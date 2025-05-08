@@ -1,10 +1,8 @@
 'use strict';
 
-var _ = require('lodash');
-var chai = require('chai');
-var should = chai.should();
-var Bitcore = require('crypto-wallet-core').BitcoreLib;
-var { Utils } = require('../ts_build/lib/common');
+const should = require('chai').should();
+const Bitcore = require('crypto-wallet-core').BitcoreLib;
+const { Utils } = require('../ts_build/lib/common');
 
 describe('Utils', () => {
 
@@ -132,9 +130,9 @@ describe('Utils', () => {
 
       ];
 
-      _.each(cases, (testCase) => {
+      for (const testCase of cases) {
         Utils.formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
-      });
+      }
     });
     it('should successfully format full amount', () => {
       var cases = [{
@@ -189,11 +187,11 @@ describe('Utils', () => {
         }
       ];
 
-      _.each(cases, (testCase) => {
+      for (const testCase of cases) {
         testCase.args[2] = testCase.args[2] || {};
         testCase.args[2].fullPrecision = true;
         Utils.formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
-      });
+      }
     });
   });
 
@@ -320,7 +318,7 @@ describe('Utils', () => {
         123,
         'x123',
       ];
-      _.each(values, (value) => {
+      for (const value of values) {
         var valid = true;
         try {
           Utils.privateKeyToAESKey(value);
@@ -328,7 +326,7 @@ describe('Utils', () => {
           valid = false;
         }
         valid.should.be.false;
-      });
+      }
     });
   });
 

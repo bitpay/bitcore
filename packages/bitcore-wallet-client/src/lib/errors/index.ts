@@ -1,25 +1,49 @@
 'use strict';
 
-import * as _ from 'lodash';
+import { errorSpec, IErrorSpec } from './spec';
 
-function format(message, args) {
+class BwcError extends Error {
+  name: string;
+
+  constructor() {
+    super();
+    this.message = 'Internal error';
+    this.stack = this.message + '\n' + new Error().stack;
+  }
+};
+BwcError.prototype.name = 'bwc.Error'; // Overrides Error base class name
+
+type BwcErr = typeof BwcError & {
+  [key: string]: (new (...args: string[]) => BwcError);
+};
+
+function format(message: string, args: string[]): string {
   return message
     .replace('{0}', args[0])
     .replace('{1}', args[1])
     .replace('{2}', args[2]);
-}
-var traverseNode = function (parent, errorDefinition) {
-  var NodeError = function () {
-    if (typeof errorDefinition.message === 'string') {
-      this.message = format(errorDefinition.message, arguments);
-    } else if (typeof errorDefinition.message === 'function') {
-      this.message = errorDefinition.message.apply(null, arguments);
-    } else {
-      throw new Error('Invalid error definition for ' + errorDefinition.name);
+};
+
+function traverseNode(parent: typeof BwcError, errorDefinition: IErrorSpec) {
+  let messageHandler: (args) => string;
+  if (typeof errorDefinition.message === 'string') {
+    messageHandler = (args) => format(errorDefinition.message as string, args);
+  } else if (typeof errorDefinition.message === 'function') {
+    messageHandler = errorDefinition.message;
+  } else {
+    throw new Error('Invalid error definition for ' + errorDefinition.name);
+  }
+  class NodeError extends parent {
+    name: string;
+    message: string;
+    stack: string;
+
+    constructor(...args) {
+      super();
+      this.message = messageHandler(args);
+      this.stack = this.message + '\n' + new Error().stack;
     }
-    this.stack = this.message + '\n' + new Error().stack;
   };
-  NodeError.prototype = Object.create(parent.prototype);
   NodeError.prototype.name = parent.prototype.name + errorDefinition.name;
   parent[errorDefinition.name] = NodeError;
   if (errorDefinition.errors) {
@@ -28,32 +52,19 @@ var traverseNode = function (parent, errorDefinition) {
   return NodeError;
 };
 
-/* jshint latedef: false */
-var childDefinitions = function (parent, childDefinitions) {
+function childDefinitions(parent: typeof BwcError, childDefinitions: IErrorSpec[]) {
   for (const childDefinition of childDefinitions) {
     traverseNode(parent, childDefinition);
   }
 };
-/* jshint latedef: true */
 
-var traverseRoot = function (parent, errorsDefinition) {
+function traverseRoot(parent: typeof BwcError, errorsDefinition: IErrorSpec[]): BwcErr {
   childDefinitions(parent, errorsDefinition);
-  return parent;
+  return parent as BwcErr;
 };
 
-var bwc: any = {};
-bwc.Error = function () {
-  this.message = 'Internal error';
-  this.stack = this.message + '\n' + new Error().stack;
-};
-bwc.Error.prototype = Object.create(Error.prototype);
-bwc.Error.prototype.name = 'bwc.Error';
+export const Errors = traverseRoot(BwcError, errorSpec);
 
-var data = require('./spec');
-traverseRoot(bwc.Error, data);
-
-module.exports = bwc.Error;
-
-module.exports.extend = function (spec) {
-  return traverseNode(bwc.Error, spec);
+export const extend = function(spec) {
+  return traverseNode(BwcError, spec);
 };
