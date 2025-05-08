@@ -1,4 +1,4 @@
-import { BitcoreLib as Bitcore, Transactions, Validation } from 'crypto-wallet-core';
+import { BitcoreLib as Bitcore, Transactions, Validation, Web3 } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IChain } from '..';
 import { Defaults } from '../../common/defaults';
@@ -190,9 +190,11 @@ export class SolChain implements IChain {
       if (
         output.amount == null ||
         output.amount < 0 ||
-        isNaN(output.amount)
+        isNaN(output.amount)  ||
+        Web3.utils.toBN(BigInt(output.amount).toString()).toString() !== BigInt(output.amount).toString()
       ) {
-        throw new Error('output.amount is not a valid value: ' + output.amount);
+        logger.warn('output.amount is not a valid value: ' + output.amount);
+        return false;
       }
       return true;
     } catch (err) {
