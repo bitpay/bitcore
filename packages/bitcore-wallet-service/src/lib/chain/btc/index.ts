@@ -921,6 +921,10 @@ export class BtcChain implements IChain {
     return true;
   }
 
+  supportsThresholdsig() {
+    return true;
+  }
+
   notifyConfirmations(network: string) {
     if (network != 'livenet') return false;
 

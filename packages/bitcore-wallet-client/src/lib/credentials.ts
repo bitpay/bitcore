@@ -48,18 +48,19 @@ export class Credentials {
   version: number;
   account: number;
   walletPrivKey: any;
+  personalEncryptingKey: string;
   sharedEncryptingKey: any;
   walletId: any;
   walletName: any;
   m: any;
   n: any;
   copayerName: any;
-  xPrivKey: string; // deprecated
-  xPrivKeyEncrypted: string; // deprecated
-  xPubKey: any;
-  requestPrivKey: any;
-  requestPubKey: any;
   copayerId: string;
+  xPrivKey: any;
+  xPrivKeyEncrypted: any;
+  xPubKey: any;
+  requestPubKey: any;
+  requestPrivKey: string;
   publicKeyRing: any;
   rootPath: any;
   derivationStrategy: any;
@@ -77,7 +78,6 @@ export class Credentials {
   multisigEthInfo?: any;
   externalSource?: boolean; // deprecated property?
   hardwareSourcePublicKey: string;
-  personalEncryptingKey: string;
 
   constructor() {
     this.version = 2;
@@ -85,10 +85,9 @@ export class Credentials {
   }
 
   /**
-   * 
+   * Create credentials from a derived key
    * @param opts
-   * @deprecated
-   * @param {string} opts.coin @deprecated Use opts.chain
+   * @param {string} opts.coin Deprecated - use opts.chain
    * @param {string} opts.chain
    * @param {string} opts.network
    * @param {number} opts.account
@@ -98,8 +97,21 @@ export class Credentials {
    * @param {string} opts.requestPrivKey
    * @returns 
    */
-  static fromDerivedKey(opts) {
-    $.shouldBeString(opts.coin);
+  static fromDerivedKey(opts: {
+    coin?: string; // Deprecated - use opts.chain
+    chain: string;
+    network: string;
+    account: number;
+    xPubKey: string;
+    rootPath: string;
+    keyId: string;
+    requestPrivKey: string;
+    n?: number; // for multisig
+    addressType?: string;
+    walletPrivKey?: string;
+    use145forBCH?: boolean;
+    nonCompliantDerivation?: boolean;
+  }) {
     $.shouldBeString(opts.chain);
     $.shouldBeString(opts.network);
     $.shouldBeNumber(opts.account, 'Invalid account');
@@ -108,9 +120,8 @@ export class Credentials {
     $.shouldBeString(opts.keyId, 'Invalid keyId');
     $.shouldBeString(opts.requestPrivKey, 'Invalid requestPrivKey');
     $.checkArgument(opts.nonCompliantDerivation == null);
-    opts = opts || {};
 
-    let x = new Credentials();
+    const x = new Credentials();
     x.coin = opts.coin;
     x.chain = opts.chain;
     x.network = opts.network;
@@ -129,7 +140,7 @@ export class Credentials {
       x.addressType = opts.addressType;
     }
 
-    // Only  used for info
+    // Only used for info
     x.rootPath = opts.rootPath;
 
     if (opts.walletPrivKey) {
@@ -141,9 +152,7 @@ export class Credentials {
     x.requestPubKey = priv.toPublicKey().toString();
 
     const prefix = 'personalKey';
-    const entropySource = Bitcore.crypto.Hash.sha256(priv.toBuffer()).toString(
-      'hex'
-    );
+    const entropySource = Bitcore.crypto.Hash.sha256(priv.toBuffer()).toString('hex');
     const b = Buffer.from(entropySource, 'hex');
     const b2 = Bitcore.crypto.Hash.sha256hmac(b, Buffer.from(prefix));
     x.personalEncryptingKey = b2.slice(0, 16).toString('base64');

@@ -10,17 +10,18 @@ import config from '../config';
 import logger from './logger';
 
 import { serverMessages as deprecatedServerMessage } from '../deprecated-serverMessages';
-import { BanxaService } from '../externalServices/banxa';
-import { ChangellyService } from '../externalServices/changelly';
-import { MoonpayService } from '../externalServices/moonpay';
-import { OneInchService } from '../externalServices/oneInch';
-import { RampService } from '../externalServices/ramp';
-import { SardineService } from '../externalServices/sardine';
-import { SimplexService } from '../externalServices/simplex';
-import { ThorswapService } from '../externalServices/thorswap';
-import { TransakService } from '../externalServices/transak';
-import { WyreService } from '../externalServices/wyre';
+import { BanxaService } from '../externalservices/banxa';
+import { ChangellyService } from '../externalservices/changelly';
+import { MoonpayService } from '../externalservices/moonpay';
+import { OneInchService } from '../externalservices/oneInch';
+import { RampService } from '../externalservices/ramp';
+import { SardineService } from '../externalservices/sardine';
+import { SimplexService } from '../externalservices/simplex';
+import { ThorswapService } from '../externalservices/thorswap';
+import { TransakService } from '../externalservices/transak';
+import { WyreService } from '../externalservices/wyre';
 import { serverMessages } from '../serverMessages';
+import { ExternalServicesConfig } from '../types/externalservices';
 import { BCHAddressTranslator } from './bchaddresstranslator';
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
@@ -34,7 +35,6 @@ import { MessageBroker } from './messagebroker';
 import {
   Advertisement,
   Copayer,
-  ExternalServicesConfig,
   INotification,
   ITxProposal,
   IWallet,
@@ -346,7 +346,7 @@ export class WalletService implements IWalletService {
     const version = Utils.parseVersion(opts.clientVersion);
     if (version && version.agent === 'bwc') {
       if (version.major === 0 || (version.major === 1 && version.minor < 2)) {
-        throw new ClientError(Errors.codes.UPGRADE_NEEDED, 'BWC clients < 1.2 are no longer supported.');
+        throw Errors.UPGRADE_NEEDED.withMessage('BWC clients < 1.2 are no longer supported.');
       }
     }
 
@@ -372,7 +372,7 @@ export class WalletService implements IWalletService {
    * @param {string} [opts.walletId] - The wallet id to use as current wallet
    * for this request (only when copayer is support staff).
    */
-  static getInstanceWithAuth(opts, cb) {
+  static getInstanceWithAuth(opts, cb: (err: Error, server?: WalletService) => void): void {
     const withSignature = cb => {
       if (!checkRequired(opts, ['copayerId', 'message', 'signature'], cb)) {
         return;
@@ -390,12 +390,12 @@ export class WalletService implements IWalletService {
           return cb(err);
         }
         if (!copayer) {
-          return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Copayer not found'));
+          return cb(Errors.NOT_AUTHORIZED.withMessage('Copayer not found'));
         }
 
         const isValid = !!server._getSigningKey(opts.message, opts.signature, copayer.requestPubKeys);
         if (!isValid) {
-          return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Invalid signature'));
+          return cb(Errors.NOT_AUTHORIZED.withMessage('Invalid signature'));
         }
 
         server.walletId = copayer.walletId;
@@ -433,7 +433,7 @@ export class WalletService implements IWalletService {
 
         const isValid = s && s.id === opts.session && s.isValid();
         if (!isValid) {
-          return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Session expired'));
+          return cb(Errors.NOT_AUTHORIZED.withMessage('Session expired'));
         }
 
         server.storage.fetchCopayerLookup(opts.copayerId, (err, copayer) => {
@@ -441,7 +441,7 @@ export class WalletService implements IWalletService {
             return cb(err);
           }
           if (!copayer) {
-            return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Copayer not found'));
+            return cb(Errors.NOT_AUTHORIZED.withMessage('Copayer not found'));
           }
 
           server.copayerId = opts.copayerId;
@@ -453,6 +453,13 @@ export class WalletService implements IWalletService {
 
     const authFn = opts.session ? withSession : withSignature;
     return authFn(cb);
+  }
+
+  static getStorage() {
+    if (!initialized) {
+      throw new Error('Storage requested before server was initialized');
+    }
+    return storage;
   }
 
   _runLocked(cb, task, waitTime?: number) {
@@ -554,20 +561,22 @@ export class WalletService implements IWalletService {
   /**
    * Creates a new wallet.
    * @param {Object} opts
-   * @param {string} opts.id - The wallet id.
-   * @param {string} opts.name - The wallet name.
-   * @param {number} opts.m - Required copayers.
-   * @param {number} opts.n - Total copayers.
-   * @param {string} opts.pubKey - Public key to verify copayers joining have access to the wallet secret.
-   * @param {string} opts.hardwareSourcePublicKey - public key from a hardware device for this copayer
-   * @param {string} opts.singleAddress[=false] - The wallet will only ever have one address.
-   * @param {string} opts.coin[='btc'] - The coin for this wallet (btc, bch, eth, doge, ltc).
-   * @param {string} opts.chain[='btc'] - The chain for this wallet (btc, bch, eth, doge, ltc).
-   * @param {string} opts.network[='livenet'] - The Bitcoin network for this wallet.
-   * @param {string} opts.account[=0] - BIP44 account number
-   * @param {string} opts.usePurpose48 - for Multisig wallet, use purpose=48
-   * @param {boolean} opts.useNativeSegwit - set addressType to P2WPKH, P2WSH, or P2TR (segwitVersion = 1)
-   * @param {number} opts.segwitVersion - 0 (default) = P2WPKH, P2WSH; 1 = P2TR
+   * @param {string} opts.id The wallet id.
+   * @param {string} opts.name The wallet name.
+   * @param {number} opts.m Required copayers.
+   * @param {number} opts.n Total copayers.
+   * @param {string} opts.pubKey Public key to verify copayers joining have access to the wallet secret.
+   * @param {string} [opts.hardwareSourcePublicKey] Public key from a hardware device for this copayer.
+   * @param {string} [opts.singleAddress] The wallet will only ever have one address. Only applies to UTXO chains. Default: false
+   * @param {string} [opts.coin] The coin for this wallet (btc, bch, eth, doge, ltc). Default: btc
+   * @param {string} [opts.chain] The chain for this wallet (btc, bch, eth, doge, ltc). Default: opts.coin
+   * @param {string} [opts.network] The Bitcoin network for this wallet. Default: livenent
+   * @param {string} [opts.account] BIP44 account number. Default: 0
+   * @param {string} [opts.usePurpose48] For Multisig wallet, use purpose=48.
+   * @param {boolean} [opts.useNativeSegwit] Sets addressType to P2WPKH, P2WSH, or P2TR (opts.segwitVersion = 1).
+   * @param {number} [opts.segwitVersion] 0 (default) = P2WPKH, P2WSH; 1 = P2TR
+   * @param {number} [opts.tssVersion] TSS version to use. Supplying this with n > 1 and a multisig chain (e.g. btc) will tell the wallet to use
+   *                                   threshold insead of on-chain multisig. Otherwise, n > 1 and a non-multisig chain will default to TSS_KEYGEN_SCHEME_VERSION
    */
   createWallet(opts, cb) {
     let pubKey;
@@ -581,12 +590,7 @@ export class WalletService implements IWalletService {
       const version = Utils.parseVersion(this.clientVersion);
       if (version && version.agent === 'bwc') {
         if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
-          return cb(
-            new ClientError(
-              Errors.codes.UPGRADE_NEEDED,
-              'BWC clients < 8.3 are no longer supported for multisig BCH wallets.'
-            )
-          );
+          return cb(Errors.UPGRADE_NEEDED.withMessage('BWC clients < 8.3 are no longer supported for multisig BCH wallets.'));
         }
       }
     }
@@ -640,12 +644,18 @@ export class WalletService implements IWalletService {
       return cb(new ClientError('Invalid public key'));
     }
 
-    // using coin for simplicity
-    if (opts.n > 1 && !ChainService.supportsMultisig(opts.chain)) {
-      return cb(new ClientError('Multisig wallets are not supported for this coin'));
+    if (opts.n > 1 && !ChainService.supportsMultisig(opts.chain) && !ChainService.supportsThresholdsig(opts.chain)) {
+      return cb(new ClientError('Multisig wallets are not supported for this chain'));
     }
 
-    // using coin for simplicity
+    if (opts.n > 1 && !ChainService.supportsMultisig(opts.chain) && !opts.tssVersion) {
+      opts.tssVersion = Defaults.TSS_KEYGEN_SCHEME_VERSION;
+    }
+
+    if (opts.tssVersion && !(opts.tssVersion > 0 && opts.tssVersion <= Constants.TSS_KEYGEN_SCHEME_VERSION_MAX)) {
+      return cb(new ClientError('Invalid TSS version'));
+    }
+
     if (ChainService.isSingleAddress(opts.chain)) {
       opts.singleAddress = true;
     }
@@ -679,8 +689,9 @@ export class WalletService implements IWalletService {
             derivationStrategy,
             addressType,
             nativeCashAddr: opts.nativeCashAddr,
-            usePurpose48: opts.n > 1 && !!opts.usePurpose48,
+            usePurpose48: opts.n > 1 && !opts.tssVersion && !!opts.usePurpose48,
             hardwareSourcePublicKey: opts.hardwareSourcePublicKey,
+            tssVersion: opts.tssVersion,
           });
           this.storage.storeWallet(wallet, err => {
             this.logd('Wallet created', wallet.id, opts.network);
@@ -1180,12 +1191,7 @@ export class WalletService implements IWalletService {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
             if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
-              return cb(
-                new ClientError(
-                  Errors.codes.UPGRADE_NEEDED,
-                  'BWC clients < 8.3 are no longer supported for multisig BCH wallets.'
-                )
-              );
+              return cb(Errors.UPGRADE_NEEDED.withMessage('BWC clients < 8.3 are no longer supported for multisig BCH wallets.'));
             }
           }
         }
@@ -1194,9 +1200,7 @@ export class WalletService implements IWalletService {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
             if (version.major < 8 || (version.major === 8 && version.minor < 4)) {
-              return cb(
-                new ClientError(Errors.codes.UPGRADE_NEEDED, 'Please upgrade your client to join this multisig wallet')
-              );
+              return cb(Errors.UPGRADE_NEEDED.withMessage('Please upgrade your client to join this multisig wallet'));
             }
           }
         }
@@ -1205,9 +1209,7 @@ export class WalletService implements IWalletService {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
             if (version.major < 8 || (version.major === 8 && version.minor < 17)) {
-              return cb(
-                new ClientError(Errors.codes.UPGRADE_NEEDED, 'Please upgrade your client to join this multisig wallet')
-              );
+              return cb(Errors.UPGRADE_NEEDED.withMessage('Please upgrade your client to join this multisig wallet'));
             }
           }
         }
@@ -3078,12 +3080,7 @@ export class WalletService implements IWalletService {
           if (err) return cb(err);
 
           if (opts.maxTxpVersion < txp.version) {
-            return cb(
-              new ClientError(
-                Errors.codes.UPGRADE_NEEDED,
-                'Your client does not support signing this transaction. Please upgrade'
-              )
-            );
+            return cb(Errors.UPGRADE_NEEDED.withMessage('Your client does not support signing this transaction. Please upgrade'));
           }
 
           const action = txp.actions.find(a => a.copayerId === this.copayerId);

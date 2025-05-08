@@ -74,7 +74,6 @@ describe('ECDSA', function() {
               assert.strictEqual(typeof session, 'string');
 
               const keygen = await KeyGen.restore({
-                seed: seeds[party],
                 authKey: authKeys[party],
                 session
               });
@@ -166,7 +165,6 @@ describe('ECDSA', function() {
               assert.strictEqual(typeof session, 'string');
 
               const keygen = await KeyGen.restore({
-                seed: seeds[party],
                 authKey: authKeys[party],
                 session
               });
@@ -209,7 +207,6 @@ describe('ECDSA', function() {
               assert.strictEqual(typeof session, 'string');
 
               const keygen = await KeyGen.restore({
-                seed: seeds[party],
                 authKey: authKeys[party],
                 session
               });
