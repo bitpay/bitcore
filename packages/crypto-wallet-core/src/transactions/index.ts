@@ -42,7 +42,7 @@ const providers = {
   OP: new OPTxProvider(),
   OPERC20: new OPERC20TxProvider(),
   SOL: new SOLTxProvider(),
-  SPL: new SPLTxProvider(),
+  SOLSPL: new SPLTxProvider(),
 };
 
 export class TransactionsProxy {

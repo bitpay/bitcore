@@ -43,21 +43,19 @@ export class SolChain implements IChain {
       // getPendingTxs returns all txps when given a native currency
       server.getPendingTxs(opts, (err, txps) => {
         if (err) return cb(err);
-        let fees = 0;
-        let amounts = 0;
-
-        txps = txps.filter(txp => {
+        const { fees, amounts } = txps.reduce((acc, txp) => {
           // Add gas used for tokens when getting native balance
           if (!opts.tokenAddress) {
-            fees += txp.fee || 0;
+            acc.fees += txp.fee || 0;
           }
+          
           // Filter tokens when getting native balance
-          if (txp.tokenAddress && !opts.tokenAddress) {
-            return false;
+          if (!(txp.tokenAddress && !opts.tokenAddress)) {
+            acc.amounts += txp.amount;
           }
-          amounts += txp.amount;
-          return true;
-        });
+          
+          return acc;
+        }, { fees: 0, amounts: 0 });
 
         const lockedSum = (amounts + fees) || 0;  // previously set to 0 if opts.multisigContractAddress
         const convertedBalance = this.convertBitcoreBalance(balance, lockedSum);
@@ -119,7 +117,7 @@ export class SolChain implements IChain {
       unsignedTxs.push(Transactions.create({ ...txp, chain, ...params }));
     }
 
-    let tx = {
+    const tx = {
       uncheckedSerialize: () => unsignedTxs,
       txid: () => txp.txid,
       toObject: () => {
@@ -135,9 +133,9 @@ export class SolChain implements IChain {
 
     if (opts.signed) {
       const sigs = txp.getCurrentSignatures();
-      sigs.forEach(x => {
+      for (const x of sigs) {
         this.addSignaturesToBitcoreTx(tx, txp.inputs, txp.inputPaths, x.signatures, x.xpub);
-      });
+      } 
     }
 
     return tx;
@@ -152,7 +150,7 @@ export class SolChain implements IChain {
     const signedTxs = [];
     for (let index = 0; index < signatures.length; index++) {
       const signed = Transactions.applySignature({
-        chain: this.chain, // TODO use lowercase always to avoid confusion
+        chain: this.chain,
         tx: unsignedTxs[index],
         signature: signatures[index]
       }); // expected to be in raw string format
@@ -171,7 +169,7 @@ export class SolChain implements IChain {
     });
   }
 
-  getWalletSendMaxInfo(server, wallet, opts, cb) {
+  getWalletSendMaxInfo(server: WalletService, wallet, opts, cb) {
     server.getBalance({}, (err, balance) => {
       if (err) return cb(err);
       const { availableAmount } = balance;
