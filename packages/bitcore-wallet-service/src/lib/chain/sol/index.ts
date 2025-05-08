@@ -1,4 +1,5 @@
 import { BitcoreLib as Bitcore, Transactions, Validation } from 'crypto-wallet-core';
+import _ from 'lodash';
 import { IChain } from '..';
 import { Defaults } from '../../common/defaults';
 import { Errors } from '../../errors/errordefinitions';
@@ -122,7 +123,7 @@ export class SolChain implements IChain {
       uncheckedSerialize: () => unsignedTxs,
       txid: () => txp.txid,
       toObject: () => {
-        let ret = txp; // Utils.deepClone(txp); TODO check this
+        let ret = _.clone(txp)
         ret.outputs[0].satoshis = ret.outputs[0].amount;
         return ret;
       },
@@ -156,7 +157,6 @@ export class SolChain implements IChain {
         signature: signatures[index]
       }); // expected to be in raw string format
       signedTxs.push(signed);
-      // TDOD id = the base64 version of the signature. no crucial
       tx.id = Transactions.getHash({ tx: signed, chain: this.chain });
     }
     tx.uncheckedSerialize = () => signedTxs;
@@ -218,8 +218,8 @@ export class SolChain implements IChain {
     server.getBalance({ wallet }, (err, balance) => {
       if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
-      // calculate how much spave is needed to find rent amount
-      const minRentException = Defaults.MIN_XRP_BALANCE;
+      // calculate how much space is needed to find rent amount
+      const minRentException = Defaults.MIN_SOL_BALANCE;
       if (totalAmount - minRentException < txp.getTotalAmount()) {
         return cb(Errors.INSUFFICIENT_FUNDS);
       } else if (availableAmount < txp.getTotalAmount()) {

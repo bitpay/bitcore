@@ -72,7 +72,6 @@ export class Key {
   public use44forMultisig: boolean;
   public compliantDerivation: boolean;
   public BIP45: boolean;
-  public signatureScheme: string
   public fingerPrint: string;
   public fingerPrintEDDSA: string
   /*
@@ -147,7 +146,7 @@ export class Key {
               ...params
             });
             const xPrivKeyEncrypted = this.#getPrivKeyEncrypted(params);
-            if (xPrivKeyEncrypted) throw new Error('Could not encrypt');
+            if (!xPrivKeyEncrypted) throw new Error('Could not encrypt');
           } else {
             this.#setPrivKey({ value: xpriv.toString(), ...params }); 
           }
@@ -254,11 +253,12 @@ export class Key {
           algo
         });
         if (!this.#getPrivKeyEncrypted({ algo })) throw new Error('Could not encrypt');
-        this.#mnemonicEncrypted = this.#mnemonicEncrypted || sjcl.encrypt(
+        this.#mnemonicEncrypted = sjcl.encrypt(
           opts.password,
           m.phrase,
           opts.sjclOpts
         );
+        if (!this.#mnemonicEncrypted) throw new Error('Could not encrypt');
       } else {
         this.#setPrivKey({ value: xpriv.toString(), algo });
         this.#mnemonic = m.phrase;
@@ -313,7 +313,6 @@ export class Key {
 
   get(password, algo?) {
     let keys: any = {};
-    let fingerPrintUpdated = false;
 
     if (this.isPrivKeyEncrypted(algo)) {
       $.checkArgument(
@@ -321,16 +320,8 @@ export class Key {
         'Private keys are encrypted, a password is needed'
       );
       try {
-        let xPrivKeyEncrypted = this.#getPrivKeyEncrypted({ algo });
+        const xPrivKeyEncrypted = this.#getPrivKeyEncrypted({ algo });
         keys.xPrivKey = sjcl.decrypt(password, xPrivKeyEncrypted);
-
-        // update fingerPrint if not set.
-        if (!this.#getFingerprint({ algo })) {
-          const xpriv = new Bitcore.HDPrivateKey(keys.xPrivKey);
-          const fingerPrint = xpriv.fingerPrint.toString('hex');
-          this.#setFingerprint({ value: fingerPrint, algo });
-          fingerPrintUpdated = true;
-        }
 
         if (this.#mnemonicEncrypted) {
           keys.mnemonic = sjcl.decrypt(password, this.#mnemonicEncrypted);
@@ -341,9 +332,13 @@ export class Key {
     } else {
       keys.xPrivKey = this.#getPrivKey({ algo });
       keys.mnemonic = this.#mnemonic;
-      if (fingerPrintUpdated) {
-        keys.fingerPrintUpdated = true;
-      }
+    }
+    // update fingerPrint if not set.
+    if (!this.#getFingerprint({ algo })) {
+      const xpriv = new Bitcore.HDPrivateKey(keys.xPrivKey);
+      const fingerPrint = xpriv.fingerPrint.toString('hex');
+      this.#setFingerprint({ value: fingerPrint, algo });
+      keys.fingerPrintUpdated = true;keys.fingerPrintUpdated = true;
     }
     keys.mnemonicHasPassphrase = this.#mnemonicHasPassphrase || false;
     return keys;
@@ -384,7 +379,6 @@ export class Key {
 
   derive(password, path, algo?): Bitcore.HDPrivateKey {
     $.checkArgument(path, 'no path at derive()');
-    let deriveFn;
     if (String(algo).toUpperCase() === Constants.ALGOS.EDDSA) {
       const key = this.#getChildKeyEDDSA(password, path);
       return new Bitcore.HDPrivateKey({
@@ -400,7 +394,7 @@ export class Key {
         this.get(password, algo).xPrivKey,
         NETWORK
       );
-      deriveFn = this.compliantDerivation
+      const deriveFn = this.compliantDerivation
       ? xPrivKey.deriveChild.bind(xPrivKey)
       : xPrivKey.deriveNonCompliantChild.bind(xPrivKey);
       return deriveFn(path);
@@ -494,12 +488,8 @@ export class Key {
     $.shouldBeUndefined(opts.useLegacyCoinType);
     $.shouldBeUndefined(opts.useLegacyPurpose);
 
-    let path = this.getBaseAddressDerivationPath(opts);
+    const path = this.getBaseAddressDerivationPath(opts);
     let xPrivKey = this.derive(password, path, algo);
-    let clientDerivedPublicKey;
-    if (algo === Constants.ALGOS.EDDSA) {
-      clientDerivedPublicKey = this.#getChildKeyEDDSA(password, path)?.pubKey
-    }
     let requestPrivKey = this.derive(
       password,
       Constants.PATHS.REQUEST_KEY,
@@ -528,7 +518,7 @@ export class Key {
       requestPrivKey,
       addressType: opts.addressType,
       walletPrivKey: opts.walletPrivKey,
-      clientDerivedPublicKey,
+      clientDerivedPublicKey: algo === Constants.ALGOS.EDDSA ? this.#getChildKeyEDDSA(password, path)?.pubKey : undefined,
     });
   };
 
@@ -596,7 +586,7 @@ export class Key {
       signatures = signatures.map(sig => sig.signature.toDER().toString('hex'));
 
       return signatures;
-    } else if (chain === 'sol') {
+    } else if (Constants.SVM_CHAINS.includes(chain)) {
       let tx = t.uncheckedSerialize();
       tx = typeof tx === 'string' ? [tx] : tx;
       const txArray = Array.isArray(tx) ? tx : [tx];

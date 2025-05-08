@@ -472,10 +472,7 @@ export class Utils {
       const isToken = tokenAddress && !payProUrl && !isTokenSwap;
       const isMULTISIG = multisigContractAddress;
       const chainName = chain.toUpperCase();
-      let tokenType = 'ERC20'
-      if (chainName === 'SOL') {
-        tokenType = 'SPL';
-      }
+      const tokenType = chainName === 'SOL' ? 'SPL' : 'ERC20'
       const _chain = isMULTISIG
         ? chainName + 'MULTISIG'
         : isToken
