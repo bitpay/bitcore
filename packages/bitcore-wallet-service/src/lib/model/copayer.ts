@@ -115,7 +115,7 @@ export class Copayer {
     x.requestPubKey = obj.requestPubKey;
     x.signature = obj.signature;
 
-    if (parseInt(x.version.toString()) == 1) {
+    if (parseInt(x.version?.toString()) == 1) {
       x.requestPubKeys = [
         {
           key: x.requestPubKey,

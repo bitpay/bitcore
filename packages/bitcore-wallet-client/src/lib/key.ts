@@ -32,7 +32,7 @@ const NETWORK: string = 'livenet';
 
 export interface KeyOptions {
   id?: string;
-  seedType: string;
+  seedType: 'new' | 'extendedPrivateKey' | 'object' | 'mnemonic' | 'objectV1';
   seedData?: any;
   passphrase?: string; // seed passphrase
   password?: string; // encrypting password
@@ -80,10 +80,7 @@ export class Key {
    */
   
   /**
-   * @param {object} opts
-   * @param {string} opts.password   encrypting password
-   * @param {string} seedType new|extendedPrivateKey|object|mnemonic
-   * @param {string} seedData
+   * @param {KeyOptions} opts
    */
   constructor(opts: KeyOptions = { seedType: 'new' }) {
     this.#version = 1;
@@ -109,7 +106,7 @@ export class Key {
         break;
       case 'mnemonic':
         $.checkArgument(x, 'Need to provide opts.seedData');
-        $.checkArgument(typeof x === 'string', 'sourceData need to be a string');
+        $.checkArgument(typeof x === 'string', 'opts.seedData needs to be a string');
         this.setFromMnemonic(new Mnemonic(x), opts);
         break;
       case 'extendedPrivateKey':
@@ -140,7 +137,7 @@ export class Key {
         $.shouldBeObject(x, 'Need to provide an object at opts.seedData');
         $.shouldBeUndefined(
           opts.password,
-          'opts.password not allowed when source is object'
+          'opts.password not allowed when opts.seedData is an object'
         );
 
         if (this.#version != x.version) {

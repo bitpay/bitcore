@@ -47,13 +47,13 @@ for (const network in NetworkChar) { // invert NetworkChar
 const BASE_URL = 'http://localhost:3232/bws/api';
 
 export class API extends EventEmitter {
-  doNotVerifyPayPro: any;
+  doNotVerifyPayPro: boolean;
   timeout: any;
-  logLevel: any;
-  supportStaffWalletId: any;
-  request: any;
-  bulkClient: any;
-  credentials: any;
+  logLevel: string;
+  supportStaffWalletId: string;
+  request: Request;
+  bulkClient: BulkClient;
+  credentials: Credentials;
   notificationIncludeOwn: boolean;
   lastNotificationId: any;
   notificationsIntervalId: any;
@@ -304,27 +304,6 @@ export class API extends EventEmitter {
       var xpub = Bitcore.HDPublicKey.fromString(
         'xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj'
       );
-      return testMessageSigning(xpriv, xpub);
-    };
-
-    // TODO => Key refactor to Key class.
-    var testLiveKeys = () => {
-      var words;
-      try {
-        words = c.getMnemonic();
-      } catch (ex) { }
-
-      var xpriv;
-      if (words && (!c.mnemonicHasPassphrase || opts.passphrase)) {
-        var m = new Mnemonic(words);
-        xpriv = m.toHDPrivateKey(opts.passphrase, c.network);
-      }
-      if (!xpriv) {
-        xpriv = new Bitcore.HDPrivateKey(c.xPrivKey);
-      }
-      xpriv = xpriv.deriveChild(c.getBaseAddressDerivationPath());
-      var xpub = new Bitcore.HDPublicKey(c.xPubKey);
-
       return testMessageSigning(xpriv, xpub);
     };
 
@@ -875,19 +854,17 @@ export class API extends EventEmitter {
    * @param {string} copayerName
    * @param {number} m
    * @param {number} n
-   * @param {object} [opts] (optional: advanced options)
-   * @param {string} [opts.coin] The coin for this wallet (btc, bch). Default: btc
-   * @param {string} [opts.chain] The chain for this wallet (btc, bch). Default: btc
-   * @param {string} [opts.network] Default: livenet
-   * @param {boolean} [opts.singleAddress] The wallet will only ever have one address. Default: false
-   * @param {string} [opts.walletPrivKey] Set a walletPrivKey (instead of random)
-   * @param {string} [opts.id] Set an id for wallet (instead of server given)
-   * @param {boolean} [opts.useNativeSegwit] Set addressType to P2WPKH, P2WSH, or P2TR (segwitVersion = 1)
-   * @param {number} [opts.segwitVersion] 0 (default) = P2WPKH, P2WSH; 1 = P2TR
+   * @param {CreateWalletOpts} [opts]
    * @param {function} cb Callback function in the standard form (err, joinSecret)
-   * @return {null|string} Returns null for a single-sig wallet, or the join secret for a multi-sig wallet
    */
-  createWallet(walletName, copayerName, m, n, opts, cb) {
+  createWallet(
+    walletName: string,
+    copayerName: string,
+    m: number,
+    n: number,
+    opts: CreateWalletOpts,
+    cb: (err?: Error, joinSecret?: string) => void
+  ) {
     if (!this._checkKeyDerivation())
       return cb(new Error('Cannot create new wallet'));
 
@@ -3456,4 +3433,39 @@ export class API extends EventEmitter {
       });
     });
   }
-}
+};
+
+export interface CreateWalletOpts {
+  /**
+   * The coin for this wallet (btc, bch). Default: btc
+   */
+  coin?: string;
+  /**
+   * The chain for this wallet (btc, bch). Default: btc
+   */
+  chain?: string;
+  /**
+   * The network for this wallet (livenet, testnet, regtest). Default: livenet
+   */
+  network?: 'livenet' | 'testnet' | 'regtest';
+  /**
+   * The wallet will only ever have one address. Default: false
+   */
+  singleAddress?: boolean;
+  /**
+   * Set a walletPrivKey (instead of random)
+   */
+  walletPrivKey?: string;
+  /**
+   * Set an id for wallet (instead of server given)
+   */
+  id?: string;
+  /**
+   * Set addressType to P2WPKH, P2WSH, or P2TR (segwitVersion = 1)
+   */
+  useNativeSegwit?: boolean;
+  /**
+   * 0 (default) = P2WPKH, P2WSH; 1 = P2TR
+   */
+  segwitVersion?: number;
+};
