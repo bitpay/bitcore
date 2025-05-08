@@ -1,8 +1,11 @@
 import * as async from 'async';
+import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
+import RateLimit from 'express-rate-limit';
 import _ from 'lodash';
 import path from 'path';
+import rp from 'request-promise-native';
 import 'source-map-support/register';
 import config from '../config';
 import * as Types from '../types/expressapp';
@@ -11,14 +14,12 @@ import { ClientError } from './errors/clienterror';
 import { Errors } from './errors/errordefinitions';
 import { logger, transport } from './logger';
 import { error } from './routes/helpers'
+import { createWalletLimiter } from './routes/middleware/createWalletLimiter';
 import { LogMiddleware } from './routes/middleware/log';
 import { TssRouter } from './routes/tss';
 import { WalletService } from './server';
 import { Stats } from './stats';
 
-const compression = require('compression');
-const RateLimit = require('express-rate-limit');
-const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
 
 export class ExpressApp {
@@ -241,20 +242,6 @@ export class ExpressApp {
       );
     };
 
-    let createWalletLimiter;
-
-    if (Defaults.RateLimit.createWallet && !opts.ignoreRateLimiter) {
-      logger.info(
-        'Limiting wallet creation per IP: %o req/h',
-        ((Defaults.RateLimit.createWallet.max / Defaults.RateLimit.createWallet.windowMs) * 60 * 60 * 1000).toFixed(2)
-      );
-      createWalletLimiter = new RateLimit(Defaults.RateLimit.createWallet);
-      // router.use(/\/v\d+\/wallets\/$/, createWalletLimiter)
-    } else {
-      createWalletLimiter = (req, res, next) => {
-        next();
-      };
-    }
 
     const ONE_MINUTE = 60;
     // See https://support.cloudflare.com/hc/en-us/articles/115003206852-Understanding-Origin-Cache-Control
@@ -311,12 +298,12 @@ export class ExpressApp {
     });
 
     // DEPRECATED
-    router.post('/v1/wallets/', createWalletLimiter, (req, res) => {
+    router.post('/v1/wallets/', createWalletLimiter(opts), (req, res) => {
       logDeprecated(req);
       return returnError(new ClientError('BIP45 wallet creation no longer supported'), res, req);
     });
 
-    router.post('/v2/wallets/', createWalletLimiter, (req, res) => {
+    router.post('/v2/wallets/', createWalletLimiter(opts), (req, res) => {
       let server: WalletService;
       try {
         server = getServer(req, res);
@@ -2351,7 +2338,7 @@ export class ExpressApp {
     });
 
 
-    router.use(new TssRouter({ returnError }).router);
+    router.use(new TssRouter({ returnError, opts }).router);
 
 
     // Set no-cache by default

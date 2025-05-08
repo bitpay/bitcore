@@ -66,6 +66,7 @@ interface Errors<T> {
   TSS_ROUND_TOO_EARLY: T;
   TSS_GENERIC_ERROR: T;
   TSS_PUBKEY_MISSING: T;
+  TSS_INVALID_MESSAGE: T;
   TSS_INVALID_MESSAGE_SIG: T;
   TSS_ROUND_MESSAGE_EXISTS: T;
   TSS_NON_PARTICIPANT: T;
@@ -134,6 +135,7 @@ const errors: Errors<string> = {
   TSS_ROUND_TOO_EARLY: 'Other participants must finish the current round first',
   TSS_GENERIC_ERROR: 'An unexpected error occurred',
   TSS_PUBKEY_MISSING: 'Pubkey missing',
+  TSS_INVALID_MESSAGE: 'Invalid message',
   TSS_INVALID_MESSAGE_SIG: 'Invalid message signature',
   TSS_ROUND_MESSAGE_EXISTS: 'You have already sent a message for this round',
   TSS_NON_PARTICIPANT: 'You are not a participant in this session',

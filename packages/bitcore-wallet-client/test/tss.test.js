@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const { Request } = require('../ts_build/lib/request');
 const { BitcoreLib } = require('crypto-wallet-core');
-const { TssKeyGen, TssKey } = require('../ts_build/lib/tsskeygen');
+const { TssKeyGen, TssKey } = require('../ts_build/lib/tsskey');
 const { TssSign } = require('../ts_build/lib/tsssign');
 const log = require('../ts_build/lib/log').default;
 const Client = require('../ts_build').default;
@@ -32,10 +32,8 @@ describe('TSS', function() {
   let dbConnection;
   let app;
   const sandbox = sinon.createSandbox();
-
-  const party0Key = new Key({ seedType: 'new' });
-  const party1Key = new Key({ seedType: 'new' });
-  const party2Key = new Key({ seedType: 'new' });
+  const m = 2;
+  const n = 3;
 
   before(function(done) {
     helpers.newDb(null, (err, database, connection) => {
@@ -76,8 +74,9 @@ describe('TSS', function() {
   });
 
   describe('Key Generation', function() {
-    const m = 2;
-    const n = 3;
+    const party0Key = new Key({ seedType: 'new' });
+    const party1Key = new Key({ seedType: 'new' });
+    const party2Key = new Key({ seedType: 'new' });
     let tss0;
     let tss1;
     let tss2;
@@ -310,9 +309,10 @@ describe('TSS', function() {
     });
 
     it(happyPath('should do round 4'), async function() {
-      const response0 = new Promise(r => tss0.once('roundsubmitted', r));
-      const response1 = new Promise(r => tss1.once('roundsubmitted', r));
-      const response2 = new Promise(r => tss2.once('roundsubmitted', r));
+      // round 4 does not emit a roundsubmitted event b/c the keychain is ready
+      const response0 = new Promise(r => tss0.once('roundprocessed', r));
+      const response1 = new Promise(r => tss1.once('roundprocessed', r));
+      const response2 = new Promise(r => tss2.once('roundprocessed', r));
       const complete = new Promise(r => tss0.once('complete', r));
       tss0.on('error', (e) => { should.not.exist(e?.message ?? e); });
       tss1.on('error', (e) => { should.not.exist(e?.message ?? e); });
@@ -320,12 +320,12 @@ describe('TSS', function() {
       tss0.subscribe({ timeout: 10, iterHandler: () => tss0.unsubscribe() });
       tss1.subscribe({ timeout: 10, iterHandler: () => tss1.unsubscribe() });
       tss2.subscribe({ timeout: 10, iterHandler: () => tss2.unsubscribe() });
-      const submitted0Round = await response0;
-      submitted0Round.should.equal(4);
-      const submitted1Round = await response1;
-      submitted1Round.should.equal(4);
-      const submitted2Round = await response2;
-      submitted2Round.should.equal(4);
+      const processed0Round = await response0;
+      processed0Round.should.equal(4);
+      const processed1Round = await response1;
+      processed1Round.should.equal(4);
+      const processed2Round = await response2;
+      processed2Round.should.equal(4);
       // ensure that the rounds are completed so-as to prevent a race condition with the following test(s)
       await complete;
     });
@@ -353,6 +353,13 @@ describe('TSS', function() {
       tss0.emit.args.filter(o => o[0] === 'keychain').length.should.equal(1);
       tss0.emit.args.filter(o => o[0] === 'complete').length.should.equal(1);
     });
+
+    // Keeping for documentation purposes
+    it.skip('SKIP ME - save to data dir', function(){ 
+      fs.writeFileSync(`${datadir}/tss-party0.json`, JSON.stringify({ key: party0Key.toObj(), tss: tss0.getKeyChain().toObj() }, null, 2));
+      fs.writeFileSync(`${datadir}/tss-party1.json`, JSON.stringify({ key: party1Key.toObj(), tss: tss1.getKeyChain().toObj() }, null, 2));
+      fs.writeFileSync(`${datadir}/tss-party2.json`, JSON.stringify({ key: party2Key.toObj(), tss: tss2.getKeyChain().toObj() }, null, 2));
+    });
   });
 
 
@@ -361,6 +368,9 @@ describe('TSS', function() {
     let sig1;
     let export0;
     let export1;
+    let party0Key;
+    let party1Key;
+    let party2Key;
     let party0Creds;
     let party1Creds;
     let party2Creds;
@@ -374,18 +384,25 @@ describe('TSS', function() {
         return Buffer.from(value.data);
       }
       return value;
-    }
+    };
 
-    before(function() {
-      ({ creds: party0Creds, tss: party0Tss } = JSON.parse(fs.readFileSync(`${datadir}/tss-party0.json`).toString(), objToBuf));
-      ({ creds: party1Creds, tss: party1Tss } = JSON.parse(fs.readFileSync(`${datadir}/tss-party1.json`).toString(), objToBuf));
-      ({ creds: party2Creds, tss: party2Tss } = JSON.parse(fs.readFileSync(`${datadir}/tss-party2.json`).toString(), objToBuf));
-      party0Creds = Credentials.fromObj(party0Creds);
-      party1Creds = Credentials.fromObj(party1Creds);
-      party2Creds = Credentials.fromObj(party2Creds);
+    before(function(done) {
+      ({ key: party0Key, tss: party0Tss } = JSON.parse(fs.readFileSync(`${datadir}/tss-party0.json`).toString(), objToBuf));
+      ({ key: party1Key, tss: party1Tss } = JSON.parse(fs.readFileSync(`${datadir}/tss-party1.json`).toString(), objToBuf));
+      ({ key: party2Key, tss: party2Tss } = JSON.parse(fs.readFileSync(`${datadir}/tss-party2.json`).toString(), objToBuf));
+      party0Key = new Key({ seedType: 'object', seedData: party0Key });
+      party1Key = new Key({ seedType: 'object', seedData: party1Key });
+      party2Key = new Key({ seedType: 'object', seedData: party2Key });
+      party0Creds = party0Key.createCredentials(null, { coin: 'eth', network: 'testnet', m, n, account: 0 });
+      party1Creds = party1Key.createCredentials(null, { coin: 'eth', network: 'testnet', m, n, account: 0 });
+      party2Creds = party2Key.createCredentials(null, { coin: 'eth', network: 'testnet', m, n, account: 0 });
       party0Tss = TssKey.fromObj(party0Tss);
       party1Tss = TssKey.fromObj(party1Tss);
       party2Tss = TssKey.fromObj(party2Tss);
+      const client = helpers.newClient(app);
+      helpers.createAndJoinWallet([client, client, client], [party0Key, party1Key, party2Key], m, n, { key: party0Key, coin: 'eth' }, (res) => {
+        done();
+      });
     });
 
     it(happyPath('should start a new signing session'), async function() {
@@ -520,18 +537,19 @@ describe('TSS', function() {
     });
 
     it(happyPath('should do round 4'), async function() {
-      const response0 = new Promise(r => sig0.once('roundsubmitted', r));
-      const response1 = new Promise(r => sig1.once('roundsubmitted', r));
+      // round 4 does not emit a roundsubmitted event b/c the signature is ready
+      const response0 = new Promise(r => sig0.once('roundprocessed', r));
+      const response1 = new Promise(r => sig1.once('roundprocessed', r));
       const signature = new Promise(r => sig1.once('signature', r));
       const complete = new Promise(r => sig0.once('complete', r));
       sig0.on('error', (e) => { should.not.exist(e?.message ?? e); });
       sig1.on('error', (e) => { should.not.exist(e?.message ?? e); });
       sig0.subscribe({ timeout: 10, iterHandler: () => sig0.unsubscribe() });
       sig1.subscribe({ timeout: 10, iterHandler: () => sig1.unsubscribe() });
-      const submitted0Round = await response0;
-      const submitted1Round = await response1;
-      submitted0Round.should.equal(4);
-      submitted1Round.should.equal(4);
+      const processed0Round = await response0;
+      const processed1Round = await response1;
+      processed0Round.should.equal(4);
+      processed1Round.should.equal(4);
       // ensure that the rounds are completed so-as to prevent
       await complete;
       const sig = await signature;

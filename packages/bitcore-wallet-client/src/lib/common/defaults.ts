@@ -13,5 +13,7 @@ export const Defaults = {
       default:
         return 1e8;
     }
-  }
+  },
+  TSS_KEYGEN_SCHEME_VERSION: 1,
+  TSS_SIGGEN_SCHEME_VERSION: 1,
 };

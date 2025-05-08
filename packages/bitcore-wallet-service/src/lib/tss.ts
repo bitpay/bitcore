@@ -15,7 +15,7 @@ class TssKeyGenClass {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
     if (!session.rounds[round]) {
-      return null;
+      return {};
     }
 
     const partyId = session.participants.indexOf(copayerId);
@@ -52,7 +52,7 @@ class TssKeyGenClass {
 
     if (session) {
       if (!this._isValidBroadcastMessage({ message }) && !this._isValidP2pMessage({ message })) {
-        throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid message provided');
+        throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid message provided');
       }
 
       if (!session.participants[message.partyId]) {
@@ -68,7 +68,7 @@ class TssKeyGenClass {
       }
     } else if (message.round === 0 && message.partyId === 0) {
       if (!this._isValidBroadcastMessage({ message })) {
-        throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid broadcast message provided');
+        throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid broadcast message provided');
       }
       await this._initSession({ id, message, storage, copayerId });
     } else {
@@ -176,7 +176,7 @@ class TssSignClass {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
     if (!session.rounds[round]) {
-      return null;
+      return {};
     }
 
     const party = session.participants.find(p => p.copayerId === copayerId);
@@ -213,7 +213,7 @@ class TssSignClass {
 
     if (session) {
       if (!this._isValidBroadcastMessage({ message }) && !this._isValidP2pMessage({ message })) {
-        throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid message provided');
+        throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid message provided');
       }
   
       const isParticipant = !!session.participants.find(p => p.copayerId === copayerId && p.partyId === message.partyId);
@@ -240,7 +240,7 @@ class TssSignClass {
       }
     } else if (message.round === 0) {
       if (!this._isValidBroadcastMessage({ message })) {
-        throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid broadcast message provided');
+        throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid broadcast message provided');
       }  
       await this._initSession({ id, message, storage, copayerId });
     } else {

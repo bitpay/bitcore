@@ -3,7 +3,7 @@ import { BitcoreLib } from 'crypto-wallet-core';
 import { EventEmitter } from 'events';
 import { Credentials } from './credentials';
 import { Request, RequestResponse } from './request';
-import { TssKey } from './tsskeygen';
+import { TssKey } from './tsskey';
 
 const $ = BitcoreLib.util.preconditions;
 
@@ -40,7 +40,6 @@ export class TssSign extends EventEmitter {
   #sign: ECDSA.Sign;
   #tssKey: TssKey;
   #credentials: Credentials;
-  #requestPrivateKey: BitcoreLib.PrivateKey;
   #subscriptionId: ReturnType<typeof setInterval>;
   #subscriptionRunning: boolean;
   id: string;
@@ -64,7 +63,6 @@ export class TssSign extends EventEmitter {
     });
     this.#credentials = params.credentials;
     this.#request.setCredentials(this.#credentials);
-    this.#requestPrivateKey = BitcoreLib.PrivateKey.fromString(this.#credentials.requestPrivKey);
     this.#tssKey = params.tssKey;
   }
 
@@ -73,9 +71,10 @@ export class TssSign extends EventEmitter {
    * @param {object} params
    * @param {string|Buffer} params.message Message to be signed
    * @param {string} [params.id] Optional ID for the session. If not provided, ID will be generated
+   * @param {string} [params.derivationPath] Optional derivation path for the key to sign with
    * @returns {Promise<TssSign>}
    */
-  async start({ message, id }: { message: string | Buffer, id?: string }): Promise<TssSign> {
+  async start({ message, id, derivationPath }: { message: string | Buffer, id?: string, derivationPath?: string }): Promise<TssSign> {
     $.checkArgument(Buffer.isBuffer(message) || typeof message === 'string', 'message must be a string or Buffer');
     $.checkArgument(id == null || typeof id === 'string', 'id must be a string or not provided');
     
@@ -86,6 +85,7 @@ export class TssSign extends EventEmitter {
       partyId: this.#tssKey.metadata.partyId,
       m: this.#tssKey.metadata.m,
       n: this.#tssKey.metadata.n,
+      derivationPath,
       messageHash,
       authKey: this.#credentials.requestPrivKey
     });
@@ -130,9 +130,9 @@ export class TssSign extends EventEmitter {
   /**
    * Subscribe to the TSS signature generation process.
    * Various events will be emitted during the process:
-   * - `roundready` => void: A new round is ready to be processed
-   * - `roundprocessed` => void: A round has been processed
-   * - `roundsubmitted` => number: A round has been submitted to the server. Emits the submitted round number
+   * - `roundready` => number: A new round is ready to be processed. Emits the round number
+   * - `roundprocessed` => number: A round has been processed. Emits the round number
+   * - `roundsubmitted` => number: A round has been submitted to the server. Emits the round number
    * - `signature` => ISignature: The signature is ready. Emits the signature object
    * - `complete` => void: The signature generation process is complete
    * - `error` => Error: An error occurred during the process. Emits the error
@@ -158,10 +158,13 @@ export class TssSign extends EventEmitter {
           try {
             const msg = await this.#sign.nextRound(body.messages);
             this.emit('roundprocessed', thisRound);
-            // For 2 P2P messages (i.e. party of 3), it already exceeds 100 KB (190 KB)
-            // Assuming ~80KB per message, the max server size of 2MB would be ~25 P2P messages
-            await this.#request.post(`/v1/tss/sign/${this.id}`, msg);
-            this.emit('roundsubmitted', thisRound);
+            // If the signature is ready, there's nothing to send to the server and msg will have empty arrays.
+            if (!this.#sign.isSignatureReady()) {
+              // For 2 P2P messages (i.e. party of 3), it already exceeds 100 KB (190 KB)
+              // Assuming ~80KB per message, the max server size of 2MB would be ~25 P2P messages
+              await this.#request.post(`/v1/tss/sign/${this.id}`, msg);
+              this.emit('roundsubmitted', thisRound);
+            }
           } catch (err) {
             // Restore the session to the previous state
             await this.restoreSession({ session: sessionBak });

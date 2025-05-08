@@ -1,22 +1,27 @@
 import express from 'express';
 import * as Types from '../../types/expressapp';
 import { TssKeyGen, TssSign } from '../tss';
+import { authRequest } from './middleware/authRequest';
 import { authTssRequest } from './middleware/authTssRequest';
+import { createWalletLimiter } from './middleware/createWalletLimiter';
 import { verifyTssMessage } from './middleware/verifyTssMessage';
 
 
 interface TssRouterOpts {
   returnError: Types.ReturnErrorFn;
+  opts: {
+    ignoreRateLimiter?: boolean;
+  }
 };
 
 export class TssRouter {
   router: express.Router;
 
-  constructor(opts: TssRouterOpts) {
-    const { returnError } = opts;
+  constructor(params: TssRouterOpts) {
+    const { returnError, opts } = params;
     const router = express.Router();
     
-    router.post('/v1/tss/keygen/:id', verifyTssMessage, async function(req, res) {
+    router.post('/v1/tss/keygen/:id', createWalletLimiter(opts), verifyTssMessage, async function(req, res) {
       try {
         const id = req.params.id;
         const msg = req.body;
@@ -51,7 +56,7 @@ export class TssRouter {
       }
     });
 
-    router.post('/v1/tss/sign/:id', verifyTssMessage, async function(req, res) {
+    router.post('/v1/tss/sign/:id', authRequest(), verifyTssMessage, async function(req, res) {
       try {
         const id = req.params.id;
         const msg = req.body;
