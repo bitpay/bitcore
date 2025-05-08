@@ -2639,7 +2639,8 @@ export class WalletService implements IWalletService {
                   next();
                 },
                 async next => {
-                  if (!opts.nonce && !Constants.SVM_CHAINS[wallet.chain.toUpperCase()]) {
+                  // SOL is skipped since its a non necessary field that is expected to be provided by the client.
+                  if (!opts.nonce && !Constants.SVM_CHAINS[wallet.chain.toUpperCase()]) { 
                     try {
                       opts.nonce = await ChainService.getTransactionCount(this, wallet, opts.from);
                     } catch (error) {
