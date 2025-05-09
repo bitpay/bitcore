@@ -1531,6 +1531,17 @@ export class ExpressApp {
       }
     });
 
+    router.post('/v1/service/banxa/getCoins', async (req, res) => {
+      let server: WalletService, response;
+      try {
+        server = getServer(req, res);
+        response = await server.externalServices.banxa.banxaGetCoins(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
     router.post('/v1/service/banxa/paymentMethods', async (req, res) => {
       let server: WalletService, response;
       try {
