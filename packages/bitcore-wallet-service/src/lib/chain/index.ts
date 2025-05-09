@@ -11,6 +11,7 @@ import { EthChain } from './eth';
 import { LtcChain } from './ltc';
 import { MaticChain } from './matic';
 import { OpChain } from './op';
+import { SolChain } from './sol';
 import { XrpChain } from './xrp';
 
 const Constants = Common.Constants;
@@ -46,7 +47,7 @@ export interface IChain {
   getChangeAddress(server: WalletService, wallet: IWallet, opts: { changeAddress: string } & any);
   checkDust(output: { amount: number; toAddress: string; valid: boolean }, opts: { outputs: any[] } & any);
   checkScriptOutput(output: { script: string; amount: number; });
-  getFee(server: WalletService, wallet: IWallet, opts: { fee: number; feePerKb: number } & any);
+  getFee(server: WalletService, wallet: IWallet, opts: { fee: number; feePerKb: number; signatures?: number } & any);
   getBitcoreTx(txp: TxProposal, opts: { signed: boolean });
   convertFeePerKb(p: number, feePerKb: number);
   checkTx(server: WalletService, txp: ITxProposal);
@@ -84,7 +85,8 @@ const chains: { [chain: string]: IChain } = {
   OP: new OpChain(),
   XRP: new XrpChain(),
   DOGE: new DogeChain(),
-  LTC: new LtcChain()
+  LTC: new LtcChain(),
+  SOL: new SolChain()
 };
 
 class ChainProxy {
