@@ -1,238 +1,494 @@
-<!DOCTYPE html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!--[if mso]>
-    <xml>
-        <o:OfficeDocumentSettings>
-            <o:PixelsPerInch>96</o:PixelsPerInch>
-        </o:OfficeDocumentSettings>
-    </xml>
-    <![endif]-->
-    <title>{{title}}</title>
-    <link href='https://fonts.googleapis.com/css?family=Roboto:400,500,700' rel='stylesheet' type='text/css'>
-    <link href='https://fonts.googleapis.com/css?family=Archivo:400,500,700' rel='stylesheet' type='text/css'>
-    <link href='https://fonts.googleapis.com/css?family=Heebo:400,500,700' rel='stylesheet' type='text/css'>
-    <style type="text/css">
-        /* Boilerplate - parts from Mailchimp, Ink */
-        #outlook a { padding: 0; }
-        .ReadMsgBody { width: 100%; }
-        .ExternalClass { width: 100%; }
-        .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass td, .ExternalClass div { line-height: 100%; }
-        body, table, td, p, a, li, blockquote {
-            -webkit-text-size-adjust: 100%;
-            -ms-text-size-adjust: 100%;
-        }
-        table, td {
-            mso-table-lspace: 0pt;
-            mso-table-rspace: 0pt;
-        }
-        img { -ms-interpolation-mode: bicubic; }
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{title}}</title>
+  <link href='https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900' rel='stylesheet' type='text/css'>
+  <style type="text/css">
 
-        /* Reset Styles */
-        body, #bodyTable, #bodyCell {
-            height: 100% !important;
-            width: 100% !important;
-            margin: 0;
-            padding: 0;
-        }
-        table { border-collapse: collapse !important; }
+    /* Boilerplate - parts from Mailchimp, Ink */
 
-        /* Mobile Styles */
-        @media only screen and (max-width: 480px) {
-            body { width: 100% !important; min-width: 100% !important; }
-            td[id="bodyCell"] { padding: 30px 0 !important; }
-            table[id="emailContainer"] { max-width: 600px !important; width: 100% !important; }
-            td[class="bodyContent"] { font-size: 18px !important; }
-            td[class="emailColumn"] {
-                display: block !important;
-                max-width: 800px !important;
-                width: 100% !important;
-            }
-            td[class="footerContent"] {
-                font-size: 15px !important;
-                padding-right: 15px;
-                padding-left: 15px;
-            }
-        }
+    /* /\/\/\/\/\/\/\/\/ CLIENT-SPECIFIC STYLES /\/\/\/\/\/\/\/\/ */
 
-        /* BitPay styles */
-        body, #bodyTable {
-            background: #F5F7FA;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            font-family: 'Roboto', Helvetica, Arial, sans-serif;
-        }
-        #emailBody {
-            background-color: #FFFFFF;
-            border-radius: 15px;
-            border-collapse: separate !important;
-            padding-top: 0;
-        }
-        .status-icon {
-            width: 100%;
-            text-align: center;
-            padding-bottom: 24px;
-        }
-        .status-icon img {
-            width: 50px;
-            height: auto;
-        }
-        .logoImage {
-            border: 0;
-            color: #162A5C !important;
-            font-size: 42px;
-            height: auto !important;
-            line-height: 100%;
-            outline: none;
-            text-align: left;
-            text-decoration: none;
-            width: 80px;
-            margin-bottom: 24px;
-        }
-        .bodyContent {
-            color: rgba(37, 37, 37, 1) !important;
-            font-family: 'Archivo', sans-serif;
-            font-weight: 400;
-            font-size: 14px;
-            line-height: 24px;
-            letter-spacing: 0;
-            padding: 44px;
-            text-align: left;
-        }
-        .bodyContainer {
-            padding-bottom: 0;
-        }
-        h1 {
-            font-family: 'Heebo', sans-serif;
-            font-size: 25px;
-            font-weight: 700;
-            color: #000000 !important;
-            line-height: 34px;
-            padding: 0;
-            text-align: center;
-            margin: 0 0 24px 0;
-        }
-        .divider {
-            position: relative;
-            border-bottom: 1px solid rgba(32, 32, 54, 0.10);
-            width: auto;
-            margin: 0 0 28px;
-        }
-        .footerContent {
-            padding: 10px 0 0;
-            color: #4F6EF7;
-            font-family: 'Heebo', sans-serif;
-            font-weight: 400;
-            font-size: 12px;
-            line-height: 20px;
-            letter-spacing: 0;
-            text-align: center;
-        }
-        .logoImage, small {
-            font-family: 'Roboto', sans-serif;
-        }
-        #bodyCell { padding: 40px 20px; }
-        #emailContainer {
-            width: 600px !important;
-            max-width: 600px !important;
-        }
-        @media only screen and (max-width: 480px) {
-            #emailContainer {
-                width: 100% !important;
-                max-width: 480px !important;
-            }
-        }
-        
-        /* Utility classes */
-        .mb-0 { margin-bottom: 0; }
-        .mb-1 { margin-bottom: 1rem; }
-        .mb-2 { margin-bottom: 2rem; }
-        .mt-0 { margin-top: 0; }
-        .mt-1 { margin-top: 1rem; }
-        .mt-3 { margin-top: 3rem; }
-        .mt-4 { margin-top: 4rem; }
-        .content-text {
-            margin-top: 2rem;
-            color: rgba(37, 37, 37, 1) !important;
-        }
-        .text-center {
-            text-align: center;
-        }
+    /* Force Outlook to provide a "view in browser" message */
+    #outlook a {
+      padding: 0;
+    }
 
-        /* Link styles */
-        a {
-            text-decoration: none !important;
-            color: #4F6EF7 !important;
-        }
+    /* Force Hotmail to display emails at full width */
+    .ReadMsgBody {
+      width: 100%;
+    }
 
-        /* Small text */
-        small {
-            padding: 0;
-            font-size: 12px;
-            line-height: 18px;
-            text-align: left;
-            color: #898B9D !important;
-        }
-        small a {
-            word-break: break-all !important;
-        }
-    </style>
+    .ExternalClass {
+      width: 100%;
+    }
+
+    /* Force Hotmail to display normal line spacing */
+    .ExternalClass,
+    .ExternalClass p,
+    .ExternalClass span,
+    .ExternalClass font,
+    .ExternalClass td,
+    .ExternalClass div {
+      line-height: 100%;
+    }
+
+    /* Prevent WebKit and Windows mobile changing default text sizes */
+    body,
+    table,
+    td,
+    p,
+    a,
+    li,
+    blockquote {
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+
+    /* Remove spacing between tables in Outlook 2007 and up */
+    table,
+    td {
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+    }
+
+    /* Help Microsoft platforms smoothly render resized images */
+    img {
+      -ms-interpolation-mode: bicubic;
+    }
+
+    /* /\/\/\/\/\/\/\/\/ RESET STYLES /\/\/\/\/\/\/\/\/ */
+    body,
+    #bodyTable,
+    #bodyCell {
+      height: 100% !important;
+      width: 100% !important;
+      margin: 0;
+      padding: 0;
+    }
+
+    table {
+      border-collapse: collapse !important;
+    }
+
+    /* /\/\/\/\/\/\/\/\/ MOBILE STYLES /\/\/\/\/\/\/\/\/ */
+
+    @media only screen and (max-width: 480px) {
+
+
+      /* /\/\/\/\/\/\/ CLIENT-SPECIFIC STYLES /\/\/\/\/\/\/ */
+      /* Prevent iOS Mail from adding padding to the body */
+      body {
+        width: 100% !important;
+        min-width: 100% !important;
+      }
+
+
+      /* /\/\/\/\/\/\/ RESET STYLES /\/\/\/\/\/\/ */
+      td[id="bodyCell"] {
+        padding: 30px 0 !important;
+      }
+
+      table[id="emailContainer"] {
+        max-width: 498px !important;
+        width: 100% !important;
+      }
+
+
+      /* /\/\/\/\/\/\/ ELEMENT STYLES /\/\/\/\/\/\/ */
+      td[class="bodyContent"] {
+        font-size: 18px !important;
+      }
+
+      table[class="emailButton"] {
+        /*max-width:480px !important; */
+        width: 100% !important;
+      }
+
+      td[class="emailButtonContent"] {
+        font-size: 18px !important;
+      }
+
+      td[class="emailButtonContent"] a {
+        display: block;
+      }
+
+      td[class="emailColumn"] {
+        display: block !important;
+        max-width: 800px !important;
+        width: 100% !important;
+      }
+
+      td[class="footerContent"] {
+        font-size: 15px !important;
+        padding-right: 15px;
+        padding-left: 15px;
+      }
+
+
+    }
+
+    /* BitPay styles */
+
+    body, #bodyTable {
+      background: #F5F7FA;
+      /*background: #162A5C;*/
+      /*background: linear-gradient(#1F3E8C, #162A5C);*/
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+
+    /* radius */
+    #emailBody {
+      border-radius: 15px;
+      /*border-radius: 6x;*/
+    }
+
+    .emailButton, .emailButtonContent {
+      border-radius: 5px;
+    }
+
+    .emailButton {
+      cursor: pointer;
+    }
+
+    /* header color */
+    .status-icon {
+      width: 100%;
+      text-align: center;
+      padding: 2rem 0;
+    }
+
+    .medium-weight-text {
+      font-weight: 500;
+    }
+
+    .centered-text {
+      display: block;
+      line-height: 160%;
+      text-align: center;
+    }
+
+    .invoiceLinkWrapper {
+      width: 100%;
+      margin-top: 1.25rem;
+    }
+
+    .operationalLink {
+      color: #4A90E2;
+      text-decoration: none;
+    }
+
+    /* text color */
+    .bodyContent {
+      color: #616471;
+    }
+
+    /* secondary color */
+    small {
+      color: #898B9D !important;
+    }
+
+    /* secondary color */
+    .footerContent .footerSpan, .footerContent a {
+      color: #4F6EF7!important;
+      /*color: rgba(255,255,255,0.8) !important;*/
+    }
+
+    /* set links */
+    a {
+      text-decoration: none !important;
+      color: #4F6EF7 !important;
+    }
+
+    /* highlight color */
+    .emailButton,
+    .emailButtonContent {
+      /*background-color: #4582E8;*/
+      background-color: #2240C4;
+    }
+
+    .emailButtonReject {
+      /*background-color: #FF5460;*/
+      background-color: #F75E5E;
+    }
+
+    .logoImage, .bodyContent, h1, .emailButtonContent, small, .footerContent, .footerSpan {
+      font-family: 'Roboto', sans-serif;
+    }
+
+    .logoImage, h1, .emailButtonText {
+      font-weight: 500;
+    }
+
+    .bodyContent, small, .footerContent, .footerSpan {
+      font-weight: 400;
+    }
+
+    #bodyCell {
+      padding: 40px 20px;
+    }
+
+    #emailContainer {
+      max-width: 498px !important;
+    }
+
+    .logoImage {
+      border: 0;
+      color: #162A5C !important;
+      font-size: 42px;
+      height: auto !important;
+      /*letter-spacing:-4px;*/
+      line-height: 100%;
+      outline: none;
+      text-align: left;
+      text-decoration: none;
+    }
+
+    #emailBody {
+      background-color: #FFFFFF;
+      border-collapse: separate !important;
+      padding-top: 15px;
+    }
+
+    .bodyContent {
+      font-size: 15px;
+      line-height: 175%;
+      padding: 15px 40px 30px 40px;
+      text-align: left;
+    }
+
+    .bodyContainer {
+      padding-top: 30px;
+      padding-bottom: 30px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: bold;
+      color: #000000 !important;
+      line-height: 115%;
+      padding: 0;
+      text-align: center;
+    }
+
+    .emailButtonCell {
+      padding-top: 35px;
+      /*padding-right:15px;*/
+      padding-bottom: 35px;
+      /*padding-left:15px;*/
+    }
+
+    .emailButton {
+      width: 100%;
+      border-collapse: separate !important;
+      margin: 2rem auto;
+    }
+
+    .emailButtonContent {
+      color: #FFFFFF;
+      background: #4F6EF7;
+      font-size: 18px;
+      line-height: 100%;
+      min-width: 180px;
+      max-width: 300px;
+      margin-bottom: 1em;
+    }
+
+    .emailButtonText {
+      display: inline-block !important;
+      padding: 20px 13px !important;
+      color: #FFFFFF;
+      color: #FFFFFF !important;
+      text-decoration: none !important;
+    }
+
+    small {
+      padding: 0;
+      font-size: 12px;
+      line-height: 18px;
+      text-align: left;
+    }
+
+    small a {
+      word-break: break-all !important;
+    }
+
+    .divider {
+      position: relative;
+      border-bottom: 1px solid rgba(32, 32, 54, 0.10);
+      width: 498px;
+      margin: 50px -40px 15px;
+    }
+
+    .deviceDetails {
+      font-weight: 500;
+    }
+
+    .footerContent {
+      padding: 10px 0 0;
+      color: #4F6EF7;
+      font-size: 13px;
+      line-height: 179%;
+    }
+
+    .footerContent a {
+      text-decoration: none !important;
+    }
+
+    .footer-icon {
+      display: inline-block;
+      background-color: transparent;
+      background-repeat: no-repeat;
+      margin: 10px;
+      width: 20px;
+      height: 20px;
+      opacity: 0.7;
+    }
+
+    .manual-box__address__wrapper {
+      background: #EFF1FE;
+      border-radius: 25px;
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 20px;
+      position: relative;
+    }
+
+    .manual-box__address__wrapper__alpha-code {
+      font-weight: 700;
+      font-size: 11px;
+      margin-top: 2.5px;
+      padding-right: 10px;
+      border-right: 1px solid #E4E4E4;
+    }
+
+    .manual-box__address__wrapper__value {
+      padding-left: 10px;
+      font-size: 12px;
+      color: #4A4A4A;
+    }
+
+    .text-16 {
+      font-size: 16px;
+    }
+
+    .mb-0 {
+      margin-bottom: 0;
+    }
+
+    .mt-3 {
+      margin-top: 3rem;
+    }
+
+    .mt-4 {
+      margin-top: 4rem;
+    }
+
+    .mb-2 {
+      margin-bottom: 2rem;
+    }
+
+    .mb-1 {
+      margin-bottom: 1rem;
+    }
+
+    .mt-0 {
+      margin-top: 0;
+    }
+
+    .mt-1 {
+      margin-top: 1rem;
+    }
+  </style>
 </head>
+
 <body>
 <center>
-    <!--[if mso]>
-    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="600" align="center">
-        <tr><td>
-    <![endif]-->
-    <table bgcolor="#F6F7FC" border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="bodyTable">
-        <tr>
-            <td align="center" valign="top" id="bodyCell">
-                <table border="0" cellpadding="0" cellspacing="0" width="600" id="emailContainer">
-                    <!-- Logo -->
-                    <tr>
-                        <td align="left" valign="top">
-                            <a href="https://bitpay.com" target="_blank" rel="noopener noreferrer">
-                                <img src="https://bitpay.com/img/email/bitpay-logo-blue.png" alt="Live life on crypto with BitPay." height="" width="80" class="logoImage"/>
-                            </a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td align="center" valign="top" class="bodyContainer">
-                            <table border="0" cellpadding="0" cellspacing="0" width="100%" id="emailBody">
-                                <tr>
-                                    <td class="bodyContent">
-                                        {{> htmlContent}}
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                    
-                    <!-- Footer -->
-                    <tr>
-                        <td style="line-height: 1px; font-size: 1px;" height="20">&nbsp;</td>
-                    </tr>
-                    <tr>
-                        <td style="font-size: 12px; color: rgba(86, 89, 102, 1); font-family: Heebo, sans-serif; font-weight: 400; line-height: 20px; letter-spacing: 0; text-align: center;" valign="top">
-                            <div>BitPay, Inc.</div>
-                            <div>1201 W Peachtree St NW Ste 2625, PMB 91017, Atlanta, Georgia 30309-3499</div>
-                            <div>NMLS ID#1496848</div>
-                            <div>BitPay is licensed to engage in Virtual Currency Business Activity by the New York State Department of Financial Services.</div>
-                            <div>©2025 Copyright <span style="font-family: Heebo, sans-serif; font-weight: 400; font-size: 12px; line-height: 20px; letter-spacing: 0; text-align: center;"><a style="color: rgb(70, 131, 232);" href="https://support.bitpay.com" target="_blank">Contact</a></span> | <span style="font-family: Heebo, sans-serif; font-weight: 400; font-size: 12px; line-height: 20px; letter-spacing: 0; text-align: center;"><a style="color: rgb(70, 131, 232);" href="https://bitpay.com/about/privacy/" target="_blank">Privacy Policy</a></span></div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="line-height: 1px; font-size: 1px;" height="20">&nbsp;</td>
-                    </tr>
-                </table>
+  <table bgcolor="#F6F7FC" border="0" cellpadding="0" cellspacing="0" height="100%" width="100%" id="bodyTable">
+    <tr>
+      <td align="center" valign="top" id="bodyCell">
+        <table border="0" cellpadding="0" cellspacing="0" id="emailContainer">
+          <tr>
+            <td align="left" valign="top">
+              <a href="https://bitpay.com" target="_blank" rel="noopener noreferrer">
+                <img src="https://bitpay.com/img/email/bitpay-logo-blue.png" alt="Live life on crypto with BitPay." height="" width="80"
+                     class="logoImage"/>
+              </a>
             </td>
-        </tr>
-    </table>
-    <!--[if mso]>
-    </td></tr></table>
-    <![endif]-->
+          </tr>
+          <tr>
+            <td align="center" valign="top" class="bodyContainer">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" id="emailBody">
+
+                <tr>
+                  <td class="bodyContent">
+
+                    {{> htmlContent}}
+
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" valign="top">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" id="emailFooter">
+                <tr>
+                  <td align="center" valign="top" class="footerContent">
+                    <a href="https://support.bitpay.com">Get Help</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="line-height: 1px; font-size: 1px;" height="20">&nbsp; </td>
+          </tr>
+          <tr>
+          </tr>
+          <tr>
+            <td style="font-size: 12px; color: rgb(86, 89, 102); font-family: Heebo, Roboto, Helvetica, Arial, sans-serif; line-height: 20px; text-align: center;" valign="top">
+              <div>
+                <div>
+                  BitPay
+                </div>
+                <div>
+                  <span class="il">1201 W Peachtree St NW Ste 2625,</span> <span class="il">PMB 91017,</span> Atlanta, Georgia <span class="il">30309-3499</span>
+                  <br>
+                </div>
+              </div> </td>
+          </tr>
+          <tr>
+            <td style="font-size: 12px; color: rgb(86, 89, 102); font-family: Heebo, Roboto, Helvetica, Arial, sans-serif; line-height: 20px; text-align: center;" valign="top">
+              <div>
+                <div>
+                  © 2024 Copyright&nbsp;&nbsp;
+                  <a style="color: rgb(70, 131, 232);" href="https://support.bitpay.com" target="_blank" >Contact</a>&nbsp;&nbsp;
+                  <a style="color: rgb(70, 131, 232);" href="https://bitpay.com/about/privacy/" target="_blank"><span class="il">Privacy</span> Policy</a>
+                </div>
+
+                <div>
+                  NMLS ID#1496848
+                </div>
+
+                <div>
+                  BitPay is licensed to engage in Virtual Currency Business Activity by the New York State Department of Financial Services.
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="line-height: 1px; font-size: 1px;" height="20">&nbsp; </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </center>
 </body>
 </html>
