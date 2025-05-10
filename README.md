@@ -1,4 +1,4 @@
-# Bitcore Monorepo
+ Bitcore Monorepo
 
   <p align="center">
   <img alt="npm" src="https://img.shields.io/npm/v/bitcore-lib">
@@ -11,7 +11,7 @@
   
 **Infrastructure to build Bitcoin and blockchain-based applications for the next generation of financial technology.**
 
-## Applications
+ Applications
 
 - [Bitcore Node](packages/bitcore-node) - A standardized API to interact with multiple blockchain networks
 - [Bitcore Wallet](packages/bitcore-wallet) - A command-line based wallet client
@@ -20,7 +20,7 @@
 - [Bitpay Wallet](https://github.com/bitpay/wallet) - An easy-to-use, multiplatform, multisignature, secure bitcoin wallet
 - [Insight](packages/insight) - A blockchain explorer web user interface
 
-## Libraries
+ Libraries
 
 - [Bitcore Lib](packages/bitcore-lib) - A powerful JavaScript library for Bitcoin
 - [Bitcore Lib Cash](packages/bitcore-lib-cash) - A powerful JavaScript library for Bitcoin Cash
@@ -32,16 +32,16 @@
 - [Bitcore P2P Doge](packages/bitcore-p2p-doge) **DEPRECATED**[^1] - The peer-to-peer networking protocol for Dogecoin
 - [Crypto Wallet Core](packages/crypto-wallet-core) - A coin-agnostic wallet library for creating transactions, signing, and address derivation
 
-## Extras
+ Extras
 
 - [Bitcore Build](packages/bitcore-build) - A helper to add tasks to gulp
 - [Bitcore Client](packages/bitcore-client) - A helper to create a wallet using the bitcore-v8 infrastructure
 
-## Contributing
+ Contributing
 
 See [CONTRIBUTING.md](https://github.com/bitpay/bitcore/blob/master/Contributing.md) on the main bitcore repo for information about how to contribute.
 
-## License
+ License
 
 Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).
 
