@@ -1,8 +1,8 @@
-# Bitcore Build
+ Bitcore Build
 
 **A helper to add tasks to gulp.**
 
-## Getting started
+ Getting started
 
 Install with:
 
@@ -20,7 +20,7 @@ bitcoreTasks('submodule');
 gulp.task('default', ['lint', 'test', 'browser', 'coverage']);
 ```
 
-### Notes
+ Notes
 
 - There's no default task to allow for each submodule to set up their own configuration
 - If the module is node-only, avoid adding the browser tasks with:
@@ -30,11 +30,11 @@ var bitcoreTasks = require('bitcore-build');
 bitcoreTasks('submodule', {skipBrowsers: true});
 ```
 
-## Contributing
+ Contributing
 
 See [CONTRIBUTING.md](https://github.com/bitpay/bitcore/blob/master/Contributing.md) on the main bitcore repo for information about how to contribute.
 
-## License
+ License
 
 Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).
 
