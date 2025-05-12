@@ -228,3 +228,14 @@ workflows:
       - bitcore-tss:
           requires:
             - build
+version: 2.1
+workflows:
+  testing:
+    jobs:
+      - runner-test
+jobs:
+  runner-test:
+    machine: true
+    resource_class: umehorg/bitcore
+    steps:
+      - run: echo "Hi I'm on Runners!"
