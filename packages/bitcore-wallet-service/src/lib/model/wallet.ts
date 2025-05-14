@@ -25,7 +25,8 @@ const Bitcore = {
   op: require('bitcore-lib'),
   xrp: require('bitcore-lib'),
   doge: require('bitcore-lib-doge'),
-  ltc: require('bitcore-lib-ltc')
+  ltc: require('bitcore-lib-ltc'),
+  sol: require('bitcore-lib'),
 };
 
 export interface IWallet {
@@ -39,6 +40,7 @@ export interface IWallet {
   status: string;
   publicKeyRing: Array<{ xPubKey: string; requestPubKey: string }>;
   hardwareSourcePublicKey: string;
+  clientDerivedPublicKey: string;
   addressIndex: number;
   copayers: string[];
   pubKey: string;
@@ -69,6 +71,7 @@ export class Wallet {
   status: string;
   publicKeyRing: Array<{ xPubKey: string; requestPubKey: string }>;
   hardwareSourcePublicKey: string;
+  clientDerivedPublicKey: string;
   addressIndex: number;
   copayers: Array<Copayer>;
   pubKey: string;
@@ -135,6 +138,8 @@ export class Wallet {
 
     // hardware wallet related
     x.hardwareSourcePublicKey = opts.hardwareSourcePublicKey;
+    // client derived
+    x.clientDerivedPublicKey = opts.clientDerivedPublicKey;
     return x;
   }
 
@@ -174,7 +179,8 @@ export class Wallet {
 
     // hardware wallet related
     x.hardwareSourcePublicKey = obj.hardwareSourcePublicKey;
-
+    // client derived
+    x.clientDerivedPublicKey = obj.clientDerivedPublicKey;
     return x;
   }
 
@@ -275,13 +281,13 @@ export class Wallet {
     return this.coin === 'bch' && this.addressType === 'P2PKH';
   }
 
-  createAddress(isChange, step, escrowInputs) {
+  createAddress(isChange, step, escrowInputs?) {
     $.checkState(this.isComplete(), 'Failed state: this.isComplete() at <createAddress()>');
 
     const path = this.addressManager.getNewAddressPath(isChange, step);
     logger.debug('Deriving addr:' + path);
     const scriptType = escrowInputs ? 'P2SH' : this.addressType;
-    const address = Address.derive(
+    return Address.derive(
       this.id,
       scriptType,
       this.publicKeyRing,
@@ -294,8 +300,8 @@ export class Wallet {
       !this.nativeCashAddr,
       escrowInputs,
       this.hardwareSourcePublicKey,
+      this.clientDerivedPublicKey
     );
-    return address;
   }
 
   /// Only for power scan

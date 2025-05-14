@@ -42,12 +42,13 @@ const providers = {
   OP: new OPTxProvider(),
   OPERC20: new OPERC20TxProvider(),
   SOL: new SOLTxProvider(),
-  SPL: new SPLTxProvider(),
+  SOLSPL: new SPLTxProvider(),
 };
 
 export class TransactionsProxy {
   get({ chain }) {
-    return providers[chain];
+    const normalizedChain = chain.toUpperCase();
+    return providers[normalizedChain];
   }
 
   create(params) {

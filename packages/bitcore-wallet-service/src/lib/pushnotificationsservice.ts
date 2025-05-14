@@ -487,7 +487,8 @@ export class PushNotificationsService {
       euroc: 'EUROC',
       usdt: 'USDT',
       weth: 'WETH',
-      'usdc.e': 'USDC.e'
+      'usdc.e': 'USDC.e',
+      sol: 'SOL'
     };
     const data = _.cloneDeep(notification.data);
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');
@@ -513,7 +514,10 @@ export class PushNotificationsService {
           } else if (Constants.BASE_TOKEN_OPTS[tokenAddress]) {
             unit = Constants.BASE_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
             label = UNIT_LABELS[unit];
-          } else {
+          } else if (Constants.SOL_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.SOL_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit];
+          }else {
             let customTokensData;
             try {
               customTokensData = await this.getTokenData(data.address.coin);

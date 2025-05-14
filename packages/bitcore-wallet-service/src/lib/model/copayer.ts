@@ -37,6 +37,7 @@ export class Copayer {
   chain: string;
   xPubKey: string;
   hardwareSourcePublicKey: string;
+  clientDerivedPublicKey: string;
   id: string;
   name: string;
   requestPubKey: string;
@@ -59,7 +60,7 @@ export class Copayer {
 
   static create(opts) {
     opts = opts || {};
-    if (!opts.hardwareSourcePublicKey) {
+    if (!opts.hardwareSourcePublicKey && !opts.clientDerivedPublicKey) {
       $.checkArgument(opts.xPubKey, 'Missing copayer extended public key')
     }
     $.checkArgument(opts.requestPubKey, 'Missing copayer request public key')
@@ -77,6 +78,7 @@ export class Copayer {
     x.chain = opts.chain || opts.coin;
     x.xPubKey = opts.xPubKey;
     x.hardwareSourcePublicKey = opts.hardwareSourcePublicKey;
+    x.clientDerivedPublicKey = opts.clientDerivedPublicKey;
     x.id = Copayer._xPubToCopayerId(opts.chain, x.xPubKey);
     x.name = opts.name;
     x.requestPubKey = opts.requestPubKey;
@@ -112,6 +114,7 @@ export class Copayer {
     x.name = obj.name;
     x.xPubKey = obj.xPubKey;
     x.hardwareSourcePublicKey = obj.hardwareSourcePublicKey;
+    x.clientDerivedPublicKey = obj.clientDerivedPublicKey;
     x.requestPubKey = obj.requestPubKey;
     x.signature = obj.signature;
 

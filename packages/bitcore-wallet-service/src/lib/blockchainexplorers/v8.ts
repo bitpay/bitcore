@@ -21,7 +21,8 @@ const Bitcore_ = {
   ltc: require('bitcore-lib-ltc'),
   arb: Bitcore,
   op: Bitcore,
-  base: Bitcore
+  base: Bitcore,
+  sol: Bitcore
 };
 
 const Constants = Common.Constants,

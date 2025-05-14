@@ -43,7 +43,8 @@ export class Credentials {
     'keyId', // this is only for information
     'token', // this is for a ERC20 token
     'multisigEthInfo', // this is for a MULTISIG eth wallet
-    'hardwareSourcePublicKey' // public key from a hardware device for this copayer
+    'hardwareSourcePublicKey', // public key from a hardware device for this copayer
+    'clientDerivedPublicKey' // for public keys generated client side
   ];
   version: number;
   account: number;
@@ -78,6 +79,7 @@ export class Credentials {
   multisigEthInfo?: any;
   externalSource?: boolean; // deprecated property?
   hardwareSourcePublicKey: string;
+  clientDerivedPublicKey: string
 
   constructor() {
     this.version = 2;
@@ -111,6 +113,7 @@ export class Credentials {
     walletPrivKey?: string;
     use145forBCH?: boolean;
     nonCompliantDerivation?: boolean;
+    clientDerivedPublicKey?: string;
   }) {
     $.shouldBeString(opts.chain);
     $.shouldBeString(opts.network);
@@ -163,7 +166,7 @@ export class Credentials {
         requestPubKey: x.requestPubKey
       }
     ];
-
+    x.clientDerivedPublicKey = opts.clientDerivedPublicKey;
     return x;
   }
 
@@ -257,6 +260,8 @@ export class Credentials {
         chainPath = '3';
       } else if (chain == 'ltc') {
         chainPath = '2';
+      } else if (chain == 'sol') {
+        chainPath = '501';
       } else {
         throw new Error('unknown chain: ' + chain);
       }
@@ -294,8 +299,8 @@ export class Credentials {
     x.account = x.account || 0;
 
     $.checkState(
-      x.xPrivKey || x.xPubKey || x.xPrivKeyEncrypted || x.hardwareSourcePublicKey,
-      'Failed State: x.xPrivKey | x.xPubkey | x.xPrivKeyEncrypted | x.hardwareSourcePublicKey at fromObj'
+      x.xPrivKey || x.xPubKey || x.xPrivKeyEncrypted || x.hardwareSourcePublicKey || x.clientDerivedPublicKey,
+      'Failed State: x.xPrivKey | x.xPubkey | x.xPrivKeyEncrypted | x.hardwareSourcePublicKey  | x.clientDerivedPublicKey at fromObj'
     );
     return x;
   }
