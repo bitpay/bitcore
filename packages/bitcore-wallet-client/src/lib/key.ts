@@ -33,26 +33,11 @@ const NETWORK: string = 'livenet';
 const ALGOS_BY_CHAIN =  {
   default: Constants.ALGOS.ECDSA,
   sol: Constants.ALGOS.EDDSA,
-}
+};
 const SUPPORTED_ALGOS = [Constants.ALGOS.ECDSA, Constants.ALGOS.EDDSA];
 const ALGO_TO_KEY_TYPE = {
   ECDSA: 'Bitcoin',
   EDDSA: 'ed25519'
-}
-
-export interface KeyOptions {
-  id?: string;
-  seedType: 'new' | 'extendedPrivateKey' | 'object' | 'mnemonic' | 'objectV1';
-  seedData?: any;
-  passphrase?: string; // seed passphrase
-  password?: string; // encrypting password
-  sjclOpts?: any; // options to SJCL encrypt
-  use0forBCH?: boolean;
-  useLegacyPurpose?: boolean;
-  useLegacyCoinType?: boolean;
-  nonCompliantDerivation?: boolean;
-  language?: string;
-  algo?: string; // eddsa or ecdsa (Bitcoin) by default
 };
 
 export interface KeyOptions {
@@ -67,6 +52,7 @@ export interface KeyOptions {
   useLegacyCoinType?: boolean;
   nonCompliantDerivation?: boolean;
   language?: string;
+  algo?: 'ECDSA' | 'EDDSA';
 };
 
 export class Key {
