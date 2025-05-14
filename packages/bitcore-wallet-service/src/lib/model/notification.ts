@@ -1,5 +1,3 @@
-import _ from 'lodash';
-
 /*
  * notifications examples
  *
@@ -53,7 +51,7 @@ export class Notification {
     const now = Date.now();
 
     x.createdOn = Math.floor(now / 1000);
-    x.id = _.padStart(now.toString(), 14, '0') + _.padStart(opts.ticker || 0, 4, '0');
+    x.id = now.toString().padStart(14, '0') + (opts.ticker || 0).toString().padStart(4, '0');
     x.type = opts.type || 'general';
     x.data = opts.data;
     x.walletId = opts.walletId;

@@ -1,21 +1,25 @@
 import * as async from 'async';
+import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
+import RateLimit from 'express-rate-limit';
 import _ from 'lodash';
 import path from 'path';
+import rp from 'request-promise-native';
 import 'source-map-support/register';
 import config from '../config';
+import * as Types from '../types/expressapp';
 import { Common } from './common';
 import { ClientError } from './errors/clienterror';
 import { Errors } from './errors/errordefinitions';
 import { logger, transport } from './logger';
-import { LogMiddleware } from './middleware';
+import { error } from './routes/helpers'
+import { createWalletLimiter } from './routes/middleware/createWalletLimiter';
+import { LogMiddleware } from './routes/middleware/log';
+import { TssRouter } from './routes/tss';
 import { WalletService } from './server';
 import { Stats } from './stats';
 
-const compression = require('compression');
-const RateLimit = require('express-rate-limit');
-const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
 
 export class ExpressApp {
@@ -71,7 +75,7 @@ export class ExpressApp {
     const POST_LIMIT_LARGE = 2 * 1024 * 1024; // Max POST 2 MB
 
     this.app.use((req, res, next) => {
-      if (req.path.includes('/txproposals')) {
+      if (req.path.includes('/txproposals') || req.path.includes('/tss/')) {
         // Pushing a lot of utxos to txproposals can make the request much bigger than 100 MB
         return express.json({ limit: POST_LIMIT_LARGE })(req, res, next);
       } else {
@@ -113,50 +117,14 @@ export class ExpressApp {
 
     const router = express.Router();
 
-    const returnError = (err, res, req) => {
-      // make sure headers have not been sent as this leads to an uncaught error
-      if (res.headersSent) {
-        return;
-      }
-      if (err instanceof ClientError) {
-        const status = err.code == 'NOT_AUTHORIZED' ? 401 : 400;
-        if (!opts.disableLogs) logger.info('Client Err: ' + status + ' ' + req.url + ' ' + JSON.stringify(err));
+    error.setOpts(opts);
+    const returnError: Types.ReturnErrorFn = error.returnError.bind(error);
 
-        const clientError: { code: string; message: string; messageData?: object } = {
-          code: err.code,
-          message: err.message
-        };
-        if (err.messageData) clientError.messageData = err.messageData;
-        res
-          .status(status)
-          .json(clientError)
-          .end();
-      } else {
-        let code = 500,
-          message;
-        if (err && ((err.code && _.isNumber(err.code)) || (err.statusCode && _.isNumber(err.statusCode)))) {
-          code = err.code || err.statusCode;
-          message = err.message || err.body;
-        }
-
-        const m = message || err.toString();
-
-        if (!opts.disableLogs) logger.error(req.url + ' :' + code + ':' + m);
-
-        res
-          .status(code || 500)
-          .json({
-            error: m
-          })
-          .end();
-      }
-    };
-
-    const logDeprecated = req => {
+    const logDeprecated: Types.LogDeprecatedFn = req => {
       logger.warn('DEPRECATED', req.method, req.url, '(' + req.header('x-client-version') + ')');
     };
 
-    const getCredentials = req => {
+    const getCredentials: Types.GetCredentialsFn = req => {
       const identity = req.header('x-identity');
       if (!identity) return;
 
@@ -167,7 +135,7 @@ export class ExpressApp {
       };
     };
 
-    const getServer = (req, res): WalletService => {
+    const getServer: Types.GetServerFn = (req, res) => {
       const opts = {
         clientVersion: req.header('x-client-version'),
         userAgent: req.header('user-agent')
@@ -175,24 +143,16 @@ export class ExpressApp {
       return WalletService.getInstance(opts);
     };
 
-    type ServerCallback = (server: WalletService, err?: Error) => void;
-    interface ServerOpts { allowSession?: boolean; silentFailure?: boolean; onlySupportStaff?: boolean; onlyMarketingStaff?: boolean }
-    const getServerWithAuth = (req, res, opts: ServerOpts | ServerCallback, cb?: ServerCallback | undefined) => {
-      if (_.isFunction(opts)) {
+    const getServerWithAuth: Types.GetServerWithAuthFn = async (req, res, opts, cb) => {
+      if (typeof opts === 'function') {
         cb = opts;
         opts = {};
       }
-      opts = opts || {};
+      opts = (opts || {}) as Types.ServerOpts;
 
       const credentials = getCredentials(req);
       if (!credentials)
-        return returnError(
-          new ClientError({
-            code: 'NOT_AUTHORIZED'
-          }),
-          res,
-          req
-        );
+        return returnError(new ClientError({ code: 'NOT_AUTHORIZED' }), res, req);
 
       const auth = {
         copayerId: credentials.copayerId,
@@ -206,46 +166,43 @@ export class ExpressApp {
       if (opts.allowSession) {
         auth.session = credentials.session;
       }
-      WalletService.getInstanceWithAuth(auth, (err, server) => {
-        opts = opts as ServerOpts;
-        if (err) {
-          if (opts.silentFailure) {
-            return cb(null, err);
-          } else {
-            return returnError(err, res, req);
-          }
+      try {
+        const server: WalletService = await new Promise((resolve, reject) => {
+          WalletService.getInstanceWithAuth(auth, (err, server) => {
+            if (err) {
+              if (opts.silentFailure) {
+                return resolve(null);
+              } else {
+                return reject(err);
+              }
+            }
+
+            if (opts.onlySupportStaff && !server.copayerIsSupportStaff) {
+              return reject(new ClientError({ code: 'NOT_AUTHORIZED' }));
+            }
+
+            if (server.copayerIsSupportStaff) {
+              req.isSupportStaff = true;
+            }
+
+            if (opts.onlyMarketingStaff && !server.copayerIsMarketingStaff) {
+              return reject(new ClientError({ code: 'NOT_AUTHORIZED' }));
+            }
+
+            // For logging
+            req.walletId = server.walletId;
+            req.copayerId = server.copayerId;
+
+            return resolve(server);
+          });
+        });
+        if (cb) {
+          return cb(server);
         }
-
-        if (opts.onlySupportStaff && !server.copayerIsSupportStaff) {
-          return returnError(
-            new ClientError({
-              code: 'NOT_AUTHORIZED'
-            }),
-            res,
-            req
-          );
-        }
-
-        if (server.copayerIsSupportStaff) {
-          req.isSupportStaff = true;
-        }
-
-        if (opts.onlyMarketingStaff && !server.copayerIsMarketingStaff) {
-          return returnError(
-            new ClientError({
-              code: 'NOT_AUTHORIZED'
-            }),
-            res,
-            req
-          );
-        }
-
-        // For logging
-        req.walletId = server.walletId;
-        req.copayerId = server.copayerId;
-
-        return cb(server);
-      });
+        return server;
+      } catch (err) {
+        return returnError(err, res, req);
+      }
     };
 
     /**
@@ -255,7 +212,7 @@ export class ExpressApp {
      * @param {Object} opts
      * @returns Array<Promise>
      */
-    const getServerWithMultiAuth = (req, res, opts = {}) => {
+    const getServerWithMultiAuth: Types.GetServerWithMultiAuthFn = (req, res, opts = {}) => {
       const identities = req.headers['x-identities'] ? req.headers['x-identities'].split(',') : false;
       const signature = req.headers['x-signature'];
       if (!identities || !signature) {
@@ -285,20 +242,6 @@ export class ExpressApp {
       );
     };
 
-    let createWalletLimiter;
-
-    if (Defaults.RateLimit.createWallet && !opts.ignoreRateLimiter) {
-      logger.info(
-        'Limiting wallet creation per IP: %o req/h',
-        ((Defaults.RateLimit.createWallet.max / Defaults.RateLimit.createWallet.windowMs) * 60 * 60 * 1000).toFixed(2)
-      );
-      createWalletLimiter = new RateLimit(Defaults.RateLimit.createWallet);
-      // router.use(/\/v\d+\/wallets\/$/, createWalletLimiter)
-    } else {
-      createWalletLimiter = (req, res, next) => {
-        next();
-      };
-    }
 
     const ONE_MINUTE = 60;
     // See https://support.cloudflare.com/hc/en-us/articles/115003206852-Understanding-Origin-Cache-Control
@@ -355,12 +298,12 @@ export class ExpressApp {
     });
 
     // DEPRECATED
-    router.post('/v1/wallets/', createWalletLimiter, (req, res) => {
+    router.post('/v1/wallets/', createWalletLimiter(opts), (req, res) => {
       logDeprecated(req);
       return returnError(new ClientError('BIP45 wallet creation no longer supported'), res, req);
     });
 
-    router.post('/v2/wallets/', createWalletLimiter, (req, res) => {
+    router.post('/v2/wallets/', createWalletLimiter(opts), (req, res) => {
       let server: WalletService;
       try {
         server = getServer(req, res);
@@ -2421,6 +2364,10 @@ export class ExpressApp {
           return returnError(err ?? 'unknown', res, req);
         });
     });
+
+
+    router.use(new TssRouter({ returnError, opts }).router);
+
 
     // Set no-cache by default
     this.app.use((req, res, next) => {

@@ -33,16 +33,16 @@ const NETWORK: string = 'livenet';
 const ALGOS_BY_CHAIN =  {
   default: Constants.ALGOS.ECDSA,
   sol: Constants.ALGOS.EDDSA,
-}
+};
 const SUPPORTED_ALGOS = [Constants.ALGOS.ECDSA, Constants.ALGOS.EDDSA];
 const ALGO_TO_KEY_TYPE = {
   ECDSA: 'Bitcoin',
   EDDSA: 'ed25519'
-}
+};
 
 export interface KeyOptions {
   id?: string;
-  seedType: string;
+  seedType: 'new' | 'extendedPrivateKey' | 'object' | 'mnemonic' | 'objectV1';
   seedData?: any;
   passphrase?: string; // seed passphrase
   password?: string; // encrypting password
@@ -52,7 +52,7 @@ export interface KeyOptions {
   useLegacyCoinType?: boolean;
   nonCompliantDerivation?: boolean;
   language?: string;
-  algo?: string; // eddsa or ecdsa (Bitcoin) by default
+  algo?: 'ECDSA' | 'EDDSA';
 };
 
 export class Key {
@@ -94,10 +94,7 @@ export class Key {
    */
   
   /**
-   * @param {Object} opts
-   * @param {String} opts.password   encrypting password
-   * @param {String} seedType new|extendedPrivateKey|object|mnemonic
-   * @param {String} seedData
+   * @param {KeyOptions} opts
    */
   constructor(opts: KeyOptions = { seedType: 'new' }) {
     this.#version = 1;
@@ -121,7 +118,7 @@ export class Key {
         break;
       case 'mnemonic':
         $.checkArgument(x, 'Need to provide opts.seedData');
-        $.checkArgument(typeof x === 'string', 'sourceData need to be a string');
+        $.checkArgument(typeof x === 'string', 'opts.seedData needs to be a string');
         this.setFromMnemonic(new Mnemonic(x), opts);
         break;
       case 'extendedPrivateKey':
@@ -158,7 +155,7 @@ export class Key {
         $.shouldBeObject(x, 'Need to provide an object at opts.seedData');
         $.shouldBeUndefined(
           opts.password,
-          'opts.password not allowed when source is object'
+          'opts.password not allowed when opts.seedData is an object'
         );
 
         if (this.#version != x.version) {
@@ -312,36 +309,51 @@ export class Key {
   };
 
   get(password, algo?) {
-    let keys: any = {};
+    const key: {
+      xPrivKey: string;
+      mnemonic: string;
+      mnemonicHasPassphrase: boolean;
+      fingerPrintUpdated?: boolean;
+    } = {
+      xPrivKey: '',
+      mnemonic: '',
+      mnemonicHasPassphrase: this.#mnemonicHasPassphrase || false
+    };
 
-    if (this.isPrivKeyEncrypted(algo)) {
-      $.checkArgument(
-        password,
-        'Private keys are encrypted, a password is needed'
-      );
+    if (this.isPrivKeyEncrypted()) {
+      $.checkArgument(password, 'Private keys are encrypted, a password is needed');
       try {
         const xPrivKeyEncrypted = this.#getPrivKeyEncrypted({ algo });
-        keys.xPrivKey = sjcl.decrypt(password, xPrivKeyEncrypted);
+        key.xPrivKey = sjcl.decrypt(password, xPrivKeyEncrypted);
+
+        // update fingerPrint if not set.
+        if (!this.fingerPrint) {
+          const xpriv = new Bitcore.HDPrivateKey(key.xPrivKey);
+          this.fingerPrint = xpriv.fingerPrint.toString('hex');
+          key.fingerPrintUpdated = true;
+        }
+        // update fingerPrint if not set.
+        if (!this.#getFingerprint({ algo })) {
+          const xpriv = new Bitcore.HDPrivateKey(key.xPrivKey);
+          const fingerPrint = xpriv.fingerPrint.toString('hex');
+          this.#setFingerprint({ value: fingerPrint, algo });
+          key.fingerPrintUpdated = true;
+        }
 
         if (this.#mnemonicEncrypted) {
-          keys.mnemonic = sjcl.decrypt(password, this.#mnemonicEncrypted);
+          key.mnemonic = sjcl.decrypt(password, this.#mnemonicEncrypted);
+        } else {
+          key.mnemonic = this.#mnemonic;
         }
       } catch (ex) {
         throw new Error('Could not decrypt');
       }
     } else {
-      keys.xPrivKey = this.#getPrivKey({ algo });
-      keys.mnemonic = this.#mnemonic;
+      key.xPrivKey = this.#getPrivKey({ algo });
+      key.mnemonic = this.#mnemonic;
     }
-    // update fingerPrint if not set.
-    if (!this.#getFingerprint({ algo })) {
-      const xpriv = new Bitcore.HDPrivateKey(keys.xPrivKey);
-      const fingerPrint = xpriv.fingerPrint.toString('hex');
-      this.#setFingerprint({ value: fingerPrint, algo });
-      keys.fingerPrintUpdated = true;keys.fingerPrintUpdated = true;
-    }
-    keys.mnemonicHasPassphrase = this.#mnemonicHasPassphrase || false;
-    return keys;
+    key.mnemonicHasPassphrase = this.#mnemonicHasPassphrase || false;
+    return key;
   };
 
   encrypt(password, opts) {
@@ -415,8 +427,7 @@ export class Key {
    * no need to include/support
    * BIP45
    */
-
-  getBaseAddressDerivationPath(opts) {
+  _getBaseAddressDerivationPath(opts) {
     $.checkArgument(opts, 'Need to provide options');
     $.checkArgument(opts.n >= 1, 'n need to be >=1');
 
@@ -466,15 +477,29 @@ export class Key {
     return addChange ? `${basePath}/${changeCode}'` : basePath;
   };
 
-  /*
-   * opts.chain
-   * opts.network
-   * opts.account
-   * opts.n
-   * opts.algo
+  /**
+   * Create a new set of credentials from this key
+   * @param {string} [password]
+   * @param {object} [opts]
+   * @param {string} [opts.chain]
+   * @param {string} [opts.network]
+   * @param {number} [opts.account]
+   * @param {number} [opts.n]
+   * @param {string} [opts.algo]
    */
-
-  createCredentials(password, opts) {
+  createCredentials(
+    password?: string,
+    opts?: {
+      coin?: string;
+      chain?: string;
+      network?: string;
+      account?: number;
+      n?: number;
+      addressType?: string;
+      walletPrivKey?: string;
+      algo?: string;
+    }
+  ) {
     opts = opts || {};
     opts.chain = opts.chain || Utils.getChain(opts.coin);
     const algo = opts.algo || (ALGOS_BY_CHAIN[opts.chain.toLowerCase()] || ALGOS_BY_CHAIN['default']);
@@ -485,12 +510,12 @@ export class Key {
     $.shouldBeNumber(opts.account, 'Invalid account');
     $.shouldBeNumber(opts.n, 'Invalid n');
 
-    $.shouldBeUndefined(opts.useLegacyCoinType);
-    $.shouldBeUndefined(opts.useLegacyPurpose);
+    $.shouldBeUndefined(opts['useLegacyCoinType'], 'useLegacyCoinType is deprecated');
+    $.shouldBeUndefined(opts['useLegacyPurpose'], 'useLegacyPurpose is deprecated');
 
-    const path = this.getBaseAddressDerivationPath(opts);
+    const path = this._getBaseAddressDerivationPath(opts);
     let xPrivKey = this.derive(password, path, algo);
-    let requestPrivKey = this.derive(
+    const requestPrivKey = this.derive(
       password,
       Constants.PATHS.REQUEST_KEY,
     ).privateKey.toString();
@@ -524,7 +549,7 @@ export class Key {
 
   /**
    * @param {string} password
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} opts.path
    * @param {string|PrivateKey} [opts.requestPrivKey]
    */

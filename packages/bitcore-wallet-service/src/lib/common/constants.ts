@@ -222,5 +222,10 @@ export const Constants = {
     xrp: { testnet: 300, livenet: 0 },
     doge: { testnet: 300, livenet: 0 },
     ltc: { testnet: 300, livenet: 0 }
-  } as { [chain: string]: { [network: string]: number } }
+  } as { [chain: string]: { [network: string]: number } },
+
+  // May be different from the defaults if we rollback
+  // or want to beta test new versions.
+  TSS_KEYGEN_SCHEME_VERSION_MAX: 1,
+  TSS_SIGGEN_SCHEME_VERSION_MAX: 1,
 };

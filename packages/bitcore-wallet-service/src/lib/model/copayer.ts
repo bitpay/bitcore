@@ -1,12 +1,15 @@
+import { singleton } from 'preconditions';
+import sjcl from 'sjcl';
 import { Common } from '../common';
 import { Address } from './address';
 import { AddressManager } from './addressmanager';
 
-const $ = require('preconditions').singleton();
-const sjcl = require('sjcl');
-const Constants = Common.Constants,
-  Defaults = Common.Defaults,
-  Utils = Common.Utils;
+const $ = singleton();
+const {
+  Constants,
+  Defaults,
+  Utils
+} = Common;
 
 export interface ICopayer {
   version: number;
@@ -22,6 +25,9 @@ export interface ICopayer {
     signature: string;
   }>;
   customData: any;
+  walletId: string;
+  isSupportStaff?: boolean;
+  isMarketingStaff?: boolean;
 }
 
 export class Copayer {
@@ -42,6 +48,9 @@ export class Copayer {
   }>;
   customData: any;
   addressManager: AddressManager;
+  walletId: string;
+  isSupportStaff?: boolean;
+  isMarketingStaff?: boolean;
 
   static _xPubToCopayerId(coin, xpub) {
     const str = coin == Defaults.COIN ? xpub : coin + xpub;
@@ -109,7 +118,7 @@ export class Copayer {
     x.requestPubKey = obj.requestPubKey;
     x.signature = obj.signature;
 
-    if (parseInt(x.version.toString()) == 1) {
+    if (parseInt(x.version?.toString()) == 1) {
       x.requestPubKeys = [
         {
           key: x.requestPubKey,
@@ -125,6 +134,9 @@ export class Copayer {
       x.addressManager = AddressManager.fromObj(obj.addressManager);
     }
     x.customData = obj.customData;
+    x.walletId = obj.walletId;
+    x.isSupportStaff = obj.isSupportStaff;
+    x.isMarketingStaff = obj.isMarketingStaff;
 
     return x;
   }

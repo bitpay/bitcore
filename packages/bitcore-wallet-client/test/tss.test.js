@@ -1,0 +1,648 @@
+'use strict';
+
+const sinon = require('sinon');
+const should = require('chai').should();
+const BWS = require('bitcore-wallet-service');
+const request = require('supertest');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const { Request } = require('../ts_build/lib/request');
+const { BitcoreLib } = require('crypto-wallet-core');
+const { TssKeyGen, TssKey } = require('../ts_build/lib/tsskey');
+const { TssSign } = require('../ts_build/lib/tsssign');
+const log = require('../ts_build/lib/log').default;
+const Client = require('../ts_build').default;
+const { Credentials } = require('../ts_build/lib/credentials');
+const {
+  helpers,
+  blockchainExplorerMock
+} = require('./helpers');
+
+const datadir = path.join(__dirname, 'data');
+const Key = Client.Key;
+
+describe('TSS', function() {
+  this.timeout(10000); 
+
+  const happyPath = testName => `\u263A HAPPY PATH - ${testName}`;
+
+  let db;
+  let storage;
+  let dbConnection;
+  let app;
+  const sandbox = sinon.createSandbox();
+  const m = 2;
+  const n = 3;
+
+  before(function(done) {
+    helpers.newDb(null, (err, database, connection) => {
+      dbConnection = connection;
+      db = database;
+      storage = new BWS.Storage({ db });
+      BWS.Storage.createIndexes(db);
+
+      const expressApp = new BWS.ExpressApp();
+      expressApp.start(
+        {
+          ignoreRateLimiter: true,
+          storage: storage,
+          blockchainExplorer: blockchainExplorerMock,
+          disableLogs: true,
+          doNotCheckV8: true
+        },
+        () => {
+          app = expressApp.app;
+
+          if (!process.env.BWC_SHOW_LOGS) {
+            sandbox.stub(log, 'warn');
+            sandbox.stub(log, 'info');
+            sandbox.stub(log, 'error');
+          }
+          done();
+        }
+      );
+    });
+  });
+
+  after(function(done) {
+    dbConnection.close(done);
+  });
+
+  afterEach(function() {
+    sandbox.restore();
+  });
+
+  describe('Key Generation', function() {
+    const party0Key = new Key({ seedType: 'new' });
+    const party1Key = new Key({ seedType: 'new' });
+    const party2Key = new Key({ seedType: 'new' });
+    let tss0;
+    let tss1;
+    let tss2;
+    let joinCode1;
+    let joinCode2;
+
+    afterEach(function() {
+      tss0?.unsubscribe();
+      tss1?.unsubscribe();
+      tss2?.unsubscribe();
+    });
+
+    it(happyPath('should instantiate a new TssKeyGen class'), function() {
+      tss0 = new TssKeyGen({
+        baseUrl: '/bws/api',
+        request: request(app),
+        key: party0Key
+      });
+      should.exist(tss0);
+      tss0.should.be.instanceOf(TssKeyGen);
+    });
+
+    it(happyPath('should start a new keygen session'), async function() {
+      const result = await tss0.newKey({ m, n });
+      should.exist(result);
+      result.should.equal(tss0);
+      tss0.id.should.be.a('string');
+      const seed = crypto.createHash('sha256').update(BitcoreLib.HDPrivateKey.fromString(party0Key.get().xPrivKey).toBuffer()).digest();
+      tss0.id.should.equal(crypto.createHash('sha256').update(crypto.createHash('sha256').update(seed).digest()).digest('hex'));
+      tss0.m.should.equal(m);
+      tss0.n.should.equal(n);
+      tss0.partyId.should.equal(0);
+    });
+
+    it(happyPath('should create a join code'), function() {
+      const code1 = tss0.createJoinCode({
+        partyId: 1,
+        partyPubKey: party1Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).requestPubKey
+      });
+      should.exist(code1);
+      code1.should.be.a('string');
+      BitcoreLib.util.js.isHexaString(code1).should.equal(true);
+      joinCode1 = code1;
+
+      const code2 = tss0.createJoinCode({
+        partyId: 2,
+        partyPubKey: party2Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).requestPubKey
+      });
+      should.exist(code2);
+      code2.should.be.a('string');
+      BitcoreLib.util.js.isHexaString(code2).should.equal(true);
+      joinCode2 = code2;
+    });
+
+    it('should not produce a deterministic join code', function() {
+      const code = tss0.createJoinCode({
+        partyId: 1,
+        partyPubKey: party1Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).requestPubKey
+      });
+      should.exist(code);
+      code.should.be.a('string');
+      BitcoreLib.util.js.isHexaString(code).should.equal(true);
+      code.should.not.equal(joinCode1);
+    });
+
+    it('should encode the join code per the encoding option', function() {
+      const code = tss0.createJoinCode({
+        partyId: 1,
+        partyPubKey: party1Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).requestPubKey,
+        opts: { encoding: 'base64'}
+      });
+      should.exist(code);
+      code.should.be.a('string');
+      code.should.not.equal(joinCode1);
+      BitcoreLib.util.js.isHexaString(code).should.equal(false);
+    });
+
+    it('should not allow other party to use join code', async function() {
+      try {
+        const tss = new TssKeyGen({
+          baseUrl: '/bws/api',
+          request: request(app),
+          key: party2Key
+        });
+        // party2 should not be able to use party1's join code
+        const result = await tss.joinKey({ code: joinCode1 });
+        throw new Error('Should not have been able to join');
+      } catch (err) {
+        err.message.should.equal('Invalid checksum');
+      }
+    });
+
+    it(happyPath('should use the join code to join a keygen session'), async function() {
+      // party 1
+      tss1 = new TssKeyGen({
+        baseUrl: '/bws/api',
+        request: request(app),
+        key: party1Key
+      });
+      let result = await tss1.joinKey({ code: joinCode1 });
+      should.exist(result);
+      result.should.equal(tss1);
+      tss1.id.should.equal(tss0.id);
+      tss1.m.should.equal(m);
+      tss1.n.should.equal(n);
+      tss1.partyId.should.equal(1);
+
+      // party 2
+      tss2 = new TssKeyGen({
+        baseUrl: '/bws/api',
+        request: request(app),
+        key: party2Key
+      });
+      result = await tss2.joinKey({ code: joinCode2 });
+      should.exist(result);
+      result.should.equal(tss2);
+      tss2.id.should.equal(tss0.id);
+      tss2.m.should.equal(m);
+      tss2.n.should.equal(n);
+      tss2.partyId.should.equal(2);
+    });
+
+    it(happyPath('should start round 1 by party1'), async function() {
+      // I chose to start the round with party 1. In practice, anyone can start the round
+      const response = new Promise(r => tss1.once('roundsubmitted', r));
+      tss1.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      tss1.subscribe({ timeout: 10, iterHandler: () => tss1.unsubscribe() });
+      const submittedRound = await response;
+      submittedRound.should.equal(1);
+    });
+
+    it('should not allow party1 to go on to the next round', function(done) {
+      sandbox.spy(Request.prototype, 'doRequest');
+      tss1.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      tss1.subscribe({ timeout: 10, iterHandler: () => {
+        tss1.unsubscribe();
+        Request.prototype.doRequest.callCount.should.equal(1);
+        Request.prototype.doRequest.args[0][0].should.equal('get');
+        Request.prototype.doRequest.args[0][1].should.include(`/v1/tss/keygen/${tss1.id}/1?r=`);
+        done();
+      }});
+    });
+
+    it(happyPath('should continue round 1'), async function() {
+      const response0 = new Promise(r => tss0.once('roundsubmitted', r));
+      const response2 = new Promise(r => tss2.once('roundsubmitted', r));
+      tss0.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      tss2.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      tss0.subscribe({ timeout: 10, iterHandler: () => tss0.unsubscribe() });
+      tss2.subscribe({ timeout: 10, iterHandler: () => tss2.unsubscribe() });
+      const submitted0Round = await response0;
+      const submitted2Round = await response2;
+      submitted0Round.should.equal(1);
+      submitted2Round.should.equal(1);
+    });
+
+    it('should export and restore the session', async function() {
+      const s0 = tss0.exportSession();
+      const s1 = tss1.exportSession();
+      const s2 = tss2.exportSession();
+      should.exist(s0);
+      should.exist(s1);
+      should.exist(s2);
+      s0.should.be.a('string');
+      s1.should.be.a('string');
+      s2.should.be.a('string');
+
+      tss0 = await new TssKeyGen({
+        baseUrl: '/bws/api',
+        request: request(app),
+        key: party0Key
+      }).restoreSession({ session: s0 });
+
+      tss1 = await new TssKeyGen({
+        baseUrl: '/bws/api',
+        request: request(app),
+        key: party1Key
+      }).restoreSession({ session: s1 });
+      
+      tss2 = await new TssKeyGen({
+        baseUrl: '/bws/api',
+        request: request(app),
+        key: party2Key
+      }).restoreSession({ session: s2 });
+    });
+
+    it(happyPath('should do round 2 (with API fault tolerance)'), async function() {
+      // fault tolerance setup
+      sandbox.stub(Request.prototype, 'post').throws(new Error('restore me'));
+      sandbox.spy(tss0, 'restoreSession');
+      sandbox.spy(tss1, 'restoreSession');
+      sandbox.spy(tss2, 'restoreSession');
+      function restore() { Request.prototype.post.restore?.(); };
+
+      const response0 = new Promise(r => tss0.once('roundsubmitted', r));
+      const response1 = new Promise(r => tss1.once('roundsubmitted', r));
+      const response2 = new Promise(r => tss2.once('roundsubmitted', r));
+      tss0.on('error', (e) => { e.message === 'restore me' ? restore() : should.not.exist(e?.message ?? e); });
+      tss1.on('error', (e) => { e.message === 'restore me' ? restore() : should.not.exist(e?.message ?? e); });
+      tss2.on('error', (e) => { e.message === 'restore me' ? restore() : should.not.exist(e?.message ?? e); });
+      tss0.subscribe({ timeout: 10, iterHandler: () => tss0.unsubscribe() });
+      tss1.subscribe({ timeout: 10, iterHandler: () => tss1.unsubscribe() });
+      tss2.subscribe({ timeout: 10, iterHandler: () => tss2.unsubscribe() });
+      const submitted0Round = await response0;
+      submitted0Round.should.equal(2);
+      const submitted1Round = await response1;
+      submitted1Round.should.equal(2);
+      const submitted2Round = await response2;
+      submitted2Round.should.equal(2);
+      // check that the fault tolerance worked
+      (tss0.restoreSession.callCount + tss1.restoreSession.callCount + tss2.restoreSession.callCount).should.be.gte(1);
+    });
+
+    it(happyPath('should do round 3'), async function() {
+      const response0 = new Promise(r => tss0.once('roundsubmitted', r));
+      const response1 = new Promise(r => tss1.once('roundsubmitted', r));
+      const response2 = new Promise(r => tss2.once('roundsubmitted', r));
+      tss0.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      tss1.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      tss2.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      tss0.subscribe({ timeout: 10, iterHandler: () => tss0.unsubscribe() });
+      tss1.subscribe({ timeout: 10, iterHandler: () => tss1.unsubscribe() });
+      tss2.subscribe({ timeout: 10, iterHandler: () => tss2.unsubscribe() });
+      const submitted0Round = await response0;
+      submitted0Round.should.equal(3);
+      const submitted1Round = await response1;
+      submitted1Round.should.equal(3);
+      const submitted2Round = await response2;
+      submitted2Round.should.equal(3);
+    });
+
+    it(happyPath('should do round 4'), async function() {
+      // round 4 does not emit a roundsubmitted event b/c the keychain is ready
+      const response0 = new Promise(r => tss0.once('roundprocessed', r));
+      const response1 = new Promise(r => tss1.once('roundprocessed', r));
+      const response2 = new Promise(r => tss2.once('roundprocessed', r));
+      const complete = new Promise(r => tss0.once('complete', r));
+      tss0.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      tss1.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      tss2.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      tss0.subscribe({ timeout: 10, iterHandler: () => tss0.unsubscribe() });
+      tss1.subscribe({ timeout: 10, iterHandler: () => tss1.unsubscribe() });
+      tss2.subscribe({ timeout: 10, iterHandler: () => tss2.unsubscribe() });
+      const processed0Round = await response0;
+      processed0Round.should.equal(4);
+      const processed1Round = await response1;
+      processed1Round.should.equal(4);
+      const processed2Round = await response2;
+      processed2Round.should.equal(4);
+      // ensure that the rounds are completed so-as to prevent a race condition with the following test(s)
+      await complete;
+    });
+
+    it(happyPath('should have stored the shared pub key'), async function() {
+      const session = await storage.fetchTssKeyGenSession({ id: tss0.id });
+      should.exist(session.sharedPublicKey);
+
+      const key = tss0.getKeyChain();
+      should.exist(key);
+      key.keychain.commonKeyChain.should.equal(session.sharedPublicKey);
+    });
+
+    it('should not export a completed session', function() {
+      should.throw(() => { tss0.exportSession() }, /Cannot export a completed session/);
+    });
+
+    it('should cleanly handle a subscription to a finished session', async function() {
+      sandbox.spy(tss0, 'emit');
+      const complete = new Promise(r => tss0.once('complete', r));
+      tss0.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      tss0.subscribe({ timeout: 10, iterHandler: () => tss0.unsubscribe() });
+      await complete;
+      tss0.emit.args.filter(o => o[0] === 'roundready').length.should.equal(0);
+      tss0.emit.args.filter(o => o[0] === 'keychain').length.should.equal(1);
+      tss0.emit.args.filter(o => o[0] === 'complete').length.should.equal(1);
+    });
+
+    // Keeping for documentation purposes
+    it.skip('SKIP ME - save to data dir', function(){ 
+      fs.writeFileSync(`${datadir}/tss-party0.json`, JSON.stringify({ key: party0Key.toObj(), tss: tss0.getKeyChain().toObj() }, null, 2));
+      fs.writeFileSync(`${datadir}/tss-party1.json`, JSON.stringify({ key: party1Key.toObj(), tss: tss1.getKeyChain().toObj() }, null, 2));
+      fs.writeFileSync(`${datadir}/tss-party2.json`, JSON.stringify({ key: party2Key.toObj(), tss: tss2.getKeyChain().toObj() }, null, 2));
+    });
+  });
+
+
+  describe('Signing', function() {
+    let sig0;
+    let sig1;
+    let export0;
+    let export1;
+    let party0Key;
+    let party1Key;
+    let party2Key;
+    let party0Creds;
+    let party1Creds;
+    let party2Creds;
+    let party0Tss;
+    let party1Tss;
+    let party2Tss;
+    const message = 'hello world';
+
+    function objToBuf(key, value) {
+      if (value && value.type === 'Buffer' && Array.isArray(value.data)) {
+        return Buffer.from(value.data);
+      }
+      return value;
+    };
+
+    before(function(done) {
+      ({ key: party0Key, tss: party0Tss } = JSON.parse(fs.readFileSync(`${datadir}/tss-party0.json`).toString(), objToBuf));
+      ({ key: party1Key, tss: party1Tss } = JSON.parse(fs.readFileSync(`${datadir}/tss-party1.json`).toString(), objToBuf));
+      ({ key: party2Key, tss: party2Tss } = JSON.parse(fs.readFileSync(`${datadir}/tss-party2.json`).toString(), objToBuf));
+      party0Key = new Key({ seedType: 'object', seedData: party0Key });
+      party1Key = new Key({ seedType: 'object', seedData: party1Key });
+      party2Key = new Key({ seedType: 'object', seedData: party2Key });
+      party0Creds = party0Key.createCredentials(null, { coin: 'eth', network: 'testnet', m, n, account: 0 });
+      party1Creds = party1Key.createCredentials(null, { coin: 'eth', network: 'testnet', m, n, account: 0 });
+      party2Creds = party2Key.createCredentials(null, { coin: 'eth', network: 'testnet', m, n, account: 0 });
+      party0Tss = TssKey.fromObj(party0Tss);
+      party1Tss = TssKey.fromObj(party1Tss);
+      party2Tss = TssKey.fromObj(party2Tss);
+      const client = helpers.newClient(app);
+      helpers.createAndJoinWallet([client, client, client], [party0Key, party1Key, party2Key], m, n, { key: party0Key, coin: 'eth' }, (res) => {
+        done();
+      });
+    });
+
+    it(happyPath('should start a new signing session'), async function() {
+      sig1 = new TssSign({
+        baseUrl: '/bws/api',
+        request: request(app),
+        credentials: party1Creds,
+        tssKey: party1Tss,
+      });
+      const result = await sig1.start({ message });
+      should.exist(result);
+      result.should.be.instanceOf(TssSign);
+      result.should.equal(sig1);
+      sig1.id.should.be.a('string');
+      sig1.id.should.equal(BitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message)).toString('hex'));
+    });
+
+    it(happyPath('should join a signing session'), async function() {
+      sig0 = new TssSign({
+        baseUrl: '/bws/api',
+        request: request(app),
+        credentials: party0Creds,
+        tssKey: party0Tss,
+      });
+      const result = await sig0.start({ message });
+      should.exist(result);
+      result.should.be.instanceOf(TssSign);
+      result.should.equal(sig0);
+      sig0.id.should.equal(sig1.id);
+    });
+
+    it('should reject too many participants', async function() {
+      const sig2 = new TssSign({
+        baseUrl: '/bws/api',
+        request: request(app),
+        credentials: party2Creds,
+        tssKey: party2Tss,
+      });
+      try {
+        await sig2.start({ message });
+        throw new Error('Should have thrown');
+      } catch (err) {
+        err.message.should.include('TSS_MAX_PARTICIPANTS_REACHED');
+      }
+    });
+
+    it(happyPath('should do round 1'), async function() {
+      const response0 = new Promise(r => sig0.once('roundsubmitted', r));
+      const response1 = new Promise(r => sig1.once('roundsubmitted', r));
+      sig0.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      sig1.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      sig0.subscribe({ timeout: 10, iterHandler: () => sig0.unsubscribe() });
+      sig1.subscribe({ timeout: 10, iterHandler: () => sig1.unsubscribe() });
+      const submitted0Round = await response0;
+      const submitted1Round = await response1;
+      submitted0Round.should.equal(1);
+      submitted1Round.should.equal(1);
+    });
+
+    it('should export and restore the session', async function() {
+      // This test is between rounds 1 & 2 to help debug if the export/restore is working.
+      // If round 1 test succeeds but 2 fails, the session restoration may be the reason.
+
+      export0 = sig0.exportSession();
+      export1 = sig1.exportSession();
+      should.exist(export0);
+      should.exist(export1);
+      export0.should.be.a('string');
+      export1.should.be.a('string');
+
+      sig0 = await new TssSign({
+        baseUrl: '/bws/api',
+        request: request(app),
+        credentials: party0Creds,
+        tssKey: party0Tss,
+      }).restoreSession({ session: export0 });
+
+      sig1 = await new TssSign({
+        baseUrl: '/bws/api',
+        request: request(app),
+        credentials: party1Creds,
+        tssKey: party1Tss,
+      }).restoreSession({ session: export1 });
+
+      sig0.should.be.instanceOf(TssSign);
+      sig1.should.be.instanceOf(TssSign);
+    });
+
+    it(happyPath('should do round 2'), async function() {
+      const response0 = new Promise(r => sig0.once('roundsubmitted', r));
+      const response1 = new Promise(r => sig1.once('roundsubmitted', r));
+      sig0.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      sig1.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      sig0.subscribe({ timeout: 10, iterHandler: () => sig0.unsubscribe() });
+      sig1.subscribe({ timeout: 10, iterHandler: () => sig1.unsubscribe() });
+      const submitted0Round = await response0;
+      const submitted1Round = await response1;
+      submitted0Round.should.equal(2);
+      submitted1Round.should.equal(2);
+    });
+
+    it('should error for a duplicate round message', async function() {
+      const sig0 = await new TssSign({
+        baseUrl: '/bws/api',
+        request: request(app),
+        credentials: party0Creds,
+        tssKey: party0Tss,
+      }).restoreSession({ session: export0 });
+      sandbox.spy(sig0, 'emit');
+      const error = new Promise(r => sig0.on('error', r));
+      sig0.subscribe({ timeout: 10, iterHandler: () => sig0.unsubscribe() });
+      const e = await error;
+      sig0.emit.callCount.should.equal(3);
+      sig0.emit.args[0][0].should.equal('roundready');
+      sig0.emit.args[1][0].should.equal('roundprocessed');
+      sig0.emit.args[2][0].should.equal('error');
+      sig0.emit.args[2][1].should.equal(e);
+      e.message.should.include('TSS_ROUND_ALREADY_DONE');
+    });
+
+    it(happyPath('should do round 3'), async function() {
+      const response0 = new Promise(r => sig0.once('roundsubmitted', r));
+      const response1 = new Promise(r => sig1.once('roundsubmitted', r));
+      sig0.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      sig1.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      sig0.subscribe({ timeout: 10, iterHandler: () => sig0.unsubscribe() });
+      sig1.subscribe({ timeout: 10, iterHandler: () => sig1.unsubscribe() });
+      const submitted0Round = await response0;
+      const submitted1Round = await response1;
+      submitted0Round.should.equal(3);
+      submitted1Round.should.equal(3);
+    });
+
+    it(happyPath('should do round 4'), async function() {
+      // round 4 does not emit a roundsubmitted event b/c the signature is ready
+      const response0 = new Promise(r => sig0.once('roundprocessed', r));
+      const response1 = new Promise(r => sig1.once('roundprocessed', r));
+      const signature = new Promise(r => sig1.once('signature', r));
+      const complete = new Promise(r => sig0.once('complete', r));
+      sig0.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      sig1.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      sig0.subscribe({ timeout: 10, iterHandler: () => sig0.unsubscribe() });
+      sig1.subscribe({ timeout: 10, iterHandler: () => sig1.unsubscribe() });
+      const processed0Round = await response0;
+      const processed1Round = await response1;
+      processed0Round.should.equal(4);
+      processed1Round.should.equal(4);
+      // ensure that the rounds are completed so-as to prevent
+      await complete;
+      const sig = await signature;
+      should.exist(sig);
+    });
+
+    it(happyPath('should have the signature'), async function() {
+      const sig = sig0.getSignature();
+      should.exist(sig);
+      sig.r.should.be.a('string');
+      sig.s.should.be.a('string');
+      sig.v.should.be.a('number');
+      sig.pubKey.should.be.a('string');
+    });
+
+    it(happyPath('should have stored the signature'), async function() {
+      const session = await storage.fetchTssSigSession({ id: sig0.id });
+      const sig = sig0.getSignature();
+      should.exist(session.signature);
+      session.signature.should.deep.equal(sig);
+    });
+
+    it('should not export a completed session', function() {
+      should.throw(() => { sig0.exportSession() }, /Cannot export a completed session/);
+    });
+
+    it('should cleanly handle a subscription to a finished session', async function() {
+      sandbox.spy(sig0, 'emit');
+      const complete = new Promise(r => sig0.once('complete', r));
+      sig0.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      sig0.subscribe({ timeout: 10, iterHandler: () => sig0.unsubscribe() });
+      await complete;
+      sig0.emit.args.filter(o => o[0] === 'roundready').length.should.equal(0);
+      sig0.emit.args.filter(o => o[0] === 'signature').length.should.equal(1);
+      sig0.emit.args.filter(o => o[0] === 'complete').length.should.equal(1);
+    });
+
+    it('should emit the signature for an outdated local but finished remote session', async function() {
+      const sig0 = await new TssSign({
+        baseUrl: '/bws/api',
+        request: request(app),
+        credentials: party0Creds,
+        tssKey: party0Tss,
+      }).restoreSession({ session: export0 });
+      sandbox.spy(sig0, 'emit');
+      const signature = new Promise(r => sig0.once('signature', r));
+      const complete = new Promise(r => sig0.once('complete', r));
+      sig0.subscribe({ timeout: 10, iterHandler: () => sig0.unsubscribe() });
+      const sig = await signature;
+      await complete;
+      should.exist(sig);
+      sig0.emit.args.filter(o => o[0] === 'roundready').length.should.equal(0);
+    });
+
+    it('should sign a message with a custom id', async function() {
+      const sig0 = new TssSign({
+        baseUrl: '/bws/api',
+        request: request(app),
+        credentials: party0Creds,
+        tssKey: party0Tss,
+      });
+      const sig2 = new TssSign({
+        baseUrl: '/bws/api',
+        request: request(app),
+        credentials: party2Creds,
+        tssKey: party2Tss,
+      });
+      const id = 'my-custom-id';
+      await sig0.start({ id, message });
+      await sig2.start({ id, message });
+      const complete0 = new Promise(r => sig0.once('complete', r));
+      const complete2 = new Promise(r => sig2.once('complete', r));
+      sig0.subscribe({ timeout: 10 });
+      sig2.subscribe({ timeout: 10 });
+      await Promise.all([complete0, complete2]);
+      const sig = sig0.getSignature();
+      should.exist(sig);
+    });
+
+    it('should error on a duplicate session id', async function() {
+      const sig0 = new TssSign({
+        baseUrl: '/bws/api',
+        request: request(app),
+        credentials: party0Creds,
+        tssKey: party0Tss,
+      });
+      try {
+        await sig0.start({ message });
+        throw new Error('Should have thrown');
+      } catch (err) {
+        err.message.should.include('TSS_ROUND_ALREADY_DONE');
+      }
+    });
+  
+  });
+});

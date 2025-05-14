@@ -77,6 +77,10 @@ export class EthChain implements IChain {
     return false;
   }
 
+  supportsThresholdsig() {
+    return true;
+  }
+
   getWalletBalance(server, wallet, opts, cb) {
     const bc = server._getBlockchainExplorer(wallet.chain || wallet.coin, wallet.network);
 
