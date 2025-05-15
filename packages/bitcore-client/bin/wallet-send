@@ -32,7 +32,7 @@ const main = async () => {
     const from = await wallet.deriveAddress(account); // only used for non-UTXO chains
     const chain = wallet.chain;
     const tokenObj = wallet.getTokenObj({ tokenName }); // null if no tokenName is provided
-    const currencyObj = await utils.getCurrencyObj(chain, tokenObj?.address);
+    const currencyObj = await utils.getCurrencyObj(chain, tokenObj?.address, !wallet.isMainnet());
     const { decimals } = currencyObj;
     const scale = Math.pow(10, decimals);
     const recipients = [];
