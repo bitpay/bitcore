@@ -1,5 +1,18 @@
 import * as Bcrypt from 'bcrypt';
-import { BitcoreLib, BitcoreLibCash, BitcoreLibDoge, BitcoreLibLtc, Deriver, ethers, Transactions, Web3, xrpl } from 'crypto-wallet-core';
+import { 
+  BitcoreLib,
+  BitcoreLibCash,
+  BitcoreLibDoge,
+  BitcoreLibLtc,
+  Constants,
+  Deriver,
+  ethers,
+  SolanaProgram,
+  SolKit,
+  Transactions,
+  Web3,
+  xrpl
+} from 'crypto-wallet-core';
 import 'source-map-support/register';
 import { Client } from './client';
 import { Encryption } from './encryption';
@@ -18,7 +31,8 @@ const chainLibs = {
   ARB: { Web3, ethers },
   BASE: { Web3, ethers },
   OP: { Web3, ethers },
-  XRP: xrpl
+  XRP: xrpl,
+  SOL: { SolKit, SolanaProgram }
 };
 
 export interface KeyImport {
@@ -166,7 +180,9 @@ export class Wallet {
       hdPrivKey = new HDPrivateKey(xpriv, network);
     } else {
       mnemonic = new Mnemonic(phrase);
-      hdPrivKey = mnemonic.toHDPrivateKey('', network).derive(Deriver.pathFor(chain, network));
+      const algo = Constants.ALGOS_BY_CHAIN[chain] || Constants.ALGOS_BY_CHAIN['default'];
+      const keyType = Constants.ALGO_TO_KEY_TYPE[algo];
+      hdPrivKey = mnemonic.toHDPrivateKey('', network).derive(Deriver.pathFor(chain, network), keyType);
     }
     const privKeyObj = hdPrivKey.toObject();
 
