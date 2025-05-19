@@ -115,7 +115,7 @@ describe('Solana API', function() {
           status: 'confirmed',
           lifetimeConstraint: { blockhash: 'hash123' },
           instructions: {
-            'TransferSol': [
+            'transferSol': [
               {
                 source: 'address1',
                 destination: 'address2',
@@ -204,7 +204,7 @@ describe('Solana API', function() {
           lifetimeConstraint: { blockhash: 'hash123' },
           blockTime: Date.now() / 1000,
           instructions: {
-            'TransferSol': [
+            'transferSol': [
               {
                 source: address,
                 destination: 'otherAddress',
@@ -283,7 +283,7 @@ describe('Solana API', function() {
       lifetimeConstraint: { blockhash: 'hash123' },
       blockTime: Date.now() / 1000,
       instructions: {
-        'TransferSol': [
+        'transferSol': [
           {
             source: 'sender',
             destination: 'receiver',
