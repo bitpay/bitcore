@@ -13,16 +13,16 @@ import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
 describe.only('Solana API', function() {
   const chain = 'SOL';
-  const network = 'testnet';
+  const network = 'devnet';
 
   const suite = this;
   this.timeout(30000);
   before(intBeforeHelper);
   after(async () => intAfterHelper(suite));
 
-  it.only('should be able to get the fees', async () => {
+  it('should be able to get the fees', async () => {
     const chain = 'SOL';
-    const network = 'testnet';
+    const network = 'devnet';
     let target = 1;
     while (target <= 4) {
       const cacheKey = `getFee-${chain}-${network}-${target}`;
@@ -37,7 +37,7 @@ describe.only('Solana API', function() {
   it('should be able to get fees with rawTx', async () => {
     const sandbox = sinon.createSandbox();
     const chain = 'SOL';
-    const network = 'testnet';
+    const network = 'devnet';
     const rawTx = 'mocked-raw-tx-data';
     const mockedFee = 5000;
     let err;
@@ -228,7 +228,7 @@ describe.only('Solana API', function() {
   describe('#streamWalletTransactions', () => {
     let sandbox = sinon.createSandbox();
     let chain = 'SOL';
-    let network = 'testnet';
+    let network = 'devnet';
     let address = 'DGqGrPJu5QgQ5pFHimGKX6wqPmUVnk5L1NAmpHdP6n8F';
     let wallet: IWallet = {
       chain,
@@ -334,7 +334,7 @@ describe.only('Solana API', function() {
   });
 
   it('should correctly transform transaction data', () => {
-    const network = 'testnet';
+    const network = 'devnet';
     const transaction = {
       txid: 'tx1',
       feePayerAddress: 'sender',
