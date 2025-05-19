@@ -128,7 +128,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
           throw new Error('Missing required block height / slot.');
         }
 
-        const { rpc } = this.getRpc(network) as SolRpc;
+        const { rpc } = await this.getRpc(network);
         const block = await rpc.getBlock({ height: blockHeight });
         const transformedTxs = this.txTransform(network, { block });
         const stream = new Readable({ objectMode: true });
@@ -223,7 +223,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       const recentBlockhash = tx.lifetimeConstraint.blockhash || blockHash;
       const date = new Date((blockTime || 0) * 1000);
       const status = tx.status || txStatus?.confirmationStatus;
-      const error = meta?.err || txStatus.err;
+      const error = meta?.err || txStatus?.err;
       const transactionError = error ? { error: JSON.stringify(error) } : null;
       const txType = version;
       const instructions = tx.instructions;

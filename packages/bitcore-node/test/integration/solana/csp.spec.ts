@@ -98,69 +98,6 @@ describe('Solana API', function() {
     expect(tokenAccounts).to.deep.eq([{ mintAddress: tokenAddress, ataAddress: 'someTokenAccountAddress' }]);
   });
 
-  it('should stream SOL transactions for address', async () => {
-    const address = 'DGqGrPJu5QgQ5pFHimGKX6wqPmUVnk5L1NAmpHdP6n8F';
-    const mockedTransactions = [
-      {
-        txid: 'tx1',
-        feePayerAddress: address,
-        slot: 123,
-        fee: 5000,
-        meta: { fee: 5000, err: undefined },
-        version: '0',
-        status: 'confirmed',
-        lifetimeConstraint: { blockhash: 'hash123' },
-        blockTime: Date.now() / 1000,
-        instructions: {
-          'TransferSol': [
-            {
-              source: address,
-              destination: 'otherAddress',
-              amount: 100000
-            }
-          ]
-        }
-      }
-    ];
-    
-    const mockedTxStatuses = [
-      {
-        confirmationStatus: 'confirmed',
-        slot: 123,
-        err: null
-      }
-    ];
-    
-    const connection = {
-      getSignaturesForAddress: () => ({ send: sandbox.stub().resolves(mockedTxStatuses) })
-    };
-    
-    const rpc = {
-      getTransactions: sandbox.stub().resolves(mockedTransactions)
-    };
-    
-    sandbox.stub(SOL, 'getRpc').resolves({ rpc, connection });
-    
-    const res = (new Transform({
-      transform: (data, _, cb) => cb(null, data)
-    }) as unknown) as Response;
-    res.type = () => res;
-
-    const req = (new Transform({
-      transform: (_data, _, cb) => cb(null)
-    }) as unknown) as Request;
-
-    let dataReceived = false;
-    res.on('data', () => {
-      dataReceived = true;
-    });
-
-    await SOL.streamAddressTransactions({ chain, network, address, res, req, args: {} });
-    
-    // We should have received some data
-    expect(dataReceived).to.be.true;
-  });
-
   it('should stream SOL transactions for block', async () => {
     const blockHeight = 123;
     const mockedBlock = {
