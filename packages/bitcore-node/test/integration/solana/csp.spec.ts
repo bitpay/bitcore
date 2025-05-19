@@ -106,7 +106,7 @@ describe('Solana API', function() {
         feePayerAddress: address,
         slot: 123,
         fee: 5000,
-        meta: { fee: 5000 },
+        meta: { fee: 5000, err: undefined },
         version: '0',
         status: 'confirmed',
         lifetimeConstraint: { blockhash: 'hash123' },
