@@ -64,6 +64,9 @@ export interface IXrpNetworkConfig extends INetworkConfig {
 export interface ISVMNetworkConfig extends INetworkConfig {
   publicConnection?: boolean; // Allow rpc connection to be open via bitcore-node API endpoint
   syncStartHeight?: number; // Start syncing from this block height
+  providers?: IProvider[]; // Multiple providers can be configured to load balance for the syncing threads
+  provider?: IProvider;
+  subscriptionProvider?: IProvider;
 }
 
 export interface ConfigType {
