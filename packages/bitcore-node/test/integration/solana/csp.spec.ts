@@ -11,18 +11,28 @@ import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { SOL } from '../../../src/modules/solana/api/csp';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
-describe.only('Solana API', function() {
+describe('Solana API', function() {
   const chain = 'SOL';
   const network = 'devnet';
+  let sandbox: sinon.SinonSandbox;
 
   const suite = this;
   this.timeout(30000);
+  
   before(intBeforeHelper);
+  // Create a fresh sandbox before each test
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+  });
+  
+  // Restore the sandbox after each test
+  afterEach(() => {
+    sandbox.restore();
+  });
+  
   after(async () => intAfterHelper(suite));
 
   it('should be able to get the fees', async () => {
-    const chain = 'SOL';
-    const network = 'devnet';
     let target = 1;
     while (target <= 4) {
       const cacheKey = `getFee-${chain}-${network}-${target}`;
@@ -35,9 +45,6 @@ describe.only('Solana API', function() {
   });
 
   it('should be able to get fees with rawTx', async () => {
-    const sandbox = sinon.createSandbox();
-    const chain = 'SOL';
-    const network = 'devnet';
     const rawTx = 'mocked-raw-tx-data';
     const mockedFee = 5000;
     let err;
@@ -57,14 +64,12 @@ describe.only('Solana API', function() {
     } catch (error) {
       err = error;
     }
-    sandbox.restore();
     expect(err).to.be.undefined;
   });
 
   it('should be able to get address SOL balance', async () => {
     const address = 'DGqGrPJu5QgQ5pFHimGKX6wqPmUVnk5L1NAmpHdP6n8F';
     const mockedBalance = 1000000;
-    const sandbox = sinon.createSandbox();
     
     const rpc = {
       getBalance: sandbox.stub().resolves(mockedBalance)
@@ -74,8 +79,6 @@ describe.only('Solana API', function() {
     
     const balance = await SOL.getBalanceForAddress({ chain, network, address, args: {} });
     expect(balance).to.deep.eq({ confirmed: 0, unconfirmed: 0, balance: mockedBalance });
-    
-    sandbox.restore();
   });
 
   it('should be able to get address token balance', async () => {
@@ -85,8 +88,6 @@ describe.only('Solana API', function() {
       { mint: tokenAddress, state: 'initialized', pubkey: 'someTokenAccountAddress' }
     ];
     
-    const sandbox = sinon.createSandbox();
-    
     const rpc = {
       getTokenAccountsByOwner: sandbox.stub().resolves(mockedAddresses)
     };
@@ -95,8 +96,6 @@ describe.only('Solana API', function() {
     
     const tokenAccounts = await SOL.getTokenAccountAddresses({ network, address });
     expect(tokenAccounts).to.deep.eq([{ mintAddress: tokenAddress, ataAddress: 'someTokenAccountAddress' }]);
-    
-    sandbox.restore();
   });
 
   it('should stream SOL transactions for address', async () => {
@@ -132,8 +131,6 @@ describe.only('Solana API', function() {
       }
     ];
     
-    const sandbox = sinon.createSandbox();
-    
     const connection = {
       getSignaturesForAddress: () => ({ send: sandbox.stub().resolves(mockedTxStatuses) })
     };
@@ -162,8 +159,6 @@ describe.only('Solana API', function() {
     
     // We should have received some data
     expect(dataReceived).to.be.true;
-    
-    sandbox.restore();
   });
 
   it('should stream SOL transactions for block', async () => {
@@ -195,8 +190,6 @@ describe.only('Solana API', function() {
       ]
     };
     
-    const sandbox = sinon.createSandbox();
-    
     const rpc = {
       getBlock: sandbox.stub().resolves(mockedBlock)
     };
@@ -221,36 +214,44 @@ describe.only('Solana API', function() {
     
     // We should have received some data
     expect(dataReceived).to.be.true;
-    
-    sandbox.restore();
   });
 
   describe('#streamWalletTransactions', () => {
-    let sandbox = sinon.createSandbox();
-    let chain = 'SOL';
-    let network = 'devnet';
     let address = 'DGqGrPJu5QgQ5pFHimGKX6wqPmUVnk5L1NAmpHdP6n8F';
-    let wallet: IWallet = {
-      chain,
-      network,
-      pubKey: '',
-      name: 'solana-wallet',
-      singleAddress: false,
-      path: 'm/44\'/501\'/0\'/0/0'
-    };
+    let wallet: IWallet;
 
+    // Set up wallet before running wallet tests
     before(async () => {
-      const res = await WalletStorage.collection.findOneAndUpdate({ name: wallet.name }, { $set: wallet }, { returnOriginal: false, upsert: true });
+      wallet = {
+        chain,
+        network,
+        pubKey: '',
+        name: 'solana-wallet',
+        singleAddress: false,
+        path: 'm/44\'/501\'/0\'/0/0'
+      };
+      
+      const res = await WalletStorage.collection.findOneAndUpdate(
+        { name: wallet.name }, 
+        { $set: wallet }, 
+        { returnOriginal: false, upsert: true }
+      );
+      
       wallet = res.value as IWallet;
-      await WalletAddressStorage.collection.updateOne({ network, address }, { $set: { chain, network, wallet: (wallet._id as ObjectId), processed: true, address } }, { upsert: true });
-    });
-
-    afterEach(async () => {
-      // Clean up mocks
-    });
-
-    after(async () => { 
-      sandbox.restore();
+      
+      await WalletAddressStorage.collection.updateOne(
+        { network, address }, 
+        { 
+          $set: { 
+            chain, 
+            network, 
+            wallet: (wallet._id as ObjectId), 
+            processed: true, 
+            address 
+          } 
+        }, 
+        { upsert: true }
+      );
     });
 
     it('should stream wallet\'s SOL transactions', async () => {
@@ -334,7 +335,6 @@ describe.only('Solana API', function() {
   });
 
   it('should correctly transform transaction data', () => {
-    const network = 'devnet';
     const transaction = {
       txid: 'tx1',
       feePayerAddress: 'sender',
@@ -355,6 +355,9 @@ describe.only('Solana API', function() {
         ]
       }
     };
+    
+    // Make sure SOL.txTransform is properly defined
+    expect(typeof SOL.txTransform).to.equal('function', 'SOL.txTransform should be defined as a function');
     
     const transformedTx = SOL.txTransform(network, { transactions: [transaction] })[0];
     
@@ -388,8 +391,6 @@ describe.only('Solana API', function() {
       ]
     };
     
-    const sandbox = sinon.createSandbox();
-    
     const connection = {
       getSlot: () => ({ send: sandbox.stub().resolves(123) })
     };
@@ -408,15 +409,11 @@ describe.only('Solana API', function() {
     expect(tip.previousBlockHash).to.equal('prevHash123');
     expect(tip.transactionCount).to.equal(1);
     expect(tip.reward).to.equal(1000000);
-    
-    sandbox.restore();
   });
 
   it('should be able to get rent exemption amount', async () => {
     const space = 100;
     const mockedAmount = 2039280;
-    
-    const sandbox = sinon.createSandbox();
     
     const connection = {
       getMinimumBalanceForRentExemption: () => ({ send: sandbox.stub().resolves(mockedAmount) })
@@ -427,15 +424,11 @@ describe.only('Solana API', function() {
     const amount = await SOL.getRentExemptionAmount({ network, space });
     
     expect(amount).to.equal(mockedAmount);
-    
-    sandbox.restore();
   });
 
   it('should broadcast transaction', async () => {
     const rawTx = 'mocked-raw-tx-data';
     const expectedSignature = 'tx-signature';
-    
-    const sandbox = sinon.createSandbox();
     
     const rpc = {
       sendRawTransaction: sandbox.stub().resolves(expectedSignature)
@@ -446,8 +439,6 @@ describe.only('Solana API', function() {
     const result = await SOL.broadcastTransaction({ chain, network, rawTx });
     
     expect(result).to.equal(expectedSignature);
-    
-    sandbox.restore();
   });
 
   it('should get wallet balance', async () => {
@@ -461,13 +452,6 @@ describe.only('Solana API', function() {
       { confirmed: 0, unconfirmed: 0, balance: 2000000 }
     ];
     
-    // const wallet = {
-    //   _id: new ObjectId(),
-    //   chain,
-    //   network,
-    //   name: 'test-wallet'
-    // };
-
     const wallet = {
       _id: new ObjectId(),
       chain,
@@ -477,8 +461,6 @@ describe.only('Solana API', function() {
       path: 'm/44\'/501\'/0\'/0',
       singleAddress: true
     } as MongoBound<IWallet>;
-    
-    const sandbox = sinon.createSandbox();
     
     sandbox.stub(SOL, 'getWalletAddresses').resolves(addresses);
     const getBalanceStub = sandbox.stub(SOL, 'getBalanceForAddress');
@@ -493,7 +475,5 @@ describe.only('Solana API', function() {
       unconfirmed: 0,
       balance: 3000000
     });
-    
-    sandbox.restore();
   });
 });
