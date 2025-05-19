@@ -15,6 +15,7 @@
   "bin": "bin/start",
   "scripts": {
     "start": "npm run tsc && node build/src/server.js",
+    "start1": "node build/src/server.js",
     "debug": "npm run tsc && node --trace-warnings --inspect build/src/server.js --DEBUG true",
     "clean": "rm -rf build",
     "compile": "npm run tsc",
@@ -99,7 +100,7 @@
     "bitcore-p2p-doge": "^10.9.0",
     "bitcore-wallet-client": "^10.9.0",
     "cors": "2.8.4",
-    "crypto-rpc": "https://github.com/bitpay/crypto-rpc.git#4d454bc5ea25e53d4a8e8ca9c45a86e0b8cc2c27",
+    "crypto-rpc": "https://github.com/bitpay/crypto-rpc.git#f182a6109220b2cf4a6ec7d4935f04cf06392232",
     "crypto-wallet-core": "^10.9.0",
     "express": "4.19.2",
     "lodash": "4.17.11",
