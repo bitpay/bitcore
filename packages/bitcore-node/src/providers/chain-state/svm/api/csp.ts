@@ -218,7 +218,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     return transactions.map((tx, index) => {
       blockTime = blockTime || tx?.blockTime
 
-      const { feePayerAddress, slot, meta, version, err, txid } = tx;
+      const { feePayerAddress, slot, meta, version, txid } = tx;
       const txStatus = txStatuses?.[index];
       const recentBlockhash = tx.lifetimeConstraint.blockhash || blockHash;
       const date = new Date((blockTime || 0) * 1000);
