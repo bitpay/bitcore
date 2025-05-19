@@ -121,6 +121,31 @@
             "dataHost": "localhost"
           }
         }
+      }, 
+      "SOL": {
+        "regtest": {
+          "chainSource": "external",
+          "provider": {
+            "host": "127.0.0.1",
+            "protocol": "http",
+            "port": "8899",
+            "dataHost": "127.0.0.1"
+          },
+          "subscriptionProvider" : {
+            "host": "127.0.0.1",
+            "protocol": "http",
+            "port": "8900",
+            "dataHost": "127.0.0.1"
+          }
+        },
+        "devnet": {
+          "chainSource": "external",
+          "provider": {
+            "host": "api.devnet.solana.com",
+            "protocol": "https",
+            "port": ""
+          }
+        }
       }
     },
     "aliasMapping": {
