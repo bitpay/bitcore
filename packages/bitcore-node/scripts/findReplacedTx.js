@@ -35,7 +35,7 @@ if (chainIdx === -1 || networkIdx === -1 || txidIdx === -1 || !chain || !network
 }
 
 const windowIdx = args.indexOf('--window');
-const windowSec = (windowIdx > -1 && parseInt(args[windowIdx + 1])) || 10;
+const windowMins = (windowIdx > -1 && parseInt(args[windowIdx + 1])) || 10;
 
 console.log('Connecting to database...');
 
@@ -43,8 +43,12 @@ Storage.start()
   .then(async () => {
 
     const confirmedTx = await TransactionStorage.collection.findOne({ chain, network, txid });
+    if (!confirmedTx) {
+      console.log('Tx not found in db:', txid);
+      return;
+    }
     const $lt = new Date(confirmedTx.blockTimeNormalized);
-    const $gt = new Date($lt.getTime() - (1000 * 60 * windowSec));
+    const $gt = new Date($lt.getTime() - (1000 * 60 * windowMins));
     const related = TransactionStorage.collection.find({ chain, network, blockTimeNormalized: { $lt, $gt }, blockHeight: -3  });
     for await (const tx of related) {
       if (tx.replacedByTxid === txid) {

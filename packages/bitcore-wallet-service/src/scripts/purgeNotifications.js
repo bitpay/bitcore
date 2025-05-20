@@ -82,18 +82,14 @@ storage.connect(config.storageOpts, async (err) => {
         await new Promise(resolve => setTimeout(resolve, 250)); // cooldown
       }
 
-      if (doit) {
-        const res = await storage.db.collection(Storage.collections.NOTIFICATIONS).deleteMany({
-          _id: { $in: notifications.map(n => n._id) }
-        });
+      const query = { _id: { $in: notifications.map(n => n._id) } };
 
+      if (doit) {
+        const res = await storage.db.collection(Storage.collections.NOTIFICATIONS).deleteMany(query);
         count += res.deletedCount;
       } else {
         // Update Wallets collection
-        const notificationCount = await storage.db.collection(Storage.collections.NOTIFICATIONS).countDocuments({
-          _id: { $in: notifications.map(n => n._id) }
-        });
-
+        const notificationCount = await storage.db.collection(Storage.collections.NOTIFICATIONS).countDocuments(query);
         count += notificationCount;
       }
     }
