@@ -67,7 +67,6 @@ describe('client API', function() {
   before(done => {
     i = 0;
     clients = [];
-    keys = [];
     helpers.newDb('', (err, database, connection) => {
       dbConnection = connection;
       db = database;
@@ -84,6 +83,7 @@ describe('client API', function() {
   });
 
   beforeEach(done => {
+    keys = [];
     let expressApp = new ExpressApp();
     expressApp.start(
       {

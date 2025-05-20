@@ -990,7 +990,7 @@ export class WalletService implements IWalletService {
     this._notify(type, data, {}, cb);
   }
 
-  _addCopayerToWallet(wallet, opts, cb) {
+  _addCopayerToWallet(wallet: Wallet, opts, cb) {
     const copayer = Copayer.create({
       coin: wallet.coin,
       chain: wallet.chain, // chain === coin for stored clients
@@ -1061,8 +1061,8 @@ export class WalletService implements IWalletService {
     });
   }
 
-  _addKeyToCopayer(wallet, copayer, opts, cb) {
-    wallet.addCopayerRequestKey(copayer.copayerId, opts.requestPubKey, opts.signature, opts.restrictions, opts.name);
+  _addKeyToCopayer(wallet: Wallet, copayer: Copayer, opts, cb) {
+    wallet.addCopayerRequestKey(copayer.id, opts.requestPubKey, opts.signature, opts.restrictions, opts.name);
     this.storage.storeWalletAndUpdateCopayersLookup(wallet, err => {
       if (err) return cb(err);
 

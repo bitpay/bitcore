@@ -110,7 +110,7 @@ export class Copayer {
     x.createdOn = obj.createdOn;
     x.coin = obj.coin || Defaults.COIN;
     x.chain = obj.chain || x.coin;
-    x.id = obj.id;
+    x.id = obj.id || obj.copayerId;
     x.name = obj.name;
     x.xPubKey = obj.xPubKey;
     x.hardwareSourcePublicKey = obj.hardwareSourcePublicKey;

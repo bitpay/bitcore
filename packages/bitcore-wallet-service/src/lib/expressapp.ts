@@ -152,7 +152,7 @@ export class ExpressApp {
 
       const credentials = getCredentials(req);
       if (!credentials)
-        return returnError(new ClientError({ code: 'NOT_AUTHORIZED' }), res, req);
+        return returnError(Errors.NOT_AUTHORIZED, res, req);
 
       const auth = {
         copayerId: credentials.copayerId,
@@ -170,15 +170,11 @@ export class ExpressApp {
         const server: WalletService = await new Promise((resolve, reject) => {
           WalletService.getInstanceWithAuth(auth, (err, server) => {
             if (err) {
-              if (opts.silentFailure) {
-                return resolve(null);
-              } else {
-                return reject(err);
-              }
+              return reject(err);
             }
 
             if (opts.onlySupportStaff && !server.copayerIsSupportStaff) {
-              return reject(new ClientError({ code: 'NOT_AUTHORIZED' }));
+              return reject(Errors.NOT_AUTHORIZED);
             }
 
             if (server.copayerIsSupportStaff) {
@@ -186,7 +182,7 @@ export class ExpressApp {
             }
 
             if (opts.onlyMarketingStaff && !server.copayerIsMarketingStaff) {
-              return reject(new ClientError({ code: 'NOT_AUTHORIZED' }));
+              return reject(Errors.NOT_AUTHORIZED);
             }
 
             // For logging
@@ -201,6 +197,12 @@ export class ExpressApp {
         }
         return server;
       } catch (err) {
+        if (opts.silentFailure) {
+          if (cb) {
+            return cb(null, err);
+          }
+          throw err;
+        }
         return returnError(err, res, req);
       }
     };
@@ -216,11 +218,11 @@ export class ExpressApp {
       const identities = req.headers['x-identities'] ? req.headers['x-identities'].split(',') : false;
       const signature = req.headers['x-signature'];
       if (!identities || !signature) {
-        throw new ClientError({ code: 'NOT_AUTHORIZED' });
+        throw Errors.NOT_AUTHORIZED;
       }
 
       if (!Array.isArray(identities)) {
-        throw new ClientError({ code: 'NOT_AUTHORIZED' });
+        throw Errors.NOT_AUTHORIZED;
       }
 
       // return a list of promises that we can await or chain
@@ -405,6 +407,10 @@ export class ExpressApp {
 
     router.get('/v1/wallets/all/', async (req, res) => {
       let responses;
+      const includeExtendedInfo = req.query.includeExtendedInfo == '1';
+      const twoStep = req.query.twoStep == '1';
+      const silentFailure = req.query.silentFailure == '1';
+      const includeServerMessages = req.query.serverMessageArray == '1';
 
       const buildOpts = (req, copayerId) => {
         const getParam = (param, returnArray = false) => {
@@ -416,10 +422,10 @@ export class ExpressApp {
           return value ? value : null;
         };
         const opts = {
-          includeExtendedInfo: req.query.includeExtendedInfo == '1',
-          twoStep: req.query.twoStep == '1',
-          silentFailure: req.query.silentFailure == '1',
-          includeServerMessages: req.query.serverMessageArray == '1',
+          includeExtendedInfo,
+          twoStep,
+          silentFailure,
+          includeServerMessages,
           tokenAddresses: getParam('tokenAddress', true),
           multisigContractAddress: getParam('multisigContractAddress'),
           network: getParam('network')
@@ -429,9 +435,9 @@ export class ExpressApp {
 
       try {
         responses = await Promise.all(
-          getServerWithMultiAuth(req, res, { silentFailure: req.query.silentFailure == '1' }).map(promise =>
+          getServerWithMultiAuth(req, res, { silentFailure }).map(promise =>
             promise.then(
-              (server: any) =>
+              (server: WalletService) =>
                 new Promise(resolve => {
                   let options: any = buildOpts(req, server.copayerId);
                   if (options.tokenAddresses) {
@@ -478,6 +484,11 @@ export class ExpressApp {
                 }),
               ({ message }) => Promise.resolve({ success: false, error: message })
             )
+            .catch(err => {
+              if (!silentFailure) {
+                returnError(err, res, req);
+              }
+            })
           )
         );
       } catch (err) {
