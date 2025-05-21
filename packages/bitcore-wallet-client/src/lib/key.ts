@@ -656,7 +656,7 @@ export class Key {
 
   #setPrivKey(params: { value: any; algo?: KeyAlgorithm; }) {
     const { value, algo } = params;
-    switch (algo?.toUpperCase()) {
+    switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):
         this.#xPrivKeyEDDSA = value;
         break;
@@ -667,7 +667,7 @@ export class Key {
 
   #setPrivKeyEncrypted(params: { value: any; algo?: KeyAlgorithm; }) {
     const { value, algo } = params;
-    switch (algo?.toUpperCase()) {
+    switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):
         this.#xPrivKeyEDDSAEncrypted = value;
         break;
@@ -678,7 +678,7 @@ export class Key {
 
   #setFingerprint(params: { value: any; algo?: KeyAlgorithm; }) {
     const { value, algo } = params;
-    switch (algo?.toUpperCase()) {
+    switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):
         this.fingerPrintEDDSA = value;
         break;
@@ -689,7 +689,7 @@ export class Key {
 
   #getPrivKey(params: { algo?: KeyAlgorithm; } = {}) {
     const { algo } = params;
-    switch (algo?.toUpperCase()) {
+    switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):
         return this.#xPrivKeyEDDSA;
       default:
@@ -699,7 +699,7 @@ export class Key {
 
   #getPrivKeyEncrypted(params: { algo?: KeyAlgorithm; } = {}) {
     const { algo } = params;
-    switch (algo?.toUpperCase()) {
+    switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):
         return this.#xPrivKeyEDDSAEncrypted;
       default:
@@ -709,7 +709,7 @@ export class Key {
 
   #getFingerprint(params: { algo?: KeyAlgorithm; } = {}) {
     const { algo } = params;
-    switch (algo?.toUpperCase()) {
+    switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):
         return this.fingerPrintEDDSA;
       default:
