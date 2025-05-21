@@ -1,3 +1,4 @@
+import { ALGO_TO_KEY_TYPE, ALGOS_BY_CHAIN } from './algorithms';
 import { EVM_CHAIN_ID_TO_CHAIN, EVM_CHAIN_NETWORK_TO_CHAIN_ID } from './chains';
 import { FEE_MINIMUMS } from './feeMinimums';
 import { TOKEN_OPTS as opts } from './tokens';
@@ -12,5 +13,7 @@ export let Constants = {
   UNITS,
   FEE_MINIMUMS,
   EVM_CHAIN_ID_TO_CHAIN,
-  EVM_CHAIN_NETWORK_TO_CHAIN_ID
+  EVM_CHAIN_NETWORK_TO_CHAIN_ID,
+  ALGOS_BY_CHAIN,
+  ALGO_TO_KEY_TYPE
 };
