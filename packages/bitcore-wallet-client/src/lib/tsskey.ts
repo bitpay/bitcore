@@ -113,9 +113,11 @@ export class TssKeyGen extends EventEmitter {
    * @param {object} params
    * @param {number} params.m Number of required signatures
    * @param {number} params.n Number of parties/signers
+   * @param {string} [params.password] An optional password other parties must provide in order to join the session on the server.
+   *                                   This adds a layer of server-side security beyond the client-side-only join code.
    * @returns {Promise<TssKeyGen>}
    */
-  async newKey({ m, n }): Promise<TssKeyGen> {
+  async newKey({ m, n, password }): Promise<TssKeyGen> {
     const keygen = new ECDSA.KeyGen({
       n,
       m,
@@ -131,21 +133,55 @@ export class TssKeyGen extends EventEmitter {
 
     const msg = await keygen.initJoin();
     msg.n = n;
+    if (password) {
+      msg.password = password;
+    }
     await this.#request.post('/v1/tss/keygen/' + this.id, msg);
     this.#keygen = keygen;
     return this;
   }
 
   /**
+   * Create a join code for a party to join the TSS key.
+   * The join code is encrypted with the party's public key and is thus party-specific.
+   * Note that the join code is verified on the client side only. Someone could theoretically
+   *  intercept or brute force the session ID and submit an initial message to join the session
+   *  uninvited. To prevent this (unlikely) possibility, set a password in the newKey() method
+   *  and share it with the other parties.
+   * @param params
+   * @param {number} params.partyId Party ID to create the join code for
+   * @param {string} params.partyPubKey Public key of the party to encrypt the join code to
+   * @param {string} [params.extra] Extra data to include in the join code
+   * @param {object} [params.opts] Options for the join code. Also contains opts for the ECIES.encrypt method
+   * @param {string} [params.opts.encoding] Encoding for the join code (default: 'hex')
+   * @param {string} [params.opts.noKey] ECIES.encrypt: Don't include the public key in the result
+   * @param {string} [params.opts.shortTag] ECIES.encrypt: Use a short tag
+   * @param {boolean} [params.opts.deterministicIv] ECIES.encrypt: Use a deterministic IV
+   * @returns {string} Encrypted join code
+   */
+  createJoinCode({ partyId, partyPubKey, extra, opts }): string {
+    extra = extra || '';
+    const data = [this.id, partyId, this.m, this.n, extra].join(':');
+    const code = ECIES.encrypt({
+      message: data,
+      publicKey: partyPubKey,
+      privateKey: this.#requestPrivateKey,
+      opts
+    });
+    return code.toString(opts?.encoding || 'hex');
+  }
+
+  /**
    * Join a Threshold Signature Scheme key
    * @param {object} params
-   * @param {string|Buffer} params.code Join code
+   * @param {string|Buffer} params.code Join code given by the session initiator
    * @param {object} [params.opts] Options for the join code. Also contains opts for the ECIES.decrypt method
    * @param {string} [params.opts.encoding] Encoding for the join code (default: 'hex')
-   * @param {string} [params.opts.noKey] ECIES.decrypt: The public key is not included the payload
+   * @param {boolean} [params.opts.noKey] ECIES.decrypt: The public key is not included the payload
    * @param {string} [params.opts.shortTag] ECIES.decrypt: A short tag was used during encryption
+   * @param {string} [params.password] Server password to join the TSS key. This was set by the initiator and should be told to you by them.
    */
-  async joinKey({ code, opts }): Promise<TssKeyGen> {
+  async joinKey({ code, opts, password }): Promise<TssKeyGen> {
     $.checkArgument(code, 'Missing required param: code');
     $.checkArgument(typeof code === 'string' || Buffer.isBuffer(code), '`code` must be a string or buffer');
 
@@ -171,6 +207,9 @@ export class TssKeyGen extends EventEmitter {
     this.partyId = parseInt(partyId);
 
     const msg = await keygen.initJoin();
+    if (password || extra) {
+      msg.password = password || extra;
+    }
     await this.#request.post('/v1/tss/keygen/' + this.id, msg);
     return this;
   }
@@ -201,31 +240,6 @@ export class TssKeyGen extends EventEmitter {
     const keygen = await ECDSA.KeyGen.restore({ session: keygenSession, authKey: this.#credentials.requestPrivKey });
     this.#keygen = keygen;
     return this;
-  }
-
-  /**
-   * Create an invidation code for a party to join the TSS key
-   * @param params
-   * @param {number} params.partyId Party ID to create the join code for
-   * @param {string} params.partyPubKey Public key of the party to encrypt the join code to
-   * @param {string} [params.extra] Extra data to include in the join code
-   * @param {object} [params.opts] Options for the join code. Also contains opts for the ECIES.encrypt method
-   * @param {string} [params.opts.encoding] Encoding for the join code (default: 'hex')
-   * @param {string} [params.opts.noKey] ECIES.encrypt: Don't include the public key in the result
-   * @param {string} [params.opts.shortTag] ECIES.encrypt: Use a short tag
-   * @param {boolean} [params.opts.deterministicIv] ECIES.encrypt: Use a deterministic IV
-   * @returns {string} Encrypted join code
-   */
-  createJoinCode({ partyId, partyPubKey, extra, opts }): string {
-    extra = extra || '';
-    const data = [this.id, partyId, this.m, this.n, extra].join(':');
-    const code = ECIES.encrypt({
-      message: data,
-      publicKey: partyPubKey,
-      privateKey: this.#requestPrivateKey,
-      opts
-    });
-    return code.toString(opts?.encoding || 'hex');
   }
 
   /**

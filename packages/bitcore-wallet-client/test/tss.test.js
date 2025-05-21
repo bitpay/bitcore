@@ -360,6 +360,128 @@ describe('TSS', function() {
       fs.writeFileSync(`${datadir}/tss-party1.json`, JSON.stringify({ key: party1Key.toObj(), tss: tss1.getKeyChain().toObj() }, null, 2));
       fs.writeFileSync(`${datadir}/tss-party2.json`, JSON.stringify({ key: party2Key.toObj(), tss: tss2.getKeyChain().toObj() }, null, 2));
     });
+
+    describe('With Password', function() {
+      const password = 'super|secret:password';
+
+      async function setupSession(password) {
+        const party0Key = new Key({ seedType: 'new' });
+        const party1Key = new Key({ seedType: 'new' });
+        const party2Key = new Key({ seedType: 'new' });
+        const tss0 = new TssKeyGen({
+          baseUrl: '/bws/api',
+          request: request(app),
+          key: party0Key
+        });
+        const tss1 = new TssKeyGen({
+          baseUrl: '/bws/api',
+          request: request(app),
+          key: party1Key
+        });
+        const tss2 = new TssKeyGen({
+          baseUrl: '/bws/api',
+          request: request(app),
+          key: party2Key
+        });
+        await tss0.newKey({ m, n, password });
+        return { tss0, tss1, tss2, party0Key, party1Key, party2Key };
+      };
+
+      it(happyPath('should start a new keygen session with a password'), async function() {
+        const party0Key = new Key({ seedType: 'new' });
+        const tss0 = new TssKeyGen({
+          baseUrl: '/bws/api',
+          request: request(app),
+          key: party0Key
+        });
+        const result = await tss0.newKey({ m, n, password });
+        should.exist(result);
+        result.should.equal(tss0);
+        tss0.id.should.be.a('string');
+        const seed = crypto.createHash('sha256').update(BitcoreLib.HDPrivateKey.fromString(party0Key.get().xPrivKey).toBuffer()).digest();
+        tss0.id.should.equal(crypto.createHash('sha256').update(crypto.createHash('sha256').update(seed).digest()).digest('hex'));
+        tss0.m.should.equal(m);
+        tss0.n.should.equal(n);
+        tss0.partyId.should.equal(0);
+        const session = await storage.fetchTssKeyGenSession({ id: tss0.id });
+        should.exist(session.joinPassword);
+      });
+
+      it(happyPath('should join key with a password'), async function() {
+        const { tss0, tss1, tss2, ...keys } = await setupSession(password);
+        const code1 = tss0.createJoinCode({
+          partyId: 1,
+          partyPubKey: keys.party1Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).requestPubKey
+        });
+        should.exist(code1);
+        await tss1.joinKey({ code: code1, password });
+        const session = await storage.fetchTssKeyGenSession({ id: tss1.id });
+        session.participants.should.deep.equal([
+          keys.party0Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).copayerId,
+          keys.party1Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).copayerId,
+          null
+        ]);
+      });
+
+      it(happyPath('should join key with a password embedded in the join code'), async function() {
+        const { tss0, tss1, tss2, ...keys } = await setupSession(password);
+        const code1 = tss0.createJoinCode({
+          partyId: 1,
+          partyPubKey: keys.party1Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).requestPubKey,
+          extra: password
+        });
+        should.exist(code1);
+        await tss1.joinKey({ code: code1 });
+        const session = await storage.fetchTssKeyGenSession({ id: tss1.id });
+        session.participants.should.deep.equal([
+          keys.party0Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).copayerId,
+          keys.party1Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).copayerId,
+          null
+        ]);
+      });
+
+      it('should NOT join key with a WRONG password', async function() {
+        const { tss0, tss1, tss2, ...keys } = await setupSession(password);
+        const code1 = tss0.createJoinCode({
+          partyId: 1,
+          partyPubKey: keys.party1Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).requestPubKey
+        });
+        should.exist(code1);
+        try {
+          await tss1.joinKey({ code: code1, password: 'wrongpassword' });
+          throw new Error('should have thrown');
+        } catch (err) {
+          err.message.should.include('TSS_INVALID_PASSWORD');
+        }
+        const session = await storage.fetchTssKeyGenSession({ id: tss1.id });
+        session.participants.should.deep.equal([
+          keys.party0Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).copayerId,
+          null, // not joined
+          null
+        ]);
+      });
+
+      it('should NOT join key with a MISSING password', async function() {
+        const { tss0, tss1, tss2, ...keys } = await setupSession(password);
+        const code1 = tss0.createJoinCode({
+          partyId: 1,
+          partyPubKey: keys.party1Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).requestPubKey
+        });
+        should.exist(code1);
+        try {
+          await tss1.joinKey({ code: code1 });
+          throw new Error('should have thrown');
+        } catch (err) {
+          err.message.should.include('TSS_INVALID_PASSWORD');
+        }
+        const session = await storage.fetchTssKeyGenSession({ id: tss1.id });
+        session.participants.should.deep.equal([
+          keys.party0Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).copayerId,
+          null, // not joined
+          null
+        ]);
+      });
+    });
   });
 
 

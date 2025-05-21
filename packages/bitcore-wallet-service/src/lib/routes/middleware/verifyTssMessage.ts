@@ -6,9 +6,6 @@ import { ITssSigMessageObject } from '../../model/tsssign';
 
 export async function verifyTssMessage(req, res, next) {
   try {
-    // TODO do some more validation here?
-    // Do we want to (can we?) verify p2p messages?
-
     const message: ITssKeyMessageObject | ITssSigMessageObject = req.body
     const { publicKey } = message;
     if (!publicKey) {
@@ -25,6 +22,9 @@ export async function verifyTssMessage(req, res, next) {
       };
     }
     for (const m of message.p2pMessages) {
+      // Note: We can't verify individual p2p messages any more than this.
+      //  `m.payload.signature` is for the unencrypted message.
+      //  Only the recipients can verify on the client side.
       if (!m.payload || !m.payload.encryptedMessage || !m.payload.signature) {
         return res.status(400).send(Errors.TSS_INVALID_MESSAGE_SIG);
       }

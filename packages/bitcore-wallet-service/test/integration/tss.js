@@ -1,8 +1,11 @@
 const sinon = require('sinon');
 const should = require('chai').should();
 const bitcoreLib = require('bitcore-lib');
+const request = require('supertest');
 const twoOfThree = require('./data/tss/2of3');
-const tss = require('bitcore-tss');
+const BWS = require('../../ts_build/index');
+const helpers = require('./helpers');
+const { TssKeyGen } = require('../../ts_build/lib/tss');
 
 describe('TSS', function() {
   const vector = {
@@ -14,17 +17,17 @@ describe('TSS', function() {
     party0: {
       seed: Buffer.from('0d18dd84ff2e7e462bdca9fb362dce0590badac80438234a6be4b859d674355d', 'hex'),
       keychain: twoOfThree.party0Key,
-      authKey: 'ae6101a4bfcae77c59c4c252d2004996e1f614e17feee932eff82d132d3c4cd1'
+      authKey: new bitcoreLib.PrivateKey('ae6101a4bfcae77c59c4c252d2004996e1f614e17feee932eff82d132d3c4cd1'),
     },
     party1: {
       seed: Buffer.from('1cb43de73873a349190d7d0ab5256aa4dba5e8ab1291885086d9db633134ac23', 'hex'),
       keychain: twoOfThree.party1Key,
-      authKey: 'b45b008ffc057705f9119411c9fd2bad380b03d3295131834a798545fc5ed9da'
+      authKey: new bitcoreLib.PrivateKey('b45b008ffc057705f9119411c9fd2bad380b03d3295131834a798545fc5ed9da')
     },
     party2: {
       seed: Buffer.from('202b9dcd66c61bdcb523b65332e5bc4f17805ba991374dfb2a3e9347ec6bd170', 'hex'),
       keychain: twoOfThree.party2Key,
-      authKey: 'c0ad56c56bfae6cad2bdba3d96be498515213eb62fdc4a0ee988514eb639841d'
+      authKey: new bitcoreLib.PrivateKey('c0ad56c56bfae6cad2bdba3d96be498515213eb62fdc4a0ee988514eb639841d')
     },
     keygen: {
       messages: {
@@ -205,14 +208,128 @@ describe('TSS', function() {
   const n = 2;
   const m = 3;
 
-    
-  it('', function() {
-    new tss.KeyGen({
-      n,
-      m,
-      partyId: 0,
-      seed: vector.party0.seed,
-      authKey: vector.party0.authKey,
+  let app;
+  const urlPrefix = '/bws/api';
+  const sandbox = sinon.createSandbox();
+
+  before(function(done) {
+    helpers.before(function(res) {
+      done();
+    });
+  });
+  after(function(done) {
+    helpers.after(done);
+  });
+
+  beforeEach(function(done) {
+    const storage = helpers.getStorage();
+    const blockchainExplorerMock = helpers.getBlockchainExplorer();
+
+    const expressApp = new BWS.ExpressApp();
+      expressApp.start(
+        {
+          ignoreRateLimiter: true,
+          storage: storage,
+          blockchainExplorer: blockchainExplorerMock,
+          disableLogs: true,
+          doNotCheckV8: true
+        },
+        () => {
+          app = request(expressApp.app);
+          done();
+        }
+      );
+  });
+
+  afterEach(function() {
+    sandbox.restore();
+  });
+
+  describe('POST /v1/tss/keygen/:id', function() {
+    const url = id => `${urlPrefix}/v1/tss/keygen/${id}`;
+
+    describe('middleware', function() {
+      beforeEach(function() {
+        sandbox.stub(TssKeyGen, 'processMessage').resolves();
+      });
+
+      it('should verify tss broadcast message', function(done) {
+        const body = JSON.parse(JSON.stringify(vector.keygen.messages.round0.party0));
+        body.publicKey = vector.party0.authKey.publicKey.toString();
+        app.post(url('test'))
+          .send(body)
+          .expect(200)
+          .end((err, res) => {
+            should.not.exist(err);
+            done();
+          });
+      });
+
+      it('should verify tss p2p message', function(done) {
+        const body = JSON.parse(JSON.stringify(vector.keygen.messages.round1.party0));
+        body.publicKey = vector.party0.authKey.publicKey.toString();
+        app.post(url('test'))
+          .send(body)
+          .expect(200)
+          .end((err, res) => {
+            should.not.exist(err);
+            done();
+          });
+      });
+
+      it('should error if no publicKey', function(done) {
+        app.post(url('test'))
+          .send({})
+          .expect(200)
+          .end((err, res) => {
+            should.exist(err);
+            res.status.should.equal(400);
+            res.body.code.should.equal('TSS_PUBKEY_MISSING');
+            done();
+          });
+      });
+
+      it('should error if publicKey is bogus', function(done) {
+        const body = JSON.parse(JSON.stringify(vector.keygen.messages.round0.party0));
+        body.publicKey = 'invalid';
+        app.post(url('test'))
+          .send(body)
+          .expect(200)
+          .end((err, res) => {
+            should.exist(err);
+            res.status.should.equal(400);
+            res.body.code.should.equal('TSS_INVALID_MESSAGE');
+            done();
+          });
+      });
+
+      it('should error if publicKey cannot verify broadcast message signature', function(done) {
+        const body = JSON.parse(JSON.stringify(vector.keygen.messages.round0.party0));
+        body.publicKey = new bitcoreLib.PrivateKey().publicKey.toString();
+        app.post(url('test'))
+          .send(body)
+          .expect(200)
+          .end((err, res) => {
+            should.exist(err);
+            res.status.should.equal(400);
+            res.body.code.should.equal('TSS_INVALID_MESSAGE_SIG');
+            done();
+          });
+      });
+
+      it('should error if messages are empty arrays', function(done) {
+        const body = { broadcastMessages: [], p2pMessages: [] };
+        body.publicKey = new bitcoreLib.PrivateKey().publicKey.toString();
+        app.post(url('test'))
+          .send(body)
+          .expect(200)
+          .end((err, res) => {
+            should.exist(err);
+            res.status.should.equal(400);
+            res.body.code.should.equal('TSS_INVALID_MESSAGE');
+            done();
+          });
+      });
     });
   });
 });

@@ -1,3 +1,4 @@
+import BitcoreLib from 'bitcore-lib';
 import { Errors } from './errors/errordefinitions'
 import logger from './logger';
 import { ITssKeyMessageObject, TssKeyGenModel } from './model/tsskeygen';
@@ -36,7 +37,7 @@ class TssKeyGenClass {
       return { messages, publicKey: session.sharedPublicKey };
     }
     return {};
-  };
+  }
 
   async processMessage(params: { id: string; message: ITssKeyMessageObject; copayerId: string; }) {
     const { id, message, copayerId } = params;
@@ -56,6 +57,9 @@ class TssKeyGenClass {
       }
 
       if (!session.participants[message.partyId]) {
+        if (!this._checkPassword({ session, message })) {
+          throw Errors.TSS_INVALID_PASSWORD;
+        }
         await storage.storeTssKeyGenParticipant({ id, partyId: message.partyId, copayerId });
       }
 
@@ -74,7 +78,19 @@ class TssKeyGenClass {
     } else {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
-  };
+  }
+
+  private _checkPassword(params: { session: TssKeyGenModel; message: ITssKeyMessageObject & { password?: string } }) {
+    const { session, message } = params;
+    if (!session.joinPassword) {
+      return true;
+    }
+    if (!message.password) {
+      return false;
+    }
+    const passwordHash = BitcoreLib.crypto.Hash.sha256(Buffer.from(session.id + message.password)).toString('hex');
+    return session.joinPassword === passwordHash;
+  }
 
   private _isValidBroadcastMessage(params: { message: ITssKeyMessageObject }) {
     const { message } = params;
@@ -92,18 +108,27 @@ class TssKeyGenClass {
       typeof message?.p2pMessages?.[0]?.commitment === 'string';
   }
 
-  private async _initSession(params: { id: string; message: ITssKeyMessageObject & { n?: number | string }; storage: Storage; copayerId: string; }) {
+  private async _initSession(params: { id: string; message: ITssKeyMessageObject & { n?: number | string; password?: string }; storage: Storage; copayerId: string; }) {
     const { id, message, storage, copayerId } = params;
     const n = parseInt(message.n as string);
     if (!n || n < 1) {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid n provided: ' + n);
     }
+
+    let passwordHash: string = null;
+    if (message.password) {
+      passwordHash = BitcoreLib.crypto.Hash.sha256(Buffer.from(id + message.password)).toString('hex');
+    }
+    
     delete message.n;
+    delete message.password;
+    
     const doc = TssKeyGenModel.create({
       id,
       message,
       n,
-      copayerId
+      copayerId,
+      passwordHash
     });
     const result = await storage.storeTssKeyGenSession({ doc });
     if (!result.result.ok) {

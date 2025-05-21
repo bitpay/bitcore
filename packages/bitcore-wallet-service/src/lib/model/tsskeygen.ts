@@ -60,6 +60,10 @@ export interface ITssKeyGenModel {
    */
   sharedPublicKey?: string;
   /**
+   * The password used to join the TSS key generation process.
+   */
+  joinPassword?: string;
+  /**
    * The mongo doc version
    */
   __v: number;
@@ -75,11 +79,12 @@ export class TssKeyGenModel implements ITssKeyGenModel {
   }>>;
   sharedPublicKey?: string;
   schemeVersion: number;
+  joinPassword?: string;
   __v: number;
 
 
-  static create(params: { id: string; message: ITssKeyMessageObject; n: number; copayerId: string; }): TssKeyGenModel {
-    const { id, message, n, copayerId } = params;
+  static create(params: { id: string; message: ITssKeyMessageObject; n: number; copayerId: string; passwordHash?: string }): TssKeyGenModel {
+    const { id, message, n, copayerId, passwordHash } = params;
     const { partyId } = message;
     $.checkArgument(partyId === 0, 'Key generation session must be started by partyId 0');
 
@@ -93,6 +98,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
       fromPartyId: partyId,
       messages: message
     }]];
+    x.joinPassword = passwordHash
     x.__v = 0;
     return x;
   }
@@ -105,6 +111,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
     x.participants = obj.participants;
     x.rounds = obj.rounds;
     x.sharedPublicKey = obj.sharedPublicKey;
+    x.joinPassword = obj.joinPassword;
     x.__v = obj.__v;
     return x;
   }

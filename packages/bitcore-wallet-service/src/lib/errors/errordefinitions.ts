@@ -62,6 +62,7 @@ interface Errors<T> {
   WALLET_NEED_SCAN: T;
   WRONG_SIGNING_METHOD: T;
   TSS_SESSION_NOT_FOUND: T;
+  TSS_INVALID_PASSWORD: T;
   TSS_ROUND_ALREADY_DONE: T;
   TSS_ROUND_TOO_EARLY: T;
   TSS_GENERIC_ERROR: T;
@@ -131,6 +132,7 @@ const errors: Errors<string> = {
   WALLET_NEED_SCAN: 'Wallet needs addresses scan',
   WRONG_SIGNING_METHOD: 'Wrong signed method for coin/network',
   TSS_SESSION_NOT_FOUND: 'Session not found',
+  TSS_INVALID_PASSWORD: 'Invalid password',
   TSS_ROUND_ALREADY_DONE: 'Your message is for a round that has already finished',
   TSS_ROUND_TOO_EARLY: 'Other participants must finish the current round first',
   TSS_GENERIC_ERROR: 'An unexpected error occurred',
