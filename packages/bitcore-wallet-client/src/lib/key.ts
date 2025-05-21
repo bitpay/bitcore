@@ -387,7 +387,7 @@ export class Key {
 
   derive(password: PasswordMaybe, path: string, algo?: KeyAlgorithm): Bitcore.HDPrivateKey {
     $.checkArgument(path, 'no path at derive()');
-    if (algo?.toUpperCase() === Constants.ALGOS.EDDSA) {
+    if (algo?.toUpperCase?.() === Constants.ALGOS.EDDSA) {
       const key = this.#getChildKeyEDDSA(password, path);
       return new Bitcore.HDPrivateKey({
         network: NETWORK,
