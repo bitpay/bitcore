@@ -576,7 +576,18 @@ export class Key {
     };
   };
 
-  async sign(rootPath: string, txp, password?: PasswordMaybe) {
+  /**
+   * Sign a transaction proposal
+   * 
+   * Why is this async?
+   *  Because the underlying SOL library uses SubtleCrypto browser API. The SubtleCrypto API hands off
+   *  cryptographic operations to a native thread so it doesn't block the JS event loop and is thus async.
+   * @param {string} rootPath 
+   * @param {object} txp 
+   * @param {PasswordMaybe} [password]
+   * @returns {Promise<string[]>} Array of signatures
+   */
+  async sign(rootPath: string, txp, password?: PasswordMaybe): Promise<string[]> {
     $.shouldBeString(rootPath);
     if (this.isPrivKeyEncrypted() && !password) {
       throw new Errors.ENCRYPTED_PRIVATE_KEY();
@@ -641,7 +652,7 @@ export class Key {
         addressIndex,
         isChange
       );
-      let signatures = [];
+      const signatures = [];
       for (const rawTx of txArray) {
         const signed = Transactions.getSignature({
           chain: chain.toUpperCase(),
