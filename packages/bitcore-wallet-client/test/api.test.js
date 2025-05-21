@@ -996,7 +996,7 @@ describe('client API', function() {
     });
 
     describe('#pushSignatures', () => {
-      it('should sign BIP45 P2SH correctly', () => {
+      it('should sign BIP45 P2SH correctly', async () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -1024,12 +1024,12 @@ describe('client API', function() {
         };
         var key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
         var path = "m/45'";
-        var signatures = key.sign(path, txp);
+        var signatures = await key.sign(path, txp);
 
         // This is a GOOD test, since bitcore ONLY accept VALID signatures
         signatures.length.should.be.equal(utxos.length);
       });
-      it('should sign BIP44 P2PKH correctly', () => {
+      it('should sign BIP44 P2PKH correctly', async () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -1057,12 +1057,12 @@ describe('client API', function() {
         };
         var path = "m/44'/1'/0'";
         var key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
-        var signatures = key.sign(path, txp);
+        var signatures = await key.sign(path, txp);
 
         // This is a GOOD test, since bitcore ONLY accept VALID signatures
         signatures.length.should.be.equal(utxos.length);
       });
-      it('should sign multiple-outputs proposal correctly', () => {
+      it('should sign multiple-outputs proposal correctly', async () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -1100,10 +1100,10 @@ describe('client API', function() {
         };
         var path = "m/44'/1'/0'";
         var key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
-        var signatures = key.sign(path, txp);
+        var signatures = await key.sign(path, txp);
         signatures.length.should.be.equal(utxos.length);
       });
-      it('should sign proposal with provided output scripts correctly', () => {
+      it('should sign proposal with provided output scripts correctly', async () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -1144,10 +1144,10 @@ describe('client API', function() {
         };
         var path = "m/44'/1'/0'";
         var key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
-        var signatures = key.sign(path, txp);
+        var signatures = await key.sign(path, txp);
         signatures.length.should.be.equal(utxos.length);
       });
-      it('should sign btc proposal correctly', () => {
+      it('should sign btc proposal correctly', async () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -1185,7 +1185,7 @@ describe('client API', function() {
         };
         var path = "m/44'/1'/0'";
         var key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
-        var signatures = key.sign(path, txp);
+        var signatures = await key.sign(path, txp);
 
         signatures.length.should.be.equal(utxos.length);
         signatures[0].should.equal(
@@ -1196,7 +1196,7 @@ describe('client API', function() {
         );
       });
 
-      it('should sign btc proposal correctly (tx V2)', () => {
+      it('should sign btc proposal correctly (tx V2)', async () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -1234,7 +1234,7 @@ describe('client API', function() {
         };
         var path = "m/44'/1'/0'";
         var key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
-        var signatures = key.sign(path, txp);
+        var signatures = await key.sign(path, txp);
 
         signatures.length.should.be.equal(utxos.length);
         signatures[0].should.equal(
@@ -1245,7 +1245,7 @@ describe('client API', function() {
         );
       });
 
-      it('should sign eth proposal correctly', () => {
+      it('should sign eth proposal correctly', async () => {
         const toAddress = '0xa062a07a0a56beb2872b12f388f511d694626730';
         var key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
         const path = "m/44'/60'/0'";
@@ -1278,13 +1278,13 @@ describe('client API', function() {
           addressType: 'P2PKH',
           amount: 3896000000000000
         };
-        const signatures = key.sign(path, txp);
+        const signatures = await key.sign(path, txp);
         const expectedSignatures = [
           '0x4f761cd5f1cf1008d398c854ee338f82b457dc67ae794a987083b36b83fc6c917247fe72fe1880c0ee914c6e1b608625d8ab4e735520c33b2f7f76e0dcaf59801c'
         ];
         signatures.should.deep.equal(expectedSignatures);
       });
-      it('should sign BCH proposal correctly', () => {
+      it('should sign BCH proposal correctly', async () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -1323,7 +1323,7 @@ describe('client API', function() {
         };
         var path = "m/44'/1'/0'";
         var key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
-        var signatures = key.sign(path, txp);
+        var signatures = await key.sign(path, txp);
 
         signatures.length.should.be.equal(utxos.length);
         signatures[0].should.equal(
@@ -1334,7 +1334,7 @@ describe('client API', function() {
         );
       });
 
-      it('should sign BCH proposal correctly (schnorr)', () => {
+      it('should sign BCH proposal correctly (schnorr)', async () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -1373,7 +1373,7 @@ describe('client API', function() {
         };
         var path = "m/44'/1'/0'";
         var key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
-        var signatures = key.sign(path, txp);
+        var signatures = await key.sign(path, txp);
 
         signatures.length.should.be.equal(utxos.length);
         signatures[0].should.equal(
@@ -3822,15 +3822,15 @@ describe('client API', function() {
             {
               txp: txp
             },
-            (err, publishedTxp) => {
+            async (err, publishedTxp) => {
               should.not.exist(err);
               should.exist(publishedTxp);
               publishedTxp.status.should.equal('pending');
 
-              let signatures = keys[0].sign(clients[0].getRootPath(), txp);
-              clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+              clients[0].pushSignatures(publishedTxp, signatures, async (err, txp) => {
                 should.not.exist(err);
-                let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
+                let signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
                 clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('accepted');
@@ -3866,15 +3866,15 @@ describe('client API', function() {
             {
               txp: txp
             },
-            (err, publishedTxp) => {
+            async (err, publishedTxp) => {
               should.not.exist(err);
               should.exist(publishedTxp);
               publishedTxp.status.should.equal('pending');
 
-              let signatures = keys[0].sign(clients[0].getRootPath(), txp);
-              clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+              clients[0].pushSignatures(publishedTxp, signatures, async (err, txp) => {
                 should.not.exist(err);
-                let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
+                let signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
                 clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('accepted');
@@ -3907,14 +3907,14 @@ describe('client API', function() {
             {
               txp: txp
             },
-            (err, publishedTxp) => {
+            async (err, publishedTxp) => {
               should.not.exist(err);
               should.exist(publishedTxp);
               publishedTxp.status.should.equal('pending');
-              let signatures = keys[0].sign(clients[0].getRootPath(), txp);
-              clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+              clients[0].pushSignatures(publishedTxp, signatures, async (err, txp) => {
                 should.not.exist(err);
-                let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
+                let signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
                 clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('accepted');
@@ -3953,14 +3953,14 @@ describe('client API', function() {
                 {
                   txp: txp
                 },
-                (err, publishedTxp) => {
+                async (err, publishedTxp) => {
                   should.not.exist(err);
                   should.exist(publishedTxp);
                   publishedTxp.status.should.equal('pending');
-                  let signatures = keys[0].sign(clients[0].getRootPath(), txp);
-                  clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+                  let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+                  clients[0].pushSignatures(publishedTxp, signatures, async (err, txp) => {
                     should.not.exist(err);
-                    let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
+                    let signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
                     clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
                       should.not.exist(err);
                       txp.status.should.equal('accepted');
@@ -4005,15 +4005,15 @@ describe('client API', function() {
               {
                 txp: txp
               },
-              (err, publishedTxp) => {
+              async (err, publishedTxp) => {
                 should.not.exist(err);
                 should.exist(publishedTxp);
                 publishedTxp.status.should.equal('pending');
 
-                let signatures = keys[0].sign(clients[0].getRootPath(), txp);
-                clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+                let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+                clients[0].pushSignatures(publishedTxp, signatures, async (err, txp) => {
                   should.not.exist(err);
-                  let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
+                  let signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
                   clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
                     should.not.exist(err);
                     txp.status.should.equal('accepted');
@@ -4051,10 +4051,10 @@ describe('client API', function() {
             {
               txp: txp
             },
-            (err, publishedTxp) => {
+            async (err, publishedTxp) => {
               should.not.exist(err);
               should.exist(publishedTxp);
-              let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(
                 publishedTxp,
                 signatures,
@@ -4094,11 +4094,11 @@ describe('client API', function() {
             {
               txp: txp
             },
-            (err, publishedTxp) => {
+            async (err, publishedTxp) => {
               should.not.exist(err);
               should.exist(publishedTxp);
               txp.version = 3; // get v3 signatures
-              let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(
                 publishedTxp,
                 signatures,
@@ -4143,15 +4143,15 @@ describe('client API', function() {
             {
               txp: txp
             },
-            (err, publishedTxp) => {
+            async (err, publishedTxp) => {
               should.not.exist(err);
               should.exist(publishedTxp);
               publishedTxp.status.should.equal('pending');
 
-              let signatures = keys[0].sign(clients[0].getRootPath(), txp);
-              clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+              clients[0].pushSignatures(publishedTxp, signatures, async (err, txp) => {
                 should.not.exist(err);
-                let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
+                let signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
                 clients[1].pushSignatures(
                   publishedTxp,
                   signatures2,
@@ -4193,19 +4193,19 @@ describe('client API', function() {
             {
               txp: txp
             },
-            (err, publishedTxp) => {
+            async (err, publishedTxp) => {
               should.not.exist(err);
               should.exist(publishedTxp);
               publishedTxp.signingMethod.should.equal('schnorr');
               publishedTxp.status.should.equal('pending');
 
-              let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(
                 publishedTxp,
                 signatures,
-                (err, txp) => {
+                async (err, txp) => {
                   should.not.exist(err);
-                  let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
+                  let signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
                   clients[1].pushSignatures(
                     publishedTxp,
                     signatures2,
@@ -4255,13 +4255,13 @@ describe('client API', function() {
             {
               txp: txp
             },
-            (err, publishedTxp) => {
+            async (err, publishedTxp) => {
               should.not.exist(err);
               should.exist(publishedTxp);
               publishedTxp.signingMethod.should.equal('schnorr');
               publishedTxp.status.should.equal('pending');
 
-              let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
                 should.not.exist(err);
                 txp.status.should.equal('accepted');
@@ -4302,11 +4302,11 @@ describe('client API', function() {
             {
               txp: txp
             },
-            (err, publishedTxp) => {
+            async (err, publishedTxp) => {
               should.not.exist(err);
               should.exist(publishedTxp);
               publishedTxp.status.should.equal('pending');
-              let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
                 should.not.exist(err);
                 txp.status.should.equal('accepted');
@@ -4344,11 +4344,11 @@ describe('client API', function() {
               {
                 txp: txp
               },
-              (err, publishedTxp) => {
+              async (err, publishedTxp) => {
                 should.not.exist(err);
                 should.exist(publishedTxp);
                 publishedTxp.status.should.equal('pending');
-                let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+                let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
                 clients[0].pushSignatures(
                   publishedTxp,
                   signatures,
@@ -4392,11 +4392,11 @@ describe('client API', function() {
               {
                 txp: txp
               },
-              (err, publishedTxp) => {
+              async (err, publishedTxp) => {
                 should.not.exist(err);
                 should.exist(publishedTxp);
                 publishedTxp.status.should.equal('pending');
-                let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+                let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
                 clients[0].pushSignatures(
                   publishedTxp,
                   signatures,
@@ -4441,12 +4441,12 @@ describe('client API', function() {
               {
                 txp: txp
               },
-              (err, publishedTxp) => {
+              async (err, publishedTxp) => {
                 should.not.exist(err);
                 should.exist(publishedTxp);
                 publishedTxp.status.should.equal('pending');
 
-                let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+                let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
                 clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('accepted');
@@ -4483,10 +4483,10 @@ describe('client API', function() {
             {
               txp: txp
             },
-            (err, publishedTxp) => {
+            async (err, publishedTxp) => {
               should.not.exist(err);
               should.exist(publishedTxp);
-              let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(
                 publishedTxp,
                 signatures,
@@ -4526,11 +4526,11 @@ describe('client API', function() {
             {
               txp: txp
             },
-            (err, publishedTxp) => {
+            async (err, publishedTxp) => {
               should.not.exist(err);
               should.exist(publishedTxp);
               txp.version = 3; // get v3 signatures
-              let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(
                 publishedTxp,
                 signatures,
@@ -4675,12 +4675,12 @@ describe('client API', function() {
           });
         });
         it('Should send the signed tx in paypro. case: ' + cas++, function(done) {
-          clients[0].getTxProposals({}, (err, txps) => {
+          clients[0].getTxProposals({}, async (err, txps) => {
             should.not.exist(err);
-            let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
-            clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
+            let signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
+            clients[0].pushSignatures(txps[0], signatures, async (err, xx, paypro) => {
               should.not.exist(err);
-              let signatures = keys[1].sign(clients[1].getRootPath(), txps[0]);
+              let signatures = await keys[1].sign(clients[1].getRootPath(), txps[0]);
               clients[1].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
               should.not.exist(err);
  
@@ -4797,9 +4797,9 @@ describe('client API', function() {
       it('Should ignore PayPro at pushSignatures if instructed', done => {
         mockRequest(Buffer.from('broken data'), TestData.payProJsonV2.btc.headers);
         clients[1].doNotVerifyPayPro = true;
-        clients[1].getTxProposals({}, (err, txps) => {
+        clients[1].getTxProposals({}, async (err, txps) => {
           should.not.exist(err);
-          let signatures = keys[1].sign(clients[1].getRootPath(), txps[0]);
+          let signatures = await keys[1].sign(clients[1].getRootPath(), txps[0]);
           clients[1].pushSignatures(txps[0], signatures, (err, txps) => {
             should.not.exist(err);
             done();
@@ -4808,12 +4808,12 @@ describe('client API', function() {
       });
 
       it('Should send the "payment message" when last copayer sign', done => {
-        clients[0].getTxProposals({}, (err, txps) => {
+        clients[0].getTxProposals({}, async (err, txps) => {
           should.not.exist(err);
-          let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
-          clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
+          let signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
+          clients[0].pushSignatures(txps[0], signatures, async (err, xx, paypro) => {
             should.not.exist(err);
-            let signatures2 = keys[1].sign(clients[1].getRootPath(), txps[0]);
+            let signatures2 = await keys[1].sign(clients[1].getRootPath(), txps[0]);
             clients[1].pushSignatures(xx, signatures2, (err, yy, paypro) => {
               should.not.exist(err);
               yy.status.should.equal('accepted');
@@ -4837,12 +4837,12 @@ describe('client API', function() {
       });
 
       it('Should send the signed tx in paypro', done => {
-        clients[0].getTxProposals({}, (err, txps) => {
+        clients[0].getTxProposals({}, async (err, txps) => {
           should.not.exist(err);
-          let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
-          clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
+          let signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
+          clients[0].pushSignatures(txps[0], signatures, async (err, xx, paypro) => {
             should.not.exist(err);
-            let signatures = keys[1].sign(clients[1].getRootPath(), txps[0]);
+            let signatures = await keys[1].sign(clients[1].getRootPath(), txps[0]);
             clients[1].pushSignatures(xx, signatures, (err, yy, paypro) => {
               should.not.exist(err);
 
@@ -4866,13 +4866,13 @@ describe('client API', function() {
       });
 
       it('Should set bp_partner', done => {
-        clients[0].getTxProposals({}, (err, txps) => {
+        clients[0].getTxProposals({}, async (err, txps) => {
           should.not.exist(err);
           var changeAddress = txps[0].changeAddress.address;
-          let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
-          clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
+          let signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
+          clients[0].pushSignatures(txps[0], signatures, async (err, xx, paypro) => {
             should.not.exist(err);
-            let signatures = keys[1].sign(clients[1].getRootPath(), txps[0]);
+            let signatures = await keys[1].sign(clients[1].getRootPath(), txps[0]);
             clients[1].pushSignatures(xx, signatures, (err, yy, paypro) => {
               should.not.exist(err);
 
@@ -4945,13 +4945,13 @@ describe('client API', function() {
       });
 
       it('Should send the "payment message" when last copayer sign', done => {
-        clients[0].getTxProposals({}, (err, txps) => {
+        clients[0].getTxProposals({}, async (err, txps) => {
           should.not.exist(err);
-          let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
-          clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
+          let signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
+          clients[0].pushSignatures(txps[0], signatures, async (err, xx, paypro) => {
             should.not.exist(err);
 
-            let signatures = keys[1].sign(clients[1].getRootPath(), xx);
+            let signatures = await keys[1].sign(clients[1].getRootPath(), xx);
             clients[1].pushSignatures(xx, signatures, (err, yy, paypro) => {
               should.not.exist(err);
               yy.status.should.equal('accepted');
@@ -4982,13 +4982,13 @@ describe('client API', function() {
       });
 
       it('Should NOT fail if requiredFeeRate is not meet', done => {
-        clients[0].getTxProposals({}, (err, txps) => {
+        clients[0].getTxProposals({}, async (err, txps) => {
           should.not.exist(err);
-          let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
-          clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
+          let signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
+          clients[0].pushSignatures(txps[0], signatures, async (err, xx, paypro) => {
             should.not.exist(err);
             xx.feePerKb /= 2;
-            let signatures2 = keys[1].sign(clients[1].getRootPath(), xx);
+            let signatures2 = await keys[1].sign(clients[1].getRootPath(), xx);
             clients[1].pushSignatures(xx, signatures2, (err, yy, paypro) => {
               should.not.exist(err);
               done();
@@ -5033,9 +5033,9 @@ describe('client API', function() {
       });
 
       it('Should send the signed tx in paypro', done => {
-        clients[0].getTxProposals({}, (err, txps) => {
+        clients[0].getTxProposals({}, async (err, txps) => {
           should.not.exist(err,err);
-          let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
+          let signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
             should.not.exist(err, err);
             xx.status.should.equal('accepted');
@@ -5106,9 +5106,9 @@ describe('client API', function() {
       });
 
       it('Should send the signed tx in paypro', done => {
-        clients[0].getTxProposals({}, (err, txps) => {
+        clients[0].getTxProposals({}, async (err, txps) => {
           should.not.exist(err);
-          let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
+          let signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
             should.not.exist(err);
             xx.status.should.equal('accepted');
@@ -5273,7 +5273,7 @@ describe('client API', function() {
     var doit = (opts, doNotVerifyPayPro, doBroadcast, done) => {
       helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
         should.not.exist(err);
-        clients[0].getTx(x.id, (err, x2) => {
+        clients[0].getTx(x.id, async (err, x2) => {
           should.not.exist(err);
           x2.creatorName.should.equal('creator');
           x2.message.should.equal('hello');
@@ -5281,7 +5281,7 @@ describe('client API', function() {
           x2.outputs[0].amount.should.equal(10000);
           x2.outputs[0].message.should.equal('world');
           clients[0].doNotVerifyPayPro = doNotVerifyPayPro;
-          let signatures = keys[0].sign(clients[0].getRootPath(), x2);
+          let signatures = await keys[0].sign(clients[0].getRootPath(), x2);
           clients[0].pushSignatures(x2, signatures, (err, txp) => {
             should.not.exist(err);
             txp.status.should.equal('accepted');
@@ -5340,7 +5340,7 @@ describe('client API', function() {
             message: 'hello',
             feePerKb: 100e2
           };
-          helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
+          helpers.createAndPublishTxProposal(clients[0], opts, async (err, txp) => {
             should.not.exist(err);
             txp.requiredRejections.should.equal(1);
             txp.requiredSignatures.should.equal(1);
@@ -5348,7 +5348,7 @@ describe('client API', function() {
             txp.changeAddress.path.should.equal('m/1/0');
             txp.outputs[0].message.should.equal('output 0');
             txp.message.should.equal('hello');
-            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
             clients[0].pushSignatures(txp, signatures, (err, txp) => {
               should.not.exist(err);
               txp.status.should.equal('accepted');
@@ -5387,7 +5387,7 @@ describe('client API', function() {
             feePerKb: 100e2,
             txType: 2
           };
-          helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
+          helpers.createAndPublishTxProposal(clients[0], opts, async (err, txp) => {
             should.not.exist(err);
             txp.requiredRejections.should.equal(1);
             txp.requiredSignatures.should.equal(1);
@@ -5397,7 +5397,7 @@ describe('client API', function() {
             txp.txType.should.equal(2);
             txp.maxGasFee.should.equal(20000);
             txp.priorityGasFee.should.equal(5000);
-            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
             clients[0].pushSignatures(txp, signatures, (err, txp) => {
               should.not.exist(err);
               txp.status.should.equal('accepted');
@@ -5445,7 +5445,7 @@ describe('client API', function() {
 
             let opts2 = opts;
             opts2.nonce = 2;
-            helpers.createAndPublishTxProposal(clients[0], opts2, (err, txp2) => {
+            helpers.createAndPublishTxProposal(clients[0], opts2, async (err, txp2) => {
               should.not.exist(err);
               txp2.requiredRejections.should.equal(1);
               txp2.requiredSignatures.should.equal(1);
@@ -5453,7 +5453,7 @@ describe('client API', function() {
               txp2.outputs[0].message.should.equal('output 0');
               txp2.message.should.equal('hello');
               
-              let signatures = keys[0].sign(clients[0].getRootPath(), txp2);
+              let signatures = await keys[0].sign(clients[0].getRootPath(), txp2);
               clients[0].pushSignatures(txp2, signatures, err => {
                 should.exist(err);
                 done();
@@ -5483,14 +5483,14 @@ describe('client API', function() {
             message: 'hello',
             feePerKb: 100e2
           };
-          helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
+          helpers.createAndPublishTxProposal(clients[0], opts, async (err, txp) => {
             should.not.exist(err);
             txp.requiredRejections.should.equal(1);
             txp.requiredSignatures.should.equal(1);
             txp.status.should.equal('pending');
             txp.outputs[0].message.should.equal('output 0');
             txp.message.should.equal('hello');
-            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
             clients[0].pushSignatures(txp, signatures, (err, txp) => {
               should.not.exist(err);
               txp.status.should.equal('accepted');
@@ -5522,7 +5522,7 @@ describe('client API', function() {
           };
           helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
             should.not.exist(err);
-            clients[0].getStatus({}, (err, st) => {
+            clients[0].getStatus({}, async (err, st) => {
               should.not.exist(err);
               var txp = st.pendingTxps[0];
               txp.status.should.equal('pending');
@@ -5534,11 +5534,11 @@ describe('client API', function() {
               var b = st.balance;
               b.totalAmount.should.equal(1000000000);
               b.lockedAmount.should.equal(1000000000);
-              let signatures = keys[0].sign(clients[0].getRootPath(), txp);
-              clients[0].pushSignatures(txp, signatures, (err, txp) => {
+              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+              clients[0].pushSignatures(txp, signatures, async (err, txp) => {
                 should.not.exist(err, err);
                 txp.status.should.equal('pending');
-                let signatures = keys[1].sign(clients[1].getRootPath(), txp);
+                let signatures = await keys[1].sign(clients[1].getRootPath(), txp);
                 clients[1].pushSignatures(txp, signatures, (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('accepted');
@@ -5567,9 +5567,9 @@ describe('client API', function() {
           };
           helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
             should.not.exist(err);
-            clients[0].rejectTxProposal(txp, 'wont sign', (err, txp) => {
+            clients[0].rejectTxProposal(txp, 'wont sign', async (err, txp) => {
               should.not.exist(err, err);
-              let signatures = keys[1].sign(clients[1].getRootPath(), txp);
+              let signatures = await keys[1].sign(clients[1].getRootPath(), txp);
               clients[1].pushSignatures(txp, signatures, (err, txp) => {
                 should.not.exist(err);
                 done();
@@ -5596,13 +5596,13 @@ describe('client API', function() {
             txp.status.should.equal('pending');
             txp.requiredRejections.should.equal(2);
             txp.requiredSignatures.should.equal(2);
-            clients[0].rejectTxProposal(txp, 'wont sign', (err, txp) => {
+            clients[0].rejectTxProposal(txp, 'wont sign', async (err, txp) => {
               should.not.exist(err, err);
               txp.status.should.equal('pending');
-              let signatures = keys[1].sign(clients[1].getRootPath(), txp);
-              clients[1].pushSignatures(txp, signatures, (err, txp) => {
+              let signatures = await keys[1].sign(clients[1].getRootPath(), txp);
+              clients[1].pushSignatures(txp, signatures, async (err, txp) => {
                 should.not.exist(err);
-                let signatures = keys[2].sign(clients[2].getRootPath(), txp);
+                let signatures = await keys[2].sign(clients[2].getRootPath(), txp);
                 clients[2].pushSignatures(txp, signatures, (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('accepted');
@@ -5636,10 +5636,10 @@ describe('client API', function() {
             txp.requiredRejections.should.equal(2);
             txp.requiredSignatures.should.equal(3);
 
-            clients[0].rejectTxProposal(txp, 'wont sign', (err, txp) => {
+            clients[0].rejectTxProposal(txp, 'wont sign', async (err, txp) => {
               should.not.exist(err, err);
               txp.status.should.equal('pending');
-              let signatures = keys[1].sign(clients[1].getRootPath(), txp);
+              let signatures = await keys[1].sign(clients[1].getRootPath(), txp);
               clients[1].pushSignatures(txp, signatures, (err, txp) => {
                 should.not.exist(err);
                 txp.status.should.equal('pending');
@@ -5666,12 +5666,12 @@ describe('client API', function() {
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello 1-1'
           };
-          helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
+          helpers.createAndPublishTxProposal(clients[0], opts, async (err, txp) => {
             should.not.exist(err);
             txp.status.should.equal('pending');
             txp.requiredRejections.should.equal(2);
             txp.requiredSignatures.should.equal(2);
-            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
             clients[0].pushSignatures(txp, signatures, (err, txp) => {
               should.not.exist(err);
               txp.status.should.equal('pending');
@@ -5760,12 +5760,12 @@ describe('client API', function() {
             };
             helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
               should.not.exist(err);
-              clients[1].rejectTxProposal(txp, 'some reason', (err, txp) => {
+              clients[1].rejectTxProposal(txp, 'some reason', async (err, txp) => {
                 should.not.exist(err);
-                let signatures = keys[2].sign(clients[2].getRootPath(), txp);
-                clients[2].pushSignatures(txp, signatures, (err, txp) => {
+                let signatures = await keys[2].sign(clients[2].getRootPath(), txp);
+                clients[2].pushSignatures(txp, signatures, async (err, txp) => {
                   should.not.exist(err);
-                  let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+                  let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
                   clients[0].pushSignatures(txp, signatures, (err, txp) => {
                     should.not.exist(err);
                     txp.status.should.equal('accepted');
