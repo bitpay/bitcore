@@ -134,7 +134,7 @@ export class RampService {
       'Content-Type': 'application/json'
     };
 
-    let qs = [];
+    let qs: string[] = [];
     qs.push('hostApiKey=' + API_KEY);
     qs.push('selectedCountryCode=' + encodeURIComponent(req.body.selectedCountryCode));
     if (req.body.finalUrl) qs.push('finalUrl=' + encodeURIComponent(req.body.finalUrl));
@@ -174,7 +174,7 @@ export class RampService {
       };
       let URL: string;
 
-      let qs = [];
+      let qs: string[] = [];
       // "Buy" and "Sell" features use the same properties. Use "flow" to target the correct endpoint
       qs.push('hostApiKey=' + API_KEY);
       if (req.body.currencyCode) qs.push('currencyCode=' + encodeURIComponent(req.body.currencyCode));
@@ -218,7 +218,7 @@ export class RampService {
       };
       let URL: string;
 
-      let qs = [];
+      let qs: string[] = [];
       qs.push('secret=' + req.body.saleViewToken);
 
       URL = API + `/host-api/v3/offramp/sale/${req.body.id}?${qs.join('&')}`;
