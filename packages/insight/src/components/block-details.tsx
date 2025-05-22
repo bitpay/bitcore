@@ -167,7 +167,7 @@ const BlockDetails: FC<BlockDetailsProps> = ({currency, network, block}) => {
                   </TileLink>
                 </Tile>
 
-                <SharedTile title='Height' description={summary.height} />
+                <SharedTile title='Height' description={`${summary.height}`} />
 
                 <Tile withBorderBottom>
                   <TileDescription margin='0 1rem 0 0'>Next Block</TileDescription>
