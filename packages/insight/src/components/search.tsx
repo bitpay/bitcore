@@ -41,6 +41,10 @@ const PillBubble = styled.div`
   border-radius: 25px;
   cursor: pointer;
   background: ${Slate30};
+
+  &:hover {
+    background: #C1C4C7;
+  }
 `
 
 interface SearchProps {
