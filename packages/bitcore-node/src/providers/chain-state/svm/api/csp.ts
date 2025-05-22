@@ -36,7 +36,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
 
       try {
         await Promise.race([
-          rpc.rpc.getSlot({ commitment: 'confirmed' }).send(),
+          rpc.connection.getSlot({ commitment: 'confirmed' }).send(),
           new Promise((_, reject) => setTimeout(reject, 5000))
         ]);
         return rpc; // return the first applicable rpc that's responsive
@@ -235,11 +235,11 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         const solTransfers = instructions[instructionKeys.TRANSFER_SOL];
         mainToAddress = solTransfers.find(transfer =>
           transfer.destination !== from)?.destination || null;
-        solTransfers.forEach(transfer => {
+        for (const transfer of solTransfers) {
           if (transfer.destination !== from) {
             recipientAddresses.add(transfer.destination);
           }
-        });
+        };
         value = solTransfers.reduce((sum, transfer) => sum + Number(transfer.amount), 0);
       }
       if (instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.length > 0) {
@@ -248,11 +248,11 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
           mainToAddress = tokenTransfers.find(transfer =>
             transfer.destination !== from)?.destination || null;
         }
-        tokenTransfers.forEach(transfer => {
+        for (const transfer of tokenTransfers) {
           if (transfer.destination !== from) {
             recipientAddresses.add(transfer.destination);
           }
-        });
+        };
       }
 
 
@@ -327,7 +327,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     const { address, network } = params;
     const { rpc } = await this.getRpc(network);
     const balance = await rpc.getBalance({ address })
-    return { confirmed: 0, unconfirmed: 0, balance };
+    return { confirmed: balance, unconfirmed: 0, balance };
   }
 
   async getBlock(params: GetBlockParams): Promise<IBlock> {
