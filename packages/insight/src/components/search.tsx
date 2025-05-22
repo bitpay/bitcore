@@ -164,7 +164,7 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
 
   const Pill: FC<{img?: string, network?: string }> = ({ img, network }) => {
     return (
-      pill ?
+      pill && currency ?
         <PillBubble onClick={() => setPill(false)}>
           <img src={img} style={{height: '120%'}}></img>
           <p style={{textTransform: 'capitalize', color: Black, padding: '2px', paddingLeft: '5px'}}>{network}</p>
