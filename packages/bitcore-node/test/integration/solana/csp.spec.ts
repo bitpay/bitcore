@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { Request, Response } from 'express-serve-static-core';
 import _ from 'lodash';
 import * as sinon from 'sinon';
-import { Transform, Writable } from 'stream';
+import { Writable } from 'stream';
 import { MongoBound } from '../../../src/models/base';
 import { CacheStorage } from '../../../src/models/cache';
 import { IWallet, WalletStorage } from '../../../src/models/wallet';
