@@ -382,7 +382,7 @@ export class Key {
     if (String(algo).toUpperCase() === Constants.ALGOS.EDDSA) {
       const key = this.#getChildKeyEDDSA(password, path);
       return new Bitcore.HDPrivateKey({
-        network: 'livenet',
+        network: NETWORK,
         depth: 1,
         parentFingerPrint: Buffer.from(this.#getFingerprint({ algo }), 'hex'),
         childIndex: 0,

@@ -55,6 +55,46 @@ export class BanxaService {
     return auth;
   }
 
+  banxaGetCoins(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.banxaGetKeys(req);
+      const API = keys.API;
+      const API_KEY = keys.API_KEY;
+      const SECRET_KEY = keys.SECRET_KEY;
+
+      if (!checkRequired(req.body, ['orderType'])) {
+        return reject(new ClientError("Banxa's request missing arguments"));
+      }
+      if (!['buy', 'sell'].includes(req.body.orderType)) {
+        return reject(new ClientError("Banxa's 'orderType' property must be 'sell' or 'buy'"));
+      }
+
+      const UriPath = `/coins/${req.body.orderType}`;
+      const URL: string = API + UriPath;
+      const auth = this.getBanxaSignature('get', UriPath, API_KEY, SECRET_KEY);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${auth}`
+      };
+
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
   banxaGetPaymentMethods(req): Promise<any> {
     return new Promise((resolve, reject) => {
       const keys = this.banxaGetKeys(req);
@@ -62,7 +102,7 @@ export class BanxaService {
       const API_KEY = keys.API_KEY;
       const SECRET_KEY = keys.SECRET_KEY;
 
-      let qs = [];
+      let qs: string[] = [];
       if (req.body.source) qs.push('source=' + req.body.source);
       if (req.body.target) qs.push('target=' + req.body.target);
 
@@ -103,7 +143,7 @@ export class BanxaService {
         return reject(new ClientError("Banxa's request missing arguments"));
       }
 
-      let qs = [];
+      let qs: string[] = [];
       qs.push('source=' + req.body.source);
       qs.push('target=' + req.body.target);
 
@@ -190,7 +230,7 @@ export class BanxaService {
         return reject(new ClientError("Banxa's request missing arguments"));
       }
 
-      let qs = [];
+      let qs: string[] = [];
       if (req.body.fx_currency) qs.push('fx_currency=' + req.body.fx_currency);
 
       const UriPath = `/orders/${req.body.order_id}${qs.length > 0 ? '?' + qs.join('&') : ''}`;
