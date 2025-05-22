@@ -49,8 +49,8 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     logger.info(`Making a new connection for ${this.chain}:${network}`);
     const dataType = params?.type;
     const providerConfig = getProvider({ network, dataType, config: this.config });
-    const subscriptionProvider = this.config[network].subscriptionProvider;
-    const rpcConfig = { ...providerConfig, chain: 'SOL', currencyConfig: {}, wsPort: subscriptionProvider?.port };
+    const wsPort = providerConfig.wsPort ?? providerConfig.port;
+    const rpcConfig = { ...providerConfig, chain: 'SOL', currencyConfig: {}, wsPort };
     const rpc = new CryptoRpc(rpcConfig, {}).get('SOL');
     const rpcObj = {
       rpc,

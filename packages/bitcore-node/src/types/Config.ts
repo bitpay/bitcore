@@ -34,6 +34,7 @@ export interface IProvider {
   protocol: 'http' | 'https' | 'ws' | 'wss' | 'ipc';
   options?: object;
   dataType?: 'realtime' | 'historical' | 'combined';
+  wsPort?: number | string;
 }
 
 export type IExternalSyncConfig<T> = {
