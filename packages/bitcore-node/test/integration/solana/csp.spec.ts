@@ -78,7 +78,7 @@ describe('Solana API', function() {
     sandbox.stub(SOL, 'getRpc').resolves({ rpc });
     
     const balance = await SOL.getBalanceForAddress({ chain, network, address, args: {} });
-    expect(balance).to.deep.eq({ confirmed: 0, unconfirmed: 0, balance: mockedBalance });
+    expect(balance).to.deep.eq({ confirmed: mockedBalance, unconfirmed: 0, balance: mockedBalance });
   });
 
   it('should be able to get address token balance', async () => {
