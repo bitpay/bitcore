@@ -1,29 +1,29 @@
-import {FC, memo} from 'react';
+import {FC, memo, useState} from 'react';
 import {determineInputType, searchValue} from 'src/utilities/search-helper-methods';
 import {useNavigate} from 'react-router-dom';
 import styled, {useTheme} from 'styled-components';
 import SearchLightSvg from 'src/assets/images/search-light.svg';
 import SearchDarkSvg from 'src/assets/images/search-dark.svg';
-import {LightBlack, Slate} from '../assets/styles/colors';
+import {Black, LightBlack, Slate, Slate30} from '../assets/styles/colors';
 import {useAppSelector} from '../utilities/hooks';
 
-interface SearchInputProps {
-  searchIcon: string;
-  borderBottom?: any;
-}
+const HeaderChip = styled.div`
+  margin: 0 0.1rem;
+  background-color: ${Slate30};
+  border-radius: 25px;
+  padding: 0.2rem 0.5rem;
+  color: ${Black};
+  text-transform: capitalize;
+  font-size: 14px;
+`;
 
-const SearchInput = styled.input<SearchInputProps>`
-  background: url(${({searchIcon}) => searchIcon}) no-repeat scroll 7px 7px;
-  padding-left: 40px;
-  border-bottom: ${({borderBottom, theme: {colors}}) =>
-    borderBottom ? `1px solid ${colors.borderColor}` : 'none'};
-  border-top: none;
-  border-left: none;
-  border-right: none;
+const SearchInput = styled.input`
+  background: no-repeat scroll 7px 7px;
+  padding-left: 2px;
+  border: none;
   height: 40px;
   width: 100%;
   font-size: 16px;
-  line-height: 25px;
   color: ${({theme: {dark}}) => (dark ? Slate : LightBlack)};
 
   &:focus-visible {
@@ -35,8 +35,10 @@ const SearchInput = styled.input<SearchInputProps>`
   }
 `;
 
-const SearchForm = styled.form`
+const SearchForm = styled.form<{ borderBottom?: boolean }>`
   width: 100%;
+  border-bottom: ${({borderBottom, theme: {colors}}) =>
+    borderBottom ? `1px solid ${colors.borderColor}` : 'none'};
 `;
 
 interface SearchProps {
@@ -51,6 +53,7 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
 
   const searchIcon = theme.dark ? SearchDarkSvg : SearchLightSvg;
   const searchId = id || 'search';
+  const [pill, setPill] = useState<boolean>(currency != undefined && network != undefined);
 
   const search = async (event: any) => {
     event.preventDefault();
@@ -60,7 +63,8 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
     const searchInputs = await determineInputType(searchVal);
     if (searchInputs.length) {
       try {
-        const val = await searchValue(searchInputs, currency, network);
+        // only search search for the specific chain+network if the pill is present, else search all
+        const val = await searchValue(searchInputs, pill ? currency : undefined, pill ? network : undefined);
         processAllResponse(val, searchVal);
       } catch (e) {
         setErrorMessage('Server error. Please try again');
@@ -151,22 +155,35 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
     }, 3000);
   };
 
+  const Pill: FC<{img?: string, network: string }> = ({ img, network }) => {
+    return (
+      pill ?
+        <span onClick={() => setPill(false)} style={{cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px'}}>
+          <img src={img} style={{padding: '5px', height: '39px'}}></img>
+          <HeaderChip>{network}</HeaderChip>
+        </span>
+      : <></>
+    );
+  }
+
   return (
     <>
-      <SearchForm onSubmit={search}>
+      <SearchForm onSubmit={search} borderBottom={borderBottom}>
+        <span style={{display: 'flex', alignItems: 'center' }}>
+        <img src={searchIcon} style={{padding: 7}}></img>
+        {currency && network ? <Pill img={`https://bitpay.com/img/icon/currencies/${currency}.svg`} network={network} /> : ''}
         <SearchInput
           id={id || 'search'}
           type='text'
           placeholder='Search for block, transaction, or address'
           required
           aria-labelledby='search'
-          searchIcon={searchIcon}
-          borderBottom={borderBottom}
           tabIndex={0}
           autoComplete='off'
           autoCorrect='off'
           spellCheck='false'
         />
+        </span>
       </SearchForm>
     </>
   );
