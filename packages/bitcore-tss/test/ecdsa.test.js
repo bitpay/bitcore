@@ -262,6 +262,17 @@ describe('ECDSA', function() {
                 const evmAddress = CWC.Deriver.getAddress('ETH', 'mainnet', pubkey);
                 assert.strictEqual(evmAddress, vector.evmAddress.address);
               }
+              if (vector.btcAddress) {
+                const xPubKey = new bitcoreLib.HDPublicKey({
+                  network: 'livenet',
+                  depth: 0,
+                  parentFingerPrint: 0,
+                  childIndex: 0,
+                  publicKey: pubkey,
+                  chainCode: chaincode
+                });
+                assert.strictEqual(xPubKey.toString(), vector.btcAddress.xPub);
+              }
             });
           }
         });
