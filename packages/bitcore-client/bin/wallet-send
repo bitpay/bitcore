@@ -71,8 +71,12 @@ const main = async () => {
       params.feeRate = Math.ceil(feeRateParam == null ? (feeRate * scale) : feeRateParam); // convert feeRate from BTC to sats/B
       console.log('Fee rate:', params.feeRate, 'sats/byte');
     } else if (wallet.chain.toUpperCase() === 'SOL') {
-      params.blockHash = blockHash;
-      params.blockHeight = blockNumber;
+      let tip;
+      if (!blockHash || !blockNumber) {
+        tip = await wallet.client.getBlockTip();
+      }
+      params.blockHash = blockHash || tip.hash;
+      params.blockHeight = blockNumber || tip.height;
     } else {
       params.nonce = parseInt(await wallet.getNonce());
       params.feeRate = feeRateParam == null ? feeRate : parseInt(Web3.utils.toWei(feeRateParam.toString(), 'gwei')); // convert feeRateParam from Gwei to Wei

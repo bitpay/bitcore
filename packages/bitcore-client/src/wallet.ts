@@ -706,6 +706,10 @@ export class Wallet {
     return SolKit.getBase58Decoder().decode(signedBytes);
   }
 
+  async getBlockTip() {
+    return this.client.getBlockTip();
+  }
+
   async derivePrivateKey(isChange, addressIndex = this.addressIndex) {
     const keyToImport = await Deriver.derivePrivateKey(
       this.chain,
