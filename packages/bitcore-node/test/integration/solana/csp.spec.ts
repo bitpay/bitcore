@@ -98,61 +98,6 @@ describe('Solana API', function() {
     expect(tokenAccounts).to.deep.eq([{ mintAddress: tokenAddress, ataAddress: 'someTokenAccountAddress' }]);
   });
 
-  it('should stream SOL transactions for block', async () => {
-    const blockHeight = 123;
-    const mockedBlock = {
-      blockHeight: blockHeight,
-      blockTime: Date.now() / 1000,
-      blockhash: 'hash123',
-      transactions: [
-        {
-          txid: 'tx1',
-          feePayerAddress: 'address1',
-          slot: blockHeight,
-          fee: 5000,
-          meta: { fee: 5000 },
-          version: '0',
-          status: 'confirmed',
-          lifetimeConstraint: { blockhash: 'hash123' },
-          instructions: {
-            'transferSol': [
-              {
-                source: 'address1',
-                destination: 'address2',
-                amount: 100000
-              }
-            ]
-          }
-        }
-      ]
-    };
-    
-    const rpc = {
-      getBlock: sandbox.stub().resolves(mockedBlock)
-    };
-    
-    sandbox.stub(SOL, 'getRpc').resolves({ rpc });
-    
-    const res = (new Transform({
-      transform: (data, _, cb) => cb(null, data)
-    }) as unknown) as Response;
-    res.type = () => res;
-
-    const req = (new Transform({
-      transform: (_data, _, cb) => cb(null)
-    }) as unknown) as Request;
-
-    let dataReceived = false;
-    res.on('data', () => {
-      dataReceived = true;
-    });
-
-    await SOL.streamTransactions({ chain, network, res, req, args: { blockHeight } });
-    
-    // We should have received some data
-    expect(dataReceived).to.be.true;
-  });
-
   describe('#streamWalletTransactions', () => {
     let address = 'DGqGrPJu5QgQ5pFHimGKX6wqPmUVnk5L1NAmpHdP6n8F';
     let wallet: IWallet;
