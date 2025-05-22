@@ -107,9 +107,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   async getTransaction(params: StreamTransactionParams): Promise<any | undefined> {
     const { txId, network } = params;
     const { rpc } = await this.getRpc(network);
-    const tx = await rpc.getTransaction(txId, {
-      commitment: 'confirmed',
-    });
+    const tx = await rpc.getTransaction({ txid: txId });
     return this.txTransform(network, { transactions: [tx] });
   }
 
@@ -306,6 +304,25 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       } as any;
     });
   }
+
+  blockTransform(network, block) {
+    const txs = block?.transactions?.map(tx => tx?.transaction?.signatures[0]);
+    return {
+      chain: this.chain,
+      network,
+      height: Number(block?.blockHeight),
+      hash: block?.blockhash,
+      time: new Date(Number(block?.blockTime) * 1000),
+      timeNormalized: new Date(Number(block?.blockTime) * 1000),
+      previousBlockHash: block?.previousBlockHash,
+      transactions: txs,
+      transactionCount: block?.transactions?.length,
+      size: block?.transactions?.length,
+      reward: Number(block?.rewards[0]?.lamports),
+      processed: true,
+    } as IBlock;
+  }
+
   async getBalanceForAddress(params: GetBalanceForAddressParams): Promise<{ confirmed: number; unconfirmed: number; balance: number }> {
     const { address, network } = params;
     const { rpc } = await this.getRpc(network);
@@ -314,9 +331,10 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async getBlock(params: GetBlockParams): Promise<IBlock> {
-    const { height, network } = params;
+    const { height, blockId, network } = params;
     const { rpc } = await this.getRpc(network);
-    return await rpc.getBlock({ height: Number(height) });
+    const block = await rpc.getBlock({ height: Number(height || blockId) });
+    return this.blockTransform(network, block);
   }
 
   async getPriorityFee(params: GetEstimatePriorityFeeParams): Promise<any> {
@@ -384,20 +402,6 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     const { rpc, connection } = await this.getRpc(network);
     const height = await connection.getSlot({ commitment: 'confirmed' }).send();
     const block = await rpc.getBlock({ height });
-    const txs = block?.transactions?.map(tx => tx?.transaction?.signatures[0]);
-    return {
-      chain: this.chain,
-      network,
-      height: Number(block?.blockHeight),
-      hash: block?.blockhash,
-      time: new Date(Number(block?.blockTime) * 1000),
-      timeNormalized: new Date(Number(block?.blockTime) * 1000),
-      previousBlockHash: block?.previousBlockHash,
-      transactions: txs,
-      transactionCount: block?.transactions?.length,
-      size: block?.transactions?.length,
-      reward: Number(block?.rewards[0]?.lamports),
-      processed: true,
-    } as IBlock;
+    return this.blockTransform(network, block);
   }
 }
