@@ -7,16 +7,6 @@ import SearchDarkSvg from 'src/assets/images/search-dark.svg';
 import {Black, LightBlack, Slate, Slate30} from '../assets/styles/colors';
 import {useAppSelector} from '../utilities/hooks';
 
-const HeaderChip = styled.div`
-  margin: 0 0.1rem;
-  background-color: ${Slate30};
-  border-radius: 25px;
-  padding: 0.2rem 0.5rem;
-  color: ${Black};
-  text-transform: capitalize;
-  font-size: 14px;
-`;
-
 const SearchInput = styled.input`
   background: no-repeat scroll 7px 7px;
   padding-left: 2px;
@@ -40,6 +30,16 @@ const SearchForm = styled.form<{ borderBottom?: boolean }>`
   border-bottom: ${({borderBottom, theme: {colors}}) =>
     borderBottom ? `1px solid ${colors.borderColor}` : 'none'};
 `;
+
+const PillBubble = styled.div`
+  padding: 7px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  background: ${Slate30};
+  border-radius: 25px;
+  height: 40px;
+`
 
 interface SearchProps {
   borderBottom?: boolean;
@@ -158,10 +158,10 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
   const Pill: FC<{img?: string, network: string }> = ({ img, network }) => {
     return (
       pill ?
-        <span onClick={() => setPill(false)} style={{cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px'}}>
-          <img src={img} style={{padding: '5px', height: '39px'}}></img>
-          <HeaderChip>{network}</HeaderChip>
-        </span>
+        <PillBubble onClick={() => setPill(false)}>
+          <img src={img} style={{height: '120%'}}></img>
+          <p style={{textTransform: 'capitalize', color: Black, padding: '2px'}}>{network}</p>
+        </PillBubble>
       : <></>
     );
   }
