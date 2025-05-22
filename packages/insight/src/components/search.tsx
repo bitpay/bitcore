@@ -33,12 +33,14 @@ const SearchForm = styled.form<{ borderBottom?: boolean }>`
 
 const PillBubble = styled.div`
   padding: 7px;
-  cursor: pointer;
+  padding-right: 10px;
+  margin-right: 10px;
   display: flex;
   align-items: center;
-  background: ${Slate30};
-  border-radius: 25px;
   height: 40px;
+  border-radius: 25px;
+  cursor: pointer;
+  background: ${Slate30};
 `
 
 interface SearchProps {
@@ -46,6 +48,7 @@ interface SearchProps {
   id?: string;
   setErrorMessage?: any;
 }
+
 const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
   const navigate = useNavigate();
   const theme = useTheme();
@@ -160,7 +163,7 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
       pill ?
         <PillBubble onClick={() => setPill(false)}>
           <img src={img} style={{height: '120%'}}></img>
-          <p style={{textTransform: 'capitalize', color: Black, padding: '2px'}}>{network}</p>
+          <p style={{textTransform: 'capitalize', color: Black, padding: '2px', paddingLeft: '5px'}}>{network}</p>
         </PillBubble>
       : <></>
     );
