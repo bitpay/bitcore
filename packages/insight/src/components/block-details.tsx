@@ -157,7 +157,7 @@ const BlockDetails: FC<BlockDetailsProps> = ({currency, network, block}) => {
 
                 <Tile withBorderBottom>
                   <TileDescription margin='0 1rem 0 0'>Previous Block</TileDescription>
-                  <TileLink value textAlign='right' disabled={!summary.previousBlockHash}>
+                  <TileLink value textAlign='right' disabled={!summary.previousBlockHash || summary.height == 0}>
                     <span
                       onClick={() =>
                         summary.previousBlockHash ? gotoBlock(summary.previousBlockHash) : null
