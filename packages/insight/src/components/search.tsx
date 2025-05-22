@@ -4,6 +4,7 @@ import {useNavigate} from 'react-router-dom';
 import styled, {useTheme} from 'styled-components';
 import SearchLightSvg from 'src/assets/images/search-light.svg';
 import SearchDarkSvg from 'src/assets/images/search-dark.svg';
+import CloseLightSvg from 'src/assets/images/close-light.svg'
 import {Black, LightBlack, Slate, Slate30} from '../assets/styles/colors';
 import {useAppSelector} from '../utilities/hooks';
 
@@ -39,13 +40,21 @@ const PillBubble = styled.div`
   align-items: center;
   height: 40px;
   border-radius: 25px;
-  cursor: pointer;
   background: ${Slate30};
+`;
+
+const PillCloseButtonCircle = styled.div`
+  background-color: #D1D4D7;
+  align-content: center;
+  border-radius: 100%;
+  height: 32px;
+  width: 32px;
+  cursor: pointer;
 
   &:hover {
-    background: #C1C4C7;
+    background-color: #B1B4B7;
   }
-`
+`;
 
 interface SearchProps {
   borderBottom?: boolean;
@@ -165,9 +174,12 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
   const Pill: FC<{img?: string, network?: string }> = ({ img, network }) => {
     return (
       pill && currency ?
-        <PillBubble onClick={() => setPill(false)}>
-          <img src={img} style={{height: '120%'}}></img>
-          <p style={{textTransform: 'capitalize', color: Black, padding: '2px', paddingLeft: '5px'}}>{network}</p>
+        <PillBubble>
+          <img src={img} style={{height: '120%'}} />
+          <p style={{textTransform: 'capitalize', color: Black, padding: '5px'}}>{network}</p>
+          <PillCloseButtonCircle onClick={() => setPill(false)}>
+            <img src={CloseLightSvg} style={{height: '100%', padding: '9px'}} />
+          </PillCloseButtonCircle>
         </PillBubble>
       : <></>
     );
