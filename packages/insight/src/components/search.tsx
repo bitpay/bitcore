@@ -68,7 +68,7 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
 
   const searchIcon = theme.dark ? SearchDarkSvg : SearchLightSvg;
   const searchId = id || 'search';
-  const [pill, setPill] = useState<boolean>(currency != undefined && network != undefined);
+  const [pill, setPill] = useState<boolean>(!currency);
 
   const search = async (event: any) => {
     event.preventDefault();
@@ -79,7 +79,8 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
     if (searchInputs.length) {
       try {
         // only search search for the specific chain+network if the pill is present, else search all
-        const val = await searchValue(searchInputs, pill ? currency : undefined, pill ? network : undefined);
+        const val = pill ? await searchValue(searchInputs, currency, network)
+                         : await searchValue(searchInputs, undefined, undefined);
         processAllResponse(val, searchVal);
       } catch (e) {
         setErrorMessage('Server error. Please try again');
@@ -151,7 +152,7 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
       }
     } else {
       const message = 'No matching records found!';
-      if (currency) {
+      if (currency && pill) {
         // Give the user currency specific error since search is limited to one chain/network
         setErrorMessage(
           `No matching records found on the ${currency} ${network}. Select a different chain or try a different search`,
