@@ -157,17 +157,17 @@ const BlockDetails: FC<BlockDetailsProps> = ({currency, network, block}) => {
 
                 <Tile withBorderBottom>
                   <TileDescription margin='0 1rem 0 0'>Previous Block</TileDescription>
-                  <TileLink value textAlign='right' disabled={!summary.previousBlockHash}>
+                  <TileLink value textAlign='right' disabled={!summary.previousBlockHash || summary.height === 0}>
                     <span
                       onClick={() =>
                         summary.previousBlockHash ? gotoBlock(summary.previousBlockHash) : null
                       }>
-                      {summary.height - 1}
+                      {(summary.height > 0) ? summary.height - 1 : "None"}
                     </span>
                   </TileLink>
                 </Tile>
 
-                <SharedTile title='Height' description={summary.height} />
+                <SharedTile title='Height' description={`${summary.height}`} />
 
                 <Tile withBorderBottom>
                   <TileDescription margin='0 1rem 0 0'>Next Block</TileDescription>
