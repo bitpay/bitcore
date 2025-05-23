@@ -1,4 +1,4 @@
-import {FC, memo, useState} from 'react';
+import {FC, memo} from 'react';
 import {determineInputType, searchValue} from 'src/utilities/search-helper-methods';
 import {useNavigate} from 'react-router-dom';
 import styled, {useTheme} from 'styled-components';
@@ -56,7 +56,7 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
     const searchInputs = await determineInputType(searchVal);
     if (searchInputs.length) {
       try {
-        const val = await searchValue(searchInputs, currency, network)
+        const val = await searchValue(searchInputs, currency, network);
         processAllResponse(val, searchVal);
       } catch (e) {
         setErrorMessage('Server error. Please try again');
