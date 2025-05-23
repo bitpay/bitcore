@@ -18,7 +18,7 @@ const feeModes = {
 
 router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, res: Response) => {
   let { chain, network, target } = req.params;
-  let { mode, txType } = req.query as QueryType & { mode?: FeeMode };
+  let { mode, txType, signatures } = req.query as QueryType & { mode?: FeeMode };
   if (!chain || !network) {
     return res.status(400).send('Missing required param');
   }
@@ -26,6 +26,7 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
   chain = chain.toUpperCase();
   network = network.toLowerCase();
   mode = mode?.toUpperCase() as FeeMode;
+  const numSignatures = Number(signatures) || 1;
   const targetNum = Number(target);
   if (targetNum < 0 || targetNum > 100) {
     return res.status(400).send('invalid target specified');
@@ -43,12 +44,13 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
   let feeCacheKey = `${chain}:${network}:${target}`;
   feeCacheKey += `${mode ? ':' + mode : ''}`;
   feeCacheKey += `${txType ? ':type' + txType : ''}`;
+  feeCacheKey += `${signatures ? ':' + numSignatures : ''}`;
   const cachedFee = feeCache[feeCacheKey];
   if (cachedFee && cachedFee.date > Date.now() - 10 * 1000) {
     return res.json(cachedFee.fee);
   }
   try {
-    let fee = await ChainStateProvider.getFee({ chain, network, target: targetNum, mode, txType });
+    let fee = await ChainStateProvider.getFee({ chain, network, target: targetNum, mode, txType, signatures: numSignatures });
     if (!fee) {
       return res.status(404).send('not available right now');
     }
@@ -60,7 +62,7 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
     feeCache[feeCacheKey] = { fee, date: Date.now() };
     return res.json(fee);
   } catch (err: any) {
-    logger.error('Fee Error: %o', err.message || err);
+    logger.error('Fee Error: %o', err.stackk || err.message || err);
     return res.status(500).send('Error getting fee from RPC');
   }
 });

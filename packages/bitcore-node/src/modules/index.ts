@@ -55,7 +55,8 @@ class ModuleManager extends BaseModule {
     BCH: './bitcoin-cash',
     DOGE: './dogecoin',
     LTC: './litecoin',
-    XRP: './ripple'
+    XRP: './ripple',
+    SOL: './solana'
   };
 
   loadConfigured(params: Partial<ChainNetwork> = {}) {
