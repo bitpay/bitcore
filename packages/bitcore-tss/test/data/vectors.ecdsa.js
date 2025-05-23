@@ -9,6 +9,9 @@ module.exports.vectors = [
     evmAddress: {
       address: '0xD57cF5ac4CC763D83E0892a07a02fE1BBD123b27'
     },
+    btcAddress: {
+      xPub: 'xpub661MyMwAqRbcGvRAUJpL6nMhYqanMb6xT7fJw7au2CxhA4Ye661AS6JHze8vGLdaxsxwmqw7g8iXKJn4TgC4Rzq87GueZbzzv1jz6XMsnr2',
+    },
     party0: {
       seed: Buffer.from('0d18dd84ff2e7e462bdca9fb362dce0590badac80438234a6be4b859d674355d', 'hex'),
       keychain: twoOfThree.party0Key,
@@ -206,6 +209,9 @@ module.exports.vectors = [
     evmAddress: {
       address: '0xD57cF5ac4CC763D83E0892a07a02fE1BBD123b27'
     },
+    btcAddress: {
+      xPub: 'xpub661MyMwAqRbcGMxfc55KDe3yBDLATHWyyERQuybvR7umom3z8QAQB9q2zDB1GQcnvcJfhiytC5sBxt8HsGLq3823rvNMEdp2sRZWHCpbvow',
+    },
     party0: {
       seed: Buffer.from('0d18dd84ff2e7e462bdca9fb362dce0590badac80438234a6be4b859d674355d', 'hex'),
       keychain: threeOfThree.party0Key,
@@ -402,6 +408,9 @@ module.exports.vectors = [
     n: 4,
     evmAddress: {
       address: '0xEa08Bdc953DFd1Fd017c3Bb17B781Be13A830aD7'
+    },
+    btcAddress: {
+      xPub: 'xpub661MyMwAqRbcEdUKkUS4CfQNmWXn74P1HM9GPsKtkhgFL6GfJNH4QZJ9XeYibd6mtCn35yzsx5i2BQXY9Tqd6YPaXaMsbnpmBw9AWuNwNCB',
     },
     party0: {
       seed: Buffer.from('0d18dd84ff2e7e462bdca9fb362dce0590badac80438234a6be4b859d674355d', 'hex'),
