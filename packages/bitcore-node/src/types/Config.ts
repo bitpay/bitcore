@@ -67,7 +67,6 @@ export interface ISVMNetworkConfig extends INetworkConfig {
   syncStartHeight?: number; // Start syncing from this block height
   providers?: IProvider[]; // Multiple providers can be configured to load balance for the syncing threads
   provider?: IProvider;
-  subscriptionProvider?: IProvider;
 }
 
 export interface ConfigType {
@@ -126,11 +125,6 @@ export interface ConfigType {
       webhookBaseUrl?: string;
       streamSecret?: string;
       webhookCors?: object; // default: { origin: ['*'] }
-    },
-    quicknode: {
-      apiKey: string;
-      webhookBaseUrl?: string;
-      streamSecret?: string;
     }
   };
 }
