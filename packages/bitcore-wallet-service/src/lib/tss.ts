@@ -7,7 +7,15 @@ import { checkRequired, WalletService } from './server';
 import { Storage } from './storage';
 
 class TssKeyGenClass {
-   async getMessagesForParty(params: { id: string; round: number | string; copayerId: string; }): Promise<{ messages?: ITssKeyMessageObject[]; publicKey?: string; }> {
+   async getMessagesForParty(params: {
+    id: string;
+    round: number | string;
+    copayerId: string;
+  }): Promise<{
+    messages?: ITssKeyMessageObject[];
+    publicKey?: string;
+    hasKeyBackup?: boolean;
+  }> {
     const { id, round, copayerId } = params;
     
     const storage = WalletService.getStorage();
@@ -34,7 +42,7 @@ class TssKeyGenClass {
       for (const m of messages) {
         m.p2pMessages = m.p2pMessages.filter(m => m.to == partyId);
       }
-      return { messages, publicKey: session.sharedPublicKey };
+      return { messages, publicKey: session.sharedPublicKey, hasKeyBackup: !!session.keyShares?.[partyId] };
     }
     return {};
   }
@@ -168,9 +176,9 @@ class TssKeyGenClass {
     }
   }
 
-  async storePublicKey(params: { id: string; message: Partial<ITssKeyMessageObject>; }) {
-    const { id, message } = params;
-    const { publicKey } = message;
+  async storeKey(params: { id: string; message: Partial<ITssKeyMessageObject> & { encryptedKeyChain: string; }; copayerId: string; }) {
+    const { id, message, copayerId } = params;
+    const { publicKey, encryptedKeyChain } = message;
     if (!publicKey) {
       throw Errors.TSS_GENERIC_ERROR.withMessage('No public key provided');
     }
@@ -181,10 +189,23 @@ class TssKeyGenClass {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
 
-    const result = await storage.storeTssKeySharedPubKey({ id, publicKey });
-    if (!result.result.ok) {
-      logger.error('Failed to store TSS key generation public key %o %o', id, result);
-      throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS key generation public key');
+    if (!session.sharedPublicKey) {
+      const result = await storage.storeTssKeySharedPubKey({ id, publicKey });
+
+      if (!result.result.ok) {
+        logger.error('Failed to store TSS key generation public key %o %o', id, result);
+        throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS key generation public key');
+      }
+    }
+
+    if (encryptedKeyChain) {
+      const partyId = session.participants.indexOf(copayerId);
+      const result = await storage.storeTssKeyShare({ id, partyId, encryptedKeyChain });
+
+      if (!result.result.ok) {
+        logger.error('Failed to store TSS key generation public key %o %o', id, result);
+        throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS key generation public key');
+      }
     }
   }
 };

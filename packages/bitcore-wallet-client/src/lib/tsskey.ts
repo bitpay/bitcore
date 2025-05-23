@@ -25,6 +25,12 @@ export interface ITssKeyGenConstructorParams {
    * For testing only
    */
   request?: Request;
+  /**
+   * Backup your encrypted key share to the server.
+   * This allows for portability and recoverability with your xPrivKey.
+   * Default: true
+   */
+  backupKeyShare?: boolean;
 };
 
 export interface ITssKey extends Key {
@@ -97,6 +103,7 @@ export class TssKey extends Key implements ITssKey {
 export class TssKeyGen extends EventEmitter {
   #request: Request;
   #key: Key;
+  #xPrivKey: string;
   #keygen: ECDSA.KeyGen;
   #seed: string;
   #credentials: Credentials;
@@ -107,6 +114,7 @@ export class TssKeyGen extends EventEmitter {
   m: number;
   n: number;
   partyId: number;
+  backupKeyShare: boolean;
 
 
   /**
@@ -124,12 +132,13 @@ export class TssKeyGen extends EventEmitter {
       r: params.request, // For testing only
     });
     this.#key = params.key;
-    const _xPrivKey = this.#key.get(params.password).xPrivKey;
-    const _seed = BitcoreLib.HDPrivateKey.fromString(_xPrivKey);
+    this.#xPrivKey = this.#key.get(params.password).xPrivKey;
+    const _seed = BitcoreLib.HDPrivateKey.fromString(this.#xPrivKey);
     this.#seed = BitcoreLib.crypto.Hash.sha256(_seed.toBuffer());
     this.#credentials = this.#key.createCredentials(params.password, { network: 'livenet', n: 1, account: 0 });
     this.#request.setCredentials(this.#credentials);
     this.#requestPrivateKey = BitcoreLib.PrivateKey.fromString(this.#credentials.requestPrivKey);
+    this.backupKeyShare = !!params.backupKeyShare || true;
   }
 
   /**
@@ -314,8 +323,14 @@ export class TssKeyGen extends EventEmitter {
         const key = this.getKeyChain();
         if (key) {
           this.emit('keychain', key);
-          if (!body.publicKey) {
-            await this.#request.post(`/v1/tss/keygen/${this.id}/store`, { publicKey: key.keychain.commonKeyChain });
+          if (!body.publicKey || (!body.hasKeyBackup && this.backupKeyShare)) {
+            const encryptedKeyChain = ECIES.encrypt({
+              message: key.keychain.privateKeyShare.toString('base64') + ':' + key.keychain.reducedPrivateKeyShare.toString('base64'),
+              publicKey: new BitcoreLib.HDPrivateKey(this.#xPrivKey).publicKey,
+              privateKey: new BitcoreLib.HDPrivateKey(this.#xPrivKey).privateKey,
+              opts: { noKey: true }
+            }).toString('base64');
+            await this.#request.post(`/v1/tss/keygen/${this.id}/store`, { publicKey: key.keychain.commonKeyChain, encryptedKeyChain });
           }
           this.emit('complete');
           if (iterHandler) iterHandler();

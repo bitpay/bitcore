@@ -1826,6 +1826,18 @@ export class Storage {
     );
   }
 
+  async storeTssKeyShare({ id, partyId, encryptedKeyChain }: { id: string; partyId: number; encryptedKeyChain: string; }) {
+    return this.db.collection(collections.TSS_KEYGEN).updateOne(
+      { id },
+      {
+        $set: {
+          [`keyShares.${partyId}`]: encryptedKeyChain
+        }
+      },
+      { upsert: false }
+    );
+  }
+
   async fetchTssSigSession({ id }: { id: string; }) {
     const doc = await this.db.collection(collections.TSS_SIGN).findOne({ id });
     if (!doc) {

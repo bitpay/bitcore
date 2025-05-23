@@ -64,6 +64,18 @@ export interface ITssKeyGenModel {
    */
   joinPassword?: string;
   /**
+   * Key shares for each participant encrypted to themseleves.
+   */
+  keyShares?: Array<string>;
+  /**
+   * Timestamp the session was created
+   */
+  createdOn: number;
+  /**
+   * 
+   */
+  timeLimit?: number;
+  /**
    * The mongo doc version
    */
   __v: number;
@@ -80,6 +92,9 @@ export class TssKeyGenModel implements ITssKeyGenModel {
   sharedPublicKey?: string;
   schemeVersion: number;
   joinPassword?: string;
+  keyShares?: Array<string>;
+  createdOn: number;
+  timeLimit?: number;
   __v: number;
 
 
@@ -98,7 +113,10 @@ export class TssKeyGenModel implements ITssKeyGenModel {
       fromPartyId: partyId,
       messages: message
     }]];
-    x.joinPassword = passwordHash
+    x.joinPassword = passwordHash;
+    x.keyShares = new Array(n);
+    x.createdOn = Date.now();
+    x.timeLimit = null; // TODO - add a session time limit
     x.__v = 0;
     return x;
   }
@@ -112,6 +130,9 @@ export class TssKeyGenModel implements ITssKeyGenModel {
     x.rounds = obj.rounds;
     x.sharedPublicKey = obj.sharedPublicKey;
     x.joinPassword = obj.joinPassword;
+    x.keyShares = obj.keyShares;
+    x.createdOn = obj.createdOn;
+    x.timeLimit = obj.timeLimit;
     x.__v = obj.__v;
     return x;
   }

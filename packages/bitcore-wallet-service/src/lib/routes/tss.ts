@@ -47,9 +47,10 @@ export class TssRouter {
     router.post('/v1/tss/keygen/:id/store', authTssRequest(), async function(req, res) {
       try {
         const id = req.params.id;
+        const copayerId = req.headers['x-identity'];
         const message = req.body;
 
-        await TssKeyGen.storePublicKey({ id, message });
+        await TssKeyGen.storeKey({ id, message, copayerId });
         return res.send();
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);

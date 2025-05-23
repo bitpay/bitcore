@@ -7,6 +7,7 @@ const request = require('supertest');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const { ECIES } = require('bitcore-tss');
 const { Request } = require('../ts_build/lib/request');
 const { BitcoreLib } = require('crypto-wallet-core');
 const { TssKeyGen, TssKey } = require('../ts_build/lib/tsskey');
@@ -336,6 +337,36 @@ describe('TSS', function() {
       const key = tss0.getKeyChain();
       should.exist(key);
       key.keychain.commonKeyChain.should.equal(session.sharedPublicKey);
+    });
+
+    it(happyPath('should have stored the encrypted key shares'), async function() {
+      const session = await storage.fetchTssKeyGenSession({ id: tss0.id });
+      session.keyShares.length.should.equal(n);
+
+      const key0 = tss0.getKeyChain();
+      const hdKey0 = new BitcoreLib.HDPrivateKey(party0Key.get().xPrivKey);
+      const expected0 = key0.keychain.privateKeyShare.toString('base64') + ':' + key0.keychain.reducedPrivateKeyShare.toString('base64');
+      ECIES.decrypt({
+        payload: Buffer.from(session.keyShares[0], 'base64'),
+        privateKey: hdKey0.privateKey,
+        publicKey: hdKey0.publicKey
+      }).toString().should.equal(expected0);
+      const key1 = tss1.getKeyChain();
+      const hdKey1 = new BitcoreLib.HDPrivateKey(party1Key.get().xPrivKey);
+      const expected1 = key1.keychain.privateKeyShare.toString('base64') + ':' + key1.keychain.reducedPrivateKeyShare.toString('base64');
+      ECIES.decrypt({
+        payload: Buffer.from(session.keyShares[1], 'base64'),
+        privateKey: hdKey1.privateKey,
+        publicKey: hdKey1.publicKey
+      }).toString().should.equal(expected1);
+      const key2 = tss2.getKeyChain();
+      const hdKey2 = new BitcoreLib.HDPrivateKey(party2Key.get().xPrivKey);
+      const expected2 = key2.keychain.privateKeyShare.toString('base64') + ':' + key2.keychain.reducedPrivateKeyShare.toString('base64');
+      ECIES.decrypt({
+        payload: Buffer.from(session.keyShares[2], 'base64'),
+        privateKey: hdKey2.privateKey,
+        publicKey: hdKey2.publicKey
+      }).toString().should.equal(expected2);
     });
 
     it('should not export a completed session', function() {

@@ -29,12 +29,12 @@ function KDF(privateKey, publicKey) {
  * @param {Buffer|string} params.message Message to be encrypted.
  * @param {PublicKey} params.publicKey Receipient's public key is used to encrypt the message.
  * @param {PrivateKey} params.privateKey Your private key is used to sign the payload.
- * @param {Buffer} [params.ivbuf] (optional) 16-byte initialization vector (IV) Buffer to be used in AES-CBC.
+ * @param {Buffer} [params.ivbuf] 16-byte initialization vector (IV) Buffer to be used in AES-CBC.
  *                    By default, `ivbuf` is randomly generated.
- * @param {object} params.opts (optional) Options object. Every field is optional.
- * @param {boolean} params.opts.noKey Do not include pubkey in the output.
- * @param {boolean} params.opts.shortTag Use 4-byte tag instead of 32-byte. This must be communicated to the payload recipient.
- * @param {boolean} params.opts.deterministicIv Compute IV deterministically from message and private key using HMAC-SHA256.
+ * @param {object} [params.opts] Options object. Every field is optional.
+ * @param {boolean} [params.opts.noKey] Do not include pubkey in the output.
+ * @param {boolean} [params.opts.shortTag] Use 4-byte tag instead of 32-byte. This must be communicated to the payload recipient.
+ * @param {boolean} [params.opts.deterministicIv] Compute IV deterministically from message and private key using HMAC-SHA256.
  *                    A deterministic IV enables end-to-end test vectors for alternative implementations.
  *                    Note that identical messages have identical ciphertexts. If it is important to not allow an attacker
  *                    to learn that a message is repeated, then you should leave opts.deterministicIv to false, pass in a custom IV
@@ -85,12 +85,12 @@ function encrypt({ message, publicKey, privateKey, ivbuf, opts = {} }) {
 /**
  * Decrypt the payload
  * @param {object} params
- * @param {Buffer} params.payload - Encrypted payload buffer.
- * @param {PrivateKey} params.privateKey - Your private key is used to decrypt the payload.
- * @param {PublicKey} params.publicKey - Sender's public key is used to verify the payload.
+ * @param {Buffer} params.payload Encrypted payload buffer.
+ * @param {PrivateKey} params.privateKey Your private key is used to decrypt the payload.
+ * @param {PublicKey} params.publicKey Sender's public key is used to verify the payload.
  *                              *Only* include this if the encrypter specified the `noKey` option, otherwise the public key is included in the payload.
- * @param {object} params.opts (optional) Options object. Every field is optional.
- * @param {boolean} params.opts.shortTag - Use 4-byte tag instead of 32-byte.
+ * @param {object} [params.opts] Options object. Every field is optional.
+ * @param {boolean} [params.opts.shortTag] - Use 4-byte tag instead of 32-byte.
  *                              This was decided during encryption and must be communicated by the sender.
  * @returns {Buffer} Decrypted message buffer.
  */
