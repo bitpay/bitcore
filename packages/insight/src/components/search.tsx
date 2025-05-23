@@ -9,7 +9,7 @@ import {Black, LightBlack, Slate, Slate30} from '../assets/styles/colors';
 import {useAppSelector} from '../utilities/hooks';
 
 const SearchInput = styled.input`
-  background: no-repeat scroll 7px 7px;
+  background: none;
   padding-left: 2px;
   border: none;
   height: 40px;
@@ -45,7 +45,6 @@ const PillBubble = styled.div`
 
 const PillCloseButtonCircle = styled.div`
   background-color: #D1D4D7;
-  align-content: center;
   border-radius: 100%;
   height: 32px;
   width: 32px;
