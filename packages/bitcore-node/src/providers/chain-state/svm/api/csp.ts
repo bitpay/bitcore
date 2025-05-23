@@ -36,7 +36,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
 
       try {
         await Promise.race([
-          rpc.rpc.getSlot({ commitment: 'confirmed' }).send(),
+          rpc.connection.getSlot({ commitment: 'confirmed' }).send(),
           new Promise((_, reject) => setTimeout(reject, 5000))
         ]);
         return rpc; // return the first applicable rpc that's responsive
@@ -49,8 +49,8 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     logger.info(`Making a new connection for ${this.chain}:${network}`);
     const dataType = params?.type;
     const providerConfig = getProvider({ network, dataType, config: this.config });
-    const subscriptionProvider = this.config[network].subscriptionProvider;
-    const rpcConfig = { ...providerConfig, chain: 'SOL', currencyConfig: {}, wsPort: subscriptionProvider?.port };
+    const wsPort = providerConfig.wsPort ?? providerConfig.port;
+    const rpcConfig = { ...providerConfig, chain: 'SOL', currencyConfig: {}, wsPort };
     const rpc = new CryptoRpc(rpcConfig, {}).get('SOL');
     const rpcObj = {
       rpc,
@@ -222,7 +222,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       const date = new Date((blockTime || 0) * 1000);
       const status = tx.status || txStatus?.confirmationStatus;
       const error = meta?.err || txStatus?.err;
-      const transactionError = error ? { error: JSON.stringify(error) } : null;
+      const transactionError = error ? { error: JSON.stringify(error, (_, v) => typeof v === 'bigint' ? v.toString() : v) } : null;
       const txType = version;
       const instructions = tx.instructions;
       const fee = meta?.fee;
@@ -235,11 +235,11 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         const solTransfers = instructions[instructionKeys.TRANSFER_SOL];
         mainToAddress = solTransfers.find(transfer =>
           transfer.destination !== from)?.destination || null;
-        solTransfers.forEach(transfer => {
+        for (const transfer of solTransfers) {
           if (transfer.destination !== from) {
             recipientAddresses.add(transfer.destination);
           }
-        });
+        };
         value = solTransfers.reduce((sum, transfer) => sum + Number(transfer.amount), 0);
       }
       if (instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.length > 0) {
@@ -248,11 +248,11 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
           mainToAddress = tokenTransfers.find(transfer =>
             transfer.destination !== from)?.destination || null;
         }
-        tokenTransfers.forEach(transfer => {
+        for (const transfer of tokenTransfers) {
           if (transfer.destination !== from) {
             recipientAddresses.add(transfer.destination);
           }
-        });
+        };
       }
 
 
@@ -324,10 +324,27 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async getBalanceForAddress(params: GetBalanceForAddressParams): Promise<{ confirmed: number; unconfirmed: number; balance: number }> {
-    const { address, network } = params;
-    const { rpc } = await this.getRpc(network);
-    const balance = await rpc.getBalance({ address })
-    return { confirmed: 0, unconfirmed: 0, balance };
+    const { address, network, args } = params;
+    const { rpc, connection } = await this.getRpc(network);
+    const tokenAddress = args?.tokenAddress || args?.mintAddress;
+    const cacheKey = tokenAddress
+      ? `getBalanceForAddress-SOL-${network}-${address}-${tokenAddress.toLowerCase()}`
+      : `getBalanceForAddress-SOL-${network}-${address}`;
+    return await CacheStorage.getGlobalOrRefresh(
+      cacheKey,
+      async () => {
+        if (tokenAddress) {
+          const ata = await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
+          const { value } = await connection.getTokenAccountBalance(ata).send()
+          const balance = value?.amount || 0;
+          return { confirmed: balance, unconfirmed: 0, balance };
+        } else {
+          const balance = await rpc.getBalance({ address })
+          return { confirmed: balance, unconfirmed: 0, balance };
+        }
+      },
+      CacheStorage.Times.Minute
+    );
   }
 
   async getBlock(params: GetBlockParams): Promise<IBlock> {

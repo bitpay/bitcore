@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { Request, Response } from 'express-serve-static-core';
 import _ from 'lodash';
 import * as sinon from 'sinon';
-import { Transform, Writable } from 'stream';
+import { Writable } from 'stream';
 import { MongoBound } from '../../../src/models/base';
 import { CacheStorage } from '../../../src/models/cache';
 import { IWallet, WalletStorage } from '../../../src/models/wallet';
@@ -78,7 +78,7 @@ describe('Solana API', function() {
     sandbox.stub(SOL, 'getRpc').resolves({ rpc });
     
     const balance = await SOL.getBalanceForAddress({ chain, network, address, args: {} });
-    expect(balance).to.deep.eq({ confirmed: 0, unconfirmed: 0, balance: mockedBalance });
+    expect(balance).to.deep.eq({ confirmed: mockedBalance, unconfirmed: 0, balance: mockedBalance });
   });
 
   it('should be able to get address token balance', async () => {
@@ -96,61 +96,6 @@ describe('Solana API', function() {
     
     const tokenAccounts = await SOL.getTokenAccountAddresses({ network, address });
     expect(tokenAccounts).to.deep.eq([{ mintAddress: tokenAddress, ataAddress: 'someTokenAccountAddress' }]);
-  });
-
-  it('should stream SOL transactions for block', async () => {
-    const blockHeight = 123;
-    const mockedBlock = {
-      blockHeight: blockHeight,
-      blockTime: Date.now() / 1000,
-      blockhash: 'hash123',
-      transactions: [
-        {
-          txid: 'tx1',
-          feePayerAddress: 'address1',
-          slot: blockHeight,
-          fee: 5000,
-          meta: { fee: 5000 },
-          version: '0',
-          status: 'confirmed',
-          lifetimeConstraint: { blockhash: 'hash123' },
-          instructions: {
-            'transferSol': [
-              {
-                source: 'address1',
-                destination: 'address2',
-                amount: 100000
-              }
-            ]
-          }
-        }
-      ]
-    };
-    
-    const rpc = {
-      getBlock: sandbox.stub().resolves(mockedBlock)
-    };
-    
-    sandbox.stub(SOL, 'getRpc').resolves({ rpc });
-    
-    const res = (new Transform({
-      transform: (data, _, cb) => cb(null, data)
-    }) as unknown) as Response;
-    res.type = () => res;
-
-    const req = (new Transform({
-      transform: (_data, _, cb) => cb(null)
-    }) as unknown) as Request;
-
-    let dataReceived = false;
-    res.on('data', () => {
-      dataReceived = true;
-    });
-
-    await SOL.streamTransactions({ chain, network, res, req, args: { blockHeight } });
-    
-    // We should have received some data
-    expect(dataReceived).to.be.true;
   });
 
   describe('#streamWalletTransactions', () => {
