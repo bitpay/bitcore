@@ -1,21 +1,20 @@
 import * as async from 'async';
-import {
-  Constants as ConstantsCWC,
-  Validation
-} from 'crypto-wallet-core';
-import * as _ from 'lodash';
-import Moralis from 'moralis';
-import 'source-map-support/register';
-import config from '../config';
-import logger from './logger';
 import Bitcore from 'bitcore-lib';
 import BitcoreCash from 'bitcore-lib-cash';
 import BitcoreDoge from 'bitcore-lib-doge';
 import BitcoreLtc from 'bitcore-lib-ltc';
+import {
+  Constants as ConstantsCWC,
+  Validation
+} from 'crypto-wallet-core';
 import EmailValidator from 'email-validator';
+import * as _ from 'lodash';
+import Moralis from 'moralis';
 import { singleton } from 'preconditions';
 import _request from 'request';
+import 'source-map-support/register';
 import Uuid from 'uuid';
+import config from '../config';
 import { serverMessages as deprecatedServerMessage } from '../deprecated-serverMessages';
 import { BanxaService } from '../externalservices/banxa';
 import { ChangellyService } from '../externalservices/changelly';
@@ -38,6 +37,7 @@ import { ClientError } from './errors/clienterror';
 import { Errors } from './errors/errordefinitions';
 import { FiatRateService } from './fiatrateservice';
 import { Lock } from './lock';
+import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import {
   Advertisement,
