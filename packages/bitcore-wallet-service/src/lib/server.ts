@@ -654,22 +654,25 @@ export class WalletService implements IWalletService {
       return cb(new ClientError('Invalid public key'));
     }
 
-    if (opts.n > 1 && !ChainService.supportsMultisig(opts.chain) && !ChainService.supportsThresholdsig(opts.chain)) {
-      return cb(new ClientError('Multisig wallets are not supported for this chain'));
-    }
+    if (opts.n > 1) {
+      const multisig = ChainService.supportsMultisig(opts.chain);
+      const thresholdsig = ChainService.supportsThresholdsig(opts.chain);
+      if (!multisig && !thresholdsig) {
+        return cb(new ClientError('Multisig wallets are not supported for this chain'));
+      }
+      if (!multisig && !opts.tssKeyId) {
+        return cb(new ClientError('TSS key session id is required for this chain'));
+      }
+      if (opts.tssKeyId) {
+        opts.tssVersion = opts.tssVersion || Defaults.TSS_KEYGEN_SCHEME_VERSION;
+        if (!(opts.tssVersion > 0 && opts.tssVersion <= Constants.TSS_KEYGEN_SCHEME_VERSION_MAX)) {
+          return cb(new ClientError('Invalid TSS version'));
+        }
 
-    if (opts.n > 1 && !ChainService.supportsMultisig(opts.chain) && !opts.tssVersion) {
-      opts.tssVersion = Defaults.TSS_KEYGEN_SCHEME_VERSION;
-    }
-
-    if (opts.tssVersion && !(opts.tssVersion > 0 && opts.tssVersion <= Constants.TSS_KEYGEN_SCHEME_VERSION_MAX)) {
-      return cb(new ClientError('Invalid TSS version'));
-    }
-
-    if (opts.tssVersion) {
-      const keySession = await storage.fetchTssKeyGenSession({ id: opts.tssKeyId });
-      if (!keySession || !keySession.sharedPublicKey) {
-        return cb(new ClientError('Invalid TSS key session id'));
+        const keySession = await storage.fetchTssKeyGenSession({ id: opts.tssKeyId });
+        if (!keySession || !keySession.sharedPublicKey) {
+          return cb(new ClientError('Invalid TSS key session id'));
+        }
       }
     }
 
