@@ -128,7 +128,8 @@ const helpers = {
         network: network,
         singleAddress: !!opts.singleAddress,
         doNotCheck: true,
-        useNativeSegwit: !!opts.useNativeSegwit
+        useNativeSegwit: !!opts.useNativeSegwit,
+        tssKeyId: opts.tssKeyId
       },
       (err, secret) => {
         if (err) console.log(err);

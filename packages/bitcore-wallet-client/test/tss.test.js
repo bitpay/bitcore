@@ -13,7 +13,6 @@ const { TssKeyGen, TssKey } = require('../ts_build/lib/tsskey');
 const { TssSign } = require('../ts_build/lib/tsssign');
 const log = require('../ts_build/lib/log').default;
 const Client = require('../ts_build').default;
-const { Credentials } = require('../ts_build/lib/credentials');
 const {
   helpers,
   blockchainExplorerMock
@@ -490,15 +489,12 @@ describe('TSS', function() {
     let sig1;
     let export0;
     let export1;
-    let party0Key;
-    let party1Key;
-    let party2Key;
     let party0Creds;
     let party1Creds;
     let party2Creds;
-    let party0Tss;
-    let party1Tss;
-    let party2Tss;
+    let party0TssKey;
+    let party1TssKey;
+    let party2TssKey;
     const message = 'hello world';
 
     function objToBuf(key, value) {
@@ -509,22 +505,42 @@ describe('TSS', function() {
     };
 
     before(function(done) {
-      ({ key: party0Key, tss: party0Tss } = JSON.parse(fs.readFileSync(`${datadir}/tss-party0.json`).toString(), objToBuf));
-      ({ key: party1Key, tss: party1Tss } = JSON.parse(fs.readFileSync(`${datadir}/tss-party1.json`).toString(), objToBuf));
-      ({ key: party2Key, tss: party2Tss } = JSON.parse(fs.readFileSync(`${datadir}/tss-party2.json`).toString(), objToBuf));
-      party0Key = new Key({ seedType: 'object', seedData: party0Key });
-      party1Key = new Key({ seedType: 'object', seedData: party1Key });
-      party2Key = new Key({ seedType: 'object', seedData: party2Key });
-      party0Creds = party0Key.createCredentials(null, { coin: 'eth', network: 'testnet', m, n, account: 0 });
-      party1Creds = party1Key.createCredentials(null, { coin: 'eth', network: 'testnet', m, n, account: 0 });
-      party2Creds = party2Key.createCredentials(null, { coin: 'eth', network: 'testnet', m, n, account: 0 });
-      party0Tss = TssKey.fromObj(party0Tss);
-      party1Tss = TssKey.fromObj(party1Tss);
-      party2Tss = TssKey.fromObj(party2Tss);
-      const client = helpers.newClient(app);
-      helpers.createAndJoinWallet([client, client, client], [party0Key, party1Key, party2Key], m, n, { key: party0Key, coin: 'eth' }, (res) => {
-        done();
-      });
+      ({ tss: party0TssKey } = JSON.parse(fs.readFileSync(`${datadir}/tss-party0.json`).toString(), objToBuf));
+      ({ tss: party1TssKey } = JSON.parse(fs.readFileSync(`${datadir}/tss-party1.json`).toString(), objToBuf));
+      ({ tss: party2TssKey } = JSON.parse(fs.readFileSync(`${datadir}/tss-party2.json`).toString(), objToBuf));
+      party0TssKey = TssKey.fromObj(party0TssKey);
+      party1TssKey = TssKey.fromObj(party1TssKey);
+      party2TssKey = TssKey.fromObj(party2TssKey);
+      party0Creds = party0TssKey.createCredentials(null, { coin: 'eth', network: 'testnet', m, n, account: 0 });
+      party1Creds = party1TssKey.createCredentials(null, { coin: 'eth', network: 'testnet', m, n, account: 0 });
+      party2Creds = party2TssKey.createCredentials(null, { coin: 'eth', network: 'testnet', m, n, account: 0 });
+      storage.storeTssKeyGenSession({
+        doc: {
+          id: party0TssKey.metadata.id,
+          participants: [
+            party0Creds.copayerId,
+            party1Creds.copayerId,
+            party2Creds.copayerId
+          ],
+          sharedPublicKey: party0TssKey.keychain.commonKeyChain,
+        }
+      }).then(() => {
+        const client = helpers.newClient(app);
+        helpers.createAndJoinWallet(
+          [client, client, client],
+          [party0TssKey, party1TssKey, party2TssKey],
+          m,
+          n,
+          {
+            key: party0TssKey,
+            coin: 'eth',
+            tssKeyId: party0TssKey.metadata.id
+          },
+          (res) => {
+            done();
+          }
+        );
+      }).catch(done);
     });
 
     it(happyPath('should start a new signing session'), async function() {
@@ -532,7 +548,7 @@ describe('TSS', function() {
         baseUrl: '/bws/api',
         request: request(app),
         credentials: party1Creds,
-        tssKey: party1Tss,
+        tssKey: party1TssKey,
       });
       const result = await sig1.start({ message });
       should.exist(result);
@@ -547,7 +563,7 @@ describe('TSS', function() {
         baseUrl: '/bws/api',
         request: request(app),
         credentials: party0Creds,
-        tssKey: party0Tss,
+        tssKey: party0TssKey,
       });
       const result = await sig0.start({ message });
       should.exist(result);
@@ -561,7 +577,7 @@ describe('TSS', function() {
         baseUrl: '/bws/api',
         request: request(app),
         credentials: party2Creds,
-        tssKey: party2Tss,
+        tssKey: party2TssKey,
       });
       try {
         await sig2.start({ message });
@@ -599,14 +615,14 @@ describe('TSS', function() {
         baseUrl: '/bws/api',
         request: request(app),
         credentials: party0Creds,
-        tssKey: party0Tss,
+        tssKey: party0TssKey,
       }).restoreSession({ session: export0 });
 
       sig1 = await new TssSign({
         baseUrl: '/bws/api',
         request: request(app),
         credentials: party1Creds,
-        tssKey: party1Tss,
+        tssKey: party1TssKey,
       }).restoreSession({ session: export1 });
 
       sig0.should.be.instanceOf(TssSign);
@@ -631,7 +647,7 @@ describe('TSS', function() {
         baseUrl: '/bws/api',
         request: request(app),
         credentials: party0Creds,
-        tssKey: party0Tss,
+        tssKey: party0TssKey,
       }).restoreSession({ session: export0 });
       sandbox.spy(sig0, 'emit');
       const error = new Promise(r => sig0.on('error', r));
@@ -714,7 +730,7 @@ describe('TSS', function() {
         baseUrl: '/bws/api',
         request: request(app),
         credentials: party0Creds,
-        tssKey: party0Tss,
+        tssKey: party0TssKey,
       }).restoreSession({ session: export0 });
       sandbox.spy(sig0, 'emit');
       const signature = new Promise(r => sig0.once('signature', r));
@@ -731,13 +747,13 @@ describe('TSS', function() {
         baseUrl: '/bws/api',
         request: request(app),
         credentials: party0Creds,
-        tssKey: party0Tss,
+        tssKey: party0TssKey,
       });
       const sig2 = new TssSign({
         baseUrl: '/bws/api',
         request: request(app),
         credentials: party2Creds,
-        tssKey: party2Tss,
+        tssKey: party2TssKey,
       });
       const id = 'my-custom-id';
       await sig0.start({ id, message });
@@ -756,7 +772,7 @@ describe('TSS', function() {
         baseUrl: '/bws/api',
         request: request(app),
         credentials: party0Creds,
-        tssKey: party0Tss,
+        tssKey: party0TssKey,
       });
       try {
         await sig0.start({ message });

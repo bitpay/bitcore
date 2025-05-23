@@ -898,6 +898,8 @@ export class API extends EventEmitter {
       return cb(new Error('Existing keys were created for a different network'));
     }
 
+    // Note: this is NOT the main wallet private key.
+    // This is just for the multisig join secret.
     var walletPrivKey = opts.walletPrivKey || new Bitcore.PrivateKey();
 
     var c = this.credentials;
@@ -918,7 +920,9 @@ export class API extends EventEmitter {
       useNativeSegwit: !!opts.useNativeSegwit,
       segwitVersion: opts.segwitVersion,
       hardwareSourcePublicKey: c.hardwareSourcePublicKey,
-      clientDerivedPublicKey: c.clientDerivedPublicKey
+      clientDerivedPublicKey: c.clientDerivedPublicKey,
+      tssVersion: opts.tssVersion,
+      tssKeyId: opts.tssKeyId
     };
     this.request.post('/v2/wallets/', args, (err, res) => {
       if (err) return cb(err);
@@ -3478,4 +3482,12 @@ export interface CreateWalletOpts {
    * 0 (default) = P2WPKH, P2WSH; 1 = P2TR
    */
   segwitVersion?: number;
+  /**
+   * Threshold signature scheme version
+   */
+  tssVersion?: number;
+  /**
+   * Threshold signature key id
+   */
+  tssKeyId?: string;
 };

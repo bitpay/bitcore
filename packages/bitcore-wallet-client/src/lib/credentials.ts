@@ -48,27 +48,30 @@ export class Credentials {
   ];
   version: number;
   account: number;
-  walletPrivKey: any;
+  walletPrivKey: string;
   personalEncryptingKey: string;
-  sharedEncryptingKey: any;
-  walletId: any;
-  walletName: any;
-  m: any;
-  n: any;
-  copayerName: any;
+  sharedEncryptingKey: string;
+  walletId: string;
+  walletName: string;
+  m: number;
+  n: number;
+  copayerName: string;
   copayerId: string;
-  xPrivKey: any;
-  xPrivKeyEncrypted: any;
-  xPubKey: any;
-  requestPubKey: any;
+  xPrivKey: string;
+  xPrivKeyEncrypted: string;
+  xPubKey: string;
+  requestPubKey: string;
   requestPrivKey: string;
-  publicKeyRing: any;
-  rootPath: any;
-  derivationStrategy: any;
+  publicKeyRing: Array<{
+    requestPubKey: string;
+    xPubKey: string;
+  }>;
+  rootPath: string;
+  derivationStrategy: string;
   network: string;
   coin: string;
   chain: string;
-  use145forBCH: any;
+  use145forBCH: boolean;
   addressType: string;
   keyId: string;
   token?: {
@@ -76,7 +79,12 @@ export class Credentials {
     symbol: string;
     address: string;
   };
-  multisigEthInfo?: any;
+  multisigEthInfo?: {
+    multisigContractAddress: string;
+    walletName: string;
+    n: string | number;
+    m: string | number;
+  };
   externalSource?: boolean; // deprecated property?
   hardwareSourcePublicKey: string;
   clientDerivedPublicKey: string
@@ -194,17 +202,12 @@ export class Credentials {
   /*
    * creates a Multisig wallet from a ETH wallet
    */
-  getMultisigEthCredentials(multisigEthInfo: {
-    multisigContractAddress: string;
-    walletName: string;
-    n: string;
-    m: string;
-  }) {
+  getMultisigEthCredentials(multisigEthInfo: Credentials['multisigEthInfo']) {
     const ret = Credentials.fromObj(this.toObj());
     ret.walletId = `${ret.walletId}-${multisigEthInfo.multisigContractAddress}`;
     ret.walletName = multisigEthInfo.walletName;
-    ret.n = multisigEthInfo.n;
-    ret.m = multisigEthInfo.m;
+    ret.n = parseInt(multisigEthInfo.n as string);
+    ret.m = parseInt(multisigEthInfo.m as string);
     ret.multisigEthInfo = multisigEthInfo;
     return ret;
   }

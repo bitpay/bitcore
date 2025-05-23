@@ -797,47 +797,49 @@ describe('Wallet service', function() {
     });
 
     for (const c of ['eth','xrp','matic','arb','base','op','sol']) {
-      it(`should  fail to create a multisig ${c}  wallet`, function(done) {
-        var opts = {
-          coin: c,
-          name: 'my wallet',
-          m: 2,
-          n: 3,
-          pubKey: TestData.keyPair.pub,
-        };
-        server.createWallet(opts, function(err, walletId) {
-          should.exist(err);
-          err.message.should.contain('not supported');
-          done();
-        });
-      });
-
-      it(`should create ${c} wallet with singleAddress flag`, function(done) {
-        helpers.createAndJoinWallet(1, 1, { coin: c }, function(s, wallet) {
-          wallet.singleAddress.should.equal(true);
-          done();
-        });
-      });
-
-      it(`should create, store, and fetch ${c} wallet`, function(done) {
-        var opts = {
-          coin: c,
-          name: 'my wallet',
-          m: 1,
-          n: 1,
-          pubKey: TestData.keyPair.pub
-        };
-
-        server.createWallet(opts, function(err, walletId) {
-          should.not.exist(err);
-          should.exist(walletId);
-          server.storage.fetchWallet(walletId, function(err, wallet) {
-            should.not.exist(err);
-            wallet.id.should.equal(walletId);
-            wallet.name.should.equal('my wallet');
-            wallet.chain.should.equal(c);
-            wallet.coin.should.equal(c);
+      describe(c, function() {
+        it('should fail to create a multisig wallet', function(done) {
+          var opts = {
+            coin: c,
+            name: 'my wallet',
+            m: 2,
+            n: 3,
+            pubKey: TestData.keyPair.pub,
+          };
+          server.createWallet(opts, function(err, walletId) {
+            should.exist(err);
+            err.message.should.contain('not supported');
             done();
+          });
+        });
+
+        it('should create wallet with singleAddress flag', function(done) {
+          helpers.createAndJoinWallet(1, 1, { coin: c }, function(s, wallet) {
+            wallet.singleAddress.should.equal(true);
+            done();
+          });
+        });
+
+        it('should create, store, and fetch wallet', function(done) {
+          var opts = {
+            coin: c,
+            name: 'my wallet',
+            m: 1,
+            n: 1,
+            pubKey: TestData.keyPair.pub
+          };
+
+          server.createWallet(opts, function(err, walletId) {
+            should.not.exist(err);
+            should.exist(walletId);
+            server.storage.fetchWallet(walletId, function(err, wallet) {
+              should.not.exist(err);
+              wallet.id.should.equal(walletId);
+              wallet.name.should.equal('my wallet');
+              wallet.chain.should.equal(c);
+              wallet.coin.should.equal(c);
+              done();
+            });
           });
         });
       });

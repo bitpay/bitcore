@@ -27,7 +27,7 @@ export interface ITssKeyGenConstructorParams {
   request?: Request;
 };
 
-export interface ITssKey {
+export interface ITssKey extends Key {
   keychain: {
     privateKeyShare: Buffer;
     reducedPrivateKeyShare: Buffer;
@@ -41,39 +41,62 @@ export interface ITssKey {
   }
 };
 
-export class TssKey implements ITssKey {
+export class TssKey extends Key implements ITssKey {
   keychain: ITssKey['keychain'];
   metadata: ITssKey['metadata'];
 
-  static fromTssKeyGen(keyGen: TssKeyGen): TssKey {
-    const key = new TssKey();
-    key.keychain = keyGen.getKeyChain().keychain;
-    key.metadata = {
-      id: keyGen.id,
-      m: keyGen.m,
-      n: keyGen.n,
-      partyId: keyGen.partyId
-    };
-    return key;
+  constructor(obj: ITssKey) {
+    super({ seedType: 'object', seedData: obj });
+    this.keychain = obj.keychain;
+    this.metadata = obj.metadata;
   }
 
   toObj(): ITssKey {
     return {
+      ...super.toObj(),
       keychain: this.keychain,
-      metadata: this.metadata
+      metadata: this.metadata,
     };
   }
 
   static fromObj(obj: ITssKey): TssKey {
-    const key = new TssKey();
-    key.keychain = obj.keychain;
-    key.metadata = obj.metadata;
+    const key = new TssKey(obj);
     return key;
+  }
+
+  createCredentials(
+    password?: string,
+    opts?: {
+      coin?: string;
+      chain?: string;
+      network?: string;
+      account?: number;
+      n?: number;
+      addressType?: string;
+      walletPrivKey?: string;
+      algo?: 'EDDSA' | 'ECDSA';
+    }
+  ): Credentials {
+    const publicKey = this.keychain.commonKeyChain.substring(0, 66);
+    const chainCode = this.keychain.commonKeyChain.substring(66);
+    const c = super.createCredentials(password, opts);
+    const xPubKey = new BitcoreLib.HDPublicKey({
+      network: (opts.network && BitcoreLib.Networks.get(opts.network)) || 'testnet',
+      depth: 0,
+      parentFingerPrint: 0,
+      childIndex: 0,
+      publicKey,
+      chainCode
+    });
+    // c.xPubKey = xPubKey.toString();
+    // c.publicKeyRing[0].xPubKey = c.xPubKey;
+    return c;
   }
 };
 
 export class TssKeyGen extends EventEmitter {
   #request: Request;
+  #key: Key;
   #keygen: ECDSA.KeyGen;
   #seed: string;
   #credentials: Credentials;
@@ -100,10 +123,11 @@ export class TssKeyGen extends EventEmitter {
     this.#request = new Request(params.baseUrl, {
       r: params.request, // For testing only
     });
-    const _xPrivKey = params.key.get(params.password).xPrivKey;
+    this.#key = params.key;
+    const _xPrivKey = this.#key.get(params.password).xPrivKey;
     const _seed = BitcoreLib.HDPrivateKey.fromString(_xPrivKey);
     this.#seed = BitcoreLib.crypto.Hash.sha256(_seed.toBuffer());
-    this.#credentials = params.key.createCredentials(params.password, { network: 'livenet', n: 1, account: 0 });
+    this.#credentials = this.#key.createCredentials(params.password, { network: 'livenet', n: 1, account: 0 });
     this.#request.setCredentials(this.#credentials);
     this.#requestPrivateKey = BitcoreLib.PrivateKey.fromString(this.#credentials.requestPrivKey);
   }
@@ -332,6 +356,7 @@ export class TssKeyGen extends EventEmitter {
   getKeyChain(): TssKey | null {
     if (this.#keygen.isKeyChainReady()) {
       const key = TssKey.fromObj({
+        ...this.#key.toObj(),
         keychain: this.#keygen.getKeyChain(),
         metadata: {
           id: this.id,

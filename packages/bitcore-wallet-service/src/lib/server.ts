@@ -8,7 +8,14 @@ import Moralis from 'moralis';
 import 'source-map-support/register';
 import config from '../config';
 import logger from './logger';
-
+import Bitcore from 'bitcore-lib';
+import BitcoreCash from 'bitcore-lib-cash';
+import BitcoreDoge from 'bitcore-lib-doge';
+import BitcoreLtc from 'bitcore-lib-ltc';
+import EmailValidator from 'email-validator';
+import { singleton } from 'preconditions';
+import _request from 'request';
+import Uuid from 'uuid';
 import { serverMessages as deprecatedServerMessage } from '../deprecated-serverMessages';
 import { BanxaService } from '../externalservices/banxa';
 import { ChangellyService } from '../externalservices/changelly';
@@ -49,31 +56,30 @@ import {
 } from './model';
 import { Storage } from './storage';
 
-const Uuid = require('uuid');
-const $ = require('preconditions').singleton();
-const EmailValidator = require('email-validator');
+let request = _request;
+const $ = singleton();
 
-const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
+  bch: BitcoreCash,
   eth: Bitcore,
   matic: Bitcore,
   arb: Bitcore,
   base: Bitcore,
   op: Bitcore,
   xrp: Bitcore,
-  doge: require('bitcore-lib-doge'),
-  ltc: require('bitcore-lib-ltc'),
+  doge: BitcoreDoge,
+  ltc: BitcoreLtc,
   sol: Bitcore,
 };
 
-const Utils = Common.Utils;
-const Constants = Common.Constants;
-const Defaults = Common.Defaults;
-const Services = Common.Services;
+const {
+  Utils,
+  Constants,
+  Defaults,
+  Services,
+} = Common;
 
-let request = require('request');
 let initialized = false;
 let doNotCheckV8 = false;
 let isMoralisInitialized = false;
@@ -566,7 +572,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.name The wallet name.
    * @param {number} opts.m Required copayers.
    * @param {number} opts.n Total copayers.
-   * @param {string} opts.pubKey Public key to verify copayers joining have access to the wallet secret.
+   * @param {string} opts.pubKey Public key to verify copayers joining have access to the wallet secret. It's basically a throw-away key.
    * @param {string} [opts.hardwareSourcePublicKey] Public key from a hardware device for this copayer.
    * @param {string} [opts.singleAddress] The wallet will only ever have one address. Only applies to UTXO chains. Default: false
    * @param {string} [opts.coin] The coin for this wallet (btc, bch, eth, doge, ltc). Default: btc
@@ -578,8 +584,9 @@ export class WalletService implements IWalletService {
    * @param {number} [opts.segwitVersion] 0 (default) = P2WPKH, P2WSH; 1 = P2TR
    * @param {number} [opts.tssVersion] TSS version to use. Supplying this with n > 1 and a multisig chain (e.g. btc) will tell the wallet to use
    *                                   threshold insead of on-chain multisig. Otherwise, n > 1 and a non-multisig chain will default to TSS_KEYGEN_SCHEME_VERSION
+   * @param {string} [opts.tssKeyId] TSS key session id. This is the id of the TSS key generation session that will be used to create the wallet.
    */
-  createWallet(opts, cb) {
+  async createWallet(opts, cb) {
     let pubKey;
 
     opts.coin = opts.coin || Defaults.COIN;
@@ -640,6 +647,8 @@ export class WalletService implements IWalletService {
     }
 
     try {
+      // NOTE: this is just a shared pub key as part of the multisig
+      // join secret. It's NOT the wallet's main xPubKey.
       pubKey = new Bitcore.PublicKey.fromString(opts.pubKey);
     } catch (ex) {
       return cb(new ClientError('Invalid public key'));
@@ -655,6 +664,13 @@ export class WalletService implements IWalletService {
 
     if (opts.tssVersion && !(opts.tssVersion > 0 && opts.tssVersion <= Constants.TSS_KEYGEN_SCHEME_VERSION_MAX)) {
       return cb(new ClientError('Invalid TSS version'));
+    }
+
+    if (opts.tssVersion) {
+      const keySession = await storage.fetchTssKeyGenSession({ id: opts.tssKeyId });
+      if (!keySession || !keySession.sharedPublicKey) {
+        return cb(new ClientError('Invalid TSS key session id'));
+      }
     }
 
     if (ChainService.isSingleAddress(opts.chain)) {
@@ -693,7 +709,8 @@ export class WalletService implements IWalletService {
             usePurpose48: opts.n > 1 && !opts.tssVersion && !!opts.usePurpose48,
             hardwareSourcePublicKey: opts.hardwareSourcePublicKey,            
             clientDerivedPublicKey: opts.clientDerivedPublicKey,
-            tssVersion: opts.tssVersion
+            tssVersion: opts.tssVersion,
+            tssKeyId: opts.tssKeyId
           });
           this.storage.storeWallet(wallet, err => {
             this.logd('Wallet created', wallet.id, opts.network);
@@ -1145,17 +1162,17 @@ export class WalletService implements IWalletService {
   /**
    * Joins a wallet in creation.
    * @param {Object} opts
-   * @param {string} opts.walletId - The wallet id.
-   * @param {string} opts.coin[='btc'] - The expected coin for this wallet (btc, bch, eth, doge, ltc).
-   * @param {string} opts.chain[='btc'] - The expected chain for this wallet (btc, bch, eth, doge, ltc).
-   * @param {string} opts.name - The copayer name.
-   * @param {string} opts.xPubKey - Extended Public Key for this copayer
-   * @param {string} opts.hardwareSourcePublicKey - public key from a hardware device for this copayer
-   * @param {string} opts.clientDerivedPublicKey - public key from the client for this wallet
-   * @param {string} opts.requestPubKey - Public Key used to check requests from this copayer.
-   * @param {string} opts.copayerSignature - S(name|xPubKey|requestPubKey). Used by other copayers to verify that the copayer joining knows the wallet secret.
-   * @param {string} opts.customData - (optional) Custom data for this copayer.
-   * @param {string} opts.dryRun[=false] - (optional) Simulate the action but do not change server state.
+   * @param {string} opts.walletId The wallet id.
+   * @param {string} opts.coin The expected coin for this wallet (btc, bch, eth, doge, ltc). Default: btc
+   * @param {string} opts.chain The expected chain for this wallet (btc, bch, eth, doge, ltc). Default: btc
+   * @param {string} opts.name The copayer name.
+   * @param {string} opts.xPubKey Extended Public Key for this copayer
+   * @param {string} opts.hardwareSourcePublicKey Public key from a hardware device for this copayer
+   * @param {string} opts.clientDerivedPublicKey Public key from the client for this wallet
+   * @param {string} opts.requestPubKey Public Key used to check requests from this copayer.
+   * @param {string} opts.copayerSignature S(name|xPubKey|requestPubKey). Used by other copayers to verify that the copayer joining knows the wallet secret.
+   * @param {string} [opts.customData] Custom data for this copayer.
+   * @param {boolean} [opts.dryRun] Simulate the action but do not change server state.
    */
   joinWallet(opts, cb) {
     if (!checkRequired(opts, ['walletId', 'name', 'requestPubKey', 'copayerSignature'], cb)) return;
@@ -1182,7 +1199,7 @@ export class WalletService implements IWalletService {
 
     this.walletId = opts.walletId;
     this._runLocked(cb, cb => {
-      this.storage.fetchWallet(opts.walletId, (err, wallet) => {
+      this.storage.fetchWallet(opts.walletId, async (err, wallet) => {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
@@ -1240,6 +1257,14 @@ export class WalletService implements IWalletService {
 
         if (wallet.copayers?.find(c => c.xPubKey === opts.xPubKey))
           return cb(Errors.COPAYER_IN_WALLET);
+
+        if (wallet.tssKeyId) {
+          const keySession = await storage.fetchTssKeyGenSession({ id: wallet.tssKeyId });
+          const copayerId = Copayer.xPubToCopayerId(opts.chain, opts.xPubKey);
+          if (!keySession.participants.includes(copayerId)) {
+            return cb(Errors.TSS_NON_PARTICIPANT);
+          }
+        }
 
         if (wallet.copayers.length == wallet.n) return cb(Errors.WALLET_FULL);
 

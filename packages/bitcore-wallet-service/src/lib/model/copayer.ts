@@ -52,7 +52,7 @@ export class Copayer {
   isSupportStaff?: boolean;
   isMarketingStaff?: boolean;
 
-  static _xPubToCopayerId(coin, xpub) {
+  static xPubToCopayerId(coin, xpub) {
     const str = coin == Defaults.COIN ? xpub : coin + xpub;
     const hash = sjcl.hash.sha256.hash(str);
     return sjcl.codec.hex.fromBits(hash);
@@ -79,7 +79,7 @@ export class Copayer {
     x.xPubKey = opts.xPubKey;
     x.hardwareSourcePublicKey = opts.hardwareSourcePublicKey;
     x.clientDerivedPublicKey = opts.clientDerivedPublicKey;
-    x.id = Copayer._xPubToCopayerId(opts.chain, x.xPubKey);
+    x.id = Copayer.xPubToCopayerId(opts.chain, x.xPubKey);
     x.name = opts.name;
     x.requestPubKey = opts.requestPubKey;
     x.signature = opts.signature;

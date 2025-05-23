@@ -4,7 +4,7 @@ import { ChainService } from '../chain/index';
 import { Common } from '../common';
 import logger from '../logger';
 import { Address } from './address';
-import { AddressManager } from './addressmanager';
+import { AddressManager, IAddressManager } from './addressmanager';
 import { Copayer } from './copayer';
 
 const $ = require('preconditions').singleton();
@@ -29,7 +29,7 @@ const Bitcore = {
   sol: require('bitcore-lib'),
 };
 
-export interface IWallet {
+export interface IWallet<isSharedT = boolean> {
   version: string;
   createdOn: number;
   id: number;
@@ -42,14 +42,14 @@ export interface IWallet {
   hardwareSourcePublicKey: string;
   clientDerivedPublicKey: string;
   addressIndex: number;
-  copayers: string[];
+  copayers: Array<Copayer>;
   pubKey: string;
   coin: string;
   chain: string;
   network: string;
   derivationStrategy: string;
   addressType: string;
-  addressManager: string;
+  addressManager: IAddressManager;
   scanStatus: 'error' | 'success';
   beRegistered: boolean; // Block explorer registered
   beAuthPrivateKey2: string;
@@ -57,10 +57,12 @@ export interface IWallet {
   nativeCashAddr: boolean;
   isTestnet?: boolean;
   usePurpose48?: boolean;
-  isShared?: boolean;
-}
+  isShared?: isSharedT;
+  tssVersion?: number;
+  tssKeyId?: string;
+};
 
-export class Wallet {
+export class Wallet implements IWallet<() => boolean> {
   version: string;
   createdOn: number;
   id: number;
@@ -88,12 +90,32 @@ export class Wallet {
   nativeCashAddr: boolean;
   isTestnet?: boolean;
   usePurpose48?: boolean;
-
   scanning: boolean;
+  tssVersion: number;
+  tssKeyId: string;
+
   static COPAYER_PAIR_LIMITS = {};
 
-  static create(opts) {
-    opts = opts || {};
+  static create(opts: {
+    id: string,
+    name: string,
+    m: number,
+    n: number,
+    coin: string,
+    chain: string, // chain === coin for stored wallets
+    network: string,
+    pubKey: string,
+    singleAddress: boolean,
+    derivationStrategy: string,
+    addressType: string,
+    nativeCashAddr?: boolean,
+    usePurpose48?: boolean,
+    hardwareSourcePublicKey?: string,
+    clientDerivedPublicKey?: string,
+    tssVersion?: number,
+    tssKeyId?: string,
+  }) {
+    opts = opts || {} as any;
 
     const chain = opts.chain || opts.coin;
     let x = new Wallet();
@@ -140,6 +162,11 @@ export class Wallet {
     x.hardwareSourcePublicKey = opts.hardwareSourcePublicKey;
     // client derived
     x.clientDerivedPublicKey = opts.clientDerivedPublicKey;
+
+    // Threshold signatures
+    x.tssVersion = opts.tssVersion;
+    x.tssKeyId = opts.tssKeyId;
+
     return x;
   }
 
@@ -181,11 +208,16 @@ export class Wallet {
     x.hardwareSourcePublicKey = obj.hardwareSourcePublicKey;
     // client derived
     x.clientDerivedPublicKey = obj.clientDerivedPublicKey;
+
+    // Threshold signatures
+    x.tssVersion = obj.tssVersion;
+    x.tssKeyId = obj.tssKeyId;
+
     return x;
   }
 
   toObject() {
-    let x: IWallet = JSON.parse(JSON.stringify(this));
+    const x: IWallet = JSON.parse(JSON.stringify(this));
     x.isShared = this.isShared();
     return x;
   }
