@@ -4,9 +4,10 @@ import {useNavigate} from 'react-router-dom';
 import styled, {useTheme} from 'styled-components';
 import SearchLightSvg from 'src/assets/images/search-light.svg';
 import SearchDarkSvg from 'src/assets/images/search-dark.svg';
-import CloseLightSvg from 'src/assets/images/close-light.svg'
-import {Black, LightBlack, Slate, Slate30} from '../assets/styles/colors';
-import {useAppSelector} from '../utilities/hooks';
+import {LightBlack, Slate} from '../assets/styles/colors';
+import {useAppDispatch, useAppSelector} from '../utilities/hooks';
+import {changeCurrency, changeNetwork} from 'src/store/app.actions';
+import {Pill} from './pill';
 
 const SearchInput = styled.input`
   background: none;
@@ -32,29 +33,6 @@ const SearchForm = styled.form<{ borderBottom?: boolean }>`
     borderBottom ? `1px solid ${colors.borderColor}` : 'none'};
 `;
 
-const PillBubble = styled.div`
-  padding: 7px;
-  padding-right: 10px;
-  margin-right: 10px;
-  display: flex;
-  align-items: center;
-  height: 40px;
-  border-radius: 25px;
-  background: ${Slate30};
-`;
-
-const PillCloseButtonCircle = styled.div`
-  background-color: #D1D4D7;
-  border-radius: 100%;
-  height: 32px;
-  width: 32px;
-  cursor: pointer;
-
-  &:hover {
-    background-color: #B1B4B7;
-  }
-`;
-
 interface SearchProps {
   borderBottom?: boolean;
   id?: string;
@@ -64,11 +42,11 @@ interface SearchProps {
 const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
   const navigate = useNavigate();
   const theme = useTheme();
+  const dispatch = useAppDispatch();
   const {currency, network} = useAppSelector(({APP}) => APP);
 
   const searchIcon = theme.dark ? SearchDarkSvg : SearchLightSvg;
   const searchId = id || 'search';
-  const [pill, setPill] = useState<boolean>(!currency);
 
   const search = async (event: any) => {
     event.preventDefault();
@@ -78,9 +56,7 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
     const searchInputs = await determineInputType(searchVal);
     if (searchInputs.length) {
       try {
-        // only search search for the specific chain+network if the pill is present, else search all
-        const val = pill ? await searchValue(searchInputs, currency, network)
-                         : await searchValue(searchInputs, undefined, undefined);
+        const val = await searchValue(searchInputs, currency, network)
         processAllResponse(val, searchVal);
       } catch (e) {
         setErrorMessage('Server error. Please try again');
@@ -152,7 +128,7 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
       }
     } else {
       const message = 'No matching records found!';
-      if (currency && pill) {
+      if (currency) {
         // Give the user currency specific error since search is limited to one chain/network
         setErrorMessage(
           `No matching records found on the ${currency} ${network}. Select a different chain or try a different search`,
@@ -171,37 +147,28 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
     }, 3000);
   };
 
-  const Pill: FC<{currency?: string, network?: string }> = ({ currency, network }) => {
-    return (
-      pill && currency ?
-        <PillBubble>
-          <img src={`https://bitpay.com/img/icon/currencies/${currency}.svg`} alt={currency} style={{height: '120%'}} />
-          <p style={{textTransform: 'capitalize', color: Black, padding: '5px'}}>{network}</p>
-          <PillCloseButtonCircle onClick={() => setPill(false)}>
-            <img src={CloseLightSvg} style={{height: '100%', padding: '9px'}} />
-          </PillCloseButtonCircle>
-        </PillBubble>
-      : <></>
-    );
+  const handlePillCloseButtonClick = () => {
+    dispatch(changeCurrency(''));
+    dispatch(changeNetwork(''));
   }
 
   return (
     <>
       <SearchForm onSubmit={search} borderBottom={borderBottom}>
         <span style={{display: 'flex', alignItems: 'center' }}>
-        <img src={searchIcon} style={{padding: 7}}></img>
-        <Pill currency={currency} network={network} />
-        <SearchInput
-          id={id || 'search'}
-          type='text'
-          placeholder='Search for block, transaction, or address'
-          required
-          aria-labelledby='search'
-          tabIndex={0}
-          autoComplete='off'
-          autoCorrect='off'
-          spellCheck='false'
-        />
+          <img src={searchIcon} style={{padding: 7}}></img>
+          <Pill currency={currency} network={network} onCloseClick={handlePillCloseButtonClick} />
+          <SearchInput
+            id={id || 'search'}
+            type='text'
+            placeholder='Search for block, transaction, or address'
+            required
+            aria-labelledby='search'
+            tabIndex={0}
+            autoComplete='off'
+            autoCorrect='off'
+            spellCheck='false'
+          />
         </span>
       </SearchForm>
     </>
