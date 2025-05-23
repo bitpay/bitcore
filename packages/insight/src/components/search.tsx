@@ -170,11 +170,11 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
     }, 3000);
   };
 
-  const Pill: FC<{img?: string, network?: string }> = ({ img, network }) => {
+  const Pill: FC<{currency?: string, network?: string }> = ({ currency, network }) => {
     return (
       pill && currency ?
         <PillBubble>
-          <img src={img} style={{height: '120%'}} />
+          <img src={`https://bitpay.com/img/icon/currencies/${currency}.svg`} alt={currency} style={{height: '120%'}} />
           <p style={{textTransform: 'capitalize', color: Black, padding: '5px'}}>{network}</p>
           <PillCloseButtonCircle onClick={() => setPill(false)}>
             <img src={CloseLightSvg} style={{height: '100%', padding: '9px'}} />
@@ -189,7 +189,7 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
       <SearchForm onSubmit={search} borderBottom={borderBottom}>
         <span style={{display: 'flex', alignItems: 'center' }}>
         <img src={searchIcon} style={{padding: 7}}></img>
-        <Pill img={`https://bitpay.com/img/icon/currencies/${currency}.svg`} network={network} />
+        <Pill currency={currency} network={network} />
         <SearchInput
           id={id || 'search'}
           type='text'
