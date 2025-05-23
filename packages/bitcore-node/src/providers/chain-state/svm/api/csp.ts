@@ -222,7 +222,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       const date = new Date((blockTime || 0) * 1000);
       const status = tx.status || txStatus?.confirmationStatus;
       const error = meta?.err || txStatus?.err;
-      const transactionError = error ? { error: JSON.stringify(error) } : null;
+      const transactionError = error ? { error: JSON.stringify(error, (_, v) => typeof v === 'bigint' ? v.toString() : v) } : null;
       const txType = version;
       const instructions = tx.instructions;
       const fee = meta?.fee;
@@ -324,10 +324,27 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async getBalanceForAddress(params: GetBalanceForAddressParams): Promise<{ confirmed: number; unconfirmed: number; balance: number }> {
-    const { address, network } = params;
-    const { rpc } = await this.getRpc(network);
-    const balance = await rpc.getBalance({ address })
-    return { confirmed: balance, unconfirmed: 0, balance };
+    const { address, network, args } = params;
+    const { rpc, connection } = await this.getRpc(network);
+    const tokenAddress = args?.tokenAddress || args?.mintAddress;
+    const cacheKey = tokenAddress
+      ? `getBalanceForAddress-SOL-${network}-${address}-${tokenAddress.toLowerCase()}`
+      : `getBalanceForAddress-SOL-${network}-${address}`;
+    return await CacheStorage.getGlobalOrRefresh(
+      cacheKey,
+      async () => {
+        if (tokenAddress) {
+          const ata = await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
+          const { value } = await connection.getTokenAccountBalance(ata).send()
+          const balance = value?.amount || 0;
+          return { confirmed: balance, unconfirmed: 0, balance };
+        } else {
+          const balance = await rpc.getBalance({ address })
+          return { confirmed: balance, unconfirmed: 0, balance };
+        }
+      },
+      CacheStorage.Times.Minute
+    );
   }
 
   async getBlock(params: GetBlockParams): Promise<IBlock> {
