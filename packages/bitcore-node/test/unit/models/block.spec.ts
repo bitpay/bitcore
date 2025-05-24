@@ -1,4 +1,5 @@
-import { expect } from 'chai';
+import { describe, it, before, after, afterEach } from 'node:test';
+import assert from 'assert';
 import { ObjectID } from 'mongodb';
 import * as sinon from 'sinon';
 import { MongoBound } from '../../../src/models/base';
@@ -14,10 +15,16 @@ import { mockCollection } from '../../helpers/index.js';
 import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 
 describe('Block Model', function() {
+  const sandbox = sinon.createSandbox();
+
   before(unitBeforeHelper);
   after(unitAfterHelper);
 
-  let addBlockParams = {
+  afterEach(function() {
+    sandbox.restore();
+  });
+
+  const addBlockParams = {
     chain: 'BTC',
     network: 'regtest',
     block: TEST_BLOCK,
@@ -27,22 +34,15 @@ describe('Block Model', function() {
   };
 
   describe('addBlock', () => {
-    let sandbox;
-    beforeEach(() => {
-      sandbox = sinon.sandbox.create();
-    });
-    afterEach(() => {
-      sandbox.restore();
-    });
     it('should be able to add a block', async () => {
-      let newBlock = Object.assign({ save: () => Promise.resolve() }, BitcoinBlockStorage, addBlockParams);
+      const newBlock = Object.assign({ save: () => Promise.resolve() }, BitcoinBlockStorage, addBlockParams);
 
       mockStorage(newBlock);
       sandbox.stub(BitcoinBlockStorage, 'handleReorg').resolves();
       sandbox.stub(TransactionStorage, 'batchImport').resolves();
 
       const result = await BitcoinBlockStorage.addBlock(addBlockParams);
-      expect(result);
+      assert.equal(result, null, 'result should not exist');
     });
   });
 
@@ -55,9 +55,9 @@ describe('Block Model', function() {
         limit: 100,
         direction: -1
       });
-      expect(options.limit).to.be.eq(100);
-      expect(query._id).to.be.deep.eq({ $lt: id });
-      expect(options.sort).to.be.deep.eq({ _id: -1 });
+      assert.strictEqual(options.limit, 100);
+      assert.deepEqual(query._id, { $lt: id });
+      assert.deepEqual(options.sort, { _id: -1 });
     });
 
     it('should default to descending', () => {
@@ -67,9 +67,9 @@ describe('Block Model', function() {
         paging: '_id',
         limit: 100
       });
-      expect(options.sort).to.be.deep.eq({ _id: -1 });
-      expect(options.limit).to.be.eq(100);
-      expect(query._id).to.be.deep.eq({ $lt: id });
+      assert.deepEqual(options.sort, { _id: -1 });
+      assert.strictEqual(options.limit, 100);
+      assert.deepEqual(query._id, { $lt: id });
     });
 
     it('should allow ascending', () => {
@@ -80,67 +80,45 @@ describe('Block Model', function() {
         limit: 100,
         direction: 1
       });
-      expect(options.sort).to.be.deep.eq({ _id: 1 });
-      expect(options.limit).to.be.eq(100);
-      expect(query._id).to.be.deep.eq({ $gt: id });
+      assert.deepEqual(options.sort, { _id: 1 });
+      assert.strictEqual(options.limit, 100);
+      assert.deepEqual(query._id, { $gt: id });
     });
   });
 
   describe('getLocalTip', () => {
-    let sandbox;
-    beforeEach(() => {
-      sandbox = sinon.sandbox.create();
-    });
-    afterEach(() => {
-      sandbox.restore();
-    });
     it('should return the new tip', async () => {
       let newBlock = Object.assign({ save: () => Promise.resolve() }, BitcoinBlockStorage, addBlockParams);
       mockStorage(newBlock);
       const params = { chain: 'BTC', network: 'regtest' };
       const result = await ChainStateProvider.getLocalTip(params);
-      expect(result!.height).to.deep.equal(addBlockParams.height);
-      expect(result!.chain).to.deep.equal(addBlockParams.chain);
-      expect(result!.network).to.deep.equal(addBlockParams.network);
+      assert.deepEqual(result!.height, addBlockParams.height);
+      assert.deepEqual(result!.chain, addBlockParams.chain);
+      assert.deepEqual(result!.network, addBlockParams.network);
     });
   });
 
   describe('getPoolInfo', () => {
-    xit('should return pool info given a coinbase string');
+    it.skip('should return pool info given a coinbase string');
   });
 
   describe('getLocatorHashes', () => {
-    let sandbox;
-    beforeEach(() => {
-      sandbox = sinon.sandbox.create();
-    });
-    afterEach(() => {
-      sandbox.restore();
-    });
     it('should return 65 zeros if there are no processed blocks for the chain and network', async () => {
       const params = { chain: 'BTC', network: 'regtest' };
       const result = await ChainStateProvider.getLocatorHashes(params);
-      expect(result).to.deep.equal([Array(65).join('0')]);
+      assert.deepEqual(result, [Array(65).join('0')]);
     });
   });
 
   describe('handleReorg', () => {
-    let sandbox;
-    beforeEach(() => {
-      sandbox = sinon.sandbox.create();
-    });
-    afterEach(() => {
-      sandbox.restore();
-    });
-
     it('should return if localTip hash equals the previous hash', async () => {
       Object.assign(BitcoinBlockStorage.collection, mockCollection(null));
       Object.assign(TransactionStorage.collection, mockCollection(null));
       Object.assign(CoinStorage.collection, mockCollection(null));
-      let blockModelRemoveSpy = BitcoinBlockStorage.collection.deleteMany as sinon.SinonSpy;
-      let transactionModelRemoveSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
-      let coinModelRemoveSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
-      let coinModelUpdateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
+      const blockModelRemoveSpy = BitcoinBlockStorage.collection.deleteMany as sinon.SinonSpy;
+      const transactionModelRemoveSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
+      const coinModelRemoveSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
+      const coinModelUpdateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
 
       const params = {
         header: {
@@ -157,31 +135,31 @@ describe('Block Model', function() {
       };
 
       await BitcoinBlockStorage.handleReorg(params);
-      expect(blockModelRemoveSpy.notCalled).to.be.true;
-      expect(transactionModelRemoveSpy.notCalled).to.be.true;
-      expect(coinModelRemoveSpy.notCalled).to.be.true;
-      expect(coinModelUpdateSpy.notCalled).to.be.true;
+      assert.strictEqual(blockModelRemoveSpy.notCalled, true);
+      assert.strictEqual(transactionModelRemoveSpy.notCalled, true);
+      assert.strictEqual(coinModelRemoveSpy.notCalled, true);
+      assert.strictEqual(coinModelUpdateSpy.notCalled, true);
     });
 
     it('should return if localTip height is zero', async () => {
-      let blockModelRemoveSpy = BitcoinBlockStorage.collection.deleteMany as sinon.SinonSpy;
-      let transactionModelRemoveSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
-      let coinModelRemoveSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
-      let coinModelUpdateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
+      const blockModelRemoveSpy = BitcoinBlockStorage.collection.deleteMany as sinon.SinonSpy;
+      const transactionModelRemoveSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
+      const coinModelRemoveSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
+      const coinModelUpdateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
 
-      let blockMethodParams = {
+      const blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BitcoinBlockStorage, blockMethodParams);
+      const params = Object.assign(BitcoinBlockStorage, blockMethodParams);
 
       await BitcoinBlockStorage.handleReorg(params);
-      expect(blockModelRemoveSpy.notCalled).to.be.true;
-      expect(transactionModelRemoveSpy.notCalled).to.be.true;
-      expect(coinModelRemoveSpy.notCalled).to.be.true;
-      expect(coinModelUpdateSpy.notCalled).to.be.true;
+      assert.strictEqual(blockModelRemoveSpy.notCalled, true);
+      assert.strictEqual(transactionModelRemoveSpy.notCalled, true);
+      assert.strictEqual(coinModelRemoveSpy.notCalled, true);
+      assert.strictEqual(coinModelUpdateSpy.notCalled, true);
     });
 
     it('should call blockModel deleteMany', async () => {
@@ -189,17 +167,17 @@ describe('Block Model', function() {
         height: 1,
         previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
-      let blockMethodParams = {
+      const blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BitcoinBlockStorage, blockMethodParams);
+      const params = Object.assign(BitcoinBlockStorage, blockMethodParams);
       const removeSpy = BitcoinBlockStorage.collection.deleteMany as sinon.SinonSpy;
 
       await BitcoinBlockStorage.handleReorg(params);
-      expect(removeSpy.called).to.be.true;
+      assert.strictEqual(removeSpy.called, true);
     });
 
     it('should call transactionModel deleteMany', async () => {
@@ -208,17 +186,17 @@ describe('Block Model', function() {
         previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
-      let blockMethodParams = {
+      const blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BitcoinBlockStorage, blockMethodParams);
+      const params = Object.assign(BitcoinBlockStorage, blockMethodParams);
       const removeSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
 
       await BitcoinBlockStorage.handleReorg(params);
-      expect(removeSpy.called).to.be.true;
+      assert.strictEqual(removeSpy.called, true);
     });
 
     it('should call coinModel deleteMany', async () => {
@@ -227,19 +205,19 @@ describe('Block Model', function() {
         previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
-      let blockMethodParams = {
+      const blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BitcoinBlockStorage, blockMethodParams);
+      const params = Object.assign(BitcoinBlockStorage, blockMethodParams);
       const collectionSpy = Storage.db!.collection as sinon.SinonSpy;
-      const removeSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
+      const coinRemoveSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
 
       await BitcoinBlockStorage.handleReorg(params);
-      expect(collectionSpy.calledOnceWith('coins'));
-      expect(removeSpy.callCount).to.eq(3);
+      assert.strictEqual(collectionSpy.calledWith('coins'), true);
+      assert.strictEqual(coinRemoveSpy.callCount, 3);
     });
 
     it('should call coinModel update', async () => {
@@ -248,19 +226,19 @@ describe('Block Model', function() {
         previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
-      let blockMethodParams = {
+      const blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BitcoinBlockStorage, blockMethodParams);
+      const params = Object.assign(BitcoinBlockStorage, blockMethodParams);
       const collectionSpy = Storage.db!.collection as sinon.SinonSpy;
       const updateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
 
       await BitcoinBlockStorage.handleReorg(params);
-      expect(collectionSpy.calledOnceWith('coins'));
-      expect(updateSpy.called).to.be.true;
+      assert.strictEqual(collectionSpy.calledWith('coins'), true);
+      assert.strictEqual(updateSpy.called, true);
     });
   });
 
@@ -287,19 +265,19 @@ describe('Block Model', function() {
 
       const result = BitcoinBlockStorage._apiTransform(block, { object: true });
 
-      expect(result.hash).to.be.equal(block.hash);
-      expect(result.height).to.be.equal(block.height);
-      expect(result.version).to.be.equal(block.version);
-      expect(result.size).to.be.equal(block.size);
-      expect(result.merkleRoot).to.be.equal(block.merkleRoot);
-      expect(result.time).to.equal(block.time);
-      expect(result.timeNormalized).to.equal(block.timeNormalized);
-      expect(result.nonce).to.be.equal(block.nonce);
-      expect(result.bits).to.be.equal(block.bits);
-      expect(result.previousBlockHash).to.be.equal(block.previousBlockHash);
-      expect(result.nextBlockHash).to.be.equal(block.nextBlockHash);
-      expect(result.transactionCount).to.be.equal(block.transactionCount);
-      expect(result).to.not.have.property('processed');
+      assert.strictEqual(result.hash, block.hash);
+      assert.strictEqual(result.height, block.height);
+      assert.strictEqual(result.version, block.version);
+      assert.strictEqual(result.size, block.size);
+      assert.strictEqual(result.merkleRoot, block.merkleRoot);
+      assert.strictEqual(result.time, block.time);
+      assert.strictEqual(result.timeNormalized, block.timeNormalized);
+      assert.strictEqual(result.nonce, block.nonce);
+      assert.strictEqual(result.bits, block.bits);
+      assert.strictEqual(result.previousBlockHash, block.previousBlockHash);
+      assert.strictEqual(result.nextBlockHash, block.nextBlockHash);
+      assert.strictEqual(result.transactionCount, block.transactionCount);
+      assert.strictEqual(Object.hasOwn(result, 'processed'), false);
     });
   });
 });

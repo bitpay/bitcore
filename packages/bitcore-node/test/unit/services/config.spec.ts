@@ -1,4 +1,5 @@
-import { expect } from 'chai';
+import { describe, it, before, after } from 'node:test';
+import assert from 'assert';
 import { Config } from '../../../src/services/config';
 import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 
@@ -6,17 +7,13 @@ describe('Config', function() {
   before(unitBeforeHelper);
   after(unitAfterHelper);
 
-  it('should have a test which runs', function() {
-    expect(true).to.equal(true);
-  });
-
   it('should give the chain config', () => {
     const chains = Config.chains();
     for (const chain of chains) {
       const networks = Config.networksFor(chain);
       for (const network of networks) {
         const chainConfig = Config.chainConfig({ chain, network });
-        expect(chainConfig).to.exist;
+        assert.notEqual(chainConfig, null);
       }
     }
   });
@@ -34,8 +31,8 @@ describe('Config', function() {
     };
     Config.updateConfig({ chains: testConfig as any });
     const testnetConfig: any = Config.chainConfig({ chain, network });
-    expect(testnetConfig.title).to.exist;
-    expect(testnetConfig).to.deep.eq(testConfig[chain][network]);
+    assert.notEqual(testnetConfig.title, null);
+    assert.deepEqual(testnetConfig, testConfig[chain][network]);
     Config.updateConfig(originalConfig);
   });
 });
