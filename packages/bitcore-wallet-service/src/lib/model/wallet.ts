@@ -1,18 +1,19 @@
-import _ from 'lodash';
+import Uuid from 'uuid';
 import config from '../../config';
 import { ChainService } from '../chain/index';
 import { Common } from '../common';
 import logger from '../logger';
 import { Address } from './address';
-import { AddressManager } from './addressmanager';
+import { AddressManager, IAddressManager } from './addressmanager';
 import { Copayer } from './copayer';
 
 const $ = require('preconditions').singleton();
-const Uuid = require('uuid');
 
-const Constants = Common.Constants,
-  Defaults = Common.Defaults,
-  Utils = Common.Utils;
+const {
+  Constants,
+  Defaults,
+  Utils
+} = Common;
 
 const Bitcore = {
   btc: require('bitcore-lib'),
@@ -28,7 +29,7 @@ const Bitcore = {
   sol: require('bitcore-lib'),
 };
 
-export interface IWallet {
+export interface IWallet<isSharedT = boolean> {
   version: string;
   createdOn: number;
   id: number;
@@ -41,14 +42,14 @@ export interface IWallet {
   hardwareSourcePublicKey: string;
   clientDerivedPublicKey: string;
   addressIndex: number;
-  copayers: string[];
+  copayers: Array<Copayer>;
   pubKey: string;
   coin: string;
   chain: string;
   network: string;
   derivationStrategy: string;
   addressType: string;
-  addressManager: string;
+  addressManager: IAddressManager;
   scanStatus: 'error' | 'success';
   beRegistered: boolean; // Block explorer registered
   beAuthPrivateKey2: string;
@@ -56,9 +57,12 @@ export interface IWallet {
   nativeCashAddr: boolean;
   isTestnet?: boolean;
   usePurpose48?: boolean;
-}
+  isShared?: isSharedT;
+  tssVersion?: number;
+  tssKeyId?: string;
+};
 
-export class Wallet {
+export class Wallet implements IWallet<() => boolean> {
   version: string;
   createdOn: number;
   id: number;
@@ -86,12 +90,32 @@ export class Wallet {
   nativeCashAddr: boolean;
   isTestnet?: boolean;
   usePurpose48?: boolean;
-
   scanning: boolean;
+  tssVersion: number;
+  tssKeyId: string;
+
   static COPAYER_PAIR_LIMITS = {};
 
-  static create(opts) {
-    opts = opts || {};
+  static create(opts: {
+    id: string,
+    name: string,
+    m: number,
+    n: number,
+    coin: string,
+    chain: string, // chain === coin for stored wallets
+    network: string,
+    pubKey: string,
+    singleAddress: boolean,
+    derivationStrategy: string,
+    addressType: string,
+    nativeCashAddr?: boolean,
+    usePurpose48?: boolean,
+    hardwareSourcePublicKey?: string,
+    clientDerivedPublicKey?: string,
+    tssVersion?: number,
+    tssKeyId?: string,
+  }) {
+    opts = opts || {} as any;
 
     const chain = opts.chain || opts.coin;
     let x = new Wallet();
@@ -132,12 +156,17 @@ export class Wallet {
     x.beAuthPublicKey2 = null;
 
     // x.nativeCashAddr opts is only for testing
-    x.nativeCashAddr = _.isUndefined(opts.nativeCashAddr) ? (x.chain == 'bch' ? true : null) : opts.nativeCashAddr;
+    x.nativeCashAddr = opts.nativeCashAddr == null ? (x.chain == 'bch' ? true : null) : opts.nativeCashAddr;
 
     // hardware wallet related
     x.hardwareSourcePublicKey = opts.hardwareSourcePublicKey;
     // client derived
     x.clientDerivedPublicKey = opts.clientDerivedPublicKey;
+
+    // Threshold signatures
+    x.tssVersion = opts.tssVersion;
+    x.tssKeyId = opts.tssKeyId;
+
     return x;
   }
 
@@ -156,9 +185,7 @@ export class Wallet {
     x.singleAddress = !!obj.singleAddress;
     x.status = obj.status;
     x.publicKeyRing = obj.publicKeyRing;
-    x.copayers = _.map(obj.copayers, copayer => {
-      return Copayer.fromObj(copayer);
-    });
+    x.copayers = obj.copayers?.map(copayer => Copayer.fromObj(copayer));
     x.pubKey = obj.pubKey;
     x.coin = obj.coin || Defaults.COIN;
     x.chain = obj.chain || ChainService.getChain(x.coin); // getChain -> backwards compatibility;
@@ -181,11 +208,16 @@ export class Wallet {
     x.hardwareSourcePublicKey = obj.hardwareSourcePublicKey;
     // client derived
     x.clientDerivedPublicKey = obj.clientDerivedPublicKey;
+
+    // Threshold signatures
+    x.tssVersion = obj.tssVersion;
+    x.tssKeyId = obj.tssKeyId;
+
     return x;
   }
 
   toObject() {
-    let x: any = _.cloneDeep(this);
+    const x: IWallet = JSON.parse(JSON.stringify(this));
     x.isShared = this.isShared();
     return x;
   }
@@ -219,8 +251,7 @@ export class Wallet {
     const bitcore = Bitcore[chain];
     const salt = config.BE_KEY_SALT || Defaults.BE_KEY_SALT;
 
-    var seed =
-      _.map(this.copayers, 'xPubKey')
+    var seed = (this.copayers || []).map(c => c.xPubKey)
         .sort()
         .join('') +
       Utils.getGenericName(this.network) + // Maintaining compatibility with previous versions
@@ -235,9 +266,7 @@ export class Wallet {
   }
 
   _updatePublicKeyRing() {
-    this.publicKeyRing = _.map(this.copayers, copayer => {
-      return _.pick(copayer, ['xPubKey', 'requestPubKey']);
-    });
+    this.publicKeyRing = (this.copayers || []).map(c => Utils.pick(c, ['xPubKey', 'requestPubKey']) as { xPubKey: string; requestPubKey: string });
   }
 
   addCopayer(copayer) {

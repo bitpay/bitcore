@@ -48,13 +48,13 @@ for (const network in NetworkChar) { // invert NetworkChar
 const BASE_URL = 'http://localhost:3232/bws/api';
 
 export class API extends EventEmitter {
-  doNotVerifyPayPro: any;
+  doNotVerifyPayPro: boolean;
   timeout: any;
-  logLevel: any;
-  supportStaffWalletId: any;
-  request: any;
-  bulkClient: any;
-  credentials: any;
+  logLevel: string;
+  supportStaffWalletId: string;
+  request: Request;
+  bulkClient: BulkClient;
+  credentials: Credentials;
   notificationIncludeOwn: boolean;
   lastNotificationId: any;
   notificationsIntervalId: any;
@@ -81,13 +81,13 @@ export class API extends EventEmitter {
 
   /**
    * ClientAPI constructor.
-   * @param {Object} [opts]
+   * @param {object} [opts]
    * @param {boolean} [opts.doNotVerifyPayPro]
    * @param {number} [opts.timeout] Default: 50000
    * @param {string} [opts.logLevel] Default: 'silent'
    * @param {string} [opts.supportStaffWalletId]
    * @param {string} [opts.baseUrl] Default: 'http://localhost:3232/bws/api'
-   * @param {Object} [opts.request] Request library instance
+   * @param {object} [opts.request] Request library instance
    * @param {string} [opts.bp_partner] PayPro BitPay Partner
    * @param {string} [opts.bp_partner_version] PayPro BitPay Partner version
    */
@@ -126,10 +126,7 @@ export class API extends EventEmitter {
   }
 
   initialize(opts, cb) {
-    $.checkState(
-      this.credentials,
-      'Failed state: this.credentials at <initialize()>'
-    );
+    $.checkState(this.credentials, 'Failed state: this.credentials at <initialize()>');
 
     this.notificationIncludeOwn = !!opts.notificationIncludeOwn;
     this._initNotifications(opts);
@@ -281,8 +278,7 @@ export class API extends EventEmitter {
 
     var testMessageSigning = (xpriv, xpub) => {
       var nonHardenedPath = 'm/0/0';
-      var message =
-        'Lorem ipsum dolor sit amet, ne amet urbanitas percipitur vim, libris disputando his ne, et facer suavitate qui. Ei quidam laoreet sea. Cu pro dico aliquip gubergren, in mundi postea usu. Ad labitur posidonium interesset duo, est et doctus molestie adipiscing.';
+      var message = 'Lorem ipsum dolor sit amet, ne amet urbanitas percipitur vim, libris disputando his ne, et facer suavitate qui. Ei quidam laoreet sea. Cu pro dico aliquip gubergren, in mundi postea usu. Ad labitur posidonium interesset duo, est et doctus molestie adipiscing.';
       var priv = xpriv.deriveChild(nonHardenedPath).privateKey;
       var signature = Utils.signMessage(message, priv);
       var pub = xpub.deriveChild(nonHardenedPath).publicKey;
@@ -290,8 +286,7 @@ export class API extends EventEmitter {
     };
 
     var testHardcodedKeys = () => {
-      var words =
-        'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+      var words = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
       var xpriv = Mnemonic(words).toHDPrivateKey();
 
       if (
@@ -310,27 +305,6 @@ export class API extends EventEmitter {
       var xpub = Bitcore.HDPublicKey.fromString(
         'xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj'
       );
-      return testMessageSigning(xpriv, xpub);
-    };
-
-    // TODO => Key refactor to Key class.
-    var testLiveKeys = () => {
-      var words;
-      try {
-        words = c.getMnemonic();
-      } catch (ex) { }
-
-      var xpriv;
-      if (words && (!c.mnemonicHasPassphrase || opts.passphrase)) {
-        var m = new Mnemonic(words);
-        xpriv = m.toHDPrivateKey(opts.passphrase, c.network);
-      }
-      if (!xpriv) {
-        xpriv = new Bitcore.HDPrivateKey(c.xPrivKey);
-      }
-      xpriv = xpriv.deriveChild(c.getBaseAddressDerivationPath());
-      var xpub = new Bitcore.HDPublicKey(c.xPubKey);
-
       return testMessageSigning(xpriv, xpub);
     };
 
@@ -754,7 +728,7 @@ export class API extends EventEmitter {
    * @param {string} xPubKey
    * @param {string} requestPubKey
    * @param {string} copayerName
-   * @param {Object} [opts]
+   * @param {object} [opts]
    * @param {string} [opts.customData]
    * @param {string} [opts.coin]
    * @param {string} [opts.hardwareSourcePublicKey]
@@ -884,19 +858,17 @@ export class API extends EventEmitter {
    * @param {string} copayerName
    * @param {number} m
    * @param {number} n
-   * @param {Object} [opts] (optional: advanced options)
-   * @param {string} [opts.coin] The coin for this wallet (btc, bch). Default: btc
-   * @param {string} [opts.chain] The chain for this wallet (btc, bch). Default: btc
-   * @param {string} [opts.network] Default: livenet
-   * @param {boolean} [opts.singleAddress] The wallet will only ever have one address. Default: false
-   * @param {string} [opts.walletPrivKey] Set a walletPrivKey (instead of random)
-   * @param {string} [opts.id] Set an id for wallet (instead of server given)
-   * @param {boolean} [opts.useNativeSegwit] Set addressType to P2WPKH, P2WSH, or P2TR (segwitVersion = 1)
-   * @param {number} [opts.segwitVersion] 0 (default) = P2WPKH, P2WSH; 1 = P2TR
+   * @param {CreateWalletOpts} [opts]
    * @param {function} cb Callback function in the standard form (err, joinSecret)
-   * @return {null|string} Returns null for a single-sig wallet, or the join secret for a multi-sig wallet
    */
-  createWallet(walletName, copayerName, m, n, opts, cb) {
+  createWallet(
+    walletName: string,
+    copayerName: string,
+    m: number,
+    n: number,
+    opts: CreateWalletOpts,
+    cb: (err?: Error, joinSecret?: string) => void
+  ) {
     if (!this._checkKeyDerivation())
       return cb(new Error('Cannot create new wallet'));
 
@@ -926,6 +898,8 @@ export class API extends EventEmitter {
       return cb(new Error('Existing keys were created for a different network'));
     }
 
+    // Note: this is NOT the main wallet private key.
+    // This is just for the multisig join secret.
     var walletPrivKey = opts.walletPrivKey || new Bitcore.PrivateKey();
 
     var c = this.credentials;
@@ -946,7 +920,9 @@ export class API extends EventEmitter {
       useNativeSegwit: !!opts.useNativeSegwit,
       segwitVersion: opts.segwitVersion,
       hardwareSourcePublicKey: c.hardwareSourcePublicKey,
-      clientDerivedPublicKey: c.clientDerivedPublicKey
+      clientDerivedPublicKey: c.clientDerivedPublicKey,
+      tssVersion: opts.tssVersion,
+      tssKeyId: opts.tssKeyId
     };
     this.request.post('/v2/wallets/', args, (err, res) => {
       if (err) return cb(err);
@@ -987,7 +963,7 @@ export class API extends EventEmitter {
    * Join an existent wallet
    * @param {string} secret
    * @param {string} copayerName
-   * @param {Object} [opts]
+   * @param {object} [opts]
    * @param {string} [opts.coin] The expected coin for this wallet (btc, bch). Default: btc
    * @param {boolean} [opts.dryRun] Simulate wallet join. Default: false
    * @param {function} cb Callback function in the standard form (err, wallet)
@@ -1206,7 +1182,7 @@ export class API extends EventEmitter {
 
   /**
    * Get latest notifications
-   * @param {Object} [opts]
+   * @param {object} [opts]
    * @param {string} [opts.lastNotificationId] The ID of the last received notification
    * @param {string} [opts.timeSpan] A time window on which to look for notifications (in seconds)
    * @param {string} [opts.includeOwn] Do not ignore notifications generated by the current copayer. Default: false
@@ -1235,13 +1211,13 @@ export class API extends EventEmitter {
 
   /**
    * Get status of the wallet
-   * @param {Object} [opts]
+   * @param {object} [opts]
    * @param {boolean} [opts.twoStep] Use 2-step balance computation for improved performance. Default: false
    * @param {boolean} [opts.includeExtendedInfo] Query extended status. Default: false
    * @param {string} [opts.tokenAddress] ERC20 Token Contract Address
    * @param {string} [opts.multisigContractAddress] MULTISIG ETH Contract Address
    * @param {function} cb Callback function in the standard form (err, status)
-   * @returns {Object} Returns an object with status information
+   * @returns {object} Returns an object with status information
    */
   getStatus(opts, cb) {
     $.checkState(this.credentials, 'Failed state: this.credentials at <getStatus()>');
@@ -1289,7 +1265,7 @@ export class API extends EventEmitter {
   /**
    * Get copayer preferences
    * @param {function} cb Callback function in the standard form (err, preferences)
-   * @return {Object} Returns a preferences object
+   * @return {object} Returns a preferences object
    */
   getPreferences(cb) {
     $.checkState(this.credentials, 'Failed state: this.credentials at <getPreferences()>');
@@ -1303,9 +1279,9 @@ export class API extends EventEmitter {
 
   /**
    * Save copayer preferences
-   * @param {Object} preferences Preferences to be saved
+   * @param {object} preferences Preferences to be saved
    * @param {function} cb Callback function in the standard form (err, preferences)
-   * @return {Object} Returns saved preferences object
+   * @return {object} Returns saved preferences object
    */
   savePreferences(preferences, cb) {
     $.checkState(
@@ -1319,7 +1295,7 @@ export class API extends EventEmitter {
 
   /**
    * Fetch PayPro invoice
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} opts.payProUrl PayPro request URL
    * @param {function} cb Callback function in the standard form (err, paypro)
    * @returns {{ amount, toAddress, memo }} Parsed payment protocol request
@@ -1346,7 +1322,7 @@ export class API extends EventEmitter {
 
   /**
    * Gets list of utxos
-   * @param {Object} [opts]
+   * @param {object} [opts]
    * @param {Array<string>} [opts.addresses] List of addresses from where to fetch UTXOs
    * @param {function} cb Callback function in the standard form (err, utxos)
    * @returns {Array<any>} Returns an array of utxos
@@ -1367,7 +1343,7 @@ export class API extends EventEmitter {
 
   /**
    * Gets list of coins
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} [opts.coin] Chain to query (DEPRECATED - use `opts.chain`)
    * @param {string} opts.chain Chain to query
    * @param {string} opts.network Network to query
@@ -1405,7 +1381,7 @@ export class API extends EventEmitter {
   /**
    * Create a transaction proposal
    *
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} [opts.txProposalId] If provided it will be used as this TX proposal ID. Should be unique in the scope of the wallet
    * @param {Array} opts.outputs Array of outputs
    * @param {string} opts.outputs[].toAddress Destination address
@@ -1430,7 +1406,7 @@ export class API extends EventEmitter {
    * @param {boolean} [opts.replaceTxByFee] Ignore locked utxos check ( used for replacing a transaction designated as RBF)
    * @param {function} cb Callback function in the standard form (err, txp)
    * @param {string} [baseUrl] ONLY FOR TESTING
-   * @returns {Object} Returns the transaction proposal
+   * @returns {object} Returns the transaction proposal
    */
   createTxProposal(opts, cb, baseUrl) {
     $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <createTxProposal()>');
@@ -1466,8 +1442,8 @@ export class API extends EventEmitter {
 
   /**
    * Publish a transaction proposal
-   * @param {Object} opts
-   * @param {Object} opts.txp The transaction proposal object returned by the API#createTxProposal method
+   * @param {object} opts
+   * @param {object} opts.txp The transaction proposal object returned by the API#createTxProposal method
    * @param {function} cb Callback function in the standard form (err, null)
    * @returns {null}
    */
@@ -1496,7 +1472,7 @@ export class API extends EventEmitter {
 
   /**
    * Create a new address
-   * @param {Object} [opts]
+   * @param {object} [opts]
    * @param {boolean} [opts.ignoreMaxGap] Default: false
    * @param {boolean} [opts.isChange] Default: false
    * @param {function} cb Callback function in the standard form (err, address)
@@ -1529,7 +1505,7 @@ export class API extends EventEmitter {
 
   /**
    * Get your main addresses
-   * @param {Object} [opts]
+   * @param {object} [opts]
    * @param {boolean} [opts.doNotVerify] Do not verify the addresses. Default: false
    * @param {number} [opts.limit] Limit the resultset. Return all addresses by default
    * @param {boolean} [opts.reverse] Reverse the order. Default: false
@@ -1563,13 +1539,13 @@ export class API extends EventEmitter {
 
   /**
    * Update wallet balance
-   * @param {Object} [opts]
-   * @param {String} [opts.coin] Defaults to current wallet chain (DEPRECATED - use opts.chain)
-   * @param {String} [opts.chain] Defaults to current wallet chain
-   * @param {String} [opts.tokenAddress] ERC20 token contract address
-   * @param {String} [opts.multisigContractAddress] MULTISIG ETH Contract Address
+   * @param {object} [opts]
+   * @param {string} [opts.coin] Defaults to current wallet chain (DEPRECATED - use opts.chain)
+   * @param {string} [opts.chain] Defaults to current wallet chain
+   * @param {string} [opts.tokenAddress] ERC20 token contract address
+   * @param {string} [opts.multisigContractAddress] MULTISIG ETH Contract Address
    * @param {function} cb Callback function in the standard form (err, balance)
-   * @returns {Object} Returns the wallet balance
+   * @returns {object} Returns the wallet balance
    */
   getBalance(opts, cb) {
     if (!cb) {
@@ -1604,7 +1580,7 @@ export class API extends EventEmitter {
 
   /**
    * Get list of transactions proposals
-   * @param {Object} [opts]
+   * @param {object} [opts]
    * @param {boolean} [opts.doNotVerify] Do not verify the transactions. Default: false
    * @param {boolean} [opts.forAirGapped] This is for an air-gapped wallet
    * @param {boolean} [opts.doNotEncryptPkr] Do not encrypt the public key ring
@@ -1707,11 +1683,11 @@ export class API extends EventEmitter {
 
   /**
    * Push transaction proposal signatures
-   * @param {Object} txp Transaction proposal to sign
+   * @param {object} txp Transaction proposal to sign
    * @param {Array} signatures Array of signatures
    * @param {function} cb Callback function in the standard form (err, txp)
    * @param {string} baseUrl ONLY FOR TESTING
-   * @return {Object} Returns txp object
+   * @return {object} Returns txp object
    */
   pushSignatures(txp, signatures, cb, baseUrl) {
     $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <pushSignatures()>');
@@ -1742,9 +1718,9 @@ export class API extends EventEmitter {
 
   /**
    * Create advertisement for bitpay app - (limited to marketing staff)
-   * @param {Object} [opts]
+   * @param {object} [opts]
    * @param {function} cb Callback function in the standard form (err, advertisement)
-   * @returns {Object} Returns the created advertisement
+   * @returns {object} Returns the created advertisement
    */
   createAdvertisement(opts, cb) {
     // TODO add check for preconditions of title, imgUrl, linkUrl
@@ -1762,7 +1738,7 @@ export class API extends EventEmitter {
 
   /**
    * Get advertisements for bitpay app - (limited to marketing staff)
-   * @param {Object} [opts]
+   * @param {object} [opts]
    * @param {boolean} [opts.testing] If true, fetches testing advertisements
    * @param {function} cb Callback function in the standard form (err, advertisements)
    * @returns {Array<any>} Returns an array of advertisements
@@ -1783,7 +1759,7 @@ export class API extends EventEmitter {
 
   /**
    * Get advertisements for bitpay app, for specified country - (limited to marketing staff)
-   * @param {Object} [opts]
+   * @param {object} [opts]
    * @param {string} [opts.country] If set, fetches ads by Country
    * @param {function} cb Callback function in the standard form (err, advertisements)
    * @returns {Array<any>} Returns an array of advertisements
@@ -1801,10 +1777,10 @@ export class API extends EventEmitter {
 
   /**
    * Get Advertisement
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} opts.adId - Advertisement ID
    * @param {function} cb Callback function in the standard form (err, advertisement)
-   * @returns {Object} Returns the advertisement
+   * @returns {object} Returns the advertisement
    */
   getAdvertisement(opts, cb) {
     var url = '/v1/advertisements/' + opts.adId; // + adId or adTitle;
@@ -1818,10 +1794,10 @@ export class API extends EventEmitter {
 
   /**
    * Activate Advertisement
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} opts.adId - Advertisement ID
    * @param {function} cb Callback function in the standard form (err, advertisement)
-   * @returns {Object} Returns the activated advertisement
+   * @returns {object} Returns the activated advertisement
    */
   activateAdvertisement(opts, cb) {
     var url = '/v1/advertisements/' + opts.adId + '/activate'; // + adId or adTitle;
@@ -1836,10 +1812,10 @@ export class API extends EventEmitter {
 
   /**
    * Deactivate Advertisement
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} opts.adId - Advertisement ID
    * @param {function} cb Callback function in the standard form (err, advertisement)
-   * @returns {Object} Returns the deactivated advertisement
+   * @returns {object} Returns the deactivated advertisement
    */
   deactivateAdvertisement(opts, cb) {
     var url = '/v1/advertisements/' + opts.adId + '/deactivate'; // + adId or adTitle;
@@ -1854,10 +1830,10 @@ export class API extends EventEmitter {
 
   /**
    * Delete Advertisement
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} opts.adId - Advertisement ID
    * @param {function} cb Callback function in the standard form (err, advertisement)
-   * @returns {Object} Returns the deleted advertisement
+   * @returns {object} Returns the deleted advertisement
    */
   deleteAdvertisement(opts, cb) {
     var url = '/v1/advertisements/' + opts.adId; // + adId or adTitle;
@@ -1871,12 +1847,12 @@ export class API extends EventEmitter {
 
   /**
    * Sign transaction proposal from AirGapped
-   * @param {Object} txp Transaction proposal to sign
+   * @param {object} txp Transaction proposal to sign
    * @param {string} encryptedPkr An encrypted string with the wallet's public key ring
    * @param {number} m Number of required signatures
    * @param {number} n Number of total signers
    * @param {string} [password] A password to decrypt the encrypted private key (if encryption is set).
-   * @return {Object} Returns signed transaction
+   * @return {object} Returns signed transaction
    */
   signTxProposalFromAirGapped(txp, encryptedPkr, m, n, password?) {
     throw new Error('signTxProposalFromAirGapped not yet implemented');
@@ -1913,17 +1889,17 @@ export class API extends EventEmitter {
   /**
    * Sign transaction proposal from AirGapped
    * @param {string} key A mnemonic phrase or an xprv HD private key
-   * @param {Object} txp Transaction proposal to sign
+   * @param {object} txp Transaction proposal to sign
    * @param {string} unencryptedPkr An unencrypted string with the wallet's public key ring
    * @param {number} m Number of required signatures
    * @param {number} n Number of total signers
-   * @param {Object} [opts]
+   * @param {object} [opts]
    * @param {string} [opts.coin] Default: 'btc' (DEPRECATED - use opts.chain)
    * @param {string} [opts.chain] Default: 'btc'
    * @param {string} [opts.passphrase]
    * @param {number} [opts.account] Default: 0
    * @param {string} [opts.derivationStrategy] Default: 'BIP44'
-   * @return {Object} Return transaction proposal
+   * @return {object} Return transaction proposal
    */
   static signTxProposalFromAirGapped(key, txp, unencryptedPkr, m, n, opts, cb) {
     opts = opts || {};
@@ -1976,10 +1952,10 @@ export class API extends EventEmitter {
 
   /**
    * Reject a transaction proposal
-   * @param {Object} txp Transaction proposal to reject
+   * @param {object} txp Transaction proposal to reject
    * @param {string} reason Rejection reason
    * @param {function} cb Callback function in the standard form (err, txp)
-   * @return {Object} Returns rejected txp
+   * @return {object} Returns rejected txp
    */
   rejectTxProposal(txp, reason, cb) {
     $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <rejectTxProposal()>');
@@ -1999,7 +1975,7 @@ export class API extends EventEmitter {
 
   /**
    * Broadcast raw transaction
-   * @param {Object} [opts]
+   * @param {object} [opts]
    * @param {string} [opts.network]
    * @param {string} [opts.rawTx]
    * @param {function} cb Callback function in the standard form (err, txid)
@@ -2029,9 +2005,9 @@ export class API extends EventEmitter {
 
   /**
    * Broadcast a transaction proposal
-   * @param {Object} txp Transaction proposal to broadcast
+   * @param {object} txp Transaction proposal to broadcast
    * @param {function} cb Callback function in the standard form (err, txp, memo?)
-   * @return {Object, string} Return txp object, and (if a paypro broadcast) possibly a memo string
+   * @return {object, string} Return txp object, and (if a paypro broadcast) possibly a memo string
    */
   broadcastTxProposal(txp, cb) {
     $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <broadcastTxProposal()>');
@@ -2136,7 +2112,7 @@ export class API extends EventEmitter {
   /**
    * Remove a transaction proposal
    *
-   * @param {Object} txp
+   * @param {object} txp
    * @param {Callback} cb
    * @return {Callback} cb - Return error or empty
    */
@@ -2154,7 +2130,7 @@ export class API extends EventEmitter {
 
   /**
    * Get transaction history
-   * @param {Object} [opts]
+   * @param {object} [opts]
    * @param {number} [opts.skip] Default: 0
    * @param {number} [opts.limit]
    * @param {string} [opts.tokenAddress]
@@ -2192,7 +2168,7 @@ export class API extends EventEmitter {
    * Get Tranaction by txid
    * @param {string} txid Transaction ID to query
    * @param {function} cb Callback function in the standard form (err, tx)
-   * @return {Object} Returns a transaction object
+   * @return {object} Returns a transaction object
    */
   getTxByHash(txid, cb) {
     $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <getTxByHash()>');
@@ -2210,7 +2186,7 @@ export class API extends EventEmitter {
    * Get Transaction Proposal by id
    * @param {string} txProposalId
    * @param {function} cb Callback function in the standard form (err, txp)
-   * @return {Object} Returns a transaction proposal object
+   * @return {object} Returns a transaction proposal object
    */
   getTx(txProposalId, cb) {
     $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <getTx()>');
@@ -2227,7 +2203,7 @@ export class API extends EventEmitter {
   /**
    * Start an address scanning process.
    * When finished, the scanning process will send a notification 'ScanFinished' to all copayers.
-   * @param {Object} opts
+   * @param {object} opts
    * @param {boolean} [opts.includeCopayerBranches] Default: false
    * @param {number} [opts.startIdx] Address derivation path start index (support agents only)
    * @param {function} cb Callback function in the standard form (err, void)
@@ -2248,7 +2224,7 @@ export class API extends EventEmitter {
 
   /**
    * Adds access to the current copayer
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} opts.requestPrivKey
    * @param {string} opts.signature Signature of the private key, from master key.
    * @param {string} [opts.restrictions]
@@ -2256,7 +2232,7 @@ export class API extends EventEmitter {
    *    - cannotXXX TODO
    * @param {string} [opts.name] Name for the new access
    * @param {function} cb Callback function in the standard form (err, wallet, requestPrivateKey)
-   * @returns {Object, string} Returns the wallet, requestPrivateKey
+   * @returns {object, string} Returns the wallet, requestPrivateKey
    */
   addAccess(opts, cb) {
     $.checkState(this.credentials, 'Failed state: no this.credentials at <addAccess()>');
@@ -2289,10 +2265,10 @@ export class API extends EventEmitter {
 
   /**
    * Get a note associated with the specified txid
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} opts.txid The txid associated with the note
    * @param {function} cb Callback function in the standard form (err, note)
-   * @return {Object} Returns the note
+   * @return {object} Returns the note
    */
   getTxNote(opts, cb) {
     $.checkState(this.credentials, 'Failed state: this.credentials at <getTxNote()>');
@@ -2307,11 +2283,11 @@ export class API extends EventEmitter {
 
   /**
    * Edit a note associated with the specified txid
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} opts.txid The txid associated with the note
    * @param {string} opts.body The contents of the note
    * @param {function} cb Callback function in the standard form (err, note)
-   * @return {Object} Returns the edited note
+   * @return {object} Returns the edited note
    */
   editTxNote(opts, cb) {
     $.checkState(this.credentials, 'Failed state: this.credentials at <editTxNote()>');
@@ -2330,7 +2306,7 @@ export class API extends EventEmitter {
 
   /**
    * Get all notes edited after the specified date
-   * @param {Object} [opts]
+   * @param {object} [opts]
    * @param {string} [opts.minTs] The starting timestamp
    * @param {function} cb Callback function in the standard form (err, notes)
    * @return {Array<any>} Returns an array of notes
@@ -2357,11 +2333,11 @@ export class API extends EventEmitter {
 
   /**
    * Returns exchange rate for the specified currency & timestamp.
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} opts.code Currency ISO code
    * @param {Date|number} [opts.ts] A timestamp to base the rate on. Default: Date.now()
    * @param {string} [opts.coin] Default: 'btc'
-   * @returns {Object} Returns exchange rates object
+   * @returns {object} Returns exchange rates object
    */
   getFiatRate(opts, cb) {
     $.checkArgument(opts?.code, 'Missing argument: code at <getFiatRate()>');
@@ -2383,11 +2359,11 @@ export class API extends EventEmitter {
 
   /**
    * Subscribe to push notifications
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} opts.type Device type (ios or android)
    * @param {string} opts.externalUserId Device token // Braze
    * @param {function} cb Callback function in the standard form (err, response)
-   * @returns {Object} Status of subscription
+   * @returns {object} Status of subscription
    */
   pushNotificationsSubscribe(opts, cb) {
     var url = '/v2/pushnotifications/subscriptions/';
@@ -2410,9 +2386,9 @@ export class API extends EventEmitter {
 
   /**
    * Listen to a tx for its first confirmation
-   * @param {Object} opts
-   * @param {String} opts.txid The txid to subscribe to
-   * @returns {Object} Status of subscription
+   * @param {object} opts
+   * @param {string} opts.txid The txid to subscribe to
+   * @returns {object} Status of subscription
    */
   txConfirmationSubscribe(opts, cb) {
     $.checkArgument(opts?.txid, 'Missing argument: txid at <txConfirmationSubscribe()>');
@@ -2436,13 +2412,13 @@ export class API extends EventEmitter {
 
   /**
    * Returns send max information
-   * @param {Object} opts
+   * @param {object} opts
    * @param {number} [opts.feeLevel] Specify the fee level ('priority', 'normal', 'economy', 'superEconomy'). Default: normal
    * @param {number} [opts.feePerKb] Specify the fee per KB (in satoshi)
    * @param {boolean} [opts.excludeUnconfirmedUtxos] Indicates it if should use (or not) the unconfirmed utxos
    * @param {boolean} [opts.returnInputs] Return the inputs used to build the tx
    * @param {function} cb Callback function in the standard form (err, result)
-   * @return {Object} Returns object result
+   * @return {object} Returns object result
    */
   getSendMaxInfo(opts, cb) {
     opts = opts || {};
@@ -2465,7 +2441,7 @@ export class API extends EventEmitter {
 
   /**
    * Returns gas limit estimate
-   * @param {Object} opts Tx object
+   * @param {object} opts Tx object
    * @param {function} cb Callback function in the standard form (err, gasLimit)
    * @return {number} Returns the gas limit
    */
@@ -2479,7 +2455,7 @@ export class API extends EventEmitter {
 
   /**
    * Returns nonce
-   * @param {Object} opts - chain, coin, network
+   * @param {object} opts - chain, coin, network
    * @param {string} opts.chain EVM based chain or 'xrp'
    * @param {string} opts.network Network name (e.g. 'livenet', 'sepolia', etc.)
    * @param {string} opts.address Address to get nonce for
@@ -2505,12 +2481,12 @@ export class API extends EventEmitter {
 
   /**
    * Returns contract instantiation info. (All contract addresses instantiated by that sender with the current transaction hash and block number)
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} opts.sender Sender wallet address
    * @param {string} opts.coin Chain name. Default: 'eth'
    * @param {string} opts.txId Instantiation transaction id
    * @param {function} cb Callback function in the standard form (err, instantiationInfo)
-   * @return {Object} Returns instantiation info object
+   * @return {object} Returns instantiation info object
    */
   getMultisigContractInstantiationInfo(opts, cb) {
     opts.network = this.credentials.network;
@@ -2522,11 +2498,11 @@ export class API extends EventEmitter {
 
   /**
    * Returns contract info
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} opts.multisigContractAddress MultiSig contract address
    * @param {string} opts.coin Chain name. Default: 'eth'
    * @param {function} cb Callback function in the standard form (err, contractInfo)
-   * @return {Object} Returns contract info object (owners addresses and required number of confirmations)
+   * @return {object} Returns contract info object (owners addresses and required number of confirmations)
    */
   getMultisigContractInfo(opts, cb) {
     var url = '/v1/multisig/info';
@@ -2539,7 +2515,7 @@ export class API extends EventEmitter {
 
   /**
    * Returns contract info
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} opts.tokenAddress Token contract address
    * @param {string} opts.chain Chain name. Default: 'eth'
    * @param {function} cb Callback function in the standard form (err, contractInfo)
@@ -2556,12 +2532,12 @@ export class API extends EventEmitter {
 
   /**
    * Get wallet status based on a string identifier
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} opts.identifier The wallet identifier (one of: walletId, address, txid)
    * @param {boolean} [opts.includeExtendedInfo] Query extended status
    * @param {boolean} [opts.walletCheck] Run server-side walletCheck if wallet is found
    * @param {function} cb Callback function in the standard form (err, status)
-   * @returns {Object} Returns an object with status information
+   * @returns {object} Returns an object with status information
    */
   getStatusByIdentifier(opts, cb) {
     $.checkState(this.credentials, 'Failed state: this.credentials at <getStatusByIdentifier()>');
@@ -2629,7 +2605,7 @@ export class API extends EventEmitter {
 
   /**
    * Upgrade Credentials V1 to Key and Credentials V2 object
-   * @param {Object} v1 Credentials V1 Object
+   * @param {object} v1 Credentials V1 object
    * @returns {{ key, credentials }}
    */
   static upgradeCredentialsV1(v1) {
@@ -2680,7 +2656,7 @@ export class API extends EventEmitter {
   /**
    * Upgrade multiple Credentials V1 to Keys and Credentials V2 objects
    * Duplicate keys will be identified and merged.
-   * @param {Array<Object>} v1 Credentials V1 Object
+   * @param {Array<object>} v1 Credentials V1 object
    * @returns {{ keys, credentials }}
    */
 
@@ -2745,13 +2721,13 @@ export class API extends EventEmitter {
 
   /**
    * Imports existing wallets against BWS and return key & clients[] for each account / coin
-   * @param {Object} opts
+   * @param {object} opts
    * @param {string} opts.words Mnemonic
    * @param {string} opts.xPrivKey Extended Private Key
    * @param {string} [opts.passphrase] Mnemonic's passphrase
    * @param {boolean} [opts.includeTestnetWallets] Include testnet wallets
    * @param {boolean} [opts.includeLegacyWallets] Search legacy wallets
-   * @param {Object} clientOpts BWS connection options (see ClientAPI constructor)
+   * @param {object} clientOpts BWS connection options (see ClientAPI constructor)
    * @param {function} callback Callback function in the standard form (err, key, clients)
    * @returns {key, clients[]} Returns key, clients[]
    */
@@ -2763,15 +2739,16 @@ export class API extends EventEmitter {
     let includeLegacyWallets = opts.includeLegacyWallets;
     let credentials = [];
     let copayerIdAlreadyTested = {};
-    let keyCredentialIndex = [];
+    let keyCredentialIndex: { credentials: Credentials; key: Key; opts: any; status?: string }[] = [];
     let clients = [];
-    let k;
+    let k: Key;
     let sets = [
       {
         // current wallets: /[44,48]/[0,145]'/
         nonCompliantDerivation: false,
         useLegacyCoinType: false,
-        useLegacyPurpose: false
+        useLegacyPurpose: false,
+        passphrase: undefined // is set later
       }
     ];
 
@@ -2826,9 +2803,9 @@ export class API extends EventEmitter {
       credentials.push(c);
     };
 
-    const checkKey = key => {
+    const checkKey = (key: Key) => {
       let opts = [
-        // coin, chain, network,  multisig
+        // [coin, chain, network, multisig, preForkBchCheck]
         ['btc', 'btc', 'livenet'],
         ['bch', 'bch', 'livenet'],
         ['bch', 'bch', 'livenet', false, true], // check for prefork bch wallet
@@ -2856,14 +2833,14 @@ export class API extends EventEmitter {
         opts = opts.filter(x => x[0] == 'bch');
       }
 
-      if (!key.nonCompliantDerivation && includeTestnetWallets) {
+      if (key.compliantDerivation && includeTestnetWallets) {
         const testnet = JSON.parse(JSON.stringify(opts));
         for (const x of testnet) {
           x[2] = 'testnet';
         }
         opts = opts.concat(testnet);
       }
-      if (key.nonCompliantDerivation) {
+      if (!key.compliantDerivation) {
         //  leave only BTC, and no testnet
         opts = opts.filter(x => x[0] == 'btc');
       }
@@ -2917,9 +2894,7 @@ export class API extends EventEmitter {
           if (wallet.status != 'complete') return cb2(null, item);
 
           if (item.status.customData?.walletPrivKey) {
-            credentials.addWalletPrivateKey(
-              item.status.customData.walletPrivKey
-            );
+            credentials.addWalletPrivateKey(item.status.customData.walletPrivKey);
           }
 
           if (credentials.walletPrivKey) {
@@ -2928,9 +2903,7 @@ export class API extends EventEmitter {
             }
           } else {
             // this should only happen in AIR-GAPPED flows
-            log.warn(
-              'Could not verify copayers key (missing wallet Private Key)'
-            );
+            log.warn('Could not verify copayers key (missing wallet Private Key)');
           }
 
           credentials.addPublicKeyRing(
@@ -3148,9 +3121,9 @@ export class API extends EventEmitter {
       );
     };
 
-    let id = Uuid.v4();
+    const id = Uuid.v4();
     for (let i = 0; i < sets.length; i++) {
-      let set: any = sets[i];
+      const set = sets[i];
       try {
         if (opts.words) {
           if (opts.passphrase) {
@@ -3474,4 +3447,47 @@ export class API extends EventEmitter {
       });
     });
   }
-}
+};
+
+export interface CreateWalletOpts {
+  /**
+   * The coin for this wallet (btc, bch). Default: btc
+   */
+  coin?: string;
+  /**
+   * The chain for this wallet (btc, bch). Default: btc
+   */
+  chain?: string;
+  /**
+   * The network for this wallet (livenet, testnet, regtest). Default: livenet
+   */
+  network?: 'livenet' | 'testnet' | 'regtest';
+  /**
+   * The wallet will only ever have one address. Default: false
+   */
+  singleAddress?: boolean;
+  /**
+   * Set a walletPrivKey (instead of random)
+   */
+  walletPrivKey?: string;
+  /**
+   * Set an id for wallet (instead of server given)
+   */
+  id?: string;
+  /**
+   * Set addressType to P2WPKH, P2WSH, or P2TR (segwitVersion = 1)
+   */
+  useNativeSegwit?: boolean;
+  /**
+   * 0 (default) = P2WPKH, P2WSH; 1 = P2TR
+   */
+  segwitVersion?: number;
+  /**
+   * Threshold signature scheme version
+   */
+  tssVersion?: number;
+  /**
+   * Threshold signature key id
+   */
+  tssKeyId?: string;
+};

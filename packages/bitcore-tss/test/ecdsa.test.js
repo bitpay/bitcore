@@ -74,7 +74,6 @@ describe('ECDSA', function() {
               assert.strictEqual(typeof session, 'string');
 
               const keygen = await KeyGen.restore({
-                seed: seeds[party],
                 authKey: authKeys[party],
                 session
               });
@@ -166,7 +165,6 @@ describe('ECDSA', function() {
               assert.strictEqual(typeof session, 'string');
 
               const keygen = await KeyGen.restore({
-                seed: seeds[party],
                 authKey: authKeys[party],
                 session
               });
@@ -209,7 +207,6 @@ describe('ECDSA', function() {
               assert.strictEqual(typeof session, 'string');
 
               const keygen = await KeyGen.restore({
-                seed: seeds[party],
                 authKey: authKeys[party],
                 session
               });
@@ -264,6 +261,17 @@ describe('ECDSA', function() {
               if (vector.evmAddress) {
                 const evmAddress = CWC.Deriver.getAddress('ETH', 'mainnet', pubkey);
                 assert.strictEqual(evmAddress, vector.evmAddress.address);
+              }
+              if (vector.btcAddress) {
+                const xPubKey = new bitcoreLib.HDPublicKey({
+                  network: 'livenet',
+                  depth: 0,
+                  parentFingerPrint: 0,
+                  childIndex: 0,
+                  publicKey: pubkey,
+                  chainCode: chaincode
+                });
+                assert.strictEqual(xPubKey.toString(), vector.btcAddress.xPub);
               }
             });
           }
