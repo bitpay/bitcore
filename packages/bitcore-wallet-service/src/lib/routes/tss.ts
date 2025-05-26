@@ -24,9 +24,9 @@ export class TssRouter {
     router.post('/v1/tss/keygen/:id', createWalletLimiter(opts), verifyTssMessage, async function(req, res) {
       try {
         const id = req.params.id;
-        const msg = req.body;
+        const { message, n, password } = req.body;
         const copayerId = req.headers['x-identity'];
-        await TssKeyGen.processMessage({ id, message: msg, copayerId });
+        await TssKeyGen.processMessage({ id, message, n, password, copayerId });
         return res.send();
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
@@ -60,9 +60,9 @@ export class TssRouter {
     router.post('/v1/tss/sign/:id', authRequest(), verifyTssMessage, async function(req, res) {
       try {
         const id = req.params.id;
-        const msg = req.body;
+        const { message } = req.body;
         const copayerId = req.headers['x-identity'];
-        await TssSign.processMessage({ id, message: msg, copayerId });
+        await TssSign.processMessage({ id, message, copayerId });
         return res.send();
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);

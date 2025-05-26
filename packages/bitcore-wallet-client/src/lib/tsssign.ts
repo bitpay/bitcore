@@ -135,7 +135,7 @@ export class TssSign extends EventEmitter {
    * - `roundsubmitted` => number: A round has been submitted to the server. Emits the round number
    * - `signature` => ISignature: The signature is ready. Emits the signature object
    * - `complete` => void: The signature generation process is complete
-   * - `error` => Error: An error occurred during the process. Emits the error
+   * - `error` => Error: An error occurred during the process. Emits the error. Note that this will not stop the subscription.
    * @param {object} [params]
    * @param {number} [params.timeout] Timeout in milliseconds for the subscription to check for new messages (default: 1000)
    * @param {function} [params.iterHandler] Custom function to fire every iteration. Does not fire on error. 
@@ -162,7 +162,7 @@ export class TssSign extends EventEmitter {
             if (!this.#sign.isSignatureReady()) {
               // For 2 P2P messages (i.e. party of 3), it already exceeds 100 KB (190 KB)
               // Assuming ~80KB per message, the max server size of 2MB would be ~25 P2P messages
-              await this.#request.post(`/v1/tss/sign/${this.id}`, msg);
+              await this.#request.post(`/v1/tss/sign/${this.id}`, { message: msg });
               this.emit('roundsubmitted', thisRound);
             }
           } catch (err) {

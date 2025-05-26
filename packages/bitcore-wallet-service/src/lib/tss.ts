@@ -47,8 +47,8 @@ class TssKeyGenClass {
     return {};
   }
 
-  async processMessage(params: { id: string; message: ITssKeyMessageObject; copayerId: string; }) {
-    const { id, message, copayerId } = params;
+  async processMessage(params: { id: string; message: ITssKeyMessageObject; n?: string | number; password?: string; copayerId: string; }) {
+    const { id, message, n, copayerId } = params;
     if (!id || typeof id !== 'string') {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid id provided: ' + id);
     }
@@ -82,7 +82,7 @@ class TssKeyGenClass {
       if (!this._isValidBroadcastMessage({ message })) {
         throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid broadcast message provided');
       }
-      await this._initSession({ id, message, storage, copayerId });
+      await this._initSession({ id, message, n, storage, copayerId });
     } else {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
@@ -116,20 +116,24 @@ class TssKeyGenClass {
       typeof message?.p2pMessages?.[0]?.commitment === 'string';
   }
 
-  private async _initSession(params: { id: string; message: ITssKeyMessageObject & { n?: number | string; password?: string }; storage: Storage; copayerId: string; }) {
-    const { id, message, storage, copayerId } = params;
-    const n = parseInt(message.n as string);
+  private async _initSession(params: {
+    id: string;
+    message: ITssKeyMessageObject,
+    n: number | string;
+    password?: string;
+    storage: Storage;
+    copayerId: string;
+  }) {
+    const { id, message, password, storage, copayerId } = params;
+    const n = parseInt(params.n as string);
     if (!n || n < 1) {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid n provided: ' + n);
     }
 
     let passwordHash: string = null;
-    if (message.password) {
-      passwordHash = BitcoreLib.crypto.Hash.sha256(Buffer.from(id + message.password)).toString('hex');
+    if (password) {
+      passwordHash = BitcoreLib.crypto.Hash.sha256(Buffer.from(id + password)).toString('hex');
     }
-    
-    delete message.n;
-    delete message.password;
     
     const doc = TssKeyGenModel.create({
       id,

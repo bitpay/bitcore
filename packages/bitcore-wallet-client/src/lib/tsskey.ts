@@ -240,10 +240,8 @@ export class TssKeyGen extends EventEmitter {
     this.partyId = parseInt(partyId);
 
     const msg = await keygen.initJoin();
-    if (password || extra) {
-      msg.password = password || extra;
-    }
-    await this.#request.post('/v1/tss/keygen/' + this.id, msg);
+    password = password || extra;
+    await this.#request.post('/v1/tss/keygen/' + this.id, { message: msg, n: this.n, password });
     return this;
   }
 
@@ -283,7 +281,7 @@ export class TssKeyGen extends EventEmitter {
    * - `roundsubmitted` => number: A round has been submitted to the server. Emits the round number
    * - `keychain` => IKeyChain: The keychain is ready. Emits the keychain object
    * - `complete` => void: The key generation process is complete
-   * - `error` => Error: An error occurred during the process. Emits the error
+   * - `error` => Error: An error occurred during the process. Emits the error. Note that this will not stop the subscription.
    * @param {object} [params]
    * @param {number} [params.timeout] Timeout in milliseconds for the subscription to check for new messages (default: 1000)
    * @param {function} [params.iterHandler] Custom function to fire every iteration. Does not fire on error. 
@@ -310,7 +308,7 @@ export class TssKeyGen extends EventEmitter {
             if (!this.#keygen.isKeyChainReady()) {
               // For 2 P2P messages (i.e. party of 3), it already exceeds 100 KB (190 KB)
               // Assuming ~80KB per message, the max server size of 2MB would be ~25 P2P messages
-              await this.#request.post(`/v1/tss/keygen/${this.id}`, msg);
+              await this.#request.post(`/v1/tss/keygen/${this.id}`, { message: msg });
               this.emit('roundsubmitted', thisRound);
             }
           } catch (err) {
