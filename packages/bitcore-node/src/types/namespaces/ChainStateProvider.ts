@@ -39,6 +39,7 @@ export type GetBalanceForAddressParams = ChainNetwork & {
 export type GetBlockParams = ChainNetwork & {
   blockId?: string;
   sinceBlock?: number | string;
+  height?: number;
   args?: Partial<{ startDate: Date; endDate: Date; date: Date } & StreamingFindOptions<IBtcBlock>>;
 };
 
@@ -69,6 +70,8 @@ export type GetEstimateSmartFeeParams = ChainNetwork & {
   target: number;
   mode?: FeeMode;
   txType?: number | string;
+  rawTx?: string;
+  signatures?: number;
 };
 
 export type GetEstimatePriorityFeeParams = ChainNetwork & {
