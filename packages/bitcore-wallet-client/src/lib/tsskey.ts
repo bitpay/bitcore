@@ -238,7 +238,7 @@ export class TssKeyGen extends EventEmitter {
   /**
    * Join a Threshold Signature Scheme key
    */
-  async joinKey(params:{
+  async joinKey(params: {
     /**
      * Join code given by the session initiator
      */
