@@ -254,10 +254,10 @@ describe('TSS', function() {
       });
 
       it('should verify tss broadcast message', function(done) {
-        const body = JSON.parse(JSON.stringify(vector.keygen.messages.round0.party0));
-        body.publicKey = vector.party0.authKey.publicKey.toString();
+        const message = JSON.parse(JSON.stringify(vector.keygen.messages.round0.party0));
+        message.publicKey = vector.party0.authKey.publicKey.toString();
         app.post(url('test'))
-          .send(body)
+          .send({ message })
           .expect(200)
           .end((err, res) => {
             should.not.exist(err);
@@ -266,10 +266,10 @@ describe('TSS', function() {
       });
 
       it('should verify tss p2p message', function(done) {
-        const body = JSON.parse(JSON.stringify(vector.keygen.messages.round1.party0));
-        body.publicKey = vector.party0.authKey.publicKey.toString();
+        const message = JSON.parse(JSON.stringify(vector.keygen.messages.round1.party0));
+        message.publicKey = vector.party0.authKey.publicKey.toString();
         app.post(url('test'))
-          .send(body)
+          .send({ message })
           .expect(200)
           .end((err, res) => {
             should.not.exist(err);
@@ -290,10 +290,10 @@ describe('TSS', function() {
       });
 
       it('should error if publicKey is bogus', function(done) {
-        const body = JSON.parse(JSON.stringify(vector.keygen.messages.round0.party0));
-        body.publicKey = 'invalid';
+        const message = JSON.parse(JSON.stringify(vector.keygen.messages.round0.party0));
+        message.publicKey = 'invalid';
         app.post(url('test'))
-          .send(body)
+          .send({ message })
           .expect(200)
           .end((err, res) => {
             should.exist(err);
@@ -304,10 +304,10 @@ describe('TSS', function() {
       });
 
       it('should error if publicKey cannot verify broadcast message signature', function(done) {
-        const body = JSON.parse(JSON.stringify(vector.keygen.messages.round0.party0));
-        body.publicKey = new bitcoreLib.PrivateKey().publicKey.toString();
+        const message = JSON.parse(JSON.stringify(vector.keygen.messages.round0.party0));
+        message.publicKey = new bitcoreLib.PrivateKey().publicKey.toString();
         app.post(url('test'))
-          .send(body)
+          .send({ message })
           .expect(200)
           .end((err, res) => {
             should.exist(err);
@@ -318,10 +318,10 @@ describe('TSS', function() {
       });
 
       it('should error if messages are empty arrays', function(done) {
-        const body = { broadcastMessages: [], p2pMessages: [] };
-        body.publicKey = new bitcoreLib.PrivateKey().publicKey.toString();
+        const message = { broadcastMessages: [], p2pMessages: [] };
+        message.publicKey = new bitcoreLib.PrivateKey().publicKey.toString();
         app.post(url('test'))
-          .send(body)
+          .send({ message })
           .expect(200)
           .end((err, res) => {
             should.exist(err);
