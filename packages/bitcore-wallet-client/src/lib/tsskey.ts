@@ -143,14 +143,24 @@ export class TssKeyGen extends EventEmitter {
 
   /**
    * Initiate a new Threshold Signature Scheme key generation session
-   * @param {object} params
-   * @param {number} params.m Number of required signatures
-   * @param {number} params.n Number of parties/signers
-   * @param {string} [params.password] An optional password other parties must provide in order to join the session on the server.
-   *                                   This adds a layer of server-side security beyond the client-side-only join code.
    * @returns {Promise<TssKeyGen>}
    */
-  async newKey({ m, n, password }): Promise<TssKeyGen> {
+  async newKey(params: {
+    /**
+     * Number of required signatures
+     */
+    m: number | string;
+    /**
+     * Number of parties/signers
+     */
+    n: number | string;
+    /**
+     * An optional password other parties must provide in order to join the session on the server.
+     * This adds a layer of server-side security beyond the client-side-only join code.
+     */
+    password?: string;
+  }): Promise<TssKeyGen> {
+    const { m, n, password } = params;
     const keygen = new ECDSA.KeyGen({
       n,
       m,
@@ -158,18 +168,13 @@ export class TssKeyGen extends EventEmitter {
       seed: this.#seed,
       authKey: this.#credentials.requestPrivKey
     });
-
     this.id = BitcoreLib.crypto.Hash.sha256sha256(this.#seed).toString('hex');
-    this.m = parseInt(m);
-    this.n = parseInt(n);
+    this.m = parseInt(m as string);
+    this.n = parseInt(n as string);
     this.partyId = 0;
 
     const msg = await keygen.initJoin();
-    msg.n = n;
-    if (password) {
-      msg.password = password;
-    }
-    await this.#request.post('/v1/tss/keygen/' + this.id, msg);
+    await this.#request.post('/v1/tss/keygen/' + this.id, { message: msg, n, password });
     this.#keygen = keygen;
     return this;
   }
@@ -181,19 +186,45 @@ export class TssKeyGen extends EventEmitter {
    *  intercept or brute force the session ID and submit an initial message to join the session
    *  uninvited. To prevent this (unlikely) possibility, set a password in the newKey() method
    *  and share it with the other parties.
-   * @param params
-   * @param {number} params.partyId Party ID to create the join code for
-   * @param {string} params.partyPubKey Public key of the party to encrypt the join code to
-   * @param {string} [params.extra] Extra data to include in the join code
-   * @param {object} [params.opts] Options for the join code. Also contains opts for the ECIES.encrypt method
-   * @param {string} [params.opts.encoding] Encoding for the join code (default: 'hex')
-   * @param {string} [params.opts.noKey] ECIES.encrypt: Don't include the public key in the result
-   * @param {string} [params.opts.shortTag] ECIES.encrypt: Use a short tag
-   * @param {boolean} [params.opts.deterministicIv] ECIES.encrypt: Use a deterministic IV
    * @returns {string} Encrypted join code
    */
-  createJoinCode({ partyId, partyPubKey, extra, opts }): string {
-    extra = extra || '';
+  createJoinCode(params: {
+    /**
+     * Party ID to create the join code for
+     */
+    partyId: number;
+    /**
+     * Public key of the party to encrypt the join code to
+     */
+    partyPubKey: string;
+    /**
+     * Extra data to include in the join code
+     */
+    extra?: string;
+    /**
+     * Options for the join code. Also contains opts for the ECIES.encrypt method
+     */
+    opts?: {
+      /**
+       * Encoding for the join code (default: 'hex')
+       */
+      encoding?: 'hex' | 'base64' | 'utf8' | 'binary';
+      /**
+       * ECIES.encrypt: Don't include the public key in the result
+       */
+      noKey?: boolean;
+      /**
+       * ECIES.encrypt: Use a short tag
+       */
+      shortTag?: boolean;
+      /**
+       * ECIES.encrypt: Use a deterministic IV
+       */
+      deterministicIv?: boolean;
+    }
+  }): string {
+    const { partyId, partyPubKey, opts } = params;
+    const extra = params.extra || '';
     const data = [this.id, partyId, this.m, this.n, extra].join(':');
     const code = ECIES.encrypt({
       message: data,
@@ -206,15 +237,36 @@ export class TssKeyGen extends EventEmitter {
 
   /**
    * Join a Threshold Signature Scheme key
-   * @param {object} params
-   * @param {string|Buffer} params.code Join code given by the session initiator
-   * @param {object} [params.opts] Options for the join code. Also contains opts for the ECIES.decrypt method
-   * @param {string} [params.opts.encoding] Encoding for the join code (default: 'hex')
-   * @param {boolean} [params.opts.noKey] ECIES.decrypt: The public key is not included the payload
-   * @param {string} [params.opts.shortTag] ECIES.decrypt: A short tag was used during encryption
-   * @param {string} [params.password] Server password to join the TSS key. This was set by the initiator and should be told to you by them.
    */
-  async joinKey({ code, opts, password }): Promise<TssKeyGen> {
+  async joinKey(params:{
+    /**
+     * Join code given by the session initiator
+     */
+    code: string | Buffer;
+    /**
+     * Options for the join code. Also contains opts for the ECIES.decrypt method
+     */
+    opts?: {
+      /**
+       * Encoding for the join code (default: 'hex')
+       */
+      encoding?: 'hex' | 'base64' | 'utf8' | 'binary';
+      /**
+       * ECIES.decrypt: The public key is not included in the payload
+       */
+      noKey?: boolean;
+      /**
+       * ECIES.decrypt: A short tag was used during encryption
+       */
+      shortTag?: boolean;
+    };
+    /**
+     * Server password to join the TSS key. This was set by the initiator and should be told to you by them.
+     */
+    password?: string;
+  }): Promise<TssKeyGen> {
+    let { code, password } = params;
+    const { opts } = params;
     $.checkArgument(code, 'Missing required param: code');
     $.checkArgument(typeof code === 'string' || Buffer.isBuffer(code), '`code` must be a string or buffer');
 
@@ -241,7 +293,7 @@ export class TssKeyGen extends EventEmitter {
 
     const msg = await keygen.initJoin();
     password = password || extra;
-    await this.#request.post('/v1/tss/keygen/' + this.id, { message: msg, n: this.n, password });
+    await this.#request.post('/v1/tss/keygen/' + this.id, { message: msg, password });
     return this;
   }
 
@@ -258,11 +310,15 @@ export class TssKeyGen extends EventEmitter {
 
   /**
    * Restore a session from a previously exported session
-   * @param {object} params
-   * @param {string} params.session Session string to restore
    * @returns {Promise<TssKeyGen>} Restored TSS instance
    */
-  async restoreSession({ session }): Promise<TssKeyGen> {
+  async restoreSession(params: {
+    /**
+     * Session string to restore
+     */
+    session: string;
+  }): Promise<TssKeyGen> {
+    const { session } = params;
     const [id, partyId, m, n, keygenSession] = session.split(':');
     this.id = id;
     this.m = parseInt(m);
@@ -282,12 +338,20 @@ export class TssKeyGen extends EventEmitter {
    * - `keychain` => IKeyChain: The keychain is ready. Emits the keychain object
    * - `complete` => void: The key generation process is complete
    * - `error` => Error: An error occurred during the process. Emits the error. Note that this will not stop the subscription.
-   * @param {object} [params]
-   * @param {number} [params.timeout] Timeout in milliseconds for the subscription to check for new messages (default: 1000)
-   * @param {function} [params.iterHandler] Custom function to fire every iteration. Does not fire on error. 
    * @returns {NodeJS.Timeout} Subscription ID
    */
-  subscribe({ timeout, iterHandler }: { timeout?: number; iterHandler?: () => void } = {}): NodeJS.Timeout {
+  subscribe(params: {
+    /**
+     * Timeout in milliseconds for the subscription to check for new messages (default: 1000)
+     * @default 1000
+     */
+    timeout?: number;
+    /**
+     * Custom function to fire every iteration. Does not fire on error.
+     */
+    iterHandler?: () => void;
+  } = {}): NodeJS.Timeout {
+    const { timeout, iterHandler } = params;
     this.#subscriptionId = setInterval(async () => {
       if (this.#subscriptionRunning) return;
       this.#subscriptionRunning = true;
@@ -350,10 +414,15 @@ export class TssKeyGen extends EventEmitter {
 
   /**
    * Unsubscribe from the TSS key generation process
-   * @param {object} [params]
-   * @param {boolean} [params.clearEvents] Whether to remove all event listeners (default: true)
    */
-  unsubscribe({ clearEvents }: { clearEvents: boolean } = { clearEvents: true}): void {
+  unsubscribe(params: {
+    /**
+     * Whether to remove all event listeners
+     * @default true
+     */
+    clearEvents: boolean;
+  } = { clearEvents: true}): void {
+    const { clearEvents } = params;
     clearInterval(this.#subscriptionId);
     if (clearEvents) {
       this.removeAllListeners();

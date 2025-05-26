@@ -68,13 +68,24 @@ export class TssSign extends EventEmitter {
 
   /**
    * Initiate a new Threshold Signature Scheme key generation session
-   * @param {object} params
-   * @param {string|Buffer} params.message Message to be signed
-   * @param {string} [params.id] Optional ID for the session. If not provided, ID will be generated
-   * @param {string} [params.derivationPath] Optional derivation path for the key to sign with
    * @returns {Promise<TssSign>}
    */
-  async start({ message, id, derivationPath }: { message: string | Buffer, id?: string, derivationPath?: string }): Promise<TssSign> {
+  async start(params: {
+    /**
+     * Message to be signed
+     */
+    message: string | Buffer;
+    /**
+     * Optional ID for the session. If not provided, ID will be generated
+     */
+    id?: string;
+    /**
+     * Optional derivation path for the key to sign with
+     */
+    derivationPath?: string;
+  }): Promise<TssSign> {
+    let { message } = params;
+    const { id, derivationPath } = params;
     $.checkArgument(Buffer.isBuffer(message) || typeof message === 'string', 'message must be a string or Buffer');
     $.checkArgument(id == null || typeof id === 'string', 'id must be a string or not provided');
     
@@ -93,8 +104,8 @@ export class TssSign extends EventEmitter {
     this.id = id || BitcoreLib.crypto.Hash.sha256(messageHash).toString('hex');
 
     const msg = await sign.initJoin();
-    msg.m = this.#tssKey.metadata.m;
-    await this.#request.post('/v1/tss/sign/' + this.id, msg);
+    const m = this.#tssKey.metadata.m;
+    await this.#request.post('/v1/tss/sign/' + this.id, { message: msg, m });
     this.#sign = sign;
     return this;
   }
@@ -112,11 +123,15 @@ export class TssSign extends EventEmitter {
 
   /**
    * Restore a session from a previously exported session
-   * @param {object} params
-   * @param {string} params.session Session string to restore
    * @returns {Promise<TssSign>} Restored TSS instance
    */
-  async restoreSession({ session }): Promise<TssSign> {
+  async restoreSession(params: {
+    /**
+     * Session string to restore
+     */
+    session: string;
+  }): Promise<TssSign> {
+    const { session } = params;
     const [id, sigSession] = session.split(':');
     this.id = id;
     this.#sign = await ECDSA.Sign.restore({
@@ -136,12 +151,21 @@ export class TssSign extends EventEmitter {
    * - `signature` => ISignature: The signature is ready. Emits the signature object
    * - `complete` => void: The signature generation process is complete
    * - `error` => Error: An error occurred during the process. Emits the error. Note that this will not stop the subscription.
-   * @param {object} [params]
-   * @param {number} [params.timeout] Timeout in milliseconds for the subscription to check for new messages (default: 1000)
-   * @param {function} [params.iterHandler] Custom function to fire every iteration. Does not fire on error. 
    * @returns {NodeJS.Timeout} Subscription ID
    */
-  subscribe({ timeout, iterHandler }: { timeout?: number; iterHandler?: () => void } = {}): NodeJS.Timeout {
+  subscribe(params: {
+    /**
+     * Timeout in milliseconds for the subscription to check for new messages.
+     * @default 1000
+     */
+    timeout?: number;
+    /**
+     * Custom function to fire every iteration. Does not fire on error.
+     * This is useful for custom handling of the subscription process
+     */
+    iterHandler?: () => void;
+  } = {}): NodeJS.Timeout {
+    const { timeout, iterHandler } = params;
     this.#subscriptionId = setInterval(async () => {
       if (this.#subscriptionRunning) return;
       this.#subscriptionRunning = true;
@@ -201,7 +225,14 @@ export class TssSign extends EventEmitter {
    * @param {object} [params]
    * @param {boolean} [params.clearEvents] Whether to remove all event listeners (default: true)
    */
-  unsubscribe({ clearEvents }: { clearEvents: boolean } = { clearEvents: true}): void {
+  unsubscribe(params: {
+    /**
+     * Whether to remove all event listeners
+     * @default true
+     */
+    clearEvents: boolean;
+  } = { clearEvents: true}): void {
+    const { clearEvents } = params;
     clearInterval(this.#subscriptionId);
     if (clearEvents) {
       this.removeAllListeners();

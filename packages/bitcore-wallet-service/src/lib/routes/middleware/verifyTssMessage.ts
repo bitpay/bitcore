@@ -6,7 +6,7 @@ import { ITssSigMessageObject } from '../../model/tsssign';
 
 export async function verifyTssMessage(req, res, next) {
   try {
-    const message: ITssKeyMessageObject | ITssSigMessageObject = req.body
+    const { message }: { message: ITssKeyMessageObject | ITssSigMessageObject } = req.body
     const { publicKey } = message;
     if (!publicKey) {
       return res.status(400).send(Errors.TSS_PUBKEY_MISSING);

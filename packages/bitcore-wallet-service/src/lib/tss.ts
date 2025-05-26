@@ -48,7 +48,7 @@ class TssKeyGenClass {
   }
 
   async processMessage(params: { id: string; message: ITssKeyMessageObject; n?: string | number; password?: string; copayerId: string; }) {
-    const { id, message, n, copayerId } = params;
+    const { id, message, n, password, copayerId } = params;
     if (!id || typeof id !== 'string') {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid id provided: ' + id);
     }
@@ -65,7 +65,7 @@ class TssKeyGenClass {
       }
 
       if (!session.participants[message.partyId]) {
-        if (!this._checkPassword({ session, message })) {
+        if (!this._checkPassword({ session, password })) {
           throw Errors.TSS_INVALID_PASSWORD;
         }
         await storage.storeTssKeyGenParticipant({ id, partyId: message.partyId, copayerId });
@@ -82,21 +82,21 @@ class TssKeyGenClass {
       if (!this._isValidBroadcastMessage({ message })) {
         throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid broadcast message provided');
       }
-      await this._initSession({ id, message, n, storage, copayerId });
+      await this._initSession({ id, message, n, password, storage, copayerId });
     } else {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
   }
 
-  private _checkPassword(params: { session: TssKeyGenModel; message: ITssKeyMessageObject & { password?: string } }) {
-    const { session, message } = params;
+  private _checkPassword(params: { session: TssKeyGenModel; password: string; }) {
+    const { session, password } = params;
     if (!session.joinPassword) {
       return true;
     }
-    if (!message.password) {
+    if (!password) {
       return false;
     }
-    const passwordHash = BitcoreLib.crypto.Hash.sha256(Buffer.from(session.id + message.password)).toString('hex');
+    const passwordHash = BitcoreLib.crypto.Hash.sha256(Buffer.from(session.id + password)).toString('hex');
     return session.joinPassword === passwordHash;
   }
 
@@ -249,8 +249,8 @@ class TssSignClass {
     return {};
   }
 
-  async processMessage(params: { id: string; message: ITssSigMessageObject; copayerId: string; }) {
-    const { id, message, copayerId } = params;
+  async processMessage(params: { id: string; message: ITssSigMessageObject; m?: string | number; copayerId: string; }) {
+    const { id, message, m, copayerId } = params;
     if (!id || typeof id !== 'string') {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid id provided: ' + id);
     }
@@ -292,7 +292,7 @@ class TssSignClass {
       if (!this._isValidBroadcastMessage({ message })) {
         throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid broadcast message provided');
       }  
-      await this._initSession({ id, message, storage, copayerId });
+      await this._initSession({ id, message, m, storage, copayerId });
     } else {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
@@ -313,13 +313,12 @@ class TssSignClass {
       typeof message?.p2pMessages?.[0]?.payload?.signature === 'string';
   }
 
-  private async _initSession(params: { id: string; message: ITssSigMessageObject & { m?: number | string }; storage: Storage; copayerId: string; }) {
+  private async _initSession(params: { id: string; message: ITssSigMessageObject; m: number | string; storage: Storage; copayerId: string; }) {
     const { id, message, storage, copayerId } = params;
-    const m = parseInt(message.m as string);
+    const m = parseInt(params.m as string);
     if (!m || m < 1) {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid m provided: ' + m);
     }
-    delete message.m;
     const doc = TssSigGenModel.create({
       id,
       message,
@@ -364,9 +363,8 @@ class TssSignClass {
     }
   }
 
-  async storeSignature(params: { id: string; message: Partial<ITssSigMessageObject>; }) {
-    const { id, message } = params;
-    const { signature } = message;
+  async storeSignature(params: { id: string; signature: ITssSigMessageObject['signature']; }) {
+    const { id, signature } = params;
     if (!signature) {
       throw Errors.TSS_NO_FINAL_SIGNATURE;
     }

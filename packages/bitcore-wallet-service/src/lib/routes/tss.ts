@@ -60,9 +60,9 @@ export class TssRouter {
     router.post('/v1/tss/sign/:id', authRequest(), verifyTssMessage, async function(req, res) {
       try {
         const id = req.params.id;
-        const { message } = req.body;
+        const { message, m } = req.body;
         const copayerId = req.headers['x-identity'];
-        await TssSign.processMessage({ id, message, copayerId });
+        await TssSign.processMessage({ id, message, m, copayerId });
         return res.send();
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
@@ -83,8 +83,8 @@ export class TssRouter {
     router.post('/v1/tss/sign/:id/store', authTssRequest(), async function(req, res) {
       try {
         const id = req.params.id;
-        const message = req.body;
-        await TssSign.storeSignature({ id, message });
+        const { signature } = req.body;
+        await TssSign.storeSignature({ id, signature });
         return res.send();
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
