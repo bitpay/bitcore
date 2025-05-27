@@ -1,4 +1,4 @@
-FROM node:20.18.0-bullseye
+FROM node:22
 
 # initial setup
 RUN set -x && node -v && npm -v
