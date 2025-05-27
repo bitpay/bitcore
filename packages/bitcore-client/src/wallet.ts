@@ -56,6 +56,7 @@ export interface WalletObj {
   tokens: Array<any>;
   lite: boolean;
   addressType: string;
+  addressZero: string;
 }
 
 export interface BumpTxFeeType {
@@ -92,6 +93,7 @@ export class Wallet {
   tokens?: Array<any>;
   lite: boolean;
   addressType: string;
+  addressZero: string;
 
   static XrpAccountFlags = xrpl.AccountSetTfFlags;
 
@@ -147,7 +149,8 @@ export class Wallet {
       tokens: this.tokens,
       storageType: this.storageType,
       lite,
-      addressType: this.addressType
+      addressType: this.addressType,
+      addressZero: this.addressZero
     };
   }
 
@@ -233,7 +236,8 @@ export class Wallet {
       storage,
       storageType,
       lite,
-      addressType
+      addressType,
+      addressZero: null
     } as WalletObj);
 
     // save wallet to storage and then bitcore-node
@@ -501,6 +505,8 @@ export class Wallet {
     isSweep?: boolean;
     type?: string;
     flags?: number;
+    blockHash?: string;
+    blockHeight?: number;
   }) {
     const chain = params.token || params.tokenName ? this.chain + 'ERC20' : this.chain;
     let tokenContractAddress;
@@ -537,7 +543,9 @@ export class Wallet {
       lockUntilDate: params.lockUntilDate,
       isSweep: params.isSweep,
       type: params.type,
-      flags: params.flags
+      flags: params.flags,
+      blockHash: params.blockHash,
+      blockHeight: params.blockHeight
     };
     return Transactions.create(payload);
   }
@@ -683,8 +691,23 @@ export class Wallet {
   }
 
   deriveAddress(addressIndex, isChange) {
+    if (addressIndex === 0 && this.addressZero) {
+      return this.addressZero;
+    }
     const address = Deriver.deriveAddress(this.chain, this.network, this.xPubKey, addressIndex, isChange, this.addressType);
     return address;
+  }
+
+  async solSignMessage(privateKey, message) {
+    const privKeyBytes = SolKit.getBase58Encoder().encode(privateKey);
+    const keypair = await SolKit.createKeyPairFromPrivateKeyBytes(privKeyBytes);
+    const encodedMessage = SolKit.getUtf8Encoder().encode(message);
+    const signedBytes = await SolKit.signBytes(keypair.privateKey, encodedMessage);
+    return SolKit.getBase58Decoder().decode(signedBytes);
+  }
+
+  async getBlockTip() {
+    return this.client.getBlockTip();
   }
 
   async derivePrivateKey(isChange, addressIndex = this.addressIndex) {
@@ -718,6 +741,9 @@ export class Wallet {
       this.addressIndex++;
     }
     await this.importKeys({ keys });
+    if (addressIndex === 0) {
+      this.addressZero = newPrivateKey.address.toString();
+    }
     await this.saveWallet();
     return keys.map(key => key.address.toString());
   }

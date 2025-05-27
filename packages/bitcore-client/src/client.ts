@@ -249,4 +249,9 @@ export class Client {
     const url = `${this.apiUrl}/l1/fee${safe ? '?safe=true' : ''}`;
     return this._request({ method: 'POST', url, json: true, body });
   }
+
+  getBlockTip() {
+    const url = `${this.apiUrl}/block/tip`;
+    return this._request({ method: 'GET', url, json: true });
+  }
 }
