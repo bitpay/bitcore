@@ -19,7 +19,7 @@ COPY packages/ ./packages/
 RUN npm install --ignore-scripts
 RUN npm run bootstrap
 
-# not sure why this isn't being found, so just manually install for now
+# not sure why "xrpl-secret-numbers" isn't being found, so just manually install for now
 RUN npm install xrpl-secret-numbers 
 RUN npm run compile
 
