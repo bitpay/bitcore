@@ -2,7 +2,6 @@ FROM node:22
 
 # initial setup
 RUN set -x && node -v && npm -v
-RUN npm i -g npm@8.19.3
 WORKDIR /bitcore
 
 # Add source
