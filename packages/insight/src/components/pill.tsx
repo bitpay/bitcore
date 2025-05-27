@@ -1,5 +1,5 @@
-import { FC } from "react";
-import styled from "styled-components";
+import { FC } from 'react';
+import styled from 'styled-components';
 import CloseLightSvg from 'src/assets/images/close-light.svg'
 import {Black, Slate30} from '../assets/styles/colors';
 
@@ -29,7 +29,7 @@ const PillCloseButtonCircle = styled.div`
 interface PillProps {
   currency?: string,
   network?: string,
-  onCloseClick?: any
+  onCloseClick?: () => void
 }
 
 export const Pill: FC<PillProps> = ({ currency, network, onCloseClick }) => {
@@ -39,7 +39,7 @@ export const Pill: FC<PillProps> = ({ currency, network, onCloseClick }) => {
         <img src={`https://bitpay.com/img/icon/currencies/${currency}.svg`} alt={currency} style={{height: '120%'}} />
         <p style={{textTransform: 'capitalize', color: Black, padding: '5px'}}>{network}</p>
         <PillCloseButtonCircle onClick={onCloseClick}>
-          <img src={CloseLightSvg} style={{height: '100%', padding: '9px'}} />
+          <img src={CloseLightSvg} alt='Close' style={{height: '100%', padding: '9px'}} />
         </PillCloseButtonCircle>
       </PillBubble>
     : null

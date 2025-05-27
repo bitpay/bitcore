@@ -1,4 +1,4 @@
-import {FC, memo} from 'react';
+import {FC, memo, useMemo} from 'react';
 import {determineInputType, searchValue} from 'src/utilities/search-helper-methods';
 import {useNavigate} from 'react-router-dom';
 import styled, {useTheme} from 'styled-components';
@@ -152,16 +152,24 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
     dispatch(changeNetwork(''));
   }
 
+  const searchInputPlaceholder = useMemo(() => {
+    let placeholder = 'Search for block, transaction, or address';
+    if (currency && network) {
+      placeholder = `${placeholder} on ${currency} ${network}`;
+    }
+    return placeholder;
+  }, [currency, network]);
+
   return (
     <>
       <SearchForm onSubmit={search} borderBottom={borderBottom}>
         <span style={{display: 'flex', alignItems: 'center' }}>
-          <img src={searchIcon} style={{padding: 7}}></img>
+          <img src={searchIcon} alt='Search' style={{padding: 7}}></img>
           <Pill currency={currency} network={network} onCloseClick={handlePillCloseButtonClick} />
           <SearchInput
             id={id || 'search'}
             type='text'
-            placeholder='Search for block, transaction, or address'
+            placeholder={searchInputPlaceholder}
             required
             aria-labelledby='search'
             tabIndex={0}
