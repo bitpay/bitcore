@@ -6,6 +6,7 @@
   },
   "scripts": {
     "build": "docker build -t bitcore-node . ",
+    "build:bitpay": "docker build -t bitpay/bitcore-node:latest -f packages/bitcore-node/Dockerfile .",
     "watch": "./node_modules/.bin/lerna run watch --parallel",
     "postinstall": "npm run bootstrap && npm run compile",
     "bootstrap": "./node_modules/.bin/lerna bootstrap",
