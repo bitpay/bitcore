@@ -25,16 +25,16 @@ export const Constants = {
   },
   BIP45_SHARED_INDEX: 0x80000000 - 1,
   CURVES: {
-    ED25519: 'ed25519',
-    SECP256K1: 'secp256k1',
+    ED25519: 'ed25519' as const,
+    SECP256K1: 'secp256k1' as const,
   },
   ALGOS: {
-    EDDSA: 'EDDSA',
-    ECDSA: 'ECDSA'
+    EDDSA: 'EDDSA' as const,
+    ECDSA: 'ECDSA' as const,
   },
   CURVE_KEY: {
-    ED25519: 'ed25519',
-    BITCOIN: 'bitcoin',
+    ED25519: 'ed25519' as const,
+    BITCOIN: 'bitcoin' as const,
   },
 
   // there is no need to add new entries here ( only for backwards compatiblity )
