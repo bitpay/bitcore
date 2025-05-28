@@ -8,8 +8,6 @@ import {
 } from '../../constants/chains';
 import { Key } from '../../derivation';
 import { MULTISENDAbi } from '../erc20/abi';
-const utils = require('web3-utils');
-const { toBN } = Web3.utils;
 export class ETHTxProvider {
   chain: string;
 
@@ -33,42 +31,42 @@ export class ETHTxProvider {
     const { recipients, nonce, gasPrice, gasLimit, network, contractAddress, maxGasFee, priorityGasFee, txType } = params;
     let { data } = params;
     let to;
-    let amount;
+    let amount: bigint;
     if (recipients.length > 1) {
       if (!contractAddress) {
         throw new Error('Multiple recipients requires use of multi-send contract, please specify contractAddress');
       }
       const addresses = [];
       const amounts = [];
-      amount = toBN(0);
+      amount = 0n;
       for (let recipient of recipients) {
         addresses.push(recipient.address);
-        amounts.push(toBN(this._valueToString(recipient.amount)));
-        amount = amount.add(toBN(this._valueToString(recipient.amount)));
+        amounts.push(BigInt(this._valueToString(recipient.amount)));
+        amount += BigInt(this._valueToString(recipient.amount));
       }
       const multisendContract = this.getMultiSendContract(contractAddress);
       data = data || multisendContract.methods.sendEth(addresses, amounts).encodeABI();
       to = contractAddress;
     } else {
       to = recipients[0].address;
-      amount = toBN(this._valueToString(recipients[0].amount));
+      amount = BigInt(this._valueToString(recipients[0].amount));
     }
     let { chainId } = params;
     chainId = chainId || this.getChainId(network);
     let txData: any = {
-      nonce: utils.toHex(nonce),
-      gasLimit: utils.toHex(gasLimit),
+      nonce: Web3.utils.toHex(nonce),
+      gasLimit: Web3.utils.toHex(gasLimit),
       to,
       data,
-      value: utils.toHex(amount),
+      value: Web3.utils.toHex(amount),
       chainId
     };
     if (maxGasFee && (txType == null || txType >= 2)) {
-      txData.maxFeePerGas = utils.toHex(maxGasFee);
-      txData.maxPriorityFeePerGas = utils.toHex(priorityGasFee || this.getPriorityFeeMinimum(chainId));
+      txData.maxFeePerGas = Web3.utils.toHex(maxGasFee);
+      txData.maxPriorityFeePerGas = Web3.utils.toHex(priorityGasFee || this.getPriorityFeeMinimum(chainId));
       txData.type = 2;
     } else {
-      txData.gasPrice = utils.toHex(gasPrice);
+      txData.gasPrice = Web3.utils.toHex(gasPrice);
       txData.type = txType || 0;
     }
 
