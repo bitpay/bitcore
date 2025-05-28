@@ -12,9 +12,10 @@ import logger from '../../logger';
 import { ERC20Abi } from './abi-erc20';
 import { InvoiceAbi } from './abi-invoice';
 
-const { toBN } = Web3.utils;
-const Constants = Common.Constants;
-const Defaults = Common.Defaults;
+const {
+  Constants,
+  Defaults
+} = Common;
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];
@@ -181,8 +182,8 @@ export class EthChain implements IChain {
         let fee = 0;
         const defaultGasLimit = this.getDefaultGasLimit(opts);
         let outputAddresses = []; // Parameter for MuliSend contract
-        let outputAmounts = []; // Parameter for MuliSend contract
-        let totalValue = toBN(0); // Parameter for MuliSend contract
+        let outputAmounts: bigint[] = []; // Parameter for MuliSend contract
+        let totalValue = 0n; // Parameter for MuliSend contract
         logger.info(`getFee for address ${from} on network ${network} and chain ${chain}`);
         logger.info('getFee.opts: %o', { from, txType, priorityFeePercentile, gasLimitBuffer });
         logger.info(`[${from}] Add gas limit buffer?: ${!!gasLimitBuffer}`);
@@ -190,9 +191,9 @@ export class EthChain implements IChain {
           // Multisend txs build contract fn parameters (addresses, amounts) and bypass output level gas estimations
           if (opts.multiSendContractAddress) {
             outputAddresses.push(output.toAddress);
-            outputAmounts.push(toBN(BigInt(output.amount).toString()));
+            outputAmounts.push(BigInt(output.amount));
             if (!opts.tokenAddress) {
-              totalValue = totalValue.add(toBN(BigInt(output.amount).toString()));
+              totalValue += BigInt(output.amount);
             }
             // Used as a fallback value if estimateGas fails for multisend
             inGasLimit += output.gasLimit ? output.gasLimit : defaultGasLimit;
@@ -526,7 +527,7 @@ export class EthChain implements IChain {
         output.amount == null ||
         output.amount < 0 ||
         isNaN(output.amount) ||
-        Web3.utils.toBN(BigInt(output.amount).toString()).toString() !== BigInt(output.amount).toString()
+        Web3.utils.toHex(BigInt(output.amount).toString()).toString() !== BigInt(output.amount).toString(16)
       ) {
         throw new Error('output.amount is not a valid value: ' + output.amount);
       }
