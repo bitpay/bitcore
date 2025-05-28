@@ -161,25 +161,23 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
   }, [currency, network]);
 
   return (
-    <>
-      <SearchForm onSubmit={search} borderBottom={borderBottom}>
-        <span style={{display: 'flex', alignItems: 'center' }}>
-          <img src={searchIcon} alt='Search' style={{padding: 7}}></img>
-          <Pill currency={currency} network={network} onCloseClick={handlePillCloseButtonClick} />
-          <SearchInput
-            id={id || 'search'}
-            type='text'
-            placeholder={searchInputPlaceholder}
-            required
-            aria-labelledby='search'
-            tabIndex={0}
-            autoComplete='off'
-            autoCorrect='off'
-            spellCheck='false'
-          />
-        </span>
-      </SearchForm>
-    </>
+    <SearchForm onSubmit={search} borderBottom={borderBottom}>
+      <span style={{display: 'flex', alignItems: 'center' }}>
+        <img src={searchIcon} alt='Search' style={{padding: 7}}></img>
+        <Pill currency={currency} network={network} onCloseClick={handlePillCloseButtonClick} />
+        <SearchInput
+          id={id || 'search'}
+          type='text'
+          placeholder={searchInputPlaceholder}
+          required
+          aria-labelledby='search'
+          tabIndex={0}
+          autoComplete='off'
+          autoCorrect='off'
+          spellCheck='false'
+        />
+      </span>
+    </SearchForm>
   );
 };
 

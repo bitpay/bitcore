@@ -5,7 +5,6 @@ import {Black, Slate30} from '../assets/styles/colors';
 
 const PillBubble = styled.div`
   padding: 7px;
-  padding-right: 10px;
   margin-right: 10px;
   display: flex;
   align-items: center;
