@@ -138,7 +138,7 @@ export class SOLTxProvider {
           ata: ataAddress
         });
         const ataTxMessage = pipe(
-          SolKit.createTransactionMessage({ version: txType }),
+          SolKit.createTransactionMessage({ version: 0 }),
           (tx) => SolKit.setTransactionMessageFeePayerSigner(fromKeyPair, tx),
           (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash({ blockhash: blockHash as SolKit.Blockhash, lastValidBlockHeight: BigInt(blockHeight) }, tx),
           (tx) => SolKit.appendTransactionMessageInstructions(

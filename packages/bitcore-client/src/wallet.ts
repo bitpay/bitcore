@@ -591,7 +591,7 @@ export class Wallet {
     const blockHeight = tip.height;
     const privateKey = await this.derivePrivateKey(null, 0)
     const privKeyBytes = SolKit.getBase58Encoder().encode(privateKey.privKey);
-    const keyPair = await SolKit.createKeyPairFromPrivateKeyBytes(privKeyBytes);
+    const keyPair = await SolKit.createKeyPairSignerFromPrivateKeyBytes(privKeyBytes);
     const tx = Transactions.create({
       network: this.network,
       chain: this.chain,

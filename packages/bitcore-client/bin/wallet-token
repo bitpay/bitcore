@@ -35,7 +35,9 @@ const main = async () => {
       const password = await promptly.password('Wallet Password:');
       wallet = await wallet.unlock(password);
       const tx = await wallet.createAtaAccount(contractAddress)
-      console.log(`Created ATA for ${contractAddress}. Transaction: ${tx}`);
+      const signedTx = await wallet.signTransaction({ tx });
+      const transaction = await wallet.broadcast({ tx: signedTx });
+      console.log(`Created ATA for ${contractAddress}. Transaction: ${transaction.txid}`);
       token = await wallet.getToken(contractAddress); // re-fetch after creating ATA
     }
     const tokenObj = {
@@ -45,7 +47,7 @@ const main = async () => {
       name: tokenName || token.symbol,
       ataAddress: token.ataAddress || undefined,
     };
-  
+
     if (!tokenObj.name) {
       throw new Error('tokenName is required for this wallet');
     }
@@ -60,7 +62,7 @@ const main = async () => {
       wallet.tokens = wallet.tokens.filter(t => t.address !== existing.address);
     }
     await wallet.addToken(tokenObj);
-    console.log(`Successfully added ${token.name} (${token.symbol})`);
+    console.log(`Successfully added ${tokenObj.name} (${tokenObj.symbol})`);
   } catch (e) {
     console.error(e);
   }
