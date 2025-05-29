@@ -534,6 +534,13 @@ export class Wallet {
     } else if (!change) {
       change = await this._getChangeAddress();
     }
+    let blockHash = params.blockHash;
+    let blockHeight = params.blockHeight;
+    if (this.isSolanaChain() && (!blockHash || !blockHeight)) {
+      const tip = await this.client.getBlockTip();
+      blockHash = tip.hash;
+      blockHeight = tip.height;
+    }
     const payload = {
       network: this.network,
       chain,
@@ -558,34 +565,47 @@ export class Wallet {
       isSweep: params.isSweep,
       type: params.type,
       flags: params.flags,
-      blockHash: params.blockHash,
-      blockHeight: params.blockHeight,
+      blockHash,
+      blockHeight,
       decimals,
       fromAta
     };
     return Transactions.create(payload);
   }
 
-  async createAtaAccount(params: { mintAddress: string }) {
+  async createAtaAccount(mintAddress) {
     if (!this.isSolanaChain()) {
       throw new Error('createAtaAccount is only supported for Solana wallets');
     }
     const owner = SolKit.address(this.addressZero);
-    if (!params.mintAddress) {
+    if (!mintAddress) {
       throw new Error('mintAddress is required to create an associated token account');
     }
     const [newAccount] = await SolanaProgram.Token.findAssociatedTokenPda({
       owner,
       tokenProgram: SolanaProgram.Token.TOKEN_PROGRAM_ADDRESS,
-      mint: SolKit.address(params.mintAddress),
+      mint: SolKit.address(mintAddress),
     });
-    return Transactions.create({
+    const tip = await this.client.getBlockTip();
+    const blockHash = tip.hash;
+    const blockHeight = tip.height;
+    const privateKey = await this.derivePrivateKey(null, 0)
+    const privKeyBytes = SolKit.getBase58Encoder().encode(privateKey.privKey);
+    const keyPair = await SolKit.createKeyPairFromPrivateKeyBytes(privKeyBytes);
+    const tx = Transactions.create({
       network: this.network,
       chain: this.chain,
-      category: 'createAccount',
-      fromKeyPair: owner,
-      recipients: [{ addressKeyPair: newAccount, amount: 0.002 * 1e12 }], // 0.002 SOL for rent exemption
-    })
+      category: 'createata',
+      fromKeyPair: keyPair,
+      from: this.addressZero,
+      ataAddress: newAccount,
+      blockHash,
+      blockHeight,
+      mint: mintAddress,
+    });
+    const sig = await this.signTx({ tx });
+    await this.broadcast({ tx: sig });
+    return sig;
   }
 
   async broadcast(params: { tx: string }) {

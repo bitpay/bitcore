@@ -32,7 +32,9 @@ const main = async () => {
       if (!ans) {
         return;
       }
-      const tx = await wallet.createAtaAccount({ mintAddress: contractAddress })
+      const password = await promptly.password('Wallet Password:');
+      wallet = await wallet.unlock(password);
+      const tx = await wallet.createAtaAccount(contractAddress)
       console.log(`Created ATA for ${contractAddress}. Transaction: ${tx}`);
       token = await wallet.getToken(contractAddress); // re-fetch after creating ATA
     }
