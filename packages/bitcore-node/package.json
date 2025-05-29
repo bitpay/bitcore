@@ -18,6 +18,7 @@
     "debug": "npm run tsc && node --trace-warnings --inspect build/src/server.js --DEBUG true",
     "clean": "rm -rf build",
     "compile": "npm run tsc",
+    "build:docker": "docker build -t bitpay/bitcore-node:latest -f ./Dockerfile ../..",
     "docs:build-html": "typedoc --out ./docs/html --tsconfig tsconfig.json ./src",
     "docs:build-json": "typedoc --json ./docs/json --tsconfig tsconfig.json ./src",
     "tsc": "npm run clean && tsc",

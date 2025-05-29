@@ -14,4 +14,4 @@ RUN npm run bootstrap
 RUN npm run compile
 
 # Start the server
-CMD ["node", "packages/bitcore-node/build/src/server.js"]
+CMD ["./start-docker.sh"]
