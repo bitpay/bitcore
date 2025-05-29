@@ -305,6 +305,10 @@ export class Wallet {
     return ['ETH', 'MATIC', 'ARB', 'OP', 'BASE'].includes(this.chain?.toUpperCase());
   }
 
+  isSolanaChain() {
+    return ['SOL'].includes(this.chain?.toUpperCase());
+  }
+
   lock() {
     this.unlocked = undefined;
     return this;
@@ -455,6 +459,10 @@ export class Wallet {
   }
 
   async getToken(contractAddress) {
+    if (this.isSolanaChain()) {
+      const addresses = await this.client.getSolanaTokens(this.addressZero);
+      return addresses.find(addr => addr.mintAddress === contractAddress);
+    }
     return this.client.getToken(contractAddress);
   }
 
@@ -466,7 +474,8 @@ export class Wallet {
       symbol: params.symbol,
       address: params.address,
       decimals: params.decimals,
-      name: params.name
+      name: params.name,
+      ataAddress: params.ataAddress
     });
     await this.saveWallet();
   }
@@ -508,11 +517,16 @@ export class Wallet {
     blockHash?: string;
     blockHeight?: number;
   }) {
-    const chain = params.token || params.tokenName ? this.chain + 'ERC20' : this.chain;
+    let chain = this.chain;
     let tokenContractAddress;
+    let decimals;
+    let fromAta
     if (params.token || params.tokenName) {
+      chain = this.isSolanaChain() ? this.chain + 'SPL' : this.chain + 'ERC20';
       const tokenObj = this.getTokenObj(params);
       tokenContractAddress = tokenObj.address;
+      decimals = tokenObj.decimals;
+      fromAta = tokenObj.ataAddress;
     }
     let change = params.change;
     if (change === 'miner') {
@@ -545,9 +559,33 @@ export class Wallet {
       type: params.type,
       flags: params.flags,
       blockHash: params.blockHash,
-      blockHeight: params.blockHeight
+      blockHeight: params.blockHeight,
+      decimals,
+      fromAta
     };
     return Transactions.create(payload);
+  }
+
+  async createAtaAccount(params: { mintAddress: string }) {
+    if (!this.isSolanaChain()) {
+      throw new Error('createAtaAccount is only supported for Solana wallets');
+    }
+    const owner = SolKit.address(this.addressZero);
+    if (!params.mintAddress) {
+      throw new Error('mintAddress is required to create an associated token account');
+    }
+    const [newAccount] = await SolanaProgram.Token.findAssociatedTokenPda({
+      owner,
+      tokenProgram: SolanaProgram.Token.TOKEN_PROGRAM_ADDRESS,
+      mint: SolKit.address(params.mintAddress),
+    });
+    return Transactions.create({
+      network: this.network,
+      chain: this.chain,
+      category: 'createAccount',
+      fromKeyPair: owner,
+      recipients: [{ addressKeyPair: newAccount, amount: 0.002 * 1e12 }], // 0.002 SOL for rent exemption
+    })
   }
 
   async broadcast(params: { tx: string }) {

@@ -405,13 +405,16 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
 
   async getTokenAccountAddresses(params) {
     const { network, address } = params;
-    const { rpc } = await this.getRpc(network);
-    const addresses = await rpc.getTokenAccountsByOwner({ address });
-    return addresses.reduce((result, addr) => {
-      if (addr.state === 'initialized')
-        result.push({ mintAddress: addr.mint, ataAddress: addr.pubkey })
-      return result;
-    }, []);
+    const { rpc, connection } = await this.getRpc(network);
+    const addresses = await rpc.getTokenAccountsByOwner({ address })
+    const result : {}[] = [];
+    for (const addr of addresses) {
+      if (addr.state === 'initialized') {
+        const { value } = await connection.getTokenAccountBalance(addr.pubkey).send()
+        result.push({ mintAddress: addr.mint, ataAddress: addr.pubkey, decimals: value.decimals })
+      } 
+    }
+    return result;
   }
 
   async getLocalTip(params: any): Promise<IBlock> {
