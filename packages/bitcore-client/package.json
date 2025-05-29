@@ -6,7 +6,7 @@
   "main": "./ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
   "bin": {
-    "bitcore-wallet": "./bin/wallet"
+    "bitcore-client": "./bin/wallet"
   },
   "engines": {
     "node": ">=18.0.0"
