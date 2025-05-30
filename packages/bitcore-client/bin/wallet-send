@@ -35,7 +35,7 @@ const main = async () => {
     const chain = wallet.chain;
     const tokenObj = wallet.getTokenObj({ tokenName }); // null if no tokenName is provided
     const currencyObj = await utils.getCurrencyObj(chain, wallet.isEvmChain() ? tokenObj?.address : null, !wallet.isMainnet());
-    const { decimals } = currencyObj;
+    const decimals = tokenObj?.decimals || currencyObj?.decimals;
     const scale = Math.pow(10, decimals);
     const recipients = [];
     const sendMax = amount === 'max';
