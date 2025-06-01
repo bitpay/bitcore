@@ -20,12 +20,14 @@ program
   .option('--account <index>',            'EVM Account index to use (default 0)')
   .option('--storageType <storageType>',  'Name of the database to use (default Level)')
   .option('--path <path>',                'Custom wallet storage path')
+  .option('--blockHash <blockHash>',      'Recent hash (SOL only)')
+  .option('--blockNumber <blockNumber>',  'Recent block number (SOL only)')
   .parse(process.argv);
 
 let wallet;
 
 const main = async () => {
-  const { name, path, to, amount, token: tokenName, storageType, rbf, tag, account = 0 } = program.opts();
+  const { name, path, to, amount, token: tokenName, storageType, rbf, tag, account = 0, blockHash, blockNumber } = program.opts();
   let { feeRate: feeRateParam } = program.opts();
   try {
     wallet = await Wallet.loadWallet({ name, path, storageType });
@@ -68,6 +70,13 @@ const main = async () => {
       feeRate = feeRate ?? 1e-8; // default to 1 sat/byte in case wallet.getNetworkFee() returns null
       params.feeRate = Math.ceil(feeRateParam == null ? (feeRate * scale) : feeRateParam); // convert feeRate from BTC to sats/B
       console.log('Fee rate:', params.feeRate, 'sats/byte');
+    } else if (wallet.chain.toUpperCase() === 'SOL') {
+      let tip;
+      if (!blockHash || !blockNumber) {
+        tip = await wallet.client.getBlockTip();
+      }
+      params.blockHash = blockHash || tip.hash;
+      params.blockHeight = blockNumber || tip.height;
     } else {
       params.nonce = parseInt(await wallet.getNonce());
       params.feeRate = feeRateParam == null ? feeRate : parseInt(Web3.utils.toWei(feeRateParam.toString(), 'gwei')); // convert feeRateParam from Gwei to Wei
