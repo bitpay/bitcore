@@ -5187,6 +5187,43 @@ export class WalletService implements IWalletService {
     });
   }
 
+  moralisGetSolWalletPortfolio(req): Promise<any> {
+    return new Promise(async (resolve, reject) => {
+      let network;
+      const chain = req.body.network ?? req.body.chain ?? undefined;
+
+      const formattedChain = typeof chain === 'number' && Number.isInteger(chain)
+        ? `0x${chain.toString(16)}`
+        : chain;
+
+      switch (formattedChain) {
+        case '0x65':
+        case 'devnet':
+          network = 'devnet';
+          break;
+        case '0x66':
+        case 'testnet':
+          network = 'testnet';
+          break;
+        default:
+          network = 'mainnet';
+          break;
+      }
+
+      try {
+        // https://solana-gateway.moralis.io/account/:network/:address/portfolio
+        const response = await Moralis.SolApi.account.getPortfolio({
+          address: req.body.address,
+          network,
+        });
+
+        return resolve(response.raw ?? response);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
   private coinGeckoGetCredentials() {
     if (!config.coinGecko) throw new Error('coinGecko missing credentials');
 

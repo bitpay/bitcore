@@ -127,6 +127,97 @@ let server, wallet, fakeRequest, req;
       });
     });
 
+    describe('#banxaGetCoins', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            orderType: 'buy'
+          }
+        }
+      server.externalServices.banxa.request = fakeRequest;
+      });
+
+      it('should work properly if req is OK for buy', async () => {
+        try {
+          const data = await server.externalServices.banxa.banxaGetCoins(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for sell', async () => {
+        try {
+          req.body.orderType = 'sell'
+          const data = await server.externalServices.banxa.banxaGetCoins(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should work properly if req is OK for web', async () => {
+        req.body.context = 'web';
+        try {
+          const data = await server.externalServices.banxa.banxaGetCoins(req);
+          should.exist(data);
+        } catch (err) {
+          should.not.exist(err);
+        }
+      });
+
+      it('should return error if get returns error', async () => {
+        const fakeRequest2 = {
+          get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+
+        server.externalServices.banxa.request = fakeRequest2;
+        try {
+          const data = await server.externalServices.banxa.banxaGetCoins(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Error');
+        };
+      });
+
+      it('should return error if orderType is not buy or sell', async () => {
+        try {
+          req.body.orderType = 'wrongOrderType';
+          const data = await server.externalServices.banxa.banxaGetCoins(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal(`Banxa's 'orderType' property must be 'sell' or 'buy'`);
+        }
+      });
+
+      it('should return error if orderType is not present', async () => {
+        try {
+          delete req.body.orderType;
+          const data = await server.externalServices.banxa.banxaGetCoins(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal(`Banxa's request missing arguments`);
+        }
+      });
+
+      it('should return error if banxa is commented in config', async () => {
+        config.banxa = undefined;
+
+        try {
+          const data = await server.externalServices.banxa.banxaGetCoins(req);
+          should.not.exist(data);
+        } catch (err) {
+          should.exist(err);
+          err.message.should.equal('Banxa missing credentials');
+        }
+      });
+    });
+
     describe('#banxaGetQuote', () => {
       beforeEach(() => {
         req = {

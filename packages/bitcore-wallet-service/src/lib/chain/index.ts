@@ -47,7 +47,7 @@ export interface IChain {
   getChangeAddress(server: WalletService, wallet: IWallet, opts: { changeAddress: string } & any);
   checkDust(output: { amount: number; toAddress: string; valid: boolean }, opts: { outputs: any[] } & any);
   checkScriptOutput(output: { script: string; amount: number; });
-  getFee(server: WalletService, wallet: IWallet, opts: { fee: number; feePerKb: number; signtures?: number } & any);
+  getFee(server: WalletService, wallet: IWallet, opts: { fee: number; feePerKb: number; signatures?: number } & any);
   getBitcoreTx(txp: TxProposal, opts: { signed: boolean });
   convertFeePerKb(p: number, feePerKb: number);
   checkTx(server: WalletService, txp: ITxProposal);

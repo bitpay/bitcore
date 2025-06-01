@@ -31,7 +31,7 @@ const main = async () => {
     } else {
       list.pause(); // Pause list to prevent race condition where it starts streaming while awaiting getCurrencyObj
       const tokenObj = wallet.getTokenObj({ tokenName }); // null if no tokenName provided
-      const currencyObj = await utils.getCurrencyObj(wallet.chain, tokenObj?.address);
+      const currencyObj = await utils.getCurrencyObj(wallet.chain, tokenObj?.address, !wallet.isMainnet());
       let txs = '[';
       list.pipe(new Writable({
         objectMode: true,

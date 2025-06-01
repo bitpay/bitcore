@@ -47,7 +47,8 @@ const providers = {
 
 export class TransactionsProxy {
   get({ chain }) {
-    return providers[chain];
+    const normalizedChain = chain.toUpperCase();
+    return providers[normalizedChain];
   }
 
   create(params) {

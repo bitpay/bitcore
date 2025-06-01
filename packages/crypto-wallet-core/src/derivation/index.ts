@@ -45,7 +45,8 @@ const derivers: { [chain: string]: IDeriver } = {
 
 export class DeriverProxy {
   get(chain) {
-    return derivers[chain];
+    const normalizedChain = chain.toUpperCase();
+    return derivers[normalizedChain];
   }
 
   /**

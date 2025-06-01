@@ -50,7 +50,7 @@ export class SardineService {
         Authorization: `Basic ${secretBase64}`,
       };
 
-      let qs = [];
+      let qs: string[] = [];
       qs.push('asset_type=' + req.body.asset_type);
       qs.push('network=' + req.body.network);
       qs.push('total=' + req.body.total);
@@ -204,8 +204,8 @@ export class SardineService {
         Authorization: `Basic ${secretBase64}`,
       };
 
-      let qs = [];
-      let URL: string;
+      let qs: string[] = [];
+      let URL: string = '';
 
       if (req.body.orderId) {
         URL = API + `/v1/orders/${req.body.orderId}`;

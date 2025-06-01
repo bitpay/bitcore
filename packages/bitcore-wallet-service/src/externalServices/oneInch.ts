@@ -62,7 +62,7 @@ export class OneInchService {
         'Content-Type': 'application/json'
       };
 
-      let qs = [];
+      let qs: string[] = [];
       qs.push('fromTokenAddress=' + req.body.fromTokenAddress);
       qs.push('toTokenAddress=' + req.body.toTokenAddress);
       qs.push('amount=' + req.body.amount);

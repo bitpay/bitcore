@@ -4,7 +4,7 @@ import { IChainConfig, IEVMNetworkConfig, IProvider } from '../../../../types/Co
 const getProvider = ({ 
   network,
   config,
-  dataType 
+  dataType
 }: { network: string, dataType: string | undefined, config: IChainConfig<IEVMNetworkConfig>}) : IProvider => {
   if (config[network]?.provider && matchProviderType(config[network].provider, dataType)) {
     return config[network].provider!;

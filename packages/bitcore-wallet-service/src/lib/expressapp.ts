@@ -1531,6 +1531,17 @@ export class ExpressApp {
       }
     });
 
+    router.post('/v1/service/banxa/getCoins', async (req, res) => {
+      let server: WalletService, response;
+      try {
+        server = getServer(req, res);
+        response = await server.externalServices.banxa.banxaGetCoins(req);
+        return res.json(response);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+    });
+
     router.post('/v1/service/banxa/paymentMethods', async (req, res) => {
       let server: WalletService, response;
       try {
@@ -2375,6 +2386,23 @@ export class ExpressApp {
           return returnError(err ?? 'unknown', res, req);
         });
     });
+
+    router.post('/v1/moralis/getSolWalletPortfolio', cors(moralisCorsOptions), (req, res) => {
+      let server: WalletService;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.moralisGetSolWalletPortfolio(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });    
 
     router.get('/v1/service/coinGecko/getRates/:contractAddresses/:altCurrencies/:chain', (req, res) => {
       SetPublicCache(res, 1 * ONE_MINUTE);
