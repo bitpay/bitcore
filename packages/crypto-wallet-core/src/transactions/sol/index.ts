@@ -41,7 +41,7 @@ export class SOLTxProvider {
         if (recipients.length > this.MAX_TRANSFERS) {
           throw new Error('Too many recipients')
         }
-        let transactionMessage = pipe(
+        let transactionMessage = SolKit.pipe(
           SolKit.createTransactionMessage({ version: txType }),
           tx => SolKit.setTransactionMessageFeePayer(fromAddress, tx),
         );
@@ -108,7 +108,7 @@ export class SOLTxProvider {
           space: _space,
           programAddress: SolSystem.SYSTEM_PROGRAM_ADDRESS
         }));
-        const txMessage = pipe(
+        const txMessage = SolKit.pipe(
           SolKit.createTransactionMessage({ version: txType }),
           (tx) => SolKit.setTransactionMessageFeePayerSigner(fromKeyPair, tx),
         )
