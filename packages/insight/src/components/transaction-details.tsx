@@ -23,7 +23,6 @@ import {
 } from '../assets/styles/transaction';
 import {Tile, TileDescription} from '../assets/styles/tile';
 import ArrowSvg from '../assets/images/arrow.svg';
-import BlueArrowSvg from '../assets/images/arrow-blue.svg';
 import {useNavigate, createSearchParams} from 'react-router-dom';
 import styled from 'styled-components';
 import {Slate, SlateDark} from '../assets/styles/colors';
@@ -274,7 +273,7 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                   </TileDescription>
                     <ArrowDiv margin='auto 0 auto .5rem'>
                       <img 
-                        src={BlueArrowSvg} 
+                        src={ArrowSvg} 
                         width={17}
                         height={17}
                         alt='Spent'
