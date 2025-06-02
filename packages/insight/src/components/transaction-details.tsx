@@ -25,7 +25,7 @@ import {Tile, TileDescription} from '../assets/styles/tile';
 import ArrowSvg from '../assets/images/arrow.svg';
 import {useNavigate, createSearchParams} from 'react-router-dom';
 import styled from 'styled-components';
-import {Slate, SlateDark} from '../assets/styles/colors';
+import {Action, Slate, SlateDark} from '../assets/styles/colors';
 
 const TextElipsis = styled(ScriptText)`
   overflow: hidden;
@@ -44,6 +44,19 @@ const SelectedPill = styled.div`
   font-weight: 500;
   font-size: 16px;
 `;
+
+const SpentArrowPill = styled.div`
+  background-color: ${Action};
+  height: 25px;
+  width: 50px;
+  font-size: 18px;
+  text-align: center;
+  border-radius: 40%;
+  padding: 5px;
+  padding-top: 0px;
+  margin-left: 10px;
+`
+const SpentArrow = () => <SpentArrowPill>⇨</SpentArrowPill>;
 
 interface TransactionDetailsProps {
   transaction: Transaction;
@@ -270,8 +283,8 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
 
                   <TileDescription value textAlign='right'>
                     {getConvertedValue(vo.value, currency)} {currency}{' '}
-                    {vo.spentTxid ? '(S)' : '(U)'}
                   </TileDescription>
+                  {vo.spentTxid ? <SpentArrow/> : null}
 
                   {showDetails && vo.spentTxid && (
                     <ArrowDiv margin='auto 0 auto .5rem'>
