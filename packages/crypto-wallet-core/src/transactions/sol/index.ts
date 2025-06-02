@@ -1,5 +1,7 @@
 import * as SolComputeBudget from '@solana-program/compute-budget';
 import * as SolSystem from '@solana-program/system';
+import * as SolToken from '@solana-program/token';
+import { pipe } from '@solana/functional';
 import * as SolKit from '@solana/kit'
 import { Key } from '../../derivation';
 
@@ -24,13 +26,15 @@ export class SOLTxProvider {
     computeUnits?: number;
     txInstructions?: Array<SolKit.BaseTransactionMessage['instructions'][number]>;
     // account creation fields
-    fromKeyPair?: SolKit.KeyPairSigner;
+    fromKeyPair?: any;
     space?: number; // amount of space to reserve a new account in bytes
+    mint?: string; // mint address for createATA
+    ataAddress?: any; // ATA address for createATA
   }) {
-    const { recipients, from, nonce, nonceAddress, category, space, blockHash, blockHeight, priorityFee, txInstructions, computeUnits } = params;
+    const { recipients, from, nonce, nonceAddress, category, space, blockHash, blockHeight, priorityFee, txInstructions, computeUnits, fromKeyPair } = params;
     const fromAddress = SolKit.address(from);
     let txType: SolKit.TransactionVersion = ['0', 0].includes(params?.txType) ? 0 : 'legacy';
-
+    let lifetimeConstrainedTx;
     switch (category?.toLowerCase()) {
       case 'transfer':
       default:
@@ -41,7 +45,6 @@ export class SOLTxProvider {
           SolKit.createTransactionMessage({ version: txType }),
           tx => SolKit.setTransactionMessageFeePayer(fromAddress, tx),
         );
-        let lifetimeConstrainedTx;
 
         if (nonce) {
           const nonceAccountAddress = SolKit.address(nonceAddress);
@@ -85,8 +88,7 @@ export class SOLTxProvider {
         const transferTxMessage = SolKit.appendTransactionMessageInstructions(transferInstructions, lifetimeConstrainedTx);
         const compiledTx = SolKit.compileTransaction(transferTxMessage);
         return SolKit.getBase64EncodedWireTransaction(compiledTx);
-      case 'createAccount':
-        const { fromKeyPair } = params;
+      case 'createaccount':
         const { amount, addressKeyPair } = recipients[0];
         const _space = space || 200;
         const _amount = Number(amount);
@@ -127,7 +129,26 @@ export class SOLTxProvider {
         );
         const compiled = SolKit.compileTransaction(completeMessage);
         return SolKit.getBase64EncodedWireTransaction(compiled);
-    }
+      case 'createata':
+        const { mint, ataAddress } = params;
+        const createAssociatedTokenIdempotentInstruction = SolToken.getCreateAssociatedTokenIdempotentInstruction({
+          payer: fromKeyPair,
+          owner: fromAddress,
+          mint: SolKit.address(mint),
+          ata: ataAddress
+        });
+        const ataTxMessage = pipe(
+          SolKit.createTransactionMessage({ version: 0 }),
+          (tx) => SolKit.setTransactionMessageFeePayerSigner(fromKeyPair, tx),
+          (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash({ blockhash: blockHash as SolKit.Blockhash, lastValidBlockHeight: BigInt(blockHeight) }, tx),
+          (tx) => SolKit.appendTransactionMessageInstructions(
+              [createAssociatedTokenIdempotentInstruction],
+              tx
+          )
+        );
+        const compiledAtaTx = SolKit.compileTransaction(ataTxMessage);
+        return SolKit.getBase64EncodedWireTransaction(compiledAtaTx);
+      }
   }
 
   decodeRawTransaction({ rawTx }) {

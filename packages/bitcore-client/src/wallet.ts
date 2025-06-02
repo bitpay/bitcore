@@ -305,6 +305,10 @@ export class Wallet {
     return ['ETH', 'MATIC', 'ARB', 'OP', 'BASE'].includes(this.chain?.toUpperCase());
   }
 
+  isSolanaChain() {
+    return ['SOL'].includes(this.chain?.toUpperCase());
+  }
+
   lock() {
     this.unlocked = undefined;
     return this;
@@ -455,6 +459,10 @@ export class Wallet {
   }
 
   async getToken(contractAddress) {
+    if (this.isSolanaChain()) {
+      const addresses = await this.client.getSolanaTokens(this.addressZero);
+      return addresses.find(addr => addr.mintAddress === contractAddress);
+    }
     return this.client.getToken(contractAddress);
   }
 
@@ -466,7 +474,8 @@ export class Wallet {
       symbol: params.symbol,
       address: params.address,
       decimals: params.decimals,
-      name: params.name
+      name: params.name,
+      ataAddress: params.ataAddress
     });
     await this.saveWallet();
   }
@@ -508,17 +517,29 @@ export class Wallet {
     blockHash?: string;
     blockHeight?: number;
   }) {
-    const chain = params.token || params.tokenName ? this.chain + 'ERC20' : this.chain;
+    let chain = this.chain;
     let tokenContractAddress;
+    let decimals;
+    let fromAta
     if (params.token || params.tokenName) {
+      chain = this.isSolanaChain() ? this.chain + 'SPL' : this.chain + 'ERC20';
       const tokenObj = this.getTokenObj(params);
       tokenContractAddress = tokenObj.address;
+      decimals = tokenObj.decimals;
+      fromAta = tokenObj.ataAddress;
     }
     let change = params.change;
     if (change === 'miner') {
       change = undefined; // no change
     } else if (!change) {
       change = await this._getChangeAddress();
+    }
+    let blockHash = params.blockHash;
+    let blockHeight = params.blockHeight;
+    if (this.isSolanaChain() && (!blockHash || !blockHeight)) {
+      const tip = await this.client.getBlockTip();
+      blockHash = tip.hash;
+      blockHeight = tip.height;
     }
     const payload = {
       network: this.network,
@@ -544,10 +565,47 @@ export class Wallet {
       isSweep: params.isSweep,
       type: params.type,
       flags: params.flags,
-      blockHash: params.blockHash,
-      blockHeight: params.blockHeight
+      blockHash,
+      blockHeight,
+      decimals,
+      fromAta
     };
     return Transactions.create(payload);
+  }
+
+  async createAtaAccount(mintAddress) {
+    if (!this.isSolanaChain()) {
+      throw new Error('createAtaAccount is only supported for Solana wallets');
+    }
+    const owner = SolKit.address(this.addressZero);
+    if (!mintAddress) {
+      throw new Error('mintAddress is required to create an associated token account');
+    }
+    const [newAccount] = await SolanaProgram.Token.findAssociatedTokenPda({
+      owner,
+      tokenProgram: SolanaProgram.Token.TOKEN_PROGRAM_ADDRESS,
+      mint: SolKit.address(mintAddress),
+    });
+    const tip = await this.client.getBlockTip();
+    const blockHash = tip.hash;
+    const blockHeight = tip.height;
+    const privateKey = await this.derivePrivateKey(null, 0)
+    const privKeyBytes = SolKit.getBase58Encoder().encode(privateKey.privKey);
+    const keyPair = await SolKit.createKeyPairSignerFromPrivateKeyBytes(privKeyBytes);
+    const tx = Transactions.create({
+      network: this.network,
+      chain: this.chain,
+      category: 'createata',
+      fromKeyPair: keyPair,
+      from: this.addressZero,
+      ataAddress: newAccount,
+      blockHash,
+      blockHeight,
+      mint: mintAddress,
+    });
+    const sig = await this.signTx({ tx });
+    await this.broadcast({ tx: sig });
+    return sig;
   }
 
   async broadcast(params: { tx: string }) {

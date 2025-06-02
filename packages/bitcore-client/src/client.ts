@@ -68,6 +68,11 @@ export class Client {
     return this._request({ method: 'GET', url, json: true });
   }
 
+  async getSolanaTokens(address) {
+    const url = `${this.apiUrl}/ata/${address}`;
+    return this._request({ method: 'GET', url, json: true });
+  }
+
   async getBalance(params: { payload?: any; pubKey: string; time?: string; address?: string; hex?: boolean }) {
     const { payload, pubKey, time, address, hex } = params;
     let url = `${this.apiUrl}/wallet/${pubKey}/balance`;
