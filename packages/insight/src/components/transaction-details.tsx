@@ -23,9 +23,10 @@ import {
 } from '../assets/styles/transaction';
 import {Tile, TileDescription} from '../assets/styles/tile';
 import ArrowSvg from '../assets/images/arrow.svg';
+import BlueArrowSvg from '../assets/images/arrow-blue.svg';
 import {useNavigate, createSearchParams} from 'react-router-dom';
 import styled from 'styled-components';
-import {Action, Slate, SlateDark} from '../assets/styles/colors';
+import {Slate, SlateDark} from '../assets/styles/colors';
 
 const TextElipsis = styled(ScriptText)`
   overflow: hidden;
@@ -44,19 +45,6 @@ const SelectedPill = styled.div`
   font-weight: 500;
   font-size: 16px;
 `;
-
-const SpentArrowPill = styled.div`
-  background-color: ${Action};
-  height: 25px;
-  width: 50px;
-  font-size: 18px;
-  text-align: center;
-  border-radius: 40%;
-  padding: 5px;
-  padding-top: 0px;
-  margin-left: 10px;
-`
-const SpentArrow = () => <SpentArrowPill>⇨</SpentArrowPill>;
 
 interface TransactionDetailsProps {
   transaction: Transaction;
@@ -281,22 +269,23 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                     )}
                   </TileDescription>
 
-                  <TileDescription value textAlign='right'>
+                  <TileDescription value textAlign='right' style={{verticalAlign: '100%'}}>
                     {getConvertedValue(vo.value, currency)} {currency}{' '}
                   </TileDescription>
-                  {vo.spentTxid ? <SpentArrow/> : null}
-
-                  {showDetails && vo.spentTxid && (
                     <ArrowDiv margin='auto 0 auto .5rem'>
-                      <img
-                        src={ArrowSvg}
+                      <img 
+                        src={BlueArrowSvg} 
                         width={17}
                         height={17}
-                        alt='arrow'
+                        alt='Spent'
+                        title='Spent'
+                        style={{
+                          visibility: (vo.spentTxid ? 'visible' : 'hidden'),
+                          margin: '0px 5px'
+                        }}
                         onClick={() => goToTx(vo.spentTxid, transaction.txid, i)}
                       />
                     </ArrowDiv>
-                  )}
                 </Tile>
               </div>
             );
