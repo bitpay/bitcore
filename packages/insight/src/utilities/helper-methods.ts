@@ -182,3 +182,9 @@ export const getLib = (currency: string) => {
       return BitcoreLibLtc;
   }
 };
+
+export const getDifficultyFromBits = (bits: number) => {
+  const maxBody = Math.log(0x00ffff);
+  const scaland = Math.log(256);
+  return Math.exp(maxBody - Math.log(bits & 0x00ffffff) + scaland * (0x1d - ((bits & 0xff000000) >> 24)));
+}
