@@ -272,16 +272,16 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                   </TileDescription>
                     <ArrowDiv margin='auto 0 auto .5rem'>
                       <img
-                        src={BlueArrowSvg}
+                        src={vo.spentTxid ? BlueArrowSvg : ArrowSvg}
                         width={17}
                         height={17}
                         alt='Spent'
-                        title='Spent'
+                        title={vo.spentTxid ? 'Spent' : 'Unspent'}
                         style={{
-                          visibility: (vo.spentTxid ? 'visible' : 'hidden'),
+                          visibility: (isOpReturn(vo) ? 'hidden' : 'visible'),
                           margin: '0px 5px'
                         }}
-                        onClick={() => goToTx(vo.spentTxid, transaction.txid, i)}
+                        onClick={() => vo.spentTxid && goToTx(vo.spentTxid, transaction.txid, i)}
                       />
                     </ArrowDiv>
                 </Tile>
