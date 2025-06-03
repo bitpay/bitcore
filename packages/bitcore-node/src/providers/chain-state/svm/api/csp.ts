@@ -1,15 +1,15 @@
 import { CryptoRpc } from 'crypto-rpc';
 import { SolRpc } from 'crypto-rpc/lib/sol/SolRpc'
 import { instructionKeys } from 'crypto-rpc/lib/sol/transaction-parser';
-import { Readable } from 'stream';
 import Config from '../../../../config';
 import logger from '../../../../logger';
 import { CacheStorage } from '../../../../models/cache';
-import { Storage } from '../../../../services/storage';
 import { IBlock } from '../../../../types/Block';
 import { CoinListingJSON } from '../../../../types/Coin';
 import { IChainConfig, IProvider, ISVMNetworkConfig } from '../../../../types/Config';
-import { BroadcastTransactionParams, GetBalanceForAddressParams, GetBlockParams, GetCoinsForTxParams, GetEstimatePriorityFeeParams, GetWalletBalanceParams, IChainStateService, StreamAddressUtxosParams, StreamTransactionParams, StreamTransactionsParams, StreamWalletTransactionsParams } from '../../../../types/namespaces/ChainStateProvider';
+import { BroadcastTransactionParams, GetBalanceForAddressParams, GetBlockParams, GetCoinsForTxParams, GetEstimatePriorityFeeParams, GetWalletBalanceParams, IChainStateService, StreamAddressUtxosParams, StreamBlocksParams, StreamTransactionParams, StreamTransactionsParams, StreamWalletTransactionsParams, WalletBalanceType } from '../../../../types/namespaces/ChainStateProvider';
+import { range } from '../../../../utils';
+import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import {
   getProvider,
   isValidProviderType
@@ -77,13 +77,13 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       cacheKey,
       async () => {
         let feerate;
-        const { rpc } = await this.getRpc(network);
+        const { rpc, connection } = await this.getRpc(network);
         try {
           if (rawTx) {
             feerate = await rpc.estimateFee({ nBlocks: target, rawTx })
           } else {
             const { height } = await rpc.getTip();
-            const { transactions } = await rpc.getBlock({ height });
+            const { transactions } = await connection.getBlock(height);
             const _signatures = signatures || 1;
             let lamportsPerSig = 5000; // default
             if (transactions?.length) {
@@ -108,6 +108,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     const { txId, network } = params;
     const { rpc } = await this.getRpc(network);
     const tx = await rpc.getTransaction({ txid: txId });
+    if (!tx) return undefined;
     return this.txTransform(network, { transactions: [tx] });
   }
 
@@ -115,7 +116,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     return new Promise<void>(async (resolve, reject) => {
       try {
         const { chain, network, req, res, args } = params;
-        let { blockHeight } = args;
+        let { blockHeight, limit = 50 } = args;
 
         if (!chain || !network) {
           throw new Error('Missing chain or network');
@@ -128,13 +129,22 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
 
         const { rpc } = await this.getRpc(network);
         const block = await rpc.getBlock({ height: blockHeight });
-        const transformedTxs = this.txTransform(network, { block });
-        const stream = new Readable({ objectMode: true });
-
-        transformedTxs.map(tx => stream.push(tx));
+        const stream = new TransformWithEventPipe({
+          objectMode: true,
+          passThrough: true
+        });
+        let count = 0;
+        for (const signature of block.signatures) {
+          if (limit && count >= limit) break;
+          const transformedTx = await this._getTransformedTx(rpc, network, { signature });
+          stream.push(transformedTx);
+          count++;
+        }
         stream.push(null);
-        Storage.stream(stream, req!, res!);
-
+        const result = await ExternalApiStream.onStream(stream, req!, res!, { jsonl: true });
+        if (!result?.success) {
+          logger.error('Error mid-stream (streamTransactions): %o', result.error?.log || result.error);
+        }  
         return resolve();
       } catch (err: any) {
         logger.error('Error streaming block transactions: %o', err.stack || err.message || err);
@@ -145,8 +155,13 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
 
   async streamAddressTransactions(params: StreamAddressUtxosParams) {
     return new Promise<void>(async (resolve, reject) => {
+      const { req, res } = params;
       try {
-        await this._buildAddressTransactionsStream(params);
+        const addressStream = await this._buildAddressTransactionsStream(params);
+        const result = await ExternalApiStream.onStream(addressStream, req!, res!, { jsonl: true });
+        if (!result?.success) {
+          logger.error('Error mid-stream (streamAddressTransactions): %o', result.error?.log || result.error);
+        }  
         return resolve();
       } catch (err) {
         return reject(err);
@@ -157,18 +172,20 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   async streamWalletTransactions(params: StreamWalletTransactionsParams): Promise<any> {
     return new Promise<void>(async (resolve, reject) => {
       try {
-        const { network, wallet, req, res, args } = params;
-        const { limit } = args;
-        const stream = new Readable({ objectMode: true });
+        const { wallet, req, res } = params;
+        const walletStream = new TransformWithEventPipe({ objectMode: true, passThrough: true });
         const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddress => waddress.address);
-        let parsedTxs = [];
+        const addressStreams: TransformWithEventPipe[] = [];
 
         for (const address of walletAddresses) {
-          parsedTxs = parsedTxs.concat(await this.getParsedAddressTransactions(address, network, limit));
+          const addressStream = await this._buildAddressTransactionsStream({ ...params, address})
+          addressStreams.push(addressStream);
         }
-        parsedTxs.map(tx => stream.push(tx));
-        stream.push(null);
-        ExternalApiStream.onStream(stream, req!, res!, { jsonl: true });
+        ExternalApiStream.mergeStreams(addressStreams, walletStream);
+        const result = await ExternalApiStream.onStream(walletStream, req!, res!, { jsonl: true });
+        if (!result?.success) {
+          logger.error('Error mid-stream (streamWalletTransactions): %o', result.error?.log || result.error);
+        }
         return resolve();
       } catch (err: any) {
         logger.error('Error streaming wallet transactions: %o', err.stack || err.message || err);
@@ -178,18 +195,68 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async _buildAddressTransactionsStream(params: StreamAddressUtxosParams) {
-    const { req, res, args, network, address } = params;
-    const { limit } = args;
-    const stream = new Readable({ objectMode: true });
+    const { args, network, address } = params;
+    const { limit = 50 } = args;
+    const addressStream = new TransformWithEventPipe({
+      objectMode: true,
+      passThrough: true,
+      read() {}  // no-op; we’ll push manually
+    });
+    (async () => {
+      try {
+        const { rpc, connection } = await this.getRpc(network);
+        let before;
+        let count = 0;
+        do {
+          // fetch the next page of signatures
+          const txList = await connection.getSignaturesForAddress(address, { limit, before }).send();
+          if (!txList.length) break;
+          before = txList[txList.length - 1].signature;
 
+          for (const tx of txList) {
+            if (limit && count >= limit) break;
+            const transformedTx = await this._getTransformedTx(rpc, network, tx, address);
+            addressStream.push(transformedTx);
+            count++;
+          }
+        } while (!limit || count < limit);
+
+        addressStream.push(null);
+      } catch (err) {
+        addressStream.emit('error', err);
+      }
+    })();
+    return addressStream;
+  }
+
+  async _getTransformedTx(rpc, network, tx, address? ) {
     try {
-      const parsedTxs = await this.getParsedAddressTransactions(address, network, limit);
-      parsedTxs.map(tx => stream.push(tx));
-      stream.push(null); // End stream
-      ExternalApiStream.onStream(stream, req!, res!, { jsonl: true });
+      const parsedTx = await rpc.getTransaction({ txid: tx.signature });
+      return this.txTransform(network, { txStatuses: [tx], transactions: [parsedTx], targetAddress: address  });
     } catch (err: any) {
-      logger.error('Error streaming address transactions: %o', err.stack || err.message || err);
-      throw err;
+      return {
+        error: err?.message,
+        txid: tx.signature,
+        network,
+        chain: 'SOL',
+        status: tx?.confirmationStatus,
+        height: Number(tx.slot)
+      }
+    }
+  }
+
+  async _getTransformedBlock(rpc, network, height ) {
+    const block = await rpc.getBlock({ height: Number(height) });
+    try {
+      return this.blockTransform(network, block, height);
+    } catch (err: any) {
+      return {
+        error: err?.message,
+        height,
+        network,
+        chain: 'SOL',
+        status: block?.confirmationStatus,
+      }
     }
   }
 
@@ -197,11 +264,11 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     const { rpc, connection } = await this.getRpc(network);
     const txList = await connection.getSignaturesForAddress(address).send();
     const parsedTxs = await rpc.getTransactions({ address });
-    return this.txTransform(network, { txStatuses: txList, transactions: parsedTxs, parsedTxs });
+    return this.txTransform(network, { txStatuses: txList, transactions: parsedTxs, targetAddress: address });
   }
 
   txTransform(network, params) {
-    let { block, transactions, txStatuses } = params;
+    let { block, transactions, txStatuses, targetAddress } = params;
     let blockTime;
     let blockHash;
 
@@ -227,6 +294,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       const instructions = tx.instructions;
       const fee = meta?.fee;
       const from = feePayerAddress;
+      const target = targetAddress || from;
       const recipientAddresses = new Set();
       let mainToAddress = null;
       let value = 0;
@@ -265,13 +333,13 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
           txCategory = 'move';
         } else {
           const solSentOut = instructions?.[instructionKeys.TRANSFER_SOL]?.some(transfer =>
-            transfer.source === from && transfer.destination !== from) || false;
+            transfer.source === target && transfer.destination !== target) || false;
           const tokensSentOut = instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.some(transfer =>
-            transfer.source === from && transfer.destination !== from) || false;
+            transfer.source === target && transfer.destination !== target) || false;
           const solReceived = instructions?.[instructionKeys.TRANSFER_SOL]?.some(transfer =>
-            transfer.destination === from && transfer.source !== from) || false;
+            transfer.destination === target && transfer.source !== target) || false;
           const tokensReceived = instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.some(transfer =>
-            transfer.destination === from && transfer.source !== from) || false;
+            transfer.destination === target && transfer.source !== target) || false;
 
           if ((solSentOut || tokensSentOut) && !(solReceived || tokensReceived)) {
             txCategory = 'send';
@@ -305,25 +373,24 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     });
   }
 
-  blockTransform(network, block) {
-    const txs = block?.transactions?.map(tx => tx?.transaction?.signatures[0]);
+  blockTransform(network, block, height) {
     return {
       chain: this.chain,
       network,
-      height: Number(block?.blockHeight),
+      height: Number(height),
       hash: block?.blockhash,
       time: new Date(Number(block?.blockTime) * 1000),
       timeNormalized: new Date(Number(block?.blockTime) * 1000),
       previousBlockHash: block?.previousBlockHash,
-      transactions: txs,
-      transactionCount: block?.transactions?.length,
+      transactions: block?.signatures,
+      transactionCount: block?.signatures?.length,
       size: block?.transactions?.length,
       reward: Number(block?.rewards[0]?.lamports),
       processed: true,
     } as IBlock;
   }
 
-  async getBalanceForAddress(params: GetBalanceForAddressParams): Promise<{ confirmed: number; unconfirmed: number; balance: number }> {
+  async getBalanceForAddress(params: GetBalanceForAddressParams): Promise<WalletBalanceType> {
     const { address, network, args } = params;
     const { rpc, connection } = await this.getRpc(network);
     const tokenAddress = args?.tokenAddress || args?.mintAddress;
@@ -350,8 +417,158 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   async getBlock(params: GetBlockParams): Promise<IBlock> {
     const { height, blockId, network } = params;
     const { rpc } = await this.getRpc(network);
-    const block = await rpc.getBlock({ height: Number(height || blockId) });
-    return this.blockTransform(network, block);
+    const slot = Number(height || blockId);
+    const block = await rpc.getBlock({ height: slot });
+    return this.blockTransform(network, block, slot);
+  }
+
+  async streamBlocks(params: StreamBlocksParams) {
+    return new Promise<void>(async (resolve, reject) => {
+      try {
+        const { chain, network, req, res } = params;
+        if (!chain || !network) {
+          throw new Error('Missing chain or network');
+        }
+        const { rpc } = await this.getRpc(network);
+        const blockRange = await this.getBlocksRange({ ...params });
+        const { height } = await rpc.getTip();
+        const stream = new TransformWithEventPipe({
+          objectMode: true,
+          passThrough: true
+        });
+        let count = 0;
+        try {
+          let block;
+          let nextBlock;
+          for (const blockNum of blockRange) {
+            const thisNextBlock = Number(block?.height) === blockNum + 1 ? block :  await this._getTransformedBlock(rpc, network, blockNum + 1);
+            block = Number(nextBlock?.number) === blockNum ? nextBlock : await this._getTransformedBlock(rpc, network, blockNum);
+            if (!block) {
+              continue;
+            }
+            nextBlock = thisNextBlock;
+            block.nextBlockHash = nextBlock?.hash;
+            block.confirmations = height - block.height + 1;
+            stream.push(block);
+            count++;
+          }
+        } catch (e: any) {
+          logger.error('Error streaming blocks: %o', e);
+        }
+        stream.push(null);
+        const result = await ExternalApiStream.onStream(stream, req!, res!, { jsonl: true });
+        if (!result?.success) {
+          logger.error('Error mid-stream (streamBlocks): %o', result.error?.log || result.error);
+        }  
+        return resolve();
+      } catch (err: any) {
+        logger.error('Error streaming blocks: %o', err.stack || err.message || err);
+        reject(err);
+      }
+    });
+
+  }
+
+  protected async getBlocksRange(params: GetBlockParams) {
+    const { chain, network, sinceBlock, args = {} } = params;
+    let { blockId } = params;
+    let { startDate, endDate, date, limit = 10, sort = { height: -1 } } = args;
+    const query: { startBlock?: number; endBlock?: number } = {};
+    if (!chain || !network) {
+      throw new Error('Missing required chain and/or network param');
+    }
+  
+    // limit - 1 because startBlock is inclusive; ensure limit is >= 0
+    limit = Math.max(limit - 1, 0);
+
+    let height: number | null = null;  
+    if (date) {
+      startDate = new Date(date);
+      endDate = new Date(date);
+      endDate.setDate(endDate.getDate() + 1);
+    }
+    if (startDate || endDate) {
+      if (startDate) {
+        query.startBlock = await this._findSlotByDate(network, startDate) || 0;
+      }
+      if (endDate) {
+        query.endBlock = await this._findSlotByDate(network, endDate) || 0;
+      }
+    }
+
+    // Get range
+    if (sinceBlock) {
+      let height = Number(sinceBlock);
+      if (isNaN(height) || height.toString(10) != sinceBlock) {
+        throw new Error('invalid block id provided');
+      }
+      const { rpc } = await this.getRpc(network);
+      const { height: _height } = await rpc.getTip();
+      const tipHeight = Number(_height) || 0;
+      if (tipHeight < height) {
+        return [];
+      }
+      if (!tipHeight) {
+        throw new Error('unable to fetch tip height');
+      }
+      query.endBlock = query.endBlock ?? tipHeight;
+      query.startBlock = query.startBlock ?? query.endBlock - limit;
+    } else if (blockId) {
+      height =  Number(blockId);
+    }
+
+    if (height != null) {
+      query.startBlock = height;
+      query.endBlock = height + limit;
+    }
+
+    if (query.startBlock == null || query.endBlock == null) {
+      // Calaculate range with options
+      const { rpc } = await this.getRpc(network);
+      const { height: _height } = await rpc.getTip();
+      const tipHeight = Number(_height) || 0;
+      query.endBlock = query.endBlock ?? tipHeight;
+      query.startBlock = query.startBlock ?? query.endBlock - limit;
+    }
+
+    if (query.endBlock - query.startBlock > limit) {
+      query.endBlock = query.startBlock + limit;
+    }
+
+    const r = range(query.startBlock, query.endBlock + 1); // +1 since range is [start, end)
+
+    if (sort?.height === -1 && query.startBlock < query.endBlock) {
+      return r.reverse();
+    }
+    return r;
+  }
+
+  async _findSlotByDate(network: string,  targetDate: Date): Promise<number | null> {
+    const { connection } = await this.getRpc(network);
+    let lo = await connection.getFirstAvailableBlock(); 
+    let hi = await connection.getSlot('finalized');
+    let result: bigint | null = null;
+    const targetTime = Math.floor(targetDate.getTime() / 1000);
+    const loBlockTime = await connection.getBlockTime(lo);
+    if (loBlockTime !== null && loBlockTime >= targetTime) {
+      return lo;
+    }
+
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1n;
+      const blkTime = await connection.getBlockTime(mid);
+  
+      if (blkTime === null) {
+        lo = mid + 1n;
+      } else if (blkTime < targetTime) {
+        lo = mid + 1n;
+      } else {
+        result = mid;
+        hi = mid - 1n;
+      }
+    }
+  
+    return Number(result) || null;
   }
 
   async getPriorityFee(params: GetEstimatePriorityFeeParams): Promise<any> {
@@ -364,10 +581,16 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   async broadcastTransaction(params: BroadcastTransactionParams): Promise<any> {
     const { rawTx, network } = params;
     const { rpc } = await this.getRpc(network);
-    return await rpc.sendRawTransaction({ rawTx });
+    const txids = new Array<string>();
+    const rawTxs = typeof rawTx === 'string' ? [rawTx] : rawTx;
+    for (const tx of rawTxs) {
+      const txid = await rpc.sendRawTransaction({ rawTx: tx });
+      txids.push(txid);
+    }
+    return txids.length === 1 ? txids[0] : txids;
   }
 
-  async getWalletBalance(params: GetWalletBalanceParams): Promise<{ confirmed: number; unconfirmed: number; balance: number }> {
+  async getWalletBalance(params: GetWalletBalanceParams): Promise<WalletBalanceType> {
     const { network } = params;
     if (params.wallet._id === undefined) {
       throw new Error('Wallet balance can only be retrieved for wallets with the _id property');
@@ -376,18 +599,22 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     let addressBalancePromises = addresses.map(({ address }) =>
       this.getBalanceForAddress({ chain: this.chain, network, address, args: params.args })
     );
-    let addressBalances = await Promise.all<{ confirmed: number; unconfirmed: number; balance: number }>(
+    let addressBalances = await Promise.all<WalletBalanceType>(
       addressBalancePromises
     );
     let balance = addressBalances.reduce(
       (prev, cur) => ({
-        unconfirmed: prev.unconfirmed + Number(cur.unconfirmed),
-        confirmed: prev.confirmed + Number(cur.confirmed),
-        balance: prev.balance + Number(cur.balance)
+        unconfirmed: BigInt(prev.unconfirmed) + BigInt(cur.unconfirmed),
+        confirmed: BigInt(prev.confirmed) + BigInt(cur.confirmed),
+        balance: BigInt(prev.balance) + BigInt(cur.balance)
       }),
-      { unconfirmed: 0, confirmed: 0, balance: 0 }
+      { unconfirmed: 0n, confirmed: 0n, balance: 0n }
     );
-    return balance;
+    return {
+      unconfirmed: Number(balance.unconfirmed),
+      confirmed: Number(balance.confirmed),
+      balance: Number(balance.balance)
+    };;
   }
 
   async getRentExemptionAmount(params) {
@@ -419,6 +646,6 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     const { rpc, connection } = await this.getRpc(network);
     const height = await connection.getSlot({ commitment: 'confirmed' }).send();
     const block = await rpc.getBlock({ height });
-    return this.blockTransform(network, block);
+    return this.blockTransform(network, block, height);
   }
 }
