@@ -8,7 +8,7 @@ import {
   isRBF,
   getLib,
 } from '../utilities/helper-methods';
-import {useState, useEffect, FC, memo} from 'react';
+import {useState, useEffect, FC, memo, ReactNode} from 'react';
 import {
   TransactionBodyCol,
   TransactionTile,
@@ -45,12 +45,15 @@ const SelectedPill = styled.div`
   font-size: 16px;
 `;
 
-const BorderBoxLabel: FC<{content: string, label: string}> = ({content, label}) => {
+const BorderBoxLabel: FC<{children: ReactNode, label: string}> = ({children, label}) => {
   return (
-    <div style={{position: 'relative', height: '2.5rem', border: '2px solid', borderRadius: '4px', marginTop: '1rem', display: 'inline-block', padding: '0.5rem 0.75rem'}}>
-      <p style={{position: 'absolute', bottom: '0.8rem', left: '0.4rem', padding: '0 0.25rem', backgroundColor: (Number('1') ? '#303030' : Slate30), fontSize: '0.75rem'}}>{label}</p>
-      <p style={{margin: '0'}}>{content}</p>
-    </div>);
+    <div>
+      <div style={{position: 'relative', height: '2.5rem', border: '2px solid', borderRadius: '4px', marginTop: '1rem', display: 'inline-block', padding: '0.5rem 0.75rem'}}>
+        <p style={{position: 'absolute', bottom: '0.8rem', left: '0.4rem', padding: '0 0.25rem', backgroundColor: (Number('1') ? '#303030' : Slate30), fontSize: '0.75rem'}}>{label}</p>
+        <div>{children}</div>
+      </div>
+    </div>
+  );
 }
 
 interface TransactionDetailsProps {
@@ -189,30 +192,34 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
 
                             {showDetails && (
                               <>
-                                <TextElipsis>
-                                  <b>Tx ID </b>
-                                  <SpanLink
-                                    onClick={() =>
-                                      goToTx(item.mintTxid, undefined, item.mintIndex)
-                                    }>
-                                    {item.mintTxid}
-                                  </SpanLink>
-                                </TextElipsis>
-
-                                <TextElipsis>
-                                  <BorderBoxLabel content={item.mintIndex} label='Tx Index'/>
-                                </TextElipsis>
+                                <BorderBoxLabel label='Tx ID'>
+                                  <TextElipsis style={{margin: 0}}>
+                                    <SpanLink
+                                      onClick={() =>
+                                        goToTx(item.mintTxid, undefined, item.mintIndex)
+                                      }>
+                                      {item.mintTxid}
+                                    </SpanLink>
+                                  </TextElipsis>
+                                </BorderBoxLabel>
+                                <BorderBoxLabel label='Tx Index'>
+                                  <TextElipsis>
+                                    {item.mintIndex}
+                                  </TextElipsis>
+                                </BorderBoxLabel>
 
                                 {item.uiConfirmations && confirmations > 0 ? (
-                                  <ScriptText>
-                                    <BorderBoxLabel content={item.uiConfirmations + confirmations} label='Confirmations'/>
-                                  </ScriptText>
+                                  <BorderBoxLabel label='Confirmations'>
+                                    <ScriptText>
+                                      {item.uiConfirmations + confirmations}
+                                    </ScriptText>
+                                  </BorderBoxLabel>
                                 ) : null}
 
                                 {item.script && (
                                   <>
-                                    <BorderBoxLabel content={item.script} label='Script Hex'/>
-                                    <BorderBoxLabel content={new lib.Script(item.script).toASM()} label='Script ASM'/>
+                                    <BorderBoxLabel label='Script Hex'>{item.script}</BorderBoxLabel>
+                                    <BorderBoxLabel label='Script ASM'>{new lib.Script(item.script).toASM()}</BorderBoxLabel>
                                   </>
                                 )}
                               </>
@@ -254,18 +261,19 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                     {showDetails && (
                       <>
                         {vo.spentTxid && (
-                          <TextElipsis>
-                            <b>Spent By </b>
-                            <SpanLink onClick={() => goToTx(vo.spentTxid, transaction.txid, i)}>
-                              {vo.spentTxid}
-                            </SpanLink>
-                          </TextElipsis>
+                          <BorderBoxLabel label='Spent By'>
+                            <TextElipsis style={{margin: 0}}>
+                              <SpanLink onClick={() => goToTx(vo.spentTxid, transaction.txid, i)}>
+                                {vo.spentTxid}
+                              </SpanLink>
+                            </TextElipsis>
+                          </BorderBoxLabel>
                         )}
                         {isOpReturn(vo) && <ScriptText>{getOpReturnText(vo)}</ScriptText>}
                         {vo.script && (
                           <>
-                            <BorderBoxLabel content={new lib.Script(vo.script).toHex()} label='Script Hex'/>
-                            <BorderBoxLabel content={new lib.Script(vo.script).toASM()} label='Script ASM'/>
+                            <BorderBoxLabel label='Script Hex'>{new lib.Script(vo.script).toHex()}</BorderBoxLabel>
+                            <BorderBoxLabel label='Script ASM'>{new lib.Script(vo.script).toASM()}</BorderBoxLabel>
                           </>
                         )}
                       </>
