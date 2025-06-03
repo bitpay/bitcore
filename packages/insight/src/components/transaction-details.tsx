@@ -268,12 +268,12 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                     )}
                   </TileDescription>
 
-                  <TileDescription value textAlign='right' style={{verticalAlign: '100%'}}>
+                  <TileDescription value textAlign='right'>
                     {getConvertedValue(vo.value, currency)} {currency}{' '}
                   </TileDescription>
                     <ArrowDiv margin='auto 0 auto .5rem'>
-                      <img 
-                        src={ArrowSvg} 
+                      <img
+                        src={ArrowSvg}
                         width={17}
                         height={17}
                         alt='Spent'
