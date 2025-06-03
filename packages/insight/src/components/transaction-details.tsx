@@ -47,9 +47,9 @@ const SelectedPill = styled.div`
 
 const BorderBoxLabel: FC<{content: string, label: string}> = ({content, label}) => {
   return (
-    <div style={{position: 'relative', height: '2.5rem', border: '2px solid', borderRadius: '4px', marginTop: '1rem'}}>
+    <div style={{position: 'relative', height: '2.5rem', border: '2px solid', borderRadius: '4px', marginTop: '1rem', display: 'inline-block', padding: '0.5rem 0.75rem'}}>
       <p style={{position: 'absolute', bottom: '0.8rem', left: '0.4rem', padding: '0 0.25rem', backgroundColor: (Number('1') ? '#303030' : Slate30), fontSize: '0.75rem'}}>{label}</p>
-      <p style={{position: 'absolute', top: '-0.5rem', left: '0.5rem'}}>{content}</p>
+      <p style={{margin: '0'}}>{content}</p>
     </div>);
 }
 
