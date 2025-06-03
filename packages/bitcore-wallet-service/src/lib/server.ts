@@ -2650,7 +2650,7 @@ export class WalletService implements IWalletService {
                   return next();
                 },
                 async next => {
-                  if (Constants.SVM_CHAINS[wallet.chain.toUpperCase()] && !opts.blockHeight) { 
+                  if (Constants.SVM_CHAINS[wallet.chain.toUpperCase()] && (!opts.blockHeight || !opts.blockHash)) { 
                     this._getBlockchainHeight(wallet.chain, wallet.network, (err, height, hash) => {
                       if (err) return next(err);
                       opts.blockHeight = height;
