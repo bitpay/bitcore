@@ -25,7 +25,7 @@ import {Tile, TileDescription} from '../assets/styles/tile';
 import ArrowSvg from '../assets/images/arrow.svg';
 import {useNavigate, createSearchParams} from 'react-router-dom';
 import styled from 'styled-components';
-import {Slate, SlateDark} from '../assets/styles/colors';
+import {Slate, Slate30, SlateDark} from '../assets/styles/colors';
 
 const TextElipsis = styled(ScriptText)`
   overflow: hidden;
@@ -44,6 +44,14 @@ const SelectedPill = styled.div`
   font-weight: 500;
   font-size: 16px;
 `;
+
+const BorderBoxLabel: FC<{content: string, label: string}> = ({content, label}) => {
+  return (
+    <div style={{position: 'relative', height: '2.5rem', border: '2px solid', borderRadius: '4px', marginTop: '1rem'}}>
+      <p style={{position: 'absolute', bottom: '0.8rem', left: '0.4rem', padding: '0 0.25rem', backgroundColor: (Number('1') ? '#303030' : Slate30), fontSize: '0.75rem'}}>{label}</p>
+      <p style={{position: 'absolute', top: '-0.5rem', left: '0.5rem'}}>{content}</p>
+    </div>);
+}
 
 interface TransactionDetailsProps {
   transaction: Transaction;
@@ -192,21 +200,19 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                                 </TextElipsis>
 
                                 <TextElipsis>
-                                  <b>Tx Index</b> {item.mintIndex}
+                                  <BorderBoxLabel content={item.mintIndex} label='Tx Index'/>
                                 </TextElipsis>
 
                                 {item.uiConfirmations && confirmations > 0 ? (
                                   <ScriptText>
-                                    <b>Confirmations</b> {item.uiConfirmations + confirmations}
+                                    <BorderBoxLabel content={item.uiConfirmations + confirmations} label='Confirmations'/>
                                   </ScriptText>
                                 ) : null}
 
                                 {item.script && (
                                   <>
-                                    <b>Script Hex</b>
-                                    <ScriptText>{item.script}</ScriptText>
-                                    <b>Script ASM</b>
-                                    <ScriptText>{new lib.Script(item.script).toASM()}</ScriptText>
+                                    <BorderBoxLabel content={item.script} label='Script Hex'/>
+                                    <BorderBoxLabel content={new lib.Script(item.script).toASM()} label='Script ASM'/>
                                   </>
                                 )}
                               </>
@@ -258,10 +264,8 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                         {isOpReturn(vo) && <ScriptText>{getOpReturnText(vo)}</ScriptText>}
                         {vo.script && (
                           <>
-                            <b>Script Hex</b>
-                            <ScriptText>{new lib.Script(vo.script).toHex()}</ScriptText>
-                            <b>Script ASM</b>
-                            <ScriptText>{new lib.Script(vo.script).toASM()}</ScriptText>
+                            <BorderBoxLabel content={new lib.Script(vo.script).toHex()} label='Script Hex'/>
+                            <BorderBoxLabel content={new lib.Script(vo.script).toASM()} label='Script ASM'/>
                           </>
                         )}
                       </>
