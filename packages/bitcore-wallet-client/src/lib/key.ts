@@ -57,6 +57,13 @@ export interface KeyOptions {
   algo?: KeyAlgorithm; // eddsa or ecdsa (Bitcoin) by default
 };
 
+export interface ExportedKey {
+  xPrivKey: string;
+  mnemonic: string;
+  mnemonicHasPassphrase: boolean;
+  fingerPrintUpdated?: boolean;
+};
+
 export class Key {
   // ecdsa
   #xPrivKey: string;
@@ -311,12 +318,7 @@ export class Key {
   };
 
   get(password: PasswordMaybe, algo?: KeyAlgorithm) {
-    const key: {
-      xPrivKey: string;
-      mnemonic: string;
-      mnemonicHasPassphrase: boolean;
-      fingerPrintUpdated?: boolean;
-    } = {
+    const key: ExportedKey = {
       xPrivKey: '',
       mnemonic: '',
       mnemonicHasPassphrase: this.#mnemonicHasPassphrase || false
@@ -420,7 +422,7 @@ export class Key {
    * No need to include/support BIP45
    */
   getBaseAddressDerivationPath(opts: {
-    n?: number;
+    n: number;
     chain?: string;
     coin?: string;
     network?: string;
@@ -492,15 +494,15 @@ export class Key {
     opts?: {
       coin?: string;
       chain?: string;
-      network?: string;
-      account?: number;
-      n?: number;
+      network: string;
+      account: number;
+      n: number;
       addressType?: string;
       walletPrivKey?: string;
       algo?: KeyAlgorithm;
     }
   ) {
-    opts = opts || {};
+    opts = opts || {} as any;
     opts.chain = opts.chain || Utils.getChain(opts.coin);
     const algo = opts.algo || ALGOS_BY_CHAIN[opts.chain.toLowerCase()] || ALGOS_BY_CHAIN.default;
 
