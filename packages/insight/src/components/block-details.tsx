@@ -12,6 +12,7 @@ import {routerFadeIn} from '../utilities/animations';
 import {
   getApiRoot,
   getConvertedValue,
+  getDifficultyFromBits,
   getFee,
   getFormattedDate,
   normalizeParams,
@@ -147,7 +148,7 @@ const BlockDetails: FC<BlockDetailsProps> = ({currency, network, block}) => {
                 <SharedTile title='Merkle Root' description={summary.merkleRoot} />
                 <SharedTile
                   title='Difficulty'
-                  description={(0x1d00ffff / summary.bits).toString()}
+                  description={getDifficultyFromBits(summary.bits).toString()}
                 />
                 <SharedTile title='Bits' description={summary.bits} />
                 <SharedTile title='Size (bytes)' description={summary.size} />
@@ -157,17 +158,17 @@ const BlockDetails: FC<BlockDetailsProps> = ({currency, network, block}) => {
 
                 <Tile withBorderBottom>
                   <TileDescription margin='0 1rem 0 0'>Previous Block</TileDescription>
-                  <TileLink value textAlign='right' disabled={!summary.previousBlockHash}>
+                  <TileLink value textAlign='right' disabled={!summary.previousBlockHash || summary.height === 0}>
                     <span
                       onClick={() =>
                         summary.previousBlockHash ? gotoBlock(summary.previousBlockHash) : null
                       }>
-                      {summary.height - 1}
+                      {(summary.height > 0) ? summary.height - 1 : "None"}
                     </span>
                   </TileLink>
                 </Tile>
 
-                <SharedTile title='Height' description={summary.height} />
+                <SharedTile title='Height' description={`${summary.height}`} />
 
                 <Tile withBorderBottom>
                   <TileDescription margin='0 1rem 0 0'>Next Block</TileDescription>

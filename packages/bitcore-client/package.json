@@ -1,10 +1,13 @@
 {
   "name": "bitcore-client",
   "description": "Wallet client for Bitcore node",
-  "version": "10.9.1",
+  "version": "10.9.2",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "main": "./ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
+  "bin": {
+    "bitcore-client": "./bin/wallet"
+  },
   "engines": {
     "node": ">=18.0.0"
   },
@@ -25,7 +28,7 @@
     "bcrypt": "5.1.0",
     "bitcore-mnemonic": "^10.9.0",
     "commander": "11.1.0",
-    "crypto-wallet-core": "^10.9.1",
+    "crypto-wallet-core": "^10.9.2",
     "level-js": "4.0.2",
     "leveldown": "6.1.1",
     "levelup": "4.3.2",
