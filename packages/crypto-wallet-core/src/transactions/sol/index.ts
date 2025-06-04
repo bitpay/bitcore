@@ -1,7 +1,7 @@
 import * as SolComputeBudget from '@solana-program/compute-budget';
+import * as SolMemo from '@solana-program/memo';
 import * as SolSystem from '@solana-program/system';
 import * as SolToken from '@solana-program/token';
-import * as SolMemo from '@solana-program/memo';
 import { pipe } from '@solana/functional';
 import * as SolKit from '@solana/kit'
 import { Key } from '../../derivation';
@@ -31,9 +31,9 @@ export class SOLTxProvider {
     space?: number; // amount of space to reserve a new account in bytes
     mint?: string; // mint address for createATA
     ataAddress?: any; // ATA address for createATA
-    invoiceID?: string; // invoice ID for memo
+    memo?: string;
   }) {
-    const { recipients, from, nonce, nonceAddress, category, space, blockHash, blockHeight, priorityFee, txInstructions, computeUnits, fromKeyPair, invoiceID } = params;
+    const { recipients, from, nonce, nonceAddress, category, space, blockHash, blockHeight, priorityFee, txInstructions, computeUnits, fromKeyPair, memo } = params;
     const fromAddress = SolKit.address(from);
     let txType: SolKit.TransactionVersion = ['0', 0].includes(params?.txType) ? 0 : 'legacy';
     let lifetimeConstrainedTx;
@@ -87,10 +87,8 @@ export class SOLTxProvider {
         if (computeUnits) {
           transferInstructions.push(SolComputeBudget.getSetComputeUnitLimitInstruction({ units: computeUnits }));
         }
-        if (invoiceID) {
-          const memoInstruction = SolMemo.getAddMemoInstruction({
-            memo: invoiceID
-          });
+        if (memo) {
+          const memoInstruction = SolMemo.getAddMemoInstruction({ memo });
           transferInstructions.push(memoInstruction);
         }
         const transferTxMessage = SolKit.appendTransactionMessageInstructions(transferInstructions, lifetimeConstrainedTx);

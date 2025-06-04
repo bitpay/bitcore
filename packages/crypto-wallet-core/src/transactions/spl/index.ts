@@ -25,7 +25,7 @@ export class SPLTxProvider extends SOLTxProvider {
     tokenAddress: string; // mint address
     fromAta: string;
     decimals: number;
-    invoiceID?: string; // optional invoice ID for memo
+    memo?: string;
   }) {
     const { recipients, from, fromAta, tokenAddress, decimals } = params;
 
