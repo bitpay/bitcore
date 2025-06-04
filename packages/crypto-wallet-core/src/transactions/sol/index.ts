@@ -181,15 +181,15 @@ export class SOLTxProvider {
     const { tx, keys } = params;
     const signedTx = await this.sign({ tx, key: keys[0] });
     const decodedTx = this.decodeRawTransaction({ rawTx: signedTx });
-    const sigEncoding = this.getSignaturesEncoder().encode(decodedTx.signatures)
-    return SolKit.getBase64Decoder().decode(sigEncoding);
+    const pubKeys = Object.keys(decodedTx.signatures);
+    const sigEncoding =  pubKeys.length == 1 ? decodedTx.signatures[pubKeys[0]] : this.getSignaturesEncoder().encode(decodedTx.signatures);
+    return SolKit.getBase58Decoder().decode(sigEncoding);
   }
 
   applySignature(params: { tx: string; signature: string }): string {
     const { tx, signature } = params;
-    const encoder = SolKit.getBase64Encoder();
-    const signatures = [encoder.encode(signature)];
-    const transaction = encoder.encode(tx);
+    const signatures = [SolKit.getBase58Encoder().encode(signature)];
+    const transaction = SolKit.getBase64Encoder().encode(tx);
     const transformWithNewSignatures = (_tx) => {
       const { messageBytes } = _tx;
       const signerAddressesDecoder = SolKit.getTupleDecoder([
@@ -236,7 +236,8 @@ export class SOLTxProvider {
   getHash(params: { tx: string; }): string {
     const { tx } = params;
     const decodedTx = this.decodeRawTransaction({ rawTx: tx });
-    const sigEncoding = this.getSignaturesEncoder().encode(decodedTx.signatures)
+    const pubKeys = Object.keys(decodedTx.signatures);
+    const sigEncoding =  pubKeys.length == 1 ? decodedTx.signatures[pubKeys[0]] : this.getSignaturesEncoder().encode(decodedTx.signatures);
     return SolKit.getBase58Decoder().decode(sigEncoding);
   }
 
