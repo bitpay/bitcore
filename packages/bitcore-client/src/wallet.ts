@@ -497,6 +497,7 @@ export class Wallet {
     from?: string;
     change?: string; // 'miner' to have any change go to the miner (i.e. no change).
     invoiceID?: string;
+    memo?: string;
     fee?: number;
     feeRate?: number;
     nonce?: number;
@@ -548,6 +549,7 @@ export class Wallet {
       from: params.from,
       change,
       invoiceID: params.invoiceID,
+      memo: params.memo,
       fee: params.fee,
       feeRate: params.feeRate,
       utxos: params.utxos,

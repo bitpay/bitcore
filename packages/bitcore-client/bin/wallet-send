@@ -110,6 +110,10 @@ const main = async () => {
           params.recipients = [{ address: to, amount: balance.confirmed }];
           console.log(`Sending ${balance.confirmed / scale} XRP to ${to}`);
         }
+      } else if (wallet.isSolanaChain()) {
+        const balance = await wallet.getBalance();
+        params.recipients = [{ address: to, amount: balance.confirmed - feeRate }];
+        console.log(`Sending ${(balance.confirmed - feeRate) / scale} SOL to ${to}`);
       } else {
         throw new Error(`sendMax not supported for ${wallet.chain}`);
       }
