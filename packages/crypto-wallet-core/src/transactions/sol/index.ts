@@ -2,7 +2,6 @@ import * as SolComputeBudget from '@solana-program/compute-budget';
 import * as SolMemo from '@solana-program/memo';
 import * as SolSystem from '@solana-program/system';
 import * as SolToken from '@solana-program/token';
-import { pipe } from '@solana/functional';
 import * as SolKit from '@solana/kit'
 import { Key } from '../../derivation';
 
@@ -143,7 +142,7 @@ export class SOLTxProvider {
           mint: SolKit.address(mint),
           ata: ataAddress
         });
-        const ataTxMessage = pipe(
+        const ataTxMessage = SolKit.pipe(
           SolKit.createTransactionMessage({ version: 0 }),
           (tx) => SolKit.setTransactionMessageFeePayerSigner(fromKeyPair, tx),
           (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash({ blockhash: blockHash as SolKit.Blockhash, lastValidBlockHeight: BigInt(blockHeight) }, tx),
