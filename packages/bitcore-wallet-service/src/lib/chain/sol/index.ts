@@ -191,7 +191,7 @@ export class SolChain implements IChain {
         output.amount == null ||
         output.amount < 0 ||
         isNaN(output.amount)  ||
-        Web3.utils.toBN(BigInt(output.amount).toString()).toString() !== BigInt(output.amount).toString()
+        Web3.utils.toHex(BigInt(output.amount).toString()).toString() !== BigInt(output.amount).toString(16)
       ) {
         logger.warn('output.amount is not a valid value: ' + output.amount);
         return false;
