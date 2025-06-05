@@ -109,7 +109,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     const { rpc } = await this.getRpc(network);
     const tx = await rpc.getTransaction({ txid: txId });
     if (!tx) return undefined;
-    return this.txTransform(network, { transactions: [tx] });
+    return this.txTransform(network, { tx });
   }
 
   async streamTransactions(params: StreamTransactionsParams): Promise<any> {
@@ -232,7 +232,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   async _getTransformedTx(rpc, network, tx, address? ) {
     try {
       const parsedTx = await rpc.getTransaction({ txid: tx.signature });
-      return this.txTransform(network, { txStatuses: [tx], transactions: [parsedTx], targetAddress: address  });
+      return this.txTransform(network, { txStatuses: tx, tx: parsedTx, targetAddress: address  });
     } catch (err: any) {
       return {
         error: err?.message,
@@ -245,149 +245,103 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     }
   }
 
-  async _getTransformedBlock(rpc, network, height ) {
-    const block = await rpc.getBlock({ height: Number(height) });
-    try {
-      return this.blockTransform(network, block, height);
-    } catch (err: any) {
-      return {
-        error: err?.message,
-        height,
-        network,
-        chain: 'SOL',
-        status: block?.confirmationStatus,
-      }
-    }
-  }
-
-  async getParsedAddressTransactions(address: string, network: string, _limit?: number): Promise<any> {
-    const { rpc, connection } = await this.getRpc(network);
-    const txList = await connection.getSignaturesForAddress(address).send();
-    const parsedTxs = await rpc.getTransactions({ address });
-    return this.txTransform(network, { txStatuses: txList, transactions: parsedTxs, targetAddress: address });
-  }
 
   txTransform(network, params) {
-    let { block, transactions, txStatuses, targetAddress } = params;
+    let { block, tx, txStatus, targetAddress } = params;
     let blockTime;
     let blockHash;
 
     if (block) {
       ({ blockHeight: blockTime, blockTime, blockhash: blockHash } = block);
     }
-    transactions = transactions || block.transactions;
-    if (!transactions || transactions.length === 0) {
-      return [];
+
+    blockTime = blockTime || tx?.blockTime
+
+    const { feePayerAddress, slot, meta, version, txid } = tx;
+    const recentBlockhash = tx.lifetimeConstraint.blockhash || blockHash;
+    const date = new Date((blockTime || 0) * 1000);
+    const status = tx.status || txStatus?.confirmationStatus;
+    const error = meta?.err || txStatus?.err;
+    const transactionError = error ? { error: JSON.stringify(error, (_, v) => typeof v === 'bigint' ? v.toString() : v) } : null;
+    const txType = version;
+    const instructions = tx.instructions;
+    const fee = meta?.fee;
+    const from = feePayerAddress;
+    const target = targetAddress || from;
+    const recipientAddresses = new Set();
+    let mainToAddress = null;
+    let value = 0;
+
+    if (instructions?.[instructionKeys.TRANSFER_SOL]?.length > 0) {
+      const solTransfers = instructions[instructionKeys.TRANSFER_SOL];
+      mainToAddress = solTransfers.find(transfer =>
+        transfer.destination !== from)?.destination || null;
+      for (const transfer of solTransfers) {
+        if (transfer.destination !== from) {
+          recipientAddresses.add(transfer.destination);
+        }
+      };
+      value = solTransfers.reduce((sum, transfer) => sum + Number(transfer.amount), 0);
+    }
+    if (instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.length > 0) {
+      const tokenTransfers = instructions[instructionKeys.TRANSFER_CHECKED_TOKEN];
+      if (!mainToAddress) {
+        mainToAddress = tokenTransfers.find(transfer =>
+          transfer.destination !== from)?.destination || null;
+      }
+      for (const transfer of tokenTransfers) {
+        if (transfer.destination !== from) {
+          recipientAddresses.add(transfer.destination);
+        }
+      };
     }
 
-    return transactions.map((tx, index) => {
-      blockTime = blockTime || tx?.blockTime
+    const allRecipients = Array.from(recipientAddresses);
+    let txCategory = 'other';
 
-      const { feePayerAddress, slot, meta, version, txid } = tx;
-      const txStatus = txStatuses?.[index];
-      const recentBlockhash = tx.lifetimeConstraint.blockhash || blockHash;
-      const date = new Date((blockTime || 0) * 1000);
-      const status = tx.status || txStatus?.confirmationStatus;
-      const error = meta?.err || txStatus?.err;
-      const transactionError = error ? { error: JSON.stringify(error, (_, v) => typeof v === 'bigint' ? v.toString() : v) } : null;
-      const txType = version;
-      const instructions = tx.instructions;
-      const fee = meta?.fee;
-      const from = feePayerAddress;
-      const target = targetAddress || from;
-      const recipientAddresses = new Set();
-      let mainToAddress = null;
-      let value = 0;
+    if (instructions?.[instructionKeys.TRANSFER_SOL]?.length > 0 ||
+      instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.length > 0) {
+      if (allRecipients.length === 0) {
+        txCategory = 'move';
+      } else {
+        const solSentOut = instructions?.[instructionKeys.TRANSFER_SOL]?.some(transfer =>
+          transfer.source === target && transfer.destination !== target) || false;
+        const tokensSentOut = instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.some(transfer =>
+          transfer.source === target && transfer.destination !== target) || false;
+        const solReceived = instructions?.[instructionKeys.TRANSFER_SOL]?.some(transfer =>
+          transfer.destination === target && transfer.source !== target) || false;
+        const tokensReceived = instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.some(transfer =>
+          transfer.destination === target && transfer.source !== target) || false;
 
-      if (instructions?.[instructionKeys.TRANSFER_SOL]?.length > 0) {
-        const solTransfers = instructions[instructionKeys.TRANSFER_SOL];
-        mainToAddress = solTransfers.find(transfer =>
-          transfer.destination !== from)?.destination || null;
-        for (const transfer of solTransfers) {
-          if (transfer.destination !== from) {
-            recipientAddresses.add(transfer.destination);
-          }
-        };
-        value = solTransfers.reduce((sum, transfer) => sum + Number(transfer.amount), 0);
-      }
-      if (instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.length > 0) {
-        const tokenTransfers = instructions[instructionKeys.TRANSFER_CHECKED_TOKEN];
-        if (!mainToAddress) {
-          mainToAddress = tokenTransfers.find(transfer =>
-            transfer.destination !== from)?.destination || null;
-        }
-        for (const transfer of tokenTransfers) {
-          if (transfer.destination !== from) {
-            recipientAddresses.add(transfer.destination);
-          }
-        };
-      }
-
-
-      const allRecipients = Array.from(recipientAddresses);
-      let txCategory = 'other';
-
-      if (instructions?.[instructionKeys.TRANSFER_SOL]?.length > 0 ||
-        instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.length > 0) {
-        if (allRecipients.length === 0) {
+        if ((solSentOut || tokensSentOut) && !(solReceived || tokensReceived)) {
+          txCategory = 'send';
+        } else if (!(solSentOut || tokensSentOut) && (solReceived || tokensReceived)) {
+          txCategory = 'receive';
+        } else if ((solSentOut || tokensSentOut) && (solReceived || tokensReceived)) {
+          // Both sending and receiving in the same transaction
           txCategory = 'move';
-        } else {
-          const solSentOut = instructions?.[instructionKeys.TRANSFER_SOL]?.some(transfer =>
-            transfer.source === target && transfer.destination !== target) || false;
-          const tokensSentOut = instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.some(transfer =>
-            transfer.source === target && transfer.destination !== target) || false;
-          const solReceived = instructions?.[instructionKeys.TRANSFER_SOL]?.some(transfer =>
-            transfer.destination === target && transfer.source !== target) || false;
-          const tokensReceived = instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.some(transfer =>
-            transfer.destination === target && transfer.source !== target) || false;
-
-          if ((solSentOut || tokensSentOut) && !(solReceived || tokensReceived)) {
-            txCategory = 'send';
-          } else if (!(solSentOut || tokensSentOut) && (solReceived || tokensReceived)) {
-            txCategory = 'receive';
-          } else if ((solSentOut || tokensSentOut) && (solReceived || tokensReceived)) {
-            // Both sending and receiving in the same transaction
-            txCategory = 'move';
-          }
         }
       }
-      return {
-        txid,
-        fee: Number(fee),
-        height: slot,
-        from,
-        initialFrom: from,
-        txType,
-        address: mainToAddress, // This is the main "to" address
-        recipients: allRecipients, // New field for all recipient addresses
-        blockTime: date,
-        error: transactionError,
-        network,
-        chain: 'SOL',
-        status,
-        recentBlockhash,
-        instructions,
-        satoshis: value,
-        category: txCategory
-      } as any;
-    });
-  }
-
-  blockTransform(network, block, height) {
+    }
     return {
-      chain: this.chain,
+      txid,
+      fee: Number(fee),
+      height: slot,
+      from,
+      initialFrom: from,
+      txType,
+      address: mainToAddress, // This is the main "to" address
+      recipients: allRecipients, // New field for all recipient addresses
+      blockTime: date,
+      error: transactionError,
       network,
-      height: Number(height),
-      hash: block?.blockhash,
-      time: new Date(Number(block?.blockTime) * 1000),
-      timeNormalized: new Date(Number(block?.blockTime) * 1000),
-      previousBlockHash: block?.previousBlockHash,
-      transactions: block?.signatures,
-      transactionCount: block?.signatures?.length,
-      size: block?.transactions?.length,
-      reward: Number(block?.rewards[0]?.lamports),
-      processed: true,
-    } as IBlock;
+      chain: 'SOL',
+      status,
+      recentBlockhash,
+      instructions,
+      satoshis: value,
+      category: txCategory
+    } as any;
   }
 
   async getBalanceForAddress(params: GetBalanceForAddressParams): Promise<WalletBalanceType> {
@@ -467,6 +421,38 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       }
     });
 
+  }
+
+  async _getTransformedBlock(rpc, network, height ) {
+    const block = await rpc.getBlock({ height: Number(height) });
+    try {
+      return this.blockTransform(network, block, height);
+    } catch (err: any) {
+      return {
+        error: err?.message,
+        height,
+        network,
+        chain: 'SOL',
+        status: block?.confirmationStatus,
+      }
+    }
+  }
+
+  blockTransform(network, block, height) {
+    return {
+      chain: this.chain,
+      network,
+      height: Number(height),
+      hash: block?.blockhash,
+      time: new Date(Number(block?.blockTime) * 1000),
+      timeNormalized: new Date(Number(block?.blockTime) * 1000),
+      previousBlockHash: block?.previousBlockHash,
+      transactions: block?.signatures,
+      transactionCount: block?.signatures?.length,
+      size: block?.transactions?.length,
+      reward: Number(block?.rewards[0]?.lamports),
+      processed: true,
+    } as IBlock;
   }
 
   protected async getBlocksRange(params: GetBlockParams) {
