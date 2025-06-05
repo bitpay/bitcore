@@ -1,4 +1,5 @@
-import { expect } from 'chai';
+import { describe, it, before, after } from 'node:test';
+import assert from 'assert';
 import { IWalletAddress, WalletAddressStorage } from '../../../src/models/walletAddress';
 import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 
@@ -18,8 +19,9 @@ describe('WalletAddress Model', function() {
 
       const parseResult = JSON.parse(result);
 
-      expect(parseResult).to.deep.equal({ address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf' });
+      assert.deepEqual(parseResult, { address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf' });
     });
+
     it('should return the raw transform object if options field exists and set to true', () => {
       let walletAddress: IWalletAddress = {
         address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf'
@@ -28,7 +30,7 @@ describe('WalletAddress Model', function() {
       const result = WalletAddressStorage._apiTransform(walletAddress, {
         object: true
       });
-      expect(result).to.deep.equal({ address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf' });
+      assert.deepEqual(result, { address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf' });
     });
   });
 });
