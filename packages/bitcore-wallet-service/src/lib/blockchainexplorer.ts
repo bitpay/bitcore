@@ -47,7 +47,8 @@ const PROVIDERS = {
     },
     sol: {
       livenet: 'https://api-sol.bitcore.io',
-      testnet: 'https://api-sol.bitcore.io'
+      testnet: 'https://api-sol.bitcore.io',
+      devnet: 'https://api-sol.bitcore.io'
     },
   }
 };

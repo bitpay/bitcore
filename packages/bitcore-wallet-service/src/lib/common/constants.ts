@@ -158,7 +158,7 @@ export const Constants = {
     },
     sol: {
       mainnet: 'livenet',
-      testnet: 'testnet'
+      testnet: 'devnet'
     }
   },
 
