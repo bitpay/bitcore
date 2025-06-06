@@ -141,7 +141,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
           count++;
         }
         stream.push(null);
-        const result = await ExternalApiStream.onStream(stream, req!, res!, { jsonl: true });
+        const result = await ExternalApiStream.onStream(stream, req!, res!);
         if (!result?.success) {
           logger.error('Error mid-stream (streamTransactions): %o', result.error?.log || result.error);
         }  
@@ -218,7 +218,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
             if (limit && count >= limit) break;
             const transformedTx = await this._getTransformedTx(rpc, network, tx, address, tokenAddress);
             if (transformedTx) {
-              addressStream.push(transformedTx);
+              addressStream.push(JSON.stringify(transformedTx) + '\n');
               count++;
             }
           }
@@ -237,6 +237,10 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       const parsedTx = await rpc.getTransaction({ txid: tx.signature });
       if (tokenAddress && !parsedTx?.instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.length) {
         return;
+      }
+      if (tokenAddress) {
+        address =  await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
+        if (!address) return;
       }
       return this.txTransform(network, { txStatuses: tx, tx: parsedTx, targetAddress: address, tokenAddress });
     } catch (err: any) {
@@ -304,7 +308,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         }
       };
       if (tokenAddress) {
-        value = tokenTransfers.reduce((sum, transfer) => { sum + Number(transfer.amount) }, 0);
+        value = tokenTransfers.reduce((sum, transfer) => sum + Number(transfer.amount), 0);
       }
     }
 
