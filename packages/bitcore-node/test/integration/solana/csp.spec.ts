@@ -20,12 +20,11 @@ describe('Solana API', function() {
   this.timeout(30000);
   
   before(intBeforeHelper);
-  // Create a fresh sandbox before each test
+
   beforeEach(() => {
     sandbox = sinon.createSandbox();
   });
-  
-  // Restore the sandbox after each test
+
   afterEach(() => {
     sandbox.restore();
   });
@@ -223,7 +222,7 @@ describe('Solana API', function() {
   });
 
   it('should correctly transform transaction data', () => {
-    const transaction = {
+    const tx = {
       txid: 'tx1',
       feePayerAddress: 'sender',
       slot: 123,
@@ -244,12 +243,10 @@ describe('Solana API', function() {
       }
     };
     
-    // Make sure SOL.txTransform is properly defined
     expect(typeof SOL.txTransform).to.equal('function', 'SOL.txTransform should be defined as a function');
     
-    const transformedTx = SOL.txTransform(network, { transactions: [transaction] })[0];
+    const transformedTx = SOL.txTransform(network, { tx })[0];
     
-    // Verify the transformation
     expect(transformedTx).to.exist;
     expect(transformedTx.txid).to.equal('tx1');
     expect(transformedTx.fee).to.equal(5000);
@@ -265,13 +262,7 @@ describe('Solana API', function() {
       blockTime: Date.now() / 1000,
       blockhash: 'hash123',
       previousBlockHash: 'prevHash123',
-      transactions: [
-        {
-          transaction: {
-            signatures: ['sig1']
-          }
-        }
-      ],
+      signatures: ['sig1'],
       rewards: [
         {
           lamports: 1000000
