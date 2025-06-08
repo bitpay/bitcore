@@ -48,7 +48,7 @@ const SelectedPill = styled.div`
 const BorderBoxLabel: FC<{children: ReactNode, label: string}> = ({children, label}) => {
   return (
     <div>
-        <fieldset style={{borderWidth: '2.5px', borderColor: 'white', borderRadius: '5px', padding: '0.1rem 0.4rem'}}>
+        <fieldset style={{borderWidth: '2.5px', borderColor: 'white', borderRadius: '5px', padding: '0.1rem 0.4rem', width: 'fit-content'}}>
           <legend style={{margin: '-0.2rem 0.1rem'}}>{label}</legend>
           {children}
         </fieldset>
