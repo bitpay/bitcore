@@ -1,3 +1,7 @@
+import { fetchDigitalAsset, mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata'
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
+import { PublicKey as UmiPublicKey } from '@metaplex-foundation/umi-public-keys';
+import { TokenListProvider } from '@solana/spl-token-registry';
 import { CryptoRpc } from 'crypto-rpc';
 import { SolRpc } from 'crypto-rpc/lib/sol/SolRpc'
 import { instructionKeys } from 'crypto-rpc/lib/sol/transaction-parser';
@@ -17,7 +21,7 @@ import {
 import { ExternalApiStream } from '../../external/streams/apiStream';
 import { InternalStateProvider } from '../../internal/internal';
 
-export interface GetSolWeb3Response { rpc: SolRpc; connection: any; dataType: string; };
+export interface GetSolWeb3Response { rpc: SolRpc; connection: any; umi: any; dataType: string; };
 
 export class BaseSVMStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<ISVMNetworkConfig>;
@@ -48,13 +52,16 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
 
     logger.info(`Making a new connection for ${this.chain}:${network}`);
     const dataType = params?.type;
-    const providerConfig = getProvider({ network, dataType, config: this.config });
-    const wsPort = providerConfig.wsPort ?? providerConfig.port;
-    const rpcConfig = { ...providerConfig, chain: 'SOL', currencyConfig: {}, wsPort };
+    const provider = getProvider({ network, dataType, config: this.config });
+    const wsPort = provider.wsPort ?? provider.port;
+    const rpcConfig = { ...provider, chain: 'SOL', currencyConfig: {}, wsPort };
     const rpc = new CryptoRpc(rpcConfig, {}).get('SOL');
+    const umi = createUmi(`${provider.protocol}://${provider.host}${provider.port ? `:${provider.port}` : ''}`)
+      .use(mplTokenMetadata());
     const rpcObj = {
       rpc,
       connection: rpc.rpc,
+      umi,
       dataType: rpcConfig.dataType || 'combined',
     };
     if (!BaseSVMStateProvider.rpcs[this.chain]) {
@@ -210,11 +217,11 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         let count = 0;
         do {
           // fetch the next page of signatures
-          const txList = await connection.getSignaturesForAddress(address, { limit, before }).send();
+          const txList = await connection.getSignaturesForAddress(address, { limit: 100, before }).send();
           if (!txList.length) break;
           before = txList[txList.length - 1].signature;
 
-          for (const tx of txList) {
+          for (const tx of txList.reverse()) {
             if (limit && count >= limit) break;
             const transformedTx = await this._getTransformedTx(rpc, network, tx, address, tokenAddress);
             if (transformedTx) {
@@ -235,11 +242,13 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   async _getTransformedTx(rpc, network, tx, address?, tokenAddress? ) {
     try {
       const parsedTx = await rpc.getTransaction({ txid: tx.signature });
-      if (tokenAddress && !parsedTx?.instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.length) {
-        return;
-      }
       if (tokenAddress) {
-        address =  await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
+        if (!parsedTx?.instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.length) return;
+        try {
+          address =  await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
+        } catch (e: any) {
+          logger.error('Error getting ata address: %o', e);
+        }
         if (!address) return;
       }
       return this.txTransform(network, { txStatuses: tx, tx: parsedTx, targetAddress: address, tokenAddress });
@@ -298,6 +307,9 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     if (instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.length > 0) {
       const allTransfers = instructions[instructionKeys.TRANSFER_CHECKED_TOKEN];
       const tokenTransfers = tokenAddress ? allTransfers.filter(transfer => tokenAddress.toLowerCase() === transfer.mint.toLowerCase()) : allTransfers;
+      if (!tokenTransfers?.length) {
+        return;
+      }
       if (tokenAddress || !mainToAddress) {
         mainToAddress = tokenTransfers.find(transfer =>
           transfer.destination !== from)?.destination || null;
@@ -641,6 +653,47 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         result.push({ mintAddress: addr.mint, ataAddress: addr.pubkey })
       return result;
     }, []);
+  }
+
+ async getSPLTokenInfo(
+    network: string, 
+    tokenAddress: string
+  ): Promise<{ name: string; symbol: string; decimals: number }> {
+    const { umi } = await this.getRpc(network);
+    let decimals;
+    let name = '';
+    let symbol = '';
+    try {
+      const asset = await fetchDigitalAsset(umi, tokenAddress as UmiPublicKey);
+      if (asset) {
+        name = asset.metadata.name;
+        symbol = asset.metadata.symbol;
+        decimals = asset.mint.decimals;
+      }  else {
+        // If a token doesn't use the Token Metadata Standard (above), it uses the Solana Labs Token List (below). 
+        // This list is obsolete since June 20,2022
+        const provider = await new TokenListProvider().resolve();
+        const networkId = {
+          mainnet: 101,
+          testnet: 102,
+          devnet: 103
+        }
+        const tokenList = provider.filterByChainId(networkId[network]).getList();
+        const tokenMap = tokenList.reduce((map, item) => {
+          map.set(item.address, item);
+          return map;
+        }, new Map());
+
+        const token = tokenMap.get(tokenAddress);
+
+        name = token.name;
+        symbol = token.symbol;
+        decimals = token.decimals;
+      }
+    } catch (err) {
+      logger.error('Error getting SPL token info: %o', err);
+    }
+    return { name, symbol, decimals };
   }
 
   async getLocalTip(params: any): Promise<IBlock> {
