@@ -23,6 +23,7 @@ import {
 } from '../assets/styles/transaction';
 import {Tile, TileDescription} from '../assets/styles/tile';
 import ArrowSvg from '../assets/images/arrow.svg';
+import BlueArrowSvg from '../assets/images/arrow-blue.svg';
 import {useNavigate, createSearchParams} from 'react-router-dom';
 import styled from 'styled-components';
 import {Slate, SlateDark} from '../assets/styles/colors';
@@ -158,17 +159,15 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                         {isInputSelected(item) ? <SelectedPill>Selected</SelectedPill> : null}
 
                         <Tile invertedBorderColor={arr.length > 1 && arr.length !== i + 1}>
-                          {showDetails && (
-                            <ArrowDiv margin='auto .5rem auto 0'>
-                              <img
-                                src={ArrowSvg}
-                                width={17}
-                                height={17}
-                                alt='arrow'
-                                onClick={() => goToTx(item.mintTxid, undefined, item.mintIndex)}
-                              />
-                            </ArrowDiv>
-                          )}
+                          <ArrowDiv margin='auto .5rem auto 0'>
+                            <img
+                              src={BlueArrowSvg}
+                              width={17}
+                              height={17}
+                              alt='arrow'
+                              onClick={() => goToTx(item.mintTxid, undefined, item.mintIndex)}
+                            />
+                          </ArrowDiv>
 
                           <TileDescription padding='0 1rem 0 0' value>
                             {getAddress(vi) !== 'Unparsed address' ? (
@@ -270,20 +269,21 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
 
                   <TileDescription value textAlign='right'>
                     {getConvertedValue(vo.value, currency)} {currency}{' '}
-                    {vo.spentTxid ? '(S)' : '(U)'}
                   </TileDescription>
-
-                  {showDetails && vo.spentTxid && (
                     <ArrowDiv margin='auto 0 auto .5rem'>
                       <img
-                        src={ArrowSvg}
+                        src={vo.spentTxid ? BlueArrowSvg : ArrowSvg}
                         width={17}
                         height={17}
-                        alt='arrow'
-                        onClick={() => goToTx(vo.spentTxid, transaction.txid, i)}
+                        alt='Spent'
+                        title={vo.spentTxid ? 'Spent' : 'Unspent'}
+                        style={{
+                          visibility: (isOpReturn(vo) ? 'hidden' : 'visible'),
+                          margin: '0px 5px'
+                        }}
+                        onClick={() => vo.spentTxid && goToTx(vo.spentTxid, transaction.txid, i)}
                       />
                     </ArrowDiv>
-                  )}
                 </Tile>
               </div>
             );
