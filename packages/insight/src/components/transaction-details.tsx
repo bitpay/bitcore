@@ -167,7 +167,24 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                     {vi.items.map((item: any, itemIndex: number) => (
                       <div key={item.mintTxid + itemIndex}>
                         {isInputSelected(item) ? <SelectedPill>Selected</SelectedPill> : null}
-
+                        <div style={{display: 'flex', marginTop: '1rem'}}>
+                          {getAddress(vi) !== 'Unparsed address' ? (
+                            <SpanLink onClick={() => goToAddress(getAddress(vi))}
+                              style={{
+                                textOverflow: 'ellipsis', 
+                                overflow: 'hidden', 
+                                textAlign: 'left', 
+                                width: '100%'}}
+                            >
+                              {getAddress(vi)}
+                            </SpanLink>
+                          ) : (
+                            <span>Unparsed address</span>
+                          )}
+                          <div style={{minInlineSize: 'fit-content'}}>
+                            {getConvertedValue(item.value, currency)} {currency}
+                          </div>
+                        </div>
                         <Tile invertedBorderColor={arr.length > 1 && arr.length !== i + 1}>
                           {showDetails && (
                             <ArrowDiv margin='auto .5rem auto 0'>
@@ -182,13 +199,6 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                           )}
 
                           <TileDescription padding='0 1rem 0 0' value>
-                            {getAddress(vi) !== 'Unparsed address' ? (
-                              <SpanLink onClick={() => goToAddress(getAddress(vi))}>
-                                {getAddress(vi)}
-                              </SpanLink>
-                            ) : (
-                              <span>Unparsed address</span>
-                            )}
 
                             {showDetails && (
                               <>
@@ -225,10 +235,6 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                               </>
                             )}
                           </TileDescription>
-
-                          <TileDescription value textAlign='right'>
-                            {getConvertedValue(item.value, currency)} {currency}
-                          </TileDescription>
                         </Tile>
                       </div>
                     ))}
@@ -248,15 +254,27 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
             return (
               <div key={i}>
                 {isOutputSelected(i) ? <SelectedPill>Selected</SelectedPill> : null}
+                <div style={{display: 'flex', marginTop: '1rem'}}>
+                  {getAddress(vo) !== 'Unparsed address' ? (
+                    <SpanLink onClick={() => goToAddress(getAddress(vo))} 
+                      style={{
+                        textOverflow: 'ellipsis', 
+                        overflow: 'hidden', 
+                        textAlign: 'left', 
+                        width: '100%'}}
+                    >
+                      {getAddress(vo)}
+                    </SpanLink>
+                  ) : (
+                    <span>{isOpReturn(vo) ? 'OP_RETURN' : 'Unparsed address'}</span>
+                  )}
+                  <div style={{minInlineSize: 'fit-content'}}>
+                    {getConvertedValue(vo.value, currency)} {currency}{' '}
+                    {vo.spentTxid ? '(S)' : '(U)'}
+                  </div>
+                </div>
                 <Tile invertedBorderColor={outputsLength > 1 && outputsLength !== i + 1}>
                   <TileDescription padding='0 1rem 0 0' value>
-                    {getAddress(vo) !== 'Unparsed address' ? (
-                      <SpanLink onClick={() => goToAddress(getAddress(vo))}>
-                        {getAddress(vo)}
-                      </SpanLink>
-                    ) : (
-                      <span>{isOpReturn(vo) ? 'OP_RETURN' : 'Unparsed address'}</span>
-                    )}
 
                     {showDetails && (
                       <>
@@ -280,10 +298,6 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                     )}
                   </TileDescription>
 
-                  <TileDescription value textAlign='right'>
-                    {getConvertedValue(vo.value, currency)} {currency}{' '}
-                    {vo.spentTxid ? '(S)' : '(U)'}
-                  </TileDescription>
 
                   {showDetails && vo.spentTxid && (
                     <ArrowDiv margin='auto 0 auto .5rem'>
