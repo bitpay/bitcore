@@ -239,7 +239,7 @@ describe('Solana API', function() {
     
     expect(typeof SOL.txTransform).to.equal('function', 'SOL.txTransform should be defined as a function');
     
-    const transformedTx = SOL.txTransform(network, { tx })[0];
+    const transformedTx = SOL.txTransform(network, { tx });
     
     expect(transformedTx).to.exist;
     expect(transformedTx.txid).to.equal('tx1');

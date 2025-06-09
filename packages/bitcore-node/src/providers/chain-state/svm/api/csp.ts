@@ -559,22 +559,22 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
 
   async _findSlotByDate(network: string,  targetDate: Date): Promise<number | null> {
     const { connection } = await this.getRpc(network);
-    let lo = await connection.getFirstAvailableBlock(); 
-    let hi = await connection.getSlot('finalized');
+    let lo = await connection.getFirstAvailableBlock().send(); 
+    let hi = await connection.getSlot({ commitment: 'finalized' }).send();
     let result: bigint | null = null;
     const targetTime = Math.floor(targetDate.getTime() / 1000);
-    const loBlockTime = await connection.getBlockTime(lo);
+    const loBlockTime = await connection.getBlockTime(lo).send();
     if (loBlockTime !== null && loBlockTime >= targetTime) {
       return lo;
     }
 
     while (lo <= hi) {
-      const mid = (lo + hi) >> 1n;
-      const blkTime = await connection.getBlockTime(mid);
+      const mid = (lo + hi) / 2n;
+      const blockTime = await connection.getBlockTime(mid).send();
   
-      if (blkTime === null) {
+      if (blockTime === null) {
         lo = mid + 1n;
-      } else if (blkTime < targetTime) {
+      } else if (blockTime < targetTime) {
         lo = mid + 1n;
       } else {
         result = mid;
