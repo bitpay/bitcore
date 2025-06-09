@@ -25,7 +25,7 @@ import {Tile, TileDescription} from '../assets/styles/tile';
 import ArrowSvg from '../assets/images/arrow.svg';
 import {useNavigate, createSearchParams} from 'react-router-dom';
 import styled from 'styled-components';
-import {Slate, Slate30, SlateDark} from '../assets/styles/colors';
+import {Slate, SlateDark} from '../assets/styles/colors';
 
 const TextElipsis = styled(ScriptText)`
   overflow: hidden;
@@ -45,14 +45,27 @@ const SelectedPill = styled.div`
   font-size: 16px;
 `;
 
+const TxAddressLink = styled.span`
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  width: 100%;
+  &hover: {
+    cursor: pointer;
+  }
+`
+
 const BorderBoxLabel: FC<{children: ReactNode, label: string}> = ({children, label}) => {
   return (
-    <div>
-        <fieldset style={{borderWidth: '2.5px', borderColor: 'white', borderRadius: '5px', padding: '0.1rem 0.4rem', width: 'fit-content'}}>
-          <legend style={{margin: '-0.2rem 0.1rem'}}>{label}</legend>
-          {children}
-        </fieldset>
-    </div>
+    <fieldset style={{
+      border: '2.5px solid',
+      borderRadius: '5px',
+      padding: '0.1rem 0.4rem',
+      width: 'fit-content'
+    }}>
+      <legend style={{margin: '-0.2rem 0.1rem'}}>{label}</legend>
+      {children}
+    </fieldset>
   );
 }
 
@@ -167,17 +180,15 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                     {vi.items.map((item: any, itemIndex: number) => (
                       <div key={item.mintTxid + itemIndex}>
                         {isInputSelected(item) ? <SelectedPill>Selected</SelectedPill> : null}
-                        <div style={{display: 'flex', marginTop: '1rem'}}>
+                        <div style={{
+                          display: 'flex',
+                          marginTop: '1rem', 
+                          ...(showDetails && {borderBottom: '2px solid', paddingBottom: '0.25rem'})
+                        }}>
                           {getAddress(vi) !== 'Unparsed address' ? (
-                            <SpanLink onClick={() => goToAddress(getAddress(vi))}
-                              style={{
-                                textOverflow: 'ellipsis', 
-                                overflow: 'hidden', 
-                                textAlign: 'left', 
-                                width: '100%'}}
-                            >
+                            <TxAddressLink onClick={() => goToAddress(getAddress(vi))}>
                               {getAddress(vi)}
-                            </SpanLink>
+                            </TxAddressLink>
                           ) : (
                             <span>Unparsed address</span>
                           )}
@@ -185,23 +196,20 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                             {getConvertedValue(item.value, currency)} {currency}
                           </div>
                         </div>
-                        <Tile invertedBorderColor={arr.length > 1 && arr.length !== i + 1}>
-                          {showDetails && (
-                            <ArrowDiv margin='auto .5rem auto 0'>
-                              <img
-                                src={ArrowSvg}
-                                width={17}
-                                height={17}
-                                alt='arrow'
-                                onClick={() => goToTx(item.mintTxid, undefined, item.mintIndex)}
-                              />
-                            </ArrowDiv>
-                          )}
+                        <Tile invertedBorderColor={arr.length > 1 && arr.length !== i + 1} padding={showDetails ? undefined : '0.4rem'}>
+                          {showDetails &&
+                            <>
+                              <ArrowDiv margin='auto .5rem auto 0'>
+                                <img
+                                  src={ArrowSvg}
+                                  width={17}
+                                  height={17}
+                                  alt='arrow'
+                                  onClick={() => goToTx(item.mintTxid, undefined, item.mintIndex)}
+                                />
+                              </ArrowDiv>
 
-                          <TileDescription padding='0 1rem 0 0' value>
-
-                            {showDetails && (
-                              <>
+                              <TileDescription padding='0 1rem 0 0' value>
                                 <BorderBoxLabel label='Tx ID'>
                                   <TextElipsis style={{margin: 0}}>
                                     <SpanLink
@@ -232,9 +240,9 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                                     <BorderBoxLabel label='Script ASM'>{new lib.Script(item.script).toASM()}</BorderBoxLabel>
                                   </>
                                 )}
-                              </>
-                            )}
-                          </TileDescription>
+                              </TileDescription>
+                            </>
+                          }
                         </Tile>
                       </div>
                     ))}
@@ -254,17 +262,15 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
             return (
               <div key={i}>
                 {isOutputSelected(i) ? <SelectedPill>Selected</SelectedPill> : null}
-                <div style={{display: 'flex', marginTop: '1rem'}}>
+                <div style={{
+                  display: 'flex',
+                  marginTop: '1rem', 
+                  ...(showDetails && {borderBottom: '2px solid', paddingBottom: '0.25rem'})
+                }}>
                   {getAddress(vo) !== 'Unparsed address' ? (
-                    <SpanLink onClick={() => goToAddress(getAddress(vo))} 
-                      style={{
-                        textOverflow: 'ellipsis', 
-                        overflow: 'hidden', 
-                        textAlign: 'left', 
-                        width: '100%'}}
-                    >
+                    <TxAddressLink onClick={() => goToAddress(getAddress(vo))}>
                       {getAddress(vo)}
-                    </SpanLink>
+                    </TxAddressLink>
                   ) : (
                     <span>{isOpReturn(vo) ? 'OP_RETURN' : 'Unparsed address'}</span>
                   )}
@@ -273,11 +279,10 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                     {vo.spentTxid ? '(S)' : '(U)'}
                   </div>
                 </div>
-                <Tile invertedBorderColor={outputsLength > 1 && outputsLength !== i + 1}>
-                  <TileDescription padding='0 1rem 0 0' value>
-
-                    {showDetails && (
-                      <>
+                <Tile invertedBorderColor={outputsLength > 1 && outputsLength !== i + 1} padding={showDetails ? undefined : '0.4rem'}>
+                  {showDetails &&
+                    <>
+                      <TileDescription padding='0 1rem 0 0' value>
                         {vo.spentTxid && (
                           <BorderBoxLabel label='Spent By'>
                             <TextElipsis style={{margin: 0}}>
@@ -294,22 +299,19 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                             <BorderBoxLabel label='Script ASM'>{new lib.Script(vo.script).toASM()}</BorderBoxLabel>
                           </>
                         )}
-                      </>
-                    )}
-                  </TileDescription>
+                      </TileDescription>
 
-
-                  {showDetails && vo.spentTxid && (
-                    <ArrowDiv margin='auto 0 auto .5rem'>
-                      <img
-                        src={ArrowSvg}
-                        width={17}
-                        height={17}
-                        alt='arrow'
-                        onClick={() => goToTx(vo.spentTxid, transaction.txid, i)}
-                      />
-                    </ArrowDiv>
-                  )}
+                      <ArrowDiv margin='auto 0 auto .5rem'>
+                        <img
+                          src={ArrowSvg}
+                          width={17}
+                          height={17}
+                          alt='arrow'
+                          onClick={() => goToTx(vo.spentTxid, transaction.txid, i)}
+                        />
+                      </ArrowDiv>
+                    </>
+                  }
                 </Tile>
               </div>
             );
