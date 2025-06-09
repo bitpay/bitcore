@@ -1,29 +1,21 @@
-import {FC, memo} from 'react';
+import {FC, memo, useMemo} from 'react';
 import {determineInputType, searchValue} from 'src/utilities/search-helper-methods';
 import {useNavigate} from 'react-router-dom';
 import styled, {useTheme} from 'styled-components';
 import SearchLightSvg from 'src/assets/images/search-light.svg';
 import SearchDarkSvg from 'src/assets/images/search-dark.svg';
 import {LightBlack, Slate} from '../assets/styles/colors';
-import {useAppSelector} from '../utilities/hooks';
+import {useAppDispatch, useAppSelector} from '../utilities/hooks';
+import {changeCurrency, changeNetwork} from 'src/store/app.actions';
+import {Pill} from './pill';
 
-interface SearchInputProps {
-  searchIcon: string;
-  borderBottom?: any;
-}
-
-const SearchInput = styled.input<SearchInputProps>`
-  background: url(${({searchIcon}) => searchIcon}) no-repeat scroll 7px 7px;
-  padding-left: 40px;
-  border-bottom: ${({borderBottom, theme: {colors}}) =>
-    borderBottom ? `1px solid ${colors.borderColor}` : 'none'};
-  border-top: none;
-  border-left: none;
-  border-right: none;
+const SearchInput = styled.input`
+  background: none;
+  padding-left: 2px;
+  border: none;
   height: 40px;
   width: 100%;
   font-size: 16px;
-  line-height: 25px;
   color: ${({theme: {dark}}) => (dark ? Slate : LightBlack)};
 
   &:focus-visible {
@@ -35,8 +27,10 @@ const SearchInput = styled.input<SearchInputProps>`
   }
 `;
 
-const SearchForm = styled.form`
+const SearchForm = styled.form<{ borderBottom?: boolean }>`
   width: 100%;
+  border-bottom: ${({borderBottom, theme: {colors}}) =>
+    borderBottom ? `1px solid ${colors.borderColor}` : 'none'};
 `;
 
 interface SearchProps {
@@ -44,9 +38,11 @@ interface SearchProps {
   id?: string;
   setErrorMessage?: any;
 }
+
 const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
   const navigate = useNavigate();
   const theme = useTheme();
+  const dispatch = useAppDispatch();
   const {currency, network} = useAppSelector(({APP}) => APP);
 
   const searchIcon = theme.dark ? SearchDarkSvg : SearchLightSvg;
@@ -151,24 +147,37 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
     }, 3000);
   };
 
+  const handlePillCloseButtonClick = () => {
+    dispatch(changeCurrency(''));
+    dispatch(changeNetwork(''));
+  }
+
+  const searchInputPlaceholder = useMemo(() => {
+    let placeholder = 'Search for block, transaction, or address';
+    if (currency && network) {
+      placeholder = `${placeholder} on ${currency} ${network}`;
+    }
+    return placeholder;
+  }, [currency, network]);
+
   return (
-    <>
-      <SearchForm onSubmit={search}>
+    <SearchForm onSubmit={search} borderBottom={borderBottom}>
+      <span style={{display: 'flex', alignItems: 'center' }}>
+        <img src={searchIcon} alt='Search' style={{padding: 7}}></img>
+        <Pill currency={currency} network={network} onCloseClick={handlePillCloseButtonClick} />
         <SearchInput
           id={id || 'search'}
           type='text'
-          placeholder='Search for block, transaction, or address'
+          placeholder={searchInputPlaceholder}
           required
           aria-labelledby='search'
-          searchIcon={searchIcon}
-          borderBottom={borderBottom}
           tabIndex={0}
           autoComplete='off'
           autoCorrect='off'
           spellCheck='false'
         />
-      </SearchForm>
-    </>
+      </span>
+    </SearchForm>
   );
 };
 
