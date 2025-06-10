@@ -2847,7 +2847,7 @@ export class WalletService implements IWalletService {
         this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
           if (err) return cb(err);
           if (!txp) return cb(Errors.TX_NOT_FOUND);
-          if (!txp.isTemporary()) return cb(null, txp);
+          if (!txp.isTemporary() && txp.chain != 'sol') return cb(null, txp);
 
           const copayer = wallet.getCopayer(this.copayerId);
 
@@ -2861,7 +2861,6 @@ export class WalletService implements IWalletService {
           if (!signingKey) {
             return cb(new ClientError('Invalid proposal signature'));
           }
-
           // Save signature info for other copayers to check
           txp.proposalSignature = opts.proposalSignature;
           if (signingKey.selfSigned) {
@@ -2872,15 +2871,19 @@ export class WalletService implements IWalletService {
           ChainService.checkTxUTXOs(this, txp, opts, err => {
             if (err) return cb(err);
             txp.status = 'pending';
-            this.storage.storeTx(this.walletId, txp, err => {
+            ChainService.refreshTxData(this, txp, opts, (err, txp) => {
               if (err) return cb(err);
+              txp.prePubRaw = raw;
+              this.storage.storeTx(this.walletId, txp, err => {
+                if (err) return cb(err);
 
-              this._notifyTxProposalAction('NewTxProposal', txp, () => {
-                if (txp.coin == 'bch' && txp.changeAddress) {
-                  const format = opts.noCashAddr ? 'copay' : 'cashaddr';
-                  txp.changeAddress.address = BCHAddressTranslator.translate(txp.changeAddress.address, format);
-                }
-                return cb(null, txp);
+                this._notifyTxProposalAction('NewTxProposal', txp, () => {
+                  if (txp.coin == 'bch' && txp.changeAddress) {
+                    const format = opts.noCashAddr ? 'copay' : 'cashaddr';
+                    txp.changeAddress.address = BCHAddressTranslator.translate(txp.changeAddress.address, format);
+                  }
+                  return cb(null, txp);
+                });
               });
             });
           });
@@ -3142,6 +3145,7 @@ export class WalletService implements IWalletService {
               return cb(err);
             }
           }
+          
 
           const copayer = wallet.getCopayer(this.copayerId);
 
@@ -3663,8 +3667,12 @@ export class WalletService implements IWalletService {
 
   _getBlockchainHeight(chain, network, cb) {
     const cacheKey = Storage.BCHEIGHT_KEY + ':' + chain + ':' + network;
+    let cacheTime = Defaults.BLOCKHEIGHT_CACHE_TIME;
+    if (chain.toLowerCase() === 'sol') {
+      cacheTime = 5 * 1000; // 5 seconds
+    }
 
-    this.storage.checkAndUseGlobalCache(cacheKey, Defaults.BLOCKHEIGHT_CACHE_TIME, (err, values) => {
+    this.storage.checkAndUseGlobalCache(cacheKey, cacheTime, (err, values) => {
       if (err) return cb(err);
 
       if (values) return cb(null, values.current, values.hash, true);

@@ -267,9 +267,23 @@ export class SolChain implements IChain {
     });
   }
 
+  refreshTxData(server: WalletService, txp, _opts, cb) {
+    if (txp.blockHeight || txp.blockHash) {
+      server._getBlockchainHeight(txp.chain, txp.network, (err, height, hash) => {
+        if (err) return cb(err);
+        txp.blockHeight = height;
+        txp.blockHash = hash;
+        return cb(null, txp);
+      });
+    } else {
+      return cb(null, txp);
+    }
+  }
+
   getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void) {
     return cb(null, 0);
   }
+
   getSizeSafetyMargin() {
     return 0;
   }
