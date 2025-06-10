@@ -67,7 +67,8 @@ const BorderBoxLabel: FC<{children: ReactNode, label: string}> = ({children, lab
       borderRadius: '5px',
       padding: '0.1rem 0.4rem',
       wordBreak: 'break-all',
-      whiteSpace: 'normal'
+      whiteSpace: 'normal',
+      width: 'fit-content'
     }}>
       <legend style={{margin: '-0.2rem 0.1rem'}}>{label}</legend>
       {children}
