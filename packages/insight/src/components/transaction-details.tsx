@@ -233,7 +233,7 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                                   
                                 <span style={{display: 'flex'}}>
                                   <BorderBoxLabel label='Tx Index'>
-                                    <TextElipsis style={{margin: '0'}}>
+                                    <TextElipsis style={{margin: 0}}>
                                       {item.mintIndex}
                                     </TextElipsis>
                                   </BorderBoxLabel>
