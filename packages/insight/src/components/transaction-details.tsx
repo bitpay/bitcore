@@ -23,6 +23,7 @@ import {
 } from '../assets/styles/transaction';
 import {Tile, TileDescription} from '../assets/styles/tile';
 import ArrowSvg from '../assets/images/arrow.svg';
+import BlueArrowSvg from '../assets/images/arrow-blue.svg';
 import {useNavigate, createSearchParams} from 'react-router-dom';
 import styled, { useTheme } from 'styled-components';
 import {Slate, SlateDark} from '../assets/styles/colors';
@@ -188,6 +189,15 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                           marginTop: '1rem', 
                           ...(showDetails && {borderBottom: '2px solid', paddingBottom: '0.25rem'})
                         }}>
+                          <ArrowDiv margin='auto .5rem auto 0'>
+                            <img
+                              src={BlueArrowSvg}
+                              width={17}
+                              height={17}
+                              alt='arrow'
+                              onClick={() => goToTx(item.mintTxid, undefined, item.mintIndex)}
+                            />
+                          </ArrowDiv>
                           {getAddress(vi) !== 'Unparsed address' ? (
                             <TxAddressLink onClick={() => goToAddress(getAddress(vi))}>
                               {getAddress(vi)}
@@ -201,18 +211,10 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                             {getConvertedValue(item.value, currency)} {currency}
                           </div>
                         </div>
+
                         <Tile invertedBorderColor={arr.length > 1 && arr.length !== i + 1} padding={showDetails ? undefined : '0.4rem'}>
                           {showDetails &&
                             <>
-                              <ArrowDiv margin='auto .5rem auto 0'>
-                                <img
-                                  src={ArrowSvg}
-                                  width={17}
-                                  height={17}
-                                  alt='arrow'
-                                  onClick={() => goToTx(item.mintTxid, undefined, item.mintIndex)}
-                                />
-                              </ArrowDiv>
 
                               <TileDescription padding='0 1rem 0 0' value>
                                 <BorderBoxLabel label='Tx ID'>
@@ -284,9 +286,22 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                       {isOpReturn(vo) ? 'OP_RETURN' : 'Unparsed address'}
                     </span>
                   )}
-                  <div style={{minInlineSize: 'fit-content'}}>
+                  <div style={{minInlineSize: 'fit-content', display: 'flex'}}>
                     {getConvertedValue(vo.value, currency)} {currency}{' '}
-                    {vo.spentTxid ? '(S)' : '(U)'}
+                    <ArrowDiv margin='auto 0 auto .5rem'>
+                      <img
+                        src={vo.spentTxid ? BlueArrowSvg : ArrowSvg}
+                        width={17}
+                        height={17}
+                        alt='Spent'
+                        title={vo.spentTxid ? 'Spent' : 'Unspent'}
+                        style={{
+                          visibility: (isOpReturn(vo) ? 'hidden' : 'visible'),
+                          margin: '0px 5px'
+                        }}
+                        onClick={() => vo.spentTxid && goToTx(vo.spentTxid, transaction.txid, i)}
+                      />
+                    </ArrowDiv>
                   </div>
                 </div>
                 <Tile invertedBorderColor={outputsLength > 1 && outputsLength !== i + 1} padding={showDetails ? undefined : '0.4rem'}>
@@ -310,16 +325,6 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                           </>
                         )}
                       </TileDescription>
-
-                      <ArrowDiv margin='auto 0 auto .5rem'>
-                        <img
-                          src={ArrowSvg}
-                          width={17}
-                          height={17}
-                          alt='arrow'
-                          onClick={() => goToTx(vo.spentTxid, transaction.txid, i)}
-                        />
-                      </ArrowDiv>
                     </>
                   }
                 </Tile>
