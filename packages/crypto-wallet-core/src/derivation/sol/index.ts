@@ -1,6 +1,6 @@
 import { encoding, HDPrivateKey } from 'bitcore-lib';
 import * as ed25519 from 'ed25519-hd-key';
-import { default as Deriver, IDeriver, Key } from '..';
+import { DeriverProxy, IDeriver, Key } from '..';
 
 export class SolDeriver implements IDeriver {
   deriveAddress(_network, _xpubkey, _addressIndex, _isChange) {
@@ -30,7 +30,7 @@ export class SolDeriver implements IDeriver {
 
   derivePrivateKey(network, xPriv, addressIndex, isChange, addressType) {
     const changeNum = isChange ? 1 : 0;
-    const pathPrefix = Deriver.pathFor('SOL', network, addressIndex);
+    const pathPrefix = new DeriverProxy().pathFor('SOL', network, addressIndex);
     const path = `${pathPrefix}/${changeNum}'`;
     return this.derivePrivateKeyWithPath(network, xPriv, path, addressType);
   };
