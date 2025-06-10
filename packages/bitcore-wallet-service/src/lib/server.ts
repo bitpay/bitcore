@@ -3675,10 +3675,7 @@ export class WalletService implements IWalletService {
 
   _getBlockchainHeight(chain, network, cb) {
     const cacheKey = Storage.BCHEIGHT_KEY + ':' + chain + ':' + network;
-    let cacheTime = Defaults.BLOCKHEIGHT_CACHE_TIME;
-    if (chain.toLowerCase() === 'sol') {
-      cacheTime = 5 * 1000; // 5 seconds - Solana needs to maintain the freshes blockheight to land txs consistently
-    }
+    const cacheTime = Defaults.BLOCKHEIGHT_CACHE_TIME[chain.toLowerCase()] || Defaults.BLOCKHEIGHT_CACHE_TIME.default;
 
     this.storage.checkAndUseGlobalCache(cacheKey, cacheTime, (err, values) => {
       if (err) return cb(err);
