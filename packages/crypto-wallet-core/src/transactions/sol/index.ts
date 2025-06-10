@@ -1,5 +1,7 @@
 import * as SolComputeBudget from '@solana-program/compute-budget';
+import * as SolMemo from '@solana-program/memo';
 import * as SolSystem from '@solana-program/system';
+import * as SolToken from '@solana-program/token';
 import * as SolKit from '@solana/kit'
 import { Key } from '../../derivation';
 
@@ -24,13 +26,16 @@ export class SOLTxProvider {
     computeUnits?: number;
     txInstructions?: Array<SolKit.BaseTransactionMessage['instructions'][number]>;
     // account creation fields
-    fromKeyPair?: SolKit.KeyPairSigner;
+    fromKeyPair?: any;
     space?: number; // amount of space to reserve a new account in bytes
+    mint?: string; // mint address for createATA
+    ataAddress?: any; // ATA address for createATA
+    memo?: string;
   }) {
-    const { recipients, from, nonce, nonceAddress, category, space, blockHash, blockHeight, priorityFee, txInstructions, computeUnits } = params;
+    const { recipients, from, nonce, nonceAddress, category, space, blockHash, blockHeight, priorityFee, txInstructions, computeUnits, fromKeyPair, memo } = params;
     const fromAddress = SolKit.address(from);
     let txType: SolKit.TransactionVersion = ['0', 0].includes(params?.txType) ? 0 : 'legacy';
-
+    let lifetimeConstrainedTx;
     switch (category?.toLowerCase()) {
       case 'transfer':
       default:
@@ -41,7 +46,6 @@ export class SOLTxProvider {
           SolKit.createTransactionMessage({ version: txType }),
           tx => SolKit.setTransactionMessageFeePayer(fromAddress, tx),
         );
-        let lifetimeConstrainedTx;
 
         if (nonce) {
           const nonceAccountAddress = SolKit.address(nonceAddress);
@@ -82,11 +86,14 @@ export class SOLTxProvider {
         if (computeUnits) {
           transferInstructions.push(SolComputeBudget.getSetComputeUnitLimitInstruction({ units: computeUnits }));
         }
+        if (memo) {
+          const memoInstruction = SolMemo.getAddMemoInstruction({ memo });
+          transferInstructions.push(memoInstruction);
+        }
         const transferTxMessage = SolKit.appendTransactionMessageInstructions(transferInstructions, lifetimeConstrainedTx);
         const compiledTx = SolKit.compileTransaction(transferTxMessage);
         return SolKit.getBase64EncodedWireTransaction(compiledTx);
-      case 'createAccount':
-        const { fromKeyPair } = params;
+      case 'createaccount':
         const { amount, addressKeyPair } = recipients[0];
         const _space = space || 200;
         const _amount = Number(amount);
@@ -127,7 +134,26 @@ export class SOLTxProvider {
         );
         const compiled = SolKit.compileTransaction(completeMessage);
         return SolKit.getBase64EncodedWireTransaction(compiled);
-    }
+      case 'createata':
+        const { mint, ataAddress } = params;
+        const createAssociatedTokenIdempotentInstruction = SolToken.getCreateAssociatedTokenIdempotentInstruction({
+          payer: fromKeyPair,
+          owner: fromAddress,
+          mint: SolKit.address(mint),
+          ata: ataAddress
+        });
+        const ataTxMessage = SolKit.pipe(
+          SolKit.createTransactionMessage({ version: 0 }),
+          (tx) => SolKit.setTransactionMessageFeePayerSigner(fromKeyPair, tx),
+          (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash({ blockhash: blockHash as SolKit.Blockhash, lastValidBlockHeight: BigInt(blockHeight) }, tx),
+          (tx) => SolKit.appendTransactionMessageInstructions(
+              [createAssociatedTokenIdempotentInstruction],
+              tx
+          )
+        );
+        const compiledAtaTx = SolKit.compileTransaction(ataTxMessage);
+        return SolKit.getBase64EncodedWireTransaction(compiledAtaTx);
+      }
   }
 
   decodeRawTransaction({ rawTx }) {
@@ -155,15 +181,15 @@ export class SOLTxProvider {
     const { tx, keys } = params;
     const signedTx = await this.sign({ tx, key: keys[0] });
     const decodedTx = this.decodeRawTransaction({ rawTx: signedTx });
-    const sigEncoding = this.getSignaturesEncoder().encode(decodedTx.signatures)
-    return SolKit.getBase64Decoder().decode(sigEncoding);
+    const pubKeys = Object.keys(decodedTx.signatures);
+    const sigEncoding =  pubKeys.length == 1 ? decodedTx.signatures[pubKeys[0]] : this.getSignaturesEncoder().encode(decodedTx.signatures);
+    return SolKit.getBase58Decoder().decode(sigEncoding);
   }
 
   applySignature(params: { tx: string; signature: string }): string {
     const { tx, signature } = params;
-    const encoder = SolKit.getBase64Encoder();
-    const signatures = [encoder.encode(signature)];
-    const transaction = encoder.encode(tx);
+    const signatures = [SolKit.getBase58Encoder().encode(signature)];
+    const transaction = SolKit.getBase64Encoder().encode(tx);
     const transformWithNewSignatures = (_tx) => {
       const { messageBytes } = _tx;
       const signerAddressesDecoder = SolKit.getTupleDecoder([
@@ -210,7 +236,8 @@ export class SOLTxProvider {
   getHash(params: { tx: string; }): string {
     const { tx } = params;
     const decodedTx = this.decodeRawTransaction({ rawTx: tx });
-    const sigEncoding = this.getSignaturesEncoder().encode(decodedTx.signatures)
+    const pubKeys = Object.keys(decodedTx.signatures);
+    const sigEncoding =  pubKeys.length == 1 ? decodedTx.signatures[pubKeys[0]] : this.getSignaturesEncoder().encode(decodedTx.signatures);
     return SolKit.getBase58Decoder().decode(sigEncoding);
   }
 

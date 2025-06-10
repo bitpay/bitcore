@@ -68,6 +68,11 @@ export class Client {
     return this._request({ method: 'GET', url, json: true });
   }
 
+  async getSolanaTokens(address) {
+    const url = `${this.apiUrl}/ata/${address}`;
+    return this._request({ method: 'GET', url, json: true });
+  }
+
   async getBalance(params: { payload?: any; pubKey: string; time?: string; address?: string; hex?: boolean }) {
     const { payload, pubKey, time, address, hex } = params;
     let url = `${this.apiUrl}/wallet/${pubKey}/balance`;
@@ -248,5 +253,10 @@ export class Client {
     const body = { rawTx };
     const url = `${this.apiUrl}/l1/fee${safe ? '?safe=true' : ''}`;
     return this._request({ method: 'POST', url, json: true, body });
+  }
+
+  getBlockTip() {
+    const url = `${this.apiUrl}/block/tip`;
+    return this._request({ method: 'GET', url, json: true });
   }
 }

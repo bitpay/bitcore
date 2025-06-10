@@ -19,16 +19,38 @@ const main = async () => {
   const { name, path, contractAddress, storageType, tokenName } = program.opts();
   try {
     wallet = await Wallet.loadWallet({ name, path, storageType });
-    if (!wallet.isEvmChain()) {
-      throw new Error('Cannot add token to non-EVM wallet.');
+    if (!wallet.isEvmChain() && !wallet.isSolanaChain()) {
+      throw new Error('Cannot add token to non-EVM/SOL wallet.');
     }
-    const token = await wallet.getToken(contractAddress);
+    let token = await wallet.getToken(contractAddress);
+    if (!token) {
+      if (!wallet.isSolanaChain()) {
+        throw new Error(`Token with contract address ${contractAddress} not found.`);
+      }
+      console.log(`Token with mint address ${contractAddress} not found on your wallet.`);
+      const ans = await promptly.confirm('Would you like to add it? (y/N)', { default: 'n' });
+      if (!ans) {
+        return;
+      }
+      const password = await promptly.password('Wallet Password:');
+      wallet = await wallet.unlock(password);
+      const tx = await wallet.createAtaAccount(contractAddress)
+      const signedTx = await wallet.signTransaction({ tx });
+      const transaction = await wallet.broadcast({ tx: signedTx });
+      console.log(`Created ATA for ${contractAddress}. Transaction: ${transaction.txid}`);
+      token = await wallet.getToken(contractAddress); // re-fetch after creating ATA
+    }
     const tokenObj = {
-      symbol: token.symbol,
+      symbol: token.symbol || tokenName,
       address: contractAddress,
       decimals: token.decimals,
-      name: tokenName || token.symbol
+      name: tokenName || token.symbol,
+      ataAddress: token.ataAddress || undefined,
     };
+
+    if (!tokenObj.name) {
+      throw new Error('tokenName is required for this wallet');
+    }
 
     const existing = wallet.tokens.find(t => t.address === contractAddress || t.name === tokenObj.name || (t.name === undefined && t.symbol === tokenObj.name));
     if (existing) {
@@ -40,7 +62,7 @@ const main = async () => {
       wallet.tokens = wallet.tokens.filter(t => t.address !== existing.address);
     }
     await wallet.addToken(tokenObj);
-    console.log(`Successfully added ${token.name} (${token.symbol})`);
+    console.log(`Successfully added ${tokenObj.name} (${tokenObj.symbol})`);
   } catch (e) {
     console.error(e);
   }

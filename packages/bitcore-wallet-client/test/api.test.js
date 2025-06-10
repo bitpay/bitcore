@@ -1410,7 +1410,7 @@ describe('client API', function() {
           should.not.exist(err);
           signatures.length.should.be.equal(1);
           signatures[0].should.equal(
-            'AUzAejjW6EhgUAOb25p3DaLMVaKsd3aD9g+iepV6Qs/GqbgraCnwwEpizxMfA8aom9OqwutpliLXg1g9oA4ucwc='
+            '2Y17QoXHgW8zHHY9KSCYyYXaw5ZyNqYmSRndD3HReFyxQVNc8xtA1syZ8exEwAKH9NBNhz4FYZsraYX21oqM5T5Q'
           );
         });
       });

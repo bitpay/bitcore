@@ -23,6 +23,7 @@ export class SVMRouter {
     this.getPriorityFee(router);
     this.getRentMinimum(router);
     this.getTokenAccountAddresses(router);
+    this.getTokenInfo(router);
   };
 
   private estimateTxFee(router: Router) {
@@ -91,6 +92,19 @@ export class SVMRouter {
           logger.error('Rent Error::%o', err.stack || err.message || err);
           res.status(500).send(err.message || err);
         }
+      }
+    });
+  };
+  
+  private getTokenInfo(router: Router) {
+    router.get(`/api/${this.chain}/:network/token/:tokenAddress`, async (req, res) => {
+      const { network, tokenAddress } = req.params;
+      try {
+        const tokenInfo = await this.csp.getSPLTokenInfo(network, tokenAddress);
+        res.json(tokenInfo);
+      } catch (err: any) {
+        logger.error('Token Info Error::%o', err.stack || err.message || err);
+        res.status(500).send(err.message || err);
       }
     });
   };

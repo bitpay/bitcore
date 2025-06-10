@@ -112,7 +112,7 @@ export const Constants = {
     arb: ['livenet', 'sepolia', 'holesky', 'regtest'],
     base: ['livenet', 'sepolia', 'holesky', 'regtest'],
     op: ['livenet', 'sepolia', 'holesky', 'regtest'],
-    sol: ['livenet', 'testnet', 'devnet']
+    sol: ['livenet', 'testnet', 'devnet', 'regtest']
   } as { [chain: string]: Array<string> },
 
   // These aliases are here to support legacy clients so don't change them lightly
@@ -158,7 +158,7 @@ export const Constants = {
     },
     sol: {
       mainnet: 'livenet',
-      testnet: 'testnet'
+      testnet: 'devnet'
     }
   },
 
