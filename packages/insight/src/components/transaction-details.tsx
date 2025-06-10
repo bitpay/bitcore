@@ -8,7 +8,7 @@ import {
   isRBF,
   getLib,
 } from '../utilities/helper-methods';
-import {useState, useEffect, FC, memo, ReactNode} from 'react';
+import {useState, useEffect, FC, memo, ReactNode, Children} from 'react';
 import {
   TransactionBodyCol,
   TransactionTile,
@@ -60,6 +60,11 @@ const TxAddressLink = styled.span`
 
 const BorderBoxLabel: FC<{children: ReactNode, label: string}> = ({children, label}) => {
   const theme = useTheme();
+  const modifiedChildren = typeof children === 'object' 
+    ? Children.map(children as JSX.Element, (child: JSX.Element) => {
+        return <span {...child.props} style={{margin: 0}}></span>;
+      })
+    : children;
   
   return (
     <fieldset style={{
@@ -68,10 +73,11 @@ const BorderBoxLabel: FC<{children: ReactNode, label: string}> = ({children, lab
       padding: '0.1rem 0.4rem',
       wordBreak: 'break-all',
       whiteSpace: 'normal',
-      width: 'fit-content'
+      width: 'fit-content',
+      height: 'fit-content'
     }}>
       <legend style={{margin: '-0.2rem 0.1rem'}}>{label}</legend>
-      {children}
+      {modifiedChildren}
     </fieldset>
   );
 }
@@ -221,7 +227,7 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
 
                               <TileDescription padding='0 1rem 0 0' value>
                                 <BorderBoxLabel label='Tx ID'>
-                                  <TextElipsis style={{margin: 0}}>
+                                  <TextElipsis>
                                     <SpanLink
                                       onClick={() =>
                                         goToTx(item.mintTxid, undefined, item.mintIndex)
@@ -233,7 +239,7 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                                   
                                 <span style={{display: 'flex'}}>
                                   <BorderBoxLabel label='Tx Index'>
-                                    <TextElipsis style={{margin: 0}}>
+                                    <TextElipsis>
                                       {item.mintIndex}
                                     </TextElipsis>
                                   </BorderBoxLabel>
@@ -310,7 +316,7 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                       <TileDescription padding='0 1rem 0 0' value>
                         {vo.spentTxid && (
                           <BorderBoxLabel label='Spent By'>
-                            <TextElipsis style={{margin: 0}}>
+                            <TextElipsis>
                               <SpanLink onClick={() => goToTx(vo.spentTxid, transaction.txid, i)}>
                                 {vo.spentTxid}
                               </SpanLink>
