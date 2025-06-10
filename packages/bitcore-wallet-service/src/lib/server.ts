@@ -2650,11 +2650,12 @@ export class WalletService implements IWalletService {
                   return next();
                 },
                 async next => {
-                  if (Constants.SVM_CHAINS[wallet.chain.toUpperCase()] && (!opts.blockHeight || !opts.blockHash)) { 
+                  if (Constants.SVM_CHAINS[wallet.chain.toUpperCase()] && !opts.nonceAddress) { 
                     this._getBlockchainHeight(wallet.chain, wallet.network, (err, height, hash) => {
                       if (err) return next(err);
                       opts.blockHeight = height;
                       opts.blockHash = hash;
+                      opts.refreshOnPublish = true;
                       return next();
                     });
                   } else {
@@ -2735,7 +2736,8 @@ export class WalletService implements IWalletService {
                       category: opts.category,
                       fromKeyPair: opts.fromKeyPair,
                       priorityFee: opts.priorityFee,
-                      computeUnits: opts.computeUnits
+                      computeUnits: opts.computeUnits,
+                      refreshOnPublish: opts.refreshOnPublish
                     };
                     txp = TxProposal.create(txOpts);
                     next();
@@ -2847,7 +2849,7 @@ export class WalletService implements IWalletService {
         this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
           if (err) return cb(err);
           if (!txp) return cb(Errors.TX_NOT_FOUND);
-          if (!txp.isTemporary() && txp.chain != 'sol') return cb(null, txp);
+          if (!txp.isTemporary() && !txp.isRepublishEnabled()) return cb(null, txp);
 
           const copayer = wallet.getCopayer(this.copayerId);
 
@@ -2856,6 +2858,9 @@ export class WalletService implements IWalletService {
             raw = txp.getRawTx();
           } catch (ex) {
             return cb(ex);
+          }
+          if (txp.isRepublishEnabled() && txp.prePublishRaw) {
+            raw = txp.prePublishRaw;
           }
           const signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
           if (!signingKey) {
@@ -2871,9 +2876,12 @@ export class WalletService implements IWalletService {
           ChainService.checkTxUTXOs(this, txp, opts, err => {
             if (err) return cb(err);
             txp.status = 'pending';
+            opts.refresh = txp.isRepublishEnabled();
             ChainService.refreshTxData(this, txp, opts, (err, txp) => {
               if (err) return cb(err);
-              txp.prePubRaw = raw;
+              if (txp.isRepublishEnabled() && !txp.prePublishRaw) {
+                txp.prePublishRaw = raw;
+              }
               this.storage.storeTx(this.walletId, txp, err => {
                 if (err) return cb(err);
 
@@ -3669,7 +3677,7 @@ export class WalletService implements IWalletService {
     const cacheKey = Storage.BCHEIGHT_KEY + ':' + chain + ':' + network;
     let cacheTime = Defaults.BLOCKHEIGHT_CACHE_TIME;
     if (chain.toLowerCase() === 'sol') {
-      cacheTime = 5 * 1000; // 5 seconds
+      cacheTime = 5 * 1000; // 5 seconds - Solana needs to maintain the freshes blockheight to land txs consistently
     }
 
     this.storage.checkAndUseGlobalCache(cacheKey, cacheTime, (err, values) => {
