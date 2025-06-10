@@ -24,7 +24,7 @@ import {
 import {Tile, TileDescription} from '../assets/styles/tile';
 import ArrowSvg from '../assets/images/arrow.svg';
 import {useNavigate, createSearchParams} from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import {Slate, SlateDark} from '../assets/styles/colors';
 
 const TextElipsis = styled(ScriptText)`
@@ -56,12 +56,15 @@ const TxAddressLink = styled.span`
 `
 
 const BorderBoxLabel: FC<{children: ReactNode, label: string}> = ({children, label}) => {
+  const theme = useTheme();
+  
   return (
     <fieldset style={{
-      border: '2.5px solid',
+      border: `1.5px solid ${theme.dark ? '#5f5f5f' : '#ccc'}`,
       borderRadius: '5px',
       padding: '0.1rem 0.4rem',
-      width: 'fit-content'
+      wordBreak: 'break-all',
+      whiteSpace: 'normal'
     }}>
       <legend style={{margin: '-0.2rem 0.1rem'}}>{label}</legend>
       {children}
@@ -220,19 +223,22 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                                     </SpanLink>
                                   </TextElipsis>
                                 </BorderBoxLabel>
-                                <BorderBoxLabel label='Tx Index'>
-                                  <TextElipsis>
-                                    {item.mintIndex}
-                                  </TextElipsis>
-                                </BorderBoxLabel>
-
-                                {item.uiConfirmations && confirmations > 0 ? (
-                                  <BorderBoxLabel label='Confirmations'>
-                                    <ScriptText>
-                                      {item.uiConfirmations + confirmations}
-                                    </ScriptText>
+                                  
+                                <span style={{display: 'flex'}}>
+                                  <BorderBoxLabel label='Tx Index'>
+                                    <TextElipsis style={{margin: '0'}}>
+                                      {item.mintIndex}
+                                    </TextElipsis>
                                   </BorderBoxLabel>
-                                ) : null}
+
+                                  {item.uiConfirmations && confirmations > 0 ? (
+                                    <BorderBoxLabel label='Confirmations'>
+                                      <ScriptText>
+                                        {item.uiConfirmations + confirmations}
+                                      </ScriptText>
+                                    </BorderBoxLabel>
+                                  ) : null}
+                                </span>
 
                                 {item.script && (
                                   <>
