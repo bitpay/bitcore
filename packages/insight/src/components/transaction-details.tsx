@@ -50,7 +50,7 @@ const TxAddressLink = styled.span`
   text-overflow: ellipsis;
   text-align: left;
   width: 100%;
-  &hover: {
+  &:hover {
     cursor: pointer;
   }
 `
@@ -193,7 +193,9 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                               {getAddress(vi)}
                             </TxAddressLink>
                           ) : (
-                            <span>Unparsed address</span>
+                            <span style={{textAlign: 'left', width: '100%'}}>
+                              Unparsed address
+                            </span>
                           )}
                           <div style={{minInlineSize: 'fit-content'}}>
                             {getConvertedValue(item.value, currency)} {currency}
@@ -278,7 +280,9 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                       {getAddress(vo)}
                     </TxAddressLink>
                   ) : (
-                    <span>{isOpReturn(vo) ? 'OP_RETURN' : 'Unparsed address'}</span>
+                    <span style={{textAlign: 'left', width: '100%'}}>
+                      {isOpReturn(vo) ? 'OP_RETURN' : 'Unparsed address'}
+                    </span>
                   )}
                   <div style={{minInlineSize: 'fit-content'}}>
                     {getConvertedValue(vo.value, currency)} {currency}{' '}
