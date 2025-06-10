@@ -119,6 +119,7 @@ export class OneInchService {
           arb: 42161,
           base: 8453,
           op: 10,
+          sol: 501
         };
 
         const chainId = chainIdMap[chain];
