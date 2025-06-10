@@ -24,6 +24,7 @@ import {
 import {Tile, TileDescription} from '../assets/styles/tile';
 import ArrowSvg from '../assets/images/arrow.svg';
 import BlueArrowSvg from '../assets/images/arrow-blue.svg';
+import CircleSvg from '../assets/images/circle.svg';
 import {useNavigate, createSearchParams} from 'react-router-dom';
 import styled, { useTheme } from 'styled-components';
 import {Slate, SlateDark} from '../assets/styles/colors';
@@ -51,6 +52,7 @@ const TxAddressLink = styled.span`
   text-overflow: ellipsis;
   text-align: left;
   width: 100%;
+  margin-right: 7px;
   &:hover {
     cursor: pointer;
   }
@@ -290,15 +292,12 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                     {getConvertedValue(vo.value, currency)} {currency}{' '}
                     <ArrowDiv margin='auto 0 auto .5rem'>
                       <img
-                        src={vo.spentTxid ? BlueArrowSvg : ArrowSvg}
+                        src={vo.spentTxid ? BlueArrowSvg : (isOpReturn(vo) ? CircleSvg : ArrowSvg)}
                         width={17}
                         height={17}
                         alt='Spent'
-                        title={vo.spentTxid ? 'Spent' : 'Unspent'}
-                        style={{
-                          visibility: (isOpReturn(vo) ? 'hidden' : 'visible'),
-                          margin: '0px 5px'
-                        }}
+                        title={vo.spentTxid ? 'Spent' : (isOpReturn(vo) ? 'Unspendable' : 'Unspent')}
+                        style={{margin: `0px ${isOpReturn(vo) ? '4px' : '5px'}`}}
                         onClick={() => vo.spentTxid && goToTx(vo.spentTxid, transaction.txid, i)}
                       />
                     </ArrowDiv>
