@@ -31,7 +31,7 @@ export class SolDeriver implements IDeriver {
 
   derivePrivateKey(network, xPriv, addressIndex, isChange, addressType) {
     const changeNum = isChange ? 1 : 0;
-    const path = `${Paths['SOL'].default}${addressIndex}/${changeNum}'`;
+    const path = `${Paths['SOL'].default}${addressIndex}'/${changeNum}'`;
     return this.derivePrivateKeyWithPath(network, xPriv, path, addressType);
   };
 
