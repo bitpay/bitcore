@@ -2889,8 +2889,8 @@ export class WalletService implements IWalletService {
               }
               this.storage.storeTx(this.walletId, txp, err => {
                 if (err) return cb(err);
-
-                this._notifyTxProposalAction('NewTxProposal', txp, () => {
+                const action = txp.isRepublishEnabled() && txp.prePublishRaw ? 'UpdatedTxProposal' : 'NewTxProposal';
+                this._notifyTxProposalAction(action, txp, () => {
                   if (txp.coin == 'bch' && txp.changeAddress) {
                     const format = opts.noCashAddr ? 'copay' : 'cashaddr';
                     txp.changeAddress.address = BCHAddressTranslator.translate(txp.changeAddress.address, format);
