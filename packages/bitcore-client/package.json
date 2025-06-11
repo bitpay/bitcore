@@ -1,7 +1,7 @@
 {
   "name": "bitcore-client",
   "description": "Wallet client for Bitcore node",
-  "version": "11.0.1",
+  "version": "11.0.2",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "main": "./ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",

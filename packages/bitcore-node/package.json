@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "version": "11.0.1",
+  "version": "11.0.2",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "contributors": [
     "Justin Langston <nitsujlangston@gmail.com>",
@@ -100,7 +100,7 @@
     "@solana/kit": "^2.1.0",
     "@solana/spl-token-registry": "^0.2.4574",
     "abi-decoder": "2.4.0",
-    "bitcore-client": "^11.0.1",
+    "bitcore-client": "^11.0.2",
     "bitcore-lib": "^11.0.1",
     "bitcore-lib-cash": "^11.0.1",
     "bitcore-lib-doge": "^11.0.1",
