@@ -1,6 +1,6 @@
 {
   "name": "bitcore-p2p-doge",
-  "version": "10.9.2",
+  "version": "10.9.4",
   "description": "Interface to the bitcoin P2P network for bitcore",
   "main": "index.js",
   "scripts": {
