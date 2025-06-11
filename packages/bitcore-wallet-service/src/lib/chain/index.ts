@@ -73,7 +73,7 @@ export interface IChain {
   onCoin(coin: any): INotificationData | null;
   onTx(tx: any): INotificationData | null;
   getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void);
-  refreshTxData(server: WalletService, txp: ITxProposal, opts: { noCashAddr: boolean } & any, cb);
+  refreshTxData(server: WalletService, txp: TxProposal, opts: any, cb);
 }
 
 const chains: { [chain: string]: IChain } = {

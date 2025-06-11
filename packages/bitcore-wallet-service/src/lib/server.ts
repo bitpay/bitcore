@@ -2859,12 +2859,16 @@ export class WalletService implements IWalletService {
           } catch (ex) {
             return cb(ex);
           }
-          if (txp.isRepublishEnabled() && txp.prePublishRaw) {
-            raw = txp.prePublishRaw;
-          }
-          const signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
+
+          let signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
           if (!signingKey) {
-            return cb(new ClientError('Invalid proposal signature'));
+            if (txp.isRepublishEnabled() && txp.prePublishRaw) {
+              raw = txp.prePublishRaw;
+              signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
+            }
+            if (!signingKey) {
+              return cb(new ClientError('Invalid proposal signature'));
+            }
           }
           // Save signature info for other copayers to check
           txp.proposalSignature = opts.proposalSignature;
@@ -2876,7 +2880,6 @@ export class WalletService implements IWalletService {
           ChainService.checkTxUTXOs(this, txp, opts, err => {
             if (err) return cb(err);
             txp.status = 'pending';
-            opts.refresh = txp.isRepublishEnabled();
             ChainService.refreshTxData(this, txp, opts, (err, txp) => {
               if (err) return cb(err);
               if (txp.isRepublishEnabled() && !txp.prePublishRaw) {
