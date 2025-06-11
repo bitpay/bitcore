@@ -2862,6 +2862,7 @@ export class WalletService implements IWalletService {
 
           let signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
           if (!signingKey) {
+            // If the txp has been published previously, we will verify the signature against the previously published raw tx
             if (txp.isRepublishEnabled() && txp.prePublishRaw) {
               raw = txp.prePublishRaw;
               signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
@@ -2883,6 +2884,7 @@ export class WalletService implements IWalletService {
             ChainService.refreshTxData(this, txp, opts, (err, txp) => {
               if (err) return cb(err);
               if (txp.isRepublishEnabled() && !txp.prePublishRaw) {
+                // We save the original raw transaction for verification on republish
                 txp.prePublishRaw = raw;
               }
               this.storage.storeTx(this.walletId, txp, err => {
