@@ -35,7 +35,7 @@ const main = async () => {
       const password = await promptly.password('Wallet Password:');
       wallet = await wallet.unlock(password);
       const tx = await wallet.createAtaAccount(contractAddress)
-      const signedTx = await wallet.signTransaction({ tx });
+      const signedTx = await wallet.signTx({ tx });
       const transaction = await wallet.broadcast({ tx: signedTx });
       console.log(`Created ATA for ${contractAddress}. Transaction: ${transaction.txid}`);
       token = await wallet.getToken(contractAddress); // re-fetch after creating ATA
