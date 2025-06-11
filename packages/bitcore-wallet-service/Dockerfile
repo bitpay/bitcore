@@ -14,5 +14,5 @@ RUN npm run bootstrap
 RUN npm run compile
 
 # Start the server
-WORKDIR /bitcore/packages/bitcore-node
-CMD ["node", "./build/src/server.js"]
+WORKDIR /bitcore/packages/bitcore-wallet-service
+CMD ["./start-docker.sh"]
