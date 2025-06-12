@@ -2650,11 +2650,12 @@ export class WalletService implements IWalletService {
                   return next();
                 },
                 async next => {
-                  if (Constants.SVM_CHAINS[wallet.chain.toUpperCase()] && (!opts.blockHeight || !opts.blockHash)) { 
+                  if (Constants.SVM_CHAINS[wallet.chain.toUpperCase()] && !opts.nonceAddress) { 
                     this._getBlockchainHeight(wallet.chain, wallet.network, (err, height, hash) => {
                       if (err) return next(err);
                       opts.blockHeight = height;
                       opts.blockHash = hash;
+                      opts.refreshOnPublish = true;
                       return next();
                     });
                   } else {
@@ -2735,7 +2736,8 @@ export class WalletService implements IWalletService {
                       category: opts.category,
                       fromKeyPair: opts.fromKeyPair,
                       priorityFee: opts.priorityFee,
-                      computeUnits: opts.computeUnits
+                      computeUnits: opts.computeUnits,
+                      refreshOnPublish: opts.refreshOnPublish
                     };
                     txp = TxProposal.create(txOpts);
                     next();
@@ -2847,7 +2849,7 @@ export class WalletService implements IWalletService {
         this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
           if (err) return cb(err);
           if (!txp) return cb(Errors.TX_NOT_FOUND);
-          if (!txp.isTemporary()) return cb(null, txp);
+          if (!txp.isTemporary() && !txp.isRepublishEnabled()) return cb(null, txp);
 
           const copayer = wallet.getCopayer(this.copayerId);
 
@@ -2857,11 +2859,18 @@ export class WalletService implements IWalletService {
           } catch (ex) {
             return cb(ex);
           }
-          const signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
-          if (!signingKey) {
-            return cb(new ClientError('Invalid proposal signature'));
-          }
 
+          let signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
+          if (!signingKey) {
+            // If the txp has been published previously, we will verify the signature against the previously published raw tx
+            if (txp.isRepublishEnabled() && txp.prePublishRaw) {
+              raw = txp.prePublishRaw;
+              signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
+            }
+            if (!signingKey) {
+              return cb(new ClientError('Invalid proposal signature'));
+            }
+          }
           // Save signature info for other copayers to check
           txp.proposalSignature = opts.proposalSignature;
           if (signingKey.selfSigned) {
@@ -2872,15 +2881,22 @@ export class WalletService implements IWalletService {
           ChainService.checkTxUTXOs(this, txp, opts, err => {
             if (err) return cb(err);
             txp.status = 'pending';
-            this.storage.storeTx(this.walletId, txp, err => {
+            ChainService.refreshTxData(this, txp, opts, (err, txp) => {
               if (err) return cb(err);
-
-              this._notifyTxProposalAction('NewTxProposal', txp, () => {
-                if (txp.coin == 'bch' && txp.changeAddress) {
-                  const format = opts.noCashAddr ? 'copay' : 'cashaddr';
-                  txp.changeAddress.address = BCHAddressTranslator.translate(txp.changeAddress.address, format);
-                }
-                return cb(null, txp);
+              if (txp.isRepublishEnabled() && !txp.prePublishRaw) {
+                // We save the original raw transaction for verification on republish
+                txp.prePublishRaw = raw;
+              }
+              this.storage.storeTx(this.walletId, txp, err => {
+                if (err) return cb(err);
+                const action = txp.isRepublishEnabled() && txp.prePublishRaw ? 'UpdatedTxProposal' : 'NewTxProposal';
+                this._notifyTxProposalAction(action, txp, () => {
+                  if (txp.coin == 'bch' && txp.changeAddress) {
+                    const format = opts.noCashAddr ? 'copay' : 'cashaddr';
+                    txp.changeAddress.address = BCHAddressTranslator.translate(txp.changeAddress.address, format);
+                  }
+                  return cb(null, txp);
+                });
               });
             });
           });
@@ -3142,6 +3158,7 @@ export class WalletService implements IWalletService {
               return cb(err);
             }
           }
+          
 
           const copayer = wallet.getCopayer(this.copayerId);
 
@@ -3663,8 +3680,9 @@ export class WalletService implements IWalletService {
 
   _getBlockchainHeight(chain, network, cb) {
     const cacheKey = Storage.BCHEIGHT_KEY + ':' + chain + ':' + network;
+    const cacheTime = Defaults.BLOCKHEIGHT_CACHE_TIME[chain.toLowerCase()] || Defaults.BLOCKHEIGHT_CACHE_TIME.default;
 
-    this.storage.checkAndUseGlobalCache(cacheKey, Defaults.BLOCKHEIGHT_CACHE_TIME, (err, values) => {
+    this.storage.checkAndUseGlobalCache(cacheKey, cacheTime, (err, values) => {
       if (err) return cb(err);
 
       if (values) return cb(null, values.current, values.hash, true);
