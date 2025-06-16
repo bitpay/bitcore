@@ -8,7 +8,7 @@ import {
   isRBF,
   getLib,
 } from '../utilities/helper-methods';
-import {useState, useEffect, FC, memo} from 'react';
+import {useState, useEffect, FC, memo, ReactNode, Children} from 'react';
 import {
   TransactionBodyCol,
   TransactionTile,
@@ -24,8 +24,9 @@ import {
 import {Tile, TileDescription} from '../assets/styles/tile';
 import ArrowSvg from '../assets/images/arrow.svg';
 import BlueArrowSvg from '../assets/images/arrow-blue.svg';
+import CircleSvg from '../assets/images/circle.svg';
 import {useNavigate, createSearchParams} from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { useTheme } from 'styled-components';
 import {Slate, SlateDark} from '../assets/styles/colors';
 
 const TextElipsis = styled(ScriptText)`
@@ -45,6 +46,41 @@ const SelectedPill = styled.div`
   font-weight: 500;
   font-size: 16px;
 `;
+
+const TxAddressLink = styled.span`
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  width: 100%;
+  margin-right: 7px;
+  &:hover {
+    cursor: pointer;
+  }
+`
+
+const BorderBoxLabel: FC<{children: ReactNode, label: string}> = ({children, label}) => {
+  const theme = useTheme();
+  const modifiedChildren = typeof children === 'object' 
+    ? Children.map(children as JSX.Element, (child: JSX.Element) => {
+        return <span {...child.props} style={{margin: 0}}></span>;
+      })
+    : children;
+  
+  return (
+    <fieldset style={{
+      border: `1.5px solid ${theme.dark ? '#5f5f5f' : '#ccc'}`,
+      borderRadius: '5px',
+      padding: '0.1rem 0.4rem',
+      wordBreak: 'break-all',
+      whiteSpace: 'normal',
+      width: 'fit-content',
+      height: 'fit-content'
+    }}>
+      <legend style={{margin: '-0.2rem 0.1rem'}}>{label}</legend>
+      {modifiedChildren}
+    </fieldset>
+  );
+}
 
 interface TransactionDetailsProps {
   transaction: Transaction;
@@ -157,8 +193,11 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                     {vi.items.map((item: any, itemIndex: number) => (
                       <div key={item.mintTxid + itemIndex}>
                         {isInputSelected(item) ? <SelectedPill>Selected</SelectedPill> : null}
-
-                        <Tile invertedBorderColor={arr.length > 1 && arr.length !== i + 1}>
+                        <div style={{
+                          display: 'flex',
+                          marginTop: '1rem', 
+                          ...(showDetails && {borderBottom: '2px solid', paddingBottom: '0.25rem'})
+                        }}>
                           <ArrowDiv margin='auto .5rem auto 0'>
                             <img
                               src={BlueArrowSvg}
@@ -168,53 +207,61 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                               onClick={() => goToTx(item.mintTxid, undefined, item.mintIndex)}
                             />
                           </ArrowDiv>
+                          {getAddress(vi) !== 'Unparsed address' ? (
+                            <TxAddressLink onClick={() => goToAddress(getAddress(vi))} style={{wordBreak: showDetails ? 'break-all' : 'unset'}}>
+                              {getAddress(vi)}
+                            </TxAddressLink>
+                          ) : (
+                            <span style={{textAlign: 'left', width: '100%'}}>
+                              Unparsed address
+                            </span>
+                          )}
+                          <div style={{minInlineSize: 'fit-content'}}>
+                            {getConvertedValue(item.value, currency)} {currency}
+                          </div>
+                        </div>
 
-                          <TileDescription padding='0 1rem 0 0' value>
-                            {getAddress(vi) !== 'Unparsed address' ? (
-                              <SpanLink onClick={() => goToAddress(getAddress(vi))}>
-                                {getAddress(vi)}
-                              </SpanLink>
-                            ) : (
-                              <span>Unparsed address</span>
-                            )}
+                        <Tile invertedBorderColor={arr.length > 1 && arr.length !== i + 1} padding={showDetails ? undefined : '0.4rem'}>
+                          {showDetails &&
+                            <>
 
-                            {showDetails && (
-                              <>
-                                <TextElipsis>
-                                  <b>Tx ID </b>
-                                  <SpanLink
-                                    onClick={() =>
-                                      goToTx(item.mintTxid, undefined, item.mintIndex)
-                                    }>
-                                    {item.mintTxid}
-                                  </SpanLink>
-                                </TextElipsis>
+                              <TileDescription padding='0 1rem 0 0' value>
+                                <BorderBoxLabel label='Tx ID'>
+                                  <TextElipsis>
+                                    <SpanLink
+                                      onClick={() =>
+                                        goToTx(item.mintTxid, undefined, item.mintIndex)
+                                      }>
+                                      {item.mintTxid}
+                                    </SpanLink>
+                                  </TextElipsis>
+                                </BorderBoxLabel>
+                                  
+                                <span style={{display: 'flex'}}>
+                                  <BorderBoxLabel label='Tx Index'>
+                                    <TextElipsis>
+                                      {item.mintIndex}
+                                    </TextElipsis>
+                                  </BorderBoxLabel>
 
-                                <TextElipsis>
-                                  <b>Tx Index</b> {item.mintIndex}
-                                </TextElipsis>
-
-                                {item.uiConfirmations && confirmations > 0 ? (
-                                  <ScriptText>
-                                    <b>Confirmations</b> {item.uiConfirmations + confirmations}
-                                  </ScriptText>
-                                ) : null}
+                                  {item.uiConfirmations && confirmations > 0 ? (
+                                    <BorderBoxLabel label='Confirmations'>
+                                      <ScriptText>
+                                        {item.uiConfirmations + confirmations}
+                                      </ScriptText>
+                                    </BorderBoxLabel>
+                                  ) : null}
+                                </span>
 
                                 {item.script && (
                                   <>
-                                    <b>Script Hex</b>
-                                    <ScriptText>{item.script}</ScriptText>
-                                    <b>Script ASM</b>
-                                    <ScriptText>{new lib.Script(item.script).toASM()}</ScriptText>
+                                    <BorderBoxLabel label='Script Hex'>{item.script}</BorderBoxLabel>
+                                    <BorderBoxLabel label='Script ASM'>{new lib.Script(item.script).toASM()}</BorderBoxLabel>
                                   </>
                                 )}
-                              </>
-                            )}
-                          </TileDescription>
-
-                          <TileDescription value textAlign='right'>
-                            {getConvertedValue(item.value, currency)} {currency}
-                          </TileDescription>
+                              </TileDescription>
+                            </>
+                          }
                         </Tile>
                       </div>
                     ))}
@@ -234,56 +281,58 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
             return (
               <div key={i}>
                 {isOutputSelected(i) ? <SelectedPill>Selected</SelectedPill> : null}
-                <Tile invertedBorderColor={outputsLength > 1 && outputsLength !== i + 1}>
-                  <TileDescription padding='0 1rem 0 0' value>
-                    {getAddress(vo) !== 'Unparsed address' ? (
-                      <SpanLink onClick={() => goToAddress(getAddress(vo))}>
-                        {getAddress(vo)}
-                      </SpanLink>
-                    ) : (
-                      <span>{isOpReturn(vo) ? 'OP_RETURN' : 'Unparsed address'}</span>
-                    )}
-
-                    {showDetails && (
-                      <>
+                <div style={{
+                  display: 'flex',
+                  marginTop: '1rem', 
+                  ...(showDetails && {borderBottom: '2px solid', paddingBottom: '0.25rem'})
+                }}>
+                  {getAddress(vo) !== 'Unparsed address' ? (
+                    <TxAddressLink onClick={() => goToAddress(getAddress(vo))} style={{wordBreak: showDetails ? 'break-all' : 'unset'}}>
+                      {getAddress(vo)}
+                    </TxAddressLink>
+                  ) : (
+                    <span style={{textAlign: 'left', width: '100%'}}>
+                      {isOpReturn(vo) ? 'OP_RETURN' : 'Unparsed address'}
+                    </span>
+                  )}
+                  <div style={{minInlineSize: 'fit-content', display: 'flex'}}>
+                    {getConvertedValue(vo.value, currency)} {currency}{' '}
+                    <ArrowDiv margin='auto 0 auto .5rem'>
+                      <img
+                        src={vo.spentTxid ? BlueArrowSvg : (isOpReturn(vo) ? CircleSvg : ArrowSvg)}
+                        width={17}
+                        height={17}
+                        alt='Spent'
+                        title={vo.spentTxid ? 'Spent' : (isOpReturn(vo) ? 'Unspendable' : 'Unspent')}
+                        style={{margin: `0px ${isOpReturn(vo) ? '4px' : '5px'}`}}
+                        onClick={() => vo.spentTxid && goToTx(vo.spentTxid, transaction.txid, i)}
+                      />
+                    </ArrowDiv>
+                  </div>
+                </div>
+                <Tile invertedBorderColor={outputsLength > 1 && outputsLength !== i + 1} padding={showDetails ? undefined : '0.4rem'}>
+                  {showDetails &&
+                    <>
+                      <TileDescription padding='0 1rem 0 0' value>
                         {vo.spentTxid && (
-                          <TextElipsis>
-                            <b>Spent By </b>
-                            <SpanLink onClick={() => goToTx(vo.spentTxid, transaction.txid, i)}>
-                              {vo.spentTxid}
-                            </SpanLink>
-                          </TextElipsis>
+                          <BorderBoxLabel label='Spent By'>
+                            <TextElipsis>
+                              <SpanLink onClick={() => goToTx(vo.spentTxid, transaction.txid, i)}>
+                                {vo.spentTxid}
+                              </SpanLink>
+                            </TextElipsis>
+                          </BorderBoxLabel>
                         )}
                         {isOpReturn(vo) && <ScriptText>{getOpReturnText(vo)}</ScriptText>}
                         {vo.script && (
                           <>
-                            <b>Script Hex</b>
-                            <ScriptText>{new lib.Script(vo.script).toHex()}</ScriptText>
-                            <b>Script ASM</b>
-                            <ScriptText>{new lib.Script(vo.script).toASM()}</ScriptText>
+                            <BorderBoxLabel label='Script Hex'>{new lib.Script(vo.script).toHex()}</BorderBoxLabel>
+                            <BorderBoxLabel label='Script ASM'>{new lib.Script(vo.script).toASM()}</BorderBoxLabel>
                           </>
                         )}
-                      </>
-                    )}
-                  </TileDescription>
-
-                  <TileDescription value textAlign='right'>
-                    {getConvertedValue(vo.value, currency)} {currency}{' '}
-                  </TileDescription>
-                    <ArrowDiv margin='auto 0 auto .5rem'>
-                      <img
-                        src={vo.spentTxid ? BlueArrowSvg : ArrowSvg}
-                        width={17}
-                        height={17}
-                        alt='Spent'
-                        title={vo.spentTxid ? 'Spent' : 'Unspent'}
-                        style={{
-                          visibility: (isOpReturn(vo) ? 'hidden' : 'visible'),
-                          margin: '0px 5px'
-                        }}
-                        onClick={() => vo.spentTxid && goToTx(vo.spentTxid, transaction.txid, i)}
-                      />
-                    </ArrowDiv>
+                      </TileDescription>
+                    </>
+                  }
                 </Tile>
               </div>
             );
