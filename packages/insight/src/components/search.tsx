@@ -8,6 +8,7 @@ import {LightBlack, Slate} from '../assets/styles/colors';
 import {useAppDispatch, useAppSelector} from '../utilities/hooks';
 import {changeCurrency, changeNetwork} from 'src/store/app.actions';
 import {Pill} from './pill';
+import { isMobile } from 'src/utilities/helper-methods';
 
 const SearchInput = styled.input`
   background: none;
@@ -163,7 +164,7 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
   return (
     <SearchForm onSubmit={search} borderBottom={borderBottom}>
       <span style={{display: 'flex', alignItems: 'center' }}>
-        <img src={searchIcon} alt='Search' style={{padding: 7}}></img>
+        <img src={searchIcon} alt='Search' style={{padding: 7, marginLeft: isMobile() && currency ? '-8px': 0}}></img>
         <Pill currency={currency} network={network} onCloseClick={handlePillCloseButtonClick} />
         <SearchInput
           id={id || 'search'}

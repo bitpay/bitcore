@@ -4,6 +4,7 @@ import {
   COIN,
   DEFAULT_RBF_SEQ_NUMBER,
   ETH_DEFAULT_REFRESH_INTERVAL,
+  size,
   UTXO_DEFAULT_REFRESH_INTERVAL,
 } from './constants';
 import {BlockTransactionDetails} from './models';
@@ -187,4 +188,8 @@ export const getDifficultyFromBits = (bits: number) => {
   const maxBody = Math.log(0x00ffff);
   const scaland = Math.log(256);
   return Math.exp(maxBody - Math.log(bits & 0x00ffffff) + scaland * (0x1d - ((bits & 0xff000000) >> 24)));
+}
+
+export const isMobile = () => {
+  return window.innerWidth < Number(size.mobileL.slice(0, -2));
 }
