@@ -1,3 +1,5 @@
+import { describe, it, before, after } from 'node:test';
+import assert from 'assert';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Config } from '../../../src/services/config';
@@ -16,16 +18,12 @@ describe('P2P Service', function() {
   before(unitBeforeHelper);
   after(unitAfterHelper);
 
-  it('should have a test which runs', function() {
-    expect(true).to.equal(true);
-  });
-
   it('should register a class', () => {
     const chain = 'TEST';
     const network = 'test';
     P2P.register(chain, network, MockP2PWorker);
     const registered = P2P.get(chain, network);
-    expect(registered).to.deep.eq(MockP2PWorker);
+    assert.deepEqual(registered, MockP2PWorker);
   });
 
   it('should start the p2p class', async () => {

@@ -1,4 +1,5 @@
-import { expect } from 'chai';
+import { describe, before, after, it } from 'node:test';
+import assert from 'assert';
 import { unitAfterHelper, unitBeforeHelper } from '../helpers/unit';
 
 describe('server', function() {
@@ -6,6 +7,6 @@ describe('server', function() {
   after(unitAfterHelper);
 
   it('should have a test which runs', function() {
-    expect(true).to.equal(true);
+    assert.ok(true);
   });
 });
