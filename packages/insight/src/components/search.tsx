@@ -8,7 +8,7 @@ import {LightBlack, Slate} from '../assets/styles/colors';
 import {useAppDispatch, useAppSelector} from '../utilities/hooks';
 import {changeCurrency, changeNetwork} from 'src/store/app.actions';
 import {Pill} from './pill';
-import { isMobile } from 'src/utilities/helper-methods';
+import { size } from 'src/utilities/constants';
 
 const SearchInput = styled.input`
   background: none;
@@ -32,6 +32,14 @@ const SearchForm = styled.form<{ borderBottom?: boolean }>`
   width: 100%;
   border-bottom: ${({borderBottom, theme: {colors}}) =>
     borderBottom ? `1px solid ${colors.borderColor}` : 'none'};
+`;
+
+const SearchImg = styled.img`
+  alt: search;
+  padding: 7px;
+  @media screen and (max-width: ${size.mobileL}) {
+    margin-left: -8px;
+  }
 `;
 
 interface SearchProps {
@@ -164,7 +172,7 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
   return (
     <SearchForm onSubmit={search} borderBottom={borderBottom}>
       <span style={{display: 'flex', alignItems: 'center' }}>
-        <img src={searchIcon} alt='Search' style={{padding: 7, marginLeft: isMobile() && currency ? '-8px': 0}}></img>
+        <SearchImg src={searchIcon}/>
         <Pill currency={currency} network={network} onCloseClick={handlePillCloseButtonClick} />
         <SearchInput
           id={id || 'search'}
