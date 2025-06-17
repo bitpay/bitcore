@@ -667,12 +667,19 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     let name = '';
     let symbol = '';
     try {
-      const asset = await fetchDigitalAsset(umi, tokenAddress as UmiPublicKey);
-      if (asset) {
-        name = asset.metadata.name;
-        symbol = asset.metadata.symbol;
-        decimals = asset.mint.decimals;
-      }  else {
+      let error;
+      let token;
+      try {
+        token = await fetchDigitalAsset(umi, tokenAddress as UmiPublicKey);
+      } catch (e) {
+        error = e;
+      }
+      
+      if (token) {
+        name = token.metadata.name;
+        symbol = token.metadata.symbol;
+        decimals = token.mint.decimals;
+      } else {
         // If a token doesn't use the Token Metadata Standard (above), it uses the Solana Labs Token List (below). 
         // This list is obsolete since June 20,2022
         const provider = await new TokenListProvider().resolve();
@@ -687,11 +694,15 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
           return map;
         }, new Map());
 
-        const token = tokenMap.get(tokenAddress);
+        token = tokenMap.get(tokenAddress);
 
-        name = token.name;
-        symbol = token.symbol;
-        decimals = token.decimals;
+        name = token?.name;
+        symbol = token?.symbol;
+        decimals = token?.decimals;
+
+        if (!token && error) {
+          throw error;
+        }
       }
     } catch (err) {
       logger.error('Error getting SPL token info: %o', err);
