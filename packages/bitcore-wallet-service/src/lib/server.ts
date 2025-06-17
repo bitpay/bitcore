@@ -2737,6 +2737,8 @@ export class WalletService implements IWalletService {
                       fromKeyPair: opts.fromKeyPair,
                       priorityFee: opts.priorityFee,
                       computeUnits: opts.computeUnits,
+                      fromAta: opts.fromAta,
+                      decimals: opts.decimals,
                       refreshOnPublish: opts.refreshOnPublish
                     };
                     txp = TxProposal.create(txOpts);

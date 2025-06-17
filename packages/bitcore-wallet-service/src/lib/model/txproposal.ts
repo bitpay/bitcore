@@ -89,6 +89,8 @@ export interface ITxProposal {
   category?: string;
   priorityFee?: number;
   computeUnits?: number;
+  fromAta?: string;
+  decimals?: number;
   refreshOnPublish?: boolean;
   prePublishRaw?: string;
 }
@@ -170,6 +172,8 @@ export class TxProposal {
   category?: string;
   priorityFee?: number;
   computeUnits?: number;
+  fromAta?: string;
+  decimals?: number;
   refreshOnPublish?: boolean;
   prePublishRaw?: string;
 
@@ -283,6 +287,8 @@ export class TxProposal {
     x.nonceAddress = opts.nonceAddress; // account address mantaining latest nonce
     x.category = opts.category; // kind of transaction: transfer, account creation, nonce creation, etc
     x.computeUnits = opts.computeUnits;
+    x.fromAta = opts.fromAta;
+    x.decimals = opts.decimals;
     x.priorityFee = opts.priorityFee;
 
     x.refreshOnPublish = opts.refreshOnPublish;
@@ -371,6 +377,8 @@ export class TxProposal {
     x.nonceAddress = obj.nonceAddress; // account address mantaining latest nonce
     x.category = obj.category; // kind of transaction: transfer, account creation, nonce creation, etc
     x.computeUnits = obj.computeUnits;
+    x.fromAta = obj.fromAta;
+    x.decimals = obj.decimals;
     x.priorityFee = obj.priorityFee;
 
     x.refreshOnPublish = obj.refreshOnPublish;
