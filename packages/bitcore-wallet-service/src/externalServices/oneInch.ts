@@ -119,11 +119,12 @@ export class OneInchService {
           arb: 42161,
           base: 8453,
           op: 10,
+          sol: 501
         };
 
         const chainId = chainIdMap[chain];
 
-        const URL: string = `${credentials.API}/v5.2/${chainId}/tokens`;
+        const URL: string = `https://api.1inch.dev/token/v1.2/${chainId}?provider=1inch&country=US/tokens`;
 
         this.request.get(
           URL,
