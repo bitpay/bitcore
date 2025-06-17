@@ -2,7 +2,6 @@ import { FC } from 'react';
 import styled from 'styled-components';
 import CloseLightSvg from 'src/assets/images/close-light.svg'
 import {Black, Slate30, White} from '../assets/styles/colors';
-import { isMobile } from 'src/utilities/helper-methods';
 import { size } from 'src/utilities/constants';
 
 const PillBubble = styled.div`
@@ -51,6 +50,7 @@ interface PillProps {
 }
 
 export const Pill: FC<PillProps> = ({ currency, network, onCloseClick }) => {
+  const isMobile = () => window.innerWidth < Number(size.mobileL.slice(0, -2));
   return (
     currency ?
       <PillBubble>
