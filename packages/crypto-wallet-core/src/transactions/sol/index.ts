@@ -14,7 +14,7 @@ export class SOLTxProvider {
     from: string;
     fee?: number;
     feeRate: number;
-    txType?:  'legacy' | '0'; // legacy, version 0
+    txType?: 'legacy' | '0'; // legacy, version 0
     category?: 'transfer' | 'createAccount'; // transfer, create account
     nonce?: string; // nonce is represented as a transaction id
     nonceAddress?: string;
@@ -130,33 +130,60 @@ export class SOLTxProvider {
     }
   }
 
-  decodeRawTransaction({ rawTx }) {
+  decodeRawTransaction({ rawTx, decodeTransactionMessage = true }) {
     if (typeof rawTx !== 'string') {
-      throw new Error(`Raw transaction expected to be a string. Found ${typeof rawTx} instead.`)
+      throw new Error(`Raw transaction expected to be a string. Found ${typeof rawTx} instead.`);
     }
     const uint8ArrayTx = SolKit.getBase64Encoder().encode(rawTx);
-    const txObj = SolKit.getTransactionDecoder().decode(uint8ArrayTx);
-    const compiledTransactionMessage = SolKit.getCompiledTransactionMessageDecoder().decode(txObj?.messageBytes);
-    const decompiledTransactionMessage = SolKit.decompileTransactionMessage(compiledTransactionMessage);
-    const compiledTransaction = SolKit.compileTransaction(decompiledTransactionMessage)
-    return { ...compiledTransaction, signatures: txObj.signatures };
+    const decodedTx: any = SolKit.getTransactionDecoder().decode(uint8ArrayTx);
+
+    // decoding and decompiling the transaction message allows extraction of key data such as lifetimeConstraint
+    // certain advance transactions such as dex swaps, lookup table txs, may need additional data to perform decompilation and will throw errors if not provided
+    if (decodeTransactionMessage) {
+      const decompiledTransactionMessage = this.decodeTransactionMessage(decodedTx?.messageBytes);
+      decodedTx.lifetimeConstraint = decompiledTransactionMessage.lifetimeConstraint;
+    }
+    return decodedTx;
+  }
+
+  decodeTransactionMessage(bytes) {
+    // TODO support lookup tables
+    const compiledTransactionMessage = SolKit.getCompiledTransactionMessageDecoder().decode(bytes);
+    return SolKit.decompileTransactionMessage(compiledTransactionMessage);
   }
 
   async sign(params: { tx: string; key: Key; }): Promise<string> {
     const { tx, key } = params;
-    const decodedTx = this.decodeRawTransaction({ rawTx: tx });
+    const decodedTx = this.decodeRawTransaction({ rawTx: tx, decodeTransactionMessage: false });
     const privKeyBytes = SolKit.getBase58Encoder().encode(key.privKey);
     const keypair = await SolKit.createKeyPairFromPrivateKeyBytes(privKeyBytes);
     const signedTransaciton = await SolKit.signTransaction([keypair], decodedTx);
     return SolKit.getBase64EncodedWireTransaction(signedTransaciton);
   }
 
+  async signPartially(params) {
+    const { tx, key } = params;
+    const decodedTx = this.decodeRawTransaction({ rawTx: tx, decodeTransactionMessage: false });
+    const privKeyBytes = SolKit.getBase58Encoder().encode(key.privKey);
+    const keypair = await SolKit.createKeyPairFromPrivateKeyBytes(privKeyBytes);
+    const signedTransaciton = await SolKit.partiallySignTransaction([keypair], decodedTx);
+    return SolKit.getBase64EncodedWireTransaction(signedTransaciton);
+  }
+
+  async signMessage(params) {
+    const { key, messageBytes } = params;
+    const privKeyBytes = SolKit.getBase58Encoder().encode(key.privKey);
+    const keypair = await SolKit.createKeyPairFromPrivateKeyBytes(privKeyBytes);
+    const signedBytes = await SolKit.signBytes(keypair.privateKey, messageBytes);
+    return SolKit.getBase58Decoder().decode(signedBytes);
+  }
+
   async getSignature(params: { tx: string; keys: Array<Key> }) {
     const { tx, keys } = params;
-    const signedTx = await this.sign({ tx, key: keys[0] });
-    const decodedTx = this.decodeRawTransaction({ rawTx: signedTx });
-    const pubKeys = Object.keys(decodedTx.signatures);
-    const sigEncoding =  pubKeys.length == 1 ? decodedTx.signatures[pubKeys[0]] : this.getSignaturesEncoder().encode(decodedTx.signatures);
+    const key = keys[0];
+    const signedTx = await this.sign({ tx, key });
+    const decodedTx = this.decodeRawTransaction({ rawTx: signedTx, decodeTransactionMessage: false });
+    const sigEncoding = decodedTx.signatures[key.address];
     return SolKit.getBase58Decoder().decode(sigEncoding);
   }
 
@@ -209,26 +236,25 @@ export class SOLTxProvider {
 
   getHash(params: { tx: string; }): string {
     const { tx } = params;
-    const decodedTx = this.decodeRawTransaction({ rawTx: tx });
+    const decodedTx = this.decodeRawTransaction({ rawTx: tx, decodeTransactionMessage: false });
     const pubKeys = Object.keys(decodedTx.signatures);
-    const sigEncoding =  pubKeys.length == 1 ? decodedTx.signatures[pubKeys[0]] : this.getSignaturesEncoder().encode(decodedTx.signatures);
-    return SolKit.getBase58Decoder().decode(sigEncoding);
-  }
+    let signature;
 
-  getSignaturesToEncode(signaturesMap) {
-    const signatures = Object.values(signaturesMap);
-    return signatures.map((signature) => {
-      if (!signature) {
-        return new Uint8Array(64).fill(0);
+    if (pubKeys.length == 1) {
+      signature = decodedTx.signatures[pubKeys[0]];
+    } else if (pubKeys.length > 1) {
+      try {
+        const compiledTransactionMessage = SolKit.getCompiledTransactionMessageDecoder().decode(decodedTx.messageBytes);
+        const feePayerAddress = compiledTransactionMessage.staticAccounts[0];
+        signature = decodedTx.signatures[feePayerAddress];
+      } catch (err) {
+        throw new Error('unable to get fee payer signature %o', err.stack || err.message || err);
       }
-      return signature;
-    });
-  }
+    }
+    if (!signature) {
+      throw new Error('tx is unsigned by fee payer');
+    }
 
-  getSignaturesEncoder() {
-    return SolKit.transformEncoder(
-      SolKit.getArrayEncoder(SolKit.fixEncoderSize(SolKit.getBytesEncoder(), 64), { size: SolKit.getShortU16Encoder() }),
-      this.getSignaturesToEncode
-    );
+    return SolKit.getBase58Decoder().decode(signature);
   }
 }
