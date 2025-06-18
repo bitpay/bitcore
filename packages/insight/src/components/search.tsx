@@ -35,7 +35,6 @@ const SearchForm = styled.form<{ borderBottom?: boolean }>`
 `;
 
 const SearchImg = styled.img`
-  alt: search;
   padding: 7px;
   @media screen and (max-width: ${size.mobileL}) {
     margin-left: -8px;
@@ -172,7 +171,7 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
   return (
     <SearchForm onSubmit={search} borderBottom={borderBottom}>
       <span style={{display: 'flex', alignItems: 'center' }}>
-        <SearchImg src={searchIcon}/>
+        <SearchImg src={searchIcon} alt='Search'/>
         <Pill currency={currency} network={network} onCloseClick={handlePillCloseButtonClick} />
         <SearchInput
           id={id || 'search'}
