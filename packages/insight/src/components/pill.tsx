@@ -78,9 +78,7 @@ export const Pill: FC<PillProps> = ({ currency, network, onCloseClick }) => {
     currency ?
       <PillBubble>
         <img src={`https://bitpay.com/img/icon/currencies/${currency}.svg`} alt={currency} style={{height: isMobile() ? '60%' : '75%'}} />
-        <NetworkLabel>
-          {isMobile() ? (network === 'mainnet' ? 'main' : 'test') : network}
-        </NetworkLabel>
+        <NetworkLabel>{network}</NetworkLabel>
         <PillCloseButtonScope onClick={onCloseClick}>
           <PillCloseButtonCircle>
             <img src={CloseLightSvg} alt='Close' style={{height: '50%'}} />

@@ -161,7 +161,13 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
   }
 
   const searchInputPlaceholder = useMemo(() => {
-    let placeholder = 'Search for block, transaction, or address';
+    const isMobile = window.innerWidth < Number(size.mobileL.slice(0, -2));
+    let placeholder;
+    if (isMobile) {
+      placeholder = 'Search';
+    } else {
+      placeholder = 'Search for block, transaction, or address';
+    }
     if (currency && network) {
       placeholder = `${placeholder} on ${currency} ${network}`;
     }
