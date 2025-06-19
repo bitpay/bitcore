@@ -170,7 +170,7 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
       placeholder = `${placeholder} on ${currency} ${network}`;
     }
     return placeholder;
-  }, [currency, network]);
+  }, [currency, network, window.innerWidth]);
 
   return (
     <SearchForm onSubmit={search} borderBottom={borderBottom}>
