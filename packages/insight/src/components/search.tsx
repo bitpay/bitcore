@@ -8,6 +8,7 @@ import {LightBlack, Slate} from '../assets/styles/colors';
 import {useAppDispatch, useAppSelector} from '../utilities/hooks';
 import {changeCurrency, changeNetwork} from 'src/store/app.actions';
 import {Pill} from './pill';
+import { size } from 'src/utilities/constants';
 
 const SearchInput = styled.input`
   background: none;
@@ -31,6 +32,13 @@ const SearchForm = styled.form<{ borderBottom?: boolean }>`
   width: 100%;
   border-bottom: ${({borderBottom, theme: {colors}}) =>
     borderBottom ? `1px solid ${colors.borderColor}` : 'none'};
+`;
+
+const SearchImg = styled.img`
+  padding: 7px;
+  @media screen and (max-width: ${size.mobileL}) {
+    margin-left: -8px;
+  }
 `;
 
 interface SearchProps {
@@ -153,17 +161,21 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
   }
 
   const searchInputPlaceholder = useMemo(() => {
+    const isMobile = window.innerWidth < Number(size.mobileL.slice(0, -2));
     let placeholder = 'Search for block, transaction, or address';
     if (currency && network) {
+      if (isMobile) {
+        placeholder = 'Search';
+      }
       placeholder = `${placeholder} on ${currency} ${network}`;
     }
     return placeholder;
-  }, [currency, network]);
+  }, [currency, network, window.innerWidth]);
 
   return (
     <SearchForm onSubmit={search} borderBottom={borderBottom}>
       <span style={{display: 'flex', alignItems: 'center' }}>
-        <img src={searchIcon} alt='Search' style={{padding: 7}}></img>
+        <SearchImg src={searchIcon} alt='Search'/>
         <Pill currency={currency} network={network} onCloseClick={handlePillCloseButtonClick} />
         <SearchInput
           id={id || 'search'}
