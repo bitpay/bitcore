@@ -76,7 +76,7 @@ export class OneInchService {
       const chainNetwork: string = `${req.params?.['chain']?.toUpperCase()}_mainnet` || 'eth_mainnet';
       const chainId: number = ConstantsCWC.EVM_CHAIN_NETWORK_TO_CHAIN_ID[chainNetwork];
 
-      const URL: string = `${credentials.API}/v5.2/${chainId}/swap/?${qs.join('&')}`;
+      const URL: string = `${credentials.API}/swap/v5.2/${chainId}/swap/?${qs.join('&')}`;
 
       this.request.get(
         URL,
@@ -119,11 +119,12 @@ export class OneInchService {
           arb: 42161,
           base: 8453,
           op: 10,
+          sol: 501
         };
 
         const chainId = chainIdMap[chain];
 
-        const URL: string = `${credentials.API}/v5.2/${chainId}/tokens`;
+        const URL: string = `${credentials.API}/token/v1.2/${chainId}?provider=1inch&country=US/tokens`;
 
         this.request.get(
           URL,
@@ -143,18 +144,18 @@ export class OneInchService {
               // oneinch rate limit
               return resolve(oldvalues);
             } else {
-              if (!data?.body?.tokens) {
+              if (!data?.body) {
                 if (oldvalues) {
                   logger.warn('No token list available... using old cached values');
                   return resolve(oldvalues);
                 }
                 return reject(new Error('Could not get tokens list'));
               }
-              this.storage.storeGlobalCache(cacheKey, data.body.tokens, err => {
+              this.storage.storeGlobalCache(cacheKey, data.body, err => {
                 if (err) {
                   logger.warn('Could not store tokens list');
                 }
-                return resolve(data.body.tokens);
+                return resolve(data.body);
               });
             }
           }
