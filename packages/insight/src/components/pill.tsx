@@ -1,4 +1,4 @@
-import {FC, useEffect, useState} from 'react';
+import {FC} from 'react';
 import styled from 'styled-components';
 import CloseLightSvg from 'src/assets/images/close-light.svg'
 import {Black, White, Slate30} from '../assets/styles/colors';
@@ -66,6 +66,13 @@ const NetworkLabel = styled.span`
   }
 `;
 
+const CurrencyImg = styled.img`
+  height: 75%;
+  @media screen and (max-width: ${size.mobileL}) {
+    height: 60%;
+  }
+`;
+
 interface PillProps {
   currency?: string,
   network?: string,
@@ -73,18 +80,10 @@ interface PillProps {
 }
 
 export const Pill: FC<PillProps> = ({ currency, network, onCloseClick }) => {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < Number(size.mobileL.slice(0, -2)));
-  
-  useEffect(() => {
-    window.addEventListener('resize', () => {
-      setIsMobile(window.innerWidth < Number(size.mobileL.slice(0, -2)));
-    });
-  }, []);
-
   return (
     currency ?
       <PillBubble>
-        <img src={`https://bitpay.com/img/icon/currencies/${currency}.svg`} alt={currency} style={{height: isMobile ? '60%' : '75%'}} />
+        <CurrencyImg src={`https://bitpay.com/img/icon/currencies/${currency}.svg`} alt={currency} />
         <NetworkLabel>{network}</NetworkLabel>
         <PillCloseButtonScope onClick={onCloseClick}>
           <PillCloseButtonCircle>
