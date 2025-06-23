@@ -89,6 +89,8 @@ export interface ITxProposal {
   category?: string;
   priorityFee?: number;
   computeUnits?: number;
+  refreshOnPublish?: boolean;
+  prePublishRaw?: string;
 }
 
 export class TxProposal {
@@ -168,6 +170,8 @@ export class TxProposal {
   category?: string;
   priorityFee?: number;
   computeUnits?: number;
+  refreshOnPublish?: boolean;
+  prePublishRaw?: string;
 
   static create(opts) {
     opts = opts || {};
@@ -281,6 +285,8 @@ export class TxProposal {
     x.computeUnits = opts.computeUnits;
     x.priorityFee = opts.priorityFee;
 
+    x.refreshOnPublish = opts.refreshOnPublish;
+
     return x;
   }
 
@@ -366,6 +372,9 @@ export class TxProposal {
     x.category = obj.category; // kind of transaction: transfer, account creation, nonce creation, etc
     x.computeUnits = obj.computeUnits;
     x.priorityFee = obj.priorityFee;
+
+    x.refreshOnPublish = obj.refreshOnPublish;
+    x.prePublishRaw = obj.prePublishRaw;
 
     if (x.status == 'broadcasted') {
       x.raw = obj.raw;
@@ -501,6 +510,10 @@ export class TxProposal {
 
   reject(copayerId, reason) {
     this.addAction(copayerId, 'reject', reason);
+  }
+
+  isRepublishEnabled() {
+    return !!this.refreshOnPublish
   }
 
   isTemporary() {

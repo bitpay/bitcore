@@ -134,6 +134,9 @@ const Config = (): any => {
         },
         testnet: {
           url: 'https://api-sol.bitcore.io'
+        },
+        devnet: {
+          url: 'https://api-sol.bitcore.io'
         }
       },
       socketApiKey: 'socketApiKey'

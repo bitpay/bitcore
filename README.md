@@ -14,10 +14,10 @@
 ## Applications
 
 - [Bitcore Node](packages/bitcore-node) - A standardized API to interact with multiple blockchain networks
-- [Bitcore Wallet](packages/bitcore-wallet) - A command-line based wallet client
+- [Bitcore Wallet](packages/bitcore-wallet) - **DEPRECATED** A command-line based wallet client
 - [Bitcore Wallet Client](packages/bitcore-wallet-client) - A client for the wallet service
 - [Bitcore Wallet Service](packages/bitcore-wallet-service) - A multisig HD service for wallets
-- [Bitpay Wallet](https://github.com/bitpay/wallet) - An easy-to-use, multiplatform, multisignature, secure bitcoin wallet
+- [Bitpay Wallet](https://github.com/bitpay/bitpay-app) - An easy-to-use, multiplatform, multisignature, secure wallet for bitcoin, ethereum, and more
 - [Insight](packages/insight) - A blockchain explorer web user interface
 
 ## Libraries
@@ -35,7 +35,12 @@
 ## Extras
 
 - [Bitcore Build](packages/bitcore-build) - A helper to add tasks to gulp
-- [Bitcore Client](packages/bitcore-client) - A helper to create a wallet using the bitcore-v8 infrastructure
+- [Bitcore Client](packages/bitcore-client) - A helper to create a wallet using the bitcore-node infrastructure
+
+
+## Versioning
+
+This repo follows the even-odd versioning convention. Major versions that are even (e.g. v8.x.x) are `stable` releases, odd are `beta` releases (e.g. v9.x.x). Beta versions may contain breaking changes or major feature additions that are still in testing.
 
 ## Contributing
 
@@ -45,6 +50,6 @@ See [CONTRIBUTING.md](https://github.com/bitpay/bitcore/blob/master/Contributing
 
 Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).
 
-Copyright 2013-2023 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.
+Copyright 2013-2025 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.
 
 [^1]: The Bitcore P2P Doge library is no longer maintained as all the core functionality is contained in Bitcore P2P

@@ -382,11 +382,11 @@ describe('History', function() {
 
     it('should get tx history from cache and bc mixed, updating confirmations', function(done) {
       var _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
-      var _time = Defaults.BLOCKHEIGHT_CACHE_TIME ;
+      var _time = Defaults.BLOCKHEIGHT_CACHE_TIME.default ;
       Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
 
       // remove bc tip cache.
-      Defaults.BLOCKHEIGHT_CACHE_TIME = 0;
+      Defaults.BLOCKHEIGHT_CACHE_TIME = { default: 0 };
       helpers.stubHistory(50, BCHEIGHT); //(0->49)
 
       // this call is to fill the cache
@@ -405,7 +405,7 @@ describe('History', function() {
             tx.confirmations.should.equal(i + heightOffset);
             i++;
           });
-          Defaults.BLOCKHEIGHT_CACHE_TIME = _time;
+          Defaults.BLOCKHEIGHT_CACHE_TIME.default = _time;
           Defaults.CONFIRMATIONS_TO_START_CACHING = _cache;
           done();
         });
