@@ -8,7 +8,7 @@ import {
   isRBF,
   getLib,
 } from '../utilities/helper-methods';
-import {useState, useEffect, FC, memo, ReactNode, Children} from 'react';
+import {useState, useEffect, FC, memo} from 'react';
 import {
   TransactionBodyCol,
   TransactionTile,
@@ -26,8 +26,9 @@ import ArrowSvg from '../assets/images/arrow.svg';
 import BlueArrowSvg from '../assets/images/arrow-blue.svg';
 import CircleSvg from '../assets/images/circle.svg';
 import {useNavigate, createSearchParams} from 'react-router-dom';
-import styled, { useTheme } from 'styled-components';
+import styled from 'styled-components';
 import {Slate, SlateDark} from '../assets/styles/colors';
+import DataBox from './data-box';
 
 const TextElipsis = styled(ScriptText)`
   overflow: hidden;
@@ -57,30 +58,6 @@ const TxAddressLink = styled.span`
     cursor: pointer;
   }
 `
-
-const BorderBoxLabel: FC<{children: ReactNode, label: string}> = ({children, label}) => {
-  const theme = useTheme();
-  const modifiedChildren = typeof children === 'object' 
-    ? Children.map(children as JSX.Element, (child: JSX.Element) => {
-        return <span {...child.props} style={{margin: 0}}></span>;
-      })
-    : children;
-  
-  return (
-    <fieldset style={{
-      border: `1.5px solid ${theme.dark ? '#5f5f5f' : '#ccc'}`,
-      borderRadius: '5px',
-      padding: '0.1rem 0.4rem',
-      wordBreak: 'break-all',
-      whiteSpace: 'normal',
-      width: 'fit-content',
-      height: 'fit-content'
-    }}>
-      <legend style={{margin: '-0.2rem 0.1rem'}}>{label}</legend>
-      {modifiedChildren}
-    </fieldset>
-  );
-}
 
 interface TransactionDetailsProps {
   transaction: Transaction;
@@ -226,7 +203,7 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                             <>
 
                               <TileDescription padding='0 1rem 0 0' value>
-                                <BorderBoxLabel label='Tx ID'>
+                                <DataBox label='Tx ID'>
                                   <TextElipsis>
                                     <SpanLink
                                       onClick={() =>
@@ -235,28 +212,28 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                                       {item.mintTxid}
                                     </SpanLink>
                                   </TextElipsis>
-                                </BorderBoxLabel>
+                                </DataBox>
                                   
                                 <span style={{display: 'flex'}}>
-                                  <BorderBoxLabel label='Tx Index'>
+                                  <DataBox label='Tx Index'>
                                     <TextElipsis>
                                       {item.mintIndex}
                                     </TextElipsis>
-                                  </BorderBoxLabel>
+                                  </DataBox>
 
                                   {item.uiConfirmations && confirmations > 0 ? (
-                                    <BorderBoxLabel label='Confirmations'>
+                                    <DataBox label='Confirmations'>
                                       <ScriptText>
                                         {item.uiConfirmations + confirmations}
                                       </ScriptText>
-                                    </BorderBoxLabel>
+                                    </DataBox>
                                   ) : null}
                                 </span>
 
                                 {item.script && (
                                   <>
-                                    <BorderBoxLabel label='Script Hex'>{item.script}</BorderBoxLabel>
-                                    <BorderBoxLabel label='Script ASM'>{new lib.Script(item.script).toASM()}</BorderBoxLabel>
+                                    <DataBox label='Script Hex'>{item.script}</DataBox>
+                                    <DataBox label='Script ASM'>{new lib.Script(item.script).toASM()}</DataBox>
                                   </>
                                 )}
                               </TileDescription>
@@ -315,19 +292,19 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                     <>
                       <TileDescription padding='0 1rem 0 0' value>
                         {vo.spentTxid && (
-                          <BorderBoxLabel label='Spent By'>
+                          <DataBox label='Spent By'>
                             <TextElipsis>
                               <SpanLink onClick={() => goToTx(vo.spentTxid, transaction.txid, i)}>
                                 {vo.spentTxid}
                               </SpanLink>
                             </TextElipsis>
-                          </BorderBoxLabel>
+                          </DataBox>
                         )}
                         {isOpReturn(vo) && <ScriptText>{getOpReturnText(vo)}</ScriptText>}
                         {vo.script && (
                           <>
-                            <BorderBoxLabel label='Script Hex'>{new lib.Script(vo.script).toHex()}</BorderBoxLabel>
-                            <BorderBoxLabel label='Script ASM'>{new lib.Script(vo.script).toASM()}</BorderBoxLabel>
+                            <DataBox label='Script Hex'>{new lib.Script(vo.script).toHex()}</DataBox>
+                            <DataBox label='Script ASM'>{new lib.Script(vo.script).toASM()}</DataBox>
                           </>
                         )}
                       </TileDescription>
