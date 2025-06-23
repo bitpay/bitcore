@@ -1,4 +1,4 @@
-import {FC, memo, useMemo} from 'react';
+import {FC, memo, useEffect, useMemo, useState} from 'react';
 import {determineInputType, searchValue} from 'src/utilities/search-helper-methods';
 import {useNavigate} from 'react-router-dom';
 import styled, {useTheme} from 'styled-components';
@@ -8,7 +8,7 @@ import {LightBlack, Slate} from '../assets/styles/colors';
 import {useAppDispatch, useAppSelector} from '../utilities/hooks';
 import {changeCurrency, changeNetwork} from 'src/store/app.actions';
 import {Pill} from './pill';
-import { size } from 'src/utilities/constants';
+import {size} from 'src/utilities/constants';
 
 const SearchInput = styled.input`
   background: none;
@@ -52,15 +52,21 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const {currency, network} = useAppSelector(({APP}) => APP);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < Number(size.mobileL.slice(0, -2)));
 
   const searchIcon = theme.dark ? SearchDarkSvg : SearchLightSvg;
   const searchId = id || 'search';
+
+  useEffect(() => {
+    window.addEventListener('resize', () => {
+      setIsMobile(window.innerWidth < Number(size.mobileL.slice(0, -2)));
+    });
+  }, []);
 
   const search = async (event: any) => {
     event.preventDefault();
     setErrorMessage('');
     const searchVal = event.target[searchId].value.replace(/\s/g, '');
-
     const searchInputs = await determineInputType(searchVal);
     if (searchInputs.length) {
       try {
@@ -161,7 +167,6 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
   }
 
   const searchInputPlaceholder = useMemo(() => {
-    const isMobile = window.innerWidth < Number(size.mobileL.slice(0, -2));
     let placeholder = 'Search for block, transaction, or address';
     if (currency && network) {
       if (isMobile) {
@@ -170,7 +175,7 @@ const Search: FC<SearchProps> = ({borderBottom, id, setErrorMessage}) => {
       placeholder = `${placeholder} on ${currency} ${network}`;
     }
     return placeholder;
-  }, [currency, network, window.innerWidth]);
+  }, [currency, network, isMobile]);
 
   return (
     <SearchForm onSubmit={search} borderBottom={borderBottom}>

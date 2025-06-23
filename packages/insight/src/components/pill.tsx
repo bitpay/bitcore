@@ -1,8 +1,8 @@
-import { FC } from 'react';
+import {FC, useEffect, useState} from 'react';
 import styled from 'styled-components';
 import CloseLightSvg from 'src/assets/images/close-light.svg'
 import {Black, White, Slate30} from '../assets/styles/colors';
-import { size } from 'src/utilities/constants';
+import {size} from 'src/utilities/constants';
 
 const PillBubble = styled.div`
   display: flex;
@@ -73,11 +73,18 @@ interface PillProps {
 }
 
 export const Pill: FC<PillProps> = ({ currency, network, onCloseClick }) => {
-  const isMobile = () => window.innerWidth < Number(size.mobileL.slice(0, -2));
+  const [isMobile, setIsMobile] = useState(window.innerWidth < Number(size.mobileL.slice(0, -2)));
+  
+  useEffect(() => {
+    window.addEventListener('resize', () => {
+      setIsMobile(window.innerWidth < Number(size.mobileL.slice(0, -2)));
+    });
+  }, []);
+
   return (
     currency ?
       <PillBubble>
-        <img src={`https://bitpay.com/img/icon/currencies/${currency}.svg`} alt={currency} style={{height: isMobile() ? '60%' : '75%'}} />
+        <img src={`https://bitpay.com/img/icon/currencies/${currency}.svg`} alt={currency} style={{height: isMobile ? '60%' : '75%'}} />
         <NetworkLabel>{network}</NetworkLabel>
         <PillCloseButtonScope onClick={onCloseClick}>
           <PillCloseButtonCircle>
