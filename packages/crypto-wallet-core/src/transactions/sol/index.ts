@@ -1,5 +1,5 @@
 import * as SolComputeBudget from '@solana-program/compute-budget';
-import * as SolComputeMemo from "@solana-program/memo";
+import * as SolComputeMemo from '@solana-program/memo';
 import * as SolSystem from '@solana-program/system';
 import * as SolToken from '@solana-program/token';
 import * as SolKit from '@solana/kit'
