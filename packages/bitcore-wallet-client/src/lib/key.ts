@@ -344,32 +344,34 @@ export class Key {
     return keys;
   };
 
-  encrypt(password, opts) {
-    if (this.#xPrivKeyEncrypted)
+  encrypt(password, opts, algo?) {
+    if (this.#getPrivKeyEncrypted({ algo }))
       throw new Error('Private key already encrypted');
 
-    if (!this.#xPrivKey) throw new Error('No private key to encrypt');
+    if (!this.#getPrivKey({ algo })) throw new Error('No private key to encrypt');
 
-    this.#xPrivKeyEncrypted = sjcl.encrypt(password, this.#xPrivKey, opts);
-    if (!this.#xPrivKeyEncrypted) throw new Error('Could not encrypt');
+    const encryptedPrivKey = sjcl.encrypt(password, this.#xPrivKey, opts);
+    this.#setPrivKeyEncrypted({ algo, value: encryptedPrivKey });
+    if (!this.#getPrivKeyEncrypted({ algo })) throw new Error('Could not encrypt');
 
     if (this.#mnemonic)
       this.#mnemonicEncrypted = sjcl.encrypt(password, this.#mnemonic, opts);
 
-    this.#xPrivKey = null;
+    this.#setPrivKey({ algo, value: null });
     this.#mnemonic = null;
   };
 
-  decrypt(password) {
-    if (!this.#xPrivKeyEncrypted)
+  decrypt(password, algo?) {
+    if (!this.#getPrivKeyEncrypted({ algo }))
       throw new Error('Private key is not encrypted');
 
     try {
-      this.#xPrivKey = sjcl.decrypt(password, this.#xPrivKeyEncrypted);
+      const decryptedPrivKey = sjcl.decrypt(password, this.#getPrivKeyEncrypted({ algo }));
+      this.#setPrivKey({ algo, value: decryptedPrivKey });
       if (this.#mnemonicEncrypted) {
         this.#mnemonic = sjcl.decrypt(password, this.#mnemonicEncrypted);
       }
-      this.#xPrivKeyEncrypted = null;
+      this.#setPrivKeyEncrypted({ algo, value: null })
       this.#mnemonicEncrypted = null;
     } catch (ex) {
       log.error('error decrypting:', ex);
