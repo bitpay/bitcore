@@ -350,7 +350,7 @@ export class Key {
 
     if (!this.#getPrivKey({ algo })) throw new Error('No private key to encrypt');
 
-    const encryptedPrivKey = sjcl.encrypt(password, this.#xPrivKey, opts);
+    const encryptedPrivKey = sjcl.encrypt(password, this.#getPrivKey({ algo }), opts);
     this.#setPrivKeyEncrypted({ algo, value: encryptedPrivKey });
     if (!this.#getPrivKeyEncrypted({ algo })) throw new Error('Could not encrypt');
 
