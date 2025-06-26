@@ -758,6 +758,7 @@ Transaction.prototype.hasAllUtxoInfo = function() {
  * @return {Transaction} this, for chaining
  */
 Transaction.prototype.fee = function(amount) {
+  amount = parseInt(amount);
   $.checkArgument(!isNaN(amount), 'amount must be a number');
   this._fee = amount;
   this._updateChangeOutput();
@@ -773,6 +774,7 @@ Transaction.prototype.fee = function(amount) {
  * @return {Transaction} this, for chaining
  */
 Transaction.prototype.feePerKb = function(amount) {
+  amount = parseFloat(amount);
   $.checkArgument(!isNaN(amount), 'amount must be a number');
   this._feePerKb = amount;
   this._updateChangeOutput();
@@ -789,6 +791,7 @@ Transaction.prototype.feePerKb = function(amount) {
  * @return {Transaction} this, for chaining
  */
 Transaction.prototype.feePerByte = function(amount) {
+  amount = parseInt(amount);
   $.checkArgument(!isNaN(amount), 'amount must be a number');
   this._feePerByte = amount;
   this._updateChangeOutput();
@@ -821,6 +824,7 @@ Transaction.prototype.change = function(address) {
  * @return {Transaction} this, for chaining
  */
  Transaction.prototype.escrow = function(address, amount) {
+  amount = parseInt(amount);
   $.checkArgument(this.inputs.length > 0, 'inputs must have already been set when setting escrow');
   $.checkArgument(this.outputs.length > 0, 'non-change outputs must have already been set when setting escrow');
   $.checkArgument(!this.getChangeOutput(), 'change must still be unset when setting escrow');
@@ -870,10 +874,8 @@ Transaction.prototype.to = function(address, amount) {
     return this;
   }
 
-  $.checkArgument(
-    JSUtil.isNaturalNumber(amount),
-    'Amount is expected to be a positive integer'
-  );
+  amount = parseInt(amount);
+  $.checkArgument(JSUtil.isNaturalNumber(amount), 'Amount is expected to be a positive integer');
   this.addOutput(new Output({
     script: Script(new Address(address)),
     satoshis: amount
