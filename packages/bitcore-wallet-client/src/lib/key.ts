@@ -54,6 +54,20 @@ export interface KeyOptions {
   language?: string;
   algo?: string; // eddsa or ecdsa (Bitcoin) by default
 };
+interface AddKeyOptions {
+  passphrase?: string;
+  password?: string;
+  sjclOpts?: any;
+  algo?: string;
+  existingAlgo?: string;
+}
+
+interface SetFromMnemonicOptions {
+  passphrase?: string;
+  algo?: string;
+  password?: string;
+  sjclOpts?: any;
+}
 
 export class Key {
   // ecdsa
@@ -210,10 +224,7 @@ export class Key {
     return a.id == b.id || a.fingerPrint == b.fingerPrint || a.fingerPrintEDDSA == b.fingerPrintEDDSA;
   }
 
-  private setFromMnemonic(
-    m,
-    opts: { passphrase?: string; password?: string; sjclOpts?: any, algo?: string }
-  ) {
+  private setFromMnemonic(m, opts: SetFromMnemonicOptions) {
     const algos = opts.algo ? [opts.algo] : SUPPORTED_ALGOS;
     for (const algo of algos) {
       const xpriv = m.toHDPrivateKey(opts.passphrase, NETWORK, ALGO_TO_KEY_TYPE[algo]);
@@ -275,42 +286,73 @@ export class Key {
     this.#mnemonicHasPassphrase = null;
   }
   
-  // Adds an additonal supported key to the object
-  // By default it creates the new key based on the existing bitcoin key (ECDSA)
-  addKeyByAlgorithm(algo, opts: { passphrase?: string; password?: string; sjclOpts?: any, algo?: string, existingAlgo?: string  }) {
+  /**
+   * Adds an additional supported key to the object
+   * By default it creates the new key based on the existing bitcoin key (ECDSA)
+   */
+  addKeyByAlgorithm(algo: string, opts: AddKeyOptions = {}) {
     const existingAlgo = opts.existingAlgo || 'ECDSA';
+
     if (this.#mnemonic) {
-      if (this.#mnemonicHasPassphrase) {
-        if (!opts.passphrase) {
-          throw new Error('Missing Passphrase')
-        }
-        this.setFromMnemonic(this.#mnemonic, { passphrase: opts.passphrase, algo })
-      } else {
-        this.setFromMnemonic(this.#mnemonic, { algo });
-      }
-    } else if (this.#mnemonicEncrypted) {
-      if (!opts.password) {
-        throw new Error('Missing Password')
-      }
-      if (this.#mnemonicHasPassphrase) {
-        if (!opts.passphrase) {
-          throw new Error('Missing Passphrase')
-        }
-        this.setFromMnemonic(this.#mnemonic, { passphrase: opts.passphrase, algo, password: opts.password })
-      } else {
-        this.setFromMnemonic(this.#mnemonic, { algo, password: opts.password });
-      }
-    } else if (this.#getPrivKeyEncrypted({ algo: existingAlgo })) {
-      if (!opts.password) {
-        throw new Error('Missing Password')
-      }
-      const xPriv = sjcl.decrypt(opts.password, this.#getPrivKeyEncrypted({ algo: existingAlgo }));
+      this.#addKeyFromMnemonic(algo, this.#mnemonic, opts);
+      return;
+    }
+    if (this.#mnemonicEncrypted) {
+      this.#validatePassword(opts.password);
+      this.#addKeyFromMnemonic(algo, this.#mnemonicEncrypted, opts);
+      return;
+    }
+    if (this.#hasExistingPrivateKey(existingAlgo)) {
+      this.#addKeyFromExistingPrivateKey(algo, existingAlgo, opts);
+      return;
+    }
+
+    throw new Error(`No key source available. Missing private key for algorithm: ${existingAlgo}`);
+  }
+  
+  /**
+   * Creates key from plain mnemonic
+   */
+  #addKeyFromMnemonic(algo: string, mnemonic: string, opts: AddKeyOptions) {
+    const mnemonicOpts: SetFromMnemonicOptions = { algo };
+    
+    if (this.#mnemonicHasPassphrase) {
+      this.#validatePassphrase(opts.passphrase);
+      mnemonicOpts.passphrase = opts.passphrase;
+    }
+    
+    this.setFromMnemonic(this.#mnemonic, mnemonicOpts);
+  }
+  
+  /**
+   * Creates key from existing private key (encrypted or plain)
+   */
+  #addKeyFromExistingPrivateKey(algo: string, existingAlgo: string, opts: AddKeyOptions) {
+    const encryptedPrivKey = this.#getPrivKeyEncrypted({ algo: existingAlgo });
+    
+    if (encryptedPrivKey) {
+      this.#validatePassword(opts.password);
+      const xPriv = sjcl.decrypt(opts.password!, encryptedPrivKey);
       this.setFromExtendedPrivateKey(xPriv, { algo, password: opts.password });
-    } else if (this.#getPrivKey({ algo: existingAlgo })){
-      const xPriv = this.#getPrivKey({ algo: existingAlgo });
-      this.setFromExtendedPrivateKey(xPriv, { algo })
     } else {
-      throw new Error(`Missing Priv Key ${ existingAlgo }`);
+      const xPriv = this.#getPrivKey({ algo: existingAlgo });
+      this.setFromExtendedPrivateKey(xPriv, { algo });
+    }
+  }
+  
+  #hasExistingPrivateKey(existingAlgo: string): boolean {
+    return !!(this.#getPrivKeyEncrypted({ algo: existingAlgo }) || this.#getPrivKey({ algo: existingAlgo }));
+  }
+  
+  #validatePassword(password?: string) {
+    if (!password) {
+      throw new Error('Password is required for encrypted content');
+    }
+  }
+
+  #validatePassphrase(passphrase?: string) {
+    if (!passphrase) {
+      throw new Error('Passphrase is required for mnemonic with passphrase');
     }
   }
 
