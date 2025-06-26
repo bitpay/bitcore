@@ -126,33 +126,7 @@ export class Key {
         break;
       case 'extendedPrivateKey':
         $.checkArgument(x, 'Need to provide opts.seedData');
-
-        let xpriv;
-        try {
-          xpriv = new Bitcore.HDPrivateKey(x);
-        } catch (e) {
-          throw new Error('Invalid argument');
-        }
-        for (const algo of SUPPORTED_ALGOS) {
-          const params = { algo }
-          this.#setFingerprint({ value: xpriv.fingerPrint.toString('hex'),  ...params });
-          if (opts.password) {
-            this.#setPrivKeyEncrypted({
-              value: sjcl.encrypt(
-                opts.password,
-                xpriv.toString(),
-                opts
-              ),
-              ...params
-            });
-            const xPrivKeyEncrypted = this.#getPrivKeyEncrypted(params);
-            if (!xPrivKeyEncrypted) throw new Error('Could not encrypt');
-          } else {
-            this.#setPrivKey({ value: xpriv.toString(), ...params }); 
-          }
-        }
-        this.#mnemonic = null;
-        this.#mnemonicHasPassphrase = null;
+        this.setFromExtendedPrivateKey(x, opts);
         break;
       case 'object':
         $.shouldBeObject(x, 'Need to provide an object at opts.seedData');
@@ -240,7 +214,8 @@ export class Key {
     m,
     opts: { passphrase?: string; password?: string; sjclOpts?: any, algo?: string }
   ) {
-    for (const algo of SUPPORTED_ALGOS) {
+    const algos = opts.algo ? [opts.algo] : SUPPORTED_ALGOS;
+    for (const algo of algos) {
       const xpriv = m.toHDPrivateKey(opts.passphrase, NETWORK, ALGO_TO_KEY_TYPE[algo]);
       this.#setFingerprint({ value: xpriv.fingerPrint.toString('hex'), algo });
 
@@ -264,6 +239,78 @@ export class Key {
         this.#mnemonic = m.phrase;
         this.#mnemonicHasPassphrase = !!opts.passphrase;
       }
+    }
+  }
+
+  private setFromExtendedPrivateKey (extendedPrivateKey, opts: { password?: string; algo?: string }) {
+    let xpriv;
+    if (this.#mnemonic || this.#mnemonicEncrypted) {
+      throw new Error('Set key from existing mnemonic')
+    }
+    try {
+      xpriv = new Bitcore.HDPrivateKey(extendedPrivateKey);
+    } catch (e) {
+      throw new Error('Invalid argument');
+    }
+    const algos = opts.algo ? [opts.algo] : SUPPORTED_ALGOS;
+    for (const algo of algos) {
+      const params = { algo }
+      this.#setFingerprint({ value: xpriv.fingerPrint.toString('hex'),  ...params });
+      if (opts.password) {
+        this.#setPrivKeyEncrypted({
+          value: sjcl.encrypt(
+            opts.password,
+            xpriv.toString(),
+            opts
+          ),
+          ...params
+        });
+        const xPrivKeyEncrypted = this.#getPrivKeyEncrypted(params);
+        if (!xPrivKeyEncrypted) throw new Error('Could not encrypt');
+      } else {
+        this.#setPrivKey({ value: xpriv.toString(), ...params }); 
+      }
+    }
+    this.#mnemonic = null;
+    this.#mnemonicHasPassphrase = null;
+  }
+  
+  // Adds an additonal supported key to the object
+  // By default it creates the new key based on the existing bitcoin key (ECDSA)
+  addKeyByAlgorithm(algo, opts: { passphrase?: string; password?: string; sjclOpts?: any, algo?: string, existingAlgo?: string  }) {
+    const existingAlgo = opts.existingAlgo || 'ECDSA';
+    if (this.#mnemonic) {
+      if (this.#mnemonicHasPassphrase) {
+        if (!opts.passphrase) {
+          throw new Error('Missing Passphrase')
+        }
+        this.setFromMnemonic(this.#mnemonic, { passphrase: opts.passphrase, algo })
+      } else {
+        this.setFromMnemonic(this.#mnemonic, { algo });
+      }
+    } else if (this.#mnemonicEncrypted) {
+      if (!opts.password) {
+        throw new Error('Missing Password')
+      }
+      if (this.#mnemonicHasPassphrase) {
+        if (!opts.passphrase) {
+          throw new Error('Missing Passphrase')
+        }
+        this.setFromMnemonic(this.#mnemonic, { passphrase: opts.passphrase, algo, password: opts.password })
+      } else {
+        this.setFromMnemonic(this.#mnemonic, { algo, password: opts.password });
+      }
+    } else if (this.#getPrivKeyEncrypted({ algo: existingAlgo })) {
+      if (!opts.password) {
+        throw new Error('Missing Password')
+      }
+      const xPriv = sjcl.decrypt(opts.password, this.#getPrivKeyEncrypted({ algo: existingAlgo }));
+      this.setFromExtendedPrivateKey(xPriv, { algo, password: opts.password });
+    } else if (this.#getPrivKey({ algo: existingAlgo })){
+      const xPriv = this.#getPrivKey({ algo: existingAlgo });
+      this.setFromExtendedPrivateKey(xPriv, { algo })
+    } else {
+      throw new Error(`Missing Priv Key ${ existingAlgo }`);
     }
   }
 
