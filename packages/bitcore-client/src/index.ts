@@ -17,9 +17,4 @@ export {
 };
 
 // Types
-import * as StorageTypes from './types/storage';
-import * as WalletTypes from './types/wallet';
-export const Types = {
-  ...WalletTypes,
-  ...StorageTypes
-};
+export type * as Types from './types';
