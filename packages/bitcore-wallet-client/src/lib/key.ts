@@ -330,7 +330,7 @@ export class Key {
       mnemonicOpts.passphrase = opts.passphrase;
     }
     
-    this.setFromMnemonic(this.#mnemonic, mnemonicOpts);
+    this.setFromMnemonic(new Mnemonic(mnemonic), mnemonicOpts);
   }
   
   /**
