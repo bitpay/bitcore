@@ -5,4 +5,21 @@ import { Encryption } from './encryption';
 import { Storage } from './storage';
 import { ParseApiStream, StreamUtil } from './stream-util';
 import { Wallet } from './wallet';
-export { Wallet, Client, Storage, ParseApiStream, Encryption, StreamUtil, CryptoWalletCore };
+export * from './wallet';
+export {
+  Wallet,
+  Client,
+  Storage,
+  ParseApiStream,
+  Encryption,
+  StreamUtil,
+  CryptoWalletCore
+};
+
+// Types
+import * as StorageTypes from './types/storage';
+import * as WalletTypes from './types/wallet';
+export const Types = {
+  ...WalletTypes,
+  ...StorageTypes
+};
