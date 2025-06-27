@@ -74,6 +74,7 @@ export interface IChain {
   onCoin(coin: any): INotificationData | null;
   onTx(tx: any): INotificationData | null;
   getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void);
+  refreshTxData(server: WalletService, txp: TxProposal, opts: any, cb);
 }
 
 const chains: { [chain: string]: IChain } = {
@@ -226,6 +227,10 @@ class ChainProxy {
 
   getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void) {
     return this.get(wallet.chain).getReserve(server, wallet, cb);
+  }
+
+  refreshTxData(server, txp, opts, cb) {
+    return this.get(txp.chain).refreshTxData(server, txp, opts, cb);
   }
 }
 

@@ -280,10 +280,10 @@ export const Defaults = {
   BALANCE_CACHE_DURATION: 10,
 
   // Cache time for blockchain height (in ms)
-  // this is actually erased on 'new block' notifications
-  // so, 30m seems fine
-  BLOCKHEIGHT_CACHE_TIME: 30 * 60 * 1000,
-
+  BLOCKHEIGHT_CACHE_TIME: {
+    default: 30 * 60 * 1000, // this is erased on 'new block' notifications so, 30m seems fine
+    sol: 5 * 1000 // 5 seconds - Solana needs to maintain the freshes blockheight to land txs consistently
+  },
   // Cache time fee levels (in ms)
   FEE_LEVEL_CACHE_DURATION: 6 * 60 * 1000,
 

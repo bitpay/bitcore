@@ -792,6 +792,7 @@ Transaction.prototype.hasAllUtxoInfo = function() {
  * @return {Transaction} this, for chaining
  */
 Transaction.prototype.fee = function(amount) {
+  amount = parseInt(amount);
   $.checkArgument(!isNaN(amount), 'amount must be a number');
   this._fee = amount;
   this._updateChangeOutput();
@@ -807,6 +808,7 @@ Transaction.prototype.fee = function(amount) {
  * @return {Transaction} this, for chaining
  */
 Transaction.prototype.feePerKb = function(amount) {
+  amount = parseFloat(amount); // fee rate can be a fractional number (float)
   $.checkArgument(!isNaN(amount), 'amount must be a number');
   this._feePerKb = amount;
   this._updateChangeOutput();
@@ -822,7 +824,8 @@ Transaction.prototype.feePerKb = function(amount) {
  * @param {number} amount satoshis per Byte to be sent
  * @return {Transaction} this, for chaining
  */
-Transaction.prototype.feePerByte = function (amount) {
+Transaction.prototype.feePerByte = function(amount) {
+  amount = parseFloat(amount); // fee rate can be a fractional number (float)
   $.checkArgument(!isNaN(amount), 'amount must be a number');
   this._feePerByte = amount;
   this._updateChangeOutput();
@@ -882,10 +885,8 @@ Transaction.prototype.to = function(address, amount) {
     return this;
   }
 
-  $.checkArgument(
-    JSUtil.isNaturalNumber(amount),
-    'Amount is expected to be a positive integer'
-  );
+  amount = parseInt(amount);
+  $.checkArgument(JSUtil.isNaturalNumber(amount), 'Amount is expected to be a positive integer');
   this.addOutput(new Output({
     script: Script(new Address(address)),
     satoshis: amount
