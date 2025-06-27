@@ -804,7 +804,7 @@ Transaction.prototype.fee = function(amount) {
  * @return {Transaction} this, for chaining
  */
 Transaction.prototype.feePerKb = function(amount) {
-  amount = parseFloat(amount);
+  amount = parseFloat(amount); // fee rate can be a fractional number (float)
   $.checkArgument(!isNaN(amount), 'amount must be a number');
   this._feePerKb = amount;
   this._updateChangeOutput();
@@ -821,7 +821,7 @@ Transaction.prototype.feePerKb = function(amount) {
  * @return {Transaction} this, for chaining
  */
 Transaction.prototype.feePerByte = function(amount) {
-  amount = parseInt(amount);
+  amount = parseFloat(amount); // fee rate can be a fractional number (float)
   $.checkArgument(!isNaN(amount), 'amount must be a number');
   this._feePerByte = amount;
   this._updateChangeOutput();
