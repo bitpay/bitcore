@@ -72,6 +72,7 @@ interface Errors<T> {
   TSS_ROUND_MESSAGE_EXISTS: T;
   TSS_NON_PARTICIPANT: T;
   TSS_MAX_PARTICIPANTS_REACHED: T;
+  TSS_BWS_JOIN_SECRET_NOT_FOUND: T;
   TSS_NO_FINAL_SIGNATURE: T;
   TSS_INVALID_FINAL_SIGNATURE: T;
 };
@@ -142,6 +143,7 @@ const errors: Errors<string> = {
   TSS_ROUND_MESSAGE_EXISTS: 'You have already sent a message for this round',
   TSS_NON_PARTICIPANT: 'You are not a participant in this session',
   TSS_MAX_PARTICIPANTS_REACHED: 'Maximum number of participants reached',
+  TSS_BWS_JOIN_SECRET_NOT_FOUND: 'BWS join secret not found',
   TSS_NO_FINAL_SIGNATURE: 'No signature provided',
   TSS_INVALID_FINAL_SIGNATURE: 'Invalid signature provided',
 };

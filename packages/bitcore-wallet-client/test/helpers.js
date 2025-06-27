@@ -92,104 +92,88 @@ const helpers = {
     });
     return utxos;
   },
-  createAndJoinWallet: (clients, keys, m, n, opts, cb) => {
+  createAndJoinWallet: async (clients, keys, m, n, opts, cb) => {
     opts = opts || {};
 
-    var coin = opts.coin || 'btc';
-    var chain = opts.chain || coin;
-    var network = opts.network || 'testnet';
+    try {
+      const chain = opts.chain || opts.coin || 'btc';
+      const coin = opts.coin || chain;
+      const network = opts.network || 'testnet';
 
-    let keyOpts = {
-      useLegacyCoinType: opts.useLegacyCoinType,
-      useLegacyPurpose: opts.useLegacyPurpose,
-      passphrase: opts.passphrase
-    };
+      const keyOpts = {
+        useLegacyCoinType: opts.useLegacyCoinType,
+        useLegacyPurpose: opts.useLegacyPurpose,
+        passphrase: opts.passphrase
+      };
 
-    keyOpts.seedType = keyOpts.seedType || 'new';
-    keys[0] = opts.key || new Key(keyOpts);
-    let cred = keys[0].createCredentials(null, {
-      coin: coin,
-      chain: chain, // chain === coin for stored clients. NOT TRUE ANYMORE
-      network: network,
-      account: opts.account ? opts.account : 0,
-      n: n,
-      addressType: opts.addressType
-    });
-    clients[0].fromObj(cred);
-
-    clients[0].createWallet(
-      'mywallet',
-      'creator',
-      m,
-      n,
-      {
+      keyOpts.seedType = keyOpts.seedType || 'new';
+      keys[0] = opts.key || new Key(keyOpts);
+      const cred = keys[0].createCredentials(null, {
         coin: coin,
         chain: chain, // chain === coin for stored clients. NOT TRUE ANYMORE
         network: network,
-        singleAddress: !!opts.singleAddress,
-        doNotCheck: true,
-        useNativeSegwit: !!opts.useNativeSegwit,
-        tssKeyId: opts.tssKeyId
-      },
-      (err, secret) => {
-        if (err) console.log(err);
-        should.not.exist(err);
+        account: opts.account ? opts.account : 0,
+        n: n,
+        addressType: opts.addressType
+      });
+      clients[0].fromObj(cred);
 
-        if (n > 1) {
-          should.exist(secret);
+      const { secret } = await clients[0].createWallet(
+        'mywallet',
+        'creator',
+        m,
+        n,
+        {
+          coin: coin,
+          chain: chain, // chain === coin for stored clients. NOT TRUE ANYMORE
+          network: network,
+          singleAddress: !!opts.singleAddress,
+          doNotCheck: true,
+          useNativeSegwit: !!opts.useNativeSegwit,
+          tssKeyId: opts.tssKeyId
         }
+      );
 
-        async.series(
-          [
-            next => {
-              async.each(
-                Array.from({ length: n - 1 }, (_, i) => i + 1), // range [1, n-1]
-                (i, cb) => {
-                  keys[i] = keys[i] || new Key(keyOpts);
-                  clients[i].fromString(
-                    keys[i].createCredentials(null, {
-                      coin: coin,
-                      chain: chain, // chain === coin for stored clients. NOT TRUE ANYMORE
-                      network: network,
-                      account: 0,
-                      n: n,
-                      addressType: opts.addressType
-                    })
-                  );
-                  clients[i].joinWallet(
-                    secret,
-                    'copayer ' + i,
-                    {
-                      coin: coin,
-                      chain: chain
-                    },
-                    cb
-                  );
-                },
-                next
-              );
-            },
-            next => {
-              async.each(
-                Array.from({ length: n }, (_, i) => i), // range [0, n-1]
-                (i, cb) => {
-                  clients[i].openWallet(cb);
-                },
-                next
-              );
-            }
-          ],
-          err => {
-            should.not.exist(err);
-            return cb({
-              m: m,
-              n: n,
-              secret: secret
-            });
-          }
+      if (n > 1) {
+        should.exist(secret);
+      }
+
+      for (const i of Array.from({ length: n - 1 }, (_, i) => i + 1)) { // range [1, n-1]
+        keys[i] = keys[i] || new Key(keyOpts);
+        clients[i].fromString(
+          keys[i].createCredentials(null, {
+            coin: coin,
+            chain: chain, // chain === coin for stored clients. NOT TRUE ANYMORE
+            network: network,
+            account: 0,
+            n: n,
+            addressType: opts.addressType
+          })
+        );
+        await clients[i].joinWallet(
+          secret,
+          'copayer ' + i,
+          {
+            coin: coin,
+            chain: chain
+          },
         );
       }
-    );
+      for (const i of Array.from({ length: n }, (_, i) => i)) { // range [0, n-1]            
+        await clients[i].openWallet();
+      }
+      
+      const retval = {
+        m: m,
+        n: n,
+        secret: secret
+      };
+      if (cb) { cb(retval); }
+      return retval;
+    } catch (err) {
+      console.log(err);
+      should.not.exist(err);
+    }
   },
   tamperResponse: (clients, method, url, args, tamper, cb) => {
     clients = [].concat(clients);

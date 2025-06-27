@@ -373,7 +373,7 @@ export class BtcChain implements IChain {
         vout: x.vout,
         outputIndex: x.outputIndex,
         scriptPubKey: x.scriptPubKey,
-        satoshis: x.satoshis,
+        satoshis: parseInt(x.satoshis),
         publicKeys: x.publicKeys
       };
     });
@@ -394,10 +394,8 @@ export class BtcChain implements IChain {
     }
 
     for (const o of txp.outputs || []) {
-      $.checkState(
-        o.script || o.toAddress,
-        'Failed state: Output should have either toAddress or script specified at <getBitcoreTx()>'
-      );
+      o.amount = parseInt(o.amount);
+      $.checkState(o.script || o.toAddress, 'Failed state: Output should have either toAddress or script specified at <getBitcoreTx()>');
       if (o.script) {
         t.addOutput(
           new this.bitcoreLib.Transaction.Output({
@@ -410,7 +408,7 @@ export class BtcChain implements IChain {
       }
     }
 
-    t.fee(txp.fee);
+    t.fee(parseInt(txp.fee));
 
     if (txp.instantAcceptanceEscrow && txp.escrowAddress) {
       t.escrow(txp.escrowAddress.address, txp.instantAcceptanceEscrow + txp.fee);
@@ -424,18 +422,9 @@ export class BtcChain implements IChain {
 
     // Shuffle outputs for improved privacy
     if (t.outputs.length > 1) {
-      const outputOrder = _.reject(txp.outputOrder, (order: number) => {
-        return order >= t.outputs.length;
-      });
-      $.checkState(
-        t.outputs.length == outputOrder.length,
-        'Failed state: t.outputs.length not equal to outputOrder.length at <getBitcoreTx()>'
-      );
-      t.sortOutputs(outputs => {
-        return _.map(outputOrder, i => {
-          return outputs[i];
-        });
-      });
+      const outputOrder = (txp.outputOrder || []).filter((order: number) => order < t.outputs.length);
+      $.checkState(t.outputs.length == outputOrder.length, 'Failed state: t.outputs.length not equal to outputOrder.length at <getBitcoreTx()>');
+      t.sortOutputs(outputs => outputOrder.map(i => outputs[i]));
     }
 
     // Validate actual inputs vs outputs independently of Bitcore
@@ -453,9 +442,9 @@ export class BtcChain implements IChain {
 
     if (opts.signed) {
       const sigs = txp.getCurrentSignatures();
-      _.each(sigs, x => {
+      for (const x of sigs) {
         this.addSignaturesToBitcoreTx(t, txp.inputs, txp.inputPaths, x.signatures, x.xpub, txp.signingMethod);
-      });
+      }
     }
     return t;
   }
@@ -911,7 +900,7 @@ export class BtcChain implements IChain {
   }
 
   checkValidTxAmount(output): boolean {
-    if (!_.isNumber(output.amount) || _.isNaN(output.amount) || output.amount <= 0) {
+    if (!Utils.isNumber(output.amount) || output.amount <= 0) {
       return false;
     }
     return true;

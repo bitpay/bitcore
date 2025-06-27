@@ -628,24 +628,6 @@ export class WalletService implements IWalletService {
       return cb(new ClientError('Regtest is not allowed for this environment'));
     }
 
-    const derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP44;
-    let addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2PKH : Constants.SCRIPT_TYPES.P2SH;
-
-    if (opts.useNativeSegwit && Utils.checkValueInCollection(opts.chain, Constants.NATIVE_SEGWIT_CHAINS)) {
-      switch (Number(opts.segwitVersion)) {
-        case 0:
-        default:
-          addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
-          break;
-        case 1:
-          if (!Utils.checkValueInCollection(opts.chain, Constants.TAPROOT_CHAINS)) {
-            return cb(new ClientError('Invalid chain for P2TR'));
-          }
-          addressType = Constants.SCRIPT_TYPES.P2TR;
-          break;
-      }
-    }
-
     try {
       // NOTE: this is just a shared pub key as part of the multisig
       // join secret. It's NOT the wallet's main xPubKey.
@@ -663,16 +645,38 @@ export class WalletService implements IWalletService {
       if (!multisig && !opts.tssKeyId) {
         return cb(new ClientError('TSS key session id is required for this chain'));
       }
-      if (opts.tssKeyId) {
-        opts.tssVersion = opts.tssVersion || Defaults.TSS_KEYGEN_SCHEME_VERSION;
-        if (!(opts.tssVersion > 0 && opts.tssVersion <= Constants.TSS_KEYGEN_SCHEME_VERSION_MAX)) {
-          return cb(new ClientError('Invalid TSS version'));
-        }
+    }
 
-        const keySession = await storage.fetchTssKeyGenSession({ id: opts.tssKeyId });
-        if (!keySession || !keySession.sharedPublicKey) {
-          return cb(new ClientError('Invalid TSS key session id'));
-        }
+    if (opts.tssKeyId) {
+      opts.tssVersion = opts.tssVersion || Defaults.TSS_KEYGEN_SCHEME_VERSION;
+      if (!(opts.tssVersion > 0 && opts.tssVersion <= Constants.TSS_KEYGEN_SCHEME_VERSION_MAX)) {
+        return cb(new ClientError('Invalid TSS version'));
+      }
+
+      const keySession = await storage.fetchTssKeyGenSession({ id: opts.tssKeyId });
+      if (!keySession || !keySession.sharedPublicKey) {
+        return cb(new ClientError('Invalid TSS key session id'));
+      }
+      // TSS wallets behave like a single-sig
+      opts.m = 1;
+      opts.n = 1;
+    }
+
+    const derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP44;
+    let addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2PKH : Constants.SCRIPT_TYPES.P2SH;
+
+    if (opts.useNativeSegwit && Utils.checkValueInCollection(opts.chain, Constants.NATIVE_SEGWIT_CHAINS)) {
+      switch (Number(opts.segwitVersion)) {
+        case 0:
+        default:
+          addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
+          break;
+        case 1:
+          if (!Utils.checkValueInCollection(opts.chain, Constants.TAPROOT_CHAINS)) {
+            return cb(new ClientError('Invalid chain for P2TR'));
+          }
+          addressType = Constants.SCRIPT_TYPES.P2TR;
+          break;
       }
     }
 
@@ -1206,7 +1210,7 @@ export class WalletService implements IWalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
-        if (opts.hardwareSourcePublicKey || opts.clientDerivedPublicKey) {
+        if ((opts.hardwareSourcePublicKey || opts.clientDerivedPublicKey) && !opts.tssKeyId) {
           this._addCopayerToWallet(wallet, opts, cb);
           return;
         }
@@ -1267,6 +1271,7 @@ export class WalletService implements IWalletService {
           if (!keySession.participants.includes(copayerId)) {
             return cb(Errors.TSS_NON_PARTICIPANT);
           }
+          return this._addCopayerToWallet(wallet, opts, cb);
         }
 
         if (wallet.copayers.length == wallet.n) return cb(Errors.WALLET_FULL);
@@ -3171,7 +3176,7 @@ export class WalletService implements IWalletService {
         {
           txProposalId: opts.txProposalId
         },
-        async (err, txp) => {
+        async (err, txp: TxProposal) => {
           if (err) return cb(err);
 
           if (opts.maxTxpVersion < txp.version) {

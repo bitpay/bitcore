@@ -1838,6 +1838,18 @@ export class Storage {
     );
   }
 
+  async storeTssKeyBwsJoinSecret({ id, secret }: { id: string; secret: string; }) {
+    return this.db.collection(collections.TSS_KEYGEN).updateOne({
+      id
+    },
+    {
+      $set: {
+        bwsJoinSecret: secret
+      }
+    },
+    { upsert: false });
+  }
+
   async fetchTssSigSession({ id }: { id: string; }) {
     const doc = await this.db.collection(collections.TSS_SIGN).findOne({ id });
     if (!doc) {

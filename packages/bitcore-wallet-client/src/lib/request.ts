@@ -16,9 +16,9 @@ interface Headers {
 
 type RequestCallback = (err: any, body?: any, header?: any) => void;
 
-export interface RequestResponse {
-  body: any;
-  header: any
+export interface RequestResponse<ResponseBody = any, ResponseHeader = any> {
+  body: ResponseBody;
+  header: ResponseHeader;
 };
 
 export class Request<CredT = Credentials> {
@@ -105,7 +105,7 @@ export class Request<CredT = Credentials> {
    * @param {RequestCallback} [cb] callback function
    * @returns
    */
-  async doRequest<T = object>(method: string, url: string, args: T, useSession?: boolean, cb?: RequestCallback): Promise<RequestResponse | void> {
+  async doRequest<ReqBodyT, ResBodyT>(method: string, url: string, args: ReqBodyT, useSession?: boolean, cb?: RequestCallback): Promise<RequestResponse<ResBodyT>> {
     var headers = this.getHeaders(method, url, args, useSession);
 
     var r = this.r[method](this.baseUrl + url);
@@ -126,7 +126,7 @@ export class Request<CredT = Credentials> {
     r.timeout(this.timeout);
 
     try {
-      const retval = await new Promise<RequestResponse>((resolve, reject) => {
+      const retval = await new Promise<RequestResponse<ResBodyT>>((resolve, reject) => {
         r.end((err, res) => {
           if (!res) {
             return reject(new Errors.CONNECTION_ERROR());
@@ -154,10 +154,10 @@ export class Request<CredT = Credentials> {
           return resolve({ body: res.body, header: res.header });
         });
       });
-      if (cb) return cb(null, retval.body, retval.header);
+      if (cb) cb(null, retval.body, retval.header);
       return retval;
     } catch (err) {
-      if (cb) return cb(err);
+      if (cb) { cb(err); return {} as RequestResponse; }
       throw err;
     }
   }
@@ -210,9 +210,9 @@ export class Request<CredT = Credentials> {
    * @param {RequestCallback} [cb] callback function
    * @returns 
    */
-  async post<T = object>(url: string, body?: T, cb?: RequestCallback) {
-    body = body || {} as T;
-    return this.doRequest<T>('post', url, body, false, cb);
+  async post<ReqBodyT = object, ResBodyT = any>(url: string, body?: ReqBodyT, cb?: RequestCallback) {
+    body = body || {} as ReqBodyT;
+    return this.doRequest<ReqBodyT, ResBodyT>('post', url, body, false, cb);
   }
 
   /**
@@ -222,9 +222,9 @@ export class Request<CredT = Credentials> {
    * @param {RequestCallback} [cb] callback function
    * @returns 
    */
-  async put<T = object>(url: string, body?: T, cb?: RequestCallback) {
-    body = body || {} as T;
-    return this.doRequest<T>('put', url, body, false, cb);
+  async put<ReqBodyT = object, ResBodyT = any>(url: string, body?: ReqBodyT, cb?: RequestCallback) {
+    body = body || {} as ReqBodyT;
+    return this.doRequest<ReqBodyT, ResBodyT>('put', url, body, false, cb);
   }
 
   /**
@@ -233,11 +233,11 @@ export class Request<CredT = Credentials> {
    * @param {RequestCallback} [cb] callback function
    * @returns 
    */
-  async get(url: string, cb?: RequestCallback) {
+  async get<ResBodyT = any>(url: string, cb?: RequestCallback) {
     url += url.indexOf('?') > 0 ? '&' : '?';
     url += 'r=' + Math.round(Math.random() * 100000);
 
-    return this.doRequest('get', url, {}, false, cb);
+    return this.doRequest<object, ResBodyT>('get', url, {}, false, cb);
   }
 
   /**
@@ -246,11 +246,11 @@ export class Request<CredT = Credentials> {
    * @param {RequestCallback} [cb] callback function
    * @returns 
    */
-  async delete(url: string, cb?: RequestCallback) {
-    return this.doRequest('delete', url, {}, false, cb);
+  async delete<ResBodyT = any>(url: string, cb?: RequestCallback) {
+    return this.doRequest<object, ResBodyT>('delete', url, {}, false, cb);
   }
 
-  getWithLogin(url: string, cb: RequestCallback) {
+  getWithLogin(url: string, cb?: RequestCallback) {
     url += url.indexOf('?') > 0 ? '&' : '?';
     url += 'r=' + Math.round(Math.random() * 100000);
     return this.doRequestWithLogin('get', url, {}, cb);
@@ -272,21 +272,21 @@ export class Request<CredT = Credentials> {
    * @param {RequestCallback} [cb] callback function
    * @param {boolean} [_retry] Retry if auth fails. Only used internally - do not set this parameter
    */
-  async doRequestWithLogin<T = object>(method: string, url: string, body: T, cb?: RequestCallback, _retry = true) {
+  async doRequestWithLogin<ReqBodyT = object, ResBodyT = any>(method: string, url: string, body: ReqBodyT, cb?: RequestCallback, _retry = true): Promise<RequestResponse<ResBodyT>> {
     try {
       if (!this.session) {
         await this.doLogin();
       }
-      const result = await this.doRequest(method, url, body, true) as RequestResponse;
-      if (cb) return cb(null, result.body, result.header);
+      const result = await this.doRequest<ReqBodyT, ResBodyT>(method, url, body, true) as RequestResponse;
+      if (cb) { cb(null, result.body, result.header); }
       return result;
     } catch (err) {
       if (err instanceof Errors.NOT_AUTHORIZED && _retry) {
         this.session = null;
-        return this.doRequestWithLogin(method, url, body, cb, false);
+        return this.doRequestWithLogin<ReqBodyT, ResBodyT>(method, url, body, cb, false);
       }
-      if (!cb) throw err;
-      return cb(err); 
+      if (cb) cb(err);
+      else throw err; 
     }
   }
 

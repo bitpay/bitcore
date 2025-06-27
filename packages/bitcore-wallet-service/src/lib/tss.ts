@@ -32,10 +32,6 @@ class TssKeyGenClass {
       throw Errors.TSS_NON_PARTICIPANT;
     }
 
-    if (session.sharedPublicKey) {
-      return { publicKey: session.sharedPublicKey };
-    }
-
     const otherPartyMsgs = session.rounds[round].filter(m => m.fromPartyId != partyId);
     if (otherPartyMsgs.length === session.n - 1) {
       const messages = otherPartyMsgs.map(m => m.messages);
@@ -180,7 +176,14 @@ class TssKeyGenClass {
     }
   }
 
-  async storeKey(params: { id: string; message: Partial<ITssKeyMessageObject> & { encryptedKeyChain: string; }; copayerId: string; }) {
+  async storeKey(params: {
+    id: string;
+    message: {
+      publicKey: ITssKeyMessageObject['publicKey'];
+      encryptedKeyChain: string;
+    };
+    copayerId: string;
+  }) {
     const { id, message, copayerId } = params;
     const { publicKey, encryptedKeyChain } = message;
     if (!publicKey) {
@@ -212,6 +215,52 @@ class TssKeyGenClass {
       }
     }
   }
+
+  async storeBwsJoinSecret(params: {
+    id: string;
+    secret: string;
+    copayerId: string;
+  }) {
+    const { id, secret, copayerId } = params;
+    if (!secret) {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('No BWS join secret provided');
+    }
+    if (typeof secret !== 'string') {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid BWS join secret provided');
+    }
+    const storage = WalletService.getStorage();
+    const session = await storage.fetchTssKeyGenSession({ id });
+
+    if (!session) {
+      throw Errors.TSS_SESSION_NOT_FOUND;
+    }
+
+    if (session.participants.indexOf(copayerId) !== 0) {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Only the session creator can store the BWS join secret');
+    }
+
+    const result = await storage.storeTssKeyBwsJoinSecret({ id, secret });
+    if (!result.result.ok) {
+      logger.error('Failed to store TSS key generation BWS join secret %o %o', id, result);
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS key generation BWS join secret');
+    }
+  }
+
+  async getBwsJoinSecret(params: { id: string; copayerId: string; }) {
+    const { id, copayerId } = params;
+    const storage = WalletService.getStorage();
+    const session = await storage.fetchTssKeyGenSession({ id });
+    if (!session) {
+      throw Errors.TSS_SESSION_NOT_FOUND;
+    }
+    if (session.participants.indexOf(copayerId) === -1) {
+      throw Errors.TSS_NON_PARTICIPANT;
+    }
+    if (!session.bwsJoinSecret) {
+      throw Errors.TSS_BWS_JOIN_SECRET_NOT_FOUND;
+    }
+    return session.bwsJoinSecret;
+  }
 };
 
 export const TssKeyGen = new TssKeyGenClass();
@@ -232,10 +281,6 @@ class TssSignClass {
     const party = session.participants.find(p => p.copayerId === copayerId);
     if (!party) {
       throw Errors.TSS_NON_PARTICIPANT;
-    }
-
-    if (session.signature) {
-      return { signature: session.signature };
     }
 
     const otherPartyMsgs = session.rounds[round].filter(m => m.fromPartyId != party.partyId);

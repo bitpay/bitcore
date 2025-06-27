@@ -1,5 +1,5 @@
 import { ECDSA } from 'bitcore-tss';
-import { BitcoreLib } from 'crypto-wallet-core';
+import { BitcoreLib, ethers } from 'crypto-wallet-core';
 import { EventEmitter } from 'events';
 import { Credentials } from './credentials';
 import { Request, RequestResponse } from './request';
@@ -50,7 +50,7 @@ export class TssSign extends EventEmitter {
    * @param {ITssConstructorParams} params Constructor parameters
    * @param {EventEmitterOptions} eventOpts Options object for EventEmitter
    */
-  constructor(params: ITssSignConstructorParams, eventOpts) {
+  constructor(params: ITssSignConstructorParams, eventOpts?) {
     super(eventOpts);
     $.checkArgument(params.baseUrl, 'Missing required param: baseUrl');
     $.checkArgument(params.credentials, 'Missing required param: credentials');
@@ -72,9 +72,13 @@ export class TssSign extends EventEmitter {
    */
   async start(params: {
     /**
-     * Message to be signed
+     * Message to be signed. Mutually exclusive with `messageHash`.
      */
-    message: string | Buffer;
+    message?: string | Buffer;
+    /**
+     * Pre-hashed message to be signed. Mutually exclusive with `message`.
+     */
+    messageHash?: Buffer;
     /**
      * Optional ID for the session. If not provided, ID will be generated
      */
@@ -83,16 +87,35 @@ export class TssSign extends EventEmitter {
      * Optional derivation path for the key to sign with
      */
     derivationPath?: string;
+    /**
+     * Password to decrypt the TSS private key share
+     */
+    password?: string;
+    /**
+     * Encoding of the `message` (if a string)
+     * @default 'utf8'
+     */
+    encoding?: 'hex' | 'base64' | 'utf8' | 'binary';
   }): Promise<TssSign> {
-    let { message } = params;
-    const { id, derivationPath } = params;
-    $.checkArgument(Buffer.isBuffer(message) || typeof message === 'string', 'message must be a string or Buffer');
+    let { message, messageHash } = params;
+    const { id, derivationPath, password, encoding = 'utf8' } = params;
+    $.checkArgument(messageHash || message, 'message or messageHash must be provided');
+    $.checkArgument(!messageHash || Buffer.isBuffer(messageHash), 'messageHash must be a Buffer');
+    $.checkArgument(!message  || Buffer.isBuffer(message) || typeof message === 'string', 'message must be a string or Buffer');
     $.checkArgument(id == null || typeof id === 'string', 'id must be a string or not provided');
+    $.checkArgument(password || this.#tssKey.keychain.privateKeyShare, 'password is required to decrypt the TSS private key share');
     
-    message = Buffer.isBuffer(message) ? message : Buffer.from(message);
-    const messageHash = BitcoreLib.crypto.Hash.sha256(message);
-    const sign = new ECDSA.Sign({
-      keychain: this.#tssKey.keychain,
+
+    if (!messageHash && typeof message === 'string') {
+      if (encoding === 'hex') {
+        message = message.startsWith('0x') ? message.slice(2) : message; // Remove '0x' prefix if present
+      }
+      message = Buffer.from(message, encoding);
+      messageHash = Buffer.from(ethers.keccak256(message).slice(2), 'hex'); // TODO this is fragile and EVM-specific
+    }
+
+    this.#sign = new ECDSA.Sign({
+      keychain: this.#tssKey.get(password).keychain,
       partyId: this.#tssKey.metadata.partyId,
       m: this.#tssKey.metadata.m,
       n: this.#tssKey.metadata.n,
@@ -103,10 +126,9 @@ export class TssSign extends EventEmitter {
 
     this.id = id || BitcoreLib.crypto.Hash.sha256(messageHash).toString('hex');
 
-    const msg = await sign.initJoin();
+    const msg = await this.#sign.initJoin();
     const m = this.#tssKey.metadata.m;
     await this.#request.post('/v1/tss/sign/' + this.id, { message: msg, m });
-    this.#sign = sign;
     return this;
   }
 
@@ -174,7 +196,7 @@ export class TssSign extends EventEmitter {
         const prevRound = thisRound - 1; // Get previous round's messages
         const { body } = await this.#request.get(`/v1/tss/sign/${this.id}/${prevRound}`) as RequestResponse;
 
-        if (body.messages?.length === this.#tssKey.metadata.m - 1) {
+        if (body.messages?.length === this.#tssKey.metadata.m - 1 && !body.signature) {
           this.emit('roundready', thisRound);
           // Snapshot the session in case there's an API failure
           //  since this.#sign can't re-process the messages
@@ -248,6 +270,15 @@ export class TssSign extends EventEmitter {
   getSignature(): ISignature | null {
     if (this.#sign.isSignatureReady()) {
       return this.#sign.getSignature();
+    }
+    return null;
+  }
+
+  async getSignatureFromServer(): Promise<ISignature | null> {
+    // round doesn't matter. It should always include the signature if it exists
+    const { body } = await this.#request.get(`/v1/tss/sign/${this.id}/1`) as RequestResponse;
+    if (body.signature) {
+      return body.signature;
     }
     return null;
   }

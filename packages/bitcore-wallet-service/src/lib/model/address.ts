@@ -100,7 +100,13 @@ export class Address {
     $.checkArgument(Utils.checkValueInCollection(scriptType, Constants.SCRIPT_TYPES));
     const externSourcePublicKey = hardwareSourcePublicKey || clientDerivedPublicKey;
     if (externSourcePublicKey) {
-      const bitcoreAddress = Deriver.getAddress(chain.toUpperCase(), network, externSourcePublicKey, scriptType);
+      let bitcoreAddress
+      try {
+        bitcoreAddress = Deriver.deriveAddressWithPath(chain.toUpperCase(), network, externSourcePublicKey, path, scriptType);
+      } catch {
+        // some chains (e.g. SOL) cannot derive address along path from pub key.
+        bitcoreAddress = Deriver.getAddress(chain.toUpperCase(), network, externSourcePublicKey, scriptType);
+      }
       return {
         address: bitcoreAddress.toString(),
         path,
@@ -108,7 +114,7 @@ export class Address {
       }
     }
 
-    let publicKeys = _.map(publicKeyRing, item => {
+    let publicKeys = (publicKeyRing || []).map(item => {
       const xpub = Address.Bitcore[chain]
         ? new Address.Bitcore[chain].HDPublicKey(item.xPubKey)
         : new Address.Bitcore.btc.HDPublicKey(item.xPubKey);
@@ -142,7 +148,7 @@ export class Address {
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(
-          _.isArray(publicKeys) && publicKeys.length == 1,
+          Array.isArray(publicKeys) && publicKeys.length == 1,
           'Failed state: publicKeys length < 1 or publicKeys not an array at <_deriveAddress()>'
         );
 
@@ -166,10 +172,10 @@ export class Address {
     }
 
     return {
-      // bws still use legacy addresses for BCH
+      // bws still uses legacy addresses for BCH
       address: addrStr,
       path,
-      publicKeys: _.invokeMap(publicKeys, 'toString')
+      publicKeys: publicKeys.map(pk => pk.toString())
     };
   }
 

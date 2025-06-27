@@ -8,6 +8,8 @@ const { vectors } = require('./data/vectors.ecdsa');
 
 
 describe('ECDSA', function() {
+  this.timeout(5000);
+
   for (const vector of vectors) {
     if (vector.skip) { continue; }
 
@@ -257,21 +259,19 @@ describe('ECDSA', function() {
               keychains[party].reducedPrivateKeyShare = keyChain.reducedPrivateKeyShare;
 
               const pubkey = keychains[party].commonKeyChain.toString('hex').substring(0, 66);
-              const chaincode = keychains.party0.commonKeyChain.toString('hex').substring(66);
-              if (vector.evmAddress) {
-                const evmAddress = CWC.Deriver.getAddress('ETH', 'mainnet', pubkey);
-                assert.strictEqual(evmAddress, vector.evmAddress.address);
-              }
-              if (vector.btcAddress) {
-                const xPubKey = new bitcoreLib.HDPublicKey({
-                  network: 'livenet',
-                  depth: 0,
-                  parentFingerPrint: 0,
-                  childIndex: 0,
-                  publicKey: pubkey,
-                  chainCode: chaincode
-                });
-                assert.strictEqual(xPubKey.toString(), vector.btcAddress.xPub);
+              const chaincode = keychains[party].commonKeyChain.toString('hex').substring(66);
+              const xPubKey = new bitcoreLib.HDPublicKey({
+                network: 'livenet',
+                depth: 0,
+                parentFingerPrint: 0,
+                childIndex: 0,
+                publicKey: pubkey,
+                chainCode: chaincode
+              });
+              assert.strictEqual(xPubKey.toString(), vector.xPubKey);
+              for (const vectorAddress of vector.addresses) {
+                const address = CWC.Deriver.deriveAddressWithPath(vectorAddress.chain, vectorAddress.network, xPubKey, vectorAddress.path, vectorAddress.addressType);
+                assert.strictEqual(address, vectorAddress.address);
               }
             });
           }
@@ -542,6 +542,11 @@ describe('ECDSA', function() {
                   assert.notEqual(sig.v, null);
                   assert.notEqual(sig.pubKey, null);
                   const signed = CWC.Transactions.applySignature({ chain: signingVector.chain, tx: signingVector.rawTx, signature: sig });
+                  if (signingVector.chain === 'ETH') {
+                    const parsedTx = CWC.ethers.Transaction.from(signed);
+                    const address = vector.addresses.find(a => a.chain === signingVector.chain && (!signingVector.network || a.network == signingVector.network) && a.path === signingVector.derivationPath);
+                    assert.strictEqual(parsedTx.from, address.address);
+                  }
                   assert.notEqual(signed, null);
                 });
               }

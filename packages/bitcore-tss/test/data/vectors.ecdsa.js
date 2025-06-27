@@ -6,12 +6,12 @@ module.exports.vectors = [
   {
     m: 2,
     n: 3,
-    evmAddress: {
-      address: '0xD57cF5ac4CC763D83E0892a07a02fE1BBD123b27'
-    },
-    btcAddress: {
-      xPub: 'xpub661MyMwAqRbcGvRAUJpL6nMhYqanMb6xT7fJw7au2CxhA4Ye661AS6JHze8vGLdaxsxwmqw7g8iXKJn4TgC4Rzq87GueZbzzv1jz6XMsnr2',
-    },
+    xPubKey: 'xpub661MyMwAqRbcGvRAUJpL6nMhYqanMb6xT7fJw7au2CxhA4Ye661AS6JHze8vGLdaxsxwmqw7g8iXKJn4TgC4Rzq87GueZbzzv1jz6XMsnr2',
+    addresses: [
+      { chain: 'ETH', network: 'mainnet', address: '0xD57cF5ac4CC763D83E0892a07a02fE1BBD123b27', path: 'm' },
+      { chain: 'ETH', network: 'mainnet', address: '0x8CeAD6bE77E8668016658Ab4a8f6B2B21C7C1959', path: 'm/0/0'},
+      { chain: 'BTC', network: 'mainnet', address: 'bc1qlhghx9pt5sj805cx6gwapgdgvvk27uea2nehv2', path: 'm', addressType: 'p2wpkh' },
+    ],
     party0: {
       seed: Buffer.from('0d18dd84ff2e7e462bdca9fb362dce0590badac80438234a6be4b859d674355d', 'hex'),
       keychain: twoOfThree.party0Key,
@@ -201,17 +201,23 @@ module.exports.vectors = [
       chain: 'ETH',
       rawTx: '0xeb8083030d4782520894145938752bad526cb27f03ffb02775c43973ab8387038d7ea4c68000808205398080',
       messageHash: '516ab037171ee1a7787cbe07c28948dd0252ea60b7f40ee6ffbb7e1271f691ea'
+    }, {
+      description: 'Sign Ethereum transaction with path m/0/0',
+      derivationPath: 'm/0/0',
+      chain: 'ETH',
+      rawTx: '0xeb8083030d4782520894145938752bad526cb27f03ffb02775c43973ab8387038d7ea4c68000808205398080',
+      messageHash: '516ab037171ee1a7787cbe07c28948dd0252ea60b7f40ee6ffbb7e1271f691ea'
     }]
   },
   {
     m: 3,
     n: 3,
-    evmAddress: {
-      address: '0xD57cF5ac4CC763D83E0892a07a02fE1BBD123b27'
-    },
-    btcAddress: {
-      xPub: 'xpub661MyMwAqRbcGMxfc55KDe3yBDLATHWyyERQuybvR7umom3z8QAQB9q2zDB1GQcnvcJfhiytC5sBxt8HsGLq3823rvNMEdp2sRZWHCpbvow',
-    },
+    xPubKey: 'xpub661MyMwAqRbcGMxfc55KDe3yBDLATHWyyERQuybvR7umom3z8QAQB9q2zDB1GQcnvcJfhiytC5sBxt8HsGLq3823rvNMEdp2sRZWHCpbvow',
+    addresses: [
+      { chain: 'ETH', network: 'mainnet', address: '0xD57cF5ac4CC763D83E0892a07a02fE1BBD123b27', path: 'm' },
+      { chain: 'ETH', network: 'mainnet', address: '0x52992F2D78E26663001890955513cC0D63D78191', path: 'm/0/0' },
+      { chain: 'BTC', network: 'mainnet', address: 'bc1qlhghx9pt5sj805cx6gwapgdgvvk27uea2nehv2', path: 'm', addressType: 'p2wpkh' },
+    ],
     party0: {
       seed: Buffer.from('0d18dd84ff2e7e462bdca9fb362dce0590badac80438234a6be4b859d674355d', 'hex'),
       keychain: threeOfThree.party0Key,
@@ -401,17 +407,23 @@ module.exports.vectors = [
       chain: 'ETH',
       rawTx: '0xeb8083030d4782520894145938752bad526cb27f03ffb02775c43973ab8387038d7ea4c68000808205398080',
       messageHash: '516ab037171ee1a7787cbe07c28948dd0252ea60b7f40ee6ffbb7e1271f691ea'
+    }, {
+      description: 'Sign Ethereum transaction with path m/0/0',
+      derivationPath: 'm/0/0',
+      chain: 'ETH',
+      rawTx: '0xeb8083030d4782520894145938752bad526cb27f03ffb02775c43973ab8387038d7ea4c68000808205398080',
+      messageHash: '516ab037171ee1a7787cbe07c28948dd0252ea60b7f40ee6ffbb7e1271f691ea'
     }]
   },
   {
     m: 1,
     n: 4,
-    evmAddress: {
-      address: '0xEa08Bdc953DFd1Fd017c3Bb17B781Be13A830aD7'
-    },
-    btcAddress: {
-      xPub: 'xpub661MyMwAqRbcEdUKkUS4CfQNmWXn74P1HM9GPsKtkhgFL6GfJNH4QZJ9XeYibd6mtCn35yzsx5i2BQXY9Tqd6YPaXaMsbnpmBw9AWuNwNCB',
-    },
+    xPubKey: 'xpub661MyMwAqRbcEdUKkUS4CfQNmWXn74P1HM9GPsKtkhgFL6GfJNH4QZJ9XeYibd6mtCn35yzsx5i2BQXY9Tqd6YPaXaMsbnpmBw9AWuNwNCB',
+    addresses: [
+      { chain: 'ETH', network: 'mainnet', address: '0xEa08Bdc953DFd1Fd017c3Bb17B781Be13A830aD7', path: 'm' },
+      { chain: 'ETH', network: 'mainnet', address: '0x7C686844e293ff19b6BF12AA4980206d30071214', path: 'm/0/0' },
+      { chain: 'BTC', network: 'mainnet', address: 'bc1q566z27mx3x9qjmg0s2gjxptwj5wqn3cddnrgm2', path: 'm', addressType: 'p2wpkh' },
+    ],
     party0: {
       seed: Buffer.from('0d18dd84ff2e7e462bdca9fb362dce0590badac80438234a6be4b859d674355d', 'hex'),
       keychain: oneOfFour.party0Key,
@@ -697,7 +709,13 @@ module.exports.vectors = [
       derivationPath: 'm',
       chain: 'ETH',
       rawTx: '0xeb8083030d4782520894145938752bad526cb27f03ffb02775c43973ab8387038d7ea4c68000808205398080',
-      messageHash: '516ab037171ee1a7787cbe07c28948dd0252ea60b7f40ee6ffbb7e1271f691ea'
+      messageHash: '516ab037171ee1a7787cbe07c28948dd0252ea60b7f40ee6ffbb7e1271f691ea' // keccak256(rawTx)
+    }, {
+      description: 'Sign Ethereum transaction with path m/0/0',
+      derivationPath: 'm/0/0',
+      chain: 'ETH',
+      rawTx: '0xeb8083030d4782520894145938752bad526cb27f03ffb02775c43973ab8387038d7ea4c68000808205398080',
+      messageHash: '516ab037171ee1a7787cbe07c28948dd0252ea60b7f40ee6ffbb7e1271f691ea' // keccak256(rawTx)
     }]
   }
 ];

@@ -37,6 +37,10 @@ export class TssRouter {
       try {
         const { id, round } = req.params as { [key: string]: string };
         const copayerId = req.headers['x-identity'];
+        if (round === 'secret') {
+          const secret = await TssKeyGen.getBwsJoinSecret({ id, copayerId });
+          return res.json({ secret });
+        }
         const { messages, publicKey } = await TssKeyGen.getMessagesForParty({ id, round, copayerId });
         return res.json({ messages, publicKey });
       } catch (err) {
@@ -52,6 +56,29 @@ export class TssRouter {
 
         await TssKeyGen.storeKey({ id, message, copayerId });
         return res.send();
+      } catch (err) {
+        return returnError(err ?? 'unknown', res, req);
+      }
+    });
+
+    router.post('/v1/tss/keygen/:id/secret', authTssRequest(), async function(req, res) {
+      try {
+        const id = req.params.id;
+        const { secret } = req.body;
+        const copayerId = req.headers['x-identity'];
+        await TssKeyGen.storeBwsJoinSecret({ id, secret, copayerId });
+        return res.send();
+      } catch (err) {
+        return returnError(err ?? 'unknown', res, req);
+      }
+    });
+
+    router.get('/v1/tss/keygen/:id/secret', authTssRequest(), async function(req, res) {
+      try {
+        const id = req.params.id;
+        const copayerId = req.headers['x-identity'];
+        const secret = await TssKeyGen.getBwsJoinSecret({ id, copayerId });
+        return res.json({ secret });
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
       }

@@ -44,7 +44,8 @@ export class Credentials {
     'token', // this is for a ERC20 token
     'multisigEthInfo', // this is for a MULTISIG eth wallet
     'hardwareSourcePublicKey', // public key from a hardware device for this copayer
-    'clientDerivedPublicKey' // for public keys generated client side
+    'clientDerivedPublicKey', // for public keys generated client side
+    'tssKeyId', // for TSS wallets
   ];
   version: number;
   account: number;
@@ -65,6 +66,7 @@ export class Credentials {
   publicKeyRing: Array<{
     requestPubKey: string;
     xPubKey: string;
+    copayerName?: string;
   }>;
   rootPath: string;
   derivationStrategy: string;
@@ -87,7 +89,8 @@ export class Credentials {
   };
   externalSource?: boolean; // deprecated property?
   hardwareSourcePublicKey: string;
-  clientDerivedPublicKey: string
+  clientDerivedPublicKey: string;
+  tssKeyId: string; // for TSS wallets
 
   constructor() {
     this.version = 2;
@@ -133,8 +136,8 @@ export class Credentials {
     $.checkArgument(opts.nonCompliantDerivation == null);
 
     const x = new Credentials();
-    x.coin = opts.coin;
     x.chain = opts.chain;
+    x.coin = opts.coin || opts.chain;
     x.network = opts.network;
     x.account = opts.account;
     x.n = opts.n;
@@ -165,8 +168,8 @@ export class Credentials {
     const prefix = 'personalKey';
     const entropySource = Bitcore.crypto.Hash.sha256(priv.toBuffer()).toString('hex');
     const b = Buffer.from(entropySource, 'hex');
-    const b2 = Bitcore.crypto.Hash.sha256hmac(b, Buffer.from(prefix));
-    x.personalEncryptingKey = b2.slice(0, 16).toString('base64');
+    const b2: Buffer = Bitcore.crypto.Hash.sha256hmac(b, Buffer.from(prefix));
+    x.personalEncryptingKey = b2.subarray(0, 16).toString('base64');
     x.copayerId = Utils.xPubToCopayerId(x.chain, x.xPubKey);
     x.publicKeyRing = [
       {
@@ -313,7 +316,7 @@ export class Credentials {
     for (const k of Credentials.FIELDS) {
       x[k] = this[k];
     }
-    return x;
+    return x as any;
   }
 
   addWalletPrivateKey(walletPrivKey) {
@@ -321,7 +324,19 @@ export class Credentials {
     this.sharedEncryptingKey = Utils.privateKeyToAESKey(walletPrivKey);
   }
 
-  addWalletInfo(walletId, walletName, m, n, copayerName, opts) {
+  addWalletInfo(
+    walletId: string,
+    walletName: string,
+    m: number,
+    n: number,
+    copayerName: string,
+    opts?: {
+      useNativeSegwit?: boolean;
+      segwitVersion?: number;
+      tssKeyId?: string;
+      allowOverwrite?: boolean;
+    }
+  ) {
     opts = opts || {};
     this.walletId = walletId;
     this.walletName = walletName;
@@ -331,8 +346,7 @@ export class Credentials {
       switch (Number(opts.segwitVersion)) {
         case 0:
         default:
-          this.addressType =
-            n == 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
+          this.addressType = n == 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
           break;
         case 1:
           // Taproot is segwit v1
@@ -341,16 +355,15 @@ export class Credentials {
       }
     }
 
-    if (this.n != n && !opts.allowOverwrite) {
+    if (this.n != n && !opts.tssKeyId && !opts.allowOverwrite) {
       // we always allow multisig n overwrite
       if (this.n == 1 || n == 1) {
-        throw new Error(
-          `Bad nr of copayers in addWalletInfo: this: ${this.n} got: ${n}`
-        );
+        throw new Error(`Bad number of copayers in addWalletInfo: this: ${this.n} got: ${n}`);
       }
     }
 
-    this.n = n;
+    this.n = opts.tssKeyId ? 1 : n; // TSS always has n=1
+    this.tssKeyId = opts.tssKeyId;
 
     if (copayerName) this.copayerName = copayerName;
 
@@ -375,10 +388,8 @@ export class Credentials {
   isComplete() {
     if (!this.m || !this.n) return false;
     if (
-      (this.chain === 'btc' ||
-        this.chain === 'bch' ||
-        this.chain === 'doge' ||
-        this.chain === 'ltc') &&
+      ['btc', 'bch', 'doge', 'ltc'].includes(this.chain) &&
+      !this.tssKeyId && // TSS creds will have publicKeyRing.length > n
       (!this.publicKeyRing || this.publicKeyRing.length != this.n)
     )
       return false;

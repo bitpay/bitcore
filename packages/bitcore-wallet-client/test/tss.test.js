@@ -32,6 +32,8 @@ describe('TSS', function() {
   let dbConnection;
   let app;
   const sandbox = sinon.createSandbox();
+  const chain = 'ETH';
+  const network = 'livenet';
   const m = 2;
   const n = 3;
 
@@ -91,6 +93,8 @@ describe('TSS', function() {
 
     it(happyPath('should instantiate a new TssKeyGen class'), function() {
       tss0 = new TssKeyGen({
+        chain,
+        network,
         baseUrl: '/bws/api',
         request: request(app),
         key: party0Key
@@ -114,7 +118,7 @@ describe('TSS', function() {
     it(happyPath('should create a join code'), function() {
       const code1 = tss0.createJoinCode({
         partyId: 1,
-        partyPubKey: party1Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).requestPubKey
+        partyPubKey: party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
       });
       should.exist(code1);
       code1.should.be.a('string');
@@ -123,7 +127,7 @@ describe('TSS', function() {
 
       const code2 = tss0.createJoinCode({
         partyId: 2,
-        partyPubKey: party2Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).requestPubKey
+        partyPubKey: party2Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
       });
       should.exist(code2);
       code2.should.be.a('string');
@@ -134,7 +138,7 @@ describe('TSS', function() {
     it('should not produce a deterministic join code', function() {
       const code = tss0.createJoinCode({
         partyId: 1,
-        partyPubKey: party1Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).requestPubKey
+        partyPubKey: party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
       });
       should.exist(code);
       code.should.be.a('string');
@@ -145,7 +149,7 @@ describe('TSS', function() {
     it('should encode the join code per the encoding option', function() {
       const code = tss0.createJoinCode({
         partyId: 1,
-        partyPubKey: party1Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).requestPubKey,
+        partyPubKey: party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey,
         opts: { encoding: 'base64'}
       });
       should.exist(code);
@@ -157,6 +161,8 @@ describe('TSS', function() {
     it('should not allow other party to use join code', async function() {
       try {
         const tss = new TssKeyGen({
+          chain,
+          network,
           baseUrl: '/bws/api',
           request: request(app),
           key: party2Key
@@ -172,6 +178,8 @@ describe('TSS', function() {
     it(happyPath('should use the join code to join a keygen session'), async function() {
       // party 1
       tss1 = new TssKeyGen({
+        chain,
+        network,
         baseUrl: '/bws/api',
         request: request(app),
         key: party1Key
@@ -186,6 +194,8 @@ describe('TSS', function() {
 
       // party 2
       tss2 = new TssKeyGen({
+        chain,
+        network,
         baseUrl: '/bws/api',
         request: request(app),
         key: party2Key
@@ -245,18 +255,24 @@ describe('TSS', function() {
       s2.should.be.a('string');
 
       tss0 = await new TssKeyGen({
+        chain,
+        network,
         baseUrl: '/bws/api',
         request: request(app),
         key: party0Key
       }).restoreSession({ session: s0 });
 
       tss1 = await new TssKeyGen({
+        chain,
+        network,
         baseUrl: '/bws/api',
         request: request(app),
         key: party1Key
       }).restoreSession({ session: s1 });
       
       tss2 = await new TssKeyGen({
+        chain,
+        network,
         baseUrl: '/bws/api',
         request: request(app),
         key: party2Key
@@ -334,7 +350,7 @@ describe('TSS', function() {
       const session = await storage.fetchTssKeyGenSession({ id: tss0.id });
       should.exist(session.sharedPublicKey);
 
-      const key = tss0.getKeyChain();
+      const key = tss0.getTssKey();
       should.exist(key);
       key.keychain.commonKeyChain.should.equal(session.sharedPublicKey);
     });
@@ -343,7 +359,7 @@ describe('TSS', function() {
       const session = await storage.fetchTssKeyGenSession({ id: tss0.id });
       session.keyShares.length.should.equal(n);
 
-      const key0 = tss0.getKeyChain();
+      const key0 = tss0.getTssKey();
       const hdKey0 = new BitcoreLib.HDPrivateKey(party0Key.get().xPrivKey);
       const expected0 = key0.keychain.privateKeyShare.toString('base64') + ':' + key0.keychain.reducedPrivateKeyShare.toString('base64');
       ECIES.decrypt({
@@ -351,7 +367,7 @@ describe('TSS', function() {
         privateKey: hdKey0.privateKey,
         publicKey: hdKey0.publicKey
       }).toString().should.equal(expected0);
-      const key1 = tss1.getKeyChain();
+      const key1 = tss1.getTssKey();
       const hdKey1 = new BitcoreLib.HDPrivateKey(party1Key.get().xPrivKey);
       const expected1 = key1.keychain.privateKeyShare.toString('base64') + ':' + key1.keychain.reducedPrivateKeyShare.toString('base64');
       ECIES.decrypt({
@@ -359,7 +375,7 @@ describe('TSS', function() {
         privateKey: hdKey1.privateKey,
         publicKey: hdKey1.publicKey
       }).toString().should.equal(expected1);
-      const key2 = tss2.getKeyChain();
+      const key2 = tss2.getTssKey();
       const hdKey2 = new BitcoreLib.HDPrivateKey(party2Key.get().xPrivKey);
       const expected2 = key2.keychain.privateKeyShare.toString('base64') + ':' + key2.keychain.reducedPrivateKeyShare.toString('base64');
       ECIES.decrypt({
@@ -380,15 +396,15 @@ describe('TSS', function() {
       tss0.subscribe({ timeout: 10, iterHandler: () => tss0.unsubscribe() });
       await complete;
       tss0.emit.args.filter(o => o[0] === 'roundready').length.should.equal(0);
-      tss0.emit.args.filter(o => o[0] === 'keychain').length.should.equal(1);
+      tss0.emit.args.filter(o => o[0] === 'tsskey').length.should.equal(1);
       tss0.emit.args.filter(o => o[0] === 'complete').length.should.equal(1);
     });
 
     // Keeping for documentation purposes
     it.skip('SKIP ME - save to data dir', function(){ 
-      fs.writeFileSync(`${datadir}/tss-party0.json`, JSON.stringify({ key: party0Key.toObj(), tss: tss0.getKeyChain().toObj() }, null, 2));
-      fs.writeFileSync(`${datadir}/tss-party1.json`, JSON.stringify({ key: party1Key.toObj(), tss: tss1.getKeyChain().toObj() }, null, 2));
-      fs.writeFileSync(`${datadir}/tss-party2.json`, JSON.stringify({ key: party2Key.toObj(), tss: tss2.getKeyChain().toObj() }, null, 2));
+      fs.writeFileSync(`${datadir}/tss-party0.json`, JSON.stringify({ key: party0Key.toObj(), tss: tss0.getTssKey().toObj() }, null, 2));
+      fs.writeFileSync(`${datadir}/tss-party1.json`, JSON.stringify({ key: party1Key.toObj(), tss: tss1.getTssKey().toObj() }, null, 2));
+      fs.writeFileSync(`${datadir}/tss-party2.json`, JSON.stringify({ key: party2Key.toObj(), tss: tss2.getTssKey().toObj() }, null, 2));
     });
 
     describe('With Password', function() {
@@ -399,16 +415,22 @@ describe('TSS', function() {
         const party1Key = new Key({ seedType: 'new' });
         const party2Key = new Key({ seedType: 'new' });
         const tss0 = new TssKeyGen({
+          chain,
+          network,
           baseUrl: '/bws/api',
           request: request(app),
           key: party0Key
         });
         const tss1 = new TssKeyGen({
+          chain,
+          network,
           baseUrl: '/bws/api',
           request: request(app),
           key: party1Key
         });
         const tss2 = new TssKeyGen({
+          chain,
+          network,
           baseUrl: '/bws/api',
           request: request(app),
           key: party2Key
@@ -420,6 +442,8 @@ describe('TSS', function() {
       it(happyPath('should start a new keygen session with a password'), async function() {
         const party0Key = new Key({ seedType: 'new' });
         const tss0 = new TssKeyGen({
+          chain,
+          network,
           baseUrl: '/bws/api',
           request: request(app),
           key: party0Key
@@ -441,14 +465,14 @@ describe('TSS', function() {
         const { tss0, tss1, tss2, ...keys } = await setupSession(password);
         const code1 = tss0.createJoinCode({
           partyId: 1,
-          partyPubKey: keys.party1Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).requestPubKey
+          partyPubKey: keys.party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
         });
         should.exist(code1);
         await tss1.joinKey({ code: code1, password });
         const session = await storage.fetchTssKeyGenSession({ id: tss1.id });
         session.participants.should.deep.equal([
-          keys.party0Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).copayerId,
-          keys.party1Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).copayerId,
+          keys.party0Key.createCredentials(null, { chain, network, n: 1, account: 0 }).copayerId,
+          keys.party1Key.createCredentials(null, { chain, network, n: 1, account: 0 }).copayerId,
           null
         ]);
       });
@@ -457,15 +481,15 @@ describe('TSS', function() {
         const { tss0, tss1, tss2, ...keys } = await setupSession(password);
         const code1 = tss0.createJoinCode({
           partyId: 1,
-          partyPubKey: keys.party1Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).requestPubKey,
+          partyPubKey: keys.party1Key.createCredentials(null, { chain, network, n: 1, account: 0 }).requestPubKey,
           extra: password
         });
         should.exist(code1);
         await tss1.joinKey({ code: code1 });
         const session = await storage.fetchTssKeyGenSession({ id: tss1.id });
         session.participants.should.deep.equal([
-          keys.party0Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).copayerId,
-          keys.party1Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).copayerId,
+          keys.party0Key.createCredentials(null, { chain, network, n: 1, account: 0 }).copayerId,
+          keys.party1Key.createCredentials(null, { chain, network, n: 1, account: 0 }).copayerId,
           null
         ]);
       });
@@ -474,7 +498,7 @@ describe('TSS', function() {
         const { tss0, tss1, tss2, ...keys } = await setupSession(password);
         const code1 = tss0.createJoinCode({
           partyId: 1,
-          partyPubKey: keys.party1Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).requestPubKey
+          partyPubKey: keys.party1Key.createCredentials(null, { chain, network, n: 1, account: 0 }).requestPubKey
         });
         should.exist(code1);
         try {
@@ -485,7 +509,7 @@ describe('TSS', function() {
         }
         const session = await storage.fetchTssKeyGenSession({ id: tss1.id });
         session.participants.should.deep.equal([
-          keys.party0Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).copayerId,
+          keys.party0Key.createCredentials(null, { chain, network, n: 1, account: 0 }).copayerId,
           null, // not joined
           null
         ]);
@@ -495,7 +519,7 @@ describe('TSS', function() {
         const { tss0, tss1, tss2, ...keys } = await setupSession(password);
         const code1 = tss0.createJoinCode({
           partyId: 1,
-          partyPubKey: keys.party1Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).requestPubKey
+          partyPubKey: keys.party1Key.createCredentials(null, { chain, network, n: 1, account: 0 }).requestPubKey
         });
         should.exist(code1);
         try {
@@ -506,7 +530,7 @@ describe('TSS', function() {
         }
         const session = await storage.fetchTssKeyGenSession({ id: tss1.id });
         session.participants.should.deep.equal([
-          keys.party0Key.createCredentials(null, { network: 'livenet', n: 1, account: 0 }).copayerId,
+          keys.party0Key.createCredentials(null, { chain, network, n: 1, account: 0 }).copayerId,
           null, // not joined
           null
         ]);
@@ -527,6 +551,7 @@ describe('TSS', function() {
     let party1TssKey;
     let party2TssKey;
     const message = 'hello world';
+    const derivationPath = 'm/0/0';
 
     function objToBuf(key, value) {
       if (value && value.type === 'Buffer' && Array.isArray(value.data)) {
@@ -535,17 +560,17 @@ describe('TSS', function() {
       return value;
     };
 
-    before(function(done) {
+    before(async function() {
       ({ tss: party0TssKey } = JSON.parse(fs.readFileSync(`${datadir}/tss-party0.json`).toString(), objToBuf));
       ({ tss: party1TssKey } = JSON.parse(fs.readFileSync(`${datadir}/tss-party1.json`).toString(), objToBuf));
       ({ tss: party2TssKey } = JSON.parse(fs.readFileSync(`${datadir}/tss-party2.json`).toString(), objToBuf));
       party0TssKey = TssKey.fromObj(party0TssKey);
       party1TssKey = TssKey.fromObj(party1TssKey);
       party2TssKey = TssKey.fromObj(party2TssKey);
-      party0Creds = party0TssKey.createCredentials(null, { coin: 'eth', network: 'testnet', m, n, account: 0 });
-      party1Creds = party1TssKey.createCredentials(null, { coin: 'eth', network: 'testnet', m, n, account: 0 });
-      party2Creds = party2TssKey.createCredentials(null, { coin: 'eth', network: 'testnet', m, n, account: 0 });
-      storage.storeTssKeyGenSession({
+      party0Creds = party0TssKey.createCredentials(null, { chain, network: 'testnet', m, n, account: 0 });
+      party1Creds = party1TssKey.createCredentials(null, { chain, network: 'testnet', m, n, account: 0 });
+      party2Creds = party2TssKey.createCredentials(null, { chain, network: 'testnet', m, n, account: 0 });
+      await storage.storeTssKeyGenSession({
         doc: {
           id: party0TssKey.metadata.id,
           participants: [
@@ -555,23 +580,21 @@ describe('TSS', function() {
           ],
           sharedPublicKey: party0TssKey.keychain.commonKeyChain,
         }
-      }).then(() => {
-        const client = helpers.newClient(app);
-        helpers.createAndJoinWallet(
+      });
+      const client = helpers.newClient(app);
+      for (const tssKey of [party0TssKey, party1TssKey, party2TssKey]) {
+        await helpers.createAndJoinWallet(
           [client, client, client],
-          [party0TssKey, party1TssKey, party2TssKey],
-          m,
-          n,
+          [tssKey],
+          1,
+          1,
           {
-            key: party0TssKey,
-            coin: 'eth',
-            tssKeyId: party0TssKey.metadata.id
-          },
-          (res) => {
-            done();
+            key: tssKey,
+            coin: chain.toLowerCase(),
+            tssKeyId: tssKey.metadata.id
           }
         );
-      }).catch(done);
+      }
     });
 
     it(happyPath('should start a new signing session'), async function() {
@@ -581,7 +604,7 @@ describe('TSS', function() {
         credentials: party1Creds,
         tssKey: party1TssKey,
       });
-      const result = await sig1.start({ message });
+      const result = await sig1.start({ message, derivationPath });
       should.exist(result);
       result.should.be.instanceOf(TssSign);
       result.should.equal(sig1);
@@ -596,7 +619,7 @@ describe('TSS', function() {
         credentials: party0Creds,
         tssKey: party0TssKey,
       });
-      const result = await sig0.start({ message });
+      const result = await sig0.start({ message, derivationPath });
       should.exist(result);
       result.should.be.instanceOf(TssSign);
       result.should.equal(sig0);
@@ -611,7 +634,7 @@ describe('TSS', function() {
         tssKey: party2TssKey,
       });
       try {
-        await sig2.start({ message });
+        await sig2.start({ message, derivationPath });
         throw new Error('Should have thrown');
       } catch (err) {
         err.message.should.include('TSS_MAX_PARTICIPANTS_REACHED');
@@ -741,6 +764,13 @@ describe('TSS', function() {
       session.signature.should.deep.equal(sig);
     });
 
+    it('should have a matchin pubKey with bitcore', function() {
+      const sig = sig0.getSignature();
+      const xpub = party0TssKey.getXPubKey();
+      const pubKey = BitcoreLib.HDPublicKey(xpub).deriveChild(derivationPath || 'm').publicKey.toString('hex');
+      sig.pubKey.should.equal(pubKey);
+    });
+
     it('should not export a completed session', function() {
       should.throw(() => { sig0.exportSession() }, /Cannot export a completed session/);
     });
@@ -787,8 +817,8 @@ describe('TSS', function() {
         tssKey: party2TssKey,
       });
       const id = 'my-custom-id';
-      await sig0.start({ id, message });
-      await sig2.start({ id, message });
+      await sig0.start({ id, message, derivationPath });
+      await sig2.start({ id, message, derivationPath });
       const complete0 = new Promise(r => sig0.once('complete', r));
       const complete2 = new Promise(r => sig2.once('complete', r));
       sig0.subscribe({ timeout: 10 });
