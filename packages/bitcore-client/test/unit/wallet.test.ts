@@ -8,6 +8,7 @@ import request from 'request-promise-native';
 import { Server } from 'http';
 import { Wallet, AddressTypes } from '../../src/wallet';
 import { utils } from '../../src/utils';
+import { StorageType } from '../../src/types/storage'
 
 const { Modules } = require('../../../bitcore-node/build/src/modules');
 const { Api: bcnApi } = require('../../../bitcore-node/build/src/services/api');
@@ -241,7 +242,7 @@ describe('Wallet', function() {
   });
 
   describe('getLocalAddress', function() {
-    for (const storageType of ['Level', 'Mongo', 'TextFile']) {
+    for (const storageType of ['Level', 'Mongo', 'TextFile'] as StorageType[]) {
       describe(storageType, function() {
         let wallet;
         let walletName = 'BitcoreClientTestGetLocalAddress' + storageType;
