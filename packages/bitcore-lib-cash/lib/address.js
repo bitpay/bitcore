@@ -71,7 +71,7 @@ function Address(data, network, type) {
   }
 
   if (type) {
-    if (!Address.isValid(type)) {
+    if (!Address.isValidType(type)) {
       throw new TypeError('Third argument must be one of: "' + Address.AllTypes.join('", "') + '".');
     }
     type = Address.TypesMap[type.toLowerCase()];
@@ -126,7 +126,7 @@ Address.PayToPublicKeyHashAlt = 'p2pkh';
 Address.TypesMap[Address.PayToPublicKeyHash] = Address.PayToPublicKeyHash;
 Address.TypesMap[Address.PayToPublicKeyHashAlt] = Address.PayToPublicKeyHash;
 Address.isPayToPublicKeyHash = function(type) {
-  return [Address.PayToPublicKeyHash, Address.PayToPublicKeyHashAlt].includes(type?.toLowerCase?.());
+  return typeof type === 'string' && [Address.PayToPublicKeyHash, Address.PayToPublicKeyHashAlt].includes(type.toLowerCase());
 };
 
 Address.PayToScriptHash = 'scripthash';
@@ -134,7 +134,7 @@ Address.PayToScriptHashAlt = 'p2sh';
 Address.TypesMap[Address.PayToScriptHash] = Address.PayToScriptHash;
 Address.TypesMap[Address.PayToScriptHashAlt] = Address.PayToScriptHash;
 Address.isPayToScriptHash = function(type) {
-  return [Address.PayToScriptHash, Address.PayToScriptHashAlt].includes(type?.toLowerCase?.());
+  return typeof type === 'string' && [Address.PayToScriptHash, Address.PayToScriptHashAlt].includes(type.toLowerCase());
 };
 
 Address.isValidType = function(type) {
@@ -610,7 +610,7 @@ Address.isValid = function(data, network, type) {
  * @return boolean
  */
 Address.prototype.isPayToPublicKeyHash = function() {
-  return this.type === Address.isPayToPublicKeyHash;
+  return this.type === Address.PayToPublicKeyHash;
 };
 
 /**

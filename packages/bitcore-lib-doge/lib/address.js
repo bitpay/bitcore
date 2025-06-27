@@ -122,7 +122,7 @@ Address.PayToPublicKeyHashAlt = 'p2pkh';
 Address.TypesMap[Address.PayToPublicKeyHash] = Address.PayToPublicKeyHash;
 Address.TypesMap[Address.PayToPublicKeyHashAlt] = Address.PayToPublicKeyHash;
 Address.isPayToPublicKeyHash = function(type) {
-  return [Address.PayToPublicKeyHash, Address.PayToPublicKeyHashAlt].includes(type?.toLowerCase?.());
+  return typeof type === 'string' && [Address.PayToPublicKeyHash, Address.PayToPublicKeyHashAlt].includes(type.toLowerCase());
 };
 
 Address.PayToScriptHash = 'scripthash';
@@ -130,7 +130,7 @@ Address.PayToScriptHashAlt = 'p2sh';
 Address.TypesMap[Address.PayToScriptHash] = Address.PayToScriptHash;
 Address.TypesMap[Address.PayToScriptHashAlt] = Address.PayToScriptHash;
 Address.isPayToScriptHash = function(type) {
-  return [Address.PayToScriptHash, Address.PayToScriptHashAlt].includes(type?.toLowerCase?.());
+  return typeof type === 'string' && [Address.PayToScriptHash, Address.PayToScriptHashAlt].includes(type.toLowerCase());
 };
 
 Address.isValidType = function(type) {

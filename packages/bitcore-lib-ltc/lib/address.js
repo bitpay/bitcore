@@ -129,7 +129,7 @@ Address.PayToPublicKeyHashAlt = 'p2pkh';
 Address.TypesMap[Address.PayToPublicKeyHash] = Address.PayToPublicKeyHash;
 Address.TypesMap[Address.PayToPublicKeyHashAlt] = Address.PayToPublicKeyHash;
 Address.isPayToPublicKeyHash = function(type) {
-  return [Address.PayToPublicKeyHash, Address.PayToPublicKeyHashAlt].includes(type?.toLowerCase?.());
+  return typeof type === 'string' && [Address.PayToPublicKeyHash, Address.PayToPublicKeyHashAlt].includes(type.toLowerCase());
 };
 /** @static */
 Address.PayToScriptHash = 'scripthash';
@@ -137,7 +137,7 @@ Address.PayToScriptHashAlt = 'p2sh';
 Address.TypesMap[Address.PayToScriptHash] = Address.PayToScriptHash;
 Address.TypesMap[Address.PayToScriptHashAlt] = Address.PayToScriptHash;
 Address.isPayToScriptHash = function(type) {
-  return [Address.PayToScriptHash, Address.PayToScriptHashAlt].includes(type?.toLowerCase?.());
+  return typeof type === 'string' && [Address.PayToScriptHash, Address.PayToScriptHashAlt].includes(type.toLowerCase());
 };
 /** @static */
 Address.PayToWitnessPublicKeyHash = 'witnesspubkeyhash';
@@ -145,7 +145,7 @@ Address.PayToWitnessPublicKeyHashAlt = 'p2wpkh';
 Address.TypesMap[Address.PayToWitnessPublicKeyHash] = Address.PayToWitnessPublicKeyHash;
 Address.TypesMap[Address.PayToWitnessPublicKeyHashAlt] = Address.PayToWitnessPublicKeyHash;
 Address.isPayToWitnessPublicKeyHash = function(type) {
-  return [Address.PayToWitnessPublicKeyHash, Address.PayToWitnessPublicKeyHashAlt].includes(type?.toLowerCase?.());
+  return typeof type === 'string' && [Address.PayToWitnessPublicKeyHash, Address.PayToWitnessPublicKeyHashAlt].includes(type.toLowerCase());
 };
 /** @static */
 Address.PayToWitnessScriptHash = 'witnessscripthash';
@@ -153,7 +153,7 @@ Address.PayToWitnessScriptHashAlt = 'p2wsh';
 Address.TypesMap[Address.PayToWitnessScriptHash] = Address.PayToWitnessScriptHash;
 Address.TypesMap[Address.PayToWitnessScriptHashAlt] = Address.PayToWitnessScriptHash;
 Address.isPayToWitnessScriptHash = function(type) {
-  return [Address.PayToWitnessScriptHash, Address.PayToWitnessScriptHashAlt].includes(type?.toLowerCase?.());
+  return typeof type === 'string' && [Address.PayToWitnessScriptHash, Address.PayToWitnessScriptHashAlt].includes(type.toLowerCase());
 };
 
 Address.isValidType = function(type) {
@@ -349,7 +349,7 @@ Address._transformScript = function(script, network) {
  */
 Address.createMultisig = function(publicKeys, threshold, network, nestedWitness, type) {
   network = network || publicKeys[0].network || Networks.defaultNetwork;
-  if (type && !Address.PayToScriptHash(type) && !Address.PayToWitnessScriptHash(type)) {
+  if (type && !Address.isPayToScriptHash(type) && !Address.isPayToWitnessScriptHash(type)) {
     throw new TypeError('Type must be either scripthash or witnessscripthash to create multisig.');
   }
   if (nestedWitness || Address.isPayToWitnessScriptHash(type)) {

@@ -37,7 +37,7 @@ describe('Address', function() {
   it('should throw an error because of bad type param', function() {
     (function() {
       return new Address(PKHLivenet[0], 'livenet', 'pubkey');
-    }).should.throw('Third argument must be "pubkeyhash" or "scripthash"');
+    }).should.throw('Third argument must be one of: "pubkeyhash", "p2pkh", "scripthash", "p2sh".');
   });
 
   describe('bitcoind compliance', function() {
