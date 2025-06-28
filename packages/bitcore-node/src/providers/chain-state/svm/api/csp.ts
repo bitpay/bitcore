@@ -234,7 +234,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
 
           for (const tx of txList.reverse()) {
             if (limit && count >= limit) break;
-            const transformedTx = await this._getTransformedTx(rpc, network, tx, address, tokenAddress);
+            const transformedTx = await this._getTransformedTx(rpc, network, tx, _address, tokenAddress);
             if (transformedTx) {
               addressStream.push(JSON.stringify(transformedTx) + '\n');
               count++;
@@ -313,7 +313,8 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     const allTokenTransfers = [...transferTokenInstructions, ...transferCheckedTokenInstructions];
 
     if (allTokenTransfers.length > 0) {
-      const tokenTransfers = tokenAddress ? allTokenTransfers.filter(transfer => tokenAddress.toLowerCase() === transfer.mint.toLowerCase()) : allTokenTransfers;
+      const filteredTransferCheckedToken = tokenAddress ? transferCheckedTokenInstructions.filter(transfer => tokenAddress.toLowerCase() === transfer.mint.toLowerCase()) : transferCheckedTokenInstructions;
+      const tokenTransfers = [...transferTokenInstructions, ...filteredTransferCheckedToken];
       if (!tokenTransfers?.length) {
         return;
       }
