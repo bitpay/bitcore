@@ -23,7 +23,7 @@ describe('HDKeys building with static methods', function() {
   var classes = [HDPublicKey, HDPrivateKey];
   var clazz, index;
 
-  _.each(classes, function(clazz) {
+  classes.forEach((clazz) => {
     var expectStaticMethodFail = function(staticMethod, argument, message) {
       expect(clazz[staticMethod].bind(null, argument)).to.throw(message);
     };

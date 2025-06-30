@@ -32,7 +32,7 @@ function MultiSigInput(input, pubkeys, threshold, signatures, opts) {
   $.checkState(Script.buildMultisigOut(this.publicKeys, threshold).equals(this.output.script),
     'Provided public keys don\'t match to the provided output script');
   this.publicKeyIndex = {};
-  _.each(this.publicKeys, function(publicKey, index) {
+  this.publicKeys.forEach((publicKey, index) => {
     self.publicKeyIndex[publicKey.toString()] = index;
   });
   this.threshold = threshold;

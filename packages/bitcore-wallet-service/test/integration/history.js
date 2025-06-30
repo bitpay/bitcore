@@ -101,7 +101,7 @@ describe('History', function() {
         should.exist(txs);
         txs.length.should.equal(20);
         var i = 0;
-        _.each(txs, function(tx) {
+        txs.forEach((tx) => {
           tx.txid.should.equal('txid' + i);
           tx.confirmations.should.equal(i);
           if (i) {
@@ -333,7 +333,7 @@ describe('History', function() {
           _.first(txs).id.should.equal('id20');
 
           var i = 20;
-          _.each(txs, function(tx) {
+          txs.forEach((tx) => {
             tx.txid.should.equal('txid' + i);
             tx.confirmations.should.equal(i);
             tx.blockheight.should.equal(BCHEIGHT - i + 1);
@@ -368,7 +368,7 @@ describe('History', function() {
           _.first(txs).id.should.equal('id5');
 
           var i = 5;
-          _.each(txs, function(tx) {
+          txs.forEach((tx) => {
             tx.txid.should.equal('txid' + i);
             tx.confirmations.should.equal(i);
             tx.blockheight.should.equal(BCHEIGHT - i + 1);
@@ -401,7 +401,7 @@ describe('History', function() {
           should.not.exist(err);
           fromCache.should.equal(true);
           var i = 5;
-          _.each(txs, function(tx) {
+          txs.forEach((tx) => {
             tx.confirmations.should.equal(i + heightOffset);
             i++;
           });
@@ -460,7 +460,7 @@ describe('History', function() {
             (err) => {
               should.not.exist(err);
               let i = 0;
-              _.each(allTxs, function(x) {
+              allTxs.forEach((x) => {
                 x.id.should.equal('id' + i);
                 i++;
               });
@@ -515,7 +515,7 @@ describe('History', function() {
             (err) => {
               should.not.exist(err);
               let i = 0;
-              _.each(allTxs, function(x) {
+              allTxs.forEach((x) => {
                 x.id.should.equal('id' + i);
                 i++;
               });
@@ -568,7 +568,7 @@ describe('History', function() {
             (err) => {
               should.not.exist(err);
               let i = 0;
-              _.each(allTxs, function(x) {
+              allTxs.forEach((x) => {
                 x.id.should.equal('id' + i);
                 i++;
               });
@@ -623,7 +623,7 @@ describe('History', function() {
             (err) => {
               should.not.exist(err);
               let i = 0;
-              _.each(allTxs, function(x) {
+              allTxs.forEach((x) => {
                 x.id.should.equal('id' + i);
                 i++;
               });
@@ -652,11 +652,11 @@ describe('History', function() {
           should.exist(txs2);
           txs2.length.should.equal(21);
           var i = 0;
-          _.each(txs, function(tx) {
+          txs.forEach((tx) => {
             tx.txid.should.equal('txid' + i++);
           });
           var i = 5;
-          _.each(txs2, function(tx) {
+          txs2.forEach((tx) => {
             tx.txid.should.equal('txid' + i++);
           });
           done();

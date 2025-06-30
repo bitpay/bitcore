@@ -79,7 +79,7 @@ describe('Storage', function() {
         coin: 'btc',
         network: 'livenet',
       });
-      _.each(_.range(3), function(i) {
+      _.range(3).forEach((i) => {
         var copayer = Model.Copayer.create({
           coin: 'btc',
           name: 'copayer ' + i,
@@ -128,7 +128,7 @@ describe('Storage', function() {
         coin: 'btc',
         network: 'livenet',
       });
-      _.each(_.range(3), function(i) {
+      _.range(3).forEach((i) => {
         var copayer = Model.Copayer.create({
           coin: 'btc',
           name: 'copayer ' + i,

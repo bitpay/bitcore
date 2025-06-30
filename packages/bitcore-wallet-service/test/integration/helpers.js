@@ -190,7 +190,7 @@ helpers._generateCopayersTestData = function() {
   ];
 
   console.log('var copayers = [');
-  _.each(xPrivKeys, function(xPrivKeyStr, c) {
+  xPrivKeys.forEach((xPrivKeyStr, c) => {
     var xpriv = Bitcore.HDPrivateKey(xPrivKeyStr);
     var xpub = Bitcore.HDPublicKey(xpriv);
 
@@ -611,7 +611,7 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
       }
       break;
     default:
-      _.each(txp.inputs, function(i) {
+      txp.inputs.forEach((i) => {
         if (!derived[i.path]) {
           derived[i.path] = xpriv.deriveChild(i.path).privateKey;
           privs.push(derived[i.path]);

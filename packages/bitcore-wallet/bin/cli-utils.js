@@ -356,7 +356,7 @@ Utils.renderTxProposals = function(txps) {
 
   console.log("* TX Proposals:")
 
-  _.each(txps, function(x) {
+  txps.forEach((x) => {
     var missingSignatures = x.requiredSignatures - _.filter(_.values(x.actions), function(a) {
       return a.type == 'accept';
     }).length;
