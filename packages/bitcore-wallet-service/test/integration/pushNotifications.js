@@ -596,7 +596,7 @@ describe('Push notifications', function() {
 
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            var args = _.map(_.takeRight(calls, 2), function(c) {
+            var args = _.map(calls.slice(-2), function(c) {
               return c.args[0];
             });
 
@@ -653,7 +653,7 @@ describe('Push notifications', function() {
 
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            var args = _.map(_.takeRight(calls, 3), function(c) {
+            var args = _.map(calls.slice(-3), function(c) {
               return c.args[0];
             });
             args[0].body.notification.title.should.contain('Payment sent');
@@ -855,7 +855,7 @@ describe('Push notifications', function() {
             setTimeout(function() {
               var calls = requestStub.getCalls();
               calls.length.should.equal(2);
-              var args = _.map(_.takeRight(calls, 2), function(c) {
+              var args = _.map(calls.slice(-2), function(c) {
                 return c.args[0];
               });
               args[1].notification.title.should.contain('New payment received');
@@ -951,7 +951,7 @@ describe('Push notifications', function() {
             setTimeout(function() {
               var calls = requestStub.getCalls();
               calls.length.should.equal(2);
-              var args = _.map(_.takeRight(calls, 2), function(c) {
+              var args = _.map(calls.slice(-2), function(c) {
                 return c.args[0];
               });
               args[1].body.notification.title.should.contain('New payment received');
@@ -985,7 +985,7 @@ describe('Push notifications', function() {
             setTimeout(function() {
               var calls = requestStub.getCalls();
               calls.length.should.equal(2);
-              var args = _.map(_.takeRight(calls, 2), function(c) {
+              var args = _.map(calls.slice(-2), function(c) {
                 return c.args[0];
               });
               args[1].body.notification.title.should.contain('New payment received');
@@ -1018,7 +1018,7 @@ describe('Push notifications', function() {
             setTimeout(function() {
               var calls = requestStub.getCalls();
               calls.length.should.equal(2);
-              var args = _.map(_.takeRight(calls, 2), function(c) {
+              var args = _.map(calls.slice(-2), function(c) {
                 return c.args[0];
               });
               args[1].body.notification.title.should.contain('Nuevo pago recibido');
@@ -1050,7 +1050,7 @@ describe('Push notifications', function() {
             setTimeout(function() {
               var calls = requestStub.getCalls();
               calls.length.should.equal(2);
-              var args = _.map(_.takeRight(calls, 2), function(c) {
+              var args = _.map(calls.slice(-2), function(c) {
                 return c.args[0];
               });
               args[1].body.notification.title.should.contain('New payment received');
