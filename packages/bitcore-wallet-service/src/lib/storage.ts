@@ -619,7 +619,7 @@ export class Storage {
           );
         },
         next => {
-          const otherCollections: string[] = _.without(_.values(collections), collections.WALLETS);
+          const otherCollections: string[] = _.values(collections).filter(x => x !== collections.WALLETS);
           async.each(
             otherCollections,
             (col, next) => {

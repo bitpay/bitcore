@@ -1110,7 +1110,7 @@ Transaction.prototype._calculateWeight = function() {
 
 Transaction.prototype._removeOutput = function(index) {
   var output = this.outputs[index];
-  this.outputs = _.without(this.outputs, output);
+  this.outputs = this.outputs.filter(x => x !== output);
   this._outputAmount = undefined;
 };
 
@@ -1218,7 +1218,7 @@ Transaction.prototype.removeInput = function(txId, outputIndex) {
     throw new errors.Transaction.InvalidIndex(index, this.inputs.length);
   }
   var input = this.inputs[index];
-  this.inputs = _.without(this.inputs, input);
+  this.inputs = this.inputs.filter(x => x !== input);
   this._inputAmount = undefined;
   this._updateChangeOutput();
 };
