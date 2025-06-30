@@ -368,7 +368,7 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
       if (opts.tokenAddress) {
         return cb(null, {unconfirmed:0, confirmed: 2e6, balance: 2e6 });
       }
-      let conf =  _.sum(_.map(amounts, x =>  Number((x*1e18).toFixed(0))));
+      let conf =  _.sum(amounts.map(x => Number((x*1e18).toFixed(0))));
       return cb(null, {unconfirmed:0, confirmed: conf, balance: conf });
     }
     blockchainExplorer.estimateFee = sinon.stub().callsArgWith(1, null, 20000000000);
@@ -377,14 +377,14 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
 
   if (wallet.coin == 'eth') {
     amounts = _.isArray(amounts) ? amounts : [amounts];
-    let conf =  _.sum(_.map(amounts, x =>  Number((x*1e18).toFixed(0))));
+    let conf =  _.sum(amounts.map(x => Number((x*1e18).toFixed(0))));
     blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: conf, balance: conf });
     return cb();
   }
 
   if (wallet.coin == 'xrp') {
     amounts = _.isArray(amounts) ? amounts : [amounts];
-    let conf =  _.sum(_.map(amounts, x =>  Number((x*1e6).toFixed(0))));
+    let conf =  _.sum(amounts.map(x => Number((x*1e6).toFixed(0))));
     conf =  conf + Defaults.MIN_XRP_BALANCE;
     blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: conf, balance: conf });
     return cb();
@@ -406,7 +406,7 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
     function(addresses, next) {
       addresses.should.not.be.empty;
 
-      var utxos = _.compact(_.map([].concat(amounts), function(amount, i) {
+      var utxos = _.compact([].concat(amounts).map((amount, i) => {
         var parsed = helpers._parseAmount(amount);
 
         if (parsed.amount <= 0) return null;
@@ -619,7 +619,7 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
       });
 
       var t = ChainService.getBitcoreTx(txp);
-      signatures = _.map(privs, function(priv, i) {
+      signatures = privs.map((priv, i) => {
         return t.getSignatures(priv, undefined, txp.signingMethod);
       });
 

@@ -44,13 +44,13 @@ inherits(MultiSigInput, Input);
 MultiSigInput.prototype.toObject = function() {
   var obj = Input.prototype.toObject.apply(this, arguments);
   obj.threshold = this.threshold;
-  obj.publicKeys = _.map(this.publicKeys, function(publicKey) { return publicKey.toString(); });
+  obj.publicKeys = this.publicKeys.map(publicKey => publicKey.toString());
   obj.signatures = this._serializeSignatures();
   return obj;
 };
 
 MultiSigInput.prototype._deserializeSignatures = function(signatures) {
-  return _.map(signatures, function(signature) {
+  return signatures.map(signature => {
     if (!signature) {
       return undefined;
     }
@@ -59,7 +59,7 @@ MultiSigInput.prototype._deserializeSignatures = function(signatures) {
 };
 
 MultiSigInput.prototype._serializeSignatures = function() {
-  return _.map(this.signatures, function(signature) {
+  return this.signatures.map(signature => {
     if (!signature) {
       return undefined;
     }

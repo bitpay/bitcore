@@ -237,7 +237,7 @@ export class Storage {
   }
 
   storeWalletAndUpdateCopayersLookup(wallet, cb) {
-    const copayerLookups = _.map(wallet.copayers, copayer => {
+    const copayerLookups = wallet.copayers.map(copayer => {
       try {
         $.checkState(
           copayer.requestPubKeys,
@@ -368,7 +368,7 @@ export class Storage {
       .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        const txs = _.map(result, tx => {
+        const txs = result.map(tx => {
           return TxProposal.fromObj(tx);
         });
         return cb(null, txs);
@@ -391,7 +391,7 @@ export class Storage {
           const multisigTxpsInfoByTransactionHash: any = _.groupBy(multisigTxpsInfo, 'transactionHash');
           const actionsById = {};
           const txs = _.compact(
-            _.map(result, tx => {
+            result.map(tx => {
               if (!tx.multisigContractAddress) {
                 return undefined;
               }
@@ -434,7 +434,7 @@ export class Storage {
       .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        const txs = _.map(result, tx => {
+        const txs = result.map(tx => {
           return TxProposal.fromObj(tx);
         });
         return this._completeTxData(walletId, txs, cb);
@@ -473,7 +473,7 @@ export class Storage {
       .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        const txs = _.map(result, tx => {
+        const txs = result.map(tx => {
           return TxProposal.fromObj(tx);
         });
         return this._completeTxData(walletId, txs, cb);
@@ -517,7 +517,7 @@ export class Storage {
       .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        const txs = _.map(result, tx => {
+        const txs = result.map(tx => {
           return TxProposal.fromObj(tx);
         });
         return this._completeTxData(walletId, txs, cb);
@@ -554,7 +554,7 @@ export class Storage {
       .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        const notifications = _.map(result, notification => {
+        const notifications = result.map(notification => {
           return Notification.fromObj(notification);
         });
         return cb(null, notifications);
@@ -873,7 +873,7 @@ export class Storage {
         }
         if (!result) return cb();
 
-        const preferences = _.map([].concat(result), r => {
+        const preferences = [].concat(result).map(r => {
           return Preferences.fromObj(r);
         });
         if (copayerId) {
@@ -923,7 +923,7 @@ export class Storage {
         if (err) return cb(err);
         if (!result || _.isEmpty(result)) return cb(null, []);
 
-        const emails = _.map(result, x => {
+        const emails = result.map(x => {
           return Email.fromObj(x);
         });
 
@@ -1322,7 +1322,7 @@ export class Storage {
       .toArray((err, result) => {
         if (err) return cb(err);
         const notes = _.compact(
-          _.map(result, note => {
+          result.map(note => {
             return TxNote.fromObj(note);
           })
         );
@@ -1382,7 +1382,7 @@ export class Storage {
 
         if (!result) return cb();
 
-        const tokens = _.map([].concat(result), r => {
+        const tokens = [].concat(result).map(r => {
           return PushNotificationSub.fromObj(r);
         });
         return cb(null, tokens);
@@ -1404,7 +1404,7 @@ export class Storage {
 
         if (!result) return cb();
 
-        const tokens = _.map([].concat(result), r => {
+        const tokens = [].concat(result).map(r => {
           return PushNotificationSub.fromObj(r);
         });
         return cb(null, tokens);

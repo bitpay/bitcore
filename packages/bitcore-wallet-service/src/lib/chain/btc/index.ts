@@ -432,7 +432,7 @@ export class BtcChain implements IChain {
         'Failed state: t.outputs.length not equal to outputOrder.length at <getBitcoreTx()>'
       );
       t.sortOutputs(outputs => {
-        return _.map(outputOrder, i => {
+        return outputOrder.map(i => {
           return outputs[i];
         });
       });

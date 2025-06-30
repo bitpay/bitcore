@@ -916,7 +916,7 @@ describe('History', function() {
       }];
 
       var timestamps = [50, 40, 30, 20, 10];
-      var txs = _.map(timestamps, function(ts, idx) {
+      var txs = timestamps.map((ts, idx) => {
         return {
           txid: (idx + 1).toString(),
           confirmations: ts / 10,

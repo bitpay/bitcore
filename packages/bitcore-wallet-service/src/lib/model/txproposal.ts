@@ -331,7 +331,7 @@ export class TxProposal {
     x.txids = obj.txids;
     x.broadcastedOn = obj.broadcastedOn;
     x.inputPaths = obj.inputPaths;
-    x.actions = _.map(obj.actions, action => {
+    x.actions = obj.actions.map(action => {
       return TxProposalAction.fromObj(action);
     });
     x.outputOrder = obj.outputOrder;
@@ -421,7 +421,7 @@ export class TxProposal {
       return a.type == 'accept';
     });
 
-    return _.map(acceptedActions, x => {
+    return acceptedActions.map(x => {
       return {
         signatures: x.signatures,
         xpub: x.xpub

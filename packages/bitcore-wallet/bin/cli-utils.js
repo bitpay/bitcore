@@ -363,7 +363,7 @@ Utils.renderTxProposals = function(txps) {
     console.log("\t%s [\"%s\" by %s] %s => %s", Utils.shortID(x.id), x.message, x.creatorName, Utils.renderAmount(x.amount), x.outputs[0].toAddress);
 
     if (!_.isEmpty(x.actions)) {
-      console.log('\t\tActions: ', _.map(x.actions, function(a) {
+      console.log('\t\tActions: ', x.actions.map(a => {
         return a.copayerName + ' ' + (a.type == 'accept' ? '✓' : '✗') + (a.comment ? ' (' + a.comment + ')' : '');
       }).join('. '));
     }
