@@ -75,7 +75,7 @@ function HDPrivateKey(arg) {
 HDPrivateKey.isValidPath = function(arg, hardened) {
   if (_.isString(arg)) {
     var indexes = HDPrivateKey._getDerivationIndexes(arg);
-    return indexes !== null && _.every(indexes, HDPrivateKey.isValidPath);
+    return indexes !== null && indexes.every(HDPrivateKey.isValidPath);
   }
 
   if (_.isNumber(arg)) {

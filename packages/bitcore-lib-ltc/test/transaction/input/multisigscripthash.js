@@ -64,14 +64,14 @@ describe('MultiSigScriptHashInput', function() {
       .to(address, 1000000);
     var input = transaction.inputs[0];
 
-    _.every(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
+    input.publicKeysWithoutSignature().every(publicKeyMissing => {
       var serialized = publicKeyMissing.toString();
       return serialized === public1.toString() ||
               serialized === public2.toString() ||
               serialized === public3.toString();
     }).should.equal(true);
     transaction.sign(privateKey1);
-    _.every(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
+    input.publicKeysWithoutSignature().every(publicKeyMissing => {
       var serialized = publicKeyMissing.toString();
       return serialized === public2.toString() ||
               serialized === public3.toString();
@@ -179,14 +179,14 @@ describe('MultiSigScriptHashInput', function() {
         .to(address, 1000000);
       var input = transaction.inputs[0];
 
-      _.every(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
+      input.publicKeysWithoutSignature().every(publicKeyMissing => {
         var serialized = publicKeyMissing.toString();
         return serialized === public1.toString() ||
                 serialized === public2.toString() ||
                 serialized === public3.toString();
       }).should.equal(true);
       transaction.sign(privateKey1);
-      _.every(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
+      input.publicKeysWithoutSignature().every(publicKeyMissing => {
         var serialized = publicKeyMissing.toString();
         return serialized === public2.toString() ||
                 serialized === public3.toString();
