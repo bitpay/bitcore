@@ -98,11 +98,11 @@ HDPrivateKey._getDerivationIndexes = function(path) {
   var steps = path.split('/');
 
   // Special cases:
-  if (_.includes(HDPrivateKey.RootElementAlias, path)) {
+  if (HDPrivateKey.RootElementAlias.includes(path)) {
     return [];
   }
 
-  if (!_.includes(HDPrivateKey.RootElementAlias, steps[0])) {
+  if (!HDPrivateKey.RootElementAlias.includes(steps[0])) {
     return null;
   }
 

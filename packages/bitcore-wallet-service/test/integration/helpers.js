@@ -575,7 +575,7 @@ helpers.stubAddressActivity = function(activeAddresses, failsOn) {
 
     stubAddressActivityFailsOnCount++;
 
-    return cb(null, _.includes(activeAddresses, address));
+    return cb(null, activeAddresses.includes(address));
   };
 };
 
