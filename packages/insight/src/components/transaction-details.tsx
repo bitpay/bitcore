@@ -175,7 +175,7 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                           marginTop: '1rem', 
                           ...(showDetails && {borderBottom: '2px solid', paddingBottom: '0.25rem'})
                         }}>
-                          <ArrowDiv margin='auto .5rem auto 0'>
+                          <ArrowDiv margin='auto .5rem auto 0' pointer>
                             <img
                               src={BlueArrowSvg}
                               width={17}
@@ -274,7 +274,7 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                   )}
                   <div style={{minInlineSize: 'fit-content', display: 'flex'}}>
                     {getConvertedValue(vo.value, currency)} {currency}{' '}
-                    <ArrowDiv margin='auto 0 auto .5rem'>
+                    <ArrowDiv margin='auto 0 auto .5rem' pointer={vo.spentTxid}>
                       <img
                         src={vo.spentTxid ? BlueArrowSvg : (isOpReturn(vo) ? CircleSvg : ArrowSvg)}
                         width={17}
