@@ -419,10 +419,10 @@ export class Key {
       $.checkArgument(password, 'Private keys are encrypted, a password is needed');
       try {
         const xPrivKeyEncrypted = this.#getPrivKeyEncrypted({ algo });
-        key.xPrivKey = Encryption.decryptWithPassword(xPrivKeyEncrypted, password);
+        key.xPrivKey = Encryption.decryptWithPassword(xPrivKeyEncrypted, password).toString();
 
         if (this.#mnemonicEncrypted) {
-          key.mnemonic = Encryption.decryptWithPassword(this.#mnemonicEncrypted, password);
+          key.mnemonic = Encryption.decryptWithPassword(this.#mnemonicEncrypted, password).toString();
         }
       } catch (ex) {
         throw new Error('Could not decrypt');
@@ -467,7 +467,7 @@ export class Key {
       const decryptedPrivKey = Encryption.decryptWithPassword(this.#getPrivKeyEncrypted({ algo }), password);
       this.#setPrivKey({ algo, value: decryptedPrivKey });
       if (this.#mnemonicEncrypted) {
-        this.#mnemonic = Encryption.decryptWithPassword(this.#mnemonicEncrypted, password);
+        this.#mnemonic = Encryption.decryptWithPassword(this.#mnemonicEncrypted, password).toString();
       }
       this.#setPrivKeyEncrypted({ algo, value: null })
       this.#mnemonicEncrypted = null;

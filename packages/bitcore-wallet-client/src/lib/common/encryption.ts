@@ -99,7 +99,7 @@ class EncryptionClass {
     decipher.setAuthTag(authTag);
     let decrypted = decipher.update(ciphertext);
     decrypted = Buffer.concat([decrypted, decipher.final()]);
-    return decrypted.toString();
+    return decrypted;
   }
 
   decryptWithKey(data: string | IEncrypted, key: string | Buffer) {

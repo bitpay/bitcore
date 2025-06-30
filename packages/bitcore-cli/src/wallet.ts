@@ -108,7 +108,7 @@ export class Wallet {
       }
 
       _verbose && prompt.intro('Loading wallet');
-      await this.load({ doNotComplete });
+      await this.load({ doNotComplete, allowCache: true });
       _verbose && prompt.outro('Wallet loaded');
     } catch (err) {
       Utils.die(err);
@@ -166,7 +166,7 @@ export class Wallet {
     this.client.fromObj(creds.toObj());
     this.#walletData = { key, creds: this.client.credentials };
     await this.save();
-    await this.register({ copayerName });
+    // await this.register({ copayerName });
     await this.load();
     return { key, creds: this.client.toObj() };
   }
@@ -180,17 +180,17 @@ export class Wallet {
     return secret as string | undefined;
   }
 
-  async load(opts?: { doNotComplete?: boolean }) {
-    const { doNotComplete } = opts || {};
-    
-    let walletData: WalletData | EncryptionTypes.IEncrypted = this.#walletData;
+  async load(opts?: { doNotComplete?: boolean; allowCache?: boolean; }) {
+    const { doNotComplete, allowCache } = opts || {};
+
+    let walletData: WalletData | EncryptionTypes.IEncrypted = allowCache ? this.#walletData : null;
     if (!walletData) {
       walletData = await this.storage.load();
     }
     if ((walletData as EncryptionTypes.IEncrypted).ct) {
       const password = await getPassword('Wallet decryption password:', { hidden: true });
       try {
-        walletData = JSON.parse(Encryption.decryptWithPassword(walletData as EncryptionTypes.IEncrypted, password));
+        walletData = JSON.parse(Encryption.decryptWithPassword(walletData as EncryptionTypes.IEncrypted, password).toString());
         this.isFullyEncrypted = true;
       } catch (e) {
         Utils.die('Could not open wallet. Wrong password.');
@@ -200,10 +200,11 @@ export class Wallet {
     
 
     const instantiateKey = () => {
-      if ((walletData.key as TssKeyType).metadata) {
-        return new TssKey.TssKey(walletData.key as TssKeyType);
+      const obj = walletData.key.toObj ? walletData.key.toObj() : walletData.key;
+      if ((obj as TssKeyType).metadata) {
+        return new TssKey.TssKey(obj as TssKeyType);
       } else {
-        return new Key({ seedType: 'object', seedData: walletData.key });
+        return new Key({ seedType: 'object', seedData: obj });
       }
     };
 

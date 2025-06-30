@@ -62,7 +62,7 @@ export class Utils {
   static decryptMessage(ciphertextJson, encryptingKey) {
     if (!ciphertextJson) return;
     if (!encryptingKey) throw new Error('Missing encrypting key');
-    return Encryption.decryptWithKey(ciphertextJson, encryptingKey);
+    return Encryption.decryptWithKey(ciphertextJson, encryptingKey).toString();
   }
 
   static decryptMessageNoThrow(ciphertextJson, encryptingKey) {

@@ -125,16 +125,20 @@ export class TssKey extends Key implements ITssKey {
     const keyObj = {
       ...super.get(password, algo),
       keychain: !this.isKeyChainEncrypted() ? { ...this.keychain } : {
-        privateKeyShare: Buffer.from(Encryption.decryptWithPassword(this.keychain.privateKeyShareEncrypted, password)),
-        reducedPrivateKeyShare: Buffer.from(Encryption.decryptWithPassword(this.keychain.reducedPrivateKeyShareEncrypted, password)),
+        privateKeyShare: Encryption.decryptWithPassword(this.keychain.privateKeyShareEncrypted, password),
+        reducedPrivateKeyShare: Encryption.decryptWithPassword(this.keychain.reducedPrivateKeyShareEncrypted, password),
         commonKeyChain: this.keychain.commonKeyChain,
       }
-    }
+    };
     return keyObj;
   }
 
   encrypt(password: string, opts?: { iter?: number; ks?: number }) {
-    super.encrypt(password, opts);
+    if (!this.isPrivKeyEncrypted()) {
+      super.encrypt(password, opts);
+    } else if (!this.checkPassword(password)) {
+      throw new Error('Private key is already encrypted but with a different password');
+    }
     if (this.isKeyChainEncrypted()) {
       throw new Error('Keychain is already encrypted');
     }
@@ -154,8 +158,8 @@ export class TssKey extends Key implements ITssKey {
       }
     }
     if (this.isKeyChainEncrypted()) {
-      this.keychain.privateKeyShare = Buffer.from(Encryption.decryptWithPassword(this.keychain.privateKeyShareEncrypted, password));
-      this.keychain.reducedPrivateKeyShare = Buffer.from(Encryption.decryptWithPassword(this.keychain.reducedPrivateKeyShareEncrypted, password));
+      this.keychain.privateKeyShare = Encryption.decryptWithPassword(this.keychain.privateKeyShareEncrypted, password);
+      this.keychain.reducedPrivateKeyShare = Encryption.decryptWithPassword(this.keychain.reducedPrivateKeyShareEncrypted, password);
       // remove the encrypted data
       this.keychain.privateKeyShareEncrypted = null;
       this.keychain.reducedPrivateKeyShareEncrypted = null;
