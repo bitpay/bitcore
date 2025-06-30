@@ -179,7 +179,7 @@ URI.prototype.toObject = URI.prototype.toJSON = function toObject() {
       json[m] = this[m].toString();
     }
   }
-  _.extend(json, this.extras);
+  Object.assign(json, this.extras);
   return json;
 };
 
@@ -202,7 +202,7 @@ URI.prototype.toString = function() {
   if (this.r) {
     query.r = this.r;
   }
-  _.extend(query, this.extras);
+  Object.assign(query, this.extras);
 
   return URL.format({
     protocol: 'bitcoin:',
