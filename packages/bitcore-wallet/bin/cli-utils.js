@@ -224,7 +224,7 @@ Utils.saveClient = function(args, key, cred, opts, cb) {
 };
 
 Utils.findOneTxProposal = function(txps, id) {
-  var matches = _.filter(txps, function(tx) {
+  var matches = txps.filter(tx => {
     return _.endsWith(Utils.shortID(tx.id), id);
   });
 
@@ -357,7 +357,7 @@ Utils.renderTxProposals = function(txps) {
   console.log("* TX Proposals:")
 
   txps.forEach((x) => {
-    var missingSignatures = x.requiredSignatures - _.filter(Object.values(x.actions), function(a) {
+    var missingSignatures = x.requiredSignatures - Object.values(x.actions).filter(a => {
       return a.type == 'accept';
     }).length;
     console.log("\t%s [\"%s\" by %s] %s => %s", Utils.shortID(x.id), x.message, x.creatorName, Utils.renderAmount(x.amount), x.outputs[0].toAddress);

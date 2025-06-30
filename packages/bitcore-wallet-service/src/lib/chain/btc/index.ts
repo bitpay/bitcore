@@ -597,7 +597,7 @@ export class BtcChain implements IChain {
         {}
       );
 
-      return _.filter(utxos, utxo => {
+      return utxos.filter(utxo => {
         if (utxo.locked) return false;
         if (txp.excludeUnconfirmedUtxos && !txp.replaceTxByFee && !utxo.confirmations) return false;
         if (excludeIndex[utxo.txid + ':' + utxo.vout]) return false;
@@ -619,7 +619,7 @@ export class BtcChain implements IChain {
       }
 
       // remove utxos not economically worth to send
-      utxos = _.filter(utxos, utxo => {
+      utxos = utxos.filter(utxo => {
         if (utxo.satoshis <= feePerInput) return false;
         return true;
       });
@@ -831,7 +831,7 @@ export class BtcChain implements IChain {
           next => {
             const group = groups[i++];
 
-            let candidateUtxos = _.filter(utxos, utxo => {
+            let candidateUtxos = utxos.filter(utxo => {
               return utxo.confirmations >= group;
             });
 

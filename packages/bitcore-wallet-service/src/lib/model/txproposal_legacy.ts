@@ -175,7 +175,7 @@ export class TxProposalLegacy {
 
   getApprovers() {
     return _.map(
-      _.filter(this.actions, a => {
+      this.actions.filter(a => {
         return a.type == 'accept';
       }),
       'copayerId'

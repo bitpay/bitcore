@@ -515,7 +515,7 @@ helpers.stubHistory = function(nr, bcHeight, txs) {
   txs= helpers.createTxsV8(nr,bcHeight, txs);
   blockchainExplorer.getTransactions = function(walletId, startBlock, cb) {
     startBlock = startBlock || 0;
-    var page = _.filter(txs, (x) => {
+    var page = txs.filter(x => {
       return x.height >=startBlock || x.height == -1
     });
     return cb(null, page);

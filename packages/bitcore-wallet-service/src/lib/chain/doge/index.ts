@@ -50,7 +50,7 @@ export class DogeChain extends BtcChain implements IChain {
         {}
       );
 
-      return _.filter(utxos, utxo => {
+      return utxos.filter(utxo => {
         if (utxo.locked) return false;
         if (utxo.satoshis <= feePerInput) return false;
         if (txp.excludeUnconfirmedUtxos && !utxo.confirmations) return false;
@@ -266,7 +266,7 @@ export class DogeChain extends BtcChain implements IChain {
         next => {
           const group = groups[i++];
 
-          const candidateUtxos = _.filter(utxos, utxo => {
+          const candidateUtxos = utxos.filter(utxo => {
             return utxo.confirmations >= group;
           });
 

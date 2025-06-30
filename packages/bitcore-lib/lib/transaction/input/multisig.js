@@ -121,7 +121,7 @@ MultiSigInput.prototype._updateScript = function() {
 
 MultiSigInput.prototype._createSignatures = function() {
   return _.map(
-    _.filter(this.signatures, function(signature) { return !_.isUndefined(signature); }),
+    this.signatures.filter(signature => !_.isUndefined(signature)),
     // Future signature types may need refactor of toDER
     function(signature) {
       return BufferUtil.concat([
@@ -153,7 +153,7 @@ MultiSigInput.prototype.countSignatures = function() {
 
 MultiSigInput.prototype.publicKeysWithoutSignature = function() {
   var self = this;
-  return _.filter(this.publicKeys, function(publicKey) {
+  return this.publicKeys.filter(publicKey => {
     return !(self.signatures[self.publicKeyIndex[publicKey.toString()]]);
   });
 };

@@ -417,7 +417,7 @@ export class TxProposal {
   }
 
   getCurrentSignatures() {
-    const acceptedActions = _.filter(this.actions, a => {
+    const acceptedActions = this.actions.filter(a => {
       return a.type == 'accept';
     });
 
@@ -459,7 +459,7 @@ export class TxProposal {
    */
   getApprovers() {
     return _.map(
-      _.filter(this.actions, a => {
+      this.actions.filter(a => {
         return a.type == 'accept';
       }),
       'copayerId'
