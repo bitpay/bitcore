@@ -214,21 +214,20 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                                   </TextElipsis>
                                 </DataBox>
                                   
-                                <span style={{display: 'flex'}}>
-                                  <DataBox label='Tx Index'>
+                                <div style={{display: 'flex', gap: '0.7rem', margin: '0 0.2rem'}}>
+                                  <DataBox label='Tx Index' style={{margin: 0}}>
                                     <TextElipsis>
                                       {item.mintIndex}
                                     </TextElipsis>
                                   </DataBox>
-
                                   {item.uiConfirmations && confirmations > 0 ? (
-                                    <DataBox label='Confirmations'>
+                                    <DataBox label='Confirmations' style={{margin: 0}}>
                                       <ScriptText>
                                         {item.uiConfirmations + confirmations}
                                       </ScriptText>
                                     </DataBox>
                                   ) : null}
-                                </span>
+                                </div>
 
                                 {item.script && (
                                   <>
