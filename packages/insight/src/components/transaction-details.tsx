@@ -300,7 +300,10 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                             </TextElipsis>
                           </DataBox>
                         )}
-                        {isOpReturn(vo) && <ScriptText>{getOpReturnText(vo)}</ScriptText>}
+                          {isOpReturn(vo) && 
+                            <DataBox label="Text"> 
+                              <ScriptText>{getOpReturnText(vo)}</ScriptText>
+                            </DataBox>}
                         {vo.script && (
                           <>
                             <DataBox label='Script Hex'>{new lib.Script(vo.script).toHex()}</DataBox>
