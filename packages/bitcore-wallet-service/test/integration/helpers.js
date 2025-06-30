@@ -119,7 +119,7 @@ helpers.beforeEach = function(cb) {
   };
 
 
-  async.each(_.values(collections), (x, icb)=> {
+  async.each(Object.values(collections), (x, icb)=> {
     storage.db.collection(x).deleteMany({}, icb);
   }, (err) => {
     should.not.exist(err);

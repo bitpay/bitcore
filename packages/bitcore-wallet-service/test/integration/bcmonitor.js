@@ -94,7 +94,7 @@ describe('Blockchain monitor', function() {
     };
 
     async.each(
-      _.values(collections),
+      Object.values(collections),
       (x, icb) => {
         storage.db.collection(x).deleteMany({}, icb);
       },

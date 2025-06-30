@@ -66,7 +66,7 @@ export class BtcChain implements IChain {
           byAddress[utxo.address].amount += utxo.satoshis;
         });
 
-        balance.byAddress = _.values(byAddress);
+        balance.byAddress = Object.values(byAddress);
 
         return cb(null, balance);
       }

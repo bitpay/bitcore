@@ -300,7 +300,7 @@ describe('HDPrivate key interface', function() {
     it('toObject leaves no Buffer instances', function() {
       var privKey = new HDPrivateKey(xprivkey);
       var object = privKey.toObject();
-      _.values(object).forEach((value) => {
+      Object.values(object).forEach(value => {
         expect(BufferUtil.isBuffer(value)).to.equal(false);
       });
     });
