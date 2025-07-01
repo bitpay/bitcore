@@ -1,6 +1,5 @@
 'use strict';
 
-const  _ = require('lodash');
 const chai = require('chai');
 const should = chai.should();
 const { BitcoreLibDoge } = require ('crypto-wallet-core');
