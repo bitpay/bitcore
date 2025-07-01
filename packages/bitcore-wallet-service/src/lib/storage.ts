@@ -459,7 +459,7 @@ export class Storage {
     const filter: { walletId: string; createdOn?: typeof tsFilter } = {
       walletId
     };
-    if (tsFilter.length !== 0) filter.createdOn = tsFilter;
+    if (Object.keys(tsFilter).length !== 0) filter.createdOn = tsFilter;
 
     const mods: { limit?: number } = {};
     if (_.isNumber(opts.limit)) mods.limit = opts.limit;
@@ -503,7 +503,7 @@ export class Storage {
       walletId,
       status: 'broadcasted'
     };
-    if (tsFilter.length !== 0) filter.broadcastedOn = tsFilter;
+    if (Object.keys(tsFilter).length !== 0) filter.broadcastedOn = tsFilter;
 
     const mods: { limit?: number } = {};
     if (_.isNumber(opts.limit)) mods.limit = opts.limit;
