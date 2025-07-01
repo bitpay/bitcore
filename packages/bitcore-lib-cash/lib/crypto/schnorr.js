@@ -11,7 +11,6 @@ var PublicKey = require('../publickey');
 var Random = require('./random');
 var Hash = require('./hash');
 var BufferUtil = require('../util/buffer');
-var _ = require('lodash');
 var $ = require('../util/preconditions');
 
 var Schnorr = function Schnorr(obj) {
