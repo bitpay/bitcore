@@ -2,7 +2,6 @@
 
 var should = require('chai').should();
 var expect = require('chai').expect;
-var _ = require('lodash');
 
 var bitcore = require('../../..');
 var errors = bitcore.errors;

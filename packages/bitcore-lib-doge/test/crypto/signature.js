@@ -1,6 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
 var should = require('chai').should();
 var bitcore = require('../..');
 var BN = bitcore.crypto.BN;

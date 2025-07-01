@@ -1,6 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
 var URL = require('url');
 
 var Address = require('./address');
