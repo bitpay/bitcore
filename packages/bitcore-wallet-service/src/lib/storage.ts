@@ -459,7 +459,7 @@ export class Storage {
     const filter: { walletId: string; createdOn?: typeof tsFilter } = {
       walletId
     };
-    if (!_.isEmpty(tsFilter)) filter.createdOn = tsFilter;
+    if (tsFilter.length !== 0) filter.createdOn = tsFilter;
 
     const mods: { limit?: number } = {};
     if (_.isNumber(opts.limit)) mods.limit = opts.limit;
@@ -503,7 +503,7 @@ export class Storage {
       walletId,
       status: 'broadcasted'
     };
-    if (!_.isEmpty(tsFilter)) filter.broadcastedOn = tsFilter;
+    if (tsFilter.length !== 0) filter.broadcastedOn = tsFilter;
 
     const mods: { limit?: number } = {};
     if (_.isNumber(opts.limit)) mods.limit = opts.limit;
@@ -775,7 +775,7 @@ export class Storage {
 
   storeAddressAndWallet(wallet, addresses, cb) {
     const clonedAddresses = [].concat(addresses);
-    if (_.isEmpty(addresses)) return cb();
+    if (addresses.length === 0) return cb();
     let duplicate;
 
     this.db.collection(collections.ADDRESSES).insertMany(
@@ -843,7 +843,7 @@ export class Storage {
       })
       .toArray((err, result) => {
         if (err) return cb(err);
-        if (!result || _.isEmpty(result)) return cb();
+        if (!result || result.length === 0) return cb();
         if (result.length > 1) {
           result = _.find(result, address => {
             return chain == (address.chain || address.coin || 'btc');
@@ -921,7 +921,7 @@ export class Storage {
       })
       .toArray((err, result) => {
         if (err) return cb(err);
-        if (!result || _.isEmpty(result)) return cb(null, []);
+        if (!result || result.length === 0) return cb(null, []);
 
         const emails = result.map(x => {
           return Email.fromObj(x);
@@ -1253,7 +1253,7 @@ export class Storage {
       })
       .limit(1)
       .toArray((err, result) => {
-        if (err || _.isEmpty(result)) return cb(err);
+        if (err || result.length === 0) return cb(err);
         return cb(null, result[0]);
       });
   }
@@ -1272,7 +1272,7 @@ export class Storage {
         ts: -1
       })
       .toArray((err, result) => {
-        if (err || _.isEmpty(result)) return cb(err);
+        if (err || result.length === 0) return cb(err);
         return cb(null, result);
       });
   }

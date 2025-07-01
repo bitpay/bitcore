@@ -383,7 +383,7 @@ export class PushNotificationsService {
 
       this.storage.fetchPreferences<Preferences[]>(notification.walletId, null, (err, preferences) => {
         if (err) logger.error('%o', err);
-        if (_.isEmpty(preferences)) preferences = [];
+        if (preferences.length === 0) preferences = [];
 
         const recipientPreferences = _.compact(
           preferences.map(p => {

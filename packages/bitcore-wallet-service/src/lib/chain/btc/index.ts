@@ -100,7 +100,7 @@ export class BtcChain implements IChain {
         return -input.satoshis;
       });
 
-      if (_.isEmpty(inputs)) return cb(null, info);
+      if (inputs.length === 0) return cb(null, info);
 
       server._getFeePerKb(wallet, opts, (err, feePerKb) => {
         if (err) return cb(err);
@@ -139,7 +139,7 @@ export class BtcChain implements IChain {
           txp.inputs.push(input);
         });
 
-        if (_.isEmpty(txp.inputs)) return cb(null, info);
+        if (txp.inputs.length === 0) return cb(null, info);
 
         const fee = this.getEstimatedFee(txp, { conservativeEstimation: true });
         const amount = _.sumBy(txp.inputs, 'satoshis') - fee;
@@ -173,7 +173,7 @@ export class BtcChain implements IChain {
         if (wallet.singleAddress) {
           server.storage.fetchAddresses(server.walletId, (err, addresses) => {
             if (err) return cb(err);
-            if (_.isEmpty(addresses)) return cb(new ClientError('The wallet has no addresses'));
+            if (addresses.length === 0) return cb(new ClientError('The wallet has no addresses'));
             return cb(null, _.head(addresses));
           });
         } else {
@@ -486,7 +486,7 @@ export class BtcChain implements IChain {
       }
     }
 
-    if (_.isEmpty(txp.inputPaths)) return Errors.NO_INPUT_PATHS;
+    if (txp.inputPaths.length === 0) return Errors.NO_INPUT_PATHS;
 
     try {
       const bitcoreTx = this.getBitcoreTx(txp);
@@ -565,7 +565,7 @@ export class BtcChain implements IChain {
     const MAX_TX_SIZE_IN_KB = Defaults.MAX_TX_SIZE_IN_KB_BTC;
 
     // todo: check inputs are ours and have enough value
-    if (txp.inputs && !_.isEmpty(txp.inputs) && !txp.replaceTxByFee) {
+    if (txp.inputs && txp.inputs.length !== 0 && !txp.replaceTxByFee) {
       if (!_.isNumber(txp.fee)) txp.fee = this.getEstimatedFee(txp, { conservativeEstimation: true });
       return cb(this.checkTx(txp));
     }
@@ -706,7 +706,7 @@ export class BtcChain implements IChain {
           return false;
         }
 
-        if (!_.isEmpty(bigInputs)) {
+        if (bigInputs.length !== 0) {
           if (amountVsUtxoRatio < Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR) {
             // logger.debug('Breaking because utxo is too small compared to tx amount');
             return false;
@@ -757,7 +757,7 @@ export class BtcChain implements IChain {
         );
 
         selected = [];
-        if (!_.isEmpty(bigInputs)) {
+        if (bigInputs.length !== 0) {
           const input = _.head(bigInputs);
           logger.debug('Using big input: %o', Utils.formatUtxos(input));
           total = input.satoshis;
@@ -767,7 +767,7 @@ export class BtcChain implements IChain {
         }
       }
 
-      if (_.isEmpty(selected)) {
+      if (selected.length === 0) {
         // logger.debug('Could not find enough funds within this utxo subset');
         return cb(
           error ||
@@ -826,7 +826,7 @@ export class BtcChain implements IChain {
         let lastGroupLength;
         async.whilst(
           () => {
-            return i < groups.length && _.isEmpty(inputs);
+            return i < groups.length && inputs.length === 0;
           },
           next => {
             const group = groups[i++];
@@ -880,7 +880,7 @@ export class BtcChain implements IChain {
           },
           err => {
             if (err) return cb(err);
-            if (selectionError || _.isEmpty(inputs))
+            if (selectionError || inputs.length === 0)
               return cb(selectionError || new Error('Could not select tx inputs'));
 
             txp.setInputs(_.shuffle(inputs));
@@ -907,7 +907,7 @@ export class BtcChain implements IChain {
   }
 
   checkUtxos(opts) {
-    if (_.isNumber(opts.fee) && _.isEmpty(opts.inputs)) return true;
+    if (_.isNumber(opts.fee) && opts.inputs.length === 0) return true;
   }
 
   checkValidTxAmount(output): boolean {

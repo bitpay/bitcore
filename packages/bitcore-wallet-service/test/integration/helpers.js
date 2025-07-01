@@ -489,7 +489,7 @@ helpers.createTxsV8 = function(nr, bcHeight, txs) {
   //  3.  => 3...   / bcHeight - 2  /   txid3
 
   var  i = 0;
-  if (_.isEmpty(txs)) {
+  if (txs.length === 0) {
     while(i < nr) {
       txs.push({
         id: 'id' + i,

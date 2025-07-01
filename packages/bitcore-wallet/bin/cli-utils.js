@@ -351,7 +351,7 @@ Utils.renderAmount = function(satoshis, coin, opts) {
 };
 
 Utils.renderTxProposals = function(txps) {
-  if (_.isEmpty(txps))
+  if (txps.length === 0)
     return;
 
   console.log("* TX Proposals:")
@@ -362,7 +362,7 @@ Utils.renderTxProposals = function(txps) {
     }).length;
     console.log("\t%s [\"%s\" by %s] %s => %s", Utils.shortID(x.id), x.message, x.creatorName, Utils.renderAmount(x.amount), x.outputs[0].toAddress);
 
-    if (!_.isEmpty(x.actions)) {
+    if (x.actions.length !== 0) {
       console.log('\t\tActions: ', x.actions.map(a => {
         return a.copayerName + ' ' + (a.type == 'accept' ? '✓' : '✗') + (a.comment ? ' (' + a.comment + ')' : '');
       }).join('. '));
