@@ -729,11 +729,18 @@ export class PushNotificationsService {
         const credentials = this.oneInchGetCredentials();
         const chainIdMap = {
           eth: 1,
-          matic: 137
-        };
+          matic: 137,
+          pol: 137,
+          arb: 42161,
+          base: 8453,
+          op: 10,
+          sol: 501
+         };
+        const chainId = chainIdMap[chain];
+        const URL: string = `${credentials.API}/token/v1.2/${chainId}?provider=1inch&country=US/tokens`;
         this.request(
           {
-            url: `${credentials.API}/v5.2/${chainIdMap[chain]}/tokens`,
+            url: URL,
             method: 'GET',
             json: true,
             headers: {
@@ -748,7 +755,7 @@ export class PushNotificationsService {
               // oneinch rate limit
               return reject();
             }
-            return resolve(data?.body?.tokens);
+            return resolve(data?.body);
           }
         );
       } catch (err) {
