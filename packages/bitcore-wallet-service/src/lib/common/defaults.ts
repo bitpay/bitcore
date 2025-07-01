@@ -293,7 +293,7 @@ export const Defaults = {
   // Oneinch token list cache duration (in ms)
   ONE_INCH_CACHE_DURATION: 1 * 60 * 1000,
 
-  // Coingecko token rates cache duration (in ms)
+  // Coingecko get token cache duration (in ms)
   COIN_GECKO_CACHE_DURATION: 1 * 24 * 60 * 60 * 1000,
 
   // Max allowed timespan for notification queries in seconds

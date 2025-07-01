@@ -23,9 +23,8 @@ describe('CoinGecko integration', function() {
       api: 'xxxx',
     }
 
-    req = {params: {chain: 'eth', contractAddresses: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48,0x6b175474e89094c44da98b954eedeac495271d0f', altCurrencies: 'ars,aud,usd'}};
     fakeRequest = {
-      get: (_url, _opts, _cb) => { return _cb(null,  { body: 'data'}) },
+      get: (_url, _opts, _cb) => { return _cb(null,  { body: {tokens: 'data'}}) },
     };
 
     helpers.beforeEach((res) => {
@@ -53,10 +52,13 @@ describe('CoinGecko integration', function() {
     helpers.after(done);
   });
 
-  describe('#coinGeckoGetRates', () => {
-    it('should get coinGecko list of tokens rates', () => {
-      server.request = fakeRequest;
-      server.coinGeckoGetRates(req).then(data => {
+  describe('#coinGeckoGetTokenData', () => {
+    beforeEach(() => {
+      server.externalServices.coinGecko.request = fakeRequest;
+    });
+    
+    it('should get coinGecko list of tokens data', () => {
+      server.externalServices.coinGecko.coinGeckoGetTokens({}).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
@@ -65,9 +67,7 @@ describe('CoinGecko integration', function() {
 
     it('should return error if coinGecko is commented in config', () => {
       config.coinGecko = undefined;
-
-      server.request = fakeRequest;
-      server.coinGeckoGetRates(req).then(data => {
+      server.externalServices.coinGecko.coinGeckoGetTokens({}).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);

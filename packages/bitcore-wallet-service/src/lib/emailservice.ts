@@ -646,48 +646,90 @@ export class EmailService {
     });
   }
 
-  private oneInchGetCredentials() {
-    if (!config.oneInch) throw new Error('1Inch missing credentials');
+  private coinGeckoGetCredentials() {
+    if (!config.coinGecko) throw new Error('coinGecko missing credentials');
 
     const credentials = {
-      API: config.oneInch.api,
-      API_KEY: config.oneInch.apiKey,
-      referrerAddress: config.oneInch.referrerAddress,
-      referrerFee: config.oneInch.referrerFee
+      API: config.coinGecko.api,
+      API_KEY: config.coinGecko.apiKey,
     };
 
     return credentials;
   }
 
-  public getTokenData(chain: string) {
+  getTokenData(chain: string): Promise<Record<string, {
+    chainId: string;
+    address: string;
+    symbol: string;
+    name: string;
+    decimals: number;
+    logoURI: string;
+  }>> {
     return new Promise((resolve, reject) => {
-      try {
-        const credentials = this.oneInchGetCredentials();
-        // Get mainnet chainId
-        const chainId = ConstantsCWC.EVM_CHAIN_NETWORK_TO_CHAIN_ID[`${chain.toUpperCase()}_mainnet`]
-        this.request(
+      const cacheKey = `cgKeyValueTokenList:${chain}`;
+      const credentials = this.coinGeckoGetCredentials();
+
+      this.storage.checkAndUseGlobalCache(cacheKey, Defaults.COIN_GECKO_CACHE_DURATION, (err, values, oldvalues) => {
+        if (err) logger.warn('Cache check failed', err);
+        if (values) return resolve(values);
+
+        const assetPlatformMap = {
+          eth: 'ethereum',
+          matic: 'polygon-pos',
+          pol: 'polygon-pos',
+          arb: 'arbitrum-one',
+          base: 'base',
+          op: 'optimistic-ethereum',
+          sol: 'solana',
+        };
+
+        const assetId = assetPlatformMap[chain];
+        if (!assetId) return reject(new Error(`Unsupported chain '${chain}'`));
+
+        const URL: string = `${credentials.API}/v3/token_lists/${assetId}/all.json`;
+        const headers = {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'x-cg-pro-api-key': credentials.API_KEY
+        };
+
+        this.request.get(
+          URL,
           {
-            url: `${credentials.API}/v5.2/${chainId}/tokens`,
-            method: 'GET',
-            json: true,
-            headers: {
-              'Content-Type': 'application/json',
-              Accept: 'application/json',
-              Authorization: 'Bearer ' + credentials.API_KEY,
-            }
+            headers,
+            json: true
           },
           (err, data) => {
-            if (err) return reject(err);
-            if (data?.statusCode === 429) {
-              // oneinch rate limit
-              return reject();
+            const tokens = data?.body?.tokens;
+            const status = data?.body?.status;
+            if (err) {
+              logger.warn('An error occured while retrieving the token list', err);
+              if (oldvalues) {
+                logger.warn('Using old cached values');
+                return resolve(oldvalues);
+              }
+              return reject(err.body ?? err);
+            } else if (status?.error_code === 429 && oldvalues) {
+              return resolve(oldvalues);
+            } else {
+              if (!tokens) {
+                if (oldvalues) {
+                  logger.warn('No token list available... using old cached values');
+                  return resolve(oldvalues);
+                }
+                return reject(new Error(`Could not get tokens list. Code: ${status?.error_code}. Error: ${status?.error_message || 'Unknown error'}`));
+              }
+              const updatedTokens = tokens.reduce((acc, token) => {
+                acc[token.address] = token;
+                return acc;
+              }, {} as Record<string, any>);
+              this.storage.storeGlobalCache(cacheKey, updatedTokens, storeErr => {
+                if (storeErr) logger.warn('Could not cache token list', storeErr);
+                return resolve(updatedTokens);
+              });
             }
-            return resolve(data?.body?.tokens);
-          }
-        );
-      } catch (err) {
-        return reject(err);
-      }
+        });
+      });
     });
   }
 }
