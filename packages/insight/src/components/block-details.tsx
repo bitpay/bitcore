@@ -163,7 +163,7 @@ const BlockDetails: FC<BlockDetailsProps> = ({currency, network, block}) => {
                       onClick={() =>
                         summary.previousBlockHash ? gotoBlock(summary.previousBlockHash) : null
                       }>
-                      {(summary.height > 0) ? summary.height - 1 : "None"}
+                      {(summary.height > 0) ? summary.height - 1 : 'None'}
                     </span>
                   </TileLink>
                 </Tile>
