@@ -93,7 +93,7 @@ export class Stats {
       .toArray((err, results) => {
         if (err) return cb(err);
         const stats = {
-          byDay: _.map(results, record => {
+          byDay: results.map(record => {
             const day = moment(record._id.day).format('YYYYMMDD');
             return {
               day,
@@ -123,7 +123,7 @@ export class Stats {
       .toArray((err, results) => {
         if (err) return cb(err);
         const stats = {
-          byDay: _.map(results, record => {
+          byDay: results.map(record => {
             const day = moment(record._id.day).format('YYYYMMDD');
             return {
               day,

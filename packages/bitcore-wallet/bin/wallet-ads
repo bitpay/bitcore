@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-var _ = require('lodash');
 var program = require('commander');
 var utils = require('./cli-utils');
 var Client = require('bitcore-wallet-client').default;
@@ -58,14 +57,14 @@ var requiredArgs = {
 }
 
 let missingArgs = [];
-_.forEach(requiredArgs, (value, requiredArg) => {
+requiredArgs.forEach((value, requiredArg) => {
   if (value === undefined) {
     missingArgs.push(requiredArg);
   }
 });
 
-if (!_.isEmpty(missingArgs)) {
-  _.forEach(missingArgs, (arg) => {
+if (missingArgs.length !== 0) {
+  missingArgs.forEach((arg) => {
     console.log(arg + ' is missing. Please run again with correct arguments.')
   });
 

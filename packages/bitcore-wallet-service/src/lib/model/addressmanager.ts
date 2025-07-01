@@ -125,7 +125,7 @@ export class AddressManager {
   }
 
   getNextSkippedPath() {
-    if (_.isEmpty(this.skippedPaths)) return null;
+    if (this.skippedPaths.length === 0) return null;
 
     const ret = this.skippedPaths.pop();
     return ret;

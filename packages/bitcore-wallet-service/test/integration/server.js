@@ -3305,7 +3305,7 @@ describe('Wallet service', function() {
         blockchainExplorer.estimateFee = sinon.stub().yields('dummy error');
         server.getFeeLevels({}, function(err, fees) {
           should.not.exist(err);
-          fees = _.fromPairs(_.map(fees, function(item) {
+          fees = _.fromPairs(fees.map(item => {
             return [item.level, item];
           }));
           fees.urgent.feePerKb.should.equal(60003);

@@ -331,7 +331,7 @@ export class TxProposal {
     x.txids = obj.txids;
     x.broadcastedOn = obj.broadcastedOn;
     x.inputPaths = obj.inputPaths;
-    x.actions = _.map(obj.actions, action => {
+    x.actions = obj.actions.map(action => {
       return TxProposalAction.fromObj(action);
     });
     x.outputOrder = obj.outputOrder;
@@ -417,11 +417,11 @@ export class TxProposal {
   }
 
   getCurrentSignatures() {
-    const acceptedActions = _.filter(this.actions, a => {
+    const acceptedActions = this.actions.filter(a => {
       return a.type == 'accept';
     });
 
-    return _.map(acceptedActions, x => {
+    return acceptedActions.map(x => {
       return {
         signatures: x.signatures,
         xpub: x.xpub
@@ -459,7 +459,7 @@ export class TxProposal {
    */
   getApprovers() {
     return _.map(
-      _.filter(this.actions, a => {
+      this.actions.filter(a => {
         return a.type == 'accept';
       }),
       'copayerId'

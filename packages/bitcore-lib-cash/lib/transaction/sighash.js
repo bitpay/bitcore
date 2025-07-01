@@ -37,7 +37,7 @@ var sighashForForkId = function(transaction, sighashType, inputNumber, subscript
   function GetPrevoutHash(tx) {
     var writer = new BufferWriter()
 
-    _.each(tx.inputs, function(input) {
+    tx.inputs.forEach((input) => {
         writer.writeReverse(input.prevTxId);
         writer.writeUInt32LE(input.outputIndex);
     });
@@ -50,7 +50,7 @@ var sighashForForkId = function(transaction, sighashType, inputNumber, subscript
   function GetSequenceHash(tx) {
     var writer = new BufferWriter()
 
-    _.each(tx.inputs, function(input) {
+    tx.inputs.forEach((input) => {
       writer.writeUInt32LE(input.sequenceNumber);
     });
 
@@ -63,7 +63,7 @@ var sighashForForkId = function(transaction, sighashType, inputNumber, subscript
     var writer = new BufferWriter()
 
     if ( _.isUndefined(n)) {
-      _.each(tx.outputs, function(output) {
+      tx.outputs.forEach((output) => {
         output.toBufferWriter(writer);
       });
     } else {

@@ -224,7 +224,7 @@ Utils.saveClient = function(args, key, cred, opts, cb) {
 };
 
 Utils.findOneTxProposal = function(txps, id) {
-  var matches = _.filter(txps, function(tx) {
+  var matches = txps.filter(tx => {
     return _.endsWith(Utils.shortID(tx.id), id);
   });
 
@@ -351,19 +351,19 @@ Utils.renderAmount = function(satoshis, coin, opts) {
 };
 
 Utils.renderTxProposals = function(txps) {
-  if (_.isEmpty(txps))
+  if (txps.length === 0)
     return;
 
   console.log("* TX Proposals:")
 
-  _.each(txps, function(x) {
-    var missingSignatures = x.requiredSignatures - _.filter(_.values(x.actions), function(a) {
+  txps.forEach((x) => {
+    var missingSignatures = x.requiredSignatures - Object.values(x.actions).filter(a => {
       return a.type == 'accept';
     }).length;
     console.log("\t%s [\"%s\" by %s] %s => %s", Utils.shortID(x.id), x.message, x.creatorName, Utils.renderAmount(x.amount), x.outputs[0].toAddress);
 
-    if (!_.isEmpty(x.actions)) {
-      console.log('\t\tActions: ', _.map(x.actions, function(a) {
+    if (x.actions.length !== 0) {
+      console.log('\t\tActions: ', x.actions.map(a => {
         return a.copayerName + ' ' + (a.type == 'accept' ? '✓' : '✗') + (a.comment ? ' (' + a.comment + ')' : '');
       }).join('. '));
     }

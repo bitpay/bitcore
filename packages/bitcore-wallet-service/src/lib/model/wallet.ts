@@ -156,7 +156,7 @@ export class Wallet {
     x.singleAddress = !!obj.singleAddress;
     x.status = obj.status;
     x.publicKeyRing = obj.publicKeyRing;
-    x.copayers = _.map(obj.copayers, copayer => {
+    x.copayers = obj.copayers.map(copayer => {
       return Copayer.fromObj(copayer);
     });
     x.pubKey = obj.pubKey;
@@ -235,7 +235,7 @@ export class Wallet {
   }
 
   _updatePublicKeyRing() {
-    this.publicKeyRing = _.map(this.copayers, copayer => {
+    this.publicKeyRing = this.copayers.map(copayer => {
       return _.pick(copayer, ['xPubKey', 'requestPubKey']);
     });
   }

@@ -116,7 +116,7 @@ describe('Push notifications', function() {
           }, function(err) {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              var args = _.map(calls, function(c) {
+              var args = calls.map(c => {
                 return c.args[0];
               });
               calls.length.should.equal(2); // NewAddress, NewIncomingTx
@@ -145,7 +145,7 @@ describe('Push notifications', function() {
         }, function(err) {
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            var args = _.map(calls, function(c) {
+            var args = calls.map(c => {
               return c.args[0];
             });
             calls.length.should.equal(2); // NewAdress, NewIncomingTx
@@ -171,7 +171,7 @@ describe('Push notifications', function() {
         }, function(err) {
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            var args = _.map(calls, function(c) {
+            var args = calls.map(c => {
               return c.args[0];
             });
             calls.length.should.equal(2); // NewOutgoingTx
@@ -199,7 +199,7 @@ describe('Push notifications', function() {
         }, function(err) {
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            var args = _.map(calls, function(c) {
+            var args = calls.map(c => {
               return c.args[0];
             });
             calls.length.should.equal(2); // NewOutgoingTx
@@ -228,7 +228,7 @@ describe('Push notifications', function() {
         }, function(err) {
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            var args = _.map(calls, function(c) {
+            var args = calls.map(c => {
               return c.args[0];
             });
             calls.length.should.equal(2); // NewAdress, NewIncomingTx
@@ -254,7 +254,7 @@ describe('Push notifications', function() {
           }, function(err) {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              var args = _.map(calls, function(c) {
+              var args = calls.map(c => {
                 return c.args[0];
               });
               calls.length.should.equal(2); // NewAdress, TxConfirmation
@@ -278,7 +278,7 @@ describe('Push notifications', function() {
         }, function(err) {
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            var args = _.map(calls, function(c) {
+            var args = calls.map(c => {
               return c.args[0];
             });
             calls.length.should.equal(2); // NewAdress, TxProposalAcceptedBy
@@ -304,7 +304,7 @@ describe('Push notifications', function() {
         }, function(err) {
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            var args = _.map(calls, function(c) {
+            var args = calls.map(c => {
               return c.args[0];
             });
             calls.length.should.equal(2); // NewAdress, TxProposalFinallyAccepted
@@ -330,7 +330,7 @@ describe('Push notifications', function() {
         }, function(err) {
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            var args = _.map(calls, function(c) {
+            var args = calls.map(c => {
               return c.args[0];
             });
             calls.length.should.equal(2); // NewAdress, TxProposalRejectedBy
@@ -356,7 +356,7 @@ describe('Push notifications', function() {
         }, function(err) {
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            var args = _.map(calls, function(c) {
+            var args = calls.map(c => {
               return c.args[0];
             });
             calls.length.should.equal(2); // NewAdress, TxProposalRemoved
@@ -385,7 +385,7 @@ describe('Push notifications', function() {
             setTimeout(function() {
               var calls = requestStub.getCalls();
               calls.length.should.equal(2);
-              var args = _.map(calls, function(c) {
+              var args = calls.map(c => {
                 return c.args[0];
               });
               args[1].body.notification.title.should.contain('New payment received');
@@ -475,7 +475,7 @@ describe('Push notifications', function() {
           }, function(err) {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              var args = _.map(calls, function(c) {
+              var args = calls.map(c => {
                 return c.args[0];
               });
 
@@ -596,7 +596,7 @@ describe('Push notifications', function() {
 
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            var args = _.map(_.takeRight(calls, 2), function(c) {
+            var args = calls.slice(-2).map(c => {
               return c.args[0];
             });
 
@@ -653,7 +653,7 @@ describe('Push notifications', function() {
 
           setTimeout(function() {
             var calls = requestStub.getCalls();
-            var args = _.map(_.takeRight(calls, 3), function(c) {
+            var args = calls.slice(-3).map(c => {
               return c.args[0];
             });
             args[0].body.notification.title.should.contain('Payment sent');
@@ -735,7 +735,7 @@ describe('Push notifications', function() {
         should.not.exist(err);
         setTimeout(function() {
           var calls = requestStub.getCalls();
-          var args = _.filter(_.map(calls, function(call) {
+          var args = _.filter(calls.map(call => {
             return call.args[0];
           }), function(arg) {
             return arg.body.notification.title == 'New copayer';
@@ -747,7 +747,7 @@ describe('Push notifications', function() {
               copayer2 should notify to copayer1
               copayer2 should NOT be notifyed
             */
-            var hashedCopayerIds = _.map(wallet.copayers, function(copayer) {
+            var hashedCopayerIds = wallet.copayers.map(copayer => {
               return sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(copayer.id));
             });
             hashedCopayerIds[0].should.equal((args[0].body.data.copayerId));
@@ -855,7 +855,7 @@ describe('Push notifications', function() {
             setTimeout(function() {
               var calls = requestStub.getCalls();
               calls.length.should.equal(2);
-              var args = _.map(_.takeRight(calls, 2), function(c) {
+              var args = calls.slice(-2).map(c => {
                 return c.args[0];
               });
               args[1].notification.title.should.contain('New payment received');
@@ -951,7 +951,7 @@ describe('Push notifications', function() {
             setTimeout(function() {
               var calls = requestStub.getCalls();
               calls.length.should.equal(2);
-              var args = _.map(_.takeRight(calls, 2), function(c) {
+              var args = calls.slice(-2).map(c => {
                 return c.args[0];
               });
               args[1].body.notification.title.should.contain('New payment received');
@@ -985,7 +985,7 @@ describe('Push notifications', function() {
             setTimeout(function() {
               var calls = requestStub.getCalls();
               calls.length.should.equal(2);
-              var args = _.map(_.takeRight(calls, 2), function(c) {
+              var args = calls.slice(-2).map(c => {
                 return c.args[0];
               });
               args[1].body.notification.title.should.contain('New payment received');
@@ -1018,7 +1018,7 @@ describe('Push notifications', function() {
             setTimeout(function() {
               var calls = requestStub.getCalls();
               calls.length.should.equal(2);
-              var args = _.map(_.takeRight(calls, 2), function(c) {
+              var args = calls.slice(-2).map(c => {
                 return c.args[0];
               });
               args[1].body.notification.title.should.contain('Nuevo pago recibido');
@@ -1050,7 +1050,7 @@ describe('Push notifications', function() {
             setTimeout(function() {
               var calls = requestStub.getCalls();
               calls.length.should.equal(2);
-              var args = _.map(_.takeRight(calls, 2), function(c) {
+              var args = calls.slice(-2).map(c => {
                 return c.args[0];
               });
               args[1].body.notification.title.should.contain('New payment received');
@@ -1180,7 +1180,7 @@ describe('Push notifications', function() {
             should.not.exist(err);
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              var args = _.map(calls, function(c) {
+              var args = calls.map(c => {
                 return c.args[0];
               });
               calls.length.should.equal(2); // DEVICE_TOKEN, DEVICE_TOKEN2
@@ -1245,7 +1245,7 @@ describe('Push notifications', function() {
             should.not.exist(err);
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              var args = _.map(calls, function(c) {
+              var args = calls.map(c => {
                 return c.args[0];
               });
               calls.length.should.equal(3); // DEVICE_TOKEN, DEVICE_TOKEN2, DEVICE_TOKEN3
@@ -1339,7 +1339,7 @@ describe('Push notifications', function() {
           }, function(err) {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              var args = _.map(calls, function(c) {
+              var args = calls.map(c => {
                 return c.args[0];
               });
               calls.length.should.equal(2); // NewAddress, NewIncomingTx
@@ -1453,7 +1453,7 @@ describe('Push notifications', function() {
           }, function(err) {
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              var args = _.map(calls, function(c) {
+              var args = calls.map(c => {
                 return c.args[0];
               });
               calls.length.should.equal(2); // NewAddress, NewIncomingTx
@@ -1585,7 +1585,7 @@ describe('Push notifications', function() {
             should.not.exist(err);
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              var args = _.map(calls, function(c) {
+              var args = calls.map(c => {
                 return c.args[0];
               });
 
@@ -1704,7 +1704,7 @@ describe('Push notifications', function() {
             should.not.exist(err);
             setTimeout(function() {
               var calls = requestStub.getCalls();
-              var args = _.map(calls, function(c) {
+              var args = calls.map(c => {
                 return c.args[0];
               });
               calls.length.should.equal(3); // DEVICE_EXTERNAL_USER_ID, DEVICE_EXTERNAL_USER_ID2, DEVICE_EXTERNAL_USER_ID3

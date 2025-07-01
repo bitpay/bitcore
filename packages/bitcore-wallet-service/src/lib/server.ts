@@ -2274,7 +2274,7 @@ export class WalletService implements IWalletService {
   }
 
   _validateOutputs(opts, wallet, cb) {
-    if (_.isEmpty(opts.outputs)) return new ClientError('No outputs were specified');
+    if (opts.outputs.length === 0) return new ClientError('No outputs were specified');
 
     for (let i = 0; i < opts.outputs.length; i++) {
       const output = opts.outputs[i];

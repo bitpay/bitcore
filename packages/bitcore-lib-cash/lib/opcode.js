@@ -262,7 +262,7 @@ for (var k in Opcode.map) {
 }
 
 // Easier access to opcodes
-_.extend(Opcode, Opcode.map);
+Object.assign(Opcode, Opcode.map);
 
 /**
  * @returns true if opcode is one of OP_0, OP_1, ..., OP_16

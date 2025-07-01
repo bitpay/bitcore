@@ -22,7 +22,7 @@ function Block(arg) {
   if (!(this instanceof Block)) {
     return new Block(arg);
   }
-  _.extend(this, Block._from(arg));
+  Object.assign(this, Block._from(arg));
   return this;
 }
 

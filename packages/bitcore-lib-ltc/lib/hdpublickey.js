@@ -75,7 +75,7 @@ function HDPublicKey(arg) {
 HDPublicKey.isValidPath = function(arg) {
   if (_.isString(arg)) {
     var indexes = HDPrivateKey._getDerivationIndexes(arg);
-    return indexes !== null && _.every(indexes, HDPublicKey.isValidPath);
+    return indexes !== null && indexes.every(HDPublicKey.isValidPath);
   }
 
   if (_.isNumber(arg)) {
@@ -181,7 +181,7 @@ HDPublicKey.prototype._deriveWithNumber = function(index, hardened) {
 
 HDPublicKey.prototype._deriveFromString = function(path) {
   /* jshint maxcomplexity: 8 */
-  if (_.includes(path, "'")) {
+  if (path.includes("'")) {
     throw new hdErrors.InvalidIndexCantDeriveHardened();
   } else if (!HDPublicKey.isValidPath(path)) {
     throw new hdErrors.InvalidPath(path);

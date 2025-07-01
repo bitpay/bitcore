@@ -74,7 +74,7 @@ function HDPrivateKey(arg) {
 HDPrivateKey.isValidPath = function(arg, hardened) {
   if (_.isString(arg)) {
     var indexes = HDPrivateKey._getDerivationIndexes(arg);
-    return indexes !== null && _.every(indexes, HDPrivateKey.isValidPath);
+    return indexes !== null && indexes.every(HDPrivateKey.isValidPath);
   }
 
   if (_.isNumber(arg)) {
@@ -99,11 +99,11 @@ HDPrivateKey._getDerivationIndexes = function(path) {
   var steps = path.split('/');
 
   // Special cases:
-  if (_.includes(HDPrivateKey.RootElementAlias, path)) {
+  if (HDPrivateKey.RootElementAlias.includes(path)) {
     return [];
   }
 
-  if (!_.includes(HDPrivateKey.RootElementAlias, steps[0])) {
+  if (!HDPrivateKey.RootElementAlias.includes(steps[0])) {
     return null;
   }
 

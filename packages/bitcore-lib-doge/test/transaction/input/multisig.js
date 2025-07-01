@@ -3,7 +3,6 @@
 
 var should = require('chai').should();
 var expect = require('chai').expect;
-var _ = require('lodash');
 
 var bitcore = require('../../..');
 var Transaction = bitcore.Transaction;
@@ -70,14 +69,14 @@ describe('MultiSigInput', function() {
       .to(address, 1000000);
     var input = transaction.inputs[0];
 
-    _.every(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
+    input.publicKeysWithoutSignature().every(publicKeyMissing => {
       var serialized = publicKeyMissing.toString();
       return serialized === public1.toString() ||
               serialized === public2.toString() ||
               serialized === public3.toString();
     }).should.equal(true);
     transaction.sign(privateKey1);
-    _.every(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
+    input.publicKeysWithoutSignature().every(publicKeyMissing => {
       var serialized = publicKeyMissing.toString();
       return serialized === public2.toString() ||
               serialized === public3.toString();

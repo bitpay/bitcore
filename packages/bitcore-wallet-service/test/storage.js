@@ -79,7 +79,7 @@ describe('Storage', function() {
         coin: 'btc',
         network: 'livenet',
       });
-      _.each(_.range(3), function(i) {
+      _.range(3).forEach((i) => {
         var copayer = Model.Copayer.create({
           coin: 'btc',
           name: 'copayer ' + i,
@@ -128,7 +128,7 @@ describe('Storage', function() {
         coin: 'btc',
         network: 'livenet',
       });
-      _.each(_.range(3), function(i) {
+      _.range(3).forEach((i) => {
         var copayer = Model.Copayer.create({
           coin: 'btc',
           name: 'copayer ' + i,
@@ -142,7 +142,7 @@ describe('Storage', function() {
       storage.storeWalletAndUpdateCopayersLookup(wallet, function(err) {
         should.not.exist(err);
 
-        proposals = _.map(_.range(4), function(i) {
+        proposals = _.range(4).map(i => {
           var tx = Model.TxProposal.create({
             walletId: '123',
             coin: 'btc',

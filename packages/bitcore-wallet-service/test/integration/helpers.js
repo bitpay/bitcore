@@ -119,7 +119,7 @@ helpers.beforeEach = function(cb) {
   };
 
 
-  async.each(_.values(collections), (x, icb)=> {
+  async.each(Object.values(collections), (x, icb)=> {
     storage.db.collection(x).deleteMany({}, icb);
   }, (err) => {
     should.not.exist(err);
@@ -190,7 +190,7 @@ helpers._generateCopayersTestData = function() {
   ];
 
   console.log('var copayers = [');
-  _.each(xPrivKeys, function(xPrivKeyStr, c) {
+  xPrivKeys.forEach((xPrivKeyStr, c) => {
     var xpriv = Bitcore.HDPrivateKey(xPrivKeyStr);
     var xpub = Bitcore.HDPublicKey(xpriv);
 
@@ -368,7 +368,7 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
       if (opts.tokenAddress) {
         return cb(null, {unconfirmed:0, confirmed: 2e6, balance: 2e6 });
       }
-      let conf =  _.sum(_.map(amounts, x =>  Number((x*1e18).toFixed(0))));
+      let conf =  _.sum(amounts.map(x => Number((x*1e18).toFixed(0))));
       return cb(null, {unconfirmed:0, confirmed: conf, balance: conf });
     }
     blockchainExplorer.estimateFee = sinon.stub().callsArgWith(1, null, 20000000000);
@@ -377,14 +377,14 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
 
   if (wallet.coin == 'eth') {
     amounts = _.isArray(amounts) ? amounts : [amounts];
-    let conf =  _.sum(_.map(amounts, x =>  Number((x*1e18).toFixed(0))));
+    let conf =  _.sum(amounts.map(x => Number((x*1e18).toFixed(0))));
     blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: conf, balance: conf });
     return cb();
   }
 
   if (wallet.coin == 'xrp') {
     amounts = _.isArray(amounts) ? amounts : [amounts];
-    let conf =  _.sum(_.map(amounts, x =>  Number((x*1e6).toFixed(0))));
+    let conf =  _.sum(amounts.map(x => Number((x*1e6).toFixed(0))));
     conf =  conf + Defaults.MIN_XRP_BALANCE;
     blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: conf, balance: conf });
     return cb();
@@ -406,7 +406,7 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
     function(addresses, next) {
       addresses.should.not.be.empty;
 
-      var utxos = _.compact(_.map([].concat(amounts), function(amount, i) {
+      var utxos = _.compact([].concat(amounts).map((amount, i) => {
         var parsed = helpers._parseAmount(amount);
 
         if (parsed.amount <= 0) return null;
@@ -489,7 +489,7 @@ helpers.createTxsV8 = function(nr, bcHeight, txs) {
   //  3.  => 3...   / bcHeight - 2  /   txid3
 
   var  i = 0;
-  if (_.isEmpty(txs)) {
+  if (txs.length === 0) {
     while(i < nr) {
       txs.push({
         id: 'id' + i,
@@ -515,7 +515,7 @@ helpers.stubHistory = function(nr, bcHeight, txs) {
   txs= helpers.createTxsV8(nr,bcHeight, txs);
   blockchainExplorer.getTransactions = function(walletId, startBlock, cb) {
     startBlock = startBlock || 0;
-    var page = _.filter(txs, (x) => {
+    var page = txs.filter(x => {
       return x.height >=startBlock || x.height == -1
     });
     return cb(null, page);
@@ -575,7 +575,7 @@ helpers.stubAddressActivity = function(activeAddresses, failsOn) {
 
     stubAddressActivityFailsOnCount++;
 
-    return cb(null, _.includes(activeAddresses, address));
+    return cb(null, activeAddresses.includes(address));
   };
 };
 
@@ -611,7 +611,7 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
       }
       break;
     default:
-      _.each(txp.inputs, function(i) {
+      txp.inputs.forEach((i) => {
         if (!derived[i.path]) {
           derived[i.path] = xpriv.deriveChild(i.path).privateKey;
           privs.push(derived[i.path]);
@@ -619,7 +619,7 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
       });
 
       var t = ChainService.getBitcoreTx(txp);
-      signatures = _.map(privs, function(priv, i) {
+      signatures = privs.map((priv, i) => {
         return t.getSignatures(priv, undefined, txp.signingMethod);
       });
 
