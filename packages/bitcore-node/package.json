@@ -30,7 +30,7 @@
     "verify:db": "npm run tsc && node ./build/test/verification/db-verify.js",
     "verify:headers": "npm run tsc && node ./build/test/verification/db-verify-headers.js",
     "resync": "npm run tsc && node ./build/test/verification/resync.js",
-    "test:unit": "mocha build/test/unit/ --name '*.spec.js'",
+    "test:unit": "node --test --test-only $(find build/test/unit/ -name '*.spec.js')",
     "test:integration": "mocha build/test/integration/ --name '*.spec.js'",
     "benchmark": "node build/test/benchmark/benchmark.js",
     "coverage": "nyc mocha build/test/**/*.spec.js",
