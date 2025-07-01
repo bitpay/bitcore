@@ -1,4 +1,5 @@
 import * as Bcrypt from 'bcrypt';
+import Mnemonic  from 'bitcore-mnemonic';
 import { 
   BitcoreLib,
   BitcoreLibCash,
@@ -17,8 +18,9 @@ import 'source-map-support/register';
 import { Client } from './client';
 import { Encryption } from './encryption';
 import { Storage } from './storage';
-const Mnemonic = require('bitcore-mnemonic');
-const { ParseApiStream } = require('./stream-util');
+import { ParseApiStream } from './stream-util';
+import { StorageType } from './types/storage';
+import { BumpTxFeeType, IWallet, KeyImport } from './types/wallet';
 
 const { PrivateKey, HDPrivateKey } = BitcoreLib;
 const chainLibs = {
@@ -35,41 +37,9 @@ const chainLibs = {
   SOL: { SolKit, SolanaProgram }
 };
 
-export interface KeyImport {
-  address: string;
-  privKey?: string;
-  pubKey?: string;
-  path?: string;
-}
-export interface WalletObj {
-  name: string;
-  baseUrl: string;
-  chain: string;
-  network: string;
-  path: string;
-  phrase?: string;
-  xpriv?: string;
-  password: string;
+export interface IWalletExt extends IWallet {
   storage?: Storage;
-  storageType: string;
-  addressIndex?: number;
-  tokens: Array<any>;
-  lite: boolean;
-  addressType: string;
-  addressZero: string;
 }
-
-export interface BumpTxFeeType {
-  txid?: string;
-  rawTx?: string;
-  changeIdx?: number;
-  feeRate?: number;
-  feeTarget?: number;
-  feePriority?: number;
-  noRbf?: boolean;
-  isSweep?: boolean;
-}
-
 
 export class Wallet {
   masterKey?: any;
@@ -97,7 +67,7 @@ export class Wallet {
 
   static XrpAccountFlags = xrpl.AccountSetTfFlags;
 
-  constructor(params: Wallet | WalletObj) {
+  constructor(params: Wallet | IWalletExt) {
     Object.assign(this, params);
     if (!this.baseUrl) {
       this.baseUrl = 'https://api.bitcore.io/api';
@@ -154,14 +124,14 @@ export class Wallet {
     };
   }
 
-  static async deleteWallet(params: { name: string; path?: string; storage?: Storage; storageType?: string }) {
+  static async deleteWallet(params: { name: string; path?: string; storage?: Storage; storageType?: StorageType }) {
     const { name, path, storageType } = params;
     let { storage } = params;
     storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
     await storage.deleteWallet({ name });
   }
 
-  static async create(params: Partial<WalletObj>) {
+  static async create(params: Partial<IWalletExt>) {
     const { network, name, phrase, xpriv, password, path, lite, baseUrl } = params;
     let { chain, storageType, storage, addressType } = params;
     if (phrase && xpriv) {
@@ -238,7 +208,7 @@ export class Wallet {
       lite,
       addressType,
       addressZero: null
-    } as WalletObj);
+    } as IWalletExt);
 
     // save wallet to storage and then bitcore-node
     await storage.saveWallet({ wallet: wallet.toObject(lite) });
@@ -276,7 +246,7 @@ export class Wallet {
     return alreadyExists != undefined && alreadyExists.length && alreadyExists.length != 0;
   }
 
-  static async loadWallet(params: { name: string; path?: string; storage?: Storage; storageType?: string }) {
+  static async loadWallet(params: { name: string; path?: string; storage?: Storage; storageType?: StorageType }) {
     const { name, path, storageType } = params;
     let { storage } = params;
     storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });

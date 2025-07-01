@@ -1,4 +1,4 @@
-import { Wallet } from 'bitcore-client';
+import { Wallet, IWalletExt } from 'bitcore-client';
 import * as _ from 'lodash';
 import { CoinStorage } from '../../src/models/coin';
 import { Storage } from '../../src/services/storage';
@@ -30,7 +30,7 @@ export async function createWallet(addresses: string[], iteration, networkName?:
       network,
       baseUrl,
       password
-    });
+    } as Partial<IWalletExt>);
   }
   await lockedWallet.register({ baseUrl });
 
