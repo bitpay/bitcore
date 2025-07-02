@@ -733,7 +733,7 @@ export class PushNotificationsService {
         };
         this.request(
           {
-            url: `${credentials.API}/v5.2/${chainIdMap[chain]}/tokens`,
+            url: `${credentials.API}/swap/v5.2/${chainIdMap[chain]}/tokens`,
             method: 'GET',
             json: true,
             headers: {
