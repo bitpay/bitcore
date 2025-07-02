@@ -124,7 +124,8 @@ export class OneInchService {
 
         const chainId = chainIdMap[chain];
 
-        const URL: string = `${credentials.API}/token/v1.2/${chainId}?provider=1inch&country=US/tokens`;
+        const URL: string = `${credentials.API}/swap/v5.2/${chainId}/tokens`;
+        // Latest endpoint. Wait for KYB `${credentials.API}/token/v1.2/${chainId}?provider=1inch&country=US/tokens`;
 
         this.request.get(
           URL,
