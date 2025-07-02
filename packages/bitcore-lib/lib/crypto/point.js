@@ -81,6 +81,7 @@ Point.getP = function() {
   return ec.curve.p.clone();
 };
 
+if (!Point.prototype._getX)
 Point.prototype._getX = Point.prototype.getX;
 
 /**
@@ -93,6 +94,7 @@ Point.prototype.getX = function getX() {
   return new BN(this._getX().toArray());
 };
 
+if (!Point.prototype._getY)
 Point.prototype._getY = Point.prototype.getY;
 
 /**
