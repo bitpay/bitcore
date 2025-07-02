@@ -2,9 +2,9 @@ import * as prompt from '@clack/prompts';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { ICliOptions } from '../../types/cli';
 import { Utils } from '../utils';
 import { Wallet } from '../wallet';
-import { ICliOptions } from '../../types/cli';
 
 export async function getUtxos(args: {
   wallet: Wallet;

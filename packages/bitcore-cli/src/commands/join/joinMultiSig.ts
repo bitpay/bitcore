@@ -1,9 +1,9 @@
 import * as prompt from '@clack/prompts';
 import BWC from 'bitcore-wallet-client';
+import { ICliOptions } from '../../../types/cli';
 import { getCopayerName, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
 import { Wallet } from '../../wallet';
-import { ICliOptions } from '../../../types/cli';
 
 export async function joinMultiSigWallet(args: {
   wallet: Wallet;

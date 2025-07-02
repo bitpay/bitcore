@@ -1,10 +1,10 @@
 import * as prompt from '@clack/prompts';
 import { Deriver } from 'crypto-wallet-core';
 import os from 'os';
+import { ICliOptions } from '../../types/cli';
 import { UserCancelled } from '../errors';
 import { getAction } from '../prompts';
 import { Wallet } from '../wallet';
-import { ICliOptions } from '../../types/cli';
 
 export async function deriveKey(args: {
   wallet: Wallet;

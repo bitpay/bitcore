@@ -2,10 +2,10 @@ import * as prompt from '@clack/prompts';
 import { Status } from 'bitcore-wallet-client';
 import moment from 'moment';
 import os from 'os';
+import { ICliOptions } from '../../types/cli';
 import { Utils } from '../utils';
 import { Wallet } from '../wallet';
 import { displayBalance } from './balance';
-import { ICliOptions } from '../../types/cli';
 
 export async function walletStatus(args: {
   wallet: Wallet;

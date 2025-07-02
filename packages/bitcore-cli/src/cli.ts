@@ -5,13 +5,13 @@ import { program } from 'commander';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import { ICliOptions } from '../types/cli';
 import * as commands from './commands';
 import { bitcoreLogo } from './constants';
 import * as Errors from './errors';
 import { getAction } from './prompts';
 import { Utils } from './utils';
 import { Wallet } from './wallet';
-import { ICliOptions } from '../types/cli';
 
 const { version } = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json')).toString());
 
@@ -67,11 +67,11 @@ if (opts.command === 'help') {
   const padLen = 18;
   program
   .addHelpText('after', os.EOL +
-    `New Wallet Commands:` + os.EOL +
+    'New Wallet Commands:' + os.EOL +
     COMMANDS.NEW.map(cmd => `  ${cmd.value.padEnd(padLen)}${cmd.hint}`).join(os.EOL) + os.EOL + os.EOL +
-    `Existing Wallet Commands:` + os.EOL +
+    'Existing Wallet Commands:' + os.EOL +
     COMMANDS.EXISTS.map(cmd => `  ${cmd.value.padEnd(padLen)}${cmd.hint}`).join(os.EOL) + os.EOL + os.EOL +
-    `Advanced Commands:` + os.EOL +
+    'Advanced Commands:' + os.EOL +
     COMMANDS.EXISTS_ADVANCED.map(cmd => `  ${cmd.value.padEnd(padLen)}${cmd.hint}`).join(os.EOL)
   )
   .help();

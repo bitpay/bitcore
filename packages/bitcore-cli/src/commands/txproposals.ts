@@ -3,11 +3,11 @@ import { Status, Txp } from 'bitcore-wallet-client';
 import fs from 'fs';
 import moment from 'moment';
 import os from 'os';
+import { ICliOptions } from '../../types/cli';
 import { UserCancelled } from '../errors';
 import { getAction } from '../prompts';
 import { Utils } from '../utils';
 import { Wallet } from '../wallet';
-import { ICliOptions } from '../../types/cli';
 
 export async function getTxProposals(args: {
   wallet: Wallet;

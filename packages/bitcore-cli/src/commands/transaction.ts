@@ -2,10 +2,10 @@ import * as prompt from '@clack/prompts';
 import { Status, Txp } from 'bitcore-wallet-client'; 
 import { Validation } from 'crypto-wallet-core';
 import os from 'os';
+import { ICliOptions } from '../../types/cli';
 import { UserCancelled } from '../errors';
 import { Utils } from '../utils';
 import { Wallet } from '../wallet';
-import { ICliOptions } from '../../types/cli';
 
 export async function createTransaction(args: {
   wallet: Wallet;

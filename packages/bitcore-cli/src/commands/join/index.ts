@@ -1,11 +1,11 @@
 import * as prompt from '@clack/prompts';
 import { Constants } from 'crypto-wallet-core';
+import { ICliOptions } from '../../../types/cli';
 import { getChain } from '../../prompts';
 import { Utils } from '../../utils';
 import { Wallet } from '../../wallet';
 import { joinMultiSigWallet } from './joinMultiSig';
 import { joinThresholdSigWallet } from './joinThresholdSig';
-import { ICliOptions } from '../../../types/cli';
 
 
 export async function joinWallet(args: {

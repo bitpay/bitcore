@@ -1,7 +1,7 @@
 import * as prompt from '@clack/prompts';
 import os from 'os';
-import { Wallet } from '../wallet';
 import { ICliOptions } from '../../types/cli';
+import { Wallet } from '../wallet';
 
 export async function getPreferences(args: {
   wallet: Wallet;

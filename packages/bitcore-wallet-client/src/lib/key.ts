@@ -7,7 +7,6 @@ import {
   Transactions
 } from 'crypto-wallet-core';
 import { singleton } from 'preconditions';
-import 'source-map-support/register';
 import Uuid from 'uuid';
 import { Constants, Encryption, Utils } from './common';
 import { Credentials } from './credentials';

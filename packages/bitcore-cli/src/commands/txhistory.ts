@@ -3,9 +3,9 @@ import fs from 'fs';
 import moment from 'moment';
 import os from 'os';
 import path from 'path';
+import { ICliOptions } from '../../types/cli';
 import { Utils } from '../utils';
 import { Wallet } from '../wallet';
-import { ICliOptions } from '../../types/cli';
 
 export async function getTxHistory(args: {
   wallet: Wallet;

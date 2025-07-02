@@ -3,11 +3,11 @@ import { Key, Network, TssKey } from 'bitcore-wallet-client'
 import crypto from 'crypto';
 import os from 'os';
 import url from 'url';
+import { ICliOptions } from '../../../types/cli';
 import { UserCancelled } from '../../errors';
 import { getAddressType, getCopayerName, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
 import { Wallet } from '../../wallet';
-import { ICliOptions } from '../../../types/cli';
 
 
 export async function createThresholdSigWallet(args: {

@@ -1,10 +1,10 @@
 import * as prompt from '@clack/prompts';
 import { Network } from 'bitcore-wallet-client';
 import os from 'os';
+import { ICliOptions } from '../../../types/cli';
 import { getAddressType, getCopayerName, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
 import { Wallet } from '../../wallet';
-import { ICliOptions } from '../../../types/cli';
 
 export async function createMultiSigWallet(args: {
   wallet: Wallet;

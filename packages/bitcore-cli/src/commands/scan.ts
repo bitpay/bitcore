@@ -1,6 +1,6 @@
 import * as prompt from '@clack/prompts';
-import { Wallet } from '../wallet';
 import { ICliOptions } from '../../types/cli';
+import { Wallet } from '../wallet';
 
 export async function scanWallet(args: {
   wallet: Wallet;

@@ -2,11 +2,11 @@ import * as prompt from '@clack/prompts';
 import { Key, TssKey } from 'bitcore-wallet-client'
 import os from 'os';
 import url from 'url';
+import { ICliOptions } from '../../../types/cli';
 import { UserCancelled } from '../../errors';
 import { getCopayerName, getNetwork, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
 import { Wallet } from '../../wallet';
-import { ICliOptions } from '../../../types/cli';
 
 export async function joinThresholdSigWallet(args: {
   wallet: Wallet;
