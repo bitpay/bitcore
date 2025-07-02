@@ -122,7 +122,7 @@ export const errorSpec: IErrorSpec[] = [
   },
   {
     name: 'COPAYER_REGISTERED',
-    message: 'Copayer already register on server.'
+    message: 'Copayer already registered on server.'
   },
   {
     name: 'INPUT_NOT_FOUND',

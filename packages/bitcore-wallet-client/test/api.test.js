@@ -56,19 +56,20 @@ function createTxsV8(nr, bcHeight, txs) {
   return txs;
 };
 
-let db;
 describe('client API', function() {
   // DONT USE LAMBAS HERE!!! https://stackoverflow.com/questions/23492043/change-default-timeout-for-mocha, or this.timeout() will BREAK!
   //
   let clients, app, sandbox, storage, keys, i;
+  let dbConnection;
+  let db;
   this.timeout(8000);
 
   before(done => {
     i = 0;
     clients = [];
-    keys = [];
-    helpers.newDb('', (err, in_db) => {
-      db = in_db;
+    helpers.newDb('', (err, database, connection) => {
+      dbConnection = connection;
+      db = database;
       storage = new Storage({
         db: db
       });
@@ -77,7 +78,12 @@ describe('client API', function() {
     });
   });
 
+  after(function(done) {
+    dbConnection.close(done);
+  });
+
   beforeEach(done => {
+    keys = [];
     let expressApp = new ExpressApp();
     expressApp.start(
       {

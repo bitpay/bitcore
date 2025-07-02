@@ -2,7 +2,6 @@ export { Address } from './address';
 export { Copayer } from './copayer';
 export { Advertisement } from './advertisement';
 export { Email } from './email';
-export { ExternalServicesConfig } from './external_services';
 export { INotification, Notification } from './notification';
 export { IPreferences, Preferences } from './preferences';
 export { PushNotificationSub } from './pushnotificationsub';
