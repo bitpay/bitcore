@@ -4,12 +4,11 @@ import os from 'os';
 import { UserCancelled } from '../errors';
 import { getPassword } from '../prompts';
 import { Wallet } from '../wallet';
+import { ICliOptions } from '../../types/cli';
 
 export async function importWallet(args: {
   wallet: Wallet;
-  opts: {
-    verbose: boolean;
-  }
+  opts: ICliOptions;
 }) {
   const { wallet, opts } = args;
   const replaceTilde = str => str.startsWith('~') ? str.replace('~', os.homedir()) : str;

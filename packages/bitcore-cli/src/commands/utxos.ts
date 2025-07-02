@@ -4,12 +4,11 @@ import os from 'os';
 import path from 'path';
 import { Utils } from '../utils';
 import { Wallet } from '../wallet';
+import { ICliOptions } from '../../types/cli';
 
 export async function getUtxos(args: {
   wallet: Wallet;
-  opts: {
-    verbose: boolean;
-  }
+  opts: ICliOptions;
 }) {
   const { wallet, opts } = args;
   const utxos = await wallet.client.getUtxos({});

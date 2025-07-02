@@ -4,12 +4,11 @@ import os from 'os';
 import { UserCancelled } from '../errors';
 import { getAction } from '../prompts';
 import { Wallet } from '../wallet';
+import { ICliOptions } from '../../types/cli';
 
 export async function deriveKey(args: {
   wallet: Wallet;
-  opts: {
-    verbose: boolean;
-  }
+  opts: ICliOptions
 }) {
   const { wallet, opts } = args;
 

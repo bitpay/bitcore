@@ -31,7 +31,7 @@
     "test": "npx mocha",
     "compile": "npm run clean && tsc",
     "postcompile": "node createBin -v",
-    "clean": "rm -rf ./ts_build",
+    "clean": "rm -rf ./build",
     "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
     "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
     "precommit": "npm run lint; npm run fix"

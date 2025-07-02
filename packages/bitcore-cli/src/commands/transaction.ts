@@ -5,12 +5,12 @@ import os from 'os';
 import { UserCancelled } from '../errors';
 import { Utils } from '../utils';
 import { Wallet } from '../wallet';
+import { ICliOptions } from '../../types/cli';
 
 export async function createTransaction(args: {
   wallet: Wallet;
   status: Status;
-  opts: {
-    verbose: boolean;
+  opts: ICliOptions & {
     pageSize: number;
   }
 }) {

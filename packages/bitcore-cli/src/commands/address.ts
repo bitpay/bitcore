@@ -1,11 +1,10 @@
 import * as prompt from '@clack/prompts';
 import { Wallet } from '../wallet';
+import { ICliOptions } from '../../types/cli';
 
 export async function createAddress(args: {
   wallet: Wallet;
-  opts: {
-    verbose: boolean;
-  }
+  opts: ICliOptions;
 }) {
   const { wallet, opts } = args;
   const x = await wallet.client.createAddress({});

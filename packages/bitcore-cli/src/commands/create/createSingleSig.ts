@@ -3,15 +3,13 @@ import { Network } from 'bitcore-wallet-client';
 import { getAddressType, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
 import { Wallet } from '../../wallet';
+import { ICliOptions } from '../../../types/cli';
 
 export async function createSingleSigWallet(args: {
   wallet: Wallet;
   chain: string;
   network: Network;
-  opts: {
-    dir: string;
-    host: string;
-    verbose: boolean;
+  opts: ICliOptions & {
     mnemonic?: string;
   }
 }) {

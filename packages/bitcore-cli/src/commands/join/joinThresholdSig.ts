@@ -6,14 +6,12 @@ import { UserCancelled } from '../../errors';
 import { getCopayerName, getNetwork, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
 import { Wallet } from '../../wallet';
+import { ICliOptions } from '../../../types/cli';
 
 export async function joinThresholdSigWallet(args: {
   wallet: Wallet;
   chain: string;
-  opts: {
-    dir: string;
-    host: string;
-    verbose: boolean;
+  opts: ICliOptions & {
     mnemonic?: string;
   };
 }) {

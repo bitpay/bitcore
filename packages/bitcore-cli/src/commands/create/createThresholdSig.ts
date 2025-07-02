@@ -7,6 +7,7 @@ import { UserCancelled } from '../../errors';
 import { getAddressType, getCopayerName, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
 import { Wallet } from '../../wallet';
+import { ICliOptions } from '../../../types/cli';
 
 
 export async function createThresholdSigWallet(args: {
@@ -15,10 +16,7 @@ export async function createThresholdSigWallet(args: {
   network: Network;
   m: number;
   n: number;
-  opts: {
-    dir: string;
-    host: string;
-    verbose: boolean;
+  opts: ICliOptions & {
     mnemonic?: string;
   };
 }) {

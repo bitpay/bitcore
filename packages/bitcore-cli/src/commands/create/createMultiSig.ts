@@ -4,6 +4,7 @@ import os from 'os';
 import { getAddressType, getCopayerName, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
 import { Wallet } from '../../wallet';
+import { ICliOptions } from '../../../types/cli';
 
 export async function createMultiSigWallet(args: {
   wallet: Wallet;
@@ -11,10 +12,7 @@ export async function createMultiSigWallet(args: {
   network: Network;
   m: number;
   n: number;
-  opts: {
-    dir: string;
-    host: string;
-    verbose: boolean;
+  opts: ICliOptions & {
     mnemonic?: string;
   };
 }) {

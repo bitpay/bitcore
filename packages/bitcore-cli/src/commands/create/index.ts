@@ -5,15 +5,12 @@ import { Wallet } from '../../wallet';
 import { createMultiSigWallet } from './createMultiSig';
 import { createSingleSigWallet } from './createSingleSig';
 import { createThresholdSigWallet } from './createThresholdSig';
+import { ICliOptions } from '../../../types/cli';
 
 export async function createWallet(args: {
   wallet: Wallet;
-  opts: {
-    dir: string;
-    host: string;
-    verbose: boolean;
+  opts: ICliOptions & {
     mnemonic?: string;
-    isMultiParty?: boolean;
   }
 }) {
   const { wallet, opts } = args;

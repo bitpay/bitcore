@@ -5,13 +5,13 @@ import os from 'os';
 import { Utils } from '../utils';
 import { Wallet } from '../wallet';
 import { displayBalance } from './balance';
+import { ICliOptions } from '../../types/cli';
 
 export async function walletStatus(args: {
   wallet: Wallet;
-  opts: {
-    verbose: boolean;
+  opts: ICliOptions & {
     tokenName?: string;
-  }
+  };
 }) {
   const { wallet, opts } = args;
   const { tokenName } = opts;

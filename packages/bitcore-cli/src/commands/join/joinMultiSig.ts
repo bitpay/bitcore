@@ -3,13 +3,11 @@ import BWC from 'bitcore-wallet-client';
 import { getCopayerName, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
 import { Wallet } from '../../wallet';
+import { ICliOptions } from '../../../types/cli';
 
 export async function joinMultiSigWallet(args: {
   wallet: Wallet;
-  opts: {
-    dir: string;
-    host: string;
-    verbose: boolean;
+  opts: ICliOptions & {
     mnemonic?: string;
   }
 }) {

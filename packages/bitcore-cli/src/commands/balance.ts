@@ -2,11 +2,11 @@ import * as prompt from '@clack/prompts';
 import os from 'os';
 import { Utils } from '../utils';
 import { Wallet } from '../wallet';
+import { ICliOptions } from '../../types/cli';
 
 export async function getBalance(args: {
   wallet: Wallet;
-  opts: {
-    verbose: boolean;
+  opts: ICliOptions & {
     tokenAddress?: string;
   }
 }) {

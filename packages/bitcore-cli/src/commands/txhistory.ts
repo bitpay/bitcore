@@ -5,11 +5,11 @@ import os from 'os';
 import path from 'path';
 import { Utils } from '../utils';
 import { Wallet } from '../wallet';
+import { ICliOptions } from '../../types/cli';
 
 export async function getTxHistory(args: {
   wallet: Wallet;
-  opts: {
-    verbose: boolean;
+  opts: ICliOptions & {
     pageSize: number;
   }
 }) {

@@ -1,12 +1,11 @@
 import * as prompt from '@clack/prompts';
 import os from 'os';
 import { Wallet } from '../wallet';
+import { ICliOptions } from '../../types/cli';
 
 export async function getPreferences(args: {
   wallet: Wallet;
-  opts: {
-    verbose: boolean;
-  }
+  opts: ICliOptions;
 }) {
   const { wallet, opts } = args;
   const preferences = await wallet.client.getPreferences();

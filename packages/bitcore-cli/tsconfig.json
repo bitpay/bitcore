@@ -16,16 +16,13 @@
     "esModuleInterop": true,
     "target": "ES2020",
     "baseUrl": ".",
-    "paths": {
-      "@src/*": ["src/*"],
-      "@test/*": ["test/*"],
-    },
     "outDir": "build",
     "sourceMap": true
   },
   "include": [
     "./src/**/*.ts",
-    "./test/**/*.ts"
+    "./test/**/*.ts",
+    "./types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules"
