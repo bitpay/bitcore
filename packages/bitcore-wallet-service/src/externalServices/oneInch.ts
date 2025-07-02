@@ -134,6 +134,7 @@ export class OneInchService {
             json: true
           },
           (err, data) => {
+            const tokens = data?.body?.tokens;
             if (err) {
               logger.warn('An error occured while retrieving the token list', err);
               if (oldvalues) {
@@ -145,18 +146,18 @@ export class OneInchService {
               // oneinch rate limit
               return resolve(oldvalues);
             } else {
-              if (!data?.body) {
+              if (!tokens) {
                 if (oldvalues) {
                   logger.warn('No token list available... using old cached values');
                   return resolve(oldvalues);
                 }
                 return reject(new Error('Could not get tokens list'));
               }
-              this.storage.storeGlobalCache(cacheKey, data.body, err => {
+              this.storage.storeGlobalCache(cacheKey, tokens, err => {
                 if (err) {
                   logger.warn('Could not store tokens list');
                 }
-                return resolve(data.body);
+                return resolve(tokens);
               });
             }
           }
