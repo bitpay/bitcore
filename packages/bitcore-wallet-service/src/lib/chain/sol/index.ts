@@ -118,20 +118,13 @@ export class SolChain implements IChain {
     if (data) {
       recipients[0].data = data;
     }
-    const unsignedTxs = [];
-    for (let index = 0; index < recipients.length; index++) {
-      let params = {
-        ...recipients[index],
-        recipients: [recipients[index]]
-      };
-      unsignedTxs.push(Transactions.create({ ...txp, chain, ...params }));
-    }
 
+    const unsignedTxs = [Transactions.create({ ...txp, chain, recipients })];
     const tx = {
       uncheckedSerialize: () => unsignedTxs,
       txid: () => txp.txid,
       toObject: () => {
-        let ret = _.clone(txp)
+        const ret = _.clone(txp);
         ret.outputs[0].satoshis = ret.outputs[0].amount;
         return ret;
       },

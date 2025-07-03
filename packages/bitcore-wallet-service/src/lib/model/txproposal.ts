@@ -37,6 +37,7 @@ export interface ITxProposal {
     amount: number;
     address: string;
     toAddress?: string;
+    sourceAddress?: string;
     message?: string;
     data?: string;
     gasLimit?: number;
@@ -118,6 +119,7 @@ export class TxProposal {
     amount: number;
     address?: string;
     toAddress?: string;
+    sourceAddress?: string;
     message?: string;
     data?: string;
     gasLimit?: number;
@@ -214,6 +216,7 @@ export class TxProposal {
       const out: any = {};
       if (output.amount     !== undefined) out.amount = output.amount;
       if (output.toAddress  !== undefined) out.toAddress = output.toAddress;
+      if (output.sourceAddress  !== undefined) out.sourceAddress = output.sourceAddress;
       if (output.message    !== undefined) out.message = output.message;
       if (output.data       !== undefined) out.data = output.data;
       if (output.gasLimit   !== undefined) out.gasLimit = output.gasLimit;

@@ -441,7 +441,7 @@ export class Utils {
 
       return t;
     } else {
-      // ETH ERC20 XRP
+      // ETH ERC20 XRP SOL
       const {
         data,
         destinationTag,
@@ -511,6 +511,13 @@ export class Utils {
           });
           unsignedTxs.push(rawTx);
         }
+      } else if (chainName === 'SOL') {
+        const rawTx = Transactions.create({
+          ...txp,
+          chain: _chain,
+          recipients,
+        });
+        unsignedTxs.push(rawTx);
       } else {
         for (let index = 0; index < recipients.length; index++) {
           const rawTx = Transactions.create({
