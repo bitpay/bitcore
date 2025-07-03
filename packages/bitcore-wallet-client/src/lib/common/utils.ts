@@ -514,7 +514,6 @@ export class Utils {
       } else if (chainName === 'SOL') {
         const rawTx = Transactions.create({
           ...txp,
-          tag: destinationTag ? Number(destinationTag) : undefined,
           chain: _chain,
           recipients,
         });
