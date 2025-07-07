@@ -518,7 +518,7 @@ export class TssKeyGen extends EventEmitter {
         const prevRound = thisRound - 1; // Get previous round's messages
         const { body } = await this.#request.get(`/v1/tss/keygen/${this.id}/${prevRound}`) as RequestResponse;
 
-        const hasEveryoneSubmitted = body.messages?.length === this.n - 1;
+        const hasEveryoneSubmitted = body.messages?.length === this.n - 1; // subtract yourself
         if (hasEveryoneSubmitted) {
           this.emit('roundready', thisRound);
           // Snapshot the session in case there's an API failure
