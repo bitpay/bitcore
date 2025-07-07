@@ -3,7 +3,7 @@ const should = require('chai').should();
 const bitcoreLib = require('bitcore-lib');
 const request = require('supertest');
 const twoOfThree = require('./data/tss/2of3');
-const BWS = require('../../ts_build/index');
+const BWS = require('../../ts_build/index').default;
 const helpers = require('./helpers');
 const { TssKeyGen } = require('../../ts_build/lib/tss');
 
