@@ -188,10 +188,13 @@ export class TssKeyGen extends EventEmitter {
 
   /**
    * Threshold Signature Scheme (TSS) client class
-   * @param {ITssKeyGenConstructorParams} params Constructor parameters
-   * @param {EventEmitterOptions} eventOpts Options object for EventEmitter
    */
-  constructor(params: ITssKeyGenConstructorParams, eventOpts?) {
+  constructor(
+    /** Constructor parameters */
+    params: ITssKeyGenConstructorParams,
+    /** EventEmitter options object */
+    eventOpts?
+  ) {
     super(eventOpts);
     $.checkArgument(params.chain, 'Missing required param: chain');
     $.checkArgument(params.network, 'Missing required param: network');
@@ -292,7 +295,7 @@ export class TssKeyGen extends EventEmitter {
       /**
        * Encoding for the join code (default: 'hex')
        */
-      encoding?: 'hex' | 'base64' | 'utf8' | 'binary';
+      encoding?: BufferEncoding;
       /**
        * ECIES.encrypt: Don't include the public key in the result
        */
@@ -325,7 +328,7 @@ export class TssKeyGen extends EventEmitter {
       /**
        * Encoding for the join code (default: 'hex')
        */
-      encoding?: 'hex' | 'base64' | 'utf8' | 'binary';
+      encoding?: BufferEncoding;
       /**
        * ECIES.decrypt: The public key is not included in the payload
        */
@@ -369,7 +372,7 @@ export class TssKeyGen extends EventEmitter {
       /**
        * Encoding for the join code (default: 'hex')
        */
-      encoding?: 'hex' | 'base64' | 'utf8' | 'binary';
+      encoding?: BufferEncoding;
       /**
        * ECIES.decrypt: The public key is not included in the payload
        */
@@ -515,7 +518,8 @@ export class TssKeyGen extends EventEmitter {
         const prevRound = thisRound - 1; // Get previous round's messages
         const { body } = await this.#request.get(`/v1/tss/keygen/${this.id}/${prevRound}`) as RequestResponse;
 
-        if (body.messages?.length === this.n - 1) {
+        const hasEveryoneSubmitted = body.messages?.length === this.n;
+        if (hasEveryoneSubmitted) {
           this.emit('roundready', thisRound);
           // Snapshot the session in case there's an API failure
           //  since this.#keygen can't re-process the messages

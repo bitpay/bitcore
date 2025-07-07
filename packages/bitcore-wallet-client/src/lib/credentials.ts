@@ -99,19 +99,10 @@ export class Credentials {
 
   /**
    * Create credentials from a derived key
-   * @param opts
-   * @param {string} opts.coin Deprecated - use opts.chain
-   * @param {string} opts.chain
-   * @param {string} opts.network
-   * @param {number} opts.account
-   * @param {string} opts.xPubKey
-   * @param {string} opts.rootPath
-   * @param {string} opts.keyId
-   * @param {string} opts.requestPrivKey
-   * @returns 
    */
   static fromDerivedKey(opts: {
-    coin?: string; // Deprecated - use opts.chain
+    /** @deprecated use `chain` */
+    coin?: string;
     chain: string;
     network: string;
     account: number;
@@ -119,7 +110,8 @@ export class Credentials {
     rootPath: string;
     keyId: string;
     requestPrivKey: string;
-    n?: number; // for multisig
+    /** Number of cosigners (for multisig) */
+    n?: number;
     addressType?: string;
     walletPrivKey?: string;
     use145forBCH?: boolean;

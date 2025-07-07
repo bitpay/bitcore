@@ -33,6 +33,10 @@ class TssKeyGenClass {
     }
 
     const otherPartyMsgs = session.rounds[round].filter(m => m.fromPartyId != partyId);
+    // Only return message if all other parties have sent their messages
+    // This is to prevent complexity in TSS session management when processing rounds. There's
+    //   no value in partially processing rounds with missing messages and messages can't be
+    //   re-processed, so it makes sense to only return messages when the round is complete.
     if (otherPartyMsgs.length === session.n - 1) {
       const messages = otherPartyMsgs.map(m => m.messages);
       for (const m of messages) {
@@ -126,7 +130,7 @@ class TssKeyGenClass {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid n provided: ' + n);
     }
 
-    let passwordHash: string = null;
+    let passwordHash: string;
     if (password) {
       passwordHash = BitcoreLib.crypto.Hash.sha256(Buffer.from(id + password)).toString('hex');
     }
@@ -329,6 +333,8 @@ class TssSignClass {
       let result = false;
       while (!result) {
         result = await this._pushMessage({ id, session, message, storage });
+        // `result` will be false if the session was stale (version conflict) and we need to retry
+        // Any other failure of the message state will result in a throw (e.g. same-message race condition, round already done, etc.)
         if (!result) {
           session = await storage.fetchTssSigSession({ id });
         }

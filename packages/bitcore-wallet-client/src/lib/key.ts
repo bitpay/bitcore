@@ -15,13 +15,14 @@ import log from './log';
 
 const $ = singleton();
 
-const wordsForLang = {
-  en: Mnemonic.Words.ENGLISH as Array<string>,
-  es: Mnemonic.Words.SPANISH as Array<string>,
-  ja: Mnemonic.Words.JAPANESE as Array<string>,
-  zh: Mnemonic.Words.CHINESE as Array<string>,
-  fr: Mnemonic.Words.FRENCH as Array<string>,
-  it: Mnemonic.Words.ITALIAN as Array<string>,
+type Language = 'en' | 'es' | 'ja' | 'zh' | 'fr' | 'it';
+const wordsForLang: Record<Language, Array<string>> = {
+  en: Mnemonic.Words.ENGLISH,
+  es: Mnemonic.Words.SPANISH,
+  ja: Mnemonic.Words.JAPANESE,
+  zh: Mnemonic.Words.CHINESE,
+  fr: Mnemonic.Words.FRENCH,
+  it: Mnemonic.Words.ITALIAN,
 };
 
 // we always set 'livenet' for xprivs. it has no consequences
@@ -51,7 +52,7 @@ export interface KeyOptions {
   useLegacyPurpose?: boolean;
   useLegacyCoinType?: boolean;
   nonCompliantDerivation?: boolean;
-  language?: keyof typeof wordsForLang;
+  language?: Language;
   algo?: KeyAlgorithm; // eddsa or ecdsa (Bitcoin) by default
 };
 
@@ -114,9 +115,6 @@ export class Key {
    *  };
    */
   
-  /**
-   * @param {KeyOptions} opts
-   */
   constructor(opts: KeyOptions = { seedType: 'new' }) {
     this.#version = 1;
     this.id = opts.id || Uuid.v4();
@@ -674,12 +672,12 @@ export class Key {
    * Why is this async?
    *  Because the underlying SOL library uses SubtleCrypto browser API. The SubtleCrypto API hands off
    *  cryptographic operations to a native thread so it doesn't block the JS event loop and is thus async.
-   * @param {string} rootPath 
-   * @param {object} txp 
-   * @param {PasswordMaybe} [password]
-   * @returns {Promise<string[]>} Array of signatures
    */
-  async sign(rootPath: string, txp, password?: PasswordMaybe): Promise<string[]> {
+  async sign(
+    rootPath: string,
+    txp,
+    password?: PasswordMaybe
+  ): Promise<string[]> {
     $.shouldBeString(rootPath);
     if (this.isPrivKeyEncrypted() && !password) {
       throw new Errors.ENCRYPTED_PRIVATE_KEY();

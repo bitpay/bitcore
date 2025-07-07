@@ -185,7 +185,7 @@ export class Wallet implements IWallet<() => boolean> {
     x.singleAddress = !!obj.singleAddress;
     x.status = obj.status;
     x.publicKeyRing = obj.publicKeyRing;
-    x.copayers = obj.copayers?.map(copayer => Copayer.fromObj(copayer));
+    x.copayers = (obj.copayers || []).map(copayer => Copayer.fromObj(copayer));
     x.pubKey = obj.pubKey;
     x.coin = obj.coin || Defaults.COIN;
     x.chain = obj.chain || ChainService.getChain(x.coin); // getChain -> backwards compatibility;

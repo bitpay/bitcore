@@ -47,10 +47,13 @@ export class TssSign extends EventEmitter {
 
   /**
    * Threshold Signature Scheme (TSS) client class
-   * @param {ITssConstructorParams} params Constructor parameters
-   * @param {EventEmitterOptions} eventOpts Options object for EventEmitter
    */
-  constructor(params: ITssSignConstructorParams, eventOpts?) {
+  constructor(
+    /** Constructor parameters */
+    params: ITssSignConstructorParams,
+    /** EventEmitter options object */
+    eventOpts?
+  ) {
     super(eventOpts);
     $.checkArgument(params.baseUrl, 'Missing required param: baseUrl');
     $.checkArgument(params.credentials, 'Missing required param: credentials');
@@ -200,7 +203,8 @@ export class TssSign extends EventEmitter {
         const prevRound = thisRound - 1; // Get previous round's messages
         const { body } = await this.#request.get(`/v1/tss/sign/${this.id}/${prevRound}`) as RequestResponse;
 
-        if (body.messages?.length === this.#tssKey.metadata.m - 1 && !body.signature) {
+        const hasEveryoneSubmitted = body.messages?.length === this.#tssKey.metadata.m;
+        if (hasEveryoneSubmitted && !body.signature) {
           this.emit('roundready', thisRound);
           // Snapshot the session in case there's an API failure
           //  since this.#sign can't re-process the messages

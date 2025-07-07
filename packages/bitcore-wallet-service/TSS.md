@@ -6,7 +6,7 @@ This document explains the specs for the client implementation of distributed _k
 If the DKG ceremony is executed asynchronously (meaning all parties are not required to be online at the same time during the DKG), the `keyGen.export()` function should be used between each step to export the local session state. The session state should be securely stored and used with `KeyGen.restore()` for following steps.
 
 ### Flow Diagram
-![DKG Flow](https://drive.google.com/uc?export=view&id=1A-zzWamhDmFzPY7GUqYNvc8BFHMUM22c)
+![DKG Flow](DKG-flow.png)
 
 ### API Spec
 
@@ -83,7 +83,7 @@ This document explains the specs for the client implementation of distributed _s
 If the DSG ceremony is executed asynchronously (meaning all signing parties are not required to be online at the same time during the DSG), the `sign.export()` function should be used between each step to export the local session state. The session state should be securely stored and used with `Sign.restore()` for following steps.
 
 ### Flow Diagram
-![DKG Flow](https://drive.google.com/uc?export=view&id=1cU_m5wzpPUCcrhTIS0-gWWopdOIa_wYx)
+![DSG Flow](DSG-flow.png)
 
 ### API Spec
 <details>

@@ -126,9 +126,46 @@ describe('ECIES', function() {
     const decrypted = bob
       .decrypt(encrypted, opts)
       .toString();
-      assert.strictEqual(decrypted, secret);
+    assert.strictEqual(decrypted, secret);
   });
 
+  it('roundtrips (short tag mismatch)', function() {
+    const opts1 = { shortTag: true };
+    const opts2 = { shortTag: false };
+    const secret = 'some secret message!!!';
+    const encrypted1 = alice.encrypt(secret, opts1);
+    const encrypted2 = alice.encrypt(secret, opts2);
+    assert.notEqual(encrypted1.toString('hex'), encrypted2.toString('hex'));
+    assert.throws(() => {
+      bob
+        .decrypt(encrypted1, opts2) // intentionally mismatched
+        .toString();
+    }, { message: 'Invalid checksum' });
+    assert.throws(() => {
+      bob
+        .decrypt(encrypted2, opts1) // intentionally mismatched
+        .toString();
+    }, { message: 'Invalid checksum' });
+  });
+
+  it('roundtrips (no key mismatch)', function() {
+    const opts1 = { noKey: true };
+    const opts2 = { noKey: false };
+    const secret = 'some secret message!!!';
+    const encrypted1 = alice.encrypt(secret, opts1);
+    const encrypted2 = alice.encrypt(secret, opts2);
+    assert.notEqual(encrypted1.toString('hex'), encrypted2.toString('hex'));
+    assert.throws(() => {
+      bob
+        .decrypt(encrypted1, opts2) // intentionally mismatched
+        .toString();
+    }, 'Invalid type'); // Generic error since it's not really possible to know _why_ it failed (could be false positive if valid type?)
+    assert.throws(() => {
+      bob
+        .decrypt(encrypted2, opts1) // intentionally mismatched
+        .toString();
+    }, 'Invalid type'); // Generic error since it's not really possible to know _why_ it failed (could be false positive if valid type?)
+  });
 
   it('correctly fails if trying to decrypt a bad message', function() {
     const encrypted = Buffer.from(encBuf);

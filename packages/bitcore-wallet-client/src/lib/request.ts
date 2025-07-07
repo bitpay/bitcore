@@ -83,29 +83,39 @@ export class Request<CredT = Credentials> {
   }
 
   /**
-   * @description sign an HTTP request
+   * Sign an HTTP request
    * @private
-   * @param {object} params
-   * @param {string} params.method the HTTP method
-   * @param {string} params.url the URL for the request
-   * @param {string} params.privKey private key to sign the request
-   * @param {object} [params.args] a POST/PUT request's body, or a GET request's query(ies)
    */
-  _signRequest({ method, url, args, privKey }) {
-    var message = `${method.toLowerCase()}|${url}|${JSON.stringify(args)}`;
+  _signRequest(params: {
+    /** The HTTP method */
+    method: string;
+    /** The URL for the request */
+    url: string;
+    /** A POST/PUT request's body, or a GET request's query(ies) */
+    args?: any;
+    /** Private key to sign the request */
+    privKey: string;
+  }) {
+    const { method, url, args, privKey } = params;
+    const message = `${method.toLowerCase()}|${url}|${JSON.stringify(args)}`;
     return Utils.signMessage(message, privKey);
   }
 
   /**
    * Base request function
-   * @param {string} method HTTP method
-   * @param {string} url the URL for the request
-   * @param {object} [args] a POST/PUT request's body, or a GET request's query(ies)
-   * @param {boolean} [useSession] 
-   * @param {RequestCallback} [cb] callback function
-   * @returns
    */
-  async doRequest<ReqBodyT, ResBodyT>(method: string, url: string, args: ReqBodyT, useSession?: boolean, cb?: RequestCallback): Promise<RequestResponse<ResBodyT>> {
+  async doRequest<ReqBodyT, ResBodyT>(
+    /** HTTP method */
+    method: string,
+    /** URL for the request */
+    url: string,
+    /** A POST/PUT request's body, or a GET request's query(ies) */
+    args: ReqBodyT,
+    /** Use session for authentication */
+    useSession?: boolean,
+    /** @deprecated */
+    cb?: RequestCallback
+  ): Promise<RequestResponse<ResBodyT>> {
     var headers = this.getHeaders(method, url, args, useSession);
 
     var r = this.r[method](this.baseUrl + url);
@@ -165,8 +175,6 @@ export class Request<CredT = Credentials> {
   /**
    * Parse errors
    * @private
-   * @param {object} body 
-   * @returns 
    */
   static _parseError(body) {
     if (!body) return;
@@ -204,36 +212,38 @@ export class Request<CredT = Credentials> {
 
   /**
    * Do a POST request
-   * @private
-   * @param {string} url 
-   * @param {object} [body] 
-   * @param {RequestCallback} [cb] callback function
-   * @returns 
    */
-  async post<ReqBodyT = object, ResBodyT = any>(url: string, body?: ReqBodyT, cb?: RequestCallback) {
+  async post<ReqBodyT = object, ResBodyT = any>(
+    url: string,
+    body?: ReqBodyT,
+    /** @deprecated */
+    cb?: RequestCallback
+  ) {
     body = body || {} as ReqBodyT;
     return this.doRequest<ReqBodyT, ResBodyT>('post', url, body, false, cb);
   }
 
   /**
    * Do a PUT request
-   * @param {string} url 
-   * @param {object} [body] 
-   * @param {RequestCallback} [cb] callback function
-   * @returns 
    */
-  async put<ReqBodyT = object, ResBodyT = any>(url: string, body?: ReqBodyT, cb?: RequestCallback) {
+  async put<ReqBodyT = object, ResBodyT = any>(
+    url: string,
+    body?: ReqBodyT,
+    /** @deprecated */
+    cb?: RequestCallback
+  ) {
     body = body || {} as ReqBodyT;
     return this.doRequest<ReqBodyT, ResBodyT>('put', url, body, false, cb);
   }
 
   /**
    * Do a GET request
-   * @param {string} url 
-   * @param {RequestCallback} [cb] callback function
-   * @returns 
    */
-  async get<ResBodyT = any>(url: string, cb?: RequestCallback) {
+  async get<ResBodyT = any>(
+    url: string,
+    /** @deprecated */
+    cb?: RequestCallback
+  ) {
     url += url.indexOf('?') > 0 ? '&' : '?';
     url += 'r=' + Math.round(Math.random() * 100000);
 
@@ -242,37 +252,54 @@ export class Request<CredT = Credentials> {
 
   /**
    * Do a DELETE request
-   * @param {string} url URL to request
-   * @param {RequestCallback} [cb] callback function
-   * @returns 
    */
-  async delete<ResBodyT = any>(url: string, cb?: RequestCallback) {
+  async delete<ResBodyT = any>(
+    url: string,
+    /** @deprecated */
+    cb?: RequestCallback
+  ) {
     return this.doRequest<object, ResBodyT>('delete', url, {}, false, cb);
   }
 
-  getWithLogin(url: string, cb?: RequestCallback) {
+  getWithLogin(
+    url: string,
+    /** @deprecated */
+    cb?: RequestCallback
+  ) {
     url += url.indexOf('?') > 0 ? '&' : '?';
     url += 'r=' + Math.round(Math.random() * 100000);
     return this.doRequestWithLogin('get', url, {}, cb);
   }
 
-  async _login(cb?: RequestCallback) {
+  async _login(
+    /** @deprecated */
+    cb?: RequestCallback
+  ) {
     return this.post('/v1/login', {}, cb);
   }
 
-  async logout(cb?: RequestCallback) {
+  async logout(
+    /** @deprecated */
+    cb?: RequestCallback
+  ) {
     return this.post('/v1/logout', {}, cb);
   }
 
   /**
    * Do an HTTP request
-   * @param {string} method HTTP method
-   * @param {string} url URL to request
-   * @param {object} [body] a POST/PUT request's body
-   * @param {RequestCallback} [cb] callback function
-   * @param {boolean} [_retry] Retry if auth fails. Only used internally - do not set this parameter
    */
-  async doRequestWithLogin<ReqBodyT = object, ResBodyT = any>(method: string, url: string, body: ReqBodyT, cb?: RequestCallback, _retry = true): Promise<RequestResponse<ResBodyT>> {
+  async doRequestWithLogin<ReqBodyT = object, ResBodyT = any>(
+    /** HTTP method */
+    method: string,
+    /** URL for the request */
+    url: string,
+    /** A POST/PUT request's body, or a GET request's query(ies) */
+    body: ReqBodyT,
+    /** @deprecated */
+    cb?: RequestCallback,
+    /** Retry if auth fails. Only used internally - do not set this parameter */
+    _retry = true
+  ): Promise<RequestResponse<ResBodyT>> {
     try {
       if (!this.session) {
         await this.doLogin();
@@ -290,7 +317,10 @@ export class Request<CredT = Credentials> {
     }
   }
 
-  async doLogin(cb?: (err?: Error) => void) {
+  async doLogin(
+    /** @deprecated */
+    cb?: (err?: Error) => void
+  ) {
     try {
       const s = await this._login() as RequestResponse;
       if (!s?.body) throw new Errors.NOT_AUTHORIZED();
