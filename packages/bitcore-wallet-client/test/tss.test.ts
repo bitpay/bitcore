@@ -1,24 +1,25 @@
 'use strict';
 
-const sinon = require('sinon');
-const should = require('chai').should();
-const BWS = require('bitcore-wallet-service');
-const request = require('supertest');
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
-const { ECIES } = require('bitcore-tss');
-const { Request } = require('../ts_build/lib/request');
-const { BitcoreLib } = require('crypto-wallet-core');
-const { TssKeyGen, TssKey } = require('../ts_build/lib/tsskey');
-const { TssSign } = require('../ts_build/lib/tsssign');
-const log = require('../ts_build/lib/log').default;
-const Client = require('../ts_build').default;
-const {
+import sinon from 'sinon';
+import chai from 'chai';
+import BWS from 'bitcore-wallet-service';
+import request from 'supertest';
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { ECIES } from 'bitcore-tss';
+import { Request } from '../src/lib/request';
+import { BitcoreLib } from 'crypto-wallet-core';
+import { TssKeyGen, TssKey } from '../src/lib/tsskey';
+import { TssSign } from '../src/lib/tsssign';
+import log from '../src/lib/log';
+import Client from '../src';
+import {
   helpers,
   blockchainExplorerMock
-} = require('./helpers');
+} from './helpers';
 
+const should = chai.should();
 const datadir = path.join(__dirname, 'data');
 const Key = Client.Key;
 
@@ -219,13 +220,13 @@ describe('TSS', function() {
     });
 
     it('should not allow party1 to go on to the next round', function(done) {
-      sandbox.spy(Request.prototype, 'doRequest');
+      const doReqSpy = sandbox.spy(Request.prototype, 'doRequest');
       tss1.on('error', (e) => { should.not.exist(e?.message ?? e); });
       tss1.subscribe({ timeout: 10, iterHandler: () => {
         tss1.unsubscribe();
-        Request.prototype.doRequest.callCount.should.equal(1);
-        Request.prototype.doRequest.args[0][0].should.equal('get');
-        Request.prototype.doRequest.args[0][1].should.include(`/v1/tss/keygen/${tss1.id}/1?r=`);
+        doReqSpy.callCount.should.equal(1);
+        doReqSpy.args[0][0].should.equal('get');
+        doReqSpy.args[0][1].should.include(`/v1/tss/keygen/${tss1.id}/1?r=`);
         done();
       }});
     });
@@ -281,11 +282,11 @@ describe('TSS', function() {
 
     it(happyPath('should do round 2 (with API fault tolerance)'), async function() {
       // fault tolerance setup
-      sandbox.stub(Request.prototype, 'post').throws(new Error('restore me'));
+      const postStub = sandbox.stub(Request.prototype, 'post').throws(new Error('restore me'));
       sandbox.spy(tss0, 'restoreSession');
       sandbox.spy(tss1, 'restoreSession');
       sandbox.spy(tss2, 'restoreSession');
-      function restore() { Request.prototype.post.restore?.(); };
+      function restore() { postStub.restore?.(); };
 
       const response0 = new Promise(r => tss0.once('roundsubmitted', r));
       const response1 = new Promise(r => tss1.once('roundsubmitted', r));
@@ -551,6 +552,7 @@ describe('TSS', function() {
     let party1TssKey;
     let party2TssKey;
     const message = 'hello world';
+    const messageHash = BitcoreLib.crypto.Hash.sha256(Buffer.from(message));
     const derivationPath = 'm/0/0';
 
     function objToBuf(key, value) {
@@ -564,9 +566,9 @@ describe('TSS', function() {
       ({ tss: party0TssKey } = JSON.parse(fs.readFileSync(`${datadir}/tss-party0.json`).toString(), objToBuf));
       ({ tss: party1TssKey } = JSON.parse(fs.readFileSync(`${datadir}/tss-party1.json`).toString(), objToBuf));
       ({ tss: party2TssKey } = JSON.parse(fs.readFileSync(`${datadir}/tss-party2.json`).toString(), objToBuf));
-      party0TssKey = TssKey.fromObj(party0TssKey);
-      party1TssKey = TssKey.fromObj(party1TssKey);
-      party2TssKey = TssKey.fromObj(party2TssKey);
+      party0TssKey = new TssKey(party0TssKey);
+      party1TssKey = new TssKey(party1TssKey);
+      party2TssKey = new TssKey(party2TssKey);
       party0Creds = party0TssKey.createCredentials(null, { chain, network: 'testnet', m, n, account: 0 });
       party1Creds = party1TssKey.createCredentials(null, { chain, network: 'testnet', m, n, account: 0 });
       party2Creds = party2TssKey.createCredentials(null, { chain, network: 'testnet', m, n, account: 0 });
@@ -604,7 +606,7 @@ describe('TSS', function() {
         credentials: party1Creds,
         tssKey: party1TssKey,
       });
-      const result = await sig1.start({ message, derivationPath });
+      const result = await sig1.start({ messageHash, derivationPath });
       should.exist(result);
       result.should.be.instanceOf(TssSign);
       result.should.equal(sig1);
@@ -619,7 +621,7 @@ describe('TSS', function() {
         credentials: party0Creds,
         tssKey: party0TssKey,
       });
-      const result = await sig0.start({ message, derivationPath });
+      const result = await sig0.start({ messageHash, derivationPath });
       should.exist(result);
       result.should.be.instanceOf(TssSign);
       result.should.equal(sig0);
@@ -634,7 +636,7 @@ describe('TSS', function() {
         tssKey: party2TssKey,
       });
       try {
-        await sig2.start({ message, derivationPath });
+        await sig2.start({ messageHash, derivationPath });
         throw new Error('Should have thrown');
       } catch (err) {
         err.message.should.include('TSS_MAX_PARTICIPANTS_REACHED');
@@ -703,15 +705,15 @@ describe('TSS', function() {
         credentials: party0Creds,
         tssKey: party0TssKey,
       }).restoreSession({ session: export0 });
-      sandbox.spy(sig0, 'emit');
-      const error = new Promise(r => sig0.on('error', r));
+      const emitSpy = sandbox.spy(sig0, 'emit');
+      const error = new Promise<Error>(r => sig0.on('error', r));
       sig0.subscribe({ timeout: 10, iterHandler: () => sig0.unsubscribe() });
       const e = await error;
-      sig0.emit.callCount.should.equal(3);
-      sig0.emit.args[0][0].should.equal('roundready');
-      sig0.emit.args[1][0].should.equal('roundprocessed');
-      sig0.emit.args[2][0].should.equal('error');
-      sig0.emit.args[2][1].should.equal(e);
+      emitSpy.callCount.should.equal(3);
+      emitSpy.args[0][0].should.equal('roundready');
+      emitSpy.args[1][0].should.equal('roundprocessed');
+      emitSpy.args[2][0].should.equal('error');
+      emitSpy.args[2][1].should.equal(e);
       e.message.should.include('TSS_ROUND_ALREADY_DONE');
     });
 
@@ -793,14 +795,14 @@ describe('TSS', function() {
         credentials: party0Creds,
         tssKey: party0TssKey,
       }).restoreSession({ session: export0 });
-      sandbox.spy(sig0, 'emit');
+      const emitSpy = sandbox.spy(sig0, 'emit');
       const signature = new Promise(r => sig0.once('signature', r));
       const complete = new Promise(r => sig0.once('complete', r));
       sig0.subscribe({ timeout: 10, iterHandler: () => sig0.unsubscribe() });
       const sig = await signature;
       await complete;
       should.exist(sig);
-      sig0.emit.args.filter(o => o[0] === 'roundready').length.should.equal(0);
+      emitSpy.args.filter(o => o[0] === 'roundready').length.should.equal(0);
     });
 
     it('should sign a message with a custom id', async function() {
@@ -817,8 +819,8 @@ describe('TSS', function() {
         tssKey: party2TssKey,
       });
       const id = 'my-custom-id';
-      await sig0.start({ id, message, derivationPath });
-      await sig2.start({ id, message, derivationPath });
+      await sig0.start({ id, messageHash, derivationPath });
+      await sig2.start({ id, messageHash, derivationPath });
       const complete0 = new Promise(r => sig0.once('complete', r));
       const complete2 = new Promise(r => sig2.once('complete', r));
       sig0.subscribe({ timeout: 10 });
@@ -836,7 +838,7 @@ describe('TSS', function() {
         tssKey: party0TssKey,
       });
       try {
-        await sig0.start({ message });
+        await sig0.start({ messageHash });
         throw new Error('Should have thrown');
       } catch (err) {
         err.message.should.include('TSS_ROUND_ALREADY_DONE');

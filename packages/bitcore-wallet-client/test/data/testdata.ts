@@ -1,5 +1,5 @@
 
-module.exports.history = [{
+export const history = [{
   txid: "0279ef7b21630f859deb723e28beac9e7011660bd1346c2da40321d2f7e34f04",
   vin: [{
     txid: "c8e221141e8bb60977896561b77fa59d6dacfcc10db82bf6f5f923048b11c70d",
@@ -72,12 +72,14 @@ module.exports.history = [{
   fees: 0.00014299
 }];
 
-module.exports.payProJsonBody = body = {
+const body = {
   bch: '{"network":"test","currency":"BCH","requiredFeeRate":1.398,"outputs":[{"amount":769200,"address":"qz78y0832kskq84rr4f9t22fequ5c0l4gu6wsehezr"}],"time":"2019-03-07T18:05:44.301Z","expires":"2019-03-07T18:20:44.301Z","memo":"Payment request for BitPay invoice 3oZcpotopVGcZ2stRw2dop for merchant GusPay","paymentUrl":"https://test.bitpay.com/i/3oZcpotopVGcZ2stRw2dop","paymentId":"3oZcpotopVGcZ2stRw2dop"}',
   btc: '{"network":"main","currency":"BTC","requiredFeeRate":27.001,"outputs":[{"amount":1004800,"address":"1MR4ucgpxum2iPYCixX77Qi9rR4im3ccsx"}],"time":"2019-03-08T15:27:43.684Z","expires":"2019-03-08T15:42:43.684Z","memo":"Payment request for BitPay invoice 4Zrpank3aA2EAdYaQwMXbz for merchant Electronic Frontier Foundation","paymentUrl":"https://bitpay.com/i/4Zrpank3aA2EAdYaQwMXbz","paymentId":"4Zrpank3aA2EAdYaQwMXbz"}',
 };
 
-module.exports.payProJson = {
+export const payProJsonBody = body;
+
+export const payProJson = {
   'bch': {
     body: Buffer.from(body.bch),
     headers: {
@@ -98,13 +100,15 @@ module.exports.payProJson = {
   }
 };
 
-module.exports.payProJsonV2Body = bodyV2 = {
+const bodyV2 = {
   bch: '{"time":"2019-11-05T17:05:31.791Z","expires":"2019-11-05T17:20:31.791Z","memo":"Payment request for BitPay invoice XM8XbreRs6cnKkR3yYT6qQ for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/XM8XbreRs6cnKkR3yYT6qQ","paymentId":"XM8XbreRs6cnKkR3yYT6qQ","chain":"BCH","network":"main","instructions":[{"type":"transaction","requiredFeeRate":1,"outputs":[{"amount":337900,"address":"qpymzlw4dfgawe2hy6xalj0qnzwedrqfvg96jl5ev6"}]}]}',
   btc: '{"time":"2019-11-05T15:21:09.047Z","expires":"2019-11-05T15:36:09.047Z","memo":"Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X","paymentId":"LanynqCPoL2JQb8z8s5Z3X","chain":"BTC","network":"main","instructions":[{"type":"transaction","requiredFeeRate":34.337,"outputs":[{"amount":19800,"address":"1CpEMwff6DA52FLoq4JAhd2xFSEjQxyokm"}]}]}',
   eth: '{"time":"2019-10-10T14:57:01.924Z","expires":"2019-10-10T15:12:01.924Z","memo":"Payment request for BitPay invoice GsbhMZeeUebqzEeDmNubEP for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/GsbhMZeeUebqzEeDmNubEP","paymentId":"GsbhMZeeUebqzEeDmNubEP","chain":"ETH","network":"main","currency":"ETH","instructions":[{"type":"transaction","amount":5214000000000000,"toAddress":"0x52dE8D3fEbd3a06d3c627f59D56e6892B80DCf12","value":5214000000000000,"to":"0x52dE8D3fEbd3a06d3c627f59D56e6892B80DCf12","data":"0xb6b4af050000000000000000000000000000000000000000000000000012861af9dbe00000000000000000000000000000000000000000000000000000000005a43875660000000000000000000000000000000000000000000000000000016db9644f77cadbc5e4ee0119e349b39e42a049f5526b4eca8c225709d3fd73550c87de3d2096c9e28e9f3b440d991720673f01a67d3f74a912339beb77ed696f65f35e5bc4000000000000000000000000000000000000000000000000000000000000001c84ebb3c8fdeb8c59e35b1248a1af05ba8a332d745cc38a3193b1792e414dbdae41b55cbb5dbddf27fc539dd13a3bf1c72671d744b8706fcfb3eb2fce968456b40000000000000000000000000000000000000000000000000000000000000000","gasPrice":24229999974}]}'
 };
+export const payProJsonV2Body = bodyV2;
 
-module.exports.payProJsonV2 = {
+
+export const payProJsonV2 = {
   'btc': {
     body:  Buffer.from(bodyV2.btc),
     headers: {

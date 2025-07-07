@@ -7,7 +7,7 @@ import {
   Transactions
 } from 'crypto-wallet-core';
 import { singleton } from 'preconditions';
-import Uuid from 'uuid';
+import * as Uuid from 'uuid';
 import { Constants, Encryption, Utils } from './common';
 import { Credentials } from './credentials';
 import { Errors } from './errors';
@@ -407,7 +407,7 @@ export class Key {
     return null;
   };
 
-  get(password: PasswordMaybe, algo?: KeyAlgorithm) {
+  get(password?: PasswordMaybe, algo?: KeyAlgorithm) {
     const key: ExportedKey = {
       xPrivKey: '',
       mnemonic: '',
@@ -463,7 +463,7 @@ export class Key {
       throw new Error('Private key is not encrypted');
 
     try {
-      const decryptedPrivKey = Encryption.decryptWithPassword(this.#getPrivKeyEncrypted({ algo }), password);
+      const decryptedPrivKey = Encryption.decryptWithPassword(this.#getPrivKeyEncrypted({ algo }), password).toString();
       this.#setPrivKey({ algo, value: decryptedPrivKey });
       if (this.#mnemonicEncrypted) {
         this.#mnemonic = Encryption.decryptWithPassword(this.#mnemonicEncrypted, password).toString();

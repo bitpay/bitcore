@@ -1,7 +1,13 @@
-const { Encryption } = require('../ts_build/lib/common/encryption');
-const should = require('chai').should();
+import chai from 'chai';
+import sjcl from 'sjcl';
+import { Encryption } from '../src/lib/common/encryption';
+
+const should = chai.should();
 
 describe('Encryption', function() {
+  it('should encrypt ')
+
+
   it('should encrypt and decrypt object data with a password', function() {
     const password = 'testPassword';
     const data = { message: 'Hello, World!' };
@@ -9,7 +15,6 @@ describe('Encryption', function() {
     const decryptedData = Encryption.decryptWithPassword(encryptedData, password);
     decryptedData.toString().should.equal(JSON.stringify(data));
   });
-
 
   it('should encrypt and decrypt string data with a password', function() {
     const password = 'testPassword';

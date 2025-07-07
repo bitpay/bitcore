@@ -1,15 +1,16 @@
 'use strict';
 
-const chai = require('chai');
-const sinon = require('sinon');
-const crypto = require('crypto');
+import chai from 'chai';
+import sinon from 'sinon';
+import crypto from 'crypto';
+import { PayPro } from '../src/lib/paypro';
+import * as TestData from './data/testdata';
+
 const should = chai.should();
-const { PayPro: payPro } = require('../ts_build/lib/paypro');
-const TestData = require('./testdata');
 
 function mockRequest(bodyBuf, headers) {
   bodyBuf = Array.isArray(bodyBuf) ? bodyBuf : [bodyBuf];
-  payPro.r = {
+  PayPro.r = {
     'get': (_url) => {
       return {
         set: (_k, _v) => { },
@@ -42,41 +43,41 @@ function mockRequest(bodyBuf, headers) {
 
 };
 
-describe('paypro', function () {
-  var clock, oldreq;
+describe('PayPro', function() {
+  let clock;
+  let oldreq;
   before(function () {
     // Stub time before cert expiration at Mar 27 2016
     clock = sinon.useFakeTimers(1459105693843);
-
   });
   beforeEach(() => {
-    oldreq = payPro.r;
+    oldreq = PayPro.r;
   });
   after(function () {
     clock.restore();
   });
   afterEach(function () {
-    payPro.r = oldreq;
+    PayPro.r = oldreq;
   });
 
   it('Make and verify PP request', function (done) {
-    mockRequest(Buffer.from(TestData.payProJson.bch.body, 'hex'), TestData.payProJson.bch.headers);
-    payPro.get({
+    mockRequest(TestData.payProJson.bch.body, TestData.payProJson.bch.headers);
+    PayPro.get({
       url: 'https://test.bitpay.com/paypro',
       network: 'testnet',
       coin: 'bch',
     }, function (err, res) {
       should.not.exist(err);
       res.should.be.deep.equal({
-        "amount": 769200,
-        "coin": "bch",
-        "expires": "2019-03-07T18:20:44.301Z",
-        "memo": "Payment request for BitPay invoice 3oZcpotopVGcZ2stRw2dop for merchant GusPay",
-        "network": "testnet",
-        "paymentId": "3oZcpotopVGcZ2stRw2dop",
-        "requiredFeeRate": 1.398,
-        "toAddress": "qz78y0832kskq84rr4f9t22fequ5c0l4gu6wsehezr",
-        "verified": true,
+        amount: 769200,
+        coin: 'bch',
+        expires: '2019-03-07T18:20:44.301Z',
+        memo: 'Payment request for BitPay invoice 3oZcpotopVGcZ2stRw2dop for merchant GusPay',
+        network: 'testnet',
+        paymentId: '3oZcpotopVGcZ2stRw2dop',
+        requiredFeeRate: 1.398,
+        toAddress: 'qz78y0832kskq84rr4f9t22fequ5c0l4gu6wsehezr',
+        verified: true,
       });
       done();
     });
@@ -84,7 +85,7 @@ describe('paypro', function () {
 
 
   it('Should handle a failed (404) request', function (done) {
-    payPro.r = {
+    PayPro.r = {
       'get': (_url) => {
         return {
           set: (_k, _v) => { },
@@ -99,7 +100,7 @@ describe('paypro', function () {
       },
       'post': () => { }
     }
-    payPro.get({
+    PayPro.get({
       url: 'https://test.bitpay.com/paypro',
       network: 'testnet',
       coin: 'bch',
@@ -112,8 +113,8 @@ describe('paypro', function () {
   it('Should detect a tampered PP request (bad signature)', function (done) {
     let h = JSON.parse(JSON.stringify(TestData.payProJson.bch.headers));
     h.signature = crypto.randomBytes(64).toString('hex');
-    mockRequest(Buffer.from(TestData.payProJson.bch.body, 'hex'), h);
-    payPro.get({
+    mockRequest(TestData.payProJson.bch.body, h);
+    PayPro.get({
       url: 'https://test.bitpay.com/paypro',
       network: 'testnet',
       coin: 'bch',
@@ -126,8 +127,8 @@ describe('paypro', function () {
   it('Should detect a tampered PP request (short signature)', function (done) {
     let h = JSON.parse(JSON.stringify(TestData.payProJson.bch.headers));
     h.signature = h.signature.slice(0, -1);
-    mockRequest(Buffer.from(TestData.payProJson.bch.body, 'hex'), h);
-    payPro.get({
+    mockRequest(TestData.payProJson.bch.body, h);
+    PayPro.get({
       url: 'https://test.bitpay.com/paypro',
       network: 'testnet',
       coin: 'bch',
@@ -140,8 +141,8 @@ describe('paypro', function () {
   it('Should detect a tampered PP request (non-hex signature)', function (done) {
     let h = JSON.parse(JSON.stringify(TestData.payProJson.bch.headers));
     h.signature = crypto.randomBytes(64).toString('base64');
-    mockRequest(Buffer.from(TestData.payProJson.bch.body, 'hex'), h);
-    payPro.get({
+    mockRequest(TestData.payProJson.bch.body, h);
+    PayPro.get({
       url: 'https://test.bitpay.com/paypro',
       network: 'testnet',
       coin: 'bch',
@@ -154,8 +155,8 @@ describe('paypro', function () {
   it('Should detect a tampered PP request (bogus signature)', function (done) {
     let h = JSON.parse(JSON.stringify(TestData.payProJson.bch.headers));
     h.signature = 'xx';
-    mockRequest(Buffer.from(TestData.payProJson.bch.body, 'hex'), h);
-    payPro.get({
+    mockRequest(TestData.payProJson.bch.body, h);
+    PayPro.get({
       url: 'https://test.bitpay.com/paypro',
       network: 'testnet',
       coin: 'bch',
@@ -167,11 +168,11 @@ describe('paypro', function () {
 
 
   it('Should detect a tampered PP request (bad amount)', function (done) {
-    let b = JSON.parse(TestData.payProJson.bch.body);
+    let b = JSON.parse(TestData.payProJson.bch.body.toString());
     b.outputs[0].amount = 100;
     b = JSON.stringify(b);
     mockRequest(Buffer.from(b), TestData.payProJson.bch.headers);
-    payPro.get({
+    PayPro.get({
       url: 'https://test.bitpay.com/paypro',
       network: 'testnet',
       coin: 'bch',
@@ -183,7 +184,7 @@ describe('paypro', function () {
 
 
   it('should send a PP payment', function (done) {
-    var opts = {
+    const opts = {
       rawTx: 'rawTx1',
       rawTxUnsigned: 'rawTxUnsigned',
       url: 'http://an.url.com/paypro',
@@ -191,7 +192,7 @@ describe('paypro', function () {
     };
     mockRequest([Buffer.from('{"memo":"Payment seems OK"}'), Buffer.from('{"memo":"memo1"}')], {
     });
-    payPro.send(opts, function (err, data, memo) {
+    PayPro.send(opts, function (err, data, memo) {
       should.not.exist(err);
       memo.should.equal('memo1');
       done();
@@ -206,7 +207,7 @@ describe('paypro', function () {
       url: 'http://an.url.com/paypro',
       coin: 'bch',
     };
-    payPro.r = {
+    PayPro.r = {
       'post': (_url) => {
         return {
           set: (_k, _v) => { },
@@ -220,7 +221,7 @@ describe('paypro', function () {
         }
       }
     }
-    payPro.send(opts, function (err, data, memo) {
+    PayPro.send(opts, function (err, data, memo) {
       should.exist(err);
       done();
     });

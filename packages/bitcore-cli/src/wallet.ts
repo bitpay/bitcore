@@ -438,11 +438,13 @@ export class Wallet {
     });
 
     try {
+      // TODO: make this work for non-EVM
+      const messageHash = ethers.keccak256(Client.getRawTx(txp)[0]).slice(2); // remove 0x prefix
       await tssSign.start({
         id: txp.id,
-        message: Client.getRawTx(txp)[0], // TODO: make this work for non-EVM
+        messageHash: Buffer.from(messageHash, 'hex'),
         encoding: 'hex',
-        derivationPath: 'm/0/0', // TODO - needed for UTXO chains
+        derivationPath: 'm/0/0', // TODO - consider UTXO chains
         password
       });
     } catch (err) {

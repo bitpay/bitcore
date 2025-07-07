@@ -1,13 +1,14 @@
 'use strict';
 
-const { PayProV2: payProV2 } = require('../ts_build/lib/payproV2');
-const TestData = require('./testdata');
+import { PayProV2 } from '../src/lib/payproV2';
+import * as TestData from './data/testdata';
 
-describe('payproV2', () => {
-  var oldreq;
-  var header = {};
-  var mockRequest = (bodyBuf, headers) => {
-    payProV2.request = {
+describe('PayProV2', () => {
+  let oldreq;
+  let header = {};
+  let postArgs;
+  const mockRequest = (bodyBuf, headers) => {
+    PayProV2.request = {
       'get': (_url) => {
         return {
           set: (_k, _v) => {
@@ -54,16 +55,16 @@ describe('payproV2', () => {
     };
   };
   beforeEach(() => {
-    oldreq = payProV2.request;
+    oldreq = PayProV2.request;
   });
   afterEach(() => {
-    payProV2.request = oldreq;
+    PayProV2.request = oldreq;
   });
   describe('_asyncRequest', () => {
 
     it('Should handle a failed (404) request', (done) => {
       var header = {};
-      payProV2.request = {
+      PayProV2.request = {
         'post': (_url) => {
           return {
             set: (_k, _v) => {
@@ -93,7 +94,7 @@ describe('payproV2', () => {
           }
         }
       }
-      payProV2._asyncRequest({
+      PayProV2._asyncRequest({
         url: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X',
         method: 'post',
         headers: {
@@ -114,7 +115,7 @@ describe('payproV2', () => {
 
     it('Should handle a failed (400) request', (done) => {
       var header = {};
-      payProV2.request = {
+      PayProV2.request = {
         'post': (_url) => {
           return {
             set: (_k, _v) => {
@@ -144,7 +145,7 @@ describe('payproV2', () => {
           }
         }
       }
-      payProV2._asyncRequest({
+      PayProV2._asyncRequest({
         url: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X',
         method: 'post',
         headers: {
@@ -165,7 +166,7 @@ describe('payproV2', () => {
 
     it('Should handle a failed (500) request', (done) => {
       var header = {};
-      payProV2.request = {
+      PayProV2.request = {
         'post': (_url) => {
           return {
             set: (_k, _v) => {
@@ -195,7 +196,7 @@ describe('payproV2', () => {
           }
         }
       }
-      payProV2._asyncRequest({
+      PayProV2._asyncRequest({
         url: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X',
         method: 'post',
         headers: {
@@ -214,8 +215,8 @@ describe('payproV2', () => {
       });
     });
     it('should return rawBody and headers', (done) => {
-      mockRequest(Buffer.from(TestData.payProJson.btc.body, 'hex'), TestData.payProJson.btc.headers);
-      payProV2._asyncRequest({
+      mockRequest(TestData.payProJson.btc.body, TestData.payProJson.btc.headers);
+      PayProV2._asyncRequest({
         url: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X',
         method: 'post',
         headers: {
@@ -240,11 +241,11 @@ describe('payproV2', () => {
   describe('getPaymentOptions', () => {
 
     it('should get payment options if everthing is ok', (done) => {
-      mockRequest(Buffer.from(TestData.payProJsonV2.btc.body, 'hex'), TestData.payProJsonV2.btc.headers);
+      mockRequest(TestData.payProJsonV2.btc.body, TestData.payProJsonV2.btc.headers);
       var opts = {
         paymentUrl: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X'
       };
-      payProV2.getPaymentOptions(opts).then((res) => {
+      PayProV2.getPaymentOptions(opts).then((res) => {
         res.should.exist;
         done();
       }).catch(err => {
@@ -253,11 +254,11 @@ describe('payproV2', () => {
     });
 
     it('should fail if the protocol is invalid', (done) => {
-      mockRequest(Buffer.from(TestData.payProJsonV2.btc.body, 'hex'), TestData.payProJsonV2.btc.headers);
+      mockRequest(TestData.payProJsonV2.btc.body, TestData.payProJsonV2.btc.headers);
       var opts = {
         paymentUrl: 'bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X'
       };
-      payProV2.getPaymentOptions(opts).then((res) => {
+      PayProV2.getPaymentOptions(opts).then((res) => {
         res.should.not.exist;
       }).catch(err => {
         err.toString().should.contain('Invalid payment protocol url');
@@ -270,11 +271,11 @@ describe('payproV2', () => {
   describe('selectPaymentOption', () => {
 
     it('should work if the params passed are correct', (done) => {
-      mockRequest(Buffer.from(TestData.payProJsonV2.btc.body, 'hex'), TestData.payProJsonV2.btc.headers);
+      mockRequest(TestData.payProJsonV2.btc.body, TestData.payProJsonV2.btc.headers);
       var opts = {
         paymentUrl: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X'
       };
-      payProV2.selectPaymentOption(opts).then((res) => {
+      PayProV2.selectPaymentOption(opts).then((res) => {
         res.should.exist;
         done();
       }).catch(err => {
@@ -283,9 +284,9 @@ describe('payproV2', () => {
     });
 
     it('should fail if the url is not provided', (done) => {
-      mockRequest(Buffer.from(TestData.payProJsonV2.btc.body, 'hex'), TestData.payProJsonV2.btc.headers);
-      var opts = {};
-      payProV2.selectPaymentOption(opts).then((res) => {
+      mockRequest(TestData.payProJsonV2.btc.body, TestData.payProJsonV2.btc.headers);
+      const opts = { paymentUrl: '' };
+      PayProV2.selectPaymentOption(opts).then((res) => {
         res.should.not.exist;
       }).catch(err => {
         err.toString().should.contain('Parameter requestUrl is required');
@@ -297,14 +298,14 @@ describe('payproV2', () => {
   describe('verifyUnsignedPayment', () => {
 
     it('should verify fails if the params are incomplete', (done) => {
-      mockRequest(Buffer.from(TestData.payProJsonV2.btc.body, 'hex'), TestData.payProJsonV2.btc.headers);
-      var opts = {
+      mockRequest(TestData.payProJsonV2.btc.body, TestData.payProJsonV2.btc.headers);
+      const opts = {
         paymentUrl: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X',
         chain: 'BTC',
         currency: '',
         unsignedTransactions: [],
       };
-      payProV2.verifyUnsignedPayment(opts).then((res) => {
+      PayProV2.verifyUnsignedPayment(opts).then((res) => {
         res.should.not.exist;
       }).catch(err => {
         err.should.exist;

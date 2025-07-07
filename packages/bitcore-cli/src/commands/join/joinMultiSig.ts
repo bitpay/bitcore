@@ -28,7 +28,7 @@ export async function joinMultiSigWallet(args: {
   const copayerName = await getCopayerName();
   const password = await getPassword('Enter a password for the wallet:', { hidden: false });
   const { key, creds } = await wallet.create({ chain, network, account: 0, n: 2, password, mnemonic, copayerName }); // n gets overwritten
-  const joinedWallet = await wallet.client.joinWallet(secret, copayerName, { chain, network });
+  const joinedWallet = await wallet.client.joinWallet(secret, copayerName, { chain });
   await wallet.load(); // Is this needed after joining?
   
   prompt.log.success(Utils.colorText(`Wallet joined: ${joinedWallet.name}`, 'green'));

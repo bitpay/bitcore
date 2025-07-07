@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 const config = require('../../ts_build/config').default;
-const { Storage } = require('../../ts_build');
+const { Storage } = require('../../ts_build').default;
 
 const startDate = new Date('2011-01-01T00:00:00.000Z');
 const endDate = new Date();

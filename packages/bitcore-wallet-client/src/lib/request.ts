@@ -1,11 +1,11 @@
 import request from 'superagent';
 import util from 'util';
+import Package from '../../package.json';
 import { Utils } from './common';
 import { Credentials } from './credentials';
 import { Errors } from './errors';
 import log from './log';
 
-const Package = require('../../package.json');
 interface Headers {
   'x-client-version': string;
   'x-wallet-id'?: string;

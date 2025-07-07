@@ -1,21 +1,22 @@
 'use strict';
 // Node >= 17 started attempting to resolve all dns listings by ipv6 first, these lines are required to make it check ipv4 first
-const { setDefaultResultOrder } = require('dns');
+import { setDefaultResultOrder } from 'dns';
 setDefaultResultOrder('ipv4first');
 
-const $ = require('preconditions').singleton();
-const chai = require('chai');
+import { singleton }from 'preconditions';
+import chai from 'chai';
 chai.config.includeStack = true;
-const sinon = require('sinon');
+import sinon from 'sinon';
+import request from 'supertest';
+import mongodb from 'mongodb';
+import * as CWC from 'crypto-wallet-core';
+import config from './data/test-config';
+import Client from '../src';
+import { Utils, Constants } from '../src/lib/common';
+
+const $ = singleton();
 const should = chai.should();
-const async = require('async');
-const request = require('supertest');
-const mongodb = require('mongodb');
-const CWC = require('crypto-wallet-core');
-const config = require('./test-config');
-const { Constants } = require('../ts_build/lib/common');
-const Client = require('../ts_build').default;
-const { Utils } = require('../ts_build/lib/common');
+
 
 const Key = Client.Key;
 const Bitcore = CWC.BitcoreLib;
@@ -25,7 +26,7 @@ const Bitcore_ = {
 };
 
 
-const helpers = {
+export const helpers = {
   toSatoshi: btc => {
     if (Array.isArray(btc)) {
       return btc.map(helpers.toSatoshi);
@@ -43,7 +44,7 @@ const helpers = {
       //    logLevel: 'debug',
     });
   },
-  stubRequest: (err, res) => {
+  stubRequest: (err, res?) => {
     var request = {
       accept: sinon.stub(),
       set: sinon.stub(),
@@ -59,12 +60,12 @@ const helpers = {
       return mem;
     }, {});
 
-    return reqFactory;
+    return reqFactory as any;
   },
   generateUtxos: (scriptType, publicKeyRing, path, requiredSignatures, amounts) => {
-    var amounts = [].concat(amounts);
+    amounts = [].concat(amounts);
     var utxos = amounts.map((amount, i) => {
-      var address = Utils.deriveAddress(scriptType, publicKeyRing, path, requiredSignatures, 'testnet');
+      var address = Utils.deriveAddress(scriptType, publicKeyRing, path, requiredSignatures, 'testnet', 'btc');
 
       var scriptPubKey;
       switch (scriptType) {
@@ -92,7 +93,7 @@ const helpers = {
     });
     return utxos;
   },
-  createAndJoinWallet: async (clients, keys, m, n, opts, cb) => {
+  createAndJoinWallet: async (clients, keys, m, n, opts, cb?) => {
     opts = opts || {};
 
     try {
@@ -103,10 +104,10 @@ const helpers = {
       const keyOpts = {
         useLegacyCoinType: opts.useLegacyCoinType,
         useLegacyPurpose: opts.useLegacyPurpose,
-        passphrase: opts.passphrase
+        passphrase: opts.passphrase,
+        seedType: 'new' as const
       };
 
-      keyOpts.seedType = keyOpts.seedType || 'new';
       keys[0] = opts.key || new Key(keyOpts);
       const cred = keys[0].createCredentials(null, {
         coin: coin,
@@ -186,7 +187,7 @@ const helpers = {
         client.request.doRequest = sinon
             .stub()
             .withArgs(method, url)
-            .yields(null, result);
+            .resolves({ body: result });
       }
       return cb();
     });
@@ -216,10 +217,14 @@ const helpers = {
 };
 
 
-const blockchainExplorerMock = {
+export const blockchainExplorerMock = {
   register: sinon.stub().callsArgWith(1, null, null),
   getCheckData: sinon.stub().callsArgWith(1, null, { sum: 100 }),
   addAddresses: sinon.stub().callsArgWith(2, null, null),
+  utxos: [],
+  lastBroadcasted: null,
+  txHistory: [],
+  feeLevels: [],
   getUtxos: (wallet, height, cb) => {
     return cb(null, JSON.parse(JSON.stringify(blockchainExplorerMock.utxos)));
   },
@@ -230,7 +235,7 @@ const blockchainExplorerMock = {
 
     return cb(null, JSON.parse(JSON.stringify(selected)));
   },
-  setUtxo: (address, amount, m, confirmations) => {
+  setUtxo: (address, amount, m, confirmations?) => {
     var B = Bitcore_[address.coin];
     var scriptPubKey;
     switch (address.type) {
@@ -298,7 +303,7 @@ const blockchainExplorerMock = {
     return cb(null, list);
   },
   getAddressActivity: (address, cb) => {
-    var activeAddresses = (blockchainExplorerMock.utxos || []).map(u => u.address);
+    var activeAddresses = blockchainExplorerMock.utxos.map(u => u.address);
     return cb(null, activeAddresses.includes(address));
   },
   setFeeLevels: levels => {
@@ -337,10 +342,4 @@ const blockchainExplorerMock = {
     blockchainExplorerMock.txHistory = [];
     blockchainExplorerMock.feeLevels = [];
   }
-};
-
-
-module.exports = {
-  helpers,
-  blockchainExplorerMock
 };

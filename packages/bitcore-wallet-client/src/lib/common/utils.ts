@@ -66,7 +66,7 @@ export class Utils {
   }
 
   static decryptMessageNoThrow(ciphertextJson, encryptingKey) {
-    if (!encryptingKey) throw new Error('Missing encrypting key');
+    if (!encryptingKey) return '<ECANNOTDECRYPT>';
     if (!ciphertextJson) return '';
 
     // encrypted json (e.g. { ks: 256, v: 1, ct: 'ciphertext'  ... })
@@ -78,7 +78,7 @@ export class Utils {
     try {
       return this.decryptMessage(ciphertextJson, encryptingKey);
     } catch (e) {
-      throw new Error('<ECANNOTDECRYPT>');
+      return '<ECANNOTDECRYPT>';
     }
   }
 

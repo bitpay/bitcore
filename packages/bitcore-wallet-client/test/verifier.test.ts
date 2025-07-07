@@ -1,7 +1,7 @@
 'use strict';
 
-const { Verifier } = require('../ts_build/lib/verifier');
-const { Key } = require('../ts_build/lib/key');
+import { Verifier } from '../src/lib/verifier';
+import { Key } from '../src/lib/key';
 
 const aKey = new Key({
   seedData: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',

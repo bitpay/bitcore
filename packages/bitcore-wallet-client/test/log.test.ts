@@ -1,53 +1,49 @@
 'use strict';
 
-const should = require('chai').should();
-const sinon = require('sinon');
-const log = require('../ts_build/lib/log').default;
+import chai from 'chai';
+import sinon from 'sinon';
+import log from '../src/lib/log';
 
-describe('log utils', function () {
+const should = chai.should();
+
+describe('log utils', function() {
+  const sandbox = sinon.createSandbox();
+  
   afterEach(function () {
     log.setLevel('info');
+    sandbox.restore();
   });
 
 
   it('should log .warn', function () {
-    if (console.warn.restore)
-      console.warn.restore();
-
-    sinon.stub(console, 'warn');
+    const cw = sandbox.stub(console, 'warn');
 
     log.setLevel('debug');
     log.warn('hola');
 
-    var arg = console.warn.getCall(0).args[0];
+    const arg = cw.getCall(0).args[0];
     //arg.should.contain('util.log.js');        /* Firefox does not include the stack track */
     arg.should.contain('hola');
-    console.warn.restore();
   });
 
 
   it('should log .fatal', function () {
-    if (console.log.restore)
-      console.log.restore();
-
-    sinon.stub(console, 'log');
+    const cl = sandbox.stub(console, 'log');
 
     log.setLevel('debug');
     log.fatal('hola', "que", 'tal');
 
-    var arg = console.log.getCall(0).args[0];
+    const arg = cl.getCall(0).args[0];
     //arg.should.contain('util.log.js');        /* Firefox does not include the stack track */
     arg.should.contain('que');
-    console.log.restore();
   });
 
 
   it('should not log debug', function () {
-    sinon.stub(console, 'log');
+    const cl = sandbox.stub(console, 'log');
     log.setLevel('info');
     log.debug('hola');
-    console.log.called.should.equal(false);
-    console.log.restore();
+    cl.called.should.equal(false);
   });
 
   it('should log debug', function () {
@@ -56,8 +52,7 @@ describe('log utils', function () {
   });
 
   it('should log nothing if logLevel is set to silent', function () {
-    var sandbox = sinon.createSandbox();
-    var cl = sandbox.stub(console, 'log');
+    const cl = sandbox.stub(console, 'log');
 
     log.setLevel('silent');
     log.debug('foo');
@@ -68,11 +63,10 @@ describe('log utils', function () {
     log.fatal('foo');
 
     cl.callCount.should.equal(0);
-    sandbox.restore();
   });
 
   it('should not create a log.silent() method', function () {
-    should.not.exist(log.silent);
+    should.not.exist(log['silent']);
   });
 
 });

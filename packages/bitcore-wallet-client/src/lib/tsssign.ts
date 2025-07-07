@@ -72,10 +72,6 @@ export class TssSign extends EventEmitter {
    */
   async start(params: {
     /**
-     * Message to be signed. Mutually exclusive with `messageHash`.
-     */
-    message?: string | Buffer;
-    /**
      * Pre-hashed message to be signed. Mutually exclusive with `message`.
      */
     messageHash?: Buffer;
@@ -92,10 +88,18 @@ export class TssSign extends EventEmitter {
      */
     password?: string;
     /**
+     * Message string to be signed. Ignored if `messageHash` is provided.
+     * 
+     * NOTE: This should only be used for signing various string messages like "hello world".
+     * Blockchain transactions should be pre-hashed and passed as `messageHash` since
+     * they often require specific hashing methods (e.g. EVM => keccak256, UTXO => sha256).
+     */
+    message?: string | Buffer;
+    /**
      * Encoding of the `message` (if a string)
      * @default 'utf8'
      */
-    encoding?: 'hex' | 'base64' | 'utf8' | 'binary';
+    encoding?: BufferEncoding;
   }): Promise<TssSign> {
     let { message, messageHash } = params;
     const { id, derivationPath, password, encoding = 'utf8' } = params;
@@ -111,7 +115,7 @@ export class TssSign extends EventEmitter {
         message = message.startsWith('0x') ? message.slice(2) : message; // Remove '0x' prefix if present
       }
       message = Buffer.from(message, encoding);
-      messageHash = Buffer.from(ethers.keccak256(message).slice(2), 'hex'); // TODO this is fragile and EVM-specific
+      messageHash = BitcoreLib.crypto.Hash.sha256(message);
     }
 
     this.#sign = new ECDSA.Sign({
