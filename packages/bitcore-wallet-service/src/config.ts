@@ -466,7 +466,8 @@ const Config = (): any => {
     //   referrerFee: 'one_inch_referrer_fee', // min: 0; max: 3; (represents percentage)
     // },
     // coinGecko: {
-    //   api: 'https://api.coingecko.com/api',
+    //   api: 'https://pro-api.coingecko.com/api/',
+    //   apiKey: 'coin_gecko_api_key',
     // },
     // moralis: {
     //   apiKey: 'moralis_api_key_here',
