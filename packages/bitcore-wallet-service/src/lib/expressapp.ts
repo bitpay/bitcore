@@ -2228,8 +2228,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.externalServices.oneInch
-        .oneInchGetTokens(req)
+      server.coinGeckoGetTokens(req)
         .then(response => {
           res.json(response);
         })
