@@ -9,28 +9,25 @@
 ## Principles
 
 A threshold signature scheme allows a group of participants to sign a message in a distributed manner. The signature is valid only if a certain number of participants (the threshold) have signed the message.
-This libary is deisgned to be flexible in that it supports distributed key generation (DKG) which means that the private key is never reconstructed in any one location, thus ensuring than no single party ever has the full private key in their possession.
+This libary is designed to be flexible in that it supports distributed key generation (DKG) which means that the private key is never constructed in any one location, thus ensuring than no single party ever has the full private key in their possession.
+
+> **The TSS protocols (DKG & DSG) depend on a secure communication channel between the participants.**
+> For example, a central coordination server that all parties connect to over HTTPS
+
 
 ## Get Started
 
+Adds Bitcore-TSS to your app's dependencies:
+
 ```sh
 npm install bitcore-tss
-```
-Adding Bitcore-TSS to your app's `package.json`:
-
-```json
-"dependencies": {
-    "bitcore-tss": "^10.8.0",
-    ...
-}
 ```
 
 ## Documentation
 
 ### Distributed Key Generation
 
-The DKG protocol is used to generate a shared private key that is distributed among a group of participants. The private key is never reconstructed in any one location, thus ensuring than no single party ever has the full private key in their possession.
-> **The DKG protocol depends on a secure communication channel between the participants.**
+The DKG protocol is used to generate a shared private key that is distributed among a group of participants. The private key is never constructed in any one location, thus ensuring than no single party ever has the full private key in their possession.
 
 #### Example
 
@@ -38,9 +35,9 @@ First, you need to instantiate a KeyGen instance.
 
 ```js
 const keygen = new bitcoreTss.KeyGen({
+  m: 2, // participant threshold needed to generate a signature
   n: 3, // number of participants
-  t: 2, // threshold
-  partyId: 0, // which participant of the 3 are you?
+  partyId: 0, // which participant of the 3 are you (0-based...the initiator is always 0)?
   authKey: privateKey, // a private key used for encrypting and signing messages
   seed: seedKey, // Optional - could be the derivation of a 12-word phrase
 });
@@ -50,7 +47,7 @@ const keygen = new bitcoreTss.KeyGen({
 Then, you need to generate the broadcast message to the other participants that you're joining the group.
 
 ```js
-const broadcastMessage = keygen.initJoin();
+const broadcastMessage = await keygen.initJoin();
 
 // securely send broadcastMessage to the other participants
 ```
@@ -94,8 +91,8 @@ const hashBuffer = Buffer.from(Web3.utils.keccak256(rawTxHex).substring(2), 'hex
 
 const signer = new bitcoreTss.Sign({
   keychain,
-  n: 3, // number of participants
-  t: 2, // threshold
+  m: 2, // participant threshold needed to generate a signature
+  n: 3, // total number of participants
   partyId: 0, // your party id
   messageHash: hashBuffer, // a 32-byte hash of message to sign
   authKey: privateKey, // a private key used for encrypting and signing messages
@@ -106,7 +103,7 @@ const signer = new bitcoreTss.Sign({
 Initiate the first round of the signature generation protocol and create a broadcast message to send to the other participants that you wish to sign a message
 
 ```js
-const broadcastMessage = signer.initJoin();
+const broadcastMessage = await signer.initJoin();
 
 // securely send broadcastMessage to the other participants
 ```

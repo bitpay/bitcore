@@ -310,6 +310,10 @@ export class SolChain implements IChain {
     return false;
   }
 
+  supportsThresholdsig() {
+    return false; // TODO: need to add EDDSA support to bitcore-tss
+  }
+
   isUTXOChain() {
     return false;
   }

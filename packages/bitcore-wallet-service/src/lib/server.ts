@@ -1,26 +1,33 @@
 import * as async from 'async';
+import Bitcore from 'bitcore-lib';
+import BitcoreCash from 'bitcore-lib-cash';
+import BitcoreDoge from 'bitcore-lib-doge';
+import BitcoreLtc from 'bitcore-lib-ltc';
 import {
   Constants as ConstantsCWC,
   Validation
 } from 'crypto-wallet-core';
+import EmailValidator from 'email-validator';
 import * as _ from 'lodash';
 import Moralis from 'moralis';
+import { singleton } from 'preconditions';
+import _request from 'request';
 import 'source-map-support/register';
+import Uuid from 'uuid';
 import config from '../config';
-import logger from './logger';
-
 import { serverMessages as deprecatedServerMessage } from '../deprecated-serverMessages';
-import { BanxaService } from '../externalServices/banxa';
-import { ChangellyService } from '../externalServices/changelly';
-import { MoonpayService } from '../externalServices/moonpay';
-import { OneInchService } from '../externalServices/oneInch';
-import { RampService } from '../externalServices/ramp';
-import { SardineService } from '../externalServices/sardine';
-import { SimplexService } from '../externalServices/simplex';
-import { ThorswapService } from '../externalServices/thorswap';
-import { TransakService } from '../externalServices/transak';
-import { WyreService } from '../externalServices/wyre';
+import { BanxaService } from '../externalservices/banxa';
+import { ChangellyService } from '../externalservices/changelly';
+import { MoonpayService } from '../externalservices/moonpay';
+import { OneInchService } from '../externalservices/oneInch';
+import { RampService } from '../externalservices/ramp';
+import { SardineService } from '../externalservices/sardine';
+import { SimplexService } from '../externalservices/simplex';
+import { ThorswapService } from '../externalservices/thorswap';
+import { TransakService } from '../externalservices/transak';
+import { WyreService } from '../externalservices/wyre';
 import { serverMessages } from '../serverMessages';
+import { ExternalServicesConfig } from '../types/externalservices';
 import { BCHAddressTranslator } from './bchaddresstranslator';
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
@@ -30,11 +37,11 @@ import { ClientError } from './errors/clienterror';
 import { Errors } from './errors/errordefinitions';
 import { FiatRateService } from './fiatrateservice';
 import { Lock } from './lock';
+import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import {
   Advertisement,
   Copayer,
-  ExternalServicesConfig,
   INotification,
   ITxProposal,
   IWallet,
@@ -49,31 +56,30 @@ import {
 } from './model';
 import { Storage } from './storage';
 
-const Uuid = require('uuid');
-const $ = require('preconditions').singleton();
-const EmailValidator = require('email-validator');
+let request = _request;
+const $ = singleton();
 
-const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
+  bch: BitcoreCash,
   eth: Bitcore,
   matic: Bitcore,
   arb: Bitcore,
   base: Bitcore,
   op: Bitcore,
   xrp: Bitcore,
-  doge: require('bitcore-lib-doge'),
-  ltc: require('bitcore-lib-ltc'),
+  doge: BitcoreDoge,
+  ltc: BitcoreLtc,
   sol: Bitcore,
 };
 
-const Utils = Common.Utils;
-const Constants = Common.Constants;
-const Defaults = Common.Defaults;
-const Services = Common.Services;
+const {
+  Utils,
+  Constants,
+  Defaults,
+  Services,
+} = Common;
 
-let request = require('request');
 let initialized = false;
 let doNotCheckV8 = false;
 let isMoralisInitialized = false;
@@ -347,7 +353,7 @@ export class WalletService implements IWalletService {
     const version = Utils.parseVersion(opts.clientVersion);
     if (version && version.agent === 'bwc') {
       if (version.major === 0 || (version.major === 1 && version.minor < 2)) {
-        throw new ClientError(Errors.codes.UPGRADE_NEEDED, 'BWC clients < 1.2 are no longer supported.');
+        throw Errors.UPGRADE_NEEDED.withMessage('BWC clients < 1.2 are no longer supported.');
       }
     }
 
@@ -373,7 +379,7 @@ export class WalletService implements IWalletService {
    * @param {string} [opts.walletId] - The wallet id to use as current wallet
    * for this request (only when copayer is support staff).
    */
-  static getInstanceWithAuth(opts, cb) {
+  static getInstanceWithAuth(opts, cb: (err: Error, server?: WalletService) => void): void {
     const withSignature = cb => {
       if (!checkRequired(opts, ['copayerId', 'message', 'signature'], cb)) {
         return;
@@ -391,12 +397,12 @@ export class WalletService implements IWalletService {
           return cb(err);
         }
         if (!copayer) {
-          return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Copayer not found'));
+          return cb(Errors.NOT_AUTHORIZED.withMessage('Copayer not found'));
         }
 
         const isValid = !!server._getSigningKey(opts.message, opts.signature, copayer.requestPubKeys);
         if (!isValid) {
-          return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Invalid signature'));
+          return cb(Errors.NOT_AUTHORIZED.withMessage('Invalid signature'));
         }
 
         server.walletId = copayer.walletId;
@@ -434,7 +440,7 @@ export class WalletService implements IWalletService {
 
         const isValid = s && s.id === opts.session && s.isValid();
         if (!isValid) {
-          return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Session expired'));
+          return cb(Errors.NOT_AUTHORIZED.withMessage('Session expired'));
         }
 
         server.storage.fetchCopayerLookup(opts.copayerId, (err, copayer) => {
@@ -442,7 +448,7 @@ export class WalletService implements IWalletService {
             return cb(err);
           }
           if (!copayer) {
-            return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Copayer not found'));
+            return cb(Errors.NOT_AUTHORIZED.withMessage('Copayer not found'));
           }
 
           server.copayerId = opts.copayerId;
@@ -454,6 +460,13 @@ export class WalletService implements IWalletService {
 
     const authFn = opts.session ? withSession : withSignature;
     return authFn(cb);
+  }
+
+  static getStorage() {
+    if (!initialized) {
+      throw new Error('Storage requested before server was initialized');
+    }
+    return storage;
   }
 
   _runLocked(cb, task, waitTime?: number) {
@@ -555,23 +568,25 @@ export class WalletService implements IWalletService {
   /**
    * Creates a new wallet.
    * @param {Object} opts
-   * @param {string} opts.id - The wallet id.
-   * @param {string} opts.name - The wallet name.
-   * @param {number} opts.m - Required copayers.
-   * @param {number} opts.n - Total copayers.
-   * @param {string} opts.pubKey - Public key to verify copayers joining have access to the wallet secret.
-   * @param {string} opts.hardwareSourcePublicKey - public key from a hardware device for this copayer
-   * @param {string} opts.clientDerivedPublicKey - public key from the client for this walet
-   * @param {string} opts.singleAddress[=false] - The wallet will only ever have one address.
-   * @param {string} opts.coin[='btc'] - The coin for this wallet (btc, bch, eth, doge, ltc).
-   * @param {string} opts.chain[='btc'] - The chain for this wallet (btc, bch, eth, doge, ltc).
-   * @param {string} opts.network[='livenet'] - The Bitcoin network for this wallet.
-   * @param {string} opts.account[=0] - BIP44 account number
-   * @param {string} opts.usePurpose48 - for Multisig wallet, use purpose=48
-   * @param {boolean} opts.useNativeSegwit - set addressType to P2WPKH, P2WSH, or P2TR (segwitVersion = 1)
-   * @param {number} opts.segwitVersion - 0 (default) = P2WPKH, P2WSH; 1 = P2TR
+   * @param {string} opts.id The wallet id.
+   * @param {string} opts.name The wallet name.
+   * @param {number} opts.m Required copayers.
+   * @param {number} opts.n Total copayers.
+   * @param {string} opts.pubKey Public key to verify copayers joining have access to the wallet secret. It's basically a throw-away key.
+   * @param {string} [opts.hardwareSourcePublicKey] Public key from a hardware device for this copayer.
+   * @param {string} [opts.singleAddress] The wallet will only ever have one address. Only applies to UTXO chains. Default: false
+   * @param {string} [opts.coin] The coin for this wallet (btc, bch, eth, doge, ltc). Default: btc
+   * @param {string} [opts.chain] The chain for this wallet (btc, bch, eth, doge, ltc). Default: opts.coin
+   * @param {string} [opts.network] The Bitcoin network for this wallet. Default: livenent
+   * @param {string} [opts.account] BIP44 account number. Default: 0
+   * @param {string} [opts.usePurpose48] For Multisig wallet, use purpose=48.
+   * @param {boolean} [opts.useNativeSegwit] Sets addressType to P2WPKH, P2WSH, or P2TR (opts.segwitVersion = 1).
+   * @param {number} [opts.segwitVersion] 0 (default) = P2WPKH, P2WSH; 1 = P2TR
+   * @param {number} [opts.tssVersion] TSS version to use. Supplying this with n > 1 and a multisig chain (e.g. btc) will tell the wallet to use
+   *                                   threshold insead of on-chain multisig. Otherwise, n > 1 and a non-multisig chain will default to TSS_KEYGEN_SCHEME_VERSION
+   * @param {string} [opts.tssKeyId] TSS key session id. This is the id of the TSS key generation session that will be used to create the wallet.
    */
-  createWallet(opts, cb) {
+  async createWallet(opts, cb) {
     let pubKey;
 
     opts.coin = opts.coin || Defaults.COIN;
@@ -583,12 +598,7 @@ export class WalletService implements IWalletService {
       const version = Utils.parseVersion(this.clientVersion);
       if (version && version.agent === 'bwc') {
         if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
-          return cb(
-            new ClientError(
-              Errors.codes.UPGRADE_NEEDED,
-              'BWC clients < 8.3 are no longer supported for multisig BCH wallets.'
-            )
-          );
+          return cb(Errors.UPGRADE_NEEDED.withMessage('BWC clients < 8.3 are no longer supported for multisig BCH wallets.'));
         }
       }
     }
@@ -618,6 +628,40 @@ export class WalletService implements IWalletService {
       return cb(new ClientError('Regtest is not allowed for this environment'));
     }
 
+    try {
+      // NOTE: this is just a shared pub key as part of the multisig
+      // join secret. It's NOT the wallet's main xPubKey.
+      pubKey = new Bitcore.PublicKey.fromString(opts.pubKey);
+    } catch (ex) {
+      return cb(new ClientError('Invalid public key'));
+    }
+
+    if (opts.n > 1) {
+      const multisig = ChainService.supportsMultisig(opts.chain);
+      const thresholdsig = ChainService.supportsThresholdsig(opts.chain);
+      if (!multisig && !thresholdsig) {
+        return cb(new ClientError('Multisig wallets are not supported for this chain'));
+      }
+      if (!multisig && !opts.tssKeyId) {
+        return cb(new ClientError('TSS key session id is required for this chain'));
+      }
+    }
+
+    if (opts.tssKeyId) {
+      opts.tssVersion = opts.tssVersion || Defaults.TSS_KEYGEN_SCHEME_VERSION;
+      if (!(opts.tssVersion > 0 && opts.tssVersion <= Constants.TSS_KEYGEN_SCHEME_VERSION_MAX)) {
+        return cb(new ClientError('Invalid TSS version'));
+      }
+
+      const keySession = await storage.fetchTssKeyGenSession({ id: opts.tssKeyId });
+      if (!keySession || !keySession.sharedPublicKey) {
+        return cb(new ClientError('Invalid TSS key session id'));
+      }
+      // TSS wallets behave like a single-sig
+      opts.m = 1;
+      opts.n = 1;
+    }
+
     const derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP44;
     let addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2PKH : Constants.SCRIPT_TYPES.P2SH;
 
@@ -636,18 +680,6 @@ export class WalletService implements IWalletService {
       }
     }
 
-    try {
-      pubKey = new Bitcore.PublicKey.fromString(opts.pubKey);
-    } catch (ex) {
-      return cb(new ClientError('Invalid public key'));
-    }
-
-    // using coin for simplicity
-    if (opts.n > 1 && !ChainService.supportsMultisig(opts.chain)) {
-      return cb(new ClientError('Multisig wallets are not supported for this coin'));
-    }
-
-    // using coin for simplicity
     if (ChainService.isSingleAddress(opts.chain)) {
       opts.singleAddress = true;
     }
@@ -681,9 +713,11 @@ export class WalletService implements IWalletService {
             derivationStrategy,
             addressType,
             nativeCashAddr: opts.nativeCashAddr,
-            usePurpose48: opts.n > 1 && !!opts.usePurpose48,
-            hardwareSourcePublicKey: opts.hardwareSourcePublicKey,
-            clientDerivedPublicKey: opts.clientDerivedPublicKey
+            usePurpose48: opts.n > 1 && !opts.tssVersion && !!opts.usePurpose48,
+            hardwareSourcePublicKey: opts.hardwareSourcePublicKey,            
+            clientDerivedPublicKey: opts.clientDerivedPublicKey,
+            tssVersion: opts.tssVersion,
+            tssKeyId: opts.tssKeyId
           });
           this.storage.storeWallet(wallet, err => {
             this.logd('Wallet created', wallet.id, opts.network);
@@ -980,7 +1014,7 @@ export class WalletService implements IWalletService {
     this._notify(type, data, {}, cb);
   }
 
-  _addCopayerToWallet(wallet, opts, cb) {
+  _addCopayerToWallet(wallet: Wallet, opts, cb) {
     const copayer = Copayer.create({
       coin: wallet.coin,
       chain: wallet.chain, // chain === coin for stored clients
@@ -1051,8 +1085,8 @@ export class WalletService implements IWalletService {
     });
   }
 
-  _addKeyToCopayer(wallet, copayer, opts, cb) {
-    wallet.addCopayerRequestKey(copayer.copayerId, opts.requestPubKey, opts.signature, opts.restrictions, opts.name);
+  _addKeyToCopayer(wallet: Wallet, copayer: Copayer, opts, cb) {
+    wallet.addCopayerRequestKey(copayer.id, opts.requestPubKey, opts.signature, opts.restrictions, opts.name);
     this.storage.storeWalletAndUpdateCopayersLookup(wallet, err => {
       if (err) return cb(err);
 
@@ -1135,17 +1169,17 @@ export class WalletService implements IWalletService {
   /**
    * Joins a wallet in creation.
    * @param {Object} opts
-   * @param {string} opts.walletId - The wallet id.
-   * @param {string} opts.coin[='btc'] - The expected coin for this wallet (btc, bch, eth, doge, ltc).
-   * @param {string} opts.chain[='btc'] - The expected chain for this wallet (btc, bch, eth, doge, ltc).
-   * @param {string} opts.name - The copayer name.
-   * @param {string} opts.xPubKey - Extended Public Key for this copayer
-   * @param {string} opts.hardwareSourcePublicKey - public key from a hardware device for this copayer
-   * @param {string} opts.clientDerivedPublicKey - public key from the client for this wallet
-   * @param {string} opts.requestPubKey - Public Key used to check requests from this copayer.
-   * @param {string} opts.copayerSignature - S(name|xPubKey|requestPubKey). Used by other copayers to verify that the copayer joining knows the wallet secret.
-   * @param {string} opts.customData - (optional) Custom data for this copayer.
-   * @param {string} opts.dryRun[=false] - (optional) Simulate the action but do not change server state.
+   * @param {string} opts.walletId The wallet id.
+   * @param {string} opts.coin The expected coin for this wallet (btc, bch, eth, doge, ltc). Default: btc
+   * @param {string} opts.chain The expected chain for this wallet (btc, bch, eth, doge, ltc). Default: btc
+   * @param {string} opts.name The copayer name.
+   * @param {string} opts.xPubKey Extended Public Key for this copayer
+   * @param {string} opts.hardwareSourcePublicKey Public key from a hardware device for this copayer
+   * @param {string} opts.clientDerivedPublicKey Public key from the client for this wallet
+   * @param {string} opts.requestPubKey Public Key used to check requests from this copayer.
+   * @param {string} opts.copayerSignature S(name|xPubKey|requestPubKey). Used by other copayers to verify that the copayer joining knows the wallet secret.
+   * @param {string} [opts.customData] Custom data for this copayer.
+   * @param {boolean} [opts.dryRun] Simulate the action but do not change server state.
    */
   joinWallet(opts, cb) {
     if (!checkRequired(opts, ['walletId', 'name', 'requestPubKey', 'copayerSignature'], cb)) return;
@@ -1172,11 +1206,11 @@ export class WalletService implements IWalletService {
 
     this.walletId = opts.walletId;
     this._runLocked(cb, cb => {
-      this.storage.fetchWallet(opts.walletId, (err, wallet) => {
+      this.storage.fetchWallet(opts.walletId, async (err, wallet) => {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
-        if (opts.hardwareSourcePublicKey || opts.clientDerivedPublicKey) {
+        if ((opts.hardwareSourcePublicKey || opts.clientDerivedPublicKey) && !opts.tssKeyId) {
           this._addCopayerToWallet(wallet, opts, cb);
           return;
         }
@@ -1185,12 +1219,7 @@ export class WalletService implements IWalletService {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
             if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
-              return cb(
-                new ClientError(
-                  Errors.codes.UPGRADE_NEEDED,
-                  'BWC clients < 8.3 are no longer supported for multisig BCH wallets.'
-                )
-              );
+              return cb(Errors.UPGRADE_NEEDED.withMessage('BWC clients < 8.3 are no longer supported for multisig BCH wallets.'));
             }
           }
         }
@@ -1199,9 +1228,7 @@ export class WalletService implements IWalletService {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
             if (version.major < 8 || (version.major === 8 && version.minor < 4)) {
-              return cb(
-                new ClientError(Errors.codes.UPGRADE_NEEDED, 'Please upgrade your client to join this multisig wallet')
-              );
+              return cb(Errors.UPGRADE_NEEDED.withMessage('Please upgrade your client to join this multisig wallet'));
             }
           }
         }
@@ -1210,9 +1237,7 @@ export class WalletService implements IWalletService {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
             if (version.major < 8 || (version.major === 8 && version.minor < 17)) {
-              return cb(
-                new ClientError(Errors.codes.UPGRADE_NEEDED, 'Please upgrade your client to join this multisig wallet')
-              );
+              return cb(Errors.UPGRADE_NEEDED.withMessage('Please upgrade your client to join this multisig wallet'));
             }
           }
         }
@@ -1239,6 +1264,15 @@ export class WalletService implements IWalletService {
 
         if (wallet.copayers?.find(c => c.xPubKey === opts.xPubKey))
           return cb(Errors.COPAYER_IN_WALLET);
+
+        if (wallet.tssKeyId) {
+          const keySession = await storage.fetchTssKeyGenSession({ id: wallet.tssKeyId });
+          const copayerId = Copayer.xPubToCopayerId(opts.chain, opts.xPubKey);
+          if (!keySession.participants.includes(copayerId)) {
+            return cb(Errors.TSS_NON_PARTICIPANT);
+          }
+          return this._addCopayerToWallet(wallet, opts, cb);
+        }
 
         if (wallet.copayers.length == wallet.n) return cb(Errors.WALLET_FULL);
 
@@ -3142,16 +3176,11 @@ export class WalletService implements IWalletService {
         {
           txProposalId: opts.txProposalId
         },
-        async (err, txp) => {
+        async (err, txp: TxProposal) => {
           if (err) return cb(err);
 
           if (opts.maxTxpVersion < txp.version) {
-            return cb(
-              new ClientError(
-                Errors.codes.UPGRADE_NEEDED,
-                'Your client does not support signing this transaction. Please upgrade'
-              )
-            );
+            return cb(Errors.UPGRADE_NEEDED.withMessage('Your client does not support signing this transaction. Please upgrade'));
           }
 
           const action = txp.actions.find(a => a.copayerId === this.copayerId);
