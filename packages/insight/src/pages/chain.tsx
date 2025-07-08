@@ -1,10 +1,11 @@
-import { useEffect } from "react";
-import { useDispatch } from "react-redux";
-import { useNavigate, useParams } from "react-router-dom";
-import { useApi } from "src/api/api";
-import ChainHeader from "src/components/chain-header";
-import { changeCurrency, changeNetwork } from "src/store/app.actions";
-import { getApiRoot, getDefaultRefreshInterval, normalizeParams } from "src/utilities/helper-methods";
+import { useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useApi } from 'src/api/api';
+import ChainHeader from 'src/components/chain-header';
+import { changeCurrency, changeNetwork } from 'src/store/app.actions';
+import { getApiRoot, getDefaultRefreshInterval, normalizeParams } from 'src/utilities/helper-methods';
+import Blocks from './blocks';
 
 
 export const ChainDetails = () => {
@@ -46,8 +47,16 @@ export const ChainDetails = () => {
     return (
         <>
             {currency && network && <ChainHeader currency={currency} network={network} />}
-            <div style={{display: 'flex'}}>
-                <div onClick={(gotoBlocks)}>Go to full block list</div>
+            <div style={{display: 'flex', height: '500px'}}>
+                <div style={{width: '50%'}}>
+                    Fee
+                </div>
+                <div style={{width: '50%', height: '100%', overflow: 'auto'}}>
+                    <div style={{display: 'flex'}}>
+                        <div onClick={(gotoBlocks)}>Go to full block list</div>
+                    </div>
+                    <Blocks />
+                </div>
             </div>
         </>
     );
