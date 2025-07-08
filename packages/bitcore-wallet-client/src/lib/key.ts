@@ -571,13 +571,6 @@ export class Key {
 
   /**
    * Create a new set of credentials from this key
-   * @param {PasswordMaybe} [password]
-   * @param {object} [opts]
-   * @param {string} [opts.chain]
-   * @param {string} [opts.network]
-   * @param {number} [opts.account]
-   * @param {number} [opts.n]
-   * @param {string} [opts.algo]
    */
   createCredentials(
     password?: PasswordMaybe,
@@ -641,16 +634,15 @@ export class Key {
   };
 
   /**
-   * @param {PasswordMaybe} password
-   * @param {object} opts
-   * @param {string} opts.path
-   * @param {string|PrivateKey} [opts.requestPrivKey]
+   * Create a new access object for this key
    */
   createAccess(
     password: PasswordMaybe,
-    opts: { path: string; requestPrivKey?: string | Bitcore.PrivateKey }
+    opts: {
+      path: string;
+      requestPrivKey?: string | Bitcore.PrivateKey
+    }
   ) {
-    opts = opts || {} as any;
     $.shouldBeString(opts.path);
 
     let requestPrivKey = new Bitcore.PrivateKey(opts.requestPrivKey || null);
