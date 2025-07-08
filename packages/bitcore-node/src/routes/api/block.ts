@@ -8,8 +8,9 @@ import { CacheTimes, Confirmations, SetCache } from '../middleware';
 const router = express.Router({ mergeParams: true });
 
 router.get('/', async function(req: Request, res: Response) {
-  let { chain, network } = req.params;
-  let { sinceBlock, date, limit, since, direction, paging } = req.query as any;
+  const { chain, network } = req.params;
+  const { sinceBlock, date, since, direction, paging } = req.query as any;
+  let { limit } = req.query as any;
   if (limit) {
     limit = parseInt(limit) || undefined; // if limit is NaN or null, set it to undefined so it'll fallback to CSP default
   }
@@ -30,7 +31,7 @@ router.get('/', async function(req: Request, res: Response) {
 });
 
 router.get('/tip', async function(req: Request, res: Response) {
-  let { chain, network } = req.params;
+  const { chain, network } = req.params;
   try {
     let tip = await ChainStateProvider.getLocalTip({ chain, network });
     return res.json(tip);
@@ -41,7 +42,7 @@ router.get('/tip', async function(req: Request, res: Response) {
 });
 
 router.get('/:blockId', async function(req: Request, res: Response) {
-  let { chain, network, blockId } = req.params;
+  const { chain, network, blockId } = req.params;
   try {
     let block = await ChainStateProvider.getBlock({ chain, network, blockId });
     if (!block) {
@@ -60,7 +61,7 @@ router.get('/:blockId', async function(req: Request, res: Response) {
 
 // return all { txids, inputs, ouputs} for a blockHash paginated at max 500 per page, to limit reqs and overload
 router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: Response) {
-  let { chain, network, blockHash, limit, pgnum } = req.params;
+  const { chain, network, blockHash, limit, pgnum } = req.params;
 
   let pageNumber;
   let maxLimit;
@@ -129,7 +130,7 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: 
 });
 
 router.get('/before-time/:time', async function(req: Request, res: Response) {
-  let { chain, network, time } = req.params;
+  const { chain, network, time } = req.params;
   try {
     const block = await ChainStateProvider.getBlockBeforeTime({ chain, network, time });
     if (!block) {
@@ -144,6 +145,41 @@ router.get('/before-time/:time', async function(req: Request, res: Response) {
     logger.error('Error getting blocks before time: %o', err.stack || err.message || err);
     return res.status(500).send(err.message || err);
   }
+});
+
+router.get('/:blockId/feeRate', async function(req: Request, res: Response) {
+  const { chain, network, blockId } = req.params;
+  const transactions = blockId.length >= 64 
+    ? await TransactionStorage.collection.find({ chain, network, blockHash: blockId }).toArray()
+    : await TransactionStorage.collection.find({ chain, network, blockHeight: parseInt(blockId, 10) }).toArray();
+  if (transactions.length == 0)
+    return res.status(404).send(`block not found with id ${blockId}`);
+
+  let feeTotal = 0;
+  let feeRates: number[] = [];
+  transactions.map((tx) => {
+    const rate = tx.fee / tx.size;
+    feeTotal += rate;
+    if (rate) // does not add fee rate 0
+      feeRates.push(rate);
+  });
+  feeRates.sort((a, b) => a - b);
+  let mean = feeTotal / feeRates.length;
+
+  let median = feeRates.length % 2 === 1
+    ? feeRates[Math.floor(feeRates.length / 2)]
+    : (feeRates[Math.floor(feeRates.length / 2)] + feeRates[Math.ceil(feeRates.length / 2)]) / 2;
+  let mode = feeRates[0], maxCount = 1;
+  let freq = {};
+  feeRates.forEach(rate => {
+    freq[rate] = (freq[rate] || 0) + 1;
+    if (freq[rate] > maxCount) {
+      mode = rate;
+      maxCount = freq[rate];
+    }
+  });
+
+  return res.json({mean, median, mode})
 });
 
 module.exports = {
