@@ -625,6 +625,25 @@ export class V8 {
       .catch(cb);
   }
 
+  getRentMinimum(space, cb) {
+    if (!space) {
+      return cb(null, Defaults.MIN_SOL_BALANCE);
+    }
+    const url = this.baseUrl + `/rent/${space}`;
+    this.request
+      .get(url, {})
+      .then(ret => {
+        try {
+          ret = Number(ret);
+          return cb(null, ret || Defaults.MIN_SOL_BALANCE);
+        } catch (err) {
+          logger.error('[v8.js] Error getting rentMinimum: %o', err);
+          return cb(null, Defaults.MIN_XRP_BALANCE);
+        }
+      })
+      .catch(cb);
+  }
+
   initSocket(callbacks) {
     logger.info('V8 connecting socket at:' + this.host);
     // sockets always use the first server on the pull

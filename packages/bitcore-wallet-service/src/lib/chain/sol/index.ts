@@ -15,15 +15,20 @@ export class SolChain implements IChain {
     this.chain = 'SOL';
   }
 
-  private convertBitcoreBalance(bitcoreBalance, locked) {
-    const { unconfirmed, confirmed, balance } = bitcoreBalance;
+  private convertBitcoreBalance(bitcoreBalance, locked, minRent = Defaults.MIN_SOL_BALANCE) {
+    const { confirmed, balance } = bitcoreBalance;
+    let activatedLocked = locked;
+  
+    if (balance > 0) {
+      activatedLocked = locked + minRent;
+    }
     const convertedBalance = {
       totalAmount: balance,
       totalConfirmedAmount: confirmed,
-      lockedAmount: locked,
-      lockedConfirmedAmount: locked,
-      availableAmount: balance - locked,
-      availableConfirmedAmount: confirmed - locked,
+      lockedAmount: activatedLocked,
+      lockedConfirmedAmount: activatedLocked,
+      availableAmount: balance - activatedLocked,
+      availableConfirmedAmount: confirmed - activatedLocked,
       byAddress: []
     };
     return convertedBalance;
@@ -40,38 +45,43 @@ export class SolChain implements IChain {
       if (err) {
         return cb(err);
       }
-      // getPendingTxs returns all txps when given a native currency
-      server.getPendingTxs(opts, (err, txps) => {
-        if (err) return cb(err);
-        const { fees, amounts } = txps.reduce((acc, txp) => {
-          // Add gas used for tokens when getting native balance
-          if (!opts.tokenAddress) {
-            acc.fees += txp.fee || 0;
-          }
-          
-          // Filter tokens when getting native balance
-          if (!(txp.tokenAddress && !opts.tokenAddress)) {
-            acc.amounts += txp.amount;
-          }
-          
-          return acc;
-        }, { fees: 0, amounts: 0 });
-
-        const lockedSum = (amounts + fees) || 0;  // previously set to 0 if opts.multisigContractAddress
-        const convertedBalance = this.convertBitcoreBalance(balance, lockedSum);
-        server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
+      bc.getRentMinimum(null, (err, reserve) => {
+        if (err) {
+          return cb(err);
+        }
+        // getPendingTxs returns all txps when given a native currency
+        server.getPendingTxs(opts, (err, txps) => {
           if (err) return cb(err);
-          if (addresses.length > 0) {
-            const byAddress = [
-              {
-                address: addresses[0].address,
-                path: addresses[0].path,
-                amount: convertedBalance.totalAmount
-              }
-            ];
-            convertedBalance.byAddress = byAddress;
-          }
-          return cb(null, convertedBalance);
+          const { fees, amounts } = txps.reduce((acc, txp) => {
+            // Add gas used for tokens when getting native balance
+            if (!opts.tokenAddress) {
+              acc.fees += txp.fee || 0;
+            }
+            
+            // Filter tokens when getting native balance
+            if (!(txp.tokenAddress && !opts.tokenAddress)) {
+              acc.amounts += txp.amount;
+            }
+            
+            return acc;
+          }, { fees: 0, amounts: 0 });
+
+          const lockedSum = (amounts + fees) || 0;  // previously set to 0 if opts.multisigContractAddress
+          const convertedBalance = this.convertBitcoreBalance(balance, lockedSum, reserve);
+          server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
+            if (err) return cb(err);
+            if (addresses.length > 0) {
+              const byAddress = [
+                {
+                  address: addresses[0].address,
+                  path: addresses[0].path,
+                  amount: convertedBalance.totalAmount
+                }
+              ];
+              convertedBalance.byAddress = byAddress;
+            }
+            return cb(null, convertedBalance);
+          });
         });
       });
     });
@@ -257,9 +267,9 @@ export class SolChain implements IChain {
   }
 
 
-  getMinimumRent(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void) {
+  getRentMinimum(server: WalletService, wallet: IWallet, space: number, cb: (err?, reserve?: number) => void) {
     const bc = server._getBlockchainExplorer(wallet.chain || wallet.coin, wallet.network);
-    bc.getReserve((err, reserve) => {
+    bc.getRentMinimum(space, (err, reserve) => {
       if (err) {
         return cb(err);
       }

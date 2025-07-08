@@ -54,6 +54,20 @@ export interface KeyOptions {
   language?: string;
   algo?: string; // eddsa or ecdsa (Bitcoin) by default
 };
+interface AddKeyOptions {
+  passphrase?: string;
+  password?: string;
+  sjclOpts?: any;
+  algo?: string;
+  existingAlgo?: string;
+}
+
+interface SetFromMnemonicOptions {
+  passphrase?: string;
+  algo?: string;
+  password?: string;
+  sjclOpts?: any;
+}
 
 export class Key {
   // ecdsa
@@ -126,33 +140,7 @@ export class Key {
         break;
       case 'extendedPrivateKey':
         $.checkArgument(x, 'Need to provide opts.seedData');
-
-        let xpriv;
-        try {
-          xpriv = new Bitcore.HDPrivateKey(x);
-        } catch (e) {
-          throw new Error('Invalid argument');
-        }
-        for (const algo of SUPPORTED_ALGOS) {
-          const params = { algo }
-          this.#setFingerprint({ value: xpriv.fingerPrint.toString('hex'),  ...params });
-          if (opts.password) {
-            this.#setPrivKeyEncrypted({
-              value: sjcl.encrypt(
-                opts.password,
-                xpriv.toString(),
-                opts
-              ),
-              ...params
-            });
-            const xPrivKeyEncrypted = this.#getPrivKeyEncrypted(params);
-            if (!xPrivKeyEncrypted) throw new Error('Could not encrypt');
-          } else {
-            this.#setPrivKey({ value: xpriv.toString(), ...params }); 
-          }
-        }
-        this.#mnemonic = null;
-        this.#mnemonicHasPassphrase = null;
+        this.setFromExtendedPrivateKey(x, opts);
         break;
       case 'object':
         $.shouldBeObject(x, 'Need to provide an object at opts.seedData');
@@ -236,11 +224,9 @@ export class Key {
     return a.id == b.id || a.fingerPrint == b.fingerPrint || a.fingerPrintEDDSA == b.fingerPrintEDDSA;
   }
 
-  private setFromMnemonic(
-    m,
-    opts: { passphrase?: string; password?: string; sjclOpts?: any, algo?: string }
-  ) {
-    for (const algo of SUPPORTED_ALGOS) {
+  private setFromMnemonic(m, opts: SetFromMnemonicOptions) {
+    const algos = opts.algo ? [opts.algo] : SUPPORTED_ALGOS;
+    for (const algo of algos) {
       const xpriv = m.toHDPrivateKey(opts.passphrase, NETWORK, ALGO_TO_KEY_TYPE[algo]);
       this.#setFingerprint({ value: xpriv.fingerPrint.toString('hex'), algo });
 
@@ -264,6 +250,109 @@ export class Key {
         this.#mnemonic = m.phrase;
         this.#mnemonicHasPassphrase = !!opts.passphrase;
       }
+    }
+  }
+
+  private setFromExtendedPrivateKey (extendedPrivateKey, opts: { password?: string; algo?: string }) {
+    let xpriv;
+    if (this.#mnemonic || this.#mnemonicEncrypted) {
+      throw new Error('Set key from existing mnemonic')
+    }
+    try {
+      xpriv = new Bitcore.HDPrivateKey(extendedPrivateKey);
+    } catch (e) {
+      throw new Error('Invalid argument');
+    }
+    const algos = opts.algo ? [opts.algo] : SUPPORTED_ALGOS;
+    for (const algo of algos) {
+      const params = { algo }
+      this.#setFingerprint({ value: xpriv.fingerPrint.toString('hex'),  ...params });
+      if (opts.password) {
+        this.#setPrivKeyEncrypted({
+          value: sjcl.encrypt(
+            opts.password,
+            xpriv.toString(),
+            opts
+          ),
+          ...params
+        });
+        const xPrivKeyEncrypted = this.#getPrivKeyEncrypted(params);
+        if (!xPrivKeyEncrypted) throw new Error('Could not encrypt');
+      } else {
+        this.#setPrivKey({ value: xpriv.toString(), ...params }); 
+      }
+    }
+    this.#mnemonic = null;
+    this.#mnemonicHasPassphrase = null;
+  }
+  
+  /**
+   * Adds an additional supported key to the object
+   * By default it creates the new key based on the existing bitcoin key (ECDSA)
+   */
+  addKeyByAlgorithm(algo: string, opts: AddKeyOptions = {}) {
+    const existingAlgo = opts.existingAlgo || 'ECDSA';
+
+    if (this.#mnemonic) {
+      this.#addKeyFromMnemonic(algo, this.#mnemonic, opts);
+      return;
+    }
+    if (this.#mnemonicEncrypted) {
+      this.#validatePassword(opts.password);
+      this.#addKeyFromMnemonic(algo, this.#mnemonicEncrypted, opts);
+      return;
+    }
+    if (this.#hasExistingPrivateKey(existingAlgo)) {
+      this.#addKeyFromExistingPrivateKey(algo, existingAlgo, opts);
+      return;
+    }
+
+    throw new Error(`No key source available. Missing private key for algorithm: ${existingAlgo}`);
+  }
+  
+  /**
+   * Creates key from plain mnemonic
+   */
+  #addKeyFromMnemonic(algo: string, mnemonic: string, opts: AddKeyOptions) {
+    const mnemonicOpts: SetFromMnemonicOptions = { algo };
+    
+    if (this.#mnemonicHasPassphrase) {
+      this.#validatePassphrase(opts.passphrase);
+      mnemonicOpts.passphrase = opts.passphrase;
+    }
+    
+    this.setFromMnemonic(new Mnemonic(mnemonic), mnemonicOpts);
+  }
+  
+  /**
+   * Creates key from existing private key (encrypted or plain)
+   */
+  #addKeyFromExistingPrivateKey(algo: string, existingAlgo: string, opts: AddKeyOptions) {
+    const encryptedPrivKey = this.#getPrivKeyEncrypted({ algo: existingAlgo });
+    
+    if (encryptedPrivKey) {
+      this.#validatePassword(opts.password);
+      const xPriv = sjcl.decrypt(opts.password!, encryptedPrivKey);
+      this.setFromExtendedPrivateKey(xPriv, { algo, password: opts.password });
+    } else {
+      const xPriv = this.#getPrivKey({ algo: existingAlgo });
+      this.setFromExtendedPrivateKey(xPriv, { algo });
+    }
+  }
+  
+  #hasExistingPrivateKey(existingAlgo: string): boolean {
+    return !!(this.#getPrivKeyEncrypted({ algo: existingAlgo }) || this.#getPrivKey({ algo: existingAlgo }));
+  }
+  
+  #validatePassword(password?: string) {
+    if (!password) {
+      throw new Error('Password is required for encrypted content');
+    }
+  }
+
+  #validatePassphrase(passphrase?: string) {
+    if (!passphrase) {
+      throw new Error('Passphrase is required for mnemonic with passphrase');
     }
   }
 
@@ -344,32 +433,34 @@ export class Key {
     return keys;
   };
 
-  encrypt(password, opts) {
-    if (this.#xPrivKeyEncrypted)
+  encrypt(password, opts, algo?) {
+    if (this.#getPrivKeyEncrypted({ algo }))
       throw new Error('Private key already encrypted');
 
-    if (!this.#xPrivKey) throw new Error('No private key to encrypt');
+    if (!this.#getPrivKey({ algo })) throw new Error('No private key to encrypt');
 
-    this.#xPrivKeyEncrypted = sjcl.encrypt(password, this.#xPrivKey, opts);
-    if (!this.#xPrivKeyEncrypted) throw new Error('Could not encrypt');
+    const encryptedPrivKey = sjcl.encrypt(password, this.#getPrivKey({ algo }), opts);
+    this.#setPrivKeyEncrypted({ algo, value: encryptedPrivKey });
+    if (!this.#getPrivKeyEncrypted({ algo })) throw new Error('Could not encrypt');
 
     if (this.#mnemonic)
       this.#mnemonicEncrypted = sjcl.encrypt(password, this.#mnemonic, opts);
 
-    this.#xPrivKey = null;
+    this.#setPrivKey({ algo, value: null });
     this.#mnemonic = null;
   };
 
-  decrypt(password) {
-    if (!this.#xPrivKeyEncrypted)
+  decrypt(password, algo?) {
+    if (!this.#getPrivKeyEncrypted({ algo }))
       throw new Error('Private key is not encrypted');
 
     try {
-      this.#xPrivKey = sjcl.decrypt(password, this.#xPrivKeyEncrypted);
+      const decryptedPrivKey = sjcl.decrypt(password, this.#getPrivKeyEncrypted({ algo }));
+      this.#setPrivKey({ algo, value: decryptedPrivKey });
       if (this.#mnemonicEncrypted) {
         this.#mnemonic = sjcl.decrypt(password, this.#mnemonicEncrypted);
       }
-      this.#xPrivKeyEncrypted = null;
+      this.#setPrivKeyEncrypted({ algo, value: null })
       this.#mnemonicEncrypted = null;
     } catch (ex) {
       log.error('error decrypting:', ex);
