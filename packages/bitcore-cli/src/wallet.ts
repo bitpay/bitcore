@@ -504,11 +504,12 @@ export class Wallet {
       const { txp: broadcastedTxp } = await this.client.broadcastTxProposal(signedTxp);
       return broadcastedTxp;
     } catch (err) {
-      // already broadcasted by another copayer
-      if (!err.message.startsWith('TX_NOT_PENDING')) {
+      // already broadcasted by another copayer?
+      const refreshedTxp = await this.client.getTx(txp.id);
+      if (refreshedTxp.status !== 'broadcasted') {
         throw err;
       }
-      return this.client.getTx(txp.id);
+      return refreshedTxp;
     }
   }
 
