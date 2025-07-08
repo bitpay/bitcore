@@ -147,7 +147,7 @@ router.get('/before-time/:time', async function(req: Request, res: Response) {
   }
 });
 
-router.get('/:blockId/feeRate', async function(req: Request, res: Response) {
+router.get('/:blockId/fee', async function(req: Request, res: Response) {
   const { chain, network, blockId } = req.params;
   const transactions = blockId.length >= 64 
     ? await TransactionStorage.collection.find({ chain, network, blockHash: blockId }).toArray()
@@ -156,30 +156,31 @@ router.get('/:blockId/feeRate', async function(req: Request, res: Response) {
     return res.status(404).send(`block not found with id ${blockId}`);
 
   let feeTotal = 0;
-  let feeRates: number[] = [];
-  transactions.map((tx) => {
+  const feeRates: number[] = [];
+  for (const tx of transactions) {
     const rate = tx.fee / tx.size;
-    feeTotal += rate;
-    if (rate) // does not add fee rate 0
+    if (rate) { // does not add fee rate 0
       feeRates.push(rate);
-  });
+      feeTotal += rate;
+    }
+  }
   feeRates.sort((a, b) => a - b);
-  let mean = feeTotal / feeRates.length;
-
-  let median = feeRates.length % 2 === 1
+  const mean = feeTotal / feeRates.length;
+  const median = feeRates.length % 2 === 1
     ? feeRates[Math.floor(feeRates.length / 2)]
     : (feeRates[Math.floor(feeRates.length / 2)] + feeRates[Math.ceil(feeRates.length / 2)]) / 2;
   let mode = feeRates[0], maxCount = 1;
-  let freq = {};
-  feeRates.forEach(rate => {
+  
+  const freq = {};
+  for (const rate of feeRates) {
     freq[rate] = (freq[rate] || 0) + 1;
     if (freq[rate] > maxCount) {
       mode = rate;
       maxCount = freq[rate];
     }
-  });
+  }
 
-  return res.json({mean, median, mode})
+  return res.json({ feeTotal, mean, median, mode })
 });
 
 module.exports = {
