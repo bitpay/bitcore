@@ -359,11 +359,11 @@ describe('PublicKey', function() {
       ['L3Hq7a8FEQwJkW1M2GNKDW28546Vp5miewcCzSqUD9kCAXrJdS3g', 'CTtcbLKQtFW3tR4x2ADdqrbiJVfZQD9cFm']
     ];
 
-    data.forEach(function(d){
+    for (const d of data) {
       var publicKey = PrivateKey.fromWIF(d[0]).toPublicKey();
       var address = Address.fromString(d[1]);
       address.hashBuffer.should.deep.equal(publicKey._getID());
-    });
+    }
 
   });
 
