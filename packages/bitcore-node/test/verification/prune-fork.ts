@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import * as _ from 'lodash';
 import { BitcoinBlockStorage } from '../../src/models/block';
 import { CoinStorage } from '../../src/models/coin';
 import { Modules } from '../../src/modules';
