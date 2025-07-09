@@ -1,6 +1,5 @@
 'use strict';
 
-import async from 'async'
 import Mnemonic from 'bitcore-mnemonic';
 import {
   BitcoreLib as Bitcore,
@@ -18,13 +17,13 @@ import log from './log';
 
 const $ = singleton();
 
-const wordsForLang: any = {
-  en: Mnemonic.Words.ENGLISH,
-  es: Mnemonic.Words.SPANISH,
-  ja: Mnemonic.Words.JAPANESE,
-  zh: Mnemonic.Words.CHINESE,
-  fr: Mnemonic.Words.FRENCH,
-  it: Mnemonic.Words.ITALIAN
+const wordsForLang = {
+  en: Mnemonic.Words.ENGLISH as Array<string>,
+  es: Mnemonic.Words.SPANISH as Array<string>,
+  ja: Mnemonic.Words.JAPANESE as Array<string>,
+  zh: Mnemonic.Words.CHINESE as Array<string>,
+  fr: Mnemonic.Words.FRENCH as Array<string>,
+  it: Mnemonic.Words.ITALIAN as Array<string>,
 };
 
 // we always set 'livenet' for xprivs. it has no consequences
@@ -36,9 +35,12 @@ const ALGOS_BY_CHAIN =  {
 }
 const SUPPORTED_ALGOS = [Constants.ALGOS.ECDSA, Constants.ALGOS.EDDSA];
 const ALGO_TO_KEY_TYPE = {
-  ECDSA: 'Bitcoin',
-  EDDSA: 'ed25519'
+  [Constants.ALGOS.ECDSA]: 'Bitcoin',
+  [Constants.ALGOS.EDDSA]: 'ed25519'
 }
+type KeyAlgorithm = keyof typeof Constants.ALGOS;
+type Nullish = null | undefined;
+type PasswordMaybe = string | Nullish;
 
 export interface KeyOptions {
   id?: string;
@@ -51,9 +53,30 @@ export interface KeyOptions {
   useLegacyPurpose?: boolean;
   useLegacyCoinType?: boolean;
   nonCompliantDerivation?: boolean;
-  language?: string;
-  algo?: string; // eddsa or ecdsa (Bitcoin) by default
+  language?: keyof typeof wordsForLang;
+  algo?: KeyAlgorithm; // eddsa or ecdsa (Bitcoin) by default
 };
+
+export interface ExportedKey {
+  xPrivKey: string;
+  mnemonic: string;
+  mnemonicHasPassphrase: boolean;
+  fingerPrintUpdated?: boolean;
+};
+interface AddKeyOptions {
+  passphrase?: string;
+  password?: string;
+  sjclOpts?: any;
+  algo?: KeyAlgorithm;
+  existingAlgo?: KeyAlgorithm;
+}
+
+interface SetFromMnemonicOptions {
+  passphrase?: string;
+  algo?: KeyAlgorithm;
+  password?: string;
+  sjclOpts?: any;
+}
 
 export class Key {
   // ecdsa
@@ -126,33 +149,7 @@ export class Key {
         break;
       case 'extendedPrivateKey':
         $.checkArgument(x, 'Need to provide opts.seedData');
-
-        let xpriv;
-        try {
-          xpriv = new Bitcore.HDPrivateKey(x);
-        } catch (e) {
-          throw new Error('Invalid argument');
-        }
-        for (const algo of SUPPORTED_ALGOS) {
-          const params = { algo }
-          this.#setFingerprint({ value: xpriv.fingerPrint.toString('hex'),  ...params });
-          if (opts.password) {
-            this.#setPrivKeyEncrypted({
-              value: sjcl.encrypt(
-                opts.password,
-                xpriv.toString(),
-                opts
-              ),
-              ...params
-            });
-            const xPrivKeyEncrypted = this.#getPrivKeyEncrypted(params);
-            if (!xPrivKeyEncrypted) throw new Error('Could not encrypt');
-          } else {
-            this.#setPrivKey({ value: xpriv.toString(), ...params }); 
-          }
-        }
-        this.#mnemonic = null;
-        this.#mnemonicHasPassphrase = null;
+        this.setFromExtendedPrivateKey(x, opts);
         break;
       case 'object':
         $.shouldBeObject(x, 'Need to provide an object at opts.seedData');
@@ -236,11 +233,9 @@ export class Key {
     return a.id == b.id || a.fingerPrint == b.fingerPrint || a.fingerPrintEDDSA == b.fingerPrintEDDSA;
   }
 
-  private setFromMnemonic(
-    m,
-    opts: { passphrase?: string; password?: string; sjclOpts?: any, algo?: string }
-  ) {
-    for (const algo of SUPPORTED_ALGOS) {
+  private setFromMnemonic(m, opts: SetFromMnemonicOptions) {
+    const algos = opts.algo ? [opts.algo] : SUPPORTED_ALGOS;
+    for (const algo of algos) {
       const xpriv = m.toHDPrivateKey(opts.passphrase, NETWORK, ALGO_TO_KEY_TYPE[algo]);
       this.#setFingerprint({ value: xpriv.fingerPrint.toString('hex'), algo });
 
@@ -267,6 +262,109 @@ export class Key {
     }
   }
 
+  private setFromExtendedPrivateKey (extendedPrivateKey, opts: { password?: string; algo?: KeyAlgorithm }) {
+    let xpriv;
+    if (this.#mnemonic || this.#mnemonicEncrypted) {
+      throw new Error('Set key from existing mnemonic')
+    }
+    try {
+      xpriv = new Bitcore.HDPrivateKey(extendedPrivateKey);
+    } catch (e) {
+      throw new Error('Invalid argument');
+    }
+    const algos = opts.algo ? [opts.algo] : SUPPORTED_ALGOS;
+    for (const algo of algos) {
+      const params = { algo };
+      this.#setFingerprint({ value: xpriv.fingerPrint.toString('hex'),  ...params });
+      if (opts.password) {
+        this.#setPrivKeyEncrypted({
+          value: sjcl.encrypt(
+            opts.password,
+            xpriv.toString(),
+            opts
+          ),
+          ...params
+        });
+        const xPrivKeyEncrypted = this.#getPrivKeyEncrypted(params);
+        if (!xPrivKeyEncrypted) throw new Error('Could not encrypt');
+      } else {
+        this.#setPrivKey({ value: xpriv.toString(), ...params }); 
+      }
+    }
+    this.#mnemonic = null;
+    this.#mnemonicHasPassphrase = null;
+  }
+  
+  /**
+   * Adds an additional supported key to the object
+   * By default it creates the new key based on the existing bitcoin key (ECDSA)
+   */
+  addKeyByAlgorithm(algo: KeyAlgorithm, opts: AddKeyOptions = {}) {
+    const existingAlgo = opts.existingAlgo || 'ECDSA';
+
+    if (this.#mnemonic) {
+      this.#addKeyFromMnemonic(algo, this.#mnemonic, opts);
+      return;
+    }
+    if (this.#mnemonicEncrypted) {
+      this.#validatePassword(opts.password);
+      this.#addKeyFromMnemonic(algo, this.#mnemonicEncrypted, opts);
+      return;
+    }
+    if (this.#hasExistingPrivateKey(existingAlgo)) {
+      this.#addKeyFromExistingPrivateKey(algo, existingAlgo, opts);
+      return;
+    }
+
+    throw new Error(`No key source available. Missing private key for algorithm: ${existingAlgo}`);
+  }
+  
+  /**
+   * Creates key from plain mnemonic
+   */
+  #addKeyFromMnemonic(algo: KeyAlgorithm, mnemonic: string, opts: AddKeyOptions) {
+    const mnemonicOpts: SetFromMnemonicOptions = { algo };
+    
+    if (this.#mnemonicHasPassphrase) {
+      this.#validatePassphrase(opts.passphrase);
+      mnemonicOpts.passphrase = opts.passphrase;
+    }
+    
+    this.setFromMnemonic(new Mnemonic(mnemonic), mnemonicOpts);
+  }
+  
+  /**
+   * Creates key from existing private key (encrypted or plain)
+   */
+  #addKeyFromExistingPrivateKey(algo: KeyAlgorithm, existingAlgo: KeyAlgorithm, opts: AddKeyOptions) {
+    const encryptedPrivKey = this.#getPrivKeyEncrypted({ algo: existingAlgo });
+    
+    if (encryptedPrivKey) {
+      this.#validatePassword(opts.password);
+      const xPriv = sjcl.decrypt(opts.password!, encryptedPrivKey);
+      this.setFromExtendedPrivateKey(xPriv, { algo, password: opts.password });
+    } else {
+      const xPriv = this.#getPrivKey({ algo: existingAlgo });
+      this.setFromExtendedPrivateKey(xPriv, { algo });
+    }
+  }
+  
+  #hasExistingPrivateKey(existingAlgo: KeyAlgorithm): boolean {
+    return !!(this.#getPrivKeyEncrypted({ algo: existingAlgo }) || this.#getPrivKey({ algo: existingAlgo }));
+  }
+  
+  #validatePassword(password?: string) {
+    if (!password) {
+      throw new Error('Password is required for encrypted content');
+    }
+  }
+
+  #validatePassphrase(passphrase?: string) {
+    if (!passphrase) {
+      throw new Error('Passphrase is required for mnemonic with passphrase');
+    }
+  }
+
   toObj() {
     const ret = {
       xPrivKey: this.#xPrivKey,
@@ -290,7 +388,7 @@ export class Key {
     return JSON.parse(JSON.stringify(ret));
   };
 
-  isPrivKeyEncrypted(algo?) {
+  isPrivKeyEncrypted(algo?: KeyAlgorithm) {
     switch (String(algo).toUpperCase()) {
       case (Constants.ALGOS.EDDSA):
         return !!this.#xPrivKeyEDDSAEncrypted && !this.#xPrivKeyEDDSA;
@@ -299,7 +397,7 @@ export class Key {
     }
   };
 
-  checkPassword(password, algo?) {
+  checkPassword(password: string, algo?: KeyAlgorithm) {
     if (this.isPrivKeyEncrypted(algo)) {
       try {
         sjcl.decrypt(password, this.#getPrivKeyEncrypted({ algo }));
@@ -311,65 +409,68 @@ export class Key {
     return null;
   };
 
-  get(password, algo?) {
-    let keys: any = {};
+  get(password: PasswordMaybe, algo?: KeyAlgorithm) {
+    const key: ExportedKey = {
+      xPrivKey: '',
+      mnemonic: '',
+      mnemonicHasPassphrase: this.#mnemonicHasPassphrase || false
+    };
 
     if (this.isPrivKeyEncrypted(algo)) {
-      $.checkArgument(
-        password,
-        'Private keys are encrypted, a password is needed'
-      );
+      $.checkArgument(password, 'Private keys are encrypted, a password is needed');
       try {
         const xPrivKeyEncrypted = this.#getPrivKeyEncrypted({ algo });
-        keys.xPrivKey = sjcl.decrypt(password, xPrivKeyEncrypted);
+        key.xPrivKey = sjcl.decrypt(password, xPrivKeyEncrypted);
 
         if (this.#mnemonicEncrypted) {
-          keys.mnemonic = sjcl.decrypt(password, this.#mnemonicEncrypted);
+          key.mnemonic = sjcl.decrypt(password, this.#mnemonicEncrypted);
         }
       } catch (ex) {
         throw new Error('Could not decrypt');
       }
     } else {
-      keys.xPrivKey = this.#getPrivKey({ algo });
-      keys.mnemonic = this.#mnemonic;
+      key.xPrivKey = this.#getPrivKey({ algo });
+      key.mnemonic = this.#mnemonic;
     }
     // update fingerPrint if not set.
     if (!this.#getFingerprint({ algo })) {
-      const xpriv = new Bitcore.HDPrivateKey(keys.xPrivKey);
+      const xpriv = new Bitcore.HDPrivateKey(key.xPrivKey);
       const fingerPrint = xpriv.fingerPrint.toString('hex');
       this.#setFingerprint({ value: fingerPrint, algo });
-      keys.fingerPrintUpdated = true;keys.fingerPrintUpdated = true;
+      key.fingerPrintUpdated = true;
     }
-    keys.mnemonicHasPassphrase = this.#mnemonicHasPassphrase || false;
-    return keys;
+    key.mnemonicHasPassphrase = this.#mnemonicHasPassphrase || false;
+    return key;
   };
 
-  encrypt(password, opts) {
-    if (this.#xPrivKeyEncrypted)
+  encrypt(password, opts, algo?) {
+    if (this.#getPrivKeyEncrypted({ algo }))
       throw new Error('Private key already encrypted');
 
-    if (!this.#xPrivKey) throw new Error('No private key to encrypt');
+    if (!this.#getPrivKey({ algo })) throw new Error('No private key to encrypt');
 
-    this.#xPrivKeyEncrypted = sjcl.encrypt(password, this.#xPrivKey, opts);
-    if (!this.#xPrivKeyEncrypted) throw new Error('Could not encrypt');
+    const encryptedPrivKey = sjcl.encrypt(password, this.#getPrivKey({ algo }), opts);
+    this.#setPrivKeyEncrypted({ algo, value: encryptedPrivKey });
+    if (!this.#getPrivKeyEncrypted({ algo })) throw new Error('Could not encrypt');
 
     if (this.#mnemonic)
       this.#mnemonicEncrypted = sjcl.encrypt(password, this.#mnemonic, opts);
 
-    this.#xPrivKey = null;
+    this.#setPrivKey({ algo, value: null });
     this.#mnemonic = null;
   };
 
-  decrypt(password) {
-    if (!this.#xPrivKeyEncrypted)
+  decrypt(password, algo?) {
+    if (!this.#getPrivKeyEncrypted({ algo }))
       throw new Error('Private key is not encrypted');
 
     try {
-      this.#xPrivKey = sjcl.decrypt(password, this.#xPrivKeyEncrypted);
+      const decryptedPrivKey = sjcl.decrypt(password, this.#getPrivKeyEncrypted({ algo }));
+      this.#setPrivKey({ algo, value: decryptedPrivKey });
       if (this.#mnemonicEncrypted) {
         this.#mnemonic = sjcl.decrypt(password, this.#mnemonicEncrypted);
       }
-      this.#xPrivKeyEncrypted = null;
+      this.#setPrivKeyEncrypted({ algo, value: null })
       this.#mnemonicEncrypted = null;
     } catch (ex) {
       log.error('error decrypting:', ex);
@@ -377,9 +478,9 @@ export class Key {
     }
   };
 
-  derive(password, path, algo?): Bitcore.HDPrivateKey {
+  derive(password: PasswordMaybe, path: string, algo?: KeyAlgorithm): Bitcore.HDPrivateKey {
     $.checkArgument(path, 'no path at derive()');
-    if (String(algo).toUpperCase() === Constants.ALGOS.EDDSA) {
+    if (algo?.toUpperCase?.() === Constants.ALGOS.EDDSA) {
       const key = this.#getChildKeyEDDSA(password, path);
       return new Bitcore.HDPrivateKey({
         network: NETWORK,
@@ -390,33 +491,39 @@ export class Key {
         privateKey: Bitcore.encoding.Base58.decode(key.privKey),
       });
     } else {
-      let xPrivKey = new Bitcore.HDPrivateKey(
+      const xPrivKey = new Bitcore.HDPrivateKey(
         this.get(password, algo).xPrivKey,
         NETWORK
       );
       const deriveFn = this.compliantDerivation
-      ? xPrivKey.deriveChild.bind(xPrivKey)
-      : xPrivKey.deriveNonCompliantChild.bind(xPrivKey);
+        ? xPrivKey.deriveChild.bind(xPrivKey)
+        : xPrivKey.deriveNonCompliantChild.bind(xPrivKey);
       return deriveFn(path);
     }
   };
 
-  _checkChain(chain) {
-    if (!Constants.CHAINS.includes(chain)) throw new Error('Invalid chain');
+  _checkChain(chain: string) {
+    if (!Constants.CHAINS.includes(chain))
+      throw new Error('Invalid chain');
   };
 
-  _checkNetwork(network) {
+  _checkNetwork(network: string) {
     if (!['livenet', 'testnet', 'regtest'].includes(network))
       throw new Error('Invalid network ' + network);
   };
 
   /*
-   * This is only used on "create"
-   * no need to include/support
-   * BIP45
+   * No need to include/support BIP45
    */
-
-  getBaseAddressDerivationPath(opts) {
+  getBaseAddressDerivationPath(opts: {
+    n: number;
+    chain?: string;
+    coin?: string;
+    network?: string;
+    addChange?: number;
+    account?: number;
+    use0forBCH?: boolean;
+  }) {
     $.checkArgument(opts, 'Need to provide options');
     $.checkArgument(opts.n >= 1, 'n need to be >=1');
 
@@ -424,7 +531,7 @@ export class Key {
     let purpose = opts.n == 1 || this.use44forMultisig ? '44' : '48';
     let coinCode = '0';
     let changeCode = opts.addChange || 0;
-    let addChange = opts.addChange;
+    let addChange = !!opts.addChange;
 
     // checking in chains for simplicity
     if (
@@ -466,18 +573,32 @@ export class Key {
     return addChange ? `${basePath}/${changeCode}'` : basePath;
   };
 
-  /*
-   * opts.chain
-   * opts.network
-   * opts.account
-   * opts.n
-   * opts.algo
+  /**
+   * Create a new set of credentials from this key
+   * @param {PasswordMaybe} [password]
+   * @param {object} [opts]
+   * @param {string} [opts.chain]
+   * @param {string} [opts.network]
+   * @param {number} [opts.account]
+   * @param {number} [opts.n]
+   * @param {string} [opts.algo]
    */
-
-  createCredentials(password, opts) {
-    opts = opts || {};
+  createCredentials(
+    password?: PasswordMaybe,
+    opts?: {
+      coin?: string;
+      chain?: string;
+      network: string;
+      account: number;
+      n: number;
+      addressType?: string;
+      walletPrivKey?: string;
+      algo?: KeyAlgorithm;
+    }
+  ) {
+    opts = opts || {} as any;
     opts.chain = opts.chain || Utils.getChain(opts.coin);
-    const algo = opts.algo || (ALGOS_BY_CHAIN[opts.chain.toLowerCase()] || ALGOS_BY_CHAIN['default']);
+    const algo = opts.algo || ALGOS_BY_CHAIN[opts.chain.toLowerCase()] || ALGOS_BY_CHAIN.default;
 
     if (password) $.shouldBeString(password, 'provide password');
 
@@ -485,8 +606,8 @@ export class Key {
     $.shouldBeNumber(opts.account, 'Invalid account');
     $.shouldBeNumber(opts.n, 'Invalid n');
 
-    $.shouldBeUndefined(opts.useLegacyCoinType);
-    $.shouldBeUndefined(opts.useLegacyPurpose);
+    $.shouldBeUndefined(opts['useLegacyCoinType']);
+    $.shouldBeUndefined(opts['useLegacyPurpose']);
 
     const path = this.getBaseAddressDerivationPath(opts);
     let xPrivKey = this.derive(password, path, algo);
@@ -523,20 +644,23 @@ export class Key {
   };
 
   /**
-   * @param {string} password
-   * @param {Object} opts
+   * @param {PasswordMaybe} password
+   * @param {object} opts
    * @param {string} opts.path
    * @param {string|PrivateKey} [opts.requestPrivKey]
    */
-  createAccess(password, opts) {
-    opts = opts || {};
+  createAccess(
+    password: PasswordMaybe,
+    opts: { path: string; requestPrivKey?: string | Bitcore.PrivateKey }
+  ) {
+    opts = opts || {} as any;
     $.shouldBeString(opts.path);
 
-    var requestPrivKey = new Bitcore.PrivateKey(opts.requestPrivKey || null);
-    var requestPubKey = requestPrivKey.toPublicKey().toString();
+    let requestPrivKey = new Bitcore.PrivateKey(opts.requestPrivKey || null);
+    const requestPubKey = requestPrivKey.toPublicKey().toString();
 
-    var xPriv = this.derive(password, opts.path);
-    var signature = Utils.signRequestPubKey(requestPubKey, xPriv);
+    const xPriv = this.derive(password, opts.path);
+    const signature = Utils.signRequestPubKey(requestPubKey, xPriv);
     requestPrivKey = requestPrivKey.toString();
 
     return {
@@ -545,37 +669,38 @@ export class Key {
     };
   };
 
-  sign(rootPath, txp, password, cb) {
+  /**
+   * Sign a transaction proposal
+   * 
+   * Why is this async?
+   *  Because the underlying SOL library uses SubtleCrypto browser API. The SubtleCrypto API hands off
+   *  cryptographic operations to a native thread so it doesn't block the JS event loop and is thus async.
+   * @param {string} rootPath 
+   * @param {object} txp 
+   * @param {PasswordMaybe} [password]
+   * @returns {Promise<string[]>} Array of signatures
+   */
+  async sign(rootPath: string, txp, password?: PasswordMaybe): Promise<string[]> {
     $.shouldBeString(rootPath);
     if (this.isPrivKeyEncrypted() && !password) {
-      return cb(new Errors.ENCRYPTED_PRIVATE_KEY());
+      throw new Errors.ENCRYPTED_PRIVATE_KEY();
     }
-    var privs = [];
-    var derived: any = {};
-
-    var derived = this.derive(password, rootPath);
-    var xpriv = new Bitcore.HDPrivateKey(derived);
-
-    var t = Utils.buildTx(txp);
-
-    var chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
+    const privs = [];
+    const derived = this.derive(password, rootPath);
+    const xpriv = new Bitcore.HDPrivateKey(derived);
+    const t = Utils.buildTx(txp);
+    const chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
 
     if (Constants.UTXO_CHAINS.includes(chain)) {
       for (const i of txp.inputs) {
-        $.checkState(
-          i.path,
-          'Input derivation path not available (signing transaction)'
-        );
+        $.checkState(i.path, 'Input derivation path not available (signing transaction)');
         if (!derived[i.path]) {
           derived[i.path] = xpriv.deriveChild(i.path).privateKey;
           privs.push(derived[i.path]);
         }
       };
 
-      var signatures = privs.map(function(priv, i) {
-        return t.getSignatures(priv, undefined, txp.signingMethod);
-      });
-
+      let signatures = privs.map(priv => t.getSignatures(priv, undefined, txp.signingMethod));
       signatures = signatures.flat().sort((a, b) => a.inputIndex - b.inputIndex);
       // DEBUG
       // for (let sig of signatures) {
@@ -584,7 +709,6 @@ export class Key {
       //   }
       // }
       signatures = signatures.map(sig => sig.signature.toDER().toString('hex'));
-
       return signatures;
     } else if (Constants.SVM_CHAINS.includes(chain)) {
       let tx = t.uncheckedSerialize();
@@ -600,30 +724,14 @@ export class Key {
         addressIndex,
         isChange
       );
-      async.map(
-        txArray,
-        function addSignatures(rawTx, next) {
-          (Transactions.getSignature({
-            chain: chain.toUpperCase(),
-            tx: rawTx,
-            keys: [key]
-          }) as any)
-          .then(signatures => {
-            next(null, signatures);
-          })
-          .catch(err => {
-            next(err);
-          });
-        },
-        function(err, signatures) {
-           try {
-            if (err)  return cb(err);
-            return cb(null, signatures);
-          } catch (e) {
-            throw new Error('Missing Callback', e)
-          }
-        }
-      );
+      const signatures = await Promise.all(
+        txArray.map(rawTx => Transactions.getSignature({
+          chain: chain.toUpperCase(),
+          tx: rawTx,
+          keys: [key]
+        }))
+      )
+      return signatures;
     } else {
       let tx = t.uncheckedSerialize();
       tx = typeof tx === 'string' ? [tx] : tx;
@@ -637,7 +745,7 @@ export class Key {
         addressIndex,
         isChange
       );
-      let signatures = [];
+      const signatures = [];
       for (const rawTx of txArray) {
         const signed = Transactions.getSignature({
           chain: chain.toUpperCase(),
@@ -650,9 +758,9 @@ export class Key {
     }
   };
 
-  #setPrivKey(params: { algo?: string; value: any; }) {
+  #setPrivKey(params: { value: any; algo?: KeyAlgorithm; }) {
     const { value, algo } = params;
-    switch (String(algo).toUpperCase()) {
+    switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):
         this.#xPrivKeyEDDSA = value;
         break;
@@ -661,9 +769,9 @@ export class Key {
     }
   }
 
-  #setPrivKeyEncrypted(params: { value: any; algo?: string; }) {
+  #setPrivKeyEncrypted(params: { value: any; algo?: KeyAlgorithm; }) {
     const { value, algo } = params;
-    switch (String(algo).toUpperCase()) {
+    switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):
         this.#xPrivKeyEDDSAEncrypted = value;
         break;
@@ -672,9 +780,9 @@ export class Key {
     }
   }
 
-  #setFingerprint(params: { value: any; algo?: string; }) {
+  #setFingerprint(params: { value: any; algo?: KeyAlgorithm; }) {
     const { value, algo } = params;
-    switch (String(algo).toUpperCase()) {
+    switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):
         this.fingerPrintEDDSA = value;
         break;
@@ -683,8 +791,9 @@ export class Key {
     }
   }
 
-  #getPrivKey(params: { algo?: string; } = {}) {
-    switch (String(params?.algo).toUpperCase()) {
+  #getPrivKey(params: { algo?: KeyAlgorithm; } = {}) {
+    const { algo } = params;
+    switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):
         return this.#xPrivKeyEDDSA;
       default:
@@ -692,8 +801,9 @@ export class Key {
     }
   }
 
-  #getPrivKeyEncrypted(params: { algo?: string; } = {}) {
-    switch (String(params?.algo).toUpperCase()) {
+  #getPrivKeyEncrypted(params: { algo?: KeyAlgorithm; } = {}) {
+    const { algo } = params;
+    switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):
         return this.#xPrivKeyEDDSAEncrypted;
       default:
@@ -701,8 +811,9 @@ export class Key {
     }
   }
 
-  #getFingerprint(params: { algo?: string; } = {}) {
-    switch (String(params?.algo).toUpperCase()) {
+  #getFingerprint(params: { algo?: KeyAlgorithm; } = {}) {
+    const { algo } = params;
+    switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):
         return this.fingerPrintEDDSA;
       default:
@@ -710,7 +821,7 @@ export class Key {
     }
   }
 
-  #getChildKeyEDDSA(password, path) {
+  #getChildKeyEDDSA(password: PasswordMaybe, path: string) {
     const privKey = this.get(password, Constants.ALGOS.EDDSA).xPrivKey;
     return Deriver.derivePrivateKeyWithPath('SOL', null, privKey, path, null);
   }

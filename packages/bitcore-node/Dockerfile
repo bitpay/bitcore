@@ -1,6 +1,4 @@
 FROM node:22
-
-# initial setup
 RUN set -x && node -v && npm -v
 WORKDIR /bitcore
 
@@ -16,4 +14,5 @@ RUN npm run bootstrap
 RUN npm run compile
 
 # Start the server
-CMD ["node", "packages/bitcore-node/build/src/server.js"]
+WORKDIR /bitcore/packages/bitcore-node
+CMD ["node", "./build/src/server.js"]

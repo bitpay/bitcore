@@ -41,7 +41,7 @@ async function getWallet() {
       password,
       phrase,
       storageType
-    });
+    } as Partial<BitcoreClient.IWalletExt>);
     await wallet.unlock(password);
     await wallet.nextAddressPair();
     await wallet.lock();

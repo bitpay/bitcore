@@ -12,6 +12,7 @@ import {routerFadeIn} from '../utilities/animations';
 import {
   getApiRoot,
   getConvertedValue,
+  getDifficultyFromBits,
   getFee,
   getFormattedDate,
   normalizeParams,
@@ -147,7 +148,7 @@ const BlockDetails: FC<BlockDetailsProps> = ({currency, network, block}) => {
                 <SharedTile title='Merkle Root' description={summary.merkleRoot} />
                 <SharedTile
                   title='Difficulty'
-                  description={(0x1d00ffff / summary.bits).toString()}
+                  description={getDifficultyFromBits(summary.bits).toString()}
                 />
                 <SharedTile title='Bits' description={summary.bits} />
                 <SharedTile title='Size (bytes)' description={summary.size} />
@@ -162,7 +163,7 @@ const BlockDetails: FC<BlockDetailsProps> = ({currency, network, block}) => {
                       onClick={() =>
                         summary.previousBlockHash ? gotoBlock(summary.previousBlockHash) : null
                       }>
-                      {(summary.height > 0) ? summary.height - 1 : "None"}
+                      {(summary.height > 0) ? summary.height - 1 : 'None'}
                     </span>
                   </TileLink>
                 </Tile>
