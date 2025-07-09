@@ -1,6 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
 var bs58 = require('bs58');
 var buffer = require('buffer');
 
@@ -26,7 +25,7 @@ Base58.validCharacters = function validCharacters(chars) {
   if (buffer.Buffer.isBuffer(chars)) {
     chars = chars.toString();
   }
-  return _.every(_.map(chars, function(char) { return (ALPHABET.includes(char)) }));
+  return [...chars].every(c => ALPHABET.includes(c));
 };
 
 Base58.prototype.set = function(obj) {

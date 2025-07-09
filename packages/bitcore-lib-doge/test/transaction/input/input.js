@@ -2,7 +2,6 @@
 
 var should = require('chai').should();
 var expect = require('chai').expect;
-var _ = require('lodash');
 
 var bitcore = require('../../..');
 var errors = bitcore.errors;
@@ -53,7 +52,7 @@ describe('Transaction.Input', function() {
 
   it('has abstract methods: "getSignatures", "isFullySigned", "addSignature", "clearSignatures"', function() {
     var input = new Input(output);
-    _.each(['getSignatures', 'isFullySigned', 'addSignature', 'clearSignatures'], function(method) {
+    ['getSignatures', 'isFullySigned', 'addSignature', 'clearSignatures'].forEach((method) => {
       expect(function() {
         return input[method]();
       }).to.throw(errors.AbstractMethodInvoked);

@@ -108,7 +108,7 @@ export class Address {
       }
     }
 
-    let publicKeys = _.map(publicKeyRing, item => {
+    let publicKeys = publicKeyRing.map(item => {
       const xpub = Address.Bitcore[chain]
         ? new Address.Bitcore[chain].HDPublicKey(item.xPubKey)
         : new Address.Bitcore.btc.HDPublicKey(item.xPubKey);

@@ -32,7 +32,7 @@ function MultiSigInput(input, pubkeys, threshold, signatures, opts) {
   $.checkState(Script.buildMultisigOut(this.publicKeys, threshold).equals(this.output.script),
     'Provided public keys don\'t match to the provided output script');
   this.publicKeyIndex = {};
-  _.each(this.publicKeys, function(publicKey, index) {
+  this.publicKeys.forEach((publicKey, index) => {
     self.publicKeyIndex[publicKey.toString()] = index;
   });
   this.threshold = threshold;
@@ -44,13 +44,13 @@ inherits(MultiSigInput, Input);
 MultiSigInput.prototype.toObject = function() {
   var obj = Input.prototype.toObject.apply(this, arguments);
   obj.threshold = this.threshold;
-  obj.publicKeys = _.map(this.publicKeys, function(publicKey) { return publicKey.toString(); });
+  obj.publicKeys = this.publicKeys.map(publicKey => publicKey.toString());
   obj.signatures = this._serializeSignatures();
   return obj;
 };
 
 MultiSigInput.prototype._deserializeSignatures = function(signatures) {
-  return _.map(signatures, function(signature) {
+  return signatures.map(signature => {
     if (!signature) {
       return undefined;
     }
@@ -59,7 +59,7 @@ MultiSigInput.prototype._deserializeSignatures = function(signatures) {
 };
 
 MultiSigInput.prototype._serializeSignatures = function() {
-  return _.map(this.signatures, function(signature) {
+  return this.signatures.map(signature => {
     if (!signature) {
       return undefined;
     }
@@ -121,7 +121,7 @@ MultiSigInput.prototype._updateScript = function() {
 
 MultiSigInput.prototype._createSignatures = function() {
   return _.map(
-    _.filter(this.signatures, function(signature) { return !_.isUndefined(signature); }),
+    this.signatures.filter(signature => !_.isUndefined(signature)),
     // Future signature types may need refactor of toDER
     function(signature) {
       return BufferUtil.concat([
@@ -153,7 +153,7 @@ MultiSigInput.prototype.countSignatures = function() {
 
 MultiSigInput.prototype.publicKeysWithoutSignature = function() {
   var self = this;
-  return _.filter(this.publicKeys, function(publicKey) {
+  return this.publicKeys.filter(publicKey => {
     return !(self.signatures[self.publicKeyIndex[publicKey.toString()]]);
   });
 };

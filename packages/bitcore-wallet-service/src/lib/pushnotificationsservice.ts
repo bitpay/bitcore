@@ -206,7 +206,7 @@ export class PushNotificationsService {
               this._getSubscriptions(notification, notifType, recipientsList, contents, next);
             },
             (subs, next) => {
-              const notifications = _.map(subs, sub => {
+              const notifications = subs.map(sub => {
                 if (notification.type === 'NewTxProposal' && sub.copayerId === notification.creatorId) return;
 
                 const tokenAddress =
@@ -383,10 +383,10 @@ export class PushNotificationsService {
 
       this.storage.fetchPreferences<Preferences[]>(notification.walletId, null, (err, preferences) => {
         if (err) logger.error('%o', err);
-        if (_.isEmpty(preferences)) preferences = [];
+        if (preferences.length === 0) preferences = [];
 
         const recipientPreferences = _.compact(
-          _.map(preferences, p => {
+          preferences.map(p => {
             if (!_.includes(this.availableLanguages, p.language)) {
               if (p.language) logger.warn('Language for notifications "' + p.language + '" not available.');
               p.language = this.defaultLanguage;
@@ -403,7 +403,7 @@ export class PushNotificationsService {
         const copayers = _.keyBy(recipientPreferences, 'copayerId');
 
         const recipientsList = _.compact(
-          _.map(wallet.copayers, copayer => {
+          wallet.copayers.map(copayer => {
             const p = copayers[copayer.id] || {
               language: this.defaultLanguage,
               unit: this.defaultUnit
@@ -565,7 +565,7 @@ export class PushNotificationsService {
       }
 
       if (notification.type == 'TxProposalFinallyRejected' && data.rejectedBy) {
-        const rejectors = _.map(data.rejectedBy, copayerId => {
+        const rejectors = data.rejectedBy.map(copayerId => {
           return wallet.copayers.find(c => c.id === copayerId).name;
         });
         data.rejectorsNames = rejectors.join(', ');

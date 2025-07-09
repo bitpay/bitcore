@@ -1,6 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
@@ -20,7 +19,7 @@ describe('CliUtils', function() {
         '10-10': [10, 10],
         '10-of-10': [10, 10],
       };
-      _.each(texts, function(expected, text) {
+      texts.forEach((expected, text) => {
         var result = CliUtils.parseMN(text);
         result.should.deep.equal(expected);
       });
@@ -42,7 +41,7 @@ describe('CliUtils', function() {
         '1--2',
         'x-of-2',
       ];
-      _.each(texts, function(text) {
+      texts.forEach((text) => {
         var valid = true;
         try {
           CliUtils.parseMN(text);
@@ -78,7 +77,7 @@ describe('CliUtils', function() {
         '0.123btc': 12300000,
         '0.123   bTc': 12300000,
       };
-      _.each(texts, function(satoshi, text) {
+      texts.forEach((satoshi, text) => {
         var amount = CliUtils.parseAmount(text);
         amount.should.equal(satoshi);
       });
@@ -100,7 +99,7 @@ describe('CliUtils', function() {
         '0.123bit',
         '2.000000009btc',
       ];
-      _.each(texts, function(text) {
+      texts.forEach((text) => {
         var valid = true;
         try {
           CliUtils.parseAmount(text);

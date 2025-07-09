@@ -30,7 +30,7 @@ var traverseNode = function(parent, errorDefinition) {
 
 /* jshint latedef: false */
 var childDefinitions = function(parent, childDefinitions) {
-  _.each(childDefinitions, function(childDefinition) {
+  childDefinitions.forEach((childDefinition) => {
     traverseNode(parent, childDefinition);
   });
 };

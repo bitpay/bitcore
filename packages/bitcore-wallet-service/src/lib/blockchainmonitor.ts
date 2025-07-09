@@ -79,8 +79,8 @@ export class BlockchainMonitor {
           };
 
           const chainNetworkPairs = [];
-          _.each(_.values(Constants.CHAINS), chain => {
-            _.each(_.values(Constants.NETWORKS[chain]), network => {
+          _.each(Object.values(Constants.CHAINS), chain => {
+            _.each(Object.values(Constants.NETWORKS[chain]), network => {
               chainNetworkPairs.push({
                 chain,
                 network

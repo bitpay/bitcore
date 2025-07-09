@@ -117,7 +117,7 @@ export class TxProposalLegacy {
     x.txid = obj.txid;
     x.broadcastedOn = obj.broadcastedOn;
     x.inputPaths = obj.inputPaths;
-    x.actions = _.map(obj.actions, function(action) {
+    x.actions = obj.actions.map(action => {
       return TxProposalAction.fromObj(action);
     });
     x.outputOrder = obj.outputOrder;
@@ -175,7 +175,7 @@ export class TxProposalLegacy {
 
   getApprovers() {
     return _.map(
-      _.filter(this.actions, a => {
+      this.actions.filter(a => {
         return a.type == 'accept';
       }),
       'copayerId'
