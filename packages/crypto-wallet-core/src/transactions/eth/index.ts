@@ -54,19 +54,19 @@ export class ETHTxProvider {
     let { chainId } = params;
     chainId = chainId || this.getChainId(network);
     let txData: any = {
-      nonce: Web3.utils.toHex(nonce),
-      gasLimit: Web3.utils.toHex(gasLimit),
+      nonce: this._toHex(nonce),
+      gasLimit: this._toHex(gasLimit),
       to,
       data,
-      value: Web3.utils.toHex(amount),
+      value: this._toHex(amount),
       chainId
     };
     if (maxGasFee && (txType == null || txType >= 2)) {
-      txData.maxFeePerGas = Web3.utils.toHex(maxGasFee);
-      txData.maxPriorityFeePerGas = Web3.utils.toHex(priorityGasFee || this.getPriorityFeeMinimum(chainId));
+      txData.maxFeePerGas = this._toHex(maxGasFee);
+      txData.maxPriorityFeePerGas = this._toHex(priorityGasFee || this.getPriorityFeeMinimum(chainId));
       txData.type = 2;
     } else {
-      txData.gasPrice = Web3.utils.toHex(gasPrice);
+      txData.gasPrice = this._toHex(gasPrice);
       txData.type = txType || 0;
     }
 
@@ -163,5 +163,9 @@ export class ETHTxProvider {
     const { tx, key } = params;
     const signature = this.getSignatureObject({ tx, key });
     return this.applySignature({ tx, signature });
+  }
+
+  private _toHex(value: string | number | bigint) {
+    return value != null ? Web3.utils.toHex(value) : undefined;
   }
 }
