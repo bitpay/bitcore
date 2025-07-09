@@ -222,7 +222,9 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
             _address =  await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
             if (!_address) throw new Error('Missing ATA');
           } catch (e: any) {
-            throw new Error('Error getting ata address: %o', e);
+            const errMsg = 'Error getting ATA address';
+            logger.error(`${errMsg} %o`, e.stack || e.message || e);
+            throw new Error(errMsg);
           }
         }
         do {
