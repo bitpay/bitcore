@@ -215,15 +215,28 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         const { rpc, connection } = await this.getRpc(network);
         let before;
         let count = 0;
+        let _address = address
+        if (tokenAddress) {
+          try {
+            const { rpc } = await this.getRpc(network);
+            _address =  await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
+            if (!_address) throw new Error('Missing ATA');
+          } catch (e: any) {
+            const errMsg = 'Error getting ATA address';
+            logger.error(`${errMsg} %o`, e.stack || e.message || e);
+            throw new Error(errMsg);
+          }
+        }
         do {
           // fetch the next page of signatures
-          const txList = await connection.getSignaturesForAddress(address, { limit: 100, before }).send();
+          const txlimit = Math.min(100, limit);
+          const txList = await connection.getSignaturesForAddress(_address, { limit: txlimit, before }).send();
           if (!txList.length) break;
           before = txList[txList.length - 1].signature;
 
           for (const tx of txList.reverse()) {
             if (limit && count >= limit) break;
-            const transformedTx = await this._getTransformedTx(rpc, network, tx, address, tokenAddress);
+            const transformedTx = await this._getTransformedTx(rpc, network, tx, _address, tokenAddress);
             if (transformedTx) {
               addressStream.push(JSON.stringify(transformedTx) + '\n');
               count++;
@@ -242,15 +255,6 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   async _getTransformedTx(rpc, network, tx, address?, tokenAddress? ) {
     try {
       const parsedTx = await rpc.getTransaction({ txid: tx.signature });
-      if (tokenAddress) {
-        if (!parsedTx?.instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.length) return;
-        try {
-          address =  await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
-        } catch (e: any) {
-          logger.error('Error getting ata address: %o', e);
-        }
-        if (!address) return;
-      }
       return this.txTransform(network, { txStatuses: tx, tx: parsedTx, targetAddress: address, tokenAddress });
     } catch (err: any) {
       return {
@@ -301,12 +305,18 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         }
       };
       if (!tokenAddress) {
-        value = solTransfers.reduce((sum, transfer) => sum + Number(transfer.amount), 0);
+        const relevantTransfers = targetAddress ? solTransfers.filter(transfer => [transfer.destination, transfer.source].includes(targetAddress)) : solTransfers;
+        value = relevantTransfers.reduce((sum, transfer) => sum + Number(transfer.amount), 0);
       }
     }
-    if (instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.length > 0) {
-      const allTransfers = instructions[instructionKeys.TRANSFER_CHECKED_TOKEN];
-      const tokenTransfers = tokenAddress ? allTransfers.filter(transfer => tokenAddress.toLowerCase() === transfer.mint.toLowerCase()) : allTransfers;
+
+    const transferTokenInstructions = instructions?.[instructionKeys.TRANSFER_TOKEN] || [];
+    const transferCheckedTokenInstructions = instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN] || [];
+    const allTokenTransfers = [...transferTokenInstructions, ...transferCheckedTokenInstructions];
+
+    if (allTokenTransfers.length > 0) {
+      const filteredTransferCheckedToken = tokenAddress ? transferCheckedTokenInstructions.filter(transfer => tokenAddress.toLowerCase() === transfer.mint.toLowerCase()) : transferCheckedTokenInstructions;
+      const tokenTransfers = [...transferTokenInstructions, ...filteredTransferCheckedToken];
       if (!tokenTransfers?.length) {
         return;
       }
@@ -320,7 +330,8 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         }
       };
       if (tokenAddress) {
-        value = tokenTransfers.reduce((sum, transfer) => sum + Number(transfer.amount), 0);
+        const relevantTransfers = targetAddress ? tokenTransfers.filter(transfer => [transfer.destination, transfer.source].includes(targetAddress)) : tokenTransfers;
+        value = relevantTransfers.reduce((sum, transfer) => sum + Number(transfer.amount), 0);
       }
     }
 
@@ -328,17 +339,17 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     let txCategory = 'other';
 
     if (instructions?.[instructionKeys.TRANSFER_SOL]?.length > 0 ||
-      instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.length > 0) {
+      allTokenTransfers.length > 0) {
       if (allRecipients.length === 0) {
         txCategory = 'move';
       } else {
         const solSentOut = instructions?.[instructionKeys.TRANSFER_SOL]?.some(transfer =>
           transfer.source === target && transfer.destination !== target) || false;
-        const tokensSentOut = instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.some(transfer =>
+        const tokensSentOut = allTokenTransfers.some(transfer =>
           transfer.source === target && transfer.destination !== target) || false;
         const solReceived = instructions?.[instructionKeys.TRANSFER_SOL]?.some(transfer =>
           transfer.destination === target && transfer.source !== target) || false;
-        const tokensReceived = instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.some(transfer =>
+        const tokensReceived = allTokenTransfers.some(transfer =>
           transfer.destination === target && transfer.source !== target) || false;
 
         if ((solSentOut || tokensSentOut) && !(solReceived || tokensReceived)) {
