@@ -2228,7 +2228,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.coinGeckoGetTokens(req)
+      server.externalServices.coinGecko.coinGeckoGetTokens(req)
         .then(response => {
           res.json(response);
         })
@@ -2402,24 +2402,6 @@ export class ExpressApp {
           return returnError(err ?? 'unknown', res, req);
         });
     });    
-
-    router.get('/v1/service/coinGecko/getRates/:contractAddresses/:altCurrencies/:chain', (req, res) => {
-      SetPublicCache(res, 1 * ONE_MINUTE);
-      let server: WalletService;
-      try {
-        server = getServer(req, res);
-      } catch (ex) {
-        return returnError(ex, res, req);
-      }
-      server
-        .coinGeckoGetRates(req)
-        .then(response => {
-          res.json(response);
-        })
-        .catch(err => {
-          return returnError(err ?? 'unknown', res, req);
-        });
-    });
 
     // Set no-cache by default
     this.app.use((req, res, next) => {
