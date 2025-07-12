@@ -17,7 +17,7 @@
     "pub": "npm run compile && npm  publish",
     "watch": "tsc --watch",
     "compile": "npm run clean && tsc",
-    "test": "mocha -r tsx test/**/*.test.ts",
+    "test": "node --test $(find ts_build/test/unit -name *.test.js)",
     "precommit": "npm run fix && npm run lint",
     "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
     "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'"

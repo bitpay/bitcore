@@ -1,5 +1,5 @@
-import { expect } from 'chai';
-import { describe } from 'mocha';
+import { describe, before, after, it } from 'node:test';
+import assert from 'assert';
 import { StatsUtil } from '../../../src/utils/stats';
 import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 
@@ -11,22 +11,22 @@ describe('Stats Util', () => {
     const values = new Array(20).fill(0).map((_, i) => i);
     it('should give back the midpoint between 0 and 5', () => {
       const firstQuartileMidPoint = StatsUtil.getNthQuartileMedian(values, 1);
-      expect(firstQuartileMidPoint).to.eq(2);
+      assert.strictEqual(firstQuartileMidPoint, 2);
     });
 
     it('should give back the midpoint between 5 and 10', () => {
       const firstQuartileMidPoint = StatsUtil.getNthQuartileMedian(values, 2);
-      expect(firstQuartileMidPoint).to.eq(7);
+      assert.strictEqual(firstQuartileMidPoint, 7);
     });
 
     it('should give back the midpoint between 10 and 15', () => {
       const firstQuartileMidPoint = StatsUtil.getNthQuartileMedian(values, 3);
-      expect(firstQuartileMidPoint).to.eq(12);
+      assert.strictEqual(firstQuartileMidPoint, 12);
     });
 
     it('should give back the midpoint between 15 and 20', () => {
       const firstQuartileMidPoint = StatsUtil.getNthQuartileMedian(values, 4);
-      expect(firstQuartileMidPoint).to.eq(17);
+      assert.strictEqual(firstQuartileMidPoint, 17);
     });
   });
 
@@ -34,22 +34,22 @@ describe('Stats Util', () => {
     const values = new Array(4).fill(0).map((_, i) => i);
     it('should give back the midpoint between 0 and 1', () => {
       const firstQuartileMidPoint = StatsUtil.getNthQuartileMedian(values, 1);
-      expect(firstQuartileMidPoint).to.eq(0);
+      assert.strictEqual(firstQuartileMidPoint, 0);
     });
 
     it('should give back the midpoint between 1 and 2', () => {
       const firstQuartileMidPoint = StatsUtil.getNthQuartileMedian(values, 2);
-      expect(firstQuartileMidPoint).to.eq(1);
+      assert.strictEqual(firstQuartileMidPoint, 1);
     });
 
     it('should give back the midpoint between 2 and 3', () => {
       const firstQuartileMidPoint = StatsUtil.getNthQuartileMedian(values, 3);
-      expect(firstQuartileMidPoint).to.eq(2);
+      assert.strictEqual(firstQuartileMidPoint, 2);
     });
 
     it('should give back the midpoint between 3 and 4', () => {
       const firstQuartileMidPoint = StatsUtil.getNthQuartileMedian(values, 4);
-      expect(firstQuartileMidPoint).to.eq(3);
+      assert.strictEqual(firstQuartileMidPoint, 3);
     });
   });
 
@@ -57,22 +57,22 @@ describe('Stats Util', () => {
     const values = new Array(1).fill(0).map((_, i) => i);
     it('should give back the midpoint between 0 and 0', () => {
       const firstQuartileMidPoint = StatsUtil.getNthQuartileMedian(values, 1);
-      expect(firstQuartileMidPoint).to.eq(0);
+      assert.strictEqual(firstQuartileMidPoint, 0);
     });
 
     it('should give back the midpoint between 0 and 0', () => {
       const firstQuartileMidPoint = StatsUtil.getNthQuartileMedian(values, 2);
-      expect(firstQuartileMidPoint).to.eq(0);
+      assert.strictEqual(firstQuartileMidPoint, 0);
     });
 
     it('should give back the midpoint between 0 and 0', () => {
       const firstQuartileMidPoint = StatsUtil.getNthQuartileMedian(values, 3);
-      expect(firstQuartileMidPoint).to.eq(0);
+      assert.strictEqual(firstQuartileMidPoint, 0);
     });
 
     it('should give back the midpoint between 0 and 0', () => {
       const firstQuartileMidPoint = StatsUtil.getNthQuartileMedian(values, 4);
-      expect(firstQuartileMidPoint).to.eq(0);
+      assert.strictEqual(firstQuartileMidPoint, 0);
     });
   });
 });

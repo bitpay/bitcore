@@ -1,35 +1,43 @@
-import { expect } from 'chai';
+import { describe, it, before, after, afterEach } from 'node:test';
+import assert from 'assert';
 import * as sinon from 'sinon';
 import { MoralisStateProvider } from '../../../../src/modules/moralis/api/csp';
 import { BaseEVMStateProvider } from '../../../../src/providers/chain-state/evm/api/csp';
 
 
 describe('BASE Chain State Provider', function() {
-  const network = 'testnet';
+  const network = 'sepolia';
+  const sandbox = sinon.createSandbox();
   let BASE;
+
   before(() => {
     BASE = new MoralisStateProvider('BASE');
   });
 
+  after(() => {
+    console.log('BaseEVMStateProvider.rpcs', BaseEVMStateProvider.rpcs);
+  });
+
+  afterEach(function() {
+    console.log(BaseEVMStateProvider.rpcs);
+    sandbox.restore();
+  });
+
   it('should be able to get web3', async () => {
-    const sandbox = sinon.createSandbox();
     const web3Stub = { eth: { getBlockNumber: sandbox.stub().resolves(1) } };
     sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ BASE: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const { web3 } = await BASE.getWeb3(network);
     const block = await web3.eth.getBlockNumber();
     const stub = web3.eth.getBlockNumber as sinon.SinonStub;
-    expect(stub.callCount).to.eq(2);
-    expect(block).to.eq(1);
-    sandbox.restore();
+    assert.strictEqual(stub.callCount, 2);
+    assert.strictEqual(block, 1);
   });
 
   it('should make a new web3 if getBlockNumber fails', async () => {
-    const sandbox = sinon.createSandbox();
-    const web3Stub = { eth: { getBlockNumber: sandbox.stub().throws('Block number fails') } };
+    const web3Stub = { eth: { getBlockNumber: sandbox.stub().rejects('Block number fails') } };
     sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ BASE: {[network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const { web3 } = await BASE.getWeb3(network);
     const stub = web3.eth.getBlockNumber as sinon.SinonStub;
-    expect(stub.callCount).to.not.exist;
-    sandbox.restore();
+    assert.equal(stub.callCount, null, 'stub.callCount should not exist');
   });
 });

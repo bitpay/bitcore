@@ -1,4 +1,5 @@
-import { expect } from 'chai';
+import { describe, it, before, after, afterEach } from 'node:test';
+import assert from 'assert';
 import sinon from 'sinon';
 import { Modules } from '../../src/modules';
 import { ChainStateProvider } from '../../src/providers/chain-state';
@@ -12,34 +13,30 @@ describe('Modules', function() {
   before(unitBeforeHelper);
   after(unitAfterHelper);
 
-  it('should load configured modules correctly', () => {
-    const sandbox = sinon.createSandbox();
-    sandbox.stub(Config, 'get').returns(mockConfig);
+  const sandbox = sinon.createSandbox();
 
-    validateModules();
+  afterEach(function() {
     sandbox.restore();
   });
 
+  it('should load configured modules correctly', () => {
+    sandbox.stub(Config, 'get').returns(mockConfig);
+    validateModules();
+  });
+
   it('should try to load custom module', () => {
-    const sandbox = sinon.createSandbox();
     const mockConfigCopy = JSON.parse(JSON.stringify(mockConfig));
     mockConfigCopy.chains.BTC.testnet.module = './bitcoin-custom';
     sandbox.stub(Config, 'get').returns(mockConfigCopy);
 
-    try {
-      Modules.loadConfigured();
-      throw new Error('it should have thrown due to a non-existing custom module');
-    } catch (e: any) {
-      expect(e.message).to.include('Cannot find module \'./bitcoin-custom\'');
-    }
-    sandbox.restore();
+    assert.throws(() => Modules.loadConfigured(), (err: any) => err.message.includes('Cannot find module \'./bitcoin-custom\''));
   });
 
   it('should have services registered after loading modules', () => {
     const chainsNetworks = Config.chainNetworks();
     for (const { chain, network } of chainsNetworks) {
       const service = ChainStateProvider.get({ chain, network });
-      expect(service).to.exist;
+      assert.notEqual(service, null, 'expected service to exist for ' + chain);
     }
   });
 
@@ -47,7 +44,7 @@ describe('Modules', function() {
     const chains = ['BTC', 'BCH'];
     for (const chain of chains) {
       const service = Libs.get(chain);
-      expect(service).to.exist;
+      assert.notEqual(service, null, 'expected service to exist for ' + chain);
     }
   });
 
@@ -55,7 +52,7 @@ describe('Modules', function() {
     const chains = [['BTC', 'regtest'], ['BCH', 'regtest']];
     for (const [chain, network] of chains) {
       const service = P2P.get(chain, network);
-      expect(service).to.exist;
+      assert.notEqual(service, null, 'expected service to exist for ' + chain);
     }
   });
 
@@ -63,7 +60,7 @@ describe('Modules', function() {
     const chains = [['BTC', 'regtest'], ['BCH', 'regtest']];
     for (const [chain, network] of chains) {
       const service = Verification.get(chain, network);
-      expect(service).to.exist;
+      assert.notEqual(service, null, 'expected service to exist for ' + chain);
     }
   });
 });
@@ -111,7 +108,7 @@ const validateModules = () => {
   Modules.internalServices = []; // Remove all loaded modules from internalServices array for a fresh load
   Modules.loadConfigured(); // Re-load modules with stubbed Config.get()
 
-  expect(Modules.internalServices.length).to.equal(2);
-  expect(Modules.internalServices[0].constructor.name).to.equal('BitcoinModule');
-  expect(Modules.internalServices[1].constructor.name).to.equal('ETHModule');
+  assert.strictEqual(Modules.internalServices.length, 2);
+  assert.strictEqual(Modules.internalServices[0].constructor.name, 'BitcoinModule');
+  assert.strictEqual(Modules.internalServices[1].constructor.name, 'ETHModule');
 };

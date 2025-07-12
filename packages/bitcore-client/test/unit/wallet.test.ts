@@ -1,5 +1,6 @@
+import { describe, it, beforeEach, afterEach, before, after } from 'node:test';
+import assert from 'assert';
 import sinon from 'sinon';
-import * as chai from 'chai';
 import crypto from 'crypto';
 import * as CWC from 'crypto-wallet-core';
 import supertest from 'supertest';
@@ -13,9 +14,6 @@ const { Modules } = require('../../../bitcore-node/build/src/modules');
 const { Api: bcnApi } = require('../../../bitcore-node/build/src/services/api');
 const { Storage: bcnStorage } = require('../../../bitcore-node/build/src/services/storage');
 
-const should = chai.should();
-const expect = chai.expect;
-
 const libMap = {
   BTC: CWC.BitcoreLib,
   BCH: CWC.BitcoreLibCash,
@@ -23,7 +21,7 @@ const libMap = {
   DOGE: CWC.BitcoreLibDoge
 };
 
-describe('Wallet', function() {
+describe('Wallet', { timeout: 20000 }, function() {
   const sandbox = sinon.createSandbox();
   const storageType = 'Level';
   const baseUrl = 'http://127.0.0.1:3000/api';
@@ -31,7 +29,6 @@ describe('Wallet', function() {
   let wallet: Wallet;
   let api;
   before(async function() {
-    this.timeout(20000);
     await bcnStorage.start({
       dbHost: process.env.DB_HOST || 'localhost',
       dbPort: process.env.DB_PORT || '27017',
@@ -42,7 +39,6 @@ describe('Wallet', function() {
     api = supertest(httpServer);
   });
   after(async function() {
-    this.timeout(20000);
     await bcnApi.stop();
     await bcnStorage.stop();
   });
@@ -84,26 +80,26 @@ describe('Wallet', function() {
           baseUrl
         });
 
-        expect(wallet.addressType).to.equal(AddressTypes[chain]?.[addressType] || 'pubkeyhash');
+        assert.strictEqual(wallet.addressType, AddressTypes[chain]?.[addressType] || 'pubkeyhash');
       });
 
       it(`should generate an address for chain and addressType: ${chain} ${addressType}`, function() {
         const address = wallet.deriveAddress(0, false);
-        expect(address).to.exist;
+        assert.notEqual(address, null);
         switch (chain) {
           case 'BTC':
           case 'BCH':
           case 'DOGE':
           case 'LTC':
             const a = new libMap[chain].Address(address);
-            expect(a.toString(true)).to.equal(address);
-            expect(a.type).to.equal(wallet.addressType);
+            assert.strictEqual(a.toString(true), address);
+            assert.strictEqual(a.type, wallet.addressType);
             break;
           case 'XRP':
             // TODO verify XRP address
             break;
           default:
-            expect(CWC.Web3.utils.isAddress(address)).to.equal(true);
+            assert.strictEqual(CWC.Web3.utils.isAddress(address), true);
             break;
         }
       });
@@ -128,21 +124,11 @@ describe('Wallet', function() {
       });
 
       it('should throw an error if changeIdx is null for UTXO chains', async () => {
-        try {
-          await wallet.bumpTxFee({});
-          expect.fail('Expected method to throw');
-        } catch (err) {
-          expect(err.message).to.equal('Must provide changeIdx for UTXO chains');
-        }
+        assert.rejects(async () => await wallet.bumpTxFee({}), { message: 'Must provide changeIdx for UTXO chains' });
       });
   
       it('should throw an error if neither rawTx nor txid is provided', async () => {
-        try {
-          await wallet.bumpTxFee({ changeIdx: 0 });
-          expect.fail('Expected method to throw');
-        } catch (err) {
-          expect(err.message).to.equal('Must provide either rawTx or txid');
-        }
+        assert.rejects(async () => await wallet.bumpTxFee({ changeIdx: 0 }), { message: 'Must provide either rawTx or txid' });
       });
 
       it('should bump the fee of a transaction with feeTarget', async function() {
@@ -161,9 +147,9 @@ describe('Wallet', function() {
           changeIdx: 0,
           feeTarget: 2
         });
-        CWC.BitcoreLib.Transaction.prototype.feePerByte.callCount.should.equal(1);
-        CWC.BitcoreLib.Transaction.prototype.feePerByte.args[0][0].should.equal(65);
-        expect(newTx).to.equal('0200000005486c7406dedb420af3eef7ed98f2337acebd78e4fe5fe4022251235ca71607330100000000fdffffffbb7ee2a19de4acf24a562b8aad9ad75e34b26f5e3a7415e6c34ff9222af8837b0100000000fdffffffd6a45c21841a84c5318e73f56a930ef302f2fa019ea2fe55a6804c0239804dfb0000000000fdffffffb335044aa0c468320c1b860844b0471be261a69882bb72ab82baf69168ed21820000000000fdffffff0f3e891bae2661edd8867e48cf49e86e6eb267b76b01c37eb59ae0d7c213f7950000000000fdffffff01c4c40d00000000001976a914b4376347e4cffb1e9a475b2661bbe74de3c1f86a88ac00000000');
+        assert.strictEqual(CWC.BitcoreLib.Transaction.prototype.feePerByte.callCount, 1);
+        assert.strictEqual(CWC.BitcoreLib.Transaction.prototype.feePerByte.args[0][0], 65);
+        assert.strictEqual(newTx, '0200000005486c7406dedb420af3eef7ed98f2337acebd78e4fe5fe4022251235ca71607330100000000fdffffffbb7ee2a19de4acf24a562b8aad9ad75e34b26f5e3a7415e6c34ff9222af8837b0100000000fdffffffd6a45c21841a84c5318e73f56a930ef302f2fa019ea2fe55a6804c0239804dfb0000000000fdffffffb335044aa0c468320c1b860844b0471be261a69882bb72ab82baf69168ed21820000000000fdffffff0f3e891bae2661edd8867e48cf49e86e6eb267b76b01c37eb59ae0d7c213f7950000000000fdffffff01c4c40d00000000001976a914b4376347e4cffb1e9a475b2661bbe74de3c1f86a88ac00000000');
       });
 
       it('should bump the fee of a transaction with feeRate', async function() {
@@ -181,9 +167,9 @@ describe('Wallet', function() {
           changeIdx: 0,
           feeRate: 2
         });
-        CWC.BitcoreLib.Transaction.prototype.feePerByte.callCount.should.equal(1);
-        CWC.BitcoreLib.Transaction.prototype.feePerByte.args[0][0].should.equal(2);
-        expect(newTx).to.equal('0200000005486c7406dedb420af3eef7ed98f2337acebd78e4fe5fe4022251235ca71607330100000000fdffffffbb7ee2a19de4acf24a562b8aad9ad75e34b26f5e3a7415e6c34ff9222af8837b0100000000fdffffffd6a45c21841a84c5318e73f56a930ef302f2fa019ea2fe55a6804c0239804dfb0000000000fdffffffb335044aa0c468320c1b860844b0471be261a69882bb72ab82baf69168ed21820000000000fdffffff0f3e891bae2661edd8867e48cf49e86e6eb267b76b01c37eb59ae0d7c213f7950000000000fdffffff01b4850e00000000001976a914b4376347e4cffb1e9a475b2661bbe74de3c1f86a88ac00000000');
+        assert.strictEqual(CWC.BitcoreLib.Transaction.prototype.feePerByte.callCount, 1);
+        assert.strictEqual(CWC.BitcoreLib.Transaction.prototype.feePerByte.args[0][0], 2);
+        assert.strictEqual(newTx, '0200000005486c7406dedb420af3eef7ed98f2337acebd78e4fe5fe4022251235ca71607330100000000fdffffffbb7ee2a19de4acf24a562b8aad9ad75e34b26f5e3a7415e6c34ff9222af8837b0100000000fdffffffd6a45c21841a84c5318e73f56a930ef302f2fa019ea2fe55a6804c0239804dfb0000000000fdffffffb335044aa0c468320c1b860844b0471be261a69882bb72ab82baf69168ed21820000000000fdffffff0f3e891bae2661edd8867e48cf49e86e6eb267b76b01c37eb59ae0d7c213f7950000000000fdffffff01b4850e00000000001976a914b4376347e4cffb1e9a475b2661bbe74de3c1f86a88ac00000000');
       });
     });
 
@@ -205,12 +191,7 @@ describe('Wallet', function() {
 
   
       it('should throw an error if neither rawTx nor txid is provided', async () => {
-        try {
-          await wallet.bumpTxFee({ changeIdx: 0 });
-          expect.fail('Expected method to throw');
-        } catch (err) {
-          expect(err.message).to.equal('Must provide either rawTx or txid');
-        }
+        assert.rejects(async () => await wallet.bumpTxFee({ changeIdx: 0 }), { message: 'Must provide either rawTx or txid' });
       });
 
       it('should bump the fee of a transaction with feeTarget', async function() {
@@ -222,8 +203,8 @@ describe('Wallet', function() {
           txid: '0x0cf410cfe7fb268ad06ae115edfa8a30a8dea3979336a647b09b5a789c4b53d5',
           feeTarget: 2
         });
-        params.gasPrice.should.equal(26550000000);
-        expect(newTx).to.equal('0xf08085062e80d98083030d40947ee308b49e36ab516cd0186b3a47cfd31d2499a1880de0b6b3a76400008083aa36a78080');
+        assert.strictEqual(params.gasPrice, 26550000000);
+        assert.strictEqual(newTx, '0xf08085062e80d98083030d40947ee308b49e36ab516cd0186b3a47cfd31d2499a1880de0b6b3a76400008083aa36a78080');
       });
 
       it('should bump the fee of a transaction with feeRate', async function() {
@@ -234,15 +215,15 @@ describe('Wallet', function() {
           txid: '0x0cf410cfe7fb268ad06ae115edfa8a30a8dea3979336a647b09b5a789c4b53d5',
           feeRate: 300
         });
-        params.gasPrice.should.equal(CWC.Web3.utils.toWei('300', 'gwei'));
-        expect(newTx).to.equal('0xf0808545d964b80083030d40947ee308b49e36ab516cd0186b3a47cfd31d2499a1880de0b6b3a76400008083aa36a78080');
+        assert.strictEqual(params.gasPrice, CWC.Web3.utils.toWei('300', 'gwei'));
+        assert.strictEqual(newTx, '0xf0808545d964b80083030d40947ee308b49e36ab516cd0186b3a47cfd31d2499a1880de0b6b3a76400008083aa36a78080');
       });
     });
   });
 
   describe('getLocalAddress', function() {
     for (const storageType of ['Level', 'Mongo', 'TextFile']) {
-      describe(storageType, function() {
+      describe(storageType, { timeout: 5000 }, function() {
         let wallet;
         let walletName = 'BitcoreClientTestGetLocalAddress' + storageType;
         let address1, caddress1, address2, caddress2, address3, caddress3;
@@ -252,7 +233,6 @@ describe('Wallet', function() {
         }
 
         before(async function() {
-          this.timeout(5000);
           try {
             wallet = await Wallet.create({
               name: walletName,
@@ -281,9 +261,9 @@ describe('Wallet', function() {
 
         it('should return the local address', async function() {
           const localAddress = await wallet.getLocalAddress(address2);
-          expect(localAddress.address).to.equal(address2);
-          expect(localAddress.path).to.equal('m/0/1');
-          expect(localAddress.pubKey).to.exist;
+          assert.strictEqual(localAddress.address, address2);
+          assert.strictEqual(localAddress.path, 'm/0/1');
+          assert.notEqual(localAddress.pubKey, null);
         });
       });
     }
@@ -323,9 +303,9 @@ describe('Wallet', function() {
         rederiveAddys: false
       });
 
-      requestStub.callCount.should.equal(1);
-      sleepStub.callCount.should.equal(0);
-      requestStub.args.flatMap(arg => arg[0].body).should.deep.equal(keys.map(k => ({ address: k.address })));
+      assert.strictEqual(requestStub.callCount, 1);
+      assert.strictEqual(sleepStub.callCount, 0);
+      assert.deepEqual(requestStub.args.flatMap(arg => arg[0].body), keys.map(k => ({ address: k.address })));
     });
 
     it('should import <100 keys', async function() {
@@ -342,9 +322,9 @@ describe('Wallet', function() {
         rederiveAddys: false
       });
 
-      requestStub.callCount.should.equal(1);
-      sleepStub.callCount.should.equal(0);
-      requestStub.args.flatMap(arg => arg[0].body).should.deep.equal(keys.map(k => ({ address: k.address })));
+      assert.strictEqual(requestStub.callCount, 1);
+      assert.strictEqual(sleepStub.callCount, 0);
+      assert.deepEqual(requestStub.args.flatMap(arg => arg[0].body), keys.map(k => ({ address: k.address })));
     });
 
     it('should import >100 keys', async function() {
@@ -361,9 +341,9 @@ describe('Wallet', function() {
         rederiveAddys: false
       });
 
-      requestStub.callCount.should.equal(2);
-      sleepStub.callCount.should.equal(1);
-      requestStub.args.flatMap(arg => arg[0].body).should.deep.equal(keys.map(k => ({ address: k.address })));
+      assert.strictEqual(requestStub.callCount, 2);
+      assert.strictEqual(sleepStub.callCount, 1);
+      assert.deepEqual(requestStub.args.flatMap(arg => arg[0].body), keys.map(k => ({ address: k.address })));
     });
   });
 
@@ -409,10 +389,10 @@ describe('Wallet', function() {
       const balance2 = await wallet.getBalance({ token: 'USDC', tokenName: 'USDC_m' });
       const balance3 = await wallet.getBalance({ tokenName: 'USDCn_m' });
       const balance4 = await wallet.getBalance({ token: 'USDC', tokenName: 'USDCn_m' });
-      balance1.should.equal(1);
-      balance2.should.equal(1);
-      balance3.should.equal(2);
-      balance4.should.equal(2);
+      assert.strictEqual(balance1, 1);
+      assert.strictEqual(balance2, 1);
+      assert.strictEqual(balance3, 2);
+      assert.strictEqual(balance4, 2);
     });
   });
 
@@ -447,10 +427,10 @@ describe('Wallet', function() {
       const obj2 = wallet.getTokenObj({ token: 'USDC', tokenName: 'USDC.other' }); // no object with "USDC.other"
       const obj3 = wallet.getTokenObj({ token: 'USDC', tokenName: 'USDC.e' });
       const obj4 = wallet.getTokenObj({ tokenName: 'USDC.e' });
-      obj1.address.should.equal('0x123');
-      obj2.address.should.equal('0x123');
-      obj3.address.should.equal('0xabc');
-      obj4.address.should.equal('0xabc');
+      assert.strictEqual(obj1.address, '0x123');
+      assert.strictEqual(obj2.address, '0x123');
+      assert.strictEqual(obj3.address, '0xabc');
+      assert.strictEqual(obj4.address, '0xabc');
     });
 
     it('should fallback to old token object if matching `token` is given', async function() {
@@ -462,15 +442,11 @@ describe('Wallet', function() {
       });
 
       const obj1 = wallet.getTokenObj({ token: 'USDC' });
-      obj1.address.should.equal('0x123');
+      assert.strictEqual(obj1.address, '0x123');
       const obj2 = wallet.getTokenObj({ token: 'USDC', tokenName: 'USDC.e' }); // falls back
-      obj2.address.should.equal('0x123');
-      try {
-        const obj3 = wallet.getTokenObj({ tokenName: 'USDC.e' }); // token not given, so cannot fall back
-        should.not.exist(obj3);
-      } catch (err) {
-        err.message.should.equal('USDC.e not found on wallet ' + walletName);
-      }
+      assert.strictEqual(obj2.address, '0x123');
+      // token not given, so cannot fall back
+      assert.throws(() => wallet.getTokenObj({ tokenName: 'USDC.e' }), { message: 'USDC.e not found on wallet ' + walletName });
     });
   });
 
@@ -517,16 +493,16 @@ describe('Wallet', function() {
 
     it('should remove a legacy token object', function() {
       wallet.rmToken({ tokenName: 'USDC' });
-      wallet.tokens.length.should.equal(2);
-      wallet.tokens.filter(t => t.symbol === 'USDC').length.should.equal(1);
-      wallet.tokens.filter(t => t.symbol === 'USDC')[0].should.deep.equal(usdcObj);
+      assert.strictEqual(wallet.tokens.length, 2);
+      assert.strictEqual(wallet.tokens.filter(t => t.symbol === 'USDC').length, 1);
+      assert.deepEqual(wallet.tokens.filter(t => t.symbol === 'USDC')[0], usdcObj);
     });
 
     it('should remove a token object', function() {
       wallet.rmToken({ tokenName: 'USDCn' });
-      wallet.tokens.length.should.equal(2);
-      wallet.tokens.filter(t => t.symbol === 'USDC').length.should.equal(1);
-      wallet.tokens.filter(t => t.symbol === 'USDC')[0].should.deep.equal(usdcLegacyObj);
+      assert.strictEqual(wallet.tokens.length, 2);
+      assert.strictEqual(wallet.tokens.filter(t => t.symbol === 'USDC').length, 1);
+      assert.deepEqual(wallet.tokens.filter(t => t.symbol === 'USDC')[0], usdcLegacyObj);
     });
 
     it('should remove the correct token object regardless of order', function() {
@@ -537,14 +513,14 @@ describe('Wallet', function() {
       ];
 
       wallet.rmToken({ tokenName: 'USDC' });
-      wallet.tokens.length.should.equal(2);
-      wallet.tokens.filter(t => t.symbol === 'USDC').length.should.equal(1);
-      wallet.tokens.filter(t => t.symbol === 'USDC')[0].should.deep.equal(usdcObj);
+      assert.strictEqual(wallet.tokens.length, 2);
+      assert.strictEqual(wallet.tokens.filter(t => t.symbol === 'USDC').length, 1);
+      assert.deepEqual(wallet.tokens.filter(t => t.symbol === 'USDC')[0], usdcObj);
     });
 
     it('should not remove any unmatched token object', function() {
       wallet.rmToken({ tokenName: 'BOGUS' });
-      wallet.tokens.length.should.equal(3);
+      assert.strictEqual(wallet.tokens.length, 3);
     });
   });
 });

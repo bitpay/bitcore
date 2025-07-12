@@ -86,20 +86,6 @@ const main = async () => {
   }
 };
 
-function getCurrencies() {
-  return new Promise((resolve, reject) => {
-    https.get('https://bitpay.com/currencies', res => {
-      if (res.statusCode !== 200) {
-        reject(new Error('Request Failed'));
-      }
-      let data = '';
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
-      res.on('end', () => resolve(data.toString()));
-    });
-  });
-}
 
 main()
   .catch(console.error)

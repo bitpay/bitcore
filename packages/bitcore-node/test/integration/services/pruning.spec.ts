@@ -1,5 +1,6 @@
+import { describe, test, before, after } from 'node:test';
+import assert from 'assert';
 import { ObjectId } from 'bson';
-import { expect } from 'chai';
 import sinon from 'sinon';
 import { MongoBound } from '../../../src/models/base';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
@@ -14,14 +15,12 @@ import logger from '../../../src/logger';
 
 const Pruning = new PruningService({ transactionModel: TransactionStorage, coinModel: CoinStorage });
 
-describe('Pruning Service', function() {
-  const suite = this;
-  this.timeout(30000);
+test('Pruning Service', { timeout: 30000 }, async function(t) {
   const sandbox = sinon.createSandbox();
   before(intBeforeHelper);
-  after(async () => intAfterHelper(suite));
+  after(async () => intAfterHelper(t));
 
-  beforeEach(async () => {
+  t.beforeEach(async () => {
     await resetDatabase();
     Pruning.lastRunTimeInvalid = 0;
     Pruning.lastRunTimeOld = 0;
@@ -33,7 +32,7 @@ describe('Pruning Service', function() {
     sandbox.spy(logger, 'warn');
     sandbox.spy(logger, 'error');
   });
-  afterEach(() => {
+  t.afterEach(() => {
     process.env.DRYRUN = undefined;
     sandbox.restore();
   });
@@ -142,8 +141,8 @@ describe('Pruning Service', function() {
     await CoinStorage.collection.insertOne({ ...oldMempoolTx2Output, mintTxid: modTxid(oldMempoolTx2Output.mintTxid, i) });
   }
 
-  describe('processAllInvalidTxs', function() {
-    it('should detect coins that should be invalid but are not', async () => {
+  await t.test('processAllInvalidTxs', async function(t) {
+    await t.test('should detect coins that should be invalid but are not', async () => {
       await insertBadCoins();
       const { chain, network } = invalidCoin;
       await Pruning.processAllInvalidTxs(chain, network);
@@ -151,12 +150,12 @@ describe('Pruning Service', function() {
         .find({ chain, network, mintTxid: { $in: [invalidCoin.mintTxid, mempoolCoin.mintTxid, mempoolCoin2.mintTxid] } })
         .toArray();
       for (const coin of shouldBeInvalid) {
-        expect(coin.mintHeight).eq(SpentHeightIndicators.conflicting);
+        assert.strictEqual(coin.mintHeight, SpentHeightIndicators.conflicting, 'coin should be marked as conflicting');
       }
-      expect(shouldBeInvalid.length).eq(3);
+      assert.strictEqual(shouldBeInvalid.length, 3);
     });
 
-    it('should mark detected coins as invalid', async () => {
+    await t.test('should mark detected coins as invalid', async () => {
       await insertBadCoins();
       const { chain, network } = invalidCoin;
       await Pruning.processAllInvalidTxs(chain, network);
@@ -164,25 +163,25 @@ describe('Pruning Service', function() {
         .find({ chain, network, mintTxid: { $in: [invalidCoin.mintTxid, mempoolCoin.mintTxid, mempoolCoin2.mintTxid] } })
         .toArray();
       for (const coin of shouldBeInvalid) {
-        expect(coin.mintHeight).eq(SpentHeightIndicators.conflicting);
+        assert.strictEqual(coin.mintHeight, SpentHeightIndicators.conflicting, 'coin should be marked as conflicting');
       }
-      expect(shouldBeInvalid.length).eq(3);
+      assert.strictEqual(shouldBeInvalid.length, 3);
     });
 
-    it('should not invalidate a mined tx', async function() {
+    await t.test('should not invalidate a mined tx', async function() {
       await insertBadCoins();
       const { chain, network } = invalidCoin;
       await Pruning.invalidateTx(chain, network, replacementTx);
       const shouldBeInvalidStill = await CoinStorage.collection
         .find({ chain, network, mintTxid: { $in: [invalidCoin.mintTxid, mempoolCoin.mintTxid, mempoolCoin2.mintTxid] } })
         .toArray();
-      expect(shouldBeInvalidStill.every(coin => coin.mintHeight === SpentHeightIndicators.pending)).to.equal(true);
-      expect(shouldBeInvalidStill.length).eq(3);
+      assert.strictEqual(shouldBeInvalidStill.every(coin => coin.mintHeight === SpentHeightIndicators.pending), true, 'every coin should still be pending');
+      assert.strictEqual(shouldBeInvalidStill.length, 3);
       const msg = `Tx ${replacementTx.txid} is already mined`;
-      expect((logger.warn as any).args.find((args: any) => args[0] === msg)).to.exist;
+      assert.notEqual((logger.warn as any).args.find((args: any) => args[0] === msg), null, 'logger should have warned');
     });
 
-    it('should not go into an infinite loop if there is a circular replacedByTxid reference', async function() {
+    await t.test('should not go into an infinite loop if there is a circular replacedByTxid reference', async function() {
       await insertBadCoins();
       await TransactionStorage.collection.insertOne({
         ...replacementTx,
@@ -205,11 +204,11 @@ describe('Pruning Service', function() {
       const shouldBeInvalid = await CoinStorage.collection
         .find({ chain, network, mintTxid: { $in: [invalidCoin.mintTxid, mempoolCoin.mintTxid, mempoolCoin2.mintTxid] } })
         .toArray();
-      expect(shouldBeInvalid.every(coin => coin.mintHeight === SpentHeightIndicators.conflicting)).to.equal(true);
-      expect(shouldBeInvalid.length).eq(3);
+      assert.strictEqual(shouldBeInvalid.every(coin => coin.mintHeight === SpentHeightIndicators.conflicting), true, 'every coin should still be pending');
+      assert.strictEqual(shouldBeInvalid.length, 3);
     });
 
-    it('should not go into an infinite loop if there is a circular, unconfirmed replacedByTxid reference', async function() {
+    await t.test('should not go into an infinite loop if there is a circular, unconfirmed replacedByTxid reference', async function() {
       await insertBadCoins();
       await TransactionStorage.collection.insertOne({
         ...replacementTx,
@@ -234,15 +233,15 @@ describe('Pruning Service', function() {
       const shouldBePendingStill = await CoinStorage.collection
         .find({ chain, network, mintTxid: { $in: [invalidCoin.mintTxid, mempoolCoin.mintTxid, mempoolCoin2.mintTxid] } })
         .toArray();
-      expect(shouldBePendingStill.every(coin => coin.mintHeight === SpentHeightIndicators.pending)).to.equal(true);
-      expect(shouldBePendingStill.length).eq(3);
+      assert.strictEqual(shouldBePendingStill.every(coin => coin.mintHeight === SpentHeightIndicators.pending), true, 'every coin should still be pending');
+      assert.strictEqual(shouldBePendingStill.length, 3);
       const msg = `Skipping invalidation of ${invalidTx.txid} with immature replacement => ${invalidTx.replacedByTxid}`;
-      expect((logger.info as any).args.find((args: any) => args[0] === msg)).to.exist;
+      assert.notEqual((logger.info as any).args.find((args: any) => args[0] === msg), null, 'should log skipping invalidation');
     });
   });
 
-  describe('processOldMempoolTxs', function() {
-    it('should remove old transactions', async () => {
+  describe('processOldMempoolTxs', async function() {
+    await t.test('should remove old transactions', async () => {
       sandbox.stub(RPC.prototype, 'getTransaction').resolves(null);
       await insertOldTx();
       const { chain, network } = oldMempoolTx;
@@ -253,7 +252,7 @@ describe('Pruning Service', function() {
         blockHeight: -1,
         blockTimeNormalized: { $lt: new Date() }
       });
-      expect(count).eq(1);
+      assert.strictEqual(count, 1);
       await Pruning.processOldMempoolTxs(chain, network, 29);
 
       const shouldBeExpiredTx = await TransactionStorage.collection
@@ -266,15 +265,15 @@ describe('Pruning Service', function() {
         .find({ chain, network, mintTxid: parentTxOutput1.mintTxid })
         .toArray();
 
-      expect(shouldBeExpiredTx.length).eq(1);
-      expect(shouldBeExpiredTx.every(tx => tx.blockHeight === SpentHeightIndicators.expired)).to.equal(true);
-      expect(shouldBeExpiredCoins.length).eq(2);
-      expect(shouldBeExpiredCoins.every(coin => coin.mintHeight === SpentHeightIndicators.expired)).to.equal(true);
-      expect(parentTxOutputs.length).eq(2);
-      expect(parentTxOutputs.filter(coin => coin.spentHeight === SpentHeightIndicators.unspent).length).to.equal(1);
+      assert.strictEqual(shouldBeExpiredTx.length, 1);
+      assert.strictEqual(shouldBeExpiredTx.every(tx => tx.blockHeight === SpentHeightIndicators.expired), true, 'tx should be expired');
+      assert.strictEqual(shouldBeExpiredCoins.length, 2);
+      assert.strictEqual(shouldBeExpiredCoins.every(coin => coin.mintHeight === SpentHeightIndicators.expired), true, 'coins should be expired');
+      assert.strictEqual(parentTxOutputs.length, 2);
+      assert.strictEqual(parentTxOutputs.filter(coin => coin.spentHeight === SpentHeightIndicators.unspent).length, 1, 'parent tx output should be unspent');
     });
 
-    it('should skip removing transactions still in mempool', async () => {
+    await t.test('should skip removing transactions still in mempool', async () => {
       const rpcStub = sandbox.stub(RPC.prototype, 'getTransaction')
       rpcStub.onCall(0).resolves(null);
       rpcStub.onCall(1).resolves({});
@@ -290,7 +289,7 @@ describe('Pruning Service', function() {
         blockHeight: SpentHeightIndicators.pending,
         blockTimeNormalized: { $lt: new Date() }
       });
-      expect(count).eq(3);
+      assert.strictEqual(count, 3);
       await Pruning.processOldMempoolTxs(chain, network, 29);
 
       const processedTxs = await TransactionStorage.collection
@@ -300,15 +299,15 @@ describe('Pruning Service', function() {
         .find({ chain, network, mintTxid: { $in: [modTxid(oldMempoolTxOutput.mintTxid, 0), modTxid(oldMempoolTx2Output.mintTxid, 0), modTxid(oldMempoolTxOutput.mintTxid, 1), modTxid(oldMempoolTx2Output.mintTxid, 1), modTxid(oldMempoolTxOutput.mintTxid, 2), modTxid(oldMempoolTx2Output.mintTxid, 2)] } })
         .toArray();
 
-      expect(processedTxs.length).eq(3);
-      expect(processedTxs.filter(tx => tx.blockHeight === SpentHeightIndicators.expired).length).eq(2);
-      expect(processedTxs.filter(tx => tx.blockHeight === SpentHeightIndicators.pending).length).eq(1); // still in mempool
-      expect(processedCoins.length).eq(6);
-      expect(processedCoins.filter(coin => coin.mintHeight === SpentHeightIndicators.expired).length).eq(4);
-      expect(processedCoins.filter(coin => coin.mintHeight === SpentHeightIndicators.pending).length).eq(2); // still in mempool
+      assert.strictEqual(processedTxs.length, 3);
+      assert.strictEqual(processedTxs.filter(tx => tx.blockHeight === SpentHeightIndicators.expired).length, 2, 'should have 2 expired txs');
+      assert.strictEqual(processedTxs.filter(tx => tx.blockHeight === SpentHeightIndicators.pending).length, 1, 'should have 1 pending tx'); // still in mempool
+      assert.strictEqual(processedCoins.length, 6);
+      assert.strictEqual(processedCoins.filter(coin => coin.mintHeight === SpentHeightIndicators.expired).length, 4, 'should have 4 expired coins');
+      assert.strictEqual(processedCoins.filter(coin => coin.mintHeight === SpentHeightIndicators.pending).length, 2, 'shoulds have 2 pending coins'); // still in mempool
     });
 
-    it('should skip removing transactions on rpc error', async () => {
+    await t.test('should skip removing transactions on rpc error', async () => {
       const rpcStub = sandbox.stub(RPC.prototype, 'getTransaction')
       rpcStub.onCall(0).rejects({ code: -1, message: 'hahaha' });
       await insertOldTx();
@@ -320,7 +319,7 @@ describe('Pruning Service', function() {
         blockHeight: SpentHeightIndicators.pending,
         blockTimeNormalized: { $lt: new Date() }
       });
-      expect(count).eq(1);
+      assert.strictEqual(count, 1);
       await Pruning.processOldMempoolTxs(chain, network, 29);
 
       const shouldBeGoneTx = await TransactionStorage.collection
@@ -330,11 +329,11 @@ describe('Pruning Service', function() {
         .find({ chain, network, mintTxid: { $in: [oldMempoolTxOutput.mintTxid, oldMempoolTx2Output.mintTxid] } })
         .toArray();
 
-      expect(shouldBeGoneTx.length).eq(1);
-      expect(shouldBeGoneCoins.length).eq(2);
+      assert.strictEqual(shouldBeGoneTx.length, 1, 'should skip removing tx');
+      assert.strictEqual(shouldBeGoneCoins.length, 2, 'should skip removing coins');
     });
 
-    it('should skip removing transactions if coin has >0 confs', async () => {
+    await t.test('should skip removing transactions if coin has >0 confs', async () => {
       const rpcStub = sandbox.stub(RPC.prototype, 'getTransaction')
       rpcStub.onCall(0).rejects({ code: -5, message: 'already exists' });
       const oldMempoolTx2OutputHeight = oldMempoolTx2Output.mintHeight;
@@ -349,7 +348,7 @@ describe('Pruning Service', function() {
         blockHeight: SpentHeightIndicators.pending,
         blockTimeNormalized: { $lt: new Date() }
       });
-      expect(count).eq(1);
+      assert.strictEqual(count, 1);
       await Pruning.processOldMempoolTxs(chain, network, 29);
 
       const shouldBeGoneTx = await TransactionStorage.collection
@@ -359,8 +358,8 @@ describe('Pruning Service', function() {
         .find({ chain, network, mintTxid: { $in: [oldMempoolTxOutput.mintTxid, oldMempoolTx2Output.mintTxid] } })
         .toArray();
 
-      expect(shouldBeGoneTx.length).eq(1);
-      expect(shouldBeGoneCoins.length).eq(2);
+      assert.strictEqual(shouldBeGoneTx.length, 1, 'should skip removing tx');
+      assert.strictEqual(shouldBeGoneCoins.length, 2, 'should skip removing coins');
     });
   });
 });
