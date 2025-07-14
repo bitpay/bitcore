@@ -310,4 +310,8 @@ export class XrpChain implements IChain {
       return cb(null, reserve);
     });
   }
+
+  refreshTxData(_server: WalletService, txp, _opts, cb) {
+    return cb(null, txp);
+  }
 }

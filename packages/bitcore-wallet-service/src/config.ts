@@ -128,6 +128,17 @@ const Config = (): any => {
           url: 'https://api-eth.bitcore.io'
         }
       },
+      sol: {
+        livenet: {
+          url: 'https://api-sol.bitcore.io'
+        },
+        testnet: {
+          url: 'https://api-sol.bitcore.io'
+        },
+        devnet: {
+          url: 'https://api-sol.bitcore.io'
+        }
+      },
       socketApiKey: 'socketApiKey'
     },
     pushNotificationsOpts: {
@@ -146,6 +157,49 @@ const Config = (): any => {
     },
     maintenanceOpts: {
       maintenanceMode: false
+    },
+    emailOpts: {
+      mailer: 'sendgrid', // Valid options: sendgrid, nodemailer, mailersend
+      sendGridApiKey: process.env.SENDGRID_API_KEY, // Override in bws.config.js or set the env var
+      mailerSendApiKey: process.env.MAILERSEND_API_KEY, // Override in bws.config.js or set the env var
+      from: 'override me in bws.config.js',
+
+      // // nodemailer config
+      // host: 'localhost',
+      // port: 25,
+      // ignoreTLS: true,
+      // subjectPrefix: '[Wallet Service]',
+      // from: 'wallet-service@bitcore.io',
+      // // Note: Prod templates are in a the copay-emails repo (https://github.com/bitpay/copay-emails)
+      // templatePath: 'templates',
+      // defaultLanguage: 'en',
+      // defaultUnit: 'btc',
+      // publicTxUrlTemplate: {
+      //   btc: {
+      //     livenet: 'https://bitpay.com/insight/#/BTC/mainnet/tx/{{txid}}',
+      //     testnet: 'https://bitpay.com/insight/#/BTC/testnet/tx/{{txid}}',
+      //   },
+      //   bch: {
+      //     livenet: 'https://bitpay.com/insight/#/BCH/mainnet/tx/{{txid}}',
+      //     testnet: 'https://bitpay.com/insight/#/BCH/testnet/tx/{{txid}}',
+      //   },
+      //   eth: {
+      //     livenet: 'https://etherscan.io/tx/{{txid}}',
+      //     testnet: 'https://kovan.etherscan.io/tx/{{txid}}',
+      //   },
+      //   xrp: {
+      //     livenet: 'https://xrpscan.com/tx/{{txid}}',
+      //     testnet: 'https://test.bithomp.com/explorer//tx/{{txid}}',
+      //   },
+      //   doge: {
+      //     livenet: 'https://blockchair.com/dogecoin/transaction/{{txid}}',
+      //     testnet: 'https://sochain.com/tx/DOGETEST/{{txid}}',
+      //   },
+      //   ltc: {
+      //     livenet: 'https://bitpay.com/insight/#/LTC/mainnet/tx/{{txid}}',
+      //     testnet: 'https://bitpay.com/insight/#/LTC/testnet/tx/{{txid}}',
+      //   }
+      // }
     },
     services: {
       buyCrypto: {
@@ -406,63 +460,19 @@ const Config = (): any => {
     //   }
     // },
     // oneInch: {
-    //   api: 'https://api.1inch.dev/swap',
+    //   api: 'https://api.1inch.dev',
     //   apiKey: 'one_inch_api_key',
     //   referrerAddress: 'one_inch_referrer_address', // ETH
     //   referrerFee: 'one_inch_referrer_fee', // min: 0; max: 3; (represents percentage)
     // },
     // coinGecko: {
-    //   api: 'https://api.coingecko.com/api',
+    //   api: 'https://pro-api.coingecko.com/api/',
+    //   apiKey: 'coin_gecko_api_key',
     // },
     // moralis: {
     //   apiKey: 'moralis_api_key_here',
     //   whitelist: []
     // },
-    // To use email notifications uncomment this:
-    // emailOpts: {
-    //  host: 'localhost',
-    //  port: 25,
-    //  ignoreTLS: true,
-    //  subjectPrefix: '[Wallet Service]',
-    //  from: 'wallet-service@bitcore.io',
-    //  // Note: Prod templates are in a the copay-emails repo (https://github.com/bitpay/copay-emails)
-    //  templatePath: 'templates',
-    //  defaultLanguage: 'en',
-    //  defaultUnit: 'btc',
-    //  publicTxUrlTemplate: {
-    //   btc: {
-    //     livenet: 'https://bitpay.com/insight/#/BTC/mainnet/tx/{{txid}}',
-    //     testnet: 'https://bitpay.com/insight/#/BTC/testnet/tx/{{txid}}',
-    //   },
-    //   bch: {
-    //     livenet: 'https://bitpay.com/insight/#/BCH/mainnet/tx/{{txid}}',
-    //     testnet: 'https://bitpay.com/insight/#/BCH/testnet/tx/{{txid}}',
-    //   },
-    //   eth: {
-    //     livenet: 'https://etherscan.io/tx/{{txid}}',
-    //     testnet: 'https://kovan.etherscan.io/tx/{{txid}}',
-    //   },
-    //   xrp: {
-    //     livenet: 'https://xrpscan.com/tx/{{txid}}',
-    //     testnet: 'https://test.bithomp.com/explorer//tx/{{txid}}',
-    //   },
-    //   doge: {
-    //     livenet: 'https://blockchair.com/dogecoin/transaction/{{txid}}',
-    //     testnet: 'https://sochain.com/tx/DOGETEST/{{txid}}',
-    //  },
-    //   ltc: {
-    //     livenet: 'https://bitpay.com/insight/#/LTC/mainnet/tx/{{txid}}',
-    //     testnet: 'https://bitpay.com/insight/#/LTC/testnet/tx/{{txid}}',
-    //  }
-    // },
-    // },
-    // To use sendgrid:
-    // const sgMail = require('@sendgrid/mail');
-    // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-    //
-    //
-    // //then add:
-    // mailer: sgMail,
   };
 
   // Override default values with bws.config.js' values, if present
@@ -472,6 +482,16 @@ const Config = (): any => {
   } catch {
     logger.info('bws.config.js not found, using default configuration values');
   }
+
+  if (process.env.SENDGRID_API_KEY) {
+    // override the config value in bws.config.js with env var
+    defaultConfig.emailOpts.sendGridApiKey = process.env.SENDGRID_API_KEY;
+  }
+  if (process.env.MAILERSEND_API_KEY) {
+    // override the config value in bws.config.js with env var
+    defaultConfig.emailOpts.mailerSendApiKey = process.env.MAILERSEND_API_KEY;
+  }
+
   return defaultConfig;
 };
 

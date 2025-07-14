@@ -1,13 +1,41 @@
 #!/usr/bin/env node
 
+require('ts-node/register');
+const config = require('../config');
 const fs = require('fs');
 const path = require('path');
 const Mustache = require('mustache');
 const os = require('os');
 const { exec } = require('child_process');
 const sgMail = require('@sendgrid/mail');
-const { getIconHtml } = require('../templates/email-icons-config');
 const juice = require('juice');
+
+
+const iconMap = {
+  new_copayer: 'person-plus.png',
+  new_incoming_tx: 'down-arrow-green.png',
+  new_incoming_tx_testnet: 'down-arrow-green.png',
+  new_outgoing_tx: 'up-arrow-gray.png',
+  new_tx_proposal: 'writing-gray.png',
+  new_zero_outgoing_tx: 'up-arrow-gray.png',
+  tx_confirmation: 'green-check.png',
+  tx_confirmation_receiver: 'green-check.png',
+  tx_confirmation_sender: 'green-check.png',
+  txp_finally_rejected: 'failed-icon.png',
+  wallet_complete: 'green-check.png'
+};
+
+function getIconHtml (templateName) {
+  const iconFile = iconMap[templateName];
+  if (!iconFile) {
+    return null;
+  }
+
+  const staticUrl = config.baseUrl || 'https://bws.bitpay.com';
+  const iconUrl = `${staticUrl}/bws/static/images/${iconFile}`;
+  
+  return `<img src="${iconUrl}" alt="${templateName} icon" style="width: 50px; height: 50px;" />`
+}; 
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -32,7 +60,7 @@ const TEMPLATE_TYPES = [
 ];
 
 // Template directory
-const TEMPLATE_DIR = path.join(__dirname, '../templates');
+const TEMPLATE_DIR = path.join(__dirname, '../../templates');
 const MASTER_TEMPLATE_PATH = path.join(TEMPLATE_DIR, 'master-template.html');
 const CONTENT_TEMPLATE_PATH = path.join(TEMPLATE_DIR, language, `${templateName}.html`);
 
@@ -72,8 +100,7 @@ const createSampleData = (templateName) => {
 
   const iconObj = getIconHtml(templateName, sendEmail);
   if (iconObj) {
-    commonData.icon = iconObj.imgHtml;
-    commonData.iconObj = iconObj;
+    commonData.icon = iconObj;
   }
 
   try {

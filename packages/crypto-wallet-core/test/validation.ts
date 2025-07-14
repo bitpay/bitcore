@@ -30,6 +30,9 @@ describe('Address Validation', () => {
   // XRP
   const xrpAddress = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh';
 
+  // SOL
+  const solAddress = '7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hnD';
+
   // Uri
   const btcUri = 'bitcoin:1NuKwkDtCymgA1FNLUBaUWLD8s4kdKWvgn';
   const bchUri = 'bitcoincash:pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g';
@@ -48,6 +51,7 @@ describe('Address Validation', () => {
   const maticUri = 'matic:0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
   const maticUriParams = 'matic:0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A?value=123&gasPrice=123&gas=123&gasLimit=123';
   const maticUriSingleParam = 'matic:0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A?value=123';
+  const solUri = 'solana:7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hnD';
 
   // Invalid Address
   const invalidBtcAddress = '1NuKwkDtCymgA1FNLUBaUWLD8s4kKWvgn';
@@ -57,6 +61,7 @@ describe('Address Validation', () => {
   const invalidEthAddress = '37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08';
   const invalidXrpAddress = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTH';
   const invalidMaticAddress = '57d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08';
+  const invalidSolAddress = '7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hn0';
 
   // Invalid Uri
   const invalidEthPrefix = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
@@ -65,6 +70,7 @@ describe('Address Validation', () => {
   const invalidEthUriParams = 'ethereum:0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A?value=invalid&gasLimit=123&gas=123';
   const invalidXrpUriParams = 'ripple:rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF?amount=invalid&dt=123';
   const invalidMaticUriParams = 'matic:0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A?value=invalid&gasLimit=123&gas=123';
+  const invalidSolUri = 'solana:7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hn0';
 
   it('should be able to validate an BTC address', async () => {
     const isValidAddress = await Validation.validateAddress('BTC', 'mainnet', btcAddress);
@@ -231,5 +237,25 @@ describe('Address Validation', () => {
   it('should be able to invalidate MATIC URI without ethereum prefix', async () => {
     const inValidMaticPrefix = await Validation.validateUri('MATIC', invalidMaticPrefix);
     expect(inValidMaticPrefix).to.equal(false);
+  });
+
+  it('should be able to validate a SOL address', async () => {
+    const isValidAddress = await Validation.validateAddress('SOL', 'mainnet', solAddress);
+    expect(isValidAddress).to.equal(true);
+  });
+
+  it('should be able to invalidate an incorrect SOL address', async () => {
+    const isValidAddress = await Validation.validateAddress('SOL', 'mainnet', invalidSolAddress);
+    expect(isValidAddress).to.equal(false);
+  });
+
+  it('should be able to validate a SOL Uri', async () => {
+    const isValidUri = await Validation.validateUri('SOL', solUri);
+    expect(isValidUri).to.equal(true);
+  });
+
+  it('should be able to invalidate an incorrect SOL Uri', async () => {
+    const isValidUri = await Validation.validateUri('SOL', invalidSolUri);
+    expect(isValidUri).to.equal(false);
   });
 });

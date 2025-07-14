@@ -37,6 +37,7 @@ export interface ITxProposal {
     amount: number;
     address: string;
     toAddress?: string;
+    sourceAddress?: string;
     message?: string;
     data?: string;
     gasLimit?: number;
@@ -65,11 +66,11 @@ export interface ITxProposal {
   proposalSignaturePubKeySig: string;
   signingMethod: string;
   lowFees: boolean;
-  nonce?: number;
+  nonce?: number | string;
   gasPrice?: number;
   maxGasFee?: number;
   priorityGasFee?: number;
-  txType?: number;
+  txType?: number | string;
   gasLimit?: number; // Backward compatibility for BWC <= 8.9.0
   data?: string; // Backward compatibility for BWC <= 8.9.0
   tokenAddress?: string;
@@ -82,6 +83,18 @@ export interface ITxProposal {
   enableRBF?: boolean;
   replaceTxByFee?: boolean;
   multiTx?: boolean; // proposal contains multiple transactions
+  space?: number;
+  nonceAddress?: string;
+  blockHash?: string;
+  blockHeight?: number;
+  category?: string;
+  priorityFee?: number;
+  computeUnits?: number;
+  memo?: string;
+  fromAta?: string;
+  decimals?: number;
+  refreshOnPublish?: boolean;
+  prePublishRaw?: string;
 }
 
 export class TxProposal {
@@ -106,6 +119,7 @@ export class TxProposal {
     amount: number;
     address?: string;
     toAddress?: string;
+    sourceAddress?: string;
     message?: string;
     data?: string;
     gasLimit?: number;
@@ -135,11 +149,11 @@ export class TxProposal {
   proposalSignaturePubKeySig: string;
   signingMethod: string;
   raw?: Array<string> | string;
-  nonce?: number;
+  nonce?: number | string;
   gasPrice?: number;
   maxGasFee?: number;
   priorityGasFee?: number;
-  txType?: number;
+  txType?: number | string;
   gasLimit?: number; // Backward compatibility for BWC <= 8.9.0
   data?: string; // Backward compatibility for BWC <= 8.9.0
   tokenAddress?: string;
@@ -154,6 +168,18 @@ export class TxProposal {
   enableRBF?: boolean;
   replaceTxByFee?: boolean;
   multiTx?: boolean;
+  space?: number;
+  nonceAddress?: string;
+  blockHash?: string;
+  blockHeight?: number;
+  category?: string;
+  priorityFee?: number;
+  computeUnits?: number;
+  memo?: string;
+  fromAta?: string;
+  decimals?: number;
+  refreshOnPublish?: boolean;
+  prePublishRaw?: string;
 
   static create(opts) {
     opts = opts || {};
@@ -190,6 +216,7 @@ export class TxProposal {
       const out: any = {};
       if (output.amount     !== undefined) out.amount = output.amount;
       if (output.toAddress  !== undefined) out.toAddress = output.toAddress;
+      if (output.sourceAddress  !== undefined) out.sourceAddress = output.sourceAddress;
       if (output.message    !== undefined) out.message = output.message;
       if (output.data       !== undefined) out.data = output.data;
       if (output.gasLimit   !== undefined) out.gasLimit = output.gasLimit;
@@ -257,7 +284,21 @@ export class TxProposal {
     x.destinationTag = opts.destinationTag;
     x.invoiceID = opts.invoiceID;
     x.multiTx = opts.multiTx; // proposal contains multiple transactions
-  
+    
+    // SOL
+    x.space = opts.space; // space to allocate for account creation
+    x.blockHash = opts.blockHash; // recent block hash  required for tx creation
+    x.blockHeight = opts.blockHeight; // max valid block height required for legacy tx creation
+    x.nonceAddress = opts.nonceAddress; // account address mantaining latest nonce
+    x.category = opts.category; // kind of transaction: transfer, account creation, nonce creation, etc
+    x.computeUnits = opts.computeUnits;
+    x.memo = opts.memo;
+    x.fromAta = opts.fromAta;
+    x.decimals = opts.decimals;
+    x.priorityFee = opts.priorityFee;
+
+    x.refreshOnPublish = opts.refreshOnPublish;
+
     return x;
   }
 
@@ -334,6 +375,21 @@ export class TxProposal {
     x.destinationTag = obj.destinationTag;
     x.invoiceID = obj.invoiceID;
     x.multiTx = obj.multiTx;
+
+    // SOL
+    x.space = obj.space; // space to allocate for account creation
+    x.blockHash = obj.blockHash; // recent block hash  required for tx creation
+    x.blockHeight = obj.blockHeight; // max valid block height required for legacy tx creation
+    x.nonceAddress = obj.nonceAddress; // account address mantaining latest nonce
+    x.category = obj.category; // kind of transaction: transfer, account creation, nonce creation, etc
+    x.computeUnits = obj.computeUnits;
+    x.memo =  obj.memo;
+    x.fromAta = obj.fromAta;
+    x.decimals = obj.decimals;
+    x.priorityFee = obj.priorityFee;
+
+    x.refreshOnPublish = obj.refreshOnPublish;
+    x.prePublishRaw = obj.prePublishRaw;
 
     if (x.status == 'broadcasted') {
       x.raw = obj.raw;
@@ -469,6 +525,10 @@ export class TxProposal {
 
   reject(copayerId, reason) {
     this.addAction(copayerId, 'reject', reason);
+  }
+
+  isRepublishEnabled() {
+    return !!this.refreshOnPublish
   }
 
   isTemporary() {

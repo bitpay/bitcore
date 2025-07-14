@@ -32,7 +32,8 @@ const Bitcore_ = {
   op: CWC.BitcoreLib,
   xrp: CWC.BitcoreLib,
   doge: CWC.BitcoreLibDoge,
-  ltc: CWC.BitcoreLibLtc
+  ltc: CWC.BitcoreLibLtc,
+  sol: CWC.BitcoreLib,
 };
 
 const NetworkChar = {
@@ -707,6 +708,7 @@ export class API extends EventEmitter {
       case 'arb':
       case 'base':
       case 'op':
+      case 'sol':
         const unsignedTxs = t.uncheckedSerialize();
         const signedTxs = [];
         for (let index = 0; index < signatures.length; index++) {
@@ -756,6 +758,7 @@ export class API extends EventEmitter {
    * @param {string} [opts.customData]
    * @param {string} [opts.coin]
    * @param {string} [opts.hardwareSourcePublicKey]
+   * @param {string} [opts.clientDerivedPublicKey]
    * @param {function} cb Callback function in the standard form (err, wallet)
    * @returns {API} Returns instance of API wallet
    */
@@ -786,7 +789,8 @@ export class API extends EventEmitter {
       xPubKey,
       requestPubKey,
       customData: encCustomData,
-      hardwareSourcePublicKey: opts.hardwareSourcePublicKey
+      hardwareSourcePublicKey: opts.hardwareSourcePublicKey,
+      clientDerivedPublicKey: opts.clientDerivedPublicKey
     };
     if (opts.dryRun) args.dryRun = true;
 
@@ -941,7 +945,8 @@ export class API extends EventEmitter {
       usePurpose48: n > 1,
       useNativeSegwit: !!opts.useNativeSegwit,
       segwitVersion: opts.segwitVersion,
-      hardwareSourcePublicKey: c.hardwareSourcePublicKey
+      hardwareSourcePublicKey: c.hardwareSourcePublicKey,
+      clientDerivedPublicKey: c.clientDerivedPublicKey
     };
     this.request.post('/v2/wallets/', args, (err, res) => {
       if (err) return cb(err);
@@ -967,7 +972,8 @@ export class API extends EventEmitter {
         {
           coin,
           chain,
-          hardwareSourcePublicKey: c.hardwareSourcePublicKey
+          hardwareSourcePublicKey: c.hardwareSourcePublicKey,
+          clientDerivedPublicKey: c.clientDerivedPublicKey
         },
         (err, wallet) => {
           if (err) return cb(err);
@@ -2806,7 +2812,8 @@ export class API extends EventEmitter {
         network: opts.network,
         account: opts.account,
         n: opts.n,
-        use0forBCH: opts.use0forBCH // only used for server assisted import
+        use0forBCH: opts.use0forBCH, // only used for server assisted import
+        algo: opts.algo
       });
 
       if (copayerIdAlreadyTested[c.copayerId + ':' + opts.n]) {
@@ -2831,6 +2838,7 @@ export class API extends EventEmitter {
         ['eth', 'base', 'livenet'],
         ['eth', 'op', 'livenet'],
         ['xrp', 'xrp', 'livenet'],
+        ['sol', 'sol', 'livenet'],
         ['doge', 'doge', 'livenet'],
         ['ltc', 'ltc', 'livenet'],
         ['btc', 'btc', 'livenet', true],
@@ -2868,7 +2876,8 @@ export class API extends EventEmitter {
           network: opt[2],
           account: 0,
           n: opt[3] ? 2 : 1,
-          use0forBCH: opt[4]
+          use0forBCH: opt[4],
+          algo: opt[5],
         };
         generateCredentials(key, optsObj);
       }
@@ -3122,6 +3131,7 @@ export class API extends EventEmitter {
                 { chain: 'arb', tokenAddresses: wallet.status.preferences.arbTokenAddresses, multisigInfo: wallet.status.preferences.multisigArbInfo, tokenOpts: Constants.ARB_TOKEN_OPTS, tokenUrlPath: 'arb' },
                 { chain: 'op', tokenAddresses: wallet.status.preferences.opTokenAddresses, multisigInfo: wallet.status.preferences.multisigOpInfo, tokenOpts: Constants.OP_TOKEN_OPTS, tokenUrlPath: 'op' },
                 { chain: 'base', tokenAddresses: wallet.status.preferences.baseTokenAddresses, multisigInfo: wallet.status.preferences.multisigBaseInfo, tokenOpts: Constants.BASE_TOKEN_OPTS, tokenUrlPath: 'base' },
+                { chain: 'sol', tokenAddresses: wallet.status.preferences.solTokenAddresses, multisigInfo: wallet.status.preferences.multisigSolInfo, tokenOpts: Constants.SOL_TOKEN_OPTS, tokenUrlPath: 'sol' },
               ];
 
               for (let config of chainConfigurations) {

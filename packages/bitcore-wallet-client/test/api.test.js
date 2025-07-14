@@ -636,6 +636,31 @@ describe('client API', function() {
           '0xec068504a817c80082520894a062a07a0a56beb2872b12f388f511d694626730870dd764300b80008081898080'
         ]);
       });
+      it('should build a sol txp correctly', () => {
+        const toAddress = 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY';
+        const from = '8WyoNvKsmfdG6zrbzNBVN8DETyLra3ond61saU9C52YR';
+        const txp = {
+          version: 3,
+          from: from,
+          coin: 'sol',
+          chain: 'sol',
+          outputs: [
+            {
+              toAddress: toAddress,
+              amount: 3896000000000000,
+            }
+          ],
+          fee: 5000,
+          blockHash: 'GtV1Hb3FvP3HURHAsj8mGwEqCumvP3pv3i6CVCzYNj3d',
+          blockHeight: 18446744,
+          amount: 389600000
+        };
+        var t = Utils.buildTx(txp);
+        const rawTxp = t.uncheckedSerialize();
+        rawTxp.should.deep.equal([
+          'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDb6/gH5XxrVl86CZd+DpqA1jN8YSz91e8yXxOlyeS8tLRnckLdZVIkhi0iAExccvYpTw5tIfPZ8z/OJGQtnvg9QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7A+XJrI4siFXUreDo+M94DBeuJwm0Oq5kHqeWuAw7xgBAgIAAQwCAAAAAIALMGTXDQA='
+        ]);
+      });
       it('should protect from creating excessive fee DOGE', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
@@ -1351,6 +1376,37 @@ describe('client API', function() {
         signatures[1].should.equal(
           '6b1494a6e8121215f40268f58b728585589c6933844b9bbcdae3fdd69be7c000d72c06143f554c5f9fd858a14e9d11cbb7c141901d8fc701c1f3c8c7328d6dc7'
         );
+      });
+
+      it('should sign SOL proposal correctly', () => {
+        const phrase = 'crush desk brain index action subject tackle idea trim unveil lawn live';
+        let k  = new Key({ seedData: phrase, seedType: 'mnemonic', algo: 'EDDSA'});
+        const toAddress = 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY';
+        const from = '7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hnD';
+        const txp = {
+          version: 3,
+          from: from,
+          coin: 'sol',
+          chain: 'sol',
+          outputs: [
+            {
+              toAddress: toAddress,
+              amount: 3896000000000000,
+            }
+          ],
+          fee: 5000,
+          blockHash: 'GtV1Hb3FvP3HURHAsj8mGwEqCumvP3pv3i6CVCzYNj3d',
+          blockHeight: 18446744,
+          amount: 389600000
+        };
+        const path = "m/44'/501'/0'";
+        k.sign(path, txp, undefined, (err, signatures) => {
+          should.not.exist(err);
+          signatures.length.should.be.equal(1);
+          signatures[0].should.equal(
+            '2Y17QoXHgW8zHHY9KSCYyYXaw5ZyNqYmSRndD3HReFyxQVNc8xtA1syZ8exEwAKH9NBNhz4FYZsraYX21oqM5T5Q'
+          );
+        });
       });
     });
   });
@@ -2406,6 +2462,9 @@ describe('client API', function() {
         clients[0].getMainAddresses({}, (err, addr) => {
           should.not.exist(err);
           addr.length.should.equal(2);
+          for(const a of addr) {
+            a.isChange?.should.not.equal(true);
+          }
           done();
         });
       });
@@ -3019,6 +3078,44 @@ describe('client API', function() {
                   });
                 }
               );
+            });
+          }
+        );
+      });
+    });
+
+    describe('SOL address creation', () => {
+      it('should be able to create address in 1-of-1 wallet', done => {
+        this.timeout(50000);
+        var xPriv =
+          'xprv9s21ZrQH143K3aKdQ6kXF1vj7R6LtkoLCiUXfM5bdbGXmhQkC1iXdnFfrxAAtaTunPUCCLwUQ3cpNixGLMbLAH1gzeCr8VZDe4gPgmKLb2X';
+        let k  = new Key({ seedData: xPriv, seedType: 'extendedPrivateKey', algo: 'EDDSA'});
+
+        clients[0].fromString(
+          k.createCredentials(null, {
+            coin: 'sol',
+            network: 'livenet',
+            account: 0,
+            n: 1
+          })
+        );
+        clients[0].createWallet(
+          'mywallet',
+          'creator',
+          1,
+          1,
+          {
+            network: 'livenet',
+            coin: 'sol',
+            singleAddress: true,
+            addressType: 'P2PKH'
+          },
+          err => {
+            should.not.exist(err);
+            clients[0].createAddress((err, res) => {
+              should.not.exist(err);
+              res.address.should.equal('7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hnD');
+              done(); 
             });
           }
         );
@@ -7272,7 +7369,7 @@ describe('client API', function() {
 
       it('should be able to gain access to a 1-1 wallet with just the xPriv', done => {
         helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
-          var xPrivKey = keys[0].get(null, true).xPrivKey;
+          var xPrivKey = keys[0].get(null).xPrivKey;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
           clients[0].createAddress((err, addr) => {

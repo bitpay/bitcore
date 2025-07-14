@@ -13,5 +13,8 @@ export const FEE_MINIMUMS = {
   },
   BASE: {
     priority: 1
+  },
+  SOL: {
+    priority: 0
   }
 };

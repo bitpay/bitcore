@@ -231,7 +231,14 @@ export const Defaults = {
         nbBlocks: 24,
         defaultValue: 10000
       }
-    ]
+    ],
+    sol: [
+      {
+        name: 'normal',
+        nbBlocks: 1,
+        defaultValue: 5000
+      }
+    ],
   },
 
   // How many levels to fallback to if the value returned by the network for a given nbBlocks is -1
@@ -273,10 +280,10 @@ export const Defaults = {
   BALANCE_CACHE_DURATION: 10,
 
   // Cache time for blockchain height (in ms)
-  // this is actually erased on 'new block' notifications
-  // so, 30m seems fine
-  BLOCKHEIGHT_CACHE_TIME: 30 * 60 * 1000,
-
+  BLOCKHEIGHT_CACHE_TIME: {
+    default: 30 * 60 * 1000, // this is erased on 'new block' notifications so, 30m seems fine
+    sol: 5 * 1000 // 5 seconds - Solana needs to maintain the freshes blockheight to land txs consistently
+  },
   // Cache time fee levels (in ms)
   FEE_LEVEL_CACHE_DURATION: 6 * 60 * 1000,
 
@@ -287,7 +294,7 @@ export const Defaults = {
   ONE_INCH_CACHE_DURATION: 1 * 60 * 1000,
 
   // Coingecko token rates cache duration (in ms)
-  COIN_GECKO_CACHE_DURATION: 5 * 60 * 1000,
+  COIN_GECKO_CACHE_DURATION: 1 * 24 * 60 * 60 * 1000,
 
   // Max allowed timespan for notification queries in seconds
   MAX_NOTIFICATIONS_TIMESPAN: 60 * 60 * 24 * 14, // ~ 2 weeks
@@ -357,7 +364,8 @@ export const Defaults = {
     op: 1000000000000, // 50 Gwei,
     xrp: 1000000000000,
     doge: 100000000 * 100,
-    ltc: 10000 * 1000 // 10k sat/b
+    ltc: 10000 * 1000, // 10k sat/b
+    sol: 15000 // Lamports per signature
   },
 
   MIN_TX_FEE: {
@@ -370,7 +378,8 @@ export const Defaults = {
     op: 0,
     xrp: 0,
     doge: 0,
-    ltc: 0
+    ltc: 0,
+    sol: 0,
   },
 
   MAX_TX_FEE: {
@@ -399,6 +408,9 @@ export const Defaults = {
 
   // XRP has a non-refundable mininum activation fee / balance
   MIN_XRP_BALANCE: 1000000,
+
+  // SOL has a non-refundable rent fee / balance
+  MIN_SOL_BALANCE: 1002240,
 
   // Time to get the latest push notification subscriptions. In ms.
   PUSH_NOTIFICATION_SUBS_TIME: 10 * 60 * 1000, // 10 min.

@@ -75,6 +75,7 @@ export class BlockchainMonitor {
             arb: {},
             base: {},
             op: {},
+            sol: {},
           };
 
           const chainNetworkPairs = [];
@@ -353,7 +354,7 @@ export class BlockchainMonitor {
               next(null, notification);
             });
           },
-          (notification, next) => {
+          (notification: Notification, next) => {
             this._storeAndBroadcastNotification(notification, next);
           }
         ],
@@ -400,7 +401,7 @@ export class BlockchainMonitor {
     }
   }
 
-  _storeAndBroadcastNotification(notification, cb?: () => void) {
+  _storeAndBroadcastNotification(notification: Notification, cb?: () => void) {
     this.storage.storeNotification(notification.walletId, notification, () => {
       this.messageBroker.send(notification);
       if (cb) return cb();

@@ -12,6 +12,7 @@ export interface IPreferences {
   opTokenAddresses?: string[];
   baseTokenAddresses?: string[];
   arbTokenAddresses?: string[];
+  solTokenAddresses?: string[];
   multisigMaticInfo: object[];
 }
 export class Preferences {
@@ -28,6 +29,7 @@ export class Preferences {
   opTokenAddresses: string[];
   baseTokenAddresses: string[];
   arbTokenAddresses: string[];
+  solTokenAddresses: string[];
   multisigMaticInfo: object[];
 
   static create(opts) {
@@ -48,6 +50,7 @@ export class Preferences {
     x.opTokenAddresses = opts.opTokenAddresses;
     x.baseTokenAddresses = opts.baseTokenAddresses;
     x.arbTokenAddresses = opts.arbTokenAddresses;
+    x.solTokenAddresses = opts.solTokenAddresses;
     x.multisigMaticInfo = opts.multisigMaticInfo;
     // you can't put useDust here since this is copayer's specific.
     return x;
@@ -69,6 +72,7 @@ export class Preferences {
     x.opTokenAddresses = obj.opTokenAddresses;
     x.baseTokenAddresses = obj.baseTokenAddresses;
     x.arbTokenAddresses = obj.arbTokenAddresses;
+    x.solTokenAddresses = obj.solTokenAddresses;
     x.multisigMaticInfo = obj.multisigMaticInfo;
     return x;
   }

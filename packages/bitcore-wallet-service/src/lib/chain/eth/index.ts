@@ -648,4 +648,8 @@ export class EthChain implements IChain {
   getReserve(server: WalletService, wallet: IWallet, cb: (err?, reserve?: number) => void) {
     return cb(null, 0);
   }
+
+  refreshTxData(_server: WalletService, txp, _opts, cb) {
+    return cb(null, txp);
+  }
 }

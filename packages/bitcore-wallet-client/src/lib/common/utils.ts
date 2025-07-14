@@ -26,7 +26,8 @@ const Bitcore_ = {
   op: Bitcore,
   xrp: Bitcore,
   doge: BitcoreLibDoge,
-  ltc: BitcoreLibLtc
+  ltc: BitcoreLibLtc,
+  sol: Bitcore
 };
 const PrivateKey = Bitcore.PrivateKey;
 const PublicKey = Bitcore.PublicKey;
@@ -181,16 +182,17 @@ export class Utils {
     network,
     chain,
     escrowInputs?,
-    hardwareSourcePublicKey?
+    hardwareSourcePublicKey?,
+    clientDerivedPublicKey?
   ) {
     $.checkArgument(Object.values(Constants.SCRIPT_TYPES).includes(scriptType));
-
-    if (hardwareSourcePublicKey) {
-      const bitcoreAddress = Deriver.getAddress(chain.toUpperCase(), network, hardwareSourcePublicKey, scriptType);
+    const externSourcePublicKey = hardwareSourcePublicKey || clientDerivedPublicKey;
+    if (externSourcePublicKey) {
+      const bitcoreAddress = Deriver.getAddress(chain.toUpperCase(), network, externSourcePublicKey, scriptType);
       return {
         address: bitcoreAddress.toString(),
         path,
-        publicKeys: [hardwareSourcePublicKey]
+        publicKeys: [externSourcePublicKey]
       }
     }
 
@@ -439,7 +441,7 @@ export class Utils {
 
       return t;
     } else {
-      // ETH ERC20 XRP
+      // ETH ERC20 XRP SOL
       const {
         data,
         destinationTag,
@@ -467,13 +469,14 @@ export class Utils {
       }
       const unsignedTxs = [];
       // If it is a token swap its an already created ERC20 transaction so we skip it and go directly to ETH transaction create
-      const isERC20 = tokenAddress && !payProUrl && !isTokenSwap;
+      const isToken = tokenAddress && !payProUrl && !isTokenSwap;
       const isMULTISIG = multisigContractAddress;
       const chainName = chain.toUpperCase();
+      const tokenType = chainName === 'SOL' ? 'SPL' : 'ERC20'
       const _chain = isMULTISIG
         ? chainName + 'MULTISIG'
-        : isERC20
-          ? chainName + 'ERC20'
+        : isToken
+          ? chainName + tokenType
           : chainName;
 
       if (multiSendContractAddress) {
@@ -503,11 +506,18 @@ export class Utils {
             ...recepient,
             tag: _tag ? Number(_tag) : undefined,
             chain: _chain,
-            nonce: Number(txp.nonce) + Number(index),
+            nonce: this.formatNonce(chainName, txp.nonce, index),
             recipients: [recepient]
           });
           unsignedTxs.push(rawTx);
         }
+      } else if (chainName === 'SOL') {
+        const rawTx = Transactions.create({
+          ...txp,
+          chain: _chain,
+          recipients,
+        });
+        unsignedTxs.push(rawTx);
       } else {
         for (let index = 0; index < recipients.length; index++) {
           const rawTx = Transactions.create({
@@ -515,13 +525,21 @@ export class Utils {
             ...recipients[index],
             tag: destinationTag ? Number(destinationTag) : undefined,
             chain: _chain,
-            nonce: Number(txp.nonce) + Number(index),
-            recipients: [recipients[index]]
+            nonce: this.formatNonce(chainName, txp.nonce, index),
+            recipients: [recipients[index]],
           });
           unsignedTxs.push(rawTx);
         }
       }
       return { uncheckedSerialize: () => unsignedTxs };
+    }
+  }
+
+  static formatNonce(chain, nonce, index) {
+    if (Constants.SVM_CHAINS.includes(chain.toLowerCase())) {
+      return nonce
+    } else {
+      return Number(nonce) + Number(index)
     }
   }
 

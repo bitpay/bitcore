@@ -33,6 +33,9 @@ export const Paths = {
   BASE: {
     default: "m/44'/60'/",
   },
+  SOL: {
+    default: "m/44'/501'/",
+  },
   default: {
     testnet: "m/44'/1'/"
   }
