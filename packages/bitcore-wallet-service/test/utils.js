@@ -1,10 +1,9 @@
 'use strict';
 
-var _ = require('lodash');
-var chai = require('chai');
-var sinon = require('sinon');
-var should = chai.should();
-var { Utils } = require('../ts_build/lib/common/utils');
+const chai = require('chai');
+const sinon = require('sinon');
+const should = chai.should();
+const { Utils } = require('../ts_build/lib/common/utils');
 const { logger } = require('../ts_build/lib/logger');
 
 describe('Utils', function() {
@@ -40,9 +39,9 @@ describe('Utils', function() {
         args: ['id', 'dummy'],
         check: ['dummy']
       },];
-      _.each(fixtures, function(f) {
+      for (const f of fixtures) {
         Utils.getMissingFields(obj, f.args).should.deep.equal(f.check);
-      });
+      }
     });
     it('should fail to check required fields on non-object', function() {
       var obj = 'dummy';
@@ -184,9 +183,9 @@ describe('Utils', function() {
         expected: '12 345,679',
       },];
 
-      _.each(cases, function(testCase) {
+      for (const testCase of cases) {
         Utils.formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
-      });
+      }
     });
   });
 
@@ -416,4 +415,42 @@ describe('Utils', function() {
     });
   });
 
+  describe('#difference', function() {
+    it('should return the diff', function() {
+      const res = Utils.difference([1, 2, 3], [1, 3, 4]);
+      res.should.deep.equal([2]);
+    });
+
+    it('should return copy of arr1 if arr2 is not given', function() {
+      const arr1 = [1, 2, 3];
+      const res = Utils.difference([1, 2, 3]);
+      res.should.deep.equal([1, 2, 3]);
+      (arr1 === res).should.be.false;
+    });
+
+    it('should return empty array if arr1 is not given', function() {
+      const res = Utils.difference(undefined, [1, 2, 3]);
+      res.should.deep.equal([]);
+    });
+
+    it('should return empty array if no params given', function() {
+      const res = Utils.difference();
+      res.should.deep.equal([]);
+    });
+
+    it('should return empty array if arr1 non-array is given', function() {
+      const res = Utils.difference(1);
+      res.should.deep.equal([]);
+    });
+
+    it('should return all arr1 elemnts if arr2 non-array is given', function() {
+      const res = Utils.difference([1, 2, 3], 1);
+      res.should.deep.equal([1, 2, 3]);
+    });
+
+    it('should return all arr1 elemnts if arr2 non-array is given', function() {
+      const res = Utils.difference([1, 2, 3], 1);
+      res.should.deep.equal([1, 2, 3]);
+    });
+  });
 });

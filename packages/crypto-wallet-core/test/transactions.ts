@@ -72,7 +72,7 @@ describe('Transaction Creation', () => {
     const uncompAddy = uncompPk.publicKey.toAddress();
     const compPk = new bitcoreLib.PrivateKey('86d32c754853c7d5788d101f0aa5c3ea4da69c0f42ffc3f7403aafba23112b0c');
     const compAddy = compPk.publicKey.toAddress();
-    
+
     const tx = new bitcoreLib.Transaction();
     const utxos = [{
       mintTxid: '643ec66d6c4cad4cbdb8ed2166b8078975e0af9bb7ff7e30d394f43b0d9f18ab',
@@ -783,6 +783,30 @@ describe('Transaction Creation', () => {
       '0200000002ab189f0d3bf494d3307effb79bafe0758907b86621edb8bd4cad4c6c6dc63e64010000006a47304402202eeb967801c0aad4f8241d8f90e2a9e2236f95c189165ba6b2ba4dc6b17bacbe02201b5d4dc0c32f6aa134d93698f85bf4c098d15fcbaada0b6ca2b8076fd8aa2741012102c8f8fa438666cbd287e28fb384b99555e4acce610e8141e887c9c458bba5db5cffffffffab189f0d3bf494d3307effb79bafe0758907b86621edb8bd4cad4c6c6dc63e64000000006a473044022072bdde2c0b413fc42d15d93e768a26f818dc5b225b9359235c09fd0452d6121a022007c00afa396d60d5b7919f2ba31e638817561cab4e2afed7a86dd636ee293c1001210321f2f13aed42db7257b64f77d574071a6e81e460ab3693eefb7482c12d1ff697ffffffff0200e1f505000000001976a914612fb4d5e27a28f5c54018d8948ca3a650741c4188acee152600000000001976a91486823ef7c8e210184cc8675189d37c4c9d8e1e0288ac00000000';
     expect(signed).to.eq(expected);
   });
+
+  it('should be able to create a livenet SOL tx', () => {
+    const rawMaticTx = {
+      network: 'livenet',
+      value: 3896000000000000,
+      to: 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY',
+      from: '8WyoNvKsmfdG6zrbzNBVN8DETyLra3ond61saU9C52YR',
+      category: 'transfer',
+      blockHash: 'GtV1Hb3FvP3HURHAsj8mGwEqCumvP3pv3i6CVCzYNj3d',
+      blockHeight: 531575,
+    };
+    const { value, to } = rawMaticTx;
+    const recipients = [{ address: to, amount: value }];
+    const cryptoTx = Transactions.create({
+      ...rawMaticTx,
+      chain: 'SOL',
+      recipients,
+    });
+    const expectedTx =
+      'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDb6/gH5XxrVl86CZd+DpqA1jN8YSz91e8yXxOlyeS8tLRnckLdZVIkhi0iAExccvYpTw5tIfPZ8z/OJGQtnvg9QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7A+XJrI4siFXUreDo+M94DBeuJwm0Oq5kHqeWuAw7xgBAgIAAQwCAAAAAIALMGTXDQA=';
+    expect(cryptoTx).to.equal(expectedTx);
+  });
+
+
 });
 
 describe('Transaction Sign', () => {
@@ -968,6 +992,19 @@ describe('Transaction Sign', () => {
     }).to.throw('invalid signature');
   });
 
+  it('should apply a signature to a SOL tx', () => {
+    const signedTx = Transactions.applySignature({
+      chain: 'SOL',
+      tx: 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDb6/gH5XxrVl86CZd+DpqA1jN8YSz91e8yXxOlyeS8tLRnckLdZVIkhi0iAExccvYpTw5tIfPZ8z/OJGQtnvg9QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7A+XJrI4siFXUreDo+M94DBeuJwm0Oq5kHqeWuAw7xgBAgIAAQwCAAAAAIALMGTXDQA=',
+      signature:
+        '6Gpk3UnfTPqUYZWXKR7T6bd5uiPLa4VE6SWFDsVc6QQVeb3F49AEtwjcwUdgpkFyaBQxDonBsA2o95JkjWx7pJ2D'
+    });
+
+    const expectedSignedTx =
+      'AQEHuvLKC5zGTnDCBktxvEi9i9zGnnucH5C+XcPYsQ1ysQ/rj7XnXUSLXUdxt6iJDp32SkOi2lLn0zEIqCW5RGQBAAEDb6/gH5XxrVl86CZd+DpqA1jN8YSz91e8yXxOlyeS8tLRnckLdZVIkhi0iAExccvYpTw5tIfPZ8z/OJGQtnvg9QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7A+XJrI4siFXUreDo+M94DBeuJwm0Oq5kHqeWuAw7xgBAgIAAQwCAAAAAIALMGTXDQA=';
+    expect(signedTx).to.equal(expectedSignedTx);
+  });
+
   it('should sign an MATIC tx', () => {
     const signedTx = Transactions.sign({
       chain: 'MATIC',
@@ -994,6 +1031,21 @@ describe('Transaction Sign', () => {
     });
     const expectedSignedTx =
       '120000228000000024000000012E0001E2405011101234567890123456789012345671012345678901234567890156789012345661400000000001E24068400000000000000C732103DBEEC5E9E76DA09C5B502A67136BC2D73423E8902A7C35A8CBC0C5A6AC0469E874473045022100D5C19360E77D691A11CA693F6E8D8472DA6749D16A06E072ED1110EB3FD9E2C80220169F95E55943C3575CEAA46413FE660E4F8F2E7158FAC235DC3CB9C9F26918098114A2C8E8CD9A9133CAD90F2668159AAF572612A5028314A2C8E8CD9A9133CAD90F2668159AAF572612A502';
+    expect(signedTx).to.equal(expectedSignedTx);
+  });
+
+  it('should sign a SOL tx', async () => {
+    const signedTx = await Transactions.sign({
+      chain: 'SOL',
+      tx:
+        'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDb6/gH5XxrVl86CZd+DpqA1jN8YSz91e8yXxOlyeS8tLRnckLdZVIkhi0iAExccvYpTw5tIfPZ8z/OJGQtnvg9QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7A+XJrI4siFXUreDo+M94DBeuJwm0Oq5kHqeWuAw7xgBAgIAAQwCAAAAAIALMGTXDQA=',
+      key: {
+        privKey: '2L4P42HQHDGBCvMpbtL1D5SQL5NJXqcz3pWNYSN8rjUP',
+        pubKey: '8WyoNvKsmfdG6zrbzNBVN8DETyLra3ond61saU9C52YR'
+      }
+    });
+    const expectedSignedTx =
+      'AQe68soLnMZOcMIGS3G8SL2L3Maee5wfkL5dw9ixDXKxD+uPteddRItdR3G3qIkOnfZKQ6LaUufTMQioJblEZAIBAAEDb6/gH5XxrVl86CZd+DpqA1jN8YSz91e8yXxOlyeS8tLRnckLdZVIkhi0iAExccvYpTw5tIfPZ8z/OJGQtnvg9QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7A+XJrI4siFXUreDo+M94DBeuJwm0Oq5kHqeWuAw7xgBAgIAAQwCAAAAAIALMGTXDQA=';
     expect(signedTx).to.equal(expectedSignedTx);
   });
 

@@ -49,7 +49,8 @@ export class Verifier {
       network,
       credentials.chain,
       escrowInputs,
-      credentials.hardwareSourcePublicKey
+      credentials.hardwareSourcePublicKey,
+      credentials.clientDerivedPublicKey
     );
     return (
       local.address == address.address &&
@@ -216,8 +217,13 @@ export class Verifier {
       ' Signature: ',
       txp.proposalSignature
     );
-    if (!Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey))
-      return false;
+  
+    const verified = Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey);
+    if (!verified && !txp.prePublishRaw)
+        return false;
+    
+    if (!verified && txp.prePublishRaw && !Utils.verifyMessage(txp.prePublishRaw, txp.proposalSignature, creatorSigningPubKey))
+        return false;
 
     if (Constants.UTXO_CHAINS.includes(chain)) {
       if (!this.checkAddress(credentials, txp.changeAddress)) {

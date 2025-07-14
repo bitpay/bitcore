@@ -6,6 +6,7 @@ import { IBtcTransaction, SpendOp, TransactionStorage } from '../../../src/model
 import { SpentHeightIndicators } from '../../../src/types/Coin';
 import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
+import { BitcoinTransaction } from '../../../src/types/namespaces/Bitcoin';
 
 function createNewTxid() {
   const seed = (Math.random() * 10000).toString();
@@ -156,7 +157,7 @@ describe('Coin Model', function() {
       .to('1Gokm82v6DmtwKEB8AiVhm82hyFSsEvBDK', 15000)
       .to('1Gokm82v6DmtwKEB8AiVhm82hyFSsEvBDK', 13000)
       .to('1Gokm82v6DmtwKEB8AiVhm82hyFSsEvBDK', 11000)
-      .sign(privateKey);
+      .sign(privateKey) as BitcoinTransaction;
 
     // import transaction in block 1
     await TransactionStorage.batchImport({
@@ -206,7 +207,7 @@ describe('Coin Model', function() {
     const tx2 = new BitcoreLib.Transaction()
       .from(utxo2)
       .to('bc1qm0jxvjvj6pzcc64lu4k7vccsg2x22pj60zke6c', 15000)
-      .sign(privateKey);
+      .sign(privateKey) as BitcoinTransaction;
 
     // import transaction in block 2
     await TransactionStorage.batchImport({

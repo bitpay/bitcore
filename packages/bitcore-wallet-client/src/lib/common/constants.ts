@@ -24,6 +24,18 @@ export const Constants = {
     REQUEST_KEY_AUTH: 'm/2' // relative to BASE
   },
   BIP45_SHARED_INDEX: 0x80000000 - 1,
+  CURVES: {
+    ED25519: 'ed25519',
+    SECP256K1: 'secp256k1',
+  },
+  ALGOS: {
+    EDDSA: 'EDDSA',
+    ECDSA: 'ECDSA'
+  },
+  CURVE_KEY: {
+    ED25519: 'ed25519',
+    BITCOIN: 'bitcoin',
+  },
 
   // there is no need to add new entries here ( only for backwards compatiblity )
   BITPAY_SUPPORTED_ETH_ERC20: [
@@ -41,14 +53,16 @@ export const Constants = {
     'usdt'
   ],
 
-  CHAINS: ['btc', 'bch', 'eth', 'matic', 'xrp', 'doge', 'ltc', 'arb', 'base', 'op'],
+  CHAINS: ['btc', 'bch', 'eth', 'matic', 'xrp', 'doge', 'ltc', 'arb', 'base', 'op', 'sol'],
   UTXO_CHAINS: ['btc', 'bch', 'doge', 'ltc'],
   EVM_CHAINS: ['eth', 'matic', 'arb', 'base', 'op'],
+  SVM_CHAINS: ['sol'],
   ETH_TOKEN_OPTS: CWC.Constants.ETH_TOKEN_OPTS,
   MATIC_TOKEN_OPTS: CWC.Constants.MATIC_TOKEN_OPTS,
   ARB_TOKEN_OPTS: CWC.Constants.ARB_TOKEN_OPTS,
   BASE_TOKEN_OPTS: CWC.Constants.BASE_TOKEN_OPTS,
   OP_TOKEN_OPTS: CWC.Constants.OP_TOKEN_OPTS,
+  SOL_TOKEN_OPTS: CWC.Constants.SOL_TOKEN_OPTS,
   UNITS: CWC.Constants.UNITS,
   EVM_CHAINSUFFIXMAP: {
     eth: 'e',

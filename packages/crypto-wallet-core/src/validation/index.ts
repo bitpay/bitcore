@@ -7,6 +7,7 @@ import { EthValidation } from './eth';
 import { LtcValidation } from './ltc';
 import { MaticValidation } from './matic';
 import { OpValidation } from './op';
+import { SolValidation } from './sol';
 import { XrpValidation } from './xrp';
 
 export interface IValidation {
@@ -24,7 +25,8 @@ const validation: { [chain: string]: IValidation } = {
   MATIC: new MaticValidation(),
   ARB: new ArbValidation(),
   BASE: new BaseValidation(),
-  OP: new OpValidation()
+  OP: new OpValidation(),
+  SOL: new SolValidation(),
 };
 
 export class ValidationProxy {

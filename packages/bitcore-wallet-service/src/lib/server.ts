@@ -64,7 +64,8 @@ const Bitcore_ = {
   op: Bitcore,
   xrp: Bitcore,
   doge: require('bitcore-lib-doge'),
-  ltc: require('bitcore-lib-ltc')
+  ltc: require('bitcore-lib-ltc'),
+  sol: Bitcore,
 };
 
 const Utils = Common.Utils;
@@ -560,6 +561,7 @@ export class WalletService implements IWalletService {
    * @param {number} opts.n - Total copayers.
    * @param {string} opts.pubKey - Public key to verify copayers joining have access to the wallet secret.
    * @param {string} opts.hardwareSourcePublicKey - public key from a hardware device for this copayer
+   * @param {string} opts.clientDerivedPublicKey - public key from the client for this walet
    * @param {string} opts.singleAddress[=false] - The wallet will only ever have one address.
    * @param {string} opts.coin[='btc'] - The coin for this wallet (btc, bch, eth, doge, ltc).
    * @param {string} opts.chain[='btc'] - The chain for this wallet (btc, bch, eth, doge, ltc).
@@ -681,6 +683,7 @@ export class WalletService implements IWalletService {
             nativeCashAddr: opts.nativeCashAddr,
             usePurpose48: opts.n > 1 && !!opts.usePurpose48,
             hardwareSourcePublicKey: opts.hardwareSourcePublicKey,
+            clientDerivedPublicKey: opts.clientDerivedPublicKey
           });
           this.storage.storeWallet(wallet, err => {
             this.logd('Wallet created', wallet.id, opts.network);
@@ -985,6 +988,7 @@ export class WalletService implements IWalletService {
       copayerIndex: wallet.copayers.length,
       xPubKey: opts.xPubKey,
       hardwareSourcePublicKey: opts.hardwareSourcePublicKey,
+      clientDerivedPublicKey: opts.clientDerivedPublicKey,
       requestPubKey: opts.requestPubKey,
       signature: opts.copayerSignature,
       customData: opts.customData,
@@ -1137,6 +1141,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.name - The copayer name.
    * @param {string} opts.xPubKey - Extended Public Key for this copayer
    * @param {string} opts.hardwareSourcePublicKey - public key from a hardware device for this copayer
+   * @param {string} opts.clientDerivedPublicKey - public key from the client for this wallet
    * @param {string} opts.requestPubKey - Public Key used to check requests from this copayer.
    * @param {string} opts.copayerSignature - S(name|xPubKey|requestPubKey). Used by other copayers to verify that the copayer joining knows the wallet secret.
    * @param {string} opts.customData - (optional) Custom data for this copayer.
@@ -1153,7 +1158,7 @@ export class WalletService implements IWalletService {
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
 
     let xPubKey;
-    if (!opts.hardwareSourcePublicKey) {
+    if (!opts.hardwareSourcePublicKey && !opts.clientDerivedPublicKey) {
       if (!checkRequired(opts, ['xPubKey'], cb)) return;
       try {
         xPubKey = Bitcore_[opts.chain].HDPublicKey(opts.xPubKey);
@@ -1171,7 +1176,7 @@ export class WalletService implements IWalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
-        if (opts.hardwareSourcePublicKey) {
+        if (opts.hardwareSourcePublicKey || opts.clientDerivedPublicKey) {
           this._addCopayerToWallet(wallet, opts, cb);
           return;
         }
@@ -1254,6 +1259,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.opTokenAddresses - Linked token addresses
    * @param {string} opts.baseTokenAddresses - Linked token addresses
    * @param {string} opts.arbTokenAddresses - Linked token addresses
+   * @param {string} opts.solTokenAddresses - Linked token addresses
    * @param {string} opts.multisigMaticInfo - Linked multisig eth wallet info
    *
    */
@@ -1327,6 +1333,12 @@ export class WalletService implements IWalletService {
           return Array.isArray(value) && value.every(x => Validation.validateAddress('arb', 'mainnet', x));
         }
       },
+      {
+        name: 'solTokenAddresses',
+        isValid(value) {
+          return Array.isArray(value) && value.every(x => Validation.validateAddress('sol', 'mainnet', x));
+        }
+      },
     ];
 
     opts = _.pick(opts, preferences.map(p => p.name));
@@ -1356,7 +1368,7 @@ export class WalletService implements IWalletService {
       }
 
       this._runLocked(cb, cb => {
-        this.storage.fetchPreferences(this.walletId, this.copayerId, (err, oldPref) => {
+        this.storage.fetchPreferences<Preferences>(this.walletId, this.copayerId, (err, oldPref) => {
           if (err) return cb(err);
 
           const newPref = Preferences.create({
@@ -1367,20 +1379,20 @@ export class WalletService implements IWalletService {
 
           // merge eth tokenAddresses
           if (opts.tokenAddresses) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.tokenAddresses = oldPref.tokenAddresses || [];
             preferences.tokenAddresses = _.uniq(oldPref.tokenAddresses.concat(opts.tokenAddresses));
           }
 
           // merge eth multisigEthInfo
           if (opts.multisigEthInfo) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.multisigEthInfo = oldPref.multisigEthInfo || [];
 
             preferences.multisigEthInfo = _.uniq(
-              oldPref.multisigEthInfo.concat(opts.multisigEthInfo).reduce((x, y) => {
+              oldPref.multisigEthInfo.concat(opts.multisigEthInfo).reduce((x: any[], y: any) => {
                 let exists = false;
-                x.forEach(e => {
+                for (let e of x) {
                   // add new token addresses linked to the multisig wallet
                   if (e.multisigContractAddress === y.multisigContractAddress) {
                     e.tokenAddresses = e.tokenAddresses || [];
@@ -1388,49 +1400,55 @@ export class WalletService implements IWalletService {
                     e = Object.assign(e, y);
                     exists = true;
                   }
-                });
+                }
                 return exists ? x : [...x, y];
-              }, [])
+              }, []) as object[]
             );
           }
 
           // merge matic tokenAddresses
           if (opts.maticTokenAddresses) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.maticTokenAddresses = oldPref.maticTokenAddresses || [];
             preferences.maticTokenAddresses = _.uniq(oldPref.maticTokenAddresses.concat(opts.maticTokenAddresses));
           }
 
           // merge op tokenAddresses
           if (opts.opTokenAddresses) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.opTokenAddresses = oldPref.opTokenAddresses || [];
             preferences.opTokenAddresses = _.uniq(oldPref.opTokenAddresses.concat(opts.opTokenAddresses));
           }
 
           // merge base tokenAddresses
           if (opts.baseTokenAddresses) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.baseTokenAddresses = oldPref.baseTokenAddresses || [];
             preferences.baseTokenAddresses = _.uniq(oldPref.baseTokenAddresses.concat(opts.baseTokenAddresses));
           }
 
           // merge arb tokenAddresses
           if (opts.arbTokenAddresses) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.arbTokenAddresses = oldPref.arbTokenAddresses || [];
             preferences.arbTokenAddresses = _.uniq(oldPref.arbTokenAddresses.concat(opts.arbTokenAddresses));
           }
 
+          if (opts.solTokenAddresses) {
+            oldPref = oldPref || {} as Preferences;
+            oldPref.solTokenAddresses = oldPref.solTokenAddresses || [];
+            preferences.solTokenAddresses = _.uniq(oldPref.solTokenAddresses.concat(opts.solTokenAddresses));
+          }
+
           // merge matic multisigMaticInfo
           if (opts.multisigMaticInfo) {
-            oldPref = oldPref || {};
+            oldPref = oldPref || {} as Preferences;
             oldPref.multisigMaticInfo = oldPref.multisigMaticInfo || [];
 
             preferences.multisigMaticInfo = _.uniq(
-              oldPref.multisigMaticInfo.concat(opts.multisigMaticInfo).reduce((x, y) => {
+              oldPref.multisigMaticInfo.concat(opts.multisigMaticInfo).reduce((x: any[], y: any) => {
                 let exists = false;
-                x.forEach(e => {
+                for (let e of x) {
                   // add new token addresses linked to the multisig wallet
                   if (e.multisigContractAddress === y.multisigContractAddress) {
                     e.maticTokenAddresses = e.maticTokenAddresses || [];
@@ -1438,9 +1456,9 @@ export class WalletService implements IWalletService {
                     e = Object.assign(e, y);
                     exists = true;
                   }
-                });
+                }
                 return exists ? x : [...x, y];
-              }, [])
+              }, []) as object[]
             );
           }
           this.storage.storePreferences(preferences, err => {
@@ -2065,7 +2083,7 @@ export class WalletService implements IWalletService {
           if (feePerKb < 0) failed.push(p);
 
           // NOTE: ONLY BTC/BCH/DOGE/LTC expect feePerKb to be Bitcoin amounts
-          // others... expect wei.
+          // EVM expects wei, Solana expects Lamports.
 
           return ChainService.convertFeePerKb(chain, p, feePerKb);
         })
@@ -2546,6 +2564,17 @@ export class WalletService implements IWalletService {
    * @param {number} opts.gasLimitBuffer - Optional. Percentage of buffer to add to the gasLimit
    * @param {number} opts.priorityFeePercentile - Optional. Percentile of targeted priority fee rate
    * @param {Boolean} opts.multiTx - Optional. Proposal will create multiple transactions
+   * @param {string} opts.blockHash - Optional. Recent Solana Blockhash
+   * @param {number} opts.blockHeight - Optional.  Recent Solana Slot
+   * @param {string} opts.nonceAddress - Optional. Address of the senders nonceAccount
+   * @param {string} opts.category - Optional. Type transaction [treansfer (default*), create account, create spl account )
+   * @param {Object} opts.fromKeyPair - Optional. Keypair to create an account
+   * @param {number} opts.priorityFee - Optional. Percentile of targeted priority fee rate
+   * @param {number} opts.computeUnits - Optional. Amount of allocated compute units
+   * @param {string} opts.memo - Optional. Solana transaction memo
+   * @param {number} opts.decimals - Optional. Numbet of decimal of a desited token
+   * @param {string} opts.fromAta - Optional. ATA addres of the sender (Solana)
+   * @param {Boolean} opts.refreshOnPublish - Optional. Allows publish function to refresh txp data
    * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
    */
   createTx(opts, cb) {
@@ -2621,7 +2650,8 @@ export class WalletService implements IWalletService {
                   next();
                 },
                 async next => {
-                  if (!opts.nonce) {
+                  // SOL is skipped since its a non necessary field that is expected to be provided by the client.
+                  if (!opts.nonce && !Constants.SVM_CHAINS[wallet.chain.toUpperCase()]) { 
                     try {
                       opts.nonce = await ChainService.getTransactionCount(this, wallet, opts.from);
                     } catch (error) {
@@ -2629,6 +2659,19 @@ export class WalletService implements IWalletService {
                     }
                   }
                   return next();
+                },
+                async next => {
+                  if (Constants.SVM_CHAINS[wallet.chain.toUpperCase()] && !opts.nonceAddress) { 
+                    this._getBlockchainHeight(wallet.chain, wallet.network, (err, height, hash) => {
+                      if (err) return next(err);
+                      opts.blockHeight = height;
+                      opts.blockHash = hash;
+                      opts.refreshOnPublish = true;
+                      return next();
+                    });
+                  } else {
+                    return next();
+                  }
                 },
                 async next => {
                   opts.signingMethod = opts.signingMethod || 'ecdsa';
@@ -2697,7 +2740,18 @@ export class WalletService implements IWalletService {
                       isTokenSwap: opts.isTokenSwap,
                       enableRBF: opts.enableRBF,
                       replaceTxByFee: opts.replaceTxByFee,
-                      multiTx: opts.multiTx
+                      multiTx: opts.multiTx,
+                      blockHash: opts.blockHash,
+                      blockHeight: opts.blockHeight,
+                      nonceAddress: opts.nonceAddress,
+                      category: opts.category,
+                      fromKeyPair: opts.fromKeyPair,
+                      priorityFee: opts.priorityFee,
+                      computeUnits: opts.computeUnits,
+                      memo: opts.memo,
+                      fromAta: opts.fromAta,
+                      decimals: opts.decimals,
+                      refreshOnPublish: opts.refreshOnPublish
                     };
                     txp = TxProposal.create(txOpts);
                     next();
@@ -2809,7 +2863,7 @@ export class WalletService implements IWalletService {
         this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
           if (err) return cb(err);
           if (!txp) return cb(Errors.TX_NOT_FOUND);
-          if (!txp.isTemporary()) return cb(null, txp);
+          if (!txp.isTemporary() && !txp.isRepublishEnabled()) return cb(null, txp);
 
           const copayer = wallet.getCopayer(this.copayerId);
 
@@ -2819,11 +2873,18 @@ export class WalletService implements IWalletService {
           } catch (ex) {
             return cb(ex);
           }
-          const signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
-          if (!signingKey) {
-            return cb(new ClientError('Invalid proposal signature'));
-          }
 
+          let signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
+          if (!signingKey) {
+            // If the txp has been published previously, we will verify the signature against the previously published raw tx
+            if (txp.isRepublishEnabled() && txp.prePublishRaw) {
+              raw = txp.prePublishRaw;
+              signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
+            }
+            if (!signingKey) {
+              return cb(new ClientError('Invalid proposal signature'));
+            }
+          }
           // Save signature info for other copayers to check
           txp.proposalSignature = opts.proposalSignature;
           if (signingKey.selfSigned) {
@@ -2834,15 +2895,22 @@ export class WalletService implements IWalletService {
           ChainService.checkTxUTXOs(this, txp, opts, err => {
             if (err) return cb(err);
             txp.status = 'pending';
-            this.storage.storeTx(this.walletId, txp, err => {
+            ChainService.refreshTxData(this, txp, opts, (err, txp) => {
               if (err) return cb(err);
-
-              this._notifyTxProposalAction('NewTxProposal', txp, () => {
-                if (txp.coin == 'bch' && txp.changeAddress) {
-                  const format = opts.noCashAddr ? 'copay' : 'cashaddr';
-                  txp.changeAddress.address = BCHAddressTranslator.translate(txp.changeAddress.address, format);
-                }
-                return cb(null, txp);
+              if (txp.isRepublishEnabled() && !txp.prePublishRaw) {
+                // We save the original raw transaction for verification on republish
+                txp.prePublishRaw = raw;
+              }
+              this.storage.storeTx(this.walletId, txp, err => {
+                if (err) return cb(err);
+                const action = txp.isRepublishEnabled() && txp.prePublishRaw ? 'UpdatedTxProposal' : 'NewTxProposal';
+                this._notifyTxProposalAction(action, txp, () => {
+                  if (txp.coin == 'bch' && txp.changeAddress) {
+                    const format = opts.noCashAddr ? 'copay' : 'cashaddr';
+                    txp.changeAddress.address = BCHAddressTranslator.translate(txp.changeAddress.address, format);
+                  }
+                  return cb(null, txp);
+                });
               });
             });
           });
@@ -3104,6 +3172,7 @@ export class WalletService implements IWalletService {
               return cb(err);
             }
           }
+          
 
           const copayer = wallet.getCopayer(this.copayerId);
 
@@ -3625,8 +3694,9 @@ export class WalletService implements IWalletService {
 
   _getBlockchainHeight(chain, network, cb) {
     const cacheKey = Storage.BCHEIGHT_KEY + ':' + chain + ':' + network;
+    const cacheTime = Defaults.BLOCKHEIGHT_CACHE_TIME[chain.toLowerCase()] || Defaults.BLOCKHEIGHT_CACHE_TIME.default;
 
-    this.storage.checkAndUseGlobalCache(cacheKey, Defaults.BLOCKHEIGHT_CACHE_TIME, (err, values) => {
+    this.storage.checkAndUseGlobalCache(cacheKey, cacheTime, (err, values) => {
       if (err) return cb(err);
 
       if (values) return cb(null, values.current, values.hash, true);
@@ -4564,7 +4634,7 @@ export class WalletService implements IWalletService {
     for (const isChange of [false, true]) {
       derivators.push({
         id: wallet.addressManager.getBaseAddressPath(isChange),
-        derive: () => wallet.createAddress(isChange, step, null),
+        derive: () => wallet.createAddress(isChange, step),
         index: () => wallet.addressManager.getCurrentIndex(isChange),
         rewind: (n) => wallet.addressManager.rewindIndex(isChange, step, n),
         getSkippedAddress: () => wallet.getSkippedAddress()
@@ -5161,11 +5231,49 @@ export class WalletService implements IWalletService {
     });
   }
 
+  moralisGetSolWalletPortfolio(req): Promise<any> {
+    return new Promise(async (resolve, reject) => {
+      let network;
+      const chain = req.body.network ?? req.body.chain ?? undefined;
+
+      const formattedChain = typeof chain === 'number' && Number.isInteger(chain)
+        ? `0x${chain.toString(16)}`
+        : chain;
+
+      switch (formattedChain) {
+        case '0x65':
+        case 'devnet':
+          network = 'devnet';
+          break;
+        case '0x66':
+        case 'testnet':
+          network = 'testnet';
+          break;
+        default:
+          network = 'mainnet';
+          break;
+      }
+
+      try {
+        // https://solana-gateway.moralis.io/account/:network/:address/portfolio
+        const response = await Moralis.SolApi.account.getPortfolio({
+          address: req.body.address,
+          network,
+        });
+
+        return resolve(response.raw ?? response);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
   private coinGeckoGetCredentials() {
     if (!config.coinGecko) throw new Error('coinGecko missing credentials');
 
     const credentials = {
       API: config.coinGecko.api,
+      API_KEY: config.coinGecko.apiKey,
     };
 
     return credentials;
@@ -5205,8 +5313,79 @@ export class WalletService implements IWalletService {
       );
     });
   }
-}
 
+  coinGeckoGetTokens(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const chain = req.params?.['chain'] || 'ethereum';
+      const cacheKey = `cgTokenList:${chain}`;
+      const credentials = this.coinGeckoGetCredentials();
+
+      this.storage.checkAndUseGlobalCache(cacheKey, Defaults.COIN_GECKO_CACHE_DURATION, (err, values, oldvalues) => {
+        if (err) logger.warn('Cache check failed', err);
+        if (values) return resolve(values);
+
+        const assetPlatformMap = {
+          eth: 'ethereum',
+          matic: 'polygon-pos',
+          pol: 'polygon-pos',
+          arb: 'arbitrum-one',
+          base: 'base',
+          op: 'optimistic-ethereum',
+          sol: 'solana',
+        };
+
+        const assetId = assetPlatformMap[chain];
+        if (!assetId) return reject(new Error(`Unsupported chain '${chain}'`));
+  
+        const URL: string = `${credentials.API}/v3/token_lists/${assetId}/all.json`;
+        const headers = {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'x-cg-pro-api-key': credentials.API_KEY
+        };
+
+        this.request.get(
+          URL,
+          {
+            headers,
+            json: true
+          },
+          (err, data) => {
+            const tokens = data?.body?.tokens;
+            const status = data?.body?.status;
+            if (err) {
+              logger.warn('An error occured while retrieving the token list', err);
+              if (oldvalues) {
+                logger.warn('Using old cached values');
+                return resolve(oldvalues);
+              }
+              return reject(err.body ?? err);
+            } else if (status?.error_code === 429 && oldvalues) {
+              return resolve(oldvalues);
+            } else {
+              if (!tokens) {
+                if (oldvalues) {
+                  logger.warn('No token list available... using old cached values');
+                  return resolve(oldvalues);
+                }
+                return reject(new Error(`Could not get tokens list. Code: ${status?.error_code}. Error: ${status?.error_message || 'Unknown error'}`));
+              }
+              const updatedTokens = tokens.map(token => {
+                if (token.logoURI?.includes('/thumb/')) {
+                  token.logoURI = token.logoURI.replace('/thumb/', '/large/');
+                }
+                return token;
+              });
+              this.storage.storeGlobalCache(cacheKey, updatedTokens, storeErr => {
+                if (storeErr) logger.warn('Could not cache token list', storeErr);
+                return resolve(updatedTokens);
+              });
+            }
+        });
+      });
+    });
+  }
+}
 
 export function checkRequired(obj, args, cb?: (e: any) => void) {
   const missing = Utils.getMissingFields(obj, args);

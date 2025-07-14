@@ -53,7 +53,8 @@ const TO_SAT = {
   'usdc': 1e6,
   'xrp': 1e6,
   'doge': 1e8,
-  'ltc': 1e8
+  'ltc': 1e8,
+  'sol': 1e9
 };
 
 const TOKENS = ['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'];
@@ -795,7 +796,7 @@ describe('Wallet service', function() {
       });
     });
 
-    for (const c of ['eth','xrp','matic','arb','base','op']) {
+    for (const c of ['eth','xrp','matic','arb','base','op','sol']) {
       it(`should  fail to create a multisig ${c}  wallet`, function(done) {
         var opts = {
           coin: c,

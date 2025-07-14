@@ -848,6 +848,10 @@ export class Wallet {
       return 0;
     }
   }
+
+  isMainnet() {
+    return this.network === 'mainnet' || this.network === 'livenet';
+  }
 }
 
 export const AddressTypes = {

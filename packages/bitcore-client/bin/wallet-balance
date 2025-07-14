@@ -26,7 +26,7 @@ async function main() {
   const { name, path, time, storageType, token: tokenName, account = 0, normalize } = program.opts();
   wallet = await Wallet.loadWallet({ name, path, storageType });
   const tokenObj = wallet.getTokenObj({ tokenName }); // null if no tokenName provided
-  const currencyObj = await utils.getCurrencyObj(wallet.chain, tokenObj?.address);
+  const currencyObj = await utils.getCurrencyObj(wallet.chain, tokenObj?.address, !wallet.isMainnet());
   const currency = currencyObj?.displayCode || tokenName || wallet.chain;
   const decimals = Number(tokenObj?.decimals || currencyObj?.decimals || 0);
   let accountAddress;

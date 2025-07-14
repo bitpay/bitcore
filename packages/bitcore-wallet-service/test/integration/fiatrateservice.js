@@ -568,6 +568,16 @@ describe('Fiat rate service', function() {
           rate: 6.64
         }
       ];
+      var sol = [
+        {
+          code: 'USD',
+          rate: 150
+        },
+        {
+          code: 'EUR',
+          rate: 156
+        }
+      ];
 
       request.get
         .withArgs({
@@ -623,6 +633,12 @@ describe('Fiat rate service', function() {
           json: true
         })
         .yields(null, null, ape);
+      request.get
+        .withArgs({
+          url: 'https://bitpay.com/api/rates/SOL?p=bws',
+          json: true
+        })
+        .yields(null, null, sol);
       request.get
         .withArgs({
           url: 'https://bitpay.com/api/rates/WBTC?p=bws',
@@ -744,8 +760,19 @@ describe('Fiat rate service', function() {
                                                         should.not.exist(err);
                                                         res.fetchedOn.should.equal(100);
                                                         res.rate.should.equal(121);
-                                                        clock.restore();
-                                                        done();
+                                                        service.getRate(
+                                                          {
+                                                            code: 'USD',
+                                                            coin: 'sol'
+                                                          },
+                                                          function(err, res) {
+                                                            should.not.exist(err);
+                                                            res.fetchedOn.should.equal(100);
+                                                            res.rate.should.equal(150);
+                                                            clock.restore();
+                                                            done();
+                                                          }
+                                                        );
                                                       }
                                                     );
                                                   }

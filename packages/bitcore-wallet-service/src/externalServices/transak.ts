@@ -143,7 +143,7 @@ export class TransakService {
         Accept: 'application/json',
       };
 
-      let qs = [];
+      let qs: string[] = [];
       qs.push('partnerApiKey=' + API_KEY);
       qs.push('fiatCurrency=' + req.body.fiatCurrency);
       qs.push('cryptoCurrency=' + req.body.cryptoCurrency);
@@ -200,7 +200,7 @@ export class TransakService {
       'Content-Type': 'application/json'
     };
 
-    let qs = [];
+    let qs: string[] = [];
     // Recommended parameters to customize from the app
     if (req.body.walletAddress) qs.push('walletAddress=' + encodeURIComponent(req.body.walletAddress));
     if (req.body.disableWalletAddressForm) qs.push('disableWalletAddressForm=' + encodeURIComponent(req.body.disableWalletAddressForm));

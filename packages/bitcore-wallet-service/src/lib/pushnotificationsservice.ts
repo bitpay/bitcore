@@ -8,7 +8,7 @@ import config from '../config';
 import { Common } from './common';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
-import { INotification, IPreferences } from './model';
+import { INotification, IPreferences, Preferences } from './model';
 import { Storage } from './storage';
 
 const Mustache = require('mustache');
@@ -163,7 +163,7 @@ export class PushNotificationsService {
   _sendPushNotifications(notification, cb) {
     cb = cb || function() {};
 
-    const notifType = _.cloneDeep(PUSHNOTIFICATIONS_TYPES[notification.type]);
+    const notifType = _.cloneDeep(PUSHNOTIFICATIONS_TYPES[notification?.type]);
     if (!notifType) return cb();
 
     if (notification.type === 'NewIncomingTx') {
@@ -381,7 +381,7 @@ export class PushNotificationsService {
         }
       }
 
-      this.storage.fetchPreferences(notification.walletId, null, (err, preferences) => {
+      this.storage.fetchPreferences<Preferences[]>(notification.walletId, null, (err, preferences) => {
         if (err) logger.error('%o', err);
         if (_.isEmpty(preferences)) preferences = [];
 
@@ -487,7 +487,8 @@ export class PushNotificationsService {
       euroc: 'EUROC',
       usdt: 'USDT',
       weth: 'WETH',
-      'usdc.e': 'USDC.e'
+      'usdc.e': 'USDC.e',
+      sol: 'SOL'
     };
     const data = _.cloneDeep(notification.data);
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');
@@ -513,7 +514,10 @@ export class PushNotificationsService {
           } else if (Constants.BASE_TOKEN_OPTS[tokenAddress]) {
             unit = Constants.BASE_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
             label = UNIT_LABELS[unit];
-          } else {
+          } else if (Constants.SOL_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.SOL_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit];
+          }else {
             let customTokensData;
             try {
               customTokensData = await this.getTokenData(data.address.coin);
@@ -729,7 +733,7 @@ export class PushNotificationsService {
         };
         this.request(
           {
-            url: `${credentials.API}/v5.2/${chainIdMap[chain]}/tokens`,
+            url: `${credentials.API}/swap/v5.2/${chainIdMap[chain]}/tokens`,
             method: 'GET',
             json: true,
             headers: {

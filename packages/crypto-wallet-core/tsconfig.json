@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "lib": ["ES2020"],
+    "lib": ["ES2022", "DOM"],
     "noImplicitAny": false,
     "removeComments": true,
     "declaration": true,
@@ -10,7 +10,7 @@
     "experimentalDecorators": true,
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "target": "ES2020",
+    "target": "ES2022",
     "typeRoots": ["./node_modules/@types"],
     "baseUrl": ".",
     "paths": {
