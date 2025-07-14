@@ -3,8 +3,9 @@ import * as convert from './convert';
 import * as jsonStream from './jsonStream';
 import * as parseArgv from './parseArgv';
 import * as stats from './stats';
+import * as mergeWith from './mergeWith';
 
-export { auth, convert, jsonStream, parseArgv, stats };
+export { mergeWith, auth, convert, jsonStream, parseArgv, stats };
 
 export function overlaps(a?: Array<any>, b?: Array<any>): boolean {
   return !!a?.some((item) => b?.includes(item));
@@ -83,4 +84,50 @@ export function castToBool(input: any): boolean {
     return true;
   }
   return false;
+}
+
+/**
+ * Uses `iteratee` which on each element in `array` to generate the criterion by which
+ * uniqueness is computed. The iteratee is invoked with one argument: (value).
+ *
+ * @category Array
+ * @param array The array to inspect.
+ * @param iteratee The iteratee invoked per element.
+ * @returns Returns the new duplicate free array.
+ * @example
+ *
+ * uniqBy([2.1, 1.2, 2.3], Math.floor);
+ * // => [2.1, 1.2]
+ *
+ * // using the `_.property` iteratee shorthand
+ * uniqBy([{ 'x': 1 }, { 'x': 2 }, { 'x': 1 }], 'x');
+ * // => [{ 'x': 1 }, { 'x': 2 }]
+ */
+export function uniqBy(array: any, iteratee: any) {
+  return [...array.reduce((map, item) => {
+    const key = (item === null || item === undefined) ?
+      item : (typeof iteratee === 'function') ? iteratee(item) : item[iteratee];
+      
+    map.has(key) || map.set(key, item);
+
+    return map;
+  }, new Map()).values()];
+}
+
+/**
+ * Creates a duplicate-free version of an array, using
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/6.0/#sec-samevaluezero)
+ * for equality comparisons, in which only the first occurrence of each element
+ * is kept.
+ *
+ * @category Array
+ * @param array The array to inspect.
+ * @returns Returns the new duplicate free array.
+ * @example
+ *
+ * uniq([2, 1, 2]);
+ * // => [2, 1]
+ */
+export function uniq<T>(array: T[]): T[] {  
+  return [...new Set(array)];
 }

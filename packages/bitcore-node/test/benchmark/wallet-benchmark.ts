@@ -1,7 +1,7 @@
 import { Wallet } from 'bitcore-client';
-import * as _ from 'lodash';
 import { CoinStorage } from '../../src/models/coin';
 import { Storage } from '../../src/services/storage';
+import { uniq } from '../../src/utils';
 
 async function getAllAddressesFromBlocks(start, end) {
   if (!Storage.connected) await Storage.start({});
@@ -9,7 +9,7 @@ async function getAllAddressesFromBlocks(start, end) {
     .find({ chain: 'BTC', network: 'mainnet', mintHeight: { $gte: start, $lte: end } })
     .project({ address: 1 })
     .toArray();
-  const uniqueAddresses = _.uniq(coins.map(c => c.address));
+  const uniqueAddresses = uniq(coins.map(c => c.address));
   return uniqueAddresses;
 }
 
