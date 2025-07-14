@@ -1,5 +1,4 @@
 import * as crypto from 'crypto';
-import * as _ from 'lodash';
 import * as request from 'request';
 import config from '../config';
 import { ClientError } from '../lib/errors/clienterror';

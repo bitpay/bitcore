@@ -1,7 +1,6 @@
 import {
   Constants as ConstantsCWC,
 } from 'crypto-wallet-core';
-import * as _ from 'lodash';
 import * as request from 'request';
 import config from '../config';
 import { Defaults } from '../lib/common/defaults';
