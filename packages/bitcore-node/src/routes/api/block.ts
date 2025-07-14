@@ -158,29 +158,27 @@ router.get('/:blockId/fee', async function(req: Request, res: Response) {
   let feeRateSum = 0;
   let feeTotal = 0;
   const feeRates: number[] = [];
+  const freq = {};
+  let mode   = feeRates[0], maxCount = 1;
   for (const tx of transactions) {
     if (tx.fee && tx.size) { // does not add fee rate 0 or divide by zero
       const rate = tx.fee / tx.size;
       feeRates.push(rate);
       feeRateSum += rate;
       feeTotal += tx.fee;
+      
+      freq[rate] = (freq[rate] || 0) + 1;
+      if (freq[rate] > maxCount) {
+        mode = rate;
+        maxCount = freq[rate];
+      }
     }
   }
-  feeRates.sort((a, b) => a - b);
   const mean = feeRateSum / feeRates.length;
+  feeRates.sort((a, b) => a - b);
   const median = feeRates.length % 2 === 1
     ? feeRates[Math.floor(feeRates.length / 2)]
     : (feeRates[feeRates.length / 2 - 1] + feeRates[feeRates.length / 2]) / 2;
-  let mode = feeRates[0], maxCount = 1;
-  
-  const freq = {};
-  for (const rate of feeRates) {
-    freq[rate] = (freq[rate] || 0) + 1;
-    if (freq[rate] > maxCount) {
-      mode = rate;
-      maxCount = freq[rate];
-    }
-  }
 
   return res.json({ feeTotal, mean, median, mode });
 });
