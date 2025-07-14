@@ -19,7 +19,6 @@ export function shaHash(data, algo = 'sha256') {
 const SHA512 = data => shaHash(data, 'sha512');
 const SHA256 = data => shaHash(data, 'sha256');
 const algo = 'aes-256-cbc';
-const _ = require('lodash');
 
 export function encryptEncryptionKey(encryptionKey, password) {
   const password_hash = Buffer.from(SHA512(password));
