@@ -1,0 +1,1 @@
+{"version":3,"file":"joinMultiSig.d.ts","sourceRoot":"","sources":["../../../src/commands/join/joinMultiSig.ts"],"names":[],"mappings":"AAEA,OAAO,EAAE,WAAW,EAAE,MAAM,oBAAoB,CAAC;AAGjD,OAAO,EAAE,MAAM,EAAE,MAAM,cAAc,CAAC;AAEtC,wBAAsB,kBAAkB,CAAC,IAAI,EAAE;IAC7C,MAAM,EAAE,MAAM,CAAC;IACf,IAAI,EAAE,WAAW,GAAG;QAClB,QAAQ,CAAC,EAAE,MAAM,CAAC;KACnB,CAAA;CACF;;GA2BA"}
