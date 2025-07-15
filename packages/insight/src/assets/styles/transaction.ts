@@ -158,6 +158,7 @@ export const TransactionChip = styled.div<TransactionChipProps>`
 
 interface ArrowDivProps {
   margin: string;
+  pointer?: boolean;
 }
 
 export const ArrowDiv = styled.div<ArrowDivProps>`
@@ -165,9 +166,11 @@ export const ArrowDiv = styled.div<ArrowDivProps>`
   position: relative;
   margin: ${({margin}) => margin};
 
-  img {
-    cursor: pointer;
-  }
+  ${({pointer}) => pointer &&
+   `img {
+      cursor: pointer;
+    }
+  `}
 `;
 
 export const ScriptText = styled.p`

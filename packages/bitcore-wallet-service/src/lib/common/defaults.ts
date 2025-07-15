@@ -280,10 +280,10 @@ export const Defaults = {
   BALANCE_CACHE_DURATION: 10,
 
   // Cache time for blockchain height (in ms)
-  // this is actually erased on 'new block' notifications
-  // so, 30m seems fine
-  BLOCKHEIGHT_CACHE_TIME: 30 * 60 * 1000,
-
+  BLOCKHEIGHT_CACHE_TIME: {
+    default: 30 * 60 * 1000, // this is erased on 'new block' notifications so, 30m seems fine
+    sol: 5 * 1000 // 5 seconds - Solana needs to maintain the freshes blockheight to land txs consistently
+  },
   // Cache time fee levels (in ms)
   FEE_LEVEL_CACHE_DURATION: 6 * 60 * 1000,
 
@@ -294,7 +294,7 @@ export const Defaults = {
   ONE_INCH_CACHE_DURATION: 1 * 60 * 1000,
 
   // Coingecko token rates cache duration (in ms)
-  COIN_GECKO_CACHE_DURATION: 5 * 60 * 1000,
+  COIN_GECKO_CACHE_DURATION: 1 * 24 * 60 * 60 * 1000,
 
   // Max allowed timespan for notification queries in seconds
   MAX_NOTIFICATIONS_TIMESPAN: 60 * 60 * 24 * 14, // ~ 2 weeks

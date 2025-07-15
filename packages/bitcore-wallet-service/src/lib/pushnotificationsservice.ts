@@ -163,7 +163,7 @@ export class PushNotificationsService {
   _sendPushNotifications(notification, cb) {
     cb = cb || function() {};
 
-    const notifType = _.cloneDeep(PUSHNOTIFICATIONS_TYPES[notification.type]);
+    const notifType = _.cloneDeep(PUSHNOTIFICATIONS_TYPES[notification?.type]);
     if (!notifType) return cb();
 
     if (notification.type === 'NewIncomingTx') {
@@ -733,7 +733,7 @@ export class PushNotificationsService {
         };
         this.request(
           {
-            url: `${credentials.API}/v5.2/${chainIdMap[chain]}/tokens`,
+            url: `${credentials.API}/swap/v5.2/${chainIdMap[chain]}/tokens`,
             method: 'GET',
             json: true,
             headers: {
