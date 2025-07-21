@@ -6,6 +6,7 @@ import { ChainStateProvider } from '../../providers/chain-state';
 import { CacheTimes, Confirmations, SetCache } from '../middleware';
 
 const router = express.Router({ mergeParams: true });
+const feeCache = {};
 
 router.get('/', async function(req: Request, res: Response) {
   const { chain, network } = req.params;
@@ -152,14 +153,20 @@ router.get('/:blockId/fee', async function(req: Request, res: Response) {
   const transactions = blockId.length >= 64 
     ? await TransactionStorage.collection.find({ chain, network, blockHash: blockId }).toArray()
     : await TransactionStorage.collection.find({ chain, network, blockHeight: parseInt(blockId, 10) }).toArray();
-  if (transactions.length == 0)
+  if (transactions.length == 0) {
+    logger.error(`block not found with id ${blockId}`);
     return res.status(404).send(`block not found with id ${blockId}`);
-
+  }
+    
+  if (feeCache[blockId]) {
+    return res.send(feeCache[blockId]);
+  }
+    
   let feeRateSum = 0;
   let feeTotal = 0;
   const feeRates: number[] = [];
   const freq = {};
-  let mode   = feeRates[0], maxCount = 1;
+  let mode = 0, maxCount = 0;
   for (const tx of transactions) {
     if (tx.fee && tx.size) { // does not add fee rate 0 or divide by zero
       const rate = tx.fee / tx.size;
@@ -180,7 +187,8 @@ router.get('/:blockId/fee', async function(req: Request, res: Response) {
     ? feeRates[Math.floor(feeRates.length / 2)]
     : (feeRates[feeRates.length / 2 - 1] + feeRates[feeRates.length / 2]) / 2;
 
-  return res.json({ feeTotal, mean, median, mode });
+  feeCache[blockId] = { feeTotal, mean, median, mode };
+  return res.json(feeCache[blockId]);
 });
 
 module.exports = {
