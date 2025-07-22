@@ -1,6 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
 var async = require('async');
 
 var chai = require('chai');
