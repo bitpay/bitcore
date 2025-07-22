@@ -9,7 +9,7 @@ import { Storage } from './storage';
 class TssKeyGenClass {
    async getMessagesForParty(params: {
     id: string;
-    round: number | string;
+    round: number;
     copayerId: string;
   }): Promise<{
     messages?: ITssKeyMessageObject[];
@@ -33,18 +33,19 @@ class TssKeyGenClass {
     }
 
     const otherPartyMsgs = session.rounds[round].filter(m => m.fromPartyId != partyId);
-    // Only return message if all other parties have sent their messages
+    // Only return message if all other parties have sent their messages.
     // This is to prevent complexity in TSS session management when processing rounds. There's
     //   no value in partially processing rounds with missing messages and messages can't be
     //   re-processed, so it makes sense to only return messages when the round is complete.
-    if (otherPartyMsgs.length === session.n - 1) {
-      const messages = otherPartyMsgs.map(m => m.messages);
-      for (const m of messages) {
-        m.p2pMessages = m.p2pMessages.filter(m => m.to == partyId);
-      }
-      return { messages, publicKey: session.sharedPublicKey, hasKeyBackup: !!session.keyShares?.[partyId] };
+    if (otherPartyMsgs.length !== session.n - 1) {
+      return {};
     }
-    return {};
+
+    const messages = otherPartyMsgs.map(m => m.messages);
+    for (const m of messages) {
+      m.p2pMessages = m.p2pMessages.filter(m => m.to == partyId);
+    }
+    return { messages, publicKey: session.sharedPublicKey, hasKeyBackup: !!session.keyShares?.[partyId] };
   }
 
   async processMessage(params: { id: string; message: ITssKeyMessageObject; n?: string | number; password?: string; copayerId: string; }) {
@@ -52,7 +53,7 @@ class TssKeyGenClass {
     if (!id || typeof id !== 'string') {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid id provided: ' + id);
     }
-    if (typeof copayerId !== 'string') {
+    if (!copayerId || typeof copayerId !== 'string') {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid copayerId provided: ' + copayerId);
     }
 
@@ -270,7 +271,7 @@ class TssKeyGenClass {
 export const TssKeyGen = new TssKeyGenClass();
 
 class TssSignClass {
-  async getMessagesForParty(params: { id: string; round: number | string; copayerId: string; }): Promise<{ messages?: ITssSigMessageObject[]; signature?: ITssSigMessageObject['signature']; }> {
+  async getMessagesForParty(params: { id: string; round: number; copayerId: string; }): Promise<{ messages?: ITssSigMessageObject[]; signature?: ITssSigMessageObject['signature']; }> {
     const { id, round, copayerId } = params;
     
     const storage = WalletService.getStorage();
@@ -315,7 +316,7 @@ class TssSignClass {
         throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid message provided');
       }
   
-      const isParticipant = !!session.participants.find(p => p.copayerId === copayerId && p.partyId === message.partyId);
+      const isParticipant = session.participants.some(p => p.copayerId === copayerId && p.partyId === message.partyId);
       if (!isParticipant) {
         if (session.participants.length === session.m) {
           throw Errors.TSS_MAX_PARTICIPANTS_REACHED;

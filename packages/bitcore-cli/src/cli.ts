@@ -19,7 +19,7 @@ program
   .addHelpText('beforeAll', bitcoreLogo)
   .usage('<walletName> [options]')
   .description('A command line tool for Bitcore wallets')
-  .argument('<walletName>', 'Name of the wallet you want to create, join, or interact with')
+  .argument('<walletName>', 'Name of the wallet you want to create, join, or interact with. "list" to see all wallets in the specified directory', (value) => value.toLowerCase())
   .option('-d, --dir <directory>', 'Directory to look for the wallet', process.env['BITCORE_CLI_DIR'] || path.join(os.homedir(), '.wallets'))
   .option('-H, --host <host>', 'Bitcore Wallet Service base URL', process.env['BITCORE_CLI_HOST'] || 'http://localhost:3232')
   .option('-c, --command <command>', 'Run a specific command without entering the interactive CLI. Use "help" to see available commands', (value) => value.toLowerCase())
@@ -90,19 +90,21 @@ const wallet = new Wallet({
 wallet.getClient({
   mustExist: false
 }).then(async () => {
+  if (walletName === 'list') {
+    for (const file of fs.readdirSync(opts.dir)) {
+      if (file.endsWith('.json')) {
+        console.log(`- ${file.replace('.json', '')}`);
+      }
+    }
+    return;
+  }
+
   if (!wallet.client?.credentials) {
     prompt.intro(`No wallet found named ${Utils.colorText(walletName, 'orange')}`);
     const cmdParams = { wallet, opts: Object.assign({}, opts, { mnemonic: null }) };
     const action = opts.command || await prompt.select({
       message: 'What would you like to do?',
       options: [].concat(COMMANDS.NEW, COMMANDS.EXIT)
-      // [
-      //   { label: 'Create Wallet', value: 'create', hint: 'Create a fresh, new wallet (multi or single sig)' },
-      //   { label: 'Join Wallet', value: 'join', hint: 'Join an existing multi-sig wallet session' },
-      //   { label: 'Import Seed', value: 'import-seed', hint: 'Import using a 12-24 word mnemonic phrase' },
-      //   { label: 'Import File', value: 'import-file', hint: 'Import using a file' },
-      //   { label: 'Exit', value: 'exit', hint: 'Exit the wallet CLI' },
-      // ]
     });
     switch (action) {
       case 'create':
@@ -146,30 +148,6 @@ wallet.getClient({
         options: COMMANDS.EXISTS.map(cmd => ({ ...cmd, label: typeof cmd.label === 'function' ? cmd.label(ppNum) : cmd.label }))
           .concat(advancedActions ? COMMANDS.EXISTS_ADVANCED : [{ label: 'Show Advanced...', value: 'advanced', hint: 'Show advanced actions' }])
           .concat(COMMANDS.EXIT)
-        // [
-        //   { label: `Proposals${ppNum}`, value: 'txproposals', hint: 'Get pending transaction proposals' },
-        //   { label: 'Send', value: 'createtx', hint: 'Create a transaction to send funds' },
-        //   { label: 'Receive', value: 'address', hint: 'Get an address to receive funds to' },
-        //   { label: 'History', value: 'history', hint: 'Get the transaction history of your wallet' },
-        //   { label: 'Balance', value: 'balance', hint: 'Get the balance of your wallet' },
-        //   { label: 'Status', value: 'status', hint: 'Get the status of your wallet' },
-        // ].concat(
-        //   !advancedActions ? [
-        //     { label: 'Show Advanced...', value: 'advanced', hint: 'Show advanced actions' }
-        //   ] : [
-        //     // TODO: Add a separator for each section when clack supports it
-        //     // feature request here: https://github.com/bombshell-dev/clack/issues/197
-        //     { label: 'Addresses', value: 'addresses', hint: 'List all of your wallet\'s addresses' },
-        //     { label: 'UTXOs', value: 'utxos', hint: 'Get the unspent transaction outputs of your wallet' },
-        //     { label: 'Preferences', value: 'preferences', hint: 'Get or set wallet preferences' },
-        //     { label: 'Derive', value: 'derive', hint: 'Derive a key along a path you will specify' },
-        //     { label: 'Export', value: 'export', hint: 'Export the wallet to a file' },
-        //     { label: 'Scan', value: 'scan', hint: 'Scan the wallet for funds' },
-        //     { label: 'Register', value: 'register', hint: 'Register the wallet with the Bitcore Wallet Service' }
-        //   ]
-        // ).concat([
-        //   { label: 'Exit', value: 'exit', hint: 'Exit the wallet CLI' }
-        // ])
       });
 
       let action: string | symbol | undefined;

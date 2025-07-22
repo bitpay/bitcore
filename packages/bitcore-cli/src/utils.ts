@@ -15,15 +15,13 @@ export class Utils {
     _verbose = !!v;
   }
 
-  static die(err) {
+  static die(err?: string | Error) {
     if (err) {
       if (err instanceof Error && err.name === 'ExitPromptError') {
-        // Inquirer exit prompt error, just log and exit gracefully
+        // prompt exit error, just log and exit gracefully
         Utils.goodbye();
-      } else if (err.code === 'ECONNREFUSED') {
-        prompt.log.error('!! Could not connect to Bitcore Wallet Service');
       } else {
-        prompt.log.error('!! ' + (_verbose && err.stack ? err.stack : err.toString()));
+        prompt.log.error('!! ' + (_verbose && (err as Error).stack ? (err as Error).stack : err.toString()));
       }
       process.exit(1);
     }
@@ -327,5 +325,34 @@ export class Utils {
 
   static compactAddress(address: string) {
     return address.slice(0, 8) + '...' + address.slice(-8);
+  }
+
+  static formatDate(date: Date | number | string) {
+    if (!(date instanceof Date)) {
+      date = new Date(date);
+    }
+    const formatter = Intl.DateTimeFormat('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
+      hour: '2-digit',
+      hour12: false,
+      minute: '2-digit',
+      second: '2-digit',
+      timeZoneName: 'short',
+    });
+    return formatter.format(date).replace(/,/g, '');
+  }
+
+  static formatDateCompact(date: Date | number | string) {
+    if (!(date instanceof Date)) {
+      date = new Date(date);
+    }
+    const formatter = Intl.DateTimeFormat('en-US', {
+      dateStyle: 'short',
+      timeStyle: 'short'
+    });
+    return formatter.format(date).replace(/,/g, '');
   }
 };

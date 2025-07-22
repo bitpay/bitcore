@@ -1,6 +1,5 @@
 import * as prompt from '@clack/prompts';
 import { Status } from 'bitcore-wallet-client';
-import moment from 'moment';
 import os from 'os';
 import { ICliOptions } from '../../types/cli';
 import { Utils } from '../utils';
@@ -23,7 +22,7 @@ export async function walletStatus(args: {
   statusLines.push(`${w.coin.toUpperCase()} ${Utils.capitalize(w.network)}`);
   statusLines.push(`${w.m}-of-${w.n}${w.tssKeyId ? ' (TSS)' : ''}${w.singleAddress ? ' single-address' : ''} [${w.derivationStrategy} ${w.addressType}]`);
   statusLines.push(`Status: ${Utils.renderStatus(w.status)}`);
-  statusLines.push(`Created on: ${moment(w.createdOn * 1000)}`);
+  statusLines.push(`Created on: ${Utils.formatDate(w.createdOn * 1000)}`);
 
 
   if (w.status !== 'complete') {

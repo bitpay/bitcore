@@ -39,8 +39,8 @@ export interface IWallet<isSharedT = boolean> {
   singleAddress: boolean;
   status: string;
   publicKeyRing: Array<{ xPubKey: string; requestPubKey: string }>;
-  hardwareSourcePublicKey: string;
-  clientDerivedPublicKey: string;
+  hardwareSourcePublicKey?: string;
+  clientDerivedPublicKey?: string;
   addressIndex: number;
   copayers: Array<Copayer>;
   pubKey: string;
@@ -50,11 +50,11 @@ export interface IWallet<isSharedT = boolean> {
   derivationStrategy: string;
   addressType: string;
   addressManager: IAddressManager;
-  scanStatus: 'error' | 'success';
+  scanStatus?: 'error' | 'success';
   beRegistered: boolean; // Block explorer registered
-  beAuthPrivateKey2: string;
-  beAuthPublicKey2: string;
-  nativeCashAddr: boolean;
+  beAuthPrivateKey2?: string;
+  beAuthPublicKey2?: string;
+  nativeCashAddr?: boolean;
   isTestnet?: boolean;
   usePurpose48?: boolean;
   isShared?: isSharedT;
@@ -72,8 +72,8 @@ export class Wallet implements IWallet<() => boolean> {
   singleAddress: boolean;
   status: string;
   publicKeyRing: Array<{ xPubKey: string; requestPubKey: string }>;
-  hardwareSourcePublicKey: string;
-  clientDerivedPublicKey: string;
+  hardwareSourcePublicKey?: string;
+  clientDerivedPublicKey?: string;
   addressIndex: number;
   copayers: Array<Copayer>;
   pubKey: string;
@@ -83,11 +83,11 @@ export class Wallet implements IWallet<() => boolean> {
   derivationStrategy: string;
   addressType: string;
   addressManager: AddressManager;
-  scanStatus: 'error' | 'success';
+  scanStatus?: 'error' | 'success';
   beRegistered: boolean; // Block explorer registered
-  beAuthPrivateKey2: string;
-  beAuthPublicKey2: string;
-  nativeCashAddr: boolean;
+  beAuthPrivateKey2?: string;
+  beAuthPublicKey2?: string;
+  nativeCashAddr?: boolean;
   isTestnet?: boolean;
   usePurpose48?: boolean;
   scanning: boolean;

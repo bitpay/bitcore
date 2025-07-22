@@ -688,25 +688,8 @@ describe('client API', function() {
           addressType: 'P2PKH'
         };
 
-        // var x = Utils;
-
-        // x.newBitcoreTransaction = () => {
-        //   return {
-        //     from: sandbox.stub(),
-        //     to: sandbox.stub(),
-        //     change: sandbox.stub(),
-        //     outputs: [
-        //       {
-        //         satoshis: 1000
-        //       }
-        //     ],
-        //     fee: sandbox.stub()
-        //   };
-        // };
-
         var t = Utils.buildTx(txp);
         should.exist(t);
-        // x.newBitcoreTransaction = x;
       });
       it('should protect from creating excessive fee', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
@@ -733,27 +716,9 @@ describe('client API', function() {
           addressType: 'P2PKH'
         };
 
-        // var x = Utils;
-
-        // x.newBitcoreTransaction = () => {
-        //   return {
-        //     from: sandbox.stub(),
-        //     to: sandbox.stub(),
-        //     change: sandbox.stub(),
-        //     outputs: [
-        //       {
-        //         satoshis: 1000
-        //       }
-        //     ],
-        //     fee: sandbox.stub()
-        //   };
-        // };
-
         (() => {
           var t = Utils.buildTx(txp);
         }).should.throw('Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(chain) at buildTx');
-
-        // x.newBitcoreTransaction = x;
       });
       it('should build a tx with multiple outputs', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';

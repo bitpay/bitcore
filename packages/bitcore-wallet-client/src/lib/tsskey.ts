@@ -462,7 +462,7 @@ export class TssKeyGen extends EventEmitter {
    * - `tsskey` => TssKey: The TSS key is ready. Emits the key class object.
    * - `tsskeystored`: => void: The TSS pub key and keyshare backup has been stored on the server.
    * - `wallet` => any: The wallet has been created. Emits the wallet object.
-   * - `complete` => void: The key generation process (+ walle creation, if applicable) is complete. This is the final event emitted along the happy path.
+   * - `complete` => void: The key generation process (+ wallet creation, if applicable) is complete. This is the final event emitted along the happy path.
    * - `error` => Error: An error occurred during the process. Emits the error. Note that this will not stop the subscription.
    * @returns {NodeJS.Timeout} Subscription ID
    */
@@ -483,12 +483,13 @@ export class TssKeyGen extends EventEmitter {
     walletName?: string;
     /**
      * Name of the party/copayer. This is used to identify the party in the wallet (e.g. "Evan", "Sara Smith", etc.).
-     * Omit this if you do not wish to create/join the wallet at BWS after the key generation is complete.
+     * If given, the wallet will be automatically created/joined at BWS after the key generation is complete.
+     * Omit if you wish to only generate the TSS key and not create the wallet.
      */
     copayerName?: string;
     /**
      * Options to pass to createWallet() when the key generation is complete.
-     * Only provied by party 0 (the session initiator).
+     * Only provided by party 0 (the session initiator).
      */
     createWalletOpts?: CreateWalletOpts;
   } = {}): NodeJS.Timeout {

@@ -348,7 +348,7 @@ export class Credentials {
     }
 
     if (this.n != n && !opts.tssKeyId && !opts.allowOverwrite) {
-      // we always allow multisig n overwrite
+      // we always allow overwrite for multisig and tss
       if (this.n == 1 || n == 1) {
         throw new Error(`Bad number of copayers in addWalletInfo: this: ${this.n} got: ${n}`);
       }

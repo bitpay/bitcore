@@ -41,7 +41,7 @@ export class TssRouter {
           const secret = await TssKeyGen.getBwsJoinSecret({ id, copayerId });
           return res.json({ secret });
         }
-        const { messages, publicKey } = await TssKeyGen.getMessagesForParty({ id, round, copayerId });
+        const { messages, publicKey } = await TssKeyGen.getMessagesForParty({ id, round: parseInt(round), copayerId });
         return res.json({ messages, publicKey });
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
@@ -100,7 +100,7 @@ export class TssRouter {
       try {
         const { id, round } = req.params as { [key: string]: string };
         const copayerId = req.headers['x-identity'];
-        const { messages, signature } = await TssSign.getMessagesForParty({ id, round, copayerId });
+        const { messages, signature } = await TssSign.getMessagesForParty({ id, round: parseInt(round), copayerId });
         return res.json({ messages, signature });
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);

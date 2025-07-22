@@ -1,7 +1,6 @@
 import * as prompt from '@clack/prompts';
 import { Status, Txp } from 'bitcore-wallet-client';
 import fs from 'fs';
-import moment from 'moment';
 import os from 'os';
 import { ICliOptions } from '../../types/cli';
 import { UserCancelled } from '../errors';
@@ -53,7 +52,7 @@ export async function getTxProposals(args: {
       txp.nonce != null && lines.push(`Nonce: ${txp.nonce}`);
       lines.push(`Status: ${txp.status}`);
       lines.push(`Creator: ${txp.creatorName}`);
-      lines.push(`Created: ${moment(txp.createdOn * 1000)}`);
+      lines.push(`Created: ${Utils.formatDate(txp.createdOn * 1000)}`);
       txp.message && lines.push(`Message: ${txp.message}`);
 
       lines.push('---------------------------');
@@ -66,7 +65,7 @@ export async function getTxProposals(args: {
       if (txp.actions?.length) {
         lines.push('Actions:');
         lines.push(...txp.actions.map(a => {
-          return ` → ${a.copayerName}: ${a.type}${a.comment ? ` "${a.comment}"` : ''}${a.createdOn ? ` (${moment(a.createdOn * 1000)})` : ''}`;
+          return ` → ${a.copayerName}: ${a.type}${a.comment ? ` "${a.comment}"` : ''}${a.createdOn ? ` (${Utils.formatDate(a.createdOn * 1000)})` : ''}`;
         }));
         lines.push('---------------------------');
       }

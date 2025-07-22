@@ -8,6 +8,11 @@ import { error } from '../helpers';
 import { getCredentials, getMessage } from './authRequest';
 
 
+/**
+ * Middleware to authenticate TSS requests and attach the TSS session to the request.
+ * It checks if the request has valid credentials, verifies the signature,
+ * and retrieves the TSS session based on the request path.
+ */
 export function authTssRequest(opts?: Types.AuthRequestOpts): express.RequestHandler {
   opts = opts || {};
 

@@ -146,6 +146,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
   getCurrentRound(): number {
     const mostRecentRound = this.rounds.length - 1;
     if (this.rounds[mostRecentRound].length === this.n) {
+      // If the most recent round is done, return the next round
       return mostRecentRound + 1;
     }
     return mostRecentRound;

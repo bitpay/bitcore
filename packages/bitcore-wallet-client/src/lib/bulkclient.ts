@@ -98,10 +98,8 @@ export class BulkClient extends Request<Array<Credentials>> {
       let wallets = opts.wallets;
       if (wallets) {
         for (const copayerId of Object.keys(wallets)) {
-          if (wallets[copayerId].tokenAddresses) {
-            wallets[copayerId].tokenAddresses.forEach(address => {
-              qs.push(`${copayerId}:tokenAddress=` + address);
-            });
+          for (const address of wallets[copayerId].tokenAddresses || []) {
+            qs.push(`${copayerId}:tokenAddress=` + address);
           }
 
           if (wallets[copayerId].multisigContractAddress) {

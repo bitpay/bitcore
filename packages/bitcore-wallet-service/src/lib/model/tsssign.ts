@@ -113,7 +113,7 @@ export class TssSigGenModel implements ITssSigGenModel {
     return x;
   }
 
-  static fromObj(obj: ITssSigGenModel & { __v: number; }): TssSigGenModel {
+  static fromObj(obj: ITssSigGenModel): TssSigGenModel {
     const x = new TssSigGenModel();
     x.id = obj.id;
     x.schemeVersion = obj.schemeVersion;
@@ -128,6 +128,7 @@ export class TssSigGenModel implements ITssSigGenModel {
   getCurrentRound(): number {
     const mostRecentRound = this.rounds.length - 1;
     if (this.rounds[mostRecentRound].length === this.m) {
+      // If the most recent round is done, return the next round
       return mostRecentRound + 1;
     }
     return mostRecentRound;

@@ -5,9 +5,6 @@ import { Encryption } from '../src/lib/common/encryption';
 const should = chai.should();
 
 describe('Encryption', function() {
-  it('should encrypt ')
-
-
   it('should encrypt and decrypt object data with a password', function() {
     const password = 'testPassword';
     const data = { message: 'Hello, World!' };

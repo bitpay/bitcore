@@ -1,6 +1,5 @@
 import * as prompt from '@clack/prompts';
 import fs from 'fs';
-import moment from 'moment';
 import os from 'os';
 import path from 'path';
 import { ICliOptions } from '../../types/cli';
@@ -56,11 +55,8 @@ export async function getTxHistory(args: {
     const lines = [];
     let sum = 0;
     for (const tx of history) {
-      const timestamp = moment(tx.time * 1000);
-      let time = timestamp.toString();
-      if (compact) {
-        time = timestamp.format('YYYY-MM-DD HH:mm:ss');
-      }
+      const timestamp = new Date(tx.time * 1000);
+      const time = compact ? Utils.formatDateCompact(timestamp) : Utils.formatDate(timestamp);
       const txid = compact ? Utils.compactString(tx.txid) : tx.txid;
       const amount = Utils.renderAmount(tx.amount, wallet.client.credentials.coin, token);
       const confirmations = tx.confirmations || 0;

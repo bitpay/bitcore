@@ -30,7 +30,7 @@ function KDF(privateKey, publicKey) {
  * @param {PublicKey} params.publicKey Receipient's public key is used to encrypt the message.
  * @param {PrivateKey} params.privateKey Your private key is used to sign the payload.
  * @param {Buffer} [params.ivbuf] 16-byte initialization vector (IV) Buffer to be used in AES-CBC.
- *                    By default, `ivbuf` is randomly generated.
+ *                    By default, `ivbuf` is randomly generated. A specified `ivbuf` is prioritized over opts.deterministicIv.
  * @param {object} [params.opts] Options object. Every field is optional.
  * @param {boolean} [params.opts.noKey] Do not include pubkey in the output.
  * @param {boolean} [params.opts.shortTag] Use 4-byte tag instead of 32-byte. This must be communicated to the payload recipient.
@@ -50,10 +50,12 @@ function encrypt({ message, publicKey, privateKey, ivbuf, opts = {} }) {
   if (!Buffer.isBuffer(message)) {
     message = Buffer.from(message);
   }
-  if (opts.deterministicIv) {
-    ivbuf = Hash.sha256hmac(message, privateKey.toBuffer()).subarray(0, 16);
-  } else if (!ivbuf) {
-    ivbuf = crypto.randomBytes(16);
+  if (!ivbuf) {
+    if (opts.deterministicIv) {
+      ivbuf = Hash.sha256hmac(message, privateKey.toBuffer()).subarray(0, 16);
+    } else {
+      ivbuf = crypto.randomBytes(16);
+    }
   }
   if (!(publicKey instanceof PublicKey)) {
     publicKey = new PublicKey(publicKey);

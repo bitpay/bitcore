@@ -3,7 +3,7 @@ This document explains the specs for the client implementation of distributed _k
 
 
 ### Asynchronous DKG
-If the DKG ceremony is executed asynchronously (meaning all parties are not required to be online at the same time during the DKG), the `keyGen.export()` function should be used between each step to export the local session state. The session state should be securely stored and used with `KeyGen.restore()` for following steps.
+If the DKG ceremony is executed asynchronously (meaning all parties are not online at the same time during the DKG), the `keyGen.export()` function should be used between each step to export the local session state. The session state should be securely stored and used with `KeyGen.restore()` for following steps. See the `exportSession()` and `restoreSession()` methods in `bitcore-wallet-client/lib/tsskey.ts` for a reference.
 
 ### Flow Diagram
 ![DKG Flow](DKG-flow.png)

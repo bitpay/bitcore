@@ -86,17 +86,14 @@ export class Wallet {
     doNotComplete?: boolean
   }): Promise<ClientType> {
     const { mustBeNew, mustExist, doNotComplete } = args;
-    const opts = { walletId: this.walletId, mustBeNew, mustExist, doNotComplete };;
 
     this.client = new Client({
       baseUrl: url.resolve(this.host, '/bws/api'),
-      supportStaffWalletId: this.walletId,
-      timeout: 20 * 60 * 1000,
-      // timeout: 1000,
+      supportStaffWalletId: this.walletId
     });
 
     try {
-      const exists = await this.storage.exists();
+      const exists = this.storage.exists();
       if (exists && mustBeNew) {
         Utils.die(`File "${this.filename}" already exists.`);
       }

@@ -219,14 +219,12 @@ export class API extends EventEmitter {
         opts.timeSpan = interval + 1;
       }
 
-      let notifications;
-      try {
-        notifications = await this.getNotifications(opts);
-      } catch (err) {
+      const notifications = await this.getNotifications(opts).catch(err => {
         log.warn('Error receiving notifications.');
         log.debug(err);
         throw err;
-      }
+      });
+
       if (notifications.length > 0) {
         this.lastNotificationId = notifications.slice(-1)[0].id;
       }
@@ -300,7 +298,7 @@ export class API extends EventEmitter {
     }
 
     const encryptingKey = this.credentials.sharedEncryptingKey;
-    for (const note of notes as Array<Note>) {
+    for (const note of notes) {
       note.encryptedBody = note.body;
       note.body = Utils.decryptMessageNoThrow(note.body, encryptingKey);
       note.encryptedEditedByName = note.editedByName;
@@ -377,12 +375,8 @@ export class API extends EventEmitter {
         return testMessageSigning(xpriv, xpub);
       };
 
-      let hardcodedOk = true;
-      let _deviceValidated = false;
-      if (!opts.skipDeviceValidation) {
-        hardcodedOk = testHardcodedKeys();
-        _deviceValidated = true;
-      }
+      const hardcodedOk = opts.skipDeviceValidation ? true : testHardcodedKeys();
+      const _deviceValidated = !opts.skipDeviceValidation;
 
       // TODO
       //  var liveOk = (c.canSign() && !c.isPrivKeyEncrypted()) ? testLiveKeys() : true;
@@ -635,11 +629,7 @@ export class API extends EventEmitter {
         return true; // ?? TODO: should return status?
       }
 
-      const qs = [];
-      qs.push('includeExtendedInfo=1');
-      qs.push('serverMessageArray=1');
-
-      const { body: status } = await this.request.get('/v3/wallets/?' + qs.join('&'));
+      const { body: status } = await this.request.get('/v3/wallets/?includeExtendedInfo=1&serverMessageArray=1');
       const wallet = status.wallet;
       this._processStatus(status);
 
@@ -1075,7 +1065,7 @@ export class API extends EventEmitter {
         segwitVersion: opts.segwitVersion,
         allowOverwrite: !!opts.tssKeyId,
       });
-      let secret = API._buildSecret(
+      const secret = API._buildSecret(
         c.walletId,
         c.walletPrivKey,
         c.coin,
@@ -1142,8 +1132,8 @@ export class API extends EventEmitter {
 
       opts = opts || {};
 
-      var coin = opts.coin || 'btc';
-      var chain = opts.chain || coin;
+      const coin = opts.coin || 'btc';
+      const chain = opts.chain || coin;
 
       if (!Constants.CHAINS.includes(chain))
         throw new Error('Invalid chain');
@@ -1239,14 +1229,11 @@ export class API extends EventEmitter {
         args['supportBIP44AndP2PKH'] = supportBIP44AndP2PKH;
       }
 
-      let body;
-      try {
-        ({ body } = await this.request.post('/v2/wallets/', args));
-      } catch (err) {
+      const { body } = await this.request.post('/v2/wallets/', args).catch(err => {
         // return all errors. Can't call addAccess.
         log.info('openWallet error' + err);
         throw new Errors.WALLET_DOES_NOT_EXIST();
-      }
+      });
 
       if (!walletId) {
         walletId = body.walletId;
@@ -2398,7 +2385,6 @@ export class API extends EventEmitter {
     }
     try {
       $.checkState(this.credentials, 'Failed state: this.credentials at <broadcastRawTx()>');
-      $.checkArgument(cb);
 
       const { body: txid } = await this.request.post<typeof opts, string>('/v1/broadcast_raw/', opts);
       if (cb) { cb(null, txid); }
@@ -2436,83 +2422,82 @@ export class API extends EventEmitter {
         txp = await this._doBroadcast(txp);
         if (cb) { cb(null, txp); }
         return { txp };
-      } else {
-        const t = Utils.buildTx(txp);
-        const rawTxUnsigned = t.uncheckedSerialize();
-
-        this._applyAllSignatures(txp, t);
-
-        const chain = txp.chain || Utils.getChain(txp.coin); // getChain -> backwards compatibility
-        const currency = Utils.getCurrencyCodeFromCoinAndChain(txp.coin, chain);
-        const serializedTx = t.serialize({
-          disableSmallFees: true,
-          disableLargeFees: true,
-          disableDustOutputs: true
-        });
-        const unsignedTransactions = [];
-        const signedTransactions = [];
-
-        // Convert string to array if string
-        const unserializedTxs =
-          typeof rawTxUnsigned === 'string' ? [rawTxUnsigned] : rawTxUnsigned;
-        const serializedTxs =
-          typeof serializedTx === 'string' ? [serializedTx] : serializedTx;
-
-        const weightedSize = [];
-
-        let isSegwit =
-          (txp.coin == 'btc' || txp.coin == 'ltc') &&
-          (txp.addressType == 'P2WSH' || txp.addressType == 'P2WPKH');
-
-        let i = 0;
-        for (const unsigned of unserializedTxs) {
-          let size;
-          if (isSegwit) {
-            // we dont have a fast way to calculate weigthedSize`
-            size = Math.floor((txp.fee / txp.feePerKb) * 1000) - 10;
-          } else {
-            size = serializedTxs[i].length / 2;
-          }
-          unsignedTransactions.push({
-            tx: unsigned,
-            weightedSize: size
-          });
-          weightedSize.push(size);
-
-          i++;
-        }
-        i = 0;
-        for (const signed of serializedTxs) {
-          signedTransactions.push({
-            tx: signed,
-            weightedSize: weightedSize[i++],
-            escrowReclaimTx: txp.escrowReclaimTx
-          });
-        }
-        await PayProV2.verifyUnsignedPayment({
-          paymentUrl: txp.payProUrl,
-          chain,
-          currency,
-          unsignedTransactions
-        });
-          
-        const payProDetails = await PayProV2.sendSignedPayment({
-          paymentUrl: txp.payProUrl,
-          chain,
-          currency,
-          signedTransactions,
-          bpPartner: {
-            bp_partner: this.bp_partner,
-            bp_partner_version: this.bp_partner_version
-          }
-        });
-        if (payProDetails.memo) {
-          log.debug('Merchant memo:', payProDetails.memo);
-        }
-
-        if (cb) { cb(null, txp, payProDetails.memo); }
-        return { txp, memo: payProDetails.memo };
       }
+      const t = Utils.buildTx(txp);
+      const rawTxUnsigned = t.uncheckedSerialize();
+
+      this._applyAllSignatures(txp, t);
+
+      const chain = txp.chain || Utils.getChain(txp.coin); // getChain -> backwards compatibility
+      const currency = Utils.getCurrencyCodeFromCoinAndChain(txp.coin, chain);
+      const serializedTx = t.serialize({
+        disableSmallFees: true,
+        disableLargeFees: true,
+        disableDustOutputs: true
+      });
+      const unsignedTransactions = [];
+      const signedTransactions = [];
+
+      // Convert string to array if string
+      const unserializedTxs =
+        typeof rawTxUnsigned === 'string' ? [rawTxUnsigned] : rawTxUnsigned;
+      const serializedTxs =
+        typeof serializedTx === 'string' ? [serializedTx] : serializedTx;
+
+      const weightedSize = [];
+
+      let isSegwit =
+        (txp.coin == 'btc' || txp.coin == 'ltc') &&
+        (txp.addressType == 'P2WSH' || txp.addressType == 'P2WPKH');
+
+      let i = 0;
+      for (const unsigned of unserializedTxs) {
+        let size;
+        if (isSegwit) {
+          // we dont have a fast way to calculate weigthedSize`
+          size = Math.floor((txp.fee / txp.feePerKb) * 1000) - 10;
+        } else {
+          size = serializedTxs[i].length / 2;
+        }
+        unsignedTransactions.push({
+          tx: unsigned,
+          weightedSize: size
+        });
+        weightedSize.push(size);
+
+        i++;
+      }
+      i = 0;
+      for (const signed of serializedTxs) {
+        signedTransactions.push({
+          tx: signed,
+          weightedSize: weightedSize[i++],
+          escrowReclaimTx: txp.escrowReclaimTx
+        });
+      }
+      await PayProV2.verifyUnsignedPayment({
+        paymentUrl: txp.payProUrl,
+        chain,
+        currency,
+        unsignedTransactions
+      });
+        
+      const payProDetails = await PayProV2.sendSignedPayment({
+        paymentUrl: txp.payProUrl,
+        chain,
+        currency,
+        signedTransactions,
+        bpPartner: {
+          bp_partner: this.bp_partner,
+          bp_partner_version: this.bp_partner_version
+        }
+      });
+      if (payProDetails.memo) {
+        log.debug('Merchant memo:', payProDetails.memo);
+      }
+
+      if (cb) { cb(null, txp, payProDetails.memo); }
+      return { txp, memo: payProDetails.memo };
     } catch (err) {
       if (cb) cb(err);
       else throw err;
@@ -3283,7 +3268,7 @@ export class API extends EventEmitter {
     c.addressType = c.addressType || Constants.SCRIPT_TYPES.P2SH;
     c.account = c.account || 0;
     c.rootPath = c.getRootPath();
-    c.keyId = k ? k.id : undefined;
+    c.keyId = k?.id;
     return { key: k, credentials: c };
   }
 
@@ -3769,8 +3754,7 @@ export class API extends EventEmitter {
     };
 
     const id = Uuid.v4();
-    for (let i = 0; i < sets.length; i++) {
-      const set = sets[i];
+    for (const set of sets) {
       try {
         if (opts.words) {
           if (opts.passphrase) {
