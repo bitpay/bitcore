@@ -2,7 +2,7 @@
   "name": "bitcore-wallet-service",
   "description": "A service for Mutisig HD Bitcoin Wallets",
   "author": "BitPay Inc",
-  "version": "11.1.7",
+  "version": "11.1.8",
   "license": "MIT",
   "main": "ts_build/index.js",
   "types": "./ts_build/index.d.ts",
