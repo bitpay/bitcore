@@ -150,16 +150,17 @@ router.get('/before-time/:time', async function(req: Request, res: Response) {
 
 router.get('/:blockId/fee', async function(req: Request, res: Response) {
   const { chain, network, blockId } = req.params;
+ 
+  if (feeCache[blockId]) {
+    return res.send(feeCache[blockId]);
+  }
+    
   const transactions = blockId.length >= 64 
     ? await TransactionStorage.collection.find({ chain, network, blockHash: blockId }).toArray()
     : await TransactionStorage.collection.find({ chain, network, blockHeight: parseInt(blockId, 10) }).toArray();
   if (transactions.length == 0) {
     logger.error(`block not found with id ${blockId}`);
     return res.status(404).send(`block not found with id ${blockId}`);
-  }
-    
-  if (feeCache[blockId]) {
-    return res.send(feeCache[blockId]);
   }
     
   let feeRateSum = 0;

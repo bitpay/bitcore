@@ -67,10 +67,8 @@ async function addTransactions(transactions: {
 
 describe('Routes', function() {
   this.timeout(500000);
-  before(intBeforeHelper);
-  after(async () => intAfterHelper());
-
-  beforeEach(async () => {
+  before(async() => {
+    await intBeforeHelper()
     await resetDatabase();
     await addBlocks([
       { height: 100 },
@@ -87,41 +85,44 @@ describe('Routes', function() {
       { fee: 35000, size: 1056, blockHeight: 100 }, 
     ]);
   });
-
-  it('should respond with a 200 code for block tip and return expected data', done => {
-    request
-      .get('/api/BTC/regtest/block/tip')
-      .set('Accept', 'application/json')
-      .expect(200, (err, res) => {
-        if (err) console.error(err);
-        expect(res.body.height).to.equal(103); // tip is defined in the beforeEach function
-        done();
-      });
-  });
-
+  after(async () => intAfterHelper());
+  
   it('should respond with a 404 status code for an unknown path', done => {
     request.get('/unknown').expect(404, done);
   });
 
-  it('should get block by height', done => {
-    request
-      .get('/api/BTC/regtest/block/101')
+  describe('Block', function() {
+    it('should respond with a 200 code for block tip and return expected data', done => {
+      request
+        .get('/api/BTC/regtest/block/tip')
+        .set('Accept', 'application/json')
+        .expect(200, (err, res) => {
+          if (err) console.error(err);
+          expect(res.body.height).to.equal(103); // tip is defined in the before function
+          done();
+        });  
+    });    
+
+    it('should get block by height', done => {
+      request
+        .get('/api/BTC/regtest/block/101')
+        .expect((res) => {
+          expect(res.body.height).to.equal(101);
+        })
+        .expect(200, done);
+    });
+
+    it('should calculate fee data (total, mean, median, and mode) for block correctly', done => {
+      request
+      .get('/api/BTC/regtest/block/100/fee')
       .expect((res) => {
-        expect(res.body.height).to.equal(101);
+        // transaction data is defined in before function
+        expect(res.body.feeTotal).to.equal(20000 + 20000 + 25000 + 30000 + 35000)
+        expect(res.body.mean).to.equal((20000 / 1056 + 20000 / 1056 + 25000 / 1056 + 30000 / 1056 + 35000 / 1056) / 5)
+        expect(res.body.median).to.equal(25000 / 1056)
+        expect(res.body.mode).to.equal(20000 / 1056)
       })
       .expect(200, done);
-  });
-
-  it('should calculate fee data (total, mean, median, and mode) for block correctly', done => {
-    request
-    .get('/api/BTC/regtest/block/100/fee')
-    .expect((res) => {
-      // transaction data is defined in beforeEach function
-      expect(res.body.feeTotal).to.equal(20000 + 20000 + 25000 + 30000 + 35000)
-      expect(res.body.mean).to.equal((20000 / 1056 + 20000 / 1056 + 25000 / 1056 + 30000 / 1056 + 35000 / 1056) / 5)
-      expect(res.body.median).to.equal(25000 / 1056)
-      expect(res.body.mode).to.equal(20000 / 1056)
-    })
-    .expect(200, done);
+    });
   });
 });
