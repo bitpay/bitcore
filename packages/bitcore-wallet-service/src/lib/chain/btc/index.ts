@@ -594,7 +594,11 @@ export class BtcChain implements IChain {
       });
     };
 
-    const select = (utxos, coin, cb) => {
+    const select = (utxos, requiredInputs, cb) => {
+      let requiredTxids = [];
+      if (requiredInputs.length > 0 && txp.replaceTxByFee) { 
+        requiredTxids = _.map(requiredInputs, 'txid');
+      }
       let totalValueInUtxos = _.sumBy(utxos, 'satoshis');
       if (totalValueInUtxos < txpAmount) {
         logger.debug(
@@ -609,6 +613,7 @@ export class BtcChain implements IChain {
 
       // remove utxos not economically worth to send
       utxos = _.filter(utxos, utxo => {
+        if (requiredTxids.includes(utxo.txid)) return true;
         if (utxo.satoshis <= feePerInput) return false;
         return true;
       });
@@ -646,10 +651,15 @@ export class BtcChain implements IChain {
         return utxo.satoshis > bigInputThreshold;
       });
 
-      const bigInputs = _.sortBy(partitions[0], 'satoshis');
-      const smallInputs = _.sortBy(partitions[1], utxo => {
-        return -utxo.satoshis;
-      });
+
+      const bigInputs = _.sortBy(partitions[0], [
+        utxo => !requiredTxids.includes(utxo.txid),
+        'satoshis'
+      ]);
+      const smallInputs = _.sortBy(partitions[1], [
+        utxo => !requiredTxids.includes(utxo.txid),
+        utxo => -utxo.satoshis
+      ]);
 
       logger.debug('Considering ' + bigInputs.length + ' big inputs (' + Utils.formatUtxos(bigInputs) + ')');
       logger.debug('Considering ' + smallInputs.length + ' small inputs (' + Utils.formatUtxos(smallInputs) + ')');
@@ -850,7 +860,7 @@ export class BtcChain implements IChain {
 
             lastGroupLength = candidateUtxos.length;
 
-            select(candidateUtxos, txp.coin, (err, selectedInputs, selectedFee) => {
+            select(candidateUtxos, txp.inputs, (err, selectedInputs, selectedFee) => {
               if (err) {
                 // logger.debug('No inputs selected on this group: ', err);
                 selectionError = err;

@@ -11,6 +11,7 @@ const { BtcChain } = require('../../ts_build/lib/chain/btc');
 const { TxProposal } = require('../../ts_build/lib/model/txproposal');
 
 const { Common } = require('../../ts_build/lib/common');
+const helpers = require('../integration/helpers');
 const Constants = Common.Constants;
 
 const segWitToAddress = 'BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4'; //'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
@@ -208,6 +209,50 @@ describe('Chain BTC', function() {
  
   });
 
+  describe('#selectTxInputs', function() {
+    let wallet;
+    let server;
+    let utxos;
+    let btc;
+
+    before(function(done) {
+      helpers.before(function(res) {
+        btc = new BtcChain();
+        done();
+      });
+    });
+
+    beforeEach(function(done) {
+      helpers.beforeEach(function() {
+        helpers.createAndJoinWallet(2, 3, {}, function(s, w) {
+          wallet = w;
+          server = s;
+          helpers.stubUtxos(server, wallet, [1, 2, 3, 4, 5], {}, function(u) {
+            utxos = u;
+            done();
+          });
+        });
+      });
+    });
+
+    after(helpers.after);
+
+    it('should not filter out provided inputs', function(done) {
+      const txp = TxProposal.fromObj(aTXP());
+      txp.walletId = wallet.id;
+      // set inputs as 2 largest utxos since selectTxInputs will spend smaller inputs first
+      const inputs = utxos.sort((a, b) => a.satoshis - b.satoshis).slice(-2);
+      txp.inputs = inputs;
+      txp.replaceTxByFee = true;
+      txp.feePerKb = 10000; // 10 sats/byte
+      btc.selectTxInputs(server, txp, wallet, {}, function(err) {
+        const txpOutpoints = txp.inputs.map(i => `${i.txid}:${i.vout}`);
+        const expectedOutpoints = inputs.map(i => `${i.txid}:${i.vout}`);
+        txpOutpoints.some(outpoint => expectedOutpoints.includes(outpoint)).should.equal(true, 'Expected resulting txp to include some provided inputs');
+        done();
+      });
+    });
+  });
 
 });
 
