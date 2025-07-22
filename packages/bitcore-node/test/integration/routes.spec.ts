@@ -1,10 +1,10 @@
 import supertest from 'supertest';
+import { expect } from 'chai';
 import app from '../../src/routes';
+import { BitcoinBlockStorage } from '../../src/models/block';
+import { TransactionStorage } from '../../src/models/transaction';
 import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
 import { resetDatabase } from '../helpers';
-import { BitcoinBlockStorage } from '../../src/models/block';
-import { expect } from 'chai';
-import { TransactionStorage } from '../../src/models/transaction';
 
 const request = supertest(app);
 
@@ -66,8 +66,8 @@ async function addTransactions(transactions: {
 }
 
 describe('Routes', function() {
-  this.timeout(500000);
-  before(async() => {
+  before(async function() {
+    this.timeout(15000);
     await intBeforeHelper()
     await resetDatabase();
     await addBlocks([
@@ -115,14 +115,15 @@ describe('Routes', function() {
     it('should calculate fee data (total, mean, median, and mode) for block correctly', done => {
       request
       .get('/api/BTC/regtest/block/100/fee')
-      .expect((res) => {
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
         // transaction data is defined in before function
-        expect(res.body.feeTotal).to.equal(20000 + 20000 + 25000 + 30000 + 35000)
-        expect(res.body.mean).to.equal((20000 / 1056 + 20000 / 1056 + 25000 / 1056 + 30000 / 1056 + 35000 / 1056) / 5)
-        expect(res.body.median).to.equal(25000 / 1056)
-        expect(res.body.mode).to.equal(20000 / 1056)
-      })
-      .expect(200, done);
+        expect(res.body.feeTotal).to.equal(20000 + 20000 + 25000 + 30000 + 35000);
+        expect(res.body.mean).to.equal((20000 / 1056 + 20000 / 1056 + 25000 / 1056 + 30000 / 1056 + 35000 / 1056) / 5);
+        expect(res.body.median).to.equal(25000 / 1056);
+        expect(res.body.mode).to.equal(20000 / 1056);
+        done();
+      });
     });
   });
 });
