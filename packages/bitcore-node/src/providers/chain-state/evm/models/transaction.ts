@@ -1,5 +1,4 @@
 import { ObjectID } from 'bson';
-import * as _ from 'lodash';
 import { LoggifyClass } from '../../../../decorators/Loggify';
 import logger from '../../../../logger';
 import { MongoBound } from '../../../../models/base';
@@ -12,7 +11,7 @@ import { Storage, StorageService } from '../../../../services/storage';
 import { SpentHeightIndicators } from '../../../../types/Coin';
 import { StreamingFindOptions } from '../../../../types/Query';
 import { TransformOptions } from '../../../../types/TransformOptions';
-import { partition, valueOrDefault } from '../../../../utils';
+import { partition, uniqBy, valueOrDefault } from '../../../../utils';
 import { ERC20Abi } from '../abi/erc20';
 import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
@@ -249,7 +248,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           const walletsAddys = await WalletAddressStorage.collection
             .find({ chain, network, address: { $in: [...fromAddresses, ...toAddresses] } })
             .toArray();
-          const wallets = _.uniqBy(
+          const wallets = uniqBy(
             walletsAddys.map(w => w.wallet),
             w => w.toHexString()
           );
