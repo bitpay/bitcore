@@ -4,6 +4,7 @@
   "author": "BitPay, Inc",
   "version": "11.0.0",
   "licence": "MIT",
+  "private": true,
   "keywords": [
     "bitcoin",
     "multisig",
