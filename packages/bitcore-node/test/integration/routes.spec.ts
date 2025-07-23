@@ -106,10 +106,11 @@ describe('Routes', function() {
     it('should get block by height', done => {
       request
         .get('/api/BTC/regtest/block/101')
-        .expect((res) => {
+        .expect(200, (err, res) => {
+          if (err) console.error(err);
           expect(res.body.height).to.equal(101);
-        })
-        .expect(200, done);
+          done();
+        });
     });
 
     it('should calculate fee data (total, mean, median, and mode) for block correctly', done => {
