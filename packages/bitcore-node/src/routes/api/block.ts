@@ -150,9 +150,9 @@ router.get('/before-time/:time', async function(req: Request, res: Response) {
 
 router.get('/:blockId/fee', async function(req: Request, res: Response) {
   const { chain, network, blockId } = req.params;
- 
-  if (feeCache[blockId]) {
-    return res.send(feeCache[blockId]);
+  const feeCacheKey = `${chain}:${network}:${blockId}`;
+  if (feeCache[feeCacheKey]) {
+    return res.send(feeCache[feeCacheKey]);
   }
     
   const transactions = blockId.length >= 64 
@@ -188,8 +188,8 @@ router.get('/:blockId/fee', async function(req: Request, res: Response) {
     ? feeRates[Math.floor(feeRates.length / 2)]
     : (feeRates[feeRates.length / 2 - 1] + feeRates[feeRates.length / 2]) / 2;
 
-  feeCache[blockId] = { feeTotal, mean, median, mode };
-  return res.json(feeCache[blockId]);
+  feeCache[feeCacheKey] = { feeTotal, mean, median, mode };
+  return res.json(feeCache[feeCacheKey]);
 });
 
 module.exports = {
