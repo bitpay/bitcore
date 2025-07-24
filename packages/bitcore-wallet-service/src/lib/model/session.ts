@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import { Common } from '../common';
 
 const Uuid = require('uuid');
