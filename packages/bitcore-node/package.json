@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "version": "10.10.8",
+  "version": "10.10.9",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "contributors": [
     "Justin Langston <nitsujlangston@gmail.com>",
@@ -98,7 +98,7 @@
     "bitcore-p2p": "^10.10.7",
     "bitcore-p2p-cash": "^10.10.7",
     "bitcore-p2p-doge": "^10.10.5",
-    "bitcore-wallet-client": "^10.10.8",
+    "bitcore-wallet-client": "^10.10.9",
     "cors": "2.8.4",
     "crypto-rpc": "https://github.com/bitpay/crypto-rpc.git#370b201c98f4616b378290dc30486df5c1c769e0",
     "crypto-wallet-core": "^10.10.7",
