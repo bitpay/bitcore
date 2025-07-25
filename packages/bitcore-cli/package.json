@@ -2,7 +2,7 @@
   "name": "bitcore-cli",
   "description": "A Bitcore CLI Wallet",
   "author": "BitPay, Inc",
-  "version": "11.0.0",
+  "version": "11.2.0",
   "licence": "MIT",
   "private": true,
   "keywords": [
@@ -39,17 +39,17 @@
   },
   "dependencies": {
     "@clack/prompts": "0.11.0",
-    "bitcore-wallet-client": "^11.0.0",
+    "bitcore-wallet-client": "^11.2.0",
     "commander": "14.0.0",
-    "crypto-wallet-core": "^11.0.0",
+    "crypto-wallet-core": "^11.2.0",
     "external-editor": "3.1.0",
     "ts-node": "10.9.2",
     "usb": "2.15.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.1",
-    "mocha": "^11.5.0",
     "chai": "^5.2.0",
+    "mocha": "^11.5.0",
     "sinon": "^20.0.0",
     "typescript": "^5.8.3"
   },
