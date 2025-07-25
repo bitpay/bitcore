@@ -1632,7 +1632,7 @@ export class API extends EventEmitter {
               return acb(isLegit);
             })
             .catch(err => {
-              return acb(err);
+              return cb(err);
             });
         },
         isLegit => {
