@@ -89,8 +89,10 @@ export class SolChain implements IChain {
 
   getFee(server, wallet, opts) {
     return new Promise(resolve => {
-      const numSignatures = opts.signatures || 1;
-      return resolve({ fee: 5000 * numSignatures });
+      const numSignatures = opts.numSignatures || 1;
+      const feePerKb = 5000; // Fee per signature in lamports
+      const fee = feePerKb * numSignatures;
+      return resolve({ fee, feePerKb });
     });
   }
 
@@ -176,7 +178,7 @@ export class SolChain implements IChain {
     server.getBalance({}, (err, balance) => {
       if (err) return cb(err);
       const { availableAmount } = balance;
-      const sigs = opts.signatures || 1;
+      const sigs = opts.numSignatures || 1;
       let fee = sigs * 5000
       return cb(null, {
         utxosBelowFee: 0,
