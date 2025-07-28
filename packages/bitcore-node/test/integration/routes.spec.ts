@@ -12,7 +12,7 @@ const request = supertest(app);
 
 async function addBlocks(blocks: {
    height: number,
-   chain: 'BCH' | 'BTC',
+   chain: 'BTC' | 'BCH',
 }[]) {
   for (const block of blocks) {
     const { chain, height } = block;
@@ -40,15 +40,16 @@ async function addBlocks(blocks: {
 }
 
 async function addTransactions(transactions: {
+  chain: 'BTC' | 'BCH';
   fee: number,
   size: number,
   blockHeight: number 
 }[]) {
   for (const tx of transactions) {
-    const { fee, size, blockHeight } = tx;
+    const { chain, fee, size, blockHeight } = tx;
     await TransactionStorage.collection.insertOne(
       {
-        chain: 'BTC',
+        chain: chain,
         network: 'regtest',
         txid: 'da848d4c5a9d690259f5fddb6c5ca0fb0e52bc4a8ac472d3784a2de834cf448e',
         blockHash: '6a12d0dda65f846f1bfeebc503295ae7d42d116efbde1a10c3d2b3b87a64fa56',
@@ -84,12 +85,19 @@ describe('Routes', function() {
       { chain: 'BCH', height: 102 },
     ]);
     await addTransactions([
-      { fee: 0, size: 133, blockHeight: 100 },
-      { fee: 20000, size: 1056, blockHeight: 100 }, 
-      { fee: 20000, size: 1056, blockHeight: 100 }, 
-      { fee: 25000, size: 1056, blockHeight: 100 }, 
-      { fee: 30000, size: 1056, blockHeight: 100 }, 
-      { fee: 35000, size: 1056, blockHeight: 100 }, 
+      { chain: 'BTC', fee: 0, size: 133, blockHeight: 100 },
+      { chain: 'BTC', fee: 20000, size: 1056, blockHeight: 100 }, 
+      { chain: 'BTC', fee: 20000, size: 1056, blockHeight: 100 }, 
+      { chain: 'BTC', fee: 25000, size: 1056, blockHeight: 100 }, 
+      { chain: 'BTC', fee: 30000, size: 1056, blockHeight: 100 }, 
+      { chain: 'BTC', fee: 35000, size: 1056, blockHeight: 100 }, 
+      
+      { chain: 'BCH', fee: 0, size: 133, blockHeight: 100 },
+      { chain: 'BCH', fee: 2000, size: 1056, blockHeight: 100 }, 
+      { chain: 'BCH', fee: 2000, size: 1056, blockHeight: 100 }, 
+      { chain: 'BCH', fee: 2500, size: 1056, blockHeight: 100 }, 
+      { chain: 'BCH', fee: 3000, size: 1056, blockHeight: 100 }, 
+      { chain: 'BCH', fee: 3500, size: 1056, blockHeight: 100 }, 
     ]);
   });
 
@@ -171,6 +179,24 @@ describe('Routes', function() {
         expect(res.body.mean).to.equal((20000 / 1056 + 20000 / 1056 + 25000 / 1056 + 30000 / 1056 + 35000 / 1056) / 5);
         expect(res.body.median).to.equal(25000 / 1056);
         expect(res.body.mode).to.equal(20000 / 1056);
+        done();
+      });
+    });
+
+
+    it('should calculate fee data on BCH', done => {
+      const spy = sandbox.spy(ChainStateProvider, 'getBlockFee');
+
+      request
+      .get('/api/BCH/regtest/block/100/fee')
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        expect(spy.calledOnce).to.be.true;
+        // transaction data is defined in before function
+        expect(res.body.feeTotal).to.equal(2000 + 2000 + 2500 + 3000 + 3500);
+        expect(res.body.mean).to.equal((2000 / 1056 + 2000 / 1056 + 2500 / 1056 + 3000 / 1056 + 3500 / 1056) / 5);
+        expect(res.body.median).to.equal(2500 / 1056);
+        expect(res.body.mode).to.equal(2000 / 1056);
         done();
       });
     });
