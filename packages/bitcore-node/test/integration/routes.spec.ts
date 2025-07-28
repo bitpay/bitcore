@@ -12,7 +12,7 @@ const request = supertest(app);
 
 async function addBlocks(blocks: {
    height: number,
-   chain: 'LTC' | 'BTC',
+   chain: 'BCH' | 'BTC',
 }[]) {
   for (const block of blocks) {
     const { chain, height } = block;
@@ -79,9 +79,9 @@ describe('Routes', function() {
       { chain: 'BTC', height: 101 },
       { chain: 'BTC', height: 102 },
       { chain: 'BTC', height: 103 },
-      { chain: 'LTC', height: 100 },
-      { chain: 'LTC', height: 101 },
-      { chain: 'LTC', height: 102 },
+      { chain: 'BCH', height: 100 },
+      { chain: 'BCH', height: 101 },
+      { chain: 'BCH', height: 102 },
     ]);
     await addTransactions([
       { fee: 0, size: 133, blockHeight: 100 },
@@ -130,13 +130,13 @@ describe('Routes', function() {
         });
     });
 
-    it('should get block by height on LTC', done => {
+    it('should get block by height on BCH', done => {
       request
-        .get('/api/LTC/regtest/block/101')
+        .get('/api/BCH/regtest/block/101')
         .expect(200, (err, res) => {
           if (err) console.error(err);
           expect(res.body.height).to.equal(101);
-          expect(res.body.chain).to.equal('LTC');
+          expect(res.body.chain).to.equal('BCH');
           done();
         });
     });
