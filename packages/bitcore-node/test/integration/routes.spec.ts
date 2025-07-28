@@ -10,13 +10,14 @@ const request = supertest(app);
 
 async function addBlocks(blocks: {
    height: number,
+   chain: 'LTC' | 'BTC',
 }[]) {
   for (const block of blocks) {
-    const { height } = block;
+    const { chain, height } = block;
     await BitcoinBlockStorage.collection.insertOne(
       {
         network: 'regtest',
-        chain: 'BTC',
+        chain: chain,
         hash: '4c58c6cab141839d66cb99e10757522d379509c9e90a89d39ee990fe6e08ab3a',
         bits: 545259519,
         height: height,
@@ -71,10 +72,13 @@ describe('Routes', function() {
     await intBeforeHelper()
     await resetDatabase();
     await addBlocks([
-      { height: 100 },
-      { height: 101 },
-      { height: 102 },
-      { height: 103 },
+      { chain: 'BTC', height: 100 },
+      { chain: 'BTC', height: 101 },
+      { chain: 'BTC', height: 102 },
+      { chain: 'BTC', height: 103 },
+      { chain: 'LTC', height: 100 },
+      { chain: 'LTC', height: 101 },
+      { chain: 'LTC', height: 102 },
     ]);
     await addTransactions([
       { fee: 0, size: 133, blockHeight: 100 },
@@ -103,12 +107,24 @@ describe('Routes', function() {
         });  
     });    
 
-    it('should get block by height', done => {
+    it('should get block by height on BTC', done => {
       request
         .get('/api/BTC/regtest/block/101')
         .expect(200, (err, res) => {
           if (err) console.error(err);
           expect(res.body.height).to.equal(101);
+          expect(res.body.chain).to.equal('BTC');
+          done();
+        });
+    });
+
+    it('should get block by height on LTC', done => {
+      request
+        .get('/api/LTC/regtest/block/101')
+        .expect(200, (err, res) => {
+          if (err) console.error(err);
+          expect(res.body.height).to.equal(101);
+          expect(res.body.chain).to.equal('LTC');
           done();
         });
     });
