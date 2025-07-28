@@ -5,6 +5,8 @@ import { BitcoinBlockStorage } from '../../src/models/block';
 import { TransactionStorage } from '../../src/models/transaction';
 import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
 import { resetDatabase } from '../helpers';
+import sinon from 'sinon';
+import { ChainStateProvider } from '../../src/providers/chain-state';
 
 const request = supertest(app);
 
@@ -67,6 +69,7 @@ async function addTransactions(transactions: {
 }
 
 describe('Routes', function() {
+  let sandbox;
   before(async function() {
     this.timeout(15000);
     await intBeforeHelper()
@@ -89,7 +92,16 @@ describe('Routes', function() {
       { fee: 35000, size: 1056, blockHeight: 100 }, 
     ]);
   });
+
+  beforeEach(async () => {
+    sandbox = sinon.createSandbox();
+  });
+  
   after(async () => intAfterHelper());
+  
+  afterEach(async () => {
+    sandbox.restore();
+  });
   
   it('should respond with a 404 status code for an unknown path', done => {
     request.get('/unknown').expect(404, done);
@@ -130,10 +142,30 @@ describe('Routes', function() {
     });
 
     it('should calculate fee data (total, mean, median, and mode) for block correctly', done => {
+      const spy = sandbox.spy(ChainStateProvider, 'getBlockFee');
+
       request
       .get('/api/BTC/regtest/block/100/fee')
       .expect(200, (err, res) => {
         if (err) console.error(err);
+        expect(spy.calledOnce).to.be.true;
+        // transaction data is defined in before function
+        expect(res.body.feeTotal).to.equal(20000 + 20000 + 25000 + 30000 + 35000);
+        expect(res.body.mean).to.equal((20000 / 1056 + 20000 / 1056 + 25000 / 1056 + 30000 / 1056 + 35000 / 1056) / 5);
+        expect(res.body.median).to.equal(25000 / 1056);
+        expect(res.body.mode).to.equal(20000 / 1056);
+        done();
+      });
+    });
+
+    it('should cache fee data', done => {
+      const spy = sandbox.spy(ChainStateProvider, 'getBlockFee');
+
+      request
+      .get('/api/BTC/regtest/block/100/fee')
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        expect(spy.notCalled).to.be.true;
         // transaction data is defined in before function
         expect(res.body.feeTotal).to.equal(20000 + 20000 + 25000 + 30000 + 35000);
         expect(res.body.mean).to.equal((20000 / 1056 + 20000 / 1056 + 25000 / 1056 + 30000 / 1056 + 35000 / 1056) / 5);
