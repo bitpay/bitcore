@@ -91,6 +91,11 @@ describe('Routes', function() {
       { chain: 'BTC', fee: 25000, size: 1056, blockHeight: 100 }, 
       { chain: 'BTC', fee: 30000, size: 1056, blockHeight: 100 }, 
       { chain: 'BTC', fee: 35000, size: 1056, blockHeight: 100 }, 
+
+      { chain: 'BTC', fee: 0, size: 133, blockHeight: 103 },
+      { chain: 'BTC', fee: 9000, size: 1056, blockHeight: 103 }, 
+      { chain: 'BTC', fee: 10000, size: 1056, blockHeight: 103 }, 
+      { chain: 'BTC', fee: 11000, size: 1056, blockHeight: 103 }, 
       
       { chain: 'BCH', fee: 0, size: 133, blockHeight: 100 },
       { chain: 'BCH', fee: 2000, size: 1056, blockHeight: 100 }, 
@@ -183,20 +188,30 @@ describe('Routes', function() {
       });
     });
 
-
     it('should calculate fee data on BCH', done => {
-      const spy = sandbox.spy(ChainStateProvider, 'getBlockFee');
-
       request
       .get('/api/BCH/regtest/block/100/fee')
       .expect(200, (err, res) => {
         if (err) console.error(err);
-        expect(spy.calledOnce).to.be.true;
         // transaction data is defined in before function
         expect(res.body.feeTotal).to.equal(2000 + 2000 + 2500 + 3000 + 3500);
         expect(res.body.mean).to.equal((2000 / 1056 + 2000 / 1056 + 2500 / 1056 + 3000 / 1056 + 3500 / 1056) / 5);
         expect(res.body.median).to.equal(2500 / 1056);
         expect(res.body.mode).to.equal(2000 / 1056);
+        done();
+      });
+    });
+
+    it('should calculate tip fee data', done => {
+      request
+      .get('/api/BTC/regtest/block/tip/fee')
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        // transaction data is defined in before function
+        expect(res.body.feeTotal).to.equal(9000 + 10000 + 11000);
+        expect(res.body.mean).to.equal((9000 / 1056 + 10000 / 1056 + 11000 / 1056) / 3);
+        expect(res.body.median).to.equal(10000 / 1056);
+        expect(res.body.mode).to.equal(9000 / 1056);
         done();
       });
     });
