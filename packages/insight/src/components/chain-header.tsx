@@ -1,16 +1,10 @@
 import {FC, useEffect, useRef} from 'react';
 import {useApi} from 'src/api/api';
-import {buildTime, getApiRoot, getDefaultRefreshInterval} from 'src/utilities/helper-methods';
 import { Chart as ChartJS } from 'chart.js';
 import { colorCodes } from 'src/utilities/constants';
 
 
 const ChainHeader: FC<{currency: string, network: string}> = ({currency, network}) => {
-    const apiRoot = getApiRoot(currency);
-    const refreshInterval = getDefaultRefreshInterval(currency);
-    const {data, error} = useApi(`${apiRoot}/${currency}/mainnet/block?limit=1`, {refreshInterval});
-    const {height, time, transactionCount, size} = data[0];
-
     const {data: priceDetails} = useApi(`https://bitpay.com/rates/${currency}/usd`);
     const {data: priceDisplay} = useApi(
         `https://bitpay.com/currencies/prices?currencyPairs=["${currency}:USD"]`,
@@ -19,7 +13,7 @@ const ChainHeader: FC<{currency: string, network: string}> = ({currency, network
     const chartRef = useRef<HTMLCanvasElement | null>(null);
     const chartInstanceRef = useRef<ChartJS | null>(null);
     
-    const price = priceDetails?.data?.rate;
+    const price = network === 'mainnet' ? priceDetails?.data?.rate : 0;
     const priceList = priceDisplay?.data?.[0]?.priceDisplay || [];
 
     const chartData = {
@@ -68,7 +62,7 @@ const ChainHeader: FC<{currency: string, network: string}> = ({currency, network
 
 
     return (
-        <div style={{borderBottom: '1px solid', padding: '0 5px'}}>
+        <div style={{borderBottom: '1px solid', padding: '0 5px', height: 'fit-content'}}>
             <div style={{display: 'flex'}}>
                 <img src={`https://bitpay.com/img/icon/currencies/${currency}.svg`} alt={currency} style={{height: '100px'}}/>
                 {priceList.length > 0 && (
@@ -79,11 +73,6 @@ const ChainHeader: FC<{currency: string, network: string}> = ({currency, network
             </div>
             <div style={{display: 'flex', justifyContent: 'space-around'}}>
                 <span style={{margin: '0 10px'}}>{price} USD </span>
-                <span style={{margin: '0 10px'}}>Height {height} </span>
-                <span style={{margin: '0 10px'}}>Mined {buildTime(time)}</span>
-                <span style={{margin: '0 10px'}}>Transaction {transactionCount} </span>
-                <span style={{margin: '0 10px'}}>Size {size}</span>
-
             </div>
         </div >
     );

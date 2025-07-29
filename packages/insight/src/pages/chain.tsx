@@ -8,6 +8,7 @@ import {getApiRoot, getFormattedDate, normalizeParams, sleep} from 'src/utilitie
 import {BlocksType} from 'src/utilities/models';
 import nProgress from 'nprogress';
 import Info from 'src/components/info';
+import { BitPay } from 'src/assets/styles/colors';
 
 const getBlocksUrl = (currency: string, network: string) => {
   return `${getApiRoot(currency)}/${currency}/${network}/block?limit=10`;
@@ -57,10 +58,16 @@ export const ChainDetails = () => {
     <>
       {error ? <Info type={'error'} message={error} /> : null}
     
-      <div style={{display: 'flex'}}>
-        {currency && network && <ChainHeader currency={currency} network={network} />}
-        <div>
-          <div onClick={gotoBlocks}>Go to full block list</div>
+      <div style={{display: 'flex', width: '100%', gap: '1rem'}}>
+        <div style={{width: '50%'}}>
+          <div style={{alignSelf: 'stretch'}}>
+           {currency && network && <ChainHeader currency={currency} network={network} />}
+          </div>
+          <div style={{backgroundColor: 'gray', width: 'fit-content', borderRadius: '15px', margin: '1rem', padding: '0.75rem'}}>
+            Fee: xxx
+          </div>
+        </div>
+        <div style={{width: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
           <table>
             <tr>
               <th>Height</th>
@@ -87,6 +94,7 @@ export const ChainDetails = () => {
               </tbody>
               ): null}
           </table>
+          <div style={{backgroundColor: BitPay, borderRadius: '15px', font: 'menu', width: 'fit-content', padding: '0.5rem 1rem'}} onClick={gotoBlocks}>... View all Blocks</div>
         </div>
       </div>
     </>
