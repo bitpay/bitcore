@@ -676,4 +676,44 @@ export class InternalStateProvider implements IChainStateService {
       .addCursorFlag('noCursorTimeout', true)
       .toArray();
   }
+
+  async getBlockFee(params: {
+    chain: string,
+    network: string,
+    blockId: string
+  }) {
+    const { chain, network, blockId } = params;
+    const transactions = blockId.length >= 64 
+      ? await TransactionStorage.collection.find({ chain, network, blockHash: blockId }).toArray()
+      : await TransactionStorage.collection.find({ chain, network, blockHeight: parseInt(blockId, 10) }).toArray();
+    if (transactions.length === 0)
+      return;
+
+    let feeRateSum = 0;
+    let feeTotal = 0;
+    const feeRates: number[] = [];
+    const freq = {};
+    let mode = 0, maxCount = 0;
+    for (const tx of transactions) {
+      if (tx.fee && tx.size) { // does not add fee rate 0 or divide by zero
+        const rate = tx.fee / tx.size;
+        feeRates.push(rate);
+        feeRateSum += rate;
+        feeTotal += tx.fee;
+        
+        freq[rate] = (freq[rate] || 0) + 1;
+        if (freq[rate] > maxCount) {
+          mode = rate;
+          maxCount = freq[rate];
+        }
+      }
+    }
+    const mean = feeRateSum / feeRates.length;
+    feeRates.sort((a, b) => a - b);
+    const median = feeRates.length % 2 === 1
+      ? feeRates[Math.floor(feeRates.length / 2)]
+      : (feeRates[feeRates.length / 2 - 1] + feeRates[feeRates.length / 2]) / 2;
+
+    return { feeTotal, mean, median, mode };
+  }
 }

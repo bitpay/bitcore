@@ -6,10 +6,12 @@ import { ChainStateProvider } from '../../providers/chain-state';
 import { CacheTimes, Confirmations, SetCache } from '../middleware';
 
 const router = express.Router({ mergeParams: true });
+const feeCache = {};
 
 router.get('/', async function(req: Request, res: Response) {
-  let { chain, network } = req.params;
-  let { sinceBlock, date, limit, since, direction, paging } = req.query as any;
+  const { chain, network } = req.params;
+  const { sinceBlock, date, since, direction, paging } = req.query as any;
+  let { limit } = req.query as any;
   if (limit) {
     limit = parseInt(limit) || undefined; // if limit is NaN or null, set it to undefined so it'll fallback to CSP default
   }
@@ -30,7 +32,7 @@ router.get('/', async function(req: Request, res: Response) {
 });
 
 router.get('/tip', async function(req: Request, res: Response) {
-  let { chain, network } = req.params;
+  const { chain, network } = req.params;
   try {
     let tip = await ChainStateProvider.getLocalTip({ chain, network });
     return res.json(tip);
@@ -41,7 +43,7 @@ router.get('/tip', async function(req: Request, res: Response) {
 });
 
 router.get('/:blockId', async function(req: Request, res: Response) {
-  let { chain, network, blockId } = req.params;
+  const { chain, network, blockId } = req.params;
   try {
     let block = await ChainStateProvider.getBlock({ chain, network, blockId });
     if (!block) {
@@ -60,7 +62,7 @@ router.get('/:blockId', async function(req: Request, res: Response) {
 
 // return all { txids, inputs, ouputs} for a blockHash paginated at max 500 per page, to limit reqs and overload
 router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: Response) {
-  let { chain, network, blockHash, limit, pgnum } = req.params;
+  const { chain, network, blockHash, limit, pgnum } = req.params;
 
   let pageNumber;
   let maxLimit;
@@ -129,7 +131,7 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: 
 });
 
 router.get('/before-time/:time', async function(req: Request, res: Response) {
-  let { chain, network, time } = req.params;
+  const { chain, network, time } = req.params;
   try {
     const block = await ChainStateProvider.getBlockBeforeTime({ chain, network, time });
     if (!block) {
@@ -144,6 +146,41 @@ router.get('/before-time/:time', async function(req: Request, res: Response) {
     logger.error('Error getting blocks before time: %o', err.stack || err.message || err);
     return res.status(500).send(err.message || err);
   }
+});
+
+router.get('/tip/fee', async function(req: Request, res: Response) {
+  const { chain, network } = req.params;
+  try {
+    let tip = await ChainStateProvider.getLocalTip({ chain, network });
+    if (tip) {
+      const height = tip.height.toString();
+      const feeCacheKey = `${chain}:${network}:${height}`;
+      if (feeCache[feeCacheKey])
+        return res.json(feeCache[feeCacheKey]);
+      feeCache[feeCacheKey] = await ChainStateProvider.getBlockFee({ chain, network, blockId: height });
+      return res.json(feeCache[feeCacheKey]);
+    }
+    return res.status(500).send('could not find tip');
+  } catch (err: any) {
+    logger.error('Error getting tip block: %o:%o: %o', chain, network, err.stack || err.message || err);
+    return res.status(500).send(err.message || err);
+  }
+});
+
+router.get('/:blockId/fee', async function(req: Request, res: Response) {
+  const { chain, network, blockId } = req.params;
+  const feeCacheKey = `${chain}:${network}:${blockId}`;
+  if (feeCache[feeCacheKey]) {
+    return res.send(feeCache[feeCacheKey]);
+  }
+
+  const fee = await ChainStateProvider.getBlockFee({ chain, network, blockId });  
+  if (!fee) {
+    logger.error(`block not found with id ${blockId}`);
+    return res.status(404).send(`block not found with id ${blockId}`);
+  }
+  feeCache[feeCacheKey] = fee;
+  return res.json(feeCache[feeCacheKey]);
 });
 
 module.exports = {
