@@ -1,5 +1,4 @@
 import { BitcoreLibLtc } from 'crypto-wallet-core';
-import _ from 'lodash';
 import { IChain } from '..';
 import { BtcChain } from '../btc';
 
