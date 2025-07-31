@@ -24,6 +24,7 @@ export class SVMRouter {
     this.getRentMinimum(router);
     this.getTokenAccountAddresses(router);
     this.getTokenInfo(router);
+    this.decodeRawTx(router);
   };
 
   private estimateTxFee(router: Router) {
@@ -104,6 +105,20 @@ export class SVMRouter {
         res.json(tokenInfo);
       } catch (err: any) {
         logger.error('Token Info Error::%o', err.stack || err.message || err);
+        res.status(500).send(err.message || err);
+      }
+    });
+  };
+
+  private decodeRawTx(router: Router) {
+    router.post(`/api/${this.chain}/:network/decode`, async (req, res) => {
+      const { rawTx } = req.body;
+      const { network } = req.params;
+      try {
+        const decodedTx = await this.csp.decodeRawTx({ network, rawTx });
+        res.json(decodedTx);
+      } catch (err: any) {
+        logger.error('Transaction Decode Error::%o', err.stack || err.message || err);
         res.status(500).send(err.message || err);
       }
     });
