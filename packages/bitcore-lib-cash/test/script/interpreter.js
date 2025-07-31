@@ -11,7 +11,6 @@ var BN = bitcore.crypto.BN;
 var BufferReader = bitcore.encoding.BufferReader;
 var BufferWriter = bitcore.encoding.BufferWriter;
 var Opcode = bitcore.Opcode;
-var _ = require('lodash');
 
 var script_tests = require('../data/bitcoind/script_tests');
 var tx_valid = require('../data/bitcoind/tx_valid');
