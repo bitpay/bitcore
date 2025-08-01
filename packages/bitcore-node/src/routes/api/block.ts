@@ -148,27 +148,18 @@ router.get('/before-time/:time', async function(req: Request, res: Response) {
   }
 });
 
-router.get('/tip/fee', async function(req: Request, res: Response) {
-  const { chain, network } = req.params;
-  try {
-    let tip = await ChainStateProvider.getLocalTip({ chain, network });
-    if (tip) {
-      const height = tip.height.toString();
-      const feeCacheKey = `${chain}:${network}:${height}`;
-      if (feeCache[feeCacheKey])
-        return res.json(feeCache[feeCacheKey]);
-      feeCache[feeCacheKey] = await ChainStateProvider.getBlockFee({ chain, network, blockId: height });
-      return res.json(feeCache[feeCacheKey]);
-    }
-    return res.status(500).send('could not find tip');
-  } catch (err: any) {
-    logger.error('Error getting tip block: %o:%o: %o', chain, network, err.stack || err.message || err);
-    return res.status(500).send(err.message || err);
-  }
-});
-
 router.get('/:blockId/fee', async function(req: Request, res: Response) {
-  const { chain, network, blockId } = req.params;
+  const { chain, network } = req.params;
+  let { blockId } = req.params;
+
+  if (blockId === 'tip') {
+    const tip = await ChainStateProvider.getLocalTip({ chain, network });
+    if (!tip) {
+      return res.status(404).send(`tip not found for ${chain}:${network}`);
+    }
+    blockId = tip.height.toString();
+  }
+  
   const feeCacheKey = `${chain}:${network}:${blockId}`;
   if (feeCache[feeCacheKey]) {
     return res.send(feeCache[feeCacheKey]);
