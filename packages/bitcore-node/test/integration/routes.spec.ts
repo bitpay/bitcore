@@ -43,10 +43,11 @@ async function addTransactions(transactions: {
   chain: 'BTC' | 'BCH';
   fee: number,
   size: number,
-  blockHeight: number 
+  blockHeight: number,
+  coinbase?: boolean
 }[]) {
   for (const tx of transactions) {
-    const { chain, fee, size, blockHeight } = tx;
+    const { chain, fee, size, blockHeight, coinbase } = tx;
     await TransactionStorage.collection.insertOne(
       {
         chain: chain,
@@ -56,7 +57,7 @@ async function addTransactions(transactions: {
         blockHeight: blockHeight,
         blockTime: new Date('2025-07-07T17:38:02.000Z'),
         blockTimeNormalized: new Date('2025-07-07T17:38:02.000Z'),
-        coinbase: true,
+        coinbase: coinbase!!,
         fee: fee,
         inputCount: 1,
         locktime: 0,
@@ -85,19 +86,21 @@ describe('Routes', function() {
       { chain: 'BCH', height: 102 },
     ]);
     await addTransactions([
-      { chain: 'BTC', fee: 0, size: 133, blockHeight: 100 },
+      { chain: 'BTC', fee: 0, size: 133, blockHeight: 100, coinbase: true },
       { chain: 'BTC', fee: 20000, size: 1056, blockHeight: 100 }, 
       { chain: 'BTC', fee: 20000, size: 1056, blockHeight: 100 }, 
       { chain: 'BTC', fee: 25000, size: 1056, blockHeight: 100 }, 
       { chain: 'BTC', fee: 30000, size: 1056, blockHeight: 100 }, 
-      { chain: 'BTC', fee: 35000, size: 1056, blockHeight: 100 }, 
+      { chain: 'BTC', fee: 35000, size: 1056, blockHeight: 100 },
 
-      { chain: 'BTC', fee: 0, size: 133, blockHeight: 103 },
+      { chain: 'BTC', fee: 0, size: 133, blockHeight: 101, coinbase: true },
+
+      { chain: 'BTC', fee: 0, size: 133, blockHeight: 103, coinbase: true },
       { chain: 'BTC', fee: 9000, size: 1056, blockHeight: 103 }, 
       { chain: 'BTC', fee: 10000, size: 1056, blockHeight: 103 }, 
       { chain: 'BTC', fee: 11000, size: 1056, blockHeight: 103 }, 
       
-      { chain: 'BCH', fee: 0, size: 133, blockHeight: 100 },
+      { chain: 'BCH', fee: 0, size: 133, blockHeight: 100, coinbase: true },
       { chain: 'BCH', fee: 2000, size: 1056, blockHeight: 100 }, 
       { chain: 'BCH', fee: 2000, size: 1056, blockHeight: 100 }, 
       { chain: 'BCH', fee: 2500, size: 1056, blockHeight: 100 }, 
@@ -212,6 +215,19 @@ describe('Routes', function() {
         expect(res.body.mean).to.equal((9000 / 1056 + 10000 / 1056 + 11000 / 1056) / 3);
         expect(res.body.median).to.equal(10000 / 1056);
         expect(res.body.mode).to.equal(9000 / 1056);
+        done();
+      });
+    });
+
+    it('should calculate fee data of block with only coinbase transaction as 0', done => {
+      request
+      .get('/api/BTC/regtest/block/101/fee')
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        expect(res.body.feeTotal).to.equal(0);
+        expect(res.body.mean).to.equal(0);
+        expect(res.body.median).to.equal(0);
+        expect(res.body.mode).to.equal(0);
         done();
       });
     });

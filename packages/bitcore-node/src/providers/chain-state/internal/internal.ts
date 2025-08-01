@@ -686,8 +686,8 @@ export class InternalStateProvider implements IChainStateService {
     const transactions = blockId.length >= 64 
       ? await TransactionStorage.collection.find({ chain, network, blockHash: blockId }).toArray()
       : await TransactionStorage.collection.find({ chain, network, blockHeight: parseInt(blockId, 10) }).toArray();
-    if (transactions.length === 0)
-      return;
+    if (transactions.length <= 1)
+      return { feeTotal: 0, mean: 0, median: 0, mode: 0 };
 
     let feeRateSum = 0;
     let feeTotal = 0;
@@ -695,17 +695,16 @@ export class InternalStateProvider implements IChainStateService {
     const freq = {};
     let mode = 0, maxCount = 0;
     for (const tx of transactions) {
-      if (tx.fee && tx.size) { // does not add fee rate 0 or divide by zero
-        const rate = tx.fee / tx.size;
-        feeRates.push(rate);
-        feeRateSum += rate;
-        feeTotal += tx.fee;
-        
-        freq[rate] = (freq[rate] || 0) + 1;
-        if (freq[rate] > maxCount) {
-          mode = rate;
-          maxCount = freq[rate];
-        }
+      if (tx.coinbase) continue; // skip coinbase transaction
+      const rate = tx.fee && tx.size ? tx.fee / tx.size : 0; // does not add fee rate 0 or divide by zero
+      feeRates.push(rate);
+      feeRateSum += rate;
+      feeTotal += tx.fee || 0;
+      
+      freq[rate] = (freq[rate] || 0) + 1;
+      if (freq[rate] > maxCount) {
+        mode = rate;
+        maxCount = freq[rate];
       }
     }
     const mean = feeRateSum / feeRates.length;
