@@ -167,6 +167,10 @@ export type isValidParams = ChainNetwork & {
   input: string;
 };
 
+export type BlockFeeParams = ChainNetwork & {
+  blockId: string;
+}
+
 export interface GetCoinsForTxParams {
   chain: string;
   network: string;
@@ -211,6 +215,7 @@ export interface IChainStateService {
   getLocalTip(params): Promise<IBlock | null>;
   getLocatorHashes(params): Promise<any>;
   isValid(params: isValidParams): { isValid: boolean; type: string };
+  getBlockFee(params: BlockFeeParams);
 }
 
 export interface ChainStateServices {
