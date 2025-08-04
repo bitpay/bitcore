@@ -16,7 +16,7 @@ router.get('/', async function(req: Request, res: Response) {
     limit = parseInt(limit) || undefined; // if limit is NaN or null, set it to undefined so it'll fallback to CSP default
   }
   try {
-    let payload = {
+    const payload = {
       chain,
       network,
       sinceBlock,
@@ -34,7 +34,7 @@ router.get('/', async function(req: Request, res: Response) {
 router.get('/tip', async function(req: Request, res: Response) {
   const { chain, network } = req.params;
   try {
-    let tip = await ChainStateProvider.getLocalTip({ chain, network });
+    const tip = await ChainStateProvider.getLocalTip({ chain, network });
     return res.json(tip);
   } catch (err: any) {
     logger.error('Error getting tip block: %o:%o: %o', chain, network, err.stack || err.message || err);
@@ -45,7 +45,7 @@ router.get('/tip', async function(req: Request, res: Response) {
 router.get('/:blockId', async function(req: Request, res: Response) {
   const { chain, network, blockId } = req.params;
   try {
-    let block = await ChainStateProvider.getBlock({ chain, network, blockId });
+    const block = await ChainStateProvider.getBlock({ chain, network, blockId });
     if (!block) {
       return res.status(404).send('block not found');
     }
@@ -77,14 +77,15 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: 
     console.log(err);
   }
 
-  let skips = maxLimit * (pageNumber - 1);
-  let numOfTxs = await TransactionStorage.collection.find({ chain, network, blockHash }).count();
+  const skips = maxLimit * (pageNumber - 1);
+  const transactions = await TransactionStorage.collection.find({ chain, network, blockHash });
+  const transactionsArray = await transactions.toArray();
+  const numOfTxs = transactionsArray.length;
   try {
-    let txs =
+    const txs =
       numOfTxs < maxLimit
-        ? await TransactionStorage.collection.find({ chain, network, blockHash }).toArray()
-        : await TransactionStorage.collection
-            .find({ chain, network, blockHash })
+        ? transactionsArray
+        : await TransactionStorage.collection.find({ chain, network, blockHash })
             .skip(skips)
             .limit(maxLimit)
             .toArray();
@@ -94,17 +95,17 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: 
     }
 
     const txidIndexes: any = {};
-    let txids = txs.map((tx, index) => {
+    const txids = txs.map((tx, index) => {
       txidIndexes[index] = tx.txid;
       return tx.txid;
     });
 
-    let inputs = await CoinStorage.collection
+    const inputs = await CoinStorage.collection
       .find({ chain, network, spentTxid: { $in: txids } })
       .addCursorFlag('noCursorTimeout', true)
       .toArray();
 
-    let outputs = await CoinStorage.collection
+    const outputs = await CoinStorage.collection
       .find({ chain, network, mintTxid: { $in: txids } })
       .addCursorFlag('noCursorTimeout', true)
       .toArray();
