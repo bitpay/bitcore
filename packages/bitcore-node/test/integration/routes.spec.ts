@@ -17,14 +17,24 @@ async function addBlocks(
     hash?: string;
     height: number;
     time?: Date;
+    transactions?: {
+      txId?: string;
+      fee: number;
+      size: number;
+      coinbase?: boolean;
+      inputs?: number[];
+      outputs?: number[];
+    }[]
   }[]
 ) {
   for (const block of blocks) {
-    const { chain, hash, height, time } = block;
+    const { chain, height, time } = block;
+    const hash = block.hash || '2c07decae68f74d6ac20184cce0216388ea66f0068cde511bb9c51f0691539a8';
+    let transactions = block.transactions || [];
     await BitcoinBlockStorage.collection.insertOne({
       network: 'regtest',
       chain: chain,
-      hash: hash || '2c07decae68f74d6ac20184cce0216388ea66f0068cde511bb9c51f0691539a8',
+      hash: hash,
       bits: 545259519,
       height: height,
       merkleRoot: '760a46b4f94ab17350a3ed299546fb5648c025ad9bd22271be38cf075c9cf3f4',
@@ -39,82 +49,63 @@ async function addBlocks(
       transactionCount: 1,
       version: 805306368
     });
-  }
-}
 
-async function addTransactions(
-  transactions: {
-    chain: 'BTC' | 'BCH';
-    blockHash?: string;
-    txId?: string;
-    fee: number;
-    size: number;
-    blockHeight: number;
-    coinbase?: boolean;
-    inputs?: {
-      value: number;
-    }[];
-    outputs?: {
-      value: number;
-    }[];
-  }[]
-) {
-  for (const tx of transactions) {
-    const { chain, blockHash, fee, size, blockHeight, coinbase } = tx;
-    let { txId, inputs, outputs } = tx;
-    inputs = inputs || [];
-    outputs = outputs || [];
-    txId = txId || 'da848d4c5a9d690259f5fddb6c5ca0fb0e52bc4a8ac472d3784a2de834cf448e';
-    await TransactionStorage.collection.insertOne({
-      chain: chain,
-      network: 'regtest',
-      txid: txId,
-      blockHash: blockHash || '2c07decae68f74d6ac20184cce0216388ea66f0068cde511bb9c51f0691539a8',
-      blockHeight: blockHeight,
-      blockTime: new Date('2025-07-07T17:38:02.000Z'),
-      blockTimeNormalized: new Date('2025-07-07T17:38:02.000Z'),
-      coinbase: coinbase!!,
-      fee: fee,
-      inputCount: inputs.length || 1,
-      outputCount: outputs.length || 1,
-      locktime: 0,
-      size: size,
-      value: 10_000_000,
-      wallets: []
-    });
-    for (const input of inputs) {
-      const { value } = input;
-      await CoinStorage.collection.insertOne({
+    for (const tx of transactions) {
+      const { fee, size, coinbase } = tx;
+      const inputs = tx.inputs || [];
+      const outputs = tx.outputs || [];
+      const txId = tx.txId || 'da848d4c5a9d690259f5fddb6c5ca0fb0e52bc4a8ac472d3784a2de834cf448e';
+
+      await TransactionStorage.collection.insertOne({
         chain: chain,
         network: 'regtest',
-        value: value,
-        mintTxid: '52e76c33561b0fc31ecf56e101c4f582d85e385381f3da3e5f5aabdb1b939f90',
-        spentTxid: txId,
-        spentHeight: blockHeight,
-        mintHeight: blockHeight - 1,
-        mintIndex: 0,
-        script: Buffer.from('aiSqIant4vYcP3HR3v0/qZnfo2lTdVxpBol5mWK0i+vYNpdOjPk'),
-        coinbase: true,
-        address: 'bcrt1qxxm47l2d6hrl8e9w9rq6w9klxav5c9e76jehw8',
+        txid: txId,
+        blockHash: hash,
+        blockHeight: height,
+        blockTime: new Date('2025-07-07T17:38:02.000Z'),
+        blockTimeNormalized: new Date('2025-07-07T17:38:02.000Z'),
+        coinbase: coinbase!!,
+        fee: fee,
+        inputCount: inputs.length || 1,
+        outputCount: outputs.length || 1,
+        locktime: 0,
+        size: size,
+        value: 10_000_000,
         wallets: []
       });
-    }
-    for (const output of outputs) {
-      const { value } = output;
-      await CoinStorage.collection.insertOne({
-        chain: chain,
-        network: 'regtest',
-        value: value,
-        mintTxid: txId,
-        spentTxid: 'c9d06466adaf5322f619c603fddb8a325cb6cdfcb9dffaa4e1919e896b2b98d7',
-        spentHeight: -2,
-        mintHeight: blockHeight,
-        mintIndex: 0,
-        script: Buffer.from('aiSqIant4vYcP3HR3v0/qZnfo2lTdVxpBol5mWK0i+vYNpdOjPk'),
-        coinbase: true,
-        address: 'bcrt1qxxm47l2d6hrl8e9w9rq6w9klxav5c9e76jehw8',
-        wallets: []
-      });
+
+      for (const input of inputs) {
+        await CoinStorage.collection.insertOne({
+          chain: chain,
+          network: 'regtest',
+          value: input,
+          mintTxid: '52e76c33561b0fc31ecf56e101c4f582d85e385381f3da3e5f5aabdb1b939f90',
+          spentTxid: txId,
+          spentHeight: height,
+          mintHeight: height - 1,
+          mintIndex: 0,
+          script: Buffer.from('aiSqIant4vYcP3HR3v0/qZnfo2lTdVxpBol5mWK0i+vYNpdOjPk'),
+          coinbase: true,
+          address: 'bcrt1qxxm47l2d6hrl8e9w9rq6w9klxav5c9e76jehw8',
+          wallets: []
+        });
+      }
+      for (const output of outputs) {
+        await CoinStorage.collection.insertOne({
+          chain: chain,
+          network: 'regtest',
+          value: output,
+          mintTxid: txId,
+          spentTxid: 'c9d06466adaf5322f619c603fddb8a325cb6cdfcb9dffaa4e1919e896b2b98d7',
+          spentHeight: -2,
+          mintHeight: height,
+          mintIndex: 0,
+          script: Buffer.from('aiSqIant4vYcP3HR3v0/qZnfo2lTdVxpBol5mWK0i+vYNpdOjPk'),
+          coinbase: true,
+          address: 'bcrt1qxxm47l2d6hrl8e9w9rq6w9klxav5c9e76jehw8',
+          wallets: []
+        });
+      }
     }
   }
 }
@@ -155,83 +146,42 @@ describe('Routes', function() {
     await resetDatabase();
     await addBlocks([
       { chain: 'BTC', height: 99, time: minutesAgo(50) },
-      { chain: 'BTC', hash: block100Hash, height: 100, time: minutesAgo(40) },
-      { chain: 'BTC', height: 101, time: minutesAgo(30) },
+      { chain: 'BTC', hash: block100Hash, height: 100, time: minutesAgo(40),
+        transactions: [
+          { fee: 0, size: 133, coinbase: true, outputs: [ 5000000000 , 0 ] },
+          { fee: 20000, size: 1056, inputs: [130000], outputs: [100000, 10000 ] },
+          { fee: 20000, size: 1056, inputs: [130000], outputs: [100000, 10000 ] },
+          { fee: 25000, size: 1056, inputs: [135000], outputs: [100000, 10000 ] },
+          { fee: 30000, size: 1056, inputs: [140000], outputs: [100000, 10000 ] },
+          { fee: 35000, size: 1056, inputs: [100000, 45000 ], outputs: [ 100000 , 10000 ]},
+        ]
+      },
+      { chain: 'BTC', height: 101, time: minutesAgo(30),
+        transactions: [
+          { fee: 0, size: 133, coinbase: true }
+        ]
+      },
       { chain: 'BTC', height: 102, time: minutesAgo(20) },
-      { chain: 'BTC', height: tipHeight, time: minutesAgo(10) },
-      { chain: 'BCH', height: 100 },
+      { chain: 'BTC', height: tipHeight, time: minutesAgo(10),
+        transactions: [
+          { fee: 0, size: 133, coinbase: true },
+          { fee: 9000, size: 1056 },
+          { fee: 10000, size: 1056 },
+          { fee: 11000, size: 1056 },
+        ]
+       },
+      { chain: 'BCH', height: 100, 
+        transactions: [
+          { fee: 0, size: 133, coinbase: true },
+          { fee: 2000, size: 1056 },
+          { fee: 2000, size: 1056 },
+          { fee: 2500, size: 1056 },
+          { fee: 3000, size: 1056 },
+          { fee: 3500, size: 1056 }
+        ] 
+      },
       { chain: 'BCH', height: 101 },
       { chain: 'BCH', height: 102 }
-    ]);
-    await addTransactions([
-      {
-        chain: 'BTC',
-        blockHash: block100Hash,
-        fee: 0,
-        size: 133,
-        blockHeight: 100,
-        coinbase: true,
-        outputs: [{ value: 5000000000 }, { value: 0 }]
-      },
-      {
-        chain: 'BTC',
-        blockHash: block100Hash,
-        fee: 20000,
-        size: 1056,
-        blockHeight: 100,
-        inputs: [{ value: 130000 }],
-        outputs: [{ value: 100000 }, { value: 10000 }]
-      },
-      {
-        chain: 'BTC',
-        blockHash: block100Hash,
-        fee: 20000,
-        size: 1056,
-        blockHeight: 100,
-        inputs: [{ value: 130000 }],
-        outputs: [{ value: 100000 }, { value: 10000 }]
-      },
-      {
-        chain: 'BTC',
-        blockHash: block100Hash,
-        fee: 25000,
-        size: 1056,
-        blockHeight: 100,
-        inputs: [{ value: 135000 }],
-        outputs: [{ value: 100000 }, { value: 10000 }]
-      },
-      {
-        chain: 'BTC',
-        blockHash: block100Hash,
-        fee: 30000,
-        size: 1056,
-        blockHeight: 100,
-        inputs: [{ value: 140000 }],
-        outputs: [{ value: 100000 }, { value: 10000 }]
-      },
-      {
-        chain: 'BTC',
-        blockHash: block100Hash,
-        fee: 35000,
-        size: 1056,
-        blockHeight: 100,
-        inputs: [{ value: 100000 }, { value: 35000 }],
-        outputs: [{ value: 100000 }, { value: 10000 }]
-      },
-
-      { chain: 'BTC', fee: 0, size: 133, blockHeight: 101, coinbase: true },
-
-      { chain: 'BTC', fee: 0, size: 133, blockHeight: tipHeight, coinbase: true },
-      { chain: 'BTC', fee: 9000, size: 1056, blockHeight: tipHeight },
-      { chain: 'BTC', fee: 10000, size: 1056, blockHeight: tipHeight },
-      { chain: 'BTC', fee: 11000, size: 1056, blockHeight: tipHeight },
-
-      { chain: 'BCH', fee: 0, size: 133, blockHeight: 100, coinbase: true },
-      { chain: 'BCH', fee: 2000, size: 1056, blockHeight: 100 },
-      { chain: 'BCH', fee: 2000, size: 1056, blockHeight: 100 },
-      { chain: 'BCH', fee: 2500, size: 1056, blockHeight: 100 },
-      { chain: 'BCH', fee: 3000, size: 1056, blockHeight: 100 },
-      { chain: 'BCH', fee: 3500, size: 1056, blockHeight: 100 }
     ]);
   });
 
