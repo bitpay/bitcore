@@ -400,7 +400,6 @@ describe('Solana API', function() {
       } as any;
   
       const router = svmRouter.getRouter();
-      // Find the decode route handler
       const routeCall = router.stack.find((layer: any) => 
         layer.route && layer.route.path === `/api/${chain}/:network/decode`
       );
@@ -481,7 +480,6 @@ describe('Solana API', function() {
     });
   
     it('should return 400 error when transaction size exceeds maximum', async () => {
-      // Create a base64 string that would decode to more than 1232 bytes
       const largeBuffer = Buffer.alloc(1300, 'a');
       const rawTx = largeBuffer.toString('base64');
   
@@ -514,7 +512,6 @@ describe('Solana API', function() {
     });
   
     it('should return 400 error when transaction is too small', async () => {
-      // Create a small base64 string that would decode to less than 64 bytes
       const smallBuffer = Buffer.alloc(30, 'a');
       const rawTx = smallBuffer.toString('base64');
   
@@ -700,7 +697,6 @@ describe('Solana API', function() {
         accountKeys: ['key1', 'key2']
       };
   
-      // Expected response after bigint conversion (what decodeRawTransaction returns)
       const expectedResponse = {
         version: 0,
         fee: '5000',
