@@ -9,6 +9,8 @@ class CredentialManager {
   private isShutdown: boolean;
   private secureHeapAllocationBaseline: number;
   private credentials: Map<string, Buffer>
+  private encryptedPassword;
+  private activeBuffers;
 
   constructor() {
     this.rsaPrivateKey = null;
@@ -156,9 +158,9 @@ class CredentialManager {
   }
 
   /**
-     * Used to determine if RSA keys still in secure heap
-     * @throws {Error} If current allocation is less than baseline
-     */
+   * Used to determine if RSA keys still in secure heap
+   * @throws {Error} If current allocation is less than baseline
+   */
   verifyExpectedAllocation() {    
     const { used: currentAllocation } = crypto.secureHeapUsed();
 
@@ -257,7 +259,11 @@ class CredentialManager {
    * @returns {Buffer} Decrypted password as a Buffer
    */
   getDecryptedPassword() {
-    this.#checkShutdown();
+    if (this.isShutdown) return;
+
+    if (!this.rsaPrivateKey) {
+      throw new Error('Rsa private key not available');
+    }
     
     const decryptedPassword = crypto.privateDecrypt({
       key: this.rsaPrivateKey,
