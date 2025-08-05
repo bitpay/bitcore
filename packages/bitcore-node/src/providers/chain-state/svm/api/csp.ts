@@ -751,9 +751,10 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     return true;
   }
 
-  async decodeRawTx(params: any): Promise<string> {
+  async decodeRawTransaction(params: any): Promise<any> {
     const { network, rawTx } = params;
     const { rpc } = await this.getRpc(network);
-    return await rpc.decodeRawTx({ rawTx });
+    const decodedTx =  await rpc.decodeRawTransaction({ rawTx });
+    return decodedTx ? JSON.parse(JSON.stringify(decodedTx, (_, v) => typeof v === 'bigint' ? v.toString() : v)) : null;
   }
 }
