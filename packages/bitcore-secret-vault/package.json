@@ -1,0 +1,36 @@
+{
+  "name": "bitcore-secret-vault",
+  "version": "0.1.0",
+  "description": "Wrapper for secure-heap forked process utilizing secure heap for protection of serializable credentials",
+  "main": "./ts_build/src/index.js",
+  "types": "./ts_build/src/index.d.ts",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "npm run compile",
+    "clean": "rm -rf ./ts_build",
+    "pub": "npm run compile && npm publish",
+    "watch": "tsc --watch",
+    "compile": "npm run clean && tsc",
+    "test": "mocha -r tsx test/**/*.test.ts",
+    "precommit": "npm run fix && npm run lint",
+    "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
+    "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'"
+  },
+  "dependencies": {
+    "child_process": "^1.0.2",
+    "crypto": "^1.0.1"
+  },
+  "devDependencies": {
+    "@types/chai": "5.0.1",
+    "@types/mocha": "10.0.10",
+    "@types/node": "22.13.1",
+    "chai": "5.1.2",
+    "mocha": "11.1.0",
+    "tsx": "4.19.2",
+    "typescript": "5.7.3"
+  },
+  "author": "Michael Jay <mjay@bitpay.com>",
+  "license": "ISC"
+}

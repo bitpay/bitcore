@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "ES2020",
+      "ES2022"
+    ],
+    "noImplicitAny": false,
+    "removeComments": true,
+    "declaration": true,
+    "declarationMap": true,
+    "module": "commonjs",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "target": "ES2020",
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "*": [
+        "*",
+        "./src/*",
+        "./test/*"
+      ]
+    },
+    "outDir": "ts_build",
+    "sourceMap": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "./src/**/*.ts",
+    "./test/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "ts_build"
+  ]
+} 
