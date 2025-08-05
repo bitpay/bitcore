@@ -18,7 +18,7 @@ async function addBlocks(
     height: number;
     time?: Date;
     transactions?: {
-      txId?: string;
+      txid?: string;
       fee: number;
       size: number;
       coinbase?: boolean;
@@ -51,20 +51,21 @@ async function addBlocks(
     });
 
     for (const tx of transactions) {
-      const { fee, size, coinbase } = tx;
+      const { fee, size } = tx;
       const inputs = tx.inputs || [];
       const outputs = tx.outputs || [];
-      const txId = tx.txId || 'da848d4c5a9d690259f5fddb6c5ca0fb0e52bc4a8ac472d3784a2de834cf448e';
+      const txid = tx.txid || 'da848d4c5a9d690259f5fddb6c5ca0fb0e52bc4a8ac472d3784a2de834cf448e';
+      const coinbase = tx.coinbase!!;
 
       await TransactionStorage.collection.insertOne({
         chain: chain,
         network: 'regtest',
-        txid: txId,
+        txid: txid,
         blockHash: hash,
         blockHeight: height,
         blockTime: new Date('2025-07-07T17:38:02.000Z'),
         blockTimeNormalized: new Date('2025-07-07T17:38:02.000Z'),
-        coinbase: coinbase!!,
+        coinbase: coinbase,
         fee: fee,
         inputCount: inputs.length || 1,
         outputCount: outputs.length || 1,
@@ -74,34 +75,36 @@ async function addBlocks(
         wallets: []
       });
 
-      for (const input of inputs) {
+      for (let i = 0; i < inputs.length; i++) {
+        const input = inputs[i];
         await CoinStorage.collection.insertOne({
           chain: chain,
           network: 'regtest',
           value: input,
           mintTxid: '52e76c33561b0fc31ecf56e101c4f582d85e385381f3da3e5f5aabdb1b939f90',
-          spentTxid: txId,
+          spentTxid: txid,
           spentHeight: height,
           mintHeight: height - 1,
-          mintIndex: 0,
+          mintIndex: i,
           script: Buffer.from('aiSqIant4vYcP3HR3v0/qZnfo2lTdVxpBol5mWK0i+vYNpdOjPk'),
-          coinbase: true,
+          coinbase: coinbase,
           address: 'bcrt1qxxm47l2d6hrl8e9w9rq6w9klxav5c9e76jehw8',
           wallets: []
         });
       }
-      for (const output of outputs) {
+      for (let i = 0; i < outputs.length; i++) {
+        const output = outputs[i];
         await CoinStorage.collection.insertOne({
           chain: chain,
           network: 'regtest',
           value: output,
-          mintTxid: txId,
+          mintTxid: txid,
           spentTxid: 'c9d06466adaf5322f619c603fddb8a325cb6cdfcb9dffaa4e1919e896b2b98d7',
           spentHeight: -2,
           mintHeight: height,
-          mintIndex: 0,
+          mintIndex: i,
           script: Buffer.from('aiSqIant4vYcP3HR3v0/qZnfo2lTdVxpBol5mWK0i+vYNpdOjPk'),
-          coinbase: true,
+          coinbase: coinbase,
           address: 'bcrt1qxxm47l2d6hrl8e9w9rq6w9klxav5c9e76jehw8',
           wallets: []
         });
@@ -148,12 +151,18 @@ describe('Routes', function() {
       { chain: 'BTC', height: 99, time: minutesAgo(50) },
       { chain: 'BTC', hash: block100Hash, height: 100, time: minutesAgo(40),
         transactions: [
-          { fee: 0, size: 133, coinbase: true, outputs: [ 5000000000 , 0 ] },
-          { fee: 20000, size: 1056, inputs: [130000], outputs: [100000, 10000 ] },
-          { fee: 20000, size: 1056, inputs: [130000], outputs: [100000, 10000 ] },
-          { fee: 25000, size: 1056, inputs: [135000], outputs: [100000, 10000 ] },
-          { fee: 30000, size: 1056, inputs: [140000], outputs: [100000, 10000 ] },
-          { fee: 35000, size: 1056, inputs: [100000, 45000 ], outputs: [ 100000 , 10000 ]},
+          { txid: '3c683a2deac83349d0da065baafc326a42f0f0630199cedd34beb52d8d16d11c',
+            fee: 0, size: 133, coinbase: true, outputs: [ 5000000000, 0 ] },
+          { txid: 'f1bc9ab3ee4c44d304b06cb09ee1c323b072d1967f3e1c3d1bd1067eae07bd25',
+            fee: 20000, size: 1056, inputs: [130000], outputs: [100000, 10000 ] },
+          { txid: '85cb924a14f354aae71afa503e057e570290c769b0fec10d149c7ea55d100f94',
+            fee: 20000, size: 1056, inputs: [130000], outputs: [100000, 10000 ] },
+          { txid: 'a4aa0cce47e70df51407ba864be9d667b71ecb2b5ee01d48b1bb29ba32436ed2',
+            fee: 25000, size: 1056, inputs: [135000], outputs: [100000, 10000 ] },
+          { txid: '86950d79deed75bcbe4e6345f6e87390a02477cfc8492e3d93702b5396ea746d',
+            fee: 30000, size: 1056, inputs: [140000], outputs: [100000, 10000 ] },
+          { txid: '4541c61085876bbe91ed82468c46d9a5aa2df0e14b1833c1c1cd241f2f143bd6',
+            fee: 35000, size: 1056, inputs: [100000, 45000 ], outputs: [ 100000 , 10000 ]},
         ]
       },
       { chain: 'BTC', height: 101, time: minutesAgo(30),
@@ -293,7 +302,8 @@ describe('Routes', function() {
         if (err) console.error(err);
         const { txids, inputs, outputs } = res.body;
         expect(txids.length).to.equal(3);
-        expect(inputs.length).to.be.at.least(txids.length);
+        // expect a transaction input for every transaction expect the mined/coinbase transaction
+        expect(inputs.length).to.be.at.least(txids.length - 1);
         expect(outputs.length).to.be.at.least(txids.length);
 
         for (const input of res.body.inputs) {
