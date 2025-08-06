@@ -2655,6 +2655,10 @@ export class WalletService implements IWalletService {
                   // SOL is skipped since its a non necessary field that is expected to be provided by the client.
                   if (!opts.nonce && !Constants.SVM_CHAINS[wallet.chain.toUpperCase()]) { 
                     try {
+                      if (Constants.EVM_CHAINS[wallet.chain.toUpperCase()]) {
+                        // if nonce mangement is done by BWS, default to refreshing nonce on txp publish
+                        opts.refreshOnPublish = true;
+                      } 
                       opts.nonce = await ChainService.getTransactionCount(this, wallet, opts.from);
                     } catch (error) {
                       return next(error);
@@ -2897,6 +2901,7 @@ export class WalletService implements IWalletService {
           ChainService.checkTxUTXOs(this, txp, opts, err => {
             if (err) return cb(err);
             txp.status = 'pending';
+            opts.wallet = wallet;
             ChainService.refreshTxData(this, txp, opts, (err, txp) => {
               if (err) return cb(err);
               if (txp.isRepublishEnabled() && !txp.prePublishRaw) {
@@ -3162,7 +3167,8 @@ export class WalletService implements IWalletService {
 
           if (txp.signingMethod === 'schnorr' && !opts.supportBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
 
-          if ([...Object.keys(Constants.EVM_CHAINS), 'XRP'].includes(wallet.chain.toUpperCase())) {
+          // Validate nonces only if they are not reset on signing via a re-publish
+          if ([...Object.keys(Constants.EVM_CHAINS), 'XRP'].includes(wallet.chain.toUpperCase()) && !txp.isRepublishEnabled()) {
             try {
               const txps = await this.getPendingTxsPromise({});
               for (let t of txps) {
