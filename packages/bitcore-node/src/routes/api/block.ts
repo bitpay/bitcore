@@ -77,18 +77,13 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: 
     console.log(err);
   }
 
+  const numOfTxs = await TransactionStorage.collection.countDocuments({ chain, network, blockHash });
   const skips = maxLimit * (pageNumber - 1);
-  const transactions = await TransactionStorage.collection.find({ chain, network, blockHash });
-  const transactionsArray = await transactions.toArray();
-  const numOfTxs = transactionsArray.length;
   try {
-    const txs =
-      numOfTxs < maxLimit
-        ? transactionsArray
-        : await TransactionStorage.collection.find({ chain, network, blockHash })
-            .skip(skips)
-            .limit(maxLimit)
-            .toArray();
+    const txs = await TransactionStorage.collection.find({ chain, network, blockHash })
+        .skip(maxLimit < numOfTxs ? skips : 0)
+        .limit(maxLimit)
+        .toArray();
 
     if (!txs) {
       return res.status(422).send('No txs for page');
