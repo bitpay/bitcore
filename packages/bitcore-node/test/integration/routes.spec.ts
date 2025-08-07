@@ -280,19 +280,52 @@ describe('Routes', function() {
       });
     });
 
+    const testCoins = (
+      chain: string,
+      network: string,
+      blockHeight: number,
+      inputs: string[],
+      outputs: string[],
+      txids: string[],
+    ) => {
+      const coinProps = [
+        'chain',
+        'network',
+        'coinbase',
+        'mintIndex',
+        'spentTxid',
+        'mintTxid',
+        'spentHeight',
+        'mintHeight',
+        'address',
+        'script',
+        'value',
+        'confirmations'
+      ];
+      // expect a transaction input for every transaction except the mined/coinbase transaction
+      expect(inputs.length).to.be.at.least(txids.length - 1);
+      // every transaction must have an output by definition
+      expect(outputs.length).to.be.at.least(txids.length);
+
+      for (const input of inputs) {
+        expect(input).to.include({chain: 'BTC', network: 'regtest', spentHeight: blockHeight});
+        for (const key of coinProps) {
+          expect(input).to.have.property(key);
+        }
+      }
+      for (const output of outputs) {
+        expect(output).to.include({chain, network, mintHeight: blockHeight });
+        for (const key of coinProps) {
+          expect(output).to.have.property(key);
+        }
+      }
+    }
+
     it('should get coins by block hash', done => {
       request.get(`/api/BTC/regtest/block/${block100Hash}/coins/0/1`).expect(200, (err, res) => {
         if (err) console.error(err);
         const { txids, inputs, outputs } = res.body;
-        expect(inputs.length).to.be.at.least(txids.length);
-        expect(outputs.length).to.be.at.least(txids.length);
-
-        for (const input of res.body.inputs) {
-          expect(input).to.include({chain: 'BTC', network: 'regtest', spentHeight: 100});
-        }
-        for (const output of res.body.outputs) {
-          expect(output).to.include({chain: 'BTC', network: 'regtest', mintHeight: 100});
-        }
+        testCoins('BTC', 'regtest', 100, inputs, outputs, txids);
         done();
       });
     });
@@ -302,20 +335,109 @@ describe('Routes', function() {
         if (err) console.error(err);
         const { txids, inputs, outputs } = res.body;
         expect(txids.length).to.equal(3);
-        // expect a transaction input for every transaction expect the mined/coinbase transaction
-        expect(inputs.length).to.be.at.least(txids.length - 1);
-        expect(outputs.length).to.be.at.least(txids.length);
-
-        for (const input of res.body.inputs) {
-          expect(input).to.include({chain: 'BTC', network: 'regtest', spentHeight: 100});
-        }
-        for (const output of res.body.outputs) {
-          expect(output).to.include({chain: 'BTC', network: 'regtest', mintHeight: 100});
-        }
+        testCoins('BTC', 'regtest', 100, inputs, outputs, txids);
         done();
       });
     });
 
+    let pg1txids;
+    it('should get coins by block hash and seperate into 2 pages (page 1)', done => {
+      request.get(`/api/BTC/regtest/block/${block100Hash}/coins/3/1`).expect(200, (err, res) => {
+        if (err) console.error(err);
+        const { txids, inputs, outputs } = res.body;
+        pg1txids = txids;
+        testCoins('BTC', 'regtest', 100, inputs, outputs, txids);
+        done();
+      });
+    });
+
+    it('should get coins by block hash and seperate into 2 pages (page 2)', done => {
+      request.get(`/api/BTC/regtest/block/${block100Hash}/coins/3/2`).expect(200, (err, res) => {
+        if (err) console.error(err);
+        const { txids, inputs, outputs } = res.body;
+        expect(pg1txids).to.be.an.instanceof(Array);
+        for (const txid of txids) {
+          expect(pg1txids).to.not.contain(txid);
+        }
+        testCoins('BTC', 'regtest', 100, inputs, outputs, txids);
+        done();
+      });
+    });
+
+    let numTxsBlock100;
+    it('should get number of transactions from block 100 for other tests', done => {
+      request.get(`/api/BTC/regtest/block/${block100Hash}/coins/500/1`).expect(200, (err, res) => {
+        if (err) console.error(err);
+        const { txids } = res.body;
+        numTxsBlock100 = txids.length;
+        expect(numTxsBlock100).to.be.at.least(6);
+        done();
+      });
+    });
+
+    it('should get coins by block hash and handle coin limit higher than number of coins', done => {
+      request.get(`/api/BTC/regtest/block/${block100Hash}/coins/500/1`).expect(200, (err, res) => {
+        if (err) console.error(err);
+        const { txids, inputs, outputs } = res.body;
+        expect(txids.length).to.equal(numTxsBlock100);
+        testCoins('BTC', 'regtest', 100, inputs, outputs, txids);
+        done();
+      });
+    });
+
+    it('should get all coin data if no limit is specified (:limit == 0) on page 1', done => {
+      request.get(`/api/BTC/regtest/block/${block100Hash}/coins/0/1`).expect(200, (err, res) => {
+        if (err) console.error(err);
+        const { txids, inputs, outputs } = res.body;
+        expect(txids.length).to.equal(numTxsBlock100);
+        testCoins('BTC', 'regtest', 100, inputs, outputs, txids);
+        done();
+      });
+    });
+
+
+    it('should get all coin data if no limit is specified (:limit == 0) on page 2', done => {
+      request.get(`/api/BTC/regtest/block/${block100Hash}/coins/0/2`).expect(200, (err, res) => {
+        if (err) console.error(err);
+        const { txids, inputs, outputs } = res.body;
+        expect(txids.length).to.equal(numTxsBlock100);
+        testCoins('BTC', 'regtest', 100, inputs, outputs, txids);
+        done();
+      });
+    });
+
+    it('should get coins by block hash and handle 2nd page with coin limit higher than number of coins', done => {
+      request.get(`/api/BTC/regtest/block/${block100Hash}/coins/500/2`).expect(200, (err, res) => {
+        if (err) console.error(err);
+        const { txids, inputs, outputs } = res.body;
+        expect(txids.length).to.equal(numTxsBlock100).and.to.be.at.least(1);
+        testCoins('BTC', 'regtest', 100, inputs, outputs, txids);
+        done();
+      });
+    });
+
+    it('should recieve 0 coins if requesting a page that is too high', done => {
+      request.get(`/api/BTC/regtest/block/${block100Hash}/coins/${numTxsBlock100 - 1}/3`).expect(200, (err, res) => {
+        if (err) console.error(err);
+        const { txids, inputs, outputs } = res.body;
+        expect(txids).to.be.empty;
+        expect(inputs).to.be.empty;
+        expect(outputs).to.be.empty;
+        done();
+      });
+    });
+
+    for (let i = 1; i <= 3; i++) {
+      it(`should recieve partial pages remainder ${i}`, done => {
+        request.get(`/api/BTC/regtest/block/${block100Hash}/coins/${numTxsBlock100 - i}/2`).expect(200, (err, res) => {
+          if (err) console.error(err);
+          const { txids, inputs, outputs } = res.body;
+          expect(txids).to.have.length(i);
+          testCoins('BTC', 'regtest', 100, inputs, outputs, txids);
+          done();
+        });
+      });
+    }
 
     it('should get blocks before 20 minutes ago', done => {
       request.get(`/api/BTC/regtest/block/before-time/${minutesAgo(20)}`).expect(200, (err, res) => {
