@@ -67,7 +67,8 @@ export class SolChain implements IChain {
           }, { fees: 0, amounts: 0 });
 
           const lockedSum = (amounts + fees) || 0;  // previously set to 0 if opts.multisigContractAddress
-          const convertedBalance = this.convertBitcoreBalance(balance, lockedSum, reserve);
+          const reserveAmount = opts.tokenAddress ? 0 : reserve;
+          const convertedBalance = this.convertBitcoreBalance(balance, lockedSum, reserveAmount);
           server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
             if (err) return cb(err);
             if (addresses.length > 0) {
