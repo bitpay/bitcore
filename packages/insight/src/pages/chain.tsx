@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {useDispatch} from 'react-redux';
 import {useNavigate, useParams} from 'react-router-dom';
 import {fetcher} from 'src/api/api';
@@ -8,8 +8,9 @@ import {getApiRoot, normalizeParams, sleep} from 'src/utilities/helper-methods';
 import {BlocksType} from 'src/utilities/models';
 import nProgress from 'nprogress';
 import Info from 'src/components/info';
-import { BitPay } from 'src/assets/styles/colors';
-import { colorCodes } from 'src/utilities/constants';
+import {BitPay, Slate} from 'src/assets/styles/colors';
+import {colorCodes} from 'src/utilities/constants';
+import {Chart as ChartJS} from 'chart.js';
 
 const getBlocksUrl = (currency: string, network: string) => {
   return `${getApiRoot(currency)}/${currency}/${network}/block?limit=6`;
@@ -23,6 +24,34 @@ export const ChainDetails = () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  
+  const feeRef = useRef<HTMLCanvasElement | null>(null);
+  const feeInstanceRef = useRef<ChartJS | null>(null);
+
+  const fees =  [0, 1, 7, 3, 2, 1, 5];
+  const feeData = {
+    labels: fees,
+    datasets: [
+      {
+        data: fees,
+        borderColor: Slate,
+        borderWidth: 3,
+        pointRadius: 0,
+      }
+    ]
+  };
+
+  const options = {
+    scales: {
+      x: {display: false},
+      y: {display: true},
+    },
+    plugins: {legend: {display: false}},
+    events: [], // disable default events
+    responsive: true,
+    maintainAspectRatio: false,
+    tension: 0.1,
+  };
 
   useEffect(() => {
     if (!currency || !network) return;
@@ -45,6 +74,18 @@ export const ChainDetails = () => {
       .finally(() => {
         nProgress.done();
       });
+    
+    if (feeRef.current) {
+      if (feeInstanceRef.current) {
+        feeInstanceRef.current.destroy();
+      }
+
+      feeInstanceRef.current = new ChartJS(feeRef.current, {
+        type: 'line',
+        data: feeData,
+        options,
+      });
+    }
   }, [currency, network]);
 
   const gotoBlocks = async () => {
@@ -62,13 +103,16 @@ export const ChainDetails = () => {
     <>
       {error ? <Info type={'error'} message={error} /> : null}
     
-      <div style={{display: 'flex', width: '100%', gap: '1rem'}}>
+      <div style={{display: 'flex', flex: 1, width: '100%', gap: '1rem'}}>
         <div style={{width: '100%'}}>
           <div style={{alignSelf: 'stretch'}}>
            <ChainHeader currency={currency} network={network} />
           </div>
           <div style={{backgroundColor: colorCodes[currency], width: 'fit-content', borderRadius: '15px', margin: '1rem 0.5rem', padding: '0.75rem'}}>
             <b>Fee: xxx</b>
+          </div>
+          <div style={{height: '100px', width: '100%'}}>
+            <canvas ref={feeRef} aria-label='price line chart' role='img' />
           </div>
         </div>
         <div style={{width: 'fit-content', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
