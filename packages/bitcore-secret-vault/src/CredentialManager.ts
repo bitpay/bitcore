@@ -88,7 +88,7 @@ class CredentialManager {
       this.activeBuffers.clear();
       console.log('SecureHeapSecretManager: Active buffers sanitized');
       
-      // ✅ SECURITY: Clear RSA keys (they're in secure heap, but clear references)
+      // SECURITY: Clear RSA keys (private key bignums are in secure heap)
       this.rsaPrivateKey = null;
       this.rsaPublicKey = null;
       console.log('SecureHeapSecretManager: RSA key references cleared');
@@ -285,7 +285,6 @@ class CredentialManager {
 
   /**
    * Removes a buffer from active tracking (call this after manual sanitization)
-   * @param {Buffer} buffer - Buffer that has been sanitized
    */
   removeFromTracking(buffer) {
     this.activeBuffers.delete(buffer);

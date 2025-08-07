@@ -23,7 +23,7 @@ export class SecureVault {
       secureHeapSize: config.secureHeapSize || 1024 * 1024 // 1MB default
     };
 
-    this.child = fork('./secure-worker.ts', [], {
+    this.child = fork('./child-process.ts', [], {
       execArgv: [`--secure-heap=${this.config.secureHeapSize}`, '--expose-gc']
     });
 
