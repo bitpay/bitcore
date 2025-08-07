@@ -90,7 +90,7 @@ export class SVMRouter {
         if (err?.code != null) {
           res.status(400).send(err.message);
         } else {
-          logger.error('Rent Error: %o', err.stack || err.message || err);
+          logger.error('Token Account Error: %o', err.stack || err.message || err);
           res.status(500).send(err.message || err);
         }
       }
