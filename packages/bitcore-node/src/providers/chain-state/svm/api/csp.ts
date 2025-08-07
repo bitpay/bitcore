@@ -728,4 +728,33 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     const block = await rpc.getBlock({ height });
     return this.blockTransform(network, block, height);
   }
+
+  validateRawTx(rawTx: string) {
+    const MAX_TRANSACTION_SIZE = 1232; // Solana's packet size limit
+    const MIN_TRANSACTION_SIZE = 64;
+
+    if (!rawTx) {
+      throw new Error('Missing raw transaction string')
+    }
+    if (!(Buffer.from(rawTx, 'base64').toString('base64') === rawTx)) {
+      throw new Error('Invalid base64 encoding');
+    }
+
+    const buffer = Buffer.from(rawTx, 'base64');
+
+    if (buffer.length > MAX_TRANSACTION_SIZE) {
+      throw new Error(`Transaction size (${buffer.length}) exceeds maximum (${MAX_TRANSACTION_SIZE})`);
+    }
+    if (buffer.length < MIN_TRANSACTION_SIZE) {
+      throw new Error('Transaction too small to be valid');
+    }
+    return true;
+  }
+
+  async decodeRawTransaction(params: any): Promise<any> {
+    const { network, rawTx } = params;
+    const { rpc } = await this.getRpc(network);
+    const decodedTx =  await rpc.decodeRawTransaction({ rawTx });
+    return decodedTx ? JSON.parse(JSON.stringify(decodedTx, (_, v) => typeof v === 'bigint' ? v.toString() : v)) : null;
+  }
 }
