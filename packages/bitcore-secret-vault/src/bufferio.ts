@@ -6,13 +6,14 @@ const crypto = require('crypto');
  * BufferIO - input/output class that NEVER stores values as strings
  */
 class BufferIO {
+  maxInputLength: number;
+
   constructor() {
     this.maxInputLength = 256;
   }
 
   /**
    * Reads user input directly into a buffer with secure cleanup
-   * @param {string} prompt
    */
   async readIn(prompt = 'Input: ') {
     return new Promise((resolve, reject) => {

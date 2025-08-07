@@ -8,7 +8,7 @@ import { ProcessState, SecureCredential, SecureVaultConfig, ValidRequestNames, V
  * SecureVault - Main class for managing secure credential storage
  * Uses child processes with secure heap allocation to protect sensitive data
  */
-export class SecureVault extends EventEmitter {
+export class SecureVault {
   private config: Required<SecureVaultConfig>;
   private isInitialized = false;
   private child: ChildProcess;
@@ -16,8 +16,6 @@ export class SecureVault extends EventEmitter {
   private msgId: number;
 
   constructor(config: SecureVaultConfig = {}) {
-    super();
-    
     // Set default configuration
     this.config = {
       maxCredentials: config.maxCredentials || 100,
@@ -33,7 +31,6 @@ export class SecureVault extends EventEmitter {
     this.pending = new Map();
     
     this.initialize();
-    this.setupEventHandlers();
   }
 
   /**
@@ -69,7 +66,6 @@ export class SecureVault extends EventEmitter {
       const result = await this.handleRequest<boolean>('deleteCredential', { id })
       return { success: true, data: { deleted: result } };
     } catch (error) {
-      this.emit('error', error);
       return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
   }
@@ -164,7 +160,6 @@ export class SecureVault extends EventEmitter {
       pending.reject('SecureVault is shutitng down');
     };
     this.pending.clear();
-    this.emit('shutdown');
   }
 
   /**
@@ -203,9 +198,7 @@ export class SecureVault extends EventEmitter {
       });
 
       this.isInitialized = true;
-      this.emit('initialized');
     } catch (error) {
-      this.emit('error', error);
       throw error;
     }
   }
@@ -216,15 +209,5 @@ export class SecureVault extends EventEmitter {
       this.pending.set(id, { resolve, reject });
       (this.child).send({ type, id, ...params });
     })
-  }
-
-  private setupEventHandlers(): void {
-    this.on('error', (error) => {
-      console.error('SecureVault Error:', error);
-    });
-  }
-
-  private generateId(): string {
-    return Math.random().toString(36).substring(2) + Date.now().toString(36);
   }
 } 
