@@ -4,7 +4,7 @@ import app from '../../src/routes';
 import { BitcoinBlockStorage } from '../../src/models/block';
 import { TransactionStorage } from '../../src/models/transaction';
 import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
-import { resetDatabase } from '../helpers';
+import { expectObjectToHaveProps, minutesAgo, resetDatabase } from '../helpers';
 import sinon from 'sinon';
 import { ChainStateProvider } from '../../src/providers/chain-state';
 import { CoinStorage } from '../../src/models/coin';
@@ -112,15 +112,6 @@ async function addBlocks(
     }
   }
 }
-
-const expectObjectToHaveProps = (obj: any, props: Record<string, string>) => {
-  expect(obj).to.include.all.keys(Object.keys(props));
-  for (const key in props) {
-    expect(obj[key]).to.be.a(props[key]);
-  }
-};
-
-const minutesAgo = (minutes: number): Date => new Date(Date.now() - 1000 * 60 * minutes);
 
 describe('Routes', function() {
   let sandbox;
