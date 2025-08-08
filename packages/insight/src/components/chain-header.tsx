@@ -60,7 +60,7 @@ const ChainHeader: FC<{currency: string; network: string}> = ({currency, network
   }, [chartData, options]);
 
   return (
-    <div style={{borderBottom: '1px solid', padding: '0 5px', height: 'fit-content'}}>
+    <div style={{borderBottom: '1px solid', padding: '0 5px', height: 'fit-content', marginBottom: '0.5rem'}}>
       <div style={{display: 'flex'}}>
         <img
           src={`https://bitpay.com/img/icon/currencies/${currency}.svg`}
@@ -68,7 +68,7 @@ const ChainHeader: FC<{currency: string; network: string}> = ({currency, network
           style={{height: '100px'}}
         />
         {priceList.length > 0 && (
-          <div style={{height: '100px', width: '100%'}}>
+          <div style={{height: '100px', width: '100%', minWidth: 0}}>
             <canvas ref={chartRef} aria-label='price line chart' role='img' />
           </div>
         )}
