@@ -10,6 +10,7 @@ import { TransactionStorage } from '../../src/models/transaction';
 import { WalletStorage } from '../../src/models/wallet';
 import { WalletAddressStorage } from '../../src/models/walletAddress';
 import { Storage } from '../../src/services/storage';
+import { expect } from 'chai';
 
 export async function resetDatabase() {
   console.log('Resetting database');
@@ -75,3 +76,12 @@ export function mockModel(collectionName: string, toReturn: any, collectionMetho
     collectionFn.withArgs(collectionName).returns(mockCollection(toReturn, collectionMethods));
   }
 }
+
+export function expectObjectToHaveProps(obj: any, props: Record<string, string>) {
+  expect(obj).to.include.all.keys(Object.keys(props));
+  for (const key in props) {
+    expect(obj[key]).to.be.a(props[key]);
+  }
+};
+
+export const minutesAgo = (minutes: number): Date => new Date(Date.now() - 1000 * 60 * minutes);
