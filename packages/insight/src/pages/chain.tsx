@@ -57,7 +57,7 @@ const Chain: React.FC = () => {
       fetcher(`${getApiRoot(currency)}/${currency}/${network}/block/tip/fee`)
     ])
       .then(([fee]) => {
-        setTipFee(fee.mean.toFixed(5));
+        setTipFee(fee.mean);
         nProgress.done();
       });
   }, [currency, network]);
@@ -81,7 +81,7 @@ const Chain: React.FC = () => {
       <HeaderDataContainer>
         <div style={{width: '100%', minWidth: 0}}>
           <ChainHeader currency={currency} network={network}/>
-          <b>Tip Fee {tipFee} sats/byte</b>
+          <b>Tip Fee {tipFee?.toFixed(5)} sats/byte</b>
         </div>
         <div style={{width: 'fit-content', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
           <BlocksLinkChip style={{backgroundColor: colorCodes[currency]}} onClick={gotoBlocks}>
