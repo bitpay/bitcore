@@ -220,12 +220,12 @@ export class SolChain implements IChain {
     return null;
   }
 
-  selectTxInputs(server, txp, wallet, _opts, cb) {
+  selectTxInputs(server, txp, wallet, opts, cb) {
     server.getBalance({ wallet }, (err, balance) => {
       if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
       // calculate how much space is needed to find rent amount
-      const minRentException = Defaults.MIN_SOL_BALANCE;
+      const minRentException = opts.tokenAddress ? 0 : Defaults.MIN_SOL_BALANCE;
       if (totalAmount - minRentException < txp.getTotalAmount()) {
         return cb(Errors.INSUFFICIENT_FUNDS);
       } else if (availableAmount < txp.getTotalAmount()) {
