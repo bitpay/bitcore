@@ -6,7 +6,7 @@ import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { IEVMTransactionTransformed } from '../types';
 
 export class EVMListTransactionsStream extends TransformWithEventPipe {
-  constructor(private walletAddresses: Array<string>) {
+  constructor(private walletAddresses: Array<string>, private tokenAddress?: string) {
     super({ objectMode: true });
   }
   async _transform(transaction: MongoBound<IEVMTransactionTransformed>, _, done) {
@@ -61,7 +61,7 @@ export class EVMListTransactionsStream extends TransformWithEventPipe {
       if (weReceivedInternal) {
         baseTx.satoshis = 0n;
         for (const effect of transaction.effects!) {
-          if (this.walletAddresses.includes(effect.to) && !effect.contractAddress) {
+          if (this.walletAddresses.includes(effect.to) && (effect.contractAddress == this.tokenAddress)) {
             baseTx.satoshis += BigInt(effect.amount || 0);
           }
         }
