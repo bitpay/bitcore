@@ -3445,6 +3445,7 @@ export class API extends EventEmitter {
         chain: opts.chain?.toLowerCase() || opts.coin, // chain === coin IS NO LONGER TRUE for Arbitrum, Base, Optimisim
         network: opts.network,
         account: opts.account,
+        m: opts.m,
         n: opts.n,
         use0forBCH: opts.use0forBCH, // only used for server assisted import
         algo: opts.algo
@@ -3509,6 +3510,9 @@ export class API extends EventEmitter {
           chain: opt[1],
           network: opt[2],
           account: 0,
+          // If opt[3] == true then check for multisig address type.
+          // The values of m & n don't actually matter (other than n being >1 and m being <= n)
+          m: 1,
           n: opt[3] ? 2 : 1,
           use0forBCH: opt[4],
           algo: opt[5],

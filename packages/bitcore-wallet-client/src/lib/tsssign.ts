@@ -1,5 +1,5 @@
 import { ECDSA } from 'bitcore-tss';
-import { BitcoreLib, ethers } from 'crypto-wallet-core';
+import { BitcoreLib } from 'crypto-wallet-core';
 import { EventEmitter } from 'events';
 import { Credentials } from './credentials';
 import { Request, RequestResponse } from './request';
@@ -213,7 +213,8 @@ export class TssSign extends EventEmitter {
             const msg = await this.#sign.nextRound(body.messages);
             this.emit('roundprocessed', thisRound);
             // If the signature is ready, there's nothing to send to the server and msg will have empty arrays.
-            if (!this.#sign.isSignatureReady()) {
+            // If !!body.signature, then we have an outdated state and the session is already done.
+            if (!this.#sign.isSignatureReady() && !body.signature) {
               // For 2 P2P messages (i.e. party of 3), it already exceeds 100 KB (190 KB)
               // Assuming ~80KB per message, the max server size of 2MB would be ~25 P2P messages
               await this.#request.post(`/v1/tss/sign/${this.id}`, { message: msg });
