@@ -304,7 +304,7 @@ export class Key {
     }
     if (this.#mnemonicEncrypted) {
       this.#validatePassword(opts.password);
-      const mnemonic = Encryption.decryptWithPassword(this.#mnemonicEncrypted, opts.password,);
+      const mnemonic = Encryption.decryptWithPassword(this.#mnemonicEncrypted, opts.password);
       this.#addKeyFromMnemonic(algo, mnemonic.toString(), opts);
       return;
     }
