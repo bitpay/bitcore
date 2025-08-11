@@ -1,7 +1,7 @@
 import { cpus, homedir } from 'os';
 import { ConfigType } from './types/Config';
+import { merge } from './utils';
 import parseArgv from './utils/parseArgv';
-import merge from './utils/merge';
 let program = parseArgv([], ['config']);
 
 function findConfig(): ConfigType | undefined {
