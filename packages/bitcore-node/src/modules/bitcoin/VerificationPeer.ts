@@ -223,10 +223,7 @@ export class VerificationPeer extends BitcoinP2PWorker implements IVerificationP
     if (block && this.deepScan && p2pBlock) {
       const txs = p2pBlock.transactions ? p2pBlock.transactions.slice(1) : [];
 
-      const spends = txs
-        .map(tx => tx.inputs)
-        .flat()
-        .map(input => input.toObject());
+      const spends = txs.flatMap(tx => tx.inputs.map(input => input.toObject()));
 
       for (let spend of spends) {
         const found = await CoinStorage.collection.findOne({

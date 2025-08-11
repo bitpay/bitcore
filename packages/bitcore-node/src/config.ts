@@ -1,7 +1,7 @@
 import { cpus, homedir } from 'os';
 import { ConfigType } from './types/Config';
-import { mergeWith } from './utils/mergeWith';
 import parseArgv from './utils/parseArgv';
+import merge from './utils/merge';
 let program = parseArgv([], ['config']);
 
 function findConfig(): ConfigType | undefined {
@@ -94,8 +94,7 @@ const Config = function(): ConfigType {
   };
 
   let foundConfig = findConfig();
-  const mergeCopyArray = (objVal, srcVal) => (objVal instanceof Array ? srcVal : undefined);
-  config = mergeWith(config, foundConfig, mergeCopyArray);
+  config = merge(config, foundConfig);
   if (!Object.keys(config.chains).length) {
     Object.assign(config.chains, {
       BTC: {
