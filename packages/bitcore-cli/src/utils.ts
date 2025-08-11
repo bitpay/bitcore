@@ -1,9 +1,10 @@
 import * as prompt from '@clack/prompts';
 import { Utils as BWCUtils } from 'bitcore-wallet-client';
 import { edit } from 'external-editor';
-import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import type { Color } from '../types/constants';
+import type { ITokenObj } from '../types/wallet';
 import { Constants } from './constants';
 import { UserCancelled } from './errors';
 
@@ -11,7 +12,7 @@ let _verbose = false;
 
 export class Utils {
 
-  static setVerbose(v) {
+  static setVerbose(v: boolean) {
     _verbose = !!v;
   }
 
@@ -34,6 +35,7 @@ export class Utils {
       'Keep calm and HODL on!',
       'Goodbye!',
       'Tata!',
+      'Chin-chin!',
       'Cheers!',
       'Adios!',
       'Ciao!',
@@ -46,23 +48,23 @@ export class Utils {
     return path.join(dir, walletName + '.json');
   }
 
-  static colorText(text, color) {
+  static colorText(text: string, color: Color): string {
     return Constants.COLOR[color.toLowerCase()].replace('%s', text);
   }
 
-  static capitalize(text) {
+  static capitalize(text: string): string {
     return text.charAt(0).toUpperCase() + text.slice(1);
   }
 
-  static shortID(id) {
+  static shortID(id: string): string {
     return id.substring(id.length - 4);
   }
 
-  static confirmationId(copayer) {
+  static confirmationId(copayer: { xPubKeySignature: string }): string {
     return parseInt(copayer.xPubKeySignature.substring(-4), 16).toString().substring(-4);
   }
 
-  static parseAmount(text) {
+  static parseAmount(text: string | number | bigint): number {
     if (typeof text !== 'string') {
       text = text.toString();
     }
@@ -93,12 +95,11 @@ export class Utils {
     return amountSat;
   };
 
-  static renderAmount(satoshis, coin, opts = {}) {
-    if (!satoshis) return '0';
-    return BWCUtils.formatAmount(satoshis, coin.toLowerCase(), { ...opts, fullPrecision: true }) + ' ' + coin.toUpperCase();
+  static renderAmount(currency: string, satoshis: number | bigint, opts = {}): string {
+    return BWCUtils.formatAmount(satoshis, currency.toLowerCase(), { ...opts, fullPrecision: true }) + ' ' + currency.toUpperCase();
   }
 
-  static renderStatus(status) {
+  static renderStatus(status: string): string {
     if (status !== 'complete') {
       return Utils.colorText(status, 'yellow');
     }
@@ -124,17 +125,18 @@ export class Utils {
     fn: (page: number, action?: string) => Promise<{ result?: any[], extraChoices?: prompt.Option<string>[] }>,
     opts?: {
       pageSize?: number;
+      initialPage?: number | string; // Initial page, default is 1
       /** Only applies if there are no extraChoices */
       exitOn1Page?: boolean
     }
   ) {
-    const { pageSize = 10, exitOn1Page = true } = opts || {};
+    const { pageSize = 10, exitOn1Page = true, initialPage } = opts || {};
 
-    let page = 1;
+    let page = parseInt(initialPage as string) || 1;
     let action: string | symbol;
     do {
       const { result, extraChoices = [] } = await fn(page, action as string);
-      if (!result || (page === 1 && exitOn1Page && result.length < pageSize && !extraChoices.length)) {
+      if (!result || (page == 1 && exitOn1Page && result.length < pageSize && !extraChoices.length)) {
         return;
       }
 
@@ -183,10 +185,11 @@ export class Utils {
   ) {
     let fileText = '';
     fileText += '!!! IMPORTANT !!!' + os.EOL;
-    fileText += 'MAKE SURE YOU WRITE DOWN THESE 12 WORDS AND SAVE THEM FOREVER' + os;
-    fileText += 'If you lose these words, you will lose access to your wallet' + os.EOL;
-    fileText += 'DO NOT SHARE THESE WORDS WITH ANYONE' + os.EOL;
-    fileText += 'It is HIGHLY recommended that you do NOT store them online or in any cloud service' + os.EOL;
+    fileText += 'MAKE SURE YOU WRITE DOWN YOUR MNEMONIC PHRASE WORDS AND SAVE THEM FOREVER.' + os.EOL;
+    fileText += 'If you lose these words, you will lose access to your wallet.' + os.EOL;
+    fileText += 'DO NOT SHARE THESE WORDS WITH ANYONE! Anyone who has these words will be have full access to any funds in your wallet.' + os.EOL;
+    fileText += 'It is HIGHLY recommended that you do NOT store them online or in any cloud service.' + os.EOL;
+    fileText += 'It is best to write them down on paper and store them in a safe place like a fireproof safe.' + os.EOL;
     fileText += os.EOL;
     fileText += 'Your mnemonic phrase is:' + os.EOL;
     fileText += '----------------------------------------' + os.EOL;
@@ -255,7 +258,10 @@ export class Utils {
     return parseFloat(feeRateStr.split(' ')[0]);
   }
 
-  static amountFromSats(chain: string, sats: number) {
+  static amountFromSats(chain: string, sats: number, opts?: ITokenObj) {
+    if (opts?.decimals) {
+      return Number((sats / opts.toSatoshis).toFixed(opts.precision));
+    }
     chain = chain.toLowerCase();
     switch (chain) {
       case 'btc':
@@ -272,7 +278,10 @@ export class Utils {
     }
   }
 
-  static amountToSats(chain: string, amount: number | string) {
+  static amountToSats(chain: string, amount: number | string, opts?: ITokenObj): bigint {
+    if (opts) {
+      return BigInt(amount as number * opts.toSatoshis);
+    }
     chain = chain.toLowerCase();
     switch (chain) {
       case 'btc':
@@ -354,5 +363,12 @@ export class Utils {
       timeStyle: 'short'
     });
     return formatter.format(date).replace(/,/g, '');
+  }
+
+  static replaceTilde(fileName: string) {
+    if (fileName.startsWith('~')) {
+      return fileName.replace('~', os.homedir());
+    }
+    return fileName;
   }
 };

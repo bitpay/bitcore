@@ -1,7 +1,8 @@
-import { Key } from '../../derivation';
+import BitcoreLib from 'bitcore-lib';
+import type { Key } from '../../types/derivation';
 
 export class BTCTxProvider {
-  lib = require('bitcore-lib');
+  lib = BitcoreLib;
 
   selectCoins(
     recipients: Array<{ amount: number }>,

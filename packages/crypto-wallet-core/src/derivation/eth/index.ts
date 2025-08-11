@@ -1,13 +1,11 @@
-import { IDeriver } from '..';
-
+import BitcoreLib from 'bitcore-lib';
 import utils from 'web3-utils';
-
-const BitcoreLib = require('bitcore-lib');
+import type { IDeriver } from '../../types/derivation';
 
 export class EthDeriver implements IDeriver {
   padTo32(msg) {
     while (msg.length < 32) {
-      msg = Buffer.concat([new Buffer([0]), msg]);
+      msg = Buffer.concat([Buffer.from([0]), msg]);
     }
     if (msg.length !== 32) {
       throw new Error(`invalid key length: ${msg.length}`);

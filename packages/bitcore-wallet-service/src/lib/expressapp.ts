@@ -21,6 +21,7 @@ import { WalletService } from './server';
 import { Stats } from './stats';
 
 const Defaults = Common.Defaults;
+const Utils = Common.Utils;
 
 export class ExpressApp {
   app: express.Express;
@@ -799,12 +800,18 @@ export class ExpressApp {
 
     router.get('/v1/addresses/', (req, res) => {
       getServerWithAuth(req, res, server => {
-        const opts: { limit?: number; reverse?: boolean; skip?: number } = {};
+        const opts: { limit?: number; reverse?: boolean; skip?: number; addresses?: string[]; noChange?: boolean } = {};
         if (req.query.limit) opts.limit = +req.query.limit;
         if (req.query.skip) opts.skip = +req.query.skip;
         opts.reverse = req.query.reverse == '1';
+        if (req.query.addresses) {
+          opts.addresses = Array.isArray(req.query.addresses)
+            ? req.query.addresses
+            : req.query.addresses.split(',');
+        }
+        opts.noChange = Utils.castToBool(req.query.noChange ?? 'true'); // fallback to true
 
-        server.getMainAddresses(opts, (err, addresses) => {
+        server.getAddresses(opts, (err, addresses) => {
           if (err) return returnError(err, res, req);
           res.json(addresses);
         });

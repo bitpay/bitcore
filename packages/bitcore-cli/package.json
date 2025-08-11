@@ -29,7 +29,7 @@
     "wallet": "./bin/wallet"
   },
   "scripts": {
-    "test": "npx mocha",
+    "test": "npx mocha --require ts-node/register 'test/**/*.ts'",
     "compile": "npm run clean && tsc",
     "postcompile": "node createBin -v",
     "clean": "rm -rf ./build",
@@ -38,7 +38,7 @@
     "precommit": "npm run lint; npm run fix"
   },
   "dependencies": {
-    "@clack/prompts": "0.11.0",
+    "@clack/prompts": "1.0.0-alpha.1",
     "bitcore-wallet-client": "^11.2.1",
     "commander": "14.0.0",
     "crypto-wallet-core": "^11.2.0",
@@ -47,10 +47,13 @@
     "usb": "2.15.0"
   },
   "devDependencies": {
+    "@types/chai": "5.2.2",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^22.14.1",
-    "chai": "^5.2.0",
-    "mocha": "^11.5.0",
-    "sinon": "^20.0.0",
+    "chai": "^5.2.1",
+    "mocha": "^11.7.1",
+    "sinon": "^21.0.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },
   "gitHead": "d1c7f8b0c3a2e4f5b6c7d8e9f0a1b2c3d4e5f6g7"

@@ -204,7 +204,7 @@ export class TssSign extends EventEmitter {
         const { body } = await this.#request.get(`/v1/tss/sign/${this.id}/${prevRound}`) as RequestResponse;
 
         const hasEveryoneSubmitted = body.messages?.length === this.#tssKey.metadata.m - 1; // subtract yourself
-        if (hasEveryoneSubmitted && !body.signature) {
+        if (hasEveryoneSubmitted && !this.#sign.isSignatureReady()) {
           this.emit('roundready', thisRound);
           // Snapshot the session in case there's an API failure
           //  since this.#sign can't re-process the messages

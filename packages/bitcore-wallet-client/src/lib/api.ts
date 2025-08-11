@@ -928,7 +928,9 @@ export class API extends EventEmitter {
   }
 
   async clearCache(
-    opts?,
+    opts?: {
+      tokenAddress?: string;
+    },
     /** @deprecated */
     cb?: (err?: Error, res?: any) => void
   ) {
@@ -940,7 +942,7 @@ export class API extends EventEmitter {
       log.warn('DEPRECATED: clearCache will remove callback support in the future.');
     }
     try {
-      const qs = Object.entries(opts || {}).map(([key, value]) => `${key}=${value}`).join('&');
+      const qs = opts.tokenAddress ? `tokenAddress=${opts.tokenAddress}` : null;
       const { body: result } = await this.request.post('/v1/clearcache/' + (qs ? '?' + qs : ''), {});
       if (cb) { cb(null, result); }
       return result;
@@ -1651,9 +1653,9 @@ export class API extends EventEmitter {
       enableRBF?: boolean;
       /** Use this address to interact with the MultiSend contract that is used to send EVM based txp's with outputs > 1 */
       multiSendContractAddress?: string;
-      /** Use this address to reference a token an a given chain */
+      /** Use this address to reference a token on a given chain */
       tokenAddress?: string;
-      /** Ignore locked utxos check ( used for replacing a transaction designated as RBF) */
+      /** Ignore locked utxos check (used for replacing a transaction designated as RBF) */
       replaceTxByFee?: boolean;
     },
     /** @deprecated */
@@ -1774,7 +1776,7 @@ export class API extends EventEmitter {
   }
 
   /**
-   * Get your main addresses
+   * Get your main addresses (i.e. non-change addresses)
    */
   async getMainAddresses(
     opts?: {
@@ -1794,29 +1796,54 @@ export class API extends EventEmitter {
       log.warn('DEPRECATED: getMainAddresses will remove callback support in the future.');
     }
     try { 
-      $.checkState(this.credentials && this.credentials.isComplete());
       opts = opts || {};
 
-      const args = [];
-      if (opts.limit) args.push('limit=' + opts.limit);
-      if (opts.skip) args.push('skip=' + opts.skip);
-      if (opts.reverse) args.push('reverse=1');
-      let qs = '';
-      if (args.length > 0) {
-        qs = '?' + args.join('&');
-      }
-      const { body: addresses } = await this.request.get<Array<Address>>('/v1/addresses/' + qs);
-
-      if (!opts.doNotVerify) {
-        const fake = (addresses || []).some(address => !Verifier.checkAddress(this.credentials, address));
-        if (fake) throw new Errors.SERVER_COMPROMISED();
-      }
+      const addresses = await this.getAddresses({ ...opts, noChange: true });
       if (cb) { cb(null, addresses); }
       return addresses;
     } catch (err) {
       if (cb) cb(err);
       else throw err;
     }
+  }
+
+  /**
+   * Get your addresses
+   */
+  async getAddresses(
+    opts?: {
+      /** Limit the resultset. Return all addresses by default */
+      limit?: number;
+      /** Skip the first N addresses. Default: 0 */
+      skip?: number;
+      /** Reverse the order. Default: false */
+      reverse?: boolean;
+      /** Do not verify the addresses. Default: false */
+      doNotVerify?: boolean;
+      /** Only return the specified addresses */
+      addresses?: Array<string>;
+      /** Filter out change addresses */
+      noChange?: boolean;
+    },
+  ) {
+    $.checkState(this.credentials && this.credentials.isComplete());
+    opts = opts || {};
+
+    const args = [];
+    if (opts.limit) args.push('limit=' + opts.limit);
+    if (opts.skip) args.push('skip=' + opts.skip);
+    if (opts.reverse) args.push('reverse=1');
+    if (opts.noChange) args.push('noChange=1');
+    if (Array.isArray(opts.addresses) && opts.addresses.length > 0) {
+      args.push('addresses=' + opts.addresses.join(','));
+    }
+    const { body: addresses } = await this.request.get<Array<Address>>(`/v1/addresses${args.length ? '?' + args.join('&') : ''}`);
+
+    if (!opts.doNotVerify) {
+      const fake = (addresses || []).some(address => !Verifier.checkAddress(this.credentials, address));
+      if (fake) throw new Errors.SERVER_COMPROMISED();
+    }
+    return addresses;
   }
 
   /**
@@ -4121,4 +4148,5 @@ export interface Address {
   address: string;
   type: string;
   path: string;
+  isChange?: boolean;
 };

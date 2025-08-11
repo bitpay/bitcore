@@ -1,16 +1,29 @@
 import * as prompt from '@clack/prompts';
 import os from 'os';
-import { ICliOptions } from '../../types/cli';
+import type { CommonArgs } from '../../types/cli';
 import { Utils } from '../utils';
-import { Wallet } from '../wallet';
 
-export async function getAddresses(args: {
-  wallet: Wallet;
-  opts: ICliOptions & {
-    pageSize: number;
+export function command(args: CommonArgs) {
+  const { program } = args;
+  program
+    .description('List wallet addresses')
+    .usage('<walletName> --command addresses [options]')
+    .optionsGroup('Addresses Options')
+    .option('--page <page>', 'Page number to display', '1')
+    .parse(process.argv);
+  
+  const opts = program.opts();
+  if (opts.help) {
+    program.help();
   }
-}) {
+  return opts;
+}
+
+export async function getAddresses(args: CommonArgs<{ pageSize?: number; page?: number; }>) {
   const { wallet, opts } = args;
+  if (opts.command) {
+    Object.assign(opts, command(args));
+  }
   const { pageSize } = opts;
 
   await Utils.paginate(async (page, viewAction) => {
@@ -27,6 +40,9 @@ export async function getAddresses(args: {
 
     prompt.note(lines.join(os.EOL), `Addresses (Page ${page})`);
 
+    if (opts.command) {
+      return { result: [] }; // Don't wait for user input in command mode
+    }
     return { result: addresses };
-  }, { pageSize });
+  }, { pageSize, initialPage: opts.page, exitOn1Page: !!opts.command });
 };

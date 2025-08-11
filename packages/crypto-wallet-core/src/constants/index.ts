@@ -1,3 +1,4 @@
+import { SCRIPT_TYPES } from './address';
 import { ALGO_TO_KEY_TYPE, ALGOS_BY_CHAIN } from './algorithms';
 import {
   CHAINS,
@@ -12,10 +13,11 @@ import { FEE_MINIMUMS } from './feeMinimums';
 import { TOKEN_OPTS as opts } from './tokens';
 import { UNITS } from './units';
 
-export let Constants = {
+export const Constants = {
   UTXO_CHAINS,
   EVM_CHAINS,
   SVM_CHAINS,
+  SCRIPT_TYPES,
   CHAINS,
   MULTISIG_CHAINS,
   ETH_TOKEN_OPTS: opts.ETH_TOKEN_OPTS,

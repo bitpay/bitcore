@@ -110,7 +110,9 @@ export class Credentials {
     rootPath: string;
     keyId: string;
     requestPrivKey: string;
-    /** Number of cosigners (for multisig) */
+    /** Multisig: minimum number of cosigners */
+    m?: number;
+    /** Multisig: total number of cosigners */
     n?: number;
     addressType?: string;
     walletPrivKey?: string;
@@ -132,6 +134,7 @@ export class Credentials {
     x.coin = opts.coin || opts.chain;
     x.network = opts.network;
     x.account = opts.account;
+    x.m = opts.m;
     x.n = opts.n;
     x.xPubKey = opts.xPubKey;
     x.keyId = opts.keyId;

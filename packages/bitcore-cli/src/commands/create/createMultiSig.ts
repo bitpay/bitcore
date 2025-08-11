@@ -1,21 +1,18 @@
 import * as prompt from '@clack/prompts';
-import { Network } from 'bitcore-wallet-client';
+import { type Network } from 'bitcore-wallet-client';
 import os from 'os';
-import { ICliOptions } from '../../../types/cli';
+import type { CommonArgs } from '../../../types/cli';
 import { getAddressType, getCopayerName, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
-import { Wallet } from '../../wallet';
 
-export async function createMultiSigWallet(args: {
-  wallet: Wallet;
-  chain: string;
-  network: Network;
-  m: number;
-  n: number;
-  opts: ICliOptions & {
-    mnemonic?: string;
-  };
-}) {
+export async function createMultiSigWallet(
+  args: CommonArgs<{ mnemonic?: string }> & {
+    chain: string;
+    network: Network;
+    m: number;
+    n: number;
+  }
+) {
   const { wallet, chain, network, m, n, opts } = args;
   const { verbose, mnemonic } = opts;
 

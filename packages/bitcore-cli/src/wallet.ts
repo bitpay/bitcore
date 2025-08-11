@@ -5,34 +5,38 @@ import {
   Encryption,
   EncryptionTypes,
   Key,
-  Network,
   TssKey,
-  TssSign,
   Txp,
+  type Network,
   Utils as BWCUtils
 } from 'bitcore-wallet-client';
-import { ethers, Web3 } from 'crypto-wallet-core';
+import {
+  ethers,
+  Message,
+  type Types as CWCTypes,
+  Utils as CWCUtils,
+  Web3
+} from 'crypto-wallet-core';
 import fs from 'fs';
 import path from 'path';
 import url from 'url';
+import type {
+  ClientType,
+  ITokenObj,
+  IWallet,
+  KeyType,
+  TssKeyType,
+  TssSigType,
+  WalletData
+} from '../types/wallet';
 import { Constants } from './constants';
 import { ERC20Abi } from './erc20Abi';
-import { UserCancelled } from './errors';
 import { FileStorage } from './filestorage';
 import { getPassword } from './prompts';
+import { sign as tssSign } from './tss';
 import { Utils } from './utils';
 
 const Client = API;
-
-export type KeyType = Key;
-export type ClientType = API;
-export type TssKeyType = TssKey.TssKey;
-export type TssSigType = TssSign.ISignature;
-
-export interface WalletData {
-  key: KeyType | TssKeyType;
-  creds: Credentials;
-}
 
 const WALLET_ENCRYPTION_OPTS = {
   iter: 5000
@@ -44,8 +48,8 @@ process.on('uncaughtException', (uncaught) => {
 
 let _verbose = false;
 
-export class Wallet {
-  static _bpCurrencies;
+export class Wallet implements IWallet {
+  static _bpCurrencies: ITokenObj[];
 
   name: string;
   dir: string;
@@ -56,7 +60,14 @@ export class Wallet {
   #walletData: WalletData;
   client: ClientType;
   isFullyEncrypted?: boolean; // All wallet data is encrypted, not just the mnemonic/private key(s)
-  
+
+  get chain() {
+    return this.client?.credentials?.chain;
+  }
+
+  get network() {
+    return this.client?.credentials?.network as Network;
+  }
 
   constructor(args: {
     name: string;
@@ -92,24 +103,21 @@ export class Wallet {
       supportStaffWalletId: this.walletId
     });
 
-    try {
-      const exists = this.storage.exists();
-      if (exists && mustBeNew) {
-        Utils.die(`File "${this.filename}" already exists.`);
-      }
-      if (!exists) {
-        if (mustExist) {
-          Utils.die(`File "${this.filename}" not found.`);
-        }
-        return this.client;
-      }
-
-      _verbose && prompt.intro('Loading wallet');
-      await this.load({ doNotComplete, allowCache: true });
-      _verbose && prompt.outro('Wallet loaded');
-    } catch (err) {
-      Utils.die(err);
+    const exists = this.storage.exists();
+    if (exists && mustBeNew) {
+      Utils.die(`File "${this.filename}" already exists.`);
     }
+    if (!exists) {
+      if (mustExist) {
+        Utils.die(`File "${this.filename}" not found.`);
+      }
+      return this.client;
+    }
+
+    _verbose && prompt.intro('Loading wallet');
+    await this.load({ doNotComplete, allowCache: true });
+    _verbose && prompt.outro('Wallet loaded');
+
     return this.client;
   }
 
@@ -325,7 +333,7 @@ export class Wallet {
     return this.client.credentials.isComplete();
   }
 
-  static async getCurrencies(network: Network = 'livenet') {
+  static async getCurrencies(network: Network) {
     if (!Wallet._bpCurrencies) {
       const urls = {
         livenet: process.env['BITCORE_CLI_CURRENCIES_URL'] || 'https://bitpay.com/currencies',
@@ -355,19 +363,37 @@ export class Wallet {
     return Wallet._bpCurrencies;
   };
 
-  async getTokenByAddress(tokenAddress) {
-    const currencies = await Wallet.getCurrencies();
+  async getToken(args: { token?: string; tokenAddress?: string }) {
+    const { token, tokenAddress } = args;
+    if (tokenAddress) {
+      let tokenObj = await this.getTokenByAddress({ tokenAddress });
+      if (!tokenObj) {
+        tokenObj = await this.getTokenFromChain({ address: tokenAddress });
+      }
+      return tokenObj;
+    } else if (token) {
+      return this.getTokenByName({ token });
+    }
+    return null;
+  }
+  
+  async getTokenByAddress(args: { tokenAddress: string }) {
+    const { tokenAddress } = args;
+    const currencies = await Wallet.getCurrencies(this.network);
     return currencies.find(currency => currency.contractAddress?.toLowerCase() === tokenAddress?.toLowerCase());
   }
 
-  async getToken(chain, token) {
-    chain = chain.toUpperCase();
-    const currencies = await Wallet.getCurrencies();
+  async getTokenByName(args: { token: string }) {
+    const { token } = args;
+    const chain = this.chain.toUpperCase();
+    const currencies = await Wallet.getCurrencies(this.network);
     return currencies.find(c => c.chain === chain && (c.code === token || c.displayCode === token));
   }
 
-  async getTokenFromChain(chain, network, address) {
-    network = network === 'livenet' ? 'mainnet' : network;
+  async getTokenFromChain(args: { address: string }) {
+    const { address } = args;
+    const chain = this.chain.toUpperCase();
+    const network = this.network === 'livenet' ? 'mainnet' : this.network;
     const web3 = new Web3(Constants.PUBLIC_API[chain][network]);
     const contract = new web3.eth.Contract(ERC20Abi as any, address);
     const token = await contract.methods.symbol().call();
@@ -382,18 +408,11 @@ export class Wallet {
       precision: decimals,
       toSatoshis: Math.pow(10, decimals),
       contractAddress: address,
-      chain: chain.toUpperCase()
-    };
+      chain: chain.toUpperCase(),
+    } as ITokenObj;
   }
 
-  async signTxp(args: {
-    txp: Txp;
-  }): Promise<string[]> {
-    const { txp } = args;
-    if (!this.client) {
-      await this.getClient({ mustExist: true });
-    }
-
+  async getPasswordWithRetry(): Promise<string> {
     let password;
     if (this.isWalletEncrypted()) {
       password = await getPassword('Wallet password:', {
@@ -407,6 +426,18 @@ export class Wallet {
         }
       });
     }
+    return password;
+  }
+
+  async signTxp(args: {
+    txp: Txp;
+  }): Promise<string[]> {
+    const { txp } = args;
+    if (!this.client) {
+      await this.getClient({ mustExist: true });
+    }
+
+    const password = await this.getPasswordWithRetry();
     if (this.#walletData.key instanceof TssKey.TssKey) {
       return this._signTxpTss({ txp, password });
     }
@@ -422,67 +453,41 @@ export class Wallet {
   }): Promise<string[]> {
     const { txp, password } = args;
 
-    const transformISignature = (signature: TssSign.ISignature): string => {
-      if ('ETH' === 'ETH') { // TODO - always ETH
-        return ethers.Signature.from(signature).serialized;
-      }
-    };
+    const isUtxo = BWCUtils.isUtxoChain(txp.chain);
+    const isEvm = BWCUtils.isEvmChain(txp.chain);
+    const isSvm = BWCUtils.isSvmChain(txp.chain);
 
-    const tssSign = new TssSign.TssSign({
-      baseUrl: url.resolve(this.host, '/bws/api'),
-      credentials: this.#walletData.creds,
-      tssKey: this.#walletData.key as TssKeyType
-    });
-
-    try {
-      // TODO: make this work for non-EVM
-      const messageHash = ethers.keccak256(Client.getRawTx(txp)[0]).slice(2); // remove 0x prefix
-      await tssSign.start({
-        id: txp.id,
-        messageHash: Buffer.from(messageHash, 'hex'),
-        encoding: 'hex',
-        derivationPath: 'm/0/0', // TODO - consider UTXO chains
-        password
-      });
-    } catch (err) {
-      if (err.message?.startsWith('TSS_ROUND_ALREADY_DONE')) {
-        const sig = await tssSign.getSignatureFromServer();
-        if (!sig) {
-          throw new Error('It looks like the TSS signature session was interrupted. Try deleting this proposal and creating a new one.');
-        }
-        return [transformISignature(sig)];
-      }
-      throw err;
+    if (!isEvm) {
+      throw new Error('TSS signing is only supported for EVM chains at the moment.');
     }
-    const spinner = prompt.spinner({ indicator: 'timer' });
-    spinner.start('Waiting for all parties to join...');
-    
-    const sig = await new Promise<string>((resolve, reject) => {
-      process.on('SIGINT', () => {
-        tssSign.unsubscribe();
-        spinner.stop('Cancelled by user');
-        reject(new UserCancelled());
+
+    const sigs: string[] = [];
+
+    const inputPaths = !isUtxo && !Array.isArray(txp.inputPaths) ? ['m/0/0'] : txp.inputPaths;
+    for (const i in inputPaths) {
+      const derivationPath = inputPaths[i];
+
+      const messageHash = isEvm
+        ? ethers.keccak256(Client.getRawTx(txp)[0]).slice(2) // remove 0x prefix
+        : 'TODO';
+
+      const signature = await tssSign({
+        host: this.host,
+        chain: txp.chain,
+        walletData: this.#walletData,
+        messageHash: Buffer.from(messageHash, 'hex'),
+        derivationPath,
+        password,
+        id: `${txp.id}:${derivationPath}`,
+        logMessageWaiting: `Signing tx input ${i} (${i + 1}/${inputPaths.length}). Waiting for all parties to join...`,
+        logMessageCompleted: `Tx input ${i} complete (${i + 1}/${inputPaths.length})`
       });
 
-      tssSign.subscribe();
-      tssSign.on('roundsubmitted', (round) => spinner.message(`Round ${round} submitted`));
-      tssSign.on('error', prompt.log.error);
-      tssSign.on('complete', async () => {
-        try {
-          spinner.stop('TSS Signature Generation Complete!');
-          const signature: TssSign.ISignature = tssSign.getSignature();
-          let sigString: string;
-          if (true) { // ETH
-            sigString = transformISignature(signature);
-          }
-          resolve(sigString);
-        } catch (err) {
-          reject(err);
-        }
-      });
-    });
+      sigs.push(signature.signature as string);
+    }
 
-    return [sig];
+    prompt.log.success('TSS signature(s) generated successfully!');
+    return sigs;
   }
 
   async signAndBroadcastTxp(args: {
@@ -510,6 +515,57 @@ export class Wallet {
     }
   }
 
+  async signMessage(args: {
+    message: string;
+    derivationPath: string;
+    encoding?: BufferEncoding | 'base58';
+  }): Promise<CWCTypes.Message.ISignedMessage> {
+    const { message, derivationPath, encoding } = args;
+
+    if (!this.client) {
+      await this.getClient({ mustExist: true });
+    }
+    const password = await this.getPasswordWithRetry();
+    const chain = this.client.credentials.chain;
+
+    if (this.#walletData.key instanceof TssKey.TssKey) {
+      const messageHash = Message.getMessageHash({ chain, message }) as Buffer;
+      return this._signMessageWithTss({ messageHash, derivationPath, password, encoding });
+    }
+
+    const hdPrivateKey = this.#walletData.key.get(password).xPrivKey;
+    const fullDerivationPath = this.client.getRootPath() + derivationPath.replace('m', '');
+    return Message.signMessageWithPath({ chain, message, derivationPath: fullDerivationPath, hdPrivateKey, encoding });
+  }
+
+  async _signMessageWithTss(args: {
+    messageHash: Buffer;
+    derivationPath?: string;
+    password?: string;
+    encoding?: BufferEncoding | 'base58';
+  }): Promise<CWCTypes.Message.ISignedMessage> {
+    const { messageHash, derivationPath, password, encoding } = args;
+
+    if (!this.isTss()) {
+      throw new Error('TSS signing is only supported for TSS wallets.');
+    }
+
+    const sig = await tssSign({
+      host: this.host,
+      chain: this.client.credentials.chain,
+      walletData: this.#walletData,
+      messageHash,
+      derivationPath,
+      password
+    });
+
+    const buf = Buffer.from(sig.signature.replace('0x', ''), 'hex');
+    return {
+      signature: CWCUtils.encodeBuffer(buf, encoding),
+      publicKey: sig.publicKey
+    };
+  }
+
   async getXPrivKey(password?: string): Promise<string> {
     password = password || await getPassword();
     return this.#walletData.key.get(password).xPrivKey;
@@ -517,6 +573,10 @@ export class Wallet {
 
   getXPubKey() {
     return this.client.credentials.clientDerivedPublicKey || this.client.credentials.xPubKey;
+  }
+
+  isMultiSig() {
+    return this.client.credentials.n > 1;
   }
 
   isTss() {
@@ -529,5 +589,21 @@ export class Wallet {
 
   isWalletEncrypted() {
     return this.#walletData.key.isPrivKeyEncrypted() || (this.#walletData.key as TssKey.TssKey).isKeyChainEncrypted?.();
+  }
+
+  isUtxo() {
+    return BWCUtils.isUtxoChain(this.chain);
+  }
+
+  isEvm() {
+    return BWCUtils.isEvmChain(this.chain);
+  }
+
+  isSvm() {
+    return BWCUtils.isSvmChain(this.chain);
+  }
+
+  isXrp() {
+    return BWCUtils.isXrpChain(this.chain);
   }
 };

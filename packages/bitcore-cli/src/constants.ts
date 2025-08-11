@@ -113,7 +113,7 @@ export const Constants = {
     yellow: '\x1b[33m%s\x1b[0m',
     blue: '\x1b[34m%s\x1b[0m',
     orange: '\x1b[38;5;208m%s\x1b[0m',
-    none: '\x1b[0m',
+    none: '\x1b[0m%s',
   },
   ADDRESS_TYPE: {
     BTC: {
