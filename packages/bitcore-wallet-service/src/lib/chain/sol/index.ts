@@ -67,7 +67,8 @@ export class SolChain implements IChain {
           }, { fees: 0, amounts: 0 });
 
           const lockedSum = (amounts + fees) || 0;  // previously set to 0 if opts.multisigContractAddress
-          const convertedBalance = this.convertBitcoreBalance(balance, lockedSum, reserve);
+          const reserveAmount = opts.tokenAddress ? 0 : reserve;
+          const convertedBalance = this.convertBitcoreBalance(balance, lockedSum, reserveAmount);
           server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
             if (err) return cb(err);
             if (addresses.length > 0) {
@@ -89,8 +90,10 @@ export class SolChain implements IChain {
 
   getFee(server, wallet, opts) {
     return new Promise(resolve => {
-      const numSignatures = opts.signatures || 1;
-      return resolve({ fee: 5000 * numSignatures });
+      const numSignatures = opts.numSignatures || 1;
+      const feePerKb = Defaults.SOL_BASE_FEE; // Fee per signature in lamports
+      const fee = feePerKb * numSignatures;
+      return resolve({ fee, feePerKb });
     });
   }
 
@@ -176,8 +179,8 @@ export class SolChain implements IChain {
     server.getBalance({}, (err, balance) => {
       if (err) return cb(err);
       const { availableAmount } = balance;
-      const sigs = opts.signatures || 1;
-      let fee = sigs * 5000
+      const sigs = opts.numSignatures || 1;
+      const fee = sigs * Defaults.SOL_BASE_FEE
       return cb(null, {
         utxosBelowFee: 0,
         amountBelowFee: 0,

@@ -2355,7 +2355,8 @@ export class WalletService implements IWalletService {
             {
               feePerKb: opts.feePerKb,
               excludeUnconfirmedUtxos: !!opts.excludeUnconfirmedUtxos,
-              returnInputs: true
+              returnInputs: true,
+              numSignatures: opts.numSignatures
             },
             (err, info) => {
               if (err) return next(err);
@@ -2574,6 +2575,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.memo - Optional. Solana transaction memo
    * @param {number} opts.decimals - Optional. Numbet of decimal of a desited token
    * @param {string} opts.fromAta - Optional. ATA addres of the sender (Solana)
+   * @param {number} opts.numSignatures - Optional. Number of signatures required for the transation. For Solana fee calculation.
    * @param {Boolean} opts.refreshOnPublish - Optional. Allows publish function to refresh txp data
    * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
    */

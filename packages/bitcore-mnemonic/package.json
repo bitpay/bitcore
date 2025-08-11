@@ -1,6 +1,6 @@
 {
   "name": "bitcore-mnemonic",
-  "version": "10.10.5",
+  "version": "10.10.7",
   "description": "BIP39 Mnemonics implemented for Bitcore.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -43,7 +43,7 @@
     "mocha": "^5.2.0"
   },
   "dependencies": {
-    "bitcore-lib": "^10.10.5",
+    "bitcore-lib": "^10.10.7",
     "unorm": "^1.4.1"
   },
   "peerDependencies": {
