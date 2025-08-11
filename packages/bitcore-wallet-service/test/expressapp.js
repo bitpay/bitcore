@@ -106,7 +106,7 @@ describe('ExpressApp', function() {
 
       it('/v1/addresses', function(done) {
         var server = {
-          getMainAddresses: sinon.stub().callsArgWith(1, null, {}),
+          getAddresses: sinon.stub().callsArgWith(1, null, {}),
         };
         var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
           './server': {
@@ -128,7 +128,7 @@ describe('ExpressApp', function() {
           request(requestOptions, function(err, res, body) {
             should.not.exist(err);
             res.statusCode.should.equal(200);
-            var args = server.getMainAddresses.getCalls()[0].args[0];
+            var args = server.getAddresses.getCalls()[0].args[0];
             args.limit.should.equal(4);
             args.reverse.should.be.true;
             done();

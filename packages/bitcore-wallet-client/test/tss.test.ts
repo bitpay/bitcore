@@ -9,7 +9,7 @@ import fs from 'fs';
 import path from 'path';
 import { ECIES } from 'bitcore-tss';
 import { Request } from '../src/lib/request';
-import { BitcoreLib } from 'crypto-wallet-core';
+import { BitcoreLib, Deriver } from 'crypto-wallet-core';
 import { TssKeyGen, TssKey } from '../src/lib/tsskey';
 import { TssSign } from '../src/lib/tsssign';
 import log from '../src/lib/log';
@@ -37,6 +37,7 @@ describe('TSS', function() {
   const network = 'livenet';
   const m = 2;
   const n = 3;
+  const derivationPath = Deriver.pathFor(chain, network);
 
   before(function(done) {
     helpers.newDb(null, (err, database, connection) => {
@@ -109,7 +110,8 @@ describe('TSS', function() {
       should.exist(result);
       result.should.equal(tss0);
       tss0.id.should.be.a('string');
-      const seed = crypto.createHash('sha256').update(BitcoreLib.HDPrivateKey.fromString(party0Key.get().xPrivKey).toBuffer()).digest();
+      const chainXpriv = BitcoreLib.HDPrivateKey.fromString(party0Key.get().xPrivKey).deriveChild(derivationPath);
+      const seed = crypto.createHash('sha256').update(chainXpriv.toBuffer()).digest();
       tss0.id.should.equal(crypto.createHash('sha256').update(crypto.createHash('sha256').update(seed).digest()).digest('hex'));
       tss0.m.should.equal(m);
       tss0.n.should.equal(n);
@@ -361,7 +363,7 @@ describe('TSS', function() {
       session.keyShares.length.should.equal(n);
 
       const key0 = tss0.getTssKey();
-      const hdKey0 = new BitcoreLib.HDPrivateKey(party0Key.get().xPrivKey);
+      const hdKey0 = new BitcoreLib.HDPrivateKey(party0Key.get().xPrivKey).deriveChild(derivationPath);
       const expected0 = key0.keychain.privateKeyShare.toString('base64') + ':' + key0.keychain.reducedPrivateKeyShare.toString('base64');
       ECIES.decrypt({
         payload: Buffer.from(session.keyShares[0], 'base64'),
@@ -369,7 +371,7 @@ describe('TSS', function() {
         publicKey: hdKey0.publicKey
       }).toString().should.equal(expected0);
       const key1 = tss1.getTssKey();
-      const hdKey1 = new BitcoreLib.HDPrivateKey(party1Key.get().xPrivKey);
+      const hdKey1 = new BitcoreLib.HDPrivateKey(party1Key.get().xPrivKey).deriveChild(derivationPath);
       const expected1 = key1.keychain.privateKeyShare.toString('base64') + ':' + key1.keychain.reducedPrivateKeyShare.toString('base64');
       ECIES.decrypt({
         payload: Buffer.from(session.keyShares[1], 'base64'),
@@ -377,7 +379,7 @@ describe('TSS', function() {
         publicKey: hdKey1.publicKey
       }).toString().should.equal(expected1);
       const key2 = tss2.getTssKey();
-      const hdKey2 = new BitcoreLib.HDPrivateKey(party2Key.get().xPrivKey);
+      const hdKey2 = new BitcoreLib.HDPrivateKey(party2Key.get().xPrivKey).deriveChild(derivationPath);
       const expected2 = key2.keychain.privateKeyShare.toString('base64') + ':' + key2.keychain.reducedPrivateKeyShare.toString('base64');
       ECIES.decrypt({
         payload: Buffer.from(session.keyShares[2], 'base64'),
@@ -453,7 +455,8 @@ describe('TSS', function() {
         should.exist(result);
         result.should.equal(tss0);
         tss0.id.should.be.a('string');
-        const seed = crypto.createHash('sha256').update(BitcoreLib.HDPrivateKey.fromString(party0Key.get().xPrivKey).toBuffer()).digest();
+        const chainXpriv = BitcoreLib.HDPrivateKey.fromString(party0Key.get().xPrivKey).deriveChild(derivationPath);
+        const seed = crypto.createHash('sha256').update(chainXpriv.toBuffer()).digest();
         tss0.id.should.equal(crypto.createHash('sha256').update(crypto.createHash('sha256').update(seed).digest()).digest('hex'));
         tss0.m.should.equal(m);
         tss0.n.should.equal(n);
@@ -802,7 +805,9 @@ describe('TSS', function() {
       const sig = await signature;
       await complete;
       should.exist(sig);
-      emitSpy.args.filter(o => o[0] === 'roundready').length.should.equal(0);
+      emitSpy.args.filter(o => o[0] === 'roundready').length.should.equal(1);
+      emitSpy.args.filter(o => o[0] === 'roundprocessed').length.should.equal(1);
+      emitSpy.args.filter(o => o[0] === 'roundsubmitted').length.should.equal(0); // b/c body.signature exists
     });
 
     it('should sign a message with a custom id', async function() {

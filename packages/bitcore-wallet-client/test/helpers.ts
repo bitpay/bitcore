@@ -114,6 +114,7 @@ export const helpers = {
         chain: chain, // chain === coin for stored clients. NOT TRUE ANYMORE
         network: network,
         account: opts.account ? opts.account : 0,
+        m: m,
         n: n,
         addressType: opts.addressType
       });
@@ -147,6 +148,7 @@ export const helpers = {
             chain: chain, // chain === coin for stored clients. NOT TRUE ANYMORE
             network: network,
             account: 0,
+            m: m,
             n: n,
             addressType: opts.addressType
           })
