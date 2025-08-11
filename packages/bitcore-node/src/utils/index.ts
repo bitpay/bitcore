@@ -1,10 +1,6 @@
-import * as auth from './auth';
-import * as convert from './convert';
-import * as jsonStream from './jsonStream';
-import * as parseArgv from './parseArgv';
-import * as stats from './stats';
-
-export { auth, convert, jsonStream, parseArgv, stats };
+/* Do not export other utils from here as it can cause circular dependencies.
+   e.g. importing and exporting auth imported auth's dependency config service. In that case
+   before the config object was initialized giving config service an empty config object. */
 
 export function overlaps(a?: Array<any>, b?: Array<any>): boolean {
   return !!a?.some((item) => b?.includes(item));
