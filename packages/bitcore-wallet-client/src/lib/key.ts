@@ -304,7 +304,8 @@ export class Key {
     }
     if (this.#mnemonicEncrypted) {
       this.#validatePassword(opts.password);
-      this.#addKeyFromMnemonic(algo, this.#mnemonicEncrypted, opts);
+      const mnemonic = sjcl.decrypt(opts.password, this.#mnemonicEncrypted);
+      this.#addKeyFromMnemonic(algo, mnemonic, opts);
       return;
     }
     if (this.#hasExistingPrivateKey(existingAlgo)) {
