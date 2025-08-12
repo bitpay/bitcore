@@ -30,25 +30,27 @@ export class SPLTxProvider extends SOLTxProvider {
   }) {
     const { recipients, from, fromAta, tokenAddress, decimals, instructions = [] } = params;
 
+    // Start with custom instructions
     const allInstructions = [...instructions];
-
-    // Add token transfer instructions for each recipient
-    for (const recipient of recipients) {
-      const { address: recipientAddress, amount: recipientAmount } = recipient;
-      allInstructions.push(SolToken.getTransferCheckedInstruction({
-        source: SolKit.address(fromAta), // ATA address
-        authority: SolKit.address(from),
-        mint: SolKit.address(tokenAddress),
-        destination: SolKit.address(recipientAddress), // ATA address
-        amount: BigInt(recipientAmount),
-        decimals
-      }));
+    if (recipients.length > 0 && !instructions?.length) {
+      // Add SPL token transfer instructions for each recipient
+      for (const recipient of recipients) {
+        const { address: recipientAddress, amount: recipientAmount } = recipient;
+        allInstructions.push(SolToken.getTransferCheckedInstruction({
+          source: SolKit.address(fromAta), // ATA address
+          authority: SolKit.address(from),
+          mint: SolKit.address(tokenAddress),
+          destination: SolKit.address(recipientAddress), // ATA address
+          amount: BigInt(recipientAmount),
+          decimals
+        }));
+      }
     }
 
     return super.create({ ...params, instructions: allInstructions });
   }
 
-    static createAtokenInstructions(instructionType: 'createAssociatedToken' | 'createAssociatedTokenIdempotent' | 'recoverNestedAssociatedToken', params: any) {
+  static createAtokenInstructions(instructionType: 'createAssociatedToken' | 'createAssociatedTokenIdempotent' | 'recoverNestedAssociatedToken', params: any) {
     try {
       switch (instructionType) {
         case 'createAssociatedToken':

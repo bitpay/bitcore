@@ -9,6 +9,7 @@ export class SOLTxProvider {
 
   MAX_TRANSFERS = 12;
   MINIMUM_PRIORITY_FEE = 1000;
+  MAX_INSTRUCTIONS = this.MAX_TRANSFERS; // Solana transaction limit is typically around 10-15 instructions
 
   create(params: {
     recipients: Array<{ address: string; amount: string; addressKeyPair?: SolKit.KeyPairSigner; }>;
@@ -32,6 +33,12 @@ export class SOLTxProvider {
     const { recipients, from, nonce, nonceAddress, category, space, blockHash, blockHeight, priorityFee, instructions, computeUnits, memo } = params;
     const fromAddress = SolKit.address(from);
     let txType: SolKit.TransactionVersion = ['0', 0].includes(params?.txType) ? 0 : 'legacy';
+
+    // Validate instructions before processing
+    const customInstructions = instructions || [];
+    if (customInstructions.length > this.MAX_INSTRUCTIONS) {
+      throw new Error(`Too many custom instructions: ${customInstructions.length}. Maximum allowed: ${this.MAX_INSTRUCTIONS}`);
+    }
 
     switch (category?.toLowerCase()) {
       case 'transfer':
@@ -63,7 +70,8 @@ export class SOLTxProvider {
             transactionMessage,
           );
         }
-        const allInstructions = instructions || [];
+        // Start with custom instructions
+        const allInstructions = [...customInstructions];
         
         // Only add SOL transfer instructions if we have recipients and no custom instructions were provided
         if (recipients.length > 0 && !instructions?.length) {
@@ -79,6 +87,8 @@ export class SOLTxProvider {
             }));
           }
         }
+        
+        // Add utility instructions
         if (priorityFee) {
           const maxPriorityFee = Math.max(this.MINIMUM_PRIORITY_FEE, priorityFee);
           allInstructions.push(SolComputeBudget.getSetComputeUnitPriceInstruction({ microLamports: maxPriorityFee }));
