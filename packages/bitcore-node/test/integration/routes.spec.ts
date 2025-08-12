@@ -420,11 +420,11 @@ describe('Routes', function() {
       });
     });
 
-    it('should get coins by block hash and handle 2nd page with coin limit higher than number of coins', done => {
+    it('should skip all coins if :limit > num coins and :pgnum = 2', done => {
       request.get(`/api/BTC/regtest/block/${block100Hash}/coins/500/2`).expect(200, (err, res) => {
         if (err) console.error(err);
         const { txids, inputs, outputs } = res.body;
-        expect(txids.length).to.equal(numTxsBlock100);
+        expect(txids.length).to.equal(0);
         testCoins('BTC', 'regtest', 100, txids, inputs, outputs);
         done();
       });
@@ -441,6 +441,7 @@ describe('Routes', function() {
       });
     });
 
+    // Test route paging of coins when remainder == i (1..3)
     for (let i = 1; i <= 3; i++) {
       it(`should recieve partial pages with remainder ${i}`, done => {
         request.get(`/api/BTC/regtest/block/${block100Hash}/coins/${numTxsBlock100 - i}/2`).expect(200, (err, res) => {

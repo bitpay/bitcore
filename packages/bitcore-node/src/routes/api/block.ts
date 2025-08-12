@@ -82,7 +82,7 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: 
   try {
     const txs = await TransactionStorage.collection
         .find({ chain, network, blockHash })
-        .skip(maxLimit < numOfTxs ? skips : 0)
+        .skip(skips)
         .limit(maxLimit)
         .toArray();
 
