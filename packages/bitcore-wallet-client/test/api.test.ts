@@ -1650,6 +1650,7 @@ describe('client API', function() {
           coin: 'btc',
           network: 'livenet',
           account: 0,
+          m: 2,
           n: 2
         })
       );
@@ -1674,6 +1675,7 @@ describe('client API', function() {
             coin: 'btc',
             network: 'livenet',
             account: 1,
+            m: 2,
             n: 2
           })
         );
@@ -1697,6 +1699,7 @@ describe('client API', function() {
           coin: 'btc',
           network: 'livenet',
           account: 0,
+          m: 2,
           n: 3
         })
       );
@@ -1709,6 +1712,7 @@ describe('client API', function() {
             coin: 'btc',
             network: 'livenet',
             account: 0,
+            m: 2,
             n: 3
           })
         );
@@ -1729,6 +1733,7 @@ describe('client API', function() {
           coin: 'btc',
           network: 'testnet',
           account: 0,
+          m: 2,
           n: 2
         })
       );
@@ -1749,6 +1754,7 @@ describe('client API', function() {
               coin: 'btc',
               network: 'testnet',
               account: 5,
+              m: 2,
               n: 2
             })
           );
@@ -1772,6 +1778,7 @@ describe('client API', function() {
           coin: 'btc',
           network: 'testnet',
           account: 0,
+          m: 2,
           n: 2
         })
       );
@@ -1792,6 +1799,7 @@ describe('client API', function() {
               coin: 'btc',
               network: 'testnet',
               account: 5,
+              m: 2,
               n: 2
             })
           );
@@ -1811,6 +1819,7 @@ describe('client API', function() {
           coin: 'btc',
           network: 'testnet',
           account: 0,
+          m: 2,
           n: 2
         })
       );
@@ -1823,6 +1832,7 @@ describe('client API', function() {
             coin: 'btc',
             network: 'testnet',
             account: 0,
+            m: 2,
             n: 2
           })
         );
@@ -1840,6 +1850,7 @@ describe('client API', function() {
           coin: 'btc',
           network: 'testnet',
           account: 0,
+          m: 2,
           n: 2
         })
       );
@@ -1866,6 +1877,7 @@ describe('client API', function() {
           coin: 'btc',
           network: 'testnet',
           account: 0,
+          m: 2,
           n: 2
         })
       );
@@ -1963,6 +1975,7 @@ describe('client API', function() {
           coin: 'btc',
           network: 'livenet',
           account: 0,
+          m: 1,
           n: 2
         })
       );
@@ -1975,6 +1988,7 @@ describe('client API', function() {
             coin: 'btc',
             network: 'livenet',
             account: 1,
+            m: 1,
             n: 2
           })
         );
@@ -2001,6 +2015,7 @@ describe('client API', function() {
           coin: 'btc',
           network: 'testnet',
           account: 0,
+          m: 1,
           n: 2
         })
       );
@@ -2223,6 +2238,7 @@ describe('client API', function() {
           coin: 'btc',
           network: 'livenet',
           account: 0,
+          m: 2,
           n: 3
         })
       );

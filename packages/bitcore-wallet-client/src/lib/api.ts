@@ -3617,6 +3617,7 @@ export class API extends EventEmitter {
           chain: clonedSettings.chain || clonedSettings.coin,
           network: clonedSettings.network,
           account: clonedSettings.account,
+          m: clonedSettings.m,
           n: clonedSettings.n,
           use0forBCH: opts.use0forBCH // only used for server assisted import
         });
