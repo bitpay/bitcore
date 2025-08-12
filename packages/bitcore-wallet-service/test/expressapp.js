@@ -131,6 +131,40 @@ describe('ExpressApp', function() {
             var args = server.getAddresses.getCalls()[0].args[0];
             args.limit.should.equal(4);
             args.reverse.should.be.true;
+            args.noChange.should.be.true;
+            done();
+          });
+        });
+      });
+
+      it('/v2/addresses', function(done) {
+        var server = {
+          getAddresses: sinon.stub().callsArgWith(1, null, {}),
+        };
+        var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+          './server': {
+            WalletService: {
+              initialize: sinon.stub().callsArg(1),
+              getServiceVersion: WalletService.getServiceVersion,
+              getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+            }
+          }
+        });
+        start(TestExpressApp, function() {
+          var requestOptions = {
+            url: testHost + ':' + testPort + config.basePath + '/v2/addresses?limit=4&reverse=1',
+            headers: {
+              'x-identity': 'identity',
+              'x-signature': 'signature'
+            }
+          };
+          request(requestOptions, function(err, res, body) {
+            should.not.exist(err);
+            res.statusCode.should.equal(200);
+            var args = server.getAddresses.getCalls()[0].args[0];
+            args.limit.should.equal(4);
+            args.reverse.should.be.true;
+            args.noChange.should.be.false;
             done();
           });
         });

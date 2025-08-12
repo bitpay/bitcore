@@ -2459,32 +2459,26 @@ describe('client API', function() {
           clients[0].createAddress(null, (err, x0) => {
             should.not.exist(err);
             blockchainExplorerMock.setUtxo(x0, 1, 1);
-            done();
+            const opts = {
+              amount: 0.1e8,
+              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+              message: 'hello 1-1'
+            };
+            helpers.createAndPublishTxProposal(clients[0], opts, async (err, x) => {
+              done(err);
+            });
           });
         });
       });
     });
-    it('Should return all main addresses', async function() {
-      const addr = await clients[0].getAddresses({ doNotVerify: true });
+    it('Should return only main addresses', async function() {
+      const addr = await clients[0].getAddresses({ noChange: true });
       addr.length.should.equal(2);
     });
-    it('Should return all addresses when change addresses exist', function(done) {
-      const opts = {
-        amount: 0.1e8,
-        toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-        message: 'hello 1-1'
-      };
-      helpers.createAndPublishTxProposal(clients[0], opts, async (err, x) => {
-        if (err) { return done(err); }
-        try {
-          const addr = await clients[0].getMainAddresses({});
-          addr.length.should.equal(3);
-          addr.filter(a => a.isChange).length.should.equal(1);
-          done();
-        } catch (err) {
-          done(err);
-        }
-      });
+    it('Should return all addresses', async function() {
+      const addr = await clients[0].getAddresses({});
+      addr.length.should.equal(3);
+      addr.filter(a => a.isChange).length.should.equal(1);
     });
   });
 

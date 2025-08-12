@@ -1837,7 +1837,7 @@ export class API extends EventEmitter {
     if (Array.isArray(opts.addresses) && opts.addresses.length > 0) {
       args.push('addresses=' + opts.addresses.join(','));
     }
-    const { body: addresses } = await this.request.get<Array<Address>>(`/v1/addresses${args.length ? '?' + args.join('&') : ''}`);
+    const { body: addresses } = await this.request.get<Array<Address>>(`/v2/addresses${args.length ? '?' + args.join('&') : ''}`);
 
     if (!opts.doNotVerify) {
       const fake = (addresses || []).some(address => !Verifier.checkAddress(this.credentials, address));

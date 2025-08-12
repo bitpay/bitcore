@@ -798,7 +798,14 @@ export class ExpressApp {
       });
     });
 
+    // DEPRECATED (default noChange=1)
     router.get('/v1/addresses/', (req, res) => {
+      logDeprecated(req);
+      req.query.noChange = req.query.noChange ?? '1'; // default to no change addresses (backward compatibility)
+      res.redirect(config.basePath + '/v2/addresses?' + Object.entries(req.query).map(([key, value]) => `${key}=${value}`).join('&'));
+    });
+
+    router.get('/v2/addresses/', (req, res) => {
       getServerWithAuth(req, res, server => {
         const opts: { limit?: number; reverse?: boolean; skip?: number; addresses?: string[]; noChange?: boolean } = {};
         if (req.query.limit) opts.limit = +req.query.limit;
@@ -809,7 +816,7 @@ export class ExpressApp {
             ? req.query.addresses
             : req.query.addresses.split(',');
         }
-        opts.noChange = Utils.castToBool(req.query.noChange ?? 'true'); // fallback to true
+        opts.noChange = Utils.castToBool(req.query.noChange);
 
         server.getAddresses(opts, (err, addresses) => {
           if (err) return returnError(err, res, req);
