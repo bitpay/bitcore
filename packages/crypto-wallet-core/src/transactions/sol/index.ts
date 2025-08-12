@@ -24,12 +24,12 @@ export class SOLTxProvider {
     priorityFee?: number;
     computeUnits?: number;
     memo?: string;
-    txInstructions?: Array<SolKit.BaseTransactionMessage['instructions'][number]>;
+    instructions?: Array<SolKit.BaseTransactionMessage['instructions'][number]>;
     // account creation fields
     fromKeyPair?: SolKit.KeyPairSigner;
     space?: number; // amount of space to reserve a new account in bytes
   }) {
-    const { recipients, from, nonce, nonceAddress, category, space, blockHash, blockHeight, priorityFee, txInstructions, computeUnits, memo } = params;
+    const { recipients, from, nonce, nonceAddress, category, space, blockHash, blockHeight, priorityFee, instructions, computeUnits, memo } = params;
     const fromAddress = SolKit.address(from);
     let txType: SolKit.TransactionVersion = ['0', 0].includes(params?.txType) ? 0 : 'legacy';
 
@@ -63,11 +63,13 @@ export class SOLTxProvider {
             transactionMessage,
           );
         }
-        const transferInstructions = txInstructions || [];
-        if (!transferInstructions.length) {
+        const allInstructions = instructions || [];
+        
+        // Only add SOL transfer instructions if we have recipients and no custom instructions were provided
+        if (recipients.length > 0 && !instructions?.length) {
           for (const recipient of recipients) {
             const { address: recipientAddress, amount: recipientAmount } = recipient;
-            transferInstructions.push(SolSystem.getTransferSolInstruction({
+            allInstructions.push(SolSystem.getTransferSolInstruction({
               amount: BigInt(recipientAmount),
               destination: SolKit.address(recipientAddress),
               source: {
@@ -79,18 +81,18 @@ export class SOLTxProvider {
         }
         if (priorityFee) {
           const maxPriorityFee = Math.max(this.MINIMUM_PRIORITY_FEE, priorityFee);
-          transferInstructions.push(SolComputeBudget.getSetComputeUnitPriceInstruction({ microLamports: maxPriorityFee }));
+          allInstructions.push(SolComputeBudget.getSetComputeUnitPriceInstruction({ microLamports: maxPriorityFee }));
         }
         if (computeUnits) {
-          transferInstructions.push(SolComputeBudget.getSetComputeUnitLimitInstruction({ units: computeUnits }));
+          allInstructions.push(SolComputeBudget.getSetComputeUnitLimitInstruction({ units: computeUnits }));
         }
         if (memo) {
           const memoInstruction = SolComputeMemo.getAddMemoInstruction({
             memo
           });
-          transferInstructions.push(memoInstruction);
+          allInstructions.push(memoInstruction);
         }
-        const transferTxMessage = SolKit.appendTransactionMessageInstructions(transferInstructions, lifetimeConstrainedTx);
+        const transferTxMessage = SolKit.appendTransactionMessageInstructions(allInstructions, lifetimeConstrainedTx);
         const compiledTx = SolKit.compileTransaction(transferTxMessage);
         return SolKit.getBase64EncodedWireTransaction(compiledTx);
       case 'createAccount':

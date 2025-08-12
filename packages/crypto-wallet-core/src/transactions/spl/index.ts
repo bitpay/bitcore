@@ -22,17 +22,20 @@ export class SPLTxProvider extends SOLTxProvider {
     // account creation fields
     fromKeyPair?: SolKit.KeyPairSigner,
     space?: number; // amount of space to reserve a new account in bytes
-    // SPL token transfer fields
+    instructions?: Array<SolKit.BaseTransactionMessage['instructions'][number]>;
+    // SPL token transfer fields (required for token transfers)
     tokenAddress: string; // mint address
     fromAta: string;
     decimals: number;
   }) {
-    const { recipients, from, fromAta, tokenAddress, decimals } = params;
+    const { recipients, from, fromAta, tokenAddress, decimals, instructions = [] } = params;
 
-    const transferInstructions = [];
+    const allInstructions = [...instructions];
+
+    // Add token transfer instructions for each recipient
     for (const recipient of recipients) {
       const { address: recipientAddress, amount: recipientAmount } = recipient;
-      transferInstructions.push( SolToken.getTransferCheckedInstruction({
+      allInstructions.push(SolToken.getTransferCheckedInstruction({
         source: SolKit.address(fromAta), // ATA address
         authority: SolKit.address(from),
         mint: SolKit.address(tokenAddress),
@@ -41,6 +44,24 @@ export class SPLTxProvider extends SOLTxProvider {
         decimals
       }));
     }
-    return super.create({ ...params, txInstructions: transferInstructions });
+
+    return super.create({ ...params, instructions: allInstructions });
+  }
+
+    static createAtokenInstructions(instructionType: 'createAssociatedToken' | 'createAssociatedTokenIdempotent' | 'recoverNestedAssociatedToken', params: any) {
+    try {
+      switch (instructionType) {
+        case 'createAssociatedToken':
+          return SolToken.getCreateAssociatedTokenInstruction(params);
+        case 'createAssociatedTokenIdempotent':
+          return SolToken.getCreateAssociatedTokenIdempotentInstruction(params);
+        case 'recoverNestedAssociatedToken':
+          return SolToken.getRecoverNestedAssociatedTokenInstruction(params);
+        default:
+          throw new Error(`Unsupported AToken instruction type: ${instructionType}`);
+      }
+    } catch (error) {
+      throw new Error(`Failed to create AToken instruction: ${error.message}`);
+    }
   }
 }
