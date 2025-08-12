@@ -24,9 +24,9 @@ export class SPLTxProvider extends SOLTxProvider {
     space?: number; // amount of space to reserve a new account in bytes
     instructions?: Array<SolKit.BaseTransactionMessage['instructions'][number]>;
     // SPL token transfer fields (required for token transfers)
-    tokenAddress: string; // mint address
-    fromAta: string;
-    decimals: number;
+    tokenAddress?: string; // mint address
+    fromAta?: string;
+    decimals?: number;
   }) {
     const { recipients, from, fromAta, tokenAddress, decimals, instructions = [] } = params;
 
