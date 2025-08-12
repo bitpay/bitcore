@@ -127,21 +127,28 @@ export function uniq<T>(array: T[]): T[] {
   return [...new Set(array)];
 }
 
+function isPlainObject(x) {
+  return typeof x === 'object' &&
+     x !== null &&
+     !Array.isArray(x) &&
+     Object.getPrototypeOf(x) === Object.prototype;
+}
+
 /**
  * Merges the source object into the destination object.
  * For each property in the source object:
  * It sets the destination object property to the source property unless
- * both properties are object and the destination object property is not an array.
+ * both properties are plain objects (see isPlainObject).
  *
  * @param object destination object
  * @param source source object
  */
 export function merge<TDest, TSrc>(dest: TDest, src: TSrc): TDest & TSrc {
   for (const key in src) {
-    const destProp = dest !== undefined ? (dest as any)[key] : undefined;
+    const destProp = dest?[key] : undefined;
     const srcProp = src[key];
     let result;
-    if (srcProp instanceof Object && destProp instanceof Object && !Array.isArray(destProp)) {
+    if (isPlainObject(srcProp) && isPlainObject(destProp)) {
       result = merge(destProp, srcProp);
     } else {
       result = srcProp;
