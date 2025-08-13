@@ -145,7 +145,7 @@ function isPlainObject(x) {
  */
 export function merge<TDest, TSrc>(dest: TDest, src: TSrc): TDest & TSrc {
   for (const key in src) {
-    const destProp = dest?[key] : undefined;
+    const destProp = (dest as any)[key];
     const srcProp = src[key];
     let result;
     if (isPlainObject(srcProp) && isPlainObject(destProp)) {
