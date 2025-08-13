@@ -182,7 +182,9 @@ export class Verifier {
         return true;
     });
 
-    if (!creatorKeys) return false;
+    if (!creatorKeys)
+      throw new Error('Missing creator key')
+
     var creatorSigningPubKey;
 
     // If the txp using a selfsigned pub key?
@@ -195,13 +197,14 @@ export class Verifier {
           creatorKeys.xPubKey
         )
       )
-        return false;
+        throw new Error('Invalid self-signed proposal signature')
 
       creatorSigningPubKey = txp.proposalSignaturePubKey;
     } else {
       creatorSigningPubKey = creatorKeys.requestPubKey;
     }
-    if (!creatorSigningPubKey) return false;
+    if (!creatorSigningPubKey)
+      throw new Error('Missing creator signing key');
 
     var hash;
     if (parseInt(txp.version) >= 3) {
@@ -220,10 +223,10 @@ export class Verifier {
   
     const verified = Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey);
     if (!verified && !txp.prePublishRaw)
-        return false;
+        throw new Error('Invalid proposal signature');
     
     if (!verified && txp.prePublishRaw && !Utils.verifyMessage(txp.prePublishRaw, txp.proposalSignature, creatorSigningPubKey))
-        return false;
+        throw new Error('Invalid refreshed proposal signature');
 
     if (Constants.UTXO_CHAINS.includes(chain)) {
       if (!this.checkAddress(credentials, txp.changeAddress)) {
