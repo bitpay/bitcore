@@ -1,16 +1,31 @@
 import * as prompt from '@clack/prompts';
 import { Deriver } from 'crypto-wallet-core';
 import os from 'os';
-import { ICliOptions } from '../../types/cli';
+import type { CommonArgs } from '../../types/cli';
 import { UserCancelled } from '../errors';
 import { getAction } from '../prompts';
-import { Wallet } from '../wallet';
 
-export async function deriveKey(args: {
-  wallet: Wallet;
-  opts: ICliOptions
-}) {
+export function command(args: CommonArgs) {
+  const { program } = args;
+  program
+    .description('Derive a key or address from the wallet')
+    .usage('<walletName> --command derive [options]')
+    .optionsGroup('Derivation Options')
+    .option('--path <path>', 'Derivation path to use (e.g. m/0/1)')
+    .parse(process.argv);
+    
+  const opts = program.opts();
+  if (opts.help) {
+    program.help();
+  }
+  return opts;
+}
+
+export async function deriveKey(args: CommonArgs<{ path?: string; }>) {
   const { wallet, opts } = args;
+  if (opts.command) {
+    Object.assign(opts, command(args));
+  }
 
   const promptAction = async () => {
     const a = await getAction({
@@ -27,7 +42,7 @@ export async function deriveKey(args: {
   let action: string;
   do {
     try {
-      const path = await prompt.text({
+      const path = opts.path || await prompt.text({
         message: 'Enter the derivation path:',
         placeholder: 'e.g. m/0/1',
         validate: (input) => {
@@ -71,12 +86,12 @@ export async function deriveKey(args: {
         prompt.note(`${address}`, `Derived Address (${path})`);
       }
 
-      action = await promptAction();
+      action = opts.command ? 'exit' : await promptAction();
     } catch (err) {
       if (!(err instanceof UserCancelled)) {
         prompt.log.error(opts.verbose ? (err.stack || err.message) : err.message);
       }
-      action = await promptAction();
+      action = opts.command ? 'exit' : await promptAction();
     }
   } while (action === 'again');
 

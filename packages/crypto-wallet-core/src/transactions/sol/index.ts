@@ -3,7 +3,7 @@ import * as SolComputeMemo from '@solana-program/memo';
 import * as SolSystem from '@solana-program/system';
 import * as SolToken from '@solana-program/token';
 import * as SolKit from '@solana/kit'
-import { Key } from '../../derivation';
+import type { Key } from '../../types/derivation';
 
 
 export class SOLTxProvider {

@@ -1,29 +1,56 @@
 import * as prompt from '@clack/prompts';
 import os from 'os';
-import { ICliOptions } from '../../types/cli';
+import type { CommonArgs } from '../../types/cli';
+import type { ITokenObj } from '../../types/wallet';
 import { Utils } from '../utils';
-import { Wallet } from '../wallet';
 
-export async function getBalance(args: {
-  wallet: Wallet;
-  opts: ICliOptions & {
-    tokenAddress?: string;
+export function command(args: CommonArgs) {
+  const { program } = args;
+  program
+    .description('Get the balance of the wallet')
+    .usage('<walletName> --command balance [options]')
+    .optionsGroup('Balance Options')
+    .option('--token <token>', 'Token to get the balance for (e.g. USDC)')
+    .option('--tokenAddress <address>', 'Token contract address to get the balance for')
+    .option('--showByAddress', 'Show balance by address', false)
+    .parse(process.argv);
+  
+  const opts = program.opts();
+  if (opts.help) {
+    program.help();
   }
-}) {
+  return opts;
+}
+
+export async function getBalance(args: CommonArgs<{
+  showByAddress?: boolean;
+}>) {
   const { wallet, opts } = args;
+  if (opts.command) {
+    Object.assign(opts, command(args));
+  }
   if (!wallet.isComplete()) {
     prompt.log.warn('Wallet is not complete. Check the wallet status for more details.');
     return {};
   }
-  const bal = await wallet.client.getBalance(opts);
-  const coin = wallet.client.credentials.coin;
-  displayBalance(bal, coin);
-  
+
+  let tokenObj: ITokenObj;
+  if (opts.token || opts.tokenAddress) {
+    tokenObj = await wallet.getToken(opts);
+    if (!tokenObj) {
+      throw new Error(`Unknown token "${opts.tokenAddress || opts.token}" on ${wallet.chain}:${wallet.network}`);
+    }
+  }
+
+  const bal = await wallet.client.getBalance({ tokenAddress: tokenObj?.contractAddress });
+  const currency = tokenObj?.displayCode || wallet.client.credentials.coin;
+  displayBalance(currency, bal, Object.assign({ showByAddress: opts.showByAddress }, tokenObj));
+
   return bal;
 };
 
-export function displayBalance(bal, coin, opts?) {
-  const format = (amount) => Utils.renderAmount(amount, coin, opts);
+export function displayBalance(currency, bal, opts?) {
+  const format = (amount) => Utils.renderAmount(currency, amount, opts);
 
   const lines = [`Total: ${format(bal.totalAmount)} (${format(bal.lockedAmount)} locked)`];
   lines.push(`Confirmed: ${format(bal.totalConfirmedAmount)} (${format(bal.lockedConfirmedAmount)} locked)`);
@@ -39,5 +66,5 @@ export function displayBalance(bal, coin, opts?) {
     }
   }
 
-  prompt.note(lines.join(os.EOL), `${coin.toUpperCase()} Balance ${opts?.contractAddress ? `(${opts.code} - ${opts.contractAddress})` : ''}`);
+  prompt.note(lines.join(os.EOL), `${currency.toUpperCase()} Balance ${opts?.contractAddress ? `(${opts.code} - ${opts.contractAddress})` : ''}`);
 }

@@ -1,16 +1,10 @@
 import * as prompt from '@clack/prompts';
 import BWC from 'bitcore-wallet-client';
-import { ICliOptions } from '../../../types/cli';
+import type { CommonArgs } from '../../../types/cli';
 import { getCopayerName, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
-import { Wallet } from '../../wallet';
 
-export async function joinMultiSigWallet(args: {
-  wallet: Wallet;
-  opts: ICliOptions & {
-    mnemonic?: string;
-  }
-}) {
+export async function joinMultiSigWallet(args: CommonArgs<{ mnemonic?: string; }>) {
   const { wallet, opts } = args;
   const { verbose, mnemonic } = opts;
 

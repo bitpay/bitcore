@@ -379,10 +379,12 @@ describe('Key', function() {
         coin: 'bch',
         network: 'livenet',
         account: 1,
+        m: 2,
         n: 2
       });
       cred.account.should.equal(1);
       cred.addressType.should.equal('P2SH');
+      cred.m.should.equal(2);
       cred.n.should.equal(2);
       cred.rootPath.should.equal("m/48'/145'/1'");
       k.compliantDerivation.should.equal(true);

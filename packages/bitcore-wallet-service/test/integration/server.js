@@ -1603,7 +1603,7 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          server2.getMainAddresses({}, function(err, addresses) {
+          server2.getAddresses({ noChange: true }, function(err, addresses) {
             should.not.exist(err);
             should.exist(addresses);
             addresses.length.should.above(0);
@@ -1902,7 +1902,7 @@ describe('Wallet service', function() {
           should.exist(err);
           should.not.exist(address);
 
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getAddresses({ noChange: true }, function(err, addresses) {
             addresses.length.should.equal(0);
 
             server.storage.storeAddressAndWallet.restore();
@@ -1970,7 +1970,7 @@ describe('Wallet service', function() {
           should.exist(err);
           should.not.exist(address);
 
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getAddresses({ noChange: true }, function(err, addresses) {
             addresses.length.should.equal(0);
 
             server.storage.storeAddressAndWallet.restore();
@@ -2037,7 +2037,7 @@ describe('Wallet service', function() {
           should.exist(err);
           should.not.exist(address);
 
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getAddresses({ noChange: true }, function(err, addresses) {
             addresses.length.should.equal(0);
 
             server.storage.storeAddressAndWallet.restore();
@@ -2105,7 +2105,7 @@ describe('Wallet service', function() {
             notif.data.address.should.equal(address.address);
 
             // stored address should be new format
-            server.getMainAddresses({}, function(err, addresses) {
+            server.getAddresses({ noChange: true }, function(err, addresses) {
               should.not.exist(err);
               addresses.length.should.equal(1);
               addresses[0].address.should.equal('qrg04mz8h67j9dck3f3f3sa560taep87yqnwra9ak6');
@@ -2338,7 +2338,7 @@ describe('Wallet service', function() {
               address.coin.should.equal('eth');
 
               // main addresses should transfrom addresses
-              server.getMainAddresses({}, function(err, addresses) {
+              server.getAddresses({ noChange: true }, function(err, addresses) {
                 should.not.exist(err);
                 addresses.length.should.equal(1);
                 addresses[0].address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
@@ -2446,7 +2446,7 @@ describe('Wallet service', function() {
               address.coin.should.equal('xrp');
 
               // main addresses should transfrom addresses
-              server.getMainAddresses({}, function(err, addresses) {
+              server.getAddresses({ noChange: true }, function(err, addresses) {
                 should.not.exist(err);
                 addresses.length.should.equal(1);
                 addresses[0].address.should.equal('rLsz9LPd3arEWQ6CsvD839E8c9dkdBopUG');
@@ -2477,21 +2477,22 @@ describe('Wallet service', function() {
 
 
 
-  describe('#getMainAddresses', function() {
-    var server, wallet;
+  describe('#getAddresses', function() {
+    let server, wallet;
+    const numMainAddresses = 5;
 
     beforeEach(function(done) {
       helpers.createAndJoinWallet(2, 2, {}, function(s, w) {
         server = s;
         wallet = w;
-        helpers.createAddresses(server, wallet, 5, 0, function() {
+        helpers.createAddresses(server, wallet, numMainAddresses, 0, function() {
           done();
         });
       });
     });
 
     it('should get all addresses', function(done) {
-      server.getMainAddresses({}, function(err, addresses) {
+      server.getAddresses({}, function(err, addresses) {
         should.not.exist(err);
         addresses.length.should.equal(5);
         addresses[0].path.should.equal('m/0/0');
@@ -2500,7 +2501,7 @@ describe('Wallet service', function() {
       });
     });
     it('should get first N addresses', function(done) {
-      server.getMainAddresses({
+      server.getAddresses({
         limit: 3
       }, function(err, addresses) {
         should.not.exist(err);
@@ -2511,7 +2512,7 @@ describe('Wallet service', function() {
       });
     });
     it('should get last N addresses in reverse order', function(done) {
-      server.getMainAddresses({
+      server.getAddresses({
         limit: 3,
         reverse: true,
       }, function(err, addresses) {
@@ -2520,6 +2521,33 @@ describe('Wallet service', function() {
         addresses[0].path.should.equal('m/0/4');
         addresses[2].path.should.equal('m/0/2');
         done();
+      });
+    });
+
+    describe('noChange', function() {
+      const numChangeAddresses = 3;
+      beforeEach(function(done) {
+        helpers.createAddresses(server, wallet, 0, numChangeAddresses, function() {
+          done();
+        });
+      });
+      it('should get all addresses', function(done) {
+        server.getAddresses({}, function(err, addresses) {
+          should.not.exist(err);
+          addresses.length.should.equal(numMainAddresses + numChangeAddresses);
+          addresses.some(addr => !addr.isChange).should.be.true;
+          addresses.some(addr => addr.isChange).should.be.true;
+          done();
+        });
+      });
+      it('should get main addresses', function(done) {
+        server.getAddresses({ noChange: true }, function(err, addresses) {
+          should.not.exist(err);
+          addresses.length.should.equal(numMainAddresses);
+          addresses.some(addr => !addr.isChange).should.be.true;
+          addresses.some(addr => addr.isChange).should.be.false;
+          done();
+        });
       });
     });
   });
@@ -2791,7 +2819,7 @@ describe('Wallet service', function() {
           should.exist(utxos);
           utxos.length.should.equal(2);
           utxos.reduce((sum, u) => sum += u.satoshis, 0).should.equal(3 * 1e8);
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getAddresses({ noChange: true }, function(err, addresses) {
             var utxo = utxos[0];
             var address = addresses.find(a => a.address === utxo.address);
             should.exist(address);
@@ -2811,7 +2839,7 @@ describe('Wallet service', function() {
           should.exist(utxos);
           utxos.length.should.equal(2);
           utxos.reduce((sum, u) => sum += u.satoshis, 0).should.equal(3 * 1e8);
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getAddresses({ noChange: true }, function(err, addresses) {
             var utxo = utxos[0];
             var address = addresses.find(a => a.address === utxo.address);
             should.exist(address);
@@ -2891,7 +2919,7 @@ describe('Wallet service', function() {
           should.exist(utxos);
           utxos.length.should.equal(2);
           utxos.reduce((sum, u) => sum += u.satoshis, 0).should.equal(2 * 1e8 + 1000);
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getAddresses({ noChange: true }, function(err, addresses) {
             var utxo = utxos[0];
             var address = addresses.find(a => a.address === utxo.address);
             should.exist(address);
@@ -3106,7 +3134,7 @@ describe('Wallet service', function() {
           balance.byAddress.length.should.equal(2);
           balance.byAddress[0].amount.should.equal(helpers.toSatoshi(4));
           balance.byAddress[1].amount.should.equal(helpers.toSatoshi(2));
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getAddresses({ noChange: true }, function(err, addresses) {
             should.not.exist(err);
             var addresses = _.uniq(addresses.map(a => a.address));
             _.intersection(addresses, balance.byAddress.map(a => a.address)).length.should.equal(2);
@@ -6980,7 +7008,7 @@ describe('Wallet service', function() {
         should.exist(x);
         x.path.should.equal('m/0/0');
         x.address.should.equal(firstAddress.address);
-        server.getMainAddresses({}, function(err, addr) {
+        server.getAddresses({ noChange: true }, function(err, addr) {
           should.not.exist(err);
           addr.length.should.equal(1);
           done();
@@ -9924,7 +9952,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             wallet.addressManager.receiveAddressIndex.should.equal(3);
             wallet.addressManager.changeAddressIndex.should.equal(1);
-            server.getMainAddresses({}, function(err, addr) {
+            server.getAddresses({ noChange: true }, function(err, addr) {
               should.not.exist(err);
               addr.length.should.equal(3);
               done();
@@ -9955,7 +9983,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             wallet.addressManager.receiveAddressIndex.should.equal(201);
             wallet.addressManager.changeAddressIndex.should.equal(10);
-            server.getMainAddresses({}, function(err, addr) {
+            server.getAddresses({ noChange: true }, function(err, addr) {
               should.not.exist(err);
 
               //201 MAIN addresses (0 to 200)
@@ -10678,13 +10706,13 @@ describe('Wallet service', function() {
           address.coin.should.equal('bch');
           address.network.should.equal('livenet');
           address.address.should.equal('qrg04mz8h67j9dck3f3f3sa560taep87yqnwra9ak6');
-          server.btc.getMainAddresses({}, function(err, addresses) {
+          server.btc.getAddresses({ noChange: true }, function(err, addresses) {
             should.not.exist(err);
             addresses.length.should.equal(1);
             addresses[0].coin.should.equal('btc');
             addresses[0].walletId.should.equal(wallet.btc.id);
             addresses[0].address.should.equal('1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG');
-            server.bch.getMainAddresses({}, function(err, addresses) {
+            server.bch.getAddresses({ noChange: true }, function(err, addresses) {
               should.not.exist(err);
               addresses.length.should.equal(1);
               addresses[0].coin.should.equal('bch');

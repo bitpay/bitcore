@@ -1,25 +1,22 @@
 import * as prompt from '@clack/prompts';
-import { Key, Network, TssKey } from 'bitcore-wallet-client'
+import { Key, TssKey, type Network } from 'bitcore-wallet-client'
 import crypto from 'crypto';
 import os from 'os';
 import url from 'url';
-import { ICliOptions } from '../../../types/cli';
+import type { CommonArgs } from '../../../types/cli';
 import { UserCancelled } from '../../errors';
 import { getAddressType, getCopayerName, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
-import { Wallet } from '../../wallet';
 
 
-export async function createThresholdSigWallet(args: {
-  wallet: Wallet;
-  chain: string;
-  network: Network;
-  m: number;
-  n: number;
-  opts: ICliOptions & {
-    mnemonic?: string;
-  };
-}) {
+export async function createThresholdSigWallet(
+  args: CommonArgs<{ mnemonic?: string }> & {
+    chain: string;
+    network: Network;
+    m: number;
+    n: number;
+  }
+) {
   const { wallet, chain, network, m, n, opts } = args;
   const { verbose, mnemonic } = opts;
 

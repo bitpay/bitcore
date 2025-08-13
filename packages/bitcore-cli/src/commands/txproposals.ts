@@ -1,32 +1,59 @@
 import * as prompt from '@clack/prompts';
-import { Status, Txp } from 'bitcore-wallet-client';
 import fs from 'fs';
 import os from 'os';
-import { ICliOptions } from '../../types/cli';
+import type { CommonArgs } from '../../types/cli';
 import { UserCancelled } from '../errors';
-import { getAction } from '../prompts';
+import { getAction, getFileName } from '../prompts';
 import { Utils } from '../utils';
-import { Wallet } from '../wallet';
 
-export async function getTxProposals(args: {
-  wallet: Wallet;
-  status: Status
-  opts: ICliOptions & {
-    pageSize: number;
+export function command(args: CommonArgs) {
+  const { wallet, program } = args;
+  program
+    .description('View, sign, and reject transaction proposals for a wallet')
+    .usage('<walletName> --command txproposals [options]')
+    .optionsGroup('Tx Proposals Options')
+    .option('--action <action>', 'Action to perform on transaction proposals: sign, reject, delete, broadcast')
+    .option('--proposalId <proposalId>', 'ID of the transaction proposal to act upon')
+    .option('--raw', 'Print raw transaction proposal objects instead of formatted output')
+    .option('--export [filename]', `Export the transaction proposal(s) to a file(s) (default: ~/${wallet.name}_txproposal_<proposalId>.json)`)
+    .parse(process.argv);
+
+  const opts = program.opts();
+  if (opts.help) {
+    program.help();
   }
-}) {
+
+  if (!!opts.action !== !!opts.proposalId) {
+    throw new Error('Both --action and --proposalId options must be provided together.');
+  }
+  return opts;
+}
+
+
+export async function getTxProposals(
+  args: CommonArgs<{
+    action?: string;
+    proposalId?: string;
+    raw?: boolean;
+    export?: string | boolean;
+  }>
+) {
   const { wallet, opts } = args;
+  if (opts.command) {
+    Object.assign(opts, command(args));
+  }
+  
   const myCopayerId = wallet.client.credentials.copayerId;
 
-  const txps = await wallet.client.getTxProposals({
-    forAirGapped: false, // TODO
-    // limit: pageSize,
-    // skip: (page - 1) * pageSize
-  });
+  const txps = opts.command && opts.proposalId
+    ? [await wallet.client.getTx(opts.proposalId)]
+    : await wallet.client.getTxProposals({
+      forAirGapped: false, // TODO
+    });
 
   let action: string | symbol | undefined;
   let i = 0;
-  let printRaw = false;
+  let printRaw = opts.raw ?? false;
 
   do {
     const txp = txps[i];
@@ -111,10 +138,12 @@ export async function getTxProposals(args: {
       options.push({ label: 'Export', value: 'export', hint: 'Save to a file' });
     }
 
-    action = await getAction({
-      options,
-      initialValue
-    });
+    action = opts.command
+      ? opts.action || (opts.export ? 'export' : 'exit')
+      : await getAction({
+          options,
+          initialValue
+        });
     if (prompt.isCancel(action)) {
       throw new UserCancelled();
     }
@@ -175,21 +204,26 @@ export async function getTxProposals(args: {
         }
         break;
       case 'export':
-        const outputFile = await prompt.text({
-          message: 'Enter output file path to save proposal:',
-          initialValue: `./${txp.id}.json`,
-          validate: (value) => {
-            if (!value) return 'Output file path is required';
-            return; // valid value
-          }
-        });
-        if (prompt.isCancel(outputFile)) {
-          throw UserCancelled;
-        }
+        const defaultValue = `~/${wallet.name}_txproposal_${txp.id}.json`;
+        const outputFile = opts.command
+          ? Utils.replaceTilde(typeof opts.export === 'string' ? opts.export : defaultValue)
+          : await getFileName({
+              message: 'Enter output file path to save proposal:',
+              defaultValue,
+            });
         fs.writeFileSync(outputFile, JSON.stringify(txp, null, 2));
+        prompt.log.success(`Exported to ${outputFile}`);
         break;
+      case 'menu':
+      case 'exit':
+        break;
+      default:
+        if (opts.command) throw new Error(`Unknown action: ${action}`);
     }
 
+    if (opts.command) {
+      action = 'exit'; // Exit after processing the action in command mode
+    }
     // TODO: handle actions
   } while (!['menu', 'exit'].includes(action))
 

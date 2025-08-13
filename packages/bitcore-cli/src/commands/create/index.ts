@@ -1,18 +1,12 @@
 import { Constants } from 'crypto-wallet-core';
-import { ICliOptions } from '../../../types/cli';
+import type { CommonArgs } from '../../../types/cli';
 import { getChain, getIsMultiParty, getMofN, getMultiPartyScheme, getNetwork } from '../../prompts';
 import { Utils } from '../../utils';
-import { Wallet } from '../../wallet';
 import { createMultiSigWallet } from './createMultiSig';
 import { createSingleSigWallet } from './createSingleSig';
 import { createThresholdSigWallet } from './createThresholdSig';
 
-export async function createWallet(args: {
-  wallet: Wallet;
-  opts: ICliOptions & {
-    mnemonic?: string;
-  }
-}) {
+export async function createWallet(args: CommonArgs<{ mnemonic?: string }>) {
   const { wallet, opts } = args;
 
   await wallet.getClient({});

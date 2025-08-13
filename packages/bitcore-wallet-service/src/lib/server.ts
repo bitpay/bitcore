@@ -1669,28 +1669,42 @@ export class WalletService implements IWalletService {
 
   /**
    * Get all addresses.
-   * @param {Object} opts
-   * @param {Numeric} opts.limit (optional) - Limit the resultset. Return all addresses by default.
-   * @param {Numeric} opts.skip (optional) - Skip this number of addresses in resultset. Useful for paging.
-   * @param {Boolean} [opts.reverse=false] (optional) - Reverse the order of returned addresses.
    * @returns {Address[]}
    */
-  getMainAddresses(opts, cb) {
+
+  getAddresses(opts: {
+    /** Limit the resultset. Return all addresses by default. */
+    limit?: number;
+    /** Skip this number of addresses in resultset. Useful for paging. */
+    skip?: number;
+    /** Reverse the order of returned addresses. */
+    reverse?: boolean;
+    /** Filter by specific addresses. */
+    addresses?: string[];
+    /** Filter out change addresses. */
+    noChange?: boolean;
+  }, cb) {
     opts = opts || {};
     this.storage.fetchAddresses(this.walletId, (err, addresses) => {
       if (err) return cb(err);
-      let onlyMain = addresses.filter(a => !a.isChange);
-      if (opts.reverse) onlyMain.reverse();
-      if (opts.skip > 0) onlyMain = onlyMain.slice(opts.skip);
-      if (opts.limit > 0) onlyMain = onlyMain.slice(0, opts.limit);
+      if (opts.noChange) {
+        addresses = addresses.filter(a => !a.isChange);
+      }
+      if (opts.addresses) {
+        addresses = addresses.filter(a => opts.addresses.includes(a.address));
+      }
+      if (opts.reverse) addresses.reverse();
+      if (opts.skip > 0) addresses = addresses.slice(opts.skip);
+      if (opts.limit > 0) addresses = addresses.slice(0, opts.limit);
 
       this.getWallet({}, (err, wallet) => {
-        for (const x of onlyMain) {
+        for (const x of addresses) {
           ChainService.addressFromStorageTransform(wallet.chain, wallet.network, x);
         }
-        return cb(null, onlyMain);
+        return cb(null, addresses);
       });
     });
+
   }
 
   /**
@@ -2645,7 +2659,7 @@ export class WalletService implements IWalletService {
               [
                 next => {
                   if (ChainService.isUTXOChain(wallet.chain)) return next();
-                  this.getMainAddresses({ reverse: true, limit: 1 }, (err, mainAddr) => {
+                  this.getAddresses({ reverse: true, limit: 1, noChange: true }, (err, mainAddr) => {
                     if (err) return next(err);
                     opts.from = mainAddr[0].address;
                     next();
