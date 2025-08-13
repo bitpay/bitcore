@@ -2,7 +2,7 @@
   "name": "bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "10.10.11",
+  "version": "10.10.12",
   "license": "MIT",
   "main": "ts_build/index.js",
   "types": "ts_build/index.d.js",
@@ -43,7 +43,7 @@
   "devDependencies": {
     "@types/lodash": "^4.14.136",
     "@types/node": "22.14.1",
-    "bitcore-wallet-service": "^10.10.11",
+    "bitcore-wallet-service": "^10.10.12",
     "browserify": "^13.1.0",
     "chai": "^1.9.1",
     "coveralls": "^3.0.2",
