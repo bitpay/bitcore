@@ -1,6 +1,6 @@
-import * as _ from 'lodash';
 import { cpus, homedir } from 'os';
 import { ConfigType } from './types/Config';
+import { merge } from './utils';
 import parseArgv from './utils/parseArgv';
 let program = parseArgv([], ['config']);
 
@@ -94,8 +94,7 @@ const Config = function(): ConfigType {
   };
 
   let foundConfig = findConfig();
-  const mergeCopyArray = (objVal, srcVal) => (objVal instanceof Array ? srcVal : undefined);
-  config = _.mergeWith(config, foundConfig, mergeCopyArray);
+  config = merge(config, foundConfig);
   if (!Object.keys(config.chains).length) {
     Object.assign(config.chains, {
       BTC: {
