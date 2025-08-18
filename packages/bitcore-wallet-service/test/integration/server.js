@@ -30,7 +30,7 @@ const Bitcore_ = {
   ltc: require('bitcore-lib-ltc')
 };
 
-const { WalletService } = require('../../ts_build/lib/server');
+const { WalletService, UPGRADES } = require('../../ts_build/lib/server');
 const { Storage } = require('../../ts_build/lib/storage')
 const { Common } = require('../../ts_build/lib/common');
 const Utils = Common.Utils;
@@ -11546,7 +11546,7 @@ describe('Wallet service', function() {
   });
 
   describe('#clearCache', () => {
-    var server, wallet;
+    let server, wallet;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(2, 2, function(s, w) {
         server = s;
@@ -11554,11 +11554,298 @@ describe('Wallet service', function() {
         done();
       });
     });
-    it('clearWalletCache', () => {
-      server.clearWalletCache({}).then((val) => {
-        should.exist(val);
-        val.should.equal(true);
+    it('clearWalletCache', async () => {
+      const val = await server.clearWalletCache({});
+      should.exist(val);
+      val.should.equal(true);
+    });
+  });
+
+  describe('#upgradeNeeded', function() {
+    let server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
       });
+    });
+    it('should do something', function() {
+      (true).should.equal(true)
+    });
+
+    describe(UPGRADES.SOL_bwc_$lt_10_10_12, function() {
+      describe('should need upgrade: YES', function() {
+        it('lower bwc patch version', function() {
+          server.clientVersion = 'bwc-10.10.11';
+          wallet.chain = 'sol';
+          server._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet).should.equal(true);
+        });
+        it('lower bwc minor version', function() {
+          server.clientVersion = 'bwc-10.9.12';
+          wallet.chain = 'sol';
+          server._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet).should.equal(true);
+        });
+        it('lower bwc major version', function() {
+          server.clientVersion = 'bwc-9.10.12';
+          wallet.chain = 'sol';
+          server._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet).should.equal(true);
+        });
+        it('should be case insensitive', function() {
+          server.clientVersion = 'bwc-10.10.11';
+          wallet.chain = 'sol'; // case insensitive
+          server._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet).should.equal(true);
+          wallet.chain = 'SOL'; // case insensitive
+          server._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet).should.equal(true);
+        });
+      });
+      describe('should need upgrade: NO', function() {
+        it('higher bwc patch version', function() {
+          server.clientVersion = 'bwc-10.10.12';
+          wallet.chain = 'sol';
+          server._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet).should.equal(false);
+        });
+        it('higher bwc minor version', function() {
+          server.clientVersion = 'bwc-10.11.11';
+          wallet.chain = 'sol';
+          server._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet).should.equal(false);
+        });
+        it('higher bwc major version', function() {
+          server.clientVersion = 'bwc-11.10.11';
+          wallet.chain = 'sol';
+          server._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet).should.equal(false);
+        });
+        it('different chain', function() {
+          server.clientVersion = 'bwc-10.10.11';
+          wallet.chain = 'btc';
+          server._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet).should.equal(false);
+        });
+      });
+    });
+
+    describe(UPGRADES.BCH_bwc_$lt_8_3_multisig, function() {
+      describe('should need upgrade: YES', function() {
+        const upgradeMessage = 'BWC clients < 8.3 are no longer supported for multisig BCH wallets.';
+        it('lower bwc minor version', function() {
+          server.clientVersion = 'bwc-8.2.0';
+          wallet.chain = 'bch';
+          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(upgradeMessage);
+        });
+        it('lower bwc major version', function() {
+          server.clientVersion = 'bwc-7.3.0';
+          wallet.chain = 'bch';
+          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(upgradeMessage);
+        });
+        it('should be case insensitive', function() {
+          server.clientVersion = 'bwc-8.2.0';
+          wallet.chain = 'bch'; // case insensitive
+          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(true);
+          wallet.chain = 'BCH'; // case insensitive
+          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(true);
+        });
+      });
+      describe('should need upgrade: NO', function() {
+        it('higher bwc minor version', function() {
+          server.clientVersion = 'bwc-8.3.0';
+          wallet.chain = 'bch';
+          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(false);
+        });
+        it('higher bwc major version', function() {
+          server.clientVersion = 'bwc-9.0.0';
+          wallet.chain = 'bch';
+          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(false);
+        });
+        it('different chain', function() {
+          server.clientVersion = 'bwc-8.2.0';
+          wallet.chain = 'btc';
+          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(false);
+        });
+        it('not multisig', function() {
+          server.clientVersion = 'bwc-8.2.0';
+          wallet.n = 1;
+          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(false);
+        });
+      });
+    });
+
+    describe(UPGRADES.bwc_$lt_8_4_multisig_purpose48, function() {
+      describe('should need upgrade: YES', function() {
+        it('lower bwc minor version', function() {
+          server.clientVersion = 'bwc-8.3.0';
+          wallet.usePurpose48 = true;
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_4_multisig_purpose48, wallet).should.equal(true);
+        });
+        it('lower bwc major version', function() {
+          server.clientVersion = 'bwc-7.4.0';
+          wallet.usePurpose48 = true;
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_4_multisig_purpose48, wallet).should.equal(true);
+        });
+      });
+      describe('should need upgrade: NO', function() {
+        it('higher bwc minor version', function() {
+          server.clientVersion = 'bwc-8.4.0';
+          wallet.usePurpose48 = true;
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_4_multisig_purpose48, wallet).should.equal(false);
+        });
+        it('higher bwc major version', function() {
+          server.clientVersion = 'bwc-9.3.0';
+          wallet.usePurpose48 = true;
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_4_multisig_purpose48, wallet).should.equal(false);
+        });
+        it('not multisig', function() {
+          server.clientVersion = 'bwc-8.3.0';
+          wallet.usePurpose48 = true;
+          wallet.n = 1;
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_4_multisig_purpose48, wallet).should.equal(false);
+        });
+        it('usePurpose48 is false', function() {
+          server.clientVersion = 'bwc-8.3.0';
+          wallet.usePurpose48 = false;
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_4_multisig_purpose48, wallet).should.equal(false);
+        });
+      });
+    });
+
+    describe(UPGRADES.bwc_$lt_8_17_multisig_p2wsh, function() {
+      describe('should need upgrade: YES', function() {
+        it('lower bwc minor version', function() {
+          server.clientVersion = 'bwc-8.16.0';
+          wallet.addressType = 'P2WSH';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_17_multisig_p2wsh, wallet).should.equal(true);
+        });
+        it('lower bwc major version', function() {
+          server.clientVersion = 'bwc-7.17.0';
+          wallet.addressType = 'P2WSH';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_17_multisig_p2wsh, wallet).should.equal(true);
+        });
+        it('addressType is case insensitive', function() {
+          server.clientVersion = 'bwc-8.16.0';
+          wallet.addressType = 'p2wsh';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_17_multisig_p2wsh, wallet).should.equal(true);
+        });
+      });
+      describe('should need upgrade: NO', function() {
+        it('higher bwc minor version', function() {
+          server.clientVersion = 'bwc-8.17.0';
+          wallet.addressType = 'P2WSH';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_17_multisig_p2wsh, wallet).should.equal(false);
+        });
+        it('higher bwc major version', function() {
+          server.clientVersion = 'bwc-9.16.0';
+          wallet.addressType = 'P2WSH';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_17_multisig_p2wsh, wallet).should.equal(false);
+        });
+        it('not multisig', function() {
+          server.clientVersion = 'bwc-8.16.0';
+          wallet.addressType = 'P2WSH';
+          wallet.n = 1;
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_17_multisig_p2wsh, wallet).should.equal(false);
+        });
+        it('addressType is not P2WSH', function() {
+          server.clientVersion = 'bwc-8.16.0';
+          wallet.addressType = 'P2SH';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_17_multisig_p2wsh, wallet).should.equal(false);
+        });
+      });
+    });
+
+    describe(UPGRADES.version_$gt_maxTxpVersion, function() {
+      describe('should need upgrade: YES', function() {
+        it('version > maxTxpVersion integers', function() {
+          const opts = {
+            version: 2,
+            maxTxpVersion: 1
+          };
+          server._upgradeNeeded(UPGRADES.version_$gt_maxTxpVersion, opts).should.equal(true);
+        });
+        it('version > maxTxpVersion strings', function() {
+          const opts = {
+            version: '2',
+            maxTxpVersion: '1'
+          };
+          server._upgradeNeeded(UPGRADES.version_$gt_maxTxpVersion, opts).should.equal(true);
+        });
+      });
+      describe('should need upgrade: NO', function() {
+        it('version == maxTxpVersion', function() {
+          const opts = {
+            version: 1,
+            maxTxpVersion: '1'
+          };
+          server._upgradeNeeded(UPGRADES.version_$gt_maxTxpVersion, opts).should.equal(false);
+        });
+        it('version < maxTxpVersion', function() {
+          const opts = {
+            version: '1',
+            maxTxpVersion: 2
+          };
+          server._upgradeNeeded(UPGRADES.version_$gt_maxTxpVersion, opts).should.equal(false);
+        });
+      });
+    });
+
+    describe(UPGRADES.BCH_schnorr, function() {
+      describe('should need upgrade: YES', function() {
+        it('lower bwc minor version', function() {
+          const opts = {
+            signingMethod: 'schnorr',
+            supportBchSchnorr: false
+          };
+          server._upgradeNeeded(UPGRADES.BCH_schnorr, opts).should.equal(true);
+        });
+        it('lower bwc major version', function() {
+          const opts = {
+            signingMethod: 'schnorr',
+            supportBchSchnorr: false
+          };
+          server._upgradeNeeded(UPGRADES.BCH_schnorr, opts).should.equal(true);
+        });
+      });
+      describe('should need upgrade: NO', function() {
+        it('signingMethod is not schnorr', function() {
+          const opts = {
+            signingMethod: 'ecdsa',
+            supportBchSchnorr: false
+          };
+          server._upgradeNeeded(UPGRADES.BCH_schnorr, opts).should.equal(false);
+        });
+        it('supportBchSchnorr is true', function() {
+          const opts = {
+            signingMethod: 'ecdsa',
+            supportBchSchnorr: true
+          };
+          server._upgradeNeeded(UPGRADES.BCH_schnorr, opts).should.equal(false);
+        });
+      });
+    });
+
+    describe(UPGRADES.bwc_$lt_1_2, function() {
+      describe('should need upgrade: YES', function() {
+        it('lower bwc minor version', function() {
+          server.clientVersion = 'bwc-1.1.0';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_1_2, null).should.equal(true);
+        });
+        it('lower bwc major version', function() {
+          server.clientVersion = 'bwc-0.2.0';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_1_2, null).should.equal(true);
+        });
+      });
+      describe('should need upgrade: NO', function() {
+        it('higher bwc minor version', function() {
+          server.clientVersion = 'bwc-1.2.0';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_1_2, null).should.equal(false);
+        });
+        it('higher bwc major version', function() {
+          server.clientVersion = 'bwc-2.1.0';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_1_2, null).should.equal(false);
+        });
+      });
+    });
+
+    it('should throw an error for an unknown path', function() {
+      (function() {
+        server._upgradeNeeded('bogus-path', wallet);
+      }).should.throw('Unknown upgrade path');
     });
   });
 })
