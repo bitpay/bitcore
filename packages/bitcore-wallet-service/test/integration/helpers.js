@@ -25,6 +25,7 @@ const { WalletService } = require('../../ts_build/lib/server');
 const Model = require('../../ts_build/lib/model');
 const TestData = require('../testdata');
 const CWC =  require('crypto-wallet-core');
+const { version } = require('../../package.json');
 
 const {
   Utils,
@@ -37,7 +38,7 @@ let blockchainExplorer;
 
 const helpers = {};
 
-helpers.CLIENT_VERSION = 'bwc-2.0.0';
+helpers.CLIENT_VERSION = `bwc-${version}`;
 
 helpers.before = function(cb) {
   storage = new Storage();
