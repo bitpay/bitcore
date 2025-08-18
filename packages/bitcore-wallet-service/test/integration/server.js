@@ -11639,9 +11639,9 @@ describe('Wallet service', function() {
         it('should be case insensitive', function() {
           server.clientVersion = 'bwc-8.2.0';
           wallet.chain = 'bch'; // case insensitive
-          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(true);
+          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(upgradeMessage);
           wallet.chain = 'BCH'; // case insensitive
-          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(true);
+          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(upgradeMessage);
         });
       });
       describe('should need upgrade: NO', function() {
@@ -11821,13 +11821,14 @@ describe('Wallet service', function() {
 
     describe(UPGRADES.bwc_$lt_1_2, function() {
       describe('should need upgrade: YES', function() {
+        const upgradeMessage = 'BWC clients < 1.2 are no longer supported.';
         it('lower bwc minor version', function() {
           server.clientVersion = 'bwc-1.1.0';
-          server._upgradeNeeded(UPGRADES.bwc_$lt_1_2, null).should.equal(true);
+          server._upgradeNeeded(UPGRADES.bwc_$lt_1_2, null).should.equal(upgradeMessage);
         });
         it('lower bwc major version', function() {
           server.clientVersion = 'bwc-0.2.0';
-          server._upgradeNeeded(UPGRADES.bwc_$lt_1_2, null).should.equal(true);
+          server._upgradeNeeded(UPGRADES.bwc_$lt_1_2, null).should.equal(upgradeMessage);
         });
       });
       describe('should need upgrade: NO', function() {
