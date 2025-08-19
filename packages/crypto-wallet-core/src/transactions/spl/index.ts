@@ -33,7 +33,7 @@ export class SPLTxProvider extends SOLTxProvider {
     return super.create({ ...params, txInstructions: allInstructions });
   }
 
-  static createAtokenInstructions(instructionType: 'createAssociatedToken' | 'createAssociatedTokenIdempotent' | 'recoverNestedAssociatedToken', params: any) {
+  static createAtokenInstructions(instructionType: InstructionType, params: any) {
     try {
       switch (instructionType) {
         case 'createAssociatedToken':
@@ -77,7 +77,7 @@ export class SPLTxProvider extends SOLTxProvider {
       ownerTokenMintAddress: SolKit.address(ownerTokenMintAddress),
       walletAddress: params.fromKeyPair
     });
-    console.log('in cwc', blockHash, blockHeight);
+
     const recentBlockhash = {
       blockhash: blockHash as SolKit.Blockhash,
       lastValidBlockHeight: BigInt(blockHeight)
@@ -133,3 +133,5 @@ interface CreateRecoverNestedAssociatedTokenParams {
   ownerAssociatedAccountAddress: string;
   ownerTokenMintAddress: string;
 }
+
+type InstructionType = 'createAssociatedToken' | 'createAssociatedTokenIdempotent' | 'recoverNestedAssociatedToken';
