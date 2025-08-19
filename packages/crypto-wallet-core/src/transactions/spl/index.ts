@@ -1,7 +1,7 @@
 import * as SolToken from '@solana-program/token';
+import { pipe } from '@solana/functional';
 import * as SolKit from '@solana/kit'
 import { SOLTxProvider } from '../sol';
-import { pipe } from '@solana/functional';
 
 export class SPLTxProvider extends SOLTxProvider {
 
@@ -98,7 +98,7 @@ export class SPLTxProvider extends SOLTxProvider {
   }
 }
 
-type CreateParams = {
+interface CreateParams {
   recipients: Array<{ address: string; amount: string; addressKeyPair?: SolKit.KeyPairSigner; }>;
   from: string;
   fee?: number;
@@ -122,7 +122,7 @@ type CreateParams = {
   decimals?: number;
 }
 
-type CreateRecoverNestedAssociatedTokenParams = {
+interface CreateRecoverNestedAssociatedTokenParams {
   category: 'recoverNestedAssociatedToken'
   blockHash: string;
   blockHeight: number;
