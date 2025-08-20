@@ -1270,7 +1270,7 @@ describe('Transaction', function() {
     });
   });
 
-  describe.only('getSighash', function() {
+  describe('getSighash', function() {
     it('should get sighash for publickey input', function() {
       const utxo = {
         txid: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
