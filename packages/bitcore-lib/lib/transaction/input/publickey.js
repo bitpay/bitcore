@@ -60,8 +60,10 @@ PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index
 PublicKeyInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
   $.checkState(this.output instanceof Output);
   sigtype = sigtype || Signature.SIGHASH_ALL;
+
+  const sighash = Sighash.sighash(transaction, sigtype, index, this.output.script);
   // sighash() returns data little endian but it must be signed big endian, hence the reverse
-  return Sighash.sighash(transaction, sigtype, index, this.output.script).reverse();
+  return sighash.reverse();
 };
 
 /**

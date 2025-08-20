@@ -29,7 +29,7 @@ inherits(EscrowInput, Input);
 
 EscrowInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
   if (this.reclaimPublicKey.toString() !== privateKey.publicKey.toString()) return [];
-  $.checkState(this.output instanceof Output);
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
   sigtype = sigtype || (Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID);
   const signature = new TransactionSignature({
     publicKey: privateKey.publicKey,
@@ -71,6 +71,25 @@ EscrowInput.prototype.isValidSignature = function(transaction, signature, signin
     undefined,
     signingMethod
   );
+};
+
+
+/**
+ * Get the hash data to sign for this input
+ * @param {Transaction} transaction The transaction to be signed
+ * @param {PublicKey} publicKey The reclaim public key
+ * @param {number} index The index of the input in the transaction input vector
+ * @param {number} sigtype The type of signature, defaults to Signature.SIGHASH_ALL
+ * @returns {Buffer}
+ */
+EscrowInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
+  if (this.reclaimPublicKey.toString() !== publicKey.toString()) return [];
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
+  sigtype = sigtype || (Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID);
+
+  const sighash = Sighash.sighash(transaction, sigtype, index, this.redeemScript, this.output.satoshisBN, undefined);
+  // sighash() returns data little endian but it must be signed big endian, hence the reverse
+  return sighash.reverse();
 };
 
 EscrowInput.prototype.clearSignatures = function() {

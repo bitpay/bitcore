@@ -75,8 +75,9 @@ PublicKeyHashInput.prototype.getSighash = function(transaction, publicKey, index
     const scriptCode = this.getScriptCode(publicKey);
     return SighashWitness.sighash(transaction, sigtype, index, scriptCode, satoshisBuffer);
   } else {
+    const sighash = Sighash.sighash(transaction, sigtype, index, this.output.script);
     // sighash() returns data little endian but it must be signed big endian, hence the reverse
-    return Sighash.sighash(transaction, sigtype, index, this.output.script).reverse();
+    return sighash.reverse();
   }
 };
 

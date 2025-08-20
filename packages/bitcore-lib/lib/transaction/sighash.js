@@ -108,7 +108,7 @@ function sighash(transaction, sighashType, inputNumber, subscript) {
  * @return {Signature}
  */
 function sign(transaction, privateKey, sighashType, inputIndex, subscript) {
-  let hashbuf = sighash(transaction, sighashType, inputIndex, subscript);
+  const hashbuf = sighash(transaction, sighashType, inputIndex, subscript);
   const sig = ECDSA.sign(hashbuf, privateKey, { endian: 'little' });
   sig.nhashtype = sighashType;
   return sig;
