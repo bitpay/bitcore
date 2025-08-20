@@ -55,10 +55,10 @@ PublicKeyHashInput.prototype.getScriptCode = function(publicKey) {
 
 /**
  * Get the hash data to sign for this input
- * @param {Transaction} transaction - the transaction to be signed
- * @param {PublicKey} publicKey - the public key in the redeem script (only if p2sh and !this.redeemScript)
- * @param {number} index - the index of the input in the transaction input vector
- * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
+ * @param {Transaction} transaction The transaction to be signed
+ * @param {PublicKey} publicKey The public key in the redeem script (only if p2sh and !this.redeemScript)
+ * @param {number} index The index of the input in the transaction input vector
+ * @param {number} sigtype The type of signature, defaults to Signature.SIGHASH_ALL
  * @returns {Buffer}
  */
 PublicKeyHashInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
@@ -69,7 +69,7 @@ PublicKeyHashInput.prototype.getSighash = function(transaction, publicKey, index
     ? this.getRedeemScript(publicKey)
     : this.output.script;
 
-  $.checkState(script, 'Missing script. Did you pass in the correct publicKey?')
+  $.checkState(script, 'Missing script. Did you pass in the correct publicKey?');
   if (script.isWitnessPublicKeyHashOut()) {
     const satoshisBuffer = this.getSatoshisBuffer();
     const scriptCode = this.getScriptCode(publicKey);

@@ -105,10 +105,10 @@ MultiSigScriptHashInput.prototype.getScriptCode = function() {
 
 /**
  * Get the hash data to sign for this input
- * @param {Transaction} transaction - the transaction to be signed
- * @param {PublicKey} publicKey - unused for this input type
- * @param {number} index - the index of the input in the transaction input vector
- * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
+ * @param {Transaction} transaction The transaction to be signed
+ * @param {PublicKey} publicKey Unused for this input type
+ * @param {number} index The index of the input in the transaction input vector
+ * @param {number} sigtype The type of signature, defaults to Signature.SIGHASH_ALL
  * @returns {Buffer}
  */
 MultiSigScriptHashInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
@@ -119,7 +119,7 @@ MultiSigScriptHashInput.prototype.getSighash = function(transaction, publicKey, 
     const scriptCode = this.getScriptCode();
     const satoshisBuffer = this.getSatoshisBuffer();
     return SighashWitness.sighash(transaction, sigtype, index, scriptCode, satoshisBuffer);
-  } else  {
+  } else {
     const sighash = Sighash.sighash(transaction, sigtype, index, this.redeemScript);
     // sighash() returns data little endian but it must be signed big endian, hence the reverse
     return sighash.reverse();

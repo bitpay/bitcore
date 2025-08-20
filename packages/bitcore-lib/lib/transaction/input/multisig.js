@@ -68,6 +68,24 @@ MultiSigInput.prototype._serializeSignatures = function() {
 };
 
 /**
+ * Get the hash data to sign for this input
+ * @param {Transaction} transaction - the transaction to be signed
+ * @param {PublicKey} publicKey - unused for this input type
+ * @param {number} index - the index of this input in the provided transaction
+ * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
+ * @param {Buffer} hashData - unused for this input type
+ * @returns {Buffer}
+ */
+MultiSigInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
+  sigtype = sigtype || Signature.SIGHASH_ALL;
+
+  const sighash = Sighash.sighash(transaction, sigtype, index, this.output.script);
+  // sighash() returns data little endian but it must be signed big endian, hence the reverse
+  return sighash.reverse();
+};
+
+/**
  * Get signatures for this input
  * @param {Transaction} transaction - the transaction to be signed
  * @param {PrivateKey} privateKey - the private key with which to sign the transaction
@@ -98,24 +116,6 @@ MultiSigInput.prototype.getSignatures = function(transaction, privateKey, index,
   }
 
   return results;
-};
-
-/**
- * Get the hash data to sign for this input
- * @param {Transaction} transaction - the transaction to be signed
- * @param {PublicKey} publicKey - unused for this input type
- * @param {number} index - the index of this input in the provided transaction
- * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
- * @param {Buffer} hashData - unused for this input type
- * @returns {Buffer}
- */
-MultiSigInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
-  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
-  sigtype = sigtype || Signature.SIGHASH_ALL;
-
-  const sighash = Sighash.sighash(transaction, sigtype, index, this.output.script);
-  // sighash() returns data little endian but it must be signed big endian, hence the reverse
-  return sighash.reverse();
 };
 
 MultiSigInput.prototype.addSignature = function(transaction, signature, signingMethod) {
