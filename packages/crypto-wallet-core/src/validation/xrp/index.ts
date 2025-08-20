@@ -14,7 +14,7 @@ export class XrpValidation implements IValidation {
 
     // Then ensure it is a valid base58check encoding
     const base58 = baseX(RIPPLE_ALPHABET);
-    const buffer = new Buffer(base58.decode(address));
+    const buffer = Buffer.from(base58.decode(address));
     let prefix = buffer.slice(0, 1);
     let data = buffer.slice(1, -4);
     let hash = Buffer.concat([prefix, data]);
