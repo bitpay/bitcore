@@ -259,6 +259,9 @@ Address._transformPublicKey = function(pubkey, network, type) {
     throw new TypeError('Address must be an instance of PublicKey.');
   }
   info.hashBuffer = Hash.sha256ripemd160(pubkey.toBuffer());
+  // NOTE: simple, single-sig, pubkey => P2SH is not completely supported in bitcore-lib-cash due
+  //  to it being unconventional in BCH (unlike BTC and LTC)
+  // TODO: either prohibit it or implement full support with a warning that it's highly unusual
   info.type = type || Address.PayToPublicKeyHash;
   return info;
 };

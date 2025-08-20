@@ -79,6 +79,7 @@
     "prettier": "^1.19.1",
     "tslint": "^5.20.1",
     "tslint-config-prettier": "^1.18.0",
+    "ts-node": "^8.0.3",
     "typedoc": "^0.15.0",
     "typescript-eslint-parser": "^15.0.0"
   },

@@ -22,6 +22,14 @@ const errors = bitcore.errors;
 
 const transactionVector = require('../data/tx_creation');
 const taprootVectors = require('../data/bitcoind/wallet_test_vectors.json');
+const MultiSigInput = require('../../lib/transaction/input/multisig');
+const PublicKeyInput = require('../../lib/transaction/input/publickey');
+const PublicKeyHashInput = require('../../lib/transaction/input/publickeyhash');
+const MultiSigScriptHashInput = require('../../lib/transaction/input/multisigscripthash');
+const TaprootInput = require('../../lib/transaction/input/taproot');
+const ECDSA = require('../../lib/crypto/ecdsa');
+const Schnorr = require('../../lib/crypto/schnorr');
+const Signature = require('../../lib/crypto/signature');
 
 describe('Transaction', function() {
 
@@ -225,19 +233,18 @@ describe('Transaction', function() {
     transaction.uncheckedSerialize().should.equal(tx_1_hex);
   });
 
-    // testnet tx 2035ead4a9d0c8e2da1184924abc9034d26f2a7093371183ef12891623b235d1
-    const taprootTx = '02000000000102c1d8527f83a3061536d394cf50c476c60e885986b047d0d553c59f7a703cab700100000000fdffffffb843817220dc08b9f008207b5ea2591c26ce0ad5b3f842b934d9f0635a252d630000000000fdffffff02a086010000000000225120a60869f0dbcf1dc659c9cecbaf8050135ea9e8cdc487053f1dc6880949dc684c6a720000000000001600141eadc6c059a0485e0f8cfff955be4f5a544f514d024730440220776ecbb80e66ada7fe379c93c790303a33c11e3e888e41c991bcdae7d7531487022022ff85dc93a45941b4941484c46b515a476a2f2ab4ccb7dfd243eaadeed05036012103e9f41161bafb6a4e54a9ad29a68cdb3194e4d98b784a1ebcafa0055eb7310c810247304402206b275c62d21aa152323cac83e037f660865ef2a3bc73cc208bdc275643291b6f0220257249964a0e42ced656f74247683b70249f0d65da50532a3d9a5c4df12a531401210332fe2e5317637bed2153bee395facec6a245b98831e5a5d8f7af091371e67264aa7f1f00';
-    it('deserializes and serializes a taproot tx', function() {
-      const tx = new Transaction(taprootTx);
-      tx.should.exist;
-      const script = new Script(tx.outputs[0]._scriptBuffer);
-      const addy = script.toAddress('testnet');
-      const addyString = addy.toString();
-      addyString.should.equal('tb1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqp3mvzv');
-      const reserialized = tx.uncheckedSerialize();
-      reserialized.should.equal(taprootTx);
-    });
-
+  // testnet tx 2035ead4a9d0c8e2da1184924abc9034d26f2a7093371183ef12891623b235d1
+  const taprootTx = '02000000000102c1d8527f83a3061536d394cf50c476c60e885986b047d0d553c59f7a703cab700100000000fdffffffb843817220dc08b9f008207b5ea2591c26ce0ad5b3f842b934d9f0635a252d630000000000fdffffff02a086010000000000225120a60869f0dbcf1dc659c9cecbaf8050135ea9e8cdc487053f1dc6880949dc684c6a720000000000001600141eadc6c059a0485e0f8cfff955be4f5a544f514d024730440220776ecbb80e66ada7fe379c93c790303a33c11e3e888e41c991bcdae7d7531487022022ff85dc93a45941b4941484c46b515a476a2f2ab4ccb7dfd243eaadeed05036012103e9f41161bafb6a4e54a9ad29a68cdb3194e4d98b784a1ebcafa0055eb7310c810247304402206b275c62d21aa152323cac83e037f660865ef2a3bc73cc208bdc275643291b6f0220257249964a0e42ced656f74247683b70249f0d65da50532a3d9a5c4df12a531401210332fe2e5317637bed2153bee395facec6a245b98831e5a5d8f7af091371e67264aa7f1f00';
+  it('deserializes and serializes a taproot tx', function() {
+    const tx = new Transaction(taprootTx);
+    tx.should.exist;
+    const script = new Script(tx.outputs[0]._scriptBuffer);
+    const addy = script.toAddress('testnet');
+    const addyString = addy.toString();
+    addyString.should.equal('tb1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqp3mvzv');
+    const reserialized = tx.uncheckedSerialize();
+    reserialized.should.equal(taprootTx);
+  });
 
   describe('transaction creation test vector', function() {
     this.timeout(5000);
@@ -264,6 +271,12 @@ describe('Transaction', function() {
 
   // TODO: Migrate this into a test for inputs
 
+  var privateKey = 'cSBnVM4xvxarwGQuAfQFwqDg9k5tErHUHzgWsEfD4zdwUasvqRVY';
+  var private1 = '6ce7e97e317d2af16c33db0b9270ec047a91bff3eff8558afb5014afb2bb5976';
+  var private2 = 'c9b26b0f771a0d2dad88a44de90f05f416b3b385ff1d989343005546a0032890';
+  var public1 = new PrivateKey(private1).publicKey;
+  var public2 = new PrivateKey(private2).publicKey;
+
   var fromAddress = 'mszYqVnqKoQx4jcTdJXxwKAissE3Jbrrc1';
   var witnessFromAddress = 'tb1q3rvex84884sw4al9vu00cp2jhyffz8e2n2k4wp';
   var wrappedWitnessFromAddress = '2N2fk5hPbAPaMUs5No2kwy6xLdFL3CjUXMy';
@@ -289,11 +302,6 @@ describe('Transaction', function() {
   var changeAddressP2SH = '2N7T3TAetJrSCruQ39aNrJvYLhG1LJosujf';
   var changeAddressP2WPKH = 'tb1q3rvex84884sw4al9vu00cp2jhyffz8e2n2k4wp';
   var changeAddressP2WSH = 'tb1qk0jhwmn65dqmlp755a7cff40fnvzsnhzq290kezrfs9d308an3tqlpjvad';
-  var privateKey = 'cSBnVM4xvxarwGQuAfQFwqDg9k5tErHUHzgWsEfD4zdwUasvqRVY';
-  var private1 = '6ce7e97e317d2af16c33db0b9270ec047a91bff3eff8558afb5014afb2bb5976';
-  var private2 = 'c9b26b0f771a0d2dad88a44de90f05f416b3b385ff1d989343005546a0032890';
-  var public1 = new PrivateKey(private1).publicKey;
-  var public2 = new PrivateKey(private2).publicKey;
 
   var simpleUtxoWith1BTC = {
     address: fromAddress,
@@ -355,6 +363,28 @@ describe('Transaction', function() {
     script: Script(p2wshAddress).toString(),
     satoshis: 1e8
   };
+
+  it('handles anyone-can-spend utxo', function() {
+    var transaction = new Transaction()
+      .from(anyoneCanSpendUTXO)
+      .to(toAddress, 50000);
+    should.exist(transaction);
+  });
+
+  it('handles unsupported utxo in tx object', function() {
+    var transaction = new Transaction();
+    transaction.fromObject.bind(transaction, JSON.parse(unsupportedTxObj))
+      .should.throw('Unsupported input script type: OP_1 OP_ADD OP_2 OP_EQUAL');
+  });
+
+  it('will error if object hash does not match transaction hash', function() {
+    var tx = new Transaction(tx_1_hex);
+    var txObj = tx.toObject();
+    txObj.hash = 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458';
+    (function() {
+      var tx2 = new Transaction(txObj);
+    }).should.throw('Hash in object does not match transaction hash');
+  });
 
   describe('adding inputs', function() {
 
@@ -1142,28 +1172,6 @@ describe('Transaction', function() {
     });
   });
 
-  it('handles anyone-can-spend utxo', function() {
-    var transaction = new Transaction()
-      .from(anyoneCanSpendUTXO)
-      .to(toAddress, 50000);
-    should.exist(transaction);
-  });
-
-  it('handles unsupported utxo in tx object', function() {
-    var transaction = new Transaction();
-    transaction.fromObject.bind(transaction, JSON.parse(unsupportedTxObj))
-      .should.throw('Unsupported input script type: OP_1 OP_ADD OP_2 OP_EQUAL');
-  });
-
-  it('will error if object hash does not match transaction hash', function() {
-    var tx = new Transaction(tx_1_hex);
-    var txObj = tx.toObject();
-    txObj.hash = 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458';
-    (function() {
-      var tx2 = new Transaction(txObj);
-    }).should.throw('Hash in object does not match transaction hash');
-  });
-
   describe('inputAmount + outputAmount', function() {
     it('returns correct values for simple transaction', function() {
       var transaction = new Transaction()
@@ -1378,6 +1386,7 @@ describe('Transaction', function() {
 
     });
   });
+
   describe('Replace-by-fee', function() {
     describe('#enableRBF', function() {
       it('only enable inputs not already enabled (0xffffffff)', function() {
@@ -1872,12 +1881,13 @@ describe('Transaction', function() {
       });
     });
     describe('signing', function() {
+      const publicKey = new PrivateKey(privateKey).publicKey;
       var privateKey1 = PrivateKey.fromWIF('cNuW8LX2oeQXfKKCGxajGvqwhCgBtacwTQqiCGHzzKfmpHGY4TE9');
-      var publicKey1 = p2shPrivateKey1.toPublicKey();
+      var publicKey1 = privateKey1.toPublicKey();
       var privateKey2 = PrivateKey.fromWIF('cTtLHt4mv6zuJytSnM7Vd6NLxyNauYLMxD818sBC8PJ1UPiVTRSs');
-      var publicKey2 = p2shPrivateKey2.toPublicKey();
+      var publicKey2 = privateKey2.toPublicKey();
       var privateKey3 = PrivateKey.fromWIF('cQFMZ5gP9CJtUZPc9X3yFae89qaiQLspnftyxxLGvVNvM6tS6mYY');
-      var publicKey3 = p2shPrivateKey3.toPublicKey();
+      var publicKey3 = privateKey3.toPublicKey();
       var address = Address.createMultisig([
         publicKey1
       ], 1, 'testnet');
@@ -1915,10 +1925,10 @@ describe('Transaction', function() {
           .from(nestedUtxo, [publicKey1], 1)
           .to([{address: 'n3LsXgyStG2CkS2CnWZtDqxTfCnXB8PvD9', satoshis: 50000}])
           .fee(150000)
-          .change('mqWDcnW3jMzthB8qdB9SnFam6N96GDqM4W')
-          .sign(privateKey1);
-        var sighash = tx.inputs[0].getSighash(tx, privateKey1, 0, bitcore.crypto.Signature.SIGHASH_ALL);
+          .change('mqWDcnW3jMzthB8qdB9SnFam6N96GDqM4W');
+        var sighash = tx.inputs[0].getSighash(tx, publicKey, 0, bitcore.crypto.Signature.SIGHASH_ALL);
         sighash.toString('hex').should.equal('51b7c5271ae04071a6d3d4c4cde28003d8e9a09e51931ebae4003539767a4955');
+        tx.sign(privateKey1);
         tx.toBuffer().toString('hex').should.equal('0100000000010161dc9737a880fd1f8671fa314d6e66b00060a52e97118d8a1b829fd95029731d010000002322002028ba8620c84df12e3283de37d02cfa7bcae3894e118388d6b3ae50f9aeb38798ffffffff0250c30000000000001976a914ef6aa14d8f5ba65a12c327a9659681c44cd821b088acc0d3f205000000001976a9146d8da2015c6d2890896485edd5897b3b2ec9ebb188ac030047304402203fdbd6604939ed9b46bd07bea993b102336a6fbc0a0c987f05b8522a2079037f022064466db4b0c6cc6697a28e0ba9b28c9738ecba56033a60aab7f04d5da2a8241e0125512102feab7deafbdb39885ef92a285dfa0f4ada0feefce43685e6551c95e71496d98051ae00000000');
       });
       it('will sign with p2wpkh witness program', function() {
@@ -1927,10 +1937,10 @@ describe('Transaction', function() {
           .from(simpleWitnessUtxoWith1BTC)
           .to([{address: 'n3LsXgyStG2CkS2CnWZtDqxTfCnXB8PvD9', satoshis: 50000}])
           .fee(150000)
-          .change('mqWDcnW3jMzthB8qdB9SnFam6N96GDqM4W')
-          .sign(privateKey);
-        var sighash = tx.inputs[0].getSighash(tx, privateKey1, 0, bitcore.crypto.Signature.SIGHASH_ALL);
+          .change('mqWDcnW3jMzthB8qdB9SnFam6N96GDqM4W');
+        var sighash = tx.inputs[0].getSighash(tx, publicKey, 0, bitcore.crypto.Signature.SIGHASH_ALL);
         sighash.toString('hex').should.equal('77814f2e33ae919d8c9ab1f30b6da386b2efb01d0373b79baf7b3e4b347cb4a2');
+        tx.sign(privateKey);
         tx.toBuffer().toString('hex').should.equal('0100000000010173d805aff043ff9a0d080a1cafeffbff9553651bcf66452858afc87937606b7e0000000000ffffffff0250c30000000000001976a914ef6aa14d8f5ba65a12c327a9659681c44cd821b088acc0d3f205000000001976a9146d8da2015c6d2890896485edd5897b3b2ec9ebb188ac02483045022100a00411ad4c9153afbccf5924b79d79ccc8b151e457a8d25019febce0bd1791c8022027721a7df64deff643910f9d41b638c8b4357a3437004309f18d138de1e1dd1001210223078d2942df62c45621d209fab84ea9a7a23346201b7727b9b45a29c4e76f5e00000000');
       });
       it('will sign with p2sh-wrapped-p2wpkh witness program', function() {
@@ -1939,10 +1949,22 @@ describe('Transaction', function() {
           .from(simpleWrappedWitnessUtxoWith1BTC)
           .to([{address: 'n3LsXgyStG2CkS2CnWZtDqxTfCnXB8PvD9', satoshis: 50000}])
           .fee(150000)
-          .change('mqWDcnW3jMzthB8qdB9SnFam6N96GDqM4W')
-          .sign(privateKey);
-        var sighash = tx.inputs[0].getSighash(tx, privateKey1, 0, bitcore.crypto.Signature.SIGHASH_ALL);
+          .change('mqWDcnW3jMzthB8qdB9SnFam6N96GDqM4W');
+        var sighash = tx.inputs[0].getSighash(tx, publicKey, 0, bitcore.crypto.Signature.SIGHASH_ALL);
         sighash.toString('hex').should.equal('f3ca83b8ebfb5454297ae1cc929c05628722999764ce38847124613eb750f1c2');
+        tx.sign(privateKey);
+        tx.toBuffer().toString('hex').should.equal('01000000000101d73e3975c556eab0ba28acfb79fae4e504723a113898a8d1ffc7d0a5a4535182000000001716001488d9931ea73d60eaf7e5671efc0552b912911f2affffffff0250c30000000000001976a914ef6aa14d8f5ba65a12c327a9659681c44cd821b088acc0d3f205000000001976a9146d8da2015c6d2890896485edd5897b3b2ec9ebb188ac024830450221009562d8f22b00fe6862d990eb7774bbb0fa357308ca404eb82dd38da28e496a2602200162b0075591faa4c704cd1545b0a3b0e95b1efde16f89adeb1d3c098d19b28901210223078d2942df62c45621d209fab84ea9a7a23346201b7727b9b45a29c4e76f5e00000000');
+      });
+      it('will sign with p2sh-wrapped-p2wpkh witness program (derived redeem script)', function() {
+        var tx = new Transaction()
+          .setVersion(1)
+          .from(simpleWrappedWitnessUtxoWith1BTC)
+          .to([{address: 'n3LsXgyStG2CkS2CnWZtDqxTfCnXB8PvD9', satoshis: 50000}])
+          .fee(150000)
+          .change('mqWDcnW3jMzthB8qdB9SnFam6N96GDqM4W');
+        var sighash = tx.inputs[0].getSighash(tx, publicKey, 0, bitcore.crypto.Signature.SIGHASH_ALL);
+        sighash.toString('hex').should.equal('f3ca83b8ebfb5454297ae1cc929c05628722999764ce38847124613eb750f1c2');
+        tx.sign(privateKey);
         tx.toBuffer().toString('hex').should.equal('01000000000101d73e3975c556eab0ba28acfb79fae4e504723a113898a8d1ffc7d0a5a4535182000000001716001488d9931ea73d60eaf7e5671efc0552b912911f2affffffff0250c30000000000001976a914ef6aa14d8f5ba65a12c327a9659681c44cd821b088acc0d3f205000000001976a9146d8da2015c6d2890896485edd5897b3b2ec9ebb188ac024830450221009562d8f22b00fe6862d990eb7774bbb0fa357308ca404eb82dd38da28e496a2602200162b0075591faa4c704cd1545b0a3b0e95b1efde16f89adeb1d3c098d19b28901210223078d2942df62c45621d209fab84ea9a7a23346201b7727b9b45a29c4e76f5e00000000');
       });
       it('will sign with p2wsh witness program', function() {
@@ -1951,10 +1973,10 @@ describe('Transaction', function() {
           .from(witnessUtxo, [publicKey1], 1)
           .to([{address: 'n3LsXgyStG2CkS2CnWZtDqxTfCnXB8PvD9', satoshis: 50000}])
           .fee(150000)
-          .change('mqWDcnW3jMzthB8qdB9SnFam6N96GDqM4W')
-          .sign(privateKey1);
-        var sighash = tx.inputs[0].getSighash(tx, privateKey1, 0, bitcore.crypto.Signature.SIGHASH_ALL);
+          .change('mqWDcnW3jMzthB8qdB9SnFam6N96GDqM4W');
+        var sighash = tx.inputs[0].getSighash(tx, publicKey, 0, bitcore.crypto.Signature.SIGHASH_ALL);
         sighash.toString('hex').should.equal('19447fc384af7d69e2950b821387034d715f0ee52bc69a8e5495e848ab71652b');
+        tx.sign(privateKey1);
         tx.toBuffer().toString('hex').should.equal('01000000000101f6206355b2ef1154d06127352d3ba333ae1de1e2b88bce2cb9d2393e85d666370000000000ffffffff0250c30000000000001976a914ef6aa14d8f5ba65a12c327a9659681c44cd821b088acc0d3f205000000001976a9146d8da2015c6d2890896485edd5897b3b2ec9ebb188ac0300483045022100a9f7bd91d0eaca2ea3a317a5977559751bb50b66f8f4af7ff32fb44499f9f7d80220332cd7617adc13dd29b2ebd2a6dd795208a0b06c218327e37c72d47139fa51420125512102feab7deafbdb39885ef92a285dfa0f4ada0feefce43685e6551c95e71496d98051ae00000000');
       });
       it('will sign with p2wsh, p2sh, and nested p2sh', function() {
@@ -2099,7 +2121,6 @@ describe('Transaction', function() {
     });
   });
 
-
   describe('Taproot', function() {
     for (let i = 0; i < taprootVectors.keyPathSpending.length; i++) {
       const vec = taprootVectors.keyPathSpending[i];
@@ -2161,19 +2182,131 @@ describe('Transaction', function() {
     }
   });
 
+  describe('getSighash', function() {
+    it('should get sighash for publickey input', function() {
+      const utxo = {
+        txid: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+        vout: 0,
+        satoshis: 1e8,
+        script: Script.buildPublicKeyOut(p2shPublicKey1)
+      };
+      const t = new Transaction().from(utxo);
+      (t.inputs[0] instanceof PublicKeyInput).should.equal(true);
+      const sighash = t.inputs[0].getSighash(t, p2shPublicKey1, 0);
+      should.exist(sighash);
+      sighash.toString('hex').should.equal('78dd8216568d7bfe22e8126c56f3bb36dfc8077185009f7e830249ef87b8aa7d');
+      const manualSig = ECDSA.sign(sighash, p2shPrivateKey1); // No { endian: 'little' } since getSighash already does a reverse()
+      const autoSig = t.inputs[0].getSignatures(t, p2shPrivateKey1, 0)[0];
+      manualSig.toString('hex').should.equal(autoSig.signature.toString());
+    });
+
+    it('should get sighash for publickeyhash input', function() {
+      const utxo = {
+        address: p2shPublicKey1.toAddress('testnet', 'p2pkh'),
+        txid: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+        vout: 0,
+        satoshis: 1e8,
+        script: Script.buildPublicKeyHashOut(p2shPublicKey1)
+      };
+      const t = new Transaction().from(utxo);
+      (t.inputs[0] instanceof PublicKeyHashInput).should.equal(true);
+      const sighash = t.inputs[0].getSighash(t, p2shPublicKey1, 0);
+      should.exist(sighash);
+      sighash.toString('hex').should.equal('c77038c8e3e44ffda845d7305def2b68f6095504b8c08ef0c020ba032deea39f');
+      const manualSig = ECDSA.sign(sighash, p2shPrivateKey1); // No { endian: 'little' } since getSighash already does a reverse()
+      const autoSig = t.inputs[0].getSignatures(t, p2shPrivateKey1, 0)[0];
+      manualSig.toString('hex').should.equal(autoSig.signature.toString());
+    });
+
+    it('should get sighash for wrapped publickeyhash input', function() {
+      const utxo = {
+        address: p2shPublicKey1.toAddress('testnet', 'p2wpkh'),
+        txid: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+        vout: 0,
+        satoshis: 1e8,
+        script: Script.buildWitnessV0Out(p2shPublicKey1)
+      };
+      const t = new Transaction().from(utxo);
+      (t.inputs[0] instanceof PublicKeyHashInput).should.equal(true);
+      const sighash = t.inputs[0].getSighash(t, p2shPublicKey1, 0);
+      should.exist(sighash);
+      sighash.toString('hex').should.equal('eb9faf9f47446bc670e36b6fe44d7f6d6606d7d0d72d3d56b9e5b0b8b8a2265d');
+      const manualSig = ECDSA.sign(sighash, p2shPrivateKey1);
+      const autoSig = t.inputs[0].getSignatures(t, p2shPrivateKey1, 0)[0];
+      manualSig.toString('hex').should.equal(autoSig.signature.toString());
+    });
+
+    it('should get sighash for multisig input', function() {
+      const utxo = {
+        txid: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+        vout: 0,
+        satoshis: 1e8,
+        script: Script.buildMultisigOut([p2shPublicKey1, p2shPublicKey2], 2)
+      };
+      const t = new Transaction().from(utxo, [p2shPublicKey1, p2shPublicKey2], 2);
+      (t.inputs[0] instanceof MultiSigInput).should.equal(true);
+      const sighash = t.inputs[0].getSighash(t, p2shPublicKey1, 0);
+      should.exist(sighash);
+      sighash.toString('hex').should.equal('22fdfb8270766439fed2ffbb13078586cedbdae46140e71556f29b6fa1b395aa');
+      const manualSig = ECDSA.sign(sighash, p2shPrivateKey1); // No { endian: 'little' } since getSighash already does a reverse()
+      const autoSig = t.inputs[0].getSignatures(t, p2shPrivateKey1, 0)[0];
+      manualSig.toString('hex').should.equal(autoSig.signature.toString());
+    });
+
+    it('should get sighash for multisigscripthash input', function() {
+      const t = new Transaction().from(p2shUtxoWith1BTC, [p2shPublicKey1, p2shPublicKey2, p2shPublicKey3], 2);
+      (t.inputs[0] instanceof MultiSigScriptHashInput).should.equal(true);
+      const sighash = t.inputs[0].getSighash(t, p2shPublicKey1, 0);
+      should.exist(sighash);
+      sighash.toString('hex').should.equal('14c79f6344dafe5864a158e8c417bfcab1a96538b9f1cedf9a7eb86e999e9355');
+      const manualSig = ECDSA.sign(sighash, p2shPrivateKey1); // No { endian: 'little' } since getSighash already does a reverse()
+      const autoSig = t.inputs[0].getSignatures(t, p2shPrivateKey1, 0)[0];
+      manualSig.toString('hex').should.equal(autoSig.signature.toString());
+    });
+
+    it('should get sighash for witness multisigscripthash input', function() {
+      const t = new Transaction().from(p2wshUtxoWith1BTC, [p2shPublicKey1, p2shPublicKey2, p2shPublicKey3], 2);
+      (t.inputs[0] instanceof MultiSigScriptHashInput).should.equal(true);
+      const sighash = t.inputs[0].getSighash(t, p2shPublicKey1, 0);
+      should.exist(sighash);
+      sighash.toString('hex').should.equal('7c4f1714eb02347ba27517d8fd583bbca4588e9220aa7f5ebcfff57c33f54b48');
+      const manualSig = ECDSA.sign(sighash, p2shPrivateKey1);
+      const autoSig = t.inputs[0].getSignatures(t, p2shPrivateKey1, 0)[0];
+      manualSig.toString('hex').should.equal(autoSig.signature.toString());
+    });
+
+    it('should get sighash for taproot input', function() {
+      const utxo = {
+        address: p2shPublicKey1.toAddress('testnet', 'p2tr'),
+        txid: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+        vout: 0,
+        satoshis: 1e8,
+        script: Script.buildWitnessV1Out(p2shPublicKey1)
+      };
+      const t = new Transaction().from(utxo);
+      (t.inputs[0] instanceof TaprootInput).should.equal(true);
+      const sighash = t.inputs[0].getSighash(t, null, 0);
+      should.exist(sighash);
+      sighash.toString('hex').should.equal('570ec1d21f22b29a6c0df455ce5bc116381ce22eb95908a64e07dac81449e675');
+      const tweakedPk = p2shPrivateKey1.createTapTweak().tweakedPrivKey;
+      const manualSig = Schnorr.sign(tweakedPk, sighash);
+      t.inputs[0].isValidSignature(t, { signature: Signature.fromSchnorr(manualSig) }).should.equal(true);
+    });
+  });
+
 });
 
 
-var tx_empty_hex = '01000000000000000000';
-var tx_empty_hexV2 = '02000000000000000000';
+const tx_empty_hex = '01000000000000000000';
+const tx_empty_hexV2 = '02000000000000000000';
 
 /* jshint maxlen: 1000 */
-var tx_1_hex = '01000000015884e5db9de218238671572340b207ee85b628074e7e467096c267266baf77a4000000006a473044022013fa3089327b50263029265572ae1b022a91d10ac80eb4f32f291c914533670b02200d8a5ed5f62634a7e1a0dc9188a3cc460a986267ae4d58faf50c79105431327501210223078d2942df62c45621d209fab84ea9a7a23346201b7727b9b45a29c4e76f5effffffff0150690f00000000001976a9147821c0a3768aa9d1a37e16cf76002aef5373f1a888ac00000000';
-var tx_1_id = '779a3e5b3c2c452c85333d8521f804c1a52800e60f4b7c3bbe36f4bab350b72c';
+const tx_1_hex = '01000000015884e5db9de218238671572340b207ee85b628074e7e467096c267266baf77a4000000006a473044022013fa3089327b50263029265572ae1b022a91d10ac80eb4f32f291c914533670b02200d8a5ed5f62634a7e1a0dc9188a3cc460a986267ae4d58faf50c79105431327501210223078d2942df62c45621d209fab84ea9a7a23346201b7727b9b45a29c4e76f5effffffff0150690f00000000001976a9147821c0a3768aa9d1a37e16cf76002aef5373f1a888ac00000000';
+const tx_1_id = '779a3e5b3c2c452c85333d8521f804c1a52800e60f4b7c3bbe36f4bab350b72c';
 
 
-var tx2hex = '0100000001e07d8090f4d4e6fcba6a2819e805805517eb19e669e9d2f856b41d4277953d640000000091004730440220248bc60bb309dd0215fbde830b6371e3fdc55685d11daa9a3c43828892e26ce202205f10cd4011f3a43657260a211f6c4d1fa81b6b6bdd6577263ed097cc22f4e5b50147522102fa38420cec94843ba963684b771ba3ca7ce1728dc2c7e7cade0bf298324d6b942103f948a83c20b2e7228ca9f3b71a96c2f079d9c32164cd07f08fbfdb483427d2ee52aeffffffff01180fe200000000001976a914ccee7ce8e8b91ec0bc23e1cfb6324461429e6b0488ac00000000';
+const tx2hex = '0100000001e07d8090f4d4e6fcba6a2819e805805517eb19e669e9d2f856b41d4277953d640000000091004730440220248bc60bb309dd0215fbde830b6371e3fdc55685d11daa9a3c43828892e26ce202205f10cd4011f3a43657260a211f6c4d1fa81b6b6bdd6577263ed097cc22f4e5b50147522102fa38420cec94843ba963684b771ba3ca7ce1728dc2c7e7cade0bf298324d6b942103f948a83c20b2e7228ca9f3b71a96c2f079d9c32164cd07f08fbfdb483427d2ee52aeffffffff01180fe200000000001976a914ccee7ce8e8b91ec0bc23e1cfb6324461429e6b0488ac00000000';
 
-var unsupportedTxObj = '{"version":1,"inputs":[{"prevTxId":"a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458","outputIndex":0,"sequenceNumber":4294967295,"script":"OP_1","output":{"satoshis":1020000,"script":"OP_1 OP_ADD OP_2 OP_EQUAL"}}],"outputs":[{"satoshis":1010000,"script":"OP_DUP OP_HASH160 20 0x7821c0a3768aa9d1a37e16cf76002aef5373f1a8 OP_EQUALVERIFY OP_CHECKSIG"}],"nLockTime":0}';
+const unsupportedTxObj = '{"version":1,"inputs":[{"prevTxId":"a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458","outputIndex":0,"sequenceNumber":4294967295,"script":"OP_1","output":{"satoshis":1020000,"script":"OP_1 OP_ADD OP_2 OP_EQUAL"}}],"outputs":[{"satoshis":1010000,"script":"OP_DUP OP_HASH160 20 0x7821c0a3768aa9d1a37e16cf76002aef5373f1a8 OP_EQUALVERIFY OP_CHECKSIG"}],"nLockTime":0}';
 
-var txCoinJoinHex = '0100000013440a4e2471a0afd66c9db54db7d414507981eb3db35970dadf722453f08bdc8d0c0000006a47304402200098a7f838ff267969971f5d9d4b2c1db11b8e39c81eebf3c8fe22dd7bf0018302203fa16f0aa3559752462c20ddd8a601620eb176b4511507d11a361a7bb595c57c01210343ead2c0e2303d880bf72dfc04fc9c20d921fc53949c471e22b3c68c0690b828ffffffff0295eef5ad85c9b6b91a3d77bce015065dc64dab526b2f27fbe56f51149bb67f100000006b483045022100c46d6226167e6023e5a058b1ae541c5ca4baf4a69afb65adbfce2cc276535a6a022006320fdc8a438009bbfebfe4ab63e415ee231456a0137d167ee2113677f8e3130121032e38a3e15bee5ef272eaf71033a054637f7b74a51882e659b0eacb8db3e417a9ffffffffee0a35737ab56a0fdb84172c985f1597cffeb33c1d8e4adf3b3b4cc6d430d9b50a0000006b483045022100d02737479b676a35a5572bfd027ef9713b2ef34c87aabe2a2939a448d06c0569022018b262f34191dd2dcf5cbf1ecae8126b35aeb4afcb0426922e1d3dfc86e4dc970121022056d76bd198504c05350c415a80900aaf1174ad95ef42105c2c7976c7094425ffffffffee0a35737ab56a0fdb84172c985f1597cffeb33c1d8e4adf3b3b4cc6d430d9b5100000006a47304402207f541994740dd1aff3dbf633b7d7681c5251f2aa1f48735370dd4694ebdb049802205f4c92f3c9d8e3e758b462a5e0487c471cf7e58757815200c869801403c5ed57012102778e7fe0fc66a2746a058bbe25029ee32bfbed75a6853455ffab7c2bf764f1aeffffffff0295eef5ad85c9b6b91a3d77bce015065dc64dab526b2f27fbe56f51149bb67f050000006a473044022050304b69e695bdba599379c52d872410ae5d78804d3f3c60fb887fd0d95f617b02205f0e27fd566849f7be7d1965219cd63484cc0f37b77b62be6fdbf48f5887ae01012103c8ac0d519ba794b2e3fe7b85717d48b8b47f0e6f94015d0cb8b2ca84bce93e22ffffffff490673d994be7c9be1a39c2d45b3c3738fde5e4b54af91740a442e1cde947114110000006b48304502210085f6b6285d30a5ea3ee6b6f0e73c39e5919d5254bc09ff57b11a7909a9f3f6b7022023ffc24406384c3ee574b836f57446980d5e79c1cd795136a2160782544037a9012103152a37a23618dcc6c41dbb0d003c027215c4ce467bffc29821e067d97fa052e7ffffffffc1365292b95156f7d68ad6dfa031910f3284d9d2e9c267670c5cfa7d97bae482010000006b483045022100e59095f9bbb1daeb04c8105f6f0cf123fcf59c80d319a0e2012326d12bb0e02702206d67b31b24ed60b3f3866755ce122abb09200f9bb331d7be214edfd74733bb830121026db18f5b27ce4e60417364ce35571096927339c6e1e9d0a9f489be6a4bc03252ffffffff0295eef5ad85c9b6b91a3d77bce015065dc64dab526b2f27fbe56f51149bb67f0d0000006b483045022100ec5f0ef35f931fa047bb0ada3f23476fded62d8f114fa547093d3b5fbabf6dbe0220127d6d28388ffeaf2a282ec5f6a7b1b7cc2cb8e35778c2f7c3be834f160f1ff8012102b38aca3954870b28403cae22139004e0756ae325208b3e692200e9ddc6e33b54ffffffff73675af13a01c64ee60339613debf81b9e1dd8d9a3515a25f947353459d3af3c0c0000006b483045022100ff17593d4bff4874aa556c5f8f649d4135ea26b37baf355e793f30303d7bfb9102200f51704d8faccbaa22f58488cb2bebe523e00a436ce4d58179d0570e55785daa0121022a0c75b75739d182076c16d3525e83b1bc7362bfa855959c0cd48e5005140166ffffffff73675af13a01c64ee60339613debf81b9e1dd8d9a3515a25f947353459d3af3c0e0000006b483045022100c7d5a379e2870d03a0f3a5bdd4054a653b29804913f8720380a448f4e1f19865022051501eae29ba44a13ddd3780bc97ac5ec86e881462d0e08d9cc4bd2b29bcc815012103abe21a9dc0e9f995e3c58d6c60971e6d54559afe222bca04c2b331f42b38c0f3ffffffff6f70aeaa54516863e16fa2082cb5471e0f66b4c7dac25d9da4969e70532f6da00d0000006b483045022100afbeaf9fe032fd77c4e46442b178bdc37c7d6409985caad2463b7ab28befccfd0220779783a9b898d94827ff210c9183ff66bfb56223b0e0118cbba66c48090a4f700121036385f64e18f00d6e56417aa33ad3243356cc5879342865ee06f3b2c17552fe7efffffffffae31df57ccb4216853c0f3cc5af1f8ad7a99fc8de6bc6d80e7b1c81f4baf1e4140000006a473044022076c7bb674a88d9c6581e9c26eac236f6dd9cb38b5ffa2a3860d8083a1751302e022033297ccaaab0a6425c2afbfb6525b75e6f27cd0c9f23202bea28f8fa8a7996b40121031066fb64bd605b8f9d07c45d0d5c42485325b9289213921736bf7b048dec1df3ffffffff909d6efb9e08780c8b8e0fccff74f3e21c5dd12d86dcf5cbea494e18bbb9995c120000006a47304402205c945293257a266f8d575020fa409c1ba28742ff3c6d66f33059675bd6ba676a02204ca582141345a161726bd4ec5f53a6d50b2afbb1aa811acbad44fd295d01948501210316a04c4b9dc5035bc9fc3ec386896dcba281366e8a8a67b4904e4e4307820f56ffffffff90ac0c55af47a073de7c3f98ac5a59cd10409a8069806c8afb9ebbbf0c232436020000006a47304402200e05f3a9db10a3936ede2f64844ebcbdeeef069f4fd7e34b18d66b185217d5e30220479b734d591ea6412ded39665463f0ae90b0b21028905dd8586f74b4eaa9d6980121030e9ba4601ae3c95ce90e01aaa33b2d0426d39940f278325023d9383350923477ffffffff3e2f391615f885e626f70940bc7daf71bcdc0a7c6bf5a5eaece5b2e08d10317c000000006b4830450221009b675247b064079c32b8e632e9ee8bd62b11b5c89f1e0b37068fe9be16ae9653022044bff9be38966d3eae77eb9adb46c20758bc106f91cd022400999226b3cd6064012103239b99cadf5350746d675d267966e9597b7f5dd5a6f0f829b7bc6e5802152abcffffffffe1ce8f7faf221c2bcab3aa74e6b1c77a73d1a5399a9d401ddb4b45dc1bdc4636090000006b483045022100a891ee2286649763b1ff45b5a3ef66ce037e86e11b559d15270e8a61cfa0365302200c1e7aa62080af45ba18c8345b5f37a94e661f6fb1d62fd2f3917aa2897ae4af012102fa6980f47e0fdc80fb94bed1afebec70eb5734308cd30f850042cd9ddf01aebcffffffffe1ce8f7faf221c2bcab3aa74e6b1c77a73d1a5399a9d401ddb4b45dc1bdc4636010000006a4730440220296dbfacd2d3f3bd4224a40b7685dad8d60292a38be994a0804bdd1d1e84edef022000f30139285e6da863bf6821d46b8799a582d453e696589233769ad9810c9f6a01210314936e7118052ac5c4ba2b44cb5b7b577346a5e6377b97291e1207cf5dae47afffffffff0295eef5ad85c9b6b91a3d77bce015065dc64dab526b2f27fbe56f51149bb67f120000006b483045022100b21b2413eb7de91cab6416efd2504b15a12b34c11e6906f44649827f9c343b4702205691ab43b72862ea0ef60279f03b77d364aa843cb8fcb16d736368e432d44698012103f520fb1a59111b3d294861d3ac498537216d4a71d25391d1b3538ccbd8b023f6ffffffff5a7eaeadd2570dd5b9189eb825d6b1876266940789ebb05deeeac954ab520d060c0000006b483045022100949c7c91ae9addf549d828ed51e0ef42255149e29293a34fb8f81dc194c2f4b902202612d2d6251ef13ed936597f979a26b38916ed844a1c3fded0b3b0ea18b54380012103eda1fa3051306238c35d83e8ff8f97aa724d175dede4c0783926c98f106fb194ffffffff15620f5723000000001976a91406595e074efdd41ef65b0c3dba3d69dd3c6e494b88ac58a3fb03000000001976a914b037b0650a691c56c1f98e274e9752e2157d970288ac18c0f702000000001976a914b68642906bca6bb6c883772f35caaeed9f7a1b7888ac83bd5723000000001976a9148729016d0c88ac01d110e7d75006811f283f119788ace41f3823000000001976a9147acd2478d13395a64a0b8eadb62d501c2b41a90c88ac31d50000000000001976a91400d2a28bc7a4486248fab573d72ef6db46f777ea88aca09c0306000000001976a914d43c27ffb4a76590c245cd55447550ffe99f346a88ac80412005000000001976a914997efabe5dce8a24d4a1f3c0f9236bf2f6a2087588ac99bb0000000000001976a914593f550a3f8afe8e90b7bae14f0f0b2c31c4826688ace2c71500000000001976a914ee85450df9ca44a4e330fd0b7d681ec6fbad6fb488acb0eb4a00000000001976a914e7a48c6f7079d95e1505b45f8307197e6191f13888acea015723000000001976a9149537e8f15a7f8ef2d9ff9c674da57a376cf4369b88ac2002c504000000001976a9141821265cd111aafae46ac62f60eed21d1544128388acb0c94f0e000000001976a914a7aef50f0868fe30389b02af4fae7dda0ec5e2e988ac40b3d509000000001976a9140f9ac28f8890318c50cffe1ec77c05afe5bb036888ac9f9d1f00000000001976a914e70288cab4379092b2d694809d555c79ae59223688ac52e85623000000001976a914a947ce2aca9c6e654e213376d8d35db9e36398d788ac21ae0000000000001976a914ff3bc00eac7ec252cd5fb3318a87ac2a86d229e188ace0737a09000000001976a9146189be3daa18cb1b1fa86859f7ed79cc5c8f2b3388acf051a707000000001976a914453b1289f3f8a0248d8d914d7ad3200c6be0d28888acc0189708000000001976a914a5e2e6e7b740cef68eb374313d53a7fab1a8a3cd88ac00000000';
+const txCoinJoinHex = '0100000013440a4e2471a0afd66c9db54db7d414507981eb3db35970dadf722453f08bdc8d0c0000006a47304402200098a7f838ff267969971f5d9d4b2c1db11b8e39c81eebf3c8fe22dd7bf0018302203fa16f0aa3559752462c20ddd8a601620eb176b4511507d11a361a7bb595c57c01210343ead2c0e2303d880bf72dfc04fc9c20d921fc53949c471e22b3c68c0690b828ffffffff0295eef5ad85c9b6b91a3d77bce015065dc64dab526b2f27fbe56f51149bb67f100000006b483045022100c46d6226167e6023e5a058b1ae541c5ca4baf4a69afb65adbfce2cc276535a6a022006320fdc8a438009bbfebfe4ab63e415ee231456a0137d167ee2113677f8e3130121032e38a3e15bee5ef272eaf71033a054637f7b74a51882e659b0eacb8db3e417a9ffffffffee0a35737ab56a0fdb84172c985f1597cffeb33c1d8e4adf3b3b4cc6d430d9b50a0000006b483045022100d02737479b676a35a5572bfd027ef9713b2ef34c87aabe2a2939a448d06c0569022018b262f34191dd2dcf5cbf1ecae8126b35aeb4afcb0426922e1d3dfc86e4dc970121022056d76bd198504c05350c415a80900aaf1174ad95ef42105c2c7976c7094425ffffffffee0a35737ab56a0fdb84172c985f1597cffeb33c1d8e4adf3b3b4cc6d430d9b5100000006a47304402207f541994740dd1aff3dbf633b7d7681c5251f2aa1f48735370dd4694ebdb049802205f4c92f3c9d8e3e758b462a5e0487c471cf7e58757815200c869801403c5ed57012102778e7fe0fc66a2746a058bbe25029ee32bfbed75a6853455ffab7c2bf764f1aeffffffff0295eef5ad85c9b6b91a3d77bce015065dc64dab526b2f27fbe56f51149bb67f050000006a473044022050304b69e695bdba599379c52d872410ae5d78804d3f3c60fb887fd0d95f617b02205f0e27fd566849f7be7d1965219cd63484cc0f37b77b62be6fdbf48f5887ae01012103c8ac0d519ba794b2e3fe7b85717d48b8b47f0e6f94015d0cb8b2ca84bce93e22ffffffff490673d994be7c9be1a39c2d45b3c3738fde5e4b54af91740a442e1cde947114110000006b48304502210085f6b6285d30a5ea3ee6b6f0e73c39e5919d5254bc09ff57b11a7909a9f3f6b7022023ffc24406384c3ee574b836f57446980d5e79c1cd795136a2160782544037a9012103152a37a23618dcc6c41dbb0d003c027215c4ce467bffc29821e067d97fa052e7ffffffffc1365292b95156f7d68ad6dfa031910f3284d9d2e9c267670c5cfa7d97bae482010000006b483045022100e59095f9bbb1daeb04c8105f6f0cf123fcf59c80d319a0e2012326d12bb0e02702206d67b31b24ed60b3f3866755ce122abb09200f9bb331d7be214edfd74733bb830121026db18f5b27ce4e60417364ce35571096927339c6e1e9d0a9f489be6a4bc03252ffffffff0295eef5ad85c9b6b91a3d77bce015065dc64dab526b2f27fbe56f51149bb67f0d0000006b483045022100ec5f0ef35f931fa047bb0ada3f23476fded62d8f114fa547093d3b5fbabf6dbe0220127d6d28388ffeaf2a282ec5f6a7b1b7cc2cb8e35778c2f7c3be834f160f1ff8012102b38aca3954870b28403cae22139004e0756ae325208b3e692200e9ddc6e33b54ffffffff73675af13a01c64ee60339613debf81b9e1dd8d9a3515a25f947353459d3af3c0c0000006b483045022100ff17593d4bff4874aa556c5f8f649d4135ea26b37baf355e793f30303d7bfb9102200f51704d8faccbaa22f58488cb2bebe523e00a436ce4d58179d0570e55785daa0121022a0c75b75739d182076c16d3525e83b1bc7362bfa855959c0cd48e5005140166ffffffff73675af13a01c64ee60339613debf81b9e1dd8d9a3515a25f947353459d3af3c0e0000006b483045022100c7d5a379e2870d03a0f3a5bdd4054a653b29804913f8720380a448f4e1f19865022051501eae29ba44a13ddd3780bc97ac5ec86e881462d0e08d9cc4bd2b29bcc815012103abe21a9dc0e9f995e3c58d6c60971e6d54559afe222bca04c2b331f42b38c0f3ffffffff6f70aeaa54516863e16fa2082cb5471e0f66b4c7dac25d9da4969e70532f6da00d0000006b483045022100afbeaf9fe032fd77c4e46442b178bdc37c7d6409985caad2463b7ab28befccfd0220779783a9b898d94827ff210c9183ff66bfb56223b0e0118cbba66c48090a4f700121036385f64e18f00d6e56417aa33ad3243356cc5879342865ee06f3b2c17552fe7efffffffffae31df57ccb4216853c0f3cc5af1f8ad7a99fc8de6bc6d80e7b1c81f4baf1e4140000006a473044022076c7bb674a88d9c6581e9c26eac236f6dd9cb38b5ffa2a3860d8083a1751302e022033297ccaaab0a6425c2afbfb6525b75e6f27cd0c9f23202bea28f8fa8a7996b40121031066fb64bd605b8f9d07c45d0d5c42485325b9289213921736bf7b048dec1df3ffffffff909d6efb9e08780c8b8e0fccff74f3e21c5dd12d86dcf5cbea494e18bbb9995c120000006a47304402205c945293257a266f8d575020fa409c1ba28742ff3c6d66f33059675bd6ba676a02204ca582141345a161726bd4ec5f53a6d50b2afbb1aa811acbad44fd295d01948501210316a04c4b9dc5035bc9fc3ec386896dcba281366e8a8a67b4904e4e4307820f56ffffffff90ac0c55af47a073de7c3f98ac5a59cd10409a8069806c8afb9ebbbf0c232436020000006a47304402200e05f3a9db10a3936ede2f64844ebcbdeeef069f4fd7e34b18d66b185217d5e30220479b734d591ea6412ded39665463f0ae90b0b21028905dd8586f74b4eaa9d6980121030e9ba4601ae3c95ce90e01aaa33b2d0426d39940f278325023d9383350923477ffffffff3e2f391615f885e626f70940bc7daf71bcdc0a7c6bf5a5eaece5b2e08d10317c000000006b4830450221009b675247b064079c32b8e632e9ee8bd62b11b5c89f1e0b37068fe9be16ae9653022044bff9be38966d3eae77eb9adb46c20758bc106f91cd022400999226b3cd6064012103239b99cadf5350746d675d267966e9597b7f5dd5a6f0f829b7bc6e5802152abcffffffffe1ce8f7faf221c2bcab3aa74e6b1c77a73d1a5399a9d401ddb4b45dc1bdc4636090000006b483045022100a891ee2286649763b1ff45b5a3ef66ce037e86e11b559d15270e8a61cfa0365302200c1e7aa62080af45ba18c8345b5f37a94e661f6fb1d62fd2f3917aa2897ae4af012102fa6980f47e0fdc80fb94bed1afebec70eb5734308cd30f850042cd9ddf01aebcffffffffe1ce8f7faf221c2bcab3aa74e6b1c77a73d1a5399a9d401ddb4b45dc1bdc4636010000006a4730440220296dbfacd2d3f3bd4224a40b7685dad8d60292a38be994a0804bdd1d1e84edef022000f30139285e6da863bf6821d46b8799a582d453e696589233769ad9810c9f6a01210314936e7118052ac5c4ba2b44cb5b7b577346a5e6377b97291e1207cf5dae47afffffffff0295eef5ad85c9b6b91a3d77bce015065dc64dab526b2f27fbe56f51149bb67f120000006b483045022100b21b2413eb7de91cab6416efd2504b15a12b34c11e6906f44649827f9c343b4702205691ab43b72862ea0ef60279f03b77d364aa843cb8fcb16d736368e432d44698012103f520fb1a59111b3d294861d3ac498537216d4a71d25391d1b3538ccbd8b023f6ffffffff5a7eaeadd2570dd5b9189eb825d6b1876266940789ebb05deeeac954ab520d060c0000006b483045022100949c7c91ae9addf549d828ed51e0ef42255149e29293a34fb8f81dc194c2f4b902202612d2d6251ef13ed936597f979a26b38916ed844a1c3fded0b3b0ea18b54380012103eda1fa3051306238c35d83e8ff8f97aa724d175dede4c0783926c98f106fb194ffffffff15620f5723000000001976a91406595e074efdd41ef65b0c3dba3d69dd3c6e494b88ac58a3fb03000000001976a914b037b0650a691c56c1f98e274e9752e2157d970288ac18c0f702000000001976a914b68642906bca6bb6c883772f35caaeed9f7a1b7888ac83bd5723000000001976a9148729016d0c88ac01d110e7d75006811f283f119788ace41f3823000000001976a9147acd2478d13395a64a0b8eadb62d501c2b41a90c88ac31d50000000000001976a91400d2a28bc7a4486248fab573d72ef6db46f777ea88aca09c0306000000001976a914d43c27ffb4a76590c245cd55447550ffe99f346a88ac80412005000000001976a914997efabe5dce8a24d4a1f3c0f9236bf2f6a2087588ac99bb0000000000001976a914593f550a3f8afe8e90b7bae14f0f0b2c31c4826688ace2c71500000000001976a914ee85450df9ca44a4e330fd0b7d681ec6fbad6fb488acb0eb4a00000000001976a914e7a48c6f7079d95e1505b45f8307197e6191f13888acea015723000000001976a9149537e8f15a7f8ef2d9ff9c674da57a376cf4369b88ac2002c504000000001976a9141821265cd111aafae46ac62f60eed21d1544128388acb0c94f0e000000001976a914a7aef50f0868fe30389b02af4fae7dda0ec5e2e988ac40b3d509000000001976a9140f9ac28f8890318c50cffe1ec77c05afe5bb036888ac9f9d1f00000000001976a914e70288cab4379092b2d694809d555c79ae59223688ac52e85623000000001976a914a947ce2aca9c6e654e213376d8d35db9e36398d788ac21ae0000000000001976a914ff3bc00eac7ec252cd5fb3318a87ac2a86d229e188ace0737a09000000001976a9146189be3daa18cb1b1fa86859f7ed79cc5c8f2b3388acf051a707000000001976a914453b1289f3f8a0248d8d914d7ad3200c6be0d28888acc0189708000000001976a914a5e2e6e7b740cef68eb374313d53a7fab1a8a3cd88ac00000000';

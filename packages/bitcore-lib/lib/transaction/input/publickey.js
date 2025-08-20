@@ -28,7 +28,7 @@ inherits(PublicKeyInput, Input);
  * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
  * @param {Buffer} hashData - unused for this input type 
  * @param {String} signingMethod DEPRECATED - method used to sign input - 'ecdsa' or 'schnorr'
- * @return {Array} of objects that can be
+ * @return {Array<TransactionSignature>}
  */
 PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
   $.checkState(this.output instanceof Output);
@@ -46,6 +46,22 @@ PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index
     })];
   }
   return [];
+};
+
+/**
+ * Get the hash data to sign for this input
+ * @param {Transaction} transaction - the transaction to be signed
+ * @param {PublicKey} publicKey - unused for this input type
+ * @param {number} index - the index of the input in the transaction input vector
+ * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
+ * @param {Buffer} hashData - unused for this input type
+ * @returns {Buffer}
+ */
+PublicKeyInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
+  $.checkState(this.output instanceof Output);
+  sigtype = sigtype || Signature.SIGHASH_ALL;
+  // sighash() returns data little endian but it must be signed big endian, hence the reverse
+  return Sighash.sighash(transaction, sigtype, index, this.output.script).reverse();
 };
 
 /**

@@ -102,16 +102,27 @@ MultiSigScriptHashInput.prototype.getScriptCode = function() {
   return writer.toBuffer();
 };
 
-MultiSigScriptHashInput.prototype.getSighash = function(transaction, privateKey, index, sigtype) {
-  var hash;
+
+/**
+ * Get the hash data to sign for this input
+ * @param {Transaction} transaction - the transaction to be signed
+ * @param {PublicKey} publicKey - unused for this input type
+ * @param {number} index - the index of the input in the transaction input vector
+ * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
+ * @returns {Buffer}
+ */
+MultiSigScriptHashInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
+  sigtype = sigtype || Signature.SIGHASH_ALL;
+
   if (this.nestedWitness || this.type === Address.PayToWitnessScriptHash) {
-    var scriptCode = this.getScriptCode();
-    var satoshisBuffer = this.getSatoshisBuffer();
-    hash = SighashWitness.sighash(transaction, sigtype, index, scriptCode, satoshisBuffer);
+    const scriptCode = this.getScriptCode();
+    const satoshisBuffer = this.getSatoshisBuffer();
+    return SighashWitness.sighash(transaction, sigtype, index, scriptCode, satoshisBuffer);
   } else  {
-    hash = Sighash.sighash(transaction, sigtype, index, this.redeemScript);
+    // sighash() returns data little endian but it must be signed big endian, hence the reverse
+    return Sighash.sighash(transaction, sigtype, index, this.redeemScript).reverse();
   }
-  return hash;
 };
 
 /**
@@ -126,7 +137,7 @@ MultiSigScriptHashInput.prototype.getSighash = function(transaction, privateKey,
  * @return {Array<TransactionSignature>}
  */
 MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod, merkleRoot) {
-  $.checkState(this.output instanceof Output);
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
   sigtype = sigtype || Signature.SIGHASH_ALL;
   signingMethod = signingMethod || 'ecdsa'; // unused. Keeping for consistency with other libs
 
