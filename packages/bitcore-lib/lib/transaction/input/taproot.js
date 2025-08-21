@@ -19,7 +19,7 @@ inherits(TaprootInput, PubKeyHashInput);
  * @param {number} index - the index of the input in the transaction input vector
  * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
  * @param {Buffer} hashData - unused for this input type
- * @param {String} signingMethod - always schnorr for taproot
+ * @param {String} signingMethod DEPRECATED - unused. Keeping for arg placement consistency with other libs
  * @param {Buffer} merkleRoot - the merkle root of the taproot tree
  * @return {Array<TransactionSignature>}
  */

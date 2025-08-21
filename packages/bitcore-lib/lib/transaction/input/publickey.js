@@ -43,14 +43,13 @@ PublicKeyInput.prototype.getSighash = function(transaction, publicKey, index, si
  * @param {PrivateKey} privateKey - the private key with which to sign the transaction
  * @param {number} index - the index of the input in the transaction input vector
  * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
- * @param {Buffer} hashData - unused for this input type 
- * @param {String} signingMethod DEPRECATED - method used to sign input - 'ecdsa' or 'schnorr'
+ * @param {Buffer} hashData - unused for this input type
+ * @param {String} signingMethod DEPRECATED - unused. Keeping for arg placement consistency with other libs
  * @return {Array<TransactionSignature>}
  */
 PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
   $.checkState(this.output instanceof Output);
   sigtype = sigtype || Signature.SIGHASH_ALL;
-  signingMethod = signingMethod || 'ecdsa'; // unused. Keeping for consistency with other libs
   var publicKey = privateKey.toPublicKey();
   if (publicKey.toString() === this.output.script.getPublicKey().toString('hex')) {
     return [new TransactionSignature({
@@ -72,11 +71,11 @@ PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index
  * @param {PublicKey} signature.publicKey
  * @param {Signature} signature.signature
  * @param {number=} signature.sigtype
- * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr' (future signing method)
+ * @param {String} signingMethod DEPRECATED - unused. Keeping for consistency with other libs
  * @return {PublicKeyInput} this, for chaining
  */
 PublicKeyInput.prototype.addSignature = function(transaction, signature, signingMethod) {
-  $.checkState(this.isValidSignature(transaction, signature, signingMethod), 'Signature is invalid');
+  $.checkState(this.isValidSignature(transaction, signature), 'Signature is invalid');
   this.setScript(Script.buildPublicKeyIn(
     signature.signature.toDER(),
     signature.sigtype

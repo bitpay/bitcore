@@ -87,7 +87,7 @@ PublicKeyHashInput.prototype.getSighash = function(transaction, publicKey, index
  * @param {number} index - the index of the input in the transaction input vector
  * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
  * @param {Buffer} hashData - the precalculated hash of the public key associated with the privateKey provided
- * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
+ * @param {String} signingMethod DEPRECATED - unused. Keeping for arg placement consistency with other libs
  * @param {Buffer} merkleRoot - unused for this input type
  * @return {Array<TransactionSignature>}
  */
@@ -95,7 +95,6 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
   $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
   hashData = hashData || Hash.sha256ripemd160(privateKey.publicKey.toBuffer());
   sigtype = sigtype || Signature.SIGHASH_ALL;
-  signingMethod = signingMethod || 'ecdsa'; // unused. Keeping for consistency with other libs
 
   const script = this.output.script.isScriptHashOut()
     ? this.getRedeemScript(privateKey.publicKey)

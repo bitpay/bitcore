@@ -39,9 +39,11 @@ function sighash(transaction, sighashType, inputNumber, scriptCode, satoshisBuff
     hashPrevouts = Hash.sha256sha256(Buffer.concat(buffers));
   }
 
-  if (!(sighashType & Signature.SIGHASH_ANYONECANPAY) &&
-      (sighashType & 0x1f) !== Signature.SIGHASH_SINGLE && (sighashType & 0x1f) !== Signature.SIGHASH_NONE) {
-
+  if (
+    !(sighashType & Signature.SIGHASH_ANYONECANPAY) &&
+    (sighashType & 0x1f) !== Signature.SIGHASH_SINGLE &&
+    (sighashType & 0x1f) !== Signature.SIGHASH_NONE
+  ) {
     const sequenceBuffers = [];
     for (let m = 0; m < transaction.inputs.length; m++) {
       const sequenceBuffer = Buffer.alloc(4);
@@ -52,12 +54,18 @@ function sighash(transaction, sighashType, inputNumber, scriptCode, satoshisBuff
   }
 
   const outputWriter = new BufferWriter();
-  if ((sighashType & 0x1f) !== Signature.SIGHASH_SINGLE && (sighashType & 0x1f) !== Signature.SIGHASH_NONE) {
+  if (
+    (sighashType & 0x1f) !== Signature.SIGHASH_SINGLE &&
+    (sighashType & 0x1f) !== Signature.SIGHASH_NONE
+  ) {
     for (let p = 0; p < transaction.outputs.length; p++) {
       transaction.outputs[p].toBufferWriter(outputWriter);
     }
     hashOutputs = Hash.sha256sha256(outputWriter.toBuffer());
-  } else if ((sighashType & 0x1f) === Signature.SIGHASH_SINGLE && inputNumber < transaction.outputs.length) {
+  } else if (
+    (sighashType & 0x1f) === Signature.SIGHASH_SINGLE &&
+    inputNumber < transaction.outputs.length
+  ) {
     transaction.outputs[inputNumber].toBufferWriter(outputWriter);
     hashOutputs = Hash.sha256sha256(outputWriter.toBuffer());
   }
@@ -120,6 +128,7 @@ function sign(transaction, privateKey, sighashType, inputIndex, scriptCode, sato
  * @param {PublicKey} publicKey
  * @param {number} inputIndex
  * @param {Script} subscript
+ * @param {Buffer} satoshisBuffer
  * @return {boolean}
  */
 function verify(transaction, signature, publicKey, inputIndex, scriptCode, satoshisBuffer) {

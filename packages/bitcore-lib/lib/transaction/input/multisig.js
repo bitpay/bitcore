@@ -92,14 +92,13 @@ MultiSigInput.prototype.getSighash = function(transaction, publicKey, index, sig
  * @param {number} index - the index of the input in the transaction input vector
  * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
  * @param {Buffer} hashData - unused for this input type
- * @param {String} signingMethod DEPRECATED - method used to sign - 'ecdsa' or 'schnorr'
+ * @param {String} signingMethod DEPRECATED - unused. Keeping for arg placement consistency with other libs
  * @param {Buffer} merkleRoot - unused for this input type
  * @return {Array<TransactionSignature>}
  */
 MultiSigInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod, merkleRoot) {
   $.checkState(this.output instanceof Output);
   sigtype = sigtype || Signature.SIGHASH_ALL;
-  signingMethod = signingMethod || 'ecdsa'; // unused. Keeping for consistency with other libs
 
   const results = [];
   for (const publicKey of this.publicKeys || []) {
