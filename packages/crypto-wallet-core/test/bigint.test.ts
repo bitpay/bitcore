@@ -142,6 +142,24 @@ describe('BigInt', function() {
 
     it('should throw on division by zero', function() {
       expect(() => BI.divToFloat(1n, 0n)).to.throw('Division by zero');
+      expect(() => BI.divToFloat(1n, 0)).to.throw('Division by zero');
+      expect(() => BI.divToFloat(1n, '0')).to.throw('Division by zero');
+      expect(() => BI.divToFloat(1n, '0x0')).to.throw('Division by zero');
+      expect(() => BI.divToFloat(1n, '0o0')).to.throw('Division by zero');
+    });
+
+    it('should throw on invalid numerator', function() {
+      expect(() => BI.divToFloat('', 3n)).to.throw('Invalid numerator');
+      expect(() => BI.divToFloat(null, 3n)).to.throw('Invalid numerator');
+      expect(() => BI.divToFloat(undefined, 3n)).to.throw('Invalid numerator');
+      expect(() => BI.divToFloat('invalid', 3n)).to.throw('Invalid numerator');
+    });
+
+    it('should throw on invalid denominator', function() {
+      expect(() => BI.divToFloat(1n, '')).to.throw('Invalid denominator');
+      expect(() => BI.divToFloat(1n, null)).to.throw('Invalid denominator');
+      expect(() => BI.divToFloat(1n, undefined)).to.throw('Invalid denominator');
+      expect(() => BI.divToFloat(1n, 'invalid')).to.throw('Invalid denominator');
     });
 
     it('should convert a bigint to a float with specified precision', function() {
@@ -177,6 +195,24 @@ describe('BigInt', function() {
 
     it('should throw on division by zero', function() {
       expect(() => BI.div(1n, 0n)).to.throw('Division by zero');
+      expect(() => BI.divToFloat(1n, 0)).to.throw('Division by zero');
+      expect(() => BI.divToFloat(1n, '0')).to.throw('Division by zero');
+      expect(() => BI.divToFloat(1n, '0x0')).to.throw('Division by zero');
+      expect(() => BI.divToFloat(1n, '0o0')).to.throw('Division by zero');
+    });
+
+    it('should throw on invalid numerator', function() {
+      expect(() => BI.divToFloat('', 3n)).to.throw('Invalid numerator');
+      expect(() => BI.divToFloat(null, 3n)).to.throw('Invalid numerator');
+      expect(() => BI.divToFloat(undefined, 3n)).to.throw('Invalid numerator');
+      expect(() => BI.divToFloat('invalid', 3n)).to.throw('Invalid numerator');
+    });
+
+    it('should throw on invalid denominator', function() {
+      expect(() => BI.divToFloat(1n, '')).to.throw('Invalid denominator');
+      expect(() => BI.divToFloat(1n, null)).to.throw('Invalid denominator');
+      expect(() => BI.divToFloat(1n, undefined)).to.throw('Invalid denominator');
+      expect(() => BI.divToFloat(1n, 'invalid')).to.throw('Invalid denominator');
     });
 
     it('should maintain large number precision', function() {

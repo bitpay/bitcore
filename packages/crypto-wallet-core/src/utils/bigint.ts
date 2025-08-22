@@ -1,19 +1,24 @@
 import type { BigIntLike } from '../types/utils';
 
+
+function isValidDenominator(val: BigIntLike): boolean {
+  return isBigIntLike(val) && val != 0n;
+};
+
 /**
  * Checks if a value is a BigInt-like type (bigint, number, or numeric string)
  * @param value 
  * @returns {boolean}
  */
 export function isBigIntLike(value?: any): boolean {
-  return value !== null &&
+  return value != null &&
     value !== '' &&
     (
       typeof value === 'bigint' ||
       (typeof value === 'number' && !isNaN(value)) ||
       !isNaN(Number(value))
     );
-}
+};
 
 /**
  * This is a special wrapper for BigInt() that assumes a string _without_ a prefix is hex.
@@ -62,7 +67,9 @@ export function min(arr: Array<BigIntLike>): BigIntLike {
  * @returns {number}
  */
 export function divToFloat(numerator: BigIntLike, denominator: BigIntLike, precision?: number) {
-  if (!denominator) throw new Error('Division by zero');
+  if (!isBigIntLike(numerator)) throw new Error('Invalid numerator');
+  if (!isBigIntLike(denominator)) throw new Error('Invalid denominator');
+  if (!isValidDenominator(denominator)) throw new Error('Division by zero');
   let [nLeft, nRight = ''] = numerator.toString().split('.');
   const [, dRight = ''] = denominator.toString().split('.');
   if (precision == null) {
@@ -82,7 +89,9 @@ export function divToFloat(numerator: BigIntLike, denominator: BigIntLike, preci
  * @returns {bigint} Rounded BigInt
  */
 export function div(numerator: BigIntLike, denominator: BigIntLike): bigint {
-  if (!denominator) throw new Error('Division by zero');
+  if (!isBigIntLike(numerator)) throw new Error('Invalid numerator');
+  if (!isBigIntLike(denominator)) throw new Error('Invalid denominator');
+  if (!isValidDenominator(denominator)) throw new Error('Division by zero');
   let [nLeft, nRight = ''] = numerator.toString().split('.');
   let [dLeft, dRight = ''] = denominator.toString().split('.');
   const precision = Math.max(nRight.length, dRight.length, 18);
