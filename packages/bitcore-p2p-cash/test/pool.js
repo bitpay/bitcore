@@ -20,7 +20,7 @@ var sinon = require('sinon');
 var net = require('net');
 
 function getPayloadBuffer(messageBuffer) {
-  return new Buffer(messageBuffer.slice(48), 'hex');
+  return Buffer.from(messageBuffer.slice(48), 'hex');
 }
 
 describe('Pool', function() {

@@ -658,6 +658,8 @@ Transaction.prototype._fromNonP2SH = function(utxo) {
   utxo = new UnspentOutput(utxo);
   if (utxo.script.isPublicKeyHashOut()) {
     clazz = PublicKeyHashInput;
+  } else if (utxo.script.isScriptHashOut()) {
+    clazz = PublicKeyHashInput;
   } else if (utxo.script.isPublicKeyOut()) {
     clazz = PublicKeyInput;
   } else {

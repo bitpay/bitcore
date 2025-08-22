@@ -148,6 +148,10 @@ Input.prototype.setScript = function(script) {
   return this;
 };
 
+Input.prototype.getSighash = function() {
+  throw new errors.AbstractMethodInvoked('Input#getSighash');
+};
+
 /**
  * Retrieve signatures for the provided PrivateKey.
  *

@@ -281,7 +281,7 @@ Pool.prototype._addAddr = function _addAddr(addr) {
   addr.port = addr.port || this.network.port;
 
   // make a unique key
-  addr.hash = sha256(new Buffer(addr.ip.v6 + addr.ip.v4 + addr.port)).toString('hex');
+  addr.hash = sha256(Buffer.from(addr.ip.v6 + addr.ip.v4 + addr.port)).toString('hex');
 
   var length = this._addrs.length;
   var exists = false;

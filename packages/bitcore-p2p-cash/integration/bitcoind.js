@@ -125,7 +125,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
       var type = Inventory.TYPE.TX;
       var inv = [{
         type: type,
-        hash: new Buffer(Random.getRandomBuffer(32)) // needs to be random for repeatability
+        hash: Buffer.from(Random.getRandomBuffer(32)) // needs to be random for repeatability
       }];
       peer.once('getdata', function(message) {
         message.inventory[0].should.deep.equal(inv[0]);
@@ -207,13 +207,13 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
     });
   };
   it('sends block inv and receives getdata', function(cb) {
-    var randomHash = new Buffer(Random.getRandomBuffer(32)); // slow buffer
+    var randomHash = Buffer.from(Random.getRandomBuffer(32)); // slow buffer
     var expected = messages.GetData.forBlock(randomHash);
     var message = messages.Inventory.forBlock(randomHash);
     testInvGetData(expected, message, cb);
   });
   it('sends tx inv and receives getdata', function(cb) {
-    var randomHash = new Buffer(Random.getRandomBuffer(32)); // slow buffer
+    var randomHash = Buffer.from(Random.getRandomBuffer(32)); // slow buffer
     var expected = messages.GetData.forTransaction(randomHash);
     var message = messages.Inventory.forTransaction(randomHash);
     testInvGetData(expected, message, cb);

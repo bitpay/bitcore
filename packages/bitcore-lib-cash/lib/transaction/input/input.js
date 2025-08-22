@@ -184,6 +184,10 @@ Input.prototype.clearSignatures = function() {
   throw new errors.AbstractMethodInvoked('Input#clearSignatures');
 };
 
+Input.prototype.getSighash = function() {
+  throw new errors.AbstractMethodInvoked('Input#getSighash');
+};
+
 Input.prototype.isValidSignature = function(transaction, signature, signingMethod) {
   // FIXME: Refactor signature so this is not necessary
   signature.signature.nhashtype = signature.sigtype;
