@@ -50,8 +50,14 @@ export async function getPassword(msg?: string, opts?: { minLength?: number; hid
 
   const password = await prompt.password({
     message: (msg || 'Password:') + (hidden ? ' (hidden)' : ''),
-    mask: hidden ? '' : '*',
-    validate: (input) => input?.length >= opts.minLength ? opts.validate?.(input) : `Password must be at least ${opts.minLength} characters long.`,
+    mask: hidden ? '' : undefined,
+    clearOnError: hidden,
+    validate: (input) => {
+      if (input?.length < opts.minLength) {
+        return `Password must be at least ${opts.minLength} characters long.`;
+      }
+      return opts.validate?.(input);
+    }
   });
   if (prompt.isCancel(password)) {
     throw new UserCancelled();
@@ -187,4 +193,20 @@ export async function getAction({ options, initialValue }: { options?: prompt.Op
   });
 
   return action;
+}
+
+export async function getFileName(args: { message?: string; defaultValue: string }) {
+  const { message, defaultValue } = args;
+  const fileName = await prompt.text({
+    message: message || 'Enter file path:',
+    initialValue: defaultValue,
+    validate: (value) => {
+      if (!value) return 'File path is required';
+      return; // valid value
+    }
+  });
+  if (prompt.isCancel(fileName)) {
+    throw new UserCancelled();
+  }
+  return Utils.replaceTilde(fileName);
 }

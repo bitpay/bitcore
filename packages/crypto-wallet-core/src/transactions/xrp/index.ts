@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
 import * as xrpl from 'xrpl';
-import { Key } from '../../derivation';
+import type { Key } from '../../types/derivation';
 
 enum HashPrefix {
   // transaction plus signature to give transaction ID

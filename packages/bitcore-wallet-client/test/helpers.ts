@@ -114,6 +114,7 @@ export const helpers = {
         chain: chain, // chain === coin for stored clients. NOT TRUE ANYMORE
         network: network,
         account: opts.account ? opts.account : 0,
+        m: m,
         n: n,
         addressType: opts.addressType
       });
@@ -147,6 +148,7 @@ export const helpers = {
             chain: chain, // chain === coin for stored clients. NOT TRUE ANYMORE
             network: network,
             account: 0,
+            m: m,
             n: n,
             addressType: opts.addressType
           })
@@ -192,17 +194,22 @@ export const helpers = {
       return cb();
     });
   },
-  createAndPublishTxProposal: (client, opts, cb) => {
-    if (!opts.outputs) {
-      opts.outputs = [{
-        toAddress: opts.toAddress,
-        amount: opts.amount
-      }];
+  createAndPublishTxProposal: async (client, opts, cb?) => {
+    try {
+      if (!opts.outputs) {
+        opts.outputs = [{
+          toAddress: opts.toAddress,
+          amount: opts.amount
+        }];
+      }
+      let txp = await client.createTxProposal(opts);
+      txp = await client.publishTxProposal({ txp });
+      if (cb) { cb(null, txp); }
+      return txp;
+    } catch (err) {
+      if (cb) { cb(err); }
+      else { throw err; }
     }
-    client.createTxProposal(opts, (err, txp) => {
-      if (err) return cb(err);
-      client.publishTxProposal({ txp }, cb);
-    });
   },
   newDb: (extra, cb) => {
     extra = extra || '';

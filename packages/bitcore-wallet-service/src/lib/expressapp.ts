@@ -9,6 +9,7 @@ import rp from 'request-promise-native';
 import 'source-map-support/register';
 import config from '../config';
 import * as Types from '../types/expressapp';
+import type { GetAddressesOpts } from '../types/server';
 import { Common } from './common';
 import { ClientError } from './errors/clienterror';
 import { Errors } from './errors/errordefinitions';
@@ -21,6 +22,7 @@ import { WalletService } from './server';
 import { Stats } from './stats';
 
 const Defaults = Common.Defaults;
+const Utils = Common.Utils;
 
 export class ExpressApp {
   app: express.Express;
@@ -797,14 +799,27 @@ export class ExpressApp {
       });
     });
 
+    // DEPRECATED (default noChange=1)
     router.get('/v1/addresses/', (req, res) => {
+      logDeprecated(req);
+      req.query.noChange = req.query.noChange ?? '1'; // default to no change addresses (backward compatibility)
+      res.redirect(config.basePath + '/v2/addresses?' + Object.entries(req.query).map(([key, value]) => `${key}=${value}`).join('&'));
+    });
+
+    router.get('/v2/addresses/', (req, res) => {
       getServerWithAuth(req, res, server => {
-        const opts: { limit?: number; reverse?: boolean; skip?: number } = {};
+        const opts: GetAddressesOpts = {};
         if (req.query.limit) opts.limit = +req.query.limit;
         if (req.query.skip) opts.skip = +req.query.skip;
         opts.reverse = req.query.reverse == '1';
+        if (req.query.addresses) {
+          opts.addresses = Array.isArray(req.query.addresses)
+            ? req.query.addresses
+            : req.query.addresses.split(',');
+        }
+        opts.noChange = Utils.castToBool(req.query.noChange);
 
-        server.getMainAddresses(opts, (err, addresses) => {
+        server.getAddresses(opts, (err, addresses) => {
           if (err) return returnError(err, res, req);
           res.json(addresses);
         });

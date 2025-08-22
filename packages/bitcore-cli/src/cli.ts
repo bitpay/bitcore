@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 
 import * as prompt from '@clack/prompts';
+import Mnemonic from 'bitcore-mnemonic';
+import { Errors as BWCErrors, Status } from 'bitcore-wallet-client';
 import { program } from 'commander';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { ICliOptions } from '../types/cli';
+import { CommonArgs, ICliOptions } from '../types/cli';
+import { getCommands } from './cli-commands';
 import * as commands from './commands';
 import { bitcoreLogo } from './constants';
 import * as Errors from './errors';
@@ -13,73 +16,45 @@ import { getAction } from './prompts';
 import { Utils } from './utils';
 import { Wallet } from './wallet';
 
-const { version } = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json')).toString());
+const { version } = JSON.parse(fs.readFileSync(path.join(__dirname, '../../package.json')).toString());
 
 program
   .addHelpText('beforeAll', bitcoreLogo)
   .usage('<walletName> [options]')
   .description('A command line tool for Bitcore wallets')
-  .argument('<walletName>', 'Name of the wallet you want to create, join, or interact with. "list" to see all wallets in the specified directory', (value) => value.toLowerCase())
+  .argument('<walletName>', 'Name of the wallet you want to create, join, or interact with. Use "list" to see all wallets in the specified directory.')
+  .optionsGroup('Global Options')
   .option('-d, --dir <directory>', 'Directory to look for the wallet', process.env['BITCORE_CLI_DIR'] || path.join(os.homedir(), '.wallets'))
   .option('-H, --host <host>', 'Bitcore Wallet Service base URL', process.env['BITCORE_CLI_HOST'] || 'http://localhost:3232')
   .option('-c, --command <command>', 'Run a specific command without entering the interactive CLI. Use "help" to see available commands', (value) => value.toLowerCase())
-  .option('-x, --exit', 'Exit after running a command')
+  .option('--no-status', 'Do not display the wallet status on startup. Defaults to true when running with --command')
   .option('-s, --pageSize <number>', 'Number of items per page of a list output', (value) => parseInt(value, 10), 10)
-  .option('-V, --verbose', 'Show more data and logs')
+  .option('-v, --verbose', 'Show more data and logs')
+  .option('--list', 'See all wallets in the specified directory')
+  .option('--register', 'Register the wallet with the Bitcore Wallet Service if it does not exist')
   .option('--walletId <walletId>', 'Support Staff Only: Wallet ID to provide support for')
-  .helpOption('-h, --help [command]', 'Display help for command')
-  .version(version, '-v, --version', 'Output the version number of this tool')
-  .parse(process.argv);
+  .option('-h, --help', 'Display help message. Use with --command to get help for a specific command')
+  .version(version, '--version', 'Output the version number of this tool')
+  // .parse(process.argv);
+  // .parseOptions(process.argv)
 
 
-const walletName = program.args[0];
 const opts = program.opts() as ICliOptions;
+const walletName = program.parseOptions(process.argv).operands.slice(-1)[0];
 
-
-const COMMANDS = {
-  EXIT: { label: 'Exit', value: 'exit', hint: 'Exit the wallet CLI' },
-  NEW: [
-    { label: 'Create Wallet', value: 'create', hint: 'Create a fresh, new wallet (multi or single sig)' },
-    { label: 'Join Wallet', value: 'join', hint: 'Join an existing multi-sig wallet session' },
-    { label: 'Import Seed', value: 'import-seed', hint: 'Import using a 12-24 word mnemonic phrase' },
-    { label: 'Import File', value: 'import-file', hint: 'Import using a file' },
-  ],
-  EXISTS: [
-    { label: (ppNum) => `Proposals${ppNum}`, value: 'txproposals', hint: 'Get pending transaction proposals' },
-    { label: 'Send', value: 'createtx', hint: 'Create a transaction to send funds' },
-    { label: 'Receive', value: 'address', hint: 'Get an address to receive funds to' },
-    { label: 'History', value: 'history', hint: 'Get the transaction history of your wallet' },
-    { label: 'Balance', value: 'balance', hint: 'Get the balance of your wallet' },
-    { label: 'Status', value: 'status', hint: 'Get the status of your wallet' },
-  ],
-  EXISTS_ADVANCED: [
-    { label: 'Addresses', value: 'addresses', hint: 'List all of your wallet\'s addresses' },
-    { label: 'UTXOs', value: 'utxos', hint: 'Get the unspent transaction outputs of your wallet' },
-    { label: 'Preferences', value: 'preferences', hint: 'Get or set wallet preferences' },
-    { label: 'Derive', value: 'derive', hint: 'Derive a key along a path you will specify' },
-    { label: 'Export', value: 'export', hint: 'Export the wallet to a file' },
-    { label: 'Scan', value: 'scan', hint: 'Scan the wallet for funds' },
-    { label: 'Register', value: 'register', hint: 'Register the wallet with the Bitcore Wallet Service' }
-  ]
-};
-
-if (opts.command === 'help') {
-  const padLen = 18;
-  program
-  .addHelpText('after', os.EOL +
-    'New Wallet Commands:' + os.EOL +
-    COMMANDS.NEW.map(cmd => `  ${cmd.value.padEnd(padLen)}${cmd.hint}`).join(os.EOL) + os.EOL + os.EOL +
-    'Existing Wallet Commands:' + os.EOL +
-    COMMANDS.EXISTS.map(cmd => `  ${cmd.value.padEnd(padLen)}${cmd.hint}`).join(os.EOL) + os.EOL + os.EOL +
-    'Advanced Commands:' + os.EOL +
-    COMMANDS.EXISTS_ADVANCED.map(cmd => `  ${cmd.value.padEnd(padLen)}${cmd.hint}`).join(os.EOL)
-  )
-  .help();
+if (opts.help && !opts.command) {
+  program.help();
 }
+
+const isCmdHelp = opts.command && opts.help;
+opts.exit = !!opts.command;
+opts.status = opts.command ? false : opts.status; // Always hide the status when running a command directly
+
+
 
 Wallet.setVerbose(opts.verbose);
 
-const wallet = new Wallet({
+export const wallet = new Wallet({
   name: walletName,
   dir: opts.dir,
   host: opts.host,
@@ -87,145 +62,242 @@ const wallet = new Wallet({
   walletId: opts.walletId
 });
 
-wallet.getClient({
-  mustExist: false
-}).then(async () => {
-  if (walletName === 'list') {
-    for (const file of fs.readdirSync(opts.dir)) {
-      if (file.endsWith('.json')) {
-        console.log(`- ${file.replace('.json', '')}`);
-      }
+export const COMMANDS = getCommands({ wallet, opts });
+
+type NewCommand = (typeof COMMANDS.NEW)[number]['value'] | 'exit';
+type Command = (typeof COMMANDS.BASIC)[number]['value'] | (typeof COMMANDS.ADVANCED)[number]['value'] | 'advanced' | 'exit';
+
+
+if (require.main === module) {
+
+  if (opts.command === 'help') {
+    const padLen = 18;
+    program
+    .addHelpText('after', os.EOL +
+      // 'New Wallet Commands:' + os.EOL +
+      // COMMANDS.NEW.map(cmd => `  ${cmd.value.padEnd(padLen)}${cmd.hint}`).join(os.EOL) + os.EOL + os.EOL +
+      'Wallet Commands:' + os.EOL +
+      COMMANDS.BASIC.filter(cmd => !cmd['noCmd']).map(cmd => `  ${cmd.value.padEnd(padLen)}${cmd.hint}`).join(os.EOL) + os.EOL + os.EOL +
+      'Advanced Commands:' + os.EOL +
+      COMMANDS.ADVANCED.filter(cmd => !cmd['noCmd']).map(cmd => `  ${cmd.value.padEnd(padLen)}${cmd.hint}`).join(os.EOL)
+    )
+    .help();
+  } else if (isCmdHelp) {
+    if (!commands[opts.command]) {
+      Utils.die(`Unknown command "${opts.command}"`);
+    } else if (!commands[opts.command].command) {
+      Utils.die(`Running "${opts.command}" directly is not supported. Use the interactive CLI`);
     }
-    return;
+    commands[opts.command].command({ wallet, program });
   }
 
-  if (!wallet.client?.credentials) {
-    prompt.intro(`No wallet found named ${Utils.colorText(walletName, 'orange')}`);
-    const cmdParams = { wallet, opts: Object.assign({}, opts, { mnemonic: null }) };
-    const action = opts.command || await prompt.select({
-      message: 'What would you like to do?',
-      options: [].concat(COMMANDS.NEW, COMMANDS.EXIT)
-    });
-    switch (action) {
-      case 'create':
-        await commands.createWallet(cmdParams);
-        break;
-      case 'join':
-        await commands.joinWallet(cmdParams);
-        break;
-      case 'import-seed':
-        cmdParams.opts.mnemonic = await prompt.password({
-          message: 'Enter your 12-24 word mnemonic phrase:',
-          mask: '*',
-          validate: (input) => input.split(' ').length >= 12 && input.split(' ').length <= 24 ? undefined : 'Mnemonic must be between 12 and 24 words.',
-        });
-        await commands.createWallet(cmdParams);
-        break;
-      case 'import-file':
-        await commands.importWallet(cmdParams);
-        break;
-      case 'exit':
-      default:
-        opts.exit = true;
-        break;
+  wallet.getClient({
+    mustExist: false,
+    doNotComplete: isCmdHelp || opts.register
+  })
+  .catch((err) => {
+    if (err instanceof BWCErrors.NOT_AUTHORIZED) {
+      if (opts.register) {
+        return commands.register.registerWallet({ wallet, opts });
+      } else {
+        prompt.log.error('This wallet does not appear to be registered with the Bitcore Wallet Service. Use --register to do so.');
+        Utils.die(err);
+      }
+    } else {
+      Utils.die(err);
     }
-    !opts.exit && prompt.outro(`${Utils.colorText('✔', 'green')} Wallet ${Utils.colorText(walletName, 'orange')} created successfully!`);
-  } else {
-    
+  })
+  .then(async () => {
+    if (walletName === 'list') {
+      for (const file of fs.readdirSync(opts.dir)) {
+        if (file.endsWith('.json')) {
+          console.log(`- ${file.replace('.json', '')}`);
+        }
+      }
+      return;
+    }
 
-    prompt.intro(`Status for ${Utils.colorText(walletName, 'orange')}`);
-    const status = await commands.walletStatus({ wallet, opts });
-    prompt.outro('Welcome to the Bitcore CLI!');
+    const cmdParams: CommonArgs<any> = {
+      wallet,
+      program: opts.command ? program : undefined,
+      opts,
+      status: null as Status
+    };
 
-    const cmdParams = { wallet, opts, status };
-    let advancedActions = false;
-    do {
-      prompt.intro(`${Utils.colorText('~~ Main Menu ~~', 'blue')} (${Utils.colorText(walletName, 'orange')})`);
-      status.pendingTxps = await wallet.client.getTxProposals({});
-      const ppNum = status.pendingTxps.length ? Utils.colorText(` (${status.pendingTxps.length})`, 'yellow') : '';
-      const menuAction = await prompt.select({
+    if (!wallet.client?.credentials) {
+      prompt.intro(`No wallet found named ${Utils.colorText(walletName, 'orange')}`);
+      const action: NewCommand | symbol = await prompt.select({
         message: 'What would you like to do?',
-        options: COMMANDS.EXISTS.map(cmd => ({ ...cmd, label: typeof cmd.label === 'function' ? cmd.label(ppNum) : cmd.label }))
-          .concat(advancedActions ? COMMANDS.EXISTS_ADVANCED : [{ label: 'Show Advanced...', value: 'advanced', hint: 'Show advanced actions' }])
-          .concat(COMMANDS.EXIT)
+        options: [].concat(COMMANDS.NEW, COMMANDS.EXIT)
       });
-
-      let action: string | symbol | undefined;
-      advancedActions = false;
-      try {
-        switch (menuAction) {
-          case 'address':
-            await commands.createAddress(cmdParams);
-            break;
-          case 'balance':
-            cmdParams.status.balance = await commands.getBalance(cmdParams);
-            break;
-          case 'history':
-            await commands.getTxHistory(cmdParams);
-            break;
-          case 'createtx':
-            await commands.createTransaction(cmdParams);
-            break;
-          case 'txproposals':
-            ({ action } = await commands.getTxProposals(cmdParams));
-            break;
-          case 'status':
-            cmdParams.status = await commands.walletStatus(cmdParams);
-            break;
-          case 'advanced':
-            advancedActions = true;
-            action = 'advanced';
-            break;
-          case 'addresses':
-            await commands.getAddresses(cmdParams);
-            break;
-          case 'utxos':
-            await commands.getUtxos(cmdParams);
-            break;
-          case 'preferences':
-            await commands.getPreferences(cmdParams);
-            break;
-          case 'derive':
-            ({ action } = await commands.deriveKey(cmdParams));
-            break;
-          case 'export':
-            await commands.exportWallet(cmdParams);
-            break;
-          case 'scan':
-            await commands.scanWallet(cmdParams);
-            break;
-          case 'register':
-            await wallet.register({ copayerName: wallet.client.credentials.copayerName });
-            break;
-          default:
-          case 'exit':
-            opts.exit = true;
-            break;
-        }
-
-        if (action === 'exit' || prompt.isCancel(action)) {
+      switch (action) {
+        case 'create':
+          await commands.create.createWallet(cmdParams);
+          break;
+        case 'join':
+          await commands.join.joinWallet(cmdParams);
+          break;
+        case 'import-seed':
+          const mnemonic = await prompt.password({
+            message: 'Enter your 12-24 word mnemonic phrase:',
+            validate: (input) => !Mnemonic.isValid(input) ? 'Invalid mnemonic. Please check your spelling and try again' : undefined,
+          });
+          if (prompt.isCancel(mnemonic)) {
+            throw new Errors.UserCancelled();
+          }
+          cmdParams.opts.mnemonic = mnemonic;
+          await commands.create.createWallet(cmdParams);
+          break;
+        case 'import-file':
+          await commands.import.importWallet(cmdParams);
+          break;
+        case 'exit':
+        default:
           opts.exit = true;
-        }
-      } catch (err) {
-        if (err instanceof Errors.UserCancelled) {
-          prompt.log.warn('Action cancelled by user.');
-        } else {
-          prompt.log.error((opts.verbose ? err.stack : err.message) || err.message || err);
-        }
+          break;
       }
-      
-      if (!opts.exit && !action) {
-        action = await getAction();
-        if (action === 'exit' || prompt.isCancel(action)) {
-          opts.exit = true;
+      prompt.outro(`${Utils.colorText('✔', 'green')} Wallet ${Utils.colorText(walletName, 'orange')} created successfully!`);
+    } else {
+
+      if (opts.status) {
+        prompt.intro(`Status for ${Utils.colorText(walletName, 'orange')}`);
+        const status = await commands.status.walletStatus({ wallet, opts });
+        cmdParams.status = status;
+        prompt.outro('Welcome to the Bitcore CLI!');
+      }
+
+      let advancedActions = false;
+      do {
+        // Don't display the intro if running a specific command
+        !opts.command && prompt.intro(`${Utils.colorText('~~ Main Menu ~~', 'blue')} (${Utils.colorText(walletName, 'orange')})`);
+        cmdParams.status.pendingTxps = opts.command ? [] : await wallet.client.getTxProposals({});
+        
+        const dynamicCmdArgs = {
+          ppNum: cmdParams.status.pendingTxps.length ? Utils.colorText(` (${cmdParams.status.pendingTxps.length})`, 'yellow') : '',
+          sNum: Utils.colorText(` (${'TODO'})`, 'yellow'),
+          token: cmdParams.opts?.token
+        };
+
+        const BASIC = COMMANDS.BASIC
+          .filter(cmd => cmd['show']?.() ?? true)
+          .map(cmd => ({ ...cmd, label: typeof cmd.label === 'function' ? cmd.label(dynamicCmdArgs) : cmd.label }))
+        const ADVANCED = COMMANDS.ADVANCED
+          .filter(cmd => cmd['show']?.() ?? true)
+
+        const menuAction: Command | symbol = opts.command as Command || (opts.register 
+          ? 'register'
+          : await prompt.select({
+            message: 'What would you like to do?',
+            options: (BASIC as Array<any>)
+              .concat(advancedActions ? ADVANCED : [COMMANDS.SHOW_ADVANCED])
+              .concat(COMMANDS.EXIT),
+            initialValue: advancedActions ? ADVANCED[0].value : BASIC[0].value,
+          }));
+
+        let action: string | symbol | undefined;
+        advancedActions = false;
+        try {
+          switch (menuAction as Command) {
+            case 'token':
+              const result = await commands.token.setToken(cmdParams);
+              const { tokenObj } = result;
+              action = result.action;
+              // If context has changed...
+              if (cmdParams.opts?.tokenAddress?.toLowerCase() !== tokenObj?.contractAddress.toLowerCase()) {
+                // ...update status
+                cmdParams.status = await wallet.client.getStatus({ tokenAddress: tokenObj?.contractAddress })
+              }
+              cmdParams.opts.tokenAddress = tokenObj?.contractAddress;
+              cmdParams.opts.token = tokenObj?.displayCode;
+              break;
+            case 'address':
+              await commands.address.createAddress(cmdParams);
+              break;
+            case 'balance':
+              const balance = await commands.balance.getBalance(cmdParams);
+              if (cmdParams.status) {
+                cmdParams.status.balance = balance;
+              }
+              break;
+            case 'history':
+              ({ action } = await commands.history.getTxHistory(cmdParams));
+              break;
+            case 'transaction':
+              await commands.transaction.createTransaction(cmdParams);
+              break;
+            case 'txproposals':
+              ({ action } = await commands.txproposals.getTxProposals(cmdParams));
+              break;
+            case 'status':
+              cmdParams.status = await commands.status.walletStatus(cmdParams);
+              break;
+            case 'sign':
+              await commands.sign.signMessage(cmdParams);
+              break;
+            case 'advanced':
+              advancedActions = true;
+              action = 'advanced';
+              break;
+            case 'addresses':
+              await commands.addresses.getAddresses(cmdParams);
+              break;
+            case 'utxos':
+              await commands.utxos.getUtxos(cmdParams);
+              break;
+            case 'preferences':
+              await commands.preferences.getPreferences(cmdParams);
+              break;
+            case 'derive':
+              ({ action } = await commands.derive.deriveKey(cmdParams));
+              break;
+            case 'export':
+              await commands.export.exportWallet(cmdParams);
+              break;
+            case 'scan':
+              await commands.scan.scanWallet(cmdParams);
+              break;
+            case 'register':
+              await commands.register.registerWallet(cmdParams);
+              break;
+            case 'clearcache':
+              await commands.clearcache.clearCache(cmdParams);
+              break;
+            default:
+              if (opts.command) {
+                throw new Error(`Unknown command: ${menuAction as string}`);
+              }
+            case 'exit':
+              opts.exit = true;
+              break;
+          }
+
+          if (action === 'exit' || prompt.isCancel(action)) {
+            opts.exit = true;
+          }
+        } catch (err) {
+          if (err instanceof Errors.UserCancelled) {
+            prompt.log.warn('Action cancelled by user.');
+          } else {
+            prompt.log.error((opts.verbose ? err.stack : err.message) || err.message || err);
+          }
         }
-      } 
+        
+        if (opts.command) {
+          // always exit when in command mode
+          opts.exit = true;
+        } else if (!opts.exit && !action) {
+          action = await getAction();
+          if (action === 'exit' || prompt.isCancel(action)) {
+            opts.exit = true;
+          }
+        } 
 
-      prompt.outro();
+        !opts.command && prompt.outro();
 
-    } while (!opts.exit);
-    
-    Utils.goodbye();
-  }
-})
-.catch(Utils.die);
+      } while (!opts.exit);
+      
+      !opts.command && Utils.goodbye();
+    }
+  })
+  .catch(Utils.die);
+}

@@ -1,32 +1,94 @@
 import * as prompt from '@clack/prompts';
-import { Status, Txp } from 'bitcore-wallet-client'; 
+import { type Txp } from 'bitcore-wallet-client'; 
 import { Validation } from 'crypto-wallet-core';
 import os from 'os';
-import { ICliOptions } from '../../types/cli';
+import type { CommonArgs } from '../../types/cli';
+import type { ITokenObj } from '../../types/wallet';
 import { UserCancelled } from '../errors';
 import { Utils } from '../utils';
-import { Wallet } from '../wallet';
 
-export async function createTransaction(args: {
-  wallet: Wallet;
-  status: Status;
-  opts: ICliOptions & {
-    pageSize: number;
+export function command(args: CommonArgs) {
+  const { wallet, program } = args;
+  program
+    .description('Create and send a transaction')
+    .usage('<walletName> --command transaction [options]')
+    .optionsGroup('Transaction Options')
+    .option('--to <address>', 'Recipient address')
+    .option('--amount <amount>', 'Amount to send (in BTC/ETH/etc). Use "max" to send all available balance')
+    .option('--fee <fee>', 'Fee to use')
+    .option('--feeRate <rate>', 'Custom fee rate in sats/b, gwei, drops, etc.')
+    .option('--feeLevel <level>', 'Fee level to use (e.g. low, normal, high)', 'normal')
+    .option('--nonce <nonce>', 'Nonce for the transaction (optional, for chains that require it)')
+    .option('--token <token>', 'Token to get the balance for (e.g. USDC)')
+    .option('--tokenAddress <address>', 'Token contract address to get the balance for')
+    .option('--note <note>', 'Note for the transaction')
+    .option('--dry-run', 'Only create the transaction proposal without broadcasting')
+    .parse(process.argv);
+  
+  const opts = program.opts();
+  if (opts.help) {
+    program.help();
   }
-}) {
-  const { wallet, status, opts } = args;
+
+  if (!opts.to) {
+    throw new Error('Recipient address (--to) is required');
+  }
+  if (!parseFloat(opts.amount) && opts.amount !== 'max') {
+    throw new Error('Missing or invalid amount (--amount) specified');
+  }
+  if (opts.fee && !parseFloat(opts.fee)) {
+    throw new Error('Invalid fee specified.');
+  }
+  if (opts.feeRate && !parseFloat(opts.feeRate)) {
+    throw new Error('Invalid fee rate specified.');
+  }
+
+  return opts;
+}
+
+export async function createTransaction(
+  args: CommonArgs<{
+    to?: string;
+    amount?: string;
+    fee?: string;
+    feeRate?: string;
+    feeLevel?: string;
+    nonce?: number;
+    note?: string;
+    dryRun?: boolean;
+  }>
+) {
+  const { wallet, opts } = args;
+  let { status } = args;
   const { chain, network } = wallet.client.credentials;
+
+  if (opts.command) {
+    Object.assign(opts, command(args));
+  }
+
+  let tokenObj: ITokenObj;
+  if (opts.token || opts.tokenAddress) {
+    tokenObj = await wallet.getToken(opts);
+    if (!tokenObj) {
+      throw new Error(`Unknown token "${opts.tokenAddress || opts.token}" on ${chain}:${network}`);
+    }
+  }
+
+  if (!status) {
+    status = await wallet.client.getStatus({ tokenAddress: tokenObj?.contractAddress });
+  }
+
   const { balance } = status;
-  const availableAmount = Utils.amountFromSats(chain, balance.availableAmount)
+  const currency = tokenObj?.displayCode || chain.toUpperCase();
+  const availableAmount = Utils.amountFromSats(chain, balance.availableAmount, tokenObj);
 
   if (!balance.availableAmount) {
-    prompt.log.warn(`You have no available balance to send on ${chain}:${network}.`);
+    prompt.log.warn(`You have no available balance to send ${currency} on ${chain}:${network}.`);
     return;
   }
 
-  const currency = chain.toUpperCase(); // TODO: handle tokens
 
-  const to = await prompt.text({
+  const to = opts.to || await prompt.text({
     message: 'Enter the recipient address:',
     placeholder: 'e.g. n2HRFgtoihgAhx1qAEXcdBMjoMvAx7AcDc',
     validate: (value) => {
@@ -40,7 +102,7 @@ export async function createTransaction(args: {
     throw new UserCancelled();
   }
 
-  const amount = await prompt.text({
+  const amount = opts.amount || await prompt.text({
     message: 'Enter the amount to send:',
     placeholder: 'Type `help` for help and to see your balance',
     validate: (value) => {
@@ -70,9 +132,9 @@ export async function createTransaction(args: {
   }
 
   const sendMax = amount === 'max';
-  const amountSats = amount === 'max' ? undefined : Utils.amountToSats(chain, amount); // Convert to satoshis 
+  const amountSats = amount === 'max' ? undefined : Utils.amountToSats(chain, amount, tokenObj); // Convert to satoshis 
 
-  const note = await prompt.text({
+  const note = opts.command ? opts.note : await prompt.text({
     message: 'Enter a note for this transaction (optional):',
     placeholder: 'e.g. paid Hal for pizza',
     initialValue: '',
@@ -84,7 +146,7 @@ export async function createTransaction(args: {
   const feeLevels = await wallet.client.getFeeLevels(chain, network);
   const defaultLevel = feeLevels.find(level => level.level === 'normal') || feeLevels[0];
 
-  const feeLevel = await prompt.select({
+  const feeLevel = opts.command ? (opts.feeLevel || 'custom') : await prompt.select({
     message: 'Select a fee level:',
     options: feeLevels.map(level => ({
       label: `${Utils.capitalize(level.level)} - ${Utils.displayFeeRate(chain, level.feePerKb)}`,
@@ -100,7 +162,7 @@ export async function createTransaction(args: {
     throw new UserCancelled();
   }
 
-  let customFeeRate;
+  let customFeeRate: string | symbol = opts.feeRate;
   if (feeLevel === 'custom') {
     const [defaultFeeRate, feeUnits] = Utils.displayFeeRate(chain, defaultLevel.feePerKb).split(' ');
     customFeeRate = await prompt.text({
@@ -127,7 +189,9 @@ export async function createTransaction(args: {
     message: note,
     feeLevel: feeLevel === 'custom' ? undefined : feeLevel,
     feePerKb: feeLevel === 'custom' ? parseFloat(customFeeRate) : undefined,
-    sendMax
+    fee: opts.fee ? parseFloat(opts.fee) : undefined,
+    sendMax,
+    tokenAddress: tokenObj?.contractAddress
   };
 
   let txp: Txp = await wallet.client.createTxProposal({
@@ -138,9 +202,12 @@ export async function createTransaction(args: {
 
   const lines = [];
   lines.push(`To: ${to}`);
-  lines.push(`Amount: ${Utils.renderAmount(txp.amount, chain)}`);
-  lines.push(`Fee: ${Utils.renderAmount(txp.fee, chain)} (${Utils.displayFeeRate(chain, txp.feePerKb)})`);
-  lines.push(`Total: ${Utils.renderAmount(txp.amount + txp.fee, chain)} ${currency}`);
+  lines.push(`Amount: ${Utils.renderAmount(currency, txp.amount, tokenObj)}`);
+  lines.push(`Fee: ${Utils.renderAmount(chain, txp.fee)} (${Utils.displayFeeRate(chain, txp.feePerKb)})`);
+  lines.push(`Total: ${tokenObj 
+    ? Utils.renderAmount(currency, txp.amount, tokenObj) + ` + ${Utils.renderAmount(chain, txp.fee)}`
+    : Utils.renderAmount(currency, txp.amount + txp.fee)
+  }`);
   if (txp.nonce != null) {
     lines.push(`Nonce: ${txp.nonce}`);
   }

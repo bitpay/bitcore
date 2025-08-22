@@ -207,16 +207,21 @@ export class TssKeyGen extends EventEmitter {
     this.#request = new Request(params.baseUrl, {
       r: params.request, // For testing only
     });
+
     this.#key = params.key;
-    this.#xPrivKey = this.#key.get(params.password).xPrivKey;
-    const _seed = BitcoreLib.HDPrivateKey.fromString(this.#xPrivKey);
-    this.#seed = BitcoreLib.crypto.Hash.sha256(_seed.toBuffer());
     // n is always 1 when creating credentials because the wallet is not multisig (threshold sig !== multisig).
     // In other words, it will look like a single sig wallet on-chain.
     this.#credentials = this.#key.createCredentials(params.password, { chain: this.chain, network: this.network, n: 1, account: 0 });
     this.#request.setCredentials(this.#credentials);
     this.#requestPrivateKey = BitcoreLib.PrivateKey.fromString(this.#credentials.requestPrivKey);
-    this.backupKeyShare = !!params.backupKeyShare || true;
+
+    const baseXPrivKey = this.#key.get(params.password).xPrivKey;
+    const derivationPath = this.#credentials.getRootPath();
+    this.#xPrivKey = new BitcoreLib.HDPrivateKey(baseXPrivKey).deriveChild(derivationPath).toString();
+    const _seed = BitcoreLib.HDPrivateKey.fromString(this.#xPrivKey);
+    this.#seed = BitcoreLib.crypto.Hash.sha256(_seed.toBuffer());
+
+    this.backupKeyShare = !!params.backupKeyShare;
   }
 
   /**

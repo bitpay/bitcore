@@ -3,13 +3,7 @@
 import * as CWC from 'crypto-wallet-core';
 
 export const Constants = {
-  SCRIPT_TYPES: {
-    P2SH: 'P2SH',
-    P2PKH: 'P2PKH',
-    P2WPKH: 'P2WPKH',
-    P2WSH: 'P2WSH',
-    P2TR: 'P2TR'
-  },
+  SCRIPT_TYPES: CWC.Constants.SCRIPT_TYPES,
   // not used, since Credentials 2.0
   DERIVATION_STRATEGIES: {
     BIP44: 'BIP44',

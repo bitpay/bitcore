@@ -2,19 +2,34 @@ import * as prompt from '@clack/prompts';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { ICliOptions } from '../../types/cli';
+import type { CommonArgs } from '../../types/cli';
 import { UserCancelled } from '../errors';
 import { getPassword } from '../prompts';
-import { Wallet } from '../wallet';
 
-export async function exportWallet(args: {
-  wallet: Wallet;
-  opts: ICliOptions;
-}) {
+export function command(args: CommonArgs) {
+  const { wallet, program } = args;
+  program
+    .description('Export wallet to a file')
+    .usage('<walletName> --command export [options]')
+    .optionsGroup('Export Options')
+    .option('--filename <filename>', 'Filename to export to', `~/${wallet.name}-export.json`)
+    .parse(process.argv);
+  
+  const opts = program.opts();
+  if (opts.help) {
+    program.help();
+  }
+  return opts;
+}
+
+export async function exportWallet(args: CommonArgs<{ filename?: string }>) {
   const { wallet, opts } = args;
+  if (opts.command) {
+    Object.assign(opts, command(args));
+  }
   const replaceTilde = str => str.startsWith('~') ? str.replace('~', os.homedir()) : str;
 
-  const filename = await prompt.text({
+  const filename = opts.filename || await prompt.text({
     message: 'Enter filename to export to:',
     initialValue: `~/${wallet.name}-export.json`,
     validate: (value) => {

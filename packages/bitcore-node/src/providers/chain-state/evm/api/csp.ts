@@ -489,10 +489,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return new Promise<void>(async (resolve, reject) => {
       const { network, wallet, req, res, args } = params;
       const { web3 } = await this.getWeb3(network);
+      args.tokenAddress = args.tokenAddress ? web3.utils.toChecksumAddress(args.tokenAddress) : undefined;
 
       let transactionStream = new TransformWithEventPipe({ objectMode: true, passThrough: true });
       const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddres => waddres.address);
-      const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses);
+      const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses, args.tokenAddress);
       const populateReceipt = new PopulateReceiptTransform();
       const populateEffects = new PopulateEffectsTransform();
 

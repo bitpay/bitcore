@@ -580,6 +580,7 @@ export class Key {
       chain?: string;
       network: string;
       account: number;
+      m?: number;
       n: number;
       addressType?: string;
       walletPrivKey?: string;
@@ -596,6 +597,8 @@ export class Key {
     this._checkNetwork(opts.network);
     $.shouldBeNumber(opts.account, 'Invalid account');
     $.shouldBeNumber(opts.n, 'Invalid n');
+    if (opts.n > 1) $.checkArgument(opts.m && opts.m <= opts.n, 'Invalid m');
+    else opts.m = 1;
 
     $.shouldBeUndefined(opts['useLegacyCoinType'], 'useLegacyCoinType is deprecated');
     $.shouldBeUndefined(opts['useLegacyPurpose'], 'useLegacyPurpose is deprecated');
@@ -624,6 +627,7 @@ export class Key {
       chain: opts.chain?.toLowerCase() || Utils.getChain(opts.coin), // getChain -> backwards compatibility
       network: opts.network,
       account: opts.account,
+      m: opts.m,
       n: opts.n,
       rootPath: path,
       keyId: this.id,

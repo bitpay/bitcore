@@ -1,6 +1,6 @@
 import assert from 'assert';
 import BitcoreLib from 'bitcore-lib';
-import { Key } from '../../derivation';
+import type { Key } from '../../types/derivation';
 
 interface TssSig {
   r: string;

@@ -6,7 +6,7 @@ const path = require('path');
 
 const verbose = process.argv.includes('-v');
 
-const source = path.join(__dirname, 'build/cli.js');
+const source = path.join(__dirname, 'build/src/cli.js');
 const targetDir = path.join(__dirname, 'bin');
 const target = path.join(targetDir, 'wallet');
 
@@ -17,11 +17,11 @@ if (!fs.existsSync(targetDir)) {
 try {
   const lstat = fs.lstatSync(target);
   if (lstat.isSymbolicLink() || lstat.isFile()) {
-    verbose && console.info('Removing existing wallet file:', target);
+    verbose && console.info('Removing stale file:', target);
     fs.rmSync(target);
   }
 } catch (e) {
-  verbose && console.info('No existing wallet file to remove:', e.message);
+  verbose && console.info('No stale file to remove:', e.message);
   // Ignore errors if the file does not exist
 }
 

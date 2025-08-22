@@ -1,5 +1,5 @@
 import { deriveAddress } from 'xrpl';
-import { IDeriver } from '..';
+import type { IDeriver } from '../../types/derivation';
 
 import BitcoreLib from 'bitcore-lib';
 

@@ -185,7 +185,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         const addressStreams: TransformWithEventPipe[] = [];
 
         for (const address of walletAddresses) {
-          const addressStream = await this._buildAddressTransactionsStream({ ...params, address})
+          const addressStream = await this._buildAddressTransactionsStream({ ...params, address });
           addressStreams.push(addressStream);
         }
         ExternalApiStream.mergeStreams(addressStreams, walletStream);
