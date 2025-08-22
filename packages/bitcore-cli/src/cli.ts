@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import * as prompt from '@clack/prompts';
-import { Errors as BWCErrors, Status } from 'bitcore-wallet-client';
 import Mnemonic from 'bitcore-mnemonic';
+import { Errors as BWCErrors, Status } from 'bitcore-wallet-client';
 import { program } from 'commander';
 import fs from 'fs';
 import os from 'os';
