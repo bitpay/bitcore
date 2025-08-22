@@ -49,13 +49,9 @@ export async function getPassword(msg?: string, opts?: { minLength?: number; hid
   const hidden = opts.hidden ?? true;
 
   const password = await prompt.password({
-    message: msg || 'Password:',
-    /*
-    TODO: uncomment when clack merges and publishes https://github.com/bombshell-dev/clack/pull/364
     message: (msg || 'Password:') + (hidden ? ' (hidden)' : ''),
     mask: hidden ? '' : undefined,
     clearOnError: hidden,
-    */
     validate: (input) => {
       if (input?.length < opts.minLength) {
         return `Password must be at least ${opts.minLength} characters long.`;
