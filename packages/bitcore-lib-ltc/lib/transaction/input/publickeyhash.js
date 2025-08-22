@@ -96,7 +96,7 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
   sigtype = sigtype || Signature.SIGHASH_ALL;
 
   const script = this.output.script.isScriptHashOut()
-    ? this.getRedeemScript(publicKey)
+    ? this.getRedeemScript(privateKey.publicKey)
     : this.output.script;
 
   if (script && BufferUtil.equals(hashData, script.getPublicKeyHash())) {
