@@ -124,7 +124,7 @@ const errors: Errors<string> = {
   TX_NONCE_CONFLICT: 'Unsigned TX proposal(s) with lower or conflicting nonces exist. Please sign or reject them first.',
   UNAVAILABLE_UTXOS: 'Unavailable unspent outputs',
   NO_INPUT_PATHS: 'Derivation paths were not provided for the inputs',
-  UPGRADE_NEEDED: 'Client app needs to be upgraded',
+  UPGRADE_NEEDED: 'Client needs to be upgraded',
   WALLET_ALREADY_EXISTS: 'Wallet already exists',
   WALLET_FULL: 'Wallet full',
   WALLET_BUSY: 'Wallet is busy, try later',

@@ -4102,7 +4102,7 @@ describe('client API', function() {
                   signatures2,
                   (err, txp) => {
                     should.exist(err);
-                    err.message.should.contain('UPGRADE_NEEDED');
+                    err.name.should.contain('UPGRADE_NEEDED');
                     done();
                   },
                   '/v1/txproposals/'
