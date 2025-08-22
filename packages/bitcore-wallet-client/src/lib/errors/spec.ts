@@ -192,5 +192,9 @@ export const errorSpec: IErrorSpec[] = [
   {
     name: 'PAYLOAD_TOO_LARGE',
     message: 'The request payload is too large.'
+  },
+  {
+    name: 'UPGRADE_NEEDED',
+    message: 'Please update your client.'
   }
 ];
