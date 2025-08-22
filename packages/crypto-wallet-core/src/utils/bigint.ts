@@ -2,7 +2,7 @@ import type { BigIntLike } from '../types/utils';
 
 
 function isValidDenominator(val: BigIntLike): boolean {
-  return isBigIntLike(val) && val != 0n;
+  return isBigIntLike(val) && BigInt(val) !== 0n;
 };
 
 /**
