@@ -27,8 +27,8 @@ import { ThorswapService } from '../externalservices/thorswap';
 import { TransakService } from '../externalservices/transak';
 import { WyreService } from '../externalservices/wyre';
 import { serverMessages } from '../serverMessages';
-import { ExternalServicesConfig } from '../types/externalservices';
-import type { GetAddressesOpts } from '../types/server';
+import type { ExternalServicesConfig } from '../types/externalservices';
+import type { GetAddressesOpts, UpgradeCheckOpts } from '../types/server';
 import { BCHAddressTranslator } from './bchaddresstranslator';
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
@@ -351,11 +351,9 @@ export class WalletService implements IWalletService {
   static getInstance(opts): WalletService {
     opts = opts || {};
 
-    const version = Utils.parseVersion(opts.clientVersion);
-    if (version && version.agent === 'bwc') {
-      if (version.major === 0 || (version.major === 1 && version.minor < 2)) {
-        throw Errors.UPGRADE_NEEDED.withMessage('BWC clients < 1.2 are no longer supported.');
-      }
+    const upgradeMessage = WalletService.upgradeNeeded(UPGRADES.bwc_$lt_1_2, opts);
+    if (upgradeMessage) {
+      throw Errors.UPGRADE_NEEDED.withMessageMaybe(upgradeMessage);
     }
 
     const server = new WalletService();
@@ -595,13 +593,9 @@ export class WalletService implements IWalletService {
       opts.chain = opts.coin; // chain === coin for stored clients
     }
 
-    if (opts.chain === 'bch' && opts.n > 1) {
-      const version = Utils.parseVersion(this.clientVersion);
-      if (version && version.agent === 'bwc') {
-        if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
-          return cb(Errors.UPGRADE_NEEDED.withMessage('BWC clients < 8.3 are no longer supported for multisig BCH wallets.'));
-        }
-      }
+    const upgradeMessage = this._upgradeNeeded([UPGRADES.BCH_bwc_$lt_8_3_multisig, UPGRADES.SOL_bwc_$lt_10_10_12], opts);
+    if (upgradeMessage) {
+      return cb(Errors.UPGRADE_NEEDED.withMessageMaybe(upgradeMessage));
     }
 
     if (!checkRequired(opts, ['name', 'm', 'n', 'pubKey'], cb)) {
@@ -742,6 +736,7 @@ export class WalletService implements IWalletService {
     this.storage.fetchWallet(this.walletId, (err, wallet) => {
       if (err) return cb(err);
       if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
+      if (this._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet)) return cb(Errors.UPGRADE_NEEDED);
 
       // cashAddress migration
       if (wallet.coin != 'bch' || wallet.nativeCashAddr) return cb(null, wallet);
@@ -860,6 +855,9 @@ export class WalletService implements IWalletService {
         next => {
           this.getWallet({}, (err, wallet) => {
             if (err) return next(err);
+            if (this._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet)) {
+              return next(Errors.UPGRADE_NEEDED);
+            }
 
             const walletExtendedKeys = ['publicKeyRing', 'pubKey', 'addressManager'];
             const copayerExtendedKeys = ['xPubKey', 'requestPubKey', 'signature', 'addressManager', 'customData'];
@@ -1216,32 +1214,16 @@ export class WalletService implements IWalletService {
           return;
         }
 
-        if (opts.chain === 'bch' && wallet.n > 1) {
-          const version = Utils.parseVersion(this.clientVersion);
-          if (version && version.agent === 'bwc') {
-            if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
-              return cb(Errors.UPGRADE_NEEDED.withMessage('BWC clients < 8.3 are no longer supported for multisig BCH wallets.'));
-            }
-          }
+        if (this._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, { chain: opts.chain, n: wallet.n })) {
+          return cb(Errors.UPGRADE_NEEDED.withMessage('BWC clients < 8.3 are no longer supported for multisig BCH wallets.'));
+        }
+        if (this._upgradeNeeded([UPGRADES.bwc_$lt_8_4_multisig_purpose48, UPGRADES.bwc_$lt_8_17_multisig_p2wsh], wallet)) {
+          return cb(Errors.UPGRADE_NEEDED.withMessage('Please upgrade your client to join this multisig wallet'));
+        }
+        if (this._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet)) {
+          return cb(Errors.UPGRADE_NEEDED);
         }
 
-        if (wallet.n > 1 && wallet.usePurpose48) {
-          const version = Utils.parseVersion(this.clientVersion);
-          if (version && version.agent === 'bwc') {
-            if (version.major < 8 || (version.major === 8 && version.minor < 4)) {
-              return cb(Errors.UPGRADE_NEEDED.withMessage('Please upgrade your client to join this multisig wallet'));
-            }
-          }
-        }
-
-        if (wallet.n > 1 && wallet.addressType === 'P2WSH') {
-          const version = Utils.parseVersion(this.clientVersion);
-          if (version && version.agent === 'bwc') {
-            if (version.major < 8 || (version.major === 8 && version.minor < 17)) {
-              return cb(Errors.UPGRADE_NEEDED.withMessage('Please upgrade your client to join this multisig wallet'));
-            }
-          }
-        }
 
         if (opts.chain != wallet.chain) {
           return cb(new ClientError('The wallet you are trying to join was created for a different chain'));
@@ -3185,7 +3167,7 @@ export class WalletService implements IWalletService {
         async (err, txp: TxProposal) => {
           if (err) return cb(err);
 
-          if (opts.maxTxpVersion < txp.version) {
+          if (this._upgradeNeeded(UPGRADES.version_$gt_maxTxpVersion, { maxTxpVersion: opts.maxTxpVersion, version: txp.version })) {
             return cb(Errors.UPGRADE_NEEDED.withMessage('Your client does not support signing this transaction. Please upgrade'));
           }
 
@@ -3193,7 +3175,9 @@ export class WalletService implements IWalletService {
           if (action) return cb(Errors.COPAYER_VOTED);
           if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
 
-          if (txp.signingMethod === 'schnorr' && !opts.supportBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
+          if (this._upgradeNeeded(UPGRADES.BCH_schnorr, { signingMethod: txp.signingMethod, supportBchSchnorr: opts.supportBchSchnorr })) {
+            return cb(Errors.UPGRADE_NEEDED);
+          }
 
           if ([...Object.keys(Constants.EVM_CHAINS), 'XRP'].includes(wallet.chain.toUpperCase())) {
             try {
@@ -5087,6 +5071,97 @@ export class WalletService implements IWalletService {
     });
   }
 
+  static upgradeNeeded(
+    paths: Upgrade | Upgrade[],
+    opts: UpgradeCheckOpts & { clientVersion: string; userAgent: string; }
+  ) {
+    paths = Array.isArray(paths) ? paths : [paths];
+    const chain = opts.chain?.toLowerCase();
+    const v = Utils.parseVersion(opts.clientVersion);
+    const a = Utils.parseAppVersion(opts.userAgent);
+
+    let result: boolean | string = false;
+    for (const path of paths) {
+      switch (path) {
+        case UPGRADES.SOL_bwc_$lt_10_10_12:
+          result = (
+            chain === 'sol' &&
+            v?.agent === 'bwc' &&
+            (
+              v?.major < 10 ||
+              (v?.major == 10 && v?.minor < 10) ||
+              (v?.major == 10 && v?.minor == 10 && v?.patch < 12)
+            )
+          );
+          break;
+        case UPGRADES.BCH_bwc_$lt_8_3_multisig:
+          result = (
+            opts.n > 1 &&
+            chain === 'bch' &&
+            v?.agent === 'bwc' &&
+            (
+              v?.major < 8 ||
+              (v.major == 8 && v?.minor < 3)
+            )
+          )
+          ? 'BWC clients < 8.3 are no longer supported for multisig BCH wallets.'
+          : false;
+          break;
+        case UPGRADES.bwc_$lt_8_4_multisig_purpose48:
+          result = (
+            opts.n > 1 &&
+            opts.usePurpose48 &&
+            v?.agent === 'bwc' &&
+            (v?.major < 8 || (v.major == 8 && v?.minor < 4))
+          );
+          break;
+        case UPGRADES.bwc_$lt_8_17_multisig_p2wsh:
+          result = (
+            opts.n > 1 &&
+            opts.addressType?.toLowerCase() === 'p2wsh' &&
+            v?.agent === 'bwc' &&
+            (v?.major < 8 || (v.major == 8 && v?.minor < 17))
+          );
+          break;
+        case UPGRADES.version_$gt_maxTxpVersion:
+          result = parseInt(opts.version as string) > parseInt(opts.maxTxpVersion as string);
+          break;
+        case UPGRADES.BCH_schnorr:
+          result = (opts.signingMethod === 'schnorr' && !opts.supportBchSchnorr);
+          break;
+        case UPGRADES.bwc_$lt_1_2:
+          result = (
+            v?.agent === 'bwc' &&
+            (v?.major == 0 || (v?.major == 1 && v?.minor < 2))
+          )
+          ? 'BWC clients < 1.2 are no longer supported.'
+          : false;
+          break;
+        default:
+          throw new Error('Unknown upgrade path');
+      }
+      if (result) {
+        logger.warn(`Upgrade needed: ${path} | ${opts.clientVersion} | ${opts.userAgent}`);
+        break; // Stop checking other upgrade paths
+      }
+    }
+    // No upgrade needed
+    return result;
+  }
+
+  _upgradeNeeded(
+    paths: Upgrade | Upgrade[],
+    opts?: UpgradeCheckOpts
+  ) {
+    opts = opts || {};
+    const _opts = {
+      ...opts,
+      clientVersion: this.clientVersion,
+      userAgent: this.userAgent
+    }
+    return WalletService.upgradeNeeded(paths, _opts);
+  }
+
   // Moralis services
   moralisGetWalletTokenBalances(req): Promise<any> {
     return new Promise(async (resolve, reject) => {
@@ -5434,3 +5509,15 @@ export function checkRequired(obj, args, cb?: (e: any) => void) {
 
   return false;
 }
+
+export const UPGRADES = {
+  SOL_bwc_$lt_10_10_12: 'SOL:bwc<10.10.12',
+  BCH_bwc_$lt_8_3_multisig: 'BCH:bwc<8.3:multisig',
+  bwc_$lt_8_4_multisig_purpose48: 'bwc<8.4:multisig:purpose48',
+  bwc_$lt_8_17_multisig_p2wsh: 'bwc<8.17:multisig:p2wsh',
+  version_$gt_maxTxpVersion: 'version>maxTxpVersion',
+  BCH_schnorr: 'BCH:schnorr',
+  bwc_$lt_1_2: 'bwc<1.2',
+} as const;
+
+type Upgrade = typeof UPGRADES[keyof typeof UPGRADES];
