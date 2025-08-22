@@ -306,9 +306,14 @@ describe('ECDSA', function() {
           }
         }
 
+        const onlys = vector.signing.reduce((arr, v, i) => {
+          if (v.only) arr.push(v.description);
+          return arr;
+        }, []);
+
         for (const signingVector of vector.signing) {
           if (signingVector.skip) { continue; }
-          if (!signingVector.only) { continue; }
+          if (onlys.length && !onlys.includes(signingVector.description)) { continue; }
 
           describe(signingVector.description, function() {
             describe('instantiation', function() {
@@ -590,6 +595,7 @@ describe('ECDSA', function() {
                     assert.strictEqual(tx.inputs[signingVector.inputIndex].isFullySigned(), false);
                     signed = CWC.Transactions.applySignature({ chain: signingVector.chain, tx, signature: sig, index: signingVector.inputIndex });
                     assert.strictEqual(signed.inputs[signingVector.inputIndex].isFullySigned(), true);
+                    assert.ok(signed.serialize());
                   }
                   assert.notEqual(signed, null);
                 });
