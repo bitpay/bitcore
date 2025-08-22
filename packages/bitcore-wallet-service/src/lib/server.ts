@@ -28,6 +28,7 @@ import { TransakService } from '../externalservices/transak';
 import { WyreService } from '../externalservices/wyre';
 import { serverMessages } from '../serverMessages';
 import { ExternalServicesConfig } from '../types/externalservices';
+import type { GetAddressesOpts } from '../types/server';
 import { BCHAddressTranslator } from './bchaddresstranslator';
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
@@ -1672,18 +1673,7 @@ export class WalletService implements IWalletService {
    * @returns {Address[]}
    */
 
-  getAddresses(opts: {
-    /** Limit the resultset. Return all addresses by default. */
-    limit?: number;
-    /** Skip this number of addresses in resultset. Useful for paging. */
-    skip?: number;
-    /** Reverse the order of returned addresses. */
-    reverse?: boolean;
-    /** Filter by specific addresses. */
-    addresses?: string[];
-    /** Filter out change addresses. */
-    noChange?: boolean;
-  }, cb) {
+  getAddresses(opts: GetAddressesOpts, cb) {
     opts = opts || {};
     this.storage.fetchAddresses(this.walletId, (err, addresses) => {
       if (err) return cb(err);

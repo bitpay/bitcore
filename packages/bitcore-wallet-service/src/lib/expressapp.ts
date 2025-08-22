@@ -9,6 +9,7 @@ import rp from 'request-promise-native';
 import 'source-map-support/register';
 import config from '../config';
 import * as Types from '../types/expressapp';
+import type { GetAddressesOpts } from '../types/server';
 import { Common } from './common';
 import { ClientError } from './errors/clienterror';
 import { Errors } from './errors/errordefinitions';
@@ -807,7 +808,7 @@ export class ExpressApp {
 
     router.get('/v2/addresses/', (req, res) => {
       getServerWithAuth(req, res, server => {
-        const opts: { limit?: number; reverse?: boolean; skip?: number; addresses?: string[]; noChange?: boolean } = {};
+        const opts: GetAddressesOpts = {};
         if (req.query.limit) opts.limit = +req.query.limit;
         if (req.query.skip) opts.skip = +req.query.skip;
         opts.reverse = req.query.reverse == '1';

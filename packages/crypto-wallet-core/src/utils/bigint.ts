@@ -1,54 +1,75 @@
+import type { BigIntLike } from '../types/utils';
+
+/**
+ * Checks if a value is a BigInt-like type (bigint, number, or numeric string)
+ * @param value 
+ * @returns {boolean}
+ */
+export function isBigIntLike(value?: any): boolean {
+  return value !== null &&
+    value !== '' &&
+    (
+      typeof value === 'bigint' ||
+      (typeof value === 'number' && !isNaN(value)) ||
+      !isNaN(Number(value))
+    );
+}
 
 /**
  * This is a special wrapper for BigInt() that assumes a string _without_ a prefix is hex.
- * @example toBigInt('0x12') => 18n
- * @example toBigInt('12') => 18n // assumes hex
- * @example toBigInt(12) => 12n
- * @example toBigInt('0o12') => 10n // octal
+ * @example sToBigInt('0x12') => 18n
+ * @example sToBigInt('12') => 18n // assumes hex
+ * @example sToBigInt(12) => 12n
+ * @example sToBigInt('0o12') => 10n // octal
+ * @returns {bigint}
  */
-export function sToBigInt(value: number | string) {
-  return BigInt(typeof value !== 'string' || value?.startsWith('0x') ? value : ('0x' + value));
+export function sToBigInt(value: number | string): bigint {
+  const isNonPrefixedString = typeof value === 'string' &&
+      !value?.startsWith('0x') &&
+      !value?.startsWith('0o');
+  return BigInt(isNonPrefixedString ? ('0x' + value) : value);
 };
 
 /**
  * Math.max() for a mixed array of BigInts, Numbers, and Strings
- * @param {Array<BigInt|Number|String>} arr Array of BigInts, Numbers, and/or Strings
- * @returns {BigInt|Number|String} Returns the max entry
+ * @param {Array<BigIntLike>} arr Array of BigInts, Numbers, and/or Strings
+ * @returns {BigIntLike} Returns the max entry
  */
-export function max(arr) {
-  if (!Array.isArray(arr)) {
-    throw new Error('Input must be an array');
-  }
+export function max(arr: Array<BigIntLike>): BigIntLike {
+  if (!Array.isArray(arr)) throw new Error('Input must be an array');
+  if (!arr.every(isBigIntLike)) throw new Error('Array must contain only BigInt-like values');
   return arr.reduce((max, cur) => cur > max ? cur : max, arr[0]);
 };
 
 
 /**
  * Math.min() for a mixed array of BigInts, Numbers, and Strings
- * @param {Array<BigInt|Number|String>} arr Array of BigInts, Numbers, and/or Strings
- * @returns {BigInt|Number|String} Returns the min entry
+ * @param {Array<BigIntLike>} arr Array of BigInts, Numbers, and/or Strings
+ * @returns {BigIntLike} Returns the min entry
  */
-export function min(arr) {
-  if (!Array.isArray(arr)) {
-    throw new Error('Input must be an array');
-  }
+export function min(arr: Array<BigIntLike>): BigIntLike {
+  if (!Array.isArray(arr)) throw new Error('Input must be an array');
+  if (!arr.every(isBigIntLike)) throw new Error('Array must contain only BigInt-like values');
   return arr.reduce((min, cur) => cur < min ? cur : min, arr[0]);
 };
 
 
 /**
  * Divide BigInts with precision. This works for Numbers and strings as well since it converts the inputs to BigInts
- * @param {BigInt|Number|String} numerator
- * @param {BigInt|Number|String} denominator
- * @param {BigInt|Number|String} precision (optional) Defaults to the max number of decimals in the inputs
- * @returns {Number}
+ * @param {BigIntLike} numerator
+ * @param {BigIntLike} denominator
+ * @param {BigIntLike} precision (optional) Default: 18
+ * @returns {number}
  */
-export function divToFloat(numerator, denominator, precision) {
+export function divToFloat(numerator: BigIntLike, denominator: BigIntLike, precision?: number) {
+  if (!denominator) throw new Error('Division by zero');
+  let [nLeft, nRight = ''] = numerator.toString().split('.');
+  const [, dRight = ''] = denominator.toString().split('.');
   if (precision == null) {
-    precision = Math.max(numerator.toString().split('.')[1]?.length || 0, denominator.toString().split('.')[1]?.length || 0);
+    precision = Math.max(nRight.length, dRight.length, 18);
   }
-  const scaleFactor = 10n ** BigInt(precision);
-  const scaledNumerator = BigInt(numerator) * scaleFactor;
+  nRight = nRight.padEnd(precision, '0');
+  const scaledNumerator = BigInt(nLeft + nRight);
   const quotient = scaledNumerator / BigInt(denominator);
   return Number(quotient) / (10 ** precision);
 };
@@ -56,17 +77,20 @@ export function divToFloat(numerator, denominator, precision) {
 
 /**
  * Divide BigInts with precision. This works for Numbers and strings as well since it converts the inputs to BigInts
- * @param {BigInt|Number|String} numerator
- * @param {BigInt|Number|String} denominator
- * @returns {BigInt} Rounded BigInt
+ * @param {BigIntLike} numerator
+ * @param {BigIntLike} denominator
+ * @returns {bigint} Rounded BigInt
  */
-export function div(numerator, denominator) {
-  const precision = [numerator, denominator].reduce((p, num) => Math.max(p, num.toString().split('.')[1]?.length || 0), 0);
+export function div(numerator: BigIntLike, denominator: BigIntLike): bigint {
+  if (!denominator) throw new Error('Division by zero');
+  let [nLeft, nRight = ''] = numerator.toString().split('.');
+  let [dLeft, dRight = ''] = denominator.toString().split('.');
+  const precision = Math.max(nRight.length, dRight.length, 18);
+  nRight = nRight.padEnd(precision, '0');
 
-  const scaleFactor = 10n ** BigInt(precision);
-  const scaledNumerator = BigInt(numerator) * scaleFactor;
-  const quotient = scaledNumerator / BigInt(denominator);
-  return Number(quotient) / (10 ** precision);
+  const scaledNumerator = BigInt(nLeft + nRight);
+  const quotient = (scaledNumerator / BigInt(denominator)).toString();
+  return BigInt(quotient.slice(0, -precision)) + BigInt(Math.round(Number('.' + quotient.slice(-precision))));
 };
 
 
@@ -75,22 +99,26 @@ export function div(numerator, denominator) {
  * @example mul(2n, 1.4) => 2.8 => 3n
  * @example mul(1n, 1.1) => 1.1 => 1n
  *
- * @param  {...BigInt|Number|String} nums
- * @returns {BigInt} Returns a rounded BigInt
+ * @param  {...BigIntLike} nums
+ * @returns {bigint} Returns a rounded bigint
  */
-export function mul(...nums) {
-  const precision = nums.reduce((p, num) => Math.max(p, num.toString().split('.')[1]?.length || 0), 0);
+export function mul(...nums: Array<BigIntLike>): bigint {
+  if (!nums.length || !nums.every(isBigIntLike)) throw new Error('Input must contain only BigInt-like values');
+  const precision = nums.reduce<number>((p: number, num: BigIntLike) => Math.max(p, num.toString().split('.')[1]?.length || 0), 0);
 
-  if (precision == 0) {
-    return nums.reduce((acc, cur) => acc * BigInt(cur), 1n);
+  if (precision == 0) { // all numbers are integers
+    return nums.reduce<bigint>((acc: bigint, cur: BigIntLike) => acc * BigInt(cur), 1n);
   }
-
-  const scaleFactor = 10 ** precision;
-  const retValScaled: string = nums.reduce((acc, cur) => {
-    const curScaled = typeof cur === 'bigint' ? (cur * BigInt(scaleFactor)) : BigInt(cur * scaleFactor);
-    return acc * curScaled;
-  }, 1n).toString();
-  return BigInt(retValScaled.slice(0, -precision)) + BigInt(Math.round(Number('.' + retValScaled.slice(-precision))));
+  
+  let productScaled = 1n;
+  for (const cur of nums) {
+    let [left, right = ''] = cur.toString().split('.');
+    right = right.padEnd(precision, '0');
+    productScaled *= BigInt(left + right);
+  }
+  const whole = productScaled.toString().slice(0, -(precision * nums.length));
+  const decimal = productScaled.toString().slice(-(precision * nums.length));
+  return BigInt(whole) + BigInt(Math.round(Number('.' + decimal)));
 };
 
 
@@ -99,22 +127,26 @@ export function mul(...nums) {
  * @example mul(2n, 1.4) => 2.8 => 2n
  * @example mul(1n, 1.1) => 1.1 => 1n
  *
- * @param  {...BigInt|Number|String} nums
- * @returns {BigInt} Returns a floor-rounded BigInt
+ * @param  {...BigIntLike} nums
+ * @returns {bigint} Returns a floor-rounded BigInt
  */
-export function mulFloor(...nums) {
-  const precision = nums.reduce((p, num) => Math.max(p, num.toString().split('.')[1]?.length || 0), 0);
+export function mulFloor(...nums: Array<BigIntLike>): bigint {
+  if (!nums.length || !nums.every(isBigIntLike)) throw new Error('Input must contain only BigInt-like values');
+  const precision = nums.reduce<number>((p: number, num: BigIntLike) => Math.max(p, num.toString().split('.')[1]?.length || 0), 0);
 
   if (precision == 0) {
-    return nums.reduce((acc, cur) => acc * BigInt(cur), 1n);
+    return nums.reduce<bigint>((acc: bigint, cur: BigIntLike) => acc * BigInt(cur), 1n);
   }
 
-  const scaleFactor = 10 ** precision;
-  const retValScaled = nums.reduce((acc, cur) => {
-    const curScaled = typeof cur === 'bigint' ? (cur * BigInt(scaleFactor)) : BigInt(cur * scaleFactor);
-    return acc * curScaled;
-  }, 1n).toString();
-  return BigInt(retValScaled.slice(0, -precision));
+  let productScaled = 1n;
+  for (const cur of nums) {
+    let [left, right = ''] = cur.toString().split('.');
+    right = right.padEnd(precision, '0');
+    productScaled *= BigInt(left + right);
+  }
+  const whole = productScaled.toString().slice(0, -(precision * nums.length));
+  // disregard the decimal since this is a floor
+  return BigInt(whole);
 };
 
 
@@ -123,20 +155,24 @@ export function mulFloor(...nums) {
  * @example mul(2n, 1.4) => 2.8 => 3n
  * @example mul(1n, 1.1) => 1.1 => 2n
  *
- * @param  {...BigInt|Number|String} nums
- * @returns {BigInt} Returns a ceiling-rounded BigInt
+ * @param  {...BigIntLike} nums
+ * @returns {bigint} Returns a ceiling-rounded BigInt
  */
-export function mulCeil(...nums: (bigint | number | string)[]): bigint {
+export function mulCeil(...nums: Array<BigIntLike>): bigint {
+  if (!nums.length || !nums.every(isBigIntLike)) throw new Error('Input must contain only BigInt-like values');
   const precision = nums.reduce<number>((p, num) => Math.max(p, num.toString().split('.')[1]?.length || 0), 0);
 
   if (precision == 0) { // All nums are integers, so can just convert all to bigints
     return nums.reduce<bigint>((acc, cur) => acc * BigInt(cur), 1n);
   }
 
-  const scaleFactor = 10 ** precision;
-  const retValScaled: string = nums.reduce<bigint>((acc, cur) => {
-    const curScaled = typeof cur === 'bigint' ? (cur * BigInt(scaleFactor)) : BigInt(Number(cur) * scaleFactor);
-    return acc * curScaled;
-  }, 1n).toString();
-  return BigInt(retValScaled.slice(0, -precision)) + (Number(retValScaled.slice(-precision)) > 0 ? 1n : 0n);
+  let productScaled = 1n;
+  for (const cur of nums) {
+    let [left, right = ''] = cur.toString().split('.');
+    right = right.padEnd(precision, '0');
+    productScaled *= BigInt(left + right);
+  }
+  const whole = productScaled.toString().slice(0, -(precision * nums.length));
+  const decimal = productScaled.toString().slice(-(precision * nums.length));
+  return BigInt(whole) + (BigInt(decimal) > 0n ? 1n : 0n);
 };

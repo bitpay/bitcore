@@ -221,7 +221,7 @@ export class TssKeyGen extends EventEmitter {
     const _seed = BitcoreLib.HDPrivateKey.fromString(this.#xPrivKey);
     this.#seed = BitcoreLib.crypto.Hash.sha256(_seed.toBuffer());
 
-    this.backupKeyShare = !!params.backupKeyShare || false;
+    this.backupKeyShare = !!params.backupKeyShare;
   }
 
   /**

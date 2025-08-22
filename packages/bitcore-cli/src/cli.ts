@@ -2,6 +2,7 @@
 
 import * as prompt from '@clack/prompts';
 import { Errors as BWCErrors, Status } from 'bitcore-wallet-client';
+import Mnemonic from 'bitcore-mnemonic';
 import { program } from 'commander';
 import fs from 'fs';
 import os from 'os';
@@ -139,8 +140,7 @@ if (require.main === module) {
         case 'import-seed':
           const mnemonic = await prompt.password({
             message: 'Enter your 12-24 word mnemonic phrase:',
-            mask: '*',
-            validate: (input) => input.split(' ').length >= 12 && input.split(' ').length <= 24 ? undefined : 'Mnemonic must be between 12 and 24 words.',
+            validate: (input) => !Mnemonic.isValid(input) ? 'Invalid mnemonic. Please check your spelling and try again' : undefined,
           });
           if (prompt.isCancel(mnemonic)) {
             throw new Errors.UserCancelled();

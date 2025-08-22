@@ -2471,11 +2471,11 @@ describe('client API', function() {
         });
       });
     });
-    it('Should return only main addresses', async function() {
+    it('Should return only main addresses when noChange is true', async function() {
       const addr = await clients[0].getAddresses({ noChange: true });
       addr.length.should.equal(2);
     });
-    it('Should return all addresses', async function() {
+    it('Should return all addresses when noChange is omitted', async function() {
       const addr = await clients[0].getAddresses({});
       addr.length.should.equal(3);
       addr.filter(a => a.isChange).length.should.equal(1);

@@ -25,7 +25,7 @@
     "start": "npm run clean && npm run tsc && ./start.sh",
     "stop": "./stop.sh",
     "coverage": "npm run compile && ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
-    "test": "npm run compile && mocha --exit",
+    "test": "npm run compile && npx mocha ./test/**/*",
     "test:ci": "npm run test",
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "tsc": "npm run clean && tsc",

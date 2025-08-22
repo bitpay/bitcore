@@ -3,7 +3,7 @@ import { type IWallet } from '../types/wallet';
 import { Utils } from './utils';
 
 export function getCommands(args: { wallet: IWallet, opts?: ICliOptions }) {
-  const { wallet, opts } = args;
+  const { wallet } = args;
 
   const COMMANDS = {
     EXIT: { label: 'Exit', value: 'exit', hint: 'Exit the wallet CLI' },
