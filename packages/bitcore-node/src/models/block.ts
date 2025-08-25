@@ -16,7 +16,15 @@ export type IBtcBlock = IBlock & {
   merkleRoot: string;
   bits: number;
   nonce: number;
+  feeData?: FeeData;
 };
+
+type FeeData = {
+  mean: number;
+  median: number;
+  mode: number;
+  feeTotal: number;
+}
 
 @LoggifyClass
 export class BitcoinBlock extends BaseBlock<IBtcBlock> {
@@ -86,7 +94,9 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
       EventStorage.signalBlock(convertedBlock);
     }
 
-    await this.collection.updateOne({ hash: convertedBlock.hash, chain, network }, { $set: { processed: true } });
+    const feeData = await this.getBlockFee({ chain, network, blockId: block.hash });
+
+    await this.collection.updateOne({ hash: convertedBlock.hash, chain, network }, { $set: { processed: true, feeData } });
   }
 
   async getBlockOp(params: { block: BitcoinBlockType; chain: string; network: string; initialHeight?: number }) {
@@ -209,6 +219,45 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
       return transform;
     }
     return JSON.stringify(transform);
+  }
+
+  async getBlockFee(params: {
+    chain: string,
+    network: string,
+    blockId: string
+  }) : Promise<FeeData> {
+    const { chain, network, blockId } = params;
+    const transactions = blockId.length >= 64 
+      ? await TransactionStorage.collection.find({ chain, network, blockHash: blockId }).toArray()
+      : await TransactionStorage.collection.find({ chain, network, blockHeight: parseInt(blockId, 10) }).toArray();
+    if (transactions.length <= 1)
+      return { feeTotal: 0, mean: 0, median: 0, mode: 0 };
+
+    let feeRateSum = 0;
+    let feeTotal = 0;
+    const feeRates: number[] = [];
+    const freq = {};
+    let mode = 0, maxCount = 0;
+    for (const tx of transactions) {
+      if (tx.coinbase) continue; // skip coinbase transaction
+      const rate = tx.fee && tx.size ? tx.fee / tx.size : 0; // does not add fee rate 0 or divide by zero
+      feeRates.push(rate);
+      feeRateSum += rate;
+      feeTotal += tx.fee || 0;
+      
+      freq[rate] = (freq[rate] || 0) + 1;
+      if (freq[rate] > maxCount) {
+        mode = rate;
+        maxCount = freq[rate];
+      }
+    }
+    const mean = feeRateSum / feeRates.length;
+    feeRates.sort((a, b) => a - b);
+    const median = feeRates.length % 2 === 1
+      ? feeRates[Math.floor(feeRates.length / 2)]
+      : (feeRates[feeRates.length / 2 - 1] + feeRates[feeRates.length / 2]) / 2;
+
+    return { feeTotal, mean, median, mode };
   }
 }
 
