@@ -52,13 +52,23 @@ PublicKeyHashInput.prototype.getScriptCode = function(publicKey) {
   return writer.toBuffer();
 };
 
-PublicKeyHashInput.prototype.getSighash = function(transaction, privateKey, index, sigtype) {
-  var scriptCode = this.getScriptCode(privateKey);
-  var satoshisBuffer = this.getSatoshisBuffer();
-  return SighashWitness.sighash(transaction, sigtype, index, scriptCode, satoshisBuffer);
+/**
+ * Get the hash data to sign for this input
+ * @param {Transaction} transaction The transaction to be signed
+ * @param {PublicKey} publicKey Unused for this input type
+ * @param {number} index The index of the input in the transaction input vector
+ * @param {number} sigtype The type of signature, defaults to Signature.SIGHASH_ALL
+ * @returns {Buffer}
+ */
+PublicKeyHashInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
+  sigtype = sigtype || Signature.SIGHASH_ALL;
+
+  const sighash = Sighash.sighash(transaction, sigtype, index, this.output.script);
+  // sighash() returns data little endian but it must be signed big endian, hence the reverse
+  return sighash.reverse();
 };
 
-/* jshint maxparams: 5 */
 /**
  * @param {Transaction} transaction - the transaction to be signed
  * @param {PrivateKey} privateKey - the private key with which to sign the transaction
@@ -72,12 +82,9 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
   hashData = hashData || Hash.sha256ripemd160(privateKey.publicKey.toBuffer());
   sigtype = sigtype || Signature.SIGHASH_ALL;
 
-  var script;
-  if (this.output.script.isScriptHashOut()) {
-    script = this.getRedeemScript(privateKey.publicKey);
-  } else {
-    script = this.output.script;
-  }
+  const script = this.output.script.isScriptHashOut()
+    ? this.getRedeemScript(privateKey.publicKey)
+    : this.output.script;
 
   if (script && BufferUtil.equals(hashData, script.getPublicKeyHash())) {
     return [new TransactionSignature({

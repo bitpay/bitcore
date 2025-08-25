@@ -67,10 +67,37 @@ MultiSigInput.prototype._serializeSignatures = function() {
   });
 };
 
+/**
+ * Get the hash data to sign for this input
+ * @param {Transaction} transaction - the transaction to be signed
+ * @param {PublicKey} publicKey - unused for this input type
+ * @param {number} index - the index of this input in the provided transaction
+ * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
+ * @param {Buffer} hashData - unused for this input type
+ * @returns {Buffer}
+ */
+MultiSigInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
+  sigtype = sigtype || Signature.SIGHASH_ALL;
+
+  const sighash = Sighash.sighash(transaction, sigtype, index, this.output.script);
+  // sighash() returns data little endian but it must be signed big endian, hence the reverse
+  return sighash.reverse();
+};
+
+/**
+ * Get signatures for this input
+ * @param {Transaction} transaction - the transaction to be signed
+ * @param {PrivateKey} privateKey - the private key with which to sign the transaction
+ * @param {number} index - the index of the input in the transaction input vector
+ * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
+ * @param {Buffer} hashData - unused for this input type
+ * @param {String} signingMethod DEPRECATED - unused. Keeping for arg placement consistency with other libs
+ * @return {Array<TransactionSignature>}
+ */
 MultiSigInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
   $.checkState(this.output instanceof Output);
   sigtype = sigtype || Signature.SIGHASH_ALL;
-  signingMethod = signingMethod || 'ecdsa';
 
   const results = [];
   for (const publicKey of this.publicKeys) {
@@ -80,7 +107,7 @@ MultiSigInput.prototype.getSignatures = function(transaction, privateKey, index,
         prevTxId: this.prevTxId,
         outputIndex: this.outputIndex,
         inputIndex: index,
-        signature: Sighash.sign(transaction, privateKey, sigtype, index, this.output.script, signingMethod),
+        signature: Sighash.sign(transaction, privateKey, sigtype, index, this.output.script),
         sigtype: sigtype
       }));
     }

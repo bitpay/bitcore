@@ -10,8 +10,16 @@ const { vectors } = require('./data/vectors.ecdsa');
 describe('ECDSA', function() {
   this.timeout(5000);
 
+  const onlys = vectors.reduce((arr, v, i) => {
+    if (v.only || v.signing.some(s => s.only)) {
+      arr.push(i);
+    }
+    return arr
+  }, []);
+
   for (const vector of vectors) {
     if (vector.skip) { continue; }
+    if (onlys.length && !onlys.includes(vectors.indexOf(vector))) { continue; }
 
     describe(`${vector.m}-of-${vector.n}`, function() {
       
@@ -298,13 +306,46 @@ describe('ECDSA', function() {
           }
         }
 
+        const onlys = vector.signing.reduce((arr, v, i) => {
+          if (v.only) arr.push(v.description);
+          return arr;
+        }, []);
+
         for (const signingVector of vector.signing) {
           if (signingVector.skip) { continue; }
+          if (onlys.length && !onlys.includes(signingVector.description)) { continue; }
 
           describe(signingVector.description, function() {
             describe('instantiation', function() {
               for (let i = 0; i < n; i++) {
                 const party = `party${i}`;
+
+                it('should validate bitcoin tx', function() {
+                  // this test is mostly for documenting how the test data was built
+                  if (signingVector.chain !== 'BTC') return;
+
+                  const parsedTx = new bitcoreLib.Transaction(signingVector.rawTx);
+                  // the change address could be any address. I usually use another address in vector.addresses[]
+                  const change = parsedTx.outputs[1].script.toAddress('regtest').toString();
+                  // the recipient address and amounts can also be anything. These are random values I chose.
+                  const recipient = parsedTx.outputs[0].script.toAddress('regtest').toString();
+                  const recipientAmt = parsedTx.outputs[0].satoshis;
+
+                  const hdpk = new bitcoreLib.HDPublicKey(vector.xPubKey);
+                  const pubkey = hdpk.deriveChild(signingVector.derivationPath).publicKey;
+                  // The utxo could be any randomly generated txid, vout, and satoshis, but I'd recommend
+                  //  sending some BTC to pubkey.toAddress('regtest', addressType) and then using that output
+                  //  for the utxo. That way, you don't need to worry about creating a valid redeem script.
+                  const utxo = new bitcoreLib.Transaction.UnspentOutput(signingVector.utxo);
+                  const tx = new bitcoreLib.Transaction()
+                    .from(utxo)
+                    .change(change)
+                    .to(recipient, recipientAmt);
+
+                  assert.equal(tx.toString(), signingVector.rawTx);
+                  const messageHash = tx.inputs[0].getSighash(tx, pubkey, 0).toString('hex');
+                  assert.equal(messageHash, signingVector.messageHash);
+                });
 
                 it(`should instantiate Sign for ${party}`, async function() {
                   signers[party] = new Sign({
@@ -541,11 +582,20 @@ describe('ECDSA', function() {
                   assert.notEqual(sig.s, null);
                   assert.notEqual(sig.v, null);
                   assert.notEqual(sig.pubKey, null);
-                  const signed = CWC.Transactions.applySignature({ chain: signingVector.chain, tx: signingVector.rawTx, signature: sig });
+                  let signed;
                   if (signingVector.chain === 'ETH') {
+                    signed = CWC.Transactions.applySignature({ chain: signingVector.chain, tx: signingVector.rawTx, signature: sig });
                     const parsedTx = CWC.ethers.Transaction.from(signed);
                     const address = vector.addresses.find(a => a.chain === signingVector.chain && (!signingVector.network || a.network == signingVector.network) && a.path === signingVector.derivationPath);
                     assert.strictEqual(parsedTx.from, address.address);
+                  } else if (signingVector.chain === 'BTC') {
+                    const tx = new CWC.BitcoreLib.Transaction(signingVector.rawTx);
+                    const utxo = new CWC.BitcoreLib.Transaction.UnspentOutput(signingVector.utxo);
+                    tx.associateInputs([utxo]);
+                    assert.strictEqual(tx.inputs[signingVector.inputIndex].isFullySigned(), false);
+                    signed = CWC.Transactions.applySignature({ chain: signingVector.chain, tx, signature: sig, index: signingVector.inputIndex });
+                    assert.strictEqual(signed.inputs[signingVector.inputIndex].isFullySigned(), true);
+                    assert.ok(signed.serialize());
                   }
                   assert.notEqual(signed, null);
                 });

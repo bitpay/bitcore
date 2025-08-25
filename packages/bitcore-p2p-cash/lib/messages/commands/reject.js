@@ -56,10 +56,10 @@ RejectMessage.prototype.setPayload = function(payload) {
 RejectMessage.prototype.getPayload = function() {
   var bw = new BufferWriter();
   bw.writeVarintNum(this.message.length);
-  bw.write(new Buffer(this.message, 'utf-8'));
+  bw.write(Buffer.from(this.message, 'utf-8'));
   bw.writeUInt8(this.ccode);
   bw.writeVarintNum(this.reason.length);
-  bw.write(new Buffer(this.reason, 'utf-8'));
+  bw.write(Buffer.from(this.reason, 'utf-8'));
   bw.write(this.data);
   return bw.toBuffer();
 };
