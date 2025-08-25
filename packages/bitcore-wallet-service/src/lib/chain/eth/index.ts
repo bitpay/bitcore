@@ -649,7 +649,15 @@ export class EthChain implements IChain {
     return cb(null, 0);
   }
 
-  refreshTxData(_server: WalletService, txp, _opts, cb) {
-    return cb(null, txp);
+  refreshTxData(server: WalletService, txp, opts, cb) {
+    // set latest nonce
+    server._getTransactionCount(opts.wallet,  txp.from, (err, nonce) => {
+        if (err) return cb(err);
+        if (!Number(nonce)) {
+          return cb(new Error('Nonce is not a number'));
+        }
+        txp.nonce = nonce;
+        return cb(null, txp);
+      });
   }
 }
