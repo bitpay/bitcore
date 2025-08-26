@@ -689,7 +689,7 @@ export class Key {
         throw new Error(`Invalid Path. Path must be of form /44'/501'/*'/*'/ but found ${rootPath}`);
       }
 
-      // Solana standarizes maintaing a 0 for the change address
+      // Solana standardizes maintaing a 0 for the change address
       const hasChangeAddress = pathMatch[2] !== undefined;
       const finalPath = hasChangeAddress ? rootPath : `${rootPath}/0'`;
       const account = parseInt(pathMatch[1], 10);
