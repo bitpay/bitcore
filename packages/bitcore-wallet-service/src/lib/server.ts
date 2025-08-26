@@ -3170,11 +3170,11 @@ export class WalletService implements IWalletService {
           if (txp.signingMethod === 'schnorr' && !opts.supportBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
 
           // Validate nonces only if they are not reset on signing via a re-publish
-          if ([...Object.keys(Constants.EVM_CHAINS), 'XRP'].includes(wallet.chain.toUpperCase()) && !txp.isRepublishEnabled()) {
+          if ([...Object.keys(Constants.EVM_CHAINS), 'XRP'].includes(wallet.chain.toUpperCase())) {
             try {
               const txps = await this.getPendingTxsPromise({});
               for (let t of txps) {
-                if (t.id !== txp.id && t.nonce <= txp.nonce && t.status !== 'rejected') {
+                if (t.id !== txp.id && t.nonce <= txp.nonce && t.status !== 'rejected' && !t.isRepublishEnabled()) {
                   return cb(Errors.TX_NONCE_CONFLICT);
                 }
               }
