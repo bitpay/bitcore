@@ -206,7 +206,7 @@ export class Verifier {
     } else {
       creatorSigningPubKey = creatorKeys.requestPubKey;
     }
-    if (!creatorSigningPubKey){
+    if (!creatorSigningPubKey) {
       log.error('Missing creator signing key');
     }
 
@@ -232,7 +232,7 @@ export class Verifier {
     }
         
     if (!verified && txp.prePublishRaw && !Utils.verifyMessage(txp.prePublishRaw, txp.proposalSignature, creatorSigningPubKey)) {
-      log.error('Invalid proposal signature');'Invalid refreshed proposal signature');
+      log.error('Invalid refreshed proposal signature');
       return false 
     }
 

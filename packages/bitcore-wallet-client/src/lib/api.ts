@@ -580,6 +580,7 @@ export class API extends EventEmitter {
 
       if (this.credentials.walletPrivKey) {
         if (!Verifier.checkCopayers(this.credentials, wallet.copayers)) {
+          log.error('Copayer verification falied on openWallet');
           return cb(new Errors.SERVER_COMPROMISED());
         }
       } else {
@@ -1457,6 +1458,7 @@ export class API extends EventEmitter {
           this.credentials.sharedEncryptingKey
         )
       ) {
+        log.error('Transaction proposal verification falied on createTxProposal');
         return cb(new Errors.SERVER_COMPROMISED());
       }
 
@@ -1520,6 +1522,7 @@ export class API extends EventEmitter {
       if (err) return cb(err);
 
       if (!Verifier.checkAddress(this.credentials, address)) {
+        log.error('Address verification falied on createAddress');
         return cb(new Errors.SERVER_COMPROMISED());
       }
 
@@ -1555,7 +1558,10 @@ export class API extends EventEmitter {
 
       if (!opts.doNotVerify) {
         const fake = (addresses || []).some(address => !Verifier.checkAddress(this.credentials, address));
-        if (fake) return cb(new Errors.SERVER_COMPROMISED());
+        if (fake) {
+          log.error('Address verification falied on getMainAddresses');
+          return cb(new Errors.SERVER_COMPROMISED());
+        }
       }
       return cb(null, addresses);
     });
@@ -1636,7 +1642,10 @@ export class API extends EventEmitter {
             });
         },
         isLegit => {
-          if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
+          if (!isLegit) {
+            log.error('Transaction proposal verification falied on getTxProposals');
+            return cb(new Errors.SERVER_COMPROMISED());
+          }
 
           var result;
           if (opts.forAirGapped) {
@@ -1724,7 +1733,10 @@ export class API extends EventEmitter {
     this.getPayProV2(txp)
       .then(paypro => {
         const isLegit = Verifier.checkTxProposal(this.credentials, txp, { paypro });
-        if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
+        if (!isLegit) {
+          log.error('Transaction proposal verification falied on pushSignatures');
+          return cb(new Errors.SERVER_COMPROMISED());
+        }
 
         baseUrl = baseUrl || '/v2/txproposals/';
         const url = baseUrl + txp.id + '/signatures/';
@@ -2924,6 +2936,7 @@ export class API extends EventEmitter {
 
           if (credentials.walletPrivKey) {
             if (!Verifier.checkCopayers(credentials, wallet.copayers)) {
+              log.error('Copayer verification falied on serverAssistedImport');
               return cb2(null, new Errors.SERVER_COMPROMISED());
             }
           } else {
