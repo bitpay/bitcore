@@ -2872,6 +2872,7 @@ export class WalletService implements IWalletService {
           if (!txp.isTemporary() && !txp.isRepublishEnabled()) return cb(null, txp);
 
           const copayer = wallet.getCopayer(this.copayerId);
+          const initialStatus = txp.status;
 
           let raw;
           try {
@@ -2910,7 +2911,8 @@ export class WalletService implements IWalletService {
               }
               this.storage.storeTx(this.walletId, txp, err => {
                 if (err) return cb(err);
-                const action = txp.isRepublishEnabled() && txp.prePublishRaw ? 'UpdatedTxProposal' : 'NewTxProposal';
+                
+                const action = initialStatus === 'pending' ? 'UpdatedTxProposal' : 'NewTxProposal';
                 this._notifyTxProposalAction(action, txp, () => {
                   if (txp.coin == 'bch' && txp.changeAddress) {
                     const format = opts.noCashAddr ? 'copay' : 'cashaddr';
