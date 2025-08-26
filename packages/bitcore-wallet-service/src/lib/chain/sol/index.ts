@@ -67,7 +67,8 @@ export class SolChain implements IChain {
           }, { fees: 0, amounts: 0 });
 
           const lockedSum = (amounts + fees) || 0;  // previously set to 0 if opts.multisigContractAddress
-          const convertedBalance = this.convertBitcoreBalance(balance, lockedSum, reserve);
+          const reserveAmount = opts.tokenAddress ? 0 : reserve;
+          const convertedBalance = this.convertBitcoreBalance(balance, lockedSum, reserveAmount);
           server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
             if (err) return cb(err);
             if (addresses.length > 0) {
@@ -219,12 +220,12 @@ export class SolChain implements IChain {
     return null;
   }
 
-  selectTxInputs(server, txp, wallet, _opts, cb) {
+  selectTxInputs(server, txp, wallet, opts, cb) {
     server.getBalance({ wallet }, (err, balance) => {
       if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
       // calculate how much space is needed to find rent amount
-      const minRentException = Defaults.MIN_SOL_BALANCE;
+      const minRentException = opts.tokenAddress ? 0 : Defaults.MIN_SOL_BALANCE;
       if (totalAmount - minRentException < txp.getTotalAmount()) {
         return cb(Errors.INSUFFICIENT_FUNDS);
       } else if (availableAmount < txp.getTotalAmount()) {

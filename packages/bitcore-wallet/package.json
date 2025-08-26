@@ -2,7 +2,7 @@
   "name": "bitcore-wallet",
   "description": "A CLI Mutisig HD Bitcoin Wallet, demo for Bitcore Wallet Service",
   "author": "BitPay Inc",
-  "version": "10.10.9",
+  "version": "10.10.14",
   "private": true,
   "keywords": [
     "bitcoin",
@@ -20,7 +20,7 @@
   "dependencies": {
     "async": "^2.5.0",
     "bitcore-lib": "^10.10.7",
-    "bitcore-wallet-client": "^10.10.9",
+    "bitcore-wallet-client": "^10.10.14",
     "commander": "^2.6.0",
     "lodash": "^3.3.1",
     "moment": "^2.9.0",
