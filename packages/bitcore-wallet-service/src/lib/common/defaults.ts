@@ -412,6 +412,8 @@ export const Defaults = {
   // SOL has a non-refundable rent fee / balance
   MIN_SOL_BALANCE: 1002240,
 
+  SOL_BASE_FEE: 5000,
+
   // Time to get the latest push notification subscriptions. In ms.
   PUSH_NOTIFICATION_SUBS_TIME: 10 * 60 * 1000, // 10 min.
 
