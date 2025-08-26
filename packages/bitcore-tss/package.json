@@ -1,6 +1,6 @@
 {
   "name": "bitcore-tss",
-  "version": "10.10.13",
+  "version": "10.10.14",
   "description": "Bitcore Library for Threshold Signature Schemes",
   "main": "index.js",
   "type": "commonjs",
@@ -31,7 +31,7 @@
     "@wdio/spec-reporter": "^9.11.0",
     "assert": "^2.1.0",
     "browserify": "^17.0.1",
-    "crypto-wallet-core": "^10.10.13",
+    "crypto-wallet-core": "^10.10.14",
     "mocha": "11.1.0",
     "webdriverio": "^9.12.0",
     "webpack": "^5.98.0",
