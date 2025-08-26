@@ -1,5 +1,4 @@
 import { ObjectID } from 'bson';
-import * as lodash from 'lodash';
 import { Collection } from 'mongodb';
 import { Readable, Transform } from 'stream';
 import { LoggifyClass } from '../decorators/Loggify';
@@ -11,7 +10,7 @@ import { SpentHeightIndicators } from '../types/Coin';
 import { BitcoinTransaction } from '../types/namespaces/Bitcoin';
 import { TransactionJSON } from '../types/Transaction';
 import { TransformOptions } from '../types/TransformOptions';
-import { partition } from '../utils';
+import { partition, uniqBy } from '../utils';
 import { MongoBound } from './base';
 import { BaseTransaction, ITransaction } from './baseTransaction';
 import { CoinStorage, ICoin } from './coin';
@@ -349,7 +348,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
         const mintedWallets = tx.wallets || [];
         const spentWallets = spent.wallets || [];
         const txWallets = mintedWallets.concat(spentWallets);
-        const wallets = lodash.uniqBy(txWallets, wallet => wallet.toHexString());
+        const wallets = uniqBy(txWallets, wallet => wallet.toHexString());
         let fee = 0;
         if (groupedSpends[txid]) {
           // TODO: Fee is negative for mempool txs
