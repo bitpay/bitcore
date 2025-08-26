@@ -708,16 +708,23 @@ export class Key {
       let tx = t.uncheckedSerialize();
       tx = typeof tx === 'string' ? [tx] : tx;
       const txArray = Array.isArray(tx) ? tx : [tx];
-      const isChange = false;
-      const addressIndex = 0;
-      const xPrivKey = this.get(password, Constants.ALGOS.EDDSA).xPrivKey
-      const key = Deriver.derivePrivateKey(
-        chain.toUpperCase(),
-        txp.network,
-        xPrivKey, // derived
-        addressIndex,
-        isChange
-      );
+
+      // Check if path includes change address and extract account number
+      const pathMatch = rootPath.match(/^m\/44'\/501'\/(\d+)'(?:\/(\d+)')?/);
+      if (!pathMatch) {
+        throw new Error(`Invalid Path. Path must be of form /44'/501'/*'/*'/ but found ${rootPath}`);
+      }
+
+      // Solana standardizes maintaing a 0 for the change address
+      const hasChangeAddress = pathMatch[2] !== undefined;
+      const finalPath = hasChangeAddress ? rootPath : `${rootPath}/0'`;
+      const account = parseInt(pathMatch[1], 10);
+      const expectedPath = this.getBaseAddressDerivationPath({ chain: txp.chain, account, n: 1 });
+      if (expectedPath !== finalPath) {
+        throw new Error(`Unexpected path. Expected ${expectedPath} but found ${finalPath} (rootPath: ${rootPath})`)
+      }
+
+      const key = this.#getChildKeyEDDSA(password, finalPath);
       const signatures = await Promise.all(
         txArray.map(rawTx => Transactions.getSignature({
           chain: chain.toUpperCase(),
