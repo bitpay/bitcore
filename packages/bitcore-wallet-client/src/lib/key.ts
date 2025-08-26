@@ -695,7 +695,7 @@ export class Key {
       const account = parseInt(pathMatch[1], 10);
       const expectedPath = this.getBaseAddressDerivationPath({ chain: txp.chain, account, n: 1 });
       if (expectedPath !== finalPath) {
-        throw new Error(`Unexcpected path. Expected ${expectedPath} but found ${finalPath} (rootPath: ${rootPath})`)
+        throw new Error(`Unexpected path. Expected ${expectedPath} but found ${finalPath} (rootPath: ${rootPath})`)
       }
 
       const key = this.#getChildKeyEDDSA(password, finalPath);

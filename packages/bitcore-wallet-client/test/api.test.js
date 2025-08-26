@@ -1440,7 +1440,7 @@ describe('client API', function() {
         });
       });
 
-      it.only('should not sign SOL proposal with invalid path', () => {
+      it('should not sign SOL proposal with invalid path', () => {
         const phrase = 'crush desk brain index action subject tackle idea trim unveil lawn live';
         let k  = new Key({ seedData: phrase, seedType: 'mnemonic', algo: 'EDDSA'});
         const toAddress = 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY';
