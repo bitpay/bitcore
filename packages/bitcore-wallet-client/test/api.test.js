@@ -1378,7 +1378,38 @@ describe('client API', function() {
         );
       });
 
-      it('should sign SOL proposal correctly', () => {
+      it('should sign SOL proposal correctly with full path', () => {
+        const phrase = 'crush desk brain index action subject tackle idea trim unveil lawn live';
+        let k  = new Key({ seedData: phrase, seedType: 'mnemonic', algo: 'EDDSA'});
+        const toAddress = 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY';
+        const from = '7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hnD';
+        const txp = {
+          version: 3,
+          from: from,
+          coin: 'sol',
+          chain: 'sol',
+          outputs: [
+            {
+              toAddress: toAddress,
+              amount: 3896000000000000,
+            }
+          ],
+          fee: 5000,
+          blockHash: 'GtV1Hb3FvP3HURHAsj8mGwEqCumvP3pv3i6CVCzYNj3d',
+          blockHeight: 18446744,
+          amount: 389600000
+        };
+        const path = "m/44'/501'/0'/0'";
+        k.sign(path, txp, undefined, (err, signatures) => {
+          should.not.exist(err);
+          signatures.length.should.be.equal(1);
+          signatures[0].should.equal(
+            '2Y17QoXHgW8zHHY9KSCYyYXaw5ZyNqYmSRndD3HReFyxQVNc8xtA1syZ8exEwAKH9NBNhz4FYZsraYX21oqM5T5Q'
+          );
+        });
+      });
+
+      it('should sign SOL proposal correctly with root path', () => {
         const phrase = 'crush desk brain index action subject tackle idea trim unveil lawn live';
         let k  = new Key({ seedData: phrase, seedType: 'mnemonic', algo: 'EDDSA'});
         const toAddress = 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY';
@@ -1407,6 +1438,36 @@ describe('client API', function() {
             '2Y17QoXHgW8zHHY9KSCYyYXaw5ZyNqYmSRndD3HReFyxQVNc8xtA1syZ8exEwAKH9NBNhz4FYZsraYX21oqM5T5Q'
           );
         });
+      });
+
+      it.only('should not sign SOL proposal with invalid path', () => {
+        const phrase = 'crush desk brain index action subject tackle idea trim unveil lawn live';
+        let k  = new Key({ seedData: phrase, seedType: 'mnemonic', algo: 'EDDSA'});
+        const toAddress = 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY';
+        const from = '7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hnD';
+        const txp = {
+          version: 3,
+          from: from,
+          coin: 'sol',
+          chain: 'sol',
+          outputs: [
+            {
+              toAddress: toAddress,
+              amount: 3896000000000000,
+            }
+          ],
+          fee: 5000,
+          blockHash: 'GtV1Hb3FvP3HURHAsj8mGwEqCumvP3pv3i6CVCzYNj3d',
+          blockHeight: 18446744,
+          amount: 389600000
+        };
+        const path = "m/48'/502'/0'";
+        try {
+          k.sign(path, txp, undefined, (err, signatures) => {should.not.exist(signatures);});
+        } catch (err) {
+          should.exist(err);
+          err.message.should.be.equal(`Invalid Path. Path must be of form /44'/501'/*'/*'/ but found m/48'/502'/0'`);
+        }
       });
     });
   });
