@@ -3169,7 +3169,6 @@ export class WalletService implements IWalletService {
 
           if (txp.signingMethod === 'schnorr' && !opts.supportBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
 
-          // Validate nonces only if they are not reset on signing via a re-publish
           if ([...Object.keys(Constants.EVM_CHAINS), 'XRP'].includes(wallet.chain.toUpperCase())) {
             try {
               const txps = await this.getPendingTxsPromise({});
