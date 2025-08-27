@@ -27,8 +27,8 @@ if (!['BTC', 'BCH', 'DOGE', 'LTC'].includes(chain) || !['mainnet', 'testnet', 'r
   usage('Invalid chain and/or network param(s).');
 }
 
-const remove = args.includes("--remove")
-const verbose = args.includes("--verbose")
+const remove = args.includes('--remove');
+const verbose = args.includes('--verbose');
 
 console.log('Connecting to storage...');
 Storage.start()
@@ -42,7 +42,7 @@ Storage.start()
     let block = await BitcoinBlockStorage.collection.findOne({ chain: chain, network: network, height: 0 });
 
     while (true) {
-      if (!block.feeData?.feeTotal) {
+      if (block.feeData?.feeTotal === undefined) {
         if (verbose)
           console.log(`Adding fee data to block ${block.height}`);
         const feeData = await BitcoinBlockStorage.getBlockFee({ chain, network, blockId: block.hash });
