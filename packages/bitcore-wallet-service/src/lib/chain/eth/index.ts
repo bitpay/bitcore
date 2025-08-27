@@ -653,9 +653,11 @@ export class EthChain implements IChain {
     // set latest nonce
     server._getTransactionCount(opts.wallet,  txp.from, (err, nonce) => {
         console.log('nonce: ', nonce);
+        console.log('err ', err)
         if (err) return cb(err);
         if (!Number(nonce)) {
-          return cb(new Error('Nonce is not a number'));
+          console.log('!Number(nonce)', !Number(nonce))
+          return cb(new ClientError('Nonce is not a number', `Nonce is not a number. Found ${nonce}`));
         }
         txp.nonce = nonce;
         return cb(null, txp);
