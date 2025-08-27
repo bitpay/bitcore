@@ -352,6 +352,7 @@ const blockchainExplorerMock = {
         });
     },
     getTransactionCount: (addr, cb) => {
+        console.log(' using mock getTransactionCount')
         return cb(null, 0);
     },
     reset: () => {
