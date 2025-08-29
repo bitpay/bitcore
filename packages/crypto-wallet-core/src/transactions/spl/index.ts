@@ -1,4 +1,5 @@
 import * as SolToken from '@solana-program/token';
+import { pipe } from '@solana/functional';
 import * as SolKit from '@solana/kit'
 import { SOLTxProvider } from '../sol';
 
@@ -10,6 +11,11 @@ export class SPLTxProvider extends SOLTxProvider {
     if (params.category === 'recoverNestedAssociatedToken') {
       return SPLTxProvider.createRecoverNestedAssociatedTokenTransaction(params as unknown as CreateRecoverNestedAssociatedTokenParams);
     }
+    // @ts-expect-error
+    if (params.category === 'closeTokenAccount') {
+      return SPLTxProvider.createCloseTokenAccountTransaction(params as unknown as CreateCloseTokenAccountParams);
+    }
+
     // @ts-expect-error
     if (params.category === 'closeTokenAccount') {
       return SPLTxProvider.createCloseTokenAccountTransaction(params as unknown as CreateCloseTokenAccountParams);
@@ -129,7 +135,7 @@ export class SPLTxProvider extends SOLTxProvider {
     }
 
     // Create transaction
-    const transactionMessage = SolKit.pipe(
+    const transactionMessage = pipe(
       SolKit.createTransactionMessage({ version: 'legacy' }),
       (tx) => SolKit.setTransactionMessageFeePayer(fromKeyPair.address, tx),
       (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash(recentBlockhash, tx),
@@ -190,3 +196,4 @@ interface CreateCloseTokenAccountParams {
 }
 
 type InstructionType = 'createAssociatedToken' | 'createAssociatedTokenIdempotent' | 'recoverNestedAssociatedToken';
+
