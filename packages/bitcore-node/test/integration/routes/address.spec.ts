@@ -1,7 +1,6 @@
 import { describe } from 'mocha';
 import app from '../../../src/routes';
 import supertest from 'supertest';
-import sinon from 'sinon';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 import { resetDatabase } from '../../helpers';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
@@ -12,274 +11,189 @@ const request = supertest(app);
 
 const address1Coins: ICoin[] = [
   {
-    chain: 'BTC',
-    network: 'regtest',
-    mintIndex: 0,
-    mintTxid: '784ee052dac242eae9d26d49388c9e469dc0de8df69e9f3353623538ab5567ec',
-    address: 'bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8',
+    chain: "BTC",
+    network: "regtest",
     coinbase: true,
-    mintHeight: 1,
-    script: Buffer.from('0014ecc5b1b3188c499d7968a2fc84581c18917cef7d0', 'hex'),
+    mintIndex: 0,
+    spentTxid: "",
+    mintTxid: "0ef2258370c1a2f7ab66615c0cc13bce45fd6a787e5e0bd3ba382ef5a1abf813",
+    mintHeight: 111,
     spentHeight: -2,
-    value: 5000000000,
-    wallets: [],
-    spentTxid: '8313f0b9645c64834e017029e7d3aecd27a3d4c68e4c47d3b5b46f342d1dcf52'
+    address: "bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8",
+    script: Buffer.from("0014ecc5b1bc62312765e5a28bf21160706245f3bdf4", "hex"),
+    value: 5000112800,
+    confirmations: -1,
+    wallets: []
   },
   {
-    chain: 'BTC',
-    mintTxid: '0a8ff33d687fb95adf423ed03f2c51ca09b5e33077049c6b6ded7d78dc2f8d4f',
-    network: 'regtest',
-    mintIndex: 0,
-    address: 'bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8',
+    chain: "BTC",
+    network: "regtest",
     coinbase: true,
-    mintHeight: 2,
-    script: Buffer.from('0014ecc5b1b3188c499d7968a2fc84581c18917cef7d0', 'hex'),
-    spentHeight: 111,
-    value: 5000000000,
-    wallets: [],
-    sequenceNumber: 4294967293,
-    spentTxid: '8313f0b9645c64834e017029e7d3aecd27a3d4c68e4c47d3b5b46f342d1dcf52'
-  },
-  {
-    chain: 'BTC',
-    mintTxid: '9a7f8ad749c63bb30a88582ed3a5b5dbc311afb799ec6170d0e58814236f836f',
-    network: 'regtest',
     mintIndex: 0,
-    address: 'bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8',
-    coinbase: true,
-    mintHeight: 3,
-    script: Buffer.from('0014ecc5b1b3188c499d7968a2fc84581c18917cef7d0', 'hex'),
-    spentHeight: 111,
-    value: 5000000000,
-    wallets: [],
-    sequenceNumber: 4294967293,
-    spentTxid: '2595e5efa5455c96ff376412172ab61c20c27a7260377c5b95913f1767c2d8d2'
-  },
-  {
-    chain: 'BTC',
-    mintTxid: '4b709c7b93ec86a4f5489b5aca184b1b90efbcc71c592ae38c07579d9f37cdd0',
-    network: 'regtest',
-    mintIndex: 0,
-    address: 'bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8',
-    coinbase: true,
-    mintHeight: 4,
-    script: Buffer.from('0014ecc5b1b3188c499d7968a2fc84581c18917cef7d0', 'hex'),
-    spentHeight: 111,
-    value: 5000000000,
-    wallets: [],
-    sequenceNumber: 4294967293,
-    spentTxid: '969f2a9bf11f040248f2860ae4d1d3e876c1195bcc1b0bf9ff0a475fca915f7b'
-  },
-  {
-    chain: 'BTC',
-    mintTxid: 'd3667993af738c3db4033dc462ab95f9916da455c628bbf71488484e2b6803c3',
-    network: 'regtest',
-    mintIndex: 0,
-    address: 'bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8',
-    coinbase: true,
-    mintHeight: 5,
-    script: Buffer.from('0014ecc5b1b3188c499d7968a2fc84581c18917cef7d0', 'hex'),
-    spentHeight: 111,
-    value: 5000000000,
-    wallets: [],
-    sequenceNumber: 4294967293,
-    spentTxid: '517dc566fb3a82121840eecdcce4636fb776b6b64ccc4f29f74b870e6bcc44b0'
-  },
-  {
-    chain: 'BTC',
-    mintTxid: 'bfc01b8227291e6d9d7cddaea6ac3c5ec0ad4e8672757838701b6b618b4cb2be',
-    network: 'regtest',
-    mintIndex: 0,
-    address: 'bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8',
-    coinbase: true,
-    mintHeight: 6,
-    script: Buffer.from('0014ecc5b1b3188c499d7968a2fc84581c18917cef7d0', 'hex'),
-    spentHeight: 111,
-    value: 5000000000,
-    wallets: [],
-    sequenceNumber: 4294967293,
-    spentTxid: '9d12f47632fc55a7b8d4e533c2f6fcbec01e08bd17939267342c9f3a28b282dc'
-  },
-  {
-    mintIndex: 0,
-    mintTxid: 'd0cd3ac4c9f6cc5850a084a1a14a1face82e248fc8afa032b449ba945cdbf443',
-    network: 'regtest',
-    chain: 'BTC',
-    address: 'bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8',
-    coinbase: true,
-    mintHeight: 7,
-    script: Buffer.from('0014ecc5b1b3188c499d7968a2fc84581c18917cef7d0', 'hex'),
-    spentHeight: 111,
-    value: 5000000000,
-    wallets: [],
-    sequenceNumber: 4294967293,
-    spentTxid: '29567b4e313d9051164adb16346025b658db4959e9168cbf8f1b08a88b754897'
-  },
-  {
-    mintIndex: 0,
-    chain: 'BTC',
-    mintTxid: 'decb8d186c04747d71c6545fe512f133d2d77750fa5e95a76894d98d2783e4ff',
-    network: 'regtest',
-    address: 'bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8',
-    coinbase: true,
-    mintHeight: 8,
-    script: Buffer.from('0014ecc5b1b3188c499d7968a2fc84581c18917cef7d0', 'hex'),
-    spentHeight: 111,
-    value: 5000000000,
-    wallets: [],
-    sequenceNumber: 4294967293,
-    spentTxid: '064a49a48f05ef621c16d5e2688f1f10bb249f96dacc91d6de9907b4690196f9'
-  },
-  {
-    mintIndex: 0,
-    mintTxid: '4920cf18899bd570f718558fc6018a85362b07fc635c9687617c29d3f5fc7df5',
-    network: 'regtest',
-    chain: 'BTC',
-    address: 'bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8',
-    coinbase: true,
-    mintHeight: 9,
-    script: Buffer.from('0014ecc5b1b3188c499d7968a2fc84581c18917cef7d0', 'hex'),
+    spentTxid: "",
+    mintTxid: "68a32aaf3fdd37d5ad5b7ed85b482a49254e98fd908636a4fd886f2bd80fbde5",
+    mintHeight: 110,
     spentHeight: -2,
+    address: "bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8",
+    script: Buffer.from("0014ecc5b1bc62312765e5a28bf21160706245f3bdf4", "hex"),
     value: 5000000000,
-    wallets: [],
-    spentTxid: '8313f0b9645c64834e017029e7d3aecd27a3d4c68e4c47d3b5b46f342d1dcf52'
+    confirmations: -1,
+    wallets: []
   },
   {
-    chain: 'BTC',
-    mintTxid: 'a367669f6c4c0c9c49b27fdbe87102b6720be7d6ba56b8131dbeaa9f929bf915',
-    network: 'regtest',
-    mintIndex: 0,
-    address: 'bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8',
+    chain: "BTC",
+    network: "regtest",
     coinbase: true,
-    mintHeight: 10,
-    script: Buffer.from('0014ecc5b1b3188c499d7968a2fc84581c18917cef7d0', 'hex'),
-    spentHeight: 111,
-    value: 5000000000,
-    wallets: [],
-    sequenceNumber: 4294967293,
-    spentTxid: '0e62f0e3f97a410a8c362cdaf2d7ab5dda9ab10e628b2f7d18184d50269c4b5d'
-  },
-  {
     mintIndex: 0,
-    mintTxid: 'fc9a18bc9295a2d9eab4f6bdd20e56b1bcba1df0d9bc0f07050a95f0bd289447',
-    network: 'regtest',
-    chain: 'BTC',
-    address: 'bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8',
-    coinbase: true,
-    mintHeight: 11,
-    script: Buffer.from('0014ecc5b1b3188c499d7968a2fc84581c18917cef7d0', 'hex'),
+    spentTxid: "",
+    mintTxid: "b2dce546b533ab15798f074e17818a42d96ce2388ac4120854b15fbab2679e04",
+    mintHeight: 109,
     spentHeight: -2,
+    address: "bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8",
+    script: Buffer.from("0014ecc5b1bc62312765e5a28bf21160706245f3bdf4", "hex"),
     value: 5000000000,
-    wallets: [],
-    spentTxid: '8313f0b9645c64834e017029e7d3aecd27a3d4c68e4c47d3b5b46f342d1dcf52'
+    confirmations: -1,
+    wallets: []
   },
   {
-    chain: 'BTC',
-    mintTxid: 'b7cfeb897decdfca5f62aeea96e6010263021d2888ecd133d4933bffbdecf8a1',
-    network: 'regtest',
-    mintIndex: 0,
-    address: 'bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8',
+    chain: "BTC",
+    network: "regtest",
     coinbase: true,
-    mintHeight: 12,
-    script: Buffer.from('0014ecc5b1b3188c499d7968a2fc84581c18917cef7d0', 'hex'),
+    mintIndex: 0,
+    spentTxid: "",
+    mintTxid: "6460e3a0ced11db7046b92a49098471c2f665d28eaeae1b710ade423a68a525d",
+    mintHeight: 108,
     spentHeight: -2,
+    address: "bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8",
+    script: Buffer.from("0014ecc5b1bc62312765e5a28bf21160706245f3bdf4", "hex"),
     value: 5000000000,
-    wallets: [],
-    spentTxid: '8313f0b9645c64834e017029e7d3aecd27a3d4c68e4c47d3b5b46f342d1dcf52'
+    confirmations: -1,
+    wallets: []
   },
   {
-    chain: 'BTC',
-    mintTxid: 'ae18c08d044f5ef57de3e98620e03ffd703a3367fdb192585b942e8924f70187',
-    network: 'regtest',
-    mintIndex: 0,
-    address: 'bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8',
+    chain: "BTC",
+    network: "regtest",
     coinbase: true,
-    mintHeight: 13,
-    script: Buffer.from('0014ecc5b1b3188c499d7968a2fc84581c18917cef7d0', 'hex'),
+    mintIndex: 0,
+    spentTxid: "",
+    mintTxid: "7b0eab0d74163bae5bf0e053a64519aa85aca68a3ff9457db6dec69e3420ec22",
+    mintHeight: 107,
     spentHeight: -2,
+    address: "bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8",
+    script: Buffer.from("0014ecc5b1bc62312765e5a28bf21160706245f3bdf4", "hex"),
     value: 5000000000,
-    wallets: [],
-    spentTxid: '8313f0b9645c64834e017029e7d3aecd27a3d4c68e4c47d3b5b46f342d1dcf52'
+    confirmations: -1,
+    wallets: []
   },
   {
-    mintIndex: 0,
-    mintTxid: '026f815c34fbabc8e70638c01c61f9ad65f401c792dc3b9117de28c630ed2980',
-    network: 'regtest',
-    chain: 'BTC',
-    address: 'bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8',
+    chain: "BTC",
+    network: "regtest",
     coinbase: true,
-    mintHeight: 14,
-    script: Buffer.from('0014ecc5b1b3188c499d7968a2fc84581c18917cef7d0', 'hex'),
+    mintIndex: 0,
+    spentTxid: "",
+    mintTxid: "aff0eb4844ff64043465971224be92f3e80e23e86e302f76316f31b287d612f6",
+    mintHeight: 106,
     spentHeight: -2,
+    address: "bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8",
+    script: Buffer.from("0014ecc5b1bc62312765e5a28bf21160706245f3bdf4", "hex"),
     value: 5000000000,
-    wallets: [],
-    spentTxid: '8313f0b9645c64834e017029e7d3aecd27a3d4c68e4c47d3b5b46f342d1dcf52'
+    confirmations: -1,
+    wallets: []
   },
   {
-    mintTxid: '251adafd19e9e95ed896d7a31f3da20bfaf990ac0df18052bd21d402a5928f44',
-    chain: 'BTC',
-    network: 'regtest',
-    mintIndex: 0,
-    address: 'bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8',
+    chain: "BTC",
+    network: "regtest",
     coinbase: true,
-    mintHeight: 15,
-    script: Buffer.from('0014ecc5b1b3188c499d7968a2fc84581c18917cef7d0', 'hex'),
+    mintIndex: 0,
+    spentTxid: "",
+    mintTxid: "91c1449248394e297d8ef93185f09d77494c626c0d845607fc6b59976891fa7d",
+    mintHeight: 105,
     spentHeight: -2,
+    address: "bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8",
+    script: Buffer.from("0014ecc5b1bc62312765e5a28bf21160706245f3bdf4", "hex"),
     value: 5000000000,
-    wallets: [],
-    spentTxid: '8313f0b9645c64834e017029e7d3aecd27a3d4c68e4c47d3b5b46f342d1dcf52'
+    confirmations: -1,
+    wallets: []
   },
   {
-    chain: 'BTC',
-    mintTxid: '1dd30b7d66f3850e15118fdd698958dabf8011c1704fb93c9bd84717cce83715',
-    network: 'regtest',
-    mintIndex: 0,
-    address: 'bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8',
+    chain: "BTC",
+    network: "regtest",
     coinbase: true,
-    mintHeight: 16,
-    script: Buffer.from('0014ecc5b1b3188c499d7968a2fc84581c18917cef7d0', 'hex'),
+    mintIndex: 0,
+    spentTxid: "",
+    mintTxid: "3f8df18d023c25db19969822f8b52a51932dfd73a94bea04655b90539d082cf8",
+    mintHeight: 104,
     spentHeight: -2,
+    address: "bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8",
+    script: Buffer.from("0014ecc5b1bc62312765e5a28bf21160706245f3bdf4", "hex"),
     value: 5000000000,
-    wallets: [],
-    spentTxid: '8313f0b9645c64834e017029e7d3aecd27a3d4c68e4c47d3b5b46f342d1dcf52'
+    confirmations: -1,
+    wallets: []
+  },
+  {
+    chain: "BTC",
+    network: "regtest",
+    coinbase: true,
+    mintIndex: 0,
+    spentTxid: "",
+    mintTxid: "fce3efb3a3ce16f98be6063a0f041dae231d6df6ae2a49895d0dc2a48f6c6835",
+    mintHeight: 103,
+    spentHeight: -2,
+    address: "bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8",
+    script: Buffer.from("0014ecc5b1bc62312765e5a28bf21160706245f3bdf4", "hex"),
+    value: 5000000000,
+    confirmations: -1,
+    wallets: []
+  },
+  {
+    chain: "BTC",
+    network: "regtest",
+    coinbase: true,
+    mintIndex: 0,
+    spentTxid: "",
+    mintTxid: "a1f319579d76a67e251f7f53c6f6fabf2e1c21eef7e1aaf6a6733153f1c17309",
+    mintHeight: 102,
+    spentHeight: -2,
+    address: "bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8",
+    script: Buffer.from("0014ecc5b1bc62312765e5a28bf21160706245f3bdf4", "hex"),
+    value: 5000000000,
+    confirmations: -1,
+    wallets: []
   }
-]
+];
 
+const address1Balance = { unconfirmed: 0, confirmed: 0, balance: 0 };
 
 describe('Address Routes', function () {
-  let sandbox;
-
-  before(async () => {
+  before(async function() {
+    this.timeout(15000);
     await intBeforeHelper();
     await resetDatabase();
     for (const coin of address1Coins) {
       await CoinStorage.collection.insertOne(coin);
+      address1Balance.balance += coin.value;
+      if (coin.mintHeight >= 0)
+        address1Balance.confirmed += coin.value;
+      else
+        address1Balance.unconfirmed += coin.value;
     }
   })
 
-  beforeEach(async () => {
-    sandbox = sinon.createSandbox();
-  });
-
   after(async () => intAfterHelper());
 
-  afterEach(async () => {
-    sandbox.restore();
-  });
 
   function expectCoinProps(coin) {
-    expect(coin).to.have.property('chain');
-    expect(coin).to.have.property('network');
-    expect(coin).to.have.property('mintIndex');
-    expect(coin).to.have.property('mintTxid');
-    expect(coin).to.have.property('address');
-    expect(coin).to.have.property('coinbase');
-    expect(coin).to.have.property('mintHeight');
+    expect(coin.chain).to.be.a('string');
+    expect(coin.network).to.be.a('string');
+    expect(coin.mintIndex).to.be.a('number');
+    expect(coin.mintTxid).to.be.a('string');
+    expect(coin.address).to.be.a('string');
+    expect(coin.coinbase).to.be.a('boolean');
+    expect(coin.mintHeight).to.be.a('number');
     expect(coin).to.have.property('script');
-    expect(coin).to.have.property('spentHeight');
-    expect(coin).to.have.property('value');
-    expect(coin).to.have.property('wallets');
-    expect(coin).to.have.property('spentTxid');
+    expect(coin.spentHeight).to.be.a('number');
+    expect(coin.value).to.be.a('number');
+    expect(coin.spentTxid).to.be.a('string');
   }
 
   it('should get address coins /address/:address', done => {
@@ -319,12 +233,12 @@ describe('Address Routes', function () {
   });
 
   it('should get address balance', done => {
-    request.get('/api/BTC/retest/address/bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8/balance')
+    request.get('/api/BTC/regtest/address/bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8/balance')
       .expect(200, (err, res) => {
         if (err) console.error(err);
-        expect(res.body).to.haveOwnProperty('unconfirmed');
-        expect(res.body).to.haveOwnProperty('confirmed');
-        expect(res.body).to.haveOwnProperty('balance');
+        expect(res.body.balance).to.be.approximately(address1Balance.balance, 1e-6);
+        expect(res.body.confirmed).to.be.approximately(address1Balance.confirmed, 1e-6);
+        expect(res.body.unconfirmed).to.be.approximately(address1Balance.unconfirmed, 1e-6);
         done();
       });
   });
