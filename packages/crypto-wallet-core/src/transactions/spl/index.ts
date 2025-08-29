@@ -16,11 +16,6 @@ export class SPLTxProvider extends SOLTxProvider {
       return SPLTxProvider.createCloseTokenAccountTransaction(params as unknown as CreateCloseTokenAccountParams);
     }
 
-    // @ts-expect-error
-    if (params.category === 'closeTokenAccount') {
-      return SPLTxProvider.createCloseTokenAccountTransaction(params as unknown as CreateCloseTokenAccountParams);
-    }
-
     const { recipients, from, fromAta, tokenAddress, decimals, instructions = [] } = params;
     // Start with custom instructions
     const allInstructions = [...instructions];
