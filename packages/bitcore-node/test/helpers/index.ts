@@ -83,5 +83,23 @@ export function expectObjectToHaveProps(obj: any, props: Record<string, string>)
     expect(obj[key]).to.be.a(props[key]);
   }
 };
+export function testCoin (coin) {
+  expect(coin, 'coin is undefined').to.exist;
+  expect(coin, 'coin is not an object').to.be.an('object');
+  expect(coin, 'coin test').to.have.property('chain').that.is.a('string', `coin.chain is not a string`);
+  expect(coin, 'coin test').to.have.property('network').that.is.a('string', 'coin.network is not a string');
+  expect(coin, 'coin test').to.have.property('mintIndex').that.is.a('number', 'coin.mintIndex is not a number');
+  expect(coin, 'coin test').to.have.property('mintTxid').that.is.a('string', 'coin.mintTxid is not a string');
+  expect(coin, 'coin test').to.have.property('address').that.is.a('string', 'coin.address is not a string');
+  expect(coin, 'coin test').to.have.property('coinbase').that.is.a('boolean', 'coin.coinbase is not a boolean');
+  expect(coin, 'coin test').to.have.property('mintHeight').that.is.a('number', 'coin.mintHeight is not a number');
+  expect(coin, 'coin test').to.have.property('script');
+  expect(coin, 'coin test').to.have.property('spentHeight').that.is.a('number', 'coin.spentHeight is not a number');
+  expect(coin, 'coin test').to.have.property('value').that.is.a('number', 'coin.value is not a number');
+  expect(coin, 'coin test').to.have.property('spentTxid').that.is.a('string', 'coin.spentTxid is not a string');
+  if ('confirmations' in coin) {
+    expect(coin.confirmations, 'coin.confirmations is not a number').to.be.a('number');
+  }
+}
 
 export const minutesAgo = (minutes: number): Date => new Date(Date.now() - 1000 * 60 * minutes);
