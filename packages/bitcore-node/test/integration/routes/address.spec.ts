@@ -2,7 +2,7 @@ import { describe } from 'mocha';
 import app from '../../../src/routes';
 import supertest from 'supertest';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
-import { resetDatabase } from '../../helpers';
+import { resetDatabase, testCoin } from '../../helpers';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
 import { expect } from 'chai';
 
@@ -32,7 +32,7 @@ const address1Coins: ICoin[] = [
     mintIndex: 0,
     spentTxid: "",
     mintTxid: "68a32aaf3fdd37d5ad5b7ed85b482a49254e98fd908636a4fd886f2bd80fbde5",
-    mintHeight: 110,
+    mintHeight: 107,
     spentHeight: -2,
     address: "bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8",
     script: Buffer.from("0014ecc5b1bc62312765e5a28bf21160706245f3bdf4", "hex"),
@@ -78,7 +78,7 @@ const address1Coins: ICoin[] = [
     spentTxid: "",
     mintTxid: "7b0eab0d74163bae5bf0e053a64519aa85aca68a3ff9457db6dec69e3420ec22",
     mintHeight: 107,
-    spentHeight: -2,
+    spentHeight: 118,
     address: "bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8",
     script: Buffer.from("0014ecc5b1bc62312765e5a28bf21160706245f3bdf4", "hex"),
     value: 5000000000,
@@ -123,7 +123,7 @@ const address1Coins: ICoin[] = [
     spentTxid: "",
     mintTxid: "3f8df18d023c25db19969822f8b52a51932dfd73a94bea04655b90539d082cf8",
     mintHeight: 104,
-    spentHeight: -2,
+    spentHeight: 120,
     address: "bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8",
     script: Buffer.from("0014ecc5b1bc62312765e5a28bf21160706245f3bdf4", "hex"),
     value: 5000000000,
@@ -169,8 +169,10 @@ describe('Address Routes', function () {
     this.timeout(15000);
     await intBeforeHelper();
     await resetDatabase();
+    await CoinStorage.collection.insertMany(address1Coins);
     for (const coin of address1Coins) {
-      await CoinStorage.collection.insertOne(coin);
+      if (coin.spentHeight > 0)
+        continue;
       address1Balance.balance += coin.value;
       if (coin.mintHeight >= 0)
         address1Balance.confirmed += coin.value;
@@ -181,52 +183,114 @@ describe('Address Routes', function () {
 
   after(async () => intAfterHelper());
 
-
-  function expectCoinProps(coin) {
-    expect(coin.chain).to.be.a('string');
-    expect(coin.network).to.be.a('string');
-    expect(coin.mintIndex).to.be.a('number');
-    expect(coin.mintTxid).to.be.a('string');
-    expect(coin.address).to.be.a('string');
-    expect(coin.coinbase).to.be.a('boolean');
-    expect(coin.mintHeight).to.be.a('number');
-    expect(coin).to.have.property('script');
-    expect(coin.spentHeight).to.be.a('number');
-    expect(coin.value).to.be.a('number');
-    expect(coin.spentTxid).to.be.a('string');
-  }
-
-  it('should get address coins /address/:address', done => {
+  it('should get address coins /api/BTC/regtest/address/:address', done => {
     request.get('/api/BTC/regtest/address/bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8')
       .expect(200, (err, res) => {
         if (err) console.error(err);
         const coins = res.body;
         for (const coin of coins) {
-          expectCoinProps(coin);
+          testCoin(coin);
         }
         done();
       });
   });
 
-  it('should get address coins /address/:address/coins', done => {
+  it('should get address coins /api/BTC/regtest/address/:address and limit', done => {
+    request.get('/api/BTC/regtest/address/bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8?limit=5')
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        const coins = res.body;
+        expect(coins.length).to.equal(5);
+        for (const coin of coins) {
+          testCoin(coin);
+        }
+        done();
+      });
+  });
+
+  it('should get address coins /api/BTC/regtest/address/:address, and filter for unspent', done => {
+    request.get('/api/BTC/regtest/address/bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8?limit=500&unspent=true')
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        const coins = res.body;
+        for (const coin of coins) {
+          expect(coin.spentHeight).to.be.lessThan(0);
+          testCoin(coin);
+        }
+        done();
+      });
+  });
+
+  it('should get address coins /api/BTC/regtest/address/:address/coins', done => {
     request.get('/api/BTC/regtest/address/bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8/coins')
       .expect(200, (err, res) => {
         if (err) console.error(err);
         const coins = res.body;
         for (const coin of coins) {
-          expectCoinProps(coin);
+          testCoin(coin);
         }
         done();
       });
   });
 
-  it('should get address coins /address/:address/txs', done => {
+  it('should get address coins /api/BTC/regtest/address/:address/coins and limit', done => {
+    request.get('/api/BTC/regtest/address/bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8/coins?limit=5')
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        const coins = res.body;
+        expect(coins.length).to.equal(5);
+        for (const coin of coins) {
+          testCoin(coin);
+        }
+        done();
+      });
+  });
+
+  it('should get address coins /api/BTC/regtest/address/:address/coins and filter for unspent', done => {
+    request.get('/api/BTC/regtest/address/bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8/coins?limit=5')
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        const coins = res.body;
+        expect(coins.length).to.equal(5);
+        for (const coin of coins) {
+          testCoin(coin);
+        }
+        done();
+      });
+  });
+
+  it('should get address coins /api/BTC/regtest/address/:address/txs', done => {
     request.get('/api/BTC/regtest/address/bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8/txs')
       .expect(200, (err, res) => {
         if (err) console.error(err);
         const coins = res.body;
         for (const coin of coins) {
-          expectCoinProps(coin);
+          testCoin(coin);
+        }
+        done();
+      });
+  });
+
+  it('should get address coins /api/BTC/regtest/address/:address/txs and limit', done => {
+    request.get('/api/BTC/regtest/address/bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8/txs?limit=5')
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        const coins = res.body;
+        expect(coins.length).to.equal(5);
+        for (const coin of coins) {
+          testCoin(coin);
+        }
+        done();
+      });
+  });
+
+  it('should get address coins /api/BTC/regtest/address/:address/txs and filter for unspent', done => {
+    request.get('/api/BTC/regtest/address/bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8/txs?limit=500&unspent=true')
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        const coins = res.body;
+        for (const coin of coins) {
+          testCoin(coin);
         }
         done();
       });
@@ -236,9 +300,9 @@ describe('Address Routes', function () {
     request.get('/api/BTC/regtest/address/bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8/balance')
       .expect(200, (err, res) => {
         if (err) console.error(err);
-        expect(res.body.balance).to.be.approximately(address1Balance.balance, 1e-6);
-        expect(res.body.confirmed).to.be.approximately(address1Balance.confirmed, 1e-6);
-        expect(res.body.unconfirmed).to.be.approximately(address1Balance.unconfirmed, 1e-6);
+        expect(res.body.balance).to.equal(address1Balance.balance);
+        expect(res.body.confirmed).to.equal(address1Balance.confirmed);
+        expect(res.body.unconfirmed).to.equal(address1Balance.unconfirmed);
         done();
       });
   });

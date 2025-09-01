@@ -3,7 +3,7 @@ import app from '../../../src/routes';
 
 const request = supertest(app);
 
-describe('Block Routes', function() {
+describe('Routes', function() {
   before(async function() {
     this.timeout(15000);
   });
