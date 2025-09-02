@@ -285,4 +285,9 @@ export class SOLTxProvider {
 
     return SolKit.getBase58Decoder().decode(signature);
   }
+
+  getSighash(params: { tx: string; }): string {
+    const { tx } = params;
+    return null; // TODO
+  }
 }

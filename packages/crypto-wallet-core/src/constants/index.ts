@@ -7,7 +7,8 @@ import {
   EVM_CHAINS,
   MULTISIG_CHAINS,
   SVM_CHAINS,
-  UTXO_CHAINS
+  UTXO_CHAINS,
+  RIPPLE_CHAINS,
 } from './chains';
 import { FEE_MINIMUMS } from './feeMinimums';
 import { TOKEN_OPTS as opts } from './tokens';
@@ -17,6 +18,7 @@ export const Constants = {
   UTXO_CHAINS,
   EVM_CHAINS,
   SVM_CHAINS,
+  RIPPLE_CHAINS,
   SCRIPT_TYPES,
   CHAINS,
   MULTISIG_CHAINS,

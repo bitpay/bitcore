@@ -113,6 +113,13 @@ export const Constants = {
     yellow: '\x1b[33m%s\x1b[0m',
     blue: '\x1b[34m%s\x1b[0m',
     orange: '\x1b[38;5;208m%s\x1b[0m',
+    gold: '\x1b[38;5;214m%s\x1b[0m',
+    tan: '\x1b[38;5;180m%s\x1b[0m',
+    beige: '\x1b[38;5;223m%s\x1b[0m',
+    purple: '\x1b[38;5;129m%s\x1b[0m',
+    lightgray: '\x1b[38;5;250m%s\x1b[0m',
+    darkgray: '\x1b[38;5;236m%s\x1b[0m',
+    pink: '\x1b[38;5;213m%s\x1b[0m',
     none: '\x1b[0m%s',
   },
   ADDRESS_TYPE: {
@@ -125,6 +132,11 @@ export const Constants = {
       multiSig: {
         P2WSH: 'witnessscripthash',
         P2SH: 'scripthash',
+      },
+      thresholdSig: {
+        P2WSH: 'witnessscripthash',
+        P2PKH: 'pubkeyhash',
+        // TSS doesn't support schnorr sigs, hence no P2TR
       }
     },
     BCH: {
@@ -133,6 +145,9 @@ export const Constants = {
       },
       multiSig: {
         P2SH: 'scripthash'
+      },
+      thresholdSig: {
+        P2PKH: 'pubkeyhash',
       }
     },
     LTC: {
@@ -143,7 +158,11 @@ export const Constants = {
       multiSig: {
         P2WSH: 'witnessscripthash',
         P2SH: 'scripthash',
-      }      
+      },
+      thresholdSig: {
+        P2WPKH: 'witnesspubkeyhash',
+        P2PKH: 'pubkeyhash',
+      }
     },
     DOGE: {
       singleSig: {
@@ -151,9 +170,12 @@ export const Constants = {
       },
       multiSig: {
         P2SH: 'scripthash'
+      },
+      thresholdSig: {
+        P2PKH: 'pubkeyhash',
       }
     },
-    default: 'scripthash'
+    default: 'pubkeyhash'
   }
 };
 
