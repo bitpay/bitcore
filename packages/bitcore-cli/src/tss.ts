@@ -1,6 +1,6 @@
 import * as prompt from '@clack/prompts';
 import { TssSign } from 'bitcore-wallet-client';
-import { type Types as CWCTypes, Transactions } from 'crypto-wallet-core';
+import { Transactions, type Types as CWCTypes } from 'crypto-wallet-core';
 import url from 'url';
 import {
   type TssKeyType,

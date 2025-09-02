@@ -6,9 +6,9 @@ import {
   EVM_CHAIN_NETWORK_TO_CHAIN_ID,
   EVM_CHAINS,
   MULTISIG_CHAINS,
+  RIPPLE_CHAINS,
   SVM_CHAINS,
   UTXO_CHAINS,
-  RIPPLE_CHAINS,
 } from './chains';
 import { FEE_MINIMUMS } from './feeMinimums';
 import { TOKEN_OPTS as opts } from './tokens';

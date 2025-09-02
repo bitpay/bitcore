@@ -1,4 +1,4 @@
-import { Transactions, Validation, BitcoreLib, Deriver } from 'crypto-wallet-core';
+import { BitcoreLib, Deriver, Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IWallet } from 'src/lib/model';
 import { IAddress } from 'src/lib/model/address';

@@ -1,11 +1,11 @@
 import * as prompt from '@clack/prompts';
 import fs from 'fs';
 import os from 'os';
+import { ITokenObj } from '../../types/wallet';
 import type { CommonArgs } from '../../types/cli';
 import { UserCancelled } from '../errors';
 import { getAction, getFileName } from '../prompts';
 import { Utils } from '../utils';
-import { ITokenObj } from 'types/wallet';
 
 export function command(args: CommonArgs) {
   const { wallet, program } = args;

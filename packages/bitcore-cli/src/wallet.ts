@@ -11,24 +11,22 @@ import {
   Utils as BWCUtils
 } from 'bitcore-wallet-client';
 import {
+  BitcoreLib,
   Message,
+  Transactions,
   type Types as CWCTypes,
   Utils as CWCUtils,
-  Web3,
-  BitcoreLib,
-  Transactions
+  Web3
 } from 'crypto-wallet-core';
 import fs from 'fs';
 import path from 'path';
 import url from 'url';
-import crypto from 'crypto';
 import type {
   ClientType,
   ITokenObj,
   IWallet,
   KeyType,
   TssKeyType,
-  TssSigType,
   WalletData
 } from '../types/wallet';
 import { Constants } from './constants';
