@@ -419,14 +419,12 @@ describe('Tx Routes', function() {
     request.get(`/api/BTC/regtest/tx/30ef4d50173b431c2649643a4c452f99c3feaf39246866ed403f459cc27c5913/authhead`)
       .expect(200, (err, res) => {
         if (err) console.error(err);
-        console.log(res.body);
         const { chain, network, authbase, identityOutputs } = res.body;
         expect(chain).to.equal('BTC');
         expect(network).to.equal('regtest');
         expect(authbase).to.exist.and.to.be.a('string');
         for (const coin of identityOutputs) {
           testCoin(coin);
-          console.log(coin);
           expect(coin.chain).to.equal('BTC');
           expect(coin.network).to.equal('regtest');
           expect(coin.spentHeight).to.be.at.most(-1);
@@ -449,7 +447,6 @@ describe('Tx Routes', function() {
         }
         for (const coin of outputs) {
           testCoin(coin);
-          console.log(coin);
           expect(coin.chain).to.equal('BTC');
           expect(coin.network).to.equal('regtest');
         }
