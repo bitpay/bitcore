@@ -88,8 +88,13 @@ Storage.start()
     let feeDataAddedCount = 0;
     await Promise.all(blockHeightsWithoutFees.map(async height => {
       const fee = await BitcoinBlockStorage.getBlockFee({ chain, network, blockId: height });
-      BitcoinBlockStorage.collection.updateOne({ chain, network, height }, { $set: { feeData: fee } });
-      if (feeDataAddedCount++ % printEvery === 0)
+      feeDataAddedCount++;
+      // Wait for the last block to be updated for proper Promise.all resolution
+      if (feeDataAddedCount < prevBlocksWithoutFeesCount)
+        BitcoinBlockStorage.collection.updateOne({ chain, network, height }, { $set: { feeData: fee } })
+      else
+        await BitcoinBlockStorage.collection.updateOne({ chain, network, height }, { $set: { feeData: fee } });
+      if (feeDataAddedCount % printEvery === 0)
         process.stdout.write(`${((feeDataAddedCount / prevBlocksWithoutFeesCount) * 100).toFixed(2)}%...`);
     }));
     console.log('100%')
