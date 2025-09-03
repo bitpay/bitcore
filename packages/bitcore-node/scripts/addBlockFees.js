@@ -73,30 +73,33 @@ Storage.start()
       return;
     }
     
-    const blockHeightsWithoutFees = (await BitcoinBlockStorage.collection
-      .find({ chain, network, feeData: { $exists: false } }, { projection: { height: 1, _id: 0 }})
-      .toArray())
-      .map(obj => obj.height);
     console.log(`Adding fee data to ${prevBlocksWithoutFeesCount} of ${totalBlocks} blocks on ${chain} ${network}`);
-    if (verbose) {
-      for (const height of blockHeightsWithoutFees) 
-        process.stdout.write(`${height} `)
-      console.log('');
-    }
-
+    
     const printEvery = Math.floor(prevBlocksWithoutFeesCount / printNumber);
     let feeDataAddedCount = 0;
-    await Promise.all(blockHeightsWithoutFees.map(async height => {
-      const fee = await BitcoinBlockStorage.getBlockFee({ chain, network, blockId: height });
-      feeDataAddedCount++;
-      // Wait for the last block to be updated for proper Promise.all resolution
-      if (feeDataAddedCount < prevBlocksWithoutFeesCount)
-        BitcoinBlockStorage.collection.updateOne({ chain, network, height }, { $set: { feeData: fee } })
-      else
-        await BitcoinBlockStorage.collection.updateOne({ chain, network, height }, { $set: { feeData: fee } });
-      if (feeDataAddedCount % printEvery === 0)
-        process.stdout.write(`${((feeDataAddedCount / prevBlocksWithoutFeesCount) * 100).toFixed(2)}%...`);
-    }));
+    await new Promise((resolve) => {
+      const stream = BitcoinBlockStorage.collection
+        .find({ chain, network, feeData: { $exists: false } }, { projection: { height: 1, _id: 0 }})
+        .addCursorFlag('noCursorTimeout', true)
+        .stream()
+  
+      stream.on('data', async function(data) {
+        const height = data.height;
+        const fee = await BitcoinBlockStorage.getBlockFee({ chain, network, blockId: height });
+        feeDataAddedCount++;
+        if (feeDataAddedCount < prevBlocksWithoutFeesCount) {
+          BitcoinBlockStorage.collection.updateOne({ chain, network, height }, { $set: { feeData: fee } })
+        // Resolve promise on last block
+        } else {
+          await BitcoinBlockStorage.collection.updateOne({ chain, network, height }, { $set: { feeData: fee } });
+          resolve();
+        }
+        if (feeDataAddedCount % printEvery === 0)
+          process.stdout.write(`${((feeDataAddedCount / prevBlocksWithoutFeesCount) * 100).toFixed(2)}%...`);
+      });
+      stream.on('error', console.error);
+    });
+
     console.log('100%')
     const seconds = (Date.now() - startTime) / 1000;
     console.log(`Finished in ${seconds} seconds | ${(prevBlocksWithoutFeesCount / seconds).toFixed(2)} blocks/sec`)
