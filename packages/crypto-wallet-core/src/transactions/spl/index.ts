@@ -185,8 +185,8 @@ interface CreateCloseTokenAccountParams {
   blockHeight: number;
   fromKeyPair: SolKit.KeyPairSigner;
   ataAddressToClose: string;
-  solRentReturnAddress: string
-  ataAddressToCloseOwnerSolAddress: string
+  solRentReturnAddress: string;
+  ataAddressToCloseOwnerSolAddress: string;
 }
 
 type InstructionType = 'createAssociatedToken' | 'createAssociatedTokenIdempotent' | 'recoverNestedAssociatedToken';
