@@ -24,7 +24,7 @@ if (args.includes('--help') || args.includes('-h')) {
 
 const chain = args[args.indexOf('--chain') + 1];
 const network = args[args.indexOf('--network') + 1];
-const printNumber = args[args.indexOf('--print-number') + 1] || 20;
+const printNumber = args.includes('--print-number') ? args[args.indexOf('--print-number') + 1] : 20;
 
 if (!['BTC', 'BCH', 'DOGE', 'LTC'].includes(chain) || !['mainnet', 'testnet', 'regtest'].includes(network)) {
   usage('Invalid chain and/or network param(s).');
@@ -47,7 +47,8 @@ Storage.start()
       }
       console.log(`Removing fee data from ${prevBlocksWithFeesCount} of ${totalBlocks} blocks on ${chain} ${network}`);
       await BitcoinBlockStorage.collection.updateMany({ chain, network }, { $unset: { feeData: {} } });
-      console.log(`Finished in ${(Date.now() - startTime) / 1000} seconds`)
+      const seconds = (Date.now() - startTime) / 1000;
+      console.log(`Finished in ${seconds} seconds | ${(prevBlocksWithFeesCount / seconds).toFixed(2)} blocks/sec`)
 
       const blocksWithFeesCount = await BitcoinBlockStorage.collection.countDocuments({ chain, network, feeData: { $exists: true } });
       if (blocksWithFeesCount == 0) {
@@ -76,7 +77,7 @@ Storage.start()
       .find({ chain, network, feeData: { $exists: false } }, { projection: { height: 1, _id: 0 }})
       .toArray())
       .map(obj => obj.height);
-    console.log(`Adding fee data to ${prevBlocksWithoutFeesCount} blocks on ${chain} ${network}`);
+    console.log(`Adding fee data to ${prevBlocksWithoutFeesCount} of ${totalBlocks} blocks on ${chain} ${network}`);
     if (verbose) {
       for (const height of blockHeightsWithoutFees) 
         process.stdout.write(`${height} `)
@@ -84,15 +85,16 @@ Storage.start()
     }
 
     const printEvery = Math.floor(prevBlocksWithoutFeesCount / printNumber);
-    for (let i = 0; i < prevBlocksWithoutFeesCount; i++) {
-      const height = blockHeightsWithoutFees[i];
-      const feeData = await BitcoinBlockStorage.getBlockFee({ chain, network, blockId: height });
-      BitcoinBlockStorage.collection.updateOne({ chain, network, height }, { $set: { feeData } });
-      if (i % printEvery === 0)
-        process.stdout.write(`${(i / prevBlocksWithoutFeesCount * 100).toFixed(2)}%...`)
-    }
-    console.log('100%');
-    console.log(`Finished in ${(Date.now() - startTime) / 1000} seconds`)
+    let feeDataAddedCount = 0;
+    await Promise.all(blockHeightsWithoutFees.map(async height => {
+      const fee = await BitcoinBlockStorage.getBlockFee({ chain, network, blockId: height });
+      BitcoinBlockStorage.collection.updateOne({ chain, network, height }, { $set: { feeData: fee } });
+      if (feeDataAddedCount++ % printEvery === 0)
+        process.stdout.write(`${((feeDataAddedCount / prevBlocksWithoutFeesCount) * 100).toFixed(2)}%...`);
+    }));
+    console.log('100%')
+    const seconds = (Date.now() - startTime) / 1000;
+    console.log(`Finished in ${seconds} seconds | ${(prevBlocksWithoutFeesCount / seconds).toFixed(2)} blocks/sec`)
 
     const blocksWithoutFeesCount = await BitcoinBlockStorage.collection.countDocuments({ chain, network, feeData: { $exists: false }});
     if (blocksWithoutFeesCount == 0) {
