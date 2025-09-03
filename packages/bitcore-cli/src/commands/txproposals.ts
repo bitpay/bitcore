@@ -1,8 +1,8 @@
 import * as prompt from '@clack/prompts';
 import fs from 'fs';
 import os from 'os';
-import { ITokenObj } from '../../types/wallet';
 import type { CommonArgs } from '../../types/cli';
+import { ITokenObj } from '../../types/wallet';
 import { UserCancelled } from '../errors';
 import { getAction, getFileName } from '../prompts';
 import { Utils } from '../utils';
