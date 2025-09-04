@@ -9,8 +9,10 @@ function usage(errMsg) {
   console.log('  --chain <value>      BTC, BCH, DOGE, or LTC');
   console.log('  --network <value>    mainnet, testnet, or regtest');
   console.log('  --remove             remove all fee data from chain on network')
+  console.log('  --reset              remove and re add all fee data')
   console.log('  --verbose            enable verbose logging')
   console.log('  --print-number       number of times to print fee data insertions (default 20)')
+  console.log('  --pause-every        number of blocks sync before pausing 50ms (default 10)')
   if (errMsg) {
     console.error(errMsg);
   }
@@ -25,25 +27,30 @@ if (args.includes('--help') || args.includes('-h')) {
 const chain = args[args.indexOf('--chain') + 1];
 const network = args[args.indexOf('--network') + 1];
 const printNumber = args.includes('--print-number') ? args[args.indexOf('--print-number') + 1] : 20;
+const pauseEvery = args.includes('--pause-every') ? args[args.indexOf('--pause-every') + 1] : 10;
 
 if (!['BTC', 'BCH', 'DOGE', 'LTC'].includes(chain) || !['mainnet', 'testnet', 'regtest'].includes(network)) {
   usage('Invalid chain and/or network param(s).');
 }
 
 const remove = args.includes('--remove');
+const reset = args.includes('--reset');
 const verbose = args.includes('--verbose');
+
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 console.log('Connecting to storage...');
 Storage.start()
   .then(async () => {
     const startTime = Date.now();
-    const prevBlocksWithFeesCount = await BitcoinBlockStorage.collection.countDocuments({ chain, network, feeData: { $exists: true } });
     const totalBlocks = await BitcoinBlockStorage.collection.countDocuments({ chain, network });
     
-    if (remove) {
+    if (remove || reset) {
+      const prevBlocksWithFeesCount = await BitcoinBlockStorage.collection.countDocuments({ chain, network, feeData: { $exists: true } });
       if (prevBlocksWithFeesCount === 0) {
         console.log(`No fee data on ${chain} ${network} to remove (${totalBlocks} of ${totalBlocks})`);
-        return;
+        if (remove)
+          return;
       }
       console.log(`Removing fee data from ${prevBlocksWithFeesCount} of ${totalBlocks} blocks on ${chain} ${network}`);
       await BitcoinBlockStorage.collection.updateMany({ chain, network }, { $unset: { feeData: {} } });
@@ -64,10 +71,11 @@ Storage.start()
           console.log('');
         }
       }
-      return;
+      if (remove)
+        return;
     }
     
-    const prevBlocksWithoutFeesCount = totalBlocks - prevBlocksWithFeesCount;
+    const prevBlocksWithoutFeesCount = await BitcoinBlockStorage.collection.countDocuments({ chain, network, feeData: { $exists: false }});
     if (prevBlocksWithoutFeesCount === 0) {
       console.log(`${chain} ${network} already has fee data`);
       return;
@@ -77,28 +85,27 @@ Storage.start()
     
     const printEvery = Math.floor(prevBlocksWithoutFeesCount / printNumber);
     let feeDataAddedCount = 0;
-    await new Promise((resolve) => {
-      const stream = BitcoinBlockStorage.collection
-        .find({ chain, network, feeData: { $exists: false } }, { projection: { height: 1, _id: 0 }})
-        .addCursorFlag('noCursorTimeout', true)
-        .stream()
   
-      stream.on('data', async function(data) {
-        const height = data.height;
-        const fee = await BitcoinBlockStorage.getBlockFee({ chain, network, blockId: height });
-        feeDataAddedCount++;
-        if (feeDataAddedCount < prevBlocksWithoutFeesCount) {
-          BitcoinBlockStorage.collection.updateOne({ chain, network, height }, { $set: { feeData: fee } })
-        // Resolve promise on last block
-        } else {
-          await BitcoinBlockStorage.collection.updateOne({ chain, network, height }, { $set: { feeData: fee } });
-          resolve();
-        }
-        if (feeDataAddedCount % printEvery === 0)
-          process.stdout.write(`${((feeDataAddedCount / prevBlocksWithoutFeesCount) * 100).toFixed(2)}%...`);
-      });
-      stream.on('error', console.error);
-    });
+    const stream = BitcoinBlockStorage.collection
+      .find({ chain, network, feeData: { $exists: false } }, { projection: { height: 1, _id: 0 }})
+      .addCursorFlag('noCursorTimeout', true)
+      .stream();
+
+    for await (const doc of stream) {
+      const height = doc.height;
+      const fee = await BitcoinBlockStorage.getBlockFee({ chain, network, blockId: height });
+      feeDataAddedCount++;
+      if (feeDataAddedCount < prevBlocksWithoutFeesCount) {
+        BitcoinBlockStorage.collection.updateOne({ chain, network, height }, { $set: { feeData: fee } })
+      // Resolve promise on last block
+      } else {
+        await BitcoinBlockStorage.collection.updateOne({ chain, network, height }, { $set: { feeData: fee } });
+      }
+      if (feeDataAddedCount % printEvery === 1)
+        process.stdout.write(`${((feeDataAddedCount / prevBlocksWithoutFeesCount) * 100).toFixed(2)}%...`);
+      if (feeDataAddedCount % pauseEvery === 0)
+        await sleep(50);
+    }
 
     console.log('100%')
     const seconds = (Date.now() - startTime) / 1000;
