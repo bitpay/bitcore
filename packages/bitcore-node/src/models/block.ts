@@ -19,7 +19,7 @@ export type IBtcBlock = IBlock & {
   feeData?: FeeData;
 };
 
-type FeeData = {
+interface FeeData {
   mean: number;
   median: number;
   mode: number;
