@@ -17,40 +17,43 @@ program
   .option('--raw',                        'Output raw transaction data')
   .option('--storageType <storageType>',  'Name of the database to use (default Level)')
   .option('--path <path>',                'Custom wallet storage path')
+  .option('--limit <limit>',              'Limit the number of transactions returned')
   .parse(process.argv);
 
 let wallet;
 
 const main = async () => {
-  const { name, path, startBlock, startDate, endBlock, endDate, includeMempool, storageType, token: tokenName, raw } = program.opts();
+  const { name, path, startBlock, startDate, endBlock, endDate, includeMempool, storageType, token: tokenName, raw, limit } = program.opts();
   try {
     wallet = await Wallet.loadWallet({ name, path, storageType });
-    const list = wallet.listTransactions({ startBlock, startDate, endBlock, endDate, includeMempool, tokenName });
-    if (raw) {
-      list.pipe(process.stdout);
-    } else {
-      list.pause(); // Pause list to prevent race condition where it starts streaming while awaiting getCurrencyObj
-      const tokenObj = wallet.getTokenObj({ tokenName }); // null if no tokenName provided
-      const currencyObj = await utils.getCurrencyObj(wallet.chain, tokenObj?.address, !wallet.isMainnet());
-      let txs = '[';
-      list.pipe(new Writable({
-        objectMode: true,
-        write: function(tx, _, next) {
-          txs += tx.toString();
-          next();
-        },
-        final: function(done) {
-          txs = JSON.parse(txs.trim().replaceAll('\n', ',') + ']');
-          for (const tx of txs) {
-            if (tx.category === 'fee') continue;
-            tx.chain = wallet.chain; // tx.chain is not always populated
-            console.log(`[${new Date(tx.blockTime).toLocaleString()}] ${tx.txid} ${catSymbol(tx)} ${displayAmt(tx, tokenObj || currencyObj)}`);
+    const list = wallet.listTransactions({ startBlock, startDate, endBlock, endDate, includeMempool, tokenName, limit });
+    list.pause(); // Pause list to prevent race condition where it starts streaming while awaiting getCurrencyObj
+    const tokenObj = wallet.getTokenObj({ tokenName }); // null if no tokenName provided
+    const currencyObj = await utils.getCurrencyObj(wallet.chain, tokenObj?.address, !wallet.isMainnet());
+    let txs = '[';
+    list.pipe(new Writable({
+      objectMode: true,
+      write: function(tx, _, next) {
+        txs += tx.toString();
+        next();
+      },
+      final: function(done) {
+        txs = JSON.parse(txs.trim().replaceAll('\n', ',') + ']');
+        for (const tx of txs) {
+          if (startDate && new Date(tx.blockTime) < new Date(startDate)) continue;
+          if (endDate && new Date(tx.blockTime) > new Date(endDate)) continue;
+          if (raw) {
+            console.log(JSON.stringify(tx));
+            continue;
           }
-          done();
+          if (tx.category === 'fee') continue;
+          tx.chain = wallet.chain; // tx.chain is not always populated
+          console.log(`[${new Date(tx.blockTime).toLocaleString()}] ${tx.txid} ${catSymbol(tx)} ${displayAmt(tx, tokenObj || currencyObj)}`);
         }
-      }));
-      list.resume();
-    }
+        done();
+      }
+    }));
+    list.resume();
   } catch (e) {
     console.error(e);
   }
