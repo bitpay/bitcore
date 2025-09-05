@@ -184,8 +184,7 @@ function sighash(transaction, sighashType, inputNumber, subscript, satoshisBN, f
   // For no ForkId sighash, separators need to be removed.
   subscript.removeCodeseparators();
 
-  let i;
-  for (i = 0; i < txcopy.inputs.length; i++) {
+  for (let i = 0; i < txcopy.inputs.length; i++) {
     // Blank signatures for other inputs
     txcopy.inputs[i] = new Input(txcopy.inputs[i]).setScript(Script.empty());
   }
@@ -197,7 +196,7 @@ function sighash(transaction, sighashType, inputNumber, subscript, satoshisBN, f
     (sighashType & 31) === Signature.SIGHASH_SINGLE
   ) {
     // clear all sequenceNumbers
-    for (i = 0; i < txcopy.inputs.length; i++) {
+    for (let i = 0; i < txcopy.inputs.length; i++) {
       if (i !== inputNumber) {
         txcopy.inputs[i].sequenceNumber = 0;
       }
@@ -215,7 +214,7 @@ function sighash(transaction, sighashType, inputNumber, subscript, satoshisBN, f
 
     txcopy.outputs.length = inputNumber + 1;
 
-    for (i = 0; i < inputNumber; i++) {
+    for (let i = 0; i < inputNumber; i++) {
       txcopy.outputs[i] = new Output({
         satoshis: BN.fromBuffer(Buffer.from(BITS_64_ON, 'hex')),
         script: Script.empty()
