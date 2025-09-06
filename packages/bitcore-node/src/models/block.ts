@@ -210,10 +210,11 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
       /*
        *isMainChain: block.mainChain,
        */
-      transactionCount: block.transactionCount
+      transactionCount: block.transactionCount,
       /*
        *minedBy: BlockModel.getPoolInfo(block.minedBy)
        */
+      feeData: block.feeData
     };
     if (options && options.object) {
       return transform;
