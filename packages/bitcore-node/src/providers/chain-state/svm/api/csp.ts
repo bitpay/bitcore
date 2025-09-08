@@ -419,8 +419,8 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     const { network, time = new Date() } = params;
     const { rpc } = await this.getRpc(network);
     const beforeTimeSlot = await this._findSlotByDate(network, new Date(time));
-    if (beforeTimeSlot === null) {
-      throw new Error('Unable to find block before specified time');
+    if (!beforeTimeSlot) {
+      return null;
     }
     const block = await rpc.getBlock({ height: beforeTimeSlot });
     return this.blockTransform(network, block, beforeTimeSlot);
