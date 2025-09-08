@@ -11,7 +11,7 @@ import { CacheStorage } from '../../../../models/cache';
 import { IBlock } from '../../../../types/Block';
 import { CoinListingJSON } from '../../../../types/Coin';
 import { IChainConfig, IProvider, ISVMNetworkConfig } from '../../../../types/Config';
-import { BroadcastTransactionParams, GetBalanceForAddressParams, GetBlockParams, GetCoinsForTxParams, GetEstimatePriorityFeeParams, GetWalletBalanceParams, IChainStateService, StreamAddressUtxosParams, StreamBlocksParams, StreamTransactionParams, StreamTransactionsParams, StreamWalletTransactionsParams, WalletBalanceType } from '../../../../types/namespaces/ChainStateProvider';
+import { BroadcastTransactionParams, GetBalanceForAddressParams, GetBlockParams, GetCoinsForTxParams, GetEstimatePriorityFeeParams, GetWalletBalanceParams, IChainStateService, StreamAddressUtxosParams, StreamBlocksParams, StreamTransactionParams, StreamTransactionsParams, StreamWalletTransactionsParams, WalletBalanceType, GetBlockBeforeTimeParams } from '../../../../types/namespaces/ChainStateProvider';
 import { range } from '../../../../utils';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import {
@@ -415,6 +415,17 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     return this.blockTransform(network, block, slot);
   }
 
+  async getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock | null> {
+    const { network, time = new Date() } = params;
+    const { rpc } = await this.getRpc(network);
+    const beforeTimeSlot = await this._findSlotByDate(network, new Date(time));
+    if (beforeTimeSlot === null) {
+      throw new Error('Unable to find block before specified time');
+    }
+    const block = await rpc.getBlock({ height: beforeTimeSlot });
+    return this.blockTransform(network, block, beforeTimeSlot);
+  }
+
   async streamBlocks(params: StreamBlocksParams) {
     return new Promise<void>(async (resolve, reject) => {
       try {
@@ -579,9 +590,24 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       return lo;
     }
 
+    let errorCount = 0;
     while (lo <= hi) {
       const mid = (lo + hi) / 2n;
-      const blockTime = await connection.getBlockTime(mid).send();
+      let blockTime: number | null = null;
+      try {
+        blockTime = await connection.getBlockTime(mid).send();
+        if (errorCount > 0) {
+          errorCount = 0; // reset error count on successful fetch
+        }
+      } catch (e: any) {
+        // possible rate limit exceeded
+        errorCount++;
+        if (errorCount >= 5) {
+          throw new Error(e?.message || 'Too many errors occurred');
+        }
+        await new Promise(resolve => setTimeout(resolve, 500));
+        continue;
+      }
   
       if (blockTime === null) {
         lo = mid + 1n;
