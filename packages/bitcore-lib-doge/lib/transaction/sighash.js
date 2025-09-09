@@ -32,7 +32,6 @@ function sighash(transaction, sighashType, inputNumber, subscript) {
   const Transaction = require('./transaction');
   const Input = require('./input');
 
-  let i;
   // Copy transaction
   const txcopy = Transaction.shallowCopy(transaction);
 
@@ -40,7 +39,7 @@ function sighash(transaction, sighashType, inputNumber, subscript) {
   subscript = new Script(subscript);
   subscript.removeCodeseparators();
 
-  for (i = 0; i < txcopy.inputs.length; i++) {
+  for (let i = 0; i < txcopy.inputs.length; i++) {
     // Blank signatures for other inputs
     txcopy.inputs[i] = new Input(txcopy.inputs[i]).setScript(Script.empty());
   }
@@ -51,7 +50,7 @@ function sighash(transaction, sighashType, inputNumber, subscript) {
     (sighashType & 31) === Signature.SIGHASH_SINGLE) {
 
     // clear all sequenceNumbers
-    for (i = 0; i < txcopy.inputs.length; i++) {
+    for (let i = 0; i < txcopy.inputs.length; i++) {
       if (i !== inputNumber) {
         txcopy.inputs[i].sequenceNumber = 0;
       }
@@ -70,7 +69,7 @@ function sighash(transaction, sighashType, inputNumber, subscript) {
 
     txcopy.outputs.length = inputNumber + 1;
 
-    for (i = 0; i < inputNumber; i++) {
+    for (let i = 0; i < inputNumber; i++) {
       txcopy.outputs[i] = new Output({
         satoshis: BN.fromBuffer(new buffer.Buffer(BITS_64_ON, 'hex')),
         script: Script.empty()
