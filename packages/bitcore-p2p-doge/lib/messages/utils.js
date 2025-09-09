@@ -25,7 +25,7 @@ module.exports = utils = {
   },
   writeIP: function writeIP(ip, bw) {
     var words = ip.v6.split(':').map(function(s) {
-      return new Buffer(s, 'hex');
+      return Buffer.from(s, 'hex');
     });
     for (var i = 0; i < words.length; i++) {
       var word = words[i];
@@ -34,7 +34,7 @@ module.exports = utils = {
   },
   writeAddr: function writeAddr(addr, bw) {
     if (_.isUndefined(addr)) {
-      var pad = new Buffer(Array(26));
+      var pad = Buffer.from(Array(26));
       bw.write(pad);
       return;
     }
@@ -87,7 +87,7 @@ module.exports = utils = {
     if (starts) {
       starts = starts.map(function(hash) {
         if (_.isString(hash)) {
-          return BufferUtil.reverse(new Buffer(hash, 'hex'));
+          return BufferUtil.reverse(Buffer.from(hash, 'hex'));
         } else {
           return hash;
         }
@@ -104,7 +104,7 @@ module.exports = utils = {
 
     stop = obj.stop;
     if (_.isString(stop)) {
-      stop = BufferUtil.reverse(new Buffer(stop, 'hex'));
+      stop = BufferUtil.reverse(Buffer.from(stop, 'hex'));
     }
     if (!stop) {
       stop = BufferUtil.NULL_HASH;

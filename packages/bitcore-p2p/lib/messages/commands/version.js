@@ -76,7 +76,7 @@ VersionMessage.prototype.getPayload = function() {
   bw.writeUInt32LE(this.version);
   bw.writeUInt64LEBN(this.services);
 
-  var timestampBuffer = new Buffer(Array(8));
+  var timestampBuffer = Buffer.from(Array(8));
   timestampBuffer.writeUInt32LE(Math.round(this.timestamp.getTime() / 1000), 0);
   bw.write(timestampBuffer);
 
@@ -84,7 +84,7 @@ VersionMessage.prototype.getPayload = function() {
   utils.writeAddr(this.addrYou, bw);
   bw.write(this.nonce);
   bw.writeVarintNum(this.subversion.length);
-  bw.write(new Buffer(this.subversion, 'ascii'));
+  bw.write(Buffer.from(this.subversion, 'ascii'));
   bw.writeUInt32LE(this.startHeight);
   bw.writeUInt8(this.relay);
 
