@@ -33,7 +33,6 @@ function sighash(transaction, sighashType, inputNumber, subscript) {
   // Convert a string to a number
   inputNumber = parseInt(inputNumber);
 
-  let i;
   // Copy transaction
   const txcopy = Transaction.shallowCopy(transaction);
 
@@ -41,7 +40,7 @@ function sighash(transaction, sighashType, inputNumber, subscript) {
   subscript = new Script(subscript);
   subscript.removeCodeseparators();
 
-  for (i = 0; i < txcopy.inputs.length; i++) {
+  for (let i = 0; i < txcopy.inputs.length; i++) {
     // Blank signatures for other inputs
     txcopy.inputs[i] = new Input(txcopy.inputs[i]).setScript(Script.empty());
   }
@@ -52,7 +51,7 @@ function sighash(transaction, sighashType, inputNumber, subscript) {
     (sighashType & 31) === Signature.SIGHASH_SINGLE) {
 
     // clear all sequenceNumbers
-    for (i = 0; i < txcopy.inputs.length; i++) {
+    for (let i = 0; i < txcopy.inputs.length; i++) {
       if (i !== inputNumber) {
         txcopy.inputs[i].sequenceNumber = 0;
       }
@@ -61,7 +60,6 @@ function sighash(transaction, sighashType, inputNumber, subscript) {
 
   if ((sighashType & 31) === Signature.SIGHASH_NONE) {
     txcopy.outputs = [];
-
   } else if ((sighashType & 31) === Signature.SIGHASH_SINGLE) {
     // The SIGHASH_SINGLE bug.
     // https://bitcointalk.org/index.php?topic=260595.0
@@ -71,7 +69,7 @@ function sighash(transaction, sighashType, inputNumber, subscript) {
 
     txcopy.outputs.length = inputNumber + 1;
 
-    for (i = 0; i < inputNumber; i++) {
+    for (let i = 0; i < inputNumber; i++) {
       txcopy.outputs[i] = new Output({
         satoshis: BN.fromBuffer(Buffer.from(BITS_64_ON, 'hex')),
         script: Script.empty()

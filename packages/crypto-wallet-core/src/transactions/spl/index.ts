@@ -1,5 +1,4 @@
 import * as SolToken from '@solana-program/token';
-import { pipe } from '@solana/functional';
 import * as SolKit from '@solana/kit'
 import { SOLTxProvider } from '../sol';
 
@@ -7,11 +6,15 @@ export class SPLTxProvider extends SOLTxProvider {
 
   create(params: CreateParams) {
     // Reuse exposed TransactionProxy API (Create)
-    // @ts-expect-error 
+    // @ts-expect-error
     if (params.category === 'recoverNestedAssociatedToken') {
       return SPLTxProvider.createRecoverNestedAssociatedTokenTransaction(params as unknown as CreateRecoverNestedAssociatedTokenParams);
     }
-    
+    // @ts-expect-error
+    if (params.category === 'closeTokenAccount') {
+      return SPLTxProvider.createCloseTokenAccountTransaction(params as unknown as CreateCloseTokenAccountParams);
+    }
+
     const { recipients, from, fromAta, tokenAddress, decimals, instructions = [] } = params;
     // Start with custom instructions
     const allInstructions = [...instructions];
@@ -81,10 +84,52 @@ export class SPLTxProvider extends SOLTxProvider {
     const recentBlockhash = {
       blockhash: blockHash as SolKit.Blockhash,
       lastValidBlockHeight: BigInt(blockHeight)
+    };
+
+    // Create transaction
+    const transactionMessage = SolKit.pipe(
+      SolKit.createTransactionMessage({ version: 'legacy' }),
+      (tx) => SolKit.setTransactionMessageFeePayer(fromKeyPair.address, tx),
+      (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash(recentBlockhash, tx),
+      (tx) => SolKit.appendTransactionMessageInstructions(
+        [instruction], tx
+      )
+    );
+
+    const compiledTx = SolKit.compileTransaction(transactionMessage);
+    return SolKit.getBase64EncodedWireTransaction(compiledTx);
+  }
+
+  static createCloseTokenAccountTransaction(params: CreateCloseTokenAccountParams) {
+    const {
+      fromKeyPair,
+      blockHash,
+      blockHeight,
+      ataAddressToClose,
+      solRentReturnAddress,
+      ataAddressToCloseOwnerSolAddress
+    } = params;
+    // Validate
+    if (!SolKit.isKeyPairSigner(fromKeyPair)) {
+      throw new Error('fromKeyPair required to implement KeyPairSigner');
+    }
+    if (!(blockHash && blockHeight)) {
+      throw new Error('blockHash and blockHeight required');
+    }
+
+    const instruction = SolToken.getCloseAccountInstruction({
+      account: SolKit.address(ataAddressToClose),
+      destination: SolKit.address(solRentReturnAddress),
+      owner: SolKit.address(ataAddressToCloseOwnerSolAddress)
+    });
+
+    const recentBlockhash = {
+      blockhash: blockHash as SolKit.Blockhash,
+      lastValidBlockHeight: BigInt(blockHeight)
     }
 
     // Create transaction
-    const transactionMessage = pipe(
+    const transactionMessage = SolKit.pipe(
       SolKit.createTransactionMessage({ version: 'legacy' }),
       (tx) => SolKit.setTransactionMessageFeePayer(fromKeyPair.address, tx),
       (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash(recentBlockhash, tx),
@@ -123,15 +168,25 @@ interface CreateParams {
 }
 
 interface CreateRecoverNestedAssociatedTokenParams {
-  category: 'recoverNestedAssociatedToken'
+  category: 'recoverNestedAssociatedToken';
   blockHash: string;
   blockHeight: number;
-  fromKeyPair: SolKit.KeyPairSigner,
+  fromKeyPair: SolKit.KeyPairSigner;
   nestedAssociatedAccountAddress: string;
   nestedTokenMintAddress: string;
   destinationAssociatedAccountAddress: string;
   ownerAssociatedAccountAddress: string;
   ownerTokenMintAddress: string;
+}
+
+interface CreateCloseTokenAccountParams {
+  category: 'closeTokenAccount';
+  blockHash: string;
+  blockHeight: number;
+  fromKeyPair: SolKit.KeyPairSigner;
+  ataAddressToClose: string;
+  solRentReturnAddress: string;
+  ataAddressToCloseOwnerSolAddress: string;
 }
 
 type InstructionType = 'createAssociatedToken' | 'createAssociatedTokenIdempotent' | 'recoverNestedAssociatedToken';

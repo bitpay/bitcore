@@ -83,7 +83,7 @@ EscrowInput.prototype.isValidSignature = function(transaction, signature, signin
  * @returns {Buffer}
  */
 EscrowInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
-  if (this.reclaimPublicKey.toString() !== publicKey.toString()) return [];
+  $.checkState(this.reclaimPublicKey.toString() === publicKey.toString(), 'Provided public key cannot sign for this input');
   $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
   sigtype = sigtype || (Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID);
 

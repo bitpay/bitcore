@@ -1,6 +1,6 @@
 {
   "name": "crypto-wallet-core",
-  "version": "11.2.0",
+  "version": "11.3.1",
   "description": "A multi-currency support library for address derivation, private key creation, and transaction creation",
   "main": "./ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
