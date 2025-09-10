@@ -1,12 +1,13 @@
-import { BitcoreLib } from 'crypto-wallet-core';
+
 import requestStream from 'request';
 import request from 'request-promise-native';
 import * as secp256k1 from 'secp256k1';
 import { URL } from 'url';
 import { utils } from './utils';
-
-const usingBrowser = (global as any).window;
+let usingBrowser = (global as any).window;
 const URLClass = usingBrowser ? usingBrowser.URL : URL;
+const bitcoreLib = require('crypto-wallet-core').BitcoreLib;
+
 export class Client {
   apiUrl: string;
   authKey: any;
@@ -44,7 +45,7 @@ export class Client {
   sign(params: { method: string; url: string; payload?: any }) {
     const message = this.getMessage(params);
     const privateKey = this.authKey.toBuffer();
-    const messageHash = BitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message));
+    const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message));
     return secp256k1.sign(messageHash, privateKey).signature.toString('hex');
   }
 
@@ -65,11 +66,6 @@ export class Client {
 
   async getToken(contractAddress) {
     const url = `${this.apiUrl}/token/${contractAddress}`;
-    return this._request({ method: 'GET', url, json: true });
-  }
-
-  async getSolanaTokens(address) {
-    const url = `${this.apiUrl}/ata/${address}`;
     return this._request({ method: 'GET', url, json: true });
   }
 
@@ -130,7 +126,7 @@ export class Client {
   }
 
   listTransactions(params) {
-    const { pubKey, startBlock, startDate, endBlock, endDate, includeMempool, payload, tokenContractAddress } = params;
+    const { pubKey, startBlock, startDate, endBlock, endDate, includeMempool, payload, tokenContractAddress, limit } = params;
     let url = `${this.apiUrl}/wallet/${pubKey}/transactions`;
     let query = '';
     if (startBlock) {
@@ -146,11 +142,15 @@ export class Client {
       query += `endDate=${endDate}&`;
     }
     if (includeMempool) {
-      query += 'includeMempool=true';
+      query += 'includeMempool=true&';
     }
     if (tokenContractAddress) {
-      query += `tokenAddress=${tokenContractAddress}`;
+      query += `tokenAddress=${tokenContractAddress}&`;
     }
+    if (limit) {
+      query += `limit=${limit}&`;
+    }
+    query = query.endsWith('&') ? query.slice(0, -1) : query;
     if (query) {
       url += '?' + query;
     }
@@ -253,10 +253,5 @@ export class Client {
     const body = { rawTx };
     const url = `${this.apiUrl}/l1/fee${safe ? '?safe=true' : ''}`;
     return this._request({ method: 'POST', url, json: true, body });
-  }
-
-  getBlockTip() {
-    const url = `${this.apiUrl}/block/tip`;
-    return this._request({ method: 'GET', url, json: true });
   }
 }
