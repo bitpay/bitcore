@@ -1,3 +1,10 @@
+import {
+  BitcoreLib,
+  BitcoreLibCash,
+  BitcoreLibDoge,
+  BitcoreLibLtc,
+} from 'crypto-wallet-core';
+import { singleton } from 'preconditions';
 import Uuid from 'uuid';
 import config from '../../config';
 import { ChainService } from '../chain/index';
@@ -7,29 +14,24 @@ import { Address } from './address';
 import { AddressManager, IAddressManager } from './addressmanager';
 import { Copayer } from './copayer';
 
-const $ = require('preconditions').singleton();
-
-const {
-  Constants,
-  Defaults,
-  Utils
-} = Common;
+const $ = singleton();
+const { Constants, Defaults, Utils } = Common;
 
 const Bitcore = {
-  btc: require('bitcore-lib'),
-  bch: require('bitcore-lib-cash'),
-  eth: require('bitcore-lib'),
-  matic: require('bitcore-lib'),
-  arb: require('bitcore-lib'),
-  base: require('bitcore-lib'),
-  op: require('bitcore-lib'),
-  xrp: require('bitcore-lib'),
-  doge: require('bitcore-lib-doge'),
-  ltc: require('bitcore-lib-ltc'),
-  sol: require('bitcore-lib'),
+  btc: BitcoreLib,
+  bch: BitcoreLibCash,
+  eth: BitcoreLib,
+  matic: BitcoreLib,
+  arb: BitcoreLib,
+  base: BitcoreLib,
+  op: BitcoreLib,
+  xrp: BitcoreLib,
+  doge: BitcoreLibDoge,
+  ltc: BitcoreLibLtc,
+  sol: BitcoreLib,
 };
 
-export interface IWallet<isSharedT = boolean> {
+export interface IWallet<isSharedT = boolean | (() => boolean)> {
   version: string;
   createdOn: number;
   id: number;
