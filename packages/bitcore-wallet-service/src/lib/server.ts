@@ -1670,6 +1670,7 @@ export class WalletService implements IWalletService {
       if (opts.limit > 0) addresses = addresses.slice(0, opts.limit);
 
       this.getWallet({}, (err, wallet) => {
+        if (err) return cb(err);
         for (const x of addresses) {
           ChainService.addressFromStorageTransform(wallet.chain, wallet.network, x);
         }
