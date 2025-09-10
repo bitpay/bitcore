@@ -8,15 +8,21 @@ import { ChainStateProvider } from '../../../src/providers/chain-state';
 import { WalletStorage } from '../../../src/models/wallet';
 
 const request = supertest(app);
+const bitcore = require('bitcore-lib');
+const secp256k1 = require('secp256k1');
+
+const privKey = new bitcore.PrivateKey();
+const pubKey = bitcore.PublicKey(privKey);
 
 const wallet = {
   chain: 'BTC',
   network: 'regtest',
   name: 'user',
-  pubKey: '037fe2463515824e28d31e4629b42e2319a358e7e951281cf1af13d13a27edf4f1',
+  pubKey: pubKey.toString(),
   path: 'm/84/1h/0h/0/0',
   singleAddress: 'bcrt1qzun74zp996s2najfar32t6j5dmyj5052s4vdq7'
 }
+
 function testWalletEquivalence(wallet1, doc) {
   const { chain, network, name, pubKey, path, singleAddress } = doc;
 
@@ -26,6 +32,12 @@ function testWalletEquivalence(wallet1, doc) {
   expect(pubKey).to.equal(wallet1.pubKey);
   expect(path).to.equal(wallet1.path);
   expect(singleAddress).to.equal(wallet1.singleAddress);
+}
+
+function getSignature(privateKey, url: string, method: 'GET' | 'POST', body={}) {
+  const message = [method, url, JSON.stringify(body)].join('|');
+  const messageHash = bitcore.crypto.Hash.sha256sha256(Buffer.from(message));
+  return Buffer.from(secp256k1.ecdsaSign(messageHash, privateKey.toBuffer()).signature).toString('hex');
 }
 
 describe('Wallet Routes', function() {
@@ -82,7 +94,9 @@ describe('Wallet Routes', function() {
   });
 
   it('should get wallet initial balance and it should be empty', done => {
-    request.get(`/api/${wallet.chain}/${wallet.network}/wallet/${wallet.pubKey}/balance`)
+    const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/balance`;
+    request.get(url)
+      .set('x-signature', getSignature(privKey, url, 'GET', {}))
       .expect(200, (err, res) => {
         if (err) console.error(err);
         const { confirmed, unconfirmed, balance } = res.body;
@@ -93,7 +107,7 @@ describe('Wallet Routes', function() {
       });
   });
 
-  it('should have a db call to wallets', done => {
+  it('should have document in wallets', done => {
     WalletStorage.collection.findOne(wallet).then(doc => {
       testWalletEquivalence(wallet, doc);
       done();
@@ -101,7 +115,9 @@ describe('Wallet Routes', function() {
   });
 
   it('should get wallet initial utxos and it should be empty', done => {
-    request.get(`/api/${wallet.chain}/${wallet.network}/wallet/${wallet.pubKey}/utxos`)
+    const url = `/api/${wallet.chain}/${wallet.network}/wallet/${wallet.pubKey}/utxos`;
+    request.get(url)
+      .set('x-signature', getSignature(privKey, url, 'GET', {}))
       .expect(200, (err, res) => {
         if (err) console.error(err);
         expect(res.body).to.deep.equal([]);
