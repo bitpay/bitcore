@@ -200,7 +200,7 @@ class SecureChildProcess {
 
       // Create a simple credential object
       const credential: SecureCredential = {
-        id: id,
+        id,
         data: dataBuffer,
         metadata: {},
         createdAt: new Date(), // We don't track creation time in this simplified version
