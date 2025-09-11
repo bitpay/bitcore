@@ -355,6 +355,7 @@ export class EmailService {
       usdt: 'USDT',
       weth: 'WETH',
       'usdc.e': 'USDC.e',
+      sol: 'SOL',
     };
 
     const data = JSON.parse(JSON.stringify(notification.data)) as Notification['data'];
@@ -414,6 +415,9 @@ export class EmailService {
             label = UNIT_LABELS[unit];
           } else if (Constants.BASE_TOKEN_OPTS[tokenAddress]) {
             unit = Constants.BASE_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
+            label = UNIT_LABELS[unit];
+          } else if (Constants.SOL_TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.SOL_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
             label = UNIT_LABELS[unit];
           } else {
             let customTokensData;
