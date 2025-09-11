@@ -10,6 +10,8 @@ export interface SecureVaultConfig {
   processTimeout?: number;
   /** Size of secure heap in bytes */
   secureHeapSize?: number;
+  /** Enable debug mode with detailed error information */
+  debug?: boolean;
 }
 
 /**

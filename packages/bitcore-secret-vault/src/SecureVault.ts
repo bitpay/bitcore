@@ -14,17 +14,29 @@ export class SecureVault {
   private child: ChildProcess;
   private pending: Map<number, { resolve: (value: any) => void; reject: (reason?: any) => void }>;
   private msgId: number;
+  private receivedBuffers: Set<Buffer> = new Set(); // Track buffers received from child
 
   constructor(config: SecureVaultConfig = {}) {
     // Set default configuration
     this.config = {
       maxCredentials: config.maxCredentials || 100,
       processTimeout: config.processTimeout || 30000,
-      secureHeapSize: config.secureHeapSize || 1024 * 1024 // 1MB default
+      secureHeapSize: config.secureHeapSize || 1024 * 1024, // 1MB default
+      debug: config.debug || false
     };
 
     this.child = fork('./child-process.ts', [], {
-      execArgv: [`--secure-heap=${this.config.secureHeapSize}`, '--expose-gc']
+      execArgv: [`--secure-heap=${this.config.secureHeapSize}`, '--expose-gc'],
+      // Sanitize environment - only pass essential variables
+      env: {
+        NODE_ENV: process.env.NODE_ENV || 'production',
+        VAULT_CONFIG: JSON.stringify(this.config)
+      },
+      // Resource limits
+      stdio: 'pipe', // Don't inherit stdio
+      // Additional security options
+      detached: false, // Keep as child process
+      silent: false
     });
 
     this.msgId = 1;
@@ -106,7 +118,7 @@ export class SecureVault {
     // SECURITY: Override toString
     const originalToString = passwordBuffer.toString;
     passwordBuffer.toString = function(...args) {
-      throw new Error('SECURITY ERROR: Converting pasword buffer to string is forbidden. This prevents accidental creation of immutable string copies.');
+      throw new Error('SECURITY ERROR: Converting password buffer to string is forbidden. This prevents accidental creation of immutable string copies.');
     }
 
     // SECURITY: Override toJSON
@@ -118,18 +130,22 @@ export class SecureVault {
     // SECURITY: Override inspect to prevent console exposure
     const originalInspect = passwordBuffer[Symbol.for('nodejs.util.inspect.custom')];
     passwordBuffer[Symbol.for('nodejs.util.inspect.custom')] = function() {
-      return '[SecureBuffer: *** REDACTED ***'
+      return '[SecureBuffer: *** REDACTED ***]';
     };
 
     try {
-      // is this right?
       const result = await callback(passwordBuffer);
       return result;
     } finally {
-      // Callback with try/finally ensures proper sanitization
+      // Explicit sanitization tracking
       if (Buffer.isBuffer(passwordBuffer)) {
+        // Remove from tracking set before sanitizing
+        this.receivedBuffers.delete(passwordBuffer);
+        
+        // Sanitize the buffer
         crypto.randomFillSync(passwordBuffer);
 
+        // Restore original methods (though buffer is now sanitized)
         passwordBuffer.toString = originalToString;
         passwordBuffer.toJSON = originalToJSON;
         passwordBuffer[Symbol.for('nodejs.util.inspect.custom')] = originalInspect;
@@ -144,6 +160,14 @@ export class SecureVault {
    * Shutdown the vault and clean up resources
    */
   async shutdown(): Promise<void> {
+    // Sanitize all tracked buffers before shutdown
+    for (const buffer of this.receivedBuffers) {
+      if (Buffer.isBuffer(buffer)) {
+        crypto.randomFillSync(buffer);
+      }
+    }
+    this.receivedBuffers.clear();
+    
     if (this.child && !this.child.killed) {
       this.child.kill('SIGTERM');
 
@@ -157,7 +181,7 @@ export class SecureVault {
     this.isInitialized = false;
 
     for (const [_, pending] of this.pending) {
-      pending.reject('SecureVault is shutitng down');
+      pending.reject('SecureVault is shutting down');
     };
     this.pending.clear();
   }
@@ -184,13 +208,31 @@ export class SecureVault {
           // Handle Buffer deserialization - IPC automatically serializes Buffers
           let data = msg.data;
           if (data?.type === 'Buffer' && Array.isArray(data.data)) {
+            // Validate buffer size to prevent DoS
+            if (data.data.length > 64 * 1024) { // 64KB max for any single buffer
+              pending.reject(new Error('Buffer size exceeds maximum allowed size'));
+              return;
+            }
+            
+            // Validate that all elements are valid byte values
+            if (!data.data.every((byte: any) => typeof byte === 'number' && byte >= 0 && byte <= 255)) {
+              pending.reject(new Error('Invalid buffer data received'));
+              return;
+            }
+            
             data = Buffer.from(data.data);
+            
+            // Track this buffer for cleanup
+            this.receivedBuffers.add(data);
           }
           pending.resolve(data);
         } else if (msg.type.endsWith(':error')) {
           this.pending.delete(msg.id);
           const err = new Error(msg.error?.message || 'Unknown error from child');
-          err.stack = msg.error?.stack;
+          // Only include stack traces in debug mode
+          if (this.config.debug && msg.error?.stack) {
+            err.stack = msg.error.stack;
+          }
           pending.reject(err);
         } else {
           console.error('Unexpected message from child', msg.type);
@@ -206,8 +248,31 @@ export class SecureVault {
   private handleRequest<T>(type: ValidRequestNames, params = {}): Promise<T> {
     return new Promise((resolve, reject) => {
       const id = ++this.msgId;
-      this.pending.set(id, { resolve, reject });
-      (this.child).send({ type, id, ...params });
+      
+      // Set up timeout cleanup
+      const timeoutId = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error(`Request timeout after ${this.config.processTimeout}ms for ${type}`));
+      }, this.config.processTimeout);
+      
+      this.pending.set(id, { 
+        resolve: (value: T) => {
+          clearTimeout(timeoutId);
+          resolve(value);
+        }, 
+        reject: (reason?: any) => {
+          clearTimeout(timeoutId);
+          reject(reason);
+        }
+      });
+      
+      try {
+        (this.child).send({ type, id, ...params });
+      } catch (error) {
+        this.pending.delete(id);
+        clearTimeout(timeoutId);
+        reject(error);
+      }
     })
   }
 } 

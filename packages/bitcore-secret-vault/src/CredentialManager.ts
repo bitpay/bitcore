@@ -9,8 +9,8 @@ class CredentialManager {
   private isShutdown: boolean;
   private secureHeapAllocationBaseline: number;
   private credentials: Map<string, Buffer>
-  private encryptedPassword;
-  private activeBuffers;
+  private encryptedPassword: Buffer | null;
+  private activeBuffers: Set<Buffer>;
 
   constructor() {
     this.rsaPrivateKey = null;
@@ -22,6 +22,8 @@ class CredentialManager {
     this.isShutdown = false;
     this.secureHeapAllocationBaseline = 0;
     this.credentials = new Map();
+    this.encryptedPassword = null;
+    this.activeBuffers = new Set();
     
     // ✅ SECURITY: Register graceful shutdown handlers
     this.registerShutdownHandlers();
@@ -255,27 +257,30 @@ class CredentialManager {
    *
    * SECURITY REQUIREMENTS:
    * - Output MUST be randomFilled (crypto.randomFillSync) as soon as possible after use
-   * 
-   * @returns {Buffer} Decrypted password as a Buffer
    */
-  getDecryptedPassword() {
+  getDecryptedPassword(id: string) {
     if (this.isShutdown) return;
 
     if (!this.rsaPrivateKey) {
       throw new Error('Rsa private key not available');
     }
     
+    const secret = this.credentials.get(id);
+    if (!secret) {
+      throw new Error('No encrypted password available');
+    }
+    
     const decryptedPassword = crypto.privateDecrypt({
       key: this.rsaPrivateKey,
       ...this.crypto
-    }, this.encryptedPassword);
+    }, secret);
     
-    // ✅ SECURITY: Track the decrypted buffer for potential shutdown cleanup
+    // SECURITY: Track the decrypted buffer for potential shutdown cleanup
     // Note: This buffer will be sanitized by the caller, but we track it
     // in case shutdown happens before the caller sanitizes it
     this.activeBuffers.add(decryptedPassword);
     
-    // ✅ SECURITY NOTE: This buffer will be sent via IPC which creates copies.
+    // SECURITY NOTE: This buffer will be sent via IPC which creates copies.
     // The original buffer in this process should be sanitized, but we need
     // to return it first. The worker process will sanitize after IPC send.
     // The main process MUST sanitize its received copy.
@@ -291,7 +296,7 @@ class CredentialManager {
   }
 }
 
-module.exports = { CredentialManager };
+export { CredentialManager };
 
 /**
  * Clean-up process (for buffers)

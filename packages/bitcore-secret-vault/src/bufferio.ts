@@ -1,6 +1,6 @@
 'use strict';
 
-const crypto = require('crypto');
+import * as crypto from 'crypto';
 
 /**
  * BufferIO - input/output class that NEVER stores values as strings
@@ -20,6 +20,7 @@ class BufferIO {
       const inputBuffer = Buffer.alloc(this.maxInputLength);
       let position = 0;
       let terminalRestored = false;
+      let signalHandlersAdded = false;
 
       // Display prompt
       process.stdout.write(prompt);
@@ -30,10 +31,21 @@ class BufferIO {
 
       const cleanup = () => {
         if (!terminalRestored) {
-          process.stdin.setRawMode(false);
-          process.stdin.pause();
-          process.stdin.removeAllListeners('data');
-          terminalRestored = true;
+          try {
+            process.stdin.setRawMode(false);
+            process.stdin.pause();
+            process.stdin.removeAllListeners('data');
+            terminalRestored = true;
+          } catch (error) {
+            // Ignore cleanup errors
+          }
+        }
+        
+        // Remove signal handlers
+        if (signalHandlersAdded) {
+          process.removeListener('SIGINT', signalHandler);
+          process.removeListener('SIGTERM', signalHandler);
+          signalHandlersAdded = false;
         }
       };
 
@@ -42,8 +54,15 @@ class BufferIO {
         crypto.randomFillSync(inputBuffer);
       };
 
-      process.stdin.on('data', (data) => {
+      const dataHandler = (data) => {
         try {
+          // Validate input data
+          if (!Buffer.isBuffer(data)) {
+            secureCleanup();
+            reject(new Error('Invalid input data received'));
+            return;
+          }
+
           // Handle each byte in the buffer
           for (let i = 0; i < data.length; i++) {
             const byte = data[i];
@@ -93,7 +112,7 @@ class BufferIO {
           secureCleanup();
           reject(err);
         }
-      });
+      };
 
       // Handle process termination signals
       const signalHandler = () => {
@@ -101,8 +120,10 @@ class BufferIO {
         process.exit(1);
       };
 
+      process.stdin.on('data', dataHandler);
       process.once('SIGINT', signalHandler);
       process.once('SIGTERM', signalHandler);
+      signalHandlersAdded = true;
     });
   }
 }

@@ -20,8 +20,35 @@ class SecureChildProcess {
       throw new Error('VAULT_CONFIG environment variable is required');
     }
     
-    this.config = JSON.parse(configStr);
-    this.credentialManager = new CredentialManager(this.config);
+    // Validate JSON structure and content
+    let parsedConfig;
+    try {
+      parsedConfig = JSON.parse(configStr);
+    } catch (error) {
+      throw new Error('VAULT_CONFIG must be valid JSON');
+    }
+    
+    // Validate configuration schema
+    if (typeof parsedConfig !== 'object' || parsedConfig === null) {
+      throw new Error('VAULT_CONFIG must be a valid configuration object');
+    }
+    
+    // Validate specific fields with safe defaults
+    const validatedConfig = {
+      maxCredentials: typeof parsedConfig.maxCredentials === 'number' && parsedConfig.maxCredentials > 0 
+        ? Math.min(parsedConfig.maxCredentials, 1000) // Cap at reasonable limit
+        : 100,
+      processTimeout: typeof parsedConfig.processTimeout === 'number' && parsedConfig.processTimeout > 0
+        ? Math.min(parsedConfig.processTimeout, 300000) // Cap at 5 minutes
+        : 30000,
+      secureHeapSize: typeof parsedConfig.secureHeapSize === 'number' && parsedConfig.secureHeapSize > 0
+        ? Math.min(parsedConfig.secureHeapSize, 100 * 1024 * 1024) // Cap at 100MB
+        : 1024 * 1024,
+      debug: typeof parsedConfig.debug === 'boolean' ? parsedConfig.debug : false
+    };
+    
+    this.config = validatedConfig as Required<SecureVaultConfig>;
+    this.credentialManager = new CredentialManager();
     
     this.setupProcessHandlers();
     this.setupIPCHandlers();
@@ -101,12 +128,18 @@ class SecureChildProcess {
 
   private async storeCredential(credentialData: SecureCredential): Promise<VaultResponse<string>> {
     try {
-      // Validate credential
-      const validationErrors = this.credentialManager.validateCredential(credentialData);
-      if (validationErrors.length > 0) {
+      // Basic validation
+      if (!credentialData || typeof credentialData !== 'object') {
         return {
           success: false,
-          error: `Validation failed: ${validationErrors.join(', ')}`
+          error: 'Invalid credential data'
+        };
+      }
+
+      if (!credentialData.id || typeof credentialData.id !== 'string') {
+        return {
+          success: false,
+          error: 'Credential ID is required and must be a string'
         };
       }
 
@@ -126,9 +159,21 @@ class SecureChildProcess {
         };
       }
 
-      // Serialize and store in secure memory
-      const serializedData = this.credentialManager.serializeCredential(credentialData);
-      this.credentials.set(credentialData.id, serializedData);
+      // Convert data to Buffer if it's a string
+      let dataBuffer: Buffer;
+      if (typeof credentialData.data === 'string') {
+        dataBuffer = Buffer.from(credentialData.data, 'utf8');
+      } else if (Buffer.isBuffer(credentialData.data)) {
+        dataBuffer = credentialData.data;
+      } else {
+        return {
+          success: false,
+          error: 'Credential data must be a string or Buffer'
+        };
+      }
+
+      // Store the buffer directly
+      this.credentials.set(credentialData.id, dataBuffer);
 
       return {
         success: true,
@@ -145,24 +190,21 @@ class SecureChildProcess {
 
   private async retrieveCredential(id: string): Promise<VaultResponse<SecureCredential>> {
     try {
-      const serializedData = this.credentials.get(id);
-      if (!serializedData) {
+      const dataBuffer = this.credentials.get(id);
+      if (!dataBuffer) {
         return {
           success: false,
           error: 'Credential not found'
         };
       }
 
-      const credential = this.credentialManager.deserializeCredential(serializedData);
-      
-      // Check if credential has expired
-      if (this.credentialManager.isExpired(credential)) {
-        this.credentials.delete(id);
-        return {
-          success: false,
-          error: 'Credential has expired'
-        };
-      }
+      // Create a simple credential object
+      const credential: SecureCredential = {
+        id: id,
+        data: dataBuffer,
+        metadata: {},
+        createdAt: new Date(), // We don't track creation time in this simplified version
+      };
 
       return {
         success: true,
@@ -182,8 +224,8 @@ class SecureChildProcess {
       const existed = this.credentials.has(id);
       if (existed) {
         // Overwrite the data before deletion for security
-        const serializedData = this.credentials.get(id)!;
-        serializedData.fill(0);
+        const dataBuffer = this.credentials.get(id)!;
+        dataBuffer.fill(0);
         this.credentials.delete(id);
       }
 
@@ -204,29 +246,9 @@ class SecureChildProcess {
     try {
       const ids = Array.from(this.credentials.keys());
       
-      // Filter out expired credentials
-      const validIds: string[] = [];
-      for (const id of ids) {
-        const serializedData = this.credentials.get(id)!;
-        try {
-          const credential = this.credentialManager.deserializeCredential(serializedData);
-          if (!this.credentialManager.isExpired(credential)) {
-            validIds.push(id);
-          } else {
-            // Clean up expired credential
-            serializedData.fill(0);
-            this.credentials.delete(id);
-          }
-        } catch {
-          // If we can't deserialize, remove it
-          serializedData.fill(0);
-          this.credentials.delete(id);
-        }
-      }
-
       return {
         success: true,
-        data: validIds,
+        data: ids,
         processId: process.pid
       };
     } catch (error) {
