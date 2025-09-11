@@ -11,7 +11,7 @@ import { CacheStorage } from '../../../../models/cache';
 import { IBlock } from '../../../../types/Block';
 import { CoinListingJSON } from '../../../../types/Coin';
 import { IChainConfig, IProvider, ISVMNetworkConfig } from '../../../../types/Config';
-import { BroadcastTransactionParams, GetBalanceForAddressParams, GetBlockParams, GetCoinsForTxParams, GetEstimatePriorityFeeParams, GetWalletBalanceParams, IChainStateService, StreamAddressUtxosParams, StreamBlocksParams, StreamTransactionParams, StreamTransactionsParams, StreamWalletTransactionsParams, WalletBalanceType, GetBlockBeforeTimeParams } from '../../../../types/namespaces/ChainStateProvider';
+import { BroadcastTransactionParams, GetBalanceForAddressParams, GetBlockBeforeTimeParams, GetBlockParams, GetCoinsForTxParams, GetEstimatePriorityFeeParams, GetWalletBalanceParams, IChainStateService, StreamAddressUtxosParams, StreamBlocksParams, StreamTransactionParams, StreamTransactionsParams, StreamWalletTransactionsParams, WalletBalanceType } from '../../../../types/namespaces/ChainStateProvider';
 import { range } from '../../../../utils';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import {
@@ -698,11 +698,16 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
  async getSPLTokenInfo(
     network: string, 
     tokenAddress: string
-  ): Promise<{ name: string; symbol: string; decimals: number }> {
-    const { umi } = await this.getRpc(network);
+  ): Promise<{ name: string; symbol: string; decimals: number; programType: string; programAddress: string; }> {
+    const TOKEN_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+    const TOKEN_2022_ADDR = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
+    const { umi, connection } = await this.getRpc(network);
     let decimals;
+    let programType;
+    let programAddress;
     let name = '';
     let symbol = '';
+  
     try {
       let error;
       let token;
@@ -744,7 +749,29 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     } catch (err) {
       logger.error('Error getting SPL token info: %o', err);
     }
-    return { name, symbol, decimals };
+
+    try {
+      const result = await connection.getAccountInfo(tokenAddress).send();
+      const owner = result?.value?.owner?.toString?.();
+      if (!owner) {
+        throw new Error(`Mint account not found or unreadable: ${tokenAddress}`);
+      }
+      if (owner === TOKEN_PROGRAM_ADDRESS) {
+        programType = 'token';
+        programAddress = TOKEN_PROGRAM_ADDRESS;
+      }
+      if (owner === TOKEN_2022_ADDR) {
+        programType =  'token2022';
+        programAddress = TOKEN_2022_ADDR;
+      }
+      if (!programAddress) {
+        throw new Error(`Unknown token program owner for ${tokenAddress}: ${owner}`);
+      }
+    } catch (err) {
+      logger.error('Error getting SPL token program info: %o', err);
+    }
+
+    return { name, symbol, decimals, programType, programAddress };
   }
 
   async getLocalTip(params: any): Promise<IBlock> {
