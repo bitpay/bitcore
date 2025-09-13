@@ -11,6 +11,7 @@ import { WalletStorage } from '../../src/models/wallet';
 import { WalletAddressStorage } from '../../src/models/walletAddress';
 import { Storage } from '../../src/services/storage';
 import { expect } from 'chai';
+import { randomBytes } from 'crypto';
 
 export async function resetDatabase() {
   console.log('Resetting database');
@@ -103,3 +104,6 @@ export function testCoin (coin) {
 }
 
 export const minutesAgo = (minutes: number): Date => new Date(Date.now() - 1000 * 60 * minutes);
+
+export const generateHex = (characters: number): string => 
+  randomBytes(Math.ceil(characters / 2.0)).toString('hex').slice(0, characters);

@@ -3,9 +3,13 @@ import sinon from 'sinon';
 import app from '../../../src/routes';
 import { expect } from 'chai';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
-import { resetDatabase } from '../../helpers';
+import { generateHex, resetDatabase } from '../../helpers';
 import { ChainStateProvider } from '../../../src/providers/chain-state';
 import { WalletStorage } from '../../../src/models/wallet';
+import { CoinStorage, ICoin } from '../../../src/models/coin';
+import { TransactionStorage } from '../../../src/models/transaction';
+import { BitcoinBlockStorage } from '../../../src/models/block';
+import { MongoBound } from '../../../src/models/base';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
 
 const request = supertest(app);
@@ -14,7 +18,8 @@ const secp256k1 = require('secp256k1');
 
 const privKey = new bitcore.PrivateKey();
 const pubKey = bitcore.PublicKey(privKey);
-const address = new bitcore.PrivateKey().toAddress();
+const address = bitcore.PrivateKey().toAddress().toObject();
+const address2 = bitcore.PrivateKey().toAddress().toObject();
 
 const wallet = {
   chain: 'BTC',
@@ -42,6 +47,200 @@ function getSignature(privateKey, method: 'GET' | 'POST', url: string, body={}) 
   return Buffer.from(secp256k1.ecdsaSign(messageHash, privateKey.toBuffer()).signature).toString('hex');
 }
 
+async function addTransaction(params: { 
+  senderAddress: string | 'coinbase', 
+  recieverAddress: string,
+  amount: number,
+  fee?: number
+ }): Promise<boolean> {
+  const { senderAddress, recieverAddress, amount } = params;
+  let { fee = 0 } = params;
+  const chain = 'BTC';
+  const network = 'regtest';
+  const txid = generateHex(64);
+  const inputs: MongoBound<ICoin>[] = [];
+  let inputsTotalValue = 0;
+  // in the case of coins there are no input coins but the input count needs to be 1
+  let inputCount;
+  let outputCount = 2;
+  const coinbase = senderAddress === 'coinbase';
+
+  const tip = await BitcoinBlockStorage.getLocalTip({ chain, network });
+  expect(tip, 'addTransaction assumes block exists to add transactions to').to.exist;
+  if (!tip) {
+    return false;
+  }
+
+  if (coinbase) {
+    inputsTotalValue = amount;
+    inputCount = 1;
+
+    // insert coinbase utxos
+    await CoinStorage.collection.insertMany([
+      {
+        chain: chain,
+        network: network, 
+        mintTxid: txid,
+        mintIndex: 0,
+        coinbase: true,
+        mintHeight: tip.height,
+        value: amount,
+        spentHeight: -2,
+        spentTxid: '',
+        address: recieverAddress,
+        wallets: [],
+        script: Buffer.from('aiSqIant4vYcP3HR3v0/qZnfo2lTdVxpBol5mWK0i+vYNpdOjPk='),
+      },
+      {
+        chain: chain,
+        network: network, 
+        mintTxid: txid,
+        mintIndex: 1,
+        coinbase: true,
+        mintHeight: tip.height,
+        value: 0,
+        spentHeight: -2,
+        spentTxid: '',
+        address: 'false',
+        wallets: [],
+        script: Buffer.from('ABQUkj119YtLFcslg+FddDk3uHkE4g=='),
+      }
+    ]);
+  } else {
+    const smallestSufficientUtxo: MongoBound<ICoin> | null = await CoinStorage.collection.findOne(
+      {
+        address: senderAddress, 
+        spentHeight: -2, 
+        value: { $gte: amount }
+      }, 
+      { sort: { value: -1 }}
+    );
+
+    if (smallestSufficientUtxo) {
+      inputs.push(smallestSufficientUtxo);
+    } else {
+      const utxos: MongoBound<ICoin>[] = [...await CoinStorage.collection
+        .find({ chain, network, address: senderAddress })
+        .sort({ value: 1 })
+        .toArray()
+      ];
+      do {
+        const utxo: MongoBound<ICoin> | undefined = utxos.pop();
+        if (utxo) {
+          inputs.push(utxo);
+        } else {
+          return false; // insufficient funds, transaction creation failed
+        }
+      } while (inputsTotalValue < amount);
+    }
+
+    inputCount = inputs.length;
+    for (const input of inputs) {
+      inputsTotalValue += input.value;
+    }
+
+    // update spent utxos, prevents future usage
+    await CoinStorage.collection.bulkWrite(
+      inputs.map(({ _id }) => {
+        return {
+          updateOne: {
+            filter: { chain, network, _id },
+            update: { $set: { spentTxid: txid, spentHeight: tip.height }}
+          }
+        }
+      })
+    );
+
+    // add new utxos
+    await CoinStorage.collection.insertMany([
+      {
+        chain: chain,
+        network: network, 
+        mintTxid: txid,
+        mintIndex: 0,
+        coinbase: false,
+        mintHeight: tip.height,
+        value: amount,
+        spentHeight: -2,
+        spentTxid: '',
+        address: recieverAddress,
+        wallets: [],
+        script: Buffer.from('ABT2FdLqYRcZotGH4hBg/uUcL0lwUA=='),
+      },
+      {
+        chain: chain,
+        network: network, 
+        mintTxid: txid,
+        mintIndex: 1,
+        coinbase: false,
+        mintHeight: tip.height,
+        value: inputsTotalValue - amount - fee,
+        spentHeight: -2,
+        spentTxid: '',
+        address: senderAddress,
+        wallets: [],
+        script: Buffer.from('ABT2FdLqYRcZotGH4hBg/uUcL0lwUA=='),
+      }
+    ]);
+  }
+
+  // add new transaction
+  await TransactionStorage.collection.insertOne({
+    txid: txid,
+    chain: chain,
+    network: network,
+    blockHash: tip.hash,
+    blockTime: tip.time,
+    blockTimeNormalized: tip.timeNormalized,
+    fee,
+    value: inputsTotalValue,
+    coinbase,
+    inputCount,
+    outputCount,
+    wallets: [],
+    locktime: 0,
+    size: 100
+  });
+
+  // add transaction to block transaction count
+  await BitcoinBlockStorage.collection.updateOne(
+    { height: tip.height },
+    { $inc: { totalTransactions: 1 } }
+  );
+  return true;
+}
+
+async function addBlock() {
+  const chain = 'BTC';
+  const network = 'regtest';
+  const tip = await BitcoinBlockStorage.getLocalTip({ chain, network });
+
+  const hash = generateHex(64);
+  const time = new Date('2025-07-07T17:16:38.002Z');
+  await BitcoinBlockStorage.collection.insertOne({
+    network: 'regtest',
+    chain: chain,
+    hash: hash,
+    bits: 545259519,
+    height: tip ? tip.height + 1 : 0,
+    merkleRoot: '760a46b4f94ab17350a3ed299546fb5648c025ad9bd22271be38cf075c9cf3f4',
+    nextBlockHash: '',
+    nonce: 0,
+    previousBlockHash: (tip) ? tip.hash : '0000000000000000000000000000000000000000000000000000000000000000',
+    processed: true,
+    reward: 1250000000,
+    size: 214,
+    time: time,
+    timeNormalized: time,
+    transactionCount: 0,
+    version: 805306368
+  });
+
+  if (tip) {
+    await BitcoinBlockStorage.collection.updateOne({ hash: tip.hash }, { $set: { nextBlockHash: hash } })
+  }
+}
+
 describe('Wallet Routes', function() {
   let sandbox;
 
@@ -49,6 +248,8 @@ describe('Wallet Routes', function() {
     this.timeout(15000);
     await intBeforeHelper();
     await resetDatabase();
+    await addBlock();
+    await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, amount: 500_000 });
   });
 
   beforeEach(function() {
@@ -63,6 +264,20 @@ describe('Wallet Routes', function() {
     await intAfterHelper();
   });
 
+  const updateWallet = async (params: { privKey, pubKey, address }) => {
+    const { privKey, pubKey, address } = params;
+
+    const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}`;
+    const body = [{ address: address }];
+    const chainStateUpdateWalletSpy = sandbox.spy(ChainStateProvider, 'updateWallet');
+    const walletAddressStorageUpdateCoinsSpy = sandbox.spy(WalletAddressStorage, 'updateCoins');
+
+    await request.post(url)
+      .set('x-signature', getSignature(privKey, 'POST', url, body))
+      .send(body);
+    expect(chainStateUpdateWalletSpy.calledOnce).to.be.true;
+    expect(walletAddressStorageUpdateCoinsSpy.calledOnce).to.be.true;
+  }
 
   it('should have empty wallets db at start', done => {
     WalletStorage.collection.findOne({}).then(doc => {
@@ -142,20 +357,7 @@ describe('Wallet Routes', function() {
   }); 
 
   it('should update wallet', done => {
-    const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}`;
-    const body = [{ address: address.toObject() }];
-    const chainStateUpdateWalletSpy = sandbox.spy(ChainStateProvider, 'updateWallet');
-    const walletAddressStorageUpdateCoinsSpy = sandbox.spy(WalletAddressStorage, 'updateCoins');
-
-    request.post(url)
-      .set('x-signature', getSignature(privKey, 'POST', url, body))
-      .send(body)
-      .expect(200, (err) => {
-        if (err) console.error(err);
-        expect(chainStateUpdateWalletSpy.calledOnce).to.be.true;
-        expect(walletAddressStorageUpdateCoinsSpy.calledOnce).to.be.true;
-        done();
-      })
+    updateWallet({ privKey, pubKey, address }).then(done);
   });
 
   it('should get address after update', done => {
@@ -164,8 +366,47 @@ describe('Wallet Routes', function() {
       .set('x-signature', getSignature(privKey, 'GET', url, {}))
       .expect(200, (err, res) => {
         if (err) console.error(err);
-        expect(res.body).to.deep.include({ address: address.toObject() });
+        expect(res.body).to.deep.include({ address: address });
         done();
       });
   });
+
+  {
+    let balance1;
+    it('should get new wallet balance', done => {
+      const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/balance`;
+      request.get(url)
+        .set('x-signature', getSignature(privKey, 'GET', url, {}))
+        .expect(200, async (err, res) => {
+          if (err) console.error(err);
+          const { confirmed, unconfirmed, balance } = res.body;
+          expect(confirmed).to.be.greaterThan(0);
+          expect(unconfirmed).to.equal(0);
+          expect(balance).to.greaterThan(0);
+          balance1 = balance;
+          done();
+        });
+    });
+
+    it('should handle block updating', done => {
+      const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/balance`;
+      addBlock().then(async () => {
+        const amount = 10_000;
+        const fee = 100;
+        await addTransaction({ senderAddress: address, recieverAddress: address2, amount, fee });
+        await updateWallet({ privKey, pubKey, address });
+
+        request.get(url)
+          .set('x-signature', getSignature(privKey, 'GET', url, {}))
+          .expect(200, (err, res) => {
+            if (err) console.error(err);
+            const { confirmed, unconfirmed, balance } = res.body;
+            expect(balance1 - balance).to.equal(amount + fee);
+            expect(balance1 - confirmed).to.equal(amount + fee);
+            expect(unconfirmed).to.be.at.least(0);
+            done();
+          });
+      });
+    });
+  }
 });
