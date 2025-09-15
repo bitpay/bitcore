@@ -729,7 +729,7 @@ describe('Email notifications', function() {
           //mailerStub.returns(Promise.reject('err'));
 
           emailService = new EmailService();
-          getTokenDataStub = sinon.stub(emailService, 'getTokenData').callsFake(() => TestData.OneInch_ETH_Tokens.tokens);
+          getTokenDataStub = sinon.stub(emailService, 'getTokenData').callsFake(() => TestData.CoinGecko_ETH_Tokens.tokens);
           emailService.start({
             lockOpts: {},
             messageBroker: server.messageBroker,
