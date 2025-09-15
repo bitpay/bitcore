@@ -17,6 +17,7 @@ interface Errors<T> {
   INSUFFICIENT_FUNDS_FOR_FEE: T;
   INVALID_ADDRESS: T;
   INVALID_CHANGE_ADDRESS: T;
+  INVALID_NONCE: T;
   KEY_IN_COPAYER: T;
   LOCKED_FUNDS: T;
   // Polygon Errors
@@ -89,6 +90,7 @@ const errors: Errors<string> = {
   LOCKED_OP_FEE: 'Your linked OP wallet does not have enough ETH for fee',
   INVALID_ADDRESS: 'Invalid address',
   INVALID_CHANGE_ADDRESS: 'Invalid change address',
+  INVALID_NONCE: 'Invalid nonce',
   KEY_IN_COPAYER: 'Key already registered',
   LOCKED_FUNDS: 'Funds are locked by pending transaction proposals',
   HISTORY_LIMIT_EXCEEDED: 'Requested page limit is above allowed maximum',

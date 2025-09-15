@@ -2658,6 +2658,10 @@ export class WalletService implements IWalletService {
                   // SOL is skipped since its a non necessary field that is expected to be provided by the client.
                   if (!opts.nonce && !Constants.SVM_CHAINS[wallet.chain.toUpperCase()]) { 
                     try {
+                      if (Constants.EVM_CHAINS[wallet.chain.toUpperCase()]) {
+                        // if nonce mangement is done by BWS, default to refreshing nonce on txp publish
+                        opts.refreshOnPublish = true;
+                      } 
                       opts.nonce = await ChainService.getTransactionCount(this, wallet, opts.from);
                     } catch (error) {
                       return next(error);
@@ -2871,6 +2875,7 @@ export class WalletService implements IWalletService {
           if (!txp.isTemporary() && !txp.isRepublishEnabled()) return cb(null, txp);
 
           const copayer = wallet.getCopayer(this.copayerId);
+          const initialStatus = txp.status;
 
           let raw;
           try {
@@ -2900,6 +2905,7 @@ export class WalletService implements IWalletService {
           ChainService.checkTxUTXOs(this, txp, opts, err => {
             if (err) return cb(err);
             txp.status = 'pending';
+            opts.wallet = wallet;
             ChainService.refreshTxData(this, txp, opts, (err, txp) => {
               if (err) return cb(err);
               if (txp.isRepublishEnabled() && !txp.prePublishRaw) {
@@ -2908,7 +2914,8 @@ export class WalletService implements IWalletService {
               }
               this.storage.storeTx(this.walletId, txp, err => {
                 if (err) return cb(err);
-                const action = txp.isRepublishEnabled() && txp.prePublishRaw ? 'UpdatedTxProposal' : 'NewTxProposal';
+                
+                const action = initialStatus === 'pending' ? 'UpdatedTxProposal' : 'NewTxProposal';
                 this._notifyTxProposalAction(action, txp, () => {
                   if (txp.coin == 'bch' && txp.changeAddress) {
                     const format = opts.noCashAddr ? 'copay' : 'cashaddr';
@@ -3169,7 +3176,7 @@ export class WalletService implements IWalletService {
             try {
               const txps = await this.getPendingTxsPromise({});
               for (let t of txps) {
-                if (t.id !== txp.id && t.nonce <= txp.nonce && t.status !== 'rejected') {
+                if (t.id !== txp.id && t.nonce <= txp.nonce && t.status !== 'rejected' && !t.isRepublishEnabled()) {
                   return cb(Errors.TX_NONCE_CONFLICT);
                 }
               }
