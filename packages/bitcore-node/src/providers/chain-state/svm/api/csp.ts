@@ -698,7 +698,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
  async getSPLTokenInfo(
     network: string, 
     tokenAddress: string
-  ): Promise<{ name: string; symbol: string; decimals: number; programType: string; programAddress: string; }> {
+  ): Promise<{ name: string; symbol: string; decimals: number; programType: string | undefined; programAddress: string | undefined; }> {
     const TOKEN_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
     const TOKEN_2022_ADDR = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
     const { umi, connection } = await this.getRpc(network);
@@ -759,13 +759,12 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       if (owner === TOKEN_PROGRAM_ADDRESS) {
         programType = 'token';
         programAddress = TOKEN_PROGRAM_ADDRESS;
-      }
-      if (owner === TOKEN_2022_ADDR) {
+      } else if (owner === TOKEN_2022_ADDR) {
         programType =  'token2022';
         programAddress = TOKEN_2022_ADDR;
       }
       if (!programAddress) {
-        throw new Error(`Unknown token program owner for ${tokenAddress}: ${owner}`);
+        logger.warn(`Unknown token program owner for ${tokenAddress}: ${owner}`);
       }
     } catch (err) {
       logger.error('Error getting SPL token program info: %o', err);
