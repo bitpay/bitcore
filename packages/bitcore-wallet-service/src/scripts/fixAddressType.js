@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 const config = require('../../ts_build/config').default;
-const { Storage } = require('../../ts_build');
+const { Storage } = require('../../ts_build').default;
 const { ObjectId } = require('mongodb');
 
 if (!process.argv[2]) {

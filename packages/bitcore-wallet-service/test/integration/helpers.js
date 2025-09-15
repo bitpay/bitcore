@@ -1,89 +1,67 @@
 'use strict';
 // Node >= 17 started attempting to resolve all dns listings by ipv6 first, these lines are required to make it check ipv4 first
-var { setDefaultResultOrder } = require('dns');
+const { setDefaultResultOrder } = require('dns');
 setDefaultResultOrder('ipv4first');
-var _ = require('lodash');
-var async = require('async');
 
-var chai = require('chai');
-var sinon = require('sinon');
-var should = chai.should();
-var log = require('npmlog');
+const _ = require('lodash');
+const async = require('async');
+const chai = require('chai');
+const sinon = require('sinon');
+const should = chai.should();
+const log = require('npmlog');
 log.debug = log.verbose;
-
-var config = require('../test-config');
-// var tingodb = require('tingodb')({
-//   memStore: true
-// });
-
-var Bitcore = require('bitcore-lib');
-var Bitcore_ = {
+const config = require('../test-config');
+const Bitcore = require('bitcore-lib');
+const Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
   doge: require('bitcore-lib-doge'),
   ltc: require('bitcore-lib-ltc')
 };
-
-var { ChainService } = require('../../ts_build/lib/chain/index');
-var { Common } = require('../../ts_build/lib/common');
-var Utils = Common.Utils;
-var Constants = Common.Constants;
-var Defaults = Common.Defaults;
-
-var { Storage } = require('../../ts_build/lib/storage');
-var { WalletService } = require('../../ts_build/lib/server');
-var Model = require('../../ts_build/lib/model');
-var TestData = require('../testdata');
-
-var storage, blockchainExplorer;
-
-// tinodb not longer supported
-var useMongoDb =  true; // !!process.env.USE_MONGO_DB;
+const { ChainService } = require('../../ts_build/lib/chain/index');
+const { Common } = require('../../ts_build/lib/common');
+const { Storage } = require('../../ts_build/lib/storage');
+const { WalletService } = require('../../ts_build/lib/server');
+const Model = require('../../ts_build/lib/model');
+const TestData = require('../testdata');
 const CWC =  require('crypto-wallet-core');
+const { version } = require('../../package.json');
 
-var helpers = {};
+const {
+  Utils,
+  Constants,
+  Defaults
+} = Common;
 
-helpers.CLIENT_VERSION = 'bwc-2.0.0';
+let storage;
+let blockchainExplorer;
+
+const helpers = {};
+
+helpers.CLIENT_VERSION = `bwc-${version}`;
 
 helpers.before = function(cb) {
-  function getDb(cb) {
-    if (useMongoDb) {
-      var mongodb = require('mongodb');
-      mongodb.MongoClient.connect(config.mongoDb.uri, { useUnifiedTopology: true }, function(err, client) {
-        if (err) throw err;
-        return cb(client.db(config.mongoDb.dbname));
-      });
-    } else {
-      throw "tingodb not longer supported";
-      //var db = new tingodb.Db('./db/test', {});
-      //return cb(db);
-    }
-
-  }
-  getDb(function(db) {
-    storage = new Storage({
-      db: db
-    });
-    Storage.createIndexes(db);
-    let be = blockchainExplorer = sinon.stub();
-    be.register = sinon.stub().callsArgWith(1, null, null);
-    be.addAddresses = sinon.stub().callsArgWith(2, null, null);
-    be.getAddressUtxos = sinon.stub().callsArgWith(2, null, []);
-    be.getCheckData = sinon.stub().callsArgWith(1, null, {sum: 100});
-    be.getUtxos = sinon.stub().callsArgWith(1, null,[]);
-    be.getTransactions = sinon.stub().callsArgWith(2, null,[]);
-    be.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000, 'hash');
-    be.estimateGas = sinon.stub().callsArgWith(1, null, Defaults.MIN_GAS_LIMIT);
-    be.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: '10000000000', balance: '10000000000' });
-    be.getReserve = sinon.stub().callsArgWith(0, null, Defaults.MIN_XRP_BALANCE);
-
+  storage = new Storage();
+  storage.connect(config, function(err) {
+    if (err) return cb(err);
+    blockchainExplorer = sinon.stub();
+    blockchainExplorer.register = sinon.stub().callsArgWith(1, null, null);
+    blockchainExplorer.addAddresses = sinon.stub().callsArgWith(2, null, null);
+    blockchainExplorer.getAddressUtxos = sinon.stub().callsArgWith(2, null, []);
+    blockchainExplorer.getCheckData = sinon.stub().callsArgWith(1, null, {sum: 100});
+    blockchainExplorer.getUtxos = sinon.stub().callsArgWith(1, null,[]);
+    blockchainExplorer.getTransactions = sinon.stub().callsArgWith(2, null,[]);
+    blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000, 'hash');
+    blockchainExplorer.estimateGas = sinon.stub().callsArgWith(1, null, Defaults.MIN_GAS_LIMIT);
+    blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: '10000000000', balance: '10000000000' });
+    blockchainExplorer.getReserve = sinon.stub().callsArgWith(0, null, Defaults.MIN_XRP_BALANCE);
     // just a number >0 (xrp does not accept 0)
-    be.getTransactionCount = sinon.stub().callsArgWith(1, null, '5');
+    blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '5');
 
 
-    var opts = {
-      storage: storage,
-      blockchainExplorer: blockchainExplorer,
+    const opts = {
+      storage,
+      blockchainExplorer,
       request: sinon.stub()
     };
     WalletService.initialize(opts, function() {
@@ -119,13 +97,13 @@ helpers.beforeEach = function(cb) {
   };
 
 
-  async.each(_.values(collections), (x, icb)=> {
+  async.each(Object.values(collections), (x, icb)=> {
     storage.db.collection(x).deleteMany({}, icb);
   }, (err) => {
     should.not.exist(err);
-    var opts = {
-      storage: storage,
-      blockchainExplorer: blockchainExplorer,
+    const opts = {
+      storage,
+      blockchainExplorer,
       request: sinon.stub()
     };
     WalletService.initialize(opts, function() {

@@ -162,6 +162,10 @@ Input.prototype.getSignatures = function() {
   );
 };
 
+Input.prototype.getSighash = function() {
+  throw new errors.AbstractMethodInvoked('Input#getSighash');
+};
+
 Input.prototype.getSatoshisBuffer = function() {
   $.checkState(this.output instanceof Output);
   $.checkState(this.output._satoshisBN);

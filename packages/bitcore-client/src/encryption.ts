@@ -1,11 +1,5 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'crypto';
-const bitcore = require('crypto-wallet-core').BitcoreLib;
-const crypto = {
-  createHash,
-  createCipheriv,
-  createDecipheriv,
-  randomBytes
-};
+import crypto from 'crypto';
+import { BitcoreLib as bitcore } from 'crypto-wallet-core';
 
 export function shaHash(data, algo = 'sha256') {
   let hash = crypto
@@ -22,8 +16,8 @@ const algo = 'aes-256-cbc';
 
 export function encryptEncryptionKey(encryptionKey, password) {
   const password_hash = Buffer.from(SHA512(password));
-  const key = password_hash.slice(0, 32);
-  const iv = password_hash.slice(32, 48);
+  const key = password_hash.subarray(0, 32);
+  const iv = password_hash.subarray(32, 48);
   const cipher = crypto.createCipheriv(algo, key, iv);
   const encData = cipher.update(encryptionKey, 'hex', 'hex') + cipher.final('hex');
   return encData;
@@ -31,8 +25,8 @@ export function encryptEncryptionKey(encryptionKey, password) {
 
 export function decryptEncryptionKey(encEncryptionKey, password) {
   const password_hash = Buffer.from(SHA512(password));
-  const key = password_hash.slice(0, 32);
-  const iv = password_hash.slice(32, 48);
+  const key = password_hash.subarray(0, 32);
+  const iv = password_hash.subarray(32, 48);
   const decipher = crypto.createDecipheriv(algo, key, iv);
   const decrypted = decipher.update(encEncryptionKey, 'hex', 'hex' as any) + decipher.final('hex');
   return decrypted;
@@ -41,7 +35,7 @@ export function decryptEncryptionKey(encEncryptionKey, password) {
 export function encryptPrivateKey(privKey, pubKey, encryptionKey) {
   const key = Buffer.from(encryptionKey, 'hex');
   const doubleHash = Buffer.from(SHA256(SHA256(pubKey)), 'hex');
-  const iv = doubleHash.slice(0, 16);
+  const iv = doubleHash.subarray(0, 16);
   const cipher = crypto.createCipheriv(algo, key, iv);
   const encData = cipher.update(privKey, 'utf8', 'hex') + cipher.final('hex');
   return encData;
@@ -50,7 +44,7 @@ export function encryptPrivateKey(privKey, pubKey, encryptionKey) {
 function decryptPrivateKey(encPrivateKey: string, pubKey: string, encryptionKey: string) {
   const key = Buffer.from(encryptionKey, 'hex');
   const doubleHash = Buffer.from(SHA256(SHA256(pubKey)), 'hex');
-  const iv = doubleHash.slice(0, 16);
+  const iv = doubleHash.subarray(0, 16);
   const decipher = crypto.createDecipheriv(algo, key, iv);
   const decrypted = decipher.update(encPrivateKey, 'hex', 'utf8') + decipher.final('utf8');
   return decrypted;
@@ -60,9 +54,9 @@ function sha512KDF(passphrase: string, salt: Buffer, derivationOptions: { rounds
   let rounds = derivationOptions.rounds || 1;
   // if salt was sent in as a string, we will have to assume the default encoding type
   if (!Buffer.isBuffer(salt)) {
-    salt = new Buffer(salt, 'hex');
+    salt = Buffer.from(salt, 'hex');
   }
-  let derivation = Buffer.concat([new Buffer(''), new Buffer(passphrase), salt]);
+  let derivation = Buffer.concat([Buffer.from(''), Buffer.from(passphrase), salt]);
   for (let i = 0; i < rounds; i++) {
     derivation = crypto
       .createHash('sha512')
@@ -125,11 +119,11 @@ function decrypt(opts: { key?: string; iv?: Buffer | string; cipherText?: string
   if (opts.iv) {
     secondHalf = opts.iv.slice(0, 16);
   } else {
-    secondHalf = key.slice(32, 48); // AES256-cbc IV
+    secondHalf = key.subarray(32, 48); // AES256-cbc IV
   }
   let cipherText = Buffer.from(opts.cipherText, 'hex');
-  let firstHalf = key.slice(0, 32); // AES256-cbc shared key
-  let AESDecipher = crypto.createDecipheriv('aes-256-cbc', firstHalf, secondHalf);
+  let firstHalf = key.subarray(0, 32); // AES256-cbc shared key
+  let AESDecipher = crypto.createDecipheriv(algo, firstHalf, secondHalf);
   let plainText;
   try {
     plainText = Buffer.concat([AESDecipher.update(cipherText), AESDecipher.final()]).toString('hex');

@@ -18,8 +18,8 @@ const main = async () => {
   const { name, path, tokenName, storageType } = program.opts();
   try {
     wallet = await Wallet.loadWallet({ name, path, storageType });
-    if (!wallet.isEvmChain()) {
-      throw new Error('Cannot remove token from non-EVM wallet.');
+    if (!wallet.isEvmChain() && !wallet.isSolanaChain()) {
+      throw new Error('Cannot remove token from non-EVM/SOL wallet.');
     }
     await wallet.rmToken({ tokenName });
     console.log(`Successfully removed ${tokenName}`);

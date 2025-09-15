@@ -30,7 +30,7 @@ const Bitcore_ = {
   ltc: require('bitcore-lib-ltc')
 };
 
-const { WalletService } = require('../../ts_build/lib/server');
+const { WalletService, UPGRADES } = require('../../ts_build/lib/server');
 const { Storage } = require('../../ts_build/lib/storage')
 const { Common } = require('../../ts_build/lib/common');
 const Utils = Common.Utils;
@@ -797,47 +797,53 @@ describe('Wallet service', function() {
     });
 
     for (const c of ['eth','xrp','matic','arb','base','op','sol']) {
-      it(`should  fail to create a multisig ${c}  wallet`, function(done) {
-        var opts = {
-          coin: c,
-          name: 'my wallet',
-          m: 2,
-          n: 3,
-          pubKey: TestData.keyPair.pub,
-        };
-        server.createWallet(opts, function(err, walletId) {
-          should.exist(err);
-          err.message.should.contain('not supported');
-          done();
-        });
-      });
-
-      it(`should create ${c} wallet with singleAddress flag`, function(done) {
-        helpers.createAndJoinWallet(1, 1, { coin: c }, function(s, wallet) {
-          wallet.singleAddress.should.equal(true);
-          done();
-        });
-      });
-
-      it(`should create, store, and fetch ${c} wallet`, function(done) {
-        var opts = {
-          coin: c,
-          name: 'my wallet',
-          m: 1,
-          n: 1,
-          pubKey: TestData.keyPair.pub
-        };
-
-        server.createWallet(opts, function(err, walletId) {
-          should.not.exist(err);
-          should.exist(walletId);
-          server.storage.fetchWallet(walletId, function(err, wallet) {
-            should.not.exist(err);
-            wallet.id.should.equal(walletId);
-            wallet.name.should.equal('my wallet');
-            wallet.chain.should.equal(c);
-            wallet.coin.should.equal(c);
+      describe(c, function() {
+        it('should fail to create a multisig wallet', function(done) {
+          var opts = {
+            coin: c,
+            name: 'my wallet',
+            m: 2,
+            n: 3,
+            pubKey: TestData.keyPair.pub,
+          };
+          server.createWallet(opts, function(err, walletId) {
+            should.exist(err);
+            if (ChainService.supportsThresholdsig(c)) {
+              err.message.should.contain('TSS key session id is required');
+            } else {
+              err.message.should.contain('not supported');
+            }
             done();
+          });
+        });
+
+        it('should create wallet with singleAddress flag', function(done) {
+          helpers.createAndJoinWallet(1, 1, { coin: c }, function(s, wallet) {
+            wallet.singleAddress.should.equal(true);
+            done();
+          });
+        });
+
+        it('should create, store, and fetch wallet', function(done) {
+          var opts = {
+            coin: c,
+            name: 'my wallet',
+            m: 1,
+            n: 1,
+            pubKey: TestData.keyPair.pub
+          };
+
+          server.createWallet(opts, function(err, walletId) {
+            should.not.exist(err);
+            should.exist(walletId);
+            server.storage.fetchWallet(walletId, function(err, wallet) {
+              should.not.exist(err);
+              wallet.id.should.equal(walletId);
+              wallet.name.should.equal('my wallet');
+              wallet.chain.should.equal(c);
+              wallet.coin.should.equal(c);
+              done();
+            });
           });
         });
       });
@@ -1597,7 +1603,7 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          server2.getMainAddresses({}, function(err, addresses) {
+          server2.getAddresses({ noChange: true }, function(err, addresses) {
             should.not.exist(err);
             should.exist(addresses);
             addresses.length.should.above(0);
@@ -1896,7 +1902,7 @@ describe('Wallet service', function() {
           should.exist(err);
           should.not.exist(address);
 
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getAddresses({ noChange: true }, function(err, addresses) {
             addresses.length.should.equal(0);
 
             server.storage.storeAddressAndWallet.restore();
@@ -1964,7 +1970,7 @@ describe('Wallet service', function() {
           should.exist(err);
           should.not.exist(address);
 
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getAddresses({ noChange: true }, function(err, addresses) {
             addresses.length.should.equal(0);
 
             server.storage.storeAddressAndWallet.restore();
@@ -2031,7 +2037,7 @@ describe('Wallet service', function() {
           should.exist(err);
           should.not.exist(address);
 
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getAddresses({ noChange: true }, function(err, addresses) {
             addresses.length.should.equal(0);
 
             server.storage.storeAddressAndWallet.restore();
@@ -2099,7 +2105,7 @@ describe('Wallet service', function() {
             notif.data.address.should.equal(address.address);
 
             // stored address should be new format
-            server.getMainAddresses({}, function(err, addresses) {
+            server.getAddresses({ noChange: true }, function(err, addresses) {
               should.not.exist(err);
               addresses.length.should.equal(1);
               addresses[0].address.should.equal('qrg04mz8h67j9dck3f3f3sa560taep87yqnwra9ak6');
@@ -2332,7 +2338,7 @@ describe('Wallet service', function() {
               address.coin.should.equal('eth');
 
               // main addresses should transfrom addresses
-              server.getMainAddresses({}, function(err, addresses) {
+              server.getAddresses({ noChange: true }, function(err, addresses) {
                 should.not.exist(err);
                 addresses.length.should.equal(1);
                 addresses[0].address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
@@ -2440,7 +2446,7 @@ describe('Wallet service', function() {
               address.coin.should.equal('xrp');
 
               // main addresses should transfrom addresses
-              server.getMainAddresses({}, function(err, addresses) {
+              server.getAddresses({ noChange: true }, function(err, addresses) {
                 should.not.exist(err);
                 addresses.length.should.equal(1);
                 addresses[0].address.should.equal('rLsz9LPd3arEWQ6CsvD839E8c9dkdBopUG');
@@ -2471,21 +2477,22 @@ describe('Wallet service', function() {
 
 
 
-  describe('#getMainAddresses', function() {
-    var server, wallet;
+  describe('#getAddresses', function() {
+    let server, wallet;
+    const numMainAddresses = 5;
 
     beforeEach(function(done) {
       helpers.createAndJoinWallet(2, 2, {}, function(s, w) {
         server = s;
         wallet = w;
-        helpers.createAddresses(server, wallet, 5, 0, function() {
+        helpers.createAddresses(server, wallet, numMainAddresses, 0, function() {
           done();
         });
       });
     });
 
     it('should get all addresses', function(done) {
-      server.getMainAddresses({}, function(err, addresses) {
+      server.getAddresses({}, function(err, addresses) {
         should.not.exist(err);
         addresses.length.should.equal(5);
         addresses[0].path.should.equal('m/0/0');
@@ -2494,7 +2501,7 @@ describe('Wallet service', function() {
       });
     });
     it('should get first N addresses', function(done) {
-      server.getMainAddresses({
+      server.getAddresses({
         limit: 3
       }, function(err, addresses) {
         should.not.exist(err);
@@ -2505,7 +2512,7 @@ describe('Wallet service', function() {
       });
     });
     it('should get last N addresses in reverse order', function(done) {
-      server.getMainAddresses({
+      server.getAddresses({
         limit: 3,
         reverse: true,
       }, function(err, addresses) {
@@ -2514,6 +2521,33 @@ describe('Wallet service', function() {
         addresses[0].path.should.equal('m/0/4');
         addresses[2].path.should.equal('m/0/2');
         done();
+      });
+    });
+
+    describe('noChange', function() {
+      const numChangeAddresses = 3;
+      beforeEach(function(done) {
+        helpers.createAddresses(server, wallet, 0, numChangeAddresses, function() {
+          done();
+        });
+      });
+      it('should get all addresses', function(done) {
+        server.getAddresses({}, function(err, addresses) {
+          should.not.exist(err);
+          addresses.length.should.equal(numMainAddresses + numChangeAddresses);
+          addresses.some(addr => !addr.isChange).should.be.true;
+          addresses.some(addr => addr.isChange).should.be.true;
+          done();
+        });
+      });
+      it('should get main addresses', function(done) {
+        server.getAddresses({ noChange: true }, function(err, addresses) {
+          should.not.exist(err);
+          addresses.length.should.equal(numMainAddresses);
+          addresses.some(addr => !addr.isChange).should.be.true;
+          addresses.some(addr => addr.isChange).should.be.false;
+          done();
+        });
       });
     });
   });
@@ -2785,7 +2819,7 @@ describe('Wallet service', function() {
           should.exist(utxos);
           utxos.length.should.equal(2);
           utxos.reduce((sum, u) => sum += u.satoshis, 0).should.equal(3 * 1e8);
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getAddresses({ noChange: true }, function(err, addresses) {
             var utxo = utxos[0];
             var address = addresses.find(a => a.address === utxo.address);
             should.exist(address);
@@ -2805,7 +2839,7 @@ describe('Wallet service', function() {
           should.exist(utxos);
           utxos.length.should.equal(2);
           utxos.reduce((sum, u) => sum += u.satoshis, 0).should.equal(3 * 1e8);
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getAddresses({ noChange: true }, function(err, addresses) {
             var utxo = utxos[0];
             var address = addresses.find(a => a.address === utxo.address);
             should.exist(address);
@@ -2885,7 +2919,7 @@ describe('Wallet service', function() {
           should.exist(utxos);
           utxos.length.should.equal(2);
           utxos.reduce((sum, u) => sum += u.satoshis, 0).should.equal(2 * 1e8 + 1000);
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getAddresses({ noChange: true }, function(err, addresses) {
             var utxo = utxos[0];
             var address = addresses.find(a => a.address === utxo.address);
             should.exist(address);
@@ -2936,7 +2970,7 @@ describe('Wallet service', function() {
       var requestPubKeyStr = requestPubKey.toString();
       var sig = helpers.signRequestPubKey(requestPubKeyStr, xPrivKey);
 
-      var copayerId = Model.Copayer._xPubToCopayerId('btc', TestData.copayers[0].xPubKey_44H_0H_0H);
+      var copayerId = Model.Copayer.xPubToCopayerId('btc', TestData.copayers[0].xPubKey_44H_0H_0H);
       opts = {
         copayerId: copayerId,
         requestPubKey: requestPubKeyStr,
@@ -3100,7 +3134,7 @@ describe('Wallet service', function() {
           balance.byAddress.length.should.equal(2);
           balance.byAddress[0].amount.should.equal(helpers.toSatoshi(4));
           balance.byAddress[1].amount.should.equal(helpers.toSatoshi(2));
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getAddresses({ noChange: true }, function(err, addresses) {
             should.not.exist(err);
             var addresses = _.uniq(addresses.map(a => a.address));
             _.intersection(addresses, balance.byAddress.map(a => a.address)).length.should.equal(2);
@@ -6974,7 +7008,7 @@ describe('Wallet service', function() {
         should.exist(x);
         x.path.should.equal('m/0/0');
         x.address.should.equal(firstAddress.address);
-        server.getMainAddresses({}, function(err, addr) {
+        server.getAddresses({ noChange: true }, function(err, addr) {
           should.not.exist(err);
           addr.length.should.equal(1);
           done();
@@ -9918,7 +9952,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             wallet.addressManager.receiveAddressIndex.should.equal(3);
             wallet.addressManager.changeAddressIndex.should.equal(1);
-            server.getMainAddresses({}, function(err, addr) {
+            server.getAddresses({ noChange: true }, function(err, addr) {
               should.not.exist(err);
               addr.length.should.equal(3);
               done();
@@ -9949,7 +9983,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             wallet.addressManager.receiveAddressIndex.should.equal(201);
             wallet.addressManager.changeAddressIndex.should.equal(10);
-            server.getMainAddresses({}, function(err, addr) {
+            server.getAddresses({ noChange: true }, function(err, addr) {
               should.not.exist(err);
 
               //201 MAIN addresses (0 to 200)
@@ -10672,13 +10706,13 @@ describe('Wallet service', function() {
           address.coin.should.equal('bch');
           address.network.should.equal('livenet');
           address.address.should.equal('qrg04mz8h67j9dck3f3f3sa560taep87yqnwra9ak6');
-          server.btc.getMainAddresses({}, function(err, addresses) {
+          server.btc.getAddresses({ noChange: true }, function(err, addresses) {
             should.not.exist(err);
             addresses.length.should.equal(1);
             addresses[0].coin.should.equal('btc');
             addresses[0].walletId.should.equal(wallet.btc.id);
             addresses[0].address.should.equal('1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG');
-            server.bch.getMainAddresses({}, function(err, addresses) {
+            server.bch.getAddresses({ noChange: true }, function(err, addresses) {
               should.not.exist(err);
               addresses.length.should.equal(1);
               addresses[0].coin.should.equal('bch');
@@ -11540,7 +11574,7 @@ describe('Wallet service', function() {
   });
 
   describe('#clearCache', () => {
-    var server, wallet;
+    let server, wallet;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(2, 2, function(s, w) {
         server = s;
@@ -11548,11 +11582,299 @@ describe('Wallet service', function() {
         done();
       });
     });
-    it('clearWalletCache', () => {
-      server.clearWalletCache({}).then((val) => {
-        should.exist(val);
-        val.should.equal(true);
+    it('clearWalletCache', async () => {
+      const val = await server.clearWalletCache({});
+      should.exist(val);
+      val.should.equal(true);
+    });
+  });
+
+  describe('#upgradeNeeded', function() {
+    let server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
       });
+    });
+    it('should do something', function() {
+      (true).should.equal(true)
+    });
+
+    describe(UPGRADES.SOL_bwc_$lt_10_10_12, function() {
+      describe('should need upgrade: YES', function() {
+        it('lower bwc patch version', function() {
+          server.clientVersion = 'bwc-10.10.11';
+          wallet.chain = 'sol';
+          server._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet).should.equal(true);
+        });
+        it('lower bwc minor version', function() {
+          server.clientVersion = 'bwc-10.9.12';
+          wallet.chain = 'sol';
+          server._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet).should.equal(true);
+        });
+        it('lower bwc major version', function() {
+          server.clientVersion = 'bwc-9.10.12';
+          wallet.chain = 'sol';
+          server._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet).should.equal(true);
+        });
+        it('should be case insensitive', function() {
+          server.clientVersion = 'bwc-10.10.11';
+          wallet.chain = 'sol'; // case insensitive
+          server._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet).should.equal(true);
+          wallet.chain = 'SOL'; // case insensitive
+          server._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet).should.equal(true);
+        });
+      });
+      describe('should need upgrade: NO', function() {
+        it('higher bwc patch version', function() {
+          server.clientVersion = 'bwc-10.10.12';
+          wallet.chain = 'sol';
+          server._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet).should.equal(false);
+        });
+        it('higher bwc minor version', function() {
+          server.clientVersion = 'bwc-10.11.11';
+          wallet.chain = 'sol';
+          server._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet).should.equal(false);
+        });
+        it('higher bwc major version', function() {
+          server.clientVersion = 'bwc-11.10.11';
+          wallet.chain = 'sol';
+          server._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet).should.equal(false);
+        });
+        it('different chain', function() {
+          server.clientVersion = 'bwc-10.10.11';
+          wallet.chain = 'btc';
+          server._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet).should.equal(false);
+        });
+      });
+    });
+
+    describe(UPGRADES.BCH_bwc_$lt_8_3_multisig, function() {
+      describe('should need upgrade: YES', function() {
+        const upgradeMessage = 'BWC clients < 8.3 are no longer supported for multisig BCH wallets.';
+        it('lower bwc minor version', function() {
+          server.clientVersion = 'bwc-8.2.0';
+          wallet.chain = 'bch';
+          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(upgradeMessage);
+        });
+        it('lower bwc major version', function() {
+          server.clientVersion = 'bwc-7.3.0';
+          wallet.chain = 'bch';
+          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(upgradeMessage);
+        });
+        it('should be case insensitive', function() {
+          server.clientVersion = 'bwc-8.2.0';
+          wallet.chain = 'bch'; // case insensitive
+          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(upgradeMessage);
+          wallet.chain = 'BCH'; // case insensitive
+          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(upgradeMessage);
+        });
+      });
+      describe('should need upgrade: NO', function() {
+        it('higher bwc minor version', function() {
+          server.clientVersion = 'bwc-8.3.0';
+          wallet.chain = 'bch';
+          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(false);
+        });
+        it('higher bwc major version', function() {
+          server.clientVersion = 'bwc-9.0.0';
+          wallet.chain = 'bch';
+          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(false);
+        });
+        it('different chain', function() {
+          server.clientVersion = 'bwc-8.2.0';
+          wallet.chain = 'btc';
+          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(false);
+        });
+        it('not multisig', function() {
+          server.clientVersion = 'bwc-8.2.0';
+          wallet.n = 1;
+          server._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, wallet).should.equal(false);
+        });
+      });
+    });
+
+    describe(UPGRADES.bwc_$lt_8_4_multisig_purpose48, function() {
+      describe('should need upgrade: YES', function() {
+        it('lower bwc minor version', function() {
+          server.clientVersion = 'bwc-8.3.0';
+          wallet.usePurpose48 = true;
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_4_multisig_purpose48, wallet).should.equal(true);
+        });
+        it('lower bwc major version', function() {
+          server.clientVersion = 'bwc-7.4.0';
+          wallet.usePurpose48 = true;
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_4_multisig_purpose48, wallet).should.equal(true);
+        });
+      });
+      describe('should need upgrade: NO', function() {
+        it('higher bwc minor version', function() {
+          server.clientVersion = 'bwc-8.4.0';
+          wallet.usePurpose48 = true;
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_4_multisig_purpose48, wallet).should.equal(false);
+        });
+        it('higher bwc major version', function() {
+          server.clientVersion = 'bwc-9.3.0';
+          wallet.usePurpose48 = true;
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_4_multisig_purpose48, wallet).should.equal(false);
+        });
+        it('not multisig', function() {
+          server.clientVersion = 'bwc-8.3.0';
+          wallet.usePurpose48 = true;
+          wallet.n = 1;
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_4_multisig_purpose48, wallet).should.equal(false);
+        });
+        it('usePurpose48 is false', function() {
+          server.clientVersion = 'bwc-8.3.0';
+          wallet.usePurpose48 = false;
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_4_multisig_purpose48, wallet).should.equal(false);
+        });
+      });
+    });
+
+    describe(UPGRADES.bwc_$lt_8_17_multisig_p2wsh, function() {
+      describe('should need upgrade: YES', function() {
+        it('lower bwc minor version', function() {
+          server.clientVersion = 'bwc-8.16.0';
+          wallet.addressType = 'P2WSH';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_17_multisig_p2wsh, wallet).should.equal(true);
+        });
+        it('lower bwc major version', function() {
+          server.clientVersion = 'bwc-7.17.0';
+          wallet.addressType = 'P2WSH';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_17_multisig_p2wsh, wallet).should.equal(true);
+        });
+        it('addressType is case insensitive', function() {
+          server.clientVersion = 'bwc-8.16.0';
+          wallet.addressType = 'p2wsh';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_17_multisig_p2wsh, wallet).should.equal(true);
+        });
+      });
+      describe('should need upgrade: NO', function() {
+        it('higher bwc minor version', function() {
+          server.clientVersion = 'bwc-8.17.0';
+          wallet.addressType = 'P2WSH';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_17_multisig_p2wsh, wallet).should.equal(false);
+        });
+        it('higher bwc major version', function() {
+          server.clientVersion = 'bwc-9.16.0';
+          wallet.addressType = 'P2WSH';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_17_multisig_p2wsh, wallet).should.equal(false);
+        });
+        it('not multisig', function() {
+          server.clientVersion = 'bwc-8.16.0';
+          wallet.addressType = 'P2WSH';
+          wallet.n = 1;
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_17_multisig_p2wsh, wallet).should.equal(false);
+        });
+        it('addressType is not P2WSH', function() {
+          server.clientVersion = 'bwc-8.16.0';
+          wallet.addressType = 'P2SH';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_8_17_multisig_p2wsh, wallet).should.equal(false);
+        });
+      });
+    });
+
+    describe(UPGRADES.version_$gt_maxTxpVersion, function() {
+      describe('should need upgrade: YES', function() {
+        it('version > maxTxpVersion integers', function() {
+          const opts = {
+            version: 2,
+            maxTxpVersion: 1
+          };
+          server._upgradeNeeded(UPGRADES.version_$gt_maxTxpVersion, opts).should.equal(true);
+        });
+        it('version > maxTxpVersion strings', function() {
+          const opts = {
+            version: '2',
+            maxTxpVersion: '1'
+          };
+          server._upgradeNeeded(UPGRADES.version_$gt_maxTxpVersion, opts).should.equal(true);
+        });
+      });
+      describe('should need upgrade: NO', function() {
+        it('version == maxTxpVersion', function() {
+          const opts = {
+            version: 1,
+            maxTxpVersion: '1'
+          };
+          server._upgradeNeeded(UPGRADES.version_$gt_maxTxpVersion, opts).should.equal(false);
+        });
+        it('version < maxTxpVersion', function() {
+          const opts = {
+            version: '1',
+            maxTxpVersion: 2
+          };
+          server._upgradeNeeded(UPGRADES.version_$gt_maxTxpVersion, opts).should.equal(false);
+        });
+      });
+    });
+
+    describe(UPGRADES.BCH_schnorr, function() {
+      describe('should need upgrade: YES', function() {
+        it('lower bwc minor version', function() {
+          const opts = {
+            signingMethod: 'schnorr',
+            supportBchSchnorr: false
+          };
+          server._upgradeNeeded(UPGRADES.BCH_schnorr, opts).should.equal(true);
+        });
+        it('lower bwc major version', function() {
+          const opts = {
+            signingMethod: 'schnorr',
+            supportBchSchnorr: false
+          };
+          server._upgradeNeeded(UPGRADES.BCH_schnorr, opts).should.equal(true);
+        });
+      });
+      describe('should need upgrade: NO', function() {
+        it('signingMethod is not schnorr', function() {
+          const opts = {
+            signingMethod: 'ecdsa',
+            supportBchSchnorr: false
+          };
+          server._upgradeNeeded(UPGRADES.BCH_schnorr, opts).should.equal(false);
+        });
+        it('supportBchSchnorr is true', function() {
+          const opts = {
+            signingMethod: 'ecdsa',
+            supportBchSchnorr: true
+          };
+          server._upgradeNeeded(UPGRADES.BCH_schnorr, opts).should.equal(false);
+        });
+      });
+    });
+
+    describe(UPGRADES.bwc_$lt_1_2, function() {
+      describe('should need upgrade: YES', function() {
+        const upgradeMessage = 'BWC clients < 1.2 are no longer supported.';
+        it('lower bwc minor version', function() {
+          server.clientVersion = 'bwc-1.1.0';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_1_2, null).should.equal(upgradeMessage);
+        });
+        it('lower bwc major version', function() {
+          server.clientVersion = 'bwc-0.2.0';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_1_2, null).should.equal(upgradeMessage);
+        });
+      });
+      describe('should need upgrade: NO', function() {
+        it('higher bwc minor version', function() {
+          server.clientVersion = 'bwc-1.2.0';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_1_2, null).should.equal(false);
+        });
+        it('higher bwc major version', function() {
+          server.clientVersion = 'bwc-2.1.0';
+          server._upgradeNeeded(UPGRADES.bwc_$lt_1_2, null).should.equal(false);
+        });
+      });
+    });
+
+    it('should throw an error for an unknown path', function() {
+      (function() {
+        server._upgradeNeeded('bogus-path', wallet);
+      }).should.throw('Unknown upgrade path');
     });
   });
 })

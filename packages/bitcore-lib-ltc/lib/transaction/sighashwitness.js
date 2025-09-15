@@ -1,17 +1,12 @@
 'use strict';
 
-/* jshint maxparams:5 */
-
-var Signature = require('../crypto/signature');
-var Script = require('../script');
-var Output = require('./output');
-var BufferReader = require('../encoding/bufferreader');
-var BufferWriter = require('../encoding/bufferwriter');
-var BN = require('../crypto/bn');
-var Hash = require('../crypto/hash');
-var ECDSA = require('../crypto/ecdsa');
-var $ = require('../util/preconditions');
-var _ = require('lodash');
+const Signature = require('../crypto/signature');
+const Script = require('../script');
+const BufferReader = require('../encoding/bufferreader');
+const BufferWriter = require('../encoding/bufferwriter');
+const Hash = require('../crypto/hash');
+const ECDSA = require('../crypto/ecdsa');
+const $ = require('../util/preconditions');
 
 /**
  * Returns a buffer of length 32 bytes with the hash that needs to be signed
@@ -24,52 +19,58 @@ var _ = require('lodash');
  * @param {number} inputNumber the input index for the signature
  * @param {Buffer} scriptCode
  * @param {Buffer} satoshisBuffer
+ * @returns {Buffer}
  */
-var sighash = function sighash(transaction, sighashType, inputNumber, scriptCode, satoshisBuffer) {
-  /* jshint maxstatements: 50 */
-
-  var hashPrevouts = Buffer.alloc(32);
-  var hashSequence = Buffer.alloc(32);
-  var hashOutputs = Buffer.alloc(32);
+function sighash(transaction, sighashType, inputNumber, scriptCode, satoshisBuffer) {
+  let hashPrevouts = Buffer.alloc(32);
+  let hashSequence = Buffer.alloc(32);
+  let hashOutputs = Buffer.alloc(32);
 
   if (!(sighashType & Signature.SIGHASH_ANYONECANPAY)) {
-    var buffers = [];
-    for (var n = 0; n < transaction.inputs.length; n++) {
-      var input = transaction.inputs[n];
-      var prevTxIdBuffer = new BufferReader(input.prevTxId).readReverse();
+    const buffers = [];
+    for (const input of transaction.inputs) {
+      const prevTxIdBuffer = new BufferReader(input.prevTxId).readReverse();
       buffers.push(prevTxIdBuffer);
-      var outputIndexBuffer = Buffer.alloc(4);
+      const outputIndexBuffer = Buffer.alloc(4);
       outputIndexBuffer.writeUInt32LE(input.outputIndex, 0);
       buffers.push(outputIndexBuffer);
     }
     hashPrevouts = Hash.sha256sha256(Buffer.concat(buffers));
   }
 
-  if (!(sighashType & Signature.SIGHASH_ANYONECANPAY) &&
-      (sighashType & 0x1f) !== Signature.SIGHASH_SINGLE && (sighashType & 0x1f) !== Signature.SIGHASH_NONE) {
-
-    var sequenceBuffers = [];
-    for (var m = 0; m < transaction.inputs.length; m++) {
-      var sequenceBuffer = Buffer.alloc(4);
-      sequenceBuffer.writeUInt32LE(transaction.inputs[m].sequenceNumber, 0);
+  if (
+    !(sighashType & Signature.SIGHASH_ANYONECANPAY) &&
+    (sighashType & 0x1f) !== Signature.SIGHASH_SINGLE &&
+    (sighashType & 0x1f) !== Signature.SIGHASH_NONE
+  ) {
+    const sequenceBuffers = [];
+    for (const input of transaction.inputs) {
+      const sequenceBuffer = Buffer.alloc(4);
+      sequenceBuffer.writeUInt32LE(input.sequenceNumber, 0);
       sequenceBuffers.push(sequenceBuffer);
     }
     hashSequence = Hash.sha256sha256(Buffer.concat(sequenceBuffers));
   }
 
-  var outputWriter = new BufferWriter();
-  if ((sighashType & 0x1f) !== Signature.SIGHASH_SINGLE && (sighashType & 0x1f) !== Signature.SIGHASH_NONE) {
-    for (var p = 0; p < transaction.outputs.length; p++) {
-      transaction.outputs[p].toBufferWriter(outputWriter);
+  const outputWriter = new BufferWriter();
+  if (
+    (sighashType & 0x1f) !== Signature.SIGHASH_SINGLE &&
+    (sighashType & 0x1f) !== Signature.SIGHASH_NONE
+  ) {
+    for (const output of transaction.outputs) {
+      output.toBufferWriter(outputWriter);
     }
     hashOutputs = Hash.sha256sha256(outputWriter.toBuffer());
-  } else if ((sighashType & 0x1f) === Signature.SIGHASH_SINGLE && inputNumber < transaction.outputs.length) {
+  } else if (
+    (sighashType & 0x1f) === Signature.SIGHASH_SINGLE &&
+    inputNumber < transaction.outputs.length
+  ) {
     transaction.outputs[inputNumber].toBufferWriter(outputWriter);
     hashOutputs = Hash.sha256sha256(outputWriter.toBuffer());
   }
 
   // Version
-  var writer = new BufferWriter();
+  const writer = new BufferWriter();
   writer.writeUInt32LE(transaction.version);
 
   // Input prevouts/nSequence (none/all, depending on flags)
@@ -79,7 +80,7 @@ var sighash = function sighash(transaction, sighashType, inputNumber, scriptCode
   // The input being signed (replacing the scriptSig with scriptCode + amount)
   // The prevout may already be contained in hashPrevout, and the nSequence
   // may already be contain in hashSequence.
-  var outpointId = new BufferReader(transaction.inputs[inputNumber].prevTxId).readReverse();
+  const outpointId = new BufferReader(transaction.inputs[inputNumber].prevTxId).readReverse();
   writer.write(outpointId);
   writer.writeUInt32LE(transaction.inputs[inputNumber].outputIndex);
 
@@ -99,7 +100,6 @@ var sighash = function sighash(transaction, sighashType, inputNumber, scriptCode
   writer.writeInt32LE(sighashType);
 
   return Hash.sha256sha256(writer.toBuffer());
-
 };
 
 /**
@@ -108,24 +108,15 @@ var sighash = function sighash(transaction, sighashType, inputNumber, scriptCode
  * @name Signing.sign
  * @param {Transaction} transaction
  * @param {PrivateKey} privateKey
- * @param {number} sighash
+ * @param {number} sighashType
  * @param {number} inputIndex
- * @param {Script} subscript
- * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
+ * @param {Script} scriptCode
+ * @param {Buffer} satoshisBuffer
  * @return {Signature}
  */
-function sign(transaction, privateKey, sighashType, inputIndex, scriptCode, satoshisBuffer, signingMethod) {
-  signingMethod = signingMethod || 'ecdsa';
-  var sig;
-
-  if (signingMethod === 'ecdsa') {
-    let hashbuf = sighash(transaction, sighashType, inputIndex, scriptCode, satoshisBuffer);
-    sig = ECDSA.sign(hashbuf, privateKey).set({
-      nhashtype: sighashType
-    });
-    return sig;
-  }
-  throw new Error("signingMethod not supported ", signingMethod);
+function sign(transaction, privateKey, sighashType, inputIndex, scriptCode, satoshisBuffer) {
+  const hashbuf = sighash(transaction, sighashType, inputIndex, scriptCode, satoshisBuffer);
+  return ECDSA.sign(hashbuf, privateKey).set({ nhashtype: sighashType });
 }
 
 /**
@@ -136,20 +127,16 @@ function sign(transaction, privateKey, sighashType, inputIndex, scriptCode, sato
  * @param {Signature} signature
  * @param {PublicKey} publicKey
  * @param {number} inputIndex
- * @param {Script} subscript
- * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr' (future signing method)
+ * @param {Script} scriptCode
+ * @param {Buffer} satoshisBuffer
  * @return {boolean}
  */
-function verify(transaction, signature, publicKey, inputIndex, scriptCode, satoshisBuffer, signingMethod) {
-  $.checkArgument(!_.isUndefined(transaction));
-  $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype));
-  signingMethod = signingMethod || 'ecdsa';
+function verify(transaction, signature, publicKey, inputIndex, scriptCode, satoshisBuffer) {
+  $.checkArgument(transaction != null, 'transaction cannot be nullish');
+  $.checkArgument(signature != null && signature.nhashtype != null, 'signature and signature.nhashtype cannot be nullish');
 
-  if (signingMethod === 'ecdsa') {
-    let hashbuf = sighash(transaction, signature.nhashtype, inputIndex, scriptCode, satoshisBuffer);
-    return ECDSA.verify(hashbuf, signature, publicKey);
-  }
-  throw new Error('signingMethod not supported ', signingMethod);
+  const hashbuf = sighash(transaction, signature.nhashtype, inputIndex, scriptCode, satoshisBuffer);
+  return ECDSA.verify(hashbuf, signature, publicKey);
 }
 
 /**

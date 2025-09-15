@@ -28,7 +28,7 @@ Varint.prototype.set = function(obj) {
 
 Varint.prototype.fromString = function(str) {
   this.set({
-    buf: new Buffer(str, 'hex')
+    buf: Buffer.from(str, 'hex')
   });
   return this;
 };

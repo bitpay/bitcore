@@ -64,7 +64,7 @@ const main = async () => {
   const from = inputFrom || await wallet.deriveAddress(0);
   let nonce;
   const { chain } = wallet;
-  if (!['BTC', 'BCH', 'DOGE', 'LTC'].includes(chain)) {
+  if (!['BTC', 'BCH', 'DOGE', 'LTC', 'SOL'].includes(chain)) {
     nonce = inputNonce || await wallet.getNonce();
   }
 
@@ -104,7 +104,7 @@ const main = async () => {
       invoiceID = outputs[0].invoiceID;
     }
     const utxos = await wallet.getUtxosArray();
-    const params = { recipients, feeRate, from, invoiceID, data, value, utxos, gasPrice };
+    const params = { recipients, feeRate, from, invoiceID, memo: invoiceID, data, value, utxos, gasPrice, tokenName: token };
     params.nonce = Number(nonce);
     params.change = !wallet.isUtxoChain() ? null : wallet.deriveAddress(wallet.addressIndex, true);
     const changeIdx = params.change ? wallet.addressIndex : null;

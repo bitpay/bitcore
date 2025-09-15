@@ -13,9 +13,9 @@ var BufferReader = bitcore.encoding.BufferReader;
 
 describe('Inventory', function() {
 
-  var hash = new Buffer('eb951630aba498b9a0d10f72b5ea9e39d5ff04b03dc2231e662f52057f948aa1', 'hex');
-  var hashedStr = BufferUtils.reverse(new Buffer(hash, 'hex')).toString('hex');
-  var inventoryBuffer = new Buffer(
+  var hash = Buffer.from('eb951630aba498b9a0d10f72b5ea9e39d5ff04b03dc2231e662f52057f948aa1', 'hex');
+  var hashedStr = BufferUtils.reverse(Buffer.from(hash, 'hex')).toString('hex');
+  var inventoryBuffer = Buffer.from(
     '01000000eb951630aba498b9a0d10f72b5ea9e39d5ff04b03dc2231e662f52057f948aa1',
     'hex'
   );
@@ -39,7 +39,7 @@ describe('Inventory', function() {
     it('handle a string hash (reversed)', function() {
       var inventory = Inventory.forItem(Inventory.TYPE.TX, hashedStr);
       should.exist(inventory);
-      inventory.hash.should.deep.equal(new Buffer(hash, 'hex'));
+      inventory.hash.should.deep.equal(Buffer.from(hash, 'hex'));
     });
 
   });

@@ -195,19 +195,18 @@ export class PayProV2 {
 
   /**
    * Selects which chain and currency option the user will be using for payment
-   * @param {string} paymentUrl the payment protocol specific url
-   * @param chain
-   * @param currency
-   * @param unsafeBypassValidation
    * @return {Promise<{payProDetails: Object}>}
    */
-  static async selectPaymentOption({
-    paymentUrl,
-    chain,
-    currency,
-    payload,
-    unsafeBypassValidation = false
+  static async selectPaymentOption(args: {
+    /** The payment protocol specific url */
+    paymentUrl: string;
+    chain?: string;
+    currency?: string;
+    payload?: any;
+    unsafeBypassValidation?: boolean;
   }) {
+    const { paymentUrl, chain, payload, unsafeBypassValidation } = args;
+    let { currency } = args;
     if (currency === 'USDP') currency = 'PAX'; // TODO workaround. Remove this when usdp is accepted as an option
     let { rawBody, headers } = await PayProV2._asyncRequest({
       url: paymentUrl,

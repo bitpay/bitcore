@@ -66,8 +66,11 @@ function Address(data, network, type) {
     throw new TypeError('Second argument must be "livenet" or "testnet".');
   }
 
-  if (type && (type !== Address.PayToPublicKeyHash && type !== Address.PayToScriptHash)) {
-    throw new TypeError('Third argument must be "pubkeyhash" or "scripthash".');
+  if (type) {
+    if (!Address.isValidType(type)) {
+      throw new TypeError('Third argument must be one of: "' + Address.AllTypes.join('", "') + '".');
+    }
+    type = Address.TypesMap[type.toLowerCase()];
   }
 
   var info = this._classifyArguments(data, network, type);
@@ -112,10 +115,30 @@ Address.prototype._classifyArguments = function(data, network, type) {
   }
 };
 
-/** @static */
+Address.TypesMap = {};
+
 Address.PayToPublicKeyHash = 'pubkeyhash';
-/** @static */
+Address.PayToPublicKeyHashAlt = 'p2pkh';
+Address.TypesMap[Address.PayToPublicKeyHash] = Address.PayToPublicKeyHash;
+Address.TypesMap[Address.PayToPublicKeyHashAlt] = Address.PayToPublicKeyHash;
+Address.isPayToPublicKeyHash = function(type) {
+  return typeof type === 'string' && [Address.PayToPublicKeyHash, Address.PayToPublicKeyHashAlt].includes(type.toLowerCase());
+};
+
 Address.PayToScriptHash = 'scripthash';
+Address.PayToScriptHashAlt = 'p2sh';
+Address.TypesMap[Address.PayToScriptHash] = Address.PayToScriptHash;
+Address.TypesMap[Address.PayToScriptHashAlt] = Address.PayToScriptHash;
+Address.isPayToScriptHash = function(type) {
+  return typeof type === 'string' && [Address.PayToScriptHash, Address.PayToScriptHashAlt].includes(type.toLowerCase());
+};
+
+Address.isValidType = function(type) {
+  return Address.isPayToPublicKeyHash(type) ||
+    Address.isPayToScriptHash(type);
+};
+
+Address.AllTypes = Object.keys(Address.TypesMap);
 
 /**
  * @param {Buffer} hash - An instance of a hash Buffer
@@ -231,6 +254,9 @@ Address._transformPublicKey = function(pubkey, network, type) {
     throw new TypeError('Address must be an instance of PublicKey.');
   }
   info.hashBuffer = Hash.sha256ripemd160(pubkey.toBuffer());
+  // NOTE: simple, single-sig, pubkey => P2SH is not completely supported in bitcore-lib-doge due
+  //  to it being unconventional in DOGE (unlike BTC and LTC)
+  // TODO: either prohibit it or implement full support with a warning that it's highly unusual
   info.type = type || Address.PayToPublicKeyHash;
   return info;
 };

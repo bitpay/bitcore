@@ -42,6 +42,7 @@ export interface ITxProposal {
     data?: string;
     gasLimit?: number;
     script?: string;
+    satoshis?: number;
     tag?: number;
   }>;
   outputOrder: number[];
@@ -50,7 +51,7 @@ export interface ITxProposal {
   requiredSignatures: number;
   requiredRejections: number;
   status: TxProposalStatus;
-  actions: [];
+  actions: any[];
   feeLevel: number;
   feePerKb: number;
   excludeUnconfirmedUtxos: boolean;
@@ -60,12 +61,12 @@ export interface ITxProposal {
   fee: number;
   version: number;
   broadcastedOn: number;
-  inputPaths: string;
+  inputPaths: string | any[];
   proposalSignature: string;
   proposalSignaturePubKey: string;
   proposalSignaturePubKeySig: string;
   signingMethod: string;
-  lowFees: boolean;
+  lowFees?: boolean;
   nonce?: number | string;
   gasPrice?: number;
   maxGasFee?: number;
@@ -97,7 +98,7 @@ export interface ITxProposal {
   prePublishRaw?: string;
 }
 
-export class TxProposal {
+export class TxProposal implements ITxProposal {
   type: string;
   creatorName: string;
   createdOn: number;
@@ -117,7 +118,7 @@ export class TxProposal {
   inputs: any[];
   outputs: Array<{
     amount: number;
-    address?: string;
+    address: string;
     toAddress?: string;
     sourceAddress?: string;
     message?: string;
@@ -139,7 +140,7 @@ export class TxProposal {
   excludeUnconfirmedUtxos: boolean;
   addressType: string;
   customData: any;
-  amount: string | number;
+  amount: string;
   fee: number;
   version: number;
   broadcastedOn: number;
@@ -148,6 +149,7 @@ export class TxProposal {
   proposalSignaturePubKey: string;
   proposalSignaturePubKeySig: string;
   signingMethod: string;
+  lowFees?: boolean;
   raw?: Array<string> | string;
   nonce?: number | string;
   gasPrice?: number;

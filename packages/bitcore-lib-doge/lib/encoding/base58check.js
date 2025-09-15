@@ -42,7 +42,7 @@ Base58Check.decode = function(s) {
   if (typeof s !== 'string')
     throw new Error('Input must be a string');
 
-  var buf = new Buffer(Base58.decode(s));
+  var buf = Buffer.from(Base58.decode(s));
 
   if (buf.length < 4)
     throw new Error("Input string too short");
@@ -66,7 +66,7 @@ Base58Check.checksum = function(buffer) {
 Base58Check.encode = function(buf) {
   if (!Buffer.isBuffer(buf))
     throw new Error('Input must be a buffer');
-  var checkedBuf = new Buffer(buf.length + 4);
+  var checkedBuf = Buffer.alloc(buf.length + 4);
   var hash = Base58Check.checksum(buf);
   buf.copy(checkedBuf);
   hash.copy(checkedBuf, buf.length);

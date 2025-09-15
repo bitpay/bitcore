@@ -10,7 +10,7 @@ var P2P = require('../');
 var BloomFilter = P2P.BloomFilter;
 
 function getPayloadBuffer(messageBuffer) {
-  return new Buffer(messageBuffer.slice(48), 'hex');
+  return Buffer.from(messageBuffer.slice(48), 'hex');
 }
 
 // convert a hex string to a bytes buffer
@@ -20,7 +20,7 @@ function ParseHex(str) {
     result.push(parseInt(str.substring(0, 2), 16));
     str = str.substring(2, str.length);
   }
-  var buf = new Buffer(result, 16);
+  var buf = Buffer.from(result);
   return buf;
 }
 
@@ -63,14 +63,14 @@ describe('BloomFilter', function() {
     assert(filter.contains(ParseHex('b9300670b4c5366e95b2699e8b18bc75e5f729c5')));
 
     var actual = filter.toBuffer();
-    var expected = new Buffer('03614e9b050000000000000001', 'hex');
+    var expected = Buffer.from('03614e9b050000000000000001', 'hex');
 
     actual.should.deep.equal(expected);
   });
 
  it('deserialize a buffer', function() {
 
-   var buffer = new Buffer('03614e9b050000000000000001', 'hex');
+   var buffer = Buffer.from('03614e9b050000000000000001', 'hex');
    var filter = BloomFilter.fromBuffer(buffer);
 
    assert(filter.contains(ParseHex('99108ad8ed9bb6274d3980bab5a85c048f0950c8')));

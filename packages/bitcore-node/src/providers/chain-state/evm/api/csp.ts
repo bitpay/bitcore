@@ -37,6 +37,10 @@ import {
 import { partition, range } from '../../../../utils';
 import { StatsUtil } from '../../../../utils/stats';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
+import {
+  getProvider,
+  isValidProviderType
+} from '../../external/providers/provider';
 import { ExternalApiStream } from '../../external/streams/apiStream';
 import { ERC20Abi } from '../abi/erc20';
 import { MultisendAbi } from '../abi/multisend';
@@ -47,10 +51,6 @@ import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateEffectsTransform } from './populateEffectsTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
-import {
-  getProvider,
-  isValidProviderType
-} from './provider';
 import { EVMListTransactionsStream } from './transform';
 
 export interface GetWeb3Response { rpc: CryptoRpc; web3: Web3; dataType: string; lastPingTime?: number; };
@@ -489,10 +489,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return new Promise<void>(async (resolve, reject) => {
       const { network, wallet, req, res, args } = params;
       const { web3 } = await this.getWeb3(network);
+      args.tokenAddress = args.tokenAddress ? web3.utils.toChecksumAddress(args.tokenAddress) : undefined;
 
       let transactionStream = new TransformWithEventPipe({ objectMode: true, passThrough: true });
       const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddres => waddres.address);
-      const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses);
+      const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses, args.tokenAddress);
       const populateReceipt = new PopulateReceiptTransform();
       const populateEffects = new PopulateEffectsTransform();
 

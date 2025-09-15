@@ -9,32 +9,37 @@ import { CacheTimes } from '../middleware';
 
 const router = Router({ mergeParams: true });
 
-router.get('/', function(req: Request, res: Response) {
-  let { chain, network } = req.params;
-  let { blockHeight, blockHash, limit, since, direction, paging } = req.query as any;
-  if (!chain || !network) {
-    return res.status(400).send('Missing required param');
-  }
-  if (!blockHash && !blockHeight) {
-    return res.status(400).send('Must provide blockHash or blockHeight');
-  }
-  chain = chain.toUpperCase();
-  network = network.toLowerCase();
-  let payload: StreamTransactionsParams = {
-    chain,
-    network,
-    req,
-    res,
-    args: { limit, since, direction, paging }
-  };
+router.get('/', async function(req: Request, res: Response) {
+  try {
+    let { chain, network } = req.params;
+    let { blockHeight, blockHash, limit, since, direction, paging } = req.query as any;
+    if (!chain || !network) {
+      return res.status(400).send('Missing required param');
+    }
+    if (!blockHash && !blockHeight) {
+      return res.status(400).send('Must provide blockHash or blockHeight');
+    }
+    chain = chain.toUpperCase();
+    network = network.toLowerCase();
+    let payload: StreamTransactionsParams = {
+      chain,
+      network,
+      req,
+      res,
+      args: { limit, since, direction, paging }
+    };
 
-  if (blockHeight !== undefined) {
-    payload.args.blockHeight = parseInt(blockHeight);
+    if (blockHeight !== undefined) {
+      payload.args.blockHeight = parseInt(blockHeight);
+    }
+    if (blockHash !== undefined) {
+      payload.args.blockHash = blockHash;
+    }
+    return await ChainStateProvider.streamTransactions(payload);
+  } catch (err: any) {
+    logger.error('Error streaming wallet utxos: %o', err.stack || err.message || err);
+    return res.status(500).send(err.message || err);
   }
-  if (blockHash !== undefined) {
-    payload.args.blockHash = blockHash;
-  }
-  return ChainStateProvider.streamTransactions(payload);
 });
 
 router.get('/:txId', async (req: Request, res: Response) => {

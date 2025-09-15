@@ -73,8 +73,7 @@ export function BlockChainExplorer(opts): V8 {
         network,
         url,
         apiPrefix: opts.apiPrefix,
-        userAgent: opts.userAgent,
-        addressFormat: opts.addressFormat
+        userAgent: opts.userAgent
       });
     default:
       throw new Error(`Provider not supported: ${provider}`);

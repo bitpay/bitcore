@@ -743,7 +743,8 @@ Transaction.prototype.addInput = function(input, outputScript, satoshis) {
   }
   if (!input.output && outputScript && satoshis != null) {
     outputScript = outputScript instanceof Script ? outputScript : new Script(outputScript);
-    $.checkArgumentType(satoshis, 'number', 'satoshis');
+    satoshis = parseInt(satoshis);
+    $.checkArgument(JSUtil.isNaturalNumber(satoshis), 'satoshis must be a natural number');
     input.output = new Output({
       script: outputScript,
       satoshis: satoshis
@@ -787,6 +788,7 @@ Transaction.prototype.hasAllUtxoInfo = function() {
  * @return {Transaction} this, for chaining
  */
 Transaction.prototype.fee = function(amount) {
+  amount = parseInt(amount);
   $.checkArgument(!isNaN(amount), 'amount must be a number');
   this._fee = amount;
   this._updateChangeOutput();
@@ -802,6 +804,7 @@ Transaction.prototype.fee = function(amount) {
  * @return {Transaction} this, for chaining
  */
 Transaction.prototype.feePerKb = function(amount) {
+  amount = parseFloat(amount); // fee rate can be a fractional number (float)
   $.checkArgument(!isNaN(amount), 'amount must be a number');
   this._feePerKb = amount;
   this._updateChangeOutput();
@@ -817,7 +820,8 @@ Transaction.prototype.feePerKb = function(amount) {
  * @param {number} amount satoshis per Byte to be sent
  * @return {Transaction} this, for chaining
  */
-Transaction.prototype.feePerByte = function (amount) {
+Transaction.prototype.feePerByte = function(amount) {
+  amount = parseFloat(amount); // fee rate can be a fractional number (float)
   $.checkArgument(!isNaN(amount), 'amount must be a number');
   this._feePerByte = amount;
   this._updateChangeOutput();
@@ -877,10 +881,8 @@ Transaction.prototype.to = function(address, amount) {
     return this;
   }
 
-  $.checkArgument(
-    JSUtil.isNaturalNumber(amount),
-    'Amount is expected to be a positive integer'
-  );
+  amount = parseInt(amount);
+  $.checkArgument(JSUtil.isNaturalNumber(amount), 'Amount is expected to be a positive integer');
   this.addOutput(new Output({
     script: Script(new Address(address)),
     satoshis: amount
@@ -1227,24 +1229,23 @@ Transaction.prototype.removeInput = function(txId, outputIndex) {
  *
  * @param {Array|String|PrivateKey} privateKey
  * @param {number} sigtype
- * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
  * @return {Transaction} this, for chaining
  */
-Transaction.prototype.sign = function(privateKey, sigtype, signingMethod) {
+Transaction.prototype.sign = function(privateKey, sigtype) {
   $.checkState(this.hasAllUtxoInfo(), 'Not all utxo information is available to sign the transaction.');
   if (Array.isArray(privateKey)) {
     for (const pk of privateKey) {
-      this.sign(pk, sigtype, signingMethod);
+      this.sign(pk, sigtype);
     }
     return this;
   }
-  for (const signature of this.getSignatures(privateKey, sigtype, signingMethod)) {
-    this.applySignature(signature, signingMethod);
+  for (const signature of this.getSignatures(privateKey, sigtype)) {
+    this.applySignature(signature);
   }
   return this;
 };
 
-Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod) {
+Transaction.prototype.getSignatures = function(privKey, sigtype) {
   privKey = new PrivateKey(privKey);
   sigtype = sigtype || Signature.SIGHASH_ALL;
   const transaction = this;
@@ -1252,7 +1253,7 @@ Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod) 
   const hashData = Hash.sha256ripemd160(privKey.publicKey.toBuffer());
   for (let index = 0; index < this.inputs.length; index++) {
     const input = this.inputs[index];
-    for (const signature of input.getSignatures(transaction, privKey, index, sigtype, hashData, signingMethod)) {
+    for (const signature of input.getSignatures(transaction, privKey, index, sigtype, hashData)) {
       results.push(signature);
     }
   }
@@ -1267,11 +1268,10 @@ Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod) 
  * @param {number} signature.sigtype
  * @param {PublicKey} signature.publicKey
  * @param {Signature} signature.signature
- * @param {String} signingMethod - 'ecdsa' to sign transaction
  * @return {Transaction} this, for chaining
  */
-Transaction.prototype.applySignature = function(signature, signingMethod) {
-  this.inputs[signature.inputIndex].addSignature(this, signature, signingMethod);
+Transaction.prototype.applySignature = function(signature) {
+  this.inputs[signature.inputIndex].addSignature(this, signature);
   return this;
 };
 
@@ -1289,22 +1289,27 @@ Transaction.prototype.isFullySigned = function() {
   });
 };
 
-Transaction.prototype.isValidSignature = function(signature, signingMethod) {
+Transaction.prototype.isValidSignature = function(signature) {
   if (this.inputs[signature.inputIndex].isValidSignature === Input.prototype.isValidSignature) {
     throw new errors.Transaction.UnableToVerifySignature(
       'Unrecognized script kind, or not enough information to execute script.' +
       'This usually happens when creating a transaction from a serialized transaction'
     );
   }
-  return this.inputs[signature.inputIndex].isValidSignature(this, signature, signingMethod);
+  return this.inputs[signature.inputIndex].isValidSignature(this, signature);
 };
 
 /**
- * @param {String} signingMethod method used to sign - 'ecdsa' or 'schnorr' (future signing method)
- * @returns {bool} whether the signature is valid for this transaction input
+ * Checks that the signature is valid for this transaction input
+ * @param {Signature|Buffer} sig Signature to verify
+ * @param {PublicKey|Buffer} pubkey Public key used to verify sig
+ * @param {Number} nin Tx input index to verify signature against
+ * @param {Script} subscript ECDSA only
+ * @param {Number} sigversion See Signature.Version for valid versions (default: 0 or Signature.Version.BASE)
+ * @param {Number} satoshis ECDSA only
+ * @returns {boolean}
  */
-Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, sigversion, satoshis, signingMethod) {
-
+Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, sigversion, satoshis) {
   if (sigversion == null) {
     sigversion = 0;
   }
@@ -1328,13 +1333,12 @@ Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, si
       pubkey,
       nin,
       scriptCodeWriter.toBuffer(),
-      satoshisBuffer,
-      signingMethod
+      satoshisBuffer
     );
     return verified;
   }
 
-  return Sighash.verify(this, sig, pubkey, nin, subscript, signingMethod);
+  return Sighash.verify(this, sig, pubkey, nin, subscript);
 };
 
 /**

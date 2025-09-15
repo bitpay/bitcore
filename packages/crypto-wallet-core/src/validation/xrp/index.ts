@@ -1,6 +1,6 @@
 import baseX from 'base-x';
 import Bitcore from 'bitcore-lib';
-import { IValidation } from '..';
+import type { IValidation } from '../../types/validation';
 
 const RIPPLE_ALPHABET = 'rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz';
 
@@ -14,13 +14,13 @@ export class XrpValidation implements IValidation {
 
     // Then ensure it is a valid base58check encoding
     const base58 = baseX(RIPPLE_ALPHABET);
-    const buffer = new Buffer(base58.decode(address));
-    let prefix = buffer.slice(0, 1);
-    let data = buffer.slice(1, -4);
+    const buffer = Buffer.from(base58.decode(address));
+    let prefix = buffer.subarray(0, 1);
+    let data = buffer.subarray(1, -4);
     let hash = Buffer.concat([prefix, data]);
     hash = Bitcore.crypto.Hash.sha256(hash);
     hash = Bitcore.crypto.Hash.sha256(hash);
-    let checksum = buffer.slice(-4).reduce((acc, check, index) => {
+    let checksum = buffer.subarray(-4).reduce((acc, check, index) => {
       if (check !== hash[index]) {
         // Invalid checksum
         return 0;

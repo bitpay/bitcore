@@ -102,16 +102,28 @@ MultiSigScriptHashInput.prototype.getScriptCode = function() {
   return writer.toBuffer();
 };
 
-MultiSigScriptHashInput.prototype.getSighash = function(transaction, privateKey, index, sigtype) {
-  var hash;
+
+/**
+ * Get the hash data to sign for this input
+ * @param {Transaction} transaction The transaction to be signed
+ * @param {PublicKey} publicKey Unused for this input type
+ * @param {number} index The index of the input in the transaction input vector
+ * @param {number} sigtype The type of signature, defaults to Signature.SIGHASH_ALL
+ * @returns {Buffer}
+ */
+MultiSigScriptHashInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
+  sigtype = sigtype || Signature.SIGHASH_ALL;
+
   if (this.nestedWitness || this.type === Address.PayToWitnessScriptHash) {
-    var scriptCode = this.getScriptCode();
-    var satoshisBuffer = this.getSatoshisBuffer();
-    hash = SighashWitness.sighash(transaction, sigtype, index, scriptCode, satoshisBuffer);
-  } else  {
-    hash = Sighash.sighash(transaction, sigtype, index, this.redeemScript);
+    const scriptCode = this.getScriptCode();
+    const satoshisBuffer = this.getSatoshisBuffer();
+    return SighashWitness.sighash(transaction, sigtype, index, scriptCode, satoshisBuffer);
+  } else {
+    const sighash = Sighash.sighash(transaction, sigtype, index, this.redeemScript);
+    // sighash() returns data little endian but it must be signed big endian, hence the reverse
+    return sighash.reverse();
   }
-  return hash;
 };
 
 /**
@@ -121,14 +133,13 @@ MultiSigScriptHashInput.prototype.getSighash = function(transaction, privateKey,
  * @param {number} index - the index of the input in the transaction input vector
  * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
  * @param {Buffer} hashData - unused for this input type
- * @param {String} signingMethod DEPRECATED - method used to sign - 'ecdsa' or 'schnorr'
+ * @param {String} signingMethod DEPRECATED - unused. Keeping for arg placement consistency with other libs
  * @param {Buffer} merkleRoot - unused for this input type
  * @return {Array<TransactionSignature>}
  */
 MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod, merkleRoot) {
-  $.checkState(this.output instanceof Output);
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
   sigtype = sigtype || Signature.SIGHASH_ALL;
-  signingMethod = signingMethod || 'ecdsa'; // unused. Keeping for consistency with other libs
 
   const results = [];
   for (const publicKey of this.publicKeys) {

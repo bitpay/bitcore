@@ -58,6 +58,7 @@ export interface IChain {
   isUTXOChain(): boolean;
   isSingleAddress(): boolean;
   supportsMultisig(): boolean;
+  supportsThresholdsig(): boolean;
   notifyConfirmations(network: string): boolean;
   addSignaturesToBitcoreTx(
     tx: string,
@@ -202,6 +203,10 @@ class ChainProxy {
 
   supportsMultisig(chain: string): boolean {
     return this.get(chain).supportsMultisig();
+  }
+
+  supportsThresholdsig(chain: string): boolean {
+    return this.get(chain).supportsThresholdsig();
   }
 
   addSignaturesToBitcoreTx(chain, tx, inputs, inputPaths, signatures, xpub, signingMethod) {

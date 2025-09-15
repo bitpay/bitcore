@@ -12,7 +12,7 @@ describe('Message Utils', function() {
   describe('checkFinished', function() {
     it('should throw an error if buffer reader is not finished', function() {
       /*jshint immed: false */
-      var buffer = new Buffer(Array(32));
+      var buffer = Buffer.from(Array(32));
       var br = new BufferReader(buffer);
       (function() {
         utils.checkFinished(br);
@@ -30,7 +30,7 @@ describe('Message Utils', function() {
     });
     it('should keep buffers as buffers', function() {
       /*jshint immed: false */
-      var starts = [new Buffer(Array(32))];
+      var starts = [Buffer.from(Array(32))];
       var obj = utils.sanitizeStartStop({starts: starts});
       obj.starts[0].should.deep.equal(starts[0]);
     });
