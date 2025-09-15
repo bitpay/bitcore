@@ -182,7 +182,11 @@ export class Verifier {
         return true;
     });
 
-    if (!creatorKeys) return false;
+    if (!creatorKeys) {
+      log.error('Missing creator key')
+      return false;
+    }
+
     var creatorSigningPubKey;
 
     // If the txp using a selfsigned pub key?
@@ -194,14 +198,17 @@ export class Verifier {
           txp.proposalSignaturePubKeySig,
           creatorKeys.xPubKey
         )
-      )
+      ) {
+        log.error('Invalid self-signed proposal signature')
         return false;
-
+      }
       creatorSigningPubKey = txp.proposalSignaturePubKey;
     } else {
       creatorSigningPubKey = creatorKeys.requestPubKey;
     }
-    if (!creatorSigningPubKey) return false;
+    if (!creatorSigningPubKey) {
+      log.error('Missing creator signing key');
+    }
 
     var hash;
     if (parseInt(txp.version) >= 3) {
@@ -219,11 +226,15 @@ export class Verifier {
     );
   
     const verified = Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey);
-    if (!verified && !txp.prePublishRaw)
-        return false;
-    
-    if (!verified && txp.prePublishRaw && !Utils.verifyMessage(txp.prePublishRaw, txp.proposalSignature, creatorSigningPubKey))
-        return false;
+    if (!verified && !txp.prePublishRaw) {
+      log.error('Invalid proposal signature');
+      return false;
+    }
+        
+    if (!verified && txp.prePublishRaw && !Utils.verifyMessage(txp.prePublishRaw, txp.proposalSignature, creatorSigningPubKey)) {
+      log.error('Invalid refreshed proposal signature');
+      return false 
+    }
 
     if (Constants.UTXO_CHAINS.includes(chain)) {
       if (!this.checkAddress(credentials, txp.changeAddress)) {
@@ -286,9 +297,15 @@ export class Verifier {
   static checkTxProposal(credentials, txp, opts) {
     opts = opts || {};
 
-    if (!this.checkTxProposalSignature(credentials, txp)) return false;
+    if (!this.checkTxProposalSignature(credentials, txp)) {
+      log.error('Transaction proposal signature check failed');
+      return false;
+    }
 
-    if (opts.paypro && !this.checkPaypro(txp, opts.paypro)) return false;
+    if (opts.paypro && !this.checkPaypro(txp, opts.paypro)) {
+      log.error('Transaction proposal paypro check failed');
+      return false;
+    }
 
     return true;
   }
