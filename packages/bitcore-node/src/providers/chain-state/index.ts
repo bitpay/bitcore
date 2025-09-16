@@ -35,10 +35,6 @@ class ChainStateProxy implements IChainStateProvider {
     return services[chain][network];
   }
 
-  streamAddressUtxos(params: StreamAddressUtxosParams) {
-    return this.get(params).streamAddressUtxos(params);
-  }
-
   streamAddressTransactions(params: StreamAddressUtxosParams) {
     return this.get(params).streamAddressTransactions(params);
   }
