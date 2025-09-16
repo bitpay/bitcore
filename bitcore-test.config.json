@@ -5,6 +5,11 @@
         "wallets": {
           "allowCreationBeforeCompleteSync": true
         }
+      },
+      "socket": {
+        "bwsKeys": [
+          "036df8264584a6398718e88a5bf4dc816c52e5037303934d555dba0ccaa65fbe3f"
+        ]
       }
     },
     "chains": {

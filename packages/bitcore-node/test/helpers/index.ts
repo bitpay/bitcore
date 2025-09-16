@@ -105,5 +105,5 @@ export function testCoin (coin) {
 
 export const minutesAgo = (minutes: number): Date => new Date(Date.now() - 1000 * 60 * minutes);
 
-export const generateHex = (characters: number): string => 
+export const randomHex = (characters: number): string => 
   randomBytes(Math.ceil(characters / 2.0)).toString('hex').slice(0, characters);

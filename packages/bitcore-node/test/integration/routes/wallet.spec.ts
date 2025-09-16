@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import app from '../../../src/routes';
 import { expect } from 'chai';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
-import { generateHex, resetDatabase } from '../../helpers';
+import { randomHex, resetDatabase, testCoin } from '../../helpers';
 import { ChainStateProvider } from '../../../src/providers/chain-state';
 import { WalletStorage } from '../../../src/models/wallet';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
@@ -12,14 +12,18 @@ import { BitcoinBlockStorage } from '../../../src/models/block';
 import { MongoBound } from '../../../src/models/base';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
 
-const request = supertest(app);
-const bitcore = require('bitcore-lib');
+const { PrivateKey, PublicKey, Address, crypto } = require('bitcore-lib');
 const secp256k1 = require('secp256k1');
 
-const privKey = new bitcore.PrivateKey();
-const pubKey = bitcore.PublicKey(privKey);
-const address = bitcore.PrivateKey().toAddress().toObject();
-const address2 = bitcore.PrivateKey().toAddress().toObject();
+const request = supertest(app);
+
+const privKey = new PrivateKey();
+const pubKey = PublicKey(privKey);
+
+const address = Address(PrivateKey().toPublicKey(), 'regtest').toString();
+const address2 = Address(PrivateKey().toPublicKey(), 'regtest').toString();
+
+const bwsPrivKey = new PrivateKey('3711033b85a260d21cd469e7d93e27f04c31c21f13001053f1c074f7abbe6e75');
 
 const wallet = {
   chain: 'BTC',
@@ -41,9 +45,9 @@ function testWalletEquivalence(wallet1, doc) {
   expect(singleAddress).to.equal(wallet1.singleAddress);
 }
 
-function getSignature(privateKey, method: 'GET' | 'POST', url: string, body={}) {
+function getSignature(privateKey, method: 'GET' | 'POST' | 'reprocess', url: string, body={}) {
   const message = [method, url, JSON.stringify(body)].join('|');
-  const messageHash = bitcore.crypto.Hash.sha256sha256(Buffer.from(message));
+  const messageHash = crypto.Hash.sha256sha256(Buffer.from(message));
   return Buffer.from(secp256k1.ecdsaSign(messageHash, privateKey.toBuffer()).signature).toString('hex');
 }
 
@@ -57,7 +61,7 @@ async function addTransaction(params: {
   let { fee = 0 } = params;
   const chain = 'BTC';
   const network = 'regtest';
-  const txid = generateHex(64);
+  const txid = randomHex(64);
   const inputs: MongoBound<ICoin>[] = [];
   let inputsTotalValue = 0;
   // in the case of coins there are no input coins but the input count needs to be 1
@@ -215,7 +219,7 @@ async function addBlock() {
   const network = 'regtest';
   const tip = await BitcoinBlockStorage.getLocalTip({ chain, network });
 
-  const hash = generateHex(64);
+  const hash = randomHex(64);
   const time = new Date('2025-07-07T17:16:38.002Z');
   await BitcoinBlockStorage.collection.insertOne({
     network: 'regtest',
@@ -288,7 +292,7 @@ describe('Wallet Routes', function() {
 
   it('should not have wallet before it is created', done => {
     const spy = sandbox.spy(ChainStateProvider, 'createWallet');
-    request.get(`/api/${wallet.chain}/${wallet.network}/wallet/${wallet.pubKey}`)
+    request.get(`/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}`)
       .expect(404, (err, res) => {
         if (err) console.error(err);
         expect(res.text).to.include('Wallet not found');
@@ -388,25 +392,76 @@ describe('Wallet Routes', function() {
         });
     });
 
-    it('should handle block updating', done => {
-      const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/balance`;
-      addBlock().then(async () => {
-        const amount = 10_000;
-        const fee = 100;
-        await addTransaction({ senderAddress: address, recieverAddress: address2, amount, fee });
-        await updateWallet({ privKey, pubKey, address });
-
-        request.get(url)
-          .set('x-signature', getSignature(privKey, 'GET', url, {}))
-          .expect(200, (err, res) => {
-            if (err) console.error(err);
-            const { confirmed, unconfirmed, balance } = res.body;
-            expect(balance1 - balance).to.equal(amount + fee);
-            expect(balance1 - confirmed).to.equal(amount + fee);
-            expect(unconfirmed).to.be.at.least(0);
-            done();
-          });
-      });
+    it('should get wallet added utxos', done => {
+      const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/utxos`;
+      request.get(url)
+        .set('x-signature', getSignature(privKey, 'GET', url, {}))
+        .expect(200, (err, res) => {
+          if (err) console.error(err);
+          let balance = 0;
+          for (const utxo of res.body) {
+            expect(utxo.chain).to.equal('BTC');
+            expect(utxo.network).to.equal('regtest');
+            balance += utxo.value;
+            testCoin(utxo);
+          }
+          expect(balance).to.equal(balance1);
+          done();
+        });
     });
-  }
+
+    it('should handle block updating (1/4): adding block and transactions directly to mongodb', done => {
+      const amount = 10_000;
+      const fee = 100;
+      addBlock()
+        .then(async () => {
+          await addTransaction({ senderAddress: address, recieverAddress: address2, amount, fee })
+          done()
+        });
+    });
+
+    it('should handle block updating (2/4): updating and reprocessing address via api', done => {
+      const url = `/api/BTC/regtest/wallet/${pubKey}`
+      const body = [{ address: address }];
+
+      request.post(url)
+        .set('x-signature', getSignature(privKey, 'POST', url, body))
+        .set('x-reprocess', getSignature(bwsPrivKey, 'reprocess', '/addAddresses' + pubKey, body))
+        .send(body)
+        .expect(200, done);
+    });
+
+    it('should handle block updating (3/4): get blocks utxos', done => {
+      const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/utxos`;
+      request.get(url)
+        .set('x-signature', getSignature(privKey, 'GET', url, {}))
+        .expect(200, (err, res) => {
+          if (err) console.error(err);
+          let balance = 0;
+          for (const utxo of res.body) {
+            expect(utxo.chain).to.equal('BTC');
+            expect(utxo.network).to.equal('regtest');
+            balance += utxo.value;
+            testCoin(utxo);
+          }
+          done();
+        });
+    });
+
+    it('should handle block updating (4/4): get balance', done => {
+      const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/balance`;
+      const amount = 10_000;
+      const fee = 100;
+      request.get(url)
+        .set('x-signature', getSignature(privKey, 'GET', url, {}))
+        .expect(200, (err, res) => {
+          if (err) console.error(err);
+          const { confirmed, unconfirmed, balance } = res.body;
+          expect(balance1 - balance).to.equal(amount + fee);
+          expect(balance1 - confirmed).to.equal(amount + fee);
+          expect(unconfirmed).to.be.at.least(0);
+          done();
+        });
+    });
+  };
 });
