@@ -354,6 +354,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
 
         if ((solSentOut || tokensSentOut) && !(solReceived || tokensReceived)) {
           txCategory = 'send';
+          value = value * -1;
         } else if (!(solSentOut || tokensSentOut) && (solReceived || tokensReceived)) {
           txCategory = 'receive';
         } else if ((solSentOut || tokensSentOut) && (solReceived || tokensReceived)) {
