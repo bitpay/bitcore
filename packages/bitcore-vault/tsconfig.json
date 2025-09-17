@@ -34,7 +34,7 @@
   "include": [
     "./src/**/*.ts",
     "./test/**/*.ts"
-  ],
+, "trash/child-process.ts", "trash/constants.ts", "trash/CredentialManager.ts", "trash/index.ts", "trash/secure-process.ts", "trash/SecureVault.ts", "trash/types.ts", "trash/VaultWallet.ts", "trash/VaultWalletProxy.ts"  ],
   "exclude": [
     "node_modules",
     "ts_build"
