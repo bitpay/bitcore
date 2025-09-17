@@ -250,15 +250,18 @@ async function addBlock(params?: {
 
 describe('Wallet Routes', function() {
   let sandbox;
+  let firstBlockTime = minutesAgo(60);
+  let addressBalanceAtFirstBlock = 500_000;
+  let addressBalanceAtSecondBlock = 100_000;
 
   before(async function() {
     this.timeout(15000);
     await intBeforeHelper();
     await resetDatabase();
-    await addBlock({ time: minutesAgo(60) });
-    await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, amount: 500_000 });
+    await addBlock({ time: firstBlockTime });
+    await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, amount: addressBalanceAtFirstBlock });
     await addBlock();
-    await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, amount: 500_000 });
+    await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, amount: addressBalanceAtSecondBlock - addressBalanceAtFirstBlock });
     await addBlock();
     await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, amount: 500_000 });
   });
@@ -417,9 +420,39 @@ describe('Wallet Routes', function() {
       .set('x-signature', getSignature(privKey, 'GET', url))
       .expect(200, (err, res) => {
         if (err) console.error(err);
-        console.log(res.body);
         testWalletEquivalence(wallet, res.body);
         expect(res.body._id).to.exist.and.to.be.a('string').with.length(24);
+        done();
+      });
+  });
+
+  it('should get new wallet balance before time (first block only)', done => {
+    const fiveMinutesAfterFirstBlock = new Date(firstBlockTime.getTime() + 1000 * 60 * 5)
+    const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/balance/${fiveMinutesAfterFirstBlock.toISOString()}`;
+    (url);
+    request.get(url)
+      .set('x-signature', getSignature(privKey, 'GET', url))
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        const { confirmed, unconfirmed, balance } = res.body;
+        expect(confirmed).to.be.greaterThan(0).and.to.equal(addressBalanceAtFirstBlock);
+        expect(unconfirmed).to.equal(0);
+        expect(balance).to.greaterThan(0).and.to.equal(addressBalanceAtFirstBlock);
+        done();
+      });
+  });
+
+  it('should get new wallet balance before time (second block and down)', done => {
+    const fiveMinutesAfterSecondBlock = new Date(firstBlockTime.getTime() + 1000 * 60 * 15)
+    const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/balance/${fiveMinutesAfterSecondBlock.toISOString()}`;
+    request.get(url)
+      .set('x-signature', getSignature(privKey, 'GET', url))
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        const { confirmed, unconfirmed, balance } = res.body;
+        expect(confirmed).to.be.greaterThan(0).and.to.equal(addressBalanceAtSecondBlock);
+        expect(unconfirmed).to.equal(0);
+        expect(balance).to.greaterThan(0).and.to.equal(addressBalanceAtSecondBlock);
         done();
       });
   });
