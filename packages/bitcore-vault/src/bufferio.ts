@@ -128,4 +128,4 @@ class BufferIO {
   }
 }
 
-module.exports = { BufferIO };
+export { BufferIO };
