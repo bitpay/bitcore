@@ -57,8 +57,7 @@ async function addTransaction(params: {
   amount: number,
   fee?: number
  }): Promise<boolean> {
-  const { senderAddress, recieverAddress, amount } = params;
-  let { fee = 0 } = params;
+  const { senderAddress, recieverAddress, amount, fee = 0 } = params;
   const chain = 'BTC';
   const network = 'regtest';
   const txid = randomHex(64);
@@ -195,9 +194,10 @@ async function addTransaction(params: {
     network: network,
     blockHash: tip.hash,
     blockTime: tip.time,
+    blockHeight: tip.height,
     blockTimeNormalized: tip.timeNormalized,
     fee,
-    value: inputsTotalValue,
+    value: inputsTotalValue - fee,
     coinbase,
     inputCount,
     outputCount,
@@ -360,6 +360,19 @@ describe('Wallet Routes', function() {
       });
   }); 
 
+  it('should check wallet before it exists', done => {
+    const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/check`;
+    request.get(url)
+      .set('x-signature', getSignature(privKey, 'GET', url, {}))
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        const { lastAddress, sum } = res.body;
+        expect(sum).to.equal(0)
+        expect(lastAddress).to.be.undefined;
+        done();
+      });
+  });
+
   it('should update wallet', done => {
     updateWallet({ privKey, pubKey, address }).then(done);
   });
@@ -371,6 +384,22 @@ describe('Wallet Routes', function() {
       .expect(200, (err, res) => {
         if (err) console.error(err);
         expect(res.body).to.deep.include({ address: address });
+        done();
+      });
+  });
+
+  it('should check wallet', done => {
+    const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/check`;
+    request.get(url)
+      .set('x-signature', getSignature(privKey, 'GET', url, {}))
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        const { lastAddress, sum } = res.body;
+        expect(lastAddress).to.equal(address);
+
+        const expectedSum = Buffer.from(address).reduce((tot, cur) => (tot + cur) % Number.MAX_SAFE_INTEGER);
+        expect(sum).to.equal(expectedSum);
+        expect(sum).to.be.greaterThan(0);
         done();
       });
   });
@@ -464,4 +493,31 @@ describe('Wallet Routes', function() {
         });
     });
   };
+
+  it('should get address after update and reprocess', done => {
+    const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/addresses`;
+    request.get(url)
+      .set('x-signature', getSignature(privKey, 'GET', url, {}))
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        expect(res.body).to.deep.include({ address: address });
+        done();
+      });
+  });
+
+  it('should check wallet after update and reprocess', done => {
+    const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/check`;
+    request.get(url)
+      .set('x-signature', getSignature(privKey, 'GET', url, {}))
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        const { lastAddress, sum } = res.body;
+        expect(lastAddress).to.equal(address);
+
+        const expectedSum = Buffer.from(address).reduce((tot, cur) => (tot + cur) % Number.MAX_SAFE_INTEGER);
+        expect(sum).to.equal(expectedSum);
+        expect(sum).to.be.greaterThan(0);
+        done();
+      });
+  });
 });
