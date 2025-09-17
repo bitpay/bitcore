@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import app from '../../../src/routes';
 import { expect } from 'chai';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
-import { randomHex, resetDatabase, testCoin } from '../../helpers';
+import { minutesAgo, randomHex, resetDatabase, testCoin } from '../../helpers';
 import { ChainStateProvider } from '../../../src/providers/chain-state';
 import { WalletStorage } from '../../../src/models/wallet';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
@@ -214,13 +214,16 @@ async function addTransaction(params: {
   return true;
 }
 
-async function addBlock() {
+async function addBlock(params?: {
+  time?: Date
+}) {
+  let { time } = params || {};
   const chain = 'BTC';
   const network = 'regtest';
   const tip = await BitcoinBlockStorage.getLocalTip({ chain, network });
-
   const hash = randomHex(64);
-  const time = new Date('2025-07-07T17:16:38.002Z');
+  if (!time)
+    time = (tip) ? new Date(tip.time.getTime() + 1000 * 60 * 10) : new Date();
   await BitcoinBlockStorage.collection.insertOne({
     network: 'regtest',
     chain: chain,
@@ -252,6 +255,10 @@ describe('Wallet Routes', function() {
     this.timeout(15000);
     await intBeforeHelper();
     await resetDatabase();
+    await addBlock({ time: minutesAgo(60) });
+    await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, amount: 500_000 });
+    await addBlock();
+    await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, amount: 500_000 });
     await addBlock();
     await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, amount: 500_000 });
   });
@@ -331,7 +338,7 @@ describe('Wallet Routes', function() {
   it('should get wallet initial balance and it should be empty', done => {
     const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/balance`;
     request.get(url)
-      .set('x-signature', getSignature(privKey, 'GET', url, {}))
+      .set('x-signature', getSignature(privKey, 'GET', url))
       .expect(200, (err, res) => {
         if (err) console.error(err);
         const { confirmed, unconfirmed, balance } = res.body;
@@ -352,7 +359,7 @@ describe('Wallet Routes', function() {
   it('should get wallet initial utxos and it should be empty', done => {
     const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/utxos`;
     request.get(url)
-      .set('x-signature', getSignature(privKey, 'GET', url, {}))
+      .set('x-signature', getSignature(privKey, 'GET', url))
       .expect(200, (err, res) => {
         if (err) console.error(err);
         expect(res.body).to.deep.equal([]);
@@ -363,7 +370,7 @@ describe('Wallet Routes', function() {
   it('should check wallet before it exists', done => {
     const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/check`;
     request.get(url)
-      .set('x-signature', getSignature(privKey, 'GET', url, {}))
+      .set('x-signature', getSignature(privKey, 'GET', url))
       .expect(200, (err, res) => {
         if (err) console.error(err);
         const { lastAddress, sum } = res.body;
@@ -380,7 +387,7 @@ describe('Wallet Routes', function() {
   it('should get address after update', done => {
     const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/addresses`;
     request.get(url)
-      .set('x-signature', getSignature(privKey, 'GET', url, {}))
+      .set('x-signature', getSignature(privKey, 'GET', url))
       .expect(200, (err, res) => {
         if (err) console.error(err);
         expect(res.body).to.deep.include({ address: address });
@@ -391,7 +398,7 @@ describe('Wallet Routes', function() {
   it('should check wallet', done => {
     const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/check`;
     request.get(url)
-      .set('x-signature', getSignature(privKey, 'GET', url, {}))
+      .set('x-signature', getSignature(privKey, 'GET', url))
       .expect(200, (err, res) => {
         if (err) console.error(err);
         const { lastAddress, sum } = res.body;
@@ -404,12 +411,25 @@ describe('Wallet Routes', function() {
       });
   });
 
+  it('should get wallet', done => {
+    const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}`;
+    request.get(url)
+      .set('x-signature', getSignature(privKey, 'GET', url))
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        console.log(res.body);
+        testWalletEquivalence(wallet, res.body);
+        expect(res.body._id).to.exist.and.to.be.a('string').with.length(24);
+        done();
+      });
+  });
+
   {
     let balance1;
     it('should get new wallet balance', done => {
       const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/balance`;
       request.get(url)
-        .set('x-signature', getSignature(privKey, 'GET', url, {}))
+        .set('x-signature', getSignature(privKey, 'GET', url))
         .expect(200, async (err, res) => {
           if (err) console.error(err);
           const { confirmed, unconfirmed, balance } = res.body;
@@ -424,7 +444,7 @@ describe('Wallet Routes', function() {
     it('should get wallet added utxos', done => {
       const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/utxos`;
       request.get(url)
-        .set('x-signature', getSignature(privKey, 'GET', url, {}))
+        .set('x-signature', getSignature(privKey, 'GET', url))
         .expect(200, (err, res) => {
           if (err) console.error(err);
           let balance = 0;
@@ -463,7 +483,7 @@ describe('Wallet Routes', function() {
     it('should handle block updating (3/4): get blocks utxos', done => {
       const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/utxos`;
       request.get(url)
-        .set('x-signature', getSignature(privKey, 'GET', url, {}))
+        .set('x-signature', getSignature(privKey, 'GET', url))
         .expect(200, (err, res) => {
           if (err) console.error(err);
           let balance = 0;
@@ -482,7 +502,7 @@ describe('Wallet Routes', function() {
       const amount = 10_000;
       const fee = 100;
       request.get(url)
-        .set('x-signature', getSignature(privKey, 'GET', url, {}))
+        .set('x-signature', getSignature(privKey, 'GET', url))
         .expect(200, (err, res) => {
           if (err) console.error(err);
           const { confirmed, unconfirmed, balance } = res.body;
@@ -497,7 +517,7 @@ describe('Wallet Routes', function() {
   it('should get address after update and reprocess', done => {
     const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/addresses`;
     request.get(url)
-      .set('x-signature', getSignature(privKey, 'GET', url, {}))
+      .set('x-signature', getSignature(privKey, 'GET', url))
       .expect(200, (err, res) => {
         if (err) console.error(err);
         expect(res.body).to.deep.include({ address: address });
@@ -508,7 +528,7 @@ describe('Wallet Routes', function() {
   it('should check wallet after update and reprocess', done => {
     const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/check`;
     request.get(url)
-      .set('x-signature', getSignature(privKey, 'GET', url, {}))
+      .set('x-signature', getSignature(privKey, 'GET', url))
       .expect(200, (err, res) => {
         if (err) console.error(err);
         const { lastAddress, sum } = res.body;
