@@ -13,3 +13,8 @@ Functional requirements:
 4b. Call VaultWallet.checkPassphrase(passphrase)
 4a. Store encrypted passphrase in the corresponding Map entry.
 4b. Return acknowledgement.
+
+Non-functional requirements:
+- Must expect uniform msg structure, including args (see VaultWalletProxy.txt). Each msg will specify which wallet to use (map key)
+- Must be able to easily add additional message handlers
+- Most methods will pass through requests to VaultWallet after parsing the args into the correct format

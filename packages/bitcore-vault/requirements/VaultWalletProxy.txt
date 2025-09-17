@@ -1,0 +1,28 @@
+Description: VaultWalletProxy is responsible for forking the child process which uses secure heap allocation, storing wallet references, and being the public interface for the forked process.
+
+1. Must expose initialize() method.
+1a. Calls child_process.fork() to start SecureProcess.
+1b. Sends getPublicKey to SecureProcess.
+1c. Stores received public key internally.
+
+2. Must expose loadWallet(details) method.
+a. Sends loadWallet message to SecureProcess.
+b. Receives wallet public address.
+c. Stores walletName → publicAddress mapping in walletAddresses. 
+
+3. Must expose addPassphrase(walletName) method.
+a. Prompts user for passphrase.
+b. Encrypts passphrase using stored public key.
+c. Sends addPassphrase message with encrypted passphrase to SecureProcess.
+d. Returns after acknowledgement.
+
+4. Must maintain public property walletAddresses: Map<string, string>.
+
+Non-functional requirements:
+- It must be easy to add additional methods which send a message to the forked process
+
+- The message should be sent in a uniform manner - no matter what the method's signature looks like:
+-- Example:
+-- importKeys(isVital, reduceDupes) -> { isVital, reduceDupes }
+-- sign({ tx }) -> { tx }
+Each public class method should accept the same signature as the underlying Wallet method, then create this uniform structure. msg will always include wallet name as 'name'
