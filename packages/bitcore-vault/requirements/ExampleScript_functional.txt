@@ -1,0 +1,13 @@
+1. Must create an instance of VaultWalletProxy.
+
+2. Must call vaultWalletProxy.initialize() before use.
+
+3. Must provide user prompts for wallet details or quit command (LOOP).
+
+4. Must call vaultWalletProxy.loadWallet(details) with user-provided details.
+
+5. Must iterate over vaultWalletProxy.walletAddresses after loading wallets.
+
+6. Must call vaultWalletProxy.addPassphrase(walletName) for each wallet.
+
+7. Must perform subsequent tasks once wallets and passphrases are loaded.

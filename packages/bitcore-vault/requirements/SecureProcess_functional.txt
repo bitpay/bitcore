@@ -1,0 +1,15 @@
+Functional requirements:
+1. Must generate RSA keypair on initialization.
+
+2. Must respond to getPublicKey requests with public key.
+
+3. Must handle loadWallet requests:
+3a. Create new VaultWallet instance.
+3b. Store in Map<string, { wallet: VaultWallet; passphrase?: Buffer } >.
+3c. Return wallet public address.
+
+4. Must handle addPassphrase requests:
+4a. Ensure private key can private key decrypt passphrase
+4b. Call VaultWallet.checkPassphrase(passphrase)
+4a. Store encrypted passphrase in the corresponding Map entry.
+4b. Return acknowledgement.

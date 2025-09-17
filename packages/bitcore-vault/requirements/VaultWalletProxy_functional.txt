@@ -1,0 +1,17 @@
+1. Must expose initialize() method.
+1a. Calls child_process.fork() to start SecureProcess.
+1b. Sends getPublicKey to SecureProcess.
+1c. Stores received public key internally.
+
+2. Must expose loadWallet(details) method.
+a. Sends loadWallet message to SecureProcess.
+b. Receives wallet public address.
+c. Stores walletName → publicAddress mapping in walletAddresses. 
+
+3. Must expose addPassphrase(walletName) method.
+a. Prompts user for passphrase.
+b. Encrypts passphrase using stored public key.
+c. Sends addPassphrase message with encrypted passphrase to SecureProcess.
+d. Returns after acknowledgement.
+
+4. Must maintain public property walletAddresses: Map<string, string>.

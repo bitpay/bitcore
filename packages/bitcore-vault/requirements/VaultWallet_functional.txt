@@ -1,0 +1,13 @@
+1. Must extend Wallet from bitcore-client
+
+2. Must provide Wallet method overrides for each method that requires the wallet to be unlocked. Wallet method overrides uses HOF to perform the following actions (in order)
+a. Retrieve decrypted passphrase as Buffer
+b. Use decrypted passphrase to call super.unlock(passphrase)
+c. crypto.randomFillSync(passphrase)
+d. Call super.<method being overriden>()
+e. super.lock()
+
+3. Must provide checkPassphrase(passphrase) method:
+a. super.unlock(passphrase)
+b. crypto.randomFillSync(passphrase)
+c. super.lock()
