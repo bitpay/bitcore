@@ -1,7 +1,8 @@
+import BitcoreLibCash from 'bitcore-lib-cash';
 import { BTCTxProvider } from '../btc';
 
 export class BCHTxProvider extends BTCTxProvider {
-  lib = require('bitcore-lib-cash');
+  lib = BitcoreLibCash;
   create({ recipients, utxos = [], change, fee = 20000, isSweep }) {
     const filteredUtxos = isSweep ? utxos : this.selectCoins(recipients, utxos, fee);
     const btcUtxos = filteredUtxos.map(utxo => {

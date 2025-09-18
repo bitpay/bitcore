@@ -1,10 +1,11 @@
 import request from 'superagent';
 import util from 'util';
+import Package from '../../package.json';
 import { Utils } from './common';
+import { Credentials } from './credentials';
 import { Errors } from './errors';
 import log from './log';
 
-const Package = require('../../package.json');
 interface Headers {
   'x-client-version': string;
   'x-wallet-id'?: string;
@@ -13,15 +14,23 @@ interface Headers {
   'x-signature'?: string;
 };
 
-export class Request {
-  baseUrl: any;
+type RequestCallback = (err: any, body?: any, header?: any) => void;
+
+export interface RequestResponse<ResponseBody = any, ResponseHeader = any> {
+  body: ResponseBody;
+  header: ResponseHeader;
+};
+
+export class Request<CredT = Credentials> {
+  baseUrl: string;
   session: any;
-  r: any;
-  credentials: any;
-  supportStaffWalletId: any;
-  timeout: any;
+  r: Request;
+  credentials: CredT;
+  supportStaffWalletId: string;
+  timeout: number;
 
   constructor(url?, opts?) {
+    opts = opts || {};
     this.baseUrl = url;
 
     this.r = opts.r || request;
@@ -31,7 +40,7 @@ export class Request {
     this.credentials = null;
   }
 
-  setCredentials(credentials) {
+  setCredentials(credentials: CredT) {
     this.credentials = credentials;
   }
 
@@ -59,13 +68,13 @@ export class Request {
     useSession?: boolean
   ) {
     if (this.credentials) {
-      headers['x-identity'] = this.credentials.copayerId;
+      headers['x-identity'] = (this.credentials as Credentials).copayerId;
 
       if (useSession && this.session) {
         headers['x-session'] = this.session;
       } else {
         const { _requestPrivKey, ...params } = signingParams;
-        const privKey = _requestPrivKey || this.credentials.requestPrivKey;
+        const privKey = _requestPrivKey || (this.credentials as Credentials).requestPrivKey;
         if (privKey) {
           headers['x-signature'] = this._signRequest({ ...params, privKey });
         }
@@ -74,29 +83,39 @@ export class Request {
   }
 
   /**
-   * @description sign an HTTP request
+   * Sign an HTTP request
    * @private
-   * @param {Object} params
-   * @param {String} params.method the HTTP method
-   * @param {String} params.url the URL for the request
-   * @param {String} params.privKey private key to sign the request
-   * @param {Object} [params.args] a POST/PUT request's body, or a GET request's query(ies)
    */
-  _signRequest({ method, url, args, privKey }) {
-    var message = `${method.toLowerCase()}|${url}|${JSON.stringify(args)}`;
+  _signRequest(params: {
+    /** The HTTP method */
+    method: string;
+    /** The URL for the request */
+    url: string;
+    /** A POST/PUT request's body, or a GET request's query(ies) */
+    args?: any;
+    /** Private key to sign the request */
+    privKey: string;
+  }) {
+    const { method, url, args, privKey } = params;
+    const message = `${method.toLowerCase()}|${url}|${JSON.stringify(args)}`;
     return Utils.signMessage(message, privKey);
   }
 
   /**
    * Base request function
-   * @param {string} method HTTP method
-   * @param {string} url the URL for the request
-   * @param {Object} [args] a POST/PUT request's body, or a GET request's query(ies)
-   * @param {boolean} [useSession] 
-   * @param {function} [cb] callback function
-   * @returns
    */
-  async doRequest(method, url, args, useSession, cb?): Promise<{ body: any; header: any }> {
+  async doRequest<ReqBodyT, ResBodyT>(
+    /** HTTP method */
+    method: string,
+    /** URL for the request */
+    url: string,
+    /** A POST/PUT request's body, or a GET request's query(ies) */
+    args: ReqBodyT,
+    /** Use session for authentication */
+    useSession?: boolean,
+    /** @deprecated */
+    cb?: RequestCallback
+  ): Promise<RequestResponse<ResBodyT>> {
     var headers = this.getHeaders(method, url, args, useSession);
 
     var r = this.r[method](this.baseUrl + url);
@@ -117,18 +136,14 @@ export class Request {
     r.timeout(this.timeout);
 
     try {
-      const retval = await new Promise<{ body: any; header: any; }>((resolve, reject) => {
+      const retval = await new Promise<RequestResponse<ResBodyT>>((resolve, reject) => {
         r.end((err, res) => {
           if (!res) {
             return reject(new Errors.CONNECTION_ERROR());
           }
 
           if (res.body)
-            log.debug(
-              util.inspect(res.body, {
-                depth: 10
-              })
-            );
+            log.debug(util.inspect(res.body, { depth: 10 }));
 
           if (res.status !== 200) {
             if (res.status === 503) return reject(new Errors.MAINTENANCE_ERROR());
@@ -149,10 +164,10 @@ export class Request {
           return resolve({ body: res.body, header: res.header });
         });
       });
-      if (cb) return cb(null, retval.body, retval.header);
+      if (cb) cb(null, retval.body, retval.header);
       return retval;
     } catch (err) {
-      if (cb) return cb(err);
+      if (cb) { cb(err); return {} as RequestResponse; }
       throw err;
     }
   }
@@ -160,8 +175,6 @@ export class Request {
   /**
    * Parse errors
    * @private
-   * @param {Object} body 
-   * @returns 
    */
   static _parseError(body) {
     if (!body) return;
@@ -199,95 +212,117 @@ export class Request {
 
   /**
    * Do a POST request
-   * @private
-   * @param {string} url 
-   * @param {Object} [body] 
-   * @param {function} [cb] callback function
-   * @returns 
    */
-  async post(url, body?, cb?) {
-    body = body || {};
-    return this.doRequest('post', url, body, false, cb);
+  async post<ReqBodyT = object, ResBodyT = any>(
+    url: string,
+    body?: ReqBodyT,
+    /** @deprecated */
+    cb?: RequestCallback
+  ) {
+    body = body || {} as ReqBodyT;
+    return this.doRequest<ReqBodyT, ResBodyT>('post', url, body, false, cb);
   }
 
   /**
    * Do a PUT request
-   * @param {string} url 
-   * @param {Object} [body] 
-   * @param {function} [cb] callback function
-   * @returns 
    */
-  async put(url, body?, cb?) {
-    body = body || {};
-    return this.doRequest('put', url, body, false, cb);
+  async put<ReqBodyT = object, ResBodyT = any>(
+    url: string,
+    body?: ReqBodyT,
+    /** @deprecated */
+    cb?: RequestCallback
+  ) {
+    body = body || {} as ReqBodyT;
+    return this.doRequest<ReqBodyT, ResBodyT>('put', url, body, false, cb);
   }
 
   /**
    * Do a GET request
-   * @param {string} url 
-   * @param {function} [cb] callback function
-   * @returns 
    */
-  async get(url, cb?) {
+  async get<ResBodyT = any>(
+    url: string,
+    /** @deprecated */
+    cb?: RequestCallback
+  ) {
     url += url.indexOf('?') > 0 ? '&' : '?';
     url += 'r=' + Math.round(Math.random() * 100000);
 
-    return this.doRequest('get', url, {}, false, cb);
+    return this.doRequest<object, ResBodyT>('get', url, {}, false, cb);
   }
 
   /**
    * Do a DELETE request
-   * @param {string} url URL to request
-   * @param {function} [cb]
-   * @returns 
    */
-  async delete(url, cb?) {
-    return this.doRequest('delete', url, {}, false, cb);
+  async delete<ResBodyT = any>(
+    url: string,
+    /** @deprecated */
+    cb?: RequestCallback
+  ) {
+    return this.doRequest<object, ResBodyT>('delete', url, {}, false, cb);
   }
 
-  getWithLogin(url, cb) {
+  getWithLogin(
+    url: string,
+    /** @deprecated */
+    cb?: RequestCallback
+  ) {
     url += url.indexOf('?') > 0 ? '&' : '?';
     url += 'r=' + Math.round(Math.random() * 100000);
     return this.doRequestWithLogin('get', url, {}, cb);
   }
 
-  async _login(cb?) {
+  async _login(
+    /** @deprecated */
+    cb?: RequestCallback
+  ) {
     return this.post('/v1/login', {}, cb);
   }
 
-  async logout(cb?) {
+  async logout(
+    /** @deprecated */
+    cb?: RequestCallback
+  ) {
     return this.post('/v1/logout', {}, cb);
   }
 
   /**
    * Do an HTTP request
-   * @param {string} method HTTP method
-   * @param {string} url URL to request
-   * @param {Object} [body] a POST/PUT request's body
-   * @param {function} [cb]
-   * @param {boolean} [retry] 
    */
-  async doRequestWithLogin(method, url, body, cb?, retry = true) {
+  async doRequestWithLogin<ReqBodyT = object, ResBodyT = any>(
+    /** HTTP method */
+    method: string,
+    /** URL for the request */
+    url: string,
+    /** A POST/PUT request's body, or a GET request's query(ies) */
+    body: ReqBodyT,
+    /** @deprecated */
+    cb?: RequestCallback,
+    /** Retry if auth fails. Only used internally - do not set this parameter */
+    _retry = true
+  ): Promise<RequestResponse<ResBodyT>> {
     try {
       if (!this.session) {
         await this.doLogin();
       }
-      const result = await this.doRequest(method, url, body, true);
-      if (cb) return cb(null, result.body, result.header);
+      const result = await this.doRequest<ReqBodyT, ResBodyT>(method, url, body, true) as RequestResponse;
+      if (cb) { cb(null, result.body, result.header); }
       return result;
     } catch (err) {
-      if (err instanceof Errors.NOT_AUTHORIZED && retry) {
+      if (err instanceof Errors.NOT_AUTHORIZED && _retry) {
         this.session = null;
-        return this.doRequestWithLogin(method, url, body, cb, false);
+        return this.doRequestWithLogin<ReqBodyT, ResBodyT>(method, url, body, cb, false);
       }
-      if (!cb) throw err;
-      return cb(err); 
+      if (cb) cb(err);
+      else throw err; 
     }
   }
 
-  async doLogin(cb?) {
+  async doLogin(
+    /** @deprecated */
+    cb?: (err?: Error) => void
+  ) {
     try {
-      const s = await this._login();
+      const s = await this._login() as RequestResponse;
       if (!s?.body) throw new Errors.NOT_AUTHORIZED();
       this.session = s.body;
       if (cb) return cb();

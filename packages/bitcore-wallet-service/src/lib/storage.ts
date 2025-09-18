@@ -8,6 +8,7 @@ import logger from './logger';
 import {
   Address,
   Advertisement,
+  Copayer,
   Email,
   Notification,
   Preferences,
@@ -17,6 +18,8 @@ import {
   TxProposal,
   Wallet
 } from './model';
+import { ITssKeyMessageObject, TssKeyGenModel } from './model/tsskeygen';
+import { ITssSigMessageObject, TssSigGenModel } from './model/tsssign';
 
 const $ = require('preconditions').singleton();
 
@@ -36,7 +39,9 @@ const collections = {
   SESSIONS: 'sessions',
   PUSH_NOTIFICATION_SUBS: 'push_notification_subs',
   TX_CONFIRMATION_SUBS: 'tx_confirmation_subs',
-  LOCKS: 'locks'
+  LOCKS: 'locks',
+  TSS_KEYGEN: 'tss_keygen',
+  TSS_SIGN: 'tss_sign'
 };
 
 const Defaults = Common.Defaults;
@@ -157,6 +162,9 @@ export class Storage {
     db.collection(collections.SESSIONS).createIndex({
       copayerId: 1
     });
+    db.collection(collections.TSS_KEYGEN).createIndex({
+      id: 1
+    }, { unique: true });
   }
 
   connect(opts, cb) {
@@ -237,12 +245,9 @@ export class Storage {
   }
 
   storeWalletAndUpdateCopayersLookup(wallet, cb) {
-    const copayerLookups = _.map(wallet.copayers, copayer => {
+    const copayerLookups = (wallet.copayers || []).map(copayer => {
       try {
-        $.checkState(
-          copayer.requestPubKeys,
-          'Failed state: copayer.requestPubkeys undefined at <storeWalletAndUpdateCopayersLookup()>'
-        );
+        $.checkState(copayer.requestPubKeys, 'Failed state: copayer.requestPubkeys undefined at <storeWalletAndUpdateCopayersLookup()>');
       } catch (e) {
         return cb(e);
       }
@@ -277,7 +282,7 @@ export class Storage {
     );
   }
 
-  fetchCopayerLookup(copayerId, cb) {
+  fetchCopayerLookup(copayerId: string, cb: (err?: any, copayer?: Copayer) => void) {
     this.db.collection(collections.COPAYERS_LOOKUP).findOne(
       {
         copayerId
@@ -295,7 +300,7 @@ export class Storage {
           ];
         }
 
-        return cb(null, result);
+        return cb(null, Copayer.fromObj(result));
       }
     );
   }
@@ -1762,4 +1767,152 @@ export class Storage {
       cb
     );
   }
+
+  async fetchTssKeyGenSession({ id }: { id: string; }) {
+    const doc = await this.db.collection(collections.TSS_KEYGEN).findOne({ id });
+    if (!doc) {
+      return null;
+    }
+    return TssKeyGenModel.fromObj(doc);
+  }
+
+  async storeTssKeyGenSession({ doc }: { doc: TssKeyGenModel; }) {
+    return this.db.collection(collections.TSS_KEYGEN).insertOne(doc);
+  }
+
+  async storeTssKeyGenParticipant({ id, partyId, copayerId }: { id: string; partyId: number; copayerId: string; }) {
+    return this.db.collection(collections.TSS_KEYGEN).updateOne(
+      { id },
+      {
+        $set: {
+          [`participants.${partyId}`]: copayerId
+        }
+      },
+      { upsert: false }
+    );
+  }
+
+  async storeTssKeyGenMessage({ id, message, __v }: { id: string; message: ITssKeyMessageObject; __v: number; }) {
+    const result = await this.db.collection(collections.TSS_KEYGEN).updateOne(
+      { id, __v },
+      {
+        $push: {
+          [`rounds.${message.round}`]: {
+            fromPartyId: message.partyId,
+            messages: message
+          }
+        },
+        $inc: {
+          __v: 1
+        }
+      },
+      { upsert: false }
+    );
+    if (!result.matchedCount) {
+      throw new Error('MONGO_DOC_OUTDATED: No document found for version ' + __v);
+    }
+    return result;
+  }
+
+  async storeTssKeySharedPubKey({ id, publicKey }: { id: string; publicKey: string; }) {
+    return this.db.collection(collections.TSS_KEYGEN).updateOne(
+      { id },
+      {
+        $set: {
+          sharedPublicKey: publicKey
+        }
+      },
+      { upsert: false }
+    );
+  }
+
+  async storeTssKeyShare({ id, partyId, encryptedKeyChain }: { id: string; partyId: number; encryptedKeyChain: string; }) {
+    return this.db.collection(collections.TSS_KEYGEN).updateOne(
+      { id },
+      {
+        $set: {
+          [`keyShares.${partyId}`]: encryptedKeyChain
+        }
+      },
+      { upsert: false }
+    );
+  }
+
+  async storeTssKeyBwsJoinSecret({ id, secret }: { id: string; secret: string; }) {
+    return this.db.collection(collections.TSS_KEYGEN).updateOne({
+      id
+    },
+    {
+      $set: {
+        bwsJoinSecret: secret
+      }
+    },
+    { upsert: false });
+  }
+
+  async fetchTssSigSession({ id }: { id: string; }) {
+    const doc = await this.db.collection(collections.TSS_SIGN).findOne({ id });
+    if (!doc) {
+      return null;
+    }
+    return TssSigGenModel.fromObj(doc);
+  }
+
+  async storeTssSigSession({ doc }: { doc: TssSigGenModel; }) {
+    return this.db.collection(collections.TSS_SIGN).insertOne(doc);
+  }
+
+  async storeTssSigParticipant({ id, partyId, copayerId, __v }: { id: string; partyId: number; copayerId: string; __v: number; }) {
+    const result = await this.db.collection(collections.TSS_SIGN).updateOne(
+      { id, __v },
+      {
+        $push: {
+          participants: {
+            partyId,
+            copayerId
+          }
+        }
+      },
+      { upsert: false }
+    );
+    if (!result.matchedCount) {
+      throw new Error('MONGO_DOC_OUTDATED: No document found for version ' + __v);
+    }
+    return result;
+  }
+
+  async storeTssSigMessage({ id, message, __v }: { id: string; message: ITssSigMessageObject; __v: number; }) {
+    const result = await this.db.collection(collections.TSS_SIGN).updateOne(
+      { id, __v },
+      {
+        $push: {
+          [`rounds.${message.round}`]: {
+            fromPartyId: message.partyId,
+            messages: message
+          }
+        },
+        $inc: {
+          __v: 1
+        }
+      },
+      { upsert: false }
+    );
+    if (!result.matchedCount) {
+      throw new Error('MONGO_DOC_OUTDATED: No document found for version ' + __v);
+    }
+    return result;
+  }
+
+  async storeTssSignature({ id, signature }: { id: string; signature: ITssSigMessageObject['signature']; }) {
+    return this.db.collection(collections.TSS_SIGN).updateOne(
+      { id },
+      {
+        $set: {
+          signature
+        }
+      },
+      { upsert: false }
+    );
+  }
+
 }

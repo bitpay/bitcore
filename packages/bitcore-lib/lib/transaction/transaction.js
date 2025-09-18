@@ -749,7 +749,8 @@ Transaction.prototype.addInput = function(input, outputScript, satoshis) {
   }
   if (!input.output && outputScript && satoshis != null) {
     outputScript = outputScript instanceof Script ? outputScript : new Script(outputScript);
-    $.checkArgumentType(satoshis, 'number', 'satoshis');
+    satoshis = parseInt(satoshis);
+    $.checkArgument(JSUtil.isNaturalNumber(satoshis), 'satoshis must be a natural number');
     input.output = new Output({
       script: outputScript,
       satoshis: satoshis
@@ -793,6 +794,7 @@ Transaction.prototype.hasAllUtxoInfo = function() {
  * @return {Transaction} this, for chaining
  */
 Transaction.prototype.fee = function(amount) {
+  amount = parseInt(amount);
   $.checkArgument(!isNaN(amount), 'amount must be a number');
   this._fee = amount;
   this._updateChangeOutput();
@@ -808,6 +810,7 @@ Transaction.prototype.fee = function(amount) {
  * @return {Transaction} this, for chaining
  */
 Transaction.prototype.feePerKb = function(amount) {
+  amount = parseFloat(amount); // fee rate can be a fractional number (float)
   $.checkArgument(!isNaN(amount), 'amount must be a number');
   this._feePerKb = amount;
   this._updateChangeOutput();
@@ -823,7 +826,8 @@ Transaction.prototype.feePerKb = function(amount) {
  * @param {number} amount satoshis per Byte to be sent
  * @return {Transaction} this, for chaining
  */
-Transaction.prototype.feePerByte = function (amount) {
+Transaction.prototype.feePerByte = function(amount) {
+  amount = parseFloat(amount); // fee rate can be a fractional number (float)
   $.checkArgument(!isNaN(amount), 'amount must be a number');
   this._feePerByte = amount;
   this._updateChangeOutput();
@@ -883,10 +887,8 @@ Transaction.prototype.to = function(address, amount) {
     return this;
   }
 
-  $.checkArgument(
-    JSUtil.isNaturalNumber(amount),
-    'Amount is expected to be a positive integer'
-  );
+  amount = parseInt(amount);
+  $.checkArgument(JSUtil.isNaturalNumber(amount), 'Amount is expected to be a positive integer');
   this.addOutput(new Output({
     script: Script(new Address(address)),
     satoshis: amount
@@ -1236,8 +1238,8 @@ Transaction.prototype.removeInput = function(txId, outputIndex) {
  *
  * @param {Array|String|PrivateKey} privateKey
  * @param {number} [sigtype]
- * @param {String} [signingMethod] - method used to sign - 'ecdsa' or 'schnorr'
- * @param {Buffer|String} [merkleRoot] - merkle root for taproot signing
+ * @param {String} [signingMethod] DEPRECATED - unused. Keeping for arg placement consistency with other libs
+ * @param {Buffer|String} [merkleRoot] Merkle root for taproot signing
  * @return {Transaction} this, for chaining
  */
 Transaction.prototype.sign = function(privateKey, sigtype, signingMethod, merkleRoot) {
@@ -1249,11 +1251,19 @@ Transaction.prototype.sign = function(privateKey, sigtype, signingMethod, merkle
     return this;
   }
   for (const signature of this.getSignatures(privateKey, sigtype, signingMethod, merkleRoot)) {
-    this.applySignature(signature, signingMethod);
+    this.applySignature(signature);
   }
   return this;
 };
 
+/**
+ * Generate the signature(s) for this transaction with `privKey`
+ * @param {String|PrivateKey} privKey A private key associated with any of the transaction inputs
+ * @param {number} [sigtype]
+ * @param {string} [signingMethod] DEPRECATED - unused. Keeping for arg placement consistency with other libs
+ * @param {Buffer} [merkleRoot] Merkle root for taproot signing
+ * @returns {Array<TransactionSignature>}
+ */
 Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod, merkleRoot) {
   if (typeof merkleRoot === 'string') {
     merkleRoot = Buffer.from(merkleRoot, 'hex');
@@ -1278,11 +1288,10 @@ Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod, 
  * @param {number} signature.sigtype
  * @param {PublicKey} signature.publicKey
  * @param {Signature} signature.signature
- * @param {String} signingMethod - 'ecdsa' to sign transaction
  * @return {Transaction} this, for chaining
  */
-Transaction.prototype.applySignature = function(signature, signingMethod) {
-  this.inputs[signature.inputIndex].addSignature(this, signature, signingMethod);
+Transaction.prototype.applySignature = function(signature) {
+  this.inputs[signature.inputIndex].addSignature(this, signature);
   return this;
 };
 
@@ -1300,14 +1309,14 @@ Transaction.prototype.isFullySigned = function() {
   });
 };
 
-Transaction.prototype.isValidSignature = function(signature, signingMethod) {
+Transaction.prototype.isValidSignature = function(signature) {
   if (this.inputs[signature.inputIndex].isValidSignature === Input.prototype.isValidSignature) {
     throw new errors.Transaction.UnableToVerifySignature(
       'Unrecognized script kind, or not enough information to execute script.' +
       'This usually happens when creating a transaction from a serialized transaction'
     );
   }
-  return this.inputs[signature.inputIndex].isValidSignature(this, signature, signingMethod);
+  return this.inputs[signature.inputIndex].isValidSignature(this, signature);
 };
 
 

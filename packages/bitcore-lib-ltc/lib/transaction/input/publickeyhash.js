@@ -52,10 +52,32 @@ PublicKeyHashInput.prototype.getScriptCode = function(publicKey) {
   return writer.toBuffer();
 };
 
-PublicKeyHashInput.prototype.getSighash = function(transaction, privateKey, index, sigtype) {
-  var scriptCode = this.getScriptCode(privateKey);
-  var satoshisBuffer = this.getSatoshisBuffer();
-  return SighashWitness.sighash(transaction, sigtype, index, scriptCode, satoshisBuffer);
+/**
+ * Get the hash data to sign for this input
+ * @param {Transaction} transaction The transaction to be signed
+ * @param {PublicKey} publicKey The public key in the redeem script (only if p2sh and !this.redeemScript)
+ * @param {number} index The index of the input in the transaction input vector
+ * @param {number} sigtype The type of signature, defaults to Signature.SIGHASH_ALL
+ * @returns {Buffer}
+ */
+PublicKeyHashInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
+  sigtype = sigtype || Signature.SIGHASH_ALL;
+
+  const script = this.output.script.isScriptHashOut()
+    ? this.getRedeemScript(publicKey)
+    : this.output.script;
+
+  $.checkState(script, 'Missing script. Did you pass in the correct publicKey?');
+  if (script.isWitnessPublicKeyHashOut()) {
+    const satoshisBuffer = this.getSatoshisBuffer();
+    const scriptCode = this.getScriptCode(publicKey);
+    return SighashWitness.sighash(transaction, sigtype, index, scriptCode, satoshisBuffer);
+  } else {
+    const sighash = Sighash.sighash(transaction, sigtype, index, this.output.script);
+    // sighash() returns data little endian but it must be signed big endian, hence the reverse
+    return sighash.reverse();
+  }
 };
 
 /* jshint maxparams: 5 */
@@ -65,21 +87,17 @@ PublicKeyHashInput.prototype.getSighash = function(transaction, privateKey, inde
  * @param {number} index - the index of the input in the transaction input vector
  * @param {number=} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
  * @param {Buffer=} hashData - the precalculated hash of the public key associated with the privateKey provided
- * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr' (future signing method)
+ * @param {String} signingMethod DEPRECATED - unused. Keeping for arg placement consistency with other libs
  * @return {Array} of objects that can be
  */
 PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
-  $.checkState(this.output instanceof Output);
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
   hashData = hashData || Hash.sha256ripemd160(privateKey.publicKey.toBuffer());
   sigtype = sigtype || Signature.SIGHASH_ALL;
-  signingMethod = signingMethod || 'ecdsa';
 
-  var script;
-  if (this.output.script.isScriptHashOut()) {
-    script = this.getRedeemScript(privateKey.publicKey);
-  } else {
-    script = this.output.script;
-  }
+  const script = this.output.script.isScriptHashOut()
+    ? this.getRedeemScript(privateKey.publicKey)
+    : this.output.script;
 
   if (script && BufferUtil.equals(hashData, script.getPublicKeyHash())) {
     var signature;

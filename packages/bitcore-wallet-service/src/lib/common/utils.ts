@@ -344,7 +344,7 @@ export const Utils = {
   },
 
   /**
-   * Sort array by keys
+   * Sort array by keys in ascending order
    * @param {Array<any>} arr Array to be sorted
    * @param {...string|Array<string>} keys Keys to sort by in order. If a key is an array, it will be treated as a nested key.
    *  e.g.: sortAsc(arr, 'a', 'b', ['c', 'd']) will sort by a, then b, then c.d
@@ -393,8 +393,45 @@ export const Utils = {
     });
   },
 
+  /**
+   * Sort array by keys in descending order
+   * @param {Array<any>} arr Array to be sorted
+   * @param {...string|Array<string>} keys Keys to sort by in order. If a key is an array, it will be treated as a nested key.
+   *  e.g.: sortDesc(arr, 'a', 'b', ['c', 'd']) will sort by a, then b, then c.d
+   */
   sortDesc(arr, ...keys) {
     return Utils.sortAsc(arr, ...keys).reverse();
+  },
+
+  /**
+   * Return a new object with only the specified keys
+   * E.g.: pick({a: 1, b: 2, c: 3, d: 4}, 'a', 'c') => {a: 1, c: 3}
+   * 
+   * Keys can be given as an array
+   * E.g.: pick({a: 1, b: 2, c: 3, d: 4}, ['a', 'c']) => {a: 1, c: 3}
+   * 
+   * Keys are flattened
+   * E.g.: pick({a: 1, b: 2, c: 3, d: 4}, ['a', ['c']], 'd') => {a: 1, c: 3, d: 4}
+   * 
+   * Properties that are defined but nullish will be included on result
+   * E.g.: pick({a: 1, b: 2, c: null, d: undefined}, ['a', 'c', 'd']) => {a: 1, c: null, d: undefined}
+   *
+   * Non-existent properties will not exist on result
+   * E.g.: pick({a: 1, b: 2, c: null, d: 4}, ['a', 'e']) => {a: 1}
+   * @param {Object} obj Object to pick keys from
+   * @param keys Keys to pick from obj
+   * @returns {Object} New object with only the specified keys
+   */
+  pick<T>(obj: T, ...keys): Partial<T> {
+    keys = keys.flat();
+    const retval: Partial<T> = {};
+    if (!obj) return retval;
+    for (const key of keys) {
+      if (obj.hasOwnProperty(key)) {
+        retval[key] = obj[key];
+      }
+    }
+    return retval;
   },
 
   /**

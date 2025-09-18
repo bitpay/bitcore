@@ -1,10 +1,11 @@
-import { BitcoreLib as Bitcore, Transactions, Validation, Web3 } from 'crypto-wallet-core';
+import { Transactions, Validation, Web3 } from 'crypto-wallet-core';
 import _ from 'lodash';
+import { WalletWithOpts } from 'src/lib/blockchainexplorers/v8';
 import { IChain } from '..';
 import { Defaults } from '../../common/defaults';
 import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
-import { IWallet } from '../../model';
+import { IWallet, TxProposal, Wallet } from '../../model';
 import { IAddress } from '../../model/address';
 import { WalletService } from '../../server';
 
@@ -34,14 +35,14 @@ export class SolChain implements IChain {
     return convertedBalance;
   }
 
-  getWalletBalance(server, wallet, opts, cb) {
+  getWalletBalance(server: WalletService, wallet: Wallet, opts: { tokenAddress?: string }, cb) {
     const bc = server._getBlockchainExplorer(wallet.chain || wallet.coin, wallet.network);
 
     if (opts.tokenAddress) {
-      wallet.tokenAddress = opts.tokenAddress;
+      (wallet as WalletWithOpts).tokenAddress = opts.tokenAddress;
     }
 
-    bc.getBalance(wallet, (err, balance) => {
+    bc.getBalance(wallet as WalletWithOpts, (err, balance) => {
       if (err) {
         return cb(err);
       }
@@ -220,8 +221,8 @@ export class SolChain implements IChain {
     return null;
   }
 
-  selectTxInputs(server, txp, wallet, opts, cb) {
-    server.getBalance({ wallet }, (err, balance) => {
+  selectTxInputs(server: WalletService, txp: TxProposal, wallet: IWallet, opts: { tokenAddress?: string }, cb) {
+    server.getBalance({ wallet, tokenAddress: opts?.tokenAddress }, (err, balance) => {
       if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
       // calculate how much space is needed to find rent amount
@@ -304,6 +305,10 @@ export class SolChain implements IChain {
 
   supportsMultisig() {
     return false;
+  }
+
+  supportsThresholdsig() {
+    return false; // TODO: need to add EDDSA support to bitcore-tss
   }
 
   isUTXOChain() {

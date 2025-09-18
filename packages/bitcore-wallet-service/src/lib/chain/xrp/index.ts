@@ -40,6 +40,10 @@ export class XrpChain implements IChain {
     return false;
   }
 
+  supportsThresholdsig() {
+    return true;
+  }
+
   getSizeSafetyMargin() {
     return 0;
   }
