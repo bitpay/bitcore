@@ -2,7 +2,8 @@
   "compilerOptions": {
     "lib": [
       "ES2020",
-      "ES2022"
+      "ES2022",
+      "DOM"
     ],
     "noImplicitAny": false,
     "removeComments": true,
@@ -15,7 +16,8 @@
     "esModuleInterop": true,
     "target": "ES2020",
     "typeRoots": [
-      "./node_modules/@types"
+      "./node_modules/@types",
+      "./src/types"
     ],
     "baseUrl": ".",
     "paths": {
@@ -26,17 +28,13 @@
       ]
     },
     "outDir": "ts_build",
-    "sourceMap": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "sourceMap": true
   },
   "include": [
     "./src/**/*.ts",
     "./test/**/*.ts"
-, "trash/child-process.ts", "trash/constants.ts", "trash/CredentialManager.ts", "trash/index.ts", "trash/secure-process.ts", "trash/SecureVault.ts", "trash/types.ts", "trash/VaultWallet.ts", "trash/VaultWalletProxy.ts"  ],
+  ],
   "exclude": [
-    "node_modules",
-    "ts_build"
+    "node_modules"
   ]
-} 
+}

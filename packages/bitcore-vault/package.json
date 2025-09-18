@@ -1,5 +1,5 @@
 {
-  "name": "bitcore-secret-vault",
+  "name": "bitcore-vault",
   "version": "0.1.0",
   "description": "Wrapper for secure-heap forked process utilizing secure heap for protection of serializable credentials",
   "main": "./ts_build/src/index.js",
