@@ -1,8 +1,8 @@
 import * as crypto from 'crypto';
-import { Wallet, WalletObj } from '../../bitcore-client/src/wallet';
+import { Wallet } from '../../bitcore-client/src/wallet';
 
 export class VaultWallet extends Wallet {
-  constructor(params: Wallet | WalletObj) {
+  constructor(params: Wallet | any) {
     super(params);
   }
 
