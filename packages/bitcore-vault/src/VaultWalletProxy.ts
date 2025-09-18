@@ -2,7 +2,6 @@ import { ChildProcess, fork } from 'child_process';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import * as readline from 'readline';
-import { WalletObj } from '../../bitcore-client/src/wallet';
 
 interface SecureProcessResponse {
   messageId: string;
@@ -82,12 +81,12 @@ export class VaultWalletProxy {
     });
   }
 
-  public async loadWallet(walletOptions: WalletObj): Promise<string> {
-    if (!walletOptions.name) {
+  public async loadWallet({ name, storageType = 'Level' }: { name: string; storageType?: string }): Promise<string> {
+    if (!name) {
       throw new Error('Wallet name must be provided in walletOptions.');
     }
-    const publicAddress = await this.sendMessage('loadWallet', walletOptions);
-    this.walletAddresses.set(walletOptions.name, publicAddress);
+    const publicAddress = await this.sendMessage('loadWallet', { name, storageType });
+    this.walletAddresses.set(name, publicAddress);
     return publicAddress;
   }
 

@@ -1,5 +1,4 @@
 import * as crypto from 'crypto';
-import { WalletObj } from '../../bitcore-client/src/wallet';
 import { VaultWallet } from './VaultWallet';
 
 // Define a type for the wallet entry in our map
@@ -77,9 +76,9 @@ export class SecureProcess {
     return this.publicKey.export({ type: 'spki', format: 'pem' }).toString();
   }
 
-  public async loadWallet(walletOptions: WalletObj): Promise<string> {
-    const wallet = new VaultWallet(walletOptions);
-    const walletName = walletOptions.name;
+  public async loadWallet({ name, storageType = 'Level' }: { name: string; storageType?: string }): Promise<string> {
+    const wallet = new VaultWallet({ name, storageType });
+    const walletName = name;
     if (!walletName) {
       throw new Error('Wallet name must be provided.');
     }
