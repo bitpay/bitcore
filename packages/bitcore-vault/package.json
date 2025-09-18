@@ -13,6 +13,7 @@
     "pub": "npm run compile && npm publish",
     "watch": "tsc --watch",
     "compile": "npm run clean && tsc",
+    "run:example": "npm run compile && node ts_build/examples/run.js",
     "test": "mocha -r tsx test/**/*.test.ts",
     "precommit": "npm run fix && npm run lint",
     "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
