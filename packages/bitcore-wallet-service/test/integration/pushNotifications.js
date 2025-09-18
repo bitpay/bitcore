@@ -812,7 +812,7 @@ describe('Push notifications', function() {
             pushNotificationsService = new PushNotificationsService();
             requestStub = sinon.stub(pushNotificationsService, '_makeRequest').callsFake(()=>{});
             requestStub.yields();
-            getTokenDataStub = sinon.stub(pushNotificationsService, 'getTokenData').callsFake(() => TestData.OneInch_ETH_Tokens.tokens);
+            getTokenDataStub = sinon.stub(pushNotificationsService, 'getTokenData').callsFake(() => TestData.CoinGecko_ETH_Tokens.tokens);
             pushNotificationsService.start({
               lockOpts: {},
               messageBroker: server.messageBroker,
@@ -908,7 +908,7 @@ describe('Push notifications', function() {
             requestStub.yields();
 
             pushNotificationsService = new PushNotificationsService();
-            getTokenDataStub = sinon.stub(pushNotificationsService, 'getTokenData').callsFake(() => TestData.OneInch_ETH_Tokens.tokens);
+            getTokenDataStub = sinon.stub(pushNotificationsService, 'getTokenData').callsFake(() => TestData.CoinGecko_ETH_Tokens.tokens);
             pushNotificationsService.start({
               lockOpts: {},
               messageBroker: server.messageBroker,

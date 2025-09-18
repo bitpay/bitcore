@@ -378,15 +378,13 @@ module.exports.historyETH = [
   }
 ];
 
-module.exports.OneInch_ETH_Tokens = {
-  tokens: {
-    '0x0d8775f648430679a709e98d2b0cb6250d2887ef': {
+module.exports.CoinGecko_ETH_Tokens = {
+  tokens: [{
       symbol: 'BAT',
       name: 'Basic Attention Token',
       address: '0x0d8775f648430679a709e98d2b0cb6250d2887ef',
       decimals: 18,
       logoURI: 'https://tokens.1inch.io/0x0d8775f648430679a709e98d2b0cb6250d2887ef.png',
       tags: ['tokens']
-    }
-  }
+  }]
 };
