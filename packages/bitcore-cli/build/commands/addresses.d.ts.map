@@ -1,1 +1,0 @@
-{"version":3,"file":"addresses.d.ts","sourceRoot":"","sources":["../../src/commands/addresses.ts"],"names":[],"mappings":"AAEA,OAAO,EAAE,WAAW,EAAE,MAAM,iBAAiB,CAAC;AAE9C,OAAO,EAAE,MAAM,EAAE,MAAM,WAAW,CAAC;AAEnC,wBAAsB,YAAY,CAAC,IAAI,EAAE;IACvC,MAAM,EAAE,MAAM,CAAC;IACf,IAAI,EAAE,WAAW,GAAG;QAClB,QAAQ,EAAE,MAAM,CAAC;KAClB,CAAA;CACF,iBAoBA"}

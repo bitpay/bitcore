@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "child_process": "^1.0.2",
-    "crypto": "^1.0.1"
+    "bitcore-client": "^11.3.2"
   },
   "devDependencies": {
     "@types/chai": "5.0.1",

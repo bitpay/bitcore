@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as os from 'os';
-import { IWallet } from 'src/types/wallet';
+import { IWallet } from '../types/wallet';
 import * as stream from 'stream';
 import { StreamUtil } from '../stream-util';
 import { Wallet } from '../wallet';
