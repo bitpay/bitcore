@@ -104,6 +104,7 @@ export class SecureProcess {
 
     const encryptedPassphraseBuffer = Buffer.from(encryptedPassphrase, 'base64');
 
+    let success = false;;
     // Decrypt the passphrase with the private key
     let passphrase: Buffer<ArrayBufferLike> | null = null;
     try {
@@ -115,20 +116,23 @@ export class SecureProcess {
         },
         encryptedPassphraseBuffer
       );
-      // Check if the passphrase is correct
+
       // This method is responsible for its own cleanup of the passphrase buffer.
       // We wrap this in a try/finally as a defense-in-depth measure.
-      await walletEntry.wallet.checkPassphrase(passphrase);
+      const { success: returnedSuccess } = await walletEntry.wallet.checkPassphrase(passphrase);
+      success = returnedSuccess;
     } finally {
       // Overwrite the buffer to ensure the secret is not left in memory.
       crypto.randomFillSync(passphrase);
     }
 
-    // Store the encrypted passphrase
-    walletEntry.passphrase = encryptedPassphraseBuffer;
-    this.wallets.set(name, walletEntry);
+    if (success) {
+      // Store the encrypted passphrase
+      walletEntry.passphrase = encryptedPassphraseBuffer;
+      this.wallets.set(name, walletEntry);
+    }
 
-    return { success: true };
+    return { success };
   }
 }
 

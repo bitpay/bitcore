@@ -4,6 +4,7 @@ import { VaultWalletProxy } from '../VaultWalletProxy';
 class WalletLoader {
   private vaultWalletProxy: VaultWalletProxy;
   private rl: readline.Interface;
+  private passphraseTriesPerWallet = 3;
 
   constructor() {
     this.vaultWalletProxy = new VaultWalletProxy();
@@ -28,7 +29,7 @@ class WalletLoader {
 
     await this.addPassphrases();
 
-    console.log('\nWallets and passphrases loaded. Performing subsequent tasks...');
+    console.log('\nWallets and passphrases loaded. Here\'s where work tasks would be kicked off...');
     // Subsequent tasks can be added here.
     // For now, we just log the wallet addresses.
     console.log('Loaded wallet addresses:', this.vaultWalletProxy.walletAddresses);
@@ -60,8 +61,22 @@ class WalletLoader {
     for (const walletName of this.vaultWalletProxy.walletAddresses.keys()) {
       try {
         console.log(`\nAdding passphrase for wallet: ${walletName}`);
-        await this.vaultWalletProxy.addPassphrase(walletName);
-        console.log(`Passphrase added for ${walletName}.`);
+        let success = false;
+        let remainingTries = this.passphraseTriesPerWallet;
+        while (!success && remainingTries > 0) {
+          const { success: returnedSuccess } = await this.vaultWalletProxy.addPassphrase(walletName);
+          success = returnedSuccess;
+          if (!success) {
+            if (remainingTries) {
+              remainingTries--;
+              console.log(`  Passphrase not successfully added - you have ${remainingTries} tries remaining`);
+            } else {
+              // @TODO remove wallet
+              console.log(`  No remaining tries - @@ TODO @@ removing ${walletName}`);
+            }
+          }
+        }
+        console.log(`Passphrase ${success ? '' : 'not '}added for ${walletName}.`);
       } catch (error) {
         console.error(`Failed to add passphrase for ${walletName}:`, error);
       }
