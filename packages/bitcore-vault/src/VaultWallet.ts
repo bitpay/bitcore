@@ -1,7 +1,7 @@
 import * as crypto from 'crypto';
-import { Wallet } from '../../bitcore-client/src/wallet';
 import { Storage } from '../../bitcore-client/src/storage';
 import { StorageType } from '../../bitcore-client/src/types/storage';
+import { Wallet } from '../../bitcore-client/src/wallet';
 
 export class VaultWallet extends Wallet {
   constructor(params) {
@@ -47,10 +47,13 @@ export class VaultWallet extends Wallet {
    * @param passphrase The passphrase to check.
    * @returns A promise that resolves if the passphrase is correct, and rejects otherwise.
    */
-  public async checkPassphrase(passphrase: Buffer): Promise<void> {
+  public async checkPassphrase(passphrase: Buffer): Promise<{ success: boolean }> {
     try {
       // Note: bcrypt documentation suggests passphrase will be stringified - this is not ideal - but the bcrypt compare method can take a buffer - hope for bcrypt's cleanup as best as possible
       await super.unlock(passphrase);
+      return { success: true }
+    } catch (err) {
+      return { success: false }
     } finally {
       crypto.randomFillSync(passphrase); // Overwrite passphrase memory
       this.lock();
