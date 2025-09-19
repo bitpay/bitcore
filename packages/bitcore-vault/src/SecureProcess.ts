@@ -105,16 +105,16 @@ export class SecureProcess {
     const encryptedPassphraseBuffer = Buffer.from(encryptedPassphrase, 'base64');
 
     // Decrypt the passphrase with the private key
-    const passphrase = crypto.privateDecrypt(
-      {
-        key: this.privateKey,
-        padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
-        oaepHash: 'sha256',
-      },
-      encryptedPassphraseBuffer
-    );
-    
+    let passphrase: Buffer<ArrayBufferLike> | null = null;
     try {
+      passphrase = crypto.privateDecrypt(
+        {
+          key: this.privateKey,
+          padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+          oaepHash: 'sha256',
+        },
+        encryptedPassphraseBuffer
+      );
       // Check if the passphrase is correct
       // This method is responsible for its own cleanup of the passphrase buffer.
       // We wrap this in a try/finally as a defense-in-depth measure.
