@@ -1,9 +1,26 @@
 import * as crypto from 'crypto';
 import { Wallet } from '../../bitcore-client/src/wallet';
+import { Storage } from '../../bitcore-client/src/storage';
+import { StorageType } from '../../bitcore-client/src/types/storage';
 
 export class VaultWallet extends Wallet {
   constructor(params) {
     super(params);
+  }
+
+  /**
+   * Override the static loadWallet method to return a VaultWallet instance
+   */
+  static async loadWallet(params: { name: string; path?: string; storage?: Storage; storageType?: StorageType }) {
+    const { name, path, storageType } = params;
+    let { storage } = params;
+    storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
+    const loadedWallet = await storage.loadWallet({ name });
+    if (loadedWallet) {
+      return new VaultWallet(Object.assign(loadedWallet, { storage }));
+    } else {
+      throw new Error('No wallet could be found');
+    }
   }
 
   /**
@@ -38,5 +55,48 @@ export class VaultWallet extends Wallet {
       crypto.randomFillSync(passphrase); // Overwrite passphrase memory
       this.lock();
     }
+  }
+
+  /**
+   * Override signTx to require vault access
+   */
+  public async signTx(params: any): Promise<any> {
+    return this.withVaultAccess(params.passphrase, super.signTx.bind(this), params);
+  }
+
+  /**
+   * Override derivePrivateKey to require vault access
+   */
+  public async derivePrivateKey(isChange: boolean, addressIndex?: number): Promise<any> {
+    // This method needs a passphrase, but it's not passed as a parameter
+    // We'll need to handle this differently - perhaps store the passphrase temporarily
+    throw new Error('derivePrivateKey requires vault access - use withVaultAccess wrapper');
+  }
+
+  /**
+   * Override generateAddressPair to require vault access
+   */
+  public async generateAddressPair(addressIndex: number, withChangeAddress?: boolean): Promise<any> {
+    // This method needs a passphrase, but it's not passed as a parameter
+    // We'll need to handle this differently - perhaps store the passphrase temporarily
+    throw new Error('generateAddressPair requires vault access - use withVaultAccess wrapper');
+  }
+
+  /**
+   * Override nextAddressPair to require vault access
+   */
+  public async nextAddressPair(withChangeAddress?: boolean): Promise<any> {
+    // This method needs a passphrase, but it's not passed as a parameter
+    // We'll need to handle this differently - perhaps store the passphrase temporarily
+    throw new Error('nextAddressPair requires vault access - use withVaultAccess wrapper');
+  }
+
+  /**
+   * Override importKeys to require vault access
+   */
+  public async importKeys(params: { keys: any[], rederiveAddys?: boolean }): Promise<any> {
+    // This method needs a passphrase, but it's not passed as a parameter
+    // We'll need to handle this differently - perhaps store the passphrase temporarily
+    throw new Error('importKeys requires vault access - use withVaultAccess wrapper');
   }
 }
