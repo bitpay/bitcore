@@ -39,7 +39,7 @@ export class VaultWalletProxy {
           console.error('SecureProcess fork error:', err);
         });
 
-        const publicKeyPem = await this.sendMessage('getPublicKey', {});
+        const publicKeyPem = await this.sendMessage<string>('getPublicKey', {});
         this.publicKey = crypto.createPublicKey({
           key: publicKeyPem,
           format: 'pem',
@@ -68,7 +68,7 @@ export class VaultWalletProxy {
     }
   }
 
-  private sendMessage(action: string, payload: any): Promise<any> {
+  private sendMessage<T>(action: string, payload: any): Promise<T> {
     return new Promise((resolve, reject) => {
       if (!this.secureProcess) {
         return reject(new Error('Secure process not initialized.'));
@@ -85,7 +85,7 @@ export class VaultWalletProxy {
     if (!name) {
       throw new Error('Wallet name must be provided in walletOptions.');
     }
-    const publicAddress = await this.sendMessage('loadWallet', { name, storageType });
+    const publicAddress = await this.sendMessage<string>('loadWallet', { name, storageType });
     this.walletAddresses.set(name, publicAddress);
     return publicAddress;
   }
@@ -111,7 +111,7 @@ export class VaultWalletProxy {
       name: walletName,
       encryptedPassphrase: encryptedPassphrase.toString('base64'),
     };
-    return this.sendMessage('addPassphrase', payload);
+    return this.sendMessage<{ success: boolean }>('addPassphrase', payload);
   }
 
   private promptForPassphrase(): Promise<string> {
