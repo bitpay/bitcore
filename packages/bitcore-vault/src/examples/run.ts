@@ -1,6 +1,5 @@
 import * as readline from 'readline';
-import { VaultWalletProxy } from '../src/VaultWalletProxy';
-import { WalletObj } from '../../bitcore-client/src/wallet';
+import { VaultWalletProxy } from '../VaultWalletProxy';
 
 class WalletLoader {
   private vaultWalletProxy: VaultWalletProxy;
@@ -33,10 +32,6 @@ class WalletLoader {
     // Subsequent tasks can be added here.
     // For now, we just log the wallet addresses.
     console.log('Loaded wallet addresses:', this.vaultWalletProxy.walletAddresses);
-
-
-    this.vaultWalletProxy.terminate();
-    console.log('Secure process terminated. Script finished.');
   }
 
   private async walletCreationLoop(): Promise<void> {
@@ -51,18 +46,7 @@ class WalletLoader {
       const chain = await this.askQuestion('Enter chain (e.g., btc, bch): ');
       const network = await this.askQuestion('Enter network (e.g., livenet, testnet): ');
 
-      const walletOptions: WalletObj = {
-        name: walletName,
-        chain,
-        network,
-        baseUrl: '',
-        path: '',
-        password: '',
-        storageType: '',
-        tokens: [],
-        lite: false,
-        addressType: ''
-      };
+      const walletOptions = { name: walletName };
 
       try {
         console.log(`Loading wallet "${walletName}"...`);

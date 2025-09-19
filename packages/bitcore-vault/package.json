@@ -16,7 +16,8 @@
     "test": "mocha -r tsx test/**/*.test.ts",
     "precommit": "npm run fix && npm run lint",
     "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
-    "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'"
+    "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
+    "run:example": "npm run compile && node ts_build/bitcore-vault/src/examples/run.js"
   },
   "dependencies": {
     "child_process": "^1.0.2",
