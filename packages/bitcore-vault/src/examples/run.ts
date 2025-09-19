@@ -43,9 +43,6 @@ class WalletLoader {
         break;
       }
 
-      const chain = await this.askQuestion('Enter chain (e.g., btc, bch): ');
-      const network = await this.askQuestion('Enter network (e.g., livenet, testnet): ');
-
       const walletOptions = { name: walletName };
 
       try {
@@ -75,6 +72,10 @@ class WalletLoader {
 const loader = new WalletLoader();
 loader
   .run()
+  .then(() => {
+    console.log('Script ran - exiting');
+    process.exit(0);
+  })
   .catch((error) => {
     console.error('An unexpected error occurred:', error);
     process.exit(1);
