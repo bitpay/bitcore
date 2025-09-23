@@ -45,6 +45,35 @@ function testWalletEquivalence(wallet1, doc) {
   expect(singleAddress).to.equal(wallet1.singleAddress);
 }
 
+function testWalletTransaction(tx) {
+  expect(tx).to.be.an('object');
+  expect(tx).to.have.property('id').that.is.a('string').with.length.greaterThan(0);
+  expect(tx.id).to.match(/^[a-f0-9]{24}$/);
+
+  expect(tx).to.have.property('txid').that.is.a('string').with.length(64);
+  expect(tx.txid).to.match(/^[a-f0-9]{64}$/);
+
+  expect(tx).to.have.property('fee').that.is.a('number');
+  expect(tx).to.have.property('size').that.is.a('number').and.to.be.greaterThan(0);
+
+  expect(tx).to.have.property('category').that.is.a('string');
+  expect(['receive', 'send', 'move']).to.include(tx.category);
+
+  expect(tx).to.have.property('satoshis').that.is.a('number');
+  if (tx.category === 'receive') {
+    expect(tx.satoshis).to.be.at.least(0);
+  } else {
+    expect(tx.satoshis).to.be.at.most(0);
+  }
+
+  expect(tx).to.have.property('height').that.is.a('number').and.to.be.at.least(0);
+
+  expect(tx).to.have.property('address').that.is.a('string').with.length.greaterThan(0);
+  expect(tx.address).to.match(/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$/);
+
+  expect(tx).to.have.property('outputIndex').that.is.a('number').and.to.be.at.least(0);
+}
+
 function getSignature(privateKey, method: 'GET' | 'POST' | 'reprocess', url: string, body={}) {
   const message = [method, url, JSON.stringify(body)].join('|');
   const messageHash = crypto.Hash.sha256sha256(Buffer.from(message));
@@ -252,7 +281,7 @@ describe('Wallet Routes', function() {
   let sandbox;
   let firstBlockTime = minutesAgo(60);
   let addressBalanceAtFirstBlock = 500_000;
-  let addressBalanceAtSecondBlock = 100_000;
+  let addressBalanceAtSecondBlock = 600_000;
 
   before(async function() {
     this.timeout(15000);
@@ -261,7 +290,8 @@ describe('Wallet Routes', function() {
     await addBlock({ time: firstBlockTime });
     await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, amount: addressBalanceAtFirstBlock });
     await addBlock();
-    await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, amount: addressBalanceAtSecondBlock - addressBalanceAtFirstBlock });
+    await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, amount: 500_000 });
+    await addTransaction({ senderAddress: address, recieverAddress: address2, amount: 500_000 * 2 - addressBalanceAtSecondBlock });
     await addBlock();
     await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, amount: 500_000 });
   });
@@ -455,6 +485,21 @@ describe('Wallet Routes', function() {
         expect(balance).to.greaterThan(0).and.to.equal(addressBalanceAtSecondBlock);
         done();
       });
+  });
+
+  it('should get wallet added transactions', done => {
+    const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/transactions`;
+    request.get(url)
+      .set('x-signature', getSignature(privKey, 'GET', url))
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        const transactions = res.text.split('\n').slice(0, -1).map(line => JSON.parse(line));
+        for (const tx of transactions) {
+          testWalletTransaction(tx);
+        }
+        console.log(transactions);
+        done();
+      })
   });
 
   {
