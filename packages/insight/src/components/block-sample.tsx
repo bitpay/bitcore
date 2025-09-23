@@ -18,11 +18,13 @@ const BlockChip = styled.div`
   text-align: center;
 `;
 
-type BlockAndFeeType = BlocksType & {
-  feeTotal: number;
-  mean: number;
-  median: number;
-  mode: number;
+export type BlockAndFeeType = BlocksType & {
+  feeData: {
+    feeTotal: number;
+    mean: number;
+    median: number;
+    mode: number;
+  }
 };
 
 const BlockSample: FC<{currency: string; network: string}> = ({currency, network}) => {
@@ -34,21 +36,10 @@ const BlockSample: FC<{currency: string; network: string}> = ({currency, network
     nProgress.start();
     Promise.all([fetcher(`${getApiRoot(currency)}/${currency}/${network}/block?limit=5`)])
       .then(([data]) => {
-        // fetch the fee data for each block
-        Promise.all(
-          data.map((block: BlockAndFeeType) =>
-            fetcher(`${getApiRoot(currency)}/${currency}/${network}/block/${block.hash}/fee`),
-          )
-        )
-          // combine the fee data with the block data
-          .then(fees => {
-            setBlocksList(data.map((block: BlocksType, i: number): BlockAndFeeType => 
-              merge(block, fees[i])
-            ));
-          })
-          .finally(() => {
-            nProgress.done();
-          });
+        setBlocksList(data);
+      })
+      .finally(() => {
+        nProgress.done();
       })
       .catch((e: any) => {
         setError(e.message || 'Something went wrong. Please try again later.');
@@ -64,7 +55,8 @@ const BlockSample: FC<{currency: string; network: string}> = ({currency, network
   return (
     <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
       {blocksList.map((block: BlockAndFeeType, index: number) => {
-        const {height, hash, transactionCount, time, median} = block;
+        const { height, hash, transactionCount, time } = block;
+        const median = block.feeData.median;
         const milisecondsWhenMined = Date.now() - new Date(time).getTime();
         const minutesWhenMined = Math.floor(milisecondsWhenMined / 60000);
         return (

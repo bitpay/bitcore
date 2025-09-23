@@ -5,7 +5,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {useDispatch} from 'react-redux';
 import {changeCurrency, changeNetwork} from 'src/store/app.actions';
 import {getApiRoot, normalizeParams} from 'src/utilities/helper-methods';
-import styled, { useTheme } from 'styled-components';
+import styled, {useTheme} from 'styled-components';
 import {colorCodes, size} from 'src/utilities/constants';
 import {fetcher} from 'src/api/api';
 import BlockGroupDarkSvg from '../assets/images/block-group-dark.svg'
@@ -54,10 +54,10 @@ const Chain: React.FC = () => {
     dispatch(changeNetwork(network));
 
     Promise.all([
-      fetcher(`${getApiRoot(currency)}/${currency}/${network}/block/tip/fee`)
+      fetcher(`${getApiRoot(currency)}/${currency}/${network}/block/tip`)
     ])
-      .then(([fee]) => {
-        setTipFee(fee.mean);
+      .then(([block]) => {
+        setTipFee(block.feeData.mean);
         nProgress.done();
       });
   }, [currency, network]);
