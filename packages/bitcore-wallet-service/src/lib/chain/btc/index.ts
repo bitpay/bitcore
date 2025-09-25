@@ -2,14 +2,14 @@ import * as async from 'async';
 import { BitcoreLib } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { singleton } from 'preconditions';
-import { WalletService } from '../../server';
-import { IChain } from '../../../types/chain';
 import config from '../../../config';
+import { IChain } from '../../../types/chain';
 import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
 import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
 import { IWallet, TxProposal } from '../../model';
+import { WalletService } from '../../server';
 
 const $ = singleton();
 const { Constants, Utils, Defaults } = Common;

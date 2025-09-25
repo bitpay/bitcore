@@ -17,8 +17,6 @@ import * as TestData from '../testdata';
 import helpers from './helpers';
 import { ClientError } from '../../src/lib/errors/clienterror';
 
-const LOG_LEVEL = 'info';
-
 const should = chai.should();
 config.moralis = config.moralis ?? {
   apiKey: 'apiKey',
@@ -63,7 +61,6 @@ describe('Wallet service', function() {
   });
 
   beforeEach(async function() {
-    transport.level = LOG_LEVEL;
     config.suspendedChains = [];
 
     // restore defaults, cp values
@@ -5048,10 +5045,6 @@ describe('Wallet service', function() {
 
         beforeEach(async function() {
           ({ server, wallet } = await helpers.createAndJoinWallet(1, 2));
-        });
-
-        afterEach(function() {
-          transport.level = LOG_LEVEL;
         });
 
         it('should exclude unconfirmed utxos if specified', function(done) {
