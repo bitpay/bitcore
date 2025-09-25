@@ -1,8 +1,8 @@
 import { BitcoreLibCash } from 'crypto-wallet-core';
-import { IChain } from '..';
+import { IChain } from '../../../types/chain';
 import config from '../../../config';
 import { Errors } from '../../errors/errordefinitions';
-import { BtcChain } from '../btc';
+import { BtcChain } from '../../chain/btc';
 
 export class BchChain extends BtcChain implements IChain {
   constructor() {

@@ -1,7 +1,7 @@
 import { Transactions, Validation, Web3 } from 'crypto-wallet-core';
 import _ from 'lodash';
-import { WalletWithOpts } from 'src/lib/blockchainexplorers/v8';
-import { IChain } from '..';
+import { WalletWithOpts } from '../../blockchainexplorers/v8';
+import { IChain } from '../../../types/chain';
 import { Defaults } from '../../common/defaults';
 import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';

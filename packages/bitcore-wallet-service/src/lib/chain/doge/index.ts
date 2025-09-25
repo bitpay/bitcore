@@ -1,17 +1,15 @@
 import * as async from 'async';
 import { BitcoreLibDoge } from 'crypto-wallet-core';
 import _ from 'lodash';
-import { IChain } from '..';
+import { IChain } from '../../../types/chain';
 import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
 import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
 import { TxProposal } from '../../model';
-import { BtcChain } from '../btc';
+import { BtcChain } from '../../chain/btc';
 
-const Constants = Common.Constants;
-const Utils = Common.Utils;
-const Defaults = Common.Defaults;
+const { Utils, Defaults } = Common;
 
 export class DogeChain extends BtcChain implements IChain {
   constructor(private bitcoreLibDoge = BitcoreLibDoge) {
@@ -22,8 +20,8 @@ export class DogeChain extends BtcChain implements IChain {
     const MAX_TX_SIZE_IN_KB = Defaults.MAX_TX_SIZE_IN_KB_DOGE;
 
     // todo: check inputs are ours and have enough value
-    if (txp.inputs && !_.isEmpty(txp.inputs)) {
-      if (!_.isNumber(txp.fee)) txp.fee = this.getEstimatedFee(txp, { conservativeEstimation: true });
+    if (txp.inputs && txp.inputs.length > 0) {
+      if (!Utils.isNumber(txp.fee)) txp.fee = this.getEstimatedFee(txp, { conservativeEstimation: true });
       return cb(this.checkTx(txp));
     }
 
@@ -34,15 +32,10 @@ export class DogeChain extends BtcChain implements IChain {
     const sizePerInput = this.getEstimatedSizeForSingleInput(txp, feeOpts);
     const feePerInput = (sizePerInput * txp.feePerKb) / 1000;
 
-    logger.debug(
-      `Amount ${Utils.formatAmountInBtc(
-        txpAmount
-      )} baseSize ${baseTxpSize} baseTxpFee ${baseTxpFee} sizePerInput ${sizePerInput}  feePerInput ${feePerInput}`
-    );
+    logger.debug(`Amount ${Utils.formatAmountInBtc(txpAmount)} baseSize ${baseTxpSize} baseTxpFee ${baseTxpFee} sizePerInput ${sizePerInput}  feePerInput ${feePerInput}`);
 
     const sanitizeUtxos = utxos => {
-      const excludeIndex = _.reduce(
-        opts.utxosToExclude,
+      const excludeIndex = (opts.utxosToExclude || []).reduce(
         (res, val) => {
           res[val] = val;
           return res;
@@ -50,7 +43,7 @@ export class DogeChain extends BtcChain implements IChain {
         {}
       );
 
-      return _.filter(utxos, utxo => {
+      return (utxos || []).filter(utxo => {
         if (utxo.locked) return false;
         if (utxo.satoshis <= feePerInput) return false;
         if (txp.excludeUnconfirmedUtxos && !utxo.confirmations) return false;
@@ -60,7 +53,7 @@ export class DogeChain extends BtcChain implements IChain {
     };
 
     const select = (utxos, coin, cb) => {
-      const totalValueInUtxos = _.sumBy(utxos, 'satoshis');
+      const totalValueInUtxos = utxos.reduce((sum, utxo) => sum + utxo.satoshis, 0);
       const netValueInUtxos = totalValueInUtxos - (baseTxpFee - utxos.length * feePerInput);
 
       if (totalValueInUtxos < txpAmount) {
@@ -74,13 +67,7 @@ export class DogeChain extends BtcChain implements IChain {
         return cb(Errors.INSUFFICIENT_FUNDS);
       }
       if (netValueInUtxos < txpAmount) {
-        logger.debug(
-          'Value after fees in all utxos (' +
-            Utils.formatAmountInBtc(netValueInUtxos) +
-            ') is insufficient to cover for txp amount (' +
-            Utils.formatAmountInBtc(txpAmount) +
-            ')'
-        );
+        logger.debug(`Value after fees in all utxos (${Utils.formatAmountInBtc(netValueInUtxos)}) is insufficient to cover for txp amount (${Utils.formatAmountInBtc(txpAmount)})`);
 
         return cb(
           new ClientError(
@@ -98,14 +85,18 @@ export class DogeChain extends BtcChain implements IChain {
       const bigInputThreshold = txpAmount * Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR + (baseTxpFee + feePerInput);
       logger.debug('Big input threshold ' + Utils.formatAmountInBtc(bigInputThreshold));
 
-      const partitions = _.partition(utxos, utxo => {
-        return utxo.satoshis > bigInputThreshold;
-      });
 
-      const bigInputs = _.sortBy(partitions[0], 'satoshis');
-      const smallInputs = _.sortBy(partitions[1], utxo => {
-        return -utxo.satoshis;
-      });
+      const partitions = [[], []];
+      for (const utxo of utxos) {
+        if (utxo.satoshis > bigInputThreshold) {
+          partitions[0].push(utxo);
+        } else {
+          partitions[1].push(utxo);
+        }
+      }
+
+      const bigInputs = Utils.sortAsc(partitions[0], 'satoshis')
+      const smallInputs = Utils.sortDesc(partitions[1], 'satoshis');
 
       logger.debug('Considering ' + bigInputs.length + ' big inputs (' + Utils.formatUtxos(bigInputs) + ')');
       logger.debug('Considering ' + smallInputs.length + ' small inputs (' + Utils.formatUtxos(smallInputs) + ')');
@@ -116,7 +107,8 @@ export class DogeChain extends BtcChain implements IChain {
       let fee;
       let error;
 
-      _.each(smallInputs, (input, i) => {
+      for (let i = 0; i < smallInputs.length; i++) {
+        const input = smallInputs[i];
         logger.debug('Input #' + i + ': ' + Utils.formatUtxos(input));
 
         const netInputAmount = input.satoshis - feePerInput;
@@ -141,15 +133,15 @@ export class DogeChain extends BtcChain implements IChain {
         // logger.debug('Tx amount/Input amount:' + Utils.formatRatio(amountVsUtxoRatio) + ' (min: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR) + ')');
 
         if (txpSize / 1000 > MAX_TX_SIZE_IN_KB) {
-          //          logger.debug('Breaking because tx size (' + Utils.formatSize(txpSize) + ') is too big (max: ' + Utils.formatSize(this.MAX_TX_SIZE_IN_KB * 1000.) + ')');
+          // logger.debug('Breaking because tx size (' + Utils.formatSize(txpSize) + ') is too big (max: ' + Utils.formatSize(this.MAX_TX_SIZE_IN_KB * 1000.) + ')');
           error = Errors.TX_MAX_SIZE_EXCEEDED;
-          return false;
+          break;
         }
 
-        if (!_.isEmpty(bigInputs)) {
+        if (bigInputs?.length > 0) {
           if (amountVsUtxoRatio < Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR) {
             // logger.debug('Breaking because utxo is too small compared to tx amount');
-            return false;
+            break;
           }
 
           if (feeVsAmountRatio > Defaults.UTXO_SELECTION_MAX_FEE_VS_TX_AMOUNT_FACTOR) {
@@ -157,49 +149,35 @@ export class DogeChain extends BtcChain implements IChain {
             // logger.debug('Fee/Single-input fee: ' + Utils.formatRatio(feeVsSingleInputFeeRatio) + ' (max: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MAX_FEE_VS_SINGLE_UTXO_FEE_FACTOR) + ')' + ' loses wrt single-input tx: ' + Utils.formatAmountInBtc((selected.length - 1) * feePerInput));
             if (feeVsSingleInputFeeRatio > Defaults.UTXO_SELECTION_MAX_FEE_VS_SINGLE_UTXO_FEE_FACTOR) {
               // logger.debug('Breaking because fee is too significant compared to tx amount and it is too expensive compared to using single input');
-              return false;
+              break;
             }
           }
         }
 
-        logger.debug(
-          'Cumuled total so far: ' +
-            Utils.formatAmountInBtc(total) +
-            ', Net total so far: ' +
-            Utils.formatAmountInBtc(netTotal)
-        );
+        logger.debug(`Cumuled total so far: ${Utils.formatAmountInBtc(total)}, Net total so far: ${Utils.formatAmountInBtc(netTotal)}`);
 
         if (netTotal >= txpAmount) {
           const changeAmount = Math.round(total - txpAmount - fee);
-          logger.debug('Tx change: %o', Utils.formatAmountInBtc(changeAmount));
+          logger.debug(`Tx change: ${Utils.formatAmountInBtc(changeAmount)}`);
 
           const dustThreshold = Math.max(Defaults.MIN_OUTPUT_AMOUNT, this.bitcoreLibDoge.Transaction.DUST_AMOUNT);
           if (changeAmount > 0 && changeAmount <= dustThreshold) {
-            logger.debug(
-              'Change below dust threshold (' +
-                Utils.formatAmountInBtc(dustThreshold) +
-                '). Incrementing fee to remove change.'
-            );
+            logger.debug(`Change below dust threshold (${Utils.formatAmountInBtc(dustThreshold)}). Incrementing fee to remove change.`);
             // Remove dust change by incrementing fee
             fee += changeAmount;
           }
 
-          return false;
+          break;
         }
-      });
+      }
 
       if (netTotal < txpAmount) {
-        logger.debug(
-          'Could not reach Txp total (' +
-            Utils.formatAmountInBtc(txpAmount) +
-            '), still missing: ' +
-            Utils.formatAmountInBtc(txpAmount - netTotal)
-        );
+        logger.debug(`Could not reach Txp total (${Utils.formatAmountInBtc(txpAmount)}), still missing: ${Utils.formatAmountInBtc(txpAmount - netTotal)}`);
 
         selected = [];
-        if (!_.isEmpty(bigInputs)) {
-          const input = _.head(bigInputs);
-          logger.debug('Using big input: %o', Utils.formatUtxos(input));
+        if (bigInputs?.length > 0) {
+          const input = bigInputs[0];
+          logger.debug(`Using big input: ${Utils.formatUtxos(input)}`);
           total = input.satoshis;
           fee = Math.round(baseTxpFee + feePerInput);
           fee = Math.max(fee, this.bitcoreLibDoge.Transaction.DUST_AMOUNT);
@@ -208,7 +186,7 @@ export class DogeChain extends BtcChain implements IChain {
         }
       }
 
-      if (_.isEmpty(selected)) {
+      if (selected.length === 0) {
         // logger.debug('Could not find enough funds within this utxo subset');
         return cb(
           error ||
@@ -261,14 +239,12 @@ export class DogeChain extends BtcChain implements IChain {
       let lastGroupLength;
       async.whilst(
         () => {
-          return i < groups.length && _.isEmpty(inputs);
+          return i < groups.length && !inputs?.length;
         },
         next => {
           const group = groups[i++];
 
-          const candidateUtxos = _.filter(utxos, utxo => {
-            return utxo.confirmations >= group;
-          });
+          const candidateUtxos = utxos.filter(utxo => utxo.confirmations >= group);
 
           // logger.debug('Group >= ' + group);
 
@@ -301,20 +277,17 @@ export class DogeChain extends BtcChain implements IChain {
         },
         err => {
           if (err) return cb(err);
-          if (selectionError || _.isEmpty(inputs)) return cb(selectionError || new Error('Could not select tx inputs'));
+          if (selectionError || !inputs.length) return cb(selectionError || new Error('Could not select tx inputs'));
 
           txp.setInputs(_.shuffle(inputs));
           txp.fee = fee;
 
           err = this.checkTx(txp);
           if (!err) {
-            const change = _.sumBy(txp.inputs, 'satoshis') - _.sumBy(txp.outputs, 'amount') - txp.fee;
-            logger.debug(
-              'Successfully built transaction. Total fees: ' +
-                Utils.formatAmountInBtc(txp.fee) +
-                ', total change: ' +
-                Utils.formatAmountInBtc(change)
-            );
+            const sumInputs = txp.inputs.reduce((sum, input) => sum += input.satoshis, 0);
+            const sumOutputs = txp.outputs.reduce((sum, output) => sum += output.amount, 0);
+            const change = sumInputs - sumOutputs - txp.fee;
+            logger.debug(`Successfully built transaction. Total fees: ${Utils.formatAmountInBtc(txp.fee)}, total change: ${Utils.formatAmountInBtc(change)}`);
           } else {
             logger.warn('Error building transaction: %o', err);
           }
@@ -343,15 +316,13 @@ export class DogeChain extends BtcChain implements IChain {
         amountAboveMaxSize: 0
       };
 
-      let inputs = _.reject(utxos, 'locked');
+      let inputs = utxos.filter(utxo => !utxo.locked);
       if (!!opts.excludeUnconfirmedUtxos) {
-        inputs = _.filter(inputs, 'confirmations');
+        inputs = inputs.filter(input => input.confirmations);
       }
-      inputs = _.sortBy(inputs, input => {
-        return -input.satoshis;
-      });
+      inputs = Utils.sortDesc(inputs, 'satoshis');
 
-      if (_.isEmpty(inputs)) return cb(null, info);
+      if (!inputs.length) return cb(null, info);
 
       server._getFeePerKb(wallet, opts, (err, feePerKb) => {
         if (err) return cb(err);
@@ -372,28 +343,34 @@ export class DogeChain extends BtcChain implements IChain {
         const sizePerInput = this.getEstimatedSizeForSingleInput(txp, { conservativeEstimation: true });
         const feePerInput = (sizePerInput * txp.feePerKb) / 1000;
 
-        const partitionedByAmount = _.partition(inputs, input => {
-          return input.satoshis > feePerInput;
-        });
+        const partitionedByAmount = [[], []];
+        for (const input of inputs) {
+          if (input.satoshis > feePerInput) {
+            partitionedByAmount[0].push(input);
+          } else {
+            partitionedByAmount[1].push(input);
+          }
+        }
 
         info.utxosBelowFee = partitionedByAmount[1].length;
-        info.amountBelowFee = _.sumBy(partitionedByAmount[1], 'satoshis');
+        info.amountBelowFee = partitionedByAmount[1].reduce((sum, x) => sum += x.satoshis, 0);
         inputs = partitionedByAmount[0];
 
-        _.each(inputs, (input, i) => {
+        for (let i = 0; i < inputs.length; i++) {
+          const input = inputs[i];
           const sizeInKb = (baseTxpSize + (i + 1) * sizePerInput) / 1000;
           if (sizeInKb > MAX_TX_SIZE_IN_KB) {
             info.utxosAboveMaxSize = inputs.length - i;
-            info.amountAboveMaxSize = _.sumBy(_.slice(inputs, i), 'satoshis');
-            return false;
+            info.amountAboveMaxSize = inputs.slice(i).reduce((sum, x) => sum += x.satoshis, 0);
+            break;
           }
           txp.inputs.push(input);
-        });
+        }
 
-        if (_.isEmpty(txp.inputs)) return cb(null, info);
+        if (!txp.inputs?.length) return cb(null, info);
 
         const fee = this.getEstimatedFee(txp, { conservativeEstimation: true });
-        const amount = _.sumBy(txp.inputs, 'satoshis') - fee;
+        const amount = txp.inputs.reduce((sum, x) => sum += x.satoshis, 0) - fee;
         info.size = this.getEstimatedSize(txp, { conservativeEstimation: true });
         info.fee = fee;
         info.amount = amount;
