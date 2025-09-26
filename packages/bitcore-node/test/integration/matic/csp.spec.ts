@@ -99,7 +99,7 @@ describe('Polygon/MATIC API', function() {
         gasPrice: 10 * 1e9
       } as IEVMTransactionInProcess;
     });
-    await CacheStorage.collection.remove({});
+    await CacheStorage.collection.deleteMany({});
     await EVMTransactionStorage.collection.deleteMany({});
     await EVMTransactionStorage.collection.insertMany(txs);
     const estimates = await Promise.all([1, 2, 3, 4].map(target => MATIC.getFee({ network, target })));
@@ -120,7 +120,7 @@ describe('Polygon/MATIC API', function() {
         gasPrice: 10 * 1e9
       } as IEVMTransactionInProcess;
     });
-    await CacheStorage.collection.remove({})
+    await CacheStorage.collection.deleteMany({});
     await EVMTransactionStorage.collection.deleteMany({});
     await EVMTransactionStorage.collection.insertMany(txs);
     let estimates = await Promise.all([1, 2, 3, 4].map(target => MATIC.getFee({ network, target })));

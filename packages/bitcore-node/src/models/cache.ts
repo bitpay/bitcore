@@ -60,7 +60,7 @@ export class CacheModel extends BaseModel<ICache<any>> {
       return found.value as T;
     } else {
       // cache miss
-      this.collection.remove({ _id: found._id });
+      this.collection.deleteOne({ _id: found._id });
       return null;
     }
   }
@@ -75,7 +75,7 @@ export class CacheModel extends BaseModel<ICache<any>> {
       return found.value as T;
     } else {
       // cache miss
-      this.collection.remove({ _id: found._id });
+      this.collection.deleteOne({ _id: found._id });
       return null;
     }
   }
