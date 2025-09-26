@@ -1,7 +1,8 @@
-import _ from 'lodash';
+import { BitcoreLib, BitcoreLibCash } from 'crypto-wallet-core';
+
 const Bitcore_ = {
-  btc: require('bitcore-lib'),
-  bch: require('bitcore-lib-cash')
+  btc: BitcoreLib,
+  bch: BitcoreLibCash
 };
 
 export class BCHAddressTranslator {
@@ -23,7 +24,7 @@ export class BCHAddressTranslator {
   // Supports 3 formats:  legacy (1xxx, mxxxx); Copay: (Cxxx, Hxxx), Cashaddr(qxxx);
   static translate(addresses, to, from?) {
     let wasArray = true;
-    if (!_.isArray(addresses)) {
+    if (!Array.isArray(addresses)) {
       wasArray = false;
       addresses = [addresses];
     }
@@ -33,26 +34,24 @@ export class BCHAddressTranslator {
     if (from == to) {
       ret = addresses;
     } else {
-      ret = _.filter(
-        _.map(addresses, x => {
-          const bitcore = Bitcore_[from == 'legacy' ? 'btc' : 'bch'];
-          let orig;
+      ret = addresses.map(x => {
+        const bitcore = Bitcore_[from == 'legacy' ? 'btc' : 'bch'];
+        let orig;
 
-          try {
-            orig = new bitcore.Address(x).toObject();
-          } catch (e) {
-            return null;
-          }
+        try {
+          orig = new bitcore.Address(x).toObject();
+        } catch (e) {
+          return null;
+        }
 
-          if (to == 'cashaddr') {
-            return Bitcore_['bch'].Address.fromObject(orig).toCashAddress(true);
-          } else if (to == 'copay') {
-            return Bitcore_['bch'].Address.fromObject(orig).toLegacyAddress();
-          } else if (to == 'legacy') {
-            return Bitcore_['btc'].Address.fromObject(orig).toString();
-          }
-        })
-      );
+        if (to == 'cashaddr') {
+          return Bitcore_['bch'].Address.fromObject(orig).toCashAddress(true);
+        } else if (to == 'copay') {
+          return Bitcore_['bch'].Address.fromObject(orig).toLegacyAddress();
+        } else if (to == 'legacy') {
+          return Bitcore_['btc'].Address.fromObject(orig).toString();
+        }
+      }).filter(x => !!x)
     }
     if (wasArray) return ret;
     else return ret[0];

@@ -1,4 +1,4 @@
-import BitcoreLib from 'bitcore-lib';
+import { BitcoreLib } from 'crypto-wallet-core';
 import { Errors } from './errors/errordefinitions'
 import logger from './logger';
 import { ITssKeyMessageObject, TssKeyGenModel } from './model/tsskeygen';

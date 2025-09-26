@@ -1,8 +1,8 @@
+import { BitcoreLib as Bitcore } from 'crypto-wallet-core';
 import * as request from 'request';
 import config from '../config';
 import { ClientError } from '../lib/errors/clienterror';
 import { checkRequired } from '../lib/server';
-const Bitcore = require('bitcore-lib');
 
 export class WyreService {
   request: any = request;

@@ -1,10 +1,8 @@
-import _ from 'lodash';
+import { singleton } from 'preconditions';
 import { Common } from '../common';
 
-const $ = require('preconditions').singleton();
-const Constants = Common.Constants;
-const Utils = Common.Utils;
-
+const $ = singleton();
+const { Constants, Utils } = Common;
 export interface IAddressManager {
   version: number;
   derivationStrategy: string;
@@ -36,7 +34,7 @@ export class AddressManager {
 
     x.receiveAddressIndex = 0;
     x.changeAddressIndex = 0;
-    x.copayerIndex = _.isNumber(opts.copayerIndex) ? opts.copayerIndex : Constants.BIP45_SHARED_INDEX;
+    x.copayerIndex = Utils.isNumber(opts.copayerIndex) ? opts.copayerIndex : Constants.BIP45_SHARED_INDEX;
     x.skippedPaths = [];
 
     return x;
@@ -69,9 +67,9 @@ export class AddressManager {
     }
   }
 
-  rewindIndex(isChange, step, n) {
-    step = _.isUndefined(step) ? 1 : step;
-    n = _.isUndefined(n) ? 1 : n;
+  rewindIndex(isChange, step?, n?) {
+    step = step == null ? 1 : step;
+    n = n == null ? 1 : n;
 
     if (isChange) {
       this.changeAddressIndex = Math.max(0, this.changeAddressIndex - n * step);
@@ -125,7 +123,7 @@ export class AddressManager {
   }
 
   getNextSkippedPath() {
-    if (_.isEmpty(this.skippedPaths)) return null;
+    if (!this.skippedPaths?.length) return null;
 
     const ret = this.skippedPaths.pop();
     return ret;

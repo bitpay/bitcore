@@ -4,7 +4,7 @@ import _ from 'lodash';
 import { IWallet } from 'src/lib/model';
 import { IAddress } from 'src/lib/model/address';
 import { WalletService } from 'src/lib/server';
-import { IChain } from '..';
+import { IChain } from '../../../types/chain';
 import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
 import { Errors } from '../../errors/errordefinitions';

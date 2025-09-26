@@ -1,9 +1,9 @@
 import * as async from 'async';
-import Bitcore from 'bitcore-lib';
-import BitcoreCash from 'bitcore-lib-cash';
-import BitcoreDoge from 'bitcore-lib-doge';
-import BitcoreLtc from 'bitcore-lib-ltc';
 import {
+  BitcoreLib as Bitcore,
+  BitcoreLibCash as BitcoreCash,
+  BitcoreLibDoge as BitcoreDoge,
+  BitcoreLibLtc as BitcoreLtc,
   Constants as ConstantsCWC,
   Validation
 } from 'crypto-wallet-core';
@@ -351,7 +351,7 @@ export class WalletService implements IWalletService {
    * @param {Object} opts
    * @param {string} opts.clientVersion - A string that identifies the client issuing the request
    */
-  static getInstance(opts): WalletService {
+  static getInstance(opts?): WalletService {
     opts = opts || {};
 
     const upgradeMessage = WalletService.upgradeNeeded(UPGRADES.bwc_$lt_1_2, opts);
@@ -748,7 +748,7 @@ export class WalletService implements IWalletService {
       if (opts.doNotMigrate) return cb(null, wallet);
 
       // backwards compatibility
-      if (!wallet.chain) wallet.chain = ChainService.getChain(wallet.coin);
+      if (!wallet.chain) wallet.chain = Utils.getChain(wallet.coin);
 
       // remove someday...
       logger.info(`Migrating wallet ${wallet.id} to cashAddr`);
@@ -2731,7 +2731,7 @@ export class WalletService implements IWalletService {
                       walletId: this.walletId,
                       creatorId: this.copayerId,
                       coin: opts.coin,
-                      chain: opts.chain?.toLowerCase() || ChainService.getChain(opts.coin), // getChain -> backwards compatibility
+                      chain: opts.chain?.toLowerCase() || Utils.getChain(opts.coin), // getChain -> backwards compatibility
                       network: wallet.network,
                       outputs: opts.outputs,
                       message: opts.message,

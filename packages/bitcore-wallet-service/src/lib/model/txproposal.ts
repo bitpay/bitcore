@@ -1,22 +1,20 @@
-import { Transactions } from 'crypto-wallet-core';
 import _ from 'lodash';
+import { singleton } from 'preconditions';
+import Uuid from 'uuid';
 import { ChainService } from '../chain/index';
 import { Common } from '../common';
 import logger from '../logger';
+import { IAddress } from './address';
 import { TxProposalLegacy } from './txproposal_legacy';
 import { TxProposalAction } from './txproposalaction';
 
-const $ = require('preconditions').singleton();
-const Uuid = require('uuid');
-
-const Constants = Common.Constants,
-  Defaults = Common.Defaults,
-  Utils = Common.Utils;
+const $ = singleton();
+const { Constants, Defaults, Utils } = Common;
 
 type TxProposalStatus = 'temporary' | 'pending' | 'accepted' | 'rejected' | 'broadcasted';
 
 export interface ITxProposal {
-  type: string;
+  type?: string;
   creatorName: string;
   createdOn: number;
   txid: string;
@@ -28,10 +26,10 @@ export interface ITxProposal {
   chain: string;
   network: string;
   message: string;
-  payProUrl: string;
+  payProUrl?: string;
   from: string;
-  changeAddress: string;
-  escrowAddress: string;
+  changeAddress?: IAddress;
+  escrowAddress?: IAddress;
   inputs: any[];
   outputs: Array<{
     amount: number;
@@ -52,7 +50,7 @@ export interface ITxProposal {
   requiredRejections: number;
   status: TxProposalStatus;
   actions: any[];
-  feeLevel: number;
+  feeLevel: string;
   feePerKb: number;
   excludeUnconfirmedUtxos: boolean;
   addressType: string;
@@ -99,7 +97,7 @@ export interface ITxProposal {
 }
 
 export class TxProposal implements ITxProposal {
-  type: string;
+  type?: string;
   creatorName: string;
   createdOn: number;
   id: string;
@@ -111,10 +109,10 @@ export class TxProposal implements ITxProposal {
   chain: string;
   network: string;
   message: string;
-  payProUrl: string;
+  payProUrl?: string;
   from: string;
-  changeAddress: any;
-  escrowAddress: any;
+  changeAddress?: IAddress;
+  escrowAddress?: IAddress;
   inputs: any[];
   outputs: Array<{
     amount: number;
@@ -135,7 +133,7 @@ export class TxProposal implements ITxProposal {
   requiredRejections: number;
   status: TxProposalStatus;
   actions: any[] = [];
-  feeLevel: number;
+  feeLevel: string;
   feePerKb: number;
   excludeUnconfirmedUtxos: boolean;
   addressType: string;
@@ -186,7 +184,7 @@ export class TxProposal implements ITxProposal {
   static create(opts) {
     opts = opts || {};
 
-    const chain = opts.chain?.toLowerCase() || ChainService.getChain(opts.coin); // getChain -> backwards compatibility
+    const chain = opts.chain?.toLowerCase() || Utils.getChain(opts.coin); // getChain -> backwards compatibility
     $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS[chain]), `Invalid network: ${opts.network} at TxProposal.create()`);
 
     const x = new TxProposal();
@@ -317,7 +315,7 @@ export class TxProposal implements ITxProposal {
     x.walletId = obj.walletId;
     x.creatorId = obj.creatorId;
     x.coin = obj.coin || Defaults.COIN;
-    x.chain = obj.chain?.toLowerCase() || ChainService.getChain(x.coin); // getChain -> backwards compatibility
+    x.chain = obj.chain?.toLowerCase() || Utils.getChain(x.coin); // getChain -> backwards compatibility
     x.network = obj.network;
     x.outputs = obj.outputs;
     x.amount = obj.amount;
@@ -534,11 +532,11 @@ export class TxProposal implements ITxProposal {
   }
 
   isTemporary() {
-    return this.status == 'temporary';
+    return this.status === 'temporary';
   }
 
   isPending() {
-    return !_.includes(['temporary', 'broadcasted', 'rejected'], this.status);
+    return !['temporary', 'broadcasted', 'rejected'].includes(this.status);
   }
 
   isAccepted() {
