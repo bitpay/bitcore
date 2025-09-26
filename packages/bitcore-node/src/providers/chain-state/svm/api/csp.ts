@@ -11,7 +11,7 @@ import { CacheStorage } from '../../../../models/cache';
 import { IBlock } from '../../../../types/Block';
 import { CoinListingJSON } from '../../../../types/Coin';
 import { IChainConfig, IProvider, ISVMNetworkConfig } from '../../../../types/Config';
-import { BroadcastTransactionParams, GetBalanceForAddressParams, GetBlockParams, GetCoinsForTxParams, GetEstimatePriorityFeeParams, GetWalletBalanceParams, IChainStateService, StreamAddressUtxosParams, StreamBlocksParams, StreamTransactionParams, StreamTransactionsParams, StreamWalletTransactionsParams, WalletBalanceType, GetBlockBeforeTimeParams } from '../../../../types/namespaces/ChainStateProvider';
+import { BroadcastTransactionParams, GetBalanceForAddressParams, GetBlockParams, GetCoinsForTxParams, GetEstimatePriorityFeeParams, GetWalletBalanceParams, IChainStateService, StreamAddressUtxosParams, StreamBlocksParams, StreamTransactionParams, StreamTransactionsParams, StreamWalletTransactionsParams, WalletBalanceType, GetBlockBeforeTimeParams, GetWalletBalanceAtTimeParams } from '../../../../types/namespaces/ChainStateProvider';
 import { range } from '../../../../utils';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import {
@@ -383,10 +383,85 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     } as any;
   }
 
+  async getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams): Promise<WalletBalanceType> {
+    const { network, time } = params;
+    if (time) {
+      if (params.args) {
+        params.args.time = time;
+      } else {
+        params.args = { time };
+      }
+    }
+    if (params.wallet._id === undefined) {
+      throw new Error('Wallet balance can only be retrieved for wallets with the _id property');
+    }
+    let addresses = await this.getWalletAddresses(params.wallet._id);
+    let addressBalancePromises = addresses.map(({ address }) =>
+      this.getBalanceForAddress({ chain: this.chain, network, address, args: params.args })
+    );
+    let addressBalances = await Promise.all<WalletBalanceType>(
+      addressBalancePromises
+    );
+    let balance = addressBalances.reduce(
+      (prev, cur) => ({
+        unconfirmed: BigInt(prev.unconfirmed) + BigInt(cur.unconfirmed),
+        confirmed: BigInt(prev.confirmed) + BigInt(cur.confirmed),
+        balance: BigInt(prev.balance) + BigInt(cur.balance)
+      }),
+      { unconfirmed: 0n, confirmed: 0n, balance: 0n }
+    );
+    return {
+      unconfirmed: Number(balance.unconfirmed),
+      confirmed: Number(balance.confirmed),
+      balance: Number(balance.balance)
+    };;
+  }
+
   async getBalanceForAddress(params: GetBalanceForAddressParams): Promise<WalletBalanceType> {
-    const { address, network, args } = params;
+    const { chain, address, network, args } = params;
     const { rpc, connection } = await this.getRpc(network);
     const tokenAddress = args?.tokenAddress || args?.mintAddress;
+    if (args?.time) {
+      const block = await this.getBlockBeforeTime({ chain, network, time: args.time });
+      if (!block) {
+        throw new Error(`Balance not found at ${args.time}`);
+      }
+      const sigInBlock = block.transactions?.[0];
+      if (!sigInBlock) {
+        throw new Error(`Balance not found at ${args.time}`);
+      }
+      let ata;
+      if (tokenAddress) {
+        ata = await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
+        if (!ata) {
+          throw new Error('Missing ATA');
+        }
+      }
+      const txList = await connection.getSignaturesForAddress(ata || address, { limit: 1, before: sigInBlock }).send();
+      if (!txList.length || !txList[0]?.signature) {
+        throw new Error(`Balance not found at ${args.time}`);
+      }
+      const tx = await rpc.getTransaction({ txid: txList[0].signature });
+      if (!tx) {
+        throw new Error(`Balance not found at ${args.time}`);
+      }
+      const index = tx.accountKeys?.findIndex(acct => acct == address);
+      if (!index || index === -1) {
+        throw new Error(`Balance not found at ${args.time}`);
+      }
+      let balance;
+      if (tokenAddress) {
+        const tokenBalance = tx.meta?.postTokenBalances?.find(tb => tb.accountIndex === index && tb.mint.toLowerCase() === tokenAddress.toLowerCase());
+        const decimals = tokenBalance?.uiTokenAmount?.decimals;
+        balance = (tokenBalance?.uiTokenAmount?.uiAmount || 0) * (10 ** decimals) || null;
+      } else {
+        balance = tx.meta?.postBalances ? tx.meta.postBalances[index] : null;
+      }
+      if (balance === null) {
+        throw new Error(`Balance not found at ${args.time}`);
+      }
+      return { confirmed: Number(balance), unconfirmed: 0, balance: Number(balance) };
+    }
     const cacheKey = tokenAddress
       ? `getBalanceForAddress-SOL-${network}-${address}-${tokenAddress.toLowerCase()}`
       : `getBalanceForAddress-SOL-${network}-${address}`;

@@ -25,6 +25,7 @@ import {
   GetBalanceForAddressParams,
   GetBlockParams,
   GetWalletBalanceParams,
+  GetWalletBalanceAtTimeParams,
   IChainStateService,
   StreamAddressUtxosParams,
   StreamTransactionParams,
@@ -216,12 +217,53 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     );
   }
 
+  async getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams): Promise<WalletBalanceType> {
+    let { network, args, wallet, time } = params;
+    if (time) {
+      if (args) {
+        args.time = time;
+      } else {
+        args = { time };
+      }
+    }
+    const hex = args.hex === 'true' || args.hex === '1';
+    if (wallet._id === undefined) {
+      throw new Error('Wallet balance can only be retrieved for wallets with the _id property');
+    }
+    let addresses = await this.getWalletAddresses(wallet._id);
+    addresses = !args.address ? addresses : addresses.filter(({ address }) => address.toLowerCase() === args.address.toLowerCase());
+    let addressBalances = await Promise.all<WalletBalanceType>(addresses.map(({ address }) =>
+      this.getBalanceForAddress({ chain: this.chain, network, address, args })
+    ));
+    let balance = addressBalances.reduce(
+      (prev, cur) => ({
+        unconfirmed: BigInt(prev.unconfirmed) + BigInt(cur.unconfirmed),
+        confirmed: BigInt(prev.confirmed) + BigInt(cur.confirmed),
+        balance: BigInt(prev.balance) + BigInt(cur.balance)
+      }),
+      { unconfirmed: 0n, confirmed: 0n, balance: 0n }
+    );
+    return {
+      unconfirmed: hex ? '0x' + balance.unconfirmed.toString(16) : Number(balance.unconfirmed),
+      confirmed: hex ? '0x' + balance.confirmed.toString(16) : Number(balance.confirmed),
+      balance: hex ? '0x' + balance.balance.toString(16) : Number(balance.balance)
+    };
+  }
+
   async getBalanceForAddress(params: GetBalanceForAddressParams): Promise<WalletBalanceType> {
     const { chain, network, address, args } = params;
     const { web3 } = await this.getWeb3(network, { type: 'realtime' });
     const tokenAddress = args?.tokenAddress;
     const addressLower = address.toLowerCase();
     const hex = args?.hex === 'true' || args?.hex === '1';
+    let blockNumber: number;
+    if (args?.time) {
+      const block = await this.getBlockBeforeTime({ chain, network, time: args.time });
+      if (!block) {
+        throw new Error(`Balance not found at ${args.time}`);
+      }
+      blockNumber = block.height;
+    }
     const cacheKey = tokenAddress
       ? `getBalanceForAddress-${chain}-${network}-${addressLower}-${tokenAddress.toLowerCase()}`
       : `getBalanceForAddress-${chain}-${network}-${addressLower}`;
@@ -230,16 +272,16 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       async () => {
         if (tokenAddress) {
           const token = await this.erc20For(network, tokenAddress);
-          const balance = await token.methods.balanceOf(address).call();
+          const balance = await token.methods.balanceOf(address).call({}, blockNumber);
           const numberBalance = '0x' + BigInt(balance).toString(16);
           return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
         } else {
-          const balance = await web3.eth.getBalance(address);
+          const balance = await web3.eth.getBalance(address, blockNumber);
           const numberBalance = '0x' + BigInt(balance).toString(16);
           return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
         }
       },
-      CacheStorage.Times.Minute
+      args?.time ? CacheStorage.Times.None : CacheStorage.Times.Minute
     );
     return {
       confirmed: hex ? balance.confirmed : Number(balance.confirmed),
