@@ -22,12 +22,30 @@ function PublicKeyInput() {
 inherits(PublicKeyInput, Input);
 
 /**
+ * Get the hash data to sign for this input
+ * @param {Transaction} transaction The transaction to be signed
+ * @param {PublicKey} publicKey Unused for this input type
+ * @param {number} index The index of the input in the transaction input vector
+ * @param {number} sigtype The type of signature, defaults to Signature.SIGHASH_ALL
+ * @returns {Buffer}
+ */
+PublicKeyInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
+  sigtype = sigtype || Signature.SIGHASH_ALL;
+
+  const sighash = Sighash.sighash(transaction, sigtype, index, this.output.script);
+  // sighash() returns data little endian but it must be signed big endian, hence the reverse
+  return sighash.reverse();
+};
+
+/**
  * @param {Transaction} transaction - the transaction to be signed
  * @param {PrivateKey} privateKey - the private key with which to sign the transaction
  * @param {number} index - the index of the input in the transaction input vector
- * @param {number=} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
- * @param {String} signingMethod - method used to sign input - 'ecdsa' or 'schnorr' (future signing method)
- * @return {Array} of objects that can be
+ * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
+ * @param {Buffer} hashData - unused for this input type 
+ * @param {String} signingMethod DEPRECATED - unused. Keeping for arg placement consistency with other libs
+ * @return {Array<TransactionSignature>}
  */
 PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
   $.checkState(this.output instanceof Output);
@@ -39,7 +57,7 @@ PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index
       prevTxId: this.prevTxId,
       outputIndex: this.outputIndex,
       inputIndex: index,
-      signature: Sighash.sign(transaction, privateKey, sigtype, index, this.output.script, signingMethod),
+      signature: Sighash.sign(transaction, privateKey, sigtype, index, this.output.script),
       sigtype: sigtype
     })];
   }
@@ -53,11 +71,10 @@ PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index
  * @param {PublicKey} signature.publicKey
  * @param {Signature} signature.signature
  * @param {number=} signature.sigtype
- * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr' (future signing method)
  * @return {PublicKeyInput} this, for chaining
  */
-PublicKeyInput.prototype.addSignature = function(transaction, signature, signingMethod) {
-  $.checkState(this.isValidSignature(transaction, signature, signingMethod), 'Signature is invalid');
+PublicKeyInput.prototype.addSignature = function(transaction, signature) {
+  $.checkState(this.isValidSignature(transaction, signature), 'Signature is invalid');
   this.setScript(Script.buildPublicKeyIn(
     signature.signature.toDER(),
     signature.sigtype

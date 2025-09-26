@@ -19,12 +19,12 @@ inherits(TaprootInput, PubKeyHashInput);
  * @param {number} index - the index of the input in the transaction input vector
  * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
  * @param {Buffer} hashData - unused for this input type
- * @param {String} signingMethod - always schnorr for taproot
+ * @param {String} signingMethod DEPRECATED - unused. Keeping for arg placement consistency with other libs
  * @param {Buffer} merkleRoot - the merkle root of the taproot tree
  * @return {Array<TransactionSignature>}
  */
 TaprootInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod, merkleRoot) {
-  $.checkState(this.output instanceof Output);
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
   sigtype = sigtype || Signature.SIGHASH_DEFAULT;
   
   const inputIndex = transaction.inputs.indexOf(this);
@@ -49,6 +49,22 @@ TaprootInput.prototype.getSignatures = function(transaction, privateKey, index, 
     sigtype: sigtype
   });
   return this.isValidSignature(transaction, txSig) ? [txSig] : [];
+};
+
+/**
+ * Get the hash data to sign for this input
+ * @param {Transaction} transaction - the transaction to be signed
+ * @param {PublicKey} publicKey - the public key in the redeem script (only if p2sh and !this.redeemScript)
+ * @param {number} index - the index of the input in the transaction input vector
+ * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_DEFAULT
+ * @returns {Buffer}
+ */
+TaprootInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
+  sigtype = sigtype || Signature.SIGHASH_DEFAULT;
+  
+  const inputIndex = transaction.inputs.indexOf(this);
+  return SighashSchnorr.sighash(transaction, sigtype, inputIndex, Signature.Version.TAPROOT, null);
 };
 
 

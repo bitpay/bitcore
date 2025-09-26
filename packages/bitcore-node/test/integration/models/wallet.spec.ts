@@ -1,4 +1,4 @@
-import { Wallet } from 'bitcore-client';
+import { Wallet, IWalletExt } from 'bitcore-client';
 import { expect } from 'chai';
 import config from '../../../src/config';
 import { WalletStorage } from '../../../src/models/wallet';
@@ -44,7 +44,7 @@ describe('Wallet Model', function() {
         network,
         baseUrl,
         password
-      });
+      } as Partial<IWalletExt>);
 
       expect(lockedWallet).to.have.includes({
         name: walletName,

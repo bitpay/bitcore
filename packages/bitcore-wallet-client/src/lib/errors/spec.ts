@@ -122,7 +122,7 @@ export const errorSpec: IErrorSpec[] = [
   },
   {
     name: 'COPAYER_REGISTERED',
-    message: 'Copayer already register on server.'
+    message: 'Copayer already registered on server.'
   },
   {
     name: 'INPUT_NOT_FOUND',
@@ -192,5 +192,9 @@ export const errorSpec: IErrorSpec[] = [
   {
     name: 'PAYLOAD_TOO_LARGE',
     message: 'The request payload is too large.'
+  },
+  {
+    name: 'UPGRADE_NEEDED',
+    message: 'Please update your client.'
   }
 ];

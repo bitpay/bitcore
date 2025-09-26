@@ -1,11 +1,26 @@
 import * as Bcrypt from 'bcrypt';
-import { BitcoreLib, BitcoreLibCash, BitcoreLibDoge, BitcoreLibLtc, Deriver, ethers, Transactions, Web3, xrpl } from 'crypto-wallet-core';
+import Mnemonic  from 'bitcore-mnemonic';
+import { 
+  BitcoreLib,
+  BitcoreLibCash,
+  BitcoreLibDoge,
+  BitcoreLibLtc,
+  Constants,
+  Deriver,
+  ethers,
+  SolanaProgram,
+  SolKit,
+  Transactions,
+  Web3,
+  xrpl
+} from 'crypto-wallet-core';
 import 'source-map-support/register';
 import { Client } from './client';
 import { Encryption } from './encryption';
 import { Storage } from './storage';
-const Mnemonic = require('bitcore-mnemonic');
-const { ParseApiStream } = require('./stream-util');
+import { ParseApiStream } from './stream-util';
+import { StorageType } from './types/storage';
+import { BumpTxFeeType, IWallet, KeyImport } from './types/wallet';
 
 const { PrivateKey, HDPrivateKey } = BitcoreLib;
 const chainLibs = {
@@ -18,43 +33,13 @@ const chainLibs = {
   ARB: { Web3, ethers },
   BASE: { Web3, ethers },
   OP: { Web3, ethers },
-  XRP: xrpl
+  XRP: xrpl,
+  SOL: { SolKit, SolanaProgram }
 };
 
-export interface KeyImport {
-  address: string;
-  privKey?: string;
-  pubKey?: string;
-  path?: string;
-}
-export interface WalletObj {
-  name: string;
-  baseUrl: string;
-  chain: string;
-  network: string;
-  path: string;
-  phrase?: string;
-  xpriv?: string;
-  password: string;
+export interface IWalletExt extends IWallet {
   storage?: Storage;
-  storageType: string;
-  addressIndex?: number;
-  tokens: Array<any>;
-  lite: boolean;
-  addressType: string;
 }
-
-export interface BumpTxFeeType {
-  txid?: string;
-  rawTx?: string;
-  changeIdx?: number;
-  feeRate?: number;
-  feeTarget?: number;
-  feePriority?: number;
-  noRbf?: boolean;
-  isSweep?: boolean;
-}
-
 
 export class Wallet {
   masterKey?: any;
@@ -78,10 +63,11 @@ export class Wallet {
   tokens?: Array<any>;
   lite: boolean;
   addressType: string;
+  addressZero: string;
 
   static XrpAccountFlags = xrpl.AccountSetTfFlags;
 
-  constructor(params: Wallet | WalletObj) {
+  constructor(params: Wallet | IWalletExt) {
     Object.assign(this, params);
     if (!this.baseUrl) {
       this.baseUrl = 'https://api.bitcore.io/api';
@@ -133,18 +119,19 @@ export class Wallet {
       tokens: this.tokens,
       storageType: this.storageType,
       lite,
-      addressType: this.addressType
+      addressType: this.addressType,
+      addressZero: this.addressZero
     };
   }
 
-  static async deleteWallet(params: { name: string; path?: string; storage?: Storage; storageType?: string }) {
+  static async deleteWallet(params: { name: string; path?: string; storage?: Storage; storageType?: StorageType }) {
     const { name, path, storageType } = params;
     let { storage } = params;
     storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
     await storage.deleteWallet({ name });
   }
 
-  static async create(params: Partial<WalletObj>) {
+  static async create(params: Partial<IWalletExt>) {
     const { network, name, phrase, xpriv, password, path, lite, baseUrl } = params;
     let { chain, storageType, storage, addressType } = params;
     if (phrase && xpriv) {
@@ -166,7 +153,9 @@ export class Wallet {
       hdPrivKey = new HDPrivateKey(xpriv, network);
     } else {
       mnemonic = new Mnemonic(phrase);
-      hdPrivKey = mnemonic.toHDPrivateKey('', network).derive(Deriver.pathFor(chain, network));
+      const algo = Constants.ALGOS_BY_CHAIN[chain] || Constants.ALGOS_BY_CHAIN['default'];
+      const keyType = Constants.ALGO_TO_KEY_TYPE[algo];
+      hdPrivKey = mnemonic.toHDPrivateKey('', network).derive(Deriver.pathFor(chain, network), keyType);
     }
     const privKeyObj = hdPrivKey.toObject();
 
@@ -217,8 +206,9 @@ export class Wallet {
       storage,
       storageType,
       lite,
-      addressType
-    } as WalletObj);
+      addressType,
+      addressZero: null
+    } as IWalletExt);
 
     // save wallet to storage and then bitcore-node
     await storage.saveWallet({ wallet: wallet.toObject(lite) });
@@ -256,7 +246,7 @@ export class Wallet {
     return alreadyExists != undefined && alreadyExists.length && alreadyExists.length != 0;
   }
 
-  static async loadWallet(params: { name: string; path?: string; storage?: Storage; storageType?: string }) {
+  static async loadWallet(params: { name: string; path?: string; storage?: Storage; storageType?: StorageType }) {
     const { name, path, storageType } = params;
     let { storage } = params;
     storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
@@ -283,6 +273,10 @@ export class Wallet {
    */
   isEvmChain() {
     return ['ETH', 'MATIC', 'ARB', 'OP', 'BASE'].includes(this.chain?.toUpperCase());
+  }
+
+  isSolanaChain() {
+    return ['SOL'].includes(this.chain?.toUpperCase());
   }
 
   lock() {
@@ -435,6 +429,10 @@ export class Wallet {
   }
 
   async getToken(contractAddress) {
+    if (this.isSolanaChain()) {
+      const addresses = await this.client.getSolanaTokens(this.addressZero);
+      return addresses.find(addr => addr.mintAddress === contractAddress);
+    }
     return this.client.getToken(contractAddress);
   }
 
@@ -446,7 +444,8 @@ export class Wallet {
       symbol: params.symbol,
       address: params.address,
       decimals: params.decimals,
-      name: params.name
+      name: params.name,
+      ataAddress: params.ataAddress
     });
     await this.saveWallet();
   }
@@ -468,6 +467,7 @@ export class Wallet {
     from?: string;
     change?: string; // 'miner' to have any change go to the miner (i.e. no change).
     invoiceID?: string;
+    memo?: string;
     fee?: number;
     feeRate?: number;
     nonce?: number;
@@ -485,18 +485,32 @@ export class Wallet {
     isSweep?: boolean;
     type?: string;
     flags?: number;
+    blockHash?: string;
+    blockHeight?: number;
   }) {
-    const chain = params.token || params.tokenName ? this.chain + 'ERC20' : this.chain;
+    let chain = this.chain;
     let tokenContractAddress;
+    let decimals;
+    let fromAta
     if (params.token || params.tokenName) {
+      chain = this.isSolanaChain() ? this.chain + 'SPL' : this.chain + 'ERC20';
       const tokenObj = this.getTokenObj(params);
       tokenContractAddress = tokenObj.address;
+      decimals = tokenObj.decimals;
+      fromAta = tokenObj.ataAddress;
     }
     let change = params.change;
     if (change === 'miner') {
       change = undefined; // no change
     } else if (!change) {
       change = await this._getChangeAddress();
+    }
+    let blockHash = params.blockHash;
+    let blockHeight = params.blockHeight;
+    if (this.isSolanaChain() && (!blockHash || !blockHeight)) {
+      const tip = await this.client.getBlockTip();
+      blockHash = tip.hash;
+      blockHeight = tip.height;
     }
     const payload = {
       network: this.network,
@@ -505,6 +519,7 @@ export class Wallet {
       from: params.from,
       change,
       invoiceID: params.invoiceID,
+      memo: params.memo,
       fee: params.fee,
       feeRate: params.feeRate,
       utxos: params.utxos,
@@ -521,9 +536,48 @@ export class Wallet {
       lockUntilDate: params.lockUntilDate,
       isSweep: params.isSweep,
       type: params.type,
-      flags: params.flags
+      flags: params.flags,
+      blockHash,
+      blockHeight,
+      decimals,
+      fromAta
     };
     return Transactions.create(payload);
+  }
+
+  async createAtaAccount(mintAddress) {
+    if (!this.isSolanaChain()) {
+      throw new Error('createAtaAccount is only supported for Solana wallets');
+    }
+    const owner = SolKit.address(this.addressZero);
+    if (!mintAddress) {
+      throw new Error('mintAddress is required to create an associated token account');
+    }
+    const [newAccount] = await SolanaProgram.Token.findAssociatedTokenPda({
+      owner,
+      tokenProgram: SolanaProgram.Token.TOKEN_PROGRAM_ADDRESS,
+      mint: SolKit.address(mintAddress),
+    });
+    const tip = await this.client.getBlockTip();
+    const blockHash = tip.hash;
+    const blockHeight = tip.height;
+    const privateKey = await this.derivePrivateKey(null, 0)
+    const privKeyBytes = SolKit.getBase58Encoder().encode(privateKey.privKey);
+    const keyPair = await SolKit.createKeyPairSignerFromPrivateKeyBytes(privKeyBytes);
+    const tx = Transactions.create({
+      network: this.network,
+      chain: this.chain,
+      category: 'createata',
+      fromKeyPair: keyPair,
+      from: this.addressZero,
+      ataAddress: newAccount,
+      blockHash,
+      blockHeight,
+      mint: mintAddress,
+    });
+    const sig = await this.signTx({ tx });
+    await this.broadcast({ tx: sig });
+    return sig;
   }
 
   async broadcast(params: { tx: string }) {
@@ -667,8 +721,23 @@ export class Wallet {
   }
 
   deriveAddress(addressIndex, isChange) {
+    if (addressIndex === 0 && this.addressZero) {
+      return this.addressZero;
+    }
     const address = Deriver.deriveAddress(this.chain, this.network, this.xPubKey, addressIndex, isChange, this.addressType);
     return address;
+  }
+
+  async solSignMessage(privateKey, message) {
+    const privKeyBytes = SolKit.getBase58Encoder().encode(privateKey);
+    const keypair = await SolKit.createKeyPairFromPrivateKeyBytes(privKeyBytes);
+    const encodedMessage = SolKit.getUtf8Encoder().encode(message);
+    const signedBytes = await SolKit.signBytes(keypair.privateKey, encodedMessage);
+    return SolKit.getBase58Decoder().decode(signedBytes);
+  }
+
+  async getBlockTip() {
+    return this.client.getBlockTip();
   }
 
   async derivePrivateKey(isChange, addressIndex = this.addressIndex) {
@@ -702,6 +771,9 @@ export class Wallet {
       this.addressIndex++;
     }
     await this.importKeys({ keys });
+    if (addressIndex === 0) {
+      this.addressZero = newPrivateKey.address.toString();
+    }
     await this.saveWallet();
     return keys.map(key => key.address.toString());
   }

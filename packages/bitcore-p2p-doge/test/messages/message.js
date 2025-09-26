@@ -28,10 +28,10 @@ describe('Message', function() {
         network: Networks.defaultNetwork
       });
       message.getPayload = function() {
-        return new Buffer(0);
+        return Buffer.alloc(0);
       };
       var buffer = message.toBuffer();
-      var expectedBuffer = new Buffer('c0c0c0c0636f6d6d616e640000000000000000005df6e0e2', 'hex');
+      var expectedBuffer = Buffer.from('c0c0c0c0636f6d6d616e640000000000000000005df6e0e2', 'hex');
       buffer.should.deep.equal(expectedBuffer);
     });
   });

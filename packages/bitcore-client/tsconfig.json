@@ -16,7 +16,8 @@
     "esModuleInterop": true,
     "target": "ES2020",
     "typeRoots": [
-      "./node_modules/@types"
+      "./node_modules/@types",
+      "./src/types"
     ],
     "baseUrl": ".",
     "paths": {

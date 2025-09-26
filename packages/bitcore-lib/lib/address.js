@@ -72,13 +72,11 @@ function Address(data, network, type, multisigType) {
     throw new TypeError('Second argument must be "livenet" or "testnet".');
   }
 
-  if (type && (
-    type !== Address.PayToPublicKeyHash
-    && type !== Address.PayToScriptHash
-    && type !== Address.PayToWitnessPublicKeyHash
-    && type !== Address.PayToWitnessScriptHash
-    && type !== Address.PayToTaproot)) {
-    throw new TypeError('Third argument must be "pubkeyhash", "scripthash", "witnesspubkeyhash", "witnessscripthash", or "taproot".');
+  if (type) {
+    if (!Address.isValidType(type)) {
+      throw new TypeError('Third argument must be one of: "' + Address.AllTypes.join('", "') + '".');
+    }
+    type = Address.TypesMap[type.toLowerCase()];
   }
 
   var info = this._classifyArguments(data, network, type);
@@ -123,16 +121,63 @@ Address.prototype._classifyArguments = function(data, network, type) {
   }
 };
 
-/** @static */
+Address.TypesMap = {};
+
 Address.PayToPublicKeyHash = 'pubkeyhash';
-/** @static */
+Address.PayToPublicKeyHashAlt = 'p2pkh';
+Address.TypesMap[Address.PayToPublicKeyHash] = Address.PayToPublicKeyHash;
+Address.TypesMap[Address.PayToPublicKeyHashAlt] = Address.PayToPublicKeyHash;
+Address.isPayToPublicKeyHash = function(type) {
+  return typeof type === 'string' && [Address.PayToPublicKeyHash, Address.PayToPublicKeyHashAlt].includes(type.toLowerCase());
+};
+
 Address.PayToScriptHash = 'scripthash';
-/** @static */
+Address.PayToScriptHashAlt = 'p2sh';
+Address.TypesMap[Address.PayToScriptHash] = Address.PayToScriptHash;
+Address.TypesMap[Address.PayToScriptHashAlt] = Address.PayToScriptHash;
+Address.isPayToScriptHash = function(type) {
+  return typeof type === 'string' && [Address.PayToScriptHash, Address.PayToScriptHashAlt].includes(type.toLowerCase());
+};
+
 Address.PayToWitnessPublicKeyHash = 'witnesspubkeyhash';
-/** @static */
+Address.PayToWitnessPublicKeyHashAlt = 'p2wpkh';
+Address.TypesMap[Address.PayToWitnessPublicKeyHash] = Address.PayToWitnessPublicKeyHash;
+Address.TypesMap[Address.PayToWitnessPublicKeyHashAlt] = Address.PayToWitnessPublicKeyHash;
+Address.isPayToWitnessPublicKeyHash = function(type) {
+  return typeof type === 'string' && [Address.PayToWitnessPublicKeyHash, Address.PayToWitnessPublicKeyHashAlt].includes(type.toLowerCase());
+};
+
 Address.PayToWitnessScriptHash = 'witnessscripthash';
-/** @static */
+Address.PayToWitnessScriptHashAlt = 'p2wsh';
+Address.TypesMap[Address.PayToWitnessScriptHash] = Address.PayToWitnessScriptHash;
+Address.TypesMap[Address.PayToWitnessScriptHashAlt] = Address.PayToWitnessScriptHash;
+Address.isPayToWitnessScriptHash = function(type) {
+  return typeof type === 'string' && [Address.PayToWitnessScriptHash, Address.PayToWitnessScriptHashAlt].includes(type.toLowerCase());
+};
+
 Address.PayToTaproot = 'taproot';
+Address.PayToTaprootAlt = 'p2tr';
+Address.TypesMap[Address.PayToTaproot] = Address.PayToTaproot;
+Address.TypesMap[Address.PayToTaprootAlt] = Address.PayToTaproot;
+Address.isPayToTaproot = function(type) {
+  return typeof type === 'string' && [Address.PayToTaproot, Address.PayToTaprootAlt].includes(type.toLowerCase());
+};
+
+Address.isValidType = function(type) {
+  return Address.isPayToPublicKeyHash(type) ||
+    Address.isPayToScriptHash(type) ||
+    Address.isPayToWitnessPublicKeyHash(type) ||
+    Address.isPayToWitnessScriptHash(type) ||
+    Address.isPayToTaproot(type);
+};
+
+Address.isValidMultisigType = function(type) {
+  return Address.isPayToScriptHash(type) ||
+    Address.isPayToWitnessScriptHash(type);
+};
+
+Address.AllTypes = Object.keys(Address.TypesMap);
+
 
 /**
  * @param {Buffer} hash - An instance of a hash Buffer
@@ -281,15 +326,15 @@ Address._transformPublicKey = function(pubkey, network, type) {
   if (!(pubkey instanceof PublicKey)) {
     throw new TypeError('Address must be an instance of PublicKey.');
   }
-  if (type && type !== Address.PayToScriptHash && type !== Address.PayToWitnessPublicKeyHash && type !== Address.PayToPublicKeyHash && type !== Address.PayToTaproot) {
+  if (type && !Address.isPayToScriptHash(type) && !Address.isPayToWitnessPublicKeyHash(type) && !Address.isPayToPublicKeyHash(type) && !Address.isPayToTaproot(type)) {
     throw new TypeError('Type must be either pubkeyhash, witnesspubkeyhash, scripthash, or taproot to transform public key.');
   }
-  if (!pubkey.compressed && (type === Address.PayToScriptHash || type === Address.PayToWitnessPublicKeyHash)) {
+  if (!pubkey.compressed && (Address.isPayToScriptHash(type) || Address.isPayToWitnessPublicKeyHash(type))) {
     throw new TypeError('Witness addresses must use compressed public keys.');
   }
-  if (type === Address.PayToScriptHash) {
+  if (Address.isPayToScriptHash(type)) {
     info.hashBuffer = Hash.sha256ripemd160(Script.buildWitnessV0Out(pubkey).toBuffer());
-  } else if (type === Address.PayToTaproot) {
+  } else if (Address.isPayToTaproot(type)) {
     info.hashBuffer = pubkey.createTapTweak().tweakedPubKey;
   } else {
     info.hashBuffer = Hash.sha256ripemd160(pubkey.toBuffer());
@@ -330,10 +375,10 @@ Address._transformScript = function(script, network) {
  */
 Address.createMultisig = function(publicKeys, threshold, network, nestedWitness, type) {
   network = network || publicKeys[0].network || Networks.defaultNetwork;
-  if (type && type !== Address.PayToScriptHash && type !== Address.PayToWitnessScriptHash) {
+  if (type && !Address.isPayToScriptHash(type) && !Address.isPayToWitnessScriptHash(type)) {
     throw new TypeError('Type must be either scripthash or witnessscripthash to create multisig.');
   }
-  if (nestedWitness || type === Address.PayToWitnessScriptHash) {
+  if (nestedWitness || Address.isPayToWitnessScriptHash(type)) {
     publicKeys = _.map(publicKeys, PublicKey);
     for (var i = 0; i < publicKeys.length; i++) {
       if (!publicKeys[i].compressed) {
@@ -376,7 +421,7 @@ Address._transformString = function(data, network, type) {
     var info = Address._transformBuffer(Buffer.from(data, 'utf8'), network, type);
     return info;
   } catch (e) {
-    if (type === Address.PayToWitnessPublicKeyHash || type === Address.PayToWitnessScriptHash || type === Address.PayToTaproot) {
+    if (Address.isPayToWitnessPublicKeyHash(type) || Address.isPayToWitnessScriptHash(type) || Address.isPayToTaproot(type)) {
       throw e;
     }
   }
@@ -423,7 +468,7 @@ Address.fromPublicKeyHash = function(hash, network) {
 Address.fromScriptHash = function(hash, network, type) {
   $.checkArgument(hash, 'hash parameter is required');
   var info = Address._transformHash(hash);
-  if (type === Address.PayToWitnessScriptHash && hash.length !== 32) {
+  if (Address.isPayToWitnessScriptHash(type) && hash.length !== 32) {
       throw new TypeError('Address hashbuffer must be exactly 32 bytes for v0 witness script hash.');
   }
   var type = type || Address.PayToScriptHash;
@@ -445,7 +490,7 @@ Address.payingTo = function(script, network, type) {
   $.checkArgument(script, 'script is required');
   $.checkArgument(script instanceof Script, 'script must be instance of Script');
   var hash;
-  if (type === Address.PayToWitnessScriptHash) {
+  if (Address.isPayToWitnessScriptHash(type)) {
     hash = Hash.sha256(script.toBuffer());
   } else {
     hash = Hash.sha256ripemd160(script.toBuffer());

@@ -1,5 +1,5 @@
 import { address as SolAddress } from '@solana/kit'
-import { IValidation } from '..';
+import type { IValidation } from '../../types/validation';
 
 export class SolValidation implements IValidation {
   regex: RegExp;

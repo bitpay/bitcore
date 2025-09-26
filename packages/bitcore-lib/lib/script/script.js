@@ -799,7 +799,7 @@ Script.prototype.removeCodeseparators = function() {
  * requiring m of those public keys to spend
  * @param {PublicKey[]} publicKeys - list of all public keys controlling the output
  * @param {number} threshold - amount of required signatures to spend the output
- * @param {Object=} opts - Several options:
+ * @param {Object=} opts Options:
  *        - noSorting: defaults to false, if true, don't sort the given
  *                      public keys before creating the script
  */
@@ -920,8 +920,7 @@ Script.buildPublicKeyHashOut = function(to) {
  * @param {(Address|PublicKey)} to - destination address
  */
 Script.buildWitnessV0Out = function(to) {
-  $.checkArgument(to != null);
-  $.checkArgument(to instanceof PublicKey || to instanceof Address || typeof to === 'string');
+  $.checkArgument(to instanceof PublicKey || to instanceof Address || typeof to === 'string', '`to` must be a PublicKey, Address, or string');
   if (to instanceof PublicKey) {
     to = to.toAddress(null, Address.PayToWitnessPublicKeyHash);
   } else if (typeof to === 'string') {

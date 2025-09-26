@@ -22,20 +22,37 @@ function PublicKeyHashInput() {
 }
 inherits(PublicKeyHashInput, Input);
 
-/* jshint maxparams: 5 */
+
+/**
+ * Get the hash data to sign for this input
+ * @param {Transaction} transaction The transaction to be signed
+ * @param {PublicKey} publicKey Unused for this input type
+ * @param {number} index The index of the input in the transaction input vector
+ * @param {number} sigtype The type of signature, defaults to (Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID)
+ * @returns {Buffer}
+ */
+PublicKeyHashInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
+  sigtype = sigtype || (Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID);
+
+  const sighash = Sighash.sighash(transaction, sigtype, index, this.output.script, this.output.satoshisBN, undefined);
+  // sighash() returns data little endian but it must be signed big endian, hence the reverse
+  return sighash.reverse();
+};
+
 /**
  * @param {Transaction} transaction - the transaction to be signed
  * @param {PrivateKey} privateKey - the private key with which to sign the transaction
  * @param {number} index - the index of the input in the transaction input vector
- * @param {number=} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
+ * @param {number=} sigtype - the type of signature, defaults to (Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID)
  * @param {Buffer=} hashData - the precalculated hash of the public key associated with the privateKey provided
  * @param {String} signingMethod - the signing method used to sign tx "ecdsa" or "schnorr"
  * @return {Array} of objects that can be
  */
 PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
-  $.checkState(this.output instanceof Output);
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
   hashData = hashData || Hash.sha256ripemd160(privateKey.publicKey.toBuffer());
-  sigtype = sigtype || (Signature.SIGHASH_ALL |  Signature.SIGHASH_FORKID);
+  sigtype = sigtype || (Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID);
 
   if (BufferUtil.equals(hashData, this.output.script.getPublicKeyHash())) {
     return [new TransactionSignature({

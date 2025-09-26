@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { Request, Response } from 'express';
-import { Readable, Stream, Transform, Writable } from 'stream';
+import { Readable, Stream, Transform } from 'stream';
 import { ReadableWithEventPipe, TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 
 
@@ -164,7 +164,7 @@ export class ExternalApiStream extends ReadableWithEventPipe {
     });
   }
 
-  static mergeStreams(streams: Stream[], destination: Writable): Writable {
+  static mergeStreams(streams: Stream[], destination: Transform): Transform {
     let activeStreams = streams.length;
 
     for (const stream of streams) {

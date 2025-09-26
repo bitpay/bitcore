@@ -19,13 +19,13 @@ const PrivateKey = require('../privatekey');
  * @param {Transaction} transaction the transaction to sign
  * @param {Number} sighashType the type of the hash
  * @param {Number} inputNumber the input index for the signature
- * @param {Number} sigversion Taproot or Tapscript version number
- * @param {Object} execdata Object with directives and data for creating the signature hash
+ * @param {Number} sigVersion 2 (Signature.Version.TAPROOT) or 3 (Signature.Version.TAPSCRIPT)
+ * @param {Object} execData object with directives and data for creating the signature hash
  */
-function _signatureHash(transaction, sighashType, inputNumber, sigversion, execdata) {
+function _signatureHash(transaction, sighashType, inputNumber, sigVersion, execData) {
   let extFlag, keyVersion;
 
-  switch (sigversion) {
+  switch (sigVersion) {
     case Signature.Version.TAPROOT:
       extFlag = 0;
       // keyVersion is not used and left uninitialized.
@@ -35,7 +35,7 @@ function _signatureHash(transaction, sighashType, inputNumber, sigversion, execd
       // keyVersion must be 0 for now, representing the current version of
       // 32-byte public keys in the tapscript signature opcode execution.
       // An upgradable public key version (with a size not 32-byte) may
-      // request a different keyVersion with a new sigversion.
+      // request a different keyVersion with a new sigVersion.
       keyVersion = 0;
       break;
     default:
@@ -105,8 +105,8 @@ function _signatureHash(transaction, sighashType, inputNumber, sigversion, execd
   }
 
   // Data about the input/prevout being spent
-  $.checkArgument(execdata.annexInit, 'missing or invalid annexInit');
-  const spendType = (extFlag << 1) + (execdata.annexPresent ? 1 : 0); // The low bit indicates whether an annex is present.
+  $.checkArgument(execData.annexInit, 'missing or invalid annexInit');
+  const spendType = (extFlag << 1) + (execData.annexPresent ? 1 : 0); // The low bit indicates whether an annex is present.
   ss.writeUInt8(spendType);
   if (inputType === Signature.SIGHASH_ANYONECANPAY) {
     // ss << tx_to.vin[in_pos].prevout;
@@ -120,8 +120,8 @@ function _signatureHash(transaction, sighashType, inputNumber, sigversion, execd
   } else {
     ss.writeUInt32LE(inputNumber);
   }
-  if (execdata.annexPresent) {
-    ss.write(execdata.annexHash);
+  if (execData.annexPresent) {
+    ss.write(execData.annexHash);
   }
 
   // Data about the output (if only one).
@@ -138,12 +138,12 @@ function _signatureHash(transaction, sighashType, inputNumber, sigversion, execd
   }
 
   // Additional data for BIP 342 signatures
-  if (sigversion == Signature.Version.TAPSCRIPT) {
-    $.checkArgument(execdata.tapleafHashInit, 'missing or invalid tapleafHashInit');
-    ss.write(execdata.tapleafHash);
+  if (sigVersion == Signature.Version.TAPSCRIPT) {
+    $.checkArgument(execData.tapleafHashInit, 'missing or invalid tapleafHashInit');
+    ss.write(execData.tapleafHash);
     ss.writeUInt8(keyVersion);
-    $.checkArgument(execdata.codeseparatorPosInit, 'missing or invalid codeseparatorPosInit');
-    ss.writeUInt32LE(execdata.codeseparatorPos);
+    $.checkArgument(execData.codeseparatorPosInit, 'missing or invalid codeseparatorPosInit');
+    ss.writeUInt32LE(execData.codeseparatorPos);
   }
 
   // Return the SHA256 hash
@@ -151,36 +151,49 @@ function _signatureHash(transaction, sighashType, inputNumber, sigversion, execd
 };
 
 
-function _getExecData(sigversion, leafHash) {
-  const execdata = { annexInit: true, annexPresent: false };
-  if (sigversion === Signature.Version.TAPSCRIPT) {
-    execdata.codeseparatorPosInit = true;
-    execdata.codeseparatorPos = 0xFFFFFFFF; // Only support non-OP_CODESEPARATOR BIP342 signing for now.
+function _getExecData(sigVersion, leafHash) {
+  const execData = { annexInit: true, annexPresent: false };
+  if (sigVersion === Signature.Version.TAPSCRIPT) {
+    execData.codeseparatorPosInit = true;
+    execData.codeseparatorPos = 0xFFFFFFFF; // Only support non-OP_CODESEPARATOR BIP342 signing for now.
     if (!leafHash) return false; // BIP342 signing needs leaf hash.
-    execdata.tapleafHashInit = true;
-    execdata.tapleafHash = leafHash;
+    execData.tapleafHashInit = true;
+    execData.tapleafHash = leafHash;
   }
-  return execdata;
-}
+  return execData;
+};
+
+
+/**
+ * Returns a 32 byte buffer with the hash that needs to be signed.
+ * @param {Transaction} transaction the transaction to sign
+ * @param {Number} sighashType the type of the hash
+ * @param {Number} inputIndex the input index for the signature
+ * @param {Number} sigVersion 2 (Signature.Version.TAPROOT) or 3 (Signature.Version.TAPSCRIPT)
+ * @param {Buffer} leafHash
+ * @returns {Buffer}
+ */
+function sighash(transaction, sighashType, inputIndex, sigVersion, leafHash) {
+  $.checkArgument(sigVersion === Signature.Version.TAPROOT || sigVersion === Signature.Version.TAPSCRIPT, 'Invalid sigVersion');
+  const execdata = _getExecData(sigVersion, leafHash);
+  return _signatureHash(transaction, sighashType, inputIndex, sigVersion, execdata);
+};
 
 
 /**
  * Create a Schnorr signature
- *
- * @name Signing.sign
- * @param {Transaction} transaction
- * @param {Buffer|BN|PrivateKey} privateKey
- * @param {number} sighash
- * @param {number} inputIndex
- * @param {number} sigversion
+ * @param {Transaction} transaction the transaction to sign
+ * @param {Buffer|BN|PrivateKey} privateKey the private key to use for signing
+ * @param {Number} sighashType the type of the hash
+ * @param {Number} inputIndex the input index for the signature
+ * @param {Number} sigVersion 2 (Signature.Version.TAPROOT) or 3 (Signature.Version.TAPSCRIPT)
  * @param {Buffer} leafHash
- * @return {Signature}
+ * @return {Buffer}
  */
-function sign(transaction, privateKey, sighashType, inputIndex, sigversion, leafHash) {
-  $.checkArgument(sigversion === Signature.Version.TAPROOT || sigversion === Signature.Version.TAPSCRIPT, 'Invalid sigversion');
-  
-  const execdata = _getExecData(sigversion, leafHash);
-  const hashbuf = _signatureHash(transaction, sighashType, inputIndex, sigversion, execdata);
+function sign(transaction, privateKey, sighashType, inputIndex, sigVersion, leafHash) {
+  $.checkArgument(sigVersion === Signature.Version.TAPROOT || sigVersion === Signature.Version.TAPSCRIPT, 'Invalid sigVersion');
+
+  const hashbuf = sighash(transaction, sighashType, inputIndex, sigVersion, leafHash);
   if (!hashbuf) {
     return false;
   }
@@ -194,26 +207,26 @@ function sign(transaction, privateKey, sighashType, inputIndex, sigversion, leaf
 
 /**
  * Verify a Schnorr signature
- *
- * @name Signing.verify
- * @param {Transaction} transaction
- * @param {Signature} signature
- * @param {PublicKey} publicKey
- * @param {Number} inputIndex
- * @param {object|Buffer|null} execdata If given, can be full execdata object or just the leafHash buffer
+ * @param {Transaction} transaction the transaction to verify
+ * @param {Signature} signature the signature to verify
+ * @param {PublicKey} publicKey the public key to use for verification
+ * @param {Number} sigVersion 2 (Signature.Version.TAPROOT) or 3 (Signature.Version.TAPSCRIPT)
+ * @param {Number} inputIndex the input index for the signature
+ * @param {object|Buffer|null} execData If given, can be full execData object or just the leafHash buffer
  * @return {Boolean}
  */
-function verify(transaction, signature, publicKey, sigversion, inputIndex, execdata) {
-  $.checkArgument(transaction != null, 'Transaction Undefined');
+function verify(transaction, signature, publicKey, sigVersion, inputIndex, execData) {
+  $.checkArgument(transaction != null, 'transaction cannot be nullish');
+  $.checkArgument(signature != null && signature.nhashtype != null, 'signature and signature.nhashtype cannot be nullish');
 
-  if (!execdata || Buffer.isBuffer(execdata)) {
-    const leafHash = execdata;
-    execdata = _getExecData(sigversion, leafHash);
+  if (!execData || Buffer.isBuffer(execData)) {
+    const leafHash = execData;
+    execData = _getExecData(sigVersion, leafHash);
   }
 
-  $.checkArgument(execdata.annexInit, 'invalid execdata');
+  $.checkArgument(execData.annexInit, 'invalid execData');
 
-  const hashbuf = _signatureHash(transaction, signature.nhashtype, inputIndex, sigversion, execdata);
+  const hashbuf = _signatureHash(transaction, signature.nhashtype, inputIndex, sigVersion, execData);
   if (!hashbuf) {
     return false;
   }
@@ -225,6 +238,7 @@ function verify(transaction, signature, publicKey, sigversion, inputIndex, execd
  * @namespace Signing
  */
 module.exports = {
+  sighash: sighash,
   sign: sign,
   verify: verify
 };

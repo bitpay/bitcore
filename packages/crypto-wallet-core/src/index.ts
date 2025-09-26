@@ -13,8 +13,11 @@ import Web3 from 'web3';
 import * as xrpl from 'xrpl';
 import { Constants } from './constants';
 import Deriver from './derivation';
+import Message from './message';
 import Transactions from './transactions';
+import * as Utils from './utils';
 import Validation from './validation';
+export type * as Types from './types';
 const SolanaProgram = {
   ComputeBudget,
   Memo,
@@ -28,6 +31,7 @@ export {
   BitcoreLibDoge,
   BitcoreLibLtc,
   Deriver,
+  Message,
   Transactions,
   Validation,
   ethers,
@@ -35,5 +39,6 @@ export {
   SolKit,
   SolanaProgram,
   Constants,
-  xrpl
+  xrpl,
+  Utils
 };
