@@ -134,7 +134,7 @@ describe('Ethereum API', function() {
         gasPrice: 10 * 1e9
       } as IEVMTransactionInProcess;
     });
-    await CacheStorage.collection.remove({});
+    await CacheStorage.collection.deleteMany({});
     await EVMTransactionStorage.collection.deleteMany({});
     await EVMTransactionStorage.collection.insertMany(txs);
     const estimates = await Promise.all([1, 2, 3, 4].map(target => ETH.getFee({ network, target })));
@@ -155,7 +155,7 @@ describe('Ethereum API', function() {
         gasPrice: 10 * 1e9
       } as IEVMTransactionInProcess;
     });
-    await CacheStorage.collection.remove({})
+    await CacheStorage.collection.deleteMany({});
     await EVMTransactionStorage.collection.deleteMany({});
     await EVMTransactionStorage.collection.insertMany(txs);
     let estimates = await Promise.all([1, 2, 3, 4].map(target => ETH.getFee({ network, target })));

@@ -24,6 +24,7 @@ import {
   BroadcastTransactionParams,
   GetBalanceForAddressParams,
   GetBlockParams,
+  GetWalletBalanceAtTimeParams,
   GetWalletBalanceParams,
   IChainStateService,
   StreamAddressUtxosParams,
@@ -437,6 +438,58 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       unconfirmed: hex ? '0x' + balance.unconfirmed.toString(16) : Number(balance.unconfirmed),
       confirmed: hex ? '0x' + balance.confirmed.toString(16) : Number(balance.confirmed),
       balance: hex ? '0x' + balance.balance.toString(16) : Number(balance.balance)
+    };
+  }
+
+  async getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams): Promise<WalletBalanceType> {
+    const { network, wallet } = params;
+    const time = new Date(params.time);
+    const { web3 } = await this.getWeb3(network, { type: 'historical' });
+    let blockNum = await this._getBlockNumberByDate({ network, date: time });
+    if (blockNum == null) {
+      const gapSize = 1000;
+      const latest = await web3.eth.getBlock('latest');
+      const gapBlocksAgo = await web3.eth.getBlock(latest.number - gapSize);
+      const latestTime = new Date(latest.timestamp as number * 1000);
+      const gapBlksAgoTime = new Date(gapBlocksAgo.timestamp as number * 1000);
+      const avgTimePerBlock = (latestTime.getTime() - gapBlksAgoTime.getTime()) / gapSize;
+      const numBlocksBack = time.getTime() > latestTime.getTime() ? 0 : Math.floor((latestTime.getTime() - time.getTime()) / avgTimePerBlock);
+      let estimatedBlockNumber = latest.number - numBlocksBack;
+      if (estimatedBlockNumber < 0) {
+        throw new Error('Could not estimate block for time');
+      }
+      let _block = await web3.eth.getBlock(estimatedBlockNumber);
+      if (!_block) {
+        throw new Error('Could not estimate block for time');
+      }
+      let final;
+      let _lastBlock = _block;
+      do {
+        const _lastBlockTime = new Date((_lastBlock.timestamp as number) * 1000);
+        const d = _lastBlockTime.getTime() - time.getTime() > 0 ? -1 : 1;
+        _block = await web3.eth.getBlock(Math.max(0, _lastBlock.number + d));
+        const _blockTime = new Date((_block.timestamp as number) * 1000);
+        const newD = _blockTime.getTime() - time.getTime() > 0 ? -1 : 1;
+        if (newD !== d) {
+          final = true;
+          // We want the first block >= `time`
+          // e.g. If `time` is 8/1/2023 12:34, then we want the block at 8/1/2023 12:37
+          //  and not the block at 8/1/2023 12:33
+          // If `d` is negative (meaning we're searching going backwards in time) then
+          //  use _lastBlock since newD !== d means we've crossed over the target time
+          _block = d < 0 ? _lastBlock : _block;
+        } else {
+          _lastBlock = _block;
+        }
+      } while (!final);
+      blockNum = _block.number;
+    }
+    const addresses = await this.getWalletAddresses(wallet._id!);
+    const bal = await web3.eth.getBalance(addresses[0].address, blockNum);
+    return {
+      confirmed: Number(bal),
+      unconfirmed: 0,
+      balance: Number(bal)
     };
   }
 
