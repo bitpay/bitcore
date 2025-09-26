@@ -3,7 +3,7 @@ import sinon from 'sinon';
 import app from '../../../src/routes';
 import { expect } from 'chai';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
-import { minutesAgo, randomHex, resetDatabase, testCoin } from '../../helpers';
+import { base58Regex, minutesAgo, mongoIdRegex, randomHex, resetDatabase, testCoin } from '../../helpers';
 import { ChainStateProvider } from '../../../src/providers/chain-state';
 import { WalletStorage } from '../../../src/models/wallet';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
@@ -21,6 +21,8 @@ const privKey = new PrivateKey();
 const pubKey = PublicKey(privKey);
 
 const address = Address(PrivateKey().toPublicKey(), 'regtest').toString();
+const missingAddress1 = Address(PrivateKey().toPublicKey(), 'regtest').toString();
+const missingAddress2 = Address(PrivateKey().toPublicKey(), 'regtest').toString();
 const address2 = Address(PrivateKey().toPublicKey(), 'regtest').toString();
 
 const bwsPrivKey = new PrivateKey('3711033b85a260d21cd469e7d93e27f04c31c21f13001053f1c074f7abbe6e75');
@@ -48,7 +50,7 @@ function testWalletEquivalence(wallet1, doc) {
 function testWalletTransaction(tx) {
   expect(tx).to.be.an('object');
   expect(tx).to.have.property('id').that.is.a('string').with.length.greaterThan(0);
-  expect(tx.id).to.match(/^[a-f0-9]{24}$/);
+  expect(tx.id).to.match(mongoIdRegex);
 
   expect(tx).to.have.property('txid').that.is.a('string').with.length(64);
   expect(tx.txid).to.match(/^[a-f0-9]{64}$/);
@@ -69,7 +71,7 @@ function testWalletTransaction(tx) {
   expect(tx).to.have.property('height').that.is.a('number').and.to.be.at.least(0);
 
   expect(tx).to.have.property('address').that.is.a('string').with.length.greaterThan(0);
-  expect(tx.address).to.match(/^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$/);
+  expect(tx.address).to.match(base58Regex);
 
   expect(tx).to.have.property('outputIndex').that.is.a('number').and.to.be.at.least(0);
 }
@@ -79,14 +81,21 @@ function getSignature(privateKey, method: 'GET' | 'POST' | 'reprocess', url: str
   const messageHash = crypto.Hash.sha256sha256(Buffer.from(message));
   return Buffer.from(secp256k1.ecdsaSign(messageHash, privateKey.toBuffer()).signature).toString('hex');
 }
-
-async function addTransaction(params: { 
-  senderAddress: string | 'coinbase', 
+async function addTransaction(params: {
+  senderAddress: string,
   recieverAddress: string,
-  amount: number,
+  value: number,
   fee?: number
- }): Promise<boolean> {
-  const { senderAddress, recieverAddress, amount, fee = 0 } = params;
+}) {
+  const { senderAddress, recieverAddress, value, fee=0 } = params;
+  await addMultiIOTransaction({senderAddresses: [senderAddress], recipients: [{ address: recieverAddress, value }], fee})
+}
+async function addMultiIOTransaction(params: { 
+  senderAddresses: string[] | 'coinbase', 
+  recipients: { address: string, value: number }[],
+  fee?: number
+ }) {
+  const { senderAddresses, recipients, fee = 0 } = params;
   const chain = 'BTC';
   const network = 'regtest';
   const txid = randomHex(64);
@@ -95,17 +104,17 @@ async function addTransaction(params: {
   // in the case of coins there are no input coins but the input count needs to be 1
   let inputCount;
   let outputCount = 2;
-  const coinbase = senderAddress === 'coinbase';
+  const coinbase = senderAddresses === 'coinbase' || senderAddresses[0] === 'coinbase';
 
   const tip = await BitcoinBlockStorage.getLocalTip({ chain, network });
   expect(tip, 'addTransaction assumes block exists to add transactions to').to.exist;
   if (!tip) {
-    return false;
+    return;
   }
 
   if (coinbase) {
-    inputsTotalValue = amount;
     inputCount = 1;
+    inputsTotalValue = recipients[0].value;
 
     // insert coinbase utxos
     await CoinStorage.collection.insertMany([
@@ -116,10 +125,10 @@ async function addTransaction(params: {
         mintIndex: 0,
         coinbase: true,
         mintHeight: tip.height,
-        value: amount,
+        value: recipients[0].value,
         spentHeight: -2,
         spentTxid: '',
-        address: recieverAddress,
+        address: recipients[0].address,
         wallets: [],
         script: Buffer.from('aiSqIant4vYcP3HR3v0/qZnfo2lTdVxpBol5mWK0i+vYNpdOjPk='),
       },
@@ -139,37 +148,49 @@ async function addTransaction(params: {
       }
     ]);
   } else {
-    const smallestSufficientUtxo: MongoBound<ICoin> | null = await CoinStorage.collection.findOne(
-      {
-        address: senderAddress, 
-        spentHeight: -2, 
-        value: { $gte: amount }
-      }, 
-      { sort: { value: -1 }}
-    );
-
-    if (smallestSufficientUtxo) {
-      inputs.push(smallestSufficientUtxo);
-    } else {
-      const utxos: MongoBound<ICoin>[] = [...await CoinStorage.collection
-        .find({ chain, network, address: senderAddress })
-        .sort({ value: 1 })
-        .toArray()
-      ];
-      do {
-        const utxo: MongoBound<ICoin> | undefined = utxos.pop();
-        if (utxo) {
-          inputs.push(utxo);
-        } else {
-          return false; // insufficient funds, transaction creation failed
-        }
-      } while (inputsTotalValue < amount);
+    let totalValueSent = 0;
+    for (const recipient of recipients) {
+      totalValueSent += recipient.value;
     }
-
-    inputCount = inputs.length;
-    for (const input of inputs) {
-      inputsTotalValue += input.value;
+    let changeAddress;
+    for (const senderAddress of senderAddresses) {
+      const remainingValue = totalValueSent - inputsTotalValue;
+      const smallestSufficientUtxo: MongoBound<ICoin> | null = await CoinStorage.collection.findOne(
+        {
+          address: senderAddress, 
+          spentHeight: -2, 
+          value: { $gte: remainingValue }
+        }, 
+        { sort: { value: 1 }}
+      );
+      
+      if (smallestSufficientUtxo) {
+        inputs.push(smallestSufficientUtxo);
+        inputCount++;
+        inputsTotalValue += smallestSufficientUtxo.value;
+      } else {
+        const utxos: MongoBound<ICoin>[] = [...await CoinStorage.collection
+          .find({ chain, network, address: senderAddress, spentHeight: -2 })
+          .sort({ value: 1 })
+          .toArray()];
+        
+        do {
+          const utxo: MongoBound<ICoin> | undefined = utxos.pop();
+          if (utxo) {
+            inputs.push(utxo);
+            inputsTotalValue += utxo.value;
+            inputCount++;
+          } else {
+            break;
+          }
+        } while (inputsTotalValue < totalValueSent);
+      }
+      if (inputsTotalValue >= totalValueSent + fee) {
+        changeAddress = senderAddress;
+        break;
+      }
     }
+    expect(inputsTotalValue, "Not enough funds to create transaction").to.be.at.least(totalValueSent + fee);
 
     // update spent utxos, prevents future usage
     await CoinStorage.collection.bulkWrite(
@@ -185,31 +206,34 @@ async function addTransaction(params: {
 
     // add new utxos
     await CoinStorage.collection.insertMany([
+      // utxos for every recipient
+      ...recipients.map(recipient => ({
+          chain: chain,
+          network: network,
+          mintTxid: txid,
+          mintIndex: 0,
+          coinbase: false,
+          mintHeight: tip.height,
+          value: recipient.value,
+          spentHeight: -2,
+          spentTxid: '',
+          address: recipient.address,
+          wallets: [],
+          script: Buffer.from('ABT2FdLqYRcZotGH4hBg/uUcL0lwUA=='),
+        })
+      ),
+      // change utxo
       {
         chain: chain,
-        network: network, 
-        mintTxid: txid,
-        mintIndex: 0,
-        coinbase: false,
-        mintHeight: tip.height,
-        value: amount,
-        spentHeight: -2,
-        spentTxid: '',
-        address: recieverAddress,
-        wallets: [],
-        script: Buffer.from('ABT2FdLqYRcZotGH4hBg/uUcL0lwUA=='),
-      },
-      {
-        chain: chain,
-        network: network, 
+        network: network,
         mintTxid: txid,
         mintIndex: 1,
         coinbase: false,
         mintHeight: tip.height,
-        value: inputsTotalValue - amount - fee,
+        value: inputsTotalValue - totalValueSent - fee,
         spentHeight: -2,
         spentTxid: '',
-        address: senderAddress,
+        address: changeAddress,
         wallets: [],
         script: Buffer.from('ABT2FdLqYRcZotGH4hBg/uUcL0lwUA=='),
       }
@@ -240,7 +264,6 @@ async function addTransaction(params: {
     { height: tip.height },
     { $inc: { totalTransactions: 1 } }
   );
-  return true;
 }
 
 async function addBlock(params?: {
@@ -252,7 +275,7 @@ async function addBlock(params?: {
   const tip = await BitcoinBlockStorage.getLocalTip({ chain, network });
   const hash = randomHex(64);
   if (!time)
-    time = (tip) ? new Date(tip.time.getTime() + 1000 * 60 * 10) : new Date();
+    time = tip ? new Date(tip.time.getTime() + 1000 * 60 * 10) : new Date();
   await BitcoinBlockStorage.collection.insertOne({
     network: 'regtest',
     chain: chain,
@@ -280,20 +303,25 @@ async function addBlock(params?: {
 describe('Wallet Routes', function() {
   let sandbox;
   let firstBlockTime = minutesAgo(60);
-  let addressBalanceAtFirstBlock = 500_000;
-  let addressBalanceAtSecondBlock = 600_000;
+  const addressBalanceAtFirstBlock = 500_000;
+  const missingValue1 = 400_000;
+  const addressBalanceAtSecondBlock = addressBalanceAtFirstBlock + 500_000 - missingValue1;
 
   before(async function() {
     this.timeout(15000);
     await intBeforeHelper();
     await resetDatabase();
     await addBlock({ time: firstBlockTime });
-    await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, amount: addressBalanceAtFirstBlock });
+    await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, value: addressBalanceAtFirstBlock });
     await addBlock();
-    await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, amount: 500_000 });
-    await addTransaction({ senderAddress: address, recieverAddress: address2, amount: 500_000 * 2 - addressBalanceAtSecondBlock });
+    await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, value: 500_000 });
+    for (let i = 0; i < 3; i++) {
+      await addTransaction({ senderAddress: address, recieverAddress: missingAddress1, value: missingValue1 / 4 });
+    }
+    await addTransaction({ senderAddress: address, recieverAddress: missingAddress2, value: missingValue1 / 4 });
     await addBlock();
-    await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, amount: 500_000 });
+    await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, value: 100_000 });
+    await addMultiIOTransaction({ senderAddresses: [missingAddress1, missingAddress2, address], recipients: [{ address: address2, value: 500_000 }]})
   });
 
   beforeEach(function() {
@@ -497,7 +525,6 @@ describe('Wallet Routes', function() {
         for (const tx of transactions) {
           testWalletTransaction(tx);
         }
-        console.log(transactions);
         done();
       })
   });
@@ -538,12 +565,12 @@ describe('Wallet Routes', function() {
     });
 
     it('should handle block updating (1/4): adding block and transactions directly to mongodb', done => {
-      const amount = 10_000;
+      const value = 10_000;
       const fee = 100;
       addBlock()
         .then(async () => {
-          await addTransaction({ senderAddress: address, recieverAddress: address2, amount, fee })
-          done()
+          await addTransaction({ senderAddress: address, recieverAddress: missingAddress1, value, fee });
+          done();
         });
     });
 
@@ -577,15 +604,15 @@ describe('Wallet Routes', function() {
 
     it('should handle block updating (4/4): get balance', done => {
       const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/balance`;
-      const amount = 10_000;
+      const value = 10_000;
       const fee = 100;
       request.get(url)
         .set('x-signature', getSignature(privKey, 'GET', url))
         .expect(200, (err, res) => {
           if (err) console.error(err);
           const { confirmed, unconfirmed, balance } = res.body;
-          expect(balance1 - balance).to.equal(amount + fee);
-          expect(balance1 - confirmed).to.equal(amount + fee);
+          expect(balance1 - balance).to.equal(value + fee);
+          expect(balance1 - confirmed).to.equal(value + fee);
           expect(unconfirmed).to.be.at.least(0);
           done();
         });
@@ -617,5 +644,47 @@ describe('Wallet Routes', function() {
         expect(sum).to.be.greaterThan(0);
         done();
       });
+  });
+
+  it('should get wallet missing addresses', done => {
+    const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/addresses/missing`;
+    request.get(url)
+      .set('x-signature', getSignature(privKey, 'GET', url))
+      .expect(200, (err, res) => {
+        if (err) console.error(err);
+        const lines = res.text.split('\n').slice(0, -1);
+        const data = JSON.parse(lines.at(-1));
+
+        let expectedTotal = 0;
+        const expectedMissingAddresses: string[] = [];
+
+        interface MissingAddressCoin { 
+          value: number;
+          address: string;
+          expected: string;
+          wallets: [];
+          _id: string[];
+        };
+
+        const coinData: MissingAddressCoin[] = JSON.parse(lines[0]).missing;
+        for (const coin of coinData) {
+          expectedTotal += coin.value;
+          expect(Address.isValid(coin.address, 'regtest')).to.be.true;
+          expect(coin._id).to.match(mongoIdRegex);
+          expect(coin.expected).to.match(mongoIdRegex);
+          expect(coin.wallets).to.exist.and.to.be.an('array');
+          expect(coin.value).to.be.at.least(0);
+          expect(coinData.filter(c => c._id === coin._id).length).to.equal(1);
+          expectedMissingAddresses.push(coin.address);
+        }
+        
+        const { allMissingAddresses, totalMissingValue } = data;
+        expect(allMissingAddresses).to.include(missingAddress1);
+        expect(allMissingAddresses).to.include(missingAddress2);
+        expect(allMissingAddresses).to.deep.equal(expectedMissingAddresses);
+        expect(totalMissingValue).to.equal(expectedTotal);
+        expect(totalMissingValue).to.equal(missingValue1);
+        done();
+      })
   });
 });

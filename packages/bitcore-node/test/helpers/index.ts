@@ -107,3 +107,6 @@ export const minutesAgo = (minutes: number): Date => new Date(Date.now() - 1000 
 
 export const randomHex = (characters: number): string => 
   randomBytes(Math.ceil(characters / 2.0)).toString('hex').slice(0, characters);
+
+export const mongoIdRegex = /^[a-f0-9]{24}$/;
+export const base58Regex = /^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$/;
