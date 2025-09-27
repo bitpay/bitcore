@@ -13,7 +13,7 @@ const ChainHeader: FC<{currency: string; network: string}> = ({currency, network
   const chartInstanceRef = useRef<ChartJS | null>(null);
 
   const price = network === 'mainnet' ? priceDetails?.data?.rate : 0;
-  const priceList = priceDisplay?.data?.[0]?.priceDisplay || [];
+  const priceList = (priceDisplay?.data?.[0]?.priceDisplay || []);
 
   const chartData = {
     labels: priceList,
@@ -31,14 +31,22 @@ const ChainHeader: FC<{currency: string; network: string}> = ({currency, network
 
   const options = {
     scales: {
-      x: {display: false},
-      y: {display: false},
+      y: {
+        display: true,
+        title: {
+          display: true,
+          text: 'USD',
+          font: { size: 14 }
+        },
+        beginAtZero: false
+      },
+      x: {display: false}
     },
     plugins: {legend: {display: false}},
-    events: [], // disable default events
+    events: [],
     responsive: true,
     maintainAspectRatio: false,
-    tension: 0.5,
+    tension: 0.2,
   };
 
   useEffect(() => {
@@ -68,7 +76,7 @@ const ChainHeader: FC<{currency: string; network: string}> = ({currency, network
           style={{height: '100px'}}
         />
         {priceList.length > 0 && (
-          <div style={{height: '100px', width: '100%', minWidth: 0}}>
+          <div style={{height: '200px', width: '100%', minWidth: 0}}>
             <canvas ref={chartRef} aria-label='price line chart' role='img' />
           </div>
         )}

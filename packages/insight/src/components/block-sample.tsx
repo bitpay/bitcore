@@ -3,7 +3,7 @@ import React, {FC, useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {fetcher} from 'src/api/api';
 import Info from 'src/components/info';
-import merge, {getApiRoot} from 'src/utilities/helper-methods';
+import {getApiRoot} from 'src/utilities/helper-methods';
 import {BlocksType} from 'src/utilities/models';
 import styled from 'styled-components';
 
