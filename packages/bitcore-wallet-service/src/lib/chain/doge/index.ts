@@ -284,8 +284,8 @@ export class DogeChain extends BtcChain implements IChain {
 
           err = this.checkTx(txp);
           if (!err) {
-            const sumInputs = txp.inputs.reduce((sum, input) => sum += input.satoshis, 0);
-            const sumOutputs = txp.outputs.reduce((sum, output) => sum += output.amount, 0);
+            const sumInputs = txp.inputs.reduce((sum, input) => sum + input.satoshis, 0);
+            const sumOutputs = txp.outputs.reduce((sum, output) => sum + output.amount, 0);
             const change = sumInputs - sumOutputs - txp.fee;
             logger.debug(`Successfully built transaction. Total fees: ${Utils.formatAmountInBtc(txp.fee)}, total change: ${Utils.formatAmountInBtc(change)}`);
           } else {
@@ -353,7 +353,7 @@ export class DogeChain extends BtcChain implements IChain {
         }
 
         info.utxosBelowFee = partitionedByAmount[1].length;
-        info.amountBelowFee = partitionedByAmount[1].reduce((sum, x) => sum += x.satoshis, 0);
+        info.amountBelowFee = partitionedByAmount[1].reduce((sum, x) => sum + x.satoshis, 0);
         inputs = partitionedByAmount[0];
 
         for (let i = 0; i < inputs.length; i++) {
@@ -361,7 +361,7 @@ export class DogeChain extends BtcChain implements IChain {
           const sizeInKb = (baseTxpSize + (i + 1) * sizePerInput) / 1000;
           if (sizeInKb > MAX_TX_SIZE_IN_KB) {
             info.utxosAboveMaxSize = inputs.length - i;
-            info.amountAboveMaxSize = inputs.slice(i).reduce((sum, x) => sum += x.satoshis, 0);
+            info.amountAboveMaxSize = inputs.slice(i).reduce((sum, x) => sum + x.satoshis, 0);
             break;
           }
           txp.inputs.push(input);
@@ -370,7 +370,7 @@ export class DogeChain extends BtcChain implements IChain {
         if (!txp.inputs?.length) return cb(null, info);
 
         const fee = this.getEstimatedFee(txp, { conservativeEstimation: true });
-        const amount = txp.inputs.reduce((sum, x) => sum += x.satoshis, 0) - fee;
+        const amount = txp.inputs.reduce((sum, x) => sum + x.satoshis, 0) - fee;
         info.size = this.getEstimatedSize(txp, { conservativeEstimation: true });
         info.fee = fee;
         info.amount = amount;
