@@ -414,7 +414,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       unconfirmed: Number(balance.unconfirmed),
       confirmed: Number(balance.confirmed),
       balance: Number(balance.balance)
-    };;
+    };
   }
 
   async getBalanceForAddress(params: GetBalanceForAddressParams): Promise<WalletBalanceType> {
@@ -445,8 +445,8 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       if (!tx) {
         throw new Error(`Balance not found at ${args.time}`);
       }
-      const index = tx.accountKeys?.findIndex(acct => acct == address);
-      if (!index || index === -1) {
+      const index = tx.accountKeys?.findIndex(acct => acct === address);
+      if (index === undefined || index === -1) {
         throw new Error(`Balance not found at ${args.time}`);
       }
       let balance;

@@ -256,7 +256,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     const tokenAddress = args?.tokenAddress;
     const addressLower = address.toLowerCase();
     const hex = args?.hex === 'true' || args?.hex === '1';
-    let blockNumber: number;
+    let blockNumber: number | string = 'latest';
     if (args?.time) {
       const block = await this.getBlockBeforeTime({ chain, network, time: args.time });
       if (!block) {
