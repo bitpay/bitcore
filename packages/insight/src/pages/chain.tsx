@@ -6,10 +6,8 @@ import {useDispatch} from 'react-redux';
 import {changeCurrency, changeNetwork} from 'src/store/app.actions';
 import {getApiRoot, normalizeParams} from 'src/utilities/helper-methods';
 import styled, {useTheme} from 'styled-components';
-import {colorCodes, size} from 'src/utilities/constants';
+import {size} from 'src/utilities/constants';
 import {fetcher} from 'src/api/api';
-import BlockGroupDarkSvg from '../assets/images/block-group-dark.svg'
-import BlockGroupLightSvg from '../assets/images/block-group-light.svg'
 import nProgress from 'nprogress';
 import {Chart as ChartJS} from 'chart.js';
 
@@ -26,22 +24,9 @@ const HeaderDataContainer = styled.div`
   }
 `;
 
-const BlocksLinkChip = styled.div`
-  display: flex;
-  border-radius: 10px;
-  font: menu;
-  width: 100%;
-  gap: 0.5rem;
-  padding: 0.2rem 0;
-  margin: 0.25rem 0;
-  justify-content: center;
-`
-
 const Chain: React.FC = () => {
   let {currency, network} = useParams<{currency: string; network: string}>();
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const theme = useTheme();
 
   const chartRef = useRef<HTMLCanvasElement | null>(null);
   const chartInstanceRef = useRef<ChartJS | null>(null);
@@ -153,18 +138,6 @@ const Chain: React.FC = () => {
     };
   }, [chartData, options, blocksList]);
 
-  const gotoBlocks = async () => {
-    await navigate(`/${currency}/${network}/blocks`);
-  };
-
-
-  const BlockGroupIcon: React.FC = () => {
-    return (
-      <img src={theme.dark ? BlockGroupLightSvg : BlockGroupDarkSvg}
-        style={{height:'1.5rem'}}/>
-    );
-  }
-
   if (!currency || !network) return null;
 
   return (
@@ -175,15 +148,9 @@ const Chain: React.FC = () => {
           <div style={{height: '200px', width: '100%', minWidth: 0}}>
             <canvas ref={chartRef} aria-label='price line chart' role='img' />
           </div>
+          { blocksList && <BlockSample currency={currency} network={network} blocksList={blocksList.slice(0, 5)} /> }
         </div>
         <div style={{width: 'fit-content', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-          <BlocksLinkChip style={{backgroundColor: colorCodes[currency]}} onClick={gotoBlocks}>
-            <BlockGroupIcon />
-            <b>View all Blocks</b>
-            <BlockGroupIcon />
-          </BlocksLinkChip>
-          { blocksList && <BlockSample currency={currency} network={network} blocksList={blocksList.slice(0, 5)} /> }
-
         </div>
       </HeaderDataContainer>
     </>
