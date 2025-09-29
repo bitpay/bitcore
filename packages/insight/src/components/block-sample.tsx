@@ -1,9 +1,5 @@
-import nProgress from 'nprogress';
-import React, {FC, useEffect, useState} from 'react';
+import React, {FC} from 'react';
 import {useNavigate} from 'react-router-dom';
-import {fetcher} from 'src/api/api';
-import Info from 'src/components/info';
-import {getApiRoot} from 'src/utilities/helper-methods';
 import {BlocksType} from 'src/utilities/models';
 import styled from 'styled-components';
 
@@ -27,30 +23,13 @@ export type BlockAndFeeType = BlocksType & {
   }
 };
 
-const BlockSample: FC<{currency: string; network: string}> = ({currency, network}) => {
+const BlockSample: FC<{currency: string; network: string, blocksList: BlockAndFeeType[]}> = ({currency, network, blocksList}) => {
   const navigate = useNavigate();
-
-  const [blocksList, setBlocksList] = useState<BlockAndFeeType[]>();
-  const [error, setError] = useState('');
-  useEffect(() => {
-    nProgress.start();
-    Promise.all([fetcher(`${getApiRoot(currency)}/${currency}/${network}/block?limit=5`)])
-      .then(([data]) => {
-        setBlocksList(data);
-      })
-      .finally(() => {
-        nProgress.done();
-      })
-      .catch((e: any) => {
-        setError(e.message || 'Something went wrong. Please try again later.');
-      });
-  }, []);
 
   const gotoSingleBlockDetailsView = async (hash: string) => {
     await navigate(`/${currency}/${network}/block/${hash}`);
   };
 
-  if (error) return <Info type={'error'} message={error} />;
   if (!blocksList?.length) return null;
   return (
     <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
@@ -64,7 +43,7 @@ const BlockSample: FC<{currency: string; network: string}> = ({currency, network
             <BlockChip onClick={() => gotoSingleBlockDetailsView(hash)}>
               <b>
                 <div>{height}</div>
-                <div>~{median.toFixed(4)} sats/vB</div>
+                <div>~{median?.toFixed(4)} sats/Byte</div>
                 <div>{transactionCount} transactions</div>
                 <div style={{whiteSpace: 'nowrap'}}>mined {minutesWhenMined} minutes ago</div>
               </b>
