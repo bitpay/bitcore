@@ -33,12 +33,10 @@ const ChainHeader: FC<{currency: string; network: string}> = ({currency, network
     scales: {
       y: {
         display: true,
-        title: {
-          display: true,
-          text: 'USD',
-          font: { size: 14 }
-        },
-        beginAtZero: false
+        beginAtZero: false,
+        ticks: {
+          maxTicksLimit: 4,
+        }
       },
       x: {display: false}
     },
