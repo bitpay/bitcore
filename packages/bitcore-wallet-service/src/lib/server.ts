@@ -1,9 +1,9 @@
 import * as async from 'async';
-import Bitcore from 'bitcore-lib';
-import BitcoreCash from 'bitcore-lib-cash';
-import BitcoreDoge from 'bitcore-lib-doge';
-import BitcoreLtc from 'bitcore-lib-ltc';
 import {
+  BitcoreLib as Bitcore,
+  BitcoreLibCash as BitcoreCash,
+  BitcoreLibDoge as BitcoreDoge,
+  BitcoreLibLtc as BitcoreLtc,
   Constants as ConstantsCWC,
   Validation
 } from 'crypto-wallet-core';
@@ -18,6 +18,7 @@ import config from '../config';
 import { serverMessages as deprecatedServerMessage } from '../deprecated-serverMessages';
 import { BanxaService } from '../externalservices/banxa';
 import { ChangellyService } from '../externalservices/changelly';
+import { CoinGeckoService } from '../externalservices/coingecko';
 import { MoonpayService } from '../externalservices/moonpay';
 import { OneInchService } from '../externalservices/oneInch';
 import { RampService } from '../externalservices/ramp';
@@ -157,6 +158,7 @@ export class WalletService implements IWalletService {
     thorswap: ThorswapService;
     transak: TransakService;
     wyre: WyreService;
+    coinGecko: CoinGeckoService,
   }
 
   constructor() {
@@ -186,6 +188,7 @@ export class WalletService implements IWalletService {
       thorswap: new ThorswapService(),
       transak: new TransakService(),
       wyre: new WyreService(),
+      coinGecko: new CoinGeckoService(this.storage),
     }
   }
   /**
@@ -348,7 +351,7 @@ export class WalletService implements IWalletService {
    * @param {Object} opts
    * @param {string} opts.clientVersion - A string that identifies the client issuing the request
    */
-  static getInstance(opts): WalletService {
+  static getInstance(opts?): WalletService {
     opts = opts || {};
 
     const upgradeMessage = WalletService.upgradeNeeded(UPGRADES.bwc_$lt_1_2, opts);
@@ -765,7 +768,7 @@ export class WalletService implements IWalletService {
       if (opts.doNotMigrate) return cb(null, wallet);
 
       // backwards compatibility
-      if (!wallet.chain) wallet.chain = ChainService.getChain(wallet.coin);
+      if (!wallet.chain) wallet.chain = Utils.getChain(wallet.coin);
 
       // remove someday...
       logger.info(`Migrating wallet ${wallet.id} to cashAddr`);
@@ -1690,6 +1693,7 @@ export class WalletService implements IWalletService {
       if (opts.limit > 0) addresses = addresses.slice(0, opts.limit);
 
       this.getWallet({}, (err, wallet) => {
+        if (err) return cb(err);
         for (const x of addresses) {
           ChainService.addressFromStorageTransform(wallet.chain, wallet.network, x);
         }
@@ -2747,7 +2751,7 @@ export class WalletService implements IWalletService {
                       walletId: this.walletId,
                       creatorId: this.copayerId,
                       coin: opts.coin,
-                      chain: opts.chain?.toLowerCase() || ChainService.getChain(opts.coin), // getChain -> backwards compatibility
+                      chain: opts.chain?.toLowerCase() || Utils.getChain(opts.coin), // getChain -> backwards compatibility
                       network: wallet.network,
                       outputs: opts.outputs,
                       message: opts.message,
@@ -5391,124 +5395,6 @@ export class WalletService implements IWalletService {
       } catch (err) {
         reject(err);
       }
-    });
-  }
-
-  private coinGeckoGetCredentials() {
-    if (!config.coinGecko) throw new Error('coinGecko missing credentials');
-
-    const credentials = {
-      API: config.coinGecko.api,
-      API_KEY: config.coinGecko.apiKey,
-    };
-
-    return credentials;
-  }
-
-  coinGeckoGetRates(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const credentials = this.coinGeckoGetCredentials();
-      const chain = req.params['chain'];
-      const evmBlockchainNetwork = {
-        eth: 'ethereum',
-        matic: 'polygon-pos',
-      };
-      const contractAddresses = req.params['contractAddresses']; // format example 0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48,0x6b175474e89094c44da98b954eedeac495271d0f,..
-      const altCurrencies = req.params['altCurrencies']; // format example ars,aud,usd,...
-
-      const URL: string = `${credentials.API}/v3/simple/token_price/${evmBlockchainNetwork[chain]
-        }?contract_addresses=${contractAddresses}&vs_currencies=${altCurrencies}&include_24hr_change=true&include_last_updated_at=true`;
-
-      this.request.get(
-        URL,
-        {
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            this.logw('An error occured while retrieving the token rates:', err);
-            return reject(err.body ?? err);
-          } else {
-            if (!data?.body) {
-              this.logw('No token rates available');
-              return reject(new Error('Could not get tokens rates'));
-            }
-            return resolve(data.body);
-          }
-        }
-      );
-    });
-  }
-
-  coinGeckoGetTokens(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const chain = req.params?.['chain'] || 'ethereum';
-      const cacheKey = `cgTokenList:${chain}`;
-      const credentials = this.coinGeckoGetCredentials();
-
-      this.storage.checkAndUseGlobalCache(cacheKey, Defaults.COIN_GECKO_CACHE_DURATION, (err, values, oldvalues) => {
-        if (err) logger.warn('Cache check failed', err);
-        if (values) return resolve(values);
-
-        const assetPlatformMap = {
-          eth: 'ethereum',
-          matic: 'polygon-pos',
-          pol: 'polygon-pos',
-          arb: 'arbitrum-one',
-          base: 'base',
-          op: 'optimistic-ethereum',
-          sol: 'solana',
-        };
-
-        const assetId = assetPlatformMap[chain];
-        if (!assetId) return reject(new Error(`Unsupported chain '${chain}'`));
-  
-        const URL: string = `${credentials.API}/v3/token_lists/${assetId}/all.json`;
-        const headers = {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'x-cg-pro-api-key': credentials.API_KEY
-        };
-
-        this.request.get(
-          URL,
-          {
-            headers,
-            json: true
-          },
-          (err, data) => {
-            const tokens = data?.body?.tokens;
-            const status = data?.body?.status;
-            if (err) {
-              logger.warn('An error occured while retrieving the token list', err);
-              if (oldvalues) {
-                logger.warn('Using old cached values');
-                return resolve(oldvalues);
-              }
-              return reject(err.body ?? err);
-            } else if (status?.error_code === 429 && oldvalues) {
-              return resolve(oldvalues);
-            } else {
-              if (!tokens) {
-                if (oldvalues) {
-                  logger.warn('No token list available... using old cached values');
-                  return resolve(oldvalues);
-                }
-                return reject(new Error(`Could not get tokens list. Code: ${status?.error_code}. Error: ${status?.error_message || 'Unknown error'}`));
-              }
-              const updatedTokens = tokens.map(token => {
-                if (token.logoURI?.includes('/thumb/')) {
-                  token.logoURI = token.logoURI.replace('/thumb/', '/large/');
-                }
-                return token;
-              });
-              this.storage.storeGlobalCache(cacheKey, updatedTokens, storeErr => {
-                if (storeErr) logger.warn('Could not cache token list', storeErr);
-                return resolve(updatedTokens);
-              });
-            }
-        });
-      });
     });
   }
 }

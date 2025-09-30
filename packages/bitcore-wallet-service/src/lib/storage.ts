@@ -780,7 +780,7 @@ export class Storage {
 
   storeAddressAndWallet(wallet, addresses, cb) {
     const clonedAddresses = [].concat(addresses);
-    if (_.isEmpty(addresses)) return cb();
+    if (!addresses || !clonedAddresses.length) return cb();
     let duplicate;
 
     this.db.collection(collections.ADDRESSES).insertMany(

@@ -1,38 +1,39 @@
+import {
+  BitcoreLib,
+  BitcoreLibCash,
+  BitcoreLibDoge,
+  BitcoreLibLtc,
+} from 'crypto-wallet-core';
+import { singleton } from 'preconditions';
 import Uuid from 'uuid';
 import config from '../../config';
-import { ChainService } from '../chain/index';
 import { Common } from '../common';
 import logger from '../logger';
 import { Address } from './address';
 import { AddressManager, IAddressManager } from './addressmanager';
-import { Copayer } from './copayer';
+import { Copayer, ICopayer } from './copayer';
 
-const $ = require('preconditions').singleton();
-
-const {
-  Constants,
-  Defaults,
-  Utils
-} = Common;
+const $ = singleton();
+const { Constants, Defaults, Utils } = Common;
 
 const Bitcore = {
-  btc: require('bitcore-lib'),
-  bch: require('bitcore-lib-cash'),
-  eth: require('bitcore-lib'),
-  matic: require('bitcore-lib'),
-  arb: require('bitcore-lib'),
-  base: require('bitcore-lib'),
-  op: require('bitcore-lib'),
-  xrp: require('bitcore-lib'),
-  doge: require('bitcore-lib-doge'),
-  ltc: require('bitcore-lib-ltc'),
-  sol: require('bitcore-lib'),
+  btc: BitcoreLib,
+  bch: BitcoreLibCash,
+  eth: BitcoreLib,
+  matic: BitcoreLib,
+  arb: BitcoreLib,
+  base: BitcoreLib,
+  op: BitcoreLib,
+  xrp: BitcoreLib,
+  doge: BitcoreLibDoge,
+  ltc: BitcoreLibLtc,
+  sol: BitcoreLib,
 };
 
-export interface IWallet<isSharedT = boolean> {
+export interface IWallet<isSharedT = boolean | (() => boolean)> {
   version: string;
   createdOn: number;
-  id: number;
+  id: string;
   name: string;
   m: number;
   n: number;
@@ -42,7 +43,7 @@ export interface IWallet<isSharedT = boolean> {
   hardwareSourcePublicKey?: string;
   clientDerivedPublicKey?: string;
   addressIndex: number;
-  copayers: Array<Copayer>;
+  copayers: Array<ICopayer>;
   pubKey: string;
   coin: string;
   chain: string;
@@ -65,7 +66,7 @@ export interface IWallet<isSharedT = boolean> {
 export class Wallet implements IWallet<() => boolean> {
   version: string;
   createdOn: number;
-  id: number;
+  id: string;
   name: string;
   m: number;
   n: number;
@@ -138,7 +139,7 @@ export class Wallet implements IWallet<() => boolean> {
     x.copayers = [];
     x.pubKey = opts.pubKey;
     x.coin = opts.coin;
-    x.chain = opts.chain || ChainService.getChain(x.coin);
+    x.chain = opts.chain || Utils.getChain(x.coin);
     x.network = opts.network;
     x.derivationStrategy = opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
     x.addressType = opts.addressType || Constants.SCRIPT_TYPES.P2SH;
@@ -188,7 +189,7 @@ export class Wallet implements IWallet<() => boolean> {
     x.copayers = (obj.copayers || []).map(copayer => Copayer.fromObj(copayer));
     x.pubKey = obj.pubKey;
     x.coin = obj.coin || Defaults.COIN;
-    x.chain = obj.chain || ChainService.getChain(x.coin); // getChain -> backwards compatibility;
+    x.chain = obj.chain || Utils.getChain(x.coin); // getChain -> backwards compatibility;
     x.network = obj.network;
     if (!x.network) {
       x.network = obj.isTestnet ? Utils.getNetworkName(x.chain, 'testnet') : 'livenet';
@@ -247,7 +248,7 @@ export class Wallet implements IWallet<() => boolean> {
   updateBEKeys() {
     $.checkState(this.isComplete(), 'Failed state: wallet incomplete at <updateBEKeys()>');
 
-    const chain = this.chain || ChainService.getChain(this.coin); // getChain -> backwards compatibility
+    const chain = this.chain || Utils.getChain(this.coin); // getChain -> backwards compatibility
     const bitcore = Bitcore[chain];
     const salt = config.BE_KEY_SALT || Defaults.BE_KEY_SALT;
 
@@ -313,7 +314,7 @@ export class Wallet implements IWallet<() => boolean> {
     return this.coin === 'bch' && this.addressType === 'P2PKH';
   }
 
-  createAddress(isChange, step, escrowInputs?) {
+  createAddress(isChange, step?, escrowInputs?) {
     $.checkState(this.isComplete(), 'Failed state: this.isComplete() at <createAddress()>');
 
     const path = this.addressManager.getNewAddressPath(isChange, step);

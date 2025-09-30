@@ -253,7 +253,7 @@ describe('Solana API', function() {
     expect(transformedTx.fee).to.equal(5000);
     expect(transformedTx.from).to.equal('sender');
     expect(transformedTx.address).to.equal('receiver');
-    expect(transformedTx.satoshis).to.equal(100000);
+    expect(transformedTx.satoshis).to.equal(-100000);
     expect(transformedTx.category).to.equal('send');
   });
 

@@ -156,9 +156,11 @@ export class ExpressApp {
       if (!credentials)
         return returnError(Errors.NOT_AUTHORIZED, res, req);
 
+      const reqUrl = req.redirectedUrl || req.url;
+
       const auth = {
         copayerId: credentials.copayerId,
-        message: req.method.toLowerCase() + '|' + req.url + '|' + JSON.stringify(req.body),
+        message: req.method.toLowerCase() + '|' + reqUrl + '|' + JSON.stringify(req.body),
         signature: credentials.signature,
         clientVersion: req.header('x-client-version'),
         userAgent: req.header('user-agent'),
@@ -803,7 +805,9 @@ export class ExpressApp {
     router.get('/v1/addresses/', (req, res) => {
       logDeprecated(req);
       req.query.noChange = req.query.noChange ?? '1'; // default to no change addresses (backward compatibility)
-      res.redirect(config.basePath + '/v2/addresses?' + Object.entries(req.query).map(([key, value]) => `${key}=${value}`).join('&'));
+      req.redirectedUrl = req.url;
+      req.url = '/v2/addresses?' + Object.entries(req.query).map(([key, value]) => `${key}=${value}`).join('&');
+      router.handle(req, res);
     });
 
     router.get('/v2/addresses/', (req, res) => {
@@ -2197,7 +2201,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.coinGeckoGetTokens(req)
+      server.externalServices.coinGecko.coinGeckoGetTokens(req)
         .then(response => {
           res.json(response);
         })
@@ -2370,27 +2374,9 @@ export class ExpressApp {
         .catch(err => {
           return returnError(err ?? 'unknown', res, req);
         });
-    });    
-
-    router.get('/v1/service/coinGecko/getRates/:contractAddresses/:altCurrencies/:chain', (req, res) => {
-      SetPublicCache(res, 1 * ONE_MINUTE);
-      let server: WalletService;
-      try {
-        server = getServer(req, res);
-      } catch (ex) {
-        return returnError(ex, res, req);
-      }
-      server
-        .coinGeckoGetRates(req)
-        .then(response => {
-          res.json(response);
-        })
-        .catch(err => {
-          return returnError(err ?? 'unknown', res, req);
-        });
     });
 
-
+    /** Imported routes */
     router.use(new TssRouter({ returnError, opts }).router);
 
 
