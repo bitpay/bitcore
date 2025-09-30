@@ -21,7 +21,7 @@ export async function createThresholdSigWallet(
   const { verbose, mnemonic } = opts;
 
   const copayerName = await getCopayerName();
-  const addressType = await getAddressType({ chain, network, isMultiSig: false }); // TSS is treated as a single-sig
+  const addressType = await getAddressType({ chain, network, isMultiSig: false, isTss: true });
   const password = await getPassword('Enter a password for the wallet:', { hidden: false });
 
   let key;

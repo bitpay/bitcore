@@ -15,9 +15,9 @@ export { PayPro } from './lib/paypro';
 export { Key } from './lib/key';
 export { Verifier } from './lib/verifier';
 export { Encryption } from './lib/common/encryption';
-export * as EncryptionTypes from './lib/common/encryption';
+export type * as EncryptionTypes from './lib/common/encryption';
 export { Utils } from './lib/common/utils';
-export * as UtilsTypes from './lib/common/utils';
+export type * as UtilsTypes from './lib/common/utils';
 export { Errors } from './lib/errors';
 
 export * as TssKey from './lib/tsskey';
