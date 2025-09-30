@@ -134,7 +134,12 @@ router.get('/before-time/:time', async function(req: Request, res: Response) {
     if (!block) {
       return res.status(404).send('block not found');
     }
-    const tip = await ChainStateProvider.getLocalTip({ chain, network });
+    let tip;
+    try {
+      tip = await ChainStateProvider.getLocalTip({ chain, network });
+    } catch (err: any) {
+      logger.error('Error getting local tip: %o', err.stack || err.message || err);
+    }
     if (block && tip && tip.height - block.height > Confirmations.Deep) {
       SetCache(res, CacheTimes.Month);
     }

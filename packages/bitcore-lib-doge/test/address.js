@@ -35,7 +35,7 @@ describe('Address', function() {
   it('should throw an error because of bad type param', function() {
     (function() {
       return new Address(PKHLivenet[0], 'livenet', 'pubkey');
-    }).should.throw('Third argument must be "pubkeyhash" or "scripthash"');
+    }).should.throw('Third argument must be one of: "pubkeyhash", "p2pkh", "scripthash", "p2sh".');
   });
 
   describe('bitcoind compliance', function() {
@@ -275,25 +275,25 @@ describe('Address', function() {
 
     it('should error because of incorrect length buffer for transform buffer', function() {
       (function() {
-        return Address._transformBuffer(new Buffer(20));
+        return Address._transformBuffer(Buffer.alloc(20));
       }).should.throw('Address buffers must be exactly 21 bytes.');
     });
 
     it('should error because of incorrect type for pubkey transform', function() {
       (function() {
-        return Address._transformPublicKey(new Buffer(20));
+        return Address._transformPublicKey(Buffer.alloc(20));
       }).should.throw('Address must be an instance of PublicKey.');
     });
 
     it('should error because of incorrect type for script transform', function() {
       (function() {
-        return Address._transformScript(new Buffer(20));
+        return Address._transformScript(Buffer.alloc(20));
       }).should.throw('Invalid Argument: script must be a Script instance');
     });
 
     it('should error because of incorrect type for string transform', function() {
       (function() {
-        return Address._transformString(new Buffer(20));
+        return Address._transformString(Buffer.alloc(20));
       }).should.throw('data parameter supplied is not a string.');
     });
 

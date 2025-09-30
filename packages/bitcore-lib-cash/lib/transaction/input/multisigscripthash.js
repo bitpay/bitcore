@@ -69,9 +69,26 @@ MultiSigScriptHashInput.prototype._serializeSignatures = function() {
   });
 };
 
+/**
+ * Get the hash data to sign for this input
+ * @param {Transaction} transaction The transaction to be signed
+ * @param {PublicKey} publicKey Unused for this input type
+ * @param {number} index The index of the input in the transaction input vector
+ * @param {number} sigtype The type of signature, defaults to (Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID)
+ * @returns {Buffer}
+ */
+MultiSigScriptHashInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
+  sigtype = sigtype || (Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID);
+
+  const sighash = Sighash.sighash(transaction, sigtype, index, this.redeemScript, this.output.satoshisBN, undefined);
+  // sighash() returns data little endian but it must be signed big endian, hence the reverse
+  return sighash.reverse();
+};
+
 MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
-  $.checkState(this.output instanceof Output);
-  sigtype = sigtype || (Signature.SIGHASH_ALL |  Signature.SIGHASH_FORKID);
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
+  sigtype = sigtype || (Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID);
 
   const results = [];
   for (const publicKey of this.publicKeys) {

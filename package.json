@@ -59,6 +59,8 @@
     "ci:bitcore-client": "./ci.sh 'npm run test:bitcore-client'",
     "test:bitcore-tss": "cd ./packages/bitcore-tss && npm run test",
     "ci:bitcore-tss": "./ci.sh 'npm run test:bitcore-tss'",
+    "test:bitcore-cli": "cd ./packages/bitcore-cli && npm run test",
+    "ci:bitcore-cli": "./ci.sh 'npm run test:bitcore-cli'",
     "lerna:ci:all": "npx lerna run test:ci --concurrency 1 --stream",
     "lerna:ci:unit": "npx run test:ci:unit --concurrency 1 --stream",
     "lerna:ci:integration": "npx run test:ci:integration --concurrency 1 --stream",
@@ -70,6 +72,7 @@
     }
   },
   "devDependencies": {
+    "@types/node": "22.13.1",
     "cz-customizable": "^5.2.0",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
@@ -78,6 +81,7 @@
     "prettier": "^1.19.1",
     "tslint": "^5.20.1",
     "tslint-config-prettier": "^1.18.0",
+    "ts-node": "^8.0.3",
     "typedoc": "^0.15.0",
     "typescript-eslint-parser": "^15.0.0"
   },

@@ -18,7 +18,8 @@
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "target": "es2015",
+    "resolveJsonModule": true,
+    "target": "ES2020",
     "typeRoots": [
       "./node_modules/@types"
     ],
@@ -36,7 +37,7 @@
     "./scripts/**/*.ts",
     "./src/**/*.ts",
     "./tests/**/*.ts",
-    "./test/*.ts"
+    "./test/**/*.ts"
   ],
   "exclude": [
     "node_modules"

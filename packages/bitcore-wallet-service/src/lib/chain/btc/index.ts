@@ -1,19 +1,18 @@
 import * as async from 'async';
 import { BitcoreLib } from 'crypto-wallet-core';
 import _ from 'lodash';
-import { WalletService } from 'src/lib/server';
-import { IChain } from '..';
+import { singleton } from 'preconditions';
 import config from '../../../config';
+import { IChain } from '../../../types/chain';
 import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
 import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
 import { IWallet, TxProposal } from '../../model';
+import { WalletService } from '../../server';
 
-const $ = require('preconditions').singleton();
-const Constants = Common.Constants;
-const Utils = Common.Utils;
-const Defaults = Common.Defaults;
+const $ = singleton();
+const { Constants, Utils, Defaults } = Common;
 
 export class BtcChain implements IChain {
   protected sizeEstimationMargin: number;
@@ -54,19 +53,18 @@ export class BtcChain implements IChain {
 
         // Compute balance by address
         const byAddress = {};
-        _.each(_.keyBy(_.sortBy(utxos, 'address'), 'address'), (value, key) => {
-          byAddress[key] = {
-            address: key,
-            path: value.path,
-            amount: 0
-          };
-        });
-
-        _.each(utxos, utxo => {
+        for (const utxo of utxos) {
+          if (!byAddress[utxo.address]) {
+            byAddress[utxo.address] = {
+              address: utxo.address,
+              path: utxo.path,
+              amount: 0
+            };
+          }
           byAddress[utxo.address].amount += utxo.satoshis;
-        });
+        }
 
-        balance.byAddress = _.values(byAddress);
+        balance.byAddress = Object.values(byAddress);
 
         return cb(null, balance);
       }
@@ -92,15 +90,13 @@ export class BtcChain implements IChain {
         amountAboveMaxSize: 0
       };
 
-      let inputs = _.reject(utxos, 'locked');
+      let inputs = utxos.filter(utxo => !utxo.locked);
       if (!!opts.excludeUnconfirmedUtxos) {
-        inputs = _.filter(inputs, 'confirmations');
+        inputs = inputs.filter(utxo => utxo.confirmations);
       }
-      inputs = _.sortBy(inputs, input => {
-        return -input.satoshis;
-      });
-
-      if (_.isEmpty(inputs)) return cb(null, info);
+      if (!inputs.length) return cb(null, info);
+      
+      inputs = Utils.sortDesc(inputs, 'satoshis');
 
       server._getFeePerKb(wallet, opts, (err, feePerKb) => {
         if (err) return cb(err);
@@ -121,28 +117,34 @@ export class BtcChain implements IChain {
         const sizePerInput = this.getEstimatedSizeForSingleInput(txp, { conservativeEstimation: true });
         const feePerInput = (sizePerInput * txp.feePerKb) / 1000;
 
-        const partitionedByAmount = _.partition(inputs, input => {
-          return input.satoshis > feePerInput;
-        });
+        const partitionedByAmount = [[], []];
+        for (const input of inputs) {
+          if (input.satoshis > feePerInput) {
+            partitionedByAmount[0].push(input);
+          } else {
+            partitionedByAmount[1].push(input);
+          }
+        }
 
         info.utxosBelowFee = partitionedByAmount[1].length;
-        info.amountBelowFee = _.sumBy(partitionedByAmount[1], 'satoshis');
+        info.amountBelowFee = partitionedByAmount[1].reduce((sum, x) => sum + x.satoshis, 0);
         inputs = partitionedByAmount[0];
 
-        _.each(inputs, (input, i) => {
+        for (let i = 0; i < inputs.length; i++) {
+          const input = inputs[i];
           const sizeInKb = (baseTxpSize + (i + 1) * sizePerInput) / 1000;
           if (sizeInKb > MAX_TX_SIZE_IN_KB) {
             info.utxosAboveMaxSize = inputs.length - i;
-            info.amountAboveMaxSize = _.sumBy(_.slice(inputs, i), 'satoshis');
-            return false;
+            info.amountAboveMaxSize = inputs.slice(i).reduce((sum, x) => sum + x.satoshis, 0);
+            break;
           }
           txp.inputs.push(input);
-        });
+        }
 
-        if (_.isEmpty(txp.inputs)) return cb(null, info);
+        if (!txp.inputs?.length) return cb(null, info);
 
         const fee = this.getEstimatedFee(txp, { conservativeEstimation: true });
-        const amount = _.sumBy(txp.inputs, 'satoshis') - fee;
+        const amount = txp.inputs.reduce((sum, x) => sum + x.satoshis, 0) - fee;
 
         if (amount < Defaults.MIN_OUTPUT_AMOUNT) return cb(null, info);
 
@@ -173,8 +175,8 @@ export class BtcChain implements IChain {
         if (wallet.singleAddress) {
           server.storage.fetchAddresses(server.walletId, (err, addresses) => {
             if (err) return cb(err);
-            if (_.isEmpty(addresses)) return cb(new ClientError('The wallet has no addresses'));
-            return cb(null, _.head(addresses));
+            if (!addresses?.length) return cb(new ClientError('The wallet has no addresses'));
+            return cb(null, addresses[0]);
           });
         } else {
           if (opts.changeAddress) {
@@ -291,20 +293,20 @@ export class BtcChain implements IChain {
     return scriptSize + 8 + 1; // value + script length
   }
 
-  getEstimatedSize(txp, opts) {
+  getEstimatedSize(txp, opts?) {
     const overhead = 4 + 4 + 1 + 1; // version, locktime, ninputs, noutputs
     // This assumed ALL inputs of the wallet are the same time
     const inputSize = this.getEstimatedSizeForSingleInput(txp, opts);
     const nbInputs = txp.inputs.length;
     let outputsSize = 0;
-    let outputs = _.isArray(txp.outputs) ? txp.outputs : [txp.toAddress];
+    let outputs = Array.isArray(txp.outputs) ? txp.outputs : [txp.toAddress];
     let addresses = outputs.map(x => x.toAddress);
     if (txp.changeAddress) {
       addresses.push(txp.changeAddress.address);
     }
-    _.each(addresses, x => {
+    for (const x of addresses) {
       outputsSize += this.getEstimatedSizeForSingleOutput(x);
-    });
+    }
 
     if (opts && opts.instantAcceptanceEscrow) {
       outputsSize += this.getEstimatedSizeForAddressType('scripthash');
@@ -320,13 +322,13 @@ export class BtcChain implements IChain {
   }
 
   getEstimatedFee(txp, opts) {
-    $.checkState(_.isNumber(txp.feePerKb), 'Failed state: txp.feePerKb is not a number at <getEstimatedFee()>');
+    $.checkState(Utils.isNumber(txp.feePerKb), 'Failed state: txp.feePerKb is not a number at <getEstimatedFee()>');
     let fee;
 
     // if TX is ready? no estimation is needed.
     if (txp.inputs.length && !txp.changeAddress && txp.outputs.length) {
-      const totalInputs = _.sumBy(txp.inputs, 'satoshis');
-      const totalOutputs = _.sumBy(txp.outputs, 'amount');
+      const totalInputs = txp.inputs.reduce((sum, x) => sum + x.satoshis, 0);
+      const totalOutputs = txp.outputs.reduce((sum, x) => sum + x.amount, 0);
       if (totalInputs && totalOutputs) {
         fee = totalInputs - totalOutputs;
       }
@@ -373,7 +375,7 @@ export class BtcChain implements IChain {
         vout: x.vout,
         outputIndex: x.outputIndex,
         scriptPubKey: x.scriptPubKey,
-        satoshis: x.satoshis,
+        satoshis: parseInt(x.satoshis),
         publicKeys: x.publicKeys
       };
     });
@@ -394,10 +396,8 @@ export class BtcChain implements IChain {
     }
 
     for (const o of txp.outputs || []) {
-      $.checkState(
-        o.script || o.toAddress,
-        'Failed state: Output should have either toAddress or script specified at <getBitcoreTx()>'
-      );
+      o.amount = parseInt(o.amount);
+      $.checkState(o.script || o.toAddress, 'Failed state: Output should have either toAddress or script specified at <getBitcoreTx()>');
       if (o.script) {
         t.addOutput(
           new this.bitcoreLib.Transaction.Output({
@@ -410,7 +410,7 @@ export class BtcChain implements IChain {
       }
     }
 
-    t.fee(txp.fee);
+    t.fee(parseInt(txp.fee));
 
     if (txp.instantAcceptanceEscrow && txp.escrowAddress) {
       t.escrow(txp.escrowAddress.address, txp.instantAcceptanceEscrow + txp.fee);
@@ -424,38 +424,23 @@ export class BtcChain implements IChain {
 
     // Shuffle outputs for improved privacy
     if (t.outputs.length > 1) {
-      const outputOrder = _.reject(txp.outputOrder, (order: number) => {
-        return order >= t.outputs.length;
-      });
-      $.checkState(
-        t.outputs.length == outputOrder.length,
-        'Failed state: t.outputs.length not equal to outputOrder.length at <getBitcoreTx()>'
-      );
-      t.sortOutputs(outputs => {
-        return _.map(outputOrder, i => {
-          return outputs[i];
-        });
-      });
+      const outputOrder = (txp.outputOrder || []).filter((order: number) => order < t.outputs.length);
+      $.checkState(t.outputs.length == outputOrder.length, 'Failed state: t.outputs.length not equal to outputOrder.length at <getBitcoreTx()>');
+      t.sortOutputs(outputs => outputOrder.map(i => outputs[i]));
     }
 
     // Validate actual inputs vs outputs independently of Bitcore
-    const totalInputs = _.sumBy(t.inputs, 'output.satoshis');
-    const totalOutputs = _.sumBy(t.outputs, 'satoshis');
+    const totalInputs = (t.inputs || []).reduce((sum, x) => sum + (x.output?.satoshis ?? 0), 0);
+    const totalOutputs = (t.outputs || []).reduce((sum, x) => sum + (x.satoshis ?? 0), 0);
 
-    $.checkState(
-      totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs,
-      'Failed state: not-enough-inputs at <getBitcoreTx()>'
-    );
-    $.checkState(
-      totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[txp.coin],
-      'Failed state: fee-too-high at <getBitcoreTx()>'
-    );
+    $.checkState(totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs, 'Failed state: not-enough-inputs at <getBitcoreTx()>');
+    $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[txp.coin], 'Failed state: fee-too-high at <getBitcoreTx()>');
 
     if (opts.signed) {
       const sigs = txp.getCurrentSignatures();
-      _.each(sigs, x => {
+      for (const x of sigs) {
         this.addSignaturesToBitcoreTx(t, txp.inputs, txp.inputPaths, x.signatures, x.xpub, txp.signingMethod);
-      });
+      }
     }
     return t;
   }
@@ -486,7 +471,7 @@ export class BtcChain implements IChain {
       }
     }
 
-    if (_.isEmpty(txp.inputPaths)) return Errors.NO_INPUT_PATHS;
+    if (!txp.inputPaths?.length) return Errors.NO_INPUT_PATHS;
 
     try {
       const bitcoreTx = this.getBitcoreTx(txp);
@@ -533,9 +518,12 @@ export class BtcChain implements IChain {
       (err, utxos) => {
         if (err) return cb(err);
 
-        const txpInputs = _.map(txp.inputs, utxoKey);
-        const utxosIndex = _.keyBy(utxos, utxoKey);
-        const unavailable = _.some(txpInputs, i => {
+        const txpInputs = (txp.inputs || []).map(utxoKey);
+        const utxosIndex = (utxos || []).reduce((acc, u) => {
+          acc[utxoKey(u)] = u;
+          return acc;
+        }, {});
+        const unavailable = txpInputs.some(i => {
           const utxo = utxosIndex[i];
           return !utxo || utxo.locked;
         });
@@ -547,11 +535,12 @@ export class BtcChain implements IChain {
   }
 
   totalizeUtxos(utxos) {
+    utxos = utxos || [];
     const balance = {
-      totalAmount: _.sumBy(utxos, 'satoshis'),
-      lockedAmount: _.sumBy(_.filter(utxos, 'locked'), 'satoshis'),
-      totalConfirmedAmount: _.sumBy(_.filter(utxos, 'confirmations'), 'satoshis'),
-      lockedConfirmedAmount: _.sumBy(_.filter(_.filter(utxos, 'locked'), 'confirmations'), 'satoshis'),
+      totalAmount: utxos.reduce((sum, x) => sum + (x.satoshis ?? 0), 0),
+      lockedAmount: utxos.filter(u => u.locked).reduce((sum, x) => sum + (x.satoshis ?? 0), 0),
+      totalConfirmedAmount: utxos.filter(u => u.confirmations).reduce((sum, x) => sum + (x.satoshis ?? 0), 0),
+      lockedConfirmedAmount: utxos.filter(u => u.locked && u.confirmations).reduce((sum, x) => sum + (x.satoshis ?? 0), 0),
       availableAmount: undefined,
       availableConfirmedAmount: undefined
     };
@@ -565,8 +554,8 @@ export class BtcChain implements IChain {
     const MAX_TX_SIZE_IN_KB = Defaults.MAX_TX_SIZE_IN_KB_BTC;
 
     // todo: check inputs are ours and have enough value
-    if (txp.inputs && !_.isEmpty(txp.inputs) && !txp.replaceTxByFee) {
-      if (!_.isNumber(txp.fee)) txp.fee = this.getEstimatedFee(txp, { conservativeEstimation: true });
+    if (txp.inputs && txp.inputs.length && !txp.replaceTxByFee) {
+      if (!Utils.isNumber(txp.fee)) txp.fee = this.getEstimatedFee(txp, { conservativeEstimation: true });
       return cb(this.checkTx(txp));
     }
 
@@ -581,15 +570,10 @@ export class BtcChain implements IChain {
     const sizePerInput = this.getEstimatedSizeForSingleInput(txp, feeOpts);
     const feePerInput = (sizePerInput * txp.feePerKb) / 1000;
 
-    logger.debug(
-      `Amount ${Utils.formatAmountInBtc(
-        txpAmount
-      )} baseSize ${baseTxpSize} baseTxpFee ${baseTxpFee} sizePerInput ${sizePerInput}  feePerInput ${feePerInput}`
-    );
+    logger.debug(`Amount ${Utils.formatAmountInBtc(txpAmount)} baseSize ${baseTxpSize} baseTxpFee ${baseTxpFee} sizePerInput ${sizePerInput}  feePerInput ${feePerInput}`);
 
     const sanitizeUtxos = utxos => {
-      const excludeIndex = _.reduce(
-        opts.utxosToExclude,
+      const excludeIndex = (opts.utxosToExclude || []).reduce(
         (res, val) => {
           res[val] = val;
           return res;
@@ -597,7 +581,7 @@ export class BtcChain implements IChain {
         {}
       );
 
-      return _.filter(utxos, utxo => {
+      return (utxos || []).filter(utxo => {
         if (utxo.locked) return false;
         if (txp.excludeUnconfirmedUtxos && !txp.replaceTxByFee && !utxo.confirmations) return false;
         if (excludeIndex[utxo.txid + ':' + utxo.vout]) return false;
@@ -608,39 +592,27 @@ export class BtcChain implements IChain {
     const select = (utxos, requiredInputs, cb) => {
       let requiredTxids = [];
       if (requiredInputs.length > 0 && txp.replaceTxByFee) { 
-        requiredTxids = _.map(requiredInputs, 'txid');
+        requiredTxids = requiredInputs.map(x => x.txid);
       }
-      let totalValueInUtxos = _.sumBy(utxos, 'satoshis');
+      let totalValueInUtxos = (utxos || []).reduce((sum, x) => sum + (x.satoshis ?? 0), 0);
       if (totalValueInUtxos < txpAmount) {
-        logger.debug(
-          'Total value in all utxos (' +
-            Utils.formatAmountInBtc(totalValueInUtxos) +
-            ') is insufficient to cover for txp amount (' +
-            Utils.formatAmountInBtc(txpAmount) +
-            ')'
-        );
+        logger.debug(`Total value in all utxos (${Utils.formatAmountInBtc(totalValueInUtxos)}) is insufficient to cover for txp amount (${Utils.formatAmountInBtc(txpAmount)})`);
         return cb(Errors.INSUFFICIENT_FUNDS);
       }
 
       // remove utxos not economically worth to send
-      utxos = _.filter(utxos, utxo => {
+      utxos = (utxos || []).filter(utxo => {
         if (requiredTxids.includes(utxo.txid)) return true;
         if (utxo.satoshis <= feePerInput) return false;
         return true;
       });
 
-      totalValueInUtxos = _.sumBy(utxos, 'satoshis');
+      totalValueInUtxos = utxos.reduce((sum, x) => sum + x.satoshis, 0);
 
       const netValueInUtxos = totalValueInUtxos - (baseTxpFee - utxos.length * feePerInput);
 
       if (netValueInUtxos < txpAmount) {
-        logger.debug(
-          'Value after fees in all utxos (' +
-            Utils.formatAmountInBtc(netValueInUtxos) +
-            ') is insufficient to cover for txp amount (' +
-            Utils.formatAmountInBtc(txpAmount) +
-            ')'
-        );
+        logger.debug(`Value after fees in all utxos (${Utils.formatAmountInBtc(netValueInUtxos)}) is insufficient to cover for txp amount (${Utils.formatAmountInBtc(txpAmount)})`);
 
         return cb(
           new ClientError(
@@ -656,12 +628,16 @@ export class BtcChain implements IChain {
       }
 
       const bigInputThreshold = txpAmount * Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR + (baseTxpFee + feePerInput);
-      logger.debug('Big input threshold ' + Utils.formatAmountInBtc(bigInputThreshold));
+      logger.debug(`Big input threshold ${Utils.formatAmountInBtc(bigInputThreshold)}`);
 
-      const partitions = _.partition(utxos, utxo => {
-        return utxo.satoshis > bigInputThreshold;
-      });
-
+      const partitions = [[], []];
+      for (const utxo of utxos) {
+        if (utxo.satoshis > bigInputThreshold) {
+          partitions[0].push(utxo);
+        } else {
+          partitions[1].push(utxo);
+        }
+      }
 
       const bigInputs = _.sortBy(partitions[0], [
         utxo => !requiredTxids.includes(utxo.txid),
@@ -672,8 +648,8 @@ export class BtcChain implements IChain {
         utxo => -utxo.satoshis
       ]);
 
-      logger.debug('Considering ' + bigInputs.length + ' big inputs (' + Utils.formatUtxos(bigInputs) + ')');
-      logger.debug('Considering ' + smallInputs.length + ' small inputs (' + Utils.formatUtxos(smallInputs) + ')');
+      logger.debug(`Considering ${bigInputs.length} big inputs (${Utils.formatUtxos(bigInputs)})`);
+      logger.debug(`Considering ${smallInputs.length} small inputs (${Utils.formatUtxos(smallInputs)})`);
 
       let total = 0;
       let netTotal = -baseTxpFee;
@@ -682,7 +658,8 @@ export class BtcChain implements IChain {
       let fee;
       let error;
 
-      _.each(smallInputs, (input, i) => {
+      for (let i = 0; i < smallInputs.length; i++) {
+        const input = smallInputs[i];
         logger.debug('Input #' + i + ': ' + Utils.formatUtxos(input));
 
         const netInputAmount = input.satoshis - feePerInput;
@@ -711,15 +688,15 @@ export class BtcChain implements IChain {
         // logger.debug('Tx amount/Input amount:' + Utils.formatRatio(amountVsUtxoRatio) + ' (min: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR) + ')');
 
         if (txpSize / 1000 > MAX_TX_SIZE_IN_KB) {
-          //          logger.debug('Breaking because tx size (' + Utils.formatSize(txpSize) + ') is too big (max: ' + Utils.formatSize(this.MAX_TX_SIZE_IN_KB * 1000.) + ')');
+          // logger.debug('Breaking because tx size (' + Utils.formatSize(txpSize) + ') is too big (max: ' + Utils.formatSize(this.MAX_TX_SIZE_IN_KB * 1000.) + ')');
           error = Errors.TX_MAX_SIZE_EXCEEDED;
-          return false;
+          break;
         }
 
-        if (!_.isEmpty(bigInputs)) {
+        if (bigInputs?.length) {
           if (amountVsUtxoRatio < Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR) {
             // logger.debug('Breaking because utxo is too small compared to tx amount');
-            return false;
+            break;
           }
 
           if (feeVsAmountRatio > Defaults.UTXO_SELECTION_MAX_FEE_VS_TX_AMOUNT_FACTOR) {
@@ -727,17 +704,12 @@ export class BtcChain implements IChain {
             // logger.debug('Fee/Single-input fee: ' + Utils.formatRatio(feeVsSingleInputFeeRatio) + ' (max: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MAX_FEE_VS_SINGLE_UTXO_FEE_FACTOR) + ')' + ' loses wrt single-input tx: ' + Utils.formatAmountInBtc((selected.length - 1) * feePerInput));
             if (feeVsSingleInputFeeRatio > Defaults.UTXO_SELECTION_MAX_FEE_VS_SINGLE_UTXO_FEE_FACTOR) {
               // logger.debug('Breaking because fee is too significant compared to tx amount and it is too expensive compared to using single input');
-              return false;
+              break;
             }
           }
         }
 
-        logger.debug(
-          'Cumuled total so far: ' +
-            Utils.formatAmountInBtc(total) +
-            ', Net total so far: ' +
-            Utils.formatAmountInBtc(netTotal)
-        );
+        logger.debug(`Cumuled total so far: ${Utils.formatAmountInBtc(total)}, Net total so far: ${Utils.formatAmountInBtc(netTotal)}`);
 
         if (netTotal >= fullTxpAmount) {
           const changeAmount = Math.round(total - fullTxpAmount - fee);
@@ -745,31 +717,22 @@ export class BtcChain implements IChain {
 
           const dustThreshold = Math.max(Defaults.MIN_OUTPUT_AMOUNT, this.bitcoreLib.Transaction.DUST_AMOUNT);
           if (changeAmount > 0 && changeAmount <= dustThreshold) {
-            logger.debug(
-              'Change below dust threshold (' +
-                Utils.formatAmountInBtc(dustThreshold) +
-                '). Incrementing fee to remove change.'
-            );
+            logger.debug(`Change below dust threshold (${Utils.formatAmountInBtc(dustThreshold)}). Incrementing fee to remove change.`);
             // Remove dust change by incrementing fee
             fee += changeAmount;
           }
 
-          return false;
+          break;
         }
-      });
+      }
 
       if (netTotal < fullTxpAmount) {
-        logger.debug(
-          'Could not reach Txp total (' +
-            Utils.formatAmountInBtc(fullTxpAmount) +
-            '), still missing: ' +
-            Utils.formatAmountInBtc(fullTxpAmount - netTotal)
-        );
+        logger.debug(`Could not reach Txp total (${Utils.formatAmountInBtc(fullTxpAmount)}), still missing: ${Utils.formatAmountInBtc(fullTxpAmount - netTotal)}`);
 
         selected = [];
-        if (!_.isEmpty(bigInputs)) {
-          const input = _.head(bigInputs);
-          logger.debug('Using big input: %o', Utils.formatUtxos(input));
+        if (bigInputs?.length) {
+          const input = bigInputs[0];
+          logger.debug(`Using big input: ${Utils.formatUtxos(input)}`);
           total = input.satoshis;
           fee = Math.round(baseTxpFee + feePerInput);
           netTotal = total - fee;
@@ -777,7 +740,7 @@ export class BtcChain implements IChain {
         }
       }
 
-      if (_.isEmpty(selected)) {
+      if (!selected.length) {
         // logger.debug('Could not find enough funds within this utxo subset');
         return cb(
           error ||
@@ -836,12 +799,12 @@ export class BtcChain implements IChain {
         let lastGroupLength;
         async.whilst(
           () => {
-            return i < groups.length && _.isEmpty(inputs);
+            return i < groups.length && !inputs?.length;
           },
           next => {
             const group = groups[i++];
 
-            let candidateUtxos = _.filter(utxos, utxo => {
+            let candidateUtxos = utxos.filter(utxo => {
               return utxo.confirmations >= group;
             });
 
@@ -853,7 +816,7 @@ export class BtcChain implements IChain {
 
             if (txp.replaceTxByFee) {
               // make sure we are using at least one input from the transaction that we are replacing
-              const txIdArray: any[] = _.map(opts.inputs, 'txid');
+              const txIdArray: any[] = (opts.inputs || []).map(input => input.txid);
               candidateUtxos = candidateUtxos.sort((a, b) => {
                 return txIdArray.indexOf(b.txid) - txIdArray.indexOf(a.txid);
               });
@@ -890,7 +853,7 @@ export class BtcChain implements IChain {
           },
           err => {
             if (err) return cb(err);
-            if (selectionError || _.isEmpty(inputs))
+            if (selectionError || !inputs?.length)
               return cb(selectionError || new Error('Could not select tx inputs'));
 
             txp.setInputs(_.shuffle(inputs));
@@ -898,13 +861,10 @@ export class BtcChain implements IChain {
 
             err = this.checkTx(txp);
             if (!err) {
-              const change = _.sumBy(txp.inputs, 'satoshis') - _.sumBy(txp.outputs, 'amount') - txp.fee;
-              logger.debug(
-                'Successfully built transaction. Total fees: ' +
-                  Utils.formatAmountInBtc(txp.fee) +
-                  ', total change: ' +
-                  Utils.formatAmountInBtc(change)
-              );
+              const sumInputs = txp.inputs.reduce((sum, input) => sum + input.satoshis, 0);
+              const sumOutputs = txp.outputs.reduce((sum, output) => sum + output.amount, 0);
+              const change = sumInputs - sumOutputs - txp.fee;
+              logger.debug(`Successfully built transaction. Total fees: ${Utils.formatAmountInBtc(txp.fee)}, total change: ${Utils.formatAmountInBtc(change)}`);
             } else {
               logger.warn('Error building transaction: %o', err);
             }
@@ -917,17 +877,18 @@ export class BtcChain implements IChain {
   }
 
   checkUtxos(opts) {
-    if (_.isNumber(opts.fee) && _.isEmpty(opts.inputs)) return true;
+    if (Utils.isNumber(opts.fee) && !opts.inputs?.length) return true;
   }
 
   checkValidTxAmount(output): boolean {
-    if (!_.isNumber(output.amount) || _.isNaN(output.amount) || output.amount <= 0) {
-      return false;
-    }
-    return true;
+    return Utils.isNumber(output.amount) && output.amount > 0;
   }
 
   supportsMultisig() {
+    return true;
+  }
+
+  supportsThresholdsig() {
     return true;
   }
 

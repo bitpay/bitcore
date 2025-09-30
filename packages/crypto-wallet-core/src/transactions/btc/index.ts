@@ -1,7 +1,16 @@
-import { Key } from '../../derivation';
+import assert from 'assert';
+import BitcoreLib from 'bitcore-lib';
+import type { Key } from '../../types/derivation';
+
+interface TssSig {
+  r: string;
+  s: string;
+  v: number;
+  pubKey: string;
+};
 
 export class BTCTxProvider {
-  lib = require('bitcore-lib');
+  lib = BitcoreLib;
 
   selectCoins(
     recipients: Array<{ amount: number }>,
@@ -68,8 +77,51 @@ export class BTCTxProvider {
     throw new Error('function getSignature not implemented for UTXO coins');
   }
 
-  applySignature(params: { tx: string; keys: Array<Key> }) {
-    throw new Error('function applySignature not implemented for UTXO coins');
+  _transformSignatureObject(obj, sigtype) {
+    let { r, s, v, i, nhashtype } = obj;
+    if (typeof r === 'string') {
+      r = Buffer.from(r.startsWith('0x') ? r.slice(2) : r, 'hex');
+    } else if (r instanceof Uint8Array || Array.isArray(r)) {
+      r = Buffer.from(r);
+    } else if (typeof r.toBuffer === 'function') {
+      r = r.toBuffer();
+    }
+    r = this.lib.crypto.BN.fromBuffer(r);
+
+    if (typeof s === 'string') {
+      s = Buffer.from(s.startsWith('0x') ? s.slice(2) : s, 'hex');
+    } else if (s instanceof Uint8Array || Array.isArray(s)) {
+      s = Buffer.from(s);
+    } else if (typeof s.toBuffer === 'function') {
+      s = s.toBuffer();
+    }
+    s = this.lib.crypto.BN.fromBuffer(s);
+
+    i = parseInt(i) || parseInt(v);
+    nhashtype = sigtype ?? nhashtype;
+
+    return new this.lib.crypto.Signature({ r, s, i, nhashtype });
+  }
+
+  applySignature(params: { tx: BitcoreLib.Transaction; signature: SignatureType; index: number; sigtype?: number; }) {
+    const { index, sigtype } = params;
+    let { tx, signature } = params;
+    assert(tx instanceof this.lib.Transaction, 'tx must be an instance of Transaction');
+    assert(signature instanceof this.lib.Transaction.Signature || (signature?.r && signature?.s), 'signature must be a valid signature object');
+
+    if (signature.r) {
+      const nhashtype = sigtype ?? signature.sigtype ?? signature.nhashtype ?? this.lib.crypto.Signature.SIGHASH_ALL;
+      signature = new this.lib.Transaction.Signature({
+        publicKey: signature.pubKey,
+        inputIndex: index,
+        outputIndex: tx.inputs[index].outputIndex,
+        prevTxId: tx.inputs[index].prevTxId,
+        signature: this._transformSignatureObject(signature, nhashtype),
+        sigtype: nhashtype,
+      });
+    }
+    tx.applySignature(signature);
+    return tx;
   }
 
   getHash(params: { tx: string }) {
@@ -125,3 +177,5 @@ export class BTCTxProvider {
     return applicableUtxos.map(utxo => utxo.address);
   }
 }
+
+type SignatureType = BitcoreLib.Transaction.Signature | BitcoreLib.crypto.Signature | TssSig;

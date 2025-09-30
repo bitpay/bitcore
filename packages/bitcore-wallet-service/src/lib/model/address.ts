@@ -1,29 +1,33 @@
-import { Deriver } from 'crypto-wallet-core';
+import {
+  BitcoreLib,
+  BitcoreLibCash,
+  BitcoreLibDoge,
+  BitcoreLibLtc,
+  Deriver
+} from 'crypto-wallet-core';
 import _ from 'lodash';
-import { ChainService } from '../chain/index';
+import { singleton } from 'preconditions';
 import { Common } from '../common';
 import { AddressManager } from './addressmanager';
 
-const $ = require('preconditions').singleton();
-const Constants = Common.Constants,
-  Defaults = Common.Defaults,
-  Utils = Common.Utils;
+const $ = singleton();
+const { Constants, Defaults, Utils } = Common;
 
 export interface IAddress {
   version: string;
   createdOn: number;
   address: string;
   walletId: string;
-  isChange: boolean;
-  isEscrow: boolean;
+  isChange?: boolean;
+  isEscrow?: boolean;
   path: string;
-  publicKeys: string[];
+  publicKeys: Array<string>;
   coin: string;
   chain: string;
   network: string;
   type: string;
-  hasActivity: boolean;
-  beRegistered: boolean;
+  hasActivity?: boolean;
+  beRegistered?: boolean;
 }
 
 export class Address {
@@ -43,10 +47,10 @@ export class Address {
   beRegistered: boolean;
 
   static Bitcore = {
-    btc: require('bitcore-lib'),
-    bch: require('bitcore-lib-cash'),
-    doge: require('bitcore-lib-doge'),
-    ltc: require('bitcore-lib-ltc')
+    btc: BitcoreLib,
+    bch: BitcoreLibCash,
+    doge: BitcoreLibDoge,
+    ltc: BitcoreLibLtc
   };
 
   static create(opts) {
@@ -54,7 +58,7 @@ export class Address {
 
     const x = new Address();
 
-    opts.chain = opts.chain || ChainService.getChain(opts.coin); // getChain -> backwards compatibility
+    opts.chain = opts.chain || Utils.getChain(opts.coin); // getChain -> backwards compatibility
     $.checkArgument(Utils.checkValueInCollection(opts.chain, Constants.CHAINS));
 
     x.version = '1.0.0';
@@ -83,7 +87,7 @@ export class Address {
     x.createdOn = obj.createdOn;
     x.address = obj.address;
     x.walletId = obj.walletId;
-    x.coin = obj.chain || ChainService.getChain(obj.coin);
+    x.coin = obj.chain || Utils.getChain(obj.coin);
     x.chain = x.coin;
     x.network = Utils.getNetworkName(x.chain, obj.network) || obj.network;
     x.isChange = obj.isChange;
@@ -100,7 +104,13 @@ export class Address {
     $.checkArgument(Utils.checkValueInCollection(scriptType, Constants.SCRIPT_TYPES));
     const externSourcePublicKey = hardwareSourcePublicKey || clientDerivedPublicKey;
     if (externSourcePublicKey) {
-      const bitcoreAddress = Deriver.getAddress(chain.toUpperCase(), network, externSourcePublicKey, scriptType);
+      let bitcoreAddress
+      try {
+        bitcoreAddress = Deriver.deriveAddressWithPath(chain.toUpperCase(), network, externSourcePublicKey, path, scriptType);
+      } catch {
+        // some chains (e.g. SOL) cannot derive address along path from pub key.
+        bitcoreAddress = Deriver.getAddress(chain.toUpperCase(), network, externSourcePublicKey, scriptType);
+      }
       return {
         address: bitcoreAddress.toString(),
         path,
@@ -108,7 +118,7 @@ export class Address {
       }
     }
 
-    let publicKeys = _.map(publicKeyRing, item => {
+    let publicKeys = (publicKeyRing || []).map(item => {
       const xpub = Address.Bitcore[chain]
         ? new Address.Bitcore[chain].HDPublicKey(item.xPubKey)
         : new Address.Bitcore.btc.HDPublicKey(item.xPubKey);
@@ -142,7 +152,7 @@ export class Address {
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(
-          _.isArray(publicKeys) && publicKeys.length == 1,
+          Array.isArray(publicKeys) && publicKeys.length == 1,
           'Failed state: publicKeys length < 1 or publicKeys not an array at <_deriveAddress()>'
         );
 
@@ -166,10 +176,10 @@ export class Address {
     }
 
     return {
-      // bws still use legacy addresses for BCH
+      // bws still uses legacy addresses for BCH
       address: addrStr,
       path,
-      publicKeys: _.invokeMap(publicKeys, 'toString')
+      publicKeys: publicKeys.map(pk => pk.toString())
     };
   }
 
@@ -194,7 +204,7 @@ export class Address {
       publicKeyRing,
       path,
       m,
-      chain || ChainService.getChain(coin), // getChain -> backwards compatibility
+      chain || Utils.getChain(coin), // getChain -> backwards compatibility
       network,
       noNativeCashAddr,
       escrowInputs,

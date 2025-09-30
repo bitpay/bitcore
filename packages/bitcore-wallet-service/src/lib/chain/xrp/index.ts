@@ -2,13 +2,13 @@ import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IWallet } from 'src/lib/model';
 import { IAddress } from 'src/lib/model/address';
-import { IChain } from '..';
+import { IChain } from '../../../types/chain';
 import { Common } from '../../common';
 import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
 import { WalletService } from '../../server';
 
-const Defaults = Common.Defaults;
+const { Defaults, Utils } = Common;
 
 export class XrpChain implements IChain {
   /**
@@ -38,6 +38,10 @@ export class XrpChain implements IChain {
 
   supportsMultisig() {
     return false;
+  }
+
+  supportsThresholdsig() {
+    return true;
   }
 
   getSizeSafetyMargin() {
@@ -120,7 +124,7 @@ export class XrpChain implements IChain {
   getFee(server, wallet, opts) {
     return new Promise((resolve, reject) => {
       // This is used for sendmax flow
-      if (_.isNumber(opts.fee)) {
+      if (Utils.isNumber(opts.fee)) {
         return resolve({ feePerKb: opts.fee });
       }
       server._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
@@ -222,7 +226,7 @@ export class XrpChain implements IChain {
   checkUtxos(opts) { }
 
   checkValidTxAmount(output): boolean {
-    if (!_.isNumber(output.amount) || _.isNaN(output.amount) || output.amount < 0) {
+    if (!Utils.isNumber(output.amount) || isNaN(output.amount) || output.amount < 0) {
       return false;
     }
     return true;

@@ -182,7 +182,7 @@ describe('Peer', function() {
       done();
     };
     peer.connect();
-    var buffer = new Buffer(Array(Peer.MAX_RECEIVE_BUFFER + 1));
+    var buffer = Buffer.from(Array(Peer.MAX_RECEIVE_BUFFER + 1));
     peer.socket.emit('data', buffer);
 
   });

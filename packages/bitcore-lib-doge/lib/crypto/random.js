@@ -29,7 +29,7 @@ Random.getRandomBufferBrowser = function(size) {
 
   var bbuf = new Uint8Array(size);
   crypto.getRandomValues(bbuf);
-  var buf = new Buffer(bbuf);
+  var buf = Buffer.from(bbuf);
 
   return buf;
 };
@@ -37,7 +37,7 @@ Random.getRandomBufferBrowser = function(size) {
 /* insecure random bytes, but it never fails */
 Random.getPseudoRandomBuffer = function(size) {
   var b32 = 0x100000000;
-  var b = new Buffer(size);
+  var b = Buffer.alloc(size);
   var r;
 
   for (var i = 0; i <= size; i++) {
