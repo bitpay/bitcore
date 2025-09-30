@@ -2135,7 +2135,7 @@ export class WalletService implements IWalletService {
 
       if (failed.length) {
         const logger = network == 'livenet' ? this.logw : this.logi;
-        logger('Could not compute fee estimation in ' + network + ': ' + failed.join(', ') + ' blocks.');
+        logger.call(this, 'Could not compute fee estimation in ' + network + ': ' + failed.join(', ') + ' blocks.');
       }
 
       return cb(null, levels, failed.length);

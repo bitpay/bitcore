@@ -11,7 +11,7 @@
     "precommit": "npm run fix",
     "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
     "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
-    "test": "npm run compile && mocha -r tsx test/**/*.test.ts",
+    "test": "npm run compile && mocha -r tsx 'test/**/*.test.ts'",
     "pub": "npm run compile && npm publish"
   },
   "keywords": [

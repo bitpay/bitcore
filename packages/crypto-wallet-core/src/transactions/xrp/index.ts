@@ -78,7 +78,8 @@ export class XRPTxProvider {
 
   getSignature(params: { tx: string; key: Key }): string {
     const { signedTransaction } = this.getSignatureObject(params);
-    return signedTransaction;
+    const decoded = (xrpl.decode(signedTransaction) as any) as xrpl.Transaction;
+    return decoded.TxnSignature;
   }
 
   getHash(params: { tx: string }): string {
