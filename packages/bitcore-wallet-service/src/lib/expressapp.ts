@@ -2374,7 +2374,11 @@ export class ExpressApp {
         .catch(err => {
           return returnError(err ?? 'unknown', res, req);
         });
-    });    
+    });
+
+    /** Imported routes */
+    router.use(new TssRouter({ returnError, opts }).router);
+
 
     // Set no-cache by default
     this.app.use((req, res, next) => {
