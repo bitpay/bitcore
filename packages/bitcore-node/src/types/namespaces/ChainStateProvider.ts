@@ -200,7 +200,6 @@ export interface IChainStateService {
   getWalletBalanceAtTime(
     params: GetWalletBalanceAtTimeParams
   ): Promise<WalletBalanceType>;
-  streamAddressUtxos(params: StreamAddressUtxosParams): any;
   streamAddressTransactions(params: StreamAddressUtxosParams): any;
   streamTransactions(params: StreamTransactionsParams): any;
   getAuthhead(params: StreamTransactionParams): Promise<AuthheadJSON | undefined>;
