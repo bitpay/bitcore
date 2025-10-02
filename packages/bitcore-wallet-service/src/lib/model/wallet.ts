@@ -51,7 +51,7 @@ export interface IWallet<isSharedT = boolean | (() => boolean)> {
   derivationStrategy: string;
   addressType: string;
   addressManager: IAddressManager;
-  scanStatus?: 'error' | 'success';
+  scanStatus?: 'error' | 'success' | 'running';
   beRegistered: boolean; // Block explorer registered
   beAuthPrivateKey2?: string;
   beAuthPublicKey2?: string;
@@ -84,7 +84,7 @@ export class Wallet implements IWallet<() => boolean> {
   derivationStrategy: string;
   addressType: string;
   addressManager: AddressManager;
-  scanStatus?: 'error' | 'success';
+  scanStatus?: 'error' | 'success' | 'running';
   beRegistered: boolean; // Block explorer registered
   beAuthPrivateKey2?: string;
   beAuthPublicKey2?: string;

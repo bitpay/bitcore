@@ -473,9 +473,9 @@ export class WalletService implements IWalletService {
 
   _runLocked(cb, task, waitTime?: number) {
     $.checkState(this.walletId, 'Failed state: this.walletId undefined at <_runLocked()>');
-
     this.lock.runLocked(this.walletId, { waitTime }, cb, task);
   }
+
   logi(message, ...args) {
     if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
       for (let i = 0; i < args.length; i++) {
@@ -735,7 +735,7 @@ export class WalletService implements IWalletService {
    * @param {Object} opts
    * @returns {Object} wallet
    */
-  getWallet(opts, cb) {
+  getWallet(opts, cb: (err: Error, wallet?: Wallet) => void) {
     this.storage.fetchWallet(this.walletId, (err, wallet) => {
       if (err) return cb(err);
       if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
@@ -829,7 +829,7 @@ export class WalletService implements IWalletService {
     opts = opts || {};
 
     const status: {
-      wallet?: IWallet;
+      wallet?: Partial<IWallet>;
       serverMessage?: {
         title: string;
         body: string;
@@ -856,7 +856,7 @@ export class WalletService implements IWalletService {
     async.parallel(
       [
         next => {
-          this.getWallet({}, (err, wallet) => {
+          this.getWallet({}, (err, wallet: Partial<Wallet>) => {
             if (err) return next(err);
             if (this._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet)) {
               return next(Errors.UPGRADE_NEEDED);
@@ -873,7 +873,7 @@ export class WalletService implements IWalletService {
               wallet = _.omit(wallet, walletExtendedKeys);
               wallet.copayers = (wallet.copayers || []).map(copayer => {
                 return _.omit(copayer, copayerExtendedKeys);
-              });
+              }) as Copayer[];
             }
             status.wallet = wallet;
 
@@ -2907,15 +2907,18 @@ export class WalletService implements IWalletService {
               raw = txp.prePublishRaw;
               signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
             }
-            if (!signingKey) {
-              return cb(new ClientError('Invalid proposal signature'));
-            }
           }
+          if (!signingKey) {
+            return cb(new ClientError('Invalid proposal signature'));
+          }
+
           // Save signature info for other copayers to check
-          txp.proposalSignature = opts.proposalSignature;
-          if (signingKey.selfSigned) {
-            txp.proposalSignaturePubKey = signingKey.key;
-            txp.proposalSignaturePubKeySig = signingKey.signature;
+          if (!txp.proposalSignature) { // May already be set if republishing
+            txp.proposalSignature = opts.proposalSignature;
+            if (signingKey.selfSigned) {
+              txp.proposalSignaturePubKey = signingKey.key;
+              txp.proposalSignaturePubKeySig = signingKey.signature;
+            }
           }
 
           ChainService.checkTxUTXOs(this, txp, opts, err => {
