@@ -10,7 +10,7 @@ import DataBox from './data-box';
 const BlockChip = styled.div`
   border: 4px solid ${({theme: {dark}}) => (dark ? '#333' : '#ddd')};
   border-radius: 10px;
-  padding: 1rem;
+  padding: 0.6em;
   background-color: transparent;
   width: 100%;
 `;
@@ -29,10 +29,10 @@ const BlocksLinkChip = styled.div`
 const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({currency, blocksList}) => {
   const theme = useTheme();
 
-  const BlockGroupIcon: React.FC = () => {
+  const BlockGroupIcon: React.FC<{height?: string | number}> = ({height}) => {
     return (
       <img src={theme.dark ? BlockGroupLightSvg : BlockGroupDarkSvg}
-        style={{height:'1.5rem'}}/>
+        style={{height: (height ? height : '1.5rem')}}/>
     );
   }
 
@@ -48,21 +48,43 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
         return (
           <React.Fragment key={index}>
             <div style={{display: 'flex', flexDirection: 'row', gap: '5px', alignItems: 'center', width: '100%'}}>
-              <BlocksLinkChip style={{backgroundColor: colorCodes[currency]}} onClick={
-                () => expandedBlocks.includes(height) 
-                  ? setExpandedBlocks(expandedBlocks.filter(h => h !== height)) 
-                  : setExpandedBlocks([...expandedBlocks, height])}>
-                <BlockGroupIcon />
-                <b>{height}</b>
-                <BlockGroupIcon />
-              </BlocksLinkChip>
+              {
+                !expandedBlocks.includes(height) &&
+                <BlocksLinkChip style={{backgroundColor: colorCodes[currency]}} onClick={
+                  () => setExpandedBlocks([...expandedBlocks, height])}>
+                  <BlockGroupIcon />
+                  <b>{height}</b>
+                  <BlockGroupIcon />
+                </BlocksLinkChip>
+              }
               {
                 expandedBlocks.includes(height) ? 
                 <BlockChip>
                   <b>
                     <div style={{display: 'flex', flexWrap: 'wrap', }}>
-                      <div style={{width: '100%', display: 'flex', justifyContent: 'center', marginTop: '-20px'}}>
-                        <div style={{border: '4px solid #333', borderRadius: '8px', width: 'fit-content', height: 'fit-content', padding: '4px', paddingTop: '5px'}}>{getFormattedDate(time)}</div>
+                      <div style={{width: '100%', display: 'flex', justifyContent: 'center', marginTop: '-10px'}}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            padding: '0.2rem 0.5rem',
+                            gap: '0.5rem',
+                            borderRadius: '0 0 20px 20px',
+                            cursor: 'pointer',
+                            backgroundColor: colorCodes[currency]
+                          }}
+                          onClick={() => setExpandedBlocks(expandedBlocks.filter(h => h !== height))}
+                        >
+                          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                            <BlockGroupIcon height={'2rem'}/>
+                              <b style={{fontSize: '20px'}}>{height}</b>
+                            <BlockGroupIcon height={'2rem'}/>
+                          </div>
+                          <div style={{width: 'fit-content', height: 'fit-content', font: 'menu', fontSize: '10px', marginTop: '-17px', backgroundColor: colorCodes[currency], padding: '2px', paddingBottom: 0}}>
+                            {getFormattedDate(time)}
+                          </div>
+                        </div>
                       </div>
                       <DataBox label='Hash' style={{backgroundColor: '#222'}}>{hash}</DataBox>
                       <DataBox label='Merkle Root' style={{backgroundColor: '#222'}}>{merkleRoot}</DataBox>
@@ -110,7 +132,6 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
                     flexDirection: 'row',
                     justifyContent: 'space-between',
                     width: '100%',
-                    gap: '2rem'
                   }}>
                     <span>{getFormattedDate(time)}</span>
                     <span>{transactionCount} transactions</span>
