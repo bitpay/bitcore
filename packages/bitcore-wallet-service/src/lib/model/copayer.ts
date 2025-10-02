@@ -2,7 +2,7 @@ import { singleton } from 'preconditions';
 import sjcl from 'sjcl';
 import { Common } from '../common';
 import { Address } from './address';
-import { AddressManager } from './addressmanager';
+import { AddressManager, IAddressManager } from './addressmanager';
 
 const $ = singleton();
 const {
@@ -28,6 +28,7 @@ export interface ICopayer {
   walletId: string;
   isSupportStaff?: boolean;
   isMarketingStaff?: boolean;
+  addressManager?: IAddressManager;
 }
 
 export class Copayer {
