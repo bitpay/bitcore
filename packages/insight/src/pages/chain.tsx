@@ -1,15 +1,17 @@
-import BlockSample, { BlockAndFeeType } from 'src/components/block-sample';
+import BlockSample from 'src/components/block-sample';
 import React, {useEffect, useRef, useState} from 'react';
 import ChainHeader from '../components/chain-header';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useParams} from 'react-router-dom';
 import {useDispatch} from 'react-redux';
 import {changeCurrency, changeNetwork} from 'src/store/app.actions';
 import {getApiRoot, normalizeParams} from 'src/utilities/helper-methods';
-import styled, {useTheme} from 'styled-components';
+import styled from 'styled-components';
 import {size} from 'src/utilities/constants';
 import {fetcher} from 'src/api/api';
 import nProgress from 'nprogress';
 import {Chart as ChartJS} from 'chart.js';
+import {BitcoinBlockType} from 'src/utilities/models';
+import Info from 'src/components/info';
 
 const HeaderDataContainer = styled.div`
   width: 100%;
@@ -30,7 +32,7 @@ const Chain: React.FC = () => {
 
   const chartRef = useRef<HTMLCanvasElement | null>(null);
   const chartInstanceRef = useRef<ChartJS | null>(null);
-  const [blocksList, setBlocksList] = useState<BlockAndFeeType[]>();
+  const [blocksList, setBlocksList] = useState<BitcoinBlockType[]>();
   const [error, setError] = useState('');
 
   const chartData: {
@@ -114,8 +116,8 @@ const Chain: React.FC = () => {
       if (chartInstanceRef.current) {
         chartInstanceRef.current.destroy();
       }
-      const fees = blocksList.map((block: BlockAndFeeType) => block.feeData.median).reverse();
-      const dates = blocksList.map((block: BlockAndFeeType) =>
+      const fees = blocksList.map((block: BitcoinBlockType) => block.feeData.median).reverse();
+      const dates = blocksList.map((block: BitcoinBlockType) =>
         new Date(block.time).toLocaleString('en-US', {
           year: '2-digit',
           month: '2-digit',
@@ -140,15 +142,17 @@ const Chain: React.FC = () => {
 
   if (!currency || !network) return null;
 
+
   return (
     <>
+      {error ? <Info type={'error'} message={error} /> : null}
       <HeaderDataContainer>
         <div style={{width: '100%', minWidth: 0}}>
           <ChainHeader currency={currency} network={network}/>
           <div style={{height: '200px', width: '100%', minWidth: 0}}>
             <canvas ref={chartRef} aria-label='price line chart' role='img' />
           </div>
-          { blocksList && <BlockSample currency={currency} network={network} blocksList={blocksList.slice(0, 5)} /> }
+          { blocksList && <BlockSample currency={currency} blocksList={blocksList} /> }
         </div>
         <div style={{width: 'fit-content', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
         </div>

@@ -1,7 +1,7 @@
-import {Children, FC, ReactNode} from 'react';
+import {Children, CSSProperties, FC, ReactNode} from 'react';
 import {useTheme} from 'styled-components';
 
-const DataBox: FC<{children: ReactNode, label: string, style?: object}> = ({children, label, style}) => {
+const   DataBox: FC<{children: ReactNode, label?: string, style?: CSSProperties}> = ({children, label, style}) => {
   const theme = useTheme();
   const modifiedChildren = typeof children === 'object' 
     ? Children.map(children as JSX.Element, (child: JSX.Element) => {
@@ -21,7 +21,7 @@ const DataBox: FC<{children: ReactNode, label: string, style?: object}> = ({chil
       margin: '0.7rem 0.2rem',
       ...style
     }}>
-      <legend style={{fontWeight: 'bold', color: 'gray', margin: '-0.2rem 0.1rem'}}>{label}</legend>
+      { label && <legend style={{fontWeight: 'bold', color: 'gray', margin: '-0.2rem 0.1rem'}}>{label}</legend> }
       {modifiedChildren}
     </fieldset>
   );
