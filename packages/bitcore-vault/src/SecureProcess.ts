@@ -1,7 +1,7 @@
 import * as crypto from 'crypto';
 import { StorageType } from '../../bitcore-client/src/types/storage';
-import { VaultWallet } from './VaultWallet';
 import { SecurityManager } from './SecurityManager';
+import { VaultWallet } from './VaultWallet';
 
 // Define a type for the wallet entry in our map
 interface WalletEntry {

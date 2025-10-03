@@ -1,4 +1,4 @@
-import { secureHeapUsed } from "crypto";
+import { secureHeapUsed } from 'crypto';
 
 export class SecurityManager {
     private secureHeapBaseAllocation: number;
