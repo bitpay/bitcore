@@ -74,6 +74,8 @@ export class SecureProcess {
       teardownAfterSend = ['checkSecureHeap'].includes(action);
     } finally {
       if (teardownAfterSend) {
+        console.log('teardownAfterSend', teardownAfterSend);
+        // @TODO better teardown
         process.exit(1);
       }
     }

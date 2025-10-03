@@ -32,7 +32,10 @@ class WalletLoader {
     console.log('\nWallets and passphrases loaded. Here\'s where work tasks would be kicked off...');
     // Subsequent tasks can be added here.
     // For now, we just log the wallet addresses.
-    console.log('Loaded wallet addresses:', this.vaultWalletProxy.walletAddresses);
+    while (true) {
+      console.log('Loaded wallet addresses:', this.vaultWalletProxy.walletAddresses);
+      await new Promise(resolve => setTimeout(resolve, 60000));
+    }
   }
 
   private async walletCreationLoop(): Promise<void> {

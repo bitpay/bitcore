@@ -72,13 +72,21 @@ export class VaultWalletProxy {
 
         // Handle child process exit/crash - reject all pending messages
         this.secureProcess.on('exit', (code, signal) => {
+          // @TODO - this should tear everything down
+
           const exitReason = signal 
             ? `killed by signal ${signal}` 
             : `exited with code ${code}`;
+
+          const msg = `SecureProcess ${exitReason}. Manual reinitialization required.`
+          console.warn(msg);
+
           this.rejectAllPendingMessages(
-            new Error(`SecureProcess ${exitReason}. Manual reinitialization required.`)
+            new Error(msg)
           );
           this.secureProcess = null;
+          // @TODO better teardown
+          process.exit(1);
         });
 
         const publicKeyPem = await this.sendMessage<string>('getPublicKey', {});
