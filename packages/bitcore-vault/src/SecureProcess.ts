@@ -29,15 +29,10 @@ export class SecureProcess {
       process.exit(1);
     }
 
-    const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
-      modulusLength: 2048,
-    });
-    this.publicKey = publicKey;
-    this.privateKey = privateKey;
     this.wallets = new Map<string, WalletEntry>();
-
     this.setupMessageHandler();
   }
+
 
   private setupMessageHandler() {
     process.on('message', (msg: SecureProcessMessage) => {
@@ -52,6 +47,9 @@ export class SecureProcess {
     try {
       let result: any;
       switch (action) {
+        case 'setupKeypair':
+          result = this.setupKeypair();
+          break;
         case 'checkSecureHeap':
           result = this.checkSecureHeap();
           // If result is false, flip teardownAfterSend
@@ -97,15 +95,57 @@ export class SecureProcess {
     }
   }
 
+  private async setupKeypair() {
+    // Ensure secure heap allocation settles before getting secure heap allocation baseline
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const allocationBefore = this.securityManager.getCurrentSecureHeapAllocation();
+    // Validate allocation measurement is a valid number
+    if (typeof allocationBefore !== 'number' || allocationBefore < 0) {
+      throw new Error(`Invalid secure heap allocation measurement: ${allocationBefore}`);
+    }
+
+    const keypair = crypto.generateKeyPairSync('rsa', {
+      modulusLength: 2048,
+    });
+    if (!(keypair?.privateKey && keypair.publicKey)) {
+      console.error('CRITICAL: RSA key generation failed');
+      // These might should just be error messages back across the boundary and then it'll shut down afterwards. Below too.
+      process.exit(1);
+    };
+
+    // Ensure secure heap allocation settles before getting secure heap allocation after key creation
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const allocationAfter = this.securityManager.getCurrentSecureHeapAllocation();
+
+    // Validate allocation measurement is a valid number
+    if (typeof allocationAfter !== 'number' || allocationAfter < 0) {
+      console.error(`Invalid secure heap allocation measurement: ${allocationAfter}`);
+      process.exit(1);
+    }
+
+    // Ensure we actually allocated secure heap memory for the keypair
+    // Note - something around 1400 bytes I think is right
+    if (allocationAfter <= allocationBefore) {
+      console.error(`RSA keypair may not be stored in secure heap. Before: ${allocationBefore}, After: ${allocationAfter}`);
+      process.exit(1);
+    }
+
+    this.publicKey = keypair.publicKey;
+    this.privateKey = keypair.privateKey;
+    this.securityManager.setBaselineSecureHeapAllocation(allocationAfter - allocationBefore);
+  }
+
+
   private checkSecureHeap(): boolean {
     return this.securityManager.isSecureHeapEnabled();
   }
 
-  public getPublicKey(): string {
+  private getPublicKey(): string {
     return this.publicKey.export({ type: 'spki', format: 'pem' }).toString();
   }
 
-  public async loadWallet({ name, storageType = 'Level' }: { name: string; storageType?: StorageType }): Promise<string> {
+  private async loadWallet({ name, storageType = 'Level' }: { name: string; storageType?: StorageType }): Promise<string> {
     const wallet = await VaultWallet.loadWallet({ name, storageType });
     const walletName = name;
     if (!walletName) {
@@ -124,7 +164,7 @@ export class SecureProcess {
     return address;
   }
 
-  public async addPassphrase(payload: { name: string; encryptedPassphrase: string }): Promise<{ success: boolean }> {
+  private async addPassphrase(payload: { name: string; encryptedPassphrase: string }): Promise<{ success: boolean }> {
     const { name, encryptedPassphrase } = payload;
     const walletEntry = this.wallets.get(name);
 

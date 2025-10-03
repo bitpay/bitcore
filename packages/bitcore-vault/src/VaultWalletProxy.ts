@@ -89,6 +89,10 @@ export class VaultWalletProxy {
           process.exit(1);
         });
 
+        // @TODO may need more stuff
+        await this.sendMessage<void>('setupKeypair', {});
+
+        // @TODO determine if there's a possible racde condition here - we can't know whether the process has fully initialized
         const publicKeyPem = await this.sendMessage<string>('getPublicKey', {});
         this.publicKey = crypto.createPublicKey({
           key: publicKeyPem,
