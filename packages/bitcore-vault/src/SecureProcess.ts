@@ -48,7 +48,7 @@ export class SecureProcess {
       let result: any;
       switch (action) {
         case 'setupKeypair':
-          result = this.setupKeypair();
+          result = await this.setupKeypair();
           break;
         case 'checkSecureHeap':
           result = this.checkSecureHeap();

@@ -59,7 +59,18 @@ export class VaultWalletProxy {
     this.initializationPromise = (async () => {
       try {
         const secureProcessPath = path.join(__dirname, 'SecureProcess.js');
-        this.secureProcess = fork(secureProcessPath);
+
+        /**
+         * NOTE TO SELF (3 Oct)
+         * One of these options makes it unable to see console logs in the forked process:
+         * stdio, env, detached - probably stdio
+         */
+        this.secureProcess = fork(secureProcessPath, [], {
+          // stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+          execArgv: ['--secure-heap=32768'],
+          // env: { ...process.env, NODE_OPTIONS: '' },
+          // detached: false
+        });
 
         // Handle responses from child process
         this.secureProcess.on('message', this.handleResponse.bind(this));
@@ -90,9 +101,10 @@ export class VaultWalletProxy {
         });
 
         // @TODO may need more stuff
+        console.log('Sending setupKeypair msg');
         await this.sendMessage<void>('setupKeypair', {});
 
-        // @TODO determine if there's a possible racde condition here - we can't know whether the process has fully initialized
+        // @TODO determine if there's a possible race condition here - we can't know whether the process has fully initialized
         const publicKeyPem = await this.sendMessage<string>('getPublicKey', {});
         this.publicKey = crypto.createPublicKey({
           key: publicKeyPem,
