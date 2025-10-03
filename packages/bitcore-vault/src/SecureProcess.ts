@@ -1,7 +1,7 @@
 import * as crypto from 'crypto';
 import { StorageType } from '../../bitcore-client/src/types/storage';
-import { VaultWallet } from './VaultWallet';
 import { SecurityManager } from './SecurityManager';
+import { VaultWallet } from './VaultWallet';
 
 // Define a type for the wallet entry in our map
 interface WalletEntry {
@@ -24,6 +24,10 @@ export class SecureProcess {
 
   constructor() {
     this.securityManager = new SecurityManager();
+    if (!this.securityManager.isSecureHeapEnabled()) {
+      console.error('Secure heap not enabled - secure process terminating');
+      process.exit(1);
+    }
 
     const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
       modulusLength: 2048,
@@ -74,6 +78,8 @@ export class SecureProcess {
       teardownAfterSend = ['checkSecureHeap'].includes(action);
     } finally {
       if (teardownAfterSend) {
+        console.log('teardownAfterSend', teardownAfterSend);
+        // @TODO better teardown
         process.exit(1);
       }
     }
