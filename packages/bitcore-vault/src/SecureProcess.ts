@@ -24,6 +24,10 @@ export class SecureProcess {
 
   constructor() {
     this.securityManager = new SecurityManager();
+    if (!this.securityManager.isSecureHeapEnabled()) {
+      console.error('Secure heap not enabled - secure process terminating');
+      process.exit(1);
+    }
 
     const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
       modulusLength: 2048,
