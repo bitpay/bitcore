@@ -1,6 +1,7 @@
 import * as crypto from 'crypto';
 import { StorageType } from '../../bitcore-client/src/types/storage';
 import { VaultWallet } from './VaultWallet';
+import { SecurityManager } from './SecurityManager';
 
 // Define a type for the wallet entry in our map
 interface WalletEntry {
@@ -19,8 +20,11 @@ export class SecureProcess {
   private privateKey: crypto.KeyObject;
   private publicKey: crypto.KeyObject;
   private wallets: Map<string, WalletEntry>;
+  private securityManager: SecurityManager;
 
   constructor() {
+    this.securityManager = new SecurityManager();
+
     const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
       modulusLength: 2048,
     });
@@ -40,9 +44,15 @@ export class SecureProcess {
   private async handleMessage(msg: SecureProcessMessage) {
     const { action, payload, messageId } = msg;
 
+    let teardownAfterSend = false;
     try {
       let result: any;
       switch (action) {
+        case 'checkSecureHeap':
+          result = this.checkSecureHeap();
+          // If result is false, flip teardownAfterSend
+          teardownAfterSend = !result;
+          break;
         case 'getPublicKey':
           result = this.getPublicKey();
           break;
@@ -56,8 +66,16 @@ export class SecureProcess {
           throw new Error(`Unknown action: ${action}`);
       }
       this.sendResponse(messageId, result);
+
+
     } catch (error) {
       this.sendError(messageId, error as Error);
+      // Running list of methods to flip teardownAfterSend on ANY error
+      teardownAfterSend = ['checkSecureHeap'].includes(action);
+    } finally {
+      if (teardownAfterSend) {
+        process.exit(1);
+      }
     }
   }
 
@@ -73,6 +91,10 @@ export class SecureProcess {
     }
   }
 
+  private checkSecureHeap(): boolean {
+    return this.securityManager.isSecureHeapEnabled();
+  }
+
   public getPublicKey(): string {
     return this.publicKey.export({ type: 'spki', format: 'pem' }).toString();
   }
@@ -83,12 +105,14 @@ export class SecureProcess {
     if (!walletName) {
       throw new Error('Wallet name must be provided.');
     }
+
+    // @TODO - this should probably be hoisted
     if (this.wallets.has(walletName)) {
       throw new Error(`Wallet with name ${walletName} already loaded.`);
     }
 
     this.wallets.set(walletName, { wallet });
-    const address = wallet.deriveAddress(0, false); // REVIEWER - is this right?
+    const address = wallet.deriveAddress(0, false);
     // @TODO - do we want to sync wallet tokens here too? See sweep script
 
     return address;
@@ -122,8 +146,10 @@ export class SecureProcess {
       const { success: returnedSuccess } = await walletEntry.wallet.checkPassphrase(passphrase);
       success = returnedSuccess;
     } finally {
-      // Overwrite the buffer to ensure the secret is not left in memory.
-      crypto.randomFillSync(passphrase);
+      if (Buffer.isBuffer(passphrase)) {
+        // Overwrite the buffer to ensure the secret is not left in memory.
+        crypto.randomFillSync(passphrase);
+      }
     }
 
     if (success) {

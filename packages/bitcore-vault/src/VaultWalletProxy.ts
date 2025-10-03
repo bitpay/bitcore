@@ -95,6 +95,14 @@ export class VaultWalletProxy {
       throw new Error('Public key not available. Initialize the proxy first.');
     }
 
+    // Check secure heap before each passphrase operation
+    const isSecureHeapEnabled = await this.sendMessage<{ enabled: boolean; error?: string }>('checkSecureHeap', {});
+    if (!isSecureHeapEnabled) {
+      // @TODO this should kill the whole process
+      throw new Error('Secure heap is not enabled. Cannot perform secure operations.');
+    }
+    
+
     const passphrase = await this.promptForPassphrase();
     const passphraseBuffer = Buffer.from(passphrase);
     const encryptedPassphrase = crypto.publicEncrypt(

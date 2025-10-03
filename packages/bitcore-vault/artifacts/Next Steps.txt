@@ -2,3 +2,4 @@
 withVaultAccess is a HOF that unlocks, calls a super method, and then finally writes over the provided password buffer & locks the wallet
 ** note ** wallet lock is not safe
 
+2) Think about observability - if the process exits, it will be useful to determine why.
