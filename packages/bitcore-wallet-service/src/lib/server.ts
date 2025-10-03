@@ -57,6 +57,7 @@ import {
   Wallet
 } from './model';
 import { Storage } from './storage';
+import { version } from '../../package.json';
 
 let request = _request;
 const $ = singleton();
@@ -196,7 +197,7 @@ export class WalletService implements IWalletService {
    */
   static getServiceVersion() {
     if (!serviceVersion) {
-      serviceVersion = 'bws-' + require('../../package').version;
+      serviceVersion = 'bws-' + version;
     }
 
     return serviceVersion;
