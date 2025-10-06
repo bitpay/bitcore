@@ -26,6 +26,28 @@ const BlocksLinkChip = styled.div`
   cursor: pointer;
 `
 
+const FeeBox: FC<{label: string, value: string}> = ({label, value}) => {
+  return (
+    <DataBox label={label}>
+      <>
+        <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', width: 'fit-content'}}>
+          <span>{value}</span>
+          <div style={{width: 'fit-content', display: 'flex', flexDirection: 'column', lineHeight: 1, padding: 0, marginLeft: '3px', marginRight: '-2px'}}>
+            <span style={{fontSize: '9px', color: 'gray'}}>sats</span>
+            <span style={{
+              borderTop: '1px solid #888',
+              fontSize: '9px',
+              color: 'gray',
+              textAlign: 'center',
+              marginTop: '1px'
+            }}>byte</span>
+          </div>
+        </div>
+      </>
+    </DataBox>
+  )
+}
+
 const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({currency, blocksList}) => {
   const theme = useTheme();
 
@@ -103,10 +125,15 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
                       <DataBox label='Fee' style={{borderWidth: '3px', borderColor: '#333', backgroundColor: '#222'}}>
                         <>
                           <div style={{margin: '-1rem 0 0 0'}}>
-                            <DataBox style={{}} label='Mean'>{mean.toFixed(4)}</DataBox>
-                            <DataBox label='Median'>{median.toFixed(4)}</DataBox>
-                            <DataBox label='Mode'>{mode.toFixed(4)}</DataBox>
-                            <DataBox label='Total'>{feeTotal}</DataBox>
+                            <FeeBox label={'Mean'} value={mean.toFixed(4)} />
+                            <FeeBox label={'Median'} value={median.toFixed(4)} />
+                            <FeeBox label={'Mode'} value={mode.toFixed(4)} />
+                            <DataBox label='Total'>
+                              <>
+                                <span>{getConvertedValue(feeTotal, currency).toFixed(3)}</span>
+                                <span style={{fontSize: '12px', color: 'gray'}}> {currency}</span>
+                              </>
+                            </DataBox>
                           </div>
                         </>
                       </DataBox>
