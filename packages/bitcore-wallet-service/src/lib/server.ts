@@ -14,6 +14,7 @@ import { singleton } from 'preconditions';
 import _request from 'request';
 import 'source-map-support/register';
 import Uuid from 'uuid';
+import { version } from '../../package.json';
 import config from '../config';
 import { serverMessages as deprecatedServerMessage } from '../deprecated-serverMessages';
 import { BanxaService } from '../externalservices/banxa';
@@ -57,7 +58,6 @@ import {
   Wallet
 } from './model';
 import { Storage } from './storage';
-import { version } from '../../package.json';
 
 let request = _request;
 const $ = singleton();

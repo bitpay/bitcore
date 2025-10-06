@@ -28,9 +28,8 @@
     "test": "npm run compile && npx mocha --exit --require ts-node/register --extensions ts --recursive 'test/**/*.test.ts'",
     "test:ci": "BWS_LOG_LEVEL=none npm run test",
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
-    "tsc": "npm run clean && tsc",
-    "build": "tsc",
-    "build:prod": "tsc -p tsconfig.prod.json",
+    "build": "tsc && npm run cp:templates",
+    "build:prod": "tsc -p tsconfig.prod.json && npm run cp:templates",
     "build:docker": "docker build -t bitpay/bitcore-wallet-service:latest -f ./Dockerfile ../..",
     "clean": "rm -rf ./ts_build",
     "compile": "npm run clean && npm run build",
@@ -38,8 +37,9 @@
     "precommit": "npm run fix && npm run lint",
     "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
     "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
-    "update:stats": "npm run clean && npm run tsc && chmod +x ./ts_build/updatestats/updatestats.js && ./ts_build/updatestats/updatestats.js ",
-    "clean:fiatrates": "npm run clean && npm run tsc && chmod +x ./ts_build/cleanfiatrates/cleanfiatrates.js && ./ts_build/cleanfiatrates/cleanfiatrates.js "
+    "update:stats": "npm run clean && npm run tsc && chmod +x ./ts_build/updatestats/updatestats.js && ./ts_build/updatestats/updatestats.js",
+    "clean:fiatrates": "npm run clean && npm run tsc && chmod +x ./ts_build/cleanfiatrates/cleanfiatrates.js && ./ts_build/cleanfiatrates/cleanfiatrates.js",
+    "cp:templates": "cp -r ./templates ./ts_build/templates"
   },
   "dependencies": {
     "@sendgrid/mail": "6.5.4",
