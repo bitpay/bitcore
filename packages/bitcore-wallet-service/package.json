@@ -22,7 +22,7 @@
     "url": "https://github.com/bitpay/bitcore-wallet-service/issues"
   },
   "scripts": {
-    "start": "npm run clean && npm run tsc && ./start.sh",
+    "start": "npm run clean && npm run build && ./start.sh",
     "stop": "./stop.sh",
     "coverage": "npm run compile && ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
     "test": "npm run compile && npx mocha --exit --require ts-node/register --extensions ts --recursive 'test/**/*.test.ts'",
@@ -37,8 +37,8 @@
     "precommit": "npm run fix && npm run lint",
     "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
     "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
-    "update:stats": "npm run clean && npm run tsc && chmod +x ./ts_build/updatestats/updatestats.js && ./ts_build/updatestats/updatestats.js",
-    "clean:fiatrates": "npm run clean && npm run tsc && chmod +x ./ts_build/cleanfiatrates/cleanfiatrates.js && ./ts_build/cleanfiatrates/cleanfiatrates.js",
+    "update:stats": "npm run clean && npm run build && chmod +x ./ts_build/updatestats/updatestats.js && ./ts_build/updatestats/updatestats.js",
+    "clean:fiatrates": "npm run clean && npm run build && chmod +x ./ts_build/cleanfiatrates/cleanfiatrates.js && ./ts_build/cleanfiatrates/cleanfiatrates.js",
     "cp:templates": "cp -r ./templates ./ts_build/templates"
   },
   "dependencies": {
