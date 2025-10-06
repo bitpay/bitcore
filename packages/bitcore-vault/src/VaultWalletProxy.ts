@@ -102,9 +102,7 @@ export class VaultWalletProxy {
 
         // @TODO may need more stuff
         console.log('Sending setupKeypair msg');
-        await this.sendMessage<void>('setupKeypair', {});
-
-        // @TODO determine if there's a possible race condition here - we can't know whether the process has fully initialized
+        await this.sendMessage<void>('initialize', {});
         const publicKeyPem = await this.sendMessage<string>('getPublicKey', {});
         this.publicKey = crypto.createPublicKey({
           key: publicKeyPem,

@@ -21,6 +21,8 @@ export class SecureProcess {
   private publicKey: crypto.KeyObject;
   private wallets: Map<string, WalletEntry>;
   private securityManager: SecurityManager;
+  private securityCheckInterval: NodeJS.Timeout | null = null;
+  private readonly securityCheckIntervalMs: number = 30000; // 30 seconds
 
   constructor() {
     this.securityManager = new SecurityManager();
@@ -47,8 +49,8 @@ export class SecureProcess {
     try {
       let result: any;
       switch (action) {
-        case 'setupKeypair':
-          result = await this.setupKeypair();
+        case 'initialize':
+          result = await this.initialize();
           break;
         case 'checkSecureHeap':
           result = this.checkSecureHeap();
@@ -95,7 +97,7 @@ export class SecureProcess {
     }
   }
 
-  private async setupKeypair() {
+  private async initialize() {
     // Ensure secure heap allocation settles before getting secure heap allocation baseline
     await new Promise(resolve => setTimeout(resolve, 500));
 
@@ -134,8 +136,27 @@ export class SecureProcess {
     this.publicKey = keypair.publicKey;
     this.privateKey = keypair.privateKey;
     this.securityManager.setBaselineSecureHeapAllocation(allocationAfter - allocationBefore);
+
+    // Start the security check interval
+    this.startSecurityCheckInterval();
   }
 
+  private startSecurityCheckInterval() {
+    this.securityCheckInterval = setInterval(() => {
+      console.log('Running security check'); // FOR DEV USE ONLY - REMOVE
+      const checkResult = this.securityManager.runSecurityCheck();
+      if (!checkResult?.result) {
+        console.error(`Security check failed: ${checkResult.reason}`);
+        // @TODO: Implement proper teardown/remediation
+        process.exit(1);
+      }
+
+      // Proof of concept log - must be removed
+      if (checkResult.result === true) {
+        console.log('Security checks passed');
+      }
+    }, this.securityCheckIntervalMs);
+  }
 
   private checkSecureHeap(): boolean {
     return this.securityManager.isSecureHeapEnabled();

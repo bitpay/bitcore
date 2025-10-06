@@ -5,8 +5,20 @@ export class SecurityManager {
     
     constructor() {}
 
-    public runSecurityCheck() {
-        // const isSecureHeap
+    public runSecurityCheck(): { result: boolean; reason?: string } {
+        try {
+            if (!this.isSecureHeapEnabled()) {
+                return { result: false, reason: 'Secure heap is not enabled' };
+            }
+    
+            const { verified: secureHeapAllocationVerified, actual, expected } = this.VerifyExpectedSecureHeapAllocation();
+            if (!secureHeapAllocationVerified) {
+                return { result: false, reason: `Secure heap allocation verification failed - expected: ${expected}, actual: ${actual}` }
+            }
+            return { result: true };
+        } catch (err) {
+            return { result: false, reason: err.message };
+        }
     }
 
     /**
@@ -42,7 +54,7 @@ export class SecurityManager {
     /**
      * @TODO - behaviors on failure conditions
      */
-    public VerifyExpectedSecureHeapAllocation(): boolean {
+    public VerifyExpectedSecureHeapAllocation(): { verified: boolean; actual: number; expected: number } {
         const currentAllocation = this.getCurrentSecureHeapAllocation();
         if (typeof currentAllocation !== 'number' || currentAllocation <= 0) {
             throw new Error('Messed up stuff - TODO');
@@ -54,10 +66,10 @@ export class SecurityManager {
         /**
          * @IMPLEMENTATION NOTE: This is a naive measurement that may not always hold up - it needs a critical assessment
          */
-        const isVerified = currentAllocation >= this.secureHeapBaseAllocation;
-        if (!isVerified) {
-            throw new Error('Messed up third stuff - third TODO');
+        return {
+            verified: currentAllocation >= this.secureHeapBaseAllocation,
+            actual: currentAllocation,
+            expected: this.secureHeapBaseAllocation
         }
-        return isVerified;
     }
 }
