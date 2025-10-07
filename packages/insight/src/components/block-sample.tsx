@@ -31,6 +31,22 @@ const BlockChip = styled.div<{currency: string}>`
     background-color: ${({currency}) => darkenHexColor(colorCodes[currency], 25)}
   }
 `
+const BlockChipHeader = styled(BlockChip)`
+  flex-direction: column;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0 0 20px 20px;
+  width: unset;
+  
+  .block-chip-date {
+    background-color: ${({currency}) => colorCodes[currency]};
+  }
+
+  &:hover {
+    .block-chip-date {
+      background-color: ${({currency}) => darkenHexColor(colorCodes[currency], 25)};
+    }
+  }
+`
 
 const FeeBox: FC<{label: string, value: string}> = ({label, value}) => {
   return (
@@ -99,14 +115,8 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
                 <BlockDataBox>
                   <div style={{display: 'flex', flexWrap: 'wrap', }}>
                     <div style={{width: '100%', display: 'flex', justifyContent: 'center', marginTop: '-10px'}}>
-                      <BlockChip
+                      <BlockChipHeader
                         currency={currency}
-                        style={{
-                          flexDirection: 'column',
-                          padding: '0.2rem 0.5rem',
-                          borderRadius: '0 0 20px 20px',
-                          width: 'unset'
-                        }}
                         onClick={() => setExpandedBlocks(expandedBlocks.filter(h => h !== height))}
                       >
                         <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
@@ -114,10 +124,19 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
                           <b style={{fontSize: '20px'}}>{height}</b>
                           <BlockGroupIcon height={'2rem'}/>
                         </div>
-                        <div style={{width: 'fit-content', height: 'fit-content', font: 'menu', fontSize: '10px', marginTop: '-17px', backgroundColor: colorCodes[currency], padding: '2px', paddingBottom: 0}}>
+                        <div 
+                          className='block-chip-date'
+                          style={{
+                            width: 'fit-content', 
+                            height: 'fit-content', 
+                            font: 'menu', 
+                            fontSize: '10px', 
+                            marginTop: '-17px', 
+                            padding: '2px', 
+                            paddingBottom: 0}}>
                           {getFormattedDate(time)}
                         </div>
-                      </BlockChip>
+                      </BlockChipHeader>
                     </div>
                     <div style={{width: '50%', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', borderRight: '1px solid #555'}}>
                       <div style={{margin: '8px 4px'}}>
