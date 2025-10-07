@@ -284,6 +284,7 @@ describe('Transak integration', () => {
         headers: {},
         body: {
           env: 'production',
+          accessToken: 'accessToken1',
           walletAddress: 'walletAddress1',
           redirectURL: 'bitpay://transak',
           fiatAmount: '500',
@@ -302,9 +303,10 @@ describe('Transak integration', () => {
       should.exist(data);
     });
 
-    it('should get the paymentUrl properly if req is OK for web', () => {
+    it('should get the paymentUrl properly if req is OK for web', async () => {
       req.body = {
         env: 'production',
+        accessToken: 'accessToken1',
         context: 'web',
         walletAddress: 'walletAddress1',
         redirectURL: 'bitpay://transak',
