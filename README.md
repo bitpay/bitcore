@@ -5,7 +5,8 @@
   <img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/m/bitpay/bitcore">
   <a href="https://opensource.org/licenses/MIT/" target="_blank"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-blue.svg" style="display: inherit;"/></a>
   <a href="https://github.com/bitpay/bitcore/graphs/contributors"> 
-  <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/bitpay/bitcore">
+    <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/bitpay/bitcore">
+  </a>
   <br>
  <img src="https://circleci.com/gh/bitpay/bitcore.svg?style=shield" alt="master build">
 </p>
