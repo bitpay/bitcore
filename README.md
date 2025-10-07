@@ -16,10 +16,9 @@
 ## Applications
 
 - [Bitcore Node](packages/bitcore-node) - A standardized API to interact with multiple blockchain networks
-- [Bitcore Wallet](packages/bitcore-wallet) - **DEPRECATED** A command-line based wallet client
 - [Bitcore Wallet Client](packages/bitcore-wallet-client) - A client for the wallet service
 - [Bitcore Wallet Service](packages/bitcore-wallet-service) - A multisig HD service for wallets
-- [Bitpay Wallet](https://github.com/bitpay/bitpay-app) - An easy-to-use, multiplatform, multisignature, secure wallet for bitcoin, ethereum, and more
+- [Bitcore CLI](packages/bitcore-cli) - A command line interface for using BWS and BWC
 - [Insight](packages/insight) - A blockchain explorer web user interface
 
 ## Libraries
@@ -38,6 +37,7 @@
 
 - [Bitcore Build](packages/bitcore-build) - A helper to add tasks to gulp
 - [Bitcore Client](packages/bitcore-client) - A helper to create a wallet using the bitcore-node infrastructure
+- [Bitpay/Bitpay App](https://github.com/bitpay/bitpay-app) - An easy-to-use, multiplatform, multisignature, secure wallet for bitcoin, ethereum, and more
 
 
 ## Versioning
