@@ -213,3 +213,18 @@ export const merge = <TDest, TSrc>(dest: TDest, src: TSrc): TDest & TSrc => {
   return dest as TDest & TSrc;
 }
 export default merge;
+
+export const darkenHexColor = (hex: string, amount: number) => {
+  hex = hex.replace(/^#/, '');
+
+  let r = parseInt(hex.substring(0, 2), 16);
+  let g = parseInt(hex.substring(2, 4), 16);
+  let b = parseInt(hex.substring(4, 6), 16);
+
+  r = Math.max(0, r - amount);
+  g = Math.max(0, g - amount);
+  b = Math.max(0, b - amount);
+
+  const toHex = (v: number) => v.toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}

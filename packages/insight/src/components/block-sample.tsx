@@ -1,5 +1,5 @@
 import React, {FC, useState} from 'react';
-import {getConvertedValue, getDifficultyFromBits, getFormattedDate} from 'src/utilities/helper-methods';
+import {darkenHexColor, getConvertedValue, getDifficultyFromBits, getFormattedDate} from 'src/utilities/helper-methods';
 import {BitcoinBlockType} from 'src/utilities/models';
 import BlockGroupDarkSvg from '../assets/images/block-group-dark.svg';
 import BlockGroupLightSvg from '../assets/images/block-group-light.svg';
@@ -7,7 +7,7 @@ import styled, {CSSProperties, useTheme} from 'styled-components';
 import {colorCodes} from 'src/utilities/constants';
 import DataBox from './data-box';
 
-const BlockChip = styled.div`
+const BlockDataBox = styled.div`
   border: 4px solid ${({theme: {dark}}) => (dark ? '#333' : '#ddd')};
   border-radius: 10px;
   padding: 0.6em;
@@ -15,7 +15,7 @@ const BlockChip = styled.div`
   width: 100%;
 `;
 
-const BlocksLinkChip = styled.div`
+const BlockChip = styled.div<{currency: string}>`
   display: flex;
   border-radius: 15px;
   font: menu;
@@ -23,7 +23,13 @@ const BlocksLinkChip = styled.div`
   gap: 0.5rem;
   padding: 0.75rem 0;
   justify-content: center;
+  align-items: center;
   cursor: pointer;
+  background-color: ${({currency}) => colorCodes[currency]};
+
+  &:hover {
+    background-color: ${({currency}) => darkenHexColor(colorCodes[currency], 25)}
+  }
 `
 
 const FeeBox: FC<{label: string, value: string}> = ({label, value}) => {
@@ -81,28 +87,25 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
             <div style={{display: 'flex', flexDirection: 'row', gap: '5px', alignItems: 'center', width: '100%'}}>
               {
                 !expandedBlocks.includes(height) &&
-                <BlocksLinkChip style={{backgroundColor: colorCodes[currency]}} onClick={
+                <BlockChip currency={currency} onClick={
                   () => setExpandedBlocks([...expandedBlocks, height])}>
                   <BlockGroupIcon />
                   <b>{height}</b>
                   <BlockGroupIcon />
-                </BlocksLinkChip>
+                </BlockChip>
               }
               {
                 expandedBlocks.includes(height) ? 
-                <BlockChip>
+                <BlockDataBox>
                   <div style={{display: 'flex', flexWrap: 'wrap', }}>
                     <div style={{width: '100%', display: 'flex', justifyContent: 'center', marginTop: '-10px'}}>
-                      <div
+                      <BlockChip
+                        currency={currency}
                         style={{
-                          display: 'flex',
                           flexDirection: 'column',
-                          alignItems: 'center',
                           padding: '0.2rem 0.5rem',
-                          gap: '0.5rem',
                           borderRadius: '0 0 20px 20px',
-                          cursor: 'pointer',
-                          backgroundColor: colorCodes[currency]
+                          width: 'unset'
                         }}
                         onClick={() => setExpandedBlocks(expandedBlocks.filter(h => h !== height))}
                       >
@@ -114,7 +117,7 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
                         <div style={{width: 'fit-content', height: 'fit-content', font: 'menu', fontSize: '10px', marginTop: '-17px', backgroundColor: colorCodes[currency], padding: '2px', paddingBottom: 0}}>
                           {getFormattedDate(time)}
                         </div>
-                      </div>
+                      </BlockChip>
                     </div>
                     <div style={{width: '50%', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', borderRight: '1px solid #555'}}>
                       <div style={{margin: '8px 4px'}}>
@@ -154,9 +157,9 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
                       </div>
                     </div>
                   </div>
-                </BlockChip>
+                </BlockDataBox>
                 :
-                <BlockChip>
+                <BlockDataBox>
                   <b style={{
                     display: 'flex',
                     flexDirection: 'row',
@@ -168,7 +171,7 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
                     <span>{size / 1000} kB</span>
                     <span>~{median?.toFixed(4)} sats/Byte</span>
                   </b>
-                </BlockChip>
+                </BlockDataBox>
               }
             </div>
             {index !== blocksList.length - 1 && (
