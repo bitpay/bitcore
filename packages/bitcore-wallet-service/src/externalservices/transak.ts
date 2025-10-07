@@ -173,76 +173,76 @@ export class TransakService {
     });
   }
 
-  transakGetSignedPaymentUrl(req): { urlWithSignature: string } {
-    const appRequiredParams = [
-      'walletAddress',
-      'redirectURL',
-      'fiatAmount',
-      'fiatCurrency',
-      'network',
-      'cryptoCurrencyCode',
-      'partnerOrderId',
-      'partnerCustomerId',
-    ];
+  transakGetSignedPaymentUrl(req): Promise<{ urlWithSignature: string }> {
+    return new Promise(async (resolve, reject) => {
+      const appRequiredParams = [
+        'walletAddress',
+        'redirectURL',
+        'fiatAmount',
+        'fiatCurrency',
+        'network',
+        'cryptoCurrencyCode',
+        'partnerOrderId',
+        'partnerCustomerId',
+      ];
 
-    const requiredParams = req.body.context === 'web' ? [] : appRequiredParams;
-    const keys = this.transakGetKeys(req);
-    const API_KEY = keys.API_KEY;
-    const WIDGET_API = keys.WIDGET_API;
+      const env = _.cloneDeep(req.body.env);
+      const requiredParams = req.body.context === 'web' ? [] : appRequiredParams;
+      const referrerDomain = req.body.referrerDomain ?? req.body.context === 'web' ? 'bitpay.com' : 'bitpay';
+      const keys = this.transakGetKeys(req);
+      const API_KEY = keys.API_KEY;
+      const WIDGET_API = keys.WIDGET_API;
 
-    if (
-      !checkRequired(req.body, requiredParams)
-    ) {
-      throw new ClientError("Transak's request missing arguments");
-    }
+      if (
+        !checkRequired(req.body, requiredParams)
+      ) {
+        throw new ClientError("Transak's request missing arguments");
+      }
 
-    const headers = {
-      'Content-Type': 'application/json'
-    };
+      let accessToken;
+        if (req.body.accessToken) {
+          accessToken = req.body.accessToken;
+        } else {
+          try {
+            const accessTokenData = await this.transakGetAccessToken({ body: env });
+            accessToken = accessTokenData?.data?.accessToken;
+          } catch (err) {
+            return reject(err?.body ? err.body : err);
+          }
+        }
 
-    let qs: string[] = [];
-    // Recommended parameters to customize from the app
-    if (req.body.walletAddress) qs.push('walletAddress=' + encodeURIComponent(req.body.walletAddress));
-    if (req.body.disableWalletAddressForm) qs.push('disableWalletAddressForm=' + encodeURIComponent(req.body.disableWalletAddressForm));
-    if (req.body.redirectURL) qs.push('redirectURL=' + encodeURIComponent(req.body.redirectURL));
-    if (req.body.exchangeScreenTitle) qs.push('exchangeScreenTitle=' + encodeURIComponent(req.body.exchangeScreenTitle));
-    if (req.body.fiatAmount) qs.push('fiatAmount=' + encodeURIComponent(req.body.fiatAmount));
-    if (req.body.fiatCurrency) qs.push('fiatCurrency=' + encodeURIComponent(req.body.fiatCurrency));
-    if (req.body.network) qs.push('network=' + encodeURIComponent(req.body.network));
-    if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
-    if (req.body.cryptoCurrencyCode) qs.push('cryptoCurrencyCode=' + encodeURIComponent(req.body.cryptoCurrencyCode));
-    if (req.body.cryptoCurrencyList) qs.push('cryptoCurrencyList=' + encodeURIComponent(req.body.cryptoCurrencyList));
-    if (req.body.hideExchangeScreen) qs.push('hideExchangeScreen=' + encodeURIComponent(req.body.hideExchangeScreen));
-    if (req.body.themeColor) qs.push('themeColor=' + encodeURIComponent(req.body.themeColor));
-    if (req.body.hideMenu) qs.push('hideMenu=' + encodeURIComponent(req.body.hideMenu));
-    if (req.body.partnerOrderId) qs.push('partnerOrderId=' + encodeURIComponent(req.body.partnerOrderId));
-    if (req.body.partnerCustomerId) qs.push('partnerCustomerId=' + encodeURIComponent(req.body.partnerCustomerId));
-    // Other parameters
-    if (req.body.environment) qs.push('environment=' + encodeURIComponent(req.body.environment));
-    if (req.body.widgetHeight) qs.push('widgetHeight=' + encodeURIComponent(req.body.widgetHeight));
-    if (req.body.widgetWidth) qs.push('widgetWidth=' + encodeURIComponent(req.body.widgetWidth));
-    if (req.body.productsAvailed) qs.push('productsAvailed=' + encodeURIComponent(req.body.productsAvailed));
-    if (req.body.defaultFiatAmount) qs.push('defaultFiatAmount=' + encodeURIComponent(req.body.defaultFiatAmount));
-    if (req.body.countryCode) qs.push('countryCode=' + encodeURIComponent(req.body.countryCode));
-    if (req.body.excludeFiatCurrencies) qs.push('excludeFiatCurrencies=' + encodeURIComponent(req.body.excludeFiatCurrencies));
-    if (req.body.defaultNetwork) qs.push('defaultNetwork=' + encodeURIComponent(req.body.defaultNetwork));
-    if (req.body.networks) qs.push('networks=' + encodeURIComponent(req.body.networks));
-    if (req.body.defaultPaymentMethod) qs.push('defaultPaymentMethod=' + encodeURIComponent(req.body.defaultPaymentMethod));
-    if (req.body.disablePaymentMethods) qs.push('disablePaymentMethods=' + encodeURIComponent(req.body.disablePaymentMethods));
-    if (req.body.defaultCryptoAmount) qs.push('defaultCryptoAmount=' + encodeURIComponent(req.body.defaultCryptoAmount));
-    if (req.body.cryptoAmount) qs.push('cryptoAmount=' + encodeURIComponent(req.body.cryptoAmount));
-    if (req.body.defaultCryptoCurrency) qs.push('defaultCryptoCurrency=' + encodeURIComponent(req.body.defaultCryptoCurrency));
-    if (req.body.isFeeCalculationHidden) qs.push('isFeeCalculationHidden=' + encodeURIComponent(req.body.isFeeCalculationHidden));
-    if (req.body.walletAddressesData) qs.push('walletAddressesData=' + encodeURIComponent(req.body.walletAddressesData));
-    if (req.body.email) qs.push('email=' + encodeURIComponent(req.body.email));
-    if (req.body.userData) qs.push('userData=' + encodeURIComponent(req.body.userData));
-    if (req.body.isAutoFillUserData) qs.push('isAutoFillUserData=' + encodeURIComponent(req.body.isAutoFillUserData));
+        const headers = {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'access-token': accessToken,
+        };
 
-    const URL_SEARCH: string = `?apiKey=${API_KEY}&${qs.join('&')}`;
+        req.body = {
+          widgetParams: {
+            ...req.body,
+            apiKey: API_KEY,
+            referrerDomain: referrerDomain,
+          },
+        };
 
-    const urlWithSignature = `${WIDGET_API}${URL_SEARCH}`;
+      const URL: string = WIDGET_API + `/api/v2/auth/session`;
 
-    return { urlWithSignature };
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: req.body,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve({urlWithSignature: data?.body?.data?.widgetUrl ?? data?.data?.widgetUrl});
+          }
+        }
+      );
+  });
   }
 
   transakGetOrderDetails(req): Promise<any> {
