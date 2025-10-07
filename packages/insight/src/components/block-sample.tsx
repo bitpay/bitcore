@@ -3,7 +3,7 @@ import {getConvertedValue, getDifficultyFromBits, getFormattedDate} from 'src/ut
 import {BitcoinBlockType} from 'src/utilities/models';
 import BlockGroupDarkSvg from '../assets/images/block-group-dark.svg';
 import BlockGroupLightSvg from '../assets/images/block-group-light.svg';
-import styled, {useTheme} from 'styled-components';
+import styled, {CSSProperties, useTheme} from 'styled-components';
 import {colorCodes} from 'src/utilities/constants';
 import DataBox from './data-box';
 
@@ -28,7 +28,7 @@ const BlocksLinkChip = styled.div`
 
 const FeeBox: FC<{label: string, value: string}> = ({label, value}) => {
   return (
-    <DataBox label={label}>
+    <DataBox label={label} style={{borderColor: '#333'}}>
       <>
         <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', width: 'fit-content'}}>
           <span>{value}</span>
@@ -45,6 +45,15 @@ const FeeBox: FC<{label: string, value: string}> = ({label, value}) => {
         </div>
       </>
     </DataBox>
+  )
+}
+
+const DataRow: FC<{label: string, value: any, style?: CSSProperties}> = ({label, value, style}) => {
+  return (
+    <div style={{justifyContent: 'space-between', width: '100%', display: 'flex', margin: '2px', padding: '6px', borderBottom: '1px solid #444', ...style}}>
+      <span>{label}</span>
+      <span style={{marginLeft: '8px'}}>{value}</span>
+    </div>
   )
 }
 
@@ -108,47 +117,44 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
                           </div>
                         </div>
                       </div>
-                      <DataBox label='Hash' style={{backgroundColor: '#222'}}>{hash}</DataBox>
-                      <DataBox label='Merkle Root' style={{backgroundColor: '#222'}}>{merkleRoot}</DataBox>
-                      <span style={{width: '100%'}}/>
+                      <div style={{width: '50%', minWidth: '700px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', borderRight: '1px solid #555'}}>
 
-                      <DataBox style={{margin: '1.4rem 0.4rem 0 0.2rem', borderColor: '#333', borderWidth: '3px', backgroundColor: '#222'}}>
-                        <>
-                          <div style={{margin: '-0.5rem 0 0 0'}}>
-                            <DataBox label='Transaction Count' style={{whiteSpace: 'nowrap'}}>{transactionCount}</DataBox>
-                            <DataBox label='Size (kB)' style={{whiteSpace: 'nowrap'}}><>{size / 1000}</></DataBox>
-                            <DataBox label='Confirmations'>{confirmations}</DataBox>
-                            <DataBox label='Version'>{version}</DataBox>
-                          </div>
-                        </>
-                      </DataBox>
-                      <DataBox label='Fee' style={{borderWidth: '3px', borderColor: '#333', backgroundColor: '#222'}}>
-                        <>
-                          <div style={{margin: '-1rem 0 0 0'}}>
-                            <FeeBox label={'Mean'} value={mean.toFixed(4)} />
-                            <FeeBox label={'Median'} value={median.toFixed(4)} />
-                            <FeeBox label={'Mode'} value={mode.toFixed(4)} />
-                            <DataBox label='Total'>
-                              <>
-                                <span>{getConvertedValue(feeTotal, currency).toFixed(3)}</span>
-                                <span style={{fontSize: '12px', color: 'gray'}}> {currency}</span>
-                              </>
-                            </DataBox>
-                          </div>
-                        </>
-                      </DataBox>
-                      <DataBox style={{margin: '1.4rem 0.4rem 0 0.2rem', borderColor: '#333', borderWidth: '3px', backgroundColor: '#222'}}>
-                        <>
-                          <div style={{margin: '-0.5rem 0 0 0'}}>
-                            <DataBox label='Reward'>{`${getConvertedValue(reward, currency).toFixed(3)} ${currency}`}</DataBox>
-                            <DataBox label='Difficulty'>{getDifficultyFromBits(bits)}</DataBox>
-                            <DataBox label='Bits'>{bits}</DataBox>
-                            <DataBox label='Nonce'>{nonce}</DataBox>
-                          </div>
-                        </>
-                      </DataBox>
-                      <span style={{width: '100%'}}/>
-
+                        <div style={{margin: '8px 4px'}}>
+                          <DataRow label='Transaction Count' value={transactionCount}/>
+                          <DataRow label='Size (kB)' value={size / 1000}/>
+                          <DataRow label='Confirmations' value={confirmations}/>
+                          <DataRow label='Version' value={version}/>
+                        </div>
+                        <div style={{margin: '8px 4px'}}>
+                          <DataRow label='Reward' value={`${getConvertedValue(reward, currency).toFixed(4)} ${currency}`}/>
+                          <DataRow label='Difficulty' value={getDifficultyFromBits(bits)}/>
+                          <DataRow label='Bits' value={bits}/>
+                          <DataRow label='Nonce' value={nonce}/>
+                        </div>
+                        <DataBox label='Fee Data' style={{borderWidth: '3px', borderColor: '#333', backgroundColor: '#111', margin: '0.5rem 1rem'}} centerLabel>
+                          <>
+                            <div style={{margin: '-1rem 0 0 0'}}>
+                              <div style={{display: 'flex', marginTop: '0.5rem'}}>
+                                <FeeBox label={'Mean'} value={mean.toFixed(4)} />
+                                <FeeBox label={'Median'} value={median.toFixed(4)} />
+                              </div>
+                              <div style={{display: 'flex', marginTop: '-0.5rem'}}>
+                                <FeeBox label={'Mode'} value={mode.toFixed(4)} />
+                                <DataBox label='Total' style={{borderColor: '#333'}}>
+                                  <>
+                                    <span>{getConvertedValue(feeTotal, currency).toFixed(3)}</span>
+                                    <span style={{fontSize: '12px', color: 'gray'}}> {currency}</span>
+                                  </>
+                                </DataBox>
+                              </div>
+                            </div>
+                          </>
+                        </DataBox>
+                        <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center'}}>
+                          <DataBox label='Hash' style={{backgroundColor: '#222'}} centerLabel>{hash}</DataBox>
+                          <DataBox label='Merkle Root' style={{backgroundColor: '#222'}} centerLabel>{merkleRoot}</DataBox>
+                        </div>
+                      </div>
                     </div>
                   </b>
                 </BlockChip>
@@ -170,22 +176,22 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
             </div>
             {index !== blocksList.length - 1 && (
               <div style={{display: 'flex', flexDirection: 'row', width: '100%', alignItems: 'center', justifyContent: 'flex-start'}}>
-                <div
-                  style={{
-                    width: '4px',
-                    height: '20px',
-                    borderRadius: '1px',
-                    background: colorCodes[currency],
-                    marginLeft: '70px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                />
+              <div
+              style={{
+                width: '4px',
+                height: '20px',
+                borderRadius: '1px',
+                background: colorCodes[currency],
+                marginLeft: '70px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              />
               </div>
             )}
-
-          </React.Fragment>
+            
+            </React.Fragment>
         );
       })}
     </div>
