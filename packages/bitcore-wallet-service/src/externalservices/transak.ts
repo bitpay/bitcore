@@ -36,7 +36,12 @@ export class TransakService {
 
   transakGetAccessToken(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.transakGetKeys(req);
+      let keys;
+      try {
+        keys = this.transakGetKeys(req);
+      } catch (err) {
+        return reject(err);
+      }
       const API = keys.API;
       const API_KEY = keys.API_KEY;
       const SECRET_KEY = keys.SECRET_KEY;
@@ -72,7 +77,12 @@ export class TransakService {
 
   transakGetCryptoCurrencies(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.transakGetKeys(req);
+      let keys;
+      try {
+        keys = this.transakGetKeys(req);
+      } catch (err) {
+        return reject(err);
+      }
       const API = keys.API;
 
       const headers = {
@@ -101,7 +111,12 @@ export class TransakService {
 
   transakGetFiatCurrencies(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.transakGetKeys(req);
+      let keys;
+      try {
+        keys = this.transakGetKeys(req);
+      } catch (err) {
+        return reject(err);
+      }
       const API = keys.API;
       const API_KEY = keys.API_KEY;
 
@@ -131,7 +146,12 @@ export class TransakService {
 
   transakGetQuote(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const keys = this.transakGetKeys(req);
+      let keys;
+      try {
+        keys = this.transakGetKeys(req);
+      } catch (err) {
+        return reject(err);
+      }
       const API = keys.API;
       const API_KEY = keys.API_KEY;
 
@@ -189,14 +209,19 @@ export class TransakService {
       const env = _.cloneDeep(req.body.env);
       const requiredParams = req.body.context === 'web' ? [] : appRequiredParams;
       const referrerDomain = req.body.referrerDomain ?? req.body.context === 'web' ? 'bitpay.com' : 'bitpay';
-      const keys = this.transakGetKeys(req);
+      let keys;
+      try {
+        keys = this.transakGetKeys(req);
+      } catch (err) {
+        return reject(err);
+      }
       const API_KEY = keys.API_KEY;
       const WIDGET_API = keys.WIDGET_API;
 
       if (
         !checkRequired(req.body, requiredParams)
       ) {
-        throw new ClientError("Transak's request missing arguments");
+        return reject(new ClientError("Transak's request missing arguments"));
       }
 
       let accessToken;
@@ -248,7 +273,12 @@ export class TransakService {
   transakGetOrderDetails(req): Promise<any> {
     return new Promise(async (resolve, reject) => {
       const env = _.cloneDeep(req.body.env);
-      const keys = this.transakGetKeys(req);
+      let keys;
+      try {
+        keys = this.transakGetKeys(req);
+      } catch (err) {
+        return reject(err);
+      }
       const API = keys.API;
 
       if (!checkRequired(req.body, ['orderId'])) {

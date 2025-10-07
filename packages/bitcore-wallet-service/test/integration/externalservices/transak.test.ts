@@ -333,6 +333,20 @@ describe('Transak integration', () => {
       }
     });
 
+    it('should return error if post returns error', async () => {
+      const fakeRequest2 = {
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+      };
+
+      server.externalServices.transak.request = fakeRequest2;
+      try {
+        await server.externalServices.transak.transakGetSignedPaymentUrl(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Error');
+      }
+    });
+
     it('should return error if transak is commented in config', async () => {
       config.transak = undefined;
 
