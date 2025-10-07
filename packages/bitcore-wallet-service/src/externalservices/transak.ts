@@ -221,11 +221,11 @@ export class TransakService {
           widgetParams: {
             ...req.body,
             apiKey: API_KEY,
-            referrerDomain: referrerDomain,
+            referrerDomain,
           },
         };
 
-      const URL: string = WIDGET_API + `/api/v2/auth/session`;
+      const URL: string = WIDGET_API + '/api/v2/auth/session';
 
       this.request.post(
         URL,
