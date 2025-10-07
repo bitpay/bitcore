@@ -31,16 +31,16 @@ const FeeBox: FC<{label: string, value: string}> = ({label, value}) => {
     <DataBox label={label} style={{borderColor: '#333'}}>
       <>
         <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', width: 'fit-content'}}>
-          <span>{value}</span>
+          <span style={{fontWeight: 'bold'}}>{value}</span>
           <div style={{width: 'fit-content', display: 'flex', flexDirection: 'column', lineHeight: 1, padding: 0, marginLeft: '3px', marginRight: '-2px'}}>
-            <span style={{fontSize: '9px', color: 'gray'}}>sats</span>
-            <span style={{
+            <b style={{fontSize: '9px', color: 'gray'}}>sats</b>
+            <b style={{
               borderTop: '1px solid #888',
               fontSize: '9px',
               color: 'gray',
               textAlign: 'center',
               marginTop: '1px'
-            }}>byte</span>
+            }}>byte</b>
           </div>
         </div>
       </>
@@ -51,7 +51,7 @@ const FeeBox: FC<{label: string, value: string}> = ({label, value}) => {
 const DataRow: FC<{label: string, value: any, style?: CSSProperties}> = ({label, value, style}) => {
   return (
     <div style={{justifyContent: 'space-between', width: '100%', display: 'flex', margin: '2px', padding: '6px', borderBottom: '1px solid #444', ...style}}>
-      <span>{label}</span>
+      <b>{label}</b>
       <span style={{marginLeft: '8px'}}>{value}</span>
     </div>
   )
@@ -91,72 +91,69 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
               {
                 expandedBlocks.includes(height) ? 
                 <BlockChip>
-                  <b>
-                    <div style={{display: 'flex', flexWrap: 'wrap', }}>
-                      <div style={{width: '100%', display: 'flex', justifyContent: 'center', marginTop: '-10px'}}>
-                        <div
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            padding: '0.2rem 0.5rem',
-                            gap: '0.5rem',
-                            borderRadius: '0 0 20px 20px',
-                            cursor: 'pointer',
-                            backgroundColor: colorCodes[currency]
-                          }}
-                          onClick={() => setExpandedBlocks(expandedBlocks.filter(h => h !== height))}
-                        >
-                          <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
-                            <BlockGroupIcon height={'2rem'}/>
-                              <b style={{fontSize: '20px'}}>{height}</b>
-                            <BlockGroupIcon height={'2rem'}/>
-                          </div>
-                          <div style={{width: 'fit-content', height: 'fit-content', font: 'menu', fontSize: '10px', marginTop: '-17px', backgroundColor: colorCodes[currency], padding: '2px', paddingBottom: 0}}>
-                            {getFormattedDate(time)}
-                          </div>
+                  <div style={{display: 'flex', flexWrap: 'wrap', }}>
+                    <div style={{width: '100%', display: 'flex', justifyContent: 'center', marginTop: '-10px'}}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          padding: '0.2rem 0.5rem',
+                          gap: '0.5rem',
+                          borderRadius: '0 0 20px 20px',
+                          cursor: 'pointer',
+                          backgroundColor: colorCodes[currency]
+                        }}
+                        onClick={() => setExpandedBlocks(expandedBlocks.filter(h => h !== height))}
+                      >
+                        <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                          <BlockGroupIcon height={'2rem'}/>
+                          <b style={{fontSize: '20px'}}>{height}</b>
+                          <BlockGroupIcon height={'2rem'}/>
                         </div>
-                      </div>
-                      <div style={{width: '50%', minWidth: '700px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', borderRight: '1px solid #555'}}>
-
-                        <div style={{margin: '8px 4px'}}>
-                          <DataRow label='Transaction Count' value={transactionCount}/>
-                          <DataRow label='Size (kB)' value={size / 1000}/>
-                          <DataRow label='Confirmations' value={confirmations}/>
-                          <DataRow label='Version' value={version}/>
-                        </div>
-                        <div style={{margin: '8px 4px'}}>
-                          <DataRow label='Reward' value={`${getConvertedValue(reward, currency).toFixed(4)} ${currency}`}/>
-                          <DataRow label='Difficulty' value={getDifficultyFromBits(bits)}/>
-                          <DataRow label='Bits' value={bits}/>
-                          <DataRow label='Nonce' value={nonce}/>
-                        </div>
-                        <DataBox label='Fee Data' style={{borderWidth: '3px', borderColor: '#333', backgroundColor: '#111', margin: '0.5rem 1rem'}} centerLabel>
-                          <>
-                            <div style={{margin: '-1rem 0 0 0'}}>
-                              <div style={{display: 'flex', marginTop: '0.5rem'}}>
-                                <FeeBox label={'Mean'} value={mean.toFixed(4)} />
-                                <FeeBox label={'Median'} value={median.toFixed(4)} />
-                              </div>
-                              <div style={{display: 'flex', marginTop: '-0.5rem'}}>
-                                <FeeBox label={'Mode'} value={mode.toFixed(4)} />
-                                <DataBox label='Total' style={{borderColor: '#333'}}>
-                                  <>
-                                    <span>{getConvertedValue(feeTotal, currency).toFixed(3)}</span>
-                                    <span style={{fontSize: '12px', color: 'gray'}}> {currency}</span>
-                                  </>
-                                </DataBox>
-                              </div>
-                            </div>
-                          </>
-                        </DataBox>
-                        <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center'}}>
-                          <DataBox label='Hash' style={{backgroundColor: '#222'}} centerLabel>{hash}</DataBox>
-                          <DataBox label='Merkle Root' style={{backgroundColor: '#222'}} centerLabel>{merkleRoot}</DataBox>
+                        <div style={{width: 'fit-content', height: 'fit-content', font: 'menu', fontSize: '10px', marginTop: '-17px', backgroundColor: colorCodes[currency], padding: '2px', paddingBottom: 0}}>
+                          {getFormattedDate(time)}
                         </div>
                       </div>
                     </div>
-                  </b>
+                    <div style={{width: '50%', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', borderRight: '1px solid #555'}}>
+                      <div style={{margin: '8px 4px'}}>
+                        <DataRow label='Transaction Count' value={transactionCount}/>
+                        <DataRow label='Size (kB)' value={size / 1000}/>
+                        <DataRow label='Confirmations' value={confirmations}/>
+                        <DataRow label='Version' value={version}/>
+                      </div>
+                      <div style={{margin: '8px 4px'}}>
+                        <DataRow label='Reward' value={`${getConvertedValue(reward, currency).toFixed(4)} ${currency}`}/>
+                        <DataRow label='Difficulty' value={getDifficultyFromBits(bits)}/>
+                        <DataRow label='Bits' value={bits}/>
+                        <DataRow label='Nonce' value={nonce}/>
+                      </div>
+                      <DataBox label='Fee Data' style={{borderWidth: '3px', borderColor: '#333', backgroundColor: '#111', margin: '0.5rem 1rem'}} centerLabel>
+                        <>
+                          <div style={{margin: '-1rem 0 0 0'}}>
+                            <div style={{display: 'flex', marginTop: '0.5rem'}}>
+                              <FeeBox label={'Mean'} value={mean.toFixed(4)} />
+                              <FeeBox label={'Median'} value={median.toFixed(4)} />
+                            </div>
+                            <div style={{display: 'flex', marginTop: '-0.5rem'}}>
+                              <FeeBox label={'Mode'} value={mode.toFixed(4)} />
+                              <DataBox label='Total' style={{borderColor: '#333'}}>
+                                <>
+                                  <b>{getConvertedValue(feeTotal, currency).toFixed(3)}</b>
+                                  <b style={{fontSize: '12px', color: 'gray'}}> {currency}</b>
+                                </>
+                              </DataBox>
+                            </div>
+                          </div>
+                        </>
+                      </DataBox>
+                      <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center'}}>
+                        <DataBox label='Hash' style={{backgroundColor: '#222'}} centerLabel>{hash}</DataBox>
+                        <DataBox label='Merkle Root' style={{backgroundColor: '#222'}} centerLabel>{merkleRoot}</DataBox>
+                      </div>
+                    </div>
+                  </div>
                 </BlockChip>
                 :
                 <BlockChip>
