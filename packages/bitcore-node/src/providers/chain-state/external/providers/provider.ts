@@ -1,15 +1,16 @@
 import * as worker from 'worker_threads';
 import { IChainConfig, IEVMNetworkConfig, IProvider } from '../../../../types/Config';
 
-const getProvider = ({ 
-  network,
-  config,
-  dataType
-}: { network: string, dataType: string | undefined, config: IChainConfig<IEVMNetworkConfig>}) : IProvider => {
+const getProvider = (params: {
+  network: string,
+  dataType: string | undefined,
+  config: IChainConfig<IEVMNetworkConfig>
+}): IProvider => {
+  const { network, config, dataType } = params;
   if (config[network]?.provider && matchProviderType(config[network].provider, dataType)) {
     return config[network].provider!;
   }
-  const providers = config[network]?.providers?.filter((p) => matchProviderType(p, dataType));
+  const providers = config[network]?.providers?.filter((p) => !p.disabled && matchProviderType(p, dataType));
   if (!providers?.length) {
     throw new Error(`No configuration found for ${network} and "${dataType}" compatible dataType`);
   }

@@ -35,6 +35,7 @@ export interface IProvider {
   options?: object;
   dataType?: 'realtime' | 'historical' | 'combined';
   wsPort?: number | string;
+  disabled?: boolean; // Useful when multiple providers are configured
 }
 
 export type IExternalSyncConfig<T> = {
