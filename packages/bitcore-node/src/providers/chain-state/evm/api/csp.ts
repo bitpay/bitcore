@@ -24,8 +24,8 @@ import {
   BroadcastTransactionParams,
   GetBalanceForAddressParams,
   GetBlockParams,
-  GetWalletBalanceParams,
   GetWalletBalanceAtTimeParams,
+  GetWalletBalanceParams,
   IChainStateService,
   StreamAddressUtxosParams,
   StreamTransactionParams,
@@ -252,7 +252,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   async getBalanceForAddress(params: GetBalanceForAddressParams): Promise<WalletBalanceType> {
     const { chain, network, address, args } = params;
-    const { web3 } = await this.getWeb3(network, { type: 'realtime' });
+    const { web3 } = await this.getWeb3(network, { type: args?.time ? 'historical' : 'realtime' });
     const tokenAddress = args?.tokenAddress;
     const addressLower = address.toLowerCase();
     const hex = args?.hex === 'true' || args?.hex === '1';
