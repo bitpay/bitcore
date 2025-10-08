@@ -50,7 +50,7 @@ const BlockChipHeader = styled(BlockChip)`
 
 const FeeBox: FC<{label: string, value: string}> = ({label, value}) => {
   return (
-    <DataBox label={label} style={{borderColor: '#333'}}>
+    <DataBox label={label} colorDark='#333' colorLight='#ccc'>
       <>
         <div style={{display: 'flex', flexDirection: 'row', alignItems: 'center', width: 'fit-content'}}>
           <span style={{fontWeight: 'bold'}}>{value}</span>
@@ -151,7 +151,7 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
                         <DataRow label='Bits' value={bits}/>
                         <DataRow label='Nonce' value={nonce}/>
                       </div>
-                      <DataBox label='Fee Data' style={{borderWidth: '3px', borderColor: '#333', backgroundColor: '#111', margin: '0.5rem 1rem'}} centerLabel>
+                      <DataBox label='Fee Data' style={{borderWidth: '3px', borderColor: theme.dark ? '#333' : '#ccc', backgroundColor: theme.dark ? '#111' : '#f0f0f0', margin: '0.5rem 1rem'}} centerLabel>
                         <>
                           <div style={{margin: '-1rem 0 0 0'}}>
                             <div style={{display: 'flex', marginTop: '0.5rem'}}>
@@ -160,7 +160,7 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
                             </div>
                             <div style={{display: 'flex', marginTop: '-0.5rem'}}>
                               <FeeBox label={'Mode'} value={mode.toFixed(4)} />
-                              <DataBox label='Total' style={{borderColor: '#333'}}>
+                              <DataBox label='Total' colorDark='#333' colorLight='#ccc'>
                                 <>
                                   <b>{getConvertedValue(feeTotal, currency).toFixed(3)}</b>
                                   <b style={{fontSize: '12px', color: 'gray'}}> {currency}</b>
@@ -171,8 +171,8 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
                         </>
                       </DataBox>
                       <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center'}}>
-                        <DataBox label='Hash' style={{backgroundColor: '#222'}} centerLabel>{hash}</DataBox>
-                        <DataBox label='Merkle Root' style={{backgroundColor: '#222'}} centerLabel>{merkleRoot}</DataBox>
+                        <DataBox label='Hash' style={{backgroundColor: theme.dark ? '#222': '#e5e5e5'}} centerLabel>{hash}</DataBox>
+                        <DataBox label='Merkle Root' style={{backgroundColor: theme.dark ? '#222' : '#e5e5e5'}} centerLabel>{merkleRoot}</DataBox>
                       </div>
                     </div>
                   </div>
