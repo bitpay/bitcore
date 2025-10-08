@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "version": "11.3.2",
+  "version": "11.3.5",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "contributors": [
     "Justin Langston <nitsujlangston@gmail.com>",
@@ -100,7 +100,7 @@
     "@solana/kit": "^2.1.0",
     "@solana/spl-token-registry": "^0.2.4574",
     "abi-decoder": "2.4.0",
-    "bitcore-client": "^11.3.2",
+    "bitcore-client": "^11.3.3",
     "bitcore-lib": "^11.3.2",
     "bitcore-lib-cash": "^11.3.2",
     "bitcore-lib-doge": "^11.3.2",
@@ -108,9 +108,9 @@
     "bitcore-p2p": "^11.3.2",
     "bitcore-p2p-cash": "^11.3.2",
     "bitcore-p2p-doge": "^11.3.2",
-    "bitcore-wallet-client": "^11.3.2",
+    "bitcore-wallet-client": "^11.3.5",
     "cors": "2.8.4",
-    "crypto-rpc": "https://github.com/bitpay/crypto-rpc.git#bb0c515f0dea322331f22598cda0d07c9813a2fc",
+    "crypto-rpc": "https://github.com/bitpay/crypto-rpc.git#d823f70c13937e332289f75728c52bf7d3c81de5",
     "crypto-wallet-core": "^11.3.2",
     "express": "4.19.2",
     "lodash": "4.17.11",

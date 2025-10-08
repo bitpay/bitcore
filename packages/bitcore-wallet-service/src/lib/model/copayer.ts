@@ -24,7 +24,7 @@ export interface ICopayer {
     key: string;
     signature: string;
   }>;
-  customData: any;
+  customData?: any;
   walletId: string;
   isSupportStaff?: boolean;
   isMarketingStaff?: boolean;
@@ -47,7 +47,7 @@ export class Copayer {
     key: string;
     signature: string;
   }>;
-  customData: any;
+  customData?: any;
   addressManager: AddressManager;
   walletId: string;
   isSupportStaff?: boolean;
