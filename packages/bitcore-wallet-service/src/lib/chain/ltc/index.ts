@@ -1,7 +1,6 @@
 import { BitcoreLibLtc } from 'crypto-wallet-core';
-import _ from 'lodash';
-import { IChain } from '..';
-import { BtcChain } from '../btc';
+import { IChain } from '../../../types/chain';
+import { BtcChain } from '../../chain/btc';
 
 export class LtcChain extends BtcChain implements IChain {
   constructor() {

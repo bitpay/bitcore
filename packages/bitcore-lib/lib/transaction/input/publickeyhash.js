@@ -5,7 +5,7 @@ var inherits = require('inherits');
 var $ = require('../../util/preconditions');
 var BufferUtil = require('../../util/buffer');
 
-var Address = require('../../address');
+var PublicKey = require('../../publickey');
 var Hash = require('../../crypto/hash');
 var Input = require('./input');
 var Output = require('../output');
@@ -28,9 +28,9 @@ inherits(PublicKeyHashInput, Input);
 
 PublicKeyHashInput.prototype.getRedeemScript = function(publicKey) {
   if (!this.redeemScript) {
-    var redeemScript = Script.buildWitnessV0Out(publicKey);
+    const redeemScript = Script.buildWitnessV0Out(publicKey);
     if (Script.buildScriptHashOut(redeemScript).equals(this.output.script)) {
-      var scriptSig = new Script();
+      const scriptSig = new Script();
       scriptSig.add(redeemScript.toBuffer());
       this.setScript(scriptSig);
       this.redeemScript = redeemScript;
@@ -53,10 +53,32 @@ PublicKeyHashInput.prototype.getScriptCode = function(publicKey) {
   return writer.toBuffer();
 };
 
-PublicKeyHashInput.prototype.getSighash = function(transaction, privateKey, index, sigtype) {
-  var scriptCode = this.getScriptCode(privateKey);
-  var satoshisBuffer = this.getSatoshisBuffer();
-  return SighashWitness.sighash(transaction, sigtype, index, scriptCode, satoshisBuffer);
+/**
+ * Get the hash data to sign for this input
+ * @param {Transaction} transaction The transaction to be signed
+ * @param {PublicKey} publicKey The public key in the redeem script (only if p2sh and !this.redeemScript)
+ * @param {number} index The index of the input in the transaction input vector
+ * @param {number} sigtype The type of signature, defaults to Signature.SIGHASH_ALL
+ * @returns {Buffer}
+ */
+PublicKeyHashInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
+  sigtype = sigtype || Signature.SIGHASH_ALL;
+
+  const script = this.output.script.isScriptHashOut()
+    ? this.getRedeemScript(publicKey)
+    : this.output.script;
+
+  $.checkState(script, 'Missing script. Did you pass in the correct publicKey?');
+  if (script.isWitnessPublicKeyHashOut()) {
+    const satoshisBuffer = this.getSatoshisBuffer();
+    const scriptCode = this.getScriptCode(publicKey);
+    return SighashWitness.sighash(transaction, sigtype, index, scriptCode, satoshisBuffer);
+  } else {
+    const sighash = Sighash.sighash(transaction, sigtype, index, this.output.script);
+    // sighash() returns data little endian but it must be signed big endian, hence the reverse
+    return sighash.reverse();
+  }
 };
 
 /**
@@ -65,28 +87,24 @@ PublicKeyHashInput.prototype.getSighash = function(transaction, privateKey, inde
  * @param {number} index - the index of the input in the transaction input vector
  * @param {number} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
  * @param {Buffer} hashData - the precalculated hash of the public key associated with the privateKey provided
- * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
+ * @param {String} signingMethod DEPRECATED - unused. Keeping for arg placement consistency with other libs
  * @param {Buffer} merkleRoot - unused for this input type
  * @return {Array<TransactionSignature>}
  */
 PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod, merkleRoot) {
-  $.checkState(this.output instanceof Output);
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
   hashData = hashData || Hash.sha256ripemd160(privateKey.publicKey.toBuffer());
   sigtype = sigtype || Signature.SIGHASH_ALL;
-  signingMethod = signingMethod || 'ecdsa'; // unused. Keeping for consistency with other libs
 
-  var script;
-  if (this.output.script.isScriptHashOut()) {
-    script = this.getRedeemScript(privateKey.publicKey);
-  } else {
-    script = this.output.script;
-  }
+  const script = this.output.script.isScriptHashOut()
+    ? this.getRedeemScript(privateKey.publicKey)
+    : this.output.script;
 
   if (script && BufferUtil.equals(hashData, script.getPublicKeyHash())) {
-    var signature;
+    let signature;
     if (script.isWitnessPublicKeyHashOut()) {
-      var satoshisBuffer = this.getSatoshisBuffer();
-      var scriptCode = this.getScriptCode(privateKey.publicKey);
+      const satoshisBuffer = this.getSatoshisBuffer();
+      const scriptCode = this.getScriptCode(privateKey.publicKey);
       signature = SighashWitness.sign(transaction, privateKey, sigtype, index, scriptCode, satoshisBuffer);
     } else {
       signature = Sighash.sign(transaction, privateKey, sigtype, index, this.output.script);
@@ -103,7 +121,6 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
   }
   return [];
 };
-/* jshint maxparams: 3 */
 
 /**
  * Add the provided signature
@@ -160,7 +177,7 @@ PublicKeyHashInput.prototype.isValidSignature = function(transaction, signature,
   // FIXME: Refactor signature so this is not necessary
   signature.signature.nhashtype = signature.sigtype;
   if (this.output.script.isWitnessPublicKeyHashOut() || this.output.script.isScriptHashOut()) {
-    var scriptCode = this.getScriptCode();
+    var scriptCode = this.getScriptCode(signature.publicKey);
     var satoshisBuffer = this.getSatoshisBuffer();
     return SighashWitness.verify(
       transaction,

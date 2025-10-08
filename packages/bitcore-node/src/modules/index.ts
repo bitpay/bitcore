@@ -1,5 +1,3 @@
-import _ from 'lodash';
-
 import logger from '../logger';
 import { ChainStateProvider } from '../providers/chain-state';
 import { Libs } from '../providers/libs';

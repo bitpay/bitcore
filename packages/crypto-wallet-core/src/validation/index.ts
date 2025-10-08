@@ -1,3 +1,4 @@
+import type { IValidation } from '../types/validation';
 import { ArbValidation } from './arb';
 import { BaseValidation } from './base';
 import { BchValidation } from './bch';
@@ -9,11 +10,6 @@ import { MaticValidation } from './matic';
 import { OpValidation } from './op';
 import { SolValidation } from './sol';
 import { XrpValidation } from './xrp';
-
-export interface IValidation {
-  validateAddress(network: string, address: string): boolean;
-  validateUri(addressUri: string): boolean;
-}
 
 const validation: { [chain: string]: IValidation } = {
   BTC: new BtcValidation(),

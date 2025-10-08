@@ -24,6 +24,7 @@ export class SVMRouter {
     this.getRentMinimum(router);
     this.getTokenAccountAddresses(router);
     this.getTokenInfo(router);
+    this.decodeRawTransaction(router);
   };
 
   private estimateTxFee(router: Router) {
@@ -36,7 +37,7 @@ export class SVMRouter {
         if (err?.code != null) {
           res.status(400).send(err.message);
         } else {
-          logger.error('Fee Error::%o', err.stack || err.message || err);
+          logger.error('Fee Error: %o', err.stack || err.message || err);
           res.status(500).send(err.message || err);
         }
       }
@@ -72,7 +73,7 @@ export class SVMRouter {
         if (err?.code != null) {
           res.status(400).send(err.message);
         } else {
-          logger.error('Rent Error::%o', err.stack || err.message || err);
+          logger.error('Rent Error: %o', err.stack || err.message || err);
           res.status(500).send(err.message || err);
         }
       }
@@ -89,7 +90,7 @@ export class SVMRouter {
         if (err?.code != null) {
           res.status(400).send(err.message);
         } else {
-          logger.error('Rent Error::%o', err.stack || err.message || err);
+          logger.error('Token Account Error: %o', err.stack || err.message || err);
           res.status(500).send(err.message || err);
         }
       }
@@ -103,7 +104,30 @@ export class SVMRouter {
         const tokenInfo = await this.csp.getSPLTokenInfo(network, tokenAddress);
         res.json(tokenInfo);
       } catch (err: any) {
-        logger.error('Token Info Error::%o', err.stack || err.message || err);
+        logger.error('Token Info Error: %o', err.stack || err.message || err);
+        res.status(500).send(err.message || err);
+      }
+    });
+  };
+
+  private decodeRawTransaction(router: Router) {
+    router.post(`/api/${this.chain}/:network/decode`, async (req, res) => {
+      const { rawTx } = req.body;
+      const { network } = req.params;
+  
+      try {
+        this.csp.validateRawTx(rawTx);
+      } catch (err: any) {
+        logger.error('Transaction Decode Error: %o', err.stack || err.message || err);
+        res.status(400).send(err.message || err);
+        return;
+      }
+
+      try {
+        const decodedTx = await this.csp.decodeRawTransaction({ network, rawTx });
+        res.json(decodedTx);
+      } catch (err: any) {
+        logger.error('Transaction Decode Error: %o', err.stack || err.message || err);
         res.status(500).send(err.message || err);
       }
     });

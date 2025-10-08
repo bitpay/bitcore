@@ -1,7 +1,6 @@
 import { ObjectId } from 'bson';
 import { expect } from 'chai';
 import { Request, Response } from 'express-serve-static-core';
-import _ from 'lodash';
 import * as sinon from 'sinon';
 import { Transform, Writable } from 'stream';
 import Web3 from 'web3';

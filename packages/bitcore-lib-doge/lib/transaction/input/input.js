@@ -168,6 +168,9 @@ Input.prototype.getSatoshisBuffer = function() {
   return new BufferWriter().writeUInt64LEBN(this.output._satoshisBN).toBuffer();
 };
 
+Input.prototype.getSighash = function() {
+  throw new errors.AbstractMethodInvoked('Input#getSighash');
+};
 
 Input.prototype.isFullySigned = function() {
   throw new errors.AbstractMethodInvoked('Input#isFullySigned');

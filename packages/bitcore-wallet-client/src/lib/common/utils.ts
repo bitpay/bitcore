@@ -1,7 +1,7 @@
 'use strict';
 
 import {
-  BitcoreLib as Bitcore,
+  BitcoreLib,
   BitcoreLibCash,
   BitcoreLibDoge,
   BitcoreLibLtc,
@@ -10,28 +10,28 @@ import {
 } from 'crypto-wallet-core';
 import Stringify from 'json-stable-stringify';
 import { singleton } from 'preconditions';
-import sjcl from 'sjcl';
 import { Constants } from './constants';
 import { Defaults } from './defaults';
+import { Encryption } from './encryption';
 
 const $ = singleton();
 
 const Bitcore_ = {
-  btc: Bitcore,
+  btc: BitcoreLib,
   bch: BitcoreLibCash,
-  eth: Bitcore,
-  matic: Bitcore,
-  arb: Bitcore,
-  base: Bitcore,
-  op: Bitcore,
-  xrp: Bitcore,
+  eth: BitcoreLib,
+  matic: BitcoreLib,
+  arb: BitcoreLib,
+  base: BitcoreLib,
+  op: BitcoreLib,
+  xrp: BitcoreLib,
   doge: BitcoreLibDoge,
   ltc: BitcoreLibLtc,
-  sol: Bitcore
+  sol: BitcoreLib
 };
-const PrivateKey = Bitcore.PrivateKey;
-const PublicKey = Bitcore.PublicKey;
-const crypto = Bitcore.crypto;
+const PrivateKey = BitcoreLib.PrivateKey;
+const PublicKey = BitcoreLib.PublicKey;
+const crypto = BitcoreLib.crypto;
 
 const MAX_DECIMAL_ANY_CHAIN = 18; // more that 14 gives rounding errors
 
@@ -55,47 +55,35 @@ export class Utils {
   }
 
   static encryptMessage(message, encryptingKey) {
-    var key = sjcl.codec.base64.toBits(encryptingKey);
-    return sjcl.encrypt(
-      key,
-      message,
-      {
-        ks: 128,
-        iter: 1
-      }
-    );
+    return JSON.stringify(Encryption.encryptWithKey(message, encryptingKey));
   }
 
   // Will throw if it can't decrypt
-  static decryptMessage(cyphertextJson, encryptingKey) {
-    if (!cyphertextJson) return;
-
-    if (!encryptingKey) throw new Error('No key');
-
-    var key = sjcl.codec.base64.toBits(encryptingKey);
-    return sjcl.decrypt(key, cyphertextJson);
+  static decryptMessage(ciphertextJson, encryptingKey) {
+    if (!ciphertextJson) return;
+    if (!encryptingKey) throw new Error('Missing encrypting key');
+    return Encryption.decryptWithKey(ciphertextJson, encryptingKey).toString();
   }
 
-  static decryptMessageNoThrow(cyphertextJson, encryptingKey) {
+  static decryptMessageNoThrow(ciphertextJson, encryptingKey) {
     if (!encryptingKey) return '<ECANNOTDECRYPT>';
+    if (!ciphertextJson) return '';
 
-    if (!cyphertextJson) return '';
-
-    // no sjcl encrypted json
-    var r = this.isJsonString(cyphertextJson);
+    // encrypted json (e.g. { ks: 256, v: 1, ct: 'ciphertext'  ... })
+    const r = this.isJsonString(ciphertextJson);
     if (!r || !r.iv || !r.ct) {
-      return cyphertextJson;
+      return ciphertextJson;
     }
 
     try {
-      return this.decryptMessage(cyphertextJson, encryptingKey);
+      return this.decryptMessage(ciphertextJson, encryptingKey);
     } catch (e) {
       return '<ECANNOTDECRYPT>';
     }
   }
 
   static isJsonString(str) {
-    var r;
+    let r;
     try {
       r = JSON.parse(str);
     } catch (e) {
@@ -103,13 +91,15 @@ export class Utils {
     }
     return r;
   }
-  /* TODO: It would be nice to be compatible with bitcoind signmessage. How
-   * the hash is calculated there? */
+  /** 
+   * TODO: It would be nice to be compatible with bitcoind signmessage. How
+   * is the hash is calculated there?
+   */
   static hashMessage(text) {
     $.checkArgument(text);
-    var buf = Buffer.from(text);
-    var ret = crypto.Hash.sha256sha256(buf);
-    ret = new Bitcore.encoding.BufferReader(ret).readReverse();
+    const buf = Buffer.from(text);
+    let ret = crypto.Hash.sha256sha256(buf);
+    ret = new BitcoreLib.encoding.BufferReader(ret).readReverse();
     return ret;
   }
 
@@ -140,12 +130,9 @@ export class Utils {
 
   static privateKeyToAESKey(privKey) {
     $.checkArgument(privKey && typeof privKey === 'string');
-    $.checkArgument(
-      Bitcore.PrivateKey.isValid(privKey),
-      'The private key received is invalid'
-    );
-    var pk = Bitcore.PrivateKey.fromString(privKey);
-    return Bitcore.crypto.Hash.sha256(pk.toBuffer())
+    $.checkArgument(BitcoreLib.PrivateKey.isValid(privKey), 'The private key received is invalid');
+    const pk = BitcoreLib.PrivateKey.fromString(privKey);
+    return BitcoreLib.crypto.Hash.sha256(pk.toBuffer())
       .slice(0, 16)
       .toString('base64');
   }
@@ -188,7 +175,13 @@ export class Utils {
     $.checkArgument(Object.values(Constants.SCRIPT_TYPES).includes(scriptType));
     const externSourcePublicKey = hardwareSourcePublicKey || clientDerivedPublicKey;
     if (externSourcePublicKey) {
-      const bitcoreAddress = Deriver.getAddress(chain.toUpperCase(), network, externSourcePublicKey, scriptType);
+      let bitcoreAddress;
+      try {
+        bitcoreAddress = Deriver.deriveAddressWithPath(chain.toUpperCase(), network, externSourcePublicKey, path, scriptType);
+      } catch {
+        // some chains (e.g. SOL) cannot derive address along path from pub key.
+        bitcoreAddress = Deriver.getAddress(chain.toUpperCase(), network, externSourcePublicKey, scriptType);
+      }
       return {
         address: bitcoreAddress.toString(),
         path,
@@ -199,11 +192,11 @@ export class Utils {
     chain = chain || 'btc';
     const bitcore = Bitcore_[chain];
     let publicKeys = (publicKeyRing || []).map(item => {
-      var xpub = new bitcore.HDPublicKey(item.xPubKey);
+      const xpub = new bitcore.HDPublicKey(item.xPubKey);
       return xpub.deriveChild(path).publicKey;
     });
 
-    var bitcoreAddress;
+    let bitcoreAddress;
     switch (scriptType) {
       case Constants.SCRIPT_TYPES.P2WSH:
         const nestedWitness = false;
@@ -217,10 +210,8 @@ export class Utils {
         break;
       case Constants.SCRIPT_TYPES.P2SH:
         if (escrowInputs) {
-          var xpub = new bitcore.HDPublicKey(publicKeyRing[0].xPubKey);
-          const inputPublicKeys = escrowInputs.map(
-            input => xpub.deriveChild(input.path).publicKey
-          );
+          const xpub = new bitcore.HDPublicKey(publicKeyRing[0].xPubKey);
+          const inputPublicKeys = escrowInputs.map(input => xpub.deriveChild(input.path).publicKey);
           bitcoreAddress = bitcore.Address.createEscrow(
             inputPublicKeys,
             publicKeys[0],
@@ -282,27 +273,27 @@ export class Utils {
   // testnet xpub starts with t.
   // livenet xpub starts with x.
   // no matter WHICH chain
-  static xPubToCopayerId(_chain, xpub): string {
+  static xPubToCopayerId(chain: string, xpub: string): string {
     // this was introduced because we allowed coinType = 0' wallets for BCH
     // for the  "wallet duplication" feature
     // now it is effective for all coins.
 
-    const chain = _chain.toLowerCase();
-    var str = chain == 'btc' ? xpub : chain + xpub;
+    chain = chain.toLowerCase();
+    const str = chain == 'btc' ? xpub : (chain + xpub);
 
-    var hash = sjcl.hash.sha256.hash(str);
-    return sjcl.codec.hex.fromBits(hash);
+    const hash = BitcoreLib.crypto.Hash.sha256(Buffer.from(str));
+    return hash.toString('hex');
   }
 
   static signRequestPubKey(requestPubKey, xPrivKey) {
-    var priv = new Bitcore.HDPrivateKey(xPrivKey).deriveChild(
+    const priv = new BitcoreLib.HDPrivateKey(xPrivKey).deriveChild(
       Constants.PATHS.REQUEST_KEY_AUTH
     ).privateKey;
     return this.signMessage(requestPubKey, priv);
   }
 
   static verifyRequestPubKey(requestPubKey, signature, xPubKey) {
-    var pub = new Bitcore.HDPublicKey(xPubKey).deriveChild(
+    const pub = new BitcoreLib.HDPublicKey(xPubKey).deriveChild(
       Constants.PATHS.REQUEST_KEY_AUTH
     ).publicKey;
     return this.verifyMessage(requestPubKey, signature, pub.toString());
@@ -441,7 +432,7 @@ export class Utils {
 
       return t;
     } else {
-      // ETH ERC20 XRP
+      // ETH ERC20 XRP SOL
       const {
         data,
         destinationTag,
@@ -511,6 +502,13 @@ export class Utils {
           });
           unsignedTxs.push(rawTx);
         }
+      } else if (chainName === 'SOL') {
+        const rawTx = Transactions.create({
+          ...txp,
+          chain: _chain,
+          recipients,
+        });
+        unsignedTxs.push(rawTx);
       } else {
         for (let index = 0; index < recipients.length; index++) {
           const rawTx = Transactions.create({
@@ -582,5 +580,25 @@ export class Utils {
       default:
         return undefined; // non-segwit addressType
     }
+  }
+
+  static isUtxoChain(chain: string): boolean {
+    return Constants.UTXO_CHAINS.includes(chain.toLowerCase());
+  }
+
+  static isSvmChain(chain: string): boolean {
+    return Constants.SVM_CHAINS.includes(chain.toLowerCase());
+  }
+
+  static isEvmChain(chain: string): boolean {
+    return Constants.EVM_CHAINS.includes(chain.toLowerCase());
+  }
+
+  static isXrpChain(chain: string): boolean {
+    return ['xrp'].includes(chain.toLowerCase());
+  }
+
+  static isSingleAddressChain(chain: string): boolean {
+    return !Utils.isUtxoChain(chain);
   }
 }

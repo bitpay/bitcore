@@ -7,23 +7,22 @@ import {
   Transactions
 } from 'crypto-wallet-core';
 import { singleton } from 'preconditions';
-import sjcl from 'sjcl';
-import 'source-map-support/register';
-import Uuid from 'uuid';
-import { Constants, Utils } from './common';
+import * as Uuid from 'uuid';
+import { Constants, Encryption, Utils } from './common';
 import { Credentials } from './credentials';
 import { Errors } from './errors';
 import log from './log';
 
 const $ = singleton();
 
-const wordsForLang = {
-  en: Mnemonic.Words.ENGLISH as Array<string>,
-  es: Mnemonic.Words.SPANISH as Array<string>,
-  ja: Mnemonic.Words.JAPANESE as Array<string>,
-  zh: Mnemonic.Words.CHINESE as Array<string>,
-  fr: Mnemonic.Words.FRENCH as Array<string>,
-  it: Mnemonic.Words.ITALIAN as Array<string>,
+type Language = 'en' | 'es' | 'ja' | 'zh' | 'fr' | 'it';
+const wordsForLang: Record<Language, Array<string>> = {
+  en: Mnemonic.Words.ENGLISH,
+  es: Mnemonic.Words.SPANISH,
+  ja: Mnemonic.Words.JAPANESE,
+  zh: Mnemonic.Words.CHINESE,
+  fr: Mnemonic.Words.FRENCH,
+  it: Mnemonic.Words.ITALIAN,
 };
 
 // we always set 'livenet' for xprivs. it has no consequences
@@ -32,28 +31,28 @@ const NETWORK: string = 'livenet';
 const ALGOS_BY_CHAIN =  {
   default: Constants.ALGOS.ECDSA,
   sol: Constants.ALGOS.EDDSA,
-}
+};
 const SUPPORTED_ALGOS = [Constants.ALGOS.ECDSA, Constants.ALGOS.EDDSA];
 const ALGO_TO_KEY_TYPE = {
   [Constants.ALGOS.ECDSA]: 'Bitcoin',
   [Constants.ALGOS.EDDSA]: 'ed25519'
 }
-type KeyAlgorithm = keyof typeof Constants.ALGOS;
+export type KeyAlgorithm = keyof typeof Constants.ALGOS;
 type Nullish = null | undefined;
-type PasswordMaybe = string | Nullish;
+export type PasswordMaybe = string | Nullish;
 
 export interface KeyOptions {
   id?: string;
-  seedType: string;
+  seedType: 'new' | 'extendedPrivateKey' | 'object' | 'mnemonic' | 'objectV1';
   seedData?: any;
   passphrase?: string; // seed passphrase
   password?: string; // encrypting password
-  sjclOpts?: any; // options to SJCL encrypt
+  encryptionOpts?: { iter?: number; }; // options for encryption
   use0forBCH?: boolean;
   useLegacyPurpose?: boolean;
   useLegacyCoinType?: boolean;
   nonCompliantDerivation?: boolean;
-  language?: keyof typeof wordsForLang;
+  language?: Language;
   algo?: KeyAlgorithm; // eddsa or ecdsa (Bitcoin) by default
 };
 
@@ -65,7 +64,7 @@ export interface ExportedKey {
 };
 interface AddKeyOptions {
   passphrase?: string;
-  password?: string;
+  password?: PasswordMaybe;
   sjclOpts?: any;
   algo?: KeyAlgorithm;
   existingAlgo?: KeyAlgorithm;
@@ -74,8 +73,8 @@ interface AddKeyOptions {
 interface SetFromMnemonicOptions {
   passphrase?: string;
   algo?: KeyAlgorithm;
-  password?: string;
-  sjclOpts?: any;
+  password?: PasswordMaybe;
+  encryptionOpts?: KeyOptions['encryptionOpts'];
 }
 
 export class Key {
@@ -116,12 +115,6 @@ export class Key {
    *  };
    */
   
-  /**
-   * @param {Object} opts
-   * @param {String} opts.password   encrypting password
-   * @param {String} seedType new|extendedPrivateKey|object|mnemonic
-   * @param {String} seedData
-   */
   constructor(opts: KeyOptions = { seedType: 'new' }) {
     this.#version = 1;
     this.id = opts.id || Uuid.v4();
@@ -144,7 +137,7 @@ export class Key {
         break;
       case 'mnemonic':
         $.checkArgument(x, 'Need to provide opts.seedData');
-        $.checkArgument(typeof x === 'string', 'sourceData need to be a string');
+        $.checkArgument(typeof x === 'string', 'opts.seedData needs to be a string');
         this.setFromMnemonic(new Mnemonic(x), opts);
         break;
       case 'extendedPrivateKey':
@@ -153,10 +146,7 @@ export class Key {
         break;
       case 'object':
         $.shouldBeObject(x, 'Need to provide an object at opts.seedData');
-        $.shouldBeUndefined(
-          opts.password,
-          'opts.password not allowed when source is object'
-        );
+        $.shouldBeUndefined(opts.password, 'opts.password not allowed when opts.seedData is an object');
 
         if (this.#version != x.version) {
           throw new Error('Bad Key version');
@@ -236,23 +226,29 @@ export class Key {
   private setFromMnemonic(m, opts: SetFromMnemonicOptions) {
     const algos = opts.algo ? [opts.algo] : SUPPORTED_ALGOS;
     for (const algo of algos) {
+  // private setFromMnemonic(
+  //   m,
+  //   opts: { passphrase?: string; password?: PasswordMaybe; encryptionOpts?: KeyOptions['encryptionOpts'], algo?: KeyAlgorithm }
+  // ) {
+  //   for (const algo of SUPPORTED_ALGOS) {
       const xpriv = m.toHDPrivateKey(opts.passphrase, NETWORK, ALGO_TO_KEY_TYPE[algo]);
       this.#setFingerprint({ value: xpriv.fingerPrint.toString('hex'), algo });
 
       if (opts.password) {
         this.#setPrivKeyEncrypted({
-          value: sjcl.encrypt(
-            opts.password,
+          value: JSON.stringify(Encryption.encryptWithPassword(
             xpriv.toString(),
-            opts.sjclOpts),
+            opts.password,
+            opts.encryptionOpts
+          )),
           algo
         });
         if (!this.#getPrivKeyEncrypted({ algo })) throw new Error('Could not encrypt');
-        this.#mnemonicEncrypted = sjcl.encrypt(
-          opts.password,
+        this.#mnemonicEncrypted = JSON.stringify(Encryption.encryptWithPassword(
           m.phrase,
-          opts.sjclOpts
-        );
+          opts.password,
+          opts.encryptionOpts
+        ));
         if (!this.#mnemonicEncrypted) throw new Error('Could not encrypt');
       } else {
         this.#setPrivKey({ value: xpriv.toString(), algo });
@@ -262,7 +258,7 @@ export class Key {
     }
   }
 
-  private setFromExtendedPrivateKey (extendedPrivateKey, opts: { password?: string; algo?: KeyAlgorithm }) {
+  private setFromExtendedPrivateKey (extendedPrivateKey, opts: { password?: PasswordMaybe; algo?: KeyAlgorithm; encryptionOpts?: KeyOptions['encryptionOpts'] }) {
     let xpriv;
     if (this.#mnemonic || this.#mnemonicEncrypted) {
       throw new Error('Set key from existing mnemonic')
@@ -278,11 +274,11 @@ export class Key {
       this.#setFingerprint({ value: xpriv.fingerPrint.toString('hex'),  ...params });
       if (opts.password) {
         this.#setPrivKeyEncrypted({
-          value: sjcl.encrypt(
-            opts.password,
+          value: JSON.stringify(Encryption.encryptWithPassword(
             xpriv.toString(),
-            opts
-          ),
+            opts.password,
+            opts.encryptionOpts
+          )),
           ...params
         });
         const xPrivKeyEncrypted = this.#getPrivKeyEncrypted(params);
@@ -308,7 +304,8 @@ export class Key {
     }
     if (this.#mnemonicEncrypted) {
       this.#validatePassword(opts.password);
-      this.#addKeyFromMnemonic(algo, this.#mnemonicEncrypted, opts);
+      const mnemonic = Encryption.decryptWithPassword(this.#mnemonicEncrypted, opts.password);
+      this.#addKeyFromMnemonic(algo, mnemonic.toString(), opts);
       return;
     }
     if (this.#hasExistingPrivateKey(existingAlgo)) {
@@ -323,7 +320,7 @@ export class Key {
    * Creates key from plain mnemonic
    */
   #addKeyFromMnemonic(algo: KeyAlgorithm, mnemonic: string, opts: AddKeyOptions) {
-    const mnemonicOpts: SetFromMnemonicOptions = { algo };
+    const mnemonicOpts: SetFromMnemonicOptions = { ...opts, algo };
     
     if (this.#mnemonicHasPassphrase) {
       this.#validatePassphrase(opts.passphrase);
@@ -341,7 +338,7 @@ export class Key {
     
     if (encryptedPrivKey) {
       this.#validatePassword(opts.password);
-      const xPriv = sjcl.decrypt(opts.password!, encryptedPrivKey);
+      const xPriv = Encryption.decryptWithPassword(encryptedPrivKey, opts.password);
       this.setFromExtendedPrivateKey(xPriv, { algo, password: opts.password });
     } else {
       const xPriv = this.#getPrivKey({ algo: existingAlgo });
@@ -400,7 +397,7 @@ export class Key {
   checkPassword(password: string, algo?: KeyAlgorithm) {
     if (this.isPrivKeyEncrypted(algo)) {
       try {
-        sjcl.decrypt(password, this.#getPrivKeyEncrypted({ algo }));
+        Encryption.decryptWithPassword(this.#getPrivKeyEncrypted({ algo }), password);
       } catch (ex) {
         return false;
       }
@@ -409,7 +406,7 @@ export class Key {
     return null;
   };
 
-  get(password: PasswordMaybe, algo?: KeyAlgorithm) {
+  get(password?: PasswordMaybe, algo?: KeyAlgorithm) {
     const key: ExportedKey = {
       xPrivKey: '',
       mnemonic: '',
@@ -420,10 +417,10 @@ export class Key {
       $.checkArgument(password, 'Private keys are encrypted, a password is needed');
       try {
         const xPrivKeyEncrypted = this.#getPrivKeyEncrypted({ algo });
-        key.xPrivKey = sjcl.decrypt(password, xPrivKeyEncrypted);
+        key.xPrivKey = Encryption.decryptWithPassword(xPrivKeyEncrypted, password).toString();
 
         if (this.#mnemonicEncrypted) {
-          key.mnemonic = sjcl.decrypt(password, this.#mnemonicEncrypted);
+          key.mnemonic = Encryption.decryptWithPassword(this.#mnemonicEncrypted, password).toString();
         }
       } catch (ex) {
         throw new Error('Could not decrypt');
@@ -443,18 +440,18 @@ export class Key {
     return key;
   };
 
-  encrypt(password, opts, algo?) {
+  encrypt(password: string, opts?: { iter?: number; ks?: number }, algo?) {
     if (this.#getPrivKeyEncrypted({ algo }))
       throw new Error('Private key already encrypted');
 
     if (!this.#getPrivKey({ algo })) throw new Error('No private key to encrypt');
 
-    const encryptedPrivKey = sjcl.encrypt(password, this.#getPrivKey({ algo }), opts);
+    const encryptedPrivKey = JSON.stringify(Encryption.encryptWithPassword(this.#getPrivKey({ algo }), password, opts));
     this.#setPrivKeyEncrypted({ algo, value: encryptedPrivKey });
     if (!this.#getPrivKeyEncrypted({ algo })) throw new Error('Could not encrypt');
 
     if (this.#mnemonic)
-      this.#mnemonicEncrypted = sjcl.encrypt(password, this.#mnemonic, opts);
+      this.#mnemonicEncrypted = JSON.stringify(Encryption.encryptWithPassword(this.#mnemonic, password, opts));
 
     this.#setPrivKey({ algo, value: null });
     this.#mnemonic = null;
@@ -465,10 +462,10 @@ export class Key {
       throw new Error('Private key is not encrypted');
 
     try {
-      const decryptedPrivKey = sjcl.decrypt(password, this.#getPrivKeyEncrypted({ algo }));
+      const decryptedPrivKey = Encryption.decryptWithPassword(this.#getPrivKeyEncrypted({ algo }), password).toString();
       this.#setPrivKey({ algo, value: decryptedPrivKey });
       if (this.#mnemonicEncrypted) {
-        this.#mnemonic = sjcl.decrypt(password, this.#mnemonicEncrypted);
+        this.#mnemonic = Encryption.decryptWithPassword(this.#mnemonicEncrypted, password).toString();
       }
       this.#setPrivKeyEncrypted({ algo, value: null })
       this.#mnemonicEncrypted = null;
@@ -575,13 +572,6 @@ export class Key {
 
   /**
    * Create a new set of credentials from this key
-   * @param {PasswordMaybe} [password]
-   * @param {object} [opts]
-   * @param {string} [opts.chain]
-   * @param {string} [opts.network]
-   * @param {number} [opts.account]
-   * @param {number} [opts.n]
-   * @param {string} [opts.algo]
    */
   createCredentials(
     password?: PasswordMaybe,
@@ -590,14 +580,16 @@ export class Key {
       chain?: string;
       network: string;
       account: number;
+      m?: number;
       n: number;
       addressType?: string;
       walletPrivKey?: string;
       algo?: KeyAlgorithm;
+      tssXPubKey?: string;
     }
   ) {
     opts = opts || {} as any;
-    opts.chain = opts.chain || Utils.getChain(opts.coin);
+    opts.chain = (opts.chain || Utils.getChain(opts.coin)).toLowerCase();
     const algo = opts.algo || ALGOS_BY_CHAIN[opts.chain.toLowerCase()] || ALGOS_BY_CHAIN.default;
 
     if (password) $.shouldBeString(password, 'provide password');
@@ -605,13 +597,15 @@ export class Key {
     this._checkNetwork(opts.network);
     $.shouldBeNumber(opts.account, 'Invalid account');
     $.shouldBeNumber(opts.n, 'Invalid n');
+    if (opts.n > 1) $.checkArgument(opts.m && opts.m <= opts.n, 'Invalid m');
+    else opts.m = 1;
 
-    $.shouldBeUndefined(opts['useLegacyCoinType']);
-    $.shouldBeUndefined(opts['useLegacyPurpose']);
+    $.shouldBeUndefined(opts['useLegacyCoinType'], 'useLegacyCoinType is deprecated');
+    $.shouldBeUndefined(opts['useLegacyPurpose'], 'useLegacyPurpose is deprecated');
 
     const path = this.getBaseAddressDerivationPath(opts);
     let xPrivKey = this.derive(password, path, algo);
-    let requestPrivKey = this.derive(
+    const requestPrivKey = this.derive(
       password,
       Constants.PATHS.REQUEST_KEY,
     ).privateKey.toString();
@@ -633,27 +627,27 @@ export class Key {
       chain: opts.chain?.toLowerCase() || Utils.getChain(opts.coin), // getChain -> backwards compatibility
       network: opts.network,
       account: opts.account,
+      m: opts.m,
       n: opts.n,
       rootPath: path,
       keyId: this.id,
       requestPrivKey,
       addressType: opts.addressType,
       walletPrivKey: opts.walletPrivKey,
-      clientDerivedPublicKey: algo === Constants.ALGOS.EDDSA ? this.#getChildKeyEDDSA(password, path)?.pubKey : undefined,
+      clientDerivedPublicKey: opts.tssXPubKey || (algo === Constants.ALGOS.EDDSA ? this.#getChildKeyEDDSA(password, path)?.pubKey : undefined),
     });
   };
 
   /**
-   * @param {PasswordMaybe} password
-   * @param {object} opts
-   * @param {string} opts.path
-   * @param {string|PrivateKey} [opts.requestPrivKey]
+   * Create a new access object for this key
    */
   createAccess(
     password: PasswordMaybe,
-    opts: { path: string; requestPrivKey?: string | Bitcore.PrivateKey }
+    opts: {
+      path: string;
+      requestPrivKey?: string | Bitcore.PrivateKey
+    }
   ) {
-    opts = opts || {} as any;
     $.shouldBeString(opts.path);
 
     let requestPrivKey = new Bitcore.PrivateKey(opts.requestPrivKey || null);
@@ -675,12 +669,12 @@ export class Key {
    * Why is this async?
    *  Because the underlying SOL library uses SubtleCrypto browser API. The SubtleCrypto API hands off
    *  cryptographic operations to a native thread so it doesn't block the JS event loop and is thus async.
-   * @param {string} rootPath 
-   * @param {object} txp 
-   * @param {PasswordMaybe} [password]
-   * @returns {Promise<string[]>} Array of signatures
    */
-  async sign(rootPath: string, txp, password?: PasswordMaybe): Promise<string[]> {
+  async sign(
+    rootPath: string,
+    txp,
+    password?: PasswordMaybe
+  ): Promise<string[]> {
     $.shouldBeString(rootPath);
     if (this.isPrivKeyEncrypted() && !password) {
       throw new Errors.ENCRYPTED_PRIVATE_KEY();
@@ -714,16 +708,23 @@ export class Key {
       let tx = t.uncheckedSerialize();
       tx = typeof tx === 'string' ? [tx] : tx;
       const txArray = Array.isArray(tx) ? tx : [tx];
-      const isChange = false;
-      const addressIndex = 0;
-      const xPrivKey = this.get(password, Constants.ALGOS.EDDSA).xPrivKey
-      const key = Deriver.derivePrivateKey(
-        chain.toUpperCase(),
-        txp.network,
-        xPrivKey, // derived
-        addressIndex,
-        isChange
-      );
+
+      // Check if path includes change address and extract account number
+      const pathMatch = rootPath.match(/^m\/44'\/501'\/(\d+)'(?:\/(\d+)')?/);
+      if (!pathMatch) {
+        throw new Error(`Invalid Path. Path must be of form /44'/501'/*'/*'/ but found ${rootPath}`);
+      }
+
+      // Solana standardizes maintaing a 0 for the change address
+      const hasChangeAddress = pathMatch[2] !== undefined;
+      const finalPath = hasChangeAddress ? rootPath : `${rootPath}/0'`;
+      const account = parseInt(pathMatch[1], 10);
+      const expectedPath = this.getBaseAddressDerivationPath({ chain: txp.chain, account, n: 1 });
+      if (expectedPath !== finalPath) {
+        throw new Error(`Unexpected path. Expected ${expectedPath} but found ${finalPath} (rootPath: ${rootPath})`)
+      }
+
+      const key = this.#getChildKeyEDDSA(password, finalPath);
       const signatures = await Promise.all(
         txArray.map(rawTx => Transactions.getSignature({
           chain: chain.toUpperCase(),
@@ -769,7 +770,7 @@ export class Key {
     }
   }
 
-  #setPrivKeyEncrypted(params: { value: any; algo?: KeyAlgorithm; }) {
+  #setPrivKeyEncrypted(params: { value: string; algo?: KeyAlgorithm; }) {
     const { value, algo } = params;
     switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):
@@ -780,7 +781,7 @@ export class Key {
     }
   }
 
-  #setFingerprint(params: { value: any; algo?: KeyAlgorithm; }) {
+  #setFingerprint(params: { value: string; algo?: KeyAlgorithm; }) {
     const { value, algo } = params;
     switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):

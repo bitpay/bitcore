@@ -35,10 +35,6 @@ class ChainStateProxy implements IChainStateProvider {
     return services[chain][network];
   }
 
-  streamAddressUtxos(params: StreamAddressUtxosParams) {
-    return this.get(params).streamAddressUtxos(params);
-  }
-
   streamAddressTransactions(params: StreamAddressUtxosParams) {
     return this.get(params).streamAddressTransactions(params);
   }
@@ -146,6 +142,10 @@ class ChainStateProxy implements IChainStateProvider {
 
   isValid(params) {
     return this.get(params).isValid(params);
+  }
+
+  async getBlockFee(params: { chain: string; network: string; blockId: string }) {
+    return this.get(params).getBlockFee(params);
   }
 }
 export let ChainStateProvider = new ChainStateProxy();

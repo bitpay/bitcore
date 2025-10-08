@@ -167,6 +167,10 @@ export type isValidParams = ChainNetwork & {
   input: string;
 };
 
+export type BlockFeeParams = ChainNetwork & {
+  blockId: string;
+}
+
 export interface GetCoinsForTxParams {
   chain: string;
   network: string;
@@ -196,7 +200,6 @@ export interface IChainStateService {
   getWalletBalanceAtTime(
     params: GetWalletBalanceAtTimeParams
   ): Promise<WalletBalanceType>;
-  streamAddressUtxos(params: StreamAddressUtxosParams): any;
   streamAddressTransactions(params: StreamAddressUtxosParams): any;
   streamTransactions(params: StreamTransactionsParams): any;
   getAuthhead(params: StreamTransactionParams): Promise<AuthheadJSON | undefined>;
@@ -211,6 +214,7 @@ export interface IChainStateService {
   getLocalTip(params): Promise<IBlock | null>;
   getLocatorHashes(params): Promise<any>;
   isValid(params: isValidParams): { isValid: boolean; type: string };
+  getBlockFee(params: BlockFeeParams);
 }
 
 export interface ChainStateServices {

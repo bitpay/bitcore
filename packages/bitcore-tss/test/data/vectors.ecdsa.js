@@ -6,9 +6,14 @@ module.exports.vectors = [
   {
     m: 2,
     n: 3,
-    evmAddress: {
-      address: '0xD57cF5ac4CC763D83E0892a07a02fE1BBD123b27'
-    },
+    xPubKey: 'xpub661MyMwAqRbcGvRAUJpL6nMhYqanMb6xT7fJw7au2CxhA4Ye661AS6JHze8vGLdaxsxwmqw7g8iXKJn4TgC4Rzq87GueZbzzv1jz6XMsnr2',
+    addresses: [
+      { chain: 'ETH', network: 'mainnet', address: '0xD57cF5ac4CC763D83E0892a07a02fE1BBD123b27', path: 'm' },
+      { chain: 'ETH', network: 'mainnet', address: '0x8CeAD6bE77E8668016658Ab4a8f6B2B21C7C1959', path: 'm/0/0'},
+      { chain: 'BTC', network: 'mainnet', address: 'bc1qlhghx9pt5sj805cx6gwapgdgvvk27uea2nehv2', path: 'm', addressType: 'p2wpkh' },
+      { chain: 'BTC', network: 'regtest', address: 'bcrt1qc9ecm64c5hnsn62dj3sswssnlxegk6vqh0qw3x', path: 'm/0/0', addressType: 'p2wpkh' },
+      { chain: 'BTC', network: 'regtest', address: 'bcrt1qvyyl7ez48qdyfezmfrk03epekshph5k5fptsf0', path: 'm/0/1', addressType: 'p2wpkh' },
+    ],
     party0: {
       seed: Buffer.from('0d18dd84ff2e7e462bdca9fb362dce0590badac80438234a6be4b859d674355d', 'hex'),
       keychain: twoOfThree.party0Key,
@@ -198,14 +203,38 @@ module.exports.vectors = [
       chain: 'ETH',
       rawTx: '0xeb8083030d4782520894145938752bad526cb27f03ffb02775c43973ab8387038d7ea4c68000808205398080',
       messageHash: '516ab037171ee1a7787cbe07c28948dd0252ea60b7f40ee6ffbb7e1271f691ea'
+    }, {
+      description: 'Sign Ethereum transaction with path m/0/0',
+      derivationPath: 'm/0/0',
+      chain: 'ETH',
+      rawTx: '0xeb8083030d4782520894145938752bad526cb27f03ffb02775c43973ab8387038d7ea4c68000808205398080',
+      messageHash: '516ab037171ee1a7787cbe07c28948dd0252ea60b7f40ee6ffbb7e1271f691ea'
+    }, {
+      description: 'Sign Bitcoin transaction - P2WPKH',
+      derivationPath: 'm/0/0',
+      chain: 'BTC',
+      rawTx: '0200000001b61247a9a96f3c705e580135066d7924cebe918a42e37f122e46d416966007760000000000ffffffff02d2040000000000001600146109ff6455381a44e45b48ecf8e439b42e1bd2d47ea5f505000000001600146109ff6455381a44e45b48ecf8e439b42e1bd2d400000000',
+      inputIndex: 0,
+      utxo: {
+        txid: '7607609616d4462e127fe3428a91bece24796d063501585e703c6fa9a94712b6',
+        vout: 0,
+        satoshis: 1e8,
+        script: '0014c1738deab8a5e709e94d9461074213f9b28b6980',
+      },
+      messageHash: '0fa198ad9d2ea9c4023835f2387b2b0d016281fee4a268eb2c9d6a9dc84ced42'
     }]
   },
   {
     m: 3,
     n: 3,
-    evmAddress: {
-      address: '0xD57cF5ac4CC763D83E0892a07a02fE1BBD123b27'
-    },
+    xPubKey: 'xpub661MyMwAqRbcGMxfc55KDe3yBDLATHWyyERQuybvR7umom3z8QAQB9q2zDB1GQcnvcJfhiytC5sBxt8HsGLq3823rvNMEdp2sRZWHCpbvow',
+    addresses: [
+      { chain: 'ETH', network: 'mainnet', address: '0xD57cF5ac4CC763D83E0892a07a02fE1BBD123b27', path: 'm' },
+      { chain: 'ETH', network: 'mainnet', address: '0x52992F2D78E26663001890955513cC0D63D78191', path: 'm/0/0' },
+      { chain: 'BTC', network: 'mainnet', address: 'bc1qlhghx9pt5sj805cx6gwapgdgvvk27uea2nehv2', path: 'm', addressType: 'p2wpkh' },
+      { chain: 'BTC', network: 'regtest', address: 'mrRVfitL15jjH1kEuUvrsX6YqSSdigQZw1', path: 'm/1/40', addressType: 'p2pkh' },
+      { chain: 'BTC', network: 'regtest', address: 'mhYp1a6gMGecCncXY6wAGPT7UdKTe5qRzT', path: 'm/1/41', addressType: 'p2pkh' },
+    ],
     party0: {
       seed: Buffer.from('0d18dd84ff2e7e462bdca9fb362dce0590badac80438234a6be4b859d674355d', 'hex'),
       keychain: threeOfThree.party0Key,
@@ -395,14 +424,38 @@ module.exports.vectors = [
       chain: 'ETH',
       rawTx: '0xeb8083030d4782520894145938752bad526cb27f03ffb02775c43973ab8387038d7ea4c68000808205398080',
       messageHash: '516ab037171ee1a7787cbe07c28948dd0252ea60b7f40ee6ffbb7e1271f691ea'
+    }, {
+      description: 'Sign Ethereum transaction with path m/0/0',
+      derivationPath: 'm/0/0',
+      chain: 'ETH',
+      rawTx: '0xeb8083030d4782520894145938752bad526cb27f03ffb02775c43973ab8387038d7ea4c68000808205398080',
+      messageHash: '516ab037171ee1a7787cbe07c28948dd0252ea60b7f40ee6ffbb7e1271f691ea'
+    }, {
+      description: 'Sign Bitcoin transaction - P2PKH',
+      derivationPath: 'm/1/40',
+      chain: 'BTC',
+      rawTx: '0200000001e61f9791fe02162402d12e1d44390e186844f85036fb1855ad70bc912f6446f20100000000ffffffff02b315000000000000160014aeb0c7630e772935abc2bfd4df72aa7d348417273155eb0b000000001976a914164a2b0f704dfb6784c9b6ccd1b5538463da93d388ac00000000',
+      inputIndex: 0,
+      utxo: {
+        txid: 'f246642f91bc70ad5518fb3650f84468180e39441d2ed102241602fe91971fe6',
+        vout: 1,
+        satoshis: 2e8,
+        script: '76a91477a113c462f6ba094df1d634062af86dfd6011b688ac'
+      },
+      messageHash: '946a6f991455ae95e8dc66aa611feb53ac3b54ddbe93c442c950c859f5647773'
     }]
   },
   {
     m: 1,
     n: 4,
-    evmAddress: {
-      address: '0xEa08Bdc953DFd1Fd017c3Bb17B781Be13A830aD7'
-    },
+    xPubKey: 'xpub661MyMwAqRbcEdUKkUS4CfQNmWXn74P1HM9GPsKtkhgFL6GfJNH4QZJ9XeYibd6mtCn35yzsx5i2BQXY9Tqd6YPaXaMsbnpmBw9AWuNwNCB',
+    addresses: [
+      { chain: 'ETH', network: 'mainnet', address: '0xEa08Bdc953DFd1Fd017c3Bb17B781Be13A830aD7', path: 'm' },
+      { chain: 'ETH', network: 'mainnet', address: '0x7C686844e293ff19b6BF12AA4980206d30071214', path: 'm/0/0' },
+      { chain: 'BTC', network: 'mainnet', address: 'bc1q566z27mx3x9qjmg0s2gjxptwj5wqn3cddnrgm2', path: 'm', addressType: 'p2wpkh' },
+      { chain: 'BTC', network: 'regtest', address: '2N7USY6j69pjMrvLgX8i3nyRZYXxYoEzsD9', path: 'm/0/510/0', addressType: 'p2sh' },
+      { chain: 'BTC', network: 'regtest', address: '2MxSNgvwjoYAWB824as56kkXxo8dhKpXnN3', path: 'm/0/510/1', addressType: 'p2sh' },
+    ],
     party0: {
       seed: Buffer.from('0d18dd84ff2e7e462bdca9fb362dce0590badac80438234a6be4b859d674355d', 'hex'),
       keychain: oneOfFour.party0Key,
@@ -688,7 +741,26 @@ module.exports.vectors = [
       derivationPath: 'm',
       chain: 'ETH',
       rawTx: '0xeb8083030d4782520894145938752bad526cb27f03ffb02775c43973ab8387038d7ea4c68000808205398080',
-      messageHash: '516ab037171ee1a7787cbe07c28948dd0252ea60b7f40ee6ffbb7e1271f691ea'
+      messageHash: '516ab037171ee1a7787cbe07c28948dd0252ea60b7f40ee6ffbb7e1271f691ea' // keccak256(rawTx)
+    }, {
+      description: 'Sign Ethereum transaction with path m/0/0',
+      derivationPath: 'm/0/0',
+      chain: 'ETH',
+      rawTx: '0xeb8083030d4782520894145938752bad526cb27f03ffb02775c43973ab8387038d7ea4c68000808205398080',
+      messageHash: '516ab037171ee1a7787cbe07c28948dd0252ea60b7f40ee6ffbb7e1271f691ea' // keccak256(rawTx)
+    }, {
+      description: 'Sign Bitcoin transaction - P2SH',
+      derivationPath: 'm/0/510/0',
+      chain: 'BTC',
+      rawTx: '0200000001ce3f4e8a68701d3adb36ded86d56ba88eef3611d66bedd3728a6d03fe58fcdef0000000000ffffffff0280f0fa02000000001600146109ff6455381a44e45b48ecf8e439b42e1bd2d4f0a0f5050000000017a91438f477b28db3e712bde2f3676f7b179952a8ab2f8700000000',
+      inputIndex: 0,
+      utxo: {
+        txid: 'efcd8fe53fd0a62837ddbe661d61f3ee88ba566dd8de36db3a1d70688a4e3fce',
+        vout: 0,
+        satoshis: 1.5e8,
+        script: 'a9149c11a4baafa7035755d8f95125622c70b708575187'
+      },
+      messageHash: 'f11ae75811487a306ee19c246a41307843302a33d96cb25ac1b36f5a4c274192'
     }]
   }
 ];

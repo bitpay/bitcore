@@ -11,7 +11,7 @@ import { CacheStorage } from '../../../../models/cache';
 import { IBlock } from '../../../../types/Block';
 import { CoinListingJSON } from '../../../../types/Coin';
 import { IChainConfig, IProvider, ISVMNetworkConfig } from '../../../../types/Config';
-import { BroadcastTransactionParams, GetBalanceForAddressParams, GetBlockParams, GetCoinsForTxParams, GetEstimatePriorityFeeParams, GetWalletBalanceParams, IChainStateService, StreamAddressUtxosParams, StreamBlocksParams, StreamTransactionParams, StreamTransactionsParams, StreamWalletTransactionsParams, WalletBalanceType } from '../../../../types/namespaces/ChainStateProvider';
+import { BroadcastTransactionParams, GetBalanceForAddressParams, GetBlockBeforeTimeParams, GetBlockParams, GetCoinsForTxParams, GetEstimatePriorityFeeParams, GetWalletBalanceParams, GetWalletBalanceAtTimeParams, IChainStateService, StreamAddressUtxosParams, StreamBlocksParams, StreamTransactionParams, StreamTransactionsParams, StreamWalletTransactionsParams, WalletBalanceType } from '../../../../types/namespaces/ChainStateProvider';
 import { range } from '../../../../utils';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import {
@@ -185,7 +185,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         const addressStreams: TransformWithEventPipe[] = [];
 
         for (const address of walletAddresses) {
-          const addressStream = await this._buildAddressTransactionsStream({ ...params, address})
+          const addressStream = await this._buildAddressTransactionsStream({ ...params, address });
           addressStreams.push(addressStream);
         }
         ExternalApiStream.mergeStreams(addressStreams, walletStream);
@@ -215,15 +215,28 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         const { rpc, connection } = await this.getRpc(network);
         let before;
         let count = 0;
+        let _address = address
+        if (tokenAddress) {
+          try {
+            const { rpc } = await this.getRpc(network);
+            _address =  await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
+            if (!_address) throw new Error('Missing ATA');
+          } catch (e: any) {
+            const errMsg = 'Error getting ATA address';
+            logger.error(`${errMsg} %o`, e.stack || e.message || e);
+            throw new Error(errMsg);
+          }
+        }
         do {
           // fetch the next page of signatures
-          const txList = await connection.getSignaturesForAddress(address, { limit: 100, before }).send();
+          const txlimit = Math.min(100, limit);
+          const txList = await connection.getSignaturesForAddress(_address, { limit: txlimit, before }).send();
           if (!txList.length) break;
           before = txList[txList.length - 1].signature;
 
           for (const tx of txList.reverse()) {
             if (limit && count >= limit) break;
-            const transformedTx = await this._getTransformedTx(rpc, network, tx, address, tokenAddress);
+            const transformedTx = await this._getTransformedTx(rpc, network, tx, _address, tokenAddress);
             if (transformedTx) {
               addressStream.push(JSON.stringify(transformedTx) + '\n');
               count++;
@@ -242,15 +255,6 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   async _getTransformedTx(rpc, network, tx, address?, tokenAddress? ) {
     try {
       const parsedTx = await rpc.getTransaction({ txid: tx.signature });
-      if (tokenAddress) {
-        if (!parsedTx?.instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.length) return;
-        try {
-          address =  await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
-        } catch (e: any) {
-          logger.error('Error getting ata address: %o', e);
-        }
-        if (!address) return;
-      }
       return this.txTransform(network, { txStatuses: tx, tx: parsedTx, targetAddress: address, tokenAddress });
     } catch (err: any) {
       return {
@@ -301,12 +305,18 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         }
       };
       if (!tokenAddress) {
-        value = solTransfers.reduce((sum, transfer) => sum + Number(transfer.amount), 0);
+        const relevantTransfers = targetAddress ? solTransfers.filter(transfer => [transfer.destination, transfer.source].includes(targetAddress)) : solTransfers;
+        value = relevantTransfers.reduce((sum, transfer) => sum + Number(transfer.amount), 0);
       }
     }
-    if (instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.length > 0) {
-      const allTransfers = instructions[instructionKeys.TRANSFER_CHECKED_TOKEN];
-      const tokenTransfers = tokenAddress ? allTransfers.filter(transfer => tokenAddress.toLowerCase() === transfer.mint.toLowerCase()) : allTransfers;
+
+    const transferTokenInstructions = instructions?.[instructionKeys.TRANSFER_TOKEN] || [];
+    const transferCheckedTokenInstructions = instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN] || [];
+    const allTokenTransfers = [...transferTokenInstructions, ...transferCheckedTokenInstructions];
+
+    if (allTokenTransfers.length > 0) {
+      const filteredTransferCheckedToken = tokenAddress ? transferCheckedTokenInstructions.filter(transfer => tokenAddress.toLowerCase() === transfer.mint.toLowerCase()) : transferCheckedTokenInstructions;
+      const tokenTransfers = [...transferTokenInstructions, ...filteredTransferCheckedToken];
       if (!tokenTransfers?.length) {
         return;
       }
@@ -320,7 +330,8 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         }
       };
       if (tokenAddress) {
-        value = tokenTransfers.reduce((sum, transfer) => sum + Number(transfer.amount), 0);
+        const relevantTransfers = targetAddress ? tokenTransfers.filter(transfer => [transfer.destination, transfer.source].includes(targetAddress)) : tokenTransfers;
+        value = relevantTransfers.reduce((sum, transfer) => sum + Number(transfer.amount), 0);
       }
     }
 
@@ -328,21 +339,22 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     let txCategory = 'other';
 
     if (instructions?.[instructionKeys.TRANSFER_SOL]?.length > 0 ||
-      instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.length > 0) {
+      allTokenTransfers.length > 0) {
       if (allRecipients.length === 0) {
         txCategory = 'move';
       } else {
         const solSentOut = instructions?.[instructionKeys.TRANSFER_SOL]?.some(transfer =>
           transfer.source === target && transfer.destination !== target) || false;
-        const tokensSentOut = instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.some(transfer =>
+        const tokensSentOut = allTokenTransfers.some(transfer =>
           transfer.source === target && transfer.destination !== target) || false;
         const solReceived = instructions?.[instructionKeys.TRANSFER_SOL]?.some(transfer =>
           transfer.destination === target && transfer.source !== target) || false;
-        const tokensReceived = instructions?.[instructionKeys.TRANSFER_CHECKED_TOKEN]?.some(transfer =>
+        const tokensReceived = allTokenTransfers.some(transfer =>
           transfer.destination === target && transfer.source !== target) || false;
 
         if ((solSentOut || tokensSentOut) && !(solReceived || tokensReceived)) {
           txCategory = 'send';
+          value = value * -1;
         } else if (!(solSentOut || tokensSentOut) && (solReceived || tokensReceived)) {
           txCategory = 'receive';
         } else if ((solSentOut || tokensSentOut) && (solReceived || tokensReceived)) {
@@ -372,10 +384,85 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     } as any;
   }
 
+  async getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams): Promise<WalletBalanceType> {
+    const { network, time } = params;
+    if (time) {
+      if (params.args) {
+        params.args.time = time;
+      } else {
+        params.args = { time };
+      }
+    }
+    if (params.wallet._id === undefined) {
+      throw new Error('Wallet balance can only be retrieved for wallets with the _id property');
+    }
+    let addresses = await this.getWalletAddresses(params.wallet._id);
+    let addressBalancePromises = addresses.map(({ address }) =>
+      this.getBalanceForAddress({ chain: this.chain, network, address, args: params.args })
+    );
+    let addressBalances = await Promise.all<WalletBalanceType>(
+      addressBalancePromises
+    );
+    let balance = addressBalances.reduce(
+      (prev, cur) => ({
+        unconfirmed: BigInt(prev.unconfirmed) + BigInt(cur.unconfirmed),
+        confirmed: BigInt(prev.confirmed) + BigInt(cur.confirmed),
+        balance: BigInt(prev.balance) + BigInt(cur.balance)
+      }),
+      { unconfirmed: 0n, confirmed: 0n, balance: 0n }
+    );
+    return {
+      unconfirmed: Number(balance.unconfirmed),
+      confirmed: Number(balance.confirmed),
+      balance: Number(balance.balance)
+    };
+  }
+
   async getBalanceForAddress(params: GetBalanceForAddressParams): Promise<WalletBalanceType> {
-    const { address, network, args } = params;
+    const { chain, address, network, args } = params;
     const { rpc, connection } = await this.getRpc(network);
     const tokenAddress = args?.tokenAddress || args?.mintAddress;
+    if (args?.time) {
+      const block = await this.getBlockBeforeTime({ chain, network, time: args.time });
+      if (!block) {
+        throw new Error(`Balance not found at ${args.time}`);
+      }
+      const sigInBlock = block.transactions?.[0];
+      if (!sigInBlock) {
+        throw new Error(`Balance not found at ${args.time}`);
+      }
+      let ata;
+      if (tokenAddress) {
+        ata = await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
+        if (!ata) {
+          throw new Error('Missing ATA');
+        }
+      }
+      const txList = await connection.getSignaturesForAddress(ata || address, { limit: 1, before: sigInBlock }).send();
+      if (!txList.length || !txList[0]?.signature) {
+        throw new Error(`Balance not found at ${args.time}`);
+      }
+      const tx = await rpc.getTransaction({ txid: txList[0].signature });
+      if (!tx) {
+        throw new Error(`Balance not found at ${args.time}`);
+      }
+      const index = tx.accountKeys?.findIndex(acct => acct === address);
+      if (index === undefined || index === -1) {
+        throw new Error(`Balance not found at ${args.time}`);
+      }
+      let balance;
+      if (tokenAddress) {
+        const tokenBalance = tx.meta?.postTokenBalances?.find(tb => tb.accountIndex === index && tb.mint.toLowerCase() === tokenAddress.toLowerCase());
+        const decimals = tokenBalance?.uiTokenAmount?.decimals;
+        balance = (tokenBalance?.uiTokenAmount?.uiAmount || 0) * (10 ** decimals) || null;
+      } else {
+        balance = tx.meta?.postBalances ? tx.meta.postBalances[index] : null;
+      }
+      if (balance === null) {
+        throw new Error(`Balance not found at ${args.time}`);
+      }
+      return { confirmed: Number(balance), unconfirmed: 0, balance: Number(balance) };
+    }
     const cacheKey = tokenAddress
       ? `getBalanceForAddress-SOL-${network}-${address}-${tokenAddress.toLowerCase()}`
       : `getBalanceForAddress-SOL-${network}-${address}`;
@@ -402,6 +489,17 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     const slot = Number(height || blockId);
     const block = await rpc.getBlock({ height: slot });
     return this.blockTransform(network, block, slot);
+  }
+
+  async getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock | null> {
+    const { network, time = new Date() } = params;
+    const { rpc } = await this.getRpc(network);
+    const beforeTimeSlot = await this._findSlotByDate(network, new Date(time));
+    if (!beforeTimeSlot) {
+      return null;
+    }
+    const block = await rpc.getBlock({ height: beforeTimeSlot });
+    return this.blockTransform(network, block, beforeTimeSlot);
   }
 
   async streamBlocks(params: StreamBlocksParams) {
@@ -568,9 +666,24 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       return lo;
     }
 
+    let errorCount = 0;
     while (lo <= hi) {
       const mid = (lo + hi) / 2n;
-      const blockTime = await connection.getBlockTime(mid).send();
+      let blockTime: number | null = null;
+      try {
+        blockTime = await connection.getBlockTime(mid).send();
+        if (errorCount > 0) {
+          errorCount = 0; // reset error count on successful fetch
+        }
+      } catch (e: any) {
+        // possible rate limit exceeded
+        errorCount++;
+        if (errorCount >= 5) {
+          throw new Error(e?.message || 'Too many errors occurred');
+        }
+        await new Promise(resolve => setTimeout(resolve, 500));
+        continue;
+      }
   
       if (blockTime === null) {
         lo = mid + 1n;
@@ -661,11 +774,16 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
  async getSPLTokenInfo(
     network: string, 
     tokenAddress: string
-  ): Promise<{ name: string; symbol: string; decimals: number }> {
-    const { umi } = await this.getRpc(network);
+  ): Promise<{ name: string; symbol: string; decimals: number; programType: string | undefined; programAddress: string | undefined; }> {
+    const TOKEN_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+    const TOKEN_2022_ADDR = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
+    const { umi, connection } = await this.getRpc(network);
     let decimals;
+    let programType;
+    let programAddress;
     let name = '';
     let symbol = '';
+  
     try {
       let error;
       let token;
@@ -707,7 +825,28 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     } catch (err) {
       logger.error('Error getting SPL token info: %o', err);
     }
-    return { name, symbol, decimals };
+
+    try {
+      const result = await connection.getAccountInfo(tokenAddress).send();
+      const owner = result?.value?.owner?.toString?.();
+      if (!owner) {
+        throw new Error(`Mint account not found or unreadable: ${tokenAddress}`);
+      }
+      if (owner === TOKEN_PROGRAM_ADDRESS) {
+        programType = 'token';
+        programAddress = TOKEN_PROGRAM_ADDRESS;
+      } else if (owner === TOKEN_2022_ADDR) {
+        programType =  'token2022';
+        programAddress = TOKEN_2022_ADDR;
+      }
+      if (!programAddress) {
+        logger.warn(`Unknown token program owner for ${tokenAddress}: ${owner}`);
+      }
+    } catch (err) {
+      logger.error('Error getting SPL token program info: %o', err);
+    }
+
+    return { name, symbol, decimals, programType, programAddress };
   }
 
   async getLocalTip(params: any): Promise<IBlock> {
@@ -716,5 +855,34 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     const height = await connection.getSlot({ commitment: 'confirmed' }).send();
     const block = await rpc.getBlock({ height });
     return this.blockTransform(network, block, height);
+  }
+
+  validateRawTx(rawTx: string) {
+    const MAX_TRANSACTION_SIZE = 1232; // Solana's packet size limit
+    const MIN_TRANSACTION_SIZE = 64;
+
+    if (!rawTx) {
+      throw new Error('Missing raw transaction string')
+    }
+    if (!(Buffer.from(rawTx, 'base64').toString('base64') === rawTx)) {
+      throw new Error('Invalid base64 encoding');
+    }
+
+    const buffer = Buffer.from(rawTx, 'base64');
+
+    if (buffer.length > MAX_TRANSACTION_SIZE) {
+      throw new Error(`Transaction size (${buffer.length}) exceeds maximum (${MAX_TRANSACTION_SIZE})`);
+    }
+    if (buffer.length < MIN_TRANSACTION_SIZE) {
+      throw new Error('Transaction too small to be valid');
+    }
+    return true;
+  }
+
+  async decodeRawTransaction(params: any): Promise<any> {
+    const { network, rawTx } = params;
+    const { rpc } = await this.getRpc(network);
+    const decodedTx =  await rpc.decodeRawTransaction({ rawTx });
+    return decodedTx ? JSON.parse(JSON.stringify(decodedTx, (_, v) => typeof v === 'bigint' ? v.toString() : v)) : null;
   }
 }

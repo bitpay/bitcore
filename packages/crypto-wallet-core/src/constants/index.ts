@@ -1,9 +1,25 @@
+import { SCRIPT_TYPES } from './address';
 import { ALGO_TO_KEY_TYPE, ALGOS_BY_CHAIN } from './algorithms';
-import { EVM_CHAIN_ID_TO_CHAIN, EVM_CHAIN_NETWORK_TO_CHAIN_ID } from './chains';
+import {
+  CHAINS,
+  EVM_CHAIN_ID_TO_CHAIN,
+  EVM_CHAIN_NETWORK_TO_CHAIN_ID,
+  EVM_CHAINS,
+  MULTISIG_CHAINS,
+  SVM_CHAINS,
+  UTXO_CHAINS
+} from './chains';
 import { FEE_MINIMUMS } from './feeMinimums';
 import { TOKEN_OPTS as opts } from './tokens';
 import { UNITS } from './units';
-export let Constants = {
+
+export const Constants = {
+  UTXO_CHAINS,
+  EVM_CHAINS,
+  SVM_CHAINS,
+  SCRIPT_TYPES,
+  CHAINS,
+  MULTISIG_CHAINS,
   ETH_TOKEN_OPTS: opts.ETH_TOKEN_OPTS,
   MATIC_TOKEN_OPTS: opts.MATIC_TOKEN_OPTS,
   ARB_TOKEN_OPTS: opts.ARB_TOKEN_OPTS,

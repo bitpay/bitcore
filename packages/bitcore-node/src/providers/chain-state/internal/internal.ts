@@ -75,13 +75,6 @@ export class InternalStateProvider implements IChainStateService {
     return query;
   }
 
-  streamAddressUtxos(params: StreamAddressUtxosParams) {
-    const { req, res, args } = params;
-    const { limit, since } = args;
-    const query = this.getAddressQuery(params);
-    Storage.apiStreamingFind(CoinStorage, query, { limit, since, paging: '_id' }, req!, res!);
-  }
-
   async streamAddressTransactions(params: StreamAddressUtxosParams) {
     const { req, res, args } = params;
     const { limit, since } = args;
@@ -675,5 +668,44 @@ export class InternalStateProvider implements IChainStateService {
       .find(query)
       .addCursorFlag('noCursorTimeout', true)
       .toArray();
+  }
+
+  async getBlockFee(params: {
+    chain: string,
+    network: string,
+    blockId: string
+  }) {
+    const { chain, network, blockId } = params;
+    const transactions = blockId.length >= 64 
+      ? await TransactionStorage.collection.find({ chain, network, blockHash: blockId }).toArray()
+      : await TransactionStorage.collection.find({ chain, network, blockHeight: parseInt(blockId, 10) }).toArray();
+    if (transactions.length <= 1)
+      return { feeTotal: 0, mean: 0, median: 0, mode: 0 };
+
+    let feeRateSum = 0;
+    let feeTotal = 0;
+    const feeRates: number[] = [];
+    const freq = {};
+    let mode = 0, maxCount = 0;
+    for (const tx of transactions) {
+      if (tx.coinbase) continue; // skip coinbase transaction
+      const rate = tx.fee && tx.size ? tx.fee / tx.size : 0; // does not add fee rate 0 or divide by zero
+      feeRates.push(rate);
+      feeRateSum += rate;
+      feeTotal += tx.fee || 0;
+      
+      freq[rate] = (freq[rate] || 0) + 1;
+      if (freq[rate] > maxCount) {
+        mode = rate;
+        maxCount = freq[rate];
+      }
+    }
+    const mean = feeRateSum / feeRates.length;
+    feeRates.sort((a, b) => a - b);
+    const median = feeRates.length % 2 === 1
+      ? feeRates[Math.floor(feeRates.length / 2)]
+      : (feeRates[feeRates.length / 2 - 1] + feeRates[feeRates.length / 2]) / 2;
+
+    return { feeTotal, mean, median, mode };
   }
 }

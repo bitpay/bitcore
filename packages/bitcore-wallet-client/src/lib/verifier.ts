@@ -5,6 +5,7 @@ import {
 import _ from 'lodash';
 import { singleton } from 'preconditions';
 import { Constants, Utils } from './common';
+import { Credentials } from './credentials';
 import log from './log';
 
 const $ = singleton();
@@ -27,11 +28,14 @@ export class Verifier {
   }
   
   /**
-   * Check address
-   *
-   * @param {Function} credentials
-   * @param {String} address
-   * @returns {Boolean} true or false
+   * Check address by deriving it from credentials and comparing
+   * @param {Credentials} credentials
+   * @param {object} address
+   * @param {string} address.address
+   * @param {string} address.type
+   * @param {string} address.path
+   * @param {Array} address.publicKeys
+   * @param {Array} [escrowInputs] Escrow inputs (BCH only)
    */
   static checkAddress(credentials, address, escrowInputs?) {
     $.checkState(credentials.isComplete(), 'Failed state: credentials at <checkAddress>');
@@ -41,7 +45,7 @@ export class Verifier {
       network = 'regtest';
     }
 
-    var local = Utils.deriveAddress(
+    const local = Utils.deriveAddress(
       address.type || credentials.addressType,
       credentials.publicKeyRing,
       address.path,
@@ -61,30 +65,26 @@ export class Verifier {
   /**
    * Check copayers
    *
-   * @param {Function} credentials
+   * @param {Credentials} credentials
    * @param {Array} copayers
    * @returns {Boolean} true or false
    */
-  static checkCopayers(credentials, copayers) {
-    $.checkState(
-      credentials.walletPrivKey,
-      'Failed state: credentials at <checkCopayers>'
-    );
-    var walletPubKey = Bitcore.PrivateKey.fromString(credentials.walletPrivKey)
+  static checkCopayers(credentials: Credentials, copayers, opts?: { isTss?: boolean }) {
+    opts = opts || {};
+    $.checkState(credentials.walletPrivKey, 'Failed state: credentials at <checkCopayers>');
+    const walletPubKey = Bitcore.PrivateKey.fromString(credentials.walletPrivKey)
       .toPublicKey()
       .toString();
 
-    if (copayers.length != credentials.n) {
+    if (copayers.length != credentials.n && !opts.isTss) {
       log.error('Missing public keys in server response');
       return false;
     }
 
     // Repeated xpub kes?
-    var uniq = [];
-    var error;
+    const uniq = [];
+    let error;
     for (const copayer of copayers || []) {
-      if (error) return;
-
       if (uniq[copayers.xPubKey]++) {
         log.error('Repeated public keys in server response');
         error = true;
@@ -100,7 +100,7 @@ export class Verifier {
         log.error('Missing copayer fields in server response');
         error = true;
       } else {
-        var hash = Utils.getCopayerHash(
+        const hash = Utils.getCopayerHash(
           copayer.encryptedName || copayer.name,
           copayer.xPubKey,
           copayer.requestPubKey
@@ -110,6 +110,7 @@ export class Verifier {
           error = true;
         }
       }
+      if (error) break;
     }
 
     if (error) return false;
@@ -217,8 +218,13 @@ export class Verifier {
       ' Signature: ',
       txp.proposalSignature
     );
-    if (!Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey))
-      return false;
+  
+    const verified = Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey);
+    if (!verified && !txp.prePublishRaw)
+        return false;
+    
+    if (!verified && txp.prePublishRaw && !Utils.verifyMessage(txp.prePublishRaw, txp.proposalSignature, creatorSigningPubKey))
+        return false;
 
     if (Constants.UTXO_CHAINS.includes(chain)) {
       if (!this.checkAddress(credentials, txp.changeAddress)) {

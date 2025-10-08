@@ -9,6 +9,7 @@ import { CacheStorage } from '../../../src/models/cache';
 import { IWallet, WalletStorage } from '../../../src/models/wallet';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { SOL } from '../../../src/modules/solana/api/csp';
+import { SVMRouter } from '../../../src/providers/chain-state/svm/api/routes';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
 describe('Solana API', function() {
@@ -252,7 +253,7 @@ describe('Solana API', function() {
     expect(transformedTx.fee).to.equal(5000);
     expect(transformedTx.from).to.equal('sender');
     expect(transformedTx.address).to.equal('receiver');
-    expect(transformedTx.satoshis).to.equal(100000);
+    expect(transformedTx.satoshis).to.equal(-100000);
     expect(transformedTx.category).to.equal('send');
   });
 
@@ -355,4 +356,414 @@ describe('Solana API', function() {
       balance: 3000000
     });
   });
+
+  describe('#decodeRawTransaction', () => {
+    let svmRouter: SVMRouter;
+  
+    beforeEach(() => {
+      svmRouter = new SVMRouter(SOL, chain);
+    });
+  
+    it('should successfully decode a valid raw transaction', async () => {
+      const rawTx = 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDb6/gH5XxrVl86CZd+DpqA1jN8YSz91e8yXxOlyeS8tLRnckLdZVIkhi0iAExccvYpTw5tIfPZ8z/OJGQtnvg9QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7A+XJrI4siFXUreDo+M94DBeuJwm0Oq5kHqeWuAw7xgBAgIAAQwCAAAAAIALMGTXDQA=';
+      
+      const mockDecodedTx = {
+        version: 0,
+        fee: '5000',
+        signatures: ['signature1'],
+        instructions: [
+          {
+            programId: 'SystemProgram',
+            accounts: ['account1', 'account2'],
+            data: 'instruction_data',
+            lamports: '1000000000'
+          }
+        ],
+        recentBlockhash: 'recent_blockhash'
+      };
+  
+      const rpc = {
+        decodeRawTransaction: sandbox.stub().resolves(mockDecodedTx)
+      };
+  
+      sandbox.stub(SOL, 'getRpc').resolves({ rpc });
+  
+      const req = {
+        body: { rawTx },
+        params: { network }
+      } as any;
+      
+      const res = {
+        json: sandbox.stub(),
+        status: sandbox.stub().returnsThis(),
+        send: sandbox.stub()
+      } as any;
+  
+      const router = svmRouter.getRouter();
+      const routeCall = router.stack.find((layer: any) => 
+        layer.route && layer.route.path === `/api/${chain}/:network/decode`
+      );
+      
+      expect(routeCall).to.exist;
+      const routeHandler = routeCall?.route?.stack?.[0]?.handle;
+      expect(routeHandler).to.exist;
+      
+      const next = sandbox.stub();
+      await (routeHandler as any)(req, res, next);
+  
+      expect(rpc.decodeRawTransaction.calledOnce).to.be.true;
+      expect(rpc.decodeRawTransaction.calledWith({ rawTx })).to.be.true;
+      expect(res.json.calledOnce).to.be.true;
+      expect(res.json.calledWith(mockDecodedTx)).to.be.true;
+      expect(res.status.called).to.be.false;
+    });
+  
+    it('should return 400 error when rawTx is missing', async () => {
+      const req = {
+        body: {}, // Missing rawTx
+        params: { network }
+      } as any;
+      
+      const res = {
+        json: sandbox.stub(),
+        status: sandbox.stub().returnsThis(),
+        send: sandbox.stub()
+      } as any;
+  
+      const router = svmRouter.getRouter();
+      const routeCall = router.stack.find((layer: any) => 
+        layer.route && layer.route.path === `/api/${chain}/:network/decode`
+      );
+      
+      const routeHandler = routeCall?.route?.stack?.[0]?.handle;
+      expect(routeHandler).to.exist;
+      
+      const next = sandbox.stub();
+      await (routeHandler as any)(req, res, next);
+  
+      expect(res.status.calledOnce).to.be.true;
+      expect(res.status.calledWith(400)).to.be.true;
+      expect(res.send.calledOnce).to.be.true;
+      expect(res.send.calledWith('Missing raw transaction string')).to.be.true;
+      expect(res.json.called).to.be.false;
+    });
+  
+    it('should return 400 error when rawTx has invalid base64 encoding', async () => {
+      const rawTx = 'invalid_base64_!@#$%';
+  
+      const req = {
+        body: { rawTx },
+        params: { network }
+      } as any;
+      
+      const res = {
+        json: sandbox.stub(),
+        status: sandbox.stub().returnsThis(),
+        send: sandbox.stub()
+      } as any;
+  
+      const router = svmRouter.getRouter();
+      const routeCall = router.stack.find((layer: any) => 
+        layer.route && layer.route.path === `/api/${chain}/:network/decode`
+      );
+      
+      const routeHandler = routeCall?.route?.stack?.[0]?.handle;
+      expect(routeHandler).to.exist;
+      
+      const next = sandbox.stub();
+      await (routeHandler as any)(req, res, next);
+  
+      expect(res.status.calledOnce).to.be.true;
+      expect(res.status.calledWith(400)).to.be.true;
+      expect(res.send.calledOnce).to.be.true;
+      expect(res.send.calledWith('Invalid base64 encoding')).to.be.true;
+    });
+  
+    it('should return 400 error when transaction size exceeds maximum', async () => {
+      const largeBuffer = Buffer.alloc(1300, 'a');
+      const rawTx = largeBuffer.toString('base64');
+  
+      const req = {
+        body: { rawTx },
+        params: { network }
+      } as any;
+      
+      const res = {
+        json: sandbox.stub(),
+        status: sandbox.stub().returnsThis(),
+        send: sandbox.stub()
+      } as any;
+  
+      const router = svmRouter.getRouter();
+      const routeCall = router.stack.find((layer: any) => 
+        layer.route && layer.route.path === `/api/${chain}/:network/decode`
+      );
+      
+      const routeHandler = routeCall?.route?.stack?.[0]?.handle;
+      expect(routeHandler).to.exist;
+      
+      const next = sandbox.stub();
+      await (routeHandler as any)(req, res, next);
+  
+      expect(res.status.calledOnce).to.be.true;
+      expect(res.status.calledWith(400)).to.be.true;
+      expect(res.send.calledOnce).to.be.true;
+      expect(res.send.args[0][0]).to.include('exceeds maximum (1232)');
+    });
+  
+    it('should return 400 error when transaction is too small', async () => {
+      const smallBuffer = Buffer.alloc(30, 'a');
+      const rawTx = smallBuffer.toString('base64');
+  
+      const req = {
+        body: { rawTx },
+        params: { network }
+      } as any;
+      
+      const res = {
+        json: sandbox.stub(),
+        status: sandbox.stub().returnsThis(),
+        send: sandbox.stub()
+      } as any;
+  
+      const router = svmRouter.getRouter();
+      const routeCall = router.stack.find((layer: any) => 
+        layer.route && layer.route.path === `/api/${chain}/:network/decode`
+      );
+      
+      const routeHandler = routeCall?.route?.stack?.[0]?.handle;
+      expect(routeHandler).to.exist;
+      
+      const next = sandbox.stub();
+      await (routeHandler as any)(req, res, next);
+  
+      expect(res.status.calledOnce).to.be.true;
+      expect(res.status.calledWith(400)).to.be.true;
+      expect(res.send.calledOnce).to.be.true;
+      expect(res.send.calledWith('Transaction too small to be valid')).to.be.true;
+    });
+  
+    it('should return 500 error when RPC decoding fails', async () => {
+      const rawTx = 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDb6/gH5XxrVl86CZd+DpqA1jN8YSz91e8yXxOlyeS8tLRnckLdZVIkhi0iAExccvYpTw5tIfPZ8z/OJGQtnvg9QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7A+XJrI4siFXUreDo+M94DBeuJwm0Oq5kHqeWuAw7xgBAgIAAQwCAAAAAIALMGTXDQA=';
+      const decodingError = new Error('RPC decode failed');
+  
+      const rpc = {
+        decodeRawTransaction: sandbox.stub().throws(decodingError)
+      };
+  
+      sandbox.stub(SOL, 'getRpc').resolves({ rpc });
+  
+      const req = {
+        body: { rawTx },
+        params: { network }
+      } as any;
+      
+      const res = {
+        json: sandbox.stub(),
+        status: sandbox.stub().returnsThis(),
+        send: sandbox.stub()
+      } as any;
+  
+      const router = svmRouter.getRouter();
+      const routeCall = router.stack.find((layer: any) => 
+        layer.route && layer.route.path === `/api/${chain}/:network/decode`
+      );
+      
+      const routeHandler = routeCall?.route?.stack?.[0]?.handle;
+      expect(routeHandler).to.exist;
+      
+      const next = sandbox.stub();
+      await (routeHandler as any)(req, res, next);
+  
+      expect(rpc.decodeRawTransaction.calledOnce).to.be.true;
+      expect(res.status.calledOnce).to.be.true;
+      expect(res.status.calledWith(500)).to.be.true;
+      expect(res.send.calledOnce).to.be.true;
+      expect(res.send.calledWith(decodingError.message)).to.be.true;
+      expect(res.json.called).to.be.false;
+    });
+  
+    it('should handle null response from RPC decoding', async () => {
+      const rawTx = 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDb6/gH5XxrVl86CZd+DpqA1jN8YSz91e8yXxOlyeS8tLRnckLdZVIkhi0iAExccvYpTw5tIfPZ8z/OJGQtnvg9QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7A+XJrI4siFXUreDo+M94DBeuJwm0Oq5kHqeWuAw7xgBAgIAAQwCAAAAAIALMGTXDQA=';
+  
+      const rpc = {
+        decodeRawTransaction: sandbox.stub().resolves(null)
+      };
+  
+      sandbox.stub(SOL, 'getRpc').resolves({ rpc });
+  
+      const req = {
+        body: { rawTx },
+        params: { network }
+      } as any;
+      
+      const res = {
+        json: sandbox.stub(),
+        status: sandbox.stub().returnsThis(),
+        send: sandbox.stub()
+      } as any;
+  
+      const router = svmRouter.getRouter();
+      const routeCall = router.stack.find((layer: any) => 
+        layer.route && layer.route.path === `/api/${chain}/:network/decode`
+      );
+      
+      const routeHandler = routeCall?.route?.stack?.[0]?.handle;
+      expect(routeHandler).to.exist;
+      
+      const next = sandbox.stub();
+      await (routeHandler as any)(req, res, next);
+  
+      expect(rpc.decodeRawTransaction.calledOnce).to.be.true;
+      expect(res.json.calledOnce).to.be.true;
+      expect(res.json.calledWith(null)).to.be.true;
+      expect(res.status.called).to.be.false;
+    });
+  
+    it('should decode transaction with different network parameters', async () => {
+      const rawTx = 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDb6/gH5XxrVl86CZd+DpqA1jN8YSz91e8yXxOlyeS8tLRnckLdZVIkhi0iAExccvYpTw5tIfPZ8z/OJGQtnvg9QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7A+XJrI4siFXUreDo+M94DBeuJwm0Oq5kHqeWuAw7xgBAgIAAQwCAAAAAIALMGTXDQA=';
+      const networks = ['mainnet', 'devnet', 'testnet'];
+      
+      for (const testNetwork of networks) {
+        const mockDecodedTx = {
+          version: 0,
+          fee: '5000',
+          network: testNetwork
+        };
+  
+        const rpc = {
+          decodeRawTransaction: sandbox.stub().resolves(mockDecodedTx)
+        };
+  
+        sandbox.stub(SOL, 'getRpc').resolves({ rpc });
+  
+        const req = {
+          body: { rawTx },
+          params: { network: testNetwork }
+        } as any;
+        
+        const res = {
+          json: sandbox.stub(),
+          status: sandbox.stub().returnsThis(),
+          send: sandbox.stub()
+        } as any;
+  
+        const router = svmRouter.getRouter();
+        const routeCall = router.stack.find((layer: any) => 
+          layer.route && layer.route.path === `/api/${chain}/:network/decode`
+        );
+        
+        const routeHandler = routeCall?.route?.stack?.[0]?.handle;
+        expect(routeHandler).to.exist;
+        
+        const next = sandbox.stub();
+        await (routeHandler as any)(req, res, next);
+  
+        expect(rpc.decodeRawTransaction.calledWith({ rawTx })).to.be.true;
+        expect(res.json.calledOnce).to.be.true;
+        expect(res.json.calledWith(mockDecodedTx)).to.be.true;
+        
+        // Restore stub for next iteration
+        sandbox.restore();
+        sandbox = sinon.createSandbox();
+      }
+    });
+  
+    it('should handle complex transaction with bigint values converted to strings', async () => {
+      const rawTx = 'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDb6/gH5XxrVl86CZd+DpqA1jN8YSz91e8yXxOlyeS8tLRnckLdZVIkhi0iAExccvYpTw5tIfPZ8z/OJGQtnvg9QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7A+XJrI4siFXUreDo+M94DBeuJwm0Oq5kHqeWuAw7xgBAgIAAQwCAAAAAIALMGTXDQA=';
+      
+      // Mock RPC returns bigint values
+      const mockDecodedTxWithBigInts = {
+        version: 0,
+        fee: BigInt(5000),
+        lamports: BigInt('1000000000000'),
+        signatures: ['sig1', 'sig2'],
+        instructions: [
+          {
+            programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+            accounts: ['account1', 'account2'],
+            data: 'base64data',
+            parsed: {
+              info: {
+                amount: BigInt('999999999999'),
+                authority: 'auth1',
+                destination: 'dest1'
+              },
+              type: 'transfer'
+            }
+          }
+        ],
+        recentBlockhash: 'blockhash123',
+        accountKeys: ['key1', 'key2']
+      };
+  
+      const expectedResponse = {
+        version: 0,
+        fee: '5000',
+        lamports: '1000000000000',
+        signatures: ['sig1', 'sig2'],
+        instructions: [
+          {
+            programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+            accounts: ['account1', 'account2'],
+            data: 'base64data',
+            parsed: {
+              info: {
+                amount: '999999999999',
+                authority: 'auth1',
+                destination: 'dest1'
+              },
+              type: 'transfer'
+            }
+          }
+        ],
+        recentBlockhash: 'blockhash123',
+        accountKeys: ['key1', 'key2']
+      };
+  
+      const rpc = {
+        decodeRawTransaction: sandbox.stub().resolves(mockDecodedTxWithBigInts)
+      };
+  
+      sandbox.stub(SOL, 'getRpc').resolves({ rpc });
+  
+      const req = {
+        body: { rawTx },
+        params: { network }
+      } as any;
+      
+      const res = {
+        json: sandbox.stub(),
+        status: sandbox.stub().returnsThis(),
+        send: sandbox.stub()
+      } as any;
+  
+      const router = svmRouter.getRouter();
+      const routeCall = router.stack.find((layer: any) => 
+        layer.route && layer.route.path === `/api/${chain}/:network/decode`
+      );
+      
+      const routeHandler = routeCall?.route?.stack[0].handle;
+      
+      const next = sandbox.stub();
+      await (routeHandler as any)(req, res, next);
+  
+      expect(rpc.decodeRawTransaction.calledOnce).to.be.true;
+      expect(res.json.calledOnce).to.be.true;
+      // The CSP's decodeRawTransaction method handles bigint conversion
+      expect(res.json.calledWith(expectedResponse)).to.be.true;
+      expect(res.status.called).to.be.false;
+    });
+  
+    it('should register the correct route path and method', () => {
+      const router = svmRouter.getRouter();
+      const routeCall = router.stack.find((layer: any) => 
+        layer.route && layer.route.path === `/api/${chain}/:network/decode`
+      );
+      
+      expect(routeCall).to.exist;
+      expect((routeCall as any)?.route?.methods?.post).to.be.true;
+    });
+  });
+  
 });

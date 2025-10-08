@@ -3,13 +3,7 @@
 import * as CWC from 'crypto-wallet-core';
 
 export const Constants = {
-  SCRIPT_TYPES: {
-    P2SH: 'P2SH',
-    P2PKH: 'P2PKH',
-    P2WPKH: 'P2WPKH',
-    P2WSH: 'P2WSH',
-    P2TR: 'P2TR'
-  },
+  SCRIPT_TYPES: CWC.Constants.SCRIPT_TYPES,
   // not used, since Credentials 2.0
   DERIVATION_STRATEGIES: {
     BIP44: 'BIP44',
@@ -53,10 +47,11 @@ export const Constants = {
     'usdt'
   ],
 
-  CHAINS: ['btc', 'bch', 'eth', 'matic', 'xrp', 'doge', 'ltc', 'arb', 'base', 'op', 'sol'],
-  UTXO_CHAINS: ['btc', 'bch', 'doge', 'ltc'],
-  EVM_CHAINS: ['eth', 'matic', 'arb', 'base', 'op'],
-  SVM_CHAINS: ['sol'],
+  CHAINS: CWC.Constants.CHAINS,
+  UTXO_CHAINS: CWC.Constants.UTXO_CHAINS,
+  EVM_CHAINS: CWC.Constants.EVM_CHAINS,
+  SVM_CHAINS: CWC.Constants.SVM_CHAINS,
+  MULTISIG_CHAINS: CWC.Constants.MULTISIG_CHAINS,
   ETH_TOKEN_OPTS: CWC.Constants.ETH_TOKEN_OPTS,
   MATIC_TOKEN_OPTS: CWC.Constants.MATIC_TOKEN_OPTS,
   ARB_TOKEN_OPTS: CWC.Constants.ARB_TOKEN_OPTS,

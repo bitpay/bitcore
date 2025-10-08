@@ -924,6 +924,10 @@ export class Wallet {
   isMainnet() {
     return this.network === 'mainnet' || this.network === 'livenet';
   }
+
+  isUnlocked() {
+    return !!this.unlocked;
+  }
 }
 
 export const AddressTypes = {

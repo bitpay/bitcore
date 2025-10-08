@@ -34,7 +34,7 @@ inherits(TransactionSignature, Signature);
 TransactionSignature.prototype._fromObject = function(arg) {
   this._checkObjectArgs(arg);
   this.publicKey = new PublicKey(arg.publicKey);
-  this.prevTxId = BufferUtil.isBuffer(arg.prevTxId) ? arg.prevTxId : new Buffer(arg.prevTxId, 'hex');
+  this.prevTxId = BufferUtil.isBuffer(arg.prevTxId) ? arg.prevTxId : Buffer.from(arg.prevTxId, 'hex');
   this.outputIndex = arg.outputIndex;
   this.inputIndex = arg.inputIndex;
   this.signature = (arg.signature instanceof Signature) ? arg.signature :
