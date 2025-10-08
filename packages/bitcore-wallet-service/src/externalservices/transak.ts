@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import * as request from 'request';
 import config from '../config';
 import { ClientError } from '../lib/errors/clienterror';
@@ -7,7 +6,7 @@ import { checkRequired } from '../lib/server';
 export class TransakService {
   request: any = request;
 
-  private transakGetKeys(req) {
+  private transakGetKeys(req, cleanBody: boolean = true) {
     if (!config.transak) throw new Error('Transak missing credentials');
 
     let env: 'sandbox' | 'production' | 'sandboxWeb' | 'productionWeb';
@@ -16,8 +15,10 @@ export class TransakService {
       env += 'Web';
     }
 
-    delete req.body.env;
-    delete req.body.context;
+    if (cleanBody) {
+      delete req.body.env;
+      delete req.body.context;
+    }
 
     const keys: {
       API: string;
@@ -51,7 +52,7 @@ export class TransakService {
         'api-secret': SECRET_KEY,
       };
 
-      req.body = {
+      const body = {
         apiKey: API_KEY
       }
 
@@ -61,7 +62,7 @@ export class TransakService {
         URL,
         {
           headers,
-          body: req.body,
+          body,
           json: true
         },
         (err, data) => {
@@ -206,49 +207,46 @@ export class TransakService {
         'partnerCustomerId',
       ];
 
-      const env = _.cloneDeep(req.body.env);
       const requiredParams = req.body.context === 'web' ? [] : appRequiredParams;
       const referrerDomain = req.body.referrerDomain ?? req.body.context === 'web' ? 'bitpay.com' : 'bitpay';
       let keys;
       try {
-        keys = this.transakGetKeys(req);
+        keys = this.transakGetKeys(req, false);
       } catch (err) {
         return reject(err);
       }
       const API_KEY = keys.API_KEY;
       const WIDGET_API = keys.WIDGET_API;
 
-      if (
-        !checkRequired(req.body, requiredParams)
-      ) {
+      if (!checkRequired(req.body, requiredParams)) {
         return reject(new ClientError("Transak's request missing arguments"));
       }
 
       let accessToken;
-        if (req.body.accessToken) {
-          accessToken = req.body.accessToken;
-        } else {
-          try {
-            const accessTokenData = await this.transakGetAccessToken({ body: env });
-            accessToken = accessTokenData?.data?.accessToken;
-          } catch (err) {
-            return reject(err?.body ? err.body : err);
-          }
+      if (req.body.accessToken) {
+        accessToken = req.body.accessToken;
+      } else {
+        try {
+          const accessTokenData = await this.transakGetAccessToken(req);
+          accessToken = accessTokenData?.data?.accessToken;
+        } catch (err) {
+          return reject(err?.body ? err.body : err);
         }
+      }
 
-        const headers = {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          'access-token': accessToken,
-        };
+      const headers = {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'access-token': accessToken,
+      };
 
-        req.body = {
-          widgetParams: {
-            ...req.body,
-            apiKey: API_KEY,
-            referrerDomain,
-          },
-        };
+      const body = {
+        widgetParams: {
+          ...req.body,
+          apiKey: API_KEY,
+          referrerDomain,
+        },
+      };
 
       const URL: string = WIDGET_API + '/api/v2/auth/session';
 
@@ -256,7 +254,7 @@ export class TransakService {
         URL,
         {
           headers,
-          body: req.body,
+          body,
           json: true
         },
         (err, data) => {
@@ -272,10 +270,9 @@ export class TransakService {
 
   transakGetOrderDetails(req): Promise<any> {
     return new Promise(async (resolve, reject) => {
-      const env = _.cloneDeep(req.body.env);
       let keys;
       try {
-        keys = this.transakGetKeys(req);
+        keys = this.transakGetKeys(req, false);
       } catch (err) {
         return reject(err);
       }
@@ -290,7 +287,7 @@ export class TransakService {
         accessToken = req.body.accessToken;
       } else {
         try {
-          const accessTokenData = await this.transakGetAccessToken({ body: env });
+          const accessTokenData = await this.transakGetAccessToken(req);
           accessToken = accessTokenData?.data?.accessToken;
         } catch (err) {
           return reject(err?.body ? err.body : err);
