@@ -204,27 +204,21 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
 
                               <TileDescription padding='0 1rem 0 0' value>
                                 <DataBox label='Tx ID'>
-                                  <TextElipsis>
-                                    <SpanLink
-                                      onClick={() =>
-                                        goToTx(item.mintTxid, undefined, item.mintIndex)
-                                      }>
-                                      {item.mintTxid}
-                                    </SpanLink>
-                                  </TextElipsis>
+                                  <SpanLink
+                                    onClick={() =>
+                                      goToTx(item.mintTxid, undefined, item.mintIndex)
+                                    }>
+                                    {item.mintTxid}
+                                  </SpanLink>
                                 </DataBox>
                                   
                                 <div style={{display: 'flex', gap: '0.7rem', margin: '0 0.2rem'}}>
                                   <DataBox label='Tx Index' style={{margin: 0}}>
-                                    <TextElipsis>
-                                      {item.mintIndex}
-                                    </TextElipsis>
+                                    {item.mintIndex}
                                   </DataBox>
                                   {item.uiConfirmations && confirmations > 0 ? (
                                     <DataBox label='Confirmations' style={{margin: 0}}>
-                                      <ScriptText>
-                                        {item.uiConfirmations + confirmations}
-                                      </ScriptText>
+                                      {item.uiConfirmations + confirmations}
                                     </DataBox>
                                   ) : null}
                                 </div>
