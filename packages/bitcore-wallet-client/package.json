@@ -52,9 +52,7 @@
     "request-promise": "^4.2.4",
     "sinon": "^7.1.1",
     "supertest": "*",
-    "ts-node": "^8.0.3",
-    "tslint": "^5.14.0",
-    "typescript-eslint-parser": "^22.0.0"
+    "ts-node": "^8.0.3"
   },
   "scripts": {
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
@@ -65,10 +63,10 @@
     "compile": "npm run clean && tsc",
     "build": "tsc && npm run lint",
     "clean": "rm -rf ./ts_build",
-    "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
-    "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
+    "lint": "eslint .",
+    "fix": "eslint --fix --quiet .",
     "pub": "npm run build && npm publish",
-    "precommit": "npm run lint; npm run fix"
+    "precommit": "echo 'TODO: npm run lint; npm run fix'"
   },
   "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4"
 }

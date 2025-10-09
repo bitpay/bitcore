@@ -1,9 +1,5 @@
 {
   "version": "8.25.8",
-  "prettier": {
-    "singleQuote": true,
-    "printWidth": 120
-  },
   "scripts": {
     "build": "docker build -t bitcore-node . ",
     "build:docker": "lerna run build:docker --concurrency 1 --stream",
@@ -72,18 +68,16 @@
     }
   },
   "devDependencies": {
+    "@eslint/js": "^9.37.0",
     "@types/node": "22.13.1",
     "cz-customizable": "^5.2.0",
-    "eslint-config-airbnb-base": "^12.1.0",
-    "eslint-plugin-import": "^2.8.0",
+    "eslint": "^9.37.0",
+    "globals": "^16.4.0",
     "husky": "^2.4.0",
     "lint-staged": "^9.5.0",
-    "prettier": "^1.19.1",
-    "tslint": "^5.20.1",
-    "tslint-config-prettier": "^1.18.0",
     "ts-node": "^8.0.3",
     "typedoc": "^0.15.0",
-    "typescript-eslint-parser": "^15.0.0"
+    "typescript-eslint": "^8.46.0"
   },
   "dependencies": {
     "lerna": "^5.6.2",

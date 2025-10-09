@@ -767,7 +767,7 @@ export class API extends EventEmitter {
           inputIndex: i,
           signature,
           sigtype:
-            // tslint:disable-next-line:no-bitwise
+            // eslint-disable-next-line no-bitwise
             bitcore.crypto.Signature.SIGHASH_ALL |
             bitcore.crypto.Signature.SIGHASH_FORKID,
           publicKey: pub

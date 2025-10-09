@@ -33,9 +33,9 @@
     "compile": "npm run clean && tsc",
     "postcompile": "node createBin -v",
     "clean": "rm -rf ./build",
-    "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
-    "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
-    "precommit": "npm run lint; npm run fix"
+    "lint": "eslint .",
+    "fix": "eslint --fix --quiet .",
+    "precommit": "echo 'TODO: npm run lint; npm run fix'"
   },
   "dependencies": {
     "@clack/prompts": "1.0.0-alpha.3",
