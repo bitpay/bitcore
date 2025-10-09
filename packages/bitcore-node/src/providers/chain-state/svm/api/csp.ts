@@ -11,7 +11,7 @@ import { CacheStorage } from '../../../../models/cache';
 import { IBlock } from '../../../../types/Block';
 import { CoinListingJSON } from '../../../../types/Coin';
 import { IChainConfig, IProvider, ISVMNetworkConfig } from '../../../../types/Config';
-import { BroadcastTransactionParams, GetBalanceForAddressParams, GetBlockBeforeTimeParams, GetBlockParams, GetCoinsForTxParams, GetEstimatePriorityFeeParams, GetWalletBalanceParams, GetWalletBalanceAtTimeParams, IChainStateService, StreamAddressUtxosParams, StreamBlocksParams, StreamTransactionParams, StreamTransactionsParams, StreamWalletTransactionsParams, WalletBalanceType } from '../../../../types/namespaces/ChainStateProvider';
+import { BroadcastTransactionParams, GetBalanceForAddressParams, GetBlockBeforeTimeParams, GetBlockParams, GetCoinsForTxParams, GetEstimatePriorityFeeParams, GetWalletBalanceAtTimeParams, GetWalletBalanceParams, IChainStateService, StreamAddressUtxosParams, StreamBlocksParams, StreamTransactionParams, StreamTransactionsParams, StreamWalletTransactionsParams, WalletBalanceType } from '../../../../types/namespaces/ChainStateProvider';
 import { range } from '../../../../utils';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import {
