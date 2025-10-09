@@ -8,6 +8,7 @@ import { P2P } from '../services/p2p';
 import { Storage } from '../services/storage';
 import { Verification } from '../services/verification';
 import { ChainNetwork } from '../types/ChainNetwork';
+import { Class } from '../types/Class';
 
 export interface IService {
   start(): Promise<void>;
