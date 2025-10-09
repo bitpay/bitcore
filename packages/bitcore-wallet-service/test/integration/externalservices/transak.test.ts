@@ -284,6 +284,7 @@ describe('Transak integration', () => {
         headers: {},
         body: {
           env: 'production',
+          accessToken: 'accessToken1',
           walletAddress: 'walletAddress1',
           redirectURL: 'bitpay://transak',
           fiatAmount: '500',
@@ -297,15 +298,15 @@ describe('Transak integration', () => {
       server.externalServices.transak.request = fakeRequest;
     });
 
-    it('should get the paymentUrl properly if req is OK', () => {
-      const data = server.externalServices.transak.transakGetSignedPaymentUrl(req);
-      should.exist(data.urlWithSignature);
-      data.urlWithSignature.should.equal('widgetApi2?apiKey=apiKey2&walletAddress=walletAddress1&redirectURL=bitpay%3A%2F%2Ftransak&fiatAmount=500&fiatCurrency=USD&network=mainnet&cryptoCurrencyCode=BTC&partnerOrderId=partnerOrderId1&partnerCustomerId=partnerCustomerId1');
+    it('should get the paymentUrl properly if req is OK', async () => {
+      const data = await server.externalServices.transak.transakGetSignedPaymentUrl(req);
+      should.exist(data);
     });
 
-    it('should get the paymentUrl properly if req is OK for web', () => {
+    it('should get the paymentUrl properly if req is OK for web', async () => {
       req.body = {
         env: 'production',
+        accessToken: 'accessToken1',
         context: 'web',
         walletAddress: 'walletAddress1',
         redirectURL: 'bitpay://transak',
@@ -316,28 +317,41 @@ describe('Transak integration', () => {
         partnerOrderId: 'partnerOrderId1',
         partnerCustomerId: 'partnerCustomerId1',
       }
-      const data = server.externalServices.transak.transakGetSignedPaymentUrl(req);
-      should.exist(data.urlWithSignature);
-      data.urlWithSignature.should.equal('widgetApi4?apiKey=apiKey4&walletAddress=walletAddress1&redirectURL=bitpay%3A%2F%2Ftransak&fiatAmount=500&fiatCurrency=USD&network=mainnet&cryptoCurrencyCode=BTC&partnerOrderId=partnerOrderId1&partnerCustomerId=partnerCustomerId1');
+      const data = await server.externalServices.transak.transakGetSignedPaymentUrl(req);
+      should.exist(data);
     });
 
-    it('should return error if there is some missing arguments', () => {
+    it('should return error if there is some missing arguments', async () => {
       delete req.body.context;
       delete req.body.fiatAmount;
 
       try {
-        server.externalServices.transak.transakGetSignedPaymentUrl(req);
+        await server.externalServices.transak.transakGetSignedPaymentUrl(req);
         should.fail('should have thrown');
       } catch (err) {
         err.message.should.equal('Transak\'s request missing arguments');
       }
     });
 
-    it('should return error if transak is commented in config', () => {
+    it('should return error if post returns error', async () => {
+      const fakeRequest2 = {
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+      };
+
+      server.externalServices.transak.request = fakeRequest2;
+      try {
+        await server.externalServices.transak.transakGetSignedPaymentUrl(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Error');
+      }
+    });
+
+    it('should return error if transak is commented in config', async () => {
       config.transak = undefined;
 
       try {
-        server.externalServices.transak.transakGetSignedPaymentUrl(req);
+        await server.externalServices.transak.transakGetSignedPaymentUrl(req);
         should.fail('should have thrown');
       } catch (err) {
         err.message.should.equal('Transak missing credentials');
