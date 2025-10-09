@@ -1,5 +1,5 @@
-import { BaseP2PWorker } from './p2p';
 import { Class } from '../types/Class';
+import { BaseP2PWorker } from './p2p';
 
 export interface ErrorType {
   model: string;
