@@ -12,11 +12,13 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "build": "npm run compile",
+    "build": "tsc",
+    "build:prod": "tsc -p tsconfig.prod.json",
     "clean": "rm -rf ./ts_build",
     "pub": "npm run compile && npm  publish",
     "watch": "tsc --watch",
-    "compile": "npm run clean && tsc",
+    "precompile": "cd ../bitcore-node && npm run build:prod",
+    "compile": "npm run clean && npm run build",
     "test": "mocha -r tsx test/**/*.test.ts",
     "precommit": "npm run lint; npm run fix:errors",
     "lint": "eslint .",
