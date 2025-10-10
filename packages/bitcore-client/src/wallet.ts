@@ -630,9 +630,8 @@ export class Wallet {
 
   async signTx(params) {
     const { tx, keys, passphrase, signingKeys, changeAddressIdx } = params;
-    let { utxos } = params;
-    if (!utxos) {
-      utxos = [];
+    const utxos = params.utxos || [];
+    if (!utxos.length) {
       await new Promise<void>((resolve, reject) => {
         this.getUtxos()
           .pipe(new ParseApiStream())

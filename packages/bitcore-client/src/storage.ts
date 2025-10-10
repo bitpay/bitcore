@@ -163,8 +163,7 @@ export class Storage {
     let open = true;
     for (const key of keys) {
       const { path } = key;
-      let { pubKey } = key;
-      pubKey = pubKey || new BitcoreLib.PrivateKey(key.privKey).publicKey.toString();
+      const pubKey = key.pubKey || new BitcoreLib.PrivateKey(key.privKey).publicKey.toString();
       let payload = {};
       if (pubKey && key.privKey && encryptionKey) {
         const toEncrypt = JSON.stringify(key);
