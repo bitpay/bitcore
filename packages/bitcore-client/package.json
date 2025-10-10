@@ -17,7 +17,7 @@
     "clean": "rm -rf ./ts_build",
     "pub": "npm run compile && npm  publish",
     "watch": "tsc --watch",
-    "precompile": "cd ../bitcore-node && npm run build:prod",
+    "precompile": "cd ../bitcore-node && npm run clean && npm run build:prod",
     "compile": "npm run clean && npm run build",
     "test": "mocha -r tsx test/**/*.test.ts",
     "precommit": "npm run lint; npm run fix:errors",
