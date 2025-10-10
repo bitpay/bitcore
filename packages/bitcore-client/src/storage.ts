@@ -1,12 +1,12 @@
-import { BitcoreLib } from 'crypto-wallet-core';
 import 'source-map-support/register';
-import { PassThrough } from 'stream';
+import { IWallet, KeyImport } from './types/wallet';
+import { BitcoreLib } from 'crypto-wallet-core';
 import { Encryption } from './encryption';
 import { Level } from './storage/level';
 import { Mongo } from './storage/mongo';
-import { TextFile } from './storage/textFile';
+import { PassThrough } from 'stream';
 import { StorageType } from './types/storage';
-import { IWallet, KeyImport } from './types/wallet';
+import { TextFile } from './storage/textFile';
 
 export class Storage {
   path: string;
@@ -17,8 +17,7 @@ export class Storage {
   storageType: Mongo | Level | TextFile;
 
   constructor(params: { path?: string; createIfMissing: boolean; errorIfExists: boolean; storageType?: StorageType }) {
-    const { path, createIfMissing, errorIfExists } = params;
-    let { storageType } = params;
+    const { path, createIfMissing, errorIfExists, storageType } = params;
     if (storageType && !['Mongo', 'Level', 'TextFile'].includes(storageType)) {
       throw new Error('Storage Type passed in must be Mongo, Level, or TextFile');
     }
@@ -35,7 +34,7 @@ export class Storage {
       this.db.push(new dbMap[storageType]({ createIfMissing, errorIfExists, path }));
       this.storageType = this.db[0];
     } else {
-      for (let DbType of Object.values(dbMap)) {
+      for (const DbType of Object.values(dbMap)) {
         this.db.push(new DbType({ createIfMissing, errorIfExists, path }));
       }
     }
@@ -68,7 +67,7 @@ export class Storage {
           this.storageType = db;
           break;
         }
-      } catch (e) {}
+      } catch { /* ignore */ }
     }
     if (!wallet) {
       return;
@@ -78,7 +77,7 @@ export class Storage {
 
   async deleteWallet(params: { name: string }) {
     const { name } = params;
-    for (let db of await this.verifyDbs(this.db)) {
+    for (const db of await this.verifyDbs(this.db)) {
       try {
         await db.deleteWallet({ name });
       } catch (e) {
@@ -90,7 +89,7 @@ export class Storage {
   async listWallets() {
     let passThrough = new PassThrough();
     const dbs = await this.verifyDbs(this.db);
-    for (let db of dbs) {
+    for (const db of dbs) {
       const listWalletStream = await db.listWallets();
       passThrough = listWalletStream.pipe(passThrough, { end: false });
       listWalletStream.once('end', () => --dbs.length === 0 && passThrough.end());
@@ -101,7 +100,7 @@ export class Storage {
   async listKeys() {
     let passThrough = new PassThrough();
     const dbs = await this.verifyDbs(this.db);
-    for (let db of dbs) {
+    for (const db of dbs) {
       const listWalletStream = await db.listKeys();
       passThrough = listWalletStream.pipe(passThrough, { end: false });
       listWalletStream.once('end', () => --dbs.length === 0 && passThrough.end());
@@ -163,7 +162,8 @@ export class Storage {
     const { name, keys, encryptionKey } = params;
     let open = true;
     for (const key of keys) {
-      let { pubKey, path } = key;
+      const { path } = key;
+      let { pubKey } = key;
       pubKey = pubKey || new BitcoreLib.PrivateKey(key.privKey).publicKey.toString();
       let payload = {};
       if (pubKey && key.privKey && encryptionKey) {

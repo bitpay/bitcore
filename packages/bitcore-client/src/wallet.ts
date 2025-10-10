@@ -1,5 +1,5 @@
+import 'source-map-support/register';
 import * as Bcrypt from 'bcrypt';
-import Mnemonic  from 'bitcore-mnemonic';
 import { 
   BitcoreLib,
   BitcoreLibCash,
@@ -14,13 +14,13 @@ import {
   Web3,
   xrpl
 } from 'crypto-wallet-core';
-import 'source-map-support/register';
+import { BumpTxFeeType, IWallet, KeyImport } from './types/wallet';
 import { Client } from './client';
 import { Encryption } from './encryption';
-import { Storage } from './storage';
+import Mnemonic from 'bitcore-mnemonic';
 import { ParseApiStream } from './stream-util';
+import { Storage } from './storage';
 import { StorageType } from './types/storage';
-import { BumpTxFeeType, IWallet, KeyImport } from './types/wallet';
 
 const { PrivateKey, HDPrivateKey } = BitcoreLib;
 const chainLibs = {
@@ -185,7 +185,7 @@ export class Wallet {
     let alreadyExists;
     try {
       alreadyExists = await this.loadWallet({ storage, name, storageType });
-    } catch (err) {}
+    } catch { /* ignore */ }
     if (alreadyExists) {
       throw new Error('Wallet already exists');
     }
@@ -285,7 +285,7 @@ export class Wallet {
   }
 
   async unlock(password) {
-    let validPass = await Bcrypt.compare(password, this.password).catch(() => false);
+    const validPass = await Bcrypt.compare(password, this.password).catch(() => false);
     if (!validPass) {
       throw new Error('Incorrect Password');
     }
@@ -491,7 +491,7 @@ export class Wallet {
     let chain = this.chain;
     let tokenContractAddress;
     let decimals;
-    let fromAta
+    let fromAta;
     if (params.token || params.tokenName) {
       chain = this.isSolanaChain() ? this.chain + 'SPL' : this.chain + 'ERC20';
       const tokenObj = this.getTokenObj(params);
@@ -561,7 +561,7 @@ export class Wallet {
     const tip = await this.client.getBlockTip();
     const blockHash = tip.hash;
     const blockHeight = tip.height;
-    const privateKey = await this.derivePrivateKey(null, 0)
+    const privateKey = await this.derivePrivateKey(null, 0);
     const privKeyBytes = SolKit.getBase58Encoder().encode(privateKey.privKey);
     const keyPair = await SolKit.createKeyPairSignerFromPrivateKeyBytes(privKeyBytes);
     const tx = Transactions.create({
@@ -629,7 +629,8 @@ export class Wallet {
   }
 
   async signTx(params) {
-    let { tx, keys, utxos, passphrase, signingKeys, changeAddressIdx } = params;
+    const { tx, keys, passphrase, signingKeys, changeAddressIdx } = params;
+    let { utxos } = params;
     if (!utxos) {
       utxos = [];
       await new Promise<void>((resolve, reject) => {
@@ -643,7 +644,7 @@ export class Wallet {
     let addresses = [];
     let decryptedKeys;
     if (!keys && !signingKeys) {
-      for (let utxo of utxos) {
+      for (const utxo of utxos) {
         addresses.push(utxo.address);
       }
       addresses = addresses.length > 0 ? addresses : await this.getAddresses();
@@ -654,11 +655,11 @@ export class Wallet {
       });
     } else if (!signingKeys) {
       addresses.push(keys[0]);
-      utxos.forEach(function(element) {
-        let keyToDecrypt = keys.find(key => key.address === element.address);
+      for (const element of utxos) {
+        const keyToDecrypt = keys.find(key => key.address === element.address);
         addresses.push(keyToDecrypt);
-      });
-      let decryptedParams = Encryption.bitcoinCoreDecrypt(addresses, passphrase);
+      }
+      const decryptedParams = Encryption.bitcoinCoreDecrypt(addresses, passphrase);
       decryptedKeys = [...decryptedParams.jsonlDecrypted];
     }
     if (this.isUtxoChain()) {
@@ -800,7 +801,7 @@ export class Wallet {
     return addresses;
   }
 
-  async getNonce(addressIndex: number = 0, isChange?: boolean) {
+  async getNonce(_addressIndex: number = 0, isChange?: boolean) {
     const address = this.deriveAddress(0, isChange);
     const count = await this.client.getNonce({ address });
     if (!count || typeof count.nonce !== 'number') {
@@ -862,7 +863,7 @@ export class Wallet {
     } else {
       const { nonce, gasLimit, gasPrice, to, data, value, chainId, type } = existingTx;
       // converting gasLimit and value with toString avoids a bigNumber warning
-      params.nonce = nonce
+      params.nonce = nonce;
       params.gasLimit = gasLimit?.toString();
       params.gasPrice = gasPrice;
       params.data = data;
@@ -871,6 +872,7 @@ export class Wallet {
       params.recipients = [{ address: to, amount: value.toString() }];
       
       // TODO fix type2 support
+      // eslint-disable-next-line no-constant-condition, no-constant-binary-expression
       if (false && existingTx.type === 2) {
         if (feeRate) {
           params.maxGasFee = Web3.utils.toWei(feeRate.toString(), 'gwei');
@@ -916,7 +918,7 @@ export class Wallet {
   async getL1Fee(rawTx) {
     try {
       return this.client.getL1Fee({ rawTx });
-    } catch (err) {
+    } catch {
       return 0;
     }
   }
@@ -979,4 +981,4 @@ export const AddressTypes = {
     scripthash: 'scripthash',
     p2sh: 'scripthash'
   }
-}
+};

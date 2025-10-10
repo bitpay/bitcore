@@ -21,18 +21,6 @@ export default defineConfig([
   },
   tseslint.configs.recommended,
   {
-    files: ['**/test/**/*.{ts,js}'],
-    languageOptions: {
-      globals: {
-        ...globals.mocha
-      }
-    },
-    rules: {
-      '@typescript-eslint/no-unused-vars': 'off',
-      'sort-imports': 'off'
-    }
-  },
-  {
     rules: {
       quotes: ['error', 'single', { avoidEscape: true }],
       '@typescript-eslint/no-require-imports': 'warn',
@@ -40,6 +28,7 @@ export default defineConfig([
       '@typescript-eslint/no-non-null-asserted-optional-chain': 'off',
       '@typescript-eslint/no-unused-expressions': 'off',
       '@typescript-eslint/no-duplicate-enum-values': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       'prefer-const': 'warn',
       'no-var': 'warn',
       'no-undef': 'error',
@@ -48,6 +37,13 @@ export default defineConfig([
       'indent': ['error', 2, { SwitchCase: 1 }],
       'no-case-declarations': 'off',
       'no-bitwise': 'error',
+      'spaced-comment': ['error', 'always', { exceptions: ['-', '+'] }],
+      'object-curly-spacing': ['error', 'always'],
+      'key-spacing': ['error', { beforeColon: false, afterColon: true }],
+      'comma-spacing': ['error', { before: false, after: true }],
+      'space-before-blocks': ['error', 'always'],
+      'keyword-spacing': ['error', { before: true, after: true }],
+      'no-multi-spaces': ['error', { ignoreEOLComments: true }],
       'no-restricted-syntax': [
         'error',
         {
@@ -59,7 +55,7 @@ export default defineConfig([
         ignoreCase: true,
         ignoreDeclarationSort: false,
         ignoreMemberSort: false,
-        // memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
+        memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
         allowSeparatedGroups: false
       }]
     }
@@ -72,6 +68,19 @@ export default defineConfig([
     languageOptions: { sourceType: 'commonjs' },
     rules: {
       // 'no-var': 'warn'
+    }
+  },
+  // Test files -- needs to be last so it can override other settings
+  {
+    files: ['**/test/**/*.{ts,js}'],
+    languageOptions: {
+      globals: {
+        ...globals.mocha
+      }
+    },
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
+      'sort-imports': 'off'
     }
   }
 ]);
