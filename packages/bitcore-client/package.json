@@ -54,8 +54,6 @@
     "@types/request-promise-native": "1.0.15",
     "@types/secp256k1": "3.5.0",
     "chai": "5.1.2",
-    "eslint-config-airbnb-base": "12.1.0",
-    "eslint-plugin-import": "2.8.0",
     "mocha": "11.1.0",
     "sinon": "19.0.2",
     "supertest": "7.0.0",
