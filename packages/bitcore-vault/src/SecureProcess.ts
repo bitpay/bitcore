@@ -199,6 +199,7 @@ export class SecureProcess {
     // Decrypt the passphrase with the private key
     let passphrase: Buffer<ArrayBufferLike> | null = null;
     try {
+      console.log('Before passphrase decrypt - alloc:', this.securityManager.getCurrentSecureHeapAllocation());
       passphrase = crypto.privateDecrypt(
         {
           key: this.privateKey,
@@ -207,10 +208,12 @@ export class SecureProcess {
         },
         encryptedPassphraseBuffer
       );
+      console.log('After passphrase decrypt - alloc:', this.securityManager.getCurrentSecureHeapAllocation());
 
       // This method is responsible for its own cleanup of the passphrase buffer.
       // We wrap this in a try/finally as a defense-in-depth measure.
       const { success: returnedSuccess } = await walletEntry.wallet.checkPassphrase(passphrase);
+      console.log('After passphrase check', this.securityManager.getCurrentSecureHeapAllocation());
       success = returnedSuccess;
     } finally {
       if (Buffer.isBuffer(passphrase)) {
