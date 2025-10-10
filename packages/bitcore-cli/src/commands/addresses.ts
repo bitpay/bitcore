@@ -1,6 +1,6 @@
 import * as prompt from '@clack/prompts';
-import os from 'os';
 import type { CommonArgs } from '../../types/cli';
+import os from 'os';
 import { Utils } from '../utils';
 
 export function command(args: CommonArgs) {
@@ -26,7 +26,7 @@ export async function getAddresses(args: CommonArgs<{ pageSize?: number; page?: 
   }
   const { pageSize } = opts;
 
-  await Utils.paginate(async (page, viewAction) => {
+  await Utils.paginate(async (page, _viewAction) => {
     const addresses = await wallet.client.getMainAddresses({
       // doNotVerify: true,
       limit: pageSize,

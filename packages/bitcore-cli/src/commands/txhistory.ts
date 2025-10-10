@@ -1,9 +1,9 @@
 import * as prompt from '@clack/prompts';
-import fs from 'fs';
-import os from 'os';
 import type { CommonArgs } from '../../types/cli';
-import type { ITokenObj } from '../../types/wallet';
+import fs from 'fs';
 import { getFileName } from '../prompts';
+import type { ITokenObj } from '../../types/wallet';
+import os from 'os';
 import { Utils } from '../utils';
 
 export function command(args: CommonArgs) {
@@ -90,9 +90,9 @@ export async function getTxHistory(
       const outputFile = opts.command
         ? Utils.replaceTilde(typeof opts.export === 'string' ? opts.export : defaultValue)
         : await getFileName({
-            message: 'Enter output file path to save proposal:',
-            defaultValue,
-          });
+          message: 'Enter output file path to save proposal:',
+          defaultValue,
+        });
 
       await fs.promises.writeFile(outputFile, JSON.stringify(history, null, 2));
       prompt.log.info(`Page ${page} exported to: ${outputFile}`);

@@ -34,8 +34,9 @@
     "postcompile": "node createBin -v",
     "clean": "rm -rf ./build",
     "lint": "eslint .",
-    "fix": "eslint --fix --quiet .",
-    "precommit": "echo 'TODO: npm run lint; npm run fix'"
+    "fix:errors": "eslint --fix --quiet .",
+    "fix:all": "eslint --fix .",
+    "precommit": "npm run lint; npm run fix:errors"
   },
   "dependencies": {
     "@clack/prompts": "1.0.0-alpha.3",

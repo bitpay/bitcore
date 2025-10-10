@@ -1,7 +1,7 @@
 import * as prompt from '@clack/prompts';
-import { Network } from 'bitcore-wallet-client';
 import { BitcoreLib, BitcoreLibLtc } from 'crypto-wallet-core';
 import { Constants } from './constants';
+import { Network } from 'bitcore-wallet-client';
 import { UserCancelled } from './errors';
 import { Utils } from './utils';
 
@@ -135,7 +135,7 @@ export async function getMultiPartyScheme() {
 };
 
 export async function getCopayerName() {
-  const defaultVal = process.env['BITCORE_CLI_COPAYER_NAME'] || process.env.USER
+  const defaultVal = process.env['BITCORE_CLI_COPAYER_NAME'] || process.env.USER;
   const copayerName = await prompt.text({
     message: 'Your name (helps to identify you):',
     placeholder: `Default: ${defaultVal}`,

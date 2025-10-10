@@ -1,11 +1,11 @@
 import * as prompt from '@clack/prompts';
-import { TssSign, Utils as BWCUtils } from 'bitcore-wallet-client';
-import { ethers, type Types as CWCTypes } from 'crypto-wallet-core';
-import url from 'url';
+import { Utils as BWCUtils, TssSign } from 'bitcore-wallet-client';
+import { type Types as CWCTypes, ethers } from 'crypto-wallet-core';
 import {
   type TssKeyType,
   type WalletData
 } from '../types/wallet';
+import url from 'url';
 import { UserCancelled } from './errors';
 
 /**

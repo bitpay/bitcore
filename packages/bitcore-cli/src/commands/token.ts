@@ -6,7 +6,7 @@ import { Wallet } from '../wallet';
 
 
 export async function setToken(args: CommonArgs) {
-  const { wallet, opts } = args;
+  const { wallet } = args;
 
   const currencies = await Wallet.getCurrencies(wallet.network);
   function findTokenObj(value) {

@@ -27,7 +27,7 @@ export class FileStorage {
       let data = await fs.promises.readFile(this.filename, 'utf8');
       data = Utils.jsonParseWithBuffer(data);
       return data as any; // TODO provide a proper type
-    } catch (e) {
+    } catch {
       Utils.die('Invalid input file');
     }
   }
@@ -36,8 +36,3 @@ export class FileStorage {
     return fs.existsSync(this.filename);
   }
 };
-
-export interface IWalletData {
-  key: {};
-  creds: {};
-}
