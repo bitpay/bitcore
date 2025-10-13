@@ -446,7 +446,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       if (!tx) {
         throw new Error(`Balance not found at ${args.time}`);
       }
-      const index = tx.accountKeys?.findIndex(acct => acct === address);
+      const index = tx.accountKeys?.findIndex(acct => acct === (ata || address));
       if (index === undefined || index === -1) {
         throw new Error(`Balance not found at ${args.time}`);
       }
@@ -454,7 +454,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       if (tokenAddress) {
         const tokenBalance = tx.meta?.postTokenBalances?.find(tb => tb.accountIndex === index && tb.mint.toLowerCase() === tokenAddress.toLowerCase());
         const decimals = tokenBalance?.uiTokenAmount?.decimals;
-        balance = (tokenBalance?.uiTokenAmount?.uiAmount || 0) * (10 ** decimals) || null;
+        balance = (Number(tokenBalance?.uiTokenAmount?.uiAmount) || 0) * (10 ** decimals) || null;
       } else {
         balance = tx.meta?.postBalances ? tx.meta.postBalances[index] : null;
       }
