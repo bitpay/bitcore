@@ -157,12 +157,21 @@ Script.fromASM = function(str) {
     var opcode = Opcode(token);
     var opcodenum = opcode.toNumber();
 
-    if (opcodenum == null) {
+    if (_.isUndefined(opcodenum)) {
       var buf = Buffer.from(tokens[i], 'hex');
+      if (buf.length < 0x4c){
+        opcodenum=buf.length
+      }else if (buf.length <= 0x100) {
+        opcodenum=Opcode.OP_PUSHDATA1
+      }else if(buf.length <= 0x10000){
+        opcodenum=Opcode.OP_PUSHDATA2
+      }else if(buf.length <= 0x100000000){
+        opcodenum=Opcode.OP_PUSHDATA4
+      }
       script.chunks.push({
         buf: buf,
         len: buf.length,
-        opcodenum: buf.length
+        opcodenum: opcodenum
       });
       i = i + 1;
     } else if (opcodenum === Opcode.OP_PUSHDATA1 ||
@@ -952,6 +961,7 @@ Script.buildWitnessV1Out = function(to, scriptTree) {
     }
   }
   
+
   function buildTree(tree) {
     if (Array.isArray(tree)) {
       const [left, leftH] = buildTree(tree[0]);
