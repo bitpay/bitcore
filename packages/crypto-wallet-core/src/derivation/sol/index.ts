@@ -4,18 +4,12 @@ import type { IDeriver, Key } from '../../types/derivation';
 import { Paths } from '../paths';
 
 export class SolDeriver implements IDeriver {
-  deriveAddress(_network, _xpubkey, _addressIndex, _isChange) {
-    if (true) {
-      throw new Error('Cannot derive Solana addresses from just xpubkey, need to use derivePrivateKeyWithPath');
-    }
-    return '';
+  deriveAddress(_network, _xpubkey, _addressIndex, _isChange): string {
+    throw new Error('Cannot derive Solana addresses from just xpubkey, need to use derivePrivateKeyWithPath');
   }
 
-  deriveAddressWithPath(_network: string, _xpubKey: string, _path: string) {
-    if (true) {
-      throw new Error('Cannot derive Solana addresses from just xpubkey, need to use derivePrivateKeyWithPath');
-    }
-    return '';
+  deriveAddressWithPath(_network: string, _xpubKey: string, _path: string): string {
+    throw new Error('Cannot derive Solana addresses from just xpubkey, need to use derivePrivateKeyWithPath');
   }
 
   getAddress(_network: string, pubKey: string) {
