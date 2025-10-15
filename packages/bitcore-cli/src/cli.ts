@@ -111,7 +111,8 @@ if (require.main === module) {
     if (walletName === 'list') {
       for (const file of fs.readdirSync(opts.dir)) {
         if (file.endsWith('.json')) {
-          console.log(`- ${file.replace('.json', '')}`);
+          const walletData = JSON.parse(fs.readFileSync(path.join(opts.dir, file), 'utf8'));
+          console.log(`  ${Utils.boldText(file.replace('.json', ''))}  [${Utils.colorizeChain(walletData.creds.chain)}:${walletData.creds.network}]`);
         }
       }
       return;
@@ -125,7 +126,7 @@ if (require.main === module) {
     };
 
     if (!wallet.client?.credentials) {
-      prompt.intro(`No wallet found named ${Utils.colorText(walletName, 'orange')}`);
+      prompt.intro(`No wallet found named ${Utils.underlineText(Utils.boldText(Utils.italicText(walletName)))}`);
       const action: NewCommand | symbol = await prompt.select({
         message: 'What would you like to do?',
         options: [].concat(COMMANDS.NEW, COMMANDS.EXIT)
@@ -156,20 +157,20 @@ if (require.main === module) {
           opts.exit = true;
           break;
       }
-      prompt.outro(`${Utils.colorText('✔', 'green')} Wallet ${Utils.colorText(walletName, 'orange')} created successfully!`);
+      !opts.exit && prompt.outro(`${Utils.colorText('✔', 'green')} Wallet ${Utils.boldText(walletName)} created successfully!`);
     } else {
 
       if (opts.status) {
-        prompt.intro(`Status for ${Utils.colorText(walletName, 'orange')}`);
+        prompt.intro(`Status for ${Utils.colorTextByChain(wallet.chain, walletName)}`);
         const status = await commands.status.walletStatus({ wallet, opts });
         cmdParams.status = status;
-        prompt.outro('Welcome to the Bitcore CLI!');
+        prompt.outro(Utils.boldText('Welcome to the Bitcore CLI!'));
       }
 
       let advancedActions = false;
       do {
         // Don't display the intro if running a specific command
-        !opts.command && prompt.intro(`${Utils.colorText('~~ Main Menu ~~', 'blue')} (${Utils.colorText(walletName, 'orange')})`);
+        !opts.command && prompt.intro(`${Utils.boldText('[  Main Menu')} - ${Utils.colorTextByChain(wallet.chain, walletName)}  ${Utils.boldText(']')}`);
         cmdParams.status.pendingTxps = opts.command ? [] : await wallet.client.getTxProposals({});
         
         const dynamicCmdArgs = {

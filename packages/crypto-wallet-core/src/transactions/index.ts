@@ -70,6 +70,14 @@ export class TransactionsProxy {
   getHash(params) {
     return this.get(params).getHash(params);
   }
+
+  transformSignatureObject(params) {
+    return this.get(params).transformSignatureObject(params);
+  }
+
+  getSighash(params): string {
+    return this.get(params).getSighash(params);
+  }
 }
 
 export default new TransactionsProxy();
