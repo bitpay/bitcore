@@ -78,7 +78,8 @@ export class BTCTxProvider {
   }
 
   _transformSignatureObject(obj, sigtype) {
-    let { r, s, v, i, nhashtype } = obj;
+    const { v } = obj;
+    let { r, s, i, nhashtype } = obj;
     if (typeof r === 'string') {
       r = Buffer.from(r.startsWith('0x') ? r.slice(2) : r, 'hex');
     } else if (r instanceof Uint8Array || Array.isArray(r)) {
@@ -104,8 +105,8 @@ export class BTCTxProvider {
   }
 
   applySignature(params: { tx: BitcoreLib.Transaction; signature: SignatureType; index: number; sigtype?: number; }) {
-    const { index, sigtype } = params;
-    let { tx, signature } = params;
+    const { index, sigtype, tx } = params;
+    let { signature } = params;
     assert(tx instanceof this.lib.Transaction, 'tx must be an instance of Transaction');
     assert(signature instanceof this.lib.Transaction.Signature || (signature?.r && signature?.s), 'signature must be a valid signature object');
 
