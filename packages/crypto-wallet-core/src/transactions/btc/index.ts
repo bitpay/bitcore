@@ -73,7 +73,7 @@ export class BTCTxProvider {
     return tx.uncheckedSerialize();
   }
 
-  getSignature(params: { tx: string; keys: Array<Key> }) {
+  getSignature() {
     throw new Error('function getSignature not implemented for UTXO coins');
   }
 
