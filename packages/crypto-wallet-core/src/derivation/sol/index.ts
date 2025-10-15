@@ -39,7 +39,7 @@ export class SolDeriver implements IDeriver {
     return segmented.reduce((parentKeys, segment) => ed25519.CKDPriv(parentKeys, segment + HARDENED_OFFSET), masterKey);
   }
 
-  derivePrivateKeyWithPath(network: string, xprivKey: string, path: string, addressType: string) {
+  derivePrivateKeyWithPath(network: string, xprivKey: string, path: string) {
     const xpriv = new HDPrivateKey(xprivKey, network);
     const child = this.deriveChild({ key: xpriv._buffers.privateKey, chainCode: xpriv._buffers.chainCode }, path);
     const pubKey = ed25519.getPublicKey(child.key, false);
