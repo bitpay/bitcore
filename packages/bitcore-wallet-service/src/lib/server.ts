@@ -4708,7 +4708,6 @@ export class WalletService implements IWalletService {
 
             let addr,
               i = 0;
-            // tslint:disable-next-line:no-conditional-assignment
             while ((addr = derivator.getSkippedAddress())) {
               addresses.push(addr);
               i++;

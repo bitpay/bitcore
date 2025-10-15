@@ -920,7 +920,7 @@ export class BtcChain implements IChain {
       try {
         const signature = this.bitcoreLib.crypto.Signature.fromString(signatureHex);
         const pub = x.deriveChild(inputPaths[i]).publicKey;
-        // tslint:disable-next-line:no-bitwise
+        // eslint-disable-next-line no-bitwise
         const SIGHASH_TYPE = this.bitcoreLib.crypto.Signature.SIGHASH_ALL | this.bitcoreLib.crypto.Signature.SIGHASH_FORKID;
         const s = {
           inputIndex: i,

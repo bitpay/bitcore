@@ -168,7 +168,7 @@ Bitcore will begin using your blockchain nodes to synchronize its own database s
 
 ## Contributing
 
-See [CONTRIBUTING.md](../../Contributing.md) on the main bitcore repo for information about how to contribute.
+See [CONTRIBUTING.md](https://github.com/bitpay/bitcore/blob/master/CONTRIBUTING.md) on the main bitcore repo for information about how to contribute.
 
 ## License
 
