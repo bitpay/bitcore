@@ -1,16 +1,16 @@
-import * as SolToken from '@solana-program/token';
 import * as SolKit from '@solana/kit';
+import * as SolToken from '@solana-program/token';
 import { SOLTxProvider } from '../sol';
 
 export class SPLTxProvider extends SOLTxProvider {
 
   create(params: CreateParams) {
     // Reuse exposed TransactionProxy API (Create)
-    // @ts-expect-error
+    // @ts-expect-error - so public api is minimally changed
     if (params.category === 'recoverNestedAssociatedToken') {
       return SPLTxProvider.createRecoverNestedAssociatedTokenTransaction(params as unknown as CreateRecoverNestedAssociatedTokenParams);
     }
-    // @ts-expect-error
+    // @ts-expect-error - so public api is minimally changed
     if (params.category === 'closeTokenAccount') {
       return SPLTxProvider.createCloseTokenAccountTransaction(params as unknown as CreateCloseTokenAccountParams);
     }

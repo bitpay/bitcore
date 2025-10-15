@@ -1,5 +1,5 @@
-import { encoding, HDPrivateKey } from 'bitcore-lib';
 import * as ed25519 from 'ed25519-hd-key';
+import { encoding, HDPrivateKey } from 'bitcore-lib';
 import type { IDeriver, Key } from '../../types/derivation';
 import { Paths } from '../paths';
 
