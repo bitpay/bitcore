@@ -24,7 +24,7 @@ const SolanaProgram = {
   System,
   Token,
   HDKey
-}
+};
 export {
   BitcoreLib,
   BitcoreLibCash,

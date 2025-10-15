@@ -12,7 +12,7 @@ export const EVM_CHAIN_DEFAULT_TESTNET = {
   ARB: 'sepolia',
   BASE: 'sepolia',
   OP: 'sepolia'
-}
+};
 
 export const EVM_CHAIN_NETWORK_TO_CHAIN_ID = {
   // Mainnets
@@ -46,7 +46,7 @@ export const EVM_CHAIN_NETWORK_TO_CHAIN_ID = {
   ARB_regtest: 442161,
   BASE_regtest: 88453,
   OP_regtest: 111554201
-}
+};
 
 const reverseObject = <K extends string, V extends number | string>(obj: Record<K, V>, split = false): Record<V, K> => {
   const reversed = {} as Record<V, K>;

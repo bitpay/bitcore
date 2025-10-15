@@ -1,4 +1,4 @@
-import { address as SolAddress } from '@solana/kit'
+import { address as SolAddress } from '@solana/kit';
 import type { IValidation } from '../../types/validation';
 
 export class SolValidation implements IValidation {

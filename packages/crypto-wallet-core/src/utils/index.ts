@@ -1,5 +1,5 @@
 import BitcoreLib from 'bitcore-lib';
-import { Constants } from '../constants'
+import { Constants } from '../constants';
 
 
 export * as BI from './bigint';
