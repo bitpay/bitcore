@@ -23,10 +23,10 @@ export class SolDeriver implements IDeriver {
     return encoding.Base58.encode(pubKey);
   }
 
-  derivePrivateKey(network, xPriv, addressIndex, isChange, addressType) {
+  derivePrivateKey(network, xPriv, addressIndex, isChange) {
     const changeNum = isChange ? 1 : 0;
     const path = `${Paths['SOL'].default}${addressIndex}'/${changeNum}'`;
-    return this.derivePrivateKeyWithPath(network, xPriv, path, addressType);
+    return this.derivePrivateKeyWithPath(network, xPriv, path);
   };
 
   deriveChild(masterKey: { key: Buffer, chainCode: Buffer }, path: string) {
