@@ -15,12 +15,12 @@ export class XrpValidation implements IValidation {
     // Then ensure it is a valid base58check encoding
     const base58 = baseX(RIPPLE_ALPHABET);
     const buffer = Buffer.from(base58.decode(address));
-    let prefix = buffer.subarray(0, 1);
-    let data = buffer.subarray(1, -4);
+    const prefix = buffer.subarray(0, 1);
+    const data = buffer.subarray(1, -4);
     let hash = Buffer.concat([prefix, data]);
     hash = Bitcore.crypto.Hash.sha256(hash);
     hash = Bitcore.crypto.Hash.sha256(hash);
-    let checksum = buffer.subarray(-4).reduce((acc, check, index) => {
+    const checksum = buffer.subarray(-4).reduce((acc, check, index) => {
       if (check !== hash[index]) {
         // Invalid checksum
         return 0;

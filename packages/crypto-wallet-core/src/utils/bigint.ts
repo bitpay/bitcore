@@ -93,7 +93,7 @@ export function div(numerator: BigIntLike, denominator: BigIntLike): bigint {
   if (!isBigIntLike(denominator)) throw new Error('Invalid denominator');
   if (!isValidDenominator(denominator)) throw new Error('Division by zero');
   let [nLeft, nRight = ''] = numerator.toString().split('.');
-  let [dLeft, dRight = ''] = denominator.toString().split('.');
+  const [dLeft, dRight = ''] = denominator.toString().split('.');
   const precision = Math.max(nRight.length, dRight.length, 18);
   nRight = nRight.padEnd(precision, '0');
 
