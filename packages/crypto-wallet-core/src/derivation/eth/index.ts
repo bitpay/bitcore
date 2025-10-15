@@ -14,10 +14,8 @@ export class EthDeriver implements IDeriver {
   }
 
   deriveAddress(network, xpubkey, addressIndex, isChange) {
-    const xpub = new BitcoreLib.HDPublicKey(xpubkey, network);
     const changeNum = isChange ? 1 : 0;
     const path = `m/${changeNum}/${addressIndex}`;
-    const derived = xpub.derive(path).publicKey;
     return this.deriveAddressWithPath(network, xpubkey, path);
   }
 
