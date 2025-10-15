@@ -153,7 +153,7 @@ export class ETHTxProvider {
         const expectedAddress = parsedTx.from;
         valid = recoveredAddress === expectedAddress;
       }
-    } catch {}
+    } catch {/** no op */}
     if (!valid) {
       throw new Error('invalid signature');
     }

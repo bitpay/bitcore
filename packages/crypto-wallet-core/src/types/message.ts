@@ -1,14 +1,13 @@
 import type BitcoreLib from 'bitcore-lib';
 
-
 export type KeyType = string | BitcoreLib.PrivateKey;
 export type HDKeyType = string | BitcoreLib.HDPrivateKey;
+// eslint-disable-next-line no-undef
 export type Encoding = BufferEncoding | 'base58';
 export interface ISignedMessage<T = Buffer | string> {
   signature: T;
   publicKey: string;
 }
-
 
 export interface IMessageClass {
   getMessageHash(args: { message: string, encoding?: Encoding }): Buffer | string;
