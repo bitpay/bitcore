@@ -12,7 +12,7 @@ export class SolValidation implements IValidation {
     try {
       SolAddress(address);
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
