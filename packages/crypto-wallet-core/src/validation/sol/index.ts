@@ -28,7 +28,7 @@ export class SolValidation implements IValidation {
 
   private extractAddress(data) {
     const prefix = /^[a-z]+:/i;
-    const params = /([\?\&](amount|fee)=(\d+([\,\.]\d+)?))+/i;
+    const params = /([?&](amount|fee)=(\d+([,.]\d+)?))+/i;
     return data.replace(prefix, '').replace(params, '');
   }
 }
