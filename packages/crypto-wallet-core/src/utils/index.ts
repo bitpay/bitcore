@@ -44,7 +44,6 @@ export function isSingleAddressChain(chain: string): boolean {
   return !isUtxoChain(chain);
 }
 
-// eslint-disable-next-line no-undef
 export function encodeBuffer(buffer: Buffer, encoding: BufferEncoding | 'base58'): Buffer | string {
   if (!encoding) {
     return buffer;
