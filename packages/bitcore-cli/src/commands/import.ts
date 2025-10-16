@@ -1,12 +1,12 @@
 import * as prompt from '@clack/prompts';
-import fs from 'fs';
-import os from 'os';
 import type { CommonArgs } from '../../types/cli';
-import { UserCancelled } from '../errors';
+import fs from 'fs';
 import { getPassword } from '../prompts';
+import os from 'os';
+import { UserCancelled } from '../errors';
 
 export async function importWallet(args: CommonArgs) {
-  const { wallet, opts } = args;
+  const { wallet } = args;
   const replaceTilde = str => str.startsWith('~') ? str.replace('~', os.homedir()) : str;
   
   const filename = await prompt.text({

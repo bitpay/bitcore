@@ -15,7 +15,8 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: {
         ...globals.node,
-        'NodeJS': 'readonly'
+        'NodeJS': 'readonly',
+        'BufferEncoding': 'readonly',
       }
     }
   },
