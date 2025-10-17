@@ -494,11 +494,22 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   async getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock | null> {
     const { network, time = new Date() } = params;
     const { rpc } = await this.getRpc(network);
-    const beforeTimeSlot = await this._findSlotByDate(network, new Date(time));
+    let beforeTimeSlot = await this._findSlotByDate(network, new Date(time));
     if (!beforeTimeSlot) {
       return null;
     }
-    const block = await rpc.getBlock({ height: beforeTimeSlot });
+    let block;
+    for (let attempt = 0; attempt < 10; attempt++) { // retry in case of skipped or missing slots
+      try {
+        block = await rpc.getBlock({ height: beforeTimeSlot });
+      } catch (e: any) {
+        if (e?.message?.includes('missing in long-term storage')) {
+          beforeTimeSlot--;
+          continue;
+        }
+        throw e;
+      }
+    }
     return this.blockTransform(network, block, beforeTimeSlot);
   }
 
