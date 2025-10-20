@@ -27,7 +27,7 @@ class FileStorage {
             data = utils_1.Utils.jsonParseWithBuffer(data);
             return data;
         }
-        catch (e) {
+        catch {
             utils_1.Utils.die('Invalid input file');
         }
     }

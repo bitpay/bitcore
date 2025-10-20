@@ -5,9 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.command = command;
 exports.signMessage = signMessage;
-const prompts_1 = __importDefault(require("@clack/prompts"));
 const crypto_wallet_core_1 = require("crypto-wallet-core");
 const os_1 = __importDefault(require("os"));
+const prompts_1 = __importDefault(require("@clack/prompts"));
 const errors_1 = require("../errors");
 const utils_1 = require("../utils");
 function command(args) {

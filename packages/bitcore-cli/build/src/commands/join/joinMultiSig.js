@@ -38,21 +38,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.joinMultiSigWallet = joinMultiSigWallet;
 const prompt = __importStar(require("@clack/prompts"));
-const bitcore_wallet_client_1 = __importDefault(require("bitcore-wallet-client"));
 const prompts_1 = require("../../prompts");
+const bitcore_wallet_client_1 = __importDefault(require("bitcore-wallet-client"));
 const utils_1 = require("../../utils");
 async function joinMultiSigWallet(args) {
     const { wallet, opts } = args;
     const { verbose, mnemonic } = opts;
     const secret = (await prompt.text({
         message: 'Enter the secret to join the wallet:',
-        validate: (input) => !!input?.trim() ? null : 'Secret cannot be empty.',
+        validate: (input) => input?.trim() ? null : 'Secret cannot be empty.',
     })).toString().trim();
     const parsed = bitcore_wallet_client_1.default.parseSecret(secret);
     const { coin: chain, network } = parsed;
     const copayerName = await (0, prompts_1.getCopayerName)();
     const password = await (0, prompts_1.getPassword)('Enter a password for the wallet:', { hidden: false });
-    const { key, creds } = await wallet.create({ chain, network, account: 0, n: 2, password, mnemonic, copayerName });
+    const { key } = await wallet.create({ chain, network, account: 0, n: 2, password, mnemonic, copayerName });
     const joinedWallet = await wallet.client.joinWallet(secret, copayerName, { chain });
     await wallet.load();
     prompt.log.success(utils_1.Utils.colorText(`Wallet joined: ${joinedWallet.name}`, 'green'));

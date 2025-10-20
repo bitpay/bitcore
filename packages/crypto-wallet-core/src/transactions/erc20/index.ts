@@ -1,7 +1,7 @@
-import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
+import { ERC20Abi } from './abi';
 import { ETHTxProvider } from '../eth';
-import { ERC20Abi, MULTISENDAbi } from './abi';
+import Web3 from 'web3';
 const { toBN } = Web3.utils;
 
 export class ERC20TxProvider extends ETHTxProvider {
@@ -40,7 +40,7 @@ export class ERC20TxProvider extends ETHTxProvider {
     if (recipients.length > 1) {
       const addresses = [];
       const amounts = [];
-      for (let recipient of recipients) {
+      for (const recipient of recipients) {
         addresses.push(recipient.address);
         amounts.push(toBN(BigInt(recipient.amount).toString()));
       }

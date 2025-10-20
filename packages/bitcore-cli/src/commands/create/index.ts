@@ -1,10 +1,10 @@
-import { Constants } from 'crypto-wallet-core';
-import type { CommonArgs } from '../../../types/cli';
 import { getChain, getIsMultiParty, getMofN, getMultiPartyScheme, getNetwork } from '../../prompts';
-import { Utils } from '../../utils';
+import type { CommonArgs } from '../../../types/cli';
+import { Constants } from 'crypto-wallet-core';
 import { createMultiSigWallet } from './createMultiSig';
 import { createSingleSigWallet } from './createSingleSig';
 import { createThresholdSigWallet } from './createThresholdSig';
+import { Utils } from '../../utils';
 
 export async function createWallet(args: CommonArgs<{ mnemonic?: string }>) {
   const { wallet, opts } = args;
@@ -31,7 +31,7 @@ export async function createWallet(args: CommonArgs<{ mnemonic?: string }>) {
     if (useTss) {
       ({ mnemonic } = await createThresholdSigWallet({ wallet, chain, network, opts, m, n }));
     } else {
-      ({ mnemonic} = await createMultiSigWallet({ wallet, chain, network, opts, m, n }));
+      ({ mnemonic } = await createMultiSigWallet({ wallet, chain, network, opts, m, n }));
     }
   }
   

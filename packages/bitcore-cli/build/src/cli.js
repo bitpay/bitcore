@@ -38,18 +38,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.COMMANDS = exports.wallet = void 0;
+const commands = __importStar(require("./commands"));
+const Errors = __importStar(require("./errors"));
 const prompt = __importStar(require("@clack/prompts"));
-const bitcore_mnemonic_1 = __importDefault(require("bitcore-mnemonic"));
 const bitcore_wallet_client_1 = require("bitcore-wallet-client");
-const commander_1 = require("commander");
+const constants_1 = require("./constants");
 const fs_1 = __importDefault(require("fs"));
+const prompts_1 = require("./prompts");
+const cli_commands_1 = require("./cli-commands");
+const bitcore_mnemonic_1 = __importDefault(require("bitcore-mnemonic"));
 const os_1 = __importDefault(require("os"));
 const path_1 = __importDefault(require("path"));
-const cli_commands_1 = require("./cli-commands");
-const commands = __importStar(require("./commands"));
-const constants_1 = require("./constants");
-const Errors = __importStar(require("./errors"));
-const prompts_1 = require("./prompts");
+const commander_1 = require("commander");
 const utils_1 = require("./utils");
 const wallet_1 = require("./wallet");
 const { version } = JSON.parse(fs_1.default.readFileSync(path_1.default.join(__dirname, '../../package.json')).toString());
@@ -271,10 +271,10 @@ if (require.main === module) {
                             await commands.clearcache.clearCache(cmdParams);
                             break;
                         default:
+                        case 'exit':
                             if (opts.command) {
                                 throw new Error(`Unknown command: ${menuAction}`);
                             }
-                        case 'exit':
                             opts.exit = true;
                             break;
                     }

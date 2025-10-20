@@ -1,8 +1,8 @@
 import * as SolComputeBudget from '@solana-program/compute-budget';
 import * as SolComputeMemo from '@solana-program/memo';
+import * as SolKit from '@solana/kit';
 import * as SolSystem from '@solana-program/system';
 import * as SolToken from '@solana-program/token';
-import * as SolKit from '@solana/kit'
 import type { Key } from '../../types/derivation';
 
 
@@ -34,15 +34,15 @@ export class SOLTxProvider {
   }) {
     const { recipients, from, nonce, nonceAddress, category, space, blockHash, blockHeight, priorityFee, txInstructions, computeUnits, fromKeyPair, memo } = params;
     const fromAddress = SolKit.address(from);
-    let txType: SolKit.TransactionVersion = ['0', 0].includes(params?.txType) ? 0 : 'legacy';
+    const txType: SolKit.TransactionVersion = ['0', 0].includes(params?.txType) ? 0 : 'legacy';
     let lifetimeConstrainedTx;
     switch (category?.toLowerCase()) {
       case 'transfer':
       default:
         if (recipients.length > this.MAX_TRANSFERS) {
-          throw new Error('Too many recipients')
+          throw new Error('Too many recipients');
         }
-        let transactionMessage = SolKit.pipe(
+        const transactionMessage = SolKit.pipe(
           SolKit.createTransactionMessage({ version: txType }),
           tx => SolKit.setTransactionMessageFeePayer(fromAddress, tx),
         );
@@ -59,7 +59,7 @@ export class SOLTxProvider {
           const recentBlockhash = {
             blockhash: blockHash as SolKit.Blockhash,
             lastValidBlockHeight: BigInt(blockHeight)
-          }
+          };
           lifetimeConstrainedTx = SolKit.setTransactionMessageLifetimeUsingBlockhash(
             recentBlockhash,
             transactionMessage,
@@ -101,13 +101,13 @@ export class SOLTxProvider {
         const _amount = Number(amount);
 
         if (!addressKeyPair) {
-          throw new Error('New address keypair is required to create an account.')
+          throw new Error('New address keypair is required to create an account.');
         }
         const recentBlockhash = {
           blockhash: blockHash as SolKit.Blockhash,
           lastValidBlockHeight: BigInt(blockHeight)
-        }
-        const createAccountInstructions = []
+        };
+        const createAccountInstructions = [];
         createAccountInstructions.push(SolSystem.getCreateAccountInstruction({
           payer: fromKeyPair,
           newAccount: addressKeyPair,
@@ -118,7 +118,7 @@ export class SOLTxProvider {
         const txMessage = SolKit.pipe(
           SolKit.createTransactionMessage({ version: txType }),
           (tx) => SolKit.setTransactionMessageFeePayerSigner(fromKeyPair, tx),
-        )
+        );
         lifetimeConstrainedTx = SolKit.setTransactionMessageLifetimeUsingBlockhash(
           recentBlockhash,
           txMessage,
@@ -149,13 +149,13 @@ export class SOLTxProvider {
           (tx) => SolKit.setTransactionMessageFeePayerSigner(fromKeyPair, tx),
           (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash({ blockhash: blockHash as SolKit.Blockhash, lastValidBlockHeight: BigInt(blockHeight) }, tx),
           (tx) => SolKit.appendTransactionMessageInstructions(
-              [createAssociatedTokenIdempotentInstruction],
-              tx
+            [createAssociatedTokenIdempotentInstruction],
+            tx
           )
         );
         const compiledAtaTx = SolKit.compileTransaction(ataTxMessage);
         return SolKit.getBase64EncodedWireTransaction(compiledAtaTx);
-      }
+    }
   }
 
   decodeRawTransaction({ rawTx, decodeTransactionMessage = true }) {

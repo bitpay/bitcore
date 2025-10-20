@@ -38,11 +38,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.joinThresholdSigWallet = joinThresholdSigWallet;
 const prompt = __importStar(require("@clack/prompts"));
+const prompts_1 = require("../../prompts");
 const bitcore_wallet_client_1 = require("bitcore-wallet-client");
 const os_1 = __importDefault(require("os"));
 const url_1 = __importDefault(require("url"));
 const errors_1 = require("../../errors");
-const prompts_1 = require("../../prompts");
 const utils_1 = require("../../utils");
 async function joinThresholdSigWallet(args) {
     const { wallet, chain, opts } = args;
@@ -112,7 +112,7 @@ async function joinThresholdSigWallet(args) {
         tss.subscribe({ copayerName });
         tss.on('roundsubmitted', (round) => spinner.message(`Round ${round} submitted`));
         tss.on('error', prompt.log.error);
-        tss.on('wallet', async (wallet) => {
+        tss.on('wallet', async (_wallet) => {
         });
         tss.on('complete', async () => {
             try {

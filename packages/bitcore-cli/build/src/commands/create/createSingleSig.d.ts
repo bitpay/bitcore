@@ -1,5 +1,5 @@
-import { type Network } from 'bitcore-wallet-client';
 import type { CommonArgs } from '../../../types/cli';
+import { type Network } from 'bitcore-wallet-client';
 export declare function createSingleSigWallet(args: CommonArgs<{
     mnemonic?: string;
 }> & {

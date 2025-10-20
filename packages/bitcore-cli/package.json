@@ -2,7 +2,7 @@
   "name": "bitcore-cli",
   "description": "A Bitcore CLI Wallet",
   "author": "BitPay, Inc",
-  "version": "11.3.2",
+  "version": "11.3.6",
   "licence": "MIT",
   "private": true,
   "keywords": [
@@ -33,16 +33,17 @@
     "compile": "npm run clean && tsc",
     "postcompile": "node createBin -v",
     "clean": "rm -rf ./build",
-    "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
-    "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
-    "precommit": "npm run lint; npm run fix"
+    "lint": "eslint .",
+    "fix:errors": "eslint --fix --quiet .",
+    "fix:all": "eslint --fix .",
+    "precommit": "npm run lint; npm run fix:errors"
   },
   "dependencies": {
     "@clack/prompts": "1.0.0-alpha.3",
-    "bitcore-mnemonic": "^11.3.2",
-    "bitcore-wallet-client": "^11.3.2",
+    "bitcore-mnemonic": "^11.3.6",
+    "bitcore-wallet-client": "^11.3.6",
     "commander": "14.0.0",
-    "crypto-wallet-core": "^11.3.2",
+    "crypto-wallet-core": "^11.3.6",
     "external-editor": "3.1.0",
     "ts-node": "10.9.2",
     "usb": "2.15.0"

@@ -40,8 +40,8 @@ exports.command = command;
 exports.getTxHistory = getTxHistory;
 const prompt = __importStar(require("@clack/prompts"));
 const fs_1 = __importDefault(require("fs"));
-const os_1 = __importDefault(require("os"));
 const prompts_1 = require("../prompts");
+const os_1 = __importDefault(require("os"));
 const utils_1 = require("../utils");
 function command(args) {
     const { wallet, program } = args;

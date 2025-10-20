@@ -4,7 +4,7 @@ The following document is a step-by-step guide to run BWS.
 
 ## Prerequisites
 
-Ensure MongoDB (2.6+) is installed and running. This document assumes that mongod is running at the default port 27017.
+Ensure MongoDB (3.4+) is installed and running. This document assumes that mongod is running at the default port 27017.
 See the configuration section to configure a different host/port.
 
 ## Install BWS from NPM

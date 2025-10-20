@@ -39,10 +39,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.command = command;
 exports.getTxProposals = getTxProposals;
 const prompt = __importStar(require("@clack/prompts"));
+const prompts_1 = require("../prompts");
 const fs_1 = __importDefault(require("fs"));
 const os_1 = __importDefault(require("os"));
 const errors_1 = require("../errors");
-const prompts_1 = require("../prompts");
 const utils_1 = require("../utils");
 function command(args) {
     const { wallet, program } = args;

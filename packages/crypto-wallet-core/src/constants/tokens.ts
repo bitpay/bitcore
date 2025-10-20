@@ -1,4 +1,4 @@
-export let ETH_TOKEN_OPTS = {
+export const ETH_TOKEN_OPTS = {
   '0x4fabb145d64652a948d72533023f6e7a623c7c53': {
     name: 'Binance USD Coin',
     symbol: 'BUSD',
@@ -73,7 +73,7 @@ export let ETH_TOKEN_OPTS = {
   }
 };
 
-export let MATIC_TOKEN_OPTS = {
+export const MATIC_TOKEN_OPTS = {
   '0x2791bca1f2de4661ed88a30c99a7a9449aa84174': {
     name: 'USDC.e',
     symbol: 'USDC.e',
@@ -130,7 +130,7 @@ export let MATIC_TOKEN_OPTS = {
   }
 };
 
-export let ARB_TOKEN_OPTS = {
+export const ARB_TOKEN_OPTS = {
   '0xaf88d065e77c8cc2239327c5edb3a432268e5831': {
     name: 'USD Coin',
     symbol: 'USDC',
@@ -157,7 +157,7 @@ export let ARB_TOKEN_OPTS = {
   }
 };
 
-export let BASE_TOKEN_OPTS = {
+export const BASE_TOKEN_OPTS = {
   '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': {
     name: 'USD Coin',
     symbol: 'USDC',
@@ -172,7 +172,7 @@ export let BASE_TOKEN_OPTS = {
   }
 };
 
-export let OP_TOKEN_OPTS = {
+export const OP_TOKEN_OPTS = {
   '0x0b2c639c533813f4aa9d7837caf62653d097ff85': {
     name: 'USD Coin',
     symbol: 'USDC',
@@ -199,7 +199,7 @@ export let OP_TOKEN_OPTS = {
   }
 };
 
-export let SOL_TOKEN_OPTS = {
+export const SOL_TOKEN_OPTS = {
   'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': {
     name: 'USD Coin',
     symbol: 'USDC',
@@ -221,4 +221,4 @@ export const TOKEN_OPTS = {
   BASE_TOKEN_OPTS,
   OP_TOKEN_OPTS,
   SOL_TOKEN_OPTS
-}
+};

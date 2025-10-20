@@ -1,8 +1,8 @@
 import * as prompt from '@clack/prompts';
+import { getAddressType, getCopayerName, getPassword } from '../../prompts';
+import type { CommonArgs } from '../../../types/cli';
 import { type Network } from 'bitcore-wallet-client';
 import os from 'os';
-import type { CommonArgs } from '../../../types/cli';
-import { getAddressType, getCopayerName, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
 
 export async function createMultiSigWallet(
@@ -32,5 +32,5 @@ export async function createMultiSigWallet(
 
   return {
     mnemonic: key.get(password).mnemonic,
-  }
+  };
 }

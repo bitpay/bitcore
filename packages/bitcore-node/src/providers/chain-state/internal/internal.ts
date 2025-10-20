@@ -75,13 +75,6 @@ export class InternalStateProvider implements IChainStateService {
     return query;
   }
 
-  streamAddressUtxos(params: StreamAddressUtxosParams) {
-    const { req, res, args } = params;
-    const { limit, since } = args;
-    const query = this.getAddressQuery(params);
-    Storage.apiStreamingFind(CoinStorage, query, { limit, since, paging: '_id' }, req!, res!);
-  }
-
   async streamAddressTransactions(params: StreamAddressUtxosParams) {
     const { req, res, args } = params;
     const { limit, since } = args;

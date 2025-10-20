@@ -1,12 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createWallet = createWallet;
-const crypto_wallet_core_1 = require("crypto-wallet-core");
 const prompts_1 = require("../../prompts");
-const utils_1 = require("../../utils");
+const crypto_wallet_core_1 = require("crypto-wallet-core");
 const createMultiSig_1 = require("./createMultiSig");
 const createSingleSig_1 = require("./createSingleSig");
 const createThresholdSig_1 = require("./createThresholdSig");
+const utils_1 = require("../../utils");
 async function createWallet(args) {
     const { wallet, opts } = args;
     await wallet.getClient({});

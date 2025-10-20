@@ -39,9 +39,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.command = command;
 exports.walletStatus = walletStatus;
 const prompt = __importStar(require("@clack/prompts"));
+const balance_1 = require("./balance");
 const os_1 = __importDefault(require("os"));
 const utils_1 = require("../utils");
-const balance_1 = require("./balance");
 async function command(args) {
     const { program } = args;
     program

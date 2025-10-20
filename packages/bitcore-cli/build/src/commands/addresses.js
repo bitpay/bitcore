@@ -61,7 +61,7 @@ async function getAddresses(args) {
         Object.assign(opts, command(args));
     }
     const { pageSize } = opts;
-    await utils_1.Utils.paginate(async (page, viewAction) => {
+    await utils_1.Utils.paginate(async (page, _viewAction) => {
         const addresses = await wallet.client.getMainAddresses({
             limit: pageSize,
             skip: (page - 1) * pageSize

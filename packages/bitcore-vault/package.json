@@ -14,9 +14,9 @@
     "watch": "tsc --watch",
     "compile": "npm run clean && tsc",
     "test": "mocha -r tsx test/**/*.test.ts",
-    "precommit": "npm run fix && npm run lint",
-    "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
-    "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
+    "precommit": "echo 'TODO: npm run fix && npm run lint'",
+    "lint": "eslint .",
+    "fix": "eslint --fix --quiet .",
     "run:example": "npm run compile && node ts_build/bitcore-vault/src/examples/run.js"
   },
   "dependencies": {

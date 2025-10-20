@@ -39,7 +39,7 @@ const errors_1 = require("../errors");
 const utils_1 = require("../utils");
 const wallet_1 = require("../wallet");
 async function setToken(args) {
-    const { wallet, opts } = args;
+    const { wallet } = args;
     const currencies = await wallet_1.Wallet.getCurrencies(wallet.network);
     function findTokenObj(value) {
         return currencies.find(c => c.contractAddress?.toLowerCase() === value.toLowerCase() ||

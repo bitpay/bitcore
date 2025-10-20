@@ -1,8 +1,8 @@
 import * as prompt from '@clack/prompts';
-import fs from 'fs';
-import os from 'os';
 import type { CommonArgs } from '../../types/cli';
+import fs from 'fs';
 import { getFileName } from '../prompts';
+import os from 'os';
 import { Utils } from '../utils';
 
 export function command(args: CommonArgs) {
@@ -93,9 +93,9 @@ export async function getUtxos(
       const filename = opts.command
         ? Utils.replaceTilde(typeof opts.export === 'string' ? opts.export : defaultValue)
         : await getFileName({
-            message: 'Enter output file name:',
-            defaultValue: `~/${wallet.name}_utxos_${new Date().toISOString()}.json`
-          });
+          message: 'Enter output file name:',
+          defaultValue: `~/${wallet.name}_utxos_${new Date().toISOString()}.json`
+        });
       await fs.promises.writeFile(filename, JSON.stringify(utxos));
       prompt.log.info(`UTXOs exported to: ${filename}`);
     } else if (printRaw) {

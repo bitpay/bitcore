@@ -38,8 +38,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createMultiSigWallet = createMultiSigWallet;
 const prompt = __importStar(require("@clack/prompts"));
-const os_1 = __importDefault(require("os"));
 const prompts_1 = require("../../prompts");
+const os_1 = __importDefault(require("os"));
 const utils_1 = require("../../utils");
 async function createMultiSigWallet(args) {
     const { wallet, chain, network, m, n, opts } = args;

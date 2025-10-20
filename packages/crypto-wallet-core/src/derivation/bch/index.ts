@@ -1,5 +1,5 @@
-import BitcoreLibCash from 'bitcore-lib-cash';
 import { AbstractBitcoreLibDeriver } from '../btc';
+import BitcoreLibCash from 'bitcore-lib-cash';
 export class BchDeriver extends AbstractBitcoreLibDeriver {
   bitcoreLib = BitcoreLibCash;
 

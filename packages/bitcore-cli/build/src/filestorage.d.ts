@@ -8,8 +8,4 @@ export declare class FileStorage {
     load(): Promise<any>;
     exists(): boolean;
 }
-export interface IWalletData {
-    key: {};
-    creds: {};
-}
 //# sourceMappingURL=filestorage.d.ts.map

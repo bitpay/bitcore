@@ -1,10 +1,10 @@
-import type { IValidation } from '../types/validation';
 import { ArbValidation } from './arb';
 import { BaseValidation } from './base';
 import { BchValidation } from './bch';
 import { BtcValidation } from './btc';
 import { DogeValidation } from './doge';
 import { EthValidation } from './eth';
+import type { IValidation } from '../types/validation';
 import { LtcValidation } from './ltc';
 import { MaticValidation } from './matic';
 import { OpValidation } from './op';

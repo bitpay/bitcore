@@ -25,6 +25,7 @@ import {
   GetBalanceForAddressParams,
   GetBlockBeforeTimeParams,
   GetEstimateSmartFeeParams,
+  GetWalletBalanceAtTimeParams,
   GetWalletBalanceParams,
   IChainStateService,
   StreamAddressUtxosParams,
@@ -91,8 +92,25 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     }
   }
 
+  async getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams) {
+    const { chain, network, time } = params;
+    const addresses = await this.getWalletAddresses(params.wallet._id!);
+    const balances = await Promise.all(
+      addresses.map(a => this.getBalanceForAddress({ address: a.address, chain, network, args: { time } }))
+    );
+    return balances.reduce(
+      (total, current) => {
+        total.balance += current.balance;
+        total.confirmed += current.confirmed;
+        total.unconfirmed += current.unconfirmed;
+        return total;
+      },
+      { confirmed: 0, unconfirmed: 0, balance: 0 }
+    );
+  }
+
   async getBalanceForAddress(params: GetBalanceForAddressParams) {
-    const { chain, network, address } = params;
+    const { chain, network, address, args } = params;
     const lowerAddress = address.toLowerCase();
     const cacheKey = `getBalanceForAddress-${chain}-${network}-${lowerAddress}`;
     return CacheStorage.getGlobalOrRefresh(
@@ -100,7 +118,15 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
       async () => {
         const client = await this.getClient(network);
         try {
-          const balance = await client.getBalance({ address });
+          let ledgerIndex: number | undefined;
+          if (args?.time) {
+            const block = await this.getBlockBeforeTime({ chain, network, time: args.time });
+            if (!block) {
+              throw new Error(`Balance not found at ${args.time}`);
+            }
+            ledgerIndex = block.height;
+          }
+          const balance = await client.getBalance({ address, ledgerIndex });
           const confirmed = Math.round(Number(balance) * 1e6);
           return { confirmed, unconfirmed: 0, balance: confirmed };
         } catch (e: any) {
@@ -117,7 +143,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
           throw e;
         }
       },
-      CacheStorage.Times.Minute
+      args?.time ? CacheStorage.Times.None : CacheStorage.Times.Minute
     );
   }
 

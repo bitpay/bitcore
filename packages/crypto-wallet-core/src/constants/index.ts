@@ -1,4 +1,3 @@
-import { SCRIPT_TYPES } from './address';
 import { ALGO_TO_KEY_TYPE, ALGOS_BY_CHAIN } from './algorithms';
 import {
   CHAINS,
@@ -11,6 +10,7 @@ import {
 } from './chains';
 import { FEE_MINIMUMS } from './feeMinimums';
 import { TOKEN_OPTS as opts } from './tokens';
+import { SCRIPT_TYPES } from './address';
 import { UNITS } from './units';
 
 export const Constants = {

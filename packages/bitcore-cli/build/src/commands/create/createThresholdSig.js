@@ -38,12 +38,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createThresholdSigWallet = createThresholdSigWallet;
 const prompt = __importStar(require("@clack/prompts"));
+const prompts_1 = require("../../prompts");
 const bitcore_wallet_client_1 = require("bitcore-wallet-client");
 const crypto_1 = __importDefault(require("crypto"));
 const os_1 = __importDefault(require("os"));
 const url_1 = __importDefault(require("url"));
 const errors_1 = require("../../errors");
-const prompts_1 = require("../../prompts");
 const utils_1 = require("../../utils");
 async function createThresholdSigWallet(args) {
     const { wallet, chain, network, m, n, opts } = args;
@@ -70,7 +70,7 @@ async function createThresholdSigWallet(args) {
     for (let i = 1; i < n; i++) {
         const pubkey = await prompt.text({
             message: `Enter party ${i}'s public key:`,
-            validate: (input) => !!input ? undefined : 'Public key cannot be empty.',
+            validate: (input) => input ? undefined : 'Public key cannot be empty.',
         });
         if (prompt.isCancel(pubkey)) {
             throw new errors_1.UserCancelled();
@@ -117,7 +117,7 @@ async function createThresholdSigWallet(args) {
         });
         tss.on('roundsubmitted', (round) => spinner.message(`Round ${round} submitted`));
         tss.on('error', prompt.log.error);
-        tss.on('wallet', async (wallet) => {
+        tss.on('wallet', async (_wallet) => {
         });
         tss.on('complete', async () => {
             try {

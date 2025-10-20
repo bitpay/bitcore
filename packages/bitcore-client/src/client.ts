@@ -1,7 +1,7 @@
-import { BitcoreLib } from 'crypto-wallet-core';
-import requestStream from 'request';
-import request from 'request-promise-native';
 import * as secp256k1 from 'secp256k1';
+import { BitcoreLib } from 'crypto-wallet-core';
+import request from 'request-promise-native';
+import requestStream from 'request';
 import { URL } from 'url';
 import { utils } from './utils';
 
@@ -28,7 +28,7 @@ export class Client {
   }
 
   _buildQueryString( params: any) {
-    let query = [];
+    const query = [];
     for (const [key, value] of Object.entries(params)) {
       value && query.push(`${key}=${value}`);
     }
@@ -101,7 +101,7 @@ export class Client {
 
   async getTransaction(params: { txid: string, populated?: boolean }) {
     const { txid, populated } = params;
-    let url = `${this.apiUrl}/tx/${txid}${populated ? '/populated' : ''}`;
+    const url = `${this.apiUrl}/tx/${txid}${populated ? '/populated' : ''}`;
     return this._request({ method: 'GET', url, json: true });
   }
 
@@ -178,7 +178,7 @@ export class Client {
 
   async getPriorityFee(params) {
     const { percentile } = params;
-    let url = `${this.apiUrl}/priorityFee/${percentile}`;
+    const url = `${this.apiUrl}/priorityFee/${percentile}`;
     const result = await this._request({ method: 'GET', url, json: true });
     if (result.errors?.length) {
       throw new Error(result.errors[0]);

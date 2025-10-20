@@ -52,14 +52,14 @@ exports.Wallet = void 0;
 const prompt = __importStar(require("@clack/prompts"));
 const bitcore_wallet_client_1 = require("bitcore-wallet-client");
 const crypto_wallet_core_1 = require("crypto-wallet-core");
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
-const url_1 = __importDefault(require("url"));
 const constants_1 = require("./constants");
 const erc20Abi_1 = require("./erc20Abi");
 const filestorage_1 = require("./filestorage");
+const fs_1 = __importDefault(require("fs"));
 const prompts_1 = require("./prompts");
+const path_1 = __importDefault(require("path"));
 const tss_1 = require("./tss");
+const url_1 = __importDefault(require("url"));
 const utils_1 = require("./utils");
 const Client = bitcore_wallet_client_1.API;
 const WALLET_ENCRYPTION_OPTS = {
@@ -131,7 +131,7 @@ class Wallet {
         return { key, creds, secret };
     }
     async createFromTss(args) {
-        const { key, chain, network, addressType, password, copayerName } = args;
+        const { key, chain, network, addressType, password } = args;
         if (!this.client) {
             await this.getClient({ mustExist: true });
         }
@@ -152,7 +152,7 @@ class Wallet {
             await this.getClient({ mustExist: true });
         }
         const { chain, network, m, n, addressType } = this.client.credentials;
-        const { wallet, secret } = await this.client.createWallet(this.name, args.copayerName, m, n, { chain, network: network, ...utils_1.Utils.getSegwitInfo(addressType) });
+        const { secret } = await this.client.createWallet(this.name, args.copayerName, m, n, { chain, network: network, ...utils_1.Utils.getSegwitInfo(addressType) });
         return secret;
     }
     async load(opts) {
@@ -167,7 +167,7 @@ class Wallet {
                 walletData = JSON.parse(bitcore_wallet_client_1.Encryption.decryptWithPassword(walletData, password).toString());
                 this.isFullyEncrypted = true;
             }
-            catch (e) {
+            catch {
                 utils_1.Utils.die('Could not open wallet. Wrong password.');
             }
         }
@@ -183,11 +183,11 @@ class Wallet {
         };
         let key;
         try {
-            let imported = Client.upgradeCredentialsV1(walletData);
+            const imported = Client.upgradeCredentialsV1(walletData);
             this.client.fromString(JSON.stringify(imported.credentials));
             key = instantiateKey();
         }
-        catch (e) {
+        catch {
             try {
                 this.client.fromObj(walletData.creds);
                 key = instantiateKey();
@@ -202,12 +202,12 @@ class Wallet {
         }, "f");
         if (doNotComplete)
             return key;
-        this.client.on('walletCompleted', (wallet) => {
+        this.client.on('walletCompleted', (_wallet) => {
             this.save().then(() => {
                 _verbose && prompt.log.info('Your wallet has just been completed.');
             });
         });
-        const isComplete = await this.client.openWallet();
+        await this.client.openWallet();
         return key;
     }
     ;

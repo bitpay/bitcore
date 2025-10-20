@@ -1,6 +1,6 @@
-import { Credentials, Key, TssKey, Txp, type Network } from 'bitcore-wallet-client';
-import { type Types as CWCTypes } from 'crypto-wallet-core';
+import { Credentials, Key, type Network, TssKey, Txp } from 'bitcore-wallet-client';
 import type { ClientType, ITokenObj, IWallet, TssKeyType } from '../types/wallet';
+import { type Types as CWCTypes } from 'crypto-wallet-core';
 import { FileStorage } from './filestorage';
 export declare class Wallet implements IWallet {
     #private;
