@@ -19,7 +19,7 @@ router.get('/:input', async function(req: Request, res) {
   }
 });
 
-module.exports = {
+export const validRoute = {
   router,
   path: '/valid'
 };

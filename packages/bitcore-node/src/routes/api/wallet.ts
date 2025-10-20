@@ -218,7 +218,7 @@ router.get('/:pubKey', Auth.authenticateMiddleware, async function(req: Authenti
   }
 });
 
-module.exports = {
+export const walletRoute = {
   router,
   path: '/wallet'
 };

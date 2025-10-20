@@ -10,8 +10,13 @@ const URLClass = usingBrowser ? usingBrowser.URL : URL;
 export class Client {
   apiUrl: string;
   authKey: any;
-  constructor(params) {
-    Object.assign(this, params);
+
+  constructor(params: {
+    apiUrl: string;
+    authKey: BitcoreLib.PrivateKey;
+  }) {
+    this.apiUrl = params.apiUrl;
+    this.authKey = params.authKey;
   }
 
   async _request(params: request.OptionsWithUrl) {

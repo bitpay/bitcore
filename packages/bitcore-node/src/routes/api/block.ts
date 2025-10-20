@@ -176,7 +176,7 @@ router.get('/:blockId/fee', async function(req: Request, res: Response) {
   return res.json(feeCache[feeCacheKey]);
 });
 
-module.exports = {
+export const blockRoute = {
   router,
   path: '/block'
 };

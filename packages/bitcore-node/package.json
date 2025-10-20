@@ -34,7 +34,7 @@
     "verify:headers": "npm run tsc && node ./build/test/verification/db-verify-headers.js",
     "resync": "npm run tsc && node ./build/test/verification/resync.js",
     "test:unit": "mocha build/test/unit/ --name '*.spec.js'",
-    "test:integration": "mocha -r tsx 'test/integration/**/*.spec.ts'",
+    "test:integration": "BCN_LOG_LEVEL=none mocha -r tsx 'test/integration/**/*.spec.ts'",
     "benchmark": "node build/test/benchmark/benchmark.js",
     "coverage": "nyc mocha build/test/**/*.spec.js",
     "api": "npm run tsc && node build/src/workers/api.js",
