@@ -8,7 +8,7 @@
     "build": "tsc",
     "clean": "rm -rf ts_build && tsc --version",
     "compile": "npm run clean && npm run build",
-    "precommit": "echo 'TODO: npm run fix'",
+    "precommit": "npm run lint; npm run fix:errors",
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
