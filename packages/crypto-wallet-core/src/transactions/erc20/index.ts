@@ -1,7 +1,8 @@
-import { AbiItem } from 'web3-utils';
-import { ERC20Abi } from './abi';
-import { ETHTxProvider } from '../eth';
 import Web3 from 'web3';
+import { AbiItem } from 'web3-utils';
+import { ETHTxProvider } from '../eth';
+import { ERC20Abi } from './abi';
+
 const { toBN } = Web3.utils;
 
 export class ERC20TxProvider extends ETHTxProvider {

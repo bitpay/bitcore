@@ -1,13 +1,13 @@
+import { ethers } from 'ethers';
+import Web3 from 'web3';
+import utils, { AbiItem } from 'web3-utils';
+import { Constants } from '../../constants';
 import { 
   EVM_CHAIN_NETWORK_TO_CHAIN_ID as chainIds,
   EVM_CHAIN_DEFAULT_TESTNET as defaultTestnet 
 } from '../../constants/chains';
-import utils, { AbiItem } from 'web3-utils';
-import { Constants } from '../../constants';
-import { ethers } from 'ethers';
-import type { Key } from '../../types/derivation';
 import { MULTISENDAbi } from '../erc20/abi';
-import Web3 from 'web3';
+import type { Key } from '../../types/derivation';
 
 const { toBN } = Web3.utils;
 export class ETHTxProvider {

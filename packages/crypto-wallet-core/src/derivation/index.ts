@@ -4,13 +4,13 @@ import { BchDeriver } from './bch';
 import { BtcDeriver } from './btc';
 import { DogeDeriver } from './doge';
 import { EthDeriver } from './eth';
-import type { IDeriver } from '../types/derivation';
 import { LtcDeriver } from './ltc';
 import { MaticDeriver } from './matic';
 import { OpDeriver } from './op';
 import { Paths } from './paths';
 import { SolDeriver } from './sol';
 import { XrpDeriver } from './xrp';
+import type { IDeriver } from '../types/derivation';
 
 const derivers: { [chain: string]: IDeriver } = {
   BTC: new BtcDeriver(),

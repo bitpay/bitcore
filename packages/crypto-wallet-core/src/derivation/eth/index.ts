@@ -1,6 +1,6 @@
 import BitcoreLib from 'bitcore-lib';
-import type { IDeriver } from '../../types/derivation';
 import utils from 'web3-utils';
+import type { IDeriver } from '../../types/derivation';
 
 export class EthDeriver implements IDeriver {
   padTo32(msg) {

@@ -6,19 +6,19 @@ import {
   BASEERC20TxProvider,
   BASETxProvider
 } from './base';
-import {
-  MATICERC20TxProvider,
-  MATICTxProvider
-} from './matic';
-import { OPERC20TxProvider, OPTxProvider } from './op';
 import { BCHTxProvider } from './bch';
 import { BTCTxProvider } from './btc';
 import { DOGETxProvider } from './doge';
 import { ERC20TxProvider } from './erc20';
-import { ETHMULTISIGTxProvider } from './eth-multisig';
 import { ETHTxProvider } from './eth';
+import { ETHMULTISIGTxProvider } from './eth-multisig';
 import { LTCTxProvider } from './ltc';
+import {
+  MATICERC20TxProvider,
+  MATICTxProvider
+} from './matic';
 import { MATICMULTISIGTxProvider } from './matic-multisig';
+import { OPERC20TxProvider, OPTxProvider } from './op';
 import { SOLTxProvider } from './sol';
 import { SPLTxProvider } from './spl';
 import { XRPTxProvider } from './xrp';

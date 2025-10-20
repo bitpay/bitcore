@@ -1,5 +1,5 @@
-import type { IValidation } from '../../types/validation';
 import utils from 'web3-utils';
+import type { IValidation } from '../../types/validation';
 
 export class EthValidation implements IValidation {
   regex: RegExp;
