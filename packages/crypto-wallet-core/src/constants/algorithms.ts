@@ -1,4 +1,4 @@
-export const ALGOS_BY_CHAIN =  {
+export const ALGOS_BY_CHAIN = {
   default: 'ECDSA',
   SOL: 'EDDSA'
 };

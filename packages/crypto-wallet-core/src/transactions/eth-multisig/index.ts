@@ -1,7 +1,7 @@
-import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 import { ETHTxProvider } from '../eth';
 import { MultisigAbi } from './abi';
+import Web3 from 'web3';
 
 export class ETHMULTISIGTxProvider extends ETHTxProvider {
   getMultisigContract(multisigContractAddress: string) {
@@ -33,8 +33,8 @@ export class ETHMULTISIGTxProvider extends ETHTxProvider {
     dailyLimit: number;
   }) {
     const { addresses, requiredConfirmations, multisigGnosisContractAddress, dailyLimit } = params;
-    let requiredConfirmationsStr = Number(requiredConfirmations).toLocaleString('en', { useGrouping: false });
-    let dailyLimitStr = Number(dailyLimit).toLocaleString('en', { useGrouping: false });
+    const requiredConfirmationsStr = Number(requiredConfirmations).toLocaleString('en', { useGrouping: false });
+    const dailyLimitStr = Number(dailyLimit).toLocaleString('en', { useGrouping: false });
     const data = this.getMultisigContract(multisigGnosisContractAddress)
       .methods.create(addresses, requiredConfirmationsStr, dailyLimitStr)
       .encodeABI();
@@ -98,9 +98,8 @@ export class ETHMULTISIGTxProvider extends ETHTxProvider {
 
   changeRequirementEncodedData(params: { requiredConfirmations: number; multisigContractAddress: string }) {
     const { requiredConfirmations, multisigContractAddress } = params;
-    let data;
-    let requiredConfirmationsStr = Number(requiredConfirmations).toLocaleString('en', { useGrouping: false });
-    data = this.getMultisigContract(multisigContractAddress)
+    const requiredConfirmationsStr = Number(requiredConfirmations).toLocaleString('en', { useGrouping: false });
+    const data = this.getMultisigContract(multisigContractAddress)
       .methods.changeRequirement(requiredConfirmationsStr)
       .encodeABI();
     return this.submitEncodeData({
@@ -117,9 +116,8 @@ export class ETHMULTISIGTxProvider extends ETHTxProvider {
 
   changeDailyLimitEncodedData(params: { requiredConfirmations: number; multisigContractAddress: string }) {
     const { requiredConfirmations, multisigContractAddress } = params;
-    let data;
-    let requiredConfirmationsStr = Number(requiredConfirmations).toLocaleString('en', { useGrouping: false });
-    data = this.getMultisigContract(multisigContractAddress)
+    const requiredConfirmationsStr = Number(requiredConfirmations).toLocaleString('en', { useGrouping: false });
+    const data = this.getMultisigContract(multisigContractAddress)
       .methods.changeDailyLimit(requiredConfirmationsStr)
       .encodeABI();
     return this.submitEncodeData({

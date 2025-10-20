@@ -1,5 +1,5 @@
-import BitcoreLib from 'bitcore-lib';
 import type { Encoding, HDKeyType, IMessageClass, ISignedMessage, KeyType } from '../types/message';
+import BitcoreLib from 'bitcore-lib';
 import { encodeBuffer } from '../utils';
 
 export class BtcMessage implements IMessageClass {

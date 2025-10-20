@@ -1,10 +1,10 @@
-import type { IDeriver } from '../types/derivation';
 import { ArbDeriver } from './arb';
 import { BaseDeriver } from './base';
 import { BchDeriver } from './bch';
 import { BtcDeriver } from './btc';
 import { DogeDeriver } from './doge';
 import { EthDeriver } from './eth';
+import type { IDeriver } from '../types/derivation';
 import { LtcDeriver } from './ltc';
 import { MaticDeriver } from './matic';
 import { OpDeriver } from './op';

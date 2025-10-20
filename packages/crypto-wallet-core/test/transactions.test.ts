@@ -544,7 +544,7 @@ describe('Transaction', function() {
       const expectedTx =
         '0x02f9015783013881808506fc23ac008506fc23ac00809437d7b3bbd88efde6a93cf74d2f5b0385d3e3b08a870dd764300b8000b90124b6b4af05000000000000000000000000000000000000000000000000000dd764300b800000000000000000000000000000000000000000000000000000000004a817c8000000000000000000000000000000000000000000000000000000016ada606a26050bb49a5a8228599e0dd48c1368abd36f4f14d2b74a015b2d168dbcab0773ce399393220df874bb22ca961f351e038acd2ba5cc8c764385c9f23707622cc435000000000000000000000000000000000000000000000000000000000000001c7e247d684a635813267b10a63f7f3ba88b28ca2790c909110b28236cf1b9bba03451e83d5834189f28d4c77802fc76b7c760a42bc8bebf8dd15e6ead146805630000000000000000000000000000000000000000000000000000000000000000c0';
       expect(cryptoTx).to.equal(expectedTx);
-    })
+    });
 
     it('should be able to encode Data in ERC20 tx', () => {
       const recipients = [{ address: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A', amount: 3896000000000000 }];
@@ -569,7 +569,7 @@ describe('Transaction', function() {
       const rawEthTx2 = {
         value: 20407919369583210,
         to: '0x3428F3Eb7df7D4a16f9e4A5098574Cea2CFBbdc6',
-      }
+      };
       const recipients = [{ address: rawEthTx.to, amount: rawEthTx.value }, { address: rawEthTx2.to, amount: rawEthTx2.value }];
       const cryptoTx = Transactions.create({
         network: 'testnet',
@@ -603,7 +603,7 @@ describe('Transaction', function() {
       const rawEthTx2 = {
         value: '900',
         to: '0x3428F3Eb7df7D4a16f9e4A5098574Cea2CFBbdc6'
-      }
+      };
       const recipients = [{ address: rawEthTx.to, amount: rawEthTx.value }, { address: rawEthTx2.to, amount: rawEthTx2.value }];
       const cryptoTx = Transactions.create({
         network: 'sepolia',
@@ -638,7 +638,7 @@ describe('Transaction', function() {
       const rawMaticTx2 = {
         value: 20407919369583210,
         to: '0x3428F3Eb7df7D4a16f9e4A5098574Cea2CFBbdc6',
-      }
+      };
       const recipients = [{ address: rawMaticTx.to, amount: rawMaticTx.value }, { address: rawMaticTx2.to, amount: rawMaticTx2.value }];
       const cryptoTx = Transactions.create({
         network: 'testnet',

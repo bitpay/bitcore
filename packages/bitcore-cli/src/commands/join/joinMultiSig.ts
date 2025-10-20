@@ -1,7 +1,7 @@
 import * as prompt from '@clack/prompts';
+import { getCopayerName, getPassword } from '../../prompts';
 import BWC from 'bitcore-wallet-client';
 import type { CommonArgs } from '../../../types/cli';
-import { getCopayerName, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
 
 export async function joinMultiSigWallet(args: CommonArgs<{ mnemonic?: string; }>) {
@@ -10,7 +10,7 @@ export async function joinMultiSigWallet(args: CommonArgs<{ mnemonic?: string; }
 
   const secret = (await prompt.text({
     message: 'Enter the secret to join the wallet:',
-    validate: (input) => !!input?.trim() ? null : 'Secret cannot be empty.',
+    validate: (input) => input?.trim() ? null : 'Secret cannot be empty.',
   })).toString().trim();
   
   const parsed = BWC.parseSecret(secret);
@@ -21,7 +21,7 @@ export async function joinMultiSigWallet(args: CommonArgs<{ mnemonic?: string; }
 
   const copayerName = await getCopayerName();
   const password = await getPassword('Enter a password for the wallet:', { hidden: false });
-  const { key, creds } = await wallet.create({ chain, network, account: 0, n: 2, password, mnemonic, copayerName }); // n gets overwritten
+  const { key } = await wallet.create({ chain, network, account: 0, n: 2, password, mnemonic, copayerName }); // n gets overwritten
   const joinedWallet = await wallet.client.joinWallet(secret, copayerName, { chain });
   await wallet.load(); // Is this needed after joining?
   
@@ -30,5 +30,5 @@ export async function joinMultiSigWallet(args: CommonArgs<{ mnemonic?: string; }
   
   return {
     mnemonic: key.get(password).mnemonic,
-  }
+  };
 };

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { Deriver } from '../src';
 import { encoding } from 'bitcore-lib';
-import { createKeyPairFromPrivateKeyBytes, getAddressDecoder } from '@solana/kit'
+import { createKeyPairFromPrivateKeyBytes, getAddressDecoder } from '@solana/kit';
 
 describe('Address Derivation', () => {
   it('should be able to generate a valid BTC address', () => {
@@ -161,7 +161,7 @@ describe('Address Derivation', () => {
     const a = Deriver.getAddress('SOL', 'mainnet', result.pubKey);
     expect(a).to.equal(expectedResult.address);
     const keypair = await createKeyPairFromPrivateKeyBytes(encoding.Base58.decode(result.privKey), true);
-    const publicKeyBytes = await crypto.subtle.exportKey("raw", keypair.publicKey);
+    const publicKeyBytes = await crypto.subtle.exportKey('raw', keypair.publicKey);
     const publicKey = Buffer.from(publicKeyBytes).toString('hex');
     expect(result.pubKey).to.equal(publicKey);
     expect(result.address).to.equal(getAddressDecoder().decode(new Uint8Array(publicKeyBytes)));

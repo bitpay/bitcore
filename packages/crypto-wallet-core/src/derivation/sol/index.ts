@@ -1,21 +1,15 @@
-import { encoding, HDPrivateKey } from 'bitcore-lib';
 import * as ed25519 from 'ed25519-hd-key';
+import { encoding, HDPrivateKey } from 'bitcore-lib';
 import type { IDeriver, Key } from '../../types/derivation';
 import { Paths } from '../paths';
 
 export class SolDeriver implements IDeriver {
-  deriveAddress(_network, _xpubkey, _addressIndex, _isChange) {
-    if (true) {
-      throw new Error('Cannot derive Solana addresses from just xpubkey, need to use derivePrivateKeyWithPath');
-    }
-    return '';
+  deriveAddress(_network, _xpubkey, _addressIndex, _isChange): string {
+    throw new Error('Cannot derive Solana addresses from just xpubkey, need to use derivePrivateKeyWithPath');
   }
 
-  deriveAddressWithPath(_network: string, _xpubKey: string, _path: string) {
-    if (true) {
-      throw new Error('Cannot derive Solana addresses from just xpubkey, need to use derivePrivateKeyWithPath');
-    }
-    return '';
+  deriveAddressWithPath(_network: string, _xpubKey: string, _path: string): string {
+    throw new Error('Cannot derive Solana addresses from just xpubkey, need to use derivePrivateKeyWithPath');
   }
 
   getAddress(_network: string, pubKey: string) {
@@ -45,7 +39,7 @@ export class SolDeriver implements IDeriver {
     return segmented.reduce((parentKeys, segment) => ed25519.CKDPriv(parentKeys, segment + HARDENED_OFFSET), masterKey);
   }
 
-  derivePrivateKeyWithPath(network: string, xprivKey: string, path: string, addressType: string) {
+  derivePrivateKeyWithPath(network: string, xprivKey: string, path: string, _addressType: string) {
     const xpriv = new HDPrivateKey(xprivKey, network);
     const child = this.deriveChild({ key: xpriv._buffers.privateKey, chainCode: xpriv._buffers.chainCode }, path);
     const pubKey = ed25519.getPublicKey(child.key, false);

@@ -13,7 +13,7 @@ export class LTCTxProvider extends BTCTxProvider {
       });
       return new this.lib.Transaction.UnspentOutput(btcUtxo);
     });
-    let tx = new this.lib.Transaction().from(btcUtxos);
+    const tx = new this.lib.Transaction().from(btcUtxos);
     if (fee) {
       tx.fee(fee);
     }

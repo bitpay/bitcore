@@ -1,16 +1,16 @@
+import * as SolKit from '@solana/kit';
 import * as SolToken from '@solana-program/token';
-import * as SolKit from '@solana/kit'
 import { SOLTxProvider } from '../sol';
 
 export class SPLTxProvider extends SOLTxProvider {
 
   create(params: CreateParams) {
     // Reuse exposed TransactionProxy API (Create)
-    // @ts-expect-error
+    // @ts-expect-error - so public api is minimally changed
     if (params.category === 'recoverNestedAssociatedToken') {
       return SPLTxProvider.createRecoverNestedAssociatedTokenTransaction(params as unknown as CreateRecoverNestedAssociatedTokenParams);
     }
-    // @ts-expect-error
+    // @ts-expect-error - so public api is minimally changed
     if (params.category === 'closeTokenAccount') {
       return SPLTxProvider.createCloseTokenAccountTransaction(params as unknown as CreateCloseTokenAccountParams);
     }
@@ -126,7 +126,7 @@ export class SPLTxProvider extends SOLTxProvider {
     const recentBlockhash = {
       blockhash: blockHash as SolKit.Blockhash,
       lastValidBlockHeight: BigInt(blockHeight)
-    }
+    };
 
     // Create transaction
     const transactionMessage = SolKit.pipe(
@@ -148,7 +148,7 @@ interface CreateParams {
   from: string;
   fee?: number;
   feeRate: number;
-  txType?:  'legacy' | '0'; // legacy, version 0
+  txType?: 'legacy' | '0'; // legacy, version 0
   category?: 'transfer' | 'createAccount';
   nonce?: string; // nonce is represented as a transaction id
   nonceAddress?: string;
