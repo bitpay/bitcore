@@ -502,6 +502,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     for (let attempt = 0; attempt < 10; attempt++) { // retry in case of skipped or missing slots
       try {
         block = await rpc.getBlock({ height: beforeTimeSlot });
+        break;
       } catch (e: any) {
         if (e?.message?.includes('missing in long-term storage')) {
           beforeTimeSlot--;
