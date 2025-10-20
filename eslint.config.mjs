@@ -1,15 +1,17 @@
-import { defineConfig } from 'eslint/config';
-import globals from 'globals';
 import js from '@eslint/js';
+import { defineConfig } from 'eslint/config';
+import importPlugin from 'eslint-plugin-import';
+import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default defineConfig([
+  js.configs.recommended,
   {
     ignores: ['**/node_modules/**', '**/build/**', '**/ts_build/**', 'packages/insight/**']
   },
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
-    plugins: { js },
+    plugins: { js, import: importPlugin },
     extends: ['js/recommended'],
     languageOptions: {
       ecmaVersion: 2020,
@@ -53,12 +55,15 @@ export default defineConfig([
         }
       ],
       'sort-imports': ['error', {
-        ignoreCase: true,
-        ignoreDeclarationSort: false,
-        ignoreMemberSort: false,
-        memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
-        allowSeparatedGroups: false
-      }]
+        ignoreDeclarationSort: true, // rule cannot be auto-fixed
+        ignoreMemberSort: false // import { b, a } from 'X' -> import { a, b } from 'X'
+      }],
+      'import/order': ['error', {
+        groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index', 'object', 'type'],
+        'newlines-between': 'never',
+        alphabetize: { order: 'asc', caseInsensitive: false }
+      }],
+      'import/newline-after-import': 'error'
     }
   },
   {
@@ -81,7 +86,8 @@ export default defineConfig([
     },
     rules: {
       '@typescript-eslint/no-unused-vars': 'off',
-      'sort-imports': 'off'
+      'sort-imports': 'off',
+      'import/order': 'off'
     }
   }
 ]);
