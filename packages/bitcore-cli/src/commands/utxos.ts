@@ -1,9 +1,9 @@
-import * as prompt from '@clack/prompts';
-import type { CommonArgs } from '../../types/cli';
 import fs from 'fs';
-import { getFileName } from '../prompts';
 import os from 'os';
+import * as prompt from '@clack/prompts';
+import { getFileName } from '../prompts';
 import { Utils } from '../utils';
+import type { CommonArgs } from '../../types/cli';
 
 export function command(args: CommonArgs) {
   const { wallet, program } = args;

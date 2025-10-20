@@ -1,10 +1,10 @@
 import * as prompt from '@clack/prompts';
-import type { CommonArgs } from '../../../types/cli';
 import { Constants } from 'crypto-wallet-core';
 import { getChain } from '../../prompts';
+import { Utils } from '../../utils';
 import { joinMultiSigWallet } from './joinMultiSig';
 import { joinThresholdSigWallet } from './joinThresholdSig';
-import { Utils } from '../../utils';
+import type { CommonArgs } from '../../../types/cli';
 
 
 export async function joinWallet(args: CommonArgs<{ mnemonic?: string; }>) {

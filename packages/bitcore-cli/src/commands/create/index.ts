@@ -1,10 +1,10 @@
-import { getChain, getIsMultiParty, getMofN, getMultiPartyScheme, getNetwork } from '../../prompts';
-import type { CommonArgs } from '../../../types/cli';
 import { Constants } from 'crypto-wallet-core';
+import { getChain, getIsMultiParty, getMofN, getMultiPartyScheme, getNetwork } from '../../prompts';
+import { Utils } from '../../utils';
 import { createMultiSigWallet } from './createMultiSig';
 import { createSingleSigWallet } from './createSingleSig';
 import { createThresholdSigWallet } from './createThresholdSig';
-import { Utils } from '../../utils';
+import type { CommonArgs } from '../../../types/cli';
 
 export async function createWallet(args: CommonArgs<{ mnemonic?: string }>) {
   const { wallet, opts } = args;

@@ -1,7 +1,7 @@
-import { type Types as CWCTypes, Deriver, Validation } from 'crypto-wallet-core';
-import { type CommonArgs } from '../../types/cli';
 import os from 'os';
 import prompt from '@clack/prompts';
+import { type Types as CWCTypes, Deriver, Validation } from 'crypto-wallet-core';
+import { type CommonArgs } from '../../types/cli';
 import { UserCancelled } from '../errors';
 import { Utils } from '../utils';
 
