@@ -60,9 +60,10 @@ export default defineConfig([
       }],
       'import/order': ['error', {
         groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index', 'object', 'type'],
-        'newlines-between': 'always',
+        'newlines-between': 'never',
         alphabetize: { order: 'asc', caseInsensitive: false }
-      }]
+      }],
+      'import/newline-after-import': 'error'
     }
   },
   {
