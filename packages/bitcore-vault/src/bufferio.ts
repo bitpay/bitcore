@@ -36,9 +36,7 @@ class BufferIO {
             process.stdin.pause();
             process.stdin.removeAllListeners('data');
             terminalRestored = true;
-          } catch (error) {
-            // Ignore cleanup errors
-          }
+          } catch {/** no op */}
         }
         
         // Remove signal handlers

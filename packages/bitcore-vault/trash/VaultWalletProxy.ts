@@ -1,5 +1,5 @@
 // VaultWalletProxy.ts
-import { BufferIO } from 'bufferio'
+import { BufferIO } from 'bufferio';
 import { ChildProcess, fork } from 'child_process';
 import { constants, publicEncrypt, randomFillSync } from 'crypto';
 import { resolve } from 'path';
@@ -253,7 +253,7 @@ export class VaultWalletProxy {
       } catch {
         try {
           this.child.kill('SIGKILL');
-        } catch {}
+        } catch {/** no op */}
       }
     }
     this.rejectAllPending(new Error('VaultWalletProxy closed by caller'));
@@ -264,7 +264,7 @@ export class VaultWalletProxy {
     for (const [, p] of this.pending) {
       try {
         p.reject(err);
-      } catch {}
+      } catch {/** no op */}
     }
     this.pending.clear();
   }
@@ -275,7 +275,7 @@ export class VaultWalletProxy {
       this.child.removeListener('message', this.onChildMessage);
       this.child.removeListener('exit', this.onChildExit);
       this.child.removeListener('error', this.onChildError);
-    } catch {}
+    } catch {/** no op */}
     this.child = null;
   }
 }

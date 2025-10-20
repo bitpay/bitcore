@@ -8,7 +8,7 @@ class CredentialManager {
   private crypto: { padding: number; oaepHash: 'sha256' };
   private isShutdown: boolean;
   private secureHeapAllocationBaseline: number;
-  private credentials: Map<string, Buffer>
+  private credentials: Map<string, Buffer>;
   private encryptedPassword: Buffer | null;
   private activeBuffers: Set<Buffer>;
 
@@ -33,7 +33,7 @@ class CredentialManager {
    * Registers signal handlers for graceful shutdown
    */
   private registerShutdownHandlers() {
-    const shutdownHandler = (signal) => {
+    const shutdownHandler = (_signal) => {
       this.shutdown();
       process.exit(0);
     };
@@ -50,7 +50,7 @@ class CredentialManager {
       process.exit(1);
     });
     
-    process.once('unhandledRejection', (reason, promise) => {
+    process.once('unhandledRejection', (reason, _promise) => {
       console.error('SecureHeapSecretManager: Unhandled rejection, forcing shutdown:', reason);
       this.shutdown();
       process.exit(1);

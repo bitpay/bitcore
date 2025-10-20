@@ -51,9 +51,9 @@ export class VaultWallet extends Wallet {
     try {
       // Note: bcrypt documentation suggests passphrase will be stringified - this is not ideal - but the bcrypt compare method can take a buffer - hope for bcrypt's cleanup as best as possible
       await super.unlock(passphrase);
-      return { success: true }
-    } catch (err) {
-      return { success: false }
+      return { success: true };
+    } catch {
+      return { success: false };
     } finally {
       crypto.randomFillSync(passphrase); // Overwrite passphrase memory
       this.lock();
@@ -70,7 +70,7 @@ export class VaultWallet extends Wallet {
   /**
    * Override derivePrivateKey to require vault access
    */
-  public async derivePrivateKey(isChange: boolean, addressIndex?: number): Promise<any> {
+  public async derivePrivateKey(_isChange: boolean, _addressIndex?: number): Promise<any> {
     // This method needs a passphrase, but it's not passed as a parameter
     // We'll need to handle this differently - perhaps store the passphrase temporarily
     throw new Error('derivePrivateKey requires vault access - use withVaultAccess wrapper');
@@ -79,7 +79,7 @@ export class VaultWallet extends Wallet {
   /**
    * Override generateAddressPair to require vault access
    */
-  public async generateAddressPair(addressIndex: number, withChangeAddress?: boolean): Promise<any> {
+  public async generateAddressPair(_addressIndex: number, _withChangeAddress?: boolean): Promise<any> {
     // This method needs a passphrase, but it's not passed as a parameter
     // We'll need to handle this differently - perhaps store the passphrase temporarily
     throw new Error('generateAddressPair requires vault access - use withVaultAccess wrapper');
@@ -88,7 +88,7 @@ export class VaultWallet extends Wallet {
   /**
    * Override nextAddressPair to require vault access
    */
-  public async nextAddressPair(withChangeAddress?: boolean): Promise<any> {
+  public async nextAddressPair(_withChangeAddress?: boolean): Promise<any> {
     // This method needs a passphrase, but it's not passed as a parameter
     // We'll need to handle this differently - perhaps store the passphrase temporarily
     throw new Error('nextAddressPair requires vault access - use withVaultAccess wrapper');
@@ -97,7 +97,7 @@ export class VaultWallet extends Wallet {
   /**
    * Override importKeys to require vault access
    */
-  public async importKeys(params: { keys: any[], rederiveAddys?: boolean }): Promise<any> {
+  public async importKeys(_params: { keys: any[], rederiveAddys?: boolean }): Promise<any> {
     // This method needs a passphrase, but it's not passed as a parameter
     // We'll need to handle this differently - perhaps store the passphrase temporarily
     throw new Error('importKeys requires vault access - use withVaultAccess wrapper');

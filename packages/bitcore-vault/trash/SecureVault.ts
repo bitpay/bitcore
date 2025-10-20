@@ -51,7 +51,7 @@ export class SecureVault {
   async storeCredential(credential: Omit<SecureCredential, 'id' | 'createdAt'>): Promise<VaultResponse<{ id: string }>> {
     try {
       // Think about what data is and what it's going to return
-      const id =  await this.handleRequest<string>('storeCredential', credential);
+      const id = await this.handleRequest<string>('storeCredential', credential);
       return { success: true, data: { id } };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -64,7 +64,7 @@ export class SecureVault {
   async readInCredential(): Promise<VaultResponse<{ id: string }>> {
     try {
       const id = await this.handleRequest<string>('readInCredential');
-      return { success: true, data: { id }  };
+      return { success: true, data: { id } };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
@@ -75,7 +75,7 @@ export class SecureVault {
    */
   async deleteCredential(id: string): Promise<VaultResponse<{ deleted: boolean }>> {
     try {
-      const result = await this.handleRequest<boolean>('deleteCredential', { id })
+      const result = await this.handleRequest<boolean>('deleteCredential', { id });
       return { success: true, data: { deleted: result } };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -119,13 +119,13 @@ export class SecureVault {
     const originalToString = passwordBuffer.toString;
     passwordBuffer.toString = function(...args) {
       throw new Error('SECURITY ERROR: Converting password buffer to string is forbidden. This prevents accidental creation of immutable string copies.');
-    }
+    };
 
     // SECURITY: Override toJSON
     const originalToJSON = passwordBuffer.toJSON;
     passwordBuffer.toJSON = function() {
       throw new Error('SECURITY ERROR: Converting password buffer to JSON is forbidden.');
-    }
+    };
 
     // SECURITY: Override inspect to prevent console exposure
     const originalInspect = passwordBuffer[Symbol.for('nodejs.util.inspect.custom')];
@@ -273,6 +273,6 @@ export class SecureVault {
         clearTimeout(timeoutId);
         reject(error);
       }
-    })
+    });
   }
 } 

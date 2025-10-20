@@ -89,7 +89,7 @@ export class VaultWalletProxy {
             ? `killed by signal ${signal}` 
             : `exited with code ${code}`;
 
-          const msg = `SecureProcess ${exitReason}. Manual reinitialization required.`
+          const msg = `SecureProcess ${exitReason}. Manual reinitialization required.`;
           console.warn(msg);
 
           this.rejectAllPendingMessages(

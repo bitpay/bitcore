@@ -1,5 +1,5 @@
 import { Wallet, WalletObj } from '../../bitcore-client/src/wallet';
-import { Key } from '../../crypto-wallet-core/src/derivation/index'
+import { Key } from '../../crypto-wallet-core/src/derivation/index';
 
 /**
  * VaultWallet extends the standard Wallet class but never requires a password.
