@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as os from 'os';
-import levelup, { LevelUp } from 'levelup';
-import leveldn from 'leveldown';
 import { Transform } from 'stream';
+import leveldn from 'leveldown';
+import levelup, { LevelUp } from 'levelup';
 
 const usingBrowser = 'window' in globalThis;
 const StorageCache: { [path: string]: LevelUp } = {};
