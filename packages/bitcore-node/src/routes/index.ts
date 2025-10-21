@@ -36,7 +36,7 @@ function bootstrapApiRoutes() {
   const router = express.Router({
     mergeParams: true
   });
-  for (const route of Object.values<{ path: string, router: express.Router}>(apiRoutes)) {
+  for (const route of Object.values<{ path: string; router: express.Router; }>(apiRoutes)) {
     router.use(route.path, route.router);
   }
 

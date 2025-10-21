@@ -69,6 +69,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",
+    "@stylistic/eslint-plugin": "^5.5.0",
     "@types/node": "22.13.1",
     "cz-customizable": "^5.2.0",
     "eslint": "^9.37.0",
