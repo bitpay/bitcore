@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-/** **************************************
+// eslint-disable-next-line spaced-comment
+/****************************************
  *** This migration script will fix historical instances
  *** of an issue where inputs that were used in an RBF tx
  *** are left in a pending state if they are not used by

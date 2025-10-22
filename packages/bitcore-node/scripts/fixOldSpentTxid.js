@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-/** **************************************
+// eslint-disable-next-line spaced-comment
+/****************************************
  *** This migration script will fix historical instances
  *** of an issue where coins that were used in a now invalid
  *** tx are left with that txid as the spentTxid even
