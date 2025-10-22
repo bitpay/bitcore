@@ -3,8 +3,8 @@ import * as xrpl from 'xrpl';
 import * as RBC from 'xrpl/node_modules/ripple-binary-codec';
 import * as binary from 'xrpl/node_modules/ripple-binary-codec/dist/binary';
 import { HashPrefix } from 'xrpl/node_modules/ripple-binary-codec/dist/hash-prefixes';
-import type { Key } from '../../types/derivation';
 import { BTCTxProvider } from '../btc';
+import type { Key } from '../../types/derivation';
 
 export class XRPTxProvider {
   create(params: {

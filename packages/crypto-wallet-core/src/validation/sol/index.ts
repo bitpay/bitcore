@@ -1,4 +1,4 @@
-import { address as SolAddress } from '@solana/kit'
+import { address as SolAddress } from '@solana/kit';
 import type { IValidation } from '../../types/validation';
 
 export class SolValidation implements IValidation {
@@ -12,7 +12,7 @@ export class SolValidation implements IValidation {
     try {
       SolAddress(address);
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
@@ -28,7 +28,7 @@ export class SolValidation implements IValidation {
 
   private extractAddress(data) {
     const prefix = /^[a-z]+:/i;
-    const params = /([\?\&](amount|fee)=(\d+([\,\.]\d+)?))+/i;
+    const params = /([?&](amount|fee)=(\d+([,.]\d+)?))+/i;
     return data.replace(prefix, '').replace(params, '');
   }
 }

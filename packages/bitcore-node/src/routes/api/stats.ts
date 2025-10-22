@@ -26,7 +26,7 @@ router.get('/daily-transactions', async function(req: Request, res: Response) {
   }
 });
 
-module.exports = {
+export const statsRoute = {
   router,
   path: '/stats'
 };

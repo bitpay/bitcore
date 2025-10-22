@@ -1,11 +1,11 @@
-import * as prompt from '@clack/prompts';
 import fs from 'fs';
 import os from 'os';
-import type { CommonArgs } from '../../types/cli';
+import * as prompt from '@clack/prompts';
 import { ITokenObj } from '../../types/wallet';
 import { UserCancelled } from '../errors';
 import { getAction, getFileName } from '../prompts';
 import { Utils } from '../utils';
+import type { CommonArgs } from '../../types/cli';
 
 export function command(args: CommonArgs) {
   const { wallet, program } = args;
@@ -154,9 +154,9 @@ export async function getTxProposals(
     action = opts.command
       ? opts.action || (opts.export ? 'export' : 'exit')
       : await getAction({
-          options,
-          initialValue
-        });
+        options,
+        initialValue
+      });
     if (prompt.isCancel(action)) {
       throw new UserCancelled();
     }
@@ -221,9 +221,9 @@ export async function getTxProposals(
         const outputFile = opts.command
           ? Utils.replaceTilde(typeof opts.export === 'string' ? opts.export : defaultValue)
           : await getFileName({
-              message: 'Enter output file path to save proposal:',
-              defaultValue,
-            });
+            message: 'Enter output file path to save proposal:',
+            defaultValue,
+          });
         fs.writeFileSync(outputFile, JSON.stringify(txp, null, 2));
         prompt.log.success(`Exported to ${outputFile}`);
         break;
@@ -238,7 +238,7 @@ export async function getTxProposals(
       action = 'exit'; // Exit after processing the action in command mode
     }
     // TODO: handle actions
-  } while (!['menu', 'exit'].includes(action))
+  } while (!['menu', 'exit'].includes(action));
 
   return { action };
 };

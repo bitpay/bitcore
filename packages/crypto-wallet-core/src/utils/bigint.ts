@@ -70,7 +70,8 @@ export function divToFloat(numerator: BigIntLike, denominator: BigIntLike, preci
   if (!isBigIntLike(numerator)) throw new Error('Invalid numerator');
   if (!isBigIntLike(denominator)) throw new Error('Invalid denominator');
   if (!isValidDenominator(denominator)) throw new Error('Division by zero');
-  let [nLeft, nRight = ''] = numerator.toString().split('.');
+  const [nLeft, nRightInitial = ''] = numerator.toString().split('.');
+  let nRight = nRightInitial;
   const [, dRight = ''] = denominator.toString().split('.');
   if (precision == null) {
     precision = Math.max(nRight.length, dRight.length, 18);
@@ -92,8 +93,9 @@ export function div(numerator: BigIntLike, denominator: BigIntLike): bigint {
   if (!isBigIntLike(numerator)) throw new Error('Invalid numerator');
   if (!isBigIntLike(denominator)) throw new Error('Invalid denominator');
   if (!isValidDenominator(denominator)) throw new Error('Division by zero');
-  let [nLeft, nRight = ''] = numerator.toString().split('.');
-  let [dLeft, dRight = ''] = denominator.toString().split('.');
+  const [nLeft, nRightInitial = ''] = numerator.toString().split('.');
+  let nRight = nRightInitial;
+  const [, dRight = ''] = denominator.toString().split('.');
   const precision = Math.max(nRight.length, dRight.length, 18);
   nRight = nRight.padEnd(precision, '0');
 
@@ -121,8 +123,8 @@ export function mul(...nums: Array<BigIntLike>): bigint {
   
   let productScaled = 1n;
   for (const cur of nums) {
-    let [left, right = ''] = cur.toString().split('.');
-    right = right.padEnd(precision, '0');
+    const [left, rightInitial = ''] = cur.toString().split('.');
+    const right = rightInitial.padEnd(precision, '0');
     productScaled *= BigInt(left + right);
   }
   const whole = productScaled.toString().slice(0, -(precision * nums.length));
@@ -149,8 +151,8 @@ export function mulFloor(...nums: Array<BigIntLike>): bigint {
 
   let productScaled = 1n;
   for (const cur of nums) {
-    let [left, right = ''] = cur.toString().split('.');
-    right = right.padEnd(precision, '0');
+    const [left, rightInitial = ''] = cur.toString().split('.');
+    const right = rightInitial.padEnd(precision, '0');
     productScaled *= BigInt(left + right);
   }
   const whole = productScaled.toString().slice(0, -(precision * nums.length));
@@ -177,8 +179,8 @@ export function mulCeil(...nums: Array<BigIntLike>): bigint {
 
   let productScaled = 1n;
   for (const cur of nums) {
-    let [left, right = ''] = cur.toString().split('.');
-    right = right.padEnd(precision, '0');
+    const [left, rightInitial = ''] = cur.toString().split('.');
+    const right = rightInitial.padEnd(precision, '0');
     productScaled *= BigInt(left + right);
   }
   const whole = productScaled.toString().slice(0, -(precision * nums.length));

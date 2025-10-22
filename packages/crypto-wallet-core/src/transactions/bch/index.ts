@@ -13,7 +13,7 @@ export class BCHTxProvider extends BTCTxProvider {
       });
       return new this.lib.Transaction.UnspentOutput(btcUtxo);
     });
-    let tx = new this.lib.Transaction().from(btcUtxos).feePerByte(Number(fee) + 2);
+    const tx = new this.lib.Transaction().from(btcUtxos).feePerByte(Number(fee) + 2);
     if (change) {
       tx.change(change);
     }

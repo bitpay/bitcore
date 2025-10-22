@@ -1,4 +1,3 @@
-import type { IValidation } from '../types/validation';
 import { ArbValidation } from './arb';
 import { BaseValidation } from './base';
 import { BchValidation } from './bch';
@@ -10,6 +9,7 @@ import { MaticValidation } from './matic';
 import { OpValidation } from './op';
 import { SolValidation } from './sol';
 import { XrpValidation } from './xrp';
+import type { IValidation } from '../types/validation';
 
 const validation: { [chain: string]: IValidation } = {
   BTC: new BtcValidation(),

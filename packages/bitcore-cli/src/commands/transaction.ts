@@ -1,14 +1,14 @@
-import * as prompt from '@clack/prompts';
-import { type Txp, Utils as BWCUtils } from 'bitcore-wallet-client'; 
-import { Validation } from 'crypto-wallet-core';
 import os from 'os';
-import type { CommonArgs } from '../../types/cli';
-import type { ITokenObj } from '../../types/wallet';
+import * as prompt from '@clack/prompts';
+import { Utils as BWCUtils, type Txp } from 'bitcore-wallet-client'; 
+import { Validation } from 'crypto-wallet-core';
 import { UserCancelled } from '../errors';
 import { Utils } from '../utils';
+import type { CommonArgs } from '../../types/cli';
+import type { ITokenObj } from '../../types/wallet';
 
 export function command(args: CommonArgs) {
-  const { wallet, program } = args;
+  const { program } = args;
   program
     .description('Create and send a transaction')
     .usage('<walletName> --command transaction [options]')

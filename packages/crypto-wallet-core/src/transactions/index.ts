@@ -19,8 +19,8 @@ import {
 } from './matic';
 import { MATICMULTISIGTxProvider } from './matic-multisig';
 import { OPERC20TxProvider, OPTxProvider } from './op';
-import { SOLTxProvider} from './sol';
-import { SPLTxProvider} from './spl';
+import { SOLTxProvider } from './sol';
+import { SPLTxProvider } from './spl';
 import { XRPTxProvider } from './xrp';
 
 const providers = {

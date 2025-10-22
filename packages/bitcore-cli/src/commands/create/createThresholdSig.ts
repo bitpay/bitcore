@@ -1,12 +1,12 @@
-import * as prompt from '@clack/prompts';
-import { Key, TssKey, type Network } from 'bitcore-wallet-client'
 import crypto from 'crypto';
 import os from 'os';
 import url from 'url';
-import type { CommonArgs } from '../../../types/cli';
+import * as prompt from '@clack/prompts';
+import { Key, type Network, TssKey } from 'bitcore-wallet-client';
 import { UserCancelled } from '../../errors';
 import { getAddressType, getCopayerName, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
+import type { CommonArgs } from '../../../types/cli';
 
 
 export async function createThresholdSigWallet(
@@ -45,7 +45,7 @@ export async function createThresholdSigWallet(
   for (let i = 1; i < n; i++) {
     const pubkey = await prompt.text({
       message: `Enter party ${i}'s public key:`,
-      validate: (input) => !!input ? undefined : 'Public key cannot be empty.',
+      validate: (input) => input ? undefined : 'Public key cannot be empty.',
     });
     if (prompt.isCancel(pubkey)) {
       throw new UserCancelled();
@@ -98,7 +98,7 @@ export async function createThresholdSigWallet(
     });
     tss.on('roundsubmitted', (round) => spinner.message(`Round ${round} submitted`));
     tss.on('error', prompt.log.error);
-    tss.on('wallet', async (wallet) => {
+    tss.on('wallet', async (_wallet) => {
       // TODO: what to do with the wallet?
       // console.log('Created wallet at BWS:', wallet);
     });

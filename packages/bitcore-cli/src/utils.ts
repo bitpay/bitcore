@@ -1,12 +1,11 @@
-import * as prompt from '@clack/prompts';
-import { Utils as BWCUtils } from 'bitcore-wallet-client';
-import { edit } from 'external-editor';
 import os from 'os';
 import path from 'path';
-import type { Color } from '../types/constants';
-import type { ITokenObj } from '../types/wallet';
+import * as prompt from '@clack/prompts';
+import { edit } from 'external-editor';
 import { Constants } from './constants';
 import { UserCancelled } from './errors';
+import type { Color } from '../types/constants';
+import type { ITokenObj } from '../types/wallet';
 
 let _verbose = false;
 

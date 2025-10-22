@@ -2,10 +2,10 @@ import {
   API,
   Credentials,
   Key,
+  type Network,
   TssKey,
   TssSign,
-  Txp,
-  type Network
+  Txp
 } from 'bitcore-wallet-client';
 import { type Types as CWCTypes } from 'crypto-wallet-core';
 

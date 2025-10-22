@@ -454,11 +454,11 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       if (tokenAddress) {
         const tokenBalance = tx.meta?.postTokenBalances?.find(tb => tb.accountIndex === index && tb.mint.toLowerCase() === tokenAddress.toLowerCase());
         const decimals = tokenBalance?.uiTokenAmount?.decimals;
-        balance = (Number(tokenBalance?.uiTokenAmount?.uiAmount) || 0) * (10 ** decimals) || null;
+        balance = (Number(tokenBalance?.uiTokenAmount?.uiAmount) || 0) * (10 ** decimals);
       } else {
-        balance = tx.meta?.postBalances ? tx.meta.postBalances[index] : null;
+        balance = tx.meta?.postBalances?.[index];
       }
-      if (balance === null) {
+      if ((!balance && balance !== 0) || isNaN(Number(balance))) {
         throw new Error(`Balance not found at ${args.time}`);
       }
       return { confirmed: Number(balance), unconfirmed: 0, balance: Number(balance) };
@@ -494,11 +494,23 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   async getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock | null> {
     const { network, time = new Date() } = params;
     const { rpc } = await this.getRpc(network);
-    const beforeTimeSlot = await this._findSlotByDate(network, new Date(time));
+    let beforeTimeSlot = await this._findSlotByDate(network, new Date(time));
     if (!beforeTimeSlot) {
       return null;
     }
-    const block = await rpc.getBlock({ height: beforeTimeSlot });
+    let block;
+    for (let attempt = 0; attempt < 10; attempt++) { // retry in case of skipped or missing slots
+      try {
+        block = await rpc.getBlock({ height: beforeTimeSlot });
+        break;
+      } catch (e: any) {
+        if (e?.message?.includes('missing in long-term storage')) {
+          beforeTimeSlot--;
+          continue;
+        }
+        throw e;
+      }
+    }
     return this.blockTransform(network, block, beforeTimeSlot);
   }
 

@@ -67,7 +67,7 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
   }
 });
 
-module.exports = {
+export const feeRoute = {
   router,
   path: '/fee'
 };

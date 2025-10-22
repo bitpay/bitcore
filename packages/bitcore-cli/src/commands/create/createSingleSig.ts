@@ -1,8 +1,8 @@
 import * as prompt from '@clack/prompts';
 import { type Network } from 'bitcore-wallet-client';
-import type { CommonArgs } from '../../../types/cli';
 import { getAddressType, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
+import type { CommonArgs } from '../../../types/cli';
 
 export async function createSingleSigWallet(
   args: CommonArgs<{ mnemonic?: string }> & {
@@ -34,5 +34,5 @@ export async function createSingleSigWallet(
   
   return {
     mnemonic: key.get(password).mnemonic,
-  }
+  };
 }

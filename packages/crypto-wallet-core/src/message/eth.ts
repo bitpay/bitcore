@@ -1,7 +1,7 @@
 import BitcoreLib from 'bitcore-lib';
 import { ethers } from 'ethers';
-import type { Encoding, HDKeyType, IMessageClass, ISignedMessage, KeyType } from '../types/message';
 import { encodeBuffer } from '../utils';
+import type { Encoding, HDKeyType, IMessageClass, ISignedMessage, KeyType } from '../types/message';
 
 export class EthMessage implements IMessageClass {
   getMessageHash(args: {

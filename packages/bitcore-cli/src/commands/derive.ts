@@ -1,9 +1,9 @@
+import os from 'os';
 import * as prompt from '@clack/prompts';
 import { Deriver } from 'crypto-wallet-core';
-import os from 'os';
-import type { CommonArgs } from '../../types/cli';
 import { UserCancelled } from '../errors';
 import { getAction } from '../prompts';
+import type { CommonArgs } from '../../types/cli';
 
 export function command(args: CommonArgs) {
   const { program } = args;

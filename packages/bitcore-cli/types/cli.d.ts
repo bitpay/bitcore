@@ -1,5 +1,5 @@
-import { program } from 'commander';
 import { type Status } from 'bitcore-wallet-client';
+import { program } from 'commander';
 import type { IWallet } from './wallet';
 
 export interface ICliOptions {
@@ -20,7 +20,7 @@ export interface ICliOptions {
 
 export type Program = typeof program;
 
-export interface CommonArgs<MoreOpts = {}> {
+export interface CommonArgs<MoreOpts = object> {
   wallet: IWallet;
   program?: Program;
   opts?: ICliOptions & MoreOpts;

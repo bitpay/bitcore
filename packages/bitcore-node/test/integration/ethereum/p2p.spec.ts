@@ -67,6 +67,7 @@ describe('Ethereum', function() {
   this.timeout(50000);
 
   before(async () => {
+    await BitcoreClient.Wallet.deleteWallet({ name, storageType }).catch(() => { /* ignore if it doesn't exist */ });
     await intBeforeHelper();
     await resetDatabase();
     await Api.start();

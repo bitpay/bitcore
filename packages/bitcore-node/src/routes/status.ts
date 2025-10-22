@@ -28,7 +28,7 @@ router.get('/:chain/:network/sync', async function(req, res) {
   res.json({ initialSyncComplete });
 });
 
-module.exports = {
+export const statusRoute = {
   router,
   path: '/status'
 };

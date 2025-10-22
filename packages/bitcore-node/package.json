@@ -34,7 +34,7 @@
     "verify:headers": "npm run tsc && node ./build/test/verification/db-verify-headers.js",
     "resync": "npm run tsc && node ./build/test/verification/resync.js",
     "test:unit": "mocha build/test/unit/ --name '*.spec.js'",
-    "test:integration": "mocha build/test/integration/ --name '*.spec.js'",
+    "test:integration": "BCN_LOG_LEVEL=none mocha -r tsx 'test/integration/**/*.spec.ts'",
     "benchmark": "node build/test/benchmark/benchmark.js",
     "coverage": "nyc mocha build/test/**/*.spec.js",
     "api": "npm run tsc && node build/src/workers/api.js",
@@ -84,7 +84,7 @@
     "sinon": "4.4.8",
     "socket.io-client": "4.8.1",
     "supertest": "3.0.0",
-    "ts-node": "^8.0.3",
+    "tsx": "4.19.2",
     "typescript": "5.7.3"
   },
   "dependencies": {

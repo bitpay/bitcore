@@ -1,10 +1,10 @@
-import * as prompt from '@clack/prompts';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import type { CommonArgs } from '../../types/cli';
+import * as prompt from '@clack/prompts';
 import { UserCancelled } from '../errors';
 import { getPassword } from '../prompts';
+import type { CommonArgs } from '../../types/cli';
 
 export function command(args: CommonArgs) {
   const { wallet, program } = args;

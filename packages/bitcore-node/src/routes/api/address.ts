@@ -44,7 +44,7 @@ router.get('/:address/balance', async function (req: Request, res) {
   }
 });
 
-module.exports = {
+export const addressRoute = {
   router,
   path: '/address'
 };

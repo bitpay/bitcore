@@ -141,7 +141,7 @@ export async function getMultiPartyScheme() {
 };
 
 export async function getCopayerName() {
-  const defaultVal = process.env['BITCORE_CLI_COPAYER_NAME'] || process.env.USER
+  const defaultVal = process.env['BITCORE_CLI_COPAYER_NAME'] || process.env.USER;
   const copayerName = await prompt.text({
     message: 'Your name (helps to identify you):',
     placeholder: `Default: ${defaultVal}`,

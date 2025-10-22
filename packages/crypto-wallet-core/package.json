@@ -8,9 +8,10 @@
     "build": "tsc",
     "clean": "rm -rf ts_build && tsc --version",
     "compile": "npm run clean && npm run build",
-    "precommit": "echo 'TODO: npm run fix'",
+    "precommit": "npm run lint; npm run fix:errors",
     "lint": "eslint .",
-    "fix": "eslint --fix --quiet .",
+    "fix:errors": "eslint --fix --quiet .",
+    "fix:all": "eslint --fix .",
     "test": "npm run compile && mocha -r tsx 'test/**/*.test.ts'",
     "pub": "npm run compile && npm publish"
   },

@@ -1,26 +1,32 @@
+import fs from 'fs';
+import path from 'path';
+import url from 'url';
 import * as prompt from '@clack/prompts';
 import {
   API,
+  Utils as BWCUtils,
   Credentials,
   Encryption,
   EncryptionTypes,
   Key,
-  TssKey,
-  Txp,
   type Network,
-  Utils as BWCUtils
+  TssKey,
+  Txp
 } from 'bitcore-wallet-client';
 import {
   BitcoreLib,
-  Message,
-  Transactions,
   type Types as CWCTypes,
   Utils as CWCUtils,
+  Message,
+  Transactions,
   Web3
 } from 'crypto-wallet-core';
-import fs from 'fs';
-import path from 'path';
-import url from 'url';
+import { Constants } from './constants';
+import { ERC20Abi } from './erc20Abi';
+import { FileStorage } from './filestorage';
+import { getPassword } from './prompts';
+import { sign as tssSign } from './tss';
+import { Utils } from './utils';
 import type {
   ClientType,
   ITokenObj,
@@ -29,12 +35,6 @@ import type {
   TssKeyType,
   WalletData
 } from '../types/wallet';
-import { Constants } from './constants';
-import { ERC20Abi } from './erc20Abi';
-import { FileStorage } from './filestorage';
-import { getPassword } from './prompts';
-import { sign as tssSign } from './tss';
-import { Utils } from './utils';
 
 const Client = API;
 
@@ -158,7 +158,7 @@ export class Wallet implements IWallet {
     addressType?: string;
     copayerName: string;
   }) {
-    const { key, chain, network, addressType, password, copayerName } = args;
+    const { key, chain, network, addressType, password } = args;
     if (!this.client) {
       await this.getClient({ mustExist: true });
     }
@@ -181,7 +181,7 @@ export class Wallet implements IWallet {
       await this.getClient({ mustExist: true });
     }
     const { chain, network, m, n, addressType } = this.client.credentials;
-    const { wallet, secret } = await this.client.createWallet(this.name, args.copayerName, m, n, { chain, network: network as Network, ...Utils.getSegwitInfo(addressType) });
+    const { secret } = await this.client.createWallet(this.name, args.copayerName, m, n, { chain, network: network as Network, ...Utils.getSegwitInfo(addressType) });
     return secret as string | undefined;
   }
 
@@ -197,7 +197,7 @@ export class Wallet implements IWallet {
       try {
         walletData = JSON.parse(Encryption.decryptWithPassword(walletData as EncryptionTypes.IEncrypted, password).toString());
         this.isFullyEncrypted = true;
-      } catch (e) {
+      } catch {
         Utils.die('Could not open wallet. Wrong password.');
       }
     }
@@ -215,11 +215,11 @@ export class Wallet implements IWallet {
 
     let key: KeyType;
     try {
-      let imported = Client.upgradeCredentialsV1(walletData);
+      const imported = Client.upgradeCredentialsV1(walletData);
       this.client.fromString(JSON.stringify(imported.credentials));
 
       key = instantiateKey();
-    } catch (e) {
+    } catch {
       try {
         this.client.fromObj(walletData.creds);
         key = instantiateKey();
@@ -236,12 +236,12 @@ export class Wallet implements IWallet {
     if (doNotComplete) return key;
 
 
-    this.client.on('walletCompleted', (wallet) => {
+    this.client.on('walletCompleted', (_wallet) => {
       this.save().then(() => {
         _verbose && prompt.log.info('Your wallet has just been completed.');
       });
     });
-    const isComplete = await this.client.openWallet();
+    await this.client.openWallet();
     return key;
   };
 
@@ -474,9 +474,7 @@ export class Wallet implements IWallet {
     const { txp, password } = args;
 
     const isUtxo = BWCUtils.isUtxoChain(txp.chain);
-    const isEvm = BWCUtils.isEvmChain(txp.chain);
     const isSvm = BWCUtils.isSvmChain(txp.chain);
-    const isXrp = BWCUtils.isXrpChain(txp.chain);
 
     if (isSvm) {
       throw new Error('TSS wallets do not yet support Solana.');

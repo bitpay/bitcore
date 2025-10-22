@@ -118,7 +118,7 @@ describe('Coin Model', function() {
       spendOps: spentOps
     });
 
-    const badTxs = await TransactionStorage.collection.find({ chain, network, txid: { $in: txids } }).toArray();
+    const badTxs = await TransactionStorage.collection.find({ chain, network, txid: { $in: txids } }).sort({ _id: 1 }).toArray();
     expect(badTxs.length).to.eq(chainLength);
     // the replaced tx is marked as conflicting, all the rest still pending to be cleaned up by pruning service
     expect(badTxs[0].blockHeight).to.eq(SpentHeightIndicators.conflicting);
