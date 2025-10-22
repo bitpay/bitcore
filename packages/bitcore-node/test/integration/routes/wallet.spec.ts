@@ -12,18 +12,19 @@ import { BitcoinBlockStorage } from '../../../src/models/block';
 import { MongoBound } from '../../../src/models/base';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
 
-const { PrivateKey, PublicKey, Address, crypto } = require('bitcore-lib');
-const secp256k1 = require('secp256k1');
+import { BitcoreLib } from 'crypto-wallet-core';
+import secp256k1 from 'secp256k1';
 
+const { PrivateKey, PublicKey, Address, crypto } = BitcoreLib;
 const request = supertest(app);
 
 const privKey = new PrivateKey();
-const pubKey = PublicKey(privKey);
+const pubKey = new PublicKey(privKey);
 
-const address = Address(PrivateKey().toPublicKey(), 'regtest').toString();
-const missingAddress1 = Address(PrivateKey().toPublicKey(), 'regtest').toString();
-const missingAddress2 = Address(PrivateKey().toPublicKey(), 'regtest').toString();
-const address2 = Address(PrivateKey().toPublicKey(), 'regtest').toString();
+const address = new Address(new PrivateKey().toPublicKey(), 'regtest').toString();
+const missingAddress1 = new Address(new PrivateKey().toPublicKey(), 'regtest').toString();
+const missingAddress2 = new Address(new PrivateKey().toPublicKey(), 'regtest').toString();
+const address2 = new Address(new PrivateKey().toPublicKey(), 'regtest').toString();
 
 const bwsPrivKey = new PrivateKey('3711033b85a260d21cd469e7d93e27f04c31c21f13001053f1c074f7abbe6e75');
 

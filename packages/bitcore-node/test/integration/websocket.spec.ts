@@ -8,8 +8,7 @@ import { Api } from '../../src/services/api';
 import { Event } from '../../src/services/event';
 import { IUtxoNetworkConfig } from '../../src/types/Config';
 import { resetDatabase } from '../helpers';
-
-const { PrivateKey } = require('bitcore-lib');
+import { PrivateKey } from 'bitcore-lib';
 
 const chain = 'BTC';
 const network = 'regtest';
@@ -31,13 +30,14 @@ function getSocket() {
 let p2pWorker: BitcoinP2PWorker;
 let socket = getSocket();
 const bwsPrivKey = new PrivateKey();
-const bwsKey = bwsPrivKey.publicKey.toString('hex');
+const bwsKey = bwsPrivKey.toPublicKey().toString();
 const authKey = new PrivateKey();
-const pubKey = authKey.publicKey.toString('hex');
+const pubKey = authKey.toPublicKey().toString();
 const address = '2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t';
 const sandbox = sinon.createSandbox();
 
 describe('Websockets', function() {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(60000);
 
@@ -250,7 +250,7 @@ describe('Websockets', function() {
   });
 
   it('should get an error when the key does not match the bwsKey', async () => {
-    const pubKey = authKey.publicKey.toString('hex');
+    const pubKey = authKey.toPublicKey().toString();
     const wrongKey = new PrivateKey();
     const authClient = new Client({ apiUrl: 'http://localhost:3000/api', authKey: wrongKey });
 

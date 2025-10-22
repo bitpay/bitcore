@@ -23,6 +23,7 @@ import { EVMTransactionJSON, Effect, ErigonTransaction, GethTransaction, IAbiDec
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require(module);
 }
 
@@ -322,7 +323,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...erc20Data
         };
       }
-    } catch (e) { }
+    } catch {/* ignore error */}
     try {
       const erc721Data: IAbiDecodeResponse = getErc721Decoder().decodeMethod(input);
       if (erc721Data) {
@@ -331,7 +332,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...erc721Data
         };
       }
-    } catch (e) { }
+    } catch {/* ignore error */}
     try {
       const invoiceData: IAbiDecodeResponse = getInvoiceDecoder().decodeMethod(input);
       if (invoiceData) {
@@ -340,7 +341,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...invoiceData
         };
       }
-    } catch (e) { }
+    } catch {/* ignore error */}
     try {
       const multisendData: IAbiDecodeResponse = getMultisendDecoder().decodeMethod(input);
       if (multisendData) {
@@ -349,7 +350,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...multisendData
         };
       }
-    } catch (e) { }
+    } catch {/* ignore error */}
     try {
       const multisigData: IAbiDecodeResponse = getMultisigDecoder().decodeMethod(input);
       if (multisigData) {
@@ -358,7 +359,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...multisigData
         };
       }
-    } catch (e) { }
+    } catch {/* ignore error */}
     return undefined;
   }
 

@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-const { WalletStorage } = require('../build/src/models/wallet');
-const { WalletAddressStorage } = require('../build/src/models/walletAddress');
-const { Storage } = require('../build/src/services/storage');
-const { wait } = require('../build/src/utils');
+import { ObjectID } from 'mongodb';
+import { WalletStorage } from '../build/src/models/wallet';
+import { WalletAddressStorage } from '../build/src/models/walletAddress';
+import { Storage } from '../build/src/services/storage';
+import { wait } from '../build/src/utils';
 
 function usage(errMsg) {
   console.log('USAGE: ./migrateTestnetWallets.js [options]');
@@ -63,7 +64,7 @@ process.on('SIGINT', () => {
 });
 
 async function deleteOldAddress(e) {
-  let [_, c, n, w, a] = e.message.split('{')[1].split(':');
+  let [, c, n, w, a] = e.message.split('{')[1].split(':');
   c = c.trim().replace(/"/g, '').replace(/,/g, '');
   n = n.trim().replace(/"/g, '').replace(/,/g, '');
   w = w.trim().replace('ObjectId(', '').replace(')', '').replace(/'/g, '').replace(/,/g, '');
@@ -95,7 +96,7 @@ Storage.start()
     console.log('----------------------------------------');
 
     console.log(`Updating ${chain} ${oldNetwork} => ${newNetwork} wallets in 10 seconds...`);
-    !quit && await wait(10000);
+    if (!quit) await wait(10000);
     console.log(`Updating ${chain} ${oldNetwork} wallets...`);
     let wallets = await WalletStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray();
     let walletsUpdated = 0;
@@ -108,7 +109,7 @@ Storage.start()
     }
 
     console.log(`Updating ${chain} ${oldNetwork} => ${newNetwork} walletAddresses in 10 seconds...`);
-    !quit && await wait(10000);
+    if (!quit) await wait(10000);
     console.log(`Updating ${chain} ${oldNetwork} walletAddresses...`);
     let walletAddresses = await WalletAddressStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray();
     let walletAddressesUpdated = 0;

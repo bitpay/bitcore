@@ -1,5 +1,5 @@
 import os from 'os';
-import request = require('request');
+import request from 'request';
 import Web3 from 'web3';
 import config from '../../../config';
 import logger from '../../../logger';
@@ -57,7 +57,8 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
 
   // @override
   async getFee(params) {
-    let { network, target = 4, txType } = params;
+    let { network } = params;
+    const { target = 4, txType } = params;
     const chain = this.chain;
     if (network === 'livenet') {
       network = 'mainnet';
@@ -70,9 +71,8 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     return CacheStorage.getGlobalOrRefresh(
       cacheKey,
       async () => {
-        let feerate;
         const { rpc } = await this.getWeb3(network, { type: 'historical' });
-        feerate = await rpc.estimateFee({ nBlocks: target, txType });
+        const feerate = await rpc.estimateFee({ nBlocks: target, txType });
         return { feerate, blocks: target };
       },
       CacheStorage.Times.Minute
@@ -132,7 +132,8 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
 
   // @override
   async _getTransaction(params: StreamTransactionParams) {
-    let { chain, network, txId } = params;
+    let { network } = params;
+    const { chain, txId } = params;
     network = network.toLowerCase();
 
     const { web3 } = await this.getWeb3(network, { type: 'historical' });
@@ -167,7 +168,8 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
   // @override
   async _buildWalletTransactionsStream(params: StreamWalletTransactionsParams, streamParams: BuildWalletTxsStreamParams) {
     const { network, args } = params;
-    let { transactionStream, walletAddresses } = streamParams;
+    let { transactionStream } = streamParams;
+    const { walletAddresses } = streamParams;
 
     const chainId = await this.getChainId({ network });
     for (const address of walletAddresses) {

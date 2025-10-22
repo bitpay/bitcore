@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 'use scrict';
 
-const { EVMBlockStorage } = require('../build/src/providers/chain-state/evm/models/block');
-const { Storage } = require('../build/src/services/storage');
+import { EVMBlockStorage } from '../build/src/providers/chain-state/evm/models/block';
+import { Storage } from '../build/src/services/storage';
 
 function usage(err) {
   if (err) {

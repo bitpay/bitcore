@@ -63,6 +63,7 @@ async function sendTransaction(from, to, amount, web3, wallet, nonce = 0) {
 }
 
 describe('Polygon', function() {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(50000);
   const sandbox = sinon.createSandbox();

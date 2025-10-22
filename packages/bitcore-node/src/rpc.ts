@@ -1,4 +1,4 @@
-import request = require('request');
+import request from 'request';
 import { LoggifyClass } from './decorators/Loggify';
 
 type CallbackType = (err: any, data?: any) => any;

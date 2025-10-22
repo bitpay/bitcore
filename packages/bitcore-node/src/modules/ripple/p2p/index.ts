@@ -101,7 +101,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
         try {
           this.client = await this.provider.getClient(this.network);
           connected = this.client.rpc.isConnected();
-        } catch (e) {
+        } catch {
           connected = false;
         }
         if (connected) {
@@ -128,7 +128,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
           );
         }
         disconnected = !connected;
-      } catch (e) {}
+      } catch {/* ignore error */}
       await wait(5000);
     }
   }

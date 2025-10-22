@@ -203,7 +203,7 @@ export class CoinModel extends BaseModel<ICoin> {
           // update coin record in db - do it asynchronously as we don't need to wait for result
           CoinStorage.collection.updateOne({ _id: coin._id }, { $set: { address: coin.address } });
         }
-      } catch (e) {
+      } catch {
         logger.debug(
           `Could not parse address on "${coin.chain}:${coin.network}" for coin ${coin.mintTxid}[${coin.mintIndex}]`
         );

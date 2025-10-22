@@ -15,6 +15,7 @@ import logger from '../../../src/logger';
 const Pruning = new PruningService({ transactionModel: TransactionStorage, coinModel: CoinStorage });
 
 describe('Pruning Service', function() {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
   const sandbox = sinon.createSandbox();

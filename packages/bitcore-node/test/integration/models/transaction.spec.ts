@@ -49,6 +49,7 @@ async function makeMempoolTxChain(chain: string, network: string, startingTxid: 
 }
 
 describe('Transaction Model', function() {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
   before(intBeforeHelper);

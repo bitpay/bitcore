@@ -98,6 +98,7 @@ async function checkWalletReceived(receivingWallet: IWallet, txid: string, addre
 }
 
 describe('Wallet Benchmark', function() {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(5000000);
   let p2pWorker: BitcoinP2PWorker;

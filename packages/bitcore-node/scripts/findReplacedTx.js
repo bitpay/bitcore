@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const { TransactionStorage } = require('../build/src/models/transaction');
-const { Storage } = require('../build/src/services/storage');
+import { TransactionStorage } from '../build/src/models/transaction';
+import { Storage } from '../build/src/services/storage';
 
 function usage(errMsg) {
   console.log('USAGE: ./findReplacedTx.js <options>');

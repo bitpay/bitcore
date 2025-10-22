@@ -44,7 +44,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
           new Promise((_, reject) => setTimeout(reject, 5000))
         ]);
         return rpc; // return the first applicable rpc that's responsive
-      } catch (e) {
+      } catch {
         const idx = BaseSVMStateProvider.rpcs[this.chain][network].indexOf(rpc);
         BaseSVMStateProvider.rpcs[this.chain][network].splice(idx, 1);
       }
@@ -123,7 +123,8 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     return new Promise<void>(async (resolve, reject) => {
       try {
         const { chain, network, req, res, args } = params;
-        let { blockHeight, limit = 50 } = args;
+        let { blockHeight } = args;
+        const { limit = 50 } = args;
 
         if (!chain || !network) {
           throw new Error('Missing chain or network');
@@ -528,7 +529,6 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
           objectMode: true,
           passThrough: true
         });
-        let count = 0;
         try {
           let block;
           let nextBlock;
@@ -542,7 +542,6 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
             block.nextBlockHash = nextBlock?.hash;
             block.confirmations = height - block.height + 1;
             stream.push(block);
-            count++;
           }
         } catch (e: any) {
           logger.error('Error streaming blocks: %o', e);
@@ -596,7 +595,8 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   protected async getBlocksRange(params: GetBlockParams) {
     const { chain, network, sinceBlock, args = {} } = params;
     const { blockId } = params;
-    let { startDate, endDate, date, limit = 10, sort = { height: -1 } } = args;
+    let { startDate, endDate, limit = 10 } = args;
+    const { date, sort = { height: -1 } } = args;
     const query: { startBlock?: number; endBlock?: number } = {};
     if (!chain || !network) {
       throw new Error('Missing required chain and/or network param');
@@ -773,7 +773,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     const { network, address } = params;
     const { rpc, connection } = await this.getRpc(network);
     const addresses = await rpc.getTokenAccountsByOwner({ address });
-    const result : {}[] = [];
+    const result : object[] = [];
     for (const addr of addresses) {
       if (addr.state === 'initialized') {
         const { value } = await connection.getTokenAccountBalance(addr.pubkey).send();

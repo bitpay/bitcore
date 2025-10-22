@@ -46,7 +46,7 @@ export class SocketService {
     try {
       const valid = Auth.verifyRequestSignature(payload);
       return valid;
-    } catch (e) {
+    } catch {
       return false;
     }
   }

@@ -3,6 +3,7 @@ import logger from '../logger';
 import { BaseBlock } from '../models/baseBlock';
 import { StateStorage } from '../models/state';
 import { IBlock } from '../types/Block';
+import { Class } from '../types/Class';
 import { wait } from '../utils';
 import { Config, ConfigService } from './config';
 

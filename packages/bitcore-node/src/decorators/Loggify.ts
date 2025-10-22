@@ -22,7 +22,7 @@ export function SavePerformance(logPrefix, startTime, endTime) {
   }
 }
 
-export function LoggifyClass<T extends new (...args: any[]) => {}>(aClass: T) {
+export function LoggifyClass<T extends new (...args: any[]) => object>(aClass: T) {
   if (!args.DEBUG) {
     return aClass;
   }

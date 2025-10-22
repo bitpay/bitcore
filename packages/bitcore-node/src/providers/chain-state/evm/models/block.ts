@@ -186,7 +186,6 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
 
   async getBlockSyncGaps(params: { chain: string; network: string; startHeight?: number, endHeight?: number }): Promise<number[]> {
     const { chain, network, startHeight = 0, endHeight } = params;
-    const self = this;
     return new Promise(async (resolve, reject) => {
       let timeout;
       try {
@@ -194,7 +193,7 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
         if (endHeight) {
           heightQuery['$lte'] = endHeight;
         }
-        const stream = self.collection
+        const stream = this.collection
           .find({
             chain,
             network,
@@ -229,7 +228,7 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
           } else {
             // prevBlock should be the next block up in height
             if (prevBlock && !block.nextBlockHash && block.height === prevBlock.height - 1) {
-              const res = await self.collection.updateOne(
+              const res = await this.collection.updateOne(
                 { chain, network, hash: block.hash },
                 { $set: { nextBlockHash: prevBlock.hash } }
               );

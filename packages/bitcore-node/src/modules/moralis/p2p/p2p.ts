@@ -56,7 +56,7 @@ export class MoralisP2PWorker extends BaseP2PWorker {
     try {
       try {
         await this.web3!.eth.getBlockNumber();
-      } catch (e) {
+      } catch {
         const providerConfigs = this.chainConfig.providers || (this.chainConfig.provider ? [this.chainConfig.provider] : []);
         for (const config of providerConfigs) {
           try {
@@ -255,7 +255,7 @@ export class MoralisP2PWorker extends BaseP2PWorker {
         }
         coinEvents = this.csp.webhookToCoinEvents({ chain: this.chain, network: this.network, webhook });
         const result = await Promise.allSettled(coinEvents.map(evt => EventStorage.signalAddressCoin(evt))); 
-        const someFulfilled = result.some(r => r.status === 'fulfilled' || (false && logger.error(`Error signaling ${this.chainNetworkStr} for webhook ${webhook._id?.toString()}: %o`, (r as PromiseRejectedResult).reason)));
+        const someFulfilled = result.some(r => r.status === 'fulfilled');
         if (someFulfilled) {
           await WebhookStorage.setProcessed({ webhook });
         }

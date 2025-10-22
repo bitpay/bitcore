@@ -66,7 +66,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
       } else {
         await RippleStateProvider.clients[network].rpc.connect();
       }
-    } catch (e) {
+    } catch {
       await RippleStateProvider.clients[network].rpc.connect();
     }
     return RippleStateProvider.clients[network];
@@ -74,22 +74,14 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
 
   async getAccountNonce(network: string, address: string) {
     const client = await this.getClient(network);
-    try {
-      const info = await client.getAccountInfo({ address });
-      return info?.account_data?.Sequence;
-    } catch (err) {
-      throw err;
-    }
+    const info = await client.getAccountInfo({ address });
+    return info?.account_data?.Sequence;
   }
 
   async getAccountFlags(network: string, address: string) {
     const client = await this.getClient(network);
-    try {
-      const info = await client.getAccountInfo({ address });
-      return info?.account_flags;
-    } catch (err) {
-      throw err;
-    }
+    const info = await client.getAccountInfo({ address });
+    return info?.account_flags;
   }
 
   async getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams) {
@@ -337,7 +329,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     try {
       const tx = await client.getTransaction({ txid: params.txId });
       return tx;
-    } catch (e) {
+    } catch {
       return undefined;
     }
   }

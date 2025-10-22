@@ -21,6 +21,7 @@ describe('Ethereum API', function() {
   const chain = 'ETH';
   const network = 'regtest';
 
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
   before(intBeforeHelper);
@@ -95,8 +96,8 @@ describe('Ethereum API', function() {
     const chain = 'ETH';
     const network = 'mainnet';
     const rpc = {
-      estimateMaxPriorityFee: ({}) => { return 2; },
-      estimateFee: ({}) => { return 4; }
+      estimateMaxPriorityFee: () => { return 2; },
+      estimateFee: () => { return 4; }
     };
     let err;
 

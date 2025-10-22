@@ -88,7 +88,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         ]);
         rpc.lastPingTime = Date.now();
         return rpc; // return the first applicable rpc that's responsive
-      } catch (e) {
+      } catch {
         // try reconnecting
         logger.info(`Reconnecting to ${this.chain}:${network}`);
         if (typeof (rpc.web3.currentProvider as any)?.disconnect === 'function') {
@@ -154,7 +154,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   @historical
   async getFee(params) {
-    let { network, target = 4, txType } = params;
+    let { network } = params;
+    const { target = 4, txType } = params;
     const chain = this.chain;
     if (network === 'livenet') {
       network = 'mainnet';
@@ -198,7 +199,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async getPriorityFee(params) {
-    let { network, percentile } = params;
+    let { network } = params;
+    const { percentile } = params;
     const chain = this.chain;
     const priorityFeePercentile = percentile || 15;
     if (network === 'livenet') {
@@ -218,7 +220,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams): Promise<WalletBalanceType> {
-    let { network, args, wallet, time } = params;
+    let { args } = params;
+    const { network, wallet, time } = params;
     if (time) {
       if (args) {
         args.time = time;
@@ -333,7 +336,10 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         throw new Error('Missing required param: network');
       }
 
-      let { tipHeight, found } = await this._getTransaction(params);
+      const tx = await this._getTransaction(params);
+      let { found } = tx;
+      const { tipHeight } = tx;
+      
       if (found) {
         let confirmations = 0;
         if (found.blockHeight && found.blockHeight >= 0) {
@@ -569,7 +575,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   async _buildWalletTransactionsStream(params: StreamWalletTransactionsParams, streamParams: BuildWalletTxsStreamParams) {
     const query = this.getWalletTransactionQuery(params);
-    let { transactionStream, populateEffects } = streamParams;
+    let { transactionStream } = streamParams;
+    const { populateEffects } = streamParams;
 
     transactionStream = EVMTransactionStorage.collection
       .find(query)
@@ -693,7 +700,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   async estimateGas(params): Promise<number> {
     return new Promise(async (resolve, reject) => {
       try {
-        let { network, value, from, data, /* gasPrice,*/ to } = params;
+        let { value } = params;
+        const { network, from, data, /* gasPrice */ to } = params;
         const { web3 } = await this.getWeb3(network, { type: 'realtime' });
         const dataDecoded = EVMTransactionStorage.abiDecode(data);
 
@@ -840,7 +848,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   protected async getBlocksRange(params: GetBlockParams & ChainId) {
     const { chain, network, chainId, sinceBlock, args = {} } = params;
     let { blockId } = params;
-    let { startDate, endDate, date, limit = 10, sort = { height: -1 } } = args;
+    let { startDate, endDate, limit = 10 } = args;
+    const { date, sort = { height: -1 } } = args;
     const query: { startBlock?: number; endBlock?: number } = {};
     if (!chain || !network) {
       throw new Error('Missing required chain and/or network param');

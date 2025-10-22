@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 
-const rl = require('readline').createInterface({ input: process.stdin, output: process.stdout });
-const { BitcoinBlockStorage: BlockStorage } = require('../build/src/models/block');
-const { CoinStorage } = require('../build/src/models/coin');
-const { TransactionStorage } = require('../build/src/models/transaction');
-const { Storage } = require('../build/src/services/storage');
-const { wait } = require('../build/src/utils');
+import * as readline from 'readline';
+import { BitcoinBlockStorage as BlockStorage } from '../build/src/models/block';
+import { CoinStorage } from '../build/src/models/coin';
+import { TransactionStorage } from '../build/src/models/transaction';
+import { Storage } from '../build/src/services/storage';
+import { wait } from '../build/src/utils';
+
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
 function usage(errMsg) {
   console.log('USAGE: ./purgeNetworkData.js [options');
@@ -81,14 +83,14 @@ Storage.start()
       let blkIds = await BlockStorage.collection.find({ chain, network }).project({ _id: 1 }).limit(limit).toArray();
       while (blkIds.length && !quit) {
         process.stdout.write(`Blocks: ${(progressCnt / blkCount * 100).toFixed(2)}% (${progressCnt} / ${blkCount})\r`);
-        const res = await BlockStorage.collection.deleteMany({ _id: { $in: blkIds.map(a => a._id) } });
+        await BlockStorage.collection.deleteMany({ _id: { $in: blkIds.map(a => a._id) } });
         progressCnt += blkIds.length;
         if (progressCnt % nSleep === 0) {
           await wait(sleepMs);
         }
         blkIds = await BlockStorage.collection.find({ chain, network }).project({ _id: 1 }).limit(limit).toArray();
       };
-      !quit && console.log('\nBlocks purged.');
+      if (!quit) console.log('\nBlocks purged.');
     }
 
     {
@@ -96,14 +98,14 @@ Storage.start()
       let txIds = await TransactionStorage.collection.find({ chain, network }).project({ _id: 1 }).limit(limit).toArray();
       while (txIds.length && !quit) {
         process.stdout.write(`Transactions: ${(progressCnt / txCount * 100).toFixed(2)}% (${progressCnt} / ${txCount})\r`);
-        const res = await TransactionStorage.collection.deleteMany({ _id: { $in: txIds.map(a => a._id) } });
+        await TransactionStorage.collection.deleteMany({ _id: { $in: txIds.map(a => a._id) } });
         progressCnt += txIds.length;
         if (progressCnt % nSleep === 0) {
           await wait(sleepMs);
         }
         txIds = await TransactionStorage.collection.find({ chain, network }).project({ _id: 1 }).limit(limit).toArray();
       }
-      !quit && console.log('\nTransactions purged.');
+      if (!quit) console.log('\nTransactions purged.');
     }
 
     {
@@ -111,16 +113,16 @@ Storage.start()
       let coinIds = await CoinStorage.collection.find({ chain, network }).project({ _id: 1 }).limit(limit).toArray();
       while (coinIds.length && !quit) {
         process.stdout.write(`Coins: ${(progressCnt / coinCount * 100).toFixed(2)}% (${progressCnt} / ${coinCount})\r`);
-        const res = await CoinStorage.collection.deleteMany({ _id: { $in: coinIds.map(a => a._id) } });
+        await CoinStorage.collection.deleteMany({ _id: { $in: coinIds.map(a => a._id) } });
         progressCnt += coinIds.length;
         if (progressCnt % nSleep === 0) {
           await wait(sleepMs);
         }
         coinIds = await CoinStorage.collection.find({ chain, network }).project({ _id: 1 }).limit(limit).toArray();
       }
-      !quit && console.log('\nCoins purged.');
+      if (!quit) console.log('\nCoins purged.');
     }
-    !quit && console.log('Data purged.');
+    if (!quit) console.log('Data purged.');
   })
   .catch(console.error)
   .finally(() => {

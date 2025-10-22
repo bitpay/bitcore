@@ -24,9 +24,10 @@ function findConfig(): ConfigType | undefined {
     if (!foundConfig) {
       try {
         const expanded = path[0] === '~' ? path.replace('~', homedir()) : path;
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const bitcoreConfig = require(expanded) as { bitcoreNode: ConfigType };
         foundConfig = bitcoreConfig.bitcoreNode;
-      } catch (e) {
+      } catch {
         foundConfig = undefined;
       }
     }

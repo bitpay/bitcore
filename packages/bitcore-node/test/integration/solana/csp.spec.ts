@@ -17,6 +17,7 @@ describe('Solana API', function() {
   const network = 'devnet';
   let sandbox: sinon.SinonSandbox;
 
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
   

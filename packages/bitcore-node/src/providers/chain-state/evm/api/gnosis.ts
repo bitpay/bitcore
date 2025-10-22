@@ -15,15 +15,13 @@ import { EVMTransactionStorage } from '../models/transaction';
 import { EventLog } from '../types';
 import { BaseEVMStateProvider } from './csp';
 
-interface MULTISIGInstantiation
-  extends EventLog<{
+type MULTISIGInstantiation = EventLog<{
     [key: string]: string;
-  }> {}
+  }>
 
-interface MULTISIGTxInfo
-  extends EventLog<{
+type MULTISIGTxInfo = EventLog<{
     [key: string]: string;
-  }> {}
+  }>
 
 function getCSP(chain: string, network: string) {
   return ChainStateProvider.get({ chain, network }) as BaseEVMStateProvider;

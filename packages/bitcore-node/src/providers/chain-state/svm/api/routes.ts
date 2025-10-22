@@ -46,7 +46,8 @@ export class SVMRouter {
 
   private getPriorityFee(router: Router) {
     router.get(`/api/${this.chain}/:network/priorityFee/:percentile`, async (req, res) => {
-      let { percentile, network } = req.params;
+      let { network } = req.params;
+      const { percentile } = req.params;
       const priorityFeePercentile = Number(percentile) || 15;
 
       network = network.toLowerCase();

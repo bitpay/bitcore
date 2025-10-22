@@ -84,6 +84,7 @@ router.get('/:txId/populated', async (req: Request, res: Response) => {
     let coins: any;
     let tip: any;
 
+    // eslint-disable-next-line prefer-const
     [tx, coins, tip] = await Promise.all([
       ChainStateProvider.getTransaction({ chain, network, txId }),
       ChainStateProvider.getCoinsForTx({ chain, network, txid }),
@@ -110,7 +111,9 @@ router.get('/:txId/populated', async (req: Request, res: Response) => {
 });
 
 router.get('/:txId/authhead', async (req: Request, res: Response) => {
-  let { chain, network, txId } = req.params;
+  let { chain, network } = req.params;
+  const { txId } = req.params;
+
   if (typeof txId !== 'string' || !chain || !network) {
     return res.status(400).send('Missing required param');
   }
@@ -130,7 +133,8 @@ router.get('/:txId/authhead', async (req: Request, res: Response) => {
 });
 
 router.get('/:txid/coins', (req: Request, res: Response, next) => {
-  let { chain, network, txid } = req.params;
+  let { chain, network } = req.params;
+  const { txid } = req.params;
   if (typeof txid !== 'string' || typeof chain !== 'string' || typeof network !== 'string') {
     res.status(400).send('Missing required param');
   } else {

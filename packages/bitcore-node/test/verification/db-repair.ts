@@ -123,7 +123,6 @@ import { Verification } from '../../src/services/verification';
           }
           break;
         case 'COIN_HEIGHT_MISMATCH':
-
         case 'CORRUPTED_BLOCK':
         case 'MISSING_BLOCK':
         case 'MISSING_TX':
@@ -201,7 +200,7 @@ import { Verification } from '../../src/services/verification';
           console.log('Inspecting...');
           console.log(dataStr);
           await handleRepair(parsedData);
-        } catch (err) {}
+        } catch (err) { /* ignore error */ }
       }
     }
   }

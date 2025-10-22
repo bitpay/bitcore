@@ -128,7 +128,9 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
 
       const blockInCache = this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash);
       if (!blockInCache) {
-        block.transactions.forEach(transaction => this.cacheInv(this.bitcoreP2p.Inventory.TYPE.TX, transaction.hash));
+        for (const transaction of block.transactions) {
+          this.cacheInv(this.bitcoreP2p.Inventory.TYPE.TX, transaction.hash);
+        }
         this.cacheInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash);
       }
       if (this.isSyncingNode && (!blockInCache || this.isSyncing)) {
@@ -339,7 +341,9 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
   async stop() {
     this.stopping = true;
     logger.debug(`Stopping worker for chain ${this.chain}`);
-    this.queuedRegistrations.forEach(clearTimeout);
+    for (const queuedRegistration of this.queuedRegistrations) {
+      clearTimeout(queuedRegistration);
+    }
     await this.unregisterSyncingNode();
     await this.disconnect();
   }

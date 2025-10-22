@@ -119,17 +119,16 @@ export class MultiThreadSync extends EventEmitter {
   }
 
   threadMessageHandler(thread: Thread) {
-    const self = this;
-    return function(msg) {
+    return (msg) => {
       logger.debug('Received sync thread message: ' + JSON.stringify(msg));
 
       switch (msg.message) {
         case 'ready':
-          self.emit('THREADREADY');
+          this.emit('THREADREADY');
           break;
         case 'sync':
         default:
-          self.threadSync(thread, msg);
+          this.threadSync(thread, msg);
       }
     };
   }
@@ -190,7 +189,6 @@ export class MultiThreadSync extends EventEmitter {
       return;
     }
 
-    const self = this;
     const threadCnt = this.config.threads || os.cpus().length - 1; // Subtract 1 for this process/thread
 
     if (threadCnt <= 0) {
@@ -205,16 +203,16 @@ export class MultiThreadSync extends EventEmitter {
 
       thread.on('message', this.threadMessageHandler(thread));
 
-      thread.on('exit', function(code) {
-        self.syncingThreads--;
-        self.threads.splice(
-          self.threads.findIndex(t => t.threadId === thread.threadId),
+      thread.on('exit', (code) => {
+        this.syncingThreads--;
+        this.threads.splice(
+          this.threads.findIndex(t => t.threadId === thread.threadId),
           1
         );
         if (code !== 0) {
           logger.error('Thread exited with non-zero code: %o', code);
         }
-        if (self.threads.length === 0) {
+        if (this.threads.length === 0) {
           logger.info('All syncing threads stopped.');
         }
       });

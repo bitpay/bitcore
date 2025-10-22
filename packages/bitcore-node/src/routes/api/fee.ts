@@ -17,8 +17,11 @@ const feeModes = {
 };
 
 router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, res: Response) => {
-  let { chain, network, target } = req.params;
-  let { mode, txType, signatures } = req.query as QueryType & { mode?: FeeMode };
+  let { chain, network } = req.params;
+  const { target } = req.params;
+  let { mode } = req.query as { mode?: FeeMode };
+  const { txType, signatures } = req.query as QueryType;
+  
   if (!chain || !network) {
     return res.status(400).send('Missing required param');
   }

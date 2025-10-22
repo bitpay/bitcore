@@ -12,6 +12,7 @@ import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
 describe('Ripple Api', function() {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   const network = 'testnet';
   this.timeout(30000);

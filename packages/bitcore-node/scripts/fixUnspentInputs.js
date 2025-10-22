@@ -12,15 +12,15 @@
  *** select the chain and network to run against.
  *** You must have valid RPC connection specified in bitcore.config.json.
  ********************************************/
-const fs = require('fs');
-const { CryptoRpc } = require('crypto-rpc');
-const { CoinStorage } = require('../build/src/models/coin');
-const { TransactionStorage } = require('../build/src/models/transaction');
+import fs from 'fs';
+import { CryptoRpc } from 'crypto-rpc';
+import Config from '../build/src/config';
+import { CoinStorage } from '../build/src/models/coin';
+import { TransactionStorage } from '../build/src/models/transaction';
+import { Storage } from '../build/src/services/storage';
+import { wait } from '../build/src/utils/wait';
 
 const fsPromises = fs.promises;
-const { Storage } = require('../build/src/services/storage');
-const { wait } = require('../build/src/utils/wait');
-const Config = require('../build/src/config');
 
 class Migration {
   constructor({ transactionModel = TransactionStorage, coinModel = CoinStorage } = {}) {
@@ -164,7 +164,7 @@ class Migration {
     console.log(`Writing output to ${filename}`);
     try {
       await fsPromises.writeFile(filename, JSON.stringify(output));
-    } catch (e) {
+    } catch {
       // write to stdout
       console.log('Failed to write output to file. Writing to stdout instead.');
       console.log(output);

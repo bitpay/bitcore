@@ -1,4 +1,4 @@
-const bitcoreLib = require('bitcore-lib');
+import { BitcoreLib as bitcoreLib } from 'crypto-wallet-core';
 
 const { Transaction, PrivateKey } = bitcoreLib;
 const UnspentOutput = Transaction.UnspentOutput;

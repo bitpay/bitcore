@@ -155,7 +155,7 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
             this.rpc = new Rpcs[this.client](this.web3);
           }
           connected = await this.web3.eth.net.isListening();
-        } catch (e) {
+        } catch {
           connected = false;
         }
         if (!connected) {
@@ -177,7 +177,7 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
           );
         }
         disconnected = !connected;
-      } catch (e) {}
+      } catch {/* ignore error */}
       await wait(2000);
     }
   }

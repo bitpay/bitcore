@@ -15,6 +15,7 @@ describe('Cache Model', function() {
   const otherAddress = '0x9527a556f0D9AA753dE0D1f9Ad024a17dd281B1D';
   const otherKey = `getBalanceForAddress-ETH-testnet-${otherAddress.toLowerCase()}`;
 
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
   before(intBeforeHelper);

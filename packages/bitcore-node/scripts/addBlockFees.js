@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const { BitcoinBlockStorage } = require('../build/src/models/block');
-const { Storage } = require('../build/src/services/storage');
+import { BitcoinBlockStorage } from '../build/src/models/block';
+import { Storage } from '../build/src/services/storage';
 
 function usage(errMsg) {
   console.log('USAGE: ./addBlockFees [options]');

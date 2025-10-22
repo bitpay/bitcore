@@ -216,7 +216,8 @@ export class InternalStateProvider implements IChainStateService {
   }
 
   async getTransaction(params: StreamTransactionParams) {
-    let { chain, network, txId } = params;
+    let { network } = params;
+    const { chain, txId } = params;
     if (typeof txId !== 'string' || !chain || !network) {
       throw new Error('Missing required param');
     }

@@ -1,12 +1,11 @@
 'use strict';
 
-const { expect } = require('chai');
-const { execSync } = require('child_process');
-const { ObjectId } = require('mongodb');
-const { Storage } = require('../../build/src/services/storage');
-const { TransactionStorage } = require('../../build/src/models/transaction');
-const { CoinStorage } = require('../../build/src/models/coin');
-
+import { expect } from 'chai';
+import { execSync } from 'child_process';
+import { ObjectId } from 'mongodb';
+import { Storage } from '../../build/src/services/storage';
+import { TransactionStorage } from '../../build/src/models/transaction';
+import { CoinStorage } from '../../build/src/models/coin';
 
 describe('syncTxnAndCoinsWallets', function() {
   this.timeout(20000);

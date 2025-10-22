@@ -12,8 +12,9 @@ import { TransactionFixture } from '../../fixtures/transaction.fixture';
 import { mockStorage } from '../../helpers';
 import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 import * as EvmTxData from '../../data/ETH/gethTxs';
+import { BitcoreLib } from 'crypto-wallet-core';
 
-const bitcoreLib = require('bitcore-lib');
+const { Transaction } = BitcoreLib;
 
 describe('Transaction Model', function() {
   before(unitBeforeHelper);
@@ -30,7 +31,7 @@ describe('Transaction Model', function() {
   });
 
   it('should stream all the mint operations', async () => {
-    const tx = bitcoreLib.Transaction(TransactionFixture.transaction) as BitcoinTransaction;
+    const tx = new Transaction(TransactionFixture.transaction) as BitcoinTransaction;
     let batches = 0;
 
     const mintStream = new Readable({ objectMode: true, read: () => {} });
@@ -58,7 +59,7 @@ describe('Transaction Model', function() {
   });
 
   it('should batch large amount of transactions', async () => {
-    const tx = bitcoreLib.Transaction(TransactionFixture.transaction) as BitcoinTransaction;
+    const tx = new Transaction(TransactionFixture.transaction) as BitcoinTransaction;
     let batches = 0;
 
     const mintStream = new Readable({ objectMode: true, read: () => {} });
@@ -85,7 +86,7 @@ describe('Transaction Model', function() {
   });
 
   it('should stream all the spend operations', async () => {
-    const tx = bitcoreLib.Transaction(TransactionFixture.transaction) as BitcoinTransaction;
+    const tx = new Transaction(TransactionFixture.transaction) as BitcoinTransaction;
     let batches = 0;
     const CURRENT_HEIGHT = 8534;
 
@@ -114,7 +115,7 @@ describe('Transaction Model', function() {
   });
 
   describe('Wallet Tagging', async () => {
-    const tx = bitcoreLib.Transaction(TransactionFixture.transaction) as TaggedBitcoinTx;
+    const tx = new Transaction(TransactionFixture.transaction) as unknown as TaggedBitcoinTx;
     const CURRENT_HEIGHT = 8534;
     const correctWalletId = new ObjectId('5d93abeba811051da3af9a35');
 
@@ -158,7 +159,7 @@ describe('Transaction Model', function() {
         const input = i.toObject();
         const inputTxid = i.toObject().prevTxId;
         const fixtureInput = TransactionFixture.inputs[inputTxid];
-        const inputTx = new bitcoreLib.Transaction(fixtureInput) as BitcoinTransaction;
+        const inputTx = new Transaction(fixtureInput) as BitcoinTransaction;
         const coin = { spentTxid: tx.hash, value: inputTx.outputs[input.outputIndex].satoshis, wallets: [] };
         return coin;
       }
