@@ -9,6 +9,7 @@ import { BitcoinBlockStorage } from '../../src/models/block';
 import { BitcoinBlockType } from '../../src/types/namespaces/Bitcoin/Block';
 import { resetDatabase } from '../helpers/index.js';
 import * as crypto from 'crypto';
+import { BitcoinTransactionType } from '../../src/types/namespaces/Bitcoin/Transaction';
 
 function randomHash() {
   return crypto.randomBytes(32).toString('hex');
@@ -71,13 +72,13 @@ function generateBlock(blockSizeMb: number, previousBlock?: BitcoinBlockType): B
         return new UnspentOutput({
           txid: transaction.hash,
           vout: 0,
-          address: output.script.toAddress('mainnet'),
+          address: output.script.toAddress('mainnet').toString(false),
           scriptPubKey: output.script.toBuffer().toString('hex'),
           amount: Number(txAmount)
         });
       });
       const newTx = new Transaction().from(utxos);
-      for (const _ of newTx.inputs) {
+      for (const _ of newTx.inputs!) {
         newTx.to(newAddress(), txAmount);
       }
       transactions.push(newTx);
@@ -87,7 +88,7 @@ function generateBlock(blockSizeMb: number, previousBlock?: BitcoinBlockType): B
     const txPerMb = 2500;
     const blockSize = txPerMb * blockSizeMb;
     for (let i = 0; i < blockSize; i++) {
-      const newTx = new Transaction().to(newAddress(), txAmount);
+      const newTx = new Transaction().to(newAddress(), txAmount) as BitcoinTransactionType;
       block.transactions.push(newTx);
     }
   }
