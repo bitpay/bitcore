@@ -1,6 +1,6 @@
 import 'source-map-support/register';
-import { Db, MongoClient } from 'mongodb';
 import { Transform } from 'stream';
+import { Db, MongoClient } from 'mongodb';
 
 export class Mongo {
   path: string;

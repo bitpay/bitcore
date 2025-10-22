@@ -1,7 +1,7 @@
-import { AbiItem } from 'web3-utils';
-import { MATICTxProvider } from '../matic';
-import { MultisigAbi } from '../eth-multisig/abi';
 import Web3 from 'web3';
+import { AbiItem } from 'web3-utils';
+import { MultisigAbi } from '../eth-multisig/abi';
+import { MATICTxProvider } from '../matic';
 
 export class MATICMULTISIGTxProvider extends MATICTxProvider {
   getMultisigContract(multisigContractAddress: string) {

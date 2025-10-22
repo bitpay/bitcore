@@ -1,6 +1,6 @@
-import type { Encoding, HDKeyType, IMessageClass, ISignedMessage, KeyType } from '../types/message';
 import BitcoreLib from 'bitcore-lib';
 import { encodeBuffer } from '../utils';
+import type { Encoding, HDKeyType, IMessageClass, ISignedMessage, KeyType } from '../types/message';
 
 export class BtcMessage implements IMessageClass {
   getMessageHash(args: { message: string, encoding?: Encoding }): Buffer | string {

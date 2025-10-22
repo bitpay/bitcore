@@ -1,12 +1,12 @@
-import * as prompt from '@clack/prompts';
-import { getAddressType, getCopayerName, getPassword } from '../../prompts';
-import { Key, type Network, TssKey } from 'bitcore-wallet-client';
-import type { CommonArgs } from '../../../types/cli';
 import crypto from 'crypto';
 import os from 'os';
 import url from 'url';
+import * as prompt from '@clack/prompts';
+import { Key, type Network, TssKey } from 'bitcore-wallet-client';
 import { UserCancelled } from '../../errors';
+import { getAddressType, getCopayerName, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
+import type { CommonArgs } from '../../../types/cli';
 
 
 export async function createThresholdSigWallet(

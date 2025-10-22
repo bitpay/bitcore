@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 
-import * as commands from './commands';
-import * as Errors from './errors';
-import * as prompt from '@clack/prompts';
-import { Errors as BWCErrors, Status } from 'bitcore-wallet-client';
-import { CommonArgs, ICliOptions } from '../types/cli';
-import { bitcoreLogo } from './constants';
 import fs from 'fs';
-import { getAction } from './prompts';
-import { getCommands } from './cli-commands';
-import Mnemonic from 'bitcore-mnemonic';
 import os from 'os';
 import path from 'path';
+import * as prompt from '@clack/prompts';
+import Mnemonic from 'bitcore-mnemonic';
+import { Errors as BWCErrors, Status } from 'bitcore-wallet-client';
 import { program } from 'commander';
+import { CommonArgs, ICliOptions } from '../types/cli';
+import { getCommands } from './cli-commands';
+import * as commands from './commands';
+import { bitcoreLogo } from './constants';
+import * as Errors from './errors';
+import { getAction } from './prompts';
 import { Utils } from './utils';
 import { Wallet } from './wallet';
 

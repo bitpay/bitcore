@@ -4,12 +4,12 @@ import { BchValidation } from './bch';
 import { BtcValidation } from './btc';
 import { DogeValidation } from './doge';
 import { EthValidation } from './eth';
-import type { IValidation } from '../types/validation';
 import { LtcValidation } from './ltc';
 import { MaticValidation } from './matic';
 import { OpValidation } from './op';
 import { SolValidation } from './sol';
 import { XrpValidation } from './xrp';
+import type { IValidation } from '../types/validation';
 
 const validation: { [chain: string]: IValidation } = {
   BTC: new BtcValidation(),

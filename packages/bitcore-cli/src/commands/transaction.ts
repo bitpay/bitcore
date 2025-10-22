@@ -1,11 +1,11 @@
-import * as prompt from '@clack/prompts';
-import type { CommonArgs } from '../../types/cli';
-import type { ITokenObj } from '../../types/wallet';
 import os from 'os';
+import * as prompt from '@clack/prompts';
 import { type Txp } from 'bitcore-wallet-client'; 
+import { Validation } from 'crypto-wallet-core';
 import { UserCancelled } from '../errors';
 import { Utils } from '../utils';
-import { Validation } from 'crypto-wallet-core';
+import type { CommonArgs } from '../../types/cli';
+import type { ITokenObj } from '../../types/wallet';
 
 export function command(args: CommonArgs) {
   const { program } = args;

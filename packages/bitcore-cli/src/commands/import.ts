@@ -1,9 +1,9 @@
-import * as prompt from '@clack/prompts';
-import type { CommonArgs } from '../../types/cli';
 import fs from 'fs';
-import { getPassword } from '../prompts';
 import os from 'os';
+import * as prompt from '@clack/prompts';
 import { UserCancelled } from '../errors';
+import { getPassword } from '../prompts';
+import type { CommonArgs } from '../../types/cli';
 
 export async function importWallet(args: CommonArgs) {
   const { wallet } = args;

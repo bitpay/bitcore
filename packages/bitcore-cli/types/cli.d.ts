@@ -1,6 +1,6 @@
-import type { IWallet } from './wallet';
-import { program } from 'commander';
 import { type Status } from 'bitcore-wallet-client';
+import { program } from 'commander';
+import type { IWallet } from './wallet';
 
 export interface ICliOptions {
   dir: string;

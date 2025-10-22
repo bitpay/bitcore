@@ -1,12 +1,12 @@
 import 'source-map-support/register';
-import { IWallet, KeyImport } from './types/wallet';
+import { PassThrough } from 'stream';
 import { BitcoreLib } from 'crypto-wallet-core';
 import { Encryption } from './encryption';
 import { Level } from './storage/level';
 import { Mongo } from './storage/mongo';
-import { PassThrough } from 'stream';
-import { StorageType } from './types/storage';
 import { TextFile } from './storage/textFile';
+import { StorageType } from './types/storage';
+import { IWallet, KeyImport } from './types/wallet';
 
 export class Storage {
   path: string;

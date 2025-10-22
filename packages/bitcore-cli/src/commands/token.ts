@@ -1,8 +1,8 @@
 import * as prompt from '@clack/prompts';
-import type { CommonArgs } from '../../types/cli';
 import { UserCancelled } from '../errors';
 import { Utils } from '../utils';
 import { Wallet } from '../wallet';
+import type { CommonArgs } from '../../types/cli';
 
 
 export async function setToken(args: CommonArgs) {

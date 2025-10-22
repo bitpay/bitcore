@@ -1,8 +1,8 @@
-import type { Encoding, HDKeyType, IMessageClass, ISignedMessage, KeyType } from '../types/message';
 import { BtcMessage } from './btc';
 import { EthMessage } from './eth';
 import { SolMessage } from './sol';
 import { XrpMessage } from './xrp';
+import type { Encoding, HDKeyType, IMessageClass, ISignedMessage, KeyType } from '../types/message';
 
 
 const MessageClasses: Record<string, IMessageClass> = {
