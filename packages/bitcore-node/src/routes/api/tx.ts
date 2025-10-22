@@ -169,7 +169,7 @@ router.post('/send', async function(req: Request, res: Response) {
   }
 });
 
-module.exports = {
+export const txRoute = {
   router,
   path: '/tx'
 };

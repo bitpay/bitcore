@@ -1,4 +1,5 @@
 import js from '@eslint/js';
+import stylistic from '@stylistic/eslint-plugin';
 import { defineConfig } from 'eslint/config';
 import importPlugin from 'eslint-plugin-import';
 import globals from 'globals';
@@ -23,15 +24,28 @@ export default defineConfig([
     }
   },
   tseslint.configs.recommended,
-  {
+  { // TypeScript files
+    files: ['**/*.{ts,mts,cts}'],
+    plugins: {
+      '@typescript-eslint': tseslint.plugin,
+      '@stylistic': stylistic,
+    },
     rules: {
-      quotes: ['error', 'single', { avoidEscape: true }],
       '@typescript-eslint/no-require-imports': 'warn',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-asserted-optional-chain': 'off',
       '@typescript-eslint/no-unused-expressions': 'off',
       '@typescript-eslint/no-duplicate-enum-values': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    }
+  },
+  {
+    plugins: {
+      '@stylistic': stylistic,
+    },
+    rules: {
+
+      quotes: ['error', 'single', { avoidEscape: true }],
       'prefer-const': 'warn',
       'no-var': 'warn',
       'no-undef': 'error',
@@ -41,6 +55,7 @@ export default defineConfig([
       'no-case-declarations': 'off',
       'no-bitwise': 'error',
       'spaced-comment': ['error', 'always', { exceptions: ['-', '+'] }],
+      '@stylistic/object-curly-spacing': ['error', 'always'],
       'object-curly-spacing': ['error', 'always'],
       'key-spacing': ['error', { beforeColon: false, afterColon: true }],
       'comma-spacing': ['error', { before: false, after: true }],
