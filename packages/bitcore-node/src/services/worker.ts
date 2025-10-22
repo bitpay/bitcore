@@ -6,7 +6,7 @@ import logger from '../logger';
 import { CallbackType } from '../types/Callback';
 import parseArgv from '../utils/parseArgv';
 
-let args = parseArgv([], [{ arg: 'DEBUG', type: 'bool' }]);
+const args = parseArgv([], [{ arg: 'DEBUG', type: 'bool' }]);
 
 @LoggifyClass
 export class WorkerService extends EventEmitter {
@@ -21,7 +21,7 @@ export class WorkerService extends EventEmitter {
       logger.verbose(`Master ${process.pid} is running`);
       if (!args.DEBUG) {
         for (let worker = 0; worker < config.numWorkers; worker++) {
-          let newWorker = cluster.fork();
+          const newWorker = cluster.fork();
           logger.verbose(`Starting worker number ${worker}`);
           newWorker.on('message', (msg: any) => {
             this.emit(msg.id, msg);
@@ -29,7 +29,7 @@ export class WorkerService extends EventEmitter {
           newWorker.on('exit', (code, _signal) => {
             logger[code == 0 ? 'info' : 'warn'](`Worker ${newWorker.process.pid} stopped with code ${code}`);
           });
-          let started = new Promise<void>(resolve => {
+          const started = new Promise<void>(resolve => {
             newWorker.on('listening', () => {
               resolve();
             });
@@ -48,10 +48,10 @@ export class WorkerService extends EventEmitter {
   async stop() {}
 
   sendTask(task: any, argument: any, done: CallbackType) {
-    var worker = this.workers.shift();
+    const worker = this.workers.shift();
     if (worker) {
       this.workers.push(worker);
-      var id = (Date.now() * Math.random()).toString();
+      const id = (Date.now() * Math.random()).toString();
       this.once(id, function(result: { error: any }) {
         done(result.error);
       });
@@ -64,4 +64,4 @@ export class WorkerService extends EventEmitter {
   }
 }
 
-export let Worker = new WorkerService();
+export const Worker = new WorkerService();

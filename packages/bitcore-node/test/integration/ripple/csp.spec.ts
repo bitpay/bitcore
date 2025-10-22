@@ -165,7 +165,7 @@ describe('Ripple Api', function() {
     const getCloseTime = (ledgerIndex: number) => new Date(xrpEpoch.getTime() + (ledgerIndex * 1000));
     const sandbox = sinon.createSandbox();
     let requestStub;
-    let validBody = {
+    const validBody = {
       result: {
         status: 'success',
         ledger: {
@@ -179,7 +179,7 @@ describe('Ripple Api', function() {
       }
     };
 
-    let invalidBody = { result: { status: 'error' } };
+    const invalidBody = { result: { status: 'error' } };
     let time;
     const _configBak = XRP.config;
 
@@ -265,7 +265,7 @@ describe('Ripple Api', function() {
         await XRP.getBlockBeforeTime({ chain: 'XRP', network: 'testnet', time: 'not-a-time' });
         throw new Error('should have thrown');
       } catch (err: any) {
-        expect(err.message).to.equal('Invalid time value')
+        expect(err.message).to.equal('Invalid time value');
       }
     });
 
@@ -275,7 +275,7 @@ describe('Ripple Api', function() {
         await XRP.getBlockBeforeTime({ chain: 'XRP', network: 'testnet', time });
         throw new Error('should have thrown');
       } catch (err) {
-        expect(err).to.equal('Unresponsive server')
+        expect(err).to.equal('Unresponsive server');
       }
     });
 
@@ -292,7 +292,7 @@ describe('Ripple Api', function() {
         await XRP.getBlockBeforeTime({ chain: 'XRP', network: 'testnet', time });
         throw new Error('should have thrown');
       } catch (err: any) {
-        expect(err.message).to.equal('Cannot read properties of undefined (reading \'provider\')')
+        expect(err.message).to.equal('Cannot read properties of undefined (reading \'provider\')');
       }
     });
   });

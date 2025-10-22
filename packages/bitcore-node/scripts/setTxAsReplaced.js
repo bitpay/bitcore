@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const { Storage } = require('../build/src/services/storage');
 const { TransactionStorage } = require('../build/src/models/transaction');
+const { Storage } = require('../build/src/services/storage');
 const { SpentHeightIndicators } = require('../build/src/types/Coin');
 
 function usage(errMsg) {
@@ -74,4 +74,4 @@ Storage.start()
     }
   })
   .catch(console.error)
-  .finally(Storage.stop.bind(Storage))
+  .finally(Storage.stop.bind(Storage));

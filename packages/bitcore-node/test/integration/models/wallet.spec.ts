@@ -96,7 +96,7 @@ describe('Wallet Model', function() {
         name: walletName,
         chain,
         network
-      }, { sort: { _id: -1 }});
+      }, { sort: { _id: -1 } });
 
       expect(findWalletResult?._id).to.exist;
       const findAddressResult = await WalletAddressStorage.collection

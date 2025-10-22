@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const { Storage } = require('../build/src/services/storage');
 const { TransactionStorage } = require('../build/src/models/transaction');
+const { Storage } = require('../build/src/services/storage');
 
 function usage(errMsg) {
   console.log('USAGE: ./findReplacedTx.js <options>');
@@ -9,7 +9,7 @@ function usage(errMsg) {
   console.log('  --chain <value>      REQUIRED - e.g. BTC, BCH, DOGE, LTC...');
   console.log('  --network <value>    REQUIRED - e.g. mainnet, testnet3, regtest...');
   console.log('  --txid <value>       REQUIRED Transaction Id that replaced');
-  console.log('  --window [value]     Minutes to look back (default: 10)')
+  console.log('  --window [value]     Minutes to look back (default: 10)');
   if (errMsg) {
     console.log('\nERROR: ' + errMsg);
   }
@@ -49,7 +49,7 @@ Storage.start()
     }
     const $lt = new Date(confirmedTx.blockTimeNormalized);
     const $gt = new Date($lt.getTime() - (1000 * 60 * windowMins));
-    const related = TransactionStorage.collection.find({ chain, network, blockTimeNormalized: { $lt, $gt }, blockHeight: -3  });
+    const related = TransactionStorage.collection.find({ chain, network, blockTimeNormalized: { $lt, $gt }, blockHeight: -3 });
     for await (const tx of related) {
       if (tx.replacedByTxid === txid) {
         console.log(tx);

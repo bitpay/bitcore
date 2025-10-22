@@ -93,10 +93,10 @@ describe('Solana API', function() {
       getTokenAccountsByOwner: sandbox.stub().resolves(mockedAddresses)
     };
     const connection = {
-      getTokenAccountBalance:  sandbox.stub().returns({
+      getTokenAccountBalance: sandbox.stub().returns({
         send: sandbox.stub().resolves({ value: { decimals } })  
       })
-    }
+    };
     
     sandbox.stub(SOL, 'getRpc').resolves({ rpc, connection });
     
@@ -105,7 +105,7 @@ describe('Solana API', function() {
   });
 
   describe('#streamWalletTransactions', () => {
-    let address = 'DGqGrPJu5QgQ5pFHimGKX6wqPmUVnk5L1NAmpHdP6n8F';
+    const address = 'DGqGrPJu5QgQ5pFHimGKX6wqPmUVnk5L1NAmpHdP6n8F';
     let wallet: IWallet;
 
     // Set up wallet before running wallet tests

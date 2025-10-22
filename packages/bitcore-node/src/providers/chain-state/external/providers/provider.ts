@@ -16,7 +16,7 @@ const getProvider = (params: {
   }
   const providerIdx = worker.threadId % providers.length;
   return providers[providerIdx];
-}
+};
 
 const hasProvider = ({ network, config, dataType }): boolean => {
   try {
@@ -46,12 +46,12 @@ const matchProviderType = (provider?: IProvider, type?: string): boolean => {
     return true;
   }    
   return false;
-}
+};
 
 const isValidProviderType = (expectedType, type) => {
-  const validTypes = expectedType ? ['combined', expectedType]  : ['combined'];
+  const validTypes = expectedType ? ['combined', expectedType] : ['combined'];
   return validTypes.includes(type);
-}
+};
 
 export {
   getProvider,

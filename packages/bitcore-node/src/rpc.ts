@@ -1,5 +1,6 @@
 import request = require('request');
 import { LoggifyClass } from './decorators/Loggify';
+
 type CallbackType = (err: any, data?: any) => any;
 
 @LoggifyClass

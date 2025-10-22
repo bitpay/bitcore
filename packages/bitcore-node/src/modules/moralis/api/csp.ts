@@ -188,7 +188,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       WalletAddressStorage.updateLastQueryTime({ chain: this.chain, network, address })
         .catch(e => logger.warn(`Failed to update ${this.chain}:${network} address lastQueryTime: %o`, e)),
       this._addAddressToSubscription({ chainId, address })
-        .catch(e => logger.warn(`Failed to add address to ${this.chain}:${network} Moralis subscription: %o`, e))
+        .catch(e => logger.warn(`Failed to add address to ${this.chain}:${network} Moralis subscription: %o`, e));
     }
     return transactionStream;
   }
@@ -236,7 +236,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
           return reject(err);
         }
         return resolve(body.block as number);
-      })
+      });
     });
   }
 
@@ -292,13 +292,13 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       const _tx: any = this._transformTransaction({ chain, network, ...tx });
       const confirmations = this._calculateConfirmations(tx, args.tipHeight);
       return EVMTransactionStorage._apiTransform({ ..._tx, confirmations }, { object: true }) as EVMTransactionJSON;
-    }
+    };
 
     return new ExternalApiStream(
       `${this.baseUrl}/${address}${queryStr}`,
       this.headers,
       args
-    )
+    );
   }
 
   private _streamERC20TransactionsByAddress({ chainId, chain, network, address, tokenAddress, args }): any {
@@ -323,13 +323,13 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       const _tx: any = this._transformTokenTransfer({ chain, network, ...tx });
       const confirmations = this._calculateConfirmations(tx, args.tipHeight);
       return EVMTransactionStorage._apiTransform({ ..._tx, confirmations }, { object: true }) as EVMTransactionJSON;
-    }
+    };
 
     return new ExternalApiStream(
       `${this.baseUrl}/${address}/erc20/transfers${queryStr}`,
       this.headers,
       args
-    )
+    );
   }
 
   private _transformTransaction(tx) {
@@ -375,7 +375,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
   }
 
   private _transformTokenTransfer(transfer) {
-    let _transfer = this._transformTransaction(transfer);
+    const _transfer = this._transformTransaction(transfer);
     return {
       ..._transfer,
       transactionHash: transfer.transaction_hash,
@@ -387,7 +387,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
 
   private _transformQueryParams(params) {
     const { chainId, args } = params;
-    let query = {
+    const query = {
       chain: this._formatChainId(chainId),
     } as any;
     if (args) {
@@ -400,7 +400,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
         }
       } else {
         if (args.startDate) {
-          query.from_date = args.startDate
+          query.from_date = args.startDate;
         }
         if (args.endDate) {
           query.to_date = args.endDate;
@@ -483,13 +483,13 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     const _chainId = this._formatChainId(chainId);
 
     const result: any = await this._subsRequest('PUT', this.baseStreamUrl, {
-        description: `Bitcore ${_chainId} - ${os.hostname()} - addresses`,
-        // tag: '',
-        chainIds: [_chainId],
-        webhookUrl: `${this.baseWebhookurl}/${chain}/${network}/moralis`,
-        includeNativeTxs: true,
-        includeInternalTxs: true
-      }
+      description: `Bitcore ${_chainId} - ${os.hostname()} - addresses`,
+      // tag: '',
+      chainIds: [_chainId],
+      webhookUrl: `${this.baseWebhookurl}/${chain}/${network}/moralis`,
+      includeNativeTxs: true,
+      includeInternalTxs: true
+    }
     );
     if (!result.id) {
       throw new Error('Failed to create subscription: ' + JSON.stringify(result));

@@ -1,8 +1,9 @@
 import util from 'util';
 import logger from '../logger';
 import parseArgv from '../utils/parseArgv';
+
 export const PerformanceTracker = {};
-let args = parseArgv([], [{ arg: 'DEBUG', type: 'bool' }]);
+const args = parseArgv([], [{ arg: 'DEBUG', type: 'bool' }]);
 
 export function SavePerformance(logPrefix, startTime, endTime) {
   const totalTime = endTime.getTime() - startTime.getTime();
@@ -29,7 +30,7 @@ export function LoggifyClass<T extends new (...args: any[]) => {}>(aClass: T) {
     constructor(...args: any[]) {
       super(...args);
       logger.debug(`Loggifying ${aClass.name} with args:: ${util.inspect(args)}`);
-      for (let prop of Object.getOwnPropertyNames(aClass.prototype)) {
+      for (const prop of Object.getOwnPropertyNames(aClass.prototype)) {
         if (typeof this[prop] === 'function') {
           logger.debug(`Loggifying  ${aClass.name}::${prop}`);
           this[prop] = LoggifyFunction(this[prop], `${aClass.name}::${prop}`, this);
@@ -50,7 +51,7 @@ export function LoggifyFunction(fn: (...args: any[]) => any, logPrefix: string =
   return function(...methodargs: any[]) {
     const startTime = new Date();
     logger.debug(`${logPrefix}::called::`);
-    let returnVal = copy(...methodargs);
+    const returnVal = copy(...methodargs);
     if (returnVal && returnVal.then) {
       returnVal
         .catch((err: any) => {
@@ -73,7 +74,7 @@ export function LoggifyObject(obj: any, logPrefix: string = '', bind?: any) {
   if (!args.DEBUG) {
     return obj;
   }
-  for (let prop of Object.getOwnPropertyNames(obj)) {
+  for (const prop of Object.getOwnPropertyNames(obj)) {
     if (typeof obj[prop] === 'function') {
       let copy = obj[prop];
       if (bind) {

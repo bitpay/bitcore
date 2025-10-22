@@ -1,6 +1,6 @@
+import { Readable, Stream, Transform } from 'stream';
 import axios from 'axios';
 import { Request, Response } from 'express';
-import { Readable, Stream, Transform } from 'stream';
 import { ReadableWithEventPipe, TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 
 
@@ -98,7 +98,7 @@ export class ExternalApiStream extends ReadableWithEventPipe {
               statusCode: err?.response?.status,
               statusMsg: err?.response?.statusText,
               data: err?.response?.data,
-            }
+            };
           }
           if (err.log?.data?.message?.includes('not supported')) {
             res.write('[]');

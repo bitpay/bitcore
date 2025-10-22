@@ -8,6 +8,7 @@ import { Api } from '../../src/services/api';
 import { Event } from '../../src/services/event';
 import { IUtxoNetworkConfig } from '../../src/types/Config';
 import { resetDatabase } from '../helpers';
+
 const { PrivateKey } = require('bitcore-lib');
 
 const chain = 'BTC';
@@ -113,7 +114,7 @@ describe('Websockets', function() {
     let hasSeenBlockEvent = false;
     let hasSeenCoinEvent = false;
     const anAddress = await rpc.getnewaddress('');
-    let sawEvents = new Promise<void>(async resolve => {
+    const sawEvents = new Promise<void>(async resolve => {
       socket.on('block', () => {
         hasSeenBlockEvent = true;
         console.log('Block event received');
@@ -168,7 +169,7 @@ describe('Websockets', function() {
 
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;
-    let sawEvents = new Promise<void>(async resolve => {
+    const sawEvents = new Promise<void>(async resolve => {
       socket.on('tx', () => {
         hasSeenTxEvent = true;
         console.log('Transaction event received');
@@ -215,7 +216,7 @@ describe('Websockets', function() {
 
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;
-    let sawEvents = new Promise<void>(async resolve => {
+    const sawEvents = new Promise<void>(async resolve => {
       socket.on('tx', () => {
         hasSeenTxEvent = true;
         console.log('Transaction event received');
@@ -258,7 +259,7 @@ describe('Websockets', function() {
     const chain = 'BTC';
     const network = 'regtest';
     const roomPrefix = `/${chain}/${network}/`;
-    let failed = new Promise<void>(resolve => {
+    const failed = new Promise<void>(resolve => {
       socket.on('failure', e => {
         expect(e.message).to.include('Authentication failed');
         resolve();
@@ -278,7 +279,7 @@ describe('Websockets', function() {
     const chain = 'BTC';
     const network = 'regtest';
     const roomPrefix = `/${chain}/${network}/`;
-    let failed = new Promise<void>(resolve => {
+    const failed = new Promise<void>(resolve => {
       socket.on('failure', e => {
         expect(e.message).to.include('Authentication failed');
         resolve();

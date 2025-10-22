@@ -43,7 +43,7 @@ import { Verification } from '../../src/services/verification';
               return;
             }
 
-            let toKeep = dupeTxs[0];
+            const toKeep = dupeTxs[0];
             const wouldBeDeleted = dupeTxs.filter(c => c._id != toKeep._id);
 
             if (dry) {
@@ -132,7 +132,7 @@ import { Verification } from '../../src/services/verification';
         case 'COIN_SHOULD_BE_SPENT':
         case 'NEG_FEE':
           const blockHeight = Number(data.payload.blockNum);
-          let { success } = await worker.validateDataForBlock(blockHeight, tip!.height);
+          const { success } = await worker.validateDataForBlock(blockHeight, tip!.height);
           if (success) {
             console.log('No errors found, repaired previously');
             return;
@@ -143,7 +143,7 @@ import { Verification } from '../../src/services/verification';
           } else {
             console.log('Resyncing Blocks', blockHeight, 'to', blockHeight + 1);
             await worker.resync(blockHeight - 1, blockHeight + 1);
-            let { success, errors } = await worker.validateDataForBlock(blockHeight, tip!.height);
+            const { success, errors } = await worker.validateDataForBlock(blockHeight, tip!.height);
             if (success) {
               console.log('REPAIR SOLVED ISSUE');
             } else {
@@ -207,7 +207,7 @@ import { Verification } from '../../src/services/verification';
   }
 
   async function transformFileChunks(chunk, _, cb) {
-    for (let line of getLinesFromChunk(chunk)) {
+    for (const line of getLinesFromChunk(chunk)) {
       await repairLineIfValidJson(line);
     }
     cb();

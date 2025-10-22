@@ -54,7 +54,7 @@ Storage.start()
       coinsUpdated += res.modifiedCount;
       console.log(`Updated ${coinsUpdated} coins (${(coinsUpdated / cnt1 * 100).toFixed(2)}%)`);
       await wait(250);
-      coins = await CoinStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray()
+      coins = await CoinStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray();
     }
 
     console.log(`Updating ${chain} ${oldNetwork} => ${newNetwork} transactions in 10 seconds...`);
@@ -67,7 +67,7 @@ Storage.start()
       txsUpdated += res.modifiedCount;
       console.log(`Updated ${txsUpdated} transactions (${(txsUpdated / cnt2 * 100).toFixed(2)}%)`);
       await wait(250);
-      txs = await TransactionStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray()
+      txs = await TransactionStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray();
     }
     
     console.log(`Updating ${chain} ${oldNetwork} => ${newNetwork} blocks in 10 seconds...`);
@@ -80,7 +80,7 @@ Storage.start()
       blocksUpdated += res.modifiedCount;
       console.log(`Updated ${blocksUpdated} blocks (${(blocksUpdated / cnt3 * 100).toFixed(2)}%)`);
       await wait(250);
-      blocks = await BitcoinBlockStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray()
+      blocks = await BitcoinBlockStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray();
     }
 
     console.log(`Updating ${chain} ${oldNetwork} => ${newNetwork} wallets in 10 seconds...`);
@@ -93,7 +93,7 @@ Storage.start()
       walletsUpdated += res.modifiedCount;
       console.log(`Updated ${walletsUpdated} wallets (${(walletsUpdated / cnt4 * 100).toFixed(2)}%)`);
       await wait(250);
-      wallets = await WalletStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray()
+      wallets = await WalletStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray();
     }
 
     console.log(`Updating ${chain} ${oldNetwork} => ${newNetwork} walletAddresses in 10 seconds...`);
@@ -106,7 +106,7 @@ Storage.start()
       walletAddressesUpdated += res.modifiedCount;
       console.log(`Updated ${walletAddressesUpdated} walletAddresses (${(walletAddressesUpdated / cnt5 * 100).toFixed(2)}%)`);
       await wait(250);
-      walletAddresses = await WalletAddressStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray()
+      walletAddresses = await WalletAddressStorage.collection.find({ chain, network: oldNetwork }).project({ _id: 1 }).limit(batchSize).toArray();
     }
   })
   .catch(console.error)

@@ -1,5 +1,4 @@
 import BN from 'bn.js';
-
 import { Binary } from 'mongodb';
 import { ITransaction } from '../../../models/baseTransaction';
 import { IBlock } from '../../../types/Block';
@@ -268,7 +267,7 @@ export interface ERC20Transfer
     [key: string]: string;
   }> {}
 
-  export interface IEVMCachedAddress {
+export interface IEVMCachedAddress {
     address: string;
     tokenAddress?: string;
   }

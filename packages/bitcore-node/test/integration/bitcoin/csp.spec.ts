@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { CacheStorage } from '../../../src/models/cache';
 import { ChainStateProvider } from '../../../src/providers/chain-state';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
+
 describe('Bitcoin API', function() {
   const suite = this;
   this.timeout(30000);

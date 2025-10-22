@@ -50,7 +50,7 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
     return res.json(cachedFee.fee);
   }
   try {
-    let fee = await ChainStateProvider.getFee({ chain, network, target: targetNum, mode, txType, signatures: numSignatures });
+    const fee = await ChainStateProvider.getFee({ chain, network, target: targetNum, mode, txType, signatures: numSignatures });
     if (!fee) {
       return res.status(404).send('not available right now');
     }

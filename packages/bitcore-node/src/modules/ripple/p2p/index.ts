@@ -1,6 +1,6 @@
-import { CryptoRpc } from 'crypto-rpc';
 import { EventEmitter } from 'events';
 import { Transform } from 'stream';
+import { CryptoRpc } from 'crypto-rpc';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import logger from '../../../logger';
 import { timestamp } from '../../../logger';
@@ -148,13 +148,13 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
 
         // After wallet syncs, start block sync from the current height
         const client = await this.provider.getClient(this.network);
-        let { ledger: chainBestBlock } = await client.getBlock({ index: 'latest' });
+        const { ledger: chainBestBlock } = await client.getBlock({ index: 'latest' });
         this.chainConfig.startHeight = chainBestBlock;
 
         const count = await WalletAddressStorage.collection.countDocuments({ chain, network });
         let done = 0;
         logger.info(`Syncing ${count} ${chain} ${network} wallets`);
-        let lastLog = Date.now();
+        const lastLog = Date.now();
         const addressStream = WalletAddressStorage.collection.find({ chain, network }).stream();
         addressStream
           .pipe(
@@ -230,11 +230,11 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
         logger.error('%o', e);
       }
     })
-    .finally(() => {
-      if (this.disconnecting) {
-        this.client.rpc.disconnect();
-      }
-    })
+      .finally(() => {
+        if (this.disconnecting) {
+          this.client.rpc.disconnect();
+        }
+      });
   }
 
   async syncBlocks() {

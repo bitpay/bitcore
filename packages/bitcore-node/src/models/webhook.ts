@@ -47,8 +47,8 @@ export class WebhookModel extends BaseModel<IWebhook> {
     if (!id) {
       throw new Error('No webhook id given to clear');
     }
-    return this.collection.updateOne({ _id: id }, { $set: { processed: true }});
+    return this.collection.updateOne({ _id: id }, { $set: { processed: true } });
   }
 }
 
-export let WebhookStorage = new WebhookModel();
+export const WebhookStorage = new WebhookModel();

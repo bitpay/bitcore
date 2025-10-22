@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-const { Storage } = require('../build/src/services/storage');
-const { BitcoinBlockStorage: BlockStorage } = require('../build/src/models/block');
-const { TransactionStorage } = require('../build/src/models/transaction');
-const { CoinStorage } = require('../build/src/models/coin');
 const rl = require('readline').createInterface({ input: process.stdin, output: process.stdout });
+const { BitcoinBlockStorage: BlockStorage } = require('../build/src/models/block');
+const { CoinStorage } = require('../build/src/models/coin');
+const { TransactionStorage } = require('../build/src/models/transaction');
+const { Storage } = require('../build/src/services/storage');
 const { wait } = require('../build/src/utils');
 
 function usage(errMsg) {
@@ -58,7 +58,7 @@ console.log('Connecting to database...');
 
 Storage.start()
   .then(async () => {
-    console.log('Collecting stats. This could take a minute...')
+    console.log('Collecting stats. This could take a minute...');
     const blkCount = await BlockStorage.collection.countDocuments({ chain, network });
     const txCount = await TransactionStorage.collection.countDocuments({ chain, network });
     const coinCount = await CoinStorage.collection.countDocuments({ chain, network });

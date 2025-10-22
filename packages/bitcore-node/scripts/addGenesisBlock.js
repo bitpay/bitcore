@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 
 
-const { Storage } = require('../build/src/services/storage');
-const { BitcoinBlockStorage } = require('../build/src/models/block');
-const Config = require('../build/src/config');
-const { BitcoinP2PWorker } = require('../build/src/modules/bitcoin/p2p');
-
 const rl = require('readline').createInterface({ input: process.stdin, output: process.stdout });
+const Config = require('../build/src/config');
+const { BitcoinBlockStorage } = require('../build/src/models/block');
+const { BitcoinP2PWorker } = require('../build/src/modules/bitcoin/p2p');
+const { Storage } = require('../build/src/services/storage');
 
 
 function usage(errMsg) {
@@ -89,4 +88,4 @@ Storage.start()
     rl.close();
     p2pWorker?.disconnect();
     Storage.stop();
-  })
+  });

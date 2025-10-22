@@ -17,7 +17,7 @@ async function makeMempoolTxChain(chain: string, network: string, startingTxid: 
     .update(txid + 1)
     .digest()
     .toString('hex');
-  let allTxids = new Array<string>();
+  const allTxids = new Array<string>();
   for (let i = 1; i <= chainLength; i++) {
     const badMempoolTx = {
       chain,
@@ -227,14 +227,14 @@ describe('Transaction Model', function() {
 
     it('should update eth transactions with related wallet id correctly (incoming)', async () => {
       const block = unprocessedEthBlocks[0] as any; // block containing an eth transfer to 0x3Ec3dA6E14BE9518A9a6e92DdCC6ACfF2CEFf4ef
-      await EVMTransactionStorage.batchImport({...block});
+      await EVMTransactionStorage.batchImport({ ...block });
       const walletTxs = await EVMTransactionStorage.collection.find({ chain, network, wallets: wallet }).toArray();
       expect(walletTxs.length).eq(1);
     });
 
     it('should update erc20 transactions with related wallet id correctly (incoming)', async () => {
       const block = unprocessedEthBlocks[1] as any; // block containing an ERC20 transfer to 0x3Ec3dA6E14BE9518A9a6e92DdCC6ACfF2CEFf4ef
-      await EVMTransactionStorage.batchImport({...block});
+      await EVMTransactionStorage.batchImport({ ...block });
       const walletTxs = await EVMTransactionStorage.collection.find({ chain, network, wallets: wallet }).toArray();
       expect(walletTxs.length).eq(1);
     });

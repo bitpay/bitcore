@@ -1,12 +1,12 @@
-import * as apiRoutes from './api';
-import { CacheMiddleware, CacheTimes, LogMiddleware, RateLimiter } from './middleware';
-import type { Request, Response } from 'express';
-import config from '../config';
-import { Config } from '../services/config';
 import cors from 'cors';
 import express from 'express';
+import config from '../config';
+import { Config } from '../services/config';
+import * as apiRoutes from './api';
+import { CacheMiddleware, CacheTimes, LogMiddleware, RateLimiter } from './middleware';
 import { statusRoute } from './status';
 import { Web3Proxy } from './web3';
+import type { Request, Response } from 'express';
 
 const app = express();
 

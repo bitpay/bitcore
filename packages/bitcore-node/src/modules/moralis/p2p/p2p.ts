@@ -52,7 +52,7 @@ export class MoralisP2PWorker extends BaseP2PWorker {
   }
 
   async getWeb3(): Promise<Web3> {
-    let connectionErrors: any[] = [];
+    const connectionErrors: any[] = [];
     try {
       try {
         await this.web3!.eth.getBlockNumber();
@@ -129,10 +129,10 @@ export class MoralisP2PWorker extends BaseP2PWorker {
           block = await web3.eth.getBlock(currentHeight, true);
           if (block && !this.stopping) {
             const blockEvent = EVMBlockStorage.convertRawBlock(this.chain, this.network, block);
-            await EventStorage.signalBlock(blockEvent)// .catch((e) => logger.error(`Error signaling ${this.chainNetworkStr} block event: %o`, e.stack || e.message || e));
+            await EventStorage.signalBlock(blockEvent);// .catch((e) => logger.error(`Error signaling ${this.chainNetworkStr} block event: %o`, e.stack || e.message || e));
             for (const tx of block.transactions) {
               const txEvent = EVMTransactionStorage.convertRawTx(this.chain, this.network, tx as any, blockEvent);
-              await EventStorage.signalTx(txEvent)// .catch((e) => logger.error(`Error signaling ${this.chainNetworkStr} tx event: %o`, e.stack || e.message || e));
+              await EventStorage.signalTx(txEvent);// .catch((e) => logger.error(`Error signaling ${this.chainNetworkStr} tx event: %o`, e.stack || e.message || e));
             }
             await StateStorage.setVerifiedBlockHeight({ chain: this.chain, network: this.network, height: currentHeight });
             currentHeight = block.number + 1;
@@ -253,7 +253,7 @@ export class MoralisP2PWorker extends BaseP2PWorker {
         if (webhook.source !== 'moralis') {
           return;
         }
-        coinEvents = this.csp.webhookToCoinEvents({ chain: this.chain, network: this.network, webhook })
+        coinEvents = this.csp.webhookToCoinEvents({ chain: this.chain, network: this.network, webhook });
         const result = await Promise.allSettled(coinEvents.map(evt => EventStorage.signalAddressCoin(evt))); 
         const someFulfilled = result.some(r => r.status === 'fulfilled' || (false && logger.error(`Error signaling ${this.chainNetworkStr} for webhook ${webhook._id?.toString()}: %o`, (r as PromiseRejectedResult).reason)));
         if (someFulfilled) {

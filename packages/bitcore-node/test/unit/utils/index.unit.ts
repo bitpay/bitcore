@@ -257,7 +257,7 @@ describe('Utils', function() {
     it('should handle null, undefined, NaN, objects and strings', function() {
       const array = 
       [NaN, NaN, new ObjectID('6f0d45b6dfeafa40f958afbf'), undefined, 
-       'bitcoin', null, 'bitcoin', undefined, 'txs', null];
+        'bitcoin', null, 'bitcoin', undefined, 'txs', null];
       const result = utils.uniq(array);
       const expectedResult = 
           [NaN, new ObjectID('6f0d45b6dfeafa40f958afbf'), undefined, 'bitcoin', null, 'txs'];
@@ -267,7 +267,7 @@ describe('Utils', function() {
 
   describe('merge', function() {
     it('should merge objects realistic to a config', function() {
-      let config = {
+      const config = {
         maxPoolSize: 50,
         port: 3000,
         chains: {},
@@ -289,28 +289,28 @@ describe('Utils', function() {
           storage: {}
         }
       };
-      let foundConfig = {
+      const foundConfig = {
         chains: {
           BTC: {
             mainnet: {},
             regtest: {
-              chainSource: "p2p",
+              chainSource: 'p2p',
               trustedPeers: [
                 {
-                  host: "127.0.0.1",
+                  host: '127.0.0.1',
                   port: 20020
                 }
               ],
               rpc: {
-                host: "127.0.0.1",
+                host: '127.0.0.1',
                 port: 20021,
-                username: "username",
-                password: "password"
+                username: 'username',
+                password: 'password'
               }
             }
           }
         }
-      }
+      };
 
       const expectedResult = {
         maxPoolSize: 50,
@@ -319,18 +319,18 @@ describe('Utils', function() {
           BTC: {
             mainnet: {},
             regtest: {
-              chainSource: "p2p",
+              chainSource: 'p2p',
               trustedPeers: [
                 {
-                  host: "127.0.0.1",
+                  host: '127.0.0.1',
                   port: 20020
                 }
               ],
               rpc: {
-                host: "127.0.0.1",
+                host: '127.0.0.1',
                 port: 20021,
-                username: "username",
-                password: "password"
+                username: 'username',
+                password: 'password'
               }
             }
           }

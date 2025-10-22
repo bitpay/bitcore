@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/****************************************
+/** **************************************
  *** This migration script will fix historical instances
  *** of an issue where inputs that were used in an RBF tx
  *** are left in a pending state if they are not used by
@@ -12,10 +12,11 @@
  *** select the chain and network to run against.
  *** You must have valid RPC connection specified in bitcore.config.json.
  ********************************************/
-const { CryptoRpc } = require('crypto-rpc');
-const { TransactionStorage } = require('../build/src/models/transaction');
-const { CoinStorage } = require('../build/src/models/coin');
 const fs = require('fs');
+const { CryptoRpc } = require('crypto-rpc');
+const { CoinStorage } = require('../build/src/models/coin');
+const { TransactionStorage } = require('../build/src/models/transaction');
+
 const fsPromises = fs.promises;
 const { Storage } = require('../build/src/services/storage');
 const { wait } = require('../build/src/utils/wait');
@@ -27,7 +28,7 @@ class Migration {
     this.coinModel = coinModel;
   }
   async connect() {
-    console.log("Attempting connection to the database...")
+    console.log('Attempting connection to the database...');
     try {
       if (!Storage.connected) {
         await Storage.start();
@@ -39,23 +40,23 @@ class Migration {
   }
 
   async endProcess() {
-    if (Storage.connected){
+    if (Storage.connected) {
       await Storage.stop();
     }
     process.exit();
   }
 
   processArgs(argv) {
-    let retArgs = {
+    const retArgs = {
       dryrun: true,
       chain: '',
       network: ''
     };
-    let args = argv.slice(2);
+    const args = argv.slice(2);
 
     const helpIdx = args.findIndex(i => i == '--help');
     if (helpIdx >= 0) {
-      console.log("Usage: node fixUnspentInputs.js --chain [CHAIN] --network [NETWORK] --dryrun [BOOL - default: true]");
+      console.log('Usage: node fixUnspentInputs.js --chain [CHAIN] --network [NETWORK] --dryrun [BOOL - default: true]');
       this.endProcess();
     }
 
@@ -65,8 +66,8 @@ class Migration {
         args[dryRunIdx + 1] == undefined || args[dryRunIdx + 1] == 'true'
           ? true
           : args[dryRunIdx + 1] == 'false'
-          ? false
-          : true;
+            ? false
+            : true;
     }
 
     const chainIdx = args.findIndex(i => i == '--chain');
@@ -80,7 +81,7 @@ class Migration {
     }
 
     if (!retArgs.chain || !retArgs.network) {
-      console.log("You must specify a chain and network for the script to run on. Use --help for more info.");
+      console.log('You must specify a chain and network for the script to run on. Use --help for more info.');
       this.endProcess();
     }
 
@@ -89,7 +90,7 @@ class Migration {
 
   async runScript(args) {
     console.log('Running script with these args: ', args);
-    let output = {};
+    const output = {};
     const { chain, network, dryrun } = args;
     console.log(`Checking records for ${chain}:${network}`);
     // Get all pending coins from valid transactions (mintHeight should be valid block height)
@@ -132,7 +133,7 @@ class Migration {
         });
         isUnspent = !!coinData;
       } catch (e) {
-        if (e.message && e.message.match(`No info found for ${data.mintTxid}`)){
+        if (e.message && e.message.match(`No info found for ${data.mintTxid}`)) {
           // Coin must be spent or actually pending in mempool - do nothing
         } else {
           // Lets log the error in case it is config related
@@ -187,8 +188,8 @@ migration
   .catch(err => {
     console.error(err);
     migration.endProcess()
-    .catch(err => { 
-      console.error(err);
-      process.exit(1);
-    });
+      .catch(err => { 
+        console.error(err);
+        process.exit(1);
+      });
   });

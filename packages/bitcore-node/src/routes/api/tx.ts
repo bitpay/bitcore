@@ -12,7 +12,7 @@ const router = Router({ mergeParams: true });
 router.get('/', async function(req: Request, res: Response) {
   try {
     let { chain, network } = req.params;
-    let { blockHeight, blockHash, limit, since, direction, paging } = req.query as any;
+    const { blockHeight, blockHash, limit, since, direction, paging } = req.query as any;
     if (!chain || !network) {
       return res.status(400).send('Missing required param');
     }
@@ -21,7 +21,7 @@ router.get('/', async function(req: Request, res: Response) {
     }
     chain = chain.toUpperCase();
     network = network.toLowerCase();
-    let payload: StreamTransactionsParams = {
+    const payload: StreamTransactionsParams = {
       chain,
       network,
       req,
@@ -73,8 +73,8 @@ router.get('/:txId', async (req: Request, res: Response) => {
 
 // Get transaction with input and outputs, assigned to key coins
 router.get('/:txId/populated', async (req: Request, res: Response) => {
-  let { chain, network, txId } = req.params;
-  let txid = txId;
+  const { chain, network, txId } = req.params;
+  const txid = txId;
   if (typeof txid !== 'string' || !chain || !network) {
     return res.status(400).send('Missing required param');
   }
@@ -147,7 +147,7 @@ router.get('/:txid/coins', (req: Request, res: Response, next) => {
 
 router.post('/send', async function(req: Request, res: Response) {
   let { chain, network } = req.params;
-  let { rawTx } = req.body;
+  const { rawTx } = req.body;
   try {
     if (typeof rawTx !== 'string' && !Array.isArray(rawTx)) {
       return res.status(400).send('Invalid rawTx');
@@ -157,7 +157,7 @@ router.post('/send', async function(req: Request, res: Response) {
     }
     chain = chain.toUpperCase();
     network = network.toLowerCase();
-    let txid = await ChainStateProvider.broadcastTransaction({
+    const txid = await ChainStateProvider.broadcastTransaction({
       chain,
       network,
       rawTx

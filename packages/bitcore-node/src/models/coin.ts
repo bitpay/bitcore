@@ -32,8 +32,8 @@ export class CoinModel extends BaseModel<ICoin> {
   }
 
   allowedPaging = [
-    { key: 'mintHeight' as 'mintHeight', type: 'number' as 'number' },
-    { key: 'spentHeight' as 'spentHeight', type: 'number' as 'number' }
+    { key: 'mintHeight' as const, type: 'number' as const },
+    { key: 'spentHeight' as const, type: 'number' as const }
   ];
 
   onConnect() {
@@ -66,7 +66,7 @@ export class CoinModel extends BaseModel<ICoin> {
   }
 
   async getBalance(params: { query: any }, options: CollectionAggregationOptions = {}) {
-    let { query } = params;
+    const { query } = params;
     const result = await this.collection
       .aggregate<{ _id: string; balance: number }>(
         [
@@ -105,7 +105,7 @@ export class CoinModel extends BaseModel<ICoin> {
   }
 
   async getBalanceAtTime(params: { query: any; time: string; chain: string; network: string }) {
-    let { query, time, chain, network } = params;
+    const { query, time, chain, network } = params;
     const [block] = await BitcoinBlockStorage.collection
       .find({
         $query: {
@@ -231,4 +231,4 @@ export class CoinModel extends BaseModel<ICoin> {
     return JSON.stringify(transform);
   }
 }
-export let CoinStorage = new CoinModel();
+export const CoinStorage = new CoinModel();

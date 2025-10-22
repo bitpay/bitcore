@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 const CWC = require('crypto-wallet-core');
-const { Storage } = require('../build/src/services/storage');
 const { TransactionStorage } = require('../build/src/models/transaction');
+const { Storage } = require('../build/src/services/storage');
 
 function usage(errMsg) {
   console.log('USAGE: ./fixReplacedTree.js <txid> <replacementTxid> [options]');
@@ -72,4 +72,4 @@ Storage.start()
     }
   })
   .catch(console.error)
-  .finally(Storage.stop.bind(Storage))
+  .finally(Storage.stop.bind(Storage));

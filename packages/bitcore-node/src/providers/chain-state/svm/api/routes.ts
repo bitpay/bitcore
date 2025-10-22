@@ -51,7 +51,7 @@ export class SVMRouter {
 
       network = network.toLowerCase();
       try {
-        let fee = await this.csp.getPriorityFee({ chain: this.chain, network, percentile: priorityFeePercentile });
+        const fee = await this.csp.getPriorityFee({ chain: this.chain, network, percentile: priorityFeePercentile });
         if (!fee) {
           return res.status(404).send('not available right now');
         }

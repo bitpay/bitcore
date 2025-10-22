@@ -42,7 +42,7 @@ export class GnosisApi {
 
   private MULTISIG_TX_PROPOSAL_EXPIRE_TIME = 48 * 3600 * 1000;
 
-  async multisigFor(chain: string,network: string, address: string) {
+  async multisigFor(chain: string, network: string, address: string) {
     const { web3 } = await getCSP(chain, network).getWeb3(network);
     const contract = new web3.eth.Contract(MultisigAbi as AbiItem[], address);
     return contract;
@@ -57,7 +57,7 @@ export class GnosisApi {
     const { web3 } = await getCSP(chain, network).getWeb3(network);
     const networkConfig: IEVMNetworkConfig = Config.chainConfig({ chain: 'ETH', network });
     const { gnosisFactory = this.gnosisFactories[chain][network] } = networkConfig;
-    let query = { chain, network, txid: txId };
+    const query = { chain, network, txid: txId };
     const found = await EVMTransactionStorage.collection.findOne(query);
     const blockHeight = found && found.blockHeight ? found.blockHeight : null;
     if (!blockHeight || blockHeight < 0) return Promise.resolve([]);

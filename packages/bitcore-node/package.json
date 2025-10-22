@@ -44,7 +44,8 @@
     "p2p": "npm run tsc && node build/src/workers/p2p.js",
     "precommit": "echo 'TODO: npm run fix && npm run lint'",
     "lint": "eslint .",
-    "fix": "eslint --fix --quiet .",
+    "fix:all": "eslint --fix .",
+    "fix:errors": "eslint --fix --quiet .",
     "test:scripts": "npx mocha scripts/test"
   },
   "nyc": {

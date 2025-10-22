@@ -275,7 +275,7 @@ describe('Pruning Service', function() {
     });
 
     it('should skip removing transactions still in mempool', async () => {
-      const rpcStub = sandbox.stub(RPC.prototype, 'getTransaction')
+      const rpcStub = sandbox.stub(RPC.prototype, 'getTransaction');
       rpcStub.onCall(0).resolves(null);
       rpcStub.onCall(1).resolves({});
       rpcStub.onCall(2).resolves(null);
@@ -309,7 +309,7 @@ describe('Pruning Service', function() {
     });
 
     it('should skip removing transactions on rpc error', async () => {
-      const rpcStub = sandbox.stub(RPC.prototype, 'getTransaction')
+      const rpcStub = sandbox.stub(RPC.prototype, 'getTransaction');
       rpcStub.onCall(0).rejects({ code: -1, message: 'hahaha' });
       await insertOldTx();
       const { chain, network } = oldMempoolTx;
@@ -335,7 +335,7 @@ describe('Pruning Service', function() {
     });
 
     it('should skip removing transactions if coin has >0 confs', async () => {
-      const rpcStub = sandbox.stub(RPC.prototype, 'getTransaction')
+      const rpcStub = sandbox.stub(RPC.prototype, 'getTransaction');
       rpcStub.onCall(0).rejects({ code: -5, message: 'already exists' });
       const oldMempoolTx2OutputHeight = oldMempoolTx2Output.mintHeight;
       oldMempoolTx2Output.mintHeight = 1;

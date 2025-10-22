@@ -5,9 +5,9 @@ import { ChainStateProvider } from '../../providers/chain-state';
 const router = express.Router({ mergeParams: true });
 
 router.get('/:input', async function(req: Request, res) {
-  let { chain, network, input } = req.params;
+  const { chain, network, input } = req.params;
   try {
-    let isValid = await ChainStateProvider.isValid({
+    const isValid = await ChainStateProvider.isValid({
       chain,
       network,
       input

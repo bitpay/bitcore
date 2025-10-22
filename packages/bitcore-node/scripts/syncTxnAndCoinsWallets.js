@@ -6,9 +6,9 @@
  */
 
 const fs = require('fs');
-const { Storage } = require('../build/src/services/storage');
-const { TransactionStorage } = require('../build/src/models/transaction');
 const { CoinStorage } = require('../build/src/models/coin');
+const { TransactionStorage } = require('../build/src/models/transaction');
+const { Storage } = require('../build/src/services/storage');
 
 function usage(err) {
   if (err) {

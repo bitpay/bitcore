@@ -1,8 +1,8 @@
+import { Readable } from 'stream';
+import util from 'util';
 import { CryptoRpc } from 'crypto-rpc';
 import { ObjectId } from 'mongodb';
 import request from 'request';
-import { Readable } from 'stream';
-import util from 'util';
 import { AccountTxRequest, AccountTxResponse } from 'xrpl/dist/npm/models';
 import { Ledger } from 'xrpl/dist/npm/models/ledger';
 import {
@@ -52,11 +52,11 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
       const networkConfig = this.config[network];
       const provider = networkConfig.provider;
       RippleStateProvider.clients[network] = new CryptoRpc({
-          chain: this.chain,
-          host: provider.host,
-          rpcPort: provider.port,
-          protocol: provider.protocol 
-        }).get(this.chain);
+        chain: this.chain,
+        host: provider.host,
+        rpcPort: provider.port,
+        protocol: provider.protocol 
+      }).get(this.chain);
       await RippleStateProvider.clients[network].rpc.connect();
     }
 
@@ -270,7 +270,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
   }
 
   streamTxs<T>(txs: Array<T>, stream: Readable) {
-    for (let tx of txs) {
+    for (const tx of txs) {
       stream.push(tx);
     }
   }
@@ -281,8 +281,8 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     const serverInfo = await client.getServerInfo();
     const ledgers = serverInfo.complete_ledgers.split('-');
     const minLedgerIndex = Number(ledgers[0]);
-    let allTxs: AccountTxResponse['result']['transactions'] = [];
-    let limit = Number(limitArg) || 100;
+    const allTxs: AccountTxResponse['result']['transactions'] = [];
+    const limit = Number(limitArg) || 100;
     const options = {
       ledger_index_min: minLedgerIndex,
       limit,
@@ -306,7 +306,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
         marker: txs.marker,
         limit,
         binary: false
-      }});
+      } });
       allTxs.push(...txs.transactions);
     }
     return allTxs;
@@ -323,7 +323,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
 
   async streamTransactions(params: StreamTransactionsParams) {
     const client = await this.getClient(params.network);
-    let { blockHash } = params.args;
+    const { blockHash } = params.args;
     const { ledger } = await client.getBlock({ hash: blockHash, transactions: true });
     const readable = new Readable({ objectMode: true });
     const txs = ledger.transactions || [];
@@ -491,7 +491,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     outputs: Array<ICoin> | any
   ): Promise<{ transaction: IXrpTransaction; coins: Array<ICoin> }> {
     const address = tx.from;
-    let involvedAddress = [address];
+    const involvedAddress = [address];
     const transaction = { ...tx, wallets: new Array<ObjectId>() };
     let coins = new Array<ICoin>();
     if (Array.isArray(outputs)) {

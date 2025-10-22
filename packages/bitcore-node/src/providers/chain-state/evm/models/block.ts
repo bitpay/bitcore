@@ -284,4 +284,4 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
   }
 }
 
-export let EVMBlockStorage = new EVMBlockModel();
+export const EVMBlockStorage = new EVMBlockModel();

@@ -1,4 +1,5 @@
 const bitcoreLib = require('bitcore-lib');
+
 const { Transaction, PrivateKey } = bitcoreLib;
 const UnspentOutput = Transaction.UnspentOutput;
 
@@ -15,7 +16,7 @@ function randomHash() {
 function* generateBlocks(blockCount: number, blockSizeMb: number) {
   let prevBlock: BitcoinBlockType | undefined = undefined;
   for (let i = 0; i < blockCount; i++) {
-    let tempBlock = generateBlock(blockSizeMb, prevBlock);
+    const tempBlock = generateBlock(blockSizeMb, prevBlock);
     yield tempBlock;
     prevBlock = tempBlock;
   }
@@ -23,7 +24,7 @@ function* generateBlocks(blockCount: number, blockSizeMb: number) {
 
 function preGenerateBlocks(blockCount: number, blockSizeMb: number) {
   const blocks = new Array<BitcoinBlockType>();
-  for (let block of generateBlocks(blockCount, blockSizeMb)) {
+  for (const block of generateBlocks(blockCount, blockSizeMb)) {
     blocks.push(block);
   }
   return blocks;
@@ -32,7 +33,7 @@ function preGenerateBlocks(blockCount: number, blockSizeMb: number) {
 function generateBlock(blockSizeMb: number, previousBlock?: BitcoinBlockType): BitcoinBlockType {
   const txAmount = 100000;
   const prevHash = previousBlock ? previousBlock.hash : '';
-  let block: BitcoinBlockType = {
+  const block: BitcoinBlockType = {
     hash: randomHash(),
     transactions: [],
     toBuffer: () => {
@@ -62,9 +63,9 @@ function generateBlock(blockSizeMb: number, previousBlock?: BitcoinBlockType): B
       }
     }
   };
-  let transactions = new Array<any>();
+  const transactions = new Array<any>();
   if (previousBlock) {
-    for (let transaction of previousBlock.transactions) {
+    for (const transaction of previousBlock.transactions) {
       // each transaction should have one input and one output
       const utxos = transaction.outputs.map(output => {
         return new UnspentOutput({
@@ -75,34 +76,34 @@ function generateBlock(blockSizeMb: number, previousBlock?: BitcoinBlockType): B
           amount: Number(txAmount)
         });
       });
-      let newTx = new Transaction().from(utxos);
-      for (let _ of newTx.inputs) {
+      const newTx = new Transaction().from(utxos);
+      for (const _ of newTx.inputs) {
         newTx.to(newAddress(), txAmount);
       }
       transactions.push(newTx);
     }
     block.transactions = transactions;
   } else {
-    let txPerMb = 2500;
-    let blockSize = txPerMb * blockSizeMb;
+    const txPerMb = 2500;
+    const blockSize = txPerMb * blockSizeMb;
     for (let i = 0; i < blockSize; i++) {
-      let newTx = new Transaction().to(newAddress(), txAmount);
+      const newTx = new Transaction().to(newAddress(), txAmount);
       block.transactions.push(newTx);
     }
   }
   return block;
 }
 
-let addresses = new Array<string>();
+const addresses = new Array<string>();
 for (let i = 0; i < 100; i++) {
-  var privateKey = new PrivateKey();
-  var publicKey = privateKey.toPublicKey();
-  var address = publicKey.toAddress().toString();
+  const privateKey = new PrivateKey();
+  const publicKey = privateKey.toPublicKey();
+  const address = publicKey.toAddress().toString();
   addresses.push(address);
 }
 
 function newAddress() {
-  let index = Math.floor(Math.random() * 100);
+  const index = Math.floor(Math.random() * 100);
   return addresses[index];
 }
 
@@ -121,7 +122,7 @@ async function benchmark(blockCount: number, blockSizeMb: number) {
   const blocks = preGenerateBlocks(blockCount, blockSizeMb);
   const startTime = new Date();
   console.log('Adding blocks');
-  for (let block of blocks) {
+  for (const block of blocks) {
     process.stdout.write('.');
     await BitcoinBlockStorage.addBlock({ block, chain: 'BENCH', network: 'MARK', initialSyncComplete: false });
   }
