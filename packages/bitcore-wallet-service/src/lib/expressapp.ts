@@ -2386,7 +2386,7 @@ export class ExpressApp {
       next();
     });
 
-    const staticPath = path.join(__dirname, '../../static');
+    const staticPath = path.join(__dirname, '../../../static');
     this.app.use('/bws/static', express.static(staticPath));
 
     this.app.use(opts.basePath || '/bws/api', router);
