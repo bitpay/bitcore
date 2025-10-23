@@ -613,8 +613,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     const seen = {};
     const batchStream = CoinStorage.collection.find({ mintTxid: forTx, mintHeight: { $ne: SpentHeightIndicators.conflicting } });
 
-    for await (const doc of batchStream) {
-      const coin = doc as ICoin;
+    for await (const coin of batchStream as AsyncIterable<ICoin>) {
       seen[coin.mintTxid] = true;
       yield coin;
       

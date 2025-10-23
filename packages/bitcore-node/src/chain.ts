@@ -1,11 +1,15 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
-module.exports = {
+import BitcoreLib from 'bitcore-lib';
+import BitcoreLibCash from 'bitcore-lib-cash';
+import BitcoreP2P from 'bitcore-p2p';
+import BitcoreP2PCash from 'bitcore-p2p-cash';
+
+export default {
   BTC: {
-    lib: require('bitcore-lib'),
-    p2p: require('bitcore-p2p')
+    lib: BitcoreLib,
+    p2p: BitcoreP2P
   },
   BCH: {
-    lib: require('bitcore-lib-cash'),
-    p2p: require('bitcore-p2p-cash')
+    lib: BitcoreLibCash,
+    p2p: BitcoreP2PCash
   }
 };

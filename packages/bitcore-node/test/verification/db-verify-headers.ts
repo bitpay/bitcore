@@ -26,8 +26,7 @@ if (require.main === module) {
       .sort({ height: 1 })
       .stream();
 
-    for await (const doc of blockStream) {
-      const locatorBlock = doc as IBtcBlock;
+    for await (const locatorBlock of blockStream as AsyncIterable<IBtcBlock>) {
       let success = true;
       if (checkHeight !== locatorBlock.height) {
         const error = {
