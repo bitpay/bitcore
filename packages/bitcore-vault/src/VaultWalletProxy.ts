@@ -66,7 +66,8 @@ export class VaultWalletProxy {
          */
         this.secureProcess = fork(secureProcessPath, [], {
           // stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
-          execArgv: ['--secure-heap=32768'],
+          execArgv: ['--secure-heap=32768'], // don't change unless you know what you're doing - ONLY --secure-heap=n allowed
+          env: {}, // zeroed environment
           // env: { ...process.env, NODE_OPTIONS: '' },
           // detached: false
         });

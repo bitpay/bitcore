@@ -1,13 +1,29 @@
+import net from 'node:net';
+import inspector from 'node:inspector';
 import { secureHeapUsed } from 'crypto';
 
 export class SecurityManager {
   private secureHeapBaseAllocation: number;
     
-  constructor() {}
+  constructor() {
+    
+  }
 
-  public runSecurityCheck(): { result: boolean; reason?: string } {
+  public async runAllSecurityChecks(): Promise<{ result: boolean; reason?: string }> {
+    const quickChecks = this.runQuickSecurityCheck();
+    if (!quickChecks.reason) {
+      return quickChecks;
+    }
+    const slowChecks = await this.runSlowSecurityCheck();
+    if (!slowChecks.result) {
+      return slowChecks;
+    }
+    return { result: true };
+  }
+
+  public runQuickSecurityCheck(): { result: boolean; reason?: string } {
     try {
-      if (!this.isSecureHeapEnabled()) {
+      if (!SecurityManager.isSecureHeapEnabled()) {
         return { result: false, reason: 'Secure heap is not enabled' };
       }
     
@@ -15,33 +31,37 @@ export class SecurityManager {
       if (!secureHeapAllocationVerified) {
         return { result: false, reason: `Secure heap allocation verification failed - expected: ${expected}, actual: ${actual}` };
       }
+
+      if (SecurityManager.inspectorUrlExists()) {
+        return { result: false, reason: 'Inspector url detected' };
+      }
       return { result: true };
     } catch (err) {
       return { result: false, reason: err.message };
     }
   }
 
+  public async runSlowSecurityCheck(): Promise<{ result: boolean; reason?: string }> {
+    if (await SecurityManager.probeDebugPort()) {
+      return { result: false, reason: 'Open debug port detected' };
+    }
+    return { result: true };
+  }
+
   /**
      * Kills process if false
      */
-  public isSecureHeapEnabled(): boolean {
+  public static isSecureHeapEnabled(): boolean {
     const { total } = secureHeapUsed();
     return total > 0;
   }
     
   public secureHeapAllocationCheck(): boolean {
-    return this.secureHeapBaseAllocation >= this.getCurrentSecureHeapAllocation();
+    return this.secureHeapBaseAllocation >= SecurityManager.getCurrentSecureHeapAllocation();
   } 
 
-  /**
-     * Kills process if true
-     */
-  public isDebuggerDetected(): boolean {
-    return false;
-  }
-
   // Helpers
-  public getCurrentSecureHeapAllocation(): number {
+  public static getCurrentSecureHeapAllocation(): number {
     const { used } = secureHeapUsed();
     return used;
   }
@@ -55,7 +75,7 @@ export class SecurityManager {
      * @TODO - behaviors on failure conditions
      */
   public VerifyExpectedSecureHeapAllocation(): { verified: boolean; actual: number; expected: number } {
-    const currentAllocation = this.getCurrentSecureHeapAllocation();
+    const currentAllocation = SecurityManager.getCurrentSecureHeapAllocation();
     if (typeof currentAllocation !== 'number' || currentAllocation <= 0) {
       throw new Error('Messed up stuff - TODO');
     }
@@ -64,12 +84,39 @@ export class SecurityManager {
     }
 
     /**
-         * @IMPLEMENTATION NOTE: This is a naive measurement that may not always hold up - it needs a critical assessment
-         */
+     * @IMPLEMENTATION NOTE: This is a naive measurement that may not always hold up - it needs a critical assessment
+     */
     return {
       verified: currentAllocation >= this.secureHeapBaseAllocation,
       actual: currentAllocation,
       expected: this.secureHeapBaseAllocation
     };
+  }
+
+  // Returns true if probe finds live debug port
+  private static async probeDebugPort(timeoutMs = 150): Promise<boolean> {
+    try {
+      const port = Number((process as any).debugPort || 0);
+      if (!Number.isFinite(port) || port <= 0) return false;
+      const net = await import('node:net');
+      return await new Promise<boolean>((resolve) => {
+        const sock = net.createConnection({ host: '127.0.0.1', port });
+        const done = (v: boolean) => { try { sock.destroy(); } catch {} resolve(v); };
+        const t = setTimeout(() => done(false), Math.min(Math.max(1, timeoutMs), 150));
+        sock.once('connect', () => { clearTimeout(t); done(true); });
+        sock.once('error', () => { clearTimeout(t); done(false); });
+      });
+    } catch {
+      return true;
+    }
+  }
+
+  private static inspectorUrlExists() {
+    try {
+      const url = inspector.url?.();
+      return typeof url === 'string' && url.length > 0;
+    } catch {
+      return true;
+    }
   }
 }

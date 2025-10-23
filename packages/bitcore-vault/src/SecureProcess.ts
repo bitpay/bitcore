@@ -1,7 +1,10 @@
 import * as crypto from 'crypto';
+import inspector from 'node:inspector';
 import { StorageType } from '../../bitcore-client/src/types/storage';
 import { SecurityManager } from './SecurityManager';
 import { VaultWallet } from './VaultWallet';
+import { installSignalPolicyHard } from './SignalHardening';
+import { inspect } from 'node:util';
 
 // Define a type for the wallet entry in our map
 interface WalletEntry {
@@ -21,12 +24,14 @@ export class SecureProcess {
   private publicKey: crypto.KeyObject;
   private wallets: Map<string, WalletEntry>;
   private securityManager: SecurityManager;
-  private securityCheckInterval: NodeJS.Timeout | null = null;
+  private securityQuickCheckInterval: NodeJS.Timeout | null = null;
+  private securitySlowCheckInterval: NodeJS.Timeout | null = null;
   private readonly securityCheckIntervalMs: number = 30000; // 30 seconds
 
   constructor() {
     this.securityManager = new SecurityManager();
-    if (!this.securityManager.isSecureHeapEnabled()) {
+    // Initial security checks
+    if (!SecurityManager.isSecureHeapEnabled()) {
       console.error('Secure heap not enabled - secure process terminating');
       process.exit(1);
     }
@@ -101,7 +106,7 @@ export class SecureProcess {
     // Ensure secure heap allocation settles before getting secure heap allocation baseline
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    const allocationBefore = this.securityManager.getCurrentSecureHeapAllocation();
+    const allocationBefore = SecurityManager.getCurrentSecureHeapAllocation();
     // Validate allocation measurement is a valid number
     if (typeof allocationBefore !== 'number' || allocationBefore < 0) {
       throw new Error(`Invalid secure heap allocation measurement: ${allocationBefore}`);
@@ -118,7 +123,7 @@ export class SecureProcess {
 
     // Ensure secure heap allocation settles before getting secure heap allocation after key creation
     await new Promise(resolve => setTimeout(resolve, 500));
-    const allocationAfter = this.securityManager.getCurrentSecureHeapAllocation();
+    const allocationAfter = SecurityManager.getCurrentSecureHeapAllocation();
 
     // Validate allocation measurement is a valid number
     if (typeof allocationAfter !== 'number' || allocationAfter < 0) {
@@ -137,29 +142,63 @@ export class SecureProcess {
     this.privateKey = keypair.privateKey;
     this.securityManager.setBaselineSecureHeapAllocation(allocationAfter - allocationBefore);
 
-    // Start the security check interval
-    this.startSecurityCheckInterval();
+    // Start the security check intervals
+    this.startSecurityCheckIntervals();
   }
 
-  private startSecurityCheckInterval() {
-    this.securityCheckInterval = setInterval(() => {
-      console.log('Running security check'); // FOR DEV USE ONLY - REMOVE
-      const checkResult = this.securityManager.runSecurityCheck();
+  private startSecurityCheckIntervals() {
+    // Start quick security check interval
+    this.securityQuickCheckInterval = setInterval(() => {
+      console.log('Running quick security check'); // FOR DEV USE ONLY - REMOVE
+      const checkResult = this.securityManager.runQuickSecurityCheck();
       if (!checkResult?.result) {
-        console.error(`Security check failed: ${checkResult.reason}`);
+        console.error(`Quick security check failed: ${checkResult.reason}`);
         // @TODO: Implement proper teardown/remediation
         process.exit(1);
       }
 
       // Proof of concept log - must be removed
       if (checkResult.result === true) {
-        console.log('Security checks passed');
+        console.log('Quick security checks passed');
       }
     }, this.securityCheckIntervalMs);
+
+    // Start slow security check interval
+    this.securitySlowCheckInterval = setInterval(async () => {
+      try {
+        console.log('Running slow security check'); // FOR DEV USE ONLY - REMOVE
+        const checkResult = await this.securityManager.runSlowSecurityCheck();
+        if (!checkResult?.result) {
+          console.error(`Slow security check failed: ${checkResult.reason}`);
+          // @TODO: Implement proper teardown/remediation
+          process.exit(1);
+        }
+
+        // Proof of concept log - must be removed
+        if (checkResult.result === true) {
+          console.log('Slow security checks passed');
+        }
+      } catch (err) {
+        console.error('Error during slow security check:', err);
+        process.exit(1);
+      }
+    }, 5000);
+  }
+
+  private cleanupSecurityCheckIntervals() {
+    if (this.securityQuickCheckInterval) {
+      clearInterval(this.securityQuickCheckInterval);
+      this.securityQuickCheckInterval = null;
+    }
+    if (this.securitySlowCheckInterval) {
+      clearInterval(this.securitySlowCheckInterval);
+      this.securitySlowCheckInterval = null;
+    }
+    console.log('Security check intervals cleaned up');
   }
 
   private checkSecureHeap(): boolean {
-    return this.securityManager.isSecureHeapEnabled();
+    return SecurityManager.isSecureHeapEnabled();
   }
 
   private getPublicKey(): string {
@@ -199,7 +238,7 @@ export class SecureProcess {
     // Decrypt the passphrase with the private key
     let passphrase: Buffer<ArrayBufferLike> | null = null;
     try {
-      console.log('Before passphrase decrypt - alloc:', this.securityManager.getCurrentSecureHeapAllocation());
+      console.log('Before passphrase decrypt - alloc:', SecurityManager.getCurrentSecureHeapAllocation());
       passphrase = crypto.privateDecrypt(
         {
           key: this.privateKey,
@@ -208,12 +247,12 @@ export class SecureProcess {
         },
         encryptedPassphraseBuffer
       );
-      console.log('After passphrase decrypt - alloc:', this.securityManager.getCurrentSecureHeapAllocation());
+      console.log('After passphrase decrypt - alloc:', SecurityManager.getCurrentSecureHeapAllocation());
 
       // This method is responsible for its own cleanup of the passphrase buffer.
       // We wrap this in a try/finally as a defense-in-depth measure.
       const { success: returnedSuccess } = await walletEntry.wallet.checkPassphrase(passphrase);
-      console.log('After passphrase check', this.securityManager.getCurrentSecureHeapAllocation());
+      console.log('After passphrase check', SecurityManager.getCurrentSecureHeapAllocation());
       success = returnedSuccess;
     } finally {
       if (Buffer.isBuffer(passphrase)) {
@@ -230,9 +269,139 @@ export class SecureProcess {
 
     return { success };
   }
+
+  public async cleanupSecureProcess(): Promise<void> {
+    try {
+      console.log('Starting secure process cleanup...');
+
+      // 1. Iterate over wallets and zeroize passphrases before clearing
+      for (const [name, walletEntry] of this.wallets.entries()) {
+        try {
+          // Zeroize passphrase buffer if it exists
+          if (Buffer.isBuffer(walletEntry.passphrase)) {
+            crypto.randomFillSync(walletEntry.passphrase);
+          }
+          // Remove wallet from map entirely to allow garbage collection
+          this.wallets.delete(name);
+        } catch (err) {
+          console.error(`Error cleaning up wallet ${name}:`, err);
+        }
+      }
+
+      // 2. Clear the wallets map itself
+      this.wallets.clear();
+      (this.wallets as any) = null;
+
+      // 3. Zeroize and null the private and public keys
+      // Note: KeyObjects are managed by crypto module; nulling the reference
+      // doesn't guarantee immediate memory cleanup, but it helps GC
+      (this.privateKey as any) = null;
+      (this.publicKey as any) = null;
+
+      // 4. Stop security check intervals
+      this.cleanupSecurityCheckIntervals();
+
+      console.log('Secure process cleanup completed');
+    } catch (err) {
+      console.error('Error during cleanup:', err);
+      // Continue with exit even if cleanup errors
+    }
+  }
 }
 
 // Instantiate and run the secure process
 if (require.main === module) {
-  new SecureProcess();
+  const secureProcessInstance = new SecureProcess();
+  // lockdownProcess() MUST BE called after instance creation so cleanup has access to it
+  lockdownProcess(async () => {
+    await secureProcessInstance.cleanupSecureProcess();
+  });
+
+    // run one-time checks
+    (async () => {
+      if (
+        checkInspectFlagsAtLaunch() ||
+        checkInspectorActiveAtLaunch() ||
+        (await checkDebugPortReachableOnce())
+      ) {
+        process.exit(1);
+      }
+    })()
+    .catch(() => {
+      console.error('Startup check failed');
+      process.exit(1);
+    });
+}
+
+function lockdownProcess(onShutdown?: () => void | Promise<void>): void {
+  try {
+  // Signal lockdown
+  installSignalPolicyHard(async () => {
+    if (onShutdown) {
+      await onShutdown();
+    }
+  }); } catch {
+    console.error('Signal policy hardening failed');
+    process.exit(1);
+  }
+
+  // Explict inspector check - should 
+  try {
+    inspector.close();
+  } catch {/** no op - expected if inspector not available on child fork */}
+
+  // Inspector override
+  try {
+    // Prevent programmatic reopen
+    Object.defineProperty(inspector, 'open', {
+      value() { throw new Error('Debugger is disabled for this process.'); },
+      writable: false, configurable: false, enumerable: true
+    });
+    Object.freeze(inspector);
+  } catch (err) {
+    console.error('Inspector override failed');
+    process.exit(1);
+  }
+
+
+}
+
+function checkInspectFlagsAtLaunch(): boolean {
+  try {
+    const argv = (process.execArgv || []).join(' ');
+    const nodeOpts = String(process.env.NODE_OPTIONS || '');
+    const rx = /--inspect(?:-brk)?\b|--inspect-port\b/;
+    return rx.test(argv) || rx.test(nodeOpts);
+  } catch {
+    console.error('checkInspectFlagsAtLaunch failed');
+    return true;
+  }
+}
+
+function checkInspectorActiveAtLaunch(): boolean {
+  try {
+    const url = inspector.url?.();
+    return typeof url === 'string' && url.length > 0;
+  } catch {
+    console.error('checkInspectorActiveAtLaunch failed');
+    return true;
+  }
+}
+
+async function checkDebugPortReachableOnce(timeoutMs = 150): Promise<boolean> {
+  try {
+    const port = Number((process as any).debugPort || 0);
+    if (!Number.isFinite(port) || port <= 0) return false;
+    const net = await import('node:net');
+    return await new Promise<boolean>((resolve) => {
+      const sock = net.createConnection({ host: '127.0.0.1', port });
+      const done = (v: boolean) => { try { sock.destroy(); } catch {} resolve(v); };
+      const t = setTimeout(() => done(false), Math.min(Math.max(1, timeoutMs), 150));
+      sock.once('connect', () => { clearTimeout(t); done(true); });
+      sock.once('error', () => { clearTimeout(t); done(false); });
+    });
+  } catch {
+    console.error('checkDebugPortReachableOnce failed');
+    return true;
+  }
 }
