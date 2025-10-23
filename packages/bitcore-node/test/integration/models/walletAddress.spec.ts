@@ -1,7 +1,7 @@
-import {expect} from 'chai';
+import { expect } from 'chai';
 
-describe('WalletAddress Model', function(){
-    it('should have a test which runs', function(){
-        expect(true).to.equal(true);
-    });
+describe('WalletAddress Model', function() {
+  it('should have a test which runs', function() {
+    expect(true).to.equal(true);
+  });
 });

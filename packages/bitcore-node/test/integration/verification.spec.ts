@@ -93,6 +93,7 @@ function addCoin() {
 }
 
 describe('VerificationPeer', function() {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(500000);
   before(intBeforeHelper);

@@ -21,6 +21,7 @@ describe('Ethereum API', function() {
   const chain = 'ETH';
   const network = 'regtest';
 
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
   before(intBeforeHelper);
@@ -95,8 +96,8 @@ describe('Ethereum API', function() {
     const chain = 'ETH';
     const network = 'mainnet';
     const rpc = {
-      estimateMaxPriorityFee: ({}) => { return 2; },
-      estimateFee: ({}) => { return 4; }
+      estimateMaxPriorityFee: () => { return 2; },
+      estimateFee: () => { return 4; }
     };
     let err;
 
@@ -111,10 +112,10 @@ describe('Ethereum API', function() {
       expect(fee).to.deep.eq(cached);
       // priority fee
       const cacheKeyPriorityFee = `getFee-${chain}-${network}-priorityFee-15`;
-      const priorityFee  = await ETH.getPriorityFee({ chain, network, percentile: 15 });
+      const priorityFee = await ETH.getPriorityFee({ chain, network, percentile: 15 });
       expect(priorityFee).to.exist;
       expect(priorityFee.feerate).to.equal(2);
-      const cachedPriorityFee  = await CacheStorage.getGlobal(cacheKeyPriorityFee);
+      const cachedPriorityFee = await CacheStorage.getGlobal(cacheKeyPriorityFee);
       expect(priorityFee).to.deep.eq(cachedPriorityFee);
     } catch (error) {
       err = error;
@@ -155,7 +156,7 @@ describe('Ethereum API', function() {
         gasPrice: 10 * 1e9
       } as IEVMTransactionInProcess;
     });
-    await CacheStorage.collection.remove({})
+    await CacheStorage.collection.remove({});
     await EVMTransactionStorage.collection.deleteMany({});
     await EVMTransactionStorage.collection.insertMany(txs);
     let estimates = await Promise.all([1, 2, 3, 4].map(target => ETH.getFee({ network, target })));
@@ -327,10 +328,10 @@ describe('Ethereum API', function() {
   });
 
   describe('#streamWalletTransactions', () => {
-    let sandbox = sinon.createSandbox();
-    let chain = 'ETH';
-    let network = 'mainnet';
-    let address = '0x1Eee23160Db790ee48Fd39871A64b13e76Fc2C3C';
+    const sandbox = sinon.createSandbox();
+    const chain = 'ETH';
+    const network = 'mainnet';
+    const address = '0x1Eee23160Db790ee48Fd39871A64b13e76Fc2C3C';
     let wallet: IWallet = {
       chain,
       network,
@@ -338,13 +339,13 @@ describe('Ethereum API', function() {
       name: 'this-name',
       singleAddress: false,
       path: 'm/0/0'
-    }
-    let web3 = new Web3();
+    };
+    const web3 = new Web3();
 
     before(async () => {
       const res = await WalletStorage.collection.findOneAndUpdate({ name: wallet.name }, { $set: wallet }, { returnOriginal: false, upsert: true });
       wallet = res.value as IWallet;
-      await WalletAddressStorage.collection.updateOne({ network, address }, { $set: { chain, network, wallet: (wallet._id as ObjectId), processed: true, address } }, { upsert: true })
+      await WalletAddressStorage.collection.updateOne({ network, address }, { $set: { chain, network, wallet: (wallet._id as ObjectId), processed: true, address } }, { upsert: true });
       sandbox.stub(ETH, 'getWeb3').resolves({ web3 });
     });
 
@@ -407,7 +408,7 @@ const streamWalletTransactionsTest = async (chain: string, network: string, incl
     txs.push({
       ...txs[0],
       blockHeight: -3
-    })
+    });
   }
   // Add wallet object ID to transactions
   for (const tx of txs) {
@@ -485,7 +486,7 @@ const streamDexWalletTransactions = async (chain, network, wallet, address, web3
   await new Promise((resolve, reject) => {
     res.on('data', (data) => {
       try {
-        const doc = JSON.parse(data.toString())
+        const doc = JSON.parse(data.toString());
         if (doc.error) {
           totalRejected += BigInt(doc.satoshis);
         } else {
@@ -502,10 +503,10 @@ const streamDexWalletTransactions = async (chain, network, wallet, address, web3
 
     res.on('finish', () => {
       try {
-        let totalETH = web3.utils.fromWei(total.toString());
-        let totalRejectedETH = web3.utils.fromWei(totalRejected.toString());
-        let totalFeeETH = web3.utils.fromWei(totalFee.toString());
-        let balanceETH = web3.utils.fromWei((total - totalFee).toString());
+        const totalETH = web3.utils.fromWei(total.toString());
+        const totalRejectedETH = web3.utils.fromWei(totalRejected.toString());
+        const totalFeeETH = web3.utils.fromWei(totalFee.toString());
+        const balanceETH = web3.utils.fromWei((total - totalFee).toString());
 
         // Need to slice b/c we're using Number rounding instead of BigInt
         expect(balanceETH.slice(0, -5)).to.equal('309.666283810972788445'.slice(0, -5));

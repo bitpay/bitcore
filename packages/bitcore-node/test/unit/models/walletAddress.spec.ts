@@ -8,7 +8,7 @@ describe('WalletAddress Model', function() {
 
   describe('_apiTransform', () => {
     it('should return transform object with wallet addresses', () => {
-      let walletAddress: IWalletAddress = {
+      const walletAddress: IWalletAddress = {
         address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf'
       } as IWalletAddress;
 
@@ -21,7 +21,7 @@ describe('WalletAddress Model', function() {
       expect(parseResult).to.deep.equal({ address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf' });
     });
     it('should return the raw transform object if options field exists and set to true', () => {
-      let walletAddress: IWalletAddress = {
+      const walletAddress: IWalletAddress = {
         address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf'
       } as IWalletAddress;
 

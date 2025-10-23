@@ -31,8 +31,8 @@ export class ConfigService {
 
   public chainNetworks(): Array<ChainNetwork> {
     const chainNetworks = new Array<ChainNetwork>();
-    for (let chain of this.chains()) {
-      for (let network of this.networksFor(chain)) {
+    for (const chain of this.chains()) {
+      for (const network of this.networksFor(chain)) {
         chainNetworks.push({ chain, network });
       }
     }
@@ -54,7 +54,7 @@ export class ConfigService {
     return disabled;
   }
 
-  public aliasFor({chain, network}: { chain: string, network: string }) {
+  public aliasFor({ chain, network }: { chain: string, network: string }) {
     let aliasChain = chain;
     let aliasNetwork = network;
     const aliasMapping = this.get().aliasMapping;

@@ -3,8 +3,8 @@ import logger from '../logger';
 import { StorageService } from '../services/storage';
 import { IBlock } from '../types/Block';
 import { SpentHeightIndicators } from '../types/Coin';
-import { BitcoinBlockType, BitcoinHeaderObj } from '../types/namespaces/Bitcoin';
 import { TransformOptions } from '../types/TransformOptions';
+import { BitcoinBlockType, BitcoinHeaderObj } from '../types/namespaces/Bitcoin';
 import { MongoBound } from './base';
 import { BaseBlock } from './baseBlock';
 import { CoinStorage } from './coin';
@@ -262,4 +262,4 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
   }
 }
 
-export let BitcoinBlockStorage = new BitcoinBlock();
+export const BitcoinBlockStorage = new BitcoinBlock();

@@ -25,7 +25,7 @@ export class WalletModel extends BaseModel<IWallet> {
   }
 
   _apiTransform(wallet: IWallet, options?: TransformOptions) {
-    let transform = { name: wallet.name, pubKey: wallet.pubKey };
+    const transform = { name: wallet.name, pubKey: wallet.pubKey };
     if (options && options.object) {
       return transform;
     }
@@ -33,13 +33,13 @@ export class WalletModel extends BaseModel<IWallet> {
   }
 
   async updateCoins(wallet: IWallet) {
-    let addressModels = await WalletAddressStorage.collection
+    const addressModels = await WalletAddressStorage.collection
       .find({ wallet: wallet._id })
       .addCursorFlag('noCursorTimeout', true)
       .toArray();
-    let addresses = addressModels.map(model => model.address);
+    const addresses = addressModels.map(model => model.address);
     return WalletAddressStorage.updateCoins({ wallet, addresses });
   }
 }
 
-export let WalletStorage = new WalletModel();
+export const WalletStorage = new WalletModel();

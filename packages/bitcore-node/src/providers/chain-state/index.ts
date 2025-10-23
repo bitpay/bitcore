@@ -120,7 +120,7 @@ class ChainStateProxy implements IChainStateProvider {
   }
 
   registerService(chain: string, network: string, service: IChainStateService) {
-    services[chain] = services[chain] || {}
+    services[chain] = services[chain] || {};
     services[chain][network] = service;
   }
 
@@ -148,4 +148,4 @@ class ChainStateProxy implements IChainStateProvider {
     return this.get(params).getBlockFee(params);
   }
 }
-export let ChainStateProvider = new ChainStateProxy();
+export const ChainStateProvider = new ChainStateProxy();

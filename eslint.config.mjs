@@ -101,6 +101,8 @@ export default defineConfig([
     },
     rules: {
       '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-this-alias': 'warn',
+      '@typescript-eslint/no-unused-expressions': 'off',
       'sort-imports': 'off',
       'import/order': 'off'
     }

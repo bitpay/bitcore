@@ -1,5 +1,5 @@
 import supertest from 'supertest';
-import app from '../../../src/routes'
+import app from '../../../src/routes';
 import { describe } from 'mocha';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 import { resetDatabase, testCoin } from '../../helpers';
@@ -416,7 +416,7 @@ describe('Tx Routes', function() {
   });
 
   it('should get on /api/BTC/regtest/tx/:txId/authhead', done => {
-    request.get(`/api/BTC/regtest/tx/30ef4d50173b431c2649643a4c452f99c3feaf39246866ed403f459cc27c5913/authhead`)
+    request.get('/api/BTC/regtest/tx/30ef4d50173b431c2649643a4c452f99c3feaf39246866ed403f459cc27c5913/authhead')
       .expect(200, (err, res) => {
         if (err) console.error(err);
         const { chain, network, authbase, identityOutputs } = res.body;
@@ -430,7 +430,7 @@ describe('Tx Routes', function() {
           expect(coin.spentHeight).to.be.at.most(-1);
         }
         done();
-      })
+      });
   });
 
   it('should get transaction inputs and outputs on /api/BTC/regtest/tx/:txId/coins', done => {

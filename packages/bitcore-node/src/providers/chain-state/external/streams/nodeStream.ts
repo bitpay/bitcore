@@ -1,5 +1,5 @@
+import { Readable, Stream, Transform } from 'stream';
 import { Request, Response } from 'express';
-import { Readable, Stream, Transform } from 'stream'
 import { ExternalApiStream } from './apiStream';
 
 export class NodeQueryStream extends Readable {

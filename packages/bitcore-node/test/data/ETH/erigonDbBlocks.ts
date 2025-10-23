@@ -702,4 +702,4 @@ export const ErigonEthBlocks = [
     gasUsed: 14989934,
     stateRoot: 'MHhlY2NjZDFjNzI0YTFmM2Q3NmNhYjdiYWY0NmNhMGY3NjA1YzMyZjQzNGU4ODlhMzhkMzAzMGY2MDM5YmZhOTEz'
   }
-]
+];

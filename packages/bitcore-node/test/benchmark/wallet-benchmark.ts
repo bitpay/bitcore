@@ -93,7 +93,7 @@ async function bench(iteration = 0, startBlock = 0, endBlock = 100) {
 
   const walletTxListStart = new Date();
   const txStream = unlockedWallet.listTransactions({ startBlock, endBlock });
-  let benchmarkComplete = new Promise(resolve => {
+  const benchmarkComplete = new Promise(resolve => {
     const txs = new Array<any>();
     txStream.on('data', data => {
       const stringData = data.toString().replace(',\n', '');

@@ -56,7 +56,7 @@ async function addBlocks(
       const inputs = tx.inputs || [];
       const outputs = tx.outputs || [];
       const txid = tx.txid || 'da848d4c5a9d690259f5fddb6c5ca0fb0e52bc4a8ac472d3784a2de834cf448e';
-      const coinbase = tx.coinbase!!;
+      const coinbase = tx.coinbase!;
 
       await TransactionStorage.collection.insertOne({
         chain: chain,
@@ -136,7 +136,7 @@ describe('Block Routes', function() {
           { txid: '86950d79deed75bcbe4e6345f6e87390a02477cfc8492e3d93702b5396ea746d',
             fee: 30000, size: 1056, inputs: [140000], outputs: [100000, 10000 ] },
           { txid: '4541c61085876bbe91ed82468c46d9a5aa2df0e14b1833c1c1cd241f2f143bd6',
-            fee: 35000, size: 1056, inputs: [100000, 45000 ], outputs: [ 100000 , 10000 ]},
+            fee: 35000, size: 1056, inputs: [100000, 45000 ], outputs: [ 100000, 10000 ] },
         ]
       },
       { chain: 'BTC', height: 101, time: minutesAgo(30),
@@ -152,7 +152,7 @@ describe('Block Routes', function() {
           { fee: 10000, size: 1056 },
           { fee: 11000, size: 1056 },
         ]
-       },
+      },
       { chain: 'BCH', height: 100, 
         transactions: [
           { fee: 0, size: 133, coinbase: true },
@@ -205,14 +205,14 @@ describe('Block Routes', function() {
     expect(block.height).to.be.at.least(0);
     expect(block.nonce).to.be.at.least(0);
     expect(block.bits).to.be.at.least(0);
-  }
+  };
 
   it('should get blocks on BTC regtest', done => {
     request.get('/api/BTC/regtest/block').expect(200, (err, res) => {
       if (err) console.error(err);
       const blocks = res.body;
       for (const block of blocks) {
-        expect(block).to.include({chain: 'BTC', network: 'regtest'});
+        expect(block).to.include({ chain: 'BTC', network: 'regtest' });
         testBlock(block);
       }
       done();
@@ -220,12 +220,12 @@ describe('Block Routes', function() {
   });
 
   it('should get blocks after 101 on BTC regtest', done => {
-    request.get(`/api/BTC/regtest/block?sinceBlock=101`).expect(200, (err, res) => {
+    request.get('/api/BTC/regtest/block?sinceBlock=101').expect(200, (err, res) => {
       if (err) console.error(err);
       const blocks = res.body;
       for (const block of blocks) {
         expect(block.height).to.be.greaterThan(101);
-        expect(block).to.include({chain: 'BTC', network: 'regtest'});
+        expect(block).to.include({ chain: 'BTC', network: 'regtest' });
         testBlock(block);
       }
       done();
@@ -233,12 +233,12 @@ describe('Block Routes', function() {
   });
 
   it('should get 3 blocks with limit=3 on BTC regtest', done => {
-    request.get(`/api/BTC/regtest/block?limit=3`).expect(200, (err, res) => {
+    request.get('/api/BTC/regtest/block?limit=3').expect(200, (err, res) => {
       if (err) console.error(err);
       const blocks = res.body;
       expect(blocks.length).to.equal(3);
       for (const block of blocks) {
-        expect(block).to.include({chain: 'BTC', network: 'regtest'});
+        expect(block).to.include({ chain: 'BTC', network: 'regtest' });
         testBlock(block);
       }
       done();
@@ -251,7 +251,7 @@ describe('Block Routes', function() {
       .expect(200, (err, res) => {
         if (err) console.error(err);
         const block = res.body;
-        expect(block).to.include({chain: 'BTC', network: 'regtest', height: tipHeight});
+        expect(block).to.include({ chain: 'BTC', network: 'regtest', height: tipHeight });
         testBlock(block);
         done();
       });
@@ -262,7 +262,7 @@ describe('Block Routes', function() {
       if (err) console.error(err);
       const block = res.body;
       expect(block).to.include(
-        {chain: 'BTC', network: 'regtest', height: 101, confirmations: tipHeight - 101 + 1}
+        { chain: 'BTC', network: 'regtest', height: 101, confirmations: tipHeight - 101 + 1 }
       );
       testBlock(block);
       done();
@@ -273,7 +273,7 @@ describe('Block Routes', function() {
     request.get('/api/BCH/regtest/block/101').expect(200, (err, res) => {
       if (err) console.error(err);
       const block = res.body;
-      expect(block).to.include({chain: 'BCH', network: 'regtest', height: 101});
+      expect(block).to.include({ chain: 'BCH', network: 'regtest', height: 101 });
       testBlock(block);
       done();
     });
@@ -307,14 +307,14 @@ describe('Block Routes', function() {
     expect(outputs.length).to.be.at.least(txids.length);
 
     for (const input of inputs) {
-      expect(input).to.include({chain, network, spentHeight: blockHeight});
+      expect(input).to.include({ chain, network, spentHeight: blockHeight });
       expectObjectToHaveProps(input, coinProps);
     }
     for (const output of outputs) {
-      expect(output).to.include({chain, network, mintHeight: blockHeight });
+      expect(output).to.include({ chain, network, mintHeight: blockHeight });
       expectObjectToHaveProps(output, coinProps);
     }
-  }
+  };
 
   let block100Hash;
   it('should fetch block 100 and save hash for other tests', done => {
@@ -325,8 +325,8 @@ describe('Block Routes', function() {
       block100Hash = block.hash;
       testBlock(block);
       done();
-    })
-  })
+    });
+  });
 
   it('should get coins by block hash', done => {
     request.get(`/api/BTC/regtest/block/${block100Hash}/coins/0/1`).expect(200, (err, res) => {
@@ -455,7 +455,7 @@ describe('Block Routes', function() {
       const block = res.body;
       const { timeNormalized } = block;
       expect(new Date(timeNormalized).getTime()).to.be.lessThan(minutesAgo(20).getTime());
-      expect(block).to.include({chain: 'BTC', network: 'regtest'})
+      expect(block).to.include({ chain: 'BTC', network: 'regtest' });
       testBlock(block);
       done();
     });

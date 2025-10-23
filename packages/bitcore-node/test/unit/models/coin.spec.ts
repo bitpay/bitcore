@@ -13,8 +13,8 @@ describe('Coin Model', function() {
 
   describe('_apiTransform', () => {
     it('should return the transform object with coin info', () => {
-      let id = new ObjectId();
-      let coin = {
+      const id = new ObjectId();
+      const coin = {
         _id: id,
         network: 'regtest',
         chain: 'BTC',
@@ -49,8 +49,8 @@ describe('Coin Model', function() {
       });
     });
     it('should return the raw transform object if options field exists and set to true', () => {
-      let id = new ObjectId();
-      let coin = {
+      const id = new ObjectId();
+      const coin = {
         _id: id,
         network: 'regtest',
         chain: 'BTC',
@@ -96,12 +96,12 @@ describe('Coin Model', function() {
     });
 
     it('should return an object with confirmed, unconfirmed, and balance when additional time parameter is passed in', async () => {
-      let id = new ObjectId('5c364e342ab5602e97a56f0e');
-      let chain = 'BTC';
-      let network = 'regtest';
-      let time = new Date().toISOString();
-      let query = { wallets: id, 'wallets.0': { $exists: true } };
-      let matchObject = {
+      const id = new ObjectId('5c364e342ab5602e97a56f0e');
+      const chain = 'BTC';
+      const network = 'regtest';
+      const time = new Date().toISOString();
+      const query = { wallets: id, 'wallets.0': { $exists: true } };
+      const matchObject = {
         $or: [
           {
             spentHeight: {
@@ -121,14 +121,14 @@ describe('Coin Model', function() {
         'wallets.0': { $exists: true }
       };
 
-      let blockModelHeight = { height: 123 };
+      const blockModelHeight = { height: 123 };
       mockModel('coins', [
         { _id: 'confirmed', balance: 123123 },
         { _id: 'unconfirmed', balance: 1 }
       ]);
       mockModel('blocks', blockModelHeight);
-      let coinModelAggregateSpy = CoinStorage.collection.aggregate as sinon.SinonSpy;
-      let blockModelFindSpy = BitcoinBlockStorage.collection.find as sinon.SinonSpy;
+      const coinModelAggregateSpy = CoinStorage.collection.aggregate as sinon.SinonSpy;
+      const blockModelFindSpy = BitcoinBlockStorage.collection.find as sinon.SinonSpy;
 
       const result = await CoinStorage.getBalanceAtTime({ query, time, chain, network });
       expect(coinModelAggregateSpy.called).to.deep.equal(true, 'CoinStorage.aggregation should have been called');
@@ -151,8 +151,8 @@ describe('Coin Model', function() {
     });
 
     it('should return an object with confirmed, unconfirmed, and balance', async () => {
-      let id = new ObjectId('5c364e342ab5602e97a56f0e');
-      let query = {
+      const id = new ObjectId('5c364e342ab5602e97a56f0e');
+      const query = {
         wallets: id,
         'wallets.0': { $exists: true },
         spentHeight: { $lt: 0 },
@@ -163,7 +163,7 @@ describe('Coin Model', function() {
         { _id: 'confirmed', balance: 123123 },
         { _id: 'unconfirmed', balance: 1 }
       ]);
-      let coinModelAggregateSpy = CoinStorage.collection.aggregate as sinon.SinonSpy;
+      const coinModelAggregateSpy = CoinStorage.collection.aggregate as sinon.SinonSpy;
 
       const result = await CoinStorage.getBalance({ query });
       expect(coinModelAggregateSpy.called).to.deep.equal(true, 'CoinStorage.aggregation should have been called');

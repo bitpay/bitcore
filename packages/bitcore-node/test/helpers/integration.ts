@@ -26,7 +26,6 @@ export async function intBeforeHelper() {
 
 export async function intAfterHelper(describeContext?: any) {
   try {
-    describeContext = describeContext;
     if (describeContext && describeContext.timeout) {
       describeContext.timeout(1);
     }

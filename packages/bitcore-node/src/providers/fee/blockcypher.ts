@@ -1,5 +1,5 @@
-import request from 'request';
 import util from 'util';
+import request from 'request';
 import logger from '../../logger';
 import { NetworkType } from '../../types/ChainNetwork';
 import { FeeCacheType, IFeeProvider } from '../../types/FeeProvider';
@@ -14,15 +14,15 @@ export class BlockCypherClass implements IFeeProvider {
     mainnet: FeeCacheType;
     testnet3: FeeCacheType;
   } = {
-    mainnet: {
-      timestamp: 0,
-      response: null
-    },
-    testnet3: {
-      timestamp: 0,
-      response: null
-    }
-  };
+      mainnet: {
+        timestamp: 0,
+        response: null
+      },
+      testnet3: {
+        timestamp: 0,
+        response: null
+      }
+    };
 
   public async getFee(network: NetworkType, nblocks: number): Promise<number> {
     try {

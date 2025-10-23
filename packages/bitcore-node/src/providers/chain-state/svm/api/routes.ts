@@ -46,12 +46,13 @@ export class SVMRouter {
 
   private getPriorityFee(router: Router) {
     router.get(`/api/${this.chain}/:network/priorityFee/:percentile`, async (req, res) => {
-      let { percentile, network } = req.params;
+      let { network } = req.params;
+      const { percentile } = req.params;
       const priorityFeePercentile = Number(percentile) || 15;
 
       network = network.toLowerCase();
       try {
-        let fee = await this.csp.getPriorityFee({ chain: this.chain, network, percentile: priorityFeePercentile });
+        const fee = await this.csp.getPriorityFee({ chain: this.chain, network, percentile: priorityFeePercentile });
         if (!fee) {
           return res.status(404).send('not available right now');
         }

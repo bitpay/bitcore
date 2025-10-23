@@ -29,7 +29,7 @@ export class InternalTxRelatedFilterTransform extends TransformWithEventPipe {
       
       const refundTxs = walletRelatedInternalTxs.filter(i => i.to === tx.from);
       const nonRefundTxs = walletRelatedInternalTxs.filter(i => i.to != tx.from);
-      const refundTotal = refundTxs.reduce((a,b) => a + Number(b.amount), 0);
+      const refundTotal = refundTxs.reduce((a, b) => a + Number(b.amount), 0);
       // Only consider it a refund if the amount refunded is less than or equal to tx value
       const hasRefund = refundTotal <= tx.value;
       
@@ -43,18 +43,18 @@ export class InternalTxRelatedFilterTransform extends TransformWithEventPipe {
         internalTxsToProcess = refundTxs.concat(nonRefundTxs);
       }
 
-      for (let internalTx of internalTxsToProcess) {
-          const _tx: IEVMTransactionTransformed = Object.assign({}, tx);
-          _tx.value = Number(internalTx.amount);
-          _tx.to = internalTx.to;
-          if (internalTx.from != tx.from) {
-            _tx.initialFrom = tx.from;
-            _tx.from = internalTx.from;
+      for (const internalTx of internalTxsToProcess) {
+        const _tx: IEVMTransactionTransformed = Object.assign({}, tx);
+        _tx.value = Number(internalTx.amount);
+        _tx.to = internalTx.to;
+        if (internalTx.from != tx.from) {
+          _tx.initialFrom = tx.from;
+          _tx.from = internalTx.from;
             
-          }
-          // This is how a requester can verify uniqueness in light of duplicated txids
-          _tx.callStack = internalTx.callStack;
-          this.push(_tx);
+        }
+        // This is how a requester can verify uniqueness in light of duplicated txids
+        _tx.callStack = internalTx.callStack;
+        this.push(_tx);
       }
     }
 

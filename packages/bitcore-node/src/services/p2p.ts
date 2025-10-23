@@ -3,6 +3,7 @@ import logger from '../logger';
 import { BaseBlock } from '../models/baseBlock';
 import { StateStorage } from '../models/state';
 import { IBlock } from '../types/Block';
+import { Class } from '../types/Class';
 import { wait } from '../utils';
 import { Config, ConfigService } from './config';
 
@@ -41,7 +42,7 @@ export class P2pManager {
     }
     logger.info('Starting P2P Manager');
 
-    for (let chainNetwork of Config.chainNetworks()) {
+    for (const chainNetwork of Config.chainNetworks()) {
       const { chain, network } = chainNetwork;
       const chainConfig = Config.chainConfig(chainNetwork);
       if ((chainConfig.chainSource && chainConfig.chainSource !== 'p2p') || chainConfig.disabled) {

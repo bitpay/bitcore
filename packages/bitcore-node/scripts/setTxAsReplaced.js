@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
-const { Storage } = require('../build/src/services/storage');
-const { TransactionStorage } = require('../build/src/models/transaction');
-const { SpentHeightIndicators } = require('../build/src/types/Coin');
+import { TransactionStorage } from '../build/src/models/transaction';
+import { Storage } from '../build/src/services/storage';
 
 function usage(errMsg) {
   console.log('USAGE: ./setTxAsReplaced.js <txid> <replacementTxid> [options]');
@@ -74,4 +73,4 @@ Storage.start()
     }
   })
   .catch(console.error)
-  .finally(Storage.stop.bind(Storage))
+  .finally(Storage.stop.bind(Storage));

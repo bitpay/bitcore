@@ -1,5 +1,5 @@
-import { ObjectID } from 'mongodb';
 import os from 'os';
+import { ObjectID } from 'mongodb';
 import { StorageService } from '../services/storage';
 import { BaseModel } from './base';
 
@@ -64,7 +64,7 @@ export class StateModel extends BaseModel<IState> {
     );
   }
 
-  setVerifiedBlockHeight(params: { chain: string; network: string; height: number}) {
+  setVerifiedBlockHeight(params: { chain: string; network: string; height: number }) {
     const { chain, network, height } = params;
     return this.collection.updateOne(
       {},
@@ -76,7 +76,7 @@ export class StateModel extends BaseModel<IState> {
     );
   }
 
-  setLastAddressSubscriptionUpdate(params: { chain: string; network: string; timestamp: Date}) {
+  setLastAddressSubscriptionUpdate(params: { chain: string; network: string; timestamp: Date }) {
     const { chain, network, timestamp } = params;
     return this.collection.updateOne(
       {},
@@ -89,4 +89,4 @@ export class StateModel extends BaseModel<IState> {
   }
 }
 
-export let StateStorage = new StateModel();
+export const StateStorage = new StateModel();

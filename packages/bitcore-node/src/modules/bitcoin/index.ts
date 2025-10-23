@@ -1,8 +1,8 @@
 import { BaseModule } from '..';
 import { BTCStateProvider } from '../../providers/chain-state/btc/btc';
 import { IUtxoNetworkConfig } from '../../types/Config';
-import { BitcoinP2PWorker } from './p2p';
 import { VerificationPeer } from './VerificationPeer';
+import { BitcoinP2PWorker } from './p2p';
 
 export default class BitcoinModule extends BaseModule {
   constructor(services: BaseModule['bitcoreServices'], chain: string, network: string, _config: IUtxoNetworkConfig) {

@@ -1,6 +1,6 @@
+import * as worker from 'worker_threads';
 import { CryptoRpc } from 'crypto-rpc';
 import Web3 from 'web3';
-import * as worker from 'worker_threads';
 import logger from '../../../../logger';
 import { Config } from '../../../../services/config';
 import { Storage } from '../../../../services/storage';

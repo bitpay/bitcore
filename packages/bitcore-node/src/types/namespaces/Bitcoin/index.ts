@@ -1,10 +1,10 @@
 import { BitcoinBlockType as BBT, BlockHeader, BlockHeaderObj } from './Block';
 import {
   BitcoinAddress as BA,
+  BitcoinScript as BS,
   BitcoinInput,
   BitcoinInputObj,
   BitcoinOutput,
-  BitcoinScript as BS,
   BitcoinTransactionType
 } from './Transaction';
 

@@ -17,7 +17,7 @@ describe('Block Model', function() {
   before(unitBeforeHelper);
   after(unitAfterHelper);
 
-  let addBlockParams = {
+  const addBlockParams = {
     chain: 'BTC',
     network: 'regtest',
     block: TEST_BLOCK,
@@ -35,7 +35,7 @@ describe('Block Model', function() {
       sandbox.restore();
     });
     it('should be able to add a block', async () => {
-      let newBlock = Object.assign({ save: () => Promise.resolve() }, BitcoinBlockStorage, addBlockParams);
+      const newBlock = Object.assign({ save: () => Promise.resolve() }, BitcoinBlockStorage, addBlockParams);
 
       mockStorage(newBlock);
       sandbox.stub(BitcoinBlockStorage, 'handleReorg').resolves();
@@ -95,7 +95,7 @@ describe('Block Model', function() {
       sandbox.restore();
     });
     it('should return the new tip', async () => {
-      let newBlock = Object.assign({ save: () => Promise.resolve() }, BitcoinBlockStorage, addBlockParams);
+      const newBlock = Object.assign({ save: () => Promise.resolve() }, BitcoinBlockStorage, addBlockParams);
       mockStorage(newBlock);
       const params = { chain: 'BTC', network: 'regtest' };
       const result = await ChainStateProvider.getLocalTip(params);
@@ -137,10 +137,10 @@ describe('Block Model', function() {
       Object.assign(BitcoinBlockStorage.collection, mockCollection(null));
       Object.assign(TransactionStorage.collection, mockCollection(null));
       Object.assign(CoinStorage.collection, mockCollection(null));
-      let blockModelRemoveSpy = BitcoinBlockStorage.collection.deleteMany as sinon.SinonSpy;
-      let transactionModelRemoveSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
-      let coinModelRemoveSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
-      let coinModelUpdateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
+      const blockModelRemoveSpy = BitcoinBlockStorage.collection.deleteMany as sinon.SinonSpy;
+      const transactionModelRemoveSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
+      const coinModelRemoveSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
+      const coinModelUpdateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
 
       const params = {
         header: {
@@ -164,18 +164,18 @@ describe('Block Model', function() {
     });
 
     it('should return if localTip height is zero', async () => {
-      let blockModelRemoveSpy = BitcoinBlockStorage.collection.deleteMany as sinon.SinonSpy;
-      let transactionModelRemoveSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
-      let coinModelRemoveSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
-      let coinModelUpdateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
+      const blockModelRemoveSpy = BitcoinBlockStorage.collection.deleteMany as sinon.SinonSpy;
+      const transactionModelRemoveSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
+      const coinModelRemoveSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
+      const coinModelUpdateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
 
-      let blockMethodParams = {
+      const blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BitcoinBlockStorage, blockMethodParams);
+      const params = Object.assign(BitcoinBlockStorage, blockMethodParams);
 
       await BitcoinBlockStorage.handleReorg(params);
       expect(blockModelRemoveSpy.notCalled).to.be.true;
@@ -189,13 +189,13 @@ describe('Block Model', function() {
         height: 1,
         previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
-      let blockMethodParams = {
+      const blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BitcoinBlockStorage, blockMethodParams);
+      const params = Object.assign(BitcoinBlockStorage, blockMethodParams);
       const removeSpy = BitcoinBlockStorage.collection.deleteMany as sinon.SinonSpy;
 
       await BitcoinBlockStorage.handleReorg(params);
@@ -208,13 +208,13 @@ describe('Block Model', function() {
         previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
-      let blockMethodParams = {
+      const blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BitcoinBlockStorage, blockMethodParams);
+      const params = Object.assign(BitcoinBlockStorage, blockMethodParams);
       const removeSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
 
       await BitcoinBlockStorage.handleReorg(params);
@@ -227,13 +227,13 @@ describe('Block Model', function() {
         previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
-      let blockMethodParams = {
+      const blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BitcoinBlockStorage, blockMethodParams);
+      const params = Object.assign(BitcoinBlockStorage, blockMethodParams);
       const collectionSpy = Storage.db!.collection as sinon.SinonSpy;
       const removeSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
 
@@ -248,13 +248,13 @@ describe('Block Model', function() {
         previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
 
-      let blockMethodParams = {
+      const blockMethodParams = {
         chain: 'BTC',
         network: 'regtest',
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BitcoinBlockStorage, blockMethodParams);
+      const params = Object.assign(BitcoinBlockStorage, blockMethodParams);
       const collectionSpy = Storage.db!.collection as sinon.SinonSpy;
       const updateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
 

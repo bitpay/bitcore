@@ -2,14 +2,15 @@ import { cpus, homedir } from 'os';
 import { ConfigType } from './types/Config';
 import { merge } from './utils';
 import parseArgv from './utils/parseArgv';
-let program = parseArgv([], ['config']);
+
+const program = parseArgv([], ['config']);
 
 function findConfig(): ConfigType | undefined {
   let foundConfig;
   const envConfigPath = process.env.BITCORE_CONFIG_PATH;
   const argConfigPath = program.config;
   const configFileName = 'bitcore.config.json';
-  let bitcoreConfigPaths = [
+  const bitcoreConfigPaths = [
     `${homedir()}/${configFileName}`,
     `../../../../${configFileName}`,
     `../../${configFileName}`
@@ -19,13 +20,14 @@ function findConfig(): ConfigType | undefined {
     bitcoreConfigPaths.unshift(overrideConfig);
   }
   // No config specified. Search home, bitcore and cur directory
-  for (let path of bitcoreConfigPaths) {
+  for (const path of bitcoreConfigPaths) {
     if (!foundConfig) {
       try {
         const expanded = path[0] === '~' ? path.replace('~', homedir()) : path;
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const bitcoreConfig = require(expanded) as { bitcoreNode: ConfigType };
         foundConfig = bitcoreConfig.bitcoreNode;
-      } catch (e) {
+      } catch {
         foundConfig = undefined;
       }
     }
@@ -34,12 +36,12 @@ function findConfig(): ConfigType | undefined {
 }
 
 function setTrustedPeers(config: ConfigType): ConfigType {
-  for (let [chain, chainObj] of Object.entries(config)) {
-    for (let network of Object.keys(chainObj)) {
-      let env = process.env;
+  for (const [chain, chainObj] of Object.entries(config)) {
+    for (const network of Object.keys(chainObj)) {
+      const env = process.env;
       const envString = `TRUSTED_${chain.toUpperCase()}_${network.toUpperCase()}_PEER`;
       if (env[envString]) {
-        let peers = config.chains[chain][network].trustedPeers || [];
+        const peers = config.chains[chain][network].trustedPeers || [];
         peers.push({
           host: env[envString] as string,
           port: env[`${envString}_PORT`] as string
@@ -93,7 +95,7 @@ const Config = function(): ConfigType {
     }
   };
 
-  let foundConfig = findConfig();
+  const foundConfig = findConfig();
   config = merge(config, foundConfig);
   if (!Object.keys(config.chains).length) {
     Object.assign(config.chains, {

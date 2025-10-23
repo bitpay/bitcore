@@ -84,6 +84,7 @@ async function insertBlocks() {
 }
 
 describe('Block Model', function() {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
   before(intBeforeHelper);

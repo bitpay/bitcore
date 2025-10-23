@@ -13,7 +13,7 @@ describe('Wallet Model', function() {
 
   describe('_apiTransform', () => {
     it('should return the transform object with wallet info', () => {
-      let wallet = {
+      const wallet = {
         name: 'Wallet1',
         singleAddress: true,
         pubKey:
@@ -30,7 +30,7 @@ describe('Wallet Model', function() {
       });
     });
     it('should return the raw transform object if options field exists and set to true', () => {
-      let wallet = {
+      const wallet = {
         name: 'Wallet1',
         singleAddress: true,
         pubKey:
@@ -56,12 +56,12 @@ describe('Wallet Model', function() {
     });
     it('should call wallet address model update coins', async () => {
       Object.assign(WalletAddressStorage.collection, mockCollection([]));
-      let walletAddressModelSpy = sandbox.stub(WalletAddressStorage, 'updateCoins').returns({
+      const walletAddressModelSpy = sandbox.stub(WalletAddressStorage, 'updateCoins').returns({
         wallet: sandbox.stub().returnsThis(),
         addresses: sandbox.stub().returnsThis()
       });
 
-      let wallet = {
+      const wallet = {
         _id: new ObjectID(),
         name: 'Wallet1',
         singleAddress: true,
