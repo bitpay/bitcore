@@ -3317,7 +3317,7 @@ export class WalletService implements IWalletService {
                 tokenAddress: txp.tokenAddress,
                 ...opts
               });
-              // Pending proposals are not considered (availableConfirmedAmount) to prevent double counting current txp
+              // Use totalConfirmedAmount (not availableConfirmedAmount) to prevent double-counting the current txp
               walletAmount = balance.totalConfirmedAmount;
               // Add fee for native currencies
               txpAmount += txp.tokenAddress ? 0 : (txp.fee || 0);
@@ -3329,7 +3329,7 @@ export class WalletService implements IWalletService {
               return cb(new Error('Invalid balance or amount values'));
             }
             if (!Number.isInteger(walletAmount) || !Number.isInteger(txpAmount)) {
-            logger.warn(`Non-integer amounts detected: wallet=${walletAmount}, txp=${txpAmount}`);
+              return cb(new Error(`Non-integer amounts detected: wallet=${walletAmount}, txp=${txpAmount}`));
             }
             if (BigInt(walletAmount) < BigInt(txpAmount)) {
               logger.warn(`Insufficient funds: wallet=${walletAmount}, required=${txpAmount}`);

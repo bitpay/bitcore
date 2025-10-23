@@ -8094,6 +8094,110 @@ describe('Wallet service', function() {
         });
       });
     });
+
+    it('should fail to broadcast a tx when balance is insufficient', async function() {
+      const blockchainExplorer = helpers.getBlockchainExplorer();
+      // Stub balance to be less than the transaction amount + fee
+      // Transaction is 9e8 (900000000) + fee, so setting balance to 8e8 (800000000) should fail
+      blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {
+        unconfirmed: 0,
+        confirmed: 8e8,
+        balance: 8e8
+      });
+
+      helpers.stubBroadcast(txid);
+      await util.promisify(server.broadcastTx).call(server, {
+        txProposalId: txpid
+      }).then(() => {
+        throw new Error('Should have failed');
+      }).catch((err) => {
+        should.exist(err);
+        err.message.should.equal('Insufficient funds');
+      });
+    });
+
+    it('should fail to broadcast a tx when getBalance returns non-integer amounts', async function() {
+      const blockchainExplorer = helpers.getBlockchainExplorer();
+      // Stub balance to return decimal value (which should not happen in practice)
+      blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {
+        unconfirmed: 0,
+        confirmed: 10.5e18,
+        balance: 10.5e18
+      });
+
+      helpers.stubBroadcast(txid);
+      await util.promisify(server.broadcastTx).call(server, {
+        txProposalId: txpid
+      }).then(() => {
+        throw new Error('Should have failed');
+      }).catch((err) => {
+        should.exist(err);
+        err.message.should.contain('Non-integer amounts detected');
+      });
+    });
+
+    it('should fail to broadcast a tx when getBalance errors', async function() {
+      const blockchainExplorer = helpers.getBlockchainExplorer();
+      // Stub getBalance to return an error
+      blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, new Error('Network error'));
+
+      helpers.stubBroadcast(txid);
+      await util.promisify(server.broadcastTx).call(server, {
+        txProposalId: txpid
+      }).then(() => {
+        throw new Error('Should have failed');
+      }).catch((err) => {
+        should.exist(err);
+        err.message.should.equal('Network error');
+      });
+    });
+
+    it('should broadcast a token tx and not include fee in balance check', async function() {
+      // Create a new wallet and tx for token transaction
+      const { server: tokenServer, wallet: tokenWallet } = await helpers.createAndJoinWallet(1, 1, { coin: 'eth' });
+      const from = await util.promisify(tokenServer.createAddress).call(tokenServer, {});
+      const blockchainExplorer = helpers.getBlockchainExplorer();
+
+      // Setup token balance
+      const tokenAddress = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'; // USDC
+      await helpers.stubUtxos(tokenServer, tokenWallet, [10], { tokenAddress });
+
+      const txOpts = {
+        outputs: [{
+          toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+          amount: 1e6, // 1 USDC
+        }],
+        from,
+        tokenAddress,
+        feePerKb: 100e2,
+      };
+
+      let txp = await helpers.createAndPublishTx(tokenServer, txOpts, TestData.copayers[0].privKey_1H_0);
+      should.exist(txp);
+      const signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+      txp = await util.promisify(tokenServer.signTx).call(tokenServer, {
+        txProposalId: txp.id,
+        signatures: signatures,
+      });
+
+      // Stub token balance to exactly match the transaction amount (no fee added for tokens)
+      blockchainExplorer.getBalance = sinon.stub().callsFake(function(opts, cb) {
+        if (opts.tokenAddress) {
+          // Token balance exactly matches transaction amount
+          return cb(null, { unconfirmed: 0, confirmed: 1e6, balance: 1e6 });
+        }
+        // Native balance for gas
+        return cb(null, { unconfirmed: 0, confirmed: 10e18, balance: 10e18 });
+      });
+
+      helpers.stubBroadcast(txp.txid);
+      const result = await util.promisify(tokenServer.broadcastTx).call(tokenServer, {
+        txProposalId: txp.id
+      });
+
+      should.exist(result);
+      result.status.should.equal('broadcasted');
+    });
   });
 
   describe('Tx proposal workflow', function() {
