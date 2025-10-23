@@ -2,6 +2,8 @@ import assert from 'assert';
 import BitcoreLib from 'bitcore-lib';
 import type { Key } from '../../types/derivation';
 
+const $ = BitcoreLib.util.preconditions;
+
 interface TssSig {
   r: string;
   s: string;
@@ -77,7 +79,8 @@ export class BTCTxProvider {
     throw new Error('function getSignature not implemented for UTXO coins');
   }
 
-  _transformSignatureObject(obj, sigtype) {
+  transformSignatureObject(params: { obj: any; sigtype?: number }) {
+    const { obj, sigtype } = params;
     const { v } = obj;
     let { r, s, i, nhashtype } = obj;
     if (typeof r === 'string') {
@@ -101,7 +104,7 @@ export class BTCTxProvider {
     i = parseInt(i) || parseInt(v);
     nhashtype = sigtype ?? nhashtype;
 
-    return new this.lib.crypto.Signature({ r, s, i, nhashtype });
+    return new this.lib.crypto.Signature({ r, s, i, nhashtype }).toString();
   }
 
   applySignature(params: { tx: BitcoreLib.Transaction; signature: SignatureType; index: number; sigtype?: number; }) {
@@ -117,7 +120,7 @@ export class BTCTxProvider {
         inputIndex: index,
         outputIndex: tx.inputs[index].outputIndex,
         prevTxId: tx.inputs[index].prevTxId,
-        signature: this._transformSignatureObject(signature, nhashtype),
+        signature: this.transformSignatureObject({ obj: signature, sigtype: nhashtype }),
         sigtype: nhashtype,
       });
     }
@@ -176,6 +179,48 @@ export class BTCTxProvider {
       utxos
     });
     return applicableUtxos.map(utxo => utxo.address);
+  }
+
+  getSighash(params: {
+    tx: string | BitcoreLib.Transaction;
+    index: number;
+    utxos?: BitcoreLib.Transaction.UnspentOutput[];
+    pubKey?: string | BitcoreLib.PublicKey | BitcoreLib.HDPublicKey;
+    path?: string;
+    sigtype?: number;
+    // Multisig params for `associateInputs()`
+    /** Multisig public keys */
+    pubKeys?: string[] | BitcoreLib.PublicKey[];
+    /** Threshold for multisig */
+    threshold?: number;
+    /** Options for multisig */
+    opts?: any;
+    // end Multisig params for `associateInputs()`
+  }): string {
+    const { index, utxos, path, sigtype, pubKeys, threshold, opts } = params;
+    let { tx, pubKey } = params;
+    
+    if (!(tx instanceof this.lib.Transaction)) {
+      tx = new this.lib.Transaction(tx);
+    }
+    if (utxos) {
+      tx.associateInputs(utxos.map(this.lib.Transaction.UnspentOutput), pubKeys, threshold, opts);
+    }
+    $.checkState(tx.inputs[index].output instanceof this.lib.Transaction.Output, 'Input must have all utxo info');
+
+    pubKey = pubKey?.toString();
+    if (pubKey) {
+      try {
+        pubKey = new this.lib.PublicKey(pubKey);
+      } catch {
+        $.checkArgument(path, '`path` param is required to derive child key');
+        pubKey = new this.lib.HDPublicKey(pubKey).deriveChild(path).publicKey;
+      }
+    }
+    // Not all input types require the public key
+    $.checkState(!pubKey || pubKey instanceof this.lib.PublicKey, 'Invalid public key');
+
+    return tx.inputs[index].getSighash(tx, pubKey, index, sigtype).toString('hex');
   }
 }
 

@@ -181,7 +181,7 @@ Signature.prototype.toCompact = function(i, compressed) {
  * Returns either a DER encoded buffer or a Schnorr encoded buffer if isSchnor == true
  */
 Signature.prototype.toBuffer = Signature.prototype.toDER = function() {
-  if(this.isSchnorr) {
+  if (this.isSchnorr) {
     const hashTypeBuf = !this.nhashtype || this.nhashtype === Signature.SIGHASH_DEFAULT ? Buffer.alloc(0) : Buffer.from([this.nhashtype]);
     return Buffer.concat([this.r.toBuffer({ size: 32 }), this.s.toBuffer({ size: 32 }), hashTypeBuf]);
   }

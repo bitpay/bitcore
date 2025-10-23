@@ -1,13 +1,11 @@
 import { createHash } from 'crypto';
 import * as xrpl from 'xrpl';
+import * as RBC from 'xrpl/node_modules/ripple-binary-codec';
+import * as binary from 'xrpl/node_modules/ripple-binary-codec/dist/binary';
+import { HashPrefix } from 'xrpl/node_modules/ripple-binary-codec/dist/hash-prefixes';
+import { BTCTxProvider } from '../btc';
 import type { Key } from '../../types/derivation';
 
-enum HashPrefix {
-  // transaction plus signature to give transaction ID
-  livenet = 0x54584e00,
-  mainnet = 0x54584e00,
-  testnet = 0x73747800
-}
 export class XRPTxProvider {
   create(params: {
     recipients: Array<{ address: string; amount: string; tag?: number }>;
@@ -80,24 +78,29 @@ export class XRPTxProvider {
 
   getSignature(params: { tx: string; key: Key }): string {
     const { signedTransaction } = this.getSignatureObject(params);
-    return signedTransaction;
+    const decoded = (xrpl.decode(signedTransaction) as any) as xrpl.Transaction;
+    return decoded.TxnSignature;
   }
 
-  getHash(params: { tx: string; network?: string }): string {
-    const { tx, network = 'mainnet' } = params;
-    const prefix = HashPrefix[network].toString(16).toUpperCase();
+  getHash(params: { tx: string }): string {
+    const { tx } = params;
+    const prefix = HashPrefix.transactionID.toString('hex').toUpperCase();
     return this.sha512Half(prefix + tx);
   }
 
-  applySignature(params: { tx: string; signature: string }): string {
-    const { signature } = params;
-    return signature;
+  applySignature(params: { tx: string; signature: string; pubKey: string; }): string {
+    const { tx, signature, pubKey } = params;
+    const txJSON = (xrpl.decode(tx) as any) as xrpl.Transaction;
+    txJSON.TxnSignature = signature;
+    txJSON.SigningPubKey = pubKey;
+    const signedTx = xrpl.encode(txJSON);
+    return signedTx;
   }
 
   sign(params: { tx: string; key: Key }): string {
     const { tx, key } = params;
     const signature = this.getSignature({ tx, key });
-    return this.applySignature({ tx, signature });
+    return this.applySignature({ tx, signature, pubKey: key.pubKey });
   }
 
   sha512Half(hex: string): string {
@@ -106,5 +109,21 @@ export class XRPTxProvider {
       .digest('hex')
       .toUpperCase()
       .slice(0, 64);
+  }
+
+  transformSignatureObject(params: { obj: any; }) {
+    const { obj } = params;
+    return new BTCTxProvider().transformSignatureObject({ obj });
+  }
+
+  getSighash(params: { tx: string; pubKey: string }) {
+    const { tx, pubKey } = params;
+    const decoded = RBC.decode(tx);
+    decoded.SigningPubKey = pubKey;
+    const encoded = binary.serializeObject(decoded, {
+      prefix: HashPrefix.transactionSig,
+      signingFieldsOnly: true
+    }).toString('hex');
+    return this.sha512Half(encoded);
   }
 }
