@@ -1,7 +1,6 @@
 import { ChildProcess, fork } from 'child_process';
 import * as crypto from 'crypto';
 import * as path from 'path';
-import * as readline from 'readline';
 
 interface SecureProcessResponse {
   messageId: string;
@@ -204,24 +203,13 @@ export class VaultWalletProxy {
     }
 
     // Check secure heap before each passphrase operation
-    const isSecureHeapEnabled = await this.sendMessage<{ enabled: boolean; error?: string }>('checkSecureHeap', {}, { timeoutMs });
+    const isSecureHeapEnabled = await this.sendMessage<boolean>('checkSecureHeap', {}, { timeoutMs });
     if (!isSecureHeapEnabled) {
       // @TODO this should kill the whole process
       throw new Error('Secure heap is not enabled. Cannot perform secure operations.');
     }
     
-
-    const passphrase = await this.promptForPassphrase();
-    const passphraseBuffer = Buffer.from(passphrase);
-    const encryptedPassphrase = crypto.publicEncrypt(
-      {
-        key: this.publicKey,
-        padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
-        oaepHash: 'sha256',
-      },
-      passphraseBuffer
-    );
-    crypto.randomFillSync(passphraseBuffer);
+    const encryptedPassphrase = await this.promptForPassphrase();
 
     const payload = {
       name: walletName,
@@ -230,17 +218,58 @@ export class VaultWalletProxy {
     return this.sendMessage<{ success: boolean }>('addPassphrase', payload, { timeoutMs });
   }
 
-  private promptForPassphrase(): Promise<string> {
-    return new Promise((resolve) => {
-      const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-      });
+  private async promptForPassphrase(opts: { prompt?: string; maxBytes?: number } = {}): Promise<Buffer> {
+    if (!this.publicKey) throw new Error('Vault not initialized (missing public key)');
 
-      rl.question('Enter passphrase: ', (passphrase) => {
-        rl.close();
-        resolve(passphrase);
-      });
+    const promptText = opts.prompt ?? 'Passphrase: ';
+    const maxBytes = Math.min(Math.max(opts.maxBytes ?? 256, 8), 4096);
+    const stdin = process.stdin as NodeJS.ReadStream & { setRawMode?: (mode: boolean) => void };
+    const plain = Buffer.allocUnsafe(maxBytes);
+    let len = 0;
+
+    if (process.stdout.isTTY) process.stdout.write(promptText);
+    stdin.setRawMode?.(true);
+    stdin.resume();
+
+    return await new Promise<Buffer>((resolve, reject) => {
+      const cleanup = () => {
+        try { crypto.randomFillSync(plain.subarray(0, len)); len = 0; } catch {}
+        stdin.setRawMode?.(false);
+        stdin.pause();
+        stdin.off('data', onData);
+        stdin.off('error', onError);
+        if (process.stdout.isTTY) process.stdout.write('\n');
+      };
+
+      const abort = (err: Error) => { cleanup(); reject(err); };
+
+      const onError = (e: Error) => abort(e);
+
+      const onData = (chunk: Buffer) => {
+        for (const c of chunk) {
+          // Ctrl+C or Ctrl+D -> cancel
+          if (c === 0x03 || c === 0x04) return abort(new Error('Cancelled'));
+          // Enter/Return
+          if (c === 0x0d || c === 0x0a) {
+            try {
+              const ciphertext = crypto.publicEncrypt(
+                { key: this.publicKey!, oaepHash: 'sha256', padding: crypto.constants.RSA_PKCS1_OAEP_PADDING },
+                plain.subarray(0, len)
+              );
+              cleanup();
+              resolve(ciphertext);
+            } catch (e) { abort(e as Error); }
+            return;
+          }
+          // Backspace/Delete
+          if ((c === 0x7f || c === 0x08) && len > 0) { len--; plain[len] = 0; continue; }
+          // Printable ASCII
+          if (c >= 0x20 && c !== 0x7f && len < maxBytes) plain[len++] = c;
+        }
+      };
+
+      stdin.on('data', onData);
+      stdin.once('error', onError);
     });
   }
 
