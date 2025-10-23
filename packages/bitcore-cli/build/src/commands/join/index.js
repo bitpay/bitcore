@@ -37,9 +37,9 @@ exports.joinWallet = joinWallet;
 const prompt = __importStar(require("@clack/prompts"));
 const crypto_wallet_core_1 = require("crypto-wallet-core");
 const prompts_1 = require("../../prompts");
+const utils_1 = require("../../utils");
 const joinMultiSig_1 = require("./joinMultiSig");
 const joinThresholdSig_1 = require("./joinThresholdSig");
-const utils_1 = require("../../utils");
 async function joinWallet(args) {
     const { wallet, opts } = args;
     const chain = await (0, prompts_1.getChain)();

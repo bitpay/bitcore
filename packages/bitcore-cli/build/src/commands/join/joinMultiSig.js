@@ -38,8 +38,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.joinMultiSigWallet = joinMultiSigWallet;
 const prompt = __importStar(require("@clack/prompts"));
-const prompts_1 = require("../../prompts");
 const bitcore_wallet_client_1 = __importDefault(require("bitcore-wallet-client"));
+const prompts_1 = require("../../prompts");
 const utils_1 = require("../../utils");
 async function joinMultiSigWallet(args) {
     const { wallet, opts } = args;

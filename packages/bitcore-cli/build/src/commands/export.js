@@ -38,12 +38,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.command = command;
 exports.exportWallet = exportWallet;
-const prompt = __importStar(require("@clack/prompts"));
 const fs_1 = __importDefault(require("fs"));
-const prompts_1 = require("../prompts");
 const os_1 = __importDefault(require("os"));
 const path_1 = __importDefault(require("path"));
+const prompt = __importStar(require("@clack/prompts"));
 const errors_1 = require("../errors");
+const prompts_1 = require("../prompts");
 function command(args) {
     const { wallet, program } = args;
     program

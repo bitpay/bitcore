@@ -37,11 +37,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.importWallet = importWallet;
-const prompt = __importStar(require("@clack/prompts"));
 const fs_1 = __importDefault(require("fs"));
-const prompts_1 = require("../prompts");
 const os_1 = __importDefault(require("os"));
+const prompt = __importStar(require("@clack/prompts"));
 const errors_1 = require("../errors");
+const prompts_1 = require("../prompts");
 async function importWallet(args) {
     const { wallet } = args;
     const replaceTilde = str => str.startsWith('~') ? str.replace('~', os_1.default.homedir()) : str;

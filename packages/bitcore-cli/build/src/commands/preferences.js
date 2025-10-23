@@ -38,8 +38,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.command = command;
 exports.getPreferences = getPreferences;
-const prompt = __importStar(require("@clack/prompts"));
 const os_1 = __importDefault(require("os"));
+const prompt = __importStar(require("@clack/prompts"));
 function command(args) {
     const { program } = args;
     program

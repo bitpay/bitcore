@@ -37,10 +37,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sign = sign;
+const url_1 = __importDefault(require("url"));
 const prompt = __importStar(require("@clack/prompts"));
 const bitcore_wallet_client_1 = require("bitcore-wallet-client");
 const crypto_wallet_core_1 = require("crypto-wallet-core");
-const url_1 = __importDefault(require("url"));
 const errors_1 = require("./errors");
 async function sign(args) {
     const { host, chain, walletData, messageHash, derivationPath, password, id, logMessageWaiting, logMessageCompleted } = args;

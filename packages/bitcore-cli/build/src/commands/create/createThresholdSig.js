@@ -37,13 +37,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createThresholdSigWallet = createThresholdSigWallet;
-const prompt = __importStar(require("@clack/prompts"));
-const prompts_1 = require("../../prompts");
-const bitcore_wallet_client_1 = require("bitcore-wallet-client");
 const crypto_1 = __importDefault(require("crypto"));
 const os_1 = __importDefault(require("os"));
 const url_1 = __importDefault(require("url"));
+const prompt = __importStar(require("@clack/prompts"));
+const bitcore_wallet_client_1 = require("bitcore-wallet-client");
 const errors_1 = require("../../errors");
+const prompts_1 = require("../../prompts");
 const utils_1 = require("../../utils");
 async function createThresholdSigWallet(args) {
     const { wallet, chain, network, m, n, opts } = args;

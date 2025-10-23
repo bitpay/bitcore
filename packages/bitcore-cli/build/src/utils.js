@@ -37,12 +37,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Utils = void 0;
-const prompt = __importStar(require("@clack/prompts"));
-const bitcore_wallet_client_1 = require("bitcore-wallet-client");
-const constants_1 = require("./constants");
-const external_editor_1 = require("external-editor");
 const os_1 = __importDefault(require("os"));
 const path_1 = __importDefault(require("path"));
+const prompt = __importStar(require("@clack/prompts"));
+const bitcore_wallet_client_1 = require("bitcore-wallet-client");
+const external_editor_1 = require("external-editor");
+const constants_1 = require("./constants");
 const errors_1 = require("./errors");
 let _verbose = false;
 class Utils {

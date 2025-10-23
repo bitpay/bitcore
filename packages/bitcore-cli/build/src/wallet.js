@@ -49,17 +49,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 var _Wallet_walletData;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Wallet = void 0;
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
+const url_1 = __importDefault(require("url"));
 const prompt = __importStar(require("@clack/prompts"));
 const bitcore_wallet_client_1 = require("bitcore-wallet-client");
 const crypto_wallet_core_1 = require("crypto-wallet-core");
 const constants_1 = require("./constants");
 const erc20Abi_1 = require("./erc20Abi");
 const filestorage_1 = require("./filestorage");
-const fs_1 = __importDefault(require("fs"));
 const prompts_1 = require("./prompts");
-const path_1 = __importDefault(require("path"));
 const tss_1 = require("./tss");
-const url_1 = __importDefault(require("url"));
 const utils_1 = require("./utils");
 const Client = bitcore_wallet_client_1.API;
 const WALLET_ENCRYPTION_OPTS = {

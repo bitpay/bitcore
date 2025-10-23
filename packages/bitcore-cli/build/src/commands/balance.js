@@ -39,8 +39,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.command = command;
 exports.getBalance = getBalance;
 exports.displayBalance = displayBalance;
-const prompt = __importStar(require("@clack/prompts"));
 const os_1 = __importDefault(require("os"));
+const prompt = __importStar(require("@clack/prompts"));
 const utils_1 = require("../utils");
 function command(args) {
     const { program } = args;

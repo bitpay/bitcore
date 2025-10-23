@@ -38,11 +38,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.command = command;
 exports.createTransaction = createTransaction;
-const prompt = __importStar(require("@clack/prompts"));
 const os_1 = __importDefault(require("os"));
+const prompt = __importStar(require("@clack/prompts"));
+const crypto_wallet_core_1 = require("crypto-wallet-core");
 const errors_1 = require("../errors");
 const utils_1 = require("../utils");
-const crypto_wallet_core_1 = require("crypto-wallet-core");
 function command(args) {
     const { program } = args;
     program
