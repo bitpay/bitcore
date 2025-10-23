@@ -30,7 +30,7 @@ import { TransakService } from '../externalservices/transak';
 import { WyreService } from '../externalservices/wyre';
 import { serverMessages } from '../serverMessages';
 import type { ExternalServicesConfig } from '../types/externalservices';
-import type { GetAddressesOpts, UpgradeCheckOpts } from '../types/server';
+import type { GetAddressesOpts, GetBalanceObj, UpgradeCheckOpts } from '../types/server';
 import { BCHAddressTranslator } from './bchaddresstranslator';
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
@@ -2053,6 +2053,15 @@ export class WalletService implements IWalletService {
     });
   }
 
+  getBalanceAsync(opts): Promise<GetBalanceObj> {
+    return new Promise((resolve, reject) => {
+      this.getBalance(opts, (err, bal) => {
+        if (err) return reject(err);
+        return resolve(bal);
+      });
+    });
+  }
+
   /**
    * Return info needed to send all funds in the wallet
    * @param {Object} opts
@@ -3292,11 +3301,41 @@ export class WalletService implements IWalletService {
         {
           txProposalId: opts.txProposalId
         },
-        (err, txp) => {
+        async (err, txp) => {
           if (err) return cb(err);
 
           if (txp.status == 'broadcasted') return cb(Errors.TX_ALREADY_BROADCASTED);
           if (txp.status != 'accepted') return cb(Errors.TX_NOT_ACCEPTED);
+          if (!ChainService.isUTXOChain(wallet.chain)) {
+            let walletAmount = 0;
+            let txpAmount = txp.getTotalAmount();
+
+            try {
+              // Final safegaurd to ensure there is enough funds to be sent.
+              const balance = await this.getBalanceAsync({
+                wallet,
+                tokenAddress: txp.tokenAddress,
+                ...opts
+              });
+              // Pending proposals are not considered (availableConfirmedAmount) to prevent double counting current txp
+              walletAmount = balance.totalConfirmedAmount;
+              // Add fee for native currencies
+              txpAmount += txp.tokenAddress ? 0 : (txp.fee || 0);
+            } catch (err) {
+              return cb(err);
+            }
+
+            if (typeof walletAmount !== 'number' || typeof txpAmount !== 'number') {
+              return cb(new Error('Invalid balance or amount values'));
+            }
+            if (!Number.isInteger(walletAmount) || !Number.isInteger(txpAmount)) {
+            logger.warn(`Non-integer amounts detected: wallet=${walletAmount}, txp=${txpAmount}`);
+            }
+            if (BigInt(walletAmount) < BigInt(txpAmount)) {
+              logger.warn(`Insufficient funds: wallet=${walletAmount}, required=${txpAmount}`);
+              return cb(Errors.INSUFFICIENT_FUNDS);
+            }
+          }
 
           const sub = TxConfirmationSub.create({
             copayerId: txp.creatorId,
