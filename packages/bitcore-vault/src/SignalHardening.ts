@@ -73,40 +73,75 @@
 
 type ShutdownFn = () => void | Promise<void>;
 
-const SIGNALS: ReadonlyArray<NodeJS.Signals> = [
-    'SIGABRT','SIGALRM','SIGBUS','SIGCHLD','SIGCONT','SIGFPE','SIGHUP','SIGILL',
-    'SIGINT','SIGIO','SIGIOT','SIGKILL','SIGPIPE','SIGPOLL','SIGPROF','SIGPWR',
-    'SIGQUIT','SIGSEGV','SIGSTKFLT','SIGSTOP','SIGSYS','SIGTERM','SIGTRAP',
-    'SIGTSTP','SIGTTIN','SIGTTOU','SIGUNUSED','SIGURG','SIGUSR1','SIGUSR2',
-    'SIGVTALRM','SIGWINCH','SIGXCPU','SIGXFSZ','SIGBREAK','SIGLOST','SIGINFO',
-  ] as const;
+/**
+ * Introspect ALL signals available on the current platform/Node.js runtime
+ * using process.binding('constants').os.signals.
+ * 
+ * Why: Instead of a hardcoded list that may miss new signals or include
+ * unsupported ones, we dynamically discover every signal the OS and Node
+ * version support. This ensures complete coverage across platforms and versions.
+ * 
+ * Security: By catching every signal (except uncatchable SIGKILL/SIGSTOP),
+ * we prevent any signal-based runtime manipulation, including SIGUSR1 which
+ * would normally enable the V8 inspector.
+ */
+function getAllPlatformSignals(): ReadonlyArray<string> {
+    try {
+        // @ts-ignore - process.binding is internal but stable for constants
+        const constants = process.binding('constants');
+        const signals = constants.os?.signals || {};
+        
+        // Extract all signal names (keys like 'SIGTERM', 'SIGUSR1', etc.)
+        return Object.keys(signals).filter(key => key.startsWith('SIG'));
+    } catch (error) {
+        // Fallback to a comprehensive list if binding fails (unlikely)
+        // This ensures we still have protection even if the introspection fails
+        return [
+            'SIGABRT','SIGALRM','SIGBUS','SIGCHLD','SIGCONT','SIGFPE','SIGHUP','SIGILL',
+            'SIGINT','SIGIO','SIGIOT','SIGKILL','SIGPIPE','SIGPOLL','SIGPROF','SIGPWR',
+            'SIGQUIT','SIGSEGV','SIGSTKFLT','SIGSTOP','SIGSYS','SIGTERM','SIGTRAP',
+            'SIGTSTP','SIGTTIN','SIGTTOU','SIGUNUSED','SIGURG','SIGUSR1','SIGUSR2',
+            'SIGVTALRM','SIGWINCH','SIGXCPU','SIGXFSZ','SIGBREAK','SIGLOST','SIGINFO',
+        ];
+    }
+}
 
 export function installSignalPolicyHard(onShutdown: ShutdownFn) {
     const shutdownSignals = ['SIGTERM', 'SIGINT', 'SIGHUP'];
     if (process.platform === 'win32') {
         shutdownSignals.push('SIGBREAK');
     }
-    for (const sig of SIGNALS) {
+    
+    // Dynamically get ALL signals supported by this platform/runtime
+    const allSignals = getAllPlatformSignals();
+    
+    for (const sig of allSignals) {
+        console.log('DEV - TODO DELETE - signal', sig);
         if (['SIGKILL', 'SIGSTOP'].includes(sig)) {
-            // Can't overwrite these
+            // Can't overwrite these - they're uncatchable by OS design
             continue;
         }
 
         try {
-            // Remove
-            process.removeAllListeners(sig);
-            // Replace
+            // Remove any existing listeners to ensure our policy is authoritative
+            process.removeAllListeners(sig as NodeJS.Signals);
+            
+            // Install our policy: shutdown signals → graceful cleanup, all others → no-op
             if (shutdownSignals.includes(sig)) {
-                process.on(sig, async () => {
+                process.on(sig as NodeJS.Signals, async () => {
                     try {
                         await onShutdown();
                     } finally {
                         process.exit(0);
                     }
-                })
+                });
             } else {
-                process.on(sig, () => {/** no op */})
+                // Swallow the signal - prevents default behavior including SIGUSR1 → inspector
+                process.on(sig as NodeJS.Signals, () => {/** no-op: signal denied */});
             }
-        } catch {/** no op - expected behavior for unsupported signals for platform/runtime */}
+        } catch {
+            // Expected for signals not supported on this platform/runtime
+            // Silently continue - the signal isn't available anyway
+        }
     }
 }
