@@ -679,8 +679,9 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     }
 
     let errorCount = 0;
+    let mid = 0n;
     while (lo <= hi) {
-      const mid = (lo + hi) / 2n;
+      mid = mid || (lo + hi) / 2n;
       let blockTime: number | null = null;
       try {
         blockTime = await connection.getBlockTime(mid).send();
@@ -688,10 +689,13 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
           errorCount = 0; // reset error count on successful fetch
         }
       } catch (e: any) {
-        // possible rate limit exceeded
+        // possible rate limit exceeded or missing slot
         errorCount++;
-        if (errorCount >= 5) {
+        if (errorCount >= 10) {
           throw new Error(e?.message || 'Too many errors occurred');
+        }
+        if (e?.message?.includes('missing in long-term storage')) {
+          mid--;
         }
         await new Promise(resolve => setTimeout(resolve, 500));
         continue;
@@ -705,6 +709,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         result = mid;
         hi = mid - 1n;
       }
+      mid = 0n; // reset mid for next iteration
     }
   
     return Number(result) || null;
