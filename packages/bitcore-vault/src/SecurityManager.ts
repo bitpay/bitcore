@@ -94,7 +94,7 @@ export class SecurityManager {
   }
 
   // Returns true if probe finds live debug port
-  private static async probeDebugPort(timeoutMs = 150): Promise<boolean> {
+  public static async probeDebugPort(timeoutMs = 150): Promise<boolean> {
     try {
       const port = Number((process as any).debugPort || 0);
       if (!Number.isFinite(port) || port <= 0) return false;
@@ -111,11 +111,23 @@ export class SecurityManager {
     }
   }
 
-  private static inspectorUrlExists() {
+  public static inspectorUrlExists(): boolean {
     try {
       const url = inspector.url?.();
       return typeof url === 'string' && url.length > 0;
     } catch {
+      return true;
+    }
+  }
+
+  public static checkInspectFlagsAtLaunch(): boolean {
+    try {
+      const argv = (process.execArgv || []).join(' ');
+      const nodeOpts = String(process.env.NODE_OPTIONS || '');
+      const rx = /--inspect(?:-brk)?\b|--inspect-port\b/;
+      return rx.test(argv) || rx.test(nodeOpts);
+    } catch {
+      console.error('checkInspectFlagsAtLaunch failed');
       return true;
     }
   }

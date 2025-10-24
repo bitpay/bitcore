@@ -320,9 +320,9 @@ if (require.main === module) {
     // run one-time checks
     (async () => {
       if (
-        checkInspectFlagsAtLaunch() ||
-        checkInspectorActiveAtLaunch() ||
-        (await checkDebugPortReachableOnce())
+        SecurityManager.checkInspectFlagsAtLaunch() ||
+        SecurityManager.inspectorUrlExists() ||
+        (await SecurityManager.probeDebugPort())
       ) {
         process.exit(1);
       }
@@ -364,44 +364,4 @@ function lockdownProcess(onShutdown?: () => void | Promise<void>): void {
   }
 
 
-}
-
-function checkInspectFlagsAtLaunch(): boolean {
-  try {
-    const argv = (process.execArgv || []).join(' ');
-    const nodeOpts = String(process.env.NODE_OPTIONS || '');
-    const rx = /--inspect(?:-brk)?\b|--inspect-port\b/;
-    return rx.test(argv) || rx.test(nodeOpts);
-  } catch {
-    console.error('checkInspectFlagsAtLaunch failed');
-    return true;
-  }
-}
-
-function checkInspectorActiveAtLaunch(): boolean {
-  try {
-    const url = inspector.url?.();
-    return typeof url === 'string' && url.length > 0;
-  } catch {
-    console.error('checkInspectorActiveAtLaunch failed');
-    return true;
-  }
-}
-
-async function checkDebugPortReachableOnce(timeoutMs = 150): Promise<boolean> {
-  try {
-    const port = Number((process as any).debugPort || 0);
-    if (!Number.isFinite(port) || port <= 0) return false;
-    const net = await import('node:net');
-    return await new Promise<boolean>((resolve) => {
-      const sock = net.createConnection({ host: '127.0.0.1', port });
-      const done = (v: boolean) => { try { sock.destroy(); } catch {} resolve(v); };
-      const t = setTimeout(() => done(false), Math.min(Math.max(1, timeoutMs), 150));
-      sock.once('connect', () => { clearTimeout(t); done(true); });
-      sock.once('error', () => { clearTimeout(t); done(false); });
-    });
-  } catch {
-    console.error('checkDebugPortReachableOnce failed');
-    return true;
-  }
 }
