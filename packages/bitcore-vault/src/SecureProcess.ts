@@ -32,8 +32,18 @@ export class SecureProcess {
     this.securityManager = new SecurityManager();
     // Initial security checks
     if (!SecurityManager.isSecureHeapEnabled()) {
-      console.error('Secure heap not enabled - secure process terminating');
-      process.exit(1);
+      console.error('[SecureProcess] Secure heap not enabled - secure process terminating');
+      // Send fatal error even though handler isn't set up yet - parent listens to all messages
+      if (process.send) {
+        process.send({
+          messageId: 'fatal-constructor-' + Date.now(),
+          error: { message: 'Secure heap not enabled' },
+          fatalError: true
+        });
+      }
+      // Give parent a moment to receive message, then force exit
+      setTimeout(() => process.exit(1), 1000);
+      return;
     }
 
     this.wallets = new Map<string, WalletEntry>();
@@ -50,7 +60,7 @@ export class SecureProcess {
   private async handleMessage(msg: SecureProcessMessage) {
     const { action, payload, messageId } = msg;
 
-    let teardownAfterSend = false;
+    let fatalErrorOccurred = false;
     try {
       let result: any;
       switch (action) {
@@ -59,8 +69,12 @@ export class SecureProcess {
           break;
         case 'checkSecureHeap':
           result = this.checkSecureHeap();
-          // If result is false, flip teardownAfterSend
-          teardownAfterSend = !result;
+          // If secure heap check fails, it's a fatal error
+          if (!result) {
+            fatalErrorOccurred = true;
+            this.sendFatalError('Secure heap check failed', messageId);
+            return;
+          }
           break;
         case 'getPublicKey':
           result = this.getPublicKey();
@@ -71,21 +85,29 @@ export class SecureProcess {
         case 'addPassphrase':
           result = await this.addPassphrase(payload);
           break;
+        case 'cleanup':
+          // Handle cleanup request from parent
+          await this.cleanupSecureProcess();
+          result = { success: true };
+          break;
         default:
-          throw new Error(`Unknown action: ${action}`);
+          // Unknown action is a security concern - treat as fatal
+          fatalErrorOccurred = true;
+          this.sendFatalError(`Unknown action: ${action}`, messageId);
+          return;
       }
       this.sendResponse(messageId, result);
 
-
     } catch (error) {
-      this.sendError(messageId, error as Error);
-      // Running list of methods to flip teardownAfterSend on ANY error
-      teardownAfterSend = ['checkSecureHeap'].includes(action);
-    } finally {
-      if (teardownAfterSend) {
-        console.log('teardownAfterSend', teardownAfterSend);
-        // @TODO better teardown
-        process.exit(1);
+      const err = error as Error;
+      
+      // Determine if this is a fatal error
+      const fatalActions = ['initialize', 'checkSecureHeap'];
+      if (fatalActions.includes(action)) {
+        fatalErrorOccurred = true;
+        this.sendFatalError(err, messageId);
+      } else {
+        this.sendError(messageId, err);
       }
     }
   }
@@ -102,6 +124,32 @@ export class SecureProcess {
     }
   }
 
+  /**
+   * Send a fatal error response to parent and wait for termination.
+   * Parent will request cleanup and then kill this process.
+   * If messageId is provided, responds to that message; otherwise sends unsolicited error.
+   */
+  private sendFatalError(error: Error | string, messageId?: string): void {
+    const errorObj = typeof error === 'string' ? new Error(error) : error;
+    console.error('[SecureProcess] Fatal error:', errorObj.message);
+    
+    if (process.send) {
+      const response = {
+        messageId: messageId || 'fatal-' + Date.now(),
+        error: { message: errorObj.message, stack: errorObj.stack },
+        fatalError: true
+      };
+      process.send(response);
+    }
+    
+    // Wait for parent to send cleanup and terminate us
+    // Set a timeout in case parent doesn't respond
+    setTimeout(() => {
+      console.error('[SecureProcess] Parent did not terminate within timeout. Forcing exit.');
+      process.exit(1);
+    }, 5000);
+  }
+
   private async initialize() {
     // Ensure secure heap allocation settles before getting secure heap allocation baseline
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -116,9 +164,7 @@ export class SecureProcess {
       modulusLength: 2048,
     });
     if (!(keypair?.privateKey && keypair.publicKey)) {
-      console.error('CRITICAL: RSA key generation failed');
-      // These might should just be error messages back across the boundary and then it'll shut down afterwards. Below too.
-      process.exit(1);
+      throw new Error('CRITICAL: RSA key generation failed');
     };
 
     // Ensure secure heap allocation settles before getting secure heap allocation after key creation
@@ -127,15 +173,13 @@ export class SecureProcess {
 
     // Validate allocation measurement is a valid number
     if (typeof allocationAfter !== 'number' || allocationAfter < 0) {
-      console.error(`Invalid secure heap allocation measurement: ${allocationAfter}`);
-      process.exit(1);
+      throw new Error(`Invalid secure heap allocation measurement: ${allocationAfter}`);
     }
 
     // Ensure we actually allocated secure heap memory for the keypair
     // Note - something around 1400 bytes I think is right
     if (allocationAfter <= allocationBefore) {
-      console.error(`RSA keypair may not be stored in secure heap. Before: ${allocationBefore}, After: ${allocationAfter}`);
-      process.exit(1);
+      throw new Error(`RSA keypair may not be stored in secure heap. Before: ${allocationBefore}, After: ${allocationAfter}`);
     }
 
     this.publicKey = keypair.publicKey;
@@ -153,8 +197,8 @@ export class SecureProcess {
       const checkResult = this.securityManager.runQuickSecurityCheck();
       if (!checkResult?.result) {
         console.error(`Quick security check failed: ${checkResult.reason}`);
-        // @TODO: Implement proper teardown/remediation
-        process.exit(1);
+        this.sendFatalError(`Quick security check failed: ${checkResult.reason}`);
+        return;
       }
 
       // Proof of concept log - must be removed
@@ -170,8 +214,8 @@ export class SecureProcess {
         const checkResult = await this.securityManager.runSlowSecurityCheck();
         if (!checkResult?.result) {
           console.error(`Slow security check failed: ${checkResult.reason}`);
-          // @TODO: Implement proper teardown/remediation
-          process.exit(1);
+          this.sendFatalError(`Slow security check failed: ${checkResult.reason}`);
+          return;
         }
 
         // Proof of concept log - must be removed
@@ -180,7 +224,7 @@ export class SecureProcess {
         }
       } catch (err) {
         console.error('Error during slow security check:', err);
-        process.exit(1);
+        this.sendFatalError(err as Error);
       }
     }, 5000);
   }
@@ -317,38 +361,64 @@ if (require.main === module) {
     await secureProcessInstance.cleanupSecureProcess();
   });
 
-    // run one-time checks
-    (async () => {
-      if (
-        SecurityManager.checkInspectFlagsAtLaunch() ||
-        SecurityManager.inspectorUrlExists() ||
-        (await SecurityManager.probeDebugPort())
-      ) {
-        process.exit(1);
+  // run one-time checks
+  (async () => {
+    if (
+      SecurityManager.checkInspectFlagsAtLaunch() ||
+      SecurityManager.inspectorUrlExists() ||
+      (await SecurityManager.probeDebugPort())
+    ) {
+      // Send fatal error for debug/inspector detection
+      if (process.send) {
+        process.send({
+          messageId: 'fatal-startup-' + Date.now(),
+          error: { message: 'Inspector/debugger detected at startup' },
+          fatalError: true
+        });
       }
-    })()
-    .catch(() => {
-      console.error('Startup check failed');
-      process.exit(1);
-    });
+      setTimeout(() => process.exit(1), 1000);
+    }
+  })()
+  .catch((err) => {
+    console.error('Startup check failed:', err);
+    if (process.send) {
+      process.send({
+        messageId: 'fatal-startup-error-' + Date.now(),
+        error: { message: `Startup check failed: ${err.message}` },
+        fatalError: true
+      });
+    }
+    setTimeout(() => process.exit(1), 1000);
+  });
 }
 
 function lockdownProcess(onShutdown?: () => void | Promise<void>): void {
   try {
-  // Signal lockdown
-  installSignalPolicyHard(async () => {
-    if (onShutdown) {
-      await onShutdown();
+    // Signal lockdown
+    installSignalPolicyHard(async () => {
+      if (onShutdown) {
+        await onShutdown();
+      }
+    }); 
+  } catch (err) {
+    console.error('Signal policy hardening failed:', err);
+    if (process.send) {
+      process.send({
+        messageId: 'fatal-lockdown-signal-' + Date.now(),
+        error: { message: `Signal policy hardening failed: ${err}` },
+        fatalError: true
+      });
     }
-  }); } catch {
-    console.error('Signal policy hardening failed');
-    process.exit(1);
+    setTimeout(() => process.exit(1), 1000);
+    return;
   }
 
-  // Explict inspector check - should 
+  // Explicit inspector check
   try {
     inspector.close();
-  } catch {/** no op - expected if inspector not available on child fork */}
+  } catch {
+    /** no op - expected if inspector not available on child fork */
+  }
 
   // Inspector override
   try {
@@ -359,9 +429,14 @@ function lockdownProcess(onShutdown?: () => void | Promise<void>): void {
     });
     Object.freeze(inspector);
   } catch (err) {
-    console.error('Inspector override failed');
-    process.exit(1);
+    console.error('Inspector override failed:', err);
+    if (process.send) {
+      process.send({
+        messageId: 'fatal-lockdown-inspector-' + Date.now(),
+        error: { message: `Inspector override failed: ${err}` },
+        fatalError: true
+      });
+    }
+    setTimeout(() => process.exit(1), 1000);
   }
-
-
 }

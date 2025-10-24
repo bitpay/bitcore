@@ -6,6 +6,7 @@ interface SecureProcessResponse {
   messageId: string;
   result?: any;
   error?: { message: string; stack?: string };
+  fatalError?: boolean; // Indicates child must be terminated
 }
 
 interface PendingMessage {
@@ -16,6 +17,10 @@ interface PendingMessage {
 
 interface SendMessageOptions {
   timeoutMs?: number; // Per-request timeout in milliseconds
+}
+
+export interface VaultWalletProxyOptions {
+  exitOnChildFailure?: boolean; // Whether parent should exit(1) when child fails fatally (default: true)
 }
 
 /**
@@ -44,10 +49,13 @@ export class VaultWalletProxy {
   private pendingMessages: Map<string, PendingMessage>;
   private initializationPromise: Promise<void> | null = null;
   private readonly DEFAULT_TIMEOUT_MS = 30000; // 30 seconds default
+  private readonly exitOnChildFailure: boolean;
+  private isTerminating: boolean = false; // Prevent recursive termination
 
-  constructor() {
+  constructor(options: VaultWalletProxyOptions = {}) {
     this.walletAddresses = new Map<string, string>(); // { name: address }
     this.pendingMessages = new Map();
+    this.exitOnChildFailure = options.exitOnChildFailure !== undefined ? options.exitOnChildFailure : true;
   }
 
   public async initialize(): Promise<void> {
@@ -83,8 +91,6 @@ export class VaultWalletProxy {
 
         // Handle child process exit/crash - reject all pending messages
         this.secureProcess.on('exit', (code, signal) => {
-          // @TODO - this should tear everything down
-
           const exitReason = signal 
             ? `killed by signal ${signal}` 
             : `exited with code ${code}`;
@@ -92,12 +98,21 @@ export class VaultWalletProxy {
           const msg = `SecureProcess ${exitReason}. Manual reinitialization required.`;
           console.warn(msg);
 
-          this.rejectAllPendingMessages(
-            new Error(msg)
-          );
+          const error = new Error(msg);
+          this.rejectAllPendingMessages(error);
           this.secureProcess = null;
-          // @TODO better teardown
-          process.exit(1);
+          this.initializationPromise = null;
+
+          // Apply failure policy for unexpected exits
+          if (!this.isTerminating) {
+            // Only apply policy if we're not already handling termination
+            if (this.exitOnChildFailure) {
+              console.error('Secure process exited unexpectedly. Parent exiting as configured.');
+              process.exit(1);
+            } else {
+              console.error('Secure process exited unexpectedly. Parent continues as configured.');
+            }
+          }
         });
 
         // @TODO may need more stuff
@@ -118,7 +133,30 @@ export class VaultWalletProxy {
   }
 
   private handleResponse(msg: SecureProcessResponse) {
-    const { messageId, result, error } = msg;
+    const { messageId, result, error, fatalError } = msg;
+    
+    // Handle fatal errors - child must be terminated
+    if (fatalError) {
+      const errorMessage = error?.message || 'Fatal error in secure process';
+      console.error(`Fatal error from SecureProcess: ${errorMessage}`);
+      
+      // Asynchronously handle cleanup and termination
+      this.handleFatalError(new Error(errorMessage)).catch(err => {
+        console.error('Error during fatal error handling:', err);
+      });
+      
+      // Still resolve/reject the pending message if it exists
+      const pendingMessage = this.pendingMessages.get(messageId);
+      if (pendingMessage) {
+        clearTimeout(pendingMessage.timeoutId);
+        const err = new Error(error?.message || 'Fatal error in secure process');
+        err.stack = error?.stack;
+        pendingMessage.reject(err);
+        this.pendingMessages.delete(messageId);
+      }
+      return;
+    }
+    
     const pendingMessage = this.pendingMessages.get(messageId);
     if (pendingMessage) {
       // Clear the timeout since we received a response
@@ -132,6 +170,43 @@ export class VaultWalletProxy {
         pendingMessage.resolve(result);
       }
       this.pendingMessages.delete(messageId);
+    }
+  }
+
+  /**
+   * Handle fatal error from child process.
+   * Attempts cleanup, terminates child, and optionally exits parent.
+   */
+  private async handleFatalError(error: Error): Promise<void> {
+    if (this.isTerminating) {
+      return; // Prevent recursive termination
+    }
+    this.isTerminating = true;
+
+    console.error('Handling fatal error from secure process...');
+
+    // Reject all pending messages first
+    this.rejectAllPendingMessages(error);
+
+    // Attempt to request cleanup from child (with short timeout)
+    if (this.secureProcess && !this.secureProcess.killed) {
+      try {
+        await this.sendMessage('cleanup', {}, { timeoutMs: 2000 });
+      } catch (err) {
+        // Cleanup may fail or timeout - that's okay, we'll kill the process anyway
+        console.warn('Child cleanup request failed or timed out:', err);
+      }
+    }
+
+    // Terminate the child process
+    this.terminate();
+
+    // Apply failure policy
+    if (this.exitOnChildFailure) {
+      console.error('Child process failed fatally. Parent exiting as configured.');
+      process.exit(1);
+    } else {
+      console.error('Child process failed fatally. Parent continues as configured.');
     }
   }
 
