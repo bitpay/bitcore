@@ -28,7 +28,6 @@ export class SecureProcess {
   private securitySlowCheckInterval: NodeJS.Timeout | null = null;
   private readonly securityQuickCheckIntervalMs: number = 5000;
   private readonly securitySlowCheckIntervalMs: number = 30000;
-  private 
 
   constructor() {
     this.securityManager = new SecurityManager();
@@ -86,6 +85,11 @@ export class SecureProcess {
           break;
         case 'addPassphrase':
           result = await this.addPassphrase(payload);
+          break;
+        case 'startSecurityCheckIntervals':
+          // Start the security check intervals after wallets are loaded
+          this.startSecurityCheckIntervals();
+          result = { success: true };
           break;
         case 'cleanup':
           // Handle cleanup request from parent
@@ -188,8 +192,22 @@ export class SecureProcess {
     this.privateKey = keypair.privateKey;
     this.securityManager.setBaselineSecureHeapAllocation(allocationAfter - allocationBefore);
 
-    // Start the security check intervals
-    this.startSecurityCheckIntervals();
+    // Run one-time security checks (but don't start intervals yet)
+    console.log('Running initial quick security check...');
+    const quickCheckResult = this.securityManager.runQuickSecurityCheck();
+    if (!quickCheckResult?.result) {
+      throw new Error(`Initial quick security check failed: ${quickCheckResult.reason}`);
+    }
+    console.log('Initial quick security check passed');
+
+    console.log('Running initial slow security check...');
+    const slowCheckResult = await this.securityManager.runSlowSecurityCheck();
+    if (!slowCheckResult?.result) {
+      throw new Error(`Initial slow security check failed: ${slowCheckResult.reason}`);
+    }
+    console.log('Initial slow security check passed');
+
+    console.log('Initialization complete. Security check intervals will start after wallets are loaded.');
   }
 
   private startSecurityCheckIntervals() {

@@ -294,6 +294,15 @@ export class VaultWalletProxy {
     return this.sendMessage<{ success: boolean }>('addPassphrase', payload, { timeoutMs });
   }
 
+  /**
+   * Start the security monitoring intervals in the secure process.
+   * Should be called after all wallets and passphrases are loaded to avoid
+   * interfering with user input prompts.
+   */
+  public async startSecurityMonitoring(timeoutMs?: number): Promise<{ success: boolean }> {
+    return this.sendMessage<{ success: boolean }>('startSecurityCheckIntervals', {}, { timeoutMs });
+  }
+
   private async promptForPassphrase(opts: { prompt?: string; maxBytes?: number } = {}): Promise<Buffer> {
     if (!this.publicKey) throw new Error('Vault not initialized (missing public key)');
 

@@ -29,6 +29,11 @@ class WalletLoader {
 
     await this.addPassphrases();
 
+    // Start security monitoring intervals now that user input is complete
+    console.log('\nStarting security monitoring...');
+    await this.vaultWalletProxy.startSecurityMonitoring();
+    console.log('Security monitoring started.');
+
     console.log('\nWallets and passphrases loaded. Here\'s where work tasks would be kicked off...');
     // Subsequent tasks can be added here.
     // For now, we just log the wallet addresses.
