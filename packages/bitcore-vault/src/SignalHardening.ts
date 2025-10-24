@@ -116,7 +116,6 @@ export function installSignalPolicyHard(onShutdown: ShutdownFn) {
     const allSignals = getAllPlatformSignals();
     
     for (const sig of allSignals) {
-        console.log('DEV - TODO DELETE - signal', sig);
         if (['SIGKILL', 'SIGSTOP'].includes(sig)) {
             // Can't overwrite these - they're uncatchable by OS design
             continue;

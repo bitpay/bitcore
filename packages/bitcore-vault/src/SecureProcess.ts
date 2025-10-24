@@ -26,7 +26,9 @@ export class SecureProcess {
   private securityManager: SecurityManager;
   private securityQuickCheckInterval: NodeJS.Timeout | null = null;
   private securitySlowCheckInterval: NodeJS.Timeout | null = null;
-  private readonly securityCheckIntervalMs: number = 30000; // 30 seconds
+  private readonly securityQuickCheckIntervalMs: number = 5000;
+  private readonly securitySlowCheckIntervalMs: number = 30000;
+  private 
 
   constructor() {
     this.securityManager = new SecurityManager();
@@ -201,11 +203,11 @@ export class SecureProcess {
         return;
       }
 
-      // Proof of concept log - must be removed
+      // TODO Proof of concept log - must be removed
       if (checkResult.result === true) {
         console.log('Quick security checks passed');
       }
-    }, this.securityCheckIntervalMs);
+    }, this.securityQuickCheckIntervalMs);
 
     // Start slow security check interval
     this.securitySlowCheckInterval = setInterval(async () => {
@@ -218,7 +220,7 @@ export class SecureProcess {
           return;
         }
 
-        // Proof of concept log - must be removed
+        // TODO Proof of concept log - must be removed
         if (checkResult.result === true) {
           console.log('Slow security checks passed');
         }
@@ -226,7 +228,7 @@ export class SecureProcess {
         console.error('Error during slow security check:', err);
         this.sendFatalError(err as Error);
       }
-    }, 5000);
+    }, this.securitySlowCheckIntervalMs);
   }
 
   private cleanupSecurityCheckIntervals() {
