@@ -135,8 +135,16 @@ export function installSignalPolicyHard(onShutdown: ShutdownFn) {
                     }
                 });
             } else {
+                // Debug logging for development - remove in production
+                if (sig === 'SIGUSR1') {
+                    console.log('[SignalHardening] Installed no-op handler for SIGUSR1');
+                    console.log('[SignalHardening] Note: SIGUSR1 will be detected by security check if signal reaches handler');
+                }
+
                 // Swallow the signal - prevents default behavior including SIGUSR1 → inspector
-                process.on(sig as NodeJS.Signals, () => {/** no-op: signal denied */});
+                process.on(sig as NodeJS.Signals, () => {
+                    console.warn('SIG detected', sig);
+                });
             }
         } catch {
             // Expected for signals not supported on this platform/runtime

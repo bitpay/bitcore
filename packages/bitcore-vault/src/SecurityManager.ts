@@ -114,8 +114,19 @@ export class SecurityManager {
   public static inspectorUrlExists(): boolean {
     try {
       const url = inspector.url?.();
-      return typeof url === 'string' && url.length > 0;
+      if (typeof url === 'string' && url.length > 0) {
+        console.error('[SecurityManager] CRITICAL: Inspector/debugger detected!');
+        console.error('[SecurityManager] Inspector URL:', url);
+        console.error('[SecurityManager] This likely means SIGUSR1 signal was received.');
+        console.error('[SecurityManager] Explanation: Node.js inspector registers SIGUSR1 handler');
+        console.error('[SecurityManager] at C++ level, which cannot be prevented by JavaScript.');
+        console.error('[SecurityManager] The signal was detected by security check (working as designed).');
+        console.error('[SecurityManager] Process will now terminate.');
+        return true;
+      }
+      return false;
     } catch {
+      console.error('[SecurityManager] Error checking inspector URL - treating as suspicious');
       return true;
     }
   }

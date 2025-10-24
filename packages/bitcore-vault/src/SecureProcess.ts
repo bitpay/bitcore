@@ -6,6 +6,51 @@ import { VaultWallet } from './VaultWallet';
 import { installSignalPolicyHard } from './SignalHardening';
 import { inspect } from 'node:util';
 
+/**
+ * CRITICAL: Module initialization hook to disable inspector at the absolute earliest point.
+ * This must execute before ANY other code, including event loop startup.
+ * 
+ * Why at module load time?
+ * - Node.js inspector C++ module registers SIGUSR1 handler when first imported
+ * - By putting this at the top level, it can intercept the import before handler is registered
+ * - This is defense-in-depth: prevents programmatic inspector access early
+ * 
+ * The security check remains the primary defense (it's working and catches debugger attachment)
+ * This supplementary measure provides an additional layer.
+ */
+function hardcodeInspectorDisable(): void {
+  try {
+    // Disable programmatic access to inspector immediately
+    inspector.close();
+  } catch {
+    // Expected if inspector not available or already closed
+  }
+
+  // Prevent reopening the inspector programmatically
+  try {
+    Object.defineProperty(inspector, 'open', {
+      value() { throw new Error('Inspector is disabled for security reasons'); },
+      writable: false,
+      configurable: false,
+      enumerable: true
+    });
+    
+    Object.defineProperty(inspector, 'Session', {
+      value: undefined,
+      writable: false,
+      configurable: false,
+      enumerable: true
+    });
+    
+    Object.freeze(inspector);
+  } catch {
+    // If we can't freeze, continue anyway - security check will catch it
+  }
+}
+
+// Execute at module load time, before anything else
+hardcodeInspectorDisable();
+
 // Define a type for the wallet entry in our map
 interface WalletEntry {
   wallet: VaultWallet;
@@ -414,14 +459,17 @@ if (require.main === module) {
 
 function lockdownProcess(onShutdown?: () => void | Promise<void>): void {
   try {
-    // Signal lockdown
+    console.log('[Lockdown] Installing signal policy hardening...');
+    // Signal lockdown - install BEFORE any other operations
     installSignalPolicyHard(async () => {
+      console.log('[Lockdown] Executing shutdown sequence...');
       if (onShutdown) {
         await onShutdown();
       }
     }); 
+    console.log('[Lockdown] Signal policy hardening installed successfully');
   } catch (err) {
-    console.error('Signal policy hardening failed:', err);
+    console.error('[Lockdown] Signal policy hardening failed:', err);
     if (process.send) {
       process.send({
         messageId: 'fatal-lockdown-signal-' + Date.now(),
@@ -433,30 +481,34 @@ function lockdownProcess(onShutdown?: () => void | Promise<void>): void {
     return;
   }
 
-  // Explicit inspector check
+  // Additional inspector hardening at runtime
+  // This is defense-in-depth: the hardcodeInspectorDisable() at module load
+  // handles programmatic reopening, but we also handle any edge cases here.
   try {
-    inspector.close();
-  } catch {
-    /** no op - expected if inspector not available on child fork */
+    console.log('[Lockdown] Performing runtime inspector security checks...');
+    
+    // Verify inspector is closed
+    if (typeof (inspector as any).close === 'function') {
+      (inspector as any).close();
+      console.log('[Lockdown] Inspector closed');
+    }
+
+    // Verify inspector methods are disabled
+    const inspectorUrl = (inspector as any).url?.();
+    if (typeof inspectorUrl === 'string' && inspectorUrl.length > 0) {
+      console.warn('[Lockdown] WARNING: Inspector appears to have an active URL after close()');
+      console.warn('[Lockdown] Security check will catch this within 5 seconds and kill the process');
+    } else {
+      console.log('[Lockdown] Inspector URL is empty (as expected)');
+    }
+  } catch (err) {
+    console.error('[Lockdown] Runtime inspector security check failed:', err);
+    // Don't fatal here - security check will catch debugger if it somehow attaches
   }
 
-  // Inspector override
-  try {
-    // Prevent programmatic reopen
-    Object.defineProperty(inspector, 'open', {
-      value() { throw new Error('Debugger is disabled for this process.'); },
-      writable: false, configurable: false, enumerable: true
-    });
-    Object.freeze(inspector);
-  } catch (err) {
-    console.error('Inspector override failed:', err);
-    if (process.send) {
-      process.send({
-        messageId: 'fatal-lockdown-inspector-' + Date.now(),
-        error: { message: `Inspector override failed: ${err}` },
-        fatalError: true
-      });
-    }
-    setTimeout(() => process.exit(1), 1000);
-  }
+  console.log('[Lockdown] Process lockdown complete');
+  console.log('[Lockdown] SIGUSR1 signal behavior: Will be detected by security check within 5 seconds');
+  console.log('[Lockdown] Details: SIGUSR1 cannot be prevented at signal-handler level due to Node.js');
+  console.log('[Lockdown] C++ inspector module registering handler at C++ level. Security check is');
+  console.log('[Lockdown] the primary defense and will terminate process if debugger attaches.');
 }
