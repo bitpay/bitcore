@@ -22,3 +22,12 @@ export interface UpgradeCheckOpts {
   signingMethod?: string;
   supportBchSchnorr?: boolean;
 }
+
+export interface GetBalanceObj { 
+  totalAmount: number;
+  lockedAmount: number;
+  totalConfirmedAmount: number;
+  lockedConfirmedAmount: number;
+  availableAmount: number;
+  availableConfirmedAmount: number;
+}
