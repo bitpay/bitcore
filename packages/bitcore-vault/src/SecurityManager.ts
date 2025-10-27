@@ -54,7 +54,7 @@ export class SecurityManager {
   }
 
   public setBaselineSecureHeapAllocation(alloc: number): void {
-    console.log(`Setting baseline secure heap allocation size - ${alloc} bytes`);
+    console.log(`[SecurityManager] Setting baseline secure heap allocation size - ${alloc} bytes`);
     this.secureHeapBaseAllocation = alloc;
   }
 
