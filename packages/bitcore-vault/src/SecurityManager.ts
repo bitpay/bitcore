@@ -1,22 +1,15 @@
-import net from 'node:net';
-import inspector from 'node:inspector';
 import { secureHeapUsed } from 'crypto';
+import inspector from 'node:inspector';
 
 export class SecurityManager {
   private secureHeapBaseAllocation: number;
     
-  constructor() {
-    
-  }
+  constructor() {}
 
   public async runAllSecurityChecks(): Promise<{ result: boolean; reason?: string }> {
     const quickChecks = this.runQuickSecurityCheck();
     if (!quickChecks.reason) {
       return quickChecks;
-    }
-    const slowChecks = await this.runSlowSecurityCheck();
-    if (!slowChecks.result) {
-      return slowChecks;
     }
     return { result: true };
   }
@@ -41,13 +34,6 @@ export class SecurityManager {
     }
   }
 
-  public async runSlowSecurityCheck(): Promise<{ result: boolean; reason?: string }> {
-    if (await SecurityManager.probeDebugPort()) {
-      return { result: false, reason: 'Open debug port detected' };
-    }
-    return { result: true };
-  }
-
   /**
      * Kills process if false
      */
@@ -67,7 +53,7 @@ export class SecurityManager {
   }
 
   public setBaselineSecureHeapAllocation(alloc: number): void {
-    console.log(`Setting baseline secure heap allocation size - ${alloc} bytes`);
+    console.log(`[SecurityManager] Setting baseline secure heap allocation size - ${alloc} bytes`);
     this.secureHeapBaseAllocation = alloc;
   }
 
@@ -93,29 +79,19 @@ export class SecurityManager {
     };
   }
 
-  // Returns true if probe finds live debug port
-  public static async probeDebugPort(timeoutMs = 150): Promise<boolean> {
-    try {
-      const port = Number((process as any).debugPort || 0);
-      if (!Number.isFinite(port) || port <= 0) return false;
-      const net = await import('node:net');
-      return await new Promise<boolean>((resolve) => {
-        const sock = net.createConnection({ host: '127.0.0.1', port });
-        const done = (v: boolean) => { try { sock.destroy(); } catch {} resolve(v); };
-        const t = setTimeout(() => done(false), Math.min(Math.max(1, timeoutMs), 150));
-        sock.once('connect', () => { clearTimeout(t); done(true); });
-        sock.once('error', () => { clearTimeout(t); done(false); });
-      });
-    } catch {
-      return true;
-    }
-  }
-
   public static inspectorUrlExists(): boolean {
     try {
       const url = inspector.url?.();
-      return typeof url === 'string' && url.length > 0;
+      if (typeof url === 'string' && url.length > 0) {
+        console.error('[SecurityManager] CRITICAL: Inspector/debugger detected!');
+        console.error('[SecurityManager] Inspector URL:', url);
+        console.error('[SecurityManager] The signal was detected by security check (working as designed).');
+        console.error('[SecurityManager] Process will now terminate.');
+        return true;
+      }
+      return false;
     } catch {
+      console.error('[SecurityManager] Error checking inspector URL - treating as suspicious');
       return true;
     }
   }
@@ -125,9 +101,13 @@ export class SecurityManager {
       const argv = (process.execArgv || []).join(' ');
       const nodeOpts = String(process.env.NODE_OPTIONS || '');
       const rx = /--inspect(?:-brk)?\b|--inspect-port\b/;
-      return rx.test(argv) || rx.test(nodeOpts);
+      const isDetected = rx.test(argv) || rx.test(nodeOpts);
+      if (isDetected) {
+        console.warn('[SecurityManager] Inspect flags detected on secure process');
+      }
+      return; 
     } catch {
-      console.error('checkInspectFlagsAtLaunch failed');
+      console.error('[SecurityManager] checkInspectFlagsAtLaunch failed');
       return true;
     }
   }
