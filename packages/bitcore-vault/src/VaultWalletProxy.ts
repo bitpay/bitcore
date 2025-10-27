@@ -67,17 +67,9 @@ export class VaultWalletProxy {
       try {
         const secureProcessPath = path.join(__dirname, 'SecureProcess.js');
 
-        /**
-         * NOTE TO SELF (3 Oct)
-         * One of these options makes it unable to see console logs in the forked process:
-         * stdio, env, detached - probably stdio
-         */
         this.secureProcess = fork(secureProcessPath, [], {
-          // stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
           execArgv: ['--secure-heap=32768'], // don't change unless you know what you're doing - ONLY --secure-heap=n allowed
           env: {}, // zeroed environment
-          // env: { ...process.env, NODE_OPTIONS: '' },
-          // detached: false
         });
 
         // Handle responses from child process
@@ -105,7 +97,6 @@ export class VaultWalletProxy {
 
           // Apply failure policy for unexpected exits
           if (!this.isTerminating) {
-            // Only apply policy if we're not already handling termination
             if (this.exitOnChildFailure) {
               console.error('Secure process exited unexpectedly. Parent exiting as configured.');
               process.exit(1);
@@ -115,8 +106,6 @@ export class VaultWalletProxy {
           }
         });
 
-        // @TODO may need more stuff
-        console.log('Sending setupKeypair msg');
         await this.sendMessage<void>('initialize', {});
         const publicKeyPem = await this.sendMessage<string>('getPublicKey', {});
         this.publicKey = crypto.createPublicKey({
@@ -276,13 +265,6 @@ export class VaultWalletProxy {
   public async addPassphrase(walletName: string, timeoutMs?: number): Promise<{ success: boolean }> {
     if (!this.publicKey) {
       throw new Error('Public key not available. Initialize the proxy first.');
-    }
-
-    // Check secure heap before each passphrase operation
-    const isSecureHeapEnabled = await this.sendMessage<boolean>('checkSecureHeap', {}, { timeoutMs });
-    if (!isSecureHeapEnabled) {
-      // @TODO this should kill the whole process
-      throw new Error('Secure heap is not enabled. Cannot perform secure operations.');
     }
     
     const encryptedPassphrase = await this.promptForPassphrase();
