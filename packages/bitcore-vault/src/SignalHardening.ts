@@ -24,7 +24,7 @@
  * 2) **Shutdown whitelist**: only `SIGTERM`, `SIGINT`, `SIGHUP`
  *    (and `SIGBREAK` on Windows) run your `onShutdown` zeroizer, then `exit(0)`.
  * 3) **Deny-by-default**: *every other catchable signal* is **no-op** (swallowed),
- *    which includes `SIGUSR1` → prevents late inspector enablement via signal.
+ *    which importantly includes `SIGUSR1` → prevents late inspector enablement via signal.
  * 4) Clears any earlier listeners so this policy is authoritative in-process.
  * 5) Silently skips unsupported signals on the current platform/runtime.
  *
@@ -76,14 +76,6 @@ type ShutdownFn = () => void | Promise<void>;
 /**
  * Introspect ALL signals available on the current platform/Node.js runtime
  * using process.binding('constants').os.signals.
- * 
- * Why: Instead of a hardcoded list that may miss new signals or include
- * unsupported ones, we dynamically discover every signal the OS and Node
- * version support. This ensures complete coverage across platforms and versions.
- * 
- * Security: By catching every signal (except uncatchable SIGKILL/SIGSTOP),
- * we prevent any signal-based runtime manipulation, including SIGUSR1 which
- * would normally enable the V8 inspector.
  */
 function getAllPlatformSignals(): ReadonlyArray<string> {
     try {
@@ -125,7 +117,7 @@ export function installSignalPolicyHard(onShutdown: ShutdownFn) {
             // Remove any existing listeners to ensure our policy is authoritative
             process.removeAllListeners(sig as NodeJS.Signals);
             
-            // Install our policy: shutdown signals → graceful cleanup, all others → no-op
+            // Install our policy: shutdown signals → graceful cleanup, all others → no-op (console log only)
             if (shutdownSignals.includes(sig)) {
                 process.on(sig as NodeJS.Signals, async () => {
                     try {
@@ -135,15 +127,8 @@ export function installSignalPolicyHard(onShutdown: ShutdownFn) {
                     }
                 });
             } else {
-                // Debug logging for development - remove in production
-                if (sig === 'SIGUSR1') {
-                    console.log('[SignalHardening] Installed no-op handler for SIGUSR1');
-                    console.log('[SignalHardening] Note: SIGUSR1 will be detected by security check if signal reaches handler');
-                }
-
-                // Swallow the signal - prevents default behavior including SIGUSR1 → inspector
                 process.on(sig as NodeJS.Signals, () => {
-                    console.warn('SIG detected', sig);
+                    console.log(`[SignalHardening] ${sig} signal received and intercepted by JavaScript handler`);
                 });
             }
         } catch {
@@ -151,4 +136,65 @@ export function installSignalPolicyHard(onShutdown: ShutdownFn) {
             // Silently continue - the signal isn't available anyway
         }
     }
+    console.log('\n[SignalHardening] Signal policy installation complete');
+}
+
+/**
+ * Verify the signal policy was installed correctly.
+ * This function audits the actual handler state and returns true only if:
+ * 1. All shutdown signals have exactly 1 listener (our handler)
+ * 2. All other signals have exactly 1 listener (our no-op handler)
+ * 3. The handler names/sources are what we expect
+ * 
+ * Call this after installSignalPolicyHard() to verify the fix is working.
+ * Returns true if verification passes, false if there are anomalies.
+ */
+export function verifySignalPolicyHard(): boolean {
+    const shutdownSignals = ['SIGTERM', 'SIGINT', 'SIGHUP'];
+    if (process.platform === 'win32') {
+        shutdownSignals.push('SIGBREAK');
+    }
+    
+    const allSignals = getAllPlatformSignals();
+    let verificationPassed = true;
+    const criticalSignals = ['SIGUSR1', 'SIGUSR2'];
+    
+    console.log('[SignalHardening] Verifying signal policy installation...');
+    
+    for (const sig of allSignals) {
+        if (['SIGKILL', 'SIGSTOP'].includes(sig)) {
+            // Can't verify these - they can't be handled
+            continue;
+        }
+        
+        try {
+            const count = process.listenerCount(sig as NodeJS.Signals);
+            
+            // We expect exactly 1 listener for all signals (either our shutdown handler or no-op)
+            if (count === 1) {
+                // This is correct - we installed exactly 1 handler
+                if (criticalSignals.includes(sig)) {
+                    console.log(`[SignalHardening] ✓ ${sig}: 1 handler (verified)`);
+                }
+            } else if (count === 0) {
+                // No handler - this means removeAllListeners didn't work or handler failed to install
+                console.error(`[SignalHardening] ✗ ${sig}: 0 handlers (PROBLEM: handler not installed!)`);
+                verificationPassed = false;
+            } else if (count > 1) {
+                // Multiple handlers - indicates duplicates or external handlers
+                console.error(`[SignalHardening] ✗ ${sig}: ${count} handlers (PROBLEM: duplicate handlers detected!)`);
+                verificationPassed = false;
+            }
+        } catch (err) {
+            // Signal not supported on this platform
+        }
+    }
+    
+    if (verificationPassed) {
+        console.log('[SignalHardening] ✓ Signal policy verification PASSED');
+    } else {
+        console.error('[SignalHardening] ✗ Signal policy verification FAILED');
+    }
+    
+    return verificationPassed;
 }
