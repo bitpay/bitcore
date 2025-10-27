@@ -48,11 +48,6 @@ export class SecureProcess {
   private securityManager: SecurityManager;
   private securityQuickCheckInterval: NodeJS.Timeout | null = null;
   private readonly securityQuickCheckIntervalMs: number = 5000;
-  
-  // CRITICAL: Store startup security check promise to block initialization
-  // until security verification completes. Must be public static to be
-  // accessible from module-level code (the if (require.main === module) block).
-  public static startupSecurityCheckPromise: Promise<void> | null = null;
 
   constructor() {
     this.securityManager = new SecurityManager();
@@ -181,17 +176,6 @@ export class SecureProcess {
   }
 
   private async initialize() {
-    // CRITICAL: Wait for startup security checks to complete before proceeding
-    // This ensures no passphrases can enter the process until we've verified
-    // the debugger is not attached. This blocks the initialize() response,
-    // preventing the parent from sending passphrases until security is verified.
-    if (SecureProcess.startupSecurityCheckPromise) {
-      console.log('[SecureProcess] Waiting for startup security checks to complete...');
-      await SecureProcess.startupSecurityCheckPromise;
-      console.log('[SecureProcess] Startup security checks completed - proceeding with initialization');
-      SecureProcess.startupSecurityCheckPromise = null; // Clear after first use
-    }
-    
     // Ensure secure heap allocation settles before getting secure heap allocation baseline
     await new Promise(resolve => setTimeout(resolve, 500));
 
@@ -365,49 +349,33 @@ export class SecureProcess {
 
 // Instantiate and run the secure process
 if (require.main === module) {
-  const secureProcessInstance = new SecureProcess();
-  // lockdownProcess() MUST BE called after instance creation so cleanup has access to it
-  lockdownProcess(async () => {
-    await secureProcessInstance.cleanupSecureProcess();
-  });
-
-  // CRITICAL: Store startup security checks as a Promise that initialize() will await
-  // This ensures no IPC messages (especially addPassphrase) are processed until
-  // security verification completes. This blocks the initialize() handler from
-  // responding until we've verified no debugger is attached.
-  console.log('[SecureProcess] Starting security checks - will block initialization until complete');
-  SecureProcess.startupSecurityCheckPromise = (async () => {
-    if (
-      SecurityManager.checkInspectFlagsAtLaunch() ||
-      SecurityManager.inspectorUrlExists()
-    ) {
-      // Send fatal error for debug/inspector detection
-      console.error('[SecureProcess] FATAL: Debugger/inspector detected during startup checks');
-      if (process.send) {
-        process.send({
-          messageId: 'fatal-startup-' + Date.now(),
-          error: { message: 'Inspector/debugger detected at startup' },
-          fatalError: true
-        });
-      }
-      setTimeout(() => process.exit(1), 1000);
-      // Throw to ensure promise rejects and initialize() fails
-      throw new Error('[SecureProcess] Inspector/debugger detected at startup');
-    }
-    console.log('[SecureProcess] Startup security checks passed');
-  })()
-  .catch((err) => {
-    console.error('[SecureProcess] Startup check failed:', err);
+  // CRITICAL: Run startup security checks synchronously before setting up IPC
+  // This ensures no IPC messages (especially addPassphrase) can be processed until
+  // we've verified the debugger is not attached.
+  console.log('[SecureProcess] Running startup security checks...');
+  if (
+    SecurityManager.checkInspectFlagsAtLaunch() ||
+    SecurityManager.inspectorUrlExists()
+  ) {
+    // Send fatal error for debug/inspector detection
+    console.error('[SecureProcess] FATAL: Debugger/inspector detected during startup checks');
     if (process.send) {
       process.send({
-        messageId: 'fatal-startup-error-' + Date.now(),
-        error: { message: `Startup check failed: ${err.message}` },
+        messageId: 'fatal-startup-' + Date.now(),
+        error: { message: 'Inspector/debugger detected at startup' },
         fatalError: true
       });
     }
     setTimeout(() => process.exit(1), 1000);
-    // Re-throw to ensure promise rejects
-    throw err;
+    // Throw to terminate immediately
+    throw new Error('[SecureProcess] Inspector/debugger detected at startup');
+  }
+  console.log('[SecureProcess] Startup security checks passed');
+
+  const secureProcessInstance = new SecureProcess();
+  // lockdownProcess() MUST BE called after instance creation so cleanup has access to it
+  lockdownProcess(async () => {
+    await secureProcessInstance.cleanupSecureProcess();
   });
 }
 
