@@ -2,8 +2,8 @@ import * as crypto from 'crypto';
 import * as inspector from 'node:inspector';
 import { StorageType } from '../../bitcore-client/src/types/storage';
 import { SecurityManager } from './SecurityManager';
-import { VaultWallet } from './VaultWallet';
 import { installSignalPolicyHard } from './SignalHardening';
+import { VaultWallet } from './VaultWallet';
 
 /**
  * CRITICAL: Module initialization hook to disable inspector at the absolute earliest point.
@@ -80,7 +80,6 @@ export class SecureProcess {
   private async handleMessage(msg: SecureProcessMessage) {
     const { action, payload, messageId } = msg;
 
-    let fatalErrorOccurred = false;
     try {
       let result: any;
       switch (action) {
@@ -91,7 +90,6 @@ export class SecureProcess {
           result = this.checkSecureHeap();
           // If secure heap check fails, it's a fatal error
           if (!result) {
-            fatalErrorOccurred = true;
             this.sendFatalError('Secure heap check failed', messageId);
             return;
           }
@@ -117,7 +115,6 @@ export class SecureProcess {
           break;
         default:
           // Unknown action is a security concern - treat as fatal
-          fatalErrorOccurred = true;
           this.sendFatalError(`Unknown action: ${action}`, messageId);
           return;
       }
@@ -129,7 +126,6 @@ export class SecureProcess {
       // Determine if this is a fatal error
       const fatalActions = ['initialize', 'checkSecureHeap'];
       if (fatalActions.includes(action)) {
-        fatalErrorOccurred = true;
         this.sendFatalError(err, messageId);
       } else {
         this.sendError(messageId, err);

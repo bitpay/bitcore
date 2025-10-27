@@ -1,6 +1,5 @@
-import net from 'node:net';
-import inspector from 'node:inspector';
 import { secureHeapUsed } from 'crypto';
+import inspector from 'node:inspector';
 
 export class SecurityManager {
   private secureHeapBaseAllocation: number;
@@ -106,7 +105,7 @@ export class SecurityManager {
       if (isDetected) {
         console.warn('[SecurityManager] Inspect flags detected on secure process');
       }
-      return 
+      return; 
     } catch {
       console.error('[SecurityManager] checkInspectFlagsAtLaunch failed');
       return true;

@@ -2,22 +2,22 @@
   "name": "bitcore-vault",
   "version": "0.1.0",
   "description": "Wrapper for secure-heap forked process utilizing secure heap for protection of serializable credentials",
-  "main": "./ts_build/src/index.js",
-  "types": "./ts_build/src/index.d.ts",
+  "author": "BitPay, Inc",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "scripts": {
     "build": "npm run compile",
-    "clean": "rm -rf ./ts_build",
+    "clean": "rm -rf ./build",
     "pub": "npm run compile && npm publish",
     "watch": "tsc --watch",
     "compile": "npm run clean && tsc",
     "test": "mocha -r tsx test/**/*.test.ts",
-    "precommit": "echo 'TODO: npm run fix && npm run lint'",
+    "precommit": "npm run lint; npm run fix:errors",
     "lint": "eslint .",
-    "fix": "eslint --fix --quiet .",
-    "run:example": "npm run compile && node ts_build/bitcore-vault/src/examples/run.js"
+    "fix:errors": "eslint --fix --quiet .",
+    "fix:all": "eslint --fix .",
+    "run:example": "npm run compile && node build/bitcore-vault/src/examples/run.js"
   },
   "dependencies": {
     "child_process": "^1.0.2",
@@ -32,6 +32,6 @@
     "tsx": "4.19.2",
     "typescript": "5.7.3"
   },
-  "author": "Michael Jay <mjay@bitpay.com>",
+  
   "license": "ISC"
 }

@@ -27,7 +27,7 @@
         "./test/*"
       ]
     },
-    "outDir": "ts_build",
+    "outDir": "build",
     "sourceMap": true
   },
   "include": [

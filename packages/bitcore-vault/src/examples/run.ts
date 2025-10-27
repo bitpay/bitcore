@@ -19,9 +19,9 @@ class WalletLoader {
   }
 
   async run(): Promise<void> {
-    console.log('Initializing Vault Wallet Proxy...');
+    console.log('[EXAMPLE] Initializing Vault Wallet Proxy...');
     await this.vaultWalletProxy.initialize();
-    console.log('Initialization complete.');
+    console.log('[EXAMPLE] Initialization complete.');
 
     await this.walletCreationLoop();
 
@@ -30,15 +30,15 @@ class WalletLoader {
     await this.addPassphrases();
 
     // Start security monitoring intervals now that user input is complete
-    console.log('\nStarting security monitoring...');
+    console.log('[EXAMPLE] \nStarting security monitoring...');
     await this.vaultWalletProxy.startSecurityMonitoring();
-    console.log('Security monitoring started.');
+    console.log('[EXAMPLE] Security monitoring started.');
 
-    console.log('\nWallets and passphrases loaded. Here\'s where work tasks would be kicked off...');
+    console.log('\n[EXAMPLE] Wallets and passphrases loaded. Here\'s where work tasks would be kicked off...');
     // Subsequent tasks can be added here.
     // For now, we just log the wallet addresses.
     while (true) {
-      console.log('Loaded wallet addresses:', this.vaultWalletProxy.walletAddresses);
+      console.log('[EXAMPLE] Loaded wallet addresses:', this.vaultWalletProxy.walletAddresses);
       await new Promise(resolve => setTimeout(resolve, 60000));
     }
   }
@@ -65,7 +65,7 @@ class WalletLoader {
   }
 
   private async addPassphrases(): Promise<void> {
-    console.log('\n--- Adding Passphrases ---');
+    console.log('[EXAMPLE] \n--- Adding Passphrases ---');
     for (const walletName of this.vaultWalletProxy.walletAddresses.keys()) {
       try {
         console.log(`\nAdding passphrase for wallet: ${walletName}`);
@@ -96,7 +96,7 @@ const loader = new WalletLoader();
 loader
   .run()
   .then(() => {
-    console.log('Script ran - exiting');
+    console.log('[EXAMPLE] Script ran - exiting');
     process.exit(0);
   })
   .catch((error) => {

@@ -300,7 +300,7 @@ export class VaultWalletProxy {
 
     return await new Promise<Buffer>((resolve, reject) => {
       const cleanup = () => {
-        try { crypto.randomFillSync(plain.subarray(0, len)); len = 0; } catch {}
+        try { crypto.randomFillSync(plain.subarray(0, len)); len = 0; } catch {/** no op */}
         stdin.setRawMode?.(false);
         stdin.pause();
         stdin.off('data', onData);

@@ -1,5 +1,5 @@
 # Build output
-ts_build/
+build/
 *.js
 *.js.map
 *.d.ts
@@ -53,4 +53,4 @@ node_modules/
 ehthumbs.db
 Thumbs.db 
 
-/artifacts/prompts
+/artifacts
