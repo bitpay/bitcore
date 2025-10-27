@@ -57,16 +57,13 @@ export class SecurityManager {
     this.secureHeapBaseAllocation = alloc;
   }
 
-  /**
-     * @TODO - behaviors on failure conditions
-     */
   public VerifyExpectedSecureHeapAllocation(): { verified: boolean; actual: number; expected: number } {
     const currentAllocation = SecurityManager.getCurrentSecureHeapAllocation();
     if (typeof currentAllocation !== 'number' || currentAllocation <= 0) {
-      throw new Error('Messed up stuff - TODO');
+      throw new Error('Expected current allocation to be a number greater than 0');
     }
     if (typeof this.secureHeapBaseAllocation !== 'number' || this.secureHeapBaseAllocation <= 0) {
-      throw new Error('Messed up other stuff - other TODO');
+      throw new Error('Expected secure heap base allocation to be a number greater than 0');
     }
 
     /**

@@ -219,8 +219,6 @@ export class VaultWalletProxy {
    * @param payload - Data to send with the action
    * @param options - Optional configuration (timeout, etc.)
    * @returns Promise that resolves with the response from SecureProcess
-   * 
-   * @TODO: Implement backpressure handling (e.g., max concurrent requests, queue with size limit)
    */
   private sendMessage<T>(action: string, payload: any, options: SendMessageOptions = {}): Promise<T> {
     return new Promise((resolve, reject) => {
