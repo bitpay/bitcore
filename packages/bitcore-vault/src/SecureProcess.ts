@@ -103,6 +103,9 @@ export class SecureProcess {
         case 'addPassphrase':
           result = await this.addPassphrase(payload);
           break;
+        case 'removeWallet':
+          result = await this.removeWallet(payload);
+          break;
         case 'startSecurityCheckIntervals':
           // Start the security check intervals after wallets are loaded
           this.startSecurityCheckIntervals();
@@ -302,6 +305,26 @@ export class SecureProcess {
     }
 
     return { success };
+  }
+
+  private async removeWallet(payload: { name: string }): Promise<{ success: boolean }> {
+    const { name } = payload;
+    const walletEntry = this.wallets.get(name);
+
+    if (!walletEntry) {
+      throw new Error(`Wallet not found: ${name}`);
+    }
+
+    // Zeroize passphrase buffer if it exists
+    if (Buffer.isBuffer(walletEntry.passphrase)) {
+      crypto.randomFillSync(walletEntry.passphrase);
+    }
+
+    // Remove wallet from map
+    this.wallets.delete(name);
+
+    console.log(`[SecureProcess] Wallet "${name}" removed successfully`);
+    return { success: true };
   }
 
   public async cleanupSecureProcess(): Promise<void> {

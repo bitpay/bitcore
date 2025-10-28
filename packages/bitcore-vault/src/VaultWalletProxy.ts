@@ -283,6 +283,19 @@ export class VaultWalletProxy {
     return this.sendMessage<{ success: boolean }>('startSecurityCheckIntervals', {}, { timeoutMs });
   }
 
+  /**
+   * Remove a wallet from both the proxy and the secure process.
+   * This will remove the wallet from walletAddresses and instruct the secure process
+   * to clean up and remove the wallet from its internal storage.
+   */
+  public async removeWallet(walletName: string, timeoutMs?: number): Promise<{ success: boolean }> {
+    // Remove from proxy's walletAddresses
+    this.walletAddresses.delete(walletName);
+
+    // Instruct secure process to remove the wallet
+    return this.sendMessage<{ success: boolean }>('removeWallet', { name: walletName }, { timeoutMs });
+  }
+
   private async promptForPassphrase(opts: { prompt?: string; maxBytes?: number } = {}): Promise<Buffer> {
     if (!this.publicKey) throw new Error('Vault not initialized (missing public key)');
 
