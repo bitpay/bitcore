@@ -284,7 +284,7 @@ export class Utils {
       case 'doge':
       case 'ltc':
       case 'xrp':
-        return (sats / 1e8).toLocaleString('fullwide', { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 8 });
+        return (sats / 1e6).toLocaleString('fullwide', { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 8 });
       case 'sol':
         return (sats / 1e9).toLocaleString('fullwide', { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 9 });
       default:

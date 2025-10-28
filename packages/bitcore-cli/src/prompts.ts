@@ -18,7 +18,7 @@ export async function getChain(): Promise<string> {
     placeholder: `Default: ${defaultVal}`,
     defaultValue: defaultVal,
     validate: (input) => {
-      if (CWCConst.CHAINS.includes(input?.toLowerCase())) {
+      if (!input || CWCConst.CHAINS.includes(input?.toLowerCase())) {
         return; // valid input
       }
       return `Invalid chain '${input}'. Valid options are: ${CWCConst.CHAINS.join(', ')}`;
@@ -38,14 +38,14 @@ export async function getNetwork(): Promise<Network> {
     defaultValue: defaultVal,
     validate: (input) => {
       // TODO: validate network with BWS
-      const validNetworks = ['mainnet', 'testnet', 'regtest'];
+      const validNetworks = ['mainnet', 'livenet', 'testnet', 'regtest'];
       return (!input || validNetworks.includes(input.toLowerCase())) ? null : `Invalid network '${input}'. Valid options are: ${validNetworks.join(', ')}`;
     }
   });
   if (prompt.isCancel(network)) {
     throw new UserCancelled();
   }
-  return network as Network;
+  return network === 'mainnet' ? 'livenet' : network as Network;
 };
 
 

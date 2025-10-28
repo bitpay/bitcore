@@ -25,7 +25,7 @@ program
   .argument('<walletName>', 'Name of the wallet you want to create, join, or interact with. Use "list" to see all wallets in the specified directory.')
   .optionsGroup('Global Options')
   .option('-d, --dir <directory>', 'Directory to look for the wallet', process.env['BITCORE_CLI_DIR'] || path.join(os.homedir(), '.wallets'))
-  .option('-H, --host <host>', 'Bitcore Wallet Service base URL', process.env['BITCORE_CLI_HOST'] || 'http://localhost:3232')
+  .option('-H, --host <host>', 'Bitcore Wallet Service base URL', process.env['BITCORE_CLI_HOST'] || 'https://bws.bitpay.com')
   .option('-c, --command <command>', 'Run a specific command without entering the interactive CLI. Use "help" to see available commands', (value) => value.toLowerCase())
   .option('--no-status', 'Do not display the wallet status on startup. Defaults to true when running with --command')
   .option('-s, --pageSize <number>', 'Number of items per page of a list output', (value) => parseInt(value, 10), 10)
@@ -38,10 +38,14 @@ program
 
 
 const opts = program.opts() as ICliOptions;
-const walletName = program.parseOptions(process.argv).operands.slice(-1)[0];
+const walletName = program.parseOptions(process.argv).operands.slice(2)[0];
 
 if (opts.help && !opts.command) {
   program.help();
+}
+
+if (!walletName && !opts.command) {
+  Utils.die('You must specify a wallet name or use --command');
 }
 
 const isCmdHelp = opts.command && opts.help;
