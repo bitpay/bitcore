@@ -95,7 +95,7 @@ async function addMultiIOTransaction(params: {
   senderAddresses: string[] | 'coinbase', 
   recipients: { address: string, value: number }[],
   fee?: number
- }) {
+}) {
   const { senderAddresses, recipients, fee = 0 } = params;
   const chain = 'BTC';
   const network = 'regtest';

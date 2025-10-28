@@ -256,11 +256,11 @@ describe('Utils', function() {
 
     it('should handle null, undefined, NaN, objects and strings', function() {
       const array = 
-      [NaN, NaN, new ObjectID('6f0d45b6dfeafa40f958afbf'), undefined, 
-        'bitcoin', null, 'bitcoin', undefined, 'txs', null];
+        [NaN, NaN, new ObjectID('6f0d45b6dfeafa40f958afbf'), undefined, 
+          'bitcoin', null, 'bitcoin', undefined, 'txs', null];
       const result = utils.uniq(array);
       const expectedResult = 
-          [NaN, new ObjectID('6f0d45b6dfeafa40f958afbf'), undefined, 'bitcoin', null, 'txs'];
+        [NaN, new ObjectID('6f0d45b6dfeafa40f958afbf'), undefined, 'bitcoin', null, 'txs'];
       expect(result).deep.equal(expectedResult);
     });
   });

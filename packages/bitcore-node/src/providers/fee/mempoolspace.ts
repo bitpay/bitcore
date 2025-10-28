@@ -18,19 +18,19 @@ export class MempoolSpaceClass implements IFeeProvider {
     testnet3: FeeCacheType;
     testnet4: FeeCacheType;
   } = {
-      mainnet: {
-        timestamp: 0,
-        response: null
-      },
-      testnet3: {
-        timestamp: 0,
-        response: null
-      },
-      testnet4: {
-        timestamp: 0,
-        response: null
-      }
-    };
+    mainnet: {
+      timestamp: 0,
+      response: null
+    },
+    testnet3: {
+      timestamp: 0,
+      response: null
+    },
+    testnet4: {
+      timestamp: 0,
+      response: null
+    }
+  };
 
   private cacheTime = 1000 * 90; // 90 seconds
 

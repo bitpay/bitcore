@@ -263,10 +263,10 @@ export interface EventLog<T> {
   raw?: { data: string; topics: any[] };
 }
 export type ERC20Transfer = EventLog<{
-    [key: string]: string;
-  }>
+  [key: string]: string;
+}>
 
 export interface IEVMCachedAddress {
-    address: string;
-    tokenAddress?: string;
-  }
+  address: string;
+  tokenAddress?: string;
+}

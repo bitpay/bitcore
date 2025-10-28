@@ -75,7 +75,7 @@ export class ExternalApiStream extends ReadableWithEventPipe {
 
   // handles events emitted by the streamed response, request from client, and response to client
   static onStream(stream: Readable, req: Request, res: Response, opts: StreamOpts = {}):
-    Promise<{ success: boolean, error?: any }> {
+  Promise<{ success: boolean, error?: any }> {
     return new Promise<{ success: boolean, error?: any }>((resolve, reject) => {
       let closed = false;
       let isFirst = true;

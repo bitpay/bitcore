@@ -131,7 +131,8 @@ export class CoinModel extends BaseModel<ICoin> {
 
   resolveAuthhead(mintTxid: string, chain?: string, network?: string) {
     return this.collection
-      .aggregate<{
+      .aggregate<
+      {
         chain: string;
         network: string;
         authbase: string;
