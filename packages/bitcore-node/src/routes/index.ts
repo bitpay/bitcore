@@ -47,7 +47,7 @@ app.use(cors());
 app.use(LogMiddleware());
 app.use(CacheMiddleware(CacheTimes.Second, CacheTimes.Second));
 app.use(RateLimiter('GLOBAL', 10, 200, 4000));
-app.use('/api/' + statusRoute.path, statusRoute.router);
+app.use('/api' + statusRoute.path, statusRoute.router);
 // Change aliased chain and network params
 app.param(['chain', 'network'], (req: Request, _: Response, next: any) => {
   const { chain: beforeChain, network: beforeNetwork } = req.params;
