@@ -123,13 +123,13 @@ describe('client API', function() {
   describe('constructor', () => {
     it('should set the log level based on the logLevel option', () => {
       const originalLogLevel = log.level;
-      var client = new Client({
+      let client = new Client({
         logLevel: 'info'
       });
       client.logLevel.should.equal('info');
       log.level.should.equal('info');
 
-      var client = new Client({
+      client = new Client({
         logLevel: 'debug'
       });
       client.logLevel.should.equal('debug');
@@ -856,20 +856,20 @@ describe('client API', function() {
         }).should.throw('Output should have either toAddress or script specified');
 
         txp.outputs[0].toAddress = '18433T2TSgajt9jWhcTBw4GoNREA6LpX3E';
-        let t = Utils.buildTx(txp);
-        var bitcoreError = t.getSerializationError({
+        const t1 = Utils.buildTx(txp);
+        const preDeleteBitcoreError = t1.getSerializationError({
           disableIsFullySigned: true
         });
-        should.not.exist(bitcoreError);
+        should.not.exist(preDeleteBitcoreError);
 
         delete txp.outputs[0].toAddress;
         txp.outputs[0].script =
           '512103ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff210314a96cd6f5a20826070173fe5b7e9797f21fc8ca4a55bcb2d2bde99f55dd352352ae';
-        t = Utils.buildTx(txp);
-        var bitcoreError = t.getSerializationError({
+        const t2 = Utils.buildTx(txp);
+        const t2BitcoreError = t2.getSerializationError({
           disableIsFullySigned: true
         });
-        should.not.exist(bitcoreError);
+        should.not.exist(t2BitcoreError);
       });
       it('should build a v3 tx proposal', () => {
         const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
@@ -1490,7 +1490,7 @@ describe('client API', function() {
           notifications.push(data);
         });
 
-        var notifications = [];
+        let notifications = [];
         clients[0]._fetchLatestNotifications(5, (err) => {
           should.not.exist(err);
           notifications.map(n => n.type).should.deep.equal(['NewCopayer', 'WalletComplete']);
@@ -7733,12 +7733,12 @@ describe('client API', function() {
                     should.not.exist(err);
 
                     // Do not send wallet name and copayer names in clear text
-                    var url = spy.getCall(0).args[0];
-                    var body = JSON.stringify(spy.getCall(0).args[1]);
+                    let url = spy.getCall(0).args[0];
+                    let body = JSON.stringify(spy.getCall(0).args[1]);
                     url.should.contain('/wallets');
                     body.should.not.contain('mywallet');
-                    var url = spy.getCall(1).args[0];
-                    var body = JSON.stringify(spy.getCall(1).args[1]);
+                    url = spy.getCall(1).args[0];
+                    body = JSON.stringify(spy.getCall(1).args[1]);
                     url.should.contain('/copayers');
                     body.should.not.contain('creator');
                     body.should.not.contain('copayer 1');
@@ -8037,15 +8037,15 @@ describe('client API', function() {
   /*
   describe.skip('Air gapped related flows', () => {
     it('should create wallet in proxy from airgapped', function(done) {
-      var airgapped = new Client();
+      let airgapped = new Client();
       airgapped.seedFromRandom({ network: 'testnet' });
-      var exported = airgapped.toString({ noSign: true });
+      let exported = airgapped.toString({ noSign: true });
 
-      var proxy = helpers.newClient(app);
+      let proxy = helpers.newClient(app);
       proxy.fromString(exported);
       should.not.exist(proxy.credentials.xPrivKey);
 
-      var seedSpy = sandbox.spy(proxy, 'seedFromRandom');
+      let seedSpy = sandbox.spy(proxy, 'seedFromRandom');
       proxy.createWallet(
         'mywallet',
         'creator',
@@ -8066,17 +8066,17 @@ describe('client API', function() {
       );
     });
     it('should fail to create wallet in proxy from airgapped when networks do not match', function(done) {
-      var airgapped = new Client();
+      let airgapped = new Client();
       airgapped.seedFromRandom({
         network: 'testnet'
       });
-      var exported = airgapped.toString({ noSign: true });
+      let exported = airgapped.toString({ noSign: true });
 
-      var proxy = helpers.newClient(app);
+      let proxy = helpers.newClient(app);
       proxy.fromString(exported);
       should.not.exist(proxy.credentials.xPrivKey);
 
-      var seedSpy = sandbox.spy(proxy, 'seedFromRandom');
+      let seedSpy = sandbox.spy(proxy, 'seedFromRandom');
       should.not.exist(proxy.credentials.xPrivKey);
       proxy.createWallet(
         'mywallet',
@@ -8094,11 +8094,11 @@ describe('client API', function() {
       );
     });
     it('should be able to sign from airgapped client and broadcast from proxy', function(done) {
-      var airgapped = new Client();
+      let airgapped = new Client();
       airgapped.seedFromRandom({ network: 'testnet' });
-      var exported = airgapped.toString({ noSign: true });
+      let exported = airgapped.toString({ noSign: true });
 
-      var proxy = helpers.newClient(app);
+      let proxy = helpers.newClient(app);
       proxy.fromString(exported);
       should.not.exist(proxy.credentials.xPrivKey);
 
@@ -8119,7 +8119,7 @@ describe('client API', function() {
                   should.not.exist(err);
                   should.exist(address.address);
                   blockchainExplorerMock.setUtxo(address, 1, 1);
-                  var opts = {
+                  let opts = {
                     amount: 1200000,
                     toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
                     message: 'hello 1-1'
@@ -8147,7 +8147,7 @@ describe('client API', function() {
             );
           },
           (bundle, next) => {
-            var signatures = airgapped.signTxProposalFromAirGapped(
+            let signatures = airgapped.signTxProposalFromAirGapped(
               bundle.txps[0],
               bundle.encryptedPkr,
               bundle.m,
@@ -8158,7 +8158,7 @@ describe('client API', function() {
           (signatures, next) => {
             proxy.getTxProposals({}, (err, txps) => {
               should.not.exist(err);
-              var txp = txps[0];
+              let txp = txps[0];
               txp.signatures = signatures;
               async.each(
                 txps,
@@ -8187,13 +8187,13 @@ describe('client API', function() {
       );
     });
     it('should be able to sign from airgapped client with mnemonics (with unencrypted xpubkey ring)', function(done) {
-      var client = helpers.newClient(app);
+      let client = helpers.newClient(app);
       client.seedFromRandomWithMnemonic({
         network: 'testnet',
         passphrase: 'passphrase'
       });
 
-      var mnemonic = client.getMnemonic();
+      let mnemonic = client.getMnemonic();
       client.encryptPrivateKey('password');
       client.isPrivKeyEncrypted().should.be.true;
 
@@ -8214,7 +8214,7 @@ describe('client API', function() {
                   should.not.exist(err);
                   should.exist(address.address);
                   blockchainExplorerMock.setUtxo(address, 1, 1);
-                  var opts = {
+                  let opts = {
                     amount: 1200000,
                     toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
                     message: 'hello 1-1'
@@ -8235,7 +8235,7 @@ describe('client API', function() {
             );
           },
           (bundle, next) => {
-            var signatures = Client.signTxProposalFromAirGapped(
+            let signatures = Client.signTxProposalFromAirGapped(
               mnemonic,
               bundle.txps[0],
               bundle.unencryptedPkr,
@@ -8252,7 +8252,7 @@ describe('client API', function() {
           (signatures, next) => {
             client.getTxProposals({}, (err, txps) => {
               should.not.exist(err);
-              var txp = txps[0];
+              let txp = txps[0];
               txp.signatures = signatures;
               async.each(
                 txps,
@@ -8281,14 +8281,14 @@ describe('client API', function() {
       );
     });
     describe('Failure and tampering', () => {
-      var airgapped, proxy, bundle;
+      let airgapped, proxy, bundle;
 
       beforeEach(function(done) {
         airgapped = new Client();
         airgapped.seedFromRandom({
           network: 'testnet'
         });
-        var exported = airgapped.toString({
+        let exported = airgapped.toString({
           noSign: true
         });
 
@@ -8313,7 +8313,7 @@ describe('client API', function() {
                     should.not.exist(err);
                     should.exist(address.address);
                     blockchainExplorerMock.setUtxo(address, 1, 1);
-                    var opts = {
+                    let opts = {
                       amount: 1200000,
                       toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
                       message: 'hello 1-1'
@@ -8862,8 +8862,8 @@ describe('client API', function() {
     /*
     describe.skip('#importFromExtendedPublicKey', () => {
       it('should handle importing an invalid extended private key', function(done) {
-        var client = new Client();
-        var xPubKey = 'this is an invalid key';
+        let client = new Client();
+        let xPubKey = 'this is an invalid key';
         client.importFromExtendedPublicKey(xPubKey, {}, {}, {}, err => {
           should.exist(err);
           err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
@@ -8871,7 +8871,7 @@ describe('client API', function() {
         });
       });
       it('should import with external public key', function(done) {
-        var client = helpers.newClient(app);
+        let client = helpers.newClient(app);
 
         client.seedFromExtendedPublicKey(
           'xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq',
@@ -8889,8 +8889,8 @@ describe('client API', function() {
           },
           err => {
             should.not.exist(err);
-            var c = client.credentials;
-            var importedClient = helpers.newClient(app);
+            let c = client.credentials;
+            let importedClient = helpers.newClient(app);
             importedClient.importFromExtendedPublicKey(
               'xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq',
               'ledger',
@@ -8898,7 +8898,7 @@ describe('client API', function() {
               {},
               err => {
                 should.not.exist(err);
-                var c2 = importedClient.credentials;
+                let c2 = importedClient.credentials;
                 c2.account.should.equal(0);
                 c2.xPubKey.should.equal(client.credentials.xPubKey);
                 c2.personalEncryptingKey.should.equal(c.personalEncryptingKey);
@@ -8913,7 +8913,7 @@ describe('client API', function() {
       });
 
       it('should fail to import with external priv key when not enought entropy', () => {
-        var client = helpers.newClient(app);
+        let client = helpers.newClient(app);
         (() => {
           client.seedFromExtendedPublicKey(
             'xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq',
