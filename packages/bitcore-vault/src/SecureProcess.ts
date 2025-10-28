@@ -1,9 +1,9 @@
 import * as crypto from 'crypto';
 import * as inspector from 'node:inspector';
-import type { StorageType } from '../../bitcore-client/src/types/storage';
 import { SecurityManager } from './SecurityManager';
 import { installSignalPolicyHard } from './SignalHardening';
 import { VaultWallet } from './VaultWallet';
+import type { StorageType } from '../../bitcore-client/src/types/storage';
 
 /**
  * CRITICAL: Module initialization hook to disable inspector at the absolute earliest point.
