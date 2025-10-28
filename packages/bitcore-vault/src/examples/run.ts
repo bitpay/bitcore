@@ -66,7 +66,9 @@ class WalletLoader {
 
   private async addPassphrases(): Promise<void> {
     console.log('[EXAMPLE] \n--- Adding Passphrases ---');
-    for (const walletName of this.vaultWalletProxy.walletAddresses.keys()) {
+    // Create a snapshot of wallet names since we might remove wallets during iteration
+    const walletNames = Array.from(this.vaultWalletProxy.walletAddresses.keys());
+    for (const walletName of walletNames) {
       try {
         console.log(`\nAdding passphrase for wallet: ${walletName}`);
         let success = false;
@@ -75,16 +77,21 @@ class WalletLoader {
           const { success: returnedSuccess } = await this.vaultWalletProxy.addPassphrase(walletName);
           success = returnedSuccess;
           if (!success) {
-            if (remainingTries) {
-              remainingTries--;
+            remainingTries--;
+            if (remainingTries > 0) {
               console.log(`  Passphrase not successfully added - you have ${remainingTries} tries remaining`);
             } else {
-              // @TODO remove wallet
-              console.log(`  No remaining tries - @@ TODO @@ removing ${walletName}`);
+              console.log(`  No remaining tries - removing ${walletName}`);
+              await this.vaultWalletProxy.removeWallet(walletName);
+              console.log(`  Wallet "${walletName}" has been removed.`);
             }
           }
         }
-        console.log(`Passphrase ${success ? '' : 'not '}added for ${walletName}.`);
+        if (success) {
+          console.log(`Passphrase added for ${walletName}.`);
+        } else {
+          console.log(`Passphrase not added for ${walletName} - wallet removed.`);
+        }
       } catch (error) {
         console.error(`Failed to add passphrase for ${walletName}:`, error);
       }
@@ -103,3 +110,4 @@ loader
     console.error('An unexpected error occurred:', error);
     process.exit(1);
   });
+
