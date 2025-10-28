@@ -166,7 +166,7 @@ export class Mongo {
     }
   }
 
-  async getAddress(params: { name: string; address: string, keepAlive: boolean; open: boolean}) {
+  async getAddress(params: { name: string; address: string, keepAlive: boolean; open: boolean }) {
     const { name, address, keepAlive, open } = params;
     const data = await this.getKey({ address, name, keepAlive, open });
     if (!data) {

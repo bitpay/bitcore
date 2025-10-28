@@ -1,9 +1,9 @@
 'use strict';
 
-import { BitcoreLib as Bitcore } from 'crypto-wallet-core';
 import query from 'querystring';
-import superagent from 'superagent';
 import url from 'url';
+import { BitcoreLib as Bitcore } from 'crypto-wallet-core';
+import superagent from 'superagent';
 import dfltTrustedKeys from '../util/JsonPaymentProtocolKeys';
 import { Errors } from './errors';
 
@@ -58,7 +58,7 @@ export class PayProV2 {
     options
   ): Promise<{ rawBody: string; headers: object }> {
     return new Promise((resolve, reject) => {
-      let requestOptions = Object.assign({}, PayProV2.options, options);
+      const requestOptions = Object.assign({}, PayProV2.options, options);
 
       // Copy headers directly as they're objects
       requestOptions.headers = Object.assign(
@@ -67,7 +67,7 @@ export class PayProV2 {
         options.headers
       );
 
-      var r = this.request[requestOptions.method](requestOptions.url);
+      const r = this.request[requestOptions.method](requestOptions.url);
       for (const [k, v] of Object.entries(requestOptions.headers || {})) {
         if (v) r.set(k, v);
       }
@@ -166,7 +166,7 @@ export class PayProV2 {
       paymentUrlObject.protocol !== 'http:' &&
       paymentUrlObject.protocol !== 'https:'
     ) {
-      let uriQuery = query.decode(paymentUrlObject.query);
+      const uriQuery = query.decode(paymentUrlObject.query);
       if (!uriQuery.r) {
         throw new Error('Invalid payment protocol url');
       } else {
@@ -208,7 +208,7 @@ export class PayProV2 {
     const { paymentUrl, chain, payload, unsafeBypassValidation } = args;
     let { currency } = args;
     if (currency === 'USDP') currency = 'PAX'; // TODO workaround. Remove this when usdp is accepted as an option
-    let { rawBody, headers } = await PayProV2._asyncRequest({
+    const { rawBody, headers } = await PayProV2._asyncRequest({
       url: paymentUrl,
       method: 'post',
       headers: {
@@ -250,7 +250,7 @@ export class PayProV2 {
     unsafeBypassValidation = false
   }) {
     if (currency === 'USDP') currency = 'PAX'; // TODO workaround. Remove this when usdp is accepted as an option
-    let { rawBody, headers } = await PayProV2._asyncRequest({
+    const { rawBody, headers } = await PayProV2._asyncRequest({
       url: paymentUrl,
       method: 'post',
       headers: {
@@ -293,7 +293,7 @@ export class PayProV2 {
     bpPartner
   }) {
     if (currency === 'USDP') currency = 'PAX'; // TODO workaround. Remove this when usdp is accepted as an option
-    let { rawBody, headers } = await this._asyncRequest({
+    const { rawBody, headers } = await this._asyncRequest({
       url: paymentUrl,
       method: 'post',
       headers: {
@@ -419,12 +419,12 @@ export class PayProV2 {
     const hashbuf = Buffer.from(hash, 'hex');
     const sigbuf = Buffer.from(signature, 'hex');
 
-    let s_r = BN.fromBuffer(sigbuf.slice(0, 32));
-    let s_s = BN.fromBuffer(sigbuf.slice(32));
+    const s_r = BN.fromBuffer(sigbuf.slice(0, 32));
+    const s_s = BN.fromBuffer(sigbuf.slice(32));
 
-    let pub = Bitcore.PublicKey.fromString(keyData.publicKey);
-    let sig = new Bitcore.crypto.Signature(s_r, s_s);
-    let valid = Bitcore.crypto.ECDSA.verify(hashbuf, sig, pub);
+    const pub = Bitcore.PublicKey.fromString(keyData.publicKey);
+    const sig = new Bitcore.crypto.Signature(s_r, s_s);
+    const valid = Bitcore.crypto.ECDSA.verify(hashbuf, sig, pub);
 
     if (!valid) {
       throw new Error('Response signature invalid');
@@ -441,7 +441,7 @@ export class PayProV2 {
    */
 
   static processResponse(responseData) {
-    let payProDetails: any = {
+    const payProDetails: any = {
       paymentId: responseData.paymentId,
       payProUrl: responseData.paymentUrl,
       memo: responseData.memo

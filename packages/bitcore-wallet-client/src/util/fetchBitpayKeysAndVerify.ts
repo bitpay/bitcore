@@ -1,19 +1,18 @@
 const ncrypto = require('crypto'); // renamed in order to prevent redeclaration of block-scoped variable 'crypto' from typescript dom library
-
 const bs58 = require('bs58');
 const kbpgp = require('kbpgp');
 const request = require('request-promise');
 
-let bitpayPgpKeys = {};
-let githubPgpKeys = {};
-let importedPgpKeys = {};
+const bitpayPgpKeys = {};
+const githubPgpKeys = {};
+const importedPgpKeys = {};
 let signatureCount = 0;
 
 let eccPayload;
 let parsedEccPayload;
 let eccKeysHash;
 
-let keyRequests = [];
+const keyRequests = [];
 
 keyRequests.push(
   (() => {
@@ -26,7 +25,7 @@ keyRequests.push(
       },
       json: true
     }).then(pgpKeyFiles => {
-      let fileDataPromises = [];
+      const fileDataPromises = [];
       pgpKeyFiles.forEach(file => {
         fileDataPromises.push(
           (() => {
@@ -37,7 +36,7 @@ keyRequests.push(
                 'user-agent': 'BitPay Key-Check Utility'
               }
             }).then(body => {
-              let hash = ncrypto.createHash('sha256').update(body).digest('hex');
+              const hash = ncrypto.createHash('sha256').update(body).digest('hex');
               githubPgpKeys[hash] = body;
               return Promise.resolve();
             });
@@ -61,7 +60,7 @@ keyRequests.push(
       json: true
     }).then(body => {
       body.pgpKeys.forEach(function (key) {
-        let hash = ncrypto
+        const hash = ncrypto
           .createHash('sha256')
           .update(key.publicKey)
           .digest('hex');
@@ -80,11 +79,11 @@ Promise.all(keyRequests)
       console.log('Warning: Different number of keys returned by key lists');
     }
 
-    let bitpayOnlyKeys = Object.keys(bitpayPgpKeys).filter(keyHash => {
+    const bitpayOnlyKeys = Object.keys(bitpayPgpKeys).filter(keyHash => {
       return !githubPgpKeys[keyHash];
     });
 
-    let githubOnlyKeys = Object.keys(githubPgpKeys).filter(keyHash => {
+    const githubOnlyKeys = Object.keys(githubPgpKeys).filter(keyHash => {
       return !bitpayPgpKeys[keyHash];
     });
 
@@ -176,13 +175,13 @@ Promise.all(keyRequests)
       Promise.all(
         signatureData.signatures.map(signature => {
           return new Promise((resolve, reject) => {
-            let pgpKey = importedPgpKeys[signature.identifier];
+            const pgpKey = importedPgpKeys[signature.identifier];
             if (!pgpKey) {
               return reject(
                 `PGP key ${signature.identifier} missing for signature`
               );
             }
-            let armoredSignature = Buffer.from(
+            const armoredSignature = Buffer.from(
               signature.signature,
               'hex'
             ).toString();
@@ -222,20 +221,20 @@ Promise.all(keyRequests)
       );
       console.log(eccPayload);
 
-      let keyMap = {};
+      const keyMap = {};
 
       console.log('----\nValid keymap for use in bitcoinRpc example:');
 
       parsedEccPayload.publicKeys.forEach(pubkey => {
         // Here we are just generating the pubkey hash (btc address) of each of the public keys received for easy lookup later
         // as this is what will be provided by the x-identity header
-        let a = ncrypto.createHash('sha256').update(pubkey, 'hex').digest();
-        let b = ncrypto.createHash('rmd160').update(a).digest('hex');
-        let c = '00' + b; // This is assuming livenet
-        let d = ncrypto.createHash('sha256').update(c, 'hex').digest();
-        let e = ncrypto.createHash('sha256').update(d).digest('hex');
+        const a = ncrypto.createHash('sha256').update(pubkey, 'hex').digest();
+        const b = ncrypto.createHash('rmd160').update(a).digest('hex');
+        const c = '00' + b; // This is assuming livenet
+        const d = ncrypto.createHash('sha256').update(c, 'hex').digest();
+        const e = ncrypto.createHash('sha256').update(d).digest('hex');
 
-        let pubKeyHash = bs58.encode(Buffer.from(c + e.substr(0, 8), 'hex'));
+        const pubKeyHash = bs58.encode(Buffer.from(c + e.substr(0, 8), 'hex'));
 
         keyMap[pubKeyHash] = {
           owner: parsedEccPayload.owner,

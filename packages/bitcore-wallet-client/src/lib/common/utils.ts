@@ -105,9 +105,9 @@ export class Utils {
 
   static signMessage(message, privKey) {
     $.checkArgument(message);
-    var priv = new PrivateKey(privKey);
+    const priv = new PrivateKey(privKey);
     const flattenedMessage = Array.isArray(message) ? message.join(',') : message;
-    var hash = this.hashMessage(flattenedMessage);
+    const hash = this.hashMessage(flattenedMessage);
     return crypto.ECDSA.sign(hash, priv, { endian: 'little' }).toString();
   }
 
@@ -117,11 +117,11 @@ export class Utils {
 
     if (!signature) return false;
 
-    var pub = new PublicKey(pubKey);
+    const pub = new PublicKey(pubKey);
     const flattenedMessage = Array.isArray(message) ? message.join(',') : message;
     const hash = this.hashMessage(flattenedMessage);
     try {
-      var sig = new crypto.Signature.fromString(signature);
+      const sig = new crypto.Signature.fromString(signature);
       return crypto.ECDSA.verify(hash, sig, pub, { endian: 'little' });
     } catch (e) {
       return false;
@@ -186,7 +186,7 @@ export class Utils {
         address: bitcoreAddress.toString(),
         path,
         publicKeys: [externSourcePublicKey]
-      }
+      };
     }
 
     chain = chain || 'btc';
@@ -302,29 +302,29 @@ export class Utils {
   static formatAmount(satoshis, unit, opts?) {
     $.shouldBeNumber(satoshis);
 
-    var clipDecimals = (number, decimals) => {
+    const clipDecimals = (number, decimals) => {
       let str = number.toString();
       if (str.indexOf('e') >= 0) {
         // fixes eth small balances
         str = number.toFixed(MAX_DECIMAL_ANY_CHAIN);
       }
-      var x = str.split('.');
+      const x = str.split('.');
 
-      var d = (x[1] || '0').substring(0, decimals);
+      const d = (x[1] || '0').substring(0, decimals);
       const ret = parseFloat(x[0] + '.' + d);
       return ret;
     };
 
-    var addSeparators = (nStr, thousands, decimal, minDecimals) => {
+    const addSeparators = (nStr, thousands, decimal, minDecimals) => {
       nStr = nStr.replace('.', decimal);
-      var x = nStr.split(decimal);
-      var x0 = x[0];
-      var x1 = x[1] || '';
+      const x = nStr.split(decimal);
+      let x0 = x[0];
+      let x1 = x[1] || '';
 
       while (x1.endsWith('0') && x1.length > minDecimals) {
         x1 = x1.slice(0, -1);
       }
-      var x2 = x.length > 1 ? decimal + x1 : '';
+      const x2 = x.length > 1 ? decimal + x1 : '';
 
       x0 = x0.replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
       return x0 + x2;
@@ -332,11 +332,11 @@ export class Utils {
 
     opts = opts || {};
 
-    var u = Constants.UNITS[unit];
-    var precision = opts.fullPrecision ? 'full' : 'short';
-    var decimals = opts.decimals ? opts.decimals[precision] : u[precision];
-    var toSatoshis = opts.toSatoshis ? opts.toSatoshis : u.toSatoshis;
-    var amount = clipDecimals(
+    const u = Constants.UNITS[unit];
+    const precision = opts.fullPrecision ? 'full' : 'short';
+    const decimals = opts.decimals ? opts.decimals[precision] : u[precision];
+    const toSatoshis = opts.toSatoshis ? opts.toSatoshis : u.toSatoshis;
+    const amount = clipDecimals(
       satoshis / toSatoshis,
       decimals.maxDecimals
     ).toFixed(decimals.maxDecimals);
@@ -349,12 +349,12 @@ export class Utils {
   }
 
   static buildTx(txp) {
-    var chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
+    const chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
 
     if (Constants.UTXO_CHAINS.includes(chain)) {
-      var bitcore = Bitcore_[chain];
+      const bitcore = Bitcore_[chain];
 
-      var t = new bitcore.Transaction();
+      const t = new bitcore.Transaction();
 
       if (txp.version >= 4) {
         t.setVersion(2);
@@ -463,7 +463,7 @@ export class Utils {
       const isToken = tokenAddress && !payProUrl && !isTokenSwap;
       const isMULTISIG = multisigContractAddress;
       const chainName = chain.toUpperCase();
-      const tokenType = chainName === 'SOL' ? 'SPL' : 'ERC20'
+      const tokenType = chainName === 'SOL' ? 'SPL' : 'ERC20';
       const _chain = isMULTISIG
         ? chainName + 'MULTISIG'
         : isToken
@@ -471,7 +471,7 @@ export class Utils {
           : chainName;
 
       if (multiSendContractAddress) {
-        let multiSendParams = {
+        const multiSendParams = {
           nonce: Number(txp.nonce),
           recipients,
           chain: _chain,
@@ -490,7 +490,7 @@ export class Utils {
             amount: outputs[outputIdx].amount,
             address: outputs[outputIdx].toAddress,
             tag: outputs[outputIdx].tag
-          }
+          };
           const _tag = recepient?.tag || destinationTag;
           const rawTx = Transactions.create({
             ...txp,
@@ -528,9 +528,9 @@ export class Utils {
 
   static formatNonce(chain, nonce, index) {
     if (Constants.SVM_CHAINS.includes(chain.toLowerCase())) {
-      return nonce
+      return nonce;
     } else {
-      return Number(nonce) + Number(index)
+      return Number(nonce) + Number(index);
     }
   }
 

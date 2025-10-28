@@ -123,15 +123,15 @@ export class Verifier {
   }
 
   static checkProposalCreation(args, txp, encryptingKey) {
-    var strEqual = (str1, str2) => {
+    const strEqual = (str1, str2) => {
       return (!str1 && !str2) || str1 === str2;
     };
 
     if (txp.outputs.length != args.outputs.length) return false;
 
-    for (var i = 0; i < txp.outputs.length; i++) {
-      var o1 = txp.outputs[i];
-      var o2 = args.outputs[i];
+    for (let i = 0; i < txp.outputs.length; i++) {
+      const o1 = txp.outputs[i];
+      const o2 = args.outputs[i];
       if (!strEqual(o1.toAddress, o2.toAddress)) return false;
       if (!strEqual(o1.script, o2.script)) return false;
       if (o1.amount != o2.amount) return false;
@@ -144,7 +144,7 @@ export class Verifier {
       if (!strEqual(o1.message, decryptedMessage)) return false;
     }
 
-    var changeAddress;
+    let changeAddress;
     if (txp.changeAddress) {
       changeAddress = txp.changeAddress.address;
     }
@@ -177,14 +177,14 @@ export class Verifier {
       'Failed state: credentials at checkTxProposalSignature'
     );
 
-    var chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
-    var creatorKeys = (credentials.publicKeyRing || []).find(item => {
+    const chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
+    const creatorKeys = (credentials.publicKeyRing || []).find(item => {
       if (Utils.xPubToCopayerId(chain, item.xPubKey) === txp.creatorId)
         return true;
     });
 
     if (!creatorKeys) return false;
-    var creatorSigningPubKey;
+    let creatorSigningPubKey;
 
     // If the txp using a selfsigned pub key?
     if (txp.proposalSignaturePubKey) {
@@ -204,9 +204,9 @@ export class Verifier {
     }
     if (!creatorSigningPubKey) return false;
 
-    var hash;
+    let hash;
     if (parseInt(txp.version) >= 3) {
-      var t = Utils.buildTx(txp);
+      const t = Utils.buildTx(txp);
       hash = t.uncheckedSerialize();
     } else {
       throw new Error('Transaction proposal not supported');
@@ -221,10 +221,10 @@ export class Verifier {
   
     const verified = Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey);
     if (!verified && !txp.prePublishRaw)
-        return false;
+      return false;
     
     if (!verified && txp.prePublishRaw && !Utils.verifyMessage(txp.prePublishRaw, txp.proposalSignature, creatorSigningPubKey))
-        return false;
+      return false;
 
     if (Constants.UTXO_CHAINS.includes(chain)) {
       if (!this.checkAddress(credentials, txp.changeAddress)) {
@@ -242,7 +242,7 @@ export class Verifier {
   }
 
   static checkPaypro(txp, payproOpts) {
-    var toAddress, amount, feeRate;
+    let toAddress, amount, feeRate;
 
     if (parseInt(txp.version) >= 3) {
       toAddress = txp.outputs[0].toAddress;

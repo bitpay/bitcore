@@ -89,13 +89,13 @@ export class BulkClient extends Request<Array<Credentials>> {
     try {
       this.setCredentials(credentials);
 
-      var qs = [];
+      const qs = [];
       qs.push('includeExtendedInfo=' + (opts.includeExtendedInfo ? '1' : '0'));
       qs.push('twoStep=' + (opts.twoStep ? '1' : '0'));
       qs.push('serverMessageArray=1');
       qs.push('silentFailure=' + (opts.silentFailure ? '1' : '0'));
 
-      let wallets = opts.wallets;
+      const wallets = opts.wallets;
       if (wallets) {
         for (const copayerId of Object.keys(wallets)) {
           for (const address of wallets[copayerId].tokenAddresses || []) {
@@ -145,14 +145,14 @@ export class BulkClient extends Request<Array<Credentials>> {
   }
 
   _processStatus(status: Status, c: Credentials) {
-    var processCustomData = (data, c) => {
+    const processCustomData = (data, c) => {
       const copayers = data.wallet.copayers;
       if (!copayers) return;
 
       const me = copayers.find(copayer => copayer.id == c.copayerId);
       if (!me || !me.customData) return;
 
-      var customData;
+      let customData;
       try {
         customData = JSON.parse(
           Utils.decryptMessage(me.customData, c.personalEncryptingKey)
@@ -174,7 +174,7 @@ export class BulkClient extends Request<Array<Credentials>> {
   }
 
   _processWallet(wallet, c: Credentials) {
-    var encryptingKey = c.sharedEncryptingKey;
+    const encryptingKey = c.sharedEncryptingKey;
 
     var name = Utils.decryptMessageNoThrow(wallet.name, encryptingKey);
     if (name != wallet.name) {
@@ -239,7 +239,7 @@ export class BulkClient extends Request<Array<Credentials>> {
   _processTxNotes(notes, c) {
     if (!notes) return;
 
-    var encryptingKey = c.sharedEncryptingKey;
+    const encryptingKey = c.sharedEncryptingKey;
     for (const note of [].concat(notes)) {
       note.encryptedBody = note.body;
       note.body = Utils.decryptMessageNoThrow(note.body, encryptingKey);

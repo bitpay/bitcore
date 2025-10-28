@@ -1,6 +1,7 @@
 'use strict';
 
 import chai from 'chai';
+
 chai.config.includeStack = true;
 import sinon from 'sinon';
 import BWS from 'bitcore-wallet-service';
@@ -35,7 +36,7 @@ describe('Bulk Client', function() {
   });
 
   beforeEach(done => {
-    let expressApp = new ExpressApp();
+    const expressApp = new ExpressApp();
     expressApp.start(
       {
         ignoreRateLimiter: true,
@@ -71,7 +72,7 @@ describe('Bulk Client', function() {
   });
 
   describe('getStatusAll', () => {
-    var k;
+    let k;
 
     beforeEach(done => {
       k = new Key({ seedType: 'new' });
@@ -130,7 +131,7 @@ describe('Bulk Client', function() {
 
     it('returns eth wallet and token wallet when getStatusAll is called', done => {
       helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', network: 'livenet' }, () => {
-        let walletOptions = {
+        const walletOptions = {
           [clients[0].credentials.copayerId]: {
             tokenAddresses: ['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48']
           }
@@ -155,7 +156,7 @@ describe('Bulk Client', function() {
 
     it('returns eth wallet and multiple token wallets when getStatusAll is called', done => {
       helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', network: 'livenet' }, () => {
-        let walletOptions = {
+        const walletOptions = {
           [clients[0].credentials.copayerId]: {
             tokenAddresses: ['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd']
           }
@@ -182,7 +183,7 @@ describe('Bulk Client', function() {
     });
 
     it('returns two eth wallets and token wallets associated with one of them', done => {
-      let key = new Key({ seedType: 'new' });
+      const key = new Key({ seedType: 'new' });
       helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', key: key, network: 'livenet' }, () => {
         helpers.createAndJoinWallet(
           clients.slice(1),
@@ -191,7 +192,7 @@ describe('Bulk Client', function() {
           1,
           { coin: 'eth', key: key, account: 1, network: 'livenet' },
           () => {
-            let walletOptions = {
+            const walletOptions = {
               [clients[0].credentials.copayerId]: {
                 tokenAddresses: [
                   '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
@@ -223,7 +224,7 @@ describe('Bulk Client', function() {
     });
 
     it('returns two arb wallets and token wallets associated with one of them', done => {
-      let key = new Key({ seedType: 'new' });
+      const key = new Key({ seedType: 'new' });
       helpers.createAndJoinWallet(
         clients,
         keys,
@@ -238,7 +239,7 @@ describe('Bulk Client', function() {
             1,
             { coin: 'eth', chain: 'arb', key: key, account: 1, network: 'livenet' },
             () => {
-              let walletOptions = {
+              const walletOptions = {
                 [clients[0].credentials.copayerId]: {
                   tokenAddresses: [
                     '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',

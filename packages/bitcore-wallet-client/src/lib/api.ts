@@ -1,11 +1,11 @@
 'use strict';
 
+import { EventEmitter } from 'events';
+import querystring from 'querystring';
 import async from 'async';
 import Mnemonic from 'bitcore-mnemonic';
 import * as CWC from 'crypto-wallet-core';
-import { EventEmitter } from 'events';
 import { singleton } from 'preconditions';
-import querystring from 'querystring';
 import * as Uuid from 'uuid';
 import { BulkClient } from './bulkclient';
 import { Constants, Encryption, Utils } from './common';
@@ -243,7 +243,7 @@ export class API extends EventEmitter {
   _initNotifications(opts) {
     opts = opts || {};
 
-    var interval = opts.notificationIntervalSeconds || 5;
+    const interval = opts.notificationIntervalSeconds || 5;
     this.notificationsIntervalId = setInterval(() => {
       this._fetchLatestNotifications(interval, err => {
         if (err) {
@@ -526,7 +526,7 @@ export class API extends EventEmitter {
       const address = privateKey.publicKey.toAddress().toString(true);
 
       const utxos = await this.getUtxos({ addresses: address });
-      const balance = (utxos || []).reduce((sum, u) => sum += u.satoshis, 0)
+      const balance = (utxos || []).reduce((sum, u) => sum += u.satoshis, 0);
       if (cb) { cb(null, balance); }
       return balance;
     } catch (err) {
@@ -687,8 +687,8 @@ export class API extends EventEmitter {
     if (typeof walletPrivKey === 'string') {
       walletPrivKey = Bitcore.PrivateKey.fromString(walletPrivKey);
     }
-    var widHex = Buffer.from(walletId.replace(/-/g, ''), 'hex');
-    var widBase58 = new Bitcore.encoding.Base58(widHex).toString();
+    const widHex = Buffer.from(walletId.replace(/-/g, ''), 'hex');
+    const widBase58 = new Bitcore.encoding.Base58(widHex).toString();
     const networkChar = NetworkChar[network] || 'L';
     return (
       widBase58.padEnd(22, '0') +
@@ -701,10 +701,10 @@ export class API extends EventEmitter {
   static parseSecret(secret) {
     $.checkArgument(secret);
 
-    var split = (str, indexes) => {
-      var parts = [];
+    const split = (str, indexes) => {
+      const parts = [];
       indexes.push(str.length);
-      var i = 0;
+      let i = 0;
       while (i < indexes.length) {
         parts.push(str.substring(i == 0 ? 0 : indexes[i - 1], indexes[i]));
         i++;
@@ -713,10 +713,10 @@ export class API extends EventEmitter {
     };
 
     try {
-      var secretSplit = split(secret, [22, 74, 75]);
-      var widBase58 = secretSplit[0].replace(/0/g, '');
-      var widHex = Bitcore.encoding.Base58.decode(widBase58).toString('hex');
-      var walletId = split(widHex, [8, 12, 16, 20]).join('-');
+      const secretSplit = split(secret, [22, 74, 75]);
+      const widBase58 = secretSplit[0].replace(/0/g, '');
+      const widHex = Bitcore.encoding.Base58.decode(widBase58).toString('hex');
+      const walletId = split(widHex, [8, 12, 16, 20]).join('-');
 
       const walletPrivKey = Bitcore.PrivateKey.fromString(secretSplit[1]);
       const network = NetworkChar[secretSplit[2]] || 'livenet';
@@ -734,7 +734,7 @@ export class API extends EventEmitter {
   }
 
   static getRawTx(txp) {
-    var t = Utils.buildTx(txp);
+    const t = Utils.buildTx(txp);
     return t.uncheckedSerialize();
   }
 
@@ -973,7 +973,7 @@ export class API extends EventEmitter {
   }
 
   _checkKeyDerivation() {
-    var isInvalid = this.keyDerivationOk === false;
+    const isInvalid = this.keyDerivationOk === false;
     if (isInvalid) {
       log.error('Key derivation for this device is not working as expected');
     }
@@ -1227,7 +1227,7 @@ export class API extends EventEmitter {
         segwitVersion
       };
 
-      if (!!supportBIP44AndP2PKH) {
+      if (supportBIP44AndP2PKH) {
         args['supportBIP44AndP2PKH'] = supportBIP44AndP2PKH;
       }
 
@@ -1246,7 +1246,7 @@ export class API extends EventEmitter {
         coin: c.coin,
         chain: c.chain
       };
-      if (!!supportBIP44AndP2PKH)
+      if (supportBIP44AndP2PKH)
         opts['supportBIP44AndP2PKH'] = supportBIP44AndP2PKH;
 
       for (const item of this.credentials.publicKeyRing) {
@@ -1263,7 +1263,7 @@ export class API extends EventEmitter {
         } catch (err) {
           // Ignore error if copayer is already in wallet
           if (!(err instanceof Errors.COPAYER_IN_WALLET))
-            throw err
+            throw err;
         }
       }
       if (cb) { cb(); }
@@ -1414,7 +1414,7 @@ export class API extends EventEmitter {
 
       const { body } = await this.request.get('/v3/wallets/?' + qs.join('&'));
       if (body.wallet.status == 'pending') {
-        var c = this.credentials;
+        const c = this.credentials;
         body.wallet.secret = API._buildSecret(
           c.walletId,
           c.walletPrivKey,
@@ -1946,9 +1946,9 @@ export class API extends EventEmitter {
           encryptedPkr: doNotEncryptPkr
             ? null
             : Utils.encryptMessage(
-                JSON.stringify(this.credentials.publicKeyRing),
-                this.credentials.personalEncryptingKey
-              ),
+              JSON.stringify(this.credentials.publicKeyRing),
+              this.credentials.personalEncryptingKey
+            ),
           unencryptedPkr: doNotEncryptPkr
             ? JSON.stringify(this.credentials.publicKeyRing)
             : null,
@@ -2444,7 +2444,7 @@ export class API extends EventEmitter {
     try {
       $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <broadcastTxProposal()>');
 
-      const paypro = await this.getPayProV2(txp)
+      const paypro = await this.getPayProV2(txp);
       if (!paypro) {
         txp = await this._doBroadcast(txp);
         if (cb) { cb(null, txp); }
@@ -2473,7 +2473,7 @@ export class API extends EventEmitter {
 
       const weightedSize = [];
 
-      let isSegwit =
+      const isSegwit =
         (txp.coin == 'btc' || txp.coin == 'ltc') &&
         (txp.addressType == 'P2WSH' || txp.addressType == 'P2WPKH');
 
@@ -2732,7 +2732,7 @@ export class API extends EventEmitter {
       const { body } = await this.request.put('/v1/copayers/' + copayerId + '/', opts2);
       // Do not set the key. Return it (for compatibility)
       // this.credentials.requestPrivKey = opts.requestPrivKey;
-      if (cb) { cb(null, body.wallet, opts.requestPrivKey) };
+      if (cb) { cb(null, body.wallet, opts.requestPrivKey); };
       return { wallet: body.wallet, requestPrivateKey: opts.requestPrivKey };
     } catch (err) {
       if (cb) cb(err);
@@ -3099,10 +3099,10 @@ export class API extends EventEmitter {
       log.warn('DEPRECATED: getMultisigContractInstantiationInfo will remove callback support in the future.');
     }
     try {
-    const args = { ...opts, network: this.credentials.network };
-    const { body: contractInstantiationInfo } = await this.request.post('/v1/multisig/', args);
-    if (cb) { cb(null, contractInstantiationInfo); }
-    return contractInstantiationInfo;
+      const args = { ...opts, network: this.credentials.network };
+      const { body: contractInstantiationInfo } = await this.request.post('/v1/multisig/', args);
+      if (cb) { cb(null, contractInstantiationInfo); }
+      return contractInstantiationInfo;
     } catch (err) {
       if (cb) cb(err);
       else throw err;
@@ -3217,10 +3217,10 @@ export class API extends EventEmitter {
    */
 
   _oldCopayDecrypt(username, password, blob) {
-    var SEP1 = '@#$';
-    var SEP2 = '%^#@';
+    const SEP1 = '@#$';
+    const SEP2 = '%^#@';
 
-    var decrypted;
+    let decrypted;
     try {
       var passphrase = username + SEP1 + password;
       decrypted = Encryption.decryptWithPassword(blob, passphrase);
@@ -3235,7 +3235,7 @@ export class API extends EventEmitter {
 
     if (!decrypted) return null;
 
-    var ret;
+    let ret;
     try {
       ret = JSON.parse(decrypted);
     } catch (e) { }
@@ -3243,9 +3243,9 @@ export class API extends EventEmitter {
   }
 
   getWalletIdsFromOldCopay(username, password, blob): any[] {
-    var p = this._oldCopayDecrypt(username, password, blob);
+    const p = this._oldCopayDecrypt(username, password, blob);
     if (!p) return null;
-    var ids = p.walletIds.concat(Object.keys(p.focusedTimestamps));
+    const ids = p.walletIds.concat(Object.keys(p.focusedTimestamps));
     return Array.from(new Set(ids));
   }
 
@@ -3391,13 +3391,13 @@ export class API extends EventEmitter {
   ) {
     $.checkArgument(opts.words || opts.xPrivKey, 'Missing argument: words or xPrivKey at <serverAssistedImport()>');
 
-    let client = clientOpts instanceof API ? API.clone(clientOpts) : new API(clientOpts);
-    let includeTestnetWallets = opts.includeTestnetWallets;
-    let includeLegacyWallets = opts.includeLegacyWallets;
-    let credentials = [];
-    let copayerIdAlreadyTested = {};
-    let keyCredentialIndex: { credentials: Credentials; key: Key; opts: any; status?: string }[] = [];
-    let clients = [];
+    const client = clientOpts instanceof API ? API.clone(clientOpts) : new API(clientOpts);
+    const includeTestnetWallets = opts.includeTestnetWallets;
+    const includeLegacyWallets = opts.includeLegacyWallets;
+    const credentials = [];
+    const copayerIdAlreadyTested = {};
+    const keyCredentialIndex: { credentials: Credentials; key: Key; opts: any; status?: string }[] = [];
+    const clients = [];
     let k: Key;
     let sets = [
       {
@@ -3440,7 +3440,7 @@ export class API extends EventEmitter {
     }
 
     const generateCredentials = (key, opts) => {
-      let c = key.createCredentials(null, {
+      const c = key.createCredentials(null, {
         coin: opts.coin,
         chain: opts.chain?.toLowerCase() || opts.coin, // chain === coin IS NO LONGER TRUE for Arbitrum, Base, Optimisim
         network: opts.network,
@@ -3504,8 +3504,8 @@ export class API extends EventEmitter {
       }
 
       for (let i = 0; i < opts.length; i++) {
-        let opt = opts[i];
-        let optsObj = {
+        const opt = opts[i];
+        const optsObj = {
           coin: opt[0],
           chain: opt[1],
           network: opt[2],
@@ -3525,8 +3525,8 @@ export class API extends EventEmitter {
       async.each(
         combined,
         (item, cb2) => {
-          let credentials = item.credentials;
-          var wallet = item.status.wallet;
+          const credentials = item.credentials;
+          const wallet = item.status.wallet;
           client.fromString(credentials);
           client._processStatus(item.status);
 
@@ -3589,7 +3589,7 @@ export class API extends EventEmitter {
       }
 
       // marry all found wallets and keyCredentialIndex entries for simplicity
-      let combined = keyCredentialIndex
+      const combined = keyCredentialIndex
         .map((x, i) => {
           if (res[i].success) {
             x.status = res[i].status;
@@ -3598,7 +3598,7 @@ export class API extends EventEmitter {
         })
         .filter(x => x);
 
-      let foundWallets = [];
+      const foundWallets = [];
       addWalletInfo(combined, foundWallets, err => {
         if (err) return callback(err);
         checkForOtherAccounts(foundWallets);
@@ -3606,13 +3606,13 @@ export class API extends EventEmitter {
     };
 
     const getNextBatch = (key, settings) => {
-      let accountKeyCredentialIndex = [];
-      let credBatch = [];
+      const accountKeyCredentialIndex = [];
+      const credBatch = [];
       // add potential wallet account credentials
       for (let i = 0; i < 5; i++) {
         settings.account++;
         const clonedSettings = JSON.parse(JSON.stringify(settings));
-        let c = key.createCredentials(null, {
+        const c = key.createCredentials(null, {
           coin: clonedSettings.coin, // base currency used for fees. Helpful for UI
           chain: clonedSettings.chain || clonedSettings.coin,
           network: clonedSettings.network,
@@ -3633,7 +3633,7 @@ export class API extends EventEmitter {
     };
 
     const checkForOtherAccounts = foundWallets => {
-      let addtFoundWallets = [];
+      const addtFoundWallets = [];
       async.each(
         foundWallets,
         (wallet, next2) => {
@@ -3642,7 +3642,7 @@ export class API extends EventEmitter {
           async.whilst(
             () => mostRecentResults.every(x => x.success),
             next => {
-              let { credentials, accountKeyCredentialIndex } = getNextBatch(
+              const { credentials, accountKeyCredentialIndex } = getNextBatch(
                 k,
                 wallet.opts
               );
@@ -3656,7 +3656,7 @@ export class API extends EventEmitter {
                 },
                 (err, response) => {
                   mostRecentResults = response;
-                  let combined = accountKeyCredentialIndex
+                  const combined = accountKeyCredentialIndex
                     .map((x, i) => {
                       if (response[i].success) {
                         x.status = response[i].status;
@@ -3694,7 +3694,7 @@ export class API extends EventEmitter {
                 client.credentials.addressType = Constants.SCRIPT_TYPES.P2TR;
               }
               // add client to list
-              let newClient = client.toClone();
+              const newClient = client.toClone();
               // newClient.credentials = settings.credentials;
               newClient.fromString(wallet.credentials);
               clients.push(newClient);
@@ -3742,7 +3742,7 @@ export class API extends EventEmitter {
                     n: info.n,
                     m: info.m
                   });
-                  let multisigClient = newClient.toClone();
+                  const multisigClient = newClient.toClone();
                   multisigClient.credentials = multisigCredentials;
                   clients.push(multisigClient);
 
@@ -3771,7 +3771,7 @@ export class API extends EventEmitter {
                 { chain: 'sol', tokenAddresses: wallet.status.preferences.solTokenAddresses, multisigInfo: wallet.status.preferences.multisigSolInfo, tokenOpts: Constants.SOL_TOKEN_OPTS, tokenUrlPath: 'sol' },
               ];
 
-              for (let config of chainConfigurations) {
+              for (const config of chainConfigurations) {
                 await handleChainTokensAndMultisig(config.chain, config.tokenAddresses, config.multisigInfo, config.tokenOpts, config.tokenUrlPath);
               }
               next();
