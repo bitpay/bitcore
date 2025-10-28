@@ -80,15 +80,10 @@ router.get('/:txId/populated', async (req: Request, res: Response) => {
   }
 
   try {
-    let tx: ITransaction & { blockHeight: number; coins?: Array<ICoin> };
-    let coins: any;
-    let tip: any;
-
-    // eslint-disable-next-line prefer-const
-    [tx, coins, tip] = await Promise.all([
-      ChainStateProvider.getTransaction({ chain, network, txId }),
-      ChainStateProvider.getCoinsForTx({ chain, network, txid }),
-      ChainStateProvider.getLocalTip({ chain, network })
+    const [tx, coins, tip] = await Promise.all([
+      ChainStateProvider.getTransaction({ chain, network, txId }) as Promise<ITransaction & { blockHeight: number; coins?: Array<ICoin> }>,
+      ChainStateProvider.getCoinsForTx({ chain, network, txid }) as any, // must cast as any so tx.coins can be set to coins
+      ChainStateProvider.getLocalTip({ chain, network }) as any
     ]);
 
     if (!tx) {

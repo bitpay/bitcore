@@ -8,13 +8,14 @@ import { Api } from '../../src/services/api';
 import { Event } from '../../src/services/event';
 import { IUtxoNetworkConfig } from '../../src/types/Config';
 import { resetDatabase } from '../helpers';
-import { PrivateKey } from 'bitcore-lib';
+import { BitcoreLib } from 'crypto-wallet-core';
 
 const chain = 'BTC';
 const network = 'regtest';
 const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
+const { PrivateKey } = BitcoreLib;
 import { Client } from 'bitcore-client';
 import { WalletStorage } from '../../src/models/wallet';
 import { WalletAddressStorage } from '../../src/models/walletAddress';
