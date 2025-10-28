@@ -17,7 +17,7 @@
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
-    "run:example": "npm run compile && node build/bitcore-vault/src/examples/run.js"
+    "run:example": "npm run compile && node build/src/examples/run.js"
   },
   "dependencies": {
     "child_process": "^1.0.2",

@@ -6,6 +6,7 @@
       "DOM"
     ],
     "noImplicitAny": false,
+    "skipLibCheck": true,
     "removeComments": true,
     "declaration": true,
     "declarationMap": true,
@@ -20,6 +21,7 @@
       "./src/types"
     ],
     "baseUrl": ".",
+    "rootDir": ".",
     "paths": {
       "*": [
         "*",

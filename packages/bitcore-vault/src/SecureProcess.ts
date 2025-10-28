@@ -1,6 +1,6 @@
 import * as crypto from 'crypto';
 import * as inspector from 'node:inspector';
-import { StorageType } from '../../bitcore-client/src/types/storage';
+import type { StorageType } from '../../bitcore-client/src/types/storage';
 import { SecurityManager } from './SecurityManager';
 import { installSignalPolicyHard } from './SignalHardening';
 import { VaultWallet } from './VaultWallet';
