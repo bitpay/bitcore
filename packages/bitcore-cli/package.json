@@ -39,7 +39,7 @@
     "precommit": "npm run lint; npm run fix:errors"
   },
   "dependencies": {
-    "@clack/prompts": "1.0.0-alpha.3",
+    "@clack/prompts": "1.0.0-alpha.6",
     "bitcore-mnemonic": "^11.3.7",
     "bitcore-wallet-client": "^11.3.7",
     "commander": "14.0.0",
