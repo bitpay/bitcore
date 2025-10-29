@@ -405,11 +405,10 @@ describe('VaultWalletProxy', function() {
       // All promises should resolve correctly with their respective addresses
       const addresses = await Promise.all(walletPromises);
 
-      // Verify results
+      // Verify message correlation worked correctly - each promise got the right result
       for (let i = 0; i < walletNames.length; i++) {
         const name = walletNames[i];
-        expect(addresses[i]).to.equal(`bc1q${name}`); // Response from loadWallets is correct
-        expect(vwp.walletAddresses.get(name)).to.equal(`bc1q${name}`); // Map value is correctly assigned
+        expect(addresses[i]).to.equal(`bc1q${name}`);
       }
     });
 
@@ -493,6 +492,293 @@ describe('VaultWalletProxy', function() {
 
       // Verify kill was called after cleanup timeout
       expect(mockChildProcess.kill.called).to.be.true;
+    });
+  });
+
+  describe('Wallet Operations', function() {
+
+    it('should successfully load a wallet and store address in walletAddresses map', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // Load wallet
+      const walletName = 'my-test-wallet';
+      const expectedAddress = 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh';
+
+      const loadPromise = vwp.loadWallet({ name: walletName });
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Simulate successful response with address
+      simulateResponse('loadWallet', expectedAddress);
+
+      const returnedAddress = await loadPromise;
+
+      // Verify the address is returned
+      expect(returnedAddress).to.equal(expectedAddress);
+
+      // Verify the address is stored in the walletAddresses map
+      expect(vwp.walletAddresses.has(walletName)).to.be.true;
+      expect(vwp.walletAddresses.get(walletName)).to.equal(expectedAddress);
+
+      // Verify correct IPC message was sent
+      const loadCall = mockChildProcess.send.getCalls().find(
+        (call: any) => call.args[0].action === 'loadWallet'
+      );
+      expect(loadCall).to.exist;
+      expect(loadCall!.args[0].payload.name).to.equal(walletName);
+      expect(loadCall!.args[0].payload.storageType).to.equal('Level');
+    });
+
+    it('should handle wallet load failure when wallet does not exist', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // Attempt to load non-existent wallet
+      const walletName = 'non-existent-wallet';
+      const loadPromise = vwp.loadWallet({ name: walletName });
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Simulate error response from SecureProcess
+      simulateErrorResponse('loadWallet', 'Wallet not found: non-existent-wallet');
+
+      try {
+        await loadPromise;
+        expect.fail('Should have thrown an error');
+      } catch (err: any) {
+        expect(err.message).to.include('Wallet not found');
+        expect(err.message).to.include('non-existent-wallet');
+      }
+
+      // Verify wallet was NOT added to walletAddresses map
+      expect(vwp.walletAddresses.has(walletName)).to.be.false;
+    });
+
+    it('should load multiple wallets simultaneously with different addresses', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // Define multiple wallets with their addresses
+      const wallets = [
+        { name: 'wallet-alice', address: 'bc1qalice111111111111111111111111111' },
+        { name: 'wallet-bob', address: 'bc1qbob222222222222222222222222222' },
+        { name: 'wallet-charlie', address: 'bc1qcharlie333333333333333333333333' },
+      ];
+
+      // Load all wallets concurrently
+      const loadPromises = wallets.map(w => vwp.loadWallet({ name: w.name }));
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Simulate responses for each wallet
+      const messageHandler = getMessageHandler();
+      const loadCalls = mockChildProcess.send.getCalls().filter(
+        (call: any) => call.args[0].action === 'loadWallet'
+      );
+
+      for (const wallet of wallets) {
+        const call = loadCalls.find(
+          (c: any) => c.args[0].payload.name === wallet.name
+        );
+        if (messageHandler && call) {
+          messageHandler({
+            messageId: call.args[0].messageId,
+            result: wallet.address
+          });
+        }
+      }
+
+      // Wait for all loads to complete
+      const addresses = await Promise.all(loadPromises);
+
+      // Verify all addresses are correct
+      for (let i = 0; i < wallets.length; i++) {
+        expect(addresses[i]).to.equal(wallets[i].address);
+      }
+
+      // Verify all wallets are in the walletAddresses map
+      for (const wallet of wallets) {
+        expect(vwp.walletAddresses.has(wallet.name)).to.be.true;
+        expect(vwp.walletAddresses.get(wallet.name)).to.equal(wallet.address);
+      }
+
+      // Verify map size
+      expect(vwp.walletAddresses.size).to.equal(wallets.length);
+    });
+
+    it('should remove wallet from both proxy map and send "removeWallet" msg to child process', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // First, load a wallet
+      const walletName = 'wallet-to-remove';
+      const walletAddress = 'bc1qremove123456789';
+
+      const loadPromise = vwp.loadWallet({ name: walletName });
+      await new Promise(resolve => setImmediate(resolve));
+      simulateResponse('loadWallet', walletAddress);
+      await loadPromise;
+
+      // Verify wallet was loaded
+      expect(vwp.walletAddresses.has(walletName)).to.be.true;
+
+      // Now remove the wallet
+      const removePromise = vwp.removeWallet(walletName);
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Simulate successful removal response
+      simulateResponse('removeWallet', { success: true });
+
+      const result = await removePromise;
+
+      // Verify result
+      expect(result.success).to.be.true;
+
+      // Verify wallet was removed from proxy's walletAddresses map
+      expect(vwp.walletAddresses.has(walletName)).to.be.false;
+
+      // Verify removeWallet message was sent to SecureProcess
+      const removeCall = mockChildProcess.send.getCalls().find(
+        (call: any) => call.args[0].action === 'removeWallet'
+      );
+      expect(removeCall).to.exist;
+      expect(removeCall!.args[0].payload.name).to.equal(walletName);
+    });
+
+    it('should handle error when removing non-existent wallet', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // Try to remove wallet that doesn't exist
+      const walletName = 'non-existent-wallet';
+      const removePromise = vwp.removeWallet(walletName);
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Simulate error response from SecureProcess
+      simulateErrorResponse('removeWallet', 'Wallet not found: non-existent-wallet');
+
+      try {
+        await removePromise;
+        expect.fail('Should have thrown an error');
+      } catch (err: any) {
+        expect(err.message).to.include('Wallet not found');
+        expect(err.message).to.include('non-existent-wallet');
+      }
+
+      // Verify the wallet is not in the map (it shouldn't be, as it was never loaded)
+      expect(vwp.walletAddresses.has(walletName)).to.be.false;
+
+      // Verify removeWallet message was still sent to SecureProcess
+      const removeCall = mockChildProcess.send.getCalls().find(
+        (call: any) => call.args[0].action === 'removeWallet'
+      );
+      expect(removeCall).to.exist;
+    });
+
+    it('should reject loadWallet when wallet name is not provided', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // Try to load wallet without name
+      try {
+        await vwp.loadWallet({ name: '' });
+        expect.fail('Should have thrown an error');
+      } catch (err: any) {
+        expect(err.message).to.include('Wallet name must be provided');
+      }
+
+      // Verify no IPC message was sent
+      const loadCall = mockChildProcess.send.getCalls().find(
+        (call: any) => call.args[0].action === 'loadWallet'
+      );
+      expect(loadCall).to.not.exist;
+    });
+
+    it('should pass custom storageType parameter to SecureProcess', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // Load wallet with custom storage type
+      const walletName = 'custom-storage-wallet';
+      const customStorageType = 'CustomStorage';
+      const expectedAddress = 'bc1qcustom123456789';
+
+      const loadPromise = vwp.loadWallet({
+        name: walletName,
+        storageType: customStorageType
+      });
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Verify correct storage type was sent in IPC message
+      const loadCall = mockChildProcess.send.getCalls().find(
+        (call: any) => call.args[0].action === 'loadWallet'
+      );
+      expect(loadCall).to.exist;
+      expect(loadCall!.args[0].payload.storageType).to.equal(customStorageType);
+
+      // Simulate response
+      simulateResponse('loadWallet', expectedAddress);
+
+      const address = await loadPromise;
+      expect(address).to.equal(expectedAddress);
+    });
+
+    it('should respect custom timeout for loadWallet operation', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // Load wallet with very short custom timeout
+      const customTimeout = 200;
+      const loadPromise = vwp.loadWallet({
+        name: 'timeout-test-wallet',
+        timeoutMs: customTimeout
+      });
+
+      // Don't send a response - let it timeout
+
+      try {
+        await loadPromise;
+        expect.fail('Should have timed out');
+      } catch (err: any) {
+        expect(err.message).to.include(`Request timeout after ${customTimeout}ms`);
+        expect(err.message).to.include('loadWallet');
+      }
     });
   });
 });
