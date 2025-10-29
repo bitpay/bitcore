@@ -51,7 +51,7 @@ if (!walletName && !opts.command) {
 const isCmdHelp = opts.command && opts.help;
 opts.exit = !!opts.command;
 opts.status = opts.command ? false : opts.status; // Always hide the status when running a command directly
-
+opts.register = opts.register ?? opts.command === 'register';
 
 
 Wallet.setVerbose(opts.verbose);
@@ -99,15 +99,9 @@ if (require.main === module) {
   })
     .catch((err) => {
       if (err instanceof BWCErrors.NOT_AUTHORIZED) {
-        if (opts.register) {
-          return commands.register.registerWallet({ wallet, opts });
-        } else {
-          prompt.log.error('This wallet does not appear to be registered with the Bitcore Wallet Service. Use --register to do so.');
-          Utils.die(err);
-        }
-      } else {
-        Utils.die(err);
+        Utils.die('This wallet does not appear to be registered with the Bitcore Wallet Service. Use --register to do so.');
       }
+      Utils.die(err);
     })
     .then(async () => {
       if (walletName === 'list') {
@@ -118,6 +112,10 @@ if (require.main === module) {
           }
         }
         return;
+      }
+
+      if (opts.register) {
+        return await commands.register.registerWallet({ wallet, opts });
       }
 
       const cmdParams: CommonArgs<any> = {
@@ -173,10 +171,10 @@ if (require.main === module) {
         do {
           // Don't display the intro if running a specific command
           !opts.command && prompt.intro(`${Utils.boldText('[  Main Menu')} - ${Utils.colorTextByChain(wallet.chain, walletName)}  ${Utils.boldText(']')}`);
-          cmdParams.status.pendingTxps = opts.command ? [] : await wallet.client.getTxProposals({});
+          cmdParams.status && (cmdParams.status.pendingTxps = opts.command || opts.register ? [] : await wallet.client.getTxProposals({}));
           
           const dynamicCmdArgs = {
-            ppNum: cmdParams.status.pendingTxps.length ? Utils.colorText(` (${cmdParams.status.pendingTxps.length})`, 'yellow') : '',
+            ppNum: cmdParams.status?.pendingTxps.length ? Utils.colorText(` (${cmdParams.status.pendingTxps.length})`, 'yellow') : '',
             sNum: Utils.colorText(` (${'TODO'})`, 'yellow'),
             token: cmdParams.opts?.token
           };

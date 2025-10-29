@@ -140,7 +140,7 @@ export class Wallet implements IWallet {
     } else {
       key = new Key({ seedType: 'new', password });
     }
-    const credOpts = { coin, chain, network, account, n, m, mnemonic, password, addressType, singleAddress: BWCUtils.isSingleAddressChain(chain) };
+    const credOpts = { coin, chain, network, account, n, m, mnemonic, password, addressType, copayerName, singleAddress: BWCUtils.isSingleAddressChain(chain) };
     const creds = key.createCredentials(password, credOpts);
     this.client.fromObj(creds);
     this.#walletData = { key, creds };

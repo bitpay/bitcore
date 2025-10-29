@@ -30,9 +30,10 @@
   },
   "scripts": {
     "test": "npx mocha --require ts-node/register 'test/**/*.ts'",
-    "compile": "npm run clean && tsc",
-    "postcompile": "node createBin -v",
+    "build": "tsc",
+    "postbuild": "node createBin -v",
     "clean": "rm -rf ./build",
+    "compile": "npm run clean && npm run build",
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
