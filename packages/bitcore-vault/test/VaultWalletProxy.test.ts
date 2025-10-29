@@ -1090,6 +1090,134 @@ describe('VaultWalletProxy', function() {
       expect(result.success).to.be.true;
     });
   });
+
+  describe('Security Monitoring', function() {
+
+    it('should successfully start security monitoring in child process', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // Start security monitoring
+      const monitoringPromise = vwp.startSecurityMonitoring();
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Simulate successful response
+      simulateResponse('startSecurityCheckIntervals', { success: true });
+
+      const result = await monitoringPromise;
+
+      // Verify result
+      expect(result.success).to.be.true;
+
+      // Verify correct IPC message was sent
+      const monitoringCall = mockChildProcess.send.getCalls().find(
+        (call: any) => call.args[0].action === 'startSecurityCheckIntervals'
+      );
+      expect(monitoringCall).to.exist;
+      expect(monitoringCall!.args[0].payload).to.deep.equal({});
+    });
+
+    it('should start monitoring after wallet is loaded', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // Load a wallet first
+      const loadPromise = vwp.loadWallet({ name: 'test-wallet' });
+      await new Promise(resolve => setImmediate(resolve));
+      simulateResponse('loadWallet', 'bc1qtest123');
+      await loadPromise;
+
+      // Then start security monitoring
+      const monitoringPromise = vwp.startSecurityMonitoring();
+      await new Promise(resolve => setImmediate(resolve));
+      simulateResponse('startSecurityCheckIntervals', { success: true });
+      const result = await monitoringPromise;
+
+      // Verify monitoring started successfully
+      expect(result.success).to.be.true;
+
+      // Verify the sequence of operations: initialize -> getPublicKey -> loadWallet -> startSecurityCheckIntervals
+      const calls = mockChildProcess.send.getCalls();
+      expect(calls[0].args[0].action).to.equal('initialize');
+      expect(calls[1].args[0].action).to.equal('getPublicKey');
+      expect(calls[2].args[0].action).to.equal('loadWallet');
+      expect(calls[3].args[0].action).to.equal('startSecurityCheckIntervals');
+    });
+
+    it('should respect custom timeout for startSecurityMonitoring', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // Start monitoring with short timeout
+      const customTimeout = 300;
+      const monitoringPromise = vwp.startSecurityMonitoring(customTimeout);
+
+      // Don't send response - let it timeout
+
+      try {
+        await monitoringPromise;
+        expect.fail('Should have timed out');
+      } catch (err: any) {
+        expect(err.message).to.include(`Request timeout after ${customTimeout}ms`);
+        expect(err.message).to.include('startSecurityCheckIntervals');
+      }
+    });
+
+    it('should fail to start monitoring before initialization', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Try to start monitoring without initializing first
+      try {
+        await vwp.startSecurityMonitoring();
+        expect.fail('Should have thrown an error');
+      } catch (err: any) {
+        expect(err.message).to.include('Secure process not initialized');
+      }
+
+      // Verify no IPC message was sent
+      const monitoringCall = mockChildProcess.send.getCalls().find(
+        (call: any) => call.args[0].action === 'startSecurityCheckIntervals'
+      );
+      expect(monitoringCall).to.not.exist;
+    });
+
+    it('should handle error response when starting monitoring', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // Attempt to start monitoring
+      const monitoringPromise = vwp.startSecurityMonitoring();
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Simulate error response from SecureProcess
+      simulateErrorResponse('startSecurityCheckIntervals', 'Security monitoring already running');
+
+      try {
+        await monitoringPromise;
+        expect.fail('Should have thrown an error');
+      } catch (err: any) {
+        expect(err.message).to.include('Security monitoring already running');
+      }
+    });
+  });
 });
 
 /**
