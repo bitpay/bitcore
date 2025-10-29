@@ -1091,6 +1091,284 @@ describe('VaultWalletProxy', function() {
     });
   });
 
+  describe('Edge Cases - Passphrase Handling', function() {
+
+    it('should fail addPassphrase when called before initialization', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Try to add passphrase without initializing first
+      try {
+        await vwp.addPassphrase('test-wallet');
+        expect.fail('Should have thrown an error');
+      } catch (err: any) {
+        expect(err.message).to.include('Public key not available');
+      }
+    });
+
+    it('should handle empty passphrase entry correctly', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // Start adding passphrase
+      const addPassphrasePromise = vwp.addPassphrase('test-wallet');
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Simulate user pressing Enter immediately without typing anything
+      const stdin = process.stdin as any;
+      const dataHandler = stdin.listeners('data')[0];
+      dataHandler(Buffer.from([0x0d])); // Enter without any characters
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Find the addPassphrase IPC message
+      const addPassphraseCall = mockChildProcess.send.getCalls().find(
+        (call: any) => call.args[0].action === 'addPassphrase'
+      );
+
+      expect(addPassphraseCall).to.exist;
+
+      // Empty passphrase should still be encrypted and sent
+      const payload = addPassphraseCall!.args[0].payload;
+      expect(payload.encryptedPassphrase).to.be.a('string');
+      expect(Buffer.from(payload.encryptedPassphrase, 'base64').length).to.be.greaterThan(100);
+
+      // Simulate SecureProcess rejecting empty passphrase
+      simulateErrorResponse('addPassphrase', 'Passphrase cannot be empty');
+
+      try {
+        await addPassphrasePromise;
+        expect.fail('Should have rejected empty passphrase');
+      } catch (err: any) {
+        expect(err.message).to.include('Passphrase cannot be empty');
+      }
+    });
+
+    it('should handle very long passphrase correctly', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // Start adding passphrase
+      const addPassphrasePromise = vwp.addPassphrase('test-wallet');
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      const stdin = process.stdin as any;
+      const dataHandler = stdin.listeners('data')[0];
+
+      // Type a 100-character passphrase to test handling of longer input
+      const longPassphrase = 'a'.repeat(100);
+      // Send as a buffer all at once (simulates pasting)
+      dataHandler(Buffer.from(longPassphrase));
+      dataHandler(Buffer.from([0x0d])); // Enter
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Verify encrypted passphrase was sent
+      const addPassphraseCall = mockChildProcess.send.getCalls().find(
+        (call: any) => call.args[0].action === 'addPassphrase'
+      );
+      expect(addPassphraseCall).to.exist;
+
+      // Verify it's encrypted properly
+      const payload = addPassphraseCall!.args[0].payload;
+      expect(payload.encryptedPassphrase).to.be.a('string');
+      expect(Buffer.from(payload.encryptedPassphrase, 'base64').length).to.be.greaterThan(100);
+
+      // Simulate success
+      simulateResponse('addPassphrase', { success: true });
+      const result = await addPassphrasePromise;
+      expect(result.success).to.be.true;
+    });
+
+    it('should handle multiple backspaces beyond buffer start gracefully', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // Start adding passphrase
+      const addPassphrasePromise = vwp.addPassphrase('test-wallet');
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      const stdin = process.stdin as any;
+      const dataHandler = stdin.listeners('data')[0];
+
+      // Press backspace multiple times before typing anything
+      dataHandler(Buffer.from([0x7f])); // Backspace
+      dataHandler(Buffer.from([0x7f])); // Backspace
+      dataHandler(Buffer.from([0x7f])); // Backspace
+
+      // Then type actual passphrase
+      for (const char of 'test123') {
+        dataHandler(Buffer.from([char.charCodeAt(0)]));
+      }
+      dataHandler(Buffer.from([0x0d])); // Enter
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Verify passphrase was encrypted and sent
+      const addPassphraseCall = mockChildProcess.send.getCalls().find(
+        (call: any) => call.args[0].action === 'addPassphrase'
+      );
+      expect(addPassphraseCall).to.exist;
+
+      // Simulate success
+      simulateResponse('addPassphrase', { success: true });
+      const result = await addPassphrasePromise;
+      expect(result.success).to.be.true;
+    });
+
+    it('should reject addPassphrase for wallet that is not loaded', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // Try to add passphrase for wallet that was never loaded
+      const addPassphrasePromise = vwp.addPassphrase('non-existent-wallet');
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Simulate passphrase entry
+      const stdin = process.stdin as any;
+      const dataHandler = stdin.listeners('data')[0];
+      for (const char of 'somepass') {
+        dataHandler(Buffer.from([char.charCodeAt(0)]));
+      }
+      dataHandler(Buffer.from([0x0d])); // Enter
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Simulate SecureProcess rejecting because wallet doesn't exist
+      simulateErrorResponse('addPassphrase', 'Wallet not found: non-existent-wallet');
+
+      try {
+        await addPassphrasePromise;
+        expect.fail('Should have rejected for non-existent wallet');
+      } catch (err: any) {
+        expect(err.message).to.include('Wallet not found');
+        expect(err.message).to.include('non-existent-wallet');
+      }
+    });
+
+    it('should handle stdin error during passphrase entry', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // Start adding passphrase
+      const addPassphrasePromise = vwp.addPassphrase('test-wallet');
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Simulate stdin error
+      const stdin = process.stdin as any;
+      const errorHandler = stdin.listeners('error')[0];
+      errorHandler(new Error('stdin read error'));
+
+      try {
+        await addPassphrasePromise;
+        expect.fail('Should have rejected on stdin error');
+      } catch (err: any) {
+        expect(err.message).to.include('stdin read error');
+      }
+
+      // Verify no IPC message was sent
+      const addPassphraseCall = mockChildProcess.send.getCalls().find(
+        (call: any) => call.args[0].action === 'addPassphrase'
+      );
+      expect(addPassphraseCall).to.not.exist;
+    });
+
+    it('should handle addPassphrase timeout during user input', async function() {
+      vwp = new VaultWalletProxy();
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // Start adding passphrase with very short timeout
+      // Note: The timeout applies to the IPC request, not the prompt
+      // So we need to complete the prompt but not respond to the IPC message
+      const addPassphrasePromise = vwp.addPassphrase('test-wallet', 300);
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Complete passphrase entry quickly
+      const stdin = process.stdin as any;
+      const dataHandler = stdin.listeners('data')[0];
+      for (const char of 'pass') {
+        dataHandler(Buffer.from([char.charCodeAt(0)]));
+      }
+      dataHandler(Buffer.from([0x0d])); // Enter
+
+      // Don't send a response from SecureProcess - let it timeout
+
+      try {
+        await addPassphrasePromise;
+        expect.fail('Should have timed out');
+      } catch (err: any) {
+        expect(err.message).to.include('Request timeout after 300ms');
+        expect(err.message).to.include('addPassphrase');
+      }
+    });
+
+    it('should handle child process crash during passphrase entry', async function() {
+      vwp = new VaultWalletProxy({ exitOnChildFailure: false });
+
+      // Initialize
+      const initPromise = vwp.initialize();
+      await simulateSuccessfulInit();
+      await initPromise;
+
+      // Start adding passphrase
+      const addPassphrasePromise = vwp.addPassphrase('test-wallet');
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Complete passphrase entry
+      const stdin = process.stdin as any;
+      const dataHandler = stdin.listeners('data')[0];
+      for (const char of 'testpass') {
+        dataHandler(Buffer.from([char.charCodeAt(0)]));
+      }
+      dataHandler(Buffer.from([0x0d])); // Enter
+
+      await new Promise(resolve => setImmediate(resolve));
+
+      // Simulate child process crash before response
+      const exitHandler = getExitHandler();
+      if (exitHandler) {
+        exitHandler(1, null);
+      }
+
+      try {
+        await addPassphrasePromise;
+        expect.fail('Should have rejected due to child crash');
+      } catch (err: any) {
+        expect(err.message).to.include('SecureProcess exited');
+      }
+    });
+  });
+
   describe('Security Monitoring', function() {
 
     it('should successfully start security monitoring in child process', async function() {
