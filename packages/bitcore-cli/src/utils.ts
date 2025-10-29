@@ -304,7 +304,7 @@ export class Utils {
       case 'doge':
       case 'ltc':
       case 'xrp':
-        return BigInt(amount as number * 1e8);
+        return BigInt(amount as number * 1e6);
       case 'sol':
         return BigInt(amount as number * 1e9);
       default:
