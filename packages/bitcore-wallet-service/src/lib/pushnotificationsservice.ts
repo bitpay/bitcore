@@ -48,10 +48,11 @@ const PUSHNOTIFICATIONS_TYPES = {
     dataOnly: true,
     broadcastToActiveUsers: true
   },
-  NewBlock: {
-    dataOnly: true,
-    broadcastToActiveUsers: true
-  },
+  // Disabling NewBlock notifications for now while we investigate an issue reported by Braze.
+  // NewBlock: {
+  //   dataOnly: true,
+  //   broadcastToActiveUsers: true
+  // },
   TxProposalAcceptedBy: {
     dataOnly: true
   },
