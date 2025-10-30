@@ -158,7 +158,7 @@ export class WalletService implements IWalletService {
     thorswap: ThorswapService;
     transak: TransakService;
     wyre: WyreService;
-    coinGecko: CoinGeckoService,
+    coinGecko: CoinGeckoService;
   };
 
   constructor() {
@@ -5061,7 +5061,7 @@ export class WalletService implements IWalletService {
 
   static upgradeNeeded(
     paths: Upgrade | Upgrade[],
-    opts: UpgradeCheckOpts & { clientVersion: string; userAgent: string; }
+    opts: UpgradeCheckOpts & { clientVersion: string; userAgent: string }
   ) {
     paths = Array.isArray(paths) ? paths : [paths];
     const chain = opts.chain?.toLowerCase();

@@ -12,7 +12,7 @@ export interface ITssKeyMessageObject {
     payload: {
       message: string;
       signature: string;
-    }
+    };
   }>;
   p2pMessages: Array<{
     to: number;
@@ -21,7 +21,7 @@ export interface ITssKeyMessageObject {
     payload: {
       encryptedMessage: string;
       signature: string;
-    }
+    };
   }>;
   partyId: number;
   publicKey: string;
@@ -126,7 +126,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
     return x;
   }
 
-  static fromObj(obj: ITssKeyGenModel & { __v: number; }): TssKeyGenModel {
+  static fromObj(obj: ITssKeyGenModel & { __v: number }): TssKeyGenModel {
     const x = new TssKeyGenModel();
     x.id = obj.id;
     x.schemeVersion = obj.schemeVersion;

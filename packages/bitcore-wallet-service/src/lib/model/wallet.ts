@@ -98,23 +98,23 @@ export class Wallet implements IWallet<() => boolean> {
   static COPAYER_PAIR_LIMITS = {};
 
   static create(opts: {
-    id: string,
-    name: string,
-    m: number,
-    n: number,
-    coin: string,
-    chain: string, // chain === coin for stored wallets
-    network: string,
-    pubKey: string,
-    singleAddress: boolean,
-    derivationStrategy: string,
-    addressType: string,
-    nativeCashAddr?: boolean,
-    usePurpose48?: boolean,
-    hardwareSourcePublicKey?: string,
-    clientDerivedPublicKey?: string,
-    tssVersion?: number,
-    tssKeyId?: string,
+    id: string;
+    name: string;
+    m: number;
+    n: number;
+    coin: string;
+    chain: string; // chain === coin for stored wallets
+    network: string;
+    pubKey: string;
+    singleAddress: boolean;
+    derivationStrategy: string;
+    addressType: string;
+    nativeCashAddr?: boolean;
+    usePurpose48?: boolean;
+    hardwareSourcePublicKey?: string;
+    clientDerivedPublicKey?: string;
+    tssVersion?: number;
+    tssKeyId?: string;
   }) {
     opts = opts || {} as any;
 

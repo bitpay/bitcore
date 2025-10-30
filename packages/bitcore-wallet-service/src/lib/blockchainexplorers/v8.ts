@@ -43,7 +43,7 @@ function v8network(bwsNetwork, chain = 'btc') {
   return bwsNetwork;
 }
 
-export type WalletWithOpts = IWallet & { tokenAddress?: string; multisigContractAddress?: string; };
+export type WalletWithOpts = IWallet & { tokenAddress?: string; multisigContractAddress?: string };
 
 export class V8 {
   chain: string;

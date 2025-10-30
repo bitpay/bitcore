@@ -6716,7 +6716,7 @@ describe('Wallet service', function() {
       sendMax?: boolean;
       fromSegwit: boolean;
       utxos: (number | string)[];
-      outputs: { toAddress: string, amount: number }[];
+      outputs: { toAddress: string; amount: number }[];
       vSize?: number;
       n?: number;
       m?: number;
@@ -7248,7 +7248,7 @@ describe('Wallet service', function() {
       name: string;
       requiredFeeRate: number;
       utxos: (number | string)[];
-      outputs: { toAddress: string, amount?: number }[];
+      outputs: { toAddress: string; amount?: number }[];
       n?: number;
       sendMax?: boolean;
       fromSegwit?: boolean;

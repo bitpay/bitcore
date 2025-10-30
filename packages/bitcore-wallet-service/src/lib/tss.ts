@@ -48,7 +48,7 @@ class TssKeyGenClass {
     return { messages, publicKey: session.sharedPublicKey, hasKeyBackup: !!session.keyShares?.[partyId] };
   }
 
-  async processMessage(params: { id: string; message: ITssKeyMessageObject; n?: string | number; password?: string; copayerId: string; }) {
+  async processMessage(params: { id: string; message: ITssKeyMessageObject; n?: string | number; password?: string; copayerId: string }) {
     const { id, message, n, password, copayerId } = params;
     if (!id || typeof id !== 'string') {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid id provided: ' + id);
@@ -89,7 +89,7 @@ class TssKeyGenClass {
     }
   }
 
-  private _checkPassword(params: { session: TssKeyGenModel; password: string; }) {
+  private _checkPassword(params: { session: TssKeyGenModel; password: string }) {
     const { session, password } = params;
     if (!session.joinPassword) {
       return true;
@@ -119,7 +119,7 @@ class TssKeyGenClass {
 
   private async _initSession(params: {
     id: string;
-    message: ITssKeyMessageObject,
+    message: ITssKeyMessageObject;
     n: number | string;
     password?: string;
     storage: Storage;
@@ -150,7 +150,7 @@ class TssKeyGenClass {
     }
   }
 
-  private async _pushMessage(params: { id: string; session: TssKeyGenModel; message: ITssKeyMessageObject; storage: Storage; }) {
+  private async _pushMessage(params: { id: string; session: TssKeyGenModel; message: ITssKeyMessageObject; storage: Storage }) {
     const { id, session, message, storage } = params;
     const { round } = message;
 
@@ -251,7 +251,7 @@ class TssKeyGenClass {
     }
   }
 
-  async getBwsJoinSecret(params: { id: string; copayerId: string; }) {
+  async getBwsJoinSecret(params: { id: string; copayerId: string }) {
     const { id, copayerId } = params;
     const storage = WalletService.getStorage();
     const session = await storage.fetchTssKeyGenSession({ id });
@@ -271,7 +271,7 @@ class TssKeyGenClass {
 export const TssKeyGen = new TssKeyGenClass();
 
 class TssSignClass {
-  async getMessagesForParty(params: { id: string; round: number; copayerId: string; }): Promise<{ messages?: ITssSigMessageObject[]; signature?: ITssSigMessageObject['signature']; }> {
+  async getMessagesForParty(params: { id: string; round: number; copayerId: string }): Promise<{ messages?: ITssSigMessageObject[]; signature?: ITssSigMessageObject['signature'] }> {
     const { id, round, copayerId } = params;
     
     const storage = WalletService.getStorage();
@@ -299,7 +299,7 @@ class TssSignClass {
     return {};
   }
 
-  async processMessage(params: { id: string; message: ITssSigMessageObject; m?: string | number; copayerId: string; }) {
+  async processMessage(params: { id: string; message: ITssSigMessageObject; m?: string | number; copayerId: string }) {
     const { id, message, m, copayerId } = params;
     if (!id || typeof id !== 'string') {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid id provided: ' + id);
@@ -365,7 +365,7 @@ class TssSignClass {
       typeof message?.p2pMessages?.[0]?.payload?.signature === 'string';
   }
 
-  private async _initSession(params: { id: string; message: ITssSigMessageObject; m: number | string; storage: Storage; copayerId: string; }) {
+  private async _initSession(params: { id: string; message: ITssSigMessageObject; m: number | string; storage: Storage; copayerId: string }) {
     const { id, message, storage, copayerId } = params;
     const m = parseInt(params.m as string);
     if (!m || m < 1) {
@@ -384,7 +384,7 @@ class TssSignClass {
     }
   }
 
-  private async _pushMessage(params: { id: string; session: TssSigGenModel; message: ITssSigMessageObject; storage: Storage; }) {
+  private async _pushMessage(params: { id: string; session: TssSigGenModel; message: ITssSigMessageObject; storage: Storage }) {
     const { id, session, message, storage } = params;
     const { round } = message;
 
@@ -415,7 +415,7 @@ class TssSignClass {
     }
   }
 
-  async storeSignature(params: { id: string; signature: ITssSigMessageObject['signature']; }) {
+  async storeSignature(params: { id: string; signature: ITssSigMessageObject['signature'] }) {
     const { id, signature } = params;
     if (!signature) {
       throw Errors.TSS_NO_FINAL_SIGNATURE;

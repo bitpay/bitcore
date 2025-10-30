@@ -98,7 +98,7 @@ export class BlockchainMonitor {
             ) {
               explorer = opts.blockchainExplorers[pair.chain][pair.network];
             } else {
-              let config: { url?: string; provider?: any, regtestEnabled?: boolean } = {};
+              let config: { url?: string; provider?: any; regtestEnabled?: boolean } = {};
               if (
                 opts.blockchainExplorerOpts &&
                 opts.blockchainExplorerOpts[pair.chain] &&

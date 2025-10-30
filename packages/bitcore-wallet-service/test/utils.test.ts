@@ -127,7 +127,7 @@ describe('Utils', function() {
 
   describe('#formatAmount', function() {
     it('should successfully format amount', function() {
-      const cases: Array<{ args: [number, string, any?], expected: string }> = [{
+      const cases: Array<{ args: [number, string, any?]; expected: string }> = [{
         args: [1, 'bit'],
         expected: '0',
       }, {
