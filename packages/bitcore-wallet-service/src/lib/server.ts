@@ -477,7 +477,22 @@ export class WalletService implements IWalletService {
     this.lock.runLocked(this.walletId, { waitTime }, cb, task);
   }
 
+  _cleanLogArgs(args) {
+    if (!args || args.length === 0) {
+      return [];
+    }
+    if (!Array.isArray(args)) {
+      args = [args];
+    }
+    for (let i = 0; i < args.length; i++) {
+      args[i] = args[i]?.response ? JSON.parse(JSON.stringify(args[i])) : args[i];
+    }
+    return args;
+  }
+
   logi(message, ...args) {
+    args = this._cleanLogArgs(args);
+
     if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
       for (let i = 0; i < args.length; i++) {
         message += ' %o';
@@ -493,6 +508,8 @@ export class WalletService implements IWalletService {
   }
 
   logw(message, ...args) {
+    args = this._cleanLogArgs(args);
+
     if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
       for (let i = 0; i < args.length; i++) {
         message += ' %o';
@@ -509,6 +526,8 @@ export class WalletService implements IWalletService {
   }
 
   logd(message, ...args) {
+    args = this._cleanLogArgs(args);
+
     if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
       for (let i = 0; i < args.length; i++) {
         message += ' %o';
@@ -1552,7 +1571,7 @@ export class WalletService implements IWalletService {
         wallet,
         err2 => {
           if (err2) {
-            this.logw('Error syncing v8 addresses: ', err2);
+            this.logw('Error syncing v8 addresses:', err2);
           }
           return cb(null, isDuplicate);
         },
@@ -1578,7 +1597,7 @@ export class WalletService implements IWalletService {
       try {
         address = wallet.createAddress(!!opts.isChange);
       } catch (e) {
-        this.logw('Error creating address', e);
+        this.logw('Error creating address:', e);
         return cb('Bad xPub');
       }
 
@@ -1734,7 +1753,7 @@ export class WalletService implements IWalletService {
     try {
       bc = BlockChainExplorer(opts);
     } catch (ex) {
-      this.logw('Could not instantiate blockchain explorer', ex);
+      this.logw('Could not instantiate blockchain explorer:', ex);
     }
     return bc;
   }
@@ -2097,7 +2116,7 @@ export class WalletService implements IWalletService {
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
     bc.estimateFee(points, (err, result) => {
       if (err) {
-        this.logw('Error estimating fee', err);
+        this.logw('Error estimating fee:', err);
         return cb(err);
       }
 
@@ -2116,7 +2135,7 @@ export class WalletService implements IWalletService {
 
       if (failed.length) {
         const logger = network == 'livenet' ? this.logw : this.logi;
-        logger('Could not compute fee estimation in ' + network + ': ' + failed.join(', ') + ' blocks.');
+        logger.call(this, 'Could not compute fee estimation in ' + network + ': ' + failed.join(', ') + ' blocks.');
       }
 
       return cb(null, levels, failed.length);
@@ -2130,7 +2149,7 @@ export class WalletService implements IWalletService {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.estimateFeeV2(opts, (err, result) => {
         if (err) {
-          this.logw('Error estimating fee', err);
+          this.logw('Error estimating fee:', err);
           return reject(err);
         }
         return resolve(result);
@@ -2145,7 +2164,7 @@ export class WalletService implements IWalletService {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.estimatePriorityFee(opts, (err, result) => {
         if (err) {
-          this.logw('Error estimating priority fee', err);
+          this.logw('Error estimating priority fee:', err);
           return reject(err);
         }
         return resolve(result);
@@ -2229,7 +2248,7 @@ export class WalletService implements IWalletService {
       this._sampleFeeLevels(opts.chain, opts.network, samplePoints(), (err, feeSamples, failed) => {
         if (err) {
           if (oldvalues) {
-            this.logw('##  There was an error estimating fees... using old cached values');
+            this.logw('##  There was an error estimating fees. Using old cached values. Error:', err);
             return cb(null, oldvalues, true);
           }
         }
@@ -2259,13 +2278,13 @@ export class WalletService implements IWalletService {
         }
 
         if (failed > 0) {
-          this.logw('Not caching default values. Failed:' + failed);
+          this.logw('Not caching default values. Failed: ' + failed);
           return cb(null, values);
         }
 
         this.storage.storeGlobalCache(cacheKey, values, err => {
           if (err) {
-            this.logw('Could not store fee level cache');
+            this.logw('Could not store fee level cache:', err);
           }
           return cb(null, values);
         });
@@ -2452,7 +2471,7 @@ export class WalletService implements IWalletService {
         if (err) return cb(err);
         const level = levels.find(l => l.level === opts.feeLevel);
         if (!level) {
-          const msg = 'Could not compute fee for "' + opts.feeLevel + '" level';
+          const msg = `Could not compute fee for "${opts.feeLevel}" level`;
           this.logw(msg);
           return cb(new ClientError(msg));
         }
@@ -2466,7 +2485,7 @@ export class WalletService implements IWalletService {
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
     bc.getTransactionCount(address, (err, nonce) => {
       if (err) {
-        this.logw('Error estimating nonce', err);
+        this.logw('Error estimating nonce:', err);
         return cb(err);
       }
       return cb(null, nonce);
@@ -2479,7 +2498,7 @@ export class WalletService implements IWalletService {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getTransactionCount(opts.address, (err, nonce) => {
         if (err) {
-          this.logw('Error estimating nonce', err);
+          this.logw('Error estimating nonce:', err);
           return reject(err);
         }
         return resolve(nonce);
@@ -2493,7 +2512,7 @@ export class WalletService implements IWalletService {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.estimateGas(opts, (err, gasLimit) => {
         if (err) {
-          this.logw('Error estimating gas limit', err);
+          this.logw('Error estimating gas limit:', err);
           return reject(err);
         }
         return resolve(gasLimit);
@@ -2507,7 +2526,7 @@ export class WalletService implements IWalletService {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getMultisigContractInstantiationInfo(opts, (err, contractInstantiationInfo) => {
         if (err) {
-          this.logw('Error getting contract instantiation info', err);
+          this.logw('Error getting contract instantiation info:', err);
           return reject(err);
         }
         return resolve(contractInstantiationInfo);
@@ -2521,7 +2540,7 @@ export class WalletService implements IWalletService {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getMultisigContractInfo(opts, (err, contractInfo) => {
         if (err) {
-          this.logw('Error getting contract instantiation info', err);
+          this.logw('Error getting contract instantiation info:', err);
           return reject(err);
         }
         return resolve(contractInfo);
@@ -2535,7 +2554,7 @@ export class WalletService implements IWalletService {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getTokenContractInfo(opts, (err, contractInfo) => {
         if (err) {
-          this.logw('Error getting contract info', err);
+          this.logw('Error getting contract info:', err);
           return reject(err);
         }
         return resolve(contractInfo);
@@ -2549,7 +2568,7 @@ export class WalletService implements IWalletService {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getMultisigTxpsInfo(opts, (err, multisigTxpsInfo) => {
         if (err) {
-          this.logw('Error getting contract txps hash', err);
+          this.logw('Error getting contract txps hash:', err);
           return reject(err);
         }
         return resolve(multisigTxpsInfo);
@@ -2964,7 +2983,7 @@ export class WalletService implements IWalletService {
 
       this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
         if (err) {
-          this.logw('Error fetching tx note for ' + txp.txid);
+          this.logw(`Error fetching tx note for ${txp.txid}:`, err);
         }
         txp.note = note;
         return cb(null, txp);
@@ -2987,7 +3006,7 @@ export class WalletService implements IWalletService {
 
       this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
         if (err) {
-          this.logw('Error fetching tx note for ' + txp.txid);
+          this.logw(`Error fetching tx note for ${txp.txid}:`, err);
         }
         txp.note = note;
         return cb(null, txp);
@@ -3111,7 +3130,7 @@ export class WalletService implements IWalletService {
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
     bc.broadcast(raw, (err, txid) => {
       if (err) {
-        logger.info('Error broadcasting tx: %o %o %o %o', chain, network, raw, err);
+        this.logw('Error broadcasting tx: %o %o %o %o', chain, network, raw, err);
         return cb(err);
       }
       return cb(null, txid);
@@ -3204,7 +3223,8 @@ export class WalletService implements IWalletService {
           const copayer = wallet.getCopayer(this.copayerId);
 
           try {
-            if (!txp.sign(this.copayerId, opts.signatures, copayer.xPubKey)) {
+            const xPubKey = wallet.tssKeyId ? wallet.clientDerivedPublicKey : copayer.xPubKey;
+            if (!txp.sign(this.copayerId, opts.signatures, xPubKey)) {
               this.logw('Error signing transaction (BAD_SIGNATURES)');
               this.logw('Client version:', this.clientVersion);
               this.logw('Arguments:', JSON.stringify(opts));
@@ -3214,7 +3234,7 @@ export class WalletService implements IWalletService {
               return cb(Errors.BAD_SIGNATURES);
             }
           } catch (ex) {
-            this.logw('Error signing transaction proposal', ex);
+            this.logw('Error signing transaction proposal:', ex);
             return cb(ex);
           }
 
@@ -3288,67 +3308,62 @@ export class WalletService implements IWalletService {
         return cb(Err);
       }
 
-      this.getTx(
-        {
-          txProposalId: opts.txProposalId
-        },
-        (err, txp) => {
-          if (err) return cb(err);
+      this.getTx({ txProposalId: opts.txProposalId}, (err, txp) => {
+        if (err) return cb(err);
 
-          if (txp.status == 'broadcasted') return cb(Errors.TX_ALREADY_BROADCASTED);
-          if (txp.status != 'accepted') return cb(Errors.TX_NOT_ACCEPTED);
+        if (txp.status == 'broadcasted') return cb(Errors.TX_ALREADY_BROADCASTED);
+        if (txp.status != 'accepted') return cb(Errors.TX_NOT_ACCEPTED);
 
-          const sub = TxConfirmationSub.create({
-            copayerId: txp.creatorId,
-            txid: txp.txid,
-            walletId: txp.walletId,
-            amount: txp.amount,
-            isActive: true,
-            isCreator: true
-          });
-          this.storage.storeTxConfirmationSub(sub, err => {
-            if (err) logger.error('Could not store Tx confirmation subscription: %o', err);
+        const sub = TxConfirmationSub.create({
+          copayerId: txp.creatorId,
+          txid: txp.txid,
+          walletId: txp.walletId,
+          amount: txp.amount,
+          isActive: true,
+          isCreator: true
+        });
+        this.storage.storeTxConfirmationSub(sub, err => {
+          if (err) logger.error('Could not store Tx confirmation subscription: %o', err);
 
-            let raw;
-            try {
-              raw = txp.getRawTx();
-            } catch (ex) {
-              return cb(ex);
-            }
-            this._broadcastRawTx(wallet.chain, wallet.network, raw, (err, txid) => {
-              if (err || txid != txp.txid) {
-                logger.warn('Broadcast failed: %o %o %o %o %o', wallet.id, wallet.chain, wallet.network, raw, err?.stack || err?.message || err);
+          let raw;
+          try {
+            raw = txp.getRawTx();
+          } catch (ex) {
+            return cb(ex);
+          }
+          this._broadcastRawTx(wallet.chain, wallet.network, raw, (err, txid) => {
+            if (err || txid != txp.txid) {
+              const broadcastErr = err?.response ? this._cleanLogArgs(err)[0] : err?.stack || err?.message || err;
+              this.logw('Broadcast failed: %o %o %o %o %o', wallet.id, wallet.chain, wallet.network, raw, broadcastErr);
 
-                const broadcastErr = err;
-                // Check if tx already in blockchain
-                this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
-                  if (err) return cb(err);
-                  if (!isInBlockchain) return cb(broadcastErr || 'broadcast error');
+              // Check if tx already in blockchain
+              this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
+                if (err) return cb(err);
+                if (!isInBlockchain) return cb(broadcastErr || 'broadcast error');
 
-                  this._processBroadcast(
-                    txp,
-                    {
-                      byThirdParty: true
-                    },
-                    cb
-                  );
-                });
-              } else {
                 this._processBroadcast(
                   txp,
                   {
-                    byThirdParty: false
+                    byThirdParty: true
                   },
-                  err => {
-                    if (err) return cb(err);
-                    return cb(null, txp);
-                  }
+                  cb
                 );
-              }
-            });
+              });
+            } else {
+              this._processBroadcast(
+                txp,
+                {
+                  byThirdParty: false
+                },
+                err => {
+                  if (err) return cb(err);
+                  return cb(null, txp);
+                }
+              );
+            }
           });
-        }
-      );
+        });
+      });
     });
   }
 
@@ -3742,7 +3757,7 @@ export class WalletService implements IWalletService {
 
         this.storage.storeGlobalCache(cacheKey, values, err => {
           if (err) {
-            this.logw('Could not store bc heigth cache');
+            this.logw('Could not store bc height cache:', err);
           }
           return cb(null, values.current, values.hash);
         });
@@ -3792,7 +3807,7 @@ export class WalletService implements IWalletService {
         bc.getCheckData(wallet, (err, serverCheck) => {
           // If there is an error, just ignore it (server does not support walletCheck)
           if (err) {
-            this.logw('Error at bitcore WalletCheck, ignoring' + err);
+            this.logw('Error at bitcore WalletCheck, ignoring:', err);
             return cb();
           }
 
@@ -4164,7 +4179,7 @@ export class WalletService implements IWalletService {
         }
 
         if (result) {
-          this.logw('Advert already exists');
+          this.logw('Advert already exists:', opts.adId);
           return cb(null, adId);
         }
       });
@@ -4223,7 +4238,7 @@ export class WalletService implements IWalletService {
       },
       (err, levels) => {
         if (err) {
-          this.logw('Could not fetch fee levels', err);
+          this.logw('Could not fetch fee levels:', err);
         } else {
           const level = levels.find(l => l.level === 'superEconomy');
           if (!level || !level.nbBlocks) {
@@ -4525,7 +4540,7 @@ export class WalletService implements IWalletService {
             return tx;
           });
           this.tagLowFeeTxs(wallet, finalTxs, err => {
-            if (err) this.logw('Failed to tag unconfirmed with low fee');
+            if (err) this.logw('Failed to tag unconfirmed with low fee:', err);
 
             if (res.txs.fromCache) {
               let p = '';

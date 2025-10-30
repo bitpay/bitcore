@@ -25,7 +25,7 @@ program
   .argument('<walletName>', 'Name of the wallet you want to create, join, or interact with. Use "list" to see all wallets in the specified directory.')
   .optionsGroup('Global Options')
   .option('-d, --dir <directory>', 'Directory to look for the wallet', process.env['BITCORE_CLI_DIR'] || path.join(os.homedir(), '.wallets'))
-  .option('-H, --host <host>', 'Bitcore Wallet Service base URL', process.env['BITCORE_CLI_HOST'] || 'http://localhost:3232')
+  .option('-H, --host <host>', 'Bitcore Wallet Service base URL', process.env['BITCORE_CLI_HOST'] || 'https://bws.bitpay.com')
   .option('-c, --command <command>', 'Run a specific command without entering the interactive CLI. Use "help" to see available commands', (value) => value.toLowerCase())
   .option('--no-status', 'Do not display the wallet status on startup. Defaults to true when running with --command')
   .option('-s, --pageSize <number>', 'Number of items per page of a list output', (value) => parseInt(value, 10), 10)
@@ -38,16 +38,20 @@ program
 
 
 const opts = program.opts() as ICliOptions;
-const walletName = program.parseOptions(process.argv).operands.slice(-1)[0];
+const walletName = program.parseOptions(process.argv).operands.slice(2)[0];
 
 if (opts.help && !opts.command) {
   program.help();
 }
 
+if (!walletName && !opts.command) {
+  Utils.die('You must specify a wallet name or use --command');
+}
+
 const isCmdHelp = opts.command && opts.help;
 opts.exit = !!opts.command;
 opts.status = opts.command ? false : opts.status; // Always hide the status when running a command directly
-
+opts.register = opts.register ?? opts.command === 'register';
 
 
 Wallet.setVerbose(opts.verbose);
@@ -95,24 +99,23 @@ if (require.main === module) {
   })
     .catch((err) => {
       if (err instanceof BWCErrors.NOT_AUTHORIZED) {
-        if (opts.register) {
-          return commands.register.registerWallet({ wallet, opts });
-        } else {
-          prompt.log.error('This wallet does not appear to be registered with the Bitcore Wallet Service. Use --register to do so.');
-          Utils.die(err);
-        }
-      } else {
-        Utils.die(err);
+        Utils.die('This wallet does not appear to be registered with the Bitcore Wallet Service. Use --register to do so.');
       }
+      Utils.die(err);
     })
     .then(async () => {
       if (walletName === 'list') {
         for (const file of fs.readdirSync(opts.dir)) {
           if (file.endsWith('.json')) {
-            console.log(`- ${file.replace('.json', '')}`);
+            const walletData = JSON.parse(fs.readFileSync(path.join(opts.dir, file), 'utf8'));
+            console.log(`  ${Utils.boldText(file.replace('.json', ''))}  [${Utils.colorizeChain(walletData.creds.chain)}:${walletData.creds.network}]`);
           }
         }
         return;
+      }
+
+      if (opts.register) {
+        return await commands.register.registerWallet({ wallet, opts });
       }
 
       const cmdParams: CommonArgs<any> = {
@@ -123,7 +126,7 @@ if (require.main === module) {
       };
 
       if (!wallet.client?.credentials) {
-        prompt.intro(`No wallet found named ${Utils.colorText(walletName, 'orange')}`);
+        prompt.intro(`No wallet found named ${Utils.underlineText(Utils.boldText(Utils.italicText(walletName)))}`);
         const action: NewCommand | symbol = await prompt.select({
           message: 'What would you like to do?',
           options: [].concat(COMMANDS.NEW, COMMANDS.EXIT)
@@ -154,24 +157,24 @@ if (require.main === module) {
             opts.exit = true;
             break;
         }
-        prompt.outro(`${Utils.colorText('✔', 'green')} Wallet ${Utils.colorText(walletName, 'orange')} created successfully!`);
+        !opts.exit && prompt.outro(`${Utils.colorText('✔', 'green')} Wallet ${Utils.boldText(walletName)} created successfully!`);
       } else {
 
         if (opts.status) {
-          prompt.intro(`Status for ${Utils.colorText(walletName, 'orange')}`);
+          prompt.intro(`Status for ${Utils.colorTextByChain(wallet.chain, walletName)}`);
           const status = await commands.status.walletStatus({ wallet, opts });
           cmdParams.status = status;
-          prompt.outro('Welcome to the Bitcore CLI!');
+          prompt.outro(Utils.boldText('Welcome to the Bitcore CLI!'));
         }
 
         let advancedActions = false;
         do {
           // Don't display the intro if running a specific command
-          !opts.command && prompt.intro(`${Utils.colorText('~~ Main Menu ~~', 'blue')} (${Utils.colorText(walletName, 'orange')})`);
-          cmdParams.status.pendingTxps = opts.command ? [] : await wallet.client.getTxProposals({});
+          !opts.command && prompt.intro(`${Utils.boldText('[  Main Menu')} - ${Utils.colorTextByChain(wallet.chain, walletName)}  ${Utils.boldText(']')}`);
+          cmdParams.status && (cmdParams.status.pendingTxps = opts.command || opts.register ? [] : await wallet.client.getTxProposals({}));
           
           const dynamicCmdArgs = {
-            ppNum: cmdParams.status.pendingTxps.length ? Utils.colorText(` (${cmdParams.status.pendingTxps.length})`, 'yellow') : '',
+            ppNum: cmdParams.status?.pendingTxps.length ? Utils.colorText(` (${cmdParams.status.pendingTxps.length})`, 'yellow') : '',
             sNum: Utils.colorText(` (${'TODO'})`, 'yellow'),
             token: cmdParams.opts?.token
           };

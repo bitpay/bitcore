@@ -116,6 +116,7 @@ export class Credentials {
     n?: number;
     addressType?: string;
     walletPrivKey?: string;
+    copayerName?: string;
     use145forBCH?: boolean;
     nonCompliantDerivation?: boolean;
     clientDerivedPublicKey?: string;
@@ -138,6 +139,7 @@ export class Credentials {
     x.n = opts.n;
     x.xPubKey = opts.xPubKey;
     x.keyId = opts.keyId;
+    x.copayerName = opts.copayerName;
 
     // this allows to set P2SH in old n=1 wallets
     if (opts.addressType == null) {

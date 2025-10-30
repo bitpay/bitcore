@@ -166,4 +166,14 @@ export class ETHTxProvider {
     const signature = this.getSignatureObject({ tx, key });
     return this.applySignature({ tx, signature });
   }
+
+  transformSignatureObject(params: { obj: any; }) {
+    const { obj } = params;
+    return ethers.Signature.from(obj).serialized;
+  }
+
+  getSighash(params: { tx: string; }): string {
+    const { tx } = params;
+    return ethers.keccak256(tx).slice(2); // remove 0x prefix
+  }
 }

@@ -1,4 +1,4 @@
-import { Transactions, Validation } from 'crypto-wallet-core';
+import { BitcoreLib, Deriver, Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IWallet } from 'src/lib/model';
 import { IAddress } from 'src/lib/model/address';
@@ -258,15 +258,20 @@ export class XrpChain implements IChain {
     }
 
     const chain = 'XRP'; // TODO use lowercase always to avoid confusion
-    const network = tx.network;
+    const network = tx.network || tx.toObject().network;
     const unsignedTxs = tx.uncheckedSerialize();
     const signedTxs = [];
     const txids = [];
     for (let index = 0; index < signatures.length; index++) {
+      const pubKey = new BitcoreLib.HDPublicKey(xpub).deriveChild(inputPaths[index] || 'm/0/0').publicKey.toString();
+      if (Deriver.getAddress(chain, network, pubKey) !== tx.toObject().from) { // sanity check
+        throw new Error('Unknown public key for signature');
+      }
       const signed = Transactions.applySignature({
         chain,
         tx: unsignedTxs[index],
-        signature: signatures[index]
+        signature: signatures[index],
+        pubKey
       });
       signedTxs.push(signed);
 

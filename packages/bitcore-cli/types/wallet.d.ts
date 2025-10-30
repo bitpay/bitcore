@@ -72,6 +72,7 @@ export interface IWallet {
   getTokenByAddress(args: { tokenAddress: string }): Promise<ITokenObj>;
   getTokenByName(args: { token: string }): Promise<ITokenObj>;
   getTokenFromChain(args: { address: string }): Promise<ITokenObj>;
+  getNativeCurrency(fallback?: boolean): Promise<ITokenObj | null>;
   getPasswordWithRetry(): Promise<string>;
   signTxp(args: { txp: Txp }): Promise<Array<string>>;
   signAndBroadcastTxp(args: { txp: Txp; }): Promise<Txp>;
@@ -90,6 +91,7 @@ export interface IWallet {
   isEvm(): boolean;
   isSvm(): boolean;
   isXrp(): boolean;
+  isTokenChain(): boolean;
 }
 
 export interface ITokenObj {
@@ -111,4 +113,5 @@ export interface ITokenObj {
   sanctioned?: boolean;
   symbol: string;
   trancheDecimals: number;
+  native: boolean;
 }

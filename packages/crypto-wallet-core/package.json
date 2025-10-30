@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
-    "test": "npm run compile && mocha -r tsx test/**/*.test.ts",
+    "test": "npm run compile && mocha -r tsx 'test/**/*.test.ts'",
     "pub": "npm run compile && npm publish"
   },
   "keywords": [
