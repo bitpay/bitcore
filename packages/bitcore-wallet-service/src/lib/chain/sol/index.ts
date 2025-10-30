@@ -1,10 +1,11 @@
-import { BitcoreLib as Bitcore, Transactions, Validation, Web3 } from 'crypto-wallet-core';
+import { Transactions, Validation, Web3 } from 'crypto-wallet-core';
 import _ from 'lodash';
-import { IChain } from '..';
+import { IChain } from '../../../types/chain';
+import { WalletWithOpts } from '../../blockchainexplorers/v8';
 import { Defaults } from '../../common/defaults';
 import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
-import { IWallet } from '../../model';
+import { IWallet, TxProposal, Wallet } from '../../model';
 import { IAddress } from '../../model/address';
 import { WalletService } from '../../server';
 
@@ -34,14 +35,14 @@ export class SolChain implements IChain {
     return convertedBalance;
   }
 
-  getWalletBalance(server, wallet, opts, cb) {
+  getWalletBalance(server: WalletService, wallet: Wallet, opts: { tokenAddress?: string }, cb) {
     const bc = server._getBlockchainExplorer(wallet.chain || wallet.coin, wallet.network);
 
     if (opts.tokenAddress) {
-      wallet.tokenAddress = opts.tokenAddress;
+      (wallet as WalletWithOpts).tokenAddress = opts.tokenAddress;
     }
 
-    bc.getBalance(wallet, (err, balance) => {
+    bc.getBalance(wallet as WalletWithOpts, (err, balance) => {
       if (err) {
         return cb(err);
       }
@@ -220,12 +221,12 @@ export class SolChain implements IChain {
     return null;
   }
 
-  selectTxInputs(server, txp, wallet, _opts, cb) {
-    server.getBalance({ wallet }, (err, balance) => {
+  selectTxInputs(server: WalletService, txp: TxProposal, wallet: IWallet, opts: { tokenAddress?: string }, cb) {
+    server.getBalance({ wallet, tokenAddress: opts?.tokenAddress }, (err, balance) => {
       if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
       // calculate how much space is needed to find rent amount
-      const minRentException = Defaults.MIN_SOL_BALANCE;
+      const minRentException = opts.tokenAddress ? 0 : Defaults.MIN_SOL_BALANCE;
       if (totalAmount - minRentException < txp.getTotalAmount()) {
         return cb(Errors.INSUFFICIENT_FUNDS);
       } else if (availableAmount < txp.getTotalAmount()) {
@@ -304,6 +305,10 @@ export class SolChain implements IChain {
 
   supportsMultisig() {
     return false;
+  }
+
+  supportsThresholdsig() {
+    return false; // TODO: need to add EDDSA support to bitcore-tss
   }
 
   isUTXOChain() {

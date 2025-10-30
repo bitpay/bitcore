@@ -1,24 +1,23 @@
 import 'source-map-support/register';
 import { PassThrough } from 'stream';
+import { BitcoreLib } from 'crypto-wallet-core';
 import { Encryption } from './encryption';
 import { Level } from './storage/level';
 import { Mongo } from './storage/mongo';
 import { TextFile } from './storage/textFile';
-import { KeyImport } from './wallet';
-
-const bitcoreLib = require('crypto-wallet-core').BitcoreLib;
+import { StorageType } from './types/storage';
+import { IWallet, KeyImport } from './types/wallet';
 
 export class Storage {
   path: string;
   db: Array<Mongo | Level | TextFile>;
-  collection: 'bitcoreWallets';
   url?: string;
   errorIfExists?: boolean;
   createIfMissing: boolean;
-  storageType: any;
-  constructor(params: { path?: string; createIfMissing: boolean; errorIfExists: boolean; storageType?: string }) {
-    const { path, createIfMissing, errorIfExists } = params;
-    let { storageType } = params;
+  storageType: Mongo | Level | TextFile;
+
+  constructor(params: { path?: string; createIfMissing: boolean; errorIfExists: boolean; storageType?: StorageType }) {
+    const { path, createIfMissing, errorIfExists, storageType } = params;
     if (storageType && !['Mongo', 'Level', 'TextFile'].includes(storageType)) {
       throw new Error('Storage Type passed in must be Mongo, Level, or TextFile');
     }
@@ -35,17 +34,17 @@ export class Storage {
       this.db.push(new dbMap[storageType]({ createIfMissing, errorIfExists, path }));
       this.storageType = this.db[0];
     } else {
-      for (let DbType of Object.values(dbMap)) {
+      for (const DbType of Object.values(dbMap)) {
         this.db.push(new DbType({ createIfMissing, errorIfExists, path }));
       }
     }
   }
 
-  async verifyDbs(dbs) {
-    for await (let db of dbs) {
-      if (typeof db.testConnection === 'function') {
+  async verifyDbs(dbs: Storage['db']) {
+    for await (const db of dbs) {
+      if (typeof (db as any).testConnection === 'function') {
         // test mongo connection
-        if (!(await db.testConnection())) {
+        if (!(await (db as any).testConnection())) {
           // remove from dbs
           dbs.splice(dbs.indexOf(db), 1);
         }
@@ -55,31 +54,30 @@ export class Storage {
   }
 
   async close() {
-    this.storageType?.close?.();
+    (this.storageType as Mongo)?.close?.();
   }
 
-  async loadWallet(params: { name: string }) {
+  async loadWallet(params: { name: string }): Promise<void | IWallet> {
     const { name } = params;
-    let wallet;
-    for (let db of await this.verifyDbs(this.db)) {
+    let wallet: string | void;
+    for (const db of await this.verifyDbs(this.db)) {
       try {
         wallet = await db.loadWallet({ name });
         if (wallet) {
-          this.storageType = wallet.storageType;
           this.storageType = db;
           break;
         }
-      } catch (e) {}
+      } catch { /* ignore */ }
     }
     if (!wallet) {
       return;
     }
-    return JSON.parse(wallet);
+    return JSON.parse(wallet) as IWallet;
   }
 
   async deleteWallet(params: { name: string }) {
     const { name } = params;
-    for (let db of await this.verifyDbs(this.db)) {
+    for (const db of await this.verifyDbs(this.db)) {
       try {
         await db.deleteWallet({ name });
       } catch (e) {
@@ -91,7 +89,7 @@ export class Storage {
   async listWallets() {
     let passThrough = new PassThrough();
     const dbs = await this.verifyDbs(this.db);
-    for (let db of dbs) {
+    for (const db of dbs) {
       const listWalletStream = await db.listWallets();
       passThrough = listWalletStream.pipe(passThrough, { end: false });
       listWalletStream.once('end', () => --dbs.length === 0 && passThrough.end());
@@ -102,7 +100,7 @@ export class Storage {
   async listKeys() {
     let passThrough = new PassThrough();
     const dbs = await this.verifyDbs(this.db);
-    for (let db of dbs) {
+    for (const db of dbs) {
       const listWalletStream = await db.listKeys();
       passThrough = listWalletStream.pipe(passThrough, { end: false });
       listWalletStream.once('end', () => --dbs.length === 0 && passThrough.end());
@@ -164,8 +162,8 @@ export class Storage {
     const { name, keys, encryptionKey } = params;
     let open = true;
     for (const key of keys) {
-      let { pubKey, path } = key;
-      pubKey = pubKey || new bitcoreLib.PrivateKey(key.privKey).publicKey.toString();
+      const { path } = key;
+      const pubKey = key.pubKey || new BitcoreLib.PrivateKey(key.privKey).publicKey.toString();
       let payload = {};
       if (pubKey && key.privKey && encryptionKey) {
         const toEncrypt = JSON.stringify(key);

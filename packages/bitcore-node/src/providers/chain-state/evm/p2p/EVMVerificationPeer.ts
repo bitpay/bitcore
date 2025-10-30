@@ -142,7 +142,7 @@ export class EVMVerificationPeer extends EVMP2pWorker implements IVerificationPe
       }
     }
 
-    for (let tx of mempoolTxs) {
+    for (const tx of mempoolTxs) {
       success = false;
       const error = { model: 'transaction', err: true, type: 'DUPE_TRANSACTION', payload: { tx, blockNum } };
       errors.push(error);
@@ -151,7 +151,7 @@ export class EVMVerificationPeer extends EVMP2pWorker implements IVerificationPe
       }
     }
 
-    for (let tx of blockTxs) {
+    for (const tx of blockTxs) {
       if (tx.fee < 0) {
         success = false;
         const error = { model: 'transaction', err: true, type: 'NEG_FEE', payload: { tx, blockNum } };

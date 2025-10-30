@@ -1,8 +1,8 @@
+import { Readable } from 'stream';
+import util from 'util';
 import { CryptoRpc } from 'crypto-rpc';
 import { ObjectId } from 'mongodb';
 import request from 'request';
-import { Readable } from 'stream';
-import util from 'util';
 import { AccountTxRequest, AccountTxResponse } from 'xrpl/dist/npm/models';
 import { Ledger } from 'xrpl/dist/npm/models/ledger';
 import {
@@ -25,6 +25,7 @@ import {
   GetBalanceForAddressParams,
   GetBlockBeforeTimeParams,
   GetEstimateSmartFeeParams,
+  GetWalletBalanceAtTimeParams,
   GetWalletBalanceParams,
   IChainStateService,
   StreamAddressUtxosParams,
@@ -51,11 +52,11 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
       const networkConfig = this.config[network];
       const provider = networkConfig.provider;
       RippleStateProvider.clients[network] = new CryptoRpc({
-          chain: this.chain,
-          host: provider.host,
-          rpcPort: provider.port,
-          protocol: provider.protocol 
-        }).get(this.chain);
+        chain: this.chain,
+        host: provider.host,
+        rpcPort: provider.port,
+        protocol: provider.protocol 
+      }).get(this.chain);
       await RippleStateProvider.clients[network].rpc.connect();
     }
 
@@ -65,7 +66,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
       } else {
         await RippleStateProvider.clients[network].rpc.connect();
       }
-    } catch (e) {
+    } catch {
       await RippleStateProvider.clients[network].rpc.connect();
     }
     return RippleStateProvider.clients[network];
@@ -73,26 +74,35 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
 
   async getAccountNonce(network: string, address: string) {
     const client = await this.getClient(network);
-    try {
-      const info = await client.getAccountInfo({ address });
-      return info?.account_data?.Sequence;
-    } catch (err) {
-      throw err;
-    }
+    const info = await client.getAccountInfo({ address });
+    return info?.account_data?.Sequence;
   }
 
   async getAccountFlags(network: string, address: string) {
     const client = await this.getClient(network);
-    try {
-      const info = await client.getAccountInfo({ address });
-      return info?.account_flags;
-    } catch (err) {
-      throw err;
-    }
+    const info = await client.getAccountInfo({ address });
+    return info?.account_flags;
+  }
+
+  async getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams) {
+    const { chain, network, time } = params;
+    const addresses = await this.getWalletAddresses(params.wallet._id!);
+    const balances = await Promise.all(
+      addresses.map(a => this.getBalanceForAddress({ address: a.address, chain, network, args: { time } }))
+    );
+    return balances.reduce(
+      (total, current) => {
+        total.balance += current.balance;
+        total.confirmed += current.confirmed;
+        total.unconfirmed += current.unconfirmed;
+        return total;
+      },
+      { confirmed: 0, unconfirmed: 0, balance: 0 }
+    );
   }
 
   async getBalanceForAddress(params: GetBalanceForAddressParams) {
-    const { chain, network, address } = params;
+    const { chain, network, address, args } = params;
     const lowerAddress = address.toLowerCase();
     const cacheKey = `getBalanceForAddress-${chain}-${network}-${lowerAddress}`;
     return CacheStorage.getGlobalOrRefresh(
@@ -100,7 +110,15 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
       async () => {
         const client = await this.getClient(network);
         try {
-          const balance = await client.getBalance({ address });
+          let ledgerIndex: number | undefined;
+          if (args?.time) {
+            const block = await this.getBlockBeforeTime({ chain, network, time: args.time });
+            if (!block) {
+              throw new Error(`Balance not found at ${args.time}`);
+            }
+            ledgerIndex = block.height;
+          }
+          const balance = await client.getBalance({ address, ledgerIndex });
           const confirmed = Math.round(Number(balance) * 1e6);
           return { confirmed, unconfirmed: 0, balance: confirmed };
         } catch (e: any) {
@@ -117,7 +135,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
           throw e;
         }
       },
-      CacheStorage.Times.Minute
+      args?.time ? CacheStorage.Times.None : CacheStorage.Times.Minute
     );
   }
 
@@ -244,7 +262,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
   }
 
   streamTxs<T>(txs: Array<T>, stream: Readable) {
-    for (let tx of txs) {
+    for (const tx of txs) {
       stream.push(tx);
     }
   }
@@ -255,8 +273,8 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     const serverInfo = await client.getServerInfo();
     const ledgers = serverInfo.complete_ledgers.split('-');
     const minLedgerIndex = Number(ledgers[0]);
-    let allTxs: AccountTxResponse['result']['transactions'] = [];
-    let limit = Number(limitArg) || 100;
+    const allTxs: AccountTxResponse['result']['transactions'] = [];
+    const limit = Number(limitArg) || 100;
     const options = {
       ledger_index_min: minLedgerIndex,
       limit,
@@ -280,7 +298,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
         marker: txs.marker,
         limit,
         binary: false
-      }});
+      } });
       allTxs.push(...txs.transactions);
     }
     return allTxs;
@@ -297,7 +315,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
 
   async streamTransactions(params: StreamTransactionsParams) {
     const client = await this.getClient(params.network);
-    let { blockHash } = params.args;
+    const { blockHash } = params.args;
     const { ledger } = await client.getBlock({ hash: blockHash, transactions: true });
     const readable = new Readable({ objectMode: true });
     const txs = ledger.transactions || [];
@@ -311,7 +329,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     try {
       const tx = await client.getTransaction({ txid: params.txId });
       return tx;
-    } catch (e) {
+    } catch {
       return undefined;
     }
   }
@@ -465,7 +483,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     outputs: Array<ICoin> | any
   ): Promise<{ transaction: IXrpTransaction; coins: Array<ICoin> }> {
     const address = tx.from;
-    let involvedAddress = [address];
+    const involvedAddress = [address];
     const transaction = { ...tx, wallets: new Array<ObjectId>() };
     let coins = new Array<ICoin>();
     if (Array.isArray(outputs)) {

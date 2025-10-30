@@ -1,7 +1,6 @@
-import { deriveAddress } from 'xrpl';
-import { IDeriver } from '..';
-
 import BitcoreLib from 'bitcore-lib';
+import { deriveAddress } from 'xrpl';
+import type { IDeriver } from '../../types/derivation';
 
 export class XrpDeriver implements IDeriver {
   deriveAddress(network, xpubkey, addressIndex, isChange) {

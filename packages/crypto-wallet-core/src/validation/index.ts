@@ -9,11 +9,7 @@ import { MaticValidation } from './matic';
 import { OpValidation } from './op';
 import { SolValidation } from './sol';
 import { XrpValidation } from './xrp';
-
-export interface IValidation {
-  validateAddress(network: string, address: string): boolean;
-  validateUri(addressUri: string): boolean;
-}
+import type { IValidation } from '../types/validation';
 
 const validation: { [chain: string]: IValidation } = {
   BTC: new BtcValidation(),

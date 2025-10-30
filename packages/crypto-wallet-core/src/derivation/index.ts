@@ -10,24 +10,7 @@ import { OpDeriver } from './op';
 import { Paths } from './paths';
 import { SolDeriver } from './sol';
 import { XrpDeriver } from './xrp';
-
-export interface Key {
-  address: string;
-  privKey?: string;
-  pubKey?: string;
-}
-
-export interface IDeriver {
-  deriveAddress(network: string, xPub: string, addressIndex: number, isChange: boolean, addressType?: string): string;
-
-  derivePrivateKey(network: string, xPriv: string, addressIndex: number, isChange: boolean, addressType?: string): Key;
-
-  deriveAddressWithPath(network: string, xpubKey: string, path: string, addressType: string): string;
-
-  derivePrivateKeyWithPath(network, xprivKey: string, path: string, addressType: string): Key;
-
-  getAddress(network: string, pubKey, addressType: string): string;
-}
+import type { IDeriver } from '../types/derivation';
 
 const derivers: { [chain: string]: IDeriver } = {
   BTC: new BtcDeriver(),
@@ -44,7 +27,7 @@ const derivers: { [chain: string]: IDeriver } = {
 };
 
 export class DeriverProxy {
-  get(chain) {
+  private get(chain) {
     const normalizedChain = chain.toUpperCase();
     return derivers[normalizedChain];
   }

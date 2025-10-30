@@ -20,6 +20,6 @@ export interface IExternalProvider {
   createAddressSubscription(params: ChainNetwork & ChainId): Promise<IAddressSubscription>;
   getAddressSubscriptions(): Promise<any>;
   deleteAddressSubscription(params: { sub: IAddressSubscription }): Promise<IAddressSubscription>;
-  updateAddressSubscription(params: { sub: IAddressSubscription, addressesToAdd?: string[], addressesToRemove?: string[], status?: string }): Promise<IAddressSubscription>;
-  webhookToCoinEvents(params: { webhook: any, tipHeight: number } & ChainNetwork): CoinEvent[];
+  updateAddressSubscription(params: { sub: IAddressSubscription; addressesToAdd?: string[]; addressesToRemove?: string[]; status?: string }): Promise<IAddressSubscription>;
+  webhookToCoinEvents(params: { webhook: any; tipHeight: number } & ChainNetwork): CoinEvent[];
 };

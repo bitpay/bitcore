@@ -36,7 +36,7 @@ export class EventModel extends BaseModel<IEvent> {
   }
 
   public signalTxs(txs: TxEvent[]) {
-    this.collection.insertMany(txs.map(tx => ({ payload: tx, emitTime: new Date(), type: 'tx' as 'tx' })));
+    this.collection.insertMany(txs.map(tx => ({ payload: tx, emitTime: new Date(), type: 'tx' as const })));
   }
 
   public signalAddressCoin(payload: CoinEvent) {
@@ -45,7 +45,7 @@ export class EventModel extends BaseModel<IEvent> {
 
   public signalAddressCoins(coins: CoinEvent[]) {
     return this.collection.insertMany(
-      coins.map(coin => ({ payload: coin, emitTime: new Date(), type: 'coin' as 'coin' }))
+      coins.map(coin => ({ payload: coin, emitTime: new Date(), type: 'coin' as const }))
     );
   }
 

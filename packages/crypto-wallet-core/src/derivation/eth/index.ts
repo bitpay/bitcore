@@ -1,13 +1,11 @@
-import { IDeriver } from '..';
-
+import BitcoreLib from 'bitcore-lib';
 import utils from 'web3-utils';
-
-const BitcoreLib = require('bitcore-lib');
+import type { IDeriver } from '../../types/derivation';
 
 export class EthDeriver implements IDeriver {
   padTo32(msg) {
     while (msg.length < 32) {
-      msg = Buffer.concat([new Buffer([0]), msg]);
+      msg = Buffer.concat([Buffer.from([0]), msg]);
     }
     if (msg.length !== 32) {
       throw new Error(`invalid key length: ${msg.length}`);
@@ -16,10 +14,8 @@ export class EthDeriver implements IDeriver {
   }
 
   deriveAddress(network, xpubkey, addressIndex, isChange) {
-    const xpub = new BitcoreLib.HDPublicKey(xpubkey, network);
     const changeNum = isChange ? 1 : 0;
     const path = `m/${changeNum}/${addressIndex}`;
-    const derived = xpub.derive(path).publicKey;
     return this.deriveAddressWithPath(network, xpubkey, path);
   }
 

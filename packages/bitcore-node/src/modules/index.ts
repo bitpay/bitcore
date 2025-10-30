@@ -8,6 +8,7 @@ import { P2P } from '../services/p2p';
 import { Storage } from '../services/storage';
 import { Verification } from '../services/verification';
 import { ChainNetwork } from '../types/ChainNetwork';
+import { Class } from '../types/Class';
 
 export interface IService {
   start(): Promise<void>;
@@ -53,7 +54,8 @@ class ModuleManager extends BaseModule {
     BCH: './bitcoin-cash',
     DOGE: './dogecoin',
     LTC: './litecoin',
-    XRP: './ripple'
+    XRP: './ripple',
+    SOL: './solana'
   };
 
   loadConfigured(params: Partial<ChainNetwork> = {}) {
@@ -73,6 +75,7 @@ class ModuleManager extends BaseModule {
           continue;
         }
         logger.info(`Registering module for ${chain}:${network}: ${modulePath}`);
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const ModuleClass: Class<BaseModule> = require(modulePath).default || require(modulePath);
         this.internalServices.push(new ModuleClass(this.bitcoreServices, chain, network, config));
       }

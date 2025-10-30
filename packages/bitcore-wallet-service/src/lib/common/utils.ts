@@ -1,22 +1,52 @@
-import * as CWC from 'crypto-wallet-core';
+import {
+  BitcoreLib,
+  BitcoreLibCash,
+  BitcoreLibDoge,
+  BitcoreLibLtc,
+  Constants as CWConstants
+} from 'crypto-wallet-core';
 import _ from 'lodash';
+import { singleton } from 'preconditions';
+import secp256k1 from 'secp256k1';
 import Config from '../../config';
 import { logger } from '../logger';
 import { Constants } from './constants';
+import { Defaults } from './defaults';
 
-const $ = require('preconditions').singleton();
-const bitcore = require('bitcore-lib');
-const crypto = bitcore.crypto;
-const secp256k1 = require('secp256k1');
-const Bitcore = require('bitcore-lib');
+const $ = singleton();
 const Bitcore_ = {
-  btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
-  doge: require('bitcore-lib-doge'),
-  ltc: require('bitcore-lib-ltc')
+  btc: BitcoreLib,
+  bch: BitcoreLibCash,
+  doge: BitcoreLibDoge,
+  ltc: BitcoreLibLtc
 };
 
 export const Utils = {
+
+  /**
+   * @deprecated
+   * Moved from ChainService to prevent circular dependency
+   */
+  getChain(coin: string): string {
+    try {
+      if (coin === undefined) { // This happens frequently for very old btc wallets/addresses
+        return Defaults.CHAIN;
+      }
+      // TODO add a warning that we are not including chain
+      let normalizedChain = coin.toLowerCase();
+      if (
+        Constants.BITPAY_SUPPORTED_ETH_ERC20[normalizedChain.toUpperCase()] ||
+        !Constants.CHAINS[normalizedChain.toUpperCase()]
+      ) {
+        // default to eth if it's an ETH ERC20 or if we don't know the chain
+        normalizedChain = 'eth';
+      }
+      return normalizedChain;
+    } catch (err) {
+      logger.error(`Error getting chain for coin ${coin}: %o`, err.stack || err.message || err);
+      return Defaults.CHAIN; // coin should always exist but most unit test don't have it -> return btc as default
+    }
+  },
 
   isObject(obj) {
     return obj && typeof obj === 'object' && !Array.isArray(obj);
@@ -64,9 +94,9 @@ export const Utils = {
   hashMessage(text, noReverse) {
     $.checkArgument(text);
     const buf = Buffer.from(text);
-    let ret = crypto.Hash.sha256sha256(buf);
+    let ret = BitcoreLib.crypto.Hash.sha256sha256(buf);
     if (!noReverse) {
-      ret = new bitcore.encoding.BufferReader(ret).readReverse();
+      ret = new BitcoreLib.encoding.BufferReader(ret).readReverse();
     }
     return ret;
   },
@@ -128,7 +158,7 @@ export const Utils = {
   },
 
   formatAmount(satoshis, unit, opts) {
-    const UNITS = Object.entries(CWC.Constants.UNITS).reduce((units, [currency, currencyConfig]) => {
+    const UNITS = Object.entries(CWConstants.UNITS).reduce((units, [currency, currencyConfig]) => {
       units[currency] = {
         toSatoshis: currencyConfig.toSatoshis,
         maxDecimals: currencyConfig.short.maxDecimals,
@@ -344,7 +374,7 @@ export const Utils = {
   },
 
   /**
-   * Sort array by keys
+   * Sort array by keys in ascending order
    * @param {Array<any>} arr Array to be sorted
    * @param {...string|Array<string>} keys Keys to sort by in order. If a key is an array, it will be treated as a nested key.
    *  e.g.: sortAsc(arr, 'a', 'b', ['c', 'd']) will sort by a, then b, then c.d
@@ -393,8 +423,45 @@ export const Utils = {
     });
   },
 
-  sortDesc(arr, ...keys) {
+  /**
+   * Sort array by keys in descending order
+   * @param {Array<any>} arr Array to be sorted
+   * @param {...string|Array<string>} keys Keys to sort by in order. If a key is an array, it will be treated as a nested key.
+   *  e.g.: sortDesc(arr, 'a', 'b', ['c', 'd']) will sort by a, then b, then c.d
+   */
+  sortDesc(arr: Array<any>, ...keys: string[]) {
     return Utils.sortAsc(arr, ...keys).reverse();
+  },
+
+  /**
+   * Return a new object with only the specified keys
+   * E.g.: pick({a: 1, b: 2, c: 3, d: 4}, 'a', 'c') => {a: 1, c: 3}
+   * 
+   * Keys can be given as an array
+   * E.g.: pick({a: 1, b: 2, c: 3, d: 4}, ['a', 'c']) => {a: 1, c: 3}
+   * 
+   * Keys are flattened
+   * E.g.: pick({a: 1, b: 2, c: 3, d: 4}, ['a', ['c']], 'd') => {a: 1, c: 3, d: 4}
+   * 
+   * Properties that are defined but nullish will be included on result
+   * E.g.: pick({a: 1, b: 2, c: null, d: undefined}, ['a', 'c', 'd']) => {a: 1, c: null, d: undefined}
+   *
+   * Non-existent properties will not exist on result
+   * E.g.: pick({a: 1, b: 2, c: null, d: 4}, ['a', 'e']) => {a: 1}
+   * @param {Object} obj Object to pick keys from
+   * @param keys Keys to pick from obj
+   * @returns {Object} New object with only the specified keys
+   */
+  pick<T>(obj: T, ...keys): Partial<T> {
+    keys = keys.flat();
+    const retval: Partial<T> = {};
+    if (!obj) return retval;
+    for (const key of keys) {
+      if (obj.hasOwnProperty(key)) {
+        retval[key] = obj[key];
+      }
+    }
+    return retval;
   },
 
   /**
@@ -402,7 +469,7 @@ export const Utils = {
    * @param {Array<Array<any, any>>} input e.g. [[a, 1], [b, 2]]
    * @returns {Object} e.g. { a: 1, b: 2 }
    */
-  fromPairs(input) {
+  fromPairs(input: Array<[any, any]>) {
     return input.reduce((map, [k, v]) => {
       map[k] = v;
       return map;
@@ -415,9 +482,25 @@ export const Utils = {
    * @param {Array<any>} [arr2] Elements to remove from arr1 if they exist. If not provided, returns a copy of arr1.
    * @returns 
    */
-  difference(arr1, arr2) {
+  difference(arr1: any, arr2: any) {
     if (!Array.isArray(arr1)) return [];
     if (!Array.isArray(arr2)) arr2 = null;
     return arr1.filter(x => !arr2?.includes(x));
-  }
-}
+  },
+
+  /**
+   * Shuffles array using a Fisher-Yates shuffle
+   * @param {Array<any>} array Array to shuffle
+   * @returns New array of shuffled elements
+   */
+  shuffle(array: Array<any>) {
+    const retval = [...array];
+    for (let i = retval.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [retval[i], retval[j]] = [retval[j], retval[i]];
+    }
+    return retval;
+  },
+
+  sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+};

@@ -15,6 +15,7 @@ describe('Cache Model', function() {
   const otherAddress = '0x9527a556f0D9AA753dE0D1f9Ad024a17dd281B1D';
   const otherKey = `getBalanceForAddress-ETH-testnet-${otherAddress.toLowerCase()}`;
 
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
   before(intBeforeHelper);
@@ -99,8 +100,8 @@ describe('Cache Model', function() {
     await CacheStorage.setGlobal(key2, value, CacheStorage.Times.Hour);
     await CacheStorage.setGlobal(otherKey, value, CacheStorage.Times.Hour);
 
-    await  EVMTransactionStorage.expireBalanceCache(op1);
-    await  EVMTransactionStorage.expireBalanceCache(op2);
+    await EVMTransactionStorage.expireBalanceCache(op1);
+    await EVMTransactionStorage.expireBalanceCache(op2);
 
     const got1 = await CacheStorage.getGlobal(key1);
     const got2 = await CacheStorage.getGlobal(key2);
@@ -119,8 +120,8 @@ describe('Cache Model', function() {
     const address1 = '0x60a0c2f0f36020dca97f6214b3c8ff72d50d76db'; // Linked ETH1 address
     const address2 = '0x3Ec3dA6E14BE9518A9a6e92DdCC6ACfF2CEFf4ef'; // Linked ETH2 address
 
-    const tokenAddress1 = '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa' // 1 Token address
-    const tokenAddress2 = '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa' // 2 Token address
+    const tokenAddress1 = '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa'; // 1 Token address
+    const tokenAddress2 = '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa'; // 2 Token address
 
     const keyToken1 = `getBalanceForAddress-${chain}-${network}-${address1.toLowerCase()}-${tokenAddress1.toLowerCase()}`;
     const keyToken2 = `getBalanceForAddress-${chain}-${network}-${address2.toLowerCase()}-${tokenAddress2.toLowerCase()}`;
@@ -128,8 +129,8 @@ describe('Cache Model', function() {
     const key1 = `getBalanceForAddress-${chain}-${network}-${address1.toLowerCase()}`;
     const key2 = `getBalanceForAddress-${chain}-${network}-${address2.toLowerCase()}`;
 
-    const op1 =  TEST_OP_TRANSFER_ERC20_TO_ERC201;
-    const op2 =  TEST_OP_TRANSFER_ERC20_TO_ERC202;
+    const op1 = TEST_OP_TRANSFER_ERC20_TO_ERC201;
+    const op2 = TEST_OP_TRANSFER_ERC20_TO_ERC202;
 
     await CacheStorage.setGlobal(keyToken1, value, CacheStorage.Times.Hour);
     await CacheStorage.setGlobal(keyToken2, value, CacheStorage.Times.Hour);
@@ -137,8 +138,8 @@ describe('Cache Model', function() {
     await CacheStorage.setGlobal(key2, value, CacheStorage.Times.Hour);
     await CacheStorage.setGlobal(otherKey, value, CacheStorage.Times.Hour);
 
-    await  EVMTransactionStorage.expireBalanceCache(op1);
-    await  EVMTransactionStorage.expireBalanceCache(op2);
+    await EVMTransactionStorage.expireBalanceCache(op1);
+    await EVMTransactionStorage.expireBalanceCache(op2);
 
     const gotToken1 = await CacheStorage.getGlobal(keyToken1);
     const gotToken2 = await CacheStorage.getGlobal(keyToken2);
@@ -159,24 +160,24 @@ describe('Cache Model', function() {
     const chain = 'ETH';
     const network = 'testnet';
     const address = '0x60a0c2f0f36020dca97f6214b3c8ff72d50d76db'; // Linked ETH address
-    const tokenAddress1 = '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa' // 1 Token address
-    const tokenAddress2 = '0xaaf64bfcc32d0f15873a02163e7e500671a4ffcd' // 2 Token address
+    const tokenAddress1 = '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa'; // 1 Token address
+    const tokenAddress2 = '0xaaf64bfcc32d0f15873a02163e7e500671a4ffcd'; // 2 Token address
 
     const keyToken1 = `getBalanceForAddress-${chain}-${network}-${address.toLowerCase()}-${tokenAddress1.toLowerCase()}`;
     const keyToken2 = `getBalanceForAddress-${chain}-${network}-${address.toLowerCase()}-${tokenAddress2.toLowerCase()}`;
 
     const key = `getBalanceForAddress-${chain}-${network}-${address.toLowerCase()}`;
 
-     const op1 =  TEST_OP_ERC20_TO_ERC201;
-     const op2 =  TEST_OP_ERC20_TO_ERC202;
+    const op1 = TEST_OP_ERC20_TO_ERC201;
+    const op2 = TEST_OP_ERC20_TO_ERC202;
 
     await CacheStorage.setGlobal(keyToken1, value, CacheStorage.Times.Hour);
     await CacheStorage.setGlobal(keyToken2, value, CacheStorage.Times.Hour);
     await CacheStorage.setGlobal(key, value, CacheStorage.Times.Hour);
     await CacheStorage.setGlobal(otherKey, value, CacheStorage.Times.Hour);
 
-    await  EVMTransactionStorage.expireBalanceCache(op1);
-    await  EVMTransactionStorage.expireBalanceCache(op2);
+    await EVMTransactionStorage.expireBalanceCache(op1);
+    await EVMTransactionStorage.expireBalanceCache(op2);
 
     const gotToken1 = await CacheStorage.getGlobal(keyToken1);
     const gotToken2 = await CacheStorage.getGlobal(keyToken2);
@@ -194,19 +195,19 @@ describe('Cache Model', function() {
     const chain = 'ETH';
     const network = 'testnet';
     const address = '0x60a0c2f0f36020dca97f6214b3c8ff72d50d76db'; // Linked ETH address
-    const tokenAddress = '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa' // Token address
+    const tokenAddress = '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa'; // Token address
     const keyToken = `getBalanceForAddress-${chain}-${network}-${address.toLowerCase()}-${tokenAddress.toLowerCase()}`;
     const key = `getBalanceForAddress-${chain}-${network}-${address.toLowerCase()}`;
 
-     const op1 = TEST_OP_ERC20Token_TO_ETH1;
-     const op2 = TEST_OP_ERC20Token_TO_ETH2;
+    const op1 = TEST_OP_ERC20Token_TO_ETH1;
+    const op2 = TEST_OP_ERC20Token_TO_ETH2;
 
     await CacheStorage.setGlobal(keyToken, value, CacheStorage.Times.Hour);
     await CacheStorage.setGlobal(key, value, CacheStorage.Times.Hour);
     await CacheStorage.setGlobal(otherKey, value, CacheStorage.Times.Hour);
 
-    await  EVMTransactionStorage.expireBalanceCache(op1);
-    await  EVMTransactionStorage.expireBalanceCache(op2);
+    await EVMTransactionStorage.expireBalanceCache(op1);
+    await EVMTransactionStorage.expireBalanceCache(op2);
 
     const gotToken = await CacheStorage.getGlobal(keyToken);
     const got = await CacheStorage.getGlobal(key);
@@ -222,19 +223,19 @@ describe('Cache Model', function() {
     const chain = 'ETH';
     const network = 'testnet';
     const address = '0x60a0c2f0f36020dca97f6214b3c8ff72d50d76db'; // Linked ETH address
-    const tokenAddress = '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa' // Token address
+    const tokenAddress = '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa'; // Token address
     const keyToken = `getBalanceForAddress-${chain}-${network}-${address.toLowerCase()}-${tokenAddress.toLowerCase()}`;
     const key = `getBalanceForAddress-${chain}-${network}-${address.toLowerCase()}`;
 
-     const op1 = TEST_OP_ETH_TO_ERC201;
-     const op2 =  TEST_OP_ETH_TO_ERC202;
+    const op1 = TEST_OP_ETH_TO_ERC201;
+    const op2 = TEST_OP_ETH_TO_ERC202;
 
     await CacheStorage.setGlobal(keyToken, value, CacheStorage.Times.Hour);
     await CacheStorage.setGlobal(key, value, CacheStorage.Times.Hour);
     await CacheStorage.setGlobal(otherKey, value, CacheStorage.Times.Hour);
 
-    await  EVMTransactionStorage.expireBalanceCache(op1);
-    await  EVMTransactionStorage.expireBalanceCache(op2);
+    await EVMTransactionStorage.expireBalanceCache(op1);
+    await EVMTransactionStorage.expireBalanceCache(op2);
 
     const gotToken = await CacheStorage.getGlobal(keyToken);
     const got = await CacheStorage.getGlobal(key);

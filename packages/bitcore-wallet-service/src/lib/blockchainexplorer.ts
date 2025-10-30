@@ -1,7 +1,8 @@
 import { V8 } from './blockchainexplorers/v8';
-import { ChainService } from './chain/index';
+import { Common } from './common';
 
 const $ = require('preconditions').singleton();
+const { Utils } = Common;
 
 const PROVIDERS = {
   v8: {
@@ -57,7 +58,7 @@ export function BlockChainExplorer(opts): V8 {
   $.checkArgument(opts, 'Failed state: opts undefined at <BlockChainExplorer()>');
 
   const provider = opts.provider || 'v8';
-  const chain = opts.chain?.toLowerCase() || ChainService.getChain(opts.coin); // getChain -> backwards compatibility
+  const chain = opts.chain?.toLowerCase() || Utils.getChain(opts.coin); // getChain -> backwards compatibility
   const network = opts.network || 'livenet';
   const url = opts.url || PROVIDERS[provider]?.[chain]?.[network];
 
@@ -73,8 +74,7 @@ export function BlockChainExplorer(opts): V8 {
         network,
         url,
         apiPrefix: opts.apiPrefix,
-        userAgent: opts.userAgent,
-        addressFormat: opts.addressFormat
+        userAgent: opts.userAgent
       });
     default:
       throw new Error(`Provider not supported: ${provider}`);

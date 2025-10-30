@@ -1,6 +1,6 @@
 {
   "name": "bitcore-p2p-doge",
-  "version": "10.10.5",
+  "version": "11.3.7",
   "description": "Interface to the bitcoin P2P network for bitcore",
   "main": "index.js",
   "scripts": {
@@ -19,13 +19,13 @@
     "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-p2p-doge"
   },
   "dependencies": {
-    "bitcore-lib-doge": "^10.10.5",
+    "bitcore-lib-doge": "^11.3.7",
     "bloom-filter": "^0.2.0",
     "buffers": "bitpay/node-buffers#v0.1.2-bitpay",
     "socks5-client": "^0.3.6"
   },
   "devDependencies": {
-    "bitcore-build": "^10.10.5",
+    "bitcore-build": "^11.3.7",
     "brfs": "^1.2.0",
     "chai": "~1.10.0",
     "gulp": "^4.0.0",

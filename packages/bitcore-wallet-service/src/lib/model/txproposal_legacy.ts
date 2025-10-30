@@ -209,7 +209,7 @@ export class TxProposalLegacy {
   }
 
   isPending() {
-    return !_.includes(['broadcasted', 'rejected'], this.status);
+    return !['broadcasted', 'rejected'].includes(this.status);
   }
 
   isAccepted() {

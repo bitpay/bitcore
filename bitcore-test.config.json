@@ -5,6 +5,11 @@
         "wallets": {
           "allowCreationBeforeCompleteSync": true
         }
+      },
+      "socket": {
+        "bwsKeys": [
+          "036df8264584a6398718e88a5bf4dc816c52e5037303934d555dba0ccaa65fbe3f"
+        ]
       }
     },
     "chains": {
@@ -119,6 +124,26 @@
             "protocol": "ws",
             "port": 6996,
             "dataHost": "localhost"
+          }
+        }
+      }, 
+      "SOL": {
+        "regtest": {
+          "chainSource": "external",
+          "provider": {
+            "host": "127.0.0.1",
+            "protocol": "http",
+            "port": "8899",
+            "dataHost": "127.0.0.1",
+            "wsPort": "8900"
+          }
+        },
+        "devnet": {
+          "chainSource": "external",
+          "provider": {
+            "host": "api.devnet.solana.com",
+            "protocol": "https",
+            "port": ""
           }
         }
       }

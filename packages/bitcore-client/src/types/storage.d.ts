@@ -1,0 +1,1 @@
+export type StorageType = 'Mongo' | 'Level' | 'TextFile';

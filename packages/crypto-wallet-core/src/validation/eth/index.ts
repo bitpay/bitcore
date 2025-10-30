@@ -1,5 +1,5 @@
-import { IValidation } from '..';
-const utils = require('web3-utils');
+import utils from 'web3-utils';
+import type { IValidation } from '../../types/validation';
 
 export class EthValidation implements IValidation {
   regex: RegExp;
@@ -23,7 +23,7 @@ export class EthValidation implements IValidation {
 
   protected extractAddress(data) {
     const prefix = /^[a-z]+:/i;
-    const params = /([\?\&](value|gas|gasPrice|gasLimit)=(\d+([\,\.]\d+)?))+/i;
+    const params = /([?&](value|gas|gasPrice|gasLimit)=(\d+([,.]\d+)?))+/i;
     return data.replace(prefix, '').replace(params, '');
   }
 }

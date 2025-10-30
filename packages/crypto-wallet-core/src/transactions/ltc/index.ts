@@ -1,7 +1,8 @@
+import BitcoreLibLtc from 'bitcore-lib-ltc';
 import { BTCTxProvider } from '../btc';
 
 export class LTCTxProvider extends BTCTxProvider {
-  lib = require('bitcore-lib-ltc');
+  lib = BitcoreLibLtc;
   create({ recipients, utxos = [], change, feeRate, fee = 20000 }) {
     const filteredUtxos = this.selectCoins(recipients, utxos, fee);
     const btcUtxos = filteredUtxos.map(utxo => {
@@ -12,7 +13,7 @@ export class LTCTxProvider extends BTCTxProvider {
       });
       return new this.lib.Transaction.UnspentOutput(btcUtxo);
     });
-    let tx = new this.lib.Transaction().from(btcUtxos);
+    const tx = new this.lib.Transaction().from(btcUtxos);
     if (fee) {
       tx.fee(fee);
     }

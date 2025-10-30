@@ -18216,4 +18216,4 @@ export const UniswapV3DexSwap: IEVMTransactionInProcess = {
       depth: '1_0_5',
     },
   ],
-}
+};

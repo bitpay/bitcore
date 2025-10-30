@@ -1,8 +1,27 @@
-import { EVM_CHAIN_ID_TO_CHAIN, EVM_CHAIN_NETWORK_TO_CHAIN_ID } from './chains';
+import { SCRIPT_TYPES } from './address';
+import { ALGOS_BY_CHAIN, ALGO_TO_KEY_TYPE } from './algorithms';
+import {
+  CHAINS,
+  EVM_CHAINS,
+  EVM_CHAIN_ID_TO_CHAIN,
+  EVM_CHAIN_NETWORK_TO_CHAIN_ID,
+  MULTISIG_CHAINS,
+  RIPPLE_CHAINS,
+  SVM_CHAINS,
+  UTXO_CHAINS,
+} from './chains';
 import { FEE_MINIMUMS } from './feeMinimums';
 import { TOKEN_OPTS as opts } from './tokens';
 import { UNITS } from './units';
-export let Constants = {
+
+export const Constants = {
+  UTXO_CHAINS,
+  EVM_CHAINS,
+  SVM_CHAINS,
+  RIPPLE_CHAINS,
+  SCRIPT_TYPES,
+  CHAINS,
+  MULTISIG_CHAINS,
   ETH_TOKEN_OPTS: opts.ETH_TOKEN_OPTS,
   MATIC_TOKEN_OPTS: opts.MATIC_TOKEN_OPTS,
   ARB_TOKEN_OPTS: opts.ARB_TOKEN_OPTS,
@@ -12,5 +31,7 @@ export let Constants = {
   UNITS,
   FEE_MINIMUMS,
   EVM_CHAIN_ID_TO_CHAIN,
-  EVM_CHAIN_NETWORK_TO_CHAIN_ID
+  EVM_CHAIN_NETWORK_TO_CHAIN_ID,
+  ALGOS_BY_CHAIN,
+  ALGO_TO_KEY_TYPE
 };

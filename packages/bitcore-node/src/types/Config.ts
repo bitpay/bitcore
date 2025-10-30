@@ -34,6 +34,8 @@ export interface IProvider {
   protocol: 'http' | 'https' | 'ws' | 'wss' | 'ipc';
   options?: object;
   dataType?: 'realtime' | 'historical' | 'combined';
+  wsPort?: number | string;
+  disabled?: boolean; // Useful when multiple providers are configured
 }
 
 export type IExternalSyncConfig<T> = {
@@ -61,6 +63,13 @@ export interface IXrpNetworkConfig extends INetworkConfig {
   walletOnlySync: boolean;
 }
 
+export interface ISVMNetworkConfig extends INetworkConfig {
+  publicConnection?: boolean; // Allow rpc connection to be open via bitcore-node API endpoint
+  syncStartHeight?: number; // Start syncing from this block height
+  providers?: IProvider[]; // Multiple providers can be configured to load balance for the syncing threads
+  provider?: IProvider;
+}
+
 export interface ConfigType {
   maxPoolSize: number;
   port: number;
@@ -74,16 +83,16 @@ export interface ConfigType {
   numWorkers: number;
 
   chains: {
-    [chain: string]: IChainConfig<IUtxoNetworkConfig | IEVMNetworkConfig | IXrpNetworkConfig>;
+    [chain: string]: IChainConfig<IUtxoNetworkConfig | IEVMNetworkConfig | IXrpNetworkConfig | ISVMNetworkConfig>;
   };
   aliasMapping: {
     chains: {
       [alias: string]: string;
     };
     networks: {
-      [chain: string]: { [alias: string]: string; }
+      [chain: string]: { [alias: string]: string };
     };
-  },
+  };
   services: {
     api: {
       disabled?: boolean;
@@ -117,6 +126,6 @@ export interface ConfigType {
       webhookBaseUrl?: string;
       streamSecret?: string;
       webhookCors?: object; // default: { origin: ['*'] }
-    }
+    };
   };
 }

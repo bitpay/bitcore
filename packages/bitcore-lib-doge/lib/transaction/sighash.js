@@ -1,20 +1,19 @@
 'use strict';
 
-var buffer = require('buffer');
+const buffer = require('buffer');
 
-var Signature = require('../crypto/signature');
-var Script = require('../script');
-var Output = require('./output');
-var BufferReader = require('../encoding/bufferreader');
-var BufferWriter = require('../encoding/bufferwriter');
-var BN = require('../crypto/bn');
-var Hash = require('../crypto/hash');
-var ECDSA = require('../crypto/ecdsa');
-var $ = require('../util/preconditions');
-var _ = require('lodash');
+const Signature = require('../crypto/signature');
+const Script = require('../script');
+const Output = require('./output');
+const BufferReader = require('../encoding/bufferreader');
+const BufferWriter = require('../encoding/bufferwriter');
+const BN = require('../crypto/bn');
+const Hash = require('../crypto/hash');
+const ECDSA = require('../crypto/ecdsa');
+const $ = require('../util/preconditions');
 
-var SIGHASH_SINGLE_BUG = '0000000000000000000000000000000000000000000000000000000000000001';
-var BITS_64_ON = 'ffffffffffffffff';
+const SIGHASH_SINGLE_BUG = '0000000000000000000000000000000000000000000000000000000000000001';
+const BITS_64_ON = 'ffffffffffffffff';
 
 /**
  * Returns a buffer of length 32 bytes with the hash that needs to be signed
@@ -25,20 +24,22 @@ var BITS_64_ON = 'ffffffffffffffff';
  * @param {number} sighashType the type of the hash
  * @param {number} inputNumber the input index for the signature
  * @param {Script} subscript the script that will be signed
+ * @returns {Buffer} the hash to sign in little endian. NOTE: this must be signed big endian
+ *   which is why the Sighash.sign() method passes { endian: 'little' } to ECDSA.sign(),
+ *   but you're signing the sighash manually, you should call .reverse() first.
  */
-var sighash = function sighash(transaction, sighashType, inputNumber, subscript) {
-  var Transaction = require('./transaction');
-  var Input = require('./input');
+function sighash(transaction, sighashType, inputNumber, subscript) {
+  const Transaction = require('./transaction');
+  const Input = require('./input');
 
-  var i;
   // Copy transaction
-  var txcopy = Transaction.shallowCopy(transaction);
+  const txcopy = Transaction.shallowCopy(transaction);
 
   // Copy script
   subscript = new Script(subscript);
   subscript.removeCodeseparators();
 
-  for (i = 0; i < txcopy.inputs.length; i++) {
+  for (let i = 0; i < txcopy.inputs.length; i++) {
     // Blank signatures for other inputs
     txcopy.inputs[i] = new Input(txcopy.inputs[i]).setScript(Script.empty());
   }
@@ -49,7 +50,7 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript)
     (sighashType & 31) === Signature.SIGHASH_SINGLE) {
 
     // clear all sequenceNumbers
-    for (i = 0; i < txcopy.inputs.length; i++) {
+    for (let i = 0; i < txcopy.inputs.length; i++) {
       if (i !== inputNumber) {
         txcopy.inputs[i].sequenceNumber = 0;
       }
@@ -58,17 +59,16 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript)
 
   if ((sighashType & 31) === Signature.SIGHASH_NONE) {
     txcopy.outputs = [];
-
   } else if ((sighashType & 31) === Signature.SIGHASH_SINGLE) {
     // The SIGHASH_SINGLE bug.
     // https://bitcointalk.org/index.php?topic=260595.0
     if (inputNumber >= txcopy.outputs.length) {
-      return new Buffer(SIGHASH_SINGLE_BUG, 'hex');
+      return Buffer.from(SIGHASH_SINGLE_BUG, 'hex');
     }
 
     txcopy.outputs.length = inputNumber + 1;
 
-    for (i = 0; i < inputNumber; i++) {
+    for (let i = 0; i < inputNumber; i++) {
       txcopy.outputs[i] = new Output({
         satoshis: BN.fromBuffer(new buffer.Buffer(BITS_64_ON, 'hex')),
         script: Script.empty()
@@ -80,12 +80,16 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript)
     txcopy.inputs = [txcopy.inputs[inputNumber]];
   }
 
-  var buf = new BufferWriter()
+  const buf = new BufferWriter()
     .write(txcopy.toBuffer())
     .writeInt32LE(sighashType)
     .toBuffer();
-  var ret = Hash.sha256sha256(buf);
+  let ret = Hash.sha256sha256(buf);
   ret = new BufferReader(ret).readReverse();
+
+  // Note, ret is little endian, but must be signed big endian.
+  // Thus, the sign() method below passes { endian: 'little' } to ECDSA.sign(),
+  //  but if the sighash is signed manually, it should be reversed first.
   return ret;
 };
 
@@ -101,7 +105,7 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript)
  * @return {Signature}
  */
 function sign(transaction, privateKey, sighashType, inputIndex, subscript) {
-  var hashbuf = sighash(transaction, sighashType, inputIndex, subscript);
+  const hashbuf = sighash(transaction, sighashType, inputIndex, subscript);
   const sig = ECDSA.sign(hashbuf, privateKey, { endian: 'little' });
   sig.nhashtype = sighashType;
   return sig;
@@ -119,8 +123,8 @@ function sign(transaction, privateKey, sighashType, inputIndex, subscript) {
  * @return {boolean}
  */
 function verify(transaction, signature, publicKey, inputIndex, subscript) {
-  $.checkArgument(!_.isUndefined(transaction));
-  $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype));
+  $.checkArgument(transaction != null, 'transaction cannot be nullish');
+  $.checkArgument(signature != null && signature.nhashtype != null, 'signature and signature.nhashtype cannot be nullish');
   const hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript);
   return ECDSA.verify(hashbuf, signature, publicKey, { endian: 'little' });
 }

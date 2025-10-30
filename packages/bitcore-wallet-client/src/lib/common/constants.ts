@@ -3,13 +3,7 @@
 import * as CWC from 'crypto-wallet-core';
 
 export const Constants = {
-  SCRIPT_TYPES: {
-    P2SH: 'P2SH',
-    P2PKH: 'P2PKH',
-    P2WPKH: 'P2WPKH',
-    P2WSH: 'P2WSH',
-    P2TR: 'P2TR'
-  },
+  SCRIPT_TYPES: CWC.Constants.SCRIPT_TYPES,
   // not used, since Credentials 2.0
   DERIVATION_STRATEGIES: {
     BIP44: 'BIP44',
@@ -25,16 +19,16 @@ export const Constants = {
   },
   BIP45_SHARED_INDEX: 0x80000000 - 1,
   CURVES: {
-    ED25519: 'ed25519',
-    SECP256K1: 'secp256k1',
+    ED25519: 'ed25519' as const,
+    SECP256K1: 'secp256k1' as const,
   },
   ALGOS: {
-    EDDSA: 'EDDSA',
-    ECDSA: 'ECDSA'
+    EDDSA: 'EDDSA' as const,
+    ECDSA: 'ECDSA' as const,
   },
   CURVE_KEY: {
-    ED25519: 'ed25519',
-    BITCOIN: 'bitcoin',
+    ED25519: 'ed25519' as const,
+    BITCOIN: 'bitcoin' as const,
   },
 
   // there is no need to add new entries here ( only for backwards compatiblity )
@@ -53,10 +47,12 @@ export const Constants = {
     'usdt'
   ],
 
-  CHAINS: ['btc', 'bch', 'eth', 'matic', 'xrp', 'doge', 'ltc', 'arb', 'base', 'op', 'sol'],
-  UTXO_CHAINS: ['btc', 'bch', 'doge', 'ltc'],
-  EVM_CHAINS: ['eth', 'matic', 'arb', 'base', 'op'],
-  SVM_CHAINS: ['sol'],
+  CHAINS: CWC.Constants.CHAINS,
+  UTXO_CHAINS: CWC.Constants.UTXO_CHAINS,
+  EVM_CHAINS: CWC.Constants.EVM_CHAINS,
+  SVM_CHAINS: CWC.Constants.SVM_CHAINS,
+  RIPPLE_CHAINS: CWC.Constants.RIPPLE_CHAINS,
+  MULTISIG_CHAINS: CWC.Constants.MULTISIG_CHAINS,
   ETH_TOKEN_OPTS: CWC.Constants.ETH_TOKEN_OPTS,
   MATIC_TOKEN_OPTS: CWC.Constants.MATIC_TOKEN_OPTS,
   ARB_TOKEN_OPTS: CWC.Constants.ARB_TOKEN_OPTS,

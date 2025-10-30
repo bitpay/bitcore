@@ -54,7 +54,7 @@ export class RippleDbWalletTransactions extends Transform {
 
     const walletAddressesObjs = await this.getAddresses();
     const walletAddresses = walletAddressesObjs.map(w => w.address);
-    let sending = walletAddresses.includes(tx.from);
+    const sending = walletAddresses.includes(tx.from);
     for (const o of outputs) {
       const isSend = !walletAddresses.includes(o.address);
       const isMove = o.address != tx.from && walletAddresses.includes(o.address);

@@ -1,12 +1,15 @@
+import { singleton } from 'preconditions';
+import sjcl from 'sjcl';
 import { Common } from '../common';
 import { Address } from './address';
-import { AddressManager } from './addressmanager';
+import { AddressManager, IAddressManager } from './addressmanager';
 
-const $ = require('preconditions').singleton();
-const sjcl = require('sjcl');
-const Constants = Common.Constants,
-  Defaults = Common.Defaults,
-  Utils = Common.Utils;
+const $ = singleton();
+const {
+  Constants,
+  Defaults,
+  Utils
+} = Common;
 
 export interface ICopayer {
   version: number;
@@ -21,7 +24,11 @@ export interface ICopayer {
     key: string;
     signature: string;
   }>;
-  customData: any;
+  customData?: any;
+  walletId: string;
+  isSupportStaff?: boolean;
+  isMarketingStaff?: boolean;
+  addressManager?: IAddressManager;
 }
 
 export class Copayer {
@@ -40,10 +47,13 @@ export class Copayer {
     key: string;
     signature: string;
   }>;
-  customData: any;
+  customData?: any;
   addressManager: AddressManager;
+  walletId: string;
+  isSupportStaff?: boolean;
+  isMarketingStaff?: boolean;
 
-  static _xPubToCopayerId(coin, xpub) {
+  static xPubToCopayerId(coin, xpub) {
     const str = coin == Defaults.COIN ? xpub : coin + xpub;
     const hash = sjcl.hash.sha256.hash(str);
     return sjcl.codec.hex.fromBits(hash);
@@ -70,7 +80,7 @@ export class Copayer {
     x.xPubKey = opts.xPubKey;
     x.hardwareSourcePublicKey = opts.hardwareSourcePublicKey;
     x.clientDerivedPublicKey = opts.clientDerivedPublicKey;
-    x.id = Copayer._xPubToCopayerId(opts.chain, x.xPubKey);
+    x.id = Copayer.xPubToCopayerId(opts.chain, x.xPubKey);
     x.name = opts.name;
     x.requestPubKey = opts.requestPubKey;
     x.signature = opts.signature;
@@ -101,7 +111,7 @@ export class Copayer {
     x.createdOn = obj.createdOn;
     x.coin = obj.coin || Defaults.COIN;
     x.chain = obj.chain || x.coin;
-    x.id = obj.id;
+    x.id = obj.id || obj.copayerId;
     x.name = obj.name;
     x.xPubKey = obj.xPubKey;
     x.hardwareSourcePublicKey = obj.hardwareSourcePublicKey;
@@ -109,7 +119,7 @@ export class Copayer {
     x.requestPubKey = obj.requestPubKey;
     x.signature = obj.signature;
 
-    if (parseInt(x.version.toString()) == 1) {
+    if (parseInt(x.version?.toString()) == 1) {
       x.requestPubKeys = [
         {
           key: x.requestPubKey,
@@ -125,6 +135,9 @@ export class Copayer {
       x.addressManager = AddressManager.fromObj(obj.addressManager);
     }
     x.customData = obj.customData;
+    x.walletId = obj.walletId;
+    x.isSupportStaff = obj.isSupportStaff;
+    x.isMarketingStaff = obj.isMarketingStaff;
 
     return x;
   }

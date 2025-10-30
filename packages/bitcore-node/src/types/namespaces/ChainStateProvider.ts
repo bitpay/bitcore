@@ -11,6 +11,7 @@ import { ChainNetwork } from '../../types/ChainNetwork';
 import { AuthheadJSON } from '../Authhead';
 import { CoinListingJSON } from '../Coin';
 import { DailyTransactionsJSON } from '../stats';
+
 export type StreamWalletTransactionsArgs = {
   startBlock: number;
   endBlock: number;
@@ -39,6 +40,7 @@ export type GetBalanceForAddressParams = ChainNetwork & {
 export type GetBlockParams = ChainNetwork & {
   blockId?: string;
   sinceBlock?: number | string;
+  height?: number;
   args?: Partial<{ startDate: Date; endDate: Date; date: Date } & StreamingFindOptions<IBtcBlock>>;
 };
 
@@ -69,6 +71,8 @@ export type GetEstimateSmartFeeParams = ChainNetwork & {
   target: number;
   mode?: FeeMode;
   txType?: number | string;
+  rawTx?: string;
+  signatures?: number;
 };
 
 export type GetEstimatePriorityFeeParams = ChainNetwork & {
@@ -197,7 +201,6 @@ export interface IChainStateService {
   getWalletBalanceAtTime(
     params: GetWalletBalanceAtTimeParams
   ): Promise<WalletBalanceType>;
-  streamAddressUtxos(params: StreamAddressUtxosParams): any;
   streamAddressTransactions(params: StreamAddressUtxosParams): any;
   streamTransactions(params: StreamTransactionsParams): any;
   getAuthhead(params: StreamTransactionParams): Promise<AuthheadJSON | undefined>;
@@ -218,5 +221,5 @@ export interface IChainStateService {
 export interface ChainStateServices {
   [chain: string]: {
     [network: string]: IChainStateService;
-  }
+  };
 }

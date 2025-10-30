@@ -24,6 +24,7 @@ import {
   BroadcastTransactionParams,
   GetBalanceForAddressParams,
   GetBlockParams,
+  GetWalletBalanceAtTimeParams,
   GetWalletBalanceParams,
   IChainStateService,
   StreamAddressUtxosParams,
@@ -37,6 +38,10 @@ import {
 import { partition, range } from '../../../../utils';
 import { StatsUtil } from '../../../../utils/stats';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
+import {
+  getProvider,
+  isValidProviderType
+} from '../../external/providers/provider';
 import { ExternalApiStream } from '../../external/streams/apiStream';
 import { ERC20Abi } from '../abi/erc20';
 import { MultisendAbi } from '../abi/multisend';
@@ -47,13 +52,9 @@ import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateEffectsTransform } from './populateEffectsTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
-import {
-  getProvider,
-  isValidProviderType
-} from './provider';
 import { EVMListTransactionsStream } from './transform';
 
-export interface GetWeb3Response { rpc: CryptoRpc; web3: Web3; dataType: string; lastPingTime?: number; };
+export interface GetWeb3Response { rpc: CryptoRpc; web3: Web3; dataType: string; lastPingTime?: number };
 
 export interface BuildWalletTxsStreamParams {
   transactionStream: TransformWithEventPipe;
@@ -87,7 +88,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         ]);
         rpc.lastPingTime = Date.now();
         return rpc; // return the first applicable rpc that's responsive
-      } catch (e) {
+      } catch {
         // try reconnecting
         logger.info(`Reconnecting to ${this.chain}:${network}`);
         if (typeof (rpc.web3.currentProvider as any)?.disconnect === 'function') {
@@ -153,7 +154,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   @historical
   async getFee(params) {
-    let { network, target = 4, txType } = params;
+    let { network } = params;
+    const { target = 4, txType } = params;
     const chain = this.chain;
     if (network === 'livenet') {
       network = 'mainnet';
@@ -197,31 +199,74 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async getPriorityFee(params) {
-    let { network, percentile } = params;
+    let { network } = params;
+    const { percentile } = params;
     const chain = this.chain;
     const priorityFeePercentile = percentile || 15;
     if (network === 'livenet') {
       network = 'mainnet';
     }
-    let cacheKey = `getFee-${chain}-${network}-priorityFee-${priorityFeePercentile}`;
+    const cacheKey = `getFee-${chain}-${network}-priorityFee-${priorityFeePercentile}`;
 
     return CacheStorage.getGlobalOrRefresh(
       cacheKey,
       async () => {
         const { rpc } = await this.getWeb3(network);
-        let feerate = await rpc.estimateMaxPriorityFee({ percentile: priorityFeePercentile });
+        const feerate = await rpc.estimateMaxPriorityFee({ percentile: priorityFeePercentile });
         return { feerate };
       },
       CacheStorage.Times.Minute
     );
   }
 
+  async getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams): Promise<WalletBalanceType> {
+    let { args } = params;
+    const { network, wallet, time } = params;
+    if (time) {
+      if (args) {
+        args.time = time;
+      } else {
+        args = { time };
+      }
+    }
+    const hex = args.hex === 'true' || args.hex === '1';
+    if (wallet._id === undefined) {
+      throw new Error('Wallet balance can only be retrieved for wallets with the _id property');
+    }
+    let addresses = await this.getWalletAddresses(wallet._id);
+    addresses = !args.address ? addresses : addresses.filter(({ address }) => address.toLowerCase() === args.address.toLowerCase());
+    const addressBalances = await Promise.all<WalletBalanceType>(addresses.map(({ address }) =>
+      this.getBalanceForAddress({ chain: this.chain, network, address, args })
+    ));
+    const balance = addressBalances.reduce(
+      (prev, cur) => ({
+        unconfirmed: BigInt(prev.unconfirmed) + BigInt(cur.unconfirmed),
+        confirmed: BigInt(prev.confirmed) + BigInt(cur.confirmed),
+        balance: BigInt(prev.balance) + BigInt(cur.balance)
+      }),
+      { unconfirmed: 0n, confirmed: 0n, balance: 0n }
+    );
+    return {
+      unconfirmed: hex ? '0x' + balance.unconfirmed.toString(16) : Number(balance.unconfirmed),
+      confirmed: hex ? '0x' + balance.confirmed.toString(16) : Number(balance.confirmed),
+      balance: hex ? '0x' + balance.balance.toString(16) : Number(balance.balance)
+    };
+  }
+
   async getBalanceForAddress(params: GetBalanceForAddressParams): Promise<WalletBalanceType> {
     const { chain, network, address, args } = params;
-    const { web3 } = await this.getWeb3(network, { type: 'realtime' });
+    const { web3 } = await this.getWeb3(network, { type: args?.time ? 'historical' : 'realtime' });
     const tokenAddress = args?.tokenAddress;
     const addressLower = address.toLowerCase();
     const hex = args?.hex === 'true' || args?.hex === '1';
+    let blockNumber: number | string = 'latest';
+    if (args?.time) {
+      const block = await this.getBlockBeforeTime({ chain, network, time: args.time });
+      if (!block) {
+        throw new Error(`Balance not found at ${args.time}`);
+      }
+      blockNumber = block.height;
+    }
     const cacheKey = tokenAddress
       ? `getBalanceForAddress-${chain}-${network}-${addressLower}-${tokenAddress.toLowerCase()}`
       : `getBalanceForAddress-${chain}-${network}-${addressLower}`;
@@ -230,16 +275,16 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       async () => {
         if (tokenAddress) {
           const token = await this.erc20For(network, tokenAddress);
-          const balance = await token.methods.balanceOf(address).call();
+          const balance = await token.methods.balanceOf(address).call({}, blockNumber);
           const numberBalance = '0x' + BigInt(balance).toString(16);
           return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
         } else {
-          const balance = await web3.eth.getBalance(address);
+          const balance = await web3.eth.getBalance(address, blockNumber);
           const numberBalance = '0x' + BigInt(balance).toString(16);
           return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
         }
       },
-      CacheStorage.Times.Minute
+      args?.time ? CacheStorage.Times.None : CacheStorage.Times.Minute
     );
     return {
       confirmed: hex ? balance.confirmed : Number(balance.confirmed),
@@ -280,7 +325,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   async getTransaction(params: StreamTransactionParams) {
     try {
       params.network = params.network.toLowerCase();
-      let { chain, network, txId } = params;
+      const { chain, network, txId } = params;
       if (typeof txId !== 'string') {
         throw new Error('Missing required param: txId');
       }
@@ -291,7 +336,10 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         throw new Error('Missing required param: network');
       }
 
-      let { tipHeight, found } = await this._getTransaction(params);
+      const tx = await this._getTransaction(params);
+      let { found } = tx;
+      const { tipHeight } = tx;
+      
       if (found) {
         let confirmations = 0;
         if (found.blockHeight && found.blockHeight >= 0) {
@@ -310,8 +358,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async _getTransaction(params: StreamTransactionParams) {
-    let { chain, network, txId } = params;
-    let query = { chain, network, txid: txId };
+    const { chain, network, txId } = params;
+    const query = { chain, network, txid: txId };
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
     const found = await EVMTransactionStorage.collection.findOne(query);
@@ -352,7 +400,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   async _buildAddressTransactionsStream(params: StreamAddressUtxosParams) {
     const { req, res, args, chain, network, address } = params;
-    const { limit, /*since,*/ tokenAddress } = args;
+    const { limit, /* since,*/ tokenAddress } = args;
 
     if (!args.tokenAddress) {
       const query = {
@@ -366,7 +414,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
       // NOTE: commented out since and paging for now b/c they were causing extra long query times on insight.
       // The case where an address has >1000 txns is an edge case ATM and can be addressed later
-      Storage.apiStreamingFind(EVMTransactionStorage, query, { limit /*since, paging: '_id'*/ }, req!, res!);
+      Storage.apiStreamingFind(EVMTransactionStorage, query, { limit /* since, paging: '_id'*/ }, req!, res!);
     } else {
       try {
         const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress, args);
@@ -383,11 +431,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   @internal
   async streamTransactions(params: StreamTransactionsParams) {
     const { chain, network, req, res, args } = params;
-    let { blockHash, blockHeight } = args;
+    const { blockHash, blockHeight } = args;
     if (!chain || !network) {
       throw new Error('Missing chain or network');
     }
-    let query: any = {
+    const query: any = {
       chain,
       network: network.toLowerCase()
     };
@@ -422,10 +470,10 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     }
     let addresses = await this.getWalletAddresses(wallet._id);
     addresses = !args.address ? addresses : addresses.filter(({ address }) => address.toLowerCase() === args.address.toLowerCase());
-    let addressBalances = await Promise.all<WalletBalanceType>(addresses.map(({ address }) =>
+    const addressBalances = await Promise.all<WalletBalanceType>(addresses.map(({ address }) =>
       this.getBalanceForAddress({ chain: this.chain, network, address, args })
     ));
-    let balance = addressBalances.reduce(
+    const balance = addressBalances.reduce(
       (prev, cur) => ({
         unconfirmed: BigInt(prev.unconfirmed) + BigInt(cur.unconfirmed),
         confirmed: BigInt(prev.confirmed) + BigInt(cur.confirmed),
@@ -442,7 +490,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   getWalletTransactionQuery(params: StreamWalletTransactionsParams) {
     const { chain, network, wallet, args } = params;
-    let query = {
+    const query = {
       chain,
       network,
       wallets: wallet._id,
@@ -455,7 +503,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         if (args.includeMempool) {
           query.$or.push({ blockHeight: SpentHeightIndicators.pending });
         }
-        let blockRangeQuery = {} as any;
+        const blockRangeQuery = {} as any;
         if (args.startBlock) {
           blockRangeQuery.$gte = Number(args.startBlock);
         }
@@ -489,10 +537,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return new Promise<void>(async (resolve, reject) => {
       const { network, wallet, req, res, args } = params;
       const { web3 } = await this.getWeb3(network);
+      args.tokenAddress = args.tokenAddress ? web3.utils.toChecksumAddress(args.tokenAddress) : undefined;
 
       let transactionStream = new TransformWithEventPipe({ objectMode: true, passThrough: true });
       const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddres => waddres.address);
-      const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses);
+      const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses, args.tokenAddress);
       const populateReceipt = new PopulateReceiptTransform();
       const populateEffects = new PopulateEffectsTransform();
 
@@ -526,7 +575,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   async _buildWalletTransactionsStream(params: StreamWalletTransactionsParams, streamParams: BuildWalletTxsStreamParams) {
     const query = this.getWalletTransactionQuery(params);
-    let { transactionStream, populateEffects } = streamParams;
+    let { transactionStream } = streamParams;
+    const { populateEffects } = streamParams;
 
     transactionStream = EVMTransactionStorage.collection
       .find(query)
@@ -641,8 +691,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       const transfers = this.getErc20Transfers(network, walletAddress.address, tokenAddress, args);
       allTokenQueries.push(transfers);
     }
-    let batches = await Promise.all(allTokenQueries);
-    let txs = batches.reduce((agg, batch) => agg.concat(batch));
+    const batches = await Promise.all(allTokenQueries);
+    const txs = batches.reduce((agg, batch) => agg.concat(batch));
     return txs.sort((tx1, tx2) => tx1.blockNumber! - tx2.blockNumber!);
   }
 
@@ -650,7 +700,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   async estimateGas(params): Promise<number> {
     return new Promise(async (resolve, reject) => {
       try {
-        let { network, value, from, data, /*gasPrice,*/ to } = params;
+        let { value } = params;
+        const { network, from, data, /* gasPrice */ to } = params;
         const { web3 } = await this.getWeb3(network, { type: 'realtime' });
         const dataDecoded = EVMTransactionStorage.abiDecode(data);
 
@@ -687,7 +738,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
           // Gas estimation might fail with `insufficient funds` if value is higher than balance for a normal send.
           // We want this method to give a blind fee estimation, though, so we should not include the value
           // unless it's needed for estimating smart contract execution.
-          _value = web3.utils.toHex(value)
+          _value = web3.utils.toHex(value);
         }
 
         const opts = {
@@ -705,7 +756,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
           id: 'bitcore-' + Date.now()
         };
 
-        let provider = web3.currentProvider as any;
+        const provider = web3.currentProvider as any;
         provider.send(opts, (err, data) => {
           if (err) return reject(err);
           if (!data.result) return reject(data.error || data);
@@ -746,7 +797,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   async updateWallet(params: UpdateWalletParams) {
     const { chain, network } = params;
     const addressBatches = partition(params.addresses, 500);
-    for (let addressBatch of addressBatches) {
+    for (const addressBatch of addressBatches) {
       const walletAddressInserts = addressBatch.map(address => {
         return {
           insertOne: {
@@ -797,7 +848,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   protected async getBlocksRange(params: GetBlockParams & ChainId) {
     const { chain, network, chainId, sinceBlock, args = {} } = params;
     let { blockId } = params;
-    let { startDate, endDate, date, limit = 10, sort = { height: -1 } } = args;
+    let { startDate, endDate, limit = 10 } = args;
+    const { date, sort = { height: -1 } } = args;
     const query: { startBlock?: number; endBlock?: number } = {};
     if (!chain || !network) {
       throw new Error('Missing required chain and/or network param');
@@ -831,7 +883,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
     // Get range
     if (sinceBlock) {
-      let height = Number(sinceBlock);
+      const height = Number(sinceBlock);
       if (isNaN(height) || height.toString(10) != sinceBlock) {
         throw new Error('invalid block id provided');
       }

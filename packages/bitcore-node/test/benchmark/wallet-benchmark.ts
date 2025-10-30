@@ -1,7 +1,7 @@
-import { Wallet } from 'bitcore-client';
-import * as _ from 'lodash';
+import { Wallet, IWalletExt } from 'bitcore-client';
 import { CoinStorage } from '../../src/models/coin';
 import { Storage } from '../../src/services/storage';
+import { uniq } from '../../src/utils';
 
 async function getAllAddressesFromBlocks(start, end) {
   if (!Storage.connected) await Storage.start({});
@@ -9,7 +9,7 @@ async function getAllAddressesFromBlocks(start, end) {
     .find({ chain: 'BTC', network: 'mainnet', mintHeight: { $gte: start, $lte: end } })
     .project({ address: 1 })
     .toArray();
-  const uniqueAddresses = _.uniq(coins.map(c => c.address));
+  const uniqueAddresses = uniq(coins.map(c => c.address));
   return uniqueAddresses;
 }
 
@@ -30,7 +30,7 @@ export async function createWallet(addresses: string[], iteration, networkName?:
       network,
       baseUrl,
       password
-    });
+    } as Partial<IWalletExt>);
   }
   await lockedWallet.register({ baseUrl });
 
@@ -93,7 +93,7 @@ async function bench(iteration = 0, startBlock = 0, endBlock = 100) {
 
   const walletTxListStart = new Date();
   const txStream = unlockedWallet.listTransactions({ startBlock, endBlock });
-  let benchmarkComplete = new Promise(resolve => {
+  const benchmarkComplete = new Promise(resolve => {
     const txs = new Array<any>();
     txStream.on('data', data => {
       const stringData = data.toString().replace(',\n', '');

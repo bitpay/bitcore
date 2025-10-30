@@ -6,5 +6,5 @@ export const SupportedChainSet = {
 export type SupportedChain = keyof typeof SupportedChainSet;
 
 export function isChainSupported(chain: string): chain is SupportedChain {
-  return SupportedChainSet.hasOwnProperty(chain);
+  return Object.hasOwn(SupportedChainSet, chain);
 }

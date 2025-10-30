@@ -27,11 +27,17 @@ const main = async () => {
     wallet = await wallet.unlock(password);
 
     const privateKey = await wallet.derivePrivateKey(change, index);
-
-    const bitcoreMessage = new BitcoreLib.Message(message);
-    const bitcorePrivateKey = new BitcoreLib.PrivateKey(privateKey.privKey);
-    const signature = bitcoreMessage.sign(bitcorePrivateKey);
-    const address = wallet.deriveAddress(index, change);
+    let signature;
+    let address;
+    if (wallet.chain === 'SOL') {
+      signature = await wallet.solSignMessage(privateKey.privKey, message);
+      address = wallet.deriveAddress(0, change);
+    } else {
+      const bitcoreMessage = new BitcoreLib.Message(message);
+      const bitcorePrivateKey = new BitcoreLib.PrivateKey(privateKey.privKey);
+      signature = bitcoreMessage.sign(bitcorePrivateKey);
+      address = wallet.deriveAddress(index, change);
+    }
 
     console.log({
       address,

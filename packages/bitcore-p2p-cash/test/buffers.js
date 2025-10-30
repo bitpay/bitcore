@@ -8,10 +8,10 @@ describe('Buffers', function() {
 
   var buffs = function buffs() {
     var b = new Buffers();
-    b.push(new Buffer('0123', 'hex'));
-    b.push(new Buffer('4567', 'hex'));
-    b.push(new Buffer('89ab', 'hex'));
-    b.push(new Buffer('cdef', 'hex'));
+    b.push(Buffer.from('0123', 'hex'));
+    b.push(Buffer.from('4567', 'hex'));
+    b.push(Buffer.from('89ab', 'hex'));
+    b.push(Buffer.from('cdef', 'hex'));
     return b;
   };
 
@@ -41,7 +41,7 @@ describe('Buffers', function() {
     var b = buffs();
     b.skip(1);
     b.length.should.equal(7);
-    b.buffers[0].should.deep.equal(new Buffer('23', 'hex'));
+    b.buffers[0].should.deep.equal(Buffer.from('23', 'hex'));
   });
 
   it('remove the first three buffers', function() {
@@ -57,7 +57,7 @@ describe('Buffers', function() {
     var b = buffs();
     b.skip(7);
     b.length.should.equal(1);
-    b.buffers[0].should.deep.equal(new Buffer('ef', 'hex'));
+    b.buffers[0].should.deep.equal(Buffer.from('ef', 'hex'));
   });
 
 });

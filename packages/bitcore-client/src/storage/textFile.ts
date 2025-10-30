@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as stream from 'stream';
+import { IWallet } from 'src/types/wallet';
 import { StreamUtil } from '../stream-util';
 import { Wallet } from '../wallet';
 
@@ -8,6 +9,7 @@ export class TextFile {
   db: string;
   walletFileName: string;
   addressFileName: string;
+
   constructor(params: { path?: string; createIfMissing: boolean; errorIfExists: boolean }) {
     const { path, createIfMissing } = params;
     let basePath;
@@ -42,7 +44,7 @@ export class TextFile {
       });
       readStream
         .pipe(StreamUtil.jsonlBufferToObjectMode())
-        .on('data', wallet => {
+        .on('data', (wallet: IWallet) => {
           if (wallet.name === name) {
             resolve(JSON.stringify(wallet));
           }
@@ -53,7 +55,7 @@ export class TextFile {
     });
   }
 
-  async deleteWallet(params: { name: string; keepAddresses: boolean }) {
+  async deleteWallet(params: { name: string; keepAddresses?: boolean }) {
     const { name, keepAddresses } = params;
     const wallets: Array<object> = await new Promise((resolve, reject) => {
       const walletArray = [];
@@ -142,14 +144,14 @@ export class TextFile {
     );
   }
 
-  async saveWallet(params) {
+  async saveWallet(params: { wallet: Wallet }) {
     const { wallet } = params;
     delete wallet.storage;
-    const wallets: Array<Wallet> = await new Promise((resolve, reject) => {
-      const walletArray = [];
+    const wallets: Array<IWallet> = await new Promise((resolve, reject) => {
+      const walletArray: IWallet[] = [];
       fs.createReadStream(this.walletFileName, { flags: 'r', encoding: 'utf8' })
         .pipe(StreamUtil.jsonlBufferToObjectMode())
-        .on('data', wallet => {
+        .on('data', (wallet: IWallet) => {
           walletArray.push(wallet);
         })
         .on('end', () => {

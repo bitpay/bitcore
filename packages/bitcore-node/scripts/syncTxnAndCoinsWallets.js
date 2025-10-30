@@ -5,10 +5,10 @@
  * This script fixes an issue where the wallets are in Coin.wallets but not Transaction.wallets in the db
  */
 
-const fs = require('fs');
-const { Storage } = require('../build/src/services/storage');
-const { TransactionStorage } = require('../build/src/models/transaction');
-const { CoinStorage } = require('../build/src/models/coin');
+import fs from 'fs';
+import { CoinStorage } from '../build/src/models/coin';
+import { TransactionStorage } from '../build/src/models/transaction';
+import { Storage } from '../build/src/services/storage';
 
 function usage(err) {
   if (err) {
@@ -75,8 +75,7 @@ Storage.start()
         'wallets.0': { $exists: true }
       });
 
-      let coin;
-      while (coin = (await coinCursor.next())) {
+      for (const coin of coinCursor) {
         const txids = [coin.mintTxid];
         if (coin.spentTxid) {
           txids.push(coin.spentTxid);

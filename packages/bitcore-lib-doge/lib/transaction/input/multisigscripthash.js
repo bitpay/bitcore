@@ -1,7 +1,5 @@
 'use strict';
 
-/* jshint maxparams:5 */
-
 var _ = require('lodash');
 var inherits = require('inherits');
 var Input = require('./input');
@@ -21,7 +19,6 @@ var TransactionSignature = require('../signature');
  * @constructor
  */
 function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, opts) {
-  /* jshint maxstatements:20 */
   opts = opts || {};
   Input.apply(this, arguments);
   pubkeys = pubkeys || input.publicKeys;
@@ -99,20 +96,32 @@ MultiSigScriptHashInput.prototype.getScriptCode = function() {
   return writer.toBuffer();
 };
 
-MultiSigScriptHashInput.prototype.getSighash = function(transaction, privateKey, index, sigtype) {
-  var hash;
-  if (this.nestedWitness) {
-    var scriptCode = this.getScriptCode();
-    var satoshisBuffer = this.getSatoshisBuffer();
-    hash = SighashWitness.sighash(transaction, sigtype, index, scriptCode, satoshisBuffer);
-  } else  {
-    hash = Sighash.sighash(transaction, sigtype, index, this.redeemScript);
+/**
+ * Get the hash data to sign for this input
+ * @param {Transaction} transaction The transaction to be signed
+ * @param {PublicKey} publicKey Unused for this input type
+ * @param {number} index The index of the input in the transaction input vector
+ * @param {number} sigtype The type of signature, defaults to Signature.SIGHASH_ALL
+ * @returns {Buffer}
+ */
+MultiSigScriptHashInput.prototype.getSighash = function(transaction, publicKey, index, sigtype) {
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
+  sigtype = sigtype || Signature.SIGHASH_ALL;
+
+
+  if (this.nestedWitness || this.type === Address.PayToWitnessScriptHash) {
+    const scriptCode = this.getScriptCode();
+    const satoshisBuffer = this.getSatoshisBuffer();
+    return SighashWitness.sighash(transaction, sigtype, index, scriptCode, satoshisBuffer);
+  } else {
+    const sighash = Sighash.sighash(transaction, sigtype, index, this.redeemScript);
+    // sighash() returns data little endian but it must be signed big endian, hence the reverse
+    return sighash.reverse();
   }
-  return hash;
 };
 
 MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype) {
-  $.checkState(this.output instanceof Output);
+  $.checkState(this.output instanceof Output, 'this.output is not an instance of Output');
   sigtype = sigtype || Signature.SIGHASH_ALL;
 
   var results = [];
