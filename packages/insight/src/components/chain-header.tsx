@@ -1,86 +1,235 @@
-import {FC, useEffect, useRef} from 'react';
+import {FC, useEffect, useRef, useState} from 'react';
 import {useApi} from 'src/api/api';
 import {Chart as ChartJS} from 'chart.js';
 import {colorCodes} from 'src/utilities/constants';
+import {BitcoinBlockType} from 'src/utilities/models';
+import styled, { useTheme } from 'styled-components';
+import { getName } from 'src/utilities/helper-methods';
+import Dropdown from './dropdown';
 
-const ChainHeader: FC<{currency: string; network: string}> = ({currency, network}) => {
-  const {data: priceDetails} = useApi(`https://bitpay.com/rates/${currency}/usd`);
-  const {data: priceDisplay} = useApi(
+const ChartTile = styled.div`
+  height: 400px;
+  width: 50%;
+  background-color: ${({theme: {dark}}) => dark ? '#222' : '#fff'};
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin: 1rem;
+  display: flex;
+  flex-direction: column;
+`;
+
+const ChartTileHeader = styled.span`
+  font-size: 27px;
+  font-weight: bolder;
+`;
+
+const ChainHeader: FC<{ currency: string; network: string; blocks?: BitcoinBlockType[] }> = ({ currency, network, blocks }) => {
+  const theme = useTheme();
+  const priceDetails: {
+    data: {
+      code: string, 
+      name: string, 
+      rate: number
+    }
+  } = useApi(`https://bitpay.com/rates/${currency}/usd`).data;
+
+  const priceDisplay: {
+    data: Array<{
+      prices: Array<{price: number, time: string}>,
+      currencyPair: string,
+      currencies: Array<object>,
+      priceDisplay: Array<number>,
+      percentChange: string,
+      priceDisplayPercentChange: string
+    }>
+  } = useApi(
     `https://bitpay.com/currencies/prices?currencyPairs=["${currency}:USD"]`,
-  );
-
-  const chartRef = useRef<HTMLCanvasElement | null>(null);
-  const chartInstanceRef = useRef<ChartJS | null>(null);
+  ).data;
 
   const price = network === 'mainnet' ? priceDetails?.data?.rate : 0;
+
+  const feeChartRef = useRef<HTMLCanvasElement | null>(null);
+  const feeChartInstanceRef = useRef<ChartJS | null>(null);
+
+  const priceChartRef = useRef<HTMLCanvasElement | null>(null);
+  const priceChartInstanceRef = useRef<ChartJS | null>(null);
   const priceList = (priceDisplay?.data?.[0]?.priceDisplay || []);
 
-  const chartData = {
-    labels: priceList,
-    datasets: [
-      {
-        data: priceList,
-        fill: false,
-        spanGaps: true,
-        borderColor: colorCodes[currency],
-        borderWidth: 2,
-        pointRadius: 0,
-      },
-    ],
-  };
+  const feeRanges = ['128 Blocks', '32 Blocks', '16 Blocks', '8 Blocks'];
+  const priceRanges = ['24 Hours', '12 Hours', '6 Hours', '3 Hours'];
 
-  const options = {
-    scales: {
-      y: {
-        display: true,
-        beginAtZero: false,
-        ticks: {
-          maxTicksLimit: 4,
-        }
-      },
-      x: {display: false}
-    },
-    plugins: {legend: {display: false}},
-    events: [],
-    responsive: true,
-    maintainAspectRatio: false,
-    tension: 0.2,
-  };
+  const [feeSelectedRange, setFeesSelectedRange] = useState('32 Blocks');
+  const [priceSelectedRange, setPriceSelectedRange] = useState('24 Hours');
+  
+  const [feeChangeSpan, setFeeChangeSpan] = useState(() => { return <span>null</span>; });
+  const [priceChangeSpan, setPriceChangeSpan] = useState(() => { return <span>null</span>; });
 
   useEffect(() => {
-    if (chartRef.current) {
-      if (chartInstanceRef.current) {
-        chartInstanceRef.current.destroy();
+    if (feeChartRef.current && blocks) {
+      if (feeChartInstanceRef.current) {
+        feeChartInstanceRef.current.destroy();
       }
-
-      chartInstanceRef.current = new ChartJS(chartRef.current, {
+      const num = Number(feeSelectedRange.slice(0, feeSelectedRange.indexOf(' ')));
+      const fees = blocks.map((block: BitcoinBlockType) => block.feeData.median).reverse().slice(blocks.length - num);
+      const dates = blocks.map((block: BitcoinBlockType) =>
+        new Date(block.time).toLocaleString('en-US', {
+          year: '2-digit',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      ).reverse().slice(blocks.length - num);
+      const chartData = {
+        labels: dates,
+        datasets: [
+          {
+            data: fees,
+            fill: false,
+            spanGaps: true,
+            borderColor: colorCodes[currency],
+            borderWidth: 1.5,
+            pointRadius: 3
+          }
+        ]
+      };
+      const options = {
+        scales: {
+          y: {
+            display: true,
+            beginAtZero: true,
+            ticks: { maxTicksLimit: 6 }
+          },
+          x: { display: false }
+        },
+        plugins: {legend: {display: false}},
+        events: [],
+        responsive: true,
+        maintainAspectRatio: false,
+        tension: 0
+      };
+      feeChartInstanceRef.current = new ChartJS(feeChartRef.current, {
         type: 'line',
         data: chartData,
-        options,
+        options
+      });
+
+      const feeChange = fees[fees.length - 1] - fees[0];
+      const percentFeeChange = feeChange / fees[0] * 100;
+
+
+      setFeeChangeSpan(() => {
+        return <span>
+          <span style={{marginRight: '8px'}}>{feeChange.toFixed(2)} sats/byte ({percentFeeChange.toFixed(2)}%)</span>
+          <span style={{color: '#555'}}>Last {feeSelectedRange}</span>
+        </span>
       });
     }
 
     return () => {
-      chartInstanceRef.current?.destroy();
+      feeChartInstanceRef.current?.destroy();
     };
-  }, [chartData, options]);
+  }, [blocks, feeSelectedRange, currency]);
+
+  useEffect(() => {
+    const hours = Number(priceSelectedRange.slice(0, priceSelectedRange.indexOf(' ')))
+    const usedPrices = priceList.slice(priceList.length - hours);
+    const priceChartData = {
+      labels: usedPrices,
+      datasets: [
+        {
+          data: usedPrices,
+          fill: false,
+          spanGaps: true,
+          borderColor: colorCodes[currency],
+          borderWidth: 1.5,
+          pointRadius: 3,
+        },
+      ],
+    };
+  
+    const priceOptions = {
+      scales: {
+        y: {
+          display: true,
+          beginAtZero: false,
+          ticks: {
+            maxTicksLimit: 4,
+          }
+        },
+        x: {display: false}
+      },
+      plugins: {legend: {display: false}},
+      events: [],
+      responsive: true,
+      maintainAspectRatio: false,
+      tension: 0,
+    };
+    if (priceChartRef.current) {
+      if (priceChartInstanceRef.current) {
+        priceChartInstanceRef.current.destroy();
+      }
+      priceChartInstanceRef.current = new ChartJS(priceChartRef.current, {
+        type: 'line',
+        data: priceChartData,
+        options: priceOptions,
+      });
+    }
+
+    const priceChange = price - usedPrices[0];
+    const percentPriceChange = priceChange / usedPrices[0] * 100;
+
+    let color = 'gray';
+    if (priceChange > 0) {
+      color = 'green';
+    } else if (priceChange < 0) {
+      color = 'red';
+    }
+
+    setPriceChangeSpan(() => {
+      return <span>
+        <span style={{color, marginRight: '8px'}}>${priceChange.toFixed(2)} ({percentPriceChange.toFixed(2)}%)</span>
+        <span style={{color: '#555'}}>Last {priceSelectedRange}</span>
+      </span>
+    });
+    return () => {
+      priceChartInstanceRef.current?.destroy();
+    };
+  }, [priceList, price, priceSelectedRange, currency]);
 
   return (
-    <div style={{borderBottom: '1px solid', padding: '0 5px', height: 'fit-content', marginBottom: '0.5rem'}}>
-      <div style={{display: 'flex'}}>
+    <div>
+      <span style={{fontSize: '50px', fontWeight: 'bold'}}>Blocks </span>
         <img
           src={`https://bitpay.com/img/icon/currencies/${currency}.svg`}
           alt={currency}
-          style={{height: '100px'}}
+          style={{height: '25px'}}
         />
-        {priceList.length > 0 && (
-          <div style={{height: '200px', width: '100%', minWidth: 0}}>
-            <canvas ref={chartRef} aria-label='price line chart' role='img' />
-          </div>
-        )}
-      </div>
-      <div style={{display: 'flex', justifyContent: 'space-around'}}>
-        <span style={{margin: '0 10px'}}>{price} USD </span>
+      <div style={{borderBottom: '1px solid', padding: '1rem', backgroundColor: theme.dark ? '#111' : '#f6f7f9', height: 'fit-content', marginBottom: '0.5rem'}}>
+        <div style={{display: 'flex', flexDirection: 'row', width: '100%', alignItems: 'center'}}>
+          <ChartTile>
+            <span>{getName(currency)} Exchange Rate</span>
+            <div style={{display: 'flex', justifyContent: 'space-between'}}>
+              <ChartTileHeader>${price}</ChartTileHeader>
+              <Dropdown options={priceRanges} value={priceSelectedRange} onChange={setPriceSelectedRange} />
+            </div>
+            {priceChangeSpan}
+            <div style={{flex: 1, minHeight: 0}}>
+              <canvas ref={priceChartRef} aria-label='price line chart' role='img' />
+            </div>
+          </ChartTile>
+          <ChartTile>
+            <span>{getName(currency)} Fee</span>
+            <div style={{display: 'flex', justifyContent: 'space-between'}}>
+              <ChartTileHeader>{blocks?.at(0)?.feeData.median.toFixed(3)} sats/byte</ChartTileHeader>
+              <Dropdown options={feeRanges} value={feeSelectedRange} onChange={setFeesSelectedRange} />
+            </div>
+            {feeChangeSpan}
+            <div style={{flex: 1, minHeight: 0}}>
+              <canvas ref={feeChartRef} aria-label='fee chart' role='img' />
+            </div>
+          </ChartTile>
+        </div>
       </div>
     </div>
   );

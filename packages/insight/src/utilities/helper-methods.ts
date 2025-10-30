@@ -183,6 +183,22 @@ export const getLib = (currency: string) => {
   }
 };
 
+export const getName = (currency: string) => {
+  switch (currency.toUpperCase()) {
+    case 'BTC':
+    default:
+      return 'Bitcoin';
+    case 'BCH':
+      return 'Bitcoin Cash';
+    case 'DOGE':
+      return 'Doge';
+    case 'LTC':
+      return 'Litecoin';
+    case 'ETH':
+      return 'Ethereum';
+  }
+}
+
 export const getDifficultyFromBits = (bits: number) => {
   const maxBody = Math.log(0x00ffff);
   const scaland = Math.log(256);
