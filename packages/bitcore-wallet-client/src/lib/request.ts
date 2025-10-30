@@ -182,7 +182,7 @@ export class Request<CredT = Credentials> {
     if (typeof body === 'string') {
       try {
         body = JSON.parse(body);
-      } catch (e) {
+      } catch {
         body = {
           error: body
         };
