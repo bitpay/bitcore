@@ -24,7 +24,7 @@ async function addBlocks(
       coinbase?: boolean;
       inputs?: number[];
       outputs?: number[];
-    }[]
+    }[];
   }[]
 ) {
   for (const block of blocks) {

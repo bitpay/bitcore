@@ -221,5 +221,5 @@ export interface IChainStateService {
 export interface ChainStateServices {
   [chain: string]: {
     [network: string]: IChainStateService;
-  }
+  };
 }

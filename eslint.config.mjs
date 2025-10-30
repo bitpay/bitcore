@@ -56,6 +56,16 @@ export default defineConfig([
       'spaced-comment': ['error', 'always', { exceptions: ['-', '+'] }],
       '@stylistic/object-curly-spacing': ['error', 'always'],
       '@stylistic/indent': ['error', 2, { SwitchCase: 1 }],
+      '@stylistic/member-delimiter-style': ['error', {
+        multiline: {
+          delimiter: 'semi',
+          requireLast: true
+        },
+        singleline: {
+          delimiter: 'semi',
+          requireLast: false
+        }
+      }],
       'object-curly-spacing': ['error', 'always'],
       'key-spacing': ['error', { beforeColon: false, afterColon: true }],
       'comma-spacing': ['error', { before: false, after: true }],

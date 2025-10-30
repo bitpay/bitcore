@@ -184,7 +184,7 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
     return JSON.stringify(transform);
   }
 
-  async getBlockSyncGaps(params: { chain: string; network: string; startHeight?: number, endHeight?: number }): Promise<number[]> {
+  async getBlockSyncGaps(params: { chain: string; network: string; startHeight?: number; endHeight?: number }): Promise<number[]> {
     const { chain, network, startHeight = 0, endHeight } = params;
     return new Promise(async (resolve, reject) => {
       let timeout;

@@ -14,8 +14,8 @@ export interface IState {
   lastAddressSubscriptionUpdate?: {
     [chain: string]: {
       [network: string]: Date;
-    }
-  }
+    };
+  };
 }
 
 export class StateModel extends BaseModel<IState> {

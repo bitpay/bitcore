@@ -161,17 +161,17 @@ export type IEVMTransaction = ITransaction & {
   transactionIndex: number;
   error?: string;
   receipt?: TxReceipt;
-  effects?: Effect[] // Meant to replace abiType, internal, calls and data on stored txs
+  effects?: Effect[]; // Meant to replace abiType, internal, calls and data on stored txs
   confirmations?: number;
 };
 
 export interface Effect {
-  to: string,
-  from: string,
-  amount: string,
-  type?: 'ERC20:transfer' | 'MULTISIG:submitTransaction' | 'MULTISIG:confirmTransaction' // These are the only txs types we care about
-  contractAddress?: string,
-  callStack?: string
+  to: string;
+  from: string;
+  amount: string;
+  type?: 'ERC20:transfer' | 'MULTISIG:submitTransaction' | 'MULTISIG:confirmTransaction'; // These are the only txs types we care about
+  contractAddress?: string;
+  callStack?: string;
 }
 
 export type IEVMTransactionInProcess = IEVMTransaction & {
@@ -225,7 +225,7 @@ export type DecodedTrace = ClassifiedTrace & {
 };
 
 export interface ParsedAbiParams {
-  [key: string]: string
+  [key: string]: string;
 }
 
 export interface EVMTransactionJSON {

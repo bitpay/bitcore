@@ -90,9 +90,9 @@ export interface ConfigType {
       [alias: string]: string;
     };
     networks: {
-      [chain: string]: { [alias: string]: string; }
+      [chain: string]: { [alias: string]: string };
     };
-  },
+  };
   services: {
     api: {
       disabled?: boolean;
@@ -126,6 +126,6 @@ export interface ConfigType {
       webhookBaseUrl?: string;
       streamSecret?: string;
       webhookCors?: object; // default: { origin: ['*'] }
-    }
+    };
   };
 }

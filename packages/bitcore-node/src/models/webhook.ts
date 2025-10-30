@@ -27,7 +27,7 @@ export class WebhookModel extends BaseModel<IWebhook> {
     this.collection.createIndex({ chain: 1, network: 1, source: 1 }, { background: true });
   }
 
-  getTail(params: { chain: string; network: string; }) {
+  getTail(params: { chain: string; network: string }) {
     const { chain, network } = params;
 
     const MINUTE = 1000 * 60;

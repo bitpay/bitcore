@@ -157,7 +157,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     }
   }
 
-  getAllTouchedAddresses(tx: Partial<IEVMTransaction>): { tos: IEVMCachedAddress[], froms: IEVMCachedAddress[] } {
+  getAllTouchedAddresses(tx: Partial<IEVMTransaction>): { tos: IEVMCachedAddress[]; froms: IEVMCachedAddress[] } {
     const { to, from, effects } = tx;
     const toBatch = new Set<string>();
     const fromBatch = new Set<string>();

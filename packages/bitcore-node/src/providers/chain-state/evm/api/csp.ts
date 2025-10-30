@@ -54,7 +54,7 @@ import { PopulateEffectsTransform } from './populateEffectsTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
 import { EVMListTransactionsStream } from './transform';
 
-export interface GetWeb3Response { rpc: CryptoRpc; web3: Web3; dataType: string; lastPingTime?: number; };
+export interface GetWeb3Response { rpc: CryptoRpc; web3: Web3; dataType: string; lastPingTime?: number };
 
 export interface BuildWalletTxsStreamParams {
   transactionStream: TransformWithEventPipe;

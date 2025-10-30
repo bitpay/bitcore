@@ -509,7 +509,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     return this._subsRequest('DELETE', `${this.baseStreamUrl}/${sub.id}`) as Promise<MoralisAddressSubscription>;
   }
 
-  async updateAddressSubscription(params: { sub: IAddressSubscription, addressesToAdd?: string[], addressesToRemove?: string[], status?: string }) {
+  async updateAddressSubscription(params: { sub: IAddressSubscription; addressesToAdd?: string[]; addressesToRemove?: string[]; status?: string }) {
     const { sub, addressesToAdd, addressesToRemove, status } = params;
 
     let moralisSub: MoralisAddressSubscription | null = null;
@@ -537,7 +537,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     return coinEvents;
   }
 
-  private _transformWebhookTransaction(params: { webhook, tx } & ChainNetwork): CoinEvent[] {
+  private _transformWebhookTransaction(params: { webhook; tx } & ChainNetwork): CoinEvent[] {
     const { chain, network, tx } = params;
     const events: CoinEvent[] = [];
     for (const address of tx.triggered_by) {

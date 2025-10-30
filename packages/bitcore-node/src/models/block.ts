@@ -223,9 +223,9 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
   }
 
   async getBlockFee(params: {
-    chain: string,
-    network: string,
-    blockId: string
+    chain: string;
+    network: string;
+    blockId: string;
   }) : Promise<FeeData> {
     const { chain, network, blockId } = params;
     const transactions = blockId.length >= 64 
