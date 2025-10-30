@@ -153,7 +153,7 @@ describe('TSS', function() {
       const code = tss0.createJoinCode({
         partyId: 1,
         partyPubKey: party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey,
-        opts: { encoding: 'base64'}
+        opts: { encoding: 'base64' }
       });
       should.exist(code);
       code.should.be.a('string');
@@ -230,7 +230,7 @@ describe('TSS', function() {
         doReqSpy.args[0][0].should.equal('get');
         doReqSpy.args[0][1].should.include(`/v1/tss/keygen/${tss1.id}/1?r=`);
         done();
-      }});
+      } });
     });
 
     it(happyPath('should continue round 1'), async function() {
@@ -389,7 +389,7 @@ describe('TSS', function() {
     });
 
     it('should not export a completed session', function() {
-      should.throw(() => { tss0.exportSession() }, /Cannot export a completed session/);
+      should.throw(() => { tss0.exportSession(); }, /Cannot export a completed session/);
     });
 
     it('should cleanly handle a subscription to a finished session', async function() {
@@ -404,7 +404,7 @@ describe('TSS', function() {
     });
 
     // Keeping for documentation purposes
-    it.skip('SKIP ME - save to data dir', function(){ 
+    it.skip('SKIP ME - save to data dir', function() { 
       fs.writeFileSync(`${datadir}/tss-party0.json`, JSON.stringify({ key: party0Key.toObj(), tss: tss0.getTssKey().toObj() }, null, 2));
       fs.writeFileSync(`${datadir}/tss-party1.json`, JSON.stringify({ key: party1Key.toObj(), tss: tss1.getTssKey().toObj() }, null, 2));
       fs.writeFileSync(`${datadir}/tss-party2.json`, JSON.stringify({ key: party2Key.toObj(), tss: tss2.getTssKey().toObj() }, null, 2));
@@ -777,7 +777,7 @@ describe('TSS', function() {
     });
 
     it('should not export a completed session', function() {
-      should.throw(() => { sig0.exportSession() }, /Cannot export a completed session/);
+      should.throw(() => { sig0.exportSession(); }, /Cannot export a completed session/);
     });
 
     it('should cleanly handle a subscription to a finished session', async function() {

@@ -6,6 +6,7 @@
  * Client API
  */
 import { API } from './lib/api';
+
 export default API;
 
 export { API, Network, CreateWalletOpts, Status, Txp } from './lib/api';

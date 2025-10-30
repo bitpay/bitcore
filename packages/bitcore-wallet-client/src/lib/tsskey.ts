@@ -1,6 +1,6 @@
+import { EventEmitter } from 'events';
 import { ECDSA, ECIES } from 'bitcore-tss';
 import { BitcoreLib } from 'crypto-wallet-core';
-import { EventEmitter } from 'events';
 import { API as Client, CreateWalletOpts } from './api';
 import { Encryption } from './common';
 import { Credentials } from './credentials';
@@ -514,7 +514,7 @@ export class TssKeyGen extends EventEmitter {
       if (iterHandler) iterHandler();
       this.unsubscribe();
       // Anything after unsubscribe() will not be executed
-    }
+    };
 
     this.#subscriptionId = setInterval(async () => {
       if (this.#subscriptionRunning) return;
@@ -612,7 +612,7 @@ export class TssKeyGen extends EventEmitter {
      * @default true
      */
     clearEvents: boolean;
-  } = { clearEvents: true}): void {
+  } = { clearEvents: true }): void {
     const { clearEvents } = params;
     clearInterval(this.#subscriptionId);
     if (clearEvents) {

@@ -1,6 +1,6 @@
+import { EventEmitter } from 'events';
 import { ECDSA } from 'bitcore-tss';
 import { BitcoreLib } from 'crypto-wallet-core';
-import { EventEmitter } from 'events';
 import { Credentials } from './credentials';
 import { Request, RequestResponse } from './request';
 import { TssKey } from './tsskey';
@@ -108,7 +108,7 @@ export class TssSign extends EventEmitter {
     const { id, derivationPath, password, encoding = 'utf8' } = params;
     $.checkArgument(messageHash || message, 'message or messageHash must be provided');
     $.checkArgument(!messageHash || Buffer.isBuffer(messageHash), 'messageHash must be a Buffer');
-    $.checkArgument(!message  || Buffer.isBuffer(message) || typeof message === 'string', 'message must be a string or Buffer');
+    $.checkArgument(!message || Buffer.isBuffer(message) || typeof message === 'string', 'message must be a string or Buffer');
     $.checkArgument(id == null || typeof id === 'string', 'id must be a string or not provided');
     $.checkArgument(password || this.#tssKey.keychain.privateKeyShare, 'password is required to decrypt the TSS private key share');
     
@@ -262,7 +262,7 @@ export class TssSign extends EventEmitter {
      * @default true
      */
     clearEvents: boolean;
-  } = { clearEvents: true}): void {
+  } = { clearEvents: true }): void {
     const { clearEvents } = params;
     clearInterval(this.#subscriptionId);
     if (clearEvents) {
