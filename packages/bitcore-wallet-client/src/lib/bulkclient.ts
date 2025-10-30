@@ -176,25 +176,25 @@ export class BulkClient extends Request<Array<Credentials>> {
   _processWallet(wallet, c: Credentials) {
     const encryptingKey = c.sharedEncryptingKey;
 
-    var name = Utils.decryptMessageNoThrow(wallet.name, encryptingKey);
-    if (name != wallet.name) {
+    const walletName = Utils.decryptMessageNoThrow(wallet.name, encryptingKey);
+    if (walletName != wallet.name) {
       wallet.encryptedName = wallet.name;
     }
-    wallet.name = name;
+    wallet.name = walletName;
     for (const copayer of wallet.copayers || []) {
-      var name = Utils.decryptMessageNoThrow(copayer.name, encryptingKey);
-      if (name != copayer.name) {
+      const copayerName = Utils.decryptMessageNoThrow(copayer.name, encryptingKey);
+      if (copayerName != copayer.name) {
         copayer.encryptedName = copayer.name;
       }
-      copayer.name = name;
+      copayer.name = copayerName;
       for (const access of copayer.requestPubKeys || []) {
         if (!access.name) return;
 
-        var name = Utils.decryptMessageNoThrow(access.name, encryptingKey);
-        if (name != access.name) {
+        const accessName = Utils.decryptMessageNoThrow(access.name, encryptingKey);
+        if (accessName != access.name) {
           access.encryptedName = access.name;
         }
-        access.name = name;
+        access.name = accessName;
       }
     }
   }
