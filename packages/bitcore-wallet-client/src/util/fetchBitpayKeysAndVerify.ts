@@ -26,7 +26,7 @@ keyRequests.push(
       json: true
     }).then(pgpKeyFiles => {
       const fileDataPromises = [];
-      pgpKeyFiles.forEach(file => {
+      for (const file of pgpKeyFiles) {
         fileDataPromises.push(
           (() => {
             return request({
@@ -42,7 +42,7 @@ keyRequests.push(
             });
           })()
         );
-      });
+      }
       return Promise.all(fileDataPromises);
     });
   })()
@@ -59,13 +59,13 @@ keyRequests.push(
       },
       json: true
     }).then(body => {
-      body.pgpKeys.forEach(function (key) {
+      for (const key of body.pgpKeys) {
         const hash = ncrypto
           .createHash('sha256')
           .update(key.publicKey)
           .digest('hex');
         bitpayPgpKeys[hash] = key.publicKey;
-      });
+      }
       return Promise.resolve();
     });
   })()
@@ -89,16 +89,16 @@ Promise.all(keyRequests)
 
     if (bitpayOnlyKeys.length) {
       console.log('BitPay returned some keys which are not present in github');
-      Object.keys(bitpayOnlyKeys).forEach(keyHash => {
+      for (const keyHash of Object.keys(bitpayOnlyKeys)) {
         console.log(`Hash ${keyHash} Key: ${bitpayOnlyKeys[keyHash]}`);
-      });
+      }
     }
 
     if (githubOnlyKeys.length) {
       console.log('GitHub returned some keys which are not present in BitPay');
-      Object.keys(githubOnlyKeys).forEach(keyHash => {
+      for (const keyHash of Object.keys(githubOnlyKeys)) {
         console.log(`Hash ${keyHash} Key: ${githubOnlyKeys[keyHash]}`);
-      });
+      }
     }
 
     if (!githubOnlyKeys.length && !bitpayOnlyKeys.length) {
@@ -192,7 +192,7 @@ Promise.all(keyRequests)
                 data: Buffer.from(eccPayload),
                 keyfetch: pgpKey
               },
-              (err, result) => {
+              (err, _result) => {
                 if (err) {
                   return reject(
                     `Unable to verify signature from ${signature.identifier} ${err}`
@@ -225,7 +225,7 @@ Promise.all(keyRequests)
 
       console.log('----\nValid keymap for use in bitcoinRpc example:');
 
-      parsedEccPayload.publicKeys.forEach(pubkey => {
+      for (const pubkey of parsedEccPayload.publicKeys) {
         // Here we are just generating the pubkey hash (btc address) of each of the public keys received for easy lookup later
         // as this is what will be provided by the x-identity header
         const a = ncrypto.createHash('sha256').update(pubkey, 'hex').digest();
@@ -251,12 +251,11 @@ Promise.all(keyRequests)
           publicKey:
             '03159069584176096f1c89763488b94dbc8d5e1fa7bf91f50b42f4befe4e45295a'
         };
-      });
+      }
 
       console.log(keyMap);
 
       const fs = require('fs');
-
       fs.writeFileSync(
         'JsonPaymentProtocolKeys.js',
         'module.exports = ' + JSON.stringify(keyMap, null, 2)
