@@ -265,7 +265,7 @@ export class Key {
     }
     try {
       xpriv = new Bitcore.HDPrivateKey(extendedPrivateKey);
-    } catch (e) {
+    } catch {
       throw new Error('Invalid argument');
     }
     const algos = opts.algo ? [opts.algo] : SUPPORTED_ALGOS;
@@ -398,7 +398,7 @@ export class Key {
     if (this.isPrivKeyEncrypted(algo)) {
       try {
         Encryption.decryptWithPassword(this.#getPrivKeyEncrypted({ algo }), password);
-      } catch (ex) {
+      } catch {
         return false;
       }
       return true;
@@ -422,7 +422,7 @@ export class Key {
         if (this.#mnemonicEncrypted) {
           key.mnemonic = Encryption.decryptWithPassword(this.#mnemonicEncrypted, password).toString();
         }
-      } catch (ex) {
+      } catch {
         throw new Error('Could not decrypt');
       }
     } else {
