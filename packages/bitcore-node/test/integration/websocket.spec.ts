@@ -8,13 +8,14 @@ import { Api } from '../../src/services/api';
 import { Event } from '../../src/services/event';
 import { IUtxoNetworkConfig } from '../../src/types/Config';
 import { resetDatabase } from '../helpers';
-const { PrivateKey } = require('bitcore-lib');
+import { BitcoreLib } from 'crypto-wallet-core';
 
 const chain = 'BTC';
 const network = 'regtest';
 const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
+const { PrivateKey } = BitcoreLib;
 import { Client } from 'bitcore-client';
 import { WalletStorage } from '../../src/models/wallet';
 import { WalletAddressStorage } from '../../src/models/walletAddress';
@@ -30,13 +31,14 @@ function getSocket() {
 let p2pWorker: BitcoinP2PWorker;
 let socket = getSocket();
 const bwsPrivKey = new PrivateKey();
-const bwsKey = bwsPrivKey.publicKey.toString('hex');
+const bwsKey = bwsPrivKey.toPublicKey().toString();
 const authKey = new PrivateKey();
-const pubKey = authKey.publicKey.toString('hex');
+const pubKey = authKey.toPublicKey().toString();
 const address = '2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t';
 const sandbox = sinon.createSandbox();
 
 describe('Websockets', function() {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(60000);
 
@@ -113,7 +115,7 @@ describe('Websockets', function() {
     let hasSeenBlockEvent = false;
     let hasSeenCoinEvent = false;
     const anAddress = await rpc.getnewaddress('');
-    let sawEvents = new Promise<void>(async resolve => {
+    const sawEvents = new Promise<void>(async resolve => {
       socket.on('block', () => {
         hasSeenBlockEvent = true;
         console.log('Block event received');
@@ -168,7 +170,7 @@ describe('Websockets', function() {
 
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;
-    let sawEvents = new Promise<void>(async resolve => {
+    const sawEvents = new Promise<void>(async resolve => {
       socket.on('tx', () => {
         hasSeenTxEvent = true;
         console.log('Transaction event received');
@@ -215,7 +217,7 @@ describe('Websockets', function() {
 
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;
-    let sawEvents = new Promise<void>(async resolve => {
+    const sawEvents = new Promise<void>(async resolve => {
       socket.on('tx', () => {
         hasSeenTxEvent = true;
         console.log('Transaction event received');
@@ -249,7 +251,7 @@ describe('Websockets', function() {
   });
 
   it('should get an error when the key does not match the bwsKey', async () => {
-    const pubKey = authKey.publicKey.toString('hex');
+    const pubKey = authKey.toPublicKey().toString();
     const wrongKey = new PrivateKey();
     const authClient = new Client({ apiUrl: 'http://localhost:3000/api', authKey: wrongKey });
 
@@ -258,7 +260,7 @@ describe('Websockets', function() {
     const chain = 'BTC';
     const network = 'regtest';
     const roomPrefix = `/${chain}/${network}/`;
-    let failed = new Promise<void>(resolve => {
+    const failed = new Promise<void>(resolve => {
       socket.on('failure', e => {
         expect(e.message).to.include('Authentication failed');
         resolve();
@@ -278,7 +280,7 @@ describe('Websockets', function() {
     const chain = 'BTC';
     const network = 'regtest';
     const roomPrefix = `/${chain}/${network}/`;
-    let failed = new Promise<void>(resolve => {
+    const failed = new Promise<void>(resolve => {
       socket.on('failure', e => {
         expect(e.message).to.include('Authentication failed');
         resolve();

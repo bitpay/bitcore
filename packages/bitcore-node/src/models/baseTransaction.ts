@@ -24,10 +24,10 @@ export abstract class BaseTransaction<T extends ITransaction> extends BaseModel<
   }
 
   allowedPaging = [
-    { key: 'blockHash' as 'blockHash', type: 'string' as 'string' },
-    { key: 'blockHeight' as 'blockHeight', type: 'number' as 'number' },
-    { key: 'blockTimeNormalized' as 'blockTimeNormalized', type: 'date' as 'date' },
-    { key: 'txid' as 'txid', type: 'string' as 'string' }
+    { key: 'blockHash' as const, type: 'string' as const },
+    { key: 'blockHeight' as const, type: 'number' as const },
+    { key: 'blockTimeNormalized' as const, type: 'date' as const },
+    { key: 'txid' as const, type: 'string' as const }
   ];
 
   onConnect() {
@@ -46,7 +46,7 @@ export abstract class BaseTransaction<T extends ITransaction> extends BaseModel<
   }
 
   getTransactions(params: { query: any; options: StreamingFindOptions<T> }) {
-    let originalQuery = params.query;
+    const originalQuery = params.query;
     const { query, options } = Storage.getFindOptions(this, params.options);
     const finalQuery = Object.assign({}, originalQuery, query);
     return this.collection.find(finalQuery, options).addCursorFlag('noCursorTimeout', true);

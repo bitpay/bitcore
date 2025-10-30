@@ -29,7 +29,7 @@ export class ListTransactionsStream extends Transform {
         .project({ address: 1, wallets: 1, value: 1, mintIndex: 1 })
         .addCursorFlag('noCursorTimeout', true)
         .toArray();
-      outputs.forEach(output => {
+      for (const output of outputs) {
         const sendingToOurself = output.wallets.some(outputWallet => {
           return outputWallet.equals(wallet);
         });
@@ -64,7 +64,7 @@ export class ListTransactionsStream extends Transform {
             }) + '\n'
           );
         }
-      });
+      }
       if (transaction.fee > 0) {
         this.push(
           JSON.stringify({
@@ -88,7 +88,7 @@ export class ListTransactionsStream extends Transform {
         .project({ address: 1, wallets: 1, value: 1, mintIndex: 1 })
         .addCursorFlag('noCursorTimeout', true)
         .toArray();
-      outputs.forEach(output => {
+      for (const output of outputs) {
         const weReceived = output.wallets.some(outputWallet => {
           return outputWallet.equals(wallet);
         });
@@ -108,7 +108,7 @@ export class ListTransactionsStream extends Transform {
             }) + '\n'
           );
         }
-      });
+      };
     }
     done();
   }

@@ -42,9 +42,10 @@
     "api:cluster": "npm run tsc && node build/src/workers/api.js --CLUSTER true",
     "pruning": "npm run tsc && node build/src/workers/pruning.js --EXIT true",
     "p2p": "npm run tsc && node build/src/workers/p2p.js",
-    "precommit": "echo 'TODO: npm run fix && npm run lint'",
     "lint": "eslint .",
-    "fix": "eslint --fix --quiet .",
+    "fix:errors": "eslint --fix --quiet .",
+    "fix:all": "eslint --fix .",
+    "precommit": "npm run lint; npm run fix:errors",
     "test:scripts": "npx mocha scripts/test"
   },
   "nyc": {

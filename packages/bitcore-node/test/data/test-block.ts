@@ -1,5 +1,6 @@
 import { BitcoinBlockType } from '../../src/types/namespaces/Bitcoin';
 import { TEST_TX, TEST_TX_1, TEST_TX_2, TEST_TX_3 } from './test-tx';
+
 export const TEST_BLOCK: BitcoinBlockType = {
   hash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
   transactions: [TEST_TX],

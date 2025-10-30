@@ -38,12 +38,12 @@ export class EVMListTransactionsStream extends TransformWithEventPipe {
       baseTx.calls = transaction.calls;
       baseTx.data = transaction.data ? transaction.data.toString() : '';
     }
-    let sending = this.walletAddresses.includes(transaction.from);
+    const sending = this.walletAddresses.includes(transaction.from);
     if (sending) {
-      let sendingToOurself = this.walletAddresses.includes(transaction.to);
+      const sendingToOurself = this.walletAddresses.includes(transaction.to);
       if (!sendingToOurself) {
         baseTx.category = 'send';
-        baseTx.satoshis = -transaction.value
+        baseTx.satoshis = -transaction.value;
         this.push(
           jsonStringify(baseTx) + '\n'
         );

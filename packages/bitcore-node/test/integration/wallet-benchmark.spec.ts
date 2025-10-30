@@ -49,12 +49,12 @@ async function getWalletUtxos(wallet: Wallet) {
   const utxos = new Array<MongoBound<ICoin>>();
   return new Promise<Array<MongoBound<ICoin>>>(resolve =>
     wallet
-    .getUtxos()
-    .pipe(new ParseApiStream())
-    .on('data', (utxo: MongoBound<ICoin>) => {
-      utxos.push(utxo);
-    })
-    .on('end', () => resolve(utxos))
+      .getUtxos()
+      .pipe(new ParseApiStream())
+      .on('data', (utxo: MongoBound<ICoin>) => {
+        utxos.push(utxo);
+      })
+      .on('end', () => resolve(utxos))
   );
 }
 
@@ -98,6 +98,7 @@ async function checkWalletReceived(receivingWallet: IWallet, txid: string, addre
 }
 
 describe('Wallet Benchmark', function() {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(5000000);
   let p2pWorker: BitcoinP2PWorker;
@@ -257,13 +258,13 @@ describe('Wallet Benchmark', function() {
     });
 
     it('should import all addresses and verify in database while below 300 mb of heapUsed memory', async () => {
-      let smallAddressBatch = new Array<string>();
-      let mediumAddressBatch = new Array<string>();
-      let largeAddressBatch = new Array<string>();
+      const smallAddressBatch = new Array<string>();
+      const mediumAddressBatch = new Array<string>();
+      const largeAddressBatch = new Array<string>();
 
       console.log('Generating small batch of addresses');
       for (let i = 0; i < 10; i++) {
-        let address = await rpc.getnewaddress('');
+        const address = await rpc.getnewaddress('');
         smallAddressBatch.push(address);
       }
 
@@ -271,14 +272,14 @@ describe('Wallet Benchmark', function() {
       expect(smallAddressBatch.length).to.deep.equal(10);
 
       for (let i = 0; i < 100; i++) {
-        let address = await rpc.getnewaddress('');
+        const address = await rpc.getnewaddress('');
         mediumAddressBatch.push(address);
       }
       expect(mediumAddressBatch.length).to.deep.equal(100);
 
       console.log('Generating large batch of addresses');
       for (let i = 0; i < 1000; i++) {
-        let address = await rpc.getnewaddress('');
+        const address = await rpc.getnewaddress('');
         largeAddressBatch.push(address);
       }
 
@@ -303,7 +304,7 @@ describe('Wallet Benchmark', function() {
 
       const smallAddresses = foundSmallAddressBatch.map(wa => wa.address);
 
-      for (let address of smallAddressBatch) {
+      for (const address of smallAddressBatch) {
         expect(smallAddresses.includes(address)).to.be.true;
       }
       expect(foundSmallAddressBatch.length).to.have.deep.equal(smallAddressBatch.length);
@@ -318,7 +319,7 @@ describe('Wallet Benchmark', function() {
 
       const mediumAddresses = foundMediumAddressBatch.map(wa => wa.address);
 
-      for (let address of mediumAddressBatch) {
+      for (const address of mediumAddressBatch) {
         expect(mediumAddresses.includes(address)).to.be.true;
       }
       expect(foundMediumAddressBatch.length).to.have.deep.equal(mediumAddressBatch.length);
@@ -333,7 +334,7 @@ describe('Wallet Benchmark', function() {
 
       const largeAddresses = foundLargeAddressBatch.map(wa => wa.address);
 
-      for (let address of largeAddressBatch) {
+      for (const address of largeAddressBatch) {
         expect(largeAddresses.includes(address)).to.be.true;
       }
       expect(foundLargeAddressBatch.length).to.have.deep.equal(largeAddressBatch.length);

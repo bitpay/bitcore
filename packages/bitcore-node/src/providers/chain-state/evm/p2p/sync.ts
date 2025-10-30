@@ -1,7 +1,7 @@
-import { CryptoRpc } from 'crypto-rpc';
 import { EventEmitter } from 'events';
 import * as os from 'os';
-import { threadId, Worker as Thread } from 'worker_threads';
+import { Worker as Thread, threadId } from 'worker_threads';
+import { CryptoRpc } from 'crypto-rpc';
 import { ChainStateProvider } from '../../';
 import Config from '../../../../config';
 import logger, { timestamp } from '../../../../logger';
@@ -56,7 +56,7 @@ export class MultiThreadSync extends EventEmitter {
     this.syncing = true;
 
     try {
-      let tip = await ChainStateProvider.getLocalTip({ chain, network });
+      const tip = await ChainStateProvider.getLocalTip({ chain, network });
       if (parentChain && (!tip || tip.height < forkHeight)) {
         let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
         while (!parentTip || parentTip.height < forkHeight) {
@@ -119,17 +119,16 @@ export class MultiThreadSync extends EventEmitter {
   }
 
   threadMessageHandler(thread: Thread) {
-    const self = this;
-    return function(msg) {
+    return (msg) => {
       logger.debug('Received sync thread message: ' + JSON.stringify(msg));
 
       switch (msg.message) {
         case 'ready':
-          self.emit('THREADREADY');
+          this.emit('THREADREADY');
           break;
         case 'sync':
         default:
-          self.threadSync(thread, msg);
+          this.threadSync(thread, msg);
       }
     };
   }
@@ -190,8 +189,7 @@ export class MultiThreadSync extends EventEmitter {
       return;
     }
 
-    const self = this;
-    let threadCnt = this.config.threads || os.cpus().length - 1; // Subtract 1 for this process/thread
+    const threadCnt = this.config.threads || os.cpus().length - 1; // Subtract 1 for this process/thread
 
     if (threadCnt <= 0) {
       throw new Error('Invalid number of syncing threads.');
@@ -205,16 +203,16 @@ export class MultiThreadSync extends EventEmitter {
 
       thread.on('message', this.threadMessageHandler(thread));
 
-      thread.on('exit', function(code) {
-        self.syncingThreads--;
-        self.threads.splice(
-          self.threads.findIndex(t => t.threadId === thread.threadId),
+      thread.on('exit', (code) => {
+        this.syncingThreads--;
+        this.threads.splice(
+          this.threads.findIndex(t => t.threadId === thread.threadId),
           1
         );
         if (code !== 0) {
           logger.error('Thread exited with non-zero code: %o', code);
         }
-        if (self.threads.length === 0) {
+        if (this.threads.length === 0) {
           logger.info('All syncing threads stopped.');
         }
       });
@@ -251,7 +249,7 @@ export class MultiThreadSync extends EventEmitter {
       this.resolvingGaps = true;
       this.gapsLength = gaps.length;
       this.syncingThreads = this.threads.length;
-      for (let blockNum of gaps) {
+      for (const blockNum of gaps) {
         this.addBlockToQueue(blockNum);
       }
       this.syncing = false;
@@ -266,7 +264,7 @@ export class MultiThreadSync extends EventEmitter {
   }
 
   shutdownThreads() {
-    for (let thread of this.threads) {
+    for (const thread of this.threads) {
       thread.postMessage({ message: 'shutdown' });
     }
     clearInterval(this.syncInterval as NodeJS.Timeout);

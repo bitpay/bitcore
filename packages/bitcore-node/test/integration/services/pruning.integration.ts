@@ -15,6 +15,7 @@ import logger from '../../../src/logger';
 const Pruning = new PruningService({ transactionModel: TransactionStorage, coinModel: CoinStorage });
 
 describe('Pruning Service', function() {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
   const sandbox = sinon.createSandbox();
@@ -275,7 +276,7 @@ describe('Pruning Service', function() {
     });
 
     it('should skip removing transactions still in mempool', async () => {
-      const rpcStub = sandbox.stub(RPC.prototype, 'getTransaction')
+      const rpcStub = sandbox.stub(RPC.prototype, 'getTransaction');
       rpcStub.onCall(0).resolves(null);
       rpcStub.onCall(1).resolves({});
       rpcStub.onCall(2).resolves(null);
@@ -309,7 +310,7 @@ describe('Pruning Service', function() {
     });
 
     it('should skip removing transactions on rpc error', async () => {
-      const rpcStub = sandbox.stub(RPC.prototype, 'getTransaction')
+      const rpcStub = sandbox.stub(RPC.prototype, 'getTransaction');
       rpcStub.onCall(0).rejects({ code: -1, message: 'hahaha' });
       await insertOldTx();
       const { chain, network } = oldMempoolTx;
@@ -335,7 +336,7 @@ describe('Pruning Service', function() {
     });
 
     it('should skip removing transactions if coin has >0 confs', async () => {
-      const rpcStub = sandbox.stub(RPC.prototype, 'getTransaction')
+      const rpcStub = sandbox.stub(RPC.prototype, 'getTransaction');
       rpcStub.onCall(0).rejects({ code: -5, message: 'already exists' });
       const oldMempoolTx2OutputHeight = oldMempoolTx2Output.mintHeight;
       oldMempoolTx2Output.mintHeight = 1;

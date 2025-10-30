@@ -27,8 +27,8 @@ const TaggedHash = require('./crypto/taggedhash');
  * var imported = PublicKey.fromString(exported);
  * ```
  *
- * @param {string} data - The encoded data in various formats
- * @param {Object} extra - additional options
+ * @param {string|PrivateKey} [data] - The encoded data in various formats
+ * @param {Object} [extra] - additional options
  * @param {Network=} extra.network - Which network should the address for this public key be for
  * @param {String=} extra.compressed - If the public key is compressed
  * @returns {PublicKey} A new valid instance of an PublicKey
@@ -467,8 +467,8 @@ PublicKey.prototype._getID = function _getID() {
 /**
  * Will return an address for the public key
  *
- * @param {String|Network=} network - Which network should the address be for
- * @param {string} type - Either 'pubkeyhash', 'witnesspubkeyhash', or 'scripthash'
+ * @param {String|Network=} [network] - Which network should the address be for
+ * @param {string} [type] - Either 'pubkeyhash', 'witnesspubkeyhash', or 'scripthash'
  * @returns {Address} An address generated from the public key
  */
 PublicKey.prototype.toAddress = function(network, type) {

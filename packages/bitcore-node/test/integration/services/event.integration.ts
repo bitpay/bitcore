@@ -3,6 +3,7 @@ import { Event } from '../../../src/services/event';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
 describe('Event Service', function() {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
   before(intBeforeHelper);

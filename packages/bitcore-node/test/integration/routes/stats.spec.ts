@@ -1,5 +1,5 @@
-import supertest from 'supertest'
-import app from '../../../src/routes'
+import supertest from 'supertest';
+import app from '../../../src/routes';
 import { expect } from 'chai';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 import { resetDatabase } from '../../helpers';
@@ -66,7 +66,7 @@ describe('Stats Routes', function() {
 
   after(async function() {
     await intAfterHelper();
-  })
+  });
 
   it('should get daily-transactions', done => {
     requests.get('/api/BTC/regtest/stats/daily-transactions')
