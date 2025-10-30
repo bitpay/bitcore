@@ -346,16 +346,11 @@ export class PayProV2 {
     let responseData;
     try {
       responseData = JSON.parse(rawBody);
-    } catch (e) {
+    } catch {
       throw new Error('Invalid JSON in response body');
     }
 
-    let payProDetails;
-    try {
-      payProDetails = this.processResponse(responseData);
-    } catch (e) {
-      throw e;
-    }
+    const payProDetails = this.processResponse(responseData);
 
     if (unsafeBypassValidation) {
       return payProDetails;
@@ -369,7 +364,7 @@ export class PayProV2 {
 
     try {
       host = url.parse(requestUrl).hostname;
-    } catch (e) {}
+    } catch {/** no op */}
 
     if (!host) {
       throw new Error('Invalid requestUrl');
@@ -452,9 +447,9 @@ export class PayProV2 {
 
     if (responseData.paymentOptions) {
       payProDetails.paymentOptions = responseData.paymentOptions;
-      payProDetails.paymentOptions.forEach(option => {
+      for (const option of payProDetails.paymentOptions) {
         option.network = NetworkMap[option.network];
-      });
+      }
     }
 
     if (responseData.network) {
@@ -472,7 +467,7 @@ export class PayProV2 {
     if (responseData.expires) {
       try {
         payProDetails.expires = new Date(responseData.expires).toISOString();
-      } catch (e) {
+      } catch {
         throw new Error('Bad expiration');
       }
     }
@@ -480,18 +475,18 @@ export class PayProV2 {
     if (responseData.time) {
       try {
         payProDetails.time = new Date(responseData.time).toISOString();
-      } catch (e) {
+      } catch {
         throw new Error('Bad time');
       }
     }
 
     if (responseData.instructions) {
       payProDetails.instructions = responseData.instructions;
-      payProDetails.instructions.forEach(output => {
+      for (const output of payProDetails.instructions) {
         output.toAddress = output.to || output.outputs[0].address;
         output.amount =
           output.value !== undefined ? output.value : output.outputs[0].amount;
-      });
+      }
       const { requiredFeeRate, gasPrice } = responseData.instructions[0];
       payProDetails.requiredFeeRate = requiredFeeRate || gasPrice;
 
