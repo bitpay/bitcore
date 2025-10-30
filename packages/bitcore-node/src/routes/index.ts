@@ -1,12 +1,12 @@
-import * as apiRoutes from './api';
-import { CacheMiddleware, CacheTimes, LogMiddleware, RateLimiter } from './middleware';
-import type { Request, Response } from 'express';
-import config from '../config';
-import { Config } from '../services/config';
 import cors from 'cors';
 import express from 'express';
+import config from '../config';
+import { Config } from '../services/config';
+import * as apiRoutes from './api';
+import { CacheMiddleware, CacheTimes, LogMiddleware, RateLimiter } from './middleware';
 import { statusRoute } from './status';
 import { Web3Proxy } from './web3';
+import type { Request, Response } from 'express';
 
 const app = express();
 
@@ -47,7 +47,7 @@ app.use(cors());
 app.use(LogMiddleware());
 app.use(CacheMiddleware(CacheTimes.Second, CacheTimes.Second));
 app.use(RateLimiter('GLOBAL', 10, 200, 4000));
-app.use('/api/' + statusRoute.path, statusRoute.router);
+app.use('/api' + statusRoute.path, statusRoute.router);
 // Change aliased chain and network params
 app.param(['chain', 'network'], (req: Request, _: Response, next: any) => {
   const { chain: beforeChain, network: beforeNetwork } = req.params;

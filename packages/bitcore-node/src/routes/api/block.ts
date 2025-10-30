@@ -81,10 +81,10 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: 
   const numOfTxs = await TransactionStorage.collection.countDocuments({ chain, network, blockHash });
   try {
     const txs = await TransactionStorage.collection
-        .find({ chain, network, blockHash })
-        .skip(skips)
-        .limit(maxLimit)
-        .toArray();
+      .find({ chain, network, blockHash })
+      .skip(skips)
+      .limit(maxLimit)
+      .toArray();
 
     if (!txs) {
       return res.status(422).send('No txs for page');

@@ -51,11 +51,11 @@ export default defineConfig([
       'no-undef': 'error',
       'no-async-promise-executor': 'off',
       'semi': ['error', 'always'],
-      'indent': ['error', 2, { SwitchCase: 1 }],
       'no-case-declarations': 'off',
       'no-bitwise': 'error',
       'spaced-comment': ['error', 'always', { exceptions: ['-', '+'] }],
       '@stylistic/object-curly-spacing': ['error', 'always'],
+      '@stylistic/indent': ['error', 2, { SwitchCase: 1 }],
       'object-curly-spacing': ['error', 'always'],
       'key-spacing': ['error', { beforeColon: false, afterColon: true }],
       'comma-spacing': ['error', { before: false, after: true }],
@@ -101,6 +101,8 @@ export default defineConfig([
     },
     rules: {
       '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-this-alias': 'warn',
+      '@typescript-eslint/no-unused-expressions': 'off',
       'sort-imports': 'off',
       'import/order': 'off'
     }

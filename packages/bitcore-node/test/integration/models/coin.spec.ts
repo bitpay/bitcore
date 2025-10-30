@@ -25,7 +25,7 @@ async function addTx(tx: IBtcTransaction, outputs: ICoin[]) {
 async function makeMempoolTxChain(chain: string, network: string, startingTxid: string, chainLength = 1) {
   let txid = startingTxid;
   let nextTxid = createNewTxid();
-  let allTxids = new Array<string>();
+  const allTxids = new Array<string>();
   for (let i = 1; i <= chainLength; i++) {
     const badMempoolTx = {
       chain,
@@ -53,6 +53,7 @@ async function makeMempoolTxChain(chain: string, network: string, startingTxid: 
 }
 
 describe('Coin Model', function() {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
   before(intBeforeHelper);

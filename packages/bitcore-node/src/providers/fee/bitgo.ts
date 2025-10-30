@@ -1,5 +1,5 @@
-import request from 'request';
 import util from 'util';
+import request from 'request';
 import logger from '../../logger';
 import { NetworkType } from '../../types/ChainNetwork';
 import { IFeeProvider } from '../../types/FeeProvider';

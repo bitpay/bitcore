@@ -4,6 +4,7 @@ import { IWallet } from '../../../models/wallet';
 import { IWalletAddress, WalletAddressStorage } from '../../../models/walletAddress';
 import { BlockTransaction } from '../types';
 import { RippleStateProvider } from './csp';
+
 export class RippleWalletTransactions extends Transform {
   walletAddresses?: Array<IWalletAddress>;
   constructor(private wallet: IWallet, private csp: RippleStateProvider) {
@@ -26,7 +27,7 @@ export class RippleWalletTransactions extends Transform {
     const relevantAddresses = (await this.getAddresses()).filter(w => changed.includes(w.address)).map(w => w.address);
     let sending = false;
     let receiving = false;
-    for (let address of relevantAddresses) {
+    for (const address of relevantAddresses) {
       for (const output of changes[address]) {
         if (Number(output.value) > 0) {
           receiving = true;
