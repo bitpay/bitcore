@@ -64,7 +64,7 @@ class Logger {
           const extraArgs = args.slice(1);
           if (console[levelName]) {
             extraArgs.unshift(str);
-            console[levelName].apply(console, extraArgs);
+            console[levelName](...extraArgs);
           } else {
             if (extraArgs.length) {
               str += JSON.stringify(extraArgs);
@@ -127,7 +127,7 @@ class Logger {
       const extraArgs = args.slice(1);
       if (console[levelName]) {
         extraArgs.unshift(str);
-        console[levelName].apply(console, extraArgs);
+        console[levelName](...extraArgs);
       } else {
         if (extraArgs.length) {
           str += JSON.stringify(extraArgs);
