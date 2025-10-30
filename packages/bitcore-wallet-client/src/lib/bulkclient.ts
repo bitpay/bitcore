@@ -157,7 +157,7 @@ export class BulkClient extends Request<Array<Credentials>> {
         customData = JSON.parse(
           Utils.decryptMessage(me.customData, c.personalEncryptingKey)
         );
-      } catch (e) {}
+      } catch {/** no op */}
       if (!customData) return;
 
       // Add it to result
