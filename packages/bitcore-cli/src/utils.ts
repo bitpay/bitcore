@@ -283,8 +283,9 @@ export class Utils {
       case 'bch':
       case 'doge':
       case 'ltc':
+        return (sats / 1e8).toLocaleString('fullwide', { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 8 });
       case 'xrp':
-        return (sats / 1e6).toLocaleString('fullwide', { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 8 });
+        return (sats / 1e6).toLocaleString('fullwide', { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 6 });
       case 'sol':
         return (sats / 1e9).toLocaleString('fullwide', { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 9 });
       default:
@@ -303,6 +304,7 @@ export class Utils {
       case 'bch':
       case 'doge':
       case 'ltc':
+        return BigInt(amount as number * 1e8);
       case 'xrp':
         return BigInt(amount as number * 1e6);
       case 'sol':
