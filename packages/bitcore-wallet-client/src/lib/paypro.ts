@@ -52,7 +52,7 @@ export class PayPro {
 
     try {
       host = URL.parse(requestUrl).hostname;
-    } catch (e) {}
+    } catch {/** no op */}
 
     if (!host) {
       return callback(new Error('Invalid requestUrl'));
@@ -125,7 +125,7 @@ export class PayPro {
       }
 
       return callback(null, keyData.owner);
-    } catch (err) {
+    } catch {
       return callback(new Error('Response signature invalid'));
     }
   }
@@ -202,7 +202,7 @@ export class PayPro {
           let ret;
           try {
             ret = JSON.parse(body);
-          } catch (e) {
+          } catch {
             return cb(new Error('Could not payment request:' + body));
           }
           ret.verified = 1;
@@ -276,7 +276,7 @@ export class PayPro {
       ret.paymentId = data.paymentId;
       try {
         ret.expires = new Date(data.expires).toISOString();
-      } catch (e) {
+      } catch {
         return cb(new Error('Bad expiration'));
       }
       return cb(null, ret);
@@ -307,7 +307,7 @@ export class PayPro {
     opts.noVerify = true;
 
     // verify request
-    PayPro.runRequest(opts, function (err, rawData) {
+    PayPro.runRequest(opts, function (err, _rawData) {
       if (err) {
         console.log(
           'Error at verify-payment:',
@@ -352,7 +352,7 @@ export class PayPro {
           try {
             const data = JSON.parse(rawData.toString());
             memo = data.memo;
-          } catch (e) {
+          } catch {
             console.log('Could not decode paymentACK');
           }
         }
