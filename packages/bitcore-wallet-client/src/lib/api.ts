@@ -728,7 +728,7 @@ export class API extends EventEmitter {
         coin,
         network
       };
-    } catch (ex) {
+    } catch {
       throw new Error('Invalid secret');
     }
   }
@@ -774,7 +774,7 @@ export class API extends EventEmitter {
         };
         t.inputs[i].addSignature(t, s, txp.signingMethod);
         i++;
-      } catch (e) { }
+      } catch {/** no op */}
     }
 
     if (i != txp.inputs.length) throw new Error('Wrong signatures');
@@ -1203,7 +1203,7 @@ export class API extends EventEmitter {
         log.info('Wallet is already created');
         if (cb) { cb(); }
         return;
-      } catch {}
+      } catch {/** no op */}
 
       const c = this.credentials;
       const walletPrivKey = Bitcore.PrivateKey.fromString(c.walletPrivKey);
@@ -1308,7 +1308,7 @@ export class API extends EventEmitter {
         let customData;
         try {
           customData = JSON.parse(Utils.decryptMessage(me.customData, this.credentials.personalEncryptingKey));
-        } catch (e) {
+        } catch {
           log.warn('Could not decrypt customData:', me.customData);
         }
         if (customData) {
@@ -2246,15 +2246,15 @@ export class API extends EventEmitter {
    */
   signTxProposalFromAirGapped(
     /** Transaction proposal to sign */
-    txp: Txp,
+    _txp: Txp,
     /** An encrypted string with the wallet's public key ring */
-    encryptedPkr: string,
+    _encryptedPkr: string,
     /** Number of required signatures */
-    m: number,
+    _m: number,
     /** Number of total signers */
-    n: number,
+    _n: number,
     /** A password to decrypt the encrypted private key (if encryption is set). */
-    password?: PasswordMaybe
+    _password?: PasswordMaybe
   ) {
     throw new Error('signTxProposalFromAirGapped not yet implemented');
     // return API.signTxProposalFromAirGapped(this.credentials, txp, encryptedPkr, m, n, { password });
@@ -2293,16 +2293,16 @@ export class API extends EventEmitter {
    */
   static signTxProposalFromAirGapped(
     /** A mnemonic phrase or an xprv HD private key */
-    key: string,
+    _key: string,
     /** Transaction proposal to sign */
-    txp: Txp,
+    _txp: Txp,
     /** An unencrypted string with the wallet's public key ring */
-    unencryptedPkr: string,
+    _unencryptedPkr: string,
     /** Number of required signatures */
-    m: number,
+    _m: number,
     /** Number of total signers */
-    n: number,
-    opts?: {
+    _n: number,
+    _opts?: {
       /** @deprecated Backward compatibility. Use `chain` instead */
       coin?: string;
       /** Chain to use. Default: 'btc' */
@@ -3221,10 +3221,11 @@ export class API extends EventEmitter {
     const SEP2 = '%^#@';
 
     let decrypted;
+    let passphrase;
     try {
-      var passphrase = username + SEP1 + password;
+      passphrase = username + SEP1 + password;
       decrypted = Encryption.decryptWithPassword(blob, passphrase);
-    } catch (e) {
+    } catch {
       passphrase = username + SEP2 + password;
       try {
         decrypted = Encryption.decryptWithPassword(blob, passphrase);
@@ -3238,7 +3239,7 @@ export class API extends EventEmitter {
     let ret;
     try {
       ret = JSON.parse(decrypted);
-    } catch (e) { }
+    } catch {/** no op */}
     return ret;
   }
 
