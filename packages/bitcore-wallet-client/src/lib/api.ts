@@ -3399,7 +3399,7 @@ export class API extends EventEmitter {
     const keyCredentialIndex: { credentials: Credentials; key: Key; opts: any; status?: string }[] = [];
     const clients = [];
     let k: Key;
-    let sets: Array<{ nonCompliantDerivation: boolean; useLegacyCoinType?: boolean; useLegacyPurpose: boolean; passphrase?: any }> = [
+    const sets: Array<{ nonCompliantDerivation: boolean; useLegacyCoinType?: boolean; useLegacyPurpose: boolean; passphrase?: any }> = [
       {
         // current wallets: /[44,48]/[0,145]'/
         nonCompliantDerivation: false,
@@ -3436,7 +3436,7 @@ export class API extends EventEmitter {
         }
       ];
   
-      sets = sets.concat(legacyOpts);
+      sets.push(...legacyOpts);
     }
 
     const generateCredentials = (key, opts) => {
