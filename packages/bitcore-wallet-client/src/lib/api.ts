@@ -3,6 +3,7 @@
 import { EventEmitter } from 'events';
 import querystring from 'querystring';
 import async from 'async';
+import Bip38 from 'bip38';
 import Mnemonic from 'bitcore-mnemonic';
 import * as CWC from 'crypto-wallet-core';
 import { singleton } from 'preconditions';
@@ -473,7 +474,6 @@ export class API extends EventEmitter {
       log.warn('DEPRECATED: decryptBIP38PrivateKey will remove callback support in the future.');
     }
     try {
-      const Bip38 = require('bip38');
       const bip38 = new Bip38();
 
       let privateKeyWif;

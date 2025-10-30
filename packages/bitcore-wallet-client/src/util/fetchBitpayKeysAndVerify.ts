@@ -1,7 +1,9 @@
-const ncrypto = require('crypto'); // renamed in order to prevent redeclaration of block-scoped variable 'crypto' from typescript dom library
-const bs58 = require('bs58');
-const kbpgp = require('kbpgp');
-const request = require('request-promise');
+import * as ncrypto from 'crypto'; // renamed in order to prevent redeclaration of block-scoped variable 'crypto' from typescript dom library
+import * as fs from 'fs';
+import * as bs58 from 'bs58';
+import { unbox } from 'kbpgp/lib/openpgp/hilev';
+import { KeyManager } from 'kbpgp/lib/openpgp/keymanager';
+import request from 'request-promise';
 
 const bitpayPgpKeys = {};
 const githubPgpKeys = {};
@@ -117,7 +119,7 @@ Promise.all(keyRequests)
     return Promise.all(
       Object.values(bitpayPgpKeys).map(pgpKeyString => {
         return new Promise<void>((resolve, reject) => {
-          kbpgp.KeyManager.import_from_armored_pgp(
+          KeyManager.import_from_armored_pgp(
             { armored: pgpKeyString },
             (err, km) => {
               if (err) {
@@ -186,7 +188,7 @@ Promise.all(keyRequests)
               'hex'
             ).toString();
 
-            kbpgp.unbox(
+            unbox(
               {
                 armored: armoredSignature,
                 data: Buffer.from(eccPayload),
@@ -255,7 +257,6 @@ Promise.all(keyRequests)
 
       console.log(keyMap);
 
-      const fs = require('fs');
       fs.writeFileSync(
         'JsonPaymentProtocolKeys.js',
         'module.exports = ' + JSON.stringify(keyMap, null, 2)
