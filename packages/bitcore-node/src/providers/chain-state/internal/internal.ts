@@ -543,7 +543,7 @@ export class InternalStateProvider implements IChainStateService {
     const start = startDate && isValidDate(startDate) ? new Date(startDate) : oneMonth;
     const end = endDate && isValidDate(endDate) ? formatDate(new Date(endDate)) : todayTruncatedUTC;
     const results = await BitcoinBlockStorage.collection
-      .aggregate<{ date: string, transactionCount: number }>([
+      .aggregate<{ date: string; transactionCount: number }>([
         {
           $match: {
             chain,
@@ -669,9 +669,9 @@ export class InternalStateProvider implements IChainStateService {
   }
 
   async getBlockFee(params: {
-    chain: string,
-    network: string,
-    blockId: string
+    chain: string;
+    network: string;
+    blockId: string;
   }) {
     const { chain, network, blockId } = params;
     const transactions = blockId.length >= 64 

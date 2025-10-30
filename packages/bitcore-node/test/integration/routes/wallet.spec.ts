@@ -83,18 +83,18 @@ function getSignature(privateKey, method: 'GET' | 'POST' | 'reprocess', url: str
   return Buffer.from(secp256k1.ecdsaSign(messageHash, privateKey.toBuffer()).signature).toString('hex');
 }
 async function addTransaction(params: {
-  senderAddress: string,
-  recieverAddress: string,
-  value: number,
-  fee?: number
+  senderAddress: string;
+  recieverAddress: string;
+  value: number;
+  fee?: number;
 }) {
   const { senderAddress, recieverAddress, value, fee=0 } = params;
   await addMultiIOTransaction({ senderAddresses: [senderAddress], recipients: [{ address: recieverAddress, value }], fee });
 }
 async function addMultiIOTransaction(params: { 
-  senderAddresses: string[] | 'coinbase', 
-  recipients: { address: string, value: number }[],
-  fee?: number
+  senderAddresses: string[] | 'coinbase'; 
+  recipients: { address: string; value: number }[];
+  fee?: number;
 }) {
   const { senderAddresses, recipients, fee = 0 } = params;
   const chain = 'BTC';
@@ -268,7 +268,7 @@ async function addMultiIOTransaction(params: {
 }
 
 async function addBlock(params?: {
-  time?: Date
+  time?: Date;
 }) {
   let { time } = params || {};
   const chain = 'BTC';
@@ -337,7 +337,7 @@ describe('Wallet Routes', function() {
     await intAfterHelper();
   });
 
-  const updateWallet = async (params: { privKey, pubKey, address }) => {
+  const updateWallet = async (params: { privKey; pubKey; address }) => {
     const { privKey, pubKey, address } = params;
 
     const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}`;

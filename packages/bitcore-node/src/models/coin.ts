@@ -189,7 +189,7 @@ export class CoinModel extends BaseModel<ICoin> {
       .toArray();
   }
 
-  _apiTransform(coin: Partial<MongoBound<ICoin>>, options?: { object: boolean; confirmations?: number; }): any {
+  _apiTransform(coin: Partial<MongoBound<ICoin>>, options?: { object: boolean; confirmations?: number }): any {
     // try to parse coin.address if its 'false' and script exists
     if (coin.address == 'false' && coin.script != undefined && coin.script.toString() != '') {
       try {

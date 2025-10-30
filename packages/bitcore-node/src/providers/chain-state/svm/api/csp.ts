@@ -21,7 +21,7 @@ import {
 import { ExternalApiStream } from '../../external/streams/apiStream';
 import { InternalStateProvider } from '../../internal/internal';
 
-export interface GetSolWeb3Response { rpc: SolRpc; connection: any; umi: any; dataType: string; };
+export interface GetSolWeb3Response { rpc: SolRpc; connection: any; umi: any; dataType: string };
 
 export class BaseSVMStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<ISVMNetworkConfig>;
@@ -791,7 +791,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   async getSPLTokenInfo(
     network: string, 
     tokenAddress: string
-  ): Promise<{ name: string; symbol: string; decimals: number; programType: string | undefined; programAddress: string | undefined; }> {
+  ): Promise<{ name: string; symbol: string; decimals: number; programType: string | undefined; programAddress: string | undefined }> {
     const TOKEN_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
     const TOKEN_2022_ADDR = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
     const { umi, connection } = await this.getRpc(network);

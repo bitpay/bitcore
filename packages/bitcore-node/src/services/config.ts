@@ -54,7 +54,7 @@ export class ConfigService {
     return disabled;
   }
 
-  public aliasFor({ chain, network }: { chain: string, network: string }) {
+  public aliasFor({ chain, network }: { chain: string; network: string }) {
     let aliasChain = chain;
     let aliasNetwork = network;
     const aliasMapping = this.get().aliasMapping;

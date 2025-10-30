@@ -2,9 +2,9 @@ import * as worker from 'worker_threads';
 import { IChainConfig, IEVMNetworkConfig, IProvider } from '../../../../types/Config';
 
 const getProvider = (params: {
-  network: string,
-  dataType: string | undefined,
-  config: IChainConfig<IEVMNetworkConfig>
+  network: string;
+  dataType: string | undefined;
+  config: IChainConfig<IEVMNetworkConfig>;
 }): IProvider => {
   const { network, config, dataType } = params;
   if (config[network]?.provider && matchProviderType(config[network].provider, dataType)) {
