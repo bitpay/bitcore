@@ -376,7 +376,6 @@ export class API extends EventEmitter {
       };
 
       const hardcodedOk = opts.skipDeviceValidation ? true : testHardcodedKeys();
-      const _deviceValidated = !opts.skipDeviceValidation;
 
       // TODO
       //  var liveOk = (c.canSign() && !c.isPrivKeyEncrypted()) ? testLiveKeys() : true;
@@ -3400,7 +3399,7 @@ export class API extends EventEmitter {
     const keyCredentialIndex: { credentials: Credentials; key: Key; opts: any; status?: string }[] = [];
     const clients = [];
     let k: Key;
-    let sets = [
+    let sets: Array<{ nonCompliantDerivation: boolean; useLegacyCoinType?: boolean; useLegacyPurpose: boolean; passphrase?: any }> = [
       {
         // current wallets: /[44,48]/[0,145]'/
         nonCompliantDerivation: false,
@@ -3436,7 +3435,7 @@ export class API extends EventEmitter {
           useLegacyPurpose: true
         }
       ];
-      // @ts-ignore
+  
       sets = sets.concat(legacyOpts);
     }
 
