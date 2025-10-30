@@ -135,12 +135,10 @@ export class Verifier {
       if (!strEqual(o1.toAddress, o2.toAddress)) return false;
       if (!strEqual(o1.script, o2.script)) return false;
       if (o1.amount != o2.amount) return false;
-      var decryptedMessage = null;
+      let decryptedMessage: boolean | string = false;
       try {
         decryptedMessage = Utils.decryptMessage(o2.message, encryptingKey);
-      } catch (e) {
-        return false;
-      }
+      } catch {/** no op - use default (false) */}
       if (!strEqual(o1.message, decryptedMessage)) return false;
     }
 
@@ -154,12 +152,10 @@ export class Verifier {
       return false;
     if (!strEqual(txp.payProUrl, args.payProUrl)) return false;
 
-    var decryptedMessage = null;
+    let decryptedMessage: boolean | string = false;
     try {
       decryptedMessage = Utils.decryptMessage(args.message, encryptingKey);
-    } catch (e) {
-      return false;
-    }
+    } catch {/** no op - use default (false) */}
     if (!strEqual(txp.message, decryptedMessage)) return false;
     if (
       (args.customData || txp.customData) &&
@@ -242,14 +238,11 @@ export class Verifier {
   }
 
   static checkPaypro(txp, payproOpts) {
-    let toAddress, amount, feeRate;
+    let toAddress, amount;
 
     if (parseInt(txp.version) >= 3) {
       toAddress = txp.outputs[0].toAddress;
       amount = txp.amount;
-      if (txp.feePerKb) {
-        feeRate = txp.feePerKb / 1024;
-      }
     } else {
       toAddress = txp.toAddress;
       amount = txp.amount;
