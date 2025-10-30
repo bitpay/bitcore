@@ -179,22 +179,22 @@ export class BulkClient extends Request<Array<Credentials>> {
     const walletName = Utils.decryptMessageNoThrow(wallet.name, encryptingKey);
     if (walletName != wallet.name) {
       wallet.encryptedName = wallet.name;
+      wallet.name = walletName;
     }
-    wallet.name = walletName;
     for (const copayer of wallet.copayers || []) {
       const copayerName = Utils.decryptMessageNoThrow(copayer.name, encryptingKey);
       if (copayerName != copayer.name) {
         copayer.encryptedName = copayer.name;
+        copayer.name = copayerName;
       }
-      copayer.name = copayerName;
       for (const access of copayer.requestPubKeys || []) {
         if (!access.name) return;
 
         const accessName = Utils.decryptMessageNoThrow(access.name, encryptingKey);
         if (accessName != access.name) {
           access.encryptedName = access.name;
+          access.name = accessName;
         }
-        access.name = accessName;
       }
     }
   }
