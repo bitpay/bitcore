@@ -1,13 +1,13 @@
 import { BitcoreLib } from 'crypto-wallet-core';
-import { Errors } from './errors/errordefinitions'
+import { Errors } from './errors/errordefinitions';
 import logger from './logger';
 import { ITssKeyMessageObject, TssKeyGenModel } from './model/tsskeygen';
 import { ITssSigMessageObject, TssSigGenModel } from './model/tsssign';
-import { checkRequired, WalletService } from './server';
+import { WalletService, checkRequired } from './server';
 import { Storage } from './storage';
 
 class TssKeyGenClass {
-   async getMessagesForParty(params: {
+  async getMessagesForParty(params: {
     id: string;
     round: number;
     copayerId: string;
@@ -435,7 +435,7 @@ class TssSignClass {
       s: signature.s,
       v: signature.v,
       pubKey: signature.pubKey,
-    }});
+    } });
     if (!result.result.ok) {
       logger.error('Failed to store TSS signature %o %o', id, result);
       throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS signature');

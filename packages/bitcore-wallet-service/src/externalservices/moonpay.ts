@@ -45,7 +45,7 @@ export class MoonpayService {
         'Content-Type': 'application/json'
       };
 
-      const URL = API + '/v3/currencies/'
+      const URL = API + '/v3/currencies/';
 
       this.request.get(
         URL,
@@ -167,7 +167,7 @@ export class MoonpayService {
       if (req.body.areFeesIncluded) qs.push('areFeesIncluded=' + encodeURIComponent(req.body.areFeesIncluded));
       if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
 
-      const URL = API + `/v3/currencies/${req.body.currencyAbbreviation}/limits/?${qs.join('&')}`
+      const URL = API + `/v3/currencies/${req.body.currencyAbbreviation}/limits/?${qs.join('&')}`;
 
       this.request.get(
         URL,
@@ -205,11 +205,7 @@ export class MoonpayService {
       throw new ClientError("Moonpay's request missing arguments");
     }
 
-    const headers = {
-      'Content-Type': 'application/json'
-    };
-
-    let qs: string[] = [];
+    const qs: string[] = [];
     qs.push('apiKey=' + API_KEY);
     qs.push('currencyCode=' + encodeURIComponent(req.body.currencyCode));
     qs.push('walletAddress=' + encodeURIComponent(req.body.walletAddress));
@@ -252,11 +248,7 @@ export class MoonpayService {
       throw new ClientError("Moonpay's request missing arguments");
     }
 
-    const headers = {
-      'Content-Type': 'application/json'
-    };
-
-    let qs: string[] = [];
+    const qs: string[] = [];
     qs.push('apiKey=' + API_KEY);
     qs.push('baseCurrencyCode=' + encodeURIComponent(req.body.baseCurrencyCode));
     qs.push('baseCurrencyAmount=' + encodeURIComponent(req.body.baseCurrencyAmount));

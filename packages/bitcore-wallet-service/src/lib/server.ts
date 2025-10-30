@@ -4,7 +4,6 @@ import {
   BitcoreLibCash as BitcoreCash,
   BitcoreLibDoge as BitcoreDoge,
   BitcoreLibLtc as BitcoreLtc,
-  Constants as ConstantsCWC,
   Validation
 } from 'crypto-wallet-core';
 import EmailValidator from 'email-validator';
@@ -29,8 +28,6 @@ import { ThorswapService } from '../externalservices/thorswap';
 import { TransakService } from '../externalservices/transak';
 import { WyreService } from '../externalservices/wyre';
 import { serverMessages } from '../serverMessages';
-import type { ExternalServicesConfig } from '../types/externalservices';
-import type { GetAddressesOpts, UpgradeCheckOpts } from '../types/server';
 import { BCHAddressTranslator } from './bchaddresstranslator';
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
@@ -58,6 +55,8 @@ import {
   Wallet
 } from './model';
 import { Storage } from './storage';
+import type { ExternalServicesConfig } from '../types/externalservices';
+import type { GetAddressesOpts, UpgradeCheckOpts } from '../types/server';
 
 let request = _request;
 const $ = singleton();
@@ -160,7 +159,7 @@ export class WalletService implements IWalletService {
     transak: TransakService;
     wyre: WyreService;
     coinGecko: CoinGeckoService,
-  }
+  };
 
   constructor() {
     if (!initialized) {
@@ -190,7 +189,7 @@ export class WalletService implements IWalletService {
       transak: new TransakService(),
       wyre: new WyreService(),
       coinGecko: new CoinGeckoService(this.storage),
-    }
+    };
   }
   /**
    * Gets the current version of BWS
@@ -564,7 +563,7 @@ export class WalletService implements IWalletService {
     );
   }
 
-  logout(opts, cb) {
+  logout(_opts, _cb) {
     // this.storage.removeSession(this.copayerId, cb);
   }
 
@@ -631,7 +630,7 @@ export class WalletService implements IWalletService {
       // NOTE: this is just a shared pub key as part of the multisig
       // join secret. It's NOT the wallet's main xPubKey.
       pubKey = new Bitcore.PublicKey.fromString(opts.pubKey);
-    } catch (ex) {
+    } catch {
       return cb(new ClientError('Invalid public key'));
     }
 
@@ -1199,7 +1198,7 @@ export class WalletService implements IWalletService {
       if (!checkRequired(opts, ['xPubKey'], cb)) return;
       try {
         xPubKey = Bitcore_[opts.chain].HDPublicKey(opts.xPubKey);
-      } catch (ex) {
+      } catch {
         return cb(new ClientError('Invalid extended public key'));
       }
       if (xPubKey.network == null) {
@@ -1544,7 +1543,7 @@ export class WalletService implements IWalletService {
   }
 
   _store(wallet, address, cb, checkSync = false, forceSync = false) {
-    let stoAddress = _.clone(address);
+    const stoAddress = _.clone(address);
     ChainService.addressToStorageTransform(wallet.chain, wallet.network, stoAddress);
     this.storage.storeAddressAndWallet(wallet, stoAddress, (err, isDuplicate) => {
       if (err) return cb(err);
@@ -1745,12 +1744,11 @@ export class WalletService implements IWalletService {
     const utxoKey = utxo => utxo.txid + '|' + utxo.vout;
 
     let allAddresses,
-        allUtxos,
-        utxoIndex,
-        addressStrs: string[],
-        bc: V8,
-        wallet: Wallet,
-        blockchainHeight: number;
+      allUtxos,
+      utxoIndex,
+      bc: V8,
+      wallet: Wallet,
+      blockchainHeight: number;
     async.series(
       [
         next => {
@@ -1784,12 +1782,11 @@ export class WalletService implements IWalletService {
           });
         },
         next => {
-          addressStrs = allAddresses.map(a => a.address);
           return next();
         },
         next => {
           if (!wallet.isComplete()) return next();
-          this._getBlockchainHeight(wallet.chain, wallet.network, (err, height, hash) => {
+          this._getBlockchainHeight(wallet.chain, wallet.network, (err, height, _hash) => {
             if (err) return next(err);
             blockchainHeight = height;
             next();
@@ -1961,14 +1958,14 @@ export class WalletService implements IWalletService {
         let addrObj: { network?: { name?: string } } = {};
         try {
           addrObj = new A(address);
-        } catch (ex) {
+        } catch {
           return cb(null, []);
         }
         if (!Utils.compareNetworks(addrObj.network.name.toLowerCase(), wallet.network.toLowerCase(), wallet.chain)) {
           return cb(null, []);
         }
 
-        this._getBlockchainHeight(wallet.chain, wallet.network, (err, height, hash) => {
+        this._getBlockchainHeight(wallet.chain, wallet.network, (err, height, _hash) => {
           if (err) return cb(err);
           bc.getAddressUtxos(address, height, (err, utxos) => {
             if (err) return cb(err);
@@ -2298,7 +2295,7 @@ export class WalletService implements IWalletService {
     });
   }
 
-  _validateOutputs(opts, wallet, cb) {
+  _validateOutputs(opts, wallet) {
     if (_.isEmpty(opts.outputs)) return new ClientError('No outputs were specified');
 
     for (let i = 0; i < opts.outputs.length; i++) {
@@ -2392,7 +2389,7 @@ export class WalletService implements IWalletService {
           );
         },
         next => {
-          const validationError = this._validateOutputs(opts, wallet, next);
+          const validationError = this._validateOutputs(opts, wallet);
           if (validationError) {
             return next(validationError);
           }
@@ -2623,7 +2620,7 @@ export class WalletService implements IWalletService {
           if (wallet.scanStatus == 'error') return cb(Errors.WALLET_NEED_SCAN);
 
           if (config.suspendedChains && config.suspendedChains.includes(wallet.chain)) {
-            let Err = Errors.NETWORK_SUSPENDED;
+            const Err = Errors.NETWORK_SUSPENDED;
             Err.message = Err.message.replace('$network', wallet.chain.toUpperCase());
             return cb(Err);
           }
@@ -2882,7 +2879,7 @@ export class WalletService implements IWalletService {
         if (err) return cb(err);
 
         if (config.suspendedChains && config.suspendedChains.includes(wallet.chain)) {
-          let Err = Errors.NETWORK_SUSPENDED;
+          const Err = Errors.NETWORK_SUSPENDED;
           Err.message = Err.message.replace('$network', wallet.chain.toUpperCase());
           return cb(Err);
         }
@@ -3163,7 +3160,7 @@ export class WalletService implements IWalletService {
       if (err) return cb(err);
 
       if (config.suspendedChains && config.suspendedChains.includes(wallet.chain)) {
-        let Err = Errors.NETWORK_SUSPENDED;
+        const Err = Errors.NETWORK_SUSPENDED;
         Err.message = Err.message.replace('$network', wallet.chain.toUpperCase());
         return cb(Err);
       }
@@ -3190,7 +3187,7 @@ export class WalletService implements IWalletService {
           if ([...Object.keys(Constants.EVM_CHAINS), 'XRP'].includes(wallet.chain.toUpperCase())) {
             try {
               const txps = await this.getPendingTxsPromise({});
-              for (let t of txps) {
+              for (const t of txps) {
                 if (t.id !== txp.id && t.nonce <= txp.nonce && t.status !== 'rejected') {
                   return cb(Errors.TX_NONCE_CONFLICT);
                 }
@@ -3283,7 +3280,7 @@ export class WalletService implements IWalletService {
       if (err) return cb(err);
 
       if (config.suspendedChains && config.suspendedChains.includes(wallet.chain)) {
-        let Err = Errors.NETWORK_SUSPENDED;
+        const Err = Errors.NETWORK_SUSPENDED;
         Err.message = Err.message.replace('$network', wallet.chain.toUpperCase());
         return cb(Err);
       }
@@ -3486,7 +3483,7 @@ export class WalletService implements IWalletService {
     return new Promise((resolve, reject) => {
       this.getPendingTxs(opts, (err, txps) => {
         if (err) return reject(err);
-        return resolve(txps)
+        return resolve(txps);
       });
     });
   }
@@ -3544,7 +3541,6 @@ export class WalletService implements IWalletService {
     if (!txs?.length) return cb(null, txs);
 
     // console.log('[server.js.2915:txs:] IN NORMALIZE',txs); //TODO
-    const now = Math.floor(Date.now() / 1000);
 
     // One fee per TXID
     const indexedFee: any = _.keyBy(txs.filter(tx => tx.category === 'fee'), 'txid');
@@ -3805,7 +3801,7 @@ export class WalletService implements IWalletService {
             return cb(null, isOK);
           }
 
-          this.storage.setWalletAddressChecked(wallet.id, totalAddresses, err => {
+          this.storage.setWalletAddressChecked(wallet.id, totalAddresses, () => {
             return cb(null, isOK);
           });
         });
@@ -3864,7 +3860,7 @@ export class WalletService implements IWalletService {
             }, { reprocess: force });
           };
 
-          syncAddr(addresses, err => {
+          syncAddr(addresses, () => {
             if (skipCheck || doNotCheckV8) return cb();
 
             this.checkWalletSync(bc, wallet, false, (err, isOK) => {
@@ -3995,10 +3991,6 @@ export class WalletService implements IWalletService {
         return _.pick(action, ['createdOn', 'type', 'copayerId', 'copayerName', 'comment']);
       });
       for (const output of tx.outputs || []) {
-        const query = {
-          toAddress: output.address,
-          amount: output.amount
-        };
         if (proposal.outputs) {
           const txpOut = proposal.outputs.find(o => o.toAddress === output.address && o.amount === output.amount);
           output.message = txpOut ? txpOut.message : null;
@@ -4046,7 +4038,7 @@ export class WalletService implements IWalletService {
         }
 
         if (!result) {
-          let x = new Advertisement();
+          const x = new Advertisement();
 
           x.advertisementId = opts.advertisementId || Uuid.v4();
           x.name = opts.name;
@@ -4074,11 +4066,7 @@ export class WalletService implements IWalletService {
         checkIfAdvertExistsAlready(opts.adId, (err, advert) => {
           if (err) throw err;
           if (advert) {
-            try {
-              this.storage.storeAdvert(advert, cb);
-            } catch (err) {
-              throw err;
-            }
+            this.storage.storeAdvert(advert, cb);
           }
         });
       },
@@ -4170,20 +4158,16 @@ export class WalletService implements IWalletService {
       });
     };
 
-    try {
-      this._runLocked(
-        cb,
-        cb => {
-          checkIfAdvertExistsAlready(opts.adId, (err, adId) => {
-            if (err) throw err;
-            this.storage.removeAdvert(adId, cb); // TODO: add to errordefinitions Errors.ADVERTISEMENT already exists
-          });
-        },
-        10 * 1000
-      );
-    } catch (err) {
-      throw err;
-    }
+    this._runLocked(
+      cb,
+      cb => {
+        checkIfAdvertExistsAlready(opts.adId, (err, adId) => {
+          if (err) throw err;
+          this.storage.removeAdvert(adId, cb); // TODO: add to errordefinitions Errors.ADVERTISEMENT already exists
+        });
+      },
+      10 * 1000
+    );
   }
 
   activateAdvert(opts, cb) {
@@ -4243,7 +4227,6 @@ export class WalletService implements IWalletService {
   getTxHistoryV8(bc: V8, wallet, opts, skip, limit, cb) {
     let bcHeight,
       bcHash,
-      sinceTx,
       lastTxs,
       cacheStatus,
       resultTxs = [],
@@ -4691,11 +4674,9 @@ export class WalletService implements IWalletService {
           if (step > 1) {
             this.logd('Deriving addresses for scan steps gaps DERIVATOR:' + derivator.id);
 
-            let addr,
-              i = 0;
+            let addr;
             while ((addr = derivator.getSkippedAddress())) {
               addresses.push(addr);
-              i++;
             }
             // this.logi(i + ' addresses were added.');
           }
@@ -4926,7 +4907,7 @@ export class WalletService implements IWalletService {
    * @param {Object} opts.platform - (Optional) Operating system and version of the user's device.
    */
   getServicesData(opts, cb) {
-    let externalServicesConfig: ExternalServicesConfig = _.cloneDeep(config.services);
+    const externalServicesConfig: ExternalServicesConfig = _.cloneDeep(config.services);
 
     const isLoggedIn = !!opts?.bitpayIdLocationCountry;
 
@@ -5085,7 +5066,6 @@ export class WalletService implements IWalletService {
     paths = Array.isArray(paths) ? paths : [paths];
     const chain = opts.chain?.toLowerCase();
     const v = Utils.parseVersion(opts.clientVersion);
-    const a = Utils.parseAppVersion(opts.userAgent);
 
     let result: boolean | string = false;
     for (const path of paths) {
@@ -5111,8 +5091,8 @@ export class WalletService implements IWalletService {
               (v.major == 8 && v?.minor < 3)
             )
           )
-          ? 'BWC clients < 8.3 are no longer supported for multisig BCH wallets.'
-          : false;
+            ? 'BWC clients < 8.3 are no longer supported for multisig BCH wallets.'
+            : false;
           break;
         case UPGRADES.bwc_$lt_8_4_multisig_purpose48:
           result = (
@@ -5141,8 +5121,8 @@ export class WalletService implements IWalletService {
             v?.agent === 'bwc' &&
             (v?.major == 0 || (v?.major == 1 && v?.minor < 2))
           )
-          ? 'BWC clients < 1.2 are no longer supported.'
-          : false;
+            ? 'BWC clients < 1.2 are no longer supported.'
+            : false;
           break;
         default:
           throw new Error('Unknown upgrade path');
@@ -5165,7 +5145,7 @@ export class WalletService implements IWalletService {
       ...opts,
       clientVersion: this.clientVersion,
       userAgent: this.userAgent
-    }
+    };
     return WalletService.upgradeNeeded(paths, _opts);
   }
 
@@ -5190,7 +5170,11 @@ export class WalletService implements IWalletService {
 
   moralisGetTokenAllowance(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      let keys, headers;
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Api-Key': config.moralis.apiKey,
+      };
 
       if (!config.moralis) return reject(new Error('Moralis missing credentials'));
       if (!checkRequired(req.body, ['address']) && !checkRequired(req.body, ['ownerAddress'])) {
@@ -5199,7 +5183,7 @@ export class WalletService implements IWalletService {
 
       const walletAddress = req.body.ownerAddress ?? req.body.address;
 
-      let qs = [];
+      const qs = [];
       if (req.body.chain) {
         const chain = req.body.chain;
         const formattedChain = typeof chain === 'number' && Number.isInteger(chain)
@@ -5211,13 +5195,7 @@ export class WalletService implements IWalletService {
       if (req.body.cursor) qs.push('cursor=' + req.body.cursor);
       if (req.body.limit) qs.push('limit=' + req.body.limit);
 
-      const URL: string = `https://deep-index.moralis.io/api/v2.2/wallets/${walletAddress}/approvals${qs.length > 0 ? '?' + qs.join('&') : ''}`
-
-      headers = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'X-Api-Key': config.moralis.apiKey,
-      };
+      const URL: string = `https://deep-index.moralis.io/api/v2.2/wallets/${walletAddress}/approvals${qs.length > 0 ? '?' + qs.join('&') : ''}`;
 
       this.request.get(
         URL,
@@ -5307,14 +5285,18 @@ export class WalletService implements IWalletService {
 
   moralisGetERC20TokenBalancesWithPricesByWallet(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      let keys, headers;
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Api-Key': config.moralis.apiKey,
+      };
 
       if (!config.moralis) return reject(new Error('Moralis missing credentials'));
       if (!checkRequired(req.body, ['address'])) {
         return reject(new ClientError('moralisGetERC20TokenBalancesWithPricesByWallet request missing arguments'));
       }
 
-      let qs = [];
+      const qs = [];
       if (req.body.chain) qs.push('chain=' + req.body.chain);
       if (req.body.toBlock) qs.push('to_block=' + req.body.toBlock);
       if (req.body.tokenAddresses) qs.push('token_addresses=' + req.body.tokenAddresses);
@@ -5323,13 +5305,7 @@ export class WalletService implements IWalletService {
       if (req.body.limit) qs.push('limit=' + req.body.limit);
       if (req.body.excludeNative) qs.push('exclude_native=' + req.body.excludeNative);
 
-      const URL: string = `https://deep-index.moralis.io/api/v2.2/wallets/${req.body.address}/tokens${qs.length > 0 ? '?' + qs.join('&') : ''}`
-
-      headers = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'X-Api-Key': config.moralis.apiKey,
-      };
+      const URL: string = `https://deep-index.moralis.io/api/v2.2/wallets/${req.body.address}/tokens${qs.length > 0 ? '?' + qs.join('&') : ''}`;
 
       this.request.get(
         URL,

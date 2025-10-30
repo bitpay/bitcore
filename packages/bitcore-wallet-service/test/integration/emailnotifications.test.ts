@@ -78,7 +78,7 @@ describe('Email notifications', function() {
       mailerStub = sinon.stub();
       mailerStub.send = sinon.stub();
       mailerStub.send.returns(Promise.resolve('ok'));
-      //mailerStub.returns(Promise.reject('err'));
+      // mailerStub.returns(Promise.reject('err'));
 
       emailService = new EmailService();
       await util.promisify(emailService.start).call(emailService, {
@@ -550,7 +550,7 @@ describe('Email notifications', function() {
 
   describe('1-1 wallet', function() {
     beforeEach(async function() {
-      ({ server, wallet } = await helpers.createAndJoinWallet(1, 1,  { coin:'bch' }));
+      ({ server, wallet } = await helpers.createAndJoinWallet(1, 1, { coin: 'bch' }));
       for (let i = 0; i < wallet.copayers.length; i++) {
         const copayer = wallet.copayers[i];
         const s = await helpers.getAuthServer(copayer.id);
@@ -563,7 +563,7 @@ describe('Email notifications', function() {
       mailerStub = sinon.stub();
       mailerStub.send = sinon.stub();
       mailerStub.send.returns(Promise.resolve('ok'));
-      //mailerStub.returns(Promise.reject('err'));
+      // mailerStub.returns(Promise.reject('err'));
 
       emailService = new EmailService();
       await util.promisify(emailService.start).call(emailService, {
@@ -627,7 +627,7 @@ describe('Email notifications', function() {
 
   describe('custom ERC20 wallet', () => {
     beforeEach(async () => {
-      ({ server, wallet } = await helpers.createAndJoinWallet(1, 1,  {coin:'eth'}));
+      ({ server, wallet } = await helpers.createAndJoinWallet(1, 1, { coin: 'eth' }));
       for (let i = 0; i < wallet.copayers.length; i++) {
         const copayer = wallet.copayers[i];
         const s = await helpers.getAuthServer(copayer.id);
@@ -640,7 +640,7 @@ describe('Email notifications', function() {
       mailerStub = sinon.stub();
       mailerStub.send = sinon.stub();
       mailerStub.send.returns(Promise.resolve('ok'));
-      //mailerStub.returns(Promise.reject('err'));
+      // mailerStub.returns(Promise.reject('err'));
 
       emailService = new EmailService();
       getTokenDataStub = sinon.stub(emailService, 'getTokenData').callsFake(() => TestData.CoinGecko_ETH_Tokens.tokens);
@@ -675,44 +675,44 @@ describe('Email notifications', function() {
     });
 
     it('should send notification if the tx is custom token', (done) => {
-        server.createAddress({}, (err, address) => {
-          should.not.exist(err);
+      server.createAddress({}, (err, address) => {
+        should.not.exist(err);
 
-          // Intercept the msg handler so we can run test assersions on callback
-          sendEmailInterceptor(function() {
-            var calls = mailerStub.send.getCalls();
-            calls.length.should.equal(1);
-            var emails = calls.map(c => c.args[0]);
-            Utils.difference(['copayer1@domain.com'], emails.map(e => e.to)).should.be.empty;
-            var one = emails[0];
-            one.from.should.equal('bws@dummy.net');
-            one.subject.should.contain('New payment received');
-            one.text.should.contain('4.00 BAT');
-            server.storage.fetchUnsentEmails(function(err, unsent) {
-              should.not.exist(err);
-              unsent.should.be.empty;
-              done();
-            });
-          });
-
-          // Simulate incoming tx notification
-          server._notify('NewIncomingTx', {
-            txid: '999',
-            address: address,
-            amount: 4e18,
-            tokenAddress: CUSTOM_TOKENS[0]
-          }, {
-            isGlobal: true
-          }, (err) => {
+        // Intercept the msg handler so we can run test assersions on callback
+        sendEmailInterceptor(function() {
+          var calls = mailerStub.send.getCalls();
+          calls.length.should.equal(1);
+          var emails = calls.map(c => c.args[0]);
+          Utils.difference(['copayer1@domain.com'], emails.map(e => e.to)).should.be.empty;
+          var one = emails[0];
+          one.from.should.equal('bws@dummy.net');
+          one.subject.should.contain('New payment received');
+          one.text.should.contain('4.00 BAT');
+          server.storage.fetchUnsentEmails(function(err, unsent) {
             should.not.exist(err);
+            unsent.should.be.empty;
+            done();
           });
         });
+
+        // Simulate incoming tx notification
+        server._notify('NewIncomingTx', {
+          txid: '999',
+          address: address,
+          amount: 4e18,
+          tokenAddress: CUSTOM_TOKENS[0]
+        }, {
+          isGlobal: true
+        }, (err) => {
+          should.not.exist(err);
+        });
+      });
     });
   });
 
   describe('ERC20 wallet', () => {
     beforeEach(async () => {
-      ({ server, wallet } = await helpers.createAndJoinWallet(1, 1,  {coin:'eth'}));
+      ({ server, wallet } = await helpers.createAndJoinWallet(1, 1, { coin: 'eth' }));
       for (let i = 0; i < wallet.copayers.length; i++) {
         const copayer = wallet.copayers[i];
         const s = await helpers.getAuthServer(copayer.id);
@@ -725,7 +725,7 @@ describe('Email notifications', function() {
       mailerStub = sinon.stub();
       mailerStub.send = sinon.stub();
       mailerStub.send.returns(Promise.resolve('ok'));
-      //mailerStub.returns(Promise.reject('err'));
+      // mailerStub.returns(Promise.reject('err'));
 
       emailService = new EmailService();
       await util.promisify(emailService.start).call(emailService, {

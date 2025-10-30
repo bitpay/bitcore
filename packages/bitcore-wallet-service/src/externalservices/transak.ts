@@ -54,7 +54,7 @@ export class TransakService {
 
       const body = {
         apiKey: API_KEY
-      }
+      };
 
       const URL: string = API + '/partners/api/v2/refresh-token';
 
@@ -261,11 +261,11 @@ export class TransakService {
           if (err) {
             return reject(err.body ? err.body : err);
           } else {
-            return resolve({urlWithSignature: data?.body?.data?.widgetUrl ?? data?.data?.widgetUrl});
+            return resolve({ urlWithSignature: data?.body?.data?.widgetUrl ?? data?.data?.widgetUrl });
           }
         }
       );
-  });
+    });
   }
 
   transakGetOrderDetails(req): Promise<any> {

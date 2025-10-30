@@ -2,6 +2,7 @@ import * as async from 'async';
 import _ from 'lodash';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
+import preconditions from 'preconditions';
 import { BCHAddressTranslator } from './bchaddresstranslator'; // only for migration
 import { Common } from './common';
 import logger from './logger';
@@ -21,7 +22,7 @@ import {
 import { ITssKeyMessageObject, TssKeyGenModel } from './model/tsskeygen';
 import { ITssSigMessageObject, TssSigGenModel } from './model/tsssign';
 
-const $ = require('preconditions').singleton();
+const $ = preconditions.singleton();
 
 const collections = {
   // Duplciated in helpers.. TODO
@@ -49,7 +50,7 @@ const Utils = Common.Utils;
 
 const ObjectID = mongodb.ObjectID;
 
-var objectIdDate = function(date) {
+const objectIdDate = function(date) {
   return Math.floor(date / 1000).toString(16) + '0000000000000000';
 };
 export class Storage {
@@ -402,11 +403,11 @@ export class Storage {
               }
               tx.status = 'pending';
               tx.multisigTxId = multisigTxpsInfoByTransactionHash[tx.txid][0].transactionId;
-              tx.actions.forEach(action => {
+              for (const action of tx.actions) {
                 if (_.some(multisigTxpsInfoByTransactionHash[tx.txid], { event: 'ExecutionFailure' })) {
                   action.type = 'failed';
                 }
-              });
+              }
               if (tx.amount === 0) {
                 actionsById[tx.multisigTxId] = [...tx.actions, ...(actionsById[tx.multisigTxId] || [])];
                 return undefined;
@@ -415,11 +416,11 @@ export class Storage {
             })
           );
 
-          txs.forEach((tx: TxProposal) => {
+          for (const tx of txs as TxProposal[]) {
             if (actionsById[tx.multisigTxId]) {
               tx.actions = [...tx.actions, ...(actionsById[tx.multisigTxId] || [])];
             }
-          });
+          }
 
           return resolve(txs);
         });
@@ -1697,7 +1698,7 @@ export class Storage {
       });
   }
 
-  fetchAllAdverts(cb) {
+  fetchAllAdverts(_cb) {
     this.db.collection(collections.ADVERTISEMENTS).find({});
   }
 

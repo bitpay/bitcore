@@ -52,8 +52,8 @@ export interface IChain {
     xpub: string,
     signingMethod?: string
   );
-  addressToStorageTransform(network: string, address: {}): void;
-  addressFromStorageTransform(network: string, address: {}): void;
+  addressToStorageTransform(network: string, address: object): void;
+  addressFromStorageTransform(network: string, address: object): void;
   validateAddress(wallet: IWallet, inaddr: string, opts: { noCashAddr: boolean } & any);
   onCoin(coin: any): INotificationData | null;
   onTx(tx: any): INotificationData | null;

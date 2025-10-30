@@ -54,9 +54,9 @@ describe('Locks', function() {
           pushEvent(3);
           setTimeout(function() {
             release();
-            expect(order).to.deep.equal([0,4,1,5,2,6,3]);
+            expect(order).to.deep.equal([0, 4, 1, 5, 2, 6, 3]);
             done();
-          },step);
+          }, step);
         });
         pushEvent(6);
       });
@@ -141,7 +141,7 @@ describe('Locks', function() {
     lock.acquire('123', {}, function(err, release) {
       should.not.exist(err);
       pushEvent(1);
-      lock.acquire('123', {waitTime:1}, function(err, release2) {
+      lock.acquire('123', { waitTime: 1 }, function(err, release2) {
         release();
         expect(err).to.contain('LOCKED');
         done();
@@ -150,9 +150,9 @@ describe('Locks', function() {
   });
   it('should release lock if acquired for a long time', function(done) {
 
-    lock.acquire('123', {lockTime:10}, function(err, release) {
+    lock.acquire('123', { lockTime: 10 }, function(err, release) {
       should.not.exist(err);
-      lock.acquire('123', {waitTime:1000}, function(err, release) {
+      lock.acquire('123', { waitTime: 1000 }, function(err, release) {
         should.not.exist(err);
         done();
       });
@@ -161,18 +161,18 @@ describe('Locks', function() {
   it('should release lock if acquired for a long time (case 2)', function(done) {
 
     // no releases
-    lock.acquire('123', {lockTime:10}, function(err, release) {
+    lock.acquire('123', { lockTime: 10 }, function(err, release) {
       should.not.exist(err);
     });
 
-    lock.acquire('123', {lockTime:20}, function(err, release) {
+    lock.acquire('123', { lockTime: 20 }, function(err, release) {
       should.not.exist(err);
     });
-    lock.acquire('123', {lockTime:30}, function(err, release) {
+    lock.acquire('123', { lockTime: 30 }, function(err, release) {
       should.not.exist(err);
-      lock.acquire('123', {lockTime:30}, function(err, release) {
+      lock.acquire('123', { lockTime: 30 }, function(err, release) {
         should.not.exist(err);
-        lock.acquire('123', {waitTime:1000}, function(err, release) {
+        lock.acquire('123', { waitTime: 1000 }, function(err, release) {
           should.not.exist(err);
           done();
         });
@@ -182,7 +182,7 @@ describe('Locks', function() {
 
 
 
-  describe("#runLocked", () => {
+  describe('#runLocked', () => {
     it('should run a locked function', function(done) {
       var called =0;
 
@@ -194,7 +194,7 @@ describe('Locks', function() {
         setTimeout(() => {
           expect(called).to.equal(0);
           done();
-        },200);
+        }, 200);
       }
 
       lock.runLocked('123', {}, end, task);
@@ -211,11 +211,11 @@ describe('Locks', function() {
       }
 
       function task() {
-        lock.runLocked('123', {waitTime:100}, end, () => {
+        lock.runLocked('123', { waitTime: 100 }, end, () => {
           setTimeout(() => {
-          },200);
+          }, 200);
         });
-     }
+      }
 
       lock.runLocked('123', {}, end, task);
     });

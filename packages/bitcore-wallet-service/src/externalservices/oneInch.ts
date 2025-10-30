@@ -30,8 +30,8 @@ export class OneInchService {
     return credentials;
   }
 
-  oneInchGetReferrerFee(req): Promise<any> {
-    return new Promise((resolve, reject) => {
+  oneInchGetReferrerFee(_req): Promise<any> {
+    return new Promise((resolve) => {
       const credentials = this.oneInchGetCredentials();
 
       const referrerFee: number = credentials.referrerFee;
@@ -72,7 +72,9 @@ export class OneInchService {
       if (credentials.referrerFee) qs.push('fee=' + credentials.referrerFee);
       if (credentials.referrerAddress) qs.push('referrerAddress=' + credentials.referrerAddress);
 
-      const chainNetwork: string = `${req.params?.['chain']?.toUpperCase()}_mainnet` || 'eth_mainnet';
+      const chainNetwork: string = req.params?.['chain']
+        ? `${req.params['chain'].toUpperCase()}_mainnet`
+        : 'eth_mainnet';
       const chainId: number = ConstantsCWC.EVM_CHAIN_NETWORK_TO_CHAIN_ID[chainNetwork];
 
       const URL: string = `${credentials.API}/swap/v5.2/${chainId}/swap/?${qs.join('&')}`;

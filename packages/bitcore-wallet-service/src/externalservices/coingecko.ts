@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import * as request from 'request';
 import config from '../config';
 import { Defaults } from '../lib/common/defaults';
@@ -13,7 +12,7 @@ export class CoinGeckoService {
     this.storage = storage;
   }
 
- private coinGeckoGetCredentials() {
+  private coinGeckoGetCredentials() {
     if (!config.coinGecko) throw new Error('coinGecko missing credentials');
 
     const credentials = {
@@ -98,7 +97,7 @@ export class CoinGeckoService {
                 return resolve(updatedTokens);
               });
             }
-        });
+          });
       });
     });
   }

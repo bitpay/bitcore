@@ -62,7 +62,7 @@ describe('Blockchain monitor', function() {
         return callbacks.onIncomingPayments({ out, txid: tx.txid });
       };
       // no uses in eth, interferes with btc
-      //socket.handlers['block'] =  callbacks.onBlock;
+      // socket.handlers['block'] =  callbacks.onBlock;
     };
   });
   after(async function() {

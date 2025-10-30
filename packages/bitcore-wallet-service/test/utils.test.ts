@@ -289,7 +289,7 @@ describe('Utils', function() {
         headers: {
           'x-forwarded-for': '1.2.3.4'
         }
-      }
+      };
 
       const ip = Utils.getIpFromReq(req);
       should.exist(ip);
@@ -301,7 +301,7 @@ describe('Utils', function() {
         headers: {
           'x-forwarded-for': '1.2.3.4, 5.6.7.8, 9.10.11.12'
         }
-      }
+      };
 
       const ip = Utils.getIpFromReq(req);
       should.exist(ip);
@@ -313,7 +313,7 @@ describe('Utils', function() {
         headers: {
           'x-real-ip': '1.2.3.4'
         }
-      }
+      };
 
       const ip = Utils.getIpFromReq(req);
       should.exist(ip);
@@ -325,7 +325,7 @@ describe('Utils', function() {
         headers: {
           'x-real-ip': '1.2.3.4, 5.6.7.8, 9.10.11.12'
         }
-      }
+      };
 
       const ip = Utils.getIpFromReq(req);
       should.exist(ip);
@@ -335,7 +335,7 @@ describe('Utils', function() {
     it('should get the ip if req.ip exists', function() {
       const req = {
         ip: '1.2.3.4'
-      }
+      };
 
       const ip = Utils.getIpFromReq(req);
       should.exist(ip);
@@ -347,7 +347,7 @@ describe('Utils', function() {
         connection: {
           remoteAddress: '1.2.3.4'
         }
-      }
+      };
 
       const ip = Utils.getIpFromReq(req);
       should.exist(ip);
@@ -355,7 +355,7 @@ describe('Utils', function() {
     });
 
     it('should get an empty string if no case is met', function() {
-      const req = {}
+      const req = {};
 
       const ip = Utils.getIpFromReq(req);
       ip.should.equal('');
@@ -407,11 +407,11 @@ describe('Utils', function() {
     });
 
     it('should sort an array of objects with nested key', function() {
-      const res = Utils.sortAsc([{ a: { b: 3 }}, { a: { b: 1 }}, { a: { b: 2 }}], ['a', 'b']);
+      const res = Utils.sortAsc([{ a: { b: 3 } }, { a: { b: 1 } }, { a: { b: 2 } }], ['a', 'b']);
       res.should.deep.equal([
-        { a: { b: 1 }},
-        { a: { b: 2 }},
-        { a: { b: 3 }}
+        { a: { b: 1 } },
+        { a: { b: 2 } },
+        { a: { b: 3 } }
       ]);
     });
   });

@@ -11,9 +11,9 @@ import { Common } from '../src/lib/common';
 const should = chai.should();
 const { Defaults } = Common;
 const V8UTXOS = [
-  {"_id":"5c1d4bc47adced963b3cddb9","chain":"BCH","network":"testnet","coinbase":false,"mintIndex":0,"spentTxid":"","mintTxid":"6e34d9b83631cd55ee09d907061332ba3c17246e3c1255543fb7a35e58c52e42","mintHeight":12,"spentHeight":-2,"address":"qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh","script":"76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac","value":1000000,"confirmations":-1},
-  {"_id":"5c1e33e17adced963b776bcf","chain":"BCH","network":"testnet","coinbase":false,"mintIndex":0,"spentTxid":"","mintTxid":"fb1340bae2431f71c5f14d0c5893cbfb09042dcb9602b858ccec43e0e1e2f1a1","mintHeight":15,"spentHeight":-2,"address":"qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh","script":"76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac","value":2000000,"confirmations":-1},
-  {"_id":"5c21088f7adced963b33eea2","chain":"BCH","network":"testnet","coinbase":false,"mintIndex":0,"spentTxid":"","mintTxid":"42eeb1d139521fa5206685ffec5df3b302cf85561201178680a0efe6bd23d449","mintHeight":-1,"spentHeight":-2,"address":"qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh","script":"76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac","value":2000000,"confirmations":-1}
+  { '_id': '5c1d4bc47adced963b3cddb9', 'chain': 'BCH', 'network': 'testnet', 'coinbase': false, 'mintIndex': 0, 'spentTxid': '', 'mintTxid': '6e34d9b83631cd55ee09d907061332ba3c17246e3c1255543fb7a35e58c52e42', 'mintHeight': 12, 'spentHeight': -2, 'address': 'qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh', 'script': '76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac', 'value': 1000000, 'confirmations': -1 },
+  { '_id': '5c1e33e17adced963b776bcf', 'chain': 'BCH', 'network': 'testnet', 'coinbase': false, 'mintIndex': 0, 'spentTxid': '', 'mintTxid': 'fb1340bae2431f71c5f14d0c5893cbfb09042dcb9602b858ccec43e0e1e2f1a1', 'mintHeight': 15, 'spentHeight': -2, 'address': 'qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh', 'script': '76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac', 'value': 2000000, 'confirmations': -1 },
+  { '_id': '5c21088f7adced963b33eea2', 'chain': 'BCH', 'network': 'testnet', 'coinbase': false, 'mintIndex': 0, 'spentTxid': '', 'mintTxid': '42eeb1d139521fa5206685ffec5df3b302cf85561201178680a0efe6bd23d449', 'mintHeight': -1, 'spentHeight': -2, 'address': 'qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh', 'script': '76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac', 'value': 2000000, 'confirmations': -1 }
 ];
 
 const V8UTXOS2 = [ 
@@ -37,9 +37,9 @@ describe('V8', () => {
           class MyReadable extends Readable {
             constructor(options?) {
               super(options);
-                this.push(txsStr.substring(0, 10));
-                this.push(txsStr.substring(10));
-                this.push(null);
+              this.push(txsStr.substring(0, 10));
+              this.push(txsStr.substring(10));
+              this.push(null);
             }
           };
 
@@ -77,7 +77,7 @@ describe('V8', () => {
               this.push(txStr.substring(0, 10));
               this.push(txStr.substring(10));
               this.push(null);
-              }
+            }
           };
 
           return new MyReadable();
@@ -109,7 +109,7 @@ describe('V8', () => {
         getAddressTxos(opts) {
           return new Promise(function (resolve) {
             resolve(V8UTXOS);
-          })
+          });
         };
       };
 
@@ -208,7 +208,7 @@ describe('V8', () => {
         request: fakeRequest,
       });
 
-      be.estimateFee([1,2,3,4,5], (err, levels) => {
+      be.estimateFee([1, 2, 3, 4, 5], (err, levels) => {
         should.not.exist(err);
         should.exist(levels);
         // should ignore non-matching results

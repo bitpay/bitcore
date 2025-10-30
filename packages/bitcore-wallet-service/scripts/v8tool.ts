@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import request from 'request';
 import { BitcoreLib } from 'crypto-wallet-core';
+import request from 'request';
 import { Client } from '../src/lib//blockchainexplorers/v8/client';
 
 const coin = process.argv[2];

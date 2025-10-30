@@ -25,7 +25,7 @@ describe('TxProposal', function() {
     });
 
     it('should copy a TxProposal, with actions', function() {
-      let txpObj  = aTXP();
+      let txpObj = aTXP();
 
 
       txpObj.version = 2;
@@ -67,7 +67,7 @@ describe('TxProposal', function() {
       txp.isAccepted().should.equal(false);
       txp.isRejected().should.equal(false);
       txp.sign('2', theSignatures, theXPub);
-      txp.isAccepted().should.equal(true); //<===
+      txp.isAccepted().should.equal(true); // <===
       txp.isRejected().should.equal(false);
     });
   });
@@ -114,13 +114,13 @@ const aTxpOpts = function() {
     network: 'livenet',
     message: 'some message',
     outputs: [{
-      toAddress: "18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7",
+      toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
       amount: 10000000,
-      message: "first message"
+      message: 'first message'
     }, {
-      toAddress: "18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7",
+      toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
       amount: 20000000,
-      message: "second message"
+      message: 'second message'
     }]
   };
 

@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
-require('ts-node/register');
-const config = require('../src/config');
-const fs = require('fs');
-const path = require('path');
-const Mustache = require('mustache');
-const os = require('os');
-const { exec } = require('child_process');
-const sgMail = require('@sendgrid/mail');
-const juice = require('juice');
+import 'ts-node/register';
+import { exec } from 'child_process';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import sgMail from '@sendgrid/mail';
+import juice from 'juice';
+import Mustache from 'mustache';
+import config from '../src/config';
 
 
 const iconMap = {
@@ -34,7 +34,7 @@ function getIconHtml (templateName) {
   const staticUrl = config.baseUrl || 'https://bws.bitpay.com';
   const iconUrl = `${staticUrl}/bws/static/images/${iconFile}`;
   
-  return `<img src="${iconUrl}" alt="${templateName} icon" style="width: 50px; height: 50px;" />`
+  return `<img src="${iconUrl}" alt="${templateName} icon" style="width: 50px; height: 50px;" />`;
 }; 
 
 // Parse command line arguments
@@ -75,7 +75,9 @@ if (!templateName || !TEMPLATE_TYPES.includes(templateName)) {
   console.log('  - send: Set to "send" to send an actual email');
   console.log('  - recipientEmail: Email address to send to (required if send=true)');
   console.log('\nAvailable templates:');
-  TEMPLATE_TYPES.forEach(type => console.log(`- ${type}`));
+  for (const type of TEMPLATE_TYPES) {
+    console.log(`- ${type}`);
+  }
   process.exit(1);
 }
 
@@ -110,8 +112,7 @@ const createSampleData = (templateName) => {
     if (firstLine && firstLine.startsWith('{{subjectPrefix}}')) {
       commonData.title = firstLine.replace('{{subjectPrefix}}', '');
     }
-  } catch (err) {
-  }
+  } catch { /* ignore error */ }
 
   switch (templateName) {
     case 'new_copayer':
@@ -227,7 +228,7 @@ function createBasicHtmlFromPlain(templateName) {
       .slice(2) // Skip the subject line and empty line
       .join('\n')
       .trim();
-  } catch (err) {
+  } catch {
     plainContent = `This is a sample email template for ${templateName}`;
   }
 

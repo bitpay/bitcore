@@ -253,8 +253,8 @@ export class Wallet implements IWallet<() => boolean> {
     const salt = config.BE_KEY_SALT || Defaults.BE_KEY_SALT;
 
     var seed = (this.copayers || []).map(c => c.xPubKey)
-        .sort()
-        .join('') +
+      .sort()
+      .join('') +
       Utils.getGenericName(this.network) + // Maintaining compatibility with previous versions
       this.coin +
       salt;
@@ -337,7 +337,7 @@ export class Wallet implements IWallet<() => boolean> {
     );
   }
 
-  /// Only for power scan
+  // / Only for power scan
   getSkippedAddress() {
     $.checkState(this.isComplete(), 'Failed state: this.isComplete() at <getSkipeedAddress()>');
 

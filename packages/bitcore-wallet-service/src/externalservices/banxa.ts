@@ -34,7 +34,7 @@ export class BanxaService {
   }
 
   private getBanxaSignature(method: 'get' | 'post', endpoint: string, apiKey: string, secret: string, body?: string) {
-    let signature, auth: string
+    let signature, auth: string;
     const nonce = Date.now().toString();
 
     switch (method) {
@@ -51,7 +51,7 @@ export class BanxaService {
     }
 
     const localSignature = crypto.createHmac('sha256', secret).update(signature).digest('hex');
-    auth = `${apiKey}:${localSignature}:${nonce}`
+    auth = `${apiKey}:${localSignature}:${nonce}`;
     return auth;
   }
 

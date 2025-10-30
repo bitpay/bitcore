@@ -11,7 +11,7 @@ import { Common } from '../common';
 import { AddressManager } from './addressmanager';
 
 const $ = singleton();
-const { Constants, Defaults, Utils } = Common;
+const { Constants, Utils } = Common;
 
 export interface IAddress {
   version: string;
@@ -104,7 +104,7 @@ export class Address {
     $.checkArgument(Utils.checkValueInCollection(scriptType, Constants.SCRIPT_TYPES));
     const externSourcePublicKey = hardwareSourcePublicKey || clientDerivedPublicKey;
     if (externSourcePublicKey) {
-      let bitcoreAddress
+      let bitcoreAddress;
       try {
         bitcoreAddress = Deriver.deriveAddressWithPath(chain.toUpperCase(), network, externSourcePublicKey, path, scriptType);
       } catch {
@@ -115,7 +115,7 @@ export class Address {
         address: bitcoreAddress.toString(),
         path,
         publicKeys: [externSourcePublicKey]
-      }
+      };
     }
 
     let publicKeys = (publicKeyRing || []).map(item => {

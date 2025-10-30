@@ -10,11 +10,11 @@ export class BchChain extends BtcChain implements IChain {
     this.sizeEstimationMargin = config.bch?.sizeEstimationMargin ?? 0.01;
     this.inputSizeEstimationMargin = config.bch?.inputSizeEstimationMargin ?? 2;
   }
-  getSizeSafetyMargin(opts: any): number {
+  getSizeSafetyMargin(_opts: any): number {
     return 0;
   }
 
-  getInputSizeSafetyMargin(opts: any): number {
+  getInputSizeSafetyMargin(_opts: any): number {
     return 0;
   }
 
@@ -26,7 +26,7 @@ export class BchChain extends BtcChain implements IChain {
     } = {};
     try {
       addr = new A(inaddr);
-    } catch (ex) {
+    } catch {
       throw Errors.INVALID_ADDRESS;
     }
     if (!this._isCorrectNetwork(wallet, addr)) {

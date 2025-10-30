@@ -1,7 +1,7 @@
 import * as async from 'async';
 import _ from 'lodash';
 import 'source-map-support/register';
-
+import preconditions from 'preconditions';
 import { BlockChainExplorer } from './blockchainexplorer';
 import { ChainService } from './chain/index';
 import { Common } from './common';
@@ -13,7 +13,9 @@ import { Notification, TxConfirmationSub } from './model';
 import { WalletService } from './server';
 import { Storage } from './storage';
 
-const $ = require('preconditions').singleton();
+
+const $ = preconditions.singleton();
+
 const Constants = Common.Constants;
 
 const throttle = (fn: (bcmContext: any, chain: string, network: string, hash: string) => void) => {
@@ -23,8 +25,8 @@ const throttle = (fn: (bcmContext: any, chain: string, network: string, hash: st
       chain = args[1],
       network = args[2],
       hash = args[3];
-    let msDelay = bcmContext.getChainThrottleSetting(chain, network) * 1000;
-    let now = new Date().getTime();
+    const msDelay = bcmContext.getChainThrottleSetting(chain, network) * 1000;
+    const now = new Date().getTime();
     if (now - lastCalled < msDelay) {
       return;
     }
@@ -226,7 +228,7 @@ export class BlockchainMonitor {
 
   _handleIncomingPayments(chain, network, data) {
     if (!data) return;
-    let out = data.out;
+    const out = data.out;
     if (!out || !out.address || out.address.length < 10) return;
 
     // For evm chains, amount = 0 is ok, repeating addr payments are ok (no change).

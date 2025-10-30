@@ -115,7 +115,7 @@ export class RampService {
       'selectedCountryCode',
       'defaultAsset',
     ];
-    const extraRequiredParams = req.body.flow && req.body.flow === 'sell' ? ['offrampAsset'] : ['finalUrl', 'userAddress', 'swapAmount','swapAsset'];
+    const extraRequiredParams = req.body.flow && req.body.flow === 'sell' ? ['offrampAsset'] : ['finalUrl', 'userAddress', 'swapAmount', 'swapAsset'];
     appRequiredParams.concat(extraRequiredParams);
 
     const requiredParams = req.body.context === 'web' ? webRequiredParams : appRequiredParams;
@@ -129,11 +129,7 @@ export class RampService {
       throw new ClientError("Ramp's request missing arguments");
     }
 
-    const headers = {
-      'Content-Type': 'application/json'
-    };
-
-    let qs: string[] = [];
+    const qs: string[] = [];
     qs.push('hostApiKey=' + API_KEY);
     qs.push('selectedCountryCode=' + encodeURIComponent(req.body.selectedCountryCode));
     if (req.body.finalUrl) qs.push('finalUrl=' + encodeURIComponent(req.body.finalUrl));

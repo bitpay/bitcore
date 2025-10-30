@@ -1,9 +1,12 @@
-import * as async from 'async';
 import * as fs from 'fs';
+import path from 'path';
+import * as async from 'async';
 import _ from 'lodash';
 import 'source-map-support/register';
-
+import Mustache from 'mustache';
 import request from 'request';
+import defaultRequest from 'request';
+import sjcl from 'sjcl';
 import config from '../config';
 import { Common } from './common';
 import logger from './logger';
@@ -11,13 +14,9 @@ import { MessageBroker } from './messagebroker';
 import { INotification, IPreferences, Preferences } from './model';
 import { Storage } from './storage';
 
-const Mustache = require('mustache');
-const defaultRequest = require('request');
-const path = require('path');
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;
 const Constants = Common.Constants;
-const sjcl = require('sjcl');
 
 const PUSHNOTIFICATIONS_TYPES = {
   NewCopayer: {
@@ -517,13 +516,13 @@ export class PushNotificationsService {
           } else if (Constants.SOL_TOKEN_OPTS[tokenAddress]) {
             unit = Constants.SOL_TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
             label = UNIT_LABELS[unit];
-          }else {
+          } else {
             let customTokensData;
             let tokenData;
             try {
               customTokensData = await this.getTokenData(data.address.coin);
               tokenData = customTokensData.find(t => t.address === tokenAddress);
-            } catch (error) {
+            } catch {
               return cb(new Error('Could not get custom tokens data'));
             }
             if (tokenData) {
@@ -712,16 +711,16 @@ export class PushNotificationsService {
     );
   }
 
- private coinGeckoGetCredentials() {
-     if (!config.coinGecko) throw new Error('coinGecko missing credentials');
+  private coinGeckoGetCredentials() {
+    if (!config.coinGecko) throw new Error('coinGecko missing credentials');
  
-     const credentials = {
-       API: config.coinGecko.api,
-       API_KEY: config.coinGecko.apiKey,
-     };
+    const credentials = {
+      API: config.coinGecko.api,
+      API_KEY: config.coinGecko.apiKey,
+    };
  
-     return credentials;
-   }
+    return credentials;
+  }
  
   getTokenData(chain: string): Promise<Array<{
     chainId: number;
@@ -731,73 +730,73 @@ export class PushNotificationsService {
     decimals: number;
     logoURI: string;
   }>> {
-     return new Promise((resolve, reject) => {
-       const cacheKey = `cgTokenList:${chain}`;
-       const credentials = this.coinGeckoGetCredentials();
+    return new Promise((resolve, reject) => {
+      const cacheKey = `cgTokenList:${chain}`;
+      const credentials = this.coinGeckoGetCredentials();
  
-       this.storage.checkAndUseGlobalCache(cacheKey, Defaults.COIN_GECKO_CACHE_DURATION, (err, values, oldvalues) => {
-         if (err) logger.warn('Cache check failed', err);
-         if (values) return resolve(values);
+      this.storage.checkAndUseGlobalCache(cacheKey, Defaults.COIN_GECKO_CACHE_DURATION, (err, values, oldvalues) => {
+        if (err) logger.warn('Cache check failed', err);
+        if (values) return resolve(values);
  
-         const assetPlatformMap = {
-           eth: 'ethereum',
-           matic: 'polygon-pos',
-           pol: 'polygon-pos',
-           arb: 'arbitrum-one',
-           base: 'base',
-           op: 'optimistic-ethereum',
-           sol: 'solana',
-         };
+        const assetPlatformMap = {
+          eth: 'ethereum',
+          matic: 'polygon-pos',
+          pol: 'polygon-pos',
+          arb: 'arbitrum-one',
+          base: 'base',
+          op: 'optimistic-ethereum',
+          sol: 'solana',
+        };
  
-         const assetId = assetPlatformMap[chain];
-         if (!assetId) return reject(new Error(`Unsupported chain '${chain}'`));
+        const assetId = assetPlatformMap[chain];
+        if (!assetId) return reject(new Error(`Unsupported chain '${chain}'`));
  
-         const URL: string = `${credentials.API}/v3/token_lists/${assetId}/all.json`;
-         const headers = {
-           'Content-Type': 'application/json',
-           'Accept': 'application/json',
-           'x-cg-pro-api-key': credentials.API_KEY
-         };
+        const URL: string = `${credentials.API}/v3/token_lists/${assetId}/all.json`;
+        const headers = {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'x-cg-pro-api-key': credentials.API_KEY
+        };
  
-         this.request.get(
-           URL,
-           {
-             headers,
-             json: true
-           },
-           (err, data) => {
-             const tokens = data?.body?.tokens;
-             const status = data?.body?.status;
-             if (err) {
-               logger.warn('An error occured while retrieving the token list', err);
-               if (oldvalues) {
-                 logger.warn('Using old cached values');
-                 return resolve(oldvalues);
-               }
-               return reject(err.body ?? err);
-             } else if (status?.error_code === 429 && oldvalues) {
-               return resolve(oldvalues);
-             } else {
-               if (!tokens) {
-                 if (oldvalues) {
-                   logger.warn('No token list available... using old cached values');
-                   return resolve(oldvalues);
-                 }
-                 return reject(new Error(`Could not get tokens list. Code: ${status?.error_code}. Error: ${status?.error_message || 'Unknown error'}`));
-               }
+        this.request.get(
+          URL,
+          {
+            headers,
+            json: true
+          },
+          (err, data) => {
+            const tokens = data?.body?.tokens;
+            const status = data?.body?.status;
+            if (err) {
+              logger.warn('An error occured while retrieving the token list', err);
+              if (oldvalues) {
+                logger.warn('Using old cached values');
+                return resolve(oldvalues);
+              }
+              return reject(err.body ?? err);
+            } else if (status?.error_code === 429 && oldvalues) {
+              return resolve(oldvalues);
+            } else {
+              if (!tokens) {
+                if (oldvalues) {
+                  logger.warn('No token list available... using old cached values');
+                  return resolve(oldvalues);
+                }
+                return reject(new Error(`Could not get tokens list. Code: ${status?.error_code}. Error: ${status?.error_message || 'Unknown error'}`));
+              }
               const updatedTokens = tokens.map(token => {
                 if (token.logoURI?.includes('/thumb/')) {
                   token.logoURI = token.logoURI.replace('/thumb/', '/large/');
                 }
                 return token;
               });
-               this.storage.storeGlobalCache(cacheKey, updatedTokens, storeErr => {
-                 if (storeErr) logger.warn('Could not cache token list', storeErr);
-                 return resolve(updatedTokens);
-               });
-             }
-         });
-       });
-     });
-   }
- }
+              this.storage.storeGlobalCache(cacheKey, updatedTokens, storeErr => {
+                if (storeErr) logger.warn('Could not cache token list', storeErr);
+                return resolve(updatedTokens);
+              });
+            }
+          });
+      });
+    });
+  }
+}

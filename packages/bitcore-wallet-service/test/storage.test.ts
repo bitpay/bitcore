@@ -14,7 +14,7 @@ const should = chai.should();
 describe('Storage', function() {
   let client, storage;
   before(function(done) {
-    mongodb.MongoClient.connect(config.mongoDb.uri,{ useUnifiedTopology: true }, function(err, inclient) {
+    mongodb.MongoClient.connect(config.mongoDb.uri, { useUnifiedTopology: true }, function(err, inclient) {
       if (err) throw err;
       client = inclient;
       let db1 = client.db(config.mongoDb.dbname);
@@ -58,7 +58,7 @@ describe('Storage', function() {
           w.m.should.equal(wallet.m);
           w.n.should.equal(wallet.n);
           done();
-        })
+        });
       });
     });
     it('should not return error if wallet not found', function(done) {
@@ -106,7 +106,7 @@ describe('Storage', function() {
           lookup.requestPubKeys[0].key.should.equal('requestPubKey 1');
           lookup.requestPubKeys[0].signature.should.equal('xxx');
           done();
-        })
+        });
       });
     });
     it('should not return error if copayer not found', function(done) {
@@ -261,7 +261,7 @@ describe('Storage', function() {
     it('should store a 5 txs on the cache and update status correctly', (done) => {
       let tipIndex = 80; // current cache tip
       let items = [
-        { txid: '1234', blockheight: 803 },    /// <=== Latests
+        { txid: '1234', blockheight: 803 },    // / <=== Latests
         { txid: '1235', blockheight: 802 },
         { txid: '1236', blockheight: 801 },
         { txid: '1237', blockheight: 801 },
@@ -284,7 +284,7 @@ describe('Storage', function() {
     it('should prevent to store txs on wrong order', (done) => {
       let tipIndex = 80; // current cache tip
       let items = [
-        { txid: '1234', blockheight: 803 },    /// <=== Latests
+        { txid: '1234', blockheight: 803 },    // / <=== Latests
         { txid: '1235', blockheight: 802 },
         { txid: '1236', blockheight: 801 },
         { txid: '1237', blockheight: 801 },
@@ -362,7 +362,7 @@ describe('Storage', function() {
     it('should store a 5 txs on the cache and retreive them correctly', (done) => {
       let tipIndex = 80; // current cache tip
       let items = [
-        { txid: '1234', blockheight: 803 },    /// <=== Latests
+        { txid: '1234', blockheight: 803 },    // / <=== Latests
         { txid: '1235', blockheight: 802 },
         { txid: '1236', blockheight: 801 },
         { txid: '1237', blockheight: 800 },
@@ -376,7 +376,7 @@ describe('Storage', function() {
           txs.length.should.equal(5);
           txs[0].blockheight.should.equal(803);
           txs[4].blockheight.should.equal(800);
-          txs[4].txid.should.equal('1238'); //should preserve order
+          txs[4].txid.should.equal('1238'); // should preserve order
           done();
         });
       });
@@ -386,7 +386,7 @@ describe('Storage', function() {
     it('should store a 10 txs on the cache and retreive them correctly', (done) => {
       let tipIndex = 80; // current cache tip
       let items = [
-        { txid: '1234', blockheight: 803 },    /// <=== Latests
+        { txid: '1234', blockheight: 803 },    // / <=== Latests
         { txid: '1235', blockheight: 802 },
         { txid: '1236', blockheight: 801 },
         { txid: '1237', blockheight: 800 },
@@ -399,7 +399,7 @@ describe('Storage', function() {
         // time passes
         updateHeight = 2000;
         let items2 = [
-          { txid: '124', blockheight: 1803 },    /// <=== Latests
+          { txid: '124', blockheight: 1803 },    // / <=== Latests
           { txid: '125', blockheight: 1802 },
           { txid: '126', blockheight: 1801 },
           { txid: '127', blockheight: 1800 },
@@ -417,7 +417,7 @@ describe('Storage', function() {
               txs.length.should.equal(10);
               txs[0].blockheight.should.equal(1803);
               txs[9].blockheight.should.equal(800);
-              txs[9].txid.should.equal('1238'); //should preserve order
+              txs[9].txid.should.equal('1238'); // should preserve order
               done();
             });
           });

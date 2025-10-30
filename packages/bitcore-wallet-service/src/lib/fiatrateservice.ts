@@ -1,11 +1,13 @@
 import * as async from 'async';
+import preconditions from 'preconditions';
 import * as request from 'request';
 import { Common } from './common';
 import { providers } from './fiatrateproviders';
 import logger from './logger';
 import { Storage } from './storage';
 
-const $ = require('preconditions').singleton();
+const $ = preconditions.singleton();
+
 const Defaults = Common.Defaults;
 const Constants = Common.Constants;
 

@@ -36,11 +36,11 @@ describe('Wyre integration', () => {
         widgetUrl: 'xxxx',
         appProviderAccountId: 'xxxx'
       }
-    }
+    };
 
     fakeRequest = {
-      get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
-      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+      get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
+      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
     };
 
     await helpers.beforeEach();
@@ -74,7 +74,7 @@ describe('Wyre integration', () => {
           dest: 'bitcoin:123123123',
           country: 'US'
         }
-      }
+      };
       server.externalServices.wyre.request = fakeRequest;
     });
 
@@ -97,7 +97,7 @@ describe('Wyre integration', () => {
     it('should return error if post returns error', async () => {
       req.body.amount = 50;
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error')); },
       };
 
       server.externalServices.wyre.request = fakeRequest2;
@@ -133,7 +133,7 @@ describe('Wyre integration', () => {
           country: 'US',
           walletType: 'DEBIT_CARD'
         }
-      }
+      };
 
       try {
         await server.externalServices.wyre.wyreWalletOrderQuotation(req);
@@ -156,7 +156,7 @@ describe('Wyre integration', () => {
           country: 'US',
           walletType: 'DEBIT_CARD'
         }
-      }
+      };
 
       const data = await server.externalServices.wyre.wyreWalletOrderQuotation(req);
       should.exist(data);
@@ -175,10 +175,10 @@ describe('Wyre integration', () => {
           dest: 'bitcoin:123123123',
           paymentMethod: 'debit-card'
         }
-      }
+      };
 
       fakeRequest = {
-        post: (_url, _opts, _cb) => { return _cb(null, { body: {} }) },
+        post: (_url, _opts, _cb) => { return _cb(null, { body: {} }); },
       };
       server.externalServices.wyre.request = fakeRequest;
     });
@@ -202,7 +202,7 @@ describe('Wyre integration', () => {
     it('should return error if post returns error', async () => {
       req.body.amount = 50;
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error')); },
       };
 
       server.externalServices.wyre.request = fakeRequest2;
@@ -238,7 +238,7 @@ describe('Wyre integration', () => {
           country: 'US',
           paymentMethod: 'debit-card'
         }
-      }
+      };
 
       try {
         await server.externalServices.wyre.wyreWalletOrderReservation(req);
@@ -261,7 +261,7 @@ describe('Wyre integration', () => {
           country: 'US',
           paymentMethod: 'debit-card'
         }
-      }
+      };
 
       const data = await server.externalServices.wyre.wyreWalletOrderReservation(req);
       should.exist(data);

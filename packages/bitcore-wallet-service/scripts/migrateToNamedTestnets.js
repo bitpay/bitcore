@@ -1,6 +1,8 @@
 #!/usr/bin/env node
-const config = require('../../ts_build/src/config').default;
-const { Storage } = require('../../ts_build/src').default;
+import pkg from '../../ts_build/src';
+import config from '../../ts_build/src/config';
+
+const { Storage } = pkg;
 
 const startDate = new Date('2011-01-01T00:00:00.000Z');
 const endDate = new Date();
@@ -52,7 +54,7 @@ storage.connect(config.storageOpts, async (err) => {
   }
   
   function done(err) {
-    if (err) { console.log(err) }
+    if (err) { console.log(err); }
     storage.disconnect(() => { console.log('done'); });
   }
 
@@ -100,7 +102,7 @@ storage.connect(config.storageOpts, async (err) => {
         if (resWallet?.result?.nModified > 0) {
           fixWalletsCount++;
         } else if (!resWallet?.result?.ok) {
-          console.log(JSON.stringify(res));
+          console.log(JSON.stringify(resWallet));
         }
 
         // Update Addresses collection
@@ -115,7 +117,7 @@ storage.connect(config.storageOpts, async (err) => {
         if (resAddress?.result?.nModified > 0) {
           fixAddressCount++;
         } else if (!resAddress?.result?.ok) {
-          console.log(JSON.stringify(res));
+          console.log(JSON.stringify(resAddress));
         }
 
         // Update Wallets collection
@@ -146,7 +148,7 @@ storage.connect(config.storageOpts, async (err) => {
         if (resTxs?.result?.nModified > 0) {
           fixTxsCount++;
         } else if (!resTxs?.result?.ok) {
-          console.log(JSON.stringify(res));
+          console.log(JSON.stringify(resTxs));
         }
       } else {
         // Update Wallets collection

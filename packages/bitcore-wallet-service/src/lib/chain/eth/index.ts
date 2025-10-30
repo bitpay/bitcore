@@ -18,14 +18,12 @@ const Defaults = Common.Defaults;
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require(module);
 }
 
 const Erc20Decoder = requireUncached('abi-decoder');
 Erc20Decoder.addABI(ERC20Abi);
-function getErc20Decoder() {
-  return Erc20Decoder;
-}
 
 const InvoiceDecoder = requireUncached('abi-decoder');
 InvoiceDecoder.addABI(InvoiceAbi);
@@ -47,7 +45,7 @@ export class EthChain implements IChain {
    * @returns {Object} balance - Total amount & locked amount.
    */
   private convertBitcoreBalance(bitcoreBalance, locked) {
-    const { unconfirmed, confirmed, balance } = bitcoreBalance;
+    const { confirmed, balance } = bitcoreBalance;
     // we ASUME all locked as confirmed, for ETH.
     const convertedBalance = {
       totalAmount: balance,
@@ -98,12 +96,12 @@ export class EthChain implements IChain {
         return cb(err);
       }
       // getPendingTxs returns all txps when given a native currency
-      server.getPendingTxs(opts, (err, txps) => {
+      server.getPendingTxs(opts, (err, _txps) => {
         if (err) return cb(err);
         let fees = 0;
         let amounts = 0;
 
-        txps = txps.filter(txp => {
+        _txps.filter(txp => {
           // Add gas used for tokens when getting native balance
           if (!opts.tokenAddress) {
             fees += txp.fee || 0;
@@ -140,8 +138,8 @@ export class EthChain implements IChain {
   getWalletSendMaxInfo(server, wallet, opts, cb) {
     server.getBalance({}, (err, balance) => {
       if (err) return cb(err);
-      const { totalAmount, availableAmount } = balance;
-      let fee = opts.feePerKb * Defaults.MIN_GAS_LIMIT;
+      const { availableAmount } = balance;
+      const fee = opts.feePerKb * Defaults.MIN_GAS_LIMIT;
       return cb(null, {
         utxosBelowFee: 0,
         amountBelowFee: 0,
@@ -167,9 +165,9 @@ export class EthChain implements IChain {
 
   getChangeAddress() { }
 
-  checkDust(output, opts) { }
+  checkDust(_output, _opts) { }
 
-  checkScriptOutput(output) { }
+  checkScriptOutput(_output) { }
 
   getFee(server, wallet, opts) {
     return new Promise(resolve => {
@@ -184,13 +182,13 @@ export class EthChain implements IChain {
         let gasLimit = 0; // Gas limit for all recepients. used for contract interactions that rollup recepients
         let fee = 0;
         const defaultGasLimit = this.getDefaultGasLimit(opts);
-        let outputAddresses = []; // Parameter for MuliSend contract
-        let outputAmounts = []; // Parameter for MuliSend contract
+        const outputAddresses = []; // Parameter for MuliSend contract
+        const outputAmounts = []; // Parameter for MuliSend contract
         let totalValue = toBN(0); // Parameter for MuliSend contract
         logger.info(`getFee for address ${from} on network ${network} and chain ${chain}`);
         logger.info('getFee.opts: %o', { from, txType, priorityFeePercentile, gasLimitBuffer });
         logger.info(`[${from}] Add gas limit buffer?: ${!!gasLimitBuffer}`);
-        for (let output of opts.outputs) {
+        for (const output of opts.outputs) {
           // Multisend txs build contract fn parameters (addresses, amounts) and bypass output level gas estimations
           if (opts.multiSendContractAddress) {
             outputAddresses.push(output.toAddress);
@@ -225,7 +223,7 @@ export class EthChain implements IChain {
                 gasPrice
               });
               output.gasLimit = gasLimitEstimate || defaultGasLimit;
-            } catch (err) {
+            } catch {
               output.gasLimit = defaultGasLimit;
             }
           }
@@ -320,7 +318,7 @@ export class EthChain implements IChain {
     const unsignedTxs = [];
 
     if (multiSendContractAddress) {
-      let multiSendParams = {
+      const multiSendParams = {
         nonce: Number(txp.nonce),
         recipients,
         contractAddress: multiSendContractAddress
@@ -330,7 +328,7 @@ export class EthChain implements IChain {
     } else {
       for (let index = 0; index < recipients.length; index++) {
         // Uses gas limit from the txp output level
-        let params = {
+        const params = {
           ...recipients[index],
           nonce: Number(txp.nonce) + Number(index),
           recipients: [recipients[index]]
@@ -339,11 +337,11 @@ export class EthChain implements IChain {
       }
     }
 
-    let tx = {
+    const tx = {
       uncheckedSerialize: () => unsignedTxs,
       txid: () => txp.txid,
       toObject: () => {
-        let ret = _.clone(txp);
+        const ret = _.clone(txp);
         ret.outputs[0].satoshis = ret.outputs[0].amount;
         return ret;
       },
@@ -355,9 +353,9 @@ export class EthChain implements IChain {
 
     if (opts.signed) {
       const sigs = txp.getCurrentSignatures();
-      sigs.forEach(x => {
+      for (const x of sigs ) {
         this.addSignaturesToBitcoreTx(tx, txp.inputs, txp.inputPaths, x.signatures, x.xpub);
-      });
+      }
     }
 
     return tx;
@@ -392,7 +390,7 @@ export class EthChain implements IChain {
 
   checkTx(txp) {
     try {
-      const tx = this.getBitcoreTx(txp);
+      this.getBitcoreTx(txp);
     } catch (ex) {
       logger.debug('Error building Bitcore transaction: %o', ex);
       return ex;
@@ -432,13 +430,13 @@ export class EthChain implements IChain {
               ... ] }
           */
 
-          txp.outputs.forEach(output => {
+          for (const output of txp.outputs) {
             // We use a custom contract call (pay) instead of the transfer ERC20 method
             const decodedData = getInvoiceDecoder().decodeMethod(output.data);
             if (decodedData && decodedData.name === 'pay') {
               totalAmount = decodedData.params[0].value;
             }
-          });
+          }
           return totalAmount;
         };
 
@@ -522,7 +520,7 @@ export class EthChain implements IChain {
     );
   }
 
-  checkUtxos(opts) { }
+  checkUtxos(_opts) { }
 
   checkValidTxAmount(output): boolean {
     try {
@@ -561,7 +559,7 @@ export class EthChain implements IChain {
     if (network != 'livenet') address.address += ':' + network;
   }
 
-  addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub) {
+  addSignaturesToBitcoreTx(tx, _inputs, _inputPaths, signatures, _xpub) {
     if (signatures.length === 0) {
       throw new Error('Signatures Required');
     }
@@ -595,7 +593,7 @@ export class EthChain implements IChain {
     return;
   }
 
-  onCoin(coin) {
+  onCoin(_coin) {
     return null;
   }
 

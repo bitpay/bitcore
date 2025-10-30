@@ -9,7 +9,7 @@ import { checkRequired } from '../lib/server';
 export class ChangellyService {
   request: any = request;
 
-  private changellyGetKeysV2(req) {
+  private changellyGetKeysV2(_req) {
     if (!config.changelly) {
       logger.warn('Changelly missing credentials');
       throw new Error('ClientError: Service not configured.');

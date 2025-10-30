@@ -1,9 +1,9 @@
 import * as request from 'request';
+import Uuid from 'uuid';
 import config from '../config';
 import { Utils } from '../lib/common/utils';
 import { ClientError } from '../lib/errors/clienterror';
 import { checkRequired } from '../lib/server';
-const Uuid = require('uuid');
 
 export class SimplexService {
   request: any = request;
