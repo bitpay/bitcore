@@ -49,7 +49,7 @@ export class Utils {
         normalizedChain = 'eth';
       }
       return normalizedChain;
-    } catch (_) {
+    } catch {
       return 'btc'; // coin should always exist but most unit test don't have it -> return btc as default
     }
   }
@@ -77,7 +77,7 @@ export class Utils {
 
     try {
       return this.decryptMessage(ciphertextJson, encryptingKey);
-    } catch (e) {
+    } catch {
       return '<ECANNOTDECRYPT>';
     }
   }
@@ -86,7 +86,7 @@ export class Utils {
     let r;
     try {
       r = JSON.parse(str);
-    } catch (e) {
+    } catch {
       return false;
     }
     return r;
@@ -123,7 +123,7 @@ export class Utils {
     try {
       const sig = new crypto.Signature.fromString(signature);
       return crypto.ECDSA.verify(hash, sig, pub, { endian: 'little' });
-    } catch (e) {
+    } catch {
       return false;
     }
   }
