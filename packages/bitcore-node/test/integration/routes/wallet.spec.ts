@@ -12,18 +12,19 @@ import { BitcoinBlockStorage } from '../../../src/models/block';
 import { MongoBound } from '../../../src/models/base';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
 
-const { PrivateKey, PublicKey, Address, crypto } = require('bitcore-lib');
-const secp256k1 = require('secp256k1');
+import { BitcoreLib } from 'crypto-wallet-core';
+import secp256k1 from 'secp256k1';
 
+const { PrivateKey, PublicKey, Address, crypto } = BitcoreLib;
 const request = supertest(app);
 
 const privKey = new PrivateKey();
-const pubKey = PublicKey(privKey);
+const pubKey = new PublicKey(privKey);
 
-const address = Address(PrivateKey().toPublicKey(), 'regtest').toString();
-const missingAddress1 = Address(PrivateKey().toPublicKey(), 'regtest').toString();
-const missingAddress2 = Address(PrivateKey().toPublicKey(), 'regtest').toString();
-const address2 = Address(PrivateKey().toPublicKey(), 'regtest').toString();
+const address = new Address(new PrivateKey().toPublicKey(), 'regtest').toString();
+const missingAddress1 = new Address(new PrivateKey().toPublicKey(), 'regtest').toString();
+const missingAddress2 = new Address(new PrivateKey().toPublicKey(), 'regtest').toString();
+const address2 = new Address(new PrivateKey().toPublicKey(), 'regtest').toString();
 
 const bwsPrivKey = new PrivateKey('3711033b85a260d21cd469e7d93e27f04c31c21f13001053f1c074f7abbe6e75');
 
@@ -88,13 +89,13 @@ async function addTransaction(params: {
   fee?: number
 }) {
   const { senderAddress, recieverAddress, value, fee=0 } = params;
-  await addMultiIOTransaction({senderAddresses: [senderAddress], recipients: [{ address: recieverAddress, value }], fee})
+  await addMultiIOTransaction({ senderAddresses: [senderAddress], recipients: [{ address: recieverAddress, value }], fee });
 }
 async function addMultiIOTransaction(params: { 
   senderAddresses: string[] | 'coinbase', 
   recipients: { address: string, value: number }[],
   fee?: number
- }) {
+}) {
   const { senderAddresses, recipients, fee = 0 } = params;
   const chain = 'BTC';
   const network = 'regtest';
@@ -103,7 +104,7 @@ async function addMultiIOTransaction(params: {
   let inputsTotalValue = 0;
   // in the case of coins there are no input coins but the input count needs to be 1
   let inputCount;
-  let outputCount = 2;
+  const outputCount = 2;
   const coinbase = senderAddresses === 'coinbase' || senderAddresses[0] === 'coinbase';
 
   const tip = await BitcoinBlockStorage.getLocalTip({ chain, network });
@@ -161,7 +162,7 @@ async function addMultiIOTransaction(params: {
           spentHeight: -2, 
           value: { $gte: remainingValue }
         }, 
-        { sort: { value: 1 }}
+        { sort: { value: 1 } }
       );
       
       if (smallestSufficientUtxo) {
@@ -190,7 +191,7 @@ async function addMultiIOTransaction(params: {
         break;
       }
     }
-    expect(inputsTotalValue, "Not enough funds to create transaction").to.be.at.least(totalValueSent + fee);
+    expect(inputsTotalValue, 'Not enough funds to create transaction').to.be.at.least(totalValueSent + fee);
 
     // update spent utxos, prevents future usage
     await CoinStorage.collection.bulkWrite(
@@ -198,9 +199,9 @@ async function addMultiIOTransaction(params: {
         return {
           updateOne: {
             filter: { chain, network, _id },
-            update: { $set: { spentTxid: txid, spentHeight: tip.height }}
+            update: { $set: { spentTxid: txid, spentHeight: tip.height } }
           }
-        }
+        };
       })
     );
 
@@ -208,19 +209,19 @@ async function addMultiIOTransaction(params: {
     await CoinStorage.collection.insertMany([
       // utxos for every recipient
       ...recipients.map(recipient => ({
-          chain: chain,
-          network: network,
-          mintTxid: txid,
-          mintIndex: 0,
-          coinbase: false,
-          mintHeight: tip.height,
-          value: recipient.value,
-          spentHeight: -2,
-          spentTxid: '',
-          address: recipient.address,
-          wallets: [],
-          script: Buffer.from('ABT2FdLqYRcZotGH4hBg/uUcL0lwUA=='),
-        })
+        chain: chain,
+        network: network,
+        mintTxid: txid,
+        mintIndex: 0,
+        coinbase: false,
+        mintHeight: tip.height,
+        value: recipient.value,
+        spentHeight: -2,
+        spentTxid: '',
+        address: recipient.address,
+        wallets: [],
+        script: Buffer.from('ABT2FdLqYRcZotGH4hBg/uUcL0lwUA=='),
+      })
       ),
       // change utxo
       {
@@ -296,13 +297,13 @@ async function addBlock(params?: {
   });
 
   if (tip) {
-    await BitcoinBlockStorage.collection.updateOne({ hash: tip.hash }, { $set: { nextBlockHash: hash } })
+    await BitcoinBlockStorage.collection.updateOne({ hash: tip.hash }, { $set: { nextBlockHash: hash } });
   }
 }
 
 describe('Wallet Routes', function() {
   let sandbox;
-  let firstBlockTime = minutesAgo(60);
+  const firstBlockTime = minutesAgo(60);
   const addressBalanceAtFirstBlock = 500_000;
   const missingValue1 = 400_000;
   const addressBalanceAtSecondBlock = addressBalanceAtFirstBlock + 500_000 - missingValue1;
@@ -321,7 +322,7 @@ describe('Wallet Routes', function() {
     await addTransaction({ senderAddress: address, recieverAddress: missingAddress2, value: missingValue1 / 4 });
     await addBlock();
     await addTransaction({ senderAddress: 'coinbase', recieverAddress: address, value: 100_000 });
-    await addMultiIOTransaction({ senderAddresses: [missingAddress1, missingAddress2, address], recipients: [{ address: address2, value: 500_000 }]})
+    await addMultiIOTransaction({ senderAddresses: [missingAddress1, missingAddress2, address], recipients: [{ address: address2, value: 500_000 }] });
   });
 
   beforeEach(function() {
@@ -349,7 +350,7 @@ describe('Wallet Routes', function() {
       .send(body);
     expect(chainStateUpdateWalletSpy.calledOnce).to.be.true;
     expect(walletAddressStorageUpdateCoinsSpy.calledOnce).to.be.true;
-  }
+  };
 
   it('should have empty wallets db at start', done => {
     WalletStorage.collection.findOne({}).then(doc => {
@@ -435,7 +436,7 @@ describe('Wallet Routes', function() {
       .expect(200, (err, res) => {
         if (err) console.error(err);
         const { lastAddress, sum } = res.body;
-        expect(sum).to.equal(0)
+        expect(sum).to.equal(0);
         expect(lastAddress).to.be.undefined;
         done();
       });
@@ -485,7 +486,7 @@ describe('Wallet Routes', function() {
   });
 
   it('should get new wallet balance before time (first block only)', done => {
-    const fiveMinutesAfterFirstBlock = new Date(firstBlockTime.getTime() + 1000 * 60 * 5)
+    const fiveMinutesAfterFirstBlock = new Date(firstBlockTime.getTime() + 1000 * 60 * 5);
     const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/balance/${fiveMinutesAfterFirstBlock.toISOString()}`;
     (url);
     request.get(url)
@@ -501,7 +502,7 @@ describe('Wallet Routes', function() {
   });
 
   it('should get new wallet balance before time (second block and down)', done => {
-    const fiveMinutesAfterSecondBlock = new Date(firstBlockTime.getTime() + 1000 * 60 * 15)
+    const fiveMinutesAfterSecondBlock = new Date(firstBlockTime.getTime() + 1000 * 60 * 15);
     const url = `/api/${wallet.chain}/${wallet.network}/wallet/${pubKey}/balance/${fiveMinutesAfterSecondBlock.toISOString()}`;
     request.get(url)
       .set('x-signature', getSignature(privKey, 'GET', url))
@@ -526,7 +527,7 @@ describe('Wallet Routes', function() {
           testWalletTransaction(tx);
         }
         done();
-      })
+      });
   });
 
   {
@@ -575,7 +576,7 @@ describe('Wallet Routes', function() {
     });
 
     it('should handle block updating (2/4): updating and reprocessing address via api', done => {
-      const url = `/api/BTC/regtest/wallet/${pubKey}`
+      const url = `/api/BTC/regtest/wallet/${pubKey}`;
       const body = [{ address: address }];
 
       request.post(url)
@@ -685,6 +686,6 @@ describe('Wallet Routes', function() {
         expect(totalMissingValue).to.equal(expectedTotal);
         expect(totalMissingValue).to.equal(missingValue1);
         done();
-      })
+      });
   });
 });

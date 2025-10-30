@@ -169,4 +169,4 @@ export class XrpBlockModel extends BaseBlock<IBlock> {
     return JSON.stringify(transform);
   }
 }
-export let XrpBlockStorage = new XrpBlockModel();
+export const XrpBlockStorage = new XrpBlockModel();

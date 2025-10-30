@@ -1,5 +1,4 @@
 import BN from 'bn.js';
-
 import { Binary } from 'mongodb';
 import { ITransaction } from '../../../models/baseTransaction';
 import { IBlock } from '../../../types/Block';
@@ -263,12 +262,11 @@ export interface EventLog<T> {
   blockNumber: number;
   raw?: { data: string; topics: any[] };
 }
-export interface ERC20Transfer
-  extends EventLog<{
-    [key: string]: string;
-  }> {}
+export type ERC20Transfer = EventLog<{
+  [key: string]: string;
+}>
 
-  export interface IEVMCachedAddress {
-    address: string;
-    tokenAddress?: string;
-  }
+export interface IEVMCachedAddress {
+  address: string;
+  tokenAddress?: string;
+}

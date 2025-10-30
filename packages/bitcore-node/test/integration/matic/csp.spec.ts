@@ -19,6 +19,7 @@ describe('Polygon/MATIC API', function() {
   const chain = 'MATIC';
   const network = 'regtest';
 
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
   before(intBeforeHelper);
@@ -120,7 +121,7 @@ describe('Polygon/MATIC API', function() {
         gasPrice: 10 * 1e9
       } as IEVMTransactionInProcess;
     });
-    await CacheStorage.collection.remove({})
+    await CacheStorage.collection.remove({});
     await EVMTransactionStorage.collection.deleteMany({});
     await EVMTransactionStorage.collection.insertMany(txs);
     let estimates = await Promise.all([1, 2, 3, 4].map(target => MATIC.getFee({ network, target })));
@@ -292,10 +293,10 @@ describe('Polygon/MATIC API', function() {
   });
 
   describe('#streamWalletTransactions', () => {
-    let sandbox = sinon.createSandbox();
-    let chain = 'MATIC';
-    let network = 'mainnet';
-    let address = '0x1Eee23160Db790ee48Fd39871A64b13e76Fc2C3C';
+    const sandbox = sinon.createSandbox();
+    const chain = 'MATIC';
+    const network = 'mainnet';
+    const address = '0x1Eee23160Db790ee48Fd39871A64b13e76Fc2C3C';
     let wallet: IWallet = {
       chain,
       network,
@@ -303,13 +304,13 @@ describe('Polygon/MATIC API', function() {
       name: 'this-name',
       singleAddress: false,
       path: 'm/0/0'
-    }
-    let web3 = new Web3();
+    };
+    const web3 = new Web3();
 
     before(async () => {
       const res = await WalletStorage.collection.findOneAndUpdate({ name: wallet.name }, { $set: wallet }, { returnOriginal: false, upsert: true });
       wallet = res.value as IWallet;
-      await WalletAddressStorage.collection.updateOne({ network, address }, { $set: { chain, network, wallet: (wallet._id as ObjectId), processed: true, address } }, { upsert: true })
+      await WalletAddressStorage.collection.updateOne({ network, address }, { $set: { chain, network, wallet: (wallet._id as ObjectId), processed: true, address } }, { upsert: true });
       sandbox.stub(MATIC, 'getWeb3').resolves({ web3 });
     });
 
@@ -365,7 +366,7 @@ const streamWalletTransactionsTest = async (chain: string, network: string, incl
     txs.push({
       ...txs[0],
       blockHeight: -3
-    })
+    });
   }
   // Add wallet object ID to transactions
   for (const tx of txs) {

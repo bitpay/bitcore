@@ -30,8 +30,8 @@ const TaggedHash = require('./crypto/taggedhash');
  * var imported = PrivateKey.fromWIF(exported);
  * ```
  *
- * @param {string} data - The encoded data in various formats
- * @param {Network|string=} network - a {@link Network} object, or a string with the network name
+ * @param {string} [data] - The encoded data in various formats
+ * @param {Network|string=} [network] - a {@link Network} object, or a string with the network name
  * @returns {PrivateKey} A new valid instance of an PrivateKey
  * @constructor
  */

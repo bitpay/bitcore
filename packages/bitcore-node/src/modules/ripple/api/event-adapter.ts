@@ -25,7 +25,7 @@ export class RippleEventAdapter {
       const network = this.network;
       const csp = this.services.CSP.get({ chain, network }) as RippleStateProvider;
 
-      for (let network of networks) {
+      for (const network of networks) {
         try {
           const client = await csp.getClient(network);
 

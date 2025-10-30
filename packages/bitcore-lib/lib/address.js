@@ -593,7 +593,7 @@ Address.getValidationError = function(data, network, type) {
  *
  * @param {string} data - The encoded data
  * @param {String|Network} network - either a Network instance, 'livenet', or 'testnet'
- * @param {string} type - The type of address: 'script' or 'pubkey'
+ * @param {string} [type] - The type of address: 'script' or 'pubkey'
  * @returns {boolean} The corresponding error message
  */
 Address.isValid = function(data, network, type) {

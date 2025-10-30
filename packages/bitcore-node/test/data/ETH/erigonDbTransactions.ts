@@ -9107,4 +9107,4 @@ export const ErigonEthTransactions = [
       transactionIndex: 130
     }
   }
-]
+];

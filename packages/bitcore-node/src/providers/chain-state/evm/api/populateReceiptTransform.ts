@@ -12,7 +12,7 @@ export class PopulateReceiptTransform extends TransformWithEventPipe {
     try {
       const EVM = new BaseEVMStateProvider(tx.chain);
       tx = await EVM.populateReceipt(tx);
-    } catch (e) {}
+    } catch {/* ignore error */}
     this.push(tx);
     return done();
   }
