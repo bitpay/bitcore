@@ -1,6 +1,6 @@
 import * as prompt from '@clack/prompts';
 import { Network } from 'bitcore-wallet-client';
-import { BitcoreLib, BitcoreLibLtc } from 'crypto-wallet-core';
+import { BitcoreLib, BitcoreLibLtc, Constants as CWCConst } from 'crypto-wallet-core';
 import { Constants } from './constants';
 import { UserCancelled } from './errors';
 import { Utils } from './utils';
@@ -17,6 +17,12 @@ export async function getChain(): Promise<string> {
     message: 'Chain:',
     placeholder: `Default: ${defaultVal}`,
     defaultValue: defaultVal,
+    validate: (input) => {
+      if (!input || CWCConst.CHAINS.includes(input?.toLowerCase())) {
+        return; // valid input
+      }
+      return `Invalid chain '${input}'. Valid options are: ${CWCConst.CHAINS.join(', ')}`;
+    }
   });
   if (prompt.isCancel(chain)) {
     throw new UserCancelled();
@@ -32,14 +38,14 @@ export async function getNetwork(): Promise<Network> {
     defaultValue: defaultVal,
     validate: (input) => {
       // TODO: validate network with BWS
-      const validNetworks = ['mainnet', 'testnet', 'regtest'];
+      const validNetworks = ['mainnet', 'livenet', 'testnet', 'regtest'];
       return (!input || validNetworks.includes(input.toLowerCase())) ? null : `Invalid network '${input}'. Valid options are: ${validNetworks.join(', ')}`;
     }
   });
   if (prompt.isCancel(network)) {
     throw new UserCancelled();
   }
-  return network as Network;
+  return network === 'mainnet' ? 'livenet' : network as Network;
 };
 
 
@@ -147,7 +153,8 @@ export async function getCopayerName() {
   return copayerName as string;
 };
 
-export async function getAddressType({ chain, network, isMultiSig }: { chain: string; network?: Network; isMultiSig?: boolean }) {
+export async function getAddressType(args: { chain: string; network?: Network; isMultiSig?: boolean; isTss?: boolean; }) {
+  const { chain, network, isMultiSig, isTss } = args;
   let addressTypes = Constants.ADDRESS_TYPE[chain.toUpperCase()];
   if (!addressTypes) {
     return Constants.ADDRESS_TYPE.default;
@@ -155,6 +162,8 @@ export async function getAddressType({ chain, network, isMultiSig }: { chain: st
 
   if (isMultiSig) {
     addressTypes = addressTypes.multiSig;
+  } else if (isTss) {
+    addressTypes = addressTypes.thresholdSig;
   } else {
     addressTypes = addressTypes.singleSig;
   }

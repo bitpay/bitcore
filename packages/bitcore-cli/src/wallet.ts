@@ -14,11 +14,12 @@ import {
   Txp
 } from 'bitcore-wallet-client';
 import {
+  BitcoreLib,
   type Types as CWCTypes,
   Utils as CWCUtils,
   Message,
-  Web3,
-  ethers
+  Transactions,
+  Web3
 } from 'crypto-wallet-core';
 import { Constants } from './constants';
 import { ERC20Abi } from './erc20Abi';
@@ -139,7 +140,7 @@ export class Wallet implements IWallet {
     } else {
       key = new Key({ seedType: 'new', password });
     }
-    const credOpts = { coin, chain, network, account, n, m, mnemonic, password, addressType, singleAddress: BWCUtils.isSingleAddressChain(chain) };
+    const credOpts = { coin, chain, network, account, n, m, mnemonic, password, addressType, copayerName, singleAddress: BWCUtils.isSingleAddressChain(chain) };
     const creds = key.createCredentials(password, credOpts);
     this.client.fromObj(creds);
     this.#walletData = { key, creds };
@@ -339,9 +340,14 @@ export class Wallet implements IWallet {
         testnet: process.env['BITCORE_CLI_CURRENCIES_URL'] || 'https://test.bitpay.com/currencies',
         regtest: process.env['BITCORE_CLI_CURRENCIES_URL_REGTEST']
       };
-      const response = await fetch(urls[network], { method: 'GET', headers: { 'Content-Type': 'application/json' } });
-      if (!response.ok) {
-        throw new Error(`Failed to fetch currencies for wallet token check: ${response.statusText}`);
+      let response: Response;
+      try {
+        response = await fetch(urls[network], { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch currencies for wallet token check: ${response.statusText}`);
+        }
+      } catch (err) {
+        throw new Error(`Unable to fetch currencies from ${urls[network]}. ${err}`);
       }
       const { data: bpCurrencies } = await response.json();
       Wallet._bpCurrencies = bpCurrencies.map(c => ({
@@ -411,6 +417,21 @@ export class Wallet implements IWallet {
     } as ITokenObj;
   }
 
+  async getNativeCurrency(fallback?: boolean): Promise<ITokenObj | null> {
+    const chain = this.chain.toUpperCase();
+    let retval = null;
+    try {
+      const currencies = await Wallet.getCurrencies(this.network);
+      retval = currencies.find(c => c.chain === chain && c.native);
+    } catch (err) {
+      prompt.log.warn(`Unable to fetch native currency for ${chain}: ${err}`);
+    }
+    if (fallback && !retval) {
+      retval = { displayCode: chain };
+    }
+    return retval;
+  }
+
   async getPasswordWithRetry(): Promise<string> {
     let password;
     if (this.isWalletEncrypted()) {
@@ -453,23 +474,31 @@ export class Wallet implements IWallet {
     const { txp, password } = args;
 
     const isUtxo = BWCUtils.isUtxoChain(txp.chain);
-    const isEvm = BWCUtils.isEvmChain(txp.chain);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- TODO add support for SVM chains
     const isSvm = BWCUtils.isSvmChain(txp.chain);
 
-    if (!isEvm) {
-      throw new Error('TSS signing is only supported for EVM chains at the moment.');
+    if (isSvm) {
+      throw new Error('TSS wallets do not yet support Solana.');
     }
 
     const sigs: string[] = [];
 
-    const inputPaths = !isUtxo && !Array.isArray(txp.inputPaths) ? ['m/0/0'] : txp.inputPaths;
-    for (const i in inputPaths) {
-      const derivationPath = inputPaths[i];
+    const inputPaths = !isUtxo && !txp.inputPaths?.length ? ['m/0/0'] : txp.inputPaths;
+    const tx = BWCUtils.buildTx(txp);
+    const xPubKey = new BitcoreLib.HDPublicKey(this.#walletData.creds.clientDerivedPublicKey);
 
-      const messageHash = isEvm
-        ? ethers.keccak256(Client.getRawTx(txp)[0]).slice(2) // remove 0x prefix
-        : 'TODO';
+    for (let i = 0; i < inputPaths.length; i++) {
+      const derivationPath = inputPaths[i];
+      const pubKey = xPubKey.deriveChild(derivationPath).publicKey.toString();
+      const txHex = tx.uncheckedSerialize();
+
+      const messageHash = Transactions.getSighash({
+        chain: this.chain,
+        network: this.network,
+        tx: Array.isArray(txHex) ? txHex[0] : txHex,
+        index: i,
+        utxos: txp.inputs,
+        pubKey
+      });
 
       const signature = await tssSign({
         host: this.host,
@@ -478,7 +507,7 @@ export class Wallet implements IWallet {
         messageHash: Buffer.from(messageHash, 'hex'),
         derivationPath,
         password,
-        id: `${txp.id}:${derivationPath}`,
+        id: `${txp.id}:${derivationPath.replace(/\//g, '-')}`,
         logMessageWaiting: `Signing tx input ${i} (${i + 1}/${inputPaths.length}). Waiting for all parties to join...`,
         logMessageCompleted: `Tx input ${i} complete (${i + 1}/${inputPaths.length})`
       });
@@ -605,5 +634,9 @@ export class Wallet implements IWallet {
 
   isXrp() {
     return BWCUtils.isXrpChain(this.chain);
+  }
+
+  isTokenChain() {
+    return this.isEvm() || this.isSvm();
   }
 };

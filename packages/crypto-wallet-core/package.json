@@ -1,6 +1,6 @@
 {
   "name": "crypto-wallet-core",
-  "version": "11.3.7",
+  "version": "11.4.0",
   "description": "A multi-currency support library for address derivation, private key creation, and transaction creation",
   "main": "./ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
-    "test": "npm run compile && mocha -r tsx test/**/*.test.ts",
+    "test": "npm run compile && mocha -r tsx 'test/**/*.test.ts'",
     "pub": "npm run compile && npm publish"
   },
   "keywords": [
@@ -29,7 +29,7 @@
     "@solana-program/system": "^0.7.0",
     "@solana-program/token": "^0.5.1",
     "@solana/kit": "^2.1.0",
-    "bitcore-lib": "^11.3.7",
+    "bitcore-lib": "^11.4.0",
     "bitcore-lib-cash": "^11.3.7",
     "bitcore-lib-doge": "^11.3.7",
     "bitcore-lib-ltc": "^11.3.7",

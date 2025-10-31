@@ -2,7 +2,8 @@
 export const UTXO_CHAINS = ['btc', 'bch', 'doge', 'ltc'];
 export const EVM_CHAINS = ['eth', 'matic', 'arb', 'base', 'op'];
 export const SVM_CHAINS = ['sol'];
-export const CHAINS = [...UTXO_CHAINS, ...EVM_CHAINS, ...SVM_CHAINS];
+export const RIPPLE_CHAINS = ['xrp'];
+export const CHAINS = [...UTXO_CHAINS, ...EVM_CHAINS, ...SVM_CHAINS, ...RIPPLE_CHAINS];
 
 export const MULTISIG_CHAINS = UTXO_CHAINS;
 

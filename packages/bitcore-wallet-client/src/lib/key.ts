@@ -586,6 +586,7 @@ export class Key {
       walletPrivKey?: string;
       algo?: KeyAlgorithm;
       tssXPubKey?: string;
+      copayerName?: string;
     }
   ) {
     opts = opts || {} as any;
@@ -634,6 +635,7 @@ export class Key {
       requestPrivKey,
       addressType: opts.addressType,
       walletPrivKey: opts.walletPrivKey,
+      copayerName: opts.copayerName,
       clientDerivedPublicKey: opts.tssXPubKey || (algo === Constants.ALGOS.EDDSA ? this.#getChildKeyEDDSA(password, path)?.pubKey : undefined),
     });
   };
