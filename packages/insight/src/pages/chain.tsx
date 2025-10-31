@@ -63,7 +63,7 @@ const Chain: React.FC = () => {
       {error ? <Info type={'error'} message={error} /> : null}
       <HeaderDataContainer>
         <ChainHeader currency={currency} network={network} blocks={blocksList}/>
-        { blocksList && <BlockSample currency={currency} blocksList={blocksList} /> }
+        { blocksList && <BlockSample currency={currency} network={network} blocks={blocksList} /> }
       </HeaderDataContainer>
     </>
   );
