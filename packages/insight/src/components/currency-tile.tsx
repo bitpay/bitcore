@@ -197,12 +197,12 @@ const CurrencyTile: FC<CurrencyTileProps> = ({currency}) => {
   const {height, time, transactionCount, size} = data[0];
   const imgSrc = `https://bitpay.com/img/icon/currencies/${currency}.svg`;
 
-  const gotoAllBlocks = async () => {
-    await navigate(`/${currency}/mainnet/blocks`);
+  const gotoChain = async () => {
+    await navigate(`/${currency}/mainnet/chain`);
   };
 
   return (
-    <CurrencyTileDiv currency={currency} onClick={gotoAllBlocks} key={currency}>
+    <CurrencyTileDiv currency={currency} onClick={gotoChain} key={currency}>
       <CurrencyTileHeader>
         <img src={imgSrc} width={35} height={35} alt={`${currency} logo`} />
         <div>

@@ -1,5 +1,5 @@
 import {AnimatePresence, motion} from 'framer-motion';
-import {FC, memo, useState} from 'react';
+import {CSSProperties, FC, memo, useState} from 'react';
 import {CopyToClipboard} from 'react-copy-to-clipboard';
 import styled from 'styled-components';
 import CopySvg from '../assets/images/copy-icon.svg';
@@ -23,8 +23,9 @@ const IconImage = styled(motion.img)`
 
 interface CopyTextProps {
   text: string;
+  style?: CSSProperties
 }
-const CopyText: FC<CopyTextProps> = ({text}) => {
+const CopyText: FC<CopyTextProps> = ({text, style}) => {
   const [copied, setCopied] = useState<boolean>(false);
 
   const onClickCopy = () => {
@@ -60,7 +61,7 @@ const CopyText: FC<CopyTextProps> = ({text}) => {
   };
 
   return (
-    <CopyImg>
+    <CopyImg style={style}>
       <AnimatePresence mode={'wait'}>
         {copied ? (
           <IconImage
