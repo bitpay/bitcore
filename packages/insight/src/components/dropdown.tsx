@@ -1,5 +1,6 @@
 import { FC, CSSProperties } from 'react';
 import ArrowDown from '../assets/images/arrow-down.svg';
+import ArrowDownBlack from '../assets/images/arrow-down-black.svg';
 import { useTheme } from 'styled-components';
 
 const Dropdown: FC<{
@@ -31,7 +32,7 @@ const Dropdown: FC<{
         ))}
       </select>
       <img
-        src={ArrowDown}
+        src={theme.dark ? ArrowDownBlack : ArrowDown}
         alt='Arrow Down'
         style={{
           pointerEvents: 'none',

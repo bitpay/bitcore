@@ -14,9 +14,7 @@ import Info from 'src/components/info';
 
 const HeaderDataContainer = styled.div`
   width: 100%;
-  gap: 1rem;
-  display: flex;
-  flex-direction: column;
+  min-width: 0;
   align-items: center; /* center on mobile by default */
 
   @media screen and (min-width: ${size.mobileL}) {
@@ -64,10 +62,8 @@ const Chain: React.FC = () => {
     <>
       {error ? <Info type={'error'} message={error} /> : null}
       <HeaderDataContainer>
-        <div style={{width: '100%', minWidth: 0}}>
-          <ChainHeader currency={currency} network={network} blocks={blocksList}/>
-          { blocksList && <BlockSample currency={currency} blocksList={blocksList} /> }
-        </div>
+        <ChainHeader currency={currency} network={network} blocks={blocksList}/>
+        { blocksList && <BlockSample currency={currency} blocksList={blocksList} /> }
       </HeaderDataContainer>
     </>
   );

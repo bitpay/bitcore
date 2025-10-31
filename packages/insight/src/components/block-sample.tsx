@@ -2,28 +2,28 @@ import React, {FC, useState} from 'react';
 import {getConvertedValue, getDifficultyFromBits, getFormattedDate} from 'src/utilities/helper-methods';
 import {BitcoinBlockType} from 'src/utilities/models';
 import Cube from '../assets/images/cube.svg';
-import Arrow from '../assets/images/arrow.svg';
+import Arrow from '../assets/images/arrow-thin.svg';
 import ArrowDown from '../assets/images/arrow-down.svg';
-import styled from 'styled-components';
-import { LightBlack, NeutralSlate, Slate30 } from 'src/assets/styles/colors';
+import styled, { useTheme } from 'styled-components';
 import InfoCard from './InfoCard';
 
 const BlockListTableRow = styled.tr`
   text-align: center;
   line-height: 45px;
 
-  &:nth-child(even) {
-    background-color: ${({theme: {dark}}) => (dark ? LightBlack : Slate30)};
+  &:nth-child(odd) {
+    background-color: ${({theme: {dark}}) => (dark ? '#2a2a2a' : '#f6f7f9')};
   }
 
-  &:nth-child(odd) {
-    background-color: ${({theme: {dark}}) => (dark ? '#090909' : NeutralSlate)};
+  &:nth-child(even) {
+    background-color: ${({theme: {dark}}) => (dark ? '#0f0f0f' : '#e0e4e7')};
   }
 
   font-size: 16px;
 `;
 
 const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({currency, blocksList}) => {
+  const theme = useTheme();
   const [expandedBlocks, setExpandedBlocks] = useState<number[]>([]);
 
   if (!blocksList?.length) return null;
@@ -31,14 +31,15 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
     <table style={{width: '100%', overflowX: 'hidden', borderCollapse: 'collapse'}}>
       <thead>
         <BlockListTableRow>
-          <th style={{textAlign: 'left', paddingLeft: '3rem'}}>Height</th>
-          <th>Timestamp</th>
-          <th>Transactions</th>
-          <th>Size</th>
-          <th style={{textAlign: 'right', paddingRight: '3rem'}}>Fee Rate</th>
+          <th style={{textAlign: 'left', paddingLeft: '3rem', width: '20%'}}>Height</th>
+          <th style={{width: '20%'}}>Timestamp</th>
+          <th style={{width: '20%'}}>Transactions</th>
+          <th style={{width: '20%'}}>Size</th>
+          <th style={{textAlign: 'right', paddingRight: '3rem', width: '20%'}}>Fee Rate</th>
         </BlockListTableRow>
       </thead>
       <tbody>
+        <tr />
         {
           blocksList.map((block: BitcoinBlockType, index: number) => {
             const feeData = block.feeData;
@@ -50,13 +51,13 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
                   onClick={() => expanded
                     ? setExpandedBlocks(expandedBlocks.filter(h => h !== block.height))
                     : setExpandedBlocks([...expandedBlocks, block.height])}>
-                  <td style={{textAlign: 'left', color: '#2240C4', paddingLeft: '2rem'}}>
+                  <td style={{textAlign: 'left', color: '#2240C4', paddingLeft: '1rem'}}>
                     <span style={{display: 'flex', alignItems: 'center', gap: '0.5em'}}>
                       {expanded 
-                        ? <img src={ArrowDown} style={{height: '2rem', marginLeft: '-0.75rem', marginRight: '-6px'}} alt='arrow' />
-                        : <img src={Arrow} style={{height: '1rem', marginRight: '5px'}} alt='arrow' />
+                        ? <img src={ArrowDown} style={{height: '2rem', marginLeft: '-2px', marginRight: '-7px'}} alt='arrow' />
+                        : <img src={Arrow} style={{height: '1.8rem', marginRight: '-6px'}} alt='arrow' />
                       }
-                      <img src={Cube} style={{height: '1rem'}} alt='cube' />
+                      <img src={Cube} style={{height: '1.2rem'}} alt='cube' />
                       {block.height}
                     </span>
                   </td>
@@ -72,6 +73,7 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
 
                       <td colSpan={5} style={{padding: '1rem 2rem'}}>
                         <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
+                          <hr style={{border: 'none', borderTop: '1px solid #eee', margin: '0 -2rem', marginTop: '-0.8rem'}} />
                           <InfoCard data={[
                             {label: 'Block Hash', value: block.hash, copyText: true},
                             {label: 'Merkle Root', value: block.merkleRoot, copyText: true},
@@ -94,8 +96,8 @@ const BlockSample: FC<{currency: string, blocksList: BitcoinBlockType[]}> = ({cu
                                   {[{label: 'Mean', value: feeData.mean}, {label: 'Median', value: feeData.median}, {label: 'Mode', value: feeData.mode}]
                                     .map(({label, value}, key) => {
                                       return (<React.Fragment key={key}>
-                                        <div style={{display: 'flex', flexDirection: 'column', lineHeight: 1.1}}>
-                                          <span style={{color: '#474d53', alignSelf: 'flex-start', lineHeight: 2, marginBottom: -2, fontSize: '16px'}}>{label}</span>
+                                        <div style={{display: 'flex', flexDirection: 'column', lineHeight: 1.1, marginTop: '-0.4rem'}}>
+                                          <span style={{color: theme.dark ? '#888' : '#474d53', alignSelf: 'flex-start', lineHeight: 2, marginBottom: -2, fontSize: '16px'}}>{label}</span>
                                           {value.toFixed(4)}
                                         </div>
                                       </React.Fragment>)

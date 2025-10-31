@@ -203,14 +203,14 @@ const ChainHeader: FC<{ currency: string; network: string; blocks?: BitcoinBlock
         <img
           src={`https://bitpay.com/img/icon/currencies/${currency}.svg`}
           alt={currency}
-          style={{height: '25px'}}
+          style={{height: '25px', marginBottom: '0.25rem'}}
         />
-      <div style={{borderBottom: '1px solid', padding: '1rem', backgroundColor: theme.dark ? '#111' : '#f6f7f9', height: 'fit-content', marginBottom: '0.5rem'}}>
+      <div style={{padding: '1rem', backgroundColor: theme.dark ? '#111' : '#f6f7f9', height: 'fit-content', marginBottom: '2rem'}}>
         <div style={{display: 'flex', flexDirection: 'row', width: '100%', alignItems: 'center'}}>
           <ChartTile>
             <span>{getName(currency)} Exchange Rate</span>
             <div style={{display: 'flex', justifyContent: 'space-between'}}>
-              <ChartTileHeader>${price}</ChartTileHeader>
+              <ChartTileHeader>${price.toLocaleString()}</ChartTileHeader>
               <Dropdown options={priceRanges} value={priceSelectedRange} onChange={setPriceSelectedRange} />
             </div>
             {priceChangeSpan}
@@ -222,7 +222,7 @@ const ChainHeader: FC<{ currency: string; network: string; blocks?: BitcoinBlock
             <span>{getName(currency)} Fee</span>
             <div style={{display: 'flex', justifyContent: 'space-between'}}>
               <ChartTileHeader>{blocks?.at(0)?.feeData.median.toFixed(3)} sats/byte</ChartTileHeader>
-              <Dropdown options={feeRanges} value={feeSelectedRange} onChange={setFeesSelectedRange} />
+              <Dropdown options={feeRanges} value={feeSelectedRange} onChange={setFeesSelectedRange} style={{width: '130px'}} />
             </div>
             {feeChangeSpan}
             <div style={{flex: 1, minHeight: 0}}>
