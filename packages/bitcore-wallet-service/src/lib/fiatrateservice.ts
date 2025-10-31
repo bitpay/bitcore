@@ -170,7 +170,7 @@ export class FiatRateService {
     const now = Date.now();
     const ts = opts.ts ? opts.ts : now;
     let fiatFiltered = [];
-    let rates = [];
+    const rates = [];
 
     if (opts.code) {
       fiatFiltered = Defaults.FIAT_CURRENCIES.filter(c => c.code === opts.code);
@@ -208,7 +208,7 @@ export class FiatRateService {
           },
           (err, res: any) => {
             if (err) return cb(err);
-            var obj = {};
+            const obj = {};
             obj[coin] = res;
             return cb(null, obj);
           }
@@ -224,7 +224,8 @@ export class FiatRateService {
   getRatesByCoin(opts, cb) {
     $.shouldBeFunction(cb, 'Failed state: type error (cb not a function) at <getRatesByCoin()>');
 
-    let { coin, code } = opts;
+    let { coin } = opts;
+    const { code } = opts;
     const ts = opts.ts || Date.now();
 
     if (Constants.BITPAY_USD_STABLECOINS[coin.toUpperCase()]) {

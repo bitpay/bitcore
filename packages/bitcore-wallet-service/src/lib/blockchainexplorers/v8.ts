@@ -94,6 +94,7 @@ export class V8 {
     // for testing
     //
     this.request = opts.request || request;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     this.Client = opts.client || Client || require('./v8/client');
   }
 

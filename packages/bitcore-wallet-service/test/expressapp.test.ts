@@ -43,12 +43,12 @@ describe('ExpressApp', function() {
     });
 
     describe('Routes', function() {
-      var testPort = 3239;
-      var testHost = 'http://127.0.0.1';
-      var httpServer;
+      const testPort = 3239;
+      const testHost = 'http://127.0.0.1';
+      let httpServer;
 
       function start(ExpressApp, done) {
-        var app = new ExpressApp();
+        const app = new ExpressApp();
         httpServer = new http.Server(app.app);
 
         app.start(config, function(err) {
@@ -79,6 +79,7 @@ describe('ExpressApp', function() {
           request(requestOptions, function(err, res, body) {
             should.not.exist(err);
             should.exist(res.headers['x-service-version']);
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
             res.headers['x-service-version'].should.equal('bws-' + require('../package').version);
             res.statusCode.should.equal(200);
             body.should.equal('{}');

@@ -80,6 +80,7 @@ describe('Wallet service', function() {
 
   describe('#getServiceVersion', function() {
     it('should get version from package', function() {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       WalletService.getServiceVersion().should.equal('bws-' + require('../../package').version);
     });
   });

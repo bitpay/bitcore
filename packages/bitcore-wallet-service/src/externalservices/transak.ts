@@ -164,7 +164,7 @@ export class TransakService {
         Accept: 'application/json',
       };
 
-      let qs: string[] = [];
+      const qs: string[] = [];
       qs.push('partnerApiKey=' + API_KEY);
       qs.push('fiatCurrency=' + req.body.fiatCurrency);
       qs.push('cryptoCurrency=' + req.body.cryptoCurrency);

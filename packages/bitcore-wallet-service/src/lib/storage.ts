@@ -1226,7 +1226,7 @@ export class Storage {
     async.each(
       rates,
       (rate: { code: string; value: string }, next) => {
-        let i = {
+        const i = {
           ts: now,
           coin,
           code: rate.code,

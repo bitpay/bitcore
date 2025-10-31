@@ -9,7 +9,7 @@ const should = chai.should();
 describe('TxProposal', function() {
   describe('#create', function() {
     it('should create a TxProposal', function() {
-      var txp = TxProposal.create(aTxpOpts());
+      const txp = TxProposal.create(aTxpOpts());
       should.exist(txp);
       txp.outputs.length.should.equal(2);
       txp.amount.should.equal(30000000);
@@ -19,13 +19,13 @@ describe('TxProposal', function() {
 
   describe('#fromObj', function() {
     it('should copy a TxProposal', function() {
-      var txp = TxProposal.fromObj(aTXP());
+      const txp = TxProposal.fromObj(aTXP());
       should.exist(txp);
       txp.amount.should.equal(aTXP().amount);
     });
 
     it('should copy a TxProposal, with actions', function() {
-      let txpObj = aTXP();
+      const txpObj = aTXP();
 
 
       txpObj.version = 2;
@@ -38,7 +38,7 @@ describe('TxProposal', function() {
         xpub: 'xx',
       }];
       
-      var txp = TxProposal.fromObj(txpObj);
+      const txp = TxProposal.fromObj(txpObj);
       should.exist(txp);
       txp.amount.should.equal(aTXP().amount);
     });
@@ -46,7 +46,7 @@ describe('TxProposal', function() {
 
 
     it('should default to BTC coin', function() {
-      var txp = TxProposal.fromObj(aTXP());
+      const txp = TxProposal.fromObj(aTXP());
       should.exist(txp);
       txp.coin.should.equal('btc');
     });
@@ -54,15 +54,15 @@ describe('TxProposal', function() {
 
   describe('#getTotalAmount', function() {
     it('should compute total amount', function() {
-      var x = TxProposal.fromObj(aTXP());
-      var total = x.getTotalAmount();
+      const x = TxProposal.fromObj(aTXP());
+      const total = x.getTotalAmount();
       total.should.equal(x.amount);
     });
   });
 
   describe('#sign', function() {
     it('should sign 2-2 (txp version 3, btc tx version 1)', function() {
-      var txp = TxProposal.fromObj(aTXP());
+      const txp = TxProposal.fromObj(aTXP());
       txp.sign('1', theSignatures, theXPub);
       txp.isAccepted().should.equal(false);
       txp.isRejected().should.equal(false);
@@ -74,7 +74,7 @@ describe('TxProposal', function() {
 
   describe('#getRawTx', function() {
     it('should generate correct raw transaction for signed 2-2, tx version 1', function() {
-      var txp = TxProposal.fromObj(aTXP());
+      const txp = TxProposal.fromObj(aTXP());
       txp.sign('1', theSignatures, theXPub);
       txp.getRawTx().should.equal(theRawTx);
     });
@@ -82,7 +82,7 @@ describe('TxProposal', function() {
 
   describe('#reject', function() {
     it('should reject 2-2', function() {
-      var txp = TxProposal.fromObj(aTXP());
+      const txp = TxProposal.fromObj(aTXP());
       txp.reject('1', 'comment');
       txp.isAccepted().should.equal(false);
       txp.isRejected().should.equal(true);
@@ -91,7 +91,7 @@ describe('TxProposal', function() {
 
   describe('#reject & #sign', function() {
     it('should finally reject', function() {
-      var txp = TxProposal.fromObj(aTXP());
+      const txp = TxProposal.fromObj(aTXP());
       txp.sign('1', theSignatures, theXPub);
       txp.isAccepted().should.equal(false);
       txp.isRejected().should.equal(false);

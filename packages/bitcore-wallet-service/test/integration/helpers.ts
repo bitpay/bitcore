@@ -69,7 +69,7 @@ class Helpers {
     if (!storage.db) return;
 
     // Left overs to be initalized
-    let be = blockchainExplorer;
+    const be = blockchainExplorer;
     be.register = sinon.stub().callsArgWith(1, null, null);
     be.addAddresses = sinon.stub().callsArgWith(2, null, null);
 
@@ -182,22 +182,22 @@ class Helpers {
 
     console.log('var copayers = [');
     for (const xPrivKeyStr of xPrivKeys) {
-      var xpriv = BitcoreLib.HDPrivateKey(xPrivKeyStr);
-      var xpub = BitcoreLib.HDPublicKey(xpriv);
+      const xpriv = BitcoreLib.HDPrivateKey(xPrivKeyStr);
+      const xpub = BitcoreLib.HDPublicKey(xpriv);
 
-      var xpriv_45H = xpriv.deriveChild(45, true);
-      var xpub_45H = BitcoreLib.HDPublicKey(xpriv_45H);
-      var id45 = Model.Copayer.xPubToCopayerId('btc', xpub_45H.toString());
+      const xpriv_45H = xpriv.deriveChild(45, true);
+      const xpub_45H = BitcoreLib.HDPublicKey(xpriv_45H);
+      const id45 = Model.Copayer.xPubToCopayerId('btc', xpub_45H.toString());
 
-      var xpriv_44H_0H_0H = xpriv.deriveChild(44, true).deriveChild(0, true).deriveChild(0, true);
-      var xpub_44H_0H_0H = BitcoreLib.HDPublicKey(xpriv_44H_0H_0H);
-      var id44btc = Model.Copayer.xPubToCopayerId('btc', xpub_44H_0H_0H.toString());
-      var id44bch = Model.Copayer.xPubToCopayerId('bch', xpub_44H_0H_0H.toString());
+      const xpriv_44H_0H_0H = xpriv.deriveChild(44, true).deriveChild(0, true).deriveChild(0, true);
+      const xpub_44H_0H_0H = BitcoreLib.HDPublicKey(xpriv_44H_0H_0H);
+      const id44btc = Model.Copayer.xPubToCopayerId('btc', xpub_44H_0H_0H.toString());
+      const id44bch = Model.Copayer.xPubToCopayerId('bch', xpub_44H_0H_0H.toString());
 
-      var xpriv_1H = xpriv.deriveChild(1, true);
-      var xpub_1H = BitcoreLib.HDPublicKey(xpriv_1H);
-      var priv = xpriv_1H.deriveChild(0).privateKey;
-      var pub = xpub_1H.deriveChild(0).publicKey;
+      const xpriv_1H = xpriv.deriveChild(1, true);
+      const xpub_1H = BitcoreLib.HDPublicKey(xpriv_1H);
+      const priv = xpriv_1H.deriveChild(0).privateKey;
+      const pub = xpub_1H.deriveChild(0).publicKey;
 
       console.log('{id44btc: ', "'" + id44btc + "',");
       console.log('id44bch: ', "'" + id44bch + "',");
@@ -355,7 +355,7 @@ class Helpers {
         if (opts.tokenAddress) {
           return cb(null, { unconfirmed: 0, confirmed: 2e6, balance: 2e6 });
         }
-        let conf = amounts.map(x => Number((x * 1e18).toFixed(0))).reduce((sum, x) => sum += x, 0);
+        const conf = amounts.map(x => Number((x * 1e18).toFixed(0))).reduce((sum, x) => sum += x, 0);
         return cb(null, { unconfirmed: 0, confirmed: conf, balance: conf });
       };
       blockchainExplorer.estimateFee = sinon.stub().callsArgWith(1, null, 20000000000);
@@ -364,7 +364,7 @@ class Helpers {
 
     if (wallet.coin == 'eth') {
       amounts = Array.isArray(amounts) ? amounts : [amounts];
-      let conf = amounts.map(x => Number((x * 1e18).toFixed(0))).reduce((sum, x) => sum += x, 0);
+      const conf = amounts.map(x => Number((x * 1e18).toFixed(0))).reduce((sum, x) => sum += x, 0);
       blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, { unconfirmed: 0, confirmed: conf, balance: conf });
       return;
     }
@@ -608,7 +608,7 @@ class Helpers {
     const mainAddresses = [];
     const changeAddresses = [];
     for (let i = 0; i < main + change; i++) {
-      let isChange = i >= main;
+      const isChange = i >= main;
       const address = wallet.createAddress(isChange);
       await util.promisify(server.storage.storeAddressAndWallet).call(server.storage, wallet, address);
       if (isChange) {

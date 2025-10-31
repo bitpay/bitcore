@@ -78,7 +78,7 @@ export class MoonpayService {
         'Content-Type': 'application/json'
       };
 
-      let qs: string[] = [];
+      const qs: string[] = [];
       qs.push('apiKey=' + API_KEY);
       qs.push('baseCurrencyAmount=' + req.body.baseCurrencyAmount);
       qs.push('baseCurrencyCode=' + req.body.baseCurrencyCode);
@@ -120,7 +120,7 @@ export class MoonpayService {
         'Content-Type': 'application/json'
       };
 
-      let qs: string[] = [];
+      const qs: string[] = [];
       qs.push('apiKey=' + API_KEY);
       qs.push('quoteCurrencyCode=' + req.body.quoteCurrencyCode);
       qs.push('baseCurrencyAmount=' + req.body.baseCurrencyAmount);
@@ -161,7 +161,7 @@ export class MoonpayService {
         'Content-Type': 'application/json'
       };
 
-      let qs: string[] = [];
+      const qs: string[] = [];
       qs.push('apiKey=' + API_KEY);
       qs.push('baseCurrencyCode=' + encodeURIComponent(req.body.baseCurrencyCode));
       if (req.body.areFeesIncluded) qs.push('areFeesIncluded=' + encodeURIComponent(req.body.areFeesIncluded));
@@ -297,7 +297,7 @@ export class MoonpayService {
       };
       let URL: string = '';
 
-      let qs: string[] = [];
+      const qs: string[] = [];
       qs.push('apiKey=' + API_KEY);
       if (req.body.transactionId) {
         URL = API + `/v1/transactions/${req.body.transactionId}?${qs.join('&')}`;
@@ -337,7 +337,7 @@ export class MoonpayService {
       };
       let URL: string = '';
 
-      let qs: string[] = [];
+      const qs: string[] = [];
       qs.push('apiKey=' + API_KEY);
       if (req.body.transactionId) {
         URL = API + `/v3/sell_transactions/${req.body.transactionId}?${qs.join('&')}`;
@@ -411,7 +411,7 @@ export class MoonpayService {
         'Content-Type': 'application/json'
       };
 
-      let qs: string[] = [];
+      const qs: string[] = [];
       qs.push('apiKey=' + API_KEY);
 
       const URL = API + `/v3/accounts/me?${qs.join('&')}`;

@@ -160,7 +160,7 @@ describe('V8', () => {
       be.getAddressUtxos('36pUaXzGouNdCqUDRWRXX9NJYungJEWJC2', 571920, (err, utxos) => {
         should.not.exist(err);
         should.exist(utxos);
-        let x = utxos[1];
+        const x = utxos[1];
         x.confirmations.should.equal(124);
         x.satoshis.should.equal(350000000);
         x.amount.should.equal(3.5);

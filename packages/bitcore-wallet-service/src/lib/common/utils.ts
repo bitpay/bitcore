@@ -191,8 +191,8 @@ export const Utils = {
     }
 
     const u = Object.assign({}, UNITS[unit], opts);
-    var decimals = opts.decimals ? opts.decimals : u;
-    var toSatoshis = opts.toSatoshis ? opts.toSatoshis : u.toSatoshis;
+    const decimals = opts.decimals ? opts.decimals : u;
+    const toSatoshis = opts.toSatoshis ? opts.toSatoshis : u.toSatoshis;
 
     const amount = (satoshis / toSatoshis).toFixed(decimals.maxDecimals);
     return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', decimals.minDecimals);
@@ -410,7 +410,7 @@ export const Utils = {
       // compare concatenated strings for multiple key sorting
       let aVal = '';
       let bVal = '';
-      for (let k of keys) {
+      for (const k of keys) {
         const [aTemp, bTemp] = transformVals(
           Array.isArray(k) ? k.reduce((val, key) => val[key], a) : a[k],
           Array.isArray(k) ? k.reduce((val, key) => val[key], b) : b[k]

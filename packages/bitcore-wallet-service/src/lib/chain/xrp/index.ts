@@ -166,12 +166,12 @@ export class XrpChain implements IChain {
       });
       unsignedTxs.push(rawTx);
     }
-    let tx = {
+    const tx = {
       uncheckedSerialize: () => unsignedTxs,
       txid: () => txp.txid,
       txids: () => txp.txid ? [txp.txid] : [],
       toObject: () => {
-        let ret = _.clone(txp);
+        const ret = _.clone(txp);
         ret.outputs[0].satoshis = ret.outputs[0].amount;
         return ret;
       },
@@ -184,7 +184,7 @@ export class XrpChain implements IChain {
     if (opts.signed) {
       const sigs = txp.getCurrentSignatures();
       for (const x of sigs) {
-        this.addSignaturesToBitcoreTx(tx, x.signatures);
+        this.addSignaturesToBitcoreTx(tx, txp.inputs, txp.inputPaths, x.signatures, x.xpub);
       }
     }
 
@@ -204,7 +204,7 @@ export class XrpChain implements IChain {
     }
   }
 
-  checkTxUTXOs(server, txp, opts, cb) {
+  checkTxUTXOs(_server, _txp, _opts, cb) {
     return cb();
   }
 
@@ -223,7 +223,7 @@ export class XrpChain implements IChain {
     });
   }
 
-  checkUtxos(/* opts */) { }
+  checkUtxos(_opts) { }
 
   checkValidTxAmount(output): boolean {
     if (!Utils.isNumber(output.amount) || isNaN(output.amount) || output.amount < 0) {
@@ -252,7 +252,7 @@ export class XrpChain implements IChain {
     if (network != 'livenet') address.address += ':' + network;
   }
 
-  addSignaturesToBitcoreTx(tx, signatures) {
+  addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub) {
     if (signatures.length === 0) {
       throw new Error('Signatures Required');
     }

@@ -299,8 +299,8 @@ export class BtcChain implements IChain {
     const inputSize = this.getEstimatedSizeForSingleInput(txp, opts);
     const nbInputs = txp.inputs.length;
     let outputsSize = 0;
-    let outputs = Array.isArray(txp.outputs) ? txp.outputs : [txp.toAddress];
-    let addresses = outputs.map(x => x.toAddress);
+    const outputs = Array.isArray(txp.outputs) ? txp.outputs : [txp.toAddress];
+    const addresses = outputs.map(x => x.toAddress);
     if (txp.changeAddress) {
       addresses.push(txp.changeAddress.address);
     }
@@ -368,7 +368,7 @@ export class BtcChain implements IChain {
      * txp.inputs clean txp.input
      * removes possible nSequence number (BIP68)
      */
-    let inputs = txp.inputs.map(x => {
+    const inputs = txp.inputs.map(x => {
       return {
         address: x.address,
         txid: x.txid,
@@ -464,7 +464,7 @@ export class BtcChain implements IChain {
     };
 
     if (txp.outputs && Array.isArray(txp.outputs)) {
-      for (let output of txp.outputs) {
+      for (const output of txp.outputs) {
         if (output.script && output.script.startsWith('6a')) { // check OP_RETURN
           serializationOpts.disableDustOutputs = true;
         }

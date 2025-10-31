@@ -71,7 +71,7 @@ r.on('data', raw => {
 });
 
 r.on('end', () => {
-  let txs = [],
+  const txs = [],
     unconf = [];
   _.each(acum.split(/\r?\n/), rawTx => {
     if (!rawTx) return;

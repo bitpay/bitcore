@@ -17,7 +17,7 @@ describe('Storage', function() {
     mongodb.MongoClient.connect(config.mongoDb.uri, { useUnifiedTopology: true }, function(err, inclient) {
       if (err) throw err;
       client = inclient;
-      let db1 = client.db(config.mongoDb.dbname);
+      const db1 = client.db(config.mongoDb.dbname);
       storage = new Storage({
         db: db1,
       });
@@ -230,9 +230,9 @@ describe('Storage', function() {
   });
   describe('History Cache v8', () => {
     it('should fail is TX does not have blochchain height', (done) => {
-      let tipIndex = 80; // current cache tip
-      let items = [{ txid: '1234' }]; // a single tx.
-      let updateHeight = 1000;
+      const tipIndex = 80; // current cache tip
+      const items = [{ txid: '1234' }]; // a single tx.
+      const updateHeight = 1000;
       storage.storeTxHistoryCacheV8('xx', tipIndex, items, updateHeight, (err) => {
         err.toString().should.contain('missing blockheight');
         done();
@@ -241,9 +241,9 @@ describe('Storage', function() {
 
 
     it('should store a single tx on the cache and update status correctly', (done) => {
-      let tipIndex = 80; // current cache tip
-      let items = [{ txid: '1234', blockheight: 800 }]; // a single tx.
-      let updateHeight = 1000;
+      const tipIndex = 80; // current cache tip
+      const items = [{ txid: '1234', blockheight: 800 }]; // a single tx.
+      const updateHeight = 1000;
       storage.storeTxHistoryCacheV8('xx', tipIndex, items, updateHeight, (err) => {
         should.not.exist(err);
         storage.getTxHistoryCacheStatusV8('xx', (err, inCacheStatus) => {
@@ -259,15 +259,15 @@ describe('Storage', function() {
 
 
     it('should store a 5 txs on the cache and update status correctly', (done) => {
-      let tipIndex = 80; // current cache tip
-      let items = [
+      const tipIndex = 80; // current cache tip
+      const items = [
         { txid: '1234', blockheight: 803 },    // / <=== Latests
         { txid: '1235', blockheight: 802 },
         { txid: '1236', blockheight: 801 },
         { txid: '1237', blockheight: 801 },
         { txid: '1238', blockheight: 800 },
       ];
-      let updateHeight = 1000;
+      const updateHeight = 1000;
       storage.storeTxHistoryCacheV8('xx', tipIndex, items, updateHeight, (err) => {
         should.not.exist(err);
         storage.getTxHistoryCacheStatusV8('xx', (err, inCacheStatus) => {
@@ -282,15 +282,15 @@ describe('Storage', function() {
     });
 
     it('should prevent to store txs on wrong order', (done) => {
-      let tipIndex = 80; // current cache tip
-      let items = [
+      const tipIndex = 80; // current cache tip
+      const items = [
         { txid: '1234', blockheight: 803 },    // / <=== Latests
         { txid: '1235', blockheight: 802 },
         { txid: '1236', blockheight: 801 },
         { txid: '1237', blockheight: 801 },
         { txid: '1238', blockheight: 800 },
       ];
-      let updateHeight = 1000;
+      const updateHeight = 1000;
       storage.storeTxHistoryCacheV8('xx', tipIndex, items.reverse(), updateHeight, (err) => {
         err.toString().should.contain('wrong order');
         done();
@@ -298,8 +298,8 @@ describe('Storage', function() {
     });
 
     it('should store a 100 txs on the cache and update status correctly', (done) => {
-      let tipIndex = 80; // current cache tip
-      let items = helpers.createTxsV8(101, 1000);
+      const tipIndex = 80; // current cache tip
+      const items = helpers.createTxsV8(101, 1000);
 
       // this is done by _normalizeV8TxHistory
       for (const x of items) {
@@ -309,7 +309,7 @@ describe('Storage', function() {
       // remove unconfirmed
       items.shift();
 
-      let updateHeight = 50000;
+      const updateHeight = 50000;
       storage.storeTxHistoryCacheV8('xx', tipIndex, items, updateHeight, (err) => {
         should.not.exist(err);
         storage.getTxHistoryCacheStatusV8('xx', (err, inCacheStatus) => {
@@ -324,9 +324,9 @@ describe('Storage', function() {
     });
 
     it('should store a 1tx on the cache and retreive them correctly', (done) => {
-      let tipIndex = 80; // current cache tip
-      let items = [{ txid: '1234', blockheight: 800, amount: 100 }]; // a single tx.
-      let updateHeight = 1000;
+      const tipIndex = 80; // current cache tip
+      const items = [{ txid: '1234', blockheight: 800, amount: 100 }]; // a single tx.
+      const updateHeight = 1000;
 
       storage.storeTxHistoryCacheV8('xx', tipIndex, items, updateHeight, (err) => {
         should.not.exist(err);
@@ -340,9 +340,9 @@ describe('Storage', function() {
     });
 
     it('should clear all cache on deregistration', (done) => {
-      let tipIndex = 80; // current cache tip
-      let items = [{ txid: '1234', blockheight: 800, amount: 100 }]; // a single tx.
-      let updateHeight = 1000;
+      const tipIndex = 80; // current cache tip
+      const items = [{ txid: '1234', blockheight: 800, amount: 100 }]; // a single tx.
+      const updateHeight = 1000;
 
       storage.storeTxHistoryCacheV8('xx', tipIndex, items, updateHeight, (err) => {
         should.not.exist(err);
@@ -360,15 +360,15 @@ describe('Storage', function() {
 
 
     it('should store a 5 txs on the cache and retreive them correctly', (done) => {
-      let tipIndex = 80; // current cache tip
-      let items = [
+      const tipIndex = 80; // current cache tip
+      const items = [
         { txid: '1234', blockheight: 803 },    // / <=== Latests
         { txid: '1235', blockheight: 802 },
         { txid: '1236', blockheight: 801 },
         { txid: '1237', blockheight: 800 },
         { txid: '1238', blockheight: 800 },
       ];
-      let updateHeight = 1000;
+      const updateHeight = 1000;
       storage.storeTxHistoryCacheV8('xx', tipIndex, items, updateHeight, (err) => {
         should.not.exist(err);
         storage.getTxHistoryCacheV8('xx', 0, 5, (err, txs) => {
@@ -384,8 +384,8 @@ describe('Storage', function() {
 
 
     it('should store a 10 txs on the cache and retreive them correctly', (done) => {
-      let tipIndex = 80; // current cache tip
-      let items = [
+      const tipIndex = 80; // current cache tip
+      const items = [
         { txid: '1234', blockheight: 803 },    // / <=== Latests
         { txid: '1235', blockheight: 802 },
         { txid: '1236', blockheight: 801 },
@@ -398,7 +398,7 @@ describe('Storage', function() {
 
         // time passes
         updateHeight = 2000;
-        let items2 = [
+        const items2 = [
           { txid: '124', blockheight: 1803 },    // / <=== Latests
           { txid: '125', blockheight: 1802 },
           { txid: '126', blockheight: 1801 },

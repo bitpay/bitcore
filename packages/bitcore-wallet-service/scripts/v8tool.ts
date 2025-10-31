@@ -24,7 +24,7 @@ if (!authKey) throw new Error('provide authKey');
 //
 const authKeyObj = BitcoreLib.PrivateKey(authKey);
 
-let tmp = authKeyObj.toObject();
+const tmp = authKeyObj.toObject();
 tmp.compressed = false;
 const pubKey = BitcoreLib.PrivateKey(tmp).toPublicKey();
 
@@ -40,10 +40,10 @@ const BASE = {
   DOGE: `https://api.bitcore.io/api/${coin}/${network}`,
   LTC: `https://api.bitcore.io/api/${coin}/${network}`
 };
-let baseUrl = BASE[coin];
+const baseUrl = BASE[coin];
 console.log('[v8tool.ts.37:baseUrl:]', baseUrl); // TODO
 
-let client = new Client({
+const client = new Client({
   baseUrl,
   authKey: authKeyObj
 });

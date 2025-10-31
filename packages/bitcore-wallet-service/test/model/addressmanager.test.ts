@@ -15,7 +15,7 @@ describe('AddressManager', function() {
   });
   describe('#fromObj', function() {
     it('should assume legacy address manager uses BIP45', function() {
-      var obj = {
+      const obj = {
         version: '1.0.0',
         receiveAddressIndex: 2,
         changeAddressIndex: 0,

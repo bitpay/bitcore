@@ -47,7 +47,7 @@ export class ChangellyService {
 
   changellyGetCurrencies(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      let keys, headers;
+      let keys;
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
@@ -67,7 +67,7 @@ export class ChangellyService {
 
       const URL: string = keys.API;
       const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-      headers = {
+      const headers = {
         'Content-Type': 'application/json',
         'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
         'X-Api-Signature': signature.toString('base64'),
@@ -93,7 +93,7 @@ export class ChangellyService {
 
   changellyGetPairsParams(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      let keys, headers;
+      let keys;
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
@@ -118,7 +118,7 @@ export class ChangellyService {
 
       const URL: string = keys.API;
       const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-      headers = {
+      const headers = {
         'Content-Type': 'application/json',
         'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
         'X-Api-Signature': signature.toString('base64'),
@@ -144,7 +144,7 @@ export class ChangellyService {
 
   changellyGetFixRateForAmount(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      let keys, headers;
+      let keys;
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
@@ -170,7 +170,7 @@ export class ChangellyService {
 
       const URL: string = keys.API;
       const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-      headers = {
+      const headers = {
         'Content-Type': 'application/json',
         'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
         'X-Api-Signature': signature.toString('base64'),
@@ -196,7 +196,7 @@ export class ChangellyService {
 
   changellyCreateFixTransaction(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      let keys, headers;
+      let keys;
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
@@ -233,7 +233,7 @@ export class ChangellyService {
 
       const URL: string = keys.API;
       const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-      headers = {
+      const headers = {
         'Content-Type': 'application/json',
         'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
         'X-Api-Signature': signature.toString('base64'),
@@ -259,7 +259,7 @@ export class ChangellyService {
 
   changellyGetTransactions(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      let keys, headers;
+      let keys;
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
@@ -283,7 +283,7 @@ export class ChangellyService {
 
       const URL: string = keys.API;
       const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-      headers = {
+      const headers = {
         'Content-Type': 'application/json',
         'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
         'X-Api-Signature': signature.toString('base64'),
@@ -309,7 +309,7 @@ export class ChangellyService {
 
   changellyGetStatus(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      let keys, headers;
+      let keys;
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
@@ -331,7 +331,7 @@ export class ChangellyService {
 
       const URL: string = keys.API;
       const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-      headers = {
+      const headers = {
         'Content-Type': 'application/json',
         'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
         'X-Api-Signature': signature.toString('base64'),

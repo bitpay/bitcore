@@ -167,9 +167,8 @@ export class RampService {
       const headers = {
         'Content-Type': 'application/json'
       };
-      let URL: string;
 
-      let qs: string[] = [];
+      const qs: string[] = [];
       // "Buy" and "Sell" features use the same properties. Use "flow" to target the correct endpoint
       qs.push('hostApiKey=' + API_KEY);
       if (req.body.currencyCode) qs.push('currencyCode=' + encodeURIComponent(req.body.currencyCode));
@@ -180,7 +179,7 @@ export class RampService {
         qs.push('userIp=' + encodeURIComponent(ip));
       }
 
-      URL = API + `/host-api/v3${req.body.flow && req.body.flow === 'sell' ? '/offramp' : ''}/assets?${qs.join('&')}`;
+      const URL = API + `/host-api/v3${req.body.flow && req.body.flow === 'sell' ? '/offramp' : ''}/assets?${qs.join('&')}`;
 
       this.request.get(
         URL,
@@ -211,12 +210,11 @@ export class RampService {
       const headers = {
         'Content-Type': 'application/json'
       };
-      let URL: string;
 
-      let qs: string[] = [];
+      const qs: string[] = [];
       qs.push('secret=' + req.body.saleViewToken);
 
-      URL = API + `/host-api/v3/offramp/sale/${req.body.id}?${qs.join('&')}`;
+      const URL = API + `/host-api/v3/offramp/sale/${req.body.id}?${qs.join('&')}`;
 
       this.request.get(
         URL,

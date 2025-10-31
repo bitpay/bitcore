@@ -34,7 +34,7 @@ export class BanxaService {
   }
 
   private getBanxaSignature(method: 'get' | 'post', endpoint: string, apiKey: string, secret: string, body?: string) {
-    let signature, auth: string;
+    let signature;
     const nonce = Date.now().toString();
 
     switch (method) {
@@ -51,7 +51,7 @@ export class BanxaService {
     }
 
     const localSignature = crypto.createHmac('sha256', secret).update(signature).digest('hex');
-    auth = `${apiKey}:${localSignature}:${nonce}`;
+    const auth = `${apiKey}:${localSignature}:${nonce}`;
     return auth;
   }
 
@@ -102,7 +102,7 @@ export class BanxaService {
       const API_KEY = keys.API_KEY;
       const SECRET_KEY = keys.SECRET_KEY;
 
-      let qs: string[] = [];
+      const qs: string[] = [];
       if (req.body.source) qs.push('source=' + req.body.source);
       if (req.body.target) qs.push('target=' + req.body.target);
 
@@ -143,7 +143,7 @@ export class BanxaService {
         return reject(new ClientError("Banxa's request missing arguments"));
       }
 
-      let qs: string[] = [];
+      const qs: string[] = [];
       qs.push('source=' + req.body.source);
       qs.push('target=' + req.body.target);
 
@@ -230,7 +230,7 @@ export class BanxaService {
         return reject(new ClientError("Banxa's request missing arguments"));
       }
 
-      let qs: string[] = [];
+      const qs: string[] = [];
       if (req.body.fx_currency) qs.push('fx_currency=' + req.body.fx_currency);
 
       const UriPath = `/orders/${req.body.order_id}${qs.length > 0 ? '?' + qs.join('&') : ''}`;

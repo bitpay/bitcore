@@ -184,7 +184,7 @@ describe('Locks', function() {
 
   describe('#runLocked', () => {
     it('should run a locked function', function(done) {
-      var called =0;
+      let called = 0;
 
       function end() {
         called++;
@@ -202,7 +202,7 @@ describe('Locks', function() {
 
 
     it('should lock locked functions', function(done) {
-      var called =0;
+      let called = 0;
 
       function end() {
         called++;

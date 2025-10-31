@@ -477,6 +477,7 @@ const Config = (): any => {
 
   // Override default values with bws.config.js' values, if present
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const bwsConfig = require('../../bws.config');
     defaultConfig = _.merge(defaultConfig, bwsConfig);
   } catch {

@@ -86,7 +86,7 @@ describe('History', function() {
     });
 
     it('should filter out DUST amount', function(done) {
-      let txs= helpers.createTxsV8(50, BCHEIGHT);
+      const txs= helpers.createTxsV8(50, BCHEIGHT);
       txs[5].satoshis=100;
       txs[15].satoshis=10;
       txs[25].satoshis=1;
@@ -352,7 +352,7 @@ describe('History', function() {
         const _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
         Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
         helpers.stubHistory(100, 10000);
-        let limit = 20;
+        const limit = 20;
         let allTxs = [];
 
         // this call is to fill the cache
@@ -409,7 +409,7 @@ describe('History', function() {
         const _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
         Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
         helpers.stubHistory(1000, 10000); // (0->49)
-        let limit = 20;
+        const limit = 20;
         let allTxs = [];
 
         // this call is to fill the cache
@@ -460,7 +460,7 @@ describe('History', function() {
         const _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
         Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
         helpers.stubHistory(997, 10000); // (0->49)
-        let limit = 17;
+        const limit = 17;
         let allTxs = [];
 
         // this call is to fill the cache
@@ -512,7 +512,7 @@ describe('History', function() {
         const _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
         Defaults.CONFIRMATIONS_TO_START_CACHING = 100;
         helpers.stubHistory(997, 10000); // (0->49)
-        let limit = 17;
+        const limit = 17;
         let allTxs = [];
 
         // this call is to fill the cache
@@ -741,7 +741,7 @@ describe('History', function() {
                   should.not.exist(err);
                   should.exist(txs);
                   txs.length.should.equal(1);
-                  var tx = txs[0];
+                  const tx = txs[0];
                   tx.createdOn.should.equal(txp.createdOn);
                   tx.action.should.equal('sent');
                   tx.amount.should.equal(0.8e8);
@@ -1132,7 +1132,7 @@ describe('History', function() {
         });
         should.exist(txs);
         txs.length.should.equal(5);
-        var s = h.slice(i, i + 5);
+        const s = h.slice(i, i + 5);
         txs.map(tx => tx.txid).should.deep.equal(s.map(tx => tx.txid));
         fromCache.should.equal(i >= Defaults.CONFIRMATIONS_TO_START_CACHING && !reset);
       }

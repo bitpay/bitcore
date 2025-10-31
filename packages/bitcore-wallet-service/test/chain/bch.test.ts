@@ -36,14 +36,14 @@ describe('Chain BCH', function() {
     });
 
     it('1 input p2pkh, 1 output p2pkh: Margin should be 10%', function() {
-      let x = TxProposal.fromObj(aTXP());
+      const x = TxProposal.fromObj(aTXP());
       delete x.changeAddress;
       x.outputs.pop();
       x.addressType = Constants.SCRIPT_TYPES.P2PKH;
       const estimatedLength = bch.getEstimatedSize(x);
 
       // Create a similar TX.
-      let tx = new BitcoreLibCash.Transaction();
+      const tx = new BitcoreLibCash.Transaction();
       tx.from(simpleUtxoWith1BTC)
         .to([{ address: toAddress, satoshis: 1e8-7000 }])
         .sign(privateKey);

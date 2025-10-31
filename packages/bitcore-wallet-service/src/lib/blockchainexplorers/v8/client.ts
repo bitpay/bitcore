@@ -93,7 +93,7 @@ export class Client {
   async getCoins(params) {
     const { payload, pubKey, includeSpent } = params;
 
-    var extra = '';
+    let extra = '';
     if (includeSpent) {
       extra = `?includeSpent=${includeSpent}`;
     }

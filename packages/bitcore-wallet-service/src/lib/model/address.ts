@@ -139,7 +139,7 @@ export class Address {
         break;
       case Constants.SCRIPT_TYPES.P2SH:
         if (escrowInputs) {
-          var xpub = new Address.Bitcore[chain].HDPublicKey(publicKeyRing[0].xPubKey);
+          const xpub = new Address.Bitcore[chain].HDPublicKey(publicKeyRing[0].xPubKey);
           const inputPublicKeys = escrowInputs.map(input => xpub.deriveChild(input.path).publicKey);
           bitcoreAddress = Address.Bitcore[chain].Address.createEscrow(inputPublicKeys, publicKeys[0], network);
           publicKeys = [publicKeys[0], ...inputPublicKeys];

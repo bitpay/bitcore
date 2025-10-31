@@ -3305,7 +3305,7 @@ export class WalletService implements IWalletService {
         return cb(Err);
       }
 
-      this.getTx({ txProposalId: opts.txProposalId}, (err, txp) => {
+      this.getTx({ txProposalId: opts.txProposalId }, (err, txp) => {
         if (err) return cb(err);
 
         if (txp.status == 'broadcasted') return cb(Errors.TX_ALREADY_BROADCASTED);

@@ -495,7 +495,7 @@ export class PushNotificationsService {
       try {
         let unit = recipient.unit.toLowerCase();
         let label = UNIT_LABELS[unit];
-        let opts = {} as any;
+        const opts = {} as any;
         if (data.tokenAddress) {
           const tokenAddress = data.tokenAddress.toLowerCase();
           if (Constants.ETH_TOKEN_OPTS[tokenAddress]) {
