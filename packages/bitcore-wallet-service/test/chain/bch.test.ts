@@ -21,7 +21,7 @@ describe('Chain BCH', function() {
     let toAddress;
     let privateKey;
 
-    before(function()  {
+    before(function() {
       fromAddress = 'qzydnyc75u7kp6hhu4n3alq922u39ygl9gc3t4e2ma';
       toAddress = 'qped668nq9ltx2x0y85ls7mkp6xkxmg89y85s8lyla';
       changeAddress = 'qqjuuqsjgamj3lj2a6jaje6wckm8qdkwyvq3quku7x2';
@@ -36,16 +36,16 @@ describe('Chain BCH', function() {
     });
 
     it('1 input p2pkh, 1 output p2pkh: Margin should be 10%', function() {
-      let x = TxProposal.fromObj(aTXP());
+      const x = TxProposal.fromObj(aTXP());
       delete x.changeAddress;
       x.outputs.pop();
       x.addressType = Constants.SCRIPT_TYPES.P2PKH;
       const estimatedLength = bch.getEstimatedSize(x);
 
       // Create a similar TX.
-      let tx = new BitcoreLibCash.Transaction();
+      const tx = new BitcoreLibCash.Transaction();
       tx.from(simpleUtxoWith1BTC)
-        .to([{address: toAddress, satoshis: 1e8-7000}])
+        .to([{ address: toAddress, satoshis: 1e8-7000 }])
         .sign(privateKey);
 
       const actualLength = tx.serialize().length/2;

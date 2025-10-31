@@ -1,7 +1,9 @@
+import preconditions from 'preconditions';
 import { V8 } from './blockchainexplorers/v8';
 import { Common } from './common';
 
-const $ = require('preconditions').singleton();
+const $ = preconditions.singleton();
+
 const { Utils } = Common;
 
 const PROVIDERS = {

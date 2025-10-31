@@ -1,5 +1,5 @@
-import * as async from 'async';
 import * as crypto from 'crypto';
+import * as async from 'async';
 import {
   BitcoreLib as Bitcore,
   BitcoreLibCash,
@@ -43,7 +43,7 @@ function v8network(bwsNetwork, chain = 'btc') {
   return bwsNetwork;
 }
 
-export type WalletWithOpts = IWallet & { tokenAddress?: string; multisigContractAddress?: string; };
+export type WalletWithOpts = IWallet & { tokenAddress?: string; multisigContractAddress?: string };
 
 export class V8 {
   chain: string;
@@ -94,6 +94,7 @@ export class V8 {
     // for testing
     //
     this.request = opts.request || request;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     this.Client = opts.client || Client || require('./v8/client');
   }
 
@@ -543,7 +544,7 @@ export class V8 {
   estimateFeeV2(opts, cb) {
     const txType = opts.txType;
     if (Number(txType) !== 2) {
-     return this.estimateFee(opts, cb);
+      return this.estimateFee(opts, cb);
     }
     const nbBlocks = Number(opts.nbBlocks) || 2;
     const url = this.baseUrl + `/fee/${nbBlocks}?txType=${txType}`;
@@ -593,7 +594,7 @@ export class V8 {
         try {
           ret = JSON.parse(ret);
           return cb(null, ret.height, ret.hash);
-        } catch (err) {
+        } catch {
           return cb(new Error('Could not get height from block explorer'));
         }
       })
@@ -609,7 +610,7 @@ export class V8 {
           ret = JSON.parse(ret);
           const res = _.map(ret, 'txid');
           return cb(null, res);
-        } catch (err) {
+        } catch {
           return cb(new Error('Could not get height from block explorer'));
         }
       })
@@ -723,15 +724,6 @@ export class V8 {
     });
   }
 }
-
-const _parseErr = (err, res) => {
-  if (err) {
-    logger.warn('[v8.js] V8 raw error: %o', err);
-    return 'V8 Error';
-  }
-  logger.warn('[v8.js] ' + res.request.href + ' Returned Status: ' + res.statusCode);
-  return 'Error querying the blockchain';
-};
 
 const getPerformanceKey = (name: string) => {
   return name + '-' + crypto.randomBytes(5).toString('hex');

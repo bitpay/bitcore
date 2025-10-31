@@ -1,6 +1,6 @@
+import Uuid from 'uuid';
 import { Common } from '../common';
 
-const Uuid = require('uuid');
 const Defaults = Common.Defaults;
 
 export interface ISession {

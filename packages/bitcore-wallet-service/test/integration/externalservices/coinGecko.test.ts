@@ -24,21 +24,21 @@ describe('CoinGecko integration', function() {
   beforeEach(async () => {
     config.coinGecko = {
       api: 'xxxx',
-    }
+    };
 
     fakeRequest = {
-      get: (_url, _opts, _cb) => { return _cb(null,  { body: {tokens: [{
+      get: (_url, _opts, _cb) => { return _cb(null, { body: { tokens: [{
         chainId: 1,
-        address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-        symbol: "USDC",
-        name: "USD Coin",
+        address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        symbol: 'USDC',
+        name: 'USD Coin',
         decimals: 6,
-        logoURI: "xxxxxx"
-      }]}}) },
+        logoURI: 'xxxxxx'
+      }] } }); },
     };
 
     await helpers.beforeEach();
-    ({ wallet} = await helpers.createAndJoinWallet(1, 1));
+    ({ wallet } = await helpers.createAndJoinWallet(1, 1));
     const priv = TestData.copayers[0].privKey_1H_0;
     const sig = helpers.signMessage('hello world', priv);
   

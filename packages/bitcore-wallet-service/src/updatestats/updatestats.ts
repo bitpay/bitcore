@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
+import config from '../config';
 import { UpdateStats } from '../lib/updatestats';
-var config = require('../config');
 
 const updateStatsScript = new UpdateStats();
 updateStatsScript.run(config, err => {

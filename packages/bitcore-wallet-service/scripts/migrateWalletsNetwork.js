@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 
-const config = require('../../ts_build/src/config').default;
-const { Storage } = require('../../ts_build/src').default;
-const rl = require('readline').createInterface({ input: process.stdin, output: process.stdout });
-const fs = require('fs');
-const os = require('os');
+import fs from 'fs';
+import os from 'os';
+import readline from 'readline';
+import config from '../ts_build/src/config';
+import { Storage } from '../ts_build/src/lib/storage';
+
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
 const startDate = new Date('2011-01-01T00:00:00.000Z');
 const endDate = new Date();
@@ -76,7 +78,7 @@ storage.connect(config.storageOpts, async (err) => {
   }
   
   function done(err) {
-    if (err) { console.log(err) }
+    if (err) { console.log(err); }
     rl.close();
     storage.disconnect(() => { console.log('done'); });
   }
@@ -89,7 +91,6 @@ storage.connect(config.storageOpts, async (err) => {
     let fixAddressCount = 0;
     let fixWalletsCount = 0;
     let fixTxsCount = 0;
-    let fixCacheCount = 0;
     let count = 0;
 
     console.log(`  ${doit ? 'REAL:' : 'DRY RUN:'} Found ${Intl.NumberFormat().format(walletCnt)} total wallets to scan`);
@@ -159,9 +160,7 @@ storage.connect(config.storageOpts, async (err) => {
         const resCache = await storage.db.collection(Storage.collections.CACHE).deleteMany({
           walletId: wallet.id
         });
-        if (resCache?.result?.n > 0) {
-          fixCacheCount++;
-        } else if (!resCache?.result?.ok) {
+        if (resCache?.result?.n <= 0 && !resCache?.result?.ok) {
           console.log(JSON.stringify(resTxs));
         }
       } else {
@@ -190,13 +189,6 @@ storage.connect(config.storageOpts, async (err) => {
         });
 
         fixTxsCount += txsCount;
-
-        // Delete Cache collection
-        const cacheCount = await storage.db.collection(Storage.collections.CACHE).countDocuments({
-          walletId: wallet.id
-        });
-
-        fixCacheCount += cacheCount;
       }
     }
     process.stdout.write('\n');

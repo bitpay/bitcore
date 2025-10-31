@@ -1,24 +1,6 @@
 import _ from 'lodash';
+import Uuid from 'uuid';
 
-const Uuid = require('uuid');
-
-interface IEmail {
-  version: number;
-  createdOn: number;
-  id: number;
-  walletId: string;
-  copayerId: string;
-  from: string;
-  to: string;
-  subject: string;
-  bodyPlain: string;
-  bodyHtml: string;
-  status: string;
-  attempts: number;
-  lastAttemptOn?: number;
-  notificationId: string;
-  language: string;
-}
 export class Email {
   version: number;
   createdOn: number;

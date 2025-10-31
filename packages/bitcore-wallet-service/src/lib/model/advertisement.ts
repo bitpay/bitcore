@@ -1,5 +1,4 @@
-const $ = require('preconditions').singleton();
-var _ = require('lodash');
+import _ from 'lodash';
 
 export interface IAdvertisement {
   name: string;

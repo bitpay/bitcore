@@ -42,11 +42,11 @@ describe('Banxa integration', () => {
         apiKey: 'apiKey4',
         secretKey: 'secretKey4',
       }
-    }
+    };
 
     fakeRequest = {
-      get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
-      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+      get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
+      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
     };
 
     await helpers.beforeEach();
@@ -76,7 +76,7 @@ describe('Banxa integration', () => {
         body: {
           env: 'sandbox',
         }
-      }
+      };
       server.externalServices.banxa.request = fakeRequest;
     });
 
@@ -93,7 +93,7 @@ describe('Banxa integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.banxa.request = fakeRequest2;
@@ -124,7 +124,7 @@ describe('Banxa integration', () => {
           env: 'sandbox',
           orderType: 'buy'
         }
-      }
+      };
       server.externalServices.banxa.request = fakeRequest;
     });
 
@@ -134,7 +134,7 @@ describe('Banxa integration', () => {
     });
 
     it('should work properly if req is OK for sell', async () => {
-      req.body.orderType = 'sell'
+      req.body.orderType = 'sell';
       const data = await server.externalServices.banxa.banxaGetCoins(req);
       should.exist(data);
     });
@@ -147,7 +147,7 @@ describe('Banxa integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.banxa.request = fakeRequest2;
@@ -165,7 +165,7 @@ describe('Banxa integration', () => {
         await server.externalServices.banxa.banxaGetCoins(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal(`Banxa's 'orderType' property must be 'sell' or 'buy'`);
+        err.message.should.equal('Banxa\'s \'orderType\' property must be \'sell\' or \'buy\'');
       }
     });
 
@@ -175,7 +175,7 @@ describe('Banxa integration', () => {
         await server.externalServices.banxa.banxaGetCoins(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal(`Banxa's request missing arguments`);
+        err.message.should.equal('Banxa\'s request missing arguments');
       }
     });
 
@@ -199,7 +199,7 @@ describe('Banxa integration', () => {
           source: 'USD',
           target: 'BTC'
         }
-      }
+      };
       server.externalServices.banxa.request = fakeRequest;
     });
 
@@ -216,7 +216,7 @@ describe('Banxa integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.banxa.request = fakeRequest2;
@@ -262,7 +262,7 @@ describe('Banxa integration', () => {
           wallet_address: 'wallet_address1',
           return_url_on_success: 'return_url_on_success1'
         }
-      }
+      };
       server.externalServices.banxa.request = fakeRequest;
     });
 
@@ -279,7 +279,7 @@ describe('Banxa integration', () => {
 
     it('should return error if post returns error', async () => {
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.banxa.request = fakeRequest2;
@@ -320,7 +320,7 @@ describe('Banxa integration', () => {
           env: 'sandbox',
           order_id: 'order_id1',
         }
-      }
+      };
       server.externalServices.banxa.request = fakeRequest;
     });
 
@@ -337,7 +337,7 @@ describe('Banxa integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.banxa.request = fakeRequest2;

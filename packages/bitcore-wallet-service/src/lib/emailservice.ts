@@ -1,14 +1,12 @@
+import fs from 'fs';
+import { IncomingMessage } from 'http';
+import path from 'path';
+import sgMail from '@sendgrid/mail';
 import * as async from 'async';
 import juice from 'juice';
 import 'source-map-support/register';
-
-import sgMail from '@sendgrid/mail';
-import { Constants as ConstantsCWC } from 'crypto-wallet-core';
-import fs from 'fs';
-import { IncomingMessage } from 'http';
 import Mustache from 'mustache';
 import * as nodemailer from 'nodemailer';
-import path from 'path';
 import request from 'request';
 import config from '../config';
 import { Common } from './common';
@@ -202,9 +200,9 @@ export class EmailService {
                       }
                       return reject(data?.body || data);
                     }
-                  )
+                  );
                 });
-              }
+              };
             } else {
               throw new Error('Unknown emailOpts.mailer: ' + opts.emailOpts.mailer);
             }
@@ -224,7 +222,7 @@ export class EmailService {
   }
 
   _getTemplateLanguages(templatePath) {
-    const contents = fs.readdirSync(templatePath, { withFileTypes: true});
+    const contents = fs.readdirSync(templatePath, { withFileTypes: true });
     const langs = contents.filter(item => item.isDirectory()).map(item => item.name);
     return langs;
   }
@@ -325,7 +323,7 @@ export class EmailService {
             unit
           };
         })
-        .filter(p => !!p); // filter out falsy values (e.g. undefined)
+          .filter(p => !!p); // filter out falsy values (e.g. undefined)
 
         return cb(null, recipients);
       });
@@ -383,7 +381,7 @@ export class EmailService {
       if (firstLine && firstLine.startsWith('{{subjectPrefix}}')) {
         data.title = toTitleCase(firstLine.replace('{{subjectPrefix}}', ''));
       }
-    } catch (err) {
+    } catch {
       const templateName = EMAIL_TYPES[notification.type].filename;
       data.title = toTitleCase(templateName.split('_').join(' '));
     }
@@ -398,7 +396,7 @@ export class EmailService {
       try {
         let unit = recipient.unit.toLowerCase();
         let label = UNIT_LABELS[unit];
-        let opts = {} as any;
+        const opts = {} as any;
         if (data.tokenAddress) {
           const tokenAddress = data.tokenAddress.toLowerCase();
           if (Constants.ETH_TOKEN_OPTS[tokenAddress]) {
@@ -425,7 +423,7 @@ export class EmailService {
             try {
               customTokensData = await this.getTokenData(data.address.coin);
               tokenData = customTokensData.find(t => t.address === tokenAddress);
-            } catch (error) {
+            } catch {
               return cb(new Error('Could not get custom tokens data'));
             }
             if (tokenData) {
@@ -512,7 +510,7 @@ export class EmailService {
         let errStr;
         try {
           errStr = err.toString();
-        } catch (e) { }
+        } catch { /* ignore errors */ }
 
         logger.warn('An error occurred when trying to send email to %o %o', email.to, (errStr || err));
         return cb(err);
@@ -628,7 +626,7 @@ export class EmailService {
                         this.storage.storeEmail(email, next);
                       });
                     },
-                    err => {
+                    () => {
                       return next();
                     }
                   );
@@ -639,7 +637,7 @@ export class EmailService {
                   let errStr;
                   try {
                     errStr = err.toString();
-                  } catch (e) { }
+                  } catch { /* ignore errors */ }
 
                   logger.warn('An error ocurred generating email notification: %o', errStr || err);
                 }
@@ -736,7 +734,7 @@ export class EmailService {
                 return resolve(updatedTokens);
               });
             }
-        });
+          });
       });
     });
   }

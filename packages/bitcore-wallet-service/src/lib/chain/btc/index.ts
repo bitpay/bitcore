@@ -91,7 +91,7 @@ export class BtcChain implements IChain {
       };
 
       let inputs = utxos.filter(utxo => !utxo.locked);
-      if (!!opts.excludeUnconfirmedUtxos) {
+      if (opts.excludeUnconfirmedUtxos) {
         inputs = inputs.filter(utxo => utxo.confirmations);
       }
       if (!inputs.length) return cb(null, info);
@@ -197,7 +197,7 @@ export class BtcChain implements IChain {
         }
       };
 
-      getChangeAddress(wallet, (err, address, isNew) => {
+      getChangeAddress(wallet, (err, address, _isNew) => {
         if (err) return reject(err);
         return resolve(address);
       });
@@ -299,8 +299,8 @@ export class BtcChain implements IChain {
     const inputSize = this.getEstimatedSizeForSingleInput(txp, opts);
     const nbInputs = txp.inputs.length;
     let outputsSize = 0;
-    let outputs = Array.isArray(txp.outputs) ? txp.outputs : [txp.toAddress];
-    let addresses = outputs.map(x => x.toAddress);
+    const outputs = Array.isArray(txp.outputs) ? txp.outputs : [txp.toAddress];
+    const addresses = outputs.map(x => x.toAddress);
     if (txp.changeAddress) {
       addresses.push(txp.changeAddress.address);
     }
@@ -368,7 +368,7 @@ export class BtcChain implements IChain {
      * txp.inputs clean txp.input
      * removes possible nSequence number (BIP68)
      */
-    let inputs = txp.inputs.map(x => {
+    const inputs = txp.inputs.map(x => {
       return {
         address: x.address,
         txid: x.txid,
@@ -464,7 +464,7 @@ export class BtcChain implements IChain {
     };
 
     if (txp.outputs && Array.isArray(txp.outputs)) {
-      for (let output of txp.outputs) {
+      for (const output of txp.outputs) {
         if (output.script && output.script.startsWith('6a')) { // check OP_RETURN
           serializationOpts.disableDustOutputs = true;
         }
@@ -905,9 +905,9 @@ export class BtcChain implements IChain {
     return false;
   }
 
-  addressFromStorageTransform(network, address) {}
+  addressFromStorageTransform(_network, _address) {}
 
-  addressToStorageTransform(network, address) {}
+  addressToStorageTransform(_network, _address) {}
 
   addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub, signingMethod) {
     signingMethod = signingMethod || 'ecdsa';
@@ -930,13 +930,13 @@ export class BtcChain implements IChain {
         };
         tx.inputs[i].addSignature(tx, s, signingMethod);
         i++;
-      } catch (e) {}
+      } catch { /* ignore error */ }
     }
 
     if (i != tx.inputs.length) throw new Error('Wrong signatures');
   }
 
-  validateAddress(wallet, inaddr, opts) {
+  validateAddress(wallet, inaddr, _opts) {
     const A = this.bitcoreLib.Address;
     let addr: {
       network?: string;
@@ -944,7 +944,7 @@ export class BtcChain implements IChain {
     } = {};
     try {
       addr = new A(inaddr);
-    } catch (ex) {
+    } catch {
       throw Errors.INVALID_ADDRESS;
     }
     if (!this._isCorrectNetwork(wallet, addr)) {
@@ -954,7 +954,7 @@ export class BtcChain implements IChain {
   }
 
   protected _isCorrectNetwork(wallet, addr) {
-    const addrNetwork = Utils.getNetworkName(wallet.chain, addr.network.toString())
+    const addrNetwork = Utils.getNetworkName(wallet.chain, addr.network.toString());
     const walNetwork = wallet.network;
     if (Utils.getNetworkType(addrNetwork) === 'testnet' && walNetwork === 'regtest') {
       return !!config.allowRegtest;
@@ -977,7 +977,7 @@ export class BtcChain implements IChain {
   }
 
   // Push notification handling
-  onTx(tx) {
+  onTx(_tx) {
     return null;
   }
 

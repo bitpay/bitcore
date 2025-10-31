@@ -1,9 +1,9 @@
 import * as request from 'request';
+import Uuid from 'uuid';
 import config from '../config';
 import { Utils } from '../lib/common/utils';
 import { ClientError } from '../lib/errors/clienterror';
 import { checkRequired } from '../lib/server';
-const Uuid = require('uuid');
 
 export class SimplexService {
   request: any = request;
@@ -120,7 +120,7 @@ export class SimplexService {
         headers['x-country-code'] = req.body.userCountry.toUpperCase();
       }
 
-      let qs: string[] = [];
+      const qs: string[] = [];
       qs.push('base_currency=' + req.body.base_currency);
       qs.push('base_amount=' + req.body.base_amount);
       qs.push('quote_currency=' + req.body.quote_currency);

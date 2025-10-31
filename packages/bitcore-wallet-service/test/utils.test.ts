@@ -11,12 +11,12 @@ const should = chai.should();
 describe('Utils', function() {
   describe('#getMissingFields', function() {
     it('should check required fields', function() {
-      var obj = {
+      const obj = {
         id: 'id',
         name: 'name',
         array: ['a', 'b'],
       };
-      var fixtures = [{
+      const fixtures = [{
         args: 'id',
         check: [],
       }, {
@@ -127,7 +127,7 @@ describe('Utils', function() {
 
   describe('#formatAmount', function() {
     it('should successfully format amount', function() {
-      const cases: Array<{ args: [number, string, any?], expected: string }> = [{
+      const cases: Array<{ args: [number, string, any?]; expected: string }> = [{
         args: [1, 'bit'],
         expected: '0',
       }, {
@@ -264,20 +264,20 @@ describe('Utils', function() {
 
   describe('#translateAddress', function() {
     it('should translate address from btc to bch', function() {
-      var res = Utils.translateAddress('1LqBGSKuX5yYUonjxT5qGfpUsXKYYWeabA', 'bch');
+      const res = Utils.translateAddress('1LqBGSKuX5yYUonjxT5qGfpUsXKYYWeabA', 'bch');
       res.should.equal('CcJ4qUfyQ8x5NwhAeCQkrBSWVeXxXghcNz');
     });
     it('should translate address from bch to btc', function() {
-      var res = Utils.translateAddress('HBf8isgS8EXG1r3X6GP89FmooUmiJ42wHS', 'btc');
+      const res = Utils.translateAddress('HBf8isgS8EXG1r3X6GP89FmooUmiJ42wHS', 'btc');
       res.should.equal('36q2G5FMGvJbPgAVEaiyAsFGmpkhPKwk2r');
     });
 
     it('should keep the address if there is nothing to do (bch)', function() {
-      var res = Utils.translateAddress('CcJ4qUfyQ8x5NwhAeCQkrBSWVeXxXghcNz', 'bch');
+      const res = Utils.translateAddress('CcJ4qUfyQ8x5NwhAeCQkrBSWVeXxXghcNz', 'bch');
       res.should.equal('CcJ4qUfyQ8x5NwhAeCQkrBSWVeXxXghcNz');
     });
     it('should keep the address if there is nothing to do (btc)', function() {
-      var res = Utils.translateAddress('1LqBGSKuX5yYUonjxT5qGfpUsXKYYWeabA', 'btc');
+      const res = Utils.translateAddress('1LqBGSKuX5yYUonjxT5qGfpUsXKYYWeabA', 'btc');
       should.exist(res);
       res.should.equal('1LqBGSKuX5yYUonjxT5qGfpUsXKYYWeabA');
     });
@@ -289,7 +289,7 @@ describe('Utils', function() {
         headers: {
           'x-forwarded-for': '1.2.3.4'
         }
-      }
+      };
 
       const ip = Utils.getIpFromReq(req);
       should.exist(ip);
@@ -301,7 +301,7 @@ describe('Utils', function() {
         headers: {
           'x-forwarded-for': '1.2.3.4, 5.6.7.8, 9.10.11.12'
         }
-      }
+      };
 
       const ip = Utils.getIpFromReq(req);
       should.exist(ip);
@@ -313,7 +313,7 @@ describe('Utils', function() {
         headers: {
           'x-real-ip': '1.2.3.4'
         }
-      }
+      };
 
       const ip = Utils.getIpFromReq(req);
       should.exist(ip);
@@ -325,7 +325,7 @@ describe('Utils', function() {
         headers: {
           'x-real-ip': '1.2.3.4, 5.6.7.8, 9.10.11.12'
         }
-      }
+      };
 
       const ip = Utils.getIpFromReq(req);
       should.exist(ip);
@@ -335,7 +335,7 @@ describe('Utils', function() {
     it('should get the ip if req.ip exists', function() {
       const req = {
         ip: '1.2.3.4'
-      }
+      };
 
       const ip = Utils.getIpFromReq(req);
       should.exist(ip);
@@ -347,7 +347,7 @@ describe('Utils', function() {
         connection: {
           remoteAddress: '1.2.3.4'
         }
-      }
+      };
 
       const ip = Utils.getIpFromReq(req);
       should.exist(ip);
@@ -355,7 +355,7 @@ describe('Utils', function() {
     });
 
     it('should get an empty string if no case is met', function() {
-      const req = {}
+      const req = {};
 
       const ip = Utils.getIpFromReq(req);
       ip.should.equal('');
@@ -407,11 +407,11 @@ describe('Utils', function() {
     });
 
     it('should sort an array of objects with nested key', function() {
-      const res = Utils.sortAsc([{ a: { b: 3 }}, { a: { b: 1 }}, { a: { b: 2 }}], ['a', 'b']);
+      const res = Utils.sortAsc([{ a: { b: 3 } }, { a: { b: 1 } }, { a: { b: 2 } }], ['a', 'b']);
       res.should.deep.equal([
-        { a: { b: 1 }},
-        { a: { b: 2 }},
-        { a: { b: 3 }}
+        { a: { b: 1 } },
+        { a: { b: 2 } },
+        { a: { b: 3 } }
       ]);
     });
   });

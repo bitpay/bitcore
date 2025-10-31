@@ -18,7 +18,7 @@ export class XrpChain implements IChain {
    * @returns {Object} balance - Total amount & locked amount.
    */
   private convertBitcoreBalance(bitcoreBalance, locked, reserve = Defaults.MIN_XRP_BALANCE) {
-    const { unconfirmed, confirmed, balance } = bitcoreBalance;
+    const { confirmed, balance } = bitcoreBalance;
     let activatedLocked = locked;
     // If XRP address has a min balance of X XRP, subtract activation fee for true spendable balance.
     if (balance > 0) {
@@ -90,8 +90,8 @@ export class XrpChain implements IChain {
   getWalletSendMaxInfo(server, wallet, opts, cb) {
     server.getBalance({}, (err, balance) => {
       if (err) return cb(err);
-      const { totalAmount, availableAmount } = balance;
-      let fee = opts.feePerKb;
+      const { availableAmount } = balance;
+      const fee = opts.feePerKb;
       return cb(null, {
         utxosBelowFee: 0,
         amountBelowFee: 0,
@@ -117,9 +117,9 @@ export class XrpChain implements IChain {
 
   getChangeAddress() { }
 
-  checkDust(output, opts) { }
+  checkDust(_output, _opts) { }
 
-  checkScriptOutput(output) { }
+  checkScriptOutput(_output) { }
 
   getFee(server, wallet, opts) {
     return new Promise((resolve, reject) => {
@@ -131,7 +131,7 @@ export class XrpChain implements IChain {
         if (err) {
           return reject(err);
         }
-        let feePerKb = inFeePerKb;
+        const feePerKb = inFeePerKb;
         opts.fee = feePerKb;
         return resolve({ feePerKb });
       });
@@ -155,7 +155,7 @@ export class XrpChain implements IChain {
         amount: outputs[outputIdx].amount,
         address: outputs[outputIdx].toAddress,
         tag: outputs[outputIdx].tag
-      }
+      };
       const _tag = recepient?.tag || destinationTag;
       const rawTx = Transactions.create({
         ...txp,
@@ -166,12 +166,12 @@ export class XrpChain implements IChain {
       });
       unsignedTxs.push(rawTx);
     }
-    let tx = {
+    const tx = {
       uncheckedSerialize: () => unsignedTxs,
       txid: () => txp.txid,
       txids: () => txp.txid ? [txp.txid] : [],
       toObject: () => {
-        let ret = _.clone(txp);
+        const ret = _.clone(txp);
         ret.outputs[0].satoshis = ret.outputs[0].amount;
         return ret;
       },
@@ -183,9 +183,9 @@ export class XrpChain implements IChain {
 
     if (opts.signed) {
       const sigs = txp.getCurrentSignatures();
-      sigs.forEach(x => {
+      for (const x of sigs) {
         this.addSignaturesToBitcoreTx(tx, txp.inputs, txp.inputPaths, x.signatures, x.xpub);
-      });
+      }
     }
 
     return tx;
@@ -204,7 +204,7 @@ export class XrpChain implements IChain {
     }
   }
 
-  checkTxUTXOs(server, txp, opts, cb) {
+  checkTxUTXOs(_server, _txp, _opts, cb) {
     return cb();
   }
 
@@ -223,7 +223,7 @@ export class XrpChain implements IChain {
     });
   }
 
-  checkUtxos(opts) { }
+  checkUtxos(_opts) { }
 
   checkValidTxAmount(output): boolean {
     if (!Utils.isNumber(output.amount) || isNaN(output.amount) || output.amount < 0) {
@@ -300,10 +300,10 @@ export class XrpChain implements IChain {
     return;
   }
 
-  onCoin(coin) {
+  onCoin(_coin) {
     return null;
   }
-  onTx(tx) {
+  onTx(_tx) {
     // TODO
     // format tx to
     // {address, amount}

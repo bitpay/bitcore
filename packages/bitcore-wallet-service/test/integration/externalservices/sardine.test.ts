@@ -42,11 +42,11 @@ describe('Sardine integration', () => {
         secretKey: 'secretKey4',
         clientId: 'clientId4',
       }
-    }
+    };
 
     fakeRequest = {
-      get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
-      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+      get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
+      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
     };
 
     await helpers.beforeEach();
@@ -81,7 +81,7 @@ describe('Sardine integration', () => {
           paymentType: 'debit',
           quote_type: 'buy'
         }
-      }
+      };
       server.externalServices.sardine.request = fakeRequest;
     });
 
@@ -98,7 +98,7 @@ describe('Sardine integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.sardine.request = fakeRequest2;
@@ -138,7 +138,7 @@ describe('Sardine integration', () => {
         body: {
           env: 'sandbox',
         }
-      }
+      };
       server.externalServices.sardine.request = fakeRequest;
     });
 
@@ -155,7 +155,7 @@ describe('Sardine integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.sardine.request = fakeRequest2;
@@ -188,7 +188,7 @@ describe('Sardine integration', () => {
           externalUserId: 'externalUserId1',
           customerId: 'customerId1',
         }
-      }
+      };
       server.externalServices.sardine.request = fakeRequest;
     });
 
@@ -205,7 +205,7 @@ describe('Sardine integration', () => {
 
     it('should return error if post returns error', async () => {
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.sardine.request = fakeRequest2;
@@ -245,7 +245,7 @@ describe('Sardine integration', () => {
         body: {
           env: 'sandbox',
         }
-      }
+      };
       server.externalServices.sardine.request = fakeRequest;
     });
 
@@ -262,7 +262,7 @@ describe('Sardine integration', () => {
 
     it('should return error if get returns error', async() => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.sardine.request = fakeRequest2;
@@ -293,7 +293,7 @@ describe('Sardine integration', () => {
           env: 'sandbox',
           orderId: 'orderId1',
         }
-      }
+      };
       server.externalServices.sardine.request = fakeRequest;
     });
 
@@ -310,7 +310,7 @@ describe('Sardine integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.sardine.request = fakeRequest2;

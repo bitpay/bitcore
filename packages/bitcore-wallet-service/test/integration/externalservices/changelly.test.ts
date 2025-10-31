@@ -45,10 +45,10 @@ describe('Changelly integration', () => {
         secret: privateKey.toString('hex'),
         api: 'apiV2'
       }
-    }
+    };
 
     fakeRequest = {
-      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data'}) },
+      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
     };
 
     await helpers.beforeEach();
@@ -75,10 +75,10 @@ describe('Changelly integration', () => {
       req = {
         headers: {},
         body: {
-          id: "test",
+          id: 'test',
           useV2: true
         }
-      }
+      };
       server.externalServices.changelly.request = fakeRequest;
     });
 
@@ -100,7 +100,7 @@ describe('Changelly integration', () => {
     it('should return error if post returns error', async () => {
       req.body.id = 'test';
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error')); },
       };
 
       server.externalServices.changelly.request = fakeRequest2;
@@ -140,12 +140,12 @@ describe('Changelly integration', () => {
       req = {
         headers: {},
         body: {
-          id: "test",
+          id: 'test',
           coinFrom: 'btc',
           coinTo: 'eth',
           useV2: true
         }
-      }
+      };
       server.externalServices.changelly.request = fakeRequest;
     });
 
@@ -172,7 +172,7 @@ describe('Changelly integration', () => {
     it('should return error if post returns error', async () => {
       req.body.coinFrom = 'btc';
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error')); },
       };
 
       server.externalServices.changelly.request = fakeRequest2;
@@ -211,13 +211,13 @@ describe('Changelly integration', () => {
       req = {
         headers: {},
         body: {
-          id: "test",
+          id: 'test',
           coinFrom: 'btc',
           coinTo: 'eth',
           amountFrom: '1.123',
           useV2: true
         }
-      }
+      };
       server.externalServices.changelly.request = fakeRequest;
     });
 
@@ -244,7 +244,7 @@ describe('Changelly integration', () => {
     it('should return error if post returns error', async () => {
       req.body.coinFrom = 'btc';
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error')); },
       };
 
       server.externalServices.changelly.request = fakeRequest2;
@@ -283,7 +283,7 @@ describe('Changelly integration', () => {
       req = {
         headers: {},
         body: {
-          id: "test",
+          id: 'test',
           coinFrom: 'btc',
           coinTo: 'eth',
           amountFrom: '1.123',
@@ -292,7 +292,7 @@ describe('Changelly integration', () => {
           refundAddress: 'refundAddress',
           useV2: true
         }
-      }
+      };
       server.externalServices.changelly.request = fakeRequest;
     });
 
@@ -315,7 +315,7 @@ describe('Changelly integration', () => {
     it('should return error if post returns error', async () => {
       req.body.coinFrom = 'btc';
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error')); },
       };
 
       server.externalServices.changelly.request = fakeRequest2;
@@ -354,11 +354,11 @@ describe('Changelly integration', () => {
       req = {
         headers: {},
         body: {
-          id: "test",
+          id: 'test',
           exchangeTxId: 'exchangeTxId',
           useV2: true
         }
-      }
+      };
       server.externalServices.changelly.request = fakeRequest;
     });
 
@@ -381,7 +381,7 @@ describe('Changelly integration', () => {
     it('should return error if post returns error', async() => {
       req.body.exchangeTxId = 'exchangeTxId';
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error')); },
       };
       server.externalServices.changelly.request = fakeRequest2;
 
@@ -420,11 +420,11 @@ describe('Changelly integration', () => {
       req = {
         headers: {},
         body: {
-          id: "test",
+          id: 'test',
           exchangeTxId: 'exchangeTxId',
           useV2: true
         }
-      }
+      };
       server.externalServices.changelly.request = fakeRequest;
     });
 
@@ -447,7 +447,7 @@ describe('Changelly integration', () => {
     it('should return error if post returns error', async () => {
       req.body.exchangeTxId = 'exchangeTxId';
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error')); },
       };
 
       server.externalServices.changelly.request = fakeRequest2;

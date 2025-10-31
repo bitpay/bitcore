@@ -36,7 +36,7 @@ describe('Cash address migration', function() {
 
   describe('Migrate wallets', function() {
     it('new BCH wallets should be native cashAddr', function(done) {
-      helpers.createAndJoinWallet(1, 1, { coin:'bch', earlyRet: true }).then(({ server: s }) => {
+      helpers.createAndJoinWallet(1, 1, { coin: 'bch', earlyRet: true }).then(({ server: s }) => {
         const spy = sinon.spy(s.storage, 'migrateToCashAddr');
         s.getWallet({}, function(err, w) {
           should.not.exist(err);
@@ -55,7 +55,7 @@ describe('Cash address migration', function() {
 
 
     it('should create cashAddr addresses for new wallets', function(done) {
-      helpers.createAndJoinWallet(1, 1, { coin:'bch' }).then(({ server: s, wallet: w }) => {
+      helpers.createAndJoinWallet(1, 1, { coin: 'bch' }).then(({ server: s, wallet: w }) => {
         helpers.createAddresses(s, w, 1, 1).then(({ main, change }) => {
           helpers.stubUtxos(s, w, 1).then(() => {
             s.getAddresses({ noChange: true }, function(err, a) {
@@ -70,7 +70,7 @@ describe('Cash address migration', function() {
 
 
     it('should migrate old wallets', function(done) {
-      helpers.createAndJoinWallet(1, 1, { coin:'bch', earlyRet: true, nativeCashAddr: false }).then(({ server: s }) => {
+      helpers.createAndJoinWallet(1, 1, { coin: 'bch', earlyRet: true, nativeCashAddr: false }).then(({ server: s }) => {
         const spy = sinon.spy(s.storage, 'migrateToCashAddr');
         s.getWallet({}, function(err, w) {
           should.not.exist(err);
@@ -84,7 +84,7 @@ describe('Cash address migration', function() {
 
 
     it('should create cashAddr in migrated wallets', function(done) {
-      helpers.createAndJoinWallet(1, 1, { coin:'bch', nativeCashAddr: false }).then(({ server: s, wallet: w }) => {
+      helpers.createAndJoinWallet(1, 1, { coin: 'bch', nativeCashAddr: false }).then(({ server: s, wallet: w }) => {
         helpers.createAddresses(s, w, 2, 2).then(({ main, change }) => {
           s.getAddresses({ noChange: true }, function(err, a) {
             should.not.exist(err);
@@ -97,7 +97,7 @@ describe('Cash address migration', function() {
 
 
     it('should migrate old addresses', function(done) {
-      helpers.createAndJoinWallet(1, 1, { coin:'bch', earlyRet: true, nativeCashAddr: false }).then(({ server: s }) => {
+      helpers.createAndJoinWallet(1, 1, { coin: 'bch', earlyRet: true, nativeCashAddr: false }).then(({ server: s }) => {
         s.createAddress({ doNotMigrate: true }, function(err, address) {
           should.not.exist(err);
           address.address.should.equal('CbWsiNjh18ynQYc5jfYhhespEGrAaW8YUq');

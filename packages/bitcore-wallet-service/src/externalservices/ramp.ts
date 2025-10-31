@@ -115,7 +115,7 @@ export class RampService {
       'selectedCountryCode',
       'defaultAsset',
     ];
-    const extraRequiredParams = req.body.flow && req.body.flow === 'sell' ? ['offrampAsset'] : ['finalUrl', 'userAddress', 'swapAmount','swapAsset'];
+    const extraRequiredParams = req.body.flow && req.body.flow === 'sell' ? ['offrampAsset'] : ['finalUrl', 'userAddress', 'swapAmount', 'swapAsset'];
     appRequiredParams.concat(extraRequiredParams);
 
     const requiredParams = req.body.context === 'web' ? webRequiredParams : appRequiredParams;
@@ -129,11 +129,7 @@ export class RampService {
       throw new ClientError("Ramp's request missing arguments");
     }
 
-    const headers = {
-      'Content-Type': 'application/json'
-    };
-
-    let qs: string[] = [];
+    const qs: string[] = [];
     qs.push('hostApiKey=' + API_KEY);
     qs.push('selectedCountryCode=' + encodeURIComponent(req.body.selectedCountryCode));
     if (req.body.finalUrl) qs.push('finalUrl=' + encodeURIComponent(req.body.finalUrl));
@@ -171,9 +167,8 @@ export class RampService {
       const headers = {
         'Content-Type': 'application/json'
       };
-      let URL: string;
 
-      let qs: string[] = [];
+      const qs: string[] = [];
       // "Buy" and "Sell" features use the same properties. Use "flow" to target the correct endpoint
       qs.push('hostApiKey=' + API_KEY);
       if (req.body.currencyCode) qs.push('currencyCode=' + encodeURIComponent(req.body.currencyCode));
@@ -184,7 +179,7 @@ export class RampService {
         qs.push('userIp=' + encodeURIComponent(ip));
       }
 
-      URL = API + `/host-api/v3${req.body.flow && req.body.flow === 'sell' ? '/offramp' : ''}/assets?${qs.join('&')}`;
+      const URL = API + `/host-api/v3${req.body.flow && req.body.flow === 'sell' ? '/offramp' : ''}/assets?${qs.join('&')}`;
 
       this.request.get(
         URL,
@@ -215,12 +210,11 @@ export class RampService {
       const headers = {
         'Content-Type': 'application/json'
       };
-      let URL: string;
 
-      let qs: string[] = [];
+      const qs: string[] = [];
       qs.push('secret=' + req.body.saleViewToken);
 
-      URL = API + `/host-api/v3/offramp/sale/${req.body.id}?${qs.join('&')}`;
+      const URL = API + `/host-api/v3/offramp/sale/${req.body.id}?${qs.join('&')}`;
 
       this.request.get(
         URL,

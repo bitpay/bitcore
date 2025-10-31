@@ -34,9 +34,10 @@
     "clean": "rm -rf ./ts_build",
     "compile": "npm run clean && npm run build",
     "pub": "npm run build && npm publish",
-    "precommit": "echo 'TODO: npm run fix && npm run lint'",
+    "precommit": "npm run lint; npm run fix:errors",
     "lint": "eslint .",
-    "fix": "eslint --fix --quiet .",
+    "fix:errors": "eslint --fix --quiet .",
+    "fix:all": "eslint --fix .",
     "update:stats": "npm run clean && npm run build && chmod +x ./ts_build/updatestats/updatestats.js && ./ts_build/updatestats/updatestats.js",
     "clean:fiatrates": "npm run clean && npm run build && chmod +x ./ts_build/cleanfiatrates/cleanfiatrates.js && ./ts_build/cleanfiatrates/cleanfiatrates.js",
     "cp:templates": "cp -r ./templates ./ts_build/templates"
