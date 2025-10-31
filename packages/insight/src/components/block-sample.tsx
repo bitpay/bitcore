@@ -3,6 +3,8 @@ import {getApiRoot, getConvertedValue, getDifficultyFromBits, getFormattedDate} 
 import {BitcoinBlockType} from 'src/utilities/models';
 import Cube from '../assets/images/cube.svg';
 import Arrow from '../assets/images/arrow-thin.svg';
+import ArrowOutward from '../assets/images/arrow-outward.svg';
+import ForwardArrow from '../assets/images/arrow-forward-blue.svg';
 import ArrowDown from '../assets/images/arrow-down.svg';
 import styled, { useTheme } from 'styled-components';
 import InfoCard from './InfoCard';
@@ -10,6 +12,7 @@ import InfiniteScroll from 'react-infinite-scroll-component';
 import { fetcher } from 'src/api/api';
 import InfiniteScrollLoadSpinner from './infinite-scroll-load-spinner';
 import Info from './info';
+import { useNavigate } from 'react-router-dom';
 
 const BlockListTableRow = styled.tr`
   text-align: center;
@@ -33,6 +36,7 @@ const getBlocksUrl = (currency: string, network: string) => {
 
 const BlockSample: FC<{currency: string, network: string, blocks: BitcoinBlockType[]}> = ({currency, network, blocks}) => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const [expandedBlocks, setExpandedBlocks] = useState<number[]>([]);
   const [blocksList, setBlocksList] = useState(blocks);
   const [error, setError] = useState('');
@@ -53,6 +57,10 @@ const BlockSample: FC<{currency: string, network: string, blocks: BitcoinBlockTy
     } catch (e: any) {
       setError(e.message || 'Something went wrong. Please try again later.');
     }
+  };
+
+  const gotoSingleBlockDetailsView = async (hash: string) => {
+    await navigate(`/${currency}/${network}/block/${hash}`);
   };
 
   if (!blocksList?.length) return null;
@@ -82,13 +90,13 @@ const BlockSample: FC<{currency: string, network: string, blocks: BitcoinBlockTy
                 const expanded = expandedBlocks.includes(block.height);
                 return (
                   <React.Fragment key={index}>
-                    <BlockListTableRow 
-                      key={index}
-                      onClick={() => expanded
-                        ? setExpandedBlocks(expandedBlocks.filter(h => h !== block.height))
-                        : setExpandedBlocks([...expandedBlocks, block.height])}>
+                    <BlockListTableRow key={index}>
                       <td style={{textAlign: 'left', color: '#2240C4', paddingLeft: '1rem'}}>
-                        <span style={{display: 'flex', alignItems: 'center', gap: '0.5em'}}>
+                        <span 
+                          style={{display: 'flex', alignItems: 'center', gap: '0.5em', width: 'fit-content', cursor: 'pointer'}}
+                          onClick={() => expanded
+                            ? setExpandedBlocks(expandedBlocks.filter(h => h !== block.height))
+                            : setExpandedBlocks([...expandedBlocks, block.height])}>
                           {expanded 
                             ? <img src={ArrowDown} style={{height: '2rem', marginLeft: '-2px', marginRight: '-7px'}} alt='arrow' />
                             : <img src={Arrow} style={{height: '1.8rem', marginRight: '-6px'}} alt='arrow' />
@@ -124,7 +132,16 @@ const BlockSample: FC<{currency: string, network: string, blocks: BitcoinBlockTy
                                   {label: 'Miner fees', value: `${getConvertedValue(feeData.feeTotal, currency).toFixed(5)} ${currency}`},
                                 ]}/>
                                 <InfoCard data={[
-                                  {label: 'Next block', value: block.height + 1},
+                                  {label: 'Next block', value: <>
+                                    {block.height + 1}
+                                    <img 
+                                      src={ArrowOutward} 
+                                      style={{width: '24px', cursor: 'pointer'}} 
+                                      onClick={() => gotoSingleBlockDetailsView(blocksList[index - 1].hash)}
+                                      alt='Next Block' 
+                                      title={`Go to block ${block.height + 1}`}
+                                    />
+                                  </>},
                                   {label: 'Nonce', value: block.nonce},
                                   {label: 'Confirmations', value: blocksList[0].height - block.height + 1},
                                   {label: 'Difficulty', value: getDifficultyFromBits(block.bits).toFixed(0)},
@@ -143,6 +160,10 @@ const BlockSample: FC<{currency: string, network: string, blocks: BitcoinBlockTy
                                   }
                                 ]}/>
                               </div>
+                              <span style={{display: 'flex', alignItems: 'center', width: 'fit-content', cursor: 'pointer'}} onClick={() => gotoSingleBlockDetailsView(block.hash)}>
+                                <span style={{color: '#2240C4', marginRight: '0.75rem', fontSize: '18px'}}>View transactions</span>
+                                <img src={ForwardArrow} style={{height: '1.75rem'}} alt='arrow' />
+                              </span>
                             </div>
                           </td>
                         </BlockListTableRow>
