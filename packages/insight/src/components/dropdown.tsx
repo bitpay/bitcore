@@ -32,7 +32,7 @@ const Dropdown: FC<{
       </select>
       <img
         src={ArrowDown}
-        alt="Arrow Down"
+        alt='Arrow Down'
         style={{
           pointerEvents: 'none',
           position: 'absolute',
