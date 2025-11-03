@@ -684,7 +684,7 @@ describe('client API', function() {
           },
           requiredSignatures: 1,
           outputOrder: [0, 1],
-          fee: 3.2e8, // / 3 DOGE fee, WOW!
+          fee: 3.2e8, // 3 DOGE fee, WOW!
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH'
         };

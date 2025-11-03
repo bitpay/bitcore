@@ -703,10 +703,8 @@ export class API extends EventEmitter {
     const split = (str, indexes) => {
       const parts = [];
       indexes.push(str.length);
-      let i = 0;
-      while (i < indexes.length) {
+      for (let i = 0; i < indexes.length; i++) {
         parts.push(str.substring(i == 0 ? 0 : indexes[i - 1], indexes[i]));
-        i++;
       }
       return parts;
     };
