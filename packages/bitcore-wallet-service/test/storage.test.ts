@@ -261,7 +261,7 @@ describe('Storage', function() {
     it('should store a 5 txs on the cache and update status correctly', (done) => {
       const tipIndex = 80; // current cache tip
       const items = [
-        { txid: '1234', blockheight: 803 },    // / <=== Latests
+        { txid: '1234', blockheight: 803 },    // <=== Latests
         { txid: '1235', blockheight: 802 },
         { txid: '1236', blockheight: 801 },
         { txid: '1237', blockheight: 801 },
@@ -284,7 +284,7 @@ describe('Storage', function() {
     it('should prevent to store txs on wrong order', (done) => {
       const tipIndex = 80; // current cache tip
       const items = [
-        { txid: '1234', blockheight: 803 },    // / <=== Latests
+        { txid: '1234', blockheight: 803 },    // <=== Latests
         { txid: '1235', blockheight: 802 },
         { txid: '1236', blockheight: 801 },
         { txid: '1237', blockheight: 801 },
@@ -362,7 +362,7 @@ describe('Storage', function() {
     it('should store a 5 txs on the cache and retreive them correctly', (done) => {
       const tipIndex = 80; // current cache tip
       const items = [
-        { txid: '1234', blockheight: 803 },    // / <=== Latests
+        { txid: '1234', blockheight: 803 },    // <=== Latests
         { txid: '1235', blockheight: 802 },
         { txid: '1236', blockheight: 801 },
         { txid: '1237', blockheight: 800 },
@@ -386,7 +386,7 @@ describe('Storage', function() {
     it('should store a 10 txs on the cache and retreive them correctly', (done) => {
       const tipIndex = 80; // current cache tip
       const items = [
-        { txid: '1234', blockheight: 803 },    // / <=== Latests
+        { txid: '1234', blockheight: 803 },    // <=== Latests
         { txid: '1235', blockheight: 802 },
         { txid: '1236', blockheight: 801 },
         { txid: '1237', blockheight: 800 },
@@ -399,7 +399,7 @@ describe('Storage', function() {
         // time passes
         updateHeight = 2000;
         const items2 = [
-          { txid: '124', blockheight: 1803 },    // / <=== Latests
+          { txid: '124', blockheight: 1803 },    // <=== Latests
           { txid: '125', blockheight: 1802 },
           { txid: '126', blockheight: 1801 },
           { txid: '127', blockheight: 1800 },

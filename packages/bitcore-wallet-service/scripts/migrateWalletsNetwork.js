@@ -160,7 +160,7 @@ storage.connect(config.storageOpts, async (err) => {
         const resCache = await storage.db.collection(Storage.collections.CACHE).deleteMany({
           walletId: wallet.id
         });
-        if (resCache?.result?.n <= 0 && !resCache?.result?.ok) {
+        if (!resCache?.result?.ok) {
           console.log(JSON.stringify(resTxs));
         }
       } else {

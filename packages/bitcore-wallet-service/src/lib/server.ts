@@ -5185,18 +5185,17 @@ export class WalletService implements IWalletService {
 
   moralisGetTokenAllowance(req): Promise<any> {
     return new Promise((resolve, reject) => {
+      if (!config.moralis) return reject(new Error('Moralis missing credentials'));
+      if (!checkRequired(req.body, ['address']) && !checkRequired(req.body, ['ownerAddress'])) {
+        return reject(new ClientError('moralisGetTokenAllowance request missing arguments'));
+      }
+      
+      const walletAddress = req.body.ownerAddress ?? req.body.address;
       const headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
         'X-Api-Key': config.moralis.apiKey,
       };
-
-      if (!config.moralis) return reject(new Error('Moralis missing credentials'));
-      if (!checkRequired(req.body, ['address']) && !checkRequired(req.body, ['ownerAddress'])) {
-        return reject(new ClientError('moralisGetTokenAllowance request missing arguments'));
-      }
-
-      const walletAddress = req.body.ownerAddress ?? req.body.address;
 
       const qs = [];
       if (req.body.chain) {
@@ -5300,16 +5299,16 @@ export class WalletService implements IWalletService {
 
   moralisGetERC20TokenBalancesWithPricesByWallet(req): Promise<any> {
     return new Promise((resolve, reject) => {
+      if (!config.moralis) return reject(new Error('Moralis missing credentials'));
+      if (!checkRequired(req.body, ['address'])) {
+        return reject(new ClientError('moralisGetERC20TokenBalancesWithPricesByWallet request missing arguments'));
+      }
+
       const headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
         'X-Api-Key': config.moralis.apiKey,
       };
-
-      if (!config.moralis) return reject(new Error('Moralis missing credentials'));
-      if (!checkRequired(req.body, ['address'])) {
-        return reject(new ClientError('moralisGetERC20TokenBalancesWithPricesByWallet request missing arguments'));
-      }
 
       const qs = [];
       if (req.body.chain) qs.push('chain=' + req.body.chain);

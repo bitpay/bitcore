@@ -337,7 +337,7 @@ export class Wallet implements IWallet<() => boolean> {
     );
   }
 
-  // / Only for power scan
+  // Only for power scan
   getSkippedAddress() {
     $.checkState(this.isComplete(), 'Failed state: this.isComplete() at <getSkipeedAddress()>');
 

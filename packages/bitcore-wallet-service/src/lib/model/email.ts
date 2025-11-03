@@ -1,6 +1,25 @@
 import _ from 'lodash';
 import Uuid from 'uuid';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+interface IEmail {
+  version: number;
+  createdOn: number;
+  id: number;
+  walletId: string;
+  copayerId: string;
+  from: string;
+  to: string;
+  subject: string;
+  bodyPlain: string;
+  bodyHtml: string;
+  status: string;
+  attempts: number;
+  lastAttemptOn?: number;
+  notificationId: string;
+  language: string;
+}
+
 export class Email {
   version: number;
   createdOn: number;

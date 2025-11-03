@@ -5717,7 +5717,7 @@ describe('Wallet service', function() {
   });
 
   describe('cashAddr backwards compat', function() {
-    // / LEGACY MODE
+    // LEGACY MODE
     it('should create a BCH tx proposal with cashaddr outputs (w/o prefix) and return Copay addr', function(done) {
       const copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
       const cashAddr = BCHAddressTranslator.translate(copayAddr, 'cashaddr');
@@ -5771,7 +5771,7 @@ describe('Wallet service', function() {
       });
     });
 
-    // / CASHADDR MODE
+    // CASHADDR MODE
     it('should create a BCH tx proposal with cashaddr outputs (w/o prefix) and return CASH addr', function(done) {
       const copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
       const cashAddr = BCHAddressTranslator.translate(copayAddr, 'cashaddr');

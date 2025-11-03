@@ -96,12 +96,12 @@ export class EthChain implements IChain {
         return cb(err);
       }
       // getPendingTxs returns all txps when given a native currency
-      server.getPendingTxs(opts, (err, _txps) => {
+      server.getPendingTxs(opts, (err, txps) => {
         if (err) return cb(err);
         let fees = 0;
         let amounts = 0;
 
-        _txps.filter(txp => {
+        txps.filter(txp => {
           // Add gas used for tokens when getting native balance
           if (!opts.tokenAddress) {
             fees += txp.fee || 0;
