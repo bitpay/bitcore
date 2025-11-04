@@ -1,9 +1,8 @@
 import express from 'express';
-import * as Types from '../../../types/expressapp';
 import { Utils } from '../../common/utils';
 import { ClientError } from '../../errors/clienterror';
 import { Errors } from '../../errors/errordefinitions';
-import { checkRequired, WalletService } from '../../server';
+import { WalletService, checkRequired } from '../../server';
 import { error } from '../helpers';
 import { getCredentials, getMessage } from './authRequest';
 
@@ -13,8 +12,7 @@ import { getCredentials, getMessage } from './authRequest';
  * It checks if the request has valid credentials, verifies the signature,
  * and retrieves the TSS session based on the request path.
  */
-export function authTssRequest(opts?: Types.AuthRequestOpts): express.RequestHandler {
-  opts = opts || {};
+export function authTssRequest(): express.RequestHandler {
 
   return async function(req, res, next) {
     try {

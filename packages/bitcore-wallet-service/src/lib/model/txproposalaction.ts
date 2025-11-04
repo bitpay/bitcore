@@ -19,7 +19,7 @@ export class TxProposalAction {
   static create(opts) {
     opts = opts || {};
 
-    let x = new TxProposalAction();
+    const x = new TxProposalAction();
 
     x.version = '1.0.0';
     x.createdOn = Math.floor(Date.now() / 1000);
@@ -33,7 +33,7 @@ export class TxProposalAction {
   }
 
   static fromObj(obj) {
-    let x = new TxProposalAction();
+    const x = new TxProposalAction();
 
     x.version = obj.version;
     x.createdOn = obj.createdOn;

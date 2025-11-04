@@ -42,11 +42,11 @@ describe('Ramp integration', () => {
         api: 'api4',
         widgetApi: 'widgetApi4',
       }
-    }
+    };
 
     fakeRequest = {
-      get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
-      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+      get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
+      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
     };
 
     await helpers.beforeEach();
@@ -78,7 +78,7 @@ describe('Ramp integration', () => {
           fiatValue: 50,
           fiatCurrency: 'USD',
         }
-      }
+      };
       server.externalServices.ramp.request = fakeRequest;
     });
 
@@ -95,7 +95,7 @@ describe('Ramp integration', () => {
 
     it('should return error if post returns error', async () => {
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.ramp.request = fakeRequest2;
@@ -138,7 +138,7 @@ describe('Ramp integration', () => {
           cryptoAmount: '10000000',
           fiatCurrency: 'USD',
         }
-      }
+      };
       server.externalServices.ramp.request = fakeRequest;
     });
 
@@ -155,7 +155,7 @@ describe('Ramp integration', () => {
 
     it('should return error if post returns error', async () => {
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.ramp.request = fakeRequest2;
@@ -204,7 +204,7 @@ describe('Ramp integration', () => {
           defaultAsset: 'BTC_BTC',
           finalUrl: 'bitpay://ramp',
         }
-      }
+      };
       server.externalServices.ramp.request = fakeRequest;
     });
 
@@ -223,7 +223,7 @@ describe('Ramp integration', () => {
         selectedCountryCode: 'US',
         defaultAsset: 'BTC_BTC',
         finalUrl: 'bitpay://ramp',
-      }
+      };
       const data = server.externalServices.ramp.rampGetSignedPaymentUrl(req);
       should.exist(data.urlWithSignature);
       data.urlWithSignature.should.equal('widgetApi4?hostApiKey=apiKey4&selectedCountryCode=US&finalUrl=bitpay%3A%2F%2Framp&userAddress=bitcoin%3A123123&swapAsset=BTC_BTC&defaultAsset=BTC_BTC');
@@ -264,7 +264,7 @@ describe('Ramp integration', () => {
         useSendCryptoCallback: true,
         useSendCryptoCallbackVersion: 1,
         hideExitButton: false,
-      }
+      };
       const data = server.externalServices.ramp.rampGetSignedPaymentUrl(req);
       should.exist(data.urlWithSignature);
       data.urlWithSignature.should.equal('widgetApi2?hostApiKey=apiKey2&selectedCountryCode=US&offrampAsset=BTC_BTC&enabledFlows=OFFRAMP&defaultFlow=OFFRAMP&swapAmount=1000000&defaultAsset=BTC_BTC&useSendCryptoCallback=true&variant=webview-mobile&useSendCryptoCallbackVersion=1');
@@ -285,7 +285,7 @@ describe('Ramp integration', () => {
         useSendCryptoCallback: true,
         useSendCryptoCallbackVersion: 1,
         hideExitButton: false,
-      }
+      };
       const data = server.externalServices.ramp.rampGetSignedPaymentUrl(req);
       should.exist(data.urlWithSignature);
       data.urlWithSignature.should.equal('widgetApi4?hostApiKey=apiKey4&selectedCountryCode=US&offrampAsset=BTC_BTC&enabledFlows=OFFRAMP&defaultFlow=OFFRAMP&swapAmount=1000000&defaultAsset=BTC_BTC&useSendCryptoCallback=true&variant=webview-mobile&useSendCryptoCallbackVersion=1');
@@ -300,7 +300,7 @@ describe('Ramp integration', () => {
           env: 'sandbox',
           currencyCode: 'USD',
         }
-      }
+      };
       server.externalServices.ramp.request = fakeRequest;
     });
 
@@ -318,7 +318,7 @@ describe('Ramp integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.ramp.request = fakeRequest2;
@@ -350,7 +350,7 @@ describe('Ramp integration', () => {
           id: 'id1',
           saleViewToken: 'saleViewToken1',
         }
-      }
+      };
       server.externalServices.ramp.request = fakeRequest;
     });
 
@@ -361,7 +361,7 @@ describe('Ramp integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.ramp.request = fakeRequest2;

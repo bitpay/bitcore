@@ -47,7 +47,7 @@ describe('History', function() {
     await helpers.after();
   });
 
-  const BCHEIGHT =  10000;
+  const BCHEIGHT = 10000;
 
   describe('#getTxHistory', function() {
     let server: WalletService;
@@ -76,7 +76,7 @@ describe('History', function() {
           tx.confirmations.should.equal(i);
           if (i) {
             tx.blockheight.should.equal(BCHEIGHT - i + 1);
-          }  else {
+          } else {
             // The first one is unconfirmed
             should.not.exist(tx.blockheight);
           }
@@ -86,13 +86,13 @@ describe('History', function() {
     });
 
     it('should filter out DUST amount', function(done) {
-      let txs= helpers.createTxsV8(50, BCHEIGHT);
+      const txs= helpers.createTxsV8(50, BCHEIGHT);
       txs[5].satoshis=100;
       txs[15].satoshis=10;
       txs[25].satoshis=1;
 
       helpers.stubHistory(null, null, txs);
-      server.getTxHistory({limit: 50}, function(err, txs, fromCache) {
+      server.getTxHistory({ limit: 50 }, function(err, txs, fromCache) {
         should.not.exist(err);
         fromCache.should.equal(false);
         should.exist(txs);
@@ -216,13 +216,13 @@ describe('History', function() {
     it('should handle moves, filtering change addresses in multisend', function(done) {
       const txs = helpers.createTxsV8(20, 1000);
       helpers.createAddresses(server, wallet, 2, 1).then(({ main, change }) => {
-        txs[0].txid     = txs[1].txid     = txs[2].txid      = txs[3].txid;
-        txs[0].height   = txs[1].height   = txs[2].height    = txs[3].height;
-        txs[0].category = txs[1].category = txs[2].category  = txs[3].category = 'move';
-        txs[0].address  = main[0].address;
-        txs[1].address  = main[0].address;
-        txs[2].address  = change[0].address;
-        txs[3].address  = main[1].address;
+        txs[0].txid = txs[1].txid = txs[2].txid = txs[3].txid;
+        txs[0].height = txs[1].height = txs[2].height = txs[3].height;
+        txs[0].category = txs[1].category = txs[2].category = txs[3].category = 'move';
+        txs[0].address = main[0].address;
+        txs[1].address = main[0].address;
+        txs[2].address = change[0].address;
+        txs[3].address = main[1].address;
 
         helpers.stubHistory(null, null, txs);
 
@@ -256,7 +256,7 @@ describe('History', function() {
         should.exist(txs);
         txs.length.should.equal(20);
         txs[0].id.should.equal('id0');
-        server.getTxHistory({skip: 20, limit: 10}, function(err, txs, fromCache) {
+        server.getTxHistory({ skip: 20, limit: 10 }, function(err, txs, fromCache) {
           // first TX result should be:
           // txid: 19
           // confirmations: 19
@@ -321,7 +321,7 @@ describe('History', function() {
 
       // remove bc tip cache.
       Defaults.BLOCKHEIGHT_CACHE_TIME = { default: 0 } as any;
-      helpers.stubHistory(50, BCHEIGHT); //(0->49)
+      helpers.stubHistory(50, BCHEIGHT); // (0->49)
 
       // this call is to fill the cache
       server.getTxHistory({ limit: 20 }, function(err, txs, fromCache) {
@@ -352,7 +352,7 @@ describe('History', function() {
         const _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
         Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
         helpers.stubHistory(100, 10000);
-        let limit = 20;
+        const limit = 20;
         let allTxs = [];
 
         // this call is to fill the cache
@@ -409,7 +409,7 @@ describe('History', function() {
         const _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
         Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
         helpers.stubHistory(1000, 10000); // (0->49)
-        let limit = 20;
+        const limit = 20;
         let allTxs = [];
 
         // this call is to fill the cache
@@ -431,7 +431,7 @@ describe('History', function() {
 
         do {
           const [txs, fromCache] = await new Promise<any>((resolve, reject) => {
-            server.getTxHistory({skip: i, limit: limit}, function(err, txs, fromCache) {
+            server.getTxHistory({ skip: i, limit: limit }, function(err, txs, fromCache) {
               if (err) return reject(err);
               resolve([txs, fromCache]);
             });
@@ -459,13 +459,13 @@ describe('History', function() {
         this.timeout(10000);
         const _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
         Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
-        helpers.stubHistory(997, 10000); //(0->49)
-        let limit = 17;
+        helpers.stubHistory(997, 10000); // (0->49)
+        const limit = 17;
         let allTxs = [];
 
         // this call is to fill the cache
         const [txs, fromCache] = await new Promise<any>((resolve, reject) => {
-          server.getTxHistory({limit: limit}, function(err, txs, fromCache) {
+          server.getTxHistory({ limit: limit }, function(err, txs, fromCache) {
             if (err) return reject(err);
             resolve([txs, fromCache]);
           });
@@ -482,7 +482,7 @@ describe('History', function() {
 
         do {
           const [txs, fromCache] = await new Promise<any>((resolve, reject) => {
-            server.getTxHistory({skip: i, limit: limit}, function(err, txs, fromCache) {
+            server.getTxHistory({ skip: i, limit: limit }, function(err, txs, fromCache) {
               if (err) return reject(err);
               resolve([txs, fromCache]);
             });
@@ -512,7 +512,7 @@ describe('History', function() {
         const _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
         Defaults.CONFIRMATIONS_TO_START_CACHING = 100;
         helpers.stubHistory(997, 10000); // (0->49)
-        let limit = 17;
+        const limit = 17;
         let allTxs = [];
 
         // this call is to fill the cache
@@ -534,7 +534,7 @@ describe('History', function() {
 
         do {
           const [txs, fromCache] = await new Promise<any>((resolve, reject) => {
-            server.getTxHistory({skip: i, limit: limit}, function(err, txs, fromCache) {
+            server.getTxHistory({ skip: i, limit: limit }, function(err, txs, fromCache) {
               if (err) return reject(err);
               resolve([txs, fromCache]);
             });
@@ -563,13 +563,13 @@ describe('History', function() {
 
     it('should get tx history from insight, in 2 overlapping pages', function(done) {
       helpers.stubHistory(300, BCHEIGHT);
-      server.getTxHistory({limit: 25}, function(err, txs, fromCache) {
+      server.getTxHistory({ limit: 25 }, function(err, txs, fromCache) {
         should.not.exist(err);
         fromCache.should.equal(false);
         txs.length.should.equal(25);
 
         // no cache
-        server.getTxHistory({ skip:5, limit: 21 }, function(err, txs2, fromCache) {
+        server.getTxHistory({ skip: 5, limit: 21 }, function(err, txs2, fromCache) {
           should.not.exist(err);
           fromCache = !!fromCache;
           fromCache.should.equal(false);
@@ -600,7 +600,7 @@ describe('History', function() {
           }],
           feePerKb: 100e2,
           customData: {
-            "test": true
+            'test': true
           },
         };
 
@@ -647,7 +647,7 @@ describe('History', function() {
                 height: 1000,
               }];
 
-              helpers.stubHistory(null, null,txs);
+              helpers.stubHistory(null, null, txs);
               helpers.stubCheckData(blockchainExplorer, server, wallet.coin == 'bch').then(() => {
                 server.getTxHistory({ includeExtendedInfo: true }, function(err, txs) {
                   should.not.exist(err);
@@ -735,13 +735,13 @@ describe('History', function() {
                 height: 1000,
               }];
 
-              helpers.stubHistory(null, null,txs);
+              helpers.stubHistory(null, null, txs);
               helpers.stubCheckData(blockchainExplorer, server, wallet.coin == 'bch').then(() => {
                 server.getTxHistory({}, function(err, txs) {
                   should.not.exist(err);
                   should.exist(txs);
                   txs.length.should.equal(1);
-                  var tx = txs[0];
+                  const tx = txs[0];
                   tx.createdOn.should.equal(txp.createdOn);
                   tx.action.should.equal('sent');
                   tx.amount.should.equal(0.8e8);
@@ -762,7 +762,7 @@ describe('History', function() {
                   should.exist(tx.outputs[1].message);
                   tx.outputs[1].message.should.equal('message #2');
                   should.exist(tx.customData);
-                  should.exist(tx.customData["test"]);
+                  should.exist(tx.customData['test']);
                   done();
                 });
               });
@@ -866,7 +866,7 @@ describe('History', function() {
 
       server.getTxHistory({}, function(err, txs) {
         should.not.exist(err);
-        should.exist(txs)
+        should.exist(txs);
         txs.length.should.equal(9);
         txs[2].should.deep.equal({
           id: '5ddbf28d4ff191801711a948',
@@ -1132,7 +1132,7 @@ describe('History', function() {
         });
         should.exist(txs);
         txs.length.should.equal(5);
-        var s = h.slice(i, i + 5);
+        const s = h.slice(i, i + 5);
         txs.map(tx => tx.txid).should.deep.equal(s.map(tx => tx.txid));
         fromCache.should.equal(i >= Defaults.CONFIRMATIONS_TO_START_CACHING && !reset);
       }

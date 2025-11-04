@@ -1,9 +1,10 @@
+import { URL } from 'url';
 import { BitcoreLib } from 'crypto-wallet-core';
 import * as requestStream from 'request';
 import * as request from 'request-promise-native';
 import secp256k1 from 'secp256k1';
-import { URL } from 'url';
 import logger from '../../logger';
+
 export class Client {
   authKey: { bn: { toBuffer: (arg) => Buffer } };
   baseUrl: string;
@@ -92,7 +93,7 @@ export class Client {
   async getCoins(params) {
     const { payload, pubKey, includeSpent } = params;
 
-    var extra = '';
+    let extra = '';
     if (includeSpent) {
       extra = `?includeSpent=${includeSpent}`;
     }
@@ -119,9 +120,7 @@ export class Client {
     const {
       pubKey,
       startBlock,
-      startDate,
       endBlock,
-      endDate,
       includeMempool,
       tokenAddress,
       multisigContractAddress

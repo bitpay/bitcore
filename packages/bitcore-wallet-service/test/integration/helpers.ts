@@ -1,11 +1,13 @@
 'use strict';
 // Node >= 17 started attempting to resolve all dns listings by ipv6 first, these lines are required to make it check ipv4 first
 import { setDefaultResultOrder } from 'dns';
+
 setDefaultResultOrder('ipv4first');
 
 import chai from 'chai';
 import sinon from 'sinon';
 import log from 'npmlog';
+
 log.debug = log.verbose;
 import config from '../test-config';
 import {
@@ -67,7 +69,7 @@ class Helpers {
     if (!storage.db) return;
 
     // Left overs to be initalized
-    let be = blockchainExplorer;
+    const be = blockchainExplorer;
     be.register = sinon.stub().callsArgWith(1, null, null);
     be.addAddresses = sinon.stub().callsArgWith(2, null, null);
 
@@ -180,22 +182,22 @@ class Helpers {
 
     console.log('var copayers = [');
     for (const xPrivKeyStr of xPrivKeys) {
-      var xpriv = BitcoreLib.HDPrivateKey(xPrivKeyStr);
-      var xpub = BitcoreLib.HDPublicKey(xpriv);
+      const xpriv = BitcoreLib.HDPrivateKey(xPrivKeyStr);
+      const xpub = BitcoreLib.HDPublicKey(xpriv);
 
-      var xpriv_45H = xpriv.deriveChild(45, true);
-      var xpub_45H = BitcoreLib.HDPublicKey(xpriv_45H);
-      var id45 = Model.Copayer.xPubToCopayerId('btc', xpub_45H.toString());
+      const xpriv_45H = xpriv.deriveChild(45, true);
+      const xpub_45H = BitcoreLib.HDPublicKey(xpriv_45H);
+      const id45 = Model.Copayer.xPubToCopayerId('btc', xpub_45H.toString());
 
-      var xpriv_44H_0H_0H = xpriv.deriveChild(44, true).deriveChild(0, true).deriveChild(0, true);
-      var xpub_44H_0H_0H = BitcoreLib.HDPublicKey(xpriv_44H_0H_0H);
-      var id44btc = Model.Copayer.xPubToCopayerId('btc', xpub_44H_0H_0H.toString());
-      var id44bch = Model.Copayer.xPubToCopayerId('bch', xpub_44H_0H_0H.toString());
+      const xpriv_44H_0H_0H = xpriv.deriveChild(44, true).deriveChild(0, true).deriveChild(0, true);
+      const xpub_44H_0H_0H = BitcoreLib.HDPublicKey(xpriv_44H_0H_0H);
+      const id44btc = Model.Copayer.xPubToCopayerId('btc', xpub_44H_0H_0H.toString());
+      const id44bch = Model.Copayer.xPubToCopayerId('bch', xpub_44H_0H_0H.toString());
 
-      var xpriv_1H = xpriv.deriveChild(1, true);
-      var xpub_1H = BitcoreLib.HDPublicKey(xpriv_1H);
-      var priv = xpriv_1H.deriveChild(0).privateKey;
-      var pub = xpub_1H.deriveChild(0).publicKey;
+      const xpriv_1H = xpriv.deriveChild(1, true);
+      const xpub_1H = BitcoreLib.HDPublicKey(xpriv_1H);
+      const priv = xpriv_1H.deriveChild(0).privateKey;
+      const pub = xpub_1H.deriveChild(0).publicKey;
 
       console.log('{id44btc: ', "'" + id44btc + "',");
       console.log('id44bch: ', "'" + id44bch + "',");
@@ -312,7 +314,7 @@ class Helpers {
 
     if (typeof str === 'number' || typeof str === 'bigint') str = str.toString();
 
-    const re = /^((?:\d+c)|u)?\s*([\d\.]+)\s*(btc|bit|sat)?$/;
+    const re = /^((?:\d+c)|u)?\s*([\d.]+)\s*(btc|bit|sat)?$/;
     const match = str.match(re);
     if (!match) throw new Error('Could not parse amount ' + str);
 
@@ -328,7 +330,7 @@ class Helpers {
         break;
       case 'bit':
         result.amount = Utils.strip(+match[2] * 1e2);
-        break
+        break;
       case 'sat':
         result.amount = Utils.strip(+match[2]);
         break;
@@ -353,16 +355,16 @@ class Helpers {
         if (opts.tokenAddress) {
           return cb(null, { unconfirmed: 0, confirmed: 2e6, balance: 2e6 });
         }
-        let conf = amounts.map(x =>  Number((x * 1e18).toFixed(0))).reduce((sum, x) => sum += x, 0);
+        const conf = amounts.map(x => Number((x * 1e18).toFixed(0))).reduce((sum, x) => sum += x, 0);
         return cb(null, { unconfirmed: 0, confirmed: conf, balance: conf });
-      }
+      };
       blockchainExplorer.estimateFee = sinon.stub().callsArgWith(1, null, 20000000000);
       return;
     }
 
     if (wallet.coin == 'eth') {
       amounts = Array.isArray(amounts) ? amounts : [amounts];
-      let conf = amounts.map(x =>  Number((x * 1e18).toFixed(0))).reduce((sum, x) => sum += x, 0);
+      const conf = amounts.map(x => Number((x * 1e18).toFixed(0))).reduce((sum, x) => sum += x, 0);
       blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, { unconfirmed: 0, confirmed: conf, balance: conf });
       return;
     }
@@ -494,7 +496,7 @@ class Helpers {
     if (cb) {
       throw new Error('USE PROMISES = stubCheckData'); // REMOVE ME
     }
-    const x = await server.storage.walletCheck({ walletId:server.walletId, bch: isBCH });
+    const x = await server.storage.walletCheck({ walletId: server.walletId, bch: isBCH });
     bc.getCheckData = sinon.stub().callsArgWith(1, null, { sum: x.sum });
   }
 
@@ -509,10 +511,10 @@ class Helpers {
 
     blockchainExplorer.estimateFee = function(nbBlocks, cb) {
       const result = nbBlocks.reduce((acc, n) => {
-          const fee = levels[n];
-          acc[n] = fee > 0 ? fee / div : fee;
-          return acc;
-        }, {});
+        const fee = levels[n];
+        acc[n] = fee > 0 ? fee / div : fee;
+        return acc;
+      }, {});
 
       if (fill) {
         let last;
@@ -551,11 +553,11 @@ class Helpers {
     const xpriv = new BitcoreLib.HDPrivateKey(derivedXPrivKey, txp.network);
     let signatures;
 
-    switch(txp.coin) {
+    switch (txp.coin) {
       case 'eth':
       case 'xrp':
         // For eth => account, 0, change = 0
-        const priv =  xpriv.derive('m/0/0').privateKey;
+        const priv = xpriv.derive('m/0/0').privateKey;
         const privKey = priv.toString('hex');
         let tx = ChainService.getBitcoreTx(txp).uncheckedSerialize();
         const isERC20 = txp.tokenAddress && !txp.payProUrl;
@@ -606,7 +608,7 @@ class Helpers {
     const mainAddresses = [];
     const changeAddresses = [];
     for (let i = 0; i < main + change; i++) {
-      let isChange = i >= main;
+      const isChange = i >= main;
       const address = wallet.createAddress(isChange);
       await util.promisify(server.storage.storeAddressAndWallet).call(server.storage, wallet, address);
       if (isChange) {
@@ -640,29 +642,29 @@ class Helpers {
 
   historyCacheTest(items) {
     const template = {
-      txid: "fad88682ccd2ff34cac6f7355fe9ecd8addd9ef167e3788455972010e0d9d0de",
+      txid: 'fad88682ccd2ff34cac6f7355fe9ecd8addd9ef167e3788455972010e0d9d0de',
       vin: [{
-        txid: "0279ef7b21630f859deb723e28beac9e7011660bd1346c2da40321d2f7e34f04",
+        txid: '0279ef7b21630f859deb723e28beac9e7011660bd1346c2da40321d2f7e34f04',
         vout: 0,
         n: 0,
-        addr: "2NAVFnsHqy5JvqDJydbHPx393LFqFFBQ89V",
+        addr: '2NAVFnsHqy5JvqDJydbHPx393LFqFFBQ89V',
         valueSat: 45753,
         value: 0.00045753,
       }],
       vout: [{
-        value: "0.00011454",
+        value: '0.00011454',
         n: 0,
         scriptPubKey: {
           addresses: [
-            "2N7GT7XaN637eBFMmeczton2aZz5rfRdZso"
+            '2N7GT7XaN637eBFMmeczton2aZz5rfRdZso'
           ]
         }
       }, {
-        value: "0.00020000",
+        value: '0.00020000',
         n: 1,
         scriptPubKey: {
           addresses: [
-            "mq4D3Va5mYHohMEHrgHNGzCjKhBKvuEhPE"
+            'mq4D3Va5mYHohMEHrgHNGzCjKhBKvuEhPE'
           ]
         }
       }],

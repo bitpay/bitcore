@@ -10,12 +10,12 @@ export class BCHAddressTranslator {
     try {
       new Bitcore_['btc'].Address(address);
       return 'legacy';
-    } catch (e) {
+    } catch {
       try {
         const a = new Bitcore_['bch'].Address(address);
         if (a.toLegacyAddress() == address) return 'copay';
         return 'cashaddr';
-      } catch (e) {
+      } catch {
         return;
       }
     }
@@ -40,7 +40,7 @@ export class BCHAddressTranslator {
 
         try {
           orig = new bitcore.Address(x).toObject();
-        } catch (e) {
+        } catch {
           return null;
         }
 
@@ -51,7 +51,7 @@ export class BCHAddressTranslator {
         } else if (to == 'legacy') {
           return Bitcore_['btc'].Address.fromObject(orig).toString();
         }
-      }).filter(x => !!x)
+      }).filter(x => !!x);
     }
     if (wasArray) return ret;
     else return ret[0];

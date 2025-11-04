@@ -54,11 +54,11 @@ describe('Simplex integration', () => {
         appSellRefId: 'appSellRefId4',
         publicKey: 'publicKey4'
       }
-    }
+    };
 
     fakeRequest = {
-      get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
-      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+      get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
+      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
     };
 
     await helpers.beforeEach();
@@ -87,7 +87,7 @@ describe('Simplex integration', () => {
         body: {
           env: 'sandbox'
         },
-      }
+      };
       server.externalServices.simplex.request = fakeRequest;
     });
 
@@ -104,7 +104,7 @@ describe('Simplex integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.simplex.request = fakeRequest2;
@@ -135,7 +135,7 @@ describe('Simplex integration', () => {
           env: 'sandbox'
         },
         ip: '1.2.3.4'
-      }
+      };
       server.externalServices.simplex.request = fakeRequest;
     });
 
@@ -152,7 +152,7 @@ describe('Simplex integration', () => {
 
     it('should return error if post returns error', async () => {
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.simplex.request = fakeRequest2;
@@ -189,7 +189,7 @@ describe('Simplex integration', () => {
           quote_currency: 'EUR',
           pp_payment_method: 'sepa'
         }
-      }
+      };
       server.externalServices.simplex.request = fakeRequest;
     });
 
@@ -206,7 +206,7 @@ describe('Simplex integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.simplex.request = fakeRequest2;
@@ -253,10 +253,10 @@ describe('Simplex integration', () => {
           }
         },
         ip: '1.2.3.4'
-      }
+      };
 
       fakeRequest = {
-        post: (_url, _opts, _cb) => { return _cb(null, { body: {} }) },
+        post: (_url, _opts, _cb) => { return _cb(null, { body: {} }); },
       };
       server.externalServices.simplex.request = fakeRequest;
     });
@@ -268,7 +268,7 @@ describe('Simplex integration', () => {
 
     it('should return error if post returns error', async () => {
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.simplex.request = fakeRequest2;
@@ -311,13 +311,13 @@ describe('Simplex integration', () => {
           userCountry: 'LT',
           referer_url: 'https://referer_url.com/',
           return_url: 'https://return_url.com/',
-          txn_details: {quote_id: 'quote_id_1'},
+          txn_details: { quote_id: 'quote_id_1' },
         },
         ip: '1.2.3.4'
-      }
+      };
 
       fakeRequest = {
-        post: (_url, _opts, _cb) => { return _cb(null, { body: {} }) },
+        post: (_url, _opts, _cb) => { return _cb(null, { body: {} }); },
       };
       server.externalServices.simplex.request = fakeRequest;
     });
@@ -329,7 +329,7 @@ describe('Simplex integration', () => {
 
     it('should return error if post returns error', async () => {
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.simplex.request = fakeRequest2;
@@ -368,10 +368,10 @@ describe('Simplex integration', () => {
     beforeEach(() => {
       req = {
         env: 'production'
-      }
+      };
 
       fakeRequest = {
-        get: (_url, _opts, _cb) => { return _cb(null, { body: {} }) },
+        get: (_url, _opts, _cb) => { return _cb(null, { body: {} }); },
       };
       server.externalServices.simplex.request = fakeRequest;
     });

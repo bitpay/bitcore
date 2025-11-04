@@ -23,11 +23,6 @@ export const logger = winston.createLogger({
   transports: [transport]
 });
 
-const timezone = new Date()
-  .toLocaleString('en-US', { timeZoneName: 'short' })
-  .split(' ')
-  .pop();
-
 export const formatTimestamp = (date: Date): string =>
   `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date
     .getDate()

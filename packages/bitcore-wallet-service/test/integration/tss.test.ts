@@ -164,8 +164,8 @@ describe('TSS', function() {
               {
                 from: 0,
                 payload: {
-                  message: "pGdmcm9tX2lkAGpwdWJsaWNfa2V5mCEDGLIYNRjfGDMYzhiCGOAY4wAY6hgnGBgYtBg9GEQYmhigGN4YXRiaGHoYrxikGI4YRBjRGJQYwhiZFhjyGENnYmlnX3NfaZghAxi9GJ8YmhiqGGcYIBj2GKUYhxjpGDQYohhYGIAYWwwYpBjHGFkYxBiaGMoY6BjUGPwY2hgmGP0YgBgiExibZXByb29momF0mCEDGMkYQRgkGEcYMRhxGP0Y4xigGJAYSRgpGJAYnBhGGKUYkBifGJkY8Rh+GCsYsxirGIcMGPAYiBjjGLEY9xhMYXOYIBhKGOMYnhi7ERjrGKYYTBIYPRiQGHIYURhLGOkYixicGJMJGLEY7xisGF8YeBicGE0IFwoIGC8YVA==",
-                  signature: "3045022100e7d1209ab8463ba6af71d0df953eaecd7cf1cbb06f7a5f4f0bacde9cd555cf310220220251083ea1d6453ff376a5520f87b9f6fe2c1fa099d034453aa41b81e54f9c",
+                  message: 'pGdmcm9tX2lkAGpwdWJsaWNfa2V5mCEDGLIYNRjfGDMYzhiCGOAY4wAY6hgnGBgYtBg9GEQYmhigGN4YXRiaGHoYrxikGI4YRBjRGJQYwhiZFhjyGENnYmlnX3NfaZghAxi9GJ8YmhiqGGcYIBj2GKUYhxjpGDQYohhYGIAYWwwYpBjHGFkYxBiaGMoY6BjUGPwY2hgmGP0YgBgiExibZXByb29momF0mCEDGMkYQRgkGEcYMRhxGP0Y4xigGJAYSRgpGJAYnBhGGKUYkBifGJkY8Rh+GCsYsxirGIcMGPAYiBjjGLEY9xhMYXOYIBhKGOMYnhi7ERjrGKYYTBIYPRiQGHIYURhLGOkYixicGJMJGLEY7xisGF8YeBicGE0IFwoIGC8YVA==',
+                  signature: '3045022100e7d1209ab8463ba6af71d0df953eaecd7cf1cbb06f7a5f4f0bacde9cd555cf310220220251083ea1d6453ff376a5520f87b9f6fe2c1fa099d034453aa41b81e54f9c',
                 },
                 signatureR: undefined,
               },
@@ -228,19 +228,19 @@ describe('TSS', function() {
     const blockchainExplorerMock = helpers.getBlockchainExplorer();
 
     const expressApp = new BWS.ExpressApp();
-      expressApp.start(
-        {
-          ignoreRateLimiter: true,
-          storage: storage,
-          blockchainExplorer: blockchainExplorerMock,
-          disableLogs: true,
-          doNotCheckV8: true
-        },
-        () => {
-          app = request(expressApp.app);
-          done();
-        }
-      );
+    expressApp.start(
+      {
+        ignoreRateLimiter: true,
+        storage: storage,
+        blockchainExplorer: blockchainExplorerMock,
+        disableLogs: true,
+        doNotCheckV8: true
+      },
+      () => {
+        app = request(expressApp.app);
+        done();
+      }
+    );
   });
 
   afterEach(function() {

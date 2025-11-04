@@ -95,7 +95,7 @@ export class DogeChain extends BtcChain implements IChain {
         }
       }
 
-      const bigInputs = Utils.sortAsc(partitions[0], 'satoshis')
+      const bigInputs = Utils.sortAsc(partitions[0], 'satoshis');
       const smallInputs = Utils.sortDesc(partitions[1], 'satoshis');
 
       logger.debug('Considering ' + bigInputs.length + ' big inputs (' + Utils.formatUtxos(bigInputs) + ')');
@@ -317,7 +317,7 @@ export class DogeChain extends BtcChain implements IChain {
       };
 
       let inputs = utxos.filter(utxo => !utxo.locked);
-      if (!!opts.excludeUnconfirmedUtxos) {
+      if (opts.excludeUnconfirmedUtxos) {
         inputs = inputs.filter(input => input.confirmations);
       }
       inputs = Utils.sortDesc(inputs, 'satoshis');

@@ -98,28 +98,28 @@ export class Wallet implements IWallet<() => boolean> {
   static COPAYER_PAIR_LIMITS = {};
 
   static create(opts: {
-    id: string,
-    name: string,
-    m: number,
-    n: number,
-    coin: string,
-    chain: string, // chain === coin for stored wallets
-    network: string,
-    pubKey: string,
-    singleAddress: boolean,
-    derivationStrategy: string,
-    addressType: string,
-    nativeCashAddr?: boolean,
-    usePurpose48?: boolean,
-    hardwareSourcePublicKey?: string,
-    clientDerivedPublicKey?: string,
-    tssVersion?: number,
-    tssKeyId?: string,
+    id: string;
+    name: string;
+    m: number;
+    n: number;
+    coin: string;
+    chain: string; // chain === coin for stored wallets
+    network: string;
+    pubKey: string;
+    singleAddress: boolean;
+    derivationStrategy: string;
+    addressType: string;
+    nativeCashAddr?: boolean;
+    usePurpose48?: boolean;
+    hardwareSourcePublicKey?: string;
+    clientDerivedPublicKey?: string;
+    tssVersion?: number;
+    tssKeyId?: string;
   }) {
     opts = opts || {} as any;
 
     const chain = opts.chain || opts.coin;
-    let x = new Wallet();
+    const x = new Wallet();
 
     $.shouldBeNumber(opts.m);
     $.shouldBeNumber(opts.n);
@@ -172,7 +172,7 @@ export class Wallet implements IWallet<() => boolean> {
   }
 
   static fromObj(obj: IWallet) {
-    let x = new Wallet();
+    const x = new Wallet();
 
     $.shouldBeNumber(obj.m);
     $.shouldBeNumber(obj.n);
@@ -252,9 +252,9 @@ export class Wallet implements IWallet<() => boolean> {
     const bitcore = Bitcore[chain];
     const salt = config.BE_KEY_SALT || Defaults.BE_KEY_SALT;
 
-    var seed = (this.copayers || []).map(c => c.xPubKey)
-        .sort()
-        .join('') +
+    let seed = (this.copayers || []).map(c => c.xPubKey)
+      .sort()
+      .join('') +
       Utils.getGenericName(this.network) + // Maintaining compatibility with previous versions
       this.coin +
       salt;
@@ -337,7 +337,7 @@ export class Wallet implements IWallet<() => boolean> {
     );
   }
 
-  /// Only for power scan
+  // Only for power scan
   getSkippedAddress() {
     $.checkState(this.isComplete(), 'Failed state: this.isComplete() at <getSkipeedAddress()>');
 

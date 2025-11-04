@@ -214,7 +214,7 @@ export class Credentials {
 
   getRootPath() {
     // This is for OLD v1.0 credentials only.
-    let legacyRootPath = () => {
+    const legacyRootPath = () => {
       // legacy base path schema
       let purpose;
       switch (this.derivationStrategy) {
@@ -278,7 +278,7 @@ export class Credentials {
   }
 
   static fromObj(obj) {
-    let x = new Credentials();
+    const x = new Credentials();
 
     if (!obj.version || obj.version < x.version) {
       throw new Error('Obsolete credentials version');

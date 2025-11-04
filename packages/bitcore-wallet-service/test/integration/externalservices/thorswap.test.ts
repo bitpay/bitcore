@@ -47,11 +47,11 @@ describe('Thorswap integration', () => {
         secretKey: 'thorswapSecretKey4',
         referer: 'thorswapReferer4'
       },
-    }
+    };
 
     fakeRequest = {
-      get: (_url, _opts, _cb) => { return _cb(null, { data: 'data' }) },
-      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data'}) },
+      get: (_url, _opts, _cb) => { return _cb(null, { data: 'data' }); },
+      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
     };
 
     await helpers.beforeEach();
@@ -81,7 +81,7 @@ describe('Thorswap integration', () => {
           env: 'sandbox',
           includeDetails: true,
         }
-      }
+      };
       server.externalServices.thorswap.request = fakeRequest;
     });
 
@@ -104,7 +104,7 @@ describe('Thorswap integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error')); },
       };
 
       server.externalServices.thorswap.request = fakeRequest2;
@@ -136,7 +136,7 @@ describe('Thorswap integration', () => {
           includeDetails: true,
           categories: 'all',
         }
-      }
+      };
       server.externalServices.thorswap.request = fakeRequest;
     });
 
@@ -165,7 +165,7 @@ describe('Thorswap integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error')); },
       };
 
       server.externalServices.thorswap.request = fakeRequest2;
@@ -195,11 +195,11 @@ describe('Thorswap integration', () => {
         headers: {},
         body: {
           env: 'sandbox',
-          sellAsset: "btc",
+          sellAsset: 'btc',
           buyAsset: 'eth',
           sellAmount: '1.123'
         }
-      }
+      };
       server.externalServices.thorswap.request = fakeRequest;
     });
 
@@ -222,7 +222,7 @@ describe('Thorswap integration', () => {
     it('should return error if get returns error', async () => {
       req.body.sellAmount = '1.123';
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error')); },
       };
 
       server.externalServices.thorswap.request = fakeRequest2;
@@ -253,7 +253,7 @@ describe('Thorswap integration', () => {
           env: 'sandbox',
           txn: 'txn1'
         }
-      }
+      };
       server.externalServices.thorswap.request = fakeRequest;
     });
 
@@ -284,7 +284,7 @@ describe('Thorswap integration', () => {
     it('should return error if post returns error', async() => {
       req.body.txn = 'txn1';
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error')); },
       };
 
       server.externalServices.thorswap.request = fakeRequest2;

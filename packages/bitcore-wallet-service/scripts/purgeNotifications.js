@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 
-const config = require('../../ts_build/src/config').default;
-const { Storage } = require('../../ts_build/src').default;
-const rl = require('readline').createInterface({ input: process.stdin, output: process.stdout });
+import readline from 'readline';
+import { Storage } from '../../ts_build/src';
+import config from '../../ts_build/src/config';
+
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
 
 let stop = false;
@@ -58,7 +60,7 @@ storage.connect(config.storageOpts, async (err) => {
   }
   
   function done(err) {
-    if (err) { console.log(err) }
+    if (err) { console.log(err); }
     rl.close();
     storage.disconnect(() => { console.log('done'); });
   }
@@ -96,7 +98,7 @@ storage.connect(config.storageOpts, async (err) => {
     process.stdout.write('\n');
 
     console.log(`\u2713 Purged ${Intl.NumberFormat().format(count)} notifications`);
-    stop && console.log('Stopped prematurely by user');
+    if (stop) console.log('Stopped prematurely by user');
 
     return done();
   } catch (err) {

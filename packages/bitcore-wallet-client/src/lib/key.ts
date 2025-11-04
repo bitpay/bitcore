@@ -28,7 +28,7 @@ const wordsForLang: Record<Language, Array<string>> = {
 // we always set 'livenet' for xprivs. it has no consequences
 // other than the serialization
 const NETWORK: string = 'livenet';
-const ALGOS_BY_CHAIN =  {
+const ALGOS_BY_CHAIN = {
   default: Constants.ALGOS.ECDSA,
   sol: Constants.ALGOS.EDDSA,
 };
@@ -36,7 +36,7 @@ const SUPPORTED_ALGOS = [Constants.ALGOS.ECDSA, Constants.ALGOS.EDDSA];
 const ALGO_TO_KEY_TYPE = {
   [Constants.ALGOS.ECDSA]: 'Bitcoin',
   [Constants.ALGOS.EDDSA]: 'ed25519'
-}
+};
 export type KeyAlgorithm = keyof typeof Constants.ALGOS;
 type Nullish = null | undefined;
 export type PasswordMaybe = string | Nullish;
@@ -95,7 +95,7 @@ export class Key {
   public compliantDerivation: boolean;
   public BIP45: boolean;
   public fingerPrint: string;
-  public fingerPrintEDDSA: string
+  public fingerPrintEDDSA: string;
   /*
    *  public readonly exportFields = {
    *    'xPrivKey': '#xPrivKey',
@@ -122,7 +122,7 @@ export class Key {
     this.use0forBCH = opts.useLegacyCoinType;
     this.use44forMultisig = opts.useLegacyPurpose;
     this.compliantDerivation = !opts.nonCompliantDerivation;
-    let x = opts.seedData;
+    const x = opts.seedData;
 
     switch (opts.seedType) {
       case 'new':
@@ -226,11 +226,11 @@ export class Key {
   private setFromMnemonic(m, opts: SetFromMnemonicOptions) {
     const algos = opts.algo ? [opts.algo] : SUPPORTED_ALGOS;
     for (const algo of algos) {
-  // private setFromMnemonic(
-  //   m,
-  //   opts: { passphrase?: string; password?: PasswordMaybe; encryptionOpts?: KeyOptions['encryptionOpts'], algo?: KeyAlgorithm }
-  // ) {
-  //   for (const algo of SUPPORTED_ALGOS) {
+      // private setFromMnemonic(
+      //   m,
+      //   opts: { passphrase?: string; password?: PasswordMaybe; encryptionOpts?: KeyOptions['encryptionOpts'], algo?: KeyAlgorithm }
+      // ) {
+      //   for (const algo of SUPPORTED_ALGOS) {
       const xpriv = m.toHDPrivateKey(opts.passphrase, NETWORK, ALGO_TO_KEY_TYPE[algo]);
       this.#setFingerprint({ value: xpriv.fingerPrint.toString('hex'), algo });
 
@@ -261,17 +261,17 @@ export class Key {
   private setFromExtendedPrivateKey (extendedPrivateKey, opts: { password?: PasswordMaybe; algo?: KeyAlgorithm; encryptionOpts?: KeyOptions['encryptionOpts'] }) {
     let xpriv;
     if (this.#mnemonic || this.#mnemonicEncrypted) {
-      throw new Error('Set key from existing mnemonic')
+      throw new Error('Set key from existing mnemonic');
     }
     try {
       xpriv = new Bitcore.HDPrivateKey(extendedPrivateKey);
-    } catch (e) {
+    } catch {
       throw new Error('Invalid argument');
     }
     const algos = opts.algo ? [opts.algo] : SUPPORTED_ALGOS;
     for (const algo of algos) {
       const params = { algo };
-      this.#setFingerprint({ value: xpriv.fingerPrint.toString('hex'),  ...params });
+      this.#setFingerprint({ value: xpriv.fingerPrint.toString('hex'), ...params });
       if (opts.password) {
         this.#setPrivKeyEncrypted({
           value: JSON.stringify(Encryption.encryptWithPassword(
@@ -398,7 +398,7 @@ export class Key {
     if (this.isPrivKeyEncrypted(algo)) {
       try {
         Encryption.decryptWithPassword(this.#getPrivKeyEncrypted({ algo }), password);
-      } catch (ex) {
+      } catch {
         return false;
       }
       return true;
@@ -422,7 +422,7 @@ export class Key {
         if (this.#mnemonicEncrypted) {
           key.mnemonic = Encryption.decryptWithPassword(this.#mnemonicEncrypted, password).toString();
         }
-      } catch (ex) {
+      } catch {
         throw new Error('Could not decrypt');
       }
     } else {
@@ -467,7 +467,7 @@ export class Key {
       if (this.#mnemonicEncrypted) {
         this.#mnemonic = Encryption.decryptWithPassword(this.#mnemonicEncrypted, password).toString();
       }
-      this.#setPrivKeyEncrypted({ algo, value: null })
+      this.#setPrivKeyEncrypted({ algo, value: null });
       this.#mnemonicEncrypted = null;
     } catch (ex) {
       log.error('error decrypting:', ex);
@@ -525,9 +525,9 @@ export class Key {
     $.checkArgument(opts.n >= 1, 'n need to be >=1');
 
     const chain = opts.chain || Utils.getChain(opts.coin);
-    let purpose = opts.n == 1 || this.use44forMultisig ? '44' : '48';
+    const purpose = opts.n == 1 || this.use44forMultisig ? '44' : '48';
     let coinCode = '0';
-    let changeCode = opts.addChange || 0;
+    const changeCode = opts.addChange || 0;
     let addChange = !!opts.addChange;
 
     // checking in chains for simplicity
@@ -614,7 +614,7 @@ export class Key {
     if (['testnet', 'regtest'].includes(opts.network)) {
       // Hacky: BTC/BCH xPriv depends on network: This code is to
       // convert a livenet xPriv to a testnet/regtest xPriv
-      let x = xPrivKey.toObject();
+      const x = xPrivKey.toObject();
       x.network = opts.network;
       delete x.xprivkey;
       delete x.checksum;
@@ -723,7 +723,7 @@ export class Key {
       const account = parseInt(pathMatch[1], 10);
       const expectedPath = this.getBaseAddressDerivationPath({ chain: txp.chain, account, n: 1 });
       if (expectedPath !== finalPath) {
-        throw new Error(`Unexpected path. Expected ${expectedPath} but found ${finalPath} (rootPath: ${rootPath})`)
+        throw new Error(`Unexpected path. Expected ${expectedPath} but found ${finalPath} (rootPath: ${rootPath})`);
       }
 
       const key = this.#getChildKeyEDDSA(password, finalPath);
@@ -733,7 +733,7 @@ export class Key {
           tx: rawTx,
           keys: [key]
         }))
-      )
+      );
       return signatures;
     } else {
       let tx = t.uncheckedSerialize();

@@ -11,7 +11,7 @@ const aKey = new Key({
 describe('Verifier', function() {
   describe('checkAddress', function() {
     it('should verify a BTC  address', () => {
-      let cred = aKey.createCredentials(null, { coin: 'btc', network: 'livenet', account: 0, n: 1 });
+      const cred = aKey.createCredentials(null, { coin: 'btc', network: 'livenet', account: 0, n: 1 });
       cred.addWalletInfo('id', 'name', 1, 1, 'copayer');
 
       Verifier.checkAddress(cred, {
@@ -22,7 +22,7 @@ describe('Verifier', function() {
     });
 
     it('should verify a ETH address', () => {
-      let cred = aKey.createCredentials(null, { coin: 'eth', network: 'livenet', account: 0, n: 1 });
+      const cred = aKey.createCredentials(null, { coin: 'eth', network: 'livenet', account: 0, n: 1 });
       cred.addWalletInfo('id', 'name', 1, 1, 'copayer');
 
       Verifier.checkAddress(cred, {
@@ -33,7 +33,7 @@ describe('Verifier', function() {
     });
 
     it('should verify a MATIC address', () => {
-      let cred = aKey.createCredentials(null, { coin: 'matic', network: 'livenet', account: 0, n: 1 });
+      const cred = aKey.createCredentials(null, { coin: 'matic', network: 'livenet', account: 0, n: 1 });
       cred.addWalletInfo('id', 'name', 1, 1, 'copayer');
 
       Verifier.checkAddress(cred, {

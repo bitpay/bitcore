@@ -64,9 +64,10 @@
     "build": "tsc && npm run lint",
     "clean": "rm -rf ./ts_build",
     "lint": "eslint .",
-    "fix": "eslint --fix --quiet .",
+    "fix:errors": "eslint --fix --quiet .",
+    "fix:all": "eslint --fix .",
     "pub": "npm run build && npm publish",
-    "precommit": "echo 'TODO: npm run lint; npm run fix'"
+    "precommit": "npm run lint; npm run fix:errors"
   },
   "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4"
 }

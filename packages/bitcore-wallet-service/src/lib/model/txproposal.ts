@@ -214,14 +214,14 @@ export class TxProposal implements ITxProposal {
     x.instantAcceptanceEscrow = opts.instantAcceptanceEscrow;
     x.outputs = (opts.outputs || []).map(output => {
       const out: any = {};
-      if (output.amount     !== undefined) out.amount = output.amount;
-      if (output.toAddress  !== undefined) out.toAddress = output.toAddress;
-      if (output.sourceAddress  !== undefined) out.sourceAddress = output.sourceAddress;
-      if (output.message    !== undefined) out.message = output.message;
-      if (output.data       !== undefined) out.data = output.data;
-      if (output.gasLimit   !== undefined) out.gasLimit = output.gasLimit;
-      if (output.script     !== undefined) out.script = output.script;
-      if (output.tag        !== undefined) out.tag = output.tag;
+      if (output.amount !== undefined) out.amount = output.amount;
+      if (output.toAddress !== undefined) out.toAddress = output.toAddress;
+      if (output.sourceAddress !== undefined) out.sourceAddress = output.sourceAddress;
+      if (output.message !== undefined) out.message = output.message;
+      if (output.data !== undefined) out.data = output.data;
+      if (output.gasLimit !== undefined) out.gasLimit = output.gasLimit;
+      if (output.script !== undefined) out.script = output.script;
+      if (output.tag !== undefined) out.tag = output.tag;
       return out; 
     });
     let numOutputs = x.outputs.length;
@@ -383,7 +383,7 @@ export class TxProposal implements ITxProposal {
     x.nonceAddress = obj.nonceAddress; // account address mantaining latest nonce
     x.category = obj.category; // kind of transaction: transfer, account creation, nonce creation, etc
     x.computeUnits = obj.computeUnits;
-    x.memo =  obj.memo;
+    x.memo = obj.memo;
     x.fromAta = obj.fromAta;
     x.decimals = obj.decimals;
     x.priorityFee = obj.priorityFee;
@@ -528,7 +528,7 @@ export class TxProposal implements ITxProposal {
   }
 
   isRepublishEnabled() {
-    return !!this.refreshOnPublish
+    return !!this.refreshOnPublish;
   }
 
   isTemporary() {

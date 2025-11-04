@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+
 let _instance;
 
 export class NotificationBroadcaster extends EventEmitter {

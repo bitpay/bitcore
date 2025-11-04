@@ -62,7 +62,7 @@ export class Copayer {
   static create(opts) {
     opts = opts || {};
     if (!opts.hardwareSourcePublicKey && !opts.clientDerivedPublicKey) {
-      $.checkArgument(opts.xPubKey, 'Missing copayer extended public key')
+      $.checkArgument(opts.xPubKey, 'Missing copayer extended public key');
     }
     $.checkArgument(opts.requestPubKey, 'Missing copayer request public key')
       .checkArgument(opts.signature, 'Missing copayer request public key signature');

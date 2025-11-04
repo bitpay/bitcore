@@ -16,9 +16,9 @@ const Config = (): any => {
     // https: true,
     // privateKeyFile: 'private.pem',
     // certificateFile: 'cert.pem',
-    ////// The following is only for certs which are not
-    ////// trusted by nodejs 'https' by default
-    ////// CAs like Verisign do not require this
+    // //// The following is only for certs which are not
+    // //// trusted by nodejs 'https' by default
+    // //// CAs like Verisign do not require this
     // CAinter1: '', // ex. 'COMODORSADomainValidationSecureServerCA.crt'
     // CAinter2: '', // ex. 'COMODORSAAddTrustCA.crt'
     // CAroot: '', // ex. 'AddTrustExternalCARoot.crt'
@@ -477,6 +477,7 @@ const Config = (): any => {
 
   // Override default values with bws.config.js' values, if present
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const bwsConfig = require('../../bws.config');
     defaultConfig = _.merge(defaultConfig, bwsConfig);
   } catch {

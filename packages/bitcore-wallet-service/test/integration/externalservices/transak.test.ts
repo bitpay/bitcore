@@ -46,11 +46,11 @@ describe('Transak integration', () => {
         secretKey: 'secretKey4',
         widgetApi: 'widgetApi4',
       }
-    }
+    };
 
     fakeRequest = {
-      get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
-      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+      get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
+      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
     };
 
     await helpers.beforeEach();
@@ -79,7 +79,7 @@ describe('Transak integration', () => {
         body: {
           env: 'sandbox',
         }
-      }
+      };
       server.externalServices.transak.request = fakeRequest;
     });
 
@@ -96,7 +96,7 @@ describe('Transak integration', () => {
 
     it('should return error if post returns error', async () => {
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.transak.request = fakeRequest2;
@@ -127,7 +127,7 @@ describe('Transak integration', () => {
         body: {
           env: 'sandbox',
         }
-      }
+      };
       server.externalServices.transak.request = fakeRequest;
     });
 
@@ -144,7 +144,7 @@ describe('Transak integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.transak.request = fakeRequest2;
@@ -175,7 +175,7 @@ describe('Transak integration', () => {
         body: {
           env: 'sandbox',
         }
-      }
+      };
       server.externalServices.transak.request = fakeRequest;
     });
 
@@ -192,7 +192,7 @@ describe('Transak integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.transak.request = fakeRequest2;
@@ -227,7 +227,7 @@ describe('Transak integration', () => {
           network: 'mainnet',
           paymentMethod: 'credit_debit_card'
         }
-      }
+      };
       server.externalServices.transak.request = fakeRequest;
     });
 
@@ -244,7 +244,7 @@ describe('Transak integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.transak.request = fakeRequest2;
@@ -294,7 +294,7 @@ describe('Transak integration', () => {
           partnerOrderId: 'partnerOrderId1',
           partnerCustomerId: 'partnerCustomerId1',
         }
-      }
+      };
       server.externalServices.transak.request = fakeRequest;
     });
 
@@ -316,7 +316,7 @@ describe('Transak integration', () => {
         cryptoCurrencyCode: 'BTC',
         partnerOrderId: 'partnerOrderId1',
         partnerCustomerId: 'partnerCustomerId1',
-      }
+      };
       const data = await server.externalServices.transak.transakGetSignedPaymentUrl(req);
       should.exist(data);
     });
@@ -335,7 +335,7 @@ describe('Transak integration', () => {
 
     it('should return error if post returns error', async () => {
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.transak.request = fakeRequest2;
@@ -368,7 +368,7 @@ describe('Transak integration', () => {
           orderId: 'orderId1',
           accessToken: 'accessToken1',
         }
-      }
+      };
       server.externalServices.transak.request = fakeRequest;
     });
 
@@ -385,7 +385,7 @@ describe('Transak integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.transak.request = fakeRequest2;

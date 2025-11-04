@@ -4,7 +4,7 @@ import { Utils } from '../../common/utils';
 import { ClientError } from '../../errors/clienterror';
 import { Errors } from '../../errors/errordefinitions';
 import { Copayer } from '../../model';
-import { checkRequired, WalletService } from '../../server';
+import { WalletService, checkRequired } from '../../server';
 import { Storage } from '../../storage';
 import { error } from '../helpers';
 

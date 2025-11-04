@@ -175,4 +175,4 @@ class ChainProxy {
   }
 }
 
-export let ChainService = new ChainProxy();
+export const ChainService = new ChainProxy();

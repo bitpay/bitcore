@@ -8,7 +8,7 @@ import { Storage } from './storage';
 
 const ObjectID = mongodb.ObjectID;
 
-var objectIdDate = function(date) {
+const objectIdDate = function(date) {
   return Math.floor(date.getTime() / 1000).toString(16) + '0000000000000000';
 };
 
@@ -21,7 +21,7 @@ export class CleanFiatRates {
   constructor() {}
 
   run(cb) {
-    let dbConfig = config.storageOpts.mongoDb;
+    const dbConfig = config.storageOpts.mongoDb;
 
     let uri = dbConfig.uri;
 
@@ -103,7 +103,7 @@ export class CleanFiatRates {
         const datesToKeep = [];
 
         // Timestamps grouped by coin avoiding duplicates.
-        let tsGruopedByCoin = _.reduce(
+        const tsGruopedByCoin = _.reduce(
           results,
           (r, a) => {
             r[a.coin] = _.uniq([...(r[a.coin] || []), a.ts]);
@@ -113,12 +113,12 @@ export class CleanFiatRates {
         );
 
         // keep one date every hour for each coin
-        _.forEach(tsGruopedByCoin, (tsGroup, key) => {
+        for (const [key, tsGroup] of Object.entries(tsGruopedByCoin)) {
           console.log(`\tFiltering times for ${key.toUpperCase()}`);
           let prevTime = null;
           let isSameHour;
 
-          _.forEach(tsGroup, (ts: number) => {
+          for (const ts of tsGroup as number[]) {
             if (prevTime > ts + 60 * 10000) return cb(new Error('Results not in order'));
 
             if (prevTime) {
@@ -131,8 +131,8 @@ export class CleanFiatRates {
               datesToKeep.push(ts);
             }
             prevTime = ts;
-          });
-        });
+          }
+        }
         return cb(null, datesToKeep);
       });
   }
