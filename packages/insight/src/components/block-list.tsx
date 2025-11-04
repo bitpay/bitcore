@@ -7,7 +7,7 @@ import ArrowOutward from '../assets/images/arrow-outward.svg';
 import ForwardArrow from '../assets/images/arrow-forward-blue.svg';
 import ArrowDown from '../assets/images/arrow-down.svg';
 import styled, { useTheme } from 'styled-components';
-import InfoCard from './InfoCard';
+import InfoCard from './info-card';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import { fetcher } from 'src/api/api';
 import InfiniteScrollLoadSpinner from './infinite-scroll-load-spinner';

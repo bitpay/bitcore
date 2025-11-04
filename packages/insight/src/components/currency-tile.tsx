@@ -198,7 +198,7 @@ const CurrencyTile: FC<CurrencyTileProps> = ({currency}) => {
   const imgSrc = `https://bitpay.com/img/icon/currencies/${currency}.svg`;
 
   const gotoChain = async () => {
-    await navigate(`/${currency}/mainnet/chain`);
+    await navigate(`/${currency}/mainnet/blocks`);
   };
 
   return (

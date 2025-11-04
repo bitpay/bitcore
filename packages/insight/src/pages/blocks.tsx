@@ -10,7 +10,7 @@ import nProgress from 'nprogress';
 import {BitcoinBlockType} from 'src/utilities/models';
 import Info from 'src/components/info';
 
-const Chain: React.FC = () => {
+const Blocks: React.FC = () => {
   let {currency, network} = useParams<{currency: string; network: string}>();
   const dispatch = useDispatch();
 
@@ -54,4 +54,4 @@ const Chain: React.FC = () => {
   );
 }
 
-export default Chain;
+export default Blocks;

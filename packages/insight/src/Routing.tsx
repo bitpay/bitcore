@@ -1,7 +1,7 @@
 import {lazy, Suspense} from 'react';
 import {Navigate, Route, Routes} from 'react-router-dom';
 import Home from './pages';
-import Chain from './pages/chain';
+import Blocks from './pages/blocks';
 const Block = lazy(() => import('./pages/block'));
 const TransactionHash = lazy(() => import('./pages/transaction'));
 const Address = lazy(() => import('./pages/address'));
@@ -12,7 +12,7 @@ function Routing() {
     <Suspense>
       <Routes>
         <Route path='/' element={<Home />} />
-        <Route path='/:currency/:network/chain' element={<Chain />} />
+        <Route path='/:currency/:network/blocks' element={<Blocks />} />
         <Route path='/:currency/:network/block/:block' element={<Block />} />
         <Route path='/:currency/:network/tx/:tx' element={<TransactionHash />} />
         <Route path='/:currency/:network/address/:address' element={<Address />} />
