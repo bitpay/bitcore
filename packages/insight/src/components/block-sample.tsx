@@ -1,6 +1,6 @@
 import React, {FC, useState} from 'react';
 import {getApiRoot, getConvertedValue, getDifficultyFromBits, getFormattedDate} from 'src/utilities/helper-methods';
-import {BitcoinBlockType} from 'src/utilities/models';
+import {BitcoinBlockType, FeeData} from 'src/utilities/models';
 import Cube from '../assets/images/cube.svg';
 import Arrow from '../assets/images/arrow-thin.svg';
 import ArrowOutward from '../assets/images/arrow-outward.svg';
@@ -34,13 +34,15 @@ const getBlocksUrl = (currency: string, network: string) => {
   return `${getApiRoot(currency)}/${currency}/${network}/block?limit=200`;
 };
 
-const BlockSample: FC<{currency: string, network: string, blocks: BitcoinBlockType[]}> = ({currency, network, blocks}) => {
+const BlockSample: FC<{currency: string, network: string, blocks: Array<BitcoinBlockType & Partial<FeeData>>}> = ({currency, network, blocks}) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const [expandedBlocks, setExpandedBlocks] = useState<number[]>([]);
   const [blocksList, setBlocksList] = useState(blocks);
   const [error, setError] = useState('');
   const [hasMore, setHasMore] = useState(true);
+  const hasFees = blocks.every(block => block.feeData);
+  const columnProportion = hasFees ? '20%' : '25%';
 
   const fetchMore = async (_blocksList: BitcoinBlockType[]) => {
     if (!_blocksList.length || !currency || !network) return;
@@ -75,17 +77,17 @@ const BlockSample: FC<{currency: string, network: string, blocks: BitcoinBlockTy
         <table style={{width: '100%', overflowX: 'hidden', borderCollapse: 'collapse'}}>
           <thead>
             <BlockListTableRow>
-              <th style={{textAlign: 'left', paddingLeft: '3rem', width: '20%'}}>Height</th>
-              <th style={{width: '20%'}}>Timestamp</th>
-              <th style={{width: '20%'}}>Transactions</th>
-              <th style={{width: '20%'}}>Size</th>
-              <th style={{textAlign: 'right', paddingRight: '3rem', width: '20%'}}>Fee Rate</th>
+              <th style={{textAlign: 'left', paddingLeft: '3rem', width: columnProportion}}>Height</th>
+              <th style={{width: columnProportion}}>Timestamp</th>
+              <th style={{width: columnProportion}}>Transactions</th>
+              <th style={{width: columnProportion}}>Size</th>
+              {hasFees && <th style={{textAlign: 'right', paddingRight: '3rem', width: '20%'}}>Fee Rate</th>}
             </BlockListTableRow>
           </thead>
           <tbody>
             <tr />
             {
-              blocksList.map((block: BitcoinBlockType, index: number) => {
+              blocksList.map((block: BitcoinBlockType & Partial<FeeData>, index: number) => {
                 const feeData = block.feeData;
                 const expanded = expandedBlocks.includes(block.height);
                 return (
@@ -108,7 +110,7 @@ const BlockSample: FC<{currency: string, network: string, blocks: BitcoinBlockTy
                       <td>{getFormattedDate(block.time)}</td>
                       <td>{block.transactionCount}</td>
                       <td>{block.size}</td>
-                      <td style={{textAlign: 'right', paddingRight: '3rem'}}>{feeData.median.toFixed(4)}</td>
+                      { feeData && <td style={{textAlign: 'right', paddingRight: '3rem'}}>{feeData.median.toFixed(4)}</td> }
                     </BlockListTableRow>
                     {expanded && <>
                         {/* Alternates the color so the data below this row stays the same*/}
@@ -126,10 +128,10 @@ const BlockSample: FC<{currency: string, network: string, blocks: BitcoinBlockTy
                               <div style={{display: 'flex', gap: '1rem'}}>
                                 <InfoCard data={[
                                   {label: 'Previous block', value: block.height - 1},
-                                  {label: 'Bits', value: block.bits},
-                                  {label: 'Version', value: block.version},
+                                  ...(block.bits ? [{label: 'Bits', value: block.bits}] : []),
+                                  ...(block.version ? [{label: 'Version', value: block.version}] : []),
                                   {label: 'Block reward', value: `${getConvertedValue(block.reward, currency).toFixed(3)} ${currency}`},
-                                  {label: 'Miner fees', value: `${getConvertedValue(feeData.feeTotal, currency).toFixed(5)} ${currency}`},
+                                  ...(feeData ? [{label: 'Miner fees', value: `${getConvertedValue(feeData.feeTotal, currency).toFixed(5)} ${currency}`}] : []),
                                 ]}/>
                                 <InfoCard data={[
                                   {label: 'Next block', value: <>
@@ -144,20 +146,20 @@ const BlockSample: FC<{currency: string, network: string, blocks: BitcoinBlockTy
                                   </>},
                                   {label: 'Nonce', value: block.nonce},
                                   {label: 'Confirmations', value: blocksList[0].height - block.height + 1},
-                                  {label: 'Difficulty', value: getDifficultyFromBits(block.bits).toFixed(0)},
-                                  {label: 'Fee data', value: <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: '100%'}}>
-                                      {[{label: 'Mean', value: feeData.mean}, {label: 'Median', value: feeData.median}, {label: 'Mode', value: feeData.mode}]
-                                        .map(({label, value}, key) => {
-                                          return (<React.Fragment key={key}>
-                                            <div style={{display: 'flex', flexDirection: 'column', lineHeight: 1.1, marginTop: '-0.4rem'}}>
-                                              <span style={{color: theme.dark ? '#888' : '#474d53', alignSelf: 'flex-start', lineHeight: 2, marginBottom: -2, fontSize: '16px'}}>{label}</span>
-                                              {value.toFixed(4)}
-                                            </div>
-                                          </React.Fragment>)
-                                        })
-                                      }
+                                  ...(block.bits ? [{label: 'Difficulty', value: getDifficultyFromBits(block.bits).toFixed(0)}] : []),
+                                  ...(feeData ? [{label: 'Fee data', value: <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: '100%'}}>
+                                    {[{label: 'Mean', value: feeData.mean}, {label: 'Median', value: feeData.median}, {label: 'Mode', value: feeData.mode}]
+                                      .map(({label, value}, key) => {
+                                        return <React.Fragment key={key}>
+                                          <div style={{display: 'flex', flexDirection: 'column', lineHeight: 1.1, marginTop: '-0.4rem'}}>
+                                            <span style={{color: theme.dark ? '#888' : '#474d53', alignSelf: 'flex-start', lineHeight: 2, marginBottom: -2, fontSize: '16px'}}>{label}</span>
+                                            {value.toFixed(4)}
+                                          </div>
+                                        </React.Fragment>
+                                      })
+                                    }
                                   </div>
-                                  }
+                                  }] : [])
                                 ]}/>
                               </div>
                               <span style={{display: 'flex', alignItems: 'center', width: 'fit-content', cursor: 'pointer'}} onClick={() => gotoSingleBlockDetailsView(block.hash)}>

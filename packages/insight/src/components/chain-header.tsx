@@ -2,7 +2,7 @@ import {FC, useEffect, useRef, useState} from 'react';
 import {useApi} from 'src/api/api';
 import {Chart as ChartJS} from 'chart.js';
 import {colorCodes} from 'src/utilities/constants';
-import {BitcoinBlockType} from 'src/utilities/models';
+import {BitcoinBlockType, FeeData} from 'src/utilities/models';
 import styled, { useTheme } from 'styled-components';
 import { getName } from 'src/utilities/helper-methods';
 import Dropdown from './dropdown';
@@ -23,7 +23,7 @@ const ChartTileHeader = styled.span`
   font-weight: bolder;
 `;
 
-const ChainHeader: FC<{ currency: string; network: string; blocks?: BitcoinBlockType[] }> = ({ currency, network, blocks }) => {
+const ChainHeader: FC<{ currency: string; network: string; blocks?: Array<BitcoinBlockType & Partial<FeeData>> }> = ({ currency, network, blocks }) => {
   const theme = useTheme();
   const priceDetails: {
     data: {
@@ -63,14 +63,15 @@ const ChainHeader: FC<{ currency: string; network: string; blocks?: BitcoinBlock
   
   const [feeChangeSpan, setFeeChangeSpan] = useState(() => { return <span>null</span>; });
   const [priceChangeSpan, setPriceChangeSpan] = useState(() => { return <span>null</span>; });
+  const hasFees = blocks?.at(0)?.feeData !== undefined;
 
   useEffect(() => {
-    if (feeChartRef.current && blocks) {
+    if (feeChartRef.current && blocks && hasFees) {
       if (feeChartInstanceRef.current) {
         feeChartInstanceRef.current.destroy();
       }
       const num = Number(feeSelectedRange.slice(0, feeSelectedRange.indexOf(' ')));
-      const fees = blocks.map((block: BitcoinBlockType) => block.feeData.median).reverse().slice(blocks.length - num);
+      const fees = blocks.map((block: BitcoinBlockType & Partial<FeeData>) => block.feeData?.median as number).reverse().slice(blocks.length - num);
       const dates = blocks.map((block: BitcoinBlockType) =>
         new Date(block.time).toLocaleString('en-US', {
           year: '2-digit',
@@ -207,7 +208,7 @@ const ChainHeader: FC<{ currency: string; network: string; blocks?: BitcoinBlock
         />
       <div style={{padding: '1rem', backgroundColor: theme.dark ? '#111' : '#f6f7f9', height: 'fit-content', marginBottom: '2rem'}}>
         <div style={{display: 'flex', flexDirection: 'row', width: '100%', alignItems: 'center'}}>
-          <ChartTile>
+          <ChartTile style={{width: hasFees ? '50%' : '100%'}}>
             <span>{getName(currency)} Exchange Rate</span>
             <div style={{display: 'flex', justifyContent: 'space-between'}}>
               <ChartTileHeader>${price.toLocaleString()}</ChartTileHeader>
@@ -218,17 +219,19 @@ const ChainHeader: FC<{ currency: string; network: string; blocks?: BitcoinBlock
               <canvas ref={priceChartRef} aria-label='price line chart' role='img' />
             </div>
           </ChartTile>
-          <ChartTile>
-            <span>{getName(currency)} Fee</span>
-            <div style={{display: 'flex', justifyContent: 'space-between'}}>
-              <ChartTileHeader>{blocks?.at(0)?.feeData.median.toFixed(3)} sats/byte</ChartTileHeader>
-              <Dropdown options={feeRanges} value={feeSelectedRange} onChange={setFeesSelectedRange} style={{width: '130px'}} />
-            </div>
-            {feeChangeSpan}
-            <div style={{flex: 1, minHeight: 0}}>
-              <canvas ref={feeChartRef} aria-label='fee chart' role='img' />
-            </div>
-          </ChartTile>
+          { hasFees &&
+            <ChartTile>
+              <span>{getName(currency)} Fee</span>
+              <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                <ChartTileHeader>{blocks?.at(0)?.feeData?.median.toFixed(3)} sats/byte</ChartTileHeader>
+                <Dropdown options={feeRanges} value={feeSelectedRange} onChange={setFeesSelectedRange} style={{width: '130px'}} />
+              </div>
+              {feeChangeSpan}
+              <div style={{flex: 1, minHeight: 0}}>
+                <canvas ref={feeChartRef} aria-label='fee chart' role='img' />
+              </div>
+            </ChartTile>
+          }
         </div>
       </div>
     </div>
