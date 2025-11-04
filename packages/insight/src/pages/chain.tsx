@@ -1,4 +1,4 @@
-import BlockSample from 'src/components/block-sample';
+import BlockList from 'src/components/block-list';
 import React, {useEffect, useState} from 'react';
 import ChainHeader from '../components/chain-header';
 import {useParams} from 'react-router-dom';
@@ -49,7 +49,7 @@ const Chain: React.FC = () => {
     <>
       {error ? <Info type={'error'} message={error} /> : null}
       <ChainHeader currency={currency} network={network} blocks={blocksList}/>
-      { blocksList && <BlockSample currency={currency} network={network} blocks={blocksList} /> }
+      { blocksList && <BlockList currency={currency} network={network} blocks={blocksList} /> }
     </>
   );
 }

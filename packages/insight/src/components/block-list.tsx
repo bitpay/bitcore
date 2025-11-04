@@ -34,7 +34,7 @@ const getBlocksUrl = (currency: string, network: string) => {
   return `${getApiRoot(currency)}/${currency}/${network}/block?limit=200`;
 };
 
-const BlockSample: FC<{currency: string, network: string, blocks: Array<BitcoinBlockType & Partial<FeeData>>}> = ({currency, network, blocks}) => {
+const BlockList: FC<{currency: string, network: string, blocks: Array<BitcoinBlockType & Partial<FeeData>>}> = ({currency, network, blocks}) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const [expandedBlocks, setExpandedBlocks] = useState<number[]>([]);
@@ -182,4 +182,4 @@ const BlockSample: FC<{currency: string, network: string, blocks: Array<BitcoinB
   );
 };
 
-export default BlockSample;
+export default BlockList;
