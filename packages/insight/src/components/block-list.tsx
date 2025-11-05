@@ -90,6 +90,58 @@ const BlockList: FC<{currency: string, network: string, blocks: Array<BitcoinBlo
               blocksList.map((block: BitcoinBlockType & Partial<FeeData>, index: number) => {
                 const feeData = block.feeData;
                 const expanded = expandedBlocks.includes(block.height);
+
+                const dataRowsDB = {
+                  'Previous block': {label: 'Previous block', value: block.height - 1},
+                  'Bits': {label: 'Bits', value: block.bits},
+                  'Version': {label: 'Version', value: block.version},
+                  'Block reward': {label: 'Block reward', value: `${getConvertedValue(block.reward, currency).toFixed(3)} ${currency}`},
+                  'Miner fees': {label: 'Miner fees', value: `${getConvertedValue(feeData?.feeTotal, currency).toFixed(5)} ${currency}`},
+                  'Next block': {label: 'Next block', value: 
+                    <>
+                      {block.height + 1}
+                      <img 
+                        src={ArrowOutward} 
+                        style={{width: '24px', cursor: 'pointer'}} 
+                        onClick={() => gotoSingleBlockDetailsView(blocksList[index - 1].hash)}
+                        alt='Next Block' 
+                        title={`Go to block ${block.height + 1}`}
+                      />
+                    </>
+                  },
+                  'Nonce': {label: 'Nonce', value: block.nonce},
+                  'Confirmations': {label: 'Confirmations', value: blocksList[0].height - block.height + 1},
+                  'Difficulty': {label: 'Difficulty', value: getDifficultyFromBits(block.bits).toFixed(0)},
+                  'Fee data': {label: 'Fee data', value: 
+                    <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: '100%'}}>
+                      {[{label: 'Mean', value: feeData?.mean}, {label: 'Median', value: feeData?.median}, {label: 'Mode', value: feeData?.mode}]
+                        .map(({label, value}, key) => {
+                          return <React.Fragment key={key}>
+                            <div style={{display: 'flex', flexDirection: 'column', lineHeight: 1.1, marginTop: '-0.4rem'}}>
+                              <span style={{color: theme.dark ? '#888' : '#474d53', alignSelf: 'flex-start', lineHeight: 2, marginBottom: -2, fontSize: '16px'}}>{label}</span>
+                              {value?.toFixed(4)}
+                            </div>
+                          </React.Fragment>
+                        })
+                      }
+                    </div>
+                  }
+                };
+
+                type IDataRowsDB = keyof typeof dataRowsDB;
+                let columnLeftExpandedDataKeys: IDataRowsDB[];
+                let columnRightExpandedDataKeys: IDataRowsDB[];
+
+                if (currency === 'ETH') {
+                  columnLeftExpandedDataKeys = ['Previous block', 'Block reward'];
+                  columnRightExpandedDataKeys = ['Next block', 'Nonce', 'Confirmations'];
+                } else {
+                  columnLeftExpandedDataKeys = ['Previous block', 'Bits', 'Version', 'Block reward', 'Miner fees'];
+                  columnRightExpandedDataKeys = ['Next block', 'Nonce', 'Confirmations', 'Difficulty', 'Fee data'];
+                }
+                const columnLeftExpandedData : Array<{label: string, value: any}> = columnLeftExpandedDataKeys.map(key => dataRowsDB[key]);
+                const columnRightExpandedData : Array<{label: string, value: any}> = columnRightExpandedDataKeys.map(key => dataRowsDB[key]);
+
                 return (
                   <React.Fragment key={index}>
                     <BlockListTableRow key={index}>
@@ -126,41 +178,8 @@ const BlockList: FC<{currency: string, network: string, blocks: Array<BitcoinBlo
                               ]}/>
                               <span style={{fontSize: '20px', alignSelf: 'flex-start'}}>Summary</span>
                               <div style={{display: 'flex', gap: '1rem'}}>
-                                <InfoCard data={[
-                                  {label: 'Previous block', value: block.height - 1},
-                                  ...(block.bits ? [{label: 'Bits', value: block.bits}] : []),
-                                  ...(block.version ? [{label: 'Version', value: block.version}] : []),
-                                  {label: 'Block reward', value: `${getConvertedValue(block.reward, currency).toFixed(3)} ${currency}`},
-                                  ...(feeData ? [{label: 'Miner fees', value: `${getConvertedValue(feeData.feeTotal, currency).toFixed(5)} ${currency}`}] : []),
-                                ]}/>
-                                <InfoCard data={[
-                                  {label: 'Next block', value: <>
-                                    {block.height + 1}
-                                    <img 
-                                      src={ArrowOutward} 
-                                      style={{width: '24px', cursor: 'pointer'}} 
-                                      onClick={() => gotoSingleBlockDetailsView(blocksList[index - 1].hash)}
-                                      alt='Next Block' 
-                                      title={`Go to block ${block.height + 1}`}
-                                    />
-                                  </>},
-                                  {label: 'Nonce', value: block.nonce},
-                                  {label: 'Confirmations', value: blocksList[0].height - block.height + 1},
-                                  ...(block.bits ? [{label: 'Difficulty', value: getDifficultyFromBits(block.bits).toFixed(0)}] : []),
-                                  ...(feeData ? [{label: 'Fee data', value: <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: '100%'}}>
-                                    {[{label: 'Mean', value: feeData.mean}, {label: 'Median', value: feeData.median}, {label: 'Mode', value: feeData.mode}]
-                                      .map(({label, value}, key) => {
-                                        return <React.Fragment key={key}>
-                                          <div style={{display: 'flex', flexDirection: 'column', lineHeight: 1.1, marginTop: '-0.4rem'}}>
-                                            <span style={{color: theme.dark ? '#888' : '#474d53', alignSelf: 'flex-start', lineHeight: 2, marginBottom: -2, fontSize: '16px'}}>{label}</span>
-                                            {value.toFixed(4)}
-                                          </div>
-                                        </React.Fragment>
-                                      })
-                                    }
-                                  </div>
-                                  }] : [])
-                                ]}/>
+                                <InfoCard data={columnLeftExpandedData}/>
+                                <InfoCard data={columnRightExpandedData}/>
                               </div>
                               <span style={{display: 'flex', alignItems: 'center', width: 'fit-content', cursor: 'pointer'}} onClick={() => gotoSingleBlockDetailsView(block.hash)}>
                                 <span style={{color: '#2240C4', marginRight: '0.75rem', fontSize: '18px'}}>View transactions</span>
