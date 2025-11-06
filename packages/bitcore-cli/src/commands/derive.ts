@@ -21,7 +21,7 @@ export function command(args: CommonArgs) {
   return opts;
 }
 
-export async function deriveKey(args: CommonArgs<{ path?: string; }>) {
+export async function deriveKey(args: CommonArgs<{ path?: string }>) {
   const { wallet, opts } = args;
   if (opts.command) {
     Object.assign(opts, command(args));

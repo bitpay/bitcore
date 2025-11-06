@@ -16,7 +16,7 @@ export interface IBaseEncrypted {
   ts: number;
   mode: 'ccm';
   adata: string;
-  cipher: 'aes',
+  cipher: 'aes';
   ct: string;
 }
 

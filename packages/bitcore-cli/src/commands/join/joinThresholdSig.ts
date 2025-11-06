@@ -8,7 +8,7 @@ import { Utils } from '../../utils';
 import type { CommonArgs } from '../../../types/cli';
 
 export async function joinThresholdSigWallet(
-  args: CommonArgs<{ mnemonic?: string; }> & { chain: string; }
+  args: CommonArgs<{ mnemonic?: string }> & { chain: string }
 ) {
   const { wallet, chain, opts } = args;
   const { verbose, mnemonic } = opts;
