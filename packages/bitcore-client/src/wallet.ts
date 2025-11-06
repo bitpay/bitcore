@@ -336,7 +336,7 @@ export class Wallet {
    * @param params.hex Return the balance in hex
    * @returns 
    */
-  getBalance(params: { time?: string, token?: string, tokenName?: string, address?: string; hex?: boolean } = {}) {
+  getBalance(params: { time?: string; token?: string; tokenName?: string; address?: string; hex?: boolean } = {}) {
     const { time, token, tokenName, address, hex } = params;
     let payload;
     if (token || tokenName) {
@@ -348,7 +348,7 @@ export class Wallet {
     return this.client.getBalance({ payload, pubKey: this.authPubKey, time, address, hex });
   }
 
-  getNetworkFee(params: { target?: number, txType?: number } = {}) {
+  getNetworkFee(params: { target?: number; txType?: number } = {}) {
     const target = params.target || 2;
     const txType = params.txType;
     return this.client.getFee({ target, txType });
@@ -400,7 +400,7 @@ export class Wallet {
    * @param tokenName The `name` field on the token object
    * @param token The `symbol` field on the token object (deprecated)
    */
-  getTokenObj(params: { tokenName?: string, token?: string }) {
+  getTokenObj(params: { tokenName?: string; token?: string }) {
     const { tokenName, token } = params || {};
     if (!tokenName && !token) {
       return null;
@@ -590,12 +590,12 @@ export class Wallet {
     return this.client.broadcast({ payload });
   }
 
-  async getTransactionByTxid(params: { txid: string, populated?: boolean }) {
+  async getTransactionByTxid(params: { txid: string; populated?: boolean }) {
     const { txid, populated } = params;
     return this.client.getTransaction({ txid, populated });
   }
 
-  async importKeys(params: { keys: KeyImport[], rederiveAddys?: boolean }) {
+  async importKeys(params: { keys: KeyImport[]; rederiveAddys?: boolean }) {
     const { encryptionKey } = this.unlocked;
     const { rederiveAddys } = params;
     let { keys } = params;
