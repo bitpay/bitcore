@@ -3,10 +3,10 @@ import { cpus } from 'os';
 import logger from './logger';
 import { ConfigType } from './types/Config';
 import { merge } from './utils';
+import parseArgv from './utils/parseArgv';
 
-const bitcoreConfigPath = process.env.BITCORE_CONFIG || '../../bitcore.config.json';
-
-logger.info('Using config at: ' + bitcoreConfigPath);
+const program = parseArgv([], ['config']);
+let bitcoreConfigPath = program.config || process.env.BITCORE_CONFIG_PATH || '../../bitcore.config.json';
 
 if (!fs.existsSync(bitcoreConfigPath)) {
   throw new Error(`No bitcore config exists at ${bitcoreConfigPath}`);
@@ -15,8 +15,12 @@ if (!fs.existsSync(bitcoreConfigPath)) {
 const bitcoreConfigStat = fs.statSync(bitcoreConfigPath);
 
 if (bitcoreConfigStat.isDirectory()) {
-  throw new Error(`Provided bitcore config path: ${bitcoreConfigPath} is a directory`);
+  if (!fs.existsSync(bitcoreConfigPath + '/bitcore.config.json')) {
+    throw new Error(`No bitcore config exists in directory ${bitcoreConfigPath}`);
+  }
+  bitcoreConfigPath += '/bitcore.config.json';
 }
+logger.info('Using config at: ' + bitcoreConfigPath);
 
 let rawBitcoreConfig;
 try {
