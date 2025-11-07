@@ -8,7 +8,7 @@ import parseArgv from './utils/parseArgv';
 const program = parseArgv([], ['config']);
 let bitcoreConfigPath = program.config || process.env.BITCORE_CONFIG_PATH || '../../bitcore.config.json';
 if (bitcoreConfigPath[0] === '~') {
-  bitcoreConfigPath.replace('~', homedir());
+  bitcoreConfigPath = bitcoreConfigPath.replace('~', homedir());
 }
 
 if (!fs.existsSync(bitcoreConfigPath)) {
