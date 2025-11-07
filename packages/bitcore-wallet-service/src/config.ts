@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import _ from 'lodash';
 import { logger } from './lib/logger';
 
@@ -477,9 +479,84 @@ const Config = (): any => {
 
   // Override default values with bws.config.js' values, if present
   try {
-    const path = process.env.BWS_CONFIG || '../../bws.config';
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const bwsConfig = require(path);
+    const { BITCORE_CONFIG_PATH, BWS_CONFIG_PATH } = process.env;
+    let bwsConfig;
+
+    const loadConfigJS = (file: string) => {
+      let config;
+      file = path.resolve(file);
+      if (!fs.existsSync(file)) {
+        return null;
+      }
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        config = require(file);
+      } catch (error) {
+        throw new Error(`Could not load config at ${file}\n${error}`);
+      }
+      return config;
+    };
+
+    const loadJSON = (file: string): object & { bitcoreWalletService?: object } => {
+      let config;
+      file = path.resolve(file);
+      if (!fs.existsSync(file)) {
+        return null;
+      }
+      try {
+        config = fs.readFileSync(file);
+      } catch (error) {
+        throw new Error(`Config '${file}' exists but could not be read\n${error}`);
+      }
+
+      try {
+        config = JSON.parse(bwsConfig);
+      } catch (error) {
+        throw new Error(`Could not parse contents of config '${file}' into JSON\n${error}`);
+      }
+      return config;
+    };
+
+    if (BWS_CONFIG_PATH) {
+      if (!fs.existsSync(BWS_CONFIG_PATH)) {
+        throw new Error(`Environmental variable BWS_CONFIG_PATH is ${BWS_CONFIG_PATH} which does not exist`);
+      }
+      if (fs.statSync(BWS_CONFIG_PATH).isDirectory()) {
+        if (fs.existsSync(path.join(BWS_CONFIG_PATH, 'bws.config.js'))) {
+          bwsConfig = loadConfigJS(path.join(BWS_CONFIG_PATH, 'bws.config.js'));
+        }
+      } else {
+        bwsConfig = loadConfigJS(BWS_CONFIG_PATH);
+      }
+    } else if (BITCORE_CONFIG_PATH) {
+      if (fs.existsSync(BITCORE_CONFIG_PATH)) {
+        if (fs.statSync(BITCORE_CONFIG_PATH).isDirectory()) {
+          if (fs.existsSync(path.join(BITCORE_CONFIG_PATH, 'bitcore.config.json'))) {
+            bwsConfig = loadJSON(path.join(BITCORE_CONFIG_PATH, 'bitcore.config.json')).bitcoreWalletService;
+          }
+        } else {
+          bwsConfig = loadJSON(BITCORE_CONFIG_PATH).bitcoreWalletService ;
+        }
+        if (!bwsConfig) {
+          bwsConfig = loadConfigJS('bws.config.js');
+        }
+      } else {
+        if (fs.existsSync('../../bitcore.config.json')) {
+          bwsConfig = loadJSON('../../bitcore.config.json').bitcoreWalletService;
+        }
+        if (!bwsConfig) {
+          bwsConfig = loadConfigJS('bws.config.js');
+        }
+      }
+    } else {
+      if (fs.existsSync('../../bitcore.config.json')) {
+        bwsConfig = loadJSON(BITCORE_CONFIG_PATH).bitcoreWalletService;
+      }
+      if (!bwsConfig) {
+        bwsConfig = loadConfigJS('bws.confg.js');
+      }
+    }
+
     defaultConfig = _.merge(defaultConfig, bwsConfig);
   } catch {
     logger.info('bws.config.js not found, using default configuration values');
