@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { cpus } from 'os';
+import { cpus, homedir } from 'os';
 import logger from './logger';
 import { ConfigType } from './types/Config';
 import { merge } from './utils';
@@ -7,6 +7,9 @@ import parseArgv from './utils/parseArgv';
 
 const program = parseArgv([], ['config']);
 let bitcoreConfigPath = program.config || process.env.BITCORE_CONFIG_PATH || '../../bitcore.config.json';
+if (bitcoreConfigPath[0] === '~') {
+  bitcoreConfigPath.replace('~', homedir());
+}
 
 if (!fs.existsSync(bitcoreConfigPath)) {
   throw new Error(`No bitcore config exists at ${bitcoreConfigPath}`);
