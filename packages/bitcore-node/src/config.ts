@@ -34,7 +34,7 @@ try {
 
 let bitcoreConfig;
 try {
-  bitcoreConfig = JSON.parse(rawBitcoreConfig);
+  bitcoreConfig = JSON.parse(rawBitcoreConfig).bitcoreNode;
 } catch (error) {
   throw new Error(`Error in parsing bitcore config\nFound and loaded file at ${bitcoreConfigPath}\n${error}`);
 }
