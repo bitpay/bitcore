@@ -10,7 +10,7 @@ import { IEVMNetworkConfig } from '../../../src/types/Config';
 import { wait } from '../../../src/utils';
 import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
-import { Config } from '../../../build/src/services/config';
+import { Config } from '../../../src/services/config';
 
 const { StreamUtil } = BitcoreClient;
 const chain = 'ETH';

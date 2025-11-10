@@ -1,6 +1,6 @@
 import cluster, { Worker as ClusterWorker } from 'cluster';
 import { EventEmitter } from 'events';
-import { Config } from '../../build/src/services/config';
+import { Config } from '../../src/services/config';
 import { LoggifyClass } from '../decorators/Loggify';
 import logger from '../logger';
 import { CallbackType } from '../types/Callback';

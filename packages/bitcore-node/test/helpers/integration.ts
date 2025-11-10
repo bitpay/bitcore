@@ -1,4 +1,4 @@
-import { Config } from '../../build/src/services/config';
+import { Config } from '../../src/services/config';
 import { Modules } from '../../src/modules';
 import { Storage } from '../../src/services/storage';
 import { wait } from '../../src/utils';

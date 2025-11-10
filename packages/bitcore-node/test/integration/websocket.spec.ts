@@ -8,7 +8,7 @@ import { Event } from '../../src/services/event';
 import { IUtxoNetworkConfig } from '../../src/types/Config';
 import { resetDatabase } from '../helpers';
 import { BitcoreLib } from 'crypto-wallet-core';
-import { Config } from '../../build/src/services/config';
+import { Config } from '../../src/services/config';
 
 const chain = 'BTC';
 const network = 'regtest';

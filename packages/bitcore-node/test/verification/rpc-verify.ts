@@ -10,7 +10,7 @@ import { AsyncRPC } from '../../src/rpc';
 import { Storage } from '../../src/services/storage';
 import { ChainNetwork } from '../../src/types/ChainNetwork';
 import { IUtxoNetworkConfig } from '../../src/types/Config';
-import { Config } from '../../build/src/services/config';
+import { Config } from '../../src/services/config';
 
 const SATOSHI = 100000000.0;
 

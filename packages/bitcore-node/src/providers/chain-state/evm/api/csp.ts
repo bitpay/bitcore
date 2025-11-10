@@ -3,7 +3,6 @@ import { ObjectID } from 'mongodb';
 import Web3 from 'web3';
 import { Transaction } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
-import Config from '../../../../config';
 import {
   historical,
   internal,
@@ -15,6 +14,7 @@ import { ITransaction } from '../../../../models/baseTransaction';
 import { CacheStorage } from '../../../../models/cache';
 import { WalletAddressStorage } from '../../../../models/walletAddress';
 import { InternalStateProvider } from '../../../../providers/chain-state/internal/internal';
+import { Config } from '../../../../services/config';
 import { Storage } from '../../../../services/storage';
 import { IBlock } from '../../../../types/Block';
 import { ChainId } from '../../../../types/ChainNetwork';
@@ -69,7 +69,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   constructor(public chain: string = 'ETH') {
     super(chain);
-    this.config = Config.chains[this.chain] as IChainConfig<IEVMNetworkConfig>;
+    this.config = Config.get().chains[this.chain] as IChainConfig<IEVMNetworkConfig>;
   }
 
   async getWeb3(network: string, params?: { type: IProvider['dataType'] }): Promise<GetWeb3Response> {

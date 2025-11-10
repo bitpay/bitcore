@@ -7,7 +7,7 @@ import { Api } from '../../../src/services/api';
 import { Event } from '../../../src/services/event';
 import { IUtxoNetworkConfig } from '../../../src/types/Config';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
-import { Config } from '../../../build/src/services/config';
+import { Config } from '../../../src/services/config';
 
 let lockedWallet: Wallet;
 const walletName = 'Test Wallet';

@@ -1,6 +1,6 @@
 import { Validation } from 'crypto-wallet-core';
 import { Request, Response, Router } from 'express';
-import { Config } from '../../../build/src/services/config';
+import { Config } from '../../../src/services/config';
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { StreamWalletAddressesParams } from '../../types/namespaces/ChainStateProvider';

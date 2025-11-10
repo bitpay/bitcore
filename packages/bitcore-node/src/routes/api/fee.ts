@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { Config } from '../../../build/src/services/config';
+import { Config } from '../../../src/services/config';
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { QueryType } from '../../types/Api';

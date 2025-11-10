@@ -1,7 +1,7 @@
 import os from 'os';
 import request from 'request';
 import Web3 from 'web3';
-import { Config } from '../../../../build/src/services/config';
+import { Config } from '../../../../src/services/config';
 import logger from '../../../logger';
 import { MongoBound } from '../../../models/base';
 import { CacheStorage } from '../../../models/cache';

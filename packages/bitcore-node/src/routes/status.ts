@@ -1,5 +1,5 @@
 import express from 'express';
-import { Config } from '../../build/src/services/config';
+import { Config } from '../../src/services/config';
 import { PerformanceTracker } from '../decorators/Loggify';
 import { StateStorage } from '../models/state';
 import { ChainNetwork } from '../types/ChainNetwork';
