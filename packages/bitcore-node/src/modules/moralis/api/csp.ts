@@ -2,7 +2,7 @@ import os from 'os';
 import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import { LRUCache } from 'lru-cache';
 import request from 'request';
-import config from '../../../config';
+import { Config } from '../../../../src/services/config';
 import logger from '../../../logger';
 import { MongoBound } from '../../../models/base';
 import { CacheStorage } from '../../../models/cache';
@@ -21,8 +21,6 @@ import { isDateValid } from '../../../utils';
 import { normalizeChainNetwork } from '../../../utils';
 import { ReadableWithEventPipe } from '../../../utils/streamWithEventPipe';
 
-
-
 export interface MoralisAddressSubscription {
   id?: string;
   message?: string;
@@ -32,8 +30,8 @@ export interface MoralisAddressSubscription {
 export class MoralisStateProvider extends BaseEVMStateProvider {
   baseUrl = 'https://deep-index.moralis.io/api/v2.2';
   baseStreamUrl = 'https://api.moralis-streams.com/streams/evm';
-  apiKey = config.externalProviders?.moralis?.apiKey;
-  baseWebhookurl = config.externalProviders?.moralis?.webhookBaseUrl;
+  apiKey = Config.get().externalProviders?.moralis?.apiKey;
+  baseWebhookurl = Config.get().externalProviders?.moralis?.webhookBaseUrl;
   headers = {
     'Content-Type': 'application/json',
     'X-API-Key': this.apiKey,
@@ -43,7 +41,19 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
 
   constructor(chain: string) {
     super(chain);
+    this.loadConfig();
   }
+
+  loadConfig() {
+    const config = Config.get();
+    this.apiKey = config.externalProviders?.moralis?.apiKey;
+    this.baseWebhookurl = config.externalProviders?.moralis?.webhookBaseUrl;
+    this.headers = {
+      'Content-Type': 'application/json',
+      'X-API-Key': this.apiKey,
+    };
+  }
+
 
   // @override
   async getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock|null> {
@@ -108,7 +118,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     const blockRange = await this.getBlocksRange({ ...params, chainId });
     const tipHeight = Number(await web3.eth.getBlockNumber());
     let isReading = false;
-  
+
     const stream = new ReadableWithEventPipe({
       objectMode: true,
       async read() {
@@ -199,7 +209,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
         }
       });
       transactionStream = txStream.eventPipe(transactionStream);
-      
+
       // Do not await these promises. They are not critical to the stream.
       WalletAddressStorage.updateLastQueryTime({ chain: this.chain, network, address })
         .catch(e => logger.warn(`Failed to update ${this.chain}:${network} address lastQueryTime: %o`, e)),
@@ -224,7 +234,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       convertedBlock.nextBlockHash = nextBlock?.hash!;
       blocks.push(convertedBlock);
     }
-    
+
     const tipHeight = Number(await web3.eth.getBlockNumber());
     return { tipHeight, blocks };
   }
@@ -480,10 +490,10 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
 
   /**
    * Request wrapper for moralis Streams (subscriptions)
-   * @param method 
-   * @param url 
-   * @param body 
-   * @returns 
+   * @param method
+   * @param url
+   * @param body
+   * @returns
    */
   _subsRequest(method: string, url: string, body?: any) {
     return new Promise((resolve, reject) => {
