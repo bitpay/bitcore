@@ -218,7 +218,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         const result = await ExternalApiStream.onStream(stream, req!, res!);
         if (!result?.success) {
           logger.error('Error mid-stream (streamTransactions): %o', result.error?.log || result.error);
-        }  
+        }
         return resolve();
       } catch (err: any) {
         logger.error('Error streaming block transactions: %o', err.stack || err.message || err);
@@ -235,7 +235,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         const result = await ExternalApiStream.onStream(addressStream, req!, res!, { jsonl: true });
         if (!result?.success) {
           logger.error('Error mid-stream (streamAddressTransactions): %o', result.error?.log || result.error);
-        }  
+        }
         return resolve();
       } catch (err) {
         return reject(err);
@@ -651,7 +651,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         const result = await ExternalApiStream.onStream(stream, req!, res!, { jsonl: true });
         if (!result?.success) {
           logger.error('Error mid-stream (streamBlocks): %o', result.error?.log || result.error);
-        }  
+        }
         return resolve();
       } catch (err: any) {
         logger.error('Error streaming blocks: %o', err.stack || err.message || err);
@@ -702,11 +702,11 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     if (!chain || !network) {
       throw new Error('Missing required chain and/or network param');
     }
-  
+
     // limit - 1 because startBlock is inclusive; ensure limit is >= 0
     limit = Math.max(limit - 1, 0);
 
-    let height: number | null = null;  
+    let height: number | null = null;
     if (date) {
       startDate = new Date(date);
       endDate = new Date(date);
@@ -770,7 +770,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
 
   async _findSlotByDate(network: string, targetDate: Date): Promise<number | null> {
     const { connection } = await this.getRpc(network);
-    let lo = await connection.getFirstAvailableBlock().send(); 
+    let lo = await connection.getFirstAvailableBlock().send();
     let hi = await connection.getSlot({ commitment: 'finalized' }).send();
     let result: bigint | null = null;
     const targetTime = Math.floor(targetDate.getTime() / 1000);
@@ -801,7 +801,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         await new Promise(resolve => setTimeout(resolve, 500));
         continue;
       }
-  
+
       if (blockTime === null) {
         lo = mid + 1n;
       } else if (blockTime < targetTime) {
@@ -812,7 +812,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       }
       mid = 0n; // reset mid for next iteration
     }
-  
+
     return Number(result) || null;
   }
 
@@ -884,13 +884,13 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       if (addr.state === 'initialized') {
         const { value } = await connection.getTokenAccountBalance(addr.pubkey).send();
         result.push({ mintAddress: addr.mint, ataAddress: addr.pubkey, decimals: value.decimals });
-      } 
+      }
     }
     return result;
   }
 
   async getSPLTokenInfo(
-    network: string, 
+    network: string,
     tokenAddress: string
   ): Promise<{ name: string; symbol: string; decimals: number; programType: string | undefined; programAddress: string | undefined }> {
     const TOKEN_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
@@ -901,7 +901,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     let programAddress;
     let name = '';
     let symbol = '';
-  
+
     try {
       let error;
       let token;
@@ -910,13 +910,13 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       } catch (e) {
         error = e;
       }
-      
+
       if (token) {
         name = token.metadata.name;
         symbol = token.metadata.symbol;
         decimals = token.mint.decimals;
       } else {
-        // If a token doesn't use the Token Metadata Standard (above), it uses the Solana Labs Token List (below). 
+        // If a token doesn't use the Token Metadata Standard (above), it uses the Solana Labs Token List (below).
         // This list is obsolete since June 20,2022
         const provider = await new TokenListProvider().resolve();
         const networkId = {
