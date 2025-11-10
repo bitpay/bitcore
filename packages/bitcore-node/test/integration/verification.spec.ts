@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import config from '../../src/config';
 import { BitcoinBlockStorage } from '../../src/models/block';
 import { CoinStorage } from '../../src/models/coin';
 import { TransactionStorage } from '../../src/models/transaction';
@@ -16,7 +15,7 @@ const chain = 'BTC';
 const network = 'regtest';
 const address = '2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t';
 
-const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+const chainConfig = Config.get().chains[chain][network] as IUtxoNetworkConfig;
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 

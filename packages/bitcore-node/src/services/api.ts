@@ -1,5 +1,4 @@
 import * as http from 'http';
-import config from '../config';
 import { LoggifyClass } from '../decorators/Loggify';
 import logger from '../logger';
 import app from '../routes';
@@ -69,5 +68,5 @@ export class ApiService {
 
 // TOOO: choose a place in the config for the API timeout and include it here
 export const Api = new ApiService({
-  port: config.port
+  port: Config.get().port
 });

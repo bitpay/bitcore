@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import * as io from 'socket.io-client';
-import config from '../../src/config';
 import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
 import { AsyncRPC } from '../../src/rpc';
 import { Api } from '../../src/services/api';
@@ -9,10 +8,11 @@ import { Event } from '../../src/services/event';
 import { IUtxoNetworkConfig } from '../../src/types/Config';
 import { resetDatabase } from '../helpers';
 import { BitcoreLib } from 'crypto-wallet-core';
+import { Config } from '../../build/src/services/config';
 
 const chain = 'BTC';
 const network = 'regtest';
-const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+const chainConfig = Config.get().chains[chain][network] as IUtxoNetworkConfig;
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 const { PrivateKey } = BitcoreLib;

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { expect } from 'chai';
-import config from '../../src/config';
 import logger from '../../src/logger';
 import { BitcoinBlockStorage, IBtcBlock } from '../../src/models/block';
 import { CoinStorage } from '../../src/models/coin';
@@ -11,6 +10,7 @@ import { AsyncRPC } from '../../src/rpc';
 import { Storage } from '../../src/services/storage';
 import { ChainNetwork } from '../../src/types/ChainNetwork';
 import { IUtxoNetworkConfig } from '../../src/types/Config';
+import { Config } from '../../build/src/services/config';
 
 const SATOSHI = 100000000.0;
 
@@ -235,7 +235,7 @@ if (require.main === module)
       chain: process.env.CHAIN || 'BTC',
       network: process.env.NETWORK || 'testnet'
     };
-    const creds = (config.chains[info.chain][info.network] as IUtxoNetworkConfig).rpc;
+    const creds = (Config.get().chains[info.chain][info.network] as IUtxoNetworkConfig).rpc;
 
     await Storage.start({});
     logger.info('verifying blocks');

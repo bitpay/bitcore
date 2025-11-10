@@ -1,6 +1,5 @@
 import { Wallet, IWalletExt } from 'bitcore-client';
 import { expect } from 'chai';
-import config from '../../../src/config';
 import { WalletStorage } from '../../../src/models/wallet';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { AsyncRPC } from '../../../src/rpc';
@@ -8,13 +7,14 @@ import { Api } from '../../../src/services/api';
 import { Event } from '../../../src/services/event';
 import { IUtxoNetworkConfig } from '../../../src/types/Config';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
+import { Config } from '../../../build/src/services/config';
 
 let lockedWallet: Wallet;
 const walletName = 'Test Wallet';
 const password = 'iamsatoshi';
 const chain = 'BTC';
 const network = 'regtest';
-const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+const chainConfig = Config.get().chains[chain][network] as IUtxoNetworkConfig;
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 

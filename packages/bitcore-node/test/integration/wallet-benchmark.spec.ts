@@ -2,7 +2,6 @@ import { Wallet } from 'bitcore-client';
 import { ParseApiStream } from 'bitcore-client';
 import { expect } from 'chai';
 import * as io from 'socket.io-client';
-import config from '../../src/config';
 import { MongoBound } from '../../src/models/base';
 import { CoinStorage, ICoin } from '../../src/models/coin';
 import { TransactionStorage } from '../../src/models/transaction';
@@ -17,10 +16,11 @@ import { wait } from '../../src/utils';
 import { createWallet } from '../benchmark/wallet-benchmark';
 import { resetDatabase } from '../helpers';
 import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
+import { Config } from '../../build/src/services/config';
 
 const chain = 'BTC';
 const network = 'regtest';
-const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+const chainConfig = Config.get().chains[chain][network] as IUtxoNetworkConfig;
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 

@@ -52,7 +52,7 @@ function setTrustedPeers(config: ConfigType): ConfigType {
   }
   return config;
 }
-const Config = function(): ConfigType {
+const loadConfig = function(): ConfigType {
   let config: ConfigType = {
     maxPoolSize: 50,
     port: 3000,
@@ -120,4 +120,4 @@ const Config = function(): ConfigType {
   return config;
 };
 
-export default Config();
+export default loadConfig;

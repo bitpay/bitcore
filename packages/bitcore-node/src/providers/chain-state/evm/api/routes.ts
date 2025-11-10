@@ -1,7 +1,6 @@
 import cors from 'cors';
 import { Router } from 'express';
 import Web3 from 'web3';
-import config from '../../../../config';
 import logger from '../../../../logger';
 import { WebhookStorage } from '../../../../models/webhook';
 import { Config } from '../../../../services/config';
@@ -231,7 +230,7 @@ export class EVMRouter {
 
 
   private _validateMoralisWebhook(req, res, next) {
-    const secret = config.externalProviders?.moralis?.streamSecret;
+    const secret = Config.get().externalProviders?.moralis?.streamSecret;
     if (!secret) {
       return res.status(404).send('Moralis not configured');
     }
@@ -247,7 +246,7 @@ export class EVMRouter {
   }
 
   private postMoralisWebhook(router: Router) {
-    const webhookCors = config.externalProviders?.moralis?.webhookCors;
+    const webhookCors = Config.get().externalProviders?.moralis?.webhookCors;
     router.post(`/webhook/${this.chain}/:network/moralis`, cors(webhookCors), this._validateMoralisWebhook, async (req, res) => {
       try {
         const { network } = req.params;
