@@ -34,7 +34,7 @@ export interface IWallet {
   getClient(args: {
     mustBeNew?: boolean;
     mustExist?: boolean;
-    doNotComplete?: boolean
+    doNotComplete?: boolean;
   }): Promise<ClientType>;
   create(args: {
     coin?: string;
@@ -56,9 +56,9 @@ export interface IWallet {
     addressType?: string;
     copayerName: string;
   }): Promise<{ key: TssKeyType; creds: Credentials }>;
-  register(args: { copayerName: string; }): Promise<string | undefined>;
-  load(opts?: { doNotComplete?: boolean; allowCache?: boolean; }): Promise<KeyType | TssKeyType>;
-  save(opts?: { encryptAll?: boolean; }): Promise<void>;
+  register(args: { copayerName: string }): Promise<string | undefined>;
+  load(opts?: { doNotComplete?: boolean; allowCache?: boolean }): Promise<KeyType | TssKeyType>;
+  save(opts?: { encryptAll?: boolean }): Promise<void>;
   export(args: {
     filename: string;
     exportPassword?: string;
@@ -75,7 +75,7 @@ export interface IWallet {
   getNativeCurrency(fallback?: boolean): Promise<ITokenObj | null>;
   getPasswordWithRetry(): Promise<string>;
   signTxp(args: { txp: Txp }): Promise<Array<string>>;
-  signAndBroadcastTxp(args: { txp: Txp; }): Promise<Txp>;
+  signAndBroadcastTxp(args: { txp: Txp }): Promise<Txp>;
   signMessage(args: {
     message: string;
     derivationPath: string;

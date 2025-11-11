@@ -144,7 +144,7 @@ export class SPLTxProvider extends SOLTxProvider {
 }
 
 interface CreateParams {
-  recipients: Array<{ address: string; amount: string; addressKeyPair?: SolKit.KeyPairSigner; }>;
+  recipients: Array<{ address: string; amount: string; addressKeyPair?: SolKit.KeyPairSigner }>;
   from: string;
   fee?: number;
   feeRate: number;
@@ -158,7 +158,7 @@ interface CreateParams {
   computeUnits?: number;
   memo?: string;
   // account creation fields
-  fromKeyPair?: SolKit.KeyPairSigner,
+  fromKeyPair?: SolKit.KeyPairSigner;
   space?: number; // amount of space to reserve a new account in bytes
   instructions?: Array<SolKit.BaseTransactionMessage['instructions'][number]>;
   // SPL token transfer fields (required for token transfers)

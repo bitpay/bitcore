@@ -19,7 +19,7 @@ export function command(args: CommonArgs) {
   return opts;
 }
 
-export async function getAddresses(args: CommonArgs<{ pageSize?: number; page?: number; }>) {
+export async function getAddresses(args: CommonArgs<{ pageSize?: number; page?: number }>) {
   const { wallet, opts } = args;
   if (opts.command) {
     Object.assign(opts, command(args));

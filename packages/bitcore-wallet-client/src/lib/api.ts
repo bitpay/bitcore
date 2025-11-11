@@ -3990,7 +3990,7 @@ export interface Status {
       address: string;
       amount: number;
       path: string;
-    }>
+    }>;
   };
   customData?: {
     walletPrivKey?: string; // used for multisig join secret
