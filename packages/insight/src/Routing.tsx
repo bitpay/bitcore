@@ -1,7 +1,7 @@
 import {lazy, Suspense} from 'react';
 import {Navigate, Route, Routes} from 'react-router-dom';
 import Home from './pages';
-import Blocks from './pages/blocks';
+const Blocks = lazy(() => import('./pages/blocks'));
 const Block = lazy(() => import('./pages/block'));
 const TransactionHash = lazy(() => import('./pages/transaction'));
 const Address = lazy(() => import('./pages/address'));

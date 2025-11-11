@@ -1,5 +1,5 @@
 import BlockList from 'src/components/block-list';
-import React, {useEffect, useState} from 'react';
+import React, {createContext, useContext, useEffect, useState} from 'react';
 import ChainHeader from '../components/chain-header';
 import {useParams} from 'react-router-dom';
 import {useDispatch} from 'react-redux';
@@ -10,26 +10,48 @@ import nProgress from 'nprogress';
 import {BitcoinBlockType} from 'src/utilities/models';
 import Info from 'src/components/info';
 
+type BlocksContextType = {
+  blocks: BitcoinBlockType[] | undefined;
+  setBlocks: React.Dispatch<React.SetStateAction<BitcoinBlockType[] | undefined>>;
+};
+
+const BlocksContext = createContext<BlocksContextType | undefined>(undefined);
+
+export const BlocksProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
+  const [blocks, setBlocks] = useState<BitcoinBlockType[]>();
+  return (
+    <BlocksContext.Provider value={{ blocks, setBlocks }}>
+      {children}
+    </BlocksContext.Provider>
+  );
+};
+
+export const useBlocks = () => {
+  const ctx = useContext(BlocksContext);
+  if (!ctx) throw new Error('useBlocks must be used within a BlocksProvider');
+  return ctx;
+};
+
 const Blocks: React.FC = () => {
   let {currency, network} = useParams<{currency: string; network: string}>();
   const dispatch = useDispatch();
 
-  const [blocksList, setBlocksList] = useState<BitcoinBlockType[]>();
+  const { blocks, setBlocks } = useBlocks();
   const [error, setError] = useState('');
 
   useEffect(() => {
     nProgress.start();
     if (!currency || !network)
       return;
-    Promise.all([fetcher(`${getApiRoot(currency)}/${currency}/${network}/block?limit=128`)])
+    Promise.all([fetcher(`${getApiRoot(currency)}/${currency}/${network}/block?limit=64`)])
       .then(([data]) => {
-        setBlocksList(data);
-      })
-      .finally(() => {
-        nProgress.done();
+        setBlocks(data);
       })
       .catch((e: any) => {
         setError(e.message || 'Something went wrong. Please try again later.');
+      })
+      .finally(() => {
+        nProgress.done();
       });
   }, []);
 
@@ -48,8 +70,8 @@ const Blocks: React.FC = () => {
   return (
     <>
       {error ? <Info type={'error'} message={error} /> : null}
-      <ChainHeader currency={currency} network={network} blocks={blocksList}/>
-      { blocksList && <BlockList currency={currency} network={network} blocks={blocksList} /> }
+      <ChainHeader currency={currency} network={network} />
+      { blocks && <BlockList currency={currency} network={network} /> }
     </>
   );
 }

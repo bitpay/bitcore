@@ -2,10 +2,11 @@ import {FC, useEffect, useRef, useState} from 'react';
 import {useApi} from 'src/api/api';
 import {Chart as ChartJS} from 'chart.js';
 import {colorCodes} from 'src/utilities/constants';
-import {BitcoinBlockType, FeeData} from 'src/utilities/models';
-import styled, { useTheme } from 'styled-components';
-import { getName } from 'src/utilities/helper-methods';
+import {BitcoinBlockType} from 'src/utilities/models';
+import styled, {useTheme} from 'styled-components';
+import {getName} from 'src/utilities/helper-methods';
 import Dropdown from './dropdown';
+import {useBlocks} from 'src/pages/blocks';
 
 const ChartTile = styled.div`
   height: 400px;
@@ -23,8 +24,47 @@ const ChartTileHeader = styled.span`
   font-weight: bolder;
 `;
 
-const ChainHeader: FC<{ currency: string; network: string; blocks?: Array<BitcoinBlockType & Partial<FeeData>> }> = ({ currency, network, blocks }) => {
+interface ChangeData {
+  change: number;
+  percentChange: number;
+  range: number;
+}
+
+const FeeChangeData: FC<{ data?: ChangeData }> = ({ data }) => {
+  if (!data)
+    return null;
+  const { change, percentChange, range } = data;
+  return (
+    <span>
+      <span style={{marginRight: '8px'}}>{change.toFixed(2)} sats/byte ({percentChange.toFixed(2)}%)</span>
+      <span style={{color: '#555'}}>Last {range}</span>
+    </span>
+  );
+}
+
+const PriceChangeData: FC<{ data?: ChangeData }> = ({ data }) => {
+  if (!data)
+    return null;
+  const { change, percentChange, range } = data;
+
+  let color = 'gray';
+  if (change > 0) {
+    color = 'green';
+  } else if (change < 0) {
+    color = 'red';
+  }
+
+  return (
+    <span>
+      <span style={{color, marginRight: '8px'}}>${change.toFixed(2)} ({percentChange.toFixed(2)}%)</span>
+      <span style={{color: '#555'}}>Last {range}</span>
+    </span>
+  );
+}
+
+const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, network }) => {
   const theme = useTheme();
+  const { blocks } = useBlocks();
   const priceDetails: {
     data: {
       code: string, 
@@ -61,8 +101,8 @@ const ChainHeader: FC<{ currency: string; network: string; blocks?: Array<Bitcoi
   const [feeSelectedRange, setFeesSelectedRange] = useState('32 Blocks');
   const [priceSelectedRange, setPriceSelectedRange] = useState('24 Hours');
   
-  const [feeChangeSpan, setFeeChangeSpan] = useState(() => { return <span>null</span>; });
-  const [priceChangeSpan, setPriceChangeSpan] = useState(() => { return <span>null</span>; });
+  const [priceChangeData, setPriceChangeData] = useState<ChangeData>();
+  const [feeChangeData, setFeeChangeData] = useState<ChangeData>();
   const hasFees = blocks?.at(0)?.feeData !== undefined;
 
   useEffect(() => {
@@ -70,8 +110,8 @@ const ChainHeader: FC<{ currency: string; network: string; blocks?: Array<Bitcoi
       if (feeChartInstanceRef.current) {
         feeChartInstanceRef.current.destroy();
       }
-      const num = Number(feeSelectedRange.slice(0, feeSelectedRange.indexOf(' ')));
-      const fees = blocks.map((block: BitcoinBlockType & Partial<FeeData>) => block.feeData?.median as number).reverse().slice(blocks.length - num);
+      const numBlocks = Number(feeSelectedRange.slice(0, feeSelectedRange.indexOf(' ')));
+      const fees = blocks.map((block: BitcoinBlockType) => block.feeData?.median as number).reverse().slice(blocks.length - numBlocks);
       const dates = blocks.map((block: BitcoinBlockType) =>
         new Date(block.time).toLocaleString('en-US', {
           year: '2-digit',
@@ -80,7 +120,7 @@ const ChainHeader: FC<{ currency: string; network: string; blocks?: Array<Bitcoi
           hour: '2-digit',
           minute: '2-digit'
         })
-      ).reverse().slice(blocks.length - num);
+      ).reverse().slice(blocks.length - numBlocks);
       const chartData = {
         labels: dates,
         datasets: [
@@ -117,14 +157,8 @@ const ChainHeader: FC<{ currency: string; network: string; blocks?: Array<Bitcoi
 
       const feeChange = fees[fees.length - 1] - fees[0];
       const percentFeeChange = feeChange / fees[0] * 100;
-
-
-      setFeeChangeSpan(() => {
-        return <span>
-          <span style={{marginRight: '8px'}}>{feeChange.toFixed(2)} sats/byte ({percentFeeChange.toFixed(2)}%)</span>
-          <span style={{color: '#555'}}>Last {feeSelectedRange}</span>
-        </span>
-      });
+    
+      setFeeChangeData({change: feeChange, percentChange: percentFeeChange, range: numBlocks});
     }
 
     return () => {
@@ -180,19 +214,7 @@ const ChainHeader: FC<{ currency: string; network: string; blocks?: Array<Bitcoi
     const priceChange = price - usedPrices[0];
     const percentPriceChange = priceChange / usedPrices[0] * 100;
 
-    let color = 'gray';
-    if (priceChange > 0) {
-      color = 'green';
-    } else if (priceChange < 0) {
-      color = 'red';
-    }
-
-    setPriceChangeSpan(() => {
-      return <span>
-        <span style={{color, marginRight: '8px'}}>${priceChange.toFixed(2)} ({percentPriceChange.toFixed(2)}%)</span>
-        <span style={{color: '#555'}}>Last {priceSelectedRange}</span>
-      </span>
-    });
+    setPriceChangeData({change: priceChange, percentChange: percentPriceChange, range: hours});
     return () => {
       priceChartInstanceRef.current?.destroy();
     };
@@ -214,7 +236,7 @@ const ChainHeader: FC<{ currency: string; network: string; blocks?: Array<Bitcoi
               <ChartTileHeader>${price.toLocaleString()}</ChartTileHeader>
               <Dropdown options={priceRanges} value={priceSelectedRange} onChange={setPriceSelectedRange} />
             </div>
-            {priceChangeSpan}
+            <PriceChangeData data={priceChangeData} />
             <div style={{flex: 1, minHeight: 0}}>
               <canvas ref={priceChartRef} aria-label='price line chart' role='img' />
             </div>
@@ -226,7 +248,7 @@ const ChainHeader: FC<{ currency: string; network: string; blocks?: Array<Bitcoi
                 <ChartTileHeader>{blocks?.at(0)?.feeData?.median.toFixed(3)} sats/byte</ChartTileHeader>
                 <Dropdown options={feeRanges} value={feeSelectedRange} onChange={setFeesSelectedRange} style={{width: '130px'}} />
               </div>
-              {feeChangeSpan}
+              <FeeChangeData data={feeChangeData} />
               <div style={{flex: 1, minHeight: 0}}>
                 <canvas ref={feeChartRef} aria-label='fee chart' role='img' />
               </div>

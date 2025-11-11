@@ -116,14 +116,13 @@ export type BitcoinBlockType = BlocksType & {
   nonce: number,
   reward: number,
   version: number,
-  confirmations: number
+  confirmations: number,
+  feeData: FeeData;
 };
 
 export type FeeData = {
-  feeData: {
-    feeTotal: number;
-    mean: number;
-    median: number;
-    mode: number;
-  }
+  feeTotal: number;
+  mean: number;
+  median: number;
+  mode: number;
 }

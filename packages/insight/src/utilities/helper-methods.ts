@@ -172,7 +172,6 @@ export const normalizeParams = (
 export const getLib = (currency: string) => {
   switch (currency.toUpperCase()) {
     case 'BTC':
-    default:
       return BitcoreLib;
     case 'BCH':
       return BitcoreLibCash;
@@ -180,13 +179,14 @@ export const getLib = (currency: string) => {
       return BitcoreLibDoge;
     case 'LTC':
       return BitcoreLibLtc;
+    default:
+      return BitcoreLib;
   }
 };
 
 export const getName = (currency: string) => {
   switch (currency.toUpperCase()) {
     case 'BTC':
-    default:
       return 'Bitcoin';
     case 'BCH':
       return 'Bitcoin Cash';
@@ -196,6 +196,8 @@ export const getName = (currency: string) => {
       return 'Litecoin';
     case 'ETH':
       return 'Ethereum';
+    default:
+      return 'Bitcoin';
   }
 }
 

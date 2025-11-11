@@ -1,18 +1,19 @@
 import React, {FC, useState} from 'react';
 import {getApiRoot, getConvertedValue, getDifficultyFromBits, getFormattedDate} from 'src/utilities/helper-methods';
-import {BitcoinBlockType, FeeData} from 'src/utilities/models';
+import {BitcoinBlockType} from 'src/utilities/models';
 import Cube from '../assets/images/cube.svg';
 import Arrow from '../assets/images/arrow-thin.svg';
 import ArrowOutward from '../assets/images/arrow-outward.svg';
 import ForwardArrow from '../assets/images/arrow-forward-blue.svg';
 import ArrowDown from '../assets/images/arrow-down.svg';
-import styled, { useTheme } from 'styled-components';
+import styled, {useTheme} from 'styled-components';
 import InfoCard from './info-card';
 import InfiniteScroll from 'react-infinite-scroll-component';
-import { fetcher } from 'src/api/api';
+import {fetcher} from 'src/api/api';
 import InfiniteScrollLoadSpinner from './infinite-scroll-load-spinner';
 import Info from './info';
-import { useNavigate } from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
+import {useBlocks} from 'src/pages/blocks';
 
 const BlockListTableRow = styled.tr`
   text-align: center;
@@ -34,11 +35,13 @@ const getBlocksUrl = (currency: string, network: string) => {
   return `${getApiRoot(currency)}/${currency}/${network}/block?limit=200`;
 };
 
-const BlockList: FC<{currency: string, network: string, blocks: Array<BitcoinBlockType & Partial<FeeData>>}> = ({currency, network, blocks}) => {
+const BlockList: FC<{currency: string, network: string}> = ({currency, network}) => {
   const theme = useTheme();
+  const { blocks, setBlocks } = useBlocks();
+  if (!blocks)
+    return null;
   const navigate = useNavigate();
   const [expandedBlocks, setExpandedBlocks] = useState<number[]>([]);
-  const [blocksList, setBlocksList] = useState(blocks);
   const [error, setError] = useState('');
   const [hasMore, setHasMore] = useState(true);
   const hasFees = blocks.every(block => block.feeData);
@@ -52,7 +55,7 @@ const BlockList: FC<{currency: string, network: string, blocks: Array<BitcoinBlo
         `${getBlocksUrl(currency, network)}&since=${since}&paging=height&direction=-1`,
       );
       if (newData?.length) {
-        setBlocksList(_blocksList.concat(newData));
+        setBlocks(_blocksList.concat(newData));
       } else {
         setHasMore(false);
       }
@@ -61,19 +64,19 @@ const BlockList: FC<{currency: string, network: string, blocks: Array<BitcoinBlo
     }
   };
 
-  const gotoSingleBlockDetailsView = async (hash: string) => {
-    await navigate(`/${currency}/${network}/block/${hash}`);
+  const gotoSingleBlockDetailsView = (hash: string) => {
+    navigate(`/${currency}/${network}/block/${hash}`);
   };
 
-  if (!blocksList?.length) return null;
+  if (!blocks?.length) return null;
   return (
     <>
-      {error ? <Info type={'error'} message={error} /> : null}  
+      {error ? <Info type={'error'} message={error} /> : null}
       <InfiniteScroll
-        next={() => fetchMore(blocksList)}
+        next={() => fetchMore(blocks)}
         hasMore={hasMore}
         loader={<InfiniteScrollLoadSpinner />}
-        dataLength={blocksList.length}>
+        dataLength={blocks.length}>
         <table style={{width: '100%', overflowX: 'hidden', borderCollapse: 'collapse'}}>
           <thead>
             <BlockListTableRow>
@@ -87,7 +90,7 @@ const BlockList: FC<{currency: string, network: string, blocks: Array<BitcoinBlo
           <tbody>
             <tr />
             {
-              blocksList.map((block: BitcoinBlockType & Partial<FeeData>, index: number) => {
+              blocks.map((block: BitcoinBlockType, index: number) => {
                 const feeData = block.feeData;
                 const expanded = expandedBlocks.includes(block.height);
 
@@ -103,14 +106,14 @@ const BlockList: FC<{currency: string, network: string, blocks: Array<BitcoinBlo
                       <img 
                         src={ArrowOutward} 
                         style={{width: '24px', cursor: 'pointer'}} 
-                        onClick={() => gotoSingleBlockDetailsView(blocksList[index - 1].hash)}
+                        onClick={() => gotoSingleBlockDetailsView(blocks[index - 1].hash)}
                         alt='Next Block' 
                         title={`Go to block ${block.height + 1}`}
                       />
                     </>
                   },
                   'Nonce': {label: 'Nonce', value: block.nonce},
-                  'Confirmations': {label: 'Confirmations', value: blocksList[0].height - block.height + 1},
+                  'Confirmations': {label: 'Confirmations', value: blocks[0].height - block.height + 1},
                   'Difficulty': {label: 'Difficulty', value: getDifficultyFromBits(block.bits).toFixed(0)},
                   'Fee data': {label: 'Fee data', value: 
                     <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: '100%'}}>
