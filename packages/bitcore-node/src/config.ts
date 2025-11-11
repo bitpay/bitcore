@@ -1,4 +1,6 @@
+import fs from 'fs';
 import { cpus, homedir } from 'os';
+import logger from './logger';
 import { ConfigType } from './types/Config';
 import { merge } from './utils';
 import parseArgv from './utils/parseArgv';
@@ -6,33 +8,40 @@ import parseArgv from './utils/parseArgv';
 const program = parseArgv([], ['config']);
 
 function findConfig(): ConfigType | undefined {
-  let foundConfig;
-  const envConfigPath = process.env.BITCORE_CONFIG_PATH;
-  const argConfigPath = program.config;
-  const configFileName = 'bitcore.config.json';
-  const bitcoreConfigPaths = [
-    `${homedir()}/${configFileName}`,
-    `../../../../${configFileName}`,
-    `../../${configFileName}`
-  ];
-  const overrideConfig = argConfigPath || envConfigPath;
-  if (overrideConfig) {
-    bitcoreConfigPaths.unshift(overrideConfig);
+  let bitcoreConfigPath = program.config || process.env.BITCORE_CONFIG_PATH || '../../bitcore.config.json';
+  if (bitcoreConfigPath[0] === '~') {
+    bitcoreConfigPath = bitcoreConfigPath.replace('~', homedir());
   }
-  // No config specified. Search home, bitcore and cur directory
-  for (const path of bitcoreConfigPaths) {
-    if (!foundConfig) {
-      try {
-        const expanded = path[0] === '~' ? path.replace('~', homedir()) : path;
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const bitcoreConfig = require(expanded) as { bitcoreNode: ConfigType };
-        foundConfig = bitcoreConfig.bitcoreNode;
-      } catch {
-        foundConfig = undefined;
-      }
+  
+  if (!fs.existsSync(bitcoreConfigPath)) {
+    throw new Error(`No bitcore config exists at ${bitcoreConfigPath}`);
+  }
+  
+  const bitcoreConfigStat = fs.statSync(bitcoreConfigPath);
+  
+  if (bitcoreConfigStat.isDirectory()) {
+    if (!fs.existsSync(bitcoreConfigPath + '/bitcore.config.json')) {
+      throw new Error(`No bitcore config exists in directory ${bitcoreConfigPath}`);
     }
+    bitcoreConfigPath += '/bitcore.config.json';
   }
-  return foundConfig;
+  logger.info('Using config at: ' + bitcoreConfigPath);
+  
+  let rawBitcoreConfig;
+  try {
+    rawBitcoreConfig = fs.readFileSync(bitcoreConfigPath).toString();
+  } catch (error) {
+    throw new Error(`Error in loading bitcore config\nFound file at ${bitcoreConfigPath}\n${error}`);
+  }
+  
+  let bitcoreConfig;
+  try {
+    bitcoreConfig = JSON.parse(rawBitcoreConfig).bitcoreNode;
+  } catch (error) {
+    throw new Error(`Error in parsing bitcore config\nFound and loaded file at ${bitcoreConfigPath}\n${error}`);
+  }
+
+  return bitcoreConfig;
 }
 
 function setTrustedPeers(config: ConfigType): ConfigType {
@@ -95,8 +104,7 @@ const loadConfig = function(): ConfigType {
     }
   };
 
-  const foundConfig = findConfig();
-  config = merge(config, foundConfig);
+  config = merge(config, findConfig());
   if (!Object.keys(config.chains).length) {
     Object.assign(config.chains, {
       BTC: {
