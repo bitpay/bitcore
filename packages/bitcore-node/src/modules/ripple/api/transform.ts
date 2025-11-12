@@ -38,37 +38,20 @@ export class RippleWalletTransactions extends Transform {
       }
       for (const output of changes[address]) {
         if (sending) {
-          if (!receiving) {
-            this.push(
-              JSON.stringify({
-                id: tx.hash,
-                txid: tx.hash,
-                fee: transaction.fee * 1e6,
-                size: 0,
-                category: 'send',
-                satoshis: -1 * Number(output.value) * 1e6,
-                height: transaction.blockHeight,
-                address,
-                outputIndex: changed.indexOf(address),
-                blockTime: transaction.blockTimeNormalized
-              }) + '\n'
-            );
-          } else {
-            this.push(
-              JSON.stringify({
-                id: tx.hash,
-                txid: tx.hash,
-                fee: transaction.fee * 1e6,
-                size: 0,
-                category: 'move',
-                satoshis: -1 * Number(output.value) * 1e6,
-                height: transaction.blockHeight,
-                address,
-                outputIndex: changed.indexOf(address),
-                blockTime: transaction.blockTimeNormalized
-              }) + '\n'
-            );
-          }
+          this.push(
+            JSON.stringify({
+              id: tx.hash,
+              txid: tx.hash,
+              fee: transaction.fee * 1e6,
+              size: 0,
+              category: receiving ? 'move' : 'send',
+              satoshis: -1 * Number(output.value) * 1e6,
+              height: transaction.blockHeight,
+              address,
+              outputIndex: changed.indexOf(address),
+              blockTime: transaction.blockTimeNormalized
+            }) + '\n'
+          );
           if (transaction.fee > 0) {
             this.push(
               JSON.stringify({
