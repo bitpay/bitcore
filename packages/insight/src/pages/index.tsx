@@ -1,5 +1,4 @@
 import {SUPPORTED_CURRENCIES} from '../utilities/constants';
-import {SecondaryTitle} from '../assets/styles/titles';
 import CurrencyTile from '../components/currency-tile';
 import Masonry from 'react-masonry-css';
 import {motion} from 'framer-motion';
@@ -24,8 +23,6 @@ const Home: React.FC = () => {
 
   return (
     <motion.div variants={routerFadeIn} animate='animate' initial='initial'>
-      <SecondaryTitle>Latest Blocks</SecondaryTitle>
-
       <Masonry
         breakpointCols={breakpointColumnsObj}
         className='currency-masonry-grid'
