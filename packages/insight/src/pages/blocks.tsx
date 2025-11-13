@@ -43,7 +43,7 @@ const Blocks: React.FC = () => {
     nProgress.start();
     if (!currency || !network)
       return;
-    Promise.all([fetcher(`${getApiRoot(currency)}/${currency}/${network}/block?limit=64`)])
+    Promise.all([fetcher(`${getApiRoot(currency)}/${currency}/${network}/block?limit=200`)])
       .then(([data]) => {
         setBlocks(data);
       })
