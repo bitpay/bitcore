@@ -9,7 +9,14 @@ import { checkRequired } from '../lib/server';
 export class ChangellyService {
   request: any = request;
 
-  private changellyGetKeysV2(_req) {
+  changellyGetKeysV2(req) {
+
+    const stablecoins = [
+      'usdt20', 'usdtarb', 'usdtop', 'usdtpolygon', 'usdtsol',
+      'usdcmatic', 'usdcarb', 'usdcbase', 'usdcop', 'usdcsol',
+      'daipolygon'
+    ];
+
     if (!config.changelly) {
       logger.warn('Changelly missing credentials');
       throw new Error('ClientError: Service not configured.');
@@ -20,7 +27,7 @@ export class ChangellyService {
 
     const keys = {
       API: config.changelly.v2.api,
-      SECRET: config.changelly.v2.secret
+      SECRET: stablecoins.includes(req.body.coinFrom) ? config.changelly.v2.STABLECOIN_KEY : config.changelly.v2.secret
     };
 
     return keys;
