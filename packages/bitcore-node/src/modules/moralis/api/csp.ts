@@ -1,7 +1,7 @@
 import os from 'os';
 import request from 'request';
 import Web3 from 'web3';
-import config from '../../../config';
+import { Config } from '../../../../src/services/config';
 import logger from '../../../logger';
 import { MongoBound } from '../../../models/base';
 import { CacheStorage } from '../../../models/cache';
@@ -19,8 +19,6 @@ import { GetBlockBeforeTimeParams, GetBlockParams, StreamAddressUtxosParams, Str
 import { isDateValid } from '../../../utils';
 import { ReadableWithEventPipe } from '../../../utils/streamWithEventPipe';
 
-
-
 export interface MoralisAddressSubscription {
   id?: string;
   message?: string;
@@ -30,16 +28,25 @@ export interface MoralisAddressSubscription {
 export class MoralisStateProvider extends BaseEVMStateProvider {
   baseUrl = 'https://deep-index.moralis.io/api/v2.2';
   baseStreamUrl = 'https://api.moralis-streams.com/streams/evm';
-  apiKey = config.externalProviders?.moralis?.apiKey;
-  baseWebhookurl = config.externalProviders?.moralis?.webhookBaseUrl;
-  headers = {
-    'Content-Type': 'application/json',
-    'X-API-Key': this.apiKey,
-  };
+  apiKey;
+  baseWebhookurl;
+  headers;
 
   constructor(chain: string) {
     super(chain);
+    this.loadConfig();
   }
+
+  loadConfig() {
+    const config = Config.get();
+    this.apiKey = config.externalProviders?.moralis?.apiKey;
+    this.baseWebhookurl = config.externalProviders?.moralis?.webhookBaseUrl;
+    this.headers = {
+      'Content-Type': 'application/json',
+      'X-API-Key': this.apiKey,
+    };
+  }
+
 
   // @override
   async getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock|null> {
