@@ -49,6 +49,7 @@ export async function getTxHistory(
     if (!tokenObj) {
       throw new Error(`Unknown token "${opts.tokenAddress || opts.token}" on ${wallet.chain}:${wallet.network}`);
     }
+    tokenObj = JSON.parse(JSON.stringify(tokenObj)); // make copy for precision modification below
   }
   const currency = tokenObj?.displayCode || wallet.client.credentials.coin;
 
@@ -68,6 +69,16 @@ export async function getTxHistory(
       printRaw = false; // reset printRaw when toggling format
     }
 
+    if (tokenObj) {
+      if (!compact) {
+        // Show full decimals in expanded view
+        tokenObj['_precision'] = tokenObj.precision; 
+        tokenObj.precision = tokenObj.decimals.short.maxDecimals;
+      } else if (tokenObj['_precision'] !== undefined) {
+        // Restore original precision when toggling back to compact view
+        tokenObj.precision = tokenObj['_precision'];
+      }
+    }
     printRaw = viewAction === ViewAction.TOGGLE_RAW ? !printRaw : printRaw;
     const exportToFile = !!opts.export || viewAction === ViewAction.EXPORT;
 
@@ -114,7 +125,6 @@ export async function getTxHistory(
         const timestamp = new Date(tx.time * 1000);
         const time = compact ? Utils.formatDateCompact(timestamp) : Utils.formatDate(timestamp);
         const txid = compact ? Utils.compactString(tx.txid) : tx.txid;
-        tokenObj = tokenObj && !compact ? { ...tokenObj, precision: tokenObj.decimals.short.maxDecimals } : tokenObj;
         const amount = Utils.renderAmount(currency, tx.amount, tokenObj);
         const confirmations = tx.confirmations || 0;
         let direction = '';
