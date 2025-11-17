@@ -42,6 +42,9 @@ const main = async () => {
         for (const tx of txs) {
           if (startDate && new Date(tx.blockTime) < new Date(startDate)) continue;
           if (endDate && new Date(tx.blockTime) > new Date(endDate)) continue;
+          if (tokenObj?.name && !tx.currency) {
+            tx.currency = tokenObj.name;
+          }
           if (raw) {
             console.log(JSON.stringify(tx));
             continue;
