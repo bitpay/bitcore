@@ -13,7 +13,7 @@ import {fetcher} from 'src/api/api';
 import InfiniteScrollLoadSpinner from './infinite-scroll-load-spinner';
 import Info from './info';
 import {useNavigate} from 'react-router-dom';
-import {useBlocks} from 'src/pages/blocks';
+import {useBlocks} from 'src/contexts';
 
 const BlockListTableRow = styled.tr`
   text-align: center;
@@ -38,8 +38,7 @@ const getBlocksUrl = (currency: string, network: string) => {
 const BlockList: FC<{currency: string, network: string}> = ({currency, network}) => {
   const theme = useTheme();
   const { blocks, setBlocks } = useBlocks();
-  if (!blocks)
-    return null;
+  if (!blocks?.length) return null;
   const navigate = useNavigate();
   const [expandedBlocks, setExpandedBlocks] = useState<number[]>([]);
   const [error, setError] = useState('');
@@ -68,7 +67,6 @@ const BlockList: FC<{currency: string, network: string}> = ({currency, network})
     navigate(`/${currency}/${network}/block/${hash}`);
   };
 
-  if (!blocks?.length) return null;
   return (
     <>
       {error ? <Info type={'error'} message={error} /> : null}
@@ -147,7 +145,7 @@ const BlockList: FC<{currency: string, network: string}> = ({currency, network})
 
                 return (
                   <React.Fragment key={index}>
-                    <BlockListTableRow key={index}>
+                    <BlockListTableRow>
                       <td style={{textAlign: 'left', color: '#2240C4', paddingLeft: '1rem'}}>
                         <span 
                           style={{display: 'flex', alignItems: 'center', gap: '0.5em', width: 'fit-content', cursor: 'pointer'}}

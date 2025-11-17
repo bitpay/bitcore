@@ -9,7 +9,7 @@ import {GlobalStyles} from './assets/styles/global';
 import {useAppSelector} from './utilities/hooks';
 import 'nprogress/nprogress.css';
 import nProgress from 'nprogress';
-import { BlocksProvider } from './pages/blocks';
+import {BlocksProvider} from './contexts';
 
 function App() {
   const theme = useAppSelector(({APP}) => APP.theme);

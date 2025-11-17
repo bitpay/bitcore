@@ -6,7 +6,7 @@ import {BitcoinBlockType} from 'src/utilities/models';
 import styled, {useTheme} from 'styled-components';
 import {getName} from 'src/utilities/helper-methods';
 import Dropdown from './dropdown';
-import {useBlocks} from 'src/pages/blocks';
+import {useBlocks} from 'src/contexts';
 import { ChangeData, FeeChangeSpan, PriceChangeSpan } from './change-span';
 
 const ChartTile = styled.div`
@@ -208,7 +208,7 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
             <ChartTile>
               <span>{getName(currency)} Fee</span>
               <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                <ChartTileHeader>{blocks?.at(0)?.feeData?.median.toFixed(3)} sats/byte</ChartTileHeader>
+                <ChartTileHeader>{blocks?.at(0)?.feeData?.median.toLocaleString()} sats/byte</ChartTileHeader>
                 <Dropdown options={feeRanges} value={feeSelectedRange} onChange={setFeesSelectedRange} style={{width: '130px'}} />
               </div>
               <FeeChangeSpan data={feeChangeData} />

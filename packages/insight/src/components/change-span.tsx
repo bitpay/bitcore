@@ -15,7 +15,7 @@ export const FeeChangeSpan: FC<{ data?: ChangeData }> = ({ data }) => {
       <span style={{marginRight: '8px'}}>
         {change.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} sats/byte
         ({percentChange.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)</span>
-      <span style={{color: '#555'}}>Last {range} Days</span>
+      <span style={{color: '#555'}}>Last {range} Blocks</span>
     </span>
   );
 }
