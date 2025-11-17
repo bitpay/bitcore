@@ -1,5 +1,6 @@
 import fs from 'fs';
 import { cpus, homedir } from 'os';
+import path from 'path';
 import logger from './logger';
 import { ConfigType } from './types/Config';
 import { merge } from './utils';
@@ -20,10 +21,10 @@ function findConfig(): ConfigType | undefined {
   const bitcoreConfigStat = fs.statSync(bitcoreConfigPath);
   
   if (bitcoreConfigStat.isDirectory()) {
-    if (!fs.existsSync(bitcoreConfigPath + '/bitcore.config.json')) {
+    if (!fs.existsSync(path.join(bitcoreConfigPath, 'bitcore.config.json'))) {
       throw new Error(`No bitcore config exists in directory ${bitcoreConfigPath}`);
     }
-    bitcoreConfigPath += '/bitcore.config.json';
+    bitcoreConfigPath = path.join(bitcoreConfigPath, 'bitcore.config.json');
   }
   logger.info('Using config at: ' + bitcoreConfigPath);
   
