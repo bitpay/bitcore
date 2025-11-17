@@ -456,6 +456,7 @@ const Config = (): any => {
     //   },
     //   v2: {
     //     secret: 'changelly_secret_v2',
+    //     secret_stablecoin: 'changelly_secret_stablecoin_v2'
     //     api: 'https://api.changelly.com/v2'
     //   }
     // },

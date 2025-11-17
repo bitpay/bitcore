@@ -43,7 +43,8 @@ describe('Changelly integration', () => {
       },
       v2: {
         secret: privateKey.toString('hex'),
-        api: 'apiV2'
+        secret_stablecoin: 'changelly_secret_stablecoin_v2',
+        api: 'apiV2',
       }
     };
 
@@ -68,6 +69,32 @@ describe('Changelly integration', () => {
 
   after(async () => {
     await helpers.after();
+  });
+
+  describe('#Changelly API key selection', () => {
+    it('should use stablecoin API key for stablecoin swaps', () => {
+      const stablecoins = [
+        'usdt20', 'usdtarb', 'usdtop', 'usdtpolygon', 'usdtsol',
+        'usdcmatic', 'usdcarb', 'usdcbase', 'usdcop', 'usdcsol',
+        'daipolygon'
+      ];
+  
+      for (const coin of stablecoins) {
+        const req = {
+          body: { coinFrom: coin }
+        };
+        const keys = server.externalServices.changelly.changellyGetKeysV2(req);
+        keys.SECRET.should.equal(config.changelly.v2.secret_stablecoin);
+        keys.API.should.equal(config.changelly.v2.api);
+      }
+
+      const req = {
+        body: { coinFrom: 'xxx' }
+      };
+      const keys = server.externalServices.changelly.changellyGetKeysV2(req);
+      keys.SECRET.should.equal(config.changelly.v2.secret);
+      keys.API.should.equal(config.changelly.v2.api);
+    });
   });
 
   describe('#changellyGetCurrencies', () => {
