@@ -16,8 +16,8 @@ export type TssSigType = TssSign.ISignature;
 
 
 export interface WalletData {
-  key: KeyType | TssKeyType;
-  creds: Credentials;
+  key: KeyType | TssKeyType | undefined; // undefined for read-only wallets
+  credentials: Credentials;
 }
 
 export interface IWallet {
@@ -47,7 +47,7 @@ export interface IWallet {
     mnemonic?: string;
     password?: string;
     addressType?: string;
-  }): Promise<{ key: KeyType | TssKeyType; secret?: string; creds: Credentials }>;
+  }): Promise<{ key: KeyType | TssKeyType; secret?: string; credentials: Credentials }>;
   createFromTss(args: {
     key: TssKeyType;
     chain: string;
@@ -55,7 +55,7 @@ export interface IWallet {
     password: string;
     addressType?: string;
     copayerName: string;
-  }): Promise<{ key: TssKeyType; creds: Credentials }>;
+  }): Promise<{ key: TssKeyType; credentials: Credentials }>;
   register(args: { copayerName: string }): Promise<string | undefined>;
   load(opts?: { doNotComplete?: boolean; allowCache?: boolean }): Promise<KeyType | TssKeyType>;
   save(opts?: { encryptAll?: boolean }): Promise<void>;
@@ -92,6 +92,7 @@ export interface IWallet {
   isSvm(): boolean;
   isXrp(): boolean;
   isTokenChain(): boolean;
+  isReadOnly(): boolean;
 }
 
 export interface ITokenObj {

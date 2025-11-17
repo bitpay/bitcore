@@ -58,6 +58,7 @@ export async function getTxHistory(
     EXPORT = 'e'
   }
 
+  let history = [];
   let compact = !opts.expand; // default to compact view
   let printRaw = !!opts.raw; // default false
 
@@ -70,12 +71,19 @@ export async function getTxHistory(
     printRaw = viewAction === ViewAction.TOGGLE_RAW ? !printRaw : printRaw;
     const exportToFile = !!opts.export || viewAction === ViewAction.EXPORT;
 
-    const history = await wallet.client.getTxHistory({
-      includeExtendedInfo: true,
-      tokenAddress: tokenObj?.contractAddress,
-      limit: opts.pageSize,
-      skip: (page - 1) * opts.pageSize
-    });
+    if (
+      viewAction !== ViewAction.TOGGLE_FORMAT &&
+      viewAction !== ViewAction.TOGGLE_RAW &&
+      viewAction !== ViewAction.EXPORT  
+    ) {
+      // Get history only if not toggling view or exporting (i.e. changing page)
+      history = await wallet.client.getTxHistory({
+        includeExtendedInfo: true,
+        tokenAddress: tokenObj?.contractAddress,
+        limit: opts.pageSize,
+        skip: (page - 1) * opts.pageSize
+      });
+    }
 
     const extraChoices = [
       compact ? { value: ViewAction.TOGGLE_FORMAT, label: 'Expand format' } : { value: ViewAction.TOGGLE_FORMAT, label: 'Compact format' },
@@ -106,6 +114,7 @@ export async function getTxHistory(
         const timestamp = new Date(tx.time * 1000);
         const time = compact ? Utils.formatDateCompact(timestamp) : Utils.formatDate(timestamp);
         const txid = compact ? Utils.compactString(tx.txid) : tx.txid;
+        tokenObj = tokenObj && !compact ? { ...tokenObj, precision: tokenObj.decimals.short.maxDecimals } : tokenObj;
         const amount = Utils.renderAmount(currency, tx.amount, tokenObj);
         const confirmations = tx.confirmations || 0;
         let direction = '';

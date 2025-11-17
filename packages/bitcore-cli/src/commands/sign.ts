@@ -37,6 +37,10 @@ export async function signMessage(args: CommonArgs<{ message?: string; path?: st
     Object.assign(opts, command(args));
   }
 
+  if (wallet.isReadOnly()) {
+    throw new Error('Read-only wallets cannot sign messages');
+  }
+
   if (wallet.isMultiSig()) {
     throw new Error('MultiSig wallets cannot sign arbitrary messages');
   }
