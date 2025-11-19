@@ -66,6 +66,10 @@ export async function createTransaction(
     Object.assign(opts, command(args));
   }
 
+  if (wallet.isReadOnly()) {
+    throw new Error('Read-only wallets cannot create transactions');
+  }
+
   let tokenObj: ITokenObj;
   if (opts.token || opts.tokenAddress) {
     tokenObj = await wallet.getToken(opts);

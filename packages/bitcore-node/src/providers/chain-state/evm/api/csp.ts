@@ -541,6 +541,10 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
       let transactionStream = new TransformWithEventPipe({ objectMode: true, passThrough: true });
       const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddres => waddres.address);
+      if (walletAddresses.length === 0) {
+        res.status(400).send('No addresses found for wallet');
+        return resolve();
+      }
       const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses, args.tokenAddress);
       const populateReceipt = new PopulateReceiptTransform();
       const populateEffects = new PopulateEffectsTransform();

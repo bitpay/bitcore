@@ -115,8 +115,8 @@ export class Wallet implements IWallet {
     }
 
     _verbose && prompt.intro('Loading wallet');
-    await this.load({ doNotComplete, allowCache: true });
-    _verbose && prompt.outro('Wallet loaded');
+    const key = await this.load({ doNotComplete, allowCache: true });
+    _verbose && prompt.outro(`${!key ? 'Read-only ' : ''}Wallet loaded`);
 
     return this.client;
   }
@@ -141,13 +141,13 @@ export class Wallet implements IWallet {
       key = new Key({ seedType: 'new', password });
     }
     const credOpts = { coin, chain, network, account, n, m, mnemonic, password, addressType, copayerName, singleAddress: BWCUtils.isSingleAddressChain(chain) };
-    const creds = key.createCredentials(password, credOpts);
-    this.client.fromObj(creds);
-    this.#walletData = { key, creds };
+    const credentials = key.createCredentials(password, credOpts);
+    this.client.fromObj(credentials);
+    this.#walletData = { key, credentials };
     await this.save();
     const secret = await this.register({ copayerName });
     await this.load();
-    return { key, creds, secret };
+    return { key, credentials, secret };
   }
 
   async createFromTss(args: {
@@ -162,26 +162,44 @@ export class Wallet implements IWallet {
     if (!this.client) {
       await this.getClient({ mustExist: true });
     }
-    const creds = key.createCredentials(password, {
+    const credentials = key.createCredentials(password, {
       chain,
       network,
       account: 0,
       addressType
     });
-    this.client.fromObj(creds.toObj());
-    this.#walletData = { key, creds: this.client.credentials };
+    this.client.fromObj(credentials.toObj());
+    this.#walletData = { key, credentials: this.client.credentials };
     await this.save();
     // await this.register({ copayerName });
     await this.load();
-    return { key, creds: this.client.toObj() };
+    return { key, credentials: this.client.toObj() };
   }
 
   async register(args: { copayerName: string }) {
     if (!this.client) {
       await this.getClient({ mustExist: true });
     }
-    const { chain, network, m, n, addressType } = this.client.credentials;
-    const { secret } = await this.client.createWallet(this.name, args.copayerName, m, n, { chain, network: network as Network, ...Utils.getSegwitInfo(addressType) });
+    const { chain, coin, network, m, n, addressType } = this.client.credentials;
+    if (coin && coin !== chain) {
+      // temporarily set it to chain for registration.
+      // coin != chain for token wallets exported from the app.
+      this.client.credentials.coin = chain;
+    }
+    const { secret } = await this.client.createWallet(
+      this.name,
+      args.copayerName,
+      m,
+      n,
+      {
+        chain,
+        network: network as Network,
+        ...Utils.getSegwitInfo(addressType)
+      }
+    );
+    if (coin) {
+      this.client.credentials.coin = coin; // change it back.
+    }
     return secret as string | undefined;
   }
 
@@ -205,6 +223,9 @@ export class Wallet implements IWallet {
     
 
     const instantiateKey = () => {
+      if (!walletData.key) {
+        return undefined; // read-only wallet
+      }
       const obj = walletData.key.toObj ? walletData.key.toObj() : walletData.key;
       if ((obj as TssKeyType).metadata) {
         return new TssKey.TssKey(obj as TssKeyType);
@@ -221,7 +242,7 @@ export class Wallet implements IWallet {
       key = instantiateKey();
     } catch {
       try {
-        this.client.fromObj(walletData.creds);
+        this.client.fromObj(walletData.credentials);
         key = instantiateKey();
       } catch (e) {
         Utils.die('Corrupt wallet file:' + (_verbose && e.stack ? e.stack : e));
@@ -230,7 +251,7 @@ export class Wallet implements IWallet {
 
     this.#walletData = {
       key,
-      creds: Credentials.fromObj(walletData.creds)
+      credentials: Credentials.fromObj(walletData.credentials)
     } as WalletData;
 
     if (doNotComplete) return key;
@@ -251,7 +272,7 @@ export class Wallet implements IWallet {
       if (!this.#walletData) {
         throw new Error('No wallet data to save. Wallet not created or loaded');
       }
-      let data: WalletData | EncryptionTypes.IEncrypted = { key: this.#walletData.key.toObj(), creds: this.#walletData.creds.toObj() };
+      let data: WalletData | EncryptionTypes.IEncrypted = { key: this.#walletData.key.toObj(), credentials: this.#walletData.credentials.toObj() };
       if (encryptAll) {
         const password = await getPassword('Enter password to encrypt:', { minLength: 6 });
         await prompt.password({
@@ -289,7 +310,7 @@ export class Wallet implements IWallet {
       key.decrypt(walletPassword);
     }
     
-    let data: any = { key: key.toObj(), creds: this.#walletData.creds.toObj() };
+    let data: any = { key: key.toObj(), credentials: this.#walletData.credentials.toObj() };
     if (exportPassword != null) {
       data = Encryption.encryptWithPassword(data, exportPassword, WALLET_ENCRYPTION_OPTS);
     }
@@ -318,7 +339,7 @@ export class Wallet implements IWallet {
     data.key.encrypt(walletPassword);
     this.#walletData = {
       key: data.key,
-      creds: Credentials.fromObj(data.creds)
+      credentials: Credentials.fromObj(data.credentials)
     };
     await this.save();
   }
@@ -484,7 +505,7 @@ export class Wallet implements IWallet {
 
     const inputPaths = !isUtxo && !txp.inputPaths?.length ? ['m/0/0'] : txp.inputPaths;
     const tx = BWCUtils.buildTx(txp);
-    const xPubKey = new BitcoreLib.HDPublicKey(this.#walletData.creds.clientDerivedPublicKey);
+    const xPubKey = new BitcoreLib.HDPublicKey(this.#walletData.credentials.clientDerivedPublicKey);
 
     for (let i = 0; i < inputPaths.length; i++) {
       const derivationPath = inputPaths[i];
@@ -638,5 +659,9 @@ export class Wallet implements IWallet {
 
   isTokenChain() {
     return this.isEvm() || this.isSvm();
+  }
+
+  isReadOnly() {
+    return !this.#walletData.key;
   }
 };
