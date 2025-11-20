@@ -1,29 +1,30 @@
 import {FC} from 'react';
+import {useBlocks} from 'src/contexts';
 
-export interface ChangeData {
-  change: number;
-  percentChange: number;
-  range: number;
-}
-
-export const FeeChangeSpan: FC<{ data?: ChangeData }> = ({ data }) => {
-  if (!data)
+export const FeeChangeSpan: FC<{ range: string }> = ({ range }) => {
+  const { blocks } = useBlocks();
+  if (!blocks)
     return null;
-  const { change, percentChange, range } = data;
+
+  const numBlocks = Number(range.slice(0, range.indexOf(' ')));
+  const fees = blocks?.map(block => block.feeData.median as number);
+  const change = fees[0] - fees[numBlocks];
+  const percentChange = change / fees[numBlocks] * 100;
+
   return (
     <span>
       <span style={{marginRight: '8px'}}>
         {change.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} sats/byte
         ({percentChange.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)</span>
-      <span style={{color: '#555'}}>Last {range} Blocks</span>
+      <span style={{color: '#555'}}>Last {numBlocks} Blocks</span>
     </span>
   );
 }
 
-export const PriceChangeSpan: FC<{ data?: ChangeData }> = ({ data }) => {
-  if (!data)
-    return null;
-  const { change, percentChange, range } = data;
+export const PriceChangeSpan: FC<{ prices: number[], lastPrice: number, range: string }> = ({ prices, lastPrice, range }) => {
+  const hours = Number(range.slice(0, range.indexOf(' ')));
+  const change = lastPrice - prices[prices.length - hours];
+  const percentChange = change / prices[prices.length - hours] * 100;
 
   let color = 'gray';
   if (change > 0) {
@@ -38,7 +39,7 @@ export const PriceChangeSpan: FC<{ data?: ChangeData }> = ({ data }) => {
       ${change.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
       ({percentChange.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%)
       </span>
-      <span style={{color: '#555'}}>Last {range} Hours</span>
+      <span style={{color: '#555'}}>Last {hours} Hours</span>
     </span>
   );
 }

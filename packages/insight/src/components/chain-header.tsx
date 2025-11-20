@@ -7,7 +7,7 @@ import styled, {useTheme} from 'styled-components';
 import {getName} from 'src/utilities/helper-methods';
 import Dropdown from './dropdown';
 import {useBlocks} from 'src/contexts';
-import { ChangeData, FeeChangeSpan, PriceChangeSpan } from './change-span';
+import {FeeChangeSpan, PriceChangeSpan} from './change-span';
 
 const ChartTile = styled.div`
   height: 400px;
@@ -64,8 +64,6 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
   const [feeSelectedRange, setFeesSelectedRange] = useState('32 Blocks');
   const [priceSelectedRange, setPriceSelectedRange] = useState('24 Hours');
   
-  const [priceChangeData, setPriceChangeData] = useState<ChangeData>();
-  const [feeChangeData, setFeeChangeData] = useState<ChangeData>();
   const hasFees = blocks?.at(0)?.feeData !== undefined;
 
   useEffect(() => {
@@ -117,11 +115,6 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
         data: chartData,
         options
       });
-
-      const feeChange = fees[fees.length - 1] - fees[0];
-      const percentFeeChange = feeChange / fees[0] * 100;
-    
-      setFeeChangeData({change: feeChange, percentChange: percentFeeChange, range: numBlocks});
     }
 
     return () => {
@@ -174,10 +167,6 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
       });
     }
 
-    const priceChange = price - usedPrices[0];
-    const percentPriceChange = priceChange / usedPrices[0] * 100;
-
-    setPriceChangeData({change: priceChange, percentChange: percentPriceChange, range: hours});
     return () => {
       priceChartInstanceRef.current?.destroy();
     };
@@ -199,7 +188,7 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
               <ChartTileHeader>${price.toLocaleString()}</ChartTileHeader>
               <Dropdown options={priceRanges} value={priceSelectedRange} onChange={setPriceSelectedRange} />
             </div>
-            <PriceChangeSpan data={priceChangeData} />
+            <PriceChangeSpan prices={priceList} lastPrice={price} range={priceSelectedRange} />
             <div style={{flex: 1, minHeight: 0}}>
               <canvas ref={priceChartRef} aria-label='price line chart' role='img' />
             </div>
@@ -211,7 +200,7 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
                 <ChartTileHeader>{blocks?.at(0)?.feeData?.median.toLocaleString()} sats/byte</ChartTileHeader>
                 <Dropdown options={feeRanges} value={feeSelectedRange} onChange={setFeesSelectedRange} style={{width: '130px'}} />
               </div>
-              <FeeChangeSpan data={feeChangeData} />
+              <FeeChangeSpan range={feeSelectedRange} />
               <div style={{flex: 1, minHeight: 0}}>
                 <canvas ref={feeChartRef} aria-label='fee chart' role='img' />
               </div>
