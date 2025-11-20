@@ -186,7 +186,10 @@ describe('Ethereum API', function() {
         balanceOf: () => ({ call: sandbox.stub().resolves(0) })
       }
     };
-    sandbox.stub(ETH, 'erc20For').resolves(tokenStub);
+    const rpc = {
+      eth: { Contract: () => { return tokenStub; } },
+    };
+    sandbox.stub(ETH, 'getWeb3').resolves({ rpc });
     const balance = await ETH.getBalanceForAddress({ chain, network, address, args: { tokenAddress: address } });
     expect(balance).to.deep.eq({ confirmed: 0, unconfirmed: 0, balance: 0 });
     sandbox.restore();

@@ -151,7 +151,10 @@ describe('Polygon/MATIC API', function() {
         balanceOf: () => ({ call: sandbox.stub().resolves(0) })
       }
     };
-    sandbox.stub(MATIC, 'erc20For').resolves(tokenStub);
+    const rpc = {
+      eth: { Contract: () => { return tokenStub; } },
+    };
+    sandbox.stub(MATIC, 'getWeb3').resolves({ rpc });
     const balance = await MATIC.getBalanceForAddress({ chain, network, address, args: { tokenAddress: address } });
     expect(balance).to.deep.eq({ confirmed: 0, unconfirmed: 0, balance: 0 });
     sandbox.restore();
