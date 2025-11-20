@@ -271,12 +271,12 @@ export class XrpChain implements IChain {
       let signature: string = signatures[index];
       try {
         // Backward compatibility.
-        // Old versions of CWC returned just the signature for the XRP.applySignature() method.
+        // Old versions of CWC returned just the signature for the XRPTxProvider.sign() method.
         // Commit 5ff87d7724cabeccf683d1bd7c73eb2efd42f9c5 changed it to return the fully signed
         //  transaction to be consistent with other chains' responses. Thus, signatures[] may
         //  be the signed transaction blobs instead of just the signature string.
         const decoded = xrpl.decode(signatures[index]);
-        signature = decoded.TxnSignature || signatures[index];
+        if (decoded.TxnSignature) signature = decoded.TxnSignature as string;
       } catch { /* ignore */ }
 
       const signed = Transactions.applySignature({
