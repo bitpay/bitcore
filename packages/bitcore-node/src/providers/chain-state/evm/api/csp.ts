@@ -274,7 +274,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       cacheKey,
       async () => {
         if (tokenAddress) {
-          const token = await this.erc20For(network, tokenAddress);
+          const token = new web3.eth.Contract(ERC20Abi as AbiItem[], tokenAddress);
           const balance = await token.methods.balanceOf(address).call({}, blockNumber);
           const numberBalance = '0x' + BigInt(balance).toString(16);
           return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
