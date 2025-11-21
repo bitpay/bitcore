@@ -109,3 +109,20 @@ export interface BlocksType {
   size: number;
   hash: string;
 }
+
+export type BitcoinBlockType = BlocksType & {
+  merkleRoot: string,
+  bits: number,
+  nonce: number,
+  reward: number,
+  version: number,
+  confirmations: number,
+  feeData: FeeData;
+};
+
+export type FeeData = {
+  feeTotal: number;
+  mean: number;
+  median: number;
+  mode: number;
+}
