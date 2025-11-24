@@ -478,7 +478,11 @@ const Config = (): any => {
   };
 
   // Override default values with bws.config.js' values, if present
-  const { BITCORE_CONFIG_PATH = '../../../../', BWS_CONFIG_PATH = '../../' } = process.env;
+  const {
+    BITCORE_CONFIG_PATH = path.join(__dirname, '../../../../'),
+    BWS_CONFIG_PATH = path.join(__dirname, '../../')
+  } = process.env;
+  
   let bwsConfig;
 
   try {
