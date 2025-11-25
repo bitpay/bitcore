@@ -1,3 +1,4 @@
+import cluster from 'cluster';
 import loadConfig from '../config';
 import { ChainNetwork } from '../types/ChainNetwork';
 import { ConfigType } from '../types/Config';
@@ -10,6 +11,21 @@ export class ConfigService {
 
   constructor({ config = loadConfig() } = {}) {
     this.config = config;
+
+    // Listen for SIGUSR1 on both main and child processes
+    process.on('SIGUSR1', () => {
+      this.reload();
+      if (cluster.workers) {
+        for (const worker of Object.values(cluster.workers)) {
+          worker?.send('reloadconfig');
+        }
+      }
+    });
+    process.on('message', msg => {
+      if (msg === 'reloadconfig') {
+        this.reload();
+      }
+    });
   }
 
   public reload() {
