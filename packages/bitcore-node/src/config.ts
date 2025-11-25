@@ -1,5 +1,7 @@
+import cluster from 'cluster';
 import fs from 'fs';
 import { cpus, homedir } from 'os';
+import path from 'path';
 import logger from './logger';
 import { ConfigType } from './types/Config';
 import { merge } from './utils';
@@ -25,7 +27,8 @@ function findConfig(): ConfigType | undefined {
     }
     bitcoreConfigPath += '/bitcore.config.json';
   }
-  logger.info('Using config at: ' + bitcoreConfigPath);
+  
+  logger.info(`${cluster.isPrimary ? 'Main' : 'Child'} ${process.pid} using config at: ${path.resolve(bitcoreConfigPath)}`);
   
   let rawBitcoreConfig;
   try {

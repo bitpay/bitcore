@@ -1,5 +1,6 @@
 import cluster from 'cluster';
 import 'source-map-support/register';
+import fs from 'fs';
 import logger from '../logger';
 import { Modules } from '../modules';
 import { Api } from '../services/api';
@@ -22,6 +23,8 @@ export const ClusteredApiWorker = async () => {
 
   services.push(Storage, Event);
   if (cluster.isPrimary) {
+    fs.mkdirSync('pids', { recursive: true });
+    fs.writeFileSync('pids/api.pid', String(process.pid));
     if (args.DEBUG || !args.CLUSTER) {
       services.push(Api);
     } else {
@@ -45,6 +48,10 @@ const stop = async () => {
     process.exit(1);
   }
   stopping = true;
+  
+  if (cluster.isPrimary) {
+    fs.unlinkSync('pids/api.pid');
+  }
   
   setTimeout(() => {
     logger.warn('API Worker did not shut down gracefully after 30 seconds, exiting');
