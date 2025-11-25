@@ -3691,7 +3691,7 @@ export class WalletService implements IWalletService {
           priorityGasFee: tx.priorityGasFee,
           txType: tx.txType,
           gasLimit: tx.gasLimit,
-          receipt: tx.receipt,
+          receipt: tx.receipt ? { ...tx.receipt, logs: undefined } : undefined,
           nonce: tx.nonce,
           effects: tx.effects
         };
