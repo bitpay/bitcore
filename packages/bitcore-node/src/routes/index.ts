@@ -1,6 +1,5 @@
 import cors from 'cors';
 import express from 'express';
-import config from '../config';
 import { Config } from '../services/config';
 import * as apiRoutes from './api';
 import { CacheMiddleware, CacheTimes, LogMiddleware, RateLimiter } from './middleware';
@@ -24,7 +23,7 @@ app.use(
 const chains = Config.chains();
 const networks: any = {};
 for (const chain of chains) {
-  for (const network of Object.keys(config.chains[chain])) {
+  for (const network of Object.keys(Config.get().chains[chain])) {
     networks[chain] = networks[chain] || {};
     Object.assign(networks[chain], {
       [network]: true

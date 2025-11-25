@@ -11,12 +11,12 @@ import {
   TransactionMetadata
 } from 'xrpl/dist/npm/models/transactions';
 import { Node } from 'xrpl/dist/npm/models/transactions/metadata';
-import Config from '../../../config';
 import logger from '../../../logger';
 import { CacheStorage } from '../../../models/cache';
 import { ICoin } from '../../../models/coin';
 import { WalletAddressStorage } from '../../../models/walletAddress';
 import { InternalStateProvider } from '../../../providers/chain-state/internal/internal';
+import { Config } from '../../../services/config';
 import { Storage } from '../../../services/storage';
 import { IBlock } from '../../../types/Block';
 import { ChainNetwork } from '../../../types/ChainNetwork';
@@ -44,7 +44,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
 
   constructor(public chain: string = 'XRP') {
     super(chain, RippleDbWalletTransactions);
-    this.config = Config.chains[this.chain];
+    this.config = Config.get().chains[this.chain];
   }
 
   async getClient(network: string) {

@@ -1,4 +1,5 @@
-import config from '../config';
+import cluster from 'cluster';
+import loadConfig from '../config';
 import { ChainNetwork } from '../types/ChainNetwork';
 import { ConfigType } from '../types/Config';
 import { valueOrDefault } from '../utils';
@@ -6,19 +7,38 @@ import { valueOrDefault } from '../utils';
 type ServiceName = keyof ConfigType['services'];
 
 export class ConfigService {
-  _config: ConfigType;
+  config: ConfigType;
 
-  constructor({ _config = config } = {}) {
-    this._config = _config;
+  constructor({ config = loadConfig() } = {}) {
+    this.config = config;
+
+    // Listen for SIGUSR1 on both main and child processes
+    process.on('SIGUSR1', () => {
+      this.reload();
+      if (cluster.workers) {
+        for (const worker of Object.values(cluster.workers)) {
+          worker?.send('reloadconfig');
+        }
+      }
+    });
+    process.on('message', msg => {
+      if (msg === 'reloadconfig') {
+        this.reload();
+      }
+    });
+  }
+
+  public reload() {
+    this.config = loadConfig();
   }
 
   public get() {
-    return this._config;
+    return this.config;
   }
 
   public updateConfig(partialConfig: Partial<ConfigType>) {
     const newConfig = Object.assign({}, this.get(), partialConfig);
-    this._config = newConfig;
+    this.config = newConfig;
   }
 
   public chains() {
