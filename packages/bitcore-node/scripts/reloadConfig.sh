@@ -2,6 +2,21 @@
 
 dir=$(pwd)
 
+if [ $# = 0 ]; then
+  pid_paths=$dir/pids/*
+
+  pids=$(
+    for path in $pid_paths; do
+      cat $path
+      printf ' '
+    done
+  )
+
+  kill -USR1 $pids &&
+  echo "Refreshed all workers: $pids"
+  exit 0;
+fi
+
 if [ $1 = --help ]; then
   cat << EOF
 Usage: $(basename "$0") [OPTIONS] [WORKER...]
@@ -22,23 +37,6 @@ Examples:
   $(basename "$0") list      List all running workers
 EOF
   exit 0
-fi
-
-
-if [ $# = 0 ]; then
-  pid_paths=$dir/pids/*
-
-  pids=$(
-    for path in $pid_paths; do
-      cat $path
-      printf ' '
-      num=1
-    done
-  )
-
-  kill -USR1 $pids &&
-  echo "Refreshed all workers: $pids"
-  exit 0;
 fi
 
 if [ $1 = list ]; then 
