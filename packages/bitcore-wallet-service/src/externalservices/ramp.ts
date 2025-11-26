@@ -154,7 +154,7 @@ export class RampService {
     if (req.body.hideExitButton) qs.push('hideExitButton=' + encodeURIComponent(req.body.hideExitButton));
     if (req.body.variant) qs.push('variant=' + encodeURIComponent(req.body.variant));
     if (req.body.useSendCryptoCallbackVersion) qs.push('useSendCryptoCallbackVersion=' + encodeURIComponent(req.body.useSendCryptoCallbackVersion));
-    
+
     const queryString = qs.join('&');
 
     // Add timestamp and sign

@@ -326,7 +326,7 @@ const Config = (): any => {
     //   production: {
     //     apiKey: 'ramp_production_api_key_here',
     //     api: 'https://api.ramp.network/api',
-    //     widgetApi: 'https://app.ramp.network',
+    //     widgetApi: 'https://app.ramp.network/',
     //     signingKey: 'ramp_production_signing_key_here',
     //   },
     //   sandboxWeb: {
@@ -338,7 +338,7 @@ const Config = (): any => {
     //   productionWeb: {
     //     apiKey: 'ramp_production_web_api_key_here',
     //     api: 'https://api.ramp.network/api',
-    //     widgetApi: 'https://app.ramp.network',
+    //     widgetApi: 'https://app.ramp.network/',
     //     signingKey: 'ramp_production_web_signing_key_here',
     //   }
     // },
