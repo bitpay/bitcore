@@ -321,21 +321,25 @@ const Config = (): any => {
     //     apiKey: 'ramp_sandbox_api_key_here',
     //     api: 'https://api.demo.ramp.network/api',
     //     widgetApi: 'https://app.demo.ramp.network/',
+    //     signingKey: 'ramp_sandbox_signing_key_here',
     //   },
     //   production: {
     //     apiKey: 'ramp_production_api_key_here',
     //     api: 'https://api.ramp.network/api',
     //     widgetApi: 'https://app.ramp.network',
+    //     signingKey: 'ramp_production_signing_key_here',
     //   },
     //   sandboxWeb: {
     //     apiKey: 'ramp_sandbox_web_api_key_here',
     //     api: 'https://api.demo.ramp.network/api',
     //     widgetApi: 'https://app.demo.ramp.network/',
+    //     signingKey: 'ramp_sandbox_web_signing_key_here',
     //   },
     //   productionWeb: {
     //     apiKey: 'ramp_production_web_api_key_here',
     //     api: 'https://api.ramp.network/api',
     //     widgetApi: 'https://app.ramp.network',
+    //     signingKey: 'ramp_production_web_signing_key_here',
     //   }
     // },
     // sardine: {
