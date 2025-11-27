@@ -1,6 +1,7 @@
 'use strict';
 
 import chai from 'chai';
+import crypto from 'crypto';
 import 'chai/register-should';
 import util from 'util';
 import { WalletService } from '../../../src/lib/server';
@@ -9,6 +10,16 @@ import helpers from '../helpers';
 import config from '../../../src/config';
 
 const should = chai.should();
+const { privateKey: privDer } = crypto.generateKeyPairSync('ed25519', {
+  publicKeyEncoding: {
+    type: 'spki',
+    format: 'pem',
+  },
+  privateKeyEncoding: {
+    type: 'pkcs8',
+    format: 'der',
+  },
+});
 
 describe('Ramp integration', () => {
   let server;
@@ -26,21 +37,25 @@ describe('Ramp integration', () => {
         apiKey: 'apiKey1',
         api: 'api1',
         widgetApi: 'widgetApi1',
+        signingKey: privDer.toString('base64'),
       },
       production: {
         apiKey: 'apiKey2',
         api: 'api2',
         widgetApi: 'widgetApi2',
+        signingKey: privDer.toString('base64'),
       },
       sandboxWeb: {
         apiKey: 'apiKey3',
         api: 'api3',
         widgetApi: 'widgetApi3',
+        signingKey: privDer.toString('base64'),
       },
       productionWeb: {
         apiKey: 'apiKey4',
         api: 'api4',
         widgetApi: 'widgetApi4',
+        signingKey: privDer.toString('base64'),
       }
     };
 
@@ -211,7 +226,26 @@ describe('Ramp integration', () => {
     it('should get the paymentUrl properly if req is OK', () => {
       const data = server.externalServices.ramp.rampGetSignedPaymentUrl(req);
       should.exist(data.urlWithSignature);
-      data.urlWithSignature.should.equal('widgetApi2?hostApiKey=apiKey2&selectedCountryCode=US&finalUrl=bitpay%3A%2F%2Framp&userAddress=bitcoin%3A123123&swapAsset=BTC_BTC&enabledFlows=ONRAMP&defaultFlow=ONRAMP&swapAmount=1000000&defaultAsset=BTC_BTC');
+      const [base, qs] = data.urlWithSignature.split('?');
+
+      base.should.equal('widgetApi2');
+
+      const params = Object.fromEntries(new URLSearchParams(qs));
+      params.hostApiKey.should.equal('apiKey2');
+      params.selectedCountryCode.should.equal('US');
+      params.finalUrl.should.equal('bitpay://ramp');
+      params.userAddress.should.equal('bitcoin:123123');
+      params.swapAsset.should.equal('BTC_BTC');
+      params.enabledFlows.should.equal('ONRAMP');
+      params.defaultFlow.should.equal('ONRAMP');
+      params.swapAmount.should.equal('1000000');
+      params.defaultAsset.should.equal('BTC_BTC');
+
+      // timestamp must exist and be numeric
+      params.timestamp.should.match(/^\d+$/);
+
+      // signature must exist and not be empty
+      params.signature.should.be.a('string').and.not.equal('');
     });
 
     it('should get the paymentUrl properly if req is OK for web', () => {
@@ -226,7 +260,23 @@ describe('Ramp integration', () => {
       };
       const data = server.externalServices.ramp.rampGetSignedPaymentUrl(req);
       should.exist(data.urlWithSignature);
-      data.urlWithSignature.should.equal('widgetApi4?hostApiKey=apiKey4&selectedCountryCode=US&finalUrl=bitpay%3A%2F%2Framp&userAddress=bitcoin%3A123123&swapAsset=BTC_BTC&defaultAsset=BTC_BTC');
+      const [base, qs] = data.urlWithSignature.split('?');
+
+      base.should.equal('widgetApi4');
+
+      const params = Object.fromEntries(new URLSearchParams(qs));
+      params.hostApiKey.should.equal('apiKey4');
+      params.selectedCountryCode.should.equal('US');
+      params.finalUrl.should.equal('bitpay://ramp');
+      params.userAddress.should.equal('bitcoin:123123');
+      params.swapAsset.should.equal('BTC_BTC');
+      params.defaultAsset.should.equal('BTC_BTC');
+
+      // timestamp must exist and be numeric
+      params.timestamp.should.match(/^\d+$/);
+
+      // signature must exist and not be empty
+      params.signature.should.be.a('string').and.not.equal('');
     });
 
     it('should return error if there is some missing arguments', () => {
@@ -267,7 +317,26 @@ describe('Ramp integration', () => {
       };
       const data = server.externalServices.ramp.rampGetSignedPaymentUrl(req);
       should.exist(data.urlWithSignature);
-      data.urlWithSignature.should.equal('widgetApi2?hostApiKey=apiKey2&selectedCountryCode=US&offrampAsset=BTC_BTC&enabledFlows=OFFRAMP&defaultFlow=OFFRAMP&swapAmount=1000000&defaultAsset=BTC_BTC&useSendCryptoCallback=true&variant=webview-mobile&useSendCryptoCallbackVersion=1');
+      const [base, qs] = data.urlWithSignature.split('?');
+      base.should.equal('widgetApi2');
+
+      const params = Object.fromEntries(new URLSearchParams(qs));
+      params.hostApiKey.should.equal('apiKey2');
+      params.selectedCountryCode.should.equal('US');
+      params.offrampAsset.should.equal('BTC_BTC');
+      params.enabledFlows.should.equal('OFFRAMP');
+      params.defaultFlow.should.equal('OFFRAMP');
+      params.swapAmount.should.equal('1000000');
+      params.defaultAsset.should.equal('BTC_BTC');
+      params.useSendCryptoCallback.should.equal('true');
+      params.variant.should.equal('webview-mobile');
+      params.useSendCryptoCallbackVersion.should.equal('1');
+
+      // timestamp must exist and be numeric
+      params.timestamp.should.match(/^\d+$/);
+
+      // signature must exist and not be empty
+      params.signature.should.be.a('string').and.not.equal('');
     });
 
     it('should get the sell paymentUrl properly if req is OK for web', () => {
@@ -288,7 +357,26 @@ describe('Ramp integration', () => {
       };
       const data = server.externalServices.ramp.rampGetSignedPaymentUrl(req);
       should.exist(data.urlWithSignature);
-      data.urlWithSignature.should.equal('widgetApi4?hostApiKey=apiKey4&selectedCountryCode=US&offrampAsset=BTC_BTC&enabledFlows=OFFRAMP&defaultFlow=OFFRAMP&swapAmount=1000000&defaultAsset=BTC_BTC&useSendCryptoCallback=true&variant=webview-mobile&useSendCryptoCallbackVersion=1');
+      const [base, qs] = data.urlWithSignature.split('?');
+      base.should.equal('widgetApi4');
+
+      const params = Object.fromEntries(new URLSearchParams(qs));
+      params.hostApiKey.should.equal('apiKey4');
+      params.selectedCountryCode.should.equal('US');
+      params.offrampAsset.should.equal('BTC_BTC');
+      params.enabledFlows.should.equal('OFFRAMP');
+      params.defaultFlow.should.equal('OFFRAMP');
+      params.swapAmount.should.equal('1000000');
+      params.defaultAsset.should.equal('BTC_BTC');
+      params.useSendCryptoCallback.should.equal('true');
+      params.variant.should.equal('webview-mobile');
+      params.useSendCryptoCallbackVersion.should.equal('1');
+
+      // timestamp must exist and be numeric
+      params.timestamp.should.match(/^\d+$/);
+
+      // signature must exist and not be empty
+      params.signature.should.be.a('string').and.not.equal('');
     });
   });
 
