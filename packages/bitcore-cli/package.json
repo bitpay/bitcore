@@ -2,7 +2,7 @@
   "name": "bitcore-cli",
   "description": "A Bitcore CLI Wallet",
   "author": "BitPay, Inc",
-  "version": "11.4.3",
+  "version": "11.4.4",
   "licence": "MIT",
   "private": true,
   "keywords": [
@@ -42,7 +42,7 @@
   "dependencies": {
     "@clack/prompts": "1.0.0-alpha.6",
     "bitcore-mnemonic": "^11.4.1",
-    "bitcore-wallet-client": "^11.4.3",
+    "bitcore-wallet-client": "^11.4.4",
     "commander": "14.0.0",
     "crypto-wallet-core": "^11.4.1",
     "external-editor": "3.1.0",
