@@ -168,7 +168,7 @@ export class RampService {
       const privateDer = Buffer.from(SIGNING_KEY, 'base64');
       const signature = crypto.sign(null, dataToSign, { key: privateDer, format: 'der', type: 'pkcs8' });
       base64Signature = signature.toString('base64');
-    } catch (e) {
+    } catch {
       throw new ClientError('Invalid Ramp signing key');
     }
 
