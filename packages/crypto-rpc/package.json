@@ -20,7 +20,7 @@
     "test:ci": "docker-compose down && docker-compose build && docker-compose run test_runner"
   },
   "author": "Micah Riggan",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@solana-program/address-lookup-table": "^0.7.0",
     "@solana-program/compute-budget": "^0.7.0",
