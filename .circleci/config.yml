@@ -116,6 +116,7 @@ jobs:
             - packages/bitcore-wallet-client/node_modules
             - packages/bitcore-wallet-service/node_modules
             - packages/crypto-wallet-core/node_modules
+            - packages/crypto-rpc/node_modules
             - packages/insight/node_modules
       - persist_to_workspace:
           root: ~/bitcore
@@ -186,6 +187,11 @@ jobs:
     steps:
       - run_test:
           package: bitcore-tss
+  crypto-rpc:
+    executor: main
+    steps:
+      - run_test:
+          package: crypto-rpc
       
 workflows:
   version: 2
@@ -231,3 +237,6 @@ workflows:
       - bitcore-cli:
           requires:
             - build
+      - crypto-rpc:
+          # requires:
+          #   - build

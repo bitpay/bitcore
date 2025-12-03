@@ -1,0 +1,14 @@
+# Javascript Node CircleCI 2.0 configuration file
+# Check https://circleci.com/docs/2.0/language-javascript/ for more details
+version: 2
+jobs:
+  build:
+    machine:
+      image: default # https://discuss.circleci.com/t/linux-image-deprecations-and-eol-for-2024/50177
+      docker_layer_caching: false
+    working_directory: ~/crypto-rpc
+    steps:
+      - checkout
+      - run:
+          name: Build service
+          command: npm test
