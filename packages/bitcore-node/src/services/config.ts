@@ -47,7 +47,7 @@ export class ConfigService {
           changes.push(...diff(val1, val2, currentPath));
         } else if (val1 !== val2) {
           changes.push(currentPath.join('.'));
-          logger.info(`${currentPath.join('.')} ${val1} -> ${val2}`);
+          logger.info(`${currentPath.join('.')} ${JSON.stringify(val1)} -> ${JSON.stringify(val2)}`);
         }
       }
       return changes;

@@ -5,6 +5,7 @@ import { StateStorage } from '../../models/state';
 import { TransactionStorage } from '../../models/transaction';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { Libs } from '../../providers/libs';
+import { Config } from '../../services/config';
 import { BaseP2PWorker } from '../../services/p2p';
 import { SpentHeightIndicators } from '../../types/Coin';
 import { IUtxoNetworkConfig } from '../../types/Config';
@@ -56,6 +57,10 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
       listenAddr: false,
       network: this.network,
       messages: this.messages
+    });
+
+    process.on('SIGUSR1', async () => {
+      await this.reload();
     });
   }
 
@@ -184,6 +189,26 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     if (this.connectInterval) {
       clearInterval(this.connectInterval);
     }
+  }
+
+  async reload() {
+    this.chainConfig = Config.chainConfig({ chain: this.chain, network: this.network }) as IUtxoNetworkConfig;
+    const configPeerUris: string[] = [];
+
+    for (const peer of Object.values(this.chainConfig.trustedPeers) as any[]) {
+      const uri = peer.host + ':' + peer.port;
+      configPeerUris.push(uri);
+      const addr = { ip: { v4: peer.host }, port: peer.port };
+      await this.pool._connectPeer(this.pool._addAddr(addr));
+    }
+    const length = this.pool._addrs.length;
+    for (let i = 0; i < length; i++) {
+      const addr = this.pool._addrs[i];
+      const uri = addr.ip.v4 + ':' + addr.port;
+      if (!configPeerUris.includes(uri)) {
+        // TODO: remove peers
+      }
+    };
   }
 
   public async getHeaders(candidateHashes: string[]): Promise<BitcoinHeaderObj[]> {
