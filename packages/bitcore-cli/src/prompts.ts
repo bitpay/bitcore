@@ -153,7 +153,7 @@ export async function getCopayerName() {
   return copayerName as string;
 };
 
-export async function getAddressType(args: { chain: string; network?: Network; isMultiSig?: boolean; isTss?: boolean; }) {
+export async function getAddressType(args: { chain: string; network?: Network; isMultiSig?: boolean; isTss?: boolean }) {
   const { chain, network, isMultiSig, isTss } = args;
   let addressTypes = Constants.ADDRESS_TYPE[chain.toUpperCase()];
   if (!addressTypes) {

@@ -47,7 +47,7 @@ export interface KeyOptions {
   seedData?: any;
   passphrase?: string; // seed passphrase
   password?: string; // encrypting password
-  encryptionOpts?: { iter?: number; }; // options for encryption
+  encryptionOpts?: { iter?: number }; // options for encryption
   use0forBCH?: boolean;
   useLegacyPurpose?: boolean;
   useLegacyCoinType?: boolean;
@@ -647,7 +647,7 @@ export class Key {
     password: PasswordMaybe,
     opts: {
       path: string;
-      requestPrivKey?: string | Bitcore.PrivateKey
+      requestPrivKey?: string | Bitcore.PrivateKey;
     }
   ) {
     $.shouldBeString(opts.path);
@@ -761,7 +761,7 @@ export class Key {
     }
   };
 
-  #setPrivKey(params: { value: any; algo?: KeyAlgorithm; }) {
+  #setPrivKey(params: { value: any; algo?: KeyAlgorithm }) {
     const { value, algo } = params;
     switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):
@@ -772,7 +772,7 @@ export class Key {
     }
   }
 
-  #setPrivKeyEncrypted(params: { value: string; algo?: KeyAlgorithm; }) {
+  #setPrivKeyEncrypted(params: { value: string; algo?: KeyAlgorithm }) {
     const { value, algo } = params;
     switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):
@@ -783,7 +783,7 @@ export class Key {
     }
   }
 
-  #setFingerprint(params: { value: string; algo?: KeyAlgorithm; }) {
+  #setFingerprint(params: { value: string; algo?: KeyAlgorithm }) {
     const { value, algo } = params;
     switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):
@@ -794,7 +794,7 @@ export class Key {
     }
   }
 
-  #getPrivKey(params: { algo?: KeyAlgorithm; } = {}) {
+  #getPrivKey(params: { algo?: KeyAlgorithm } = {}) {
     const { algo } = params;
     switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):
@@ -804,7 +804,7 @@ export class Key {
     }
   }
 
-  #getPrivKeyEncrypted(params: { algo?: KeyAlgorithm; } = {}) {
+  #getPrivKeyEncrypted(params: { algo?: KeyAlgorithm } = {}) {
     const { algo } = params;
     switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):
@@ -814,7 +814,7 @@ export class Key {
     }
   }
 
-  #getFingerprint(params: { algo?: KeyAlgorithm; } = {}) {
+  #getFingerprint(params: { algo?: KeyAlgorithm } = {}) {
     const { algo } = params;
     switch (algo?.toUpperCase?.()) {
       case (Constants.ALGOS.EDDSA):

@@ -1,8 +1,8 @@
 import { createHash } from 'crypto';
+import * as RBC from 'ripple-binary-codec';
+import * as binary from 'ripple-binary-codec/dist/binary';
+import { HashPrefix } from 'ripple-binary-codec/dist/hash-prefixes';
 import * as xrpl from 'xrpl';
-import * as RBC from 'xrpl/node_modules/ripple-binary-codec';
-import * as binary from 'xrpl/node_modules/ripple-binary-codec/dist/binary';
-import { HashPrefix } from 'xrpl/node_modules/ripple-binary-codec/dist/hash-prefixes';
 import { BTCTxProvider } from '../btc';
 import type { Key } from '../../types/derivation';
 
@@ -88,7 +88,7 @@ export class XRPTxProvider {
     return this.sha512Half(prefix + tx);
   }
 
-  applySignature(params: { tx: string; signature: string; pubKey: string; }): string {
+  applySignature(params: { tx: string; signature: string; pubKey: string }): string {
     const { tx, signature, pubKey } = params;
     const txJSON = (xrpl.decode(tx) as any) as xrpl.Transaction;
     txJSON.TxnSignature = signature;
@@ -111,7 +111,7 @@ export class XRPTxProvider {
       .slice(0, 64);
   }
 
-  transformSignatureObject(params: { obj: any; }) {
+  transformSignatureObject(params: { obj: any }) {
     const { obj } = params;
     return new BTCTxProvider().transformSignatureObject({ obj });
   }

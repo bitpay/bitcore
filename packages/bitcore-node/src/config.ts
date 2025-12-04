@@ -22,10 +22,10 @@ function findConfig(): ConfigType | undefined {
   const bitcoreConfigStat = fs.statSync(bitcoreConfigPath);
   
   if (bitcoreConfigStat.isDirectory()) {
-    if (!fs.existsSync(bitcoreConfigPath + '/bitcore.config.json')) {
+    if (!fs.existsSync(path.join(bitcoreConfigPath, 'bitcore.config.json'))) {
       throw new Error(`No bitcore config exists in directory ${bitcoreConfigPath}`);
     }
-    bitcoreConfigPath += '/bitcore.config.json';
+    bitcoreConfigPath = path.join(bitcoreConfigPath, 'bitcore.config.json');
   }
   
   logger.info(`${cluster.isPrimary ? 'Main' : 'Child'} ${process.pid} using config at: ${path.resolve(bitcoreConfigPath)}`);

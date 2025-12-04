@@ -260,5 +260,5 @@ export interface StatusAll {
   wallet?: {
     status: string;
     secret?: string;
-  }
+  };
 };

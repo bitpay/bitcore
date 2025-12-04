@@ -137,12 +137,12 @@ export class Utils {
   }
 
   static async paginate(
-    fn: (page: number, action?: string) => Promise<{ result?: any[], extraChoices?: prompt.Option<string>[] }>,
+    fn: (page: number, action?: string) => Promise<{ result?: any[]; extraChoices?: prompt.Option<string>[] }>,
     opts?: {
       pageSize?: number;
       initialPage?: number | string; // Initial page, default is 1
       /** Only applies if there are no extraChoices */
-      exitOn1Page?: boolean
+      exitOn1Page?: boolean;
     }
   ) {
     const { pageSize = 10, exitOn1Page = true, initialPage } = opts || {};

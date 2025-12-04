@@ -274,7 +274,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       cacheKey,
       async () => {
         if (tokenAddress) {
-          const token = await this.erc20For(network, tokenAddress);
+          const token = new web3.eth.Contract(ERC20Abi as AbiItem[], tokenAddress);
           const balance = await token.methods.balanceOf(address).call({}, blockNumber);
           const numberBalance = '0x' + BigInt(balance).toString(16);
           return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
@@ -541,6 +541,10 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
       let transactionStream = new TransformWithEventPipe({ objectMode: true, passThrough: true });
       const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddres => waddres.address);
+      if (walletAddresses.length === 0) {
+        res.status(400).send('No addresses found for wallet');
+        return resolve();
+      }
       const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses, args.tokenAddress);
       const populateReceipt = new PopulateReceiptTransform();
       const populateEffects = new PopulateEffectsTransform();

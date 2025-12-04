@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import 'source-map-support/register';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -108,7 +109,7 @@ if (require.main === module) {
         for (const file of fs.readdirSync(opts.dir)) {
           if (file.endsWith('.json')) {
             const walletData = JSON.parse(fs.readFileSync(path.join(opts.dir, file), 'utf8'));
-            console.log(`  ${Utils.boldText(file.replace('.json', ''))}  [${Utils.colorizeChain(walletData.creds.chain)}:${walletData.creds.network}]`);
+            console.log(`  ${Utils.boldText(file.replace('.json', ''))}  ${walletData.cipher ? '{Encrypted}' : `[${Utils.colorizeChain(walletData.credentials.chain)}:${walletData.credentials.network}]`}`);
           }
         }
         return;

@@ -107,7 +107,7 @@ export class BTCTxProvider {
     return new this.lib.crypto.Signature({ r, s, i, nhashtype }).toString();
   }
 
-  applySignature(params: { tx: BitcoreLib.Transaction; signature: SignatureType; index: number; sigtype?: number; }) {
+  applySignature(params: { tx: BitcoreLib.Transaction; signature: SignatureType; index: number; sigtype?: number }) {
     const { index, sigtype, tx } = params;
     let { signature } = params;
     assert(tx instanceof this.lib.Transaction, 'tx must be an instance of Transaction');

@@ -12,7 +12,7 @@ export class SOLTxProvider {
   MINIMUM_PRIORITY_FEE = 1000;
 
   create(params: {
-    recipients: Array<{ address: string; amount: string; addressKeyPair?: SolKit.KeyPairSigner; }>;
+    recipients: Array<{ address: string; amount: string; addressKeyPair?: SolKit.KeyPairSigner }>;
     from: string;
     fee?: number;
     feeRate: number;
@@ -180,7 +180,7 @@ export class SOLTxProvider {
     return SolKit.decompileTransactionMessage(compiledTransactionMessage);
   }
 
-  async sign(params: { tx: string; key: Key; }): Promise<string> {
+  async sign(params: { tx: string; key: Key }): Promise<string> {
     const { tx, key } = params;
     const decodedTx = this.decodeRawTransaction({ rawTx: tx, decodeTransactionMessage: false });
     const privKeyBytes = SolKit.getBase58Encoder().encode(key.privKey);
@@ -262,7 +262,7 @@ export class SOLTxProvider {
     return SolKit.getBase64EncodedWireTransaction(signedTx);
   }
 
-  getHash(params: { tx: string; }): string {
+  getHash(params: { tx: string }): string {
     const { tx } = params;
     const decodedTx = this.decodeRawTransaction({ rawTx: tx, decodeTransactionMessage: false });
     const pubKeys = Object.keys(decodedTx.signatures);
@@ -286,7 +286,7 @@ export class SOLTxProvider {
     return SolKit.getBase58Decoder().decode(signature);
   }
 
-  getSighash(_params: { tx: string; }): string {
+  getSighash(_params: { tx: string }): string {
     return null; // TODO
   }
 }

@@ -31,7 +31,7 @@ export async function sign(args: {
 
   const tssSign = new TssSign.TssSign({
     baseUrl: url.resolve(host, '/bws/api'),
-    credentials: walletData.creds,
+    credentials: walletData.credentials,
     tssKey: walletData.key as TssKeyType
   });
 

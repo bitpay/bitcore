@@ -246,21 +246,25 @@ module.exports = {
   //     apiKey: 'ramp_sandbox_api_key_here',
   //     api: 'https://api.demo.rampnetwork.com/api',
   //     widgetApi: 'https://app.demo.rampnetwork.com/',
+  //     signingKey: 'ramp_sandbox_signing_key_here',
   //   },
   //   production: {
   //     apiKey: 'ramp_production_api_key_here',
   //     api: 'https://api.rampnetwork.com/api',
-  //     widgetApi: 'https://app.rampnetwork.com',
+  //     widgetApi: 'https://app.rampnetwork.com/',
+  //     signingKey: 'ramp_production_signing_key_here',
   //   },
   //   sandboxWeb: {
   //     apiKey: 'ramp_sandbox_web_api_key_here',
   //     api: 'https://api.demo.rampnetwork.com/api',
   //     widgetApi: 'https://app.demo.rampnetwork.com/',
+  //     signingKey: 'ramp_sandbox_web_signing_key_here',
   //   },
   //   productionWeb: {
   //     apiKey: 'ramp_production_web_api_key_here',
   //     api: 'https://api.rampnetwork.com/api',
-  //     widgetApi: 'https://app.rampnetwork.com',
+  //     widgetApi: 'https://app.rampnetwork.com/',
+  //     signingKey: 'ramp_production_web_signing_key_here',
   //   }
   // },
   // sardine: {

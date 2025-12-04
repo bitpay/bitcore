@@ -241,6 +241,17 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
             if (transformedTx) {
               addressStream.push(JSON.stringify(transformedTx) + '\n');
               count++;
+
+              if (transformedTx.category === 'send' || transformedTx.category === 'move') {
+                addressStream.push(JSON.stringify({
+                  id: transformedTx.txid,
+                  txid: transformedTx.txid,
+                  category: 'fee',
+                  satoshis: -1 * transformedTx.fee, // lamports
+                  height: transformedTx.height,
+                  blockTime: transformedTx.blockTime
+                }) + '\n');
+              }
             }
           }
         } while (!limit || count < limit);

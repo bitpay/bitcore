@@ -1,3 +1,4 @@
+import * as crypto from 'crypto';
 import * as request from 'request';
 import config from '../config';
 import { Utils } from '../lib/common/utils';
@@ -22,10 +23,12 @@ export class RampService {
       API: string;
       WIDGET_API: string;
       API_KEY: string;
+      SIGNING_KEY: string;
     } = {
       API: config.ramp[env].api,
       WIDGET_API: config.ramp[env].widgetApi,
       API_KEY: config.ramp[env].apiKey,
+      SIGNING_KEY: config.ramp[env].signingKey,
     };
 
     return keys;
@@ -122,6 +125,7 @@ export class RampService {
     const keys = this.rampGetKeys(req);
     const API_KEY = keys.API_KEY;
     const WIDGET_API = keys.WIDGET_API;
+    const SIGNING_KEY = keys.SIGNING_KEY;
 
     if (
       !checkRequired(req.body, requiredParams)
@@ -151,7 +155,27 @@ export class RampService {
     if (req.body.variant) qs.push('variant=' + encodeURIComponent(req.body.variant));
     if (req.body.useSendCryptoCallbackVersion) qs.push('useSendCryptoCallbackVersion=' + encodeURIComponent(req.body.useSendCryptoCallbackVersion));
 
-    const URL_SEARCH: string = `?${qs.join('&')}`;
+    const queryString = qs.join('&');
+
+    // Add timestamp and sign
+    const timestamp = Math.floor(Date.now());
+    const queryWithTimestamp = `${queryString}&timestamp=${timestamp}`;
+
+    // Create signature using Ed25519
+    const dataToSign = Buffer.from(queryWithTimestamp, 'utf8');
+    let base64Signature: string;
+    try {
+      const privateDer = Buffer.from(SIGNING_KEY, 'base64');
+      const signature = crypto.sign(null, dataToSign, { key: privateDer, format: 'der', type: 'pkcs8' });
+      base64Signature = signature.toString('base64');
+    } catch {
+      throw new ClientError('Invalid Ramp signing key');
+    }
+
+    // Create final URL
+    const URL_SEARCH: string = `?${queryWithTimestamp}&signature=${encodeURIComponent(
+      base64Signature
+    )}`;
 
     const urlWithSignature = `${WIDGET_API}${URL_SEARCH}`;
 

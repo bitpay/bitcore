@@ -4,7 +4,7 @@ import { getCopayerName, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
 import type { CommonArgs } from '../../../types/cli';
 
-export async function joinMultiSigWallet(args: CommonArgs<{ mnemonic?: string; }>) {
+export async function joinMultiSigWallet(args: CommonArgs<{ mnemonic?: string }>) {
   const { wallet, opts } = args;
   const { verbose, mnemonic } = opts;
 
