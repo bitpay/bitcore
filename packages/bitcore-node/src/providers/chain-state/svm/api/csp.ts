@@ -5,9 +5,9 @@ import { TokenListProvider } from '@solana/spl-token-registry';
 import { CryptoRpc } from 'crypto-rpc';
 import { SolRpc } from 'crypto-rpc/lib/sol/SolRpc';
 import { instructionKeys } from 'crypto-rpc/lib/sol/transaction-parser';
-import Config from '../../../../config';
 import logger from '../../../../logger';
 import { CacheStorage } from '../../../../models/cache';
+import { Config } from '../../../../services/config';
 import { IBlock } from '../../../../types/Block';
 import { CoinListingJSON } from '../../../../types/Coin';
 import { IChainConfig, IProvider, ISVMNetworkConfig } from '../../../../types/Config';
@@ -29,7 +29,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
 
   constructor(public chain: string = 'SOL') {
     super(chain);
-    this.config = Config.chains[this.chain] as IChainConfig<ISVMNetworkConfig>;
+    this.config = Config.get().chains[this.chain] as IChainConfig<ISVMNetworkConfig>;
   }
 
   async getRpc(network: string, params?: { type: IProvider['dataType'] }): Promise<GetSolWeb3Response> {

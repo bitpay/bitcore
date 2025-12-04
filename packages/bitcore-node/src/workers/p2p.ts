@@ -1,5 +1,6 @@
 import cluster from 'cluster';
 import 'source-map-support/register';
+import fs from 'fs';
 import logger from '../logger';
 import { Modules } from '../modules';
 import { Config } from '../services/config';
@@ -17,6 +18,9 @@ export const P2pWorker = async () => {
   });
   process.on('SIGTERM', stop);
   process.on('SIGINT', stop);
+
+  fs.mkdirSync('pids', { recursive: true });
+  fs.writeFileSync('pids/p2p.pid', String(process.pid));
 
   services.push(Storage, Event);
 
@@ -54,6 +58,8 @@ const stop = async () => {
   }
   stopping = true;
 
+  fs.unlinkSync('pids/p2p.pid');
+  
   setTimeout(() => {
     logger.warn('P2P Worker did not shut down gracefully after 30 seconds, exiting');
     process.exit(1);

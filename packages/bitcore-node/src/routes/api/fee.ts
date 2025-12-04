@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import config from '../../config';
+import { Config } from '../../../src/services/config';
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { QueryType } from '../../types/Api';
@@ -35,7 +35,7 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
     return res.status(400).send('invalid target specified');
   }
   if (!mode) {
-    mode = (config.chains[chain]?.[network] as IUtxoNetworkConfig)?.defaultFeeMode;
+    mode = (Config.get().chains[chain]?.[network] as IUtxoNetworkConfig)?.defaultFeeMode;
   } else if (!feeModes[chain]) {
     mode = undefined;
   } else if (!feeModes[chain]?.includes(mode)) {
