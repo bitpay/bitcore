@@ -5,16 +5,16 @@ dir=$(pwd)
 if [ $# = 0 ]; then
   pid_paths=$dir/pids/*
 
-  pids=$(
-    for path in $pid_paths; do
-      cat $path
-      printf ' '
-    done
-  )
+  for path in $pid_paths; do
+    pid=$(cat "$path")
+    printf "$(basename "$path" .pid)::$pid "
+    pids="$pids $pid"
+  done
+  echo ''
 
   kill -USR1 $pids &&
-  echo "Refreshed all workers: $pids"
-  exit 0;
+  echo "Refreshed all workers"
+  exit 0
 fi
 
 if [ $1 = --help ]; then
@@ -40,8 +40,11 @@ EOF
 fi
 
 if [ $1 = list ]; then 
-  for base in $(ls $dir/pids/*); do
-    basename $base .pid
+  pid_paths=$(ls $dir/pids/*.pid 2>/dev/null)
+  for path in $pid_paths; do
+    worker=$(basename "$path" .pid)
+    pid=$(cat "$path")
+    printf "%-3s %s\n" "$worker" "$pid"
   done
   exit 0
 fi
