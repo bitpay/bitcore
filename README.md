@@ -16,8 +16,8 @@
 ## Applications
 
 - [Bitcore Node](packages/bitcore-node) - A standardized API to interact with multiple blockchain networks
-- [Bitcore Wallet Client](packages/bitcore-wallet-client) - A client for the wallet service
-- [Bitcore Wallet Service](packages/bitcore-wallet-service) - A multisig HD service for wallets
+- [Bitcore Wallet Client](packages/bitcore-wallet-client) - A client for Bitcore Wallet Service
+- [Bitcore Wallet Service](packages/bitcore-wallet-service) - A coordination service for multisig wallets
 - [Bitcore CLI](packages/bitcore-cli) - A command line interface for using BWS and BWC
 - [Insight](packages/insight) - A blockchain explorer web user interface
 
@@ -32,6 +32,7 @@
 - [Bitcore P2P Cash](packages/bitcore-p2p-cash) - The peer-to-peer networking protocol for Bitcoin Cash
 - [Bitcore P2P Doge](packages/bitcore-p2p-doge) **DEPRECATED**[^1] - The peer-to-peer networking protocol for Dogecoin
 - [Crypto Wallet Core](packages/crypto-wallet-core) - A coin-agnostic wallet library for creating transactions, signing, and address derivation
+- [Crypto RPC](packages/crypto-rpc) - A library for connecting to blockchains' RPC interfaces
 
 ## Extras
 
