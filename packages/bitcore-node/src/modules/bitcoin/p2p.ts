@@ -198,15 +198,25 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     for (const peer of Object.values(this.chainConfig.trustedPeers) as any[]) {
       const uri = peer.host + ':' + peer.port;
       configPeerUris.push(uri);
-      const addr = { ip: { v4: peer.host }, port: peer.port };
-      await this.pool._connectPeer(this.pool._addAddr(addr));
+      const hashes = Object.values(this.pool._addrs).map((a: any) => a.hash);
+      const addr = this.pool._addAddr({ ip: { v4: peer.host }, port: peer.port });
+      if (!hashes.includes(addr.hash)) {
+        logger.info(`Adding peer ${uri}`);
+      }
     }
-    const length = this.pool._addrs.length;
-    for (let i = 0; i < length; i++) {
-      const addr = this.pool._addrs[i];
+
+    for (const addr of Object.values(this.pool._addrs) as any[]) {
       const uri = addr.ip.v4 + ':' + addr.port;
       if (!configPeerUris.includes(uri)) {
-        // TODO: remove peers
+        this.pool._addrs = (this.pool._addrs as any[]).filter(({ hash }) => hash !== addr.hash);
+        if (this.pool._connectedPeers[addr.hash]) {
+          logger.info(`Removing peer ${uri}`);
+        } else {
+          logger.info(`Removing unconnected peer ${uri}`);
+          continue;
+        }
+        this.pool._connectedPeers[addr.hash].disconnect();
+        delete this.pool._connectedPeers[addr.hash];
       }
     };
   }
