@@ -1,14 +1,14 @@
-import * as prompt from '@clack/prompts';
-import { Key, TssKey } from 'bitcore-wallet-client'
 import os from 'os';
 import url from 'url';
-import type { CommonArgs } from '../../../types/cli';
+import * as prompt from '@clack/prompts';
+import { Key, TssKey } from 'bitcore-wallet-client';
 import { UserCancelled } from '../../errors';
 import { getCopayerName, getNetwork, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
+import type { CommonArgs } from '../../../types/cli';
 
 export async function joinThresholdSigWallet(
-args: CommonArgs<{ mnemonic?: string; }> & { chain: string; }
+  args: CommonArgs<{ mnemonic?: string }> & { chain: string }
 ) {
   const { wallet, chain, opts } = args;
   const { verbose, mnemonic } = opts;
@@ -84,7 +84,7 @@ args: CommonArgs<{ mnemonic?: string; }> & { chain: string; }
     tss.subscribe({ copayerName });
     tss.on('roundsubmitted', (round) => spinner.message(`Round ${round} submitted`));
     tss.on('error', prompt.log.error);
-    tss.on('wallet', async (wallet) => {
+    tss.on('wallet', async (_wallet) => {
       // TOOD: what to do with this?
       // console.log('Joined wallet at BWS:', wallet);
     });
@@ -111,7 +111,7 @@ args: CommonArgs<{ mnemonic?: string; }> & { chain: string; }
       } catch (err) {
         reject(err);
       }
-    })
+    });
   });
 
   return {

@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import logger from '../../../logger';
 import { XRP } from './csp';
+
 export const XrpRoutes = Router();
 
 XrpRoutes.get('/api/XRP/:network/address/:address/txs/count', async (req, res) => {
-  let { network, address } = req.params;
+  const { network, address } = req.params;
   try {
     const nonce = await XRP.getAccountNonce(network, address);
     res.json({ nonce });
@@ -15,7 +16,7 @@ XrpRoutes.get('/api/XRP/:network/address/:address/txs/count', async (req, res) =
 });
 
 XrpRoutes.get('/api/XRP/:network/address/:address/flags', async (req, res) => {
-  let { address, network } = req.params;
+  const { address, network } = req.params;
   try {
     const flags = await XRP.getAccountFlags(network, address);
     res.json({ flags });
@@ -26,7 +27,7 @@ XrpRoutes.get('/api/XRP/:network/address/:address/flags', async (req, res) => {
 });
 
 XrpRoutes.get('/api/XRP/:network/reserve', async (req, res) => {
-  let { network } = req.params;
+  const { network } = req.params;
   try {
     const reserve = await XRP.getReserve(network);
     res.json({ reserve });

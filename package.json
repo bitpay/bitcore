@@ -1,9 +1,5 @@
 {
   "version": "8.25.8",
-  "prettier": {
-    "singleQuote": true,
-    "printWidth": 120
-  },
   "scripts": {
     "build": "docker build -t bitcore-node . ",
     "build:docker": "lerna run build:docker --concurrency 1 --stream",
@@ -14,8 +10,9 @@
     "node": "cd packages/bitcore-node && npm start",
     "bws": "cd packages/bitcore-wallet-service && npm start",
     "compile": "./node_modules/.bin/lerna run compile",
-    "lint": "lerna run lint",
-    "fix": "lerna run fix",
+    "lint": "eslint .",
+    "fix:errors": "eslint --fix --quiet .",
+    "fix:all": "eslint --fix .",
     "precommit": "lerna run --concurrency 1 --stream precommit --since master",
     "test:ci:local": "npm run test:ci:build:local && npm run test:ci:all",
     "test:ci:build:local": "./ci.sh build local",
@@ -72,18 +69,18 @@
     }
   },
   "devDependencies": {
+    "@eslint/js": "^9.37.0",
+    "@stylistic/eslint-plugin": "^5.5.0",
     "@types/node": "22.13.1",
     "cz-customizable": "^5.2.0",
-    "eslint-config-airbnb-base": "^12.1.0",
-    "eslint-plugin-import": "^2.8.0",
+    "eslint": "^9.37.0",
+    "eslint-plugin-import": "2.32.0",
+    "globals": "^16.4.0",
     "husky": "^2.4.0",
     "lint-staged": "^9.5.0",
-    "prettier": "^1.19.1",
-    "tslint": "^5.20.1",
-    "tslint-config-prettier": "^1.18.0",
     "ts-node": "^8.0.3",
     "typedoc": "^0.15.0",
-    "typescript-eslint-parser": "^15.0.0"
+    "typescript-eslint": "^8.46.0"
   },
   "dependencies": {
     "lerna": "^5.6.2",

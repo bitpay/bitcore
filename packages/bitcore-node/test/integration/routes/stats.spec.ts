@@ -1,5 +1,5 @@
-import supertest from 'supertest'
-import app from '../../../src/routes'
+import supertest from 'supertest';
+import app from '../../../src/routes';
 import { expect } from 'chai';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 import { resetDatabase } from '../../helpers';
@@ -66,7 +66,7 @@ describe('Stats Routes', function() {
 
   after(async function() {
     await intAfterHelper();
-  })
+  });
 
   it('should get daily-transactions', done => {
     requests.get('/api/BTC/regtest/stats/daily-transactions')
@@ -75,7 +75,7 @@ describe('Stats Routes', function() {
         const { chain, network, results } = res.body;
         expect(chain).to.equal('BTC');
         expect(network).to.equal('regtest');
-        expect(results.length).to.be.approximately(30, 1);
+        expect(results.length).to.equal(30);
         for (const result of results) {
           const { date, transactionCount } = result;
           expect(expectedDailyTransactions.get(date)).to.equal(transactionCount);
@@ -94,7 +94,7 @@ describe('Stats Routes', function() {
         const { chain, network, results } = res.body;
         expect(chain).to.equal('BTC');
         expect(network).to.equal('regtest');
-        expect(results.length).to.be.approximately(1, 1);
+        expect(results.length).to.equal(1);
         for (const result of results) {
           const { date, transactionCount } = result;
           expect(expectedDailyTransactions.get(date)).to.equal(transactionCount);
@@ -114,7 +114,7 @@ describe('Stats Routes', function() {
         const { chain, network, results } = res.body;
         expect(chain).to.equal('BTC');
         expect(network).to.equal('regtest');
-        expect(results.length).to.be.approximately(7, 1);
+        expect(results.length).to.equal(7);
         for (const result of results) {
           const { date, transactionCount } = result;
           expect(expectedDailyTransactions.get(date)).to.equal(transactionCount);
@@ -127,18 +127,18 @@ describe('Stats Routes', function() {
 
   it('should get daily-transactions from a week', done => {
     const startDate = new Date();
-    startDate.setUTCDate(startDate.getUTCDate() - 7 - 25);
     startDate.setUTCHours(0, 0, 0, 0);
+    startDate.setUTCDate(startDate.getUTCDate() - 7 - 25);
     const endDate = new Date();
-    endDate.setUTCDate(startDate.getUTCDate() - 25);
     endDate.setUTCHours(0, 0, 0, 0);
+    endDate.setUTCDate(endDate.getUTCDate() - 25);
     requests.get(`/api/BTC/regtest/stats/daily-transactions?startDate=${startDate}&endDate=${endDate}`)
       .expect(200, (err, res) => {
         if (err) console.error(err);
         const { chain, network, results } = res.body;
         expect(chain).to.equal('BTC');
         expect(network).to.equal('regtest');
-        expect(results.length).to.be.approximately(7, 1);
+        expect(results.length).to.equal(7);
         for (const result of results) {
           const { date, transactionCount } = result;
           expect(expectedDailyTransactions.get(date)).to.equal(transactionCount);

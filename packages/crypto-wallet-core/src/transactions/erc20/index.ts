@@ -39,7 +39,7 @@ export class ERC20TxProvider extends ETHTxProvider {
     if (recipients.length > 1) {
       const addresses = [];
       const amounts = [];
-      for (let recipient of recipients) {
+      for (const recipient of recipients) {
         addresses.push(recipient.address);
         amounts.push(BigInt(recipient.amount));
       }

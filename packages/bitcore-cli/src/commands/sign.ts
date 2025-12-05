@@ -1,6 +1,6 @@
-import prompt from '@clack/prompts';
-import { Deriver, type Types as CWCTypes, Validation } from 'crypto-wallet-core';
 import os from 'os';
+import prompt from '@clack/prompts';
+import { type Types as CWCTypes, Deriver, Validation } from 'crypto-wallet-core';
 import { type CommonArgs } from '../../types/cli';
 import { UserCancelled } from '../errors';
 import { Utils } from '../utils';
@@ -35,6 +35,10 @@ export async function signMessage(args: CommonArgs<{ message?: string; path?: st
   const { wallet, opts } = args;
   if (opts.command) {
     Object.assign(opts, command(args));
+  }
+
+  if (wallet.isReadOnly()) {
+    throw new Error('Read-only wallets cannot sign messages');
   }
 
   if (wallet.isMultiSig()) {

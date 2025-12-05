@@ -2,10 +2,10 @@ import {
   API,
   Credentials,
   Key,
+  type Network,
   TssKey,
   TssSign,
-  Txp,
-  type Network
+  Txp
 } from 'bitcore-wallet-client';
 import { type Types as CWCTypes } from 'crypto-wallet-core';
 
@@ -16,8 +16,8 @@ export type TssSigType = TssSign.ISignature;
 
 
 export interface WalletData {
-  key: KeyType | TssKeyType;
-  creds: Credentials;
+  key: KeyType | TssKeyType | undefined; // undefined for read-only wallets
+  credentials: Credentials;
 }
 
 export interface IWallet {
@@ -34,7 +34,7 @@ export interface IWallet {
   getClient(args: {
     mustBeNew?: boolean;
     mustExist?: boolean;
-    doNotComplete?: boolean
+    doNotComplete?: boolean;
   }): Promise<ClientType>;
   create(args: {
     coin?: string;
@@ -47,7 +47,7 @@ export interface IWallet {
     mnemonic?: string;
     password?: string;
     addressType?: string;
-  }): Promise<{ key: KeyType | TssKeyType; secret?: string; creds: Credentials }>;
+  }): Promise<{ key: KeyType | TssKeyType; secret?: string; credentials: Credentials }>;
   createFromTss(args: {
     key: TssKeyType;
     chain: string;
@@ -55,10 +55,10 @@ export interface IWallet {
     password: string;
     addressType?: string;
     copayerName: string;
-  }): Promise<{ key: TssKeyType; creds: Credentials }>;
-  register(args: { copayerName: string; }): Promise<string | undefined>;
-  load(opts?: { doNotComplete?: boolean; allowCache?: boolean; }): Promise<KeyType | TssKeyType>;
-  save(opts?: { encryptAll?: boolean; }): Promise<void>;
+  }): Promise<{ key: TssKeyType; credentials: Credentials }>;
+  register(args: { copayerName: string }): Promise<string | undefined>;
+  load(opts?: { doNotComplete?: boolean; allowCache?: boolean }): Promise<KeyType | TssKeyType>;
+  save(opts?: { encryptAll?: boolean }): Promise<void>;
   export(args: {
     filename: string;
     exportPassword?: string;
@@ -72,9 +72,10 @@ export interface IWallet {
   getTokenByAddress(args: { tokenAddress: string }): Promise<ITokenObj>;
   getTokenByName(args: { token: string }): Promise<ITokenObj>;
   getTokenFromChain(args: { address: string }): Promise<ITokenObj>;
+  getNativeCurrency(fallback?: boolean): Promise<ITokenObj | null>;
   getPasswordWithRetry(): Promise<string>;
   signTxp(args: { txp: Txp }): Promise<Array<string>>;
-  signAndBroadcastTxp(args: { txp: Txp; }): Promise<Txp>;
+  signAndBroadcastTxp(args: { txp: Txp }): Promise<Txp>;
   signMessage(args: {
     message: string;
     derivationPath: string;
@@ -90,6 +91,8 @@ export interface IWallet {
   isEvm(): boolean;
   isSvm(): boolean;
   isXrp(): boolean;
+  isTokenChain(): boolean;
+  isReadOnly(): boolean;
 }
 
 export interface ITokenObj {
@@ -111,4 +114,5 @@ export interface ITokenObj {
   sanctioned?: boolean;
   symbol: string;
   trancheDecimals: number;
+  native: boolean;
 }

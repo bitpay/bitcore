@@ -1,12 +1,11 @@
-import * as prompt from '@clack/prompts';
-import { Utils as BWCUtils } from 'bitcore-wallet-client';
-import { edit } from 'external-editor';
 import os from 'os';
 import path from 'path';
-import type { Color } from '../types/constants';
-import type { ITokenObj } from '../types/wallet';
+import * as prompt from '@clack/prompts';
+import { edit } from 'external-editor';
 import { Constants } from './constants';
 import { UserCancelled } from './errors';
+import type { Color } from '../types/constants';
+import type { ITokenObj } from '../types/wallet';
 
 let _verbose = false;
 
@@ -52,6 +51,22 @@ export class Utils {
     return Constants.COLOR[color.toLowerCase()].replace('%s', text);
   }
 
+  static boldText(text: string) {
+    return '\x1b[1m' + text + '\x1b[0m';
+  }
+
+  static italicText(text: string) {
+    return '\x1b[3m' + text + '\x1b[0m';
+  }
+
+  static underlineText(text: string) {
+    return '\x1b[4m' + text + '\x1b[0m';
+  }
+
+  static strikeText(text: string) {
+    return '\x1b[9m' + text + '\x1b[0m';
+  }
+
   static capitalize(text: string): string {
     return text.charAt(0).toUpperCase() + text.slice(1);
   }
@@ -95,8 +110,8 @@ export class Utils {
     return amountSat;
   };
 
-  static renderAmount(currency: string, satoshis: number | bigint, opts = {}): string {
-    return BWCUtils.formatAmount(satoshis, currency.toLowerCase(), { ...opts, fullPrecision: true }) + ' ' + currency.toUpperCase();
+  static renderAmount(currency: string, satoshis: number | bigint | string, opts?: ITokenObj): string {
+    return Utils.amountFromSats(currency, Number(satoshis), opts) + ' ' + currency.toUpperCase();
   }
 
   static renderStatus(status: string): string {
@@ -122,12 +137,12 @@ export class Utils {
   }
 
   static async paginate(
-    fn: (page: number, action?: string) => Promise<{ result?: any[], extraChoices?: prompt.Option<string>[] }>,
+    fn: (page: number, action?: string) => Promise<{ result?: any[]; extraChoices?: prompt.Option<string>[] }>,
     opts?: {
       pageSize?: number;
       initialPage?: number | string; // Initial page, default is 1
       /** Only applies if there are no extraChoices */
-      exitOn1Page?: boolean
+      exitOn1Page?: boolean;
     }
   ) {
     const { pageSize = 10, exitOn1Page = true, initialPage } = opts || {};
@@ -249,7 +264,7 @@ export class Utils {
       case 'drops':
       case 'lamports':
       default:
-        `${feeRate} ${feeUnit}`;
+        return `${feeRate} ${feeUnit}`;
     }
   }
 
@@ -268,13 +283,14 @@ export class Utils {
       case 'bch':
       case 'doge':
       case 'ltc':
+        return (sats / 1e8).toLocaleString('fullwide', { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 8 });
       case 'xrp':
-        return sats / 1e8;
+        return (sats / 1e6).toLocaleString('fullwide', { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 6 });
       case 'sol':
-        return sats / 1e9;
+        return (sats / 1e9).toLocaleString('fullwide', { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 9 });
       default:
         // Assume EVM chain
-        return sats / 1e18;
+        return (sats / 1e18).toLocaleString('fullwide', { useGrouping: false, minimumFractionDigits: 0, maximumFractionDigits: 18 });
     }
   }
 
@@ -288,8 +304,9 @@ export class Utils {
       case 'bch':
       case 'doge':
       case 'ltc':
-      case 'xrp':
         return BigInt(amount as number * 1e8);
+      case 'xrp':
+        return BigInt(amount as number * 1e6);
       case 'sol':
         return BigInt(amount as number * 1e9);
       default:
@@ -370,5 +387,38 @@ export class Utils {
       return fileName.replace('~', os.homedir());
     }
     return fileName;
+  }
+
+  static getChainColor(chain: string) {
+    switch (chain.toLowerCase()) {
+      case 'btc':
+        return 'orange';
+      case 'bch':
+        return 'green';
+      case 'doge':
+        return 'beige';
+      case 'ltc':
+        return 'lightgray';
+      case 'eth':
+        return 'blue';
+      case 'matic':
+        return 'pink';
+      case 'xrp':
+        return 'darkgray';
+      case 'sol':
+        return 'purple';
+    }
+  }
+
+  static colorTextByChain(chain: string, text: string) {
+    const color = Utils.getChainColor(chain);
+    if (!color) {
+      return Utils.boldText(text);
+    }
+    return Utils.colorText(text, color);
+  }
+
+  static colorizeChain(chain: string) {
+    return Utils.colorTextByChain(chain, chain);
   }
 };

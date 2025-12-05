@@ -1,12 +1,12 @@
 import * as prompt from '@clack/prompts';
-import type { CommonArgs } from '../../types/cli';
 import { UserCancelled } from '../errors';
 import { Utils } from '../utils';
 import { Wallet } from '../wallet';
+import type { CommonArgs } from '../../types/cli';
 
 
 export async function setToken(args: CommonArgs) {
-  const { wallet, opts } = args;
+  const { wallet } = args;
 
   const currencies = await Wallet.getCurrencies(wallet.network);
   function findTokenObj(value) {

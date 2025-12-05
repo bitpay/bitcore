@@ -1,9 +1,9 @@
-import { ObjectId } from 'bson';
 import { EventEmitter } from 'events';
+import { Readable } from 'stream';
+import { ObjectId } from 'bson';
 import { Request, Response } from 'express';
 import { ObjectID } from 'mongodb';
 import { Cursor, Db, MongoClient } from 'mongodb';
-import { Readable } from 'stream';
 import { LoggifyClass } from '../decorators/Loggify';
 import logger from '../logger';
 import '../models';
@@ -32,13 +32,13 @@ export class StorageService {
 
   start(args: Partial<ConfigType> = {}): Promise<MongoClient> {
     return new Promise((resolve, reject) => {
-      let options = Object.assign({}, this.configService.get(), args);
-      let { dbUrl, dbName, dbHost, dbPort, dbUser, dbPass, dbReadPreference } = options;
-      let auth = dbUser !== '' && dbPass !== '' ? `${dbUser}:${dbPass}@` : '';
+      const options = Object.assign({}, this.configService.get(), args);
+      const { dbUrl, dbName, dbHost, dbPort, dbUser, dbPass, dbReadPreference } = options;
+      const auth = dbUser !== '' && dbPass !== '' ? `${dbUser}:${dbPass}@` : '';
       const connectUrl = dbUrl
         ? dbUrl
         : `mongodb://${auth}${dbHost}:${dbPort}/${dbName}?socketTimeoutMS=3600000&noDelay=true${dbReadPreference ? `?readPreference=${dbReadPreference}` : ''}`;
-      let attemptConnect = async () => {
+      const attemptConnect = async () => {
         return MongoClient.connect(connectUrl, {
           keepAlive: true,
           poolSize: options.maxPoolSize,
@@ -46,7 +46,7 @@ export class StorageService {
         });
       };
       let attempted = 0;
-      let attemptConnectId = setInterval(async () => {
+      const attemptConnectId = setInterval(async () => {
         try {
           this.client = await attemptConnect();
           this.db = this.client.db(dbName);
@@ -90,8 +90,8 @@ export class StorageService {
   typecastForDb<T>(model: TransformableModel<T>, modelKey: keyof MongoBound<T>, modelValue: T[keyof T] | ObjectId) {
     let typecastedValue = modelValue;
     if (modelKey) {
-      let oldValue = modelValue as any;
-      let optionsType = model.allowedPaging.find(prop => prop.key === modelKey);
+      const oldValue = modelValue as any;
+      const optionsType = model.allowedPaging.find(prop => prop.key === modelKey);
       if (optionsType) {
         switch (optionsType.type) {
           case 'number':
@@ -197,9 +197,9 @@ export class StorageService {
     });
   }
   getFindOptions<T>(model: TransformableModel<T>, originalOptions: StreamingFindOptions<T>) {
-    let query: any = {};
+    const query: any = {};
     let since: any = null;
-    let options: StreamingFindOptions<T> = {};
+    const options: StreamingFindOptions<T> = {};
 
     if (originalOptions.sort) {
       options.sort = originalOptions.sort;
@@ -249,4 +249,4 @@ export class StorageService {
   }
 }
 
-export let Storage = new StorageService();
+export const Storage = new StorageService();

@@ -4,7 +4,9 @@
   <img alt="npm" src="https://img.shields.io/npm/v/bitcore-lib">
   <img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/m/bitpay/bitcore">
   <a href="https://opensource.org/licenses/MIT/" target="_blank"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-blue.svg" style="display: inherit;"/></a>
-  <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/bitpay/bitcore">
+  <a href="https://github.com/bitpay/bitcore/graphs/contributors"> 
+    <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/bitpay/bitcore">
+  </a>
   <br>
  <img src="https://circleci.com/gh/bitpay/bitcore.svg?style=shield" alt="master build">
 </p>
@@ -14,10 +16,9 @@
 ## Applications
 
 - [Bitcore Node](packages/bitcore-node) - A standardized API to interact with multiple blockchain networks
-- [Bitcore Wallet](packages/bitcore-wallet) - **DEPRECATED** A command-line based wallet client
-- [Bitcore Wallet Client](packages/bitcore-wallet-client) - A client for the wallet service
-- [Bitcore Wallet Service](packages/bitcore-wallet-service) - A multisig HD service for wallets
-- [Bitpay Wallet](https://github.com/bitpay/bitpay-app) - An easy-to-use, multiplatform, multisignature, secure wallet for bitcoin, ethereum, and more
+- [Bitcore Wallet Client](packages/bitcore-wallet-client) - A client for Bitcore Wallet Service
+- [Bitcore Wallet Service](packages/bitcore-wallet-service) - A coordination service for multisig wallets
+- [Bitcore CLI](packages/bitcore-cli) - A command line interface for using BWS and BWC
 - [Insight](packages/insight) - A blockchain explorer web user interface
 
 ## Libraries
@@ -31,11 +32,13 @@
 - [Bitcore P2P Cash](packages/bitcore-p2p-cash) - The peer-to-peer networking protocol for Bitcoin Cash
 - [Bitcore P2P Doge](packages/bitcore-p2p-doge) **DEPRECATED**[^1] - The peer-to-peer networking protocol for Dogecoin
 - [Crypto Wallet Core](packages/crypto-wallet-core) - A coin-agnostic wallet library for creating transactions, signing, and address derivation
+- [Crypto RPC](packages/crypto-rpc) - A library for connecting to blockchains' RPC interfaces
 
 ## Extras
 
 - [Bitcore Build](packages/bitcore-build) - A helper to add tasks to gulp
 - [Bitcore Client](packages/bitcore-client) - A helper to create a wallet using the bitcore-node infrastructure
+- [Bitpay/Bitpay App](https://github.com/bitpay/bitpay-app) - An easy-to-use, multiplatform, multisignature, secure wallet for bitcoin, ethereum, and more
 
 
 ## Versioning
@@ -44,7 +47,7 @@ This repo follows the even-odd versioning convention. Major versions that are ev
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/bitpay/bitcore/blob/master/Contributing.md) on the main bitcore repo for information about how to contribute.
+See [CONTRIBUTING.md](https://github.com/bitpay/bitcore/blob/master/CONTRIBUTING.md) on the main bitcore repo for information about how to contribute.
 
 ## License
 

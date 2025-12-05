@@ -11,8 +11,8 @@ export abstract class BaseBlock<T extends IBlock> extends BaseModel<T> {
 
   allowedPaging = [
     {
-      key: 'height' as 'height',
-      type: 'number' as 'number'
+      key: 'height' as const,
+      type: 'number' as const
     }
   ];
 
@@ -36,7 +36,7 @@ export abstract class BaseBlock<T extends IBlock> extends BaseModel<T> {
 
   public async validateLocatorHashes(params: ChainNetwork) {
     const { chain, network } = params;
-    let headers = new Array<IBlock>();
+    const headers = new Array<IBlock>();
     const locatorBlocks = await this.collection
       .find({
         processed: true,

@@ -35,6 +35,7 @@ export interface IProvider {
   options?: object;
   dataType?: 'realtime' | 'historical' | 'combined';
   wsPort?: number | string;
+  disabled?: boolean; // Useful when multiple providers are configured
 }
 
 export type IExternalSyncConfig<T> = {
@@ -89,9 +90,9 @@ export interface ConfigType {
       [alias: string]: string;
     };
     networks: {
-      [chain: string]: { [alias: string]: string; }
+      [chain: string]: { [alias: string]: string };
     };
-  },
+  };
   services: {
     api: {
       disabled?: boolean;
@@ -125,6 +126,6 @@ export interface ConfigType {
       webhookBaseUrl?: string;
       streamSecret?: string;
       webhookCors?: object; // default: { origin: ['*'] }
-    }
+    };
   };
 }

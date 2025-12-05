@@ -1,7 +1,7 @@
 import express from 'express';
 import { WalletService } from 'src/lib/server';
 
-export interface ApiCredentials { copayerId: string; signature: string; session: string; }
+export interface ApiCredentials { copayerId: string; signature: string; session: string }
 export interface ServerOpts { allowSession?: boolean; silentFailure?: boolean; onlySupportStaff?: boolean; onlyMarketingStaff?: boolean }
 export interface AuthRequestOpts { allowSession?: boolean; silentFailure?: boolean; onlySupportStaff?: boolean; onlyMarketingStaff?: boolean }
 

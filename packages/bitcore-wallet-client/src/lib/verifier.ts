@@ -123,28 +123,26 @@ export class Verifier {
   }
 
   static checkProposalCreation(args, txp, encryptingKey) {
-    var strEqual = (str1, str2) => {
+    const strEqual = (str1, str2) => {
       return (!str1 && !str2) || str1 === str2;
     };
 
     if (txp.outputs.length != args.outputs.length) return false;
 
-    for (var i = 0; i < txp.outputs.length; i++) {
-      var o1 = txp.outputs[i];
-      var o2 = args.outputs[i];
+    for (let i = 0; i < txp.outputs.length; i++) {
+      const o1 = txp.outputs[i];
+      const o2 = args.outputs[i];
       if (!strEqual(o1.toAddress, o2.toAddress)) return false;
       if (!strEqual(o1.script, o2.script)) return false;
       if (o1.amount != o2.amount) return false;
-      var decryptedMessage = null;
+      let decryptedMessage: boolean | string = false;
       try {
         decryptedMessage = Utils.decryptMessage(o2.message, encryptingKey);
-      } catch (e) {
-        return false;
-      }
+      } catch {/** no op - use default (false) */}
       if (!strEqual(o1.message, decryptedMessage)) return false;
     }
 
-    var changeAddress;
+    let changeAddress;
     if (txp.changeAddress) {
       changeAddress = txp.changeAddress.address;
     }
@@ -154,12 +152,10 @@ export class Verifier {
       return false;
     if (!strEqual(txp.payProUrl, args.payProUrl)) return false;
 
-    var decryptedMessage = null;
+    let decryptedMessage: boolean | string = false;
     try {
       decryptedMessage = Utils.decryptMessage(args.message, encryptingKey);
-    } catch (e) {
-      return false;
-    }
+    } catch {/** no op - use default (false) */}
     if (!strEqual(txp.message, decryptedMessage)) return false;
     if (
       (args.customData || txp.customData) &&
@@ -171,69 +167,62 @@ export class Verifier {
   }
 
   static checkTxProposalSignature(credentials, txp) {
-    $.checkArgument(txp.creatorId);
-    $.checkState(
-      credentials.isComplete(),
-      'Failed state: credentials at checkTxProposalSignature'
-    );
+    $.checkArgument(txp.creatorId, 'Invalid txp: Missing creatorId');
+    $.checkState(credentials.isComplete(), 'Failed state: credentials at checkTxProposalSignature');
 
-    var chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
-    var creatorKeys = (credentials.publicKeyRing || []).find(item => {
-      if (Utils.xPubToCopayerId(chain, item.xPubKey) === txp.creatorId)
-        return true;
-    });
-
-    if (!creatorKeys) return false;
-    var creatorSigningPubKey;
+    const chain = txp.chain?.toLowerCase() || Utils.getChain(txp.coin); // getChain -> backwards compatibility
+    const creatorKeys = (credentials.publicKeyRing || []).find(item => Utils.xPubToCopayerId(chain, item.xPubKey) === txp.creatorId);
+    if (!creatorKeys) {
+      log.debug(`[TXP ${txp.id}] Creator keys not found in public key ring`);
+      return false;
+    }
+    let creatorSigningPubKey;
 
     // If the txp using a selfsigned pub key?
     if (txp.proposalSignaturePubKey) {
       // Verify it...
-      if (
-        !Utils.verifyRequestPubKey(
-          txp.proposalSignaturePubKey,
-          txp.proposalSignaturePubKeySig,
-          creatorKeys.xPubKey
-        )
-      )
+      if (!Utils.verifyRequestPubKey(txp.proposalSignaturePubKey, txp.proposalSignaturePubKeySig, creatorKeys.xPubKey)) {
+        log.debug(`[TXP ${txp.id}] Invalid proposalSignaturePubKeySig`);
         return false;
+      }
 
       creatorSigningPubKey = txp.proposalSignaturePubKey;
     } else {
       creatorSigningPubKey = creatorKeys.requestPubKey;
     }
-    if (!creatorSigningPubKey) return false;
+    if (!creatorSigningPubKey) {
+      log.debug(`[TXP ${txp.id}] Creator signing public key not found`);
+      return false;
+    }
 
-    var hash;
+    let hash;
     if (parseInt(txp.version) >= 3) {
-      var t = Utils.buildTx(txp);
+      const t = Utils.buildTx(txp);
       hash = t.uncheckedSerialize();
     } else {
       throw new Error('Transaction proposal not supported');
     }
 
-    log.debug(
-      'Regenerating & verifying tx proposal hash -> Hash: ',
-      hash,
-      ' Signature: ',
-      txp.proposalSignature
-    );
+    log.debug(`[TXP ${txp.id}] Regenerating & verifying tx proposal hash -> Hash: ${hash}, Signature: ${txp.proposalSignature}`);
   
     const verified = Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey);
-    if (!verified && !txp.prePublishRaw)
-        return false;
+    if (!verified && !txp.prePublishRaw) {
+      log.debug(`[TXP ${txp.id}] Invalid proposal signature, no prePublishRaw to fall back to`);
+      return false;
+    }
     
-    if (!verified && txp.prePublishRaw && !Utils.verifyMessage(txp.prePublishRaw, txp.proposalSignature, creatorSigningPubKey))
-        return false;
+    if (!verified && txp.prePublishRaw && !Utils.verifyMessage(txp.prePublishRaw, txp.proposalSignature, creatorSigningPubKey)) {
+      log.debug(`[TXP ${txp.id}] Invalid proposal signature, even with prePublishRaw fallback`);
+      return false;
+    }
 
     if (Constants.UTXO_CHAINS.includes(chain)) {
       if (!this.checkAddress(credentials, txp.changeAddress)) {
+        log.debug(`[TXP ${txp.id}] Invalid change address`);
         return false;
       }
-      if (
-        txp.escrowAddress &&
-        !this.checkAddress(credentials, txp.escrowAddress, txp.inputs)
-      ) {
+      if (txp.escrowAddress && !this.checkAddress(credentials, txp.escrowAddress, txp.inputs)) {
+        log.debug(`[TXP ${txp.id}] Invalid escrow address`);
         return false;
       }
     }
@@ -242,14 +231,11 @@ export class Verifier {
   }
 
   static checkPaypro(txp, payproOpts) {
-    var toAddress, amount, feeRate;
+    let toAddress, amount;
 
     if (parseInt(txp.version) >= 3) {
       toAddress = txp.outputs[0].toAddress;
       amount = txp.amount;
-      if (txp.feePerKb) {
-        feeRate = txp.feePerKb / 1024;
-      }
     } else {
       toAddress = txp.toAddress;
       amount = txp.amount;

@@ -1,4 +1,3 @@
-import type { IDeriver } from '../types/derivation';
 import { ArbDeriver } from './arb';
 import { BaseDeriver } from './base';
 import { BchDeriver } from './bch';
@@ -11,6 +10,7 @@ import { OpDeriver } from './op';
 import { Paths } from './paths';
 import { SolDeriver } from './sol';
 import { XrpDeriver } from './xrp';
+import type { IDeriver } from '../types/derivation';
 
 const derivers: { [chain: string]: IDeriver } = {
   BTC: new BtcDeriver(),

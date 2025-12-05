@@ -1,9 +1,9 @@
+import os from 'os';
 import * as prompt from '@clack/prompts';
 import { Deriver } from 'crypto-wallet-core';
-import os from 'os';
-import type { CommonArgs } from '../../types/cli';
 import { UserCancelled } from '../errors';
 import { getAction } from '../prompts';
+import type { CommonArgs } from '../../types/cli';
 
 export function command(args: CommonArgs) {
   const { program } = args;
@@ -21,7 +21,7 @@ export function command(args: CommonArgs) {
   return opts;
 }
 
-export async function deriveKey(args: CommonArgs<{ path?: string; }>) {
+export async function deriveKey(args: CommonArgs<{ path?: string }>) {
   const { wallet, opts } = args;
   if (opts.command) {
     Object.assign(opts, command(args));

@@ -7,9 +7,9 @@ const router = express.Router({ mergeParams: true });
 
 async function streamCoins(req: Request, res) {
   try {
-    let { chain, network, address } = req.params;
-    let { unspent, limit = 10, since } = req.query;
-    let payload = {
+    const { chain, network, address } = req.params;
+    const { unspent, limit = 10, since } = req.query;
+    const payload = {
       chain,
       network,
       address,
@@ -29,9 +29,9 @@ router.get('/:address/txs', streamCoins);
 router.get('/:address/coins', streamCoins);
 
 router.get('/:address/balance', async function (req: Request, res) {
-  let { address, chain, network } = req.params;
+  const { address, chain, network } = req.params;
   try {
-    let result = await ChainStateProvider.getBalanceForAddress({
+    const result = await ChainStateProvider.getBalanceForAddress({
       chain,
       network,
       address,
@@ -44,7 +44,7 @@ router.get('/:address/balance', async function (req: Request, res) {
   }
 });
 
-module.exports = {
+export const addressRoute = {
   router,
   path: '/address'
 };

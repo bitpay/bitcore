@@ -27,11 +27,11 @@ describe('OneInch integration', function() {
       api: 'xxxx',
       referrerAddress: 'referrerAddress',
       referrerFee: 'referrerFee1'
-    }
+    };
 
     fakeRequest = {
-      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data'}) },
-      get: (_url, _opts, _cb) => { return _cb(null, { body: 'data'}) },
+      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
+      get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
     };
 
     await helpers.beforeEach();
@@ -55,7 +55,7 @@ describe('OneInch integration', function() {
 
   describe('#oneInchGetReferrerFee', () => {
     beforeEach(() => {
-      req = {}
+      req = {};
       server.externalServices.oneInch.request = fakeRequest;
     });
 
@@ -88,7 +88,7 @@ describe('OneInch integration', function() {
           slippage: 0.5,
           destReceiver: 'destReceiver1'
         }
-      }
+      };
       server.externalServices.oneInch.request = fakeRequest;
     });
 
@@ -110,8 +110,8 @@ describe('OneInch integration', function() {
     it('should return error if request returns error', async () => {
       req.body.fromTokenAddress = 'fromTokenAddress1';
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error')) }
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error')); },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error')); }
       };
 
       server.externalServices.oneInch.request = fakeRequest2;
@@ -139,7 +139,7 @@ describe('OneInch integration', function() {
     beforeEach(() => {
       req = {};
       fakeRequest = {
-        get: (_url, _opts, _cb) => { return _cb(null, { body: { tokens: 'data'}}) },
+        get: (_url, _opts, _cb) => { return _cb(null, { body: { tokens: 'data' } }); },
       };
       server.externalServices.oneInch.request = fakeRequest;
     });

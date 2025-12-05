@@ -1,8 +1,8 @@
+import { URL } from 'url';
 import { BitcoreLib } from 'crypto-wallet-core';
 import requestStream from 'request';
 import request from 'request-promise-native';
 import * as secp256k1 from 'secp256k1';
-import { URL } from 'url';
 import { utils } from './utils';
 
 const usingBrowser = (global as any).window;
@@ -10,8 +10,13 @@ const URLClass = usingBrowser ? usingBrowser.URL : URL;
 export class Client {
   apiUrl: string;
   authKey: any;
-  constructor(params) {
-    Object.assign(this, params);
+
+  constructor(params: {
+    apiUrl: string;
+    authKey: BitcoreLib.PrivateKey;
+  }) {
+    this.apiUrl = params.apiUrl;
+    this.authKey = params.authKey;
   }
 
   async _request(params: request.OptionsWithUrl) {
@@ -28,7 +33,7 @@ export class Client {
   }
 
   _buildQueryString( params: any) {
-    let query = [];
+    const query = [];
     for (const [key, value] of Object.entries(params)) {
       value && query.push(`${key}=${value}`);
     }
@@ -99,9 +104,9 @@ export class Client {
     });
   }
 
-  async getTransaction(params: { txid: string, populated?: boolean }) {
+  async getTransaction(params: { txid: string; populated?: boolean }) {
     const { txid, populated } = params;
-    let url = `${this.apiUrl}/tx/${txid}${populated ? '/populated' : ''}`;
+    const url = `${this.apiUrl}/tx/${txid}${populated ? '/populated' : ''}`;
     return this._request({ method: 'GET', url, json: true });
   }
 
@@ -178,7 +183,7 @@ export class Client {
 
   async getPriorityFee(params) {
     const { percentile } = params;
-    let url = `${this.apiUrl}/priorityFee/${percentile}`;
+    const url = `${this.apiUrl}/priorityFee/${percentile}`;
     const result = await this._request({ method: 'GET', url, json: true });
     if (result.errors?.length) {
       throw new Error(result.errors[0]);

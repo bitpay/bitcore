@@ -21,9 +21,9 @@ function mockRequest(bodyBuf, headers) {
             statusCode: 200,
             statusMessage: 'OK',
             text: bodyBuf.shift()
-          })
+          });
         }
-      }
+      };
     },
     'post': (_url) => {
       return {
@@ -35,11 +35,11 @@ function mockRequest(bodyBuf, headers) {
             statusCode: 200,
             statusMessage: 'OK',
             text: bodyBuf.shift()
-          })
+          });
         }
-      }
+      };
     }
-  }
+  };
 
 };
 
@@ -96,10 +96,10 @@ describe('PayPro', function() {
               statusMessage: 'Not Found',
             }, 'This invoice was not found or has been archived');
           }
-        }
+        };
       },
       'post': () => { }
-    }
+    };
     PayPro.get({
       url: 'https://test.bitpay.com/paypro',
       network: 'testnet',
@@ -111,7 +111,7 @@ describe('PayPro', function() {
   });
 
   it('Should detect a tampered PP request (bad signature)', function (done) {
-    let h = JSON.parse(JSON.stringify(TestData.payProJson.bch.headers));
+    const h = JSON.parse(JSON.stringify(TestData.payProJson.bch.headers));
     h.signature = crypto.randomBytes(64).toString('hex');
     mockRequest(TestData.payProJson.bch.body, h);
     PayPro.get({
@@ -125,7 +125,7 @@ describe('PayPro', function() {
   });
 
   it('Should detect a tampered PP request (short signature)', function (done) {
-    let h = JSON.parse(JSON.stringify(TestData.payProJson.bch.headers));
+    const h = JSON.parse(JSON.stringify(TestData.payProJson.bch.headers));
     h.signature = h.signature.slice(0, -1);
     mockRequest(TestData.payProJson.bch.body, h);
     PayPro.get({
@@ -139,7 +139,7 @@ describe('PayPro', function() {
   });
 
   it('Should detect a tampered PP request (non-hex signature)', function (done) {
-    let h = JSON.parse(JSON.stringify(TestData.payProJson.bch.headers));
+    const h = JSON.parse(JSON.stringify(TestData.payProJson.bch.headers));
     h.signature = crypto.randomBytes(64).toString('base64');
     mockRequest(TestData.payProJson.bch.body, h);
     PayPro.get({
@@ -153,7 +153,7 @@ describe('PayPro', function() {
   });
 
   it('Should detect a tampered PP request (bogus signature)', function (done) {
-    let h = JSON.parse(JSON.stringify(TestData.payProJson.bch.headers));
+    const h = JSON.parse(JSON.stringify(TestData.payProJson.bch.headers));
     h.signature = 'xx';
     mockRequest(TestData.payProJson.bch.body, h);
     PayPro.get({
@@ -201,7 +201,7 @@ describe('PayPro', function() {
 
 
   it('should not send PP payment if verify fails', function (done) {
-    var opts = {
+    const opts = {
       rawTx: 'rawTx1',
       rawTxUnsigned: 'rawTxUnsigned',
       url: 'http://an.url.com/paypro',
@@ -218,9 +218,9 @@ describe('PayPro', function() {
               statusMessage: 'ss',
             }, 'This invoice was not found or has been archived');
           }
-        }
+        };
       }
-    }
+    };
     PayPro.send(opts, function (err, data, memo) {
       should.exist(err);
       done();

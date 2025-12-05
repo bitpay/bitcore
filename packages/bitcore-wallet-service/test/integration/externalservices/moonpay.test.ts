@@ -50,12 +50,12 @@ describe('Moonpay integration', () => {
         sellWidgetApi: 'sellWidgetApi4',
         secretKey: 'secretKey4'
       }
-    }
+    };
 
     fakeRequest = {
-      get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
-      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
-      delete: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
+      get: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
+      post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
+      delete: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }); },
     };
 
     await helpers.beforeEach();
@@ -88,7 +88,7 @@ describe('Moonpay integration', () => {
           extraFeePercentage: 5,
           baseCurrencyCode: 'usd'
         }
-      }
+      };
       server.externalServices.moonpay.request = fakeRequest;
     });
 
@@ -105,7 +105,7 @@ describe('Moonpay integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.moonpay.request = fakeRequest2;
@@ -148,7 +148,7 @@ describe('Moonpay integration', () => {
           quoteCurrencyCode: 'usd',
           baseCurrencyAmount: 1
         }
-      }
+      };
       server.externalServices.moonpay.request = fakeRequest;
     });
 
@@ -165,7 +165,7 @@ describe('Moonpay integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.moonpay.request = fakeRequest2;
@@ -207,7 +207,7 @@ describe('Moonpay integration', () => {
           currencyAbbreviation: 'btc',
           baseCurrencyCode: 'usd'
         }
-      }
+      };
       server.externalServices.moonpay.request = fakeRequest;
     });
 
@@ -224,7 +224,7 @@ describe('Moonpay integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.moonpay.request = fakeRequest2;
@@ -270,7 +270,7 @@ describe('Moonpay integration', () => {
           externalTransactionId: '123123',
           redirectURL: 'bitpay://moonpay'
         }
-      }
+      };
       server.externalServices.moonpay.request = fakeRequest;
     });
 
@@ -314,7 +314,7 @@ describe('Moonpay integration', () => {
           quoteCurrencyCode: 'usd',
           refundWalletAddress: 'bitcoin:123123',
         }
-      }
+      };
       server.externalServices.moonpay.request = fakeRequest;
     });
 
@@ -354,7 +354,7 @@ describe('Moonpay integration', () => {
           env: 'sandbox',
           transactionId: 'transactionId1',
         }
-      }
+      };
       server.externalServices.moonpay.request = fakeRequest;
     });
 
@@ -372,7 +372,7 @@ describe('Moonpay integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.moonpay.request = fakeRequest2;
@@ -414,7 +414,7 @@ describe('Moonpay integration', () => {
           env: 'sandbox',
           transactionId: 'transactionId1',
         }
-      }
+      };
       server.externalServices.moonpay.request = fakeRequest;
     });
 
@@ -432,7 +432,7 @@ describe('Moonpay integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.moonpay.request = fakeRequest2;
@@ -473,7 +473,7 @@ describe('Moonpay integration', () => {
         body: {
           env: 'sandbox',
         }
-      }
+      };
       server.externalServices.moonpay.request = fakeRequest;
     });
 
@@ -484,7 +484,7 @@ describe('Moonpay integration', () => {
 
     it('should return error if get returns error', async () => {
       const fakeRequest2 = {
-        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.moonpay.request = fakeRequest2;
@@ -515,7 +515,7 @@ describe('Moonpay integration', () => {
           env: 'sandbox',
           transactionId: 'transactionId1',
         }
-      }
+      };
       server.externalServices.moonpay.request = fakeRequest;
     });
 
@@ -533,7 +533,7 @@ describe('Moonpay integration', () => {
 
     it('should return error if delete returns error', async () => {
       const fakeRequest2 = {
-        delete: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        delete: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
       };
 
       server.externalServices.moonpay.request = fakeRequest2;

@@ -19,8 +19,8 @@ import {
 } from './matic';
 import { MATICMULTISIGTxProvider } from './matic-multisig';
 import { OPERC20TxProvider, OPTxProvider } from './op';
-import { SOLTxProvider} from './sol';
-import { SPLTxProvider} from './spl';
+import { SOLTxProvider } from './sol';
+import { SPLTxProvider } from './spl';
 import { XRPTxProvider } from './xrp';
 
 const providers = {
@@ -69,6 +69,14 @@ export class TransactionsProxy {
 
   getHash(params) {
     return this.get(params).getHash(params);
+  }
+
+  transformSignatureObject(params) {
+    return this.get(params).transformSignatureObject(params);
+  }
+
+  getSighash(params): string {
+    return this.get(params).getSighash(params);
   }
 }
 

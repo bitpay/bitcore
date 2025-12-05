@@ -13,9 +13,9 @@ module.exports = {
   // https: true,
   // privateKeyFile: 'private.pem',
   // certificateFile: 'cert.pem',
-  ////// The following is only for certs which are not
-  ////// trusted by nodejs 'https' by default
-  ////// CAs like Verisign do not require this
+  // //// The following is only for certs which are not
+  // //// trusted by nodejs 'https' by default
+  // //// CAs like Verisign do not require this
   // CAinter1: '', // ex. 'COMODORSADomainValidationSecureServerCA.crt'
   // CAinter2: '', // ex. 'COMODORSAAddTrustCA.crt'
   // CAroot: '', // ex. 'AddTrustExternalCARoot.crt'
@@ -56,7 +56,7 @@ module.exports = {
         url: 'https://api.bitcore.io',
         regtestEnabled: false
       },
-      testnet3:{
+      testnet3: {
         url: 'https://api.bitcore.io'
       },
       testnet4: {
@@ -244,23 +244,27 @@ module.exports = {
   // ramp: {
   //   sandbox: {
   //     apiKey: 'ramp_sandbox_api_key_here',
-  //     api: 'https://api.demo.ramp.network/api',
-  //     widgetApi: 'https://app.demo.ramp.network/',
+  //     api: 'https://api.demo.rampnetwork.com/api',
+  //     widgetApi: 'https://app.demo.rampnetwork.com/',
+  //     signingKey: 'ramp_sandbox_signing_key_here',
   //   },
   //   production: {
   //     apiKey: 'ramp_production_api_key_here',
-  //     api: 'https://api.ramp.network/api',
-  //     widgetApi: 'https://app.ramp.network',
+  //     api: 'https://api.rampnetwork.com/api',
+  //     widgetApi: 'https://app.rampnetwork.com/',
+  //     signingKey: 'ramp_production_signing_key_here',
   //   },
   //   sandboxWeb: {
   //     apiKey: 'ramp_sandbox_web_api_key_here',
-  //     api: 'https://api.demo.ramp.network/api',
-  //     widgetApi: 'https://app.demo.ramp.network/',
+  //     api: 'https://api.demo.rampnetwork.com/api',
+  //     widgetApi: 'https://app.demo.rampnetwork.com/',
+  //     signingKey: 'ramp_sandbox_web_signing_key_here',
   //   },
   //   productionWeb: {
   //     apiKey: 'ramp_production_web_api_key_here',
-  //     api: 'https://api.ramp.network/api',
-  //     widgetApi: 'https://app.ramp.network',
+  //     api: 'https://api.rampnetwork.com/api',
+  //     widgetApi: 'https://app.rampnetwork.com/',
+  //     signingKey: 'ramp_production_web_signing_key_here',
   //   }
   // },
   // sardine: {
@@ -336,25 +340,25 @@ module.exports = {
   // transak : {
   //   sandbox: {
   //     api: 'https://api-stg.transak.com',
-  //     widgetApi: 'https://global-stg.transak.com',
+  //     widgetApi: 'https://api-gateway-stg.transak.com',
   //     apiKey: 'transak_sandbox_api_key_here',
   //     secretKey: 'transak_sandbox_secret_key_here',
   //   },
   //   production: {
   //     api: 'https://api.transak.com',
-  //     widgetApi: 'https://global.transak.com',
+  //     widgetApi: 'https://api-gateway.transak.com',
   //     apiKey: 'transak_production_api_key_here',
   //     secretKey: 'transak_production_secret_key_here',
   //   },
   //   sandboxWeb: {
   //     api: 'https://api-stg.transak.com',
-  //     widgetApi: 'https://global-stg.transak.com',
+  //     widgetApi: 'https://api-gateway-stg.transak.com',
   //     apiKey: 'transak_sandbox_web_api_key_here',
   //     secretKey: 'transak_sandbox_web_secret_key_here',
   //   },
   //   productionWeb: {
   //     api: 'https://api.transak.com',
-  //     widgetApi: 'https://global.transak.com',
+  //     widgetApi: 'https://api-gateway.transak.com',
   //     apiKey: 'transak_production_web_api_key_here',
   //     secretKey: 'transak_production_web_secret_key_here',
   //   }

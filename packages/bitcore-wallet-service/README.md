@@ -82,7 +82,7 @@ Tx proposal need to be:
 3.  Then signed via /v?/txproposal/:id/signature for each copayer
 4.  Then broadcasted to the p2p network via /v?/txproposal/:id/broadcast
 
-The are plenty example creating and sending proposals in the `/test/integration` code.
+There are plenty examples of creating and sending proposals in the `/test/integration` code.
 
 ## Enabling Regtest Mode for BWS and Copay
 
@@ -418,7 +418,7 @@ Recomended to complete config.js file:
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/bitpay/bitcore/blob/master/Contributing.md) on the main bitcore repo for information about how to contribute.
+See [CONTRIBUTING.md](https://github.com/bitpay/bitcore/blob/master/CONTRIBUTING.md) on the main bitcore repo for information about how to contribute.
 
 ## License
 

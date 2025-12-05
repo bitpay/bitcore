@@ -63,10 +63,12 @@ async function sendTransaction(from, to, amount, web3, wallet, nonce = 0) {
 }
 
 describe('Ethereum', function() {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(50000);
 
   before(async () => {
+    await BitcoreClient.Wallet.deleteWallet({ name, storageType }).catch(() => { /* ignore if it doesn't exist */ });
     await intBeforeHelper();
     await resetDatabase();
     await Api.start();
@@ -118,7 +120,7 @@ describe('Ethereum', function() {
     const nonce = await web3.eth.getTransactionCount(accounts['geth']);
     // sending multiple tx to entice geth to mine a block because sometimes it doesn't mine even with automine enabled
     sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet, nonce),
-    sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet, nonce + 1)
+    sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet, nonce + 1);
     await sawBlock;
     await worker.disconnect();
     await worker.stop();

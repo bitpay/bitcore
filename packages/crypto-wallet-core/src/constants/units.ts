@@ -1,4 +1,4 @@
-export let UNITS = {
+export const UNITS = {
   btc: {
     toSatoshis: 100000000,
     full: {

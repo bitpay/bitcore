@@ -1,11 +1,13 @@
 import _ from 'lodash';
+import preconditions from 'preconditions';
 import { Common } from '../common';
 import logger from '../logger';
+import { TxProposalAction } from './txproposalaction';
 
-const $ = require('preconditions').singleton();
+const $ = preconditions.singleton();
+
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
-import { TxProposalAction } from './txproposalaction';
 
 function throwUnsupportedError() {
   const msg = 'Unsupported operation on this transaction proposal';

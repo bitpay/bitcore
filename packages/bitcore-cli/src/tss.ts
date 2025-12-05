@@ -1,7 +1,7 @@
-import * as prompt from '@clack/prompts';
-import { TssSign, Utils as BWCUtils } from 'bitcore-wallet-client';
-import { ethers, type Types as CWCTypes } from 'crypto-wallet-core';
 import url from 'url';
+import * as prompt from '@clack/prompts';
+import { TssSign } from 'bitcore-wallet-client';
+import { type Types as CWCTypes, Transactions } from 'crypto-wallet-core';
 import {
   type TssKeyType,
   type WalletData
@@ -25,17 +25,13 @@ export async function sign(args: {
 }): Promise<CWCTypes.Message.ISignedMessage<string>> {
   const { host, chain, walletData, messageHash, derivationPath, password, id, logMessageWaiting, logMessageCompleted } = args;
 
-  const isEvm = BWCUtils.isEvmChain(chain);
-
   const transformISignature = (signature: TssSign.ISignature): string => {
-    if (isEvm) {
-      return ethers.Signature.from(signature).serialized;
-    }
+    return Transactions.transformSignatureObject({ chain, obj: signature });
   };
 
   const tssSign = new TssSign.TssSign({
     baseUrl: url.resolve(host, '/bws/api'),
-    credentials: walletData.creds,
+    credentials: walletData.credentials,
     tssKey: walletData.key as TssKeyType
   });
 

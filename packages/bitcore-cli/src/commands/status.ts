@@ -1,10 +1,10 @@
+import os from 'os';
 import * as prompt from '@clack/prompts';
 import { Status } from 'bitcore-wallet-client';
-import os from 'os';
-import type { CommonArgs } from '../../types/cli';
-import type { ITokenObj } from '../../types/wallet';
 import { Utils } from '../utils';
 import { displayBalance } from './balance';
+import type { CommonArgs } from '../../types/cli';
+import type { ITokenObj } from '../../types/wallet';
 
 export async function command(args: CommonArgs) {
   const { program } = args;

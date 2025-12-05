@@ -1,6 +1,6 @@
 type Required = 'string' | 'int' | 'number' | 'float'
 type Optional = Required | 'bool' | 'boolean';
-type Arg<T> = string | { arg: string; type: T; }
+type Arg<T> = string | { arg: string; type: T }
 
 /**
  * parseArgv
@@ -10,7 +10,7 @@ type Arg<T> = string | { arg: string; type: T; }
  * @returns {object}
  */
 export default function parseArgv(required: Arg<Required>[], optional: Arg<Optional>[] = []): any {
-  let parsed = {};
+  const parsed = {};
   for (let arg of required) {
     let type = 'string';
     if (typeof arg === 'object') {
@@ -46,14 +46,14 @@ function convertType(val, type) {
       const givenWithoutVal = val == null || val?.startsWith('--');
       return Boolean(val === 'true' || parseInt(val) || givenWithoutVal);
     case 'int':
-      if (!val) { return }
+      if (!val) { return; }
       if (isNaN(parseInt(val))) {
         throw new Error(`Invalid arg type. Expected int but got "${val}"`);
       }
       return parseInt(val);
     case 'number':
     case 'float':
-      if (!val) { return }
+      if (!val) { return; }
       if (isNaN(parseFloat(val))) {
         throw new Error(`Invalid arg type. Expected float but got "${val}"`);
       }

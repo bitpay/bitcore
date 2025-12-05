@@ -1,6 +1,6 @@
 'use strict';
 
-import { errorSpec, IErrorSpec } from './spec';
+import { IErrorSpec, errorSpec } from './spec';
 
 class BwcError extends Error {
   name: string;

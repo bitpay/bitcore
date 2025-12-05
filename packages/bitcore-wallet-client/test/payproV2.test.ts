@@ -5,7 +5,7 @@ import * as TestData from './data/testdata';
 
 describe('PayProV2', () => {
   let oldreq;
-  let header = {};
+  const header = {};
   let postArgs;
   const mockRequest = (bodyBuf, headers) => {
     PayProV2.request = {
@@ -26,7 +26,7 @@ describe('PayProV2', () => {
               text: bodyBuf
             });
           }
-        }
+        };
       },
       'post': (_url) => {
         return {
@@ -36,7 +36,7 @@ describe('PayProV2', () => {
             }
           },
           send: (opts) => {
-            var _opts = JSON.parse(opts);
+            const _opts = JSON.parse(opts);
             if (_opts.transactions) {
               postArgs = _opts;
             }
@@ -50,7 +50,7 @@ describe('PayProV2', () => {
               text: bodyBuf
             });
           }
-        }
+        };
       }
     };
   };
@@ -63,7 +63,7 @@ describe('PayProV2', () => {
   describe('_asyncRequest', () => {
 
     it('Should handle a failed (404) request', (done) => {
-      var header = {};
+      const header = {};
       PayProV2.request = {
         'post': (_url) => {
           return {
@@ -73,7 +73,7 @@ describe('PayProV2', () => {
               }
             },
             send: (opts) => {
-              var _opts = JSON.parse(opts);
+              const _opts = JSON.parse(opts);
               if (_opts.transactions) {
                 postArgs = _opts;
               }
@@ -91,9 +91,9 @@ describe('PayProV2', () => {
                 }
               });
             }
-          }
+          };
         }
-      }
+      };
       PayProV2._asyncRequest({
         url: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X',
         method: 'post',
@@ -114,7 +114,7 @@ describe('PayProV2', () => {
     });
 
     it('Should handle a failed (400) request', (done) => {
-      var header = {};
+      const header = {};
       PayProV2.request = {
         'post': (_url) => {
           return {
@@ -124,7 +124,7 @@ describe('PayProV2', () => {
               }
             },
             send: (opts) => {
-              var _opts = JSON.parse(opts);
+              const _opts = JSON.parse(opts);
               if (_opts.transactions) {
                 postArgs = _opts;
               }
@@ -142,9 +142,9 @@ describe('PayProV2', () => {
                 }
               });
             }
-          }
+          };
         }
-      }
+      };
       PayProV2._asyncRequest({
         url: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X',
         method: 'post',
@@ -165,7 +165,7 @@ describe('PayProV2', () => {
     });
 
     it('Should handle a failed (500) request', (done) => {
-      var header = {};
+      const header = {};
       PayProV2.request = {
         'post': (_url) => {
           return {
@@ -175,7 +175,7 @@ describe('PayProV2', () => {
               }
             },
             send: (opts) => {
-              var _opts = JSON.parse(opts);
+              const _opts = JSON.parse(opts);
               if (_opts.transactions) {
                 postArgs = _opts;
               }
@@ -193,9 +193,9 @@ describe('PayProV2', () => {
                 }
               });
             }
-          }
+          };
         }
-      }
+      };
       PayProV2._asyncRequest({
         url: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X',
         method: 'post',
@@ -242,7 +242,7 @@ describe('PayProV2', () => {
 
     it('should get payment options if everthing is ok', (done) => {
       mockRequest(TestData.payProJsonV2.btc.body, TestData.payProJsonV2.btc.headers);
-      var opts = {
+      const opts = {
         paymentUrl: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X'
       };
       PayProV2.getPaymentOptions(opts).then((res) => {
@@ -255,7 +255,7 @@ describe('PayProV2', () => {
 
     it('should fail if the protocol is invalid', (done) => {
       mockRequest(TestData.payProJsonV2.btc.body, TestData.payProJsonV2.btc.headers);
-      var opts = {
+      const opts = {
         paymentUrl: 'bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X'
       };
       PayProV2.getPaymentOptions(opts).then((res) => {
@@ -272,7 +272,7 @@ describe('PayProV2', () => {
 
     it('should work if the params passed are correct', (done) => {
       mockRequest(TestData.payProJsonV2.btc.body, TestData.payProJsonV2.btc.headers);
-      var opts = {
+      const opts = {
         paymentUrl: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X'
       };
       PayProV2.selectPaymentOption(opts).then((res) => {

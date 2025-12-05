@@ -1,10 +1,12 @@
 import cors from 'cors';
-import { Request, Response } from 'express';
 import express from 'express';
 import config from '../config';
 import { Config } from '../services/config';
+import * as apiRoutes from './api';
 import { CacheMiddleware, CacheTimes, LogMiddleware, RateLimiter } from './middleware';
+import { statusRoute } from './status';
 import { Web3Proxy } from './web3';
+import type { Request, Response } from 'express';
 
 const app = express();
 
@@ -21,8 +23,8 @@ app.use(
 );
 const chains = Config.chains();
 const networks: any = {};
-for (let chain of chains) {
-  for (let network of Object.keys(config.chains[chain])) {
+for (const chain of chains) {
+  for (const network of Object.keys(config.chains[chain])) {
     networks[chain] = networks[chain] || {};
     Object.assign(networks[chain], {
       [network]: true
@@ -30,29 +32,14 @@ for (let chain of chains) {
   }
 }
 
-function bootstrap(path?: string) {
-  const fs = require('fs');
+function bootstrapApiRoutes() {
   const router = express.Router({
     mergeParams: true
   });
-  const folder = path ? path + '/' : '';
-  fs.readdirSync(__dirname + '/' + path).forEach(function(file: string) {
-    if (file.match(/\.js$/) !== null && file !== 'index.js') {
-      var route = require('./' + folder + file);
-      router.use(route.path, route.router);
-    }
-  });
+  for (const route of Object.values<{ path: string; router: express.Router }>(apiRoutes)) {
+    router.use(route.path, route.router);
+  }
 
-  return router;
-}
-
-function getRouterFromFile(path) {
-  const router = express.Router({
-    mergeParams: true
-  });
-
-  var route = require('./' + path);
-  router.use(route.path, route.router);
   return router;
 }
 
@@ -60,7 +47,7 @@ app.use(cors());
 app.use(LogMiddleware());
 app.use(CacheMiddleware(CacheTimes.Second, CacheTimes.Second));
 app.use(RateLimiter('GLOBAL', 10, 200, 4000));
-app.use('/api', getRouterFromFile('status'));
+app.use('/api' + statusRoute.path, statusRoute.router);
 // Change aliased chain and network params
 app.param(['chain', 'network'], (req: Request, _: Response, next: any) => {
   const { chain: beforeChain, network: beforeNetwork } = req.params;
@@ -70,7 +57,7 @@ app.param(['chain', 'network'], (req: Request, _: Response, next: any) => {
   next();
 });
 app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
-  let { chain, network } = req.params;
+  const { chain, network } = req.params;
 
   const hasChain = chains.includes(chain as string);
   const chainNetworks = networks[chain as string] || null;
@@ -86,7 +73,7 @@ app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
   return next();
 });
 
-app.use('/api/:chain/:network', bootstrap('api'));
+app.use('/api/:chain/:network', bootstrapApiRoutes());
 app.use('/web3/:chain/:network', Web3Proxy);
 
 export default app;

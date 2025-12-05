@@ -1,6 +1,6 @@
+import { Readable, Stream, Transform } from 'stream';
 import axios from 'axios';
 import { Request, Response } from 'express';
-import { Readable, Stream, Transform } from 'stream';
 import { ReadableWithEventPipe, TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 
 
@@ -75,8 +75,8 @@ export class ExternalApiStream extends ReadableWithEventPipe {
 
   // handles events emitted by the streamed response, request from client, and response to client
   static onStream(stream: Readable, req: Request, res: Response, opts: StreamOpts = {}):
-    Promise<{ success: boolean, error?: any }> {
-    return new Promise<{ success: boolean, error?: any }>((resolve, reject) => {
+  Promise<{ success: boolean; error?: any }> {
+    return new Promise<{ success: boolean; error?: any }>((resolve, reject) => {
       let closed = false;
       let isFirst = true;
 
@@ -98,7 +98,7 @@ export class ExternalApiStream extends ReadableWithEventPipe {
               statusCode: err?.response?.status,
               statusMsg: err?.response?.statusText,
               data: err?.response?.data,
-            }
+            };
           }
           if (err.log?.data?.message?.includes('not supported')) {
             res.write('[]');

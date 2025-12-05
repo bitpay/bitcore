@@ -1,40 +1,40 @@
+import fs from 'fs';
+import path from 'path';
+import url from 'url';
 import * as prompt from '@clack/prompts';
 import {
   API,
+  Utils as BWCUtils,
   Credentials,
   Encryption,
   EncryptionTypes,
   Key,
-  TssKey,
-  Txp,
   type Network,
-  Utils as BWCUtils
+  TssKey,
+  Txp
 } from 'bitcore-wallet-client';
 import {
-  ethers,
-  Message,
+  BitcoreLib,
   type Types as CWCTypes,
   Utils as CWCUtils,
+  Message,
+  Transactions,
   Web3
 } from 'crypto-wallet-core';
-import fs from 'fs';
-import path from 'path';
-import url from 'url';
-import type {
-  ClientType,
-  ITokenObj,
-  IWallet,
-  KeyType,
-  TssKeyType,
-  TssSigType,
-  WalletData
-} from '../types/wallet';
 import { Constants } from './constants';
 import { ERC20Abi } from './erc20Abi';
 import { FileStorage } from './filestorage';
 import { getPassword } from './prompts';
 import { sign as tssSign } from './tss';
 import { Utils } from './utils';
+import type {
+  ClientType,
+  ITokenObj,
+  IWallet,
+  KeyType,
+  TssKeyType,
+  WalletData
+} from '../types/wallet';
 
 const Client = API;
 
@@ -94,7 +94,7 @@ export class Wallet implements IWallet {
   async getClient(args: {
     mustBeNew?: boolean;
     mustExist?: boolean;
-    doNotComplete?: boolean
+    doNotComplete?: boolean;
   }): Promise<ClientType> {
     const { mustBeNew, mustExist, doNotComplete } = args;
 
@@ -115,8 +115,8 @@ export class Wallet implements IWallet {
     }
 
     _verbose && prompt.intro('Loading wallet');
-    await this.load({ doNotComplete, allowCache: true });
-    _verbose && prompt.outro('Wallet loaded');
+    const key = await this.load({ doNotComplete, allowCache: true });
+    _verbose && prompt.outro(`${!key ? 'Read-only ' : ''}Wallet loaded`);
 
     return this.client;
   }
@@ -140,14 +140,14 @@ export class Wallet implements IWallet {
     } else {
       key = new Key({ seedType: 'new', password });
     }
-    const credOpts = { coin, chain, network, account, n, m, mnemonic, password, addressType, singleAddress: BWCUtils.isSingleAddressChain(chain) };
-    const creds = key.createCredentials(password, credOpts);
-    this.client.fromObj(creds);
-    this.#walletData = { key, creds };
+    const credOpts = { coin, chain, network, account, n, m, mnemonic, password, addressType, copayerName, singleAddress: BWCUtils.isSingleAddressChain(chain) };
+    const credentials = key.createCredentials(password, credOpts);
+    this.client.fromObj(credentials);
+    this.#walletData = { key, credentials };
     await this.save();
     const secret = await this.register({ copayerName });
     await this.load();
-    return { key, creds, secret };
+    return { key, credentials, secret };
   }
 
   async createFromTss(args: {
@@ -158,34 +158,52 @@ export class Wallet implements IWallet {
     addressType?: string;
     copayerName: string;
   }) {
-    const { key, chain, network, addressType, password, copayerName } = args;
+    const { key, chain, network, addressType, password } = args;
     if (!this.client) {
       await this.getClient({ mustExist: true });
     }
-    const creds = key.createCredentials(password, {
+    const credentials = key.createCredentials(password, {
       chain,
       network,
       account: 0,
       addressType
     });
-    this.client.fromObj(creds.toObj());
-    this.#walletData = { key, creds: this.client.credentials };
+    this.client.fromObj(credentials.toObj());
+    this.#walletData = { key, credentials: this.client.credentials };
     await this.save();
     // await this.register({ copayerName });
     await this.load();
-    return { key, creds: this.client.toObj() };
+    return { key, credentials: this.client.toObj() };
   }
 
-  async register(args: { copayerName: string; }) {
+  async register(args: { copayerName: string }) {
     if (!this.client) {
       await this.getClient({ mustExist: true });
     }
-    const { chain, network, m, n, addressType } = this.client.credentials;
-    const { wallet, secret } = await this.client.createWallet(this.name, args.copayerName, m, n, { chain, network: network as Network, ...Utils.getSegwitInfo(addressType) });
+    const { chain, coin, network, m, n, addressType } = this.client.credentials;
+    if (coin && coin !== chain) {
+      // temporarily set it to chain for registration.
+      // coin != chain for token wallets exported from the app.
+      this.client.credentials.coin = chain;
+    }
+    const { secret } = await this.client.createWallet(
+      this.name,
+      args.copayerName,
+      m,
+      n,
+      {
+        chain,
+        network: network as Network,
+        ...Utils.getSegwitInfo(addressType)
+      }
+    );
+    if (coin) {
+      this.client.credentials.coin = coin; // change it back.
+    }
     return secret as string | undefined;
   }
 
-  async load(opts?: { doNotComplete?: boolean; allowCache?: boolean; }) {
+  async load(opts?: { doNotComplete?: boolean; allowCache?: boolean }) {
     const { doNotComplete, allowCache } = opts || {};
 
     let walletData: WalletData | EncryptionTypes.IEncrypted = allowCache ? this.#walletData : null;
@@ -197,7 +215,7 @@ export class Wallet implements IWallet {
       try {
         walletData = JSON.parse(Encryption.decryptWithPassword(walletData as EncryptionTypes.IEncrypted, password).toString());
         this.isFullyEncrypted = true;
-      } catch (e) {
+      } catch {
         Utils.die('Could not open wallet. Wrong password.');
       }
     }
@@ -205,6 +223,9 @@ export class Wallet implements IWallet {
     
 
     const instantiateKey = () => {
+      if (!walletData.key) {
+        return undefined; // read-only wallet
+      }
       const obj = walletData.key.toObj ? walletData.key.toObj() : walletData.key;
       if ((obj as TssKeyType).metadata) {
         return new TssKey.TssKey(obj as TssKeyType);
@@ -215,13 +236,13 @@ export class Wallet implements IWallet {
 
     let key: KeyType;
     try {
-      let imported = Client.upgradeCredentialsV1(walletData);
+      const imported = Client.upgradeCredentialsV1(walletData);
       this.client.fromString(JSON.stringify(imported.credentials));
 
       key = instantiateKey();
-    } catch (e) {
+    } catch {
       try {
-        this.client.fromObj(walletData.creds);
+        this.client.fromObj(walletData.credentials);
         key = instantiateKey();
       } catch (e) {
         Utils.die('Corrupt wallet file:' + (_verbose && e.stack ? e.stack : e));
@@ -230,28 +251,28 @@ export class Wallet implements IWallet {
 
     this.#walletData = {
       key,
-      creds: Credentials.fromObj(walletData.creds)
+      credentials: Credentials.fromObj(walletData.credentials)
     } as WalletData;
 
     if (doNotComplete) return key;
 
 
-    this.client.on('walletCompleted', (wallet) => {
+    this.client.on('walletCompleted', (_wallet) => {
       this.save().then(() => {
         _verbose && prompt.log.info('Your wallet has just been completed.');
       });
     });
-    const isComplete = await this.client.openWallet();
+    await this.client.openWallet();
     return key;
   };
 
-  async save(opts?: { encryptAll?: boolean; }) {
+  async save(opts?: { encryptAll?: boolean }) {
     const { encryptAll } = opts || {};
     try {
       if (!this.#walletData) {
         throw new Error('No wallet data to save. Wallet not created or loaded');
       }
-      let data: WalletData | EncryptionTypes.IEncrypted = { key: this.#walletData.key.toObj(), creds: this.#walletData.creds.toObj() };
+      let data: WalletData | EncryptionTypes.IEncrypted = { key: this.#walletData.key.toObj(), credentials: this.#walletData.credentials.toObj() };
       if (encryptAll) {
         const password = await getPassword('Enter password to encrypt:', { minLength: 6 });
         await prompt.password({
@@ -289,7 +310,7 @@ export class Wallet implements IWallet {
       key.decrypt(walletPassword);
     }
     
-    let data: any = { key: key.toObj(), creds: this.#walletData.creds.toObj() };
+    let data: any = { key: key.toObj(), credentials: this.#walletData.credentials.toObj() };
     if (exportPassword != null) {
       data = Encryption.encryptWithPassword(data, exportPassword, WALLET_ENCRYPTION_OPTS);
     }
@@ -318,7 +339,7 @@ export class Wallet implements IWallet {
     data.key.encrypt(walletPassword);
     this.#walletData = {
       key: data.key,
-      creds: Credentials.fromObj(data.creds)
+      credentials: Credentials.fromObj(data.credentials)
     };
     await this.save();
   }
@@ -340,9 +361,14 @@ export class Wallet implements IWallet {
         testnet: process.env['BITCORE_CLI_CURRENCIES_URL'] || 'https://test.bitpay.com/currencies',
         regtest: process.env['BITCORE_CLI_CURRENCIES_URL_REGTEST']
       };
-      const response = await fetch(urls[network], { method: 'GET', headers: { 'Content-Type': 'application/json' } });
-      if (!response.ok) {
-        throw new Error(`Failed to fetch currencies for wallet token check: ${response.statusText}`);
+      let response: Response;
+      try {
+        response = await fetch(urls[network], { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch currencies for wallet token check: ${response.statusText}`);
+        }
+      } catch (err) {
+        throw new Error(`Unable to fetch currencies from ${urls[network]}. ${err}`);
       }
       const { data: bpCurrencies } = await response.json();
       Wallet._bpCurrencies = bpCurrencies.map(c => ({
@@ -412,6 +438,21 @@ export class Wallet implements IWallet {
     } as ITokenObj;
   }
 
+  async getNativeCurrency(fallback?: boolean): Promise<ITokenObj | null> {
+    const chain = this.chain.toUpperCase();
+    let retval = null;
+    try {
+      const currencies = await Wallet.getCurrencies(this.network);
+      retval = currencies.find(c => c.chain === chain && c.native);
+    } catch (err) {
+      prompt.log.warn(`Unable to fetch native currency for ${chain}: ${err}`);
+    }
+    if (fallback && !retval) {
+      retval = { displayCode: chain };
+    }
+    return retval;
+  }
+
   async getPasswordWithRetry(): Promise<string> {
     let password;
     if (this.isWalletEncrypted()) {
@@ -454,22 +495,31 @@ export class Wallet implements IWallet {
     const { txp, password } = args;
 
     const isUtxo = BWCUtils.isUtxoChain(txp.chain);
-    const isEvm = BWCUtils.isEvmChain(txp.chain);
     const isSvm = BWCUtils.isSvmChain(txp.chain);
 
-    if (!isEvm) {
-      throw new Error('TSS signing is only supported for EVM chains at the moment.');
+    if (isSvm) {
+      throw new Error('TSS wallets do not yet support Solana.');
     }
 
     const sigs: string[] = [];
 
-    const inputPaths = !isUtxo && !Array.isArray(txp.inputPaths) ? ['m/0/0'] : txp.inputPaths;
-    for (const i in inputPaths) {
-      const derivationPath = inputPaths[i];
+    const inputPaths = !isUtxo && !txp.inputPaths?.length ? ['m/0/0'] : txp.inputPaths;
+    const tx = BWCUtils.buildTx(txp);
+    const xPubKey = new BitcoreLib.HDPublicKey(this.#walletData.credentials.clientDerivedPublicKey);
 
-      const messageHash = isEvm
-        ? ethers.keccak256(Client.getRawTx(txp)[0]).slice(2) // remove 0x prefix
-        : 'TODO';
+    for (let i = 0; i < inputPaths.length; i++) {
+      const derivationPath = inputPaths[i];
+      const pubKey = xPubKey.deriveChild(derivationPath).publicKey.toString();
+      const txHex = tx.uncheckedSerialize();
+
+      const messageHash = Transactions.getSighash({
+        chain: this.chain,
+        network: this.network,
+        tx: Array.isArray(txHex) ? txHex[0] : txHex,
+        index: i,
+        utxos: txp.inputs,
+        pubKey
+      });
 
       const signature = await tssSign({
         host: this.host,
@@ -478,7 +528,7 @@ export class Wallet implements IWallet {
         messageHash: Buffer.from(messageHash, 'hex'),
         derivationPath,
         password,
-        id: `${txp.id}:${derivationPath}`,
+        id: `${txp.id}:${derivationPath.replace(/\//g, '-')}`,
         logMessageWaiting: `Signing tx input ${i} (${i + 1}/${inputPaths.length}). Waiting for all parties to join...`,
         logMessageCompleted: `Tx input ${i} complete (${i + 1}/${inputPaths.length})`
       });
@@ -605,5 +655,13 @@ export class Wallet implements IWallet {
 
   isXrp() {
     return BWCUtils.isXrpChain(this.chain);
+  }
+
+  isTokenChain() {
+    return this.isEvm() || this.isSvm();
+  }
+
+  isReadOnly() {
+    return !this.#walletData.key;
   }
 };

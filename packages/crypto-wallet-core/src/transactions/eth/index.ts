@@ -1,13 +1,14 @@
 import { ethers } from 'ethers';
 import Web3 from 'web3';
-import utils, { AbiItem } from 'web3-utils';
+import { AbiItem } from 'web3-utils';
 import { Constants } from '../../constants';
 import { 
-  EVM_CHAIN_DEFAULT_TESTNET as defaultTestnet,
-  EVM_CHAIN_NETWORK_TO_CHAIN_ID as chainIds 
+  EVM_CHAIN_NETWORK_TO_CHAIN_ID as chainIds,
+  EVM_CHAIN_DEFAULT_TESTNET as defaultTestnet 
 } from '../../constants/chains';
-import type { Key } from '../../types/derivation';
 import { MULTISENDAbi } from '../erc20/abi';
+import type { Key } from '../../types/derivation';
+
 export class ETHTxProvider {
   chain: string;
 
@@ -39,7 +40,7 @@ export class ETHTxProvider {
       const addresses = [];
       const amounts = [];
       amount = 0n;
-      for (let recipient of recipients) {
+      for (const recipient of recipients) {
         addresses.push(recipient.address);
         amounts.push(BigInt(this._valueToString(recipient.amount)));
         amount += BigInt(this._valueToString(recipient.amount));
@@ -53,7 +54,7 @@ export class ETHTxProvider {
     }
     let { chainId } = params;
     chainId = chainId || this.getChainId(network);
-    let txData: any = {
+    const txData: any = {
       nonce: this._toHex(nonce),
       gasLimit: this._toHex(gasLimit),
       to,
@@ -78,7 +79,7 @@ export class ETHTxProvider {
     if (type === 'number') {
       return (value).toLocaleString('fullwide', { useGrouping: false });
     } else if (type === 'bigint') {
-      return value.toString()
+      return value.toString();
     } else if (type === 'string') {
       return value;
     } else {
@@ -127,7 +128,7 @@ export class ETHTxProvider {
   }
 
   applySignature(params: { tx: string; signature: any }) {
-    let { tx, signature } = params;
+    const { tx, signature } = params;
     const parsedTx = ethers.Transaction.from(tx);
     const { gasPrice, maxFeePerGas, maxPriorityFeePerGas } = parsedTx;
     // backwards compatibility
@@ -149,9 +150,9 @@ export class ETHTxProvider {
       if (signedTx.hash) {
         const recoveredAddress = ethers.recoverAddress(ethers.keccak256(tx), signature);
         const expectedAddress = parsedTx.from;
-        valid = recoveredAddress === expectedAddress
+        valid = recoveredAddress === expectedAddress;
       }
-    } catch {}
+    } catch {/** no op */}
     if (!valid) {
       throw new Error('invalid signature');
     }
@@ -167,5 +168,14 @@ export class ETHTxProvider {
 
   private _toHex(value: string | number | bigint) {
     return value != null ? Web3.utils.toHex(value) : undefined;
+  }
+  transformSignatureObject(params: { obj: any }) {
+    const { obj } = params;
+    return ethers.Signature.from(obj).serialized;
+  }
+
+  getSighash(params: { tx: string }): string {
+    const { tx } = params;
+    return ethers.keccak256(tx).slice(2); // remove 0x prefix
   }
 }

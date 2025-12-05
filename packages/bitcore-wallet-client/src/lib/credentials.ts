@@ -116,6 +116,7 @@ export class Credentials {
     n?: number;
     addressType?: string;
     walletPrivKey?: string;
+    copayerName?: string;
     use145forBCH?: boolean;
     nonCompliantDerivation?: boolean;
     clientDerivedPublicKey?: string;
@@ -138,6 +139,7 @@ export class Credentials {
     x.n = opts.n;
     x.xPubKey = opts.xPubKey;
     x.keyId = opts.keyId;
+    x.copayerName = opts.copayerName;
 
     // this allows to set P2SH in old n=1 wallets
     if (opts.addressType == null) {
@@ -212,7 +214,7 @@ export class Credentials {
 
   getRootPath() {
     // This is for OLD v1.0 credentials only.
-    let legacyRootPath = () => {
+    const legacyRootPath = () => {
       // legacy base path schema
       let purpose;
       switch (this.derivationStrategy) {
@@ -276,7 +278,7 @@ export class Credentials {
   }
 
   static fromObj(obj) {
-    let x = new Credentials();
+    const x = new Credentials();
 
     if (!obj.version || obj.version < x.version) {
       throw new Error('Obsolete credentials version');

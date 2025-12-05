@@ -1,13 +1,14 @@
 import { SCRIPT_TYPES } from './address';
-import { ALGO_TO_KEY_TYPE, ALGOS_BY_CHAIN } from './algorithms';
+import { ALGOS_BY_CHAIN, ALGO_TO_KEY_TYPE } from './algorithms';
 import {
   CHAINS,
+  EVM_CHAINS,
   EVM_CHAIN_ID_TO_CHAIN,
   EVM_CHAIN_NETWORK_TO_CHAIN_ID,
-  EVM_CHAINS,
   MULTISIG_CHAINS,
+  RIPPLE_CHAINS,
   SVM_CHAINS,
-  UTXO_CHAINS
+  UTXO_CHAINS,
 } from './chains';
 import { FEE_MINIMUMS } from './feeMinimums';
 import { TOKEN_OPTS as opts } from './tokens';
@@ -17,6 +18,7 @@ export const Constants = {
   UTXO_CHAINS,
   EVM_CHAINS,
   SVM_CHAINS,
+  RIPPLE_CHAINS,
   SCRIPT_TYPES,
   CHAINS,
   MULTISIG_CHAINS,

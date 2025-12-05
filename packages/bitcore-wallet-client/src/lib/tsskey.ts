@@ -1,6 +1,6 @@
+import { EventEmitter } from 'events';
 import { ECDSA, ECIES } from 'bitcore-tss';
 import { BitcoreLib } from 'crypto-wallet-core';
-import { EventEmitter } from 'events';
 import { API as Client, CreateWalletOpts } from './api';
 import { Encryption } from './common';
 import { Credentials } from './credentials';
@@ -50,13 +50,13 @@ export interface ITssKey extends Key {
     reducedPrivateKeyShare?: Buffer;
     reducedPrivateKeyShareEncrypted?: string;
     commonKeyChain: string;
-  },
+  };
   metadata: {
     id: string;
     m: number;
     n: number;
     partyId: number;
-  }
+  };
 };
 
 export interface TssExportedKey extends ExportedKey {
@@ -313,7 +313,7 @@ export class TssKeyGen extends EventEmitter {
        * ECIES.encrypt: Use a deterministic IV
        */
       deterministicIv?: boolean;
-    }
+    };
   }): string {
     const { partyId, partyPubKey, opts } = params;
     const extra = params.extra || '';
@@ -514,7 +514,7 @@ export class TssKeyGen extends EventEmitter {
       if (iterHandler) iterHandler();
       this.unsubscribe();
       // Anything after unsubscribe() will not be executed
-    }
+    };
 
     this.#subscriptionId = setInterval(async () => {
       if (this.#subscriptionRunning) return;
@@ -612,7 +612,7 @@ export class TssKeyGen extends EventEmitter {
      * @default true
      */
     clearEvents: boolean;
-  } = { clearEvents: true}): void {
+  } = { clearEvents: true }): void {
     const { clearEvents } = params;
     clearInterval(this.#subscriptionId);
     if (clearEvents) {
@@ -648,9 +648,9 @@ export class TssKeyGen extends EventEmitter {
   }
 
   async createWallet(params: {
-    walletName: string,
-    copayerName: string,
-    opts?: CreateWalletOpts & { addressType?: string }
+    walletName: string;
+    copayerName: string;
+    opts?: CreateWalletOpts & { addressType?: string };
   }) {
     const { walletName, copayerName, opts = {} } = params;
     const key = this.getTssKey();
@@ -684,11 +684,11 @@ export class TssKeyGen extends EventEmitter {
   }
 
   async joinWallet(params: {
-    copayerName: string,
+    copayerName: string;
     opts?: {
       coin?: string;
       dryRun?: boolean;
-    }
+    };
   }) {
     const { copayerName, opts = {} } = params;
     const key = this.getTssKey();

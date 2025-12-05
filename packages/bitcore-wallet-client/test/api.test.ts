@@ -2,6 +2,7 @@
 
 import chai from 'chai';
 import 'chai/register-should';
+
 chai.config.includeStack = true;
 import sinon from 'sinon';
 import async from 'async';
@@ -86,7 +87,7 @@ describe('client API', function() {
 
   beforeEach(function(done) {
     keys = [];
-    let expressApp = new ExpressApp();
+    const expressApp = new ExpressApp();
     expressApp.start(
       {
         ignoreRateLimiter: true,
@@ -99,7 +100,7 @@ describe('client API', function() {
         app = expressApp.app;
 
         // Generates 5 clients
-        const range0to4 = Array.from({ length: 5 }, (_,i) => i);
+        const range0to4 = Array.from({ length: 5 }, (_, i) => i);
         clients = range0to4.map(i => helpers.newClient(app));
         blockchainExplorerMock.reset();
         sandbox = sinon.createSandbox();
@@ -121,32 +122,32 @@ describe('client API', function() {
 
   describe('constructor', () => {
     it('should set the log level based on the logLevel option', () => {
-      var originalLogLevel = log.level;
-      var client = new Client({
+      const originalLogLevel = log.level;
+      let client = new Client({
         logLevel: 'info'
       });
       client.logLevel.should.equal('info');
       log.level.should.equal('info');
 
-      var client = new Client({
+      client = new Client({
         logLevel: 'debug'
       });
       client.logLevel.should.equal('debug');
       log.level.should.equal('debug');
 
-      log.level = originalLogLevel; //restore since log is a singleton
+      log.level = originalLogLevel; // restore since log is a singleton
     });
 
     it('should use silent for the log level if no logLevel is specified', () => {
-      var originalLogLevel = log.level;
+      const originalLogLevel = log.level;
 
       log.level = 'foo;';
 
-      var client = new Client();
+      const client = new Client();
       client.logLevel.should.equal('silent');
       log.level.should.equal('silent');
 
-      log.level = originalLogLevel; //restore since log is a singleton
+      log.level = originalLogLevel; // restore since log is a singleton
     });
   });
 
@@ -158,7 +159,7 @@ describe('client API', function() {
   });
   // todo
   describe('Server internals', () => {
-    var k;
+    let k;
 
     before(() => {
       k = new Key({ seedType: 'new' });
@@ -175,10 +176,10 @@ describe('client API', function() {
     });
 
     it('should request set credentials before creating/joining', function(done) {
-      var s = sandbox.stub();
+      const s = sandbox.stub();
       s.storeWallet = sandbox.stub().yields('bigerror');
       s.fetchWallet = sandbox.stub().yields(null);
-      var expressApp = new ExpressApp();
+      const expressApp = new ExpressApp();
       expressApp.start(
         {
           storage: s,
@@ -186,7 +187,7 @@ describe('client API', function() {
           disableLogs: true
         },
         () => {
-          var client = helpers.newClient(app);
+          const client = helpers.newClient(app);
           client.createWallet(
             '1',
             '2',
@@ -206,10 +207,10 @@ describe('client API', function() {
     });
 
     it('should handle critical errors', function(done) {
-      var s = sandbox.stub();
+      const s = sandbox.stub();
       s.storeWallet = sandbox.stub().yields('bigerror');
       s.fetchWallet = sandbox.stub().yields(null);
-      var expressApp = new ExpressApp();
+      const expressApp = new ExpressApp();
       expressApp.start(
         {
           storage: s,
@@ -217,7 +218,7 @@ describe('client API', function() {
           disableLogs: true
         },
         () => {
-          var client = helpers.newClient(app);
+          const client = helpers.newClient(app);
           client.fromString(k.createCredentials(null, { coin: 'btc', n: 1, network: 'testnet', account: 0 }));
           client.createWallet(
             '1',
@@ -238,13 +239,13 @@ describe('client API', function() {
     });
 
     it('should handle critical errors (Case2)', function(done) {
-      var s = sandbox.stub();
+      const s = sandbox.stub();
       s.storeWallet = sandbox.stub().yields({
         code: 501,
         message: 'wow'
       });
       s.fetchWallet = sandbox.stub().yields(null);
-      var expressApp = new ExpressApp();
+      const expressApp = new ExpressApp();
       expressApp.start(
         {
           storage: s,
@@ -252,7 +253,7 @@ describe('client API', function() {
           disableLogs: true
         },
         () => {
-          var client = helpers.newClient(app);
+          const client = helpers.newClient(app);
           client.fromString(k.createCredentials(null, { coin: 'btc', n: 1, network: 'testnet', account: 0 }));
 
           client.createWallet(
@@ -274,13 +275,13 @@ describe('client API', function() {
     });
 
     it('should handle critical errors (Case3)', function(done) {
-      var s = sandbox.stub();
+      const s = sandbox.stub();
       s.storeWallet = sandbox.stub().yields({
         code: 404,
         message: 'wow'
       });
       s.fetchWallet = sandbox.stub().yields(null);
-      var expressApp = new ExpressApp();
+      const expressApp = new ExpressApp();
       expressApp.start(
         {
           storage: s,
@@ -288,7 +289,7 @@ describe('client API', function() {
           disableLogs: true
         },
         () => {
-          var client = helpers.newClient(app);
+          const client = helpers.newClient(app);
           client.fromString(k.createCredentials(null, { coin: 'btc', n: 1, network: 'testnet', account: 0 }));
 
           client.createWallet(
@@ -309,11 +310,11 @@ describe('client API', function() {
     });
 
     it('should handle critical errors (Case4)', function(done) {
-      var body = {
+      const body = {
         code: 999,
         message: 'unexpected body'
       };
-      var ret = Request._parseError(body);
+      const ret = Request._parseError(body);
       ret.should.be.an.instanceOf(Error);
       ret.message.should.equal('999: unexpected body');
       done();
@@ -340,11 +341,11 @@ describe('client API', function() {
     });
 
     it('should correctly use remote message', function(done) {
-      var body = {
+      let body = {
         code: 'INSUFFICIENT_FUNDS',
         message: undefined
       };
-      var ret = Request._parseError(body);
+      const ret = Request._parseError(body);
       ret.should.be.an.instanceOf(Error);
       ret.message.should.equal('Insufficient funds.');
 
@@ -352,7 +353,7 @@ describe('client API', function() {
         code: 'INSUFFICIENT_FUNDS',
         message: 'remote message'
       };
-      var ret2 = Request._parseError(body);
+      const ret2 = Request._parseError(body);
       ret2.should.be.an.instanceOf(Error);
       ret2.message.should.equal('remote message');
 
@@ -360,7 +361,7 @@ describe('client API', function() {
         code: 'MADE_UP_ERROR',
         message: 'remote message'
       };
-      var ret3 = Request._parseError(body);
+      const ret3 = Request._parseError(body);
       ret3.should.be.an.instanceOf(Error);
       ret3.message.should.equal('MADE_UP_ERROR: remote message');
       done();
@@ -368,9 +369,9 @@ describe('client API', function() {
   });
 
   describe('Build & sign txs', () => {
-    var masterPrivateKey =
+    const masterPrivateKey =
       'tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k';
-    var derivedPrivateKey = {
+    const derivedPrivateKey = {
       BIP44: new Bitcore.HDPrivateKey(masterPrivateKey).deriveChild("m/44'/1'/0'").toString(),
       BIP45: new Bitcore.HDPrivateKey(masterPrivateKey).deriveChild("m/45'").toString(),
       BIP48: new Bitcore.HDPrivateKey(masterPrivateKey).deriveChild("m/48'/1'/0'").toString()
@@ -378,17 +379,17 @@ describe('client API', function() {
 
     describe('#buildTx', () => {
       it('Raw tx roundtrip', () => {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44'])
           }
         ];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        const txp = {
           version: '2.0.0',
           inputs: utxos,
           toAddress: toAddress,
@@ -402,28 +403,28 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH'
         };
-        var t = Client.getRawTx(txp);
+        const t = Client.getRawTx(txp);
         should.exist(t);
         (typeof t === 'string').should.be.true;
         /^[\da-f]+$/.test(t).should.be.true;
 
-        var t2 = new Bitcore.Transaction(t);
+        const t2 = new Bitcore.Transaction(t);
         t2.inputs.length.should.equal(2);
         t2.outputs.length.should.equal(2);
         t2.outputs[0].satoshis.should.equal(1200);
       });
       it('should build a tx correctly (BIP44)', () => {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44'])
           }
         ];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        const txp = {
           version: '2.0.0',
           inputs: utxos,
           toAddress: toAddress,
@@ -437,8 +438,8 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH'
         };
-        var t = Utils.buildTx(txp);
-        var bitcoreError = t.getSerializationError({
+        const t = Utils.buildTx(txp);
+        const bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
           disableSmallFees: true,
           disableLargeFees: true
@@ -448,7 +449,7 @@ describe('client API', function() {
         t.getFee().should.equal(10050);
       });
       it('should build a P2WPKH tx correctly (BIP44)', () => {
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44'])
           }
@@ -460,8 +461,8 @@ describe('client API', function() {
         toAddress.address.should.equal('bc1qrshu7r9z9y22y3wrrghfmjrvn0xxasfl7qrmvf');
         changeAddress.address.should.equal('bc1quhzpvcmllzm3kkf7jwsxdemgaec3dz2j0uuan0');
 
-        var utxos = helpers.generateUtxos('P2WPKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2WPKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        const txp = {
           version: '2.0.0',
           inputs: utxos,
           toAddress: toAddress.address,
@@ -475,8 +476,8 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2WPKH'
         };
-        var t = Utils.buildTx(txp);
-        var bitcoreError = t.getSerializationError({
+        const t = Utils.buildTx(txp);
+        const bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
           disableSmallFees: true,
           disableLargeFees: true
@@ -486,7 +487,7 @@ describe('client API', function() {
         t.getFee().should.equal(10050);
       });
       it('should build a P2WSH tx correctly (BIP48)', () => {
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP48'])
           }
@@ -498,8 +499,8 @@ describe('client API', function() {
         toAddress.address.should.equal('bc1qxq4tyr7uhwprj4w8ayc8manv4t64g0hc74ka9w4qka0uygr7gplqqnlu24');
         changeAddress.address.should.equal('bc1qk8q74mfp7mcldhvfu4azjyqnu7rnd0d9ghdnxkxye34utvp0fgvq50jl0v');
 
-        var utxos = helpers.generateUtxos('P2WSH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2WSH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        const txp = {
           version: '2.0.0',
           inputs: utxos,
           toAddress: toAddress.address,
@@ -513,8 +514,8 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2WSH'
         };
-        var t = Utils.buildTx(txp);
-        var bitcoreError = t.getSerializationError({
+        const t = Utils.buildTx(txp);
+        const bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
           disableSmallFees: true,
           disableLargeFees: true
@@ -524,17 +525,17 @@ describe('client API', function() {
         t.getFee().should.equal(10050);
       });
       it('should build a tx correctly (BIP48)', () => {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP48'])
           }
         ];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        const txp = {
           version: '2.0.0',
           inputs: utxos,
           toAddress: toAddress,
@@ -548,8 +549,8 @@ describe('client API', function() {
           derivationStrategy: 'BIP48',
           addressType: 'P2PKH'
         };
-        var t = Utils.buildTx(txp);
-        var bitcoreError = t.getSerializationError({
+        const t = Utils.buildTx(txp);
+        const bitcoreError = t.getSerializationError({
           disableIsFullySigned: true,
           disableSmallFees: true,
           disableLargeFees: true
@@ -591,7 +592,7 @@ describe('client API', function() {
           addressType: 'P2PKH',
           amount: 3896000000000000
         };
-        var t = Utils.buildTx(txp);
+        const t = Utils.buildTx(txp);
         const rawTxp = t.uncheckedSerialize();
         rawTxp.should.deep.equal([
           '0xeb068504a817c80082520894a062a07a0a56beb2872b12f388f511d694626730870dd764300b800080018080'
@@ -631,7 +632,7 @@ describe('client API', function() {
           addressType: 'P2PKH',
           amount: 3896000000000000
         };
-        var t = Utils.buildTx(txp);
+        const t = Utils.buildTx(txp);
         const rawTxp = t.uncheckedSerialize();
         rawTxp.should.deep.equal([
           '0xec068504a817c80082520894a062a07a0a56beb2872b12f388f511d694626730870dd764300b80008081898080'
@@ -656,24 +657,24 @@ describe('client API', function() {
           blockHeight: 18446744,
           amount: 389600000
         };
-        var t = Utils.buildTx(txp);
+        const t = Utils.buildTx(txp);
         const rawTxp = t.uncheckedSerialize();
         rawTxp.should.deep.equal([
           'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDb6/gH5XxrVl86CZd+DpqA1jN8YSz91e8yXxOlyeS8tLRnckLdZVIkhi0iAExccvYpTw5tIfPZ8z/OJGQtnvg9QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7A+XJrI4siFXUreDo+M94DBeuJwm0Oq5kHqeWuAw7xgBAgIAAQwCAAAAAIALMGTXDQA='
         ]);
       });
       it('should protect from creating excessive fee DOGE', () => {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44'])
           }
         ];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1, 2]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1, 2]);
+        const txp = {
           coin: 'doge',
           inputs: utxos,
           toAddress: toAddress,
@@ -683,26 +684,26 @@ describe('client API', function() {
           },
           requiredSignatures: 1,
           outputOrder: [0, 1],
-          fee: 3.2e8, /// 3 DOGE fee, WOW!
+          fee: 3.2e8, // 3 DOGE fee, WOW!
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH'
         };
 
-        var t = Utils.buildTx(txp);
+        const t = Utils.buildTx(txp);
         should.exist(t);
       });
       it('should protect from creating excessive fee', () => {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44'])
           }
         ];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1, 2]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1, 2]);
+        const txp = {
           inputs: utxos,
           toAddress: toAddress,
           amount: 1.5e8,
@@ -717,21 +718,21 @@ describe('client API', function() {
         };
 
         (() => {
-          var t = Utils.buildTx(txp);
+          const t = Utils.buildTx(txp);
         }).should.throw('Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE(chain) at buildTx');
       });
       it('should build a tx with multiple outputs', () => {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44'])
           }
         ];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        const txp = {
           inputs: utxos,
           outputs: [
             {
@@ -754,24 +755,24 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH'
         };
-        var t = Utils.buildTx(txp);
-        var bitcoreError = t.getSerializationError({
+        const t = Utils.buildTx(txp);
+        const bitcoreError = t.getSerializationError({
           disableIsFullySigned: true
         });
         should.not.exist(bitcoreError);
       });
       it('should build a tx with provided output scripts', () => {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44'])
           }
         ];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [0.001]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [0.001]);
+        const txp = {
           inputs: utxos,
           type: 'external',
           outputs: [
@@ -799,8 +800,8 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH'
         };
-        var t = Utils.buildTx(txp);
-        var bitcoreError = t.getSerializationError({
+        const t = Utils.buildTx(txp);
+        const bitcoreError = t.getSerializationError({
           disableIsFullySigned: true
         });
         should.not.exist(bitcoreError);
@@ -811,21 +812,21 @@ describe('client API', function() {
         t.outputs[1].satoshis.should.equal(txp.outputs[1].amount);
         t.outputs[2].script.toHex().should.equal(txp.outputs[2].script);
         t.outputs[2].satoshis.should.equal(txp.outputs[2].amount);
-        var changeScript = Bitcore.Script.fromAddress(txp.changeAddress.address).toHex();
+        const changeScript = Bitcore.Script.fromAddress(txp.changeAddress.address).toHex();
         t.outputs[3].script.toHex().should.equal(changeScript);
       });
       it('should fail if provided output has no either toAddress or script', () => {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44'])
           }
         ];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [0.001]);
-        var txp: any = {
+        const utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [0.001]);
+        const txp: any = {
           inputs: utxos,
           type: 'external',
           outputs: [
@@ -851,37 +852,37 @@ describe('client API', function() {
           addressType: 'P2PKH'
         };
         (() => {
-          var t = Utils.buildTx(txp);
+          const t = Utils.buildTx(txp);
         }).should.throw('Output should have either toAddress or script specified');
 
         txp.outputs[0].toAddress = '18433T2TSgajt9jWhcTBw4GoNREA6LpX3E';
-        var t = Utils.buildTx(txp);
-        var bitcoreError = t.getSerializationError({
+        const t1 = Utils.buildTx(txp);
+        const preDeleteBitcoreError = t1.getSerializationError({
           disableIsFullySigned: true
         });
-        should.not.exist(bitcoreError);
+        should.not.exist(preDeleteBitcoreError);
 
         delete txp.outputs[0].toAddress;
         txp.outputs[0].script =
           '512103ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff210314a96cd6f5a20826070173fe5b7e9797f21fc8ca4a55bcb2d2bde99f55dd352352ae';
-        t = Utils.buildTx(txp);
-        var bitcoreError = t.getSerializationError({
+        const t2 = Utils.buildTx(txp);
+        const t2BitcoreError = t2.getSerializationError({
           disableIsFullySigned: true
         });
-        should.not.exist(bitcoreError);
+        should.not.exist(t2BitcoreError);
       });
       it('should build a v3 tx proposal', () => {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44'])
           }
         ];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        const txp = {
           version: 3,
           inputs: utxos,
           outputs: [
@@ -905,25 +906,25 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH'
         };
-        var t = Utils.buildTx(txp);
-        var bitcoreError = t.getSerializationError({
+        const t = Utils.buildTx(txp);
+        const bitcoreError = t.getSerializationError({
           disableIsFullySigned: true
         });
         should.not.exist(bitcoreError);
       });
 
       it('should build a v4 tx proposal', () => {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44'])
           }
         ];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        const txp = {
           version: 4,
           inputs: utxos,
           outputs: [
@@ -947,8 +948,8 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH'
         };
-        var t = Utils.buildTx(txp);
-        var bitcoreError = t.getSerializationError({
+        const t = Utils.buildTx(txp);
+        const bitcoreError = t.getSerializationError({
           disableIsFullySigned: true
         });
         should.not.exist(bitcoreError);
@@ -957,17 +958,17 @@ describe('client API', function() {
 
     describe('#pushSignatures', () => {
       it('should sign BIP45 P2SH correctly', async () => {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP45'])
           }
         ];
 
-        var utxos = helpers.generateUtxos('P2SH', publicKeyRing, 'm/2147483647/0/0', 1, [1000, 2000]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2SH', publicKeyRing, 'm/2147483647/0/0', 1, [1000, 2000]);
+        const txp = {
           inputs: utxos,
           coin: 'btc',
           signingMethod: 'ecdsa',
@@ -982,25 +983,25 @@ describe('client API', function() {
           derivationStrategy: 'BIP45',
           addressType: 'P2SH'
         };
-        var key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
-        var path = "m/45'";
-        var signatures = await key.sign(path, txp);
+        const key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
+        const path = "m/45'";
+        const signatures = await key.sign(path, txp);
 
         // This is a GOOD test, since bitcore ONLY accept VALID signatures
         signatures.length.should.be.equal(utxos.length);
       });
       it('should sign BIP44 P2PKH correctly', async () => {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44'])
           }
         ];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        const txp = {
           inputs: utxos,
           toAddress: toAddress,
           coin: 'btc',
@@ -1015,25 +1016,25 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH'
         };
-        var path = "m/44'/1'/0'";
-        var key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
-        var signatures = await key.sign(path, txp);
+        const path = "m/44'/1'/0'";
+        const key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
+        const signatures = await key.sign(path, txp);
 
         // This is a GOOD test, since bitcore ONLY accept VALID signatures
         signatures.length.should.be.equal(utxos.length);
       });
       it('should sign multiple-outputs proposal correctly', async () => {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44'])
           }
         ];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        const txp = {
           inputs: utxos,
           coin: 'btc',
           signingMethod: 'ecdsa',
@@ -1058,23 +1059,23 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH'
         };
-        var path = "m/44'/1'/0'";
-        var key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
-        var signatures = await key.sign(path, txp);
+        const path = "m/44'/1'/0'";
+        const key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
+        const signatures = await key.sign(path, txp);
         signatures.length.should.be.equal(utxos.length);
       });
       it('should sign proposal with provided output scripts correctly', async () => {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44'])
           }
         ];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [0.001]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [0.001]);
+        const txp = {
           inputs: utxos,
           type: 'external',
           coin: 'btc',
@@ -1102,23 +1103,23 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH'
         };
-        var path = "m/44'/1'/0'";
-        var key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
-        var signatures = await key.sign(path, txp);
+        const path = "m/44'/1'/0'";
+        const key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
+        const signatures = await key.sign(path, txp);
         signatures.length.should.be.equal(utxos.length);
       });
       it('should sign btc proposal correctly', async () => {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44'])
           }
         ];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        const txp = {
           version: 3,
           coin: 'btc',
           inputs: utxos,
@@ -1143,9 +1144,9 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH'
         };
-        var path = "m/44'/1'/0'";
-        var key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
-        var signatures = await key.sign(path, txp);
+        const path = "m/44'/1'/0'";
+        const key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
+        const signatures = await key.sign(path, txp);
 
         signatures.length.should.be.equal(utxos.length);
         signatures[0].should.equal(
@@ -1157,17 +1158,17 @@ describe('client API', function() {
       });
 
       it('should sign btc proposal correctly (tx V2)', async () => {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44'])
           }
         ];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        const txp = {
           version: 4,
           coin: 'btc',
           inputs: utxos,
@@ -1192,9 +1193,9 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH'
         };
-        var path = "m/44'/1'/0'";
-        var key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
-        var signatures = await key.sign(path, txp);
+        const path = "m/44'/1'/0'";
+        const key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
+        const signatures = await key.sign(path, txp);
 
         signatures.length.should.be.equal(utxos.length);
         signatures[0].should.equal(
@@ -1207,7 +1208,7 @@ describe('client API', function() {
 
       it('should sign eth proposal correctly', async () => {
         const toAddress = '0xa062a07a0a56beb2872b12f388f511d694626730';
-        var key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
+        const key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
         const path = "m/44'/60'/0'";
         const publicKeyRing = [
           {
@@ -1245,17 +1246,17 @@ describe('client API', function() {
         signatures.should.deep.equal(expectedSignatures);
       });
       it('should sign BCH proposal correctly', async () => {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44'])
           }
         ];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        const txp = {
           version: 3,
           coin: 'bch',
           signingMethod: 'ecdsa',
@@ -1281,9 +1282,9 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH'
         };
-        var path = "m/44'/1'/0'";
-        var key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
-        var signatures = await key.sign(path, txp);
+        const path = "m/44'/1'/0'";
+        const key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
+        const signatures = await key.sign(path, txp);
 
         signatures.length.should.be.equal(utxos.length);
         signatures[0].should.equal(
@@ -1295,17 +1296,17 @@ describe('client API', function() {
       });
 
       it('should sign BCH proposal correctly (schnorr)', async () => {
-        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
-        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        const changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
-        var publicKeyRing = [
+        const publicKeyRing = [
           {
             xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44'])
           }
         ];
 
-        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
-        var txp = {
+        const utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        const txp = {
           version: 3,
           coin: 'bch',
           signingMethod: 'schnorr',
@@ -1331,9 +1332,9 @@ describe('client API', function() {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH'
         };
-        var path = "m/44'/1'/0'";
-        var key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
-        var signatures = await key.sign(path, txp);
+        const path = "m/44'/1'/0'";
+        const key = new Key({ seedData: masterPrivateKey, seedType: 'extendedPrivateKey' });
+        const signatures = await key.sign(path, txp);
 
         signatures.length.should.be.equal(utxos.length);
         signatures[0].should.equal(
@@ -1346,7 +1347,7 @@ describe('client API', function() {
 
       it('should sign SOL proposal correctly with full path', async () => {
         const phrase = 'crush desk brain index action subject tackle idea trim unveil lawn live';
-        let k  = new Key({ seedData: phrase, seedType: 'mnemonic', algo: 'EDDSA'});
+        const k = new Key({ seedData: phrase, seedType: 'mnemonic', algo: 'EDDSA' });
         const toAddress = 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY';
         const from = '7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hnD';
         const txp = {
@@ -1375,7 +1376,7 @@ describe('client API', function() {
 
       it('should sign SOL proposal correctly with root path', async () => {
         const phrase = 'crush desk brain index action subject tackle idea trim unveil lawn live';
-        let k  = new Key({ seedData: phrase, seedType: 'mnemonic', algo: 'EDDSA'});
+        const k = new Key({ seedData: phrase, seedType: 'mnemonic', algo: 'EDDSA' });
         const toAddress = 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY';
         const from = '7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hnD';
         const txp = {
@@ -1404,7 +1405,7 @@ describe('client API', function() {
 
       it('should not sign SOL proposal with invalid path', async () => {
         const phrase = 'crush desk brain index action subject tackle idea trim unveil lawn live';
-        let k  = new Key({ seedData: phrase, seedType: 'mnemonic', algo: 'EDDSA'});
+        const k = new Key({ seedData: phrase, seedType: 'mnemonic', algo: 'EDDSA' });
         const toAddress = 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY';
         const from = '7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hnD';
         const txp = {
@@ -1429,7 +1430,7 @@ describe('client API', function() {
           should.not.exist(signatures);
         } catch (err) {
           should.exist(err);
-          err.message.should.be.equal(`Invalid Path. Path must be of form /44'/501'/*'/*'/ but found m/48'/502'/0'`);
+          err.message.should.be.equal('Invalid Path. Path must be of form /44\'/501\'/*\'/*\'/ but found m/48\'/502\'/0\'');
         }
       });
     });
@@ -1441,10 +1442,10 @@ describe('client API', function() {
       const coin = ['bch', 'btc', 'doge', 'ltc'][i % 4];
 
       it(`should create secret and parse secret: ${i} - ${coin}:${network}`, () => {
-        var walletId = Uuid.v4();
-        var walletPrivKey = new Bitcore.PrivateKey();
-        var secret = Client._buildSecret(walletId, walletPrivKey, coin, network);
-        var result = Client.parseSecret(secret);
+        const walletId = Uuid.v4();
+        const walletPrivKey = new Bitcore.PrivateKey();
+        const secret = Client._buildSecret(walletId, walletPrivKey, coin, network);
+        const result = Client.parseSecret(secret);
         result.walletId.should.equal(walletId);
         result.walletPrivKey.toString().should.equal(walletPrivKey.toString());
         result.coin.should.equal(coin);
@@ -1458,25 +1459,25 @@ describe('client API', function() {
     });
 
     it('should create secret and parse secret from string', () => {
-      var walletId = Uuid.v4();
-      var walletPrivKey = new Bitcore.PrivateKey();
-      var coin = 'btc';
-      var network = 'testnet';
-      var secret = Client._buildSecret(walletId, walletPrivKey.toString(), coin, network);
-      var result = Client.parseSecret(secret);
+      const walletId = Uuid.v4();
+      const walletPrivKey = new Bitcore.PrivateKey();
+      const coin = 'btc';
+      const network = 'testnet';
+      const secret = Client._buildSecret(walletId, walletPrivKey.toString(), coin, network);
+      const result = Client.parseSecret(secret);
       result.walletId.should.equal(walletId);
       result.walletPrivKey.toString().should.equal(walletPrivKey.toString());
       result.coin.should.equal(coin);
       result.network.should.equal(network);
     });
     it('should default to btc for secrets not specifying coin', () => {
-      var result = Client.parseSecret('5ZN64RxKWCJXcy1pZwgrAzL1NnN5FQic5M2tLJVG5bEHaGXNRQs2uzJjMa9pMAbP5rz9Vu2xSaT');
+      const result = Client.parseSecret('5ZN64RxKWCJXcy1pZwgrAzL1NnN5FQic5M2tLJVG5bEHaGXNRQs2uzJjMa9pMAbP5rz9Vu2xSaT');
       result.coin.should.equal('btc');
     });
   });
 
   describe('Notification polling', () => {
-    var clock, interval;
+    let clock, interval;
     beforeEach(() => {
       clock = sandbox.useFakeTimers({ now: 1234000, toFake: ['Date'] });
     });
@@ -1489,7 +1490,7 @@ describe('client API', function() {
           notifications.push(data);
         });
 
-        var notifications = [];
+        let notifications = [];
         clients[0]._fetchLatestNotifications(5, (err) => {
           should.not.exist(err);
           notifications.map(n => n.type).should.deep.equal(['NewCopayer', 'WalletComplete']);
@@ -1525,10 +1526,10 @@ describe('client API', function() {
   });
 
   describe('Wallet Creation', () => {
-    var k;
+    let k;
 
     beforeEach(function(done) {
-      k = new Key({ seedType:'new'});
+      k = new Key({ seedType: 'new' });
       db.dropDatabase(err => {
         return done(err);
       });
@@ -1563,11 +1564,11 @@ describe('client API', function() {
         })
       );
 
-      var spy = sandbox.spy(clients[0].request, 'post');
+      const spy = sandbox.spy(clients[0].request, 'post');
       clients[0].createWallet('mywallet', 'pepe', 1, 1, {}, (err, secret) => {
         should.not.exist(err);
-        var url = spy.getCall(0).args[0];
-        var body = JSON.stringify(spy.getCall(0).args[1]);
+        const url = spy.getCall(0).args[0];
+        const body = JSON.stringify(spy.getCall(0).args[1]);
         url.should.contain('/wallets');
         body.should.not.contain('mywallet');
         clients[0].getStatus({}, (err, status) => {
@@ -1588,11 +1589,11 @@ describe('client API', function() {
         })
       );
 
-      var spy = sandbox.spy(clients[0].request, 'post');
+      const spy = sandbox.spy(clients[0].request, 'post');
       clients[0].createWallet('mywallet', 'pepe', 1, 1, {}, (err, secret) => {
         should.not.exist(err);
-        var url = spy.getCall(1).args[0];
-        var body = JSON.stringify(spy.getCall(1).args[1]);
+        const url = spy.getCall(1).args[0];
+        const body = JSON.stringify(spy.getCall(1).args[1]);
         url.should.contain('/copayers');
         body.should.not.contain('pepe');
         clients[0].getStatus({}, (err, status) => {
@@ -1613,8 +1614,8 @@ describe('client API', function() {
         })
       );
 
-      var wpk = new Bitcore.PrivateKey();
-      var args = {
+      const wpk = new Bitcore.PrivateKey();
+      const args = {
         name: 'mywallet',
         m: 1,
         n: 1,
@@ -1624,9 +1625,9 @@ describe('client API', function() {
       };
       clients[0].request.post('/v2/wallets/', args, (err, wallet) => {
         should.not.exist(err);
-        var c = clients[0].credentials;
+        const c = clients[0].credentials;
 
-        var args = {
+        const args = {
           walletId: '123',
           name: 'pepe',
           xPubKey: c.xPubKey,
@@ -1639,7 +1640,7 @@ describe('client API', function() {
           ),
           copayerSignature: undefined
         };
-        var hash = Utils.getCopayerHash(args.name, args.xPubKey, args.requestPubKey);
+        const hash = Utils.getCopayerHash(args.name, args.xPubKey, args.requestPubKey);
         args.copayerSignature = Utils.signMessage(hash, wpk);
         clients[0].request.post('/v2/wallets/123/copayers', args, (err, wallet) => {
           should.not.exist(err);
@@ -1647,7 +1648,7 @@ describe('client API', function() {
             should.not.exist(err);
             clients[0].getStatus({}, (err, status) => {
               should.not.exist(err);
-              var wallet = status.wallet;
+              const wallet = status.wallet;
               wallet.name.should.equal('mywallet');
               should.not.exist(wallet.encryptedName);
               wallet.copayers[0].name.should.equal('pepe');
@@ -1715,7 +1716,7 @@ describe('client API', function() {
         })
       );
 
-      var checks = 0;
+      let checks = 0;
 
       clients[0].on('walletCompleted', wallet => {
         wallet.name.should.equal('mywallet');
@@ -1729,7 +1730,7 @@ describe('client API', function() {
         clients[0].isComplete().should.equal(false);
         clients[0].credentials.isComplete().should.equal(false);
 
-        let k2 = new Key({ seedType:'new'});
+        const k2 = new Key({ seedType: 'new' });
         clients[1].fromString(
           k2.createCredentials(null, {
             coin: 'btc',
@@ -1766,7 +1767,7 @@ describe('client API', function() {
 
       clients[0].createWallet('XXX', 'creator', 2, 3, {}, (err, secret) => {
         should.not.exist(err);
-        let k2 = new Key({ seedData: k.get(null, true).mnemonic, seedType: 'mnemonic' });
+        const k2 = new Key({ seedData: k.get(null, true).mnemonic, seedType: 'mnemonic' });
         clients[1].fromString(
           k2.createCredentials(null, {
             coin: 'btc',
@@ -1808,7 +1809,7 @@ describe('client API', function() {
         },
         (err, secret) => {
           should.not.exist(err);
-          let k2 = new Key({ seedType:'new'});
+          const k2 = new Key({ seedType: 'new' });
           clients[1].fromString(
             k2.createCredentials(null, {
               coin: 'btc',
@@ -1853,7 +1854,7 @@ describe('client API', function() {
         },
         (err, secret) => {
           should.not.exist(err);
-          let k2 = new Key({ seedType:'new'});
+          const k2 = new Key({ seedType: 'new' });
           clients[1].fromString(
             k2.createCredentials(null, {
               coin: 'btc',
@@ -1943,7 +1944,7 @@ describe('client API', function() {
       );
 
       // Unknown walletId
-      var oldSecret = '3bJKRn1HkQTpwhVaJMaJ22KwsjN24ML9uKfkSrP7iDuq91vSsTEygfGMMpo6kWLp1pXG9wZSKcT';
+      const oldSecret = '3bJKRn1HkQTpwhVaJMaJ22KwsjN24ML9uKfkSrP7iDuq91vSsTEygfGMMpo6kWLp1pXG9wZSKcT';
       clients[0].joinWallet(oldSecret, 'copayer', {}, (err, result) => {
         err.should.be.an.instanceOf(Errors.WALLET_NOT_FOUND);
         done();
@@ -1952,7 +1953,7 @@ describe('client API', function() {
 
     it('should detect wallets with bad signatures', function(done) {
       // Do not complete clients[1] pkr
-      var openWalletStub = sandbox.stub(clients[1], 'openWallet').resolves();
+      const openWalletStub = sandbox.stub(clients[1], 'openWallet').resolves();
 
       helpers.createAndJoinWallet(clients, keys, 2, 3, {}, () => {
         helpers.tamperResponse(
@@ -1977,7 +1978,7 @@ describe('client API', function() {
 
     it('should detect wallets with missing signatures', function(done) {
       // Do not complete clients[1] pkr
-      var openWalletStub = sandbox.stub(clients[1], 'openWallet').resolves();
+      const openWalletStub = sandbox.stub(clients[1], 'openWallet').resolves();
 
       helpers.createAndJoinWallet(clients, keys, 2, 3, {}, () => {
         helpers.tamperResponse(
@@ -2001,7 +2002,7 @@ describe('client API', function() {
 
     it('should detect wallets missing callers pubkey', function(done) {
       // Do not complete clients[1] pkr
-      var openWalletStub = sandbox.stub(clients[1], 'openWallet').resolves();
+      const openWalletStub = sandbox.stub(clients[1], 'openWallet').resolves();
 
       helpers.createAndJoinWallet(clients, keys, 2, 3, {}, () => {
         helpers.tamperResponse(
@@ -2188,7 +2189,7 @@ describe('client API', function() {
           network: 'testnet'
         },
         err => {
-          var key = clients[0].credentials.walletPrivKey;
+          const key = clients[0].credentials.walletPrivKey;
           should.not.exist(err);
           clients[0].getStatus(
             {
@@ -2198,7 +2199,7 @@ describe('client API', function() {
               should.not.exist(err);
               status.wallet.publicKeyRing.length.should.equal(1);
               status.wallet.status.should.equal('complete');
-              var key2 = status.customData.walletPrivKey;
+              const key2 = status.customData.walletPrivKey;
 
               clients[0].credentials.walletPrivKey.should.be.equal(key2);
               done();
@@ -2227,8 +2228,8 @@ describe('client API', function() {
           network: 'testnet'
         },
         err => {
-          var wkey = clients[0].credentials.walletPrivKey;
-          var skey = clients[0].credentials.sharedEncryptingKey;
+          const wkey = clients[0].credentials.walletPrivKey;
+          const skey = clients[0].credentials.sharedEncryptingKey;
           delete clients[0].credentials.walletPrivKey;
           delete clients[0].credentials.sharedEncryptingKey;
           should.not.exist(err);
@@ -2248,7 +2249,7 @@ describe('client API', function() {
     });
 
     it('should create a 1-1 wallet with given mnemonic', function(done) {
-      var c = new Key({
+      const c = new Key({
         seedData: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
         seedType: 'mnemonic'
       });
@@ -2286,7 +2287,7 @@ describe('client API', function() {
     });
 
     it('should create a 2-3 wallet with given mnemonic', function(done) {
-      var c = new Key({
+      const c = new Key({
         seedData: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
         seedType: 'mnemonic'
       });
@@ -2325,7 +2326,7 @@ describe('client API', function() {
     });
 
     it('should create Bitcoin Cash wallet', function(done) {
-      let k = new Key({ seedType:'new'});
+      const k = new Key({ seedType: 'new' });
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'bch',
@@ -2355,9 +2356,9 @@ describe('client API', function() {
     });
 
     it('should create a BCH  address correctly', function(done) {
-      var xPriv =
+      const xPriv =
         'xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu';
-      let k = new Key({ seedData: xPriv, useLegacyCoinType: true, seedType: 'extendedPrivateKey' });
+      const k = new Key({ seedData: xPriv, useLegacyCoinType: true, seedType: 'extendedPrivateKey' });
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'bch',
@@ -2492,7 +2493,7 @@ describe('client API', function() {
       );
     });
     it('Should return only main addresses when change addresses exist', function(done) {
-      var opts = {
+      const opts = {
         amount: 0.1e8,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'hello 1-1'
@@ -2502,7 +2503,7 @@ describe('client API', function() {
         clients[0].getMainAddresses({}, (err, addr) => {
           should.not.exist(err);
           addr.length.should.equal(2);
-          for(const a of addr) {
+          for (const a of addr) {
             a.isChange?.should.not.equal(true);
           }
           done();
@@ -2573,7 +2574,7 @@ describe('client API', function() {
         blockchainExplorerMock.setUtxo(x, 1, 1);
         addresses.push(x.address);
       }
-      const utxos = await clients[0].getUtxos({ addresses: [addresses[0]]});
+      const utxos = await clients[0].getUtxos({ addresses: [addresses[0]] });
       utxos.length.should.equal(1);
       utxos.reduce((sum, utxo) => sum += utxo.satoshis, 0).should.equal(1 * 1e8);
     });
@@ -2652,7 +2653,7 @@ describe('client API', function() {
     });
 
     it('should save and retrieve matic token addresses', function(done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {coin: 'matic', chain: 'matic'}, () => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic', chain: 'matic' }, () => {
         clients[0].getPreferences((err, preferences) => {
           should.not.exist(err);
           preferences.should.be.empty;
@@ -2676,7 +2677,7 @@ describe('client API', function() {
     });
 
     it('should save and retrieve matic multisig address', function(done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {coin: 'matic', chain: 'matic'}, () => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic', chain: 'matic' }, () => {
         clients[0].getPreferences((err, preferences) => {
           should.not.exist(err);
           preferences.should.be.empty;
@@ -2705,7 +2706,7 @@ describe('client API', function() {
     });
 
     it('should save and retrieve op token addresses', function(done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {coin: 'eth', chain: 'op'}, () => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'op' }, () => {
         clients[0].getPreferences((err, preferences) => {
           should.not.exist(err);
           preferences.should.be.empty;
@@ -2729,7 +2730,7 @@ describe('client API', function() {
     });
 
     it('should save and retrieve base token addresses', function(done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {coin: 'eth', chain: 'base'}, () => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'base' }, () => {
         clients[0].getPreferences((err, preferences) => {
           should.not.exist(err);
           preferences.should.be.empty;
@@ -2753,7 +2754,7 @@ describe('client API', function() {
     });
 
     it('should save and retrieve arb token addresses', function(done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {coin: 'eth', chain: 'arb'}, () => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'arb' }, () => {
         clients[0].getPreferences((err, preferences) => {
           should.not.exist(err);
           preferences.should.be.empty;
@@ -2779,7 +2780,7 @@ describe('client API', function() {
 
   describe('Fiat rates', () => {
     it('should get fiat exchange rate', function(done) {
-      var now = Date.now();
+      const now = Date.now();
       helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
         clients[0].getFiatRate(
           {
@@ -2856,7 +2857,7 @@ describe('client API', function() {
   });
 
   describe('Get send max information', () => {
-    var balance;
+    let balance;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
         clients[0].createAddress(null, (err, address) => {
@@ -2876,7 +2877,7 @@ describe('client API', function() {
       blockchainExplorerMock.setFeeLevels({
         1: 200e2
       });
-      var opts = {
+      const opts = {
         feeLevel: 'priority' as const,
         excludeUnconfirmedUtxos: false,
         returnInputs: true
@@ -2894,7 +2895,7 @@ describe('client API', function() {
       });
     });
     it('should return data excluding unconfirmed UTXOs', function(done) {
-      var opts = {
+      const opts = {
         feePerKb: 200,
         excludeUnconfirmedUtxos: true,
         returnInputs: true
@@ -2906,7 +2907,7 @@ describe('client API', function() {
       });
     });
     it('should return data including unconfirmed UTXOs', function(done) {
-      var opts = {
+      const opts = {
         feePerKb: 200,
         excludeUnconfirmedUtxos: false,
         returnInputs: true
@@ -2918,7 +2919,7 @@ describe('client API', function() {
       });
     });
     it('should return data without inputs', function(done) {
-      var opts = {
+      const opts = {
         feePerKb: 200,
         excludeUnconfirmedUtxos: true,
         returnInputs: false
@@ -2930,7 +2931,7 @@ describe('client API', function() {
       });
     });
     it('should return data with inputs', function(done) {
-      var opts = {
+      const opts = {
         feePerKb: 200,
         excludeUnconfirmedUtxos: true,
         returnInputs: true
@@ -2938,7 +2939,7 @@ describe('client API', function() {
       clients[0].getSendMaxInfo(opts, (err, result) => {
         should.not.exist(err);
         result.inputs.length.should.not.equal(0);
-        var totalSatoshis = 0;
+        let totalSatoshis = 0;
         for (const i of result.inputs) {
           totalSatoshis = totalSatoshis + i.satoshis;
         }
@@ -3053,9 +3054,9 @@ describe('client API', function() {
     });
     it('should be able to derive 25 addresses', function(done) {
       this.timeout(5000);
-      var num = 25;
+      const num = 25;
       helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
-        var create = callback => {
+        const create = callback => {
           clients[0].createAddress(
             {
               ignoreMaxGap: true
@@ -3069,8 +3070,8 @@ describe('client API', function() {
           );
         };
 
-        var tasks = [];
-        for (var i = 0; i < num; i++) {
+        const tasks = [];
+        for (let i = 0; i < num; i++) {
           tasks.push(create);
         }
 
@@ -3085,9 +3086,9 @@ describe('client API', function() {
 
     describe('ETH testnet address creation', () => {
       it('should be able to create address in 1-of-1 wallet', function(done) {
-        var xPriv =
+        const xPriv =
           'xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu';
-        let k  = new Key({ seedData: xPriv, seedType: 'extendedPrivateKey'});
+        const k = new Key({ seedData: xPriv, seedType: 'extendedPrivateKey' });
 
         clients[0].fromString(
           k.createCredentials(null, {
@@ -3146,9 +3147,9 @@ describe('client API', function() {
     describe('SOL address creation', () => {
       it('should be able to create address in 1-of-1 wallet', function(done) {
         this.timeout(50000);
-        var xPriv =
+        const xPriv =
           'xprv9s21ZrQH143K3aKdQ6kXF1vj7R6LtkoLCiUXfM5bdbGXmhQkC1iXdnFfrxAAtaTunPUCCLwUQ3cpNixGLMbLAH1gzeCr8VZDe4gPgmKLb2X';
-        let k  = new Key({ seedData: xPriv, seedType: 'extendedPrivateKey', algo: 'EDDSA'});
+        const k = new Key({ seedData: xPriv, seedType: 'extendedPrivateKey', algo: 'EDDSA' });
 
         clients[0].fromString(
           k.createCredentials(null, {
@@ -3182,7 +3183,7 @@ describe('client API', function() {
   });
 
   describe('Notifications', () => {
-    var clock;
+    let clock;
     beforeEach(function(done) {
       this.timeout(5000);
       clock = sandbox.useFakeTimers({ now: 1234000, toFake: ['Date'] });
@@ -3253,7 +3254,7 @@ describe('client API', function() {
   });
 
   describe('Transaction Proposals Creation and Locked funds', () => {
-    var myAddress;
+    let myAddress;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(clients, keys, 2, 3, {}, w => {
         clients[0].createAddress(null, (err, address) => {
@@ -3271,8 +3272,8 @@ describe('client API', function() {
       blockchainExplorerMock.setFeeLevels({
         2: 123e2
       });
-      var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
-      var opts = {
+      const toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+      const opts = {
         outputs: [
           {
             amount: 1e8,
@@ -3325,7 +3326,7 @@ describe('client API', function() {
               clients[0].getTxProposals({}, (err, txps) => {
                 should.not.exist(err);
                 txps.length.should.equal(1);
-                var x = txps[0];
+                const x = txps[0];
                 x.id.should.equal(txp.id);
                 should.exist(x.proposalSignature);
                 should.not.exist(x.proposalSignaturePubKey);
@@ -3348,8 +3349,8 @@ describe('client API', function() {
         1: 456e2,
         6: 123e2
       });
-      var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
-      var opts = {
+      const toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+      const opts = {
         txProposalId: '1234',
         outputs: [
           {
@@ -3411,7 +3412,7 @@ describe('client API', function() {
       });
     });
     it('Should protect against tampering at proposal creation', function(done) {
-      var opts = {
+      const opts = {
         outputs: [
           {
             amount: 1e8,
@@ -3428,7 +3429,7 @@ describe('client API', function() {
         message: 'hello'
       };
 
-      var tamperings = [
+      const tamperings = [
         txp => {
           txp.feePerKb = 45600;
         },
@@ -3461,8 +3462,8 @@ describe('client API', function() {
         }
       ];
 
-      var tmp = clients[0]._getCreateTxProposalArgs;
-      var args = clients[0]._getCreateTxProposalArgs(opts);
+      const tmp = clients[0]._getCreateTxProposalArgs;
+      const args = clients[0]._getCreateTxProposalArgs(opts);
 
       clients[0]._getCreateTxProposalArgs = opts => {
         return args;
@@ -3486,7 +3487,7 @@ describe('client API', function() {
       );
     });
     it('Should fail to publish when not enough available UTXOs', function(done) {
-      var opts = {
+      const opts = {
         outputs: [
           {
             amount: 3e8,
@@ -3496,7 +3497,7 @@ describe('client API', function() {
         feePerKb: 100e2
       };
 
-      var txp1, txp2;
+      let txp1, txp2;
       async.series(
         [
           next => {
@@ -3553,7 +3554,7 @@ describe('client API', function() {
       );
     });
     it('Should create proposal with unconfirmed inputs', function(done) {
-      var opts = {
+      const opts = {
         amount: 4.5e8,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'hello'
@@ -3568,7 +3569,7 @@ describe('client API', function() {
       });
     });
     it('Should fail to create proposal with insufficient funds', function(done) {
-      var opts = {
+      const opts = {
         amount: 6e8,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'hello 1-1'
@@ -3580,7 +3581,7 @@ describe('client API', function() {
       });
     });
     it('Should fail to create proposal with insufficient funds for fee', function(done) {
-      var opts = {
+      const opts = {
         amount: 5e8 - 200e2,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'hello 1-1',
@@ -3601,7 +3602,7 @@ describe('client API', function() {
       });
     });
     it('Should lock and release funds through rejection', function(done) {
-      var opts = {
+      const opts = {
         amount: 2.2e8,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5'
       };
@@ -3626,7 +3627,7 @@ describe('client API', function() {
       });
     });
     it('Should lock and release funds through removal', function(done) {
-      var opts = {
+      const opts = {
         amount: 2.2e8,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'hello 1-1'
@@ -3649,7 +3650,7 @@ describe('client API', function() {
       });
     });
     it('Should keep message and refusal texts', function(done) {
-      var opts = {
+      const opts = {
         amount: 1e8,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'some message'
@@ -3670,7 +3671,7 @@ describe('client API', function() {
       });
     });
     it('Should hide message and refusal texts if not key is present', function(done) {
-      var opts = {
+      const opts = {
         amount: 1e8,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'some message'
@@ -3694,7 +3695,7 @@ describe('client API', function() {
     });
 
     it('Should encrypt proposal message', function(done) {
-      var opts = {
+      const opts = {
         outputs: [
           {
             amount: 1000e2,
@@ -3704,7 +3705,7 @@ describe('client API', function() {
         message: 'some message',
         feePerKb: 100e2
       };
-      var spy = sandbox.spy(clients[0].request, 'post');
+      const spy = sandbox.spy(clients[0].request, 'post');
       clients[0].createTxProposal(opts, (err, x) => {
         should.not.exist(err);
         spy.calledOnce.should.be.true;
@@ -3713,13 +3714,13 @@ describe('client API', function() {
       });
     });
     it('Should encrypt proposal refusal comment', function(done) {
-      var opts = {
+      const opts = {
         amount: 1e8,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5'
       };
       helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
         should.not.exist(err);
-        var spy = sandbox.spy(clients[1].request, 'post');
+        const spy = sandbox.spy(clients[1].request, 'post');
         clients[1].rejectTxProposal(x, 'rejection comment', (err, tx1) => {
           should.not.exist(err);
           spy.calledOnce.should.be.true;
@@ -3731,7 +3732,7 @@ describe('client API', function() {
 
     describe('Detecting tampered tx proposals', () => {
       it('should detect wrong signature', function(done) {
-        var opts = {
+        const opts = {
           amount: 1000e2,
           toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
           message: 'hello'
@@ -3759,7 +3760,7 @@ describe('client API', function() {
         });
       });
       it('should detect tampered amount', function(done) {
-        var opts = {
+        const opts = {
           amount: 1000e2,
           toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
           message: 'hello'
@@ -3786,7 +3787,7 @@ describe('client API', function() {
         });
       });
       it('should detect change address not it wallet', function(done) {
-        var opts = {
+        const opts = {
           amount: 1000e2,
           toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
           message: 'hello'
@@ -3817,7 +3818,7 @@ describe('client API', function() {
 
   describe('Transaction Proposal signing', function() {
     this.timeout(5000);
-    var setup = (m, n, coin, network, cb) => {
+    const setup = (m, n, coin, network, cb) => {
       helpers.createAndJoinWallet(
         clients,
         keys,
@@ -3852,8 +3853,8 @@ describe('client API', function() {
       });
 
       it('Should sign proposal', function(done) {
-        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
-        var opts = {
+        const toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        const opts = {
           outputs: [
             {
               amount: 1e8,
@@ -3879,10 +3880,10 @@ describe('client API', function() {
               should.exist(publishedTxp);
               publishedTxp.status.should.equal('pending');
 
-              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+              const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(publishedTxp, signatures, async (err, txp) => {
                 should.not.exist(err);
-                let signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
+                const signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
                 clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('accepted');
@@ -3895,8 +3896,8 @@ describe('client API', function() {
       });
 
       it('Should sign a RBF proposal', function(done) {
-        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
-        var opts = {
+        const toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        const opts = {
           outputs: [
             {
               amount: 1e8,
@@ -3923,10 +3924,10 @@ describe('client API', function() {
               should.exist(publishedTxp);
               publishedTxp.status.should.equal('pending');
 
-              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+              const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(publishedTxp, signatures, async (err, txp) => {
                 should.not.exist(err);
-                let signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
+                const signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
                 clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('accepted');
@@ -3939,8 +3940,8 @@ describe('client API', function() {
       });
       
       it('Should sign proposal with no change', function(done) {
-        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
-        var opts = {
+        const toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        const opts = {
           outputs: [
             {
               amount: 4e8 - 100,
@@ -3953,7 +3954,7 @@ describe('client API', function() {
         clients[0].createTxProposal(opts, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
-          var t = Utils.buildTx(txp);
+          const t = Utils.buildTx(txp);
           should.not.exist(t.getChangeOutput());
           clients[0].publishTxProposal(
             {
@@ -3963,10 +3964,10 @@ describe('client API', function() {
               should.not.exist(err);
               should.exist(publishedTxp);
               publishedTxp.status.should.equal('pending');
-              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+              const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(publishedTxp, signatures, async (err, txp) => {
                 should.not.exist(err);
-                let signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
+                const signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
                 clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('accepted');
@@ -3978,7 +3979,7 @@ describe('client API', function() {
         });
       });
       it('Should sign proposal created with send max settings', function(done) {
-        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        const toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
         clients[0].getSendMaxInfo(
           {
             feePerKb: 100e2,
@@ -3986,7 +3987,7 @@ describe('client API', function() {
           },
           (err, info) => {
             should.not.exist(err);
-            var opts = {
+            const opts = {
               outputs: [
                 {
                   amount: info.amount,
@@ -3999,7 +4000,7 @@ describe('client API', function() {
             clients[0].createTxProposal(opts, (err, txp) => {
               should.not.exist(err);
               should.exist(txp);
-              var t = Utils.buildTx(txp);
+              const t = Utils.buildTx(txp);
               should.not.exist(t.getChangeOutput());
               clients[0].publishTxProposal(
                 {
@@ -4009,10 +4010,10 @@ describe('client API', function() {
                   should.not.exist(err);
                   should.exist(publishedTxp);
                   publishedTxp.status.should.equal('pending');
-                  let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+                  const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
                   clients[0].pushSignatures(publishedTxp, signatures, async (err, txp) => {
                     should.not.exist(err);
-                    let signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
+                    const signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
                     clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
                       should.not.exist(err);
                       txp.status.should.equal('accepted');
@@ -4032,8 +4033,8 @@ describe('client API', function() {
 
       // DISABLED 2020-04-07
       it.skip('Should sign proposal (legacy txp version 3)', function(done) {
-        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
-        var opts = {
+        const toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        const opts = {
           outputs: [
             {
               amount: 1e8,
@@ -4062,10 +4063,10 @@ describe('client API', function() {
                 should.exist(publishedTxp);
                 publishedTxp.status.should.equal('pending');
 
-                let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+                const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
                 clients[0].pushSignatures(publishedTxp, signatures, async (err, txp) => {
                   should.not.exist(err);
-                  let signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
+                  const signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
                   clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
                     should.not.exist(err);
                     txp.status.should.equal('accepted');
@@ -4080,8 +4081,8 @@ describe('client API', function() {
       });
 
       it.skip('Should fail with need_update error if trying to sign a txp v4 on old client', function(done) {
-        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
-        var opts = {
+        const toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        const opts = {
           outputs: [
             {
               amount: 1e8,
@@ -4106,7 +4107,7 @@ describe('client API', function() {
             async (err, publishedTxp) => {
               should.not.exist(err);
               should.exist(publishedTxp);
-              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+              const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(
                 publishedTxp,
                 signatures,
@@ -4123,8 +4124,8 @@ describe('client API', function() {
       });
 
       it.skip('Should fail with wrong_signatures error if trying to push v3 signatures to  a v4 txp v', function(done) {
-        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
-        var opts = {
+        const toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        const opts = {
           outputs: [
             {
               amount: 1e8,
@@ -4150,7 +4151,7 @@ describe('client API', function() {
               should.not.exist(err);
               should.exist(publishedTxp);
               txp.version = 3; // get v3 signatures
-              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+              const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(
                 publishedTxp,
                 signatures,
@@ -4173,8 +4174,8 @@ describe('client API', function() {
       });
 
       it('(BCH) two incompatible clients try to sign schnorr txp', function(done) {
-        var toAddress = 'qr5m6xul5nahlzczeaqkg5qe3mgt754djuug954tc3';
-        var opts = {
+        const toAddress = 'qr5m6xul5nahlzczeaqkg5qe3mgt754djuug954tc3';
+        const opts = {
           outputs: [
             {
               amount: 1e8,
@@ -4200,10 +4201,10 @@ describe('client API', function() {
               should.exist(publishedTxp);
               publishedTxp.status.should.equal('pending');
 
-              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+              const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(publishedTxp, signatures, async (err, txp) => {
                 should.not.exist(err);
-                let signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
+                const signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
                 clients[1].pushSignatures(
                   publishedTxp,
                   signatures2,
@@ -4221,8 +4222,8 @@ describe('client API', function() {
       });
 
       it('BCH Multisig Txp signingMethod = schnorr', function(done) {
-        var toAddress = 'qr5m6xul5nahlzczeaqkg5qe3mgt754djuug954tc3';
-        var opts = {
+        const toAddress = 'qr5m6xul5nahlzczeaqkg5qe3mgt754djuug954tc3';
+        const opts = {
           outputs: [
             {
               amount: 1e8,
@@ -4251,13 +4252,13 @@ describe('client API', function() {
               publishedTxp.signingMethod.should.equal('schnorr');
               publishedTxp.status.should.equal('pending');
 
-              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+              const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(
                 publishedTxp,
                 signatures,
                 async (err, txp) => {
                   should.not.exist(err);
-                  let signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
+                  const signatures2 = await keys[1].sign(clients[1].getRootPath(), txp);
                   clients[1].pushSignatures(
                     publishedTxp,
                     signatures2,
@@ -4283,8 +4284,8 @@ describe('client API', function() {
       });
 
       it('should sign a tx', function(done) {
-        var toAddress = 'qr5m6xul5nahlzczeaqkg5qe3mgt754djuug954tc3';
-        var opts = {
+        const toAddress = 'qr5m6xul5nahlzczeaqkg5qe3mgt754djuug954tc3';
+        const opts = {
           outputs: [
             {
               amount: 1e8,
@@ -4313,7 +4314,7 @@ describe('client API', function() {
               publishedTxp.signingMethod.should.equal('schnorr');
               publishedTxp.status.should.equal('pending');
 
-              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+              const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
                 should.not.exist(err);
                 txp.status.should.equal('accepted');
@@ -4331,8 +4332,8 @@ describe('client API', function() {
       });
 
       it('Should sign proposal', function(done) {
-        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
-        var opts = {
+        const toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
+        const opts = {
           outputs: [
             {
               amount: 1e8,
@@ -4358,7 +4359,7 @@ describe('client API', function() {
               should.not.exist(err);
               should.exist(publishedTxp);
               publishedTxp.status.should.equal('pending');
-              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+              const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
                 should.not.exist(err);
                 txp.status.should.equal('accepted');
@@ -4370,8 +4371,8 @@ describe('client API', function() {
       });
 
       it('Should fail with "upgrade needed" trying to sign schnorr on old clients', function(done) {
-        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
-        var opts = {
+        const toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
+        const opts = {
           outputs: [
             {
               amount: 1e8,
@@ -4400,7 +4401,7 @@ describe('client API', function() {
                 should.not.exist(err);
                 should.exist(publishedTxp);
                 publishedTxp.status.should.equal('pending');
-                let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+                const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
                 clients[0].pushSignatures(
                   publishedTxp,
                   signatures,
@@ -4418,8 +4419,8 @@ describe('client API', function() {
       });
 
       it('Should sign proposal v3', function(done) {
-        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
-        var opts = {
+        const toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
+        const opts = {
           outputs: [
             {
               amount: 1e8,
@@ -4448,7 +4449,7 @@ describe('client API', function() {
                 should.not.exist(err);
                 should.exist(publishedTxp);
                 publishedTxp.status.should.equal('pending');
-                let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+                const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
                 clients[0].pushSignatures(
                   publishedTxp,
                   signatures,
@@ -4467,8 +4468,8 @@ describe('client API', function() {
       });
 
       it.skip('Should sign proposal (legacy txp version 3)', function(done) {
-        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
-        var opts = {
+        const toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
+        const opts = {
           outputs: [
             {
               amount: 1e8,
@@ -4498,7 +4499,7 @@ describe('client API', function() {
                 should.exist(publishedTxp);
                 publishedTxp.status.should.equal('pending');
 
-                let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+                const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
                 clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('accepted');
@@ -4512,8 +4513,8 @@ describe('client API', function() {
       });
 
       it.skip('Should fail with need_update error if trying to sign a txp v4 on old client', function(done) {
-        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
-        var opts = {
+        const toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
+        const opts = {
           outputs: [
             {
               amount: 1e8,
@@ -4538,7 +4539,7 @@ describe('client API', function() {
             async (err, publishedTxp) => {
               should.not.exist(err);
               should.exist(publishedTxp);
-              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+              const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(
                 publishedTxp,
                 signatures,
@@ -4555,8 +4556,8 @@ describe('client API', function() {
       });
 
       it.skip('Should fail with wrong_signatures error if trying to push v3 signatures to  a v4 txp v', function(done) {
-        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
-        var opts = {
+        const toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
+        const opts = {
           outputs: [
             {
               amount: 1e8,
@@ -4582,7 +4583,7 @@ describe('client API', function() {
               should.not.exist(err);
               should.exist(publishedTxp);
               txp.version = 3; // get v3 signatures
-              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+              const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(
                 publishedTxp,
                 signatures,
@@ -4601,9 +4602,9 @@ describe('client API', function() {
   });
 
   describe('Payment Protocol V2', function() {
-    var PP, oldreq, DATA, postArgs;
-    var header: any = {};
-    var mockRequest = (bodyBuf, headers) => {
+    let PP, oldreq, DATA, postArgs;
+    const header: any = {};
+    const mockRequest = (bodyBuf, headers) => {
       Client.PayProV2.request = {
         get: _url => {
           return {
@@ -4632,7 +4633,7 @@ describe('client API', function() {
               }
             },
             send: opts => {
-              var _opts = JSON.parse(opts);
+              const _opts = JSON.parse(opts);
               if (_opts.transactions) {
                 postArgs.push(_opts);
               }
@@ -4661,8 +4662,8 @@ describe('client API', function() {
       });
     });
 
-    let tests = [
-/*      {
+    const tests = [
+      /*      {
         name: 'weightedSize: Legacy BTC',
         opts: { network: 'livenet' },
         expectedSize: 220,
@@ -4672,7 +4673,7 @@ describe('client API', function() {
         opts: { network: 'livenet', useNativeSegwit: true },
         expectedSize: 140,
       }
- */   {
+ */ {
         name: 'weightedSize: Legacy BTC',
         opts: { network: 'livenet' },
         expectedSize: 335,
@@ -4701,7 +4702,7 @@ describe('client API', function() {
                 should.exist(x0.address);
                 blockchainExplorerMock.setUtxo(x0, 1, 2);
                 blockchainExplorerMock.setUtxo(x0, 1, 2);
-                var opts = {
+                const opts = {
                   paymentUrl: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X'
                 };
 
@@ -4729,33 +4730,33 @@ describe('client API', function() {
         it('Should send the signed tx in paypro. case: ' + cas++, function(done) {
           clients[0].getTxProposals({}, async (err, txps) => {
             should.not.exist(err);
-            let signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
+            const signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
             clients[0].pushSignatures(txps[0], signatures, async (err, xx) => {
               should.not.exist(err);
-              let signatures = await keys[1].sign(clients[1].getRootPath(), txps[0]);
+              const signatures = await keys[1].sign(clients[1].getRootPath(), txps[0]);
               clients[1].pushSignatures(txps[0], signatures, (err, xx) => {
-              should.not.exist(err);
- 
-              xx.status.should.equal('accepted');
-
-              let spy = sandbox.spy(Client.PayProV2.request, 'post');
-              clients[0].broadcastTxProposal(xx, (err, zz, memo) => {
                 should.not.exist(err);
-                spy.called.should.be.true;
+ 
+                xx.status.should.equal('accepted');
 
-                // unsigned
-                let size = x.expectedSize;
-                postArgs[0].transactions[0].weightedSize.should.within(
-                  size - 10,
-                  size + 10
-                );
+                const spy = sandbox.spy(Client.PayProV2.request, 'post');
+                clients[0].broadcastTxProposal(xx, (err, zz, memo) => {
+                  should.not.exist(err);
+                  spy.called.should.be.true;
 
-                // signed
-                postArgs[1].transactions[0].weightedSize.should.within(size-10, size+10);
-                done();
+                  // unsigned
+                  const size = x.expectedSize;
+                  postArgs[0].transactions[0].weightedSize.should.within(
+                    size - 10,
+                    size + 10
+                  );
+
+                  // signed
+                  postArgs[1].transactions[0].weightedSize.should.within(size-10, size+10);
+                  done();
+                });
               });
             });
-          });
           });
         });
       });
@@ -4775,7 +4776,7 @@ describe('client API', function() {
               should.exist(x0.address);
               blockchainExplorerMock.setUtxo(x0, 1, 2);
               blockchainExplorerMock.setUtxo(x0, 1, 2);
-              var opts = {
+              const opts = {
                 paymentUrl: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X'
               };
 
@@ -4804,7 +4805,7 @@ describe('client API', function() {
         clients[1].getTxProposals({}, (err, txps) => {
           try {
             should.not.exist(err);
-            var tx = txps[0];
+            const tx = txps[0];
             // From the hardcoded paypro request
             tx.outputs[0].amount.should.equal(DATA.instructions[0].outputs[0].amount);
             tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
@@ -4819,7 +4820,7 @@ describe('client API', function() {
 
       it('Should handle broken paypro data', async () => {
         mockRequest(Buffer.from('broken data'), TestData.payProJsonV2.btc.headers);
-        var opts = {
+        const opts = {
           // payProUrl: 'dummy' // was this intentional?
           paymentUrl: 'dummy'
         };
@@ -4834,7 +4835,7 @@ describe('client API', function() {
         clients[1].getTxProposals({}, (err, txps) => {
           try {
             should.not.exist(err);
-            var tx = txps[0];
+            const tx = txps[0];
             // From the hardcoded paypro request
             tx.outputs[0].amount.should.equal(DATA.instructions[0].outputs[0].amount);
             tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
@@ -4852,7 +4853,7 @@ describe('client API', function() {
         clients[1].doNotVerifyPayPro = true;
         clients[1].getTxProposals({}, async (err, txps) => {
           should.not.exist(err);
-          let signatures = await keys[1].sign(clients[1].getRootPath(), txps[0]);
+          const signatures = await keys[1].sign(clients[1].getRootPath(), txps[0]);
           clients[1].pushSignatures(txps[0], signatures, (err, txps) => {
             should.not.exist(err);
             done();
@@ -4863,14 +4864,14 @@ describe('client API', function() {
       it('Should send the "payment message" when last copayer sign', function(done) {
         clients[0].getTxProposals({}, async (err, txps) => {
           should.not.exist(err);
-          let signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
+          const signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, async (err, xx) => {
             should.not.exist(err);
-            let signatures2 = await keys[1].sign(clients[1].getRootPath(), txps[0]);
+            const signatures2 = await keys[1].sign(clients[1].getRootPath(), txps[0]);
             clients[1].pushSignatures(xx, signatures2, (err, yy) => {
               should.not.exist(err);
               yy.status.should.equal('accepted');
-              let spy = sandbox.spy(Client.PayProV2.request, 'post');
+              const spy = sandbox.spy(Client.PayProV2.request, 'post');
               //              http.onCall(5).resolves(TestData.payProAckHex);
 
               clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
@@ -4892,21 +4893,21 @@ describe('client API', function() {
       it('Should send the signed tx in paypro', function(done) {
         clients[0].getTxProposals({}, async (err, txps) => {
           should.not.exist(err);
-          let signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
+          const signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, async (err, xx) => {
             should.not.exist(err);
-            let signatures = await keys[1].sign(clients[1].getRootPath(), txps[0]);
+            const signatures = await keys[1].sign(clients[1].getRootPath(), txps[0]);
             clients[1].pushSignatures(xx, signatures, (err, yy) => {
               should.not.exist(err);
 
               yy.status.should.equal('accepted');
-              let spy = sandbox.spy(Client.PayProV2.request, 'post');
+              const spy = sandbox.spy(Client.PayProV2.request, 'post');
               clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
                 should.not.exist(err);
                 spy.called.should.be.true;
-                var rawTx = Buffer.from(postArgs[1].transactions[0].tx, 'hex');
-                var tx = new Bitcore.Transaction(rawTx);
-                var script = tx.inputs[0].script;
+                const rawTx = Buffer.from(postArgs[1].transactions[0].tx, 'hex');
+                const tx = new Bitcore.Transaction(rawTx);
+                const script = tx.inputs[0].script;
                 script.isScriptHashIn().should.equal(true);
                 memo.should.be.equal(
                   'Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)'
@@ -4921,16 +4922,16 @@ describe('client API', function() {
       it('Should set bp_partner', function(done) {
         clients[0].getTxProposals({}, async (err, txps) => {
           should.not.exist(err);
-          var changeAddress = txps[0].changeAddress.address;
-          let signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
+          const changeAddress = txps[0].changeAddress.address;
+          const signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, async (err, xx) => {
             should.not.exist(err);
-            let signatures = await keys[1].sign(clients[1].getRootPath(), txps[0]);
+            const signatures = await keys[1].sign(clients[1].getRootPath(), txps[0]);
             clients[1].pushSignatures(xx, signatures, (err, yy) => {
               should.not.exist(err);
 
               yy.status.should.equal('accepted');
-              let spy = sandbox.spy(Client.PayProV2.request, 'post');
+              const spy = sandbox.spy(Client.PayProV2.request, 'post');
 
               clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
                 should.not.exist(err);
@@ -4956,7 +4957,7 @@ describe('client API', function() {
               should.exist(x0.address);
               blockchainExplorerMock.setUtxo(x0, 1, 2);
               blockchainExplorerMock.setUtxo(x0, 1, 2);
-              var opts = {
+              const opts = {
                 paymentUrl: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X'
               };
               Client.PayProV2.selectPaymentOption(opts).then(paypro => {
@@ -4984,7 +4985,7 @@ describe('client API', function() {
       it('Should Create and Verify a Tx from PayPro', function(done) {
         clients[1].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
-          var tx = txps[0];
+          const tx = txps[0];
 
           tx.outputs[0].amount.should.equal(DATA.instructions[0].outputs[0].amount);
           tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
@@ -5000,15 +5001,15 @@ describe('client API', function() {
       it('Should send the "payment message" when last copayer sign', function(done) {
         clients[0].getTxProposals({}, async (err, txps) => {
           should.not.exist(err);
-          let signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
+          const signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, async (err, xx) => {
             should.not.exist(err);
 
-            let signatures = await keys[1].sign(clients[1].getRootPath(), xx);
+            const signatures = await keys[1].sign(clients[1].getRootPath(), xx);
             clients[1].pushSignatures(xx, signatures, (err, yy) => {
               should.not.exist(err);
               yy.status.should.equal('accepted');
-              let spy = sandbox.spy(Client.PayProV2.request, 'post');
+              const spy = sandbox.spy(Client.PayProV2.request, 'post');
               clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
                 try {
                   should.not.exist(err);
@@ -5037,11 +5038,11 @@ describe('client API', function() {
       it('Should NOT fail if requiredFeeRate is not meet', function(done) {
         clients[0].getTxProposals({}, async (err, txps) => {
           should.not.exist(err);
-          let signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
+          const signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, async (err, xx) => {
             should.not.exist(err);
             xx.feePerKb /= 2;
-            let signatures2 = await keys[1].sign(clients[1].getRootPath(), xx);
+            const signatures2 = await keys[1].sign(clients[1].getRootPath(), xx);
             clients[1].pushSignatures(xx, signatures2, (err, yy) => {
               should.not.exist(err);
               done();
@@ -5062,7 +5063,7 @@ describe('client API', function() {
               should.exist(x0.address);
               blockchainExplorerMock.setUtxo(x0, 1, 2);
               blockchainExplorerMock.setUtxo(x0, 1, 2);
-              var opts = {
+              const opts = {
                 paymentUrl: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X'
               };
               Client.PayProV2.selectPaymentOption(opts).then(paypro => {
@@ -5088,18 +5089,18 @@ describe('client API', function() {
       it('Should send the signed tx in paypro', function(done) {
         clients[0].getTxProposals({}, async (err, txps) => {
           should.not.exist(err);
-          let signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
+          const signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, (err, xx) => {
             should.not.exist(err);
             xx.status.should.equal('accepted');
-            let spy = sandbox.spy(Client.PayProV2.request, 'post');
+            const spy = sandbox.spy(Client.PayProV2.request, 'post');
 
             clients[0].broadcastTxProposal(xx, (err, zz, memo) => {
               should.not.exist(err);
               spy.called.should.be.true;
-              var rawTx = Buffer.from(postArgs[1].transactions[0].tx, 'hex');
-              var tx = new Bitcore.Transaction(rawTx);
-              var script = tx.inputs[0].script;
+              const rawTx = Buffer.from(postArgs[1].transactions[0].tx, 'hex');
+              const tx = new Bitcore.Transaction(rawTx);
+              const script = tx.inputs[0].script;
 
               script.isPublicKeyHashIn().should.equal(true);
               memo.should.be.equal(
@@ -5125,11 +5126,11 @@ describe('client API', function() {
               should.exist(x0.address);
 
               // TODO change createAddress to /v4/, and remove this.
-              //x0.address = Bitcore_['bch'].Address(x0.address).toString(true);
+              // x0.address = Bitcore_['bch'].Address(x0.address).toString(true);
               // ======
               blockchainExplorerMock.setUtxo(x0, 1, 2);
               blockchainExplorerMock.setUtxo(x0, 1, 2);
-              var opts = {
+              const opts = {
                 paymentUrl: 'https://bitpay.com/i/XM8XbreRs6cnKkR3yYT6qQ',
                 chain: 'BCH',
                 currency: 'BCH'
@@ -5161,18 +5162,18 @@ describe('client API', function() {
       it('Should send the signed tx in paypro', function(done) {
         clients[0].getTxProposals({}, async (err, txps) => {
           should.not.exist(err);
-          let signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
+          const signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, (err, xx) => {
             should.not.exist(err);
             xx.status.should.equal('accepted');
 
-            let spy = sandbox.spy(Client.PayProV2.request, 'post');
+            const spy = sandbox.spy(Client.PayProV2.request, 'post');
             clients[0].broadcastTxProposal(xx, (err, zz, memo) => {
               should.not.exist(err);
               spy.called.should.be.true;
-              var rawTx = Buffer.from(postArgs[1].transactions[0].tx, 'hex');
-              var tx = Bitcore_['bch'].Transaction(rawTx);
-              var script = tx.inputs[0].script;
+              const rawTx = Buffer.from(postArgs[1].transactions[0].tx, 'hex');
+              const tx = Bitcore_['bch'].Transaction(rawTx);
+              const script = tx.inputs[0].script;
               script.isPublicKeyHashIn().should.equal(true);
               memo.should.be.equal(
                 'Payment request for BitPay invoice XM8XbreRs6cnKkR3yYT6qQ for merchant BitPay Visa® Load (USD-USA)'
@@ -5199,7 +5200,7 @@ describe('client API', function() {
               should.exist(x0.address);
               blockchainExplorerMock.setUtxo(x0, 1, 2);
               blockchainExplorerMock.setUtxo(x0, 1, 2);
-              var opts = {
+              const opts = {
                 paymentUrl: 'http://example.com'
               };
 
@@ -5238,7 +5239,7 @@ describe('client API', function() {
       it('Should Create and Verify a Tx from PayPro', function(done) {
         clients[1].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
-          var tx = txps[0];
+          const tx = txps[0];
           // From the hardcoded paypro request
           tx.amount.should.equal(DATA.instructions[0].outputs[0].amount);
           tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
@@ -5253,13 +5254,13 @@ describe('client API', function() {
   describe('Proposals with explicit ID', () => {
     it('Should create and publish a proposal', function(done) {
       helpers.createAndJoinWallet(clients, keys, 1, 1, {}, w => {
-        var id = 'anId';
+        const id = 'anId';
         clients[0].createAddress(null, (err, x0) => {
           should.not.exist(err);
           should.exist(x0.address);
           blockchainExplorerMock.setUtxo(x0, 1, 2);
-          var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
-          var opts = {
+          const toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+          const opts = {
             outputs: [
               {
                 amount: 40000,
@@ -5297,8 +5298,8 @@ describe('client API', function() {
   });
 
   describe('Multiple output proposals', () => {
-    var toAddress;
-    var opts;
+    let toAddress;
+    let opts;
     beforeEach(function(done) {
       toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
       opts = {
@@ -5313,7 +5314,7 @@ describe('client API', function() {
         feePerKb: 100e2
       };
 
-      var http = sandbox.stub();
+      const http = sandbox.stub();
       http.resolves(undefined);
       helpers.createAndJoinWallet(clients, keys, 1, 1, {}, w => {
         clients[0].createAddress(null, (err, x0) => {
@@ -5325,7 +5326,7 @@ describe('client API', function() {
       });
     });
 
-    var doit = (opts, doNotVerifyPayPro, doBroadcast, done) => {
+    const doit = (opts, doNotVerifyPayPro, doBroadcast, done) => {
       helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
         should.not.exist(err);
         clients[0].getTx(x.id, async (err, x2) => {
@@ -5336,7 +5337,7 @@ describe('client API', function() {
           x2.outputs[0].amount.should.equal(10000);
           x2.outputs[0].message.should.equal('world');
           clients[0].doNotVerifyPayPro = doNotVerifyPayPro;
-          let signatures = await keys[0].sign(clients[0].getRootPath(), x2);
+          const signatures = await keys[0].sign(clients[0].getRootPath(), x2);
           clients[0].pushSignatures(x2, signatures, (err, txp) => {
             should.not.exist(err);
             txp.status.should.equal('accepted');
@@ -5384,7 +5385,7 @@ describe('client API', function() {
           should.not.exist(err);
           should.exist(x0.address);
           blockchainExplorerMock.setUtxo(x0, 1, 1);
-          var opts = {
+          const opts = {
             outputs: [
               {
                 amount: 10000000,
@@ -5403,7 +5404,7 @@ describe('client API', function() {
             txp.changeAddress.path.should.equal('m/1/0');
             txp.outputs[0].message.should.equal('output 0');
             txp.message.should.equal('hello');
-            let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+            const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
             clients[0].pushSignatures(txp, signatures, (err, txp) => {
               should.not.exist(err);
               txp.status.should.equal('accepted');
@@ -5428,8 +5429,8 @@ describe('client API', function() {
         clients[0].createAddress(null, (err, x0) => {
           should.not.exist(err);
           should.exist(x0.address);
-          //blockchainExplorerMock.setUtxo(x0, 1, 1);
-          var opts = {
+          // blockchainExplorerMock.setUtxo(x0, 1, 1);
+          const opts = {
             outputs: [
               {
                 amount: 10000000,
@@ -5452,7 +5453,7 @@ describe('client API', function() {
             txp.txType.should.equal(2);
             txp.maxGasFee.should.equal(20000);
             txp.priorityGasFee.should.equal(5000);
-            let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+            const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
             clients[0].pushSignatures(txp, signatures, (err, txp) => {
               should.not.exist(err);
               txp.status.should.equal('accepted');
@@ -5476,7 +5477,7 @@ describe('client API', function() {
         clients[0].createAddress(null, (err, x0) => {
           should.not.exist(err);
           should.exist(x0.address);
-          var opts = {
+          const opts = {
             outputs: [
               {
                 amount: 10000000,
@@ -5506,7 +5507,7 @@ describe('client API', function() {
               txp2.outputs[0].message.should.equal('output 0');
               txp2.message.should.equal('hello');
               
-              let signatures = await keys[0].sign(clients[0].getRootPath(), txp2);
+              const signatures = await keys[0].sign(clients[0].getRootPath(), txp2);
               clients[0].pushSignatures(txp2, signatures, err => {
                 should.exist(err);
                 done();
@@ -5522,8 +5523,8 @@ describe('client API', function() {
         clients[0].createAddress(null, (err, x0) => {
           should.not.exist(err);
           should.exist(x0.address);
-          //blockchainExplorerMock.setUtxo(x0, 1, 1);
-          var opts = {
+          // blockchainExplorerMock.setUtxo(x0, 1, 1);
+          const opts = {
             chain: 'matic',
             outputs: [
               {
@@ -5543,7 +5544,7 @@ describe('client API', function() {
             txp.status.should.equal('pending');
             txp.outputs[0].message.should.equal('output 0');
             txp.message.should.equal('hello');
-            let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+            const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
             clients[0].pushSignatures(txp, signatures, (err, txp) => {
               should.not.exist(err);
               txp.status.should.equal('accepted');
@@ -5568,7 +5569,7 @@ describe('client API', function() {
           should.not.exist(err);
           should.exist(x0.address);
           blockchainExplorerMock.setUtxo(x0, 10, 2);
-          var opts = {
+          const opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello'
@@ -5577,21 +5578,21 @@ describe('client API', function() {
             should.not.exist(err);
             clients[0].getStatus({}, async (err, st) => {
               should.not.exist(err);
-              var txp = st.pendingTxps[0];
+              const txp = st.pendingTxps[0];
               txp.status.should.equal('pending');
               txp.requiredRejections.should.equal(2);
               txp.requiredSignatures.should.equal(2);
-              var w = st.wallet;
+              const w = st.wallet;
               w.copayers.length.should.equal(3);
               w.status.should.equal('complete');
-              var b = st.balance;
+              const b = st.balance;
               b.totalAmount.should.equal(1000000000);
               b.lockedAmount.should.equal(1000000000);
-              let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+              const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
               clients[0].pushSignatures(txp, signatures, async (err, txp) => {
                 should.not.exist(err);
                 txp.status.should.equal('pending');
-                let signatures = await keys[1].sign(clients[1].getRootPath(), txp);
+                const signatures = await keys[1].sign(clients[1].getRootPath(), txp);
                 clients[1].pushSignatures(txp, signatures, (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('accepted');
@@ -5613,7 +5614,7 @@ describe('client API', function() {
         clients[0].createAddress(null, (err, x0) => {
           should.not.exist(err);
           blockchainExplorerMock.setUtxo(x0, 10, 2);
-          var opts = {
+          const opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello 1-1'
@@ -5622,7 +5623,7 @@ describe('client API', function() {
             should.not.exist(err);
             clients[0].rejectTxProposal(txp, 'wont sign', async (err, txp) => {
               should.not.exist(err);
-              let signatures = await keys[1].sign(clients[1].getRootPath(), txp);
+              const signatures = await keys[1].sign(clients[1].getRootPath(), txp);
               clients[1].pushSignatures(txp, signatures, (err, txp) => {
                 should.not.exist(err);
                 done();
@@ -5639,7 +5640,7 @@ describe('client API', function() {
           should.not.exist(err);
           should.exist(x0.address);
           blockchainExplorerMock.setUtxo(x0, 10, 2);
-          var opts = {
+          const opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello 1-1'
@@ -5652,10 +5653,10 @@ describe('client API', function() {
             clients[0].rejectTxProposal(txp, 'wont sign', async (err, txp) => {
               should.not.exist(err);
               txp.status.should.equal('pending');
-              let signatures = await keys[1].sign(clients[1].getRootPath(), txp);
+              const signatures = await keys[1].sign(clients[1].getRootPath(), txp);
               clients[1].pushSignatures(txp, signatures, async (err, txp) => {
                 should.not.exist(err);
-                let signatures = await keys[2].sign(clients[2].getRootPath(), txp);
+                const signatures = await keys[2].sign(clients[2].getRootPath(), txp);
                 clients[2].pushSignatures(txp, signatures, (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('accepted');
@@ -5678,7 +5679,7 @@ describe('client API', function() {
           should.not.exist(err);
           should.exist(x0.address);
           blockchainExplorerMock.setUtxo(x0, 10, 3);
-          var opts = {
+          const opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello 1-1'
@@ -5692,7 +5693,7 @@ describe('client API', function() {
             clients[0].rejectTxProposal(txp, 'wont sign', async (err, txp) => {
               should.not.exist(err);
               txp.status.should.equal('pending');
-              let signatures = await keys[1].sign(clients[1].getRootPath(), txp);
+              const signatures = await keys[1].sign(clients[1].getRootPath(), txp);
               clients[1].pushSignatures(txp, signatures, (err, txp) => {
                 should.not.exist(err);
                 txp.status.should.equal('pending');
@@ -5714,7 +5715,7 @@ describe('client API', function() {
           should.not.exist(err);
           should.exist(x0.address);
           blockchainExplorerMock.setUtxo(x0, 10, 2);
-          var opts = {
+          const opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello 1-1'
@@ -5724,7 +5725,7 @@ describe('client API', function() {
             txp.status.should.equal('pending');
             txp.requiredRejections.should.equal(2);
             txp.requiredSignatures.should.equal(2);
-            let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+            const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
             clients[0].pushSignatures(txp, signatures, (err, txp) => {
               should.not.exist(err);
               txp.status.should.equal('pending');
@@ -5750,7 +5751,7 @@ describe('client API', function() {
   describe('Broadcast raw transaction', () => {
     it('should broadcast raw tx', function(done) {
       helpers.createAndJoinWallet(clients, keys, 1, 1, {}, w => {
-        var opts = {
+        const opts = {
           network: 'testnet',
           rawTx:
             '0100000001b1b1b1b0d9786e237ec6a4b80049df9e926563fee7bdbc1ac3c4efc3d0af9a1c010000006a47304402207c612d36d0132ed463526a4b2370de60b0aa08e76b6f370067e7915c2c74179b02206ae8e3c6c84cee0bca8521704eddb40afe4590f14fd5d6434da980787ba3d5110121031be732b984b0f1f404840f2479bcc81f90187298efecc67dd83e1f93d9b2860dfeffffff0200ab9041000000001976a91403383bd4cff200de3690db1ed17d0b1a228ea43f88ac25ad6ed6190000001976a9147ccbaf7bcc1e323548bd1d57d7db03f6e6daf76a88acaec70700'
@@ -5806,7 +5807,7 @@ describe('client API', function() {
           },
           (address, next) => {
             blockchainExplorerMock.setUtxo(address, 10, 2);
-            var opts = {
+            const opts = {
               amount: 10000,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'some message'
@@ -5815,10 +5816,10 @@ describe('client API', function() {
               should.not.exist(err);
               clients[1].rejectTxProposal(txp, 'some reason', async (err, txp) => {
                 should.not.exist(err);
-                let signatures = await keys[2].sign(clients[2].getRootPath(), txp);
+                const signatures = await keys[2].sign(clients[2].getRootPath(), txp);
                 clients[2].pushSignatures(txp, signatures, async (err, txp) => {
                   should.not.exist(err);
-                  let signatures = await keys[0].sign(clients[0].getRootPath(), txp);
+                  const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
                   clients[0].pushSignatures(txp, signatures, (err, txp) => {
                     should.not.exist(err);
                     txp.status.should.equal('accepted');
@@ -5844,7 +5845,7 @@ describe('client API', function() {
             );
           },
           (txp, next) => {
-            var history = createTxsV8(2, 1000);
+            const history = createTxsV8(2, 1000);
             history[0].txid = txp.txid;
             for (const h of history) {
               h.blockTime = new Date().toISOString();
@@ -5854,16 +5855,16 @@ describe('client API', function() {
               should.not.exist(err);
               should.exist(txs);
               txs.length.should.equal(2);
-              var decorated = txs.find(tx => tx.txid === txp.txid);
+              const decorated = txs.find(tx => tx.txid === txp.txid);
               should.exist(decorated);
               decorated.proposalId.should.equal(txp.id);
               decorated.message.should.equal('some message');
               decorated.actions.length.should.equal(3);
-              var rejection = decorated.actions.find(a => a.type === 'reject');
+              const rejection = decorated.actions.find(a => a.type === 'reject');
               should.exist(rejection);
               rejection.comment.should.equal('some reason');
 
-              var note = decorated.note;
+              const note = decorated.note;
               should.exist(note);
               note.body.should.equal('just a note');
               note.editedByName.should.equal('copayer 1');
@@ -5878,7 +5879,7 @@ describe('client API', function() {
       );
     });
     describe('should get paginated transaction history', function() {
-      let testCases = [
+      const testCases = [
         {
           opts: {},
           expected: [20, 10]
@@ -5911,7 +5912,7 @@ describe('client API', function() {
       ];
 
       beforeEach(function(done) {
-        let txs = createTxsV8(2, 1000);
+        const txs = createTxsV8(2, 1000);
         txs[0].blockTime = new Date(20 * 1000).toISOString();
         txs[1].blockTime = new Date(10 * 1000).toISOString();
         blockchainExplorerMock.setHistory(txs);
@@ -5928,7 +5929,7 @@ describe('client API', function() {
           clients[0].getTxHistory(testCase.opts, (err, txs) => {
             should.not.exist(err);
             should.exist(txs);
-            var times = txs.map(tx => tx.time);
+            const times = txs.map(tx => tx.time);
             times.should.deep.equal(testCase.expected);
             done();
           });
@@ -5974,7 +5975,7 @@ describe('client API', function() {
       );
     });
     it('should not send note body in clear text', function(done) {
-      var spy = sandbox.spy(clients[0].request, 'put');
+      const spy = sandbox.spy(clients[0].request, 'put');
       clients[0].editTxNote(
         {
           txid: '123',
@@ -5982,8 +5983,8 @@ describe('client API', function() {
         },
         err => {
           should.not.exist(err);
-          var url = spy.getCall(0).args[0];
-          var body = JSON.stringify(spy.getCall(0).args[1]);
+          const url = spy.getCall(0).args[0];
+          const body = JSON.stringify(spy.getCall(0).args[1]);
           url.should.contain('/txnotes');
           body.should.contain('123');
           body.should.not.contain('a random note');
@@ -6008,7 +6009,7 @@ describe('client API', function() {
               should.not.exist(err);
               should.exist(note);
               note.editedBy.should.equal(clients[0].credentials.copayerId);
-              var creator = note.editedBy;
+              const creator = note.editedBy;
               clients[1].getTxNote(
                 {
                   txid: '123'
@@ -6027,7 +6028,7 @@ describe('client API', function() {
       );
     });
     it('should get all notes edited past a given date', function(done) {
-      var clock = sandbox.useFakeTimers({ toFake: ['Date'] });
+      const clock = sandbox.useFakeTimers({ toFake: ['Date'] });
       async.series(
         [
           next => {
@@ -6138,12 +6139,12 @@ describe('client API', function() {
   });
 
   describe('from Old credentials', () => {
-    describe(`#upgradeCredentialsV1`, () => {
+    describe('#upgradeCredentialsV1', () => {
       for (const x of oldCredentials) {
         it(`should import old credentials: ${x.name}`, () => {
-          let imported = Client.upgradeCredentialsV1(JSON.parse(x.blob));
-          let k = imported.key;
-          let c = imported.credentials;
+          const imported = Client.upgradeCredentialsV1(JSON.parse(x.blob));
+          const k = imported.key;
+          const c = imported.credentials;
           if (x.password) {
             k.decrypt(x.password);
           }
@@ -6158,10 +6159,10 @@ describe('client API', function() {
       }
     });
 
-    describe(`#upgradeMultipleCredentialsV1`, () => {
-      it(`should import many credentials`, () => {
-        let oldies = oldCredentials.map(x => JSON.parse(x.blob));
-        let imported = Client.upgradeMultipleCredentialsV1(oldies);
+    describe('#upgradeMultipleCredentialsV1', () => {
+      it('should import many credentials', () => {
+        const oldies = oldCredentials.map(x => JSON.parse(x.blob));
+        const imported = Client.upgradeMultipleCredentialsV1(oldies);
 
         imported.credentials.length.should.equal(oldies.length);
 
@@ -6175,21 +6176,21 @@ describe('client API', function() {
         }
       });
 
-      it(`should detect and merge with existing keys`, () => {
-        let oldies = oldCredentials.map(x => JSON.parse(x.blob));
+      it('should detect and merge with existing keys', () => {
+        const oldies = oldCredentials.map(x => JSON.parse(x.blob));
 
         // Create some keys.
         oldies[0] = JSON.parse(JSON.stringify(oldies[2]));
         oldies[1] = JSON.parse(JSON.stringify(oldies[2]));
 
-        let imported = Client.upgradeMultipleCredentialsV1(oldies);
+        const imported = Client.upgradeMultipleCredentialsV1(oldies);
         imported.credentials.length.should.equal(oldies.length);
 
         // 1 read-only - 2 existing
         imported.keys.length.should.equal(oldies.length - 1 - 2);
 
         // should assign keyIds to existing keys
-        let k = imported.credentials[0].keyId;
+        const k = imported.credentials[0].keyId;
         imported.credentials[1].keyId.should.equal(k);
         imported.credentials[2].keyId.should.equal(k);
 
@@ -6197,20 +6198,20 @@ describe('client API', function() {
         imported.keys.filter(x => x.id == k).length.should.equal(1);
       });
 
-      it(`should detect and merge with existing keys (2 wallets)`, () => {
+      it('should detect and merge with existing keys (2 wallets)', () => {
         let oldies = oldCredentials.map(x => JSON.parse(x.blob));
         oldies = oldies.splice(0, 2);
 
         // Create some keys.
         oldies[0] = JSON.parse(JSON.stringify(oldies[1]));
 
-        let imported = Client.upgradeMultipleCredentialsV1(oldies);
+        const imported = Client.upgradeMultipleCredentialsV1(oldies);
         imported.credentials.length.should.equal(oldies.length);
 
         imported.keys.length.should.equal(1);
 
         // should assign keyIds to existing keys
-        let k = imported.credentials[0].keyId;
+        const k = imported.credentials[0].keyId;
         imported.credentials[1].keyId.should.equal(k);
 
         // the resulting key should be returned
@@ -6221,7 +6222,7 @@ describe('client API', function() {
 
   describe('Mobility, backup & restore', () => {
     describe('Export & Import', () => {
-      var address, importedClient;
+      let address, importedClient;
       describe('Compliant derivation', () => {
         beforeEach(function(done) {
           importedClient = null;
@@ -6246,16 +6247,16 @@ describe('client API', function() {
         });
 
         it('should export & import with mnemonics + BWS', function(done) {
-          var c = clients[0].credentials;
-          var walletId = c.walletId;
-          var walletName = c.walletName;
-          var copayerName = c.copayerName;
-          var key = c.xPubKey;
+          const c = clients[0].credentials;
+          const walletId = c.walletId;
+          const walletName = c.walletName;
+          const copayerName = c.copayerName;
+          const key = c.xPubKey;
 
-          var exported = clients[0].toString();
+          const exported = clients[0].toString();
           importedClient = helpers.newClient(app);
           importedClient.fromString(exported);
-          var c2 = importedClient.credentials;
+          const c2 = importedClient.credentials;
           c2.xPubKey.should.equal(key);
           c2.walletId.should.equal(walletId);
           c2.walletName.should.equal(walletName);
@@ -6266,16 +6267,16 @@ describe('client API', function() {
         });
 
         it.skip('should export & import with mnemonic encrypted ', function(done) {
-          var c = clients[0].credentials;
-          var walletId = c.walletId;
-          var walletName = c.walletName;
-          var copayerName = c.copayerName;
-          var key = c.xPubKey;
+          const c = clients[0].credentials;
+          const walletId = c.walletId;
+          const walletName = c.walletName;
+          const copayerName = c.copayerName;
+          const key = c.xPubKey;
 
-          var exported = clients[0].toString();
+          const exported = clients[0].toString();
           importedClient = helpers.newClient(app);
           importedClient.fromString(exported);
-          var c2 = importedClient.credentials;
+          const c2 = importedClient.credentials;
           c2.xPubKey.should.equal(key);
           c2.walletId.should.equal(walletId);
           c2.walletName.should.equal(walletName);
@@ -6286,12 +6287,12 @@ describe('client API', function() {
         });
 
         it('should export & import from Key +  BWS', function(done) {
-          var c = clients[0].credentials;
-          var walletId = c.walletId;
-          var walletName = c.walletName;
-          var copayerName = c.copayerName;
-          var network = c.network;
-          var pub = c.xPubKey;
+          const c = clients[0].credentials;
+          const walletId = c.walletId;
+          const walletName = c.walletName;
+          const copayerName = c.copayerName;
+          const network = c.network;
+          const pub = c.xPubKey;
 
           importedClient = helpers.newClient(app);
           importedClient.fromString(
@@ -6302,7 +6303,7 @@ describe('client API', function() {
               n: 1
             })
           );
-          var c2 = importedClient.credentials;
+          const c2 = importedClient.credentials;
           c2.xPubKey.should.equal(pub);
           importedClient.openWallet(null, err => {
             should.not.exist(err);
@@ -6317,7 +6318,7 @@ describe('client API', function() {
       });
 
       describe('Non-compliant derivation', () => {
-        var setup = function(done) {
+        const setup = function(done) {
           clients[0].createWallet(
             'mywallet',
             'creator',
@@ -6365,7 +6366,7 @@ describe('client API', function() {
                       });
         */
         it('should export & import with mnemonics + BWS', function(done) {
-          let k = new Key({
+          const k = new Key({
             seedData: 'pink net pet stove boy receive task nephew book spawn pull regret',
             seedType: 'mnemonic',
             nonCompliantDerivation: true
@@ -6390,7 +6391,7 @@ describe('client API', function() {
             );
           setup(() => {
             importedClient = helpers.newClient(app);
-            let k2 = new Key({
+            const k2 = new Key({
               seedData: 'pink net pet stove boy receive task nephew book spawn pull regret',
               seedType: 'mnemonic',
               nonCompliantDerivation: true
@@ -6412,7 +6413,7 @@ describe('client API', function() {
 
         it('should check BWS once if specific derivation is not problematic', function(done) {
           // this key derivation is equal for compliant and non-compliant
-          let k = new Key({
+          const k = new Key({
             seedData: 'relax about label gentle insect cross summer helmet come price elephant seek',
             seedType: 'mnemonic',
             nonCompliantDerivation: true
@@ -6438,7 +6439,7 @@ describe('client API', function() {
             })
           );
 
-          var spy = sandbox.spy(importedClient, 'openWallet');
+          const spy = sandbox.spy(importedClient, 'openWallet');
           importedClient.openWallet(null, err => {
             should.exist(err);
             err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
@@ -6457,7 +6458,7 @@ describe('client API', function() {
         });
       });
       it('should validate key derivation (fail)', function(done) {
-        let x = Utils.signMessage;
+        const x = Utils.signMessage;
         Utils.signMessage = () => {
           return 'xxxx';
         };
@@ -6482,7 +6483,7 @@ describe('client API', function() {
 
     describe('#import FromMnemonic', () => {
       it('should handle importing an invalid mnemonic', function(done) {
-        var mnemonicWords = 'this is an invalid mnemonic';
+        const mnemonicWords = 'this is an invalid mnemonic';
         Client.serverAssistedImport({ words: mnemonicWords }, {}, err => {
           should.exist(err);
           err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
@@ -6493,7 +6494,7 @@ describe('client API', function() {
 
     describe('#import FromExtendedPrivateKey', () => {
       it('should handle importing an invalid extended private key', function(done) {
-        var xPrivKey = 'this is an invalid key';
+        const xPrivKey = 'this is an invalid key';
         Client.serverAssistedImport({ xPrivKey }, {}, err => {
           should.exist(err);
           err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
@@ -6519,9 +6520,9 @@ describe('client API', function() {
 
       it('should be able to gain access to a 1-1 wallet from mnemonic', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
-          var words = keys[0].get(null, true).mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
+          const words = keys[0].get(null, true).mnemonic;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
 
           clients[0].createAddress(null, (err, addr) => {
             should.not.exist(err);
@@ -6552,11 +6553,11 @@ describe('client API', function() {
 
       it('should be able to gain access to eth tokens wallets from mnemonic', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth' }, () => {
-          var words = keys[0].get(null, true).mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
-          var walletId = clients[0].credentials.walletId;
-          var tokenAddresses = [
+          const words = keys[0].get(null, true).mnemonic;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
+          const walletId = clients[0].credentials.walletId;
+          const tokenAddresses = [
             '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
             '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'
           ];
@@ -6573,7 +6574,7 @@ describe('client API', function() {
                 (err, k, c) => {
                   // the eth wallet + 2 tokens.
                   c.length.should.equal(3);
-                  let recoveryClient = c[0];
+                  const recoveryClient = c[0];
                   recoveryClient.openWallet(null, err => {
                     should.not.exist(err);
                     recoveryClient.credentials.walletName.should.equal(walletName);
@@ -6581,13 +6582,13 @@ describe('client API', function() {
                     recoveryClient.credentials.walletId.should.equal(walletId);
                     recoveryClient.credentials.coin.should.equal('eth');
                     recoveryClient.credentials.chain.should.equal('eth');
-                    let recoveryClient2 = c[2];
+                    const recoveryClient2 = c[2];
                     recoveryClient2.openWallet(null, err => {
                       should.not.exist(err);
                       recoveryClient2.credentials.coin.should.equal('gusd');
                       should.exist(recoveryClient2.credentials.chain);
                       recoveryClient2.credentials.chain.should.equal('eth');
-                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${tokenAddresses[1]}`);
+                      recoveryClient2.credentials.walletId.should.equal(`${walletId}-${tokenAddresses[1]}`);
                       done();
                     });
                   });
@@ -6600,11 +6601,11 @@ describe('client API', function() {
 
       it('should be able to gain access to eth tokens wallets from mnemonic (Case 2)', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth' }, () => {
-          var words = keys[0].get(null, true).mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
-          var walletId = clients[0].credentials.walletId;
-          var tokenAddresses = [
+          const words = keys[0].get(null, true).mnemonic;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
+          const walletId = clients[0].credentials.walletId;
+          const tokenAddresses = [
             '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
           ];
 
@@ -6616,7 +6617,7 @@ describe('client API', function() {
               (err, k, c) => {
                 // the eth wallet + 1 token.
                 c.length.should.equal(2);
-                let recoveryClient = c[0];
+                const recoveryClient = c[0];
                 recoveryClient.openWallet(null, err => {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
@@ -6624,7 +6625,7 @@ describe('client API', function() {
                   recoveryClient.credentials.walletId.should.equal(walletId);
                   recoveryClient.credentials.coin.should.equal('eth');
                   recoveryClient.credentials.chain.should.equal('eth');
-                  let recoveryClient2 = c[1];
+                  const recoveryClient2 = c[1];
                   recoveryClient2.openWallet(null, err => {
                     should.not.exist(err);
                     recoveryClient2.credentials.coin.should.equal('usdc');
@@ -6642,23 +6643,23 @@ describe('client API', function() {
 
       it('should not fail to gain access to eth wallet with unknown tokens addresses from mnemonic (Case 3)', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth' }, () => {
-          var words = keys[0].get(null, true).mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
-          var walletId = clients[0].credentials.walletId;
-          var tokenAddresses = [
+          const words = keys[0].get(null, true).mnemonic;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
+          const walletId = clients[0].credentials.walletId;
+          const tokenAddresses = [
             '0x9da9bc12b19b22d7c55798f722a1b6747ae9a710',
           ];
 
           clients[0].savePreferences({ tokenAddresses }, err => {
             should.not.exist(err);
-              Client.serverAssistedImport(
+            Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
               helpers.newClient(app),
               (err, k, c) => {
                 // the eth wallet + 1 unknown token addresses on preferences.
                 c.length.should.equal(1);
-                let recoveryClient = c[0];
+                const recoveryClient = c[0];
                 recoveryClient.openWallet(null, err => {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
@@ -6668,18 +6669,18 @@ describe('client API', function() {
                   recoveryClient.credentials.chain.should.equal('eth');
                   done();
                 });
-              })
+              });
           });
         });
       });
 
       it('should be able to gain access to matic tokens wallets from mnemonic', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic', chain: 'matic' }, () => {
-          var words = keys[0].get(null, true).mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
-          var walletId = clients[0].credentials.walletId;
-          var maticTokenAddresses = [
+          const words = keys[0].get(null, true).mnemonic;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
+          const walletId = clients[0].credentials.walletId;
+          const maticTokenAddresses = [
             '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
             '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063'
           ];
@@ -6690,12 +6691,12 @@ describe('client API', function() {
             err => {
               should.not.exist(err);
               Client.serverAssistedImport(
-                { words, includeTestnetWallets: true  },
+                { words, includeTestnetWallets: true },
                 helpers.newClient(app),
                 (err, k, c) => {
                   // the matic wallet + 2 tokens.
                   c.length.should.equal(3);
-                  let recoveryClient = c[0];
+                  const recoveryClient = c[0];
                   recoveryClient.openWallet(null, err => {
                     should.not.exist(err);
                     recoveryClient.credentials.walletName.should.equal(walletName);
@@ -6703,7 +6704,7 @@ describe('client API', function() {
                     recoveryClient.credentials.walletId.should.equal(walletId);
                     recoveryClient.credentials.coin.should.equal('matic');
                     recoveryClient.credentials.chain.should.equal('matic');
-                    let recoveryClient2 = c[2];
+                    const recoveryClient2 = c[2];
                     recoveryClient2.openWallet(null, err => {
                       should.not.exist(err);
                       recoveryClient2.credentials.coin.should.equal('dai');
@@ -6722,23 +6723,23 @@ describe('client API', function() {
 
       it('should be able to gain access to matic tokens wallets from mnemonic (Case 2)', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic', chain: 'matic' }, () => {
-          var words = keys[0].get(null, true).mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
-          var walletId = clients[0].credentials.walletId;
-          var maticTokenAddresses = [
+          const words = keys[0].get(null, true).mnemonic;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
+          const walletId = clients[0].credentials.walletId;
+          const maticTokenAddresses = [
             '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
           ];
 
           clients[0].savePreferences({ maticTokenAddresses }, err => {
             should.not.exist(err);
             Client.serverAssistedImport(
-              { words, includeTestnetWallets: true  },
+              { words, includeTestnetWallets: true },
               helpers.newClient(app),
               (err, k, c) => {
                 // the matic wallet + 1 token.
                 c.length.should.equal(2);
-                let recoveryClient = c[0];
+                const recoveryClient = c[0];
                 recoveryClient.openWallet(null, err => {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
@@ -6746,7 +6747,7 @@ describe('client API', function() {
                   recoveryClient.credentials.walletId.should.equal(walletId);
                   recoveryClient.credentials.coin.should.equal('matic');
                   recoveryClient.credentials.chain.should.equal('matic');
-                  let recoveryClient2 = c[1];
+                  const recoveryClient2 = c[1];
                   recoveryClient2.openWallet(null, err => {
                     should.not.exist(err);
                     recoveryClient2.credentials.coin.should.equal('usdc.e');
@@ -6764,23 +6765,23 @@ describe('client API', function() {
 
       it('should not fail to gain access to matic wallet with unknown tokens addresses from mnemonic (Case 3)', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'matic', chain: 'matic' }, () => {
-          var words = keys[0].get(null, true).mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
-          var walletId = clients[0].credentials.walletId;
-          var maticTokenAddresses = [
+          const words = keys[0].get(null, true).mnemonic;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
+          const walletId = clients[0].credentials.walletId;
+          const maticTokenAddresses = [
             '0x9da9bc12b19b22d7c55798f722a1b6747ae9a710',
           ];
 
           clients[0].savePreferences({ maticTokenAddresses }, err => {
             should.not.exist(err);
-              Client.serverAssistedImport(
+            Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
               helpers.newClient(app),
               (err, k, c) => {
                 // the matic wallet + 1 unknown token addresses on preferences.
                 c.length.should.equal(1);
-                let recoveryClient = c[0];
+                const recoveryClient = c[0];
                 recoveryClient.openWallet(null, err => {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
@@ -6790,18 +6791,18 @@ describe('client API', function() {
                   recoveryClient.credentials.chain.should.equal('matic');
                   done();
                 });
-              })
+              });
           });
         });
       });
 
       it('should be able to gain access to op tokens wallets from mnemonic', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'op' }, () => {
-          var words = keys[0].get(null, true).mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
-          var walletId = clients[0].credentials.walletId;
-          var opTokenAddresses = [
+          const words = keys[0].get(null, true).mnemonic;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
+          const walletId = clients[0].credentials.walletId;
+          const opTokenAddresses = [
             '0x0b2c639c533813f4aa9d7837caf62653d097ff85',
             '0x68f180fcce6836688e9084f035309e29bf0a2095'
           ];
@@ -6812,12 +6813,12 @@ describe('client API', function() {
             err => {
               should.not.exist(err);
               Client.serverAssistedImport(
-                { words, includeTestnetWallets: true  },
+                { words, includeTestnetWallets: true },
                 helpers.newClient(app),
                 (err, k, c) => {
                   // the op wallet + 2 tokens.
                   c.length.should.equal(3);
-                  let recoveryClient = c[0];
+                  const recoveryClient = c[0];
                   recoveryClient.openWallet(null, err => {
                     should.not.exist(err);
                     recoveryClient.credentials.walletName.should.equal(walletName);
@@ -6825,7 +6826,7 @@ describe('client API', function() {
                     recoveryClient.credentials.walletId.should.equal(walletId);
                     recoveryClient.credentials.coin.should.equal('eth');
                     recoveryClient.credentials.chain.should.equal('op');
-                    let recoveryClient2 = c[2];
+                    const recoveryClient2 = c[2];
                     recoveryClient2.openWallet(null, err => {
                       should.not.exist(err);
                       recoveryClient2.credentials.coin.should.equal('wbtc');
@@ -6844,23 +6845,23 @@ describe('client API', function() {
 
       it('should be able to gain access to op tokens wallets from mnemonic (Case 2)', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'op' }, () => {
-          var words = keys[0].get(null, true).mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
-          var walletId = clients[0].credentials.walletId;
-          var opTokenAddresses = [
+          const words = keys[0].get(null, true).mnemonic;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
+          const walletId = clients[0].credentials.walletId;
+          const opTokenAddresses = [
             '0x0b2c639c533813f4aa9d7837caf62653d097ff85',
           ];
 
           clients[0].savePreferences({ opTokenAddresses }, err => {
             should.not.exist(err);
             Client.serverAssistedImport(
-              { words, includeTestnetWallets: true  },
+              { words, includeTestnetWallets: true },
               helpers.newClient(app),
               (err, k, c) => {
                 // the op wallet + 1 token.
                 c.length.should.equal(2);
-                let recoveryClient = c[0];
+                const recoveryClient = c[0];
                 recoveryClient.openWallet(null, err => {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
@@ -6868,7 +6869,7 @@ describe('client API', function() {
                   recoveryClient.credentials.walletId.should.equal(walletId);
                   recoveryClient.credentials.coin.should.equal('eth');
                   recoveryClient.credentials.chain.should.equal('op');
-                  let recoveryClient2 = c[1];
+                  const recoveryClient2 = c[1];
                   recoveryClient2.openWallet(null, err => {
                     should.not.exist(err);
                     recoveryClient2.credentials.coin.should.equal('usdc');
@@ -6886,23 +6887,23 @@ describe('client API', function() {
       
       it('should not fail to gain access to op wallet with unknown tokens addresses from mnemonic (Case 3)', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'op' }, () => {
-          var words = keys[0].get(null, true).mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
-          var walletId = clients[0].credentials.walletId;
-          var opTokenAddresses = [
+          const words = keys[0].get(null, true).mnemonic;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
+          const walletId = clients[0].credentials.walletId;
+          const opTokenAddresses = [
             '0x9da9bc12b19b22d7c55798f722a1b6747ae9a710',
           ];
 
           clients[0].savePreferences({ opTokenAddresses }, err => {
             should.not.exist(err);
-              Client.serverAssistedImport(
+            Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
               helpers.newClient(app),
               (err, k, c) => {
                 // the op wallet + 1 unknown token addresses on preferences.
                 c.length.should.equal(1);
-                let recoveryClient = c[0];
+                const recoveryClient = c[0];
                 recoveryClient.openWallet(null, err => {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
@@ -6912,18 +6913,18 @@ describe('client API', function() {
                   recoveryClient.credentials.chain.should.equal('op');
                   done();
                 });
-              })
+              });
           });
         });
       });
 
       it('should be able to gain access to base tokens wallets from mnemonic', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'base' }, () => {
-          var words = keys[0].get(null, true).mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
-          var walletId = clients[0].credentials.walletId;
-          var baseTokenAddresses = [
+          const words = keys[0].get(null, true).mnemonic;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
+          const walletId = clients[0].credentials.walletId;
+          const baseTokenAddresses = [
             '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
             '0x4200000000000000000000000000000000000006'
           ];
@@ -6939,7 +6940,7 @@ describe('client API', function() {
                 (err, k, c) => {
                   // the base wallet + 2 tokens.
                   c.length.should.equal(3);
-                  let recoveryClient = c[0];
+                  const recoveryClient = c[0];
                   recoveryClient.openWallet(null, err => {
                     should.not.exist(err);
                     recoveryClient.credentials.walletName.should.equal(walletName);
@@ -6947,7 +6948,7 @@ describe('client API', function() {
                     recoveryClient.credentials.walletId.should.equal(walletId);
                     recoveryClient.credentials.coin.should.equal('eth');
                     recoveryClient.credentials.chain.should.equal('base');
-                    let recoveryClient2 = c[2];
+                    const recoveryClient2 = c[2];
                     recoveryClient2.openWallet(null, err => {
                       should.not.exist(err);
                       recoveryClient2.credentials.coin.should.equal('weth');
@@ -6966,23 +6967,23 @@ describe('client API', function() {
       
       it('should be able to gain access to base tokens wallets from mnemonic (Case 2)', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'base' }, () => {
-          var words = keys[0].get(null, true).mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
-          var walletId = clients[0].credentials.walletId;
-          var baseTokenAddresses = [
+          const words = keys[0].get(null, true).mnemonic;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
+          const walletId = clients[0].credentials.walletId;
+          const baseTokenAddresses = [
             '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
           ];
 
           clients[0].savePreferences({ baseTokenAddresses }, err => {
             should.not.exist(err);
             Client.serverAssistedImport(
-              { words, includeTestnetWallets: true  },
+              { words, includeTestnetWallets: true },
               helpers.newClient(app),
               (err, k, c) => {
                 // the base wallet + 1 token.
                 c.length.should.equal(2);
-                let recoveryClient = c[0];
+                const recoveryClient = c[0];
                 recoveryClient.openWallet(null, err => {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
@@ -6990,7 +6991,7 @@ describe('client API', function() {
                   recoveryClient.credentials.walletId.should.equal(walletId);
                   recoveryClient.credentials.coin.should.equal('eth');
                   recoveryClient.credentials.chain.should.equal('base');
-                  let recoveryClient2 = c[1];
+                  const recoveryClient2 = c[1];
                   recoveryClient2.openWallet(null, err => {
                     should.not.exist(err);
                     recoveryClient2.credentials.coin.should.equal('usdc');
@@ -7008,23 +7009,23 @@ describe('client API', function() {
 
       it('should not fail to gain access to base wallet with unknown tokens addresses from mnemonic (Case 3)', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'base' }, () => {
-          var words = keys[0].get(null, true).mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
-          var walletId = clients[0].credentials.walletId;
-          var baseTokenAddresses = [
+          const words = keys[0].get(null, true).mnemonic;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
+          const walletId = clients[0].credentials.walletId;
+          const baseTokenAddresses = [
             '0x9da9bc12b19b22d7c55798f722a1b6747ae9a710',
           ];
       
           clients[0].savePreferences({ baseTokenAddresses }, err => {
             should.not.exist(err);
-              Client.serverAssistedImport(
+            Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
               helpers.newClient(app),
               (err, k, c) => {
                 // the base wallet + unknown token addresses should be ignored.
                 c.length.should.equal(1);
-                let recoveryClient = c[0];
+                const recoveryClient = c[0];
                 recoveryClient.openWallet(null, err => {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
@@ -7034,18 +7035,18 @@ describe('client API', function() {
                   recoveryClient.credentials.chain.should.equal('base');
                   done();
                 });
-              })
+              });
           });
         });
       });
 
       it('should be able to gain access to arb tokens wallets from mnemonic', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'arb' }, () => {
-          var words = keys[0].get(null, true).mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
-          var walletId = clients[0].credentials.walletId;
-          var arbTokenAddresses = [
+          const words = keys[0].get(null, true).mnemonic;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
+          const walletId = clients[0].credentials.walletId;
+          const arbTokenAddresses = [
             '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
             '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f'
           ];
@@ -7061,7 +7062,7 @@ describe('client API', function() {
                 (err, k, c) => {
                   // the arb wallet + 2 tokens.
                   c.length.should.equal(3);
-                  let recoveryClient = c[0];
+                  const recoveryClient = c[0];
                   recoveryClient.openWallet(null, err => {
                     should.not.exist(err);
                     recoveryClient.credentials.walletName.should.equal(walletName);
@@ -7069,7 +7070,7 @@ describe('client API', function() {
                     recoveryClient.credentials.walletId.should.equal(walletId);
                     recoveryClient.credentials.coin.should.equal('eth');
                     recoveryClient.credentials.chain.should.equal('arb');
-                    let recoveryClient2 = c[2];
+                    const recoveryClient2 = c[2];
                     recoveryClient2.openWallet(null, err => {
                       should.not.exist(err);
                       recoveryClient2.credentials.coin.should.equal('wbtc');
@@ -7088,23 +7089,23 @@ describe('client API', function() {
 
       it('should be able to gain access to arb tokens wallets from mnemonic (Case 2)', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'arb' }, () => {
-          var words = keys[0].get(null, true).mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
-          var walletId = clients[0].credentials.walletId;
-          var arbTokenAddresses = [
+          const words = keys[0].get(null, true).mnemonic;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
+          const walletId = clients[0].credentials.walletId;
+          const arbTokenAddresses = [
             '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
           ];
 
           clients[0].savePreferences({ arbTokenAddresses }, err => {
             should.not.exist(err);
             Client.serverAssistedImport(
-              { words, includeTestnetWallets: true  },
+              { words, includeTestnetWallets: true },
               helpers.newClient(app),
               (err, k, c) => {
                 // the arb wallet + 1 token.
                 c.length.should.equal(2);
-                let recoveryClient = c[0];
+                const recoveryClient = c[0];
                 recoveryClient.openWallet(null, err => {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
@@ -7112,7 +7113,7 @@ describe('client API', function() {
                   recoveryClient.credentials.walletId.should.equal(walletId);
                   recoveryClient.credentials.coin.should.equal('eth');
                   recoveryClient.credentials.chain.should.equal('arb');
-                  let recoveryClient2 = c[1];
+                  const recoveryClient2 = c[1];
                   recoveryClient2.openWallet(null, err => {
                     should.not.exist(err);
                     recoveryClient2.credentials.coin.should.equal('usdc');
@@ -7130,23 +7131,23 @@ describe('client API', function() {
 
       it('should not fail to gain access to arb wallet with unknown tokens addresses from mnemonic (Case 3)', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'arb' }, () => {
-          var words = keys[0].get(null, true).mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
-          var walletId = clients[0].credentials.walletId;
-          var arbTokenAddresses = [
+          const words = keys[0].get(null, true).mnemonic;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
+          const walletId = clients[0].credentials.walletId;
+          const arbTokenAddresses = [
             '0x9da9bc12b19b22d7c55798f722a1b6747ae9a710',
           ];
       
           clients[0].savePreferences({ arbTokenAddresses }, err => {
             should.not.exist(err);
-              Client.serverAssistedImport(
+            Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
               helpers.newClient(app),
               (err, k, c) => {
                 // the arb wallet + unknown token addresses should be ignored.
                 c.length.should.equal(1);
-                let recoveryClient = c[0];
+                const recoveryClient = c[0];
                 recoveryClient.openWallet(null, err => {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
@@ -7156,19 +7157,19 @@ describe('client API', function() {
                   recoveryClient.credentials.chain.should.equal('arb');
                   done();
                 });
-              })
+              });
           });
         });
       });
 
       
       it('should be able to gain access to two TESTNET btc/bch 1-1 wallets from mnemonic', function(done) {
-        let key = new Key({ seedType: 'new' });
+        const key = new Key({ seedType: 'new' });
         helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key }, () => {
           helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'bch', key: key }, () => {
-            var words = keys[0].get(null, true).mnemonic;
-            var walletName = clients[0].credentials.walletName;
-            var copayerName = clients[0].credentials.copayerName;
+            const words = keys[0].get(null, true).mnemonic;
+            const walletName = clients[0].credentials.walletName;
+            const copayerName = clients[0].credentials.copayerName;
             clients[0].createAddress(null, (err, addr) => {
               should.not.exist(err);
               should.exist(addr);
@@ -7182,7 +7183,7 @@ describe('client API', function() {
                   c[1].credentials.coin.should.equal('bch');
                   c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
 
-                  let recoveryClient = c[1];
+                  const recoveryClient = c[1];
                   recoveryClient.openWallet(null, err => {
                     should.not.exist(err);
                     recoveryClient.credentials.walletName.should.equal(walletName);
@@ -7202,17 +7203,17 @@ describe('client API', function() {
       });
 
       it('should be able to gain access to two TESTNET btc/bch 1-1 wallets from mnemonic', function(done) {
-        let key = new Key({ seedType: 'new' });
+        const key = new Key({ seedType: 'new' });
         helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, network: 'livenet' }, () => {
           helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'bch', key: key, network: 'livenet' }, () => {
-            var words = keys[0].get(null, true).mnemonic;
-            var walletName = clients[0].credentials.walletName;
-            var copayerName = clients[0].credentials.copayerName;
+            const words = keys[0].get(null, true).mnemonic;
+            const walletName = clients[0].credentials.walletName;
+            const copayerName = clients[0].credentials.copayerName;
             clients[0].createAddress(null, (err, addr) => {
               should.not.exist(err);
               should.exist(addr);
               Client.serverAssistedImport(
-                { words, includeTestnetWallets: true},
+                { words, includeTestnetWallets: true },
                 helpers.newClient(app),
                 (err, k, c) => {
                   should.not.exist(err);
@@ -7220,7 +7221,7 @@ describe('client API', function() {
                   c[0].credentials.coin.should.equal('btc');
                   c[1].credentials.coin.should.equal('bch');
                   c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
-                  let recoveryClient = c[1];
+                  const recoveryClient = c[1];
                   recoveryClient.openWallet(null, err => {
                     should.not.exist(err);
                     recoveryClient.credentials.walletName.should.equal(walletName);
@@ -7240,13 +7241,13 @@ describe('client API', function() {
       });
 
       it('should be able to gain access to three btc 1-1 accounts of a single wallet from mnemonic and add wallet info correctly to all of them', function(done) {
-        let key = new Key({ seedType: 'new' });
+        const key = new Key({ seedType: 'new' });
         helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key }, () => {
           helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 1 }, () => {
             helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 2 }, () => {
-              var words = keys[0].get(null, true).mnemonic;
-              var walletName = clients[0].credentials.walletName;
-              var copayerName = clients[0].credentials.copayerName;
+              const words = keys[0].get(null, true).mnemonic;
+              const walletName = clients[0].credentials.walletName;
+              const copayerName = clients[0].credentials.copayerName;
               clients[0].createAddress(null, (err, addr) => {
                 should.not.exist(err);
                 should.exist(addr);
@@ -7268,7 +7269,7 @@ describe('client API', function() {
                     should.exist(c[0].credentials.walletId);
                     should.exist(c[1].credentials.walletId);
                     should.exist(c[2].credentials.walletId);
-                    let recoveryClient = c[2];
+                    const recoveryClient = c[2];
                     recoveryClient.openWallet(null, err => {
                       should.not.exist(err);
                       recoveryClient.credentials.walletName.should.equal(walletName);
@@ -7289,7 +7290,7 @@ describe('client API', function() {
       });
 
       it('should be able to gain access to seven btc 1-1 accounts of a single wallet from mnemonic', function(done) {
-        let key = new Key({ seedType: 'new' });
+        const key = new Key({ seedType: 'new' });
         helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key }, () => {
           helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 1 }, () => {
             helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 2 }, () => {
@@ -7297,9 +7298,9 @@ describe('client API', function() {
                 helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 4 }, () => {
                   helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 5 }, () => {
                     helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, account: 6 }, () => {
-                      var words = keys[0].get(null, true).mnemonic;
-                      var walletName = clients[0].credentials.walletName;
-                      var copayerName = clients[0].credentials.copayerName;
+                      const words = keys[0].get(null, true).mnemonic;
+                      const walletName = clients[0].credentials.walletName;
+                      const copayerName = clients[0].credentials.copayerName;
                       clients[0].createAddress(null, (err, addr) => {
                         should.not.exist(err);
                         should.exist(addr);
@@ -7316,12 +7317,12 @@ describe('client API', function() {
                             }
                             // make sure only one client has each copayerId
                             c.every(client => {
-                              let copayerId = client.credentials.copayerId;
+                              const copayerId = client.credentials.copayerId;
                               return c.filter(x => x.credentials.copayerId === copayerId).length === 1;
                             }).should.equal(true);
 
 
-                            let recoveryClient = c[6];
+                            const recoveryClient = c[6];
                             recoveryClient.openWallet(null, err => {
                               should.not.exist(err);
                               recoveryClient.credentials.walletName.should.equal(walletName);
@@ -7346,13 +7347,13 @@ describe('client API', function() {
       });
 
       it('should be able to gain access to three arb accounts from mnemonic and add wallet info correctly to all of them', function(done) {
-        let key = new Key({ seedType: 'new' });
-        helpers.createAndJoinWallet(clients, keys, 1, 1, {key, coin: 'eth', chain: 'arb'}, () => {
-          helpers.createAndJoinWallet(clients, keys, 1, 1, {key, coin: 'eth', chain: 'arb', account: 1}, () => {
-            helpers.createAndJoinWallet(clients, keys, 1, 1, {key, coin: 'eth', chain: 'arb', account: 2}, () => {
-              var words = keys[0].get(null, true).mnemonic;
-              var walletName = clients[0].credentials.walletName;
-              var copayerName = clients[0].credentials.copayerName;
+        const key = new Key({ seedType: 'new' });
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { key, coin: 'eth', chain: 'arb' }, () => {
+          helpers.createAndJoinWallet(clients, keys, 1, 1, { key, coin: 'eth', chain: 'arb', account: 1 }, () => {
+            helpers.createAndJoinWallet(clients, keys, 1, 1, { key, coin: 'eth', chain: 'arb', account: 2 }, () => {
+              const words = keys[0].get(null, true).mnemonic;
+              const walletName = clients[0].credentials.walletName;
+              const copayerName = clients[0].credentials.copayerName;
               clients[0].createAddress(null, (err, addr) => {
                 should.not.exist(err);
                 should.exist(addr);
@@ -7377,7 +7378,7 @@ describe('client API', function() {
                     should.exist(c[0].credentials.walletId);
                     should.exist(c[1].credentials.walletId);
                     should.exist(c[2].credentials.walletId);
-                    let recoveryClient = c[2];
+                    const recoveryClient = c[2];
                     recoveryClient.openWallet(null, err => {
                       should.not.exist(err);
                       recoveryClient.credentials.walletName.should.equal(walletName);
@@ -7398,11 +7399,11 @@ describe('client API', function() {
       });
 
       it('should be able to gain access to a 1-1 wallet from mnemonic with passphrase', function(done) {
-        let passphrase = 'xxx';
+        const passphrase = 'xxx';
         helpers.createAndJoinWallet(clients, keys, 1, 1, { passphrase }, () => {
-          var words = keys[0].get(null, true).mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
+          const words = keys[0].get(null, true).mnemonic;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
           clients[0].createAddress(null, (err, addr) => {
             should.not.exist(err);
             should.exist(addr);
@@ -7413,7 +7414,7 @@ describe('client API', function() {
                 should.not.exist(err);
                 c.length.should.equal(1);
 
-                let recoveryClient = c[0];
+                const recoveryClient = c[0];
                 recoveryClient.openWallet(null, err => {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
@@ -7433,9 +7434,9 @@ describe('client API', function() {
 
       it('should be able to gain access to a 1-1 wallet with just the xPriv', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
-          var xPrivKey = keys[0].get(null).xPrivKey;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
+          const xPrivKey = keys[0].get(null).xPrivKey;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
           clients[0].createAddress(null, (err, addr) => {
             should.not.exist(err);
             should.exist(addr);
@@ -7450,7 +7451,7 @@ describe('client API', function() {
                 k.use44forMultisig.should.equal(false);
                 should.not.exist(err);
                 c.length.should.equal(1);
-                let recoveryClient = c[0];
+                const recoveryClient = c[0];
                 recoveryClient.openWallet(null, err => {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
@@ -7470,9 +7471,9 @@ describe('client API', function() {
 
       it('should be able to gain access to a 2-2 wallet from mnemonic', function(done) {
         helpers.createAndJoinWallet(clients, keys, 2, 2, {}, () => {
-          var words = keys[0].get(null, true).mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
+          const words = keys[0].get(null, true).mnemonic;
+          const walletName = clients[0].credentials.walletName;
+          const copayerName = clients[0].credentials.copayerName;
           clients[0].createAddress(null, (err, addr) => {
             should.not.exist(err);
             should.exist(addr);
@@ -7485,7 +7486,7 @@ describe('client API', function() {
                 k.use44forMultisig.should.equal(false);
                 should.not.exist(err);
                 c.length.should.equal(1);
-                let recoveryClient = c[0];
+                const recoveryClient = c[0];
                 recoveryClient.openWallet(null, err => {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
@@ -7531,9 +7532,9 @@ describe('client API', function() {
             useLegacyPurpose: true
           },
           () => {
-            var words = keys[0].get(null, true).mnemonic;
-            var walletName = clients[0].credentials.walletName;
-            var copayerName = clients[0].credentials.copayerName;
+            const words = keys[0].get(null, true).mnemonic;
+            const walletName = clients[0].credentials.walletName;
+            const copayerName = clients[0].credentials.copayerName;
             clients[0].createAddress(null, (err, addr) => {
               should.not.exist(err);
               should.exist(addr);
@@ -7549,7 +7550,7 @@ describe('client API', function() {
 
                   should.not.exist(err);
                   c.length.should.equal(1);
-                  let recoveryClient = c[0];
+                  const recoveryClient = c[0];
                   recoveryClient.openWallet(null, err => {
                     should.not.exist(err);
                     recoveryClient.credentials.walletName.should.equal(walletName);
@@ -7581,9 +7582,9 @@ describe('client API', function() {
             useLegacyPurpose: true
           },
           () => {
-            var words = keys[0].get(null, true).mnemonic;
-            var walletName = clients[0].credentials.walletName;
-            var copayerName = clients[0].credentials.copayerName;
+            const words = keys[0].get(null, true).mnemonic;
+            const walletName = clients[0].credentials.walletName;
+            const copayerName = clients[0].credentials.copayerName;
             clients[0].createAddress(null, (err, addr) => {
               should.not.exist(err);
               should.exist(addr);
@@ -7599,7 +7600,7 @@ describe('client API', function() {
 
                   should.not.exist(err);
                   c.length.should.equal(1);
-                  let recoveryClient = c[0];
+                  const recoveryClient = c[0];
                   recoveryClient.openWallet(null, err => {
                     should.not.exist(err);
                     recoveryClient.credentials.walletName.should.equal(walletName);
@@ -7621,30 +7622,30 @@ describe('client API', function() {
       });
 
       it('should be able to restore with equal keyid an old bch wallet and an old multisig btc wallet', function(done) {  
-        var words = 'famous ship happy oyster retire sponsor disease friend parent wise grunt voyage';
-        let k1 = new Key({ seedData: words, seedType: 'mnemonic', useLegacyCoinType: false, useLegacyPurpose: true}); // old bch wallets: /[44,48]/[0,0]'/
-        let k2 = new Key({ seedData: words, seedType: 'mnemonic', useLegacyCoinType: true,  useLegacyPurpose: false });  // old BTC/BCH  multisig wallets: /[44]/[0,145]'/
-        helpers.createAndJoinWallet(clients, keys, 2, 2, { key: k1, network: 'livenet'}, () => {
+        const words = 'famous ship happy oyster retire sponsor disease friend parent wise grunt voyage';
+        const k1 = new Key({ seedData: words, seedType: 'mnemonic', useLegacyCoinType: false, useLegacyPurpose: true }); // old bch wallets: /[44,48]/[0,0]'/
+        const k2 = new Key({ seedData: words, seedType: 'mnemonic', useLegacyCoinType: true, useLegacyPurpose: false });  // old BTC/BCH  multisig wallets: /[44]/[0,145]'/
+        helpers.createAndJoinWallet(clients, keys, 2, 2, { key: k1, network: 'livenet' }, () => {
         // first create a "old" bch wallet (coin = 0).
-        clients[1].fromString(
-          k2.createCredentials(null, {
-            coin: 'bch',
-            network: 'livenet',
-            account: 0,
-            n: 1
-          })
-        );
-        clients[1].createWallet(
-          'mywallet',
-          'creator',
-          1,
-          1,
-          {
-            coin: 'bch',
-            network: 'livenet'
-          },
-          (err, secret) => {
-            should.not.exist(err);
+          clients[1].fromString(
+            k2.createCredentials(null, {
+              coin: 'bch',
+              network: 'livenet',
+              account: 0,
+              n: 1
+            })
+          );
+          clients[1].createWallet(
+            'mywallet',
+            'creator',
+            1,
+            1,
+            {
+              coin: 'bch',
+              network: 'livenet'
+            },
+            (err, secret) => {
+              should.not.exist(err);
               Client.serverAssistedImport(
                 { words, includeTestnetWallets: false, includeLegacyWallets: true },
                 helpers.newClient(app),
@@ -7658,18 +7659,18 @@ describe('client API', function() {
                   done();
                 });
             });
-          });
         });
+      });
 
       it('should be able to see txp messages after gaining access', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
-          var xPrivKey = keys[0].get().xPrivKey;
-          var walletName = clients[0].credentials.walletName;
+          const xPrivKey = keys[0].get().xPrivKey;
+          const walletName = clients[0].credentials.walletName;
           clients[0].createAddress(null, (err, x0) => {
             should.not.exist(err);
             should.exist(x0.address);
             blockchainExplorerMock.setUtxo(x0, 1, 1, 0);
-            var opts = {
+            const opts = {
               amount: 30000,
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello'
@@ -7683,7 +7684,7 @@ describe('client API', function() {
                 (err, k, c) => {
                   should.not.exist(err);
                   c.length.should.equal(1);
-                  let recoveryClient = c[0];
+                  const recoveryClient = c[0];
                   recoveryClient.openWallet(null, err => {
                     should.not.exist(err);
                     recoveryClient.credentials.walletName.should.equal(walletName);
@@ -7706,12 +7707,12 @@ describe('client API', function() {
             should.not.exist(err);
             should.exist(addr);
 
-            var storage = new Storage({
+            const storage = new Storage({
               db: db2
             });
 
-            var newApp;
-            var expressApp = new ExpressApp();
+            let newApp;
+            const expressApp = new ExpressApp();
             expressApp.start(
               {
                 storage: storage,
@@ -7721,23 +7722,23 @@ describe('client API', function() {
               () => {
                 newApp = expressApp.app;
 
-                var recoveryClient = helpers.newClient(newApp);
+                const recoveryClient = helpers.newClient(newApp);
                 recoveryClient.fromString(clients[0].toString());
 
                 recoveryClient.getStatus({}, (err, status) => {
                   should.exist(err);
                   err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
-                  var spy = sandbox.spy(recoveryClient.request, 'post');
+                  const spy = sandbox.spy(recoveryClient.request, 'post');
                   recoveryClient.recreateWallet(err => {
                     should.not.exist(err);
 
                     // Do not send wallet name and copayer names in clear text
-                    var url = spy.getCall(0).args[0];
-                    var body = JSON.stringify(spy.getCall(0).args[1]);
+                    let url = spy.getCall(0).args[0];
+                    let body = JSON.stringify(spy.getCall(0).args[1]);
                     url.should.contain('/wallets');
                     body.should.not.contain('mywallet');
-                    var url = spy.getCall(1).args[0];
-                    var body = JSON.stringify(spy.getCall(1).args[1]);
+                    url = spy.getCall(1).args[0];
+                    body = JSON.stringify(spy.getCall(1).args[1]);
                     url.should.contain('/copayers');
                     body.should.not.contain('creator');
                     body.should.not.contain('copayer 1');
@@ -7752,7 +7753,7 @@ describe('client API', function() {
                         addr2.address.should.equal(addr.address);
                         addr2.path.should.equal(addr.path);
 
-                        var recoveryClient2 = helpers.newClient(newApp);
+                        const recoveryClient2 = helpers.newClient(newApp);
                         recoveryClient2.fromString(clients[1].toString());
                         recoveryClient2.getStatus({}, (err, status) => {
                           should.not.exist(err);
@@ -7776,11 +7777,11 @@ describe('client API', function() {
             should.exist(addr);
             blockchainExplorerMock.setUtxo(addr, 1, 2);
 
-            var storage = new Storage({
+            const storage = new Storage({
               db: db2
             });
-            var newApp;
-            var expressApp = new ExpressApp();
+            let newApp;
+            const expressApp = new ExpressApp();
             expressApp.start(
               {
                 storage: storage,
@@ -7790,7 +7791,7 @@ describe('client API', function() {
               () => {
                 newApp = expressApp.app;
 
-                var recoveryClient = helpers.newClient(newApp);
+                const recoveryClient = helpers.newClient(newApp);
                 recoveryClient.fromString(clients[0].toString());
 
                 recoveryClient.getStatus({}, (err, status) => {
@@ -7802,7 +7803,7 @@ describe('client API', function() {
                       should.not.exist(err);
                       recoveryClient.startScan({}, err => {
                         should.not.exist(err);
-                        var balance = 0;
+                        let balance = 0;
                         async.whilst(
                           () => {
                             return balance == 0;
@@ -7837,11 +7838,11 @@ describe('client API', function() {
             should.not.exist(err);
             should.exist(addr);
 
-            var storage = new Storage({
+            const storage = new Storage({
               db: db2
             });
-            var newApp;
-            var expressApp = new ExpressApp();
+            let newApp;
+            const expressApp = new ExpressApp();
             expressApp.start(
               {
                 storage: storage,
@@ -7851,7 +7852,7 @@ describe('client API', function() {
               () => {
                 newApp = expressApp.app;
 
-                var recoveryClient = helpers.newClient(newApp);
+                const recoveryClient = helpers.newClient(newApp);
                 recoveryClient.fromString(clients[0].toString());
 
                 recoveryClient.getStatus({}, (err, status) => {
@@ -7870,7 +7871,7 @@ describe('client API', function() {
                           addr2.address.should.equal(addr.address);
                           addr2.path.should.equal(addr.path);
 
-                          var recoveryClient2 = helpers.newClient(newApp);
+                          const recoveryClient2 = helpers.newClient(newApp);
                           recoveryClient2.fromString(clients[1].toString());
                           recoveryClient2.getStatus({}, (err, status) => {
                             should.not.exist(err);
@@ -7888,7 +7889,7 @@ describe('client API', function() {
       });
 
       it('should be able to recreate 1-of-1 wallet with account 2', function(done) {
-        let k = new Key({
+        const k = new Key({
           seedData:
             'tprv8ZgxMBicQKsPdeZR4tV14PAJmzrWGsmafRVaHXUVYezrSbtnFM1CnqdbQuXfmSLxwr71axKewd3LTRDcQmtttUnZe27TQoGmGMeddv1H9JQ',
           seedType: 'extendedPrivateKey'
@@ -7917,12 +7918,12 @@ describe('client API', function() {
               should.not.exist(err);
               should.exist(addr);
 
-              var storage = new Storage({
+              const storage = new Storage({
                 db: db2
               });
 
-              var newApp;
-              var expressApp = new ExpressApp();
+              let newApp;
+              const expressApp = new ExpressApp();
               expressApp.start(
                 {
                   storage: storage,
@@ -7932,7 +7933,7 @@ describe('client API', function() {
                 () => {
                   newApp = expressApp.app;
 
-                  var recoveryClient = helpers.newClient(newApp);
+                  const recoveryClient = helpers.newClient(newApp);
                   recoveryClient.fromString(clients[0].toString());
                   recoveryClient.credentials.account.should.equal(2);
                   recoveryClient.credentials.rootPath.should.equal("m/44'/1'/2'");
@@ -7963,7 +7964,7 @@ describe('client API', function() {
   });
 
   describe('Mobility, backup & restore BCH ONLY', () => {
-    var importedClient = null,
+    let importedClient = null,
       address;
 
     beforeEach(() => {
@@ -7973,7 +7974,7 @@ describe('client API', function() {
     it('should be able to restore a  useLegacyCoinType wallet', function(done) {
       this.timeout(5000);
 
-      var check = x => {
+      const check = x => {
         x.credentials.rootPath.should.equal("m/44'/0'/0'");
         x.credentials.xPubKey
           .toString()
@@ -7982,10 +7983,10 @@ describe('client API', function() {
           );
       };
 
-      var m = 'pink net pet stove boy receive task nephew book spawn pull regret';
+      const m = 'pink net pet stove boy receive task nephew book spawn pull regret';
       // first create a "old" bch wallet (coin = 0).
       //
-      let k = new Key({ seedData: m, seedType: 'mnemonic', useLegacyCoinType: true });
+      const k = new Key({ seedData: m, seedType: 'mnemonic', useLegacyCoinType: true });
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'bch',
@@ -8008,7 +8009,7 @@ describe('client API', function() {
           clients[0].createAddress(null, (err, x) => {
             should.not.exist(err);
             address = x.address;
-            var importedClient = helpers.newClient(app);
+            const importedClient = helpers.newClient(app);
             importedClient.fromString(
               k.createCredentials(null, {
                 coin: 'bch',
@@ -8017,7 +8018,7 @@ describe('client API', function() {
                 n: 1
               })
             );
-            var spy = sandbox.spy(importedClient, 'openWallet');
+            const spy = sandbox.spy(importedClient, 'openWallet');
             importedClient.openWallet(null, err => {
               should.not.exist(err);
               check(importedClient);
@@ -8036,15 +8037,15 @@ describe('client API', function() {
   /*
   describe.skip('Air gapped related flows', () => {
     it('should create wallet in proxy from airgapped', function(done) {
-      var airgapped = new Client();
+      let airgapped = new Client();
       airgapped.seedFromRandom({ network: 'testnet' });
-      var exported = airgapped.toString({ noSign: true });
+      let exported = airgapped.toString({ noSign: true });
 
-      var proxy = helpers.newClient(app);
+      let proxy = helpers.newClient(app);
       proxy.fromString(exported);
       should.not.exist(proxy.credentials.xPrivKey);
 
-      var seedSpy = sandbox.spy(proxy, 'seedFromRandom');
+      let seedSpy = sandbox.spy(proxy, 'seedFromRandom');
       proxy.createWallet(
         'mywallet',
         'creator',
@@ -8065,17 +8066,17 @@ describe('client API', function() {
       );
     });
     it('should fail to create wallet in proxy from airgapped when networks do not match', function(done) {
-      var airgapped = new Client();
+      let airgapped = new Client();
       airgapped.seedFromRandom({
         network: 'testnet'
       });
-      var exported = airgapped.toString({ noSign: true });
+      let exported = airgapped.toString({ noSign: true });
 
-      var proxy = helpers.newClient(app);
+      let proxy = helpers.newClient(app);
       proxy.fromString(exported);
       should.not.exist(proxy.credentials.xPrivKey);
 
-      var seedSpy = sandbox.spy(proxy, 'seedFromRandom');
+      let seedSpy = sandbox.spy(proxy, 'seedFromRandom');
       should.not.exist(proxy.credentials.xPrivKey);
       proxy.createWallet(
         'mywallet',
@@ -8093,11 +8094,11 @@ describe('client API', function() {
       );
     });
     it('should be able to sign from airgapped client and broadcast from proxy', function(done) {
-      var airgapped = new Client();
+      let airgapped = new Client();
       airgapped.seedFromRandom({ network: 'testnet' });
-      var exported = airgapped.toString({ noSign: true });
+      let exported = airgapped.toString({ noSign: true });
 
-      var proxy = helpers.newClient(app);
+      let proxy = helpers.newClient(app);
       proxy.fromString(exported);
       should.not.exist(proxy.credentials.xPrivKey);
 
@@ -8118,7 +8119,7 @@ describe('client API', function() {
                   should.not.exist(err);
                   should.exist(address.address);
                   blockchainExplorerMock.setUtxo(address, 1, 1);
-                  var opts = {
+                  let opts = {
                     amount: 1200000,
                     toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
                     message: 'hello 1-1'
@@ -8146,7 +8147,7 @@ describe('client API', function() {
             );
           },
           (bundle, next) => {
-            var signatures = airgapped.signTxProposalFromAirGapped(
+            let signatures = airgapped.signTxProposalFromAirGapped(
               bundle.txps[0],
               bundle.encryptedPkr,
               bundle.m,
@@ -8157,7 +8158,7 @@ describe('client API', function() {
           (signatures, next) => {
             proxy.getTxProposals({}, (err, txps) => {
               should.not.exist(err);
-              var txp = txps[0];
+              let txp = txps[0];
               txp.signatures = signatures;
               async.each(
                 txps,
@@ -8186,13 +8187,13 @@ describe('client API', function() {
       );
     });
     it('should be able to sign from airgapped client with mnemonics (with unencrypted xpubkey ring)', function(done) {
-      var client = helpers.newClient(app);
+      let client = helpers.newClient(app);
       client.seedFromRandomWithMnemonic({
         network: 'testnet',
         passphrase: 'passphrase'
       });
 
-      var mnemonic = client.getMnemonic();
+      let mnemonic = client.getMnemonic();
       client.encryptPrivateKey('password');
       client.isPrivKeyEncrypted().should.be.true;
 
@@ -8213,7 +8214,7 @@ describe('client API', function() {
                   should.not.exist(err);
                   should.exist(address.address);
                   blockchainExplorerMock.setUtxo(address, 1, 1);
-                  var opts = {
+                  let opts = {
                     amount: 1200000,
                     toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
                     message: 'hello 1-1'
@@ -8234,7 +8235,7 @@ describe('client API', function() {
             );
           },
           (bundle, next) => {
-            var signatures = Client.signTxProposalFromAirGapped(
+            let signatures = Client.signTxProposalFromAirGapped(
               mnemonic,
               bundle.txps[0],
               bundle.unencryptedPkr,
@@ -8251,7 +8252,7 @@ describe('client API', function() {
           (signatures, next) => {
             client.getTxProposals({}, (err, txps) => {
               should.not.exist(err);
-              var txp = txps[0];
+              let txp = txps[0];
               txp.signatures = signatures;
               async.each(
                 txps,
@@ -8280,14 +8281,14 @@ describe('client API', function() {
       );
     });
     describe('Failure and tampering', () => {
-      var airgapped, proxy, bundle;
+      let airgapped, proxy, bundle;
 
       beforeEach(function(done) {
         airgapped = new Client();
         airgapped.seedFromRandom({
           network: 'testnet'
         });
-        var exported = airgapped.toString({
+        let exported = airgapped.toString({
           noSign: true
         });
 
@@ -8312,7 +8313,7 @@ describe('client API', function() {
                     should.not.exist(err);
                     should.exist(address.address);
                     blockchainExplorerMock.setUtxo(address, 1, 1);
-                    var opts = {
+                    let opts = {
                       amount: 1200000,
                       toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
                       message: 'hello 1-1'
@@ -8381,7 +8382,7 @@ describe('client API', function() {
 
   describe('#addAccess', () => {
     describe('1-1 wallets', () => {
-      var opts;
+      let opts;
 
       beforeEach(function(done) {
         opts = {
@@ -8394,10 +8395,10 @@ describe('client API', function() {
           clients[0].createAddress(null, (err, x0) => {
             should.not.exist(err);
             blockchainExplorerMock.setUtxo(x0, 10, 1);
-            var c = clients[0].credentials;
+            const c = clients[0].credentials;
 
             // Ggenerate a new priv key, not registered
-            var k = new Bitcore.PrivateKey();
+            const k = new Bitcore.PrivateKey();
             c.requestPrivKey = k.toString();
             c.requestPubKey = k.toPublicKey().toString();
             done();
@@ -8413,7 +8414,7 @@ describe('client API', function() {
       });
 
       it('should grant access with current keys', function(done) {
-        let rk = clients[0].credentials.requestPrivKey;
+        const rk = clients[0].credentials.requestPrivKey;
         clients[0].addAccess(
           keys[0].createAccess(null, {
             path: clients[0].credentials.rootPath,
@@ -8431,27 +8432,27 @@ describe('client API', function() {
       });
 
       it('should add access with copayer name', function(done) {
-        var spy = sandbox.spy(clients[0].request, 'put');
+        const spy = sandbox.spy(clients[0].request, 'put');
 
-        var opts2 = keys[0].createAccess(null, {
+        const opts2 = keys[0].createAccess(null, {
           path: clients[0].credentials.rootPath
         });
         opts2.name = 'pepe';
         clients[0].addAccess(opts2, (err, x, key) => {
           should.not.exist(err);
-          var url = spy.getCall(0).args[0];
-          var body = JSON.stringify(spy.getCall(0).args[1]);
+          const url = spy.getCall(0).args[0];
+          const body = JSON.stringify(spy.getCall(0).args[1]);
           url.should.contain('/copayers');
           body.should.not.contain('pepe');
 
-          var k = new Bitcore.PrivateKey(key);
-          var c = clients[0].credentials;
+          const k = new Bitcore.PrivateKey(key);
+          const c = clients[0].credentials;
           c.requestPrivKey = k.toString();
           c.requestPubKey = k.toPublicKey().toString();
 
           clients[0].getStatus({}, (err, status) => {
             should.not.exist(err);
-            var keys = status.wallet.copayers[0].requestPubKeys;
+            const keys = status.wallet.copayers[0].requestPubKeys;
             keys.length.should.equal(2);
             keys.filter(key => key.name === 'pepe').length.should.equal(1);
 
@@ -8465,10 +8466,10 @@ describe('client API', function() {
       });
 
       it('should grant access with *new* keys then deny access with old keys', function(done) {
-        var opts2 = keys[0].createAccess(null, {
+        const opts2 = keys[0].createAccess(null, {
           path: clients[0].credentials.rootPath
           // Generate new keys:  Do not pass this param
-          //requestPrivKey: clients[0].credentials.requestPrivKey,
+          // requestPrivKey: clients[0].credentials.requestPrivKey,
         });
         clients[0].addAccess(opts2, (err, x) => {
           helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
@@ -8479,13 +8480,13 @@ describe('client API', function() {
       });
 
       it('should grant access with new keys', function(done) {
-        var opts2 = keys[0].createAccess(null, {
+        const opts2 = keys[0].createAccess(null, {
           path: clients[0].credentials.rootPath
         });
 
         clients[0].addAccess(opts2, (err, x, key) => {
-          var k = new Bitcore.PrivateKey(key);
-          var c = clients[0].credentials;
+          const k = new Bitcore.PrivateKey(key);
+          const c = clients[0].credentials;
           c.requestPrivKey = k.toString();
           c.requestPubKey = k.toPublicKey().toString();
           helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
@@ -8496,7 +8497,7 @@ describe('client API', function() {
       });
 
       it('should verify tx proposals of added access', function(done) {
-        var opts2 = keys[0].createAccess(null, {
+        const opts2 = keys[0].createAccess(null, {
           path: clients[0].credentials.rootPath,
           requestPrivKey: clients[0].credentials.requestPrivKey
         });
@@ -8512,7 +8513,7 @@ describe('client API', function() {
       });
 
       it('should detect tampered tx proposals of added access (case 1)', function(done) {
-        var opts2 = keys[0].createAccess(null, {
+        const opts2 = keys[0].createAccess(null, {
           path: clients[0].credentials.rootPath,
           requestPrivKey: clients[0].credentials.requestPrivKey
         });
@@ -8540,7 +8541,7 @@ describe('client API', function() {
       });
 
       it('should detect tampered tx proposals of added access (case 2)', function(done) {
-        var opts2 = keys[0].createAccess(null, {
+        const opts2 = keys[0].createAccess(null, {
           path: clients[0].credentials.rootPath,
           requestPrivKey: clients[0].credentials.requestPrivKey
         });
@@ -8567,7 +8568,7 @@ describe('client API', function() {
       });
 
       it('should detect tampered tx proposals of added access (case 3)', function(done) {
-        var opts2 = keys[0].createAccess(null, {
+        const opts2 = keys[0].createAccess(null, {
           path: clients[0].credentials.rootPath,
           requestPrivKey: clients[0].credentials.requestPrivKey
         });
@@ -8596,7 +8597,7 @@ describe('client API', function() {
     });
   });
 
-  var addrMap = {
+  const addrMap = {
     btc: ['1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3', '1GG3JQikGC7wxstyavUBDoCJ66bWLLENZC'],
     bch: ['qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e', 'qznkyz7hdd3jvkqc76zsf585dcp5czmz5udnlj26ya']
   };
@@ -8644,7 +8645,7 @@ describe('client API', function() {
         );
       });
       it('should get balance from single private key', function(done) {
-        var address = {
+        const address = {
           address: addr[0],
           type: 'P2PKH',
           coin: coin
@@ -8663,7 +8664,7 @@ describe('client API', function() {
         });
       });
       it('should build tx for single private key', function(done) {
-        var address = {
+        const address = {
           address: addr[0],
           type: 'P2PKH',
           coin: coin
@@ -8680,9 +8681,9 @@ describe('client API', function() {
               should.not.exist(err);
               should.exist(tx);
               tx.outputs.length.should.equal(1);
-              var output = tx.outputs[0];
+              const output = tx.outputs[0];
               output.satoshis.should.equal(123 * 1e8 - 10000);
-              var script = B.Script.buildPublicKeyHashOut(B.Address.fromString(addr[1]));
+              const script = B.Script.buildPublicKeyHashOut(B.Address.fromString(addr[1]));
               output.script.toString('hex').should.equal(script.toString('hex'));
               done();
             }
@@ -8691,13 +8692,13 @@ describe('client API', function() {
       });
 
       it('should handle tx serialization error when building tx', function(done) {
-        var sandbox = sinon.createSandbox();
+        const sandbox = sinon.createSandbox();
 
-        var se = sandbox.stub(B.Transaction.prototype, 'serialize').callsFake(() => {
+        const se = sandbox.stub(B.Transaction.prototype, 'serialize').callsFake(() => {
           throw new Error('this is an error');
         });
 
-        var address = {
+        const address = {
           address: addr[0],
           type: 'P2PKH',
           coin: coin
@@ -8722,7 +8723,7 @@ describe('client API', function() {
       });
 
       it('should fail to build tx for single private key if insufficient funds', function(done) {
-        var address = {
+        const address = {
           address: addr[0],
           type: 'P2PKH',
           coin: coin
@@ -8749,7 +8750,7 @@ describe('client API', function() {
 
   describe('#formatAmount', () => {
     it('should successfully format amount', () => {
-      var cases = [
+      const cases = [
         {
           args: [1, 'bit'],
           expected: '0'
@@ -8799,12 +8800,12 @@ describe('client API', function() {
 
   describe('_initNotifications', () => {
     it('should handle NOT_FOUND error from _fetchLatestNotifications', function(done) {
-      var sandbox = sinon.createSandbox();
-      var clock = sandbox.useFakeTimers();
+      const sandbox = sinon.createSandbox();
+      const clock = sandbox.useFakeTimers();
 
-      var client = new Client();
+      const client = new Client();
 
-      var _f = sandbox.stub(client, '_fetchLatestNotifications').callsFake((interval, cb) => {
+      const _f = sandbox.stub(client, '_fetchLatestNotifications').callsFake((interval, cb) => {
         cb(new Errors.NOT_FOUND());
       });
 
@@ -8819,12 +8820,12 @@ describe('client API', function() {
     });
 
     it('should handle NOT_AUTHORIZED error from _fetLatestNotifications', function(done) {
-      var sandbox = sinon.createSandbox();
-      var clock = sandbox.useFakeTimers();
+      const sandbox = sinon.createSandbox();
+      const clock = sandbox.useFakeTimers();
 
-      var client = new Client();
+      const client = new Client();
 
-      var _f = sandbox.stub(client, '_fetchLatestNotifications').callsFake((interval, cb) => {
+      const _f = sandbox.stub(client, '_fetchLatestNotifications').callsFake((interval, cb) => {
         cb(new Errors.NOT_AUTHORIZED());
       });
 
@@ -8842,16 +8843,16 @@ describe('client API', function() {
   describe('Import', () => {
     describe('#import', function() {
       it('should handle import with invalid JSON', function(done) {
-        var importString = 'this is not valid JSON';
-        var client = new Client();
+        const importString = 'this is not valid JSON';
+        const client = new Client();
         (() => {
           client.fromString(importString);
         }).should.throw(Errors.INVALID_BACKUP);
         done();
       });
       it('should handle old credentials', function(done) {
-        var importString = '{"version": 1, "xPubKey": "xxx"}';
-        var client = new Client();
+        const importString = '{"version": 1, "xPubKey": "xxx"}';
+        const client = new Client();
         (() => {
           client.fromString(importString);
         }).should.throw(Errors.OBSOLETE_BACKUP);
@@ -8861,8 +8862,8 @@ describe('client API', function() {
     /*
     describe.skip('#importFromExtendedPublicKey', () => {
       it('should handle importing an invalid extended private key', function(done) {
-        var client = new Client();
-        var xPubKey = 'this is an invalid key';
+        let client = new Client();
+        let xPubKey = 'this is an invalid key';
         client.importFromExtendedPublicKey(xPubKey, {}, {}, {}, err => {
           should.exist(err);
           err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
@@ -8870,7 +8871,7 @@ describe('client API', function() {
         });
       });
       it('should import with external public key', function(done) {
-        var client = helpers.newClient(app);
+        let client = helpers.newClient(app);
 
         client.seedFromExtendedPublicKey(
           'xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq',
@@ -8888,8 +8889,8 @@ describe('client API', function() {
           },
           err => {
             should.not.exist(err);
-            var c = client.credentials;
-            var importedClient = helpers.newClient(app);
+            let c = client.credentials;
+            let importedClient = helpers.newClient(app);
             importedClient.importFromExtendedPublicKey(
               'xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq',
               'ledger',
@@ -8897,7 +8898,7 @@ describe('client API', function() {
               {},
               err => {
                 should.not.exist(err);
-                var c2 = importedClient.credentials;
+                let c2 = importedClient.credentials;
                 c2.account.should.equal(0);
                 c2.xPubKey.should.equal(client.credentials.xPubKey);
                 c2.personalEncryptingKey.should.equal(c.personalEncryptingKey);
@@ -8912,7 +8913,7 @@ describe('client API', function() {
       });
 
       it('should fail to import with external priv key when not enought entropy', () => {
-        var client = helpers.newClient(app);
+        let client = helpers.newClient(app);
         (() => {
           client.seedFromExtendedPublicKey(
             'xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq',
@@ -8927,7 +8928,7 @@ describe('client API', function() {
 
   describe('doRequest', () => {
     it('should handle connection error', function(done) {
-      var client = new Client();
+      const client = new Client();
       client.credentials = {} as Credentials;
       client.request.r = helpers.stubRequest(null, {});
       client.request.doRequest('get', 'url', {}, false, (err, body, header) => {
@@ -8940,7 +8941,7 @@ describe('client API', function() {
     });
 
     it('should handle ECONNRESET error', function(done) {
-      var client = new Client();
+      const client = new Client();
       client.credentials = {} as Credentials;
       client.request.r = helpers.stubRequest(null, {
         status: 200,
@@ -9001,8 +9002,8 @@ describe('client API', function() {
         should.exist(address.address);
         blockchainExplorerMock.setUtxo(address, 2, 1);
 
-        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
-        var opts = {
+        const toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        const opts = {
           outputs: [
             {
               amount: 1e8,

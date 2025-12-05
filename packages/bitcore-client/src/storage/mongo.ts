@@ -1,6 +1,6 @@
-import { Db, MongoClient } from 'mongodb';
 import 'source-map-support/register';
 import { Transform } from 'stream';
+import { Db, MongoClient } from 'mongodb';
 
 export class Mongo {
   path: string;
@@ -20,7 +20,7 @@ export class Mongo {
     const { path, createIfMissing, errorIfExists } = params;
     if (path) {
       this.path = path;
-      let databasePath = path.split('/');
+      const databasePath = path.split('/');
       if (databasePath[databasePath.length - 1] === '') {
         databasePath.pop();
       }
@@ -45,7 +45,7 @@ export class Mongo {
       this.addressCollection = this.db.collection(this.addressCollectionName);
       await this.walletCollection.createIndex({ name: 1 });
       await this.addressCollection.createIndex({ name: 1 });
-    } catch (error) {}
+    } catch { /* ignore */ }
   }
 
   async close() {
@@ -65,7 +65,7 @@ export class Mongo {
       await client.connect();
       await client.close();
       return true;
-    } catch (e) {
+    } catch {
       return false;
     }
   }
@@ -166,7 +166,7 @@ export class Mongo {
     }
   }
 
-  async getAddress(params: { name: string; address: string, keepAlive: boolean; open: boolean}) {
+  async getAddress(params: { name: string; address: string; keepAlive: boolean; open: boolean }) {
     const { name, address, keepAlive, open } = params;
     const data = await this.getKey({ address, name, keepAlive, open });
     if (!data) {

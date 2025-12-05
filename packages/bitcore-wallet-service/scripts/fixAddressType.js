@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-const config = require('../../ts_build/src/config').default;
-const { Storage } = require('../../ts_build/src').default;
-const { ObjectId } = require('mongodb');
+import { ObjectId } from 'mongodb';
+import { Storage } from '../../ts_build/src';
+import config from '../../ts_build/src/config';
 
 if (!process.argv[2]) {
   console.log('Usage: fixAddressType.js <chain> [--doit]');
@@ -38,7 +38,7 @@ storage.connect(config.storageOpts, async (err) => {
   }
   
   function done(err) {
-    if (err) { console.log(err) }
+    if (err) { console.log(err); }
     storage.disconnect(() => { console.log('done'); });
   }
 

@@ -25,7 +25,7 @@ async function addTx(tx: IBtcTransaction, outputs: ICoin[]) {
 async function makeMempoolTxChain(chain: string, network: string, startingTxid: string, chainLength = 1) {
   let txid = startingTxid;
   let nextTxid = createNewTxid();
-  let allTxids = new Array<string>();
+  const allTxids = new Array<string>();
   for (let i = 1; i <= chainLength; i++) {
     const badMempoolTx = {
       chain,
@@ -53,6 +53,7 @@ async function makeMempoolTxChain(chain: string, network: string, startingTxid: 
 }
 
 describe('Coin Model', function() {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
   before(intBeforeHelper);
@@ -118,7 +119,7 @@ describe('Coin Model', function() {
       spendOps: spentOps
     });
 
-    const badTxs = await TransactionStorage.collection.find({ chain, network, txid: { $in: txids } }).toArray();
+    const badTxs = await TransactionStorage.collection.find({ chain, network, txid: { $in: txids } }).sort({ _id: 1 }).toArray();
     expect(badTxs.length).to.eq(chainLength);
     // the replaced tx is marked as conflicting, all the rest still pending to be cleaned up by pruning service
     expect(badTxs[0].blockHeight).to.eq(SpentHeightIndicators.conflicting);

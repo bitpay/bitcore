@@ -184,9 +184,9 @@ describe('Utils', () => {
         }],
         expected: '12 345,67899999',
       }, {
-          args: [104236872412, 'eth'],
-          expected: '0.00000010',
-        }
+        args: [104236872412, 'eth'],
+        expected: '0.00000010',
+      }
       ];
 
       for (const testCase of cases) {
@@ -199,7 +199,7 @@ describe('Utils', () => {
 
   describe('#signMessage #verifyMessage round trip', () => {
     it('should sign and verify', () => {
-      const msg = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+      const msg = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.';
       const sig = Utils.signMessage(msg, '09458c090a69a38368975fb68115df2f4b0ab7d1bc463fc60c67aa1730641d6c');
       Utils.verifyMessage(msg, sig, '03bec86ad4a8a91fe7c11ec06af27246ec55094db3d86098b7d8b2f12afe47627f').should.equal(true);
     });
@@ -207,7 +207,7 @@ describe('Utils', () => {
 
   describe('#encryptMessage #decryptMessage round trip', () => {
     it('should encrypt and decrypt', () => {
-      const pwd = "ezDRS2NRchMJLf1IWtjL5A==";
+      const pwd = 'ezDRS2NRchMJLf1IWtjL5A==';
       const ct = Utils.encryptMessage('hello world', pwd);
       const msg = Utils.decryptMessage(ct, pwd);
       msg.should.equal('hello world');
@@ -217,17 +217,17 @@ describe('Utils', () => {
 
   describe('#decryptMessage should throw', () => {
     it('should encrypt and decrypt', () => {
-      const pwd = "ezDRS2NRchMJLf1IWtjL5A==";
+      const pwd = 'ezDRS2NRchMJLf1IWtjL5A==';
       const ct = Utils.encryptMessage('hello world', pwd);
       (() => {
-        Utils.decryptMessage(ct, 'test')
+        Utils.decryptMessage(ct, 'test');
       }).should.throw('Invalid key length');
     });
   });
 
   describe('#decryptMessageNoThrow should not throw', () => {
     it('should encrypt and decrypt', () => {
-      const pwd = "ezDRS2NRchMJLf1IWtjL5A==";
+      const pwd = 'ezDRS2NRchMJLf1IWtjL5A==';
       const ct = Utils.encryptMessage('hello world', pwd);
       const msg = Utils.decryptMessageNoThrow(ct, pwd);
 
@@ -235,7 +235,7 @@ describe('Utils', () => {
     });
 
     it('should encrypt and  fail to decrypt', () => {
-      const pwd = "ezDRS2NRchMJLf1IWtjL5A==";
+      const pwd = 'ezDRS2NRchMJLf1IWtjL5A==';
       const ct = Utils.encryptMessage('hello world', pwd);
       const msg = Utils.decryptMessageNoThrow(ct, 'hola');
 
@@ -244,14 +244,14 @@ describe('Utils', () => {
 
 
     it('should failover to decrypt a non-encrypted msg', () => {
-      const pwd = "ezDRS2NRchMJLf1IWtjL5A==";
+      const pwd = 'ezDRS2NRchMJLf1IWtjL5A==';
       const msg = Utils.decryptMessageNoThrow('hola mundo', 'hola');
 
       msg.should.equal('hola mundo');
     });
 
     it('should failover to decrypt a non-encrypted msg (case 2)', () => {
-      const pwd = "ezDRS2NRchMJLf1IWtjL5A==";
+      const pwd = 'ezDRS2NRchMJLf1IWtjL5A==';
       const msg = Utils.decryptMessageNoThrow('{"pepe":1}', 'hola');
 
       msg.should.equal('{"pepe":1}');

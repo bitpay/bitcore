@@ -12,14 +12,16 @@ import { TransactionFixture } from '../../fixtures/transaction.fixture';
 import { mockStorage } from '../../helpers';
 import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 import * as EvmTxData from '../../data/ETH/gethTxs';
-const bitcoreLib = require('bitcore-lib');
+import { BitcoreLib } from 'crypto-wallet-core';
+
+const { Transaction } = BitcoreLib;
 
 describe('Transaction Model', function() {
   before(unitBeforeHelper);
   after(unitAfterHelper);
 
-  let sandbox = sinon.sandbox.create();
-  let address = 'mjVf6sFjt9q6aLY7M21Ap6CPSWdaoNHSf1';
+  const sandbox = sinon.sandbox.create();
+  const address = 'mjVf6sFjt9q6aLY7M21Ap6CPSWdaoNHSf1';
   this.timeout(500000);
   before(() => {
     mockStorage([]);
@@ -29,7 +31,7 @@ describe('Transaction Model', function() {
   });
 
   it('should stream all the mint operations', async () => {
-    const tx = bitcoreLib.Transaction(TransactionFixture.transaction) as BitcoinTransaction;
+    const tx = new Transaction(TransactionFixture.transaction) as BitcoinTransaction;
     let batches = 0;
 
     const mintStream = new Readable({ objectMode: true, read: () => {} });
@@ -37,7 +39,7 @@ describe('Transaction Model', function() {
       mintStream
         .on('data', (mintOps: MintOp[]) => {
           batches++;
-          let ops = mintOps;
+          const ops = mintOps;
           expect(ops.length).to.eq(1);
           expect(ops[0].updateOne.update.$set.address).to.eq(address);
         })
@@ -57,7 +59,7 @@ describe('Transaction Model', function() {
   });
 
   it('should batch large amount of transactions', async () => {
-    const tx = bitcoreLib.Transaction(TransactionFixture.transaction) as BitcoinTransaction;
+    const tx = new Transaction(TransactionFixture.transaction) as BitcoinTransaction;
     let batches = 0;
 
     const mintStream = new Readable({ objectMode: true, read: () => {} });
@@ -65,7 +67,7 @@ describe('Transaction Model', function() {
       mintStream
         .on('data', (mintOps: MintOp[]) => {
           batches++;
-          let ops = mintOps;
+          const ops = mintOps;
           expect(ops.length).to.eq(50000);
         })
         .on('end', r)
@@ -84,7 +86,7 @@ describe('Transaction Model', function() {
   });
 
   it('should stream all the spend operations', async () => {
-    const tx = bitcoreLib.Transaction(TransactionFixture.transaction) as BitcoinTransaction;
+    const tx = new Transaction(TransactionFixture.transaction) as BitcoinTransaction;
     let batches = 0;
     const CURRENT_HEIGHT = 8534;
 
@@ -93,7 +95,7 @@ describe('Transaction Model', function() {
       spentStream
         .on('data', (spentOps: SpendOp[]) => {
           batches++;
-          let ops = spentOps;
+          const ops = spentOps;
           expect(ops.length).to.eq(tx.inputs.length);
           expect(ops[0].updateOne.update.$set.spentHeight).to.eq(CURRENT_HEIGHT);
           expect(ops[0].updateOne.update.$set.spentTxid).to.eq(tx.hash);
@@ -113,7 +115,7 @@ describe('Transaction Model', function() {
   });
 
   describe('Wallet Tagging', async () => {
-    const tx = bitcoreLib.Transaction(TransactionFixture.transaction) as TaggedBitcoinTx;
+    const tx = new Transaction(TransactionFixture.transaction) as unknown as TaggedBitcoinTx;
     const CURRENT_HEIGHT = 8534;
     const correctWalletId = new ObjectId('5d93abeba811051da3af9a35');
 
@@ -128,10 +130,10 @@ describe('Transaction Model', function() {
       }));
 
       const mintStream = new Readable({ objectMode: true, read: () => {} });
-      let done = new Promise(r =>
+      const done = new Promise(r =>
         mintStream
           .on('data', (mintOps: MintOp[]) => {
-            let ops = mintOps;
+            const ops = mintOps;
             expect(ops.length).to.eq(1);
             expect(ops[0].updateOne.update.$set.address).to.eq(address);
           })
@@ -157,7 +159,7 @@ describe('Transaction Model', function() {
         const input = i.toObject();
         const inputTxid = i.toObject().prevTxId;
         const fixtureInput = TransactionFixture.inputs[inputTxid];
-        const inputTx = new bitcoreLib.Transaction(fixtureInput) as BitcoinTransaction;
+        const inputTx = new Transaction(fixtureInput) as BitcoinTransaction;
         const coin = { spentTxid: tx.hash, value: inputTx.outputs[input.outputIndex].satoshis, wallets: [] };
         return coin;
       }
@@ -169,10 +171,10 @@ describe('Transaction Model', function() {
       }));
 
       const txStream = new Readable({ objectMode: true, read: () => {} });
-      let done = new Promise(r =>
+      const done = new Promise(r =>
         txStream
           .on('data', (spentOps: TxOp[]) => {
-            let ops = spentOps;
+            const ops = spentOps;
             expect(ops.length).to.eq(1);
             expect(ops[0].updateOne.filter.txid).to.eq(tx.hash);
             expect(ops[0].updateOne.update.$set.fee).to.eq(81276);
@@ -220,7 +222,7 @@ describe('Transaction Model', function() {
           contractAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
         };
         let cs = -1;
-        let CS = () => `${cs += 4}`;
+        const CS = () => `${cs += 4}`;
         expect(effects[0]).to.deep.equal({ ...std, callStack: CS(), to: '0x12FC1169925053Dd4FFF511FA53D3a8A94aE9E80', amount: '148950000' });
         expect(effects[1]).to.deep.equal({ ...std, callStack: CS(), to: '0x7f5C4a4cB0677585934642053c56d81eb605e345', amount: '26290000' });
         expect(effects[2]).to.deep.equal({ ...std, callStack: CS(), to: '0xD487A844F99a5ed1b0207d55A30618927e5F5Cc5', amount: '430450000' });
@@ -311,7 +313,7 @@ describe('Transaction Model', function() {
           contractAddress: '0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd'
         };
         let cs = -1;
-        let CS = () => `${cs += 4}`;
+        const CS = () => `${cs += 4}`;
         expect(effects[0]).to.deep.equal({ ...std, callStack: CS(), to: '0x5A00051073A29fbC74869297e21c5449c0360Ecd', amount: '20905' });
         expect(effects[1]).to.deep.equal({ ...std, callStack: CS(), to: '0x898e4e89AD04E51c739542AA434b1B3f67d92171', amount: '29979' });
         expect(effects.length).to.equal(2);
@@ -323,7 +325,7 @@ describe('Transaction Model', function() {
           from: '0x8992273ed68bAc36d55f69054140FF4284FAf627' // `from` for native ETH transfers is the contract address
         };
         let cs = -1;
-        let CS = () => `${cs += 1}`;
+        const CS = () => `${cs += 1}`;
         const toWei = (amt) => Web3.utils.toWei(amt, 'ether').toString();
         expect(effects[0]).to.deep.equal({ ...std, callStack: CS(), to: '0x95Aa45AacD2CDF83f8b3d0576ad92f19482C524a', amount: toWei('0.003203') });
         expect(effects[1]).to.deep.equal({ ...std, callStack: CS(), to: '0x95Aa45AacD2CDF83f8b3d0576ad92f19482C524a', amount: toWei('0.083528') });

@@ -1,9 +1,9 @@
-import { fetchDigitalAsset, mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata'
-import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
+import { fetchDigitalAsset, mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { PublicKey as UmiPublicKey } from '@metaplex-foundation/umi-public-keys';
 import { TokenListProvider } from '@solana/spl-token-registry';
 import { CryptoRpc } from 'crypto-rpc';
-import { SolRpc } from 'crypto-rpc/lib/sol/SolRpc'
+import { SolRpc } from 'crypto-rpc/lib/sol/SolRpc';
 import { instructionKeys } from 'crypto-rpc/lib/sol/transaction-parser';
 import Config from '../../../../config';
 import logger from '../../../../logger';
@@ -11,7 +11,7 @@ import { CacheStorage } from '../../../../models/cache';
 import { IBlock } from '../../../../types/Block';
 import { CoinListingJSON } from '../../../../types/Coin';
 import { IChainConfig, IProvider, ISVMNetworkConfig } from '../../../../types/Config';
-import { BroadcastTransactionParams, GetBalanceForAddressParams, GetBlockBeforeTimeParams, GetBlockParams, GetCoinsForTxParams, GetEstimatePriorityFeeParams, GetWalletBalanceParams, GetWalletBalanceAtTimeParams, IChainStateService, StreamAddressUtxosParams, StreamBlocksParams, StreamTransactionParams, StreamTransactionsParams, StreamWalletTransactionsParams, WalletBalanceType } from '../../../../types/namespaces/ChainStateProvider';
+import { BroadcastTransactionParams, GetBalanceForAddressParams, GetBlockBeforeTimeParams, GetBlockParams, GetCoinsForTxParams, GetEstimatePriorityFeeParams, GetWalletBalanceAtTimeParams, GetWalletBalanceParams, IChainStateService, StreamAddressUtxosParams, StreamBlocksParams, StreamTransactionParams, StreamTransactionsParams, StreamWalletTransactionsParams, WalletBalanceType } from '../../../../types/namespaces/ChainStateProvider';
 import { range } from '../../../../utils';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import {
@@ -21,7 +21,7 @@ import {
 import { ExternalApiStream } from '../../external/streams/apiStream';
 import { InternalStateProvider } from '../../internal/internal';
 
-export interface GetSolWeb3Response { rpc: SolRpc; connection: any; umi: any; dataType: string; };
+export interface GetSolWeb3Response { rpc: SolRpc; connection: any; umi: any; dataType: string };
 
 export class BaseSVMStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<ISVMNetworkConfig>;
@@ -44,7 +44,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
           new Promise((_, reject) => setTimeout(reject, 5000))
         ]);
         return rpc; // return the first applicable rpc that's responsive
-      } catch (e) {
+      } catch {
         const idx = BaseSVMStateProvider.rpcs[this.chain][network].indexOf(rpc);
         BaseSVMStateProvider.rpcs[this.chain][network].splice(idx, 1);
       }
@@ -87,7 +87,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         const { rpc, connection } = await this.getRpc(network);
         try {
           if (rawTx) {
-            feerate = await rpc.estimateFee({ nBlocks: target, rawTx })
+            feerate = await rpc.estimateFee({ nBlocks: target, rawTx });
           } else {
             const { height } = await rpc.getTip();
             const { transactions } = await connection.getBlock(height);
@@ -99,7 +99,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
               lamportsPerSig = fee / numberOfSignatures;
             }
             // Total Fee = Number of Signatures × Lamports per Signature
-            feerate = _signatures * lamportsPerSig
+            feerate = _signatures * lamportsPerSig;
           }
         } catch (err: any) {
           logger.error('getFee: %o', err.stack || err.message || err);
@@ -123,7 +123,8 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     return new Promise<void>(async (resolve, reject) => {
       try {
         const { chain, network, req, res, args } = params;
-        let { blockHeight, limit = 50 } = args;
+        let { blockHeight } = args;
+        const { limit = 50 } = args;
 
         if (!chain || !network) {
           throw new Error('Missing chain or network');
@@ -215,11 +216,11 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         const { rpc, connection } = await this.getRpc(network);
         let before;
         let count = 0;
-        let _address = address
+        let _address = address;
         if (tokenAddress) {
           try {
             const { rpc } = await this.getRpc(network);
-            _address =  await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
+            _address = await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
             if (!_address) throw new Error('Missing ATA');
           } catch (e: any) {
             const errMsg = 'Error getting ATA address';
@@ -240,6 +241,17 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
             if (transformedTx) {
               addressStream.push(JSON.stringify(transformedTx) + '\n');
               count++;
+
+              if (transformedTx.category === 'send' || transformedTx.category === 'move') {
+                addressStream.push(JSON.stringify({
+                  id: transformedTx.txid,
+                  txid: transformedTx.txid,
+                  category: 'fee',
+                  satoshis: -1 * transformedTx.fee, // lamports
+                  height: transformedTx.height,
+                  blockTime: transformedTx.blockTime
+                }) + '\n');
+              }
             }
           }
         } while (!limit || count < limit);
@@ -264,13 +276,13 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         chain: 'SOL',
         status: tx?.confirmationStatus,
         height: Number(tx.slot)
-      }
+      };
     }
   }
 
 
   txTransform(network, params) {
-    let { block, tx, txStatus, targetAddress, tokenAddress } = params;
+    const { block, tx, txStatus, targetAddress, tokenAddress } = params;
     let blockTime;
     let blockHash;
 
@@ -278,7 +290,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       ({ blockHeight: blockTime, blockTime, blockhash: blockHash } = block);
     }
 
-    blockTime = blockTime || tx?.blockTime
+    blockTime = blockTime || tx?.blockTime;
 
     const { feePayerAddress, slot, meta, version, txid } = tx;
     const recentBlockhash = tx.lifetimeConstraint.blockhash || blockHash;
@@ -396,14 +408,14 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     if (params.wallet._id === undefined) {
       throw new Error('Wallet balance can only be retrieved for wallets with the _id property');
     }
-    let addresses = await this.getWalletAddresses(params.wallet._id);
-    let addressBalancePromises = addresses.map(({ address }) =>
+    const addresses = await this.getWalletAddresses(params.wallet._id);
+    const addressBalancePromises = addresses.map(({ address }) =>
       this.getBalanceForAddress({ chain: this.chain, network, address, args: params.args })
     );
-    let addressBalances = await Promise.all<WalletBalanceType>(
+    const addressBalances = await Promise.all<WalletBalanceType>(
       addressBalancePromises
     );
-    let balance = addressBalances.reduce(
+    const balance = addressBalances.reduce(
       (prev, cur) => ({
         unconfirmed: BigInt(prev.unconfirmed) + BigInt(cur.unconfirmed),
         confirmed: BigInt(prev.confirmed) + BigInt(cur.confirmed),
@@ -446,7 +458,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       if (!tx) {
         throw new Error(`Balance not found at ${args.time}`);
       }
-      const index = tx.accountKeys?.findIndex(acct => acct === address);
+      const index = tx.accountKeys?.findIndex(acct => acct === (ata || address));
       if (index === undefined || index === -1) {
         throw new Error(`Balance not found at ${args.time}`);
       }
@@ -454,11 +466,11 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       if (tokenAddress) {
         const tokenBalance = tx.meta?.postTokenBalances?.find(tb => tb.accountIndex === index && tb.mint.toLowerCase() === tokenAddress.toLowerCase());
         const decimals = tokenBalance?.uiTokenAmount?.decimals;
-        balance = (tokenBalance?.uiTokenAmount?.uiAmount || 0) * (10 ** decimals) || null;
+        balance = (Number(tokenBalance?.uiTokenAmount?.uiAmount) || 0) * (10 ** decimals);
       } else {
-        balance = tx.meta?.postBalances ? tx.meta.postBalances[index] : null;
+        balance = tx.meta?.postBalances?.[index];
       }
-      if (balance === null) {
+      if ((!balance && balance !== 0) || isNaN(Number(balance))) {
         throw new Error(`Balance not found at ${args.time}`);
       }
       return { confirmed: Number(balance), unconfirmed: 0, balance: Number(balance) };
@@ -471,11 +483,11 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       async () => {
         if (tokenAddress) {
           const ata = await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
-          const { value } = await connection.getTokenAccountBalance(ata).send()
+          const { value } = await connection.getTokenAccountBalance(ata).send();
           const balance = value?.amount || 0;
           return { confirmed: balance, unconfirmed: 0, balance };
         } else {
-          const balance = await rpc.getBalance({ address })
+          const balance = await rpc.getBalance({ address });
           return { confirmed: balance, unconfirmed: 0, balance };
         }
       },
@@ -494,11 +506,23 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   async getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock | null> {
     const { network, time = new Date() } = params;
     const { rpc } = await this.getRpc(network);
-    const beforeTimeSlot = await this._findSlotByDate(network, new Date(time));
+    let beforeTimeSlot = await this._findSlotByDate(network, new Date(time));
     if (!beforeTimeSlot) {
       return null;
     }
-    const block = await rpc.getBlock({ height: beforeTimeSlot });
+    let block;
+    for (let attempt = 0; attempt < 10; attempt++) { // retry in case of skipped or missing slots
+      try {
+        block = await rpc.getBlock({ height: beforeTimeSlot });
+        break;
+      } catch (e: any) {
+        if (e?.message?.includes('missing in long-term storage')) {
+          beforeTimeSlot--;
+          continue;
+        }
+        throw e;
+      }
+    }
     return this.blockTransform(network, block, beforeTimeSlot);
   }
 
@@ -516,12 +540,11 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
           objectMode: true,
           passThrough: true
         });
-        let count = 0;
         try {
           let block;
           let nextBlock;
           for (const blockNum of blockRange) {
-            const thisNextBlock = Number(block?.height) === blockNum + 1 ? block :  await this._getTransformedBlock(rpc, network, blockNum + 1);
+            const thisNextBlock = Number(block?.height) === blockNum + 1 ? block : await this._getTransformedBlock(rpc, network, blockNum + 1);
             block = Number(nextBlock?.number) === blockNum ? nextBlock : await this._getTransformedBlock(rpc, network, blockNum);
             if (!block) {
               continue;
@@ -530,7 +553,6 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
             block.nextBlockHash = nextBlock?.hash;
             block.confirmations = height - block.height + 1;
             stream.push(block);
-            count++;
           }
         } catch (e: any) {
           logger.error('Error streaming blocks: %o', e);
@@ -560,7 +582,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         network,
         chain: 'SOL',
         status: block?.confirmationStatus,
-      }
+      };
     }
   }
 
@@ -583,8 +605,9 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
 
   protected async getBlocksRange(params: GetBlockParams) {
     const { chain, network, sinceBlock, args = {} } = params;
-    let { blockId } = params;
-    let { startDate, endDate, date, limit = 10, sort = { height: -1 } } = args;
+    const { blockId } = params;
+    let { startDate, endDate, limit = 10 } = args;
+    const { date, sort = { height: -1 } } = args;
     const query: { startBlock?: number; endBlock?: number } = {};
     if (!chain || !network) {
       throw new Error('Missing required chain and/or network param');
@@ -610,7 +633,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
 
     // Get range
     if (sinceBlock) {
-      let height = Number(sinceBlock);
+      const height = Number(sinceBlock);
       if (isNaN(height) || height.toString(10) != sinceBlock) {
         throw new Error('invalid block id provided');
       }
@@ -626,7 +649,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       query.endBlock = query.endBlock ?? tipHeight;
       query.startBlock = query.startBlock ?? query.endBlock - limit;
     } else if (blockId) {
-      height =  Number(blockId);
+      height = Number(blockId);
     }
 
     if (height != null) {
@@ -655,7 +678,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     return r;
   }
 
-  async _findSlotByDate(network: string,  targetDate: Date): Promise<number | null> {
+  async _findSlotByDate(network: string, targetDate: Date): Promise<number | null> {
     const { connection } = await this.getRpc(network);
     let lo = await connection.getFirstAvailableBlock().send(); 
     let hi = await connection.getSlot({ commitment: 'finalized' }).send();
@@ -667,8 +690,9 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     }
 
     let errorCount = 0;
+    let mid = 0n;
     while (lo <= hi) {
-      const mid = (lo + hi) / 2n;
+      mid = mid || (lo + hi) / 2n;
       let blockTime: number | null = null;
       try {
         blockTime = await connection.getBlockTime(mid).send();
@@ -676,10 +700,13 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
           errorCount = 0; // reset error count on successful fetch
         }
       } catch (e: any) {
-        // possible rate limit exceeded
+        // possible rate limit exceeded or missing slot
         errorCount++;
-        if (errorCount >= 5) {
+        if (errorCount >= 10) {
           throw new Error(e?.message || 'Too many errors occurred');
+        }
+        if (e?.message?.includes('missing in long-term storage')) {
+          mid--;
         }
         await new Promise(resolve => setTimeout(resolve, 500));
         continue;
@@ -693,6 +720,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         result = mid;
         hi = mid - 1n;
       }
+      mid = 0n; // reset mid for next iteration
     }
   
     return Number(result) || null;
@@ -722,14 +750,14 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     if (params.wallet._id === undefined) {
       throw new Error('Wallet balance can only be retrieved for wallets with the _id property');
     }
-    let addresses = await this.getWalletAddresses(params.wallet._id);
-    let addressBalancePromises = addresses.map(({ address }) =>
+    const addresses = await this.getWalletAddresses(params.wallet._id);
+    const addressBalancePromises = addresses.map(({ address }) =>
       this.getBalanceForAddress({ chain: this.chain, network, address, args: params.args })
     );
-    let addressBalances = await Promise.all<WalletBalanceType>(
+    const addressBalances = await Promise.all<WalletBalanceType>(
       addressBalancePromises
     );
-    let balance = addressBalances.reduce(
+    const balance = addressBalances.reduce(
       (prev, cur) => ({
         unconfirmed: BigInt(prev.unconfirmed) + BigInt(cur.unconfirmed),
         confirmed: BigInt(prev.confirmed) + BigInt(cur.confirmed),
@@ -760,21 +788,21 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   async getTokenAccountAddresses(params) {
     const { network, address } = params;
     const { rpc, connection } = await this.getRpc(network);
-    const addresses = await rpc.getTokenAccountsByOwner({ address })
-    const result : {}[] = [];
+    const addresses = await rpc.getTokenAccountsByOwner({ address });
+    const result : object[] = [];
     for (const addr of addresses) {
       if (addr.state === 'initialized') {
-        const { value } = await connection.getTokenAccountBalance(addr.pubkey).send()
-        result.push({ mintAddress: addr.mint, ataAddress: addr.pubkey, decimals: value.decimals })
+        const { value } = await connection.getTokenAccountBalance(addr.pubkey).send();
+        result.push({ mintAddress: addr.mint, ataAddress: addr.pubkey, decimals: value.decimals });
       } 
     }
     return result;
   }
 
- async getSPLTokenInfo(
+  async getSPLTokenInfo(
     network: string, 
     tokenAddress: string
-  ): Promise<{ name: string; symbol: string; decimals: number; programType: string | undefined; programAddress: string | undefined; }> {
+  ): Promise<{ name: string; symbol: string; decimals: number; programType: string | undefined; programAddress: string | undefined }> {
     const TOKEN_PROGRAM_ADDRESS = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
     const TOKEN_2022_ADDR = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
     const { umi, connection } = await this.getRpc(network);
@@ -805,7 +833,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
           mainnet: 101,
           testnet: 102,
           devnet: 103
-        }
+        };
         const tokenList = provider.filterByChainId(networkId[network]).getList();
         const tokenMap = tokenList.reduce((map, item) => {
           map.set(item.address, item);
@@ -836,7 +864,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         programType = 'token';
         programAddress = TOKEN_PROGRAM_ADDRESS;
       } else if (owner === TOKEN_2022_ADDR) {
-        programType =  'token2022';
+        programType = 'token2022';
         programAddress = TOKEN_2022_ADDR;
       }
       if (!programAddress) {
@@ -862,7 +890,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     const MIN_TRANSACTION_SIZE = 64;
 
     if (!rawTx) {
-      throw new Error('Missing raw transaction string')
+      throw new Error('Missing raw transaction string');
     }
     if (!(Buffer.from(rawTx, 'base64').toString('base64') === rawTx)) {
       throw new Error('Invalid base64 encoding');
@@ -882,7 +910,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   async decodeRawTransaction(params: any): Promise<any> {
     const { network, rawTx } = params;
     const { rpc } = await this.getRpc(network);
-    const decodedTx =  await rpc.decodeRawTransaction({ rawTx });
+    const decodedTx = await rpc.decodeRawTransaction({ rawTx });
     return decodedTx ? JSON.parse(JSON.stringify(decodedTx, (_, v) => typeof v === 'bigint' ? v.toString() : v)) : null;
   }
 }

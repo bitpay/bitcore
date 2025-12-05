@@ -1,16 +1,16 @@
+import * as SolKit from '@solana/kit';
 import * as SolToken from '@solana-program/token';
-import * as SolKit from '@solana/kit'
 import { SOLTxProvider } from '../sol';
 
 export class SPLTxProvider extends SOLTxProvider {
 
   create(params: CreateParams) {
     // Reuse exposed TransactionProxy API (Create)
-    // @ts-expect-error
+    // @ts-expect-error - so public api is minimally changed
     if (params.category === 'recoverNestedAssociatedToken') {
       return SPLTxProvider.createRecoverNestedAssociatedTokenTransaction(params as unknown as CreateRecoverNestedAssociatedTokenParams);
     }
-    // @ts-expect-error
+    // @ts-expect-error - so public api is minimally changed
     if (params.category === 'closeTokenAccount') {
       return SPLTxProvider.createCloseTokenAccountTransaction(params as unknown as CreateCloseTokenAccountParams);
     }
@@ -126,7 +126,7 @@ export class SPLTxProvider extends SOLTxProvider {
     const recentBlockhash = {
       blockhash: blockHash as SolKit.Blockhash,
       lastValidBlockHeight: BigInt(blockHeight)
-    }
+    };
 
     // Create transaction
     const transactionMessage = SolKit.pipe(
@@ -144,11 +144,11 @@ export class SPLTxProvider extends SOLTxProvider {
 }
 
 interface CreateParams {
-  recipients: Array<{ address: string; amount: string; addressKeyPair?: SolKit.KeyPairSigner; }>;
+  recipients: Array<{ address: string; amount: string; addressKeyPair?: SolKit.KeyPairSigner }>;
   from: string;
   fee?: number;
   feeRate: number;
-  txType?:  'legacy' | '0'; // legacy, version 0
+  txType?: 'legacy' | '0'; // legacy, version 0
   category?: 'transfer' | 'createAccount';
   nonce?: string; // nonce is represented as a transaction id
   nonceAddress?: string;
@@ -158,7 +158,7 @@ interface CreateParams {
   computeUnits?: number;
   memo?: string;
   // account creation fields
-  fromKeyPair?: SolKit.KeyPairSigner,
+  fromKeyPair?: SolKit.KeyPairSigner;
   space?: number; // amount of space to reserve a new account in bytes
   instructions?: Array<SolKit.BaseTransactionMessage['instructions'][number]>;
   // SPL token transfer fields (required for token transfers)

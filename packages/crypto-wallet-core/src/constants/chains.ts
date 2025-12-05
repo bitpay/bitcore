@@ -2,7 +2,8 @@
 export const UTXO_CHAINS = ['btc', 'bch', 'doge', 'ltc'];
 export const EVM_CHAINS = ['eth', 'matic', 'arb', 'base', 'op'];
 export const SVM_CHAINS = ['sol'];
-export const CHAINS = [...UTXO_CHAINS, ...EVM_CHAINS, ...SVM_CHAINS];
+export const RIPPLE_CHAINS = ['xrp'];
+export const CHAINS = [...UTXO_CHAINS, ...EVM_CHAINS, ...SVM_CHAINS, ...RIPPLE_CHAINS];
 
 export const MULTISIG_CHAINS = UTXO_CHAINS;
 
@@ -12,7 +13,7 @@ export const EVM_CHAIN_DEFAULT_TESTNET = {
   ARB: 'sepolia',
   BASE: 'sepolia',
   OP: 'sepolia'
-}
+};
 
 export const EVM_CHAIN_NETWORK_TO_CHAIN_ID = {
   // Mainnets
@@ -46,7 +47,7 @@ export const EVM_CHAIN_NETWORK_TO_CHAIN_ID = {
   ARB_regtest: 442161,
   BASE_regtest: 88453,
   OP_regtest: 111554201
-}
+};
 
 const reverseObject = <K extends string, V extends number | string>(obj: Record<K, V>, split = false): Record<V, K> => {
   const reversed = {} as Record<V, K>;

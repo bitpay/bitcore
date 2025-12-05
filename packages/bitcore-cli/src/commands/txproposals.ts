@@ -1,10 +1,11 @@
-import * as prompt from '@clack/prompts';
 import fs from 'fs';
 import os from 'os';
-import type { CommonArgs } from '../../types/cli';
+import * as prompt from '@clack/prompts';
+import { ITokenObj } from '../../types/wallet';
 import { UserCancelled } from '../errors';
 import { getAction, getFileName } from '../prompts';
 import { Utils } from '../utils';
+import type { CommonArgs } from '../../types/cli';
 
 export function command(args: CommonArgs) {
   const { wallet, program } = args;
@@ -64,15 +65,27 @@ export async function getTxProposals(
     } else {
       const lines = [];
       const chain = txp.chain || txp.coin;
-      const currency = chain.toUpperCase();
-      const feeCurrency = currency; // TODO
+      const network = txp.network;
+      let tokenObj: ITokenObj;
+      if (txp.tokenAddress) {
+        tokenObj = await wallet.getToken({ tokenAddress: txp.tokenAddress });
+        if (!tokenObj) {
+          throw new Error(`Unknown token "${txp.tokenAddress}" on ${chain}:${network}`);
+        }
+      }
+      const nativeCurrency = (await wallet.getNativeCurrency(true)).displayCode;
+      const currency = tokenObj?.displayCode || nativeCurrency;
 
       lines.push(`Chain: ${chain.toUpperCase()}`);
       lines.push(`Network: ${Utils.capitalize(txp.network)}`);
       txp.tokenAddress && lines.push(`Token: ${txp.tokenAddress}`);
-      lines.push(`Amount: ${Utils.amountFromSats(chain, txp.amount)} ${currency}`);
-      lines.push(`Fee: ${Utils.amountFromSats(chain, txp.fee)} ${feeCurrency}`);
-      lines.push(`Total Amount: ${Utils.amountFromSats(chain, txp.amount + txp.fee)} ${currency}`);
+      lines.push(`Amount: ${Utils.renderAmount(currency, txp.amount, tokenObj)}`);
+      lines.push(`Fee: ${Utils.renderAmount(nativeCurrency, txp.fee)}`);
+      // lines.push(`Total Amount: ${Utils.amountFromSats(chain, txp.amount + txp.fee)} ${currency}`);
+      lines.push(`Total Amount: ${tokenObj 
+        ? Utils.renderAmount(currency, txp.amount, tokenObj) + ` + ${Utils.renderAmount(nativeCurrency, txp.fee)}`
+        : Utils.renderAmount(currency, txp.amount + txp.fee)
+      }`);
       txp.gasPrice && lines.push(`Gas Price: ${Utils.displayFeeRate(chain, txp.gasPrice)}`);
       txp.gasLimit && lines.push(`Gas Limit: ${txp.gasLimit}`);
       txp.feePerKb && lines.push(`Fee Rate: ${Utils.displayFeeRate(chain, txp.feePerKb)}`);
@@ -85,9 +98,9 @@ export async function getTxProposals(
       lines.push('---------------------------');
       lines.push('Recipients:');
       lines.push(...txp.outputs.map(o => {
-        return ` → ${Utils.maxLength(o.toAddress)}${o.tag ? `:${o.tag}` : ''}: ${Utils.amountFromSats(chain, o.amount)} ${currency}${o.message ? ` (${o.message})` : ''}`;
+        return ` → ${Utils.maxLength(o.toAddress)}${o.tag ? `:${o.tag}` : ''}: ${Utils.renderAmount(currency, o.amount)}${o.message ? ` (${o.message})` : ''}`;
       }));
-      txp.changeAddress && lines.push(`Change Address: ${Utils.maxLength(txp.changeAddress.address)} (${txp.changeAddress.path})`);
+      txp.changeAddress && lines.push(` ↲ ${Utils.maxLength(txp.changeAddress.address)} (change - ${txp.changeAddress.path})`);
       lines.push('---------------------------');
       if (txp.actions?.length) {
         lines.push('Actions:');
@@ -141,9 +154,9 @@ export async function getTxProposals(
     action = opts.command
       ? opts.action || (opts.export ? 'export' : 'exit')
       : await getAction({
-          options,
-          initialValue
-        });
+        options,
+        initialValue
+      });
     if (prompt.isCancel(action)) {
       throw new UserCancelled();
     }
@@ -208,9 +221,9 @@ export async function getTxProposals(
         const outputFile = opts.command
           ? Utils.replaceTilde(typeof opts.export === 'string' ? opts.export : defaultValue)
           : await getFileName({
-              message: 'Enter output file path to save proposal:',
-              defaultValue,
-            });
+            message: 'Enter output file path to save proposal:',
+            defaultValue,
+          });
         fs.writeFileSync(outputFile, JSON.stringify(txp, null, 2));
         prompt.log.success(`Exported to ${outputFile}`);
         break;
@@ -225,7 +238,7 @@ export async function getTxProposals(
       action = 'exit'; // Exit after processing the action in command mode
     }
     // TODO: handle actions
-  } while (!['menu', 'exit'].includes(action))
+  } while (!['menu', 'exit'].includes(action));
 
   return { action };
 };

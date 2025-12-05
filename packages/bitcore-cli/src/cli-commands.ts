@@ -2,7 +2,7 @@ import { type ICliOptions } from '../types/cli';
 import { type IWallet } from '../types/wallet';
 import { Utils } from './utils';
 
-export function getCommands(args: { wallet: IWallet, opts?: ICliOptions }) {
+export function getCommands(args: { wallet: IWallet; opts?: ICliOptions }) {
   const { wallet } = args;
 
   const COMMANDS = {
@@ -14,7 +14,7 @@ export function getCommands(args: { wallet: IWallet, opts?: ICliOptions }) {
       { label: 'Import File', value: 'import-file', hint: 'Import using a file' },
     ],
     BASIC: [
-      { label: ({ token }) => `Token${token ? ` (${Utils.colorText(token, 'orange')})` : ''}`, value: 'token', hint: 'Manage the token context for this session', show: () => !wallet.isUtxo(), noCmd: true },
+      { label: ({ token }) => `Token${token ? ` (${Utils.colorText(token, 'orange')})` : ''}`, value: 'token', hint: 'Manage the token context for this session', show: () => wallet.isTokenChain(), noCmd: true },
       { label: ({ ppNum }) => `Proposals${ppNum}`, value: 'txproposals', hint: 'Get pending transaction proposals' },
       { label: 'Send', value: 'transaction', hint: 'Create a transaction to send funds' },
       { label: 'Receive', value: 'address', hint: 'Get an address to receive funds to' },

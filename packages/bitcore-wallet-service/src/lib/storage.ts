@@ -2,6 +2,7 @@ import * as async from 'async';
 import _ from 'lodash';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
+import preconditions from 'preconditions';
 import { BCHAddressTranslator } from './bchaddresstranslator'; // only for migration
 import { Common } from './common';
 import logger from './logger';
@@ -21,7 +22,7 @@ import {
 import { ITssKeyMessageObject, TssKeyGenModel } from './model/tsskeygen';
 import { ITssSigMessageObject, TssSigGenModel } from './model/tsssign';
 
-const $ = require('preconditions').singleton();
+const $ = preconditions.singleton();
 
 const collections = {
   // Duplciated in helpers.. TODO
@@ -49,7 +50,7 @@ const Utils = Common.Utils;
 
 const ObjectID = mongodb.ObjectID;
 
-var objectIdDate = function(date) {
+const objectIdDate = function(date) {
   return Math.floor(date / 1000).toString(16) + '0000000000000000';
 };
 export class Storage {
@@ -402,11 +403,11 @@ export class Storage {
               }
               tx.status = 'pending';
               tx.multisigTxId = multisigTxpsInfoByTransactionHash[tx.txid][0].transactionId;
-              tx.actions.forEach(action => {
+              for (const action of tx.actions) {
                 if (_.some(multisigTxpsInfoByTransactionHash[tx.txid], { event: 'ExecutionFailure' })) {
                   action.type = 'failed';
                 }
-              });
+              }
               if (tx.amount === 0) {
                 actionsById[tx.multisigTxId] = [...tx.actions, ...(actionsById[tx.multisigTxId] || [])];
                 return undefined;
@@ -415,11 +416,11 @@ export class Storage {
             })
           );
 
-          txs.forEach((tx: TxProposal) => {
+          for (const tx of txs as TxProposal[]) {
             if (actionsById[tx.multisigTxId]) {
               tx.actions = [...tx.actions, ...(actionsById[tx.multisigTxId] || [])];
             }
-          });
+          }
 
           return resolve(txs);
         });
@@ -1225,7 +1226,7 @@ export class Storage {
     async.each(
       rates,
       (rate: { code: string; value: string }, next) => {
-        let i = {
+        const i = {
           ts: now,
           coin,
           code: rate.code,
@@ -1697,7 +1698,7 @@ export class Storage {
       });
   }
 
-  fetchAllAdverts(cb) {
+  fetchAllAdverts(_cb) {
     this.db.collection(collections.ADVERTISEMENTS).find({});
   }
 
@@ -1768,7 +1769,7 @@ export class Storage {
     );
   }
 
-  async fetchTssKeyGenSession({ id }: { id: string; }) {
+  async fetchTssKeyGenSession({ id }: { id: string }) {
     const doc = await this.db.collection(collections.TSS_KEYGEN).findOne({ id });
     if (!doc) {
       return null;
@@ -1776,11 +1777,11 @@ export class Storage {
     return TssKeyGenModel.fromObj(doc);
   }
 
-  async storeTssKeyGenSession({ doc }: { doc: TssKeyGenModel; }) {
+  async storeTssKeyGenSession({ doc }: { doc: TssKeyGenModel }) {
     return this.db.collection(collections.TSS_KEYGEN).insertOne(doc);
   }
 
-  async storeTssKeyGenParticipant({ id, partyId, copayerId }: { id: string; partyId: number; copayerId: string; }) {
+  async storeTssKeyGenParticipant({ id, partyId, copayerId }: { id: string; partyId: number; copayerId: string }) {
     return this.db.collection(collections.TSS_KEYGEN).updateOne(
       { id },
       {
@@ -1792,7 +1793,7 @@ export class Storage {
     );
   }
 
-  async storeTssKeyGenMessage({ id, message, __v }: { id: string; message: ITssKeyMessageObject; __v: number; }) {
+  async storeTssKeyGenMessage({ id, message, __v }: { id: string; message: ITssKeyMessageObject; __v: number }) {
     const result = await this.db.collection(collections.TSS_KEYGEN).updateOne(
       { id, __v },
       {
@@ -1814,7 +1815,7 @@ export class Storage {
     return result;
   }
 
-  async storeTssKeySharedPubKey({ id, publicKey }: { id: string; publicKey: string; }) {
+  async storeTssKeySharedPubKey({ id, publicKey }: { id: string; publicKey: string }) {
     return this.db.collection(collections.TSS_KEYGEN).updateOne(
       { id },
       {
@@ -1826,7 +1827,7 @@ export class Storage {
     );
   }
 
-  async storeTssKeyShare({ id, partyId, encryptedKeyChain }: { id: string; partyId: number; encryptedKeyChain: string; }) {
+  async storeTssKeyShare({ id, partyId, encryptedKeyChain }: { id: string; partyId: number; encryptedKeyChain: string }) {
     return this.db.collection(collections.TSS_KEYGEN).updateOne(
       { id },
       {
@@ -1838,7 +1839,7 @@ export class Storage {
     );
   }
 
-  async storeTssKeyBwsJoinSecret({ id, secret }: { id: string; secret: string; }) {
+  async storeTssKeyBwsJoinSecret({ id, secret }: { id: string; secret: string }) {
     return this.db.collection(collections.TSS_KEYGEN).updateOne({
       id
     },
@@ -1850,7 +1851,7 @@ export class Storage {
     { upsert: false });
   }
 
-  async fetchTssSigSession({ id }: { id: string; }) {
+  async fetchTssSigSession({ id }: { id: string }) {
     const doc = await this.db.collection(collections.TSS_SIGN).findOne({ id });
     if (!doc) {
       return null;
@@ -1858,11 +1859,11 @@ export class Storage {
     return TssSigGenModel.fromObj(doc);
   }
 
-  async storeTssSigSession({ doc }: { doc: TssSigGenModel; }) {
+  async storeTssSigSession({ doc }: { doc: TssSigGenModel }) {
     return this.db.collection(collections.TSS_SIGN).insertOne(doc);
   }
 
-  async storeTssSigParticipant({ id, partyId, copayerId, __v }: { id: string; partyId: number; copayerId: string; __v: number; }) {
+  async storeTssSigParticipant({ id, partyId, copayerId, __v }: { id: string; partyId: number; copayerId: string; __v: number }) {
     const result = await this.db.collection(collections.TSS_SIGN).updateOne(
       { id, __v },
       {
@@ -1881,7 +1882,7 @@ export class Storage {
     return result;
   }
 
-  async storeTssSigMessage({ id, message, __v }: { id: string; message: ITssSigMessageObject; __v: number; }) {
+  async storeTssSigMessage({ id, message, __v }: { id: string; message: ITssSigMessageObject; __v: number }) {
     const result = await this.db.collection(collections.TSS_SIGN).updateOne(
       { id, __v },
       {
@@ -1903,7 +1904,7 @@ export class Storage {
     return result;
   }
 
-  async storeTssSignature({ id, signature }: { id: string; signature: ITssSigMessageObject['signature']; }) {
+  async storeTssSignature({ id, signature }: { id: string; signature: ITssSigMessageObject['signature'] }) {
     return this.db.collection(collections.TSS_SIGN).updateOne(
       { id },
       {

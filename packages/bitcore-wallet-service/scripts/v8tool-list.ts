@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import _ from 'lodash';
 import { BitcoreLib } from 'crypto-wallet-core';
+import _ from 'lodash';
 import requestStream from 'request';
 import { Client } from '../src/lib//blockchainexplorers/v8/client';
 
@@ -24,7 +24,7 @@ if (!authKey) throw new Error('provide authKey');
 //
 const authKeyObj = BitcoreLib.PrivateKey(authKey);
 
-let tmp = authKeyObj.toObject();
+const tmp = authKeyObj.toObject();
 tmp.compressed = false;
 const pubKey = BitcoreLib.PrivateKey(tmp).toPublicKey();
 
@@ -41,9 +41,9 @@ const BASE = {
   LTC: `https://api.bitcore.io/api/${coin}/${network}`
 };
 
-let baseUrl = BASE[coin];
+const baseUrl = BASE[coin];
 
-let client = new Client({
+const client = new Client({
   baseUrl,
   authKey: authKeyObj
 });
@@ -59,10 +59,9 @@ if (extra) {
 
 console.log('[v8tool.37:url:]', url);
 const signature = client.sign({ method: 'GET', url });
-const payload = {};
-var acum = '';
+let acum = '';
 
-let r = requestStream.get(url, {
+const r = requestStream.get(url, {
   headers: { 'x-signature': signature },
   json: true
 });
@@ -72,9 +71,8 @@ r.on('data', raw => {
 });
 
 r.on('end', () => {
-  let txs = [],
-    unconf = [],
-    err;
+  const txs = [],
+    unconf = [];
   _.each(acum.split(/\r?\n/), rawTx => {
     if (!rawTx) return;
 
