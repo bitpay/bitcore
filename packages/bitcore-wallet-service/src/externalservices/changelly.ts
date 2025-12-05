@@ -12,6 +12,7 @@ export class ChangellyService {
   changellyGetKeysV2(req) {
 
     const stablecoins = [
+      'usdt', 'usdc', 'dai', 'busd', 'tusd', 'usdp', 'usdn',
       'usdt20', 'usdtarb', 'usdtop', 'usdtpolygon', 'usdtsol',
       'usdcmatic', 'usdcarb', 'usdcbase', 'usdcop', 'usdcsol',
       'daipolygon'
@@ -27,7 +28,7 @@ export class ChangellyService {
 
     const { api, secret, secret_stablecoin } = config.changelly.v2;
 
-    const apiKey = stablecoins.includes(req.body.coinFrom)
+    const apiKey = stablecoins.includes(req.body?.coinFrom) && stablecoins.includes(req.body?.coinTo)
       ? (secret_stablecoin ?? secret)
       : secret;
     
