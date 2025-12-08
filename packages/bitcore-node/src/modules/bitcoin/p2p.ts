@@ -102,43 +102,51 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     });
 
     this.pool.on('peertx', async (peer, message) => {
-      const hash = message.transaction.hash;
-      logger.debug('peer tx received: %o', {
-        peer: `${peer.host}:${peer.port}`,
-        chain: this.chain,
-        network: this.network,
-        hash
-      });
-      if (this.isSyncingNode && !this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.TX, hash)) {
-        this.cacheInv(this.bitcoreP2p.Inventory.TYPE.TX, hash);
-        await this.processTransaction(message.transaction);
-        this.events.emit('transaction', message.transaction);
+      try {
+        const hash = message.transaction.hash;
+        logger.debug('peer tx received: %o', {
+          peer: `${peer.host}:${peer.port}`,
+          chain: this.chain,
+          network: this.network,
+          hash
+        });
+        if (this.isSyncingNode && !this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.TX, hash)) {
+          this.cacheInv(this.bitcoreP2p.Inventory.TYPE.TX, hash);
+          await this.processTransaction(message.transaction);
+          this.events.emit('transaction', message.transaction);
+        }
+      } catch (err) {
+        logger.error('Error in peertx handler:', err);
       }
     });
 
     this.pool.on('peerblock', async (peer, message) => {
-      const { block } = message;
-      const { hash } = block;
-      logger.debug('peer block received: %o', {
-        peer: `${peer.host}:${peer.port}`,
-        chain: this.chain,
-        network: this.network,
-        hash
-      });
+      try {
+        const { block } = message;
+        const { hash } = block;
+        logger.debug('peer block received: %o', {
+          peer: `${peer.host}:${peer.port}`,
+          chain: this.chain,
+          network: this.network,
+          hash
+        });
 
-      const blockInCache = this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash);
-      if (!blockInCache) {
-        for (const transaction of block.transactions) {
-          this.cacheInv(this.bitcoreP2p.Inventory.TYPE.TX, transaction.hash);
+        const blockInCache = this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash);
+        if (!blockInCache) {
+          for (const transaction of block.transactions) {
+            this.cacheInv(this.bitcoreP2p.Inventory.TYPE.TX, transaction.hash);
+          }
+          this.cacheInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash);
         }
-        this.cacheInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash);
-      }
-      if (this.isSyncingNode && (!blockInCache || this.isSyncing)) {
-        this.events.emit(hash, message.block);
-        this.events.emit('block', message.block);
-        if (!this.isSyncing) {
-          this.sync();
+        if (this.isSyncingNode && (!blockInCache || this.isSyncing)) {
+          this.events.emit(hash, message.block);
+          this.events.emit('block', message.block);
+          if (!this.isSyncing) {
+            this.sync();
+          }
         }
+      } catch (err) {
+        logger.error('Error in peerblock handler:', err);
       }
     });
 

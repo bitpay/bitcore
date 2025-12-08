@@ -72,29 +72,45 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
   async setupListeners() {
     const { host, port } = this.chainConfig.provider || this.chainConfig.providers![0];
     this.events.on('disconnected', async () => {
-      logger.warn(
-        `${timestamp()} | Not connected to peer: ${host}:${port} | Chain: ${this.chain} | Network: ${this.network}`
-      );
+      try {
+        logger.warn(
+          `${timestamp()} | Not connected to peer: ${host}:${port} | Chain: ${this.chain} | Network: ${this.network}`
+        );
+      } catch (err) {
+        logger.error('Error in disconnected handler:', err);
+      }
     });
     this.events.on('connected', async () => {
-      this.txSubscription = await this.web3!.eth.subscribe('pendingTransactions');
-      this.txSubscription.subscribe(async (_err, txid) => {
-        if (!this.isCachedInv('TX', txid)) {
-          this.cacheInv('TX', txid);
-          const tx = (await this.web3!.eth.getTransaction(txid)) as ErigonTransaction;
-          if (tx) {
-            await this.processTransaction(tx);
-            this.events.emit('transaction', tx);
+      try {
+        this.txSubscription = await this.web3!.eth.subscribe('pendingTransactions');
+        this.txSubscription.subscribe(async (_err, txid) => {
+          try {
+            if (!this.isCachedInv('TX', txid)) {
+              this.cacheInv('TX', txid);
+              const tx = (await this.web3!.eth.getTransaction(txid)) as ErigonTransaction;
+              if (tx) {
+                await this.processTransaction(tx);
+                this.events.emit('transaction', tx);
+              }
+            }
+          } catch (err) {
+            logger.error('Error in pendingTransactions subscription:', err);
           }
-        }
-      });
-      this.blockSubscription = await this.web3!.eth.subscribe('newBlockHeaders');
-      this.blockSubscription.subscribe((_err, block) => {
-        this.events.emit('block', block);
-        if (!this.syncing) {
-          this.sync();
-        }
-      });
+        });
+        this.blockSubscription = await this.web3!.eth.subscribe('newBlockHeaders');
+        this.blockSubscription.subscribe((_err, block) => {
+          try {
+            this.events.emit('block', block);
+            if (!this.syncing) {
+              this.sync();
+            }
+          } catch (err) {
+            logger.error('Error in newBlockHeaders subscription:', err);
+          }
+        });
+      } catch (err) {
+        logger.error('Error in connected handler:', err);
+      }
     });
 
     this.multiThreadSync.once('INITIALSYNCDONE', () => {

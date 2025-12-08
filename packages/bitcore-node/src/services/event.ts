@@ -59,52 +59,67 @@ export class EventService {
     let lastAddressTxUpdate = new Date();
 
     const retryTxCursor = async () => {
-      const txCursor = this.eventModel.getTxTail(lastTxUpdate);
-      while (!this.stopped && (await txCursor.hasNext())) {
-        const txEvent = await txCursor.next();
-        if (txEvent) {
-          const tx = txEvent.payload as TxEvent;
-          this.txEvent.emit('tx', tx);
-          lastTxUpdate = new Date();
+      try {
+        const txCursor = this.eventModel.getTxTail(lastTxUpdate);
+        while (!this.stopped && (await txCursor.hasNext())) {
+          const txEvent = await txCursor.next();
+          if (txEvent) {
+            const tx = txEvent.payload as TxEvent;
+            this.txEvent.emit('tx', tx);
+            lastTxUpdate = new Date();
+          }
+        }
+      } catch (err) {
+        logger.error('Error in retryTxCursor:', err);
+      } finally {
+        if (!this.stopped) {
+          setTimeout(retryTxCursor, 100);
         }
       }
-      if (!this.stopped) {
-        setTimeout(retryTxCursor, 100);
-      }
     };
-    retryTxCursor();
+    retryTxCursor().catch(err => logger.error('Failed to start retryTxCursor:', err));
 
     const retryBlockCursor = async () => {
-      const blockCursor = this.eventModel.getBlockTail(lastBlockUpdate);
-      while (!this.stopped && (await blockCursor.hasNext())) {
-        const blockEvent = await blockCursor.next();
-        if (blockEvent) {
-          const block = blockEvent.payload as BlockEvent;
-          this.blockEvent.emit('block', block);
-          lastBlockUpdate = new Date();
+      try {
+        const blockCursor = this.eventModel.getBlockTail(lastBlockUpdate);
+        while (!this.stopped && (await blockCursor.hasNext())) {
+          const blockEvent = await blockCursor.next();
+          if (blockEvent) {
+            const block = blockEvent.payload as BlockEvent;
+            this.blockEvent.emit('block', block);
+            lastBlockUpdate = new Date();
+          }
+        }
+      } catch (err) {
+        logger.error('Error in retryBlockCursor:', err);
+      } finally {
+        if (!this.stopped) {
+          setTimeout(retryBlockCursor, 100);
         }
       }
-      if (!this.stopped) {
-        setTimeout(retryBlockCursor, 100);
-      }
     };
-    retryBlockCursor();
+    retryBlockCursor().catch(err => logger.error('Failed to start retryBlockCursor:', err));
 
     const retryAddressTxCursor = async () => {
-      const addressTxCursor = this.eventModel.getCoinTail(lastAddressTxUpdate);
-      while (!this.stopped && (await addressTxCursor.hasNext())) {
-        const addressTx = await addressTxCursor.next();
-        if (addressTx) {
-          const addressCoin = addressTx.payload as CoinEvent;
-          this.addressCoinEvent.emit('coin', addressCoin);
-          lastAddressTxUpdate = new Date();
+      try {
+        const addressTxCursor = this.eventModel.getCoinTail(lastAddressTxUpdate);
+        while (!this.stopped && (await addressTxCursor.hasNext())) {
+          const addressTx = await addressTxCursor.next();
+          if (addressTx) {
+            const addressCoin = addressTx.payload as CoinEvent;
+            this.addressCoinEvent.emit('coin', addressCoin);
+            lastAddressTxUpdate = new Date();
+          }
+        }
+      } catch (err) {
+        logger.error('Error in retryAddressTxCursor:', err);
+      } finally {
+        if (!this.stopped) {
+          setTimeout(retryAddressTxCursor, 100);
         }
       }
-      if (!this.stopped) {
-        setTimeout(retryAddressTxCursor, 100);
-      }
     };
-    retryAddressTxCursor();
+    retryAddressTxCursor().catch(err => logger.error('Failed to start retryAddressTxCursor:', err));
   }
 
   async signalBlock(block: BlockEvent) {
