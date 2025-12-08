@@ -72,13 +72,9 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
   async setupListeners() {
     const { host, port } = this.chainConfig.provider || this.chainConfig.providers![0];
     this.events.on('disconnected', async () => {
-      try {
-        logger.warn(
-          `${timestamp()} | Not connected to peer: ${host}:${port} | Chain: ${this.chain} | Network: ${this.network}`
-        );
-      } catch (err) {
-        logger.error('Error in disconnected handler:', err);
-      }
+      logger.warn(
+        `${timestamp()} | Not connected to peer: ${host}:${port} | Chain: ${this.chain} | Network: ${this.network}`
+      );
     });
     this.events.on('connected', async () => {
       try {

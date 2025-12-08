@@ -77,7 +77,7 @@ export class EventService {
         }
       }
     };
-    retryTxCursor().catch(err => logger.error('Failed to start retryTxCursor:', err));
+    retryTxCursor();
 
     const retryBlockCursor = async () => {
       try {
@@ -98,7 +98,7 @@ export class EventService {
         }
       }
     };
-    retryBlockCursor().catch(err => logger.error('Failed to start retryBlockCursor:', err));
+    retryBlockCursor();
 
     const retryAddressTxCursor = async () => {
       try {
@@ -119,7 +119,7 @@ export class EventService {
         }
       }
     };
-    retryAddressTxCursor().catch(err => logger.error('Failed to start retryAddressTxCursor:', err));
+    retryAddressTxCursor();
   }
 
   async signalBlock(block: BlockEvent) {

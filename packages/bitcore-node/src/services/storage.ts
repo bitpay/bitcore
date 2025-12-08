@@ -63,7 +63,7 @@ export class StorageService {
               reject(new Error('Failed to connect to database'));
             }
           }
-        })().catch(err => logger.error('Unhandled error in connection retry:', err));
+         })();
       }, 5000);
     });
   }
