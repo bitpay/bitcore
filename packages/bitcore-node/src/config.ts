@@ -9,7 +9,7 @@ import parseArgv from './utils/parseArgv';
 const program = parseArgv([], ['config']);
 
 function findConfig(): ConfigType | undefined {
-  const DEFAULT_CONFIG = path.join(__dirname, '../../bitcore.config.json');
+  const DEFAULT_CONFIG = path.join(__dirname, '../../../../bitcore.config.json');
   let bitcoreConfigPath = program.config || process.env.BITCORE_CONFIG_PATH || DEFAULT_CONFIG;
   if (bitcoreConfigPath[0] === '~') {
     bitcoreConfigPath = bitcoreConfigPath.replace('~', homedir());
