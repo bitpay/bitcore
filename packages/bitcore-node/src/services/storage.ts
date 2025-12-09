@@ -63,7 +63,7 @@ export class StorageService {
               reject(new Error('Failed to connect to database'));
             }
           }
-         })();
+        })();
       }, 5000);
     });
   }
