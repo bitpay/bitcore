@@ -103,21 +103,25 @@ export class SocketService {
 
   async wireup() {
     this.eventService.txEvent.on('tx', async (tx: TxEvent) => {
-      if (!this.stopped && this.io) {
-        const { chain, network } = tx;
-        const sanitizedTx = SanitizeWallet(tx);
-        this.io.sockets.in(`/${chain}/${network}/inv`).emit('tx', sanitizedTx);
+      try {
+        if (!this.stopped && this.io) {
+          const { chain, network } = tx;
+          const sanitizedTx = SanitizeWallet(tx);
+          this.io.sockets.in(`/${chain}/${network}/inv`).emit('tx', sanitizedTx);
 
-        if (tx.wallets && tx.wallets.length) {
-          const objectIds = tx.wallets.map(w => new ObjectID(w));
-          const wallets = await WalletStorage.collection.find({ _id: { $in: objectIds } }).toArray();
-          for (const wallet of wallets) {
-            this.io.sockets.in(`/${chain}/${network}/wallets`).emit('tx', { pubKey: wallet.pubKey, tx });
-            this.io.sockets
-              .in(`/${chain}/${network}/${wallet.pubKey}`)
-              .emit('tx', { pubKey: wallet.pubKey, tx: sanitizedTx });
+          if (tx.wallets && tx.wallets.length) {
+            const objectIds = tx.wallets.map(w => new ObjectID(w));
+            const wallets = await WalletStorage.collection.find({ _id: { $in: objectIds } }).toArray();
+            for (const wallet of wallets) {
+              this.io.sockets.in(`/${chain}/${network}/wallets`).emit('tx', { pubKey: wallet.pubKey, tx });
+              this.io.sockets
+                .in(`/${chain}/${network}/${wallet.pubKey}`)
+                .emit('tx', { pubKey: wallet.pubKey, tx: sanitizedTx });
+            }
           }
         }
+      } catch (err) {
+        logger.error('Error in txEvent handler:', err);
       }
     });
 
@@ -129,22 +133,26 @@ export class SocketService {
     });
 
     this.eventService.addressCoinEvent.on('coin', async (addressCoin: CoinEvent) => {
-      if (!this.stopped && this.io) {
-        const { coin, address } = addressCoin;
-        const { chain, network } = coin;
-        const sanitizedCoin = SanitizeWallet(coin);
-        this.io.sockets.in(`/${chain}/${network}/address`).emit(address, sanitizedCoin);
-        this.io.sockets.in(`/${chain}/${network}/inv`).emit('coin', sanitizedCoin);
-        if (coin.wallets && coin.wallets.length) {
-          const objectIds = coin.wallets.map(w => new ObjectID(w));
-          const wallets = await WalletStorage.collection.find({ _id: { $in: objectIds } }).toArray();
-          for (const wallet of wallets) {
-            this.io.sockets.in(`/${chain}/${network}/wallets`).emit('coin', { pubKey: wallet.pubKey, coin });
-            this.io.sockets
-              .in(`/${chain}/${network}/${wallet.pubKey}`)
-              .emit('coin', { pubKey: wallet.pubKey, coin: sanitizedCoin });
+      try {
+        if (!this.stopped && this.io) {
+          const { coin, address } = addressCoin;
+          const { chain, network } = coin;
+          const sanitizedCoin = SanitizeWallet(coin);
+          this.io.sockets.in(`/${chain}/${network}/address`).emit(address, sanitizedCoin);
+          this.io.sockets.in(`/${chain}/${network}/inv`).emit('coin', sanitizedCoin);
+          if (coin.wallets && coin.wallets.length) {
+            const objectIds = coin.wallets.map(w => new ObjectID(w));
+            const wallets = await WalletStorage.collection.find({ _id: { $in: objectIds } }).toArray();
+            for (const wallet of wallets) {
+              this.io.sockets.in(`/${chain}/${network}/wallets`).emit('coin', { pubKey: wallet.pubKey, coin });
+              this.io.sockets
+                .in(`/${chain}/${network}/${wallet.pubKey}`)
+                .emit('coin', { pubKey: wallet.pubKey, coin: sanitizedCoin });
+            }
           }
         }
+      } catch (err) {
+        logger.error('Error in addressCoinEvent handler:', err);
       }
     });
   }
