@@ -8,7 +8,12 @@ import tseslint from 'typescript-eslint';
 export default defineConfig([
   js.configs.recommended,
   {
-    ignores: ['**/node_modules/**', '**/build/**', '**/ts_build/**', 'packages/insight/**']
+    ignores: [
+      '**/node_modules/**',
+      '**/build/**',
+      '**/ts_build/**',
+      'packages/insight/**',
+    ]
   },
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
@@ -20,6 +25,9 @@ export default defineConfig([
         ...globals.node,
         'NodeJS': 'readonly',
         'BufferEncoding': 'readonly',
+      },
+      parserOptions: {
+        impliedStrict: true
       }
     }
   },
@@ -44,7 +52,6 @@ export default defineConfig([
       '@stylistic': stylistic,
     },
     rules: {
-
       quotes: ['error', 'single', { avoidEscape: true }],
       'prefer-const': 'warn',
       'no-var': 'warn',
