@@ -3,13 +3,13 @@ import { BitcoreLib as bitcoreLib } from 'crypto-wallet-core';
 const { Transaction, PrivateKey } = bitcoreLib;
 const UnspentOutput = Transaction.UnspentOutput;
 
-import config from '../../src/config';
 import { Storage } from '../../src/services/storage';
 import { BitcoinBlockStorage } from '../../src/models/block';
 import { BitcoinBlockType } from '../../src/types/namespaces/Bitcoin/Block';
 import { resetDatabase } from '../helpers/index.js';
 import * as crypto from 'crypto';
 import { BitcoinTransactionType } from '../../src/types/namespaces/Bitcoin/Transaction';
+import { Config } from '../../src/services/config';
 
 function randomHash() {
   return crypto.randomBytes(32).toString('hex');
@@ -110,7 +110,7 @@ function newAddress() {
 
 function startBenchmarkDatabase() {
   const storageArgs = {
-    dbHost: config.dbHost,
+    dbHost: Config.get().dbHost,
     dbName: 'bitcore-benchmark'
   };
 

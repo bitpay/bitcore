@@ -1,3 +1,4 @@
+import cluster from 'cluster';
 import fs from 'fs';
 import { cpus, homedir } from 'os';
 import path from 'path';
@@ -27,7 +28,8 @@ function findConfig(): ConfigType | undefined {
     }
     bitcoreConfigPath = path.join(bitcoreConfigPath, 'bitcore.config.json');
   }
-  logger.info('Using config at: ' + bitcoreConfigPath);
+  
+  logger.info(`${cluster.isPrimary ? 'Main' : 'Child'} ${process.pid} using config at: ${path.resolve(bitcoreConfigPath)}`);
   
   let rawBitcoreConfig;
   try {
@@ -63,7 +65,7 @@ function setTrustedPeers(config: ConfigType): ConfigType {
   }
   return config;
 }
-const Config = function(): ConfigType {
+const loadConfig = function(): ConfigType {
   let config: ConfigType = {
     maxPoolSize: 50,
     port: 3000,
@@ -130,4 +132,4 @@ const Config = function(): ConfigType {
   return config;
 };
 
-export default Config();
+export default loadConfig;

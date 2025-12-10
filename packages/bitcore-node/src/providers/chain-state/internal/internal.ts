@@ -56,8 +56,8 @@ export class InternalStateProvider implements IChainStateService {
     if (!RPC_PEER) {
       throw new Error(`RPC not configured for ${chain} ${network}`);
     }
-    const { username, password, host, port } = RPC_PEER;
-    return new RPC(username, password, host, port);
+    const { username, password, host, port, protocol } = RPC_PEER;
+    return new RPC(username, password, host, port, protocol);
   }
 
   private getAddressQuery(params: StreamAddressUtxosParams) {
