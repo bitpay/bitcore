@@ -23,6 +23,7 @@ export interface IUtxoNetworkConfig extends INetworkConfig {
     port: number | string;
     username: string;
     password: string;
+    protocol?: string;
   };
   defaultFeeMode?: FeeMode;
   syncStartHash?: string; // Start syncing from this block
