@@ -1,5 +1,5 @@
 import {FC, useEffect, useRef, useState} from 'react';
-import {useApi} from 'src/api/api';
+import {fetcher, useApi} from 'src/api/api';
 import {Chart as ChartJS} from 'chart.js';
 import {colorCodes} from 'src/utilities/constants';
 import {BitcoinBlockType} from 'src/utilities/models';
@@ -25,16 +25,18 @@ const ChartTileHeader = styled.span`
   font-weight: bolder;
 `;
 
+interface PriceDetails {
+  data: {
+    code: string, 
+    name: string, 
+    rate: number
+  }
+}
+
 const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, network }) => {
   const theme = useTheme();
   const { blocks } = useBlocks();
-  const priceDetails: {
-    data: {
-      code: string, 
-      name: string, 
-      rate: number
-    }
-  } = useApi(`https://bitpay.com/rates/${currency}/usd`).data;
+  const [price, setPrice] = useState<number>(0);
 
   const priceDisplay: {
     data: Array<{
@@ -49,7 +51,6 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
     `https://bitpay.com/currencies/prices?currencyPairs=["${currency}:USD"]`,
   ).data;
 
-  const price = network === 'mainnet' ? priceDetails?.data?.rate : 0;
 
   const feeChartRef = useRef<HTMLCanvasElement | null>(null);
   const feeChartInstanceRef = useRef<ChartJS | null>(null);
@@ -125,6 +126,15 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
   useEffect(() => {
     const hours = Number(priceSelectedRange.slice(0, priceSelectedRange.indexOf(' ')))
     const usedPrices = priceList.slice(priceList.length - hours);
+    if (network !== 'mainnet') {
+      setPrice(0);
+    } else {
+      fetcher(`https://bitpay.com/rates/${currency}/usd`)
+        .then(({data}: PriceDetails) => {
+          setPrice(data.rate);
+        });
+    }
+
     const priceChartData = {
       labels: usedPrices,
       datasets: [
