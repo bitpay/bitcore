@@ -39,6 +39,7 @@ const chainLibs = {
 
 export interface IWalletExt extends IWallet {
   storage?: Storage;
+  version?: 2; // Wallet versioning used for backwards compatibility
 }
 
 export class Wallet {
@@ -64,6 +65,7 @@ export class Wallet {
   lite: boolean;
   addressType: string;
   addressZero: string;
+  version?: number; // If 2, master key xprivkey and privateKey are encrypted and serialized BEFORE 
 
   static XrpAccountFlags = xrpl.AccountSetTfFlags;
 
@@ -159,10 +161,6 @@ export class Wallet {
     }
     const privKeyObj = hdPrivKey.toObject();
 
-    // Generate authentication keys
-    const authKey = new PrivateKey();
-    const authPubKey = authKey.toPublicKey().toString();
-
     // Generate public keys
     // bip44 compatible pubKey
     const pubKey = hdPrivKey.publicKey.toString();
@@ -170,6 +168,17 @@ export class Wallet {
     // Generate and encrypt the encryption key and private key
     const walletEncryptionKey = Encryption.generateEncryptionKey();
     const encryptionKey = Encryption.encryptEncryptionKey(walletEncryptionKey, password);
+
+    // Encrypt privKeyObj.privateKey & privKeyObj.xprivkey
+    const xprivBuffer = BitcoreLib.encoding.Base58Check.decode(privKeyObj.xprivkey);
+    privKeyObj.xprivkey = Encryption.encryptBuffer(xprivBuffer, pubKey, encryptionKey).toString('hex');
+    privKeyObj.privateKey = Encryption.encryptBuffer(Buffer.from(privKeyObj.privateKey, 'hex'), pubKey, encryptionKey).toString('hex');
+
+    // Generate authentication keys
+    const authKey = new PrivateKey();
+    const authPubKey = authKey.toPublicKey().toString();
+
+    // Generate and encrypt the encryption key and private key
     const encPrivateKey = Encryption.encryptPrivateKey(JSON.stringify(privKeyObj), pubKey, walletEncryptionKey);
 
     storageType = storageType ? storageType : 'Level';
@@ -207,7 +216,8 @@ export class Wallet {
       storageType,
       lite,
       addressType,
-      addressZero: null
+      addressZero: null,
+      version: 2,
     } as IWalletExt);
 
     // save wallet to storage and then bitcore-node
@@ -294,7 +304,24 @@ export class Wallet {
     if (!this.lite) {
       const encMasterKey = this.masterKey;
       const masterKeyStr = await Encryption.decryptPrivateKey(encMasterKey, this.pubKey, encryptionKey);
+      // masterKey.xprivkey & masterKey.privateKey are encrypted with encryptionKey
       masterKey = JSON.parse(masterKeyStr);
+    
+      if (this.version === 2) {
+        /**
+         * Phase 1 implementation of string-based secrets clean-up (Dec 10, 2025):
+         * Maintain buffers until last possible moment while maintaining prior boundary
+         * 
+         * Phase 2 should update call site to propagate buffer usage outwards to enable buffer cleanup upon completion
+         */
+        const decryptedxprivBuffer = Encryption.decryptToBuffer(masterKey.xpriv, this.pubKey, this.unlocked.encryptionKey);
+        masterKey.xpriv = BitcoreLib.encoding.Base58Check.encode(decryptedxprivBuffer);
+        decryptedxprivBuffer.fill(0);
+    
+        const decryptedPrivKey = Encryption.decryptToBuffer(masterKey.privateKey, this.pubKey, this.unlocked.encryptionKey);
+        masterKey.privateKey = decryptedPrivKey.toString();
+        decryptedPrivKey.fill(0);
+      }
     }
     this.unlocked = {
       encryptionKey,
@@ -611,13 +638,35 @@ export class Wallet {
         address: key.pubKey ? Deriver.getAddress(this.chain, this.network, key.pubKey, this.addressType) : key.address
       }) as KeyImport);
     }
+    
+    /**
+     * Phase 1: Encrypt key.privKey at boundary
+     */
+    if (this.version === 2) {
+      // todo: encrypt key.privKey
+      for (const key of keysToSave) {
+        // The goal here is to make it so when the key is retrieved, it's uniform
+        const privKeyBuffer = Deriver.privateKeyToBuffer(key.privKey);
+        key.privKey = Encryption.encryptBuffer(privKeyBuffer, this.pubKey, encryptionKey).toString('hex');
+        privKeyBuffer.fill(0);
+      }
+    }
 
     if (keysToSave.length) {
-      await this.storage.addKeys({
-        keys: keysToSave,
-        encryptionKey,
-        name: this.name
-      });
+      if (this.version === 2) {
+        await this.storage.addKeysSafe({
+          keys: keysToSave,
+          encryptionKey,
+          name: this.name
+        });
+      } else {
+        // Backwards compatibility
+        await this.storage.addKeys({
+          keys: keysToSave,
+          encryptionKey,
+          name: this.name
+        });
+      }
     }
     const addedAddresses = keys.map(key => {
       return { address: key.address };
