@@ -319,11 +319,11 @@ export class Wallet {
          * 
          * Phase 2 should update call site to propagate buffer usage outwards to enable buffer cleanup upon completion
          */
-        const decryptedxprivBuffer = Encryption.decryptToBuffer(masterKey.xpriv, this.pubKey, this.unlocked.encryptionKey);
-        masterKey.xpriv = BitcoreLib.encoding.Base58Check.encode(decryptedxprivBuffer);
+        const decryptedxprivBuffer = Encryption.decryptToBuffer(masterKey.xprivkey, this.pubKey, encryptionKey);
+        masterKey.xprivkey = BitcoreLib.encoding.Base58Check.encode(decryptedxprivBuffer);
         decryptedxprivBuffer.fill(0);
     
-        const decryptedPrivKey = Encryption.decryptToBuffer(masterKey.privateKey, this.pubKey, this.unlocked.encryptionKey);
+        const decryptedPrivKey = Encryption.decryptToBuffer(masterKey.privateKey, this.pubKey, encryptionKey);
         masterKey.privateKey = decryptedPrivKey.toString();
         decryptedPrivKey.fill(0);
       }
