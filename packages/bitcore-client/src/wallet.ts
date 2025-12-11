@@ -39,7 +39,7 @@ const chainLibs = {
 
 export interface IWalletExt extends IWallet {
   storage?: Storage;
-  version?: 2; // Wallet versioning used for backwards compatibility
+  version?: 0 | 2; // Wallet versioning used for backwards compatibility
 }
 
 export class Wallet {
@@ -122,7 +122,8 @@ export class Wallet {
       storageType: this.storageType,
       lite,
       addressType: this.addressType,
-      addressZero: this.addressZero
+      addressZero: this.addressZero,
+      version: this.version
     };
   }
 
@@ -136,6 +137,8 @@ export class Wallet {
   static async create(params: Partial<IWalletExt>) {
     const { network, name, phrase, xpriv, password, path, lite, baseUrl } = params;
     let { chain, storageType, storage, addressType } = params;
+    // For create: allow explicit 0 to signal legacy (undefined). Everything else defaults to v2.
+    const version = params.version === 0 ? undefined : 2;
     if (phrase && xpriv) {
       throw new Error('You can only provide either a phrase or a xpriv, not both');
     }
@@ -166,13 +169,15 @@ export class Wallet {
     const pubKey = hdPrivKey.publicKey.toString();
 
     // Generate and encrypt the encryption key and private key
-    const walletEncryptionKey = Encryption.generateEncryptionKey();
-    const encryptionKey = Encryption.encryptEncryptionKey(walletEncryptionKey, password);
+    const walletEncryptionKey = Encryption.generateEncryptionKey().toString('hex'); // raw 32-byte key as hex
+    const encryptionKey = Encryption.encryptEncryptionKey(walletEncryptionKey, password); // stored, password-wrapped
 
-    // Encrypt privKeyObj.privateKey & privKeyObj.xprivkey
-    const xprivBuffer = BitcoreLib.encoding.Base58Check.decode(privKeyObj.xprivkey);
-    privKeyObj.xprivkey = Encryption.encryptBuffer(xprivBuffer, pubKey, encryptionKey).toString('hex');
-    privKeyObj.privateKey = Encryption.encryptBuffer(Buffer.from(privKeyObj.privateKey, 'hex'), pubKey, encryptionKey).toString('hex');
+    // Encrypt privKeyObj.privateKey & privKeyObj.xprivkey (only for v2)
+    if (version === 2) {
+      const xprivBuffer = BitcoreLib.encoding.Base58Check.decode(privKeyObj.xprivkey);
+      privKeyObj.xprivkey = Encryption.encryptBuffer(xprivBuffer, pubKey, walletEncryptionKey).toString('hex');
+      privKeyObj.privateKey = Encryption.encryptBuffer(Buffer.from(privKeyObj.privateKey, 'hex'), pubKey, walletEncryptionKey).toString('hex');
+    }
 
     // Generate authentication keys
     const authKey = new PrivateKey();
@@ -217,7 +222,7 @@ export class Wallet {
       lite,
       addressType,
       addressZero: null,
-      version: 2,
+      version,
     } as IWalletExt);
 
     // save wallet to storage and then bitcore-node
