@@ -716,16 +716,36 @@ export class Wallet {
       await this.importKeys({ keys: [changeKey] });
     }
 
-    // if (this.version === 2) {
+    // Shallow copy to avoid mutation if signingKeys are passed in
+    const keysForSigning = [...(signingKeys || decryptedKeys)];
 
-    // }
+    if (this.version === 2) {
+      /**
+       * Phase 1: Convert encrypted private keys directly to strings as required by Transactions.sign (as of Dec 11, 2025)
+       * This mitigates the security improvement, but also removes the requirement for changing Transaction.sign fully immediately
+       */
+      for (const key of keysForSigning) {
+        // In Phase 2, this would be passed directly to Transaction.sign in a try/finally, which will fill(0)
+        let privKeyBuf: Buffer | undefined;
+        try {
+          privKeyBuf = Encryption.decryptToBuffer(key.privKey, this.pubKey, this.unlocked.encryptionKey);
+          key.privKey = Deriver.privateKeyBufferToNativePrivateKey(this.chain, this.network, privKeyBuf);
+        } catch {
+          continue;
+        } finally {
+          if (Buffer.isBuffer(privKeyBuf)) {
+            privKeyBuf.fill(0);
+          }
+        }
+      }
+    }
 
     const payload = {
       chain: this.chain,
       network: this.network,
       tx,
-      keys: signingKeys || decryptedKeys,
-      key: signingKeys ? signingKeys[0] : decryptedKeys[0],
+      keys: keysForSigning,
+      key: keysForSigning[0],
       utxos
     };
     return Transactions.sign({ ...payload });
