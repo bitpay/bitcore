@@ -646,7 +646,7 @@ export class Wallet {
       // todo: encrypt key.privKey
       for (const key of keysToSave) {
         // The goal here is to make it so when the key is retrieved, it's uniform
-        const privKeyBuffer = Deriver.privateKeyToBuffer(key.privKey);
+        const privKeyBuffer = Deriver.privateKeyToBuffer(this.chain, key.privKey);
         key.privKey = Encryption.encryptBuffer(privKeyBuffer, this.pubKey, encryptionKey).toString('hex');
         privKeyBuffer.fill(0);
       }
@@ -715,6 +715,10 @@ export class Wallet {
       const changeKey = await this.derivePrivateKey(true, changeAddressIdx == null ? this.addressIndex : changeAddressIdx);
       await this.importKeys({ keys: [changeKey] });
     }
+
+    // if (this.version === 2) {
+
+    // }
 
     const payload = {
       chain: this.chain,

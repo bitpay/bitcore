@@ -120,7 +120,7 @@ export class DeriverProxy {
     }
   }
 
-  privateKeyToBuffer(chain, network, privateKey: any): Buffer {
+  privateKeyToBuffer(chain, privateKey: any): Buffer {
     return this.get(chain).privateKeyToBuffer(privateKey);
   }
 }
