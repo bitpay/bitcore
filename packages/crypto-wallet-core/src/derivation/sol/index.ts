@@ -54,4 +54,18 @@ export class SolDeriver implements IDeriver {
       pubKey: Buffer.from(pubKey).toString('hex')
     } as Key;
   };
+
+  /**
+   * @param {any} privKey - expects base 58 encoded string
+   * @returns {Buffer}
+   * @throws {Error} If privKey is not a Buffer (planned forwards compatibility) or string. Propagates all other errors
+   * 
+   * TODO
+   */
+  privateKeyToBuffer(privKey: any): Buffer {
+    if (Buffer.isBuffer(privKey)) return privKey;
+    if (typeof privKey !== 'string') throw new Error(`Expected string, got ${typeof privKey}`);
+    // Expects to match return from derivePrivateKey's privKey.
+    return encoding.Base58.decode(privKey);
+  }
 }

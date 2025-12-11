@@ -33,6 +33,18 @@ export abstract class AbstractBitcoreLibDeriver implements IDeriver {
     pubKey = new this.bitcoreLib.PublicKey(pubKey);
     return new this.bitcoreLib.Address(pubKey, network, addressType).toString();
   }
+
+  /**
+   * @returns {Buffer} raw secpk1 private key buffer (32 bytes, big-endian)
+   * @throws {Error} If privKey is not a Buffer (planned forwards compatibility) or string. Propagates all other errors
+   */
+  privateKeyToBuffer(privKey: any): Buffer {
+    if (Buffer.isBuffer(privKey)) return privKey; // forward compatibility
+    if (typeof privKey !== 'string') throw new Error(`Expected key to be a string, got ${typeof privKey}`);
+
+    const key = new this.bitcoreLib.PrivateKey(privKey);
+    return key.toBuffer();
+  }
 }
 export class BtcDeriver extends AbstractBitcoreLibDeriver {
   bitcoreLib = BitcoreLib;

@@ -55,4 +55,16 @@ export class EthDeriver implements IDeriver {
     pubKey = new BitcoreLib.PublicKey(pubKey, network); // network not needed here since ETH doesn't differentiate addresses by network.
     return this.addressFromPublicKeyBuffer(pubKey.toBuffer());
   }
+
+  /**
+   * @param {any} privKey - expects hex-encoded string, as returned from EthDeriver.derivePrivateKey
+   * @returns {Buffer}
+   * @throws {Error} If privKey is not a Buffer (planned forwards compatibility) or string. Propagates all other errors
+   */
+  privateKeyToBuffer(privKey: any): Buffer {
+    if (Buffer.isBuffer(privKey)) return privKey;
+    if (typeof privKey !== 'string') throw new Error(`Expected string, got ${typeof privKey}`);
+    // Expects to match return from derivePrivateKey's privKey.
+    return Buffer.from(privKey, 'hex');
+  }
 }
