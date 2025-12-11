@@ -45,6 +45,10 @@ export abstract class AbstractBitcoreLibDeriver implements IDeriver {
     const key = new this.bitcoreLib.PrivateKey(privKey);
     return key.toBuffer();
   }
+
+  privateKeyBufferToNativePrivateKey(buf: Buffer, network: string): any {
+    return this.bitcoreLib.PrivateKey.fromBuffer(buf, network).toWIF();
+  }
 }
 export class BtcDeriver extends AbstractBitcoreLibDeriver {
   bitcoreLib = BitcoreLib;

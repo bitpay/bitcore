@@ -68,4 +68,8 @@ export class SolDeriver implements IDeriver {
     // Expects to match return from derivePrivateKey's privKey.
     return encoding.Base58.decode(privKey);
   }
+
+  privateKeyBufferToNativePrivateKey(buf: Buffer, _network: string): any {
+    return encoding.Base58.encode(buf);
+  }
 }

@@ -47,4 +47,8 @@ export class XrpDeriver implements IDeriver {
     // Expects to match return from derivePrivateKey's privKey.
     return Buffer.from(privKey, 'hex');
   }
+
+  privateKeyBufferToNativePrivateKey(buf: Buffer, _network: string): any {
+    return buf.toString('hex').toUpperCase();
+  }
 }

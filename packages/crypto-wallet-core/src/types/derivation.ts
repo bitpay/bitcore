@@ -19,4 +19,9 @@ export interface IDeriver {
    * Used to normalize output of Key.privKey
    */
   privateKeyToBuffer(privKey: any): Buffer;
+
+  /**
+   * Temporary - converts decrypted private key buffer to chain-native private key format
+   */
+  privateKeyBufferToNativePrivateKey(buf: Buffer, network: string): any;
 }
