@@ -47,7 +47,10 @@ export abstract class AbstractBitcoreLibDeriver implements IDeriver {
   }
 
   privateKeyBufferToNativePrivateKey(buf: Buffer, network: string): any {
-    return this.bitcoreLib.PrivateKey.fromBuffer(buf, network).toWIF();
+    // force compressed WIF without mutating instances
+    const bn = this.bitcoreLib.crypto.BN.fromBuffer(buf);
+    const key = new this.bitcoreLib.PrivateKey({ bn, network, compressed: true });
+    return key.toWIF();
   }
 }
 export class BtcDeriver extends AbstractBitcoreLibDeriver {
