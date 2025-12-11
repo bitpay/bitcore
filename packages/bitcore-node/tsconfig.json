@@ -24,6 +24,7 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
+    "rootDirs": ["src"],
     "types": [
       "mocha"
     ],
