@@ -50,6 +50,29 @@ function decryptPrivateKey(encPrivateKey: string, pubKey: string, encryptionKey:
   return decrypted;
 }
 
+function encryptBuffer(data: Buffer, pubKey: string, encryptionKey: string): Buffer {
+  const key = Buffer.from(encryptionKey, 'hex');
+  const iv = Buffer.from(SHA256(SHA256(pubKey)), 'hex').subarray(0, 16);
+  const cipher = crypto.createCipheriv(algo, key, iv);
+  return Buffer.concat([cipher.update(data), cipher.final()]);
+}
+
+function decryptToBuffer(encHex: string, pubKey: string, encryptionKey: string): Buffer {
+  const key = Buffer.from(encryptionKey, 'hex');
+  const iv = Buffer.from(SHA256(SHA256(pubKey)), 'hex').subarray(0, 16);
+  const decipher = crypto.createDecipheriv(algo, key, iv);
+
+  const decrypted = decipher.update(encHex, 'hex');
+  const final = decipher.final();
+  if (final.length) {
+    const out = Buffer.concat([decrypted, final]);
+    decrypted.fill(0);
+    final.fill(0);
+    return out;
+  }
+  return decrypted;
+}
+
 function sha512KDF(passphrase: string, salt: Buffer, derivationOptions: { rounds?: number }): string {
   const rounds = derivationOptions.rounds || 1;
   // if salt was sent in as a string, we will have to assume the default encoding type
@@ -134,6 +157,8 @@ export const Encryption = {
   decryptEncryptionKey,
   encryptPrivateKey,
   decryptPrivateKey,
+  encryptBuffer,
+  decryptToBuffer,
   generateEncryptionKey,
   bitcoinCoreDecrypt
 };

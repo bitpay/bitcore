@@ -180,6 +180,32 @@ export class Storage {
     }
   }
 
+  async addKeysSafe(params: { name: string; keys: KeyImport[]; encryptionKey: string }) {
+    const { name, keys, encryptionKey } = params;
+    let open = true;
+    for (const key of keys) {
+      const { path } = key;
+      const pubKey = key.pubKey;
+      // addKeysSafe operates on KeyImports whose privKeys are encrypted. If pubKey 
+      if (!pubKey) {
+        throw new Error(`pubKey is undefined for ${name}. Keys not added to storage`);
+      }
+      let payload = {};
+      if (pubKey && key.privKey && encryptionKey) {
+        const toEncrypt = JSON.stringify(key);
+        const encKey = Encryption.encryptPrivateKey(toEncrypt, pubKey, encryptionKey);
+        payload = { encKey, pubKey, path };
+      }
+      const toStore = JSON.stringify(payload);
+      let keepAlive = true;
+      if (key === keys[keys.length - 1]) {
+        keepAlive = false;
+      }
+      await this.storageType.addKeys({ name, key, toStore, keepAlive, open });
+      open = false;
+    }
+  }
+
   async getAddress(params: { name: string; address: string }) {
     const { name, address } = params;
     return this.storageType.getAddress({ name, address, keepAlive: true, open: true });
