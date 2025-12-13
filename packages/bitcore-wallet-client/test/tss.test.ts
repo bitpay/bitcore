@@ -1,7 +1,7 @@
 'use strict';
 
 import sinon from 'sinon';
-import chai from 'chai';
+import * as chai from 'chai';
 import BWS from 'bitcore-wallet-service';
 import request from 'supertest';
 import crypto from 'crypto';

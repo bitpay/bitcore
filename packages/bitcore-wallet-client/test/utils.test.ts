@@ -1,6 +1,6 @@
 'use strict';
 
-import chai from 'chai';
+import * as chai from 'chai';
 import { BitcoreLib as Bitcore } from 'crypto-wallet-core';
 import { Utils } from '../src/lib/common';
 

@@ -1,6 +1,6 @@
 'use strict';
 
-import chai from 'chai';
+import * as chai from 'chai';
 import 'chai/register-should';
 import { Address } from '../../src/lib/model/address';
 
