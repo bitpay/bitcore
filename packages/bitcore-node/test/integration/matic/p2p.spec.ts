@@ -15,7 +15,7 @@ import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 const { StreamUtil } = BitcoreClient;
 const chain = 'MATIC';
 const network = 'regtest';
-const chainConfig = config.chains[chain][network] as IEVMNetworkConfig;
+let chainConfig: IEVMNetworkConfig;
 const name = 'PolygonWallet-Ci';
 const storageType = 'Level';
 const baseUrl = 'http://localhost:3000/api';
@@ -68,7 +68,12 @@ describe('Polygon', function() {
   this.timeout(50000);
   const sandbox = sinon.createSandbox();
 
-  before(async () => {
+  before(async function() {
+    expect(config.chains[chain], `chain ${chain} is not in the config`).to.exist;
+    if (config.chains[chain] === undefined) {
+      this.skip();
+    }
+    chainConfig = config.chains[chain][network];
     await intBeforeHelper();
     await resetDatabase();
     await Api.start();
