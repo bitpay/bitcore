@@ -15,7 +15,8 @@ import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 const { StreamUtil } = BitcoreClient;
 const chain = 'ETH';
 const network = 'regtest';
-const chainConfig = config.chains[chain][network] as IEVMNetworkConfig;
+let chainConfig: IEVMNetworkConfig; // Declare but don't assign yet
+
 const name = 'EthereumWallet-Ci';
 const storageType = 'Level';
 const baseUrl = 'http://localhost:3000/api';
@@ -67,7 +68,12 @@ describe('Ethereum', function() {
   const suite = this;
   this.timeout(50000);
 
-  before(async () => {
+  before(async function() {
+    expect(config.chains[chain], `chain ${chain} is not in the config`).to.exist;
+    if (!config.chains[chain] || !config.chains[chain][network]) {
+      this.skip();
+    }
+    chainConfig = config.chains[chain][network] as IEVMNetworkConfig;
     await BitcoreClient.Wallet.deleteWallet({ name, storageType }).catch(() => { /* ignore if it doesn't exist */ });
     await intBeforeHelper();
     await resetDatabase();
