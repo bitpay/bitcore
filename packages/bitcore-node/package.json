@@ -36,7 +36,7 @@
     "test:unit": "mocha build/test/unit/ --name '*.spec.js'",
     "test:integration": "BCN_LOG_LEVEL=none mocha -r tsx 'test/integration/**/*.spec.ts'",
     "benchmark": "node build/test/benchmark/benchmark.js",
-    "coverage": "nyc mocha -r ts-node/register test/**/*.unit.ts test/**/*.spec.ts",
+    "coverage": "nyc mocha -r ts-node/register 'test/**/*.unit.ts' 'test/**/*.spec.ts' 'test/**/*.integration.ts'",
     "api": "npm run tsc && node build/src/workers/api.js",
     "api:debug": "npm run tsc && node --inspect build/src/workers/api.js --DEBUG true",
     "api:cluster": "npm run tsc && node build/src/workers/api.js --CLUSTER true",
@@ -53,15 +53,10 @@
     "check-coverage": true,
     "all": true,
     "include": [
-      "src/**/!(*.test.*).[tj]s?(x)"
-    ],
-    "exclude": [
-      "src/_tests_/**/*.*"
+      "src/**/*"
     ],
     "reporter": [
       "html",
-      "lcov",
-      "text",
       "text-summary"
     ],
     "report-dir": "coverage"
