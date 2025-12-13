@@ -1,6 +1,6 @@
 'use strict';
 
-import chai from 'chai';
+import * as chai from 'chai';
 import sinon from 'sinon';
 import log from '../src/lib/log';
 

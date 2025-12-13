@@ -1,6 +1,6 @@
 'use strict';
 
-import chai from 'chai';
+import * as chai from 'chai';
 import crypto from 'crypto';
 import 'chai/register-should';
 import util from 'util';

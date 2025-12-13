@@ -5,7 +5,7 @@ import { setDefaultResultOrder } from 'dns';
 setDefaultResultOrder('ipv4first');
 
 import { singleton } from 'preconditions';
-import chai from 'chai';
+import * as chai from 'chai';
 
 chai.config.includeStack = true;
 import sinon from 'sinon';
