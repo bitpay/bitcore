@@ -6,6 +6,7 @@ node_modules/
 .idea
 .DS_Store
 *.swp
+.nyc_output
 
 # VIM ignore
 [._]*.s[a-w][a-z]
