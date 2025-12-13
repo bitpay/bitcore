@@ -10,7 +10,7 @@ import { ChainStateProvider } from '../../../src/providers/chain-state';
 import { Storage } from '../../../src/services/storage';
 import { TEST_BLOCK } from '../../data/test-block';
 import { mockStorage } from '../../helpers';
-import { mockCollection } from '../../helpers/index.js';
+import { mockCollection } from '../../helpers';
 import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 
 describe('Block Model', function() {

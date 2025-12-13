@@ -4,7 +4,7 @@ import sinon from 'sinon';
 import { BitcoinBlockStorage } from '../../../src/models/block';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
 import { SpentHeightIndicators } from '../../../src/types/Coin';
-import { mockModel, mockStorage } from '../../helpers/index.js';
+import { mockModel, mockStorage } from '../../helpers';
 import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 
 describe('Coin Model', function() {
