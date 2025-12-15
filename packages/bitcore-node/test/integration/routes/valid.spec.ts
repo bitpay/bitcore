@@ -2,12 +2,9 @@ import supertest from 'supertest';
 import { expect } from 'chai';
 import app from '../../../src/routes';
 
-const request = supertest(app);
 describe('Validate Route', function() {
-  before(async function() {
-      
-  });
-
+  const request = supertest(app);
+  
   it('should detect valid block height', done => {
     request.get('/api/BTC/regtest/valid/100000')
       .expect(200, (err, res) => {

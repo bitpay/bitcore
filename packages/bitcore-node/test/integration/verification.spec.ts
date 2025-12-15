@@ -12,87 +12,88 @@ import { wait } from '../../src/utils';
 import { resetDatabase } from '../helpers';
 import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
 
-const chain = 'BTC';
-const network = 'regtest';
-const address = '2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t';
-
-const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
-const creds = chainConfig.rpc;
-const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
-
-async function sendBitcoin() {
-  try {
-    await rpc.sendtoaddress(address, 0.1);
-    console.log('Sending');
-  } catch (e) {
-    // Handle insufficent balance issues
-    console.log('Generating blocks');
-    const ourAddress = await rpc.getnewaddress('');
-    await rpc.call('generatetoaddress', [130, ourAddress]);
-    await wait(5000);
-    console.log('Sending after generating');
-    await rpc.sendtoaddress(address, 0.1);
-  }
-}
-
-function addBlock1() {
-  return BitcoinBlockStorage.collection.insertOne({
-    chain,
-    network,
-    height: 8976158,
-    hash: '0x9997699519d116dfa89256d0f6ebd1737db13adca583dc80dbd533d90083961c',
-    version: 100,
-    merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
-    time: new Date(1526326784),
-    timeNormalized: new Date(1526326784),
-    transactionCount: 1,
-    reward: 50,
-    nonce: 3,
-    previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
-    nextBlockHash: '0xddae2bf21fb5836dec837671afd7bea1cc49d7111462e803ed3efc10570f1858',
-    size: 264,
-    bits: parseInt('207fffff', 16),
-    processed: true
-  });
-}
-
-function addTx() {
-  return TransactionStorage.collection.insertOne({
-    chain,
-    network,
-    txid: '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098',
-    blockHash: '0x9997699519d116dfa89256d0f6ebd1737db13adca583dc80dbd533d90083961c',
-    blockHeight: 8976158,
-    blockTime: new Date('2009-01-09T02:54:25.000Z'),
-    blockTimeNormalized: new Date('2009-01-09T02:54:25.000Z'),
-    coinbase: true,
-    fee: 0,
-    inputCount: 1,
-    locktime: 0,
-    outputCount: 1,
-    size: 134,
-    value: 5000000000.0,
-    wallets: []
-  });
-}
-function addCoin() {
-  return CoinStorage.collection.insertOne({
-    chain,
-    network,
-    mintIndex: 0,
-    mintTxid: '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098',
-    address: '12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX',
-    coinbase: true,
-    mintHeight: 1,
-    script: Buffer.from('QQSWtTjoU1GccmoskeYewRYArhOQgTpifGb7i+eUe+Y8Utp1iTeVFdTgpgT4FBeB5iKUchFmv2Iec6gsvyNCyFjurA=='),
-    spentHeight: -2,
-    spentTxid: '',
-    value: 5000000000.0,
-    wallets: []
-  });
-}
 
 describe('VerificationPeer', function() {
+  const chain = 'BTC';
+  const network = 'regtest';
+  const address = '2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t';
+  
+  const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+  const creds = chainConfig.rpc;
+  const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
+  
+  async function sendBitcoin() {
+    try {
+      await rpc.sendtoaddress(address, 0.1);
+      console.log('Sending');
+    } catch (e) {
+      // Handle insufficent balance issues
+      console.log('Generating blocks');
+      const ourAddress = await rpc.getnewaddress('');
+      await rpc.call('generatetoaddress', [130, ourAddress]);
+      await wait(5000);
+      console.log('Sending after generating');
+      await rpc.sendtoaddress(address, 0.1);
+    }
+  }
+  
+  function addBlock1() {
+    return BitcoinBlockStorage.collection.insertOne({
+      chain,
+      network,
+      height: 8976158,
+      hash: '0x9997699519d116dfa89256d0f6ebd1737db13adca583dc80dbd533d90083961c',
+      version: 100,
+      merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
+      time: new Date(1526326784),
+      timeNormalized: new Date(1526326784),
+      transactionCount: 1,
+      reward: 50,
+      nonce: 3,
+      previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
+      nextBlockHash: '0xddae2bf21fb5836dec837671afd7bea1cc49d7111462e803ed3efc10570f1858',
+      size: 264,
+      bits: parseInt('207fffff', 16),
+      processed: true
+    });
+  }
+  
+  function addTx() {
+    return TransactionStorage.collection.insertOne({
+      chain,
+      network,
+      txid: '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098',
+      blockHash: '0x9997699519d116dfa89256d0f6ebd1737db13adca583dc80dbd533d90083961c',
+      blockHeight: 8976158,
+      blockTime: new Date('2009-01-09T02:54:25.000Z'),
+      blockTimeNormalized: new Date('2009-01-09T02:54:25.000Z'),
+      coinbase: true,
+      fee: 0,
+      inputCount: 1,
+      locktime: 0,
+      outputCount: 1,
+      size: 134,
+      value: 5000000000.0,
+      wallets: []
+    });
+  }
+  function addCoin() {
+    return CoinStorage.collection.insertOne({
+      chain,
+      network,
+      mintIndex: 0,
+      mintTxid: '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098',
+      address: '12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX',
+      coinbase: true,
+      mintHeight: 1,
+      script: Buffer.from('QQSWtTjoU1GccmoskeYewRYArhOQgTpifGb7i+eUe+Y8Utp1iTeVFdTgpgT4FBeB5iKUchFmv2Iec6gsvyNCyFjurA=='),
+      spentHeight: -2,
+      spentTxid: '',
+      value: 5000000000.0,
+      wallets: []
+    });
+  }
+  
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(500000);

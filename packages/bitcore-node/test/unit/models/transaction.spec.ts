@@ -14,9 +14,9 @@ import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 import * as EvmTxData from '../../data/ETH/gethTxs';
 import { BitcoreLib } from 'crypto-wallet-core';
 
-const { Transaction } = BitcoreLib;
-
 describe('Transaction Model', function() {
+  const { Transaction } = BitcoreLib;
+  
   before(unitBeforeHelper);
   after(unitAfterHelper);
 
