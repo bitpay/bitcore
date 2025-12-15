@@ -186,7 +186,7 @@ export class Storage {
     for (const key of keys) {
       const { path } = key;
       const pubKey = key.pubKey;
-      // addKeysSafe operates on KeyImports whose privKeys are encrypted. If pubKey 
+      // key.privKey is encrypted - cannot be directly used to retrieve pubKey if required
       if (!pubKey) {
         throw new Error(`pubKey is undefined for ${name}. Keys not added to storage`);
       }
