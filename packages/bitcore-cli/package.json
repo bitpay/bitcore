@@ -29,7 +29,7 @@
     "wallet": "./bin/wallet"
   },
   "scripts": {
-    "test": "npx mocha --require ts-node/register 'test/**/*.ts'",
+    "test": "npx mocha --require tsx 'test/**/*.ts'",
     "build": "tsc",
     "postbuild": "node createBin -v",
     "clean": "rm -rf ./build",
@@ -46,7 +46,6 @@
     "commander": "14.0.0",
     "crypto-wallet-core": "^11.4.5",
     "external-editor": "3.1.0",
-    "ts-node": "10.9.2",
     "usb": "2.15.0"
   },
   "devDependencies": {
@@ -57,7 +56,7 @@
     "mocha": "^11.7.1",
     "sinon": "^21.0.0",
     "source-map-support": "0.5.16",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.8.3"
   },
   "gitHead": "d1c7f8b0c3a2e4f5b6c7d8e9f0a1b2c3d4e5f6g7"
