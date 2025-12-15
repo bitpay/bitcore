@@ -7,7 +7,7 @@ import config from '../../src/config';
 import { Storage } from '../../src/services/storage';
 import { BitcoinBlockStorage } from '../../src/models/block';
 import { BitcoinBlockType } from '../../src/types/namespaces/Bitcoin/Block';
-import { resetDatabase } from '../helpers/index.js';
+import { resetDatabase } from '../helpers';
 import * as crypto from 'crypto';
 import { BitcoinTransactionType } from '../../src/types/namespaces/Bitcoin/Transaction';
 

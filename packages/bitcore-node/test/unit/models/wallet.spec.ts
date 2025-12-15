@@ -4,7 +4,7 @@ import * as sinon from 'sinon';
 import { MongoBound } from '../../../src/models/base';
 import { IWallet, WalletStorage } from '../../../src/models/wallet';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
-import { mockCollection } from '../../helpers/index.js';
+import { mockCollection } from '../../helpers';
 import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 
 describe('Wallet Model', function() {
