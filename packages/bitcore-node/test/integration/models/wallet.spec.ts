@@ -19,11 +19,17 @@ describe('Wallet Model', function() {
   const password = 'iamsatoshi';
   const chain = 'BTC';
   const network = 'regtest';
-  const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
-  const creds = chainConfig.rpc;
-  const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
+  let chainConfig: IUtxoNetworkConfig;
+  let creds: IUtxoNetworkConfig['rpc'];
+  let rpc: AsyncRPC;
 
-  before(intBeforeHelper);
+  before(async function() {
+    chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+    creds = chainConfig.rpc;
+    rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
+    await intBeforeHelper();
+  });
+
   after(async () => intAfterHelper(suite));
 
   before(async () => {

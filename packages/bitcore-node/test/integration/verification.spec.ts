@@ -18,10 +18,10 @@ describe('VerificationPeer', function() {
   const network = 'regtest';
   const address = '2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t';
   
-  const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
-  const creds = chainConfig.rpc;
-  const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
-  
+  let chainConfig: IUtxoNetworkConfig;
+  let creds: IUtxoNetworkConfig['rpc'];
+  let rpc: AsyncRPC;
+
   async function sendBitcoin() {
     try {
       await rpc.sendtoaddress(address, 0.1);
@@ -97,7 +97,14 @@ describe('VerificationPeer', function() {
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(500000);
-  before(intBeforeHelper);
+
+  before(async function() {
+    chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+    creds = chainConfig.rpc;
+    rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
+    await intBeforeHelper();
+  });
+
   after(async () => intAfterHelper(suite));
 
   beforeEach(async () => {

@@ -22,9 +22,9 @@ import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
 describe('Wallet Benchmark', function() {
   const chain = 'BTC';
   const network = 'regtest';
-  const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
-  const creds = chainConfig.rpc;
-  const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
+  let chainConfig: IUtxoNetworkConfig;
+  let creds: IUtxoNetworkConfig['rpc'];
+  let rpc: AsyncRPC;
   
   async function checkWalletExists(pubKey, expectedAddress) {
     // Check the database for the first wallet
@@ -104,7 +104,10 @@ describe('Wallet Benchmark', function() {
   this.timeout(5000000);
   let p2pWorker: BitcoinP2PWorker;
 
-  before(async () => {
+  before(async function() {
+    chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+    creds = chainConfig.rpc;
+    rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
     await intBeforeHelper();
     await Event.start();
     await Api.start();

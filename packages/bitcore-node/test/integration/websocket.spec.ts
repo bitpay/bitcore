@@ -19,9 +19,9 @@ import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
 describe('Websockets', function() {
   const chain = 'BTC';
   const network = 'regtest';
-  const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
-  const creds = chainConfig.rpc;
-  const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
+  let chainConfig: IUtxoNetworkConfig;
+  let creds: IUtxoNetworkConfig['rpc'];
+  let rpc: AsyncRPC;
   const { PrivateKey } = BitcoreLib;
   
   function getSocket() {
@@ -42,8 +42,11 @@ describe('Websockets', function() {
   const suite = this;
   this.timeout(60000);
 
-  before(async () => {
-    intBeforeHelper();
+  before(async function() {
+    chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+    creds = chainConfig.rpc;
+    rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
+    await intBeforeHelper();
     sandbox.stub(Socket.serviceConfig, 'bwsKeys').value([bwsKey]);
     await resetDatabase();
     await Event.start();
