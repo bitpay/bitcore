@@ -1,5 +1,5 @@
 import {FC, useEffect, useRef, useState} from 'react';
-import {fetcher, useApi} from 'src/api/api';
+import {fetcher} from 'src/api/api';
 import {Chart as ChartJS} from 'chart.js';
 import {colorCodes} from 'src/utilities/constants';
 import {BitcoinBlockType} from 'src/utilities/models';
@@ -8,6 +8,7 @@ import {getName} from 'src/utilities/helper-methods';
 import Dropdown from './dropdown';
 import {useBlocks} from 'src/contexts';
 import {FeeChangeSpan, PriceChangeSpan} from './change-span';
+import Info from './info';
 
 const ChartTile = styled.div`
   height: 400px;
@@ -33,31 +34,29 @@ interface PriceDetails {
   }
 }
 
+interface PriceDisplay {
+  data: Array<{
+    prices: Array<{price: number, time: string}>,
+    currencyPair: string,
+    currencies: Array<object>,
+    priceDisplay: Array<number>,
+    percentChange: string,
+    priceDisplayPercentChange: string
+  }>
+}
+
 const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, network }) => {
   const theme = useTheme();
   const { blocks } = useBlocks();
   const [price, setPrice] = useState<number>(0);
-
-  const priceDisplay: {
-    data: Array<{
-      prices: Array<{price: number, time: string}>,
-      currencyPair: string,
-      currencies: Array<object>,
-      priceDisplay: Array<number>,
-      percentChange: string,
-      priceDisplayPercentChange: string
-    }>
-  } = useApi(
-    `https://bitpay.com/currencies/prices?currencyPairs=["${currency}:USD"]`,
-  ).data;
-
+  const [priceList, setPriceList] = useState<PriceDisplay['data'][0]['priceDisplay']>([0]);
+  const [error, setError] = useState('');
 
   const feeChartRef = useRef<HTMLCanvasElement | null>(null);
   const feeChartInstanceRef = useRef<ChartJS | null>(null);
 
   const priceChartRef = useRef<HTMLCanvasElement | null>(null);
   const priceChartInstanceRef = useRef<ChartJS | null>(null);
-  const priceList = (priceDisplay?.data?.[0]?.priceDisplay || []);
 
   const feeRanges = ['128 Blocks', '32 Blocks', '16 Blocks', '8 Blocks'];
   const priceRanges = ['24 Hours', '12 Hours', '6 Hours', '3 Hours'];
@@ -129,9 +128,13 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
     if (network !== 'mainnet') {
       setPrice(0);
     } else {
-      fetcher(`https://bitpay.com/rates/${currency}/usd`)
+      const url = `https://bitpay.com/rates/${currency}/usd`;
+      fetcher(url)
         .then(({data}: PriceDetails) => {
           setPrice(data.rate);
+        })
+        .catch(() => {
+          setError('Error fetching price. Please try again later.');
         });
     }
 
@@ -182,6 +185,17 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
     };
   }, [priceList, price, priceSelectedRange, currency]);
 
+  useEffect(() => {
+    const url = `https://bitpay.com/currencies/prices?currencyPairs=["${currency}:USD"]`;
+    fetcher(url)
+      .then((priceDisplay: PriceDisplay) => {
+        setPriceList(priceDisplay.data[0].priceDisplay);
+      })
+      .catch(() => {
+        setError('Error fetching price graph data. Please try again later.');
+      });
+  }, [currency]);
+
   return (
     <div>
       <span style={{fontSize: '50px', fontWeight: 'bold'}}>Blocks </span>
@@ -192,16 +206,21 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
         />
       <div style={{padding: '1rem', backgroundColor: theme.dark ? '#111' : '#f6f7f9', height: 'fit-content', marginBottom: '2rem'}}>
         <div style={{display: 'flex', flexDirection: 'row', width: '100%', alignItems: 'center'}}>
+          
           <ChartTile style={{width: hasFees ? '50%' : '100%'}}>
-            <span>{getName(currency)} Exchange Rate</span>
-            <div style={{display: 'flex', justifyContent: 'space-between'}}>
-              <ChartTileHeader>${price.toLocaleString()}</ChartTileHeader>
-              <Dropdown options={priceRanges} value={priceSelectedRange} onChange={setPriceSelectedRange} />
-            </div>
-            <PriceChangeSpan prices={priceList} lastPrice={price} range={priceSelectedRange} />
-            <div style={{flex: 1, minHeight: 0}}>
-              <canvas ref={priceChartRef} aria-label='price line chart' role='img' />
-            </div>
+            { error ?  <Info type={'error'} message={error} />: 
+              <>
+                <span>{getName(currency)} Exchange Rate</span>
+                <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                  <ChartTileHeader>${price.toLocaleString()}</ChartTileHeader>
+                  <Dropdown options={priceRanges} value={priceSelectedRange} onChange={setPriceSelectedRange} />
+                </div>
+                <PriceChangeSpan prices={priceList} lastPrice={price} range={priceSelectedRange} />
+                <div style={{flex: 1, minHeight: 0}}>
+                  <canvas ref={priceChartRef} aria-label='price line chart' role='img' />
+                </div>
+              </>
+            }
           </ChartTile>
           { hasFees &&
             <ChartTile>
