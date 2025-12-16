@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import {FC} from 'react';
 import CopyText from './copy-text';
 import styled from 'styled-components';
 

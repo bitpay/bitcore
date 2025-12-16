@@ -1,7 +1,7 @@
-import { FC, CSSProperties } from 'react';
+import {FC, CSSProperties} from 'react';
 import ArrowDown from '../assets/images/arrow-down.svg';
 import ArrowDownBlack from '../assets/images/arrow-down-black.svg';
-import { useTheme } from 'styled-components';
+import {useTheme} from 'styled-components';
 
 const Dropdown: FC<{
   options: string[],
