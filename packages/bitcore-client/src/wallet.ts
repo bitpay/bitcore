@@ -696,24 +696,28 @@ export class Wallet {
     }
     let addresses = [];
     let decryptedKeys;
-    if (!keys && !signingKeys) {
-      for (const utxo of utxos) {
-        addresses.push(utxo.address);
+    let decryptPrivateKeys = true;
+    if (!signingKeys) {
+      if (!keys) {
+        for (const utxo of utxos) {
+          addresses.push(utxo.address);
+        }
+        addresses = addresses.length > 0 ? addresses : await this.getAddresses();
+        decryptedKeys = await this.storage.getKeys({
+          addresses,
+          name: this.name,
+          encryptionKey: this.unlocked.encryptionKey
+        });
+      } else {
+        addresses.push(keys[0]);
+        for (const element of utxos) {
+          const keyToDecrypt = keys.find(key => key.address === element.address);
+          addresses.push(keyToDecrypt);
+        }
+        const decryptedParams = Encryption.bitcoinCoreDecrypt(addresses, passphrase);
+        decryptedKeys = [...decryptedParams.jsonlDecrypted];
+        decryptPrivateKeys = false;
       }
-      addresses = addresses.length > 0 ? addresses : await this.getAddresses();
-      decryptedKeys = await this.storage.getKeys({
-        addresses,
-        name: this.name,
-        encryptionKey: this.unlocked.encryptionKey
-      });
-    } else if (!signingKeys) {
-      addresses.push(keys[0]);
-      for (const element of utxos) {
-        const keyToDecrypt = keys.find(key => key.address === element.address);
-        addresses.push(keyToDecrypt);
-      }
-      const decryptedParams = Encryption.bitcoinCoreDecrypt(addresses, passphrase);
-      decryptedKeys = [...decryptedParams.jsonlDecrypted];
     }
     if (this.isUtxoChain()) {
       // If changeAddressIdx == null, then save the change key at the current addressIndex (just in case)
@@ -724,7 +728,7 @@ export class Wallet {
     // Shallow copy to avoid mutation if signingKeys are passed in
     const keysForSigning = [...(signingKeys || decryptedKeys)];
 
-    if (this.version === 2) {
+    if (this.version === 2 && decryptPrivateKeys) {
       /**
        * Phase 1: Convert encrypted private keys directly to strings as required by Transactions.sign (as of Dec 11, 2025)
        * This mitigates the security improvement, but also removes the requirement for changing Transaction.sign fully immediately
