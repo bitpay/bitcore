@@ -98,7 +98,7 @@ describe('Wallet Benchmark', function() {
     expect(txWallets).to.include(receivingWallet!._id!.toHexString());
     expect(txWallets).to.include(sendingWallet!._id!.toHexString());
   }
-  
+
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(5000000);

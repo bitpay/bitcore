@@ -83,7 +83,7 @@ describe('Block Model', function() {
       processed: true
     });
   }
-  
+
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
