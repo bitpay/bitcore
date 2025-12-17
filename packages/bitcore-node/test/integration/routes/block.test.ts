@@ -155,7 +155,7 @@ describe('Block Routes', function() {
           { fee: 11000, size: 1056 },
         ]
       },
-      { chain: 'BCH', height: 100, 
+      { chain: 'BCH', height: 100,
         transactions: [
           { fee: 0, size: 133, coinbase: true },
           { fee: 2000, size: 1056 },
@@ -163,7 +163,7 @@ describe('Block Routes', function() {
           { fee: 2500, size: 1056 },
           { fee: 3000, size: 1056 },
           { fee: 3500, size: 1056 }
-        ] 
+        ]
       },
       { chain: 'BCH', height: 101 },
       { chain: 'BCH', height: 102 }
@@ -334,7 +334,7 @@ describe('Block Routes', function() {
       done();
     });
   });
-      
+
   it('should get coins by block hash and limit coins to 3', done => {
     request.get(`/api/BTC/regtest/block/${block100Hash}/coins/3/1`).expect(200, (err, res) => {
       if (err) return done(err);

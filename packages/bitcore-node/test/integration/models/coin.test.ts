@@ -13,7 +13,7 @@ describe('Coin Model', function() {
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
-  
+
   function createNewTxid() {
     const seed = (Math.random() * 10000).toString();
     return crypto
@@ -22,12 +22,12 @@ describe('Coin Model', function() {
       .digest()
       .toString('hex');
   }
-  
+
   async function addTx(tx: IBtcTransaction, outputs: ICoin[]) {
     await TransactionStorage.collection.insertOne(tx as IBtcTransaction);
     await CoinStorage.collection.insertMany(outputs as ICoin[]);
   }
-  
+
   async function makeMempoolTxChain(chain: string, network: string, startingTxid: string, chainLength = 1) {
     let txid = startingTxid;
     let nextTxid = createNewTxid();
@@ -190,7 +190,7 @@ describe('Coin Model', function() {
       } as ICoin;
     });
     await addTx(mempoolTx, mempoolOutputs);
-    
+
     // update existing outputs to be spent by mempool tx
     await CoinStorage.collection.updateMany(
       { chain, network, mintTxid: tx1.hash },

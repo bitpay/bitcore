@@ -12,7 +12,7 @@ describe('Block Model', function() {
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
-  
+
   async function insertBlocks() {
     await BitcoinBlockStorage.collection.insertOne({
       chain: 'BTC',
