@@ -10,48 +10,50 @@ import { unprocessedEthBlocks } from '../../data/ETH/unprocessedBlocksETH';
 import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
-async function makeMempoolTxChain(chain: string, network: string, startingTxid: string, chainLength = 1) {
-  let txid = startingTxid;
-  let nextTxid = crypto
-    .createHash('sha256')
-    .update(txid + 1)
-    .digest()
-    .toString('hex');
-  const allTxids = new Array<string>();
-  for (let i = 1; i <= chainLength; i++) {
-    const badMempoolTx = {
-      chain,
-      network,
-      blockHeight: -1,
-      txid
-    };
-    const badMempoolOutputs = {
-      chain,
-      network,
-      mintHeight: -1,
-      mintTxid: txid,
-      spentTxid: i != chainLength ? nextTxid : '',
-      mintIndex: 0,
-      spentHeight: -1
-    };
+describe('Transaction Model', function() {
 
-    await TransactionStorage.collection.insertOne(badMempoolTx as IBtcTransaction);
-    await CoinStorage.collection.insertOne(badMempoolOutputs as ICoin);
-    allTxids.push(txid);
-    txid = nextTxid;
-    nextTxid = crypto
+  async function makeMempoolTxChain(chain: string, network: string, startingTxid: string, chainLength = 1) {
+    let txid = startingTxid;
+    let nextTxid = crypto
       .createHash('sha256')
       .update(txid + 1)
       .digest()
       .toString('hex');
-  }
-  return allTxids;
-}
+    const allTxids = new Array<string>();
+    for (let i = 1; i <= chainLength; i++) {
+      const badMempoolTx = {
+        chain,
+        network,
+        blockHeight: -1,
+        txid
+      };
+      const badMempoolOutputs = {
+        chain,
+        network,
+        mintHeight: -1,
+        mintTxid: txid,
+        spentTxid: i != chainLength ? nextTxid : '',
+        mintIndex: 0,
+        spentHeight: -1
+      };
 
-describe('Transaction Model', function() {
+      await TransactionStorage.collection.insertOne(badMempoolTx as IBtcTransaction);
+      await CoinStorage.collection.insertOne(badMempoolOutputs as ICoin);
+      allTxids.push(txid);
+      txid = nextTxid;
+      nextTxid = crypto
+        .createHash('sha256')
+        .update(txid + 1)
+        .digest()
+        .toString('hex');
+    }
+    return allTxids;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
+
   before(intBeforeHelper);
   after(async () => intAfterHelper(suite));
 

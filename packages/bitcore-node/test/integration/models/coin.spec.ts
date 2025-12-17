@@ -8,54 +8,56 @@ import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 import { BitcoinTransaction } from '../../../src/types/namespaces/Bitcoin';
 
-function createNewTxid() {
-  const seed = (Math.random() * 10000).toString();
-  return crypto
-    .createHash('sha256')
-    .update(seed + 1)
-    .digest()
-    .toString('hex');
-}
-
-async function addTx(tx: IBtcTransaction, outputs: ICoin[]) {
-  await TransactionStorage.collection.insertOne(tx as IBtcTransaction);
-  await CoinStorage.collection.insertMany(outputs as ICoin[]);
-}
-
-async function makeMempoolTxChain(chain: string, network: string, startingTxid: string, chainLength = 1) {
-  let txid = startingTxid;
-  let nextTxid = createNewTxid();
-  const allTxids = new Array<string>();
-  for (let i = 1; i <= chainLength; i++) {
-    const badMempoolTx = {
-      chain,
-      network,
-      blockHeight: -1,
-      txid
-    };
-    const badMempoolOutputs = [
-      {
-        chain,
-        network,
-        mintHeight: -1,
-        mintTxid: txid,
-        spentTxid: i != chainLength ? nextTxid : '',
-        mintIndex: 0,
-        spentHeight: -1
-      }
-    ];
-    await addTx(badMempoolTx as IBtcTransaction, badMempoolOutputs as ICoin[]);
-    allTxids.push(txid);
-    txid = nextTxid;
-    nextTxid = createNewTxid();
-  }
-  return allTxids;
-}
 
 describe('Coin Model', function() {
+  function createNewTxid() {
+    const seed = (Math.random() * 10000).toString();
+    return crypto
+      .createHash('sha256')
+      .update(seed + 1)
+      .digest()
+      .toString('hex');
+  }
+  
+  async function addTx(tx: IBtcTransaction, outputs: ICoin[]) {
+    await TransactionStorage.collection.insertOne(tx as IBtcTransaction);
+    await CoinStorage.collection.insertMany(outputs as ICoin[]);
+  }
+  
+  async function makeMempoolTxChain(chain: string, network: string, startingTxid: string, chainLength = 1) {
+    let txid = startingTxid;
+    let nextTxid = createNewTxid();
+    const allTxids = new Array<string>();
+    for (let i = 1; i <= chainLength; i++) {
+      const badMempoolTx = {
+        chain,
+        network,
+        blockHeight: -1,
+        txid
+      };
+      const badMempoolOutputs = [
+        {
+          chain,
+          network,
+          mintHeight: -1,
+          mintTxid: txid,
+          spentTxid: i != chainLength ? nextTxid : '',
+          mintIndex: 0,
+          spentHeight: -1
+        }
+      ];
+      await addTx(badMempoolTx as IBtcTransaction, badMempoolOutputs as ICoin[]);
+      allTxids.push(txid);
+      txid = nextTxid;
+      nextTxid = createNewTxid();
+    }
+    return allTxids;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
+  
   before(intBeforeHelper);
   after(async () => intAfterHelper(suite));
 

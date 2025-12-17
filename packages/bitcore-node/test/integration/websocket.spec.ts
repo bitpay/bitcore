@@ -8,42 +8,45 @@ import { Event } from '../../src/services/event';
 import { IUtxoNetworkConfig } from '../../src/types/Config';
 import { resetDatabase } from '../helpers';
 import { BitcoreLib } from 'crypto-wallet-core';
-import { Config } from '../../src/services/config';
-
-const chain = 'BTC';
-const network = 'regtest';
-const chainConfig = Config.get().chains[chain][network] as IUtxoNetworkConfig;
-const creds = chainConfig.rpc;
-const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
-const { PrivateKey } = BitcoreLib;
 import { Client } from 'bitcore-client';
 import { WalletStorage } from '../../src/models/wallet';
 import { WalletAddressStorage } from '../../src/models/walletAddress';
 import { Socket } from '../../src/services/socket';
 import { wait } from '../../src/utils';
 import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
-
-function getSocket() {
-  const socket = io.connect('http://localhost:3000', { transports: ['websocket'] });
-  return socket;
-}
-
-let p2pWorker: BitcoinP2PWorker;
-let socket = getSocket();
-const bwsPrivKey = new PrivateKey();
-const bwsKey = bwsPrivKey.toPublicKey().toString();
-const authKey = new PrivateKey();
-const pubKey = authKey.toPublicKey().toString();
-const address = '2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t';
-const sandbox = sinon.createSandbox();
+import { Config } from '../../src/services/config';
 
 describe('Websockets', function() {
+  const chain = 'BTC';
+  const network = 'regtest';
+  let chainConfig: IUtxoNetworkConfig;
+  let creds: IUtxoNetworkConfig['rpc'];
+  let rpc: AsyncRPC;
+  const { PrivateKey } = BitcoreLib;
+  
+  function getSocket() {
+    const socket = io.connect('http://localhost:3000', { transports: ['websocket'] });
+    return socket;
+  }
+  
+  let p2pWorker: BitcoinP2PWorker;
+  let socket = getSocket();
+  const bwsPrivKey = new PrivateKey();
+  const bwsKey = bwsPrivKey.toPublicKey().toString();
+  const authKey = new PrivateKey();
+  const pubKey = authKey.toPublicKey().toString();
+  const address = '2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t';
+  const sandbox = sinon.createSandbox();
+  
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(60000);
-
-  before(async () => {
-    intBeforeHelper();
+  
+  before(async function() {
+    chainConfig = Config.get().chains[chain][network] as IUtxoNetworkConfig;
+    creds = chainConfig.rpc;
+    rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
+    await intBeforeHelper();
     sandbox.stub(Socket.serviceConfig, 'bwsKeys').value([bwsKey]);
     await resetDatabase();
     await Event.start();
