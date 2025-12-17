@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import * as io from 'socket.io-client';
-import config from '../../src/config';
 import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
 import { AsyncRPC } from '../../src/rpc';
 import { Api } from '../../src/services/api';
@@ -15,6 +14,7 @@ import { WalletAddressStorage } from '../../src/models/walletAddress';
 import { Socket } from '../../src/services/socket';
 import { wait } from '../../src/utils';
 import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
+import { Config } from '../../src/services/config';
 
 describe('Websockets', function() {
   const chain = 'BTC';
@@ -37,13 +37,13 @@ describe('Websockets', function() {
   const pubKey = authKey.toPublicKey().toString();
   const address = '2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t';
   const sandbox = sinon.createSandbox();
-
+  
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(60000);
-
+  
   before(async function() {
-    chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+    chainConfig = Config.get().chains[chain][network] as IUtxoNetworkConfig;
     creds = chainConfig.rpc;
     rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
     await intBeforeHelper();

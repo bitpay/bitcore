@@ -2,7 +2,6 @@ import * as BitcoreClient from 'bitcore-client';
 import { expect } from 'chai';
 import { Web3, Transactions } from 'crypto-wallet-core';
 import sinon from 'sinon';
-import config from '../../../src/config';
 import { CacheStorage } from '../../../src/models/cache';
 import { EVMBlockStorage } from '../../../src/providers/chain-state/evm/models/block';
 import { EVMP2pWorker } from '../../../src/providers/chain-state/evm/p2p/p2p';
@@ -11,13 +10,9 @@ import { IEVMNetworkConfig } from '../../../src/types/Config';
 import { wait } from '../../../src/utils';
 import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
+import { Config } from '../../../src/services/config';
 
 describe('Polygon', function() {
-  // eslint-disable-next-line @typescript-eslint/no-this-alias
-  const suite = this;
-  this.timeout(50000);
-  const sandbox = sinon.createSandbox();
-
   const { StreamUtil } = BitcoreClient;
   const chain = 'MATIC';
   const network = 'regtest';
@@ -67,9 +62,14 @@ describe('Polygon', function() {
     const signedTx = await wallet.signTx({ tx, signingKeys: [{ privKey: privKeys[from] }] });
     await web3.eth.sendSignedTransaction(signedTx);
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
+  const suite = this;
+  this.timeout(50000);
+  const sandbox = sinon.createSandbox();
   
   before(async function() {
-    chainConfig = config.chains[chain][network];
+    chainConfig = Config.get().chains[chain][network];
     await intBeforeHelper();
     await resetDatabase();
     await Api.start();

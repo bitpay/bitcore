@@ -2,7 +2,6 @@ import * as BitcoreClient from 'bitcore-client';
 import { expect } from 'chai';
 import { Web3 } from 'crypto-wallet-core';
 import sinon from 'sinon';
-import config from '../../../src/config';
 import { CacheStorage } from '../../../src/models/cache';
 import { EthP2pWorker } from '../../../src/modules/ethereum/p2p/p2p';
 import { EVMBlockStorage } from '../../../src/providers/chain-state/evm/models/block';
@@ -11,17 +10,14 @@ import { IEVMNetworkConfig } from '../../../src/types/Config';
 import { wait } from '../../../src/utils';
 import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
+import { Config } from '../../../src/services/config';
 
 describe('Ethereum', function() {
-  // eslint-disable-next-line @typescript-eslint/no-this-alias
-  const suite = this;
-  this.timeout(50000);
 
   const { StreamUtil } = BitcoreClient;
   const chain = 'ETH';
   const network = 'regtest';
   let chainConfig: IEVMNetworkConfig;
-  
   const name = 'EthereumWallet-Ci';
   const storageType = 'Level';
   const baseUrl = 'http://localhost:3000/api';
@@ -29,7 +25,7 @@ describe('Ethereum', function() {
   const phrase = 'kiss talent nerve fossil equip fault exile execute train wrist misery diet';
   const accounts = { erigon: '0x67b1d87101671b127f5f8714789C7192f7ad340e', geth: '0xeC12CD1Ab86F83C1B26C5caa38126Bc4299b6CBa' };
   const privKeys = { erigon: '26e86e45f6fc45ec6e2ecd128cec80fa1d1505e5507dcd2ae58c3130a7a97b48', geth: '0xf9ad2207e910cd649c9a32063dea3656380c32fa07d6bb9be853687ca585a015' };
-  
+
   async function getWallet() {
     let wallet: BitcoreClient.Wallet;
     try {
@@ -68,8 +64,12 @@ describe('Ethereum', function() {
     await web3.eth.sendSignedTransaction(signedTx);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
+  const suite = this;
+  this.timeout(50000);
+
   before(async function() {
-    chainConfig = config.chains[chain][network] as IEVMNetworkConfig;
+    chainConfig = Config.get().chains[chain][network];
     await BitcoreClient.Wallet.deleteWallet({ name, storageType }).catch(() => { /* ignore if it doesn't exist */ });
     await intBeforeHelper();
     await resetDatabase();

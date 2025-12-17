@@ -2,7 +2,6 @@ import { Wallet } from 'bitcore-client';
 import { ParseApiStream } from 'bitcore-client';
 import { expect } from 'chai';
 import * as io from 'socket.io-client';
-import config from '../../src/config';
 import { MongoBound } from '../../src/models/base';
 import { CoinStorage, ICoin } from '../../src/models/coin';
 import { TransactionStorage } from '../../src/models/transaction';
@@ -17,6 +16,7 @@ import { wait } from '../../src/utils';
 import { createWallet } from '../benchmark/wallet-benchmark';
 import { resetDatabase } from '../helpers';
 import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
+import { Config } from '../../src/services/config';
 
 
 describe('Wallet Benchmark', function() {
@@ -98,14 +98,14 @@ describe('Wallet Benchmark', function() {
     expect(txWallets).to.include(receivingWallet!._id!.toHexString());
     expect(txWallets).to.include(sendingWallet!._id!.toHexString());
   }
-  
+
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(5000000);
   let p2pWorker: BitcoinP2PWorker;
 
   before(async function() {
-    chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+    chainConfig = Config.get().chains[chain][network] as IUtxoNetworkConfig;
     creds = chainConfig.rpc;
     rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
     await intBeforeHelper();

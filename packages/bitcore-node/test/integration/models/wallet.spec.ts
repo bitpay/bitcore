@@ -1,6 +1,5 @@
 import { Wallet, IWalletExt } from 'bitcore-client';
 import { expect } from 'chai';
-import config from '../../../src/config';
 import { WalletStorage } from '../../../src/models/wallet';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { AsyncRPC } from '../../../src/rpc';
@@ -8,12 +7,9 @@ import { Api } from '../../../src/services/api';
 import { Event } from '../../../src/services/event';
 import { IUtxoNetworkConfig } from '../../../src/types/Config';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
+import { Config } from '../../../src/services/config';
 
 describe('Wallet Model', function() {
-  // eslint-disable-next-line @typescript-eslint/no-this-alias
-  const suite = this;
-  this.timeout(50000);
-
   let lockedWallet: Wallet;
   const walletName = 'Test Wallet';
   const password = 'iamsatoshi';
@@ -23,8 +19,12 @@ describe('Wallet Model', function() {
   let creds: IUtxoNetworkConfig['rpc'];
   let rpc: AsyncRPC;
 
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
+  const suite = this;
+  this.timeout(50000);
+
   before(async function() {
-    chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+    chainConfig = Config.get().chains[chain][network] as IUtxoNetworkConfig;
     creds = chainConfig.rpc;
     rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
     await intBeforeHelper();
