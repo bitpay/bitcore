@@ -9,20 +9,27 @@ import { Event } from '../../../src/services/event';
 import { IUtxoNetworkConfig } from '../../../src/types/Config';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
-let lockedWallet: Wallet;
-const walletName = 'Test Wallet';
-const password = 'iamsatoshi';
-const chain = 'BTC';
-const network = 'regtest';
-const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
-const creds = chainConfig.rpc;
-const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
-
 describe('Wallet Model', function() {
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(50000);
-  before(intBeforeHelper);
+
+  let lockedWallet: Wallet;
+  const walletName = 'Test Wallet';
+  const password = 'iamsatoshi';
+  const chain = 'BTC';
+  const network = 'regtest';
+  let chainConfig: IUtxoNetworkConfig;
+  let creds: IUtxoNetworkConfig['rpc'];
+  let rpc: AsyncRPC;
+
+  before(async function() {
+    chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+    creds = chainConfig.rpc;
+    rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
+    await intBeforeHelper();
+  });
+
   after(async () => intAfterHelper(suite));
 
   before(async () => {

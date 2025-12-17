@@ -1,9 +1,10 @@
 import supertest from 'supertest';
 import app from '../../../src/routes';
 
-const request = supertest(app);
 
 describe('Routes', function() {
+  const request = supertest(app);
+  
   before(async function() {
     this.timeout(15000);
   });

@@ -9,113 +9,115 @@ import sinon from 'sinon';
 import { ChainStateProvider } from '../../../src/providers/chain-state';
 import { CoinStorage } from '../../../src/models/coin';
 
-const request = supertest(app);
 
-async function addBlocks(
-  blocks: {
-    chain: 'BTC' | 'BCH';
-    height: number;
-    hash?: string;
-    time?: Date;
-    transactions?: {
-      txid?: string;
-      fee: number;
-      size: number;
-      coinbase?: boolean;
-      inputs?: number[];
-      outputs?: number[];
-    }[];
-  }[]
-) {
-  for (const block of blocks) {
-    const { chain, height } = block;
-    const hash = block.hash || '2c07decae68f74d6ac20184cce0216388ea66f0068cde511bb9c51f0691539a8';
-    const transactions = block.transactions || [];
-    const time = block.time || new Date('2025-07-07T17:16:38.002Z');
-    await BitcoinBlockStorage.collection.insertOne({
-      network: 'regtest',
-      chain: chain,
-      hash: hash,
-      bits: 545259519,
-      height: height,
-      merkleRoot: '760a46b4f94ab17350a3ed299546fb5648c025ad9bd22271be38cf075c9cf3f4',
-      nextBlockHash: '47bab8f788e3bd8d3caca2a5e054e912982a0e6dfb873a7578beb8fac90eb87d',
-      nonce: 0,
-      previousBlockHash: '0a60c6e93a931e9b342a6c258bada673784610fdd2504cc7c6795555ef7e53ea',
-      processed: true,
-      reward: 1250000000,
-      size: 214,
-      time: time,
-      timeNormalized: time,
-      transactionCount: 1,
-      version: 805306368
-    });
-
-    for (const tx of transactions) {
-      const { fee, size } = tx;
-      const inputs = tx.inputs || [];
-      const outputs = tx.outputs || [];
-      const txid = tx.txid || 'da848d4c5a9d690259f5fddb6c5ca0fb0e52bc4a8ac472d3784a2de834cf448e';
-      const coinbase = tx.coinbase!;
-
-      await TransactionStorage.collection.insertOne({
-        chain: chain,
-        network: 'regtest',
-        txid: txid,
-        blockHash: hash,
-        blockHeight: height,
-        blockTime: new Date('2025-07-07T17:38:02.000Z'),
-        blockTimeNormalized: new Date('2025-07-07T17:38:02.000Z'),
-        coinbase: coinbase,
-        fee: fee,
-        inputCount: inputs.length || 1,
-        outputCount: outputs.length || 1,
-        locktime: 0,
-        size: size,
-        value: 10_000_000,
-        wallets: []
-      });
-
-      for (const input of inputs) {
-        await CoinStorage.collection.insertOne({
-          chain: chain,
-          network: 'regtest',
-          value: input,
-          mintTxid: '52e76c33561b0fc31ecf56e101c4f582d85e385381f3da3e5f5aabdb1b939f90',
-          spentTxid: txid,
-          spentHeight: height,
-          mintHeight: height - 1,
-          mintIndex: 0,
-          script: Buffer.from('aiSqIant4vYcP3HR3v0/qZnfo2lTdVxpBol5mWK0i+vYNpdOjPk'),
-          coinbase: coinbase,
-          address: 'bcrt1qxxm47l2d6hrl8e9w9rq6w9klxav5c9e76jehw8',
-          wallets: []
-        });
-      }
-      for (let i = 0; i < outputs.length; i++) {
-        const output = outputs[i];
-        await CoinStorage.collection.insertOne({
-          chain: chain,
-          network: 'regtest',
-          value: output,
-          mintTxid: txid,
-          spentTxid: 'c9d06466adaf5322f619c603fddb8a325cb6cdfcb9dffaa4e1919e896b2b98d7',
-          spentHeight: -2,
-          mintHeight: height,
-          mintIndex: i,
-          script: Buffer.from('aiSqIant4vYcP3HR3v0/qZnfo2lTdVxpBol5mWK0i+vYNpdOjPk'),
-          coinbase: coinbase,
-          address: 'bcrt1qxxm47l2d6hrl8e9w9rq6w9klxav5c9e76jehw8',
-          wallets: []
-        });
-      }
-    }
-  }
-}
 
 describe('Block Routes', function() {
   let sandbox;
   const tipHeight = 103;
+
+  const request = supertest(app);
+
+  async function addBlocks(
+    blocks: {
+      chain: 'BTC' | 'BCH';
+      height: number;
+      hash?: string;
+      time?: Date;
+      transactions?: {
+        txid?: string;
+        fee: number;
+        size: number;
+        coinbase?: boolean;
+        inputs?: number[];
+        outputs?: number[];
+      }[];
+    }[]
+  ) {
+    for (const block of blocks) {
+      const { chain, height } = block;
+      const hash = block.hash || '2c07decae68f74d6ac20184cce0216388ea66f0068cde511bb9c51f0691539a8';
+      const transactions = block.transactions || [];
+      const time = block.time || new Date('2025-07-07T17:16:38.002Z');
+      await BitcoinBlockStorage.collection.insertOne({
+        network: 'regtest',
+        chain: chain,
+        hash: hash,
+        bits: 545259519,
+        height: height,
+        merkleRoot: '760a46b4f94ab17350a3ed299546fb5648c025ad9bd22271be38cf075c9cf3f4',
+        nextBlockHash: '47bab8f788e3bd8d3caca2a5e054e912982a0e6dfb873a7578beb8fac90eb87d',
+        nonce: 0,
+        previousBlockHash: '0a60c6e93a931e9b342a6c258bada673784610fdd2504cc7c6795555ef7e53ea',
+        processed: true,
+        reward: 1250000000,
+        size: 214,
+        time: time,
+        timeNormalized: time,
+        transactionCount: 1,
+        version: 805306368
+      });
+
+      for (const tx of transactions) {
+        const { fee, size } = tx;
+        const inputs = tx.inputs || [];
+        const outputs = tx.outputs || [];
+        const txid = tx.txid || 'da848d4c5a9d690259f5fddb6c5ca0fb0e52bc4a8ac472d3784a2de834cf448e';
+        const coinbase = tx.coinbase!;
+
+        await TransactionStorage.collection.insertOne({
+          chain: chain,
+          network: 'regtest',
+          txid: txid,
+          blockHash: hash,
+          blockHeight: height,
+          blockTime: new Date('2025-07-07T17:38:02.000Z'),
+          blockTimeNormalized: new Date('2025-07-07T17:38:02.000Z'),
+          coinbase: coinbase,
+          fee: fee,
+          inputCount: inputs.length || 1,
+          outputCount: outputs.length || 1,
+          locktime: 0,
+          size: size,
+          value: 10_000_000,
+          wallets: []
+        });
+
+        for (const input of inputs) {
+          await CoinStorage.collection.insertOne({
+            chain: chain,
+            network: 'regtest',
+            value: input,
+            mintTxid: '52e76c33561b0fc31ecf56e101c4f582d85e385381f3da3e5f5aabdb1b939f90',
+            spentTxid: txid,
+            spentHeight: height,
+            mintHeight: height - 1,
+            mintIndex: 0,
+            script: Buffer.from('aiSqIant4vYcP3HR3v0/qZnfo2lTdVxpBol5mWK0i+vYNpdOjPk'),
+            coinbase: coinbase,
+            address: 'bcrt1qxxm47l2d6hrl8e9w9rq6w9klxav5c9e76jehw8',
+            wallets: []
+          });
+        }
+        for (let i = 0; i < outputs.length; i++) {
+          const output = outputs[i];
+          await CoinStorage.collection.insertOne({
+            chain: chain,
+            network: 'regtest',
+            value: output,
+            mintTxid: txid,
+            spentTxid: 'c9d06466adaf5322f619c603fddb8a325cb6cdfcb9dffaa4e1919e896b2b98d7',
+            spentHeight: -2,
+            mintHeight: height,
+            mintIndex: i,
+            script: Buffer.from('aiSqIant4vYcP3HR3v0/qZnfo2lTdVxpBol5mWK0i+vYNpdOjPk'),
+            coinbase: coinbase,
+            address: 'bcrt1qxxm47l2d6hrl8e9w9rq6w9klxav5c9e76jehw8',
+            wallets: []
+          });
+        }
+      }
+    }
+  }
 
   before(async function() {
     this.timeout(15000);
