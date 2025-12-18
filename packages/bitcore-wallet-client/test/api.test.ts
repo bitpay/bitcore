@@ -1,6 +1,6 @@
 'use strict';
 
-import chai from 'chai';
+import * as chai from 'chai';
 import 'chai/register-should';
 
 chai.config.includeStack = true;
