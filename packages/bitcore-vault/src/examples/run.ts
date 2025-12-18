@@ -1,5 +1,5 @@
 import * as readline from 'readline';
-import { VaultWalletProxy } from '../vaultWalletProxy';
+import { VaultWalletProxy } from '../vault_WalletProxy';
 
 class WalletLoader {
   private vaultWalletProxy: VaultWalletProxy;
