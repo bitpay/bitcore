@@ -19,7 +19,7 @@
     "watch": "tsc --watch",
     "precompile": "cd ../bitcore-node && npm run clean && npm run build:prod",
     "compile": "npm run clean && npm run build",
-    "test": "mocha -r tsx test/**/*.test.ts",
+    "test": "tsc --noEmit && mocha -r tsx test/**/*.test.ts",
     "precommit": "npm run lint; npm run fix:errors",
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
