@@ -1,6 +1,6 @@
 import * as crypto from 'crypto';
 import { Storage, Wallet } from 'bitcore-client';
-import type { StorageType } from '../../bitcore-client/src/types/storage';
+import type { StorageType } from 'bitcore-client/src/types/storage';
 
 export class VaultWallet extends Wallet {
   constructor(params) {
