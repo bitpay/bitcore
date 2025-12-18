@@ -52,7 +52,7 @@ describe('PayProV2', () => {
           }
         };
       }
-    };
+    } as any;
   };
   beforeEach(() => {
     oldreq = PayProV2.request;
@@ -93,7 +93,7 @@ describe('PayProV2', () => {
             }
           };
         }
-      };
+      } as any;
       PayProV2._asyncRequest({
         url: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X',
         method: 'post',
@@ -144,7 +144,7 @@ describe('PayProV2', () => {
             }
           };
         }
-      };
+      } as any;
       PayProV2._asyncRequest({
         url: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X',
         method: 'post',
@@ -195,7 +195,7 @@ describe('PayProV2', () => {
             }
           };
         }
-      };
+      } as any;
       PayProV2._asyncRequest({
         url: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X',
         method: 'post',

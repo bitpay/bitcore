@@ -4649,7 +4649,7 @@ describe('client API', function() {
             }
           };
         }
-      };
+      } as any;
     };
     beforeEach(() => {
       oldreq = Client.PayProV2.request;

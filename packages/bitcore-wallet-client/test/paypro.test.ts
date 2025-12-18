@@ -39,7 +39,7 @@ function mockRequest(bodyBuf, headers) {
         }
       };
     }
-  };
+  } as any;
 
 };
 
@@ -99,7 +99,7 @@ describe('PayPro', function() {
         };
       },
       'post': () => { }
-    };
+    } as any;
     PayPro.get({
       url: 'https://test.bitpay.com/paypro',
       network: 'testnet',
@@ -220,7 +220,7 @@ describe('PayPro', function() {
           }
         };
       }
-    };
+    } as any;
     PayPro.send(opts, function (err, data, memo) {
       should.exist(err);
       done();
