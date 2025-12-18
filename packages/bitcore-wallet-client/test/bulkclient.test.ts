@@ -1,6 +1,6 @@
 'use strict';
 
-import chai from 'chai';
+import * as chai from 'chai';
 
 chai.config.includeStack = true;
 import sinon from 'sinon';

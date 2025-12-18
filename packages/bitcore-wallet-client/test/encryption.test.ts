@@ -1,4 +1,4 @@
-import chai from 'chai';
+import * as chai from 'chai';
 import sjcl from 'sjcl';
 import { Encryption } from '../src/lib/common/encryption';
 
