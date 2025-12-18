@@ -24,8 +24,8 @@
   "scripts": {
     "start": "npm run clean && npm run build && ./start.sh",
     "stop": "./stop.sh",
-    "test": "npx mocha -r tsx 'test/**/*.test.ts'",
-    "coverage": "nyc mocha -r tsx 'test/**/*.test.ts'",
+    "test": "tsc --noEmit && mocha -r tsx 'test/**/*.test.ts'",
+    "coverage": "tsc --noEmit && nyc mocha -r tsx 'test/**/*.test.ts'",
     "test:ci": "BWS_LOG_LEVEL=none npm run test",
     "build": "tsc && npm run cp:templates",
     "build:prod": "tsc -p tsconfig.prod.json && npm run cp:templates",

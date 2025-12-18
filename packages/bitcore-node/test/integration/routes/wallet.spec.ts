@@ -15,291 +15,6 @@ import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { BitcoreLib } from 'crypto-wallet-core';
 import secp256k1 from 'secp256k1';
 
-const { PrivateKey, PublicKey, Address, crypto } = BitcoreLib;
-const request = supertest(app);
-
-const privKey = new PrivateKey();
-const pubKey = new PublicKey(privKey);
-
-const address = new Address(new PrivateKey().toPublicKey(), 'regtest').toString();
-const missingAddress1 = new Address(new PrivateKey().toPublicKey(), 'regtest').toString();
-const missingAddress2 = new Address(new PrivateKey().toPublicKey(), 'regtest').toString();
-const address2 = new Address(new PrivateKey().toPublicKey(), 'regtest').toString();
-
-const bwsPrivKey = new PrivateKey('3711033b85a260d21cd469e7d93e27f04c31c21f13001053f1c074f7abbe6e75');
-
-const wallet = {
-  chain: 'BTC',
-  network: 'regtest',
-  name: 'user',
-  pubKey: pubKey.toString(),
-  path: 'm/84/1h/0h/0/0',
-  singleAddress: 'bcrt1qzun74zp996s2najfar32t6j5dmyj5052s4vdq7'
-};
-
-function testWalletEquivalence(wallet1, doc) {
-  const { chain, network, name, pubKey, path, singleAddress } = doc;
-
-  expect(chain).to.equal(wallet1.chain);
-  expect(network).to.equal(wallet1.network);
-  expect(name).to.equal(wallet1.name);
-  expect(pubKey).to.equal(wallet1.pubKey);
-  expect(path).to.equal(wallet1.path);
-  expect(singleAddress).to.equal(wallet1.singleAddress);
-}
-
-function testWalletTransaction(tx) {
-  expect(tx).to.be.an('object');
-  expect(tx).to.have.property('id').that.is.a('string').with.length.greaterThan(0);
-  expect(tx.id).to.match(mongoIdRegex);
-
-  expect(tx).to.have.property('txid').that.is.a('string').with.length(64);
-  expect(tx.txid).to.match(/^[a-f0-9]{64}$/);
-
-  expect(tx).to.have.property('fee').that.is.a('number');
-  expect(tx).to.have.property('size').that.is.a('number').and.to.be.greaterThan(0);
-
-  expect(tx).to.have.property('category').that.is.a('string');
-  expect(['receive', 'send', 'move']).to.include(tx.category);
-
-  expect(tx).to.have.property('satoshis').that.is.a('number');
-  if (tx.category === 'receive') {
-    expect(tx.satoshis).to.be.at.least(0);
-  } else {
-    expect(tx.satoshis).to.be.at.most(0);
-  }
-
-  expect(tx).to.have.property('height').that.is.a('number').and.to.be.at.least(0);
-
-  expect(tx).to.have.property('address').that.is.a('string').with.length.greaterThan(0);
-  expect(tx.address).to.match(base58Regex);
-
-  expect(tx).to.have.property('outputIndex').that.is.a('number').and.to.be.at.least(0);
-}
-
-function getSignature(privateKey, method: 'GET' | 'POST' | 'reprocess', url: string, body={}) {
-  const message = [method, url, JSON.stringify(body)].join('|');
-  const messageHash = crypto.Hash.sha256sha256(Buffer.from(message));
-  return Buffer.from(secp256k1.ecdsaSign(messageHash, privateKey.toBuffer()).signature).toString('hex');
-}
-async function addTransaction(params: {
-  senderAddress: string;
-  recieverAddress: string;
-  value: number;
-  fee?: number;
-}) {
-  const { senderAddress, recieverAddress, value, fee=0 } = params;
-  await addMultiIOTransaction({ senderAddresses: [senderAddress], recipients: [{ address: recieverAddress, value }], fee });
-}
-async function addMultiIOTransaction(params: { 
-  senderAddresses: string[] | 'coinbase'; 
-  recipients: { address: string; value: number }[];
-  fee?: number;
-}) {
-  const { senderAddresses, recipients, fee = 0 } = params;
-  const chain = 'BTC';
-  const network = 'regtest';
-  const txid = randomHex(64);
-  const inputs: MongoBound<ICoin>[] = [];
-  let inputsTotalValue = 0;
-  // in the case of coins there are no input coins but the input count needs to be 1
-  let inputCount;
-  const outputCount = 2;
-  const coinbase = senderAddresses === 'coinbase' || senderAddresses[0] === 'coinbase';
-
-  const tip = await BitcoinBlockStorage.getLocalTip({ chain, network });
-  expect(tip, 'addTransaction assumes block exists to add transactions to').to.exist;
-  if (!tip) {
-    return;
-  }
-
-  if (coinbase) {
-    inputCount = 1;
-    inputsTotalValue = recipients[0].value;
-
-    // insert coinbase utxos
-    await CoinStorage.collection.insertMany([
-      {
-        chain: chain,
-        network: network, 
-        mintTxid: txid,
-        mintIndex: 0,
-        coinbase: true,
-        mintHeight: tip.height,
-        value: recipients[0].value,
-        spentHeight: -2,
-        spentTxid: '',
-        address: recipients[0].address,
-        wallets: [],
-        script: Buffer.from('aiSqIant4vYcP3HR3v0/qZnfo2lTdVxpBol5mWK0i+vYNpdOjPk='),
-      },
-      {
-        chain: chain,
-        network: network, 
-        mintTxid: txid,
-        mintIndex: 1,
-        coinbase: true,
-        mintHeight: tip.height,
-        value: 0,
-        spentHeight: -2,
-        spentTxid: '',
-        address: 'false',
-        wallets: [],
-        script: Buffer.from('ABQUkj119YtLFcslg+FddDk3uHkE4g=='),
-      }
-    ]);
-  } else {
-    let totalValueSent = 0;
-    for (const recipient of recipients) {
-      totalValueSent += recipient.value;
-    }
-    let changeAddress;
-    for (const senderAddress of senderAddresses) {
-      const remainingValue = totalValueSent - inputsTotalValue;
-      const smallestSufficientUtxo: MongoBound<ICoin> | null = await CoinStorage.collection.findOne(
-        {
-          address: senderAddress, 
-          spentHeight: -2, 
-          value: { $gte: remainingValue }
-        }, 
-        { sort: { value: 1 } }
-      );
-      
-      if (smallestSufficientUtxo) {
-        inputs.push(smallestSufficientUtxo);
-        inputCount++;
-        inputsTotalValue += smallestSufficientUtxo.value;
-      } else {
-        const utxos: MongoBound<ICoin>[] = [...await CoinStorage.collection
-          .find({ chain, network, address: senderAddress, spentHeight: -2 })
-          .sort({ value: 1 })
-          .toArray()];
-        
-        do {
-          const utxo: MongoBound<ICoin> | undefined = utxos.pop();
-          if (utxo) {
-            inputs.push(utxo);
-            inputsTotalValue += utxo.value;
-            inputCount++;
-          } else {
-            break;
-          }
-        } while (inputsTotalValue < totalValueSent);
-      }
-      if (inputsTotalValue >= totalValueSent + fee) {
-        changeAddress = senderAddress;
-        break;
-      }
-    }
-    expect(inputsTotalValue, 'Not enough funds to create transaction').to.be.at.least(totalValueSent + fee);
-
-    // update spent utxos, prevents future usage
-    await CoinStorage.collection.bulkWrite(
-      inputs.map(({ _id }) => {
-        return {
-          updateOne: {
-            filter: { chain, network, _id },
-            update: { $set: { spentTxid: txid, spentHeight: tip.height } }
-          }
-        };
-      })
-    );
-
-    // add new utxos
-    await CoinStorage.collection.insertMany([
-      // utxos for every recipient
-      ...recipients.map(recipient => ({
-        chain: chain,
-        network: network,
-        mintTxid: txid,
-        mintIndex: 0,
-        coinbase: false,
-        mintHeight: tip.height,
-        value: recipient.value,
-        spentHeight: -2,
-        spentTxid: '',
-        address: recipient.address,
-        wallets: [],
-        script: Buffer.from('ABT2FdLqYRcZotGH4hBg/uUcL0lwUA=='),
-      })
-      ),
-      // change utxo
-      {
-        chain: chain,
-        network: network,
-        mintTxid: txid,
-        mintIndex: 1,
-        coinbase: false,
-        mintHeight: tip.height,
-        value: inputsTotalValue - totalValueSent - fee,
-        spentHeight: -2,
-        spentTxid: '',
-        address: changeAddress,
-        wallets: [],
-        script: Buffer.from('ABT2FdLqYRcZotGH4hBg/uUcL0lwUA=='),
-      }
-    ]);
-  }
-
-  // add new transaction
-  await TransactionStorage.collection.insertOne({
-    txid: txid,
-    chain: chain,
-    network: network,
-    blockHash: tip.hash,
-    blockTime: tip.time,
-    blockHeight: tip.height,
-    blockTimeNormalized: tip.timeNormalized,
-    fee,
-    value: inputsTotalValue - fee,
-    coinbase,
-    inputCount,
-    outputCount,
-    wallets: [],
-    locktime: 0,
-    size: 100
-  });
-
-  // add transaction to block transaction count
-  await BitcoinBlockStorage.collection.updateOne(
-    { height: tip.height },
-    { $inc: { totalTransactions: 1 } }
-  );
-}
-
-async function addBlock(params?: {
-  time?: Date;
-}) {
-  let { time } = params || {};
-  const chain = 'BTC';
-  const network = 'regtest';
-  const tip = await BitcoinBlockStorage.getLocalTip({ chain, network });
-  const hash = randomHex(64);
-  if (!time)
-    time = tip ? new Date(tip.time.getTime() + 1000 * 60 * 10) : new Date();
-  await BitcoinBlockStorage.collection.insertOne({
-    network: 'regtest',
-    chain: chain,
-    hash: hash,
-    bits: 545259519,
-    height: tip ? tip.height + 1 : 0,
-    merkleRoot: '760a46b4f94ab17350a3ed299546fb5648c025ad9bd22271be38cf075c9cf3f4',
-    nextBlockHash: '',
-    nonce: 0,
-    previousBlockHash: (tip) ? tip.hash : '0000000000000000000000000000000000000000000000000000000000000000',
-    processed: true,
-    reward: 1250000000,
-    size: 214,
-    time: time,
-    timeNormalized: time,
-    transactionCount: 0,
-    version: 805306368
-  });
-
-  if (tip) {
-    await BitcoinBlockStorage.collection.updateOne({ hash: tip.hash }, { $set: { nextBlockHash: hash } });
-  }
-}
 
 describe('Wallet Routes', function() {
   let sandbox;
@@ -307,6 +22,292 @@ describe('Wallet Routes', function() {
   const addressBalanceAtFirstBlock = 500_000;
   const missingValue1 = 400_000;
   const addressBalanceAtSecondBlock = addressBalanceAtFirstBlock + 500_000 - missingValue1;
+  
+  const { PrivateKey, PublicKey, Address, crypto } = BitcoreLib;
+  const request = supertest(app);
+  
+  const privKey = new PrivateKey();
+  const pubKey = new PublicKey(privKey);
+  
+  const address = new Address(new PrivateKey().toPublicKey(), 'regtest').toString();
+  const missingAddress1 = new Address(new PrivateKey().toPublicKey(), 'regtest').toString();
+  const missingAddress2 = new Address(new PrivateKey().toPublicKey(), 'regtest').toString();
+  const address2 = new Address(new PrivateKey().toPublicKey(), 'regtest').toString();
+  
+  const bwsPrivKey = new PrivateKey('3711033b85a260d21cd469e7d93e27f04c31c21f13001053f1c074f7abbe6e75');
+  
+  const wallet = {
+    chain: 'BTC',
+    network: 'regtest',
+    name: 'user',
+    pubKey: pubKey.toString(),
+    path: 'm/84/1h/0h/0/0',
+    singleAddress: 'bcrt1qzun74zp996s2najfar32t6j5dmyj5052s4vdq7'
+  };
+  
+  function testWalletEquivalence(wallet1, doc) {
+    const { chain, network, name, pubKey, path, singleAddress } = doc;
+  
+    expect(chain).to.equal(wallet1.chain);
+    expect(network).to.equal(wallet1.network);
+    expect(name).to.equal(wallet1.name);
+    expect(pubKey).to.equal(wallet1.pubKey);
+    expect(path).to.equal(wallet1.path);
+    expect(singleAddress).to.equal(wallet1.singleAddress);
+  }
+  
+  function testWalletTransaction(tx) {
+    expect(tx).to.be.an('object');
+    expect(tx).to.have.property('id').that.is.a('string').with.length.greaterThan(0);
+    expect(tx.id).to.match(mongoIdRegex);
+  
+    expect(tx).to.have.property('txid').that.is.a('string').with.length(64);
+    expect(tx.txid).to.match(/^[a-f0-9]{64}$/);
+  
+    expect(tx).to.have.property('fee').that.is.a('number');
+    expect(tx).to.have.property('size').that.is.a('number').and.to.be.greaterThan(0);
+  
+    expect(tx).to.have.property('category').that.is.a('string');
+    expect(['receive', 'send', 'move']).to.include(tx.category);
+  
+    expect(tx).to.have.property('satoshis').that.is.a('number');
+    if (tx.category === 'receive') {
+      expect(tx.satoshis).to.be.at.least(0);
+    } else {
+      expect(tx.satoshis).to.be.at.most(0);
+    }
+  
+    expect(tx).to.have.property('height').that.is.a('number').and.to.be.at.least(0);
+  
+    expect(tx).to.have.property('address').that.is.a('string').with.length.greaterThan(0);
+    expect(tx.address).to.match(base58Regex);
+  
+    expect(tx).to.have.property('outputIndex').that.is.a('number').and.to.be.at.least(0);
+  }
+  
+  function getSignature(privateKey, method: 'GET' | 'POST' | 'reprocess', url: string, body={}) {
+    const message = [method, url, JSON.stringify(body)].join('|');
+    const messageHash = crypto.Hash.sha256sha256(Buffer.from(message));
+    return Buffer.from(secp256k1.ecdsaSign(messageHash, privateKey.toBuffer()).signature).toString('hex');
+  }
+  async function addTransaction(params: {
+    senderAddress: string;
+    recieverAddress: string;
+    value: number;
+    fee?: number;
+  }) {
+    const { senderAddress, recieverAddress, value, fee=0 } = params;
+    await addMultiIOTransaction({ senderAddresses: [senderAddress], recipients: [{ address: recieverAddress, value }], fee });
+  }
+  async function addMultiIOTransaction(params: { 
+    senderAddresses: string[] | 'coinbase'; 
+    recipients: { address: string; value: number }[];
+    fee?: number;
+  }) {
+    const { senderAddresses, recipients, fee = 0 } = params;
+    const chain = 'BTC';
+    const network = 'regtest';
+    const txid = randomHex(64);
+    const inputs: MongoBound<ICoin>[] = [];
+    let inputsTotalValue = 0;
+    // in the case of coins there are no input coins but the input count needs to be 1
+    let inputCount;
+    const outputCount = 2;
+    const coinbase = senderAddresses === 'coinbase' || senderAddresses[0] === 'coinbase';
+  
+    const tip = await BitcoinBlockStorage.getLocalTip({ chain, network });
+    expect(tip, 'addTransaction assumes block exists to add transactions to').to.exist;
+    if (!tip) {
+      return;
+    }
+  
+    if (coinbase) {
+      inputCount = 1;
+      inputsTotalValue = recipients[0].value;
+  
+      // insert coinbase utxos
+      await CoinStorage.collection.insertMany([
+        {
+          chain: chain,
+          network: network, 
+          mintTxid: txid,
+          mintIndex: 0,
+          coinbase: true,
+          mintHeight: tip.height,
+          value: recipients[0].value,
+          spentHeight: -2,
+          spentTxid: '',
+          address: recipients[0].address,
+          wallets: [],
+          script: Buffer.from('aiSqIant4vYcP3HR3v0/qZnfo2lTdVxpBol5mWK0i+vYNpdOjPk='),
+        },
+        {
+          chain: chain,
+          network: network, 
+          mintTxid: txid,
+          mintIndex: 1,
+          coinbase: true,
+          mintHeight: tip.height,
+          value: 0,
+          spentHeight: -2,
+          spentTxid: '',
+          address: 'false',
+          wallets: [],
+          script: Buffer.from('ABQUkj119YtLFcslg+FddDk3uHkE4g=='),
+        }
+      ]);
+    } else {
+      let totalValueSent = 0;
+      for (const recipient of recipients) {
+        totalValueSent += recipient.value;
+      }
+      let changeAddress;
+      for (const senderAddress of senderAddresses) {
+        const remainingValue = totalValueSent - inputsTotalValue;
+        const smallestSufficientUtxo: MongoBound<ICoin> | null = await CoinStorage.collection.findOne(
+          {
+            address: senderAddress, 
+            spentHeight: -2, 
+            value: { $gte: remainingValue }
+          }, 
+          { sort: { value: 1 } }
+        );
+        
+        if (smallestSufficientUtxo) {
+          inputs.push(smallestSufficientUtxo);
+          inputCount++;
+          inputsTotalValue += smallestSufficientUtxo.value;
+        } else {
+          const utxos: MongoBound<ICoin>[] = [...await CoinStorage.collection
+            .find({ chain, network, address: senderAddress, spentHeight: -2 })
+            .sort({ value: 1 })
+            .toArray()];
+          
+          do {
+            const utxo: MongoBound<ICoin> | undefined = utxos.pop();
+            if (utxo) {
+              inputs.push(utxo);
+              inputsTotalValue += utxo.value;
+              inputCount++;
+            } else {
+              break;
+            }
+          } while (inputsTotalValue < totalValueSent);
+        }
+        if (inputsTotalValue >= totalValueSent + fee) {
+          changeAddress = senderAddress;
+          break;
+        }
+      }
+      expect(inputsTotalValue, 'Not enough funds to create transaction').to.be.at.least(totalValueSent + fee);
+  
+      // update spent utxos, prevents future usage
+      await CoinStorage.collection.bulkWrite(
+        inputs.map(({ _id }) => {
+          return {
+            updateOne: {
+              filter: { chain, network, _id },
+              update: { $set: { spentTxid: txid, spentHeight: tip.height } }
+            }
+          };
+        })
+      );
+  
+      // add new utxos
+      await CoinStorage.collection.insertMany([
+        // utxos for every recipient
+        ...recipients.map(recipient => ({
+          chain: chain,
+          network: network,
+          mintTxid: txid,
+          mintIndex: 0,
+          coinbase: false,
+          mintHeight: tip.height,
+          value: recipient.value,
+          spentHeight: -2,
+          spentTxid: '',
+          address: recipient.address,
+          wallets: [],
+          script: Buffer.from('ABT2FdLqYRcZotGH4hBg/uUcL0lwUA=='),
+        })
+        ),
+        // change utxo
+        {
+          chain: chain,
+          network: network,
+          mintTxid: txid,
+          mintIndex: 1,
+          coinbase: false,
+          mintHeight: tip.height,
+          value: inputsTotalValue - totalValueSent - fee,
+          spentHeight: -2,
+          spentTxid: '',
+          address: changeAddress,
+          wallets: [],
+          script: Buffer.from('ABT2FdLqYRcZotGH4hBg/uUcL0lwUA=='),
+        }
+      ]);
+    }
+  
+    // add new transaction
+    await TransactionStorage.collection.insertOne({
+      txid: txid,
+      chain: chain,
+      network: network,
+      blockHash: tip.hash,
+      blockTime: tip.time,
+      blockHeight: tip.height,
+      blockTimeNormalized: tip.timeNormalized,
+      fee,
+      value: inputsTotalValue - fee,
+      coinbase,
+      inputCount,
+      outputCount,
+      wallets: [],
+      locktime: 0,
+      size: 100
+    });
+  
+    // add transaction to block transaction count
+    await BitcoinBlockStorage.collection.updateOne(
+      { height: tip.height },
+      { $inc: { totalTransactions: 1 } }
+    );
+  }
+  
+  async function addBlock(params?: {
+    time?: Date;
+  }) {
+    let { time } = params || {};
+    const chain = 'BTC';
+    const network = 'regtest';
+    const tip = await BitcoinBlockStorage.getLocalTip({ chain, network });
+    const hash = randomHex(64);
+    if (!time)
+      time = tip ? new Date(tip.time.getTime() + 1000 * 60 * 10) : new Date();
+    await BitcoinBlockStorage.collection.insertOne({
+      network: 'regtest',
+      chain: chain,
+      hash: hash,
+      bits: 545259519,
+      height: tip ? tip.height + 1 : 0,
+      merkleRoot: '760a46b4f94ab17350a3ed299546fb5648c025ad9bd22271be38cf075c9cf3f4',
+      nextBlockHash: '',
+      nonce: 0,
+      previousBlockHash: (tip) ? tip.hash : '0000000000000000000000000000000000000000000000000000000000000000',
+      processed: true,
+      reward: 1250000000,
+      size: 214,
+      time: time,
+      timeNormalized: time,
+      transactionCount: 0,
+      version: 805306368
+    });
+  
+    if (tip) {
+      await BitcoinBlockStorage.collection.updateOne({ hash: tip.hash }, { $set: { nextBlockHash: hash } });
+    }
+  }
 
   before(async function() {
     this.timeout(15000);

@@ -12,9 +12,10 @@ import { RPC } from '../../../src/rpc';
 import { SpentHeightIndicators } from '../../../src/types/Coin';
 import logger from '../../../src/logger';
 
-const Pruning = new PruningService({ transactionModel: TransactionStorage, coinModel: CoinStorage });
 
 describe('Pruning Service', function() {
+  const Pruning = new PruningService({ transactionModel: TransactionStorage, coinModel: CoinStorage });
+  
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);

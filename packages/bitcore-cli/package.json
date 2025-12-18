@@ -29,7 +29,7 @@
     "wallet": "./bin/wallet"
   },
   "scripts": {
-    "test": "npx mocha --require tsx 'test/**/*.ts'",
+    "test": "tsc --noEmit && npx mocha -r tsx 'test/**/*.ts'",
     "build": "tsc",
     "postbuild": "node createBin -v",
     "clean": "rm -rf ./build",
