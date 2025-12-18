@@ -13,6 +13,7 @@
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
     "test": "tsc --noEmit && mocha -r tsx 'test/**/*.test.ts'",
+    "coverage": "tsc --noEmit && nyc mocha -r tsx 'test/**/*.test.ts'",
     "pub": "npm run compile && npm publish"
   },
   "keywords": [
@@ -23,6 +24,15 @@
   ],
   "author": "Micah Riggan",
   "license": "MIT",
+  "nyc": {
+    "include": [
+      "src"
+    ],
+    "reporter": [
+      "html",
+      "text-summary"
+    ]
+  },
   "dependencies": {
     "@solana-program/compute-budget": "^0.7.0",
     "@solana-program/memo": "^0.7.0",
@@ -45,7 +55,8 @@
     "@types/mocha": "10.0.10",
     "@types/node": "22.13.1",
     "chai": "5.1.2",
-    "mocha": "11.1.0",
+    "mocha": "^11.1.0",
+    "nyc": "^17.1.0",
     "tsx": "4.19.2",
     "typescript": "5.7.3"
   },

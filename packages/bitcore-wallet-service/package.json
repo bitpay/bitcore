@@ -42,17 +42,13 @@
     "cp:templates": "cp -r ./templates ./ts_build/templates"
   },
   "nyc": {
-    "extends": "@istanbuljs/nyc-config-typescript",
-    "all": true,
     "includes": [
-      "src/**",
-      "ts_build/src/**"
+      "src"
     ],
     "reporter": [
       "html",
       "text-summary"
-    ],
-    "report-dir": "coverage"
+    ]
   },
   "dependencies": {
     "@sendgrid/mail": "6.5.4",
@@ -89,7 +85,6 @@
     "winston": "3.3.3"
   },
   "devDependencies": {
-    "@istanbuljs/nyc-config-typescript": "^1.0.2",
     "@types/async": "^2.4.1",
     "@types/chai": "^5.2.2",
     "@types/lodash": "^4.14.123",
