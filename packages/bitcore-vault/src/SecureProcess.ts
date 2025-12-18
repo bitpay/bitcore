@@ -1,8 +1,8 @@
 import * as crypto from 'crypto';
 import * as inspector from 'node:inspector';
-import { SecurityManager } from './SecurityManager';
-import { installSignalPolicyHard } from './SignalHardening';
-import { VaultWallet } from './VaultWallet';
+import { SecurityManager } from './securityManager';
+import { installSignalPolicyHard } from './signalHardening';
+import { VaultWallet } from './vaultWallet';
 import type { StorageType } from '../../bitcore-client/src/types/storage';
 
 /**
@@ -274,7 +274,7 @@ export class SecureProcess {
 
     const encryptedPassphraseBuffer = Buffer.from(encryptedPassphrase, 'base64');
 
-    let success = false;;
+    let success = false;
     // Decrypt the passphrase with the private key
     let passphrase: Buffer<ArrayBufferLike> | null = null;
     try {

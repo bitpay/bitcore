@@ -96,7 +96,7 @@ export class VaultWallet extends Wallet {
   /**
    * Override importKeys to require vault access
    */
-  public async importKeys(_params: { keys: any[], rederiveAddys?: boolean }): Promise<any> {
+  public async importKeys(_params: { keys: any[]; rederiveAddys?: boolean }): Promise<any> {
     // This method needs a passphrase, but it's not passed as a parameter
     // We'll need to handle this differently - perhaps store the passphrase temporarily
     throw new Error('importKeys requires vault access - use withVaultAccess wrapper');

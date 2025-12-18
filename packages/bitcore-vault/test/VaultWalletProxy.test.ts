@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { VaultWalletProxy } from '../src/VaultWalletProxy';
+import { VaultWalletProxy } from '../src/vaultWalletProxy';
 
 /**
  * VaultWalletProxy Test Suite
