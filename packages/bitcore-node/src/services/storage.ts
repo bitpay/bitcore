@@ -46,22 +46,24 @@ export class StorageService {
         });
       };
       let attempted = 0;
-      const attemptConnectId = setInterval(async () => {
-        try {
-          this.client = await attemptConnect();
-          this.db = this.client.db(dbName);
-          this.connected = true;
-          clearInterval(attemptConnectId);
-          this.connection.emit('CONNECTED');
-          resolve(this.client);
-        } catch (err: any) {
-          logger.error('%o', err);
-          attempted++;
-          if (attempted > 5) {
+      const attemptConnectId = setInterval(() => {
+        (async () => {
+          try {
+            this.client = await attemptConnect();
+            this.db = this.client.db(dbName);
+            this.connected = true;
             clearInterval(attemptConnectId);
-            reject(new Error('Failed to connect to database'));
+            this.connection.emit('CONNECTED');
+            resolve(this.client);
+          } catch (err: any) {
+            logger.error('%o', err);
+            attempted++;
+            if (attempted > 5) {
+              clearInterval(attemptConnectId);
+              reject(new Error('Failed to connect to database'));
+            }
           }
-        }
+        })();
       }, 5000);
     });
   }

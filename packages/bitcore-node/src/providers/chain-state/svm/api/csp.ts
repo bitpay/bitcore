@@ -260,7 +260,10 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       } catch (err) {
         addressStream.emit('error', err);
       }
-    })();
+    })().catch(err => {
+      logger.error('Unhandled error in _buildAddressTransactionsStream:', err);
+      addressStream.emit('error', err);
+    });
     return addressStream;
   }
 

@@ -90,7 +90,7 @@ export class MoralisP2PWorker extends BaseP2PWorker {
     let currentHeight: number = state?.verifiedBlockHeight?.[this.chain]?.[this.network] || 0;
     let syncing = false;
 
-    this.syncInterval = setInterval(async () => {
+    this.syncInterval = setInterval(() => {
       if (this.stopping || !this.isSyncingNode) {
         return;
       }
@@ -98,54 +98,57 @@ export class MoralisP2PWorker extends BaseP2PWorker {
       if (syncing) {
         return;
       }
-      syncing = true;
 
-      const startTime = Date.now();
-      let msgInterval;
-      let block: BlockTransactionObject | null = null;
-      try {
-        const web3 = await this.getWeb3();
-        this.bestBlock = await web3.eth.getBlockNumber();
-        currentHeight = Math.max(this.bestBlock - (this.chainConfig.maxBlocksToSync || 50), currentHeight || 0);
-        const startHeight = currentHeight;
+      (async () => {
+        syncing = true;
 
-        if (this.bestBlock - currentHeight <= 0) {
-          return;
-        }
+        const startTime = Date.now();
+        let msgInterval;
+        let block: BlockTransactionObject | null = null;
+        try {
+          const web3 = await this.getWeb3();
+          this.bestBlock = await web3.eth.getBlockNumber();
+          currentHeight = Math.max(this.bestBlock - (this.chainConfig.maxBlocksToSync || 50), currentHeight || 0);
+          const startHeight = currentHeight;
 
-        logger.info(`Syncing ${this.bestBlock - currentHeight} blocks for ${this.chain} ${this.network}`);
-        msgInterval = setInterval(() => {
-          const blocksProcessed = currentHeight - startHeight;
-          const elapsedMinutes = (Date.now() - startTime) / (60 * 1000);
-          logger.info(
-            `${timestamp()} | Syncing... | Chain: ${this.chain} | Network: ${this.network} |${(blocksProcessed / elapsedMinutes)
-              .toFixed(2)
-              .padStart(8)} blocks/min | Height: ${currentHeight.toString().padStart(7)}`
-          );
-        }, 1000 * 2); // 2 seconds
-  
-
-        do {
-          block = await web3.eth.getBlock(currentHeight, true);
-          if (block && !this.stopping) {
-            const blockEvent = EVMBlockStorage.convertRawBlock(this.chain, this.network, block);
-            await EventStorage.signalBlock(blockEvent);// .catch((e) => logger.error(`Error signaling ${this.chainNetworkStr} block event: %o`, e.stack || e.message || e));
-            for (const tx of block.transactions) {
-              const txEvent = EVMTransactionStorage.convertRawTx(this.chain, this.network, tx as any, blockEvent);
-              await EventStorage.signalTx(txEvent);// .catch((e) => logger.error(`Error signaling ${this.chainNetworkStr} tx event: %o`, e.stack || e.message || e));
-            }
-            await StateStorage.setVerifiedBlockHeight({ chain: this.chain, network: this.network, height: currentHeight });
-            currentHeight = block.number + 1;
+          if (this.bestBlock - currentHeight <= 0) {
+            return;
           }
-        } while (block);
-        clearInterval(msgInterval); // clear before log below
-        logger.info(`${this.chainNetworkStr} up to date.`);
-      } catch (err: any) {
-        logger.error(`Error syncing ${this.chainNetworkStr}: %o`, err.stack || err.message || err);
-      } finally {
-        syncing = false;
-        clearInterval(msgInterval); // clear here too in case of a catch
-      }
+
+          logger.info(`Syncing ${this.bestBlock - currentHeight} blocks for ${this.chain} ${this.network}`);
+          msgInterval = setInterval(() => {
+            const blocksProcessed = currentHeight - startHeight;
+            const elapsedMinutes = (Date.now() - startTime) / (60 * 1000);
+            logger.info(
+              `${timestamp()} | Syncing... | Chain: ${this.chain} | Network: ${this.network} |${(blocksProcessed / elapsedMinutes)
+                .toFixed(2)
+                .padStart(8)} blocks/min | Height: ${currentHeight.toString().padStart(7)}`
+            );
+          }, 1000 * 2); // 2 seconds
+     
+
+          do {
+            block = await web3.eth.getBlock(currentHeight, true);
+            if (block && !this.stopping) {
+              const blockEvent = EVMBlockStorage.convertRawBlock(this.chain, this.network, block);
+              await EventStorage.signalBlock(blockEvent);// .catch((e) => logger.error(`Error signaling ${this.chainNetworkStr} block event: %o`, e.stack || e.message || e));
+              for (const tx of block.transactions) {
+                const txEvent = EVMTransactionStorage.convertRawTx(this.chain, this.network, tx as any, blockEvent);
+                await EventStorage.signalTx(txEvent);// .catch((e) => logger.error(`Error signaling ${this.chainNetworkStr} tx event: %o`, e.stack || e.message || e));
+              }
+              await StateStorage.setVerifiedBlockHeight({ chain: this.chain, network: this.network, height: currentHeight });
+              currentHeight = block.number + 1;
+            }
+          } while (block);
+          clearInterval(msgInterval); // clear before log below
+          logger.info(`${this.chainNetworkStr} up to date.`);
+        } catch (err: any) {
+          logger.error(`Error syncing ${this.chainNetworkStr}: %o`, err.stack || err.message || err);
+        } finally {
+          syncing = false;
+          clearInterval(msgInterval); // clear here too in case of a catch
+        }
+      })().catch(err => logger.error('Unhandled error in sync interval:', err));
     }, 1000 * (this.chainConfig.syncIntervalSecs || 10)); // default 10 seconds
 
     // Listen for webhooks and process any unprocessed ones in the db

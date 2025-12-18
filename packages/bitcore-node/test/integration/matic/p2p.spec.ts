@@ -12,63 +12,64 @@ import { wait } from '../../../src/utils';
 import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
-const { StreamUtil } = BitcoreClient;
-const chain = 'MATIC';
-const network = 'regtest';
-const chainConfig = config.chains[chain][network] as IEVMNetworkConfig;
-const name = 'PolygonWallet-Ci';
-const storageType = 'Level';
-const baseUrl = 'http://localhost:3000/api';
-const password = '';
-const phrase = 'glimpse mystery poverty onion muffin twist live kidney unhappy sort frame muffin';
-const accounts = { geth: '0xeC12CD1Ab86F83C1B26C5caa38126Bc4299b6CBa' };
-const privKeys = { geth: '0xf9ad2207e910cd649c9a32063dea3656380c32fa07d6bb9be853687ca585a015' };
-
-async function getWallet() {
-  let wallet: BitcoreClient.Wallet;
-  try {
-    wallet = await BitcoreClient.Wallet.loadWallet({ name, storageType });
-    await wallet.register();
-    await wallet.syncAddresses();
-    return wallet;
-  } catch (e) {
-    console.log('Creating a new matic wallet');
-    wallet = await BitcoreClient.Wallet.create({
-      name,
-      chain,
-      network,
-      baseUrl,
-      password,
-      phrase,
-      storageType
-    } as Partial<BitcoreClient.IWalletExt>);
-    await wallet.unlock(password);
-    await wallet.nextAddressPair();
-    await wallet.lock();
-    return wallet;
-  }
-}
-
-async function sendTransaction(from, to, amount, web3, wallet, nonce = 0) {
-  if (!wallet) {
-    wallet = await getWallet();
-  }
-  if (!nonce) {
-    nonce = await web3.eth.getTransactionCount(accounts[from]);
-  }
-  const gasPrice = Number(await web3.eth.getGasPrice());
-  const tx = await wallet.newTx({ recipients: [{ address: to, amount }], from: accounts[from], nonce, gasLimit: 21000, gasPrice });
-  const signedTx = await wallet.signTx({ tx, signingKeys: [{ privKey: privKeys[from] }] });
-  await web3.eth.sendSignedTransaction(signedTx);
-}
-
 describe('Polygon', function() {
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(50000);
   const sandbox = sinon.createSandbox();
 
-  before(async () => {
+  const { StreamUtil } = BitcoreClient;
+  const chain = 'MATIC';
+  const network = 'regtest';
+  let chainConfig: IEVMNetworkConfig;
+  const name = 'PolygonWallet-Ci';
+  const storageType = 'Level';
+  const baseUrl = 'http://localhost:3000/api';
+  const password = '';
+  const phrase = 'glimpse mystery poverty onion muffin twist live kidney unhappy sort frame muffin';
+  const accounts = { geth: '0xeC12CD1Ab86F83C1B26C5caa38126Bc4299b6CBa' };
+  const privKeys = { geth: '0xf9ad2207e910cd649c9a32063dea3656380c32fa07d6bb9be853687ca585a015' };
+
+  async function getWallet() {
+    let wallet: BitcoreClient.Wallet;
+    try {
+      wallet = await BitcoreClient.Wallet.loadWallet({ name, storageType });
+      await wallet.register();
+      await wallet.syncAddresses();
+      return wallet;
+    } catch (e) {
+      console.log('Creating a new matic wallet');
+      wallet = await BitcoreClient.Wallet.create({
+        name,
+        chain,
+        network,
+        baseUrl,
+        password,
+        phrase,
+        storageType
+      } as Partial<BitcoreClient.IWalletExt>);
+      await wallet.unlock(password);
+      await wallet.nextAddressPair();
+      await wallet.lock();
+      return wallet;
+    }
+  }
+
+  async function sendTransaction(from, to, amount, web3, wallet, nonce = 0) {
+    if (!wallet) {
+      wallet = await getWallet();
+    }
+    if (!nonce) {
+      nonce = await web3.eth.getTransactionCount(accounts[from]);
+    }
+    const gasPrice = Number(await web3.eth.getGasPrice());
+    const tx = await wallet.newTx({ recipients: [{ address: to, amount }], from: accounts[from], nonce, gasLimit: 21000, gasPrice });
+    const signedTx = await wallet.signTx({ tx, signingKeys: [{ privKey: privKeys[from] }] });
+    await web3.eth.sendSignedTransaction(signedTx);
+  }
+  
+  before(async function() {
+    chainConfig = config.chains[chain][network];
     await intBeforeHelper();
     await resetDatabase();
     await Api.start();

@@ -129,7 +129,7 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
           chain: this.chain,
           network: this.network,
           lastHeartBeat
-        });
+        }).catch(err => logger.error('Error in selfNominateSyncingNode:', err));
       },
       primary ? 0 : 5 * 60 * 1000
     );

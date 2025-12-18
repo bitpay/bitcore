@@ -9,14 +9,17 @@ export class RPC {
     private username: string,
     private password: string,
     private host: string,
-    private port: number | string
+    private port: number | string,
+    private protocol: string = 'http'
   ) {}
 
   public callMethod(method: string, params: any, callback: CallbackType, walletName?: string) {
+    const authString = this.username ? `${this.username}:${this.password}@` : '';
+    const walletString = walletName ? '/wallet/' + walletName : '';
     request(
       {
         method: 'POST',
-        url: `http://${this.username}:${this.password}@${this.host}:${this.port}${walletName ? '/wallet/' + walletName : ''}`,
+        url: `${this.protocol}://${authString}${this.host}:${this.port}${walletString}`,
         body: {
           jsonrpc: '1.0',
           id: Date.now(),
@@ -122,8 +125,8 @@ export class AsyncRPC {
   private rpc: RPC;
   private walletName: string | undefined;
 
-  constructor(username: string, password: string, host: string, port: number | string) {
-    this.rpc = new RPC(username, password, host, port);
+  constructor(username: string, password: string, host: string, port: number | string, protocol?: string) {
+    this.rpc = new RPC(username, password, host, port, protocol);
     this.walletName = process.env.LOADED_MOCHA_OPTS === 'true' ? 'MOCHA_BITCORE_WALLET' : undefined;
   }
 

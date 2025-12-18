@@ -12,62 +12,64 @@ import { wait } from '../../../src/utils';
 import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
-const { StreamUtil } = BitcoreClient;
-const chain = 'ETH';
-const network = 'regtest';
-const chainConfig = config.chains[chain][network] as IEVMNetworkConfig;
-const name = 'EthereumWallet-Ci';
-const storageType = 'Level';
-const baseUrl = 'http://localhost:3000/api';
-const password = '';
-const phrase = 'kiss talent nerve fossil equip fault exile execute train wrist misery diet';
-const accounts = { erigon: '0x67b1d87101671b127f5f8714789C7192f7ad340e', geth: '0xeC12CD1Ab86F83C1B26C5caa38126Bc4299b6CBa' };
-const privKeys = { erigon: '26e86e45f6fc45ec6e2ecd128cec80fa1d1505e5507dcd2ae58c3130a7a97b48', geth: '0xf9ad2207e910cd649c9a32063dea3656380c32fa07d6bb9be853687ca585a015' };
-
-async function getWallet() {
-  let wallet: BitcoreClient.Wallet;
-  try {
-    wallet = await BitcoreClient.Wallet.loadWallet({ name, storageType });
-    await wallet.register();
-    await wallet.syncAddresses();
-    return wallet;
-  } catch (e) {
-    console.log('Creating a new ethereum wallet');
-    wallet = await BitcoreClient.Wallet.create({
-      name,
-      chain,
-      network,
-      baseUrl,
-      password,
-      phrase,
-      storageType
-    } as Partial<BitcoreClient.IWalletExt>);
-    await wallet.unlock(password);
-    await wallet.nextAddressPair();
-    await wallet.lock();
-    return wallet;
-  }
-}
-
-async function sendTransaction(from, to, amount, web3, wallet, nonce = 0) {
-  if (!wallet) {
-    wallet = await getWallet();
-  }
-  if (!nonce) {
-    nonce = await web3.eth.getTransactionCount(accounts[from]);
-  }
-  const gasPrice = Number(await web3.eth.getGasPrice());
-  const tx = await wallet.newTx({ recipients: [{ address: to, amount }], from: accounts[from], nonce, gasLimit: 21000, gasPrice });
-  const signedTx = await wallet.signTx({ tx, signingKeys: [{ privKey: privKeys[from] }] });
-  await web3.eth.sendSignedTransaction(signedTx);
-}
-
 describe('Ethereum', function() {
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(50000);
 
-  before(async () => {
+  const { StreamUtil } = BitcoreClient;
+  const chain = 'ETH';
+  const network = 'regtest';
+  let chainConfig: IEVMNetworkConfig;
+  
+  const name = 'EthereumWallet-Ci';
+  const storageType = 'Level';
+  const baseUrl = 'http://localhost:3000/api';
+  const password = '';
+  const phrase = 'kiss talent nerve fossil equip fault exile execute train wrist misery diet';
+  const accounts = { erigon: '0x67b1d87101671b127f5f8714789C7192f7ad340e', geth: '0xeC12CD1Ab86F83C1B26C5caa38126Bc4299b6CBa' };
+  const privKeys = { erigon: '26e86e45f6fc45ec6e2ecd128cec80fa1d1505e5507dcd2ae58c3130a7a97b48', geth: '0xf9ad2207e910cd649c9a32063dea3656380c32fa07d6bb9be853687ca585a015' };
+  
+  async function getWallet() {
+    let wallet: BitcoreClient.Wallet;
+    try {
+      wallet = await BitcoreClient.Wallet.loadWallet({ name, storageType });
+      await wallet.register();
+      await wallet.syncAddresses();
+      return wallet;
+    } catch (e) {
+      console.log('Creating a new ethereum wallet');
+      wallet = await BitcoreClient.Wallet.create({
+        name,
+        chain,
+        network,
+        baseUrl,
+        password,
+        phrase,
+        storageType
+      } as Partial<BitcoreClient.IWalletExt>);
+      await wallet.unlock(password);
+      await wallet.nextAddressPair();
+      await wallet.lock();
+      return wallet;
+    }
+  }
+  
+  async function sendTransaction(from, to, amount, web3, wallet, nonce = 0) {
+    if (!wallet) {
+      wallet = await getWallet();
+    }
+    if (!nonce) {
+      nonce = await web3.eth.getTransactionCount(accounts[from]);
+    }
+    const gasPrice = Number(await web3.eth.getGasPrice());
+    const tx = await wallet.newTx({ recipients: [{ address: to, amount }], from: accounts[from], nonce, gasLimit: 21000, gasPrice });
+    const signedTx = await wallet.signTx({ tx, signingKeys: [{ privKey: privKeys[from] }] });
+    await web3.eth.sendSignedTransaction(signedTx);
+  }
+
+  before(async function() {
+    chainConfig = config.chains[chain][network] as IEVMNetworkConfig;
     await BitcoreClient.Wallet.deleteWallet({ name, storageType }).catch(() => { /* ignore if it doesn't exist */ });
     await intBeforeHelper();
     await resetDatabase();
