@@ -74,7 +74,7 @@ export class GethRPC implements IRpc {
     const convertedTx = tx.result;
     convertedTx.abiType = EVMTransactionStorage.abiDecode(tx.result.input);
 
-    for (let call of convertedTx.calls || []) {
+    for (const call of convertedTx.calls || []) {
       call.abiType = EVMTransactionStorage.abiDecode(tx.result.input);
     }
     return convertedTx;
@@ -84,9 +84,9 @@ export class GethRPC implements IRpc {
     // TODO calculate total block reward including fees
     block;
 
-    for (let i in traces) {
+    for (const i in traces) {
       if (traces[i].calls) {
-        let tx = transactions[i];
+        const tx = transactions[i];
         tx.calls = traces[i].calls!.flatMap((call, idx) => this.flattenTraceCalls(call, idx.toString()));
       }
     }
@@ -101,7 +101,7 @@ export class GethRPC implements IRpc {
     delete trace.calls;
     trace.abiType = trace.input ? EVMTransactionStorage.abiDecode(trace.input) : undefined;
     if (trace.abiType) {
-      for (let param of trace.abiType.params) {
+      for (const param of trace.abiType.params) {
         param.value = typeof param.value === 'string' ? param.value : JSON.stringify(param.value);
         if (param.value && param.value.length > 100) {
           // Need to truncate this so it doesn't blow up the index.

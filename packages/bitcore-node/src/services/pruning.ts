@@ -112,7 +112,7 @@ export class PruningService {
         args.OLD && await this.processOldMempoolTxs(CHAIN, NETWORK, MEMPOOL_AGE);
         args.INVALID && await this.processAllInvalidTxs(CHAIN, NETWORK);
       } else {
-        for (let chainNetwork of Config.chainNetworks()) {
+        for (const chainNetwork of Config.chainNetworks()) {
           const { chain, network } = chainNetwork;
           if (!chain || !network) {
             throw new Error('Config structure should contain both a chain and network');
@@ -173,7 +173,7 @@ export class PruningService {
                 }
                 logger.info(`Finding ${tx.txid} outputs and dependent outputs`);
                 const outputGenerator = this.transactionModel.yieldRelatedOutputs(tx.txid);
-                let spentTxids = new Set<string>();
+                const spentTxids = new Set<string>();
                 for await (const coin of outputGenerator) {
                   if (coin.mintHeight >= 0 || coin.spentHeight >= 0) {
                     logger.error(`Cannot prune coin! ${coin.mintTxid}`);
@@ -290,7 +290,7 @@ export class PruningService {
       return false;
     }
     let rTx = await this.transactionModel.collection.findOne({ chain, network, txid: tx.replacedByTxid });
-    let txids = [tx.txid];
+    const txids = [tx.txid];
     while (rTx?.replacedByTxid && rTx?.blockHeight! < 0 && !txids.includes(rTx?.txid)) {
       // replacement tx has also been replaced
       // Note: rTx.txid === tx.txid may happen if tx.replacedByTxid => rTx.txid and rTx.replacedByTxid => tx.txid.

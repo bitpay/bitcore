@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// eslint-disable-next-line spaced-comment
 /****************************************
  *** This migration script will fix historical instances
  *** of an issue where inputs that were used in an RBF tx
@@ -12,14 +13,15 @@
  *** select the chain and network to run against.
  *** You must have valid RPC connection specified in bitcore.config.json.
  ********************************************/
-const { CryptoRpc } = require('crypto-rpc');
-const { TransactionStorage } = require('../build/src/models/transaction');
-const { CoinStorage } = require('../build/src/models/coin');
-const fs = require('fs');
+import fs from 'fs';
+import { CryptoRpc } from 'crypto-rpc';
+import Config from '../build/src/config';
+import { CoinStorage } from '../build/src/models/coin';
+import { TransactionStorage } from '../build/src/models/transaction';
+import { Storage } from '../build/src/services/storage';
+import { wait } from '../build/src/utils/wait';
+
 const fsPromises = fs.promises;
-const { Storage } = require('../build/src/services/storage');
-const { wait } = require('../build/src/utils/wait');
-const Config = require('../build/src/config');
 
 class Migration {
   constructor({ transactionModel = TransactionStorage, coinModel = CoinStorage } = {}) {
@@ -27,7 +29,7 @@ class Migration {
     this.coinModel = coinModel;
   }
   async connect() {
-    console.log("Attempting connection to the database...")
+    console.log('Attempting connection to the database...');
     try {
       if (!Storage.connected) {
         await Storage.start();
@@ -39,23 +41,23 @@ class Migration {
   }
 
   async endProcess() {
-    if (Storage.connected){
+    if (Storage.connected) {
       await Storage.stop();
     }
     process.exit();
   }
 
   processArgs(argv) {
-    let retArgs = {
+    const retArgs = {
       dryrun: true,
       chain: '',
       network: ''
     };
-    let args = argv.slice(2);
+    const args = argv.slice(2);
 
     const helpIdx = args.findIndex(i => i == '--help');
     if (helpIdx >= 0) {
-      console.log("Usage: node fixUnspentInputs.js --chain [CHAIN] --network [NETWORK] --dryrun [BOOL - default: true]");
+      console.log('Usage: node fixUnspentInputs.js --chain [CHAIN] --network [NETWORK] --dryrun [BOOL - default: true]');
       this.endProcess();
     }
 
@@ -65,8 +67,8 @@ class Migration {
         args[dryRunIdx + 1] == undefined || args[dryRunIdx + 1] == 'true'
           ? true
           : args[dryRunIdx + 1] == 'false'
-          ? false
-          : true;
+            ? false
+            : true;
     }
 
     const chainIdx = args.findIndex(i => i == '--chain');
@@ -80,7 +82,7 @@ class Migration {
     }
 
     if (!retArgs.chain || !retArgs.network) {
-      console.log("You must specify a chain and network for the script to run on. Use --help for more info.");
+      console.log('You must specify a chain and network for the script to run on. Use --help for more info.');
       this.endProcess();
     }
 
@@ -89,7 +91,7 @@ class Migration {
 
   async runScript(args) {
     console.log('Running script with these args: ', args);
-    let output = {};
+    const output = {};
     const { chain, network, dryrun } = args;
     console.log(`Checking records for ${chain}:${network}`);
     // Get all pending coins from valid transactions (mintHeight should be valid block height)
@@ -132,7 +134,7 @@ class Migration {
         });
         isUnspent = !!coinData;
       } catch (e) {
-        if (e.message && e.message.match(`No info found for ${data.mintTxid}`)){
+        if (e.message && e.message.match(`No info found for ${data.mintTxid}`)) {
           // Coin must be spent or actually pending in mempool - do nothing
         } else {
           // Lets log the error in case it is config related
@@ -163,7 +165,7 @@ class Migration {
     console.log(`Writing output to ${filename}`);
     try {
       await fsPromises.writeFile(filename, JSON.stringify(output));
-    } catch (e) {
+    } catch {
       // write to stdout
       console.log('Failed to write output to file. Writing to stdout instead.');
       console.log(output);
@@ -187,8 +189,8 @@ migration
   .catch(err => {
     console.error(err);
     migration.endProcess()
-    .catch(err => { 
-      console.error(err);
-      process.exit(1);
-    });
+      .catch(err => { 
+        console.error(err);
+        process.exit(1);
+      });
   });

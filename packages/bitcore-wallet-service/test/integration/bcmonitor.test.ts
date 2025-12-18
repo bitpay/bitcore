@@ -9,7 +9,7 @@ import { Constants } from '../../src/lib/common/constants';
 import helpers from './helpers';
 
 const should = chai.should();
-var storage, blockchainExplorer, blockchainExplorerEVM, bcmonitor;
+let storage, blockchainExplorer, blockchainExplorerEVM, bcmonitor;
 
 const socket = {
   handlers: {},
@@ -21,7 +21,7 @@ socket.on = function(eventName, handler) {
 
 describe('Blockchain monitor', function() {
   this.timeout(5000);
-  var server, wallet;
+  let server, wallet;
 
   before(async function() {
     const res = await helpers.before();
@@ -62,7 +62,7 @@ describe('Blockchain monitor', function() {
         return callbacks.onIncomingPayments({ out, txid: tx.txid });
       };
       // no uses in eth, interferes with btc
-      //socket.handlers['block'] =  callbacks.onBlock;
+      // socket.handlers['block'] =  callbacks.onBlock;
     };
   });
   after(async function() {

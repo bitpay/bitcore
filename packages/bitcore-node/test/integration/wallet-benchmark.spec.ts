@@ -18,91 +18,96 @@ import { createWallet } from '../benchmark/wallet-benchmark';
 import { resetDatabase } from '../helpers';
 import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
 
-const chain = 'BTC';
-const network = 'regtest';
-const chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
-const creds = chainConfig.rpc;
-const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
-
-async function checkWalletExists(pubKey, expectedAddress) {
-  // Check the database for the first wallet
-  const dbWallet = await WalletStorage.collection.findOne({
-    chain,
-    network,
-    pubKey
-  });
-
-  // Verify the addresses match
-  const foundAddresses = await WalletAddressStorage.collection
-    .find({
-      chain,
-      network,
-      wallet: dbWallet!._id
-    })
-    .toArray();
-  expect(foundAddresses.length).to.eq(1);
-  expect(foundAddresses[0].address).to.eq(expectedAddress);
-  return dbWallet;
-}
-
-async function getWalletUtxos(wallet: Wallet) {
-  const utxos = new Array<MongoBound<ICoin>>();
-  return new Promise<Array<MongoBound<ICoin>>>(resolve =>
-    wallet
-    .getUtxos()
-    .pipe(new ParseApiStream())
-    .on('data', (utxo: MongoBound<ICoin>) => {
-      utxos.push(utxo);
-    })
-    .on('end', () => resolve(utxos))
-  );
-}
-
-async function checkWalletUtxos(wallet: Wallet, expectedAddress: string) {
-  const utxos = await getWalletUtxos(wallet);
-  expect(utxos.length).to.eq(1);
-  expect(utxos[0].address).to.eq(expectedAddress);
-  return utxos;
-}
-
-async function verifyCoinSpent(coin: MongoBound<ICoin>, spentTxid: string, wallet: IWallet) {
-  const wallet1Coin = await CoinStorage.collection.findOne({ 
-    chain: coin.chain,
-    network: coin.network,
-    mintTxid: coin.mintTxid,
-    mintIndex: coin.mintIndex,
-  });
-  expect(wallet1Coin!.spentTxid).to.eq(spentTxid);
-  expect(wallet1Coin!.wallets[0].toHexString()).to.eq(wallet!._id!.toHexString());
-}
-async function checkWalletReceived(receivingWallet: IWallet, txid: string, address: string, sendingWallet: IWallet) {
-  const broadcastedOutput = await CoinStorage.collection.findOne({
-    chain,
-    network,
-    mintTxid: txid,
-    address
-  });
-
-  expect(broadcastedOutput!.address).to.eq(address);
-  expect(broadcastedOutput!.wallets.length).to.eq(1);
-  expect(broadcastedOutput!.wallets[0].toHexString()).to.eq(receivingWallet!._id!.toHexString());
-
-  const broadcastedTransaction = await TransactionStorage.collection.findOne({ chain, network, txid });
-  expect(broadcastedTransaction!.txid).to.eq(txid);
-  expect(broadcastedTransaction!.fee).gt(0);
-
-  const txWallets = broadcastedTransaction!.wallets.map(w => w.toHexString());
-  expect(txWallets.length).to.eq(2);
-  expect(txWallets).to.include(receivingWallet!._id!.toHexString());
-  expect(txWallets).to.include(sendingWallet!._id!.toHexString());
-}
 
 describe('Wallet Benchmark', function() {
+  const chain = 'BTC';
+  const network = 'regtest';
+  let chainConfig: IUtxoNetworkConfig;
+  let creds: IUtxoNetworkConfig['rpc'];
+  let rpc: AsyncRPC;
+  
+  async function checkWalletExists(pubKey, expectedAddress) {
+    // Check the database for the first wallet
+    const dbWallet = await WalletStorage.collection.findOne({
+      chain,
+      network,
+      pubKey
+    });
+  
+    // Verify the addresses match
+    const foundAddresses = await WalletAddressStorage.collection
+      .find({
+        chain,
+        network,
+        wallet: dbWallet!._id
+      })
+      .toArray();
+    expect(foundAddresses.length).to.eq(1);
+    expect(foundAddresses[0].address).to.eq(expectedAddress);
+    return dbWallet;
+  }
+  
+  async function getWalletUtxos(wallet: Wallet) {
+    const utxos = new Array<MongoBound<ICoin>>();
+    return new Promise<Array<MongoBound<ICoin>>>(resolve =>
+      wallet
+        .getUtxos()
+        .pipe(new ParseApiStream())
+        .on('data', (utxo: MongoBound<ICoin>) => {
+          utxos.push(utxo);
+        })
+        .on('end', () => resolve(utxos))
+    );
+  }
+  
+  async function checkWalletUtxos(wallet: Wallet, expectedAddress: string) {
+    const utxos = await getWalletUtxos(wallet);
+    expect(utxos.length).to.eq(1);
+    expect(utxos[0].address).to.eq(expectedAddress);
+    return utxos;
+  }
+  
+  async function verifyCoinSpent(coin: MongoBound<ICoin>, spentTxid: string, wallet: IWallet) {
+    const wallet1Coin = await CoinStorage.collection.findOne({ 
+      chain: coin.chain,
+      network: coin.network,
+      mintTxid: coin.mintTxid,
+      mintIndex: coin.mintIndex,
+    });
+    expect(wallet1Coin!.spentTxid).to.eq(spentTxid);
+    expect(wallet1Coin!.wallets[0].toHexString()).to.eq(wallet!._id!.toHexString());
+  }
+  async function checkWalletReceived(receivingWallet: IWallet, txid: string, address: string, sendingWallet: IWallet) {
+    const broadcastedOutput = await CoinStorage.collection.findOne({
+      chain,
+      network,
+      mintTxid: txid,
+      address
+    });
+  
+    expect(broadcastedOutput!.address).to.eq(address);
+    expect(broadcastedOutput!.wallets.length).to.eq(1);
+    expect(broadcastedOutput!.wallets[0].toHexString()).to.eq(receivingWallet!._id!.toHexString());
+  
+    const broadcastedTransaction = await TransactionStorage.collection.findOne({ chain, network, txid });
+    expect(broadcastedTransaction!.txid).to.eq(txid);
+    expect(broadcastedTransaction!.fee).gt(0);
+  
+    const txWallets = broadcastedTransaction!.wallets.map(w => w.toHexString());
+    expect(txWallets.length).to.eq(2);
+    expect(txWallets).to.include(receivingWallet!._id!.toHexString());
+    expect(txWallets).to.include(sendingWallet!._id!.toHexString());
+  }
+  
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(5000000);
   let p2pWorker: BitcoinP2PWorker;
 
-  before(async () => {
+  before(async function() {
+    chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+    creds = chainConfig.rpc;
+    rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
     await intBeforeHelper();
     await Event.start();
     await Api.start();
@@ -257,13 +262,13 @@ describe('Wallet Benchmark', function() {
     });
 
     it('should import all addresses and verify in database while below 300 mb of heapUsed memory', async () => {
-      let smallAddressBatch = new Array<string>();
-      let mediumAddressBatch = new Array<string>();
-      let largeAddressBatch = new Array<string>();
+      const smallAddressBatch = new Array<string>();
+      const mediumAddressBatch = new Array<string>();
+      const largeAddressBatch = new Array<string>();
 
       console.log('Generating small batch of addresses');
       for (let i = 0; i < 10; i++) {
-        let address = await rpc.getnewaddress('');
+        const address = await rpc.getnewaddress('');
         smallAddressBatch.push(address);
       }
 
@@ -271,14 +276,14 @@ describe('Wallet Benchmark', function() {
       expect(smallAddressBatch.length).to.deep.equal(10);
 
       for (let i = 0; i < 100; i++) {
-        let address = await rpc.getnewaddress('');
+        const address = await rpc.getnewaddress('');
         mediumAddressBatch.push(address);
       }
       expect(mediumAddressBatch.length).to.deep.equal(100);
 
       console.log('Generating large batch of addresses');
       for (let i = 0; i < 1000; i++) {
-        let address = await rpc.getnewaddress('');
+        const address = await rpc.getnewaddress('');
         largeAddressBatch.push(address);
       }
 
@@ -303,7 +308,7 @@ describe('Wallet Benchmark', function() {
 
       const smallAddresses = foundSmallAddressBatch.map(wa => wa.address);
 
-      for (let address of smallAddressBatch) {
+      for (const address of smallAddressBatch) {
         expect(smallAddresses.includes(address)).to.be.true;
       }
       expect(foundSmallAddressBatch.length).to.have.deep.equal(smallAddressBatch.length);
@@ -318,7 +323,7 @@ describe('Wallet Benchmark', function() {
 
       const mediumAddresses = foundMediumAddressBatch.map(wa => wa.address);
 
-      for (let address of mediumAddressBatch) {
+      for (const address of mediumAddressBatch) {
         expect(mediumAddresses.includes(address)).to.be.true;
       }
       expect(foundMediumAddressBatch.length).to.have.deep.equal(mediumAddressBatch.length);
@@ -333,7 +338,7 @@ describe('Wallet Benchmark', function() {
 
       const largeAddresses = foundLargeAddressBatch.map(wa => wa.address);
 
-      for (let address of largeAddressBatch) {
+      for (const address of largeAddressBatch) {
         expect(largeAddresses.includes(address)).to.be.true;
       }
       expect(foundLargeAddressBatch.length).to.have.deep.equal(largeAddressBatch.length);

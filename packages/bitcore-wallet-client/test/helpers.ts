@@ -1,10 +1,12 @@
 'use strict';
 // Node >= 17 started attempting to resolve all dns listings by ipv6 first, these lines are required to make it check ipv4 first
 import { setDefaultResultOrder } from 'dns';
+
 setDefaultResultOrder('ipv4first');
 
-import { singleton }from 'preconditions';
+import { singleton } from 'preconditions';
 import chai from 'chai';
+
 chai.config.includeStack = true;
 import sinon from 'sinon';
 import request from 'supertest';
@@ -45,7 +47,7 @@ export const helpers = {
     });
   },
   stubRequest: (err, res?) => {
-    var request = {
+    const request = {
       accept: sinon.stub(),
       set: sinon.stub(),
       query: sinon.stub(),
@@ -53,7 +55,7 @@ export const helpers = {
       timeout: sinon.stub(),
       end: sinon.stub().yields(err, res)
     };
-    var reqFactory = ['get', 'post', 'put', 'delete'].reduce((mem, verb) => {
+    const reqFactory = ['get', 'post', 'put', 'delete'].reduce((mem, verb) => {
       mem[verb] = url => {
         return request;
       };
@@ -64,10 +66,10 @@ export const helpers = {
   },
   generateUtxos: (scriptType, publicKeyRing, path, requiredSignatures, amounts) => {
     amounts = [].concat(amounts);
-    var utxos = amounts.map((amount, i) => {
-      var address = Utils.deriveAddress(scriptType, publicKeyRing, path, requiredSignatures, 'testnet', 'btc');
+    const utxos = amounts.map((amount, i) => {
+      const address = Utils.deriveAddress(scriptType, publicKeyRing, path, requiredSignatures, 'testnet', 'btc');
 
-      var scriptPubKey;
+      let scriptPubKey;
       switch (scriptType) {
         case Constants.SCRIPT_TYPES.P2WSH:
         case Constants.SCRIPT_TYPES.P2SH:
@@ -80,7 +82,7 @@ export const helpers = {
       }
       should.exist(scriptPubKey);
 
-      var obj = {
+      const obj = {
         txid: new Bitcore.crypto.Hash.sha256(Buffer.alloc(i)).toString('hex'),
         vout: 100,
         satoshis: helpers.toSatoshi(amount),
@@ -187,9 +189,9 @@ export const helpers = {
       // Return tampered data for every client in the list
       for (const client of clients) {
         client.request.doRequest = sinon
-            .stub()
-            .withArgs(method, url)
-            .resolves({ body: result });
+          .stub()
+          .withArgs(method, url)
+          .resolves({ body: result });
       }
       return cb();
     });
@@ -215,7 +217,7 @@ export const helpers = {
     extra = extra || '';
     mongodb.MongoClient.connect(config.mongoDb.uri + extra, (err, connection) => {
       if (err) return cb(err);
-      let db = connection.db(config.mongoDb.dbname + extra);
+      const db = connection.db(config.mongoDb.dbname + extra);
       db.dropDatabase(function(err) {
         return cb(err, db, connection);
       });
@@ -236,15 +238,15 @@ export const blockchainExplorerMock = {
     return cb(null, JSON.parse(JSON.stringify(blockchainExplorerMock.utxos)));
   },
   getAddressUtxos: (address, height, cb) => {
-    var selected = blockchainExplorerMock.utxos.filter(utxo => {
+    const selected = blockchainExplorerMock.utxos.filter(utxo => {
       return address.includes(utxo.address);
     });
 
     return cb(null, JSON.parse(JSON.stringify(selected)));
   },
   setUtxo: (address, amount, m, confirmations?) => {
-    var B = Bitcore_[address.coin];
-    var scriptPubKey;
+    const B = Bitcore_[address.coin];
+    let scriptPubKey;
     switch (address.type) {
       case Constants.SCRIPT_TYPES.P2SH:
         scriptPubKey = address.publicKeys ? B.Script.buildMultisigOut(address.publicKeys, m).toScriptHashOut() : '';
@@ -279,7 +281,7 @@ export const blockchainExplorerMock = {
 
     let hash;
     try {
-      let tx = new Bitcore.Transaction(raw);
+      const tx = new Bitcore.Transaction(raw);
       if (!tx.outputs.length) {
         throw 'no bitcoin';
       }
@@ -302,7 +304,7 @@ export const blockchainExplorerMock = {
     return cb();
   },
   getTransactions: (wallet, startBlock, cb) => {
-    var list = [].concat(blockchainExplorerMock.txHistory);
+    let list = [].concat(blockchainExplorerMock.txHistory);
     // -1 = mempool, always included in server' s v8.js
     list = list.filter(x => {
       return x.height >= startBlock || x.height == -1;
@@ -310,16 +312,16 @@ export const blockchainExplorerMock = {
     return cb(null, list);
   },
   getAddressActivity: (address, cb) => {
-    var activeAddresses = blockchainExplorerMock.utxos.map(u => u.address);
+    const activeAddresses = blockchainExplorerMock.utxos.map(u => u.address);
     return cb(null, activeAddresses.includes(address));
   },
   setFeeLevels: levels => {
     blockchainExplorerMock.feeLevels = levels;
   },
   estimateFee: (nbBlocks, cb) => {
-    var levels = {};
+    const levels = {};
     for (const nb of nbBlocks) {
-      var feePerKb = blockchainExplorerMock.feeLevels[nb];
+      const feePerKb = blockchainExplorerMock.feeLevels[nb];
       levels[nb] = typeof feePerKb === 'number' ? feePerKb / 1e8 : -1;
     }
 

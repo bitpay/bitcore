@@ -1,25 +1,25 @@
+import path from 'path';
 import * as async from 'async';
 import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
 import RateLimit from 'express-rate-limit';
 import _ from 'lodash';
-import path from 'path';
 import rp from 'request-promise-native';
 import 'source-map-support/register';
 import config from '../config';
 import * as Types from '../types/expressapp';
-import type { GetAddressesOpts } from '../types/server';
 import { Common } from './common';
 import { ClientError } from './errors/clienterror';
 import { Errors } from './errors/errordefinitions';
 import { logger, transport } from './logger';
-import { error } from './routes/helpers'
+import { error } from './routes/helpers';
 import { createWalletLimiter } from './routes/middleware/createWalletLimiter';
 import { LogMiddleware } from './routes/middleware/log';
 import { TssRouter } from './routes/tss';
 import { WalletService } from './server';
 import { Stats } from './stats';
+import type { GetAddressesOpts } from '../types/server';
 
 const Defaults = Common.Defaults;
 const Utils = Common.Utils;
@@ -88,8 +88,8 @@ export class ExpressApp {
     this.app.use((req, res, next) => {
       if (config.maintenanceOpts.maintenanceMode === true) {
         // send a 503 error, with a message to the bitpay status page
-        let errorCode = 503;
-        let errorMessage = 'BWS down for maintenance';
+        const errorCode = 503;
+        const errorMessage = 'BWS down for maintenance';
         res.status(503).send({ code: errorCode, message: errorMessage });
       } else {
         next();
@@ -137,7 +137,7 @@ export class ExpressApp {
       };
     };
 
-    const getServer: Types.GetServerFn = (req, res) => {
+    const getServer: Types.GetServerFn = (req, _res) => {
       const opts = {
         clientVersion: req.header('x-client-version'),
         userAgent: req.header('user-agent')
@@ -261,7 +261,7 @@ export class ExpressApp {
       SetPublicCache(res, 10 * ONE_MINUTE);
       try {
         res.setHeader('User-Agent', 'copay');
-        var options = {
+        const options = {
           uri: 'https://api.github.com/repos/bitpay/wallet/releases/latest',
           headers: {
             'User-Agent': 'Copay'
@@ -288,7 +288,7 @@ export class ExpressApp {
               try {
                 const htmlString = await rp(options);
                 if (htmlString['tag_name']) {
-                  server.storage.storeGlobalCache('latest-copay-version', htmlString['tag_name'], err => {
+                  server.storage.storeGlobalCache('latest-copay-version', htmlString['tag_name'], () => {
                     res.json({ version: htmlString['tag_name'] });
                   });
                 }
@@ -443,18 +443,18 @@ export class ExpressApp {
             promise.then(
               (server: WalletService) =>
                 new Promise(resolve => {
-                  let options: any = buildOpts(req, server.copayerId);
+                  const options: any = buildOpts(req, server.copayerId);
                   if (options.tokenAddresses) {
                     // add a null entry to array so we can get the chain balance
                     options.tokenAddresses.unshift(null);
                     return async.concat(
                       options.tokenAddresses,
                       (tokenAddress, cb) => {
-                        let optsClone = JSON.parse(JSON.stringify(options));
+                        const optsClone = JSON.parse(JSON.stringify(options));
                         optsClone.tokenAddresses = null;
                         optsClone.tokenAddress = tokenAddress;
                         return server.getStatus(optsClone, (err, status) => {
-                          let result: any = {
+                          const result: any = {
                             walletId: server.walletId,
                             tokenAddress: optsClone.tokenAddress,
                             success: true,
@@ -488,11 +488,11 @@ export class ExpressApp {
                 }),
               ({ message }) => Promise.resolve({ success: false, error: message })
             )
-            .catch(err => {
-              if (!silentFailure) {
-                returnError(err, res, req);
-              }
-            })
+              .catch(err => {
+                if (!silentFailure) {
+                  returnError(err, res, req);
+                }
+              })
           )
         );
       } catch (err) {
@@ -616,7 +616,7 @@ export class ExpressApp {
 
     router.get('/v1/advertisements/', (req, res) => {
       let server: WalletService;
-      let testing = req.query.testing;
+      const testing = req.query.testing;
 
       try {
         server = getServer(req, res);
@@ -647,7 +647,7 @@ export class ExpressApp {
         return returnError(ex, res, req);
       }
 
-      let opts = { adId: req.params['adId'] };
+      const opts = { adId: req.params['adId'] };
 
       if (req.params['adId']) {
         server.getAdvert(opts, (err, ad) => {
@@ -659,9 +659,9 @@ export class ExpressApp {
 
     router.get('/v1/advertisements/country/:country', (req, res) => {
       let server: WalletService;
-      let country = req.params['country'];
+      const country = req.params['country'];
 
-      let opts = { country };
+      const opts = { country };
 
       try {
         server = getServer(req, res);
@@ -676,7 +676,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/advertisements/:adId/activate', (req, res) => {
-      let opts = { adId: req.params['adId'] };
+      const opts = { adId: req.params['adId'] };
 
       getServerWithAuth(
         req,
@@ -686,7 +686,7 @@ export class ExpressApp {
         },
         server => {
           if (req.params['adId']) {
-            server.activateAdvert(opts, (err, ad) => {
+            server.activateAdvert(opts, (err, _ad) => {
               if (err) returnError(err, res, req);
               res.json({ advertisementId: opts.adId, message: 'advert activated' });
             });
@@ -696,7 +696,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/advertisements/:adId/deactivate', (req, res) => {
-      let opts = { adId: req.params['adId'] };
+      const opts = { adId: req.params['adId'] };
 
       getServerWithAuth(
         req,
@@ -706,7 +706,7 @@ export class ExpressApp {
         },
         server => {
           if (req.params['adId']) {
-            server.deactivateAdvert(opts, (err, ad) => {
+            server.deactivateAdvert(opts, (err, _ad) => {
               if (err) returnError(err, res, req);
               res.json({ advertisementId: opts.adId, message: 'advert deactivated' });
             });

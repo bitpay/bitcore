@@ -13,6 +13,12 @@ executors:
       - DB_NAME: bitcore-test
       - DB_PORT: 7357
       - BITCORE_CONFIG_PATH: ~/bitcore/bitcore-test.config.json
+  crypto-rpc:
+    machine:
+      image: default
+      docker_layer_caching: true
+    resource_class: large
+    working_directory: ~/bitcore
 
 commands:
   create_concatenated_package_lock:
@@ -70,6 +76,17 @@ commands:
             nvm use default
             npm run compile
             npm run test:<< parameters.package >>
+  run_crypto_rpc:
+    description: Execute the test suite for crypto-rpc package
+    steps:
+      - attach_workspace:
+          at: ~/bitcore # ~/bitcore is the crypto-rpc package persisted from build-crypto-rpc job
+      - use_node
+      - run:
+          name: Run crypto-rpc tests
+          command: |
+            nvm use default
+            npm run test:ci
 
 
 jobs:
@@ -116,9 +133,25 @@ jobs:
             - packages/bitcore-wallet-client/node_modules
             - packages/bitcore-wallet-service/node_modules
             - packages/crypto-wallet-core/node_modules
+            - packages/crypto-rpc/node_modules
             - packages/insight/node_modules
       - persist_to_workspace:
           root: ~/bitcore
+          paths:
+            - .
+  build-crypto-rpc:
+    executor: crypto-rpc
+    steps:
+      - checkout
+      - use_python2
+      - use_node
+      # - restore_dependency_cache
+      - run: | # TODO figure out how to make this only run on a cache miss in restore_dependency_cache
+          nvm use default
+          cd packages/crypto-rpc
+          npm install
+      - persist_to_workspace:
+          root: ~/bitcore/packages/crypto-rpc # only persist crypto-rpc package
           paths:
             - .
   bitcore-node:
@@ -186,12 +219,17 @@ jobs:
     steps:
       - run_test:
           package: bitcore-tss
+  crypto-rpc:
+    executor: crypto-rpc
+    steps:
+      - run_crypto_rpc
       
 workflows:
   version: 2
   build_and_test:
     jobs:
       - build
+      - build-crypto-rpc
       - bitcore-node:
           requires:
             - build
@@ -231,3 +269,6 @@ workflows:
       - bitcore-cli:
           requires:
             - build
+      - crypto-rpc:
+          requires:
+            - build-crypto-rpc

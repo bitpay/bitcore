@@ -75,7 +75,7 @@ export const Utils = {
     args = args || [];
     if (!Array.isArray(args)) args = [args];
     if (!Utils.isObject(obj)) return args;
-    const missing = args.filter(arg => !obj.hasOwnProperty(arg));
+    const missing = args.filter(arg => !Object.hasOwn(obj, arg));
     return missing;
   },
 
@@ -191,8 +191,8 @@ export const Utils = {
     }
 
     const u = Object.assign({}, UNITS[unit], opts);
-    var decimals = opts.decimals ? opts.decimals : u;
-    var toSatoshis = opts.toSatoshis ? opts.toSatoshis : u.toSatoshis;
+    const decimals = opts.decimals ? opts.decimals : u;
+    const toSatoshis = opts.toSatoshis ? opts.toSatoshis : u.toSatoshis;
 
     const amount = (satoshis / toSatoshis).toFixed(decimals.maxDecimals);
     return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', decimals.minDecimals);
@@ -300,19 +300,19 @@ export const Utils = {
     try {
       new Bitcore_['btc'].Address(address);
       return 'btc';
-    } catch (e) {
+    } catch {
       try {
         new Bitcore_['bch'].Address(address);
         return 'bch';
-      } catch (e) {
+      } catch {
         try {
           new Bitcore_['doge'].Address(address);
           return 'doge';
-        } catch (e) {
+        } catch {
           try {
             new Bitcore_['ltc'].Address(address);
             return 'ltc';
-          } catch (e) {
+          } catch {
             return;
           }
         }
@@ -360,7 +360,7 @@ export const Utils = {
       return 'mainnet';
     }
     if (network === 'regtest') {
-       return 'regtest';
+      return 'regtest';
     }
     return 'testnet';
   },
@@ -402,15 +402,15 @@ export const Utils = {
     };
 
     if (!keys.length) {
-      return arr.sort((a, b) => { const [_a, _b] = transformVals(a, b); return _a.compare(_b) });
+      return arr.sort((a, b) => { const [_a, _b] = transformVals(a, b); return _a.compare(_b); });
     } else if (keys.length === 1 && !Array.isArray(keys[0])) {
-      return arr.sort((a, b) => { const [_a, _b] = transformVals(a[keys[0]], b[keys[0]]); return _a.compare(_b) });
+      return arr.sort((a, b) => { const [_a, _b] = transformVals(a[keys[0]], b[keys[0]]); return _a.compare(_b); });
     }
     return arr.sort((a, b) => {
       // compare concatenated strings for multiple key sorting
       let aVal = '';
       let bVal = '';
-      for (let k of keys) {
+      for (const k of keys) {
         const [aTemp, bTemp] = transformVals(
           Array.isArray(k) ? k.reduce((val, key) => val[key], a) : a[k],
           Array.isArray(k) ? k.reduce((val, key) => val[key], b) : b[k]
@@ -457,7 +457,7 @@ export const Utils = {
     const retval: Partial<T> = {};
     if (!obj) return retval;
     for (const key of keys) {
-      if (obj.hasOwnProperty(key)) {
+      if (Object.hasOwn(obj as object, key)) {
         retval[key] = obj[key];
       }
     }

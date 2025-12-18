@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 
+import * as readline from 'readline';
+import Config from '../build/src/config';
+import { BitcoinBlockStorage } from '../build/src/models/block';
+import { BitcoinP2PWorker } from '../build/src/modules/bitcoin/p2p';
+import { Storage } from '../build/src/services/storage';
 
-const { Storage } = require('../build/src/services/storage');
-const { BitcoinBlockStorage } = require('../build/src/models/block');
-const Config = require('../build/src/config');
-const { BitcoinP2PWorker } = require('../build/src/modules/bitcoin/p2p');
-
-const rl = require('readline').createInterface({ input: process.stdin, output: process.stdout });
-
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
 function usage(errMsg) {
   console.log('USAGE: ./addGenesisBlock.js [options]');
@@ -35,7 +34,7 @@ if (!['BTC', 'BCH', 'DOGE', 'LTC'].includes(chain) || !['mainnet', 'testnet', 'r
 
 const real = !!args.find(a => a === '--real');
 console.log('Real:', real);
-real && console.log('~~~~ REAL RUN ~~~~');
+if (real) console.log('~~~~ REAL RUN ~~~~');
 
 let p2pWorker;
 
@@ -79,7 +78,8 @@ Storage.start()
         network
       });
       const cnt = await BitcoinBlockStorage.collection.countDocuments({ chain, network, height: 0 });
-      cnt == 1 ? console.log('Genesis block added') : console.log(`Somethings wrong. There are ${cnt} genesis blocks in the db`);
+      if (cnt == 1) console.log('Genesis block added');
+      else console.log(`Somethings wrong. There are ${cnt} genesis blocks in the db`);
     } else {
       console.log('Dry run. Genesis block not added.');
     }
@@ -89,4 +89,4 @@ Storage.start()
     rl.close();
     p2pWorker?.disconnect();
     Storage.stop();
-  })
+  });

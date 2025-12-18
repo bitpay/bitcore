@@ -1,5 +1,4 @@
 import BN from 'bn.js';
-
 import { Binary } from 'mongodb';
 import { ITransaction } from '../../../models/baseTransaction';
 import { IBlock } from '../../../types/Block';
@@ -162,17 +161,17 @@ export type IEVMTransaction = ITransaction & {
   transactionIndex: number;
   error?: string;
   receipt?: TxReceipt;
-  effects?: Effect[] // Meant to replace abiType, internal, calls and data on stored txs
+  effects?: Effect[]; // Meant to replace abiType, internal, calls and data on stored txs
   confirmations?: number;
 };
 
 export interface Effect {
-  to: string,
-  from: string,
-  amount: string,
-  type?: 'ERC20:transfer' | 'MULTISIG:submitTransaction' | 'MULTISIG:confirmTransaction' // These are the only txs types we care about
-  contractAddress?: string,
-  callStack?: string
+  to: string;
+  from: string;
+  amount: string;
+  type?: 'ERC20:transfer' | 'MULTISIG:submitTransaction' | 'MULTISIG:confirmTransaction'; // These are the only txs types we care about
+  contractAddress?: string;
+  callStack?: string;
 }
 
 export type IEVMTransactionInProcess = IEVMTransaction & {
@@ -226,7 +225,7 @@ export type DecodedTrace = ClassifiedTrace & {
 };
 
 export interface ParsedAbiParams {
-  [key: string]: string
+  [key: string]: string;
 }
 
 export interface EVMTransactionJSON {
@@ -263,12 +262,11 @@ export interface EventLog<T> {
   blockNumber: number;
   raw?: { data: string; topics: any[] };
 }
-export interface ERC20Transfer
-  extends EventLog<{
-    [key: string]: string;
-  }> {}
+export type ERC20Transfer = EventLog<{
+  [key: string]: string;
+}>
 
-  export interface IEVMCachedAddress {
-    address: string;
-    tokenAddress?: string;
-  }
+export interface IEVMCachedAddress {
+  address: string;
+  tokenAddress?: string;
+}

@@ -148,7 +148,7 @@ export class SolChain implements IChain {
     return tx;
   }
 
-  addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub) {
+  addSignaturesToBitcoreTx(tx, _inputs, _inputPaths, signatures, _xpub) {
     if (signatures.length === 0) {
       throw new Error('Signatures Required');
     }
@@ -181,7 +181,7 @@ export class SolChain implements IChain {
       if (err) return cb(err);
       const { availableAmount } = balance;
       const sigs = opts.numSignatures || 1;
-      const fee = sigs * Defaults.SOL_BASE_FEE
+      const fee = sigs * Defaults.SOL_BASE_FEE;
       return cb(null, {
         utxosBelowFee: 0,
         amountBelowFee: 0,
@@ -197,7 +197,7 @@ export class SolChain implements IChain {
       if (
         output.amount == null ||
         output.amount < 0 ||
-        isNaN(output.amount)  ||
+        isNaN(output.amount) ||
         Web3.utils.toBN(BigInt(output.amount).toString()).toString() !== BigInt(output.amount).toString()
       ) {
         logger.warn('output.amount is not a valid value: ' + output.amount);
@@ -212,7 +212,7 @@ export class SolChain implements IChain {
 
   checkTx(txp) {
     try {
-      const tx = this.getBitcoreTx(txp);
+      this.getBitcoreTx(txp);
     } catch (ex) {
       logger.debug('Error building Bitcore transaction: %o', ex);
       return ex;
@@ -327,9 +327,9 @@ export class SolChain implements IChain {
 
   checkDust(_output, _opts) { }
 
-  checkScriptOutput(output) { }
+  checkScriptOutput(_output) { }
 
-  onCoin(coin) {
+  onCoin(_coin) {
     return null;
   }
 
@@ -341,9 +341,9 @@ export class SolChain implements IChain {
     return cb();
   }
 
-  checkUtxos(opts) { }
+  checkUtxos(_opts) { }
 
-  onTx(tx) {
+  onTx(_tx) {
     return null;
   }
 }

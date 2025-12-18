@@ -1,5 +1,5 @@
-import request from 'superagent';
 import util from 'util';
+import request from 'superagent';
 import Package from '../../package.json';
 import { Utils } from './common';
 import { Credentials } from './credentials';
@@ -45,7 +45,7 @@ export class Request<CredT = Credentials> {
   }
 
   getHeaders(method: string, url: string, args: any, useSession?: boolean): Headers {
-    var headers = {
+    const headers = {
       'x-client-version': 'bwc-' + Package.version
     };
     if (this.supportStaffWalletId) {
@@ -116,9 +116,9 @@ export class Request<CredT = Credentials> {
     /** @deprecated */
     cb?: RequestCallback
   ): Promise<RequestResponse<ResBodyT>> {
-    var headers = this.getHeaders(method, url, args, useSession);
+    const headers = this.getHeaders(method, url, args, useSession);
 
-    var r = this.r[method](this.baseUrl + url);
+    const r = this.r[method](this.baseUrl + url);
     r.accept('json');
 
     for (const [k, v] of Object.entries(headers)) {
@@ -182,7 +182,7 @@ export class Request<CredT = Credentials> {
     if (typeof body === 'string') {
       try {
         body = JSON.parse(body);
-      } catch (e) {
+      } catch {
         body = {
           error: body
         };

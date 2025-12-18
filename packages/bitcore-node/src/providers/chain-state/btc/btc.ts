@@ -17,7 +17,7 @@ export class BTCStateProvider extends InternalStateProvider {
       cacheKey,
       async () => {
         const rpcEstimate = await this.getRPC(chain, network).getEstimateSmartFee(Number(target), mode) as SmartFeeResponse;
-        let estimates = (await Promise.allSettled([
+        const estimates = (await Promise.allSettled([
           FeeProviders.BlockCypher.getFee(network as NetworkType, target),
           FeeProviders.MempoolSpace.getFee(network as NetworkType, target),
           FeeProviders.Bitgo.getFee(network as NetworkType, target),

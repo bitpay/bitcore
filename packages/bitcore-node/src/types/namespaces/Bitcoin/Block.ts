@@ -1,4 +1,5 @@
 import { BitcoinTransactionType } from './Transaction';
+
 export interface BlockHeaderObj {
   prevHash: string;
   hash: string;

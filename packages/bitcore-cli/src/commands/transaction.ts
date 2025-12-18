@@ -1,6 +1,6 @@
 import os from 'os';
 import * as prompt from '@clack/prompts';
-import { type Txp } from 'bitcore-wallet-client'; 
+import { Utils as BWCUtils, type Txp } from 'bitcore-wallet-client'; 
 import { Validation } from 'crypto-wallet-core';
 import { UserCancelled } from '../errors';
 import { Utils } from '../utils';
@@ -66,6 +66,10 @@ export async function createTransaction(
     Object.assign(opts, command(args));
   }
 
+  if (wallet.isReadOnly()) {
+    throw new Error('Read-only wallets cannot create transactions');
+  }
+
   let tokenObj: ITokenObj;
   if (opts.token || opts.tokenAddress) {
     tokenObj = await wallet.getToken(opts);
@@ -73,13 +77,14 @@ export async function createTransaction(
       throw new Error(`Unknown token "${opts.tokenAddress || opts.token}" on ${chain}:${network}`);
     }
   }
+  const nativeCurrency = (await wallet.getNativeCurrency(true)).displayCode;
 
   if (!status) {
     status = await wallet.client.getStatus({ tokenAddress: tokenObj?.contractAddress });
   }
 
   const { balance } = status;
-  const currency = tokenObj?.displayCode || chain.toUpperCase();
+  const currency = tokenObj?.displayCode || nativeCurrency;
   const availableAmount = Utils.amountFromSats(chain, balance.availableAmount, tokenObj);
 
   if (!balance.availableAmount) {
@@ -89,8 +94,7 @@ export async function createTransaction(
 
 
   const to = opts.to || await prompt.text({
-    message: 'Enter the recipient address:',
-    placeholder: 'e.g. n2HRFgtoihgAhx1qAEXcdBMjoMvAx7AcDc',
+    message: 'Enter the recipient\'s address:',
     validate: (value) => {
       if (!Validation.validateAddress(chain, network, value)) {
         return `Invalid address for ${chain}:${network}`;
@@ -121,7 +125,7 @@ export async function createTransaction(
       if (isNaN(val) || val <= 0) {
         return 'Please enter a valid amount greater than 0';
       }
-      if (val > availableAmount) {
+      if (val > Number(availableAmount)) {
         return 'You cannot send more than your balance';
       }
       return; // valid value
@@ -178,6 +182,9 @@ export async function createTransaction(
     });
     if (prompt.isCancel(customFeeRate)) {
       throw new UserCancelled();
+    }
+    if (BWCUtils.isUtxoChain(chain)) {
+      customFeeRate = (Number(customFeeRate) * 1000).toString(); // convert to sats/KB
     }
   }
 

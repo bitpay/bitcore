@@ -11,6 +11,7 @@ import { ChainNetwork } from '../../types/ChainNetwork';
 import { AuthheadJSON } from '../Authhead';
 import { CoinListingJSON } from '../Coin';
 import { DailyTransactionsJSON } from '../stats';
+
 export type StreamWalletTransactionsArgs = {
   startBlock: number;
   endBlock: number;
@@ -220,5 +221,5 @@ export interface IChainStateService {
 export interface ChainStateServices {
   [chain: string]: {
     [network: string]: IChainStateService;
-  }
+  };
 }

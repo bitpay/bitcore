@@ -10,47 +10,49 @@ import { unprocessedEthBlocks } from '../../data/ETH/unprocessedBlocksETH';
 import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
-async function makeMempoolTxChain(chain: string, network: string, startingTxid: string, chainLength = 1) {
-  let txid = startingTxid;
-  let nextTxid = crypto
-    .createHash('sha256')
-    .update(txid + 1)
-    .digest()
-    .toString('hex');
-  let allTxids = new Array<string>();
-  for (let i = 1; i <= chainLength; i++) {
-    const badMempoolTx = {
-      chain,
-      network,
-      blockHeight: -1,
-      txid
-    };
-    const badMempoolOutputs = {
-      chain,
-      network,
-      mintHeight: -1,
-      mintTxid: txid,
-      spentTxid: i != chainLength ? nextTxid : '',
-      mintIndex: 0,
-      spentHeight: -1
-    };
+describe('Transaction Model', function() {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
+  const suite = this;
+  this.timeout(30000);
 
-    await TransactionStorage.collection.insertOne(badMempoolTx as IBtcTransaction);
-    await CoinStorage.collection.insertOne(badMempoolOutputs as ICoin);
-    allTxids.push(txid);
-    txid = nextTxid;
-    nextTxid = crypto
+  async function makeMempoolTxChain(chain: string, network: string, startingTxid: string, chainLength = 1) {
+    let txid = startingTxid;
+    let nextTxid = crypto
       .createHash('sha256')
       .update(txid + 1)
       .digest()
       .toString('hex');
-  }
-  return allTxids;
-}
+    const allTxids = new Array<string>();
+    for (let i = 1; i <= chainLength; i++) {
+      const badMempoolTx = {
+        chain,
+        network,
+        blockHeight: -1,
+        txid
+      };
+      const badMempoolOutputs = {
+        chain,
+        network,
+        mintHeight: -1,
+        mintTxid: txid,
+        spentTxid: i != chainLength ? nextTxid : '',
+        mintIndex: 0,
+        spentHeight: -1
+      };
 
-describe('Transaction Model', function() {
-  const suite = this;
-  this.timeout(30000);
+      await TransactionStorage.collection.insertOne(badMempoolTx as IBtcTransaction);
+      await CoinStorage.collection.insertOne(badMempoolOutputs as ICoin);
+      allTxids.push(txid);
+      txid = nextTxid;
+      nextTxid = crypto
+        .createHash('sha256')
+        .update(txid + 1)
+        .digest()
+        .toString('hex');
+    }
+    return allTxids;
+  }
+
   before(intBeforeHelper);
   after(async () => intAfterHelper(suite));
 
@@ -227,14 +229,14 @@ describe('Transaction Model', function() {
 
     it('should update eth transactions with related wallet id correctly (incoming)', async () => {
       const block = unprocessedEthBlocks[0] as any; // block containing an eth transfer to 0x3Ec3dA6E14BE9518A9a6e92DdCC6ACfF2CEFf4ef
-      await EVMTransactionStorage.batchImport({...block});
+      await EVMTransactionStorage.batchImport({ ...block });
       const walletTxs = await EVMTransactionStorage.collection.find({ chain, network, wallets: wallet }).toArray();
       expect(walletTxs.length).eq(1);
     });
 
     it('should update erc20 transactions with related wallet id correctly (incoming)', async () => {
       const block = unprocessedEthBlocks[1] as any; // block containing an ERC20 transfer to 0x3Ec3dA6E14BE9518A9a6e92DdCC6ACfF2CEFf4ef
-      await EVMTransactionStorage.batchImport({...block});
+      await EVMTransactionStorage.batchImport({ ...block });
       const walletTxs = await EVMTransactionStorage.collection.find({ chain, network, wallets: wallet }).toArray();
       expect(walletTxs.length).eq(1);
     });

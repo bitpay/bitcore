@@ -87,7 +87,7 @@ export function expectObjectToHaveProps(obj: any, props: Record<string, string>)
 export function testCoin (coin) {
   expect(coin, 'coin is undefined').to.exist;
   expect(coin, 'coin is not an object').to.be.an('object');
-  expect(coin, 'coin test').to.have.property('chain').that.is.a('string', `coin.chain is not a string`);
+  expect(coin, 'coin test').to.have.property('chain').that.is.a('string', 'coin.chain is not a string');
   expect(coin, 'coin test').to.have.property('network').that.is.a('string', 'coin.network is not a string');
   expect(coin, 'coin test').to.have.property('mintIndex').that.is.a('number', 'coin.mintIndex is not a number');
   expect(coin, 'coin test').to.have.property('mintTxid').that.is.a('string', 'coin.mintTxid is not a string');

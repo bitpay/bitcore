@@ -104,7 +104,7 @@ export class Client {
     });
   }
 
-  async getTransaction(params: { txid: string, populated?: boolean }) {
+  async getTransaction(params: { txid: string; populated?: boolean }) {
     const { txid, populated } = params;
     const url = `${this.apiUrl}/tx/${txid}${populated ? '/populated' : ''}`;
     return this._request({ method: 'GET', url, json: true });

@@ -60,7 +60,7 @@ describe('BlockChain explorer', function() {
         network: 'livenet',
       });
       should.exist(exp);
-      exp.register //...TODO
+      exp.register; // ...TODO
     });
   });
 });

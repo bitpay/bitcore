@@ -23,6 +23,7 @@ export async function registerWallet(args: CommonArgs) {
     Object.assign(opts, command(args));
   }
 
-  await wallet.register({ copayerName: wallet.client.credentials.copayerName });
+  const copayerName = wallet.client.credentials.copayerName || process.env.USER || 'copayer';
+  await wallet.register({ copayerName });
   prompt.log.success('Wallet registered');
 };

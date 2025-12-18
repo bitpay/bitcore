@@ -1,14 +1,13 @@
+import { BitcoreLib as bitcoreLib } from 'crypto-wallet-core';
 import { Request, Response } from 'express';
 import { RequestHandler } from 'express-serve-static-core';
+import secp256k1 from 'secp256k1';
 import logger from '../logger';
 import { MongoBound } from '../models/base';
 import { IWallet } from '../models/wallet';
 import { ChainStateProvider } from '../providers/chain-state';
 import { Config } from '../services/config';
 import { ChainNetwork } from '../types/ChainNetwork';
-
-const secp256k1 = require('secp256k1');
-const bitcoreLib = require('bitcore-lib');
 
 export interface VerificationPayload {
   message: string;
@@ -42,7 +41,7 @@ const authenticateMiddleware: RequestHandler = async (req: Request, res: Respons
   let wallet;
   try {
     wallet = await ChainStateProvider.getWallet({ chain, network, pubKey });
-  } catch (err) {
+  } catch {
     return res.status(500).send('Problem authenticating wallet');
   }
   try {

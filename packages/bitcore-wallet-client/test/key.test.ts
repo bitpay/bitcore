@@ -15,11 +15,11 @@ describe('Key', function() {
     });
 
     it('Should create random keys', function() {
-      var all = {};
-      for (var i = 0; i < 10; i++) {
+      const all = {};
+      for (let i = 0; i < 10; i++) {
         const key = new Key();
         const c = key.get();
-        var exist = all[c.xPrivKey];
+        const exist = all[c.xPrivKey];
         should.not.exist(exist);
         all[c.xPrivKey] = 1;
       }
@@ -109,8 +109,8 @@ describe('Key', function() {
     });
 
     it("Shouldn't match", function() {
-      var c = new Key();
-      var c2 = new Key();
+      const c = new Key();
+      const c2 = new Key();
       Key.match(c, c2).should.equal(false);
     });
   });
@@ -154,9 +154,9 @@ describe('Key', function() {
         should.not.exist(c.mnemonic);
       });
       it('should fail to encrypt private key if already encrypted', function() {
-        var c = new Key({ seedType: 'new' });
+        const c = new Key({ seedType: 'new' });
         c.encrypt('password');
-        var err;
+        let err;
         try {
           c.encrypt('password');
         } catch (ex) {
@@ -212,23 +212,23 @@ describe('Key', function() {
     describe('#getKeys', function() {
       it('should get keys regardless of encryption', function() {
         const k = new Key();
-        var keys = k.get();
+        const keys = k.get();
         should.exist(keys.xPrivKey);
         should.exist(keys.mnemonic);
 
-        let o = k.toObj();
+        const o = k.toObj();
         keys.xPrivKey.should.equal(o.xPrivKey);
         keys.mnemonic.should.equal(o.mnemonic);
 
         k.encrypt('password');
         k.isPrivKeyEncrypted().should.be.true;
-        var keys2 = k.get('password');
+        const keys2 = k.get('password');
         should.exist(keys2);
         keys2.should.deep.equal(keys);
 
         k.decrypt('password');
         k.isPrivKeyEncrypted().should.be.false;
-        var keys3 = k.get();
+        const keys3 = k.get();
         should.exist(keys3);
         keys3.should.deep.equal(keys);
       });
@@ -256,7 +256,7 @@ describe('Key', function() {
   describe('#fromExtendedPrivateKey', function() {
     it('Should create credentials from seed', function() {
       const xPriv = 'xprv9s21ZrQH143K2TjT3rF4m5AJcMvCetfQbVjFEx1Rped8qzcMJwbqxv21k3ftL69z7n3gqvvHthkdzbW14gxEFDYQdrRQMub3XdkJyt3GGGc';
-      const k = new Key({ seedType:'extendedPrivateKey', seedData: xPriv});
+      const k = new Key({ seedType: 'extendedPrivateKey', seedData: xPriv });
       const c = k.createCredentials(null, {
         coin: 'btc',
         network: 'livenet',
@@ -276,7 +276,7 @@ describe('Key', function() {
     it('Should create credentials from seed and walletPrivateKey', function() {
       const xPriv = 'xprv9s21ZrQH143K2TjT3rF4m5AJcMvCetfQbVjFEx1Rped8qzcMJwbqxv21k3ftL69z7n3gqvvHthkdzbW14gxEFDYQdrRQMub3XdkJyt3GGGc';
       const wKey = 'a28840e18650b1de8cb83bcd2213672a728be38a63e70680b0c2be9c452e2d4d';
-      const k = new Key({ seedType: 'extendedPrivateKey', seedData:xPriv });
+      const k = new Key({ seedType: 'extendedPrivateKey', seedData: xPriv });
       const c = k.createCredentials(null, {
         coin: 'btc',
         network: 'livenet',
@@ -292,7 +292,7 @@ describe('Key', function() {
     describe('Compliant derivation', function() {
       it('Should create compliant base address derivation key', function() {
         const xPriv = 'xprv9s21ZrQH143K4HHBKb6APEoa5i58fxeFWP1x5AGMfr6zXB3A6Hjt7f9LrPXp9P7CiTCA3Hk66cS4g8enUHWpYHpNhtufxSrSpcbaQyVX163';
-        const k = new Key({ seedType: 'extendedPrivateKey', seedData:xPriv });
+        const k = new Key({ seedType: 'extendedPrivateKey', seedData: xPriv });
         const c = k.createCredentials(null, {
           coin: 'btc',
           network: 'livenet',
@@ -304,7 +304,7 @@ describe('Key', function() {
 
       it('Should create compliant request key', function() {
         const xPriv = 'xprv9s21ZrQH143K3xMCR1BNaUrTuh1XJnsj8KjEL5VpQty3NY8ufgbR8SjZS8B4offHq6Jj5WhgFpM2dcYxeqLLCuj1wgMnSfmZuPUtGk8rWT7';
-        const k = new Key({ seedType: 'extendedPrivateKey', seedData:xPriv });
+        const k = new Key({ seedType: 'extendedPrivateKey', seedData: xPriv });
         const c = k.createCredentials(null, {
           coin: 'btc',
           network: 'livenet',
@@ -316,7 +316,7 @@ describe('Key', function() {
 
       it('should accept non-compliant derivation as a parameter when importing', function() {
         const xPriv = 'tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k';
-        const k = new Key({ seedType: 'extendedPrivateKey', seedData:xPriv,   nonCompliantDerivation: true });
+        const k = new Key({ seedType: 'extendedPrivateKey', seedData: xPriv, nonCompliantDerivation: true });
         const c = k.createCredentials(null, {
           coin: 'btc',
           network: 'testnet',
@@ -346,13 +346,13 @@ describe('Key', function() {
       xpk.should.equal('xprv9yaGCLKPS2ovEGw987MZr4DCkfZHGh518ndVk3Jb6eiUdPwCQu7nYru59WoNkTEQvmhnv5sPbYxeuee5k8QASWRnGV2iFX4RmKXEQse8KnQ');
     });
     it('should derive compliant child', function() {
-      const k = new Key({ seedType: 'extendedPrivateKey', seedData: 'tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k'});
+      const k = new Key({ seedType: 'extendedPrivateKey', seedData: 'tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k' });
       k.compliantDerivation.should.be.true;
       const xpk = k.derive(null, "m/44'/1'/0'").toString();
       xpk.should.equal('tprv8gXvQvjGt7oYCTRD3d4oeQr9B7JLuC2B6S854F4XWCQ4pr9NcjokH9kouWMAp1MJKy4Y8QLBgbmPtk3i7RegVzaWhWsnVPi4ZmykJXt4HeV');
     });
     it('should derive non-compliant child', function() {
-      const k = new Key({ seedType: 'extendedPrivateKey', seedData: 'tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k', nonCompliantDerivation: true});
+      const k = new Key({ seedType: 'extendedPrivateKey', seedData: 'tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k', nonCompliantDerivation: true });
       k.compliantDerivation.should.be.false;
       const xpk = k.derive(null, "m/44'/1'/0'").toString();
       xpk.should.equal('tprv8gSy16H5hQ1MKNHzZDzsktr4aaGQSHg4XYVEbfsEiGSBcgw4J8dEm8uf19FH4L9h6W47VBKtc3bbYyjb6HAm6QdyRLpB6fsA7bW19RZnby2');
@@ -529,7 +529,7 @@ describe('Key', function() {
       const k = new Key();
 
       const exported = k.toObj();
-      const imported = new Key({ seedType: 'object', seedData: exported} );
+      const imported = new Key({ seedType: 'object', seedData: exported } );
       imported.get().xPrivKey.should.equal(k.get().xPrivKey);
       imported.get().mnemonic.should.equal(k.get().mnemonic);
     });
@@ -541,7 +541,7 @@ describe('Key', function() {
       k.encrypt('pepe');
 
       const exported = k.toObj();
-      const imported = new Key({ seedType: 'object', seedData: exported} );
+      const imported = new Key({ seedType: 'object', seedData: exported } );
       (() => {
         imported.get().xPrivKey.should.equal(x);
       }).should.throw('encrypted');
@@ -560,7 +560,7 @@ describe('Key', function() {
       k.encrypt('pepe');
 
       const exported = k.toObj();
-      const imported = new Key({ seedType: 'object', seedData: exported} );
+      const imported = new Key({ seedType: 'object', seedData: exported } );
       imported.get('pepe').xPrivKey.should.equal(x);
       imported.get('pepe').mnemonic.should.equal(m);
 

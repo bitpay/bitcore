@@ -2,11 +2,13 @@
 import cluster from 'cluster';
 import * as fs from 'fs';
 import 'source-map-support/register';
+import os from 'os';
 import config from './config';
 import { ExpressApp } from './lib/expressapp';
 import logger from './lib/logger';
 
 const port = process.env.BWS_PORT || config.port || 3232;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const serverModule = config.https ? require('https') : require('http');
 
 const serverOpts: {
@@ -61,7 +63,7 @@ function startInstance() {
 
 if (config.cluster && cluster.isMaster) {
   // Count the machine's CPUs
-  const instances = config.clusterInstances || require('os').cpus().length;
+  const instances = config.clusterInstances || os.cpus().length;
 
   logger.info('Starting ' + instances + ' instances');
 

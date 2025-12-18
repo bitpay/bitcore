@@ -81,7 +81,7 @@ export class ThorswapService {
         'x-api-key': API_KEY
       };
 
-      let qs: string[] = [];
+      const qs: string[] = [];
       qs.push('categories=' + (req?.body?.categories ?? 'all'));
 
       const uriPath: string = req?.body?.includeDetails ? '/tokenlist/utils/currencies/details' : '/tokenlist/utils/currencies';
@@ -118,7 +118,7 @@ export class ThorswapService {
         'x-api-key': API_KEY
       };
 
-      let qs: string[] = [];
+      const qs: string[] = [];
       if (!checkRequired(req.body, ['sellAsset', 'buyAsset', 'sellAmount'])) {
         return reject(new ClientError("Thorswap's request missing arguments"));
       }

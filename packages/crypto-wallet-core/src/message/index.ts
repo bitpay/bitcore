@@ -30,10 +30,10 @@ export class MessageProxy {
   }
 
   getMessageHash(args: {
-    chain: string,
-    message: string,
+    chain: string;
+    message: string;
     /** The encoding to use for the output. Will return a Buffer if not specified. */
-    encoding?: Encoding
+    encoding?: Encoding;
   }): Buffer | string {
     const { message, chain, encoding } = args;
     const messageClass = this.get(chain);
@@ -41,11 +41,11 @@ export class MessageProxy {
   }
 
   signMessage(args: {
-    chain: string,
-    message: string,
-    privateKey: KeyType,
+    chain: string;
+    message: string;
+    privateKey: KeyType;
     /** The encoding to use for the output. Will return a Buffer if not specified. */
-    encoding?: Encoding
+    encoding?: Encoding;
   }): ISignedMessage {
     const { message, chain, privateKey, encoding } = args;
     const messageClass = this.get(chain);
@@ -54,12 +54,12 @@ export class MessageProxy {
   }
 
   signMessageWithPath(args: {
-    chain: string,
-    message: string,
-    hdPrivateKey: HDKeyType,
-    derivationPath: string,
+    chain: string;
+    message: string;
+    hdPrivateKey: HDKeyType;
+    derivationPath: string;
     /** The encoding to use for the output. Will return a Buffer if not specified. */
-    encoding?: Encoding
+    encoding?: Encoding;
   }): ISignedMessage {
     const { message, chain, hdPrivateKey, derivationPath, encoding } = args;
     const messageClass = this.get(chain);

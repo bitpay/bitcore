@@ -23,7 +23,7 @@ export class MultisigRelatedFilterTransform extends Transform {
       );
 
       // Create a tx object for each internal transfer
-      for (let internalTx of walletRelatedInternalTxs) {
+      for (const internalTx of walletRelatedInternalTxs) {
         const _tx = Object.assign({}, tx);
         _tx.value = Number(internalTx.amount);
         _tx.to = internalTx.to;

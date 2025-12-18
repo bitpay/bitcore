@@ -29,7 +29,7 @@ export class SolDeriver implements IDeriver {
     return this.derivePrivateKeyWithPath(network, xPriv, path, addressType);
   };
 
-  deriveChild(masterKey: { key: Buffer, chainCode: Buffer }, path: string) {
+  deriveChild(masterKey: { key: Buffer; chainCode: Buffer }, path: string) {
     const HARDENED_OFFSET = 0x80000000;
     const segmented = path
       .split('/')

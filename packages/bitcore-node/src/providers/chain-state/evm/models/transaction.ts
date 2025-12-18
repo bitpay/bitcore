@@ -1,4 +1,5 @@
 import { ObjectID } from 'bson';
+import Web3 from 'web3';
 import { LoggifyClass } from '../../../../decorators/Loggify';
 import logger from '../../../../logger';
 import { MongoBound } from '../../../../models/base';
@@ -9,6 +10,7 @@ import { WalletAddressStorage } from '../../../../models/walletAddress';
 import { Config } from '../../../../services/config';
 import { Storage, StorageService } from '../../../../services/storage';
 import { SpentHeightIndicators } from '../../../../types/Coin';
+import { IEVMNetworkConfig } from '../../../../types/Config';
 import { StreamingFindOptions } from '../../../../types/Query';
 import { TransformOptions } from '../../../../types/TransformOptions';
 import { partition, uniqBy, valueOrDefault } from '../../../../utils';
@@ -17,13 +19,11 @@ import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
 import { MultisendAbi } from '../abi/multisend';
 import { MultisigAbi } from '../abi/multisig';
-
-import Web3 from 'web3';
-import { IEVMNetworkConfig } from '../../../../types/Config';
-import { Effect, ErigonTransaction, EVMTransactionJSON, GethTransaction, IAbiDecodedData, IAbiDecodeResponse, IEVMBlock, IEVMCachedAddress, IEVMTransaction, IEVMTransactionInProcess, ParsedAbiParams } from '../types';
+import { EVMTransactionJSON, Effect, ErigonTransaction, GethTransaction, IAbiDecodeResponse, IAbiDecodedData, IEVMBlock, IEVMCachedAddress, IEVMTransaction, IEVMTransactionInProcess, ParsedAbiParams } from '../types';
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require(module);
 }
 
@@ -145,7 +145,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
 
     // Create events for mempool txs
     if (params.height < SpentHeightIndicators.minimum) {
-      for (let op of txOps) {
+      for (const op of txOps) {
         const filter = op.updateOne.filter;
         const tx = { ...op.updateOne.update.$set, ...filter } as IEVMTransactionInProcess;
         await EventStorage.signalTx(tx);
@@ -157,10 +157,10 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     }
   }
 
-  getAllTouchedAddresses(tx: Partial<IEVMTransaction>): { tos: IEVMCachedAddress[], froms: IEVMCachedAddress[] } {
+  getAllTouchedAddresses(tx: Partial<IEVMTransaction>): { tos: IEVMCachedAddress[]; froms: IEVMCachedAddress[] } {
     const { to, from, effects } = tx;
-    let toBatch = new Set<string>();
-    let fromBatch = new Set<string>();
+    const toBatch = new Set<string>();
+    const fromBatch = new Set<string>();
     const addToBatch = (batch: Set<string>, obj: IEVMCachedAddress) => {
       // Adds string representation to batch to guard uniqueness since {} != {} but '{}' == '{}'
       batch.add(JSON.stringify(obj));
@@ -217,7 +217,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     network: string;
     mempoolTime?: Date;
   }) {
-    let { blockTimeNormalized, chain, height, network, parentChain, forkHeight } = params;
+    const { blockTimeNormalized, chain, height, network, parentChain, forkHeight } = params;
     if (parentChain && forkHeight && height < forkHeight) {
       const parentTxs = await EVMTransactionStorage.collection
         .find({ blockHeight: height, chain: parentChain, network })
@@ -308,7 +308,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
   }
 
   getTransactions(params: { query: any; options: StreamingFindOptions<IEVMTransaction> }) {
-    let originalQuery = params.query;
+    const originalQuery = params.query;
     const { query, options } = Storage.getFindOptions(this, params.options);
     const finalQuery = Object.assign({}, originalQuery, query);
     return this.collection.find(finalQuery, options).addCursorFlag('noCursorTimeout', true);
@@ -323,7 +323,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...erc20Data
         };
       }
-    } catch (e) { }
+    } catch {/* ignore error */}
     try {
       const erc721Data: IAbiDecodeResponse = getErc721Decoder().decodeMethod(input);
       if (erc721Data) {
@@ -332,7 +332,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...erc721Data
         };
       }
-    } catch (e) { }
+    } catch {/* ignore error */}
     try {
       const invoiceData: IAbiDecodeResponse = getInvoiceDecoder().decodeMethod(input);
       if (invoiceData) {
@@ -341,7 +341,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...invoiceData
         };
       }
-    } catch (e) { }
+    } catch {/* ignore error */}
     try {
       const multisendData: IAbiDecodeResponse = getMultisendDecoder().decodeMethod(input);
       if (multisendData) {
@@ -350,7 +350,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...multisendData
         };
       }
-    } catch (e) { }
+    } catch {/* ignore error */}
     try {
       const multisigData: IAbiDecodeResponse = getMultisigDecoder().decodeMethod(input);
       if (multisigData) {
@@ -359,7 +359,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           ...multisigData
         };
       }
-    } catch (e) { }
+    } catch {/* ignore error */}
     return undefined;
   }
 
@@ -371,7 +371,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
   parseAbiParams(abi: IAbiDecodedData): ParsedAbiParams {
     const params = abi.params;
     const parsed = {} as ParsedAbiParams;
-    for (let param of params) {
+    for (const param of params) {
       const { value } = param;
       parsed[param.name] = value;
     }
@@ -382,7 +382,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
    * Adds effects details object to in process txs
    */
   addEffectsToTxs(txs: IEVMTransactionInProcess[]) {
-    for (let tx of txs) {
+    for (const tx of txs) {
       tx.effects = this.getEffects(tx);
     }
   }
@@ -396,7 +396,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     const effects = [] as Effect[];
     try {
       if (tx.calls?.length) { // Geth trace calls[]
-        for (let call of tx.calls) {
+        for (const call of tx.calls) {
           if (call.value && BigInt(call.value) > 0) {
             // Handle native asset transfer
             const effect = this._getEffectForNativeTransfer(BigInt(call.value).toString(), call.to, call.from, call.depth);
@@ -422,7 +422,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           }
         }
       } else if (tx.internal?.length) { // LEGACY: Used for converting old OpenEthereum/Parity db entries with internal[]
-        for (let internalTx of tx.internal) {
+        for (const internalTx of tx.internal) {
           if (internalTx.action.value && BigInt(internalTx.action.value) > 0) {
             // Handle native asset transfer
             const effect = this._getEffectForNativeTransfer(BigInt(internalTx.action.value).toString(), internalTx.action.to, internalTx.action.from || tx.from, internalTx.traceAddress.join('_'));
@@ -510,7 +510,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
       from: Web3.utils.toChecksumAddress(from),
       amount: Web3.utils.fromWei(value, 'wei'),
       callStack
-    }
+    };
     return effect;
   }
   /**
@@ -519,7 +519,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
    */
   toLeanTransaction(tx: IEVMTransactionInProcess | IEVMTransaction): IEVMTransaction {
     const removableProperties = ['data', 'internal', 'calls', 'abiType'];
-    for (let prop of removableProperties) {
+    for (const prop of removableProperties) {
       if (tx[prop]) {
         delete tx[prop];
       }
@@ -622,4 +622,4 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     return JSON.stringify(transaction);
   }
 }
-export let EVMTransactionStorage = new EVMTransactionModel();
+export const EVMTransactionStorage = new EVMTransactionModel();

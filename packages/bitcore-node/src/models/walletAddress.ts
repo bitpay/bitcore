@@ -1,5 +1,5 @@
-import { ObjectID } from 'mongodb';
 import { Readable, Transform, Writable } from 'stream';
+import { ObjectID } from 'mongodb';
 import { StorageService } from '../services/storage';
 import { TransformOptions } from '../types/TransformOptions';
 import { partition } from '../utils';
@@ -30,7 +30,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
   }
 
   _apiTransform(walletAddress: { address: string }, options?: TransformOptions) {
-    let transform = { address: walletAddress.address };
+    const transform = { address: walletAddress.address };
     if (options && options.object) {
       return transform;
     }
@@ -270,4 +270,4 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
   }
 }
 
-export let WalletAddressStorage = new WalletAddressModel();
+export const WalletAddressStorage = new WalletAddressModel();

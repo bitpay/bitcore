@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 class LibProvider {
   libs = {
     BTC: {

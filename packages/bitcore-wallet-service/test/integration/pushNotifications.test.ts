@@ -9,7 +9,7 @@ import sjcl from 'sjcl';
 import { WalletService } from '../../src/lib/server';
 import { PushNotificationsService } from '../../src/lib/pushnotificationsservice';
 import { Storage } from '../../src/lib/storage';
-import { ObjectID }  from 'mongodb';
+import { ObjectID } from 'mongodb';
 import * as TestData from '../testdata';
 import helpers from './helpers';
 import { Common } from '../../src/lib/common';
@@ -988,14 +988,14 @@ describe('Push notifications', function() {
     it('should notify NewBlock to all devices subscribed in the last 10 minutes', function(done) {
       const collections = Storage.collections;
       const oldSubscription = {
-        _id : new ObjectID('5fb57ecde3de1d285042a551'),
-        version : '1.0.0',
-        createdOn : 1605729997,
-        copayerId : wallet.copayers[0].id,
-        token : 'DEVICE_TOKEN3',
-        packageName : 'com.my-other-wallet2',
-        platform : 'any',
-        walletId : '123'
+        _id: new ObjectID('5fb57ecde3de1d285042a551'),
+        version: '1.0.0',
+        createdOn: 1605729997,
+        copayerId: wallet.copayers[0].id,
+        token: 'DEVICE_TOKEN3',
+        packageName: 'com.my-other-wallet2',
+        platform: 'any',
+        walletId: '123'
       };
 
       server.storage.db.collection(collections.PUSH_NOTIFICATION_SUBS).insertOne(oldSubscription, function(err) {
@@ -1025,40 +1025,40 @@ describe('Push notifications', function() {
     it('should notify only one NewBlock push notification for each device', function(done) {
       const collections = Storage.collections;
       const subs = [{
-        version : '1.0.0',
-        createdOn : Math.floor(Date.now() / 1000),
-        copayerId : wallet.copayers[0].id,
-        token : 'DEVICE_TOKEN',
-        packageName : 'com.my-other-wallet',
-        platform : 'any',
-        walletId : '123'
+        version: '1.0.0',
+        createdOn: Math.floor(Date.now() / 1000),
+        copayerId: wallet.copayers[0].id,
+        token: 'DEVICE_TOKEN',
+        packageName: 'com.my-other-wallet',
+        platform: 'any',
+        walletId: '123'
       },
       {
-        version : '1.0.0',
-        createdOn : Math.floor(Date.now() / 1000),
-        copayerId : wallet.copayers[0].id,
-        token : 'DEVICE_TOKEN2',
-        packageName : 'com.my-other-wallet2',
-        platform : 'any',
-        walletId : '123'
+        version: '1.0.0',
+        createdOn: Math.floor(Date.now() / 1000),
+        copayerId: wallet.copayers[0].id,
+        token: 'DEVICE_TOKEN2',
+        packageName: 'com.my-other-wallet2',
+        platform: 'any',
+        walletId: '123'
       },
       {
-        version : '1.0.0',
-        createdOn : Math.floor(Date.now() / 1000),
-        copayerId : wallet.copayers[0].id,
-        token : 'DEVICE_TOKEN2',
-        packageName : 'com.my-other-wallet2',
-        platform : 'any',
-        walletId : '123'
+        version: '1.0.0',
+        createdOn: Math.floor(Date.now() / 1000),
+        copayerId: wallet.copayers[0].id,
+        token: 'DEVICE_TOKEN2',
+        packageName: 'com.my-other-wallet2',
+        platform: 'any',
+        walletId: '123'
       },
       {
-        version : '1.0.0',
-        createdOn : Math.floor(Date.now() / 1000),
-        copayerId : wallet.copayers[0].id,
-        token : 'DEVICE_TOKEN3',
-        packageName : 'com.my-other-wallet3',
-        platform : 'any',
-        walletId : '123'
+        version: '1.0.0',
+        createdOn: Math.floor(Date.now() / 1000),
+        copayerId: wallet.copayers[0].id,
+        token: 'DEVICE_TOKEN3',
+        packageName: 'com.my-other-wallet3',
+        platform: 'any',
+        walletId: '123'
       }];
 
       server.storage.db.collection(collections.PUSH_NOTIFICATION_SUBS).insertMany(subs, function(err) {
@@ -1340,14 +1340,14 @@ describe('Push notifications', function() {
     it('should notify NewBlock to all devices subscribed in the last 10 minutes', function(done) {
       const collections = Storage.collections;
       const oldSubscription = {
-        _id : new ObjectID('5fb57ecde3de1d285042a551'),
-        version : '1.0.0',
-        createdOn : 1605729997,
-        copayerId : wallet.copayers[0].id,
-        externalUserId : 'DEVICE_EXTERNAL_USER_ID3',
-        packageName : 'com.my-other-wallet2',
-        platform : 'any',
-        walletId : '123'
+        _id: new ObjectID('5fb57ecde3de1d285042a551'),
+        version: '1.0.0',
+        createdOn: 1605729997,
+        copayerId: wallet.copayers[0].id,
+        externalUserId: 'DEVICE_EXTERNAL_USER_ID3',
+        packageName: 'com.my-other-wallet2',
+        platform: 'any',
+        walletId: '123'
       };
 
       server.storage.db.collection(collections.PUSH_NOTIFICATION_SUBS).insertOne(oldSubscription, function(err) {
@@ -1395,76 +1395,76 @@ describe('Push notifications', function() {
     it('should notify only one NewBlock push notification for each device', function(done) {
       const collections = Storage.collections;
       const subs = [{
-        version : '1.0.0',
-        createdOn : Math.floor(Date.now() / 1000),
-        copayerId : wallet.copayers[0].id,
-        token : 'DEVICE_TOKEN',
-        packageName : 'com.my-other-wallet',
-        platform : 'any',
-        walletId : '123'
+        version: '1.0.0',
+        createdOn: Math.floor(Date.now() / 1000),
+        copayerId: wallet.copayers[0].id,
+        token: 'DEVICE_TOKEN',
+        packageName: 'com.my-other-wallet',
+        platform: 'any',
+        walletId: '123'
       },
       {
-        version : '1.0.0',
-        createdOn : Math.floor(Date.now() / 1000),
-        copayerId : wallet.copayers[0].id,
-        token : 'DEVICE_TOKEN2',
-        packageName : 'com.my-other-wallet2',
-        platform : 'any',
-        walletId : '123'
+        version: '1.0.0',
+        createdOn: Math.floor(Date.now() / 1000),
+        copayerId: wallet.copayers[0].id,
+        token: 'DEVICE_TOKEN2',
+        packageName: 'com.my-other-wallet2',
+        platform: 'any',
+        walletId: '123'
       },
       {
-        version : '1.0.0',
-        createdOn : Math.floor(Date.now() / 1000),
-        copayerId : wallet.copayers[0].id,
-        token : 'DEVICE_TOKEN2',
-        packageName : 'com.my-other-wallet2',
-        platform : 'any',
-        walletId : '123'
+        version: '1.0.0',
+        createdOn: Math.floor(Date.now() / 1000),
+        copayerId: wallet.copayers[0].id,
+        token: 'DEVICE_TOKEN2',
+        packageName: 'com.my-other-wallet2',
+        platform: 'any',
+        walletId: '123'
       },
       {
-        version : '1.0.0',
-        createdOn : Math.floor(Date.now() / 1000),
-        copayerId : wallet.copayers[0].id,
-        token : 'DEVICE_TOKEN3',
-        packageName : 'com.my-other-wallet3',
-        platform : 'any',
-        walletId : '123'
+        version: '1.0.0',
+        createdOn: Math.floor(Date.now() / 1000),
+        copayerId: wallet.copayers[0].id,
+        token: 'DEVICE_TOKEN3',
+        packageName: 'com.my-other-wallet3',
+        platform: 'any',
+        walletId: '123'
       },
       {
-        version : '1.0.0',
-        createdOn : Math.floor(Date.now() / 1000),
-        copayerId : wallet.copayers[0].id,
-        externalUserId : 'DEVICE_EXTERNAL_USER_ID',
-        packageName : 'com.my-other-wallet',
-        platform : 'any',
-        walletId : '123'
+        version: '1.0.0',
+        createdOn: Math.floor(Date.now() / 1000),
+        copayerId: wallet.copayers[0].id,
+        externalUserId: 'DEVICE_EXTERNAL_USER_ID',
+        packageName: 'com.my-other-wallet',
+        platform: 'any',
+        walletId: '123'
       },
       {
-        version : '1.0.0',
-        createdOn : Math.floor(Date.now() / 1000),
-        copayerId : wallet.copayers[0].id,
-        externalUserId : 'DEVICE_EXTERNAL_USER_ID2',
-        packageName : 'com.my-other-wallet2',
-        platform : 'any',
-        walletId : '123'
+        version: '1.0.0',
+        createdOn: Math.floor(Date.now() / 1000),
+        copayerId: wallet.copayers[0].id,
+        externalUserId: 'DEVICE_EXTERNAL_USER_ID2',
+        packageName: 'com.my-other-wallet2',
+        platform: 'any',
+        walletId: '123'
       },
       {
-        version : '1.0.0',
-        createdOn : Math.floor(Date.now() / 1000),
-        copayerId : wallet.copayers[0].id,
-        externalUserId : 'DEVICE_EXTERNAL_USER_ID2',
-        packageName : 'com.my-other-wallet2',
-        platform : 'any',
-        walletId : '123'
+        version: '1.0.0',
+        createdOn: Math.floor(Date.now() / 1000),
+        copayerId: wallet.copayers[0].id,
+        externalUserId: 'DEVICE_EXTERNAL_USER_ID2',
+        packageName: 'com.my-other-wallet2',
+        platform: 'any',
+        walletId: '123'
       },
       {
-        version : '1.0.0',
-        createdOn : Math.floor(Date.now() / 1000),
-        copayerId : wallet.copayers[0].id,
-        externalUserId : 'DEVICE_EXTERNAL_USER_ID3',
-        packageName : 'com.my-other-wallet3',
-        platform : 'any',
-        walletId : '123'
+        version: '1.0.0',
+        createdOn: Math.floor(Date.now() / 1000),
+        copayerId: wallet.copayers[0].id,
+        externalUserId: 'DEVICE_EXTERNAL_USER_ID3',
+        packageName: 'com.my-other-wallet3',
+        platform: 'any',
+        walletId: '123'
       }];
 
       server.storage.db.collection(collections.PUSH_NOTIFICATION_SUBS).insertMany(subs, function(err) {
@@ -1513,7 +1513,7 @@ describe('Push notifications', function() {
             should.exist(args[2].body.messages.apple_push.extra);
             should.exist(args[2].body.messages.apple_push.custom_uri);
             should.exist(args[2].body.messages.android_push.extra);
-            should.exist(args[2].body.messages.android_push.custom_uri)
+            should.exist(args[2].body.messages.android_push.custom_uri);
             done();
           });
         });

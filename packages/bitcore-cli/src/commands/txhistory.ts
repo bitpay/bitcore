@@ -49,6 +49,7 @@ export async function getTxHistory(
     if (!tokenObj) {
       throw new Error(`Unknown token "${opts.tokenAddress || opts.token}" on ${wallet.chain}:${wallet.network}`);
     }
+    tokenObj = JSON.parse(JSON.stringify(tokenObj)); // make copy for precision modification below
   }
   const currency = tokenObj?.displayCode || wallet.client.credentials.coin;
 
@@ -58,6 +59,7 @@ export async function getTxHistory(
     EXPORT = 'e'
   }
 
+  let history = [];
   let compact = !opts.expand; // default to compact view
   let printRaw = !!opts.raw; // default false
 
@@ -67,15 +69,32 @@ export async function getTxHistory(
       printRaw = false; // reset printRaw when toggling format
     }
 
+    if (tokenObj) {
+      if (!compact) {
+        // Show full decimals in expanded view
+        tokenObj['_precision'] = tokenObj.precision; 
+        tokenObj.precision = tokenObj.decimals.short.maxDecimals;
+      } else if (tokenObj['_precision'] !== undefined) {
+        // Restore original precision when toggling back to compact view
+        tokenObj.precision = tokenObj['_precision'];
+      }
+    }
     printRaw = viewAction === ViewAction.TOGGLE_RAW ? !printRaw : printRaw;
     const exportToFile = !!opts.export || viewAction === ViewAction.EXPORT;
 
-    const history = await wallet.client.getTxHistory({
-      includeExtendedInfo: true,
-      tokenAddress: tokenObj?.contractAddress,
-      limit: opts.pageSize,
-      skip: (page - 1) * opts.pageSize
-    });
+    if (
+      viewAction !== ViewAction.TOGGLE_FORMAT &&
+      viewAction !== ViewAction.TOGGLE_RAW &&
+      viewAction !== ViewAction.EXPORT  
+    ) {
+      // Get history only if not toggling view or exporting (i.e. changing page)
+      history = await wallet.client.getTxHistory({
+        includeExtendedInfo: true,
+        tokenAddress: tokenObj?.contractAddress,
+        limit: opts.pageSize,
+        skip: (page - 1) * opts.pageSize
+      });
+    }
 
     const extraChoices = [
       compact ? { value: ViewAction.TOGGLE_FORMAT, label: 'Expand format' } : { value: ViewAction.TOGGLE_FORMAT, label: 'Compact format' },

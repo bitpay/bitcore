@@ -9,7 +9,15 @@ import { checkRequired } from '../lib/server';
 export class ChangellyService {
   request: any = request;
 
-  private changellyGetKeysV2(req) {
+  changellyGetKeysV2(req) {
+
+    const stablecoins = [
+      'usdt', 'usdc', 'dai', 'busd', 'tusd', 'usdp', 'usdn',
+      'usdt20', 'usdtarb', 'usdtop', 'usdtpolygon', 'usdtsol',
+      'usdcmatic', 'usdcarb', 'usdcbase', 'usdcop', 'usdcsol',
+      'daipolygon'
+    ];
+
     if (!config.changelly) {
       logger.warn('Changelly missing credentials');
       throw new Error('ClientError: Service not configured.');
@@ -18,9 +26,15 @@ export class ChangellyService {
       throw new Error('ClientError: Service v2 not configured.');
     }
 
+    const { api, secret, secret_stablecoin } = config.changelly.v2;
+
+    const apiKey = stablecoins.includes(req.body?.coinFrom) && stablecoins.includes(req.body?.coinTo)
+      ? (secret_stablecoin ?? secret)
+      : secret;
+    
     const keys = {
-      API: config.changelly.v2.api,
-      SECRET: config.changelly.v2.secret
+      API: api,
+      SECRET: apiKey
     };
 
     return keys;
@@ -47,7 +61,7 @@ export class ChangellyService {
 
   changellyGetCurrencies(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      let keys, headers;
+      let keys;
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
@@ -67,7 +81,7 @@ export class ChangellyService {
 
       const URL: string = keys.API;
       const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-      headers = {
+      const headers = {
         'Content-Type': 'application/json',
         'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
         'X-Api-Signature': signature.toString('base64'),
@@ -93,7 +107,7 @@ export class ChangellyService {
 
   changellyGetPairsParams(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      let keys, headers;
+      let keys;
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
@@ -118,7 +132,7 @@ export class ChangellyService {
 
       const URL: string = keys.API;
       const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-      headers = {
+      const headers = {
         'Content-Type': 'application/json',
         'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
         'X-Api-Signature': signature.toString('base64'),
@@ -144,7 +158,7 @@ export class ChangellyService {
 
   changellyGetFixRateForAmount(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      let keys, headers;
+      let keys;
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
@@ -170,7 +184,7 @@ export class ChangellyService {
 
       const URL: string = keys.API;
       const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-      headers = {
+      const headers = {
         'Content-Type': 'application/json',
         'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
         'X-Api-Signature': signature.toString('base64'),
@@ -196,7 +210,7 @@ export class ChangellyService {
 
   changellyCreateFixTransaction(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      let keys, headers;
+      let keys;
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
@@ -233,7 +247,7 @@ export class ChangellyService {
 
       const URL: string = keys.API;
       const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-      headers = {
+      const headers = {
         'Content-Type': 'application/json',
         'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
         'X-Api-Signature': signature.toString('base64'),
@@ -259,7 +273,7 @@ export class ChangellyService {
 
   changellyGetTransactions(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      let keys, headers;
+      let keys;
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
@@ -283,7 +297,7 @@ export class ChangellyService {
 
       const URL: string = keys.API;
       const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-      headers = {
+      const headers = {
         'Content-Type': 'application/json',
         'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
         'X-Api-Signature': signature.toString('base64'),
@@ -309,7 +323,7 @@ export class ChangellyService {
 
   changellyGetStatus(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      let keys, headers;
+      let keys;
       if (req.body.useV2) {
         keys = this.changellyGetKeysV2(req);
       } else {
@@ -331,7 +345,7 @@ export class ChangellyService {
 
       const URL: string = keys.API;
       const { signature, publicKey } = this.changellySignRequestsV2(message, keys.SECRET);
-      headers = {
+      const headers = {
         'Content-Type': 'application/json',
         'X-Api-Key': crypto.createHash('sha256').update(publicKey).digest('base64'),
         'X-Api-Signature': signature.toString('base64'),

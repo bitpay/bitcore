@@ -92,7 +92,7 @@ export function RateLimiter(method: string, perSecond: number, perMinute: number
       if (isDisabled || isWhiteListed(whitelist, identifier)) {
         return next();
       }
-      let [perSecondResult, perMinuteResult, perHourResult] = await RateLimitStorage.incrementAndCheck(
+      const [perSecondResult, perMinuteResult, perHourResult] = await RateLimitStorage.incrementAndCheck(
         identifier,
         method
       );
@@ -103,7 +103,7 @@ export function RateLimiter(method: string, perSecond: number, perMinute: number
       ) {
         return res.status(429).send('Rate Limited');
       }
-    } catch (err) {
+    } catch {
       logger.error('Rate Limiter failed');
     }
     return next();

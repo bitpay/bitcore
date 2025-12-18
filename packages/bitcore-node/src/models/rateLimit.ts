@@ -63,4 +63,4 @@ export class RateLimitModel extends BaseModel<IRateLimit> {
   }
 }
 
-export let RateLimitStorage = new RateLimitModel();
+export const RateLimitStorage = new RateLimitModel();

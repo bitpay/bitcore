@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { IBlock } from '../../src/types/Block';
-import { BitcoinBlockStorage } from '../../src/models/block';
+import { BitcoinBlockStorage, IBtcBlock } from '../../src/models/block';
 import { Modules } from '../../src/modules';
 import { Storage } from '../../src/services/storage';
 
@@ -20,43 +20,46 @@ if (require.main === module) {
     let checkHeight = resumeHeight;
 
     console.log('Verifying headers for', chain, network, 'from height', resumeHeight);
-    await BitcoinBlockStorage.collection
+    const blockStream = BitcoinBlockStorage.collection
       .find({ chain, network, processed: true, height: { $gte: checkHeight } })
       .project({ height: 1, nextBlockHash: 1, previousBlockHash: 1, hash: 1 })
       .sort({ height: 1 })
-      .forEach(locatorBlock => {
-        let success = true;
-        if (checkHeight !== locatorBlock.height) {
+      .stream();
+
+    for await (const locatorBlock of blockStream as AsyncIterable<IBtcBlock>) {
+      let success = true;
+      if (checkHeight !== locatorBlock.height) {
+        const error = {
+          model: 'block',
+          err: true,
+          type: 'MISSING_BLOCK',
+          payload: { blockNum: checkHeight }
+        };
+        console.log(JSON.stringify(error));
+        success = false;
+        checkHeight = locatorBlock.height;
+      } else if (previousBlock) {
+        prevMatch = prevMatch && locatorBlock.previousBlockHash === previousBlock.hash;
+        nextMatch = nextMatch && locatorBlock.hash === previousBlock.nextBlockHash;
+        if (!prevMatch || !nextMatch) {
           const error = {
             model: 'block',
             err: true,
-            type: 'MISSING_BLOCK',
-            payload: { blockNum: checkHeight }
+            type: 'CORRUPTED_BLOCK',
+            payload: { blockNum: locatorBlock.height }
           };
           console.log(JSON.stringify(error));
           success = false;
-          checkHeight = locatorBlock.height;
-        } else if (previousBlock) {
-          prevMatch = prevMatch && locatorBlock.previousBlockHash === previousBlock.hash;
-          nextMatch = nextMatch && locatorBlock.hash === previousBlock.nextBlockHash;
-          if (!prevMatch || !nextMatch) {
-            const error = {
-              model: 'block',
-              err: true,
-              type: 'CORRUPTED_BLOCK',
-              payload: { blockNum: locatorBlock.height }
-            };
-            console.log(JSON.stringify(error));
-            success = false;
-          }
         }
+      }
 
-        previousBlock = locatorBlock;
-        checkHeight++;
-        if (success) {
-          console.log({ block: checkHeight, success });
-        }
-      });
+      previousBlock = locatorBlock;
+      checkHeight++;
+      if (success) {
+        console.log({ block: checkHeight, success });
+      }
+    }
+        
     process.exit(0);
   })();
 }

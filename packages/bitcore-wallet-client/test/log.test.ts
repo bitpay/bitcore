@@ -22,7 +22,7 @@ describe('log utils', function() {
     log.warn('hola');
 
     const arg = cw.getCall(0).args[0];
-    //arg.should.contain('util.log.js');        /* Firefox does not include the stack track */
+    // arg.should.contain('util.log.js');        /* Firefox does not include the stack track */
     arg.should.contain('hola');
   });
 
@@ -31,10 +31,10 @@ describe('log utils', function() {
     const cl = sandbox.stub(console, 'log');
 
     log.setLevel('debug');
-    log.fatal('hola', "que", 'tal');
+    log.fatal('hola', 'que', 'tal');
 
     const arg = cl.getCall(0).args[0];
-    //arg.should.contain('util.log.js');        /* Firefox does not include the stack track */
+    // arg.should.contain('util.log.js');        /* Firefox does not include the stack track */
     arg.should.contain('que');
   });
 

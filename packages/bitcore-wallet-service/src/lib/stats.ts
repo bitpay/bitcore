@@ -25,7 +25,7 @@ export class Stats {
   }
 
   run(cb) {
-    let dbConfig = config.storageOpts.mongoDb;
+    const dbConfig = config.storageOpts.mongoDb;
     let uri = dbConfig.uri;
 
     // Always for stats!

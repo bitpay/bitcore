@@ -69,7 +69,7 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
 
     // Create events for mempool txs
     if (params.height != undefined && params.height < SpentHeightIndicators.minimum) {
-      for (let op of txOps) {
+      for (const op of txOps) {
         const filter = op.updateOne.filter;
         const tx = { ...op.updateOne.update.$set, ...filter } as IXrpTransaction;
         await EventStorage.signalTx(tx);
@@ -92,7 +92,7 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
   }
 
   async expireBalanceCache(coinOps: Array<any>) {
-    let batch = new Array<{ address: string; chain: string; network: string }>();
+    const batch = new Array<{ address: string; chain: string; network: string }>();
     for (const coinOp of coinOps) {
       const coin = { ...coinOp.updateOne.filter, ...coinOp.updateOne.update.$set } as IXrpCoin;
       const { address, chain, network } = coin;
@@ -120,7 +120,7 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
     network: string;
     mempoolTime?: Date;
   }) {
-    let { blockTimeNormalized, chain, height, network, parentChain, forkHeight } = params;
+    const { blockTimeNormalized, chain, height, network, parentChain, forkHeight } = params;
     if (parentChain && forkHeight && height != undefined && height < forkHeight) {
       const parentTxs = await XrpTransactionStorage.collection
         .find({ blockHeight: height, chain: parentChain, network })
@@ -177,7 +177,7 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
     network: string;
     mempoolTime?: Date;
   }) {
-    let { chain, height, network, parentChain, forkHeight } = params;
+    const { chain, height, network, parentChain, forkHeight } = params;
     if (parentChain && forkHeight && height != undefined && height < forkHeight) {
       const parentChainCoins = await CoinStorage.collection
         .find({ blockHeight: height, chain: parentChain, network })
@@ -237,7 +237,7 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
   }
 
   getTransactions(params: { query: any; options: StreamingFindOptions<IXrpTransaction> }) {
-    let originalQuery = params.query;
+    const originalQuery = params.query;
     const { query, options } = Storage.getFindOptions(this, params.options);
     const finalQuery = Object.assign({}, originalQuery, query);
     return this.collection.find(finalQuery, options).addCursorFlag('noCursorTimeout', true);
@@ -269,4 +269,4 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
     return JSON.stringify(transaction);
   }
 }
-export let XrpTransactionStorage = new XrpTransactionModel();
+export const XrpTransactionStorage = new XrpTransactionModel();

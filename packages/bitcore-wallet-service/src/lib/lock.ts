@@ -1,16 +1,18 @@
 import _ from 'lodash';
+import preconditions from 'preconditions';
 import { Common } from './common';
 import { Errors } from './errors/errordefinitions';
 import { Storage } from './storage';
 
-const $ = require('preconditions').singleton();
+const $ = preconditions.singleton();
+
 const Defaults = Common.Defaults;
 const ACQUIRE_RETRY_STEP = 50; // ms
 
 export class Lock {
   storage: Storage;
-  constructor(storage: Storage, opts = {}) {
-    opts = opts || {};
+  constructor(storage: Storage, _opts = {}) {
+    _opts = _opts || {};
 
     this.storage = storage;
   }
@@ -61,8 +63,8 @@ export class Lock {
       if (err == 'LOCKED') return cb(Errors.WALLET_BUSY);
       if (err) return cb(err);
 
-      const _cb = function() {
-        cb.apply(null, arguments);
+      const _cb = function(...args) {
+        cb(...args);
         release();
       };
       task(_cb);

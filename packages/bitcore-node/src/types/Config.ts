@@ -23,6 +23,7 @@ export interface IUtxoNetworkConfig extends INetworkConfig {
     port: number | string;
     username: string;
     password: string;
+    protocol?: string;
   };
   defaultFeeMode?: FeeMode;
   syncStartHash?: string; // Start syncing from this block
@@ -90,9 +91,9 @@ export interface ConfigType {
       [alias: string]: string;
     };
     networks: {
-      [chain: string]: { [alias: string]: string; }
+      [chain: string]: { [alias: string]: string };
     };
-  },
+  };
   services: {
     api: {
       disabled?: boolean;
@@ -126,6 +127,6 @@ export interface ConfigType {
       webhookBaseUrl?: string;
       streamSecret?: string;
       webhookCors?: object; // default: { origin: ['*'] }
-    }
+    };
   };
 }

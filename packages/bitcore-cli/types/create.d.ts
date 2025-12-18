@@ -6,5 +6,5 @@ export interface CreateWalletArgs {
     verbose: boolean;
     mnemonic?: string;
     isMultiParty?: boolean;
-  }
+  };
 }

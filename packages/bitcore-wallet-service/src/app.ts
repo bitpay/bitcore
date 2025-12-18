@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-var spawn = require('child_process').spawn;
-var async = require('async');
+import { spawn } from 'child_process';
+import async from 'async';
 
-var scripts = [
+const scripts = [
   'locker/locker.js',
   'messagebroker/messagebroker.js',
   'bcmonitor/bcmonitor.js',

@@ -9,113 +9,115 @@ import sinon from 'sinon';
 import { ChainStateProvider } from '../../../src/providers/chain-state';
 import { CoinStorage } from '../../../src/models/coin';
 
-const request = supertest(app);
 
-async function addBlocks(
-  blocks: {
-    chain: 'BTC' | 'BCH';
-    height: number;
-    hash?: string;
-    time?: Date;
-    transactions?: {
-      txid?: string;
-      fee: number;
-      size: number;
-      coinbase?: boolean;
-      inputs?: number[];
-      outputs?: number[];
-    }[]
-  }[]
-) {
-  for (const block of blocks) {
-    const { chain, height } = block;
-    const hash = block.hash || '2c07decae68f74d6ac20184cce0216388ea66f0068cde511bb9c51f0691539a8';
-    const transactions = block.transactions || [];
-    const time = block.time || new Date('2025-07-07T17:16:38.002Z');
-    await BitcoinBlockStorage.collection.insertOne({
-      network: 'regtest',
-      chain: chain,
-      hash: hash,
-      bits: 545259519,
-      height: height,
-      merkleRoot: '760a46b4f94ab17350a3ed299546fb5648c025ad9bd22271be38cf075c9cf3f4',
-      nextBlockHash: '47bab8f788e3bd8d3caca2a5e054e912982a0e6dfb873a7578beb8fac90eb87d',
-      nonce: 0,
-      previousBlockHash: '0a60c6e93a931e9b342a6c258bada673784610fdd2504cc7c6795555ef7e53ea',
-      processed: true,
-      reward: 1250000000,
-      size: 214,
-      time: time,
-      timeNormalized: time,
-      transactionCount: 1,
-      version: 805306368
-    });
-
-    for (const tx of transactions) {
-      const { fee, size } = tx;
-      const inputs = tx.inputs || [];
-      const outputs = tx.outputs || [];
-      const txid = tx.txid || 'da848d4c5a9d690259f5fddb6c5ca0fb0e52bc4a8ac472d3784a2de834cf448e';
-      const coinbase = tx.coinbase!!;
-
-      await TransactionStorage.collection.insertOne({
-        chain: chain,
-        network: 'regtest',
-        txid: txid,
-        blockHash: hash,
-        blockHeight: height,
-        blockTime: new Date('2025-07-07T17:38:02.000Z'),
-        blockTimeNormalized: new Date('2025-07-07T17:38:02.000Z'),
-        coinbase: coinbase,
-        fee: fee,
-        inputCount: inputs.length || 1,
-        outputCount: outputs.length || 1,
-        locktime: 0,
-        size: size,
-        value: 10_000_000,
-        wallets: []
-      });
-
-      for (const input of inputs) {
-        await CoinStorage.collection.insertOne({
-          chain: chain,
-          network: 'regtest',
-          value: input,
-          mintTxid: '52e76c33561b0fc31ecf56e101c4f582d85e385381f3da3e5f5aabdb1b939f90',
-          spentTxid: txid,
-          spentHeight: height,
-          mintHeight: height - 1,
-          mintIndex: 0,
-          script: Buffer.from('aiSqIant4vYcP3HR3v0/qZnfo2lTdVxpBol5mWK0i+vYNpdOjPk'),
-          coinbase: coinbase,
-          address: 'bcrt1qxxm47l2d6hrl8e9w9rq6w9klxav5c9e76jehw8',
-          wallets: []
-        });
-      }
-      for (let i = 0; i < outputs.length; i++) {
-        const output = outputs[i];
-        await CoinStorage.collection.insertOne({
-          chain: chain,
-          network: 'regtest',
-          value: output,
-          mintTxid: txid,
-          spentTxid: 'c9d06466adaf5322f619c603fddb8a325cb6cdfcb9dffaa4e1919e896b2b98d7',
-          spentHeight: -2,
-          mintHeight: height,
-          mintIndex: i,
-          script: Buffer.from('aiSqIant4vYcP3HR3v0/qZnfo2lTdVxpBol5mWK0i+vYNpdOjPk'),
-          coinbase: coinbase,
-          address: 'bcrt1qxxm47l2d6hrl8e9w9rq6w9klxav5c9e76jehw8',
-          wallets: []
-        });
-      }
-    }
-  }
-}
 
 describe('Block Routes', function() {
   let sandbox;
   const tipHeight = 103;
+
+  const request = supertest(app);
+
+  async function addBlocks(
+    blocks: {
+      chain: 'BTC' | 'BCH';
+      height: number;
+      hash?: string;
+      time?: Date;
+      transactions?: {
+        txid?: string;
+        fee: number;
+        size: number;
+        coinbase?: boolean;
+        inputs?: number[];
+        outputs?: number[];
+      }[];
+    }[]
+  ) {
+    for (const block of blocks) {
+      const { chain, height } = block;
+      const hash = block.hash || '2c07decae68f74d6ac20184cce0216388ea66f0068cde511bb9c51f0691539a8';
+      const transactions = block.transactions || [];
+      const time = block.time || new Date('2025-07-07T17:16:38.002Z');
+      await BitcoinBlockStorage.collection.insertOne({
+        network: 'regtest',
+        chain: chain,
+        hash: hash,
+        bits: 545259519,
+        height: height,
+        merkleRoot: '760a46b4f94ab17350a3ed299546fb5648c025ad9bd22271be38cf075c9cf3f4',
+        nextBlockHash: '47bab8f788e3bd8d3caca2a5e054e912982a0e6dfb873a7578beb8fac90eb87d',
+        nonce: 0,
+        previousBlockHash: '0a60c6e93a931e9b342a6c258bada673784610fdd2504cc7c6795555ef7e53ea',
+        processed: true,
+        reward: 1250000000,
+        size: 214,
+        time: time,
+        timeNormalized: time,
+        transactionCount: 1,
+        version: 805306368
+      });
+
+      for (const tx of transactions) {
+        const { fee, size } = tx;
+        const inputs = tx.inputs || [];
+        const outputs = tx.outputs || [];
+        const txid = tx.txid || 'da848d4c5a9d690259f5fddb6c5ca0fb0e52bc4a8ac472d3784a2de834cf448e';
+        const coinbase = tx.coinbase!;
+
+        await TransactionStorage.collection.insertOne({
+          chain: chain,
+          network: 'regtest',
+          txid: txid,
+          blockHash: hash,
+          blockHeight: height,
+          blockTime: new Date('2025-07-07T17:38:02.000Z'),
+          blockTimeNormalized: new Date('2025-07-07T17:38:02.000Z'),
+          coinbase: coinbase,
+          fee: fee,
+          inputCount: inputs.length || 1,
+          outputCount: outputs.length || 1,
+          locktime: 0,
+          size: size,
+          value: 10_000_000,
+          wallets: []
+        });
+
+        for (const input of inputs) {
+          await CoinStorage.collection.insertOne({
+            chain: chain,
+            network: 'regtest',
+            value: input,
+            mintTxid: '52e76c33561b0fc31ecf56e101c4f582d85e385381f3da3e5f5aabdb1b939f90',
+            spentTxid: txid,
+            spentHeight: height,
+            mintHeight: height - 1,
+            mintIndex: 0,
+            script: Buffer.from('aiSqIant4vYcP3HR3v0/qZnfo2lTdVxpBol5mWK0i+vYNpdOjPk'),
+            coinbase: coinbase,
+            address: 'bcrt1qxxm47l2d6hrl8e9w9rq6w9klxav5c9e76jehw8',
+            wallets: []
+          });
+        }
+        for (let i = 0; i < outputs.length; i++) {
+          const output = outputs[i];
+          await CoinStorage.collection.insertOne({
+            chain: chain,
+            network: 'regtest',
+            value: output,
+            mintTxid: txid,
+            spentTxid: 'c9d06466adaf5322f619c603fddb8a325cb6cdfcb9dffaa4e1919e896b2b98d7',
+            spentHeight: -2,
+            mintHeight: height,
+            mintIndex: i,
+            script: Buffer.from('aiSqIant4vYcP3HR3v0/qZnfo2lTdVxpBol5mWK0i+vYNpdOjPk'),
+            coinbase: coinbase,
+            address: 'bcrt1qxxm47l2d6hrl8e9w9rq6w9klxav5c9e76jehw8',
+            wallets: []
+          });
+        }
+      }
+    }
+  }
 
   before(async function() {
     this.timeout(15000);
@@ -136,7 +138,7 @@ describe('Block Routes', function() {
           { txid: '86950d79deed75bcbe4e6345f6e87390a02477cfc8492e3d93702b5396ea746d',
             fee: 30000, size: 1056, inputs: [140000], outputs: [100000, 10000 ] },
           { txid: '4541c61085876bbe91ed82468c46d9a5aa2df0e14b1833c1c1cd241f2f143bd6',
-            fee: 35000, size: 1056, inputs: [100000, 45000 ], outputs: [ 100000 , 10000 ]},
+            fee: 35000, size: 1056, inputs: [100000, 45000 ], outputs: [ 100000, 10000 ] },
         ]
       },
       { chain: 'BTC', height: 101, time: minutesAgo(30),
@@ -152,7 +154,7 @@ describe('Block Routes', function() {
           { fee: 10000, size: 1056 },
           { fee: 11000, size: 1056 },
         ]
-       },
+      },
       { chain: 'BCH', height: 100, 
         transactions: [
           { fee: 0, size: 133, coinbase: true },
@@ -205,14 +207,14 @@ describe('Block Routes', function() {
     expect(block.height).to.be.at.least(0);
     expect(block.nonce).to.be.at.least(0);
     expect(block.bits).to.be.at.least(0);
-  }
+  };
 
   it('should get blocks on BTC regtest', done => {
     request.get('/api/BTC/regtest/block').expect(200, (err, res) => {
       if (err) console.error(err);
       const blocks = res.body;
       for (const block of blocks) {
-        expect(block).to.include({chain: 'BTC', network: 'regtest'});
+        expect(block).to.include({ chain: 'BTC', network: 'regtest' });
         testBlock(block);
       }
       done();
@@ -220,12 +222,12 @@ describe('Block Routes', function() {
   });
 
   it('should get blocks after 101 on BTC regtest', done => {
-    request.get(`/api/BTC/regtest/block?sinceBlock=101`).expect(200, (err, res) => {
+    request.get('/api/BTC/regtest/block?sinceBlock=101').expect(200, (err, res) => {
       if (err) console.error(err);
       const blocks = res.body;
       for (const block of blocks) {
         expect(block.height).to.be.greaterThan(101);
-        expect(block).to.include({chain: 'BTC', network: 'regtest'});
+        expect(block).to.include({ chain: 'BTC', network: 'regtest' });
         testBlock(block);
       }
       done();
@@ -233,12 +235,12 @@ describe('Block Routes', function() {
   });
 
   it('should get 3 blocks with limit=3 on BTC regtest', done => {
-    request.get(`/api/BTC/regtest/block?limit=3`).expect(200, (err, res) => {
+    request.get('/api/BTC/regtest/block?limit=3').expect(200, (err, res) => {
       if (err) console.error(err);
       const blocks = res.body;
       expect(blocks.length).to.equal(3);
       for (const block of blocks) {
-        expect(block).to.include({chain: 'BTC', network: 'regtest'});
+        expect(block).to.include({ chain: 'BTC', network: 'regtest' });
         testBlock(block);
       }
       done();
@@ -251,7 +253,7 @@ describe('Block Routes', function() {
       .expect(200, (err, res) => {
         if (err) console.error(err);
         const block = res.body;
-        expect(block).to.include({chain: 'BTC', network: 'regtest', height: tipHeight});
+        expect(block).to.include({ chain: 'BTC', network: 'regtest', height: tipHeight });
         testBlock(block);
         done();
       });
@@ -262,7 +264,7 @@ describe('Block Routes', function() {
       if (err) console.error(err);
       const block = res.body;
       expect(block).to.include(
-        {chain: 'BTC', network: 'regtest', height: 101, confirmations: tipHeight - 101 + 1}
+        { chain: 'BTC', network: 'regtest', height: 101, confirmations: tipHeight - 101 + 1 }
       );
       testBlock(block);
       done();
@@ -273,7 +275,7 @@ describe('Block Routes', function() {
     request.get('/api/BCH/regtest/block/101').expect(200, (err, res) => {
       if (err) console.error(err);
       const block = res.body;
-      expect(block).to.include({chain: 'BCH', network: 'regtest', height: 101});
+      expect(block).to.include({ chain: 'BCH', network: 'regtest', height: 101 });
       testBlock(block);
       done();
     });
@@ -307,14 +309,14 @@ describe('Block Routes', function() {
     expect(outputs.length).to.be.at.least(txids.length);
 
     for (const input of inputs) {
-      expect(input).to.include({chain, network, spentHeight: blockHeight});
+      expect(input).to.include({ chain, network, spentHeight: blockHeight });
       expectObjectToHaveProps(input, coinProps);
     }
     for (const output of outputs) {
-      expect(output).to.include({chain, network, mintHeight: blockHeight });
+      expect(output).to.include({ chain, network, mintHeight: blockHeight });
       expectObjectToHaveProps(output, coinProps);
     }
-  }
+  };
 
   let block100Hash;
   it('should fetch block 100 and save hash for other tests', done => {
@@ -325,8 +327,8 @@ describe('Block Routes', function() {
       block100Hash = block.hash;
       testBlock(block);
       done();
-    })
-  })
+    });
+  });
 
   it('should get coins by block hash', done => {
     request.get(`/api/BTC/regtest/block/${block100Hash}/coins/0/1`).expect(200, (err, res) => {
@@ -455,7 +457,7 @@ describe('Block Routes', function() {
       const block = res.body;
       const { timeNormalized } = block;
       expect(new Date(timeNormalized).getTime()).to.be.lessThan(minutesAgo(20).getTime());
-      expect(block).to.include({chain: 'BTC', network: 'regtest'})
+      expect(block).to.include({ chain: 'BTC', network: 'regtest' });
       testBlock(block);
       done();
     });

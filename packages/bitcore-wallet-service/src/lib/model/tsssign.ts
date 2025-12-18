@@ -9,7 +9,7 @@ export interface ITssSigMessageObject {
     payload: {
       message: string;
       signature: string;
-    }
+    };
   }>;
   p2pMessages: Array<{
     to: number;
@@ -17,7 +17,7 @@ export interface ITssSigMessageObject {
     payload: {
       encryptedMessage: string;
       signature: string;
-    }
+    };
   }>;
   partyId: number;
   publicKey: string;
@@ -93,7 +93,7 @@ export class TssSigGenModel implements ITssSigGenModel {
   __v: number;
 
 
-  static create(params: { id: string; message: ITssSigMessageObject; m: number; copayerId: string; }): TssSigGenModel {
+  static create(params: { id: string; message: ITssSigMessageObject; m: number; copayerId: string }): TssSigGenModel {
     const { id, message, m, copayerId } = params;
     const { partyId } = message;
 

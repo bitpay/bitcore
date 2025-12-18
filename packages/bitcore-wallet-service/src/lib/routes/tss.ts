@@ -11,7 +11,7 @@ interface TssRouterOpts {
   returnError: Types.ReturnErrorFn;
   opts: {
     ignoreRateLimiter?: boolean;
-  }
+  };
 };
 
 export class TssRouter {

@@ -185,7 +185,7 @@ export class Storage {
     return this.storageType.getAddress({ name, address, keepAlive: true, open: true });
   }
 
-  async getAddresses(params: { name: string, limit?: number, skip?: number }) {
+  async getAddresses(params: { name: string; limit?: number; skip?: number }) {
     const { name, limit, skip } = params;
     return this.storageType.getAddresses({ name, limit, skip });
   }

@@ -18,7 +18,7 @@ const iconMap: IconMap = {
   wallet_complete: 'green-check.png'
 };
 
-export const getIconHtml = (templateName: string, sendEmail?: boolean): string | null => {
+export const getIconHtml = (templateName: string, _sendEmail?: boolean): string | null => {
   const iconFile = iconMap[templateName];
   if (!iconFile) {
     return null;
@@ -27,5 +27,5 @@ export const getIconHtml = (templateName: string, sendEmail?: boolean): string |
   const staticUrl = config.baseUrl || 'https://bws.bitpay.com';
   const iconUrl = `${staticUrl}/bws/static/images/${iconFile}`;
   
-  return `<img src="${iconUrl}" alt="${templateName} icon" style="width: 50px; height: 50px;" />`
+  return `<img src="${iconUrl}" alt="${templateName} icon" style="width: 50px; height: 50px;" />`;
 }; 

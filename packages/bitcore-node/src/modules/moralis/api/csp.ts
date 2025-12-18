@@ -1,5 +1,5 @@
 import os from 'os';
-import request = require('request');
+import request from 'request';
 import Web3 from 'web3';
 import config from '../../../config';
 import logger from '../../../logger';
@@ -57,7 +57,8 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
 
   // @override
   async getFee(params) {
-    let { network, target = 4, txType } = params;
+    let { network } = params;
+    const { target = 4, txType } = params;
     const chain = this.chain;
     if (network === 'livenet') {
       network = 'mainnet';
@@ -70,9 +71,8 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     return CacheStorage.getGlobalOrRefresh(
       cacheKey,
       async () => {
-        let feerate;
         const { rpc } = await this.getWeb3(network, { type: 'historical' });
-        feerate = await rpc.estimateFee({ nBlocks: target, txType });
+        const feerate = await rpc.estimateFee({ nBlocks: target, txType });
         return { feerate, blocks: target };
       },
       CacheStorage.Times.Minute
@@ -132,7 +132,8 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
 
   // @override
   async _getTransaction(params: StreamTransactionParams) {
-    let { chain, network, txId } = params;
+    let { network } = params;
+    const { chain, txId } = params;
     network = network.toLowerCase();
 
     const { web3 } = await this.getWeb3(network, { type: 'historical' });
@@ -167,7 +168,8 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
   // @override
   async _buildWalletTransactionsStream(params: StreamWalletTransactionsParams, streamParams: BuildWalletTxsStreamParams) {
     const { network, args } = params;
-    let { transactionStream, walletAddresses } = streamParams;
+    let { transactionStream } = streamParams;
+    const { walletAddresses } = streamParams;
 
     const chainId = await this.getChainId({ network });
     for (const address of walletAddresses) {
@@ -188,7 +190,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       WalletAddressStorage.updateLastQueryTime({ chain: this.chain, network, address })
         .catch(e => logger.warn(`Failed to update ${this.chain}:${network} address lastQueryTime: %o`, e)),
       this._addAddressToSubscription({ chainId, address })
-        .catch(e => logger.warn(`Failed to add address to ${this.chain}:${network} Moralis subscription: %o`, e))
+        .catch(e => logger.warn(`Failed to add address to ${this.chain}:${network} Moralis subscription: %o`, e));
     }
     return transactionStream;
   }
@@ -236,7 +238,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
           return reject(err);
         }
         return resolve(body.block as number);
-      })
+      });
     });
   }
 
@@ -292,13 +294,13 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       const _tx: any = this._transformTransaction({ chain, network, ...tx });
       const confirmations = this._calculateConfirmations(tx, args.tipHeight);
       return EVMTransactionStorage._apiTransform({ ..._tx, confirmations }, { object: true }) as EVMTransactionJSON;
-    }
+    };
 
     return new ExternalApiStream(
       `${this.baseUrl}/${address}${queryStr}`,
       this.headers,
       args
-    )
+    );
   }
 
   private _streamERC20TransactionsByAddress({ chainId, chain, network, address, tokenAddress, args }): any {
@@ -323,13 +325,13 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       const _tx: any = this._transformTokenTransfer({ chain, network, ...tx });
       const confirmations = this._calculateConfirmations(tx, args.tipHeight);
       return EVMTransactionStorage._apiTransform({ ..._tx, confirmations }, { object: true }) as EVMTransactionJSON;
-    }
+    };
 
     return new ExternalApiStream(
       `${this.baseUrl}/${address}/erc20/transfers${queryStr}`,
       this.headers,
       args
-    )
+    );
   }
 
   private _transformTransaction(tx) {
@@ -375,7 +377,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
   }
 
   private _transformTokenTransfer(transfer) {
-    let _transfer = this._transformTransaction(transfer);
+    const _transfer = this._transformTransaction(transfer);
     return {
       ..._transfer,
       transactionHash: transfer.transaction_hash,
@@ -387,7 +389,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
 
   private _transformQueryParams(params) {
     const { chainId, args } = params;
-    let query = {
+    const query = {
       chain: this._formatChainId(chainId),
     } as any;
     if (args) {
@@ -400,7 +402,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
         }
       } else {
         if (args.startDate) {
-          query.from_date = args.startDate
+          query.from_date = args.startDate;
         }
         if (args.endDate) {
           query.to_date = args.endDate;
@@ -483,13 +485,13 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     const _chainId = this._formatChainId(chainId);
 
     const result: any = await this._subsRequest('PUT', this.baseStreamUrl, {
-        description: `Bitcore ${_chainId} - ${os.hostname()} - addresses`,
-        // tag: '',
-        chainIds: [_chainId],
-        webhookUrl: `${this.baseWebhookurl}/${chain}/${network}/moralis`,
-        includeNativeTxs: true,
-        includeInternalTxs: true
-      }
+      description: `Bitcore ${_chainId} - ${os.hostname()} - addresses`,
+      // tag: '',
+      chainIds: [_chainId],
+      webhookUrl: `${this.baseWebhookurl}/${chain}/${network}/moralis`,
+      includeNativeTxs: true,
+      includeInternalTxs: true
+    }
     );
     if (!result.id) {
       throw new Error('Failed to create subscription: ' + JSON.stringify(result));
@@ -507,7 +509,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     return this._subsRequest('DELETE', `${this.baseStreamUrl}/${sub.id}`) as Promise<MoralisAddressSubscription>;
   }
 
-  async updateAddressSubscription(params: { sub: IAddressSubscription, addressesToAdd?: string[], addressesToRemove?: string[], status?: string }) {
+  async updateAddressSubscription(params: { sub: IAddressSubscription; addressesToAdd?: string[]; addressesToRemove?: string[]; status?: string }) {
     const { sub, addressesToAdd, addressesToRemove, status } = params;
 
     let moralisSub: MoralisAddressSubscription | null = null;
@@ -535,7 +537,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     return coinEvents;
   }
 
-  private _transformWebhookTransaction(params: { webhook, tx } & ChainNetwork): CoinEvent[] {
+  private _transformWebhookTransaction(params: { webhook; tx } & ChainNetwork): CoinEvent[] {
     const { chain, network, tx } = params;
     const events: CoinEvent[] = [];
     for (const address of tx.triggered_by) {

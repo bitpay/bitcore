@@ -1,7 +1,7 @@
 import _ from 'lodash';
+import Uuid from 'uuid';
 
-const Uuid = require('uuid');
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface IEmail {
   version: number;
   createdOn: number;
@@ -19,6 +19,7 @@ interface IEmail {
   notificationId: string;
   language: string;
 }
+
 export class Email {
   version: number;
   createdOn: number;

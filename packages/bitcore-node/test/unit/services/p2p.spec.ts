@@ -4,15 +4,16 @@ import { Config } from '../../../src/services/config';
 import { BaseP2PWorker, P2P } from '../../../src/services/p2p';
 import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 
-class MockP2PWorker extends BaseP2PWorker<any> {
-  started = false;
-
-  constructor(params) {
-    super(params);
-    this.started = true;
-  }
-}
 describe('P2P Service', function() {
+  class MockP2PWorker extends BaseP2PWorker<any> {
+    started = false;
+  
+    constructor(params) {
+      super(params);
+      this.started = true;
+    }
+  }
+  
   before(unitBeforeHelper);
   after(unitAfterHelper);
 

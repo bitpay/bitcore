@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
-const CWC = require('crypto-wallet-core');
-const { Storage } = require('../build/src/services/storage');
-const { TransactionStorage } = require('../build/src/models/transaction');
+import { TransactionStorage } from '../build/src/models/transaction';
+import { Storage } from '../build/src/services/storage';
 
 function usage(errMsg) {
   console.log('USAGE: ./fixReplacedTree.js <txid> <replacementTxid> [options]');
@@ -43,7 +42,7 @@ const real = !!args.find(a => a === '--real');
 const force = !!args.find(a => a === '--force');
 
 console.log('Real:', real);
-real && console.log('~~~~ REAL RUN ~~~~');
+if (real) console.log('~~~~ REAL RUN ~~~~');
 
 console.log('Connecting to storage...');
 Storage.start()
@@ -72,4 +71,4 @@ Storage.start()
     }
   })
   .catch(console.error)
-  .finally(Storage.stop.bind(Storage))
+  .finally(Storage.stop.bind(Storage));

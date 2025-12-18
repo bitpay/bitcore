@@ -9,13 +9,13 @@ const should = chai.should();
 describe('#Advertisement', function() {
   describe('#create', function() {
     it('should create Advertisement', function() {
-      const x = Advertisement.create({ title: 'Test Title'});
+      const x = Advertisement.create({ title: 'Test Title' });
       should.exist(x);
     });
   });
 
   describe('#fromObj', function() {
-     it('should create Advertisement', function() {
+    it('should create Advertisement', function() {
       const x = Advertisement.fromObj({ title: 'Test Title' });
       should.exist(x);
     });

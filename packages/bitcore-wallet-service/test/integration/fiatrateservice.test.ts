@@ -734,16 +734,16 @@ describe('Fiat rate service', function() {
     it('should get the rates of each coin in all supported fiat currencies', function(done) {
       service.getRates({}, function(err, res) {
         should.not.exist(err);
-        Object.keys(res).forEach(key => {
+        for (const key of Object.keys(res)) {
           res[key].length.should.equal(Defaults.FIAT_CURRENCIES.length);
-        });
+        }
         done();
       });
     });
     it('should get the rates of all coins supported', function(done) {
       service.getRates({}, function(err, res) {
         should.not.exist(err);
-        Object.keys(res).length.should.equal( Object.keys(Constants.BITPAY_SUPPORTED_COINS).length)
+        Object.keys(res).length.should.equal( Object.keys(Constants.BITPAY_SUPPORTED_COINS).length);
         done();
       });
     });
@@ -754,10 +754,10 @@ describe('Fiat rate service', function() {
         },
         function(err, res) {
           should.not.exist(err);
-          Object.keys(res).length.should.equal( Object.keys(Constants.BITPAY_SUPPORTED_COINS).length)
-          Object.keys(res).forEach(key=>{
+          Object.keys(res).length.should.equal( Object.keys(Constants.BITPAY_SUPPORTED_COINS).length);
+          for (const key of Object.keys(res)) {
             res[key].length.should.equal(1);
-          });
+          }
           done();
         }
       );
@@ -806,9 +806,9 @@ describe('Fiat rate service', function() {
                 },
                 function(err, res) {
                   should.not.exist(err);
-                  Object.keys(res).forEach(key => {
+                  for (const key of Object.keys(res)) {
                     res[key][0].ts.should.equal(50);
-                  });
+                  }
                   clock.restore();
                   done();
                 }

@@ -59,7 +59,7 @@ export class EVMRouter {
 
   private getAccountNonce(router: Router) {
     router.get(`/api/${this.chain}/:network/address/:address/txs/count`, async (req, res) => {
-      let { address, network } = req.params;
+      const { address, network } = req.params;
       try {
         const nonce = await this.csp.getAccountNonce(network, address);
         res.json({ nonce });
@@ -152,12 +152,13 @@ export class EVMRouter {
 
   private getPriorityFee(router: Router) {
     router.get(`/api/${this.chain}/:network/priorityFee/:percentile`, async (req, res) => {
-      let { percentile, network } = req.params;
+      let { network } = req.params;
+      const { percentile } = req.params;
       const priorityFeePercentile = Number(percentile) || 15;
     
       network = network.toLowerCase();
       try {
-        let fee = await this.csp.getPriorityFee({ network, percentile: priorityFeePercentile });
+        const fee = await this.csp.getPriorityFee({ network, percentile: priorityFeePercentile });
         if (!fee) {
           return res.status(404).send('not available right now');
         }
@@ -171,7 +172,7 @@ export class EVMRouter {
 
   private streamGnosisWalletTransactions(router: Router) { 
     router.get(`/api/${this.chain}/:network/ethmultisig/transactions/:multisigContractAddress`, async (req, res) => {
-      let { network, multisigContractAddress } = req.params;
+      const { network, multisigContractAddress } = req.params;
       try {
         return await Gnosis.streamGnosisWalletTransactions({
           chain: this.chain,

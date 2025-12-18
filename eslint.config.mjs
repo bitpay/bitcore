@@ -8,7 +8,12 @@ import tseslint from 'typescript-eslint';
 export default defineConfig([
   js.configs.recommended,
   {
-    ignores: ['**/node_modules/**', '**/build/**', '**/ts_build/**', 'packages/insight/**']
+    ignores: [
+      '**/node_modules/**',
+      '**/build/**',
+      '**/ts_build/**',
+      'packages/insight/**',
+    ]
   },
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
@@ -20,6 +25,9 @@ export default defineConfig([
         ...globals.node,
         'NodeJS': 'readonly',
         'BufferEncoding': 'readonly',
+      },
+      parserOptions: {
+        impliedStrict: true
       }
     }
   },
@@ -44,18 +52,27 @@ export default defineConfig([
       '@stylistic': stylistic,
     },
     rules: {
-
       quotes: ['error', 'single', { avoidEscape: true }],
       'prefer-const': 'warn',
       'no-var': 'warn',
       'no-undef': 'error',
       'no-async-promise-executor': 'off',
       'semi': ['error', 'always'],
-      'indent': ['error', 2, { SwitchCase: 1 }],
       'no-case-declarations': 'off',
       'no-bitwise': 'error',
       'spaced-comment': ['error', 'always', { exceptions: ['-', '+'] }],
       '@stylistic/object-curly-spacing': ['error', 'always'],
+      '@stylistic/indent': ['error', 2, { SwitchCase: 1 }],
+      '@stylistic/member-delimiter-style': ['error', {
+        multiline: {
+          delimiter: 'semi',
+          requireLast: true
+        },
+        singleline: {
+          delimiter: 'semi',
+          requireLast: false
+        }
+      }],
       'object-curly-spacing': ['error', 'always'],
       'key-spacing': ['error', { beforeColon: false, afterColon: true }],
       'comma-spacing': ['error', { before: false, after: true }],
@@ -101,6 +118,8 @@ export default defineConfig([
     },
     rules: {
       '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-this-alias': 'warn',
+      '@typescript-eslint/no-unused-expressions': 'off',
       'sort-imports': 'off',
       'import/order': 'off'
     }

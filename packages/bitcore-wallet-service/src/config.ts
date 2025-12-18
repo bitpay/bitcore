@@ -1,8 +1,10 @@
+import fs from 'fs';
+import path from 'path';
 import _ from 'lodash';
 import { logger } from './lib/logger';
 
 const Config = (): any => {
-  let defaultConfig = {
+  const defaultConfig = {
     basePath: '/bws/api',
     disableLogs: false,
     port: 3232,
@@ -16,9 +18,9 @@ const Config = (): any => {
     // https: true,
     // privateKeyFile: 'private.pem',
     // certificateFile: 'cert.pem',
-    ////// The following is only for certs which are not
-    ////// trusted by nodejs 'https' by default
-    ////// CAs like Verisign do not require this
+    // //// The following is only for certs which are not
+    // //// trusted by nodejs 'https' by default
+    // //// CAs like Verisign do not require this
     // CAinter1: '', // ex. 'COMODORSADomainValidationSecureServerCA.crt'
     // CAinter2: '', // ex. 'COMODORSAAddTrustCA.crt'
     // CAroot: '', // ex. 'AddTrustExternalCARoot.crt'
@@ -319,21 +321,25 @@ const Config = (): any => {
     //     apiKey: 'ramp_sandbox_api_key_here',
     //     api: 'https://api.demo.ramp.network/api',
     //     widgetApi: 'https://app.demo.ramp.network/',
+    //     signingKey: 'ramp_sandbox_signing_key_here',
     //   },
     //   production: {
     //     apiKey: 'ramp_production_api_key_here',
     //     api: 'https://api.ramp.network/api',
-    //     widgetApi: 'https://app.ramp.network',
+    //     widgetApi: 'https://app.ramp.network/',
+    //     signingKey: 'ramp_production_signing_key_here',
     //   },
     //   sandboxWeb: {
     //     apiKey: 'ramp_sandbox_web_api_key_here',
     //     api: 'https://api.demo.ramp.network/api',
     //     widgetApi: 'https://app.demo.ramp.network/',
+    //     signingKey: 'ramp_sandbox_web_signing_key_here',
     //   },
     //   productionWeb: {
     //     apiKey: 'ramp_production_web_api_key_here',
     //     api: 'https://api.ramp.network/api',
-    //     widgetApi: 'https://app.ramp.network',
+    //     widgetApi: 'https://app.ramp.network/',
+    //     signingKey: 'ramp_production_web_signing_key_here',
     //   }
     // },
     // sardine: {
@@ -456,6 +462,7 @@ const Config = (): any => {
     //   },
     //   v2: {
     //     secret: 'changelly_secret_v2',
+    //     secret_stablecoin: 'changelly_secret_stablecoin_v2'
     //     api: 'https://api.changelly.com/v2'
     //   }
     // },
@@ -476,11 +483,46 @@ const Config = (): any => {
   };
 
   // Override default values with bws.config.js' values, if present
+  const {
+    BITCORE_CONFIG_PATH = path.join(__dirname, '../../../../'),
+    BWS_CONFIG_PATH = path.join(__dirname, '../../')
+  } = process.env;
+  
+  let bwsConfig;
+
   try {
-    const bwsConfig = require('../../bws.config');
-    defaultConfig = _.merge(defaultConfig, bwsConfig);
-  } catch {
-    logger.info('bws.config.js not found, using default configuration values');
+    if (BITCORE_CONFIG_PATH) {
+      if (fs.existsSync(path.join(BITCORE_CONFIG_PATH, 'bitcore.config.json'))) {
+        bwsConfig = JSON.parse(fs.readFileSync(path.join(BITCORE_CONFIG_PATH, 'bitcore.config.json'), 'utf8'));
+      } else if (fs.existsSync(BITCORE_CONFIG_PATH) && BITCORE_CONFIG_PATH.endsWith('.json')) {
+        bwsConfig = JSON.parse(fs.readFileSync(BITCORE_CONFIG_PATH, 'utf8'));
+      }
+      bwsConfig = bwsConfig?.bitcoreWalletService;
+      if (bwsConfig) {
+        logger.info(`Using JSON config from ${BITCORE_CONFIG_PATH}`);
+      }
+    }
+
+    if (!bwsConfig && BWS_CONFIG_PATH) {
+      if (fs.existsSync(path.join(BWS_CONFIG_PATH, 'bws.config.js'))) {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        bwsConfig = require(path.join(BWS_CONFIG_PATH, 'bws.config.js'));
+      } else if (fs.existsSync(BWS_CONFIG_PATH) && BWS_CONFIG_PATH.endsWith('.js')) {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        bwsConfig = require(BWS_CONFIG_PATH);
+      }
+      if (bwsConfig) {
+        logger.info(`Using JS config from ${BWS_CONFIG_PATH}`);
+      }
+    }
+    
+    if (!bwsConfig) {
+      logger.info('No config file found. Using default configuration values');
+    }
+
+    bwsConfig = _.merge(defaultConfig, bwsConfig);
+  } catch (err) {
+    throw new Error('Error loading config file:\n' + err.stack);
   }
 
   if (process.env.SENDGRID_API_KEY) {

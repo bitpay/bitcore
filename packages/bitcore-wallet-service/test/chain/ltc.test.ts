@@ -60,7 +60,7 @@ describe('Chain LTC', () => {
     let toAddress;
     let privateKey;
 
-    before(() =>  {
+    before(() => {
       ltc = ChainService.get('ltc') as LtcChain;
       fromAddress = 'LcA1gPGGxYEGL2FS1eErMnWKSCkPUJonxH';
       toAddress = 'LYNk38CXCPavnf3wmhkymkC9HVrXj6zMQn';

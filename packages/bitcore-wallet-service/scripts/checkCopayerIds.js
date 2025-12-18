@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
-const config = require('../../ts_build/src/config').default;
-const { Storage } = require('../../ts_build/src').default;
-const rl = require('readline').createInterface({ input: process.stdin, output: process.stdout });
-const fs = require('fs');
-const os = require('os');
-const CWC = require('crypto-wallet-core');
+import fs from 'fs';
+import os from 'os';
+import readline from 'readline';
+import CWC from 'crypto-wallet-core';
+import pkg from '../../ts_build/src';
+import config from '../../ts_build/src/config';
 
-const startDate = new Date('2011-01-01T00:00:00.000Z');
-const endDate = new Date();
+const { Storage } = pkg;
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
 function usage(errMsg) {
   console.log('USAGE: ./checkCopayerIds.js [options]');
@@ -55,7 +55,7 @@ storage.connect(config.storageOpts, async (err) => {
   }
   
   function done(err) {
-    if (err) { console.log(err) }
+    if (err) { console.log(err); }
     rl.close();
     storage.disconnect(() => { console.log('done'); });
   }
@@ -99,7 +99,7 @@ storage.connect(config.storageOpts, async (err) => {
         const str = chain === 'btc' ? xpub : (chain + xpub);
         
         const hash = CWC.BitcoreLib.crypto.Hash.sha256(Buffer.from(str));
-        const computed =  hash.toString('hex');
+        const computed = hash.toString('hex');
         if (copayerId !== computed) {
           mismatches++;
           fs.appendFileSync(outFile, `${wallet.id}:${copayerId} -> expected: ${computed}\n`);

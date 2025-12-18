@@ -82,7 +82,7 @@ Tx proposal need to be:
 3.  Then signed via /v?/txproposal/:id/signature for each copayer
 4.  Then broadcasted to the p2p network via /v?/txproposal/:id/broadcast
 
-The are plenty example creating and sending proposals in the `/test/integration` code.
+There are plenty examples of creating and sending proposals in the `/test/integration` code.
 
 ## Enabling Regtest Mode for BWS and Copay
 
