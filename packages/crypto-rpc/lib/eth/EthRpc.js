@@ -1,8 +1,7 @@
 import EventEmitter from 'events';
 import util from 'util';
-import * as ethers from 'ethers';
+import { Web3, ethers } from 'crypto-wallet-core';
 import promptly from 'promptly';
-import { Web3 } from 'web3';
 import * as utils from '../utils.js';
 import { chainConfig } from './chains.js';
 

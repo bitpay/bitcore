@@ -1,7 +1,7 @@
 import EventEmitter from 'events';
 import util from 'util';
+import { xrpl } from 'crypto-wallet-core';
 import promptly from 'promptly';
-import xrpl from 'xrpl';
 import { XrpClientAdapter } from './XrpClientAdapter.js';
 
 const passwordPromptAsync = util.promisify(promptly.password);

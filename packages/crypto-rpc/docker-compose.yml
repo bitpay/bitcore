@@ -6,6 +6,7 @@ services:
     volumes:
       - my_data1:/root/.lnd
       - my_data2:/root/.lnd2
+      - ../crypto-wallet-core:/crypto-rpc/node_modules/crypto-wallet-core
     networks:
       default:
         ipv4_address: 172.28.0.21
@@ -27,6 +28,7 @@ services:
     volumes:
       - my_data1:/root/.lnd
       - my_data2:/root/.lnd2
+      - ../crypto-wallet-core:/crypto-rpc/node_modules/crypto-wallet-core
     networks:
       default:
         ipv4_address: 172.28.0.2
@@ -241,6 +243,9 @@ volumes:
     driver: local
   my_data2:
     driver: local
+  cwc:
+    driver: external
+    name: crypto-wallet-core
 
 networks:
   default:

@@ -1,12 +1,15 @@
 import EventEmitter from 'events';
 import { pipe } from '@solana/functional';
-import * as SolKit from '@solana/kit';
-import * as SolComputeBudget from '@solana-program/compute-budget';
-import * as SolSystem from '@solana-program/system';
-import * as SolToken from '@solana-program/token';
 import bs58 from 'bs58';
+import { SolKit, SolanaProgram } from 'crypto-wallet-core';
 import { SOL_ERROR_MESSAGES } from './error_messages.js';
 import { parseInstructions } from './transaction-parser.js';
+
+const {
+  ComputeBudget: SolComputeBudget,
+  System: SolSystem,
+  Token: SolToken
+} = SolanaProgram;
 
 export class SolRpc {
   /**
