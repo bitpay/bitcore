@@ -29,6 +29,9 @@ WORKDIR /bitcore
 COPY lerna.json ./
 COPY package*.json ./
 
+COPY  ./packages/bitcore-cli/package.json ./packages/bitcore-cli/package.json
+COPY  ./packages/bitcore-cli/package-lock.json ./packages/bitcore-cli/package-lock.json
+
 COPY  ./packages/bitcore-client/package.json ./packages/bitcore-client/package.json
 COPY  ./packages/bitcore-client/package-lock.json ./packages/bitcore-client/package-lock.json
 
@@ -58,9 +61,6 @@ COPY  ./packages/bitcore-wallet-client/package-lock.json ./packages/bitcore-wall
 
 COPY  ./packages/bitcore-wallet-service/package.json ./packages/bitcore-wallet-service/package.json
 COPY  ./packages/bitcore-wallet-service/package-lock.json ./packages/bitcore-wallet-service/package-lock.json
-
-COPY  ./packages/bitcore-wallet/package.json ./packages/bitcore-wallet/package.json
-COPY  ./packages/bitcore-wallet/package-lock.json ./packages/bitcore-wallet/package-lock.json
 
 COPY  ./packages/crypto-wallet-core/package.json ./packages/crypto-wallet-core/package.json
 COPY  ./packages/crypto-wallet-core/package-lock.json ./packages/crypto-wallet-core/package-lock.json
