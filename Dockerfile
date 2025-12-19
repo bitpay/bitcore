@@ -29,6 +29,9 @@ WORKDIR /bitcore
 COPY lerna.json ./
 COPY package*.json ./
 
+COPY  ./packages/bitcore-cli/package.json ./packages/bitcore-cli/package.json
+COPY  ./packages/bitcore-cli/package-lock.json ./packages/bitcore-cli/package-lock.json
+
 COPY  ./packages/bitcore-client/package.json ./packages/bitcore-client/package.json
 COPY  ./packages/bitcore-client/package-lock.json ./packages/bitcore-client/package-lock.json
 
