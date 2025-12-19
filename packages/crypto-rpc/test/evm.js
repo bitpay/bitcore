@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import * as ethers from 'ethers';
-import * as util from 'web3-utils';
+import { Web3, ethers } from 'crypto-wallet-core';
 import { CryptoRpc } from '../index.js';
 import { chainConfig } from '../lib/eth/chains.js';
 
@@ -155,7 +154,7 @@ describe('EVM', function() {
           gasLimit: 25000,
           gasPrice: 2.1 * 10e9,
           to: config.currencyConfig.sendTo,
-          value: Number(util.toWei('123', 'wei'))
+          value: Number(Web3.utils.toWei('123', 'wei'))
         };
         const privateKey = config.currencyConfig.privateKey;
         const signer = new ethers.Wallet(privateKey);
@@ -176,7 +175,7 @@ describe('EVM', function() {
             gasLimit: 25000,
             gasPrice: 2.1 * 10e9,
             to: config.currencyConfig.sendTo,
-            value: Number(util.toWei('123', 'wei'))
+            value: Number(Web3.utils.toWei('123', 'wei'))
           };
           const privateKey = config.currencyConfig.privateKey;
           const signer = new ethers.Wallet(privateKey);
@@ -211,7 +210,7 @@ describe('EVM', function() {
       it('should be able to get a block hash', async () => {
         const block = await rpcs.getBestBlockHash({ currency });
         blockHash = block;
-        expect(util.isHex(block)).to.be.true;
+        expect(ethers.isHexString(block)).to.be.true;
       });
     
       it('should get block', async () => {
@@ -249,7 +248,7 @@ describe('EVM', function() {
           amount: '10000',
           fromAccount: currencyConfig.privateKey
         });
-        expect(util.isHex(txid)).to.be.true;
+        expect(ethers.isHexString(txid)).to.be.true;
       });
 
       it('should be able to send a transaction with added wallet', async () => {
@@ -263,7 +262,7 @@ describe('EVM', function() {
         });
         const decodedParams = await rpcs.getTransaction({ txid });
         expect(decodedParams.gasPrice).to.equal(30000000000n);
-        expect(util.isHex(txid)).to.be.true;
+        expect(ethers.isHexString(txid)).to.be.true;
         rpcs.rpcs[config.chain].removeAccount(config.account);
       });
     
@@ -277,7 +276,7 @@ describe('EVM', function() {
         });
         const decodedParams = await rpcs.getTransaction({ txid });
         expect(decodedParams.gasPrice).to.equal(30000000000n);
-        expect(util.isHex(txid)).to.be.true;
+        expect(ethers.isHexString(txid)).to.be.true;
       });
     
       it('should be able to send many transactions', async () => {
@@ -311,8 +310,8 @@ describe('EVM', function() {
         expect(emitResults[1].address).to.equal(address);
         expect(emitResults[1].amount).to.equal(amount);
         expect(outputArray.length).to.equal(2);
-        expect(util.isHex(outputArray[0].txid)).to.be.true;
-        expect(util.isHex(outputArray[1].txid)).to.be.true;
+        expect(ethers.isHexString(outputArray[0].txid)).to.be.true;
+        expect(ethers.isHexString(outputArray[1].txid)).to.be.true;
         expect(outputArray[0].txid).to.have.lengthOf(66);
         expect(outputArray[1].txid).to.have.lengthOf(66);
         expect(outputArray[1].txid).to.not.equal(outputArray[0].txid);
@@ -390,7 +389,7 @@ describe('EVM', function() {
           currency,
           address: config.currencyConfig.sendTo
         });
-        const utilVaildate = util.isAddress(config.currencyConfig.sendTo);
+        const utilVaildate = ethers.isAddress(config.currencyConfig.sendTo);
         expect(isValid).to.equal(utilVaildate);
       });
     
@@ -399,7 +398,7 @@ describe('EVM', function() {
           currency,
           address: 'NOTANADDRESS'
         });
-        const utilVaildate = util.isAddress('NOTANADDRESS');
+        const utilVaildate = ethers.isAddress('NOTANADDRESS');
         expect(isValid).to.equal(utilVaildate);
       });
 

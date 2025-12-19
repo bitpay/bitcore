@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { createRequire } from 'module';
-import * as util from 'web3-utils';
+import { ethers } from 'crypto-wallet-core';
 import { CryptoRpc } from '../index.js';
 
 const require = createRequire(import.meta.url);
@@ -73,7 +73,7 @@ describe('ERC20 Tests', function() {
     const decodedParams = await rpcs.getTransaction({ txid });
     expect(decodedParams.nonce).to.equal(24n);
     expect(decodedParams.gasPrice).to.equal(30000000000n);
-    expect(util.isHex(txid)).to.be.true;
+    expect(ethers.isHexString(txid)).to.be.true;
   });
 
   it('should be able to send a big transaction', async () => {
@@ -112,8 +112,8 @@ describe('ERC20 Tests', function() {
     expect(emitResults[1].address).to.equal(address);
     expect(emitResults[1].amount).to.equal(amount);
     expect(outputArray.length).to.equal(2);
-    expect(util.isHex(outputArray[0].txid)).to.be.true;
-    expect(util.isHex(outputArray[1].txid)).to.be.true;
+    expect(ethers.isHexString(outputArray[0].txid)).to.be.true;
+    expect(ethers.isHexString(outputArray[1].txid)).to.be.true;
     expect(outputArray[0].txid).to.have.lengthOf(66);
     expect(outputArray[1].txid).to.have.lengthOf(66);
   });

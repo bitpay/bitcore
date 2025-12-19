@@ -1,7 +1,8 @@
-import * as SolKit from '@solana/kit';
-import * as SolToken from '@solana-program/token';
+import { SolKit, SolanaProgram } from 'crypto-wallet-core';
 import { SolRpc } from './SolRpc.js';
 import { SOL_ERROR_MESSAGES } from './error_messages.js';
+
+const { Token: SolToken } = SolanaProgram;
 
 export class SplRpc extends SolRpc {
   constructor(config) {
