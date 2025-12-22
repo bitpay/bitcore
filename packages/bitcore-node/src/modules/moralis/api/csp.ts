@@ -1,3 +1,44 @@
+/**
+ * Moralis Chain State Provider - EXTERNAL API MODULE
+ *
+ * TODO! THIS IS THE TEMPLATE FOR EXTERNAL API PROVIDERS:
+ * This file shows how to create a chain state provider that uses an external indexed API
+ * instead of local MongoDB. It's located in modules/ (not providers/chain-state/) because
+ * it's an ALTERNATIVE implementation to the base local MongoDB providers.
+ *
+ * DIRECTORY STRUCTURE EXPLAINED:
+ * - providers/chain-state/evm/api/csp.ts = BaseEVMStateProvider (LOCAL MongoDB + RPC)
+ * - modules/ethereum/api/csp.ts = ETHStateProvider extends BaseEVM (just a wrapper)
+ * - modules/moralis/api/csp.ts = MoralisStateProvider extends BaseEVM (EXTERNAL API - THIS FILE!)
+ *
+ * This is the same as UTXO chains:
+ * - providers/chain-state/btc/btc.ts = BTCStateProvider (LOCAL MongoDB + RPC)
+ * - modules/blockcypher/api/csp.ts = BlockCypherStateProvider extends BTC (FUTURE - external API)
+ *
+ * WHY EXTERNAL API PROVIDERS?
+ * Running full blockchain nodes is expensive (118.4 TB storage, $12K+/month) and operationally
+ * complex (sync times, maintenance, monitoring). Moralis provides indexed blockchain data through
+ * APIs, eliminating the need for local P2P workers and MongoDB indexing for most queries.
+ *
+ * CURRENT STATE:
+ * - Already used for EVM Layer 2 chains (BASE, MATIC, ARB, OP) in production
+ * - Extends BaseEVMStateProvider, overrides query methods to use Moralis API
+ * - Still inherits RPC methods (broadcasting, balance checks) from base class
+ *
+ * TODO! REPLICATE THIS PATTERN FOR UTXO CHAINS:
+ * Create modules/blockcypher/api/csp.ts with:
+ * ```
+ * export class BlockCypherStateProvider extends BTCStateProvider {
+ *   // Override methods to use BlockCypher API instead of local MongoDB
+ *   async streamAddressTransactions(params) { return new ExternalApiStream(...); }
+ *   async getBalanceForAddress(params) { return await axios.get(blockCypherUrl); }
+ *   // Keep inherited: broadcastTransaction, getFee (still use RPC)
+ * }
+ * ```
+ *
+ * See: /Users/lyambo/code/.notes/BCN-Node-Providers.html for full migration strategy
+ */
+
 import os from 'os';
 import request from 'request';
 import Web3 from 'web3';
@@ -27,6 +68,44 @@ export interface MoralisAddressSubscription {
   status?: string;
 }
 
+/**
+ * TODO! MORALIS STATE PROVIDER CLASS - HOW TO OVERRIDE BASE METHODS:
+ * This class extends BaseEVMStateProvider (the local MongoDB implementation) and overrides
+ * specific methods to use Moralis APIs instead. This is the PATTERN to replicate.
+ *
+ * WHAT GETS OVERRIDDEN (uses Moralis API):
+ * - _getTransaction() → Queries Moralis instead of EVMTransactionStorage
+ * - _buildAddressTransactionsStream() → Streams from Moralis instead of MongoDB
+ * - _buildWalletTransactionsStream() → Streams from Moralis instead of MongoDB
+ * - _getBlockNumberByDate() → Queries Moralis dateToBlock endpoint
+ * - _getBlocks() → Queries Moralis block endpoint with range
+ *
+ * WHAT STAYS INHERITED (uses RPC from base class):
+ * - getBalanceForAddress() → web3.eth.getBalance() (fast RPC call)
+ * - broadcastTransaction() → web3.eth.sendSignedTransaction() (RPC)
+ * - estimateGas() → web3.eth.estimateGas() (RPC)
+ * - getAccountNonce() → web3.eth.getTransactionCount() (RPC)
+ *
+ * MORALIS-SPECIFIC FEATURES:
+ * - Webhooks for real-time transaction notifications
+ * - Streams API for address monitoring
+ * - Multiple EVM chains supported (ETH, BASE, ARB, OP, MATIC, etc.)
+ *
+ * TODO! ARCHITECTURAL IMPROVEMENTS NEEDED:
+ * 1. STREAM ARCHITECTURE: Currently passes req/res through the entire call chain.
+ *    Should instead return streams that get piped to res in the route handler.
+ *    This would simplify testing, reduce coupling, and make the code more composable.
+ *    See _streamAddressTransactionsFromMoralis() for how it SHOULD work everywhere.
+ *
+ * 2. HYBRID QUERY ROUTING: Add retention policy logic
+ *    - Keep recent N days in local MongoDB (fast, no API cost)
+ *    - Query Moralis for older historical data (when needed)
+ *    - Check local first, fallback to Moralis if not found
+ *    - Cache Moralis responses locally for frequently accessed data
+ *
+ * 3. MIGRATE FROM REQUEST LIBRARY: Replace callback-based 'request' with async/await axios
+ *    (already done in ExternalApiStream, need to apply to _subsRequest and others)
+ */
 export class MoralisStateProvider extends BaseEVMStateProvider {
   baseUrl = 'https://deep-index.moralis.io/api/v2.2';
   baseStreamUrl = 'https://api.moralis-streams.com/streams/evm';
@@ -130,6 +209,23 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
 
   }
 
+  /**
+   * TODO! HYBRID QUERY PATTERN:
+   * This method currently ONLY queries Moralis. For a true hybrid approach, it should:
+   * 1. Check local MongoDB first (for recent data within retention window)
+   * 2. If not found locally AND request is outside retention window, query Moralis
+   * 3. Cache Moralis response locally for future queries
+   *
+   * Example implementation:
+   * ```
+   * const localTx = await EVMTransactionStorage.collection.findOne({ chain, network, txid: txId });
+   * if (localTx) return { tipHeight, found: localTx };
+   *
+   * // Check if transaction is likely outside retention window
+   * const retentionWindow = config.chains[chain].retentionDays || 30;
+   * // ... query Moralis only if needed ...
+   * ```
+   */
   // @override
   async _getTransaction(params: StreamTransactionParams) {
     let { network } = params;
@@ -148,6 +244,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     const { req, res, args, network, address } = params;
 
     const chainId = await this.getChainId({ network });
+    // TODO! GOOD PATTERN: This method creates a stream and returns it
     const txStream = await this._streamAddressTransactionsFromMoralis({
       chainId,
       chain: this.chain,
@@ -158,7 +255,11 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
         ...args
       }
     });
-    // TODO unify `ExternalApiStream.onStream` and `Storage.apiStream` which are effectively doing the same thing
+    // TODO! ANTI-PATTERN: We're piping the stream to res here instead of in the route handler
+    // This method should just RETURN the stream, and the route handler should do:
+    //   const stream = await provider._buildAddressTransactionsStream(params);
+    //   await ExternalApiStream.onStream(stream, req, res);
+    // This would make the method testable without mocking req/res
     const result = await ExternalApiStream.onStream(txStream, req!, res!);
     if (!result?.success) {
       logger.error('Error mid-stream (streamAddressTransactions): %o', result.error?.log || result.error);
@@ -172,6 +273,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     const { walletAddresses } = streamParams;
 
     const chainId = await this.getChainId({ network });
+    // TODO! Query Moralis for each address in the wallet and merge streams
     for (const address of walletAddresses) {
       const txStream = await this._streamAddressTransactionsFromMoralis({
         chainId,
@@ -180,15 +282,19 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
         address,
         args: {
           limit: args.limit, // no default limit when querying by wallet. Note: BWS caches txs
-          order: 'ASC',
+          order: 'ASC', // TODO! Ascending order for wallet txs (chronological)
           ...args
         }
       });
+      // TODO! eventPipe pattern: Merges this address's stream into the wallet stream
+      // Each address stream gets piped into the combined wallet stream
       transactionStream = txStream.eventPipe(transactionStream);
-      
-      // Do not await these promises. They are not critical to the stream.
+
+      // TODO! Fire-and-forget maintenance tasks (don't block the stream)
+      // updateLastQueryTime: Track when we last queried this address (for caching decisions)
       WalletAddressStorage.updateLastQueryTime({ chain: this.chain, network, address })
         .catch(e => logger.warn(`Failed to update ${this.chain}:${network} address lastQueryTime: %o`, e)),
+      // _addAddressToSubscription: Register address for Moralis webhook notifications
       this._addAddressToSubscription({ chainId, address })
         .catch(e => logger.warn(`Failed to add address to ${this.chain}:${network} Moralis subscription: %o`, e));
     }
@@ -216,6 +322,30 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
   }
 
   // @override
+  /**
+   * TODO! MIGRATE FROM REQUEST CALLBACKS TO ASYNC/AWAIT:
+   * This method uses the old 'request' library with callbacks. Should be updated to:
+   * 1. Use axios (like ExternalApiStream does) for consistency
+   * 2. Use async/await instead of Promise constructor antipattern
+   * 3. Add proper error handling and retries
+   *
+   * TODO! ADD CACHING:
+   * Block number by date is immutable data - perfect candidate for caching
+   * Should cache indefinitely once block is confirmed (> N confirmations)
+   *
+   * Example refactor:
+   * ```
+   * async _getBlockNumberByDate({ chainId, date }) {
+   *   const cacheKey = `blockByDate-${chainId}-${date.getTime()}`;
+   *   return CacheStorage.getGlobalOrRefresh(cacheKey, async () => {
+   *     const response = await axios.get(`${this.baseUrl}/dateToBlock${queryStr}`, {
+   *       headers: this.headers
+   *     });
+   *     return response.data.block;
+   *   }, CacheStorage.Times.Day);
+   * }
+   * ```
+   */
   async _getBlockNumberByDate({ chainId, date }) {
     if (!date || !isDateValid(date)) {
       throw new Error('Invalid date');
@@ -271,6 +401,34 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
   }
 
 
+  /**
+   * TODO! STREAM-BASED ARCHITECTURE - THIS IS THE RIGHT PATTERN:
+   * This method RETURNS a stream instead of taking req/res as parameters.
+   * This is how ALL our streaming methods should work.
+   *
+   * WHY THIS PATTERN IS BETTER:
+   * 1. Testable: Can test stream output without mocking Express req/res
+   * 2. Composable: Can pipe streams together without coupling to HTTP layer
+   * 3. Reusable: Same stream can be used for HTTP, WebSocket, file output, etc.
+   * 4. Clear separation: Business logic (this) vs HTTP concerns (route handler)
+   *
+   * COMPARE TO ANTI-PATTERN:
+   * - _buildAddressTransactionsStream() takes req/res, pipes internally (BAD)
+   * - This method returns stream, caller decides what to do with it (GOOD)
+   *
+   * TODO! APPLY THIS PATTERN EVERYWHERE:
+   * All streaming methods should return streams, not take req/res:
+   * - streamBlocks() -> return stream
+   * - streamWalletTransactions() -> return stream
+   * - streamAddressTransactions() -> return stream
+   * Route handlers should do: await ExternalApiStream.onStream(stream, req, res);
+   *
+   * TODO! FOR HYBRID QUERIES:
+   * - Use ExternalApiStream.mergeStreams() to combine local + Moralis streams
+   * - Local stream: Recent data from MongoDB (within retention window)
+   * - Moralis stream: Historical data from API (outside retention window)
+   * - See ExternalApiStream.mergeStreams() for implementation pattern
+   */
   _streamAddressTransactionsFromMoralis(params: StreamAddressUtxosParams & ChainId) {
     const { chainId, chain, network, address, args } = params;
     if (args.tokenAddress) {
@@ -288,18 +446,21 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       ...query,
       order: args.order || 'DESC', // default to descending order
       limit: args.pageSize || 10, // limit per request/page. total limit (args.limit) is checked in apiStream._read()
-      include: 'internal_transactions'
+      include: 'internal_transactions' // TODO! Include internal txs in response (contract calls, etc.)
     });
+    // TODO! Transform function: Converts Moralis format to our internal format
+    // This runs on EACH transaction as it's streamed (not all at once)
     args.transform = (tx) => {
-      const _tx: any = this._transformTransaction({ chain, network, ...tx });
-      const confirmations = this._calculateConfirmations(tx, args.tipHeight);
-      return EVMTransactionStorage._apiTransform({ ..._tx, confirmations }, { object: true }) as EVMTransactionJSON;
+      const _tx: any = this._transformTransaction({ chain, network, ...tx }); // Moralis -> internal format
+      const confirmations = this._calculateConfirmations(tx, args.tipHeight); // Add confirmations
+      return EVMTransactionStorage._apiTransform({ ..._tx, confirmations }, { object: true }) as EVMTransactionJSON; // Final API format
     };
 
+    // TODO! Return stream directly - caller decides how to consume it
     return new ExternalApiStream(
-      `${this.baseUrl}/${address}${queryStr}`,
-      this.headers,
-      args
+      `${this.baseUrl}/${address}${queryStr}`, // Moralis API URL with query params
+      this.headers, // API key headers
+      args // Includes limit, transform, pagination settings
     );
   }
 

@@ -1,3 +1,55 @@
+/**
+ * Internal State Provider - LOCAL MongoDB Base for ALL Chains
+ *
+ * TODO! THIS IS THE ROOT BASE CLASS FOR LOCAL PROVIDERS:
+ * This is the foundation for ALL chain state providers that use local MongoDB storage.
+ * Both UTXO chains (Bitcoin) and account-based chains (Ethereum) extend this class.
+ *
+ * DIRECTORY STRUCTURE:
+ * providers/chain-state/ = Base implementations (LOCAL MongoDB + RPC)
+ *   ├─ internal/internal.ts → InternalStateProvider (THIS FILE - UTXO base methods)
+ *   ├─ btc/btc.ts → BTCStateProvider extends InternalStateProvider
+ *   ├─ ltc/ltc.ts → LTCStateProvider extends InternalStateProvider
+ *   ├─ evm/api/csp.ts → BaseEVMStateProvider extends InternalStateProvider
+ *
+ * modules/ = Alternative implementations (can override base methods with external APIs)
+ *   ├─ ethereum/api/csp.ts → ETHStateProvider extends BaseEVM (just a wrapper)
+ *   ├─ moralis/api/csp.ts → MoralisStateProvider extends BaseEVM (OVERRIDES with Moralis API)
+ *   ├─ blockcypher/ (future) → BlockCypherStateProvider extends BTCStateProvider (OVERRIDES with BlockCypher API)
+ *
+ * WHAT THIS CLASS PROVIDES:
+ * - UTXO model storage: CoinStorage (inputs/outputs, spentHeight, mintHeight)
+ * - Transaction storage: TransactionStorage (UTXO transactions)
+ * - Block storage: BitcoinBlockStorage (works for all UTXO chains)
+ * - RPC access: this.getRPC() for broadcasting and fee estimation
+ * - ALL methods query LOCAL MongoDB or LOCAL RPC
+ *
+ * WHO USES THIS DIRECTLY:
+ * - BTCStateProvider (providers/chain-state/btc/btc.ts)
+ * - LTCStateProvider (providers/chain-state/ltc/ltc.ts)
+ * - DOGEStateProvider (providers/chain-state/doge/doge.ts)
+ * - BCHStateProvider (providers/chain-state/bch/bch.ts)
+ *
+ * WHO EXTENDS AND MODIFIES IT:
+ * - BaseEVMStateProvider (adds EVM account model on top of UTXO base)
+ *
+ * TODO! FOR BLOCKCYPHER/UTXO EXTERNAL API PROVIDER:
+ * Create modules/blockcypher/api/csp.ts with:
+ * ```
+ * export class BlockCypherStateProvider extends BTCStateProvider {
+ *   // Override to use BlockCypher API instead of local MongoDB
+ *   async streamAddressTransactions(params) { return new ExternalApiStream(...); }
+ *   async getBalanceForAddress(params) { return await axios.get(blockCypherUrl); }
+ *   async getTransaction(params) {
+ *     const local = await super.getTransaction(params); // Check local first
+ *     if (!local) return await this._getFromBlockCypher(params); // Fallback to API
+ *   }
+ *   // Keep inherited: broadcastTransaction, getFee (still use RPC)
+ * }
+ * ```
+ *
+ * See: /Users/lyambo/code/.notes/BCN-Node-Providers.html for migration strategy
+ */
 
 import { Transform } from 'stream';
 import { Validation } from 'crypto-wallet-core';
@@ -75,10 +127,13 @@ export class InternalStateProvider implements IChainStateService {
     return query;
   }
 
+  // TODO! ANTI-PATTERN: Takes req/res as parameters (same issue as EVM streamWalletTransactions)
+  // Should return stream instead, let route handler pipe to res
+  // BlockCypher provider would override this to return ExternalApiStream
   async streamAddressTransactions(params: StreamAddressUtxosParams) {
     const { req, res, args } = params;
     const { limit, since } = args;
-    const query = this.getAddressQuery(params);
+    const query = this.getAddressQuery(params); // Builds MongoDB query for coins
     Storage.apiStreamingFind(CoinStorage, query, { limit, since, paging: '_id' }, req!, res!);
   }
 
@@ -215,6 +270,9 @@ export class InternalStateProvider implements IChainStateService {
     });
   }
 
+  // TODO! HYBRID OVERRIDE POINT: BlockCypher provider would override this
+  // Pattern: Check local MongoDB first, if not found query BlockCypher API
+  // Then cache BlockCypher response locally for future queries
   async getTransaction(params: StreamTransactionParams) {
     let { network } = params;
     const { chain, txId } = params;
@@ -222,10 +280,10 @@ export class InternalStateProvider implements IChainStateService {
       throw new Error('Missing required param');
     }
     network = network.toLowerCase();
-    const query = { chain, network, txid: txId };
+    const query = { chain, network, txid: txId }; // TODO! Local MongoDB query
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
-    const found = await TransactionStorage.collection.findOne(query);
+    const found = await TransactionStorage.collection.findOne(query); // TODO! Check local storage
     if (found) {
       let confirmations = 0;
       if (found.blockHeight != null && found.blockHeight >= 0) {
@@ -369,12 +427,15 @@ export class InternalStateProvider implements IChainStateService {
     await WalletAddressStorage.updateCoins({ wallet, addresses, opts: { reprocess } });
   }
 
+  // TODO! HYBRID OVERRIDE POINT: BlockCypher provider would override this method
+  // Pattern: Check local MongoDB first (recent data), fallback to BlockCypher API (historical)
+  // Same req/res anti-pattern as EVM - should return stream instead
   async streamWalletTransactions(params: StreamWalletTransactionsParams) {
     const { chain, network, wallet, res, args } = params;
     const query: any = {
       chain,
       network,
-      wallets: wallet._id,
+      wallets: wallet._id, // TODO! Queries TransactionStorage for wallet's transactions
       'wallets.0': { $exists: true }
     };
     if (wallet.chain === 'BTC' && ['testnet3', 'testnet4'].includes(wallet.network)) {

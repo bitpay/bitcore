@@ -1,3 +1,37 @@
+/**
+ * Base EVM Chain State Provider - LOCAL MongoDB Implementation
+ *
+ * TODO! THIS IS THE LOCAL (FULLY SELF-HOSTED) IMPLEMENTATION:
+ * This file contains the BaseEVMStateProvider class - the LOCAL MongoDB implementation for EVM chains.
+ * It's located in providers/chain-state/ because it's the BASE implementation that other providers extend.
+ *
+ * DIRECTORY STRUCTURE:
+ * providers/chain-state/ = Base implementations (LOCAL MongoDB + RPC)
+ *   ├─ internal/internal.ts → InternalStateProvider (UTXO base: BTC, LTC, DOGE, BCH)
+ *   ├─ btc/btc.ts → BTCStateProvider extends Internal (adds Bitcoin-specific fee logic)
+ *   ├─ evm/api/csp.ts → BaseEVMStateProvider extends Internal (THIS FILE - adds EVM account model)
+ *
+ * modules/ = Alternative implementations (wrappers or EXTERNAL APIs)
+ *   ├─ ethereum/api/csp.ts → ETHStateProvider extends BaseEVM (just a wrapper, uses this)
+ *   ├─ matic/api/csp.ts → MATICStateProvider extends BaseEVM (just a wrapper, uses this)
+ *   ├─ moralis/api/csp.ts → MoralisStateProvider extends BaseEVM (EXTERNAL API! overrides this)
+ *
+ * WHAT THIS CLASS DOES:
+ * - Extends InternalStateProvider (the UTXO base class)
+ * - Adds EVM-specific functionality (account model vs UTXO model)
+ * - Uses EVMTransactionStorage, EVMBlockStorage (from/to instead of inputs/outputs)
+ * - Implements web3.js integration for RPC calls
+ * - ALL methods query LOCAL MongoDB or LOCAL RPC
+ *
+ * HOW EXTERNAL API PROVIDERS WORK (like Moralis):
+ * - Create a new class in modules/: MoralisStateProvider extends BaseEVMStateProvider
+ * - Override query methods (_getTransaction, streamAddressTransactions, etc.) to use API
+ * - Keep inherited RPC methods (broadcastTransaction, getBalanceForAddress, etc.)
+ * - See src/modules/moralis/api/csp.ts for the full implementation
+ *
+ * See: /Users/lyambo/code/.notes/BCN-Node-Providers.html for architecture decisions
+ */
+
 import { CryptoRpc } from 'crypto-rpc';
 import { ObjectID } from 'mongodb';
 import Web3 from 'web3';
@@ -357,6 +391,33 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return undefined;
   }
 
+  /**
+   * TODO! LOCAL MONGODB QUERY - BASE IMPLEMENTATION:
+   * This is the base implementation that queries LOCAL MongoDB only.
+   * Provider-specific implementations (like MoralisStateProvider) override this method.
+   *
+   * FOR HYBRID ARCHITECTURE:
+   * Child classes should implement a hybrid pattern:
+   * 1. Call this base method first to check local storage
+   * 2. If not found locally AND data might be outside retention window, query external API
+   * 3. Cache external API responses locally for future queries
+   *
+   * Example hybrid implementation (in child class):
+   * ```
+   * async _getTransaction(params) {
+   *   const local = await super._getTransaction(params);
+   *   if (local.found) return local;
+   *
+   *   // Not found locally, check if we should query external API
+   *   const externalTx = await this._getTransactionFromExternalAPI(params);
+   *   if (externalTx) {
+   *     // Cache for future queries
+   *     await this._cacheTransaction(externalTx);
+   *   }
+   *   return { tipHeight: local.tipHeight, found: externalTx };
+   * }
+   * ```
+   */
   async _getTransaction(params: StreamTransactionParams) {
     const { chain, network, txId } = params;
     const query = { chain, network, txid: txId };
@@ -533,6 +594,37 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return query;
   }
 
+  /**
+   * TODO! STREAM COMPOSITION PATTERN - HOW DATA PIPELINES WORK:
+   * This method demonstrates how to build complex data pipelines using streams.
+   * Understanding this pattern is crucial for implementing hybrid providers.
+   *
+   * CURRENT STREAM PIPELINE:
+   * 1. _buildWalletTransactionsStream(): Creates base stream (MongoDB query or external API)
+   * 2. InternalTxRelatedFilterTransform: Filters for internal transactions
+   * 3. PopulateReceiptTransform: Adds transaction receipt data
+   * 4. EVMListTransactionsStream: Transforms to final output format
+   * 5. ExternalApiStream.onStream(): Handles response streaming and errors
+   *
+   * THE EVENTPIPE PATTERN:
+   * - .eventPipe() is like .pipe() but preserves error events across transforms
+   * - Allows downstream to handle errors from any point in the pipeline
+   * - See ReadableWithEventPipe and TransformWithEventPipe in utils/streamWithEventPipe.ts
+   *
+   * TODO! ARCHITECTURAL ISSUE - REQ/RES COUPLING:
+   * This method takes req/res as parameters and pipes internally.
+   * Should instead RETURN the stream and let route handler pipe to res.
+   * This would make it testable without mocking Express and more reusable.
+   * See MoralisStateProvider._streamAddressTransactionsFromMoralis() for the right pattern.
+   *
+   * TODO! FOR HYBRID PROVIDERS:
+   * _buildWalletTransactionsStream() is overridden by child classes:
+   * - Local provider: queries MongoDB (this implementation)
+   * - Moralis provider: calls Moralis API (see MoralisStateProvider)
+   * - Hybrid provider: merges local stream + external stream based on retention policy
+   *
+   * The rest of the pipeline (transforms) stays the same regardless of data source!
+   */
   async streamWalletTransactions(params: StreamWalletTransactionsParams) {
     return new Promise<void>(async (resolve, reject) => {
       const { network, wallet, req, res, args } = params;
@@ -545,31 +637,36 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         res.status(400).send('No addresses found for wallet');
         return resolve();
       }
+      // TODO! Create transform pipeline components
       const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses, args.tokenAddress);
-      const populateReceipt = new PopulateReceiptTransform();
-      const populateEffects = new PopulateEffectsTransform();
+      const populateReceipt = new PopulateReceiptTransform(); // Adds receipt data (gasUsed, status, etc.)
+      const populateEffects = new PopulateEffectsTransform(); // Adds effects (token transfers, etc.)
 
       const streamParams: BuildWalletTxsStreamParams = {
         transactionStream,
         populateEffects,
         walletAddresses
       };
+      // TODO! Get base stream from MongoDB or external API (depending on provider)
+      // This is where child classes (MoralisStateProvider) override to use external APIs
       transactionStream = await this._buildWalletTransactionsStream(params, streamParams);
 
+      // TODO! Add internal transaction filter (for non-token queries)
       if (!args.tokenAddress && wallet._id) {
         const internalTxTransform = new InternalTxRelatedFilterTransform(web3, wallet._id);
-        transactionStream = transactionStream.eventPipe(internalTxTransform);
+        transactionStream = transactionStream.eventPipe(internalTxTransform); // eventPipe preserves errors
       }
 
+      // TODO! Chain transforms: receipt -> format -> response
       transactionStream = transactionStream
-        .eventPipe(populateReceipt)
-        .eventPipe(ethTransactionTransform);
+        .eventPipe(populateReceipt) // Add receipt data
+        .eventPipe(ethTransactionTransform); // Format for API output
 
       try {
         const result = await ExternalApiStream.onStream(transactionStream, req!, res!, { jsonl: true });
         if (!result?.success) {
           logger.error('Error mid-stream (streamWalletTransactions): %o', result.error?.log || result.error);
-        }  
+        }
         return resolve();
       } catch (err) {
         return reject(err);

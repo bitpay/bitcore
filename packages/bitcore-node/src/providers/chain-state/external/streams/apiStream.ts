@@ -1,11 +1,11 @@
 /**
  * External API Stream Utilities
  *
- * TODO! STREAM-BASED ARCHITECTURE - CRITICAL FILE:
+ * TODO! STREAM-BASED ARCHITECTURE - CRITICAL INFRASTRUCTURE:
  * This file implements the stream-based pattern for consuming paginated external APIs.
  * Understanding these classes is essential for the hybrid provider migration.
  *
- * WHY STREAMS?
+ * WHY STREAMS OVER LOADING ALL DATA?
  * - Memory efficiency: Process millions of transactions without loading all into memory
  * - Backpressure handling: Automatically pause API requests when client connection is slow
  * - Progressive rendering: User sees data immediately instead of waiting for full response
@@ -14,20 +14,20 @@
  * KEY CLASSES:
  * 1. ExternalApiStream: Readable stream that fetches paginated data from external APIs
  * 2. ExternalApiStream.onStream(): Pipes stream to HTTP response with proper error handling
- * 3. ExternalApiStream.mergeStreams(): Combines multiple streams (e.g., local + remote)
+ * 3. ExternalApiStream.mergeStreams(): Combines multiple streams (local + remote for hybrid)
  * 4. MergedStream: Transform stream for combining data from multiple sources
  *
- * UNDERSTANDING THE FLOW (for junior engineers):
+ * DATA FLOW:
  * User Request → Route Handler → Provider creates ExternalApiStream → onStream pipes to response
- *     └─ Stream reads data in chunks (pagination)
- *     └─ Each chunk is transformed and written to client
+ *     └─ Stream reads data in chunks (pagination handled automatically)
+ *     └─ Each chunk is transformed (provider format → internal format)
  *     └─ Client receives data progressively (JSONL or JSON array)
  *
  * TODO! FOR HYBRID PROVIDERS:
  * Use mergeStreams() to combine local MongoDB stream with external API stream:
  * ```
- * const localStream = createLocalStream(retentionWindow);
- * const externalStream = new ExternalApiStream(url, headers, args);
+ * const localStream = createLocalStream(retentionWindow); // Recent data from MongoDB
+ * const externalStream = new ExternalApiStream(url, headers, args); // Old data from Moralis
  * const merged = ExternalApiStream.mergeStreams([localStream, externalStream], new MergedStream());
  * await ExternalApiStream.onStream(merged, req, res);
  * ```
@@ -44,33 +44,37 @@ export interface StreamOpts {
 }
 
 /**
- * TODO! EXTERNALAPISTREAM CLASS - PAGINATED API CONSUMER:
- * This class handles fetching paginated data from external APIs (like Moralis, BlockCypher).
+ * TODO! EXTERNALAPISTREAM CLASS - AUTOMATIC PAGINATION HANDLER:
+ * This class handles fetching paginated data from external APIs (Moralis, BlockCypher, etc.).
  * It implements the Node.js Readable Stream interface with automatic pagination.
  *
- * HOW IT WORKS (for junior engineers):
- * 1. Constructor takes a URL, headers, and args (limit, paging, transform)
- * 2. _read() is called automatically by Node.js when client is ready for more data
- * 3. Fetches one page of data from the API
- * 4. Transforms each item (if transform function provided)
- * 5. Pushes items to stream
- * 6. Updates cursor for next page
- * 7. When no more data, pushes null to signal end
+ * HOW AUTOMATIC PAGINATION WORKS:
+ * 1. Constructor takes: URL, headers, args (limit, paging, transform function)
+ * 2. Node.js calls _read() automatically when client is ready for more data (backpressure!)
+ * 3. _read() fetches one page from the API
+ * 4. Transforms each item using the provided transform function
+ * 5. Pushes items to stream buffer
+ * 6. Updates cursor for next page (cursor-based pagination)
+ * 7. When cursor is null/undefined, pushes null to signal stream end
  *
- * PAGINATION PATTERN:
- * - Moralis uses cursor-based pagination: ?cursor=xyz for next page
- * - Each response includes cursor for next page
- * - When cursor is null/undefined, we've reached the end
+ * PAGINATION PATTERN (CURSOR-BASED):
+ * - Request 1: GET /address/0xABC... (no cursor)
+ * - Response 1: { result: [...], cursor: "page2token" }
+ * - Request 2: GET /address/0xABC...?cursor=page2token
+ * - Response 2: { result: [...], cursor: "page3token" }
+ * - Request N: GET /address/0xABC...?cursor=pageNtoken
+ * - Response N: { result: [...], cursor: null } ← End of data
  *
  * THE TRANSFORM FUNCTION:
- * - Converts provider-specific format to our internal format
- * - Example: Moralis transaction → EVMTransactionJSON
- * - See MoralisStateProvider._streamAddressTransactionsFromMoralis for usage
+ * - Converts provider-specific format to our internal format on-the-fly
+ * - Example: Moralis transaction format → EVMTransactionJSON format
+ * - Runs for EACH item as it's streamed (not all at once)
+ * - See MoralisStateProvider._streamAddressTransactionsFromMoralis() for usage
  *
- * TODO! FOR OTHER PROVIDERS:
- * - BlockCypher uses offset-based pagination (page numbers instead of cursors)
- * - May need to create BlockCypherApiStream that extends this class
- * - Override _read() to handle different pagination styles
+ * TODO! FOR OTHER PROVIDERS (UTXO CHAINS):
+ * - BlockCypher uses offset-based pagination (page=1, page=2, etc. instead of cursors)
+ * - May need BlockCypherApiStream class that extends this and overrides _read()
+ * - Or add pagination strategy parameter to handle both cursor and offset styles
  */
 export class ExternalApiStream extends ReadableWithEventPipe {
   url: string;
@@ -97,48 +101,55 @@ export class ExternalApiStream extends ReadableWithEventPipe {
 
   async _read() {
     try {
-      // End stream if page limit is reached
+      // TODO! Check page limit (if paging parameter was set)
       if (this.paging && this.page >= this.paging) {
-        this.push(null);
+        this.push(null); // Signal end of stream
       }
 
-      const urlWithCursor = this.cursor ? `${this.url}&cursor=${this.cursor}` : this.url;
+      // TODO! Build URL with cursor for pagination
+      const urlWithCursor = this.cursor
+        ? `${this.url}&cursor=${this.cursor}` // Append cursor for subsequent pages
+        : this.url; // First request has no cursor
+
+      // TODO! Fetch one page from external API
       const response = await axios.get(urlWithCursor, { headers: this.headers });
 
       if (response?.data?.result?.length > 0) {
+        // TODO! Process each item in this page
         for (const result of response.data.result) {
-          // End stream if result limit is reached 
+          // TODO! Check result limit (total items across all pages)
           if (this.limit && this.results >= this.limit) {
-            this.push(null);
+            this.push(null); // Hit limit, end stream
             return;
           }
           let data = result;
-          // Transform data before pushing
+          // TODO! Transform provider format to internal format (if transform function provided)
           if (this.transform) {
-            data = this.transform(data);
+            data = this.transform(data); // e.g., Moralis TX → EVMTransactionJSON
           }
-          this.push(data);
-          this.results++;
+          this.push(data); // Push to stream buffer (sent to client)
+          this.results++; // Track total results
         }
-        // Update the cursor with the new value from the response
-        this.cursor = response.data.cursor;
-        // If there is no new cursor, push null to end the stream
+        // TODO! Update cursor for next page
+        this.cursor = response.data.cursor; // Moralis provides cursor in response
+        // TODO! Check if we've reached the end (no more pages)
         if (!this.cursor) {
-          this.push(null);
+          this.push(null); // No cursor = last page, end stream
         }
-        // Page complete, increment
+        // TODO! Increment page counter
         this.page++;
       } else {
-        // No more data, end the stream
+        // TODO! No results in response, end stream
         this.push(null);
       }
     } catch (error) {
+      // TODO! Emit error event (caught by onStream error handler)
       this.emit('error', error);
     }
   }
 
   /**
-   * TODO! ONSTREAM METHOD - HTTP RESPONSE HANDLER:
+   * TODO! ONSTREAM METHOD - PIPES STREAM TO HTTP RESPONSE:
    * This static method pipes a stream to an HTTP response with proper error handling.
    * It's the final step in the request → stream → response pipeline.
    *
@@ -146,24 +157,31 @@ export class ExternalApiStream extends ReadableWithEventPipe {
    * 1. Sets up listeners for client disconnect (req.close, res.close)
    * 2. Handles stream errors gracefully (before and after first data chunk)
    * 3. Formats output as JSON array or JSONL (JSON Lines) based on opts
-   * 4. Manages response lifecycle (opening [, items, closing ])
+   * 4. Manages response lifecycle (opening bracket, items, closing bracket)
    *
    * ERROR HANDLING STATES:
-   * - BEFORE first data: Can send 500 status (no headers sent yet)
-   * - AFTER first data: Status 200 already sent, must handle inline
+   * - BEFORE first data chunk: Can send 500 status (headers not sent yet)
+   * - AFTER first data chunk: Status 200 already sent, must handle inline
    *   → Appends error object to response
    *   → Logs error for monitoring
-   *   → Closes stream gracefully
+   *   → Closes stream gracefully (partial data is better than no data)
    *
-   * JSON vs JSONL:
+   * OUTPUT FORMATS:
    * - JSON (default): Wraps in array [ item1,\n item2,\n ... ]
-   * - JSONL (opts.jsonl=true): One object per line (better for streaming parsers)
+   *   Good for: Standard API responses, small datasets
+   * - JSONL (opts.jsonl=true): One object per line
+   *   Good for: Large datasets, streaming parsers, line-by-line processing
    *
-   * TODO! STUDY WITH:
-   * - BaseEVMStateProvider.streamWalletTransactions(): Uses this for response
-   * - MoralisStateProvider._buildAddressTransactionsStream(): Creates stream for this
+   * TODO! CURRENT USAGE PATTERN (needs improvement):
+   * Currently called from within provider methods (coupled to HTTP):
+   *   await ExternalApiStream.onStream(stream, req, res);
    *
-   * This pattern ensures consistent error handling across all streaming endpoints.
+   * BETTER PATTERN:
+   * Provider methods should RETURN streams, route handlers should call onStream:
+   *   const stream = await provider.streamWalletTransactions(params);
+   *   await ExternalApiStream.onStream(stream, req, res);
+   *
+   * This separates business logic (creating streams) from HTTP concerns (sending response).
    */
   // handles events emitted by the streamed response, request from client, and response to client
   static onStream(stream: Readable, req: Request, res: Response, opts: StreamOpts = {}):
@@ -218,24 +236,25 @@ export class ExternalApiStream extends ReadableWithEventPipe {
       });
       stream.on('data', function(data) {
         if (!closed) {
-          // We are assuming jsonl data appended a new line upstream
+          // TODO! Handle JSON array formatting (add commas and brackets)
           if (!opts.jsonl) {
             if (isFirst) {
-              res.write('[\n');
+              res.write('[\n'); // Start of JSON array
             } else {
-              res.write(',\n');
+              res.write(',\n'); // Comma between items
             }
           }
+          // TODO! Track first data chunk (for error handling state)
           if (isFirst) {
-            // All cases need isFirst set correctly for proper error handling
-            isFirst = false;
+            isFirst = false; // After first chunk, we've sent 200 status
           }
+          // TODO! Stringify objects to JSON (if not already string)
           if (typeof data !== 'string') {
             data = JSON.stringify(data);
           }
-          res.write(data);
+          res.write(data); // Write chunk to HTTP response
         } else {
-          stream.destroy();
+          stream.destroy(); // Client disconnected, clean up stream
         }
       });
       stream.on('end', function() {
@@ -257,45 +276,57 @@ export class ExternalApiStream extends ReadableWithEventPipe {
   }
 
   /**
-   * TODO! MERGESTREAMS METHOD - CRITICAL FOR HYBRID ARCHITECTURE:
+   * TODO! MERGESTREAMS METHOD - HYBRID QUERY IMPLEMENTATION:
    * This static method combines multiple streams into one destination stream.
    * Essential for implementing hybrid providers that combine local + external data.
    *
    * HOW IT WORKS:
-   * 1. Pipes all source streams to destination (with { end: false })
+   * 1. Pipes all source streams to destination (with { end: false } so destination stays open)
    * 2. Tracks number of active streams
-   * 3. When all streams end, ends the destination stream
-   * 4. Propagates errors from any stream to destination
+   * 3. When ALL source streams end, ends the destination stream
+   * 4. Propagates errors from ANY stream to destination
    *
-   * HYBRID PROVIDER USAGE:
+   * HYBRID PROVIDER USAGE EXAMPLE:
    * ```
-   * // Stream 1: Recent data from local MongoDB
+   * // Stream 1: Recent data from local MongoDB (last 30 days)
+   * const retentionCutoff = Date.now() - (30 * 24 * 60 * 60 * 1000);
    * const localStream = EVMTransactionStorage.collection
-   *   .find({ blockHeight: { $gte: retentionCutoff } })
+   *   .find({ chain, network, address, blockTime: { $gte: retentionCutoff } })
    *   .stream();
    *
-   * // Stream 2: Historical data from external API
+   * // Stream 2: Historical data from Moralis API (older than 30 days)
    * const externalStream = new ExternalApiStream(
-   *   moralisUrl,
+   *   `${moralisUrl}/address/${address}`,
    *   headers,
-   *   { endBlock: retentionCutoff }
+   *   { to_date: retentionCutoff } // Only query historical data
    * );
    *
-   * // Merge both streams
+   * // Merge both streams into one
    * const merged = ExternalApiStream.mergeStreams(
    *   [localStream, externalStream],
-   *   new MergedStream()
+   *   new MergedStream() // Pass-through transform that combines both
    * );
    *
-   * // Pipe to response
+   * // Pipe merged stream to HTTP response
    * await ExternalApiStream.onStream(merged, req, res);
    * ```
    *
-   * TODO! CONSIDERATIONS FOR IMPLEMENTATION:
-   * - Order of results: Streams emit data concurrently, may be out of order
-   * - Deduplication: If data overlaps between local/external, need to dedupe
-   * - Sorting: May need to sort merged results by blockHeight/timestamp
-   * - Use TransformStream between merge and response to handle these concerns
+   * TODO! IMPLEMENTATION CHALLENGES TO ADDRESS:
+   * 1. ORDERING: Streams emit concurrently, results may be out of chronological order
+   *    Solution: Add SortingTransform that buffers and sorts by blockHeight/timestamp
+   *
+   * 2. DEDUPLICATION: Data at retention boundary might overlap (same tx in both streams)
+   *    Solution: Add DedupeTransform that tracks seen txids and filters duplicates
+   *
+   * 3. SMOOTH TRANSITION: Need to ensure no gaps at retention boundary
+   *    Solution: Use inclusive cutoff (local: >= cutoff, external: <= cutoff + buffer)
+   *
+   * Example with transforms:
+   * ```
+   * const merged = ExternalApiStream.mergeStreams([localStream, externalStream], new MergedStream())
+   *   .pipe(new DedupeTransform()) // Remove duplicates
+   *   .pipe(new SortingTransform()); // Sort by blockHeight
+   * ```
    */
   static mergeStreams(streams: Stream[], destination: Transform): Transform {
     let activeStreams = streams.length;
