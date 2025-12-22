@@ -1,7 +1,7 @@
 /**
  * External API Stream Utilities
  *
- * TODO! STREAM-BASED ARCHITECTURE - CRITICAL INFRASTRUCTURE:
+ * NOTE! STREAM-BASED ARCHITECTURE - CRITICAL INFRASTRUCTURE:
  * This file implements the stream-based pattern for consuming paginated external APIs.
  * Understanding these classes is essential for the hybrid provider migration.
  *
@@ -44,7 +44,7 @@ export interface StreamOpts {
 }
 
 /**
- * TODO! EXTERNALAPISTREAM CLASS - AUTOMATIC PAGINATION HANDLER:
+ * NOTE! EXTERNALAPISTREAM CLASS - AUTOMATIC PAGINATION HANDLER:
  * This class handles fetching paginated data from external APIs (Moralis, BlockCypher, etc.).
  * It implements the Node.js Readable Stream interface with automatic pagination.
  *
@@ -101,55 +101,55 @@ export class ExternalApiStream extends ReadableWithEventPipe {
 
   async _read() {
     try {
-      // TODO! Check page limit (if paging parameter was set)
+      // NOTE! Check page limit (if paging parameter was set)
       if (this.paging && this.page >= this.paging) {
         this.push(null); // Signal end of stream
       }
 
-      // TODO! Build URL with cursor for pagination
+      // NOTE! Build URL with cursor for pagination
       const urlWithCursor = this.cursor
         ? `${this.url}&cursor=${this.cursor}` // Append cursor for subsequent pages
         : this.url; // First request has no cursor
 
-      // TODO! Fetch one page from external API
+      // NOTE! Fetch one page from external API
       const response = await axios.get(urlWithCursor, { headers: this.headers });
 
       if (response?.data?.result?.length > 0) {
-        // TODO! Process each item in this page
+        // NOTE! Process each item in this page
         for (const result of response.data.result) {
-          // TODO! Check result limit (total items across all pages)
+          // NOTE! Check result limit (total items across all pages)
           if (this.limit && this.results >= this.limit) {
             this.push(null); // Hit limit, end stream
             return;
           }
           let data = result;
-          // TODO! Transform provider format to internal format (if transform function provided)
+          // NOTE! Transform provider format to internal format (if transform function provided)
           if (this.transform) {
             data = this.transform(data); // e.g., Moralis TX → EVMTransactionJSON
           }
           this.push(data); // Push to stream buffer (sent to client)
           this.results++; // Track total results
         }
-        // TODO! Update cursor for next page
+        // NOTE! Update cursor for next page
         this.cursor = response.data.cursor; // Moralis provides cursor in response
-        // TODO! Check if we've reached the end (no more pages)
+        // NOTE! Check if we've reached the end (no more pages)
         if (!this.cursor) {
           this.push(null); // No cursor = last page, end stream
         }
-        // TODO! Increment page counter
+        // NOTE! Increment page counter
         this.page++;
       } else {
-        // TODO! No results in response, end stream
+        // NOTE! No results in response, end stream
         this.push(null);
       }
     } catch (error) {
-      // TODO! Emit error event (caught by onStream error handler)
+      // NOTE! Emit error event (caught by onStream error handler)
       this.emit('error', error);
     }
   }
 
   /**
-   * TODO! ONSTREAM METHOD - PIPES STREAM TO HTTP RESPONSE:
+   * NOTE! ONSTREAM METHOD - PIPES STREAM TO HTTP RESPONSE:
    * This static method pipes a stream to an HTTP response with proper error handling.
    * It's the final step in the request → stream → response pipeline.
    *
@@ -236,7 +236,7 @@ export class ExternalApiStream extends ReadableWithEventPipe {
       });
       stream.on('data', function(data) {
         if (!closed) {
-          // TODO! Handle JSON array formatting (add commas and brackets)
+          // NOTE! Handle JSON array formatting (add commas and brackets)
           if (!opts.jsonl) {
             if (isFirst) {
               res.write('[\n'); // Start of JSON array
@@ -244,11 +244,11 @@ export class ExternalApiStream extends ReadableWithEventPipe {
               res.write(',\n'); // Comma between items
             }
           }
-          // TODO! Track first data chunk (for error handling state)
+          // NOTE! Track first data chunk (for error handling state)
           if (isFirst) {
             isFirst = false; // After first chunk, we've sent 200 status
           }
-          // TODO! Stringify objects to JSON (if not already string)
+          // NOTE! Stringify objects to JSON (if not already string)
           if (typeof data !== 'string') {
             data = JSON.stringify(data);
           }
@@ -276,7 +276,7 @@ export class ExternalApiStream extends ReadableWithEventPipe {
   }
 
   /**
-   * TODO! MERGESTREAMS METHOD - HYBRID QUERY IMPLEMENTATION:
+   * NOTE! MERGESTREAMS METHOD - HYBRID QUERY IMPLEMENTATION:
    * This static method combines multiple streams into one destination stream.
    * Essential for implementing hybrid providers that combine local + external data.
    *

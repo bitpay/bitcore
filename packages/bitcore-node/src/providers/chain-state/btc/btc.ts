@@ -1,7 +1,7 @@
 /**
  * Bitcoin State Provider - LOCAL MongoDB Implementation
  *
- * TODO! THIS IS THE LOCAL BTC IMPLEMENTATION:
+ * NOTE! THIS IS THE LOCAL BTC IMPLEMENTATION:
  * This class extends InternalStateProvider and adds Bitcoin-specific fee estimation logic.
  * It's located in providers/chain-state/btc/ because it's the BASE local implementation.
  *
@@ -72,16 +72,16 @@ export class BTCStateProvider extends InternalStateProvider {
     super(chain);
   }
 
-  // TODO! FEE AGGREGATION: This already uses external APIs for fee ESTIMATION
+  // NOTE! FEE AGGREGATION: This already uses external APIs for fee ESTIMATION
   // But transaction/balance queries still use local MongoDB
-  // A full BlockCypher provider would use their API for ALL queries, not just fees
+  // TODO! A full BlockCypher provider would use their API for ALL queries, not just fees
   async getFee(params: GetEstimateSmartFeeParams) {
     const { chain, network, target, mode } = params;
     const cacheKey = `getFee-${chain}-${network}-${target}${mode ? '-' + mode.toLowerCase() : ''}`;
     return CacheStorage.getGlobalOrRefresh(
       cacheKey,
       async () => {
-        // TODO! Already aggregates fees from multiple sources:
+        // NOTE! Already aggregates fees from multiple sources:
         // 1. Local RPC (this.getRPC)
         // 2. BlockCypher API (FeeProviders.BlockCypher)
         // 3. Mempool.space API (FeeProviders.MempoolSpace)
@@ -99,7 +99,7 @@ export class BTCStateProvider extends InternalStateProvider {
 
         let feerate = rpcEstimate.feerate * 1e5; // convert to sats per byte
         feerate = feerate + estimates.reduce((acc, v) => acc += v, 0);
-        feerate = Math.ceil(feerate / (estimates.length + 1)); // TODO! Average all sources
+        feerate = Math.ceil(feerate / (estimates.length + 1)); // NOTE! Average all sources
         feerate = Number((feerate / 1e5).toFixed(8)); // convert to BTC per KB
 
         return {

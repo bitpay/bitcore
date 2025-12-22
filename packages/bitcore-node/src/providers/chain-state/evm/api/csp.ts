@@ -637,30 +637,30 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         res.status(400).send('No addresses found for wallet');
         return resolve();
       }
-      // TODO! Create transform pipeline components
+      // NOTE! Create transform pipeline components
       const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses, args.tokenAddress);
-      const populateReceipt = new PopulateReceiptTransform(); // Adds receipt data (gasUsed, status, etc.)
-      const populateEffects = new PopulateEffectsTransform(); // Adds effects (token transfers, etc.)
+      const populateReceipt = new PopulateReceiptTransform(); // NOTE! Adds receipt data (gasUsed, status, etc.)
+      const populateEffects = new PopulateEffectsTransform(); // NOTE! Adds effects (token transfers, etc.)
 
       const streamParams: BuildWalletTxsStreamParams = {
         transactionStream,
         populateEffects,
         walletAddresses
       };
-      // TODO! Get base stream from MongoDB or external API (depending on provider)
+      // NOTE! Get base stream from MongoDB or external API (depending on provider)
       // This is where child classes (MoralisStateProvider) override to use external APIs
       transactionStream = await this._buildWalletTransactionsStream(params, streamParams);
 
-      // TODO! Add internal transaction filter (for non-token queries)
+      // NOTE! Add internal transaction filter (for non-token queries)
       if (!args.tokenAddress && wallet._id) {
         const internalTxTransform = new InternalTxRelatedFilterTransform(web3, wallet._id);
-        transactionStream = transactionStream.eventPipe(internalTxTransform); // eventPipe preserves errors
+        transactionStream = transactionStream.eventPipe(internalTxTransform); // NOTE! eventPipe preserves errors
       }
 
-      // TODO! Chain transforms: receipt -> format -> response
+      // NOTE! Chain transforms: receipt -> format -> response
       transactionStream = transactionStream
-        .eventPipe(populateReceipt) // Add receipt data
-        .eventPipe(ethTransactionTransform); // Format for API output
+        .eventPipe(populateReceipt) // NOTE! Add receipt data
+        .eventPipe(ethTransactionTransform); // NOTE! Format for API output
 
       try {
         const result = await ExternalApiStream.onStream(transactionStream, req!, res!, { jsonl: true });

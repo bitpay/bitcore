@@ -133,7 +133,7 @@ export class InternalStateProvider implements IChainStateService {
   async streamAddressTransactions(params: StreamAddressUtxosParams) {
     const { req, res, args } = params;
     const { limit, since } = args;
-    const query = this.getAddressQuery(params); // Builds MongoDB query for coins
+    const query = this.getAddressQuery(params); // NOTE! Builds MongoDB query for coins
     Storage.apiStreamingFind(CoinStorage, query, { limit, since, paging: '_id' }, req!, res!);
   }
 
@@ -280,10 +280,10 @@ export class InternalStateProvider implements IChainStateService {
       throw new Error('Missing required param');
     }
     network = network.toLowerCase();
-    const query = { chain, network, txid: txId }; // TODO! Local MongoDB query
+    const query = { chain, network, txid: txId }; // NOTE! Local MongoDB query
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
-    const found = await TransactionStorage.collection.findOne(query); // TODO! Check local storage
+    const found = await TransactionStorage.collection.findOne(query); // NOTE! Check local storage
     if (found) {
       let confirmations = 0;
       if (found.blockHeight != null && found.blockHeight >= 0) {
@@ -435,7 +435,7 @@ export class InternalStateProvider implements IChainStateService {
     const query: any = {
       chain,
       network,
-      wallets: wallet._id, // TODO! Queries TransactionStorage for wallet's transactions
+      wallets: wallet._id, // NOTE! Queries TransactionStorage for wallet's transactions
       'wallets.0': { $exists: true }
     };
     if (wallet.chain === 'BTC' && ['testnet3', 'testnet4'].includes(wallet.network)) {

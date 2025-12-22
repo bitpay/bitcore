@@ -244,7 +244,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     const { req, res, args, network, address } = params;
 
     const chainId = await this.getChainId({ network });
-    // TODO! GOOD PATTERN: This method creates a stream and returns it
+    // NOTE! GOOD PATTERN: This method creates a stream and returns it
     const txStream = await this._streamAddressTransactionsFromMoralis({
       chainId,
       chain: this.chain,
@@ -273,7 +273,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     const { walletAddresses } = streamParams;
 
     const chainId = await this.getChainId({ network });
-    // TODO! Query Moralis for each address in the wallet and merge streams
+    // NOTE! Query Moralis for each address in the wallet and merge streams
     for (const address of walletAddresses) {
       const txStream = await this._streamAddressTransactionsFromMoralis({
         chainId,
@@ -282,15 +282,15 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
         address,
         args: {
           limit: args.limit, // no default limit when querying by wallet. Note: BWS caches txs
-          order: 'ASC', // TODO! Ascending order for wallet txs (chronological)
+          order: 'ASC', // NOTE! Ascending order for wallet txs (chronological)
           ...args
         }
       });
-      // TODO! eventPipe pattern: Merges this address's stream into the wallet stream
+      // NOTE! eventPipe pattern: Merges this address's stream into the wallet stream
       // Each address stream gets piped into the combined wallet stream
       transactionStream = txStream.eventPipe(transactionStream);
 
-      // TODO! Fire-and-forget maintenance tasks (don't block the stream)
+      // NOTE! Fire-and-forget maintenance tasks (don't block the stream)
       // updateLastQueryTime: Track when we last queried this address (for caching decisions)
       WalletAddressStorage.updateLastQueryTime({ chain: this.chain, network, address })
         .catch(e => logger.warn(`Failed to update ${this.chain}:${network} address lastQueryTime: %o`, e)),
@@ -446,21 +446,21 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       ...query,
       order: args.order || 'DESC', // default to descending order
       limit: args.pageSize || 10, // limit per request/page. total limit (args.limit) is checked in apiStream._read()
-      include: 'internal_transactions' // TODO! Include internal txs in response (contract calls, etc.)
+      include: 'internal_transactions' // NOTE! Include internal txs in response (contract calls, etc.)
     });
-    // TODO! Transform function: Converts Moralis format to our internal format
+    // NOTE! Transform function: Converts Moralis format to our internal format
     // This runs on EACH transaction as it's streamed (not all at once)
     args.transform = (tx) => {
-      const _tx: any = this._transformTransaction({ chain, network, ...tx }); // Moralis -> internal format
-      const confirmations = this._calculateConfirmations(tx, args.tipHeight); // Add confirmations
-      return EVMTransactionStorage._apiTransform({ ..._tx, confirmations }, { object: true }) as EVMTransactionJSON; // Final API format
+      const _tx: any = this._transformTransaction({ chain, network, ...tx }); // NOTE! Moralis -> internal format
+      const confirmations = this._calculateConfirmations(tx, args.tipHeight); // NOTE! Add confirmations
+      return EVMTransactionStorage._apiTransform({ ..._tx, confirmations }, { object: true }) as EVMTransactionJSON; // NOTE! Final API format
     };
 
-    // TODO! Return stream directly - caller decides how to consume it
+    // NOTE! Return stream directly - caller decides how to consume it
     return new ExternalApiStream(
-      `${this.baseUrl}/${address}${queryStr}`, // Moralis API URL with query params
-      this.headers, // API key headers
-      args // Includes limit, transform, pagination settings
+      `${this.baseUrl}/${address}${queryStr}`, // NOTE! Moralis API URL with query params
+      this.headers, // NOTE! API key headers
+      args // NOTE! Includes limit, transform, pagination settings
     );
   }
 
