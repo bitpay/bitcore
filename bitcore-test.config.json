@@ -1,4 +1,19 @@
 {
+  "_comment": "TODO! HYBRID PROVIDER CONFIGURATION EXAMPLES",
+  "_comment_description": "This test config shows how to configure hybrid blockchain data providers.",
+  "_comment_hybrid_modes": [
+    "FULLY LOCAL (P2P): chainSource='p2p', no external module, uses local MongoDB + RPC only",
+    "FULLY EXTERNAL: chainSource='external', module='./moralis', uses external API only",
+    "HYBRID: chainSource='p2p', module='./moralis', multiple providers with different dataTypes",
+    "  - provider with dataType='realtime': Local node for recent data (last 90 days)",
+    "  - provider with dataType='historical': External API for old data (>90 days ago)",
+    "  - Query routing handled by chain state provider implementation"
+  ],
+  "_comment_see_also": [
+    "Config type definitions: packages/bitcore-node/src/types/Config.ts",
+    "EVM hybrid provider: packages/bitcore-node/src/modules/moralis/api/csp.ts",
+    "Future UTXO hybrid: packages/bitcore-node/src/modules/blockcypher/api/csp.ts (not yet implemented)"
+  ],
   "bitcoreNode": {
     "services": {
       "api": {
@@ -14,7 +29,9 @@
     },
     "chains": {
       "BTC": {
+        "_comment": "TODO! EXAMPLE: UTXO Hybrid Provider Configuration (FUTURE)",
         "regtest": {
+          "_comment_current": "FULLY LOCAL MODE: All data from local P2P + MongoDB",
           "chainSource": "p2p",
           "trustedPeers": [
             {
@@ -28,6 +45,64 @@
             "username": "bitcorenodetest",
             "password": "local321"
           }
+        },
+        "_comment_hybrid_example": "TODO! FUTURE HYBRID MODE for BTC mainnet:",
+        "xmainnet_hybrid_example": {
+          "_comment": "This is a COMMENTED EXAMPLE of future UTXO hybrid configuration (not implemented yet)",
+          "disabled": false,
+          "chainSource": "p2p",
+          "module": "./blockcypher",
+          "_comment_module": "Future BlockCypher provider: modules/blockcypher/api/csp.ts",
+          "syncStartHeight": 820000,
+          "syncStartHash": "00000000000000000002a7c4c1e48d76c5a37902165a270156b7a8d72728a054",
+          "_comment_sync": "syncStartHeight/Hash define boundary between local and external API",
+          "trustedPeers": [
+            {
+              "host": "localhost",
+              "port": 8333,
+              "_comment": "Local Bitcoin Core node for recent blocks"
+            }
+          ],
+          "rpc": {
+            "_comment": "PRIMARY RPC: Local node for broadcasts, fee estimation, blockchain info",
+            "host": "localhost",
+            "port": 8332,
+            "username": "bitcorenode",
+            "password": "yoursecurepassword",
+            "protocol": "http"
+          },
+          "_comment_future_providers": "FUTURE: providers array for hybrid UTXO (not in current IUtxoNetworkConfig)",
+          "xproviders": [
+            {
+              "_comment": "LOCAL: For recent transactions (>= syncStartHeight)",
+              "host": "localhost",
+              "port": 8332,
+              "protocol": "http",
+              "dataType": "realtime"
+            },
+            {
+              "_comment": "BLOCKCYPHER API: For historical transactions (< syncStartHeight)",
+              "host": "api.blockcypher.com/v1/btc/main",
+              "protocol": "https",
+              "port": "",
+              "dataType": "historical"
+            }
+          ],
+          "_comment_routing": [
+            "BlockCypherStateProvider (future) would route queries:",
+            "- streamAddressTransactions for block >= syncStartHeight: Local CoinStorage",
+            "- streamAddressTransactions for block < syncStartHeight: BlockCypher API",
+            "- getTransaction: Check local TransactionStorage first, then BlockCypher",
+            "- broadcastTransaction: Always use local RPC",
+            "- getFee: Aggregate local RPC + BlockCypher + Mempool.space (already implemented!)",
+            "Result: 90 days locally (~12,960 blocks), unlimited history via BlockCypher"
+          ],
+          "_comment_implementation": [
+            "See packages/bitcore-node/src/providers/chain-state/btc/btc.ts for full example",
+            "BlockCypherStateProvider extends BTCStateProvider",
+            "Overrides: streamAddressTransactions, getTransaction, getBalanceForAddress",
+            "Inherits: broadcastTransaction, getFee (uses existing fee aggregation)"
+          ]
         }
       },
       "BCH": {
@@ -91,7 +166,10 @@
         }
       },
       "BASE": {
+        "_comment": "TODO! EXAMPLE: EVM Hybrid Provider Configuration",
+        "_comment_mode": "This shows EXTERNAL-ONLY mode. For HYBRID, see commented example below.",
         "testnet": {
+          "_comment_current": "EXTERNAL-ONLY MODE: All data from external API (Moralis)",
           "chainSource": "external",
           "module": "./moralis",
           "trustedPeers": [
@@ -113,6 +191,51 @@
               "port": "",
               "dataType": "combined"
             }
+          ]
+        },
+        "_comment_hybrid_example": "TODO! FUTURE HYBRID MODE for BASE mainnet:",
+        "xmainnet_hybrid_example": {
+          "_comment": "This is a COMMENTED EXAMPLE of hybrid configuration (not active)",
+          "disabled": false,
+          "chainSource": "p2p",
+          "module": "./moralis",
+          "syncStartHeight": 10000000,
+          "_comment_sync": "syncStartHeight defines boundary: blocks >= this are in local MongoDB",
+          "trustedPeers": [
+            {
+              "host": "localhost",
+              "port": 8545,
+              "_comment": "Local BASE node for recent blocks"
+            }
+          ],
+          "provider": {
+            "_comment": "PRIMARY provider: Local node for REALTIME data (recent blocks)",
+            "host": "localhost",
+            "protocol": "ws",
+            "port": 8545,
+            "dataType": "realtime",
+            "options": {
+              "clientConfig": {
+                "maxReceivedFrameSize": 100000000,
+                "maxReceivedMessageSize": 100000000
+              }
+            }
+          },
+          "providers": [
+            {
+              "_comment": "SECONDARY provider: Moralis API for HISTORICAL data (old blocks)",
+              "host": "site1.moralis-nodes.com",
+              "protocol": "https",
+              "port": "",
+              "dataType": "historical"
+            }
+          ],
+          "_comment_routing": [
+            "MoralisStateProvider routes queries based on block height:",
+            "- Query for block >= syncStartHeight: Uses local MongoDB (provider with dataType='realtime')",
+            "- Query for block < syncStartHeight: Uses Moralis API (provider with dataType='historical')",
+            "- RPC calls (broadcast, balance): Always use local node (provider.host)",
+            "Result: 90 days of data locally, unlimited history via Moralis"
           ]
         }
       },
@@ -156,6 +279,55 @@
         "BTC": {
           "testnet3": "testnet",
           "testnet4": "testnet"
+        }
+      }
+    },
+    "_comment_externalProviders": "TODO! EXTERNAL API CREDENTIALS",
+    "_comment_externalProviders_description": [
+      "This section stores API keys for external blockchain data providers.",
+      "Each provider module (modules/moralis, modules/blockcypher) reads its config from here.",
+      "Add API keys for providers you want to use in hybrid mode."
+    ],
+    "externalProviders": {
+      "_comment_moralis": "CURRENT: Moralis is used for EVM chains (BASE, OP, etc.)",
+      "moralis": {
+        "apiKey": "your-moralis-api-key-here",
+        "webhookBaseUrl": "https://your-domain.com/webhooks",
+        "streamSecret": "your-stream-secret",
+        "webhookCors": {
+          "origin": ["*"]
+        }
+      },
+      "_comment_blockcypher": "FUTURE: BlockCypher for UTXO chains (BTC, LTC, DOGE, BCH)",
+      "_comment_blockcypher_info": [
+        "BlockCypher provides indexed blockchain data for Bitcoin and other UTXO chains.",
+        "Free tier: 200 req/hr, 3 req/sec",
+        "Paid tiers: Up to 600 req/sec with higher limits",
+        "Used by future modules/blockcypher/api/csp.ts"
+      ],
+      "xblockcypher": {
+        "apiKey": "your-blockcypher-api-key-here",
+        "rateLimit": 3,
+        "_comment_rateLimit": "Requests per second (default 3 for free tier)"
+      },
+      "_comment_blockchair": "FUTURE: Alternative UTXO provider (has free tier)",
+      "xblockchair": {
+        "apiKey": "optional-api-key-here",
+        "_comment_apiKey": "Optional - Blockchair has a generous free tier without API key"
+      },
+      "_comment_future": "FUTURE: Other providers as alternatives to Moralis for EVM",
+      "xalchemy": {
+        "apiKey": "your-alchemy-api-key-here"
+      },
+      "xquicknode": {
+        "_comment": "QuickNode provides chain-specific endpoints",
+        "endpoints": {
+          "ETH": {
+            "mainnet": "https://your-endpoint.ethereum-mainnet.quiknode.pro/your-token/"
+          },
+          "BASE": {
+            "mainnet": "https://your-endpoint.base-mainnet.quiknode.pro/your-token/"
+          }
         }
       }
     }
