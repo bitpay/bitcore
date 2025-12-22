@@ -36,7 +36,7 @@
  * }
  * ```
  *
- * See: /Users/lyambo/code/.notes/BCN-Node-Providers.html for full migration strategy
+ * See: https://bitpayprod.atlassian.net/wiki/spaces/CONS/pages/2742059010/BCN+Node+Providers
  */
 
 import os from 'os';

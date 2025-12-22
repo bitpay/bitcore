@@ -29,7 +29,7 @@
  * - Keep inherited RPC methods (broadcastTransaction, getBalanceForAddress, etc.)
  * - See src/modules/moralis/api/csp.ts for the full implementation
  *
- * See: /Users/lyambo/code/.notes/BCN-Node-Providers.html for architecture decisions
+ * See: https://bitpayprod.atlassian.net/wiki/spaces/CONS/pages/2742059010/BCN+Node+Providers
  */
 
 import { CryptoRpc } from 'crypto-rpc';
