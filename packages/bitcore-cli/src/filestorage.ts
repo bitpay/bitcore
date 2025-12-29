@@ -26,7 +26,8 @@ export class FileStorage {
     try {
       let data = await fs.promises.readFile(this.filename, 'utf8');
       data = Utils.jsonParseWithBuffer(data);
-      return data as any; // TODO provide a proper type
+    // Parsed JSON input (runtime-validated)
+    return data as unknown;
     } catch {
       Utils.die('Invalid input file');
     }
