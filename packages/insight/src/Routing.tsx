@@ -1,4 +1,4 @@
-import React, {lazy, Suspense} from 'react';
+import {lazy, Suspense} from 'react';
 import {Navigate, Route, Routes} from 'react-router-dom';
 import Home from './pages';
 const Blocks = lazy(() => import('./pages/blocks'));
