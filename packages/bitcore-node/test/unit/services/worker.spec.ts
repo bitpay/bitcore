@@ -86,7 +86,7 @@ describe('Worker Service', function() {
       // Advance to exactly 5 seconds
       clock.tick(1);
       expect(forkStub.callCount).to.equal(initialWorkerCount + 1); // Now restarted
-      expect(loggerStubs.info.calledWith(sinon.match('Restarting worker 0 (restart #1)'))).to.be.true;
+      expect(loggerStubs.warn.calledWith(sinon.match('Restarting worker 0 (restart #1)'))).to.be.true;
       
       // Verify the new worker has workerId 0
       const restartedWorker = mockWorkers[mockWorkers.length - 1];
@@ -157,21 +157,21 @@ describe('Worker Service', function() {
       // First crash
       mockWorkers[0].emit('exit', 1, null);
       clock.tick(5000);
-      expect(loggerStubs.info.calledWith(sinon.match('restart #1'))).to.be.true;
+      expect(loggerStubs.warn.calledWith(sinon.match('restart #1'))).to.be.true;
       
       // Get the restarted worker and crash it again
       const restartedWorker1 = mockWorkers[mockWorkers.length - 1];
       restartedWorker1.emit('listening');
       restartedWorker1.emit('exit', 1, null);
       clock.tick(5000);
-      expect(loggerStubs.info.calledWith(sinon.match('restart #2'))).to.be.true;
+      expect(loggerStubs.warn.calledWith(sinon.match('restart #2'))).to.be.true;
       
       // Crash again
       const restartedWorker2 = mockWorkers[mockWorkers.length - 1];
       restartedWorker2.emit('listening');
       restartedWorker2.emit('exit', 1, null);
       clock.tick(5000);
-      expect(loggerStubs.info.calledWith(sinon.match('restart #3'))).to.be.true;
+      expect(loggerStubs.warn.calledWith(sinon.match('restart #3'))).to.be.true;
     });
 
     it('should preserve worker ID across restarts', async () => {
@@ -185,7 +185,7 @@ describe('Worker Service', function() {
       clock.tick(5000);
       
       // Verify restart message mentions worker 1, not worker 3
-      expect(loggerStubs.info.calledWith(sinon.match('Restarting worker 1'))).to.be.true;
+      expect(loggerStubs.warn.calledWith(sinon.match('Restarting worker 1'))).to.be.true;
       
       // Trigger listening event
       const restartedWorker = mockWorkers[mockWorkers.length - 1];
@@ -208,15 +208,15 @@ describe('Worker Service', function() {
       // Advance to t=5000ms - worker 0 should restart
       clock.tick(3000);
       expect(forkStub.callCount).to.equal(initialWorkerCount + 1);
-      expect(loggerStubs.info.calledWith(sinon.match('Restarting worker 0'))).to.be.true;
+      expect(loggerStubs.warn.calledWith(sinon.match('Restarting worker 0'))).to.be.true;
       
       // Worker 2 shouldn't have restarted yet
-      expect(loggerStubs.info.calledWith(sinon.match('Restarting worker 2'))).to.be.false;
+      expect(loggerStubs.warn.calledWith(sinon.match('Restarting worker 2'))).to.be.false;
       
       // Advance to t=7000ms - worker 2 should restart
       clock.tick(2000);
       expect(forkStub.callCount).to.equal(initialWorkerCount + 2);
-      expect(loggerStubs.info.calledWith(sinon.match('Restarting worker 2'))).to.be.true;
+      expect(loggerStubs.warn.calledWith(sinon.match('Restarting worker 2'))).to.be.true;
     });
 
     it('should re-attach event handlers on restart', async () => {
@@ -240,7 +240,7 @@ describe('Worker Service', function() {
       clock.tick(5000);
       
       // Should have restarted again
-      expect(loggerStubs.info.calledWith(sinon.match('restart #2'))).to.be.true;
+      expect(loggerStubs.warn.calledWith(sinon.match('restart #2'))).to.be.true;
     });
 
     it('should log restart information correctly', async () => {
@@ -262,7 +262,7 @@ describe('Worker Service', function() {
       clock.tick(5000);
       
       // Verify restart log
-      expect(loggerStubs.info.calledWith('Restarting worker 0 (restart #1)')).to.be.true;
+      expect(loggerStubs.warn.calledWith('Restarting worker 0 (restart #1)')).to.be.true;
       
       // Emit listening event
       const restartedWorker = mockWorkers[mockWorkers.length - 1];
@@ -333,7 +333,7 @@ describe('Worker Service', function() {
       clock.tick(5000);
       
       expect(forkStub.callCount).to.equal(initialWorkerCount + 1);
-      expect(loggerStubs.info.calledWith(sinon.match('Restarting worker 0'))).to.be.true;
+      expect(loggerStubs.warn.calledWith(sinon.match('Restarting worker 0'))).to.be.true;
     });
 
     it('should restart on uncaught exception (exit code 1)', async () => {
@@ -350,7 +350,7 @@ describe('Worker Service', function() {
       clock.tick(5000);
       
       expect(forkStub.callCount).to.equal(initialWorkerCount + 1);
-      expect(loggerStubs.info.calledWith(sinon.match('Restarting worker 0'))).to.be.true;
+      expect(loggerStubs.warn.calledWith(sinon.match('Restarting worker 0'))).to.be.true;
     });
   });
 });
