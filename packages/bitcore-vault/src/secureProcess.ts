@@ -127,7 +127,7 @@ export class SecureProcess {
       const err = error as Error;
       
       // Determine if this is a fatal error
-      const fatalActions = ['initialize', 'checkSecureHeap'];
+      const fatalActions = ['initialize', 'checkSecureHeap', 'getPublicKey'];
       if (fatalActions.includes(action)) {
         this.sendFatalError(err, messageId);
       } else {
@@ -243,6 +243,9 @@ export class SecureProcess {
   }
 
   private getPublicKey(): string {
+    if (!this.publicKey) {
+      throw new Error('Secure process is missing public key');
+    }
     return this.publicKey.export({ type: 'spki', format: 'pem' }).toString();
   }
 
