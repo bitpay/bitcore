@@ -1,6 +1,6 @@
 import cluster, { Worker as ClusterWorker } from 'cluster';
 import { EventEmitter } from 'events';
-import config from '../config';
+import { Config } from '../../src/services/config';
 import { LoggifyClass } from '../decorators/Loggify';
 import logger from '../logger';
 import { CallbackType } from '../types/Callback';
@@ -20,7 +20,7 @@ export class WorkerService extends EventEmitter {
     if (cluster.isPrimary) {
       logger.verbose(`Master ${process.pid} is running`);
       if (!args.DEBUG) {
-        for (let worker = 0; worker < config.numWorkers; worker++) {
+        for (let worker = 0; worker < Config.get().numWorkers; worker++) {
           const newWorker = cluster.fork();
           logger.verbose(`Starting worker number ${worker}`);
           newWorker.on('message', (msg: any) => {

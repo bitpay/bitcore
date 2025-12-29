@@ -11,9 +11,6 @@ import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
 describe('Transaction Model', function() {
-  // eslint-disable-next-line @typescript-eslint/no-this-alias
-  const suite = this;
-  this.timeout(30000);
 
   async function makeMempoolTxChain(chain: string, network: string, startingTxid: string, chainLength = 1) {
     let txid = startingTxid;
@@ -52,6 +49,10 @@ describe('Transaction Model', function() {
     }
     return allTxids;
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
+  const suite = this;
+  this.timeout(30000);
 
   before(intBeforeHelper);
   after(async () => intAfterHelper(suite));

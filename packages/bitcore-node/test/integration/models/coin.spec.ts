@@ -10,10 +10,6 @@ import { BitcoinTransaction } from '../../../src/types/namespaces/Bitcoin';
 
 
 describe('Coin Model', function() {
-  // eslint-disable-next-line @typescript-eslint/no-this-alias
-  const suite = this;
-  this.timeout(30000);
-  
   function createNewTxid() {
     const seed = (Math.random() * 10000).toString();
     return crypto
@@ -58,6 +54,10 @@ describe('Coin Model', function() {
     return allTxids;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
+  const suite = this;
+  this.timeout(30000);
+  
   before(intBeforeHelper);
   after(async () => intAfterHelper(suite));
 

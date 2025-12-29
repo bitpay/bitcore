@@ -1,10 +1,10 @@
-import config from '../../src/config';
+import { Config } from '../../src/services/config';
 import { Modules } from '../../src/modules';
 import { Storage } from '../../src/services/storage';
 import { wait } from '../../src/utils';
 
 const storageArgs = {
-  dbHost: config.dbHost,
+  dbHost: Config.get().dbHost,
   dbName: 'bitcore-integration'
 };
 

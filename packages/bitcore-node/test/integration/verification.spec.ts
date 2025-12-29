@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import config from '../../src/config';
 import { BitcoinBlockStorage } from '../../src/models/block';
 import { CoinStorage } from '../../src/models/coin';
 import { TransactionStorage } from '../../src/models/transaction';
@@ -99,7 +98,7 @@ describe('VerificationPeer', function() {
   this.timeout(500000);
 
   before(async function() {
-    chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+    chainConfig = Config.get().chains[chain][network] as IUtxoNetworkConfig;
     creds = chainConfig.rpc;
     rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
     await intBeforeHelper();

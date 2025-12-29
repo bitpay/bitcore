@@ -9,10 +9,6 @@ import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
 describe('Block Model', function() {
-  // eslint-disable-next-line @typescript-eslint/no-this-alias
-  const suite = this;
-  this.timeout(30000);
-  
   async function insertBlocks() {
     await BitcoinBlockStorage.collection.insertOne({
       chain: 'BTC',
@@ -87,6 +83,10 @@ describe('Block Model', function() {
       processed: true
     });
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
+  const suite = this;
+  this.timeout(30000);
 
   before(intBeforeHelper);
   after(() => intAfterHelper(suite));
