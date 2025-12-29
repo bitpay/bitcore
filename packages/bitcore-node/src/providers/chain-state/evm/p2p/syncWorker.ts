@@ -1,6 +1,5 @@
 import * as worker from 'worker_threads';
 import { CryptoRpc } from 'crypto-rpc';
-import Web3 from 'web3';
 import logger from '../../../../logger';
 import { Config } from '../../../../services/config';
 import { Storage } from '../../../../services/storage';
@@ -9,6 +8,7 @@ import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
 import { AnyBlock, ErigonTransaction, IEVMBlock, IEVMTransactionInProcess } from '../types';
 import { IRpc, Rpcs } from './rpcs';
+import type { Web3 } from 'crypto-wallet-core';
 
 export class SyncWorker {
   private chain: string = worker.workerData.chain;

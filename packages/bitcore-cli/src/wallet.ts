@@ -422,7 +422,7 @@ export class Wallet implements IWallet {
     const network = this.network === 'livenet' ? 'mainnet' : this.network;
     const web3 = new Web3(Constants.PUBLIC_API[chain][network]);
     const contract = new web3.eth.Contract(ERC20Abi as any, address);
-    const token = await contract.methods.symbol().call();
+    const token = await contract.methods.symbol().call<string>();
     const decimals = Number(await contract.methods.decimals().call());
     return {
       code: token,

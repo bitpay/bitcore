@@ -92,12 +92,7 @@
     "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
     "@metaplex-foundation/umi": "^1.2.0",
     "@metaplex-foundation/umi-bundle-defaults": "^1.2.0",
-    "@solana-program/compute-budget": "^0.7.0",
-    "@solana-program/memo": "^0.7.0",
-    "@solana-program/system": "^0.7.0",
-    "@solana-program/token": "^0.5.1",
-    "@solana/kit": "^2.1.0",
-    "@solana/spl-token-registry": "^0.2.4574",
+    "@solana/spl-token-registry": "0.2.4574",
     "abi-decoder": "2.4.0",
     "bitcore-client": "^11.4.5",
     "bitcore-lib": "^11.4.5",
@@ -118,9 +113,7 @@
     "secp256k1": "4.0.3",
     "socket.io": "4.8.1",
     "source-map-support": "^0.5.13",
-    "web3": "1.7.0",
-    "winston": "3.2.0",
-    "xrpl": "2.6.0"
+    "winston": "3.2.0"
   },
   "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4"
 }

@@ -1,6 +1,5 @@
 import { EventEmitter } from 'events';
 import * as os from 'os';
-import Web3 from 'web3';
 import { ChainStateProvider } from '../../';
 import { timestamp } from '../../../../logger';
 import logger from '../../../../logger';
@@ -11,9 +10,10 @@ import { wait } from '../../../../utils';
 import { BaseEVMStateProvider } from '../api/csp';
 import { EVMBlockModel, EVMBlockStorage } from '../models/block';
 import { EVMTransactionModel, EVMTransactionStorage } from '../models/transaction';
-import { AnyBlock, ErigonTransaction, GethTransaction, IEVMBlock, IEVMTransactionInProcess } from '../types';
+import { AnyBlock, IEVMBlock, IEVMTransactionInProcess } from '../types';
 import { IRpc, Rpcs } from './rpcs';
 import { MultiThreadSync } from './sync';
+import type { Web3, Web3Types } from 'crypto-wallet-core';
 
 export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
   protected chainConfig: IEVMNetworkConfig;
@@ -83,7 +83,7 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
           try {
             if (!this.isCachedInv('TX', txid)) {
               this.cacheInv('TX', txid);
-              const tx = (await this.web3!.eth.getTransaction(txid)) as ErigonTransaction;
+              const tx = await this.web3!.eth.getTransaction(txid) as Web3Types.TransactionInfo;
               if (tx) {
                 await this.processTransaction(tx);
                 this.events.emit('transaction', tx);
@@ -221,7 +221,7 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
     }
   }
 
-  async processTransaction(tx: ErigonTransaction | GethTransaction) {
+  async processTransaction(tx: Web3Types.TransactionInfo) {
     const now = new Date();
     const convertedTx = this.txModel.convertRawTx(this.chain, this.network, tx);
     this.txModel.batchImport({
@@ -274,7 +274,7 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
     const startHeight = tip ? tip.height : chainConfig.syncStartHeight || 0;
     const startTime = Date.now();
     try {
-      let bestBlock = await this.web3!.eth.getBlockNumber();
+      let bestBlock = Number(await this.web3!.eth.getBlockNumber());
       let lastLog = 0;
       let currentHeight = tip ? tip.height : chainConfig.syncStartHeight || 0;
       logger.info(`Syncing ${bestBlock - currentHeight} blocks for ${chain} ${network}`);
@@ -287,7 +287,7 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
         const { convertedBlock, convertedTxs } = await this.convertBlock(block);
         await this.processBlock(convertedBlock, convertedTxs);
         if (currentHeight === bestBlock) {
-          bestBlock = await this.web3!.eth.getBlockNumber();
+          bestBlock = Number(await this.web3!.eth.getBlockNumber());
         }
         tip = await ChainStateProvider.getLocalTip({ chain, network });
         currentHeight = tip ? tip.height + 1 : 0;

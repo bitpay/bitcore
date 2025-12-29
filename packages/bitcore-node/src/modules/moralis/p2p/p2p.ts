@@ -1,7 +1,5 @@
 import { CryptoRpc } from 'crypto-rpc';
 import { Cursor } from 'mongodb';
-import Web3 from 'web3';
-import { BlockTransactionObject } from 'web3-eth';
 import logger, { timestamp } from '../../../logger';
 import { CoinEvent, EventStorage } from '../../../models/events';
 import { StateStorage } from '../../../models/state';
@@ -14,13 +12,14 @@ import { IEVMNetworkConfig, IExternalSyncConfig } from '../../../types/Config';
 import { IAddressSubscription } from '../../../types/ExternalProvider';
 import { wait } from '../../../utils';
 import { MoralisStateProvider } from '../api/csp';
+import type { Web3 } from 'crypto-wallet-core';
 
 export class MoralisP2PWorker extends BaseP2PWorker {
   private chainConfig: IExternalSyncConfig<IEVMNetworkConfig>;
   private web3?: Web3;
   private syncInterval?: NodeJS.Timeout;
   private addressSub?: IAddressSubscription;
-  private chainId?: number;
+  private chainId?: bigint;
   private webhookTail?: Cursor;
   private bestBlock: number;
   private chainNetworkStr: string;
@@ -104,10 +103,9 @@ export class MoralisP2PWorker extends BaseP2PWorker {
 
         const startTime = Date.now();
         let msgInterval;
-        let block: BlockTransactionObject | null = null;
         try {
           const web3 = await this.getWeb3();
-          this.bestBlock = await web3.eth.getBlockNumber();
+          this.bestBlock = Number(await web3.eth.getBlockNumber());
           currentHeight = Math.max(this.bestBlock - (this.chainConfig.maxBlocksToSync || 50), currentHeight || 0);
           const startHeight = currentHeight;
 
@@ -127,8 +125,10 @@ export class MoralisP2PWorker extends BaseP2PWorker {
           }, 1000 * 2); // 2 seconds
      
 
+          let blockExists = false;
           do {
-            block = await web3.eth.getBlock(currentHeight, true);
+            const block = await web3.eth.getBlock(currentHeight, true);
+            blockExists = !!block;
             if (block && !this.stopping) {
               const blockEvent = EVMBlockStorage.convertRawBlock(this.chain, this.network, block);
               await EventStorage.signalBlock(blockEvent);// .catch((e) => logger.error(`Error signaling ${this.chainNetworkStr} block event: %o`, e.stack || e.message || e));
@@ -137,9 +137,9 @@ export class MoralisP2PWorker extends BaseP2PWorker {
                 await EventStorage.signalTx(txEvent);// .catch((e) => logger.error(`Error signaling ${this.chainNetworkStr} tx event: %o`, e.stack || e.message || e));
               }
               await StateStorage.setVerifiedBlockHeight({ chain: this.chain, network: this.network, height: currentHeight });
-              currentHeight = block.number + 1;
+              currentHeight = Number(block.number) + 1;
             }
-          } while (block);
+          } while (blockExists);
           clearInterval(msgInterval); // clear before log below
           logger.info(`${this.chainNetworkStr} up to date.`);
         } catch (err: any) {

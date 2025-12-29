@@ -1,5 +1,5 @@
 import { ObjectID } from 'bson';
-import Web3 from 'web3';
+import { Web3 } from 'crypto-wallet-core';
 import { LoggifyClass } from '../../../../decorators/Loggify';
 import logger from '../../../../logger';
 import { MongoBound } from '../../../../models/base';
@@ -19,7 +19,8 @@ import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
 import { MultisendAbi } from '../abi/multisend';
 import { MultisigAbi } from '../abi/multisig';
-import { EVMTransactionJSON, Effect, ErigonTransaction, GethTransaction, IAbiDecodeResponse, IAbiDecodedData, IEVMBlock, IEVMCachedAddress, IEVMTransaction, IEVMTransactionInProcess, ParsedAbiParams } from '../types';
+import { EVMTransactionJSON, Effect, IAbiDecodeResponse, IAbiDecodedData, IEVMBlock, IEVMCachedAddress, IEVMTransaction, IEVMTransactionInProcess, ParsedAbiParams } from '../types';
+import type { Web3Types } from 'crypto-wallet-core';
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];
@@ -527,26 +528,26 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     return tx;
   }
 
-  convertRawTx(chain: string, network: string, tx: Partial<ErigonTransaction | GethTransaction>, block?: IEVMBlock): IEVMTransactionInProcess {
+  convertRawTx(chain: string, network: string, tx: Partial<Web3Types.TransactionInfo>, block?: IEVMBlock): IEVMTransactionInProcess {
     if (!block) {
-      const txid = tx.hash || '';
+      const txid = tx.hash as string || '';
       const to = tx.to || '';
       const from = tx.from || '';
       const value = Number(tx.value);
       const fee = Number(tx.gas) * Number(tx.gasPrice);
-      const abiType = this.abiDecode(tx.input!);
-      const nonce = tx.nonce || 0;
+      const abiType = this.abiDecode(tx.input as string);
+      const nonce = Number(tx.nonce) || 0;
       const convertedTx: IEVMTransactionInProcess = {
         chain,
         network,
-        blockHeight: valueOrDefault(tx.blockNumber, -1),
-        blockHash: valueOrDefault(tx.blockHash, undefined),
+        blockHeight: valueOrDefault(Number(tx.blockNumber), -1),
+        blockHash: valueOrDefault(tx.blockHash as string, undefined),
         data: Buffer.from(tx.input || '0x'),
         txid,
         blockTime: new Date(),
         blockTimeNormalized: new Date(),
         fee,
-        transactionIndex: tx.transactionIndex || 0,
+        transactionIndex: Number(tx.transactionIndex) || 0,
         value,
         wallets: [],
         to,
