@@ -54,7 +54,9 @@ export class VaultWallet extends Wallet {
     } catch {
       return { success: false };
     } finally {
-      crypto.randomFillSync(passphrase); // Overwrite passphrase memory
+      if (Buffer.isBuffer(passphrase)) {
+        crypto.randomFillSync(passphrase); // Overwrite passphrase memory
+      }
       this.lock();
     }
   }
@@ -63,7 +65,8 @@ export class VaultWallet extends Wallet {
    * Override signTx to require vault access
    */
   public async signTx(params: any): Promise<any> {
-    return this.withVaultAccess(params.passphrase, super.signTx.bind(this), params);
+    const { passphrase, ...rest } = params;
+    return this.withVaultAccess(passphrase, super.signTx.bind(this), rest);
   }
 
   /**

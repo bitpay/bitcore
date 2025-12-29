@@ -94,6 +94,8 @@ export class VaultWalletProxy {
           this.rejectAllPendingMessages(error);
           this.secureProcess = null;
           this.initializationPromise = null;
+          this.publicKey = null;
+          this.walletAddresses.clear();
 
           // Apply failure policy for unexpected exits
           if (!this.isTerminating) {
@@ -108,6 +110,11 @@ export class VaultWalletProxy {
 
         await this.sendMessage<void>('initialize', {});
         const publicKeyPem = await this.sendMessage<string>('getPublicKey', {});
+
+        if (typeof publicKeyPem !== 'string' || !publicKeyPem.trim().length) {
+          throw new Error('invalid public key received from secure process');
+        }
+
         this.publicKey = crypto.createPublicKey({
           key: publicKeyPem,
           format: 'pem',
@@ -302,7 +309,7 @@ export class VaultWalletProxy {
     const promptText = opts.prompt ?? 'Passphrase: ';
     const maxBytes = Math.min(Math.max(opts.maxBytes ?? 256, 8), 4096);
     const stdin = process.stdin as NodeJS.ReadStream & { setRawMode?: (mode: boolean) => void };
-    const plain = Buffer.allocUnsafe(maxBytes);
+    const plain = Buffer.alloc(maxBytes);
     let len = 0;
 
     if (process.stdout.isTTY) process.stdout.write(promptText);

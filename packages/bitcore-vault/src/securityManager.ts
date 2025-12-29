@@ -8,7 +8,7 @@ export class SecurityManager {
 
   public async runAllSecurityChecks(): Promise<{ result: boolean; reason?: string }> {
     const quickChecks = this.runQuickSecurityCheck();
-    if (!quickChecks.reason) {
+    if (quickChecks.reason) {
       return quickChecks;
     }
     return { result: true };
@@ -34,9 +34,6 @@ export class SecurityManager {
     }
   }
 
-  /**
-     * Kills process if false
-     */
   public static isSecureHeapEnabled(): boolean {
     const { total } = secureHeapUsed();
     return total > 0;
@@ -102,7 +99,7 @@ export class SecurityManager {
       if (isDetected) {
         console.warn('[SecurityManager] Inspect flags detected on secure process');
       }
-      return; 
+      return isDetected; 
     } catch {
       console.error('[SecurityManager] checkInspectFlagsAtLaunch failed');
       return true;
