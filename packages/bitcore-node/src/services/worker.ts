@@ -17,7 +17,7 @@ export class WorkerService extends EventEmitter {
     workerId: number;
     restartCount: number;
   }>();
-  
+
   private shuttingDown = false;
 
   async start() {
@@ -38,7 +38,7 @@ export class WorkerService extends EventEmitter {
 
   async stop() {
     this.shuttingDown = true;
-    
+
     // Disconnect all workers gracefully
     for (const workerData of this.workers) {
       if (workerData.worker.isConnected()) {
@@ -46,7 +46,7 @@ export class WorkerService extends EventEmitter {
       }
     }
   }
-  
+
   private startWorker(workerId?: number, restartCount?: number) {
     const isRestart = !!workerId;
     if (this.shuttingDown) {
@@ -55,32 +55,32 @@ export class WorkerService extends EventEmitter {
       }
       return;
     }
-    
+
+    const newWorker = cluster.fork();
+    workerId = workerId ?? newWorker.process.pid!;
+    restartCount = restartCount ?? 0;
+
     if (isRestart) {
       logger.warn(`Restarting worker ${workerId} (restart #${restartCount})`);
     } else {
       logger.verbose(`Starting worker ${workerId}`);
     }
 
-    const newWorker = cluster.fork();
-    workerId = workerId ?? newWorker.process.pid!;
-    restartCount = restartCount ?? 0;
-    
     newWorker.on('message', (msg: any) => {
       this.emit(msg.id, msg);
     });
-    
+
     newWorker.on('exit', (code, signal) => {
       const exitReason = code !== 0 || signal ? 'crashed' : 'stopped gracefully';
       logger[code == 0 ? 'info' : 'error'](
         `Worker ${newWorker.process.pid} ${exitReason} (code: ${code}, signal: ${signal})`
       );
-      
+
       const workerIndex = this.workers.findIndex(w => w.worker === newWorker);
       if (workerIndex > -1) {
         const workerData = this.workers[workerIndex];
         this.workers.splice(workerIndex, 1);
-        
+
         if ((code !== 0 || signal) && !this.shuttingDown) {
           logger.info(`Scheduling worker ${workerData.workerId} restart in 5 seconds...`);
           setTimeout(() => {
@@ -89,17 +89,17 @@ export class WorkerService extends EventEmitter {
         }
       }
     });
-    
+
     const started = new Promise<void>(resolve => {
       newWorker.on('listening', () => {
         logger.info(`Worker ${workerId} successfully ${isRestart ? 're' : ''}started (pid: ${newWorker.process.pid})`);
         resolve();
       });
     });
-    
-    this.workers.push({ 
-      worker: newWorker, 
-      active: false, 
+
+    this.workers.push({
+      worker: newWorker,
+      active: false,
       started,
       workerId,
       restartCount
