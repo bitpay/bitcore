@@ -84,9 +84,11 @@ client.joinWallet(secret, "Tomas", {}, function(err, wallet) {
       console.log('error: ', err);
       return
     };
-    console.log('\n\n** Wallet Info', ret); //TODO
+    // Example output for demonstration / debugging purposes
+    console.log('\n\n** Wallet Info', ret);
 
-    console.log('\n\nCreating first address:', ret); //TODO
+    console.log('\n\nCreating first address:', ret);
+
     if (ret.wallet.status == 'complete') {
       client.createAddress({}, function(err,addr){
         if (err) {
