@@ -25,7 +25,7 @@ export class WorkerService extends EventEmitter {
       logger.verbose(`Master ${process.pid} is running`);
       if (!args.DEBUG) {
         for (let worker = 0; worker < config.numWorkers; worker++) {
-          this.startWorker();
+          this.startWorker(worker, 0);
         }
       }
       const startedPromises = this.workers.map(worker => worker.started);
@@ -47,8 +47,8 @@ export class WorkerService extends EventEmitter {
     }
   }
 
-  private startWorker(workerId?: number, restartCount?: number) {
-    const isRestart = !!workerId;
+  private startWorker(workerId: number, restartCount: number = 0) {
+    const isRestart = restartCount > 0;
     if (this.shuttingDown) {
       if (isRestart) {
         logger.info(`Not restarting worker ${workerId} - service is shutting down`);
@@ -57,8 +57,6 @@ export class WorkerService extends EventEmitter {
     }
 
     const newWorker = cluster.fork();
-    workerId = workerId ?? newWorker.process.pid!;
-    restartCount = restartCount ?? 0;
 
     if (isRestart) {
       logger.warn(`Restarting worker ${workerId} (restart #${restartCount})`);
