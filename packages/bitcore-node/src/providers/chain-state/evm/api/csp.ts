@@ -608,7 +608,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     // Pipe cursor to transform stream
     transactionStream = cursor.pipe(new TransformWithEventPipe({ objectMode: true, passThrough: true }));
 
-    transactionStream = transactionStream.eventPipe(populateEffects); // For old db entires
+    transactionStream = transactionStream.eventPipe(populateEffects); // For old db entries
 
     if (params.args.tokenAddress) {
       const erc20Transform = new Erc20RelatedFilterTransform(params.args.tokenAddress);

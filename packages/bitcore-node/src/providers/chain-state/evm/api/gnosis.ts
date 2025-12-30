@@ -219,7 +219,7 @@ export class GnosisApi {
     req.on('close', cleanupCursor);
     res.on('close', cleanupCursor);
 
-    transactionStream = cursor.pipe(populateEffects); // For old db entires
+    transactionStream = cursor.pipe(populateEffects); // For old db entries
 
     if (multisigContractAddress) {
       const multisigTransform = new MultisigRelatedFilterTransform(multisigContractAddress, args.tokenAddress);

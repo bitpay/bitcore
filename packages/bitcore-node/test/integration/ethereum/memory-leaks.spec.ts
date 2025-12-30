@@ -223,7 +223,7 @@ describe('EVM Memory Leak Prevention', function() {
       const { req, res, resEmitter } = createMockReqRes();
 
       let receivedTxCount = 0;
-      res.on('data', () => {
+      resEmitter.on('data', () => {
         receivedTxCount++;
       });
 
