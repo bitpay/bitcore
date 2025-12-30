@@ -3,7 +3,6 @@ import util from 'util';
 import { CryptoRpc } from 'crypto-rpc';
 import { ObjectId } from 'mongodb';
 import request from 'request';
-import { AccountTxRequest, AccountTxResponse } from 'xrpl/dist/npm/models';
 import { Ledger } from 'xrpl/dist/npm/models/ledger';
 import {
   CheckCreate,
@@ -36,11 +35,13 @@ import { GetBlockParams } from '../../../types/namespaces/ChainStateProvider';
 import { XrpBlockStorage } from '../models/block';
 import { AccountTransaction, BlockTransaction, IXrpTransaction, RpcTransaction } from '../types';
 import { RippleDbWalletTransactions } from './wallet-tx-transform';
+import type { XrpRpc } from 'crypto-rpc/lib/xrp/XrpRpc';
+import type { AccountTxRequest, AccountTxResponse/* , TransactionStream as SubscribeTx */ } from 'xrpl/dist/npm/models';
 
 
 export class RippleStateProvider extends InternalStateProvider implements IChainStateService {
   config: any;
-  static clients: { [network: string]: CryptoRpc } = {};
+  static clients: { [network: string]: XrpRpc } = {};
 
   constructor(public chain: string = 'XRP') {
     super(chain, RippleDbWalletTransactions);
@@ -54,7 +55,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
       RippleStateProvider.clients[network] = new CryptoRpc({
         chain: this.chain,
         host: provider.host,
-        rpcPort: provider.port,
+        port: provider.port,
         protocol: provider.protocol 
       }).get(this.chain);
       await RippleStateProvider.clients[network].rpc.connect();

@@ -219,10 +219,12 @@ export const ERC20Abi = [
         type: 'string'
       }
     ],
+    stateMutability: 'nonpayable',
     type: 'constructor'
   },
   {
-    payable: false,
+    payable: true,
+    stateMutability: 'payable',
     type: 'fallback'
   },
   {
@@ -269,4 +271,4 @@ export const ERC20Abi = [
     name: 'Approval',
     type: 'event'
   }
-];
+] as const;

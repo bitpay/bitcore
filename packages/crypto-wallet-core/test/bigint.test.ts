@@ -337,4 +337,20 @@ describe('BigInt', function() {
       expect(BI.mulCeil(2n, 1.25)).to.equal(3n); // 2 * 1.25 = 2.5 => 3
     });
   });
+
+  describe('JSONStringifyBigIntReplacer', function() {
+    it('should convert bigint values to serializable objects during JSON.stringify', function() {
+      const obj = { a: 123n, b: 'test' };
+      const jsonString = JSON.stringify(obj, BI.JSONStringifyBigIntReplacer);
+      expect(jsonString).to.equal('{"a":{"data":"123","type":"BigInt"},"b":"test"}');
+    });
+  });
+
+  describe('JSONParseBigIntReviver', function() {
+    it('should convert bigint values from serializable objects during JSON.parse', function() {
+      const str = '{"a":{"data":"123","type":"BigInt"},"b":"test"}';
+      const jsonObject = JSON.parse(str, BI.JSONParseBigIntReviver);
+      expect(jsonObject).to.deep.equal({ a: 123n, b: 'test' });
+    });
+  });
 });

@@ -1,7 +1,7 @@
-import Web3 from 'web3';
 import { ErigonBlock, GethBlock, IEVMBlock, IEVMTransactionInProcess } from '../../types';
 import { ClassifiedTrace, ErigonRPC } from './erigonRpc';
 import { GethRPC, IGethTxTrace } from './gethRpc';
+import type { Web3 } from 'crypto-wallet-core';
 
 export const Rpcs = {
   geth: GethRPC,

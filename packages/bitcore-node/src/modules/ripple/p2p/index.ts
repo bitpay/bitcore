@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { Transform } from 'stream';
-import { CryptoRpc } from 'crypto-rpc';
+import { XrpRpc } from 'crypto-rpc/lib/xrp/XrpRpc';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import logger from '../../../logger';
 import { timestamp } from '../../../logger';
@@ -26,7 +26,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
   protected invCacheLimits: any;
   public events: EventEmitter;
   public disconnecting: boolean;
-  public client?: CryptoRpc;
+  public client?: XrpRpc;
   public blockModel: XrpBlockModel;
 
   constructor({ chain, network, chainConfig, blockModel = XrpBlockStorage }) {
@@ -73,16 +73,16 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
       );
     });
     this.events.on('connected', async () => {
-      this.client.rpc.on('ledgerClosed', async () => {
+      this.client?.rpc.on('ledgerClosed', async () => {
         this.sync();
       });
-      this.client.asyncRequest('subscribe', { streams: ['ledger'] });
+      this.client?.asyncRequest('subscribe', { streams: ['ledger'] });
     });
   }
 
   async teardownListeners() {
-    this.client.rpc.removeAllListeners('ledgerClosed');
-    await this.client.asyncRequest('unsubscribe', { streams: ['ledger'] });
+    this.client?.rpc.removeAllListeners('ledgerClosed');
+    await this.client?.asyncRequest('unsubscribe', { streams: ['ledger'] });
   }
 
   async disconnect() {
@@ -232,7 +232,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
     })
       .finally(() => {
         if (this.disconnecting) {
-          this.client.rpc.disconnect();
+          this.client?.rpc.disconnect();
         }
       });
   }
@@ -300,7 +300,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
     }
 
     if (this.disconnecting) {
-      this.client.rpc.disconnect();
+      this.client?.rpc.disconnect();
     }
   }
 

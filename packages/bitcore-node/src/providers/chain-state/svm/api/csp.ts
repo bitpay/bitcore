@@ -55,7 +55,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     const provider = getProvider({ network, dataType, config: this.config });
     const wsPort = provider.wsPort ?? provider.port;
     const rpcConfig = { ...provider, chain: 'SOL', currencyConfig: {}, wsPort };
-    const rpc = new CryptoRpc(rpcConfig, {}).get('SOL');
+    const rpc = new CryptoRpc(rpcConfig as any).get('SOL');
     const umi = createUmi(`${provider.protocol}://${provider.host}${provider.port ? `:${provider.port}` : ''}`)
       .use(mplTokenMetadata());
     const rpcObj = {
@@ -136,13 +136,16 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         }
 
         const { rpc } = await this.getRpc(network);
-        const block = await rpc.getBlock({ height: blockHeight });
+        const block: any = await rpc.getBlock({ height: blockHeight, transactionDetails: 'signatures' });
+        if (!block) {
+          throw new Error('Block not found: ' + blockHeight);
+        }
         const stream = new TransformWithEventPipe({
           objectMode: true,
           passThrough: true
         });
         let count = 0;
-        for (const signature of block.signatures) {
+        for (const signature of block?.signatures || []) {
           if (limit && count >= limit) break;
           const transformedTx = await this._getTransformedTx(rpc, network, { signature });
           stream.push(transformedTx);
@@ -554,7 +557,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
             }
             nextBlock = thisNextBlock;
             block.nextBlockHash = nextBlock?.hash;
-            block.confirmations = height - block.height + 1;
+            block.confirmations = Number(height - block.height + 1n);
             stream.push(block);
           }
         } catch (e: any) {
@@ -739,7 +742,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   async broadcastTransaction(params: BroadcastTransactionParams): Promise<any> {
     const { rawTx, network } = params;
     const { rpc } = await this.getRpc(network);
-    const txids = new Array<string>();
+    const txids = new Array<string|null>();
     const rawTxs = typeof rawTx === 'string' ? [rawTx] : rawTx;
     for (const tx of rawTxs) {
       const txid = await rpc.sendRawTransaction({ rawTx: tx });

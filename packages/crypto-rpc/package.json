@@ -22,20 +22,13 @@
   "author": "Micah Riggan",
   "license": "MIT",
   "dependencies": {
-    "@solana-program/address-lookup-table": "^0.7.0",
-    "@solana-program/compute-budget": "^0.7.0",
-    "@solana-program/memo": "^0.7.0",
-    "@solana-program/system": "^0.7.0",
-    "@solana-program/token": "^0.5.1",
-    "@solana/kit": "^2.1.0",
+    "@solana-program/address-lookup-table": "0.7.0",
     "bitcoind-rpc": "0.9.1",
     "commander": "2.8.1",
+    "crypto-wallet-core": "^11.4.5",
     "dogecoind-rpc": "0.8.1",
-    "ethers": "6.15.0",
     "lightning": "10.0.1",
-    "promptly": "0.2.0",
-    "web3": "4.16.0",
-    "xrpl": "^2.6.0"
+    "promptly": "0.2.0"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.8",

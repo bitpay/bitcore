@@ -104,7 +104,7 @@ describe('Polygon', function() {
     const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
 
     const { web3 } = await worker.getWeb3();
-    const nonce = await web3.eth.getTransactionCount(accounts['geth']);
+    const nonce = Number(await web3.eth.getTransactionCount(accounts['geth']));
     // sending multiple tx to entice geth to mine a block because sometimes it doesn't mine even with automine enabled
     sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet, nonce),
     sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet, nonce + 1);

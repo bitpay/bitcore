@@ -1,8 +1,8 @@
-import Web3 from 'web3';
 import logger from '../../../../../logger';
 import { EVMTransactionStorage } from '../../models/transaction';
 import { GethBlock, IAbiDecodedData, IEVMBlock, IEVMTransactionInProcess } from '../../types';
 import { Callback, IJsonRpcRequest, IJsonRpcResponse, IRpc } from './index';
+import type { Web3 } from 'crypto-wallet-core';
 
 interface IGethTxTraceResponse {
   result: IGethTxTrace;

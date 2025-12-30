@@ -6,13 +6,13 @@
  */
 
 import AbiDecoder from 'abi-decoder';
-import Web3 from 'web3';
 import { LoggifyClass } from '../../../../../decorators/Loggify';
 import { ERC20Abi } from '../../abi/erc20';
 import { ERC721Abi } from '../../abi/erc721';
 import { EVMTransactionStorage } from '../../models/transaction';
 import { ErigonBlock, IAbiDecodedData, IEVMBlock, IEVMTransactionInProcess } from '../../types';
 import { Callback, IJsonRpcRequest, IJsonRpcResponse, IRpc } from './index';
+import type { Web3 } from 'crypto-wallet-core';
 
 AbiDecoder.addABI(ERC20Abi);
 AbiDecoder.addABI(ERC721Abi);
