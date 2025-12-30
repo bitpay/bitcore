@@ -68,9 +68,13 @@ export class InternalTxRelatedFilterTransform extends TransformWithEventPipe {
 
   async getWalletAddresses(tx) {
     if (!this.walletAddresses.length) {
-      this.walletAddresses = await WalletAddressStorage.collection
-        .find({ chain: tx.chain, network: tx.network, wallet: this.walletId })
-        .toArray();
+      const cursor = WalletAddressStorage.collection
+        .find({ chain: tx.chain, network: tx.network, wallet: this.walletId });
+      try {
+        this.walletAddresses = await cursor.toArray();
+      } finally {
+        await cursor.close();
+      }
     }
     return this.walletAddresses.map(walletAddress => this.web3.utils.toChecksumAddress(walletAddress.address));
   }
