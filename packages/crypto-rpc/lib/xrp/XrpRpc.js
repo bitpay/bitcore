@@ -10,13 +10,13 @@ export class XrpRpc {
   constructor(config) {
     this.config = config;
     const {
-      rpcPort,
-      host,
       protocol,
+      host,
+      port,
       address,
       useClientAdapter = true
     } = config;
-    const connectionString = `${protocol}://${host}:${rpcPort}`;
+    const connectionString = `${protocol}://${host}:${port}`;
     // Use client adapter to include implementations of ripple-lib Client methods as an extension to the xrpl Client
     this.rpc = useClientAdapter ? new XrpClientAdapter(connectionString) : new xrpl.Client(connectionString);
     this.address = address;
@@ -212,8 +212,9 @@ export class XrpRpc {
 
   /**
    * Get all transactions for an account
-   * @param {string} address Account to get transactions for
-   * @param {object} options See https://xrpl.org/docs/references/http-websocket-apis/public-api-methods/account-methods/account_tx/
+   * @param {object} params
+   * @param {string} params.address Account to get transactions for
+   * @param {object} params.options See https://xrpl.org/docs/references/http-websocket-apis/public-api-methods/account-methods/account_tx/
    * @returns 
    */
   async getTransactions({ address, options }) {
@@ -228,6 +229,15 @@ export class XrpRpc {
     }
   }
 
+  /**
+   * Get block by hash or index
+   * @param {object} params
+   * @param {string} [params.hash] - The block hash
+   * @param {number|string} [params.index] - The block index or 'latest'
+   * @param {boolean} [params.transactions=true] - Whether to include transactions
+   * @param {boolean} [params.expand=true] - Whether to expand transactions
+   * @returns 
+   */
   async getBlock({ hash, index, transactions = true, expand = true } = {}) {
     try {
       if (index === 'latest') {

@@ -70,7 +70,7 @@ export class EthRpc {
     if (this.account) {
       return this.account;
     }
-    return this.web3.eth.accounts.wallet[0]?.address;
+    return this.web3.eth.accounts.wallet.get(0)?.address;
   }
 
   removeAccount(address) {
@@ -121,12 +121,11 @@ export class EthRpc {
       const balance = await this.web3.eth.getBalance(address);
       return balance;
     } else {
-      const wallets = await this.web3.eth.accounts.wallet;
-      const balances = [];
-      for (const wallet of wallets) {
-        const balance = await this.web3.eth.getBalance(wallet.address);
-        balances.push({ account: wallet.address, balance });
-      }
+      const balances = await Promise.all(Array.from({ length: this.web3.eth.accounts.wallet.length }, async (_, idx) => {
+        const address = this.web3.eth.accounts.wallet[idx].address;
+        const balance = await this.getBalance({ address });
+        return { account: address, balance };
+      }));
       return balances;
     }
   }

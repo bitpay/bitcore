@@ -61,37 +61,37 @@ export class CryptoRpc {
    * Constructor for CryptoRpcProvider class.
    * @param {Object} config - The configuration object.
    * @param {string} config.chain - The chain to connect to.
-   * @param {boolean} config.isEVM - Optional flag indicating if the chain is EVM compatible.
-   * @param {string} config.host - The host address for RPC connection.
-   * @param {number} config.port - The port for RPC connection.
-   * @param {string} config.rpcPort - The port for RPC connection (alternative).
-   * @param {string} config.user - The username for RPC connection.
-   * @param {string} config.rpcUser - The username for RPC connection (alternative).
-   * @param {string} config.pass - The password for RPC connection.
-   * @param {string} config.rpcPass - The password for RPC connection (alternative).
-   * @param {string} config.protocol - The protocol for RPC connection.
-   * @param {Object} config.tokens - Optional tokens configuration.
+   * @param {boolean} [config.isEVM] - Optional flag indicating if the chain is EVM compatible.
+   * @param {string} config.protocol - The protocol for RPC connection. e.g. 'http', 'https', 'ws', or 'wss'.
+   * @param {string} config.host - The host address for RPC connection. e.g. 'localhost', 'x.x.x.x', or 'mydomain.com'.
+   * @param {number} config.port - The port for RPC connection. e.g. 8332, 18332, 8545, 443, etc.
+   * @param {string} [config.rpcPort] - The port for RPC connection (alternative).
+   * @param {string} [config.user] - The username for authenticated RPC connection.
+   * @param {string} [config.rpcUser] - The username for authenticated RPC connection (alternative).
+   * @param {string} [config.pass] - The password for authenticated RPC connection.
+   * @param {string} [config.rpcPass] - The password for authenticated RPC connection (alternative).
+   * @param {Object} [config.tokens] - Optional tokens configuration.
    */
   constructor(config) {
-    this.chain = config.chain;
-    if (!RpcClasses[this.chain] && !config.isEVM) {
+    const chain = config.chain;
+    if (!RpcClasses[chain] && !config.isEVM) {
       throw new Error('Invalid chain specified');
     }
-    this.config = Object.assign({}, config, {
+    const _config = Object.assign({}, config, {
       host: config.host,
       port: config.port || config.rpcPort,
       user: config.user || config.rpcUser,
       pass: config.pass || config.rpcPass,
       protocol: config.protocol
     });
-    const rpcChain = !config.isEVM ? this.chain : 'ETH';
+    const rpcChain = !config.isEVM ? chain : 'ETH';
     this.rpcs = {
-      [this.chain]: new RpcClasses[rpcChain](this.config)
+      [chain]: new RpcClasses[rpcChain](_config)
     };
     if (config.tokens) {
       for (const [token, tokenConfig] of Object.entries(config.tokens)) {
         const TokenClass = TokenClasses[rpcChain][tokenConfig.type];
-        const configForToken = Object.assign(tokenConfig, this.config);
+        const configForToken = Object.assign(tokenConfig, _config);
         this.rpcs[token] = new TokenClass(configForToken);
       }
     }

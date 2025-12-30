@@ -29,21 +29,20 @@ const config = {
 };
 
 describe('ERC20 Tests', function() {
-  let txid = '';
+  this.timeout(10000);
   const currency = 'ERC20';
   const currencyConfig = config.currencyConfig;
-  const rpcs = new CryptoRpc(config, currencyConfig);
-
-
-  this.timeout(10000);
-
+  let txid = '';
+  let rpcs;
+  
   before(done => {
+    rpcs = new CryptoRpc(config, currencyConfig);
     setTimeout(done, 5000);
   });
 
   it('should be able to get specific balance', async () => {
     const balance = await rpcs.getBalance({ currency, address: config.account });
-    expect(balance).to.be.gt(0);
+    expect(Number(balance)).to.be.gt(0);
   });
 
   it('should be able to get all balances', async () => {
@@ -52,7 +51,7 @@ describe('ERC20 Tests', function() {
     expect(Array.isArray(balances)).to.be.true;
     expect(balances.length).to.equal(1);
     expect(balances[0].account).to.equal(config.account);
-    expect(balances[0].balance).to.be.gt(0);
+    expect(Number(balances[0].balance)).to.be.gt(0);
     rpcs.rpcs[currency].removeAccount(config.account);
   });
 
@@ -70,7 +69,7 @@ describe('ERC20 Tests', function() {
       gasPrice: 30000000000,
       nonce: 24
     });
-    const decodedParams = await rpcs.getTransaction({ txid });
+    const decodedParams = await rpcs.getTransaction({ currency, txid });
     expect(decodedParams.nonce).to.equal(24n);
     expect(decodedParams.gasPrice).to.equal(30000000000n);
     expect(ethers.isHexString(txid)).to.be.true;

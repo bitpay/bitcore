@@ -107,16 +107,17 @@ describe('EVM', function() {
   for (const config of configs) {
 
     describe(`${config.chain} Tests: `, function() {
+      this.timeout(30000);
       const currency = config.chain;
       const currencyConfig = config.currencyConfig;
-      const rpcs = new CryptoRpc(config, currencyConfig);
-      const evmRPC = rpcs.get(currency);
       let txid = '';
       let blockHash = '';
-    
-      this.timeout(30000);
+      let rpcs;
+      let evmRPC;
     
       before(done => {
+        rpcs = new CryptoRpc(config, currencyConfig);
+        evmRPC = rpcs.get(currency);
         setTimeout(done, 10000);
       });
 
@@ -260,7 +261,7 @@ describe('EVM', function() {
           fromAccount: config.account,
           gasPrice: 30000000000
         });
-        const decodedParams = await rpcs.getTransaction({ txid });
+        const decodedParams = await rpcs.getTransaction({ currency, txid });
         expect(decodedParams.gasPrice).to.equal(30000000000n);
         expect(ethers.isHexString(txid)).to.be.true;
         rpcs.rpcs[config.chain].removeAccount(config.account);
@@ -274,7 +275,7 @@ describe('EVM', function() {
           fromAccount: currencyConfig.privateKey,
           gasPrice: 30000000000
         });
-        const decodedParams = await rpcs.getTransaction({ txid });
+        const decodedParams = await rpcs.getTransaction({ currency, txid });
         expect(decodedParams.gasPrice).to.equal(30000000000n);
         expect(ethers.isHexString(txid)).to.be.true;
       });

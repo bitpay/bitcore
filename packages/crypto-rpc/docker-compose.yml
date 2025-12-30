@@ -122,7 +122,7 @@ services:
     restart: always
 
   geth:
-    image: ethereum/client-go:v1.14.13
+    image: ethereum/client-go:v1.16.7
     volumes:
       - ./test/docker/geth-keystore:/keystore
     ports:
@@ -133,7 +133,6 @@ services:
     command:
       --dev
       --datadir /geth
-      --networkid 1337
       --http
       --http.api web3,eth,debug,net
       --http.corsdomain '*'

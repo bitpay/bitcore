@@ -23,7 +23,6 @@ describe('XRP Tests', function() {
   let blockHash = '';
   let block;
   let txid = '';
-
   let rpcs;
   let xrpRPC;
 

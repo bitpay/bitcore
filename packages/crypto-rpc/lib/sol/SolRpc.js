@@ -376,6 +376,7 @@ export class SolRpc {
    * This function retrieves recent prioritization fees and calculates the fee at the given percentile.
    * The fee is the per-compute-unit fee paid by at least one successfully landed transaction
    * 
+   * @param {Object} params
    * @param {number} [params.percentile=25] - The percentile (0-100) of fees to consider for maximum priority fee estimation.
    * @returns {Promise<number|null>} The estimated maximum priority fee or null if no fees are available.
    */
@@ -699,7 +700,11 @@ export class SolRpc {
     if (hash) {
       throw new Error('Hash is not supported. Provide a height instead');
     }
-    const block = await this.rpc.getBlock(height, { ...this._versionedConfig, transactionDetails }).send();
+    const block = await this.rpc.getBlock(height, {
+      commitment: this._versionedConfig.commitment,
+      maxSupportedTransactionVersion: this._versionedConfig.maxSupportedTransactionVersion,
+      transactionDetails
+    }).send();
     return block;
   }
 
