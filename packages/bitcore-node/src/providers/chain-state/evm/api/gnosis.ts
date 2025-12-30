@@ -192,7 +192,7 @@ export class GnosisApi {
 
     let transactionStream = new Readable({ objectMode: true });
     const ethTransactionTransform = new EVMListTransactionsStream([multisigContractAddress, args.tokenAddress]);
-    const EVM = new BaseEVMStateProvider(chain);
+    const EVM = getCSP(chain, network);
     const populateReceipt = new PopulateReceiptTransform(EVM);
     const populateEffects = new PopulateEffectsTransform(EVM);
 
