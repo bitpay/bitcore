@@ -149,7 +149,7 @@ export type IEVMBlock = IBlock & {
   merkleRoot: Buffer | Binary;
   uncleReward?: Array<number>;
   difficulty: string;
-  totalDifficulty: string;
+  totalDifficulty?: string;
 };
 
 export type IEVMTransaction = ITransaction & {

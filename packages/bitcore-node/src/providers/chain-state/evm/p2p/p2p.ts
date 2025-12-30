@@ -10,7 +10,7 @@ import { wait } from '../../../../utils';
 import { BaseEVMStateProvider } from '../api/csp';
 import { EVMBlockModel, EVMBlockStorage } from '../models/block';
 import { EVMTransactionModel, EVMTransactionStorage } from '../models/transaction';
-import { AnyBlock, IEVMBlock, IEVMTransactionInProcess } from '../types';
+import { IEVMBlock, IEVMTransactionInProcess } from '../types';
 import { IRpc, Rpcs } from './rpcs';
 import { MultiThreadSync } from './sync';
 import type { Web3, Web3Types } from 'crypto-wallet-core';
@@ -72,14 +72,16 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
   async setupListeners() {
     const { host, port } = this.chainConfig.provider || this.chainConfig.providers![0];
     this.events.on('disconnected', async () => {
-      logger.warn(
-        `${timestamp()} | Not connected to peer: ${host}:${port} | Chain: ${this.chain} | Network: ${this.network}`
-      );
+      logger.warn(`${timestamp()} | Not connected to peer: ${host}:${port} | Chain: ${this.chain} | Network: ${this.network}`);
     });
     this.events.on('connected', async () => {
       try {
-        this.txSubscription = await this.web3!.eth.subscribe('pendingTransactions');
-        this.txSubscription.subscribe(async (_err, txid) => {
+        if (this.txSubscription) {
+          await this.txSubscription.resubscribe();
+        } else {
+          this.txSubscription = await this.web3!.eth.subscribe('pendingTransactions');
+        }
+        this.txSubscription.on('data', async (txid) => {
           try {
             if (!this.isCachedInv('TX', txid)) {
               this.cacheInv('TX', txid);
@@ -93,8 +95,12 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
             logger.error('Error in pendingTransactions subscription:', err);
           }
         });
-        this.blockSubscription = await this.web3!.eth.subscribe('newBlockHeaders');
-        this.blockSubscription.subscribe((_err, block) => {
+        if (this.blockSubscription) {
+          await this.blockSubscription.resubscribe();
+        } else {
+          this.blockSubscription = await this.web3!.eth.subscribe('newBlockHeaders');
+        }
+        this.blockSubscription.on('data', (block) => {
           try {
             this.events.emit('block', block);
             if (!this.syncing) {
@@ -326,41 +332,41 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
     return new Promise(resolve => this.events.once('SYNCDONE', resolve));
   }
 
-  getBlockReward(block: AnyBlock): number {
+  getBlockReward(block: Web3Types.Block): number {
     // TODO: implement block reward
     block;
     return 0;
   }
 
-  async convertBlock(block: AnyBlock) {
+  async convertBlock(block: Web3Types.Block) {
     const blockTime = Number(block.timestamp) * 1000;
-    const hash = block.hash;
+    const hash = block.hash as string;
     const height = block.number;
     const reward = this.getBlockReward(block);
 
     const convertedBlock: IEVMBlock = {
       chain: this.chain,
       network: this.network,
-      height,
+      height: Number(height),
       hash,
       coinbase: Buffer.from(block.miner),
       merkleRoot: Buffer.from(block.transactionsRoot),
       time: new Date(blockTime),
       timeNormalized: new Date(blockTime),
       nonce: Buffer.from(block.extraData),
-      previousBlockHash: block.parentHash,
-      difficulty: block.difficulty,
-      totalDifficulty: block.totalDifficulty,
+      previousBlockHash: block.parentHash as string,
+      difficulty: Number(block.difficulty).toString(),
+      totalDifficulty: block.totalDifficulty != undefined ? Number(block.totalDifficulty).toString() : undefined,
       nextBlockHash: '',
       transactionCount: block.transactions.length,
-      size: block.size,
+      size: Number(block.size),
       reward,
-      logsBloom: Buffer.from(block.logsBloom),
+      logsBloom: Buffer.from(block.logsBloom as string),
       sha3Uncles: Buffer.from(block.sha3Uncles),
       receiptsRoot: Buffer.from(block.receiptsRoot),
       processed: false,
-      gasLimit: block.gasLimit,
-      gasUsed: block.gasUsed,
+      gasLimit: Number(block.gasLimit),
+      gasUsed: Number(block.gasUsed),
       stateRoot: Buffer.from(block.stateRoot)
     };
     const convertedTxs = block.transactions.map(t => this.txModel.convertRawTx(this.chain, this.network, t, convertedBlock));

@@ -1,4 +1,5 @@
 import { CryptoRpc } from 'crypto-rpc';
+import { Utils } from 'crypto-wallet-core';
 import { ObjectID } from 'mongodb';
 import Config from '../../../../config';
 import {
@@ -107,7 +108,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     const providerConfig = getProvider({ network, dataType, config: this.config });
     // Default to using ETH CryptoRpc with all EVM chain configs
     const rpcConfig = { ...providerConfig, chain: 'ETH', currencyConfig: {} };
-    const rpc = new CryptoRpc(rpcConfig, {}).get('ETH') as EthRpc;
+    const rpc = new CryptoRpc(rpcConfig as any).get('ETH') as EthRpc;
     const rpcObj = { rpc, web3: rpc.web3, dataType: rpcConfig.dataType || 'combined' };
     if (!BaseEVMStateProvider.rpcs[this.chain]) {
       BaseEVMStateProvider.rpcs[this.chain] = {};
@@ -305,10 +306,10 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     if (!tx.receipt) {
       const receipt = await this.getReceipt(tx.network, tx.txid);
       if (receipt) {
-        const fee = Number(receipt.gasUsed) * tx.gasPrice;
+        const fee = Number(receipt.gasUsed * BigInt(tx.gasPrice));
         // TEST if/how this db save works with bigint values in receipt
         await EVMTransactionStorage.collection.updateOne({ _id: tx._id }, { $set: { receipt, fee } });
-        tx.receipt = receipt;
+        tx.receipt = receipt as any;
         tx.fee = fee;
       }
     }
@@ -604,33 +605,37 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     args: Partial<StreamWalletTransactionsArgs> = {}
   ): Promise<Array<Partial<Web3Types.Transaction>>> {
     const token = await this.erc20For(network, tokenAddress);
-    let windowSize = 100;
+    let windowSize = 100n;
     const { web3 } = await this.getWeb3(network);
-    const tip = Number(await web3.eth.getBlockNumber());
-    
-    // If endBlock or startBlock is negative, it is a block offset from the tip
-    if (args.endBlock! < 0) {
-      args.endBlock = tip + Number(args.endBlock!);
-    }
-    if (args.startBlock! < 0) {
-      args.startBlock = tip + Number(args.startBlock!);
-    }
-
-    args.endBlock = Math.min(args.endBlock ?? tip, tip);
-    args.startBlock = Math.max(args.startBlock != null ? Number(args.startBlock) : args.endBlock - 10000, 0);
+    const tip = await web3.eth.getBlockNumber();
     
     if (isNaN(args.startBlock!) || isNaN(args.endBlock!)) {
       throw new Error('startBlock and endBlock must be numbers');
-    } else if (args.endBlock < args.startBlock) {
+    }
+
+    let endBlock = args.endBlock == null ? null : BigInt(args.endBlock);
+    let startBlock = args.startBlock == null ? null : BigInt(args.startBlock);
+
+    // If endBlock or startBlock is negative, it is a block offset from the tip
+    if (endBlock! < 0n) {
+      endBlock = tip + endBlock!;
+    }
+    if (startBlock! < 0n) {
+      startBlock = tip + startBlock!;
+    }
+
+    endBlock = Utils.BI.min<bigint>([endBlock ?? tip, tip]) as bigint;
+    startBlock = Utils.BI.max<bigint>([startBlock != null ? startBlock : endBlock - 10000n, 0n]) as bigint;
+    
+    if (endBlock < startBlock!) {
       throw new Error('startBlock cannot be greater than endBlock');
-    } else if (args.endBlock - args.startBlock > 10000) {
+    } else if (endBlock - startBlock > 10000n) {
       throw new Error('Cannot scan more than 10000 blocks at a time. Please limit your search with startBlock and endBlock');
     }
 
-    windowSize = Math.min(windowSize, args.endBlock - args.startBlock);
-    let endBlock = args.endBlock;
+    windowSize = Utils.BI.min([windowSize, endBlock - startBlock]);
     const tokenTransfers: Partial<Web3Types.Transaction>[] = [];
-    while (windowSize > 0) {
+    while (windowSize > 0n) {
       const [sent, received] = await Promise.all([
         token.getPastEvents('Transfer', {
           filter: { _from: address },
@@ -644,8 +649,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         }) as Promise<Array<Web3Types.EventLog>>
       ]);
       tokenTransfers.push(...this.convertTokenTransfers([...sent, ...received]));
-      endBlock -= windowSize + 1;
-      windowSize = Math.min(windowSize, endBlock - args.startBlock);
+      endBlock -= windowSize + 1n;
+      windowSize = Utils.BI.min([windowSize, endBlock - startBlock]);
     }
     return tokenTransfers;
   }
@@ -690,7 +695,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     args: StreamWalletTransactionsArgs
   ) {
     const addresses = await this.getWalletAddresses(walletId);
-    const allTokenQueries = Array<Promise<Array<Partial<Web3Types.Transaction>>>>();
+    const allTokenQueries = Array<Promise<Array<Partial<Web3Types.TransactionInfo>>>>();
     for (const walletAddress of addresses) {
       const transfers = this.getErc20Transfers(network, walletAddress.address, tokenAddress, args);
       allTokenQueries.push(transfers);
@@ -698,7 +703,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     const batches = await Promise.all(allTokenQueries);
     const txs = batches.reduce((agg, batch) => agg.concat(batch));
     // TODO fix this.
-    return txs.sort((tx1, tx2) => tx1.blockNumber! - tx2.blockNumber!);
+    return txs.sort((tx1, tx2) => Number(BigInt(tx1.blockNumber!) - BigInt(tx2.blockNumber!)));
   }
 
   @realtime

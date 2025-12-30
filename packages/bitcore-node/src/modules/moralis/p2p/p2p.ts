@@ -12,6 +12,7 @@ import { IEVMNetworkConfig, IExternalSyncConfig } from '../../../types/Config';
 import { IAddressSubscription } from '../../../types/ExternalProvider';
 import { wait } from '../../../utils';
 import { MoralisStateProvider } from '../api/csp';
+import type { EthRpc } from 'crypto-rpc/lib/eth/EthRpc';
 import type { Web3 } from 'crypto-wallet-core';
 
 export class MoralisP2PWorker extends BaseP2PWorker {
@@ -59,7 +60,7 @@ export class MoralisP2PWorker extends BaseP2PWorker {
         const providerConfigs = this.chainConfig.providers || (this.chainConfig.provider ? [this.chainConfig.provider] : []);
         for (const config of providerConfigs) {
           try {
-            const rpc = new CryptoRpc({ chain: this.chain, network: this.network, isEVM: true, ...config }).get(this.chain);
+            const rpc: EthRpc = new CryptoRpc({ chain: this.chain, isEVM: true, ...config as any }).get(this.chain);
             await rpc.web3.eth.getBlockNumber();
             this.web3 = rpc.web3;
             return this.web3 as Web3;

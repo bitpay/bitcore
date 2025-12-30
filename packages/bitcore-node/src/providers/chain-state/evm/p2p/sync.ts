@@ -9,6 +9,7 @@ import { StateStorage } from '../../../../models/state';
 import { IEVMNetworkConfig } from '../../../../types/Config';
 import { wait } from '../../../../utils';
 import { EVMBlockStorage } from '../models/block';
+import type { EthRpc } from 'crypto-rpc/lib/eth/EthRpc';
 
 export class MultiThreadSync extends EventEmitter {
   private chain: string;
@@ -43,7 +44,7 @@ export class MultiThreadSync extends EventEmitter {
     const providerIdx = threadId % (this.config.providers || []).length;
     const providerConfig = this.config.provider || this.config.providers![providerIdx];
     const rpcConfig = { ...providerConfig, chain: this.chain, currencyConfig: {} };
-    const rpc = new CryptoRpc(rpcConfig, {}).get(this.chain);
+    const rpc = new CryptoRpc(rpcConfig as any).get(this.chain) as EthRpc;
     return rpc;
   }
 
@@ -70,7 +71,7 @@ export class MultiThreadSync extends EventEmitter {
 
       let startHeight = tip ? tip.height : this.config.syncStartHeight || 0;
       const rpc = this.getRpc();
-      this.bestBlock = await rpc.web3!.eth.getBlockNumber();
+      this.bestBlock = Number(await rpc.web3!.eth.getBlockNumber());
       this.currentHeight = tip ? tip.height : this.config.syncStartHeight || 0;
       this.syncHeight = this.currentHeight;
       startHeight = this.currentHeight;
@@ -171,7 +172,7 @@ export class MultiThreadSync extends EventEmitter {
       return false;
     }
     const rpc = this.getRpc();
-    this.bestBlock = await rpc.web3!.eth.getBlockNumber();
+    this.bestBlock = Number(await rpc.web3!.eth.getBlockNumber());
     if (this.bestBlock > this.syncHeight + this.mtSyncTipPad) {
       return false;
     }
