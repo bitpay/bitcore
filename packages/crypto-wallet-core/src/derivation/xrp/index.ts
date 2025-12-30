@@ -35,4 +35,20 @@ export class XrpDeriver implements IDeriver {
     const address = deriveAddress(pubKey);
     return address;
   }
+
+  /**
+   * @param {any} privKey - expects hex-encoded string, as returned from XrpDeriver.derivePrivateKey privKey
+   * @returns {Buffer}
+   * @throws {Error} If privKey is not a Buffer (planned forwards compatibility) or string. Propagates all other errors
+   */
+  privateKeyToBuffer(privKey: any): Buffer {
+    if (Buffer.isBuffer(privKey)) return privKey;
+    if (typeof privKey !== 'string') throw new Error(`Expected string, got ${typeof privKey}`);
+    // Expects to match return from derivePrivateKey's privKey.
+    return Buffer.from(privKey, 'hex');
+  }
+
+  privateKeyBufferToNativePrivateKey(buf: Buffer, _network: string): any {
+    return buf.toString('hex').toUpperCase();
+  }
 }

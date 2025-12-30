@@ -14,4 +14,14 @@ export interface IDeriver {
   derivePrivateKeyWithPath(network: string, xprivKey: string, path: string, addressType: string): Key;
 
   getAddress(network: string, pubKey, addressType: string): string;
+
+  /**
+   * Used to normalize output of Key.privKey
+   */
+  privateKeyToBuffer(privKey: any): Buffer;
+
+  /**
+   * Temporary - converts decrypted private key buffer to chain-native private key format
+   */
+  privateKeyBufferToNativePrivateKey(buf: Buffer, network: string): any;
 }
