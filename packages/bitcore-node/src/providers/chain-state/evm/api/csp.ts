@@ -595,7 +595,6 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         cursorClosed = true;
         try {
           cursor.close();
-          cursor.destroy();
         } catch {
           // Cursor might already be closed, ignore
         }

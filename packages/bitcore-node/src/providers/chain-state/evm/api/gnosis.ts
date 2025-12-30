@@ -209,7 +209,6 @@ export class GnosisApi {
         cursorClosed = true;
         try {
           cursor.close();
-          cursor.destroy();
         } catch {
           // Cursor might already be closed, ignore
         }
