@@ -79,7 +79,7 @@ describe('EVM Memory Leak Prevention', function() {
       });
 
       const txCount = 5;
-      const txs = new Array(txCount).fill({}).map(() => ({
+      const txs = new Array(txCount).fill({}).map((_, i) => ({
         chain,
         network,
         blockHeight: 1,
@@ -87,7 +87,7 @@ describe('EVM Memory Leak Prevention', function() {
         data: Buffer.from(''),
         from: address,
         to: '0xRecipient123',
-        txid: '0x' + Math.random().toString(16).substring(2),
+        txid: '0x' + (i + 1).toString(16).padStart(64, '0'),
         wallets: [objectId]
       } as any));
 
@@ -143,7 +143,7 @@ describe('EVM Memory Leak Prevention', function() {
       });
 
       const txCount = 5;
-      const txs = new Array(txCount).fill({}).map(() => ({
+      const txs = new Array(txCount).fill({}).map((_, i) => ({
         chain,
         network,
         blockHeight: 1,
@@ -151,7 +151,7 @@ describe('EVM Memory Leak Prevention', function() {
         data: Buffer.from(''),
         from: address,
         to: '0xRecipient456',
-        txid: '0x' + Math.random().toString(16).substring(2),
+        txid: '0x' + (i + 100).toString(16).padStart(64, '0'),
         wallets: [objectId]
       } as any));
 
@@ -206,7 +206,7 @@ describe('EVM Memory Leak Prevention', function() {
       });
 
       const txCount = 5;
-      const txs = new Array(txCount).fill({}).map(() => ({
+      const txs = new Array(txCount).fill({}).map((_, i) => ({
         chain,
         network,
         blockHeight: 1,
@@ -214,7 +214,7 @@ describe('EVM Memory Leak Prevention', function() {
         data: Buffer.from(''),
         from: address,
         to: '0xRecipient789',
-        txid: '0x' + Math.random().toString(16).substring(2),
+        txid: '0x' + (i + 200).toString(16).padStart(64, '0'),
         wallets: [objectId]
       } as any));
 
