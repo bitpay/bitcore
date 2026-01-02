@@ -174,6 +174,12 @@ export interface Effect {
   callStack?: string;
 }
 
+/**
+ * Reference doc: IEVMTransactionInProcess interface
+ * This is the standardized internal format ALL provider adapters must return.
+ * Each adapter (Moralis, Chainstack, Tatum) transforms its API response to this format.
+ * Extends IEVMTransaction (txid, chain, network, blockHeight, from, to, value, gasLimit, gasPrice, nonce).
+ */
 export type IEVMTransactionInProcess = IEVMTransaction & {
   data: Buffer;
   internal: Array<ClassifiedTrace>;
