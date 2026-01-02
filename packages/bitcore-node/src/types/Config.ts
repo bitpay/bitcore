@@ -44,16 +44,23 @@ export type IExternalSyncConfig<T> = {
   syncIntervalSecs?: number; // Interval in seconds to check for new blocks
 } & T;
 
+/**
+ * Reference doc: Section "Configuration"
+ * Add externalProviders array for multi-provider indexed API support.
+ * Each provider needs: name, priority, config (apiKey, etc), optional circuitBreakerConfig.
+ * See reference doc IProviderConfig interface.
+ */
 export interface IEVMNetworkConfig extends INetworkConfig {
   client?: 'geth' | 'erigon'; // Note: Erigon support is not actively maintained
-  providers?: IProvider[]; // Multiple providers can be configured to load balance for the syncing threads
-  provider?: IProvider;
+  providers?: IProvider[]; // Multiple RPC providers - already supports multi-provider
+  provider?: IProvider; // Primary RPC provider
   gnosisFactory?: string; // Address of the gnosis multisig contract
   publicWeb3?: boolean; // Allow web3 rpc to be open via bitcore-node API endpoint
   threads?: number; // Defaults to your CPU's capabilities. Currently only available for EVM chains
   mtSyncTipPad?: number; // Default: 100. Multi-threaded sync will sync up to latest block height minus mtSyncTipPad. MT syncing is blind to reorgs. This helps ensure reorgs are accounted for near the tip.
   leanTransactionStorage?: boolean; // Removes data, abiType, internal and calls before saving a transaction to the databases
   needsL1Fee?: boolean; // Does this chain require a layer-1 fee to be added to a transaction (e.g. OP-stack chains)?
+  // TODO: Add externalProviders?: IProviderConfig[] for multi-provider indexed API support
 }
 
 export interface IXrpNetworkConfig extends INetworkConfig {
