@@ -34,7 +34,7 @@
     "clean": "rm -rf ./ts_build",
     "compile": "npm run clean && npm run build",
     "pub": "npm run build && npm publish",
-    "precommit": "npm run lint; npm run fix:errors",
+    "precommit": "npm run lint",
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",

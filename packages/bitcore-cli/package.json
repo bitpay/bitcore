@@ -37,7 +37,7 @@
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
-    "precommit": "npm run lint; npm run fix:errors"
+    "precommit": "npm run lint"
   },
   "dependencies": {
     "@clack/prompts": "1.0.0-alpha.6",
