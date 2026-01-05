@@ -38,6 +38,7 @@
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
+    "fix": "npm run fix:errors",
     "update:stats": "npm run clean && npm run build && chmod +x ./ts_build/updatestats/updatestats.js && ./ts_build/updatestats/updatestats.js",
     "clean:fiatrates": "npm run clean && npm run build && chmod +x ./ts_build/cleanfiatrates/cleanfiatrates.js && ./ts_build/cleanfiatrates/cleanfiatrates.js",
     "cp:templates": "cp -r ./templates ./ts_build/templates"

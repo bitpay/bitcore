@@ -13,6 +13,7 @@
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
+    "fix": "npm run fix:errors",
     "precommit": "lerna run --concurrency 1 --stream precommit --since master",
     "test:ci:local": "npm run test:ci:build:local && npm run test:ci:all",
     "test:ci:build:local": "./ci.sh build local",
