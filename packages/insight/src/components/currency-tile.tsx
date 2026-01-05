@@ -114,13 +114,23 @@ interface CurrencyTileProps {
   currency: string;
 }
 
+type PriceDetails = Array<
+{
+  ts: number,
+  rate: number,
+  fetchedOn: number,
+  code: string,
+  name: string
+}>
+
 const CurrencyTile: FC<CurrencyTileProps> = ({currency}) => {
   const navigate = useNavigate();
   const apiRoot = getApiRoot(currency);
   const refreshInterval = getDefaultRefreshInterval(currency);
 
   const {data, error} = useApi(`${apiRoot}/${currency}/mainnet/block?limit=1`, {refreshInterval});
-  const {data: priceDetails} = useApi(`https://bitpay.com/rates/${currency}/usd`);
+  const priceDetails: PriceDetails = useApi(`https://bws.bitpay.com/bws/api/v3/fiatrates/${currency.toLowerCase()}`).data;
+
   const {data: priceDisplay} = useApi(
     `https://bitpay.com/currencies/prices?currencyPairs=["${currency}:USD"]`,
   );
@@ -128,7 +138,7 @@ const CurrencyTile: FC<CurrencyTileProps> = ({currency}) => {
   const chartRef = useRef<HTMLCanvasElement | null>(null);
   const chartInstanceRef = useRef<ChartJS | null>(null);
 
-  const price = priceDetails?.data?.rate;
+  const price = priceDetails?.filter(d => d.code === 'USD')[0].rate;
   const priceList = priceDisplay?.data?.[0]?.priceDisplay || [];
 
   const chartData = {

@@ -47,13 +47,14 @@ const ChartTileHeader = styled.span`
   font-weight: bolder;
 `;
 
-interface PriceDetails {
-  data: {
+type PriceDetails = Array<
+  {
+    ts: number,
+    rate: number,
+    fetchedOn: number,
     code: string,
-    name: string,
-    rate: number
-  }
-}
+    name: string
+  }>;
 
 interface PriceDisplay {
   data: Array<{
@@ -147,9 +148,9 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
       setPrice(0);
       setPriceList([0]);
     } else {
-      fetcher(`https://bitpay.com/rates/${currency}/usd`)
-        .then(({data}: PriceDetails) => {
-          setPrice(data.rate);
+      fetcher(`https://bws.bitpay.com/bws/api/v3/fiatrates/${currency.toLowerCase()}`)
+        .then((data: PriceDetails) => {
+          setPrice(data.filter(d => d.code === 'USD')[0].rate);
         })
         .catch(() => {
           setError('Error fetching price. Please try again later.');
@@ -230,7 +231,7 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
             <>
               <span>{getName(currency)} Exchange Rate</span>
               <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                <ChartTileHeader>${price.toLocaleString()}</ChartTileHeader>
+                <ChartTileHeader>${price}</ChartTileHeader>
                 <Dropdown options={priceRanges} value={priceSelectedRange} onChange={setPriceSelectedRange} />
               </div>
               <PriceChangeSpan prices={priceList} lastPrice={price} range={priceSelectedRange} />
