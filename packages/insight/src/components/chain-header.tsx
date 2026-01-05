@@ -49,8 +49,8 @@ const ChartTileHeader = styled.span`
 
 interface PriceDetails {
   data: {
-    code: string, 
-    name: string, 
+    code: string,
+    name: string,
     rate: number
   }
 }
@@ -79,11 +79,11 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
   const priceChartInstanceRef = useRef<ChartJS | null>(null);
 
   const feeRanges = ['128 Blocks', '32 Blocks', '16 Blocks', '8 Blocks'];
-  const priceRanges = ['24 Hours', '12 Hours', '6 Hours', '3 Hours'];
+  const priceRanges = ['23 Hours', '12 Hours', '6 Hours', '3 Hours'];
 
   const [feeSelectedRange, setFeesSelectedRange] = useState('32 Blocks');
-  const [priceSelectedRange, setPriceSelectedRange] = useState('24 Hours');
-  
+  const [priceSelectedRange, setPriceSelectedRange] = useState('23 Hours');
+
   const hasFees = blocks?.at(0)?.feeData !== undefined;
 
   useEffect(() => {
@@ -167,7 +167,7 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
 
   useEffect(() => {
     const hours = Number(priceSelectedRange.slice(0, priceSelectedRange.indexOf(' ')))
-    const usedPrices = priceList.slice(priceList.length - hours);
+    const usedPrices = priceList.slice(priceList.length - hours - 1);
 
     const priceChartData = {
       labels: usedPrices,
@@ -182,7 +182,7 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
         },
       ],
     };
-  
+
     const priceOptions = {
       scales: {
         y: {
@@ -224,9 +224,9 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
           alt={currency}
           style={{height: '25px', marginBottom: '0.25rem'}}
         />
-      <ChartContainer>          
+      <ChartContainer>
         <ChartTile fullWidth={!hasFees}>
-          { error ?  <Info type={'error'} message={error} />: 
+          { error ?  <Info type={'error'} message={error} />:
             <>
               <span>{getName(currency)} Exchange Rate</span>
               <div style={{display: 'flex', justifyContent: 'space-between'}}>
