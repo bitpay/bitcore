@@ -633,7 +633,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       throw new Error('Cannot scan more than 10000 blocks at a time. Please limit your search with startBlock and endBlock');
     }
 
-    windowSize = Utils.BI.min([windowSize, endBlock - startBlock]);
+    windowSize = Utils.BI.min<bigint>([windowSize, endBlock - startBlock]);
     const tokenTransfers: Partial<Web3Types.Transaction>[] = [];
     while (windowSize > 0n) {
       const [sent, received] = await Promise.all([
@@ -650,7 +650,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       ]);
       tokenTransfers.push(...this.convertTokenTransfers([...sent, ...received]));
       endBlock -= windowSize + 1n;
-      windowSize = Utils.BI.min([windowSize, endBlock - startBlock]);
+      windowSize = Utils.BI.min<bigint>([windowSize, endBlock - startBlock]);
     }
     return tokenTransfers;
   }

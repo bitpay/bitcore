@@ -56,7 +56,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
         chain: this.chain,
         host: provider.host,
         port: provider.port,
-        protocol: provider.protocol 
+        protocol: provider.protocol
       }).get(this.chain);
       await RippleStateProvider.clients[network].rpc.connect();
     }
@@ -524,7 +524,6 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     }
     // the ripple epoch is 2000-01-01
     return new Date(new Date('2000-01-01').getTime() + rippleTime * 1000);
-  
   }
 }
 

@@ -90,7 +90,6 @@ export interface GethTraceCall {
   value?: string;
 }
 
-export type AnyBlock = GethBlock | ErigonBlock;
 export type AnyTransaction = GethTraceTransaction | ErigonTransaction;
 
 export type Networks = 'mainnet' | 'ropsten' | 'rinkeby' | 'goerli' | 'kovan' | 'sepolia' | 'mumbai';

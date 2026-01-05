@@ -6,15 +6,16 @@ import { Storage } from '../../../../services/storage';
 import { wait } from '../../../../utils';
 import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
-import { AnyBlock, ErigonTransaction, IEVMBlock, IEVMTransactionInProcess } from '../types';
-import { IRpc, Rpcs } from './rpcs';
-import type { Web3 } from 'crypto-wallet-core';
+import { type IRpc, Rpcs } from './rpcs';
+import type { IEVMBlock, IEVMTransactionInProcess } from '../types';
+import type { Web3, Web3Types } from 'crypto-wallet-core';
 
 export class SyncWorker {
   private chain: string = worker.workerData.chain;
   private network: string = worker.workerData.network;
   private parentPort: worker.MessagePort = worker.parentPort as worker.MessagePort;
   private chainConfig: any;
+  private txModel = EVMTransactionStorage;
   private web3?: Web3;
   private rpc?: IRpc;
   private client?: 'erigon' | 'geth';
@@ -72,7 +73,7 @@ export class SyncWorker {
       worker.parentPort!.postMessage({
         message: 'sync',
         notFound: !block,
-        blockNum: block.number,
+        blockNum: Number(block.number),
         threadId: worker.threadId
       });
     } catch (err: any) {
@@ -126,48 +127,46 @@ export class SyncWorker {
     });
   }
 
-  getBlockReward(block: AnyBlock): number {
+  getBlockReward(block: Web3Types.Block): number {
     block;
     return 0;
   }
 
-  async convertBlock(block: AnyBlock) {
+  async convertBlock(block: Web3Types.Block) {
     const blockTime = Number(block.timestamp) * 1000;
-    const hash = block.hash;
+    const hash = block.hash as string;
     const height = block.number;
     const reward = this.getBlockReward(block);
 
     const convertedBlock: IEVMBlock = {
       chain: this.chain,
       network: this.network,
-      height,
+      height: Number(height),
       hash,
       coinbase: Buffer.from(block.miner),
       merkleRoot: Buffer.from(block.transactionsRoot),
       time: new Date(blockTime),
       timeNormalized: new Date(blockTime),
       nonce: Buffer.from(block.extraData),
-      previousBlockHash: block.parentHash,
-      difficulty: block.difficulty,
-      totalDifficulty: block.totalDifficulty,
+      previousBlockHash: block.parentHash as string,
+      difficulty: Number(block.difficulty).toString(),
+      totalDifficulty: block.totalDifficulty != undefined ? Number(block.totalDifficulty).toString() : undefined,
       nextBlockHash: '',
       transactionCount: block.transactions.length,
-      size: block.size,
+      size: Number(block.size),
       reward,
-      logsBloom: Buffer.from(block.logsBloom),
+      logsBloom: Buffer.from(block.logsBloom as string),
       sha3Uncles: Buffer.from(block.sha3Uncles),
       receiptsRoot: Buffer.from(block.receiptsRoot),
       processed: false,
-      gasLimit: block.gasLimit,
-      gasUsed: block.gasUsed,
+      gasLimit: Number(block.gasLimit),
+      gasUsed: Number(block.gasUsed),
       stateRoot: Buffer.from(block.stateRoot)
     };
-    const transactions = block.transactions as Array<ErigonTransaction>;
-    const convertedTxs = transactions.map(t => EVMTransactionStorage.convertRawTx(this.chain, this.network, t, convertedBlock));
+    const convertedTxs = block.transactions.map(t => this.txModel.convertRawTx(this.chain, this.network, t, convertedBlock));
     const traceTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
-    EVMTransactionStorage.addEffectsToTxs(convertedTxs);
     this.rpc!.reconcileTraces(convertedBlock, convertedTxs, traceTxs);
-
+    this.txModel.addEffectsToTxs(convertedTxs);
     return { convertedBlock, convertedTxs };
   }
 
