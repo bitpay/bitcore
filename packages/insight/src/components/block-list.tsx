@@ -1,10 +1,13 @@
 import React, {FC, useState} from 'react';
 import {getApiRoot, getConvertedValue, getDifficultyFromBits, getFormattedDate} from 'src/utilities/helper-methods';
 import {BitcoinBlockType} from 'src/utilities/models';
-import Cube from '../assets/images/cube.svg';
+import CubeLight from '../assets/images/light/cube.svg';
+import CubeDark from '../assets/images/dark/cube.svg';
 import Arrow from '../assets/images/arrow-thin.svg';
-import ArrowOutward from '../assets/images/arrow-outward.svg';
-import ForwardArrow from '../assets/images/arrow-forward-blue.svg';
+import ArrowOutwardDark from '../assets/images/dark/arrow-outward.svg';
+import ArrowOutwardLight from '../assets/images/light/arrow-outward.svg';
+import ForwardArrowDark from '../assets/images/dark/arrow-forward-blue.svg';
+import ForwardArrowLight from '../assets/images/light/arrow-forward-blue.svg';
 import ArrowDown from '../assets/images/arrow-down.svg';
 import styled, {useTheme} from 'styled-components';
 import InfoCard from './info-card';
@@ -45,6 +48,10 @@ const BlockList: FC<{currency: string, network: string}> = ({currency, network})
   const [hasMore, setHasMore] = useState(true);
   const hasFees = blocks.every(block => block.feeData);
   const columnProportion = hasFees ? '20%' : '25%';
+
+  const ForwardArrow = theme.dark ? ForwardArrowDark : ForwardArrowLight;
+  const ArrowOutward = theme.dark ? ArrowOutwardDark : ArrowOutwardLight;
+  const Cube = theme.dark ? CubeDark : CubeLight;
 
   const fetchMore = async (_blocksList: BitcoinBlockType[]) => {
     if (!_blocksList.length || !currency || !network) return;
@@ -98,14 +105,14 @@ const BlockList: FC<{currency: string, network: string}> = ({currency, network})
                   'Version': {label: 'Version', value: block.version},
                   'Block reward': {label: 'Block reward', value: `${getConvertedValue(block.reward, currency).toFixed(3)} ${currency}`},
                   'Miner fees': {label: 'Miner fees', value: `${getConvertedValue(feeData?.feeTotal, currency).toFixed(5)} ${currency}`},
-                  'Next block': {label: 'Next block', value: 
+                  'Next block': {label: 'Next block', value:
                     <>
                       {block.height + 1}
-                      <img 
-                        src={ArrowOutward} 
-                        style={{width: '24px', cursor: 'pointer'}} 
+                      <img
+                        src={ArrowOutward}
+                        style={{width: '24px', cursor: 'pointer'}}
                         onClick={() => gotoSingleBlockDetailsView(blocks[index - 1].hash)}
-                        alt='Next Block' 
+                        alt='Next Block'
                         title={`Go to block ${block.height + 1}`}
                       />
                     </>
@@ -113,7 +120,7 @@ const BlockList: FC<{currency: string, network: string}> = ({currency, network})
                   'Nonce': {label: 'Nonce', value: block.nonce},
                   'Confirmations': {label: 'Confirmations', value: blocks[0].height - block.height + 1},
                   'Difficulty': {label: 'Difficulty', value: getDifficultyFromBits(block.bits).toFixed(0)},
-                  'Fee data': {label: 'Fee data', value: 
+                  'Fee data': {label: 'Fee data', value:
                     <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: '100%'}}>
                       {[{label: 'Mean', value: feeData?.mean}, {label: 'Median', value: feeData?.median}, {label: 'Mode', value: feeData?.mode}]
                         .map(({label, value}, key) => {
@@ -146,13 +153,13 @@ const BlockList: FC<{currency: string, network: string}> = ({currency, network})
                 return (
                   <React.Fragment key={index}>
                     <BlockListTableRow>
-                      <td style={{textAlign: 'left', color: '#2240C4', paddingLeft: '1rem'}}>
-                        <span 
+                      <td style={{textAlign: 'left', color: theme.dark ? '#4989FF' : '#2240C4', paddingLeft: '1rem'}}>
+                        <span
                           style={{display: 'flex', alignItems: 'center', gap: '0.5em', width: 'fit-content', cursor: 'pointer'}}
                           onClick={() => expanded
                             ? setExpandedBlocks(expandedBlocks.filter(h => h !== block.height))
                             : setExpandedBlocks([...expandedBlocks, block.height])}>
-                          {expanded 
+                          {expanded
                             ? <img src={ArrowDown} style={{height: '2rem', marginLeft: '-2px', marginRight: '-7px'}} alt='arrow' />
                             : <img src={Arrow} style={{height: '1.8rem', marginRight: '-6px'}} alt='arrow' />
                           }
@@ -167,7 +174,7 @@ const BlockList: FC<{currency: string, network: string}> = ({currency, network})
                     </BlockListTableRow>
                     {expanded && <>
                         {/* Alternates the color so the data below this row stays the same*/}
-                        <BlockListTableRow />  
+                        <BlockListTableRow />
                         <BlockListTableRow>
 
                           <td colSpan={5} style={{padding: '1rem 2rem'}}>
@@ -183,7 +190,7 @@ const BlockList: FC<{currency: string, network: string}> = ({currency, network})
                                 <InfoCard data={columnRightExpandedData}/>
                               </div>
                               <span style={{display: 'flex', alignItems: 'center', width: 'fit-content', cursor: 'pointer'}} onClick={() => gotoSingleBlockDetailsView(block.hash)}>
-                                <span style={{color: '#2240C4', marginRight: '0.75rem', fontSize: '18px'}}>View transactions</span>
+                                <span style={{color: theme.dark ? '#4989FF' : '#2240C4', marginRight: '0.75rem', fontSize: '18px'}}>View transactions</span>
                                 <img src={ForwardArrow} style={{height: '1.75rem'}} alt='arrow' />
                               </span>
                             </div>
