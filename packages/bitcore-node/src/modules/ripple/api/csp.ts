@@ -3,13 +3,6 @@ import util from 'util';
 import { CryptoRpc } from 'crypto-rpc';
 import { ObjectId } from 'mongodb';
 import request from 'request';
-import { Ledger } from 'xrpl/dist/npm/models/ledger';
-import {
-  CheckCreate,
-  Payment,
-  TransactionMetadata
-} from 'xrpl/dist/npm/models/transactions';
-import { Node } from 'xrpl/dist/npm/models/transactions/metadata';
 import Config from '../../../config';
 import logger from '../../../logger';
 import { CacheStorage } from '../../../models/cache';
@@ -36,8 +29,9 @@ import { XrpBlockStorage } from '../models/block';
 import { AccountTransaction, BlockTransaction, IXrpTransaction, RpcTransaction } from '../types';
 import { RippleDbWalletTransactions } from './wallet-tx-transform';
 import type { XrpRpc } from 'crypto-rpc/lib/xrp/XrpRpc';
-import type { AccountTxRequest, AccountTxResponse/* , TransactionStream as SubscribeTx */ } from 'xrpl/dist/npm/models';
+import type { xrpl } from 'crypto-wallet-core';
 
+type Ledger = xrpl.LedgerResponse['result']['ledger'];
 
 export class RippleStateProvider extends InternalStateProvider implements IChainStateService {
   config: any;
@@ -217,7 +211,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     if (ledger?.body?.result?.status !== 'success') {
       return null;
     }
-    return ledger.body.result.ledger;
+    return ledger.body.result.ledger as Ledger;
   }
 
   async getFee(params: GetEstimateSmartFeeParams) {
@@ -274,19 +268,19 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     const serverInfo = await client.getServerInfo();
     const ledgers = serverInfo.complete_ledgers.split('-');
     const minLedgerIndex = Number(ledgers[0]);
-    const allTxs: AccountTxResponse['result']['transactions'] = [];
+    const allTxs: xrpl.AccountTxResponse['result']['transactions'] = [];
     const limit = Number(limitArg) || 100;
     const options = {
       ledger_index_min: minLedgerIndex,
       limit,
       binary: false
-    } as AccountTxRequest;
+    } as xrpl.AccountTxRequest;
     if (startTx) {
       const tx = await client.getTransaction({ txid: startTx });
       options.ledger_index_min = Math.max(Number(tx?.ledger_index), minLedgerIndex);
       options.forward = true;
     }
-    let txs: AccountTxResponse['result'] = await client.getTransactions({ address: params.address, options });
+    let txs: xrpl.AccountTxResponse['result'] = await client.getTransactions({ address: params.address, options });
     if (startTx) {
       const startTxIdx = txs.transactions.findIndex(tx => tx.tx?.hash === startTx);
       if (startTxIdx > -1) {
@@ -366,10 +360,10 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
 
   transform(tx: BlockTransaction | RpcTransaction, network: string, block?: IBlock): IXrpTransaction {
     const date = block?.time ? new Date(block?.time) : this.getDateFromRippleTime((tx as RpcTransaction).date) || '';
-    const metaData: TransactionMetadata = (tx as BlockTransaction).metaData || (tx as RpcTransaction).meta;
+    const metaData: xrpl.TransactionMetadata = (tx as BlockTransaction).metaData || (tx as RpcTransaction).meta;
     const value = metaData.delivered_amount ??
       metaData.DeliveredAmount ??
-      (tx as Payment).Amount ??
+      (tx as xrpl.Payment).Amount ??
       0;
 
     return {
@@ -384,17 +378,17 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
       value: Number(value),
       fee: Number(tx.Fee ?? 0),
       nonce: Number(tx.Sequence),
-      destinationTag: (tx as Payment).DestinationTag,
-      to: (tx as Payment).Destination,
+      destinationTag: (tx as xrpl.Payment).DestinationTag,
+      to: (tx as xrpl.Payment).Destination,
       currency: undefined, // TODO
-      invoiceID: (tx as CheckCreate).InvoiceID,
+      invoiceID: (tx as xrpl.CheckCreate).InvoiceID,
       wallets: []
     } as IXrpTransaction;
   }
 
   transformAccountTx(tx: AccountTransaction, network: string): IXrpTransaction {
     const date = this.getDateFromRippleTime(tx.tx?.date) || '';
-    const value = Number((tx.meta as TransactionMetadata).DeliveredAmount ?? (tx.meta as TransactionMetadata).delivered_amount ?? 0);
+    const value = Number((tx.meta as xrpl.TransactionMetadata).DeliveredAmount ?? (tx.meta as xrpl.TransactionMetadata).delivered_amount ?? 0);
 
     return {
       network,
@@ -408,10 +402,10 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
       value: Number(value),
       fee: Number(tx.tx?.Fee ?? 0),
       nonce: Number(tx.tx?.Sequence),
-      destinationTag: (tx.tx as Payment).DestinationTag,
-      to: (tx.tx as Payment).Destination,
+      destinationTag: (tx.tx as xrpl.Payment).DestinationTag,
+      to: (tx.tx as xrpl.Payment).Destination,
       currency: undefined, // TODO
-      invoiceID: (tx.tx as CheckCreate).InvoiceID,
+      invoiceID: (tx.tx as xrpl.CheckCreate).InvoiceID,
       wallets: []
     } as IXrpTransaction;
 
@@ -420,12 +414,12 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
   transformToCoins(tx: BlockTransaction | AccountTransaction | RpcTransaction, network: string, block?: IBlock): Array<Partial<ICoin>> {
     const coins: Partial<ICoin>[] = [];
     const mintTxid = (tx as BlockTransaction).hash || (tx as AccountTransaction).tx?.hash || (tx as RpcTransaction).hash;
-    const metaData = (tx as BlockTransaction).metaData || (tx as AccountTransaction).meta as TransactionMetadata || (tx as RpcTransaction).meta as TransactionMetadata;
+    const metaData = (tx as BlockTransaction).metaData || (tx as AccountTransaction).meta as xrpl.TransactionMetadata || (tx as RpcTransaction).meta as xrpl.TransactionMetadata;
 
     if (!metaData.AffectedNodes?.length) {
       return coins;
     }
-    const nodes: Node[] = metaData.AffectedNodes || [];
+    const nodes: xrpl.Node[] = metaData.AffectedNodes || [];
     for (const node of nodes) {
       if ('ModifiedNode' in node && node.ModifiedNode.FinalFields) {
         const address = node.ModifiedNode.FinalFields.Account;
