@@ -7,7 +7,7 @@ import styled from 'styled-components';
 import {getName} from 'src/utilities/helper-methods';
 import Dropdown from './dropdown';
 import {useBlocks} from 'src/contexts';
-import {FeeChangeSpan, PriceChangeSpan} from './change-span';
+import {FeeMetadataSpan, PriceMetadataSpan} from './graph-metadata-spans';
 import Info from './info';
 
 const ChartTile = styled.div<{ fullWidth?: boolean }>`
@@ -231,10 +231,10 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
             <>
               <span>{getName(currency)} Exchange Rate</span>
               <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                <ChartTileHeader>${price}</ChartTileHeader>
+                <ChartTileHeader>${price.toLocaleString()}</ChartTileHeader>
                 <Dropdown options={priceRanges} value={priceSelectedRange} onChange={setPriceSelectedRange} />
               </div>
-              <PriceChangeSpan prices={priceList} lastPrice={price} range={priceSelectedRange} />
+              <PriceMetadataSpan prices={priceList} lastPrice={price} range={priceSelectedRange} />
               <div style={{flex: 1, minHeight: 0}}>
                 <canvas ref={priceChartRef} aria-label='price line chart' role='img' />
               </div>
@@ -248,7 +248,7 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
               <ChartTileHeader>{blocks?.at(0)?.feeData?.median.toLocaleString()} sats/byte</ChartTileHeader>
               <Dropdown options={feeRanges} value={feeSelectedRange} onChange={setFeesSelectedRange} style={{width: '130px'}} />
             </div>
-            <FeeChangeSpan range={feeSelectedRange} />
+            <FeeMetadataSpan range={feeSelectedRange} />
             <div style={{flex: 1, minHeight: 0}}>
               <canvas ref={feeChartRef} aria-label='fee chart' role='img' />
             </div>
