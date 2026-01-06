@@ -3,8 +3,8 @@ import {lazy, memo, ReactNode, Suspense, useEffect, useMemo, useState} from 'rea
 import {Parallax} from 'react-parallax';
 import {useLocation} from 'react-router-dom';
 import styled, {useTheme} from 'styled-components';
-import PlusBackgroundDark from '../assets/images/plus-dark-background.svg';
-import PlusBackgroundLight from '../assets/images/plus-light-background.svg';
+import PlusBackgroundLight from '../assets/images/light/plus-background.svg';
+import PlusBackgroundDark from '../assets/images/dark/plus-background.svg';
 import {Feather} from '../assets/styles/colors';
 import {FooterHeight, HeaderHeight} from '../assets/styles/global';
 import {MainTitle} from '../assets/styles/titles';
@@ -77,7 +77,7 @@ const Layout = ({children}: {children?: ReactNode}) => {
   const theme = useTheme();
   const location = useLocation();
 
-  const url = useMemo(() => (theme.dark ? PlusBackgroundDark : PlusBackgroundLight), [theme.dark]);
+  const url = useMemo(() => (theme.dark ? PlusBackgroundLight : PlusBackgroundDark), [theme.dark]);
 
   const [searchError, setSearchError] = useState('');
   const [isHomePage, setIsHomePage] = useState<boolean>();
