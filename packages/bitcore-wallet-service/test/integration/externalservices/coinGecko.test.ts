@@ -76,4 +76,119 @@ describe('CoinGecko integration', function() {
       }
     });
   });
+
+  describe('#coinGeckoGetMarketStats', () => {
+    beforeEach(() => {
+      config.coinGecko = {
+        api: 'https://pro-api.coingecko.com/api',
+      };
+
+      fakeRequest = {
+        get: (url, _opts, cb) => {
+          const defaultIds = [
+            'bitcoin',
+            'ethereum',
+            'ripple',
+            'solana',
+            'dogecoin',
+            'bitcoin-cash',
+            'shiba-inu',
+            'polygon-ecosystem-token',
+            'apecoin',
+            'litecoin',
+            'wrapped-bitcoin',
+            'weth'
+          ];
+
+          const marketById: Record<string, any> = {
+            bitcoin: {
+              id: 'bitcoin',
+              symbol: 'btc',
+              name: 'Bitcoin',
+              image: 'btc.png',
+              current_price: 100,
+              total_volume: 200,
+              circulating_supply: 300,
+              market_cap: 400,
+              last_updated: '2020-01-01T00:00:00.000Z'
+            },
+            ethereum: {
+              id: 'ethereum',
+              symbol: 'eth',
+              name: 'Ethereum',
+              image: 'eth.png',
+              current_price: 10,
+              total_volume: 20,
+              circulating_supply: 30,
+              market_cap: 40,
+              last_updated: '2020-01-01T00:00:00.000Z'
+            }
+          };
+
+          const aboutById: Record<string, string> = {
+            bitcoin: 'About BTC',
+            ethereum: 'About ETH'
+          };
+
+          if (url.includes('/v3/coins/markets')) {
+            return cb(null, {
+              body: [
+                ...defaultIds.map(id =>
+                  marketById[id]
+                    ? marketById[id]
+                    : {
+                      id,
+                      symbol: id.replace(/[^a-z]/g, '').slice(0, 4),
+                      name: id,
+                      image: `${id}.png`,
+                      current_price: 1,
+                      total_volume: 1,
+                      circulating_supply: 1,
+                      market_cap: 1,
+                      last_updated: '2020-01-01T00:00:00.000Z'
+                    }
+                )
+              ]
+            });
+          }
+
+          const mChart = url.match(/\/v3\/coins\/([^/]+)\/market_chart\?/);
+          if (mChart?.[1]) {
+            const id = decodeURIComponent(mChart[1]);
+            if (id === 'bitcoin') return cb(null, { body: { prices: [[0, 90], [1, 110], [2, 95]] } });
+            if (id === 'ethereum') return cb(null, { body: { prices: [[0, 9], [1, 12], [2, 8]] } });
+            return cb(null, { body: { prices: [[0, 1], [1, 1], [2, 1]] } });
+          }
+
+          const mInfo = url.match(/\/v3\/coins\/([^?]+)\?/);
+          if (mInfo?.[1]) {
+            const id = decodeURIComponent(mInfo[1]);
+            return cb(null, { body: { description: { en: aboutById[id] || `About ${id}` } } });
+          }
+
+          return cb(new Error('unexpected url'));
+        }
+      };
+
+      server.externalServices.coinGecko.request = fakeRequest;
+    });
+
+    it('should get market stats for a single coin', async () => {
+      const data = await server.externalServices.coinGecko.coinGeckoGetMarketStats({ params: { code: 'ARS' }, query: { coin: 'btc' } });
+      should.exist(data);
+      data.should.have.length(1);
+      data[0].about.should.equal('About BTC');
+      data[0].low52w.should.equal(90);
+    });
+
+    it('should return error if coinGecko is commented in config', async () => {
+      config.coinGecko = undefined;
+      try {
+        await server.externalServices.coinGecko.coinGeckoGetMarketStats({ params: { code: 'USD' }, query: { coin: 'btc' } });
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('coinGecko missing credentials');
+      }
+    });
+  });
 });
