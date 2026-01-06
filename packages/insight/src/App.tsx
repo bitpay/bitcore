@@ -9,6 +9,7 @@ import {GlobalStyles} from './assets/styles/global';
 import {useAppSelector} from './utilities/hooks';
 import 'nprogress/nprogress.css';
 import nProgress from 'nprogress';
+import {BlocksProvider} from './contexts';
 
 function App() {
   const theme = useAppSelector(({APP}) => APP.theme);
@@ -20,15 +21,17 @@ function App() {
 
   return (
     <ThemeProvider theme={colorScheme}>
-      <GlobalStyles />
-      <BrowserRouter basename={'/insight'}>
-        <SWRConfig
-          value={{
-            fetcher,
-          }}>
-          <Body />
-        </SWRConfig>
-      </BrowserRouter>
+      <BlocksProvider>
+        <GlobalStyles />
+        <BrowserRouter basename={'/insight'}>
+          <SWRConfig
+            value={{
+              fetcher,
+            }}>
+            <Body />
+          </SWRConfig>
+        </BrowserRouter>
+      </BlocksProvider>
     </ThemeProvider>
   );
 }
