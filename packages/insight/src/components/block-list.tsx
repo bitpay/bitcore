@@ -106,16 +106,17 @@ const BlockList: FC<{currency: string, network: string}> = ({currency, network})
                   'Block reward': {label: 'Block reward', value: `${getConvertedValue(block.reward, currency).toFixed(3)} ${currency}`},
                   'Miner fees': {label: 'Miner fees', value: `${getConvertedValue(feeData?.feeTotal, currency).toFixed(5)} ${currency}`},
                   'Next block': {label: 'Next block', value:
-                    <>
-                      {block.height + 1}
-                      <img
-                        src={ArrowOutward}
-                        style={{width: '24px', cursor: 'pointer'}}
-                        onClick={() => gotoSingleBlockDetailsView(blocks[index - 1].hash)}
-                        alt='Next Block'
-                        title={`Go to block ${block.height + 1}`}
-                      />
-                    </>
+                    block.height === blocks[0].height ? 'None' :
+                      <>
+                        {block.height + 1}
+                        <img
+                          src={ArrowOutward}
+                          style={{width: '24px', cursor: 'pointer'}}
+                          onClick={() => gotoSingleBlockDetailsView(blocks[index - 1].hash)}
+                          alt='Next Block'
+                          title={`Go to block ${block.height + 1}`}
+                        />
+                      </>
                   },
                   'Nonce': {label: 'Nonce', value: block.nonce},
                   'Confirmations': {label: 'Confirmations', value: blocks[0].height - block.height + 1},
