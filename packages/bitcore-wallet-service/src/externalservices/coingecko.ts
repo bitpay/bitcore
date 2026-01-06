@@ -95,7 +95,35 @@ export class CoinGeckoService {
       const currency = (req.params?.['code'] || 'USD').toString().toUpperCase();
       const vsCurrency = currency.toLowerCase();
       const coinParam = (req.query?.coin as string) || null;
-      const symbols = coinParam ? [coinParam] : this.getDefaultMarketStatsSymbols();
+      const symbols = this.getDefaultMarketStatsSymbols();
+
+      let requestedId: string | null = null;
+      if (coinParam) {
+        try {
+          requestedId = this.resolveCoinGeckoId(coinParam);
+        } catch (e) {
+          return reject(e);
+        }
+      }
+
+      const filterResponse = (stats: CoinMarketStats[]) => {
+        if (!coinParam) return stats;
+
+        const normalizedSymbol = coinParam.trim().toUpperCase();
+        const defaultSymbolSet = new Set(symbols.map(s => s.toUpperCase()));
+        if (defaultSymbolSet.has(normalizedSymbol)) {
+          return stats.filter(s => s.symbol === normalizedSymbol);
+        }
+
+        const defaultIds = symbols.map(s => this.resolveCoinGeckoId(s));
+        const idx = requestedId ? defaultIds.indexOf(requestedId) : -1;
+        if (idx >= 0) {
+          const requestedSymbol = symbols[idx].toUpperCase();
+          return stats.filter(s => s.symbol === requestedSymbol);
+        }
+
+        return [];
+      };
 
       let ids: string[];
       try {
@@ -104,7 +132,7 @@ export class CoinGeckoService {
         return reject(e);
       }
 
-      const cacheKey = `cgMarketStats:${vsCurrency}:${ids.join(',')}`;
+      const cacheKey = `cgMarketStats:${vsCurrency}`;
       const credentials = this.coinGeckoGetCredentials();
       const headers = {
         'Content-Type': 'application/json',
@@ -114,7 +142,7 @@ export class CoinGeckoService {
 
       this.storage.checkAndUseGlobalCache(cacheKey, Defaults.COIN_GECKO_MARKET_STATS_CACHE_DURATION, async (err, values, oldvalues) => {
         if (err) logger.warn('Cache check failed', err);
-        if (values) return resolve(values);
+        if (values) return resolve(filterResponse(values));
 
         try {
           const marketsUrl = `${credentials.API}/v3/coins/markets?vs_currency=${encodeURIComponent(vsCurrency)}&ids=${encodeURIComponent(
@@ -195,16 +223,16 @@ export class CoinGeckoService {
           const response = sortedStats;
           this.storage.storeGlobalCache(cacheKey, response, storeErr => {
             if (storeErr) logger.warn('Could not cache market stats', storeErr);
-            return resolve(response);
+            return resolve(filterResponse(response));
           });
         } catch (e: any) {
           const statusCode = e?.statusCode;
           if (statusCode === 429 && oldvalues) {
-            return resolve(oldvalues);
+            return resolve(filterResponse(oldvalues));
           }
           if (oldvalues) {
             logger.warn('Using old cached values');
-            return resolve(oldvalues);
+            return resolve(filterResponse(oldvalues));
           }
           return reject(e);
         }

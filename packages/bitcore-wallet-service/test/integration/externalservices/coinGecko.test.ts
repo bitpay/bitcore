@@ -85,47 +85,85 @@ describe('CoinGecko integration', function() {
 
       fakeRequest = {
         get: (url, _opts, cb) => {
+          const defaultIds = [
+            'bitcoin',
+            'ethereum',
+            'ripple',
+            'solana',
+            'dogecoin',
+            'bitcoin-cash',
+            'shiba-inu',
+            'polygon-ecosystem-token',
+            'apecoin',
+            'litecoin',
+            'wrapped-bitcoin',
+            'weth'
+          ];
+
+          const marketById: Record<string, any> = {
+            bitcoin: {
+              id: 'bitcoin',
+              symbol: 'btc',
+              name: 'Bitcoin',
+              image: 'btc.png',
+              current_price: 100,
+              total_volume: 200,
+              circulating_supply: 300,
+              market_cap: 400,
+              last_updated: '2020-01-01T00:00:00.000Z'
+            },
+            ethereum: {
+              id: 'ethereum',
+              symbol: 'eth',
+              name: 'Ethereum',
+              image: 'eth.png',
+              current_price: 10,
+              total_volume: 20,
+              circulating_supply: 30,
+              market_cap: 40,
+              last_updated: '2020-01-01T00:00:00.000Z'
+            }
+          };
+
+          const aboutById: Record<string, string> = {
+            bitcoin: 'About BTC',
+            ethereum: 'About ETH'
+          };
+
           if (url.includes('/v3/coins/markets')) {
             return cb(null, {
               body: [
-                {
-                  id: 'bitcoin',
-                  symbol: 'btc',
-                  name: 'Bitcoin',
-                  image: 'btc.png',
-                  current_price: 100,
-                  total_volume: 200,
-                  circulating_supply: 300,
-                  market_cap: 400,
-                  last_updated: '2020-01-01T00:00:00.000Z'
-                },
-                {
-                  id: 'ethereum',
-                  symbol: 'eth',
-                  name: 'Ethereum',
-                  image: 'eth.png',
-                  current_price: 10,
-                  total_volume: 20,
-                  circulating_supply: 30,
-                  market_cap: 40,
-                  last_updated: '2020-01-01T00:00:00.000Z'
-                }
+                ...defaultIds.map(id =>
+                  marketById[id]
+                    ? marketById[id]
+                    : {
+                      id,
+                      symbol: id.replace(/[^a-z]/g, '').slice(0, 4),
+                      name: id,
+                      image: `${id}.png`,
+                      current_price: 1,
+                      total_volume: 1,
+                      circulating_supply: 1,
+                      market_cap: 1,
+                      last_updated: '2020-01-01T00:00:00.000Z'
+                    }
+                )
               ]
             });
           }
 
-          if (url.includes('/v3/coins/bitcoin/market_chart')) {
-            return cb(null, { body: { prices: [[0, 90], [1, 110], [2, 95]] } });
-          }
-          if (url.includes('/v3/coins/ethereum/market_chart')) {
-            return cb(null, { body: { prices: [[0, 9], [1, 12], [2, 8]] } });
+          const mChart = url.match(/\/v3\/coins\/([^/]+)\/market_chart\?/);
+          if (mChart?.[1]) {
+            const id = decodeURIComponent(mChart[1]);
+            if (id === 'bitcoin') return cb(null, { body: { prices: [[0, 90], [1, 110], [2, 95]] } });
+            if (id === 'ethereum') return cb(null, { body: { prices: [[0, 9], [1, 12], [2, 8]] } });
+            return cb(null, { body: { prices: [[0, 1], [1, 1], [2, 1]] } });
           }
 
-          if (url.includes('/v3/coins/bitcoin?')) {
-            return cb(null, { body: { description: { en: 'About BTC' } } });
-          }
-          if (url.includes('/v3/coins/ethereum?')) {
-            return cb(null, { body: { description: { en: 'About ETH' } } });
+          const mInfo = url.match(/\/v3\/coins\/([^?]+)\?/);
+          if (mInfo?.[1]) {
+            const id = decodeURIComponent(mInfo[1]);
+            return cb(null, { body: { description: { en: aboutById[id] || `About ${id}` } } });
           }
 
           return cb(new Error('unexpected url'));
