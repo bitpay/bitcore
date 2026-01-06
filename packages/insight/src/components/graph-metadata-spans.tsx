@@ -8,7 +8,7 @@ export const FeeMetadataSpan: FC<{ range: string }> = ({ range }) => {
 
   const numBlocks = Number(range.slice(0, range.indexOf(' ')));
   const fees = blocks
-    .slice(blocks.length - numBlocks)
+    .slice(0, numBlocks)
     .map(block => block.feeData.median);
 
   let total = 0;
