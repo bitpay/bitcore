@@ -31,7 +31,3 @@ If one of the following is relevant to the error (such as in the error message) 
 
 ### Steps to reproduce
 1\.
-
-2\.
-
-...
