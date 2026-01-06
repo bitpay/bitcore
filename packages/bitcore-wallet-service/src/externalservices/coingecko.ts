@@ -141,7 +141,7 @@ export class CoinGeckoService {
       };
 
       this.storage.checkAndUseGlobalCache(cacheKey, Defaults.COIN_GECKO_MARKET_STATS_CACHE_DURATION, async (err, values, oldvalues) => {
-        if (err) logger.warn('Cache check failed', err);
+        if (err) logger.warn('CoinGecko market stats cache check failed: %o', err);
         if (values) return resolve(filterResponse(values));
 
         try {
@@ -222,7 +222,7 @@ export class CoinGeckoService {
 
           const response = sortedStats;
           this.storage.storeGlobalCache(cacheKey, response, storeErr => {
-            if (storeErr) logger.warn('Could not cache market stats', storeErr);
+            if (storeErr) logger.warn('Could not cache CoinGecko market stats: %o', storeErr);
             return resolve(filterResponse(response));
           });
         } catch (e: any) {
@@ -231,7 +231,7 @@ export class CoinGeckoService {
             return resolve(filterResponse(oldvalues));
           }
           if (oldvalues) {
-            logger.warn('Using old cached values');
+            logger.warn('Using old cached CoinGecko market stats values');
             return resolve(filterResponse(oldvalues));
           }
           return reject(e);
@@ -254,7 +254,7 @@ export class CoinGeckoService {
       const credentials = this.coinGeckoGetCredentials();
 
       this.storage.checkAndUseGlobalCache(cacheKey, Defaults.COIN_GECKO_CACHE_DURATION, (err, values, oldvalues) => {
-        if (err) logger.warn('Cache check failed', err);
+        if (err) logger.warn('CoinGecko token list cache check failed: %o', err);
         if (values) return resolve(values);
 
         const assetPlatformMap = {
@@ -287,9 +287,9 @@ export class CoinGeckoService {
             const tokens = data?.body?.tokens;
             const status = data?.body?.status;
             if (err) {
-              logger.warn('An error occured while retrieving the token list', err);
+              logger.warn('An error occurred while retrieving the CoinGecko token list: %o', err);
               if (oldvalues) {
-                logger.warn('Using old cached values');
+                logger.warn('Using old cached CoinGecko token list values');
                 return resolve(oldvalues);
               }
               return reject(err.body ?? err);
@@ -298,7 +298,7 @@ export class CoinGeckoService {
             } else {
               if (!tokens) {
                 if (oldvalues) {
-                  logger.warn('No token list available... using old cached values');
+                  logger.warn('No token list available... using old cached CoinGecko token list values');
                   return resolve(oldvalues);
                 }
                 return reject(new Error(`Could not get tokens list. Code: ${status?.error_code}. Error: ${status?.error_message || 'Unknown error'}`));
@@ -310,7 +310,7 @@ export class CoinGeckoService {
                 return token;
               });
               this.storage.storeGlobalCache(cacheKey, updatedTokens, storeErr => {
-                if (storeErr) logger.warn('Could not cache token list', storeErr);
+                if (storeErr) logger.warn('Could not cache CoinGecko token list: %o', storeErr);
                 return resolve(updatedTokens);
               });
             }
