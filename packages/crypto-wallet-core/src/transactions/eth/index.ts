@@ -167,7 +167,9 @@ export class ETHTxProvider {
   }
 
   private _toHex(value: string | number | bigint) {
-    return value != null ? Web3.utils.toHex(value) : undefined;
+    // Convert to BigInt first to normalize behavior across types.
+    // Web3.utils.toHex('20000') -> '0x323030303030' because it calls utf8ToHex for strings
+    return value != null ? Web3.utils.toHex(BigInt(value)) : undefined;
   }
   transformSignatureObject(params: { obj: any }) {
     const { obj } = params;
