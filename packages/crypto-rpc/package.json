@@ -10,14 +10,14 @@
   "scripts": {
     "docker:test": "npm run hardhat:compile && npm run hardhat:deploy && npm run hardhat:test && mocha --exit --recursive ./test",
     "docker:test:build": "docker compose build",
-    "docker:test:stop": "docker compose down",
+    "docker:test:down": "docker compose down",
     "hardhat:compile": "cd blockchain/EVM/ && npx hardhat compile",
     "hardhat:deploy": "cd blockchain/EVM/ && export HARDHAT_IGNITION_CONFIRM_DEPLOYMENT=false && export HARDHAT_IGNITION_CONFIRM_RESET=false && npx hardhat --network geth ignition deploy ./ignition/modules/all.js --reset",
     "hardhat:test": "cd blockchain/EVM/ && npx hardhat test",
     "lint": "eslint .",
     "precommit": "npm run lint",
-    "test": "npm run docker:test:stop && npm run docker:test:build && docker compose run test_runner",
-    "test:ci": "docker-compose down && docker-compose build && docker-compose run test_runner"
+    "test": "docker-compose down && docker-compose build && docker-compose run test_runner",
+    "test:local": "npm run docker:test:down && npm run docker:test:build && docker compose run test_runner"
   },
   "author": "Micah Riggan",
   "license": "MIT",
