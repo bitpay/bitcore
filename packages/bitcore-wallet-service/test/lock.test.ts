@@ -71,18 +71,12 @@ describe('Locks', function() {
   });
 
   it('should call waiting tasks', function(done) {
-    sinon.stub(storage, 'acquireLock').callsFake(function(...args) {
-      // There's a race condition between these db calls and the pushEvent(4) call.
-      // This slows down db calls to force sequence seen in testDone().
-      setTimeout((storage.acquireLock as any).wrappedMethod.bind(storage, ...args), 10);
-    });
     pushEvent(0);
 
     function testDone() {
-      if ([0, 4, 1, 2, 3].every((x, i) => order[i] === x)) {
-        pushEvent('done');
-        done();
-      }
+      expect([0, 4, 1, 2, 3]).to.deep.equal(order);
+      pushEvent('done');
+      done();
     }
 
     lock.acquire('123', {}, function(err, release) {
@@ -90,7 +84,6 @@ describe('Locks', function() {
       pushEvent(1);
       setTimeout(function() {
         release();
-        testDone();
       }, step);
     }, 1);
     lock.acquire('123', {}, function(err, release) {
@@ -98,7 +91,6 @@ describe('Locks', function() {
       pushEvent(2);
       setTimeout(function() {
         release();
-        testDone();
       }, step);
     }, 2);
     lock.acquire('123', {}, function(err, release) {
