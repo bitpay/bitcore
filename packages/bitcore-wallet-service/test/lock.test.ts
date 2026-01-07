@@ -1,15 +1,19 @@
 'use strict';
 
+import sinon from 'sinon';
 import chai from 'chai';
 import 'chai/register-should';
 import { Lock } from '../src/lib/lock';
 import helpers from './integration/helpers';
+import { type Storage } from '../src/lib/storage';
 
 const should = chai.should();
 const expect = chai.expect;
 
 describe('Locks', function() {
-  let lock, clock, order = [], storage;
+  let lock: Lock;
+  let order = [];
+  let storage: Storage;
   const step = 50;
 
   before(async function() {
@@ -67,6 +71,11 @@ describe('Locks', function() {
   });
 
   it('should call waiting tasks', function(done) {
+    sinon.stub(storage, 'acquireLock').callsFake(function(...args) {
+      // There's a race condition between these db calls and the pushEvent(4) call.
+      // This slows down db calls to force sequence seen in testDone().
+      setTimeout((storage.acquireLock as any).wrappedMethod.bind(storage, ...args), 10);
+    });
     pushEvent(0);
 
     function testDone() {
@@ -101,11 +110,9 @@ describe('Locks', function() {
       }, step);
     }, 3);
     pushEvent(4);
-
   });
 
   it('should not lock tasks using different tokens', function(done) {
-
     pushEvent(0);
 
     lock.acquire('123', {}, function(err, release) {
@@ -123,7 +130,6 @@ describe('Locks', function() {
           done();
         }, step);
       });
-
     });
 
     lock.acquire('123', {}, function(err, release) {
@@ -134,8 +140,8 @@ describe('Locks', function() {
       }, step);
     });
   });
-  it('should return error if unable to acquire lock', function(done) {
-    
+
+  it('should return error if unable to acquire lock', function(done) {  
     pushEvent(0);
 
     lock.acquire('123', {}, function(err, release) {
@@ -148,8 +154,8 @@ describe('Locks', function() {
       });
     });
   });
-  it('should release lock if acquired for a long time', function(done) {
 
+  it('should release lock if acquired for a long time', function(done) {
     lock.acquire('123', { lockTime: 10 }, function(err, release) {
       should.not.exist(err);
       lock.acquire('123', { waitTime: 1000 }, function(err, release) {
@@ -158,8 +164,8 @@ describe('Locks', function() {
       });
     });
   });
-  it('should release lock if acquired for a long time (case 2)', function(done) {
 
+  it('should release lock if acquired for a long time (case 2)', function(done) {
     // no releases
     lock.acquire('123', { lockTime: 10 }, function(err, release) {
       should.not.exist(err);
@@ -179,7 +185,6 @@ describe('Locks', function() {
       });
     });
   });
-
 
 
   describe('#runLocked', () => {
@@ -219,8 +224,5 @@ describe('Locks', function() {
 
       lock.runLocked('123', {}, end, task);
     });
-
   });
-
-
 });
