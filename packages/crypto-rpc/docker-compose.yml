@@ -46,7 +46,7 @@ services:
   bitcoin:
     image: kajoseph/bitcoin-core:22.0
     ports:
-      - "8333:8333"
+      - "8433:8333"
     networks:
       default:
         ipv4_address: 172.29.0.3
