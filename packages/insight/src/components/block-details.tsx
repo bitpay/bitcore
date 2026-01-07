@@ -184,9 +184,7 @@ const BlockDetails: FC<BlockDetailsProps> = ({currency, network, block}) => {
 
                 <SharedTile
                   title='Block Reward'
-                  description={`${getConvertedValue(summary.reward, currency).toFixed(
-                    3,
-                  )} ${currency}`}
+                  description={`${getConvertedValue(summary.reward, currency).toFixed(3)} ${currency}`}
                 />
                 <SharedTile title='Confirmations' description={summary.confirmations} />
 

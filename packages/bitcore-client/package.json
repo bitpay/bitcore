@@ -20,10 +20,11 @@
     "precompile": "cd ../bitcore-node && npm run clean && npm run build:prod",
     "compile": "npm run clean && npm run build",
     "test": "tsc --noEmit && mocha -r tsx test/**/*.test.ts",
-    "precommit": "npm run lint; npm run fix:errors",
+    "precommit": "npm run lint",
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
-    "fix:all": "eslint --fix ."
+    "fix:all": "eslint --fix .",
+    "fix": "npm run fix:errors"
   },
   "dependencies": {
     "JSONStream": "~1.3.1",

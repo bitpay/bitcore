@@ -66,8 +66,9 @@
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
+    "fix": "npm run fix:errors",
     "pub": "npm run build && npm publish",
-    "precommit": "npm run lint; npm run fix:errors"
+    "precommit": "npm run lint"
   },
   "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4"
 }
