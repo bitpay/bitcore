@@ -126,7 +126,7 @@ services:
     volumes:
       - ./test/docker/geth-keystore:/keystore
     ports:
-      - "9545:8545"
+      - "8645:8545"
     networks:
       default:
         ipv4_address: 172.29.0.7
