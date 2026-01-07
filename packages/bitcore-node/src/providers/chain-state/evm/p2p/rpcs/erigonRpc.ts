@@ -6,6 +6,7 @@
  */
 
 import AbiDecoder from 'abi-decoder';
+import { Utils } from 'crypto-wallet-core';
 import { LoggifyClass } from '../../../../../decorators/Loggify';
 import { ERC20Abi } from '../../abi/erc20';
 import { ERC721Abi } from '../../abi/erc721';
@@ -63,7 +64,7 @@ export class ErigonRPC implements IRpc {
   private async traceBlock(blockNumber: number): Promise<Array<ErigonTraceResponse>> {
     const txs = await this.send<Array<ErigonTraceResponse>>({
       method: 'trace_block',
-      params: [this.web3.utils.toHex(blockNumber)],
+      params: [Utils.toHex(blockNumber)],
       jsonrpc: '2.0',
       id: Date.now() + Math.round(Math.random() * 1000)
     });

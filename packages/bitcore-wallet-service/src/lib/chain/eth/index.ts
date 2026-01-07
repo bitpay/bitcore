@@ -1,5 +1,5 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
-import { Web3 } from 'crypto-wallet-core';
+import { Utils, Web3 } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IWallet } from 'src/lib/model';
 import { IAddress } from 'src/lib/model/address';
@@ -529,7 +529,7 @@ export class EthChain implements IChain {
         output.amount == null ||
         output.amount < 0 ||
         isNaN(output.amount) ||
-        Web3.utils.toHex(BigInt(output.amount)).toString() !== '0x' + BigInt(output.amount).toString(16)
+        Utils.toHex(output.amount) !== '0x' + BigInt(output.amount).toString(16)
       ) {
         throw new Error('output.amount is not a valid value: ' + output.amount);
       }

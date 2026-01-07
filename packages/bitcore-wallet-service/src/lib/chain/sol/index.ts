@@ -1,4 +1,4 @@
-import { Transactions, Validation, Web3 } from 'crypto-wallet-core';
+import { Transactions, Utils, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IChain } from '../../../types/chain';
 import { WalletWithOpts } from '../../blockchainexplorers/v8';
@@ -198,14 +198,14 @@ export class SolChain implements IChain {
         output.amount == null ||
         output.amount < 0 ||
         isNaN(output.amount) ||
-        Web3.utils.toHex(BigInt(output.amount).toString()).toString() !== BigInt(output.amount).toString(16)
+        Utils.toHex(output.amount) !== '0x' + BigInt(output.amount).toString(16)
       ) {
         logger.warn('output.amount is not a valid value: ' + output.amount);
         return false;
       }
       return true;
     } catch (err) {
-      logger.warn(`Invalid output amount (${output.amount}) in checkValidTxAmount: $o`, err);
+      logger.warn(`Invalid output amount (${output.amount}) in checkValidTxAmount: %o`, err);
       return false;
     }
   }

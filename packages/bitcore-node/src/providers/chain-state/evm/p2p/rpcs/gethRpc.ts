@@ -1,3 +1,4 @@
+import { Utils } from 'crypto-wallet-core';
 import logger from '../../../../../logger';
 import { EVMTransactionStorage } from '../../models/transaction';
 import { GethBlock, IAbiDecodedData, IEVMBlock, IEVMTransactionInProcess } from '../../types';
@@ -44,7 +45,7 @@ export class GethRPC implements IRpc {
     try {
       result = await this.send<IGethTxTraceResponse[]>({
         method: 'debug_traceBlockByNumber',
-        params: [this.web3.utils.toHex(blockNumber), { tracer: 'callTracer' }],
+        params: [Utils.toHex(blockNumber), { tracer: 'callTracer' }],
         jsonrpc: '2.0',
         id: Date.now() + Math.round(Math.random() * 1000)
       });

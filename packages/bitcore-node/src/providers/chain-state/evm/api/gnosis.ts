@@ -1,4 +1,5 @@
 import { Readable } from 'stream';
+import { Utils } from 'crypto-wallet-core';
 import { ChainStateProvider } from '../../';
 import { Config } from '../../../../services/config';
 import { IEVMNetworkConfig } from '../../../../types/Config';
@@ -51,7 +52,6 @@ export class GnosisApi {
     sender: string,
     txId: string
   ): Promise<Partial<Web3Types.Transaction>[]> {
-    const { web3 } = await getCSP(chain, network).getWeb3(network);
     const networkConfig: IEVMNetworkConfig = Config.chainConfig({ chain: 'ETH', network });
     const { gnosisFactory = this.gnosisFactories[chain][network] } = networkConfig;
     const query = { chain, network, txid: txId };
@@ -60,8 +60,8 @@ export class GnosisApi {
     if (!blockHeight || blockHeight < 0) return Promise.resolve([]);
     const contract = await this.multisigFor(chain, network, gnosisFactory);
     const contractInfo = await contract.getPastEvents('ContractInstantiation', {
-      fromBlock: web3.utils.toHex(blockHeight),
-      toBlock: web3.utils.toHex(blockHeight)
+      fromBlock: Utils.toHex(blockHeight),
+      toBlock: Utils.toHex((blockHeight))
     }) as Web3Types.EventLog[];
     return this.convertMultisigContractInstantiationInfo(
       contractInfo.filter(info => (info.returnValues.sender as string).toLowerCase() === sender.toLowerCase())

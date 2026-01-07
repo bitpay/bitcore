@@ -748,7 +748,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
           // Gas estimation might fail with `insufficient funds` if value is higher than balance for a normal send.
           // We want this method to give a blind fee estimation, though, so we should not include the value
           // unless it's needed for estimating smart contract execution.
-          _value = web3.utils.toHex(value);
+          _value = Utils.toHex(value);
         }
 
         const opts = {
@@ -758,7 +758,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
               data,
               to: to && to.toLowerCase(),
               from: from && from.toLowerCase(),
-              // gasPrice: web3.utils.toHex(gasPrice), // Setting this lower than the baseFee of the last block will cause an error. Better to just leave it out.
+              // gasPrice: Utils.toHex(gasPrice), // Setting this lower than the baseFee of the last block will cause an error. Better to just leave it out.
               value: _value
             }
           ],
