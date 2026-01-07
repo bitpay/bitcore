@@ -306,7 +306,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     if (!tx.receipt) {
       const receipt = await this.getReceipt(tx.network, tx.txid);
       if (receipt) {
-        const fee = Number(receipt.gasUsed * BigInt(tx.gasPrice));
+        const fee = Number(BigInt(receipt.gasUsed) * BigInt(tx.gasPrice));
         // TEST if/how this db save works with bigint values in receipt
         await EVMTransactionStorage.collection.updateOne({ _id: tx._id }, { $set: { receipt, fee } });
         tx.receipt = receipt as any;
