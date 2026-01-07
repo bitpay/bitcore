@@ -228,4 +228,4 @@ export const Constants = {
   // or want to beta test new versions.
   TSS_KEYGEN_SCHEME_VERSION_MAX: 1,
   TSS_SIGGEN_SCHEME_VERSION_MAX: 1,
-};
+} as const;

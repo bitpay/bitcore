@@ -363,7 +363,7 @@ export class EthChain implements IChain {
   }
 
   getDefaultGasLimit(opts) {
-    let defaultGasLimit = opts.tokenAddress ? Defaults.DEFAULT_ERC20_GAS_LIMIT : Defaults.DEFAULT_GAS_LIMIT;
+    let defaultGasLimit: number = opts.tokenAddress ? Defaults.DEFAULT_ERC20_GAS_LIMIT : Defaults.DEFAULT_GAS_LIMIT;
     if (opts.multiSendContractAddress) {
       defaultGasLimit = opts.tokenAddress
         ? Defaults.DEFAULT_MULTISEND_RECIPIENT_ERC20_GAS_LIMIT
@@ -529,13 +529,13 @@ export class EthChain implements IChain {
         output.amount == null ||
         output.amount < 0 ||
         isNaN(output.amount) ||
-        Web3.utils.toHex(BigInt(output.amount).toString()).toString() !== BigInt(output.amount).toString(16)
+        Web3.utils.toHex(BigInt(output.amount)).toString() !== '0x' + BigInt(output.amount).toString(16)
       ) {
         throw new Error('output.amount is not a valid value: ' + output.amount);
       }
       return true;
     } catch (err) {
-      logger.warn(`Invalid output amount (${output.amount}) in checkValidTxAmount: $o`, err);
+      logger.warn(`Invalid output amount (${output.amount}) in checkValidTxAmount: %o`, err);
       return false;
     }
   }
