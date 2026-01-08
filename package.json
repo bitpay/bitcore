@@ -27,8 +27,6 @@
     "ci:bitcore-wallet-service": "./ci.sh 'npm run test:bitcore-wallet-service'",
     "test:bitcore-wallet-client": "cd ./packages/bitcore-wallet-client && npm run test",
     "ci:bitcore-wallet-client": "./ci.sh 'npm run test:bitcore-wallet-client'",
-    "test:bitcore-wallet": "cd ./packages/bitcore-wallet && npm run test",
-    "ci:bitcore-wallet": "./ci.sh 'npm run test:bitcore-wallet'",
     "test:crypto-wallet-core": "cd ./packages/crypto-wallet-core && npm run test",
     "ci:crypto-wallet-core": "./ci.sh 'npm run test:crypto-wallet-core'",
     "test:bitcore-node": "cd ./packages/bitcore-node && npm run test",
