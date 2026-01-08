@@ -40,21 +40,20 @@ services:
     volumes:
       - ./.docker/geth-keystore:/keystore
     command:
-      geth
       --dev
-      --datadir=/home/kjoseph/nodes/dev/geth
-      --keystore=/keystore
+      --datadir /home/kjoseph/nodes/dev/geth
+      --keystore /keystore
       --http
-      --http.api=web3,eth,debug,personal,net
-      --http.corsdomain='*'
-      --http.vhosts='*'
-      --http.addr=0.0.0.0
-      --http.port=8545
+      --http.api web3,eth,debug,net
+      --http.corsdomain '*'
+      --http.vhosts '*'
+      --http.addr 0.0.0.0
+      --http.port 8545
       --ws
-      --ws.origins='*'
-      --ws.api=web3,eth,debug,personal,net
-      --ws.addr=0.0.0.0
-      --ws.port=8546
+      --ws.origins '*'
+      --ws.api web3,eth,debug,net
+      --ws.addr 0.0.0.0
+      --ws.port 8546
 
   rippled:
     build:
