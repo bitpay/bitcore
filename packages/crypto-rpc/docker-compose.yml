@@ -221,7 +221,7 @@ services:
       --bitcoind.zmqpubrawblock=tcp://bitcoin:38332
       --bitcoind.zmqpubrawtx=tcp://bitcoin:38333
     restart: always
-
+  
   solana:
     image: solanalabs/solana:v1.18.26
     networks:
