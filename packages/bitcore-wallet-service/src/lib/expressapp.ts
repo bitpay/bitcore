@@ -2210,6 +2210,23 @@ export class ExpressApp {
         });
     });
 
+    router.get('/v1/marketstats/:code/', (req, res) => {
+      SetPublicCache(res, 5 * ONE_MINUTE);
+      let server: WalletService;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.externalServices.coinGecko.coinGeckoGetMarketStats(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
     router.get('/v1/services/dex/getSpenderApprovalWhitelist', (req, res) => {
       let server: WalletService;
       try {
