@@ -25,7 +25,7 @@
     "docs:build-html": "typedoc --out ./docs/html --tsconfig tsconfig.json ./src",
     "docs:build-json": "typedoc --json ./docs/json --tsconfig tsconfig.json ./src",
     "tsc": "npm run clean && tsc",
-    "test": "tsc --noEmit && mocha -r tsx 'test/**/*.spec.ts' 'test/**/*.unit.ts' 'test/**/*.integration.ts'",
+    "test": "npm run test:unit && npm run test:integration",
     "test:ci": "npm run test",
     "test:ci:integration": "npm run test:integration",
     "repair:db": "npm run tsc && node ./build/test/verification/db-repair.js",
