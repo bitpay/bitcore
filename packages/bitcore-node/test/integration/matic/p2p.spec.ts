@@ -109,7 +109,6 @@ describe('Polygon', function() {
     sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet, nonce),
     sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet, nonce + 1);
     await sawBlock;
-    await worker.disconnect();
     await worker.stop();
     getWeb3Stub.restore();
   });
@@ -139,7 +138,6 @@ describe('Polygon', function() {
     const { web3 } = await worker.getWeb3();
     await sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet);
     await sawBlock;
-    await worker.disconnect();
     await worker.stop();
     const afterBalance = await wallet.getBalance();
     expect(afterBalance).to.not.deep.eq(beforeBalance);

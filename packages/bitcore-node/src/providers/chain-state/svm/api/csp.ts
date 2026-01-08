@@ -557,7 +557,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
             }
             nextBlock = thisNextBlock;
             block.nextBlockHash = nextBlock?.hash;
-            block.confirmations = Number(height - block.height + 1n);
+            block.confirmations = Number(BigInt(height) - BigInt(block.height) + 1n);
             stream.push(block);
           }
         } catch (e: any) {
