@@ -62,7 +62,16 @@
     "lerna:ci:all": "npx lerna run test:ci --concurrency 1 --stream",
     "lerna:ci:unit": "npx run test:ci:unit --concurrency 1 --stream",
     "lerna:ci:integration": "npx run test:ci:integration --concurrency 1 --stream",
-    "lerna:ci:coverage": "npx run coverage --concurrency 1 --stream"
+    "lerna:ci:coverage": "npx run coverage --concurrency 1 --stream",
+    "bitcoin": "docker compose -f .docker/compose.yaml up bitcoin -d",
+    "bitcoin-cash": "docker compose -f .docker/compose.yaml up bitcoin-cash -d",
+    "dogecoin": "docker compose -f .docker/compose.yaml up dogecoin -d",
+    "litecoin": "docker compose -f .docker/compose.yaml up litecoin -d",
+    "rippled": "docker compose -f .docker/compose.yaml up rippled -d",
+    "geth": "docker compose -f .docker/compose.yaml up geth -d",
+    "solana": "docker compose -f .docker/compose.yaml up solana -d",
+    "lightning": "docker compose -f .docker/compose.yaml up lightning -d",
+    "lightning2": "docker compose -f .docker/compose.yaml up lightning2 -d"
   },
   "config": {
     "commitizen": {

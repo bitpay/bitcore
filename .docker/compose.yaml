@@ -1,46 +1,4 @@
 services:
-  start:
-    build:
-      context: .
-      dockerfile: start.dockerfile
-    volumes:
-      - my_data1:/root/.lnd
-      - my_data2:/root/.lnd2
-    networks:
-      default:
-        ipv4_address: 172.28.0.21
-    depends_on:
-      - bitcoin
-      - bitcoin-cash
-      - dogecoin
-      - rippled
-      - litecoin
-      - lightning
-      - lightning2
-      - geth
-      - solana
-
-  test_runner:
-    build:
-      context: .
-      dockerfile: ./test/docker/Dockerfile-test
-    volumes:
-      - my_data1:/root/.lnd
-      - my_data2:/root/.lnd2
-    networks:
-      default:
-        ipv4_address: 172.28.0.2
-    depends_on:
-      - bitcoin
-      - bitcoin-cash
-      - dogecoin
-      - rippled
-      - litecoin
-      - lightning
-      - lightning2
-      - geth
-      - solana
-
   bitcoin:
     image: kajoseph/bitcoin-core:22.0
     ports:
@@ -60,7 +18,7 @@ services:
       -rpcport=8333
       -rpcallowip=172.0.0.0/8
       -rpcbind=0.0.0.0
-      -rpcuser=cryptorpc
+      -rpcuser=bitcoinnode
       -rpcpassword=local321
       -fallbackfee=0.0002
       -zmqpubrawblock=tcp://0.0.0.0:38332
@@ -149,7 +107,7 @@ services:
         ipv4_address: 172.28.0.8
     build:
       context: .
-      dockerfile: ./test/docker/rippled.Dockerfile
+      dockerfile: ./rippled.Dockerfile
 
   litecoin:
     image: uphold/litecoin-core:0.16.3
