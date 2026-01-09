@@ -5,8 +5,8 @@ export class LndRpc {
   constructor(config) {
     this.config = config;
     const {
-      rpcPort: port,
       host,
+      port,
       macaroon,
       cert,
     } = config;

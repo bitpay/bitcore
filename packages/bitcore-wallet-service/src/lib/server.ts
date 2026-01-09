@@ -141,7 +141,7 @@ export class WalletService implements IWalletService {
   walletId: string;
   copayerId: string;
   appName: string;
-  appVersion: { agent?: string; major?: number; minor?: number };
+  appVersion: { agent?: string; major?: number; minor?: number; patch?: number };
   parsedClientVersion: { agent?: string; major?: number; minor?: number };
   clientVersion: string;
   copayerIsSupportStaff: boolean;
@@ -680,7 +680,7 @@ export class WalletService implements IWalletService {
     }
 
     const derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP44;
-    let addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2PKH : Constants.SCRIPT_TYPES.P2SH;
+    let addressType: string = opts.n === 1 ? Constants.SCRIPT_TYPES.P2PKH : Constants.SCRIPT_TYPES.P2SH;
 
     if (opts.useNativeSegwit && Utils.checkValueInCollection(opts.chain, Constants.NATIVE_SEGWIT_CHAINS)) {
       switch (Number(opts.segwitVersion)) {
@@ -4624,7 +4624,7 @@ export class WalletService implements IWalletService {
       let inactiveCounter = 0;
       const allAddresses = [];
 
-      let gap = Defaults.SCAN_ADDRESS_GAP;
+      let gap: number = Defaults.SCAN_ADDRESS_GAP;
 
       // when powerScanning, we just accept gap<=3
       if (step > 1) {

@@ -230,6 +230,7 @@ export class Wallet implements IWallet {
       if ((obj as TssKeyType).metadata) {
         return new TssKey.TssKey(obj as TssKeyType);
       } else {
+        obj.version = obj.version ?? 1;
         return new Key({ seedType: 'object', seedData: obj });
       }
     };
@@ -422,8 +423,8 @@ export class Wallet implements IWallet {
     const network = this.network === 'livenet' ? 'mainnet' : this.network;
     const web3 = new Web3(Constants.PUBLIC_API[chain][network]);
     const contract = new web3.eth.Contract(ERC20Abi as any, address);
-    const token = await contract.methods.symbol().call();
-    const decimals = Number(await contract.methods.decimals().call());
+    const token = await contract.methods.symbol().call<string>();
+    const decimals = Number(await contract.methods.decimals().call<bigint>());
     return {
       code: token,
       displayCode: token,

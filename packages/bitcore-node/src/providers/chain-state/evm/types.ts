@@ -90,7 +90,6 @@ export interface GethTraceCall {
   value?: string;
 }
 
-export type AnyBlock = GethBlock | ErigonBlock;
 export type AnyTransaction = GethTraceTransaction | ErigonTransaction;
 
 export type Networks = 'mainnet' | 'ropsten' | 'rinkeby' | 'goerli' | 'kovan' | 'sepolia' | 'mumbai';
@@ -149,7 +148,7 @@ export type IEVMBlock = IBlock & {
   merkleRoot: Buffer | Binary;
   uncleReward?: Array<number>;
   difficulty: string;
-  totalDifficulty: string;
+  totalDifficulty?: string;
 };
 
 export type IEVMTransaction = ITransaction & {

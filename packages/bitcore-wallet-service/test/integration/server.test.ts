@@ -247,8 +247,8 @@ describe('Wallet service', function() {
 
   // tests for adding and retrieving adds from db
   describe('Creating ads, retrieve ads, active/inactive', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
     const adOpts = {
       advertisementId: '123',
       name: 'name',
@@ -314,8 +314,8 @@ describe('Wallet service', function() {
   });
 
   describe('Session management (#login, #logout, #authenticate)', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(1, 2));
@@ -389,7 +389,7 @@ describe('Wallet service', function() {
   });
 
   describe('#createWallet', function() {
-    let server;
+    let server: WalletService;
 
     beforeEach(function() {
       server = new WalletService();
@@ -744,7 +744,7 @@ describe('Wallet service', function() {
 
 
     describe('Address derivation strategy', function() {
-      let server;
+      let server: WalletService;
 
       beforeEach(function() {
         server = WalletService.getInstance();
@@ -790,7 +790,7 @@ describe('Wallet service', function() {
 
   describe('#joinWallet', function() {
     describe('New clients', function() {
-      let server;
+      let server: WalletService;
       let serverForBch;
       let walletId;
       let walletIdForBch;
@@ -1165,7 +1165,7 @@ describe('Wallet service', function() {
     });
 
     describe('New clients 2', function() {
-      let server;
+      let server: WalletService;
       let serverForBch;
       let walletId;
       let walletIdForBch;
@@ -1271,7 +1271,7 @@ describe('Wallet service', function() {
     });
 
     describe('New clients 3', function() {
-      let server;
+      let server: WalletService;
       let walletId;
       let walletIdForSegwit;
 
@@ -1379,8 +1379,8 @@ describe('Wallet service', function() {
   });
 
   describe('#removeWallet', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
     let clock;
 
     beforeEach(async function() {
@@ -1463,8 +1463,8 @@ describe('Wallet service', function() {
   });
 
   describe('#getStatus', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(1, 2));
@@ -1591,8 +1591,8 @@ describe('Wallet service', function() {
   });
 
   describe('#verifyMessageSignature', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(2, 3));
@@ -1628,8 +1628,8 @@ describe('Wallet service', function() {
   });
 
   describe('#createAddress', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     describe('shared wallets (BIP44)', function() {
       beforeEach(async function() {
@@ -1668,7 +1668,7 @@ describe('Wallet service', function() {
 
             // return main address index to 0;
             w.addressManager.receiveAddressIndex = 0;
-            server.getWallet.callsArgWith(1, null, w);
+            (server.getWallet as any).callsArgWith(1, null, w);
 
             server.createAddress({}, function(err, address) {
               server.getWallet = old;
@@ -1706,7 +1706,7 @@ describe('Wallet service', function() {
           should.not.exist(address);
           server.getAddresses({ noChange: true }, function(err, addresses) {
             addresses.length.should.equal(0);
-            server.storage.storeAddressAndWallet.restore();
+            (server.storage.storeAddressAndWallet as any).restore();
             server.createAddress({}, function(err, address) {
               should.not.exist(err);
               should.exist(address);
@@ -1766,7 +1766,7 @@ describe('Wallet service', function() {
           should.not.exist(address);
           server.getAddresses({ noChange: true }, function(err, addresses) {
             addresses.length.should.equal(0);
-            server.storage.storeAddressAndWallet.restore();
+            (server.storage.storeAddressAndWallet as any).restore();
             server.createAddress({}, function(err, address) {
               should.not.exist(err);
               should.exist(address);
@@ -1825,7 +1825,7 @@ describe('Wallet service', function() {
           should.not.exist(address);
           server.getAddresses({ noChange: true }, function(err, addresses) {
             addresses.length.should.equal(0);
-            server.storage.storeAddressAndWallet.restore();
+            (server.storage.storeAddressAndWallet as any).restore();
             server.createAddress({}, function(err, address) {
               should.not.exist(err);
               should.exist(address);
@@ -2015,8 +2015,8 @@ describe('Wallet service', function() {
     });
 
     describe('ETH', function() {
-      let server;
-      let wallet;
+      let server: WalletService;
+      let wallet: Model.Wallet;
 
       describe('BIP44 livenet', function() {
         beforeEach(async function() {
@@ -2116,8 +2116,8 @@ describe('Wallet service', function() {
     });
 
     describe('XRP', function() {
-      let server;
-      let wallet;
+      let server: WalletService;
+      let wallet: Model.Wallet;
 
       describe('BIP44 livenet', function() {
         beforeEach(async function() {
@@ -2220,8 +2220,8 @@ describe('Wallet service', function() {
 
 
   describe('#getAddresses', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
     const numMainAddresses = 5;
 
     beforeEach(async function() {
@@ -2292,8 +2292,8 @@ describe('Wallet service', function() {
   });
 
   describe('Preferences tokens', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(1, 1, { coin: 'eth' }));
@@ -2393,8 +2393,8 @@ describe('Wallet service', function() {
 
 
   describe('Preferences', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(2, 2));
@@ -2513,8 +2513,8 @@ describe('Wallet service', function() {
   });
 
   describe('#getUtxos', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(1, 1));
@@ -2655,8 +2655,8 @@ describe('Wallet service', function() {
 
 
   describe('Multiple request Pub Keys', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
     let opts;
     let reqPrivKey;
     let ws;
@@ -2808,8 +2808,8 @@ describe('Wallet service', function() {
   });
 
   describe('#getBalance', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(1, 1));
@@ -2913,8 +2913,8 @@ describe('Wallet service', function() {
   });
 
   describe('#getFeeLevels', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
     let clock;
 
     beforeEach(async function() {
@@ -3496,8 +3496,8 @@ describe('Wallet service', function() {
 
     describe(`#createTx ${coin} flags ${JSON.stringify(flags)}`, function() {
       describe(`Tx proposal creation & publishing ${coin}`, function() {
-        let server;
-        let wallet;
+        let server: WalletService;
+        let wallet: Model.Wallet;
 
         beforeEach(async function() {
           ({ server, wallet } = await helpers.createAndJoinWallet(1, 1, { coin }));
@@ -4961,8 +4961,8 @@ describe('Wallet service', function() {
     });
 
     describe('Backoff time ' + coin, function() {
-      let server;
-      let wallet;
+      let server: WalletService;
+      let wallet: Model.Wallet;
       let txid;
       let clock;
 
@@ -5038,8 +5038,8 @@ describe('Wallet service', function() {
 
     if (Constants.UTXO_CHAINS[coin.toUpperCase()]) {
       describe(`UTXO Selection: ${coin}`, function() {
-        let server;
-        let wallet;
+        let server: WalletService;
+        let wallet: Model.Wallet;
 
         beforeEach(async function() {
           ({ server, wallet } = await helpers.createAndJoinWallet(1, 2));
@@ -5559,8 +5559,8 @@ describe('Wallet service', function() {
   }
 
   describe('#createTX Segwit tests', () => {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(1, 1, {
@@ -5610,8 +5610,8 @@ describe('Wallet service', function() {
   });
 
   describe('#createTX ETH Only tests', () => {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(1, 1, {
@@ -6039,8 +6039,8 @@ describe('Wallet service', function() {
 
 
   describe('Transaction notes', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(1, 2));
@@ -6305,8 +6305,8 @@ describe('Wallet service', function() {
   });
 
   describe('Single-address wallet', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
     let firstAddress;
 
     beforeEach(async function() {
@@ -6405,8 +6405,8 @@ describe('Wallet service', function() {
   });
 
   describe('#getSendMaxInfo', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(2, 3));
@@ -6695,8 +6695,8 @@ describe('Wallet service', function() {
   });
 
   describe('Check requiredFeeRate  BTC', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     // some of these tests, particularly case 26, can run a bit long
     //  and cause the ci pipeline to fail
@@ -7234,8 +7234,8 @@ describe('Wallet service', function() {
 
 
   describe('Check requiredFeeRate  DOGE', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(function() {
       helpers.stubFeeLevels({
@@ -7384,8 +7384,8 @@ describe('Wallet service', function() {
 
 
   describe('#rejectTx', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
     let txid;
 
     beforeEach(async function() {
@@ -7459,8 +7459,8 @@ describe('Wallet service', function() {
 
   describe('#signTx', function() {
     describe('1-of-1 (BIP44 & P2PKH)', function() {
-      let server;
-      let wallet;
+      let server: WalletService;
+      let wallet: Model.Wallet;
       let txid;
 
       beforeEach(async function() {
@@ -7511,8 +7511,8 @@ describe('Wallet service', function() {
     });
 
     describe('1-of-1 (BIP44 ETH)', function() {
-      let server;
-      let wallet;
+      let server: WalletService;
+      let wallet: Model.Wallet;
       let txpid;
 
       beforeEach(async function() {
@@ -7611,8 +7611,8 @@ describe('Wallet service', function() {
     });
 
     describe('Multisig', function() {
-      let server;
-      let wallet;
+      let server: WalletService;
+      let wallet: Model.Wallet;
       let txid;
 
       beforeEach(async function() {
@@ -7802,8 +7802,8 @@ describe('Wallet service', function() {
   });
 
   describe('#broadcastTx & #broadcastRawTx', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
     let txpid;
     let txid;
 
@@ -8038,8 +8038,8 @@ describe('Wallet service', function() {
   });
 
   describe('#broadcastTx ETH', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
     let txpid;
     let txid;
 
@@ -8095,8 +8095,8 @@ describe('Wallet service', function() {
   });
 
   describe('Tx proposal workflow', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(2, 3));
@@ -8235,8 +8235,8 @@ describe('Wallet service', function() {
   });
 
   describe('#getTx', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
     let txpid;
 
     beforeEach(async function() {
@@ -8297,8 +8297,8 @@ describe('Wallet service', function() {
   });
 
   describe('#getTxs', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       this.timeout(5000);
@@ -8380,8 +8380,8 @@ describe('Wallet service', function() {
 
   describe('#getNotifications', function() {
     let clock;
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       clock = sinon.useFakeTimers({ now: 10 * 1000, toFake: ['Date'] });
@@ -8657,8 +8657,8 @@ describe('Wallet service', function() {
   });
 
   describe('#removePendingTx', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
     let txp;
 
     beforeEach(async function() {
@@ -8837,8 +8837,8 @@ describe('Wallet service', function() {
   });
 
   describe('#scan', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     describe('1-of-1 wallet (BIP44 & P2PKH)', function() {
       beforeEach(async function() {
@@ -9132,8 +9132,8 @@ describe('Wallet service', function() {
   });
 
   describe('#startScan', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       this.timeout(5000);
@@ -9248,8 +9248,8 @@ describe('Wallet service', function() {
   });
 
   describe('#startScan ETH', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       this.timeout(5000);
@@ -9273,8 +9273,8 @@ describe('Wallet service', function() {
 
 
   describe('PayPro', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(1, 1));
@@ -9303,8 +9303,8 @@ describe('Wallet service', function() {
   });
 
   describe('Push notifications', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(2, 3));
@@ -9480,8 +9480,8 @@ describe('Wallet service', function() {
 
   describe('Tx confirmation notifications', function() {
     this.timeout(5000);
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(2, 3));
@@ -9556,8 +9556,8 @@ describe('Wallet service', function() {
   });
 
   describe('#getWalletFromIdentifier', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(1, 1, {}));
@@ -9638,8 +9638,8 @@ describe('Wallet service', function() {
   });
 
   describe('Sync wallet', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(1, 1));
@@ -9766,8 +9766,8 @@ describe('Wallet service', function() {
   });
 
   describe('ERC20 createTx (ETH)', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
     const addressStr = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
 
     beforeEach(async function() {
@@ -9841,8 +9841,8 @@ describe('Wallet service', function() {
   });
 
   describe('ERC20 createTx (MATIC)', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
     const addressStr = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
 
     beforeEach(async function() {
@@ -9918,7 +9918,7 @@ describe('Wallet service', function() {
   });
 
   describe('getServicesData', () => {
-    let server;
+    let server: WalletService;
 
     beforeEach(() => {
       server = new WalletService();
@@ -10412,8 +10412,8 @@ describe('Wallet service', function() {
   });
 
   describe('#getCoinsForTx', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(function() {
       blockchainExplorer.getCoinsForTx = sinon.stub().callsArgWith(1, null, [{ txid: '11' }]);
@@ -10437,7 +10437,7 @@ describe('Wallet service', function() {
 
   describe('#getPayId', () => {
     const url = 'https://ematiu.sandbox.payid.org/matias';
-    let server;
+    let server: WalletService;
     let fakeRequest;
     let req;
 
@@ -10479,7 +10479,7 @@ describe('Wallet service', function() {
 
   describe('#discoverPayId', () => {
     // payId: matias$ematiu.sandbox.payid.org
-    let server;
+    let server: WalletService;
     let fakeRequest;
     let req;
 
@@ -10589,8 +10589,8 @@ describe('Wallet service', function() {
   });
 
   describe('#clearCache', () => {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(2, 2));
@@ -10604,8 +10604,8 @@ describe('Wallet service', function() {
   });
 
   describe('#upgradeNeeded', function() {
-    let server;
-    let wallet;
+    let server: WalletService;
+    let wallet: Model.Wallet;
 
     beforeEach(async function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(2, 2));
@@ -10886,7 +10886,7 @@ describe('Wallet service', function() {
 
     it('should throw an error for an unknown path', function() {
       (function() {
-        server._upgradeNeeded('bogus-path', wallet);
+        server._upgradeNeeded('bogus-path' as any, wallet);
       }).should.throw('Unknown upgrade path');
     });
   });

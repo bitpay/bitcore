@@ -1,5 +1,5 @@
 import { ObjectID } from 'bson';
-import Web3 from 'web3';
+import { Utils, Web3 } from 'crypto-wallet-core';
 import { LoggifyClass } from '../../../../decorators/Loggify';
 import logger from '../../../../logger';
 import { MongoBound } from '../../../../models/base';
@@ -10,16 +10,18 @@ import { WalletAddressStorage } from '../../../../models/walletAddress';
 import { Config } from '../../../../services/config';
 import { Storage, StorageService } from '../../../../services/storage';
 import { SpentHeightIndicators } from '../../../../types/Coin';
-import { IEVMNetworkConfig } from '../../../../types/Config';
-import { StreamingFindOptions } from '../../../../types/Query';
-import { TransformOptions } from '../../../../types/TransformOptions';
 import { partition, uniqBy, valueOrDefault } from '../../../../utils';
 import { ERC20Abi } from '../abi/erc20';
 import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
 import { MultisendAbi } from '../abi/multisend';
 import { MultisigAbi } from '../abi/multisig';
-import { EVMTransactionJSON, Effect, ErigonTransaction, GethTransaction, IAbiDecodeResponse, IAbiDecodedData, IEVMBlock, IEVMCachedAddress, IEVMTransaction, IEVMTransactionInProcess, ParsedAbiParams } from '../types';
+import type { IEVMNetworkConfig } from '../../../../types/Config';
+import type { StreamingFindOptions } from '../../../../types/Query';
+import type { TransformOptions } from '../../../../types/TransformOptions';
+import type { EVMTransactionJSON, Effect, IAbiDecodeResponse, IAbiDecodedData, IEVMBlock, IEVMCachedAddress, IEVMTransaction, IEVMTransactionInProcess, ParsedAbiParams } from '../types';
+import type { Web3Types } from 'crypto-wallet-core';
+
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];
@@ -151,7 +153,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
         await EventStorage.signalTx(tx);
         await EventStorage.signalAddressCoin({
           address: tx.to,
-          coin: { value: tx.value, address: tx.to, chain: params.chain, network: params.network, mintTxid: tx.txid }
+          coin: { value: Number(tx.value), address: tx.to, chain: params.chain, network: params.network, mintTxid: tx.txid }
         });
       }
     }
@@ -527,33 +529,35 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     return tx;
   }
 
-  convertRawTx(chain: string, network: string, tx: Partial<ErigonTransaction | GethTransaction>, block?: IEVMBlock): IEVMTransactionInProcess {
+  convertRawTx(chain: string, network: string, tx: Partial<Web3Types.TransactionInfo>, block?: IEVMBlock): IEVMTransactionInProcess {
     if (!block) {
-      const txid = tx.hash || '';
+      const txid = tx.hash as string || '';
       const to = tx.to || '';
       const from = tx.from || '';
-      const value = Number(tx.value);
-      const fee = Number(tx.gas) * Number(tx.gasPrice);
-      const abiType = this.abiDecode(tx.input!);
-      const nonce = tx.nonce || 0;
+      const value = BigInt(tx.value!);
+      const gas = BigInt(tx.gas || -1); // -1 indicates unknown
+      const gasPrice = BigInt(tx.gasPrice || -1);
+      const fee = gas < 0n || gasPrice < 0n ? -1n : gas * gasPrice;
+      const abiType = this.abiDecode(tx.input as string);
+      const nonce = BigInt(tx.nonce || 0);
       const convertedTx: IEVMTransactionInProcess = {
         chain,
         network,
-        blockHeight: valueOrDefault(tx.blockNumber, -1),
-        blockHash: valueOrDefault(tx.blockHash, undefined),
+        blockHeight: Number(valueOrDefault(tx.blockNumber, -1)),
+        blockHash: valueOrDefault(tx.blockHash as string, undefined),
         data: Buffer.from(tx.input || '0x'),
         txid,
         blockTime: new Date(),
         blockTimeNormalized: new Date(),
-        fee,
-        transactionIndex: tx.transactionIndex || 0,
-        value,
+        fee: Number(fee),
+        transactionIndex: Number(tx.transactionIndex || 0),
+        value: Number(value),
         wallets: [],
         to,
         from,
-        gasLimit: Number(tx.gas),
-        gasPrice: Number(tx.gasPrice),
-        nonce,
+        gasLimit: Number(gas),
+        gasPrice: Number(gasPrice),
+        nonce: Number(nonce),
         internal: [],
         calls: []
       };
@@ -619,7 +623,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     if (options && options.object) {
       return transaction;
     }
-    return JSON.stringify(transaction);
+    return JSON.stringify(transaction, Utils.BI.JSONStringifyBigIntReplacer);
   }
 }
 export const EVMTransactionStorage = new EVMTransactionModel();

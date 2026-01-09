@@ -37,10 +37,10 @@ export function sToBigInt(value: number | string): bigint {
 
 /**
  * Math.max() for a mixed array of BigInts, Numbers, and Strings
- * @param {Array<BigIntLike>} arr Array of BigInts, Numbers, and/or Strings
- * @returns {BigIntLike} Returns the max entry
+ * @param {Array<T = BigIntLike>} arr Array of T (T by default can be a mix of BigInts, Numbers, and/or Strings)
+ * @returns {T = BigIntLike} Returns the max entry
  */
-export function max(arr: Array<BigIntLike>): BigIntLike {
+export function max<T = BigIntLike>(arr: Array<T>): T {
   if (!Array.isArray(arr)) throw new Error('Input must be an array');
   if (!arr.every(isBigIntLike)) throw new Error('Array must contain only BigInt-like values');
   return arr.reduce((max, cur) => cur > max ? cur : max, arr[0]);
@@ -49,10 +49,10 @@ export function max(arr: Array<BigIntLike>): BigIntLike {
 
 /**
  * Math.min() for a mixed array of BigInts, Numbers, and Strings
- * @param {Array<BigIntLike>} arr Array of BigInts, Numbers, and/or Strings
- * @returns {BigIntLike} Returns the min entry
+ * @param {Array<T = BigIntLike>} arr Array of T (T by default can be a mix of BigInts, Numbers, and/or Strings)
+ * @returns {T = BigIntLike} Returns the min entry
  */
-export function min(arr: Array<BigIntLike>): BigIntLike {
+export function min<T = BigIntLike>(arr: Array<T>): T {
   if (!Array.isArray(arr)) throw new Error('Input must be an array');
   if (!arr.every(isBigIntLike)) throw new Error('Array must contain only BigInt-like values');
   return arr.reduce((min, cur) => cur < min ? cur : min, arr[0]);
@@ -186,4 +186,31 @@ export function mulCeil(...nums: Array<BigIntLike>): bigint {
   const whole = productScaled.toString().slice(0, -(precision * nums.length));
   const decimal = productScaled.toString().slice(-(precision * nums.length));
   return BigInt(whole) + (BigInt(decimal) > 0n ? 1n : 0n);
+};
+
+
+/**
+ * To be used with JSON.stringify to convert BigInt values to a serializable format
+ * @example 
+ * const obj = { a: 123n, b: 'test' };
+ * JSON.stringify(obj, JSONStringifyBigIntReplacer);
+ * // Result: '{"a":{"data":"123","type":"BigInt"},"b":"test"}'
+ */
+export function JSONStringifyBigIntReplacer(_key: string, value: any) {
+  return typeof value === 'bigint' ? { data: value.toString(), type: 'BigInt' } : value;
+};
+
+
+/**
+ * To be used with JSON.parse to revive BigInt values from the serializable format
+ * @example
+ * const str = '{"a":{"data":"123","type":"BigInt"},"b":"test"}';
+ * JSON.parse(str, JSONParseBigIntReviver);
+ * // Result: { a: 123n, b: 'test' }
+ */
+export function JSONParseBigIntReviver(_key: string, value: any) {
+  if (value && typeof value === 'object' && value.type === 'BigInt' && typeof value.data === 'string') {
+    return BigInt(value.data);
+  }
+  return value;
 };

@@ -142,7 +142,7 @@ describe('DOGE Tests', function() {
         }
       });
     });
-    const outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000, maxValue, maxOutputs });
+    const outputArray = await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword, time: 1000, maxValue, maxOutputs });
     await emitPromise;
     expect(outputArray).to.have.lengthOf(4);
     expect(outputArray[0].txid).to.equal(outputArray[1].txid);

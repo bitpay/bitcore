@@ -169,22 +169,22 @@ export class FiatRateService {
 
     const now = Date.now();
     const ts = opts.ts ? opts.ts : now;
-    let fiatFiltered = [];
+    let fiatFiltered: Array<typeof Defaults.FIAT_CURRENCIES[number]> = [];
     const rates = [];
 
     if (opts.code) {
       fiatFiltered = Defaults.FIAT_CURRENCIES.filter(c => c.code === opts.code);
       if (!fiatFiltered.length) return cb(opts.code + ' is not supported');
     }
-    const currencies: { code: string; name: string }[] = fiatFiltered.length ? fiatFiltered : Defaults.FIAT_CURRENCIES;
+    const currencies = fiatFiltered.length ? fiatFiltered : Defaults.FIAT_CURRENCIES;
 
     async.map(
       Object.values(Constants.BITPAY_SUPPORTED_COINS),
       (coin, cb) => {
         rates[coin] = [];
         async.map(
-          currencies,
-          (currency, cb) => {
+          currencies as any,
+          (currency: typeof Defaults.FIAT_CURRENCIES[number], cb) => {
             let c = coin.split('_')[0];
             if (c === 'wbtc') {
               logger.info('Using btc for wbtc rate.');
@@ -236,18 +236,18 @@ export class FiatRateService {
       return this.getRatesForStablecoin({ code: 'EUR', ts }, cb);
     }
 
-    let fiatFiltered = [];
+    let fiatFiltered: Array<typeof Defaults.FIAT_CURRENCIES[number]> = [];
 
     if (code) {
       fiatFiltered = Defaults.FIAT_CURRENCIES.filter(c => c.code === opts.code);
       if (!fiatFiltered.length) return cb(opts.code + ' is not supported');
     }
 
-    const currencies: { code: string; name: string }[] = fiatFiltered.length ? fiatFiltered : Defaults.FIAT_CURRENCIES;
+    const currencies = fiatFiltered.length ? fiatFiltered : Defaults.FIAT_CURRENCIES;
 
     async.map(
-      currencies,
-      (currency, cb) => {
+      currencies as any,
+      (currency: typeof Defaults.FIAT_CURRENCIES[number], cb) => {
         if (coin === 'wbtc') {
           logger.info('Using btc for wbtc rate.');
           coin = 'btc';

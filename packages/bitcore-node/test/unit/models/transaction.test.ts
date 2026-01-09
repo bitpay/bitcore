@@ -2,7 +2,7 @@ import { ObjectId } from 'bson';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { Readable } from 'stream';
-import Web3 from 'web3';
+import { Web3 } from 'crypto-wallet-core';
 import { CoinStorage } from '../../../src/models/coin';
 import { MintOp, SpendOp, TaggedBitcoinTx, TransactionStorage, TxOp } from '../../../src/models/transaction';
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';

@@ -7,13 +7,13 @@ import { CryptoRpc } from '../index.js';
 const config1 = {
   chain: 'LNBTC',
   rpcPort: '11009',
-  host: '172.28.0.5',
+  host: '172.29.0.5',
   cert: ''
 };
 const config2 = {
   chain: 'LNBTC',
   rpcPort: '11010',
-  host: '172.28.0.10',
+  host: '172.29.0.10',
   cert: ''
 };
 const btcConfig = {
