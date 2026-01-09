@@ -546,8 +546,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         return resolve();
       }
       const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses, args.tokenAddress);
-      const populateReceipt = new PopulateReceiptTransform();
-      const populateEffects = new PopulateEffectsTransform();
+      const populateReceipt = new PopulateReceiptTransform(this);
+      const populateEffects = new PopulateEffectsTransform(this);
 
       const streamParams: BuildWalletTxsStreamParams = {
         transactionStream,
@@ -582,13 +582,33 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     let { transactionStream } = streamParams;
     const { populateEffects } = streamParams;
 
-    transactionStream = EVMTransactionStorage.collection
+    // Store cursor reference for cleanup
+    const cursor = EVMTransactionStorage.collection
       .find(query)
       .sort({ blockTimeNormalized: 1 })
-      .addCursorFlag('noCursorTimeout', true)
-      .pipe(new TransformWithEventPipe({ objectMode: true, passThrough: true }));
+      .addCursorFlag('noCursorTimeout', true);
 
-    transactionStream = transactionStream.eventPipe(populateEffects); // For old db entires
+    // Add cleanup handlers when client disconnects
+    let cursorClosed = false;
+    const cleanupCursor = () => {
+      if (!cursorClosed) {
+        cursorClosed = true;
+        try {
+          cursor.close();
+        } catch {
+          // Cursor might already be closed, ignore
+        }
+      }
+    };
+
+    const { req, res } = params;
+    req.on('close', cleanupCursor);
+    res.on('close', cleanupCursor);
+
+    // Pipe cursor to transform stream
+    transactionStream = cursor.pipe(new TransformWithEventPipe({ objectMode: true, passThrough: true }));
+
+    transactionStream = transactionStream.eventPipe(populateEffects); // For old db entries
 
     if (params.args.tokenAddress) {
       const erc20Transform = new Erc20RelatedFilterTransform(params.args.tokenAddress);
