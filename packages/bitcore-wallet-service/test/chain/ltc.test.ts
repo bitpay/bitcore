@@ -1,6 +1,6 @@
 'use strict';
 
-import chai from 'chai';
+import * as chai from 'chai';
 import { BitcoreLibLtc } from 'crypto-wallet-core';
 import { ChainService } from '../../src/lib/chain';
 import { LtcChain } from '../../src/lib/chain/ltc';
