@@ -191,4 +191,94 @@ describe('CoinGecko integration', function() {
       }
     });
   });
+
+  describe('#coinGeckoGetFiatRates', () => {
+    beforeEach(() => {
+      config.coinGecko = {
+        api: 'https://pro-api.coingecko.com/api',
+      };
+
+      fakeRequest = {
+        get: (url, _opts, cb) => {
+          const mChart = url.match(/\/v3\/coins\/([^/]+)\/market_chart\?/);
+          if (mChart?.[1]) {
+            const id = decodeURIComponent(mChart[1]);
+            if (id === 'bitcoin') return cb(null, { body: { prices: [[1, 100], [2, 110]] } });
+            if (id === 'bitcoin-cash') return cb(null, { body: { prices: [[1, 200], [2, 210]] } });
+            return cb(null, { body: { prices: [[1, 1], [2, 1]] } });
+          }
+          return cb(new Error('unexpected url'));
+        }
+      };
+
+      server.externalServices.coinGecko.request = fakeRequest;
+    });
+
+    it('should get fiat rates with default days', async () => {
+      const data = await server.externalServices.coinGecko.coinGeckoGetFiatRates({
+        params: { code: 'USD' },
+        query: { coin: 'BTC' }
+      });
+      should.exist(data);
+      data.should.deep.equal([
+        { ts: 1, rate: 100 },
+        { ts: 2, rate: 110 }
+      ]);
+    });
+
+    it('should get fiat rates with explicit days', async () => {
+      const data = await server.externalServices.coinGecko.coinGeckoGetFiatRates({
+        params: { code: 'USD' },
+        query: { coin: 'BTC', days: 365 }
+      });
+      should.exist(data);
+      data.should.have.length(2);
+      data[0].rate.should.equal(100);
+    });
+
+    it('should support BCH coin mapping', async () => {
+      const data = await server.externalServices.coinGecko.coinGeckoGetFiatRates({
+        params: { code: 'USD' },
+        query: { coin: 'BCH' }
+      });
+      should.exist(data);
+      data[0].rate.should.equal(200);
+    });
+
+    it('should return error on invalid days', async () => {
+      try {
+        await server.externalServices.coinGecko.coinGeckoGetFiatRates({
+          params: { code: 'USD' },
+          query: { coin: 'BTC', days: 0 }
+        });
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Invalid days');
+      }
+    });
+
+    it('should return rates for all supported coins if missing coin', async () => {
+      const data: any = await server.externalServices.coinGecko.coinGeckoGetFiatRates({
+        params: { code: 'USD' },
+        query: {}
+      });
+      should.exist(data);
+
+      data.should.have.property('btc');
+      data.should.have.property('bch');
+      data.should.have.property('eth');
+      data.should.have.property('pol');
+      data.should.have.property('wbtc');
+      data.should.have.property('weth');
+
+      data.btc.should.deep.equal([
+        { ts: 1, rate: 100 },
+        { ts: 2, rate: 110 }
+      ]);
+      data.bch.should.deep.equal([
+        { ts: 1, rate: 200 },
+        { ts: 2, rate: 210 }
+      ]);
+    });
+  });
 });
