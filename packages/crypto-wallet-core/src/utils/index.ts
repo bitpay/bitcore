@@ -60,10 +60,10 @@ export function encodeBuffer(buffer: Buffer, encoding: BufferEncoding | 'base58'
  * @returns {boolean} True if the string is a valid hex string (with or without 0x prefix)
  */
 export function isHexString(str: string): boolean {
-  if (!str || typeof str !== 'string') {
+  if (typeof str !== 'string' || str === '') {
     return false;
   }
-  const normalizedStr = str.toLowerCase().replace('0x', '');
+  const normalizedStr = str.toLowerCase().slice(0, 2) === '0x' ? str.toLowerCase().slice(2) : str.toLowerCase();
   return Buffer.from(normalizedStr, 'hex').toString('hex') === normalizedStr;
 }
 
@@ -76,10 +76,10 @@ export function isHexString(str: string): boolean {
  * @returns {string} The hex string with 0x prefix
  */
 export function toHex(input: number | string | bigint): string {
+  if ((typeof input !== 'number' && typeof input !== 'string' && typeof input !== 'bigint') || input === '') {
+    throw new Error(`Input for toHex must be a number, string (non-empty), or bigint. Got ${!input ? JSON.stringify(input) : `typeof ${typeof input}`}`);
+  }
   try {
-    if ((typeof input !== 'number' && typeof input !== 'string' && typeof input !== 'bigint') || input === '') {
-      throw new Error('Invalid input type for toHex');
-    }
     return '0x' + BigInt(input).toString(16);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (e) {

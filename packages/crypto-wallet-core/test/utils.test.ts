@@ -21,6 +21,12 @@ describe('Utils', function() {
       expect(result).to.be.false;
     });
 
+    it('should return false for string with 0x somewhere in the middle', function() {
+      const str = 'abc0x123';
+      const result = utils.isHexString(str);
+      expect(result).to.be.false;
+    });
+
     it('should return false for invalid non-prefixed hex string', function() {
       const str = 'abc123g';
       const result = utils.isHexString(str);
@@ -94,17 +100,17 @@ describe('Utils', function() {
 
     it('should throw error for unsupported input type', function() {
       const input = { key: 'value' };
-      expect(() => utils.toHex(input as any)).to.throw('Invalid input for toHex: [object Object]');
+      expect(() => utils.toHex(input as any)).to.throw('Input for toHex must be a number, string (non-empty), or bigint. Got typeof object');
     });
 
     it('should throw error for empty string input', function() {
       const input = '';
-      expect(() => utils.toHex(input)).to.throw('Invalid input for toHex: \'\'');
+      expect(() => utils.toHex(input)).to.throw('Input for toHex must be a number, string (non-empty), or bigint. Got ""');
     });
 
     it('should throw error for null/undefined input', function() {
-      expect(() => utils.toHex(null as any)).to.throw('Invalid input for toHex: null');
-      expect(() => utils.toHex(undefined as any)).to.throw('Invalid input for toHex: undefined');
+      expect(() => utils.toHex(null as any)).to.throw('Input for toHex must be a number, string (non-empty), or bigint. Got null');
+      expect(() => utils.toHex(undefined as any)).to.throw('Input for toHex must be a number, string (non-empty), or bigint. Got undefined');
     });
 
     it('should throw error for NaN input', function() {
