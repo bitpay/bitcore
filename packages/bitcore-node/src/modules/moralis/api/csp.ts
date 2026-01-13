@@ -216,7 +216,11 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
   }
 
   // @override
-  async _getBlockNumberByDate({ chainId, date }) {
+  async _getBlockNumberByDate(params: {
+    date: Date;
+    chainId: string | bigint;
+  }) {
+    const { date, chainId } = params;
     if (!date || !isDateValid(date)) {
       throw new Error('Invalid date');
     }

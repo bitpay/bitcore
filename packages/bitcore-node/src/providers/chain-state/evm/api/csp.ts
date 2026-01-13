@@ -603,7 +603,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     address: string,
     tokenAddress: string,
     args: Partial<StreamWalletTransactionsArgs> = {}
-  ): Promise<Array<Partial<Web3Types.Transaction>>> {
+  ): Promise<Array<Partial<Web3Types.TransactionInfo>>> {
     const token = await this.erc20For(network, tokenAddress);
     let windowSize = 100n;
     const { web3 } = await this.getWeb3(network);
@@ -627,14 +627,14 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     endBlock = Utils.BI.min<bigint>([endBlock ?? tip, tip]) as bigint;
     startBlock = Utils.BI.max<bigint>([startBlock != null ? startBlock : endBlock - 10000n, 0n]) as bigint;
     
-    if (endBlock < startBlock!) {
+    if (startBlock! > endBlock) {
       throw new Error('startBlock cannot be greater than endBlock');
     } else if (endBlock - startBlock > 10000n) {
       throw new Error('Cannot scan more than 10000 blocks at a time. Please limit your search with startBlock and endBlock');
     }
 
     windowSize = Utils.BI.min<bigint>([windowSize, endBlock - startBlock]);
-    const tokenTransfers: Partial<Web3Types.Transaction>[] = [];
+    const tokenTransfers: Partial<Web3Types.TransactionInfo>[] = [];
     while (windowSize > 0n) {
       const [sent, received] = await Promise.all([
         token.getPastEvents('Transfer', {
@@ -670,7 +670,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       from: returnValues['_from'],
       to: returnValues['_to'],
       value: returnValues['_value']
-    } as Partial<Web3Types.Transaction>;
+    } as Partial<Web3Types.TransactionInfo>;
   }
 
   @realtime
@@ -695,15 +695,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     args: StreamWalletTransactionsArgs
   ) {
     const addresses = await this.getWalletAddresses(walletId);
-    const allTokenQueries = Array<Promise<Array<Partial<Web3Types.TransactionInfo>>>>();
-    for (const walletAddress of addresses) {
-      const transfers = this.getErc20Transfers(network, walletAddress.address, tokenAddress, args);
-      allTokenQueries.push(transfers);
-    }
-    const batches = await Promise.all(allTokenQueries);
-    const txs = batches.reduce((agg, batch) => agg.concat(batch));
-    // TODO fix this.
-    return txs.sort((tx1, tx2) => Number(BigInt(tx1.blockNumber!) - BigInt(tx2.blockNumber!)));
+    const batches = await Promise.all(addresses.map(walletAddress => this.getErc20Transfers(network, walletAddress.address, tokenAddress, args)));
+    return batches.flat().sort((tx1, tx2) => Number(BigInt(tx1.blockNumber!) - BigInt(tx2.blockNumber!)));
   }
 
   @realtime
@@ -941,6 +934,10 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   async _getBlockNumberByDate(params: {
     date: Date;
     network?: string;
+    /**
+     * Unused in this method, but is used in the overriding methods of subclasses (e.g. Moralis' CSP).
+     * Removing it from this method's signature causes TS errors in methods above that pass in chainId when inherited by subclasses.
+     */
     chainId?: string | bigint;
   }) {
     const { date, network } = params;

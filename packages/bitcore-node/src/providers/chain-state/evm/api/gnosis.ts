@@ -61,10 +61,10 @@ export class GnosisApi {
     const contract = await this.multisigFor(chain, network, gnosisFactory);
     const contractInfo = await contract.getPastEvents('ContractInstantiation', {
       fromBlock: Utils.toHex(blockHeight),
-      toBlock: Utils.toHex((blockHeight))
+      toBlock: Utils.toHex(blockHeight)
     }) as Web3Types.EventLog[];
     return this.convertMultisigContractInstantiationInfo(
-      contractInfo.filter(info => (info.returnValues.sender as string).toLowerCase() === sender.toLowerCase())
+      contractInfo.filter(info => typeof info.returnValues.sender === 'string' && info.returnValues.sender.toLowerCase() === sender.toLowerCase())
     );
   }
 

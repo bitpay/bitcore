@@ -274,7 +274,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
       ledger_index_min: minLedgerIndex,
       limit,
       binary: false
-    } as xrpl.AccountTxRequest;
+    } as Partial<xrpl.AccountTxRequest>;
     if (startTx) {
       const tx = await client.getTransaction({ txid: startTx });
       options.ledger_index_min = Math.max(Number(tx?.ledger_index), minLedgerIndex);
