@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { Request, Response } from 'express-serve-static-core';
 import * as sinon from 'sinon';
 import { Transform, Writable } from 'stream';
-import Web3 from 'web3';
+import { Web3 } from 'crypto-wallet-core';
 import { MongoBound } from '../../../src/models/base';
 import { CacheStorage } from '../../../src/models/cache';
 import { IWallet, WalletStorage } from '../../../src/models/wallet';
@@ -510,10 +510,10 @@ const streamDexWalletTransactions = async (chain, network, wallet, address, web3
 
     res.on('finish', () => {
       try {
-        const totalETH = web3.utils.fromWei(total.toString());
-        const totalRejectedETH = web3.utils.fromWei(totalRejected.toString());
-        const totalFeeETH = web3.utils.fromWei(totalFee.toString());
-        const balanceETH = web3.utils.fromWei((total - totalFee).toString());
+        const totalETH = web3.utils.fromWei(total.toString(), 'ether');
+        const totalRejectedETH = web3.utils.fromWei(totalRejected.toString(), 'ether');
+        const totalFeeETH = web3.utils.fromWei(totalFee.toString(), 'ether');
+        const balanceETH = web3.utils.fromWei((total - totalFee).toString(), 'ether');
 
         // Need to slice b/c we're using Number rounding instead of BigInt
         expect(balanceETH.slice(0, -5)).to.equal('309.666283810972788445'.slice(0, -5));

@@ -23,7 +23,6 @@ describe('XRP Tests', function() {
   let blockHash = '';
   let block;
   let txid = '';
-
   let rpcs;
   let xrpRPC;
 
@@ -166,7 +165,7 @@ describe('XRP Tests', function() {
         }
       });
     });
-    const outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, secret: 'snoPBrXtMeMyMHUVTgbuqAfg1SUTb' });
+    const outputArray = await rpcs.unlockAndSendToAddressMany({ currency, payToArray, secret: 'snoPBrXtMeMyMHUVTgbuqAfg1SUTb' });
     await emitPromise;
     expect(outputArray).to.have.lengthOf(4);
     expect(outputArray[0]).to.have.property('txid');

@@ -48,9 +48,9 @@ export function valueOrDefault<T>(value: T | undefined, defaultVal: T): T {
   return value != undefined ? value : defaultVal;
 }
 
-export function isDateValid(dateStr: string): boolean {
-  if (!dateStr) return false;
-  return new Date(dateStr).toString() !== 'Invalid Date';
+export function isDateValid(input: string | Date): boolean {
+  if (!input) return false;
+  return new Date(input).toString() !== 'Invalid Date';
 }
 
 /**

@@ -1,7 +1,7 @@
-import { AccountTxResponse, Transaction, TransactionMetadata } from 'xrpl';
 import { ITransaction } from '../../models/baseTransaction';
 import { ICoin } from '../../models/coin';
 import { IBlock } from '../../types/Block';
+import type { xrpl } from 'crypto-wallet-core';
 
 export type IXrpBlock = IBlock & {};
 export type IXrpTransaction = ITransaction & {
@@ -31,17 +31,17 @@ export interface XrpTransactionJSON {
 
 export type IXrpCoin = ICoin & {};
 
-export type AccountTransaction = AccountTxResponse['result']['transactions'][0]
+export type AccountTransaction = xrpl.AccountTxResponse['result']['transactions'][0]
 
-export type BlockTransaction = Transaction & { hash: string; metaData?: TransactionMetadata };
+export type BlockTransaction = xrpl.Transaction & { hash: string; metaData?: xrpl.TransactionMetadata };
 
-export type RpcTransaction = Transaction & {
+export type RpcTransaction = xrpl.Transaction & {
   DeliverMax: string;
   ctid: string;
   date: number;
   hash: string;
   inLedger: number;
   ledger_index: number;
-  meta: TransactionMetadata;
+  meta: xrpl.TransactionMetadata;
   validated: boolean;
 };

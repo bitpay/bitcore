@@ -1,13 +1,13 @@
 import { EVMP2pWorker } from '../../../providers/chain-state/evm/p2p/p2p';
-import { AnyBlock } from '../../../providers/chain-state/evm/types';
+import type { Web3Types } from 'crypto-wallet-core';
 
 export class EthP2pWorker extends EVMP2pWorker {
-  getBlockReward(block: AnyBlock): number {
+  getBlockReward(block: Web3Types.Block): number {
     let reward = 5;
-    const height = block.number;
+    const height = BigInt(block.number);
     const ForkHeights = {
-      Byzantium: 4370000,
-      Constantinople: 7280000
+      Byzantium: 4370000n,
+      Constantinople: 7280000n
     };
 
     if (height > ForkHeights.Constantinople) {

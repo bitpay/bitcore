@@ -297,8 +297,8 @@ describe('V8', () => {
 
 
     it('should retry to broadcast is socket hang up', (done) => {
-      const oldd = Defaults.BROADCAST_RETRY_TIME;
-      Defaults.BROADCAST_RETRY_TIME = 5;
+      const old = Defaults.BROADCAST_RETRY_TIME;
+      (Defaults.BROADCAST_RETRY_TIME as any) = 5;
       let x = 0;
       class BroadcastInvalid {
         broadcast(payload) {
@@ -324,7 +324,7 @@ describe('V8', () => {
       be.broadcast('xxx', (err, txid) => {
         should.not.exist(err);
         txid.should.equal('txid');
-        Defaults.BROADCAST_RETRY_TIME = oldd;
+        (Defaults.BROADCAST_RETRY_TIME as any) = old;
         done();
       });
     });
