@@ -39,6 +39,7 @@ const chainLibs = {
 
 export interface IWalletExt extends IWallet {
   storage?: Storage;
+  version?: 0 | 2; // Wallet versioning used for backwards compatibility
 }
 
 export class Wallet {
@@ -64,6 +65,7 @@ export class Wallet {
   lite: boolean;
   addressType: string;
   addressZero: string;
+  version?: number; // If 2, master key xprivkey and privateKey are encrypted and serialized BEFORE 
 
   static XrpAccountFlags = xrpl.AccountSetTfFlags;
 
@@ -120,7 +122,8 @@ export class Wallet {
       storageType: this.storageType,
       lite,
       addressType: this.addressType,
-      addressZero: this.addressZero
+      addressZero: this.addressZero,
+      version: this.version
     };
   }
 
@@ -134,6 +137,8 @@ export class Wallet {
   static async create(params: Partial<IWalletExt>) {
     const { network, name, phrase, xpriv, password, path, lite, baseUrl } = params;
     let { chain, storageType, storage, addressType } = params;
+    // For create: allow explicit 0 to signal legacy (undefined). Everything else defaults to v2.
+    const version = params.version === 0 ? undefined : 2;
     if (phrase && xpriv) {
       throw new Error('You can only provide either a phrase or a xpriv, not both');
     }
@@ -159,17 +164,26 @@ export class Wallet {
     }
     const privKeyObj = hdPrivKey.toObject();
 
-    // Generate authentication keys
-    const authKey = new PrivateKey();
-    const authPubKey = authKey.toPublicKey().toString();
-
     // Generate public keys
     // bip44 compatible pubKey
     const pubKey = hdPrivKey.publicKey.toString();
 
     // Generate and encrypt the encryption key and private key
-    const walletEncryptionKey = Encryption.generateEncryptionKey();
-    const encryptionKey = Encryption.encryptEncryptionKey(walletEncryptionKey, password);
+    const walletEncryptionKey = Encryption.generateEncryptionKey().toString('hex'); // raw 32-byte key as hex
+    const encryptionKey = Encryption.encryptEncryptionKey(walletEncryptionKey, password); // stored, password-wrapped
+
+    // Encrypt privKeyObj.privateKey & privKeyObj.xprivkey (only for v2)
+    if (version === 2) {
+      const xprivBuffer = BitcoreLib.encoding.Base58Check.decode(privKeyObj.xprivkey);
+      privKeyObj.xprivkey = Encryption.encryptBuffer(xprivBuffer, pubKey, walletEncryptionKey).toString('hex');
+      privKeyObj.privateKey = Encryption.encryptBuffer(Buffer.from(privKeyObj.privateKey, 'hex'), pubKey, walletEncryptionKey).toString('hex');
+    }
+
+    // Generate authentication keys
+    const authKey = new PrivateKey();
+    const authPubKey = authKey.toPublicKey().toString();
+
+    // Generate and encrypt the encryption key and private key
     const encPrivateKey = Encryption.encryptPrivateKey(JSON.stringify(privKeyObj), pubKey, walletEncryptionKey);
 
     storageType = storageType ? storageType : 'Level';
@@ -207,7 +221,8 @@ export class Wallet {
       storageType,
       lite,
       addressType,
-      addressZero: null
+      addressZero: null,
+      version,
     } as IWalletExt);
 
     // save wallet to storage and then bitcore-node
@@ -294,7 +309,24 @@ export class Wallet {
     if (!this.lite) {
       const encMasterKey = this.masterKey;
       const masterKeyStr = await Encryption.decryptPrivateKey(encMasterKey, this.pubKey, encryptionKey);
+      // masterKey.xprivkey & masterKey.privateKey are encrypted with encryptionKey
       masterKey = JSON.parse(masterKeyStr);
+    
+      if (this.version === 2) {
+        /**
+         * Phase 1 implementation of string-based secrets clean-up (Dec 10, 2025):
+         * Maintain buffers until last possible moment while maintaining prior boundary
+         * 
+         * Phase 2 should update call site to propagate buffer usage outwards to enable buffer cleanup upon completion
+         */
+        const decryptedxprivBuffer = Encryption.decryptToBuffer(masterKey.xprivkey, this.pubKey, encryptionKey);
+        masterKey.xprivkey = decryptedxprivBuffer.toString('hex');
+        decryptedxprivBuffer.fill(0);
+    
+        const decryptedPrivKey = Encryption.decryptToBuffer(masterKey.privateKey, this.pubKey, encryptionKey);
+        masterKey.privateKey = decryptedPrivKey.toString('hex');
+        decryptedPrivKey.fill(0);
+      }
     }
     this.unlocked = {
       encryptionKey,
@@ -611,13 +643,35 @@ export class Wallet {
         address: key.pubKey ? Deriver.getAddress(this.chain, this.network, key.pubKey, this.addressType) : key.address
       }) as KeyImport);
     }
+    
+    /**
+     * Phase 1: Encrypt key.privKey at boundary
+     */
+    if (this.version === 2) {
+      // todo: encrypt key.privKey
+      for (const key of keysToSave) {
+        // The goal here is to make it so when the key is retrieved, it's uniform
+        const privKeyBuffer = Deriver.privateKeyToBuffer(this.chain, key.privKey);
+        key.privKey = Encryption.encryptBuffer(privKeyBuffer, this.pubKey, encryptionKey).toString('hex');
+        privKeyBuffer.fill(0);
+      }
+    }
 
     if (keysToSave.length) {
-      await this.storage.addKeys({
-        keys: keysToSave,
-        encryptionKey,
-        name: this.name
-      });
+      if (this.version === 2) {
+        await this.storage.addKeysSafe({
+          keys: keysToSave,
+          encryptionKey,
+          name: this.name
+        });
+      } else {
+        // Backwards compatibility
+        await this.storage.addKeys({
+          keys: keysToSave,
+          encryptionKey,
+          name: this.name
+        });
+      }
     }
     const addedAddresses = keys.map(key => {
       return { address: key.address };
@@ -642,24 +696,28 @@ export class Wallet {
     }
     let addresses = [];
     let decryptedKeys;
-    if (!keys && !signingKeys) {
-      for (const utxo of utxos) {
-        addresses.push(utxo.address);
+    let decryptPrivateKeys = true;
+    if (!signingKeys) {
+      if (!keys) {
+        for (const utxo of utxos) {
+          addresses.push(utxo.address);
+        }
+        addresses = addresses.length > 0 ? addresses : await this.getAddresses();
+        decryptedKeys = await this.storage.getKeys({
+          addresses,
+          name: this.name,
+          encryptionKey: this.unlocked.encryptionKey
+        });
+      } else {
+        addresses.push(keys[0]);
+        for (const element of utxos) {
+          const keyToDecrypt = keys.find(key => key.address === element.address);
+          addresses.push(keyToDecrypt);
+        }
+        const decryptedParams = Encryption.bitcoinCoreDecrypt(addresses, passphrase);
+        decryptedKeys = [...decryptedParams.jsonlDecrypted];
+        decryptPrivateKeys = false;
       }
-      addresses = addresses.length > 0 ? addresses : await this.getAddresses();
-      decryptedKeys = await this.storage.getKeys({
-        addresses,
-        name: this.name,
-        encryptionKey: this.unlocked.encryptionKey
-      });
-    } else if (!signingKeys) {
-      addresses.push(keys[0]);
-      for (const element of utxos) {
-        const keyToDecrypt = keys.find(key => key.address === element.address);
-        addresses.push(keyToDecrypt);
-      }
-      const decryptedParams = Encryption.bitcoinCoreDecrypt(addresses, passphrase);
-      decryptedKeys = [...decryptedParams.jsonlDecrypted];
     }
     if (this.isUtxoChain()) {
       // If changeAddressIdx == null, then save the change key at the current addressIndex (just in case)
@@ -667,12 +725,36 @@ export class Wallet {
       await this.importKeys({ keys: [changeKey] });
     }
 
+    // Shallow copy to avoid mutation if signingKeys are passed in
+    const keysForSigning = [...(signingKeys || decryptedKeys)];
+
+    if (this.version === 2 && decryptPrivateKeys) {
+      /**
+       * Phase 1: Convert encrypted private keys directly to strings as required by Transactions.sign (as of Dec 11, 2025)
+       * This mitigates the security improvement, but also removes the requirement for changing Transaction.sign fully immediately
+       */
+      for (const key of keysForSigning) {
+        // In Phase 2, this would be passed directly to Transaction.sign in a try/finally, which will fill(0)
+        let privKeyBuf: Buffer | undefined;
+        try {
+          privKeyBuf = Encryption.decryptToBuffer(key.privKey, this.pubKey, this.unlocked.encryptionKey);
+          key.privKey = Deriver.privateKeyBufferToNativePrivateKey(this.chain, this.network, privKeyBuf);
+        } catch {
+          continue;
+        } finally {
+          if (Buffer.isBuffer(privKeyBuf)) {
+            privKeyBuf.fill(0);
+          }
+        }
+      }
+    }
+
     const payload = {
       chain: this.chain,
       network: this.network,
       tx,
-      keys: signingKeys || decryptedKeys,
-      key: signingKeys ? signingKeys[0] : decryptedKeys[0],
+      keys: keysForSigning,
+      key: keysForSigning[0],
       utxos
     };
     return Transactions.sign({ ...payload });
