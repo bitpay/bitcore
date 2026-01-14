@@ -1,0 +1,209 @@
+services:
+  bitcoin:
+    image: kajoseph/bitcoin-core:22.0
+    ports:
+      - "8333:8333"
+    networks:
+      default:
+        ipv4_address: 172.28.0.3
+    command:
+      -printtoconsole
+      -regtest=1
+      -txindex=1
+      -listen=1
+      -server=1
+      -dnsseed=0
+      -upnp=0
+      -port=8332
+      -rpcport=8333
+      -rpcallowip=172.0.0.0/8
+      -rpcbind=0.0.0.0
+      -rpcuser=bitcoinnode
+      -rpcpassword=local321
+      -fallbackfee=0.0002
+      -zmqpubrawblock=tcp://0.0.0.0:38332
+      -zmqpubrawtx=tcp://0.0.0.0:38333
+    restart: always
+
+  bitcoin-cash:
+    image: zquestz/bitcoin-cash-node:28.0.1
+    ports:
+      - "9333:9333"
+    networks:
+      default:
+        ipv4_address: 172.28.0.4
+    command:
+      bitcoind
+      -printtoconsole
+      -regtest=1
+      -txindex=1
+      -listen=1
+      -server=1
+      -dnsseed=0
+      -upnp=0
+      -port=9332
+      -rpcport=9333
+      -rpcallowip="172.0.0.0/8"
+      -rpcbind="bitcoin-cash"
+      -deprecatedrpc=generate
+      -discover=0
+      -rpcuser=cryptorpc
+      -rpcpassword=local321
+    restart: always
+
+  dogecoin:
+    image: casperstack/dogecoin
+    ports:
+      - "22555:22555"
+    networks:
+      default:
+        ipv4_address: 172.28.0.6
+    command:
+      dogecoind
+      -printtoconsole
+      -regtest=1
+      -txindex=1
+      -listen=1
+      -server=1
+      -dnsseed=0
+      -upnp=0
+      -port=22555
+      -rpcport=22555
+      -rpcallowip="172.0.0.0/8"
+      -rpcbind="dogecoin"
+      -deprecatedrpc=generate
+      -discover=0
+      -rpcuser=cryptorpc
+      -rpcpassword=local321
+    restart: always
+
+  geth:
+    image: ethereum/client-go:v1.14.13
+    volumes:
+      - ./test/docker/geth-keystore:/keystore
+    ports:
+      - "9545:8545"
+    networks:
+      default:
+        ipv4_address: 172.28.0.7
+    command:
+      --dev
+      --datadir /geth
+      --networkid 1337
+      --http
+      --http.api web3,eth,debug,net
+      --http.corsdomain '*'
+      --http.vhosts '*'
+      --http.addr 0.0.0.0
+      --http.port 8545
+      --keystore /keystore
+      --allow-insecure-unlock
+      --unlock 00a329c0648769a73afac7f9381e08fb43dbea72
+      --password /keystore/pw
+
+  rippled:
+    networks:
+      default:
+        ipv4_address: 172.28.0.8
+    build:
+      context: .
+      dockerfile: ./rippled.Dockerfile
+
+  litecoin:
+    image: uphold/litecoin-core:0.16.3
+    ports:
+      - "10333:10333"
+    networks:
+      default:
+        ipv4_address: 172.28.0.9
+    command:
+      -printtoconsole
+      -regtest=1
+      -txindex=1
+      -listen=1
+      -server=1
+      -irc=0
+      -dnsseed=0
+      -upnp=0
+      -port=10332
+      -rpcport=10333
+      -rpcallowip=172.0.0.0/8
+      -rpcbind="litecoin"
+      -rpcuser=cryptorpc
+      -rpcpassword=local321
+    restart: always
+
+  lightning:
+    image: lightninglabs/lnd:v0.14.1-beta
+    ports:
+      - "11009:11009"
+    volumes:
+      - my_data1:/root/.lnd
+    networks:
+      default:
+        ipv4_address: 172.28.0.5
+    command:
+      --tlsextraip=172.28.0.5
+      --tlsextradomain=lightning
+      --rpclisten=0.0.0.0:11009
+      --bitcoin.active
+      --bitcoin.regtest
+      --bitcoin.node=bitcoind
+      --bitcoind.rpchost=bitcoin:8333
+      --bitcoind.rpcuser=cryptorpc
+      --bitcoind.rpcpass=local321
+      --bitcoind.zmqpubrawblock=tcp://bitcoin:38332
+      --bitcoind.zmqpubrawtx=tcp://bitcoin:38333
+    restart: always
+
+  lightning2:
+    image: sbhat96/lnd-v0.14.1-beta:latest
+    ports:
+      - "11010:11010"
+    volumes:
+      - my_data2:/root/.lnd2
+    networks:
+      default:
+        ipv4_address: 172.28.0.10
+    command:
+      --lnddir=/root/.lnd2
+      --tlsextraip=172.28.0.10
+      --tlsextradomain=lightning
+      --rpclisten=0.0.0.0:11010
+      --bitcoin.active
+      --bitcoin.regtest
+      --bitcoin.node=bitcoind
+      --bitcoind.rpchost=bitcoin:8333
+      --bitcoind.rpcuser=cryptorpc
+      --bitcoind.rpcpass=local321
+      --bitcoind.zmqpubrawblock=tcp://bitcoin:38332
+      --bitcoind.zmqpubrawtx=tcp://bitcoin:38333
+    restart: always
+
+  solana:
+    image: solanalabs/solana:v1.18.26
+    networks:
+      default:
+        ipv4_address: 172.28.0.12
+    build:
+      context: .
+      dockerfile: ./test/docker/solana.Dockerfile
+    ports:
+      - "8899:8899"
+      - "8900:8900"
+    environment:
+      - RUST_LOG=solana=info
+
+volumes:
+  my_data1:
+    driver: local
+  my_data2:
+    driver: local
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
