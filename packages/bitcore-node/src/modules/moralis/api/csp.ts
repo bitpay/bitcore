@@ -27,6 +27,12 @@ export interface MoralisAddressSubscription {
   status?: string;
 }
 
+/**
+ * Single-provider pattern - reference doc Section "Provider Adapters"
+ * This class directly calls Moralis API and transforms responses.
+ * For multi-provider: extract transformation logic into MoralisAdapter,
+ * then use MultiProviderEVMStateProvider to orchestrate multiple adapters.
+ */
 export class MoralisStateProvider extends BaseEVMStateProvider {
   baseUrl = 'https://deep-index.moralis.io/api/v2.2';
   baseStreamUrl = 'https://api.moralis-streams.com/streams/evm';
@@ -130,6 +136,12 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
 
   }
 
+  /**
+   * Reference doc: IIndexedAPIAdapter.getTransaction()
+   * This method calls Moralis API and transforms to internal format.
+   * For multi-provider: move Moralis-specific logic to MoralisAdapter.getTransaction(),
+   * return standardized IEVMTransactionInProcess format.
+   */
   // @override
   async _getTransaction(params: StreamTransactionParams) {
     let { network } = params;
@@ -143,6 +155,11 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     return { tipHeight, found };
   }
 
+  /**
+   * Reference doc: Section "Stream Improvements"
+   * Current pattern: passes req/res deep into stream logic (coupled).
+   * For multi-provider: return stream from adapter, pipe to res at route layer (decoupled).
+   */
   // @override
   async _buildAddressTransactionsStream(params: StreamAddressUtxosParams) {
     const { req, res, args, network, address } = params;
