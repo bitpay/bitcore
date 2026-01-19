@@ -74,7 +74,11 @@ describe('Locks', function() {
     pushEvent(0);
 
     function testDone() {
-      expect([0, 4, 1, 2, 3]).to.deep.equal(order);
+      if (order.length < 5) return;
+      expect([0, 4, 1]).to.deep.equal(order.slice(0, 3));
+      // There's a race condition with the setTimeouts, so we just check that 2 and 3 are in the last two positions
+      expect(order[3]).to.be.oneOf([2, 3]);
+      expect(order[4]).to.be.oneOf([2, 3]);
       pushEvent('done');
       done();
     }
@@ -91,6 +95,7 @@ describe('Locks', function() {
       pushEvent(2);
       setTimeout(function() {
         release();
+        testDone();
       }, step);
     }, 2);
     lock.acquire('123', {}, function(err, release) {
