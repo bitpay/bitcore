@@ -1398,6 +1398,23 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v4/fiatrates/:code/', (req, res) => {
+      SetPublicCache(res, 5 * ONE_MINUTE);
+      let server: WalletService;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.externalServices.coinGecko.coinGeckoGetFiatRates(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
     // DEPRECATED
     router.post('/v1/pushnotifications/subscriptions/', (req, res) => {
       getServerWithAuth(req, res, server => {

@@ -191,15 +191,34 @@ export class GnosisApi {
 
     let transactionStream = new Readable({ objectMode: true });
     const ethTransactionTransform = new EVMListTransactionsStream([multisigContractAddress, args.tokenAddress]);
-    const populateReceipt = new PopulateReceiptTransform();
-    const populateEffects = new PopulateEffectsTransform();
+    const EVM = getCSP(chain, network);
+    const populateReceipt = new PopulateReceiptTransform(EVM);
+    const populateEffects = new PopulateEffectsTransform(EVM);
 
-    transactionStream = EVMTransactionStorage.collection
+    // Store cursor reference for cleanup
+    const cursor = EVMTransactionStorage.collection
       .find(query)
       .sort({ blockTimeNormalized: 1 })
       .addCursorFlag('noCursorTimeout', true);
 
-    transactionStream = transactionStream.pipe(populateEffects); // For old db entires
+    // Add cleanup handlers when client disconnects
+    let cursorClosed = false;
+    const cleanupCursor = () => {
+      if (!cursorClosed) {
+        cursorClosed = true;
+        try {
+          cursor.close();
+        } catch {
+          // Cursor might already be closed, ignore
+        }
+      }
+    };
+
+    const { req } = params;
+    req.on('close', cleanupCursor);
+    res.on('close', cleanupCursor);
+
+    transactionStream = cursor.pipe(populateEffects); // For old db entries
 
     if (multisigContractAddress) {
       const multisigTransform = new MultisigRelatedFilterTransform(multisigContractAddress, args.tokenAddress);

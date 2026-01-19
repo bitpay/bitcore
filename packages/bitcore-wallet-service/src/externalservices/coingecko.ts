@@ -18,12 +18,60 @@ type CoinMarketStats = {
   about?: string;
 };
 
+const SUPPORTED_FIAT_CODES = new Set(Defaults.FIAT_CURRENCIES.map(f => f.code));
+
 export class CoinGeckoService {
   request: any = request;
   storage: Storage;
 
   constructor(storage) {
     this.storage = storage;
+  }
+
+  private async coinGeckoGetFiatRatesForId(
+    args: {
+      id: string;
+      vsCurrency: string;
+      days: number;
+    }
+  ): Promise<Array<{ ts: number; rate: number }>> {
+    const { id, vsCurrency, days } = args;
+    const cacheKey = `cgFiatRates:${id}:${vsCurrency}:${days}`;
+
+    return new Promise((resolve, reject) => {
+      this.storage.checkAndUseGlobalCache(cacheKey, Defaults.COIN_GECKO_MARKET_STATS_CACHE_DURATION, async (err, values, oldvalues) => {
+        if (err) logger.warn('CoinGecko fiat rates cache check failed: %o', err);
+        if (values) return resolve(values);
+
+        try {
+          const credentials = this.coinGeckoGetCredentials();
+          const headers = this.coinGeckoGetHeaders(credentials.API_KEY);
+          const intervalParam = days >= 90 ? '&interval=daily' : '';
+          const chartUrl = `${credentials.API}/v3/coins/${encodeURIComponent(id)}/market_chart?vs_currency=${encodeURIComponent(
+            vsCurrency
+          )}&days=${encodeURIComponent(days.toString())}${intervalParam}`;
+          const chartBody = await this.coinGeckoGetJson(chartUrl, headers);
+
+          const prices: Array<[number, number]> = chartBody?.prices || [];
+          const response = prices.map(p => ({ ts: p[0], rate: p[1] }));
+
+          this.storage.storeGlobalCache(cacheKey, response, storeErr => {
+            if (storeErr) logger.warn('Could not cache CoinGecko fiat rates: %o', storeErr);
+            return resolve(response);
+          });
+        } catch (e: any) {
+          const statusCode = e?.statusCode;
+          if (statusCode === 429 && oldvalues) {
+            return resolve(oldvalues);
+          }
+          if (oldvalues) {
+            logger.warn('Using old cached CoinGecko fiat rates values');
+            return resolve(oldvalues);
+          }
+          return reject(e);
+        }
+      });
+    });
   }
 
   private coinGeckoGetCredentials() {
@@ -35,6 +83,14 @@ export class CoinGeckoService {
     };
 
     return credentials;
+  }
+
+  private coinGeckoGetHeaders(apiKey: string): Record<string, string | undefined> {
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'x-cg-pro-api-key': apiKey
+    };
   }
 
   private getDefaultMarketStatsSymbols(): string[] {
@@ -75,16 +131,40 @@ export class CoinGeckoService {
           json: true
         },
         (err, data) => {
-          const status = data?.body?.status;
-          const statusCode = data?.statusCode || status?.error_code;
+          const body = data?.body;
+          const status = body?.status;
+          const httpStatusCode = data?.statusCode;
+          const coinGeckoErrorCode = status?.error_code;
 
-          if (err) return reject(err.body ?? err);
-          if (statusCode === 429) {
+          if (err) {
+            logger.error('CoinGecko request failed: %o', {
+              url,
+              httpStatusCode,
+              coinGeckoErrorCode,
+              err: err?.message || err,
+              body
+            });
+            return reject(err.body ?? err);
+          }
+
+          if (httpStatusCode === 429 || coinGeckoErrorCode === 429) {
+            logger.warn('CoinGecko rate limit: %o', { url, httpStatusCode, coinGeckoErrorCode, body });
             const rateLimitErr: any = new Error('coinGecko rate limit');
             rateLimitErr.statusCode = 429;
             return reject(rateLimitErr);
           }
-          return resolve(data?.body);
+
+          const hasCoinGeckoError = !!(status?.error_code || status?.error_message);
+          if ((httpStatusCode && httpStatusCode >= 400) || hasCoinGeckoError) {
+            logger.error('CoinGecko request failed: %o', { url, httpStatusCode, coinGeckoErrorCode, body });
+            const cgErr: any = new Error(status?.error_message || body?.status || 'coinGecko error');
+            cgErr.statusCode = httpStatusCode || coinGeckoErrorCode;
+            cgErr.coinGeckoErrorCode = coinGeckoErrorCode;
+            cgErr.body = body;
+            return reject(cgErr);
+          }
+
+          return resolve(body);
         }
       );
     });
@@ -93,6 +173,9 @@ export class CoinGeckoService {
   coinGeckoGetMarketStats(req): Promise<CoinMarketStats[]> {
     return new Promise((resolve, reject) => {
       const currency = (req.params?.['code'] || 'USD').toString().toUpperCase();
+      if (!SUPPORTED_FIAT_CODES.has(currency)) {
+        return reject(new Error(`Unsupported fiat currency code '${currency}'`));
+      }
       const vsCurrency = currency.toLowerCase();
       const coinParam = (req.query?.coin as string) || null;
       const symbols = this.getDefaultMarketStatsSymbols();
@@ -134,11 +217,7 @@ export class CoinGeckoService {
 
       const cacheKey = `cgMarketStats:${vsCurrency}`;
       const credentials = this.coinGeckoGetCredentials();
-      const headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'x-cg-pro-api-key': credentials.API_KEY
-      };
+      const headers = this.coinGeckoGetHeaders(credentials.API_KEY);
 
       this.storage.checkAndUseGlobalCache(cacheKey, Defaults.COIN_GECKO_MARKET_STATS_CACHE_DURATION, async (err, values, oldvalues) => {
         if (err) logger.warn('CoinGecko market stats cache check failed: %o', err);
@@ -240,6 +319,63 @@ export class CoinGeckoService {
     });
   }
 
+  coinGeckoGetFiatRates(req): Promise<Record<string, Array<{ ts: number; rate: number }>> | Array<{ ts: number; rate: number }>> {
+    return new Promise((resolve, reject) => {
+      const currency = (req.params?.['code'] || '').toString().toUpperCase();
+      if (!SUPPORTED_FIAT_CODES.has(currency)) {
+        return reject(new Error(`Unsupported fiat currency code '${currency}'`));
+      }
+      const vsCurrency = currency.toLowerCase();
+      const coinParam = (req.query?.coin as string) || null;
+
+      const allowedDays = new Set([1, 7, 30, 90, 365, 1825]);
+      let days = 100000; // default to all time (daily rates)
+      if (req.query?.days !== undefined) {
+        const parsed = +req.query.days;
+        if (!allowedDays.has(parsed)) return reject(new Error('Invalid days'));
+        days = parsed;
+      }
+
+      if (coinParam) {
+        let id: string;
+        try {
+          id = this.resolveCoinGeckoId(coinParam);
+        } catch (e) {
+          return reject(e);
+        }
+
+        this.coinGeckoGetFiatRatesForId({ id, vsCurrency, days })
+          .then(resolve)
+          .catch(reject);
+
+        return;
+      }
+
+      const symbols = this.getDefaultMarketStatsSymbols();
+
+      Promise.allSettled(
+        symbols.map(async symbol => {
+          const coin = symbol.trim().toLowerCase();
+          const id = this.resolveCoinGeckoId(symbol);
+          const rates = await this.coinGeckoGetFiatRatesForId({ id, vsCurrency, days });
+          return { coin, rates };
+        })
+      )
+        .then(results => {
+          const out: Record<string, Array<{ ts: number; rate: number }>> = {};
+
+          for (const r of results) {
+            if (r.status === 'fulfilled') {
+              out[r.value.coin] = r.value.rates;
+            }
+          }
+
+          return resolve(out);
+        })
+        .catch(reject);
+    });
+  }
+
   coinGeckoGetTokens(req): Promise<Array<{
     chainId: string;
     address: string;
@@ -252,6 +388,7 @@ export class CoinGeckoService {
       const chain = req.params?.['chain'] || 'eth';
       const cacheKey = `cgTokenList:${chain}`;
       const credentials = this.coinGeckoGetCredentials();
+      const headers = this.coinGeckoGetHeaders(credentials.API_KEY);
 
       this.storage.checkAndUseGlobalCache(cacheKey, Defaults.COIN_GECKO_CACHE_DURATION, (err, values, oldvalues) => {
         if (err) logger.warn('CoinGecko token list cache check failed: %o', err);
@@ -271,11 +408,6 @@ export class CoinGeckoService {
         if (!assetId) return reject(new Error(`Unsupported chain '${chain}'`));
 
         const URL: string = `${credentials.API}/v3/token_lists/${assetId}/all.json`;
-        const headers = {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'x-cg-pro-api-key': credentials.API_KEY
-        };
 
         this.request.get(
           URL,
