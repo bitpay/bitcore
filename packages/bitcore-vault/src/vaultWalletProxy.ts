@@ -307,7 +307,7 @@ export class VaultWalletProxy {
     if (!this.publicKey) throw new Error('Vault not initialized (missing public key)');
 
     const promptText = opts.prompt ?? 'Passphrase: ';
-    const maxBytes = Math.min(Math.max(opts.maxBytes ?? 256, 8), 4096);
+    const maxBytes = Math.min(Math.max(opts.maxBytes ?? 256, 8), 190);
     const stdin = process.stdin as NodeJS.ReadStream & { setRawMode?: (mode: boolean) => void };
     const plain = Buffer.alloc(maxBytes);
     let len = 0;

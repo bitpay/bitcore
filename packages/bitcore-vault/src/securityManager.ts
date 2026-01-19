@@ -38,10 +38,6 @@ export class SecurityManager {
     const { total } = secureHeapUsed();
     return total > 0;
   }
-    
-  public secureHeapAllocationCheck(): boolean {
-    return this.secureHeapBaseAllocation >= SecurityManager.getCurrentSecureHeapAllocation();
-  } 
 
   // Helpers
   public static getCurrentSecureHeapAllocation(): number {
