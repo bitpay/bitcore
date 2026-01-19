@@ -631,4 +631,4 @@ export const MultisigAbi = [
     name: 'ContractInstantiation',
     type: 'event'
   }
-];
+] as const;

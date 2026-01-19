@@ -65,7 +65,16 @@ describe('Ethereum', function() {
     const gasPrice = Number(await web3.eth.getGasPrice());
     const tx = await wallet.newTx({ recipients: [{ address: to, amount }], from: accounts[from], nonce, gasLimit: 21000, gasPrice });
     const signedTx = await wallet.signTx({ tx, signingKeys: [{ privKey: privKeys[from] }] });
-    await web3.eth.sendSignedTransaction(signedTx);
+
+    // Directly awaiting web3.eth.sendSignedTransaction() waits for the tx receipt which adds a delay
+    //  and throws errors about indexing in progress on a freshly started geth instance
+    //  so we use the `transactionHash` event to get the txid immediately
+    return await new Promise<string>((resolve) => {
+      web3.eth.sendSignedTransaction(signedTx)
+        .on('transactionHash', resolve)
+        .on('error', console.error)
+        .catch(console.error);
+    });
   }
 
   before(async function() {
@@ -101,7 +110,6 @@ describe('Ethereum', function() {
     const { web3 } = await worker.getWeb3();
     await sendTransaction('erigon', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet);
     await sawBlock;
-    await worker.disconnect();
     await worker.stop();
   });
 
@@ -119,12 +127,11 @@ describe('Ethereum', function() {
     const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
 
     const { web3 } = await worker.getWeb3();
-    const nonce = await web3.eth.getTransactionCount(accounts['geth']);
+    const nonce = Number(await web3.eth.getTransactionCount(accounts['geth']));
     // sending multiple tx to entice geth to mine a block because sometimes it doesn't mine even with automine enabled
-    sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet, nonce),
-    sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet, nonce + 1);
+    await sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet, nonce);
+    await sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet, nonce + 1);
     await sawBlock;
-    await worker.disconnect();
     await worker.stop();
     getWeb3Stub.restore();
   });
@@ -154,7 +161,6 @@ describe('Ethereum', function() {
     const { web3 } = await worker.getWeb3();
     await sendTransaction('erigon', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet);
     await sawBlock;
-    await worker.disconnect();
     await worker.stop();
     const afterBalance = await wallet.getBalance();
     expect(afterBalance).to.not.deep.eq(beforeBalance);

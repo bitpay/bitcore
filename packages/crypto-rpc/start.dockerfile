@@ -4,6 +4,7 @@ COPY package.json .
 RUN mkdir ~/.ssh
 RUN ssh-keyscan github.com >> ~/.ssh/known_hosts
 RUN npm install
+RUN rm -rf ./node_modules/crypto-wallet-core
 ADD . .
 ENV PATH="/crypto-rpc/test/docker/solc-v0.4.24:${PATH}"
 CMD ["npm", "run", "migrate"]

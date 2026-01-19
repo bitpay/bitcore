@@ -1,5 +1,5 @@
 import { createRequire } from 'module';
-import * as ethers from 'ethers';
+import { ethers } from 'crypto-wallet-core';
 // eslint-disable-next-line import/order
 import { EthRpc } from '../eth/EthRpc.js';
 
@@ -31,19 +31,31 @@ export class Erc20Rpc extends EthRpc {
       .transfer(address, amountStr)
       .encodeABI();
 
-    const wallet = this.#getWallet(account);
-    if (!wallet) {
-      throw new Error('Account not found. Make sure you add it first with addAccount()');
-    }
-  
-    const signed = await wallet.signTransaction({
+    const sendParams = {
       from: account,
       gasPrice,
       data: contractData,
       to: this.tokenContractAddress,
       nonce,
       gas
-    });
+    };
+
+
+    if (!gas) {
+      const estimatedGas = await this.web3.eth.estimateGas(sendParams);
+      sendParams.gas = estimatedGas; 
+    }
+
+    if (nonce == null) {
+      sendParams.nonce = await this.getTransactionCount({ address: account });
+    }
+
+    const wallet = this.#getWallet(account);
+    if (!wallet) {
+      throw new Error('Account not found. Make sure you add it first with addAccount()');
+    }
+
+    const signed = await wallet.signTransaction(sendParams);
     const txid = await this.sendRawTransaction({ rawTx: signed.rawTransaction });
     return txid;
   }
@@ -55,10 +67,10 @@ export class Erc20Rpc extends EthRpc {
         .call();
       return balance;
     } else {
-      const wallets = await this.web3.eth.accounts.wallet;
-      const balances = await Promise.all(wallets.map(async (wallet) => {
-        const balance = await this.getBalance({ address: wallet.address });
-        return { account: wallet.address, balance };
+      const balances = await Promise.all(Array.from({ length: this.web3.eth.accounts.wallet.length }, async (_, idx) => {
+        const address = this.web3.eth.accounts.wallet[idx].address;
+        const balance = await this.getBalance({ address });
+        return { account: address, balance };
       }));
       return balances;
     }

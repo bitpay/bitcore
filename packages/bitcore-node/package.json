@@ -93,12 +93,7 @@
     "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
     "@metaplex-foundation/umi": "^1.2.0",
     "@metaplex-foundation/umi-bundle-defaults": "^1.2.0",
-    "@solana-program/compute-budget": "^0.7.0",
-    "@solana-program/memo": "^0.7.0",
-    "@solana-program/system": "^0.7.0",
-    "@solana-program/token": "^0.5.1",
-    "@solana/kit": "^2.1.0",
-    "@solana/spl-token-registry": "^0.2.4574",
+    "@solana/spl-token-registry": "0.2.4574",
     "abi-decoder": "2.4.0",
     "bitcore-client": "^11.4.7",
     "bitcore-lib": "^11.4.5",
@@ -110,7 +105,7 @@
     "bitcore-p2p-doge": "^11.4.5",
     "bitcore-wallet-client": "^11.4.7",
     "cors": "2.8.4",
-    "crypto-rpc": "https://github.com/bitpay/crypto-rpc.git#d823f70c13937e332289f75728c52bf7d3c81de5",
+    "crypto-rpc": "^11.4.5",
     "crypto-wallet-core": "^11.4.7",
     "express": "4.19.2",
     "lodash": "4.17.11",
@@ -119,9 +114,7 @@
     "secp256k1": "4.0.3",
     "socket.io": "4.8.1",
     "source-map-support": "^0.5.13",
-    "web3": "1.7.0",
-    "winston": "3.2.0",
-    "xrpl": "2.6.0"
+    "winston": "3.2.0"
   },
   "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4"
 }

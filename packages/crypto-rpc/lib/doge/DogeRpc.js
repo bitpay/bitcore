@@ -5,11 +5,11 @@ export class DogeRpc extends BtcRpc {
   constructor(config) {
     super(config);
     const {
-      rpcPort: port,
-      rpcUser: user,
-      rpcPass: pass,
+      protocol,
       host,
-      protocol
+      port,
+      user,
+      pass
     } = config;
     this.rpc = new DogecoinRPC({ host, port, user, pass, protocol });
   }

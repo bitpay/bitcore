@@ -1750,4 +1750,28 @@ describe('Transaction', function() {
       expect(regtestId).to.equal(13375);
     });
   });
+
+  describe('ETH _toHex', function() {
+    it('should convert number to hex string', function() {
+      const ETHTxProvider = Transactions.get({ chain: 'ETH' });
+      const result = ETHTxProvider._toHex(200000);
+      expect(result).to.equal('0x30d40');
+    });
+    it('should convert number string to hex string', function() {
+      const ETHTxProvider = Transactions.get({ chain: 'ETH' });
+      const result = ETHTxProvider._toHex('200000');
+      expect(result).to.equal('0x30d40');
+    });
+    it('should convert bigint to hex string', function() {
+      const ETHTxProvider = Transactions.get({ chain: 'ETH' });
+      const result = ETHTxProvider._toHex(200000n);
+      expect(result).to.equal('0x30d40');
+    });
+    it('should leave 0x-prefix hex string unchanged', function() {
+      const ETHTxProvider = Transactions.get({ chain: 'ETH' });
+      const result = ETHTxProvider._toHex('0x200000');
+      expect(result).to.equal('0x200000');
+    });
+
+  });
 });

@@ -1,4 +1,4 @@
-import Web3 from 'web3';
+import { Web3 } from 'crypto-wallet-core';
 import { MongoBound } from '../../../../models/base';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { IEVMTransactionInProcess, IEVMTransactionTransformed } from '../types';

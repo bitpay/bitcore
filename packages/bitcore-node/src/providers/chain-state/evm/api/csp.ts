@@ -1,8 +1,6 @@
 import { CryptoRpc } from 'crypto-rpc';
+import { Utils } from 'crypto-wallet-core';
 import { ObjectID } from 'mongodb';
-import Web3 from 'web3';
-import { Transaction } from 'web3-eth';
-import { AbiItem } from 'web3-utils';
 import Config from '../../../../config';
 import {
   historical,
@@ -47,14 +45,16 @@ import { ERC20Abi } from '../abi/erc20';
 import { MultisendAbi } from '../abi/multisend';
 import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
-import { ERC20Transfer, EVMTransactionJSON, IEVMBlock, IEVMTransaction, IEVMTransactionInProcess } from '../types';
+import { EVMTransactionJSON, IEVMBlock, IEVMTransaction, IEVMTransactionInProcess } from '../types';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateEffectsTransform } from './populateEffectsTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
 import { EVMListTransactionsStream } from './transform';
+import type { EthRpc } from 'crypto-rpc/lib/eth/EthRpc';
+import type { Web3, Web3Types } from 'crypto-wallet-core';
 
-export interface GetWeb3Response { rpc: CryptoRpc; web3: Web3; dataType: string; lastPingTime?: number };
+export interface GetWeb3Response { rpc: EthRpc; web3: Web3; dataType: string; lastPingTime?: number };
 
 export interface BuildWalletTxsStreamParams {
   transactionStream: TransformWithEventPipe;
@@ -108,7 +108,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     const providerConfig = getProvider({ network, dataType, config: this.config });
     // Default to using ETH CryptoRpc with all EVM chain configs
     const rpcConfig = { ...providerConfig, chain: 'ETH', currencyConfig: {} };
-    const rpc = new CryptoRpc(rpcConfig, {}).get('ETH');
+    const rpc = new CryptoRpc(rpcConfig as any).get('ETH') as EthRpc;
     const rpcObj = { rpc, web3: rpc.web3, dataType: rpcConfig.dataType || 'combined' };
     if (!BaseEVMStateProvider.rpcs[this.chain]) {
       BaseEVMStateProvider.rpcs[this.chain] = {};
@@ -122,13 +122,13 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   async erc20For(network: string, address: string) {
     const { web3 } = await this.getWeb3(network);
-    const contract = new web3.eth.Contract(ERC20Abi as AbiItem[], address);
+    const contract = new web3.eth.Contract(ERC20Abi, address);
     return contract;
   }
 
   async getMultisendContract(network: string, address: string) {
     const { web3 } = await this.getWeb3(network);
-    const contract = new web3.eth.Contract(MultisendAbi as AbiItem[], address);
+    const contract = new web3.eth.Contract(MultisendAbi, address);
     return contract;
   }
 
@@ -274,8 +274,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       cacheKey,
       async () => {
         if (tokenAddress) {
-          const token = new web3.eth.Contract(ERC20Abi as AbiItem[], tokenAddress);
-          const balance = await token.methods.balanceOf(address).call({}, blockNumber);
+          const token = new web3.eth.Contract(ERC20Abi, tokenAddress);
+          const balance = await token.methods.balanceOf(address).call<bigint>({}, blockNumber);
           const numberBalance = '0x' + BigInt(balance).toString(16);
           return { confirmed: numberBalance, unconfirmed: '0x0', balance: numberBalance };
         } else {
@@ -306,9 +306,10 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     if (!tx.receipt) {
       const receipt = await this.getReceipt(tx.network, tx.txid);
       if (receipt) {
-        const fee = receipt.gasUsed * tx.gasPrice;
+        const fee = Number(BigInt(receipt.gasUsed) * BigInt(tx.gasPrice));
+        // TEST if/how this db save works with bigint values in receipt
         await EVMTransactionStorage.collection.updateOne({ _id: tx._id }, { $set: { receipt, fee } });
-        tx.receipt = receipt;
+        tx.receipt = receipt as any;
         tx.fee = fee;
       }
     }
@@ -622,59 +623,63 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     address: string,
     tokenAddress: string,
     args: Partial<StreamWalletTransactionsArgs> = {}
-  ): Promise<Array<Partial<Transaction>>> {
+  ): Promise<Array<Partial<Web3Types.TransactionInfo>>> {
     const token = await this.erc20For(network, tokenAddress);
-    let windowSize = 100;
+    let windowSize = 100n;
     const { web3 } = await this.getWeb3(network);
     const tip = await web3.eth.getBlockNumber();
     
-    // If endBlock or startBlock is negative, it is a block offset from the tip
-    if (args.endBlock! < 0) {
-      args.endBlock = tip + Number(args.endBlock!);
-    }
-    if (args.startBlock! < 0) {
-      args.startBlock = tip + Number(args.startBlock!);
-    }
-
-    args.endBlock = Math.min(args.endBlock ?? tip, tip);
-    args.startBlock = Math.max(args.startBlock != null ? Number(args.startBlock) : args.endBlock - 10000, 0);
-    
     if (isNaN(args.startBlock!) || isNaN(args.endBlock!)) {
       throw new Error('startBlock and endBlock must be numbers');
-    } else if (args.endBlock < args.startBlock) {
+    }
+
+    let endBlock = args.endBlock == null ? null : BigInt(args.endBlock);
+    let startBlock = args.startBlock == null ? null : BigInt(args.startBlock);
+
+    // If endBlock or startBlock is negative, it is a block offset from the tip
+    if (endBlock! < 0n) {
+      endBlock = tip + endBlock!;
+    }
+    if (startBlock! < 0n) {
+      startBlock = tip + startBlock!;
+    }
+
+    endBlock = Utils.BI.min<bigint>([endBlock ?? tip, tip]) as bigint;
+    startBlock = Utils.BI.max<bigint>([startBlock != null ? startBlock : endBlock - 10000n, 0n]) as bigint;
+    
+    if (startBlock! > endBlock) {
       throw new Error('startBlock cannot be greater than endBlock');
-    } else if (args.endBlock - args.startBlock > 10000) {
+    } else if (endBlock - startBlock > 10000n) {
       throw new Error('Cannot scan more than 10000 blocks at a time. Please limit your search with startBlock and endBlock');
     }
 
-    windowSize = Math.min(windowSize, args.endBlock - args.startBlock);
-    let endBlock = args.endBlock;
-    const tokenTransfers: Partial<Transaction>[] = [];
-    while (windowSize > 0) {
+    windowSize = Utils.BI.min<bigint>([windowSize, endBlock - startBlock]);
+    const tokenTransfers: Partial<Web3Types.TransactionInfo>[] = [];
+    while (windowSize > 0n) {
       const [sent, received] = await Promise.all([
         token.getPastEvents('Transfer', {
           filter: { _from: address },
           fromBlock: endBlock - windowSize,
           toBlock: endBlock
-        }),
+        }) as Promise<Array<Web3Types.EventLog>>,
         token.getPastEvents('Transfer', {
           filter: { _to: address },
           fromBlock: endBlock - windowSize,
           toBlock: endBlock
-        })
+        }) as Promise<Array<Web3Types.EventLog>>
       ]);
       tokenTransfers.push(...this.convertTokenTransfers([...sent, ...received]));
-      endBlock -= windowSize + 1;
-      windowSize = Math.min(windowSize, endBlock - args.startBlock);
+      endBlock -= windowSize + 1n;
+      windowSize = Utils.BI.min<bigint>([windowSize, endBlock - startBlock]);
     }
     return tokenTransfers;
   }
 
-  convertTokenTransfers(tokenTransfers: Array<ERC20Transfer>) {
+  convertTokenTransfers(tokenTransfers: Array<Web3Types.EventLog>) {
     return tokenTransfers.map(this.convertTokenTransfer);
   }
 
-  convertTokenTransfer(transfer: ERC20Transfer) {
+  convertTokenTransfer(transfer: Web3Types.EventLog) {
     const { blockHash, blockNumber, transactionHash, returnValues, transactionIndex } = transfer;
     return {
       blockHash,
@@ -685,7 +690,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       from: returnValues['_from'],
       to: returnValues['_to'],
       value: returnValues['_value']
-    } as Partial<Transaction>;
+    } as Partial<Web3Types.TransactionInfo>;
   }
 
   @realtime
@@ -710,14 +715,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     args: StreamWalletTransactionsArgs
   ) {
     const addresses = await this.getWalletAddresses(walletId);
-    const allTokenQueries = Array<Promise<Array<Partial<Transaction>>>>();
-    for (const walletAddress of addresses) {
-      const transfers = this.getErc20Transfers(network, walletAddress.address, tokenAddress, args);
-      allTokenQueries.push(transfers);
-    }
-    const batches = await Promise.all(allTokenQueries);
-    const txs = batches.reduce((agg, batch) => agg.concat(batch));
-    return txs.sort((tx1, tx2) => tx1.blockNumber! - tx2.blockNumber!);
+    const batches = await Promise.all(addresses.map(walletAddress => this.getErc20Transfers(network, walletAddress.address, tokenAddress, args)));
+    return batches.flat().sort((tx1, tx2) => Number(BigInt(tx1.blockNumber!) - BigInt(tx2.blockNumber!)));
   }
 
   @realtime
@@ -762,7 +761,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
           // Gas estimation might fail with `insufficient funds` if value is higher than balance for a normal send.
           // We want this method to give a blind fee estimation, though, so we should not include the value
           // unless it's needed for estimating smart contract execution.
-          _value = web3.utils.toHex(value);
+          _value = Utils.toHex(value);
         }
 
         const opts = {
@@ -772,7 +771,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
               data,
               to: to && to.toLowerCase(),
               from: from && from.toLowerCase(),
-              // gasPrice: web3.utils.toHex(gasPrice), // Setting this lower than the baseFee of the last block will cause an error. Better to just leave it out.
+              // gasPrice: Utils.toHex(gasPrice), // Setting this lower than the baseFee of the last block will cause an error. Better to just leave it out.
               value: _value
             }
           ],
@@ -912,7 +911,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         throw new Error('invalid block id provided');
       }
       const { web3 } = await this.getWeb3(network);
-      const tipHeight = await web3.eth.getBlockNumber();
+      const tipHeight = Number(await web3.eth.getBlockNumber());
       if (tipHeight < height) {
         return [];
       }
@@ -924,7 +923,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       if (!blk || blk.number == null) {
         throw new Error(`Could not get block ${blockId}`);
       }
-      height = blk.number;
+      height = Number(blk.number);
     }
 
     if (height != null) {
@@ -935,7 +934,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     if (query.startBlock == null || query.endBlock == null) {
       // Calaculate range with options
       const { web3 } = await this.getWeb3(network);
-      const tipHeight = await web3.eth.getBlockNumber();
+      const tipHeight = Number(await web3.eth.getBlockNumber());
       query.endBlock = query.endBlock ?? tipHeight;
       query.startBlock = query.startBlock ?? query.endBlock - limit;
     }
@@ -952,7 +951,15 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return r;
   }
 
-  async _getBlockNumberByDate(params) {
+  async _getBlockNumberByDate(params: {
+    date: Date;
+    network?: string;
+    /**
+     * Unused in this method, but is used in the overriding methods of subclasses (e.g. Moralis' CSP).
+     * Removing it from this method's signature causes TS errors in methods above that pass in chainId when inherited by subclasses.
+     */
+    chainId?: string | bigint;
+  }) {
     const { date, network } = params;
     const block = await EVMBlockStorage.collection.findOne({ chain: this.chain, network, timeNormalized: { $gte: date } }, { sort: { timeNormalized: 1 } });
     return block?.height;

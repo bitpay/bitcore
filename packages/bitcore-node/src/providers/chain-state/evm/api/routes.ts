@@ -1,6 +1,6 @@
 import cors from 'cors';
+import { Web3 } from 'crypto-wallet-core';
 import { Router } from 'express';
-import Web3 from 'web3';
 import config from '../../../../config';
 import logger from '../../../../logger';
 import { WebhookStorage } from '../../../../models/webhook';

@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { Request, Response } from 'express-serve-static-core';
 import * as sinon from 'sinon';
 import { Transform, Writable } from 'stream';
-import Web3 from 'web3';
+import { Web3 } from 'crypto-wallet-core';
 import { MongoBound } from '../../../src/models/base';
 import { CacheStorage } from '../../../src/models/cache';
 import { IWallet, WalletStorage } from '../../../src/models/wallet';
