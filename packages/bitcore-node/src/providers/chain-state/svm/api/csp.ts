@@ -3,7 +3,6 @@ import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { PublicKey as UmiPublicKey } from '@metaplex-foundation/umi-public-keys';
 import { TokenListProvider } from '@solana/spl-token-registry';
 import { CryptoRpc } from 'crypto-rpc';
-import { SolRpc } from 'crypto-rpc/lib/sol/SolRpc';
 import { instructionKeys } from 'crypto-rpc/lib/sol/transaction-parser';
 import Config from '../../../../config';
 import logger from '../../../../logger';
@@ -20,6 +19,7 @@ import {
 } from '../../external/providers/provider';
 import { ExternalApiStream } from '../../external/streams/apiStream';
 import { InternalStateProvider } from '../../internal/internal';
+import type { SolRpc } from 'crypto-rpc/lib/sol/SolRpc';
 
 export interface GetSolWeb3Response { rpc: SolRpc; connection: any; umi: any; dataType: string };
 
@@ -55,7 +55,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     const provider = getProvider({ network, dataType, config: this.config });
     const wsPort = provider.wsPort ?? provider.port;
     const rpcConfig = { ...provider, chain: 'SOL', currencyConfig: {}, wsPort };
-    const rpc = new CryptoRpc(rpcConfig, {}).get('SOL');
+    const rpc = new CryptoRpc(rpcConfig, {}).get('SOL') as SolRpc;
     const umi = createUmi(`${provider.protocol}://${provider.host}${provider.port ? `:${provider.port}` : ''}`)
       .use(mplTokenMetadata());
     const rpcObj = {
@@ -485,10 +485,17 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       cacheKey,
       async () => {
         if (tokenAddress) {
-          const ata = await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
-          const { value } = await connection.getTokenAccountBalance(ata).send();
-          const balance = value?.amount || 0;
-          return { confirmed: balance, unconfirmed: 0, balance };
+          try {
+            const ata = await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
+            const { value } = await connection.getTokenAccountBalance(ata).send();
+            const balance = value?.amount || 0;
+            return { confirmed: balance, unconfirmed: 0, balance };
+          } catch (e: any) {
+            if (e?.message?.includes('ATA not initialized')) {
+              return { confirmed: 0, unconfirmed: 0, balance: 0 };
+            }
+            throw e;
+          }
         } else {
           const balance = await rpc.getBalance({ address });
           return { confirmed: balance, unconfirmed: 0, balance };
