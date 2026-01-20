@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import Web3 from 'web3';
-import utils, { AbiItem } from 'web3-utils';
+import { AbiItem } from 'web3-utils';
 import { Constants } from '../../constants';
 import { 
   EVM_CHAIN_NETWORK_TO_CHAIN_ID as chainIds,
@@ -9,7 +9,6 @@ import {
 import { MULTISENDAbi } from '../erc20/abi';
 import type { Key } from '../../types/derivation';
 
-const { toBN } = Web3.utils;
 export class ETHTxProvider {
   chain: string;
 
@@ -33,42 +32,42 @@ export class ETHTxProvider {
     const { recipients, nonce, gasPrice, gasLimit, network, contractAddress, maxGasFee, priorityGasFee, txType } = params;
     let { data } = params;
     let to;
-    let amount;
+    let amount: bigint;
     if (recipients.length > 1) {
       if (!contractAddress) {
         throw new Error('Multiple recipients requires use of multi-send contract, please specify contractAddress');
       }
       const addresses = [];
       const amounts = [];
-      amount = toBN(0);
+      amount = 0n;
       for (const recipient of recipients) {
         addresses.push(recipient.address);
-        amounts.push(toBN(this._valueToString(recipient.amount)));
-        amount = amount.add(toBN(this._valueToString(recipient.amount)));
+        amounts.push(BigInt(this._valueToString(recipient.amount)));
+        amount += BigInt(this._valueToString(recipient.amount));
       }
       const multisendContract = this.getMultiSendContract(contractAddress);
       data = data || multisendContract.methods.sendEth(addresses, amounts).encodeABI();
       to = contractAddress;
     } else {
       to = recipients[0].address;
-      amount = toBN(this._valueToString(recipients[0].amount));
+      amount = BigInt(this._valueToString(recipients[0].amount));
     }
     let { chainId } = params;
     chainId = chainId || this.getChainId(network);
     const txData: any = {
-      nonce: utils.toHex(nonce),
-      gasLimit: utils.toHex(gasLimit),
+      nonce: this._toHex(nonce),
+      gasLimit: this._toHex(gasLimit),
       to,
       data,
-      value: utils.toHex(amount),
+      value: this._toHex(amount),
       chainId
     };
     if (maxGasFee && (txType == null || txType >= 2)) {
-      txData.maxFeePerGas = utils.toHex(maxGasFee);
-      txData.maxPriorityFeePerGas = utils.toHex(priorityGasFee || this.getPriorityFeeMinimum(chainId));
+      txData.maxFeePerGas = this._toHex(maxGasFee);
+      txData.maxPriorityFeePerGas = this._toHex(priorityGasFee || this.getPriorityFeeMinimum(chainId));
       txData.type = 2;
     } else {
-      txData.gasPrice = utils.toHex(gasPrice);
+      txData.gasPrice = this._toHex(gasPrice);
       txData.type = txType || 0;
     }
 
@@ -167,6 +166,11 @@ export class ETHTxProvider {
     return this.applySignature({ tx, signature });
   }
 
+  private _toHex(value: string | number | bigint) {
+    // Convert to BigInt first to normalize behavior across types.
+    // Web3.utils.toHex('20000') -> '0x323030303030' because it calls utf8ToHex for strings
+    return value != null ? Web3.utils.toHex(BigInt(value)) : undefined;
+  }
   transformSignatureObject(params: { obj: any }) {
     const { obj } = params;
     return ethers.Signature.from(obj).serialized;

@@ -19,6 +19,9 @@ import * as Utils from './utils';
 import Validation from './validation';
 
 export type * as Types from './types';
+export type * as Web3Types from 'web3-types';
+
+
 const SolanaProgram = {
   ComputeBudget,
   Memo,

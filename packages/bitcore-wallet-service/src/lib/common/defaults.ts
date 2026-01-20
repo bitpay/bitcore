@@ -336,7 +336,7 @@ export const Defaults = {
   ADDRESS_SYNC_BATCH_SIZE: 500000,
 
   LOCK_WAIT_TIME: 5 * 1000, // wait time 5s
-  LOCK_EXE_TIME: 40 * 1000, // max lock time 50s
+  LOCK_EXE_TIME: 40 * 1000, // max lock time 40s
   SERVER_EXE_TIME: 40 * 1000 * 1.5,
 
   BE_KEY_SALT: 'bws-auth-keysalt',
@@ -433,4 +433,4 @@ export const Defaults = {
 
   TSS_KEYGEN_SCHEME_VERSION: 1,
   TSS_SIGGEN_SCHEME_VERSION: 1,
-};
+} as const;

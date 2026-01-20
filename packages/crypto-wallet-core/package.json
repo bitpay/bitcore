@@ -25,11 +25,11 @@
   "author": "Micah Riggan",
   "license": "MIT",
   "dependencies": {
-    "@solana-program/compute-budget": "^0.7.0",
-    "@solana-program/memo": "^0.7.0",
-    "@solana-program/system": "^0.7.0",
-    "@solana-program/token": "^0.5.1",
-    "@solana/kit": "^2.1.0",
+    "@solana-program/compute-budget": "0.7.0",
+    "@solana-program/memo": "0.7.0",
+    "@solana-program/system": "0.7.0",
+    "@solana-program/token": "0.5.1",
+    "@solana/kit": "2.1.0",
     "bitcore-lib": "^11.4.5",
     "bitcore-lib-cash": "^11.4.5",
     "bitcore-lib-doge": "^11.4.5",
@@ -38,7 +38,7 @@
     "ethers": "6.13.5",
     "info": "0.0.6-beta.0",
     "ripple-binary-codec": "^1.10.0",
-    "web3": "1.4.0",
+    "web3": "4.16.0",
     "xrpl": "2.13.0"
   },
   "devDependencies": {

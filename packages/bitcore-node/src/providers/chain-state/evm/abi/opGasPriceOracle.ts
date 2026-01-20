@@ -1,8 +1,6 @@
-import { AbiItem } from 'web3-utils';
-
 export const OPGasPriceOracleAddress = '0x420000000000000000000000000000000000000F';
 
-export const OPGasPriceOracleAbi: AbiItem[] = [
+export const OPGasPriceOracleAbi = [
   {
     type: 'function',
     name: 'DECIMALS',
@@ -243,5 +241,4 @@ export const OPGasPriceOracleAbi: AbiItem[] = [
     ],
     stateMutability: 'view'
   }
-]
-;
+] as const;

@@ -148,7 +148,6 @@ jobs:
       # - restore_dependency_cache
       - run: | # TODO figure out how to make this only run on a cache miss in restore_dependency_cache
           nvm use default
-          cd packages/crypto-rpc
           npm install
       - persist_to_workspace:
           root: ~/bitcore/packages/crypto-rpc # only persist crypto-rpc package
@@ -220,16 +219,21 @@ jobs:
       - run_test:
           package: bitcore-tss
   crypto-rpc:
-    executor: crypto-rpc
+    executor: main
     steps:
-      - run_crypto_rpc
+      - run_test:
+          package: crypto-rpc
+  # crypto-rpc:
+  #   executor: crypto-rpc
+  #   steps:
+  #     - run_crypto_rpc
       
 workflows:
   version: 2
   build_and_test:
     jobs:
       - build
-      - build-crypto-rpc
+      # - build-crypto-rpc
       - bitcore-node:
           requires:
             - build
@@ -271,4 +275,4 @@ workflows:
             - build
       - crypto-rpc:
           requires:
-            - build-crypto-rpc
+            - build

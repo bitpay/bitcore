@@ -1,5 +1,5 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
-import { Web3 } from 'crypto-wallet-core';
+import { Utils, Web3 } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IWallet } from 'src/lib/model';
 import { IAddress } from 'src/lib/model/address';
@@ -12,9 +12,10 @@ import logger from '../../logger';
 import { ERC20Abi } from './abi-erc20';
 import { InvoiceAbi } from './abi-invoice';
 
-const { toBN } = Web3.utils;
-const Constants = Common.Constants;
-const Defaults = Common.Defaults;
+const {
+  Constants,
+  Defaults
+} = Common;
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];
@@ -183,8 +184,8 @@ export class EthChain implements IChain {
         let fee = 0;
         const defaultGasLimit = this.getDefaultGasLimit(opts);
         const outputAddresses = []; // Parameter for MuliSend contract
-        const outputAmounts = []; // Parameter for MuliSend contract
-        let totalValue = toBN(0); // Parameter for MuliSend contract
+        const outputAmounts: bigint[] = []; // Parameter for MuliSend contract
+        let totalValue = 0n; // Parameter for MuliSend contract
         logger.info(`getFee for address ${from} on network ${network} and chain ${chain}`);
         logger.info('getFee.opts: %o', { from, txType, priorityFeePercentile, gasLimitBuffer });
         logger.info(`[${from}] Add gas limit buffer?: ${!!gasLimitBuffer}`);
@@ -192,9 +193,9 @@ export class EthChain implements IChain {
           // Multisend txs build contract fn parameters (addresses, amounts) and bypass output level gas estimations
           if (opts.multiSendContractAddress) {
             outputAddresses.push(output.toAddress);
-            outputAmounts.push(toBN(BigInt(output.amount).toString()));
+            outputAmounts.push(BigInt(output.amount));
             if (!opts.tokenAddress) {
-              totalValue = totalValue.add(toBN(BigInt(output.amount).toString()));
+              totalValue += BigInt(output.amount);
             }
             // Used as a fallback value if estimateGas fails for multisend
             inGasLimit += output.gasLimit ? output.gasLimit : defaultGasLimit;
@@ -362,7 +363,7 @@ export class EthChain implements IChain {
   }
 
   getDefaultGasLimit(opts) {
-    let defaultGasLimit = opts.tokenAddress ? Defaults.DEFAULT_ERC20_GAS_LIMIT : Defaults.DEFAULT_GAS_LIMIT;
+    let defaultGasLimit: number = opts.tokenAddress ? Defaults.DEFAULT_ERC20_GAS_LIMIT : Defaults.DEFAULT_GAS_LIMIT;
     if (opts.multiSendContractAddress) {
       defaultGasLimit = opts.tokenAddress
         ? Defaults.DEFAULT_MULTISEND_RECIPIENT_ERC20_GAS_LIMIT
@@ -528,13 +529,13 @@ export class EthChain implements IChain {
         output.amount == null ||
         output.amount < 0 ||
         isNaN(output.amount) ||
-        Web3.utils.toBN(BigInt(output.amount).toString()).toString() !== BigInt(output.amount).toString()
+        Utils.toHex(output.amount) !== '0x' + BigInt(output.amount).toString(16)
       ) {
         throw new Error('output.amount is not a valid value: ' + output.amount);
       }
       return true;
     } catch (err) {
-      logger.warn(`Invalid output amount (${output.amount}) in checkValidTxAmount: $o`, err);
+      logger.warn(`Invalid output amount (${output.amount}) in checkValidTxAmount: %o`, err);
       return false;
     }
   }

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { createRequire } from 'module';
-import * as util from 'web3-utils';
+import { ethers } from 'crypto-wallet-core';
 import { CryptoRpc } from '../index.js';
 
 const require = createRequire(import.meta.url);
@@ -29,21 +29,20 @@ const config = {
 };
 
 describe('ERC20 Tests', function() {
-  let txid = '';
+  this.timeout(10000);
   const currency = 'ERC20';
   const currencyConfig = config.currencyConfig;
-  const rpcs = new CryptoRpc(config, currencyConfig);
-
-
-  this.timeout(10000);
-
+  let txid = '';
+  let rpcs;
+  
   before(done => {
+    rpcs = new CryptoRpc(config, currencyConfig);
     setTimeout(done, 5000);
   });
 
   it('should be able to get specific balance', async () => {
     const balance = await rpcs.getBalance({ currency, address: config.account });
-    expect(balance).to.be.gt(0);
+    expect(Number(balance)).to.be.gt(0);
   });
 
   it('should be able to get all balances', async () => {
@@ -52,7 +51,7 @@ describe('ERC20 Tests', function() {
     expect(Array.isArray(balances)).to.be.true;
     expect(balances.length).to.equal(1);
     expect(balances[0].account).to.equal(config.account);
-    expect(balances[0].balance).to.be.gt(0);
+    expect(Number(balances[0].balance)).to.be.gt(0);
     rpcs.rpcs[currency].removeAccount(config.account);
   });
 
@@ -70,10 +69,10 @@ describe('ERC20 Tests', function() {
       gasPrice: 30000000000,
       nonce: 24
     });
-    const decodedParams = await rpcs.getTransaction({ txid });
+    const decodedParams = await rpcs.getTransaction({ currency, txid });
     expect(decodedParams.nonce).to.equal(24n);
     expect(decodedParams.gasPrice).to.equal(30000000000n);
-    expect(util.isHex(txid)).to.be.true;
+    expect(ethers.isHexString(txid)).to.be.true;
   });
 
   it('should be able to send a big transaction', async () => {
@@ -112,8 +111,8 @@ describe('ERC20 Tests', function() {
     expect(emitResults[1].address).to.equal(address);
     expect(emitResults[1].amount).to.equal(amount);
     expect(outputArray.length).to.equal(2);
-    expect(util.isHex(outputArray[0].txid)).to.be.true;
-    expect(util.isHex(outputArray[1].txid)).to.be.true;
+    expect(ethers.isHexString(outputArray[0].txid)).to.be.true;
+    expect(ethers.isHexString(outputArray[1].txid)).to.be.true;
     expect(outputArray[0].txid).to.have.lengthOf(66);
     expect(outputArray[1].txid).to.have.lengthOf(66);
   });

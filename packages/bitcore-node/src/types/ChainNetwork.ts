@@ -10,4 +10,4 @@ export interface Network {
 }
 export type ChainNetwork = Chain & Network;
 
-export interface ChainId { chainId: string | number }
+export interface ChainId { chainId: string | bigint }
