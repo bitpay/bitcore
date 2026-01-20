@@ -1,6 +1,6 @@
 import {FC} from 'react';
 import styled from 'styled-components';
-import CloseLightSvg from 'src/assets/images/close-light.svg'
+import CloseLightSvg from 'src/assets/images/close.svg'
 import {Black, White, Slate30} from '../assets/styles/colors';
 import {size} from 'src/utilities/constants';
 
@@ -10,7 +10,7 @@ const PillBubble = styled.div`
   height: 38px;
   padding-left: 5px;
   margin-right: 10px;
-  
+
   @media screen and (max-width: ${size.mobileL}) {
     height: 25px;
     padding-left: 6px;

@@ -1,7 +1,11 @@
-import * as SolComputeBudget from '@solana-program/compute-budget';
-import * as SolMemo from '@solana-program/memo';
-import * as SolSystem from '@solana-program/system';
-import * as SolToken from '@solana-program/token';
+import { SolanaProgram } from 'crypto-wallet-core';
+
+const {
+  ComputeBudget: SolComputeBudget,
+  Memo: SolMemo,
+  System: SolSystem,
+  Token: SolToken
+} = SolanaProgram;
 
 const solTokenProgramAddress = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 

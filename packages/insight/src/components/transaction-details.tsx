@@ -23,10 +23,11 @@ import {
 } from '../assets/styles/transaction';
 import {Tile, TileDescription} from '../assets/styles/tile';
 import ArrowSvg from '../assets/images/arrow.svg';
-import BlueArrowSvg from '../assets/images/arrow-blue.svg';
+import BlueArrowSvgLight from '../assets/images/light/arrow-blue.svg';
+import BlueArrowSvgDark from '../assets/images/dark/arrow-blue.svg';
 import CircleSvg from '../assets/images/circle.svg';
 import {useNavigate, createSearchParams} from 'react-router-dom';
-import styled from 'styled-components';
+import styled, {useTheme} from 'styled-components';
 import {Slate, SlateDark} from '../assets/styles/colors';
 import DataBox from './data-box';
 
@@ -74,6 +75,7 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
   refVout,
 }) => {
   const navigate = useNavigate();
+  const theme = useTheme();
   const [formattedInputs, setFormattedInputs] = useState<any[]>();
   const [lib, setLib] = useState<any>(getLib(currency));
   const {outputs, txid, blockTime, blockHeight, coinbase, inputs, confirmations, fee, value} =
@@ -81,6 +83,8 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
   const goToAddress = (address: any) => {
     return navigate(`/${currency}/${network}/address/${address}`);
   };
+
+  const BlueArrowSvg = theme.dark ? BlueArrowSvgDark : BlueArrowSvgLight;
 
   const createOptionalSearchParams = (refTxid?: string, refVout?: number) => {
     if (refTxid == null && refVout == null) {
@@ -172,7 +176,7 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                         {isInputSelected(item) ? <SelectedPill>Selected</SelectedPill> : null}
                         <div style={{
                           display: 'flex',
-                          marginTop: '1rem', 
+                          marginTop: '1rem',
                           ...(showDetails && {borderBottom: '2px solid', paddingBottom: '0.25rem'})
                         }}>
                           <ArrowDiv margin='auto .5rem auto 0' pointer>
@@ -204,27 +208,21 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
 
                               <TileDescription padding='0 1rem 0 0' value>
                                 <DataBox label='Tx ID'>
-                                  <TextElipsis>
-                                    <SpanLink
-                                      onClick={() =>
-                                        goToTx(item.mintTxid, undefined, item.mintIndex)
-                                      }>
-                                      {item.mintTxid}
-                                    </SpanLink>
-                                  </TextElipsis>
+                                  <SpanLink
+                                    onClick={() =>
+                                      goToTx(item.mintTxid, undefined, item.mintIndex)
+                                    }>
+                                    {item.mintTxid}
+                                  </SpanLink>
                                 </DataBox>
-                                  
+
                                 <div style={{display: 'flex', gap: '0.7rem', margin: '0 0.2rem'}}>
                                   <DataBox label='Tx Index' style={{margin: 0}}>
-                                    <TextElipsis>
-                                      {item.mintIndex}
-                                    </TextElipsis>
+                                    {item.mintIndex}
                                   </DataBox>
                                   {item.uiConfirmations && confirmations > 0 ? (
                                     <DataBox label='Confirmations' style={{margin: 0}}>
-                                      <ScriptText>
-                                        {item.uiConfirmations + confirmations}
-                                      </ScriptText>
+                                      {item.uiConfirmations + confirmations}
                                     </DataBox>
                                   ) : null}
                                 </div>
@@ -259,7 +257,7 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                 {isOutputSelected(i) ? <SelectedPill>Selected</SelectedPill> : null}
                 <div style={{
                   display: 'flex',
-                  marginTop: '1rem', 
+                  marginTop: '1rem',
                   ...(showDetails && {borderBottom: '2px solid', paddingBottom: '0.25rem'})
                 }}>
                   {getAddress(vo) !== 'Unparsed address' ? (
@@ -299,8 +297,8 @@ const TransactionDetails: FC<TransactionDetailsProps> = ({
                             </TextElipsis>
                           </DataBox>
                         )}
-                          {isOpReturn(vo) && 
-                            <DataBox label="Text"> 
+                          {isOpReturn(vo) &&
+                            <DataBox label="Text">
                               <ScriptText>{getOpReturnText(vo)}</ScriptText>
                             </DataBox>}
                         {vo.script && (

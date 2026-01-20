@@ -4,14 +4,13 @@ import { IEVMTransaction } from '../types';
 import { BaseEVMStateProvider } from './csp';
 
 export class PopulateEffectsTransform extends TransformWithEventPipe {
-  constructor() {
+  constructor(private evm: BaseEVMStateProvider) {
     super({ objectMode: true });
   }
 
   async _transform(tx: MongoBound<IEVMTransaction>, _, done) {
     // Add effects to old db entries
-    const EVM = new BaseEVMStateProvider(tx.chain);
-    tx = EVM.populateEffects(tx);
+    tx = this.evm.populateEffects(tx);
     this.push(tx);
     return done();
   }

@@ -1,4 +1,4 @@
-import utils from 'web3-utils';
+import { utils } from 'web3';
 import type { IValidation } from '../../types/validation';
 
 export class EthValidation implements IValidation {

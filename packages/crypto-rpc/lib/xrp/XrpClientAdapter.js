@@ -1,4 +1,4 @@
-import xrpl from 'xrpl';
+import { xrpl } from 'crypto-wallet-core';
 
 // Array elements should be lower-case
 const SUPPORTED_TRANSACTION_TYPES = new Set(['payment']);

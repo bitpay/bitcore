@@ -10,32 +10,26 @@
   "scripts": {
     "docker:test": "npm run hardhat:compile && npm run hardhat:deploy && npm run hardhat:test && mocha --exit --recursive ./test",
     "docker:test:build": "docker compose build",
-    "docker:test:stop": "docker compose down",
+    "docker:test:down": "docker compose down",
     "hardhat:compile": "cd blockchain/EVM/ && npx hardhat compile",
     "hardhat:deploy": "cd blockchain/EVM/ && export HARDHAT_IGNITION_CONFIRM_DEPLOYMENT=false && export HARDHAT_IGNITION_CONFIRM_RESET=false && npx hardhat --network geth ignition deploy ./ignition/modules/all.js --reset",
-    "hardhat:test": "cd blockchain/EVM/ && npx hardhat test",
+    "hardhat:clean": "rm -rf blockchain/EVM/artifacts blockchain/EVM/cache",
+    "hardhat:test": "npm run hardhat:clean && cd blockchain/EVM/ && npx hardhat test",
     "lint": "eslint .",
     "precommit": "npm run lint",
-    "test": "npm run docker:test:stop && npm run docker:test:build && docker compose run test_runner",
-    "test:ci": "docker-compose down && docker-compose build && docker-compose run test_runner"
+    "test": "docker-compose down && docker-compose build && docker-compose run test_runner",
+    "test:local": "npm run docker:test:down && npm run docker:test:build && docker compose run test_runner"
   },
   "author": "Micah Riggan",
   "license": "MIT",
   "dependencies": {
-    "@solana-program/address-lookup-table": "^0.7.0",
-    "@solana-program/compute-budget": "^0.7.0",
-    "@solana-program/memo": "^0.7.0",
-    "@solana-program/system": "^0.7.0",
-    "@solana-program/token": "^0.5.1",
-    "@solana/kit": "^2.1.0",
+    "@solana-program/address-lookup-table": "0.7.0",
     "bitcoind-rpc": "0.9.1",
     "commander": "2.8.1",
+    "crypto-wallet-core": "^11.4.5",
     "dogecoind-rpc": "0.8.1",
-    "ethers": "6.15.0",
     "lightning": "10.0.1",
-    "promptly": "0.2.0",
-    "web3": "4.16.0",
-    "xrpl": "^2.6.0"
+    "promptly": "0.2.0"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.8",

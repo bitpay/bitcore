@@ -21,14 +21,16 @@ const config = {
 
 describe('BCH Tests', function() {
   this.timeout(30000);
-  let blockHash = '';
   const currency = 'BCH';
   const { currencyConfig } = config;
-  const rpcs = new CryptoRpc(config, currencyConfig);
-  const bitcoin = rpcs.get(currency);
+  let blockHash = '';
+  let rpcs;
+  let bitcoin;
 
   before(async function() {
     this.timeout(60000);
+    rpcs = new CryptoRpc(config, currencyConfig);
+    bitcoin = rpcs.get(currency);
     try {
       await bitcoin.asyncCall('encryptWallet', ['password']);
     } catch (e) {
@@ -143,7 +145,7 @@ describe('BCH Tests', function() {
         }
       });
     });
-    const outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000, maxValue, maxOutputs });
+    const outputArray = await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword, time: 1000, maxValue, maxOutputs });
     await emitPromise;
     expect(outputArray).to.have.lengthOf(4);
     expect(outputArray[0].txid).to.equal(outputArray[1].txid);

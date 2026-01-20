@@ -40,4 +40,4 @@ export const Services = {
       url: 'https://thorchain.org/'
     }
   ]
-};
+} as const;

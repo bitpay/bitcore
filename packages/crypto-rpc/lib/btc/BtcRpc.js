@@ -9,11 +9,11 @@ export class BtcRpc {
   constructor(config) {
     this.config = config;
     const {
-      rpcPort: port,
-      rpcUser: user,
-      rpcPass: pass,
+      protocol,
       host,
-      protocol
+      port,
+      user,
+      pass
     } = config;
     this.rpc = new BitcoinRPC({ host, port, user, pass, protocol });
     this.emitter = new EventEmitter();
