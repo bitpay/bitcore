@@ -770,7 +770,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
     const provider = web3.currentProvider;
     const response = await provider!.request(opts);
-    if (!response.result) throw new Error(response.error as any || response as any);
+    if (!response.result) throw new Error(JSON.stringify(response.error || response));
     return Number(response.result);
   }
 

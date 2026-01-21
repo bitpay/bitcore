@@ -194,7 +194,7 @@ describe('ETH Chain State Provider', function() {
         getBlockNumber: sandbox.stub().resolves(1)
       },
       currentProvider: {
-        send: sandbox.stub()
+        request: sandbox.stub()
       }
     };
 
@@ -207,53 +207,53 @@ describe('ETH Chain State Provider', function() {
     });
 
     it('it should return gas', async () => {
-      web3Stub.currentProvider.send.callsArgWith(1, null, { result: '12345' });
+      web3Stub.currentProvider.request.resolves({ result: '12345' });
       const gas = await ETH.estimateGas({ network, to: '0x123', from: '0xabc', gasPrice: 123, value: 'lorem' });
       expect(gas).to.equal(12345);
     });
 
     it('should return gas for optional params', async () => {
-      web3Stub.currentProvider.send.callsArgWith(1, null, { result: '1234' });
+      web3Stub.currentProvider.request.resolves({ result: '1234' });
       
       const gas = await ETH.estimateGas({ network });
       expect(gas).to.equal(1234);
     });
 
     it('should reject an error response', async () => {
-      web3Stub.currentProvider.send.callsArgWith(1, 'Unavailable server', null); // body is null
+      web3Stub.currentProvider.request.rejects(new Error('Unavailable server')); // body is null
   
       try {
         await ETH.estimateGas({ network });
         throw new Error('should have thrown');
-      } catch (err) {
-        expect(err).to.equal('Unavailable server');
+      } catch (err: any) {
+        expect(err.message).to.equal('Unavailable server');
       }
     });
 
     it('should reject if response body is missing result', async () => {
-      web3Stub.currentProvider.send.callsArgWith(1, null, { message: 'need some param' });
+      web3Stub.currentProvider.request.resolves({ message: 'need some param' });
   
       try {
         await ETH.estimateGas({ network });
         throw new Error('should have thrown');
-      } catch (err) {
-        expect(err).to.deep.equal({ message: 'need some param' });
+      } catch (err: any) {
+        expect(err.message).to.equal(JSON.stringify({ message: 'need some param' }));
       }
     });
 
     it('should reject if response body is missing result and has error', async () => {
-      web3Stub.currentProvider.send.callsArgWith(1, null, { error: { code: 2, message: 'need some param' } });
+      web3Stub.currentProvider.request.resolves({ error: { code: 2, message: 'need some param' } });
   
       try {
         await ETH.estimateGas({ network });
         throw new Error('should have thrown');
-      } catch (err) {
-        expect(err).to.deep.equal({ code: 2, message: 'need some param' });
+      } catch (err: any) {
+        expect(err.message).to.equal(JSON.stringify({ code: 2, message: 'need some param' }));
       }
     });
 
     it('should reject on unexpected error', async () => {
-      web3Stub.currentProvider.send.callsArgWith(1, null, { result: '12345' });
+      web3Stub.currentProvider.request.resolves({ result: '12345' });
   
       try {
         await ETH.estimateGas({ network: 'unexpected' });
@@ -264,7 +264,7 @@ describe('ETH Chain State Provider', function() {
     });
 
     it('should reject on unexpected error in callback', async () => {
-      web3Stub.currentProvider.send.callsArgWith(1, null, null); // body is null
+      web3Stub.currentProvider.request.resolves(null); // body is null
   
       try {
         await ETH.estimateGas({ network });
