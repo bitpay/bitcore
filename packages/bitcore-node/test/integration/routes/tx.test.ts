@@ -454,4 +454,17 @@ describe('Tx Routes', function() {
         done();
       });
   });
+
+  describe('EVM', function() {
+    it('should get transaction', done => {
+      request.get('/api/BASE/testnet/tx/0xa53acec1afd574dff35a771a88262685bc0213716203e0e5459abcab8cd03ff5').expect(200, (err, res) => {
+        if (err) return done(err);
+        const block = res.body;
+        expect(block).to.include({ chain: 'BASE', network: 'sepolia' });
+        expect(block).to.have.property('blockHeight').that.is.a('number');
+        expect(block).to.have.property('blockHash').that.is.a('string').with.length(66);
+        done();
+      });
+    });
+  });
 });

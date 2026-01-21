@@ -94,6 +94,7 @@
         "testnet": {
           "chainSource": "external",
           "module": "./moralis",
+          "needsL1Fee": true,
           "trustedPeers": [
             {
               "host": "localhost",

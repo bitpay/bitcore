@@ -1,10 +1,9 @@
-import { describe } from 'mocha';
-import app from '../../../src/routes';
+import { expect } from 'chai';
 import supertest from 'supertest';
+import app from '../../../src/routes';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 import { resetDatabase, testCoin } from '../../helpers';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
-import { expect } from 'chai';
 
 describe('Address Routes', function () {
   const request = supertest(app);
@@ -305,5 +304,18 @@ describe('Address Routes', function () {
         expect(res.body.unconfirmed).to.equal(address1Balance.unconfirmed);
         done();
       });
+  });
+
+  describe('EVM', function() {
+    it('should get address balance', done => {
+      request.get('/api/ETH/regtest/address/0x9bb6f7fdf81afbd8876d37f3e5e37df416bf8da1/balance')
+        .expect(200, (err, res) => {
+          if (err) console.error(err);
+          expect(res.body.balance).to.be.a('number');
+          expect(res.body.confirmed).to.be.a('number');
+          expect(res.body.unconfirmed).to.be.a('number');
+          done();
+        });
+    });
   });
 });

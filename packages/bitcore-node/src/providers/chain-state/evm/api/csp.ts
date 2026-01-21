@@ -1,6 +1,5 @@
 import { CryptoRpc } from 'crypto-rpc';
 import { Utils } from 'crypto-wallet-core';
-import { ObjectID } from 'mongodb';
 import Config from '../../../../config';
 import {
   historical,
@@ -8,8 +7,7 @@ import {
   realtime
 } from '../../../../decorators/decorators';
 import logger from '../../../../logger';
-import { MongoBound } from '../../../../models/base';
-import { ITransaction } from '../../../../models/baseTransaction';
+import { type ITransaction } from '../../../../models/baseTransaction';
 import { CacheStorage } from '../../../../models/cache';
 import { WalletAddressStorage } from '../../../../models/walletAddress';
 import { InternalStateProvider } from '../../../../providers/chain-state/internal/internal';
@@ -17,29 +15,10 @@ import { Storage } from '../../../../services/storage';
 import { IBlock } from '../../../../types/Block';
 import { ChainId } from '../../../../types/ChainNetwork';
 import { SpentHeightIndicators } from '../../../../types/Coin';
-import { IChainConfig, IEVMNetworkConfig, IProvider } from '../../../../types/Config';
-import {
-  BroadcastTransactionParams,
-  GetBalanceForAddressParams,
-  GetBlockParams,
-  GetWalletBalanceAtTimeParams,
-  GetWalletBalanceParams,
-  IChainStateService,
-  StreamAddressUtxosParams,
-  StreamTransactionParams,
-  StreamTransactionsParams,
-  StreamWalletTransactionsArgs,
-  StreamWalletTransactionsParams,
-  UpdateWalletParams,
-  WalletBalanceType
-} from '../../../../types/namespaces/ChainStateProvider';
 import { partition, range } from '../../../../utils';
 import { StatsUtil } from '../../../../utils/stats';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
-import {
-  getProvider,
-  isValidProviderType
-} from '../../external/providers/provider';
+import { getProvider, isValidProviderType } from '../../external/providers/provider';
 import { ExternalApiStream } from '../../external/streams/apiStream';
 import { ERC20Abi } from '../abi/erc20';
 import { MultisendAbi } from '../abi/multisend';
@@ -51,8 +30,27 @@ import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateEffectsTransform } from './populateEffectsTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
 import { EVMListTransactionsStream } from './transform';
+import type { MongoBound } from '../../../../models/base';
+import type { IChainConfig, IEVMNetworkConfig, IProvider } from '../../../../types/Config';
+import type {
+  BroadcastTransactionParams,
+  GetBalanceForAddressParams,
+  GetBlockParams,
+  GetEstimateSmartFeeParams,
+  GetWalletBalanceAtTimeParams,
+  GetWalletBalanceParams,
+  IChainStateService,
+  StreamAddressUtxosParams,
+  StreamTransactionParams,
+  StreamTransactionsParams,
+  StreamWalletTransactionsArgs,
+  StreamWalletTransactionsParams,
+  UpdateWalletParams,
+  WalletBalanceType
+} from '../../../../types/namespaces/ChainStateProvider';
 import type { EthRpc } from 'crypto-rpc/lib/eth/EthRpc';
 import type { Web3, Web3Types } from 'crypto-wallet-core';
+import type { ObjectID } from 'mongodb';
 
 export interface GetWeb3Response { rpc: EthRpc; web3: Web3; dataType: string; lastPingTime?: number };
 
@@ -132,7 +130,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return contract;
   }
 
-  async getERC20TokenInfo(network: string, tokenAddress: string) {
+  async getERC20TokenInfo(network: string, tokenAddress: string): Promise<{ name: string; decimals: number; symbol: string }> {
     const token = await this.erc20For(network, tokenAddress);
     const [name, decimals, symbol] = await Promise.all([
       token.methods.name().call(),
@@ -142,18 +140,18 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
     return {
       name,
-      decimals,
+      decimals: Number(decimals),
       symbol
     };
   }
 
-  async getERC20TokenAllowance(network: string, tokenAddress: string, ownerAddress: string, spenderAddress: string) {
+  async getERC20TokenAllowance(network: string, tokenAddress: string, ownerAddress: string, spenderAddress: string): Promise<number> {
     const token = await this.erc20For(network, tokenAddress);
-    return await token.methods.allowance(ownerAddress, spenderAddress).call();
+    return Number(await token.methods.allowance(ownerAddress, spenderAddress).call());
   }
 
   @historical
-  async getFee(params) {
+  async getFee(params: GetEstimateSmartFeeParams): Promise<{ feerate: number; blocks: number }> {
     let { network } = params;
     const { target = 4, txType } = params;
     const chain = this.chain;
@@ -161,7 +159,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       network = 'mainnet';
     }
     let cacheKey = `getFee-${chain}-${network}-${target}`;
-    if (txType) {
+    if (txType != null) {
       cacheKey += `-type${txType}`;
     }
 
@@ -171,7 +169,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         let feerate;
         if (txType?.toString() === '2') {
           const { rpc } = await this.getWeb3(network, { type: 'historical' });
-          feerate = await rpc.estimateFee({ nBlocks: target, txType });
+          feerate = await rpc.estimateFee({ nBlocks: target, txType: txType?.toString() });
         } else {
           const txs = await EVMTransactionStorage.collection
             .find({ chain, network, blockHeight: { $gt: 0 } })
@@ -198,7 +196,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     );
   }
 
-  async getPriorityFee(params) {
+  async getPriorityFee(params): Promise<{ feerate: number }> {
     let { network } = params;
     const { percentile } = params;
     const chain = this.chain;
@@ -213,7 +211,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       async () => {
         const { rpc } = await this.getWeb3(network);
         const feerate = await rpc.estimateMaxPriorityFee({ percentile: priorityFeePercentile });
-        return { feerate };
+        return { feerate: Number(feerate) };
       },
       CacheStorage.Times.Minute
     );
@@ -299,7 +297,13 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   async getReceipt(network: string, txid: string) {
     const { web3 } = await this.getWeb3(network, { type: 'historical' });
-    return web3.eth.getTransactionReceipt(txid);
+    const receipt = await web3.eth.getTransactionReceipt(txid);
+    return JSON.parse(JSON.stringify(receipt, (_key, value) => {
+      if (typeof value === 'bigint') {
+        return Number(value);
+      }
+      return value;
+    }));
   }
 
   async populateReceipt(tx: MongoBound<IEVMTransaction>) {
@@ -307,7 +311,6 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       const receipt = await this.getReceipt(tx.network, tx.txid);
       if (receipt) {
         const fee = Number(BigInt(receipt.gasUsed) * BigInt(tx.gasPrice));
-        // TEST if/how this db save works with bigint values in receipt
         await EVMTransactionStorage.collection.updateOne({ _id: tx._id }, { $set: { receipt, fee } });
         tx.receipt = receipt as any;
         tx.fee = fee;
@@ -697,15 +700,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   async getAccountNonce(network: string, address: string) {
     const { web3 } = await this.getWeb3(network, { type: 'realtime' });
     const count = await web3.eth.getTransactionCount(address);
-    return count;
-    /*
-     *return EthTransactionStorage.collection.countDocuments({
-     *  chain: 'ETH',
-     *  network,
-     *  from: address,
-     *  blockHeight: { $gt: -1 }
-     *});
-     */
+    return Number(count);
   }
 
   async getWalletTokenTransactions(
@@ -721,74 +716,62 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   @realtime
   async estimateGas(params): Promise<number> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        let { value } = params;
-        const { network, from, data, /* gasPrice */ to } = params;
-        const { web3 } = await this.getWeb3(network, { type: 'realtime' });
-        const dataDecoded = EVMTransactionStorage.abiDecode(data);
+    let { value } = params;
+    const { network, from, data, /* gasPrice */ to } = params;
+    const { web3 } = await this.getWeb3(network, { type: 'realtime' });
+    const dataDecoded = EVMTransactionStorage.abiDecode(data);
 
-        if (dataDecoded && dataDecoded.type === 'INVOICE' && dataDecoded.name === 'pay') {
-          value = dataDecoded.params[0].value;
-          // gasPrice = dataDecoded.params[1].value;
-        } else if (data && data.type === 'MULTISEND') {
-          try {
-            let method, gasLimit;
-            const contract = await this.getMultisendContract(network, to);
-            const addresses = web3.eth.abi.decodeParameter('address[]', data.addresses);
-            const amounts = web3.eth.abi.decodeParameter('uint256[]', data.amounts);
+    if (dataDecoded && dataDecoded.type === 'INVOICE' && dataDecoded.name === 'pay') {
+      value = dataDecoded.params[0].value;
+      // gasPrice = dataDecoded.params[1].value;
+    } else if (data && data.type === 'MULTISEND') {
+      let method, gasLimit;
+      const contract = await this.getMultisendContract(network, to);
+      const addresses = web3.eth.abi.decodeParameter('address[]', data.addresses);
+      const amounts = web3.eth.abi.decodeParameter('uint256[]', data.amounts);
 
-            switch (data.method) {
-              case 'sendErc20':
-                method = contract.methods.sendErc20(data.tokenAddress, addresses, amounts);
-                gasLimit = method ? await method.estimateGas({ from }) : undefined;
-                break;
-              case 'sendEth':
-                method = contract.methods.sendEth(addresses, amounts);
-                gasLimit = method ? await method.estimateGas({ from, value }) : undefined;
-                break;
-              default:
-                break;
-            }
-            return resolve(Number(gasLimit));
-          } catch (err) {
-            return reject(err);
-          }
-        }
-
-        let _value;
-        if (data) {
-          // Gas estimation might fail with `insufficient funds` if value is higher than balance for a normal send.
-          // We want this method to give a blind fee estimation, though, so we should not include the value
-          // unless it's needed for estimating smart contract execution.
-          _value = Utils.toHex(value);
-        }
-
-        const opts = {
-          method: 'eth_estimateGas',
-          params: [
-            {
-              data,
-              to: to && to.toLowerCase(),
-              from: from && from.toLowerCase(),
-              // gasPrice: Utils.toHex(gasPrice), // Setting this lower than the baseFee of the last block will cause an error. Better to just leave it out.
-              value: _value
-            }
-          ],
-          jsonrpc: '2.0',
-          id: 'bitcore-' + Date.now()
-        };
-
-        const provider = web3.currentProvider as any;
-        provider.send(opts, (err, data) => {
-          if (err) return reject(err);
-          if (!data.result) return reject(data.error || data);
-          return resolve(Number(data.result));
-        });
-      } catch (err) {
-        return reject(err);
+      switch (data.method) {
+        case 'sendErc20':
+          method = contract.methods.sendErc20(data.tokenAddress, addresses, amounts);
+          gasLimit = method ? await method.estimateGas({ from }) : undefined;
+          break;
+        case 'sendEth':
+          method = contract.methods.sendEth(addresses, amounts);
+          gasLimit = method ? await method.estimateGas({ from, value }) : undefined;
+          break;
+        default:
+          break;
       }
-    });
+      return Number(gasLimit);
+    }
+
+    let _value;
+    if (data) {
+      // Gas estimation might fail with `insufficient funds` if value is higher than balance for a normal send.
+      // We want this method to give a blind fee estimation, though, so we should not include the value
+      // unless it's needed for estimating smart contract execution.
+      _value = Utils.toHex(value);
+    }
+
+    const opts = {
+      method: 'eth_estimateGas',
+      params: [
+        {
+          data,
+          to: to && to.toLowerCase(),
+          from: from && from.toLowerCase(),
+          // gasPrice: Utils.toHex(gasPrice), // Setting this lower than the baseFee of the last block will cause an error. Better to just leave it out.
+          value: _value
+        }
+      ],
+      jsonrpc: '2.0',
+      id: 'bitcore-' + Date.now()
+    } as const;
+
+    const provider = web3.currentProvider;
+    const response = await provider!.request(opts);
+    if (!response.result) throw new Error(response.error as any || response as any);
+    return Number(response.result);
   }
 
 
