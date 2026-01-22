@@ -151,6 +151,9 @@
         "BTC": {
           "testnet3": "testnet",
           "testnet4": "testnet"
+        },
+        "BASE": {
+          "testnet": "sepolia"
         }
       }
     }
