@@ -159,9 +159,6 @@ export class EVMRouter {
       network = network.toLowerCase();
       try {
         const fee: { feerate: number } = await this.csp.getPriorityFee({ network, percentile: priorityFeePercentile });
-        if (!fee) {
-          return res.status(404).send('not available right now');
-        }
         return res.json(fee);
       } catch (err: any) {
         logger.error('Fee Error: %o', err.stack || err.message || err);
