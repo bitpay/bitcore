@@ -214,3 +214,25 @@ export function JSONParseBigIntReviver(_key: string, value: any) {
   }
   return value;
 };
+
+
+/**
+ * Converts any BigInt values in an object to Numbers recursively
+ * @param {object|array} obj Object or Array to be scrubbed
+ * @param {'number'|'string'|'hex'} [destType='number'] Destination type for BigInt conversion
+ * @returns {object|array}
+ */
+export function scrubBigIntsInObject<T>(obj: T, destType: 'number' | 'string' | 'hex' = 'number'): T {
+  if (!obj || typeof obj !== 'object') {
+    return obj;
+  }
+  const toDestType = destType === 'number' ? Number : destType === 'string' ? (val) => val.toString() : (val) => '0x' + val.toString(16);
+  for (const [key, val] of Object.entries(obj)) {
+    if (typeof val === 'bigint') {
+      obj[key] = toDestType(val);
+    } else if (val && typeof val === 'object') {
+      obj[key] = scrubBigIntsInObject(val, destType);
+    }
+  }
+  return obj;
+}

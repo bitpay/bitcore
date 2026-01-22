@@ -298,12 +298,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   async getReceipt(network: string, txid: string) {
     const { web3 } = await this.getWeb3(network, { type: 'historical' });
     const receipt = await web3.eth.getTransactionReceipt(txid);
-    return JSON.parse(JSON.stringify(receipt, (_key, value) => {
-      if (typeof value === 'bigint') {
-        return Number(value);
-      }
-      return value;
-    }));
+    return Utils.BI.scrubBigIntsInObject(receipt);
   }
 
   async populateReceipt(tx: MongoBound<IEVMTransaction>) {
