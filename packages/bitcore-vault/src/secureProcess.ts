@@ -275,6 +275,10 @@ export class SecureProcess {
       throw new Error(`Wallet not found: ${name}`);
     }
 
+    if (!this.privateKey) {
+      throw new Error('Private key not available - secure process not initialized or already cleaned up');
+    }
+
     const encryptedPassphraseBuffer = Buffer.from(encryptedPassphrase, 'base64');
 
     let success = false;
