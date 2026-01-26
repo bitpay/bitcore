@@ -36,6 +36,7 @@ const chainLibs = {
   XRP: xrpl,
   SOL: { SolKit, SolanaProgram }
 };
+const CURRENT_WALLET_VERSION = 2;
 
 export interface IWalletExt extends IWallet {
   storage?: Storage;
@@ -160,7 +161,7 @@ export class Wallet {
       const keyType = Constants.ALGO_TO_KEY_TYPE[algo];
       hdPrivKey = mnemonic.toHDPrivateKey('', network).derive(Deriver.pathFor(chain, network), keyType);
     }
-    const privKeyObj = hdPrivKey.toObject();
+    const privKeyObj = hdPrivKey.toObjectWithBufferPrivateKey();
 
     // Generate public keys
     // bip44 compatible pubKey
@@ -173,14 +174,18 @@ export class Wallet {
     // Encrypt privKeyObj.privateKey & privKeyObj.xprivkey
     const xprivBuffer = BitcoreLib.encoding.Base58Check.decode(privKeyObj.xprivkey);
     privKeyObj.xprivkey = Encryption.encryptBuffer(xprivBuffer, pubKey, walletEncryptionKey).toString('hex');
-    privKeyObj.privateKey = Encryption.encryptBuffer(Buffer.from(privKeyObj.privateKey, 'hex'), pubKey, walletEncryptionKey).toString('hex');
+    // privKeyObj.privateKey = Encryption.encryptBuffer(Buffer.from(privKeyObj.privateKey, 'hex'), pubKey, walletEncryptionKey).toString('hex');
+    privKeyObj.privateKey = Encryption.encryptBuffer(privKeyObj.privateKey, pubKey, walletEncryptionKey).toString('hex');
 
     // Generate authentication keys
     const authKey = new PrivateKey();
     const authPubKey = authKey.toPublicKey().toString();
 
-    // Generate and encrypt the encryption key and private key
-    const encPrivateKey = Encryption.encryptPrivateKey(JSON.stringify(privKeyObj), pubKey, walletEncryptionKey);
+    /**
+     * TODO: Remove Encryption.encryptPrivateKey - now private keys are encrypted BEFORE stringification, so private keys can be decrypted NEVER AS STRINGS
+     * After this TODO, the downstream consequence is that the wallet's masterKey will NOT have to be decrypted - so that will need to be changed too.
+     */
+    const masterKeyWithEncryptedPrivateKeys = Encryption.encryptPrivateKey(JSON.stringify(privKeyObj), pubKey, walletEncryptionKey);
 
     storageType = storageType ? storageType : 'Level';
     storage =
@@ -196,7 +201,7 @@ export class Wallet {
     if (alreadyExists) {
       throw new Error('Wallet already exists');
     }
-    
+
     const wallet = new Wallet({
       name,
       chain,
@@ -206,7 +211,7 @@ export class Wallet {
       encryptionKey,
       authKey,
       authPubKey,
-      masterKey: encPrivateKey,
+      masterKey: masterKeyWithEncryptedPrivateKeys,
       password,
       xPubKey: hdPrivKey.xpubkey,
       pubKey,
@@ -216,7 +221,7 @@ export class Wallet {
       lite,
       addressType,
       addressZero: null,
-      version: 2,
+      version: CURRENT_WALLET_VERSION,
     } as IWalletExt);
 
     // save wallet to storage and then bitcore-node
@@ -227,11 +232,7 @@ export class Wallet {
       storageType
     });
 
-    if (!xpriv) {
-      console.log(mnemonic.toString());
-    } else {
-      console.log(hdPrivKey.toString());
-    }
+    console.log(xpriv ? hdPrivKey.toString() : mnemonic.toString());
 
     await loadedWallet.register().catch(e => {
       console.debug(e);
@@ -260,11 +261,28 @@ export class Wallet {
     let { storage } = params;
     storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
     const loadedWallet = await storage.loadWallet({ name });
-    if (loadedWallet) {
-      return new Wallet(Object.assign(loadedWallet, { storage }));
-    } else {
+    
+    if (!loadedWallet) {
       throw new Error('No wallet could be found');
     }
+
+    let wallet = new Wallet(Object.assign(loadedWallet, { storage }));
+    if (wallet.version > CURRENT_WALLET_VERSION) {
+      throw new Error(`Invalid wallet version ${wallet.version} exceeds current wallet version ${CURRENT_WALLET_VERSION}`);
+    }
+
+    if (wallet.version != CURRENT_WALLET_VERSION) {
+      wallet = await wallet.migrateWallet();
+    }
+
+    return wallet;
+  }
+
+  async migrateWallet(): Promise<Wallet> {
+    /**
+     * TODO:
+     */
+    return this;
   }
 
   /**
