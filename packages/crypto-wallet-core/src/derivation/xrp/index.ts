@@ -37,11 +37,11 @@ export class XrpDeriver implements IDeriver {
   }
 
   /**
-   * @param {any} privKey - expects hex-encoded string, as returned from XrpDeriver.derivePrivateKey privKey
+   * @param {Buffer | string} privKey - expects hex-encoded string, as returned from XrpDeriver.derivePrivateKey privKey
    * @returns {Buffer}
    * @throws {Error} If privKey is not a Buffer (planned forwards compatibility) or string. Propagates all other errors
    */
-  privateKeyToBuffer(privKey: any): Buffer {
+  privateKeyToBuffer(privKey: Buffer | string): Buffer {
     if (Buffer.isBuffer(privKey)) return privKey;
     if (typeof privKey !== 'string') throw new Error(`Expected string, got ${typeof privKey}`);
     // Expects to match return from derivePrivateKey's privKey.

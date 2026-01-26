@@ -57,13 +57,16 @@ export class EthDeriver implements IDeriver {
   }
 
   /**
-   * @param {any} privKey - expects hex-encoded string, as returned from EthDeriver.derivePrivateKey
+   * @param {Buffer | string} privKey - expects hex-encoded string, as returned from EthDeriver.derivePrivateKey
    * @returns {Buffer}
    * @throws {Error} If privKey is not a Buffer (planned forwards compatibility) or string. Propagates all other errors
    */
-  privateKeyToBuffer(privKey: any): Buffer {
+  privateKeyToBuffer(privKey: Buffer | string): Buffer {
     if (Buffer.isBuffer(privKey)) return privKey;
     if (typeof privKey !== 'string') throw new Error(`Expected string, got ${typeof privKey}`);
+    if (privKey.startsWith('0x')) {
+      privKey = privKey.slice(2);
+    };
     // Expects to match return from derivePrivateKey's privKey.
     return Buffer.from(privKey, 'hex');
   }

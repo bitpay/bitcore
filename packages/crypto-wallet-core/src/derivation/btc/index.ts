@@ -38,7 +38,7 @@ export abstract class AbstractBitcoreLibDeriver implements IDeriver {
    * @returns {Buffer} raw secpk1 private key buffer (32 bytes, big-endian)
    * @throws {Error} If privKey is not a Buffer (planned forwards compatibility) or string. Propagates all other errors
    */
-  privateKeyToBuffer(privKey: any): Buffer {
+  privateKeyToBuffer(privKey: Buffer | string): Buffer {
     if (Buffer.isBuffer(privKey)) return privKey; // forward compatibility
     if (typeof privKey !== 'string') throw new Error(`Expected key to be a string, got ${typeof privKey}`);
 
