@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "version": "11.4.7",
+  "version": "11.5.0",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "contributors": [
     "Justin Langston <nitsujlangston@gmail.com>",
@@ -25,7 +25,7 @@
     "docs:build-html": "typedoc --out ./docs/html --tsconfig tsconfig.json ./src",
     "docs:build-json": "typedoc --json ./docs/json --tsconfig tsconfig.json ./src",
     "tsc": "npm run clean && tsc",
-    "test": "tsc --noEmit && mocha -r tsx 'test/**/*.spec.ts' 'test/**/*.unit.ts' 'test/**/*.integration.ts'",
+    "test": "npm run test:unit && npm run test:integration",
     "test:ci": "npm run test",
     "test:ci:integration": "npm run test:integration",
     "repair:db": "npm run tsc && node ./build/test/verification/db-repair.js",
@@ -33,8 +33,8 @@
     "verify:db": "npm run tsc && node ./build/test/verification/db-verify.js",
     "verify:headers": "npm run tsc && node ./build/test/verification/db-verify-headers.js",
     "resync": "npm run tsc && node ./build/test/verification/resync.js",
-    "test:unit": "tsc --noEmit && mocha -r tsx 'test/unit/**/*.spec.ts' 'test/unit/**/*.unit.ts'",
-    "test:integration": "tsc --noEmit && BCN_LOG_LEVEL=none mocha -r tsx 'test/integration/**/*.spec.ts' 'test/integration/**/*.integration.ts'",
+    "test:unit": "tsc --noEmit && mocha -r tsx 'test/unit/**/*.test.ts'",
+    "test:integration": "tsc --noEmit && BCN_LOG_LEVEL=none mocha -r tsx 'test/integration/**/*.test.ts'",
     "benchmark": "node build/test/benchmark/benchmark.js",
     "coverage": "nyc mocha -r tsx 'test/**/*.test.ts'",
     "api": "npm run tsc && node build/src/workers/api.js",
@@ -63,8 +63,7 @@
     "@types/bn.js": "4.11.5",
     "@types/chai": "4.1.3",
     "@types/express": "4.17.21",
-    "@types/lodash": "4.14.116",
-    "@types/mocha": "^5.2.0",
+    "@types/mocha": "5.2.0",
     "@types/mongodb": "3.1.22",
     "@types/node": "22.13.1",
     "@types/request": "2.47.0",
@@ -79,7 +78,7 @@
     "sinon": "4.4.8",
     "socket.io-client": "4.8.1",
     "supertest": "3.0.0",
-    "tsx": "4.19.2",
+    "tsx": "^4.21.0",
     "typescript": "5.7.3"
   },
   "dependencies": {
@@ -88,7 +87,7 @@
     "@metaplex-foundation/umi-bundle-defaults": "^1.2.0",
     "@solana/spl-token-registry": "0.2.4574",
     "abi-decoder": "2.4.0",
-    "bitcore-client": "^11.4.7",
+    "bitcore-client": "^11.5.0",
     "bitcore-lib": "^11.4.5",
     "bitcore-lib-cash": "^11.4.5",
     "bitcore-lib-doge": "^11.4.5",
@@ -96,18 +95,17 @@
     "bitcore-p2p": "^11.4.5",
     "bitcore-p2p-cash": "^11.4.5",
     "bitcore-p2p-doge": "^11.4.5",
-    "bitcore-wallet-client": "^11.4.7",
+    "bitcore-wallet-client": "^11.5.0",
     "cors": "2.8.4",
-    "crypto-rpc": "^11.4.5",
-    "crypto-wallet-core": "^11.4.7",
+    "crypto-rpc": "^11.5.0",
+    "crypto-wallet-core": "^11.5.0",
     "express": "4.19.2",
-    "lodash": "4.17.11",
     "mongodb": "3.6.12",
     "request": "2.88.0",
     "secp256k1": "4.0.3",
     "socket.io": "4.8.1",
     "source-map-support": "^0.5.13",
-    "winston": "3.2.0"
+    "winston": "3.3.0"
   },
   "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4"
 }

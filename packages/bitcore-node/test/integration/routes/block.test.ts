@@ -532,4 +532,17 @@ describe('Block Routes', function() {
       done();
     });
   });
+
+  describe('EVM', function() {
+    it('should get tip', done => {
+      request.get('/api/BASE/testnet/block/tip').expect(200, (err, res) => {
+        if (err) return done(err);
+        const block = res.body;
+        expect(block).to.include({ chain: 'BASE', network: 'sepolia' });
+        expect(block).to.have.property('height').that.is.a('number');
+        expect(block).to.have.property('hash').that.is.a('string').with.length(66);
+        done();
+      });
+    });
+  });
 });

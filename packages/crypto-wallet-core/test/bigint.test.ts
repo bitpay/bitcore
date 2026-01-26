@@ -353,4 +353,21 @@ describe('BigInt', function() {
       expect(jsonObject).to.deep.equal({ a: 123n, b: 'test' });
     });
   });
+
+  describe('scrubBigIntsInObject', function() {
+    it('should convert all bigint values in an object to number by default', function() {
+      const result = BI.scrubBigIntsInObject({ a: 123n, b: { c: 456n, d: 'test' }, e: [789n, 'value'] });
+      expect(result).to.deep.equal({ a: 123, b: { c: 456, d: 'test' }, e: [789, 'value'] });
+    });
+
+    it('should convert all bigint values in an object to string when destType is "string"', function() {
+      const result = BI.scrubBigIntsInObject({ a: 123n, b: { c: 456n, d: 'test' }, e: [789n, 'value'] }, 'string');
+      expect(result).to.deep.equal({ a: '123', b: { c: '456', d: 'test' }, e: ['789', 'value'] });
+    });
+
+    it('should convert all bigint values in an object to hex string when destType is "hex"', function() {
+      const result = BI.scrubBigIntsInObject({ a: 123n, b: { c: 456n, d: 'test' }, e: [789n, 'value'] }, 'hex');
+      expect(result).to.deep.equal({ a: '0x7b', b: { c: '0x1c8', d: 'test' }, e: ['0x315', 'value'] });
+    });
+  });
 });

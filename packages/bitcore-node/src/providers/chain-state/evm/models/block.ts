@@ -257,7 +257,7 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
     return {
       chain,
       network,
-      height: block.number,
+      height: Number(block.number),
       hash: block.hash,
       coinbase: new Binary(Buffer.from(block.miner)),
       merkleRoot: new Binary(Buffer.from((block as any).transactionsRoot)), // TODO: rm `as any` if web3 is updated and fixes itself
@@ -269,15 +269,15 @@ export class EVMBlockModel extends BaseBlock<IEVMBlock> {
       totalDifficulty: block.totalDifficulty?.toString(),
       nextBlockHash: '',
       transactionCount: block.transactions.length,
-      size: block.size,
+      size: Number(block.size),
       reward: 0,
       logsBloom: new Binary(Buffer.from(block.logsBloom)),
       sha3Uncles: new Binary(Buffer.from(block.sha3Uncles)),
       receiptsRoot: new Binary(Buffer.from(block.receiptsRoot)),
       processed: false,
-      gasLimit: block.gasLimit,
-      gasUsed: block.gasUsed,
-      baseFeePerGas: block.baseFeePerGas,
+      gasLimit: Number(block.gasLimit),
+      gasUsed: Number(block.gasUsed),
+      baseFeePerGas: Number(block.baseFeePerGas),
       stateRoot: new Binary(Buffer.from(block.stateRoot)),
     } as IEVMBlock;
   }

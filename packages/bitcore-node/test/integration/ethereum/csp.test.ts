@@ -138,7 +138,7 @@ describe('Ethereum API', function() {
     await CacheStorage.collection.remove({});
     await EVMTransactionStorage.collection.deleteMany({});
     await EVMTransactionStorage.collection.insertMany(txs);
-    const estimates = await Promise.all([1, 2, 3, 4].map(target => ETH.getFee({ network, target })));
+    const estimates = await Promise.all([1, 2, 3, 4].map(target => ETH.getFee({ chain, network, target })));
     for (const estimate of estimates) {
       expect(estimate.feerate).to.be.gt(0);
       expect(estimate.feerate).to.be.eq(10000000000);
@@ -159,10 +159,10 @@ describe('Ethereum API', function() {
     await CacheStorage.collection.remove({});
     await EVMTransactionStorage.collection.deleteMany({});
     await EVMTransactionStorage.collection.insertMany(txs);
-    let estimates = await Promise.all([1, 2, 3, 4].map(target => ETH.getFee({ network, target })));
+    let estimates = await Promise.all([1, 2, 3, 4].map(target => ETH.getFee({ chain, network, target })));
 
     await EVMTransactionStorage.collection.deleteMany({});
-    estimates = await Promise.all([1, 2, 3, 4].map(target => ETH.getFee({ network, target })));
+    estimates = await Promise.all([1, 2, 3, 4].map(target => ETH.getFee({ chain, network, target })));
     for (const estimate of estimates) {
       expect(estimate.feerate).to.be.gt(0);
       expect(estimate.feerate).to.be.eq(10000000000);

@@ -269,7 +269,7 @@ export class EthRpc {
 
   /**
    * Estimates the gas price.
-   * @returns {Promise<number>} The estimated gas price.
+   * @returns {Promise<bigint>} The estimated gas price.
    */
   async estimateGasPrice() {
     const defaultEstimate = await this.web3.eth.getGasPrice();
@@ -285,7 +285,7 @@ export class EthRpc {
    * @param {Object} params - The parameters for estimating the maximum base fee.
    * @param {number} [params.percentile] - Optional: The maxPriorityFee percentile from last block to use for the estimation.
    * @param {number} [params.priority] - Optional: The maxPriorityFee to be used with the baseFee.
-   * @returns {number|BigInt} The estimated maximum base fee.
+   * @returns {bigint} The estimated maximum base fee.
    */
   async estimateMaxFee({ percentile, priority }) {
     const lastBlock = await this.web3.eth.getBlock('latest');
@@ -309,7 +309,7 @@ export class EthRpc {
    * Estimates the maximum priority fee.
    * @param {Object} params - The parameters for estimating the maximum priority fee.
    * @param {number} [params.percentile=25] - The percentile to use for the estimation.
-   * @returns {Promise<number>} The estimated maximum priority fee.
+   * @returns {Promise<bigint>} The estimated maximum priority fee.
    */
   async estimateMaxPriorityFee({ percentile = 25 }) {
     const minimumFee = chainConfig[this.chain] ? chainConfig[this.chain].priorityFee : 2.5;
@@ -405,8 +405,8 @@ export class EthRpc {
 
   /**
    * Calculates the fee estimate.
-   * @param {Array<BigInt>} fees - The fees to calculate the estimate from.
-   * @returns {BigInt} The calculated fee estimate.
+   * @param {Array<bigint>} fees - The fees to calculate the estimate from.
+   * @returns {bigint} The calculated fee estimate.
    */
   _calculateFeeEstimate(fees) {
     const shortAverage = utils.BI.avgCeil(fees.slice(0, fees.length / 2));
@@ -415,12 +415,23 @@ export class EthRpc {
     return utils.BI.max([shortAverage, longAverage]) + divergence;
   }
 
+  /**
+   * Gets the latest block's hash.
+   * @returns {Promise<string>}
+   */
   async getBestBlockHash() {
     const block = await this.web3.eth.getBlock('latest');
     const blockHash = block.hash;
     return blockHash;
   }
 
+  /**
+   * Get transaction object by txid
+   * @param {object} params
+   * @param {string} params.txid
+   * @param {boolean} [params.getConfirmations]
+   * @returns {Promise<object>}
+   */
   async getTransaction({ txid, getConfirmations = false }) {
     const tx = await this.web3.eth.getTransaction(txid);
     if (!getConfirmations || !tx) {
@@ -438,6 +449,13 @@ export class EthRpc {
     return await this.web3.eth.getPendingTransactions();
   }
 
+  /**
+   * Gets the number of transactions sent from an address.
+   * @param {object} params
+   * @param {string} params.address
+   * @param {string|number} [params.defaultBlock]
+   * @returns {Promise<bigint>}
+   */
   async getTransactionCount({ address, defaultBlock }) {
     return await this.web3.eth.getTransactionCount(address, defaultBlock);
   }
@@ -458,6 +476,12 @@ export class EthRpc {
     return tx;
   }
 
+  /**
+   * Sends a raw signed transaction to the network.
+   * @param {object} params
+   * @param {string} params.rawTx
+   * @returns {Promise<string>} Sent transaction ID (txid)
+   */
   async sendRawTransaction({ rawTx }) {
     const txid = await new Promise((resolve, reject) => {
       const errorHandler = (err) => {
@@ -477,6 +501,12 @@ export class EthRpc {
     return txid;
   }
 
+  /**
+   * Decodes a raw transaction string.
+   * @param {object} params
+   * @param {string} params.rawTx
+   * @returns {object}
+   */
   decodeRawTransaction({ rawTx }) {
     const decodedTx = ethers.Transaction.from(rawTx);
     const {
@@ -512,6 +542,12 @@ export class EthRpc {
     return await this.web3.eth.getBlock(hash);
   }
 
+  /**
+   * Gets the number of confirmations for a transaction.
+   * @param {object} params
+   * @param {string} params.txid
+   * @returns {Promise<bigint>}
+   */
   async getConfirmations({ txid }) {
     const tx = await this.getTransaction({ txid, getConfirmations: true });
     if (!tx) {
@@ -520,6 +556,10 @@ export class EthRpc {
     return tx.confirmations;
   }
 
+  /**
+   * Gets the latest block's height and hash.
+   * @returns {Promise<{ height: bigint, hash: string }>}
+   */
   async getTip() {
     const block = await this.web3.eth.getBlock('latest');
     const { hash, number } = block;
@@ -531,6 +571,7 @@ export class EthRpc {
   }
 
   async validateAddress({ address }) {
+    // TODO: migrate to ethers.isAddress() or similar. Need to ensure same behavior first.
     return await this.web3.utils.isAddress(address);
   }
 

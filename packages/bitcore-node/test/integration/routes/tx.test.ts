@@ -1,3 +1,4 @@
+import sinon from 'sinon';
 import supertest from 'supertest';
 import app from '../../../src/routes';
 import { describe } from 'mocha';
@@ -6,10 +7,12 @@ import { resetDatabase, testCoin } from '../../helpers';
 import { expect } from 'chai';
 import { ITransaction, TransactionStorage } from '../../../src/models/transaction';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
+import { MoralisStateProvider } from '../../../src/modules/moralis/api/csp';
 
 
 describe('Tx Routes', function() {
   const request = supertest(app);
+  const sandbox = sinon.createSandbox();
   
   const transactions = [
     {
@@ -314,6 +317,10 @@ describe('Tx Routes', function() {
     await intAfterHelper();
   });
 
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   function testTransaction(transaction) {
     expect(transaction).to.be.an('object');
     expect(transaction).to.have.property('txid').that.is.a('string');
@@ -453,5 +460,46 @@ describe('Tx Routes', function() {
         }
         done();
       });
+  });
+
+  describe('EVM', function() {
+    beforeEach(function() {
+      sandbox.stub(MoralisStateProvider.prototype, '_getTransactionFromMoralis').resolves({
+        chain: 'BASE',
+        network: 'sepolia',
+        txid: '0xa53acec1afd574dff35a771a88262685bc0213716203e0e5459abcab8cd03ff5',
+        blockHeight: 36626370,
+        blockHash: '0x6a0ff0a3d6446b1afe041a164ff8a8c1d1ddd9c54cd8050c0a82a91e84dd3763',
+        blockTime: new Date('2026-01-21T18:43:48.000Z'),
+        blockTimeNormalized: new Date('2026-01-21T18:43:48.000Z'),
+        value: '0',
+        gasLimit: '44178',
+        gasPrice: '1200000',
+        fee: 47307600000,
+        nonce: '33157',
+        to: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+        from: '0x0f8Aa6B95084896C8Aaf822e6B51c0E4b272cF8D',
+        data: '0xa9059cbb0000000000000000000000009f663335cd6ad02a37b633602e98866cf944124d0000000000000000000000000000000000000000000000000000000000000000',
+        internal: [],
+        calls: [],
+        effects: [],
+        category: undefined,
+        wallets: [],
+        transactionIndex: '19',
+      });
+    });
+
+    it('should get transaction', done => {
+      request.get('/api/BASE/testnet/tx/0xa53acec1afd574dff35a771a88262685bc0213716203e0e5459abcab8cd03ff5')
+        .expect(200, (err, res) => {
+          if (err) return done(err);
+          const tx = res.body;
+          expect(tx).to.include({ chain: 'BASE', network: 'sepolia', txid: '0xa53acec1afd574dff35a771a88262685bc0213716203e0e5459abcab8cd03ff5' });
+          expect(tx).to.have.property('blockHeight').that.is.a('number');
+          expect(tx).to.have.property('blockHash').that.is.a('string').with.length(66);
+          expect(tx).to.have.property('fee').that.is.a('number');
+          done();
+        });
+    });
   });
 });

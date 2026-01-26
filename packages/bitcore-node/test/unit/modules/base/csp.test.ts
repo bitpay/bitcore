@@ -5,7 +5,7 @@ import { BaseEVMStateProvider } from '../../../../src/providers/chain-state/evm/
 
 
 describe('BASE Chain State Provider', function() {
-  const network = 'testnet';
+  const network = 'sepolia';
   let BASE;
   before(() => {
     BASE = new MoralisStateProvider('BASE');

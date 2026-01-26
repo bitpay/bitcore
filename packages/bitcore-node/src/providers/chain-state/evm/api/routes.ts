@@ -61,7 +61,7 @@ export class EVMRouter {
     router.get(`/api/${this.chain}/:network/address/:address/txs/count`, async (req, res) => {
       const { address, network } = req.params;
       try {
-        const nonce = await this.csp.getAccountNonce(network, address);
+        const nonce: number = await this.csp.getAccountNonce(network, address);
         res.json({ nonce });
       } catch (err: any) {
         logger.error('Nonce Error::%o', err.stack || err.message || err);
@@ -75,7 +75,7 @@ export class EVMRouter {
       const { from, to, value, data } = req.body;
       const { network } = req.params;
       try {
-        const gasLimit = await this.csp.estimateGas({ network, from, to, value, data });
+        const gasLimit: number = await this.csp.estimateGas({ network, from, to, value, data });
         res.json(gasLimit);
       } catch (err: any) {
         if (err?.code != null) { // Preventable error from geth (probably due to insufficient funds or similar)
@@ -110,7 +110,7 @@ export class EVMRouter {
         
         const { web3 } = await this.csp.getWeb3(network);
         const gasPriceOracle = new web3.eth.Contract(OPGasPriceOracleAbi, OPGasPriceOracleAddress);
-        let l1DataFee;
+        let l1DataFee: bigint;
         if (castToBool(safe)) {
           l1DataFee = await gasPriceOracle.methods.getL1FeeUpperBound(rawTxBuf.length).call();
         } else {
@@ -128,7 +128,7 @@ export class EVMRouter {
     router.get(`/api/${this.chain}/:network/token/:tokenAddress`, async (req, res) => {
       const { network, tokenAddress } = req.params;
       try {
-        const tokenInfo = await this.csp.getERC20TokenInfo(network, tokenAddress);
+        const tokenInfo: { name: string; decimals: number; symbol: string } = await this.csp.getERC20TokenInfo(network, tokenAddress);
         res.json(tokenInfo);
       } catch (err: any) {
         logger.error('Token Info Error::%o', err.stack || err.message || err);
@@ -141,7 +141,7 @@ export class EVMRouter {
     router.get(`/api/${this.chain}/:network/token/:tokenAddress/allowance/:ownerAddress/for/:spenderAddress`, async (req, res) => {
       const { network, tokenAddress, ownerAddress, spenderAddress } = req.params;
       try {
-        const allowance = await this.csp.getERC20TokenAllowance(network, tokenAddress, ownerAddress, spenderAddress);
+        const allowance: number = await this.csp.getERC20TokenAllowance(network, tokenAddress, ownerAddress, spenderAddress);
         res.json(allowance);
       } catch (err: any) {
         logger.error('Token Allowance Error::%o', err.stack || err.message || err);
@@ -158,10 +158,7 @@ export class EVMRouter {
     
       network = network.toLowerCase();
       try {
-        const fee = await this.csp.getPriorityFee({ network, percentile: priorityFeePercentile });
-        if (!fee) {
-          return res.status(404).send('not available right now');
-        }
+        const fee: { feerate: number } = await this.csp.getPriorityFee({ network, percentile: priorityFeePercentile });
         return res.json(fee);
       } catch (err: any) {
         logger.error('Fee Error: %o', err.stack || err.message || err);

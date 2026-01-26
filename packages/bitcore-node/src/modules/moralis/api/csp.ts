@@ -73,7 +73,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       async () => {
         const { rpc } = await this.getWeb3(network, { type: 'historical' });
         const feerate = await rpc.estimateFee({ nBlocks: target, txType });
-        return { feerate, blocks: target };
+        return { feerate: Number(feerate), blocks: target };
       },
       CacheStorage.Times.Minute
     );

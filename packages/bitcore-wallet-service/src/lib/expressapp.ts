@@ -12,7 +12,7 @@ import * as Types from '../types/expressapp';
 import { Common } from './common';
 import { ClientError } from './errors/clienterror';
 import { Errors } from './errors/errordefinitions';
-import { logger, transport } from './logger';
+import { logger, transports } from './logger';
 import { error } from './routes/helpers';
 import { createWalletLimiter } from './routes/middleware/createWalletLimiter';
 import { LogMiddleware } from './routes/middleware/log';
@@ -97,7 +97,9 @@ export class ExpressApp {
     });
 
     if (opts.disableLogs) {
-      transport.level = 'error';
+      for (const transport of transports) {
+        transport.level = 'error';
+      }
     } else {
       this.app.use(LogMiddleware());
       // morgan.token('walletId', function getId(req) {

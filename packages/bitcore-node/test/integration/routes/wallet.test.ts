@@ -1,7 +1,9 @@
 import supertest from 'supertest';
 import sinon from 'sinon';
-import app from '../../../src/routes';
 import { expect } from 'chai';
+import { BitcoreLib } from 'crypto-wallet-core';
+import secp256k1 from 'secp256k1';
+import app from '../../../src/routes';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 import { base58Regex, minutesAgo, mongoIdRegex, randomHex, resetDatabase, testCoin } from '../../helpers';
 import { ChainStateProvider } from '../../../src/providers/chain-state';
@@ -11,9 +13,6 @@ import { TransactionStorage } from '../../../src/models/transaction';
 import { BitcoinBlockStorage } from '../../../src/models/block';
 import { MongoBound } from '../../../src/models/base';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
-
-import { BitcoreLib } from 'crypto-wallet-core';
-import secp256k1 from 'secp256k1';
 
 
 describe('Wallet Routes', function() {
