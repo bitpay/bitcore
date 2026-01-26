@@ -91,8 +91,10 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
                 this.events.emit('transaction', tx);
               }
             }
-          } catch (err) {
-            logger.error('Error in pendingTransactions subscription:', err);
+          } catch (err: any) {
+            if (err.message !== 'Transaction not found') {
+              logger.error('Error in pendingTransactions subscription:', err);
+            }
           }
         });
         if (this.blockSubscription) {
