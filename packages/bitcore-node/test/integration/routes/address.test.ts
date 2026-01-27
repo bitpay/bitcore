@@ -1,12 +1,16 @@
+import sinon from 'sinon';
 import { expect } from 'chai';
 import supertest from 'supertest';
 import app from '../../../src/routes';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 import { resetDatabase, testCoin } from '../../helpers';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
+import { ChainStateProvider } from '../../../src/providers/chain-state';
+import { BaseEVMStateProvider } from '../../../src/providers/chain-state/evm/api/csp';
 
 describe('Address Routes', function () {
   const request = supertest(app);
+  const sandbox = sinon.createSandbox();
 
   const address1Coins: ICoin[] = [
     {
@@ -182,6 +186,10 @@ describe('Address Routes', function () {
 
   after(async () => intAfterHelper());
 
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   it('should get address coins /api/BTC/regtest/address/:address', done => {
     request.get('/api/BTC/regtest/address/bcrt1qanzmr0rzxynktedz30epzcrsvfzl8005ppz0d8')
       .expect(200, (err, res) => {
@@ -310,10 +318,51 @@ describe('Address Routes', function () {
     it('should get address balance', done => {
       request.get('/api/ETH/regtest/address/0x9bb6f7fdf81afbd8876d37f3e5e37df416bf8da1/balance')
         .expect(200, (err, res) => {
-          if (err) console.error(err);
+          if (err) return done(err);
           expect(res.body.balance).to.be.a('number');
           expect(res.body.confirmed).to.be.a('number');
           expect(res.body.unconfirmed).to.be.a('number');
+          done();
+        });
+    });
+
+    it('should get token transactions', function(done) {
+      this.timeout(10000);
+      const csp = new BaseEVMStateProvider('BASE');
+      sandbox.stub(ChainStateProvider, 'get').returns(csp);
+      request.get('/api/BASE/testnet/address/0x9bb6f7fdf81afbd8876d37f3e5e37df416bf8da1/txs?tokenAddress=0x036CbD53842c5426634e7929541eC2318f3dCF7e&startBlock=14035000&endBlock=14045000')
+        .expect(200, (err, res) => {
+          if (err) return done(err);
+          expect(res.body).to.deep.equal([{
+            blockHash: '0xcb2d39791b8d37a23cdd981f6df5d43f6bd90c26d613ea997963903efabfb930',
+            blockNumber: 14035533,
+            transactionHash: '0x9a5f29cca34f11f48b7c3f2d07647d683a6e363b5364093b6bb0933e6fea360c',
+            transactionIndex: 2,
+            hash: '0x9a5f29cca34f11f48b7c3f2d07647d683a6e363b5364093b6bb0933e6fea360c',
+            from: '0x4cea16CFa6bB2F47d1b592EA6ef9BC5025637363',
+            to: '0x9bB6F7Fdf81afBD8876D37f3e5e37df416bF8DA1',
+            value: 6000000,
+          },
+          {
+            blockHash: '0x31c4010957724527740cd69fd1aca5d2f8334890ac396e3fa4e715f802e60a53',
+            blockNumber: 14035049,
+            transactionHash: '0x217e9b5a7126719f8f48aa894dbe10cc0e07b5b4f1968a584fcb9afde2250b60',
+            transactionIndex: 8,
+            hash: '0x217e9b5a7126719f8f48aa894dbe10cc0e07b5b4f1968a584fcb9afde2250b60',
+            from: '0x9bB6F7Fdf81afBD8876D37f3e5e37df416bF8DA1',
+            to: '0x4cea16CFa6bB2F47d1b592EA6ef9BC5025637363',
+            value: 10000000,
+          },
+          {
+            blockHash: '0xa122021a1470e6e28fa0cb617a2ecfa0e44637665b60c7c5ac5ad7ced434e125',
+            blockNumber: 14035023,
+            transactionHash: '0xe5133449739a50b2921a84f1b16290cb9c39f2c74e20ca7a9fc0291761ed64b4',
+            transactionIndex: 7,
+            hash: '0xe5133449739a50b2921a84f1b16290cb9c39f2c74e20ca7a9fc0291761ed64b4',
+            from: '0xFaEc9cDC3Ef75713b48f46057B98BA04885e3391',
+            to: '0x9bB6F7Fdf81afBD8876D37f3e5e37df416bF8DA1',
+            value: 10000000,
+          }]);
           done();
         });
     });

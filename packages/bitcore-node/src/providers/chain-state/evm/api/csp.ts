@@ -681,13 +681,13 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     const { blockHash, blockNumber, transactionHash, returnValues, transactionIndex } = transfer;
     return {
       blockHash,
-      blockNumber,
+      blockNumber: Number(blockNumber),
       transactionHash,
-      transactionIndex,
+      transactionIndex: Number(transactionIndex),
       hash: transactionHash,
       from: returnValues['_from'],
       to: returnValues['_to'],
-      value: returnValues['_value']
+      value: Number(returnValues['_value'])
     } as Partial<Web3Types.TransactionInfo>;
   }
 
