@@ -33,10 +33,21 @@ if (process.env.BWS_LOG_HTTP_HOST) {
     headers: {
       'Content-Type': 'application/json'
     },
-    format: winston.format.printf(info => JSON.stringify({
-      tag: process.env.BWS_LOG_HTTP_TAG || ('bws.' + path.parse(process.argv[1]).name),
-      ...info
-    })),
+    format: winston.format.combine(
+      winston.format.splat(),
+      winston.format.simple(),
+      winston.format.printf(info => {
+        // fallback in case the above formatters don't work.
+        // eg: logger.log({ some: 'object' })
+        if (typeof info.message === 'object') {
+          info.message = JSON.stringify(info.message, null, 4);
+        }
+        return JSON.stringify({
+          tag: process.env.BWS_LOG_HTTP_TAG || ('bws.' + path.parse(process.argv[1]).name),
+          ...info
+        });
+      }),
+    )
   }));
 }
 
