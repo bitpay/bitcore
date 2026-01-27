@@ -28,8 +28,18 @@
   "bin": {
     "wallet": "./bin/wallet"
   },
+  "nyc": {
+    "include": [
+      "src"
+    ],
+    "reporter": [
+      "html",
+      "text-summary"
+    ]
+  },
   "scripts": {
-    "test": "tsc --noEmit && npx mocha -r tsx 'test/**/*.ts'",
+    "test": "tsc --noEmit && mocha -r tsx 'test/**/*.ts'",
+    "coverage": "tsc --noEmit && nyc mocha -r tsx 'test/**/*.ts'",
     "build": "tsc",
     "postbuild": "node createBin -v",
     "clean": "rm -rf ./build",
@@ -55,6 +65,7 @@
     "@types/node": "^22.14.1",
     "chai": "^5.2.1",
     "mocha": "^11.7.1",
+    "nyc": "^17.1.0",
     "sinon": "^21.0.0",
     "source-map-support": "0.5.16",
     "tsx": "^4.21.0",

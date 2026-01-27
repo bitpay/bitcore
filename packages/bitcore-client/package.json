@@ -20,11 +20,21 @@
     "precompile": "cd ../bitcore-node && npm run clean && npm run build:prod",
     "compile": "npm run clean && npm run build",
     "test": "tsc --noEmit && mocha -r tsx test/**/*.test.ts",
+    "coverage": "tsc --noEmit && nyc mocha -r tsx 'test/**/*.test.ts'",
     "precommit": "npm run lint",
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
     "fix": "npm run fix:errors"
+  },
+  "nyc": {
+    "include": [
+      "src"
+    ],
+    "reporter": [
+      "html",
+      "text-summary"
+    ]
   },
   "dependencies": {
     "async": "2.5.0",
@@ -58,6 +68,7 @@
     "@types/secp256k1": "3.5.0",
     "chai": "5.1.2",
     "mocha": "11.1.0",
+    "nyc": "^17.1.0",
     "sinon": "19.0.2",
     "supertest": "7.0.0",
     "tsx": "^4.21.0",

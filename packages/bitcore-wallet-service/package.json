@@ -24,10 +24,9 @@
   "scripts": {
     "start": "npm run clean && npm run build && ./start.sh",
     "stop": "./stop.sh",
-    "coverage": "npm run compile && ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
-    "test": "tsc --noEmit && npx mocha -r tsx 'test/**/*.test.ts'",
+    "test": "tsc --noEmit && mocha -r tsx 'test/**/*.test.ts'",
+    "coverage": "tsc --noEmit && nyc mocha -r tsx 'test/**/*.test.ts'",
     "test:ci": "BWS_LOG_LEVEL=none npm run test",
-    "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "build": "tsc && npm run cp:templates",
     "build:prod": "tsc -p tsconfig.prod.json && npm run cp:templates",
     "build:docker": "docker build -t bitpay/bitcore-wallet-service:latest -f ./Dockerfile ../..",
@@ -43,6 +42,15 @@
     "clean:fiatrates": "npm run clean && npm run build && chmod +x ./ts_build/cleanfiatrates/cleanfiatrates.js && ./ts_build/cleanfiatrates/cleanfiatrates.js",
     "cp:templates": "cp -r ./templates ./ts_build/templates"
   },
+  "nyc": {
+    "includes": [
+      "src"
+    ],
+    "reporter": [
+      "html",
+      "text-summary"
+    ]
+  },
   "dependencies": {
     "@sendgrid/mail": "6.5.4",
     "abi-decoder": "2.4.0",
@@ -55,7 +63,6 @@
     "express": "4.19.2",
     "express-rate-limit": "2.14.2",
     "inherits": "2.0.4",
-    "istanbul": "0.4.5",
     "json-stable-stringify": "1.0.1",
     "juice": "^11.0.1",
     "lodash": "4.17.19",
@@ -64,6 +71,7 @@
     "moralis": "2.25.1",
     "mustache": "2.3.2",
     "nodemailer": "5.1.1",
+    "nyc": "^17.1.0",
     "preconditions": "2.2.3",
     "read": "1.0.7",
     "request": "2.88.2",
