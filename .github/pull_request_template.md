@@ -1,13 +1,16 @@
-## Description
-This PR...
+### Description
+Link to an issue if one exists and/or briefly describe what this PR does and why it's needed.
 
-Describe what this PR does here
-Explain why this PR is needed
+### Changelog
 
-## Make sure...
+* Add bullet points summarizing your changes.
+
+### Testing Notes
+Add any helpful notes for reviewers to test your code here.
+
+<hr style="border-width:3px">
+
+### Checklist
 * [ ] I have read [CONTRIBUTING.md](https://github.com/bitpay/bitcore/tree/master/CONTRIBUTING.md) and verified that this PR follows the guidelines and requirements outlined in it.
 * [ ] I have added the appropriate package tag(s) (e.g. `BWC` if modifying the bitcore-wallet-client package, `CLI` if modifying the bitcore-cli package, etc.)
 * [ ] I have verified that this is not an existing PR ([open](https://github.com/bitpay/bitcore/pulls) or [closed](https://github.com/bitpay/bitcore/pulls?q=is%3Apr+is%3Aclosed+))
-
-## Testing Notes
-Add any helpful notes for reviewers to test your code here.
