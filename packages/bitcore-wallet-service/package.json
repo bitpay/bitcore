@@ -25,7 +25,7 @@
     "start": "npm run clean && npm run build && ./start.sh",
     "stop": "./stop.sh",
     "coverage": "npm run compile && ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
-    "test": "npm run compile && npx mocha --exit --require ts-node/register --extensions ts --recursive 'test/**/*.test.ts'",
+    "test": "tsc --noEmit && npx mocha -r tsx 'test/**/*.test.ts'",
     "test:ci": "BWS_LOG_LEVEL=none npm run test",
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "build": "tsc && npm run cp:templates",
@@ -93,7 +93,7 @@
     "mocha-lcov-reporter": "^1.3.0",
     "sinon": "^7.1.1",
     "supertest": "*",
-    "ts-node": "^8.0.3",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.3"
   },
   "bitcoreNode": "./bitcorenode",

@@ -1,6 +1,6 @@
 'use strict';
 
-import chai from 'chai';
+import * as chai from 'chai';
 import { ChainService } from '../../src/lib/chain';
 
 const should = chai.should();

@@ -1,6 +1,6 @@
 'use strict';
 
-import chai from 'chai';
+import * as chai from 'chai';
 import 'chai/register-should';
 import sinon from 'sinon';
 import { Utils } from '../src/lib/common/utils';

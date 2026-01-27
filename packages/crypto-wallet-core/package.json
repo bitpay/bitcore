@@ -13,7 +13,7 @@
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
     "fix": "npm run fix:errors",
-    "test": "npm run compile && mocha -r tsx 'test/**/*.test.ts'",
+    "test": "tsc --noEmit && mocha -r tsx 'test/**/*.test.ts'",
     "pub": "npm run compile && npm publish"
   },
   "keywords": [
@@ -47,7 +47,7 @@
     "@types/node": "22.13.1",
     "chai": "5.1.2",
     "mocha": "11.1.0",
-    "tsx": "4.19.2",
+    "tsx": "^4.21.0",
     "typescript": "5.7.3"
   },
   "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4"

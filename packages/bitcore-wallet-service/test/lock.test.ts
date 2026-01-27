@@ -1,7 +1,6 @@
 'use strict';
 
-import sinon from 'sinon';
-import chai from 'chai';
+import * as chai from 'chai';
 import 'chai/register-should';
 import { Lock } from '../src/lib/lock';
 import helpers from './integration/helpers';
@@ -138,7 +137,7 @@ describe('Locks', function() {
     });
   });
 
-  it('should return error if unable to acquire lock', function(done) {  
+  it('should return error if unable to acquire lock', function(done) {
     pushEvent(0);
 
     lock.acquire('123', {}, function(err, release) {
