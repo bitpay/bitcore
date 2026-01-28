@@ -119,6 +119,14 @@ export class DeriverProxy {
       return Paths.BTC.default + accountStr;
     }
   }
+
+  privateKeyToBuffer(chain, privateKey: any): Buffer {
+    return this.get(chain).privateKeyToBuffer(privateKey);
+  }
+
+  privateKeyBufferToNativePrivateKey(chain: string, network: string, buf: Buffer): any {
+    return this.get(chain).privateKeyBufferToNativePrivateKey(buf, network);
+  }
 }
 
 export default new DeriverProxy();
