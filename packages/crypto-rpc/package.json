@@ -1,6 +1,6 @@
 {
   "name": "crypto-rpc",
-  "version": "11.5.0",
+  "version": "11.5.1",
   "description": "A Normalized RPC Interface for Cryptocurrencies",
   "main": "index.js",
   "type": "module",
@@ -26,7 +26,7 @@
     "@solana-program/address-lookup-table": "0.7.0",
     "bitcoind-rpc": "0.9.1",
     "commander": "2.8.1",
-    "crypto-wallet-core": "^11.5.0",
+    "crypto-wallet-core": "^11.5.1",
     "dogecoind-rpc": "0.8.1",
     "lightning": "10.0.1",
     "promptly": "0.2.0"
