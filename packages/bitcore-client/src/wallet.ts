@@ -785,9 +785,10 @@ export class Wallet {
         // In Phase 2, this would be passed directly to Transaction.sign in a try/finally, which will fill(0)
         let privKeyBuf: Buffer | undefined;
         try {
-          privKeyBuf = Encryption.decryptToBuffer(key.privKey, this.pubKey, this.unlocked.encryptionKey);
+          privKeyBuf = Encryption.decryptToBuffer(key.encKey, this.pubKey, this.unlocked.encryptionKey);
           key.privKey = Deriver.privateKeyBufferToNativePrivateKey(this.chain, this.network, privKeyBuf);
-        } catch {
+        } catch (e) {
+          console.error(e);
           continue;
         } finally {
           if (Buffer.isBuffer(privKeyBuf)) {
