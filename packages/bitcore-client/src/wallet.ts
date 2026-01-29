@@ -264,16 +264,6 @@ export class Wallet {
     }
 
     return new Wallet(Object.assign(loadedWallet, { storage }));
-    // TODO REMOVE
-    // if (wallet.version > CURRENT_WALLET_VERSION) {
-    //   throw new Error(`Invalid wallet version ${wallet.version} exceeds current wallet version ${CURRENT_WALLET_VERSION}`);
-    // }
-
-    // if (wallet.version != CURRENT_WALLET_VERSION) {
-    //   wallet = await wallet.migrateWallet();
-    // }
-
-    // return wallet;
   }
 
   /**
@@ -396,7 +386,10 @@ export class Wallet {
      * 3. Overwrite
      */
     this.version = CURRENT_WALLET_VERSION;
-    await this.storage.saveWallet({ wallet: this.toObject(false) })
+    const savedPassword = this.password; // Wallet.toObject() rehashes password - save and replace
+    const walletObj = this.toObject(false);
+    walletObj.password = savedPassword;
+    await this.storage.saveWallet({ wallet: walletObj })
       .catch(err => {
         console.error('Wallet migration failed, rely on backup', err);
       });
