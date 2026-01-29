@@ -6,9 +6,10 @@ services:
     volumes:
       - my_data1:/root/.lnd
       - my_data2:/root/.lnd2
+      - ../crypto-wallet-core:/crypto-rpc/node_modules/crypto-wallet-core
     networks:
       default:
-        ipv4_address: 172.28.0.21
+        ipv4_address: 172.29.0.21
     depends_on:
       - bitcoin
       - bitcoin-cash
@@ -27,9 +28,10 @@ services:
     volumes:
       - my_data1:/root/.lnd
       - my_data2:/root/.lnd2
+      - ../crypto-wallet-core:/crypto-rpc/node_modules/crypto-wallet-core
     networks:
       default:
-        ipv4_address: 172.28.0.2
+        ipv4_address: 172.29.0.2
     depends_on:
       - bitcoin
       - bitcoin-cash
@@ -44,10 +46,10 @@ services:
   bitcoin:
     image: kajoseph/bitcoin-core:22.0
     ports:
-      - "8333:8333"
+      - "8433:8333"
     networks:
       default:
-        ipv4_address: 172.28.0.3
+        ipv4_address: 172.29.0.3
     command:
       -printtoconsole
       -regtest=1
@@ -73,7 +75,7 @@ services:
       - "9333:9333"
     networks:
       default:
-        ipv4_address: 172.28.0.4
+        ipv4_address: 172.29.0.4
     command:
       bitcoind
       -printtoconsole
@@ -99,7 +101,7 @@ services:
       - "22555:22555"
     networks:
       default:
-        ipv4_address: 172.28.0.6
+        ipv4_address: 172.29.0.6
     command:
       dogecoind
       -printtoconsole
@@ -120,18 +122,17 @@ services:
     restart: always
 
   geth:
-    image: ethereum/client-go:v1.14.13
+    image: ethereum/client-go:v1.16.7
     volumes:
       - ./test/docker/geth-keystore:/keystore
     ports:
-      - "9545:8545"
+      - "8645:8545"
     networks:
       default:
-        ipv4_address: 172.28.0.7
+        ipv4_address: 172.29.0.7
     command:
       --dev
       --datadir /geth
-      --networkid 1337
       --http
       --http.api web3,eth,debug,net
       --http.corsdomain '*'
@@ -140,13 +141,15 @@ services:
       --http.port 8545
       --keystore /keystore
       --allow-insecure-unlock
-      --unlock 00a329c0648769a73afac7f9381e08fb43dbea72
       --password /keystore/pw
+      --txlookuplimit 0
+      --cache 512
+      # --unlock 00a329c0648769a73afac7f9381e08fb43dbea72
 
   rippled:
     networks:
       default:
-        ipv4_address: 172.28.0.8
+        ipv4_address: 172.29.0.8
     build:
       context: .
       dockerfile: ./test/docker/rippled.Dockerfile
@@ -157,7 +160,7 @@ services:
       - "10333:10333"
     networks:
       default:
-        ipv4_address: 172.28.0.9
+        ipv4_address: 172.29.0.9
     command:
       -printtoconsole
       -regtest=1
@@ -183,9 +186,9 @@ services:
       - my_data1:/root/.lnd
     networks:
       default:
-        ipv4_address: 172.28.0.5
+        ipv4_address: 172.29.0.5
     command:
-      --tlsextraip=172.28.0.5
+      --tlsextraip=172.29.0.5
       --tlsextradomain=lightning
       --rpclisten=0.0.0.0:11009
       --bitcoin.active
@@ -206,10 +209,10 @@ services:
       - my_data2:/root/.lnd2
     networks:
       default:
-        ipv4_address: 172.28.0.10
+        ipv4_address: 172.29.0.10
     command:
       --lnddir=/root/.lnd2
-      --tlsextraip=172.28.0.10
+      --tlsextraip=172.29.0.10
       --tlsextradomain=lightning
       --rpclisten=0.0.0.0:11010
       --bitcoin.active
@@ -226,7 +229,7 @@ services:
     image: solanalabs/solana:v1.18.26
     networks:
       default:
-        ipv4_address: 172.28.0.12
+        ipv4_address: 172.29.0.12
     build:
       context: .
       dockerfile: ./test/docker/solana.Dockerfile
@@ -241,6 +244,9 @@ volumes:
     driver: local
   my_data2:
     driver: local
+  cwc:
+    driver: external
+    name: crypto-wallet-core
 
 networks:
   default:
@@ -248,4 +254,4 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.28.0.0/16
+        - subnet: 172.29.0.0/16

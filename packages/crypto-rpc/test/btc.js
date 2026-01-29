@@ -23,13 +23,15 @@ describe('BTC Tests', function() {
   this.timeout(10000);
   const currency = 'BTC';
   const { currencyConfig } = config;
-  const rpcs = new CryptoRpc(config, currencyConfig);
-  const bitcoin = rpcs.get(currency);
   const walletName = 'wallet0';
   const addressLabel = 'abc123';
   let walletAddress = '';
+  let rpcs;
+  let bitcoin;
 
   before(async () => {
+    rpcs = new CryptoRpc(config, currencyConfig);
+    bitcoin = rpcs.get(currency);
     await bitcoin.asyncCall('createwallet', [walletName]);
     walletAddress = await bitcoin.asyncCall('getnewaddress', [addressLabel]);
   });
@@ -146,7 +148,7 @@ describe('BTC Tests', function() {
         }
       });
     });
-    const outputArray = await rpcs.unlockAndSendToAddressMany({ payToArray, passphrase: currencyConfig.unlockPassword, time: 1000, maxValue, maxOutputs });
+    const outputArray = await rpcs.unlockAndSendToAddressMany({ currency, payToArray, passphrase: currencyConfig.unlockPassword, time: 1000, maxValue, maxOutputs });
     await emitPromise;
     expect(outputArray).to.have.lengthOf(4);
     expect(outputArray[0].txid).to.equal(outputArray[1].txid);
@@ -298,7 +300,7 @@ describe('BTC Tests', function() {
     });
   
     it('should be able to get a transaction with detail', async() => {
-      const tx = await rpcs.getTransaction({ txid, detail: true });
+      const tx = await rpcs.getTransaction({ currency, txid, detail: true });
       expect(tx).to.exist;
       expect(tx.txid).to.equal(txid);
       expect(tx.vin[0].address).to.exist;
@@ -365,8 +367,8 @@ describe('BTC Tests', function() {
       assert(txid);
     });
     it('should get tx output info from mempool', async() => {
-      const output1 = await rpcs.getTxOutputInfo({ txid, vout: 0, includeMempool: true });
-      const output2 = await rpcs.getTxOutputInfo({ txid, vout: 1, includeMempool: true });
+      const output1 = await rpcs.getTxOutputInfo({ currency, txid, vout: 0, includeMempool: true });
+      const output2 = await rpcs.getTxOutputInfo({ currency, txid, vout: 1, includeMempool: true });
       const output = [output1, output2].find(v => v.value === 0.0001);
       expect(output).to.exist;
       expect(output.scriptPubKey.address).to.equal(config.currencyConfig.sendTo);
@@ -375,7 +377,7 @@ describe('BTC Tests', function() {
     it('should fail to get tx output when not in mempool', async() => {
       let output = null;
       try {
-        output = await rpcs.getTxOutputInfo({ txid, vout: 0, includeMempool: false });
+        output = await rpcs.getTxOutputInfo({ currency, txid, vout: 0, includeMempool: false });
       } catch (e) {
         expect(e.message).to.include('No info found for');
       }
@@ -393,16 +395,16 @@ describe('BTC Tests', function() {
       });
 
       it('should get tx output info', async() => {
-        const output1 = await rpcs.getTxOutputInfo({ txid, vout: 0 });
-        const output2 = await rpcs.getTxOutputInfo({ txid, vout: 1 });
+        const output1 = await rpcs.getTxOutputInfo({ currency, txid, vout: 0 });
+        const output2 = await rpcs.getTxOutputInfo({ currency, txid, vout: 1 });
         const output = [output1, output2].find(v => v.value === 0.0001);
         expect(output).to.exist;
         expect(output.scriptPubKey.address).to.equal(config.currencyConfig.sendTo);
       });
     
       it('should get tx output info for bitcore', async() => {
-        const output1 = await rpcs.getTxOutputInfo({ txid, vout: 0, transformToBitcore: true });
-        const output2 = await rpcs.getTxOutputInfo({ txid, vout: 1, transformToBitcore: true });
+        const output1 = await rpcs.getTxOutputInfo({ currency, txid, vout: 0, transformToBitcore: true });
+        const output2 = await rpcs.getTxOutputInfo({ currency, txid, vout: 1, transformToBitcore: true });
         const output = [output1, output2].find(v => v.value === 0.0001);
         expect(output).to.exist;
         expect(output.address).to.equal(config.currencyConfig.sendTo);

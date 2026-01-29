@@ -1,10 +1,10 @@
 'use strict';
 
-import chai from 'chai';
+import * as chai from 'chai';
 import 'chai/register-should';
 import util from 'util';
 import sinon from 'sinon';
-import { transport } from '../../src/lib/logger';
+import { transports } from '../../src/lib/logger';
 import { EmailService } from '../../src/lib/emailservice';
 import { Common } from '../../src/lib/common';
 import * as TestData from '../testdata';
@@ -12,7 +12,9 @@ import helpers from './helpers';
 
 
 const should = chai.should();
-transport.level = 'error';
+for (const transport of transports) {
+  transport.level = 'error';
+}
 const { Utils } = Common;
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 

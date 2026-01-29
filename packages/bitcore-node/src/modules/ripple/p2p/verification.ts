@@ -20,7 +20,7 @@ export class XrpVerificationPeer extends XrpP2pWorker implements IVerificationPe
 
   async setupListeners() {
     this.events.on('connected', async () => {
-      this.client!.on('ledger', async block => {
+      this.client?.emitter.on('ledger', async block => {
         const transformedBlock = this.provider.transformLedger(block, this.network);
         this.events.emit('block', transformedBlock);
       });
@@ -33,10 +33,10 @@ export class XrpVerificationPeer extends XrpP2pWorker implements IVerificationPe
     let currentHeight = Math.max(1, start);
     while (currentHeight <= end) {
       let lastLog = Date.now();
-      const block = await client.getLedger({
-        ledgerVersion: currentHeight,
-        includeTransactions: true,
-        includeAllData: true
+      const block = await client.getBlock({
+        index: currentHeight,
+        transactions: true,
+        expand: true
       });
 
       const transformedBlock = this.provider.transformLedger(block, network);

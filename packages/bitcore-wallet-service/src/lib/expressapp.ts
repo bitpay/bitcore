@@ -12,7 +12,7 @@ import * as Types from '../types/expressapp';
 import { Common } from './common';
 import { ClientError } from './errors/clienterror';
 import { Errors } from './errors/errordefinitions';
-import { logger, transport } from './logger';
+import { logger, transports } from './logger';
 import { error } from './routes/helpers';
 import { createWalletLimiter } from './routes/middleware/createWalletLimiter';
 import { LogMiddleware } from './routes/middleware/log';
@@ -97,7 +97,9 @@ export class ExpressApp {
     });
 
     if (opts.disableLogs) {
-      transport.level = 'error';
+      for (const transport of transports) {
+        transport.level = 'error';
+      }
     } else {
       this.app.use(LogMiddleware());
       // morgan.token('walletId', function getId(req) {
@@ -1398,6 +1400,23 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v4/fiatrates/:code/', (req, res) => {
+      SetPublicCache(res, 5 * ONE_MINUTE);
+      let server: WalletService;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.externalServices.coinGecko.coinGeckoGetFiatRates(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
     // DEPRECATED
     router.post('/v1/pushnotifications/subscriptions/', (req, res) => {
       getServerWithAuth(req, res, server => {
@@ -2202,6 +2221,23 @@ export class ExpressApp {
         return returnError(ex, res, req);
       }
       server.externalServices.coinGecko.coinGeckoGetTokens(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          return returnError(err ?? 'unknown', res, req);
+        });
+    });
+
+    router.get('/v1/marketstats/:code/', (req, res) => {
+      SetPublicCache(res, 5 * ONE_MINUTE);
+      let server: WalletService;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.externalServices.coinGecko.coinGeckoGetMarketStats(req)
         .then(response => {
           res.json(response);
         })

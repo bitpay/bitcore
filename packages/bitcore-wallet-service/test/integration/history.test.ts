@@ -1,6 +1,6 @@
 'use strict';
 
-import chai from 'chai';
+import * as chai from 'chai';
 import 'chai/register-should';
 import util from 'util';
 import sinon from 'sinon';
@@ -245,7 +245,7 @@ describe('History', function() {
 
     it('should get tx history from cache', function(done) {
       const _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
-      Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
+      (Defaults.CONFIRMATIONS_TO_START_CACHING as any) = 10;
       helpers.stubHistory(50, BCHEIGHT); // (0->49)
 
       // this call is to fill the cache
@@ -273,7 +273,7 @@ describe('History', function() {
             tx.blockheight.should.equal(BCHEIGHT - i + 1);
             i++;
           }
-          Defaults.CONFIRMATIONS_TO_START_CACHING = _cache;
+          (Defaults.CONFIRMATIONS_TO_START_CACHING as any) = _cache;
           done();
         });
       });
@@ -281,7 +281,7 @@ describe('History', function() {
 
     it('should get tx history from cache and bc mixed', function(done) {
       const _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
-      Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
+      (Defaults.CONFIRMATIONS_TO_START_CACHING as any) = 10;
       helpers.stubHistory(50, BCHEIGHT); // (0->49)
 
       // this call is to fill the cache
@@ -308,7 +308,7 @@ describe('History', function() {
             tx.blockheight.should.equal(BCHEIGHT - i + 1);
             i++;
           }
-          Defaults.CONFIRMATIONS_TO_START_CACHING = _cache;
+          (Defaults.CONFIRMATIONS_TO_START_CACHING as any) = _cache;
           done();
         });
       });
@@ -317,10 +317,10 @@ describe('History', function() {
     it('should get tx history from cache and bc mixed, updating confirmations', function(done) {
       const _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
       const _time = Defaults.BLOCKHEIGHT_CACHE_TIME.default;
-      Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
+      (Defaults.CONFIRMATIONS_TO_START_CACHING as any) = 10;
 
       // remove bc tip cache.
-      Defaults.BLOCKHEIGHT_CACHE_TIME = { default: 0 } as any;
+      (Defaults.BLOCKHEIGHT_CACHE_TIME as any) = { default: 0 };
       helpers.stubHistory(50, BCHEIGHT); // (0->49)
 
       // this call is to fill the cache
@@ -339,8 +339,8 @@ describe('History', function() {
             tx.confirmations.should.equal(i + heightOffset);
             i++;
           }
-          Defaults.BLOCKHEIGHT_CACHE_TIME.default = _time;
-          Defaults.CONFIRMATIONS_TO_START_CACHING = _cache;
+          (Defaults.BLOCKHEIGHT_CACHE_TIME.default as any) = _time;
+          (Defaults.CONFIRMATIONS_TO_START_CACHING as any) = _cache;
           done();
         });
       });
@@ -350,7 +350,7 @@ describe('History', function() {
       it('should not stream cache on first call', async function() {
         this.timeout(10000);
         const _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
-        Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
+        (Defaults.CONFIRMATIONS_TO_START_CACHING as any) = 10;
         helpers.stubHistory(100, 10000);
         const limit = 20;
         let allTxs = [];
@@ -399,7 +399,7 @@ describe('History', function() {
           x.id.should.equal('id' + i);
           i++;
         }
-        Defaults.CONFIRMATIONS_TO_START_CACHING = _cache;
+        (Defaults.CONFIRMATIONS_TO_START_CACHING as any) = _cache;
       });
 
 
@@ -407,7 +407,7 @@ describe('History', function() {
       it('should get tx history from cache and bc mixed', async function() {
         this.timeout(10000);
         const _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
-        Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
+        (Defaults.CONFIRMATIONS_TO_START_CACHING as any) = 10;
         helpers.stubHistory(1000, 10000); // (0->49)
         const limit = 20;
         let allTxs = [];
@@ -452,13 +452,13 @@ describe('History', function() {
           x.id.should.equal('id' + i);
           i++;
         }
-        Defaults.CONFIRMATIONS_TO_START_CACHING = _cache;
+        (Defaults.CONFIRMATIONS_TO_START_CACHING as any) = _cache;
       });
 
       it('should download history with prime page size and total txs', async function() {
         this.timeout(10000);
         const _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
-        Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
+        (Defaults.CONFIRMATIONS_TO_START_CACHING as any) = 10;
         helpers.stubHistory(997, 10000); // (0->49)
         const limit = 17;
         let allTxs = [];
@@ -503,14 +503,14 @@ describe('History', function() {
           x.id.should.equal('id' + i);
           i++;
         }
-        Defaults.CONFIRMATIONS_TO_START_CACHING = _cache;
+        (Defaults.CONFIRMATIONS_TO_START_CACHING as any) = _cache;
       });
 
 
       it('should download history with stream cache> page', async function() {
         this.timeout(10000);
         const _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
-        Defaults.CONFIRMATIONS_TO_START_CACHING = 100;
+        (Defaults.CONFIRMATIONS_TO_START_CACHING as any) = 100;
         helpers.stubHistory(997, 10000); // (0->49)
         const limit = 17;
         let allTxs = [];
@@ -556,7 +556,7 @@ describe('History', function() {
           x.id.should.equal('id' + i);
           i++;
         }
-        Defaults.CONFIRMATIONS_TO_START_CACHING = _cache;
+        (Defaults.CONFIRMATIONS_TO_START_CACHING as any) = _cache;
       });
     });
 

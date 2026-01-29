@@ -1,5 +1,5 @@
 import sinon from 'sinon';
-import chai from 'chai';
+import * as chai from 'chai';
 import 'chai/register-should';
 import { BitcoreLib } from 'crypto-wallet-core';
 import request from 'supertest';

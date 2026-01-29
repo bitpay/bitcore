@@ -1,24 +1,27 @@
 
 import { Transform } from 'stream';
 import { Validation } from 'crypto-wallet-core';
-import { ObjectId } from 'mongodb';
 import { LoggifyClass } from '../../../decorators/Loggify';
-import { MongoBound } from '../../../models/base';
-import { BitcoinBlockStorage, IBtcBlock } from '../../../models/block';
+import { BitcoinBlockStorage, type IBtcBlock } from '../../../models/block';
 import { CacheStorage } from '../../../models/cache';
-import { CoinStorage, ICoin } from '../../../models/coin';
+import { CoinStorage, type ICoin } from '../../../models/coin';
 import { StateStorage } from '../../../models/state';
-import { ITransaction, TransactionStorage } from '../../../models/transaction';
-import { IWallet, WalletStorage } from '../../../models/wallet';
-import { IWalletAddress, WalletAddressStorage } from '../../../models/walletAddress';
+import { type ITransaction, TransactionStorage } from '../../../models/transaction';
+import { type IWallet, WalletStorage } from '../../../models/wallet';
+import { type IWalletAddress, WalletAddressStorage } from '../../../models/walletAddress';
 import { RPC } from '../../../rpc';
 import { Config } from '../../../services/config';
 import { Storage } from '../../../services/storage';
-import { IBlock } from '../../../types/Block';
-import { CoinJSON, SpentHeightIndicators } from '../../../types/Coin';
-import { IUtxoNetworkConfig } from '../../../types/Config';
-import { TransactionJSON } from '../../../types/Transaction';
-import {
+import { type CoinJSON, SpentHeightIndicators } from '../../../types/Coin';
+import { StringifyJsonStream } from '../../../utils/jsonStream';
+import { ListTransactionsStream } from './transforms';
+import type { MongoBound } from '../../../models/base';
+import type { IBlock } from '../../../types/Block';
+import type { IUtxoNetworkConfig } from '../../../types/Config';
+import type { TransactionJSON } from '../../../types/Transaction';
+import type { StreamBlocksParams } from '../../../types/namespaces/ChainStateProvider';
+import type { GetBlockBeforeTimeParams, StreamTransactionParams, WalletBalanceType } from '../../../types/namespaces/ChainStateProvider';
+import type {
   BroadcastTransactionParams,
   CreateWalletParams,
   DailyTransactionsParams,
@@ -38,10 +41,7 @@ import {
   UpdateWalletParams,
   WalletCheckParams
 } from '../../../types/namespaces/ChainStateProvider';
-import { StreamBlocksParams } from '../../../types/namespaces/ChainStateProvider';
-import { GetBlockBeforeTimeParams, StreamTransactionParams, WalletBalanceType } from '../../../types/namespaces/ChainStateProvider';
-import { StringifyJsonStream } from '../../../utils/jsonStream';
-import { ListTransactionsStream } from './transforms';
+import type { ObjectId } from 'mongodb';
 
 @LoggifyClass
 export class InternalStateProvider implements IChainStateService {
@@ -56,8 +56,8 @@ export class InternalStateProvider implements IChainStateService {
     if (!RPC_PEER) {
       throw new Error(`RPC not configured for ${chain} ${network}`);
     }
-    const { username, password, host, port } = RPC_PEER;
-    return new RPC(username, password, host, port);
+    const { username, password, host, port, protocol } = RPC_PEER;
+    return new RPC(username, password, host, port, protocol);
   }
 
   private getAddressQuery(params: StreamAddressUtxosParams) {

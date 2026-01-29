@@ -1,6 +1,6 @@
 import os from 'os';
+import { Web3 } from 'crypto-wallet-core';
 import request from 'request';
-import Web3 from 'web3';
 import config from '../../../config';
 import logger from '../../../logger';
 import { MongoBound } from '../../../models/base';
@@ -73,7 +73,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       async () => {
         const { rpc } = await this.getWeb3(network, { type: 'historical' });
         const feerate = await rpc.estimateFee({ nBlocks: target, txType });
-        return { feerate, blocks: target };
+        return { feerate: Number(feerate), blocks: target };
       },
       CacheStorage.Times.Minute
     );
@@ -92,7 +92,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     const { web3 } = await this.getWeb3(network);
     const chainId = await this.getChainId({ network });
     const blockRange = await this.getBlocksRange({ ...params, chainId });
-    const tipHeight = await web3.eth.getBlockNumber();
+    const tipHeight = Number(await web3.eth.getBlockNumber());
     let isReading = false;
   
     const stream = new ReadableWithEventPipe({
@@ -137,7 +137,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     network = network.toLowerCase();
 
     const { web3 } = await this.getWeb3(network, { type: 'historical' });
-    const tipHeight = await web3.eth.getBlockNumber();
+    const tipHeight = Number(await web3.eth.getBlockNumber());
     const chainId = await this.getChainId({ network });
     const found = await this._getTransactionFromMoralis({ chain, network, chainId, txId });
     return { tipHeight, found };
@@ -205,18 +205,22 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
 
     for (const blockNum of blockRange) {
       const block = await web3.eth.getBlock(blockNum);
-      const nextBlock = await web3.eth.getBlock(block.number + 1);
+      const nextBlock = await web3.eth.getBlock(block.number + 1n);
       const convertedBlock = EVMBlockStorage.convertRawBlock(chain, network, block);
-      convertedBlock.nextBlockHash = nextBlock?.hash;
+      convertedBlock.nextBlockHash = nextBlock?.hash!;
       blocks.push(convertedBlock);
     }
     
-    const tipHeight = await web3.eth.getBlockNumber();
+    const tipHeight = Number(await web3.eth.getBlockNumber());
     return { tipHeight, blocks };
   }
 
   // @override
-  async _getBlockNumberByDate({ chainId, date }) {
+  async _getBlockNumberByDate(params: {
+    date: Date;
+    chainId: string | bigint;
+  }) {
+    const { date, chainId } = params;
     if (!date || !isDateValid(date)) {
       throw new Error('Invalid date');
     }

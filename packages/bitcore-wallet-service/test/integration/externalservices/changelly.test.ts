@@ -1,6 +1,6 @@
 'use strict';
 
-import chai from 'chai';
+import * as chai from 'chai';
 import 'chai/register-should';
 import crypto from 'crypto';
 import util from 'util';
@@ -74,14 +74,19 @@ describe('Changelly integration', () => {
   describe('#Changelly API key selection', () => {
     it('should use stablecoin API key for stablecoin swaps', () => {
       const stablecoins = [
+        'usdt', 'usdc', 'dai', 'busd', 'tusd', 'usdp', 'usdn',
         'usdt20', 'usdtarb', 'usdtop', 'usdtpolygon', 'usdtsol',
         'usdcmatic', 'usdcarb', 'usdcbase', 'usdcop', 'usdcsol',
         'daipolygon'
       ];
+
+      const getRandomStablecoin = () =>
+        stablecoins[Math.floor(Math.random() * stablecoins.length)];
   
       for (const coin of stablecoins) {
+        const _coinTo = getRandomStablecoin();
         const req = {
-          body: { coinFrom: coin }
+          body: { coinFrom: coin, coinTo: _coinTo }
         };
         const keys = server.externalServices.changelly.changellyGetKeysV2(req);
         keys.SECRET.should.equal(config.changelly.v2.secret_stablecoin);
@@ -89,7 +94,7 @@ describe('Changelly integration', () => {
       }
 
       const req = {
-        body: { coinFrom: 'xxx' }
+        body: { coinFrom: 'xxx', coinTo: 'xxx' }
       };
       const keys = server.externalServices.changelly.changellyGetKeysV2(req);
       keys.SECRET.should.equal(config.changelly.v2.secret);
