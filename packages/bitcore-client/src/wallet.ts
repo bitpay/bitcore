@@ -325,9 +325,7 @@ export class Wallet {
     }
     let masterKey;
     if (!this.lite) {
-      const encMasterKey = this.masterKey;
-      const masterKeyStr = await Encryption.decryptPrivateKey(encMasterKey, this.pubKey, encryptionKey);
-      masterKey = JSON.parse(masterKeyStr);
+      masterKey = JSON.parse(this.masterKey);
       masterKey.xprivkey = Encryption.decryptToBuffer(masterKey.xprivkey, this.pubKey, encryptionKey);
       masterKey.privateKey = Encryption.decryptToBuffer(masterKey.privateKey, this.pubKey, encryptionKey);
     }
