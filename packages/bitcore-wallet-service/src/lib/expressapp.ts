@@ -2260,28 +2260,6 @@ export class ExpressApp {
       });
     });
 
-    router.get('/v1/service/payId/:payId', (req, res) => {
-      let server: WalletService;
-      const payId = req.params['payId'];
-      const opts = {
-        handle: payId.split('$')[0],
-        domain: payId.split('$')[1]
-      };
-      try {
-        server = getServer(req, res);
-      } catch (ex) {
-        return returnError(ex, res, req);
-      }
-      server
-        .discoverPayId(opts)
-        .then(response => {
-          res.json(response);
-        })
-        .catch(err => {
-          return returnError(err ?? 'unknown', res, req);
-        });
-    });
-
     const moralisCorsOptions = {
       origin: (origin, cb) => {
         const moralisWhiteList = config.moralis?.whitelist ?? [];
