@@ -4999,66 +4999,6 @@ export class WalletService implements IWalletService {
     }
   }
 
-  getPayId(url: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const headers = {
-        'PayID-Version': '1.0',
-        Accept: 'application/payid+json'
-      };
-      this.request.get(
-        url,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            return resolve(data.body ? data.body : data);
-          }
-        }
-      );
-    });
-  }
-
-  discoverPayId(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const URL: string = `https://${req.domain}/.well-known/webfinger?resource=payid%3A${req.handle}%24${req.domain}`;
-      const headers = {
-        'PayID-Version': '1.0',
-        Accept: 'application/payid+json'
-      };
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : err);
-          } else {
-            let url;
-            if (data.body && data.body.links && data.body.links[0].template) {
-              const template: string = data.body.links[0].template;
-              url = template.replace('{acctpart}', req.handle);
-            } else {
-              url = `https://${req.domain}/${req.handle}`;
-            }
-            this.getPayId(url)
-              .then(data => {
-                return resolve(data);
-              })
-              .catch(err => {
-                return reject(err);
-              });
-          }
-        }
-      );
-    });
-  }
-
   /**
    * Clear wallet cache
    * @param {Object} opts
