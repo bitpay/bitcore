@@ -65,9 +65,11 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       if (!this.blockAtTimeCache[chainNetwork]) {
         this.blockAtTimeCache[chainNetwork] = new LRUCache<string, IBlock>({ max: 1000 });
       }
-      this.blockAtTimeCache[chainNetwork].set(date.toISOString(), block, { ttl: block ? undefined : 60000 }); // cache nulls for 1 min
+      this.blockAtTimeCache[chainNetwork].set(date.toISOString(), block);
+    } else {
+      this.blockAtTimeCache[chainNetwork].set(date.toISOString(), block, { ttl: 10000 }); // cache nulls for 10 sec
     }
-    return block || null;
+    return block;
   }
 
   // @override

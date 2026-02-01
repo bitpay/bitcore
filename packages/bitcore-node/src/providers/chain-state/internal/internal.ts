@@ -180,7 +180,7 @@ export class InternalStateProvider implements IChainStateService {
     const { chain, network, time } = params;
     const date = new Date(time || Date.now());
     const chainNetwork = chain.toLowerCase() + ':' + network.toLowerCase();
-    const cachedBlock = this.blockAtTimeCache[chainNetwork].get(date.toISOString());
+    const cachedBlock = this.blockAtTimeCache[chainNetwork]?.get(date.toISOString());
     if (cachedBlock) {
       return cachedBlock;
     }
