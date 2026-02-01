@@ -65,7 +65,7 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
     feeCache[feeCacheKey] = { fee, date: Date.now() };
     return res.json(fee);
   } catch (err: any) {
-    logger.error('Fee Error: %o', err.stackk || err.message || err);
+    logger.error('Fee Error: %o', err?.stack || err?.message || err || '(unknown)');
     return res.status(500).send('Error getting fee from RPC');
   }
 });

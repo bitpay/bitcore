@@ -29,12 +29,14 @@ export interface IUtxoNetworkConfig extends INetworkConfig {
   syncStartHash?: string; // Start syncing from this block
 }
 
+export type ProviderDataType = 'realtime' | 'historical';
+
 export interface IProvider {
   host: string;
   port?: number | string;
   protocol: 'http' | 'https' | 'ws' | 'wss' | 'ipc';
   options?: object;
-  dataType?: 'realtime' | 'historical' | 'combined';
+  dataType?: ProviderDataType | 'combined';
   wsPort?: number | string;
   disabled?: boolean; // Useful when multiple providers are configured
 }

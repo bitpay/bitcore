@@ -68,7 +68,7 @@ export class MoralisP2PWorker extends BaseP2PWorker {
             connectionErrors.push(e);
           }
         }
-        logger.error('Unable to connect to web3 %o:%o instance: %o', connectionErrors);
+        logger.error('Unable to connect to web3 %o:%o instance: %o', this.chain, this.network, connectionErrors);
         // Notice we don't unset this.web3. At worst, the old connection starts working again.
       }
     } catch (e) {

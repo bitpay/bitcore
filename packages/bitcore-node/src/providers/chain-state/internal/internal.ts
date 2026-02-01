@@ -1,6 +1,7 @@
 
 import { Transform } from 'stream';
 import { Validation } from 'crypto-wallet-core';
+import { LRUCache } from 'lru-cache';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import { BitcoinBlockStorage, type IBtcBlock } from '../../../models/block';
 import { CacheStorage } from '../../../models/cache';
@@ -46,9 +47,12 @@ import type { ObjectId } from 'mongodb';
 @LoggifyClass
 export class InternalStateProvider implements IChainStateService {
   chain: string;
+  blockAtTimeCache: { [key: string]: LRUCache<string, IBlock> };
+
   constructor(chain: string, private WalletStreamTransform = ListTransactionsStream) {
     this.chain = chain;
     this.chain = this.chain.toUpperCase();
+    this.blockAtTimeCache = {};
   }
 
   getRPC(chain: string, network: string) {
@@ -175,6 +179,11 @@ export class InternalStateProvider implements IChainStateService {
   async getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock|null> {
     const { chain, network, time } = params;
     const date = new Date(time || Date.now());
+    const chainNetwork = chain.toLowerCase() + ':' + network.toLowerCase();
+    const cachedBlock = this.blockAtTimeCache[chainNetwork].get(date.toISOString());
+    if (cachedBlock) {
+      return cachedBlock;
+    }
     const [block] = await BitcoinBlockStorage.collection
       .find({
         chain,
@@ -184,6 +193,10 @@ export class InternalStateProvider implements IChainStateService {
       .limit(1)
       .sort({ timeNormalized: -1 })
       .toArray();
+    if (!this.blockAtTimeCache[chainNetwork]) {
+      this.blockAtTimeCache[chainNetwork] = new LRUCache<string, IBlock>({ max: 1000 });
+    }
+    this.blockAtTimeCache[chainNetwork].set(date.toISOString(), block);
     return block;
   }
 
