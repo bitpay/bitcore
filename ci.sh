@@ -8,9 +8,15 @@ if [ "$1" == "build" ]; then
   if [ -z $2 ]; then
     env="ci"
   fi
-  docker-compose -f docker-compose.test.base.yml -f docker-compose.test.$env.yml build
-elif [ "$1" != "" ]; then
-  docker-compose -f docker-compose.test.base.yml -f docker-compose.test.local.yml run --entrypoint "$1" test_runner
+  if [ "$env" = "ci" ]; then
+    docker-compose -f docker-compose.test.base.yml -f docker-compose.test.$env.yml build
+  elif [ "$env" = "local" ]; then
+    docker compose -f docker-compose.test.base.yml -f docker-compose.test.$env.yml build
+  else
+    echo "Unknown environment '$env'. Expected 'ci' or 'local'."
+  fi
+elif [ "$1" = "local" ]; then
+  docker compose -f docker-compose.test.base.yml -f docker-compose.test.local.yml run --entrypoint "$1" test_runner
 else
   echo "Missing expected parameter. The first parameter should be 'build' or a top level npm script to run in the test_runner docker container."
 fi
