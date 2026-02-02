@@ -67,7 +67,7 @@ export class Wallet {
   lite: boolean;
   addressType: string;
   addressZero: string;
-  version?: number; // If 2, master key xprivkey and privateKey are encrypted and serialized BEFORE 
+  version?: number;
 
   static XrpAccountFlags = xrpl.AccountSetTfFlags;
 
@@ -175,7 +175,6 @@ export class Wallet {
     // Encrypt privKeyObj.privateKey & privKeyObj.xprivkey
     const xprivBuffer = BitcoreLib.encoding.Base58Check.decode(privKeyObj.xprivkey);
     privKeyObj.xprivkey = Encryption.encryptBuffer(xprivBuffer, pubKey, walletEncryptionKey).toString('hex');
-    // privKeyObj.privateKey = Encryption.encryptBuffer(Buffer.from(privKeyObj.privateKey, 'hex'), pubKey, walletEncryptionKey).toString('hex');
     privKeyObj.privateKey = Encryption.encryptBuffer(privKeyObj.privateKey, pubKey, walletEncryptionKey).toString('hex');
 
     // Generate authentication keys
@@ -228,8 +227,6 @@ export class Wallet {
       name,
       storageType
     });
-
-    console.log(xpriv ? hdPrivKey.toString() : mnemonic.toString());
 
     await loadedWallet.register().catch(e => {
       console.debug(e);
@@ -297,8 +294,9 @@ export class Wallet {
     }
     this.unlocked.masterKey = null;
 
-    // TODO: this.unlocked.encryptionKey should also be Bufferized and zeroed here
-
+    if (Buffer.isBuffer(this.unlocked.encryptionKey)) {
+      this.unlocked.encryptionKey.fill(0);
+    }
     this.unlocked.encryptionKey = null;
     this.unlocked = null;
     return this;
@@ -320,7 +318,7 @@ export class Wallet {
       masterKey.privateKey = Encryption.decryptToBuffer(masterKey.privateKey, this.pubKey, encryptionKey);
     }
     this.unlocked = {
-      encryptionKey, // todo: buffer
+      encryptionKey,
       masterKey
     };
     return this;
@@ -351,18 +349,37 @@ export class Wallet {
     await writeFile(`${this.name}.bak`, rawWallet, 'utf8')
       .catch(err => {
         console.error('Wallet backup failed, aborting migration', err.msg);
-        throw err;
+        throw new Error('Migration failure: failed to write wallet backup file. Aborting.');
+      });
+
+    /**
+     * Retrieve stored keys for backup and for migration
+     */
+    const addresses = await this.getAddresses();
+    const storedKeys = await this.storage.getStoredKeys({
+      addresses,
+      name: this.name,
+    });
+
+    // Back up keys (enc)
+    const backupKeysStr = JSON.stringify(storedKeys);
+    await writeFile(`${this.name}_keys.bak`, backupKeysStr, 'utf8')
+      .catch(err => {
+        console.error('Keys backup failed, aborting migration', err.msg);
+        throw new Error('Migration failure: failed to write keys backup file. Aborting.');
       });
 
     /**
      * 2. Convert
      */
+
+    /**
+     * 2a. Convert masterKey and encryptionKey
+     */
     const masterKeyStr = Encryption.decryptPrivateKey(this.masterKey, this.pubKey, encryptionKey);
-    // Here, masterKeyStr.xprivkey and masterKeyStr.privateKey are both plaintext. Encrypt with encryption key
     const masterKey = JSON.parse(masterKeyStr);
     if (!(masterKey.xprivkey && masterKey.privateKey)) {
-      console.warn('WARNING - masterKey is not formatted as expected');
-      throw new Error('Wallet migration failed, aborting');
+      throw new Error('Migration failure: masterKey is not formatted as expected');
     }
 
     const xprivBuffer = BitcoreLib.encoding.Base58Check.decode(masterKey.xprivkey);
@@ -383,20 +400,44 @@ export class Wallet {
     this.masterKey = JSON.stringify(masterKey);
 
     /**
-     * 3. Overwrite
+     * 2b. Convert signing keys
      */
+    const newKeys = [];
+    for (const key of storedKeys) {
+      const { encKey, pubKey } = key;
+      const decryptedKey = Encryption.decryptPrivateKey(encKey, pubKey, encryptionKey);
+      const decryptedKeyJSON = JSON.parse(decryptedKey);
+      
+      // Convert private key to buffer format (uniform across all chains)
+      const privKeyBuffer = Deriver.privateKeyToBuffer(this.chain, decryptedKeyJSON.privKey);
+      const encryptedPrivateKeyBuffer = Encryption.encryptBuffer(privKeyBuffer, pubKey, encryptionKey);
+      privKeyBuffer.fill(0); // Zero out the plaintext buffer
+      
+      decryptedKeyJSON.privKey = encryptedPrivateKeyBuffer.toString('hex');
+      newKeys.push(decryptedKeyJSON);
+    }
+    
+    /**
+     * 3. Overwrite
+    */
+    // 3a. Overwrite keys
+    await this.storage.addKeysSafe({ name: this.name, keys: newKeys })
+      .catch(err => {
+        console.error('Migration failure: updated keys not successfully stored', err);
+        throw new Error('Migration failure: keys not successfully stored. Use backups to restore prior wallet and keys.');
+      });
+    
+    // 3b. Overwrite wallet
     this.version = CURRENT_WALLET_VERSION;
-    const savedPassword = this.password; // Wallet.toObject() rehashes password - save and replace
+    const storedEncryptedPassword = this.password; // Wallet.toObject() rehashes password - save and replace
     const walletObj = this.toObject(false);
-    walletObj.password = savedPassword;
+    walletObj.password = storedEncryptedPassword;
     await this.storage.saveWallet({ wallet: walletObj })
       .catch(err => {
-        console.error('Wallet migration failed, rely on backup', err);
+        console.error('Migration failure: wallet not successfully saved', err);
+        throw new Error('Migration failure: wallet not successfully saved. Use backups to restore prior wallet and keys');
       });
 
-    /**
-     * 4. Return
-     */
     return this;
   }
 
@@ -505,7 +546,6 @@ export class Wallet {
     // If tokenName was given, find the token by name (e.g. USDC_m)
     let tokenObj = tokenName && this.tokens.find(tok => tok.name === tokenName);
     // If not found by name AND token was given, find the token by symbol (e.g. USDC)
-    // NOTE: we don't want to 
     tokenObj = tokenObj || (token && this.tokens.find(tok => tok.symbol === token && [token, undefined].includes(tok.name)));
     if (!tokenObj) {
       throw new Error(`${tokenName || token} not found on wallet ${this.name}`);
@@ -708,11 +748,9 @@ export class Wallet {
       }) as KeyImport);
     }
     
-    // For each key to save, buffer -> encrypt to buffer -> hex string (should be undone as needed)
     for (const key of keysToSave) {
-      // The goal here is to make it so when the key is retrieved, it's uniform
       const privKeyBuffer = Deriver.privateKeyToBuffer(this.chain, key.privKey);
-      key.privKey = Encryption.encryptBuffer(privKeyBuffer, this.pubKey, this.unlocked.encryptionKey).toString('hex');
+      key.privKey = Encryption.encryptBuffer(privKeyBuffer, key.pubKey, this.unlocked.encryptionKey).toString('hex');
       privKeyBuffer.fill(0);
     }
 
@@ -776,21 +814,21 @@ export class Wallet {
     // Shallow copy to avoid mutation if signingKeys are passed in
     const keysForSigning = [...(signingKeys || decryptedKeys)];
 
-    if (this.version === 2 && decryptPrivateKeys) {
-      /**
-       * Phase 1: Convert encrypted private keys directly to strings as required by Transactions.sign (as of Dec 11, 2025)
-       * This mitigates the security improvement, but also removes the requirement for changing Transaction.sign fully immediately
-       */
+    if (decryptPrivateKeys) {
       for (const key of keysForSigning) {
-        // In Phase 2, this would be passed directly to Transaction.sign in a try/finally, which will fill(0)
         let privKeyBuf: Buffer | undefined;
         try {
-          privKeyBuf = Encryption.decryptToBuffer(key.encKey, this.pubKey, this.unlocked.encryptionKey);
-          key.privKey = Deriver.privateKeyBufferToNativePrivateKey(this.chain, this.network, privKeyBuf);
+          privKeyBuf = Encryption.decryptToBuffer(key.privKey, key.pubKey, this.unlocked.encryptionKey);
+          
+          // Convert buffer to chain-specific native format (e.g., WIF for BTC, hex for ETH, base58 for SOL)
+          const nativePrivKey = Deriver.privateKeyBufferToNativePrivateKey(this.chain, this.network, privKeyBuf);
+          
+          key.privKey = nativePrivKey;
         } catch (e) {
-          console.error(e);
+          console.error('Failed to decrypt/convert private key:', e);
           continue;
         } finally {
+          // Zero out the buffer immediately after use
           if (Buffer.isBuffer(privKeyBuf)) {
             privKeyBuf.fill(0);
           }
@@ -872,10 +910,21 @@ export class Wallet {
   }
 
   async derivePrivateKey(isChange, addressIndex = this.addressIndex) {
+    let masterKeyForDeriver: any = this.unlocked.masterKey;
+    if (Buffer.isBuffer(this.unlocked.masterKey.xprivkey)) {
+      const xprivString = BitcoreLib.encoding.Base58Check.encode(this.unlocked.masterKey.xprivkey);
+      const privateKeyString = this.unlocked.masterKey.privateKey.toString('hex');
+      masterKeyForDeriver = { 
+        ...this.unlocked.masterKey, 
+        xprivkey: xprivString, 
+        privateKey: privateKeyString 
+      };
+    }
+    
     const keyToImport = await Deriver.derivePrivateKey(
       this.chain,
       this.network,
-      this.unlocked.masterKey, // TODO - derivePrivateKey should work with masterKey buffer privateKey (and xprivkey if necessary)
+      masterKeyForDeriver,
       addressIndex || 0,
       isChange,
       this.addressType
