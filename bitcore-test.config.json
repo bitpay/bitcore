@@ -79,7 +79,7 @@
             {
               "host": "localhost",
               "protocol": "ws",
-              "port": 9556
+              "port": 8546
             }
           ],
           "threads": 0

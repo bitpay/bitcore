@@ -45,6 +45,8 @@ services:
       --datadir /geth-data
       --keystore /keystore
       --txlookuplimit=0
+      --snapshot=false
+      --cache=1024
       --http
       --http.api web3,eth,debug,net,txpool
       --http.corsdomain '*'

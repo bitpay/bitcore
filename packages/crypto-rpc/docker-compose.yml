@@ -134,6 +134,8 @@ services:
     command:
       --dev
       --txlookuplimit 0
+      --snapshot=false
+      --cache=1024
       --datadir /geth-data
       --http
       --http.api web3,eth,debug,net,txpool
