@@ -405,10 +405,11 @@ describe('Wallet', function() {
         const pk = new CWC.BitcoreLib.PrivateKey(undefined, 'testnet');
         const address = pk.toAddress().toString();
         const privBuf = CWC.Deriver.privateKeyToBuffer('BTC', pk.toString());
-        const encPriv = Encryption.encryptBuffer(privBuf, wallet.pubKey, wallet.unlocked.encryptionKey).toString('hex');
+        // v2 key encryption uses the key's pubKey as the IV salt (not the wallet pubKey)
+        const encPriv = Encryption.encryptBuffer(privBuf, pk.publicKey.toString(), wallet.unlocked.encryptionKey).toString('hex');
         privBuf.fill(0);
 
-        sandbox.stub(wallet.storage, 'getKeys').resolves([
+        sandbox.stub(wallet.storage, 'getStoredKeys').resolves([
           {
             address,
             privKey: encPriv,
@@ -461,8 +462,12 @@ describe('Wallet', function() {
 
       it('should decrypt stored ciphertext and hand hex privKey to Transactions.sign', async function() {
         const privHex = crypto.randomBytes(32).toString('hex');
+        const privBufForPubKey = CWC.Deriver.privateKeyToBuffer('ETH', privHex);
+        const pubKey = CWC.Deriver.getPublicKey('ETH', wallet.network, privBufForPubKey);
+        privBufForPubKey.fill(0);
         const privBuf = CWC.Deriver.privateKeyToBuffer('ETH', privHex);
-        const encPriv = Encryption.encryptBuffer(privBuf, wallet.pubKey, wallet.unlocked.encryptionKey).toString('hex');
+        // v2 key encryption uses the key's pubKey as the IV salt (not the wallet pubKey)
+        const encPriv = Encryption.encryptBuffer(privBuf, pubKey, wallet.unlocked.encryptionKey).toString('hex');
         privBuf.fill(0);
 
         let capturedPayload;
@@ -471,7 +476,7 @@ describe('Wallet', function() {
           return 'signed';
         });
 
-        const signingKeys = [{ address: '0xabc', privKey: encPriv }];
+        const signingKeys = [{ address: '0xabc', privKey: encPriv, pubKey }];
         await wallet.signTx({ tx: 'raw', signingKeys });
 
         txStub.calledOnce.should.equal(true);

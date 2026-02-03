@@ -735,23 +735,44 @@ export class Wallet {
   async importKeys(params: { keys: KeyImport[]; rederiveAddys?: boolean }) {
     const { rederiveAddys } = params;
     let { keys } = params;
+    // Avoid mutating caller-owned references (we'll encrypt privKeys below)
+    keys = keys.map(k => ({ ...k }));
     let keysToSave = keys.filter(key => typeof key.privKey === 'string');
 
     if (rederiveAddys) {
-      keysToSave = keysToSave.map(key => ({
-        ...key,
-        address: key.pubKey ? Deriver.getAddress(this.chain, this.network, key.pubKey, this.addressType) : key.address
-      }) as KeyImport);
-      keys = keys.map(key => ({
-        ...key,
-        address: key.pubKey ? Deriver.getAddress(this.chain, this.network, key.pubKey, this.addressType) : key.address
-      }) as KeyImport);
+      keys = keys.map(key => {
+        let pubKey = key.pubKey;
+        if (!pubKey && typeof key.privKey === 'string') {
+          const privKeyBuffer = Deriver.privateKeyToBuffer(this.chain, key.privKey);
+          try {
+            pubKey = Deriver.getPublicKey(this.chain, this.network, privKeyBuffer);
+          } finally {
+            privKeyBuffer.fill(0);
+          }
+        }
+        return {
+          ...key,
+          pubKey,
+          address: pubKey ? Deriver.getAddress(this.chain, this.network, pubKey, this.addressType) : key.address
+        } as KeyImport;
+      });
+      keysToSave = keys.filter(key => typeof key.privKey === 'string');
     }
     
     for (const key of keysToSave) {
       const privKeyBuffer = Deriver.privateKeyToBuffer(this.chain, key.privKey);
-      key.privKey = Encryption.encryptBuffer(privKeyBuffer, key.pubKey, this.unlocked.encryptionKey).toString('hex');
-      privKeyBuffer.fill(0);
+      try {
+        if (!key.pubKey) {
+          key.pubKey = Deriver.getPublicKey(this.chain, this.network, privKeyBuffer);
+        }
+        if (!key.pubKey) {
+          throw new Error(`pubKey is undefined for ${this.name}. Keys not added to storage`);
+        }
+        key.privKey = Encryption.encryptBuffer(privKeyBuffer, key.pubKey, this.unlocked.encryptionKey).toString('hex');
+      } finally {
+        // Buffer creator should sanitize
+        privKeyBuffer.fill(0);
+      }
     }
 
     if (keysToSave.length) {
