@@ -125,7 +125,7 @@ services:
     image: ethereum/client-go:v1.16.7
     volumes:
       - ./test/docker/geth-keystore:/keystore
-      - crypto-rpc-geth-data:/geth-data
+      - geth-data:/geth-data
     ports:
       - "8645:8545"
     networks:
