@@ -105,6 +105,10 @@ export class DeriverProxy {
     return this.get(chain).getAddress(network, pubKey, addressType);
   }
 
+  getPublicKey(chain, network, privKey) {
+    return this.get(chain).getPublicKey(network, privKey);
+  }
+
   pathFor(chain, network, account = 0) {
     const normalizedChain = chain.toUpperCase();
     const accountStr = `${account}'`;

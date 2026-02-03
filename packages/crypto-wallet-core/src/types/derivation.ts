@@ -16,6 +16,12 @@ export interface IDeriver {
   getAddress(network: string, pubKey, addressType: string): string;
 
   /**
+   * Derive the public key for a given chain-native private key representation.
+   * Used when importing plaintext private keys that may not include `pubKey`.
+   */
+  getPublicKey(network: string, privKey: any): string;
+
+  /**
    * Used to normalize output of Key.privKey
    */
   privateKeyToBuffer(privKey: any): Buffer;
