@@ -125,6 +125,7 @@ services:
     image: ethereum/client-go:v1.16.7
     volumes:
       - ./test/docker/geth-keystore:/keystore
+      - crypto-rpc-geth-data:/geth-data
     ports:
       - "8645:8545"
     networks:
@@ -132,9 +133,10 @@ services:
         ipv4_address: 172.29.0.7
     command:
       --dev
-      --datadir /geth
+      --txlookuplimit 0
+      --datadir /geth-data
       --http
-      --http.api web3,eth,debug,net
+      --http.api web3,eth,debug,net,txpool
       --http.corsdomain '*'
       --http.vhosts '*'
       --http.addr 0.0.0.0
@@ -142,8 +144,6 @@ services:
       --keystore /keystore
       --allow-insecure-unlock
       --password /keystore/pw
-      --txlookuplimit 0
-      --cache 512
       # --unlock 00a329c0648769a73afac7f9381e08fb43dbea72
 
   rippled:
@@ -247,6 +247,7 @@ volumes:
   cwc:
     driver: external
     name: crypto-wallet-core
+  geth-data:
 
 networks:
   default:

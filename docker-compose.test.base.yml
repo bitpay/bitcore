@@ -39,19 +39,21 @@ services:
     image: ethereum/client-go:v1.16.7
     volumes:
       - ./.docker/geth-keystore:/keystore
+      - geth-data:/geth-data
     command:
       --dev
-      --datadir /home/kjoseph/nodes/dev/geth
+      --datadir /geth-data
       --keystore /keystore
+      --txlookuplimit=0
       --http
-      --http.api web3,eth,debug,net
+      --http.api web3,eth,debug,net,txpool
       --http.corsdomain '*'
       --http.vhosts '*'
       --http.addr 0.0.0.0
       --http.port 8545
       --ws
       --ws.origins '*'
-      --ws.api web3,eth,debug,net
+      --ws.api web3,eth,debug,net,txpool
       --ws.addr 0.0.0.0
       --ws.port 8546
 
@@ -67,3 +69,6 @@ networks:
       driver: default
       config:
         - subnet: 172.28.0.0/16
+
+volumes:
+  geth-data:
