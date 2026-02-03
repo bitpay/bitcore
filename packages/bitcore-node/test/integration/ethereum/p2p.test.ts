@@ -168,7 +168,7 @@ describe('Ethereum', function() {
         isEVM: true,
         chain,
         host: runningInDocker ? 'erigon' : 'localhost',
-        port: runningInDocker ? 8545 : 9545,
+        port: 9555,
         protocol: 'ws'
       };
       const rpc = new CryptoRpc(config).get(chain);

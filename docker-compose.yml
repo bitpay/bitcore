@@ -1,4 +1,3 @@
-version: '3'
 services:
   database:
     image: mongo:3.4-jessie
