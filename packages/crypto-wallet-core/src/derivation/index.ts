@@ -105,7 +105,10 @@ export class DeriverProxy {
     return this.get(chain).getAddress(network, pubKey, addressType);
   }
 
-  getPublicKey(chain, network, privKey) {
+  /**
+   * Caller responsible for cleaning up privKey buffer
+   */
+  getPublicKey(chain, network, privKey: Buffer) {
     return this.get(chain).getPublicKey(network, privKey);
   }
 

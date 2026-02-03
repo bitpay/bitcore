@@ -16,6 +16,14 @@ export class SolDeriver implements IDeriver {
     return this.addressFromPublicKeyBuffer(Buffer.from(pubKey, 'hex'));
   }
 
+  getPublicKey(_network: string, privKey: Buffer): string {
+    if (!Buffer.isBuffer(privKey)) {
+      throw new Error('Expected privKey to be a Buffer');
+    }
+    const pubKey = ed25519.getPublicKey(privKey, false);
+    return Buffer.from(pubKey).toString('hex');
+  }
+
   addressFromPublicKeyBuffer(pubKey: Buffer): string {
     if (pubKey.length > 32) {
       pubKey = pubKey.subarray(pubKey.length - 32);
