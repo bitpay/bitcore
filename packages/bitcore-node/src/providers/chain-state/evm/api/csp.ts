@@ -70,6 +70,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     this.config = Config.chains[this.chain] as IChainConfig<IEVMNetworkConfig>;
   }
 
+  /**
+   * Multi-provider pattern for RPC - reference doc Section "RPC vs Indexed APIs"
+   * This shows sequential failover already working for RPC providers.
+   * Implement the same pattern for indexed APIs (getTransaction, streamAddressTransactions).
+   */
   async getWeb3(network: string, params?: { type: IProvider['dataType'] }): Promise<GetWeb3Response> {
     for (const rpc of BaseEVMStateProvider.rpcs[this.chain]?.[network] || []) {
       if (!isValidProviderType(params?.type, rpc.dataType)) {
