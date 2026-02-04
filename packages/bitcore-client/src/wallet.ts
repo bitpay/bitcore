@@ -285,6 +285,10 @@ export class Wallet {
   }
 
   lock() {
+    if (!this.unlocked) {
+      return this;
+    }
+
     if (Buffer.isBuffer(this.unlocked.masterKey.xprivkey)) {
       this.unlocked.masterKey.xprivkey.fill(0);
     }
