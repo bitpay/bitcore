@@ -13,7 +13,8 @@
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
     "fix": "npm run fix:errors",
-    "test": "tsc --noEmit && mocha -r tsx 'test/**/*.test.ts'",
+    "test": "npm run compile && mocha 'ts_build/test/**/*.test.js'",
+    "coverage": "npm run compile && nyc mocha 'ts_build/test/**/*.test.js'",
     "pub": "npm run compile && npm publish"
   },
   "keywords": [
@@ -22,6 +23,16 @@
     "and",
     "transactions"
   ],
+  "nyc": {
+    "include": [
+      "ts_build/src",
+      "src"
+    ],
+    "reporter": [
+      "html",
+      "text-summary"
+    ]
+  },
   "author": "Micah Riggan",
   "license": "MIT",
   "dependencies": {
@@ -47,7 +58,7 @@
     "@types/node": "22.13.1",
     "chai": "5.1.2",
     "mocha": "11.1.0",
-    "tsx": "^4.21.0",
+    "nyc": "^17.1.0",
     "typescript": "5.7.3"
   },
   "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4"

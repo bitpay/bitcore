@@ -17,3 +17,5 @@ Session.vim
 ts_build
 bitcore-lib.js
 
+coverage
+.nyc_output

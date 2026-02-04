@@ -16,7 +16,6 @@
 .project
 .strong-pm
 .vscode
-coverage
 node_modules
 npm-debug.log
 dist
