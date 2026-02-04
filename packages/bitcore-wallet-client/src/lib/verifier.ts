@@ -85,7 +85,7 @@ export class Verifier {
     const uniq = [];
     let error;
     for (const copayer of copayers || []) {
-      if (uniq[copayers.xPubKey]++) {
+      if (uniq[copayer.xPubKey]++) {
         log.error('Repeated public keys in server response');
         error = true;
       }
