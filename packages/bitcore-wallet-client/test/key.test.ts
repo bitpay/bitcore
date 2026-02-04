@@ -1,6 +1,7 @@
 'use strict';
 
 import * as chai from 'chai';
+import sjcl from 'sjcl';
 import { Key } from '../src/lib/key';
 
 const should = chai.should();
@@ -570,6 +571,102 @@ describe('Key', function() {
       should.exist(obj.xPrivKeyEncrypted);
       should.exist(obj.mnemonicEncrypted);
       should.exist(obj.fingerPrint);
+    });
+  });
+  describe('Backward compatibility with sjcl', function() {
+    describe('#checkPassword with sjcl encrypted key', function() {
+      it('should check password on sjcl encrypted key', function() {
+        const k = new Key({
+          seedType: 'mnemonic',
+          seedData: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+        });
+        const password = 'testpassword';
+        const xPrivKey = k.get().xPrivKey;
+        
+        const obj = k.toObj();
+        obj.xPrivKeyEncrypted = sjcl.encrypt(password, xPrivKey);
+        obj.xPrivKey = undefined;
+        
+        const k2 = new Key({ seedType: 'object', seedData: obj });
+        k2.checkPassword(password).should.equal(true);
+        k2.checkPassword('wrongpassword').should.equal(false);
+      });
+    });
+  
+    describe('#get with sjcl encrypted key', function() {
+      it('should decrypt sjcl encrypted mnemonic and privatekey', function() {
+        const k = new Key({
+          seedType: 'mnemonic',
+          seedData: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+        });
+        const password = 'testpassword';
+        const expectedMnemonic = k.get().mnemonic;
+        const expectedXPrivKey = k.get().xPrivKey;
+        
+        const obj = k.toObj();
+        obj.xPrivKeyEncrypted = sjcl.encrypt(password, expectedXPrivKey);
+        obj.mnemonicEncrypted = sjcl.encrypt(password, expectedMnemonic);
+        obj.xPrivKey = undefined;
+        obj.mnemonic = undefined;
+        
+        const k2 = new Key({ seedType: 'object', seedData: obj });
+        const decrypted = k2.get(password);
+        decrypted.mnemonic.should.equal(expectedMnemonic);
+        decrypted.xPrivKey.should.equal(expectedXPrivKey);
+      });
+    });
+  
+    describe('#decrypt with sjcl encrypted key', function() {
+      it('should decrypt sjcl key', function() {
+        const k = new Key({
+          seedType: 'mnemonic',
+          seedData: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+        });
+        const password = 'testpassword';
+        const expectedXPrivKey = k.get().xPrivKey;
+        const expectedMnemonic = k.get().mnemonic;
+        
+        const obj = k.toObj();
+        obj.xPrivKeyEncrypted = sjcl.encrypt(password, expectedXPrivKey);
+        obj.mnemonicEncrypted = sjcl.encrypt(password, expectedMnemonic);
+        obj.xPrivKey = undefined;
+        obj.mnemonic = undefined;
+        
+        const k2 = new Key({ seedType: 'object', seedData: obj });
+        k2.isPrivKeyEncrypted().should.be.true;
+        k2.decrypt(password);
+        k2.isPrivKeyEncrypted().should.be.false;
+        
+        const decrypted = k2.toObj();
+        decrypted.xPrivKey.should.equal(expectedXPrivKey);
+        decrypted.mnemonic.should.equal(expectedMnemonic);
+        should.not.exist(decrypted.xPrivKeyEncrypted);
+        should.not.exist(decrypted.mnemonicEncrypted);
+      });
+    });
+  
+    describe('#addKeyFromExistingPrivateKey with sjcl', function() {
+      it('should create new algo key from sjcl encrypted existing key', function() {
+        const k = new Key({
+          seedType: 'mnemonic',
+          seedData: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+        });
+        const password = 'testpassword';
+        const expectedXPrivKey = k.get().xPrivKey;
+        
+        const obj = k.toObj();
+        obj.xPrivKeyEncrypted = sjcl.encrypt(password, expectedXPrivKey);
+        obj.xPrivKey = undefined;
+        obj.mnemonic = undefined;
+        obj.mnemonicEncrypted = undefined;
+        
+        const k2 = new Key({ seedType: 'object', seedData: obj });
+        k2.addKeyByAlgorithm('EDDSA', { password, existingAlgo: 'ECDSA' });
+        
+        should.exist(k2.fingerPrintEDDSA);
+        const eddsaKey = k2.get(password, 'EDDSA');
+        should.exist(eddsaKey.xPrivKey);
+      });
     });
   });
 });

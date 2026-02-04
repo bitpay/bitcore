@@ -1,6 +1,7 @@
 'use strict';
 
 import crypto from 'crypto';
+import sjcl from 'sjcl';
 
 const PBKDF2_ITERATIONS = 1000;
 const DEFAULT_KEY_SIZE = 256; // bits
@@ -103,14 +104,30 @@ class EncryptionClass {
   }
 
   decryptWithKey(data: string | IEncrypted, key: string | Buffer) {
-    key = Buffer.isBuffer(key) ? key : Buffer.from(key, 'base64');
-    return this._baseDecrypt(data, key);
+    try {
+      const keyBuffer = Buffer.isBuffer(key) ? key : Buffer.from(key, 'base64');
+      return this._baseDecrypt(data, keyBuffer);
+    } catch (err) {
+      try {
+        return sjcl.decrypt(key, data);
+      } catch {
+        throw err;
+      }
+    }
   }
 
   decryptWithPassword(data: string | IEncrypted, password: string) {
-    const json = typeof data === 'string' ? JSON.parse(data) : data;
-    const key = crypto.pbkdf2Sync(password, Buffer.from(json.salt, 'base64'), json.iter, json.ks / 8, 'sha256');
-    return this._baseDecrypt(json, key);
+    try {
+      const json = typeof data === 'string' ? JSON.parse(data) : data;
+      const key = crypto.pbkdf2Sync(password, Buffer.from(json.salt, 'base64'), json.iter, json.ks / 8, 'sha256');
+      return this._baseDecrypt(json, key);
+    } catch (err) {
+      try {
+        return sjcl.decrypt(password, data);
+      } catch {
+        throw err;
+      }
+    }
   }
 }
 
