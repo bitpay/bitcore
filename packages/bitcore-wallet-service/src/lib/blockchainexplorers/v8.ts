@@ -378,7 +378,7 @@ export class V8 {
       }
       console.timeEnd(perfKey);
       // blockTime on unconf is 'seenTime';
-      return cb(null, _.flatten(sortDesc(unconf, 'blockTime').concat(txs.reverse())));
+      return cb(null, _.flatten(sortDesc(unconf, 'blockTime').concat(sortDesc(txs, 'height'))));
     });
 
     txStream.on('error', e => {
