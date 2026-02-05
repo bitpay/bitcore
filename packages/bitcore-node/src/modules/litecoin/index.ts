@@ -7,7 +7,7 @@ import { LitecoinP2PWorker } from './p2p';
 export default class LTCModule extends BaseModule {
   constructor(services: BaseModule['bitcoreServices'], chain: string, network: string, _config: IUtxoNetworkConfig) {
     super(services);
-    services.Libs.register(chain, 'bitcore-lib-ltc', 'bitcore-p2p');
+    services.Libs.register(chain, '@bitpay-labs/bitcore-lib-ltc', '@bitpay-labs/bitcore-p2p');
     services.P2P.register(chain, network, LitecoinP2PWorker);
     services.CSP.registerService(chain, network, new LTCStateProvider());
     services.Verification.register(chain, network, VerificationPeer);

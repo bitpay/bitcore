@@ -2,7 +2,7 @@ import { MongoBound } from '../../../../models/base';
 import { IWalletAddress, WalletAddressStorage } from '../../../../models/walletAddress';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { Effect, IEVMTransactionInProcess, IEVMTransactionTransformed } from '../types';
-import type { Web3 } from 'crypto-wallet-core';
+import type { Web3 } from '@bitpay-labs/crypto-wallet-core';
 
 export class InternalTxRelatedFilterTransform extends TransformWithEventPipe {
   private walletAddresses: IWalletAddress[] = [];

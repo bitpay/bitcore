@@ -1,9 +1,9 @@
-import * as BitcoreClient from 'bitcore-client';
+import * as BitcoreClient from '@bitpay-labs/bitcore-client';
 import { expect } from 'chai';
-import { Web3 } from 'crypto-wallet-core';
+import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import sinon from 'sinon';
 import fs from 'fs';
-import { CryptoRpc } from 'crypto-rpc';
+import { CryptoRpc } from '@bitpay-labs/crypto-rpc';
 import config from '../../../src/config';
 import { CacheStorage } from '../../../src/models/cache';
 import { EthP2pWorker } from '../../../src/modules/ethereum/p2p/p2p';

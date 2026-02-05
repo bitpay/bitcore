@@ -5,7 +5,7 @@
 const program = require('commander');
 const { Wallet } = require('../ts_build/src/wallet');
 const promptly = require('promptly');
-const { BitcoreLib } = require('crypto-wallet-core');
+const { BitcoreLib } = require('@bitpay-labs/crypto-wallet-core');
 
 program
   .version(require('../package.json').version)

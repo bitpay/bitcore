@@ -1,4 +1,4 @@
-import { BitcoreLib as bitcoreLib } from 'crypto-wallet-core';
+import { BitcoreLib as bitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { Request, Response } from 'express';
 import { RequestHandler } from 'express-serve-static-core';
 import secp256k1 from 'secp256k1';

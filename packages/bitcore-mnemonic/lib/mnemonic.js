@@ -1,13 +1,12 @@
 'use strict';
 
-const bitcore = require('bitcore-lib');
-const BN = bitcore.crypto.BN;
+const bitcore = require('@bitpay-labs/bitcore-lib');
 const unorm = require('unorm');
-const _ = bitcore.deps._;
-
 const pbkdf2 = require('./pbkdf2');
 const errors = require('./errors');
 
+const BN = bitcore.crypto.BN;
+const _ = bitcore.deps._;
 const Hash = bitcore.crypto.Hash;
 const Random = bitcore.crypto.Random;
 const Network = bitcore.Networks;

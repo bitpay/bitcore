@@ -1,5 +1,5 @@
-import { Wallet } from 'bitcore-client';
-import { ParseApiStream } from 'bitcore-client';
+import { Wallet } from '@bitpay-labs/bitcore-client';
+import { ParseApiStream } from '@bitpay-labs/bitcore-client';
 import { expect } from 'chai';
 import * as io from 'socket.io-client';
 import config from '../../src/config';

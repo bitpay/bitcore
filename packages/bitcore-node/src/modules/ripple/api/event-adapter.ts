@@ -2,7 +2,7 @@ import { ObjectId } from 'mongodb';
 import { BaseModule } from '../..';
 import logger from '../../../logger';
 import { RippleStateProvider } from './csp';
-import type { XrpRpc } from 'crypto-rpc/lib/xrp/XrpRpc';
+import type { XrpRpc } from '@bitpay-labs/crypto-rpc/lib/xrp/XrpRpc';
 
 export class RippleEventAdapter {
   stopping = false;

@@ -1,9 +1,10 @@
+/* eslint-disable no-bitwise */
 'use strict';
 
-var crypto = require("crypto");
+const crypto = require('crypto');
 
 /**
- * PDKBF2
+ * PBKDF2
  * Credit to: https://github.com/stayradiated/pbkdf2-sha512
  * Copyright (c) 2014, JP Richardson Copyright (c) 2010-2011 Intalio Pte, All Rights Reserved
  */
@@ -11,7 +12,7 @@ function pbkdf2(key, salt, iterations, dkLen) {
   /* jshint maxstatements: 31 */
   /* jshint maxcomplexity: 9 */
 
-  var hLen = 64; //SHA512 Mac length
+  var hLen = 64; // SHA512 Mac length
   if (dkLen > (Math.pow(2, 32) - 1) * hLen) {
     throw Error('Requested key length too long');
   }
@@ -45,8 +46,8 @@ function pbkdf2(key, salt, iterations, dkLen) {
   for (var i = 1; i <= l; i++) {
     block1[salt.length + 0] = (i >> 24 & 0xff);
     block1[salt.length + 1] = (i >> 16 & 0xff);
-    block1[salt.length + 2] = (i >> 8  & 0xff);
-    block1[salt.length + 3] = (i >> 0  & 0xff);
+    block1[salt.length + 2] = (i >> 8 & 0xff);
+    block1[salt.length + 3] = (i >> 0 & 0xff);
 
     U = crypto.createHmac('sha512', key).update(block1).digest();
 

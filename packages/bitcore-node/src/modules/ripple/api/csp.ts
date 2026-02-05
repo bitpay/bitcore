@@ -1,6 +1,6 @@
 import { Readable } from 'stream';
 import util from 'util';
-import { CryptoRpc } from 'crypto-rpc';
+import { CryptoRpc } from '@bitpay-labs/crypto-rpc';
 import { ObjectId } from 'mongodb';
 import request from 'request';
 import Config from '../../../config';
@@ -28,8 +28,8 @@ import { GetBlockParams } from '../../../types/namespaces/ChainStateProvider';
 import { XrpBlockStorage } from '../models/block';
 import { AccountTransaction, BlockTransaction, IXrpTransaction, RpcTransaction } from '../types';
 import { RippleDbWalletTransactions } from './wallet-tx-transform';
-import type { XrpRpc } from 'crypto-rpc/lib/xrp/XrpRpc';
-import type { xrpl } from 'crypto-wallet-core';
+import type { XrpRpc } from '@bitpay-labs/crypto-rpc/lib/xrp/XrpRpc';
+import type { xrpl } from '@bitpay-labs/crypto-wallet-core';
 
 type Ledger = xrpl.LedgerResponse['result']['ledger'];
 

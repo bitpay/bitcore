@@ -1,6 +1,6 @@
 'use strict';
 
-var spec = {
+const spec = {
   name: 'Mnemonic',
   message: 'Internal Error on bitcore-mnemonic module {0}',
   errors: [{
@@ -15,4 +15,4 @@ var spec = {
   }]
 };
 
-module.exports = require('bitcore-lib').errors.extend(spec);
+module.exports = require('@bitpay-labs/bitcore-lib').errors.extend(spec);

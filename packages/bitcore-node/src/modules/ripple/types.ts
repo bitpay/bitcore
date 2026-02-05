@@ -1,7 +1,7 @@
 import { ITransaction } from '../../models/baseTransaction';
 import { ICoin } from '../../models/coin';
 import { IBlock } from '../../types/Block';
-import type { xrpl } from 'crypto-wallet-core';
+import type { xrpl } from '@bitpay-labs/crypto-wallet-core';
 
 export type IXrpBlock = IBlock & {};
 export type IXrpTransaction = ITransaction & {

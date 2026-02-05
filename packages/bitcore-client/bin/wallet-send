@@ -6,7 +6,7 @@ const program = require('commander');
 const { Wallet } = require('../ts_build/src/wallet');
 const { utils } = require('../ts_build/src/utils');
 const promptly = require('promptly');
-const { Web3 } = require('crypto-wallet-core');
+const { Web3 } = require('@bitpay-labs/crypto-wallet-core');
 
 program
   .version(require('../package.json').version)

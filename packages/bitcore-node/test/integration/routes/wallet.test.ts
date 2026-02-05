@@ -1,7 +1,7 @@
 import supertest from 'supertest';
 import sinon from 'sinon';
 import { expect } from 'chai';
-import { BitcoreLib } from 'crypto-wallet-core';
+import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import secp256k1 from 'secp256k1';
 import app from '../../../src/routes';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';

@@ -1,6 +1,5 @@
 import 'source-map-support/register';
-import * as Bcrypt from 'bcrypt';
-import Mnemonic from 'bitcore-mnemonic';
+import Mnemonic from '@bitpay-labs/bitcore-mnemonic';
 import { 
   BitcoreLib,
   BitcoreLibCash,
@@ -14,7 +13,8 @@ import {
   Web3,
   ethers,
   xrpl
-} from 'crypto-wallet-core';
+} from '@bitpay-labs/crypto-wallet-core';
+import * as Bcrypt from 'bcrypt';
 import { Client } from './client';
 import { Encryption } from './encryption';
 import { Storage } from './storage';

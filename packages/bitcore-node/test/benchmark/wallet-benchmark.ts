@@ -1,4 +1,4 @@
-import { Wallet, IWalletExt } from 'bitcore-client';
+import { Wallet, IWalletExt } from '@bitpay-labs/bitcore-client';
 import { CoinStorage } from '../../src/models/coin';
 import { Storage } from '../../src/services/storage';
 import { uniq } from '../../src/utils';

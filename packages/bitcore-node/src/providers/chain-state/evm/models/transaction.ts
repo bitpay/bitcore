@@ -1,5 +1,5 @@
+import { Utils, Web3 } from '@bitpay-labs/crypto-wallet-core';
 import { ObjectID } from 'bson';
-import { Utils, Web3 } from 'crypto-wallet-core';
 import { LoggifyClass } from '../../../../decorators/Loggify';
 import logger from '../../../../logger';
 import { MongoBound } from '../../../../models/base';
@@ -20,7 +20,7 @@ import type { IEVMNetworkConfig } from '../../../../types/Config';
 import type { StreamingFindOptions } from '../../../../types/Query';
 import type { TransformOptions } from '../../../../types/TransformOptions';
 import type { EVMTransactionJSON, Effect, IAbiDecodeResponse, IAbiDecodedData, IEVMBlock, IEVMCachedAddress, IEVMTransaction, IEVMTransactionInProcess, ParsedAbiParams } from '../types';
-import type { Web3Types } from 'crypto-wallet-core';
+import type { Web3Types } from '@bitpay-labs/crypto-wallet-core';
 
 
 function requireUncached(module) {

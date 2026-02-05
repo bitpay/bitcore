@@ -1,5 +1,5 @@
 import * as chai from 'chai';
-import * as CWC from 'crypto-wallet-core';
+import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import { AddressTypes, Wallet } from '../../src/wallet';
 import { Api as bcnApi } from '../../../bitcore-node/build/src/services/api';
 import { Storage as bcnStorage } from '../../../bitcore-node/build/src/services/storage';

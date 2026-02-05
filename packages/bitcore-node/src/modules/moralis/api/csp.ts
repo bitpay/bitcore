@@ -1,5 +1,5 @@
 import os from 'os';
-import { Web3 } from 'crypto-wallet-core';
+import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import { LRUCache } from 'lru-cache';
 import request from 'request';
 import config from '../../../config';

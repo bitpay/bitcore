@@ -1,5 +1,5 @@
+import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import cors from 'cors';
-import { Web3 } from 'crypto-wallet-core';
 import { Router } from 'express';
 import config from '../../../../config';
 import logger from '../../../../logger';

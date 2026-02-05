@@ -13,7 +13,7 @@ import { EVMTransactionModel, EVMTransactionStorage } from '../models/transactio
 import { IEVMBlock, IEVMTransactionInProcess } from '../types';
 import { IRpc, Rpcs } from './rpcs';
 import { MultiThreadSync } from './sync';
-import type { Web3, Web3Types } from 'crypto-wallet-core';
+import type { Web3, Web3Types } from '@bitpay-labs/crypto-wallet-core';
 
 export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
   protected chainConfig: IEVMNetworkConfig;

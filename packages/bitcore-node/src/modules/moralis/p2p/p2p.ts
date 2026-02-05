@@ -1,4 +1,4 @@
-import { CryptoRpc } from 'crypto-rpc';
+import { CryptoRpc } from '@bitpay-labs/crypto-rpc';
 import { Cursor } from 'mongodb';
 import logger, { timestamp } from '../../../logger';
 import { CoinEvent, EventStorage } from '../../../models/events';
@@ -12,8 +12,8 @@ import { IEVMNetworkConfig, IExternalSyncConfig } from '../../../types/Config';
 import { IAddressSubscription } from '../../../types/ExternalProvider';
 import { wait } from '../../../utils';
 import { MoralisStateProvider } from '../api/csp';
-import type { EthRpc } from 'crypto-rpc/lib/eth/EthRpc';
-import type { Web3 } from 'crypto-wallet-core';
+import type { EthRpc } from '@bitpay-labs/crypto-rpc/lib/eth/EthRpc';
+import type { Web3 } from '@bitpay-labs/crypto-wallet-core';
 
 export class MoralisP2PWorker extends BaseP2PWorker {
   private chainConfig: IExternalSyncConfig<IEVMNetworkConfig>;

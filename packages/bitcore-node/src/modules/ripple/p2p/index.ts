@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { Transform } from 'stream';
-import { XrpRpc } from 'crypto-rpc/lib/xrp/XrpRpc';
+import { XrpRpc } from '@bitpay-labs/crypto-rpc/lib/xrp/XrpRpc';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import logger from '../../../logger';
 import { timestamp } from '../../../logger';

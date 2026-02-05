@@ -1,4 +1,5 @@
 'use strict';
 
-var startGulp = require('bitcore-build');
+const startGulp = require('@bitpay-labs/bitcore-build');
+
 module.exports = startGulp('lib');
