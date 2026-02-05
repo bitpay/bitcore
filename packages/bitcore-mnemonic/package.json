@@ -35,19 +35,19 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "@bitpay-labs/bitcore-build": "^11.5.1",
     "assert": "^1.4.1",
-    "bitcore-build": "^11.5.1",
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
     "gulp": "^4.0.0",
     "mocha": "^5.2.0"
   },
   "dependencies": {
-    "bitcore-lib": "^11.5.1",
+    "@bitpay-labs/bitcore-lib": "^11.5.1",
     "unorm": "^1.4.1"
   },
   "peerDependencies": {
-    "bitcore-lib": "*"
+    "@bitpay-labs/bitcore-lib": "*"
   },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }

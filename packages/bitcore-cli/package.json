@@ -41,11 +41,11 @@
     "precommit": "npm run lint"
   },
   "dependencies": {
+    "@bitpay-labs/bitcore-mnemonic": "^11.5.1",
+    "@bitpay-labs/bitcore-wallet-client": "^11.5.1",
+    "@bitpay-labs/crypto-wallet-core": "^11.5.1",
     "@clack/prompts": "1.0.0-alpha.6",
-    "bitcore-mnemonic": "^11.5.1",
-    "bitcore-wallet-client": "^11.5.1",
     "commander": "14.0.0",
-    "crypto-wallet-core": "^11.5.1",
     "external-editor": "3.1.0",
     "usb": "2.15.0"
   },

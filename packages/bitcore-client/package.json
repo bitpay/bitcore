@@ -31,11 +31,11 @@
     "fix": "npm run fix:errors"
   },
   "dependencies": {
+    "@bitpay-labs/bitcore-mnemonic": "^11.5.1",
+    "@bitpay-labs/crypto-wallet-core": "^11.5.1",
     "async": "2.5.0",
     "bcrypt": "5.1.0",
-    "bitcore-mnemonic": "^11.5.1",
     "commander": "11.1.0",
-    "crypto-wallet-core": "^11.5.1",
     "level-js": "4.0.2",
     "leveldown": "6.1.1",
     "levelup": "4.3.2",
