@@ -1,8 +1,8 @@
 {
-  "name": "bitcore-node",
+  "name": "@bitpay-labs/bitcore-node",
   "description": "A blockchain indexing node with extended capabilities using bitcore",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "version": "11.5.1",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
@@ -11,6 +11,10 @@
     "Micah Riggan <micahriggan@gmail.com>",
     "Kenny Joseph <kajoseph2@msn.com>"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-node"
+  },
   "main": "build/src/server.js",
   "bin": "bin/start",
   "scripts": {

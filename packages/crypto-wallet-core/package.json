@@ -1,9 +1,13 @@
 {
-  "name": "crypto-wallet-core",
+  "name": "@bitpay-labs/crypto-wallet-core",
   "version": "11.5.1",
   "description": "A multi-currency support library for address derivation, private key creation, and transaction creation",
   "main": "./ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/crypto-wallet-core"
+  },
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf ts_build && tsc --version",

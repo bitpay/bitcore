@@ -1,5 +1,5 @@
 {
-  "name": "bitcore-tss",
+  "name": "@bitpay-labs/bitcore-tss",
   "version": "11.5.1",
   "description": "Bitcore Library for Threshold Signature Schemes",
   "main": "index.js",
@@ -20,6 +20,10 @@
   ],
   "author": "Kenny Joseph",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-tss"
+  },
   "dependencies": {
     "@bitgo/sdk-lib-mpc": "^10.1.2",
     "bitcore-lib": "^11.5.1"

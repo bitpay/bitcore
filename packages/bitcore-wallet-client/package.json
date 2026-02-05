@@ -1,5 +1,5 @@
 {
-  "name": "bitcore-wallet-client",
+  "name": "@bitpay-labs/bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
   "version": "11.5.1",
@@ -19,8 +19,8 @@
     "node": ">=18.0.0"
   },
   "repository": {
-    "url": "git@github.com:bitpay/bitcore.git",
-    "type": "git"
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet-client"
   },
   "bugs": {
     "url": "https://github.com/bitpay/bitcore/issues"

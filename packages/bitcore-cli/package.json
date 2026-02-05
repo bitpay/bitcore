@@ -1,5 +1,5 @@
 {
-  "name": "bitcore-cli",
+  "name": "@bitpay-labs/bitcore-cli",
   "description": "A Bitcore CLI Wallet",
   "author": "BitPay, Inc",
   "version": "11.5.1",
@@ -13,8 +13,8 @@
     "wallet"
   ],
   "repository": {
-    "url": "git@github.com:bitpay/bitcore.git",
-    "type": "git"
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-cli"
   },
   "bugs": {
     "url": "https://github.com/bitpay/bitcore/issues"

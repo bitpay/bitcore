@@ -1,5 +1,5 @@
 {
-  "name": "bitcore-mnemonic",
+  "name": "@bitpay-labs/bitcore-mnemonic",
   "version": "11.5.1",
   "description": "BIP39 Mnemonics implemented for Bitcore.",
   "author": "BitPay <dev@bitpay.com>",
@@ -23,7 +23,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitpay/bitcore.git"
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-mnemonic"
   },
   "keywords": [
     "bitcoin",

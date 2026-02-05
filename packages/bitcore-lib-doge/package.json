@@ -1,5 +1,5 @@
 {
-  "name": "bitcore-lib-doge",
+  "name": "@bitpay-labs/bitcore-lib-doge",
   "version": "11.5.1",
   "description": "A pure and powerful JavaScript Dogecoin library.",
   "author": "BitPay <dev@bitpay.com>",

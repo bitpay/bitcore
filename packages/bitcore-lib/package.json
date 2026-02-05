@@ -1,5 +1,5 @@
 {
-  "name": "bitcore-lib",
+  "name": "@bitpay-labs/bitcore-lib",
   "version": "11.5.1",
   "description": "A pure and powerful JavaScript Bitcoin library.",
   "author": "BitPay <dev@bitpay.com>",

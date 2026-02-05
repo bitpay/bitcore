@@ -1,5 +1,5 @@
 {
-  "name": "bitcore-wallet-service",
+  "name": "@bitpay-labs/bitcore-wallet-service",
   "description": "A service for Mutisig HD Bitcoin Wallets",
   "author": "BitPay Inc",
   "version": "11.5.1",
@@ -15,8 +15,8 @@
     "BWS"
   ],
   "repository": {
-    "url": "git@github.com:bitpay/bitcore-wallet-service.git",
-    "type": "git"
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet-service"
   },
   "bugs": {
     "url": "https://github.com/bitpay/bitcore-wallet-service/issues"

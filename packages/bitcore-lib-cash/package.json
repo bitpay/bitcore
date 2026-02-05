@@ -1,5 +1,5 @@
 {
-  "name": "bitcore-lib-cash",
+  "name": "@bitpay-labs/bitcore-lib-cash",
   "version": "11.5.1",
   "description": "A pure and powerful JavaScript Bitcoin Cash library.",
   "author": "BitPay <dev@bitpay.com>",

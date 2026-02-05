@@ -1,5 +1,5 @@
 {
-  "name": "bitcore-p2p-doge",
+  "name": "@bitpay-labs/bitcore-p2p-doge",
   "version": "11.5.1",
   "description": "Interface to the bitcoin P2P network for bitcore",
   "main": "index.js",

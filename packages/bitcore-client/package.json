@@ -1,6 +1,6 @@
 {
-  "name": "bitcore-client",
-  "description": "Wallet client for Bitcore node",
+  "name": "@bitpay-labs/bitcore-client",
+  "description": "Wallet client for Bitcore-Node",
   "version": "11.5.1",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "main": "./ts_build/src/index.js",
@@ -10,6 +10,10 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-client"
   },
   "scripts": {
     "build": "tsc",

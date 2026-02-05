@@ -1,15 +1,15 @@
 {
-  "name": "bitcore-build",
+  "name": "@bitpay-labs/bitcore-build",
   "version": "11.5.1",
   "description": "A helper for common tasks to build bitcore modules'",
   "main": "index.js",
   "scripts": {
     "test": "gulp test",
-    "pub": "npm  publish"
+    "pub": "npm publish"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/bitpay/bitcore-build"
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-build"
   },
   "keywords": [
     "bitcore"

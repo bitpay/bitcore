@@ -1,11 +1,15 @@
 {
-  "name": "crypto-rpc",
+  "name": "@bitpay-labs/crypto-rpc",
   "version": "11.5.1",
   "description": "A Normalized RPC Interface for Cryptocurrencies",
   "main": "index.js",
   "type": "module",
   "engines": {
     "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/crypto-rpc"
   },
   "scripts": {
     "docker:test": "npm run hardhat:compile && npm run hardhat:deploy && npm run hardhat:test && mocha --exit --recursive ./test",
