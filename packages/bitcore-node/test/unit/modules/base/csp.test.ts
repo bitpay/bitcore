@@ -259,7 +259,7 @@ describe('BASE Chain State Provider', function() {
       } });
       BaseEVMStateProvider.rpcIndicies[`BASE:${network}`].realtime = 1; // set to last index
       const response = await BASE.getWeb3(network);
-      expect(response.id).to.eq(0); // should wrap around to index 0
+      expect(response.index).to.eq(0); // should wrap around to index 0
       const block = await response.web3.eth.getBlockNumber();
       const stub = response.web3.eth.getBlockNumber as sinon.SinonStub;
       expect(stub.callCount).to.eq(2); // does a test call to select responsive provider
