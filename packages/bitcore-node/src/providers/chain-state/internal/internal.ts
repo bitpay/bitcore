@@ -1,6 +1,7 @@
 
 import { Transform } from 'stream';
 import { Validation } from 'crypto-wallet-core';
+import { LRUCache } from 'lru-cache';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import { BitcoinBlockStorage, type IBtcBlock } from '../../../models/block';
 import { CacheStorage } from '../../../models/cache';
@@ -13,6 +14,7 @@ import { RPC } from '../../../rpc';
 import { Config } from '../../../services/config';
 import { Storage } from '../../../services/storage';
 import { type CoinJSON, SpentHeightIndicators } from '../../../types/Coin';
+import { normalizeChainNetwork } from '../../../utils';
 import { StringifyJsonStream } from '../../../utils/jsonStream';
 import { ListTransactionsStream } from './transforms';
 import type { MongoBound } from '../../../models/base';
@@ -46,9 +48,12 @@ import type { ObjectId } from 'mongodb';
 @LoggifyClass
 export class InternalStateProvider implements IChainStateService {
   chain: string;
+  blockAtTimeCache: { [key: string]: LRUCache<string, IBlock> };
+
   constructor(chain: string, private WalletStreamTransform = ListTransactionsStream) {
     this.chain = chain;
     this.chain = this.chain.toUpperCase();
+    this.blockAtTimeCache = {};
   }
 
   getRPC(chain: string, network: string) {
@@ -175,6 +180,14 @@ export class InternalStateProvider implements IChainStateService {
   async getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock|null> {
     const { chain, network, time } = params;
     const date = new Date(time || Date.now());
+    const chainNetwork = normalizeChainNetwork(chain, network);
+    if (!this.blockAtTimeCache[chainNetwork]) {
+      this.blockAtTimeCache[chainNetwork] = new LRUCache<string, IBlock>({ max: 1000 });
+    }
+    const cachedBlock = this.blockAtTimeCache[chainNetwork].get(date.toISOString());
+    if (cachedBlock !== undefined) {
+      return cachedBlock;
+    }
     const [block] = await BitcoinBlockStorage.collection
       .find({
         chain,
@@ -184,7 +197,8 @@ export class InternalStateProvider implements IChainStateService {
       .limit(1)
       .sort({ timeNormalized: -1 })
       .toArray();
-    return block;
+    this.blockAtTimeCache[chainNetwork].set(date.toISOString(), block || null);
+    return block || null;
   }
 
   async streamTransactions(params: StreamTransactionsParams) {

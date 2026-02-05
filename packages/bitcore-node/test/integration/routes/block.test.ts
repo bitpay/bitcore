@@ -12,7 +12,7 @@ import { CoinStorage } from '../../../src/models/coin';
 
 
 describe('Block Routes', function() {
-  let sandbox;
+  const sandbox = sinon.createSandbox();
   const tipHeight = 103;
 
   const request = supertest(app);
@@ -170,10 +170,6 @@ describe('Block Routes', function() {
     ]);
   });
 
-  beforeEach(async () => {
-    sandbox = sinon.createSandbox();
-  });
-
   after(async () => intAfterHelper());
 
   afterEach(async () => {
@@ -211,7 +207,7 @@ describe('Block Routes', function() {
 
   it('should get blocks on BTC regtest', done => {
     request.get('/api/BTC/regtest/block').expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const blocks = res.body;
       for (const block of blocks) {
         expect(block).to.include({ chain: 'BTC', network: 'regtest' });
@@ -223,7 +219,7 @@ describe('Block Routes', function() {
 
   it('should get blocks after 101 on BTC regtest', done => {
     request.get('/api/BTC/regtest/block?sinceBlock=101').expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const blocks = res.body;
       for (const block of blocks) {
         expect(block.height).to.be.greaterThan(101);
@@ -236,7 +232,7 @@ describe('Block Routes', function() {
 
   it('should get 3 blocks with limit=3 on BTC regtest', done => {
     request.get('/api/BTC/regtest/block?limit=3').expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const blocks = res.body;
       expect(blocks.length).to.equal(3);
       for (const block of blocks) {
@@ -251,7 +247,7 @@ describe('Block Routes', function() {
     request
       .get('/api/BTC/regtest/block/tip')
       .expect(200, (err, res) => {
-        if (err) console.error(err);
+        if (err) return done(err);
         const block = res.body;
         expect(block).to.include({ chain: 'BTC', network: 'regtest', height: tipHeight });
         testBlock(block);
@@ -261,7 +257,7 @@ describe('Block Routes', function() {
 
   it('should get block by height on BTC', done => {
     request.get('/api/BTC/regtest/block/101').expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const block = res.body;
       expect(block).to.include(
         { chain: 'BTC', network: 'regtest', height: 101, confirmations: tipHeight - 101 + 1 }
@@ -273,7 +269,7 @@ describe('Block Routes', function() {
 
   it('should get block by height on BCH', done => {
     request.get('/api/BCH/regtest/block/101').expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const block = res.body;
       expect(block).to.include({ chain: 'BCH', network: 'regtest', height: 101 });
       testBlock(block);
@@ -322,7 +318,7 @@ describe('Block Routes', function() {
   it('should fetch block 100 and save hash for other tests', done => {
     expect(block100Hash).to.be.undefined;
     request.get('/api/BTC/regtest/block/100').expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const block = res.body;
       block100Hash = block.hash;
       testBlock(block);
@@ -332,7 +328,7 @@ describe('Block Routes', function() {
 
   it('should get coins by block hash', done => {
     request.get(`/api/BTC/regtest/block/${block100Hash}/coins/0/1`).expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const { txids, inputs, outputs } = res.body;
       testCoins('BTC', 'regtest', 100, txids, inputs, outputs);
       done();
@@ -341,7 +337,7 @@ describe('Block Routes', function() {
       
   it('should get coins by block hash and limit coins to 3', done => {
     request.get(`/api/BTC/regtest/block/${block100Hash}/coins/3/1`).expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const { txids, inputs, outputs } = res.body;
       expect(txids.length).to.equal(3);
       testCoins('BTC', 'regtest', 100, txids, inputs, outputs);
@@ -352,7 +348,7 @@ describe('Block Routes', function() {
   let pg1txids;
   it('should get coins by block hash and seperate into 2 pages (page 1)', done => {
     request.get(`/api/BTC/regtest/block/${block100Hash}/coins/3/1`).expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const { txids, inputs, outputs } = res.body;
       pg1txids = txids;
       testCoins('BTC', 'regtest', 100, txids, inputs, outputs);
@@ -362,7 +358,7 @@ describe('Block Routes', function() {
 
   it('should get coins by block hash and seperate into 2 pages (page 2)', done => {
     request.get(`/api/BTC/regtest/block/${block100Hash}/coins/3/2`).expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const { txids, inputs, outputs } = res.body;
       expect(pg1txids).to.be.an.instanceof(Array);
       for (const txid of txids) {
@@ -376,7 +372,7 @@ describe('Block Routes', function() {
   let numTxsBlock100;
   it('should get number of transactions from block 100 for other tests', done => {
     request.get(`/api/BTC/regtest/block/${block100Hash}/coins/500/1`).expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const { txids, inputs, outputs } = res.body;
       numTxsBlock100 = txids.length;
       // the following tests assume block 100 has at least 6 transactions
@@ -388,7 +384,7 @@ describe('Block Routes', function() {
 
   it('should get coins by block hash and handle coin limit higher than number of coins', done => {
     request.get(`/api/BTC/regtest/block/${block100Hash}/coins/500/1`).expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const { txids, inputs, outputs } = res.body;
       expect(txids.length).to.equal(numTxsBlock100);
       testCoins('BTC', 'regtest', 100, txids, inputs, outputs);
@@ -398,7 +394,7 @@ describe('Block Routes', function() {
 
   it('should get all coin data if no limit is specified (:limit == 0) on page 1', done => {
     request.get(`/api/BTC/regtest/block/${block100Hash}/coins/0/1`).expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const { txids, inputs, outputs } = res.body;
       expect(txids.length).to.equal(numTxsBlock100);
       testCoins('BTC', 'regtest', 100, txids, inputs, outputs);
@@ -409,7 +405,7 @@ describe('Block Routes', function() {
 
   it('should get all coin data if no limit is specified (:limit == 0) on page 2', done => {
     request.get(`/api/BTC/regtest/block/${block100Hash}/coins/0/2`).expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const { txids, inputs, outputs } = res.body;
       expect(txids.length).to.equal(numTxsBlock100);
       testCoins('BTC', 'regtest', 100, txids, inputs, outputs);
@@ -419,7 +415,7 @@ describe('Block Routes', function() {
 
   it('should skip all coins if :limit > num coins and :pgnum = 2', done => {
     request.get(`/api/BTC/regtest/block/${block100Hash}/coins/500/2`).expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const { txids, inputs, outputs } = res.body;
       expect(txids.length).to.equal(0);
       testCoins('BTC', 'regtest', 100, txids, inputs, outputs);
@@ -429,7 +425,7 @@ describe('Block Routes', function() {
 
   it('should recieve 0 coins if requesting a page that is too high', done => {
     request.get(`/api/BTC/regtest/block/${block100Hash}/coins/${numTxsBlock100 - 1}/3`).expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const { txids, inputs, outputs } = res.body;
       expect(txids).to.be.empty;
       expect(inputs).to.be.empty;
@@ -442,7 +438,7 @@ describe('Block Routes', function() {
   for (let i = 1; i <= 3; i++) {
     it(`should recieve partial pages with remainder ${i}`, done => {
       request.get(`/api/BTC/regtest/block/${block100Hash}/coins/${numTxsBlock100 - i}/2`).expect(200, (err, res) => {
-        if (err) console.error(err);
+        if (err) return done(err);
         const { txids, inputs, outputs } = res.body;
         expect(txids).to.have.length(i);
         testCoins('BTC', 'regtest', 100, txids, inputs, outputs);
@@ -453,7 +449,7 @@ describe('Block Routes', function() {
 
   it('should get blocks before 20 minutes ago', done => {
     request.get(`/api/BTC/regtest/block/before-time/${minutesAgo(20)}`).expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const block = res.body;
       const { timeNormalized } = block;
       expect(new Date(timeNormalized).getTime()).to.be.lessThan(minutesAgo(20).getTime());
@@ -467,12 +463,13 @@ describe('Block Routes', function() {
     const spy = sandbox.spy(ChainStateProvider, 'getBlockFee');
 
     request.get('/api/BTC/regtest/block/100/fee').expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       expect(spy.calledOnce).to.be.true;
       const { feeTotal, mean, median, mode } = res.body;
       // transaction data is defined in before function
       expect(feeTotal).to.equal(20000 + 20000 + 25000 + 30000 + 35000);
-      expect(mean).to.equal((20000 / 1056 + 20000 / 1056 + 25000 / 1056 + 30000 / 1056 + 35000 / 1056) / 5);
+      // compiler optimization may affect floating point math, so use closeTo for mean
+      expect(mean).to.be.closeTo((20000 / 1056 + 20000 / 1056 + 25000 / 1056 + 30000 / 1056 + 35000 / 1056) / 5, 1e-10);
       expect(median).to.equal(25000 / 1056);
       expect(mode).to.equal(20000 / 1056);
       done();
@@ -483,12 +480,13 @@ describe('Block Routes', function() {
     const spy = sandbox.spy(ChainStateProvider, 'getBlockFee');
 
     request.get('/api/BTC/regtest/block/100/fee').expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       expect(spy.notCalled).to.be.true;
       const { feeTotal, mean, median, mode } = res.body;
       // transaction data is defined in before function
       expect(feeTotal).to.equal(20000 + 20000 + 25000 + 30000 + 35000);
-      expect(mean).to.equal((20000 / 1056 + 20000 / 1056 + 25000 / 1056 + 30000 / 1056 + 35000 / 1056) / 5);
+      // compiler optimization may affect floating point math, so use closeTo for mean
+      expect(mean).to.be.closeTo((20000 / 1056 + 20000 / 1056 + 25000 / 1056 + 30000 / 1056 + 35000 / 1056) / 5, 1e-10);
       expect(median).to.equal(25000 / 1056);
       expect(mode).to.equal(20000 / 1056);
       done();
@@ -497,33 +495,35 @@ describe('Block Routes', function() {
 
   it('should calculate fee data on BCH', done => {
     request.get('/api/BCH/regtest/block/100/fee').expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const { feeTotal, mean, median, mode } = res.body;
       // transaction data is defined in before function
       expect(feeTotal).to.equal(2000 + 2000 + 2500 + 3000 + 3500);
-      expect(mean).to.equal((2000 / 1056 + 2000 / 1056 + 2500 / 1056 + 3000 / 1056 + 3500 / 1056) / 5);
+      // compiler optimization may affect floating point math, so use closeTo for mean
+      expect(mean).to.be.closeTo((2000 / 1056 + 2000 / 1056 + 2500 / 1056 + 3000 / 1056 + 3500 / 1056) / 5, 1e-10);
       expect(median).to.equal(2500 / 1056);
-      expect(mode).to.equal(2000 / 1056);
+      expect(mode).to.equal(2000 / 1056); // mode is deterministic since fee 2000 occurs twice
       done();
     });
   });
 
   it('should calculate tip fee data', done => {
     request.get('/api/BTC/regtest/block/tip/fee').expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const { feeTotal, mean, median, mode } = res.body;
       // transaction data is defined in before function
       expect(feeTotal).to.equal(9000 + 10000 + 11000);
-      expect(mean).to.equal((9000 / 1056 + 10000 / 1056 + 11000 / 1056) / 3);
+      // compiler optimization may affect floating point math, so use closeTo for mean
+      expect(mean).to.be.closeTo((9000 / 1056 + 10000 / 1056 + 11000 / 1056) / 3, 1e-10);
       expect(median).to.equal(10000 / 1056);
-      expect(mode).to.equal(9000 / 1056);
+      expect(mode).to.be.oneOf([9000 / 1056, 10000 / 1056, 11000 / 1056]); // mode is non-deterministic since all values occur once
       done();
     });
   });
 
   it('should calculate fee data of block with only coinbase transaction as 0', done => {
     request.get('/api/BTC/regtest/block/101/fee').expect(200, (err, res) => {
-      if (err) console.error(err);
+      if (err) return done(err);
       const { feeTotal, mean, median, mode } = res.body;
       expect(feeTotal).to.equal(0);
       expect(mean).to.equal(0);

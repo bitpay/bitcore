@@ -1,6 +1,5 @@
 import { CryptoRpc } from 'crypto-rpc';
-import { Utils } from 'crypto-wallet-core';
-import Config from '../../../../config';
+import { Utils, Web3, type Web3Types } from 'crypto-wallet-core';
 import {
   historical,
   internal,
@@ -11,14 +10,14 @@ import { type ITransaction } from '../../../../models/baseTransaction';
 import { CacheStorage } from '../../../../models/cache';
 import { WalletAddressStorage } from '../../../../models/walletAddress';
 import { InternalStateProvider } from '../../../../providers/chain-state/internal/internal';
+import { Config } from '../../../../services/config';
 import { Storage } from '../../../../services/storage';
 import { IBlock } from '../../../../types/Block';
 import { ChainId } from '../../../../types/ChainNetwork';
 import { SpentHeightIndicators } from '../../../../types/Coin';
-import { partition, range } from '../../../../utils';
+import { normalizeChainNetwork, partition, range } from '../../../../utils';
 import { StatsUtil } from '../../../../utils/stats';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
-import { getProvider, isValidProviderType } from '../../external/providers/provider';
 import { ExternalApiStream } from '../../external/streams/apiStream';
 import { ERC20Abi } from '../abi/erc20';
 import { MultisendAbi } from '../abi/multisend';
@@ -31,7 +30,7 @@ import { PopulateEffectsTransform } from './populateEffectsTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
 import { EVMListTransactionsStream } from './transform';
 import type { MongoBound } from '../../../../models/base';
-import type { IChainConfig, IEVMNetworkConfig, IProvider } from '../../../../types/Config';
+import type { IChainConfig, IEVMNetworkConfig, ProviderDataType } from '../../../../types/Config';
 import type {
   BroadcastTransactionParams,
   GetBalanceForAddressParams,
@@ -49,7 +48,6 @@ import type {
   WalletBalanceType
 } from '../../../../types/namespaces/ChainStateProvider';
 import type { EthRpc } from 'crypto-rpc/lib/eth/EthRpc';
-import type { Web3, Web3Types } from 'crypto-wallet-core';
 import type { ObjectID } from 'mongodb';
 
 export interface GetWeb3Response { rpc: EthRpc; web3: Web3; dataType: string; lastPingTime?: number };
@@ -63,19 +61,80 @@ export interface BuildWalletTxsStreamParams {
 
 export class BaseEVMStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<IEVMNetworkConfig>;
-  static rpcs = {} as { [chain: string]: { [network: string]: GetWeb3Response[] } };
+  static rpcs: { [chainNetwork: string]: { historical: GetWeb3Response[]; realtime: GetWeb3Response[] } } = {};
+  static rpcIndicies: { [chainNetwork: string]: { historical: number; realtime: number } } = {};
+  static rpcInitialized: { [chain: string]: boolean } = {};
 
   constructor(public chain: string = 'ETH') {
     super(chain);
-    this.config = Config.chains[this.chain] as IChainConfig<IEVMNetworkConfig>;
+    this.config = Config.get().chains[this.chain] as IChainConfig<IEVMNetworkConfig>;
+    BaseEVMStateProvider.initializeRpcs(this.chain);
   }
 
-  async getWeb3(network: string, params?: { type: IProvider['dataType'] }): Promise<GetWeb3Response> {
-    for (const rpc of BaseEVMStateProvider.rpcs[this.chain]?.[network] || []) {
-      if (!isValidProviderType(params?.type, rpc.dataType)) {
-        continue;
-      }
+  static initializeRpcs(chain: string) {
+    if (BaseEVMStateProvider.rpcInitialized[chain]) {
+      return;
+    }
+    BaseEVMStateProvider.rpcInitialized[chain] = true;
+    
+    const configs = Config.get().chains[chain] as IChainConfig<IEVMNetworkConfig>;
+    for (const [network, config] of Object.entries(configs)) {
+      const chainNetwork = normalizeChainNetwork(chain, network);
+      BaseEVMStateProvider.rpcs[chainNetwork] = { historical: [], realtime: [] };
+      BaseEVMStateProvider.rpcIndicies[chainNetwork] = { historical: 0, realtime: 0 };
 
+      const providers = config.provider ? [config.provider] : config.providers || [];
+      for (const providerConfig of providers) {
+        const rpcConfig = { ...providerConfig, chain, isEVM: true };
+        const rpc = new CryptoRpc(rpcConfig as any).get(chain) as EthRpc;
+        const rpcObj = {
+          rpc,
+          web3: rpc.web3,
+          dataType: rpcConfig.dataType || 'combined'
+        };
+        if (rpcObj.dataType === 'historical' || rpcObj.dataType === 'combined') {
+          BaseEVMStateProvider.rpcs[chainNetwork].historical.push(rpcObj);
+        }
+        if (rpcObj.dataType === 'realtime' || rpcObj.dataType === 'combined') {
+          BaseEVMStateProvider.rpcs[chainNetwork].realtime.push(rpcObj);
+        }
+      }
+    }
+  }
+
+  static teardownRpcs() {
+    for (const [chainNetwork, rpcObj] of Object.entries(BaseEVMStateProvider.rpcs)) {
+      logger.info('Tearing down RPC connections for %o', chainNetwork);
+      for (const rpc of (rpcObj.historical || []).concat(rpcObj.realtime || [])) {
+        try {
+          rpc.web3.currentProvider?.disconnect?.();
+        } catch { /* ignore -- already disconnected or non-socket connection (e.g. http) */}
+      }
+      delete BaseEVMStateProvider.rpcs[chainNetwork];
+      delete BaseEVMStateProvider.rpcIndicies[chainNetwork];
+      delete BaseEVMStateProvider.rpcInitialized[chainNetwork.split(':')[0]];
+    }
+  }
+
+  async getWeb3(network: string, params?: { type: ProviderDataType }): Promise<GetWeb3Response> {
+    const chainNetwork = normalizeChainNetwork(this.chain, network);
+
+    const type = params?.type || 'realtime';
+    if (!BaseEVMStateProvider.rpcs[chainNetwork]?.[type]?.length) {
+      throw new Error(`No configuration found for ${chainNetwork} and "${type}" compatible dataType`);
+    }
+    if (BaseEVMStateProvider.rpcs[chainNetwork][type].length === 1) {
+      return BaseEVMStateProvider.rpcs[chainNetwork][type][0];
+    }
+
+    // Load-balance the RPCs in a round-robin fashion
+    const lastUsedIndex = BaseEVMStateProvider.rpcIndicies[chainNetwork][type];
+    const getNextIndex = (index) => (index + 1) % BaseEVMStateProvider.rpcs[chainNetwork][type].length;
+    const initialIndex = getNextIndex(lastUsedIndex);
+    let index = initialIndex;
+    let rpc: GetWeb3Response;
+    do {
+      rpc = BaseEVMStateProvider.rpcs[chainNetwork][type][index];
       try {
         if (Date.now() - (rpc.lastPingTime || 0) < 10000) { // Keep the rpc from being blasted with ping calls
           return rpc;
@@ -85,37 +144,29 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
           new Promise((_, reject) => setTimeout(reject, 5000))
         ]);
         rpc.lastPingTime = Date.now();
-        return rpc; // return the first applicable rpc that's responsive
+        // Update the most recently used index
+        BaseEVMStateProvider.rpcIndicies[chainNetwork][type] = index;
+        return rpc;
       } catch {
-        // try reconnecting
-        logger.info(`Reconnecting to ${this.chain}:${network}`);
-        if (typeof (rpc.web3.currentProvider as any)?.disconnect === 'function') {
-          (rpc.web3.currentProvider as any)?.disconnect?.();
-          (rpc.web3.currentProvider as any)?.connect?.();
-          if ((rpc.web3.currentProvider as any)?.connected) {
-            return rpc;
+        if (
+          rpc.web3.currentProvider instanceof Web3.providers.WebsocketProvider &&
+          (['connected', 'connecting'].includes(rpc.web3.currentProvider.getStatus()))
+        ) {
+          try {
+            // try reconnecting
+            rpc.web3.currentProvider.disconnect();
+            rpc.web3.currentProvider.connect();
+          } catch (err) {
+            logger.warn('Error reconnecting to %o:%o RPC websocket: %o', this.chain, network, err);
           }
         }
-        const idx = BaseEVMStateProvider.rpcs[this.chain][network].indexOf(rpc);
-        BaseEVMStateProvider.rpcs[this.chain][network].splice(idx, 1);
       }
-    }
+      index = getNextIndex(index);
+    } while (index !== initialIndex);
 
-    logger.info(`Making a new connection for ${this.chain}:${network}`);
-    const dataType = params?.type;
-    const providerConfig = getProvider({ network, dataType, config: this.config });
-    // Default to using ETH CryptoRpc with all EVM chain configs
-    const rpcConfig = { ...providerConfig, chain: 'ETH', currencyConfig: {} };
-    const rpc = new CryptoRpc(rpcConfig as any).get('ETH') as EthRpc;
-    const rpcObj = { rpc, web3: rpc.web3, dataType: rpcConfig.dataType || 'combined' };
-    if (!BaseEVMStateProvider.rpcs[this.chain]) {
-      BaseEVMStateProvider.rpcs[this.chain] = {};
-    }
-    if (!BaseEVMStateProvider.rpcs[this.chain][network]) {
-      BaseEVMStateProvider.rpcs[this.chain][network] = [];
-    }
-    BaseEVMStateProvider.rpcs[this.chain][network].push(rpcObj);
-    return rpcObj;
+    // If none have worked, return the last (successful?) rpc
+    logger.warn('All %o:%o RPCs are unresponsive, returning last used RPC', this.chain, network);
+    return BaseEVMStateProvider.rpcs[chainNetwork][type][lastUsedIndex];
   }
 
   async erc20For(network: string, address: string) {

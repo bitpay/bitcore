@@ -1,12 +1,14 @@
 import express, { Request, Response } from 'express';
+import { LRUCache } from 'lru-cache';
 import logger from '../../logger';
 import { CoinStorage, ICoin } from '../../models/coin';
 import { TransactionStorage } from '../../models/transaction';
 import { ChainStateProvider } from '../../providers/chain-state';
+import { isDateValid } from '../../utils';
 import { CacheTimes, Confirmations, SetCache } from '../middleware';
 
 const router = express.Router({ mergeParams: true });
-const feeCache = {};
+const feeCache = new LRUCache({ max: 6000 });
 
 router.get('/', async function(req: Request, res: Response) {
   const { chain, network } = req.params;
@@ -130,6 +132,9 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: 
 router.get('/before-time/:time', async function(req: Request, res: Response) {
   const { chain, network, time } = req.params;
   try {
+    if (!isDateValid(time)) {
+      return res.status(400).send('Invalid time parameter');
+    }
     const block = await ChainStateProvider.getBlockBeforeTime({ chain, network, time });
     if (!block) {
       return res.status(404).send('block not found');
@@ -163,8 +168,8 @@ router.get('/:blockId/fee', async function(req: Request, res: Response) {
   }
   
   const feeCacheKey = `${chain}:${network}:${blockId}`;
-  if (feeCache[feeCacheKey]) {
-    return res.send(feeCache[feeCacheKey]);
+  if (feeCache.has(feeCacheKey)) {
+    return res.send(feeCache.get(feeCacheKey));
   }
 
   const fee = await ChainStateProvider.getBlockFee({ chain, network, blockId });  
@@ -172,8 +177,8 @@ router.get('/:blockId/fee', async function(req: Request, res: Response) {
     logger.error(`block not found with id ${blockId}`);
     return res.status(404).send(`block not found with id ${blockId}`);
   }
-  feeCache[feeCacheKey] = fee;
-  return res.json(feeCache[feeCacheKey]);
+  feeCache.set(feeCacheKey, fee);
+  return res.json(fee);
 });
 
 export const blockRoute = {

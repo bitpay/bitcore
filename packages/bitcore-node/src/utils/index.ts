@@ -157,3 +157,7 @@ export function merge<TDest, TSrc>(dest: TDest, src: TSrc): TDest & TSrc {
   }
   return dest as TDest & TSrc;
 }
+
+export function normalizeChainNetwork(chain: string, network: string): string {
+  return chain.toUpperCase() + ':' + network.toLowerCase();
+}

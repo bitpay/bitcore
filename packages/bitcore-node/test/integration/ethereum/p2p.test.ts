@@ -2,6 +2,8 @@ import * as BitcoreClient from 'bitcore-client';
 import { expect } from 'chai';
 import { Web3 } from 'crypto-wallet-core';
 import sinon from 'sinon';
+import fs from 'fs';
+import { CryptoRpc } from 'crypto-rpc';
 import config from '../../../src/config';
 import { CacheStorage } from '../../../src/models/cache';
 import { EthP2pWorker } from '../../../src/modules/ethereum/p2p/p2p';
@@ -11,11 +13,13 @@ import { IEVMNetworkConfig } from '../../../src/types/Config';
 import { wait } from '../../../src/utils';
 import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
+import { BaseEVMStateProvider } from '../../../src/providers/chain-state/evm/api/csp';
 
 describe('Ethereum', function() {
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(50000);
+  const sandbox = sinon.createSandbox();
 
   const { StreamUtil } = BitcoreClient;
   const chain = 'ETH';
@@ -90,6 +94,10 @@ describe('Ethereum', function() {
     await intAfterHelper(suite);
   });
 
+  afterEach(() => {
+    sandbox.restore();
+  });
+
   it('should be able to create a wallet with an address', async () => {
     const wallet = await getWallet();
     const addresses = await wallet.getAddresses();
@@ -98,30 +106,14 @@ describe('Ethereum', function() {
     expect(addresses[0].toLowerCase()).to.equal('0xd8fd14fb0e0848cb931c1e54a73486c4b968be3d');
   });
 
-  it('should be able to get block events from erigon', async () => {
+  it('should be able to get block events from geth', async () => {
+    const { protocol, host, port } = chainConfig.providers![0];
+    sandbox.stub(EthP2pWorker.prototype, 'getWeb3').resolves({ web3: new Web3(`${protocol}://${host}:${port}`) });
+
     const wallet = await getWallet();
     const addresses = await wallet.getAddresses();
 
     const worker = new EthP2pWorker({ chain, network, chainConfig });
-    await worker.setupListeners();
-    await worker.connect();
-    const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
-
-    const { web3 } = await worker.getWeb3();
-    await sendTransaction('erigon', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet);
-    await sawBlock;
-    await worker.stop();
-  });
-
-  it('should be able to get block events from geth', async () => {
-    const gethOnlyConfig = { ...chainConfig, provider: chainConfig.providers![1] };
-    const { protocol, host, port } = gethOnlyConfig.provider;
-    const getWeb3Stub = sinon.stub(EthP2pWorker.prototype, 'getWeb3').resolves({ web3: new Web3(`${protocol}://${host}:${port}`) });
-
-    const wallet = await getWallet();
-    const addresses = await wallet.getAddresses();
-
-    const worker = new EthP2pWorker({ chain, network, chainConfig: gethOnlyConfig });
     await worker.setupListeners();
     await worker.connect();
     const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
@@ -133,7 +125,6 @@ describe('Ethereum', function() {
     await sendTransaction('geth', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet, nonce + 1);
     await sawBlock;
     await worker.stop();
-    getWeb3Stub.restore();
   });
 
   it('should be able to get the balance for the address', async () => {
@@ -145,26 +136,6 @@ describe('Ethereum', function() {
     const cached = await CacheStorage.collection.findOne({ key });
     expect(cached).to.exist;
     expect(cached!.value).to.deep.eq(balance);
-    await wallet.lock();
-  });
-
-  it('should update after a send', async () => {
-    const wallet = await getWallet();
-    const addresses = await wallet.getAddresses();
-    const beforeBalance = await wallet.getBalance();
-
-    const worker = new EthP2pWorker({ chain, network, chainConfig });
-    await worker.setupListeners();
-    await worker.connect();
-    const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
-
-    const { web3 } = await worker.getWeb3();
-    await sendTransaction('erigon', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet);
-    await sawBlock;
-    await worker.stop();
-    const afterBalance = await wallet.getBalance();
-    expect(afterBalance).to.not.deep.eq(beforeBalance);
-    expect(afterBalance.confirmed).to.be.gt(beforeBalance.confirmed);
     await wallet.lock();
   });
 
@@ -190,25 +161,78 @@ describe('Ethereum', function() {
     await wallet.lock();
   });
 
-  it.skip('should be able to save blocks to the database', async () => {
-    const wallet = await getWallet();
-    const addresses = await wallet.getAddresses();
+  describe('erigon', function() {
+    beforeEach(function() {
+      const runningInDocker = fs.existsSync('/.dockerenv');
+      const config = {
+        isEVM: true,
+        chain,
+        host: runningInDocker ? 'erigon' : 'localhost',
+        port: 9555,
+        protocol: 'ws'
+      };
+      const rpc = new CryptoRpc(config).get(chain);
+      // Use only the erigon provider
+      sandbox.stub(BaseEVMStateProvider, 'rpcs').value({
+        [`${chain}:${network}`]: { realtime: [{ rpc, web3: rpc.web3, dataType: 'realtime' }] }
+      });
+    });
 
-    const worker = new EthP2pWorker({ chain, network, chainConfig });
-    const done = worker.syncDone();
-    const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
-    await worker.start();
-    await wait(1000);
+    it('should be able to get block events from erigon', async function() {
+      const wallet = await getWallet();
+      const addresses = await wallet.getAddresses();
 
-    const { web3 } = await worker.getWeb3();
-    await sendTransaction('erigon', addresses[0], web3.utils.toWei('.02', 'ether'), web3, wallet);
-    await sawBlock;
-    await done;
-    await worker.stop();
+      const worker = new EthP2pWorker({ chain, network, chainConfig });
+      await worker.setupListeners();
+      await worker.connect();
+      const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
 
-    const dbBlocks = await EVMBlockStorage.collection.count({ chain, network });
-    expect(dbBlocks).to.be.gt(0);
-    await wallet.lock();
+      const { web3 } = await worker.getWeb3();
+      await sendTransaction('erigon', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet);
+      await sawBlock;
+      await worker.stop();
+    });
+
+    it('should update after an erigon send', async () => {
+      const wallet = await getWallet();
+      const addresses = await wallet.getAddresses();
+      const beforeBalance = await wallet.getBalance();
+
+      const worker = new EthP2pWorker({ chain, network, chainConfig });
+      await worker.setupListeners();
+      await worker.connect();
+      const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
+
+      const { web3 } = await worker.getWeb3();
+      await sendTransaction('erigon', addresses[0], web3.utils.toWei('.01', 'ether'), web3, wallet);
+      await sawBlock;
+      await worker.stop();
+      const afterBalance = await wallet.getBalance();
+      expect(afterBalance).to.not.deep.eq(beforeBalance);
+      expect(afterBalance.confirmed).to.be.gt(beforeBalance.confirmed);
+      await wallet.lock();
+    });
+
+    it.skip('should be able to save erigon blocks to the database', async () => {
+      const wallet = await getWallet();
+      const addresses = await wallet.getAddresses();
+
+      const worker = new EthP2pWorker({ chain, network, chainConfig });
+      const done = worker.syncDone();
+      const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
+      await worker.start();
+      await wait(1000);
+
+      const { web3 } = await worker.getWeb3();
+      await sendTransaction('erigon', addresses[0], web3.utils.toWei('.02', 'ether'), web3, wallet);
+      await sawBlock;
+      await done;
+      await worker.stop();
+
+      const dbBlocks = await EVMBlockStorage.collection.count({ chain, network });
+      expect(dbBlocks).to.be.gt(0);
+      await wallet.lock();
+    });
   });
 
   it('should be able to handle reorgs');
