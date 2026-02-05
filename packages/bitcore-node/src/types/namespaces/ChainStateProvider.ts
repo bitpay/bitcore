@@ -54,7 +54,7 @@ export interface ExternalGetBlockResults {
 }
 
 export type GetBlockBeforeTimeParams = ChainNetwork & {
-  time?: Date | string;
+  time: Date | string;
 };
 
 export type StreamBlocksParams = ChainNetwork & {

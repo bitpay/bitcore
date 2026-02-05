@@ -4,6 +4,7 @@ import logger from '../../logger';
 import { CoinStorage, ICoin } from '../../models/coin';
 import { TransactionStorage } from '../../models/transaction';
 import { ChainStateProvider } from '../../providers/chain-state';
+import { isDateValid } from '../../utils';
 import { CacheTimes, Confirmations, SetCache } from '../middleware';
 
 const router = express.Router({ mergeParams: true });
@@ -131,6 +132,9 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: 
 router.get('/before-time/:time', async function(req: Request, res: Response) {
   const { chain, network, time } = req.params;
   try {
+    if (!isDateValid(time)) {
+      return res.status(400).send('Invalid time parameter');
+    }
     const block = await ChainStateProvider.getBlockBeforeTime({ chain, network, time });
     if (!block) {
       return res.status(404).send('block not found');

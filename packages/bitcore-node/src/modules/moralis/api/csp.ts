@@ -18,6 +18,7 @@ import { ChainId, ChainNetwork } from '../../../types/ChainNetwork';
 import { IAddressSubscription } from '../../../types/ExternalProvider';
 import { GetBlockBeforeTimeParams, GetBlockParams, StreamAddressUtxosParams, StreamBlocksParams, StreamTransactionParams, StreamWalletTransactionsParams } from '../../../types/namespaces/ChainStateProvider';
 import { isDateValid } from '../../../utils';
+import { normalizeChainNetwork } from '../../../utils';
 import { ReadableWithEventPipe } from '../../../utils/streamWithEventPipe';
 
 
@@ -48,9 +49,12 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
   async getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock|null> {
     const { chain, network, time } = params;
     const date = new Date(time || Date.now());
-    const chainNetwork = chain.toLowerCase() + ':' + network.toLowerCase();
-    const cachedBlock = this.blockAtTimeCache[chainNetwork]?.get(date.toISOString());
-    if (cachedBlock) {
+    const chainNetwork = normalizeChainNetwork(chain, network);
+    if (!this.blockAtTimeCache[chainNetwork]) {
+      this.blockAtTimeCache[chainNetwork] = new LRUCache<string, IBlock>({ max: 1000 });
+    }
+    const cachedBlock = this.blockAtTimeCache[chainNetwork].get(date.toISOString());
+    if (cachedBlock !== undefined) {
       return cachedBlock;
     }
     const chainId = await this.getChainId({ network });
@@ -61,14 +65,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     const blockId = blockNum.toString();
     const blocks = await this._getBlocks({ chain, network, blockId, args: { limit: 1 } });
     const block = blocks.blocks[0] || null;
-    if (block) {
-      if (!this.blockAtTimeCache[chainNetwork]) {
-        this.blockAtTimeCache[chainNetwork] = new LRUCache<string, IBlock>({ max: 1000 });
-      }
-      this.blockAtTimeCache[chainNetwork].set(date.toISOString(), block);
-    } else {
-      this.blockAtTimeCache[chainNetwork].set(date.toISOString(), block, { ttl: 10000 }); // cache nulls for 10 sec
-    }
+    this.blockAtTimeCache[chainNetwork].set(date.toISOString(), block);
     return block;
   }
 

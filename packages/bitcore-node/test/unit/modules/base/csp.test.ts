@@ -237,7 +237,10 @@ describe('BASE Chain State Provider', function() {
     it('should be able to get web3 with multiple realtime provider', async () => {
       const web3Stub = { eth: { getBlockNumber: sandbox.stub().resolves(1) } };
       sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ [`BASE:${network}`]: {
-        realtime: [{ web3: web3Stub, rpc: sandbox.stub(), dataType: 'combined' }, { web3: web3Stub, rpc: sandbox.stub(), dataType: 'combined' }]
+        realtime: [
+          { web3: web3Stub, rpc: sandbox.stub(), dataType: 'combined' },
+          { web3: web3Stub, rpc: sandbox.stub(), dataType: 'combined' }
+        ]
       } });
       const { web3 } = await BASE.getWeb3(network);
       const block = await web3.eth.getBlockNumber();
@@ -246,11 +249,31 @@ describe('BASE Chain State Provider', function() {
       expect(block).to.eq(1);
     });
 
+    it('should handle when last used index is last in array', async () => {
+      const web3Stub = { eth: { getBlockNumber: sandbox.stub().resolves(1) } };
+      sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ [`BASE:${network}`]: {
+        realtime: [
+          { web3: web3Stub, rpc: sandbox.stub(), dataType: 'combined', index: 0 },
+          { web3: web3Stub, rpc: sandbox.stub(), dataType: 'combined', index: 1 },
+        ]
+      } });
+      BaseEVMStateProvider.rpcIndicies[`BASE:${network}`].realtime = 1; // set to last index
+      const response = await BASE.getWeb3(network);
+      expect(response.id).to.eq(0); // should wrap around to index 0
+      const block = await response.web3.eth.getBlockNumber();
+      const stub = response.web3.eth.getBlockNumber as sinon.SinonStub;
+      expect(stub.callCount).to.eq(2); // does a test call to select responsive provider
+      expect(block).to.eq(1);
+    });
+
     it('should round-robin multiple web3 providers', async () => {
       const web3Stub1 = { eth: { getBlockNumber: sandbox.stub().resolves(1) } };
       const web3Stub2 = { eth: { getBlockNumber: sandbox.stub().resolves(2) } };
       sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ [`BASE:${network}`]: {
-        realtime: [{ web3: web3Stub1, rpc: sandbox.stub(), dataType: 'combined' }, { web3: web3Stub2, rpc: sandbox.stub(), dataType: 'combined' }]
+        realtime: [
+          { web3: web3Stub1, rpc: sandbox.stub(), dataType: 'combined' },
+          { web3: web3Stub2, rpc: sandbox.stub(), dataType: 'combined' }
+        ]
       } });
       let { web3 } = await BASE.getWeb3(network);
       expect(web3).to.equal(web3Stub2); // index starts at index 1

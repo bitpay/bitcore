@@ -4,6 +4,7 @@ import { PublicKey as UmiPublicKey } from '@metaplex-foundation/umi-public-keys'
 import { TokenListProvider } from '@solana/spl-token-registry';
 import { CryptoRpc } from 'crypto-rpc';
 import { instructionKeys } from 'crypto-rpc/lib/sol/transaction-parser';
+import { LRUCache } from 'lru-cache';
 import logger from '../../../../logger';
 import { CacheStorage } from '../../../../models/cache';
 import { Config } from '../../../../services/config';
@@ -27,7 +28,7 @@ import {
   StreamWalletTransactionsParams,
   WalletBalanceType
 } from '../../../../types/namespaces/ChainStateProvider';
-import { range } from '../../../../utils';
+import { normalizeChainNetwork, range } from '../../../../utils';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { ExternalApiStream } from '../../external/streams/apiStream';
 import { InternalStateProvider } from '../../internal/internal';
@@ -36,10 +37,12 @@ import type { SolRpc } from 'crypto-rpc/lib/sol/SolRpc';
 export interface GetSolWeb3Response { rpc: SolRpc; connection: any; umi: any; dataType: string; lastPingTime?: number };
 
 export class BaseSVMStateProvider extends InternalStateProvider implements IChainStateService {
-  config: IChainConfig<ISVMNetworkConfig>;
   static rpcs: { [chainNetwork: string]: { historical: GetSolWeb3Response[]; realtime: GetSolWeb3Response[] } } = {};
   static rpcIndicies: { [chainNetwork: string]: { historical: number; realtime: number } } = {};
   static rpcInitialized: { [chain: string]: boolean } = {};
+  config: IChainConfig<ISVMNetworkConfig>;
+  blockAtTimeCache: { [key: string]: LRUCache<string, IBlock> } = {};
+
 
   constructor(public chain: string = 'SOL') {
     super(chain);
@@ -51,12 +54,10 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     if (BaseSVMStateProvider.rpcInitialized[chain]) {
       return;
     }
-    BaseSVMStateProvider.rpcInitialized[chain] = true;
-    
 
     const configs = Config.get().chains[chain] as IChainConfig<ISVMNetworkConfig>;
     for (const [network, config] of Object.entries(configs)) {
-      const chainNetwork = chain.toUpperCase() + ':' + network.toLowerCase();
+      const chainNetwork = normalizeChainNetwork(chain, network);
       BaseSVMStateProvider.rpcs[chainNetwork] = { historical: [], realtime: [] };
       BaseSVMStateProvider.rpcIndicies[chainNetwork] = { historical: 0, realtime: 0 };
 
@@ -82,6 +83,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         }
       }
     }
+    BaseSVMStateProvider.rpcInitialized[chain] = true;
   }
 
   static teardownRpcs() {
@@ -97,7 +99,7 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async getRpc(network: string, params?: { type: ProviderDataType }): Promise<GetSolWeb3Response> {
-    const chainNetwork = this.chain.toUpperCase() + ':' + network.toLowerCase();
+    const chainNetwork = normalizeChainNetwork(this.chain, network);
 
     const type = params?.type || 'realtime';
     if (BaseSVMStateProvider.rpcs[chainNetwork][type].length === 1) {
@@ -105,8 +107,10 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
     }
 
     // Load-balance the RPCs in a round-robin fashion
-    const lastIndex = BaseSVMStateProvider.rpcIndicies[chainNetwork][type];
-    let index = (lastIndex + 1) % BaseSVMStateProvider.rpcs[chainNetwork][type].length;
+    const lastUsedIndex = BaseSVMStateProvider.rpcIndicies[chainNetwork][type];
+    const getNextIndex = (index) => (index + 1) % BaseSVMStateProvider.rpcs[chainNetwork][type].length;
+    const initialIndex = getNextIndex(lastUsedIndex);
+    let index = initialIndex;
     let rpc: GetSolWeb3Response;
     do {
       rpc = BaseSVMStateProvider.rpcs[chainNetwork][type][index];
@@ -125,12 +129,12 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       } catch {
         logger.warn('Unresponsive RPC detected for %o:%o, trying next RPC', this.chain, network);
       }
-      index = (index + 1) % BaseSVMStateProvider.rpcs[chainNetwork][type].length;
-    } while (index !== lastIndex + 1);
+      index = getNextIndex(index);
+    } while (index !== initialIndex);
 
     // If none have worked, return the last (successful?) rpc
     logger.warn('All %o:%o RPCs are unresponsive, returning last used RPC', this.chain, network);
-    return BaseSVMStateProvider.rpcs[chainNetwork][type][lastIndex];
+    return BaseSVMStateProvider.rpcs[chainNetwork][type][lastUsedIndex];
   }
 
   async getFee(params) {
@@ -577,8 +581,17 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
 
   async getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock | null> {
     const { network, time = new Date() } = params;
+    const date = new Date(time || Date.now());
     const { rpc } = await this.getRpc(network);
-    let beforeTimeSlot = await this._findSlotByDate(network, new Date(time));
+    const chainNetwork = normalizeChainNetwork(this.chain, network);
+    if (!this.blockAtTimeCache[chainNetwork]) {
+      this.blockAtTimeCache[chainNetwork] = new LRUCache<string, IBlock>({ max: 1000 });
+    }
+    const cachedBlock = this.blockAtTimeCache[chainNetwork].get(date.toISOString());
+    if (cachedBlock !== undefined) {
+      return cachedBlock;
+    }
+    let beforeTimeSlot = await this._findSlotByDate(network, date);
     if (!beforeTimeSlot) {
       return null;
     }
@@ -595,7 +608,11 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         throw e;
       }
     }
-    return this.blockTransform(network, block, beforeTimeSlot);
+    if (block) {
+      block = this.blockTransform(network, block, beforeTimeSlot);
+    }
+    this.blockAtTimeCache[chainNetwork].set(date.toISOString(), block);
+    return block;
   }
 
   async streamBlocks(params: StreamBlocksParams) {

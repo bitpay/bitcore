@@ -15,7 +15,7 @@ import { Storage } from '../../../../services/storage';
 import { IBlock } from '../../../../types/Block';
 import { ChainId } from '../../../../types/ChainNetwork';
 import { SpentHeightIndicators } from '../../../../types/Coin';
-import { partition, range } from '../../../../utils';
+import { normalizeChainNetwork, partition, range } from '../../../../utils';
 import { StatsUtil } from '../../../../utils/stats';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { ExternalApiStream } from '../../external/streams/apiStream';
@@ -61,8 +61,8 @@ export interface BuildWalletTxsStreamParams {
 
 export class BaseEVMStateProvider extends InternalStateProvider implements IChainStateService {
   config: IChainConfig<IEVMNetworkConfig>;
-  static rpcs = {} as { [chainNetwork: string]: { historical: GetWeb3Response[]; realtime: GetWeb3Response[] } };
-  static rpcIndicies = {} as { [chainNetwork: string]: { historical: number; realtime: number } };
+  static rpcs: { [chainNetwork: string]: { historical: GetWeb3Response[]; realtime: GetWeb3Response[] } } = {};
+  static rpcIndicies: { [chainNetwork: string]: { historical: number; realtime: number } } = {};
   static rpcInitialized: { [chain: string]: boolean } = {};
 
   constructor(public chain: string = 'ETH') {
@@ -79,7 +79,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     
     const configs = Config.get().chains[chain] as IChainConfig<IEVMNetworkConfig>;
     for (const [network, config] of Object.entries(configs)) {
-      const chainNetwork = chain.toUpperCase() + ':' + network.toLowerCase();
+      const chainNetwork = normalizeChainNetwork(chain, network);
       BaseEVMStateProvider.rpcs[chainNetwork] = { historical: [], realtime: [] };
       BaseEVMStateProvider.rpcIndicies[chainNetwork] = { historical: 0, realtime: 0 };
 
@@ -117,7 +117,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async getWeb3(network: string, params?: { type: ProviderDataType }): Promise<GetWeb3Response> {
-    const chainNetwork = this.chain.toUpperCase() + ':' + network.toLowerCase();
+    const chainNetwork = normalizeChainNetwork(this.chain, network);
 
     const type = params?.type || 'realtime';
     if (!BaseEVMStateProvider.rpcs[chainNetwork]?.[type]?.length) {
@@ -128,8 +128,10 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     }
 
     // Load-balance the RPCs in a round-robin fashion
-    const lastIndex = BaseEVMStateProvider.rpcIndicies[chainNetwork][type];
-    let index = (lastIndex + 1) % BaseEVMStateProvider.rpcs[chainNetwork][type].length;
+    const lastUsedIndex = BaseEVMStateProvider.rpcIndicies[chainNetwork][type];
+    const getNextIndex = (index) => (index + 1) % BaseEVMStateProvider.rpcs[chainNetwork][type].length;
+    const initialIndex = getNextIndex(lastUsedIndex);
+    let index = initialIndex;
     let rpc: GetWeb3Response;
     do {
       rpc = BaseEVMStateProvider.rpcs[chainNetwork][type][index];
@@ -159,12 +161,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
           }
         }
       }
-      index = (index + 1) % BaseEVMStateProvider.rpcs[chainNetwork][type].length;
-    } while (index !== lastIndex + 1);
+      index = getNextIndex(index);
+    } while (index !== initialIndex);
 
     // If none have worked, return the last (successful?) rpc
     logger.warn('All %o:%o RPCs are unresponsive, returning last used RPC', this.chain, network);
-    return BaseEVMStateProvider.rpcs[chainNetwork][type][lastIndex];
+    return BaseEVMStateProvider.rpcs[chainNetwork][type][lastUsedIndex];
   }
 
   async erc20For(network: string, address: string) {

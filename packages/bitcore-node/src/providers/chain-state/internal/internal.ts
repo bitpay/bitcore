@@ -14,6 +14,7 @@ import { RPC } from '../../../rpc';
 import { Config } from '../../../services/config';
 import { Storage } from '../../../services/storage';
 import { type CoinJSON, SpentHeightIndicators } from '../../../types/Coin';
+import { normalizeChainNetwork } from '../../../utils';
 import { StringifyJsonStream } from '../../../utils/jsonStream';
 import { ListTransactionsStream } from './transforms';
 import type { MongoBound } from '../../../models/base';
@@ -179,9 +180,12 @@ export class InternalStateProvider implements IChainStateService {
   async getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock|null> {
     const { chain, network, time } = params;
     const date = new Date(time || Date.now());
-    const chainNetwork = chain.toLowerCase() + ':' + network.toLowerCase();
-    const cachedBlock = this.blockAtTimeCache[chainNetwork]?.get(date.toISOString());
-    if (cachedBlock) {
+    const chainNetwork = normalizeChainNetwork(chain, network);
+    if (!this.blockAtTimeCache[chainNetwork]) {
+      this.blockAtTimeCache[chainNetwork] = new LRUCache<string, IBlock>({ max: 1000 });
+    }
+    const cachedBlock = this.blockAtTimeCache[chainNetwork].get(date.toISOString());
+    if (cachedBlock !== undefined) {
       return cachedBlock;
     }
     const [block] = await BitcoinBlockStorage.collection
@@ -193,11 +197,8 @@ export class InternalStateProvider implements IChainStateService {
       .limit(1)
       .sort({ timeNormalized: -1 })
       .toArray();
-    if (!this.blockAtTimeCache[chainNetwork]) {
-      this.blockAtTimeCache[chainNetwork] = new LRUCache<string, IBlock>({ max: 1000 });
-    }
-    this.blockAtTimeCache[chainNetwork].set(date.toISOString(), block);
-    return block;
+    this.blockAtTimeCache[chainNetwork].set(date.toISOString(), block || null);
+    return block || null;
   }
 
   async streamTransactions(params: StreamTransactionsParams) {
