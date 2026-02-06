@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=22.0.0"
   },
-  "version": "11.5.1",
+  "version": "11.5.2",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "contributors": [
     "Justin Langston <nitsujlangston@gmail.com>",
@@ -92,7 +92,7 @@
     "typescript": "5.7.3"
   },
   "dependencies": {
-    "@bitpay-labs/bitcore-client": "^11.5.1",
+    "@bitpay-labs/bitcore-client": "^11.5.2",
     "@bitpay-labs/bitcore-lib": "^11.5.1",
     "@bitpay-labs/bitcore-lib-cash": "^11.5.1",
     "@bitpay-labs/bitcore-lib-doge": "^11.5.1",
@@ -100,8 +100,8 @@
     "@bitpay-labs/bitcore-p2p": "^11.5.1",
     "@bitpay-labs/bitcore-p2p-cash": "^11.5.1",
     "@bitpay-labs/bitcore-p2p-doge": "^11.5.1",
-    "@bitpay-labs/bitcore-wallet-client": "^11.5.1",
-    "@bitpay-labs/crypto-rpc": "^11.5.1",
+    "@bitpay-labs/bitcore-wallet-client": "^11.5.2",
+    "@bitpay-labs/crypto-rpc": "^11.5.2",
     "@bitpay-labs/crypto-wallet-core": "^11.5.1",
     "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
     "@metaplex-foundation/umi": "^1.2.0",

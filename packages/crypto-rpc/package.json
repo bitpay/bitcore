@@ -1,6 +1,6 @@
 {
   "name": "@bitpay-labs/crypto-rpc",
-  "version": "11.5.1",
+  "version": "11.5.2",
   "description": "A Normalized RPC Interface for Cryptocurrencies",
   "main": "index.js",
   "type": "module",
