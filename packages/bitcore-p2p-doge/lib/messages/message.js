@@ -1,9 +1,10 @@
 'use strict';
 
-var bitcore = require('bitcore-lib-doge');
-var $ = bitcore.util.preconditions;
-var BufferWriter = bitcore.encoding.BufferWriter;
-var Hash = bitcore.crypto.Hash;
+const bitcore = require('@bitpay-labs/bitcore-lib-doge');
+
+const $ = bitcore.util.preconditions;
+const BufferWriter = bitcore.encoding.BufferWriter;
+const Hash = bitcore.crypto.Hash;
 
 /**
  * Base message that can be inherited to add an additional
@@ -24,13 +25,13 @@ function Message(options) {
  */
 Message.prototype.toBuffer = Message.prototype.serialize = function() {
   $.checkState(this.network, 'Need to have a defined network to serialize message');
-  var commandBuf = Buffer.from(Array(12));
+  const commandBuf = Buffer.from(Array(12));
   commandBuf.write(this.command, 'ascii');
 
-  var payload = this.getPayload();
-  var checksum = Hash.sha256sha256(payload).slice(0, 4);
+  const payload = this.getPayload();
+  const checksum = Hash.sha256sha256(payload).slice(0, 4);
 
-  var bw = new BufferWriter();
+  const bw = new BufferWriter();
   bw.write(this.network.networkMagic);
   bw.write(commandBuf);
   bw.writeUInt32LE(payload.length);

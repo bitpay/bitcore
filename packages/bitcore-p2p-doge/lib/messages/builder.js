@@ -1,7 +1,7 @@
 'use strict';
 
-var bitcore = require('bitcore-lib-doge');
-var Inventory = require('../inventory');
+const bitcore = require('@bitpay-labs/bitcore-lib-doge');
+const Inventory = require('../inventory');
 
 function builder(options) {
   /* jshint maxstatements: 20 */
@@ -21,7 +21,7 @@ function builder(options) {
   options.MerkleBlock = options.MerkleBlock || bitcore.MerkleBlock;
   options.protocolVersion = options.protocolVersion || 70003;
 
-  var exported = {
+  const exported = {
     constructors: {
       Block: options.Block,
       BlockHeader: options.BlockHeader,

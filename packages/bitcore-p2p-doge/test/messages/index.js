@@ -1,15 +1,15 @@
 'use strict';
 
-var chai = require('chai');
-var should = chai.should();
+const chai = require('chai');
+const Buffers = require('buffers');
+const P2P = require('../../');
+const bitcore = require('@bitpay-labs/bitcore-lib-doge');
+const Data = require('../data/messages'); // todo merge with commandData
+const commandData = require('../data/messages.json');
 
-var Buffers = require('buffers');
-var P2P = require('../../');
-var Messages = P2P.Messages;
-var messages = new Messages();
-var bitcore = require('bitcore-lib-doge');
-var Data = require('../data/messages'); //todo merge with commandData
-var commandData = require('../data/messages.json');
+const should = chai.should();
+const Messages = P2P.Messages;
+const messages = new Messages();
 
 function getPayloadBuffer(messageBuffer) {
   return Buffer.from(messageBuffer.slice(48), 'hex');

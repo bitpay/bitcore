@@ -1,14 +1,15 @@
 'use strict';
 
-var Buffers = require('./buffers');
-var EventEmitter = require('events').EventEmitter;
-var Net = require('net');
-var Socks5Client = require('socks5-client');
-var bitcore = require('bitcore-lib-doge');
-var Networks = bitcore.Networks;
-var Messages = require('./messages');
-var $ = bitcore.util.preconditions;
-var util = require('util');
+const Buffers = require('./buffers');
+const EventEmitter = require('events').EventEmitter;
+const Net = require('net');
+const Socks5Client = require('socks5-client');
+const bitcore = require('@bitpay-labs/bitcore-lib-doge');
+const Messages = require('./messages');
+const util = require('util');
+
+const Networks = bitcore.Networks;
+const $ = bitcore.util.preconditions;
 
 /**
  * The Peer constructor will create an instance of Peer to send and receive messages
