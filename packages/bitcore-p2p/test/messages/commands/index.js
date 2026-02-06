@@ -1,11 +1,12 @@
 'use strict';
 
-var should = require('chai').should();
-var expect = require('chai').expect;
-var P2P = require('../../../');
-var Messages = P2P.Messages;
-var sinon = require('sinon');
-var bitcore = require('bitcore-lib');
+const should = require('chai').should();
+const expect = require('chai').expect;
+const P2P = require('../../../');
+const sinon = require('sinon');
+const bitcore = require('@bitpay-labs/bitcore-lib');
+
+const Messages = P2P.Messages;
 
 describe('Command Messages', function() {
 

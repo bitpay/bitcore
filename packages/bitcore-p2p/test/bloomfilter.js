@@ -1,13 +1,13 @@
 'use strict';
 
-var chai = require('chai');
-var should = chai.should();
+const chai = require('chai');
+const assert = require('assert');
+const bitcore = require('@bitpay-labs/bitcore-lib');
+const Data = require('./data/messages');
+const P2P = require('../');
 
-var assert = require('assert');
-var bitcore = require('bitcore-lib');
-var Data = require('./data/messages');
-var P2P = require('../');
-var BloomFilter = P2P.BloomFilter;
+const should = chai.should();
+const BloomFilter = P2P.BloomFilter;
 
 function getPayloadBuffer(messageBuffer) {
   return Buffer.from(messageBuffer.slice(48), 'hex');

@@ -1,15 +1,13 @@
 'use strict';
 
-/*jshint immed: false */
+const should = require('chai').should();
+const bitcore = require('@bitpay-labs/bitcore-lib');
+const P2P = require('../');
 
-var should = require('chai').should();
-
-var bitcore = require('bitcore-lib');
-var P2P = require('../');
-var Inventory = P2P.Inventory;
-var BufferUtils = bitcore.util.buffer;
-var BufferWriter = bitcore.encoding.BufferWriter;
-var BufferReader = bitcore.encoding.BufferReader;
+const Inventory = P2P.Inventory;
+const BufferUtils = bitcore.util.buffer;
+const BufferWriter = bitcore.encoding.BufferWriter;
+const BufferReader = bitcore.encoding.BufferReader;
 
 describe('Inventory', function() {
 

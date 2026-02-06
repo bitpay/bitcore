@@ -1,13 +1,14 @@
 'use strict';
 
-var Message = require('../message');
-var inherits = require('util').inherits;
-var bitcore = require('bitcore-lib');
-var utils = require('../utils');
-var $ = bitcore.util.preconditions;
-var _ = bitcore.deps._;
-var BufferReader = bitcore.encoding.BufferReader;
-var BufferWriter = bitcore.encoding.BufferWriter;
+const Message = require('../message');
+const inherits = require('util').inherits;
+const bitcore = require('@bitpay-labs/bitcore-lib');
+const utils = require('../utils');
+
+const $ = bitcore.util.preconditions;
+const _ = bitcore.deps._;
+const BufferReader = bitcore.encoding.BufferReader;
+const BufferWriter = bitcore.encoding.BufferWriter;
 
 /**
  * @param {Array=} arg - An array of addrs

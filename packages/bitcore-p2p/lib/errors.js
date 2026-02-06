@@ -1,8 +1,8 @@
 'use strict';
 
-var spec = {
+const spec = {
   name: 'P2P',
   message: 'Internal Error on bitcore-p2p Module {0}'
 };
 
-module.exports = require('bitcore-lib').errors.extend(spec);
+module.exports = require('@bitpay-labs/bitcore-lib').errors.extend(spec);

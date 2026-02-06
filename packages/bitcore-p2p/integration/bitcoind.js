@@ -1,53 +1,50 @@
 'use strict';
 
-var chai = require('chai');
+const chai = require('chai');
+const sinon = require('sinon');
+const bitcore = require('@bitpay-labs/bitcore-lib');
+const p2p = require('../');
 
-/* jshint unused: false */
-var should = chai.should();
-var sinon = require('sinon');
-
-var bitcore = require('bitcore-lib');
-var _ = bitcore.deps._;
-var Random = bitcore.crypto.Random;
-var BN = bitcore.crypto.BN;
-var BufferUtil = bitcore.util.buffer;
-var p2p = require('../');
-var Peer = p2p.Peer;
-var Pool = p2p.Pool;
-var Networks = bitcore.Networks;
-var Messages = p2p.Messages;
-var Inventory = p2p.Inventory;
-var Block = bitcore.Block;
-var Transaction = bitcore.Transaction;
+const should = chai.should();
+const _ = bitcore.deps._;
+const Random = bitcore.crypto.Random;
+const BN = bitcore.crypto.BN;
+const BufferUtil = bitcore.util.buffer;
+const Peer = p2p.Peer;
+const Pool = p2p.Pool;
+const Networks = bitcore.Networks;
+const Messages = p2p.Messages;
+const Inventory = p2p.Inventory;
+const Block = bitcore.Block;
+const Transaction = bitcore.Transaction;
 
 // config 
-var network = process.env.NETWORK === 'testnet' ? Networks.testnet : Networks.livenet;
-var messages = new Messages({
+const network = process.env.NETWORK === 'testnet' ? Networks.testnet : Networks.livenet;
+const messages = new Messages({
   network: network
 });
-var blockHash = {
+const blockHash = {
   'livenet': '000000000000000013413cf2536b491bf0988f52e90c476ffeb701c8bfdb1db9',
   'testnet': '0000000058cc069d964711cd25083c0a709f4df2b34c8ff9302ce71fe5b45786'
 };
-var stopBlock = {
+const stopBlock = {
   'livenet': '00000000000000000b539ef570128acb953af3dbcfc19dd8e6066949672311a1',
   'testnet': '00000000d0bc4271bcefaa7eb25000e345910ba16b91eb375cd944b68624de9f'
 };
-var txHash = {
+const txHash = {
   'livenet': '22231e8219a0617a0ded618b5dc713fdf9b0db8ebd5bb3322d3011a703119d3b',
   'testnet': '22231e8219a0617a0ded618b5dc713fdf9b0db8ebd5bb3322d3011a703119d3b'
 };
 
 // These tests require a running bitcoind instance
 describe('Integration with ' + network.name + ' bitcoind', function() {
-
   this.timeout(15000);
-  var opts = {
+  const opts = {
     host: 'localhost',
     network: network.name
   };
   it('handshakes', function(cb) {
-    var peer = new Peer(opts);
+    const peer = new Peer(opts);
     peer.once('version', function(m) {
       m.version.should.be.above(70000);
       m.services.toString().should.equal('1');

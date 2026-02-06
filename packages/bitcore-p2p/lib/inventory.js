@@ -1,11 +1,11 @@
 'use strict';
 
-var bitcore = require('bitcore-lib');
-var $ = bitcore.util.preconditions;
-var BufferUtil = bitcore.util.buffer;
-var BufferReader = bitcore.encoding.BufferReader;
-var BufferWriter = bitcore.encoding.BufferWriter;
-var _ = bitcore.deps._;
+const bitcore = require('@bitpay-labs/bitcore-lib');
+const $ = bitcore.util.preconditions;
+const BufferUtil = bitcore.util.buffer;
+const BufferReader = bitcore.encoding.BufferReader;
+const BufferWriter = bitcore.encoding.BufferWriter;
+const _ = bitcore.deps._;
 
 /**
  * A constructor for inventory related Bitcoin messages such as
