@@ -46,8 +46,5 @@
     "@bitpay-labs/bitcore-lib": "^11.5.1",
     "unorm": "^1.4.1"
   },
-  "peerDependencies": {
-    "@bitpay-labs/bitcore-lib": "*"
-  },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }
