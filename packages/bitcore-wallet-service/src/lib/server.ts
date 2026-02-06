@@ -1,11 +1,11 @@
-import * as async from 'async';
 import {
   BitcoreLib as Bitcore,
   BitcoreLibCash as BitcoreCash,
   BitcoreLibDoge as BitcoreDoge,
   BitcoreLibLtc as BitcoreLtc,
   Validation
-} from 'crypto-wallet-core';
+} from '@bitpay-labs/crypto-wallet-core';
+import * as async from 'async';
 import EmailValidator from 'email-validator';
 import * as _ from 'lodash';
 import Moralis from 'moralis';

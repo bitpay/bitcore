@@ -1,4 +1,4 @@
-import { BitcoreLib as Bitcore } from 'crypto-wallet-core';
+import { BitcoreLib as Bitcore } from '@bitpay-labs/crypto-wallet-core';
 import * as request from 'request';
 import config from '../config';
 import { ClientError } from '../lib/errors/clienterror';

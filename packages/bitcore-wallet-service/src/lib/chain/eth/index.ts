@@ -1,5 +1,4 @@
-import { Transactions, Validation } from 'crypto-wallet-core';
-import { Utils, Web3 } from 'crypto-wallet-core';
+import { Transactions, Utils, Validation, Web3 } from '@bitpay-labs/crypto-wallet-core';
 import _ from 'lodash';
 import { IWallet } from 'src/lib/model';
 import { IAddress } from 'src/lib/model/address';

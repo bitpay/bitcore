@@ -1,11 +1,11 @@
 import * as crypto from 'crypto';
-import * as async from 'async';
 import {
   BitcoreLib as Bitcore,
   BitcoreLibCash,
   BitcoreLibDoge,
   BitcoreLibLtc
-} from 'crypto-wallet-core';
+} from '@bitpay-labs/crypto-wallet-core';
+import * as async from 'async';
 import _ from 'lodash';
 import { singleton } from 'preconditions';
 import * as request from 'request-promise-native';

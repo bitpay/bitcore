@@ -14,7 +14,7 @@
  *** You must have valid RPC connection specified in bitcore.config.json.
  ********************************************/
 import fs from 'fs';
-import { CryptoRpc } from 'crypto-rpc';
+import { CryptoRpc } from '@bitpay-labs/crypto-rpc';
 import Config from '../build/src/config';
 import { CoinStorage } from '../build/src/models/coin';
 import { TransactionStorage } from '../build/src/models/transaction';

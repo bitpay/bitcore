@@ -1,4 +1,4 @@
-import { BitcoreLib, BitcoreLibCash } from 'crypto-wallet-core';
+import { BitcoreLib, BitcoreLibCash } from '@bitpay-labs/crypto-wallet-core';
 
 const Bitcore_ = {
   btc: BitcoreLib,

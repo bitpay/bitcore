@@ -1,5 +1,5 @@
+import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import * as async from 'async';
-import { BitcoreLib } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { singleton } from 'preconditions';
 import config from '../../../config';

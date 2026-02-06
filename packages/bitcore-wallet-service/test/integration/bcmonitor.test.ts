@@ -3,7 +3,7 @@
 import * as chai from 'chai';
 import sinon from 'sinon';
 import util from 'util';
-import * as CWC from 'crypto-wallet-core';
+import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import { BlockchainMonitor } from '../../src/lib/blockchainmonitor';
 import { Constants } from '../../src/lib/common/constants';
 import helpers from './helpers';

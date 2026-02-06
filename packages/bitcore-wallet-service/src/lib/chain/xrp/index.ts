@@ -1,4 +1,4 @@
-import { BitcoreLib, Deriver, Transactions, Validation, xrpl } from 'crypto-wallet-core';
+import { BitcoreLib, Deriver, Transactions, Validation, xrpl } from '@bitpay-labs/crypto-wallet-core';
 import _ from 'lodash';
 import { IWallet } from 'src/lib/model';
 import { IAddress } from 'src/lib/model/address';

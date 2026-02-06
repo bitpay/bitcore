@@ -1,5 +1,5 @@
 import { URL } from 'url';
-import { BitcoreLib } from 'crypto-wallet-core';
+import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import * as requestStream from 'request';
 import * as request from 'request-promise-native';
 import secp256k1 from 'secp256k1';

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { BitcoreLib } from 'crypto-wallet-core';
+import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import _ from 'lodash';
 import requestStream from 'request';
 import { Client } from '../src/lib//blockchainexplorers/v8/client';

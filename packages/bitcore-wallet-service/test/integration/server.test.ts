@@ -4,7 +4,7 @@ import * as chai from 'chai';
 import 'chai/register-should';
 import util from 'util';
 import sinon from 'sinon';
-import * as CWC from 'crypto-wallet-core';
+import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import { ChainService } from '../../src/lib/chain/index';
 import config from '../../src/config';
 import { WalletService, UPGRADES } from '../../src/lib/server';
