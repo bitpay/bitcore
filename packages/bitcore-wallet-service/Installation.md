@@ -12,7 +12,7 @@ See the configuration section to configure a different host/port.
 Use the following steps to Install BWS from the npmjs repository and run it with defaults.
 
 ```sh
-npm install bitcore-wallet-service
+npm install @bitpay-labs/bitcore-wallet-service
 cd bitcore-wallet-service
 ```
 
@@ -27,49 +27,71 @@ npm start
 Use the following steps to Install BWS from github source and run it with defaults.
 
 ```sh
-git clone https://github.com/bitpay/bitcore-wallet-service.git
-cd bitcore-wallet-service
+git clone https://github.com/bitpay/bitcore.git
+cd bitcore
 npm install
 ```
 
 To change configuration before running, see the Configuration section.
 
 ```sh
-npm start
+npm run bws
 ```
 
 ## Configuration
 
-Configuration for all required modules can be specified in https://github.com/bitpay/bitcore-wallet-service/blob/master/config.js
+Configuration for all required modules can be specified in the "bitcoreWalletService" section of `bitcore.config.json`. Config references: [bws.example.config.js](https://github.com/bitpay/bitcore/blob/master/packages/bitcore-wallet-service/bws.example.config.js) and [config.ts](https://github.com/bitpay/bitcore/blob/master/packages/bitcore-wallet-service/src/config.ts).
 
-BWS is composed of 4 separate node services -
-Message Broker - messagebroker/messagebroker.js
-Blockchain Monitor - bcmonitor/bcmonitor.js (This service talks to the Blockchain Explorer service configured under blockchainExplorerOpts - see Configure blockchain service below.)
-Email Service - emailservice/emailservice.js
-Bitcore Wallet Service - bws.js
+
+```json
+{
+  "bitcoreWalletService": {
+    ...
+  }
+}
+```
+
+
+BWS is composed of 6 separate services
+- **Bitcore Wallet Service**: bws.ts
+- **Message Broker**: messagebroker/messagebroker.ts
+- **Blockchain Monitor**: bcmonitor/bcmonitor.ts (This service talks to the Blockchain Explorer service configured under blockchainExplorerOpts - see Configure blockchain service below.)
+- **Email Service**: emailservice/emailservice.ts
+- **Push Notification Service**: pushnotificationservice/pushnotificationservice.ts
+- **Fiat Rate Service**: fiatrateservice/fiatrateservice.ts
 
 ### Configure MongoDB
 
 Example configuration for connecting to the MongoDB instance:
 
-```javascript
-  storageOpts: {
-    mongoDb: {
-      uri: 'mongodb://localhost:27017/bws',
-    },
+```json
+// bitcore.config.json
+{
+  "bitcoreWalletService": {
+    "storageOpts": {
+      "mongoDb": {
+        "uri": "mongodb://localhost:27017/bws"
+      }
+    }
   }
+}
 ```
 
 ### Configure Message Broker service
 
 Example configuration for connecting to message broker service:
 
-```javascript
-  messageBrokerOpts: {
-    messageBrokerServer: {
-      url: 'http://localhost:3380',
-    },
+```json
+// bitcore.config.json
+{
+  "bitcoreWalletService": {
+    "messageBrokerOpts": {
+      "messageBrokerServer": {
+        "uri": "http://localhost:3380"
+      }
+    }
   }
+}
 ```
 
 ### Configure blockchain service. Bitcore v8 is required.
@@ -77,19 +99,28 @@ Example configuration for connecting to message broker service:
 Note: this service will be used by blockchain monitor service as well as by BWS itself.
 An example of this configuration is:
 
-```javascript
-  blockchainExplorerOpts: {
-      'btc': {
-        livenet: {
-            provider: 'v8',
-            url: 'https://insight.bitpay.com:443',
-         },
-        testnet: {
-            provider: 'v8',
-            url: 'https://test-insight.bitpay.com:443',
-         },
+```json
+// bitcore.config.json
+{
+  "bitcoreWalletService": {
+    "allowRegtest": false, // set to true and add a regtest object below if you wish to support a local regtest
+    "blockchainExplorerOpts": {
+      "btc": {
+        "livenet": {
+          "url": "https://api.bitcore.io"
+        },
+        "testnet": {
+          "url": "https://api.bitcore.io"
+        }
       },
+      "eth": {
+        "livenet": {
+          "url": "https://api-eth.bitcore.io"
+        }
+      }
+    }
   }
+}
 ```
 
 ### Configure Email service
@@ -104,15 +135,4 @@ Example configuration for connecting to email service (using postfix):
     subjectPrefix: '[Wallet Service]',
     from: 'wallet-service@bitcore.io',
   }
-```
-
-### Enable clustering
-
-Change `config.js` file to enable and configure clustering:
-
-```javascript
-{
-  cluster: true,
-  clusterInstances: 4,
-}
 ```

@@ -1,6 +1,6 @@
 # Bitcore Wallet Service
 
-[![NPM Package](https://img.shields.io/npm/v/bitcore-wallet-service.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-wallet-service)
+[![NPM Package](https://img.shields.io/npm/v/@bitpay-labs/bitcore-wallet-service.svg?style=flat-square)](https://www.npmjs.org/package/@bitpay-labs/bitcore-wallet-service)
 [![Build Status](https://img.shields.io/travis/bitpay/bitcore-wallet-service.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-wallet-service)
 [![Coverage Status](https://coveralls.io/repos/bitpay/bitcore-wallet-service/badge.svg?branch=master)](https://coveralls.io/r/bitpay/bitcore-wallet-service?branch=master)
 
@@ -12,7 +12,7 @@ Bitcore Wallet Service facilitates multisig HD wallets creation and operation th
 
 BWS can usually be installed within minutes and accommodates all the needed infrastructure for peers in a multisig wallet to communicate and operate – with minimum server trust.
 
-See [bitcore-wallet-client](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet-client) for the _official_ client library that communicates to BWS and verifies its response. Also check [bitcore-wallet](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet) for a simple CLI wallet implementation that relies on BWS.
+See [bitcore-wallet-client](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet-client) for the _official_ client library that communicates to BWS and verifies its response. Also check [bitcore-cli](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-cli) for a simple CLI wallet implementation that relies on BWS.
 
 BWS is been used in production enviroments for [Copay Wallet](https://copay.io), [Bitpay App wallet](https://bitpay.com/wallet) and others.
 
@@ -21,27 +21,19 @@ More about BWS at https://blog.bitpay.com/announcing-the-bitcore-wallet-suite/
 ## Getting Started
 
 ```sh
- git clone https://github.com/bitpay/bitcore-wallet-service.git
- cd bitcore-wallet-service
- npm install
- npm start
+git clone https://github.com/bitpay/bitcore.git
+cd bitcore
+npm install
+npm run bws
 ```
 
 This will launch the BWS service (with default settings) at `http://localhost:3232/bws/api`.
 
-BWS needs mongoDB. You can configure the connection at `bws.config.js`
+BWS needs mongoDB. You can configure the connection inside the "bitcoreWalletService" section of your `bitcore.config.json`. See the Configuration section of [Installation.md](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet-service/Installation.md#Configuration).
 
-BWS supports SSL and Clustering. For a detailed guide on installing BWS with extra features see [Installing BWS](https://github.com/bitpay/bitcore/blob/master/packages/bitcore-wallet-service/installation.md).
 
 BWS uses by default a Request Rate Limitation to CreateWallet endpoint. If you need to modify it, check defaults.js' `Defaults.RateLimit`
 
-## Using BWS with PM2
-
-BWS can be used with PM2 with the provided `app.js` script:
-
-```sh
-  pm2 start app.js --name "bitcoin-wallet-service"
-```
 
 ## Security Considerations
 
@@ -102,10 +94,17 @@ There are plenty examples of creating and sending proposals in the `/test/integr
 
 **bitcore.config.json**
 
-1.  Add regtest to bitcore.config.json.
+1.  Add a regtest configuration to the bitcoreNode section of your `bitcore.config.json`.
 
-```
-"regtest": {
+Example:
+```json
+// bitcore.config.json
+{
+  "bitcoreNode": {
+    "chains": {
+      "BTC": {
+        // add me:
+        "regtest": {
           "chainSource": "p2p",
           "trustedPeers": [
             {
@@ -120,25 +119,28 @@ There are plenty examples of creating and sending proposals in the `/test/integr
             "password": "local321"
           }
         }
-```
-
-**bitcore-wallet-service/bws.config.js**
-
-2. Point testnet to http://localhost:3000 in BWS/bws.config.js and set regtestEnabled to true.
-
-```
-blockchainExplorerOpts: {
-    btc: {
-      livenet: {
-        url: 'https://api.bitcore.io'
-      },
-      testnet: {
-        // set url to http://localhost:3000 here
-        url: 'http://localhost:3000',
-        // set regtestEnabled to true here
-        regtestEnabled: true
       }
-    },
+    }
+  }
+}
+```
+
+2. Point regtest to http://localhost:3000 in the bitcoreWalletService.blockchainExplorerOpts section and set allowRegtest to true.
+
+```json
+// bitcore.config.json
+{
+  "bitcoreWalletService": {
+    "allowRegtest": true,
+    "blockchainExplorerOpts": {
+      "btc": {
+        "livenet": {
+          "url": "https://api.bitcore.io"
+        },
+        "regtest": {
+          "url": "http://localhost:3000",
+        }
+      },
 ...
 ```
 

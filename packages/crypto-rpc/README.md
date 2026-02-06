@@ -3,10 +3,15 @@ Crypto-RPC is a library that wraps other RPC libraries to create a normalized in
 
 # Usage
 
+### Install
+```sh
+npm install @bitpay-labs/crypto-rpc
+```
+
 ### Instantiation 
 
 ```javascript
-import { CryptoRpc } from 'crypto-rpc';
+import { CryptoRpc } from '@bitpay-labs/crypto-rpc';
 
 const rpc = new CryptoRpc({
   chain: 'BTC',

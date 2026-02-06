@@ -1,6 +1,6 @@
 # Bitcore CLI
 
-[![NPM Package](https://img.shields.io/npm/v/bitcore-wallet.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-wallet)
+[![NPM Package](https://img.shields.io/npm/v/@bitpay-labs/bitcore-cli.svg?style=flat-square)](https://www.npmjs.org/package/@bitpay-labs/bitcore-cli)
 
 **A simple Command Line Interface Wallet using [Bitcore Wallet Service](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet-service) and its *official* client lib [Bitcore Wallet Client](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet-client).**
 

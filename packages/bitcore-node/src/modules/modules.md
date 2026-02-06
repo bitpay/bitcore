@@ -27,7 +27,7 @@ Let's say we have a node_module, named `bitcore-node-bch` with the following cod
 module.exports = class BitcoinCashModule {
   constructor(services, chain, network, config) {
     // chain === 'BCH'
-    services.Libs.register(chain, 'bitcore-lib-cash', 'bitcore-p2p-cash');
+    services.Libs.register(chain, '@bitpay-labs/bitcore-lib-cash', '@bitpay-labs/bitcore-p2p-cash');
     services.P2P.register(chain, network, services.P2P.get('BTC'));
   }
 }
@@ -38,8 +38,8 @@ The module has the following dependencies
 // package.json
 
   "dependencies": {
-    "bitcore-lib-cash": "^8.3.4",
-    "bitcore-p2p-cash": "^8.3.4"
+    "@bitpay-labs/bitcore-lib-cash": "^11.5.1",
+    "@bitpay-labs/bitcore-p2p-cash": "^11.5.1"
   }
 
 ```
