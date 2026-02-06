@@ -1,10 +1,11 @@
 'use strict';
 
-var Message = require('../message');
-var inherits = require('util').inherits;
-var bitcore = require('bitcore-lib-cash');
-var $ = bitcore.util.preconditions;
-var _ = bitcore.deps._;
+const Message = require('../message');
+const inherits = require('util').inherits;
+const bitcore = require('@bitpay-labs/bitcore-lib-cash');
+
+const $ = bitcore.util.preconditions;
+const _ = bitcore.deps._;
 
 /**
  * @param {Block=} arg - An instance of a Block

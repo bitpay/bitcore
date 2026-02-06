@@ -1,9 +1,10 @@
 'use strict';
 
-var should = require('chai').should();
-var P2P = require('../../');
-var builder = P2P.Messages.builder;
-var bitcore = require('bitcore-lib-cash');
+const should = require('chai').should();
+const P2P = require('../../');
+const bitcore = require('@bitpay-labs/bitcore-lib-cash');
+
+const builder = P2P.Messages.builder;
 
 describe('Messages Builder', function() {
 
@@ -11,13 +12,13 @@ describe('Messages Builder', function() {
 
     it('should return commands based on default', function() {
       // instantiate
-      var b = builder();
+      const b = builder();
       should.exist(b);
     });
 
     it('should return commands with customizations', function() {
       // instantiate
-      var b = builder({
+      const b = builder({
         network: bitcore.Networks.testnet,
         Block: bitcore.Block,
         Transaction: bitcore.Transaction

@@ -1,9 +1,10 @@
 'use strict';
 
-var Message = require('../message');
-var inherits = require('util').inherits;
-var bitcore = require('bitcore-lib-cash');
-var BufferUtil = bitcore.util.buffer;
+const Message = require('../message');
+const inherits = require('util').inherits;
+const bitcore = require('@bitpay-labs/bitcore-lib-cash');
+
+const BufferUtil = bitcore.util.buffer;
 
 /**
  * Transports a generic key-value map that holds the configuration and version parameters.

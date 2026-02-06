@@ -1,12 +1,9 @@
 'use strict';
 
-var bitcore = require('bitcore-lib-cash');
-var Inventory = require('../inventory');
+const bitcore = require('@bitpay-labs/bitcore-lib-cash');
+const Inventory = require('../inventory');
 
 function builder(options) {
-  /* jshint maxstatements: 20 */
-  /* jshint maxcomplexity: 10 */
-
   if (!options) {
     options = {};
   }
@@ -21,7 +18,7 @@ function builder(options) {
   options.MerkleBlock = options.MerkleBlock || bitcore.MerkleBlock;
   options.protocolVersion = options.protocolVersion || 70001;
 
-  var exported = {
+  const exported = {
     constructors: {
       Block: options.Block,
       BlockHeader: options.BlockHeader,

@@ -1,9 +1,10 @@
  'use strict';
 
-var bitcore = require('bitcore-lib-cash');
-var BufferUtil = bitcore.util.buffer;
-var Hash = bitcore.crypto.Hash;
-var $ = bitcore.util.preconditions;
+const bitcore = require('@bitpay-labs/bitcore-lib-cash');
+
+const BufferUtil = bitcore.util.buffer;
+const Hash = bitcore.crypto.Hash;
+const $ = bitcore.util.preconditions;
 
 /**
  * A factory to build Bitcoin protocol messages.

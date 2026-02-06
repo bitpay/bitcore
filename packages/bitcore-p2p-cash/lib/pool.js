@@ -1,13 +1,14 @@
 'use strict';
 
-var dns = require('dns');
-var EventEmitter = require('events').EventEmitter;
-var bitcore = require('bitcore-lib-cash');
-var sha256 = bitcore.crypto.Hash.sha256;
-var Peer = require('./peer');
-var Networks = bitcore.Networks;
-var util = require('util');
-var net = require('net');
+const dns = require('dns');
+const EventEmitter = require('events').EventEmitter;
+const bitcore = require('@bitpay-labs/bitcore-lib-cash');
+const Peer = require('./peer');
+const util = require('util');
+const net = require('net');
+
+const sha256 = bitcore.crypto.Hash.sha256;
+const Networks = bitcore.Networks;
 
 function now() {
   return Math.floor(new Date().getTime() / 1000);
