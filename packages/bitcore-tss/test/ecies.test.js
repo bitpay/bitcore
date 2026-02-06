@@ -2,7 +2,7 @@
 
 // const { describe, it } = require('node:test');
 const assert = require('assert');
-const bitcore = require('bitcore-lib');
+const bitcore = require('@bitpay-labs/bitcore-lib');
 const ECIES = require('../ecies/ecies');
 
 const PrivateKey = bitcore.PrivateKey;

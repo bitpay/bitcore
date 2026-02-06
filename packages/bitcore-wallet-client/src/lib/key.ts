@@ -1,11 +1,11 @@
 'use strict';
 
-import Mnemonic from 'bitcore-mnemonic';
+import Mnemonic from '@bitpay-labs/bitcore-mnemonic';
 import {
   BitcoreLib as Bitcore,
   Deriver,
   Transactions
-} from 'crypto-wallet-core';
+} from '@bitpay-labs/crypto-wallet-core';
 import { singleton } from 'preconditions';
 import * as Uuid from 'uuid';
 import { Constants, Encryption, Utils } from './common';

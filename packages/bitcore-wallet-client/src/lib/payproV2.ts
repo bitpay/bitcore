@@ -2,7 +2,7 @@
 
 import query from 'querystring';
 import url from 'url';
-import { BitcoreLib as Bitcore } from 'crypto-wallet-core';
+import { BitcoreLib as Bitcore } from '@bitpay-labs/crypto-wallet-core';
 import superagent from 'superagent';
 import dfltTrustedKeys from '../util/JsonPaymentProtocolKeys';
 import { Errors } from './errors';

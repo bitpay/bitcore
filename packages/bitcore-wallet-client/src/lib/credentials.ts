@@ -1,6 +1,6 @@
 'use strict';
 
-import { BitcoreLib as Bitcore } from 'crypto-wallet-core';
+import { BitcoreLib as Bitcore } from '@bitpay-labs/crypto-wallet-core';
 import { singleton } from 'preconditions';
 import { Constants, Utils } from './common';
 

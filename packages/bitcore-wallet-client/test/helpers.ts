@@ -11,7 +11,7 @@ chai.config.includeStack = true;
 import sinon from 'sinon';
 import request from 'supertest';
 import mongodb from 'mongodb';
-import * as CWC from 'crypto-wallet-core';
+import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import config from './data/test-config';
 import Client from '../src';
 import { Utils, Constants } from '../src/lib/common';

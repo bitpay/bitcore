@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
-import { ECDSA, ECIES } from 'bitcore-tss';
-import { BitcoreLib } from 'crypto-wallet-core';
+import { ECDSA, ECIES } from '@bitpay-labs/bitcore-tss';
+import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { API as Client, CreateWalletOpts } from './api';
 import { Encryption } from './common';
 import { Credentials } from './credentials';

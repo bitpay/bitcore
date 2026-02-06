@@ -7,7 +7,7 @@ import {
   BitcoreLibLtc,
   Deriver,
   Transactions
-} from 'crypto-wallet-core';
+} from '@bitpay-labs/crypto-wallet-core';
 import Stringify from 'json-stable-stringify';
 import { singleton } from 'preconditions';
 import { Constants } from './constants';

@@ -1,6 +1,6 @@
 'use strict';
 
-const bitcore = require('bitcore-lib');
+const bitcore = require('@bitpay-labs/bitcore-lib');
 const crypto = require('crypto');
 
 const PublicKey = bitcore.PublicKey;
