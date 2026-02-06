@@ -1,7 +1,7 @@
 import url from 'url';
+import { TssSign } from '@bitpay-labs/bitcore-wallet-client';
+import { type Types as CWCTypes, Transactions } from '@bitpay-labs/crypto-wallet-core';
 import * as prompt from '@clack/prompts';
-import { TssSign } from 'bitcore-wallet-client';
-import { type Types as CWCTypes, Transactions } from 'crypto-wallet-core';
 import {
   type TssKeyType,
   type WalletData

@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import url from 'url';
-import * as prompt from '@clack/prompts';
 import {
   API,
   Utils as BWCUtils,
@@ -12,7 +11,7 @@ import {
   type Network,
   TssKey,
   Txp
-} from 'bitcore-wallet-client';
+} from '@bitpay-labs/bitcore-wallet-client';
 import {
   BitcoreLib,
   type Types as CWCTypes,
@@ -20,7 +19,8 @@ import {
   Message,
   Transactions,
   Web3
-} from 'crypto-wallet-core';
+} from '@bitpay-labs/crypto-wallet-core';
+import * as prompt from '@clack/prompts';
 import { Constants } from './constants';
 import { ERC20Abi } from './erc20Abi';
 import { FileStorage } from './filestorage';

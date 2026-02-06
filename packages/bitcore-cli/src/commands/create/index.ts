@@ -1,4 +1,4 @@
-import { Constants } from 'crypto-wallet-core';
+import { Constants } from '@bitpay-labs/crypto-wallet-core';
 import { getChain, getIsMultiParty, getMofN, getMultiPartyScheme, getNetwork } from '../../prompts';
 import { Utils } from '../../utils';
 import { createMultiSigWallet } from './createMultiSig';

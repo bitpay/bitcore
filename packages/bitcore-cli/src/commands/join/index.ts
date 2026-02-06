@@ -1,5 +1,5 @@
+import { Constants } from '@bitpay-labs/crypto-wallet-core';
 import * as prompt from '@clack/prompts';
-import { Constants } from 'crypto-wallet-core';
 import { getChain } from '../../prompts';
 import { Utils } from '../../utils';
 import { joinMultiSigWallet } from './joinMultiSig';

@@ -1,4 +1,4 @@
-import { type Status } from 'bitcore-wallet-client';
+import { type Status } from '@bitpay-labs/bitcore-wallet-client';
 import { program } from 'commander';
 import type { IWallet } from './wallet';
 

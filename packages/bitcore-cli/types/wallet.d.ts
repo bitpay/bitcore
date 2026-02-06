@@ -6,8 +6,8 @@ import {
   TssKey,
   TssSign,
   Txp
-} from 'bitcore-wallet-client';
-import { type Types as CWCTypes } from 'crypto-wallet-core';
+} from '@bitpay-labs/bitcore-wallet-client';
+import { type Types as CWCTypes } from '@bitpay-labs/crypto-wallet-core';
 
 export type KeyType = Key;
 export type ClientType = API;

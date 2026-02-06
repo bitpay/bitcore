@@ -1,6 +1,6 @@
 import os from 'os';
+import { Status } from '@bitpay-labs/bitcore-wallet-client';
 import * as prompt from '@clack/prompts';
-import { Status } from 'bitcore-wallet-client';
 import { Utils } from '../utils';
 import { displayBalance } from './balance';
 import type { CommonArgs } from '../../types/cli';

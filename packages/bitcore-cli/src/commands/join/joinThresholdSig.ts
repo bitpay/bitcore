@@ -1,7 +1,7 @@
 import os from 'os';
 import url from 'url';
+import { Key, TssKey } from '@bitpay-labs/bitcore-wallet-client';
 import * as prompt from '@clack/prompts';
-import { Key, TssKey } from 'bitcore-wallet-client';
 import { UserCancelled } from '../../errors';
 import { getCopayerName, getNetwork, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
