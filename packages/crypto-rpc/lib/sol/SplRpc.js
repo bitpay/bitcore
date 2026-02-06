@@ -1,4 +1,4 @@
-import { SolKit, SolanaProgram } from 'crypto-wallet-core';
+import { SolKit, SolanaProgram } from '@bitpay-labs/crypto-wallet-core';
 import { SolRpc } from './SolRpc.js';
 import { SOL_ERROR_MESSAGES } from './error_messages.js';
 

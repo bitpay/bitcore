@@ -1,4 +1,4 @@
-import { SolanaProgram } from 'crypto-wallet-core';
+import { SolanaProgram } from '@bitpay-labs/crypto-wallet-core';
 
 const {
   ComputeBudget: SolComputeBudget,
