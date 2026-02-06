@@ -1,4 +1,4 @@
-import BitcoreDoge from 'bitcore-lib-doge';
+import BitcoreDoge from '@bitpay-labs/bitcore-lib-doge';
 import type { IValidation } from '../../types/validation';
 
 export class DogeValidation implements IValidation {

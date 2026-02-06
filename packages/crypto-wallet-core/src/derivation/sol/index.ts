@@ -1,4 +1,4 @@
-import { HDPrivateKey, encoding } from 'bitcore-lib';
+import { HDPrivateKey, encoding } from '@bitpay-labs/bitcore-lib';
 import * as ed25519 from 'ed25519-hd-key';
 import { Paths } from '../paths';
 import type { IDeriver, Key } from '../../types/derivation';

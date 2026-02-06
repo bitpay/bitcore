@@ -1,4 +1,4 @@
-import BitcoreLibCash from 'bitcore-lib-cash';
+import BitcoreLibCash from '@bitpay-labs/bitcore-lib-cash';
 import { BTCTxProvider } from '../btc';
 
 export class BCHTxProvider extends BTCTxProvider {

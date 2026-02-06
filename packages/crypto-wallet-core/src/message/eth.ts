@@ -1,4 +1,4 @@
-import BitcoreLib from 'bitcore-lib';
+import BitcoreLib from '@bitpay-labs/bitcore-lib';
 import { ethers } from 'ethers';
 import { encodeBuffer } from '../utils';
 import type { Encoding, HDKeyType, IMessageClass, ISignedMessage, KeyType } from '../types/message';

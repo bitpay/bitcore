@@ -1,5 +1,5 @@
 import assert from 'assert';
-import BitcoreLib from 'bitcore-lib';
+import BitcoreLib from '@bitpay-labs/bitcore-lib';
 import type { Key } from '../../types/derivation';
 
 const $ = BitcoreLib.util.preconditions;

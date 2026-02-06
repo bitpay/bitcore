@@ -1,4 +1,4 @@
-import BitcoreLib from 'bitcore-lib';
+import BitcoreLib from '@bitpay-labs/bitcore-lib';
 import Web3 from 'web3';
 import type { IDeriver } from '../../types/derivation';
 
