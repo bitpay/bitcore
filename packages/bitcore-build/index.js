@@ -1,16 +1,14 @@
 'use strict';
 
-var gulp = require('gulp');
-
-var coveralls = require('@kollavarsham/gulp-coveralls');
-//var jshint = require('gulp-jshint');
-var mocha = require('gulp-mocha');
-var rename = require('gulp-rename');
-var shell = require('gulp-shell');
-var terser = require('gulp-terser');
-//var bump = require('gulp-bump');
-//var git = require('gulp-git');
-var fs = require('fs');
+const gulp = require('gulp');
+const coveralls = require('@kollavarsham/gulp-coveralls');
+const mocha = require('gulp-mocha');
+const rename = require('gulp-rename');
+const shell = require('gulp-shell');
+const terser = require('gulp-terser');
+// const bump = require('gulp-bump');
+// const git = require('gulp-git');
+const fs = require('fs');
 const assert = require('assert');
 
 function ignoreerror() {
@@ -20,29 +18,29 @@ function ignoreerror() {
 }
 
 function startGulp(name, opts) {
-  var task = {};
+  const task = {};
   opts = opts || {};
   opts.externals = opts.externals || [];
   opts.transforms = opts.transforms || [];
   assert(!opts.browserRunner || ['karma', 'webdriverio'].includes(opts.browserRunner), 'Invalid option - browserRunner: "' + opts.browserRunner + '"');
 
-  var browser = !opts.skipBrowser;
-  var browserRunner = opts.browserRunner || 'karma';
-  var fullname = name ? 'bitcore-' + name : 'bitcore';
-  var files = ['lib/**/*.js'];
-  var tests = ['test/**/*.js'];
-  var alljs = files.concat(tests);
+  const browser = !opts.skipBrowser;
+  const browserRunner = opts.browserRunner || 'karma';
+  const fullname = name ? 'bitcore-' + name : 'bitcore';
+  const files = ['lib/**/*.js'];
+  const tests = ['test/**/*.js'];
+  const alljs = files.concat(tests);
 
-  var buildPath = './node_modules/bitcore-build/';
-  var buildModulesPath = buildPath + 'node_modules/';
-  var buildBinPath = buildPath + 'node_modules/.bin/';
+  const buildPath = './node_modules/@bitpay-labs/bitcore-build/';
+  const buildModulesPath = buildPath + 'node_modules/';
+  const buildBinPath = buildPath + 'node_modules/.bin/';
 
-  var browserifyPath = buildBinPath + 'browserify';
-  var karmaPath = buildBinPath + 'karma';
-  var webdriverioPath = buildBinPath = 'wdio';
-  var platoPath = buildBinPath + 'plato';
-  var istanbulPath = buildBinPath + 'istanbul';
-  var mochaPath = buildBinPath + '_mocha';
+  let browserifyPath = buildBinPath + 'browserify';
+  let karmaPath = buildBinPath + 'karma';
+  let webdriverioPath = buildBinPath + 'wdio';
+  let platoPath = buildBinPath + 'plato';
+  let istanbulPath = buildBinPath + 'istanbul';
+  let mochaPath = buildBinPath + '_mocha';
 
   // newer version of node? binaries are in lower level of node_module path
   if (!fs.existsSync(browserifyPath)) {
@@ -72,7 +70,7 @@ function startGulp(name, opts) {
   /**
    * testing
    */
-  var testmocha = function () {
+  const testmocha = function () {
     return gulp.src(tests).pipe(mocha({
       reporter: 'spec'
     }));
@@ -86,8 +84,8 @@ function startGulp(name, opts) {
     webdriverioPath + ' run ' + (opts.wdioConf || (buildPath + 'wdio.conf.js'))
   ]);
 
-  task['test:node'] =  testmocha;
-  task['test:node:nofail'] =  function() {
+  task['test:node'] = testmocha;
+  task['test:node:nofail'] = function() {
     return testmocha().on('error', ignoreerror);
   };
 
@@ -99,12 +97,12 @@ function startGulp(name, opts) {
    */
   if (browser) {
 
-    var browserifyCommand;
+    let browserifyCommand;
 
     if (name === 'tss') {
       browserifyCommand = browserifyPath + ' --require ./index.js:' + fullname + opts.externals.map(e => ' --external ' + e).join('') + opts.transforms.map(t => ' -t ' + t).join('') + ' -o ' + fullname + '.js';
     } else if (name !== 'lib') {
-      browserifyCommand = browserifyPath + ' --require ./index.js:' + fullname + ' --external bitcore-lib -o ' + fullname + '.js';
+      browserifyCommand = browserifyPath + ' --require ./index.js:' + fullname + ' --external @bitpay-labs/bitcore-lib -o ' + fullname + '.js';
     } else {
       browserifyCommand = browserifyPath + ' --require ./index.js:bitcore-lib -o bitcore-lib.js';
     }
@@ -113,7 +111,7 @@ function startGulp(name, opts) {
       browserifyCommand
     ]);
 
-    task['browser:terser'] =function() {
+    task['browser:terser'] = function() {
       return gulp.src(fullname + '.js')
         .pipe(terser({
           mangle: true,
@@ -146,7 +144,7 @@ function startGulp(name, opts) {
 
   //  task['plato']= shell.task([platoPath + ' -d report -r -l .jshintrc -t ' + fullname + ' lib']);
 
-  task['coverage']= shell.task([istanbulPath + ' cover ' + mochaPath + ' -- --recursive']);
+  task['coverage'] = shell.task([istanbulPath + ' cover ' + mochaPath + ' -- --recursive']);
 
   task['coveralls'] = gulp.series(task['coverage'], function() {
     gulp.src('coverage/lcov.info').pipe(coveralls());
@@ -157,58 +155,57 @@ function startGulp(name, opts) {
    */
 
   task['watch:test'] = function() {
-    //// todo: only run tests that are linked to file changes by doing
-    //// something smart like reading through the require statements
+    // todo: only run tests that are linked to file changes by doing
+    // something smart like reading through the require statements
     return gulp.watch(alljs, gulp.series('test'));
   };
 
-  task['watch:test:node']= function() {
-    //// todo: only run tests that are linked to file changes by doing
-    //// something smart like reading through the require statements
+  task['watch:test:node'] = function() {
+    // todo: only run tests that are linked to file changes by doing
+    // something smart like reading through the require statements
     return gulp.watch(alljs, gulp.series('test:node'));
   };
 
   if (browser) {
-    task['watch:test:browser'], function() {
+    task['watch:test:browser'] = function() {
       // todo: only run tests that are linked to file changes by doing
       // something smart like reading through the require statements
       return gulp.watch(alljs, task['test:browser']);
     };
   }
 
-  task['watch:coverage']= function() {
+  task['watch:coverage'] = function() {
     // todo: only run tests that are linked to file changes by doing
     // something smart like reading through the require statements
-    return gulp.watch(alljs, task[coverage]);
+    return gulp.watch(alljs, task['coverage']);
   };
 
-  task['watch:lint']= function() {
-    //// todo: only lint files that are linked to file changes by doing
-    //// something smart like reading through the require statements
-    return gulp.watch(alljs, task[lint]);
+  task['watch:lint'] = function() {
+    // todo: only lint files that are linked to file changes by doing
+  // something smart like reading through the require statements
+    return gulp.watch(alljs, task['lint']);
   };
 
   if (browser) {
-    task['watch:browser']= function() {
+    task['watch:browser'] = function() {
       return gulp.watch(alljs, task[browser]);
     };
   }
 
   if (browser) {
     task['test:browser'] = gulp.series(task['browser:uncompressed'], task['browser:maketests'], task[`test:${browserRunner}`]);
-    task['test']= gulp.series(task['test:node'], task['test:browser']);
+    task['test'] = gulp.series(task['test:node'], task['test:browser']);
   } else {
-    task['test']= task['test:node'];
+    task['test'] = task['test:node'];
   }
-  task['default']= task['test'];
+  task['default'] = task['test'];
 
   /**
    * Release automation
    */
 
-  task['release:install']= shell.task([ 'npm install']);
-  var releaseFiles = ['./package.json'];
-  return  task;
+  task['release:install'] = shell.task([ 'npm install']);
+  return task;
 }
 
 module.exports = startGulp;

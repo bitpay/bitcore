@@ -3,7 +3,7 @@
 const should = require('chai').should();
 const unorm = require('unorm');
 const Mnemonic = require('..');
-const errors = require('bitcore-lib').errors;
+const errors = require('@bitpay-labs/bitcore-lib').errors;
 const bip39_vectors = require('./data/bip39-vectors.json');
 
 describe('Mnemonic', function() {
@@ -46,23 +46,23 @@ describe('Mnemonic', function() {
     });
 
     it('constructor defaults to english worldlist', function() {
-      var mnemonic = new Mnemonic();
+      const mnemonic = new Mnemonic();
       mnemonic.wordlist.should.equal(Mnemonic.Words.ENGLISH);
     });
 
     it('allow using different worldlists', function() {
-      var mnemonic = new Mnemonic(Mnemonic.Words.SPANISH);
+      const mnemonic = new Mnemonic(Mnemonic.Words.SPANISH);
       mnemonic.wordlist.should.equal(Mnemonic.Words.SPANISH);
     });
 
     it('constructor honor both length and wordlist', function() {
-      var mnemonic = new Mnemonic(32 * 7, Mnemonic.Words.SPANISH);
+      const mnemonic = new Mnemonic(32 * 7, Mnemonic.Words.SPANISH);
       mnemonic.phrase.split(' ').length.should.equal(21);
       mnemonic.wordlist.should.equal(Mnemonic.Words.SPANISH);
     });
 
     it('constructor should detect standard wordlist', function() {
-      var mnemonic = new Mnemonic('afirmar diseño hielo fideo etapa ogro cambio fideo toalla pomelo número buscar');
+      const mnemonic = new Mnemonic('afirmar diseño hielo fideo etapa ogro cambio fideo toalla pomelo número buscar');
       mnemonic.wordlist.should.equal(Mnemonic.Words.SPANISH);
     });
 
@@ -137,7 +137,7 @@ describe('Mnemonic', function() {
   });
 
   it('allows use different phrase lengths', function() {
-    var mnemonic;
+    let mnemonic;
 
     mnemonic = new Mnemonic(32 * 4);
     mnemonic.phrase.split(' ').length.should.equal(12);
@@ -156,47 +156,47 @@ describe('Mnemonic', function() {
   });
 
   it('validates a phrase', function() {
-    var valid = Mnemonic.isValid('afirmar diseño hielo fideo etapa ogro cambio fideo toalla pomelo número buscar');
+    const valid = Mnemonic.isValid('afirmar diseño hielo fideo etapa ogro cambio fideo toalla pomelo número buscar');
     valid.should.equal(true);
 
-    var invalid = Mnemonic.isValid('afirmar diseño hielo fideo etapa ogro cambio fideo hielo pomelo número buscar');
+    const invalid = Mnemonic.isValid('afirmar diseño hielo fideo etapa ogro cambio fideo hielo pomelo número buscar');
     invalid.should.equal(false);
 
-    var invalid2 = Mnemonic.isValid('afirmar diseño hielo fideo etapa ogro cambio fideo hielo pomelo número oneInvalidWord');
+    const invalid2 = Mnemonic.isValid('afirmar diseño hielo fideo etapa ogro cambio fideo hielo pomelo número oneInvalidWord');
     invalid2.should.equal(false);
 
-    var invalid3 = Mnemonic.isValid('totally invalid phrase');
+    const invalid3 = Mnemonic.isValid('totally invalid phrase');
     invalid3.should.equal(false);
 
-    var valid2 = Mnemonic.isValid('caution opprimer époque belote devenir ficeler filleul caneton apologie nectar frapper fouiller');
+    const valid2 = Mnemonic.isValid('caution opprimer époque belote devenir ficeler filleul caneton apologie nectar frapper fouiller');
     valid2.should.equal(true);
   });
 
   it('has a toString method', function() {
-    var mnemonic = new Mnemonic();
+    const mnemonic = new Mnemonic();
     mnemonic.toString().should.equal(mnemonic.phrase);
   });
 
   it('has an inspect method', function() {
-    var mnemonic = new Mnemonic();
+    const mnemonic = new Mnemonic();
     mnemonic.inspect().should.have.string('<Mnemonic:');
   });
 
   it('derives a seed without a passphrase', function() {
-    var mnemonic = new Mnemonic();
-    var seed = mnemonic.toSeed();
+    const mnemonic = new Mnemonic();
+    const seed = mnemonic.toSeed();
     should.exist(seed);
   });
 
   it('derives a seed using a passphrase', function() {
-    var mnemonic = new Mnemonic();
-    var seed = mnemonic.toSeed('my passphrase');
+    const mnemonic = new Mnemonic();
+    const seed = mnemonic.toSeed('my passphrase');
     should.exist(seed);
   });
 
   it('derives an extended private key', function() {
-    var mnemonic = new Mnemonic();
-    var pk = mnemonic.toHDPrivateKey();
+    const mnemonic = new Mnemonic();
+    const pk = mnemonic.toHDPrivateKey();
     should.exist(pk);
   });
 
@@ -210,7 +210,7 @@ describe('Mnemonic', function() {
 
   it('deriving an extended private key should fail for invalid seed', function() {
     (function() {
-      var mnemonic = new Mnemonic();
+      const mnemonic = new Mnemonic();
       return mnemonic.toHDPrivateKey('', 'livenet', 'bad seed');
     }).should.throw('Invalid Key Type: bad seed');
   });
@@ -242,7 +242,7 @@ describe('Mnemonic', function() {
   }
 
   for (const language in bip39_vectors) {
-    if (bip39_vectors.hasOwnProperty(language)) {
+    if (Object.hasOwn(bip39_vectors, language)) {
       for (let i = 0; i < bip39_vectors[language].length; i++) {
         it(`should pass test vector for ${language} #${i}`, function() {
           const wordlist = getWords(language);
