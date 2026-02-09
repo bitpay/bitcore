@@ -116,6 +116,7 @@ export class Storage {
     return this.storageType.saveWallet({ wallet });
   }
 
+  // @deprecated
   async getKey(params: {
     address: string;
     name: string;
@@ -135,6 +136,7 @@ export class Storage {
     }
   }
 
+  // @deprecated
   async getKeys(params: { addresses: string[]; name: string; encryptionKey: string }): Promise<Array<KeyImport>> {
     const { addresses, name, encryptionKey } = params;
     const keys = new Array<KeyImport>();
@@ -161,6 +163,7 @@ export class Storage {
     return keys;
   }
 
+  // @deprecated
   async addKeys(params: { name: string; keys: KeyImport[]; encryptionKey: string }) {
     const { name, keys, encryptionKey } = params;
     let open = true;
@@ -193,10 +196,6 @@ export class Storage {
     return this.storageType.getAddresses({ name, limit, skip });
   }
 
-  /**
-   * New methods
-   * TODO: Deprecate above as necessary
-   */
   async addKeysSafe(params: { name: string; keys: KeyImport[] }) {
     const { name, keys } = params;
     let i = 0;

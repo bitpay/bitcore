@@ -377,7 +377,7 @@ describe('Wallet', function() {
   describe('signTx v2 key handling', function() {
     let txStub: sinon.SinonStub;
     afterEach(async function() {
-      txStub?.restore();
+      sandbox.restore();
     });
 
     describe('BTC (UTXO) decrypts ciphertext to WIF', function() {
@@ -466,7 +466,6 @@ describe('Wallet', function() {
         const pubKey = CWC.Deriver.getPublicKey('ETH', wallet.network, privBufForPubKey);
         privBufForPubKey.fill(0);
         const privBuf = CWC.Deriver.privateKeyToBuffer('ETH', privHex);
-        // v2 key encryption uses the key's pubKey as the IV salt (not the wallet pubKey)
         const encPriv = Encryption.encryptBuffer(privBuf, pubKey, wallet.unlocked.encryptionKey).toString('hex');
         privBuf.fill(0);
 
