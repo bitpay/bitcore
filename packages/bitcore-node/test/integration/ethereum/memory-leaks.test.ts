@@ -13,6 +13,7 @@ const chain = 'ETH';
 const network = 'regtest';
 
 describe('EVM Memory Leak Prevention', function() {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
   let globalSandbox: sinon.SinonSandbox;

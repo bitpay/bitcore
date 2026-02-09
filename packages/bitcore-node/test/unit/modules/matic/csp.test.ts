@@ -15,11 +15,11 @@ describe('MATIC Chain State Provider', function() {
   it('should be able to get web3', async () => {
     const sandbox = sinon.createSandbox();
     const web3Stub = { eth: { getBlockNumber: sandbox.stub().resolves(1) } };
-    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ MATIC: { [network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
+    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ [`MATIC:${network}`]: { realtime: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const { web3 } = await MATIC.getWeb3(network);
     const block = await web3.eth.getBlockNumber();
     const stub = web3.eth.getBlockNumber as sinon.SinonStub;
-    expect(stub.callCount).to.eq(2);
+    expect(stub.callCount).to.eq(1);
     expect(block).to.eq(1);
     sandbox.restore();
   });
@@ -27,10 +27,10 @@ describe('MATIC Chain State Provider', function() {
   it('should make a new web3 if getBlockNumber fails', async () => {
     const sandbox = sinon.createSandbox();
     const web3Stub = { eth: { getBlockNumber: sandbox.stub().throws('Block number fails') } };
-    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ MATIC: { [network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
+    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ [`MATIC:${network}`]: { realtime: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const { web3 } = await MATIC.getWeb3(network);
     const stub = web3.eth.getBlockNumber as sinon.SinonStub;
-    expect(stub.callCount).to.not.exist;
+    expect(stub.callCount).to.equal(0);
     sandbox.restore();
   });
 
@@ -92,7 +92,7 @@ describe('MATIC Chain State Provider', function() {
         })
       }
     };
-    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ MATIC: { [network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
+    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ [`MATIC:${network}`]: { realtime: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const txids = await MATIC.broadcastTransaction({ chain, network, rawTx: ['123', '456'] });
     expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
     expect(web3Stub.eth.sendSignedTransaction.calledWith('456')).to.eq(true);
@@ -115,7 +115,7 @@ describe('MATIC Chain State Provider', function() {
         })
       }
     };
-    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ MATIC: { [network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
+    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ [`MATIC:${network}`]: { realtime: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     const txid = await MATIC.broadcastTransaction({ chain, network, rawTx: '123' });
     expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
     expect(txid).to.eq('123');
@@ -146,7 +146,7 @@ describe('MATIC Chain State Provider', function() {
         })
       }
     };
-    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ MATIC: { [network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
+    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ [`MATIC:${network}`]: { realtime: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     let thrown = false;
     try {
       await MATIC.broadcastTransaction({ chain, network, rawTx: ['123', '456'] });
@@ -190,7 +190,7 @@ describe('MATIC Chain State Provider', function() {
     };
 
     beforeEach(() => {
-      sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ MATIC: { [network]: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
+      sandbox.stub(BaseEVMStateProvider, 'rpcs').value({ [`MATIC:${network}`]: { realtime: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] } });
     });
 
     afterEach(() => {
@@ -250,7 +250,7 @@ describe('MATIC Chain State Provider', function() {
         await MATIC.estimateGas({ network: 'unexpected' });
         throw new Error('should have thrown');
       } catch (err: any) {
-        expect(err.message).to.equal('No configuration found for unexpected and "realtime" compatible dataType');
+        expect(err.message).to.equal('No configuration found for MATIC:unexpected and "realtime" compatible dataType');
       }
     });
 

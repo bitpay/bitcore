@@ -1,5 +1,3 @@
-version: "3"
-
 services:
 
   # This is a docker runner that communicates with the other containers in docker-compose.test.base.yml

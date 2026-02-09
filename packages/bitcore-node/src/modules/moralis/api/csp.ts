@@ -1,5 +1,6 @@
 import os from 'os';
 import { Web3 } from 'crypto-wallet-core';
+import { LRUCache } from 'lru-cache';
 import request from 'request';
 import config from '../../../config';
 import logger from '../../../logger';
@@ -17,6 +18,7 @@ import { ChainId, ChainNetwork } from '../../../types/ChainNetwork';
 import { IAddressSubscription } from '../../../types/ExternalProvider';
 import { GetBlockBeforeTimeParams, GetBlockParams, StreamAddressUtxosParams, StreamBlocksParams, StreamTransactionParams, StreamWalletTransactionsParams } from '../../../types/namespaces/ChainStateProvider';
 import { isDateValid } from '../../../utils';
+import { normalizeChainNetwork } from '../../../utils';
 import { ReadableWithEventPipe } from '../../../utils/streamWithEventPipe';
 
 
@@ -36,6 +38,8 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     'Content-Type': 'application/json',
     'X-API-Key': this.apiKey,
   };
+  blockAtTimeCache: { [key: string]: LRUCache<string, IBlock> } = {};
+
 
   constructor(chain: string) {
     super(chain);
@@ -45,6 +49,14 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
   async getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock|null> {
     const { chain, network, time } = params;
     const date = new Date(time || Date.now());
+    const chainNetwork = normalizeChainNetwork(chain, network);
+    if (!this.blockAtTimeCache[chainNetwork]) {
+      this.blockAtTimeCache[chainNetwork] = new LRUCache<string, IBlock>({ max: 1000 });
+    }
+    const cachedBlock = this.blockAtTimeCache[chainNetwork].get(date.toISOString());
+    if (cachedBlock !== undefined) {
+      return cachedBlock;
+    }
     const chainId = await this.getChainId({ network });
     const blockNum = await this._getBlockNumberByDate({ chainId, date });
     if (!blockNum) {
@@ -52,7 +64,9 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     }
     const blockId = blockNum.toString();
     const blocks = await this._getBlocks({ chain, network, blockId, args: { limit: 1 } });
-    return blocks.blocks[0] || null;
+    const block = blocks.blocks[0] || null;
+    this.blockAtTimeCache[chainNetwork].set(date.toISOString(), block);
+    return block;
   }
 
   // @override

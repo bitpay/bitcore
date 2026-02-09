@@ -8,10 +8,8 @@ testConfig.bitcoreNode.chains.BCH.regtest.rpc.host = 'bitcoin';
 
 testConfig.bitcoreNode.chains.ETH.regtest.trustedPeers[0].host = 'geth';
 testConfig.bitcoreNode.chains.ETH.regtest.trustedPeers[0].port = 30303;
-testConfig.bitcoreNode.chains.ETH.regtest.providers[0].host = 'erigon';
-testConfig.bitcoreNode.chains.ETH.regtest.providers[0].port = 8545;
-testConfig.bitcoreNode.chains.ETH.regtest.providers[1].host = 'geth';
-testConfig.bitcoreNode.chains.ETH.regtest.providers[1].port = 8546;
+testConfig.bitcoreNode.chains.ETH.regtest.providers[0].host = 'geth';
+testConfig.bitcoreNode.chains.ETH.regtest.providers[0].port = 8546;
 
 testConfig.bitcoreNode.chains.MATIC.regtest.trustedPeers[0].host = 'geth';
 testConfig.bitcoreNode.chains.MATIC.regtest.trustedPeers[0].port = 30303;

@@ -3,6 +3,7 @@
 import * as chai from 'chai';
 import { BitcoreLib as Bitcore } from 'crypto-wallet-core';
 import { Utils } from '../src/lib/common';
+import sjcl from 'sjcl';
 
 const should = chai.should();
 
@@ -212,6 +213,14 @@ describe('Utils', () => {
       const msg = Utils.decryptMessage(ct, pwd);
       msg.should.equal('hello world');
     });
+    it('should decrypt sjcl encrypted message', () => {
+      const pwd = 'ezDRS2NRchMJLf1IWtjL5A==';
+      const message = 'hello world';
+      const key = sjcl.codec.base64.toBits(pwd);
+      const ct = sjcl.encrypt(key, message);
+      const msg = Utils.decryptMessage(ct, pwd);
+      msg.should.equal(message);
+    });
   });
 
 
@@ -222,6 +231,16 @@ describe('Utils', () => {
       (() => {
         Utils.decryptMessage(ct, 'test');
       }).should.throw('Invalid key length');
+    });
+    it('should throw on sjcl encrypted message with wrong password', () => {
+      const pwd = 'ezDRS2NRchMJLf1IWtjL5A==';
+      const wrongPwd = 'wrongpassword12345==';
+      const message = 'hello world';
+      const key = sjcl.codec.base64.toBits(pwd);
+      const ct = sjcl.encrypt(key, message);
+      (() => {
+        Utils.decryptMessage(ct, wrongPwd);
+      }).should.throw();
     });
   });
 
@@ -234,7 +253,7 @@ describe('Utils', () => {
       msg.should.equal('hello world');
     });
 
-    it('should encrypt and  fail to decrypt', () => {
+    it('should encrypt and fail to decrypt', () => {
       const pwd = 'ezDRS2NRchMJLf1IWtjL5A==';
       const ct = Utils.encryptMessage('hello world', pwd);
       const msg = Utils.decryptMessageNoThrow(ct, 'hola');
@@ -242,6 +261,24 @@ describe('Utils', () => {
       msg.should.equal('<ECANNOTDECRYPT>');
     });
 
+    it('should decrypt sjcl encrypted message', () => {
+      const pwd = 'ezDRS2NRchMJLf1IWtjL5A==';
+      const message = 'hello world';
+      const key = sjcl.codec.base64.toBits(pwd);
+      const ct = sjcl.encrypt(key, message);
+      const msg = Utils.decryptMessageNoThrow(ct, pwd);
+      msg.should.equal(message);
+    });
+
+    it('should return error string on sjcl encrypted message with wrong password', () => {
+      const pwd = 'ezDRS2NRchMJLf1IWtjL5A==';
+      const wrongPwd = 'wrongpassword12345==';
+      const message = 'hello world';
+      const key = sjcl.codec.base64.toBits(pwd);
+      const ct = sjcl.encrypt(key, message);
+      const msg = Utils.decryptMessageNoThrow(ct, wrongPwd);
+      msg.should.equal('<ECANNOTDECRYPT>');
+    });
 
     it('should failover to decrypt a non-encrypted msg', () => {
       const pwd = 'ezDRS2NRchMJLf1IWtjL5A==';
@@ -257,19 +294,15 @@ describe('Utils', () => {
       msg.should.equal('{"pepe":1}');
     });
 
-
     it('should no try to decrypt empty', () => {
       const msg = Utils.decryptMessageNoThrow('', 'hola');
       msg.should.equal('');
     });
 
-
     it('should no try to decrypt null', () => {
       const msg = Utils.decryptMessageNoThrow(null, 'hola');
       msg.should.equal('');
     });
-
-
   });
 
 
