@@ -132,7 +132,7 @@ export class DeriverProxy {
   }
 
   privateKeyBufferToNativePrivateKey(chain: string, network: string, buf: Buffer): string {
-    return this.get(chain).privateKeyBufferToNativePrivateKey(buf, network);
+    return this.get(chain).bufferToPrivateKey_TEMP(buf, network);
   }
 }
 

@@ -59,7 +59,7 @@ export class XrpDeriver implements IDeriver {
     return Buffer.from(privKey, 'hex');
   }
 
-  privateKeyBufferToNativePrivateKey(buf: Buffer, _network: string): any {
+  bufferToPrivateKey_TEMP(buf: Buffer, _network: string): any {
     return buf.toString('hex').toUpperCase();
   }
 }

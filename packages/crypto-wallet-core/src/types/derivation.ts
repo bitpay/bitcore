@@ -28,7 +28,7 @@ export interface IDeriver {
   privateKeyToBuffer(privKey: any): Buffer;
 
   /**
-   * Temporary - converts decrypted private key buffer to chain-native private key format
+   * Temporary - converts decrypted private key buffer to lib-specific private key format
    */
-  privateKeyBufferToNativePrivateKey(buf: Buffer, network: string): any;
+  bufferToPrivateKey_TEMP(buf: Buffer, network: string): any;
 }
