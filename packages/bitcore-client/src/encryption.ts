@@ -48,38 +48,9 @@ export function decryptEncryptionKey(encEncryptionKey, password, toBuffer?: bool
 
 /** @deprecated - Use encryptBuffer */
 export function encryptPrivateKey(privKey, pubKey, encryptionKey) {
-  // Store buffers this method makes to sanitize
-  const createdBuffers: Buffer[] = [];
-
-  try {
-    let encKey: Buffer | null = null;
-    if (Buffer.isBuffer(encryptionKey)) {
-      encKey = encryptionKey;
-    } else {
-      if (typeof encryptionKey !== 'string') {
-        throw new Error('encryptionKey should be Buffer or hex-encoded string');
-      }
-      encKey = Buffer.from(encryptionKey, 'hex');
-      createdBuffers.push(encKey);
-    }
-
-    let unencryptedPrivKeyBuffer: Buffer | null = null;
-    if (Buffer.isBuffer(privKey)) {
-      unencryptedPrivKeyBuffer = privKey;
-    } else {
-      if (typeof privKey !== 'string') {
-        throw new Error('privKey should be Buffer or utf8-encoded string');
-      }
-      unencryptedPrivKeyBuffer = Buffer.from(privKey);
-      createdBuffers.push(unencryptedPrivKeyBuffer);
-    }
-
-    return encryptBuffer(unencryptedPrivKeyBuffer, pubKey, encKey).toString('hex');
-  } finally {
-    for (const buf of createdBuffers) {
-      buf.fill(0);
-    }
-  }
+  encryptionKey = Buffer.from(encryptionKey, 'hex');
+  privKey = Buffer.from(privKey, 'utf8');
+  return encryptBuffer(privKey, pubKey, encryptionKey).toString('hex');
 }
 
 function decryptPrivateKey(encPrivateKey: string, pubKey: string, encryptionKey: Buffer | string) {
