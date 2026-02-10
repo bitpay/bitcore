@@ -846,7 +846,7 @@ export class Wallet {
           privKeyBuf = Encryption.decryptToBuffer(key.privKey, key.pubKey, this.unlocked.encryptionKey);
           
           // Convert buffer to chain-specific native format (e.g., WIF for BTC, hex for ETH, base58 for SOL)
-          const nativePrivKey = Deriver.privateKeyBufferToNativePrivateKey(this.chain, this.network, privKeyBuf);
+          const nativePrivKey = Deriver.bufferToPrivateKey_TEMP(this.chain, this.network, privKeyBuf);
           
           key.privKey = nativePrivKey;
         } catch (e) {
