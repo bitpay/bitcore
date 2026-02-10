@@ -82,7 +82,7 @@ export class EthDeriver implements IDeriver {
     return Buffer.from(privKey, 'hex');
   }
 
-  bufferToPrivateKey_TEMP(buf: Buffer, _network: string): any {
+  bufferToPrivateKey_TEMP(buf: Buffer, _network: string): string {
     return buf.toString('hex');
   }
 }

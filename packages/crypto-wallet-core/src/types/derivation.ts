@@ -30,5 +30,5 @@ export interface IDeriver {
   /**
    * Temporary - converts decrypted private key buffer to lib-specific private key format
    */
-  bufferToPrivateKey_TEMP(buf: Buffer, network: string): any;
+  bufferToPrivateKey_TEMP(buf: Buffer, network: string): string;
 }

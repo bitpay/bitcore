@@ -75,7 +75,7 @@ export class SolDeriver implements IDeriver {
     return encoding.Base58.decode(privKey);
   }
 
-  bufferToPrivateKey_TEMP(buf: Buffer, _network: string) {
+  bufferToPrivateKey_TEMP(buf: Buffer, _network: string): string {
     return encoding.Base58.encode(buf);
   }
 }
