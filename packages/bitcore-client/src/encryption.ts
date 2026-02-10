@@ -46,7 +46,7 @@ export function decryptEncryptionKey(encEncryptionKey, password, toBuffer?: bool
   }
 }
 
-// @deprecated - Use encryptBuffer
+/** @deprecated - Use encryptBuffer */
 export function encryptPrivateKey(privKey, pubKey, encryptionKey) {
   // Store buffers this method makes to sanitize
   const createdBuffers: Buffer[] = [];

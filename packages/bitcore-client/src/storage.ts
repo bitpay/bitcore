@@ -116,7 +116,7 @@ export class Storage {
     return this.storageType.saveWallet({ wallet });
   }
 
-  // @deprecated
+  /** @deprecated - Use getStoredKey */
   async getKey(params: {
     address: string;
     name: string;
@@ -136,7 +136,7 @@ export class Storage {
     }
   }
 
-  // @deprecated
+  /** @deprecated - Use getStoredKeys */
   async getKeys(params: { addresses: string[]; name: string; encryptionKey: string }): Promise<Array<KeyImport>> {
     const { addresses, name, encryptionKey } = params;
     const keys = new Array<KeyImport>();
@@ -163,7 +163,7 @@ export class Storage {
     return keys;
   }
 
-  // @deprecated
+  /** @deprecated - Use addKeysSafe */
   async addKeys(params: { name: string; keys: KeyImport[]; encryptionKey: string }) {
     const { name, keys, encryptionKey } = params;
     let open = true;
