@@ -189,7 +189,7 @@ export interface TxReceipt {
   contractAddress?: string;
   cumulativeGasUsed: number;
   gasUsed: number;
-  logs: Array<any>;
+  logs?: Array<any>;
 }
 
 export type IEVMTransactionTransformed = IEVMTransactionInProcess & {

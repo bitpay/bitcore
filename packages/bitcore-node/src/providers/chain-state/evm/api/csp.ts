@@ -26,7 +26,7 @@ import { EVMTransactionStorage } from '../models/transaction';
 import { EVMTransactionJSON, IEVMBlock, IEVMTransaction, IEVMTransactionInProcess } from '../types';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
-import { PopulateEffectsTransform } from './populateEffectsTransform';
+import { PopulateEffectsForAddressTransform } from './populateEffectsTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
 import { EVMListTransactionsStream } from './transform';
 import type { MongoBound } from '../../../../models/base';
@@ -54,7 +54,7 @@ export interface GetWeb3Response { rpc: EthRpc; web3: Web3; dataType: string; la
 
 export interface BuildWalletTxsStreamParams {
   transactionStream: TransformWithEventPipe;
-  populateEffects: PopulateEffectsTransform;
+  populateEffects: PopulateEffectsForAddressTransform;
   walletAddresses: string[];
 }
 
@@ -362,12 +362,23 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         tx.fee = fee;
       }
     }
+    // logs can be very large and are not currently needed for any use case in this codebase.
+    delete tx.receipt?.logs;
     return tx;
   }
 
   populateEffects(tx: MongoBound<IEVMTransaction>) {
     if (!tx.effects || (tx.effects && tx.effects.length == 0)) {
       tx.effects = EVMTransactionStorage.getEffects(tx as IEVMTransactionInProcess);
+    }
+    return tx;
+  }
+
+  populateEffectsForAddresses(tx: MongoBound<IEVMTransaction>, addresses: Array<string>) {
+    if (tx.effects && tx.effects.length > 0) {
+      tx.effects = tx.effects.filter(effect => addresses.some(address => effect.to.toLowerCase() === address.toLowerCase() || effect.from.toLowerCase() === address.toLowerCase()));
+    } else {
+      tx.effects = EVMTransactionStorage.getEffectsForAddresses(tx as IEVMTransactionInProcess, addresses);
     }
     return tx;
   }
@@ -597,7 +608,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       }
       const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses, args.tokenAddress);
       const populateReceipt = new PopulateReceiptTransform(this);
-      const populateEffects = new PopulateEffectsTransform(this);
+      const populateEffects = new PopulateEffectsForAddressTransform(this, walletAddresses);
 
       const streamParams: BuildWalletTxsStreamParams = {
         transactionStream,
