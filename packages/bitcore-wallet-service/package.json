@@ -2,7 +2,7 @@
   "name": "@bitpay-labs/bitcore-wallet-service",
   "description": "A service for Mutisig HD Bitcoin Wallets",
   "author": "BitPay Inc",
-  "version": "11.5.2",
+  "version": "11.6.0",
   "license": "MIT",
   "main": "ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
@@ -44,8 +44,8 @@
     "cp:templates": "cp -r ./templates ./ts_build/templates"
   },
   "dependencies": {
-    "@bitpay-labs/bitcore-tss": "^11.5.1",
-    "@bitpay-labs/crypto-wallet-core": "^11.5.1",
+    "@bitpay-labs/bitcore-tss": "^11.6.0",
+    "@bitpay-labs/crypto-wallet-core": "^11.6.0",
     "@sendgrid/mail": "6.5.4",
     "abi-decoder": "2.4.0",
     "async": "0.9.2",
