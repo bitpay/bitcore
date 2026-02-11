@@ -458,7 +458,8 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
    */
   getEffectsForAddresses(tx: IEVMTransactionInProcess, addresses: Array<string>): Effect[] {
     const effects = this.getEffects(tx);
-    return effects.filter(effect => addresses.some(address => effect.to.toLowerCase() === address.toLowerCase() || effect.from.toLowerCase() === address.toLowerCase()));
+    const addySet = new Set(addresses.map(a => a.toLowerCase()));
+    return effects.filter(effect => addySet.has(effect.to.toLowerCase()) || addySet.has(effect.from.toLowerCase()));
   }
 
   _getEffectForAbiType(abi: IAbiDecodedData, to: string, from: string, callStack: string): Effect | undefined {
