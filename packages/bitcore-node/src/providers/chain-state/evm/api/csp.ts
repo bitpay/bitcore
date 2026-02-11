@@ -375,12 +375,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   populateEffectsForAddresses(tx: MongoBound<IEVMTransaction>, addresses: Array<string>) {
-    if (tx.effects && tx.effects.length > 0) {
-      const addySet = new Set(addresses.map(a => a.toLowerCase()));
-      tx.effects = tx.effects.filter(effect => addySet.has(effect.to.toLowerCase()) || addySet.has(effect.from.toLowerCase()));
-    } else {
-      tx.effects = EVMTransactionStorage.getEffectsForAddresses(tx as IEVMTransactionInProcess, addresses);
-    }
+    tx.effects = EVMTransactionStorage.getEffectsForAddresses(tx as IEVMTransactionInProcess, addresses);
     return tx;
   }
 

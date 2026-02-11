@@ -457,7 +457,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
    * @param {Array<string>} addresses
    */
   getEffectsForAddresses(tx: IEVMTransactionInProcess, addresses: Array<string>): Effect[] {
-    const effects = this.getEffects(tx);
+    const effects = tx.effects?.length ? tx.effects : this.getEffects(tx);
     const addySet = new Set(addresses.map(a => a.toLowerCase()));
     return effects.filter(effect => addySet.has(effect.to.toLowerCase()) || addySet.has(effect.from.toLowerCase()));
   }
