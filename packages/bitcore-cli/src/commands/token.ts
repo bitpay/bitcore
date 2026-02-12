@@ -11,9 +11,11 @@ export async function setToken(args: CommonArgs) {
   const currencies = await Wallet.getCurrencies(wallet.network);
   function findTokenObj(value) {
     return currencies.find(c =>
-      c.contractAddress?.toLowerCase() === value.toLowerCase() ||
-      c.displayCode?.toLowerCase() === value.toLowerCase() ||
-      c.code?.toLowerCase() === value.toLowerCase()
+      c.chain?.toUpperCase() === wallet.chain.toUpperCase() && (
+        c.contractAddress?.toLowerCase() === value.toLowerCase() ||
+        c.displayCode?.toLowerCase() === value.toLowerCase() ||
+        c.code?.toLowerCase() === value.toLowerCase()
+      )
     );
   };
 
