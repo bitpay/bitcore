@@ -29,4 +29,21 @@ describe('Encryption', function() {
     const decryptedData = Encryption.decryptWithPassword(encryptedData, password);
     Buffer.compare(decryptedData, data).should.equal(0);
   });
+
+  it('should decrypt data encrypted with old sjcl using base64 key (backward compat)', function() {
+    const base64Key = 'ezDRS2NRchMJLf1IWtjL5A==';
+    const message = JSON.stringify({ walletPrivKey: 'some-private-key' });
+    const sjclKey = sjcl.codec.base64.toBits(base64Key);
+    const ct = sjcl.encrypt(sjclKey, message, { ks: 128, iter: 1 });
+    const decrypted = Encryption.decryptWithKey(ct, base64Key);
+    decrypted.toString().should.equal(message);
+  });
+
+  it('should decrypt data encrypted with old sjcl using password string (backward compat)', function() {
+    const password = 'testPassword';
+    const data = 'xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu';
+    const ct = sjcl.encrypt(password, data);
+    const decrypted = Encryption.decryptWithPassword(ct, password);
+    decrypted.toString().should.equal(data);
+  });
 });
