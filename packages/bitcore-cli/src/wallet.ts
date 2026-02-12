@@ -362,6 +362,9 @@ export class Wallet implements IWallet {
         testnet: process.env['BITCORE_CLI_CURRENCIES_URL'] || 'https://test.bitpay.com/currencies',
         regtest: process.env['BITCORE_CLI_CURRENCIES_URL_REGTEST']
       };
+      if (network === 'regtest' && !urls[network]) {
+        throw new Error('Set BITCORE_CLI_CURRENCIES_URL_REGTEST environment variable.');
+      }
       let response: Response;
       try {
         response = await fetch(urls[network], { method: 'GET', headers: { 'Content-Type': 'application/json' } });
