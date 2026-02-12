@@ -13,12 +13,12 @@ const BN = Bitcore.crypto.BN;
 const MAX_FEE_PER_KB = {
   btc: 10000 * 1000, // 10k sat/b
   bch: 10000 * 1000, // 10k sat/b
-  eth: 1000000000000, // 1000 Gwei
-  matic: 1000000000000, // 1000 Gwei
-  arb: 1000000000000, // 1000 Gwei
-  base: 1000000000000, // 1000 Gwei
-  op: 1000000000000, // 1000 Gwei
-  xrp: 1000000000000,
+  eth: 1000 * 1e9, // 1000 Gwei
+  matic: 30000 * 1e9, // 30,000 Gwei
+  arb: 1000 * 1e9, // 1000 Gwei
+  base: 1000 * 1e9, // 1000 Gwei
+  op: 1000 * 1e9, // 1000 Gwei
+  xrp: 1000 * 1e9, // ?? 
   doge: 10000 * 1000, // 10k sat/b
   ltc: 10000 * 1000, // 10k sat/b
   sol: 15000
