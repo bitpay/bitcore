@@ -20,6 +20,5 @@ elif [ "$1" = "local" ]; then
 elif [ "$1" = "down" ]; then
   docker compose -f docker-compose.test.base.yml -f docker-compose.test.local.yml down -v
 else
-  echo "Missing expected parameter. The first parameter should be 'build' or a top level npm script to run in the test_runner docker container."
+  echo "Missing expected parameter. The first parameter should be 'build', 'local', or 'down'."
 fi
-

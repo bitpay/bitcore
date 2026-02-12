@@ -404,7 +404,8 @@ export const Utils = {
     if (!keys.length) {
       return arr.sort((a, b) => { const [_a, _b] = transformVals(a, b); return _a.compare(_b); });
     } else if (keys.length === 1 && !Array.isArray(keys[0])) {
-      return arr.sort((a, b) => { const [_a, _b] = transformVals(a[keys[0] as string], b[keys[0] as string]); return _a.compare(_b); });
+      const key = keys[0];
+      return arr.sort((a, b) => { const [_a, _b] = transformVals(a[key], b[key]); return _a.compare(_b); });
     }
     return arr.sort((a, b) => {
       // compare concatenated strings for multiple key sorting
