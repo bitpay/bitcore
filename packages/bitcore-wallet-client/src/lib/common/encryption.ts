@@ -130,7 +130,8 @@ class EncryptionClass {
       return this._baseDecrypt(data, keyBuffer);
     } catch (err) {
       try {
-        return sjcl.decrypt(key, data);
+        const sjclKey = sjcl.codec.base64.toBits(typeof key === 'string' ? key : key.toString('base64'));
+        return sjcl.decrypt(sjclKey, data);
       } catch {
         throw err;
       }
