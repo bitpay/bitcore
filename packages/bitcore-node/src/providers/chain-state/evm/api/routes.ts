@@ -1,4 +1,4 @@
-import { Web3 } from '@bitpay-labs/crypto-wallet-core';
+import { Utils, Web3 } from '@bitpay-labs/crypto-wallet-core';
 import cors from 'cors';
 import { Router } from 'express';
 import config from '../../../../config';
@@ -7,7 +7,10 @@ import { WebhookStorage } from '../../../../models/webhook';
 import { Config } from '../../../../services/config';
 import { IEVMNetworkConfig } from '../../../../types/Config';
 import { castToBool } from '../../../../utils';
+import { AavePoolAbi } from '../abi/aavePool';
+import { AavePoolAbiV2 } from '../abi/aavePoolV2';
 import { OPGasPriceOracleAbi, OPGasPriceOracleAddress } from '../abi/opGasPriceOracle';
+import { getAavePoolAddress } from './aave';
 import { BaseEVMStateProvider } from './csp';
 import { Gnosis } from './gnosis';
 
@@ -44,6 +47,7 @@ export class EVMRouter {
     this.getERC20TokenAllowance(router);
     this.getPriorityFee(router);
     this.estimateL1Fee(router);
+    this.getAaveUserAccountData(router);
   };
   
   private setMultiSigRoutes(router: Router) {
@@ -84,6 +88,36 @@ export class EVMRouter {
           logger.error('Gas Error::%o', err.stack || err.message || err);
           res.status(500).send(err.message || err);
         }
+      }
+    });
+  };
+
+  private getAaveUserAccountData(router: Router) {
+    router.get(`/api/${this.chain}/:network/aave/account/:address`, async (req, res) => {
+      const { address, network } = req.params;
+      const requestedVersion = String(req.query.version || 'v3').toLowerCase();
+      if (!['v2', 'v3'].includes(requestedVersion)) {
+        res.status(400).send('Unsupported Aave version');
+        return;
+      }
+
+      const poolAddress = getAavePoolAddress(this.chain, network, requestedVersion as 'v2' | 'v3');
+      if (!poolAddress) {
+        res.status(400).send('Unsupported chain or network for Aave');
+        return;
+      }
+
+      try {
+        const { web3 } = await this.csp.getWeb3(network);
+        const abi = requestedVersion === 'v2' ? AavePoolAbiV2 : AavePoolAbi;
+        const contract = new web3.eth.Contract(abi as any, poolAddress);
+        const accountData = await contract.methods
+          .getUserAccountData(web3.utils.toChecksumAddress(address))
+          .call();
+        res.json(Utils.BI.scrubBigIntsInObject(accountData, 'string'));
+      } catch (err: any) {
+        logger.error('Aave getUserAccountData error::%o', err.stack || err.message || err);
+        res.status(500).send(err.message || err);
       }
     });
   };
