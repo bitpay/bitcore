@@ -375,12 +375,12 @@ export const Utils = {
 
   /**
    * Sort array by keys in ascending order
-   * @param {Array<any>} arr Array to be sorted
-   * @param {...string|Array<string>} keys Keys to sort by in order. If a key is an array, it will be treated as a nested key.
+   * @param {Array<T>} arr Array to be sorted
+   * @param {...(string|string[])} keys Keys to sort by in order. If a key is an array, it will be treated as a nested key.
    *  e.g.: sortAsc(arr, 'a', 'b', ['c', 'd']) will sort by a, then b, then c.d
    * @returns 
    */
-  sortAsc(arr, ...keys) {
+  sortAsc<T = any>(arr: Array<T>, ...keys: (string | string[])[]): Array<T> {
     function transformVals(val1, val2) {
       if (val1 === undefined) {
         val1 = '\uFFFF'; // highest possible string value, otherwise 'undefined' < 'xyz'
@@ -404,7 +404,7 @@ export const Utils = {
     if (!keys.length) {
       return arr.sort((a, b) => { const [_a, _b] = transformVals(a, b); return _a.compare(_b); });
     } else if (keys.length === 1 && !Array.isArray(keys[0])) {
-      return arr.sort((a, b) => { const [_a, _b] = transformVals(a[keys[0]], b[keys[0]]); return _a.compare(_b); });
+      return arr.sort((a, b) => { const [_a, _b] = transformVals(a[keys[0] as string], b[keys[0] as string]); return _a.compare(_b); });
     }
     return arr.sort((a, b) => {
       // compare concatenated strings for multiple key sorting
@@ -425,11 +425,11 @@ export const Utils = {
 
   /**
    * Sort array by keys in descending order
-   * @param {Array<any>} arr Array to be sorted
-   * @param {...string|Array<string>} keys Keys to sort by in order. If a key is an array, it will be treated as a nested key.
+   * @param {Array<T>} arr Array to be sorted
+   * @param {...(string|string[])} keys Keys to sort by in order. If a key is an array, it will be treated as a nested key.
    *  e.g.: sortDesc(arr, 'a', 'b', ['c', 'd']) will sort by a, then b, then c.d
    */
-  sortDesc(arr: Array<any>, ...keys: string[]) {
+  sortDesc<T = any>(arr: Array<T>, ...keys: (string | string[])[]): Array<T> {
     return Utils.sortAsc(arr, ...keys).reverse();
   },
 
