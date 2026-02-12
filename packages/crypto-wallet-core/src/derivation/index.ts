@@ -105,6 +105,13 @@ export class DeriverProxy {
     return this.get(chain).getAddress(network, pubKey, addressType);
   }
 
+  /**
+   * Caller responsible for cleaning up privKey buffer
+   */
+  getPublicKey(chain, network, privKey: Buffer) {
+    return this.get(chain).getPublicKey(network, privKey);
+  }
+
   pathFor(chain, network, account = 0) {
     const normalizedChain = chain.toUpperCase();
     const accountStr = `${account}'`;
@@ -118,6 +125,14 @@ export class DeriverProxy {
     } else {
       return Paths.BTC.default + accountStr;
     }
+  }
+
+  privateKeyToBuffer(chain, privateKey: Buffer | string): Buffer {
+    return this.get(chain).privateKeyToBuffer(privateKey);
+  }
+
+  bufferToPrivateKey_TEMP(chain: string, network: string, buf: Buffer): string {
+    return this.get(chain).bufferToPrivateKey_TEMP(buf, network);
   }
 }
 
