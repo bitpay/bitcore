@@ -2,7 +2,7 @@
   "name": "@bitpay-labs/bitcore-wallet-client",
   "description": "Client for bitcore-wallet-service",
   "author": "BitPay Inc",
-  "version": "11.6.0",
+  "version": "11.6.1",
   "license": "MIT",
   "main": "ts_build/src/index.js",
   "types": "ts_build/src/index.d.js",
