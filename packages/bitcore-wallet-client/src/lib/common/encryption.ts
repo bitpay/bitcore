@@ -5,17 +5,17 @@ import sjcl from 'sjcl';
 
 const PBKDF2_ITERATIONS = 1000;
 const DEFAULT_KEY_SIZE = 256; // bits
-const ALGORITHM = ks => `aes-${ks || DEFAULT_KEY_SIZE}-ccm`;
+const ALGORITHM = ks => `aes-${ks || DEFAULT_KEY_SIZE}-gcm`;
 const AUTH_TAG_LENGTH = 16; // 128 bits
 const SALT_LENGTH = 16; // 128 bits
-const MAX_IV_LENGTH = 13; // 7-13 bytes for CCM mode
+const IV_LENGTH = 12; // 12 bytes standard for GCM mode (96 bits)
 
 
 export interface IBaseEncrypted {
   iv: string;
   v: number;
   ts: number;
-  mode: 'ccm';
+  mode: 'ccm' | 'gcm';
   adata: string;
   cipher: 'aes';
   ct: string;
@@ -50,15 +50,20 @@ class EncryptionClass {
 
   _baseEncrypt(data, key: Buffer): IBaseEncrypted {
     const buf = Buffer.isBuffer(data) ? data : Buffer.from(typeof data === 'string' ? data : JSON.stringify(data), 'utf8');
-    const iv = this._optimizeIv(buf.length, crypto.randomBytes(MAX_IV_LENGTH));
-    const cipher = crypto.createCipheriv(ALGORITHM(key.length * 8), key, iv, { authTagLength: AUTH_TAG_LENGTH, plaintextLength: buf.length } as crypto.CipherCCMOptions) as crypto.CipherCCM;
+    const iv = crypto.randomBytes(IV_LENGTH);
+    const cipher = crypto.createCipheriv(
+      ALGORITHM(key.length * 8), 
+      key, 
+      iv, 
+      { authTagLength: AUTH_TAG_LENGTH } as crypto.CipherGCMOptions
+    ) as crypto.CipherGCM;
     let encrypted = cipher.update(buf);
     encrypted = Buffer.concat([encrypted, cipher.final()]);
     return {
       iv: iv.toString('base64'),
       v: 1,
       ts: AUTH_TAG_LENGTH * 8,
-      mode: 'ccm',
+      mode: 'gcm',
       adata: '',
       cipher: 'aes',
       ct: Buffer.concat([encrypted, cipher.getAuthTag()]).toString('base64')
@@ -95,8 +100,24 @@ class EncryptionClass {
     const authTagLength = json.ts / 8;
     const ciphertext = ct.subarray(0, ct.length - authTagLength);
     const authTag = ct.subarray(ct.length - authTagLength);
-    const iv = this._optimizeIv(ciphertext.length, Buffer.from(json.iv, 'base64'));
-    const decipher = crypto.createDecipheriv(`${json.cipher}-${json.ks}-${json.mode}`, key, iv, { authTagLength } as crypto.CipherCCMOptions) as crypto.DecipherCCM;
+    let iv;
+    let decipher;
+    if (json.mode === 'gcm') {
+      iv = Buffer.from(json.iv, 'base64');
+      decipher = crypto.createDecipheriv(
+        `${json.cipher}-${json.ks}-${json.mode}`, 
+        key, 
+        iv, 
+        { authTagLength } as crypto.CipherGCMOptions
+      ) as crypto.DecipherGCM;
+    } else {
+      iv = this._optimizeIv(ciphertext.length, Buffer.from(json.iv, 'base64'));
+      decipher = crypto.createDecipheriv(`${json.cipher}-${json.ks}-${json.mode}`, 
+        key, 
+        iv, 
+        { authTagLength, plaintextLength: ciphertext.length } as crypto.CipherCCMOptions
+      ) as crypto.DecipherCCM;
+    }
     decipher.setAuthTag(authTag);
     let decrypted = decipher.update(ciphertext);
     decrypted = Buffer.concat([decrypted, decipher.final()]);
