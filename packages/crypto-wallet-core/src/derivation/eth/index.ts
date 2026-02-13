@@ -60,10 +60,7 @@ export class EthDeriver implements IDeriver {
     if (!Buffer.isBuffer(privKey)) {
       throw new Error('Expected privKey to be a Buffer');
     }
-    // Match the pubKey representation returned from derivePrivateKeyWithPath (hex string)
-    // Convert Buffer -> hex as the PrivateKey constructor input.
-    // This avoids bitcore-lib rejecting the `{ bn }` object form in some builds.
-    const key = new BitcoreLib.PrivateKey(privKey.toString('hex'));
+    const key = BitcoreLib.PrivateKey.fromBuffer(privKey);
     return key.publicKey.toString('hex');
   }
 
