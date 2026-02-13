@@ -106,10 +106,6 @@ export class EVMRouter {
         });
         res.json(accountData);
       } catch (err: any) {
-        if (err?.message === 'Unsupported chain or network for Aave') {
-          res.status(400).send(err.message);
-          return;
-        }
         logger.error('Aave getUserAccountData error::%o', err.stack || err.message || err);
         res.status(500).send(err.message || err);
       }
