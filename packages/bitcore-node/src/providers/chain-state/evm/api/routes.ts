@@ -44,6 +44,7 @@ export class EVMRouter {
     this.getERC20TokenAllowance(router);
     this.getPriorityFee(router);
     this.estimateL1Fee(router);
+    this.getAaveUserAccountData(router);
   };
   
   private setMultiSigRoutes(router: Router) {
@@ -84,6 +85,29 @@ export class EVMRouter {
           logger.error('Gas Error::%o', err.stack || err.message || err);
           res.status(500).send(err.message || err);
         }
+      }
+    });
+  };
+
+  private getAaveUserAccountData(router: Router) {
+    router.get(`/api/${this.chain}/:network/aave/account/:address`, async (req, res) => {
+      const { address, network } = req.params;
+      const requestedVersion = String(req.query.version || 'v3').toLowerCase();
+      if (!['v2', 'v3'].includes(requestedVersion)) {
+        res.status(400).send('Unsupported Aave version');
+        return;
+      }
+
+      try {
+        const accountData = await this.csp.getAaveUserAccountData({
+          network,
+          address,
+          version: requestedVersion as 'v2' | 'v3'
+        });
+        res.json(accountData);
+      } catch (err: any) {
+        logger.error('Aave getUserAccountData error::%o', err.stack || err.message || err);
+        res.status(500).send(err.message || err);
       }
     });
   };
