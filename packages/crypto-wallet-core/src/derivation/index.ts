@@ -27,36 +27,72 @@ const derivers: { [chain: string]: IDeriver } = {
 };
 
 export class DeriverProxy {
-  private get(chain) {
-    const normalizedChain = chain.toUpperCase();
-    return derivers[normalizedChain];
+  /**
+   * Returns the list of supported chain identifiers.
+   *
+   * @returns {string[]} Array of supported chain names (uppercase)
+   */
+  getSupportedChains(): string[] {
+    return Object.keys(derivers);
   }
 
   /**
-   * This is derives addresses using the conventional paths.
-   * @param chain
-   * @param network
-   * @param xpubKey
-   * @param addressIndex
-   * @param isChange
-   * @param addressType
-   * @returns
+   * Returns whether a given chain is supported by the deriver proxy.
+   *
+   * @param {string} chain - The chain identifier (case-insensitive)
+   * @returns {boolean} True if the chain is supported
    */
-  deriveAddress(chain, network, xpubKey, addressIndex, isChange, addressType?) {
+  isSupported(chain: string): boolean {
+    if (!chain || typeof chain !== 'string') {
+      return false;
+    }
+    return chain.toUpperCase() in derivers;
+  }
+
+  /**
+   * Retrieves the deriver implementation for a given chain.
+   *
+   * @param {string} chain - The chain identifier (case-insensitive)
+   * @returns {IDeriver} The deriver instance for the chain
+   * @throws {Error} If the chain is not provided or not supported
+   */
+  private get(chain: string): IDeriver {
+    if (!chain || typeof chain !== 'string') {
+      throw new Error('Chain must be a non-empty string');
+    }
+    const normalizedChain = chain.toUpperCase();
+    const deriver = derivers[normalizedChain];
+    if (!deriver) {
+      throw new Error(`Unsupported chain: ${chain}. Supported chains: ${this.getSupportedChains().join(', ')}`);
+    }
+    return deriver;
+  }
+
+  /**
+   * This derives addresses using the conventional paths.
+   * @param {string} chain - The chain identifier
+   * @param {string} network - The network name
+   * @param {string} xpubKey - The extended public key
+   * @param {number} addressIndex - The address index
+   * @param {boolean} isChange - Whether this is a change address
+   * @param {string} [addressType] - Optional address type
+   * @returns The derived address
+   */
+  deriveAddress(chain: string, network: string, xpubKey: string, addressIndex: number, isChange: boolean, addressType?: string) {
     return this.get(chain).deriveAddress(network, xpubKey, addressIndex, isChange, addressType);
   }
 
   /**
    * This derives keys/addresses using the conventional paths.
-   * @param chain
-   * @param network
-   * @param privKey
-   * @param addressIndex
-   * @param isChange
-   * @param addressType
-   * @returns
+   * @param {string} chain - The chain identifier
+   * @param {string} network - The network name
+   * @param {string} privKey - The private key
+   * @param {number} addressIndex - The address index
+   * @param {boolean} isChange - Whether this is a change address
+   * @param {string} [addressType] - Optional address type
+   * @returns The derived private key info
    */
-  derivePrivateKey(chain, network, privKey, addressIndex, isChange, addressType?) {
+  derivePrivateKey(chain: string, network: string, privKey: string, addressIndex: number, isChange: boolean, addressType?: string) {
     return this.get(chain).derivePrivateKey(network, privKey, addressIndex, isChange, addressType);
   }
 
@@ -65,14 +101,14 @@ export class DeriverProxy {
    * This should probably only be used when importing from another wallet
    *   where known paths are provided with their keys. Most of the BitPay
    *   codebase uses `deriveAddress()`
-   * @param chain
-   * @param network
-   * @param xpubKey
-   * @param path
-   * @param addressType
-   * @returns
+   * @param {string} chain - The chain identifier
+   * @param {string} network - The network name
+   * @param {string} xpubKey - The extended public key
+   * @param {string} path - The derivation path
+   * @param {string} addressType - The address type
+   * @returns The derived address
    */
-  deriveAddressWithPath(chain, network, xpubKey, path, addressType) {
+  deriveAddressWithPath(chain: string, network: string, xpubKey: string, path: string, addressType: string) {
     return this.get(chain).deriveAddressWithPath(network, xpubKey, path, addressType);
   }
 
@@ -81,31 +117,42 @@ export class DeriverProxy {
    * This should probably only be used when importing from another wallet
    *   where known paths are provided with their keys. Most of the BitPay
    *   codebase uses `derivePrivateKey()`
-   * @param chain
-   * @param network
-   * @param xprivKey
-   * @param path
-   * @param addressType
-   * @returns
+   * @param {string} chain - The chain identifier
+   * @param {string} network - The network name
+   * @param {string} xprivKey - The extended private key
+   * @param {string} path - The derivation path
+   * @param {string} addressType - The address type
+   * @returns The derived private key info
    */
-  derivePrivateKeyWithPath(chain, network, xprivKey, path, addressType) {
+  derivePrivateKeyWithPath(chain: string, network: string, xprivKey: string, path: string, addressType: string) {
     return this.get(chain).derivePrivateKeyWithPath(network, xprivKey, path, addressType);
   }
 
   /**
    * This is a simple function for getting an address from a
    * given pub key and chain. There is no derivation happening.
-   * @param chain
-   * @param network
-   * @param pubKey
-   * @param addressType
-   * @returns
+   * @param {string} chain - The chain identifier
+   * @param {string} network - The network name
+   * @param {string} pubKey - The public key
+   * @param {string} [addressType] - Optional address type
+   * @returns The address
    */
-  getAddress(chain, network, pubKey, addressType?) {
+  getAddress(chain: string, network: string, pubKey: string, addressType?: string) {
     return this.get(chain).getAddress(network, pubKey, addressType);
   }
 
-  pathFor(chain, network, account = 0) {
+  /**
+   * Returns the BIP44 derivation path for a given chain and network.
+   *
+   * @param {string} chain - The chain identifier
+   * @param {string} network - The network name
+   * @param {number} [account=0] - The account index
+   * @returns {string} The derivation path
+   */
+  pathFor(chain: string, network: string, account: number = 0): string {
+    if (!chain || typeof chain !== 'string') {
+      throw new Error('Chain must be a non-empty string');
+    }
     const normalizedChain = chain.toUpperCase();
     const accountStr = `${account}'`;
     const chainConfig = Paths[normalizedChain];
