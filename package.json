@@ -79,7 +79,7 @@
     "globals": "^16.4.0",
     "husky": "^2.4.0",
     "lint-staged": "^9.5.0",
-    "ts-node": "^8.0.3",
+    "ts-node": "^10.9.2",
     "typedoc": "^0.15.0",
     "typescript-eslint": "^8.46.0"
   },

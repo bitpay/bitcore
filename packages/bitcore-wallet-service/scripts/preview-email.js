@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import 'ts-node/register';
+import 'ts-node/esm';
 import { exec } from 'child_process';
 import fs from 'fs';
 import os from 'os';
