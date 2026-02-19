@@ -184,6 +184,16 @@ describe('EVM Routes', function () {
         });
     });
 
+    it('should return 400 for unsupported chain/network on v2', done => {
+      request.get(`/api/ETH/sepolia/aave/account/${address}?version=v2`)
+        .expect(400)
+        .end((err, res) => {
+          if (err) return done(err);
+          expect(res.text).to.equal('Unsupported chain or network for Aave');
+          done();
+        });
+    });
+
     it('should get v3 account-data shape', done => {
       request.get(`/api/ETH/sepolia/aave/account/${address}?version=v3`)
         .expect(200)
@@ -197,6 +207,16 @@ describe('EVM Routes', function () {
             'ltv',
             'healthFactor'
           ]);
+          done();
+        });
+    });
+
+    it('should return 400 for unsupported chain/network on v3', done => {
+      request.get(`/api/ETH/regtest/aave/account/${address}?version=v3`)
+        .expect(400)
+        .end((err, res) => {
+          if (err) return done(err);
+          expect(res.text).to.equal('Unsupported chain or network for Aave');
           done();
         });
     });

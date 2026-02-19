@@ -1,3 +1,26 @@
+export const AAVE_VERSIONS = ['v2', 'v3'] as const;
+export type AaveVersion = typeof AAVE_VERSIONS[number];
+
+interface AaveAccountDataCommon {
+  currentLiquidationThreshold: string;
+  ltv: string;
+  healthFactor: string;
+}
+
+export interface AaveV2AccountData extends AaveAccountDataCommon {
+  totalCollateralETH: string;
+  totalDebtETH: string;
+  availableBorrowsETH: string;
+}
+
+export interface AaveV3AccountData extends AaveAccountDataCommon {
+  totalCollateralBase: string;
+  totalDebtBase: string;
+  availableBorrowsBase: string;
+}
+
+export type AaveAccountData = AaveV2AccountData | AaveV3AccountData;
+
 /**
  * Aave Pool contract addresses by version, chain, and network.
  * Source: https://aave.com/docs/resources/addresses
@@ -31,8 +54,12 @@ export const AAVE_POOL_CONTRACT_ADDRESS: Record<'v2' | 'v3', Record<string, Reco
   }
 };
 
-export function getAavePoolAddress(chain: string, network: string, version: 'v2' | 'v3'): string | undefined {
+export function getAavePoolAddress(chain: string, network: string, version: AaveVersion): string | undefined {
   const normalizedChain = chain.toUpperCase();
   const normalizedNetwork = network.toLowerCase();
   return AAVE_POOL_CONTRACT_ADDRESS[version]?.[normalizedChain]?.[normalizedNetwork];
+}
+
+export function isAaveVersion(value: string): value is AaveVersion {
+  return (AAVE_VERSIONS as readonly string[]).includes(value);
 }

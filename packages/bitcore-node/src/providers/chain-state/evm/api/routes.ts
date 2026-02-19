@@ -8,6 +8,7 @@ import { Config } from '../../../../services/config';
 import { IEVMNetworkConfig } from '../../../../types/Config';
 import { castToBool } from '../../../../utils';
 import { OPGasPriceOracleAbi, OPGasPriceOracleAddress } from '../abi/opGasPriceOracle';
+import { getAavePoolAddress, isAaveVersion } from './aave';
 import { BaseEVMStateProvider } from './csp';
 import { Gnosis } from './gnosis';
 
@@ -93,8 +94,16 @@ export class EVMRouter {
     router.get(`/api/${this.chain}/:network/aave/account/:address`, async (req, res) => {
       const { address, network } = req.params;
       const requestedVersion = String(req.query.version || 'v3').toLowerCase();
-      if (!['v2', 'v3'].includes(requestedVersion)) {
+      if (!isAaveVersion(requestedVersion)) {
         res.status(400).send('Unsupported Aave version');
+        return;
+      }
+      if (!getAavePoolAddress(this.chain, network, requestedVersion)) {
+        res.status(400).send('Unsupported chain or network for Aave');
+        return;
+      }
+      if(!Web3.utils.isAddress(address)) {
+        res.status(400).send('Invalid address');
         return;
       }
 
@@ -102,7 +111,7 @@ export class EVMRouter {
         const accountData = await this.csp.getAaveUserAccountData({
           network,
           address,
-          version: requestedVersion as 'v2' | 'v3'
+          version: requestedVersion
         });
         res.json(accountData);
       } catch (err: any) {

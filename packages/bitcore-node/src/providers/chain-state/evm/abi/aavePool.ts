@@ -1641,4 +1641,4 @@ export const AavePoolAbi = [
     "stateMutability": "nonpayable",
     "type": "function"
   }
-];
+] as const;
