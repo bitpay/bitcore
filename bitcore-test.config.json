@@ -64,6 +64,19 @@
             }
           ],
           "threads": 0
+        },
+        "sepolia": {
+          "chainSource": "external",
+          "trustedPeers": [],
+          "providers": [
+            {
+              "host": "ethereum-sepolia.publicnode.com",
+              "protocol": "https",
+              "port": "",
+              "dataType": "combined"
+            }
+          ],
+          "threads": 0
         }
       },
       "MATIC": {
