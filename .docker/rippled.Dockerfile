@@ -1,4 +1,5 @@
 FROM node:18-bullseye
+WORKDIR /.docker
 
 RUN apt-get update
 RUN apt-get install sudo
@@ -15,7 +16,7 @@ RUN sudo apt -y update
 RUN sudo apt -y install rippled
 
 RUN sudo rm /etc/opt/ripple/rippled.cfg
-COPY ./.docker/rippled.cfg /home/docker
+COPY ./rippled.cfg /home/docker
 RUN sudo cp /home/docker/rippled.cfg /etc/opt/ripple/rippled.cfg
 
 ENTRYPOINT ["sudo", "rippled", "-a", "--start", "--conf=/home/docker/rippled.cfg"]
