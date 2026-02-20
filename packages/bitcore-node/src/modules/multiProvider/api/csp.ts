@@ -14,6 +14,7 @@ import logger from '../../../logger';
 import { EVMTransactionStorage } from '../../../providers/chain-state/evm/models/transaction';
 import { EVMTransactionJSON } from '../../../providers/chain-state/evm/types';
 import {
+  GetBlockBeforeTimeParams,
   StreamAddressUtxosParams,
   StreamTransactionParams,
   StreamWalletTransactionsParams
@@ -247,8 +248,10 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
           continue;
         }
 
-        // Preflight succeeded - commit to this provider, pipe to response.
+        // Preflight succeeded - commit to this provider
+        logger.debug(`MultiProvider: ${provider.adapter.name} streaming ${address} on ${this.chain}:${network}`);
         txStream.on('error', (err) => {
+          logger.warn(`MultiProvider: ${provider.adapter.name} mid-stream error for ${address}: ${err.message}`);
           if (err instanceof AdapterError && err.isBreakerable) {
             provider.health.recordFailure(err);
           }
@@ -351,11 +354,11 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
     const chainId = await this.getChainId({ network });
     const providers = this.getProvidersForNetwork(network);
 
-    // Find first available provider for this network
     let activeProvider = providers.find(p => p.health.isAvailable());
     if (!activeProvider) {
       throw new AllProvidersUnavailableError('walletTransactions', this.chain, network);
     }
+    logger.debug(`MultiProvider: wallet stream using ${activeProvider.adapter.name} for ${this.chain}:${network} (${walletAddresses.length} addresses)`);
 
     for (const address of walletAddresses) {
       try {
@@ -374,10 +377,13 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
           .catch(e => logger.warn(`Failed to update ${this.chain}:${network} address lastQueryTime: %o`, e));
       } catch (error) {
         activeProvider.health.recordFailure(error as Error);
-        logger.warn(`MultiProvider: ${activeProvider.adapter.name} wallet stream failed for ${address}`);
-        // Try next available provider for remaining addresses
-        activeProvider = providers.find(p => p.health.isAvailable());
-        if (!activeProvider) throw error;
+        const nextProvider = providers.find(p => p.health.isAvailable());
+        if (!nextProvider) {
+          logger.error(`MultiProvider: ${activeProvider.adapter.name} wallet stream failed for ${address}, no providers left`);
+          throw error;
+        }
+        logger.warn(`MultiProvider: ${activeProvider.adapter.name} wallet stream failed for ${address}, failing over to ${nextProvider.adapter.name}`);
+        activeProvider = nextProvider;
       }
     }
 
@@ -402,18 +408,20 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
         continue;
       }
 
-      // Enforce floor semantics via RPC timestamp verification
-      return await this._enforceFloorSemantics(network, attempt.result!, date);
+      logger.debug(`MultiProvider: ${provider.adapter.name} resolved date to block ${attempt.result}`);
+      return await this._verifyBlockBeforeDate(network, attempt.result!, date);
     }
 
     throw new AllProvidersUnavailableError('getBlockNumberByDate', this.chain, network);
   }
 
   /**
-   * Verify and adjust a candidate block number to enforce floor semantics:
-   * the returned block's timestamp MUST be <= target date.
+   * Adapters give an approximate block number for a date. This double-checks it
+   * via RPC and nudges it forward or backward (up to 16 blocks) so the final
+   * block's timestamp is at or before the target date. Falls back to a full
+   * binary search if the adapter was way off.
    */
-  private async _enforceFloorSemantics(network: string, candidateBlock: number, date: Date): Promise<number> {
+  private async _verifyBlockBeforeDate(network: string, candidateBlock: number, date: Date): Promise<number> {
     const { web3 } = await this.getWeb3(network, { type: 'historical' });
     const targetTimestamp = Math.floor(date.getTime() / 1000);
     const MAX_ADJUSTMENTS = 16;
@@ -431,7 +439,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
     }
 
     if (Number(block.timestamp) > targetTimestamp) {
-      logger.warn(`MultiProvider: floor semantics adjustment exhausted, falling back to binary search`);
+      logger.warn(`MultiProvider: block verification exceeded ${MAX_ADJUSTMENTS} adjustments, falling back to binary search`);
       return this._binarySearchBlockByTimestamp(web3, targetTimestamp);
     }
 
@@ -447,7 +455,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
     return blockNum;
   }
 
-  /** Pure RPC binary search fallback for floor semantics enforcement */
+  /** Fallback: find the latest block with timestamp <= target using only RPC */
   private async _binarySearchBlockByTimestamp(web3: any, targetTimestamp: number): Promise<number> {
     const latestBlock = await web3.eth.getBlock('latest');
     let high = Number(latestBlock.number);
@@ -468,9 +476,9 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
     return low;
   }
 
-  // @override - getBlockBeforeTime uses indexed API providers for date->block resolution
-  async getBlockBeforeTime(params: { query: { chain: string; network: string; time: string } }) {
-    const { chain, network, time } = params.query;
+  // @override - uses indexed API providers for date->block resolution
+  async getBlockBeforeTime(params: GetBlockBeforeTimeParams) {
+    const { network, time } = params;
     const date = new Date(time);
     const chainId = await this.getChainId({ network });
     const blockNum = await this._getBlockNumberByDate({ date, chainId, network });

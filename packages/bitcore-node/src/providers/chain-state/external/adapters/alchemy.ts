@@ -1,12 +1,10 @@
-// src/providers/chain-state/external/adapters/alchemy.ts
-
 import axios, { AxiosError } from 'axios';
 import { IIndexedAPIAdapter, AdapterTransactionParams, AdapterStreamParams, AdapterBlockByDateParams } from './IIndexedAPIAdapter';
 import { IEVMTransactionTransformed } from '../../evm/types';
 import { EVMTransactionStorage } from '../../evm/models/transaction';
 import { ExternalApiStream } from '../streams/apiStream';
 import { Web3 } from '@bitpay-labs/crypto-wallet-core';
-import { AdapterError, NotFoundError, AuthError, RateLimitError, TimeoutError, UpstreamError, InvalidRequestError } from './errors';
+import { AdapterError, AuthError, RateLimitError, TimeoutError, UpstreamError, InvalidRequestError } from './errors';
 import logger from '../../../../logger';
 
 interface AlchemyConfig {
@@ -51,9 +49,9 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
     const tx = txResponse.result;
     const receipt = receiptResponse.result;
     if (!tx) return undefined; // Not found - return undefined per interface contract
-    if (!tx.blockNumber) return undefined; // Pending tx - treat as not found (bitcore indexes confirmed only)
-    // Missing receipt with confirmed tx: rare (chain reorg), treat as upstream error
+    if (!tx.blockNumber) return undefined; // Pending tx - treat as not found
     if (!receipt) {
+      logger.warn(`Alchemy: receipt missing for confirmed tx ${txId} (possible reorg)`);
       throw new UpstreamError(this.name, undefined, `receipt missing for confirmed tx ${txId}`);
     }
 
@@ -75,7 +73,7 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
       { chain, network, address, args, requestTimeout: this.requestTimeout },
       (transfer) => {
         const _tx = this._transformAssetTransfer({ chain, network, transfer });
-        const confirmations = args.tipHeight ? args.tipHeight - _tx.blockHeight + 1 : 0;
+        const confirmations = args.tipHeight ? args.tipHeight - (_tx.blockHeight ?? 0) + 1 : 0;
         return EVMTransactionStorage._apiTransform({ ..._tx, confirmations }, { object: true });
       }
     );
@@ -94,7 +92,7 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
       },
       (transfer) => {
         const _tx = this._transformAssetTransfer({ chain, network, transfer });
-        const confirmations = args.tipHeight ? args.tipHeight - _tx.blockHeight + 1 : 0;
+        const confirmations = args.tipHeight ? args.tipHeight - (_tx.blockHeight ?? 0) + 1 : 0;
         return EVMTransactionStorage._apiTransform({ ..._tx, confirmations }, { object: true });
       }
     );
@@ -104,8 +102,6 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
     const { date } = params;
     const targetTimestamp = Math.floor(new Date(date).getTime() / 1000);
 
-    // Binary search: find the block closest to the target timestamp
-    // Hard cap of 64 iterations prevents runaway RPC calls
     const MAX_ITERATIONS = 64;
     const latestBlockResp = await this._jsonRpc('eth_blockNumber', []);
     let high = parseInt(latestBlockResp.result, 16);
@@ -297,9 +293,6 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
 export class AlchemyAssetTransferStream extends ExternalApiStream {
   private pageKey: string | null = null;
   private toPageKey: string | null = null;
-  private results: number = 0;
-  private page: number = 0;
-  /** Bounded LRU-style dedup: evict oldest entries when exceeding max size */
   private seenTxHashes: Set<string> = new Set();
   private static readonly MAX_DEDUP_ENTRIES = 10000;
   private requestTimeout: number;
@@ -379,7 +372,6 @@ export class AlchemyAssetTransferStream extends ExternalApiStream {
         ...(toData?.transfers || [])
       ];
 
-      let pushed = false;
       for (const transfer of allTransfers) {
         // Deduplicate: a tx can appear in both from and to results.
         // Use uniqueId (Alchemy provides this) to avoid collisions when a single tx
@@ -391,7 +383,7 @@ export class AlchemyAssetTransferStream extends ExternalApiStream {
 
         // Bound dedup set to prevent unbounded memory growth for high-activity addresses
         if (this.seenTxHashes.size > AlchemyAssetTransferStream.MAX_DEDUP_ENTRIES) {
-          // Evict oldest entries (first ~10% added)
+          logger.debug(`Alchemy: dedup set exceeded ${AlchemyAssetTransferStream.MAX_DEDUP_ENTRIES}, evicting oldest entries`);
           const iterator = this.seenTxHashes.values();
           for (let i = 0; i < 1000; i++) {
             const oldest = iterator.next().value;
@@ -405,7 +397,6 @@ export class AlchemyAssetTransferStream extends ExternalApiStream {
         }
         this.push(this.transformFn(transfer));
         this.results++;
-        pushed = true;
       }
 
       this.pageKey = fromData?.pageKey || null;
@@ -419,7 +410,6 @@ export class AlchemyAssetTransferStream extends ExternalApiStream {
       // the stream consumer will naturally fetch the next page (no recursive call needed).
       this.page++;
     } catch (error) {
-      // Wrap raw errors in AdapterError so circuit breaker logic works consistently
       if (error instanceof AdapterError) {
         this.emit('error', error);
       } else if (axios.isAxiosError(error)) {

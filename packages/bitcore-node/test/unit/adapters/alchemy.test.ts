@@ -247,7 +247,7 @@ describe('AlchemyAdapter', function() {
 
       const stream = adapter.streamAddressTransactions({
         chain: 'ETH', network: 'mainnet', chainId: '1', address: VALID_ADDRESS,
-        args: { startBlock: 0, endBlock: 100 }
+        args: { startBlock: 0, endBlock: 100 } as any
       });
 
       const items: any[] = [];

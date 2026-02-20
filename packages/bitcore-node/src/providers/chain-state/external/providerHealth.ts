@@ -24,7 +24,7 @@ export class ProviderHealth {
   readonly key: string;
 
   constructor(
-    private providerName: string,
+    providerName: string,
     config?: Partial<ProviderHealthConfig>,
     keyParts?: { chain: string; network: string }
   ) {
