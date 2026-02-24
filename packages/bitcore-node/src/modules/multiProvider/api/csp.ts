@@ -3,7 +3,7 @@ import { LRUCache } from 'lru-cache';
 import { BaseEVMStateProvider, BuildWalletTxsStreamParams } from '../../../providers/chain-state/evm/api/csp';
 import { IIndexedAPIAdapter } from '../../../providers/chain-state/external/adapters/IIndexedAPIAdapter';
 import { AdapterFactory } from '../../../providers/chain-state/external/adapters/factory';
-import { AdapterError, InvalidRequestError, AllProvidersUnavailableError, TimeoutError } from '../../../providers/chain-state/external/adapters/errors';
+import { AdapterError, AdapterErrorCode, AllProvidersUnavailableError } from '../../../providers/chain-state/external/adapters/errors';
 import { ProviderHealth } from '../../../providers/chain-state/external/providerHealth';
 import { ExternalApiStream } from '../../../providers/chain-state/external/streams/apiStream';
 import { EVMBlockStorage } from '../../../providers/chain-state/evm/models/block';
@@ -86,7 +86,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
 
   // @override
   // BaseEVMStateProvider.getTransaction() swallows all errors and returns undefined.
-  // We override to let AllProvidersUnavailableError and InvalidRequestError propagate
+  // We override to let AllProvidersUnavailableError and INVALID_REQUEST errors propagate
   // for correct 503/400 HTTP status mapping.
   async getTransaction(params: StreamTransactionParams) {
     try {
@@ -106,7 +106,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
       }
       return undefined;
     } catch (err) {
-      if (err instanceof AllProvidersUnavailableError || err instanceof InvalidRequestError) {
+      if (err instanceof AllProvidersUnavailableError || (err instanceof AdapterError && err.code === AdapterErrorCode.INVALID_REQUEST)) {
         throw err;
       }
       logger.error('MultiProvider: unexpected error in getTransaction: %o', err);
@@ -124,7 +124,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
       return { result };
     } catch (error) {
       const err = error as Error;
-      if (err instanceof InvalidRequestError) {
+      if (err instanceof AdapterError && err.code === AdapterErrorCode.INVALID_REQUEST) {
         throw err; // Bad input — don't record failure, don't failover
       }
       provider.health.recordFailure(err);
@@ -258,7 +258,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
         }
         return; // Stream handled
       } catch (error) {
-        if (error instanceof InvalidRequestError) throw error; // 400 — no failover
+        if (error instanceof AdapterError && (error as AdapterError).code === AdapterErrorCode.INVALID_REQUEST) throw error; // 400 — no failover
         provider.health.recordFailure(error as Error);
         logger.warn(`MultiProvider: ${provider.adapter.name} stream failed for ${address}: ${(error as Error).message}`);
         continue;
@@ -287,7 +287,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
         if (!resolved) {
           resolved = true;
           cleanup();
-          resolve({ success: false, error: new TimeoutError('preflight', timeoutMs) });
+          resolve({ success: false, error: new AdapterError('preflight', AdapterErrorCode.TIMEOUT, `request timed out after ${timeoutMs}ms`) });
         }
       }, timeoutMs);
 

@@ -4,7 +4,7 @@ import { IEVMTransactionTransformed } from '../../evm/types';
 import { EVMTransactionStorage } from '../../evm/models/transaction';
 import { ExternalApiStream } from '../streams/apiStream';
 import { Web3 } from '@bitpay-labs/crypto-wallet-core';
-import { AdapterError, AuthError, RateLimitError, TimeoutError, UpstreamError, InvalidRequestError } from './errors';
+import { AdapterError, AdapterErrorCode } from './errors';
 import { IMultiProviderConfig } from '../../../../types/Config';
 import config from '../../../../config';
 import logger from '../../../../logger';
@@ -37,7 +37,7 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
   private getBaseUrl(chain: string, network: string): string {
     const alchemyNetwork = ALCHEMY_NETWORK_MAP[chain.toUpperCase()]?.[network.toLowerCase()];
     if (!alchemyNetwork) {
-      throw new InvalidRequestError(this.name, `unsupported chain/network: ${chain}/${network}`);
+      throw new AdapterError(this.name, AdapterErrorCode.INVALID_REQUEST, `unsupported chain/network: ${chain}/${network}`);
     }
     return `https://${alchemyNetwork}.g.alchemy.com/v2/${this.apiKey}`;
   }
@@ -47,7 +47,7 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
 
     // Validate before making external call
     if (!TX_HASH_REGEX.test(txId)) {
-      throw new InvalidRequestError(this.name, `invalid txId format: ${txId}`);
+      throw new AdapterError(this.name, AdapterErrorCode.INVALID_REQUEST, `invalid txId format: ${txId}`);
     }
 
     // Need tx + receipt (for gasUsed/fee) + block (for timestamp)
@@ -63,7 +63,7 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
     if (!tx.blockNumber) return undefined; // Pending tx
     if (!receipt) {
       logger.warn(`Alchemy: receipt missing for confirmed tx ${txId} (possible reorg)`);
-      throw new UpstreamError(this.name, undefined, `receipt missing for confirmed tx ${txId}`);
+      throw new AdapterError(this.name, AdapterErrorCode.UPSTREAM, `receipt missing for confirmed tx ${txId}`);
     }
 
     const blockResponse = await this._jsonRpc(url, 'eth_getBlockByNumber', [tx.blockNumber, false]);
@@ -163,17 +163,17 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
 
       // Alchemy may return rate limits as HTTP status or inside JSON-RPC error
       const httpStatus = response.status;
-      if (httpStatus === 401 || httpStatus === 403) throw new AuthError(this.name);
-      if (httpStatus === 429) throw new RateLimitError(this.name);
+      if (httpStatus === 401 || httpStatus === 403) throw new AdapterError(this.name, AdapterErrorCode.AUTH, 'authentication failed');
+      if (httpStatus === 429) throw new AdapterError(this.name, AdapterErrorCode.RATE_LIMIT, 'rate limited');
 
       if (response.data.error) {
         const rpcError = response.data.error;
-        if (rpcError.code === -32602) throw new InvalidRequestError(this.name, rpcError.message);
+        if (rpcError.code === -32602) throw new AdapterError(this.name, AdapterErrorCode.INVALID_REQUEST, rpcError.message);
         const msg = (rpcError.message || '').toLowerCase();
         if (msg.includes('rate limit') || msg.includes('too many requests')) {
-          throw new RateLimitError(this.name);
+          throw new AdapterError(this.name, AdapterErrorCode.RATE_LIMIT, 'rate limited');
         }
-        throw new UpstreamError(this.name, undefined, rpcError.message);
+        throw new AdapterError(this.name, AdapterErrorCode.UPSTREAM, rpcError.message);
       }
       return response.data;
     } catch (error) {
@@ -185,12 +185,12 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
   private _classifyError(error: unknown): never {
     if (axios.isAxiosError(error)) {
       const status = (error as AxiosError).response?.status;
-      if (status === 401 || status === 403) throw new AuthError(this.name);
-      if (status === 429) throw new RateLimitError(this.name);
-      if (error.code === 'ECONNABORTED') throw new TimeoutError(this.name, this.requestTimeout);
-      if (status && status >= 500) throw new UpstreamError(this.name, status);
+      if (status === 401 || status === 403) throw new AdapterError(this.name, AdapterErrorCode.AUTH, 'authentication failed');
+      if (status === 429) throw new AdapterError(this.name, AdapterErrorCode.RATE_LIMIT, 'rate limited');
+      if (error.code === 'ECONNABORTED') throw new AdapterError(this.name, AdapterErrorCode.TIMEOUT, `request timed out after ${this.requestTimeout}ms`);
+      if (status && status >= 500) throw new AdapterError(this.name, AdapterErrorCode.UPSTREAM, `HTTP ${status}`);
     }
-    throw new UpstreamError(this.name, undefined, (error as Error)?.message);
+    throw new AdapterError(this.name, AdapterErrorCode.UPSTREAM, (error as Error)?.message);
   }
 
   private _transformTransaction(params: {
@@ -305,7 +305,7 @@ export class AlchemyAssetTransferStream extends ExternalApiStream {
     try {
       Web3.utils.toChecksumAddress(alchemyParams.address);
     } catch {
-      process.nextTick(() => this.emit('error', new InvalidRequestError('Alchemy', `invalid address: ${alchemyParams.address}`)));
+      process.nextTick(() => this.emit('error', new AdapterError('Alchemy', AdapterErrorCode.INVALID_REQUEST, `invalid address: ${alchemyParams.address}`)));
     }
   }
 
@@ -390,12 +390,12 @@ export class AlchemyAssetTransferStream extends ExternalApiStream {
         this.emit('error', error);
       } else if (axios.isAxiosError(error)) {
         const status = (error as AxiosError).response?.status;
-        if (status === 429) this.emit('error', new RateLimitError('Alchemy'));
-        else if (status === 401 || status === 403) this.emit('error', new AuthError('Alchemy'));
-        else if (error.code === 'ECONNABORTED') this.emit('error', new TimeoutError('Alchemy', this.requestTimeout));
-        else this.emit('error', new UpstreamError('Alchemy', status));
+        if (status === 429) this.emit('error', new AdapterError('Alchemy', AdapterErrorCode.RATE_LIMIT, 'rate limited'));
+        else if (status === 401 || status === 403) this.emit('error', new AdapterError('Alchemy', AdapterErrorCode.AUTH, 'authentication failed'));
+        else if (error.code === 'ECONNABORTED') this.emit('error', new AdapterError('Alchemy', AdapterErrorCode.TIMEOUT, `request timed out after ${this.requestTimeout}ms`));
+        else this.emit('error', new AdapterError('Alchemy', AdapterErrorCode.UPSTREAM, `HTTP ${status}`));
       } else {
-        this.emit('error', new UpstreamError('Alchemy', undefined, (error as Error)?.message));
+        this.emit('error', new AdapterError('Alchemy', AdapterErrorCode.UPSTREAM, (error as Error)?.message));
       }
     }
   }

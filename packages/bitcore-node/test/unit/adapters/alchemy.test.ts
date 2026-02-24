@@ -2,10 +2,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import axios from 'axios';
 import path from 'path';
-import {
-  InvalidRequestError, AuthError, RateLimitError,
-  TimeoutError, UpstreamError
-} from '../../../src/providers/chain-state/external/adapters/errors';
+import { AdapterError, AdapterErrorCode } from '../../../src/providers/chain-state/external/adapters/errors';
 
 // --- Module mocks (must run before AlchemyAdapter import) ---
 const mockWeb3 = {
@@ -152,33 +149,36 @@ describe('AlchemyAdapter', function() {
       expect(await adapter.getTransaction(params)).to.be.undefined;
     });
 
-    it('should throw UpstreamError when receipt missing on confirmed tx', async function() {
+    it('should throw UPSTREAM error when receipt missing on confirmed tx', async function() {
       axiosPostStub.onCall(0).resolves(rpcOk(MOCK_TX));
       axiosPostStub.onCall(1).resolves(rpcOk(null));
       try {
         await adapter.getTransaction(params);
         expect.fail('Should have thrown');
       } catch (err: any) {
-        expect(err).to.be.instanceOf(UpstreamError);
+        expect(err).to.be.instanceOf(AdapterError);
+        expect(err.code).to.equal(AdapterErrorCode.UPSTREAM);
       }
     });
 
-    it('should throw InvalidRequestError for bad txId format', async function() {
+    it('should throw INVALID_REQUEST for bad txId format', async function() {
       try {
         await adapter.getTransaction({ ...params, txId: 'bad' });
         expect.fail('Should have thrown');
       } catch (err: any) {
-        expect(err).to.be.instanceOf(InvalidRequestError);
+        expect(err).to.be.instanceOf(AdapterError);
+        expect(err.code).to.equal(AdapterErrorCode.INVALID_REQUEST);
         expect(axiosPostStub.called).to.be.false;
       }
     });
 
-    it('should throw InvalidRequestError for unsupported chain/network', async function() {
+    it('should throw INVALID_REQUEST for unsupported chain/network', async function() {
       try {
         await adapter.getTransaction({ ...params, chain: 'BTC', network: 'mainnet' });
         expect.fail('Should have thrown');
       } catch (err: any) {
-        expect(err).to.be.instanceOf(InvalidRequestError);
+        expect(err).to.be.instanceOf(AdapterError);
+        expect(err.code).to.equal(AdapterErrorCode.INVALID_REQUEST);
         expect(err.message).to.include('unsupported');
       }
     });
@@ -197,49 +197,50 @@ describe('AlchemyAdapter', function() {
 
   // --- Error classification ---
   describe('error classification via _jsonRpc', function() {
-    const errorCases: Array<{ scenario: string; setup: () => void; expectedType: any }> = [
+    const errorCases: Array<{ scenario: string; setup: () => void; expectedCode: AdapterErrorCode }> = [
       {
-        scenario: 'HTTP 401 → AuthError',
+        scenario: 'HTTP 401 → AUTH',
         setup: () => axiosPostStub.rejects({ isAxiosError: true, response: { status: 401 } }),
-        expectedType: AuthError
+        expectedCode: AdapterErrorCode.AUTH
       },
       {
-        scenario: 'HTTP 429 → RateLimitError',
+        scenario: 'HTTP 429 → RATE_LIMIT',
         setup: () => axiosPostStub.rejects({ isAxiosError: true, response: { status: 429 } }),
-        expectedType: RateLimitError
+        expectedCode: AdapterErrorCode.RATE_LIMIT
       },
       {
-        scenario: 'HTTP 500 → UpstreamError',
+        scenario: 'HTTP 500 → UPSTREAM',
         setup: () => axiosPostStub.rejects({ isAxiosError: true, response: { status: 500 } }),
-        expectedType: UpstreamError
+        expectedCode: AdapterErrorCode.UPSTREAM
       },
       {
-        scenario: 'timeout → TimeoutError',
+        scenario: 'timeout → TIMEOUT',
         setup: () => axiosPostStub.rejects({ isAxiosError: true, code: 'ECONNABORTED' }),
-        expectedType: TimeoutError
+        expectedCode: AdapterErrorCode.TIMEOUT
       },
       {
-        scenario: 'JSON-RPC error -32602 → InvalidRequestError',
+        scenario: 'JSON-RPC error -32602 → INVALID_REQUEST',
         setup: () => axiosPostStub.resolves({ status: 200, data: { jsonrpc: '2.0', id: 1, error: { code: -32602, message: 'invalid params' } } }),
-        expectedType: InvalidRequestError
+        expectedCode: AdapterErrorCode.INVALID_REQUEST
       },
       {
-        scenario: 'JSON-RPC rate limit message → RateLimitError',
+        scenario: 'JSON-RPC rate limit message → RATE_LIMIT',
         setup: () => axiosPostStub.resolves({ status: 200, data: { jsonrpc: '2.0', id: 1, error: { code: -32000, message: 'rate limit exceeded' } } }),
-        expectedType: RateLimitError
+        expectedCode: AdapterErrorCode.RATE_LIMIT
       },
     ];
 
     const params = { chain: 'ETH', network: 'mainnet', chainId: '1', txId: VALID_TX_HASH };
 
-    errorCases.forEach(({ scenario, setup, expectedType }) => {
+    errorCases.forEach(({ scenario, setup, expectedCode }) => {
       it(`should classify ${scenario}`, async function() {
         setup();
         try {
           await adapter.getTransaction(params);
           expect.fail('Should have thrown');
         } catch (err: any) {
-          expect(err).to.be.instanceOf(expectedType);
+          expect(err).to.be.instanceOf(AdapterError);
+          expect(err.code).to.equal(expectedCode);
         }
       });
     });
@@ -268,13 +269,14 @@ describe('AlchemyAdapter', function() {
       expect(items).to.have.length(2);
     });
 
-    it('should emit InvalidRequestError for invalid address', function(done) {
+    it('should emit INVALID_REQUEST error for invalid address', function(done) {
       const stream = new AlchemyAssetTransferStream(
         'https://example.com', { chain: 'ETH', network: 'mainnet', address: 'bad-address', args: {} },
         (t: any) => t
       );
       stream.on('error', (err: any) => {
-        expect(err).to.be.instanceOf(InvalidRequestError);
+        expect(err).to.be.instanceOf(AdapterError);
+        expect(err.code).to.equal(AdapterErrorCode.INVALID_REQUEST);
         done();
       });
     });

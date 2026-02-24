@@ -17,7 +17,7 @@ export interface IIndexedAPIAdapter {
    * Get a single transaction by hash.
    * Returns the transaction in internal format, or undefined if not found.
    * MUST NOT throw for "not found" — return undefined instead.
-   * MUST throw AdapterError subclasses for all other failures.
+   * MUST throw AdapterError for all other failures.
    */
   getTransaction(params: AdapterTransactionParams): Promise<IEVMTransactionTransformed | undefined>;
 
