@@ -1,23 +1,24 @@
 import { IIndexedAPIAdapter } from './IIndexedAPIAdapter';
+import { IMultiProviderConfig } from '../../../../types/Config';
 import { AlchemyAdapter } from './alchemy';
 
 export class AdapterFactory {
-  private static registry: Record<string, new (config: any) => IIndexedAPIAdapter> = {
+  private static registry: Record<string, new (config: IMultiProviderConfig) => IIndexedAPIAdapter> = {
     alchemy: AlchemyAdapter
   };
 
-  static createAdapter(providerName: string, config: any): IIndexedAPIAdapter {
-    const AdapterClass = this.registry[providerName.toLowerCase()];
+  static createAdapter(providerConfig: IMultiProviderConfig): IIndexedAPIAdapter {
+    const AdapterClass = this.registry[providerConfig.name.toLowerCase()];
     if (!AdapterClass) {
       throw new Error(
-        `Unknown indexed API provider: "${providerName}". ` +
+        `Unknown indexed API provider: "${providerConfig.name}". ` +
         `Available: ${Object.keys(this.registry).join(', ')}`
       );
     }
-    return new AdapterClass(config);
+    return new AdapterClass(providerConfig);
   }
 
-  static registerAdapter(name: string, adapterClass: new (config: any) => IIndexedAPIAdapter): void {
+  static registerAdapter(name: string, adapterClass: new (config: IMultiProviderConfig) => IIndexedAPIAdapter): void {
     this.registry[name.toLowerCase()] = adapterClass;
   }
 

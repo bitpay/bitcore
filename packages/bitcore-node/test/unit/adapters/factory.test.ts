@@ -3,7 +3,7 @@ import { AdapterFactory } from '../../../src/providers/chain-state/external/adap
 
 describe('AdapterFactory', function() {
   it('should throw for unknown provider', function() {
-    expect(() => AdapterFactory.createAdapter('unknown', {})).to.throw('Unknown indexed API provider');
+    expect(() => AdapterFactory.createAdapter({ name: 'unknown', priority: 1 } as any)).to.throw('Unknown indexed API provider');
   });
 
   it('should register and create a custom adapter', function() {
@@ -12,7 +12,7 @@ describe('AdapterFactory', function() {
       readonly supportedChains = ['ETH'];
     }
     AdapterFactory.registerAdapter('test', TestAdapter as any);
-    const adapter = AdapterFactory.createAdapter('test', {});
+    const adapter = AdapterFactory.createAdapter({ name: 'test', priority: 1 });
     expect(adapter.name).to.eq('Test');
     AdapterFactory.registerAdapter('test', undefined as any);
   });
@@ -23,7 +23,7 @@ describe('AdapterFactory', function() {
   });
 
   it('should be case-insensitive for provider names', function() {
-    const adapter = AdapterFactory.createAdapter('Alchemy', { apiKey: 'test', network: 'eth-mainnet' });
+    const adapter = AdapterFactory.createAdapter({ name: 'Alchemy', priority: 1 });
     expect(adapter).to.exist;
   });
 });

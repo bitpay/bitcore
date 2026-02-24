@@ -7,36 +7,36 @@ import {
 describe('Error Taxonomy', function() {
 
   describe('AdapterError base class', function() {
-    it('should extend Error with providerName and isBreakerable', function() {
+    it('should extend Error with providerName and affectsHealth', function() {
       const err = new AdapterError('msg', 'TestProvider', false);
       expect(err).to.be.instanceOf(Error);
       expect(err.name).to.equal('AdapterError');
       expect(err.providerName).to.equal('TestProvider');
-      expect(err.isBreakerable).to.equal(false);
+      expect(err.affectsHealth).to.equal(false);
       expect(err.message).to.equal('msg');
     });
 
-    it('should default isBreakerable to true', function() {
-      expect(new AdapterError('msg', 'P').isBreakerable).to.equal(true);
+    it('should default affectsHealth to true', function() {
+      expect(new AdapterError('msg', 'P').affectsHealth).to.equal(true);
     });
   });
 
   describe('subclass properties', function() {
-    const cases: Array<{ Class: any; args: any[]; isBreakerable: boolean; msgIncludes: string }> = [
-      { Class: NotFoundError, args: ['Moralis', 'tx 0xabc'], isBreakerable: false, msgIncludes: 'not found' },
-      { Class: InvalidRequestError, args: ['Alchemy', 'bad address'], isBreakerable: false, msgIncludes: 'invalid request' },
-      { Class: AuthError, args: ['Moralis'], isBreakerable: true, msgIncludes: 'authentication failed' },
-      { Class: RateLimitError, args: ['Alchemy', 5000], isBreakerable: true, msgIncludes: 'rate limited' },
-      { Class: TimeoutError, args: ['Moralis', 30000], isBreakerable: true, msgIncludes: '30000ms' },
-      { Class: UpstreamError, args: ['Alchemy', 502, 'bad gateway'], isBreakerable: true, msgIncludes: '502' },
+    const cases: Array<{ Class: any; args: any[]; affectsHealth: boolean; msgIncludes: string }> = [
+      { Class: NotFoundError, args: ['Moralis', 'tx 0xabc'], affectsHealth: false, msgIncludes: 'not found' },
+      { Class: InvalidRequestError, args: ['Alchemy', 'bad address'], affectsHealth: false, msgIncludes: 'invalid request' },
+      { Class: AuthError, args: ['Moralis'], affectsHealth: true, msgIncludes: 'authentication failed' },
+      { Class: RateLimitError, args: ['Alchemy', 5000], affectsHealth: true, msgIncludes: 'rate limited' },
+      { Class: TimeoutError, args: ['Moralis', 30000], affectsHealth: true, msgIncludes: '30000ms' },
+      { Class: UpstreamError, args: ['Alchemy', 502, 'bad gateway'], affectsHealth: true, msgIncludes: '502' },
     ];
 
-    cases.forEach(({ Class, args, isBreakerable, msgIncludes }) => {
-      it(`${Class.name}: isBreakerable=${isBreakerable}, message includes "${msgIncludes}"`, function() {
+    cases.forEach(({ Class, args, affectsHealth, msgIncludes }) => {
+      it(`${Class.name}: affectsHealth=${affectsHealth}, message includes "${msgIncludes}"`, function() {
         const err = new Class(...args);
         expect(err).to.be.instanceOf(AdapterError);
         expect(err.name).to.equal(Class.name);
-        expect(err.isBreakerable).to.equal(isBreakerable);
+        expect(err.affectsHealth).to.equal(affectsHealth);
         expect(err.message).to.include(msgIncludes);
         expect(err.providerName).to.be.a('string');
       });

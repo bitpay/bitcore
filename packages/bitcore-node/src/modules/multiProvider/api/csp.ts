@@ -1,18 +1,20 @@
-// src/modules/multiProvider/api/csp.ts
-
 import { Readable, PassThrough } from 'stream';
+import { LRUCache } from 'lru-cache';
 import { BaseEVMStateProvider, BuildWalletTxsStreamParams } from '../../../providers/chain-state/evm/api/csp';
 import { IIndexedAPIAdapter } from '../../../providers/chain-state/external/adapters/IIndexedAPIAdapter';
 import { AdapterFactory } from '../../../providers/chain-state/external/adapters/factory';
 import { AdapterError, InvalidRequestError, AllProvidersUnavailableError, TimeoutError } from '../../../providers/chain-state/external/adapters/errors';
 import { ProviderHealth } from '../../../providers/chain-state/external/providerHealth';
 import { ExternalApiStream } from '../../../providers/chain-state/external/streams/apiStream';
+import { EVMBlockStorage } from '../../../providers/chain-state/evm/models/block';
 import { Config } from '../../../services/config';
-import { IProviderConfig } from '../../../types/Config';
+import { IMultiProviderConfig } from '../../../types/Config';
+import { IBlock } from '../../../types/Block';
 import { WalletAddressStorage } from '../../../models/walletAddress';
 import logger from '../../../logger';
 import { EVMTransactionStorage } from '../../../providers/chain-state/evm/models/transaction';
 import { EVMTransactionJSON } from '../../../providers/chain-state/evm/types';
+import { normalizeChainNetwork } from '../../../utils';
 import {
   GetBlockBeforeTimeParams,
   StreamAddressUtxosParams,
@@ -27,12 +29,8 @@ interface ProviderWithHealth {
 }
 
 export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
-  /**
-   * Keyed by network name (e.g., 'mainnet', 'testnet').
-   * Each network has its own sorted array of providers with independent health trackers.
-   * This prevents the last-network-wins overwrite bug.
-   */
   private providersByNetwork: Map<string, ProviderWithHealth[]> = new Map();
+  blockAtTimeCache: { [key: string]: LRUCache<string, IBlock> } = {};
 
   constructor(chain: string = 'ETH') {
     super(chain);
@@ -46,10 +44,10 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
       return;
     }
 
-    // Iterate networks - each gets its own provider array with independent health trackers
+    // Each network gets its own provider array with independent health trackers
     for (const [network, networkConfig] of Object.entries(chainConfig)) {
       const evmConfig = networkConfig as any;
-      const externalProviders: IProviderConfig[] = evmConfig.externalProviders || [];
+      const externalProviders: IMultiProviderConfig[] = evmConfig.externalProviders || [];
 
       if (externalProviders.length === 0) {
         logger.warn(`No externalProviders configured for ${this.chain}:${network}`);
@@ -58,7 +56,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
 
       const providers = externalProviders
         .map((providerConfig) => ({
-          adapter: AdapterFactory.createAdapter(providerConfig.name, providerConfig.config),
+          adapter: AdapterFactory.createAdapter(providerConfig),
           health: new ProviderHealth(
             providerConfig.name,
             providerConfig.healthConfig,
@@ -77,10 +75,6 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
     }
   }
 
-  /**
-   * Get the providers for a specific network.
-   * Throws AllProvidersUnavailableError (-> 503) if no providers are configured.
-   */
   private getProvidersForNetwork(network: string): ProviderWithHealth[] {
     const providers = this.providersByNetwork.get(network);
     if (!providers || providers.length === 0) {
@@ -90,11 +84,10 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
     return providers;
   }
 
-  // @override getTransaction (the PUBLIC method, not just _getTransaction)
-  // CRITICAL: BaseEVMStateProvider.getTransaction() wraps _getTransaction() in a try/catch
-  // that swallows ALL errors and returns undefined (line 411-414 of csp.ts).
-  // We MUST override the public getTransaction() to let AllProvidersUnavailableError
-  // and InvalidRequestError propagate to route handlers for correct 503/400 mapping.
+  // @override
+  // BaseEVMStateProvider.getTransaction() swallows all errors and returns undefined.
+  // We override to let AllProvidersUnavailableError and InvalidRequestError propagate
+  // for correct 503/400 HTTP status mapping.
   async getTransaction(params: StreamTransactionParams) {
     try {
       params.network = params.network.toLowerCase();
@@ -111,22 +104,16 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
         const convertedTx = EVMTransactionStorage._apiTransform(found, { object: true }) as EVMTransactionJSON;
         return { ...convertedTx, confirmations };
       }
-      return undefined; // Not found across all providers -> route returns 404
+      return undefined;
     } catch (err) {
-      // Let typed errors propagate for correct HTTP status mapping
       if (err instanceof AllProvidersUnavailableError || err instanceof InvalidRequestError) {
         throw err;
       }
-      // All other errors: log and return undefined (preserve base class behavior)
       logger.error('MultiProvider: unexpected error in getTransaction: %o', err);
       return undefined;
     }
   }
 
-  /**
-   * Try an adapter call, recording success/failure on the provider's health tracker.
-   * InvalidRequestError (bad client input) is re-thrown immediately without recording failure.
-   */
   private async withHealthTracking<T>(
     provider: ProviderWithHealth,
     fn: () => Promise<T>
@@ -138,15 +125,13 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
     } catch (error) {
       const err = error as Error;
       if (err instanceof InvalidRequestError) {
-        // Bad input - don't record failure, don't failover. Re-throw immediately.
-        throw err;
+        throw err; // Bad input — don't record failure, don't failover
       }
       provider.health.recordFailure(err);
       return { error: err };
     }
   }
 
-  // Internal implementation: sequential failover for single transaction lookup.
   async _getTransaction(params: StreamTransactionParams): Promise<{ tipHeight: number; found: any }> {
     const { chain, network, txId } = params;
     const { web3 } = await this.getWeb3(network, { type: 'historical' });
@@ -175,10 +160,9 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
       }
 
       if (attempt.result) {
-        logger.debug(`MultiProvider: ${provider.adapter.name} returned tx ${txId}`);
         return { tipHeight, found: attempt.result };
       }
-      // undefined = not found in this provider's index. Try next (indexing lag).
+      // undefined = not found in this provider's index, try next (indexing lag)
       logger.debug(`MultiProvider: ${provider.adapter.name} returned undefined for tx ${txId}, trying next`);
       continue;
     }
@@ -186,30 +170,29 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
     if (hadError || !attemptedAny) {
       throw new AllProvidersUnavailableError('getTransaction', chain, network);
     }
-    // All providers returned undefined (not found across all indexes) -> 404
+    // All providers returned undefined — not found across all indexes
     return { tipHeight, found: undefined };
   }
 
-  // @override - Sequential failover for address transaction streaming
-  // Uses preflight check: buffers first item before piping to response.
-  // Failover only occurs before any response body bytes are written.
+  // @override — sequential failover with preflight check.
+  // Buffers first item before piping to response; failover only before response bytes are written.
   async _buildAddressTransactionsStream(params: StreamAddressUtxosParams) {
     const { req, res, args, network, address } = params;
     const chainId = await this.getChainId({ network });
     const providers = this.getProvidersForNetwork(network);
     const PREFLIGHT_TIMEOUT_MS = 5000;
 
-    // Date-to-block conversion: Alchemy only supports fromBlock/toBlock, not date ranges.
+    // Convert date ranges to block ranges (Alchemy only supports fromBlock/toBlock)
     const resolvedArgs = { ...args };
     if (args.startDate && !args.startBlock) {
       resolvedArgs.startBlock = await this._getBlockNumberByDate({
-        date: new Date(args.startDate), chainId, network
+        date: new Date(args.startDate), chain: this.chain, chainId, network
       });
       delete resolvedArgs.startDate;
     }
     if (args.endDate && !args.endBlock) {
       resolvedArgs.endBlock = await this._getBlockNumberByDate({
-        date: new Date(args.endDate), chainId, network
+        date: new Date(args.endDate), chain: this.chain, chainId, network
       });
       delete resolvedArgs.endDate;
     }
@@ -248,17 +231,16 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
           continue;
         }
 
-        // Preflight succeeded - commit to this provider
         logger.debug(`MultiProvider: ${provider.adapter.name} streaming ${address} on ${this.chain}:${network}`);
         txStream.on('error', (err) => {
           logger.warn(`MultiProvider: ${provider.adapter.name} mid-stream error for ${address}: ${err.message}`);
-          if (err instanceof AdapterError && err.isBreakerable) {
+          if (err instanceof AdapterError && err.affectsHealth) {
             provider.health.recordFailure(err);
           }
         });
         txStream.on('end', () => provider.health.recordSuccess());
 
-        // Use PassThrough to prepend the buffered first item to the stream.
+        // PassThrough prepends the buffered first item to the stream
         let outputStream: Readable = txStream;
         if (preflight.firstItem) {
           const wrapper = new PassThrough({ objectMode: true });
@@ -274,9 +256,9 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
         if (!result?.success) {
           logger.error('Error mid-stream (streamAddressTransactions): %o', result.error?.log || result.error);
         }
-        return; // Stream handled, exit
+        return; // Stream handled
       } catch (error) {
-        if (error instanceof InvalidRequestError) throw error; // 400 - no failover
+        if (error instanceof InvalidRequestError) throw error; // 400 — no failover
         provider.health.recordFailure(error as Error);
         logger.warn(`MultiProvider: ${provider.adapter.name} stream failed for ${address}: ${(error as Error).message}`);
         continue;
@@ -287,12 +269,6 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
     throw new AllProvidersUnavailableError('streamAddressTransactions', this.chain, network);
   }
 
-  /**
-   * Preflight check: wait for the first data item or error from a stream.
-   * Returns within timeoutMs. If the stream emits data first, returns { success: true, firstItem }.
-   * If the stream emits error or times out, returns { success: false, error }.
-   * If the stream ends immediately (empty result), returns { success: true, firstItem: null }.
-   */
   private _preflightStream(stream: ExternalApiStream, timeoutMs: number): Promise<{
     success: boolean;
     firstItem?: any;
@@ -346,7 +322,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
     });
   }
 
-  // @override - Sequential failover for wallet transaction streaming
+  // @override — sequential failover for wallet transaction streaming
   async _buildWalletTransactionsStream(params: StreamWalletTransactionsParams, streamParams: BuildWalletTxsStreamParams) {
     const { network, args } = params;
     let { transactionStream } = streamParams;
@@ -372,7 +348,6 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
 
         transactionStream = txStream.eventPipe(transactionStream);
 
-        // Non-blocking side effects
         WalletAddressStorage.updateLastQueryTime({ chain: this.chain, network, address })
           .catch(e => logger.warn(`Failed to update ${this.chain}:${network} address lastQueryTime: %o`, e));
       } catch (error) {
@@ -391,16 +366,17 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
   }
 
   // @override
-  async _getBlockNumberByDate(params: { date: Date; chainId: string | bigint; network?: string }) {
+  async _getBlockNumberByDate(params: { date: Date; chain?: string; chainId: string | bigint; network?: string }) {
     const { date, chainId } = params;
-    const network = (params as any).network || this.providersByNetwork.keys().next().value;
+    const chain = params.chain || this.chain;
+    const network = params.network || this.providersByNetwork.keys().next().value!;
     const providers = this.getProvidersForNetwork(network);
 
     for (const provider of providers) {
       if (!provider.health.isAvailable()) continue;
 
       const attempt = await this.withHealthTracking(provider, () =>
-        provider.adapter.getBlockNumberByDate({ chainId, date })
+        provider.adapter.getBlockNumberByDate({ chain, network, chainId, date })
       );
 
       if (attempt.error) {
@@ -415,12 +391,6 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
     throw new AllProvidersUnavailableError('getBlockNumberByDate', this.chain, network);
   }
 
-  /**
-   * Adapters give an approximate block number for a date. This double-checks it
-   * via RPC and nudges it forward or backward (up to 16 blocks) so the final
-   * block's timestamp is at or before the target date. Falls back to a full
-   * binary search if the adapter was way off.
-   */
   private async _verifyBlockBeforeDate(network: string, candidateBlock: number, date: Date): Promise<number> {
     const { web3 } = await this.getWeb3(network, { type: 'historical' });
     const targetTimestamp = Math.floor(date.getTime() / 1000);
@@ -430,7 +400,6 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
     let block = await web3.eth.getBlock(blockNum);
     if (!block) return blockNum;
 
-    // If candidate is too late, decrement
     let adjustments = 0;
     while (Number(block.timestamp) > targetTimestamp && blockNum > 0 && adjustments < MAX_ADJUSTMENTS) {
       blockNum--;
@@ -443,7 +412,6 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
       return this._binarySearchBlockByTimestamp(web3, targetTimestamp);
     }
 
-    // If candidate is before target, try incrementing to find the largest valid block
     adjustments = 0;
     while (adjustments < MAX_ADJUSTMENTS) {
       const nextBlock = await web3.eth.getBlock(blockNum + 1);
@@ -455,7 +423,6 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
     return blockNum;
   }
 
-  /** Fallback: find the latest block with timestamp <= target using only RPC */
   private async _binarySearchBlockByTimestamp(web3: any, targetTimestamp: number): Promise<number> {
     const latestBlock = await web3.eth.getBlock('latest');
     let high = Number(latestBlock.number);
@@ -476,20 +443,33 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
     return low;
   }
 
-  // @override - uses indexed API providers for date->block resolution
+  // @override
   async getBlockBeforeTime(params: GetBlockBeforeTimeParams) {
-    const { network, time } = params;
-    const date = new Date(time);
+    const { chain, network, time } = params;
+    const date = new Date(time || Date.now());
+    const chainNetwork = normalizeChainNetwork(chain, network);
+
+    if (!this.blockAtTimeCache[chainNetwork]) {
+      this.blockAtTimeCache[chainNetwork] = new LRUCache<string, IBlock>({ max: 1000 });
+    }
+    const cachedBlock = this.blockAtTimeCache[chainNetwork].get(date.toISOString());
+    if (cachedBlock !== undefined) {
+      return cachedBlock;
+    }
+
     const chainId = await this.getChainId({ network });
-    const blockNum = await this._getBlockNumberByDate({ date, chainId, network });
+    const blockNum = await this._getBlockNumberByDate({ date, chain: this.chain, chainId, network });
+    if (!blockNum) {
+      return null;
+    }
+
     const { web3 } = await this.getWeb3(network, { type: 'historical' });
-    const block = await web3.eth.getBlock(blockNum);
+    const rawBlock = await web3.eth.getBlock(blockNum);
+    const block = EVMBlockStorage.convertRawBlock(this.chain, network, rawBlock);
+    this.blockAtTimeCache[chainNetwork].set(date.toISOString(), block);
     return block;
   }
 
-  // Note: getLocalTip(), _getBlocks() are inherited from BaseEVMStateProvider and use RPC.
-
-  // Internal-only health check for debugging/monitoring.
   async getProviderHealth(): Promise<Record<string, Record<string, any>>> {
     const health: Record<string, Record<string, any>> = {};
 

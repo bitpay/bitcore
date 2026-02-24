@@ -66,6 +66,8 @@ export interface AdapterStreamParams {
 }
 
 export interface AdapterBlockByDateParams {
+  chain: string;
+  network: string;
   chainId: string | bigint;
   date: Date;
 }

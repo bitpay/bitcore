@@ -47,15 +47,10 @@ export type IExternalSyncConfig<T> = {
   syncIntervalSecs?: number; // Interval in seconds to check for new blocks
 } & T;
 
-export interface IProviderConfig {
-  name: string;             // 'moralis' | 'alchemy'
-  priority: number;         // Lower = higher priority (1 = primary)
-  config: {
-    apiKey: string;
-    network?: string;       // Provider-specific network identifier
-    requestTimeout?: number; // ms, default 30000
-    [key: string]: any;
-  };
+export interface IMultiProviderConfig {
+  name: string;
+  priority: number;
+  requestTimeout?: number;
   healthConfig?: Partial<ProviderHealthConfig>;
 }
 
@@ -69,7 +64,7 @@ export interface IEVMNetworkConfig extends INetworkConfig {
   mtSyncTipPad?: number; // Default: 100. Multi-threaded sync will sync up to latest block height minus mtSyncTipPad. MT syncing is blind to reorgs. This helps ensure reorgs are accounted for near the tip.
   leanTransactionStorage?: boolean; // Removes data, abiType, internal and calls before saving a transaction to the databases
   needsL1Fee?: boolean; // Does this chain require a layer-1 fee to be added to a transaction (e.g. OP-stack chains)?
-  externalProviders?: IProviderConfig[];
+  externalProviders?: IMultiProviderConfig[];
 }
 
 export interface IXrpNetworkConfig extends INetworkConfig {
@@ -143,6 +138,9 @@ export interface ConfigType {
       webhookBaseUrl?: string;
       streamSecret?: string;
       webhookCors?: object; // default: { origin: ['*'] }
+    };
+    alchemy?: {
+      apiKey: string;
     };
   };
 }

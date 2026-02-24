@@ -11,11 +11,8 @@ const DEFAULTS: ProviderHealthConfig = {
 };
 
 /**
- * Simple provider health tracker. Tracks consecutive failures per provider
- * and skips unhealthy providers until a cooldown period elapses.
- *
- * No state machine, no rolling windows — just: "did it fail N times in a row?
- * If so, skip it for M seconds, then try again."
+ * Tracks consecutive failures per provider and skips unhealthy providers
+ * until a cooldown period elapses.
  */
 export class ProviderHealth {
   private consecutiveFailures = 0;

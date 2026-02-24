@@ -8,7 +8,6 @@ import {
 } from '../../../src/providers/chain-state/external/adapters/errors';
 
 // --- Module mocks (must run before AlchemyAdapter import) ---
-// @bitpay-labs/* packages are private; src/config.ts needs bitcore.config.json
 const mockWeb3 = {
   utils: {
     toChecksumAddress: (addr: string) => {
@@ -34,7 +33,7 @@ const mockConfig = {
     api: { rateLimiter: { disabled: true, whitelist: [] }, wallets: {} },
     event: { onlyWalletEvents: false }, p2p: {}, socket: { bwsKeys: [] }, storage: {}
   },
-  externalProviders: { alchemy: { apiKey: 'test', network: 'eth-mainnet' } }
+  externalProviders: { alchemy: { apiKey: 'test-key' } }
 };
 
 require.cache[MOCK_CONFIG_KEY] = {
@@ -103,7 +102,7 @@ describe('AlchemyAdapter', function() {
     sandbox.stub(EVMTransactionStorage, 'abiDecode').returns(undefined as any);
     sandbox.stub(EVMTransactionStorage, '_apiTransform').callsFake((tx: any) => tx);
     axiosPostStub = sandbox.stub(axios, 'post');
-    adapter = new AlchemyAdapter({ apiKey: 'test-key', network: 'eth-mainnet' });
+    adapter = new AlchemyAdapter({ name: 'alchemy', priority: 1 });
   });
 
   afterEach(function() { sandbox.restore(); });
@@ -111,9 +110,11 @@ describe('AlchemyAdapter', function() {
 
   // --- Constructor ---
   describe('constructor', function() {
-    it('should throw if apiKey or network is missing', function() {
-      expect(() => new AlchemyAdapter({ apiKey: '', network: 'eth-mainnet' })).to.throw('apiKey is required');
-      expect(() => new AlchemyAdapter({ apiKey: 'key', network: '' })).to.throw('network is required');
+    it('should throw if apiKey is missing from config', function() {
+      const saved = mockConfig.externalProviders;
+      mockConfig.externalProviders = { alchemy: { apiKey: '' } } as any;
+      expect(() => new AlchemyAdapter({ name: 'alchemy', priority: 1 })).to.throw('apiKey is required');
+      mockConfig.externalProviders = saved;
     });
 
     it('should set name and supportedChains', function() {
@@ -172,20 +173,29 @@ describe('AlchemyAdapter', function() {
       }
     });
 
+    it('should throw InvalidRequestError for unsupported chain/network', async function() {
+      try {
+        await adapter.getTransaction({ ...params, chain: 'BTC', network: 'mainnet' });
+        expect.fail('Should have thrown');
+      } catch (err: any) {
+        expect(err).to.be.instanceOf(InvalidRequestError);
+        expect(err.message).to.include('unsupported');
+      }
+    });
+
     it('should use EIP-1559 effectiveGasPrice for fee calculation', async function() {
-      const eip1559Tx = { ...MOCK_TX, gasPrice: '0x77359400' }; // maxFeePerGas = 2 gwei
-      const eip1559Receipt = { ...MOCK_RECEIPT, effectiveGasPrice: '0x3B9ACA00' }; // actual = 1 gwei
+      const eip1559Tx = { ...MOCK_TX, gasPrice: '0x77359400' };
+      const eip1559Receipt = { ...MOCK_RECEIPT, effectiveGasPrice: '0x3B9ACA00' };
       axiosPostStub.onCall(0).resolves(rpcOk(eip1559Tx));
       axiosPostStub.onCall(1).resolves(rpcOk(eip1559Receipt));
       axiosPostStub.onCall(2).resolves(rpcOk(MOCK_BLOCK));
 
       const result = await adapter.getTransaction(params);
-      // fee = gasUsed (21000) * effectiveGasPrice (1 gwei = 1000000000) = 21000000000000
       expect(result!.fee).to.equal(21000 * 1000000000);
     });
   });
 
-  // --- Error classification (parametrized) ---
+  // --- Error classification ---
   describe('error classification via _jsonRpc', function() {
     const errorCases: Array<{ scenario: string; setup: () => void; expectedType: any }> = [
       {
@@ -220,7 +230,6 @@ describe('AlchemyAdapter', function() {
       },
     ];
 
-    // Use a simple getTransaction call to exercise _jsonRpc
     const params = { chain: 'ETH', network: 'mainnet', chainId: '1', txId: VALID_TX_HASH };
 
     errorCases.forEach(({ scenario, setup, expectedType }) => {
@@ -241,7 +250,6 @@ describe('AlchemyAdapter', function() {
     it('should query both fromAddress and toAddress and deduplicate', async function() {
       const transfer1 = { hash: '0x1'.padEnd(66, '0'), blockNum: '0x1', from: VALID_FROM, to: VALID_ADDRESS, value: 1, category: 'external', uniqueId: 'u1', metadata: { blockTimestamp: '2023-01-01T00:00:00Z' } };
       const transfer2 = { ...transfer1, uniqueId: 'u2', hash: '0x2'.padEnd(66, '0') };
-      // Same transfer appears in both directions
       axiosPostStub.onCall(0).resolves({ status: 200, data: { result: { transfers: [transfer1], pageKey: null } } });
       axiosPostStub.onCall(1).resolves({ status: 200, data: { result: { transfers: [transfer1, transfer2], pageKey: null } } });
 
@@ -257,7 +265,6 @@ describe('AlchemyAdapter', function() {
         stream.on('error', reject);
       });
 
-      // transfer1 appears in both responses but should be deduped
       expect(items).to.have.length(2);
     });
 
@@ -276,23 +283,24 @@ describe('AlchemyAdapter', function() {
   // --- getBlockNumberByDate ---
   describe('getBlockNumberByDate', function() {
     it('should binary search for block closest to target date', async function() {
-      // Latest block = 100
-      axiosPostStub.onCall(0).resolves(rpcOk('0x64')); // eth_blockNumber = 100
-      axiosPostStub.onCall(1).resolves(rpcOk({ timestamp: '0x64', number: '0x64' })); // latest block timestamp = 100
+      axiosPostStub.callsFake(async (_url: string, body: any) => {
+        if (body.method === 'eth_blockNumber') return rpcOk('0x64');
+        if (body.method === 'eth_getBlockByNumber') {
+          const num = parseInt(body.params[0], 16);
+          return rpcOk({ timestamp: `0x${num.toString(16)}`, number: body.params[0] });
+        }
+        return rpcOk(null);
+      });
 
-      // Target timestamp = 50 (between genesis and latest)
-      // Binary search: mid=50, timestamp=50 → exact match
-      axiosPostStub.onCall(2).resolves(rpcOk({ timestamp: '0x32', number: '0x32' })); // block 50, ts=50
-
-      const result = await adapter.getBlockNumberByDate({ chainId: '1', date: new Date(50000) });
-      expect(result).to.be.a('number');
+      const result = await adapter.getBlockNumberByDate({ chain: 'ETH', network: 'mainnet', chainId: '1', date: new Date(50000) });
+      expect(result).to.equal(50);
     });
 
     it('should return latest block if target is in the future', async function() {
       axiosPostStub.onCall(0).resolves(rpcOk('0x64'));
       axiosPostStub.onCall(1).resolves(rpcOk({ timestamp: '0x64', number: '0x64' }));
 
-      const result = await adapter.getBlockNumberByDate({ chainId: '1', date: new Date(200000) });
+      const result = await adapter.getBlockNumberByDate({ chain: 'ETH', network: 'mainnet', chainId: '1', date: new Date(200000) });
       expect(result).to.equal(100);
     });
   });
