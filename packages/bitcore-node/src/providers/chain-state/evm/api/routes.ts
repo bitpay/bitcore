@@ -8,6 +8,7 @@ import { Config } from '../../../../services/config';
 import { IEVMNetworkConfig } from '../../../../types/Config';
 import { castToBool } from '../../../../utils';
 import { OPGasPriceOracleAbi, OPGasPriceOracleAddress } from '../abi/opGasPriceOracle';
+import { getAavePoolAddress, isAaveVersion } from './aave';
 import { BaseEVMStateProvider } from './csp';
 import { Gnosis } from './gnosis';
 
@@ -44,6 +45,7 @@ export class EVMRouter {
     this.getERC20TokenAllowance(router);
     this.getPriorityFee(router);
     this.estimateL1Fee(router);
+    this.getAaveUserAccountData(router);
   };
   
   private setMultiSigRoutes(router: Router) {
@@ -84,6 +86,37 @@ export class EVMRouter {
           logger.error('Gas Error::%o', err.stack || err.message || err);
           res.status(500).send(err.message || err);
         }
+      }
+    });
+  };
+
+  private getAaveUserAccountData(router: Router) {
+    router.get(`/api/${this.chain}/:network/aave/account/:address`, async (req, res) => {
+      const { address, network } = req.params;
+      const requestedVersion = String(req.query.version || 'v3').toLowerCase();
+      if (!isAaveVersion(requestedVersion)) {
+        res.status(400).send('Unsupported Aave version');
+        return;
+      }
+      if (!getAavePoolAddress(this.chain, network, requestedVersion)) {
+        res.status(400).send('Unsupported chain or network for Aave');
+        return;
+      }
+      if (!Web3.utils.isAddress(address)) {
+        res.status(400).send('Invalid address');
+        return;
+      }
+
+      try {
+        const accountData = await this.csp.getAaveUserAccountData({
+          network,
+          address,
+          version: requestedVersion
+        });
+        res.json(accountData);
+      } catch (err: any) {
+        logger.error('Aave getUserAccountData error::%o', err.stack || err.message || err);
+        res.status(500).send(err.message || err);
       }
     });
   };

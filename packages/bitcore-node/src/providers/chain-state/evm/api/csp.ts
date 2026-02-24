@@ -19,11 +19,14 @@ import { normalizeChainNetwork, partition, range } from '../../../../utils';
 import { StatsUtil } from '../../../../utils/stats';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { ExternalApiStream } from '../../external/streams/apiStream';
+import { AavePoolAbi } from '../abi/aavePool';
+import { AavePoolAbiV2 } from '../abi/aavePoolV2';
 import { ERC20Abi } from '../abi/erc20';
 import { MultisendAbi } from '../abi/multisend';
 import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
 import { EVMTransactionJSON, IEVMBlock, IEVMTransaction, IEVMTransactionInProcess } from '../types';
+import { AaveAccountData, AaveV2AccountData, AaveV3AccountData, AaveVersion, getAavePoolAddress } from './aave';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateEffectsForAddressTransform } from './populateEffectsTransform';
@@ -199,6 +202,55 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   async getERC20TokenAllowance(network: string, tokenAddress: string, ownerAddress: string, spenderAddress: string): Promise<number> {
     const token = await this.erc20For(network, tokenAddress);
     return Number(await token.methods.allowance(ownerAddress, spenderAddress).call());
+  }
+
+  async getAaveUserAccountData(params: { network: string; address: string; version: AaveVersion }): Promise<AaveAccountData> {
+    const { network, address, version } = params;
+    const poolAddress = getAavePoolAddress(this.chain, network, version)!;
+    
+    if (!poolAddress) {
+      throw new Error(
+        `Unsupported Aave pool for chain "${this.chain}", network "${network}", version "${version}".`
+      );
+    }
+
+    const { web3 } = await this.getWeb3(network);
+    if (version === 'v2') {
+      return this.getAaveV2UserAccountData(web3, poolAddress, address);
+    }
+    return this.getAaveV3UserAccountData(web3, poolAddress, address);
+  }
+
+  private async getAaveV2UserAccountData(web3: Web3, poolAddress: string, address: string): Promise<AaveV2AccountData> {
+    const contract = new web3.eth.Contract(AavePoolAbiV2, poolAddress);
+    const accountData = await contract.methods
+      .getUserAccountData(web3.utils.toChecksumAddress(address))
+      .call();
+
+    return {
+      totalCollateralETH: accountData.totalCollateralETH.toString(),
+      totalDebtETH: accountData.totalDebtETH.toString(),
+      availableBorrowsETH: accountData.availableBorrowsETH.toString(),
+      currentLiquidationThreshold: accountData.currentLiquidationThreshold.toString(),
+      ltv: accountData.ltv.toString(),
+      healthFactor: accountData.healthFactor.toString()
+    };
+  }
+
+  private async getAaveV3UserAccountData(web3: Web3, poolAddress: string, address: string): Promise<AaveV3AccountData> {
+    const contract = new web3.eth.Contract(AavePoolAbi, poolAddress);
+    const accountData = await contract.methods
+      .getUserAccountData(web3.utils.toChecksumAddress(address))
+      .call();
+
+    return {
+      totalCollateralBase: accountData.totalCollateralBase.toString(),
+      totalDebtBase: accountData.totalDebtBase.toString(),
+      availableBorrowsBase: accountData.availableBorrowsBase.toString(),
+      currentLiquidationThreshold: accountData.currentLiquidationThreshold.toString(),
+      ltv: accountData.ltv.toString(),
+      healthFactor: accountData.healthFactor.toString()
+    };
   }
 
   @historical
