@@ -207,6 +207,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   async getAaveUserAccountData(params: { network: string; address: string; version: AaveVersion }): Promise<AaveAccountData> {
     const { network, address, version } = params;
     const poolAddress = getAavePoolAddress(this.chain, network, version)!;
+    
+    if (!poolAddress) {
+      throw new Error(
+        `Unsupported Aave pool for chain "${this.chain}", network "${network}", version "${version}".`
+      );
+    }
 
     const { web3 } = await this.getWeb3(network);
     if (version === 'v2') {

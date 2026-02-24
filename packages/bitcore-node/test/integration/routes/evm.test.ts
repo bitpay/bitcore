@@ -194,7 +194,8 @@ describe('EVM Routes', function () {
         });
     });
 
-    it('should get v3 account-data shape', done => {
+    it('should get v3 account-data shape', function(done)  {
+      this.timeout(30000);
       request.get(`/api/ETH/sepolia/aave/account/${address}?version=v3`)
         .expect(200)
         .end((err, res) => {

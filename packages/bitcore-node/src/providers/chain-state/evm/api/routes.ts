@@ -102,7 +102,7 @@ export class EVMRouter {
         res.status(400).send('Unsupported chain or network for Aave');
         return;
       }
-      if(!Web3.utils.isAddress(address)) {
+      if (!Web3.utils.isAddress(address)) {
         res.status(400).send('Invalid address');
         return;
       }
