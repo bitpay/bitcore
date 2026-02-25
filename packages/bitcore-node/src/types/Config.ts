@@ -1,4 +1,5 @@
 import { FeeMode } from './namespaces/ChainStateProvider';
+import { ProviderHealthConfig } from '../providers/chain-state/external/providerHealth';
 
 export interface IChainConfig<T extends INetworkConfig> {
   [network: string]: T;
@@ -46,6 +47,13 @@ export type IExternalSyncConfig<T> = {
   syncIntervalSecs?: number; // Interval in seconds to check for new blocks
 } & T;
 
+export interface IMultiProviderConfig {
+  name: string;
+  priority: number;
+  requestTimeout?: number;
+  healthConfig?: Partial<ProviderHealthConfig>;
+}
+
 export interface IEVMNetworkConfig extends INetworkConfig {
   client?: 'geth' | 'erigon'; // Note: Erigon support is not actively maintained
   providers?: IProvider[]; // Multiple providers can be configured to load balance for the syncing threads
@@ -56,6 +64,7 @@ export interface IEVMNetworkConfig extends INetworkConfig {
   mtSyncTipPad?: number; // Default: 100. Multi-threaded sync will sync up to latest block height minus mtSyncTipPad. MT syncing is blind to reorgs. This helps ensure reorgs are accounted for near the tip.
   leanTransactionStorage?: boolean; // Removes data, abiType, internal and calls before saving a transaction to the databases
   needsL1Fee?: boolean; // Does this chain require a layer-1 fee to be added to a transaction (e.g. OP-stack chains)?
+  externalProviders?: IMultiProviderConfig[];
 }
 
 export interface IXrpNetworkConfig extends INetworkConfig {
@@ -129,6 +138,9 @@ export interface ConfigType {
       webhookBaseUrl?: string;
       streamSecret?: string;
       webhookCors?: object; // default: { origin: ['*'] }
+    };
+    alchemy?: {
+      apiKey: string;
     };
   };
 }
