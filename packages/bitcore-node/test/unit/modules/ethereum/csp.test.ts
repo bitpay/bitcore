@@ -261,6 +261,105 @@ describe('ETH Chain State Provider', function() {
     sandbox.restore();
   });
 
+  describe('getAaveReserveData', function() {
+    // Using USDC as a common asset for both v2 and v3 tests
+    const asset = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
+
+    const makeReserveDataStub = (sandbox: sinon.SinonSandbox) => {
+      const reserveData = {
+        currentVariableBorrowRate: 80000000000000000000000000n
+      };
+      const contractStub = {
+        methods: { getReserveData: () => ({ call: sandbox.stub().resolves(reserveData) }) }
+      };
+      const web3Stub: any = {
+        utils: { toChecksumAddress: (addr: string) => addr },
+        eth: { Contract: sandbox.stub().returns(contractStub) }
+      };
+      sandbox.stub(BaseEVMStateProvider, 'rpcs').value({
+        [`ETH:${network}`]: { realtime: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] }
+      });
+      sandbox.stub(aaveApi, 'getAavePoolAddress').returns('0xpool');
+      return reserveData;
+    };
+
+    it('should return currentVariableBorrowRate for Aave v3', async () => {
+      const sandbox = sinon.createSandbox();
+      makeReserveDataStub(sandbox);
+
+      const result = await ETH.getAaveReserveData({ network, asset, version: 'v3' });
+
+      expect(result).to.deep.equal({ currentVariableBorrowRate: '80000000000000000000000000' });
+      sandbox.restore();
+    });
+
+    it('should return currentVariableBorrowRate for Aave v2', async () => {
+      const sandbox = sinon.createSandbox();
+      makeReserveDataStub(sandbox);
+
+      const result = await ETH.getAaveReserveData({ network, asset, version: 'v2' });
+
+      expect(result).to.deep.equal({ currentVariableBorrowRate: '80000000000000000000000000' });
+      sandbox.restore();
+    });
+  });
+
+  describe('getAaveReserveTokensAddresses', function() {
+    it('should return variableDebtTokenAddress', async () => {
+      const sandbox = sinon.createSandbox();
+      const reserveData = {
+        variableDebtTokenAddress: '0xvariableDebtAddress'
+      };
+      const contractStub = {
+        methods: { getReserveData: () => ({ call: sandbox.stub().resolves(reserveData) }) }
+      };
+      const web3Stub: any = {
+        utils: { toChecksumAddress: (addr: string) => addr },
+        eth: { Contract: sandbox.stub().returns(contractStub) }
+      };
+      sandbox.stub(BaseEVMStateProvider, 'rpcs').value({
+        [`ETH:${network}`]: { realtime: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] }
+      });
+      sandbox.stub(aaveApi, 'getAavePoolAddress').returns('0xpool');
+
+      const result = await ETH.getAaveReserveTokensAddresses({
+        network,
+        asset: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        version: 'v3'
+      });
+
+      expect(result).to.deep.equal({ variableDebtTokenAddress: '0xvariableDebtAddress' });
+      sandbox.restore();
+    });
+
+    it('should return variableDebtTokenAddress for v2', async () => {
+      const sandbox = sinon.createSandbox();
+      const reserveData = {
+        variableDebtTokenAddress: '0xvariableDebtAddress'
+      };
+      const contractStub = {
+        methods: { getReserveData: () => ({ call: sandbox.stub().resolves(reserveData) }) }
+      };
+      const web3Stub: any = {
+        utils: { toChecksumAddress: (addr: string) => addr },
+        eth: { Contract: sandbox.stub().returns(contractStub) }
+      };
+      sandbox.stub(BaseEVMStateProvider, 'rpcs').value({
+        [`ETH:${network}`]: { realtime: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] }
+      });
+      sandbox.stub(aaveApi, 'getAavePoolAddress').returns('0xpool');
+
+      const result = await ETH.getAaveReserveTokensAddresses({
+        network,
+        asset: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        version: 'v2'
+      });
+
+      expect(result).to.deep.equal({ variableDebtTokenAddress: '0xvariableDebtAddress' });
+      sandbox.restore();
+    });
+  });
+
   it('should be able to find an ETH block', async () => {
     const sandbox = sinon.createSandbox();
     const mockBlock = {

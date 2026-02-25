@@ -46,6 +46,8 @@ export class EVMRouter {
     this.getPriorityFee(router);
     this.estimateL1Fee(router);
     this.getAaveUserAccountData(router);
+    this.getAaveReserveData(router);
+    this.getAaveReserveTokensAddresses(router);
   };
   
   private setMultiSigRoutes(router: Router) {
@@ -116,6 +118,60 @@ export class EVMRouter {
         res.json(accountData);
       } catch (err: any) {
         logger.error('Aave getUserAccountData error::%o', err.stack || err.message || err);
+        res.status(500).send(err.message || err);
+      }
+    });
+  };
+
+  private getAaveReserveData(router: Router) {
+    router.get(`/api/${this.chain}/:network/aave/reserve/:asset`, async (req, res) => {
+      const { network, asset } = req.params;
+      const requestedVersion = String(req.query.version || 'v3').toLowerCase();
+      if (!isAaveVersion(requestedVersion)) {
+        res.status(400).send('Unsupported Aave version');
+        return;
+      }
+      if (!getAavePoolAddress(this.chain, network, requestedVersion)) {
+        res.status(400).send('Unsupported chain or network for Aave');
+        return;
+      }
+      if (!Web3.utils.isAddress(asset)) {
+        res.status(400).send('Invalid address');
+        return;
+      }
+
+      try {
+        const data = await this.csp.getAaveReserveData({ network, asset, version: requestedVersion });
+        res.json(data);
+      } catch (err: any) {
+        logger.error('Aave getReserveData error::%o', err.stack || err.message || err);
+        res.status(500).send(err.message || err);
+      }
+    });
+  };
+
+  private getAaveReserveTokensAddresses(router: Router) {
+    router.get(`/api/${this.chain}/:network/aave/reserve-tokens/:asset`, async (req, res) => {
+      const { network, asset } = req.params;
+      const requestedVersion = String(req.query.version || 'v3').toLowerCase();
+      if (!isAaveVersion(requestedVersion)) {
+        res.status(400).send('Unsupported Aave version');
+        return;
+      }
+      if (!getAavePoolAddress(this.chain, network, requestedVersion)) {
+        res.status(400).send('Unsupported chain or network for Aave');
+        return;
+      }
+      if (!Web3.utils.isAddress(asset)) {
+        res.status(400).send('Invalid address');
+        return;
+      }
+      
+      try {
+        const data = await this.csp.getAaveReserveTokensAddresses({ network, asset, version: requestedVersion });
+        res.json(data);
+      } catch (err: any) {
+        logger.error('Aave getReserveTokensAddresses error::%o', err.stack || err.message || err);
         res.status(500).send(err.message || err);
       }
     });
