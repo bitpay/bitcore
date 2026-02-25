@@ -1,6 +1,7 @@
 import * as chai from 'chai';
 import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import { AddressTypes, Wallet } from '../../src/wallet';
+import { Encryption } from '../../src/encryption';
 import { Api as bcnApi } from '../../../bitcore-node/build/src/services/api';
 import { Storage as bcnStorage } from '../../../bitcore-node/build/src/services/storage';
 import crypto from 'crypto';
@@ -82,7 +83,8 @@ describe('Wallet', function() {
           lite: false,
           addressType,
           storageType,
-          baseUrl
+          baseUrl,
+          version: 0
         });
 
         expect(wallet.addressType).to.equal(AddressTypes[chain]?.[addressType] || 'pubkeyhash');
@@ -123,7 +125,8 @@ describe('Wallet', function() {
           phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
           password: 'abc123',
           storageType,
-          baseUrl
+          baseUrl,
+          version: 0
         });
         await wallet.unlock('abc123');
       });
@@ -199,7 +202,8 @@ describe('Wallet', function() {
           phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
           password: 'abc123',
           storageType,
-          baseUrl
+          baseUrl,
+          version: 0
         });
         await wallet.unlock('abc123');
       });
@@ -262,7 +266,8 @@ describe('Wallet', function() {
               password: 'abc123',
               storageType,
               path,
-              baseUrl
+              baseUrl,
+              version: 0
             });
             await wallet.unlock('abc123');
             // 3 address pairs
@@ -303,7 +308,8 @@ describe('Wallet', function() {
         phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
         password: 'abc123',
         storageType,
-        baseUrl
+        baseUrl,
+        version: 0
       });
       await wallet.unlock('abc123');
       requestStub = sandbox.stub(wallet.client, '_request').resolves();
@@ -368,6 +374,116 @@ describe('Wallet', function() {
     });
   });
 
+  describe('signTx v2 key handling', function() {
+    let txStub: sinon.SinonStub;
+    afterEach(async function() {
+      sandbox.restore();
+    });
+
+    describe('BTC (UTXO) decrypts ciphertext to WIF', function() {
+      walletName = 'BitcoreClientTestSignTxV2-BTC';
+      let wallet: Wallet;
+
+      beforeEach(async function() {
+        wallet = await Wallet.create({
+          name: walletName,
+          chain: 'BTC',
+          network: 'testnet',
+          phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
+          password: 'abc123',
+          storageType,
+          baseUrl
+        });
+        await wallet.unlock('abc123');
+      });
+
+      afterEach(async function() {
+        await Wallet.deleteWallet({ name: walletName, storageType });
+      });
+
+      it('should decrypt stored ciphertext and hand WIF to Transactions.sign', async function() {
+        const pk = new CWC.BitcoreLib.PrivateKey(undefined, 'testnet');
+        const address = pk.toAddress().toString();
+        const privBuf = CWC.Deriver.privateKeyToBuffer('BTC', pk.toString());
+        // v2 key encryption uses the key's pubKey as the IV salt (not the wallet pubKey)
+        const encPriv = Encryption.encryptBuffer(privBuf, pk.publicKey.toString(), wallet.unlocked.encryptionKey).toString('hex');
+        privBuf.fill(0);
+
+        sandbox.stub(wallet.storage, 'getStoredKeys').resolves([
+          {
+            address,
+            privKey: encPriv,
+            pubKey: pk.publicKey.toString()
+          }
+        ]);
+        sandbox.stub(wallet, 'derivePrivateKey').resolves({
+          address: 'change',
+          privKey: pk.toString(),
+          pubKey: pk.publicKey.toString(),
+          path: 'm/1/0'
+        });
+        sandbox.stub(wallet, 'importKeys').resolves();
+
+        let capturedPayload;
+        txStub = sandbox.stub(CWC.Transactions, 'sign').callsFake(payload => {
+          capturedPayload = payload;
+          return 'signed';
+        });
+
+        const utxos = [{ address, value: 1 }];
+        await wallet.signTx({ tx: 'raw', utxos });
+
+        txStub.calledOnce.should.equal(true);
+        capturedPayload.keys[0].privKey.should.equal(pk.toWIF());
+        capturedPayload.key.privKey.should.equal(pk.toWIF());
+      });
+    });
+
+    describe('ETH (account) decrypts ciphertext to hex and skips plaintext', function() {
+      walletName = 'BitcoreClientTestSignTxV2-ETH';
+      let wallet: Wallet;
+
+      beforeEach(async function() {
+        wallet = await Wallet.create({
+          name: walletName,
+          chain: 'ETH',
+          network: 'testnet',
+          phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
+          password: 'abc123',
+          storageType,
+          baseUrl
+        });
+        await wallet.unlock('abc123');
+      });
+
+      afterEach(async function() {
+        await Wallet.deleteWallet({ name: walletName, storageType });
+      });
+
+      it('should decrypt stored ciphertext and hand hex privKey to Transactions.sign', async function() {
+        const privHex = crypto.randomBytes(32).toString('hex');
+        const privBufForPubKey = CWC.Deriver.privateKeyToBuffer('ETH', privHex);
+        const pubKey = CWC.Deriver.getPublicKey('ETH', wallet.network, privBufForPubKey);
+        privBufForPubKey.fill(0);
+        const privBuf = CWC.Deriver.privateKeyToBuffer('ETH', privHex);
+        const encPriv = Encryption.encryptBuffer(privBuf, pubKey, wallet.unlocked.encryptionKey).toString('hex');
+        privBuf.fill(0);
+
+        let capturedPayload;
+        txStub = sandbox.stub(CWC.Transactions, 'sign').callsFake(payload => {
+          capturedPayload = payload;
+          return 'signed';
+        });
+
+        const signingKeys = [{ address: '0xabc', privKey: encPriv, pubKey }];
+        await wallet.signTx({ tx: 'raw', signingKeys });
+
+        txStub.calledOnce.should.equal(true);
+        capturedPayload.keys[0].privKey.should.equal(privHex);
+      });
+    });
+  });
+
   describe('getBalance', function() {
     walletName = 'BitcoreClientTestGetBalance';
     beforeEach(async function() {
@@ -378,6 +494,7 @@ describe('Wallet', function() {
         phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
         password: 'abc123',
         storageType: 'Level',
+        version: 0,
       });
       await wallet.unlock('abc123');
     });
@@ -427,6 +544,7 @@ describe('Wallet', function() {
         phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
         password: 'abc123',
         storageType: 'Level',
+        version: 0,
       });
       await wallet.unlock('abc123');
     });
@@ -506,7 +624,8 @@ describe('Wallet', function() {
         password: 'abc123',
         lite: false,
         storageType,
-        baseUrl
+        baseUrl,
+        version: 0
       });
 
       wallet.tokens = [
