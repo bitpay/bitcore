@@ -1,77 +1,16 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import axios from 'axios';
-import path from 'path';
 import { AdapterError, AdapterErrorCode } from '../../../src/providers/chain-state/external/adapters/errors';
-
-// --- Module mocks (must run before AlchemyAdapter import) ---
-const mockWeb3 = {
-  utils: {
-    toChecksumAddress: (addr: string) => {
-      if (addr && (!addr.startsWith('0x') || addr.length !== 42)) throw new Error('invalid address');
-      return addr;
-    }
-  }
-};
-
-const Module = require('module');
-const originalResolve = Module._resolveFilename;
-const mockModules: Record<string, any> = {
-  '@bitpay-labs/crypto-wallet-core': { Web3: mockWeb3, BitcoreLib: {}, Utils: { BI: { JSONStringifyBigIntReplacer: null } } },
-};
-
-const configModulePath = path.resolve(__dirname, '../../../src/config.ts');
-const MOCK_CONFIG_KEY = '__mock__/src/config';
-const mockConfig = {
-  maxPoolSize: 50, port: 3000, dbUrl: '', dbHost: '127.0.0.1', dbName: 'bitcore',
-  dbPort: '27017', dbUser: '', dbPass: '', numWorkers: 1, chains: {},
-  aliasMapping: { chains: {}, networks: {} },
-  services: {
-    api: { rateLimiter: { disabled: true, whitelist: [] }, wallets: {} },
-    event: { onlyWalletEvents: false }, p2p: {}, socket: { bwsKeys: [] }, storage: {}
-  },
-  externalProviders: { alchemy: { apiKey: 'test-key' } }
-};
-
-require.cache[MOCK_CONFIG_KEY] = {
-  id: MOCK_CONFIG_KEY, filename: MOCK_CONFIG_KEY, loaded: true,
-  exports: { default: mockConfig, __esModule: true },
-  parent: null, children: [], paths: [], path: ''
-} as any;
-
-Module._resolveFilename = function(request: string, parent: any, isMain: boolean, options: any) {
-  if (mockModules[request]) return request;
-  if (request.startsWith('@bitpay-labs/')) {
-    if (!mockModules[request]) {
-      mockModules[request] = {};
-      require.cache[request] = {
-        id: request, filename: request, loaded: true, exports: mockModules[request],
-        parent: null, children: [], paths: [], path: ''
-      } as any;
-    }
-    return request;
-  }
-  try {
-    const resolved = originalResolve.call(this, request, parent, isMain, options);
-    return resolved === configModulePath ? MOCK_CONFIG_KEY : resolved;
-  } catch (err) { throw err; }
-};
-
-for (const [modName, modExports] of Object.entries(mockModules)) {
-  require.cache[modName] = {
-    id: modName, filename: modName, loaded: true, exports: modExports,
-    parent: null, children: [], paths: [], path: ''
-  } as any;
-}
-
-// Now safe to import
 import { AlchemyAdapter, AlchemyAssetTransferStream } from '../../../src/providers/chain-state/external/adapters/alchemy';
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
+import config from '../../../src/config';
 
 // --- Mock data ---
+// Use lowercase addresses so real Web3.utils.toChecksumAddress always accepts them
 const VALID_TX_HASH = '0xabc123def456abc123def456abc123def456abc123def456abc123def456abc1';
-const VALID_ADDRESS = '0x742d35Cc6634C0532925a3b844Bc9e7595f2bD1e';
-const VALID_FROM = '0x388C818CA8B9251b393131C08a736A67ccB19297';
+const VALID_ADDRESS = '0x742d35cc6634c0532925a3b844bc9e7595f2bd1e';
+const VALID_FROM = '0x388c818ca8b9251b393131c08a736a67ccb19297';
 
 const MOCK_TX = {
   hash: VALID_TX_HASH, blockNumber: '0x112a880', blockHash: '0xblockhash123',
@@ -92,6 +31,15 @@ describe('AlchemyAdapter', function() {
   let sandbox: sinon.SinonSandbox;
   let adapter: AlchemyAdapter;
   let axiosPostStub: sinon.SinonStub;
+  const savedExternalProviders = config.externalProviders;
+
+  before(function() {
+    (config as any).externalProviders = { ...savedExternalProviders, alchemy: { apiKey: 'test-key' } };
+  });
+
+  after(function() {
+    (config as any).externalProviders = savedExternalProviders;
+  });
 
   beforeEach(function() {
     sandbox = sinon.createSandbox();
@@ -103,15 +51,14 @@ describe('AlchemyAdapter', function() {
   });
 
   afterEach(function() { sandbox.restore(); });
-  after(function() { Module._resolveFilename = originalResolve; });
 
   // --- Constructor ---
   describe('constructor', function() {
     it('should throw if apiKey is missing from config', function() {
-      const saved = mockConfig.externalProviders;
-      mockConfig.externalProviders = { alchemy: { apiKey: '' } } as any;
+      const saved = config.externalProviders;
+      (config as any).externalProviders = { alchemy: { apiKey: '' } };
       expect(() => new AlchemyAdapter({ name: 'alchemy', priority: 1 })).to.throw('apiKey is required');
-      mockConfig.externalProviders = saved;
+      (config as any).externalProviders = saved;
     });
 
     it('should set name and supportedChains', function() {

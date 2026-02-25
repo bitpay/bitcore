@@ -1,7 +1,18 @@
 import { expect } from 'chai';
 import { AdapterFactory } from '../../../src/providers/chain-state/external/adapters/factory';
+import config from '../../../src/config';
 
 describe('AdapterFactory', function() {
+  const savedExternalProviders = config.externalProviders;
+
+  before(function() {
+    (config as any).externalProviders = { ...savedExternalProviders, alchemy: { apiKey: 'test-key' } };
+  });
+
+  after(function() {
+    (config as any).externalProviders = savedExternalProviders;
+  });
+
   it('should throw for unknown provider', function() {
     expect(() => AdapterFactory.createAdapter({ name: 'unknown', priority: 1 } as any)).to.throw('Unknown indexed API provider');
   });
