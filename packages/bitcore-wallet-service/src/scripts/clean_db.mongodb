@@ -1,0 +1,5 @@
+db.email_queue.remove({createdOn: {$lt: Date.now()/1000-86400*10 }});
+db.notifications.remove({createdOn: {$lt: Date.now()/1000-86400*10 }});
+db.tx_confirmation_subs.remove({createdOn: {$lt: Date.now()/1000-86400*20 }});
+
+

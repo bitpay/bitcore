@@ -1,16 +1,17 @@
-import { BaseModel } from './base';
-import { ITransaction } from './transaction';
-import { IBlock } from '../types/Block';
-import { ICoin } from './coin';
 import { StorageService } from '../services/storage';
+import { IBlock } from '../types/Block';
+import { BaseModel } from './base';
+import { ICoin } from './coin';
+import { ITransaction } from './transaction';
 
-export namespace IEvent {
-  export type BlockEvent = IBlock;
-  export type TxEvent = ITransaction;
-  export type CoinEvent = { coin: ICoin; address: string };
+export type BlockEvent = IBlock;
+export type TxEvent = ITransaction;
+export interface CoinEvent {
+  coin: Partial<ICoin>;
+  address: string;
 }
 interface IEvent {
-  payload: IEvent.BlockEvent | IEvent.TxEvent | IEvent.CoinEvent;
+  payload: BlockEvent | TxEvent | CoinEvent;
   type: 'block' | 'tx' | 'coin';
   emitTime: Date;
 }
@@ -22,24 +23,30 @@ export class EventModel extends BaseModel<IEvent> {
   allowedPaging = [];
 
   async onConnect() {
-    this.collection.createIndex({ type: 1, emitTime: 1 }, { background: true });
-
-    const capped = await this.collection.isCapped();
-    if (!capped) {
-      this.db!.createCollection('events', { capped: true, size: 10000 });
-    }
+    await this.collection.createIndex({ type: 1, emitTime: 1 }, { background: true });
+    await this.collection.createIndex({ emitTime: 1 }, { background: true, expireAfterSeconds: 60 * 5 });
   }
 
-  public signalBlock(block: IEvent.BlockEvent) {
-    this.collection.insertOne({ payload: block, emitTime: new Date(), type: 'block' });
+  public signalBlock(block: BlockEvent) {
+    return this.collection.insertOne({ payload: block, emitTime: new Date(), type: 'block' });
   }
 
-  public signalTx(tx: IEvent.TxEvent) {
-    this.collection.insertOne({ payload: tx, emitTime: new Date(), type: 'tx' });
+  public signalTx(tx: TxEvent) {
+    return this.collection.insertOne({ payload: tx, emitTime: new Date(), type: 'tx' });
   }
 
-  public signalAddressCoin(payload: IEvent.CoinEvent) {
-    this.collection.insertOne({ payload, emitTime: new Date(), type: 'coin' });
+  public signalTxs(txs: TxEvent[]) {
+    this.collection.insertMany(txs.map(tx => ({ payload: tx, emitTime: new Date(), type: 'tx' as 'tx' })));
+  }
+
+  public signalAddressCoin(payload: CoinEvent) {
+    return this.collection.insertOne({ payload, emitTime: new Date(), type: 'coin' });
+  }
+
+  public signalAddressCoins(coins: CoinEvent[]) {
+    return this.collection.insertMany(
+      coins.map(coin => ({ payload: coin, emitTime: new Date(), type: 'coin' as 'coin' }))
+    );
   }
 
   public getBlockTail(lastSeen: Date) {

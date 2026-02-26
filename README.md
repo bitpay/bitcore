@@ -1,114 +1,50 @@
-# Installing
-```
-npm install
-```
+# Bitcore Monorepo
 
-# Running Bitcore-Node
+  <p align="center">
+  <img alt="npm" src="https://img.shields.io/npm/v/bitcore-lib">
+  <img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/m/bitpay/bitcore">
+  <a href="https://opensource.org/licenses/MIT/" target="_blank"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-blue.svg" style="display: inherit;"/></a>
+  <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/bitpay/bitcore">
+  <br>
+ <img src="https://circleci.com/gh/bitpay/bitcore.svg?style=shield" alt="master build">
+</p>
+  
+**Infrastructure to build Bitcoin and blockchain-based applications for the next generation of financial technology.**
 
-To run bitcore-node you'll need
-* mongoDB v3.4.11
-* node 8.9.4
-* a valid bitcore.config.json
-  * see bitcore-node/README
+## Applications
 
-Alternatively, if you have docker
+- [Bitcore Node](packages/bitcore-node) - A standardized API to interact with multiple blockchain networks
+- [Bitcore Wallet](packages/bitcore-wallet) - A command-line based wallet client
+- [Bitcore Wallet Client](packages/bitcore-wallet-client) - A client for the wallet service
+- [Bitcore Wallet Service](packages/bitcore-wallet-service) - A multisig HD service for wallets
+- [Bitpay Wallet](https://github.com/bitpay/wallet) - An easy-to-use, multiplatform, multisignature, secure bitcoin wallet
+- [Insight](packages/insight) - A blockchain explorer web user interface
 
-```
-npm run build
-docker-compose up
-```
+## Libraries
 
-# Services
-* bitcore-node
-  * port 3000
-* insight
-  * port 8100
+- [Bitcore Lib](packages/bitcore-lib) - A powerful JavaScript library for Bitcoin
+- [Bitcore Lib Cash](packages/bitcore-lib-cash) - A powerful JavaScript library for Bitcoin Cash
+- [Bitcore Lib Doge](packages/bitcore-lib-doge) - A powerful JavaScript library for Dogecoin
+- [Bitcore Lib Litecoin](packages/bitcore-lib-ltc) - A powerful JavaScript library for Litecoin
+- [Bitcore Mnemonic](packages/bitcore-mnemonic) - Implements mnemonic code for generating deterministic keys
+- [Bitcore P2P](packages/bitcore-p2p) - The peer-to-peer networking protocol for Bitcoin
+- [Bitcore P2P Cash](packages/bitcore-p2p-cash) - The peer-to-peer networking protocol for Bitcoin Cash
+- [Bitcore P2P Doge](packages/bitcore-p2p-doge) **DEPRECATED**[^1] - The peer-to-peer networking protocol for Dogecoin
+- [Crypto Wallet Core](packages/crypto-wallet-core) - A coin-agnostic wallet library for creating transactions, signing, and address derivation
 
+## Extras
 
-# Configuring Bitcore Services
-Bitcore services can be configured through a bitcore.config.json file
+- [Bitcore Build](packages/bitcore-build) - A helper to add tasks to gulp
+- [Bitcore Client](packages/bitcore-client) - A helper to create a wallet using the bitcore-v8 infrastructure
 
-Each service should have it's own namespace in the config
+## Contributing
 
-Eg:
+See [CONTRIBUTING.md](https://github.com/bitpay/bitcore/blob/master/Contributing.md) on the main bitcore repo for information about how to contribute.
 
-```
-{
-  bitcoreNode : {},
-  insight: {},
-  someOtherService: {}
-}
-```
+## License
 
-## Bitcore-Node Config
-Bitcore-Node can access a bitcore.config.json file from
-* Environment Variable
-  * $BITCORE_CONFIG_PATH=some/path/to/config
-* node arguments
-  * --config some/path/to/config
-* ~/bitcore.config.json
-* ${BITCORE_DIR}/bitcore.config.json
-* ${BITCORE_DIR}/packages/bitcore-node/bitcore.config.json
+Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).
 
-### Example Config
-```
-{
-  "bitcoreNode": {
-    "dbHost": "OPTIONAL IP FOR REMOTE DB",
-    "pruneSpentScripts": true,
-    "chains": {
-      "BTC": {
-        "mainnet": {
-          "chainSource": "p2p",
-          "trustedPeers": [
-            {
-              "host": "127.0.0.1",
-              "port": 8333
-            }
-          ],
-          "rpc": {
-            "host": "127.0.0.1",
-            "port": 44444,
-            "username": "RPCUSER",
-            "password": "RPCPASS"
-          }
-        }
-      },
-      "BCH": {
-        "mainnet": {
-          "parentChain": "BTC",
-          "forkHeight": 478558,
-          "trustedPeers": [
-            {
-              "host": "127.0.0.1",
-              "port": 8433
-            }
-          ]
-        }
-      }
-    }
-  }
-}
-```
+Copyright 2013-2023 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.
 
-
-### Trusted Peer Environment Variables
-Trusted peers can also be added via enviroment variables.
-```
-TRUSTED_BTC_REGTEST_PEER=127.0.0.1
-TRUSTED_BTC_REGTEST_PEER_PORT=30000
-```
-This would accomplish the same thing as adding a peer to the trustedPeers array in the config
-
-
-# Bitcore Wallet
-
-Create a wallet
-```
-./bin/wallet-create "testing wallet creation" 1-1 --coin btc --network testnet -f ~/newtestwallet.dat
-```
-
-Register a wallet
-```
-./bin/wallet-import
-```
+[^1]: The Bitcore P2P Doge library is no longer maintained as all the core functionality is contained in Bitcore P2P

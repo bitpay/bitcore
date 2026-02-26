@@ -1,0 +1,6 @@
+ 
+duplicates=[];
+
+db.addresses.aggregate([     {$group: {         _id: {address: "$address"},         dups: {$addToSet: "$_id"},         count: {$sum: 1}         }     },     {$match: {          count: {"$gt": 1}         }     } ], {allowDiskUse:true}).forEach(function(doc) {     doc.dups.shift();     doc.dups.forEach( function(dupId){          duplicates.push(dupId);          }     )     });
+
+db.addresses.remove({_id:{$in:duplicates}});

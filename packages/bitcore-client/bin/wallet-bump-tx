@@ -1,0 +1,78 @@
+#!/usr/bin/env node
+
+'use strict';
+
+const program = require('../ts_build/program');
+const { Wallet } = require('../ts_build/wallet');
+const promptly = require('promptly');
+const ethers = require('ethers');
+
+program
+  .version(require('../package.json').version)
+  .option('--name <name>', 'REQUIRED - Wallet Name')
+  .option('--txid [txid]', 'Transaction id (either this or --rawtx are required)')
+  .option('--rawtx [rawtx]', 'Raw transaction (either this or --txid are required)')
+  .option('--gwei [gwei]', 'For use with EVM based chains (defaults to current market rate)')
+  .option('--path [path]', 'Custom wallet storage path')
+  .option('--storageType [storageType]', 'Name of the database to use (default Level)')
+  .parse(process.argv);
+
+const main = async () => {
+  const { name, path, storageType, txid, rawtx, gwei } = program;
+  let wallet;
+  const weiInGwei = 1000000000;
+  
+  try {
+    wallet = await Wallet.loadWallet({ name, path, storageType });
+
+    let existingTx;
+    if (txid) {
+      existingTx = JSON.parse(await wallet.getTransactionByTxid({ txid }));
+    } else if (rawtx) {
+      existingTx = ethers.utils.parseTransaction(rawtx);
+    } else {
+      throw new Error('Must provide either --rawtx or --txid.');
+    }
+
+    const existingGasPriceInWei = Number(existingTx.gasPrice);
+    let newFeeInWei;
+    if (gwei) {
+      newFeeInWei = Number(gwei) * weiInGwei;
+      if (newFeeInWei <= existingGasPriceInWei) {
+        throw new Error(
+          `Provided gwei is not greater than existing tx gwei. Existing tx gwei is ${existingGasPriceInWei / weiInGwei}`
+        );
+      }
+      existingTx.gasPrice = newFeeInWei;
+    } else {
+      newFeeInWei = JSON.parse(await wallet.getNetworkFee()).feerate;
+      existingTx.gasPrice = newFeeInWei;
+    }
+
+    console.log(
+      `Bumping gas price from ${existingGasPriceInWei / weiInGwei} gwei to ${newFeeInWei / weiInGwei} gwei`
+    );
+
+    const { nonce, gasLimit, gasPrice, to, data, value, chainId } = existingTx;
+    // converting gasLimit and value with toString avoids a bigNumber warning
+    const params = { nonce, gasLimit: gasLimit.toString(), gasPrice, data, chainId, recipients: [{ address: to, amount: value.toString() }] };
+
+    const tx = await wallet.newTx(params);
+    console.log('UnsignedRawTx: ', tx);
+    const passphrase = await promptly.password('Wallet Password:');
+    wallet = await wallet.unlock(passphrase);
+    const signedTx = await wallet.signTx({ tx, passphrase });
+    console.log('SignedRawTx: ', signedTx);
+    const confirmed = await promptly.confirm('Broadcast? (y/n)');
+    if (!confirmed) {
+      return;
+    }
+    const transaction = await wallet.broadcast({ tx: signedTx, ignoreNonce: true });
+    console.log('Txid: ', transaction.txid);
+    console.log('Transaction broadcasted');
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+main();

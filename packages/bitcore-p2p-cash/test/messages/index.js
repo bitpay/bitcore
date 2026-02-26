@@ -12,14 +12,14 @@ var Data = require('../data/messages'); //todo merge with commandData
 var commandData = require('../data/messages.json');
 
 function getPayloadBuffer(messageBuffer) {
-  return new Buffer(messageBuffer.slice(48), 'hex');
+  return Buffer.from(messageBuffer.slice(48), 'hex');
 }
 
 describe('Messages', function() {
 
   var buildMessage = function(hex) {
     var m = Buffers();
-    m.push(new Buffer(hex, 'hex'));
+    m.push(Buffer.from(hex, 'hex'));
     return m;
   };
 
@@ -67,9 +67,13 @@ describe('Messages', function() {
     });
   });
 
+
   describe('#fromBuffer/#toBuffer round trip for all commands', function() {
+    const skipped = ['xversion']; // TODO no fixtures for this yet
     var messages = new Messages();
     Object.keys(messages.builder.commandsMap).forEach(function(command) {
+      if (skipped.includes(command)) return;
+
       var name = messages.builder.commandsMap[command];
       it(name, function(done) {
         var payloadBuffer = getPayloadBuffer(commandData[command].message);
@@ -78,7 +82,7 @@ describe('Messages', function() {
         var outputBuffer = message.getPayload();
         outputBuffer.toString('hex').should.equal(payloadBuffer.toString('hex'));
         outputBuffer.should.deep.equal(payloadBuffer);
-        var expectedBuffer = new Buffer(commandData[command].message, 'hex');
+        var expectedBuffer = Buffer.from(commandData[command].message, 'hex');
         message.toBuffer().should.deep.equal(expectedBuffer);
         done();
       });
@@ -163,7 +167,7 @@ describe('Messages', function() {
 
   describe('#parseBuffer', function() {
     it('fails with invalid command', function() {
-      var invalidCommand = 'f9beb4d96d616c6963696f757300000025000000bd5e830c' +
+      var invalidCommand = 'e3e1f3e86d616c6963696f757300000025000000bd5e830c' +
         '0102000000ec3995c1bf7269ff728818a65e53af00cbbee6b6eca8ac9ce7bc79d87' +
         '7041ed8';
       var fails = function() {
@@ -178,10 +182,10 @@ describe('Messages', function() {
         '1000100000000000000ba6288540000000001000000000000000000000000000000' +
         '0000ffffba8886dceab0010000000000000000000000000000000000ffff0509552' +
         '2208de7e1c1ef80a1cea70f2f5361746f7368693a302e392e312fa317050001';
-      var malformed2 = 'f9beb4d967657464617461000000000089000000d88134740102' +
+      var malformed2 = 'e3e1f3e867657464617461000000000089000000d88134740102' +
         '0000006308e4a380c949dbad182747b0f7b6a89e874328ca41f37287f74a81b8f84' +
         '86d';
-      var malformed3 = 'f9beb4d967657464617461000000000025000000616263640102' +
+      var malformed3 = 'e3e1f3e867657464617461000000000025000000616263640102' +
         '00000069ebcbc34a4f9890da9aea0f773beba883a9afb1ab9ad7647dd4a1cd346c3' +
         '728';
       [malformed1, malformed2, malformed3].forEach(function(malformed) {

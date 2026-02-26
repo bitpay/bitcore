@@ -8,13 +8,14 @@ program
   .version(require('../package.json').version)
   .option('--name <name>', 'REQUIRED - Wallet Name')
   .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--storageType [storageType]', 'optional - name of the databse to use (default Level)')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path } = program;
+  const { name, path, storageType } = program;
   try {
     const password = await promptly.password('Wallet Password:');
-    let wallet = await Wallet.loadWallet({ name, path });
+    let wallet = await Wallet.loadWallet({ name, path, storageType });
     await wallet.unlock(password);
     console.log(wallet);
   } catch (e) {

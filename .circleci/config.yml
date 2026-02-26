@@ -1,15 +1,203 @@
 # Javascript Node CircleCI 2.0 configuration file
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
-version: 2
+version: 2.1
+
+executors:
+  main:
+    machine:
+      image: ubuntu-2004:202201-02
+      docker_layer_caching: true
+    resource_class: large
+    working_directory: ~/bitcore
+    environment:
+      - DB_NAME: bitcore-test
+      - DB_PORT: 7357
+      - BITCORE_CONFIG_PATH: ~/bitcore/bitcore-test.config.json
+
+commands:
+  create_concatenated_package_lock:
+    description: "Concatenate all package-lock.json files recognized by lerna.js into single file. File is used as checksum source for part of caching key."
+    parameters:
+      filename:
+        type: string
+    steps:
+      - run:
+          name: Combine package-lock.json files to single file
+          command: npx lerna la --json | grep '"location":' | awk -F packages '{printf "packages%s\n", $2}' | awk -F '"' '{printf "\"%s/package-lock.json\" ", $1}' | xargs cat > << parameters.filename >>
+  start_docker_images:
+    description: Pull docker images for mongo and blockchain nodes
+    steps:
+      - run:
+          name: Build & start blockchain containers
+          command: docker-compose -f docker-compose.test.base.yml -f docker-compose.test.ci.yml up --detach
+  use_node:
+    description: Force usage of correct node version on the executor machine
+    steps:
+      - run:
+          name: Use Node 18
+          command: |
+            nvm install 18.14.2
+            nvm alias default 18.14.2
+            nvm use default
+  restore_dependency_cache:
+    steps:
+      - create_concatenated_package_lock:
+          filename: combined-package-lock.txt
+      - restore_cache:
+          key: node_modules-{{ checksum "package-lock.json" }}-{{ checksum "combined-package-lock.txt" }}
+  run_test:
+    description: Execute the test suite for a package
+    parameters:
+      package:
+        type: string
+    steps:    
+      - attach_workspace:
+          at: ~/bitcore
+      - use_node
+      - start_docker_images
+      - run:
+          name: Run << parameters.package >> tests
+          command: |
+            nvm use default
+            npm run compile
+            npm run test:<< parameters.package >>
+
+
 jobs:
   build:
-    machine:
-      image: circleci/classic:latest
-      docker_layer_caching: true
-    working_directory: ~/bitcore
+    executor: main
     steps:
       - checkout
-
+      - use_node
+    #   - run:
+    #       name: Install Chrome
+    #       command: |
+    #         sudo mkdir -p /etc/apt/keyrings
+    #         curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /etc/apt/keyrings/google.gpg
+    #         echo 'deb [arch=amd64 signed-by=/etc/apt/keygrings/google.gpg] http://dl.google.com/linux/chrome/deb/ stable main' | sudo tee /etc/apt/sources.list.d/chrome.list
+    #         set -x && sudo apt-get update && sudo apt-get install -y google-chrome-stable
+    #         export CHROME_BIN=/usr/bin/google-chrome
       - run:
-          name: Build service
-          command: npm run test:ci
+          name: Print versions
+          command: |
+            nvm use default
+            set -x && node -v && npm -v && google-chrome --version && docker version
+      - restore_dependency_cache
+      - run: | # TODO figure out how to make this only run on a cache miss in restore_dependency_cache
+          nvm use default
+          npm install
+      - save_cache:
+          key: node_modules-{{ checksum "package-lock.json" }}-{{ checksum "combined-package-lock.txt" }}
+          paths:
+            - node_modules
+            - packages/bitcore-build/node_modules
+            - packages/bitcore-client/node_modules
+            - packages/bitcore-lib/node_modules
+            - packages/bitcore-lib-cash/node_modules
+            - packages/bitcore-lib-doge/node_modules
+            - packages/bitcore-lib-ltc/node_modules
+            - packages/bitcore-mnemonic/node_modules
+            - packages/bitcore-node/node_modules
+            - packages/bitcore-p2p/node_modules
+            - packages/bitcore-p2p-cash/node_modules
+            - packages/bitcore-p2p-doge/node_modules
+            - packages/bitcore-wallet/node_modules
+            - packages/bitcore-wallet-client/node_modules
+            - packages/bitcore-wallet-service/node_modules
+            - packages/crypto-wallet-core/node_modules
+            - packages/insight/node_modules
+      - persist_to_workspace:
+          root: ~/bitcore
+          paths:
+            - .
+  bitcore-node:
+    executor: main
+    steps:
+      - run_test:
+          package: bitcore-node
+  bitcore-wallet-service:
+    executor: main
+    steps:    
+      - run_test:
+          package: bitcore-wallet-service
+  bitcore-wallet-client:
+    executor: main
+    steps:
+      - run_test:
+          package: bitcore-wallet-client
+  crypto-wallet-core:
+    executor: main
+    steps:
+      - run_test:
+          package: crypto-wallet-core
+  bitcore-wallet:
+    executor: main
+    steps:
+      - run_test:
+          package: bitcore-wallet
+  bitcore-lib:
+    executor: main
+    steps:
+      - run_test:
+          package: bitcore-lib
+  bitcore-lib-cash:
+    executor: main
+    steps:
+      - run_test:
+          package: bitcore-lib-cash
+  bitcore-lib-doge:
+    executor: main
+    steps:
+      - run_test:
+          package: bitcore-lib-doge
+  bitcore-lib-ltc:
+    executor: main
+    steps:
+      - run_test:
+          package: bitcore-lib-ltc
+  bitcore-mnemonic:
+    executor: main
+    steps:
+      - run_test:
+          package: bitcore-mnemonic
+  bitcore-p2p:
+    executor: main
+    steps:
+      - run_test:
+          package: bitcore-p2p
+      
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - bitcore-node:
+          requires:
+            - build
+      - bitcore-wallet-service:
+          requires:
+            - build
+      - bitcore-wallet-client:
+          requires:
+            - build
+      - crypto-wallet-core:
+          requires:
+            - build
+      - bitcore-lib:
+          requires:
+            - build
+      - bitcore-lib-cash:
+          requires:
+            - build
+      - bitcore-lib-doge:
+          requires:
+            - build
+      - bitcore-lib-ltc:
+          requires:
+            - build
+      - bitcore-mnemonic:
+          requires:
+            - build
+      - bitcore-p2p:
+          requires:
+            - build

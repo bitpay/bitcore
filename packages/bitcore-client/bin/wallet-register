@@ -8,13 +8,14 @@ program
   .option('--name <name>', 'REQUIRED - Wallet Name')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--baseUrl <url>', 'optional - Change configured wallet baseUrl')
+  .option('--storageType [storageType]', 'optional - name of the database to use')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, baseUrl } = program;
+  const { name, path, baseUrl, storageType } = program;
   let wallet;
   try {
-    wallet = await Wallet.loadWallet({ name, path });
+    wallet = await Wallet.loadWallet({ name, path, storageType });
     await wallet.register({ baseUrl });
     console.log('Wallet registered!');
   } catch (e) {

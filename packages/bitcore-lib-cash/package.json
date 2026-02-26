@@ -1,15 +1,15 @@
 {
   "name": "bitcore-lib-cash",
-  "version": "8.0.0",
+  "version": "10.0.5",
   "description": "A pure and powerful JavaScript Bitcoin Cash library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
-    "lint": "gulp lint",
     "test": "gulp test",
     "test:ci": "npm run test",
     "coverage": "gulp coverage",
-    "build": "gulp"
+    "build": "gulp",
+    "pub": "npm run build && npm publish"
   },
   "keywords": [
     "bitcoin",
@@ -29,28 +29,28 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitpay/bitcore-lib/tree/cash"
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-lib-cash"
   },
   "browser": {
     "request": "browser-request"
   },
   "dependencies": {
-    "bitcore-lib": "^8.0.0",
+    "bitcore-lib": "^10.0.5",
     "bn.js": "=4.11.8",
     "bs58": "^4.0.1",
     "buffer-compare": "=1.1.1",
-    "elliptic": "=6.4.0",
+    "elliptic": "^6.5.3",
     "inherits": "=2.0.1",
-    "lodash": "=4.17.11"
+    "lodash": "^4.17.20"
   },
   "devDependencies": {
     "base-x": "=3.0.4",
-    "bitcore-build": "^8.0.0",
+    "bitcore-build": "^10.0.5",
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
     "gulp": "^4.0.0",
-    "karma-phantomjs-launcher": "^1.0.4",
     "sinon": "^7.1.1"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }

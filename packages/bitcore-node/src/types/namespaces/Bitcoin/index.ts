@@ -1,27 +1,21 @@
-import { BitcoinBlockType, BlockHeader, BlockHeaderObj } from './Block';
+import { BitcoinBlockType as BBT, BlockHeader, BlockHeaderObj } from './Block';
 import {
-  BitcoinTransactionType,
-  BitcoinOutput,
+  BitcoinAddress as BA,
   BitcoinInput,
-  BitcoinScript,
-  BitcoinAddress,
-  BitcoinInputObj
+  BitcoinInputObj,
+  BitcoinOutput,
+  BitcoinScript as BS,
+  BitcoinTransactionType
 } from './Transaction';
 
-export declare namespace Bitcoin {
-  export type Block = BitcoinBlockType;
-  export type Transaction = BitcoinTransactionType;
-  export type Script = BitcoinScript;
-  export type Address = BitcoinAddress;
-}
+export type BitcoinBlockType = BBT;
+export type BitcoinTransaction = BitcoinTransactionType;
+export type BitcoinScript = BS;
+export type BitcoinAddress = BA;
 
-export declare namespace Bitcoin.Transaction {
-  export type Output = BitcoinOutput;
-  export type Input = BitcoinInput;
-  export type InputObj = BitcoinInputObj;
-}
+export type TransactionOutput = BitcoinOutput;
+export type TransactionInput = BitcoinInput;
+export type TransactionInputObj = BitcoinInputObj;
 
-export declare namespace Bitcoin.Block {
-  export type Header = BlockHeader;
-  export type HeaderObj = BlockHeaderObj
-}
+export type BitcoinHeader = BlockHeader;
+export type BitcoinHeaderObj = BlockHeaderObj;

@@ -38,7 +38,7 @@ var sighash = function sighash(transaction, sighashType, inputNumber, scriptCode
       var input = transaction.inputs[n];
       var prevTxIdBuffer = new BufferReader(input.prevTxId).readReverse();
       buffers.push(prevTxIdBuffer);
-      var outputIndexBuffer = new Buffer(new Array(4));
+      var outputIndexBuffer = Buffer.alloc(4);
       outputIndexBuffer.writeUInt32LE(input.outputIndex, 0);
       buffers.push(outputIndexBuffer);
     }
@@ -50,7 +50,7 @@ var sighash = function sighash(transaction, sighashType, inputNumber, scriptCode
 
     var sequenceBuffers = [];
     for (var m = 0; m < transaction.inputs.length; m++) {
-      var sequenceBuffer = new Buffer(new Array(4));
+      var sequenceBuffer = Buffer.alloc(4);
       sequenceBuffer.writeUInt32LE(transaction.inputs[m].sequenceNumber, 0);
       sequenceBuffers.push(sequenceBuffer);
     }
@@ -111,14 +111,21 @@ var sighash = function sighash(transaction, sighashType, inputNumber, scriptCode
  * @param {number} sighash
  * @param {number} inputIndex
  * @param {Script} subscript
+ * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
  * @return {Signature}
  */
-function sign(transaction, privateKey, sighashType, inputIndex, scriptCode, satoshisBuffer) {
-  var hashbuf = sighash(transaction, sighashType, inputIndex, scriptCode, satoshisBuffer);
-  var sig = ECDSA.sign(hashbuf, privateKey).set({
-    nhashtype: sighashType
-  });
-  return sig;
+function sign(transaction, privateKey, sighashType, inputIndex, scriptCode, satoshisBuffer, signingMethod) {
+  signingMethod = signingMethod || 'ecdsa';
+  var sig;
+
+  if (signingMethod === 'ecdsa') {
+    let hashbuf = sighash(transaction, sighashType, inputIndex, scriptCode, satoshisBuffer);
+    sig = ECDSA.sign(hashbuf, privateKey).set({
+      nhashtype: sighashType
+    });
+    return sig;
+  }
+  throw new Error("signingMethod not supported ", signingMethod);
 }
 
 /**
@@ -130,13 +137,19 @@ function sign(transaction, privateKey, sighashType, inputIndex, scriptCode, sato
  * @param {PublicKey} publicKey
  * @param {number} inputIndex
  * @param {Script} subscript
+ * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr' (future signing method)
  * @return {boolean}
  */
-function verify(transaction, signature, publicKey, inputIndex, scriptCode, satoshisBuffer) {
+function verify(transaction, signature, publicKey, inputIndex, scriptCode, satoshisBuffer, signingMethod) {
   $.checkArgument(!_.isUndefined(transaction));
   $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype));
-  var hashbuf = sighash(transaction, signature.nhashtype, inputIndex, scriptCode, satoshisBuffer);
-  return ECDSA.verify(hashbuf, signature, publicKey);
+  signingMethod = signingMethod || 'ecdsa';
+
+  if (signingMethod === 'ecdsa') {
+    let hashbuf = sighash(transaction, signature.nhashtype, inputIndex, scriptCode, satoshisBuffer);
+    return ECDSA.verify(hashbuf, signature, publicKey);
+  }
+  throw new Error("signingMethod not supported ", signingMethod);
 }
 
 /**

@@ -1,13 +1,13 @@
-import config from '../config';
+import cors from 'cors';
 import { Request, Response } from 'express';
 import express from 'express';
-import cors from 'cors';
-import { LogMiddleware, CacheMiddleware, CacheTimes, RateLimiter } from './middleware';
-import { Web3Proxy } from "./web3";
+import config from '../config';
+import { Config } from '../services/config';
+import { CacheMiddleware, CacheTimes, LogMiddleware, RateLimiter } from './middleware';
+import { Web3Proxy } from './web3';
 
 const app = express();
 const bodyParser = require('body-parser');
-app.use(RateLimiter('GLOBAL', 10, 200, 4000));
 app.use(
   bodyParser.json({
     limit: 100000000
@@ -18,7 +18,7 @@ app.use(
     limit: 100000000
   })
 );
-const chains = Object.keys(config.chains);
+const chains = Config.chains();
 const networks: any = {};
 for (let chain of chains) {
   for (let network of Object.keys(config.chains[chain])) {
@@ -57,7 +57,8 @@ function getRouterFromFile(path) {
 
 app.use(cors());
 app.use(LogMiddleware());
-app.use(CacheMiddleware(CacheTimes.Second));
+app.use(CacheMiddleware(CacheTimes.Second, CacheTimes.Second));
+app.use(RateLimiter('GLOBAL', 10, 200, 4000));
 app.use('/api', getRouterFromFile('status'));
 
 app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {

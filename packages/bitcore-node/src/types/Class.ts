@@ -1,1 +1,1 @@
-type Class<T> = { new (...args: any[]): T };
+type Class<T> = new (...args: any[]) => T;

@@ -1,0 +1,2 @@
+{{subjectPrefix}}New payment received
+You have received a payment of {{amount}}. The transaction is still unconfirmed.

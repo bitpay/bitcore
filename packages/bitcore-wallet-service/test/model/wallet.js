@@ -4,7 +4,7 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var Wallet = require('../../lib/model/wallet');
+var { Wallet } = require('../../ts_build/lib/model/wallet');
 
 
 describe('Wallet', function() {
@@ -73,14 +73,14 @@ describe('Wallet', function() {
 
     it('key should depend on xpubs', function() {
       var t = _.clone(testWallet);
-  
+
       t.copayers[0].xPubKey = 'xpub661MyMwAqRbcF3Q3BRNic47PusMzQbG3TDmxKJJT2k7vGLg7STrmdfYporfSgmCefUkLDnaQrMrVZf9knKBR9bYkwQxCaEpK611mZV8VNkN';
       var w = Wallet.fromObj(t);
       var a = w.updateBEKeys();
       w.beAuthPrivateKey2.should.be.equal('16c34ae1b6b6176fb7972204d7aed37494a65878d58928ea8a1331b9995aa7a3');
     });
- 
- 
+
+
   });
 
 });

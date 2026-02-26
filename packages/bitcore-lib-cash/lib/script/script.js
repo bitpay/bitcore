@@ -12,6 +12,7 @@ var errors = require('../errors');
 var buffer = require('buffer');
 var BufferUtil = require('../util/buffer');
 var JSUtil = require('../util/js');
+var Escrow = require('./escrow');
 
 /**
  * A bitcoin transaction script. Each transaction's inputs and outputs
@@ -172,12 +173,12 @@ Script.fromASM = function(str) {
 };
 
 Script.fromHex = function(str) {
-  return new Script(new buffer.Buffer(str, 'hex'));
+  return new Script(Buffer.from(str, 'hex'));
 };
 
 Script.fromString = function(str) {
   if (JSUtil.isHexa(str) || str.length === 0) {
-    return new Script(new buffer.Buffer(str, 'hex'));
+    return new Script(Buffer.from(str, 'hex'));
   }
   var script = new Script();
   script.chunks = [];
@@ -326,7 +327,6 @@ Script.prototype.isPublicKeyHashIn = function() {
     var pubkeyBuf = this.chunks[1].buf;
     if (signatureBuf &&
         signatureBuf.length &&
-        signatureBuf[0] === 0x30 &&
         pubkeyBuf &&
         pubkeyBuf.length
        ) {
@@ -344,8 +344,8 @@ Script.prototype.isPublicKeyHashIn = function() {
 };
 
 Script.prototype.getPublicKey = function() {
-  $.checkState(this.isPublicKeyOut(), 'Can\'t retrieve PublicKey from a non-PK output');
-  return this.chunks[0].buf;
+  $.checkState(this.isPublicKeyOut() || this.isPublicKeyHashIn(), "Can't retrieve PublicKey from a non-PK output or non-PKH input");
+  return this.isPublicKeyOut() ? this.chunks[0].buf : this.chunks[1].buf;
 };
 
 Script.prototype.getPublicKeyHash = function() {
@@ -390,6 +390,33 @@ Script.prototype.isPublicKeyIn = function() {
       return true;
     }
   }
+  return false;
+};
+
+/**
+ * @param {Object=} values - The return values
+ * @param {Number} values.version - Set with the witness version
+ * @param {Buffer} values.program - Set with the witness program
+ * @returns {boolean} if this is a p2wpkh output script
+ */
+ Script.prototype.isWitnessProgram = function(values) {
+  if (!values) {
+    values = {};
+  }
+  var buf = this.toBuffer();
+  if (buf.length < 4 || buf.length > 42) {
+    return false;
+  }
+  if (buf[0] !== Opcode.OP_0 && !(buf[0] >= Opcode.OP_1 && buf[0] <= Opcode.OP_16)) {
+    return false;
+  }
+
+  if (buf.length === buf[1] + 2) {
+    values.version = buf[0];
+    values.program = buf.slice(2, buf.length);
+    return true;
+  }
+
   return false;
 };
 
@@ -707,6 +734,24 @@ Script.prototype.removeCodeseparators = function() {
 // high level script builder methods
 
 /**
+ * @returns {Script} a new escrow output redeem script for given input public keys and reclaim public key
+ * @param {PublicKey[]} inputPublicKeys - list of all public keys associated with each P2PKH input of the
+ * zero-confirmation escrow transaction
+ * @param {PublicKey} reclaimPublicKey - the public key used to reclaim the escrow by the customer
+ */
+ Script.buildEscrowOut = function(inputPublicKeys, reclaimPublicKey) {
+  // Escrow redeem scripts support a max of 2^16 input public keys: 
+  // https://github.com/bitjson/bch-zce#zce-root-hash
+  $.checkArgument(inputPublicKeys.length < 65536, 'Number of input public keys exceeds 65,536');
+  $.checkArgument(inputPublicKeys.length > 0, 'Must provide at least one input public key');
+  $.checkArgument(reclaimPublicKey, 'Must provide a reclaim public key');
+  const redeemScript = new Script();
+  const redeemScriptOperations = Escrow.generateRedeemScriptOperations(inputPublicKeys, reclaimPublicKey);
+  redeemScriptOperations.forEach(operation => redeemScript.add(operation));
+  return redeemScript;
+};
+
+/**
  * @returns {Script} a new Multisig output script for given public keys,
  * requiring m of those public keys to spend
  * @param {PublicKey[]} publicKeys - list of all public keys controlling the output
@@ -755,7 +800,42 @@ Script.buildMultisigIn = function(pubkeys, threshold, signatures, opts) {
   $.checkArgument(_.isArray(signatures));
   opts = opts || {};
   var s = new Script();
-  s.add(Opcode.OP_0);
+
+  if (opts.signingMethod === "schnorr" && opts.checkBits) {
+
+    // Spec according to https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/2019-11-15-schnorrmultisig.md#scriptsig-size
+    let checkBitsString = Buffer.from(opts.checkBits).reverse().join('');
+    let checkBitsDecimal = parseInt(checkBitsString, 2);
+    let checkBitsHex = parseInt(checkBitsDecimal.toString(16), 16);
+    let N = pubkeys.length;
+      // N should only be 1-20
+        if (N >= 1 && N <= 4) {
+          s.add(Opcode(checkBitsHex));
+        }
+        else if (N >= 5 && N <= 8) {
+        if(checkBitsHex === 0x81) {
+            s.add(Opcode("OP_1NEGATE")) // OP_1NEGATE
+          } else if(checkBitsHex > 0x10) {
+            s.add(0x01);
+            s.add(checkBitsHex);
+          } else {
+            s.add(Opcode(checkBitsHex));
+          }
+          
+        }
+        else if (N >= 9 && N <= 16) {
+          s.add(0x02);
+          s.add(checkBitsHex);
+        } 
+        else if (N >= 17 && N <= 20) {
+          s.add(0x03);
+          s.add(checkBitsHex);
+        }
+    } else {
+      s.add(Opcode.OP_0); // ecdsa schnorr mode; multisig dummy param of 0
+    }
+  
+  
   _.each(signatures, function(signature) {
     $.checkArgument(BufferUtil.isBuffer(signature), 'Signatures must be an array of Buffers');
     // TODO: allow signatures to be an array of Signature objects
@@ -773,6 +853,8 @@ Script.buildMultisigIn = function(pubkeys, threshold, signatures, opts) {
  * @param {Object=} opts
  * @param {boolean=} opts.noSorting don't sort the given public keys before creating the script (false by default)
  * @param {Script=} opts.cachedMultisig don't recalculate the redeemScript
+ * @param {Uint8Array} opts.checkBits bitfield map 1 or 0 to check which signatures to map against public keys for verification in schnorr multisig mode
+ * @param {String} opts.signingMethod method with which input will be signed "ecdsa" or "schnorr"
  *
  * @returns {Script}
  */
@@ -782,7 +864,40 @@ Script.buildP2SHMultisigIn = function(pubkeys, threshold, signatures, opts) {
   $.checkArgument(_.isArray(signatures));
   opts = opts || {};
   var s = new Script();
-  s.add(Opcode.OP_0);
+  
+  if (opts.signingMethod === "schnorr" && opts.checkBits) {
+
+    // Spec according to https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/2019-11-15-schnorrmultisig.md#scriptsig-size
+    let checkBitsString = Buffer.from(opts.checkBits).reverse().join('');
+    let checkBitsDecimal = parseInt(checkBitsString, 2);
+    let checkBitsHex = parseInt(checkBitsDecimal.toString(16), 16);
+    let N = pubkeys.length;
+    // N should only be 1-20
+      if (N >= 1 && N <= 4) {
+        s.add(Opcode.smallInt(checkBitsDecimal));
+      }
+      else if (N >= 5 && N <= 8) {
+       if(checkBitsHex === 0x81) {
+          s.add(Opcode("OP_1NEGATE")) // OP_1NEGATE
+        } else if(checkBitsHex > 0x10) {
+          s.add(0x01);
+          s.add(checkBitsHex);
+        } else {
+          s.add(Opcode.smallInt(checkBitsDecimal));
+        }
+      }
+      else if (N >= 9 && N <= 16) {
+        s.add(0x02);
+        s.add(checkBitsHex);
+      } 
+      else if (N >= 17 && N <= 20) {
+        s.add(0x03);
+        s.add(checkBitsHex);
+      }
+  } else {
+    s.add(Opcode.OP_0); // ecdsa schnorr mode; multisig dummy param of 0
+  }
+  
   _.each(signatures, function(signature) {
     $.checkArgument(BufferUtil.isBuffer(signature), 'Signatures must be an array of Buffers');
     // TODO: allow signatures to be an array of Signature objects
@@ -903,6 +1018,22 @@ Script.buildPublicKeyHashIn = function(publicKey, signature, sigtype) {
     ]))
     .add(new PublicKey(publicKey).toBuffer());
   return script;
+};
+
+/**
+ * Builds a scriptSig (a script for an input) that signs an escrow output script.
+ *
+ * @param {PublicKey} publicKey
+ * @param {Signature} signature - a Signature object
+ * @param {RedeemScript} redeemScript - the escrow redeemScript
+ */
+ Script.buildEscrowIn = function(publicKey, signature, redeemScript) {
+  $.checkArgument(signature instanceof Signature);
+  const sighashAll = Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID;
+  return new Script()
+    .add(BufferUtil.concat([signature.toBuffer('schnorr'), BufferUtil.integerAsSingleByteBuffer(sighashAll)]))
+    .add(publicKey.toBuffer())
+    .add(redeemScript.toBuffer());
 };
 
 /**
@@ -1032,7 +1163,7 @@ Script.prototype.findAndDelete = function(script) {
  * @returns {boolean} if the chunk {i} is the smallest way to push that particular data.
  */
 Script.prototype.checkMinimalPush = function(i) {
-  var chunk = this.chunks[i];
+  var chunk = this.   chunks[i];
   var buf = chunk.buf;
   var opcodenum = chunk.opcodenum;
   if (!buf) {
@@ -1043,10 +1174,11 @@ Script.prototype.checkMinimalPush = function(i) {
     return opcodenum === Opcode.OP_0;
   } else if (buf.length === 1 && buf[0] >= 1 && buf[0] <= 16) {
     // Could have used OP_1 .. OP_16.
-    return opcodenum === Opcode.OP_1 + (buf[0] - 1);
+    // return opcodenum === Opcode.OP_1 + (buf[0] - 1);
+    return false;
   } else if (buf.length === 1 && buf[0] === 0x81) {
     // Could have used OP_1NEGATE
-    return opcodenum === Opcode.OP_1NEGATE;
+    return false;
   } else if (buf.length <= 75) {
     // Could have used a direct push (opcode indicating number of bytes pushed + those bytes).
     return opcodenum === buf.length;

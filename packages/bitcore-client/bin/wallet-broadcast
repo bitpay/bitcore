@@ -8,13 +8,14 @@ program
   .option('--name <name>', 'REQUIRED - Wallet name')
   .option('--tx <tx>', 'REQUIRED - Signed transaction to broadcast')
   .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
   .parse(process.argv);
 
 const main = async () => {
-  const { tx, name, path } = program;
+  const { tx, name, path, storageType } = program;
   let wallet;
   try {
-    wallet = await Wallet.loadWallet({ name, path });
+    wallet = await Wallet.loadWallet({ name, path, storageType });
     const transaction = await wallet.broadcast({ tx });
 
     console.log('Transaction broadcasted');

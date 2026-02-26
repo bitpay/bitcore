@@ -187,4 +187,34 @@ BN.pad = function(buf, natlen, size) {
   return rbuf;
 };
 
+BN.prototype.getSize = function() {
+  const bin = this.toString(2).replace('-', '');
+  const numBits = bin.length + 1;
+  return numBits / 8;
+};
+
+BN.prototype.checkOperationForOverflow = function (operand, result, maxSize) {
+  if (this.getSize() > maxSize || operand.getSize() > maxSize || result.getSize() > 8) {
+    throw new Error('overflow');
+  }
+};
+
+BN.prototype.safeAdd = function(bigNumToAdd, maxSize) {
+  const sum = this.add(bigNumToAdd);
+  this.checkOperationForOverflow(bigNumToAdd, sum, maxSize);
+  return sum;
+};
+
+BN.prototype.safeSub = function(bigNumToSubtract, maxSize) {
+  const difference = this.sub(bigNumToSubtract);
+  this.checkOperationForOverflow(bigNumToSubtract, difference, maxSize);
+  return difference;
+};
+
+BN.prototype.safeMul = function(bigNumToMultiply, maxSize) {
+  const product = this.mul(bigNumToMultiply);
+  this.checkOperationForOverflow(bigNumToMultiply, product, maxSize);
+  return product;
+};
+
 module.exports = BN;

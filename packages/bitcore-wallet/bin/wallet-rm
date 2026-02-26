@@ -13,7 +13,7 @@ var args = program.args;
 var txpid = args[0] || '';
 
 utils.getClient(program, { mustExist: true }, function (client) {
-  client.getTxProposals({}, function(err, txps) {
+  client.getTxProposals({doNotVerify: true}, function(err, txps) {
     utils.die(err);
 
     if (program.verbose)

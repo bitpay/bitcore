@@ -31,6 +31,11 @@ var Interpreter = function Interpreter(obj) {
   }
 };
 
+Interpreter.SIGVERSION_BASE = 0;
+Interpreter.SIGVERSION_WITNESS_V0 = 1;
+Interpreter.SIGVERSION_TAPROOT = 2;
+Interpreter.SIGVERSION_TAPSCRIPT = 3;
+
 Interpreter.prototype.verifyWitnessProgram = function(version, program, witness, satoshis, flags) {
 
   var scriptPubKey = new Script();
@@ -82,7 +87,7 @@ Interpreter.prototype.verifyWitnessProgram = function(version, program, witness,
   this.set({
     script: scriptPubKey,
     stack: stack,
-    sigversion: 1,
+    sigversion: Interpreter.SIGVERSION_WITNESS_V0,
     satoshis: satoshis,
     flags: flags,
   });
@@ -145,7 +150,7 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
     script: scriptSig,
     tx: tx,
     nin: nin,
-    sigversion: 0,
+    sigversion: Interpreter.SIGVERSION_BASE,
     satoshis: 0,
     flags: flags
   });
@@ -302,7 +307,7 @@ Interpreter.prototype.initialize = function(obj) {
   this.altstack = [];
   this.pc = 0;
   this.satoshis = 0;
-  this.sigversion = 0;
+  this.sigversion = Interpreter.SIGVERSION_BASE;
   this.pbegincodehash = 0;
   this.nOpCount = 0;
   this.vfExec = [];
@@ -504,7 +509,7 @@ Interpreter.prototype.checkPubkeyEncoding = function(buf) {
   }
 
   // Only compressed keys are accepted in segwit
-  if ((this.flags & Interpreter.SCRIPT_VERIFY_WITNESS_PUBKEYTYPE) != 0 && this.sigversion == 1 && !PublicKey.fromBuffer(buf).compressed) {
+  if ((this.flags & Interpreter.SCRIPT_VERIFY_WITNESS_PUBKEYTYPE) != 0 && this.sigversion == Interpreter.SIGVERSION_WITNESS_V0 && !PublicKey.fromBuffer(buf).compressed) {
     this.errstr = 'SCRIPT_ERR_WITNESS_PUBKEYTYPE';
     return false;
   }

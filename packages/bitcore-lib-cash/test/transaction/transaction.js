@@ -10,6 +10,7 @@ var sinon = require('sinon');
 var bitcore = require('../..');
 var BN = bitcore.crypto.BN;
 var Transaction = bitcore.Transaction;
+var Signature = bitcore.Signature;
 var Input = bitcore.Transaction.Input;
 var Output = bitcore.Transaction.Output;
 var PrivateKey = bitcore.PrivateKey;
@@ -182,7 +183,7 @@ describe('Transaction', function() {
       index++;
       it('case ' + index, function() {
         var i = 0;
-        var transaction = new Transaction();
+        var transaction = (new Transaction()).setVersion(1);
         while (i < vector.length) {
           var command = vector[i];
           var args = vector[i + 1];
@@ -312,9 +313,8 @@ describe('Transaction', function() {
         .to(toAddress, 500000)
         .change(changeAddress)
         .sign(privateKey);
-
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(400000);
+      transaction.outputs[1].satoshis.should.equal(473400);
       transaction.outputs[1].script.toString()
         .should.equal(Script.fromAddress(changeAddress).toString());
       var actual = transaction.getChangeOutput().script.toString();
@@ -388,10 +388,10 @@ describe('Transaction', function() {
         .sign(privateKey);
       transaction._estimateSize().should.be.within(1000, 1999);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.equal(34000);
+      transaction.outputs[1].satoshis.should.equal(37504);
     });
-    it('fee per byte (low fee) can be set up manually', function() {
-      var inputs = _.map(_.range(10), function(i) {
+    it('fee per byte (low fee) can be set up manually', function () {
+      var inputs = _.map(_.range(10), function (i) {
         var utxo = _.clone(simpleUtxoWith100000Satoshis);
         utxo.outputIndex = i;
         return utxo;
@@ -406,8 +406,8 @@ describe('Transaction', function() {
       transaction.outputs.length.should.equal(2);
       transaction.outputs[1].satoshis.should.be.within(48001, 49000); 
     });
-    it('fee per byte (high fee) can be set up manually', function() {
-      var inputs = _.map(_.range(10), function(i) {
+    it('fee per byte (high fee) can be set up manually', function () {
+      var inputs = _.map(_.range(10), function (i) {
         var utxo = _.clone(simpleUtxoWith100000Satoshis);
         utxo.outputIndex = i;
         return utxo;
@@ -422,8 +422,8 @@ describe('Transaction', function() {
       transaction.outputs.length.should.equal(2);
       transaction.outputs[1].satoshis.should.be.within(46002, 48000); 
     });
-    it('fee per byte can be set up manually', function() {
-      var inputs = _.map(_.range(10), function(i) {
+    it('fee per byte can be set up manually', function () {
+      var inputs = _.map(_.range(10), function (i) {
         var utxo = _.clone(simpleUtxoWith100000Satoshis);
         utxo.outputIndex = i;
         return utxo;
@@ -438,8 +438,8 @@ describe('Transaction', function() {
       transaction.outputs.length.should.equal(2);
       transaction.outputs[1].satoshis.should.be.within(24013, 37000); 
     });
-    it('fee per byte not enough for change', function() {
-      var inputs = _.map(_.range(10), function(i) {
+    it('fee per byte not enough for change', function () {
+      var inputs = _.map(_.range(10), function (i) {
         var utxo = _.clone(simpleUtxoWith100000Satoshis);
         utxo.outputIndex = i;
         return utxo;
@@ -464,6 +464,16 @@ describe('Transaction', function() {
       expect(function() {
         return transaction.serialize();
       }).to.throw(errors.Transaction.InvalidSatoshis);
+    });
+    it('if fee is too small, fail serialization', function() {
+      var transaction = new Transaction({ disableDustOutputs: true })
+        .from(simpleUtxoWith100000Satoshis)
+        .to(toAddress, 99999)
+        .change(changeAddress)
+        .sign(privateKey);
+      expect(function() {
+        return transaction.serialize();
+      }).to.throw(errors.Transaction.FeeError.TooSmall);
     });
     it('on second call to sign, change is not recalculated', function() {
       var transaction = new Transaction()
@@ -622,6 +632,14 @@ describe('Transaction', function() {
             .change(changeAddress)
             .sign(privateKey);
         }, 'disableLargeFees', errors.Transaction.FeeError.TooLarge
+      ));
+      it('can skip the check for a fee that is too small', buildSkipTest(
+        function(transaction) {
+          return transaction
+            .fee(1)
+            .change(changeAddress)
+            .sign(privateKey);
+        }, 'disableSmallFees', errors.Transaction.FeeError.TooSmall
       ));
       it('can skip the check that prevents dust outputs', buildSkipTest(
         function(transaction) {
@@ -987,7 +1005,7 @@ describe('Transaction', function() {
         .change(changeAddress)
         .to(toAddress, 1000);
       transaction.inputAmount.should.equal(100000000);
-      transaction.outputAmount.should.equal(99900000);
+      transaction.outputAmount.should.equal(99973400);
     });
     it('returns correct values for coinjoin transaction', function() {
       // see livenet tx c16467eea05f1f30d50ed6dbc06a38539d9bb15110e4b7dc6653046a3678a718
@@ -1085,10 +1103,34 @@ describe('Transaction', function() {
       tx.outputs.length.should.equal(2);
       tx.outputs[0].satoshis.should.equal(10000000);
       tx.outputs[0].script.toAddress().toString().should.equal(toAddress);
-      tx.outputs[1].satoshis.should.equal(89900000);
+      tx.outputs[1].satoshis.should.equal(89973400);
       tx.outputs[1].script.toAddress().toString().should.equal(changeAddress);
     });
 
+  });
+
+  describe('isZceSecured', () => {
+    const zceRawTx = '0100000004ff8abba28b308eb0c1e6bd10b29f30b957dad3be871b40553d8324a79ad1bdea010000006441c4f26e20f40e01f186c70cf89c4003c07870fa4b4370999ed14b4700425a39f89bdc8324abd5245db2df5b9f63f1232a7907e87f05843c2db5062b35dc7b77b9412103978af6aff2c8b93b8776fbb6e33b532316326667ec79f21704589576548f3dcaffffffff85ee380cc3329273aa667d3c29ea9fc81167e8a06ed0feac4df12809f60a064100000000644171dccb5867d2dc9fe9278c2de3916260994a32fc4c724663fb1b9f0fe3f10d8d46a20f3881487c0d391b45419b57d301db4811174ba3fc05c6d16865f4e4f136412103351c7e4cc8e77ccab99b23de6c1585defc72b99da42d2878d6cb64a4186bb0c7ffffffffbcdf29fde37c27c291f585cb83af678dc54ce950f8c5bc7e1d25413b240c94ea000000006441092d7d0dc3b785d13c8e910d8533272a33812b7a61479002ffb7d5cf620fd813c6f59c70f874e78ac65ed720afe1ff6b09a299c03ebb4f8f14f4e7370db852f5412103f4d946e03044e8314e5d87b674154b21c5c7a72f26b96c8a734b1b4ded7263ebffffffff9dc766918e1deed380ddce878c4239f5dd434498f5b65ac3520980dadf3375c3000000006441ae19b88f8503b6beb9d9508d46984486d01ace007fceb90c1b813be51b88ab7e576ba1711e52fcfd8487f22373acc9550a107d5565b9f07a2b004368247358bb412103de52c25690cf07f3f95ba76129c43b9099b51fe151789bc96ac75515b3d48df9ffffffff033c7a0300000000001976a9140157345215a85cbdd767cf947e0c3503e349bfbf88acf63b0000000000001976a914754f61f94a91042b40e5eb804d4db5d766239f4488ac832c00000000000017a914ad6306ad48a63fd28884974ae1ef579af4279a6b8700000000';
+    const zceTx = new Transaction(zceRawTx);
+    const reclaimRawTx = '0100000001b5389a3c3ddcdf02569f7d44442923ddaa7ac6bc889983dff8a1823d7f33169402000000b44135429e569603d928f65e808a3163b59431317c2032f8b611cc1a5a8c7bc6e577b0697000d85950a5a29b7544abdcda3467cc0b5f513e3f7bb616f8ad257badf04121035fb4cada6334e9179b4ed1294a510bcaf8e6f8622030f301e1a76856649924194c4e76a914f92b0b93d58cbb77b51e4f76de22fe47d5000e0f8763ac676b6b5279a96c637c687ea96c637c687ea914c319f2ebff371fd5fcff74768e8200d446fb803188785479879169766bbb6cba68ffffffff017a2b0000000000001976a91425707fbb5f80cd52cc86e88a456a95bbdb4f0c8788ac00000000';
+    const instantAcceptanceEscrow = 10721;
+    const requiredFeeRate = 1;
+    it('should return true for a properly constructed escrowReclaimTx', () => {
+      const zceSecured = zceTx.isZceSecured(reclaimRawTx, instantAcceptanceEscrow, requiredFeeRate);
+      zceSecured.should.equal(true);
+    });
+    it('should return false if insufficient escrow provided', () => {
+      const zceSecured = zceTx.isZceSecured(reclaimRawTx, instantAcceptanceEscrow + 1, requiredFeeRate);
+      zceSecured.should.equal(false);
+    });
+    it('should return false if insufficient fee rate used', () => {
+      const zceSecured = zceTx.isZceSecured(reclaimRawTx, instantAcceptanceEscrow, requiredFeeRate + 1);
+      zceSecured.should.equal(false);
+    });
+    it('should not crash and return false if invalid escrowReclaimTx provided', () => {
+      const zceSecured = zceTx.isZceSecured('invalidhex', instantAcceptanceEscrow, requiredFeeRate);
+      zceSecured.should.equal(false);
+    });
   });
 
   describe('BIP69 Sorting', function() {
@@ -1194,13 +1236,12 @@ describe('Transaction', function() {
           getIndexOrder(outputSet.outputs, tx.outputs).should.deep.equal(outputSet.expected);
         });
       });
-
     });
   });
 });
 
 
-var tx_empty_hex = '01000000000000000000';
+var tx_empty_hex = '02000000000000000000';
 
 /* jshint maxlen: 1000 */
 var tx_1_hex = '01000000015884e5db9de218238671572340b207ee85b628074e7e467096c267266baf77a4000000006a473044022013fa3089327b50263029265572ae1b022a91d10ac80eb4f32f291c914533670b02200d8a5ed5f62634a7e1a0dc9188a3cc460a986267ae4d58faf50c79105431327501210223078d2942df62c45621d209fab84ea9a7a23346201b7727b9b45a29c4e76f5effffffff0150690f00000000001976a9147821c0a3768aa9d1a37e16cf76002aef5373f1a888ac00000000';

@@ -17,7 +17,8 @@ module.exports = function(config) {
 
   function hasDockerCGroup() {
     try {
-      return fs.readFileSync('/proc/self/cgroup', 'utf8').indexOf('docker') !== -1;
+      const file = fs.readFileSync('/proc/self/cgroup', 'utf8');
+      return file.indexOf('docker') !== -1;
     } catch (err) {
       return false;
     }

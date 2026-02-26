@@ -1,0 +1,48 @@
+{
+  "name": "crypto-wallet-core",
+  "version": "10.0.5",
+  "description": "A multi-currency support library for address derivation, private key creation, and transaction creation",
+  "main": "./ts_build/src/index.js",
+  "types": "./ts_build/src/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf ts_build && tsc --version",
+    "compile": "npm run clean && npm run build",
+    "precommit": "npm run fix",
+    "lint": "tslint -c tslint.json 'src/**/*.ts'",
+    "fix": "tslint --fix -c tslint.json 'src/**/*.ts'",
+    "test": "npm run compile && mocha -r ts-node/register test/*.ts",
+    "pub": "npm run compile && npm publish"
+  },
+  "keywords": [
+    "multi-currency",
+    "addresses",
+    "and",
+    "transactions"
+  ],
+  "author": "Micah Riggan",
+  "license": "MIT",
+  "dependencies": {
+    "bitcore-lib": "^10.0.5",
+    "bitcore-lib-cash": "^10.0.5",
+    "bitcore-lib-doge": "^10.0.5",
+    "bitcore-lib-ltc": "^10.0.5",
+    "ethers": "^5.0.12",
+    "info": "0.0.6-beta.0",
+    "ripple-binary-codec": "0.2.6",
+    "ripple-keypairs": "git+https://git@github.com/bitpay/ripple-keypairs.git#8d3a4643a8ddfce8222786e1e5a3e85a89a5b7f5",
+    "ripple-lib": "^1.8.0",
+    "web3": "1.4.0"
+  },
+  "devDependencies": {
+    "@types/chai": "4.1.7",
+    "@types/mocha": "5.2.6",
+    "@types/node": "^14.10.0",
+    "chai": "4.2.0",
+    "mocha": "6.1.4",
+    "ts-node": "8.1.0",
+    "tslint": "5.14.0",
+    "typescript": "4.9.4"
+  },
+  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
+}

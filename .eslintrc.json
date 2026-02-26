@@ -20,6 +20,12 @@
     "semi": [
       "error",
       "always"
+    ],
+    "max-len": [
+      "warn",
+      { 
+        "code": 120
+      }
     ]
   }
 }

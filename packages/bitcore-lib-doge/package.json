@@ -1,0 +1,55 @@
+{
+  "name": "bitcore-lib-doge",
+  "version": "10.0.5",
+  "description": "A pure and powerful JavaScript Dogecoin library.",
+  "author": "BitPay <dev@bitpay.com>",
+  "main": "index.js",
+  "scripts": {
+    "test": "gulp --tasks && gulp test",
+    "test:ci": "npm run test",
+    "coverage": "gulp coverage",
+    "build": "gulp",
+    "pub": "npm run build && npm publish"
+  },
+  "keywords": [
+    "dogecoin",
+    "bitcoin",
+    "transaction",
+    "address",
+    "p2p",
+    "ecies",
+    "cryptocurrency",
+    "blockchain",
+    "payment",
+    "bip21",
+    "bip32",
+    "bip37",
+    "bip69",
+    "bip70",
+    "multisig"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-lib-doge"
+  },
+  "browser": {
+    "request": "browser-request"
+  },
+  "dependencies": {
+    "bn.js": "=4.11.8",
+    "bs58": "^4.0.1",
+    "buffer-compare": "=1.1.1",
+    "elliptic": "^6.5.3",
+    "inherits": "=2.0.1",
+    "lodash": "^4.17.20",
+    "scryptsy": "2.1.0"
+  },
+  "devDependencies": {
+    "bitcore-build": "^10.0.5",
+    "brfs": "^2.0.1",
+    "chai": "^4.2.0",
+    "gulp": "^4.0.0",
+    "sinon": "^7.1.1"
+  },
+  "license": "MIT"
+}

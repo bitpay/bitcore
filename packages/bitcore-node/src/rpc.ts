@@ -1,11 +1,15 @@
 import request = require('request');
-
 import { LoggifyClass } from './decorators/Loggify';
 type CallbackType = (err: any, data?: any) => any;
 
 @LoggifyClass
 export class RPC {
-  constructor(private username: string, private password: string, private host: string, private port: number) {}
+  constructor(
+    private username: string,
+    private password: string,
+    private host: string,
+    private port: number | string
+  ) {}
 
   public callMethod(method: string, params: any, callback: CallbackType) {
     request(
@@ -15,8 +19,8 @@ export class RPC {
         body: {
           jsonrpc: '1.0',
           id: Date.now(),
-          method: method,
-          params: params
+          method,
+          params
         },
         json: true
       },
@@ -40,8 +44,8 @@ export class RPC {
     );
   }
 
-  async asyncCall(method: string, params: any[]) {
-    return new Promise((resolve, reject) => {
+  async asyncCall<T>(method: string, params: any[]) {
+    return new Promise<T>((resolve, reject) => {
       this.callMethod(method, params, (err, data) => {
         if (err) {
           return reject(err);
@@ -51,82 +55,73 @@ export class RPC {
     });
   }
 
-  getChainTip(callback: CallbackType) {
-    this.callMethod('getchaintips', [], (err, result) => {
-      if (err) {
-        return callback(err);
-      }
-      return callback(null, result[0]);
-    });
+  async getChainTip() {
+    const tips = await this.asyncCall<{
+      height: number;
+      hash: string;
+      branchlen: number;
+      status: string;
+    }>('getchaintips', []);
+    return tips[0];
   }
 
-  getBestBlockHash(callback: CallbackType) {
-    this.callMethod('getbestblockhash', [], callback);
+  getBestBlockHash() {
+    return this.asyncCall('getbestblockhash', []);
   }
 
-  getBlockHeight(callback: CallbackType) {
-    this.callMethod('getblockcount', [], callback);
+  getBlockHeight() {
+    return this.asyncCall('getblockcount', []);
   }
 
-  getBlock(hash: string, verbose: boolean, callback: CallbackType) {
-    this.callMethod('getblock', [hash, verbose], callback);
+  getBlock(hash: string, verbose: boolean) {
+    return this.asyncCall('getblock', [hash, verbose]);
   }
 
-  getBlockHash(height: number, callback: CallbackType) {
-    this.callMethod('getblockhash', [height], callback);
+  getBlockHash(height: number) {
+    return this.asyncCall<string>('getblockhash', [height]);
   }
 
-  getBlockByHeight(height: number, callback: CallbackType) {
-    this.getBlockHash(height, (err, hash) => {
-      if (err) {
-        return callback(err);
-      }
-      this.getBlock(hash, false, callback);
-    });
+  async getBlockByHeight(height: number) {
+    const hash = await this.getBlockHash(height);
+    return this.getBlock(hash, false);
   }
 
-  getTransaction(txid: string, callback: CallbackType) {
-    this.callMethod('getrawtransaction', [txid, true], (err, result) => {
-      if (err) {
-        return callback(err);
-      }
-      return callback(null, result);
-    });
+  getTransaction(txid: string) {
+    return this.asyncCall('getrawtransaction', [txid, true]);
   }
 
-  sendTransaction(rawTx: string, callback: CallbackType) {
-    this.callMethod('sendrawtransaction', [rawTx], callback);
+  sendTransaction(rawTx: string | Array<string>) {
+    const txs = typeof rawTx === 'string' ? [rawTx] : rawTx;
+    return this.asyncCall<string>('sendrawtransaction', txs);
   }
 
-  decodeScript(hex: string, callback: CallbackType) {
-    this.callMethod('decodescript', [hex], callback);
+  decodeScript(hex: string) {
+    return this.asyncCall('decodescript', [hex]);
   }
 
-  getWalletAddresses(account: string, callback: CallbackType) {
-    this.callMethod('getaddressesbyaccount', [account], callback);
+  getWalletAddresses(account: string) {
+    return this.asyncCall('getaddressesbyaccount', [account]);
   }
 
   async getEstimateSmartFee(target: number) {
     return this.asyncCall('estimatesmartfee', [target]);
   }
 
-
-  async getEstimateFee(target: number) {
-    return this.asyncCall('estimatefee', [target]);
+  async getEstimateFee() {
+    return this.asyncCall('estimatefee', []);
   }
-
 }
 
 @LoggifyClass
 export class AsyncRPC {
   private rpc: RPC;
 
-  constructor(username: string, password: string, host: string, port: number) {
+  constructor(username: string, password: string, host: string, port: number | string) {
     this.rpc = new RPC(username, password, host, port);
   }
 
-  async call(method: string, params: any[]) {
-    return new Promise((resolve, reject) => {
+  async call<T = any>(method: string, params: any[]): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
       this.rpc.callMethod(method, params, (err, data) => {
         if (err) {
           return reject(err);
@@ -144,8 +139,18 @@ export class AsyncRPC {
     return (await this.call('getblock', [hash, 2])) as RPCBlock<RPCTransaction>;
   }
 
-  async generate(n: number): Promise<string[]> {
-    return (await this.call('generate', [n])) as string[];
+  async getnewaddress(account: string): Promise<string> {
+    return (await this.call('getnewaddress', [account])) as string;
+  }
+
+  async signrawtx(txs: string): Promise<any> {
+    try {
+      const ret = await this.call('signrawtransactionwithwallet', [txs]);
+      return ret;
+    } catch (e: any) {
+      if (!e.code || e.code != -32601) return Promise.reject(e);
+      return await this.call('signrawtransaction', [txs]);
+    }
   }
 
   async transaction(txid: string, block?: string): Promise<RPCTransaction> {
@@ -155,9 +160,13 @@ export class AsyncRPC {
     }
     return (await this.call('getrawtransaction', args)) as RPCTransaction;
   }
+
+  async sendtoaddress(address: string, value: string | number) {
+    return this.call<string>('sendtoaddress', [address, value]);
+  }
 }
 
-export type RPCBlock<T> = {
+export interface RPCBlock<T> {
   hash: string;
   confirmations: number;
   size: number;
@@ -176,9 +185,9 @@ export type RPCBlock<T> = {
   chainwork: string;
   previousblockhash: string;
   nextblockhash: string;
-};
+}
 
-export type RPCTransaction = {
+export interface RPCTransaction {
   in_active_chain: boolean;
   hex: string;
   txid: string;
@@ -213,4 +222,4 @@ export type RPCTransaction = {
   confirmations: number;
   time: number;
   blocktime: number;
-};
+}

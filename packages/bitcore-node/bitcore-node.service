@@ -5,7 +5,7 @@ After=network.target
 [Service]
 User=bitcore
 Group=bitcore
-ExecStart=/usr/bin/node /home/bitcore/bitcore/packages/bitcore-node/server.js
+ExecStart=/usr/bin/node /home/bitcore/bitcore/packages/bitcore-node/build/src/server.js
 
 [Install]
 WantedBy=multi-user.target

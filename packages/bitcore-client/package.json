@@ -1,48 +1,60 @@
 {
   "name": "bitcore-client",
   "description": "Wallet client for Bitcore node",
-  "engines": {
-    "node": ">=8.0.0"
-  },
-  "version": "8.0.0",
+  "version": "10.0.5",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
-  "main": "ts_build/index.js",
+  "main": "./ts_build/index.js",
   "types": "./ts_build/index.d.ts",
-  "prettier": {
-    "singleQuote": true
+  "engines": {
+    "node": ">=18.0.0"
   },
   "scripts": {
-    "clean": "rm -rf ts_build",
-    "compile": "npm run clean && ./node_modules/.bin/tsc",
-    "test": "mocha ./test/unit"
+    "build": "npm run compile",
+    "clean": "rm -rf ./ts_build",
+    "pub": "npm run compile && npm  publish",
+    "watch": "tsc --watch",
+    "compile": "npm run clean && tsc",
+    "test": "mocha ./test/unit",
+    "precommit": "npm run fix && npm run lint",
+    "lint": "tslint -c ../../tslint.json 'src/**/*.ts'",
+    "fix": "tslint --fix -c ../../tslint.json 'src/**/*.ts'"
   },
   "dependencies": {
     "JSONStream": "~1.3.1",
-    "async": "^2.5.0",
-    "bcrypt": "^2.0.1",
-    "bitcore-lib": "^8.0.0",
-    "bitcore-lib-cash": "^8.0.0",
-    "bitcore-mnemonic": "^8.0.0",
-    "commander": "^2.15.1",
-    "leveldown": "^3.0.0",
-    "levelup": "^2.0.2",
-    "mkdirp": "^0.5.1",
-    "progress": "^2.0.0",
-    "promptly": "^3.0.3",
-    "request": "^2.87.0",
-    "request-promise-native": "^1.0.5",
-    "secp256k1": "^3.5.0"
+    "async": "2.5.0",
+    "bcrypt": "5.1.0",
+    "bitcore-mnemonic": "^10.0.5",
+    "commander": "2.15.1",
+    "crypto-wallet-core": "^10.0.5",
+    "elliptic": "^6.5.3",
+    "ethers": "5.7.1",
+    "level-js": "4.0.2",
+    "leveldown": "6.1.1",
+    "levelup": "4.3.2",
+    "mkdirp": "0.5.1",
+    "mongodb": "^3.6.0",
+    "progress": "2.0.0",
+    "promptly": "3.0.3",
+    "request": "2.87.0",
+    "request-promise-native": "1.0.5",
+    "secp256k1": "3.7.1",
+    "source-map-support": "0.5.13"
   },
   "devDependencies": {
-    "@types/bcrypt": "^3.0.0",
-    "@types/node": "^10.12.15",
-    "@types/request": "^2.48.1",
-    "@types/request-promise-native": "^1.0.15",
-    "@types/secp256k1": "^3.5.0",
-    "eslint-config-airbnb-base": "^12.1.0",
-    "eslint-plugin-import": "^2.8.0",
-    "mocha": "^5.0.5",
-    "sinon": "^4.4.8",
-    "typescript": "^3.2.2"
-  }
+    "@types/bcrypt": "3.0.0",
+    "@types/bcryptjs": "2.4.2",
+    "@types/elliptic": "6.4.3",
+    "@types/ethereumjs-util": "5.2.0",
+    "@types/mongodb": "4.0.7",
+    "@types/node": "18.11.18",
+    "@types/request": "2.48.1",
+    "@types/request-promise-native": "1.0.15",
+    "@types/secp256k1": "3.5.0",
+    "eslint-config-airbnb-base": "12.1.0",
+    "eslint-plugin-import": "2.8.0",
+    "mocha": "5.0.5",
+    "sinon": "4.4.8",
+    "typescript": "4.9.4"
+  },
+  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }

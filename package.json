@@ -1,46 +1,63 @@
 {
-  "version": "8.0.0",
+  "version": "8.25.8",
   "prettier": {
-    "singleQuote": true
+    "singleQuote": true,
+    "printWidth": 120
   },
   "scripts": {
-    "build": "docker build -t bitcore-node .",
+    "build": "docker build -t bitcore-node . ",
+    "watch": "./node_modules/.bin/lerna run watch --parallel",
     "postinstall": "npm run bootstrap && npm run compile",
     "bootstrap": "./node_modules/.bin/lerna bootstrap",
-    "insight": "cd packages/insight && npm start",
-    "insight-previous": "cd ./packages/insight-previous && npm start",
+    "insight:build": "cd ./packages/insight && npm i && npm run build",
     "node": "cd packages/bitcore-node && npm start",
     "bws": "cd packages/bitcore-wallet-service && npm start",
     "compile": "./node_modules/.bin/lerna run compile",
-    "test:ci": "npm run test:ci:build && npm run test:ci:unit && npm run test:ci:integration",
-    "test:ci:build": "docker-compose -f docker-compose.test.yml build",
+    "lint": "lerna run lint",
+    "fix": "lerna run fix",
+    "precommit": "lerna run --concurrency 1 --stream precommit --since master",
+    "test:ci:local": "npm run test:ci:build:local && npm run test:ci:all",
+    "test:ci:build:local": "./ci.sh build local",
+    "test:ci": "echo 'This command has been removed. Try running `npm run test:ci:local` to run tests locally using the test_runner docker container as before. The CI pipeline logic is now in .circleci/config.yml.'",
+    "test:ci:build": "./ci.sh build ci",
+    "test:ci:all": "./ci.sh 'npm run lerna:ci:all'",
     "test:ci:unit": "./ci.sh 'npm run lerna:ci:unit'",
     "test:ci:integration": "./ci.sh 'npm run lerna:ci:integration'",
+    "test:ci:coverage": "./ci.sh 'npm run lerna:ci:coverage'",
     "test:bitcore-wallet-service": "cd ./packages/bitcore-wallet-service && npm run test",
     "ci:bitcore-wallet-service": "./ci.sh 'npm run test:bitcore-wallet-service'",
     "test:bitcore-wallet-client": "cd ./packages/bitcore-wallet-client && npm run test",
     "ci:bitcore-wallet-client": "./ci.sh 'npm run test:bitcore-wallet-client'",
+    "test:bitcore-wallet": "cd ./packages/bitcore-wallet && npm run test",
+    "ci:bitcore-wallet": "./ci.sh 'npm run test:bitcore-wallet'",
+    "test:crypto-wallet-core": "cd ./packages/crypto-wallet-core && npm run test",
+    "ci:crypto-wallet-core": "./ci.sh 'npm run test:crypto-wallet-core'",
     "test:bitcore-node": "cd ./packages/bitcore-node && npm run test",
+    "test:bitcore-node:coverage": "cd ./packages/bitcore-node && npm run coverage",
+    "test:bitcore-node:int": "cd ./packages/bitcore-node && npm run test:integration",
     "ci:bitcore-node": "./ci.sh 'npm run test:bitcore-node'",
+    "ci:bitcore-node:int": "./ci.sh 'npm run test:bitcore-node:int'",
+    "ci:bitcore-node:coverage": "./ci.sh 'npm run test:bitcore-node:coverage'",
     "test:bitcore-lib": "cd ./packages/bitcore-lib && npm run test",
     "ci:bitcore-lib": "./ci.sh 'npm run test:bitcore-lib'",
     "test:bitcore-lib-cash": "cd ./packages/bitcore-lib-cash && npm run test",
     "ci:bitcore-lib-cash": "./ci.sh 'npm run test:bitcore-lib-cash'",
+    "test:bitcore-lib-ltc": "cd ./packages/bitcore-lib-ltc && npm run test",
+    "ci:bitcore-lib-ltc": "./ci.sh 'npm run test:bitcore-lib-ltc'",
+    "test:bitcore-lib-doge": "cd ./packages/bitcore-lib-doge && npm run test",
+    "ci:bitcore-lib-doge": "./ci.sh 'npm run test:bitcore-lib-doge'",
     "test:bitcore-p2p": "cd ./packages/bitcore-p2p && npm run test",
     "ci:bitcore-p2p": "./ci.sh 'npm run test:bitcore-p2p'",
     "test:bitcore-p2p-cash": "cd ./packages/bitcore-p2p-cash && npm run test",
     "ci:bitcore-p2p-cash": "./ci.sh 'npm run test:bitcore-p2p-cash'",
-    "test:bitcore-payment-protocol": "cd ./packages/bitcore-payment-protocol && npm run test",
-    "ci:bitcore-payment-protocol": "./ci.sh 'npm run test:bitcore-payment-protocol'",
+    "test:bitcore-p2p-doge": "cd ./packages/bitcore-p2p-doge && npm run test",
+    "ci:bitcore-p2p-doge": "./ci.sh 'npm run test:bitcore-p2p-doge'",
     "test:bitcore-mnemonic": "cd ./packages/bitcore-mnemonic && npm run test",
     "ci:bitcore-mnemonic": "./ci.sh 'npm run test:bitcore-mnemonic'",
-    "test:insight-previous": "cd ./packages/insight-previous && npm run test",
-    "ci:insight-previous": "./ci.sh 'npm run test:insight-previous'",
-    "test:insight": "cd ./packages/insight && npm run test",
-    "ci:insight": "./ci.sh 'npm run test:insight'",
-    "lerna:ci:unit": "./node_modules/.bin/lerna run test:ci --concurrency 1 --stream",
-    "lerna:ci:integration": "./node_modules/.bin/lerna run test:ci:integration --concurrency 1 --stream",
-    "lerna:ci:coverage": "./node_modules/.bin/lerna run coverage --concurrency 1 --stream"
+    "lerna:ci:all": "npx lerna run test:ci --concurrency 1 --stream",
+    "lerna:ci:unit": "npx run test:ci:unit --concurrency 1 --stream",
+    "lerna:ci:integration": "npx run test:ci:integration --concurrency 1 --stream",
+    "lerna:ci:coverage": "npx run coverage --concurrency 1 --stream"
   },
   "config": {
     "commitizen": {
@@ -49,12 +66,23 @@
   },
   "devDependencies": {
     "cz-customizable": "^5.2.0",
-    "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
-    "lerna": "^3.6.0",
-    "prettier": "^1.14.3",
+    "husky": "^2.4.0",
+    "lint-staged": "^9.5.0",
+    "prettier": "^1.19.1",
+    "tslint": "^5.20.1",
+    "tslint-config-prettier": "^1.18.0",
+    "typedoc": "^0.15.0",
     "typescript-eslint-parser": "^15.0.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "lerna": "^3.22.1",
+    "typescript": "4.9.4"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run precommit"
+    }
+  }
 }

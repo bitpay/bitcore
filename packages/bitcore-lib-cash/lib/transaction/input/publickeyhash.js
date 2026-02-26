@@ -29,9 +29,10 @@ inherits(PublicKeyHashInput, Input);
  * @param {number} index - the index of the input in the transaction input vector
  * @param {number=} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
  * @param {Buffer=} hashData - the precalculated hash of the public key associated with the privateKey provided
+ * @param {String} signingMethod - the signing method used to sign tx "ecdsa" or "schnorr"
  * @return {Array} of objects that can be
  */
-PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData) {
+PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
   $.checkState(this.output instanceof Output);
   hashData = hashData || Hash.sha256ripemd160(privateKey.publicKey.toBuffer());
   sigtype = sigtype || (Signature.SIGHASH_ALL |  Signature.SIGHASH_FORKID);
@@ -42,7 +43,7 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
       prevTxId: this.prevTxId,
       outputIndex: this.outputIndex,
       inputIndex: index,
-      signature: Sighash.sign(transaction, privateKey, sigtype, index, this.output.script, this.output.satoshisBN),
+      signature: Sighash.sign(transaction, privateKey, sigtype, index, this.output.script, this.output.satoshisBN, undefined, signingMethod),
       sigtype: sigtype
     })];
   }
@@ -57,14 +58,16 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
  * @param {PublicKey} signature.publicKey
  * @param {Signature} signature.signature
  * @param {number=} signature.sigtype
+ * @param {String} signingMethod "ecdsa" or "schnorr"
  * @return {PublicKeyHashInput} this, for chaining
  */
-PublicKeyHashInput.prototype.addSignature = function(transaction, signature) {
-  $.checkState(this.isValidSignature(transaction, signature), 'Signature is invalid');
+PublicKeyHashInput.prototype.addSignature = function(transaction, signature, signingMethod) {
+
+  $.checkState(this.isValidSignature(transaction, signature, signingMethod), 'Signature is invalid');
 
   this.setScript(Script.buildPublicKeyHashIn(
     signature.publicKey,
-    signature.signature.toDER(),
+    signature.signature.toDER(signingMethod),
     signature.sigtype
   ));
   return this;

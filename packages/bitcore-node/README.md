@@ -1,42 +1,104 @@
-Bitcore Node
-============
-_Requirements_:
-- Trusted P2P Peer
-- MongoDB Server >= v3.4
-## Config Example
-./config.json
+# Bitcore Node
 
+**A standardized API to interact with multiple blockchain networks**
+
+Currently supporting:
+**[Bitcoin](https://bitcoin.org/), [Bitcoin Cash](https://bitcoincash.org/), [Litecoin](https://litecoin.com/), [Dogecoin](https://dogecoin.com/), [Ripple](https://ripple.com/), [Ethereum](https://ethereum.org/) and [Polygon](https://polygon.technology/)**
+
+
+## Getting Started
+
+### Requirements
+
+- Trusted P2P Client with an open RPC endpoint
+- MongoDB Server >= v3.4
+- make g++ gcc 
+
+### Checkout the repo
+
+
+```sh
+git clone git@github.com:bitpay/bitcore.git
+git checkout master
+npm install
 ```
+
+## Setup Guide
+
+### 1. Setup Bitcore config
+
+The definition for all the chain configuration can be found in `src/types/Config.ts`
+
+<details>
+<summary>Example bitcore.config.json</summary>
+<br>
+
+```json
 {
   "bitcoreNode": {
     "chains": {
       "BTC": {
+        "mainnet": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "127.0.0.1",
+              "port": 20008
+            }
+          ],
+          "rpc": {
+            "host": "127.0.0.1",
+            "port": 20009,
+            "username": "username",
+            "password": "password"
+          }
+        },
         "regtest": {
           "chainSource": "p2p",
           "trustedPeers": [
             {
               "host": "127.0.0.1",
-              "port": 30000
+              "port": 20020
             }
           ],
           "rpc": {
             "host": "127.0.0.1",
-            "port": 30001,
-            "username": "bitpaytest",
-            "password": "local321"
+            "port": 20021,
+            "username": "username",
+            "password": "password"
+          }
+        }
+      },
+      "BCH": {
+        "mainnet": {
+          "parentChain": "BTC",
+          "forkHeight": 478558,
+          "trustedPeers": [
+            {
+              "host": "127.0.0.1",
+              "port": 30008
+            }
+          ],
+          "rpc": {
+            "host": "127.0.0.1",
+            "port": 30009,
+            "username": "username",
+            "password": "password"
           }
         },
-        "testnet": {
+        "regtest": {
           "chainSource": "p2p",
           "trustedPeers": [
             {
               "host": "127.0.0.1",
-              "port": 20000
+              "port": 30020
             }
           ],
           "rpc": {
             "host": "127.0.0.1",
-            "port": 30001
+            "port": 30021,
+            "username": "username",
+            "password": "password"
           }
         }
       }
@@ -45,82 +107,71 @@ _Requirements_:
 }
 ```
 
+</details>
 
-# Transactions
+### 2. Setup Your Blockchain Nodes
 
-## Get Transactions by block
+<details>
+<summary>Example Bitcoin Mainnet Config</summary>
 
-GET `/api/BTC/mainnet/tx/?blockHeight=123456`
+```sh
+whitelist=127.0.0.1
+txindex=0
+listen=1
+server=1
+irc=1
+upnp=1
 
-GET `/api/BTC/mainnet/tx/?blockHash=0000000000002917ed80650c6174aac8dfc46f5fe36480aaef682ff6cd83c3ca`
+# Make sure port & rpcport matches the
+# bitcore.config.json ports for BTC mainnet
 
-## Get Transaction by txid
+# if using Bitcoin Core v0.17+ prefix
+# [main]
 
-GET `/api/BTC/mainnet/tx/5c8a63e695caf95c28a0155beaa22b84a7adb18b8693ba90f04d94891d122afe`
+port=20008
+rpcport=20009
+rpcallowip=127.0.0.1
 
-# Address
-
-## Get Transaction Outputs by Address
-
-GET `/api/BTC/mainnet/address/mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4/?unspent=true`
-
-## Get Balance for an Address
-
-GET `/api/BTC/mainnet/address/mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4/balance`
-
-# Block
-
-## Get Block
-
-GET `/api/BTC/mainnet/block/0000000000002917ed80650c6174aac8dfc46f5fe36480aaef682ff6cd83c3ca`
-
-GET `/api/BTC/mainnet/block/123456`
-
-
-# Authenticated Methods
-## Wallet
-
-### Add Wallet:
-
-POST `/api/BTC/mainnet/wallet`
-
-BODY:
-```
-{
-  "name": "WalletName",
-  "chain": "BTC",
-  "network": "mainnet",
-  "pubKey": "03bdb94afdc7e5c4811bf9b160ac475b82156ea42c8659c8358b68c828df9a1c3d",
-  "path": "m/44'/0'/0'"
-}
+rpcuser=username
+rpcpassword=password
 ```
 
-### Get Wallet:
+</details>
 
-GET `/api/BTC/mainnet/wallet/:pubKey`
+### 3. Run Your Blockchain Nodes
 
-### Import Addresses:
+<details>
+<summary>Example Starting a Bitcoin Node</summary>
 
-POST `/api/BTC/mainnet/wallet/:pubKey`
-
-BODY: raw jsonl wallet file of the form
+```sh
+# Path to your bitcoin application and path to the config above
+/Applications/Bitcoin-Qt.app/Contents/MacOS/Bitcoin-Qt -datadir=/Users/username/blockchains/bitcoin-core/networks/mainnet/
 ```
-{"address": "bItCoInAddReSSHeRe"}
+
+</details>
+
+### 4. Start Bitcore
+
+```sh
+npm run node
 ```
 
-### Get Wallet Addresses
+Bitcore will begin using your blockchain nodes to synchronize its own database so that you can use standardized queries to get data from each of your supported blockchains.
 
-GET `/api/BTC/mainnet/wallet/:pubKey/addresses`
+## API Documentation
 
-### Get Wallet Transactions:
+- [REST API parameters and example responses](./docs/api-documentation.md)
 
-GET `/api/BTC/mainnet/wallet/:pubKey/transactions`
+- [Websockets API namespaces, event names and parameters](./docs/sockets-api.md)
 
-### Get Balance:
+- [Testing Bitcore-node in RegTest](./docs/wallet-guide.md)
 
-GET `/api/BTC/mainnet/wallet/:pubKey/balance`
+## Contributing
 
-### Get Wallet UTXOS
+See [CONTRIBUTING.md](../../Contributing.md) on the main bitcore repo for information about how to contribute.
 
-GET `/api/BTC/mainnet/wallet/:pubKey/utxos`
+## License
 
+Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).
+
+Copyright 2013-2023 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.

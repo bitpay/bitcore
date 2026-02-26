@@ -11,9 +11,11 @@ program
 var args = program.args;
 
 utils.getClient(program, { mustExist: true }, function (client) {
+  
   client.getMainAddresses({
     doNotVerify: true
   }, function(err, x) {
+
     utils.die(err);
 
     if (x.length > 0) {

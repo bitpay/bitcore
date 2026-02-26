@@ -1,10 +1,10 @@
 # bitcore-wallet-client
 
 [![NPM Package](https://img.shields.io/npm/v/bitcore-wallet-client.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-wallet-client)
-[![Build Status](https://img.shields.io/travis/bitpay/bitcore-wallet-client.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-wallet-client) 
+[![Build Status](https://img.shields.io/travis/bitpay/bitcore-wallet-client.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-wallet-client)
 [![Coverage Status](https://coveralls.io/repos/bitpay/bitcore-wallet-client/badge.svg)](https://coveralls.io/r/bitpay/bitcore-wallet-client)
 
-The *official* client library for [bitcore-wallet-service] (https://github.com/bitpay/bitcore-wallet-service). 
+The *official* client library for [bitcore-wallet-service](https://github.com/bitpay/bitcore-wallet-service).
 
 ## Description
 
@@ -14,10 +14,7 @@ See [Bitcore-wallet] (https://github.com/bitpay/bitcore-wallet) for a simple CLI
 
 ## Get Started
 
-You can start using bitcore-wallet-client in any of these two ways:
-
-* via [Bower](http://bower.io/): by running `bower install bitcore-wallet-client` from your console
-* or via [NPM](https://www.npmjs.com/package/bitcore-wallet-client): by running `npm install bitcore-wallet-client` from your console.
+You can start using bitcore-wallet-client via [NPM](https://www.npmjs.com/package/bitcore-wallet-client): by running `npm install bitcore-wallet-client` from your console.
 
 ## Example
 
@@ -25,7 +22,7 @@ Start your own local [Bitcore wallet service](https://github.com/bitpay/bitcore-
 
 Then create two files `irene.js` and `tomas.js` with the content below:
 
-**irene.js**
+### **irene.js**
 
 ``` javascript
 var Client = require('bitcore-wallet-client');
@@ -50,7 +47,7 @@ client.createWallet("My Wallet", "Irene", 2, 2, {network: 'testnet'}, function(e
 });
 ```
 
-**tomas.js**
+### **tomas.js**
 
 ``` javascript
 
@@ -106,21 +103,21 @@ client.joinWallet(secret, "Tomas", {}, function(err, wallet) {
 
 Install `bitcore-wallet-client` before start:
 
-```
+```sh
 npm i bitcore-wallet-client
 ```
 
 Create a new wallet with the first script:
 
-```
+```sh
 $ node irene.js
-info Generating new keys 
+info Generating new keys
  Wallet Created. Share this secret with your copayers: JbTDjtUkvWS4c3mgAtJf4zKyRGzdQzZacfx2S7gRqPLcbeAWaSDEnazFJF6mKbzBvY1ZRwZCbvT
 ```
 
 Join to this wallet with generated secret:
 
-```
+```sh
 $ node tomas.js JbTDjtUkvWS4c3mgAtJf4zKyRGzdQzZacfx2S7gRqPLcbeAWaSDEnazFJF6mKbzBvY1ZRwZCbvT
 Joined My Wallet!
 
@@ -133,5 +130,3 @@ Return: [...]
 ```
 
 Note that the scripts created two files named `irene.dat` and `tomas.dat`. With these files you can get status, generate addresses, create proposals, sign transactions, etc.
-
-

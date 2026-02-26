@@ -1,14 +1,14 @@
 {
   "name": "bitcore-p2p",
-  "version": "8.0.0",
+  "version": "10.0.5",
   "description": "Interface to the bitcoin P2P network for bitcore",
   "main": "index.js",
   "scripts": {
-    "lint": "gulp lint",
     "test": "gulp test",
     "test:ci": "npm run test",
     "coverage": "gulp coverage",
-    "build": "gulp"
+    "build": "gulp",
+    "pub": "npm run build && npm publish"
   },
   "keywords": [
     "bitcoin",
@@ -19,18 +19,18 @@
     "url": "https://github.com/bitpay/bitcore-p2p.git"
   },
   "dependencies": {
-    "bitcore-lib": "^8.0.0",
-    "bcoin": "1.0.0-beta.12",
+    "bitcore-lib": "^10.0.5",
     "bloom-filter": "^0.2.0",
     "buffers": "bitpay/node-buffers#v0.1.2-bitpay",
     "socks5-client": "^0.3.6"
   },
   "devDependencies": {
-    "bitcore-build": "^8.0.0",
+    "bitcore-build": "^10.0.5",
     "brfs": "^1.2.0",
     "chai": "~1.10.0",
     "gulp": "^4.0.0",
     "sinon": "^1.12.2"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }

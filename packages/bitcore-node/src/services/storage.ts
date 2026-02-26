@@ -1,14 +1,17 @@
+import { ObjectId } from 'bson';
 import { EventEmitter } from 'events';
 import { Request, Response } from 'express';
-import { TransformableModel } from '../types/TransformableModel';
-import logger from '../logger';
-import { LoggifyClass } from '../decorators/Loggify';
 import { ObjectID } from 'mongodb';
-import { MongoClient, Db, Cursor } from 'mongodb';
-import { MongoBound } from '../models/base';
+import { Cursor, Db, MongoClient } from 'mongodb';
+import { Readable } from 'stream';
+import { LoggifyClass } from '../decorators/Loggify';
+import logger from '../logger';
 import '../models';
-import { StreamingFindOptions } from '../types/Query';
+import { MongoBound } from '../models/base';
 import { ConfigType } from '../types/Config';
+import { StreamingFindOptions } from '../types/Query';
+import { TransformableModel } from '../types/TransformableModel';
+import { wait } from '../utils/wait';
 import { Config, ConfigService } from './config';
 
 export { StreamingFindOptions };
@@ -20,25 +23,27 @@ export class StorageService {
   connected: boolean = false;
   connection = new EventEmitter();
   configService: ConfigService;
+  modelsConnected = new Array<Promise<any>>();
 
   constructor({ configService = Config } = {}) {
     this.configService = configService;
+    this.connection.setMaxListeners(30);
   }
 
   start(args: Partial<ConfigType> = {}): Promise<MongoClient> {
     return new Promise((resolve, reject) => {
       let options = Object.assign({}, this.configService.get(), args);
-      let { dbName, dbHost, dbPort } = options;
-      const connectUrl = `mongodb://${dbHost}:${dbPort}/${dbName}?socketTimeoutMS=3600000&noDelay=true`;
+      let { dbUrl, dbName, dbHost, dbPort, dbUser, dbPass } = options;
+      let auth = dbUser !== '' && dbPass !== '' ? `${dbUser}:${dbPass}@` : '';
+      const connectUrl = dbUrl
+        ? dbUrl
+        : `mongodb://${auth}${dbHost}:${dbPort}/${dbName}?socketTimeoutMS=3600000&noDelay=true`;
       let attemptConnect = async () => {
-        return MongoClient.connect(
-          connectUrl,
-          {
-            keepAlive: true,
-            poolSize: options.maxPoolSize,
-            useNewUrlParser: true
-          }
-        );
+        return MongoClient.connect(connectUrl, {
+          keepAlive: true,
+          poolSize: options.maxPoolSize,
+          useNewUrlParser: true
+        });
       };
       let attempted = 0;
       let attemptConnectId = setInterval(async () => {
@@ -49,8 +54,8 @@ export class StorageService {
           clearInterval(attemptConnectId);
           this.connection.emit('CONNECTED');
           resolve(this.client);
-        } catch (err) {
-          logger.error(err);
+        } catch (err: any) {
+          logger.error('%o', err);
           attempted++;
           if (attempted > 5) {
             clearInterval(attemptConnectId);
@@ -61,7 +66,16 @@ export class StorageService {
     });
   }
 
-  stop() {}
+  async stop() {
+    if (this.client) {
+      logger.info('Stopping Storage Service');
+      await wait(5000);
+      this.connected = false;
+      await Promise.all(this.modelsConnected);
+      await this.client.close();
+      this.connection.emit('DISCONNECTED');
+    }
+  }
 
   validPagingProperty<T>(model: TransformableModel<T>, property: keyof MongoBound<T>) {
     const defaultCase = property === '_id';
@@ -73,7 +87,7 @@ export class StorageService {
    *
    * For a given model, return the typecasted value based on a key and the type associated with that key
    */
-  typecastForDb<T>(model: TransformableModel<T>, modelKey: keyof T, modelValue: T[keyof T]) {
+  typecastForDb<T>(model: TransformableModel<T>, modelKey: keyof MongoBound<T>, modelValue: T[keyof T] | ObjectId) {
     let typecastedValue = modelValue;
     if (modelKey) {
       let oldValue = modelValue as any;
@@ -97,6 +111,47 @@ export class StorageService {
     return typecastedValue;
   }
 
+  stream(input: Readable, req: Request, res: Response) {
+    let closed = false;
+    req.on('close', function() {
+      closed = true;
+    });
+    res.on('close', function() {
+      closed = true;
+    });
+    input.on('error', function(err) {
+      if (!closed) {
+        closed = true;
+        return res.status(500).end(err.message);
+      }
+      return;
+    });
+    let isFirst = true;
+    res.type('json');
+    input.on('data', function(data) {
+      if (!closed) {
+        if (isFirst) {
+          res.write('[\n');
+          isFirst = false;
+        } else {
+          res.write(',\n');
+        }
+        res.write(JSON.stringify(data));
+      }
+    });
+    input.on('end', function() {
+      if (!closed) {
+        if (isFirst) {
+          // there was no data
+          res.write('[]');
+        } else {
+          res.write('\n]');
+        }
+        res.end();
+      }
+    });
+  }
+
   apiStream<T>(cursor: Cursor<T>, req: Request, res: Response) {
     let closed = false;
     req.on('close', function() {
@@ -112,6 +167,7 @@ export class StorageService {
         closed = true;
         return res.status(500).end(err.message);
       }
+      return;
     });
     let isFirst = true;
     res.type('json');
@@ -134,7 +190,7 @@ export class StorageService {
           // there was no data
           res.write('[]');
         } else {
-          res.write(']');
+          res.write('\n]');
         }
         res.end();
       }
@@ -184,7 +240,7 @@ export class StorageService {
       .find(finalQuery, options)
       .addCursorFlag('noCursorTimeout', true)
       .stream({
-        transform: transform || model._apiTransform
+        transform: transform || model._apiTransform.bind(model)
       });
     if (options.sort) {
       cursor = cursor.sort(options.sort);

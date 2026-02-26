@@ -4,6 +4,7 @@
     "noImplicitAny": false,
     "removeComments": true,
     "declaration": true,
+    "declarationMap": true,
     "module": "commonjs",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,

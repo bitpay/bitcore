@@ -5,6 +5,7 @@ var should = chai.should();
 var expect = chai.expect;
 
 var bitcore = require('..');
+var Address = bitcore.Address;
 var BN = bitcore.crypto.BN;
 var Point = bitcore.crypto.Point;
 var PrivateKey = bitcore.PrivateKey;
@@ -17,7 +18,7 @@ var invalidbase58 = require('./data/bitcoind/base58_keys_invalid.json');
 describe('PrivateKey', function() {
   var hex = '96c132224121b509b7d0a16245e957d9192609c5637c6228311287b1be21627a';
   var hex2 = '8080808080808080808080808080808080808080808080808080808080808080';
-  var buf = new Buffer(hex, 'hex');
+  var buf = Buffer.from(hex, 'hex');
   var wifTestnet = 'cSdkPxkAjA4HDr5VHgsebAPDEh9Gyub4HK8UJr2DFGGqKKy4K5sG';
   var wifTestnetUncompressed = '92jJzK4tbURm1C7udQXxeCBvXHoHJstDXRxAMouPG1k1XUaXdsu';
   var wifLivenet = 'L2Gkw3kKJ6N24QcDuH4XDqt9cTqsKTVNDGz1CRZhk9cq4auDUbJy';
@@ -127,7 +128,7 @@ describe('PrivateKey', function() {
     it('should not be able to instantiate private key WIF is too long', function() {
       expect(function() {
         var buf = Base58Check.decode('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
-        var buf2 = Buffer.concat([buf, new Buffer(0x01)]);
+        var buf2 = Buffer.concat([buf, Buffer.from([0x01])]);
         return new PrivateKey(buf2);
       }).to.throw('Length of buffer must be 33 (uncompressed) or 34 (compressed');
     });
@@ -135,7 +136,7 @@ describe('PrivateKey', function() {
     it('should not be able to instantiate private key WIF because of unknown network byte', function() {
       expect(function() {
         var buf = Base58Check.decode('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
-        var buf2 = Buffer.concat([new Buffer('ff', 'hex'), buf.slice(1, 33)]);
+        var buf2 = Buffer.concat([ Buffer.from('ff', 'hex'), buf.slice(1, 33)]);
         return new PrivateKey(buf2);
       }).to.throw('Invalid network');
     });
@@ -271,6 +272,42 @@ describe('PrivateKey', function() {
       pk.toAddress(Networks.testnet).network.name.should.equal(Networks.testnet.name);
     });
 
+    it('should output this known livenet witness address correctly', function() {
+      var privkey = PrivateKey.fromWIF('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
+      var address = privkey.toAddress(null, Address.PayToWitnessPublicKeyHash);
+      address.toString().should.equal('bc1qv0t45lutg37ghyg7lg22vgducs3d9hvuarwr89');
+    });
+
+    it('should output this known testnet witness address correctly', function() {
+      var privkey = PrivateKey.fromWIF('cR4qogdN9UxLZJXCNFNwDRRZNeLRWuds9TTSuLNweFVjiaE4gPaq');
+      var address = privkey.toAddress(null, Address.PayToWitnessPublicKeyHash);
+      address.toString().should.equal('tb1q363x8lv54fdsywyc9494upd6sp4rg6glhsyzk0');
+    });
+
+    it('creates network specific witness address', function() {
+      var pk = PrivateKey.fromWIF('cR4qogdN9UxLZJXCNFNwDRRZNeLRWuds9TTSuLNweFVjiaE4gPaq');
+      pk.toAddress(Networks.livenet, Address.PayToWitnessPublicKeyHash).network.name.should.equal(Networks.livenet.name);
+      pk.toAddress(Networks.testnet, Address.PayToWitnessPublicKeyHash).network.name.should.equal(Networks.testnet.name);
+    });
+
+    it('should output this known livenet wrapped witness address correctly', function() {
+      var privkey = PrivateKey.fromWIF('L3T1s1TYP9oyhHpXgkyLoJFGniEgkv2Jhi138d7R2yJ9F4QdDU2m');
+      var address = privkey.toAddress(null, Address.PayToScriptHash);
+      address.toString().should.equal('39wREM7dxb7KNMNR1py1W8nUheUtkPPA5r');
+    });
+
+    it('should output this known testnet wrapped witness address correctly', function() {
+      var privkey = PrivateKey.fromWIF('cR4qogdN9UxLZJXCNFNwDRRZNeLRWuds9TTSuLNweFVjiaE4gPaq');
+      var address = privkey.toAddress(null, Address.PayToScriptHash);
+      address.toString().should.equal('2NDgQSsQGdLDGoYvh4NTmesQ2wWgx6RGu3m');
+    });
+
+    it('creates network specific wrapped witness address', function() {
+      var pk = PrivateKey.fromWIF('cR4qogdN9UxLZJXCNFNwDRRZNeLRWuds9TTSuLNweFVjiaE4gPaq');
+      pk.toAddress(Networks.livenet, Address.PayToScriptHash).network.name.should.equal(Networks.livenet.name);
+      pk.toAddress(Networks.testnet, Address.PayToScriptHash).network.name.should.equal(Networks.testnet.name);
+    });
+
   });
 
   describe('#inspect', function() {
@@ -332,7 +369,7 @@ describe('PrivateKey', function() {
     });
 
     it('will output a 31 byte buffer', function() {
-      var bn = BN.fromBuffer(new Buffer('9b5a0e8fee1835e21170ce1431f9b6f19b487e67748ed70d8a4462bc031915', 'hex'));
+      var bn = BN.fromBuffer(Buffer.from('9b5a0e8fee1835e21170ce1431f9b6f19b487e67748ed70d8a4462bc031915', 'hex'));
       var privkey = new PrivateKey(bn);
       var buffer = privkey.toBufferNoPadding();
       buffer.length.should.equal(31);
@@ -416,7 +453,7 @@ describe('PrivateKey', function() {
     it('should convert this known PrivateKey to known PublicKey', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
       var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
-      var privkey = new PrivateKey(new BN(new Buffer(privhex, 'hex')));
+      var privkey = new PrivateKey(new BN(Buffer.from(privhex, 'hex')));
       var pubkey = privkey.toPublicKey();
       pubkey.toString().should.equal(pubhex);
     });
@@ -424,7 +461,7 @@ describe('PrivateKey', function() {
     it('should have a "publicKey" property', function() {
       var privhex = '906977a061af29276e40bf377042ffbde414e496ae2260bbf1fa9d085637bfff';
       var pubhex = '02a1633cafcc01ebfb6d78e39f687a1f0995c62fc95f51ead10a02ee0be551b5dc';
-      var privkey = new PrivateKey(new BN(new Buffer(privhex, 'hex')));
+      var privkey = new PrivateKey(new BN(Buffer.from(privhex, 'hex')));
       privkey.publicKey.toString().should.equal(pubhex);
     });
 

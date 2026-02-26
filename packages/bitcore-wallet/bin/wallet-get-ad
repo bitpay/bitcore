@@ -1,0 +1,31 @@
+#!/usr/bin/env node
+
+var _ = require('lodash');
+var program = require('commander');
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .usage('[options]')
+  .parse(process.argv);
+
+var args = program.args;
+var host = 'https://bws.bitpay.com';
+
+var clientArgs = {
+  host
+}
+
+utils.getClient(clientArgs, { 
+  mustExist: true
+}, function (client) {
+  client.getAdvertisements({}, (err, result) => {
+    utils.die(err);
+    if(!result) {
+      console.log('Couldn\'t retrieve adverts');
+    }
+    else {
+      console.log('Retrieved adverts ', result);
+    }
+  });
+});

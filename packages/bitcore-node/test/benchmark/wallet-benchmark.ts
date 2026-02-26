@@ -1,21 +1,23 @@
-import { CoinStorage } from '../../src/models/coin';
 import { Wallet } from 'bitcore-client';
+import * as _ from 'lodash';
+import { CoinStorage } from '../../src/models/coin';
 import { Storage } from '../../src/services/storage';
 
 async function getAllAddressesFromBlocks(start, end) {
   if (!Storage.connected) await Storage.start({});
-  const addresses = await CoinStorage.collection
+  const coins = await CoinStorage.collection
     .find({ chain: 'BTC', network: 'mainnet', mintHeight: { $gte: start, $lte: end } })
     .project({ address: 1 })
     .toArray();
-  return addresses.map(a => a.address);
+  const uniqueAddresses = _.uniq(coins.map(c => c.address));
+  return uniqueAddresses;
 }
 
-async function createWallet(addresses: string[], iteration) {
+export async function createWallet(addresses: string[], iteration, networkName?: string) {
   const walletName = 'Benchmark Wallet' + iteration;
   const password = 'iamsatoshi';
   const chain = 'BTC';
-  const network = 'mainnet';
+  const network = networkName || 'mainnet';
   const baseUrl = 'http://localhost:3000/api';
   let lockedWallet: Wallet;
 
@@ -121,4 +123,6 @@ async function main() {
   }
   process.exit(0);
 }
-main();
+if (require.main === module) {
+  main();
+}

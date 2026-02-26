@@ -111,4 +111,24 @@ describe('MultiSigScriptHashInput', function() {
     var roundtrip = new MultiSigScriptHashInput(input.toObject());
     roundtrip.toObject().should.deep.equal(input.toObject());
   });
+  it('can build a redeem script from non-sorted public keys with a noSorting option', function() {
+    var nonSortedPublicKeys = [public1, public2, public3];
+    var threshold = 2;
+    var opts = { noSorting: true };
+    var nonSortedRedeemScript = Script.buildMultisigOut(nonSortedPublicKeys, threshold, opts);
+    var nonSortedAddress = Address.payingTo(nonSortedRedeemScript);
+
+    nonSortedAddress.toLegacyAddress().should.equal('HLEAcJ3iYF5sRGR4oSowZx5fuqigfD5Ah7');
+
+    var nonSortedOutput = Object.assign({}, output, {
+      address: nonSortedAddress.toLegacyAddress(),
+      script: new Script(nonSortedAddress)
+    });
+    var transaction = new Transaction()
+      .from(nonSortedOutput, nonSortedPublicKeys, threshold, opts)
+      .to(address, 1000000);
+    var input = transaction.inputs[0];
+
+    input.redeemScript.equals(nonSortedRedeemScript).should.equal(true);
+  });
 });

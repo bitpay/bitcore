@@ -6,14 +6,15 @@ var $ = require('../util/preconditions');
 var BufferUtil = require('../util/buffer');
 var JSUtil = require('../util/js');
 
-var Signature = function Signature(r, s) {
+var Signature = function Signature(r, s, isSchnorr) {
   if (!(this instanceof Signature)) {
-    return new Signature(r, s);
+    return new Signature(r, s, isSchnorr);
   }
   if (r instanceof BN) {
     this.set({
       r: r,
-      s: s
+      s: s,
+      isSchnorr: isSchnorr,
     });
   } else if (r) {
     var obj = r;
@@ -28,7 +29,8 @@ Signature.prototype.set = function(obj) {
 
   this.i = typeof obj.i !== 'undefined' ? obj.i : this.i; //public key recovery parameter in range [0, 3]
   this.compressed = typeof obj.compressed !== 'undefined' ?
-    obj.compressed : this.compressed; //whether the recovered pubkey is compressed
+    obj.compressed : this.compressed; // whether the recovered pubkey is compressed
+  this.isSchnorr = obj.isSchnorr || this.isSchnorr;
   this.nhashtype = obj.nhashtype || this.nhashtype || undefined;
   return this;
 };
@@ -61,6 +63,17 @@ Signature.fromCompact = function(buf) {
 };
 
 Signature.fromDER = Signature.fromBuffer = function(buf, strict) {
+  // Schnorr signatures are 64 bytes: r [len] 32 || s [len] 32
+  //  There can be a 65th byte that is the nhashtype. It needs to be trimmed before calling this.
+  if (buf.length === 64) {
+    let obj = Signature.parseSchnorrEncodedSig(buf);
+    let sig = new Signature();
+    sig.r = obj.r;
+    sig.s = obj.s;
+    sig.isSchnorr = true;
+    return sig;
+  }
+  
   var obj = Signature.parseDER(buf, strict);
   var sig = new Signature();
 
@@ -88,11 +101,37 @@ Signature.fromDataFormat = function(buf) {
 };
 
 
+// This assumes the str is a raw signature DER and does not have nhashtype
+// Use Signature.fromTxString when decoding a tx
 Signature.fromString = function(str) {
   var buf = Buffer.from(str, 'hex');
+  
   return Signature.fromDER(buf);
 };
 
+// Use this when decoding a tx signature string
+Signature.fromTxString = function(str, encoding = 'hex') {
+  return Signature.fromTxFormat(Buffer.from(str, encoding))
+}
+
+
+Signature.parseSchnorrEncodedSig = function(buf) {
+  let r = buf.slice(0,32);
+  let s = buf.slice(32, 64);
+  let hashtype;
+  if (buf.length === 65) {
+    hashtype = buf.slice(64,65);
+    this.nhashtype = hashtype;
+  }
+
+  var obj = {
+    r: BN.fromBuffer(r),
+    s: BN.fromBuffer(s),
+    nhashtype: hashtype
+  };
+
+  return obj;
+};
 
 /**
  * In order to mimic the non-strict DER encoding of OpenSSL, set strict = false.
@@ -175,9 +214,17 @@ Signature.prototype.toCompact = function(i, compressed) {
 };
 
 Signature.prototype.toBuffer = Signature.prototype.toDER = function() {
+
+  // Schnorr signatures use a 64 byte r,s format, where as ECDSA takes the form decribed
+  // below, above the isDER function signature.
+
+  if(this.isSchnorr) {
+    return Buffer.concat([this.r.toBuffer({size: 32}), this.s.toBuffer({size: 32})]);
+  }
+
   var rnbuf = this.r.toBuffer();
   var snbuf = this.s.toBuffer();
-
+  
   var rneg = rnbuf[0] & 0x80 ? true : false;
   var sneg = snbuf[0] & 0x80 ? true : false;
 
@@ -377,8 +424,8 @@ Signature.prototype.hasDefinedHashtype = function() {
   return true;
 };
 
-Signature.prototype.toTxFormat = function() {
-  var derbuf = this.toDER();
+Signature.prototype.toTxFormat = function(signingMethod) {
+  var derbuf = this.toDER(signingMethod);
   var buf = Buffer.alloc(1);
   buf.writeUInt8(this.nhashtype, 0);
   return Buffer.concat([derbuf, buf]);

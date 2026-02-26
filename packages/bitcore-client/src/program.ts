@@ -5,9 +5,7 @@ const _parse = program.parse.bind(program);
 program.parse = args => {
   _parse(args);
 
-  const requiredOptions = program.options.filter(
-    opt => opt.required && opt.required !== 0
-  );
+  const requiredOptions = program.options.filter(opt => opt.required && opt.required !== 0);
 
   const programProps = Object.getOwnPropertyNames(program);
   for (let option of program.options) {
