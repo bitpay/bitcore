@@ -8,7 +8,7 @@ import { Config } from '../../../../services/config';
 import { IEVMNetworkConfig } from '../../../../types/Config';
 import { castToBool } from '../../../../utils';
 import { OPGasPriceOracleAbi, OPGasPriceOracleAddress } from '../abi/opGasPriceOracle';
-import { getAavePoolAddress, isAaveVersion } from './aave';
+import { AaveVersion, getAavePoolAddress, isAaveVersion } from './aave';
 import { BaseEVMStateProvider } from './csp';
 import { Gnosis } from './gnosis';
 
@@ -92,29 +92,28 @@ export class EVMRouter {
     });
   };
 
+  private validateAaveRequest(requestedVersion: string, network: string, addressOrAsset: string): string | null {
+    if (!isAaveVersion(requestedVersion)) {
+      return 'Unsupported Aave version';
+    }
+    if (!getAavePoolAddress(this.chain, network, requestedVersion)) {
+      return 'Unsupported chain or network for Aave';
+    }
+    if (!Web3.utils.isAddress(addressOrAsset)) {
+      return 'Invalid address';
+    }
+    return null;
+  };
+
   private getAaveUserAccountData(router: Router) {
     router.get(`/api/${this.chain}/:network/aave/account/:address`, async (req, res) => {
       const { address, network } = req.params;
       const requestedVersion = String(req.query.version || 'v3').toLowerCase();
-      if (!isAaveVersion(requestedVersion)) {
-        res.status(400).send('Unsupported Aave version');
-        return;
-      }
-      if (!getAavePoolAddress(this.chain, network, requestedVersion)) {
-        res.status(400).send('Unsupported chain or network for Aave');
-        return;
-      }
-      if (!Web3.utils.isAddress(address)) {
-        res.status(400).send('Invalid address');
-        return;
-      }
+      const error = this.validateAaveRequest(requestedVersion, network, address);
+      if (error) { res.status(400).send(error); return; }
 
       try {
-        const accountData = await this.csp.getAaveUserAccountData({
-          network,
-          address,
-          version: requestedVersion
-        });
+        const accountData = await this.csp.getAaveUserAccountData({ network, address, version: requestedVersion as AaveVersion });
         res.json(accountData);
       } catch (err: any) {
         logger.error('Aave getUserAccountData error::%o', err.stack || err.message || err);
@@ -127,21 +126,11 @@ export class EVMRouter {
     router.get(`/api/${this.chain}/:network/aave/reserve/:asset`, async (req, res) => {
       const { network, asset } = req.params;
       const requestedVersion = String(req.query.version || 'v3').toLowerCase();
-      if (!isAaveVersion(requestedVersion)) {
-        res.status(400).send('Unsupported Aave version');
-        return;
-      }
-      if (!getAavePoolAddress(this.chain, network, requestedVersion)) {
-        res.status(400).send('Unsupported chain or network for Aave');
-        return;
-      }
-      if (!Web3.utils.isAddress(asset)) {
-        res.status(400).send('Invalid address');
-        return;
-      }
+      const error = this.validateAaveRequest(requestedVersion, network, asset);
+      if (error) { res.status(400).send(error); return; }
 
       try {
-        const data = await this.csp.getAaveReserveData({ network, asset, version: requestedVersion });
+        const data = await this.csp.getAaveReserveData({ network, asset, version: requestedVersion as AaveVersion });
         res.json(data);
       } catch (err: any) {
         logger.error('Aave getReserveData error::%o', err.stack || err.message || err);
@@ -154,21 +143,11 @@ export class EVMRouter {
     router.get(`/api/${this.chain}/:network/aave/reserve-tokens/:asset`, async (req, res) => {
       const { network, asset } = req.params;
       const requestedVersion = String(req.query.version || 'v3').toLowerCase();
-      if (!isAaveVersion(requestedVersion)) {
-        res.status(400).send('Unsupported Aave version');
-        return;
-      }
-      if (!getAavePoolAddress(this.chain, network, requestedVersion)) {
-        res.status(400).send('Unsupported chain or network for Aave');
-        return;
-      }
-      if (!Web3.utils.isAddress(asset)) {
-        res.status(400).send('Invalid address');
-        return;
-      }
-      
+      const error = this.validateAaveRequest(requestedVersion, network, asset);
+      if (error) { res.status(400).send(error); return; }
+
       try {
-        const data = await this.csp.getAaveReserveTokensAddresses({ network, asset, version: requestedVersion });
+        const data = await this.csp.getAaveReserveTokensAddresses({ network, asset, version: requestedVersion as AaveVersion });
         res.json(data);
       } catch (err: any) {
         logger.error('Aave getReserveTokensAddresses error::%o', err.stack || err.message || err);
