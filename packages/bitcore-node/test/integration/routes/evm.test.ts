@@ -232,4 +232,112 @@ describe('EVM Routes', function () {
         });
     });
   });
+
+  describe('GET aave/reserve', function() {
+    // USDC on ETH mainnet (V2 only — V2 not deployed on sepolia)
+    const usdcMainnet = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
+    const v2PoolMainnet = '0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9';
+    // Aave test USDC on sepolia (V3 is deployed on sepolia)
+    const usdcSepolia = '0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8';
+
+    it('should return currentVariableBorrowRate for v2 using hardcoded public ETH mainnet RPC', function(done) {
+      this.timeout(30000);
+      const web3 = new Web3('https://ethereum.publicnode.com');
+      sandbox.stub(ETH, 'getWeb3').resolves({ web3 } as any);
+      sandbox.stub(aaveApi, 'getAavePoolAddress').returns(v2PoolMainnet);
+
+      request.get(`/api/ETH/sepolia/aave/reserve/${usdcMainnet}?version=v2`)
+        .expect(200)
+        .end((err, res) => {
+          if (err) return done(err);
+          expect(res.body).to.have.keys(['currentVariableBorrowRate']);
+          done();
+        });
+    });
+
+    it('should return currentVariableBorrowRate for v3 on sepolia', function(done) {
+      this.timeout(30000);
+      request.get(`/api/ETH/sepolia/aave/reserve/${usdcSepolia}?version=v3`)
+        .expect(200)
+        .end((err, res) => {
+          if (err) return done(err);
+          expect(res.body).to.have.keys(['currentVariableBorrowRate']);
+          done();
+        });
+    });
+
+    it('should return 400 for unsupported chain or network', done => {
+      request.get(`/api/ETH/regtest/aave/reserve/${usdcMainnet}?version=v3`)
+        .expect(400)
+        .end((err, res) => {
+          if (err) return done(err);
+          expect(res.text).to.equal('Unsupported chain or network for Aave');
+          done();
+        });
+    });
+
+    it('should return 400 for unsupported Aave version', done => {
+      request.get(`/api/ETH/sepolia/aave/reserve/${usdcMainnet}?version=v9`)
+        .expect(400)
+        .end((err, res) => {
+          if (err) return done(err);
+          expect(res.text).to.equal('Unsupported Aave version');
+          done();
+        });
+    });
+  });
+
+  describe('GET aave/reserve-tokens', function() {
+    // USDC on ETH mainnet (V2 only — V2 not deployed on sepolia)
+    const usdcMainnet = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
+    const v2PoolMainnet = '0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9';
+    // Aave test USDC on sepolia (V3 is deployed on sepolia)
+    const usdcSepolia = '0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8';
+
+    it('should return variableDebtTokenAddress for v2 using hardcoded public ETH mainnet RPC', function(done) {
+      this.timeout(30000);
+      const web3 = new Web3('https://ethereum.publicnode.com');
+      sandbox.stub(ETH, 'getWeb3').resolves({ web3 } as any);
+      sandbox.stub(aaveApi, 'getAavePoolAddress').returns(v2PoolMainnet);
+
+      request.get(`/api/ETH/sepolia/aave/reserve-tokens/${usdcMainnet}?version=v2`)
+        .expect(200)
+        .end((err, res) => {
+          if (err) return done(err);
+          expect(res.body).to.have.keys(['variableDebtTokenAddress']);
+          done();
+        });
+    });
+
+    it('should return variableDebtTokenAddress for v3 on sepolia', function(done) {
+      this.timeout(30000);
+      request.get(`/api/ETH/sepolia/aave/reserve-tokens/${usdcSepolia}?version=v3`)
+        .expect(200)
+        .end((err, res) => {
+          if (err) return done(err);
+          expect(res.body).to.have.keys(['variableDebtTokenAddress']);
+          done();
+        });
+    });
+
+    it('should return 400 for unsupported chain or network', done => {
+      request.get(`/api/ETH/regtest/aave/reserve-tokens/${usdcSepolia}?version=v3`)
+        .expect(400)
+        .end((err, res) => {
+          if (err) return done(err);
+          expect(res.text).to.equal('Unsupported chain or network for Aave');
+          done();
+        });
+    });
+
+    it('should return 400 for unsupported Aave version', done => {
+      request.get(`/api/ETH/sepolia/aave/reserve-tokens/${usdcSepolia}?version=v9`)
+        .expect(400)
+        .end((err, res) => {
+          if (err) return done(err);
+          expect(res.text).to.equal('Unsupported Aave version');
+          done();
+        });
+    });
+  });
 });
