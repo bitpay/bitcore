@@ -1,5 +1,7 @@
+import { Validation } from 'crypto-wallet-core';
 import * as request from 'request';
 import config from '../config';
+import { Constants } from '../lib/common/constants';
 import { Defaults } from '../lib/common/defaults';
 import logger from '../lib/logger';
 import { Storage } from '../lib/storage';
@@ -22,7 +24,7 @@ type CoinMarketStats = {
 type FiatRatePoint = { ts: number; rate: number };
 
 type TokenListToken = {
-  chainId: string;
+  chainId: number;
   address: string;
   symbol: string;
   name: string;
@@ -39,6 +41,8 @@ const DEFAULT_ALL_TIME_DAYS = 100000;
 
 const MAX_QUERY_PARAM_LENGTH = 64;
 const CHAIN_PARAM_PATTERN = /^[a-z0-9-_]+$/i;
+
+const COIN_GECKO_REQUEST_TIMEOUT_MS = 15000;
 
 /**
  * Default market-stats / fiat-rates coins when the caller does not specify a coin.
@@ -61,19 +65,42 @@ const DEFAULT_COIN_ENTRIES = Object.entries(DEFAULT_COINS);
 const DEFAULT_IDS = DEFAULT_COIN_ENTRIES.map(([, id]) => id);
 const DEFAULT_ID_SET = new Set(DEFAULT_IDS);
 
-const CHAIN_TO_PLATFORM_ID: Record<string, string> = {
-  arb: 'arbitrum-one',
-  base: 'base',
-  eth: 'ethereum',
-  matic: 'polygon-pos',
-  op: 'optimistic-ethereum',
-  pol: 'polygon-pos',
-  sol: 'solana'
-};
+type EvmChain = (typeof Constants.EVM_CHAINS)[keyof typeof Constants.EVM_CHAINS];
+type SvmChain = (typeof Constants.SVM_CHAINS)[keyof typeof Constants.SVM_CHAINS];
+type BitPayTokenChain = EvmChain | SvmChain;
 
-const SUPPORTED_TOKEN_LIST_PLATFORM_IDS = new Set(Object.values(CHAIN_TO_PLATFORM_ID));
+const CHAIN_ALIASES = {
+  pol: Constants.EVM_CHAINS.MATIC
+} as const satisfies Record<string, BitPayTokenChain>;
+
+const COINGECKO_PLATFORM_ID_BY_CHAIN = {
+  [Constants.EVM_CHAINS.ARB]: 'arbitrum-one',
+  [Constants.EVM_CHAINS.BASE]: 'base',
+  [Constants.EVM_CHAINS.ETH]: 'ethereum',
+  [Constants.EVM_CHAINS.MATIC]: 'polygon-pos',
+  [Constants.EVM_CHAINS.OP]: 'optimistic-ethereum',
+  [Constants.SVM_CHAINS.SOL]: 'solana'
+} as const satisfies Record<BitPayTokenChain, string>;
+
+const CHAIN_BY_COINGECKO_PLATFORM_ID = Object.entries(COINGECKO_PLATFORM_ID_BY_CHAIN).reduce(
+  (acc, [chain, platformId]) => {
+    acc[platformId] = chain as BitPayTokenChain;
+    return acc;
+  },
+  {} as Record<string, BitPayTokenChain>
+);
+
+function isBitPayTokenChain(value: string): value is BitPayTokenChain {
+  return Object.prototype.hasOwnProperty.call(COINGECKO_PLATFORM_ID_BY_CHAIN, value);
+}
 
 const first = (value: unknown) => (Array.isArray(value) ? value[0] : value);
+
+function badRequest(message: string): Error {
+  const err: any = new Error(message);
+  err.statusCode = 400;
+  return err;
+}
 
 function getQueryString(query: Record<string, unknown> | undefined, key: string): string | undefined {
   const raw = first(query?.[key]);
@@ -83,8 +110,26 @@ function getQueryString(query: Record<string, unknown> | undefined, key: string)
     .trim();
 
   if (!s) return undefined;
-  if (s.length > MAX_QUERY_PARAM_LENGTH) throw new Error('Query param too long');
+  if (s.length > MAX_QUERY_PARAM_LENGTH) throw badRequest('Query param too long');
   return s;
+}
+
+function validateQueryParam(query: Record<string, unknown> | undefined, key: string): string | undefined {
+  try {
+    return getQueryString(query, key);
+  } catch {
+    throw badRequest(`Unsupported ${key}`);
+  }
+}
+
+function parseCoinChainTokenAddress(
+  query: Record<string, unknown> | undefined
+): { coin?: string; chain?: string; tokenAddress?: string } {
+  return {
+    coin: validateQueryParam(query, 'coin'),
+    chain: validateQueryParam(query, 'chain'),
+    tokenAddress: validateQueryParam(query, 'tokenAddress')
+  };
 }
 
 function normalizeChainSafe(chain: unknown): string | undefined {
@@ -92,11 +137,22 @@ function normalizeChainSafe(chain: unknown): string | undefined {
   if (!c) return undefined;
   if (c.length > MAX_QUERY_PARAM_LENGTH) return undefined;
   if (!CHAIN_PARAM_PATTERN.test(c)) return undefined;
-  return CHAIN_TO_PLATFORM_ID[c] || c;
+
+  const normalizedChain = CHAIN_ALIASES[c] || (isBitPayTokenChain(c) ? c : undefined);
+
+  if (!normalizedChain) return undefined;
+
+  return COINGECKO_PLATFORM_ID_BY_CHAIN[normalizedChain];
 }
 
 function asNumberOrNull(value: any): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function isValidTokenAddressForPlatform(tokenAddress: string, platformId: string): boolean {
+  const chain = CHAIN_BY_COINGECKO_PLATFORM_ID[platformId];
+  if (!chain) return false;
+  return Validation.validateAddress(chain, 'mainnet', tokenAddress);
 }
 
 export class CoinGeckoService {
@@ -164,7 +220,7 @@ export class CoinGeckoService {
 
   private coinGeckoGetJson(url: string, headers: Record<string, string | undefined>): Promise<any> {
     return new Promise((resolve, reject) => {
-      this.request.get(url, { headers, json: true }, (err, data) => {
+      this.request.get(url, { headers, json: true, timeout: COIN_GECKO_REQUEST_TIMEOUT_MS }, (err, data) => {
         const body = data?.body;
         const status = body?.status;
         const httpStatusCode = data?.statusCode;
@@ -176,15 +232,21 @@ export class CoinGeckoService {
         }
 
         if (httpStatusCode === 429 || coinGeckoErrorCode === 429) {
+          logger.warn('CoinGecko rate limit: %o', { url, httpStatusCode, coinGeckoErrorCode, body });
           const rateLimitErr: any = new Error('coinGecko rate limit');
           rateLimitErr.statusCode = 429;
+          rateLimitErr.coinGeckoErrorCode = coinGeckoErrorCode;
+          rateLimitErr.body = body;
           return reject(rateLimitErr);
         }
 
         const hasCoinGeckoError = !!(status?.error_code || status?.error_message);
         if ((httpStatusCode && httpStatusCode >= 400) || hasCoinGeckoError) {
+          logger.error('CoinGecko request failed: %o', { url, httpStatusCode, coinGeckoErrorCode, body });
           const cgErr: any = new Error(status?.error_message || body?.status || 'coinGecko error');
           cgErr.statusCode = httpStatusCode || coinGeckoErrorCode;
+          cgErr.coinGeckoErrorCode = coinGeckoErrorCode;
+          cgErr.body = body;
           return reject(cgErr);
         }
 
@@ -193,75 +255,28 @@ export class CoinGeckoService {
     });
   }
 
-  private async searchCoinIdsBySymbol(symbol: string): Promise<string[]> {
-    const { API_KEY } = this.coinGeckoGetCredentials();
-    const headers = this.coinGeckoGetHeaders(API_KEY);
+  private async resolveCoinGeckoId(coin: string | undefined, chain?: unknown, tokenAddress?: string): Promise<string> {
+    const sym = (coin || '').trim().toLowerCase();
+    if (sym && sym.length > MAX_QUERY_PARAM_LENGTH) throw badRequest('Unsupported coin');
 
-    const q = symbol.trim().toLowerCase();
-    if (!q) return [];
-
-    const url = this.cgUrl('/v3/search', { query: q });
-    const body = await this.coinGeckoGetJson(url, headers);
-
-    const coins = Array.isArray(body?.coins) ? body.coins : [];
-    const out: string[] = [];
-    const seen = new Set<string>();
-
-    for (const c of coins) {
-      const sym = (c?.symbol ?? '').toString().trim().toLowerCase();
-      const id = (c?.id ?? '').toString().trim().toLowerCase();
-      if (!id || sym !== q || seen.has(id)) continue;
-      seen.add(id);
-      out.push(id);
-    }
-
-    return out;
-  }
-
-  private async getCoinList(): Promise<Array<{ id: string; symbol: string }>> {
-    return this.withGlobalCache('cgCoinList', Defaults.COIN_GECKO_CACHE_DURATION, async () => {
-      const { API_KEY } = this.coinGeckoGetCredentials();
-      const headers = this.coinGeckoGetHeaders(API_KEY);
-
-      const url = this.cgUrl('/v3/coins/list', { include_platform: false });
-      const body = await this.coinGeckoGetJson(url, headers);
-
-      if (!Array.isArray(body)) throw new Error('Could not get coin list');
-
-      return body
-        .map((c: any) => ({
-          id: (c?.id ?? '').toString().trim().toLowerCase(),
-          symbol: (c?.symbol ?? '').toString().trim().toLowerCase()
-        }))
-        .filter(c => c.id && c.symbol);
-    });
-  }
-
-  private async getCandidateIdsFromCoinList(symbol: string): Promise<string[]> {
-    const q = symbol.trim().toLowerCase();
-    if (!q) return [];
-
-    const list = await this.getCoinList();
-    const ids = new Set<string>();
-
-    for (const c of list) {
-      if (c.symbol === q) ids.add(c.id);
-    }
-
-    return Array.from(ids).sort();
-  }
-
-  private async resolveCoinGeckoId(coin: string, chain?: unknown, tokenAddress?: string): Promise<string> {
-    const sym = coin.trim().toLowerCase();
-    if (!sym || sym.length > MAX_QUERY_PARAM_LENGTH) throw new Error('Unsupported coin');
-
-    const platformId = normalizeChainSafe(chain);
+    const chainRaw = first(chain);
+    const chainProvided = chainRaw !== undefined && chainRaw !== null && String(chainRaw).trim().length > 0;
+    const platformId = normalizeChainSafe(chainRaw);
     const normalizedTokenAddress = tokenAddress?.trim();
 
-    // If a token contract address is provided, require a valid chain and prefer contract lookup.
-    // This intentionally overrides default symbol mappings.
+    // If chain is provided, tokenAddress is required for deterministic token resolution.
+    // Keep invalid-chain errors specific when chain validation fails.
+    if (chainProvided && !normalizedTokenAddress) {
+      if (!platformId) throw badRequest('Unsupported chain');
+      throw badRequest('chain is only supported for token lookups; provide tokenAddress or omit chain for native coins');
+    }
+
+    // If a token contract address is provided, require a valid chain and resolve via contract lookup.
     if (normalizedTokenAddress) {
-      if (!platformId) throw new Error('tokenAddress requires valid chain');
+      if (!platformId) throw badRequest('tokenAddress requires valid chain');
+      if (!isValidTokenAddressForPlatform(normalizedTokenAddress, platformId)) {
+        throw badRequest('Invalid tokenAddress');
+      }
 
       const { API_KEY } = this.coinGeckoGetCredentials();
       const headers = this.coinGeckoGetHeaders(API_KEY);
@@ -271,9 +286,9 @@ export class CoinGeckoService {
         );
         const body = await this.coinGeckoGetJson(url, headers);
         const id = (body?.id ?? '').toString().trim().toLowerCase();
-        if (!id) throw new Error('Unsupported tokenAddress');
+        if (!id) throw badRequest('Unsupported tokenAddress');
         const tokenSymbol = (body?.symbol ?? '').toString().trim().toLowerCase();
-        if (!tokenSymbol || tokenSymbol !== sym) throw new Error('tokenAddress does not match coin');
+        if (sym && (!tokenSymbol || tokenSymbol !== sym)) throw badRequest('tokenAddress does not match coin');
         const tokenAssetPlatformId = (body?.asset_platform_id ?? '').toString().trim().toLowerCase();
         const platforms = body?.platforms;
         const detailPlatforms = body?.detail_platforms;
@@ -284,62 +299,25 @@ export class CoinGeckoService {
           ...platformKeys(detailPlatforms)
         ];
         if (platformSignals.length > 0 && !platformSignals.includes(platformId)) {
-          throw new Error('tokenAddress does not match chain');
+          throw badRequest('tokenAddress does not match chain');
         }
         return id;
       } catch (e: any) {
         if (e?.statusCode === 404) {
-          throw new Error('Unsupported tokenAddress');
+          throw badRequest('Unsupported tokenAddress');
         }
         throw e;
       }
     }
 
+    if (!sym) throw badRequest('Unsupported coin');
+
     const defaultId = DEFAULT_COINS[sym];
     if (defaultId) return defaultId;
 
-    // Prefer /search for market-cap ordering; fallback to coin-list only if needed.
-    let candidates = await this.searchCoinIdsBySymbol(sym);
-    if (!candidates.length) candidates = await this.getCandidateIdsFromCoinList(sym);
-    if (!candidates.length) throw new Error(`Unsupported coin '${coin}'`);
-
-    if (!platformId) return candidates[0];
-
-    const { API_KEY } = this.coinGeckoGetCredentials();
-    const headers = this.coinGeckoGetHeaders(API_KEY);
-
-    let secondary: string | undefined;
-    for (const id of candidates.slice(0, 10)) {
-      try {
-        const url = this.cgUrl(`/v3/coins/${encodeURIComponent(id)}`, {
-          localization: false,
-          tickers: false,
-          market_data: false,
-          community_data: false,
-          developer_data: false,
-          sparkline: false
-        });
-
-        const info = await this.coinGeckoGetJson(url, headers);
-
-        const assetPlatformId = (info?.asset_platform_id ?? '').toString().trim().toLowerCase();
-        if (assetPlatformId && assetPlatformId === platformId) return id;
-
-        const platforms = info?.platforms;
-        const detailPlatforms = info?.detail_platforms;
-        const keys = (obj: any) => (obj && typeof obj === 'object' ? Object.keys(obj).map(k => k.toLowerCase()) : []);
-
-        if (!secondary && (keys(platforms).includes(platformId) || keys(detailPlatforms).includes(platformId))) {
-          secondary = id;
-        }
-      } catch {
-        // Best-effort only.
-      }
-    }
-
-    if (secondary) return secondary;
-
-    throw new Error('chain does not match coin');
+    // Coin-only requests are intentionally restricted to DEFAULT_COINS.
+    // Tokens must be requested with both chain + tokenAddress.
+    throw badRequest('Unsupported coin. For token symbols, pass `chain` and `tokenAddress`.');
   }
 
   private async fetchFiatRatesForId(id: string, vsCurrency: string, days: number): Promise<FiatRatePoint[]> {
@@ -454,35 +432,16 @@ export class CoinGeckoService {
 
   async coinGeckoGetMarketStats(req: CoinGeckoRequest): Promise<CoinMarketStats[]> {
     const currency = (req.params?.['code'] || 'USD').toString().toUpperCase();
-    if (!SUPPORTED_FIAT_CODES.has(currency)) throw new Error(`Unsupported fiat currency code '${currency}'`);
+    if (!SUPPORTED_FIAT_CODES.has(currency)) throw badRequest(`Unsupported fiat currency code '${currency}'`);
 
     const vsCurrency = currency.toLowerCase();
 
-    let coinParam: string | undefined;
-    try {
-      coinParam = getQueryString(req.query, 'coin');
-    } catch {
-      throw new Error('Unsupported coin');
-    }
-
-    let chainParam: string | undefined;
-    try {
-      chainParam = getQueryString(req.query, 'chain');
-    } catch {
-      chainParam = undefined;
-    }
-
-    let tokenAddressParam: string | undefined;
-    try {
-      tokenAddressParam = getQueryString(req.query, 'tokenAddress');
-    } catch {
-      throw new Error('Unsupported tokenAddress');
-    }
+    const { coin: coinParam, chain: chainParam, tokenAddress: tokenAddressParam } = parseCoinChainTokenAddress(req.query);
 
     let ids: string[];
     let cacheKey: string | null = null;
 
-    if (coinParam) {
+    if (coinParam || chainParam || tokenAddressParam) {
       const id = await this.resolveCoinGeckoId(coinParam, chainParam, tokenAddressParam);
       ids = [id];
       if (DEFAULT_ID_SET.has(id)) cacheKey = `cgMarketStats:${vsCurrency}:${id}`;
@@ -500,44 +459,25 @@ export class CoinGeckoService {
 
   async coinGeckoGetFiatRates(req: CoinGeckoRequest): Promise<Record<string, FiatRatePoint[]> | FiatRatePoint[]> {
     const currency = (req.params?.['code'] || '').toString().toUpperCase();
-    if (!SUPPORTED_FIAT_CODES.has(currency)) throw new Error(`Unsupported fiat currency code '${currency}'`);
+    if (!SUPPORTED_FIAT_CODES.has(currency)) throw badRequest(`Unsupported fiat currency code '${currency}'`);
 
     const vsCurrency = currency.toLowerCase();
 
-    let coinParam: string | undefined;
-    try {
-      coinParam = getQueryString(req.query, 'coin');
-    } catch {
-      throw new Error('Unsupported coin');
-    }
-
-    let chainParam: string | undefined;
-    try {
-      chainParam = getQueryString(req.query, 'chain');
-    } catch {
-      chainParam = undefined;
-    }
-
-    let tokenAddressParam: string | undefined;
-    try {
-      tokenAddressParam = getQueryString(req.query, 'tokenAddress');
-    } catch {
-      throw new Error('Unsupported tokenAddress');
-    }
+    const { coin: coinParam, chain: chainParam, tokenAddress: tokenAddressParam } = parseCoinChainTokenAddress(req.query);
 
     let days = DEFAULT_ALL_TIME_DAYS;
     try {
       const daysParam = getQueryString(req.query, 'days');
       if (daysParam !== undefined) {
         const parsed = +daysParam;
-        if (!ALLOWED_DAYS.has(parsed)) throw new Error('Invalid days');
+        if (!ALLOWED_DAYS.has(parsed)) throw badRequest('Invalid days');
         days = parsed;
       }
     } catch {
-      throw new Error('Invalid days');
+      throw badRequest('Invalid days');
     }
 
-    if (coinParam) {
+    if (coinParam || chainParam || tokenAddressParam) {
       const id = await this.resolveCoinGeckoId(coinParam, chainParam, tokenAddressParam);
       const useDbCache = DEFAULT_ID_SET.has(id);
       return this.getFiatRatesForId(id, vsCurrency, days, useDbCache);
@@ -567,8 +507,8 @@ export class CoinGeckoService {
     const chain = (req.params?.['chain'] || 'eth').toString();
 
     const platformId = normalizeChainSafe(chain);
-    if (!platformId || !SUPPORTED_TOKEN_LIST_PLATFORM_IDS.has(platformId)) {
-      throw new Error(`Unsupported chain '${chain}'`);
+    if (!platformId) {
+      throw badRequest(`Unsupported chain '${chain}'`);
     }
 
     const cacheKey = `cgTokenList:${platformId}`;
@@ -584,10 +524,9 @@ export class CoinGeckoService {
       if (!tokens) throw new Error('Could not get tokens list');
 
       return tokens.map((t: any) => {
-        if (t?.logoURI?.includes('/thumb/')) {
-          t.logoURI = t.logoURI.replace('/thumb/', '/large/');
-        }
-        return t;
+        if (!t || typeof t !== 'object') return t;
+        const logoURI = t?.logoURI?.includes('/thumb/') ? t.logoURI.replace('/thumb/', '/large/') : t.logoURI;
+        return { ...t, logoURI };
       });
     });
   }
