@@ -4,21 +4,20 @@
 var assert = require('assert');
 var buffer = require('buffer');
 var _ = require('lodash');
-var $ = require('./util/preconditions');
-
 var BN = require('./crypto/bn');
+var Hash = require('./crypto/hash');
+var Point = require('./crypto/point');
+var Random = require('./crypto/random');
 var Base58 = require('./encoding/base58');
 var Base58Check = require('./encoding/base58check');
-var Hash = require('./crypto/hash');
-var Network = require('./networks');
-var Point = require('./crypto/point');
-var PrivateKey = require('./privatekey');
-var Random = require('./crypto/random');
-
 var errors = require('./errors');
+var Network = require('./networks');
+var PrivateKey = require('./privatekey');
+
 var hdErrors = errors.HDPrivateKey;
 var BufferUtil = require('./util/buffer');
 var JSUtil = require('./util/js');
+var $ = require('./util/preconditions');
 
 var MINIMUM_ENTROPY_BITS = 128;
 var BITS_TO_BYTES = 1 / 8;
@@ -73,7 +72,7 @@ function HDPrivateKey(arg) {
  */
 HDPrivateKey.isValidPath = function(arg, hardened) {
   if (_.isString(arg)) {
-    var indexes = HDPrivateKey._getDerivationIndexes(arg);
+    const indexes = HDPrivateKey._getDerivationIndexes(arg);
     return indexes !== null && _.every(indexes, HDPrivateKey.isValidPath);
   }
 
@@ -96,7 +95,7 @@ HDPrivateKey.isValidPath = function(arg, hardened) {
  * @return {Array}
  */
 HDPrivateKey._getDerivationIndexes = function(path) {
-  var steps = path.split('/');
+  const steps = path.split('/');
 
   // Special cases:
   if (_.includes(HDPrivateKey.RootElementAlias, path)) {
@@ -107,15 +106,15 @@ HDPrivateKey._getDerivationIndexes = function(path) {
     return null;
   }
 
-  var indexes = steps.slice(1).map(function(step) {
-    var isHardened = step.slice(-1) === '\'';
+  const indexes = steps.slice(1).map(function(step) {
+    const isHardened = step.slice(-1) === '\'';
     if (isHardened) {
       step = step.slice(0, -1);
     }
     if (!step || step[0] === '-') {
       return NaN;
     }
-    var index = +step; // cast to number
+    let index = +step; // cast to number
     if (isHardened) {
       index += HDPrivateKey.Hardened;
     }
@@ -233,28 +232,28 @@ HDPrivateKey.prototype._deriveWithNumber = function(index, hardened, nonComplian
     index += HDPrivateKey.Hardened;
   }
 
-  var indexBuffer = BufferUtil.integerAsBuffer(index);
-  var data;
+  const indexBuffer = BufferUtil.integerAsBuffer(index);
+  let data;
   if (hardened && nonCompliant) {
     // The private key serialization in this case will not be exactly 32 bytes and can be
     // any value less, and the value is not zero-padded.
-    var nonZeroPadded = this.privateKey.bn.toBuffer();
+    const nonZeroPadded = this.privateKey.bn.toBuffer();
     data = BufferUtil.concat([Buffer.from([0]), nonZeroPadded, indexBuffer]);
   } else if (hardened) {
     // This will use a 32 byte zero padded serialization of the private key
-    var privateKeyBuffer = this.privateKey.bn.toBuffer({size: 32});
+    const privateKeyBuffer = this.privateKey.bn.toBuffer({ size: 32 });
     assert(privateKeyBuffer.length === 32, 'length of private key buffer is expected to be 32 bytes');
     data = BufferUtil.concat([Buffer.from([0]), privateKeyBuffer, indexBuffer]);
   } else {
     data = BufferUtil.concat([this.publicKey.toBuffer(), indexBuffer]);
   }
-  var hash = Hash.sha512hmac(data, this._buffers.chainCode);
-  var leftPart = BN.fromBuffer(hash.slice(0, 32), {
+  const hash = Hash.sha512hmac(data, this._buffers.chainCode);
+  const leftPart = BN.fromBuffer(hash.slice(0, 32), {
     size: 32
   });
-  var chainCode = hash.slice(32, 64);
+  const chainCode = hash.slice(32, 64);
 
-  var privateKey = leftPart.add(this.privateKey.toBigNumber()).umod(Point.getN()).toBuffer({
+  const privateKey = leftPart.add(this.privateKey.toBigNumber()).umod(Point.getN()).toBuffer({
     size: 32
   });
 
@@ -263,7 +262,7 @@ HDPrivateKey.prototype._deriveWithNumber = function(index, hardened, nonComplian
     return this._deriveWithNumber(index + 1, null, nonCompliant);
   }
 
-  var derived = new HDPrivateKey({
+  const derived = new HDPrivateKey({
     network: this.network,
     depth: this.depth + 1,
     parentFingerPrint: this.fingerPrint,
@@ -280,8 +279,8 @@ HDPrivateKey.prototype._deriveFromString = function(path, nonCompliant) {
     throw new hdErrors.InvalidPath(path);
   }
 
-  var indexes = HDPrivateKey._getDerivationIndexes(path);
-  var derived = indexes.reduce(function(prev, index) {
+  const indexes = HDPrivateKey._getDerivationIndexes(path);
+  const derived = indexes.reduce(function(prev, index) {
     return prev._deriveWithNumber(index, null, nonCompliant);
   }, this);
 
@@ -327,7 +326,7 @@ HDPrivateKey.getSerializedError = function(data, network) {
     return new hdErrors.InvalidLength(data);
   }
   if (!_.isUndefined(network)) {
-    var error = HDPrivateKey._validateNetwork(data, network);
+    const error = HDPrivateKey._validateNetwork(data, network);
     if (error) {
       return error;
     }
@@ -336,11 +335,11 @@ HDPrivateKey.getSerializedError = function(data, network) {
 };
 
 HDPrivateKey._validateNetwork = function(data, networkArg) {
-  var network = Network.get(networkArg);
+  const network = Network.get(networkArg);
   if (!network) {
     return new errors.InvalidNetworkArgument(networkArg);
   }
-  var version = data.slice(0, 4);
+  const version = data.slice(0, 4);
   if (BufferUtil.integerFromBuffer(version) !== network.xprivkey) {
     return new errors.InvalidNetwork(version);
   }
@@ -364,21 +363,21 @@ HDPrivateKey.prototype._buildFromJSON = function(arg) {
 HDPrivateKey.prototype._buildFromObject = function(arg) {
   /* jshint maxcomplexity: 12 */
   // TODO: Type validation
-  var buffers = {
+  const buffers = {
     version: arg.network ? BufferUtil.integerAsBuffer(Network.get(arg.network).xprivkey) : arg.version,
     depth: _.isNumber(arg.depth) ? BufferUtil.integerAsSingleByteBuffer(arg.depth) : arg.depth,
     parentFingerPrint: _.isNumber(arg.parentFingerPrint) ? BufferUtil.integerAsBuffer(arg.parentFingerPrint) : arg.parentFingerPrint,
     childIndex: _.isNumber(arg.childIndex) ? BufferUtil.integerAsBuffer(arg.childIndex) : arg.childIndex,
-    chainCode: _.isString(arg.chainCode) ? Buffer.from(arg.chainCode,'hex') : arg.chainCode,
-    privateKey: (_.isString(arg.privateKey) && JSUtil.isHexa(arg.privateKey)) ? Buffer.from(arg.privateKey,'hex') : arg.privateKey,
+    chainCode: _.isString(arg.chainCode) ? Buffer.from(arg.chainCode, 'hex') : arg.chainCode,
+    privateKey: (_.isString(arg.privateKey) && JSUtil.isHexa(arg.privateKey)) ? Buffer.from(arg.privateKey, 'hex') : arg.privateKey,
     checksum: arg.checksum ? (arg.checksum.length ? arg.checksum : BufferUtil.integerAsBuffer(arg.checksum)) : undefined
   };
   return this._buildFromBuffers(buffers);
 };
 
 HDPrivateKey.prototype._buildFromSerialized = function(arg) {
-  var decoded = Base58Check.decode(arg);
-  var buffers = {
+  const decoded = Base58Check.decode(arg);
+  const buffers = {
     version: decoded.slice(HDPrivateKey.VersionStart, HDPrivateKey.VersionEnd),
     depth: decoded.slice(HDPrivateKey.DepthStart, HDPrivateKey.DepthEnd),
     parentFingerPrint: decoded.slice(HDPrivateKey.ParentFingerPrintStart,
@@ -431,7 +430,7 @@ HDPrivateKey.fromSeed = function(hexa, network) {
 
 HDPrivateKey.prototype._calcHDPublicKey = function() {
   if (!this._hdPublicKey) {
-    var HDPublicKey = require('./hdpublickey');
+    const HDPublicKey = require('./hdpublickey');
     this._hdPublicKey = new HDPublicKey(this);
   }
 };
@@ -462,11 +461,11 @@ HDPrivateKey.prototype._buildFromBuffers = function(arg) {
     _buffers: arg
   });
 
-  var sequence = [
+  const sequence = [
     arg.version, arg.depth, arg.parentFingerPrint, arg.childIndex, arg.chainCode,
     BufferUtil.emptyBuffer(1), arg.privateKey
   ];
-  var concat = buffer.Buffer.concat(sequence);
+  const concat = buffer.Buffer.concat(sequence);
   if (!arg.checksum || !arg.checksum.length) {
     arg.checksum = Base58Check.checksum(concat);
   } else {
@@ -475,15 +474,15 @@ HDPrivateKey.prototype._buildFromBuffers = function(arg) {
     }
   }
 
-  var network = Network.get(BufferUtil.integerFromBuffer(arg.version));
-  var xprivkey;
+  const network = Network.get(BufferUtil.integerFromBuffer(arg.version));
+  let xprivkey;
   xprivkey = Base58Check.encode(buffer.Buffer.concat(sequence));
   arg.xprivkey = Buffer.from(xprivkey);
 
-  var privateKey = new PrivateKey(BN.fromBuffer(arg.privateKey), network);
-  var publicKey = privateKey.toPublicKey();
-  var size = HDPrivateKey.ParentFingerPrintSize;
-  var fingerPrint = Hash.sha256ripemd160(publicKey.toBuffer()).slice(0, size);
+  const privateKey = new PrivateKey(BN.fromBuffer(arg.privateKey), network);
+  const publicKey = privateKey.toPublicKey();
+  const size = HDPrivateKey.ParentFingerPrintSize;
+  const fingerPrint = Hash.sha256ripemd160(publicKey.toBuffer()).slice(0, size);
 
   JSUtil.defineImmutable(this, {
     xprivkey: xprivkey,
@@ -516,8 +515,8 @@ HDPrivateKey.prototype._buildFromBuffers = function(arg) {
 };
 
 HDPrivateKey._validateBufferArguments = function(arg) {
-  var checkBuffer = function(name, size) {
-    var buff = arg[name];
+  const checkBuffer = function(name, size) {
+    const buff = arg[name];
     assert(BufferUtil.isBuffer(buff), name + ' argument is not a buffer');
     assert(
       buff.length === size,
@@ -581,6 +580,20 @@ HDPrivateKey.prototype.toObject = HDPrivateKey.prototype.toJSON = function toObj
     childIndex: BufferUtil.integerFromBuffer(this._buffers.childIndex),
     chainCode: BufferUtil.bufferToHex(this._buffers.chainCode),
     privateKey: this.privateKey.toBuffer().toString('hex'),
+    checksum: BufferUtil.integerFromBuffer(this._buffers.checksum),
+    xprivkey: this.xprivkey
+  };
+};
+
+HDPrivateKey.prototype.toObjectWithBufferPrivateKey = function toObjectWithBufferPrivateKey() {
+  return {
+    network: Network.get(BufferUtil.integerFromBuffer(this._buffers.version), 'xprivkey').name,
+    depth: BufferUtil.integerFromSingleByteBuffer(this._buffers.depth),
+    fingerPrint: BufferUtil.integerFromBuffer(this.fingerPrint),
+    parentFingerPrint: BufferUtil.integerFromBuffer(this._buffers.parentFingerPrint),
+    childIndex: BufferUtil.integerFromBuffer(this._buffers.childIndex),
+    chainCode: BufferUtil.bufferToHex(this._buffers.chainCode),
+    privateKey: this.privateKey.toBuffer(),
     checksum: BufferUtil.integerFromBuffer(this._buffers.checksum),
     xprivkey: this.xprivkey
   };
