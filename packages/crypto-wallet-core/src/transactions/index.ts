@@ -46,36 +46,76 @@ const providers = {
 };
 
 export class TransactionsProxy {
-  get({ chain }) {
-    const normalizedChain = chain.toUpperCase();
-    return providers[normalizedChain];
+  /**
+   * Returns the list of supported chain/token identifiers.
+   *
+   * @returns {string[]} Array of supported chain names (uppercase)
+   */
+  getSupportedChains(): string[] {
+    return Object.keys(providers);
   }
 
-  create(params) {
+  /**
+   * Returns whether a given chain is supported by the transactions proxy.
+   *
+   * @param {string} chain - The chain identifier (case-insensitive)
+   * @returns {boolean} True if the chain is supported
+   */
+  isSupported(chain: string): boolean {
+    if (!chain || typeof chain !== 'string') {
+      return false;
+    }
+    return chain.toUpperCase() in providers;
+  }
+
+  /**
+   * Retrieves the transaction provider for a given chain.
+   *
+   * @param {{ chain: string }} params - Object containing the chain identifier
+   * @returns The transaction provider for the chain
+   * @throws {Error} If the chain is not provided or not supported
+   */
+  get(params: { chain: string }) {
+    if (!params || typeof params !== 'object') {
+      throw new Error('Params must be an object with a "chain" property');
+    }
+    const chain = params.chain;
+    if (!chain || typeof chain !== 'string') {
+      throw new Error('Chain must be a non-empty string');
+    }
+    const normalizedChain = chain.toUpperCase();
+    const provider = providers[normalizedChain];
+    if (!provider) {
+      throw new Error(`Unsupported chain: ${chain}. Supported chains: ${this.getSupportedChains().join(', ')}`);
+    }
+    return provider;
+  }
+
+  create(params: { chain: string; [key: string]: any }) {
     return this.get(params).create(params);
   }
 
-  sign(params): string {
+  sign(params: { chain: string; [key: string]: any }): string {
     return this.get(params).sign(params);
   }
 
-  getSignature(params): string {
+  getSignature(params: { chain: string; [key: string]: any }): string {
     return this.get(params).getSignature(params);
   }
 
-  applySignature(params) {
+  applySignature(params: { chain: string; [key: string]: any }) {
     return this.get(params).applySignature(params);
   }
 
-  getHash(params) {
+  getHash(params: { chain: string; [key: string]: any }) {
     return this.get(params).getHash(params);
   }
 
-  transformSignatureObject(params) {
+  transformSignatureObject(params: { chain: string; [key: string]: any }) {
     return this.get(params).transformSignatureObject(params);
   }
 
-  getSighash(params): string {
+  getSighash(params: { chain: string; [key: string]: any }): string {
     return this.get(params).getSighash(params);
   }
 }

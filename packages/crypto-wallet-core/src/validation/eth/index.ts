@@ -18,10 +18,47 @@ export class EthValidation implements IValidation {
     }
     const address = this.extractAddress(addressUri);
     const prefix = this.regex.exec(addressUri);
-    return !!prefix && utils.isAddress(address);
+    if (!prefix) {
+      return false;
+    }
+    if (!utils.isAddress(address)) {
+      return false;
+    }
+    // Validate that numeric parameters contain only valid numbers
+    if (!this.validateUriParams(addressUri)) {
+      return false;
+    }
+    return true;
   }
 
-  protected extractAddress(data) {
+  /**
+   * Validates that URI parameters contain properly formatted numeric values.
+   * Returns false if any recognized numeric parameter has an invalid (non-numeric) value.
+   *
+   * @param {string} uri - The full URI string
+   * @returns {boolean} True if all numeric params are valid, or no params exist
+   */
+  protected validateUriParams(uri: string): boolean {
+    const queryIndex = uri.indexOf('?');
+    if (queryIndex === -1) {
+      return true;
+    }
+    const queryString = uri.substring(queryIndex + 1);
+    const params = queryString.split('&');
+    const numericParams = ['value', 'gas', 'gasPrice', 'gasLimit', 'amount'];
+
+    for (const param of params) {
+      const [key, value] = param.split('=');
+      if (numericParams.includes(key)) {
+        if (!value || isNaN(Number(value.replace(',', '.')))) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  protected extractAddress(data: string): string {
     const prefix = /^[a-z]+:/i;
     const params = /([?&](value|gas|gasPrice|gasLimit)=(\d+([,.]\d+)?))+/i;
     return data.replace(prefix, '').replace(params, '');
