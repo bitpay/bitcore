@@ -21,6 +21,14 @@ export interface AaveV3AccountData extends AaveAccountDataCommon {
 
 export type AaveAccountData = AaveV2AccountData | AaveV3AccountData;
 
+export interface AaveReserveData {
+  currentVariableBorrowRate: string;
+}
+
+export interface AaveReserveTokensAddresses {
+  variableDebtTokenAddress: string;
+}
+
 /**
  * Aave Pool contract addresses by version, chain, and network.
  * Source: https://aave.com/docs/resources/addresses
