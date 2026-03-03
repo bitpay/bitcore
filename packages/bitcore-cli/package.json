@@ -50,13 +50,16 @@
     "usb": "2.15.0"
   },
   "devDependencies": {
+    "@bitpay-labs/bitcore-wallet-service": "^11.6.0",
     "@types/chai": "5.2.2",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.14.1",
     "chai": "^5.2.1",
     "mocha": "^11.7.1",
+    "mongodb": "^3.5.9",
     "sinon": "^21.0.0",
     "source-map-support": "0.5.16",
+    "supertest": "^7.2.2",
     "tsx": "^4.21.0",
     "typescript": "^5.8.3"
   },
