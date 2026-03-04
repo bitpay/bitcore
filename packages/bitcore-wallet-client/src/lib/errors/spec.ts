@@ -194,6 +194,22 @@ export const errorSpec: IErrorSpec[] = [
     message: 'The request payload is too large.'
   },
   {
+    name: 'TOO_MANY_REQUESTS_ERROR',
+    message: 'Too many requests. Please try again later.'
+  },
+  {
+    name: 'BAD_GATEWAY_ERROR',
+    message: 'Wallet service is temporarily unavailable. Please try again later.'
+  },
+  {
+    name: 'GATEWAY_TIMEOUT_ERROR',
+    message: 'Wallet service took too long to respond. Please try again.'
+  },
+  {
+    name: 'INTERNAL_SERVER_ERROR',
+    message: 'Wallet service error. Please try again later.'
+  },
+  {
     name: 'UPGRADE_NEEDED',
     message: 'Please update your client.'
   }
