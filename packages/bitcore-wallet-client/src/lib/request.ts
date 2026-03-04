@@ -149,6 +149,10 @@ export class Request<CredT = Credentials> {
             if (res.status === 503) return reject(new Errors.MAINTENANCE_ERROR());
             if (res.status === 404) return reject(new Errors.NOT_FOUND());
             if (res.status === 413) return reject(new Errors.PAYLOAD_TOO_LARGE());
+            if (res.status === 429) return reject(new Errors.TOO_MANY_REQUESTS_ERROR());
+            if (res.status === 502) return reject(new Errors.BAD_GATEWAY_ERROR());
+            if (res.status === 504) return reject(new Errors.GATEWAY_TIMEOUT_ERROR());
+            if (res.status === 500) return reject(new Errors.INTERNAL_SERVER_ERROR());
             if (!res.status) return reject(new Errors.CONNECTION_ERROR());
 
             log.error('HTTP Error:' + res.status);
