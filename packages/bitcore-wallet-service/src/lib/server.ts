@@ -2694,7 +2694,7 @@ export class WalletService implements IWalletService {
                 },
                 async next => {
                   // SOL is skipped since its a non necessary field that is expected to be provided by the client.
-                  if (!opts.nonce && !Constants.SVM_CHAINS[wallet.chain.toUpperCase()]) { 
+                  if (!opts.nonce && !Constants.SVM_CHAINS[wallet.chain.toUpperCase()] && !opts.deferNonce) {
                     try {
                       opts.nonce = await ChainService.getTransactionCount(this, wallet, opts.from);
                     } catch (error) {
@@ -2794,7 +2794,8 @@ export class WalletService implements IWalletService {
                       memo: opts.memo,
                       fromAta: opts.fromAta,
                       decimals: opts.decimals,
-                      refreshOnPublish: opts.refreshOnPublish
+                      refreshOnPublish: opts.refreshOnPublish,
+                      deferNonce: opts.deferNonce
                     };
                     txp = TxProposal.create(txOpts);
                     next();
