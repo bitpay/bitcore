@@ -66,6 +66,7 @@ export interface ITxProposal {
   signingMethod: string;
   lowFees?: boolean;
   nonce?: number | string;
+  deferNonce?: boolean;
   gasPrice?: number;
   maxGasFee?: number;
   priorityGasFee?: number;
@@ -150,6 +151,7 @@ export class TxProposal implements ITxProposal {
   lowFees?: boolean;
   raw?: Array<string> | string;
   nonce?: number | string;
+  deferNonce?: boolean;
   gasPrice?: number;
   maxGasFee?: number;
   priorityGasFee?: number;
@@ -273,6 +275,7 @@ export class TxProposal implements ITxProposal {
     x.txType = opts.txType;
     x.from = opts.from;
     x.nonce = opts.nonce;
+    x.deferNonce = opts.deferNonce;
     x.gasLimit = opts.gasLimit; // Backward compatibility for BWC <= 8.9.0
     x.data = opts.data; // Backward compatibility for BWC <= 8.9.0
     x.tokenAddress = opts.tokenAddress;
@@ -363,6 +366,7 @@ export class TxProposal implements ITxProposal {
     x.txType = obj.txType;
     x.from = obj.from;
     x.nonce = obj.nonce;
+    x.deferNonce = obj.deferNonce;
     x.gasLimit = obj.gasLimit; // Backward compatibility for BWC <= 8.9.0
     x.data = obj.data; // Backward compatibility for BWC <= 8.9.0
     x.tokenAddress = obj.tokenAddress;
