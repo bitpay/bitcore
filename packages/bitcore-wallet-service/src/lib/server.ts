@@ -2907,7 +2907,7 @@ export class WalletService implements IWalletService {
         this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
           if (err) return cb(err);
           if (!txp) return cb(Errors.TX_NOT_FOUND);
-          if (!txp.isTemporary() && !txp.isRepublishEnabled()) return cb(null, txp);
+          if (!txp.isTemporary() && !txp.isRepublishEnabled() && !txp.deferNonce) return cb(null, txp);
 
           const copayer = wallet.getCopayer(this.copayerId);
 
@@ -2921,7 +2921,7 @@ export class WalletService implements IWalletService {
           let signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
           if (!signingKey) {
             // If the txp has been published previously, we will verify the signature against the previously published raw tx
-            if (txp.isRepublishEnabled() && txp.prePublishRaw) {
+            if ((txp.isRepublishEnabled() || txp.deferNonce) && txp.prePublishRaw) {
               raw = txp.prePublishRaw;
               signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
             }
@@ -2944,7 +2944,7 @@ export class WalletService implements IWalletService {
             txp.status = 'pending';
             ChainService.refreshTxData(this, txp, opts, (err, txp) => {
               if (err) return cb(err);
-              if (txp.isRepublishEnabled() && !txp.prePublishRaw) {
+              if ((txp.isRepublishEnabled() || txp.deferNonce) && !txp.prePublishRaw) {
                 // We save the original raw transaction for verification on republish
                 txp.prePublishRaw = raw;
               }
