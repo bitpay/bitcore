@@ -3208,7 +3208,7 @@ export class WalletService implements IWalletService {
             try {
               const txps = await this.getPendingTxsPromise({});
               for (const t of txps) {
-                if (t.id !== txp.id && t.nonce <= txp.nonce && t.status !== 'rejected') {
+                if (t.id !== txp.id && t.nonce != null && txp.nonce != null && t.nonce <= txp.nonce && t.status !== 'rejected') {
                   return cb(Errors.TX_NONCE_CONFLICT);
                 }
               }
