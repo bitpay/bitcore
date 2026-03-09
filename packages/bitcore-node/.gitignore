@@ -14,7 +14,6 @@
 .idea
 .project
 .strong-pm
-coverage
 node_modules
 npm-debug.log
 dist
@@ -24,6 +23,5 @@ build/
 build-test/
 config.json
 *bitcore.config.*
-.nyc_output
-coverage
+
 scripts/*.log
