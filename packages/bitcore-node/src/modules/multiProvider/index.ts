@@ -1,9 +1,9 @@
 import { BaseModule } from '..';
 import { EVMRouter } from '../../providers/chain-state/evm/api/routes';
 import { EVMVerificationPeer } from '../../providers/chain-state/evm/p2p/EVMVerificationPeer';
-import { IEVMNetworkConfig } from '../../types/Config';
 import { MoralisP2PWorker } from '../moralis/p2p/p2p';
 import { MultiProviderEVMStateProvider } from './api/csp';
+import type { IEVMNetworkConfig } from '../../types/Config';
 
 export default class MultiProviderModule extends BaseModule {
   constructor(

@@ -1,13 +1,19 @@
-import axios, { AxiosError } from 'axios';
-import { IIndexedAPIAdapter, AdapterTransactionParams, AdapterStreamParams, AdapterBlockByDateParams } from './IIndexedAPIAdapter';
-import { IEVMTransactionTransformed } from '../../evm/types';
-import { EVMTransactionStorage } from '../../evm/models/transaction';
-import { ExternalApiStream } from '../streams/apiStream';
 import { Web3 } from '@bitpay-labs/crypto-wallet-core';
-import { AdapterError, AdapterErrorCode } from './errors';
-import { IMultiProviderConfig } from '../../../../types/Config';
+import axios from 'axios';
 import config from '../../../../config';
 import logger from '../../../../logger';
+import { EVMTransactionStorage } from '../../evm/models/transaction';
+import { ExternalApiStream } from '../streams/apiStream';
+import {
+  type AdapterBlockByDateParams,
+  type AdapterStreamParams,
+  type AdapterTransactionParams,
+  type IIndexedAPIAdapter
+} from './IIndexedAPIAdapter';
+import { AdapterError, AdapterErrorCode } from './errors';
+import type { IMultiProviderConfig } from '../../../../types/Config';
+import type { IEVMTransactionTransformed } from '../../evm/types';
+import type { AxiosError } from 'axios';
 
 const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/;
 
@@ -22,7 +28,6 @@ const ALCHEMY_NETWORK_MAP: Record<string, Record<string, string>> = {
 
 export class AlchemyAdapter implements IIndexedAPIAdapter {
   readonly name = 'Alchemy';
-  readonly supportedChains = ['ETH', 'MATIC', 'BASE', 'ARB', 'OP'];
 
   private apiKey: string;
   private requestTimeout: number;
@@ -235,8 +240,8 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
 
     const blockNum = transfer.blockNum != null
       ? (typeof transfer.blockNum === 'string' && transfer.blockNum.startsWith('0x')
-          ? parseInt(transfer.blockNum, 16)
-          : parseInt(transfer.blockNum))
+        ? parseInt(transfer.blockNum, 16)
+        : parseInt(transfer.blockNum))
       : 0;
 
     // Guard against missing/undefined blockTimestamp → Invalid Date

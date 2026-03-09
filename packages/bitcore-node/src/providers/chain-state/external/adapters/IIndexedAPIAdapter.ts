@@ -1,17 +1,10 @@
-// src/providers/chain-state/external/adapters/IIndexedAPIAdapter.ts
-
-import { IEVMTransactionTransformed } from '../../evm/types';
 import { ExternalApiStream } from '../streams/apiStream';
-import {
-  StreamWalletTransactionsArgs
-} from '../../../../types/namespaces/ChainStateProvider';
+import type { StreamWalletTransactionsArgs } from '../../../../types/namespaces/ChainStateProvider';
+import type { IEVMTransactionTransformed } from '../../evm/types';
 
 export interface IIndexedAPIAdapter {
   /** Provider display name (e.g., 'Moralis', 'Alchemy') */
   readonly name: string;
-
-  /** Chains this adapter supports (e.g., ['ETH', 'MATIC', 'BASE']) */
-  readonly supportedChains: string[];
 
   /**
    * Get a single transaction by hash.

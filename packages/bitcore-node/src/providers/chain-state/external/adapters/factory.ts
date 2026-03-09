@@ -1,6 +1,6 @@
-import { IIndexedAPIAdapter } from './IIndexedAPIAdapter';
-import { IMultiProviderConfig } from '../../../../types/Config';
 import { AlchemyAdapter } from './alchemy';
+import type { IIndexedAPIAdapter } from './IIndexedAPIAdapter';
+import type { IMultiProviderConfig } from '../../../../types/Config';
 
 export class AdapterFactory {
   private static registry: Record<string, new (config: IMultiProviderConfig) => IIndexedAPIAdapter> = {

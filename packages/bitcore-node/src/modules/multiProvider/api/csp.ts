@@ -1,26 +1,29 @@
-import { Readable, PassThrough } from 'stream';
+import { PassThrough, Readable } from 'stream';
 import { LRUCache } from 'lru-cache';
-import { BaseEVMStateProvider, BuildWalletTxsStreamParams } from '../../../providers/chain-state/evm/api/csp';
-import { IIndexedAPIAdapter } from '../../../providers/chain-state/external/adapters/IIndexedAPIAdapter';
-import { AdapterFactory } from '../../../providers/chain-state/external/adapters/factory';
+import logger from '../../../logger';
+import { WalletAddressStorage } from '../../../models/walletAddress';
+import { BaseEVMStateProvider } from '../../../providers/chain-state/evm/api/csp';
+import { EVMBlockStorage } from '../../../providers/chain-state/evm/models/block';
+import { EVMTransactionStorage } from '../../../providers/chain-state/evm/models/transaction';
 import { AdapterError, AdapterErrorCode, AllProvidersUnavailableError } from '../../../providers/chain-state/external/adapters/errors';
+import { AdapterFactory } from '../../../providers/chain-state/external/adapters/factory';
 import { ProviderHealth } from '../../../providers/chain-state/external/providerHealth';
 import { ExternalApiStream } from '../../../providers/chain-state/external/streams/apiStream';
-import { EVMBlockStorage } from '../../../providers/chain-state/evm/models/block';
 import { Config } from '../../../services/config';
-import { IMultiProviderConfig } from '../../../types/Config';
-import { IBlock } from '../../../types/Block';
-import { WalletAddressStorage } from '../../../models/walletAddress';
-import logger from '../../../logger';
-import { EVMTransactionStorage } from '../../../providers/chain-state/evm/models/transaction';
-import { EVMTransactionJSON } from '../../../providers/chain-state/evm/types';
-import { normalizeChainNetwork } from '../../../utils';
 import {
   GetBlockBeforeTimeParams,
   StreamAddressUtxosParams,
   StreamTransactionParams,
   StreamWalletTransactionsParams
 } from '../../../types/namespaces/ChainStateProvider';
+import { normalizeChainNetwork } from '../../../utils';
+import type {
+  BuildWalletTxsStreamParams
+} from '../../../providers/chain-state/evm/api/csp';
+import type { EVMTransactionJSON } from '../../../providers/chain-state/evm/types';
+import type { IIndexedAPIAdapter } from '../../../providers/chain-state/external/adapters/IIndexedAPIAdapter';
+import type { IBlock } from '../../../types/Block';
+import type { IMultiProviderConfig } from '../../../types/Config';
 
 interface ProviderWithHealth {
   adapter: IIndexedAPIAdapter;
@@ -106,7 +109,10 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
       }
       return undefined;
     } catch (err) {
-      if (err instanceof AllProvidersUnavailableError || (err instanceof AdapterError && err.code === AdapterErrorCode.INVALID_REQUEST)) {
+      if (
+        err instanceof AllProvidersUnavailableError ||
+        (err instanceof AdapterError && err.code === AdapterErrorCode.INVALID_REQUEST)
+      ) {
         throw err;
       }
       logger.error('MultiProvider: unexpected error in getTransaction: %o', err);

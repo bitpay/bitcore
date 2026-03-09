@@ -28,12 +28,12 @@ describe('AdapterError', function() {
       { code: AdapterErrorCode.UPSTREAM, affectsHealth: true },
     ];
 
-    cases.forEach(({ code, affectsHealth }) => {
+    for (const { code, affectsHealth } of cases) {
       it(`code=${code} → affectsHealth=${affectsHealth}`, function() {
         const err = new AdapterError('P', code);
         expect(err.affectsHealth).to.equal(affectsHealth);
       });
-    });
+    }
   });
 
   describe('AllProvidersUnavailableError', function() {

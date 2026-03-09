@@ -20,7 +20,6 @@ describe('AdapterFactory', function() {
   it('should register and create a custom adapter', function() {
     class TestAdapter {
       readonly name = 'Test';
-      readonly supportedChains = ['ETH'];
     }
     AdapterFactory.registerAdapter('test', TestAdapter as any);
     const adapter = AdapterFactory.createAdapter({ name: 'test', priority: 1 });

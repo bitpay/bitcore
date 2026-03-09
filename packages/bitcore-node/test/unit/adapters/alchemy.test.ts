@@ -61,9 +61,8 @@ describe('AlchemyAdapter', function() {
       (config as any).externalProviders = saved;
     });
 
-    it('should set name and supportedChains', function() {
+    it('should set the adapter name', function() {
       expect(adapter.name).to.equal('Alchemy');
-      expect(adapter.supportedChains).to.include('ETH');
     });
   });
 
@@ -179,7 +178,7 @@ describe('AlchemyAdapter', function() {
 
     const params = { chain: 'ETH', network: 'mainnet', chainId: '1', txId: VALID_TX_HASH };
 
-    errorCases.forEach(({ scenario, setup, expectedCode }) => {
+    for (const { scenario, setup, expectedCode } of errorCases) {
       it(`should classify ${scenario}`, async function() {
         setup();
         try {
@@ -190,7 +189,7 @@ describe('AlchemyAdapter', function() {
           expect(err.code).to.equal(expectedCode);
         }
       });
-    });
+    }
   });
 
   // --- Asset transfer stream ---

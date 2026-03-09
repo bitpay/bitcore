@@ -1,5 +1,5 @@
-import { FeeMode } from './namespaces/ChainStateProvider';
-import { ProviderHealthConfig } from '../providers/chain-state/external/providerHealth';
+import type { FeeMode } from './namespaces/ChainStateProvider';
+import type { ProviderHealthConfig } from '../providers/chain-state/external/providerHealth';
 
 export interface IChainConfig<T extends INetworkConfig> {
   [network: string]: T;
