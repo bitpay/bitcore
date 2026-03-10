@@ -552,18 +552,19 @@ export class TssKeyGen extends EventEmitter {
         const key = this.getTssKey();
         if (key) {
           this.emit('tsskey', key);
-          /* Backup to server is disabled
-          if (!body.publicKey || (!body.hasKeyBackup && this.backupKeyShare)) {
-            const encryptedKeyChain = ECIES.encrypt({
-              message: key.keychain.privateKeyShare.toString('base64') + ':' + key.keychain.reducedPrivateKeyShare.toString('base64'),
-              publicKey: new BitcoreLib.HDPrivateKey(this.#xPrivKey).publicKey,
-              privateKey: new BitcoreLib.HDPrivateKey(this.#xPrivKey).privateKey,
-              opts: { noKey: true }
-            }).toString('base64');
-            await this.#request.post(`/v1/tss/keygen/${this.id}/store`, { publicKey: key.keychain.commonKeyChain, encryptedKeyChain });
+          
+          // Backup to server is disabled
+          if (!body.publicKey) {// || (!body.hasKeyBackup && this.backupKeyShare)) {
+            // const encryptedKeyChain = ECIES.encrypt({
+            //   message: key.keychain.privateKeyShare.toString('base64') + ':' + key.keychain.reducedPrivateKeyShare.toString('base64'),
+            //   publicKey: new BitcoreLib.HDPrivateKey(this.#xPrivKey).publicKey,
+            //   privateKey: new BitcoreLib.HDPrivateKey(this.#xPrivKey).privateKey,
+            //   opts: { noKey: true }
+            // }).toString('base64');
+            // await this.#request.post(`/v1/tss/keygen/${this.id}/store`, { publicKey: key.keychain.commonKeyChain, encryptedKeyChain });
+            await this.#request.post(`/v1/tss/keygen/${this.id}/store`, { publicKey: key.keychain.commonKeyChain });
             this.emit('tsskeystored');
           }
-          */
 
           if (!copayerName) {
             complete();
