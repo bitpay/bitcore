@@ -31,10 +31,13 @@ export function decryptEncryptionKey(encEncryptionKey, password, toBuffer?: bool
   const iv = password_hash.subarray(32, 48);
   const decipher = crypto.createDecipheriv(algo, key, iv);
   
-  const payload = decipher.update(encEncryptionKey, 'hex');
-  const final = decipher.final();
-  const output = Buffer.concat([payload, final]);
+  let payload: Buffer | undefined;
+  let final: Buffer | undefined;
+  let output: Buffer | undefined;
   try {
+    payload = decipher.update(encEncryptionKey, 'hex');
+    final = decipher.final();
+    output = Buffer.concat([payload, final]);
     return toBuffer ? output : output.toString('hex');
   } finally {
     payload.fill(0);
@@ -65,27 +68,35 @@ function decryptPrivateKey(encPrivateKey: string, pubKey: string, encryptionKey:
 }
 
 function encryptBuffer(data: Buffer, pubKey: string, encryptionKey: Buffer): Buffer {
-  const iv = Buffer.from(SHA256(SHA256(pubKey)), 'hex').subarray(0, 16);
-  const cipher = crypto.createCipheriv(algo, encryptionKey, iv);
-  const payload = cipher.update(data);
+  let payload: Buffer | undefined;
   try {
+    const iv = Buffer.from(SHA256(SHA256(pubKey)), 'hex').subarray(0, 16);
+    const cipher = crypto.createCipheriv(algo, encryptionKey, iv);
+    payload = cipher.update(data);
     return Buffer.concat([payload, cipher.final()]);
   } finally {
-    payload.fill(0);
+    if (Buffer.isBuffer(payload)) {
+      payload.fill(0);
+    }
   }
 }
 
 function decryptToBuffer(encHex: string, pubKey: string, encryptionKey: Buffer): Buffer {
-  const iv = Buffer.from(SHA256(SHA256(pubKey)), 'hex').subarray(0, 16);
-  const decipher = crypto.createDecipheriv(algo, encryptionKey, iv);
-
-  const decrypted = decipher.update(encHex, 'hex');
-  const final = decipher.final();
+  let decrypted: Buffer | undefined;
+  let final: Buffer | undefined;
   try {
+    const iv = Buffer.from(SHA256(SHA256(pubKey)), 'hex').subarray(0, 16);
+    const decipher = crypto.createDecipheriv(algo, encryptionKey, iv);
+    decrypted = decipher.update(encHex, 'hex');
+    final = decipher.final();
     return Buffer.concat([decrypted, final]);
   } finally {
-    decrypted.fill(0);
-    final.fill(0);
+    if (Buffer.isBuffer(decrypted)) {
+      decrypted.fill(0);
+    }
+    if (Buffer.isBuffer(final)) {
+      final.fill(0);
+    }
   }
 }
 
