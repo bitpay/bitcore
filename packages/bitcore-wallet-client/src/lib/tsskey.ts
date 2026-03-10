@@ -38,9 +38,10 @@ export interface ITssKeyGenConstructorParams {
   /**
    * Backup your encrypted key share to the server.
    * This allows for portability and recoverability with your xPrivKey.
-   * Default: true
+   * Default: false
+   * DISABLED
    */
-  backupKeyShare?: boolean;
+  // backupKeyShare?: boolean;
 };
 
 export interface ITssKey extends Key {
@@ -221,7 +222,8 @@ export class TssKeyGen extends EventEmitter {
     const _seed = BitcoreLib.HDPrivateKey.fromString(this.#xPrivKey);
     this.#seed = BitcoreLib.crypto.Hash.sha256(_seed.toBuffer());
 
-    this.backupKeyShare = !!params.backupKeyShare;
+    // Backup to server is disabled
+    // this.backupKeyShare = !!params.backupKeyShare;
   }
 
   /**
@@ -550,6 +552,7 @@ export class TssKeyGen extends EventEmitter {
         const key = this.getTssKey();
         if (key) {
           this.emit('tsskey', key);
+          /* Backup to server is disabled
           if (!body.publicKey || (!body.hasKeyBackup && this.backupKeyShare)) {
             const encryptedKeyChain = ECIES.encrypt({
               message: key.keychain.privateKeyShare.toString('base64') + ':' + key.keychain.reducedPrivateKeyShare.toString('base64'),
@@ -560,6 +563,7 @@ export class TssKeyGen extends EventEmitter {
             await this.#request.post(`/v1/tss/keygen/${this.id}/store`, { publicKey: key.keychain.commonKeyChain, encryptedKeyChain });
             this.emit('tsskeystored');
           }
+          */
 
           if (!copayerName) {
             complete();
