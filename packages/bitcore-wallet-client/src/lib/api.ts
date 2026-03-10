@@ -2063,6 +2063,36 @@ export class API extends EventEmitter {
   }
 
   /**
+   * Assign a fresh nonce to a deferred-nonce transaction proposal.
+   * Call this just before signing a deferred-nonce txp.
+   */
+  async assignNonce(
+    opts: {
+      /** The transaction proposal to assign nonce to */
+      txp: Txp;
+    },
+    /** @deprecated */
+    cb?: (err?: Error, txp?: Txp) => void
+  ) {
+    if (cb) {
+      log.warn('DEPRECATED: assignNonce will remove callback support in the future.');
+    }
+    try {
+      $.checkState(this.credentials && this.credentials.isComplete(),
+        'Failed state: this.credentials at <assignNonce()>');
+
+      const url = '/v1/txproposals/' + opts.txp.id + '/assign-nonce/';
+      const { body: txp } = await this.request.post<object, Txp>(url, {});
+      this._processTxps(txp);
+      if (cb) { cb(null, txp); }
+      return txp;
+    } catch (err) {
+      if (cb) cb(err);
+      else throw err;
+    }
+  }
+
+  /**
    * Create advertisement for bitpay app - (limited to marketing staff)
    * @returns {object} Returns the created advertisement
    */
