@@ -48,18 +48,23 @@ export class TssRouter {
       }
     });
 
-    router.post('/v1/tss/keygen/:id/store', authTssRequest(), async function(req, res) {
-      try {
-        const id = req.params.id;
-        const copayerId = req.headers['x-identity'];
-        const message = req.body;
+    /**
+     * 2026-03-10:
+     *  Removing this endpoint until we decide to support keychain backup to our DB (probably never).
+     *  If we ever decide to do this, we'll need a GET method to retrieve it.
+     */
+    // router.post('/v1/tss/keygen/:id/store', authTssRequest(), async function(req, res) {
+    //   try {
+    //     const id = req.params.id;
+    //     const copayerId = req.headers['x-identity'];
+    //     const message = req.body;
 
-        await TssKeyGen.storeKey({ id, message, copayerId });
-        return res.send();
-      } catch (err) {
-        return returnError(err ?? 'unknown', res, req);
-      }
-    });
+    //     await TssKeyGen.storeKey({ id, message, copayerId });
+    //     return res.send();
+    //   } catch (err) {
+    //     return returnError(err ?? 'unknown', res, req);
+    //   }
+    // });
 
     router.post('/v1/tss/keygen/:id/secret', authTssRequest(), async function(req, res) {
       try {
