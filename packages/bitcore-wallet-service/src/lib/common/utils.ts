@@ -381,46 +381,50 @@ export const Utils = {
    * @returns 
    */
   sortAsc<T = any>(arr: Array<T>, ...keys: (string | string[])[]): Array<T> {
-    function transformVals(val1, val2) {
-      if (val1 === undefined) {
-        val1 = '\uFFFF'; // highest possible string value, otherwise 'undefined' < 'xyz'
-      } else if (val1 === null || val1 === false || val1.toString() === 'NaN') {
-        val1 = '0';
-      } else if (val1 === true) {
-        val1 = '1';
+    function normalizeVal(v) {
+      if (v === undefined) return '\uFFFF'; // highest possible value, sorts last
+      if (v === null || v === false || v?.toString() === 'NaN') return 0;
+      if (v === true) return 1;
+      return v;
+    }
+
+    function compareVals(a, b): number {
+      a = normalizeVal(a);
+      b = normalizeVal(b);
+
+      // Compare bigints directly to avoid loss of precision via Number()
+      if (typeof a === 'bigint' && typeof b === 'bigint') {
+        return a < b ? -1 : a > b ? 1 : 0;
       }
 
-      if (val2 === undefined) {
-        val2 = '\uFFFF'; // highest possible string value, otherwise 'undefined' < 'xyz'
-      } else if (val2 === null || val2 === false || val2.toString() === 'NaN') {
-        val2 = '0';
-      } else if (val2 === true) {
-        val2 = '1';
+      // Numeric comparison for numbers, bigints, and non-empty numeric strings
+      const aIsNumeric = typeof a !== 'string' ? !isNaN(Number(a)) : a.trim() !== '' && !isNaN(Number(a));
+      const bIsNumeric = typeof b !== 'string' ? !isNaN(Number(b)) : b.trim() !== '' && !isNaN(Number(b));
+      if (aIsNumeric && bIsNumeric) {
+        const na = Number(a);
+        const nb = Number(b);
+        return na < nb ? -1 : na > nb ? 1 : 0;
       }
 
-      return [Buffer.from(val1.toString()), Buffer.from(val2.toString())];
-    };
+      // String comparison fallback
+      const sa = String(a);
+      const sb = String(b);
+      return sa < sb ? -1 : sa > sb ? 1 : 0;
+    }
 
     if (!keys.length) {
-      return arr.sort((a, b) => { const [_a, _b] = transformVals(a, b); return _a.compare(_b); });
-    } else if (keys.length === 1 && !Array.isArray(keys[0])) {
-      const key = keys[0];
-      return arr.sort((a, b) => { const [_a, _b] = transformVals(a[key], b[key]); return _a.compare(_b); });
+      return arr.sort((a, b) => compareVals(a, b));
     }
+
     return arr.sort((a, b) => {
-      // compare concatenated strings for multiple key sorting
-      let aVal = '';
-      let bVal = '';
       for (const k of keys) {
-        const [aTemp, bTemp] = transformVals(
+        const cmp = compareVals(
           Array.isArray(k) ? k.reduce((val, key) => val[key], a) : a[k],
           Array.isArray(k) ? k.reduce((val, key) => val[key], b) : b[k]
         );
-
-        aVal += aTemp.toString();
-        bVal += bTemp.toString();
+        if (cmp !== 0) return cmp;
       }
-      return Buffer.from(aVal).compare(Buffer.from(bVal));
+      return 0;
     });
   },
 
