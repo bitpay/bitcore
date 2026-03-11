@@ -207,7 +207,7 @@ export const errorSpec: IErrorSpec[] = [
   },
   {
     name: 'INTERNAL_SERVER_ERROR',
-    message: 'Wallet service error. Please try again later.'
+    message: 'Wallet service error. Please try again later or contact support if the problem persists.'
   },
   {
     name: 'UPGRADE_NEEDED',

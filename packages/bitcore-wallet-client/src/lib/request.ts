@@ -152,13 +152,22 @@ export class Request<CredT = Credentials> {
             if (res.status === 429) return reject(new Errors.TOO_MANY_REQUESTS_ERROR());
             if (res.status === 502) return reject(new Errors.BAD_GATEWAY_ERROR());
             if (res.status === 504) return reject(new Errors.GATEWAY_TIMEOUT_ERROR());
-            if (res.status === 500) return reject(new Errors.INTERNAL_SERVER_ERROR());
             if (!res.status) return reject(new Errors.CONNECTION_ERROR());
 
             log.error('HTTP Error:' + res.status);
 
-            if (!res.body || !Object.keys(res.body).length)
+            if (
+              res.status === 500 &&
+              (!res.body ||
+                typeof res.body !== 'object' ||
+                !Object.keys(res.body).length)
+            ) {
+              return reject(new Errors.INTERNAL_SERVER_ERROR());
+            }
+            
+            if (!res.body || !Object.keys(res.body).length) {
               return reject(new Error(res.status + `${err?.message ? ': ' + err.message : ''}`));
+            }
             return reject(Request._parseError(res.body));
           }
 
