@@ -185,12 +185,14 @@ class TssKeyGenClass {
     id: string;
     message: {
       publicKey: ITssKeyMessageObject['publicKey'];
+      /** unused */
       encryptedKeyChain: string;
     };
+    /** unused - only needed for storing the encryptedKeyChain */
     copayerId: string;
   }) {
-    const { id, message, copayerId } = params;
-    const { publicKey, encryptedKeyChain } = message;
+    const { id, message } = params;
+    const { publicKey } = message;
     if (!publicKey) {
       throw Errors.TSS_GENERIC_ERROR.withMessage('No public key provided');
     }
@@ -210,15 +212,21 @@ class TssKeyGenClass {
       }
     }
 
-    if (encryptedKeyChain) {
-      const partyId = session.participants.indexOf(copayerId);
-      const result = await storage.storeTssKeyShare({ id, partyId, encryptedKeyChain });
+    /**
+     * 2026-03-10:
+     *  Removing this feature until we decide to support keychain backup to our DB (probably never).
+     *  If we ever decide to do this, we may need to add support in BWC for restoring it.
+     */
 
-      if (!result.result.ok) {
-        logger.error('Failed to store TSS key generation public key %o %o', id, result);
-        throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS key generation public key');
-      }
-    }
+    // if (encryptedKeyChain) {
+    //   const partyId = session.participants.indexOf(copayerId);
+    //   const result = await storage.storeTssKeyShare({ id, partyId, encryptedKeyChain });
+
+    //   if (!result.result.ok) {
+    //     logger.error('Failed to store TSS key generation public key %o %o', id, result);
+    //     throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS key generation public key');
+    //   }
+    // }
   }
 
   async storeBwsJoinSecret(params: {

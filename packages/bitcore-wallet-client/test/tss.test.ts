@@ -358,10 +358,13 @@ describe('TSS', function() {
       key.keychain.commonKeyChain.should.equal(session.sharedPublicKey);
     });
 
-    it(happyPath('should have stored the encrypted key shares'), async function() {
+    it(happyPath('should have not stored the encrypted key shares'), async function() {
       const session = await storage.fetchTssKeyGenSession({ id: tss0.id });
       session.keyShares.length.should.equal(n);
+      session.keyShares.every(share => share == null).should.equal(true); // encrypted keyshares are not stored
+      return;
 
+      // If we every decide to store the encrypted key shares...
       const key0 = tss0.getTssKey();
       const hdKey0 = new BitcoreLib.HDPrivateKey(party0Key.get().xPrivKey).deriveChild(derivationPath);
       const expected0 = key0.keychain.privateKeyShare.toString('base64') + ':' + key0.keychain.reducedPrivateKeyShare.toString('base64');
