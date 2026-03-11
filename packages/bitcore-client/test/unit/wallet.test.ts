@@ -665,6 +665,87 @@ describe('Wallet', function() {
       );
       expect(migratedPrivateKey.toString('hex')).to.equal(originalMasterKey.privateKey);
     });
+
+    it('should throw if the raw wallet cannot be loaded', async () => {
+      loadWalletStub.resolves(undefined);
+
+      try {
+        await wallet.migrateWallet(decryptedEncryptionKey);
+        expect.fail('Expected migrateWallet to throw');
+      } catch (err) {
+        expect(err.message).to.equal('Migration failed - wallet not found');
+      }
+
+      expect(getStoredKeysStub.called).to.equal(false);
+      expect(addKeysSafeStub.called).to.equal(false);
+      expect(saveWalletStub.called).to.equal(false);
+    });
+
+    it('should throw if the decrypted masterKey is malformed', async () => {
+      wallet.masterKey = Encryption.encryptPrivateKey(
+        JSON.stringify({ invalid: true }),
+        wallet.pubKey,
+        decryptedEncryptionKey.toString('hex')
+      );
+
+      try {
+        await wallet.migrateWallet(decryptedEncryptionKey);
+        expect.fail('Expected migrateWallet to throw');
+      } catch (err) {
+        expect(err.message).to.equal('Migration failure: masterKey is not formatted as expected');
+      }
+
+      expect(addKeysSafeStub.called).to.equal(false);
+      expect(saveWalletStub.called).to.equal(false);
+    });
+
+    it('should throw if addKeysSafe fails and should not save the wallet', async () => {
+      addKeysSafeStub.rejects(new Error('write failed'));
+
+      try {
+        await wallet.migrateWallet(decryptedEncryptionKey);
+        expect.fail('Expected migrateWallet to throw');
+      } catch (err) {
+        expect(err.message).to.equal(
+          'Migration failure: keys not successfully stored. Use backups to restore prior wallet and keys.'
+        );
+      }
+
+      expect(addKeysSafeStub.calledOnce).to.equal(true);
+      expect(saveWalletStub.called).to.equal(false);
+    });
+
+    it('should no-op when the wallet is already on the current version', async () => {
+      wallet.version = 2;
+      const warnStub = sandbox.stub(console, 'warn');
+
+      const migratedWallet = await wallet.migrateWallet(decryptedEncryptionKey);
+
+      expect(migratedWallet).to.equal(wallet);
+      expect(warnStub.calledOnceWithExactly('Wallet migration unnecessarily called - wallet is current version')).to.equal(true);
+      expect(loadWalletStub.called).to.equal(false);
+      expect(getStoredKeysStub.called).to.equal(false);
+      expect(addKeysSafeStub.called).to.equal(false);
+      expect(saveWalletStub.called).to.equal(false);
+      expect(fs.existsSync(path.join(backupDir, `${ethMigrationTestWalletFixture.name}.bak`))).to.equal(false);
+    });
+
+    it('should no-op when the wallet version is newer than the current version', async () => {
+      wallet.version = 3;
+      const warnStub = sandbox.stub(console, 'warn');
+
+      const migratedWallet = await wallet.migrateWallet(decryptedEncryptionKey);
+
+      expect(migratedWallet).to.equal(wallet);
+      expect(
+        warnStub.calledOnceWithExactly('Wallet version 3 greater than expected current wallet version 2')
+      ).to.equal(true);
+      expect(loadWalletStub.called).to.equal(false);
+      expect(getStoredKeysStub.called).to.equal(false);
+      expect(addKeysSafeStub.called).to.equal(false);
+      expect(saveWalletStub.called).to.equal(false);
+      expect(fs.existsSync(path.join(backupDir, `${ethMigrationTestWalletFixture.name}.bak`))).to.equal(false);
+    });
   });
 
   describe('getBalance', function() {
