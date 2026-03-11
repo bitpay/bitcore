@@ -1,5 +1,7 @@
 import { writeFile } from 'fs/promises';
 import 'source-map-support/register';
+import os from 'os';
+import path from 'path';
 import * as Bcrypt from 'bcrypt';
 import Mnemonic from 'bitcore-mnemonic';
 import { 
@@ -342,6 +344,8 @@ export class Wallet {
       return this;
     }
 
+    console.log(`Migrating wallet from version ${this.version} to version ${CURRENT_WALLET_VERSION}`);
+
     /**
      * 1: Wallet to .bak
      */
@@ -349,8 +353,18 @@ export class Wallet {
     if (!rawWallet) {
       throw new Error('Migration failed - wallet not found');
     }
+
+    const backupDir = path.join(
+      os.homedir(),
+      '.bitcore',
+      'bitcoreWallets',
+      'backup'
+    );
+
+    const walletFilePath = path.join(backupDir, `${this.name}.bak`);
     
-    await writeFile(`${this.name}.bak`, rawWallet, 'utf8')
+    await writeFile(walletFilePath, rawWallet, 'utf8')
+      .then(() => console.log(`Pre-migration wallet backup written to ${walletFilePath}`))
       .catch(err => {
         console.error('Wallet backup failed, aborting migration', err.msg);
         throw new Error('Migration failure: failed to write wallet backup file. Aborting.');
@@ -367,7 +381,9 @@ export class Wallet {
 
     // Back up keys (enc)
     const backupKeysStr = JSON.stringify(storedKeys);
-    await writeFile(`${this.name}_keys.bak`, backupKeysStr, 'utf8')
+    const keysFilePath = path.join(backupDir, `${this.name}_keys.bak`);
+    await writeFile(keysFilePath, backupKeysStr, 'utf8')
+      .then(() => console.log(`Pre-migration keys backup written to ${keysFilePath}`))
       .catch(err => {
         console.error('Keys backup failed, aborting migration', err.msg);
         throw new Error('Migration failure: failed to write keys backup file. Aborting.');
@@ -442,6 +458,7 @@ export class Wallet {
         throw new Error('Migration failure: wallet not successfully saved. Use backups to restore prior wallet and keys');
       });
 
+    console.log('Migration succeeded');
     return this;
   }
 
