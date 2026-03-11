@@ -26,7 +26,7 @@ import { MultisendAbi } from '../abi/multisend';
 import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
 import { EVMTransactionJSON, IEVMBlock, IEVMTransaction, IEVMTransactionInProcess } from '../types';
-import { AaveAccountData, AaveV2AccountData, AaveV3AccountData, AaveVersion, getAavePoolAddress } from './aave';
+import { AaveAccountData, AaveReserveData, AaveReserveTokensAddresses, AaveV2AccountData, AaveV3AccountData, AaveVersion, getAavePoolAddress } from './aave';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateEffectsForAddressTransform } from './populateEffectsTransform';
@@ -206,7 +206,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
   async getAaveUserAccountData(params: { network: string; address: string; version: AaveVersion }): Promise<AaveAccountData> {
     const { network, address, version } = params;
-    const poolAddress = getAavePoolAddress(this.chain, network, version)!;
+    const poolAddress = getAavePoolAddress(this.chain, network, version);
     
     if (!poolAddress) {
       throw new Error(
@@ -251,6 +251,40 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       ltv: accountData.ltv.toString(),
       healthFactor: accountData.healthFactor.toString()
     };
+  }
+
+  async getAaveReserveData(params: { network: string; asset: string; version: AaveVersion }): Promise<AaveReserveData> {
+    const { network, asset, version } = params;
+    const poolAddress = getAavePoolAddress(this.chain, network, version);
+
+    if (!poolAddress) {
+      throw new Error(
+        `Unsupported Aave pool for chain "${this.chain}", network "${network}", version "${version}".`
+      );
+    }
+
+    const { web3 } = await this.getWeb3(network);
+    const abi = version === 'v2' ? AavePoolAbiV2 : AavePoolAbi;
+    const contract = new web3.eth.Contract(abi, poolAddress);
+    const reserveData = await contract.methods.getReserveData(web3.utils.toChecksumAddress(asset)).call();
+    return { currentVariableBorrowRate: reserveData.currentVariableBorrowRate.toString() };
+  }
+
+  async getAaveReserveTokensAddresses(params: { network: string; asset: string; version: AaveVersion }): Promise<AaveReserveTokensAddresses> {
+    const { network, asset, version } = params;
+    const poolAddress = getAavePoolAddress(this.chain, network, version);
+
+    if (!poolAddress) {
+      throw new Error(
+        `Unsupported Aave pool for chain "${this.chain}", network "${network}", version "${version}".`
+      );
+    }
+
+    const { web3 } = await this.getWeb3(network);
+    const abi = version === 'v2' ? AavePoolAbiV2 : AavePoolAbi;
+    const contract = new web3.eth.Contract(abi, poolAddress);
+    const reserveData = await contract.methods.getReserveData(web3.utils.toChecksumAddress(asset)).call();
+    return { variableDebtTokenAddress: reserveData.variableDebtTokenAddress };
   }
 
   @historical
