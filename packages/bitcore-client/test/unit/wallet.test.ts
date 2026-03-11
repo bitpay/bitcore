@@ -1,5 +1,8 @@
 import * as chai from 'chai';
 import * as CWC from 'crypto-wallet-core';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import { AddressTypes, Wallet } from '../../src/wallet';
 import { Encryption } from '../../src/encryption';
 import { Api as bcnApi } from '../../../bitcore-node/build/src/services/api';
@@ -13,6 +16,7 @@ import sinon from 'sinon';
 import { StorageType } from '../../src/types/storage';
 import supertest from 'supertest';
 import { utils } from '../../src/utils';
+import ethMigrationTestWalletFixture from './data/ethMigrationTestWallet.fixture';
 
 
 const should = chai.should();
@@ -65,7 +69,10 @@ describe('Wallet', function() {
     });
   });
   afterEach(async function() {
-    await Wallet.deleteWallet({ name: walletName, storageType });
+    if (walletName) {
+      await Wallet.deleteWallet({ name: walletName, storageType });
+    }
+    walletName = undefined;
     sandbox.restore();
   });
   for (const chain of ['BTC', 'BCH', 'LTC', 'DOGE', 'ETH', 'XRP', 'MATIC']) {
@@ -489,22 +496,175 @@ describe('Wallet', function() {
   describe('derivePrivateKey', function () {});
 
   describe('unlock', function () {
-    it('performs wallet migration for previous wallet versions', async () => {});
+    it('performs wallet migration for previous wallet versions', async () => {
+      const fixture = ethMigrationTestWalletFixture;
+      const wallet = new Wallet(fixture.wallet as any);
+      const tempHomeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bitcore-client-migration-unlock-'));
+      const backupDir = path.join(tempHomeDir, '.bitcore', 'bitcoreWallets', 'backup');
+      const loadWalletStub = sandbox.stub();
+      const getStoredKeysStub = sandbox.stub();
+      const addKeysSafeStub = sandbox.stub();
+      const saveWalletStub = sandbox.stub();
+
+      wallet.storage = {
+        loadWallet: loadWalletStub,
+        getStoredKeys: getStoredKeysStub,
+        addKeysSafe: addKeysSafeStub,
+        saveWallet: saveWalletStub
+      } as any;
+
+      loadWalletStub.resolves(fixture.rawWallet);
+      getStoredKeysStub.resolves(fixture.storedKeys);
+      addKeysSafeStub.resolves();
+      saveWalletStub.resolves();
+
+      fs.mkdirSync(backupDir, { recursive: true });
+      const homedirStub = sandbox.stub(os, 'homedir').returns(tempHomeDir);
+      sandbox.stub(wallet, 'getAddresses').resolves(fixture.addresses);
+
+      await wallet.unlock(fixture.password);
+
+      // Assert wallet.storage methods are called (from migrateWallet)
+      expect(addKeysSafeStub.calledOnce).to.equal(true);
+      expect(saveWalletStub.calledOnce).to.equal(true);
+
+      expect(wallet.version).to.equal(2);
+      expect(wallet.unlocked).to.exist;
+      expect(Buffer.isBuffer(wallet.unlocked?.encryptionKey)).to.equal(true);
+      expect(Buffer.isBuffer(wallet.unlocked?.masterKey?.privateKey)).to.equal(true);
+      expect(Buffer.isBuffer(wallet.unlocked?.masterKey?.xprivkey)).to.equal(true);
+      expect(fs.readFileSync(path.join(backupDir, `${fixture.name}.bak`), 'utf8')).to.equal(fixture.rawWallet);
+      expect(fs.readFileSync(path.join(backupDir, `${fixture.name}_keys.bak`), 'utf8')).to.equal(JSON.stringify(fixture.storedKeys));
+      homedirStub.restore();
+      fs.rmSync(tempHomeDir, { recursive: true, force: true });
+    });
   });
 
   describe('migrateWallet', function () {
     let wallet: Wallet;
     let decryptedEncryptionKey: Buffer | undefined;
+    let loadWalletStub: sinon.SinonStub;
+    let getStoredKeysStub: sinon.SinonStub;
+    let addKeysSafeStub: sinon.SinonStub;
+    let saveWalletStub: sinon.SinonStub;
+    let homedirStub: sinon.SinonStub;
+    let tempHomeDir: string;
+    let backupDir: string;
 
     
     beforeEach(async function () {
-      const password = 'password';
-      // 
+      wallet = new Wallet(ethMigrationTestWalletFixture.wallet as any);
+      tempHomeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bitcore-client-migration-'));
+      backupDir = path.join(tempHomeDir, '.bitcore', 'bitcoreWallets', 'backup');
+      fs.mkdirSync(backupDir, { recursive: true });
+      wallet.storage = {
+        loadWallet: async () => undefined,
+        getStoredKeys: async () => [],
+        addKeysSafe: async () => undefined,
+        saveWallet: async () => undefined
+      } as any;
+
+      loadWalletStub = sandbox.stub(wallet.storage, 'loadWallet').resolves(ethMigrationTestWalletFixture.rawWallet);
+      getStoredKeysStub = sandbox.stub(wallet.storage, 'getStoredKeys').resolves(ethMigrationTestWalletFixture.storedKeys);
+      addKeysSafeStub = sandbox.stub(wallet.storage, 'addKeysSafe').resolves();
+      saveWalletStub = sandbox.stub(wallet.storage, 'saveWallet').resolves();
+      homedirStub = sandbox.stub(os, 'homedir').returns(tempHomeDir);
+      sandbox.stub(wallet, 'getAddresses').resolves(ethMigrationTestWalletFixture.addresses);
+
+      decryptedEncryptionKey = Encryption.decryptEncryptionKey(
+        ethMigrationTestWalletFixture.wallet.encryptionKey,
+        ethMigrationTestWalletFixture.password,
+        true
+      ) as Buffer;
     });
 
-    it('should back up existing raw wallet & keys (separately) before migration', async () => {});
-    it('should overwrite existing keys', async () => {});
-    it('should overwrite existing wallet', async () => {});
+    afterEach(function () {
+      homedirStub?.restore();
+      if (tempHomeDir) {
+        fs.rmSync(tempHomeDir, { recursive: true, force: true });
+      }
+    });
+
+    it('should back up existing raw wallet & keys (separately) before migration', async () => {
+      await wallet.migrateWallet(decryptedEncryptionKey);
+
+      expect(loadWalletStub.calledOnceWithExactly({ name: ethMigrationTestWalletFixture.name, raw: true })).to.be.true;
+      expect(getStoredKeysStub.calledOnceWithExactly({
+        addresses: ethMigrationTestWalletFixture.addresses,
+        name: ethMigrationTestWalletFixture.name
+      })).to.be.true;
+      expect(fs.readFileSync(path.join(backupDir, `${ethMigrationTestWalletFixture.name}.bak`), 'utf8')).to.equal(
+        ethMigrationTestWalletFixture.rawWallet
+      );
+      expect(fs.readFileSync(path.join(backupDir, `${ethMigrationTestWalletFixture.name}_keys.bak`), 'utf8')).to.equal(
+        JSON.stringify(ethMigrationTestWalletFixture.storedKeys)
+      );
+    });
+
+    it('should overwrite existing keys', async () => {
+      await wallet.migrateWallet(decryptedEncryptionKey);
+
+      expect(addKeysSafeStub.calledOnce).to.equal(true);
+      const { name, keys } = addKeysSafeStub.firstCall.args[0];
+      expect(name).to.equal(ethMigrationTestWalletFixture.name);
+      expect(keys).to.have.length(ethMigrationTestWalletFixture.storedKeys.length);
+
+      const expectedKeys = ethMigrationTestWalletFixture.storedKeys.map(storedKey => {
+        // Added keys encrypt privKey, convert to hex, and store that on key.privKey
+        const decryptedKey = JSON.parse(
+          Encryption.decryptPrivateKey(storedKey.encKey, storedKey.pubKey, decryptedEncryptionKey)
+        );
+        const privKeyBuffer = CWC.Deriver.privateKeyToBuffer(wallet.chain, decryptedKey.privKey);
+        const encryptedPrivKey = Encryption.encryptBuffer(privKeyBuffer, storedKey.pubKey, decryptedEncryptionKey).toString('hex');
+        privKeyBuffer.fill(0);
+        return {
+          ...decryptedKey,
+          privKey: encryptedPrivKey
+        };
+      });
+
+      // Stored keys exhibit new encryption process
+      expect(keys).to.deep.equal(expectedKeys);
+    });
+
+    it('should overwrite existing wallet', async () => {
+      await wallet.migrateWallet(decryptedEncryptionKey);
+
+      expect(saveWalletStub.calledOnce).to.equal(true);
+      const savedWallet = saveWalletStub.firstCall.args[0].wallet;
+
+      expect(savedWallet.version).to.equal(2);
+      expect(savedWallet.password).to.equal(ethMigrationTestWalletFixture.wallet.password);
+      expect(savedWallet.masterKey).to.not.equal(ethMigrationTestWalletFixture.wallet.masterKey);
+
+      const migratedMasterKey = JSON.parse(savedWallet.masterKey);
+      const originalMasterKey = JSON.parse(
+        Encryption.decryptPrivateKey(
+          ethMigrationTestWalletFixture.wallet.masterKey,
+          ethMigrationTestWalletFixture.wallet.pubKey,
+          decryptedEncryptionKey
+        )
+      );
+
+      const migratedXpriv = Encryption.decryptToBuffer(
+        migratedMasterKey.xprivkey,
+        ethMigrationTestWalletFixture.wallet.pubKey,
+        decryptedEncryptionKey
+      );
+      const migratedPrivateKey = Encryption.decryptToBuffer(
+        migratedMasterKey.privateKey,
+        ethMigrationTestWalletFixture.wallet.pubKey,
+        decryptedEncryptionKey
+      );
+
+      expect(wallet.version).to.equal(2);
+
+      // Decrypted master keys same as prior master keys
+      expect(migratedXpriv.toString('hex')).to.equal(
+        CWC.BitcoreLib.encoding.Base58Check.decode(originalMasterKey.xprivkey).toString('hex')
+      );
+      expect(migratedPrivateKey.toString('hex')).to.equal(originalMasterKey.privateKey);
+    });
   });
 
   describe('getBalance', function() {
