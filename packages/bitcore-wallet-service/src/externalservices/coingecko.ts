@@ -1,4 +1,4 @@
-import { Validation } from 'crypto-wallet-core';
+import { Validation } from '@bitpay-labs/crypto-wallet-core';
 import * as request from 'request';
 import config from '../config';
 import { Constants } from '../lib/common/constants';
