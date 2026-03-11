@@ -484,6 +484,29 @@ describe('Wallet', function() {
     });
   });
 
+  describe('signTx', function () {});
+
+  describe('derivePrivateKey', function () {});
+
+  describe('unlock', function () {
+    it('performs wallet migration for previous wallet versions', async () => {});
+  });
+
+  describe('migrateWallet', function () {
+    let wallet: Wallet;
+    let decryptedEncryptionKey: Buffer | undefined;
+
+    
+    beforeEach(async function () {
+      const password = 'password';
+      // 
+    });
+
+    it('should back up existing raw wallet & keys (separately) before migration', async () => {});
+    it('should overwrite existing keys', async () => {});
+    it('should overwrite existing wallet', async () => {});
+  });
+
   describe('getBalance', function() {
     walletName = 'BitcoreClientTestGetBalance';
     beforeEach(async function() {
