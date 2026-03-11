@@ -64,7 +64,7 @@ export interface IEVMNetworkConfig extends INetworkConfig {
   mtSyncTipPad?: number; // Default: 100. Multi-threaded sync will sync up to latest block height minus mtSyncTipPad. MT syncing is blind to reorgs. This helps ensure reorgs are accounted for near the tip.
   leanTransactionStorage?: boolean; // Removes data, abiType, internal and calls before saving a transaction to the databases
   needsL1Fee?: boolean; // Does this chain require a layer-1 fee to be added to a transaction (e.g. OP-stack chains)?
-  externalProviders?: IMultiProviderConfig[];
+  indexedProviderRouting?: IMultiProviderConfig[]; // Per-network indexed API routing order; provider credentials live under config.externalProviders
 }
 
 export interface IXrpNetworkConfig extends INetworkConfig {

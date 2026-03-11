@@ -50,14 +50,17 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
     // Each network gets its own provider array with independent health trackers
     for (const [network, networkConfig] of Object.entries(chainConfig)) {
       const evmConfig = networkConfig as any;
-      const externalProviders: IMultiProviderConfig[] = evmConfig.externalProviders || [];
+      const indexedProviderRouting: IMultiProviderConfig[] = evmConfig.indexedProviderRouting || [];
+      const usesMultiProviderModule = typeof evmConfig.module === 'string' && evmConfig.module.includes('multiProvider');
 
-      if (externalProviders.length === 0) {
-        logger.warn(`No externalProviders configured for ${this.chain}:${network}`);
+      if (indexedProviderRouting.length === 0) {
+        if (usesMultiProviderModule) {
+          logger.warn(`No indexedProviderRouting configured for ${this.chain}:${network}`);
+        }
         continue;
       }
 
-      const providers = externalProviders
+      const providers = indexedProviderRouting
         .map((providerConfig) => ({
           adapter: AdapterFactory.createAdapter(providerConfig),
           health: new ProviderHealth(
@@ -81,7 +84,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
   private getProvidersForNetwork(network: string): ProviderWithHealth[] {
     const providers = this.providersByNetwork.get(network);
     if (!providers || providers.length === 0) {
-      logger.error(`MultiProvider [${this.chain}:${network}]: No externalProviders configured. Check bitcore config.`);
+      logger.error(`MultiProvider [${this.chain}:${network}]: No indexedProviderRouting configured. Check bitcore config.`);
       throw new AllProvidersUnavailableError('config', this.chain, network);
     }
     return providers;
