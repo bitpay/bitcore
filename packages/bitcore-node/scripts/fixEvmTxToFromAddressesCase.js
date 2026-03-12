@@ -40,7 +40,7 @@ if (chainIdx === -1 || networkIdx === -1 || startHeightIdx === -1 || !chain || !
   usage('Missing required options.');
 }
 
-if (endHeight && endHeight < startHeight) {
+if ((endHeightIdx > -1 && isNaN(endHeight)) || endHeight < startHeight) {
   usage('endHeight must be greater than or equal to startHeight.');
 }
 
