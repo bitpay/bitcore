@@ -63,7 +63,7 @@ Storage.start()
       return;
     }
 
-    const txStream = TransactionStorage.collection.find(query);
+    const txStream = TransactionStorage.collection.find(query).addCursorFlag('noCursorTimeout', true);
     
     let countModified = 0;
     let countRunning = 0;

@@ -5,14 +5,14 @@ import { timestamp } from '../../../../logger';
 import logger from '../../../../logger';
 import { StateStorage } from '../../../../models/state';
 import { BaseP2PWorker } from '../../../../services/p2p';
-import { IEVMNetworkConfig } from '../../../../types/Config';
 import { wait } from '../../../../utils';
 import { BaseEVMStateProvider } from '../api/csp';
 import { EVMBlockModel, EVMBlockStorage } from '../models/block';
 import { EVMTransactionModel, EVMTransactionStorage } from '../models/transaction';
-import { IEVMBlock, IEVMTransactionInProcess } from '../types';
-import { IRpc, Rpcs } from './rpcs';
+import { type IRpc, Rpcs } from './rpcs';
 import { MultiThreadSync } from './sync';
+import type { IEVMNetworkConfig } from '../../../../types/Config';
+import type { IEVMBlock, IEVMTransactionInProcess } from '../types';
 import type { Web3, Web3Types } from '@bitpay-labs/crypto-wallet-core';
 
 export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
