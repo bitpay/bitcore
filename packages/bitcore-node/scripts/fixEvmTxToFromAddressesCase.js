@@ -36,12 +36,16 @@ const network = args[networkIdx + 1]?.toLowerCase();
 const startHeight = parseInt(args[startHeightIdx + 1]);
 const endHeight = endHeightIdx !== -1 ? parseInt(args[endHeightIdx + 1]) : undefined;
 
-if (chainIdx === -1 || networkIdx === -1 || startHeightIdx === -1 || !chain || !network || !startHeight) {
+if (chainIdx === -1 || networkIdx === -1 || startHeightIdx === -1 || !chain || !network || isNaN(startHeight)) {
   usage('Missing required options.');
 }
 
-if ((endHeightIdx > -1 && isNaN(endHeight)) || endHeight < startHeight) {
-  usage('endHeight must be greater than or equal to startHeight.');
+if (startHeight < 0) {
+  usage('startHeight must be greater than or equal to 0.');
+}
+
+if ((endHeightIdx > -1 && isNaN(endHeight)) || endHeight <= startHeight) {
+  usage('endHeight must be greater than startHeight.');
 }
 
 
