@@ -535,6 +535,10 @@ export class TxProposal implements ITxProposal {
     return !!this.refreshOnPublish;
   }
 
+  hasMutableTxData() {
+    return this.isRepublishEnabled() || !!this.deferNonce;
+  }
+
   isTemporary() {
     return this.status === 'temporary';
   }
