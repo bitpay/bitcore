@@ -29,7 +29,7 @@ const libMap = {
   DOGE: CWC.BitcoreLibDoge
 };
 
-describe('Wallet', function() {
+describe.only('Wallet', function() {
   const sandbox = sinon.createSandbox();
   const storageType = 'Level';
   const baseUrl = 'http://127.0.0.1:3000/api';
@@ -560,7 +560,95 @@ describe('Wallet', function() {
     });
   });
 
-  describe('derivePrivateKey', function () {});
+  describe('derivePrivateKey', function () {
+    let wallet: Wallet;
+    const createUnlockedWallet = async (params: { chain: string; network: string; xpriv: string }) => {
+      walletName = `BitcoreClientTestDerivePrivateKey-${params.chain}`;
+      wallet = await Wallet.create({
+        name: walletName,
+        chain: params.chain,
+        network: params.network,
+        xpriv: params.xpriv,
+        password: 'abc123',
+        storageType,
+        baseUrl
+      });
+      await wallet.unlock('abc123');
+      expect(Buffer.isBuffer(wallet.unlocked?.masterKey?.xprivkey)).to.equal(true);
+      expect(Buffer.isBuffer(wallet.unlocked?.masterKey?.privateKey)).to.equal(true);
+      return wallet;
+    };
+
+    const walletVectors = {
+      BTC: {
+        chain: 'BTC',
+        network: 'mainnet',
+        xpriv: 'xprv9s21ZrQH143K3aKdQ6kXF1vj7R6LtkoLCiUXfM5bdbGXmhQkC1iXdnFfrxAAtaTunPUCCLwUQ3cpNixGLMbLAH1gzeCr8VZDe4gPgmKLb2X',
+        expected: {
+          address: '14FubqQhpG1dhTSgD5nRsiQRJEEcxVojRf',
+          privKey: '79cab08ffc77750721329a0033c43fd1e5c32e9e2da273c18e5e36abb05cca32',
+          pubKey: '03d69dd136b999433a9f6c8f38076831ec0d3a3cf7a555bec8bc8c6d76fc266231',
+          path: 'm/0/0'
+        }
+      },
+      ETH: {
+        chain: 'ETH',
+        network: 'mainnet',
+        xpriv: 'xprv9ypBjKErGMqCdzd44hfSdy1Vk6PGtU3si8ogZcow7rA23HTxMi9XfT99EKmiNdLMr9BAZ9S8ZKCYfN1eCmzYSmXYHje1jnYQseV1VJDDfdS',
+        expected: {
+          address: '0xb497281830dE4F19a3482AbF3D5C35c514e6fB36',
+          privKey: '62b8311c71f355c5c07f6bffe9b1ae60aa20d90e2e2ec93ec11b6014b2ae6340',
+          pubKey: '0386d153aad9395924631dbc78fa560107123a759eaa3e105958248c60cd4472ad',
+          path: 'm/0/0'
+        }
+      },
+      XRP: {
+        chain: 'XRP',
+        network: 'mainnet',
+        xpriv: 'xprvA58pn8bWSyoRGvEY97ALTHP4Dj6t47Q3PTBUEw78CF91kALMwhs7D2GutQSvpRN6ACR4RX4HbF3KmF7zDf48gR8nwG7DqLp6ezUcMiPHDtV',
+        expected: {
+          address: 'r9dmAJBfBe7JL2RRLiFWGJ8kM4CHEeTpgN',
+          privKey: 'D02C6801D8F328FF2EAD51D01F9580AF36C8D74E2BD463963AC4ADBE51AE5F2C',
+          pubKey: '03DBEEC5E9E76DA09C5B502A67136BC2D73423E8902A7C35A8CBC0C5A6AC0469E8',
+          path: 'm/0/0'
+        }
+      },
+      SOL: {
+        chain: 'SOL',
+        network: 'mainnet',
+        xpriv: 'xprv9s21ZrQH143K3aKdQ6kXF1vj7R6LtkoLCiUXfM5bdbGXmhQkC1iXdnFfrxAAtaTunPUCCLwUQ3cpNixGLMbLAH1gzeCr8VZDe4gPgmKLb2X',
+        expected: {
+          address: '7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hnD',
+          privKey: 'E4Tp4nTgMCa5dtGwqvkWoMGrJC7FKRNjcpeFFXi4nNb9',
+          pubKey: '5c9c85b20525ee81d3cc56da1f8307ec169086ae41458c5458519aced7683b66'
+        }
+      }
+    };
+
+    it('derives the expected BTC key material', async function () {
+      await createUnlockedWallet(walletVectors.BTC);
+      const result = await wallet.derivePrivateKey(false, 0);
+      expect(result).to.deep.equal(walletVectors.BTC.expected);
+    });
+
+    it('derives the expected ETH key material', async function () {
+      await createUnlockedWallet(walletVectors.ETH);
+      const result = await wallet.derivePrivateKey(false, 0);
+      expect(result).to.deep.equal(walletVectors.ETH.expected);
+    });
+
+    it('derives the expected XRP key material', async function () {
+      await createUnlockedWallet(walletVectors.XRP);
+      const result = await wallet.derivePrivateKey(false, 0);
+      expect(result).to.deep.equal(walletVectors.XRP.expected);
+    });
+
+    it('derives the expected SOL key material', async function () {
+      await createUnlockedWallet(walletVectors.SOL);
+      const result = await wallet.derivePrivateKey(false, 0);
+      expect(result).to.deep.equal(walletVectors.SOL.expected);
+    });
+  });
 
   describe('unlock', function () {
     it('performs wallet migration for previous wallet versions', async () => {

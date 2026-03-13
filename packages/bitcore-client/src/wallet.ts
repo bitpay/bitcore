@@ -944,26 +944,14 @@ export class Wallet {
   }
 
   async derivePrivateKey(isChange, addressIndex = this.addressIndex) {
-    let masterKeyForDeriver: any = this.unlocked.masterKey;
-    if (Buffer.isBuffer(this.unlocked.masterKey.xprivkey)) {
-      const xprivString = BitcoreLib.encoding.Base58Check.encode(this.unlocked.masterKey.xprivkey);
-      const privateKeyString = this.unlocked.masterKey.privateKey.toString('hex');
-      masterKeyForDeriver = { 
-        ...this.unlocked.masterKey, 
-        xprivkey: xprivString, 
-        privateKey: privateKeyString 
-      };
-    }
-    
-    const keyToImport = await Deriver.derivePrivateKey(
+    return Deriver.derivePrivateKey(
       this.chain,
       this.network,
-      masterKeyForDeriver,
+      this.unlocked.masterKey,
       addressIndex || 0,
       isChange,
       this.addressType
     );
-    return keyToImport;
   }
 
   async nextAddressPair(withChangeAddress?: boolean) {
