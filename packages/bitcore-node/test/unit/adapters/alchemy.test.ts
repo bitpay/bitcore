@@ -79,7 +79,10 @@ describe('AlchemyAdapter', function() {
       expect(result).to.exist;
       expect(result!.txid).to.equal(VALID_TX_HASH);
       expect(result!.blockHeight).to.equal(18000000);
-      expect(result!.nonce).to.equal(5);
+      expect(result!.nonce).to.equal('5');
+      expect(result!.value).to.equal('1000000000000000000');
+      expect(result!.gasPrice).to.equal('20000000000');
+      expect(result!.data).to.equal('0x');
       expect(axiosPostStub.callCount).to.equal(3);
     });
 
@@ -118,15 +121,12 @@ describe('AlchemyAdapter', function() {
       }
     });
 
-    it('should throw INVALID_REQUEST for unsupported chain/network', async function() {
-      try {
-        await adapter.getTransaction({ ...params, chain: 'BTC', network: 'mainnet' });
-        expect.fail('Should have thrown');
-      } catch (err: any) {
-        expect(err).to.be.instanceOf(AdapterError);
-        expect(err.code).to.equal(AdapterErrorCode.INVALID_REQUEST);
-        expect(err.message).to.include('unsupported');
-      }
+    it('should derive the Alchemy URL dynamically for aliased chains', async function() {
+      axiosPostStub.onCall(0).resolves(rpcOk(null));
+      axiosPostStub.onCall(1).resolves(rpcOk(null));
+
+      await adapter.getTransaction({ ...params, chain: 'MATIC', network: 'amoy' });
+      expect(axiosPostStub.firstCall.args[0]).to.equal('https://polygon-amoy.g.alchemy.com/v2/test-key');
     });
 
     it('should use EIP-1559 effectiveGasPrice for fee calculation', async function() {

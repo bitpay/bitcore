@@ -16,14 +16,9 @@ import type { IEVMTransactionTransformed } from '../../evm/types';
 import type { AxiosError } from 'axios';
 
 const TX_HASH_REGEX = /^0x[0-9a-fA-F]{64}$/;
-
-/** Maps bitcore chain+network → Alchemy hostname prefix */
-const ALCHEMY_NETWORK_MAP: Record<string, Record<string, string>> = {
-  ETH: { mainnet: 'eth-mainnet', sepolia: 'eth-sepolia' },
-  MATIC: { mainnet: 'polygon-mainnet', amoy: 'polygon-amoy' },
-  BASE: { mainnet: 'base-mainnet', sepolia: 'base-sepolia' },
-  ARB: { mainnet: 'arb-mainnet', sepolia: 'arb-sepolia' },
-  OP: { mainnet: 'opt-mainnet', sepolia: 'opt-sepolia' },
+const ALCHEMY_CHAIN_ALIASES: Record<string, string> = {
+  MATIC: 'polygon',
+  OP: 'opt'
 };
 
 export class AlchemyAdapter implements IIndexedAPIAdapter {
@@ -39,11 +34,13 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
     this.requestTimeout = providerConfig.requestTimeout ?? 30000;
   }
 
+  private getNetworkUrlString(chain: string, network: string): string {
+    const normalizedChain = ALCHEMY_CHAIN_ALIASES[chain.toUpperCase()] || chain.toLowerCase();
+    return `${normalizedChain}-${network.toLowerCase()}`;
+  }
+
   private getBaseUrl(chain: string, network: string): string {
-    const alchemyNetwork = ALCHEMY_NETWORK_MAP[chain.toUpperCase()]?.[network.toLowerCase()];
-    if (!alchemyNetwork) {
-      throw new AdapterError(this.name, AdapterErrorCode.INVALID_REQUEST, `unsupported chain/network: ${chain}/${network}`);
-    }
+    const alchemyNetwork = this.getNetworkUrlString(chain, network);
     return `https://${alchemyNetwork}.g.alchemy.com/v2/${this.apiKey}`;
   }
 
@@ -213,20 +210,21 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
       blockHash: tx.blockHash,
       blockTime,
       blockTimeNormalized: blockTime,
-      value: Number(BigInt(tx.value)),
-      gasLimit: parseInt(tx.gas, 16),
-      gasPrice: parseInt(tx.gasPrice || '0x0', 16),
+      // JSON-RPC quantity fields are exact integers, so BigInt preserves precision while normalizing to decimal strings.
+      value: BigInt(tx.value).toString(),
+      gasLimit: BigInt(tx.gas).toString(),
+      gasPrice: BigInt(tx.gasPrice || '0x0').toString(),
       // EIP-1559: effectiveGasPrice is the actual price paid; tx.gasPrice may be maxFeePerGas
       fee: Number(BigInt(receipt.gasUsed) * BigInt(receipt.effectiveGasPrice || tx.gasPrice || '0x0')),
-      nonce: parseInt(tx.nonce, 16),
+      nonce: BigInt(tx.nonce).toString(),
       to: tx.to ? Web3.utils.toChecksumAddress(tx.to) : '',
       from: Web3.utils.toChecksumAddress(tx.from),
-      data: tx.input ? Buffer.from(String(tx.input).replace('0x', ''), 'hex') : Buffer.alloc(0),
+      data: tx.input || '0x',
       internal: [],
       calls: [],
       effects: [],
       wallets: [],
-      transactionIndex: parseInt(tx.transactionIndex, 16)
+      transactionIndex: BigInt(tx.transactionIndex).toString()
     } as IEVMTransactionTransformed;
 
     EVMTransactionStorage.addEffectsToTxs([transformed]);
@@ -257,14 +255,14 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
       blockHash: '',
       blockTime: safeBlockTime,
       blockTimeNormalized: safeBlockTime,
-      value: transfer.value != null ? Number(transfer.value) : 0,
+      value: transfer.value != null ? String(transfer.value) : 0,
       gasLimit: 0,
       gasPrice: 0,
       fee: 0,
       nonce: 0,
       to: transfer.to ? Web3.utils.toChecksumAddress(transfer.to) : '',
       from: transfer.from ? Web3.utils.toChecksumAddress(transfer.from) : '',
-      data: Buffer.alloc(0),
+      data: '',
       internal: [],
       calls: [],
       effects: [],
