@@ -29,7 +29,7 @@ const libMap = {
   DOGE: CWC.BitcoreLibDoge
 };
 
-describe.only('Wallet', function() {
+describe('Wallet', function() {
   const sandbox = sinon.createSandbox();
   const storageType = 'Level';
   const baseUrl = 'http://127.0.0.1:3000/api';
@@ -556,6 +556,94 @@ describe.only('Wallet', function() {
 
         txStub.calledOnce.should.equal(true);
         capturedPayload.keys[0].privKey.should.equal(privHex);
+      });
+    });
+
+    describe('XRP (account) decrypts ciphertext to uppercase hex and skips plaintext', function() {
+      walletName = 'BitcoreClientTestSignTxV2-XRP';
+      let wallet: Wallet;
+
+      beforeEach(async function() {
+        wallet = await Wallet.create({
+          name: walletName,
+          chain: 'XRP',
+          network: 'testnet',
+          phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
+          password: 'abc123',
+          storageType,
+          baseUrl
+        });
+        await wallet.unlock('abc123');
+      });
+
+      afterEach(async function() {
+        await Wallet.deleteWallet({ name: walletName, storageType });
+      });
+
+      it('should decrypt stored ciphertext and hand uppercase hex privKey to Transactions.sign', async function() {
+        const privHex = crypto.randomBytes(32).toString('hex').toUpperCase();
+        const privBufForPubKey = CWC.Deriver.privateKeyToBuffer('XRP', privHex);
+        const pubKey = CWC.Deriver.getPublicKey('XRP', wallet.network, privBufForPubKey);
+        privBufForPubKey.fill(0);
+        const privBuf = CWC.Deriver.privateKeyToBuffer('XRP', privHex);
+        const encPriv = Encryption.encryptBuffer(privBuf, pubKey, wallet.unlocked.encryptionKey).toString('hex');
+        privBuf.fill(0);
+
+        let capturedPayload;
+        txStub = sandbox.stub(CWC.Transactions, 'sign').callsFake(payload => {
+          capturedPayload = payload;
+          return 'signed';
+        });
+
+        const signingKeys = [{ address: 'rabc', privKey: encPriv, pubKey }];
+        await wallet.signTx({ tx: 'raw', signingKeys });
+
+        txStub.calledOnce.should.equal(true);
+        capturedPayload.keys[0].privKey.should.equal(privHex);
+      });
+    });
+
+    describe('SOL (account) decrypts ciphertext to base58 and skips plaintext', function() {
+      walletName = 'BitcoreClientTestSignTxV2-SOL';
+      let wallet: Wallet;
+
+      beforeEach(async function() {
+        wallet = await Wallet.create({
+          name: walletName,
+          chain: 'SOL',
+          network: 'devnet',
+          phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
+          password: 'abc123',
+          storageType,
+          baseUrl
+        });
+        await wallet.unlock('abc123');
+      });
+
+      afterEach(async function() {
+        await Wallet.deleteWallet({ name: walletName, storageType });
+      });
+
+      it('should decrypt stored ciphertext and hand base58 privKey to Transactions.sign', async function() {
+        const privBufForPubKey = crypto.randomBytes(32);
+        const pubKey = CWC.Deriver.getPublicKey('SOL', wallet.network, privBufForPubKey);
+        const privBuf = Buffer.from(privBufForPubKey);
+        privBufForPubKey.fill(0);
+        const encPriv = Encryption.encryptBuffer(privBuf, pubKey, wallet.unlocked.encryptionKey).toString('hex');
+        const expectedPrivKey = CWC.Deriver.bufferToPrivateKey_TEMP('SOL', wallet.network, Buffer.from(privBuf));
+        privBuf.fill(0);
+
+        let capturedPayload;
+        txStub = sandbox.stub(CWC.Transactions, 'sign').callsFake(payload => {
+          capturedPayload = payload;
+          return Promise.resolve('signed');
+        });
+
+        const signingKeys = [{ address: pubKey, privKey: encPriv, pubKey }];
+        await wallet.signTx({ tx: 'raw', signingKeys });
+
+        txStub.calledOnce.should.equal(true);
+        capturedPayload.keys[0].privKey.should.equal(expectedPrivKey);
       });
     });
   });
