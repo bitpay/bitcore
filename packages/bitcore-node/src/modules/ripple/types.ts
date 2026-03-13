@@ -21,7 +21,7 @@ export interface XrpTransactionJSON {
   blockTime: string;
   blockTimeNormalized: string;
   fee: number;
-  value: number;
+  value: number | string;
   from: string;
   to: string;
   nonce: number;
