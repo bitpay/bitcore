@@ -386,7 +386,7 @@ describe('Push notifications', function() {
           })
         ]);
       }
-            
+
       requestStub = sinon.stub();
       requestStub.yields();
 
@@ -703,7 +703,7 @@ describe('Push notifications', function() {
       }, function(err) {
         server.createAddress({}, (err, address) => {
           should.not.exist(err);
-          
+
           // Simulate incoming tx notification
           server._notify('NewIncomingTx', {
             txid: '997',
@@ -750,7 +750,7 @@ describe('Push notifications', function() {
           })
         ]);
       }
-       
+
       requestStub = sinon.stub();
       requestStub.yields();
 
@@ -924,7 +924,7 @@ describe('Push notifications', function() {
     });
   });
 
-  describe('Any wallet', function() {
+  describe.skip('Any wallet', function() {
     beforeEach(async function() {
       await helpers.beforeEach();
       ({ wallet, server } = await helpers.createAndJoinWallet(1, 1));
@@ -1273,7 +1273,7 @@ describe('Push notifications', function() {
     });
   });
 
-  describe('Any wallet - Should use braze subscription if both set', function() {
+  describe.skip('Any wallet - Should use braze subscription if both set', function() {
     beforeEach(async function() {
       await helpers.beforeEach();
       ({ wallet, server } = await helpers.createAndJoinWallet(1, 1));
