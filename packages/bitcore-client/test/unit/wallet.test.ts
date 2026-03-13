@@ -72,7 +72,6 @@ describe('Wallet', function() {
     if (walletName) {
       await Wallet.deleteWallet({ name: walletName, storageType });
     }
-    walletName = undefined;
     sandbox.restore();
   });
   for (const chain of ['BTC', 'BCH', 'LTC', 'DOGE', 'ETH', 'XRP', 'MATIC']) {
@@ -133,7 +132,7 @@ describe('Wallet', function() {
           password: 'abc123',
           storageType,
           baseUrl,
-          version: 0
+          // version: 0
         });
         await wallet.unlock('abc123');
       });
@@ -379,9 +378,79 @@ describe('Wallet', function() {
       sleepStub.callCount.should.equal(1);
       requestStub.args.flatMap(arg => arg[0].body).should.deep.equal(keys.map(k => ({ address: k.address })));
     });
+
+    it('can derive the public key if not included', async function () {
+      const keys = [];
+      for (let i = 0; i < 101; i++) {
+        const pk = crypto.randomBytes(32).toString('hex');
+        keys.push({
+          privKey: pk,
+          address: libMap.BTC.PrivateKey(pk).toAddress().toString()
+        });
+      }
+      const getPublicKeyStub = sandbox.stub(CWC.Deriver, 'getPublicKey').returns('mockedPubKey');
+      sandbox.stub(wallet.storage, 'addKeysSafe').resolves();
+
+      await wallet.importKeys({
+        keys,
+        rederiveAddys: false
+      });
+
+      getPublicKeyStub.callCount.should.be.greaterThan(0);
+    });
+
+    it('encrypts key.privKey only', async function () {
+      const keys = [];
+      for (let i = 0; i < 1; i++) {
+        const pk = crypto.randomBytes(32).toString('hex');
+        keys.push({
+          privKey: pk,
+          address: libMap.BTC.PrivateKey(pk).toAddress().toString()
+        });
+      }
+      const addKeysSafeStub = sandbox.stub(wallet.storage, 'addKeysSafe').resolves();
+
+      await wallet.importKeys({
+        keys,
+        rederiveAddys: false
+      });
+
+      addKeysSafeStub.calledOnce.should.equal(true);
+      const savedKeys = addKeysSafeStub.firstCall.args[0].keys;
+
+      for (const originalKey of keys) {
+        const matchingSavedKey = savedKeys.find(sk => {
+          // Match on pubKey only if it was in originalKey
+          return !(originalKey.pubKey && sk.pubKey === originalKey.pubKey) && sk.address === originalKey.address;
+        });
+        expect(matchingSavedKey).to.exist;
+        matchingSavedKey.privKey.should.not.equal(originalKey.privKey);
+      }
+    });
+
+    it('can rederive addresses', async function () {
+      const keys = [];
+      for (let i = 0; i < 1; i++) {
+        const pk = crypto.randomBytes(32).toString('hex');
+        keys.push({
+          privKey: pk,
+          address: libMap.BTC.PrivateKey(pk).toAddress().toString()
+        });
+      }
+      const getPublicKeyStub = sandbox.stub(CWC.Deriver, 'getPublicKey').returns('mockedPubKey');
+      const getAddressStub = sandbox.stub(CWC.Deriver, 'getAddress').returns('mockedAddress');
+      sandbox.stub(wallet.storage, 'addKeysSafe').resolves();
+
+      await wallet.importKeys({
+        keys,
+        rederiveAddys: true
+      });
+
+      getAddressStub.callCount.should.be.greaterThan(0);
+    });
   });
 
-  describe('signTx v2 key handling', function() {
+  describe('signTx', function() {
     let txStub: sinon.SinonStub;
     afterEach(async function() {
       sandbox.restore();
@@ -490,8 +559,6 @@ describe('Wallet', function() {
       });
     });
   });
-
-  describe('signTx', function () {});
 
   describe('derivePrivateKey', function () {});
 
