@@ -368,6 +368,11 @@ describe('Utils', function() {
       res.should.deep.equal([1, 2, 3]);
     });
 
+    it('should sort a simple array with multi-digit values', function() {
+      const res = Utils.sortAsc([30, 1, 200, 2]);
+      res.should.deep.equal([1, 2, 30, 200]);
+    });
+
     it('should sort a simple array with undefined values', function() {
       const res = Utils.sortAsc([3, undefined, 1, 2, '\uFFFE']);
       res.should.deep.equal([1, 2, 3, '\uFFFE', undefined]); // undefined should be in last position
