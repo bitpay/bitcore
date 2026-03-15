@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import config from '../../src/config';
 import { BitcoinBlockStorage } from '../../src/models/block';
 import { CoinStorage } from '../../src/models/coin';
 import { TransactionStorage } from '../../src/models/transaction';
@@ -17,7 +16,7 @@ describe('VerificationPeer', function() {
   const chain = 'BTC';
   const network = 'regtest';
   const address = '2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t';
-  
+
   let chainConfig: IUtxoNetworkConfig;
   let creds: IUtxoNetworkConfig['rpc'];
   let rpc: AsyncRPC;
@@ -36,7 +35,7 @@ describe('VerificationPeer', function() {
       await rpc.sendtoaddress(address, 0.1);
     }
   }
-  
+
   function addBlock1() {
     return BitcoinBlockStorage.collection.insertOne({
       chain,
@@ -57,7 +56,7 @@ describe('VerificationPeer', function() {
       processed: true
     });
   }
-  
+
   function addTx() {
     return TransactionStorage.collection.insertOne({
       chain,
@@ -93,13 +92,13 @@ describe('VerificationPeer', function() {
       wallets: []
     });
   }
-  
+
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(500000);
 
   before(async function() {
-    chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+    chainConfig = Config.get().chains[chain][network] as IUtxoNetworkConfig;
     creds = chainConfig.rpc;
     rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
     await intBeforeHelper();

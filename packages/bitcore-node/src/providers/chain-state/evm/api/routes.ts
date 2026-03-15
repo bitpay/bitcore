@@ -1,7 +1,6 @@
 import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import cors from 'cors';
 import { Router } from 'express';
-import config from '../../../../config';
 import logger from '../../../../logger';
 import { WebhookStorage } from '../../../../models/webhook';
 import { Config } from '../../../../services/config';
@@ -49,7 +48,7 @@ export class EVMRouter {
     this.getAaveReserveData(router);
     this.getAaveReserveTokensAddresses(router);
   };
-  
+
   private setMultiSigRoutes(router: Router) {
     this.getMultisigEthInfo(router);
     this.getMultisigContractInstantiationInfo(router);
@@ -175,7 +174,7 @@ export class EVMRouter {
         // Reference: https://docs.optimism.io/builders/app-developers/transactions/estimates
         const packedRawTx = Web3.utils.encodePacked(rawTx);
         const rawTxBuf = Buffer.from(packedRawTx!.slice(2), 'hex');
-        
+
         const { web3 } = await this.csp.getWeb3(network);
         const gasPriceOracle = new web3.eth.Contract(OPGasPriceOracleAbi, OPGasPriceOracleAddress);
         let l1DataFee: bigint;
@@ -223,7 +222,7 @@ export class EVMRouter {
       let { network } = req.params;
       const { percentile } = req.params;
       const priorityFeePercentile = Number(percentile) || 15;
-    
+
       network = network.toLowerCase();
       try {
         const fee: { feerate: number } = await this.csp.getPriorityFee({ network, percentile: priorityFeePercentile });
@@ -235,7 +234,7 @@ export class EVMRouter {
     });
   };
 
-  private streamGnosisWalletTransactions(router: Router) { 
+  private streamGnosisWalletTransactions(router: Router) {
     router.get(`/api/${this.chain}/:network/ethmultisig/transactions/:multisigContractAddress`, async (req, res) => {
       const { network, multisigContractAddress } = req.params;
       try {
@@ -296,7 +295,7 @@ export class EVMRouter {
 
 
   private _validateMoralisWebhook(req, res, next) {
-    const secret = config.externalProviders?.moralis?.streamSecret;
+    const secret = Config.get().externalProviders?.moralis?.streamSecret;
     if (!secret) {
       return res.status(404).send('Moralis not configured');
     }
@@ -312,7 +311,7 @@ export class EVMRouter {
   }
 
   private postMoralisWebhook(router: Router) {
-    const webhookCors = config.externalProviders?.moralis?.webhookCors;
+    const webhookCors = Config.get().externalProviders?.moralis?.webhookCors;
     router.post(`/webhook/${this.chain}/:network/moralis`, cors(webhookCors), this._validateMoralisWebhook, async (req, res) => {
       try {
         const { network } = req.params;

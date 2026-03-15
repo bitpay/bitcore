@@ -216,7 +216,7 @@ describe('Transaction Model', function() {
 
     const wallet = new ObjectId();
     const address = '0x3Ec3dA6E14BE9518A9a6e92DdCC6ACfF2CEFf4ef';
-    
+
     beforeEach(async () => {
       await WalletAddressStorage.collection.insertOne({
         chain,

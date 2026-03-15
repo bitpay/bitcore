@@ -14,13 +14,13 @@ function findConfig(): ConfigType | undefined {
   if (bitcoreConfigPath[0] === '~') {
     bitcoreConfigPath = bitcoreConfigPath.replace('~', homedir());
   }
-  
+
   if (!fs.existsSync(bitcoreConfigPath)) {
     throw new Error(`No bitcore config exists at ${bitcoreConfigPath}`);
   }
-  
+
   const bitcoreConfigStat = fs.statSync(bitcoreConfigPath);
-  
+
   if (bitcoreConfigStat.isDirectory()) {
     if (!fs.existsSync(path.join(bitcoreConfigPath, 'bitcore.config.json'))) {
       throw new Error(`No bitcore config exists in directory ${bitcoreConfigPath}`);
@@ -28,14 +28,14 @@ function findConfig(): ConfigType | undefined {
     bitcoreConfigPath = path.join(bitcoreConfigPath, 'bitcore.config.json');
   }
   logger.info('Using config at: ' + bitcoreConfigPath);
-  
+
   let rawBitcoreConfig;
   try {
     rawBitcoreConfig = fs.readFileSync(bitcoreConfigPath).toString();
   } catch (error) {
     throw new Error(`Error in loading bitcore config\nFound file at ${bitcoreConfigPath}\n${error}`);
   }
-  
+
   let bitcoreConfig;
   try {
     bitcoreConfig = JSON.parse(rawBitcoreConfig).bitcoreNode;
@@ -63,7 +63,7 @@ function setTrustedPeers(config: ConfigType): ConfigType {
   }
   return config;
 }
-const Config = function(): ConfigType {
+const loadConfig = function(): ConfigType {
   let config: ConfigType = {
     maxPoolSize: 50,
     port: 3000,
@@ -130,4 +130,4 @@ const Config = function(): ConfigType {
   return config;
 };
 
-export default Config();
+export default loadConfig;

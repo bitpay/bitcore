@@ -1,5 +1,6 @@
 import cluster from 'cluster';
 import 'source-map-support/register';
+import fs from 'fs';
 import logger from '../logger';
 import { Modules } from '../modules';
 import { Api } from '../services/api';
@@ -23,6 +24,8 @@ export const FullClusteredWorker = async () => {
 
   services.push(Storage, Event);
   if (cluster.isPrimary) {
+    fs.mkdirSync('pids', { recursive: true });
+    fs.writeFileSync('pids/all.pid', String(process.pid));
     services.push(P2P);
     if (args.DEBUG) {
       services.push(Api);
@@ -47,6 +50,10 @@ const stop = async () => {
     process.exit(1);
   }
   stopping = true;
+
+  if (cluster.isPrimary) {
+    fs.unlinkSync('pids/all.pid');
+  }
 
   setTimeout(() => {
     logger.error('All workers did not shut down gracefully after 30 seconds, exiting');

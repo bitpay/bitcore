@@ -15,4 +15,4 @@ RUN npm run compile
 
 # Start the server
 WORKDIR /bitcore/packages/bitcore-node
-CMD ["node", "./build/src/server.js"]
+CMD ["node", ".*.tsserver.js"]
