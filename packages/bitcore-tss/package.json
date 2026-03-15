@@ -11,6 +11,7 @@
     "test:node": "node --test $(find test -name *.test.js)",
     "test:node:only": "node --test --test-only $(find test -name *.test.js)",
     "test:web": "npm run build && npm run wdio",
+    "coverage": "nyc mocha test/**/*.test.js",
     "wdio": "wdio run ./wdio.conf.js"
   },
   "keywords": [
@@ -23,6 +24,16 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-tss"
+  },
+  "nyc": {
+    "include": [
+      "ecies",
+      "ecdsa"
+    ],
+    "reporter": [
+      "html",
+      "text-summary"
+    ]
   },
   "dependencies": {
     "@bitgo/sdk-lib-mpc": "^10.1.2",
@@ -37,6 +48,7 @@
     "assert": "^2.1.0",
     "browserify": "^17.0.1",
     "mocha": "11.1.0",
+    "nyc": "^18.0.0",
     "webdriverio": "^9.12.0",
     "webpack": "^5.98.0",
     "webpack-cli": "^6.0.1"

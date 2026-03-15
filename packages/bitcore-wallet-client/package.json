@@ -45,21 +45,20 @@
     "@types/node": "22.14.1",
     "browserify": "^13.1.0",
     "chai": "^5.2.0",
-    "istanbul": "*",
     "kbpgp": "^2.1.4",
     "mocha": "^5.2.0",
     "mongodb": "^3.5.9",
+    "nyc": "^17.1.0",
     "request-promise": "^4.2.4",
     "sinon": "^7.1.1",
     "supertest": "*",
     "tsx": "^4.21.0"
   },
   "scripts": {
-    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
+    "coverage": "npm run compile && nyc mocha 'ts_build/test/**/*.test.js'",
     "test": "tsc --noEmit && mocha -r tsx 'test/**/*.test.ts'",
     "test:ci": "npm run test",
     "docs": "TODO ./node_modules/.bin/tsdoc src/lib/* src/lib/common src/lib/errors -o docs && cat README.header.md  docs/*.md LICENSE > README.md",
-    "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "compile": "npm run clean && tsc",
     "build": "tsc && npm run lint",
     "clean": "rm -rf ./ts_build",
@@ -69,6 +68,21 @@
     "fix": "npm run fix:errors",
     "pub": "npm run build && npm publish",
     "precommit": "npm run lint"
+  },
+  "nyc": {
+    "include": [
+      "ts_build/src",
+      "src"
+    ],
+    "reporter": [
+      "html",
+      "text-summary"
+    ],
+    "check-coverage": true,
+    "lines": 60,
+    "functions": 60,
+    "branches": 60,
+    "statements": 60
   },
   "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4"
 }
