@@ -70,7 +70,7 @@ console.log('Connecting to database...');
 Storage.start()
   .then(async () => {
     console.log('Finding local tip...');
-    const lastBlockNum = Math.min(endHeight, (await BitcoinBlockStorage.getLocalTip({ chain, network })).height);
+    const lastBlockNum = Math.min(endHeight, (await BitcoinBlockStorage.getLocalTip({ chain, network }))?.height ?? Infinity);
     const totalBlockCount = lastBlockNum - startHeight + 1;
     console.log(`Updating ${totalBlockCount} block's worth of transactions.`);
 
