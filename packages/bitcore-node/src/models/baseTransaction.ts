@@ -13,7 +13,7 @@ export interface ITransaction {
   blockTime?: Date;
   blockTimeNormalized?: Date;
   fee: number;
-  value: number;
+  value: number | string;
   wallets: ObjectID[];
   replacedByTxid?: string;
 }

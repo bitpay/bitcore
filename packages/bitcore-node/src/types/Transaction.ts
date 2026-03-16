@@ -12,6 +12,6 @@ export interface TransactionJSON {
   locktime: number;
   inputCount: number;
   outputCount: number;
-  value: number;
+  value: number | string;
   replacedByTxid?: string;
 }
