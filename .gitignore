@@ -6,6 +6,7 @@ node_modules/
 .idea
 .DS_Store
 *.swp
+.zed
 
 # VIM ignore
 [._]*.s[a-w][a-z]
@@ -16,4 +17,3 @@ Session.vim
 *~
 ts_build
 bitcore-lib.js
-

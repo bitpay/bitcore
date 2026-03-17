@@ -15,3 +15,15 @@ export class PopulateEffectsTransform extends TransformWithEventPipe {
     return done();
   }
 }
+
+export class PopulateEffectsForAddressTransform extends TransformWithEventPipe {
+  constructor(private evm: BaseEVMStateProvider, private addresses: Array<string>) {
+    super({ objectMode: true });
+  }
+
+  async _transform(tx: MongoBound<IEVMTransaction>, _, done) {
+    tx = this.evm.populateEffectsForAddresses(tx, this.addresses);
+    this.push(tx);
+    return done();
+  }
+}

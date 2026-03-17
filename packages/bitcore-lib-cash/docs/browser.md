@@ -2,11 +2,11 @@
 
 Bitcore and most official submodules work in the browser, thanks to [browserify](http://browserify.org/) (some modules are not fully compatible with web browsers).
 
-The easiest and recommended way to use them, is via [Bower](http://bower.io/), a browser package manager, and get the release bundles. For example, when building an app that uses `bitcore` and `bitcore-mnemonic`, you do:
+The easiest and recommended way to use them, is via [Bower](http://bower.io/), a browser package manager, and get the release bundles. For example, when building an app that uses `bitcore-lib` and `bitcore-mnemonic`, you do:
 
 ```sh
-bower install bitcore-lib
-bower install bitcore-mnemonic
+bower install @bitpay-labs/bitcore-lib
+bower install @bitpay-labs/bitcore-mnemonic
 ```
 
 You can also use a `bower.json` file to store the dependencies of your project:
@@ -17,8 +17,8 @@ You can also use a `bower.json` file to store the dependencies of your project:
   "version": "0.0.1",
   "license": "MIT",
   "dependencies": {
-    "bitcore-lib": "^0.13.7",
-    "bitcore-mnemonic": "^1.0.1"
+    "@bitpay-labs/bitcore-lib": "^11.5.1",
+    "@bitpay-labs/bitcore-mnemonic": "^11.5.1"
   }
 }
 ```
@@ -40,8 +40,8 @@ After this, you can include the bundled release versions in your HTML file:
 <body>
 
   <script type="text/javascript">
-    var bitcore = require('bitcore-lib');
-    var Mnemonic = require('bitcore-mnemonic');
+    var bitcore = require('@bitpay-labs/bitcore-lib');
+    var Mnemonic = require('@bitpay-labs/bitcore-mnemonic');
     // etc...
   </script>
 

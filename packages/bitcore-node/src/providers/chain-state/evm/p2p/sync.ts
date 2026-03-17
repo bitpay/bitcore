@@ -1,15 +1,15 @@
 import { EventEmitter } from 'events';
 import * as os from 'os';
 import { Worker as Thread, threadId } from 'worker_threads';
-import { CryptoRpc } from 'crypto-rpc';
+import { CryptoRpc } from '@bitpay-labs/crypto-rpc';
 import { ChainStateProvider } from '../../';
-import Config from '../../../../config';
 import logger, { timestamp } from '../../../../logger';
 import { StateStorage } from '../../../../models/state';
+import { Config } from '../../../../services/config';
 import { IEVMNetworkConfig } from '../../../../types/Config';
 import { wait } from '../../../../utils';
 import { EVMBlockStorage } from '../models/block';
-import type { EthRpc } from 'crypto-rpc/lib/eth/EthRpc';
+import type { EthRpc } from '@bitpay-labs/crypto-rpc/lib/eth/EthRpc';
 
 export class MultiThreadSync extends EventEmitter {
   private chain: string;
@@ -32,7 +32,7 @@ export class MultiThreadSync extends EventEmitter {
     super();
     this.chain = chain || 'ETH';
     this.network = network || 'mainnet';
-    this.config = Config.chains[chain][network];
+    this.config = Config.get().chains[chain][network];
     this.mtSyncTipPad = this.config.mtSyncTipPad || 100;
   }
 

@@ -1,5 +1,5 @@
 import os from 'os';
-import { Web3 } from 'crypto-wallet-core';
+import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import { LRUCache } from 'lru-cache';
 import request from 'request';
 import config from '../../../config';
@@ -269,7 +269,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
 
     const query = this._buildQueryString({ chain: chainId, include: 'internal_transactions' });
 
-    return new Promise<IEVMTransactionTransformed>((resolve, reject) => {
+    return new Promise<IEVMTransactionTransformed | null>((resolve, reject) => {
       request({
         method: 'GET',
         url: `${this.baseUrl}/transaction/${txId}${query}`,
@@ -283,6 +283,9 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
           return reject(new Error(data));
         }
         const tx = data.body;
+        if (tx.message === 'No transaction found') {
+          return resolve(null);
+        }
         return resolve(this._transformTransaction({ chain, network, ...tx }));
       });
     });
@@ -353,31 +356,37 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
   }
 
   private _transformTransaction(tx) {
-    const transformed = {
-      chain: tx.chain,
-      network: tx.network,
-      txid: tx.hash || tx.transaction_hash, // erc20 transfer txs have transaction_hash
-      blockHeight: Number(tx.block_number ?? tx.blockNumber),
-      blockHash: tx.block_hash ?? tx.blockHash,
-      blockTime: new Date(tx.block_timestamp ?? tx.blockTimestamp),
-      blockTimeNormalized: new Date(tx.block_timestamp ?? tx.blockTimestamp),
-      value: tx.value,
-      gasLimit: tx.gas ?? 0,
-      gasPrice: tx.gas_price ?? tx.gasPrice ?? 0,
-      fee: Number(tx.receipt_gas_used ?? tx.receiptGasUsed ?? 0) * Number(tx.gas_price ?? tx.gasPrice ?? 0),
-      nonce: tx.nonce,
-      to: Web3.utils.toChecksumAddress(tx.to_address ?? tx.toAddress),
-      from: Web3.utils.toChecksumAddress(tx.from_address ?? tx.fromAddress),
-      data: tx.input,
-      internal: [],
-      calls: tx?.internal_transactions?.map(t => this._transformInternalTransaction(t)) || [],
-      effects: [],
-      category: tx.category,
-      wallets: [],
-      transactionIndex: tx.transaction_index ?? tx.transactionIndex
-    } as IEVMTransactionTransformed;
-    EVMTransactionStorage.addEffectsToTxs([transformed]);
-    return transformed;
+    const txid = tx.hash || tx.transaction_hash; // erc20 transfer txs have transaction_hash
+    try {
+      const transformed = {
+        chain: tx.chain,
+        network: tx.network,
+        txid,
+        blockHeight: Number(tx.block_number ?? tx.blockNumber),
+        blockHash: tx.block_hash ?? tx.blockHash,
+        blockTime: new Date(tx.block_timestamp ?? tx.blockTimestamp),
+        blockTimeNormalized: new Date(tx.block_timestamp ?? tx.blockTimestamp),
+        value: tx.value,
+        gasLimit: tx.gas ?? 0,
+        gasPrice: tx.gas_price ?? tx.gasPrice ?? 0,
+        fee: Number(tx.receipt_gas_used ?? tx.receiptGasUsed ?? 0) * Number(tx.gas_price ?? tx.gasPrice ?? 0),
+        nonce: tx.nonce,
+        to: Web3.utils.toChecksumAddress(tx.to_address ?? tx.toAddress),
+        from: Web3.utils.toChecksumAddress(tx.from_address ?? tx.fromAddress),
+        data: tx.input,
+        internal: [],
+        calls: tx?.internal_transactions?.map(t => this._transformInternalTransaction(t)) || [],
+        effects: [],
+        category: tx.category,
+        wallets: [],
+        transactionIndex: tx.transaction_index ?? tx.transactionIndex
+      } as IEVMTransactionTransformed;
+      EVMTransactionStorage.addEffectsToTxs([transformed]);
+      return transformed;
+    } catch (e: any) {
+      logger.error('Error transforming transaction from Moralis: %o -- %o', txid || tx, e.stack || e.message || e);
+      throw e;
+    }
   }
 
   private _transformInternalTransaction(tx) {

@@ -1,4 +1,4 @@
-import BitcoreLib from 'bitcore-lib';
+import BitcoreLib from '@bitpay-labs/bitcore-lib';
 import { deriveAddress } from 'xrpl';
 import type { IDeriver } from '../../types/derivation';
 

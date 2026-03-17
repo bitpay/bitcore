@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { BitcoreLib as bitcore } from 'crypto-wallet-core';
+import { BitcoreLib as bitcore } from '@bitpay-labs/crypto-wallet-core';
 
 export function shaHash(data, algo = 'sha256') {
   const hash = crypto

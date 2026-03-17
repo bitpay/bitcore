@@ -1,5 +1,5 @@
 import { createRequire } from 'module';
-import { ethers } from 'crypto-wallet-core';
+import { ethers } from '@bitpay-labs/crypto-wallet-core';
 // eslint-disable-next-line import/order
 import { EthRpc } from '../eth/EthRpc.js';
 

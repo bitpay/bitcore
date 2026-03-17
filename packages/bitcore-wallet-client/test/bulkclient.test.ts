@@ -4,7 +4,7 @@ import * as chai from 'chai';
 
 chai.config.includeStack = true;
 import sinon from 'sinon';
-import BWS from 'bitcore-wallet-service';
+import BWS from '@bitpay-labs/bitcore-wallet-service';
 import log from '../src/lib/log';
 import Client from '../src';
 import { helpers, blockchainExplorerMock } from './helpers';

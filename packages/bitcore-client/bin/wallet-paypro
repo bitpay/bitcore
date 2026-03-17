@@ -4,7 +4,7 @@ const program = require('commander');
 const { Wallet } = require('../ts_build/src/wallet');
 const request = require('request-promise-native');
 const promptly = require('promptly');
-const cwc = require('crypto-wallet-core');
+const cwc = require('@bitpay-labs/crypto-wallet-core');
 const libs = {
   BTC: cwc.BitcoreLib,
   BCH: cwc.BitcoreLibCash,

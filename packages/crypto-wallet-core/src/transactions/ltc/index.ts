@@ -1,4 +1,4 @@
-import BitcoreLibLtc from 'bitcore-lib-ltc';
+import BitcoreLibLtc from '@bitpay-labs/bitcore-lib-ltc';
 import { BTCTxProvider } from '../btc';
 
 export class LTCTxProvider extends BTCTxProvider {

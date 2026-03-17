@@ -1,6 +1,6 @@
 
 import { Transform } from 'stream';
-import { Validation } from 'crypto-wallet-core';
+import { Validation } from '@bitpay-labs/crypto-wallet-core';
 import { LRUCache } from 'lru-cache';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import { BitcoinBlockStorage, type IBtcBlock } from '../../../models/block';

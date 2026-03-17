@@ -1,12 +1,13 @@
 'use strict';
 
-var Message = require('../message');
-var inherits = require('util').inherits;
-var bitcore = require('bitcore-lib');
-var utils = require('../utils');
-var BufferReader = bitcore.encoding.BufferReader;
-var BufferWriter = bitcore.encoding.BufferWriter;
-var $ = bitcore.util.preconditions;
+const Message = require('../message');
+const inherits = require('util').inherits;
+const bitcore = require('@bitpay-labs/bitcore-lib');
+const utils = require('../utils');
+
+const BufferReader = bitcore.encoding.BufferReader;
+const BufferWriter = bitcore.encoding.BufferWriter;
+const $ = bitcore.util.preconditions;
 
 /**
  * Query another peer about blocks. It can query for multiple block hashes,

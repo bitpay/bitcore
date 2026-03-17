@@ -1,6 +1,6 @@
 import os from 'os';
+import { Deriver } from '@bitpay-labs/crypto-wallet-core';
 import * as prompt from '@clack/prompts';
-import { Deriver } from 'crypto-wallet-core';
 import { UserCancelled } from '../errors';
 import { getAction } from '../prompts';
 import type { CommonArgs } from '../../types/cli';

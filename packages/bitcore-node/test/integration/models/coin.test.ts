@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as crypto from 'crypto';
-import { BitcoreLib } from 'crypto-wallet-core';
+import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
 import { IBtcTransaction, SpendOp, TransactionStorage } from '../../../src/models/transaction';
 import { SpentHeightIndicators } from '../../../src/types/Coin';

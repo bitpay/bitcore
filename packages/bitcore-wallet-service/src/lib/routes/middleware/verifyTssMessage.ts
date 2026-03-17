@@ -1,4 +1,4 @@
-import { utils as tssUtils } from 'bitcore-tss';
+import { utils as tssUtils } from '@bitpay-labs/bitcore-tss';
 import { Errors } from '../../errors/errordefinitions';
 import { ITssKeyMessageObject } from '../../model/tsskeygen';
 import { ITssSigMessageObject } from '../../model/tsssign';

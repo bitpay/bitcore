@@ -1,13 +1,14 @@
 'use strict';
 
-var Message = require('../message');
-var inherits = require('util').inherits;
-var bitcore = require('bitcore-lib');
-var utils = require('../utils');
-var $ = bitcore.util.preconditions;
-var _ = bitcore.deps._;
-var BufferUtil = bitcore.util.buffer;
-var BufferReader = bitcore.encoding.BufferReader;
+const Message = require('../message');
+const inherits = require('util').inherits;
+const bitcore = require('@bitpay-labs/bitcore-lib');
+const utils = require('../utils');
+
+const $ = bitcore.util.preconditions;
+const _ = bitcore.deps._;
+const BufferUtil = bitcore.util.buffer;
+const BufferReader = bitcore.encoding.BufferReader;
 
 /**
  * A message to confirm that a connection is still valid.

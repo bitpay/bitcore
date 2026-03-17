@@ -1,6 +1,6 @@
 # Bitcore Threshold Signature Scheme
 
-[![NPM Package](https://img.shields.io/npm/v/bitcore-tss.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-tss)
+[![NPM Package](https://img.shields.io/npm/v/@bitpay-labs/bitcore-tss.svg?style=flat-square)](https://www.npmjs.org/package/@bitpay-labs/bitcore-tss)
 [![CircleCI](https://dl.circleci.com/status-badge/img/gh/bitpay/bitcore/tree/master.svg?style=shield)](https://dl.circleci.com/status-badge/redirect/gh/bitpay/bitcore/tree/master)
 [![Coverage Status](https://coveralls.io/repos/github/bitpay/bitcore/badge.svg?branch=master&path=packages/bitcore-tss)](https://coveralls.io/github/bitpay/bitcore?branch=master)
 
@@ -17,10 +17,10 @@ This libary is designed to be flexible in that it supports distributed key gener
 
 ## Get Started
 
-Adds Bitcore-TSS to your app's dependencies:
+To add Bitcore-TSS to your project, run:
 
 ```sh
-npm install bitcore-tss
+npm install @bitpay-labs/bitcore-tss
 ```
 
 ## Documentation
@@ -123,7 +123,7 @@ while (!signer.isSignatureReady()) {
 Once the signature is ready, you can get it and apply it to your use case. For this example, we're applying the signature to our Ethereum transaction.
 
 ```js
-const CWC = require('crypto-wallet-core');
+const CWC = require('@bitpay-labs/crypto-wallet-core');
 
 const sig = signer.getSignature();
 

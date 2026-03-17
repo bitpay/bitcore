@@ -152,12 +152,12 @@ export type IEVMBlock = IBlock & {
 };
 
 export type IEVMTransaction = ITransaction & {
-  gasLimit: number;
-  gasPrice: number;
-  nonce: number;
+  gasLimit: number | string;
+  gasPrice: number | string;
+  nonce: number | string;
   to: string;
   from: string;
-  transactionIndex: number;
+  transactionIndex: number | string;
   error?: string;
   receipt?: TxReceipt;
   effects?: Effect[]; // Meant to replace abiType, internal, calls and data on stored txs
@@ -174,7 +174,7 @@ export interface Effect {
 }
 
 export type IEVMTransactionInProcess = IEVMTransaction & {
-  data: Buffer;
+  data: Buffer | string;
   internal: Array<ClassifiedTrace>;
   calls: Array<IGethTxTraceFlat>;
   abiType?: IAbiDecodedData;
@@ -189,7 +189,7 @@ export interface TxReceipt {
   contractAddress?: string;
   cumulativeGasUsed: number;
   gasUsed: number;
-  logs: Array<any>;
+  logs?: Array<any>;
 }
 
 export type IEVMTransactionTransformed = IEVMTransactionInProcess & {
@@ -208,7 +208,7 @@ export interface TransactionJSON {
   blockTimeNormalized: string;
   fee: number;
   size: number;
-  value: number;
+  value: number | string;
 }
 
 export interface IAbiDecodeResponse {
@@ -235,11 +235,11 @@ export interface EVMTransactionJSON {
   blockHash: string;
   blockTime: string;
   blockTimeNormalized: string;
-  fee: number;
-  value: number;
-  gasLimit: number;
-  gasPrice: number;
-  nonce: number;
+  fee: number | string;
+  value: number | string;
+  gasLimit: number | string;
+  gasPrice: number | string;
+  nonce: number | string;
   to: string;
   from: string;
   abiType?: IAbiDecodedData;

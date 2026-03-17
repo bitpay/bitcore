@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { Deriver } from '../src';
-import { encoding } from 'bitcore-lib';
+import { encoding } from '@bitpay-labs/bitcore-lib';
 import { createKeyPairFromPrivateKeyBytes, getAddressDecoder } from '@solana/kit';
 
 describe('Address Derivation', () => {

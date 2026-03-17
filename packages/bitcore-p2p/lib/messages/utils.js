@@ -1,10 +1,11 @@
 'use strict';
 
-var bitcore = require('bitcore-lib');
-var BufferUtil = bitcore.util.buffer;
-var $ = bitcore.util.preconditions;
-var _ = bitcore.deps._;
-var utils;
+const bitcore = require('@bitpay-labs/bitcore-lib');
+
+const BufferUtil = bitcore.util.buffer;
+const $ = bitcore.util.preconditions;
+const _ = bitcore.deps._;
+let utils;
 
 module.exports = utils = {
   checkInventory: function(arg) {

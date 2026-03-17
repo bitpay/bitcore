@@ -1,23 +1,21 @@
 'use strict';
 
-var chai = require('chai');
-var Net = require('net');
-var Socks5Client = require('socks5-client');
+const chai = require('chai');
+const Net = require('net');
+const Socks5Client = require('socks5-client');
+const sinon = require('sinon');
+const fs = require('fs');
+const bitcore = require('@bitpay-labs/bitcore-lib');
+const P2P = require('../');
+const EventEmitter = require('events').EventEmitter;
 
-/* jshint unused: false */
-var should = chai.should();
-var expect = chai.expect;
-var sinon = require('sinon');
-var fs = require('fs');
-
-var bitcore = require('bitcore-lib');
-var _ = bitcore.deps._;
-var P2P = require('../');
-var Peer = P2P.Peer;
-var EventEmitter = require('events').EventEmitter;
-var Messages = P2P.Messages;
-var messages = new Messages();
-var Networks = bitcore.Networks;
+const should = chai.should();
+const expect = chai.expect;
+const _ = bitcore.deps._;
+const Peer = P2P.Peer;
+const Messages = P2P.Messages;
+const messages = new Messages();
+const Networks = bitcore.Networks;
 
 describe('Peer', function() {
 

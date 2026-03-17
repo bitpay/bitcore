@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
-import { ECDSA, ECIES } from 'bitcore-tss';
-import { BitcoreLib } from 'crypto-wallet-core';
+import { ECDSA, ECIES } from '@bitpay-labs/bitcore-tss';
+import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { API as Client, CreateWalletOpts } from './api';
 import { Encryption } from './common';
 import { Credentials } from './credentials';
@@ -38,9 +38,10 @@ export interface ITssKeyGenConstructorParams {
   /**
    * Backup your encrypted key share to the server.
    * This allows for portability and recoverability with your xPrivKey.
-   * Default: true
+   * Default: false
+   * DISABLED
    */
-  backupKeyShare?: boolean;
+  // backupKeyShare?: boolean;
 };
 
 export interface ITssKey extends Key {
@@ -221,7 +222,8 @@ export class TssKeyGen extends EventEmitter {
     const _seed = BitcoreLib.HDPrivateKey.fromString(this.#xPrivKey);
     this.#seed = BitcoreLib.crypto.Hash.sha256(_seed.toBuffer());
 
-    this.backupKeyShare = !!params.backupKeyShare;
+    // Backup to server is disabled
+    // this.backupKeyShare = !!params.backupKeyShare;
   }
 
   /**
@@ -550,14 +552,17 @@ export class TssKeyGen extends EventEmitter {
         const key = this.getTssKey();
         if (key) {
           this.emit('tsskey', key);
-          if (!body.publicKey || (!body.hasKeyBackup && this.backupKeyShare)) {
-            const encryptedKeyChain = ECIES.encrypt({
-              message: key.keychain.privateKeyShare.toString('base64') + ':' + key.keychain.reducedPrivateKeyShare.toString('base64'),
-              publicKey: new BitcoreLib.HDPrivateKey(this.#xPrivKey).publicKey,
-              privateKey: new BitcoreLib.HDPrivateKey(this.#xPrivKey).privateKey,
-              opts: { noKey: true }
-            }).toString('base64');
-            await this.#request.post(`/v1/tss/keygen/${this.id}/store`, { publicKey: key.keychain.commonKeyChain, encryptedKeyChain });
+          
+          // Backup to server is disabled
+          if (!body.publicKey) {// || (!body.hasKeyBackup && this.backupKeyShare)) {
+            // const encryptedKeyChain = ECIES.encrypt({
+            //   message: key.keychain.privateKeyShare.toString('base64') + ':' + key.keychain.reducedPrivateKeyShare.toString('base64'),
+            //   publicKey: new BitcoreLib.HDPrivateKey(this.#xPrivKey).publicKey,
+            //   privateKey: new BitcoreLib.HDPrivateKey(this.#xPrivKey).privateKey,
+            //   opts: { noKey: true }
+            // }).toString('base64');
+            // await this.#request.post(`/v1/tss/keygen/${this.id}/store`, { publicKey: key.keychain.commonKeyChain, encryptedKeyChain });
+            await this.#request.post(`/v1/tss/keygen/${this.id}/store`, { publicKey: key.keychain.commonKeyChain });
             this.emit('tsskeystored');
           }
 

@@ -1,2 +1,3 @@
-var startGulp = require('bitcore-build');
-Object.assign(exports, startGulp('lib'))
+const startGulp = require('@bitpay-labs/bitcore-build');
+
+Object.assign(exports, startGulp('lib'));

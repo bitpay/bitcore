@@ -1,5 +1,5 @@
 import URL from 'url';
-import { BitcoreLib, BitcoreLibCash } from 'crypto-wallet-core';
+import { BitcoreLib, BitcoreLibCash } from '@bitpay-labs/crypto-wallet-core';
 import { singleton } from 'preconditions';
 import superagent from 'superagent';
 import dfltTrustedKeys from '../util/JsonPaymentProtocolKeys';

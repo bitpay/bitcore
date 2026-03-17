@@ -1,4 +1,4 @@
-import BitcoreLtc from 'bitcore-lib-ltc';
+import BitcoreLtc from '@bitpay-labs/bitcore-lib-ltc';
 import type { IValidation } from '../../types/validation';
 
 export class LtcValidation implements IValidation {

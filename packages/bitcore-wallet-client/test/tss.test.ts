@@ -2,14 +2,14 @@
 
 import sinon from 'sinon';
 import * as chai from 'chai';
-import BWS from 'bitcore-wallet-service';
+import BWS from '@bitpay-labs/bitcore-wallet-service';
 import request from 'supertest';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { ECIES } from 'bitcore-tss';
+import { ECIES } from '@bitpay-labs/bitcore-tss';
 import { Request } from '../src/lib/request';
-import { BitcoreLib, Deriver } from 'crypto-wallet-core';
+import { BitcoreLib, Deriver } from '@bitpay-labs/crypto-wallet-core';
 import { TssKeyGen, TssKey } from '../src/lib/tsskey';
 import { TssSign } from '../src/lib/tsssign';
 import log from '../src/lib/log';
@@ -358,10 +358,13 @@ describe('TSS', function() {
       key.keychain.commonKeyChain.should.equal(session.sharedPublicKey);
     });
 
-    it(happyPath('should have stored the encrypted key shares'), async function() {
+    it(happyPath('should have not stored the encrypted key shares'), async function() {
       const session = await storage.fetchTssKeyGenSession({ id: tss0.id });
       session.keyShares.length.should.equal(n);
+      session.keyShares.every(share => share == null).should.equal(true); // encrypted keyshares are not stored
+      return;
 
+      // If we every decide to store the encrypted key shares...
       const key0 = tss0.getTssKey();
       const hdKey0 = new BitcoreLib.HDPrivateKey(party0Key.get().xPrivKey).deriveChild(derivationPath);
       const expected0 = key0.keychain.privateKeyShare.toString('base64') + ':' + key0.keychain.reducedPrivateKeyShare.toString('base64');

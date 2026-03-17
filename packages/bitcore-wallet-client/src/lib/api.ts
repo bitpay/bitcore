@@ -2,10 +2,10 @@
 
 import { EventEmitter } from 'events';
 import querystring from 'querystring';
+import Mnemonic from '@bitpay-labs/bitcore-mnemonic';
+import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import async from 'async';
 import Bip38 from 'bip38';
-import Mnemonic from 'bitcore-mnemonic';
-import * as CWC from 'crypto-wallet-core';
 import { singleton } from 'preconditions';
 import * as Uuid from 'uuid';
 import { BulkClient } from './bulkclient';

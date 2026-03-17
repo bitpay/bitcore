@@ -1,4 +1,5 @@
 'use strict';
 
-var startGulp = require('bitcore-build');
-module.exports = startGulp('p2p', {skipBrowser: true})
+const startGulp = require('@bitpay-labs/bitcore-build');
+
+module.exports = startGulp('p2p', { skipBrowser: true });

@@ -1,7 +1,7 @@
 import {
   BitcoreLib as Bitcore,
   BitcoreLibCash 
-} from 'crypto-wallet-core';
+} from '@bitpay-labs/crypto-wallet-core';
 import _ from 'lodash';
 import { singleton } from 'preconditions';
 import { Constants, Utils } from './common';

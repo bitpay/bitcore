@@ -1,4 +1,4 @@
-import { BitcoreLibCash } from 'crypto-wallet-core';
+import { BitcoreLibCash } from '@bitpay-labs/crypto-wallet-core';
 import config from '../../../config';
 import { IChain } from '../../../types/chain';
 import { BtcChain } from '../../chain/btc';

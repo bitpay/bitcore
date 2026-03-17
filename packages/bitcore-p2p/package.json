@@ -1,6 +1,6 @@
 {
-  "name": "bitcore-p2p",
-  "version": "11.5.1",
+  "name": "@bitpay-labs/bitcore-p2p",
+  "version": "11.6.0",
   "description": "Interface to the bitcoin P2P network for bitcore",
   "main": "index.js",
   "scripts": {
@@ -16,16 +16,16 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitpay/bitcore-p2p.git"
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-p2p"
   },
   "dependencies": {
-    "bitcore-lib": "^11.5.1",
+    "@bitpay-labs/bitcore-lib": "^11.6.0",
     "bloom-filter": "^0.2.0",
     "buffers": "bitpay/node-buffers#v0.1.2-bitpay",
     "socks5-client": "^0.3.6"
   },
   "devDependencies": {
-    "bitcore-build": "^11.5.1",
+    "@bitpay-labs/bitcore-build": "^11.6.0",
     "brfs": "^1.2.0",
     "chai": "~1.10.0",
     "gulp": "^4.0.0",

@@ -1,9 +1,10 @@
 'use strict';
 
-var bitcore = require('bitcore-lib-doge');
-var BloomFilter = require('bloom-filter');
-var BufferReader = bitcore.encoding.BufferReader;
-var BufferWriter = bitcore.encoding.BufferWriter;
+const bitcore = require('@bitpay-labs/bitcore-lib-doge');
+const BloomFilter = require('bloom-filter');
+
+const BufferReader = bitcore.encoding.BufferReader;
+const BufferWriter = bitcore.encoding.BufferWriter;
 
 /**
  * A constructor for Bloom Filters
@@ -11,11 +12,11 @@ var BufferWriter = bitcore.encoding.BufferWriter;
  * @param {Buffer} - payload
  */
 BloomFilter.fromBuffer = function fromBuffer(payload) {
-  var obj = {};
-  var parser = new BufferReader(payload);
-  var length = parser.readVarintNum();
+  const obj = {};
+  const parser = new BufferReader(payload);
+  const length = parser.readVarintNum();
   obj.vData = [];
-  for(var i = 0; i < length; i++) {
+  for (let i = 0; i < length; i++) {
     obj.vData.push(parser.readUInt8());
   }
   obj.nHashFuncs = parser.readUInt32LE();
@@ -28,9 +29,9 @@ BloomFilter.fromBuffer = function fromBuffer(payload) {
  * @returns {Buffer}
  */
 BloomFilter.prototype.toBuffer = function toBuffer() {
-  var bw = new BufferWriter();
+  const bw = new BufferWriter();
   bw.writeVarintNum(this.vData.length);
-  for(var i = 0; i < this.vData.length; i++) {
+  for (let i = 0; i < this.vData.length; i++) {
     bw.writeUInt8(this.vData[i]);
   }
   bw.writeUInt32LE(this.nHashFuncs);

@@ -1,5 +1,5 @@
+import Bitcore from '@bitpay-labs/bitcore-lib';
 import baseX from 'base-x';
-import Bitcore from 'bitcore-lib';
 import type { IValidation } from '../../types/validation';
 
 const RIPPLE_ALPHABET = 'rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz';

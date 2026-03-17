@@ -1,21 +1,19 @@
 'use strict';
 
-/*jshint immed: false */
+const should = require('chai').should();
+const bitcore = require('@bitpay-labs/bitcore-lib-doge');
+const P2P = require('../');
 
-var should = require('chai').should();
-
-var bitcore = require('bitcore-lib-doge');
-var P2P = require('../');
-var Inventory = P2P.Inventory;
-var BufferUtils = bitcore.util.buffer;
-var BufferWriter = bitcore.encoding.BufferWriter;
-var BufferReader = bitcore.encoding.BufferReader;
+const Inventory = P2P.Inventory;
+const BufferUtils = bitcore.util.buffer;
+const BufferWriter = bitcore.encoding.BufferWriter;
+const BufferReader = bitcore.encoding.BufferReader;
 
 describe('Inventory', function() {
 
-  var hash = Buffer.from('eb951630aba498b9a0d10f72b5ea9e39d5ff04b03dc2231e662f52057f948aa1', 'hex');
-  var hashedStr = BufferUtils.reverse(Buffer.from(hash, 'hex')).toString('hex');
-  var inventoryBuffer = Buffer.from(
+  const hash = Buffer.from('eb951630aba498b9a0d10f72b5ea9e39d5ff04b03dc2231e662f52057f948aa1', 'hex');
+  const hashedStr = BufferUtils.reverse(Buffer.from(hash, 'hex')).toString('hex');
+  const inventoryBuffer = Buffer.from(
     '01000000eb951630aba498b9a0d10f72b5ea9e39d5ff04b03dc2231e662f52057f948aa1',
     'hex'
   );

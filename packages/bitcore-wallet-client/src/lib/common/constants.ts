@@ -1,6 +1,6 @@
 'use strict';
 
-import * as CWC from 'crypto-wallet-core';
+import * as CWC from '@bitpay-labs/crypto-wallet-core';
 
 export const Constants = {
   SCRIPT_TYPES: CWC.Constants.SCRIPT_TYPES,

@@ -1,14 +1,14 @@
 'use strict';
 
-var Message = require('../message');
-var inherits = require('util').inherits;
-var bitcore = require('bitcore-lib-cash');
-var BufferWriter = bitcore.encoding.BufferWriter;
-var BufferReader = bitcore.encoding.BufferReader;
-var BN = bitcore.crypto.BN;
+const Message = require('../message');
+const inherits = require('util').inherits;
+const bitcore = require('@bitpay-labs/bitcore-lib-cash');
+const utils = require('../utils');
+const packageInfo = require('../../../package.json');
 
-var utils = require('../utils');
-var packageInfo = require('../../../package.json');
+const BufferWriter = bitcore.encoding.BufferWriter;
+const BufferReader = bitcore.encoding.BufferReader;
+const BN = bitcore.crypto.BN;
 
 /**
  * The version message is used on connection creation to advertise
@@ -45,7 +45,7 @@ function VersionMessage(arg, options) {
 inherits(VersionMessage, Message);
 
 VersionMessage.prototype.setPayload = function(payload) {
-  var parser = new BufferReader(payload);
+  const parser = new BufferReader(payload);
   this.version = parser.readUInt32LE();
   this.services = parser.readUInt64LEBN();
   this.timestamp = new Date(parser.readUInt64LEBN().toNumber() * 1000);
@@ -64,7 +64,7 @@ VersionMessage.prototype.setPayload = function(payload) {
   this.subversion = parser.readVarLengthBuffer().toString();
   this.startHeight = parser.readUInt32LE();
 
-  if(parser.finished()) {
+  if (parser.finished()) {
     this.relay = true;
   } else {
     this.relay = !!parser.readUInt8();
@@ -73,11 +73,11 @@ VersionMessage.prototype.setPayload = function(payload) {
 };
 
 VersionMessage.prototype.getPayload = function() {
-  var bw = new BufferWriter();
+  const bw = new BufferWriter();
   bw.writeUInt32LE(this.version);
   bw.writeUInt64LEBN(this.services);
 
-  var timestampBuffer = Buffer.from(Array(8));
+  const timestampBuffer = Buffer.from(Array(8));
   timestampBuffer.writeUInt32LE(Math.round(this.timestamp.getTime() / 1000), 0);
   bw.write(timestampBuffer);
 

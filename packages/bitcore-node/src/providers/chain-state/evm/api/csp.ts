@@ -1,5 +1,5 @@
-import { CryptoRpc } from 'crypto-rpc';
-import { Utils, Web3, type Web3Types } from 'crypto-wallet-core';
+import { CryptoRpc } from '@bitpay-labs/crypto-rpc';
+import { Utils, Web3, type Web3Types } from '@bitpay-labs/crypto-wallet-core';
 import {
   historical,
   internal,
@@ -19,14 +19,17 @@ import { normalizeChainNetwork, partition, range } from '../../../../utils';
 import { StatsUtil } from '../../../../utils/stats';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { ExternalApiStream } from '../../external/streams/apiStream';
+import { AavePoolAbi } from '../abi/aavePool';
+import { AavePoolAbiV2 } from '../abi/aavePoolV2';
 import { ERC20Abi } from '../abi/erc20';
 import { MultisendAbi } from '../abi/multisend';
 import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
 import { EVMTransactionJSON, IEVMBlock, IEVMTransaction, IEVMTransactionInProcess } from '../types';
+import { AaveAccountData, AaveReserveData, AaveReserveTokensAddresses, AaveV2AccountData, AaveV3AccountData, AaveVersion, getAavePoolAddress } from './aave';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
-import { PopulateEffectsTransform } from './populateEffectsTransform';
+import { PopulateEffectsForAddressTransform } from './populateEffectsTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
 import { EVMListTransactionsStream } from './transform';
 import type { MongoBound } from '../../../../models/base';
@@ -47,14 +50,14 @@ import type {
   UpdateWalletParams,
   WalletBalanceType
 } from '../../../../types/namespaces/ChainStateProvider';
-import type { EthRpc } from 'crypto-rpc/lib/eth/EthRpc';
+import type { EthRpc } from '@bitpay-labs/crypto-rpc/lib/eth/EthRpc';
 import type { ObjectID } from 'mongodb';
 
 export interface GetWeb3Response { rpc: EthRpc; web3: Web3; dataType: string; lastPingTime?: number };
 
 export interface BuildWalletTxsStreamParams {
   transactionStream: TransformWithEventPipe;
-  populateEffects: PopulateEffectsTransform;
+  populateEffects: PopulateEffectsForAddressTransform;
   walletAddresses: string[];
 }
 
@@ -199,6 +202,89 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   async getERC20TokenAllowance(network: string, tokenAddress: string, ownerAddress: string, spenderAddress: string): Promise<number> {
     const token = await this.erc20For(network, tokenAddress);
     return Number(await token.methods.allowance(ownerAddress, spenderAddress).call());
+  }
+
+  async getAaveUserAccountData(params: { network: string; address: string; version: AaveVersion }): Promise<AaveAccountData> {
+    const { network, address, version } = params;
+    const poolAddress = getAavePoolAddress(this.chain, network, version);
+    
+    if (!poolAddress) {
+      throw new Error(
+        `Unsupported Aave pool for chain "${this.chain}", network "${network}", version "${version}".`
+      );
+    }
+
+    const { web3 } = await this.getWeb3(network);
+    if (version === 'v2') {
+      return this.getAaveV2UserAccountData(web3, poolAddress, address);
+    }
+    return this.getAaveV3UserAccountData(web3, poolAddress, address);
+  }
+
+  private async getAaveV2UserAccountData(web3: Web3, poolAddress: string, address: string): Promise<AaveV2AccountData> {
+    const contract = new web3.eth.Contract(AavePoolAbiV2, poolAddress);
+    const accountData = await contract.methods
+      .getUserAccountData(web3.utils.toChecksumAddress(address))
+      .call();
+
+    return {
+      totalCollateralETH: accountData.totalCollateralETH.toString(),
+      totalDebtETH: accountData.totalDebtETH.toString(),
+      availableBorrowsETH: accountData.availableBorrowsETH.toString(),
+      currentLiquidationThreshold: accountData.currentLiquidationThreshold.toString(),
+      ltv: accountData.ltv.toString(),
+      healthFactor: accountData.healthFactor.toString()
+    };
+  }
+
+  private async getAaveV3UserAccountData(web3: Web3, poolAddress: string, address: string): Promise<AaveV3AccountData> {
+    const contract = new web3.eth.Contract(AavePoolAbi, poolAddress);
+    const accountData = await contract.methods
+      .getUserAccountData(web3.utils.toChecksumAddress(address))
+      .call();
+
+    return {
+      totalCollateralBase: accountData.totalCollateralBase.toString(),
+      totalDebtBase: accountData.totalDebtBase.toString(),
+      availableBorrowsBase: accountData.availableBorrowsBase.toString(),
+      currentLiquidationThreshold: accountData.currentLiquidationThreshold.toString(),
+      ltv: accountData.ltv.toString(),
+      healthFactor: accountData.healthFactor.toString()
+    };
+  }
+
+  async getAaveReserveData(params: { network: string; asset: string; version: AaveVersion }): Promise<AaveReserveData> {
+    const { network, asset, version } = params;
+    const poolAddress = getAavePoolAddress(this.chain, network, version);
+
+    if (!poolAddress) {
+      throw new Error(
+        `Unsupported Aave pool for chain "${this.chain}", network "${network}", version "${version}".`
+      );
+    }
+
+    const { web3 } = await this.getWeb3(network);
+    const abi = version === 'v2' ? AavePoolAbiV2 : AavePoolAbi;
+    const contract = new web3.eth.Contract(abi, poolAddress);
+    const reserveData = await contract.methods.getReserveData(web3.utils.toChecksumAddress(asset)).call();
+    return { currentVariableBorrowRate: reserveData.currentVariableBorrowRate.toString() };
+  }
+
+  async getAaveReserveTokensAddresses(params: { network: string; asset: string; version: AaveVersion }): Promise<AaveReserveTokensAddresses> {
+    const { network, asset, version } = params;
+    const poolAddress = getAavePoolAddress(this.chain, network, version);
+
+    if (!poolAddress) {
+      throw new Error(
+        `Unsupported Aave pool for chain "${this.chain}", network "${network}", version "${version}".`
+      );
+    }
+
+    const { web3 } = await this.getWeb3(network);
+    const abi = version === 'v2' ? AavePoolAbiV2 : AavePoolAbi;
+    const contract = new web3.eth.Contract(abi, poolAddress);
+    const reserveData = await contract.methods.getReserveData(web3.utils.toChecksumAddress(asset)).call();
+    return { variableDebtTokenAddress: reserveData.variableDebtTokenAddress };
   }
 
   @historical
@@ -362,6 +448,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         tx.fee = fee;
       }
     }
+    // logs can be very large and are not currently needed for any use case in this codebase.
+    delete tx.receipt?.logs;
     return tx;
   }
 
@@ -369,6 +457,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     if (!tx.effects || (tx.effects && tx.effects.length == 0)) {
       tx.effects = EVMTransactionStorage.getEffects(tx as IEVMTransactionInProcess);
     }
+    return tx;
+  }
+
+  populateEffectsForAddresses(tx: MongoBound<IEVMTransaction>, addresses: Array<string>) {
+    tx.effects = EVMTransactionStorage.getEffectsForAddresses(tx as IEVMTransactionInProcess, addresses);
     return tx;
   }
 
@@ -597,7 +690,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       }
       const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses, args.tokenAddress);
       const populateReceipt = new PopulateReceiptTransform(this);
-      const populateEffects = new PopulateEffectsTransform(this);
+      const populateEffects = new PopulateEffectsForAddressTransform(this, walletAddresses);
 
       const streamParams: BuildWalletTxsStreamParams = {
         transactionStream,

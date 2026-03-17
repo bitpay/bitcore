@@ -1,9 +1,10 @@
  'use strict';
 
-var bitcore = require('bitcore-lib-doge');
-var BufferUtil = bitcore.util.buffer;
-var Hash = bitcore.crypto.Hash;
-var $ = bitcore.util.preconditions;
+const bitcore = require('@bitpay-labs/bitcore-lib-doge');
+
+const BufferUtil = bitcore.util.buffer;
+const Hash = bitcore.crypto.Hash;
+const $ = bitcore.util.preconditions;
 
 /**
  * A factory to build Bitcoin protocol messages.
@@ -19,8 +20,8 @@ function Messages(options) {
   this.builder = Messages.builder(options);
 
   // map message constructors by name
-  for(var key in this.builder.commandsMap) {
-    var name = this.builder.commandsMap[key];
+  for (const key in this.builder.commandsMap) {
+    const name = this.builder.commandsMap[key];
     this[name] = this.builder.commands[key];
   }
 

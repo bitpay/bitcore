@@ -1,14 +1,14 @@
 'use strict';
 
-var Message = require('../message');
-var inherits = require('util').inherits;
-var bitcore = require('bitcore-lib');
-var BufferWriter = bitcore.encoding.BufferWriter;
-var BufferReader = bitcore.encoding.BufferReader;
-var BN = bitcore.crypto.BN;
+const Message = require('../message');
+const inherits = require('util').inherits;
+const bitcore = require('@bitpay-labs/bitcore-lib');
+const utils = require('../utils');
+const packageInfo = require('../../../package.json');
 
-var utils = require('../utils');
-var packageInfo = require('../../../package.json');
+const BufferWriter = bitcore.encoding.BufferWriter;
+const BufferReader = bitcore.encoding.BufferReader;
+const BN = bitcore.crypto.BN;
 
 /**
  * The version message is used on connection creation to advertise

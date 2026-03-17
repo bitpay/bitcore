@@ -1,5 +1,5 @@
+import { BitcoreLibDoge } from '@bitpay-labs/crypto-wallet-core';
 import * as async from 'async';
-import { BitcoreLibDoge } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IChain } from '../../../types/chain';
 import { BtcChain } from '../../chain/btc';

@@ -2,7 +2,7 @@ import { ObjectId } from 'bson';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { Readable } from 'stream';
-import { Web3 } from 'crypto-wallet-core';
+import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import { CoinStorage } from '../../../src/models/coin';
 import { MintOp, SpendOp, TaggedBitcoinTx, TransactionStorage, TxOp } from '../../../src/models/transaction';
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
@@ -12,7 +12,7 @@ import { TransactionFixture } from '../../fixtures/transaction.fixture';
 import { mockStorage } from '../../helpers';
 import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 import * as EvmTxData from '../../data/ETH/gethTxs';
-import { BitcoreLib } from 'crypto-wallet-core';
+import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 
 describe('Transaction Model', function() {
   const { Transaction } = BitcoreLib;
@@ -20,7 +20,7 @@ describe('Transaction Model', function() {
   before(unitBeforeHelper);
   after(unitAfterHelper);
 
-  const sandbox = sinon.sandbox.create();
+  const sandbox = sinon.createSandbox();
   const address = 'mjVf6sFjt9q6aLY7M21Ap6CPSWdaoNHSf1';
   this.timeout(500000);
   before(() => {

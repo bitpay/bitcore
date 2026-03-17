@@ -1,11 +1,15 @@
 {
-  "name": "crypto-rpc",
-  "version": "11.5.2",
+  "name": "@bitpay-labs/crypto-rpc",
+  "version": "11.6.0",
   "description": "A Normalized RPC Interface for Cryptocurrencies",
   "main": "index.js",
   "type": "module",
   "engines": {
     "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/crypto-rpc"
   },
   "scripts": {
     "docker:test": "npm run hardhat:compile && npm run hardhat:deploy && npm run hardhat:test && mocha --exit --recursive ./test",
@@ -23,10 +27,10 @@
   "author": "Micah Riggan",
   "license": "MIT",
   "dependencies": {
+    "@bitpay-labs/crypto-wallet-core": "^11.6.0",
     "@solana-program/address-lookup-table": "0.7.0",
     "bitcoind-rpc": "0.9.1",
     "commander": "2.8.1",
-    "crypto-wallet-core": "^11.5.1",
     "dogecoind-rpc": "0.8.1",
     "lightning": "10.0.1",
     "promptly": "0.2.0"

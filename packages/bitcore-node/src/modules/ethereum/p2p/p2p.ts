@@ -1,5 +1,5 @@
 import { EVMP2pWorker } from '../../../providers/chain-state/evm/p2p/p2p';
-import type { Web3Types } from 'crypto-wallet-core';
+import type { Web3Types } from '@bitpay-labs/crypto-wallet-core';
 
 export class EthP2pWorker extends EVMP2pWorker {
   getBlockReward(block: Web3Types.Block): number {

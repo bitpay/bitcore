@@ -1,14 +1,15 @@
 'use strict';
 
-var Message = require('../message');
-var inherits = require('util').inherits;
-var bitcore = require('bitcore-lib-cash');
-var utils = require('../utils');
-var BufferUtil = bitcore.util.buffer;
-var BufferWriter = bitcore.encoding.BufferWriter;
-var BufferReader = bitcore.encoding.BufferReader;
-var $ = bitcore.util.preconditions;
-var _ = bitcore.deps._;
+const Message = require('../message');
+const inherits = require('util').inherits;
+const bitcore = require('@bitpay-labs/bitcore-lib-cash');
+const utils = require('../utils');
+
+const BufferUtil = bitcore.util.buffer;
+const BufferWriter = bitcore.encoding.BufferWriter;
+const BufferReader = bitcore.encoding.BufferReader;
+const $ = bitcore.util.preconditions;
+const _ = bitcore.deps._;
 
 /**
  * Request peer to add data to a bloom filter already set by 'filterload'

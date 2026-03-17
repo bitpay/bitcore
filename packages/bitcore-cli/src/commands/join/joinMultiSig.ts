@@ -1,5 +1,5 @@
+import BWC from '@bitpay-labs/bitcore-wallet-client';
 import * as prompt from '@clack/prompts';
-import BWC from 'bitcore-wallet-client';
 import { getCopayerName, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
 import type { CommonArgs } from '../../../types/cli';

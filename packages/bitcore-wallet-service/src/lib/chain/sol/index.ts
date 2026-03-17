@@ -1,4 +1,4 @@
-import { Transactions, Utils, Validation } from 'crypto-wallet-core';
+import { Transactions, Utils, Validation } from '@bitpay-labs/crypto-wallet-core';
 import _ from 'lodash';
 import { IChain } from '../../../types/chain';
 import { WalletWithOpts } from '../../blockchainexplorers/v8';

@@ -1,4 +1,4 @@
-import type BitcoreLib from 'bitcore-lib';
+import type BitcoreLib from '@bitpay-labs/bitcore-lib';
 
 export type KeyType = string | BitcoreLib.PrivateKey;
 export type HDKeyType = string | BitcoreLib.HDPrivateKey;

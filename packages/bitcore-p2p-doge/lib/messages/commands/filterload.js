@@ -1,12 +1,13 @@
 'use strict';
 
-var Message = require('../message');
-var inherits = require('util').inherits;
-var bitcore = require('bitcore-lib-doge');
-var BufferUtil = bitcore.util.buffer;
-var BloomFilter = require('../../bloomfilter');
-var $ = bitcore.util.preconditions;
-var _ = bitcore.deps._;
+const Message = require('../message');
+const inherits = require('util').inherits;
+const bitcore = require('@bitpay-labs/bitcore-lib-doge');
+const BloomFilter = require('../../bloomfilter');
+
+const BufferUtil = bitcore.util.buffer;
+const $ = bitcore.util.preconditions;
+const _ = bitcore.deps._;
 
 /**
  * Request peer to send inv messages based on a bloom filter
@@ -31,7 +32,7 @@ FilterloadMessage.prototype.setPayload = function(payload) {
 };
 
 FilterloadMessage.prototype.getPayload = function() {
-  if(this.filter) {
+  if (this.filter) {
     return this.filter.toBuffer();
   } else {
     return BufferUtil.EMPTY_BUFFER;

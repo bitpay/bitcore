@@ -2,7 +2,7 @@ import { MongoBound } from '../../../../models/base';
 import { IWalletAddress, WalletAddressStorage } from '../../../../models/walletAddress';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { Effect, IEVMTransactionInProcess, IEVMTransactionTransformed } from '../types';
-import type { Web3 } from 'crypto-wallet-core';
+import type { Web3 } from '@bitpay-labs/crypto-wallet-core';
 
 export class InternalTxRelatedFilterTransform extends TransformWithEventPipe {
   private walletAddresses: IWalletAddress[] = [];
@@ -30,12 +30,13 @@ export class InternalTxRelatedFilterTransform extends TransformWithEventPipe {
       const refundTxs = walletRelatedInternalTxs.filter(i => i.to === tx.from);
       const nonRefundTxs = walletRelatedInternalTxs.filter(i => i.to != tx.from);
       const refundTotal = refundTxs.reduce((a, b) => a + Number(b.amount), 0);
+      const txValue = Number(tx.value);
       // Only consider it a refund if the amount refunded is less than or equal to tx value
-      const hasRefund = refundTotal <= tx.value;
+      const hasRefund = refundTotal <= txValue;
       
       if (hasRefund) {
         // Subtract refund from tx.value
-        tx.value -= refundTotal;
+        tx.value = txValue - refundTotal;
         // Handle any remaining internal txs
         internalTxsToProcess = nonRefundTxs;
       } else {

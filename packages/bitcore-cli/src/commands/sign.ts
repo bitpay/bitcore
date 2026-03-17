@@ -1,6 +1,6 @@
 import os from 'os';
+import { type Types as CWCTypes, Deriver, Validation } from '@bitpay-labs/crypto-wallet-core';
 import prompt from '@clack/prompts';
-import { type Types as CWCTypes, Deriver, Validation } from 'crypto-wallet-core';
 import { type CommonArgs } from '../../types/cli';
 import { UserCancelled } from '../errors';
 import { Utils } from '../utils';

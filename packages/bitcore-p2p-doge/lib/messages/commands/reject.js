@@ -1,11 +1,12 @@
 'use strict';
 
-var Message = require('../message');
-var inherits = require('util').inherits;
-var bitcore = require('bitcore-lib-doge');
-var utils = require('../utils');
-var BufferReader = bitcore.encoding.BufferReader;
-var BufferWriter = bitcore.encoding.BufferWriter;
+const Message = require('../message');
+const inherits = require('util').inherits;
+const bitcore = require('@bitpay-labs/bitcore-lib-doge');
+const utils = require('../utils');
+
+const BufferReader = bitcore.encoding.BufferReader;
+const BufferWriter = bitcore.encoding.BufferWriter;
 
 /**
  * The reject message is sent when messages are rejected.
@@ -45,7 +46,7 @@ RejectMessage.CCODE = {
 };
 
 RejectMessage.prototype.setPayload = function(payload) {
-  var parser = new BufferReader(payload);
+  const parser = new BufferReader(payload);
   this.message = parser.readVarLengthBuffer().toString('utf-8');
   this.ccode = parser.readUInt8();
   this.reason = parser.readVarLengthBuffer().toString('utf-8');
@@ -54,7 +55,7 @@ RejectMessage.prototype.setPayload = function(payload) {
 };
 
 RejectMessage.prototype.getPayload = function() {
-  var bw = new BufferWriter();
+  const bw = new BufferWriter();
   bw.writeVarintNum(this.message.length);
   bw.write(Buffer.from(this.message, 'utf-8'));
   bw.writeUInt8(this.ccode);

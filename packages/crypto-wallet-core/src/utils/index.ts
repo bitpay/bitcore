@@ -1,4 +1,4 @@
-import BitcoreLib from 'bitcore-lib';
+import BitcoreLib from '@bitpay-labs/bitcore-lib';
 import { Constants } from '../constants';
 
 

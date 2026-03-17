@@ -1,6 +1,6 @@
 'use strict';
 
-import { BitcoreLib as Bitcore } from 'crypto-wallet-core';
+import { BitcoreLib as Bitcore } from '@bitpay-labs/crypto-wallet-core';
 import { singleton } from 'preconditions';
 import { Constants, Utils } from './common';
 
@@ -166,7 +166,7 @@ export class Credentials {
     const entropySource = Bitcore.crypto.Hash.sha256(priv.toBuffer()).toString('hex');
     const b = Buffer.from(entropySource, 'hex');
     const b2: Buffer = Bitcore.crypto.Hash.sha256hmac(b, Buffer.from(prefix));
-    x.personalEncryptingKey = b2.subarray(0, 16).toString('base64');
+    x.personalEncryptingKey = Buffer.from(b2.subarray(0, 16)).toString('base64');
     x.copayerId = Utils.xPubToCopayerId(x.chain, x.xPubKey);
     x.publicKeyRing = [
       {

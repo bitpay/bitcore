@@ -1,6 +1,6 @@
 # bitcore-wallet-client
 
-[![NPM Package](https://img.shields.io/npm/v/bitcore-wallet-client.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-wallet-client)
+[![NPM Package](https://img.shields.io/npm/v/@bitpay-labs/bitcore-wallet-client.svg?style=flat-square)](https://www.npmjs.org/package/@bitpay-labs/bitcore-wallet-client)
 [![Build Status](https://img.shields.io/travis/bitpay/bitcore-wallet-client.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-wallet-client)
 [![Coverage Status](https://coveralls.io/repos/bitpay/bitcore-wallet-client/badge.svg)](https://coveralls.io/r/bitpay/bitcore-wallet-client)
 
@@ -10,11 +10,11 @@ The *official* client library for [bitcore-wallet-service](https://github.com/bi
 
 This package communicates with BWS [Bitcore wallet service](https://github.com/bitpay/bitcore-wallet-service) using the REST API. All REST endpoints are wrapped as simple async methods. All relevant responses from BWS are checked independently by the peers, thus the importance of using this library when talking to a third party BWS instance.
 
-See [Bitcore-wallet] (https://github.com/bitpay/bitcore-wallet) for a simple CLI wallet implementation that relays on BWS and uses bitcore-wallet-client.
+See [Bitcore-CLI] (https://github.com/bitpay/bitcore/tree/master/packages/bitcore-cli) for a simple CLI wallet implementation that relies on BWS and uses bitcore-wallet-client.
 
 ## Get Started
 
-You can start using bitcore-wallet-client via [NPM](https://www.npmjs.com/package/bitcore-wallet-client): by running `npm install bitcore-wallet-client` from your console.
+You can start using bitcore-wallet-client via [NPM](https://www.npmjs.com/package/@bitpay-labs/bitcore-wallet-client): by running `npm install @bitpay-labs/bitcore-wallet-client` from your console.
 
 ## Example
 
@@ -25,7 +25,7 @@ Then create two files `irene.js` and `tomas.js` with the content below:
 ### **irene.js**
 
 ``` javascript
-var Client = require('bitcore-wallet-client');
+var Client = require('@bitpay-labs/bitcore-wallet-client');
 
 
 var fs = require('fs');
@@ -51,7 +51,7 @@ client.createWallet("My Wallet", "Irene", 2, 2, {network: 'testnet'}, function(e
 
 ``` javascript
 
-var Client = require('bitcore-wallet-client');
+var Client = require('@bitpay-labs/bitcore-wallet-client');
 
 
 var fs = require('fs');
@@ -104,7 +104,7 @@ client.joinWallet(secret, "Tomas", {}, function(err, wallet) {
 Install `bitcore-wallet-client` before start:
 
 ```sh
-npm i bitcore-wallet-client
+npm i @bitpay-labs/bitcore-wallet-client
 ```
 
 Create a new wallet with the first script:

@@ -1,5 +1,5 @@
+import { Utils, Web3 } from '@bitpay-labs/crypto-wallet-core';
 import { ObjectID } from 'bson';
-import { Utils, Web3 } from 'crypto-wallet-core';
 import { LoggifyClass } from '../../../../decorators/Loggify';
 import logger from '../../../../logger';
 import { MongoBound } from '../../../../models/base';
@@ -20,7 +20,7 @@ import type { IEVMNetworkConfig } from '../../../../types/Config';
 import type { StreamingFindOptions } from '../../../../types/Query';
 import type { TransformOptions } from '../../../../types/TransformOptions';
 import type { EVMTransactionJSON, Effect, IAbiDecodeResponse, IAbiDecodedData, IEVMBlock, IEVMCachedAddress, IEVMTransaction, IEVMTransactionInProcess, ParsedAbiParams } from '../types';
-import type { Web3Types } from 'crypto-wallet-core';
+import type { Web3Types } from '@bitpay-labs/crypto-wallet-core';
 
 
 function requireUncached(module) {
@@ -451,6 +451,17 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     return effects;
   }
 
+  /**
+   * Creates an array of effects that are filtered for relevance to a given list of addresses
+   * @param {IEVMTransactionInProcess} tx 
+   * @param {Array<string>} addresses
+   */
+  getEffectsForAddresses(tx: IEVMTransactionInProcess, addresses: Array<string>): Effect[] {
+    const effects = tx.effects?.length ? tx.effects : this.getEffects(tx);
+    const addySet = new Set(addresses.map(a => a.toLowerCase()));
+    return effects.filter(effect => addySet.has(effect.to.toLowerCase()) || addySet.has(effect.from.toLowerCase()));
+  }
+
   _getEffectForAbiType(abi: IAbiDecodedData, to: string, from: string, callStack: string): Effect | undefined {
     // Check that the params are valid before parsing
     if (!to || !from) return;
@@ -532,8 +543,8 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
   convertRawTx(chain: string, network: string, tx: Partial<Web3Types.TransactionInfo>, block?: IEVMBlock): IEVMTransactionInProcess {
     if (!block) {
       const txid = tx.hash as string || '';
-      const to = tx.to || '';
-      const from = tx.from || '';
+      const to = tx.to ? Web3.utils.toChecksumAddress(tx.to) : '';
+      const from = tx.from ? Web3.utils.toChecksumAddress(tx.from) : '';
       const value = BigInt(tx.value!);
       const gas = BigInt(tx.gas || -1); // -1 indicates unknown
       const gasPrice = BigInt(tx.gasPrice || -1);

@@ -1,7 +1,7 @@
 import sinon from 'sinon';
 import * as chai from 'chai';
 import 'chai/register-should';
-import { BitcoreLib } from 'crypto-wallet-core';
+import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import request from 'supertest';
 import * as twoOfThree from './data/tss/2of3';
 import BWS from '../../src/index';

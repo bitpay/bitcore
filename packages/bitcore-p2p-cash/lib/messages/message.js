@@ -1,9 +1,10 @@
 'use strict';
 
-var bitcore = require('bitcore-lib-cash');
-var $ = bitcore.util.preconditions;
-var BufferWriter = bitcore.encoding.BufferWriter;
-var Hash = bitcore.crypto.Hash;
+const bitcore = require('@bitpay-labs/bitcore-lib-cash');
+
+const $ = bitcore.util.preconditions;
+const BufferWriter = bitcore.encoding.BufferWriter;
+const Hash = bitcore.crypto.Hash;
 
 /**
  * Base message that can be inherited to add an additional

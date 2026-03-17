@@ -1,13 +1,14 @@
 'use strict';
 
-var Message = require('../message');
-var inherits = require('util').inherits;
-var bitcore = require('bitcore-lib-doge');
-var utils = require('../utils');
-var $ = bitcore.util.preconditions;
-var _ = bitcore.deps._;
-var BufferUtil = bitcore.util.buffer;
-var BufferReader = bitcore.encoding.BufferReader;
+const Message = require('../message');
+const inherits = require('util').inherits;
+const bitcore = require('@bitpay-labs/bitcore-lib-doge');
+const utils = require('../utils');
+
+const $ = bitcore.util.preconditions;
+const _ = bitcore.deps._;
+const BufferUtil = bitcore.util.buffer;
+const BufferReader = bitcore.encoding.BufferReader;
 
 /**
  * A message in response to a ping message.
@@ -28,7 +29,7 @@ function PongMessage(arg, options) {
 inherits(PongMessage, Message);
 
 PongMessage.prototype.setPayload = function(payload) {
-  var parser = new BufferReader(payload);
+  const parser = new BufferReader(payload);
   this.nonce = parser.read(8);
 
   utils.checkFinished(parser);

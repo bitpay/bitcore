@@ -8,7 +8,7 @@ import log from 'npmlog';
 import {
   BitcoreLib,
   BitcoreLibCash
-} from 'crypto-wallet-core';
+} from '@bitpay-labs/crypto-wallet-core';
 import { Common } from '../../src/lib/common';
 import HugeTxs from './hugetx';
 import * as TestData from '../testdata';

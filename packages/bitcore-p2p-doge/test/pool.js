@@ -1,23 +1,21 @@
 'use strict';
 
-var chai = require('chai');
+const chai = require('chai');
+const bitcore = require('@bitpay-labs/bitcore-lib-doge');
+const P2P = require('../');
+const MessagesData = require('./data/messages');
+const dns = require('dns');
+const sinon = require('sinon');
+const net = require('net');
 
-/* jshint unused: false */
-var should = chai.should();
-var expect = chai.expect;
+const Peer = P2P.Peer;
+const should = chai.should();
+const expect = chai.expect;
+const Messages = P2P.Messages;
+const messages = new Messages();
+const Pool = P2P.Pool;
+const Networks = bitcore.Networks;
 
-var bitcore = require('bitcore-lib-doge');
-var P2P = require('../');
-var Peer = P2P.Peer;
-var MessagesData = require('./data/messages');
-var Messages = P2P.Messages;
-var messages = new Messages();
-var Pool = P2P.Pool;
-var Networks = bitcore.Networks;
-
-var dns = require('dns');
-var sinon = require('sinon');
-var net = require('net');
 
 function getPayloadBuffer(messageBuffer) {
   return Buffer.from(messageBuffer.slice(48), 'hex');

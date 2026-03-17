@@ -2,7 +2,7 @@
 
 BIP39 Mnemonics for bitcore
 
-[![NPM Package](https://img.shields.io/npm/v/bitcore-mnemonic.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-mnemonic)
+[![NPM Package](https://img.shields.io/npm/v/@bitpay-labs/bitcore-mnemonic.svg?style=flat-square)](https://www.npmjs.org/package/@bitpay-labs/bitcore-mnemonic)
 [![Build Status](https://img.shields.io/travis/bitpay/bitcore-mnemonic.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-mnemonic)
 [![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore-mnemonic.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore-mnemonic)
 
@@ -13,14 +13,13 @@ BIP39 Mnemonics for bitcore
 This library is distributed in both the npm packaging systems.
 
 ```sh
-npm install bitcore-lib  #this to install bitcore-lib since it is a peerDependecy
-npm install bitcore-mnemonic
+npm install @bitpay-labs/bitcore-mnemonic
 ```
 
 There are many examples of how to use it on the developer guide [section for mnemonic](./docs/index.md). For example, the following code would generate a new random mnemonic code and convert it to a `HDPrivateKey`.
 
 ```javascript
-var Mnemonic = require('bitcore-mnemonic');
+var Mnemonic = require('@bitpay-labs/bitcore-mnemonic');
 var code = new Mnemonic(Mnemonic.Words.SPANISH);
 code.toString(); // natal hada sutil año sólido papel jamón combate aula flota ver esfera...
 var xpriv = code.toHDPrivateKey();

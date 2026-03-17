@@ -3,7 +3,7 @@
 import fs from 'fs';
 import os from 'os';
 import readline from 'readline';
-import CWC from 'crypto-wallet-core';
+import CWC from '@bitpay-labs/crypto-wallet-core';
 import pkg from '../../ts_build/src';
 import config from '../../ts_build/src/config';
 

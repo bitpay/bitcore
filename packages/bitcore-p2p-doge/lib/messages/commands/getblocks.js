@@ -1,12 +1,13 @@
 'use strict';
 
-var Message = require('../message');
-var inherits = require('util').inherits;
-var bitcore = require('bitcore-lib-doge');
-var utils = require('../utils');
-var BufferReader = bitcore.encoding.BufferReader;
-var BufferWriter = bitcore.encoding.BufferWriter;
-var $ = bitcore.util.preconditions;
+const Message = require('../message');
+const inherits = require('util').inherits;
+const bitcore = require('@bitpay-labs/bitcore-lib-doge');
+const utils = require('../utils');
+
+const BufferReader = bitcore.encoding.BufferReader;
+const BufferWriter = bitcore.encoding.BufferWriter;
+const $ = bitcore.util.preconditions;
 
 /**
  * Query another peer about blocks. It can query for multiple block hashes,
@@ -33,14 +34,14 @@ function GetblocksMessage(arg, options) {
 inherits(GetblocksMessage, Message);
 
 GetblocksMessage.prototype.setPayload = function(payload) {
-  var parser = new BufferReader(payload);
+  const parser = new BufferReader(payload);
   $.checkArgument(!parser.finished(), 'No data received in payload');
 
   this.version = parser.readUInt32LE();
-  var startCount = parser.readVarintNum();
+  const startCount = parser.readVarintNum();
 
   this.starts = [];
-  for (var i = 0; i < startCount; i++) {
+  for (let i = 0; i < startCount; i++) {
     this.starts.push(parser.read(32));
   }
   this.stop = parser.read(32);
@@ -48,10 +49,10 @@ GetblocksMessage.prototype.setPayload = function(payload) {
 };
 
 GetblocksMessage.prototype.getPayload = function() {
-  var bw = new BufferWriter();
+  const bw = new BufferWriter();
   bw.writeUInt32LE(this.version);
   bw.writeVarintNum(this.starts.length);
-  for (var i = 0; i < this.starts.length; i++) {
+  for (let i = 0; i < this.starts.length; i++) {
     bw.write(this.starts[i]);
   }
   if (this.stop.length !== 32) {

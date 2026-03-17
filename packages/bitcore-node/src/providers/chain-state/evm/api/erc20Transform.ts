@@ -1,4 +1,4 @@
-import { Web3 } from 'crypto-wallet-core';
+import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import { MongoBound } from '../../../../models/base';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { IEVMTransactionInProcess, IEVMTransactionTransformed } from '../types';

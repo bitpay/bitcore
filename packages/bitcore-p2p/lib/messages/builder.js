@@ -1,7 +1,7 @@
 'use strict';
 
-var bitcore = require('bitcore-lib');
-var Inventory = require('../inventory');
+const bitcore = require('@bitpay-labs/bitcore-lib');
+const Inventory = require('../inventory');
 
 function builder(options) {
   /* jshint maxstatements: 20 */

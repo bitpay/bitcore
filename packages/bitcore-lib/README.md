@@ -1,6 +1,6 @@
 # Bitcore JavaScript Library for Bitcoin
 
-[![NPM Package](https://img.shields.io/npm/v/bitcore-lib.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-lib)
+[![NPM Package](https://img.shields.io/npm/v/@bitpay-labs/bitcore-lib.svg?style=flat-square)](https://www.npmjs.org/package/@bitpay-labs/bitcore-lib)
 [![CircleCI](https://dl.circleci.com/status-badge/img/gh/bitpay/bitcore/tree/master.svg?style=shield&task=bitcore-lib)](https://dl.circleci.com/status-badge/redirect/gh/bitpay/bitcore/tree/master)
 [![Coverage Status](https://img.shields.io/coveralls/bitpay/bitcore-lib.svg?style=flat-square)](https://coveralls.io/r/bitpay/bitcore-lib)
 

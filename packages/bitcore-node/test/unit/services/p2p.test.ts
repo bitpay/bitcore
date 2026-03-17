@@ -1,10 +1,16 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import { Config } from '../../../src/services/config';
 import { BaseP2PWorker, P2P } from '../../../src/services/p2p';
+import { EVMP2pWorker } from '../../../src/providers/chain-state/evm/p2p/p2p';
+import { BaseEVMStateProvider } from '../../../src/providers/chain-state/evm/api/csp';
 import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
+import { block } from '../../data/ETH/gethMainnet24486902';
+import { Rpcs } from '../../../src/providers/chain-state/evm/p2p/rpcs';
 
 describe('P2P Service', function() {
+  const sandbox = sinon.createSandbox();
   class MockP2PWorker extends BaseP2PWorker<any> {
     started = false;
   
@@ -16,6 +22,10 @@ describe('P2P Service', function() {
   
   before(unitBeforeHelper);
   after(unitAfterHelper);
+
+  afterEach(() => {
+    sandbox.restore();
+  });
 
   it('should have a test which runs', function() {
     expect(true).to.equal(true);
@@ -30,7 +40,6 @@ describe('P2P Service', function() {
   });
 
   it('should start the p2p class', async () => {
-    const sandbox = sinon.createSandbox();
     const chain = 'TEST';
     const network = 'testnet';
     const fakeConfig = {};
@@ -50,11 +59,9 @@ describe('P2P Service', function() {
     expect(worker.started).to.eq(true);
     await P2P.stop();
     expect(P2P.workers).to.deep.eq([]);
-    sandbox.restore();
   });
 
   it('should not start if disabled', async () => {
-    const sandbox = sinon.createSandbox();
     const chain = 'TEST';
     const network = 'test';
 
@@ -66,11 +73,9 @@ describe('P2P Service', function() {
     expect(P2P.workers).to.deep.eq([]);
     await P2P.start();
     expect(P2P.workers.length).to.eq(0);
-    sandbox.restore();
   });
 
   it('should not start if config has disabled', async () => {
-    const sandbox = sinon.createSandbox();
     const chain = 'TEST';
     const network = 'testnet';
     const fakeConfig = { disabled: true };
@@ -85,11 +90,9 @@ describe('P2P Service', function() {
     expect(P2P.workers).to.deep.eq([]);
     await P2P.start();
     expect(P2P.workers.length).to.eq(0);
-    sandbox.restore();
   });
 
   it('should not start if config has chainSource other than p2p', async () => {
-    const sandbox = sinon.createSandbox();
     const chain = 'TEST';
     const network = 'testnet';
     const fakeConfig = { chainSource: 'rpc' };
@@ -104,6 +107,25 @@ describe('P2P Service', function() {
     expect(P2P.workers).to.deep.eq([]);
     await P2P.start();
     expect(P2P.workers.length).to.eq(0);
-    sandbox.restore();
+  });
+
+  it('should convert an EVM block', async function() {
+    sandbox.stub(Rpcs.geth.prototype, 'getTransactionsFromBlock').resolves([]);
+    sandbox.stub(BaseEVMStateProvider, 'initializeRpcs');
+    sandbox.stub(Config, 'get').returns({ chains: { ETH: { mainnet: {} } } });
+    class MockEVMP2pWorker extends EVMP2pWorker {
+      protected rpc = new Rpcs.geth(sandbox.stub() as any);
+
+      constructor(params) {
+        super(params);
+      }
+    }
+    
+    const p2p = new MockEVMP2pWorker({ chain: 'ETH', network: 'mainnet', chainConfig: {} });
+    const converted = await p2p.convertBlock(block as any);
+    expect(converted.convertedTxs.every(tx => {
+      return (tx.to === '' || tx.to === Web3.utils.toChecksumAddress(tx.to)) &&
+        tx.from === Web3.utils.toChecksumAddress(tx.from);
+    })).to.equal(true);
   });
 });
