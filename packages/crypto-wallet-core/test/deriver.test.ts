@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import crypto from 'crypto';
 import { Deriver } from '../src';
 
-describe.only('IDeriver', function () {
+describe('IDeriver', function () {
   describe('getPublicKey (Buffer-first)', () => {
     it('BTC: should derive the compressed secp256k1 public key', () => {
       // Well-known secp256k1 test vector: private key 1 maps to generator point G.
