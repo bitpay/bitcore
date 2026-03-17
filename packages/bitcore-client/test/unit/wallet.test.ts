@@ -1,5 +1,5 @@
 import * as chai from 'chai';
-import * as CWC from 'crypto-wallet-core';
+import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
