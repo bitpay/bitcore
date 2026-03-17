@@ -56,11 +56,12 @@ export class EthDeriver implements IDeriver {
     return this.addressFromPublicKeyBuffer(pubKey.toBuffer());
   }
 
-  getPublicKey(_network: string, privKey: Buffer): string {
+  getPublicKey(network: string, privKey: Buffer): string {
     if (!Buffer.isBuffer(privKey)) {
       throw new Error('Expected privKey to be a Buffer');
     }
-    const key = BitcoreLib.PrivateKey.fromBuffer(privKey);
+    const bn = BitcoreLib.crypto.BN.fromBuffer(privKey);
+    const key = new BitcoreLib.PrivateKey({ bn, network, compressed: true });
     return key.publicKey.toString('hex');
   }
 
