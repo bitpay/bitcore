@@ -17,7 +17,6 @@ import {
   xrpl
 } from '@bitpay-labs/crypto-wallet-core';
 import * as Bcrypt from 'bcrypt';
-import * as Bcrypt from 'bcrypt';
 import Mnemonic from 'bitcore-mnemonic';
 import { Client } from './client';
 import { Encryption } from './encryption';
