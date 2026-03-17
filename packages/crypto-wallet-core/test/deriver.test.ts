@@ -1,8 +1,7 @@
 import { expect } from 'chai';
 import crypto from 'crypto';
 import { Deriver } from '../src';
-import BitcoreLib from 'bitcore-lib';
-import { encoding } from 'bitcore-lib';
+import BitcoreLib, { encoding } from '@bitpay-labs/bitcore-lib';
 import * as ed25519 from 'ed25519-hd-key';
 
 describe('Deriver.getPublicKey (Buffer-first)', () => {
