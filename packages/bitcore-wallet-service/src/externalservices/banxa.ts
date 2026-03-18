@@ -190,8 +190,6 @@ export class BanxaService {
         return reject(new ClientError("Banxa's request missing arguments"));
       }
 
-      delete req.body.payment_method_id;
-
       const UriPath = '/orders';
       const URL: string = API + UriPath;
       const auth = this.getBanxaSignature('post', UriPath, API_KEY, SECRET_KEY, req.body);
