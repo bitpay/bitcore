@@ -226,11 +226,6 @@ export class Key {
   private setFromMnemonic(m, opts: SetFromMnemonicOptions) {
     const algos = opts.algo ? [opts.algo] : SUPPORTED_ALGOS;
     for (const algo of algos) {
-      // private setFromMnemonic(
-      //   m,
-      //   opts: { passphrase?: string; password?: PasswordMaybe; encryptionOpts?: KeyOptions['encryptionOpts'], algo?: KeyAlgorithm }
-      // ) {
-      //   for (const algo of SUPPORTED_ALGOS) {
       const xpriv = m.toHDPrivateKey(opts.passphrase, NETWORK, ALGO_TO_KEY_TYPE[algo]);
       this.#setFingerprint({ value: xpriv.fingerPrint.toString('hex'), algo });
 
@@ -475,11 +470,20 @@ export class Key {
     }
   };
 
-  derive(password: PasswordMaybe, path: string, algo?: KeyAlgorithm): Bitcore.HDPrivateKey {
+  /**
+   * Derive a child key
+   * @param {string} password 
+   * @param {string} path 
+   * @param {KeyAlgorithm} [algo] "ECDSA" (default) or "EDDSA"
+   * @param {string} [network] Used to converts a livenet xPrivkey to testnet and vice versa
+   * @returns 
+   */
+  derive(password: PasswordMaybe, path: string, algo?: KeyAlgorithm, network?: string): Bitcore.HDPrivateKey {
     $.checkArgument(path, 'no path at derive()');
+    let xPrivKey;
     if (algo?.toUpperCase?.() === Constants.ALGOS.EDDSA) {
       const key = this.#getChildKeyEDDSA(password, path);
-      return new Bitcore.HDPrivateKey({
+      xPrivKey = new Bitcore.HDPrivateKey({
         network: NETWORK,
         depth: 1,
         parentFingerPrint: Buffer.from(this.#getFingerprint({ algo }), 'hex'),
@@ -488,16 +492,30 @@ export class Key {
         privateKey: Bitcore.encoding.Base58.decode(key.privKey),
       });
     } else {
-      const xPrivKey = new Bitcore.HDPrivateKey(
+      xPrivKey = new Bitcore.HDPrivateKey(
         this.get(password, algo).xPrivKey,
         NETWORK
       );
       const deriveFn = this.compliantDerivation
         ? xPrivKey.deriveChild.bind(xPrivKey)
         : xPrivKey.deriveNonCompliantChild.bind(xPrivKey);
-      return deriveFn(path);
+      xPrivKey = deriveFn(path);
     }
+    if (network && network !== NETWORK) {
+      xPrivKey = this.convertXPrivKeyToNetwork(xPrivKey, network);
+    }
+    return xPrivKey;
   };
+
+  convertXPrivKeyToNetwork(xPrivKey: Bitcore.HDPrivateKey, network: string): Bitcore.HDPrivateKey {
+    if (!['testnet', 'regtest'].includes(network)) return xPrivKey;
+    const x = xPrivKey.toObject();
+    x.network = network;
+    delete x.xprivkey;
+    delete x.checksum;
+    x.privateKey = x.privateKey.padStart(64, '0');
+    return new Bitcore.HDPrivateKey(x);
+  }
 
   _checkChain(chain: string) {
     if (!Constants.CHAINS.includes(chain))
@@ -532,7 +550,7 @@ export class Key {
 
     // checking in chains for simplicity
     if (
-      ['testnet', 'regtest]'].includes(opts.network) &&
+      ['testnet', 'regtest'].includes(opts.network) &&
       Constants.UTXO_CHAINS.includes(chain)
     ) {
       coinCode = '1';
@@ -587,11 +605,13 @@ export class Key {
       algo?: KeyAlgorithm;
       tssXPubKey?: string;
       copayerName?: string;
+      /** Only used when trying to find keys from a seed phrase import */
+      use0forBCH?: boolean;
     }
   ) {
     opts = opts || {} as any;
     opts.chain = (opts.chain || Utils.getChain(opts.coin)).toLowerCase();
-    const algo = opts.algo || ALGOS_BY_CHAIN[opts.chain.toLowerCase()] || ALGOS_BY_CHAIN.default;
+    const algo = opts.algo || this.getAlgorithm(opts.chain);
 
     if (password) $.shouldBeString(password, 'provide password');
 
@@ -605,21 +625,15 @@ export class Key {
     $.shouldBeUndefined(opts['useLegacyPurpose'], 'useLegacyPurpose is deprecated');
 
     const path = this.getBaseAddressDerivationPath(opts);
-    let xPrivKey = this.derive(password, path, algo);
+    let xPrivKey = this.derive(password, path, algo, opts.network);
     const requestPrivKey = this.derive(
       password,
       Constants.PATHS.REQUEST_KEY,
     ).privateKey.toString();
 
     if (['testnet', 'regtest'].includes(opts.network)) {
-      // Hacky: BTC/BCH xPriv depends on network: This code is to
       // convert a livenet xPriv to a testnet/regtest xPriv
-      const x = xPrivKey.toObject();
-      x.network = opts.network;
-      delete x.xprivkey;
-      delete x.checksum;
-      x.privateKey = x.privateKey.padStart(64, '0');
-      xPrivKey = new Bitcore.HDPrivateKey(x);
+      xPrivKey = this.convertXPrivKeyToNetwork(xPrivKey, opts.network);
     }
 
     return Credentials.fromDerivedKey({
@@ -760,6 +774,10 @@ export class Key {
       return signatures;
     }
   };
+
+  getAlgorithm(chain: string) {
+    return ALGOS_BY_CHAIN[chain.toLowerCase()] || ALGOS_BY_CHAIN.default;
+  }
 
   #setPrivKey(params: { value: any; algo?: KeyAlgorithm }) {
     const { value, algo } = params;

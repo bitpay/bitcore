@@ -6551,6 +6551,111 @@ describe('client API', function() {
         });
       });
 
+      it('should be able to gain access to multiple 1-1 wallets from mnemonic using V2 import function', async function() {
+        let walletCnt = 0;
+        await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'btc', chain: 'btc' });
+        walletCnt++;
+        const key = keys[0];
+        const words = key.get(null, true).mnemonic;
+        const walletName = clients[0].credentials.walletName;
+        const copayerName = clients[0].credentials.copayerName;
+        const addrs = new Set();
+        let addr = await clients[0].createAddress();
+        should.exist(addr);
+        addrs.add(addr.address);
+        await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'bch', chain: 'bch', key });
+        walletCnt++;
+        addr = await clients[0].createAddress();
+        should.exist(addr);
+        addrs.add(addr.address);
+        await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'doge', chain: 'doge', key });
+        walletCnt++;
+        addr = await clients[0].createAddress();
+        should.exist(addr);
+        addrs.add(addr.address);
+        await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'ltc', chain: 'ltc', key });
+        walletCnt++;
+        addr = await clients[0].createAddress();
+        should.exist(addr);
+        addrs.add(addr.address);
+        await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'eth', key });
+        walletCnt++;
+        addr = await clients[0].createAddress();
+        should.exist(addr);
+        addrs.add(addr.address);
+        await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'arb', key });
+        walletCnt++;
+        addr = await clients[0].createAddress();
+        should.exist(addr);
+        addrs.add(addr.address);
+        await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'op', key });
+        walletCnt++;
+        addr = await clients[0].createAddress();
+        should.exist(addr);
+        addrs.add(addr.address);
+        await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'base', key });
+        walletCnt++;
+        addr = await clients[0].createAddress();
+        should.exist(addr);
+        addrs.add(addr.address);
+        {
+          const account = 1;
+          await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'btc', chain: 'btc', key, account });
+          walletCnt++;
+          addr = await clients[0].createAddress();
+          should.exist(addr);
+          addrs.add(addr.address);
+          await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'eth', key, account });
+          walletCnt++;
+          addr = await clients[0].createAddress();
+          should.exist(addr);
+          addrs.add(addr.address);
+          await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'arb', key, account });
+          walletCnt++;
+          addr = await clients[0].createAddress();
+          should.exist(addr);
+          addrs.add(addr.address);
+          await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'op', key, account });
+          walletCnt++;
+          addr = await clients[0].createAddress();
+          should.exist(addr);
+          addrs.add(addr.address);
+          await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'base', key, account });
+          walletCnt++;
+          addr = await clients[0].createAddress();
+          should.exist(addr);
+          addrs.add(addr.address);
+        }
+        {
+          const account = 2;
+          await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'btc', chain: 'btc', key, account });
+          walletCnt++;
+          addr = await clients[0].createAddress();
+          should.exist(addr);
+          addrs.add(addr.address);
+        }
+        {
+          const account = 3;
+          await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'btc', chain: 'btc', key, account });
+          walletCnt++;
+          addr = await clients[0].createAddress();
+          should.exist(addr);
+          addrs.add(addr.address);
+        }
+        const retVal = await Client.serverAssistedImportV2({ words, includeTestnetWallets: true, includeLegacyWallets: true }, helpers.newClient(app));
+        const { key: k, clients: c } = retVal;
+        c.length.should.equal(walletCnt);
+        const recoveryClient = c[0];
+        await recoveryClient.openWallet();
+        recoveryClient.credentials.walletName.should.equal(walletName);
+        recoveryClient.credentials.copayerName.should.equal(copayerName);
+        const list = await recoveryClient.getMainAddresses({});
+        should.exist(list);
+        list.length.should.equal(1);
+        addrs.has(list[0].address).should.be.true;
+      });
+
+
       it('should be able to gain access to eth tokens wallets from mnemonic', function(done) {
         helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth' }, () => {
           const words = keys[0].get(null, true).mnemonic;

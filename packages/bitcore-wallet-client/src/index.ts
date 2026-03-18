@@ -20,6 +20,7 @@ export type * as EncryptionTypes from './lib/common/encryption';
 export { Utils } from './lib/common/utils';
 export type * as UtilsTypes from './lib/common/utils';
 export { Errors } from './lib/errors';
+export type { ServerAssistedImportEvents } from './types/serverAssistedImportEvents';
 
 export * as TssKey from './lib/tsskey';
 export * as TssSign from './lib/tsssign';

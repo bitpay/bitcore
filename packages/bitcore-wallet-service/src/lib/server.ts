@@ -944,7 +944,7 @@ export class WalletService implements IWalletService {
     );
   }
 
-  /*
+  /**
    * Verifies a signature
    * @param text
    * @param signature
@@ -954,7 +954,7 @@ export class WalletService implements IWalletService {
     return Utils.verifyMessage(text, signature, pubkey);
   }
 
-  /*
+  /**
    * Verifies a request public key
    * @param requestPubKey
    * @param signature
@@ -965,7 +965,7 @@ export class WalletService implements IWalletService {
     return Utils.verifyMessage(requestPubKey, signature, pub.toString());
   }
 
-  /*
+  /**
    * Verifies signature againt a collection of pubkeys
    * @param text
    * @param signature
