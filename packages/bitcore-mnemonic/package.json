@@ -23,7 +23,8 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-mnemonic"
+    "url": "https://github.com/bitpay/bitcore.git",
+    "directory": "packages/bitcore-mnemonic"
   },
   "keywords": [
     "bitcoin",
