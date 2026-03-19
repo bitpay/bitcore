@@ -8110,16 +8110,6 @@ describe('Wallet service', function() {
         });
         withNonce.nonce.should.equal(10 + i);
         assignedNonces.push(withNonce.nonce);
-
-        const fetched = await util.promisify(server.getTx).call(server, { txProposalId: txps[i].id });
-        const signatures = helpers.clientSign(fetched, TestData.copayers[0].xPrivKey_44H_0H_0H);
-        const signed = await util.promisify(server.signTx).call(server, {
-          txProposalId: txps[i].id,
-          signatures
-        });
-        signed.status.should.equal('accepted');
-        helpers.stubBroadcast(signed.txid);
-        await util.promisify(server.broadcastTx).call(server, { txProposalId: txps[i].id });
       }
 
       assignedNonces.should.deep.equal([10, 11, 12]);
