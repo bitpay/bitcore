@@ -4,7 +4,6 @@ import { EventEmitter } from 'events';
 import querystring from 'querystring';
 import Mnemonic from '@bitpay-labs/bitcore-mnemonic';
 import * as CWC from '@bitpay-labs/crypto-wallet-core';
-import async from 'async';
 import Bip38 from 'bip38';
 import { singleton } from 'preconditions';
 import * as Uuid from 'uuid';
@@ -3365,465 +3364,10 @@ export class API extends EventEmitter {
   }
 
   /**
-   * Imports existing wallets against BWS and return key & clients[] for each account / coin
-   */
-  static serverAssistedImport(
-    opts: {
-      /** Mnemonic words */
-      words?: string;
-      /** Extended Private Key */
-      xPrivKey?: string;
-      /** Mnemonic's passphrase */
-      passphrase?: string;
-      /** Include testnet wallets */
-      includeTestnetWallets?: boolean;
-      /** Search legacy wallets */
-      includeLegacyWallets?: boolean;
-      /** Use 0 for BCH */
-      use0forBCH?: boolean;
-    },
-    /** BWS connection options (see ClientAPI constructor) */
-    clientOpts: API | any,
-    /** Callback function in the standard form (err, key, clients) */
-    callback: (err?: Error, key?: Key, clients?: API[]) => void
-  ) {
-    const { words, xPrivKey, passphrase, includeTestnetWallets, includeLegacyWallets, use0forBCH } = opts || {};
-    $.checkArgument(words || xPrivKey, 'Missing argument: words or xPrivKey at <serverAssistedImport()>');
-
-    const client = clientOpts instanceof API ? API.clone(clientOpts) : new API(clientOpts);
-    const credentials = [];
-    const copayerIdAlreadyTested = {};
-    const keyCredentialIndex: { credentials: Credentials; key: Key; opts: any; status?: string }[] = [];
-    const clients = [];
-    let k: Key;
-    const sets: Array<{ nonCompliantDerivation: boolean; useLegacyCoinType?: boolean; useLegacyPurpose: boolean; passphrase?: any }> = [
-      {
-        // current wallets: /[44,48]/[0,145]'/
-        nonCompliantDerivation: false,
-        useLegacyCoinType: false,
-        useLegacyPurpose: false,
-        passphrase: undefined // is set later
-      }
-    ];
-
-    if (includeLegacyWallets) {
-      const legacyOpts = [
-        {
-          // old bch wallets: /[44,48]/[0,0]'/
-          nonCompliantDerivation: false,
-          useLegacyCoinType: true,
-          useLegacyPurpose: false
-        },
-        {
-          // old BTC/BCH  multisig wallets: /[44]/[0,145]'/
-          nonCompliantDerivation: false,
-          useLegacyCoinType: false,
-          useLegacyPurpose: true
-        },
-        {
-          // old multisig BCH wallets: /[44]/[0]'/
-          nonCompliantDerivation: false,
-          useLegacyCoinType: true,
-          useLegacyPurpose: true
-        },
-        {
-          // old BTC no-comp wallets: /44'/[0]'/
-          nonCompliantDerivation: true,
-          useLegacyPurpose: true
-        }
-      ];
-  
-      sets.push(...legacyOpts);
-    }
-
-    const generateCredentials = (key, opts) => {
-      const c = key.createCredentials(null, {
-        coin: opts.coin,
-        chain: opts.chain?.toLowerCase() || opts.coin, // chain === coin IS NO LONGER TRUE for Arbitrum, Base, Optimisim
-        network: opts.network,
-        account: opts.account,
-        m: opts.m,
-        n: opts.n,
-        use0forBCH: opts.use0forBCH, // only used for server assisted import
-        algo: opts.algo
-      });
-
-      if (copayerIdAlreadyTested[c.copayerId + ':' + opts.n]) {
-        return;
-      } else {
-        copayerIdAlreadyTested[c.copayerId + ':' + opts.n] = true;
-      }
-
-      keyCredentialIndex.push({ credentials: c, key, opts });
-      credentials.push(c);
-    };
-
-    const checkKey = (key: Key) => {
-      let opts = [
-        // [coin, chain, network, multisig, preForkBchCheck]
-        ['btc', 'btc', 'livenet'],
-        ['bch', 'bch', 'livenet'],
-        ['bch', 'bch', 'livenet', false, true], // check for prefork bch wallet
-        ['eth', 'eth', 'livenet'],
-        ['matic', 'matic', 'livenet'],
-        ['eth', 'arb', 'livenet'],
-        ['eth', 'base', 'livenet'],
-        ['eth', 'op', 'livenet'],
-        ['xrp', 'xrp', 'livenet'],
-        ['sol', 'sol', 'livenet'],
-        ['doge', 'doge', 'livenet'],
-        ['ltc', 'ltc', 'livenet'],
-        ['btc', 'btc', 'livenet', true],
-        ['bch', 'bch', 'livenet', true],
-        ['doge', 'doge', 'livenet', true],
-        ['ltc', 'ltc', 'livenet', true]
-      ];
-      if (key.use44forMultisig) {
-        //  testing old multi sig
-        opts = opts.filter(x => x[3]);
-      }
-
-      if (key.use0forBCH) {
-        //  testing BCH, old coin=0 wallets
-        opts = opts.filter(x => x[0] == 'bch');
-      }
-
-      if (key.compliantDerivation && includeTestnetWallets) {
-        const testnet = JSON.parse(JSON.stringify(opts));
-        for (const x of testnet) {
-          x[2] = 'testnet';
-        }
-        opts = opts.concat(testnet);
-      }
-      if (!key.compliantDerivation) {
-        //  leave only BTC, and no testnet
-        opts = opts.filter(x => x[0] == 'btc');
-      }
-
-      for (let i = 0; i < opts.length; i++) {
-        const opt = opts[i];
-        const optsObj = {
-          coin: opt[0],
-          chain: opt[1],
-          network: opt[2],
-          account: 0,
-          // If opt[3] == true then check for multisig address type.
-          // The values of m & n don't actually matter (other than n being >1 and m being <= n)
-          m: 1,
-          n: opt[3] ? 2 : 1,
-          use0forBCH: opt[4],
-          algo: opt[5],
-        };
-        generateCredentials(key, optsObj);
-      }
-    };
-
-    const addWalletInfo = (combined, foundWallets, cb) => {
-      async.each(
-        combined,
-        (item, cb2) => {
-          const credentials = item.credentials;
-          const wallet = item.status.wallet;
-          client.fromString(credentials);
-          client._processStatus(item.status);
-
-          if (!credentials.hasWalletInfo()) {
-            const me = (wallet.copayers || []).find(c => c.id === credentials.copayerId);
-            if (!me) return cb2(null, new Error('Copayer not in wallet'));
-
-            try {
-              credentials.addWalletInfo(
-                wallet.id,
-                wallet.name,
-                wallet.m,
-                wallet.n,
-                me.name,
-                {
-                  allowOverwrite: !!wallet.tssKeyId
-                }
-              );
-            } catch (e) {
-              if (e.message) {
-                log.info('Trying credentials...', e.message);
-              }
-              if (e.message && e.message.match(/Bad\snr/)) {
-                return cb2(null, new Errors.WALLET_DOES_NOT_EXIST());
-              }
-            }
-          }
-          if (wallet.status != 'complete') return cb2(null, item);
-
-          if (item.status.customData?.walletPrivKey) {
-            credentials.addWalletPrivateKey(item.status.customData.walletPrivKey);
-          }
-
-          if (credentials.walletPrivKey) {
-            if (!Verifier.checkCopayers(credentials, wallet.copayers)) {
-              return cb2(null, new Errors.SERVER_COMPROMISED());
-            }
-          } else {
-            // this should only happen in AIR-GAPPED flows
-            log.warn('Could not verify copayers key (missing wallet Private Key)');
-          }
-
-          credentials.addPublicKeyRing(
-            client._extractPublicKeyRing(wallet.copayers)
-          );
-          client.emit('walletCompleted', wallet);
-
-          foundWallets.push(item);
-          cb2();
-        },
-        err => {
-          cb(err);
-        }
-      );
-    };
-
-    const getClientsFromWallets = (err, res) => {
-      if (err) {
-        return callback(err);
-      }
-
-      // marry all found wallets and keyCredentialIndex entries for simplicity
-      const combined = keyCredentialIndex
-        .map((x, i) => {
-          if (res[i].success) {
-            x.status = res[i].status;
-            return x;
-          }
-        })
-        .filter(x => x);
-
-      const foundWallets = [];
-      addWalletInfo(combined, foundWallets, err => {
-        if (err) return callback(err);
-        checkForOtherAccounts(foundWallets);
-      });
-    };
-
-    const getNextBatch = (key, settings) => {
-      const accountKeyCredentialIndex = [];
-      const credBatch = [];
-      // add potential wallet account credentials
-      for (let i = 0; i < 5; i++) {
-        settings.account++;
-        const clonedSettings = JSON.parse(JSON.stringify(settings));
-        const c = key.createCredentials(null, {
-          coin: clonedSettings.coin, // base currency used for fees. Helpful for UI
-          chain: clonedSettings.chain || clonedSettings.coin,
-          network: clonedSettings.network,
-          account: clonedSettings.account,
-          m: clonedSettings.m,
-          n: clonedSettings.n,
-          use0forBCH: use0forBCH // only used for server assisted import
-        });
-
-        accountKeyCredentialIndex.push({
-          credentials: c,
-          key,
-          opts: clonedSettings
-        });
-        credBatch.push(c);
-      }
-      return { credentials: credBatch, accountKeyCredentialIndex };
-    };
-
-    const checkForOtherAccounts = foundWallets => {
-      const addtFoundWallets = [];
-      async.each(
-        foundWallets,
-        (wallet, next2) => {
-          k = wallet.key;
-          let mostRecentResults = [{ success: true }];
-          async.whilst(
-            () => mostRecentResults.every(x => x.success),
-            next => {
-              const { credentials, accountKeyCredentialIndex } = getNextBatch(
-                k,
-                wallet.opts
-              );
-              client.bulkClient.getStatusAll(
-                credentials,
-                {
-                  silentFailure: true,
-                  twoStep: true,
-                  includeExtendedInfo: true,
-                  ignoreIncomplete: true
-                },
-                (err, response) => {
-                  mostRecentResults = response;
-                  const combined = accountKeyCredentialIndex
-                    .map((x, i) => {
-                      if (response[i].success) {
-                        x.status = response[i].status;
-                        return x;
-                      }
-                    })
-                    .filter(x => x);
-                  addWalletInfo(combined, addtFoundWallets, next);
-                }
-              );
-            },
-            err => {
-              next2(err);
-            }
-          );
-        },
-        err => {
-          if (err) return callback(err);
-          const allWallets = foundWallets.concat(addtFoundWallets);
-          // generate clients
-          async.each(
-            allWallets,
-            async (wallet, next) => {
-              if (
-                wallet.opts.coin == 'btc' &&
-                (wallet.status.wallet.addressType == 'P2WPKH' ||
-                  wallet.status.wallet.addressType == 'P2WSH')
-              ) {
-                client.credentials.addressType =
-                  wallet.status.wallet.n == 1
-                    ? Constants.SCRIPT_TYPES.P2WPKH
-                    : Constants.SCRIPT_TYPES.P2WSH;
-              }
-              if (wallet.opts.coin === 'btc' && wallet.status.wallet.addressType === 'P2TR') {
-                client.credentials.addressType = Constants.SCRIPT_TYPES.P2TR;
-              }
-              // add client to list
-              const newClient = client.toClone();
-              // newClient.credentials = settings.credentials;
-              newClient.fromString(wallet.credentials);
-              clients.push(newClient);
-
-              async function handleChainTokensAndMultisig(chain, tokenAddresses, multisigInfo, tokenOpts, tokenUrlPath) {
-                // Handle importing of tokens
-                if (tokenAddresses?.length) {
-                  async function getNetworkTokensData() {
-                    return new Promise((resolve, reject) => {
-                      newClient.request.get(`/v1/service/oneInch/getTokens/${tokenUrlPath}`, (err, data) => {
-                        if (err) return reject(err);
-                        return resolve(data);
-                      });
-                    });
-                  }
-
-                  let customTokensData;
-                  try {
-                    customTokensData = await getNetworkTokensData();
-                  } catch (error) {
-                    log.warn(`getNetworkTokensData err for ${chain}`, error);
-                    customTokensData = null;
-                  }
-
-                  for (const t of tokenAddresses) {
-                    const token = tokenOpts[t] || (customTokensData && customTokensData[t]);
-                    if (!token) {
-                      log.warn(`Token ${t} unknown on ${chain}`);
-                      continue;
-                    }
-                    log.info(`Importing token: ${token.name} on ${chain}`);
-                    const tokenCredentials = newClient.credentials.getTokenCredentials(token, chain);
-                    const tokenClient = newClient.toClone();
-                    tokenClient.credentials = tokenCredentials;
-                    clients.push(tokenClient);
-                  }
-                }
-
-                // Handle importing of multisig wallets
-                for (const info of (multisigInfo || [])) {
-                  log.info(`Importing multisig wallet on ${chain}. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`);
-                  const multisigCredentials = newClient.credentials.getMultisigEthCredentials({
-                    walletName: info.walletName,
-                    multisigContractAddress: info.multisigContractAddress,
-                    n: info.n,
-                    m: info.m
-                  });
-                  const multisigClient = newClient.toClone();
-                  multisigClient.credentials = multisigCredentials;
-                  clients.push(multisigClient);
-
-                  const multisigTokenAddresses = info.tokenAddresses || [];
-                  for (const t of multisigTokenAddresses) {
-                    const token = tokenOpts[t];
-                    if (!token) {
-                      log.warn(`Token ${t} unknown in multisig on ${chain}`);
-                      continue;
-                    }
-                    log.info(`Importing multisig token: ${token.name} on ${chain}`);
-                    const tokenCredentials = multisigClient.credentials.getTokenCredentials(token, chain);
-                    const tokenClient = multisigClient.toClone();
-                    tokenClient.credentials = tokenCredentials;
-                    clients.push(tokenClient);
-                  }
-                }
-              }
-
-              const chainConfigurations = [
-                { chain: 'eth', tokenAddresses: wallet.status.preferences.tokenAddresses, multisigInfo: wallet.status.preferences.multisigEthInfo, tokenOpts: Constants.ETH_TOKEN_OPTS, tokenUrlPath: 'eth' },
-                { chain: 'matic', tokenAddresses: wallet.status.preferences.maticTokenAddresses, multisigInfo: wallet.status.preferences.multisigMaticInfo, tokenOpts: Constants.MATIC_TOKEN_OPTS, tokenUrlPath: 'matic' },
-                { chain: 'arb', tokenAddresses: wallet.status.preferences.arbTokenAddresses, multisigInfo: wallet.status.preferences.multisigArbInfo, tokenOpts: Constants.ARB_TOKEN_OPTS, tokenUrlPath: 'arb' },
-                { chain: 'op', tokenAddresses: wallet.status.preferences.opTokenAddresses, multisigInfo: wallet.status.preferences.multisigOpInfo, tokenOpts: Constants.OP_TOKEN_OPTS, tokenUrlPath: 'op' },
-                { chain: 'base', tokenAddresses: wallet.status.preferences.baseTokenAddresses, multisigInfo: wallet.status.preferences.multisigBaseInfo, tokenOpts: Constants.BASE_TOKEN_OPTS, tokenUrlPath: 'base' },
-                { chain: 'sol', tokenAddresses: wallet.status.preferences.solTokenAddresses, multisigInfo: wallet.status.preferences.multisigSolInfo, tokenOpts: Constants.SOL_TOKEN_OPTS, tokenUrlPath: 'sol' },
-              ];
-
-              for (const config of chainConfigurations) {
-                await handleChainTokensAndMultisig(config.chain, config.tokenAddresses, config.multisigInfo, config.tokenOpts, config.tokenUrlPath);
-              }
-              next();
-            },
-            err => {
-              if (err) return callback(err);
-              return callback(null, k, clients);
-            }
-          );
-        }
-      );
-    };
-
-    const id = Uuid.v4();
-    for (const set of sets) {
-      try {
-        if (words) {
-          if (passphrase) {
-            set.passphrase = passphrase;
-          }
-
-          k = new Key({ id, seedData: words, seedType: 'mnemonic', ...set });
-        } else {
-          k = new Key({
-            id,
-            seedData: xPrivKey,
-            seedType: 'extendedPrivateKey',
-            ...set
-          });
-        }
-      } catch (e) {
-        log.info('Backup error:', e);
-        return callback(new Errors.INVALID_BACKUP());
-      }
-      checkKey(k);
-    }
-
-    // send batched calls to server
-    client.bulkClient.getStatusAll(
-      credentials,
-      {
-        silentFailure: true,
-        twoStep: true,
-        includeExtendedInfo: true,
-        ignoreIncomplete: true
-      },
-      getClientsFromWallets
-    );
-  }
-
-  /**
    * Derives keys from words/xPrivKey and checks for existing wallets against BWS.
-   * If wallets exist, generates credentials and returns a single `key` and an array of `clients` as found wallets.
+   * If wallets exist, generates credentials and returns a single `key` and an array of found wallets as `clients`
    */
-  static async serverAssistedImportV2(
+  static async serverAssistedImport(
     opts: {
       /** Mnemonic words */
       words?: string;
@@ -3833,43 +3377,17 @@ export class API extends EventEmitter {
       passphrase?: string;
       /** Include testnet wallets */
       includeTestnetWallets?: boolean;
-      /** Search legacy wallets */
+      /** Search legacy wallets (pre-fork BCH & old multisig wallets) */
       includeLegacyWallets?: boolean;
     },
     /** BWS connection options (see ClientAPI constructor) */
     clientOpts: API | any,
-    /**
-     * Event emitter to consume status updates, errors, and the end result
-     * Events:
-     *  - `keyConfig.count` => int - total number of key configurations to be checked (not all configurations will necessarily be processed, as the process may exit early if wallets are found)
-     *  - `keyConfig.start` => int - index of the current key configuration being processed
-     *  - `keyConfig.keyCreated` => void - status event saying a key was successfully created from the provided backup data
-     *  - `chainPermutations.count` => int - total number of permutaions of [chain/coin, network, and derivation strategy] to be checked for each key configuration
-     *  - `chainPermutations.getKey` => int - index of the current permutation being processed, and the key is created along the permuation to be sent to BWS for existence check
-     *  - `findingCopayers` => int - number of copayers being sent to BWS to check for existence. Note, this is called inside a loop and may be called more than once. The loop goes as long as there are copayers to check for
-     *  - `foundCopayers` => int - number of copayers found in BWS. Note, this is called inside a loop and may be called more than once. Each event is the number of copayers found for that loop iteration, not the total sum of copayers found.
-     *  - `foundCopayers.count` => int - total number of copayers in BWS. This is the sum of all `foundCopayers` events and is emitted when the process of checking copayers against BWS is complete
-     *  - `keyConfig.noCopayersFound` => void - emitted when no copayers are found for a given key configuration, and the process is moving on to the next key configuration (if any)
-     *  - `creatingCredentials` => void - status event saying client credentials are being created for a found copayers
-     *  - `gettingStatuses` => void - status event saying wallet statuses are being fetched from BWS for the found copayers
-     *  - `gatheringWalletsInfos` => int - number of wallets being processed to gather wallet info
-     *  - `walletInfo.gatheringTokens` => { chain: string, network: string } - status event saying token info is being gathered for a wallet of a chain:network
-     *  - `walletInfo.gatheringTokens.error` => { chain: string, network: string, error: Error } - emitted with error info if gathering token info fails for a wallet of a chain:network
-     *  - `walletInfo.importingToken` => { chain: string, network: string, tokenName: string, tokenAddress: string } - token wallet is being imported for a wallet of a chain:network
-     *  - `walletInfo.gatheringMultisig` => { chain: string, network: string } - status event saying multisig info is being gathered for a wallet of a chain:network
-     *  - `walletInfo.multisig.creatingCredentials` => { chain: string, network: string, walletName: string, multisigContractAddress: string, m: int, n: int } - status event saying multisig wallet credentials are being created for a wallet of a chain:network
-     *  - `walletInfo.multisig.importingToken` => { chain: string, network: string, walletName: string, multisigContractAddress: string, tokenName: string, tokenAddress: string } - token wallet is being imported for a multisig wallet of a chain:network
-     *  - `error` => Error - emitted with any terminating error that throws during the process
-     *  - `done` => { key: Key, clients: API[] } - emitted with the final result object containing the key and clients when the process is complete
-     */
+    /** Event emitter to consume status updates, errors, and the end result */
     events?: ServerAssistedImportEvents
   ) {
     $.checkArgument(!events || events instanceof EventEmitter, 'Invalid argument: events must be an EventEmitter instance');
     try {
       const { words, xPrivKey, passphrase, includeTestnetWallets, includeLegacyWallets } = opts || {};
-      events.on('findingCopayers', (num) => {
-        log.info(`Checking existence of ${num} copayers in BWS...`);
-      });
       $.checkArgument(words || xPrivKey, 'Missing argument: words or xPrivKey at <serverAssistedImport()>');
       const client = clientOpts instanceof API ? API.clone(clientOpts) : new API(clientOpts);
       const keyConfigs: Array<{
@@ -3891,26 +3409,26 @@ export class API extends EventEmitter {
       if (includeLegacyWallets) {
         const legacyConfigs = [
           {
-            // old bch wallets: /[44,48]/[0,0]'/
+            // old BCH wallets: m/48'/0'/
             nonCompliantDerivation: false,
             useLegacyCoinType: true,
             useLegacyPurpose: false
           },
           {
-            // old BTC/BCH multisig wallets: /[44]/[0,145]'/
+            // old BTC/BCH multisig wallets: m/44'/145'/
             nonCompliantDerivation: false,
             useLegacyCoinType: false,
             useLegacyPurpose: true
           },
           {
-            // old multisig BCH wallets: /[44]/[0]'/
+            // old multisig BCH wallets: m/44'/0'/
             nonCompliantDerivation: false,
             useLegacyCoinType: true,
             useLegacyPurpose: true
           },
           {
-            // old BTC non-comp wallets: /44'/[0]'/
-            nonCompliantDerivation: true,
+            // old BTC non-comp wallets: m/44'/0'/
+            nonCompliantDerivation: true, // Non-padded private keys
             useLegacyCoinType: false,
             useLegacyPurpose: true
           }
@@ -3958,16 +3476,16 @@ export class API extends EventEmitter {
       type KeyData = { 
         copayerId: string;
         key: Key;
-        perms: Array<{ coin: string; chain: string; network: string; multisig?: boolean; preForkBchCheck?: boolean }>;
+        perm: { coin: string; chain: string; network: string; multisig?: boolean; preForkBchCheck?: boolean };
         path: string;
         account: number;
         signature: string;
         requestPrivKey: any;
       };
       
-      let key: Key;
       const clients: API[] = [];
-      
+      const keysToCheck: { [copayerId: string]: KeyData[] } = {};
+
       const id = Uuid.v4();
       for (const i in keyConfigs) {
         events?.emit('keyConfig.start', Number(i));
@@ -3997,7 +3515,7 @@ export class API extends EventEmitter {
         let chainPermutations: { coin: string; chain: string; network: string; multisig?: boolean; preForkBchCheck?: boolean }[] = [
           { coin: 'btc', chain: 'btc', network: 'livenet' },
           { coin: 'bch', chain: 'bch', network: 'livenet' },
-          { coin: 'bch', chain: 'bch', network: 'livenet', preForkBchCheck: true }, // check for prefork bch wallet
+          { coin: 'bch', chain: 'bch', network: 'livenet', preForkBchCheck: true }, // check for pre-fork BCH wallet
           { coin: 'eth', chain: 'eth', network: 'livenet' },
           { coin: 'matic', chain: 'matic', network: 'livenet' },
           { coin: 'eth', chain: 'arb', network: 'livenet' },
@@ -4039,246 +3557,254 @@ export class API extends EventEmitter {
 
         // deterministic request key
         const requestPrivKey = k.derive(passphrase, Constants.PATHS.REQUEST_KEY).privateKey;
-        const keysToCheck: { [copayerId: string]: KeyData } = {};
         
         for (const j in chainPermutations) {
           events?.emit('chainPermutations.getKey', Number(j));
           const perm = chainPermutations[j];
           const keyData = getKeyToCheck({ key: k, requestPrivKey, perm, account: 0 });
-          // assert(!allCopayerIds.has(keyData.copayerId) || !!keysToCheck[keyData.copayerId].perm.multisig == !!keyData.perm.multisig, 'Duplicate copayerId generated, this should not happen');
           if (!keysToCheck[keyData.copayerId]) {
-            keysToCheck[keyData.copayerId] = { ...keyData, perms: [keyData.perm] };
-          } else {
-            keysToCheck[keyData.copayerId].perms.push(keyData.perm);
+            keysToCheck[keyData.copayerId] = [];
           }
+          keysToCheck[keyData.copayerId].push(keyData);
           allCopayerIds.add(keyData.copayerId);
         }
-
-        const existingKeyDatas: { [copayerId: string]: KeyData & { credentials?: Credentials[] } } = {};
-        let existingCopayerIds: Set<string>;
-        do {
-          events?.emit('findingCopayers', Object.keys(keysToCheck).length);
-          const { body } = await client.request.post('/v1/wallets/exist', {
-            copayers: Object.values(keysToCheck).map(x => ({ copayerId: x.copayerId, signature: x.signature }))
-          });
-
-          existingCopayerIds = new Set(body);
-          const checkedCopayerIds = Object.keys(keysToCheck);
-          for (const copayerId of checkedCopayerIds) {
-            if (existingCopayerIds.has(copayerId)) {
-              const foundKeyData = keysToCheck[copayerId];
-              existingKeyDatas[copayerId] = foundKeyData;
-              for (const perm of foundKeyData.perms) {
-                const nextKeyData = getKeyToCheck({ ...foundKeyData, account: foundKeyData.account + 1, perm });
-                $.checkState(!allCopayerIds.has(nextKeyData.copayerId), 'Duplicate copayerId generated, this should not happen');
-                if (!keysToCheck[nextKeyData.copayerId]) {
-                  keysToCheck[nextKeyData.copayerId] = { ...nextKeyData, perms: [nextKeyData.perm] };
-                } else {
-                  keysToCheck[nextKeyData.copayerId].perms.push(nextKeyData.perm);
-                }
-              }
-            }
-            delete keysToCheck[copayerId];
-          }
-          events?.emit('foundCopayers', existingCopayerIds.size);
-        } while (existingCopayerIds.size > 0);
-
-        events?.emit('foundCopayers.count', Object.keys(existingKeyDatas).length);
-
-
-        // if no copayers were found for this keyConfig, continue to the next one
-        if (Object.keys(existingKeyDatas).length === 0) {
-          events?.emit('keyConfig.noCopayersFound');
-          continue;
-        }
-
-        // Build clients for found copayers
-        events?.emit('creatingCredentials');
-        key = Object.values(existingKeyDatas)[0]?.key; // all found keys should be the same, so just take the first one to generate clients
-        const credentials: Array<Credentials> = [];
-        for (const copayerId in existingKeyDatas) {
-          const keyData = existingKeyDatas[copayerId];
-          for (const perm of keyData.perms) {
-            const creds = keyData.key.createCredentials(null, {
-              coin: perm.coin,
-              chain: perm.chain,
-              network: perm.network,
-              account: keyData.account,
-              m: 1,
-              n: perm.multisig ? 2 : 1,
-              use0forBCH: perm.preForkBchCheck, // only used for server assisted import
-            });
-            keyData.credentials = keyData.credentials || [];
-            keyData.credentials.push(creds);
-            credentials.push(creds);
-          }
-        }
-        events?.emit('gettingStatuses');
-        const walletsInfos = await client.bulkClient.getStatusAll(
-          credentials,
-          {
-            silentFailure: true,
-            twoStep: true,
-            includeExtendedInfo: true,
-            ignoreIncomplete: true
-          }
-        );
-
-        events?.emit('gatheringWalletsInfos', walletsInfos.length);
-        for (const walletInfo of walletsInfos) {
-          if (!walletInfo.success) {
-            continue;
-          }
-          const { status } = walletInfo;
-          let found = false;
-          for (const me of status.wallet.copayers) {
-            const keyData = existingKeyDatas[me.id];
-            if (keyData) {
-              found = true;
-              const credIndex = keyData.credentials.findIndex(c => c.copayerId === me.id && (c.n > 1) == (status.wallet.n > 1));
-              const credentials = keyData.credentials[credIndex];
-              const perm = keyData.perms[credIndex];
-              const { network } = perm;
-              const { wallet } = status;
-              const newClient = API.clone(client);
-              newClient.fromString(credentials);
-              newClient._processStatus(status);
-              if (!credentials.hasWalletInfo()) {
-                try {
-                  credentials.addWalletInfo(
-                    wallet.id,
-                    wallet.name,
-                    wallet.m,
-                    wallet.n,
-                    me.name,
-                    {
-                      allowOverwrite: !!wallet.tssKeyId
-                    }
-                  );
-                } catch (e) {
-                  if (e.message) {
-                    log.info('Trying credentials...', e.message);
-                  }
-                  if (e.message && e.message.match(/Bad\snr/)) {
-                    log.warn(new Errors.WALLET_DOES_NOT_EXIST());
-                    break;
-                  }
-                }
-              }
-              if (wallet.status != 'complete') continue;
-
-              if (status.customData?.walletPrivKey) {
-                credentials.addWalletPrivateKey(status.customData.walletPrivKey);
-              }
-
-              if (credentials.walletPrivKey) {
-                if (!Verifier.checkCopayers(credentials, wallet.copayers)) {
-                  log.warn(new Errors.SERVER_COMPROMISED());
-                  continue;
-                }
-              } else {
-                // this should only happen in AIR-GAPPED flows
-                log.warn('Could not verify copayers key (missing wallet Private Key)');
-              }
-
-              credentials.addPublicKeyRing(
-                newClient._extractPublicKeyRing(wallet.copayers)
-              );
-              client.emit('walletCompleted', wallet);
-
-              if (perm.coin == 'btc') {
-                if (['P2WPKH', 'P2WSH'].includes(wallet.addressType)) {
-                  newClient.credentials.addressType = wallet.n == 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
-                } else if (wallet.addressType === 'P2TR') {
-                  newClient.credentials.addressType = Constants.SCRIPT_TYPES.P2TR;
-                }
-              }
-
-              clients.push(newClient);
-
-              // Handle importing of tokens and multisig wallets for EVM chains
-              {
-                const chainConfigurations = [
-                  { chain: 'eth', tokenAddresses: status.preferences.tokenAddresses, multisigInfo: status.preferences.multisigEthInfo, tokenOpts: Constants.ETH_TOKEN_OPTS },
-                  { chain: 'matic', tokenAddresses: status.preferences.maticTokenAddresses, multisigInfo: status.preferences.multisigMaticInfo, tokenOpts: Constants.MATIC_TOKEN_OPTS },
-                  { chain: 'arb', tokenAddresses: status.preferences.arbTokenAddresses, multisigInfo: status.preferences.multisigArbInfo, tokenOpts: Constants.ARB_TOKEN_OPTS },
-                  { chain: 'op', tokenAddresses: status.preferences.opTokenAddresses, multisigInfo: status.preferences.multisigOpInfo, tokenOpts: Constants.OP_TOKEN_OPTS },
-                  { chain: 'base', tokenAddresses: status.preferences.baseTokenAddresses, multisigInfo: status.preferences.multisigBaseInfo, tokenOpts: Constants.BASE_TOKEN_OPTS },
-                  { chain: 'sol', tokenAddresses: status.preferences.solTokenAddresses, multisigInfo: status.preferences.multisigSolInfo, tokenOpts: Constants.SOL_TOKEN_OPTS },
-                ];
-
-                for (const config of chainConfigurations) {
-                  const { chain, tokenAddresses, multisigInfo, tokenOpts } = config;
-                  if (chain !== perm.chain) continue;
-                  events?.emit('walletInfo.gatheringTokens', { chain, network });
-                  // Handle importing of tokens
-                  if (tokenAddresses?.length) {
-                    const { body: customTokensData } = await newClient.request.get(`/v1/service/oneInch/getTokens/${chain}`).catch(err => {
-                      log.warn(`getNetworkTokensData err for ${chain}:${network}`, err);
-                      events?.emit('walletInfo.gatheringTokens.error', { chain, network, error: err });
-                      return { body: null };
-                    });
-
-                    for (const t of tokenAddresses) {
-                      const token = tokenOpts[t] || (customTokensData && customTokensData[t]);
-                      if (!token) {
-                        log.warn(`Token ${t} unknown on ${chain}`);
-                        continue;
-                      }
-                      log.info(`Importing token: ${token.name} on ${chain}`);
-                      events?.emit('walletInfo.importingToken', { chain, network, tokenName: token.name, tokenAddress: t });
-                      const tokenCredentials = newClient.credentials.getTokenCredentials(token, chain);
-                      const tokenClient = newClient.toClone();
-                      tokenClient.credentials = tokenCredentials;
-                      clients.push(tokenClient);
-                    }
-                  }
-
-                  events?.emit('walletInfo.gatheringMultisig', { chain, network });
-
-                  // Handle importing of multisig wallets (I don't believe this contract-based multisig feature was ever used, so this might be dead code)
-                  for (const info of (multisigInfo || [])) {
-                    log.info(`Importing multisig wallet on ${chain}. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`);
-                    events?.emit('walletInfo.multisig.creatingCredentials', { ...info, chain, network });
-                    const multisigCredentials = newClient.credentials.getMultisigEthCredentials({
-                      walletName: info.walletName,
-                      multisigContractAddress: info.multisigContractAddress,
-                      n: info.n,
-                      m: info.m
-                    });
-                    const multisigClient = newClient.toClone();
-                    multisigClient.credentials = multisigCredentials;
-                    clients.push(multisigClient);
-
-                    const multisigTokenAddresses = info.tokenAddresses || [];
-                    for (const t of multisigTokenAddresses) {
-                      const token = tokenOpts[t];
-                      if (!token) {
-                        log.warn(`Token ${t} unknown in multisig on ${chain}`);
-                        continue;
-                      }
-                      log.info(`Importing multisig token: ${token.name} on ${chain}`);
-                      events?.emit('walletInfo.multisig.importingToken', { ...info, chain, network, tokenName: token.name, tokenAddress: t });
-                      const tokenCredentials = multisigClient.credentials.getTokenCredentials(token, chain);
-                      const tokenClient = multisigClient.toClone();
-                      tokenClient.credentials = tokenCredentials;
-                      clients.push(tokenClient);
-                    }
-                  }
-                }
-              }
-            }
-          }
-          if (!found) {
-            log.warn(new Error('Copayer not in wallet'));
-          }
-        }
-        // If we've gotten this far, return the results which short-circuits the rest of the keyConfigs.
-        events?.emit('done', { key, clients });
-        return { key, clients };
       }
 
-      throw new Errors.WALLET_DOES_NOT_EXIST();
+      const existingKeyDatas: { [copayerId: string]: Array<KeyData & { credentials?: Credentials }> } = {};
+      let existingCopayerIds: Set<string>;
+      do {
+        events?.emit('findingCopayers', Object.keys(keysToCheck).length);
+        const { body } = await client.request.post('/v1/wallets/exist', {
+          copayers: Object.values(keysToCheck).map(x => ({ copayerId: x[0].copayerId, signature: x[0].signature }))
+        });
+
+        existingCopayerIds = new Set(body);
+        const checkedCopayerIds = Object.keys(keysToCheck);
+        for (const copayerId of checkedCopayerIds) {
+          if (existingCopayerIds.has(copayerId)) {
+            const foundKeyData = keysToCheck[copayerId];
+            existingKeyDatas[copayerId] = foundKeyData;
+            for (const keyData of foundKeyData) {
+              const nextKeyData = getKeyToCheck({ ...keyData, account: keyData.account + 1 });
+              $.checkState(!allCopayerIds.has(nextKeyData.copayerId), 'Duplicate copayerId generated, this should not happen');
+              if (!keysToCheck[nextKeyData.copayerId]) {
+                keysToCheck[nextKeyData.copayerId] = [];
+              }
+              keysToCheck[nextKeyData.copayerId].push(nextKeyData);
+            }
+          }
+          delete keysToCheck[copayerId];
+        }
+        events?.emit('foundCopayers', existingCopayerIds.size);
+      } while (existingCopayerIds.size > 0);
+
+      events?.emit('foundCopayers.count', Object.keys(existingKeyDatas).length);
+
+      if (Object.keys(existingKeyDatas).length === 0) {
+        throw new Errors.WALLET_DOES_NOT_EXIST();
+      }
+
+      // Build clients for found copayers
+      events?.emit('creatingCredentials');
+      const credentialsToSubmit: { [copayerId: string]: Credentials } = {};
+      // const credentialsTracker = new Set<string>();
+      for (const copayerId in existingKeyDatas) {
+        const keyDatas = existingKeyDatas[copayerId];
+        for (const keyData of keyDatas) {
+          if (credentialsToSubmit[keyData.copayerId]) {
+            // Key derivation is computationally expensive in createCredentials, so re-use keys here
+            keyData.credentials = Credentials.fromDerivedKey({
+              ...credentialsToSubmit[keyData.copayerId],
+              n: keyData.perm.multisig ? 2 : 1,
+              addressType: undefined // different n can lead to different address type
+            });
+          } else {
+            const creds = keyData.key.createCredentials(null, {
+              coin: keyData.perm.coin,
+              chain: keyData.perm.chain,
+              network: keyData.perm.network,
+              account: keyData.account,
+              m: 1,
+              n: keyData.perm.multisig ? 2 : 1,
+              use0forBCH: keyData.perm.preForkBchCheck, // only used for server assisted import
+            });
+            keyData.credentials = creds;
+            // No need to submit duplicate copayerId credentials, even though the credentials may differ slightly based on multisig, etc.
+            // The relevant info about which permutation to use for the copayer will come back from the status call
+            credentialsToSubmit[keyData.copayerId] = creds;
+          }
+        }
+      }
+      events?.emit('gettingStatuses');
+      const walletsInfos = await client.bulkClient.getStatusAll(
+        Object.values(credentialsToSubmit),
+        {
+          silentFailure: true,
+          twoStep: true,
+          includeExtendedInfo: true,
+          ignoreIncomplete: true
+        }
+      );
+
+      events?.emit('gatheringWalletsInfos', walletsInfos.length);
+      let key: Key;
+      for (const walletInfo of walletsInfos) {
+        if (!walletInfo.success) {
+          continue;
+        }
+        const { status } = walletInfo;
+        let found = false;
+        for (const copayer of status.wallet.copayers) {
+          const keyDatas = existingKeyDatas[copayer.id];
+          const myKeyData = keyDatas?.find(({ credentials: c }) => c.copayerId === copayer.id && (c.n > 1) == (status.wallet.n > 1));
+          if (!myKeyData) {
+            continue;
+          }
+          found = true;
+          key = myKeyData.key;
+          const myCredentials = myKeyData.credentials;
+          const perm = myKeyData.perm;
+          const { network } = perm;
+          const { wallet } = status;
+          const newClient = API.clone(client);
+          newClient.fromObj(myCredentials);
+          newClient._processStatus(status);
+          const credentials = newClient.credentials;
+          if (!credentials.hasWalletInfo()) {
+            try {
+              credentials.addWalletInfo(
+                wallet.id,
+                wallet.name,
+                wallet.m,
+                wallet.n,
+                copayer.name,
+                {
+                  allowOverwrite: !!wallet.tssKeyId
+                }
+              );
+            } catch (e) {
+              if (e.message) {
+                log.info('Trying credentials...', e.message);
+              }
+              if (e.message && e.message.match(/Bad\snr/)) {
+                log.warn(new Errors.WALLET_DOES_NOT_EXIST());
+                break;
+              }
+            }
+          }
+          if (wallet.status != 'complete') continue;
+
+          if (status.customData?.walletPrivKey) {
+            credentials.addWalletPrivateKey(status.customData.walletPrivKey);
+          }
+
+          if (credentials.walletPrivKey) {
+            if (!Verifier.checkCopayers(credentials, wallet.copayers)) {
+              log.warn(new Errors.SERVER_COMPROMISED());
+              continue;
+            }
+          } else {
+            // this should only happen in AIR-GAPPED flows
+            log.warn('Could not verify copayers key (missing wallet Private Key)');
+          }
+
+          credentials.addPublicKeyRing(
+            newClient._extractPublicKeyRing(wallet.copayers)
+          );
+          client.emit('walletCompleted', wallet);
+
+          if (perm.coin == 'btc') {
+            if (['P2WPKH', 'P2WSH'].includes(wallet.addressType)) {
+              newClient.credentials.addressType = wallet.n == 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
+            } else if (wallet.addressType === 'P2TR') {
+              newClient.credentials.addressType = Constants.SCRIPT_TYPES.P2TR;
+            }
+          }
+
+          clients.push(newClient);
+
+          // Handle importing of tokens and multisig wallets for EVM chains
+          {
+            const chainConfigurations = [
+              { chain: 'eth', tokenAddresses: status.preferences.tokenAddresses, multisigInfo: status.preferences.multisigEthInfo, tokenOpts: Constants.ETH_TOKEN_OPTS },
+              { chain: 'matic', tokenAddresses: status.preferences.maticTokenAddresses, multisigInfo: status.preferences.multisigMaticInfo, tokenOpts: Constants.MATIC_TOKEN_OPTS },
+              { chain: 'arb', tokenAddresses: status.preferences.arbTokenAddresses, multisigInfo: status.preferences.multisigArbInfo, tokenOpts: Constants.ARB_TOKEN_OPTS },
+              { chain: 'op', tokenAddresses: status.preferences.opTokenAddresses, multisigInfo: status.preferences.multisigOpInfo, tokenOpts: Constants.OP_TOKEN_OPTS },
+              { chain: 'base', tokenAddresses: status.preferences.baseTokenAddresses, multisigInfo: status.preferences.multisigBaseInfo, tokenOpts: Constants.BASE_TOKEN_OPTS },
+              { chain: 'sol', tokenAddresses: status.preferences.solTokenAddresses, multisigInfo: status.preferences.multisigSolInfo, tokenOpts: Constants.SOL_TOKEN_OPTS },
+            ];
+
+            for (const config of chainConfigurations) {
+              const { chain, tokenAddresses, multisigInfo, tokenOpts } = config;
+              if (chain !== perm.chain) continue;
+              events?.emit('walletInfo.gatheringTokens', { chain, network });
+              // Handle importing of tokens
+              if (tokenAddresses?.length) {
+                const { body: customTokensData } = await newClient.request.get(`/v1/service/oneInch/getTokens/${chain}`).catch(err => {
+                  log.warn(`getNetworkTokensData err for ${chain}:${network}`, err);
+                  events?.emit('walletInfo.gatheringTokens.error', { chain, network, error: err });
+                  return { body: null };
+                });
+
+                for (const t of tokenAddresses) {
+                  const token = tokenOpts[t] || (customTokensData && customTokensData[t]);
+                  if (!token) {
+                    log.warn(`Token ${t} unknown on ${chain}`);
+                    continue;
+                  }
+                  log.info(`Importing token: ${token.name} on ${chain}`);
+                  events?.emit('walletInfo.importingToken', { chain, network, tokenName: token.name, tokenAddress: t });
+                  const tokenCredentials = newClient.credentials.getTokenCredentials(token, chain);
+                  const tokenClient = newClient.toClone();
+                  tokenClient.credentials = tokenCredentials;
+                  clients.push(tokenClient);
+                }
+              }
+
+              events?.emit('walletInfo.gatheringMultisig', { chain, network });
+
+              // Handle importing of multisig wallets (I don't believe this contract-based multisig feature was ever used, so this might be dead code)
+              for (const info of (multisigInfo || [])) {
+                log.info(`Importing multisig wallet on ${chain}. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`);
+                events?.emit('walletInfo.multisig.creatingCredentials', { ...info, chain, network });
+                const multisigCredentials = newClient.credentials.getMultisigEthCredentials({
+                  walletName: info.walletName,
+                  multisigContractAddress: info.multisigContractAddress,
+                  n: info.n,
+                  m: info.m
+                });
+                const multisigClient = newClient.toClone();
+                multisigClient.credentials = multisigCredentials;
+                clients.push(multisigClient);
+
+                const multisigTokenAddresses = info.tokenAddresses || [];
+                for (const t of multisigTokenAddresses) {
+                  const token = tokenOpts[t];
+                  if (!token) {
+                    log.warn(`Token ${t} unknown in multisig on ${chain}`);
+                    continue;
+                  }
+                  log.info(`Importing multisig token: ${token.name} on ${chain}`);
+                  events?.emit('walletInfo.multisig.importingToken', { ...info, chain, network, tokenName: token.name, tokenAddress: t });
+                  const tokenCredentials = multisigClient.credentials.getTokenCredentials(token, chain);
+                  const tokenClient = multisigClient.toClone();
+                  tokenClient.credentials = tokenCredentials;
+                  clients.push(tokenClient);
+                }
+              }
+            }
+          }
+        }
+        if (!found) {
+          log.warn(new Error('Copayer not in wallet'));
+        }
+      }
+
+      if (!clients.length) {
+        throw new Errors.WALLET_DOES_NOT_EXIST();
+      }
+      events?.emit('done', { key, clients });
+      return { key, clients };
     } catch (err) {
       if (events) {
         events.emit('error', err);

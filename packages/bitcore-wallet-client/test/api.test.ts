@@ -6484,22 +6484,26 @@ describe('client API', function() {
     describe('#import FromMnemonic', () => {
       it('should handle importing an invalid mnemonic', function(done) {
         const mnemonicWords = 'this is an invalid mnemonic';
-        Client.serverAssistedImport({ words: mnemonicWords }, {}, err => {
-          should.exist(err);
-          err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
-          done();
-        });
+        Client.serverAssistedImport({ words: mnemonicWords }, {})
+          .then(() => { throw new Error('Should have thrown'); })
+          .catch(err => {
+            should.exist(err);
+            err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+            done();
+          });
       });
     });
 
     describe('#import FromExtendedPrivateKey', () => {
       it('should handle importing an invalid extended private key', function(done) {
         const xPrivKey = 'this is an invalid key';
-        Client.serverAssistedImport({ xPrivKey }, {}, err => {
-          should.exist(err);
-          err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
-          done();
-        });
+        Client.serverAssistedImport({ xPrivKey }, {})
+          .then(() => { throw new Error('Should have thrown'); })
+          .catch(err => {
+            should.exist(err);
+            err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+            done();
+          });
       });
     });
 
@@ -6530,28 +6534,26 @@ describe('client API', function() {
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true, includeLegacyWallets: true },
               helpers.newClient(app),
-              (err, k, c) => {
+            ).then(({ key: k, clients: c }) => {
+              c.length.should.equal(1);
+              const recoveryClient = c[0];
+              recoveryClient.openWallet(null, err => {
                 should.not.exist(err);
-                c.length.should.equal(1);
-                const recoveryClient = c[0];
-                recoveryClient.openWallet(null, err => {
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.getMainAddresses({}, (err, list) => {
                   should.not.exist(err);
-                  recoveryClient.credentials.walletName.should.equal(walletName);
-                  recoveryClient.credentials.copayerName.should.equal(copayerName);
-                  recoveryClient.getMainAddresses({}, (err, list) => {
-                    should.not.exist(err);
-                    should.exist(list);
-                    list[0].address.should.equal(addr.address);
-                    done();
-                  });
+                  should.exist(list);
+                  list[0].address.should.equal(addr.address);
+                  done();
                 });
-              }
-            );
+              });
+            }).catch(done);
           });
         });
       });
 
-      it('should be able to gain access to multiple 1-1 wallets from mnemonic using V2 import function', async function() {
+      it('should be able to gain access to multiple 1-1 wallets from mnemonic', async function() {
         let walletCnt = 0;
         await helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'btc', chain: 'btc' });
         walletCnt++;
@@ -6642,7 +6644,7 @@ describe('client API', function() {
           should.exist(addr);
           addrs.add(addr.address);
         }
-        const retVal = await Client.serverAssistedImportV2({ words, includeTestnetWallets: true, includeLegacyWallets: true }, helpers.newClient(app));
+        const retVal = await Client.serverAssistedImport({ words, includeTestnetWallets: true, includeLegacyWallets: true }, helpers.newClient(app));
         const { key: k, clients: c } = retVal;
         c.length.should.equal(walletCnt);
         const recoveryClient = c[0];
@@ -6676,29 +6678,28 @@ describe('client API', function() {
               Client.serverAssistedImport(
                 { words, includeTestnetWallets: true },
                 helpers.newClient(app),
-                (err, k, c) => {
-                  // the eth wallet + 2 tokens.
-                  c.length.should.equal(3);
-                  const recoveryClient = c[0];
-                  recoveryClient.openWallet(null, err => {
+              ).then(({ key: k, clients: c }) => {
+                // the eth wallet + 2 tokens.
+                c.length.should.equal(3);
+                const recoveryClient = c[0];
+                recoveryClient.openWallet(null, err => {
+                  should.not.exist(err);
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
+                  recoveryClient.credentials.coin.should.equal('eth');
+                  recoveryClient.credentials.chain.should.equal('eth');
+                  const recoveryClient2 = c[2];
+                  recoveryClient2.openWallet(null, err => {
                     should.not.exist(err);
-                    recoveryClient.credentials.walletName.should.equal(walletName);
-                    recoveryClient.credentials.copayerName.should.equal(copayerName);
-                    recoveryClient.credentials.walletId.should.equal(walletId);
-                    recoveryClient.credentials.coin.should.equal('eth');
-                    recoveryClient.credentials.chain.should.equal('eth');
-                    const recoveryClient2 = c[2];
-                    recoveryClient2.openWallet(null, err => {
-                      should.not.exist(err);
-                      recoveryClient2.credentials.coin.should.equal('gusd');
-                      should.exist(recoveryClient2.credentials.chain);
-                      recoveryClient2.credentials.chain.should.equal('eth');
-                      recoveryClient2.credentials.walletId.should.equal(`${walletId}-${tokenAddresses[1]}`);
-                      done();
-                    });
+                    recoveryClient2.credentials.coin.should.equal('gusd');
+                    should.exist(recoveryClient2.credentials.chain);
+                    recoveryClient2.credentials.chain.should.equal('eth');
+                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${tokenAddresses[1]}`);
+                    done();
                   });
-                }
-              );
+                });
+              }).catch(done);
             }
           );
         });
@@ -6719,29 +6720,28 @@ describe('client API', function() {
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
               helpers.newClient(app),
-              (err, k, c) => {
-                // the eth wallet + 1 token.
-                c.length.should.equal(2);
-                const recoveryClient = c[0];
-                recoveryClient.openWallet(null, err => {
+            ).then(({ key: k, clients: c }) => {
+              // the eth wallet + 1 token.
+              c.length.should.equal(2);
+              const recoveryClient = c[0];
+              recoveryClient.openWallet(null, err => {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.credentials.walletId.should.equal(walletId);
+                recoveryClient.credentials.coin.should.equal('eth');
+                recoveryClient.credentials.chain.should.equal('eth');
+                const recoveryClient2 = c[1];
+                recoveryClient2.openWallet(null, err => {
                   should.not.exist(err);
-                  recoveryClient.credentials.walletName.should.equal(walletName);
-                  recoveryClient.credentials.copayerName.should.equal(copayerName);
-                  recoveryClient.credentials.walletId.should.equal(walletId);
-                  recoveryClient.credentials.coin.should.equal('eth');
-                  recoveryClient.credentials.chain.should.equal('eth');
-                  const recoveryClient2 = c[1];
-                  recoveryClient2.openWallet(null, err => {
-                    should.not.exist(err);
-                    recoveryClient2.credentials.coin.should.equal('usdc');
-                    should.exist(recoveryClient2.credentials.chain);
-                    recoveryClient2.credentials.chain.should.equal('eth');
-                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${tokenAddresses[0]}`);
-                    done();
-                  });
+                  recoveryClient2.credentials.coin.should.equal('usdc');
+                  should.exist(recoveryClient2.credentials.chain);
+                  recoveryClient2.credentials.chain.should.equal('eth');
+                  recoveryClient2.credentials.walletId.should.equal(`${walletId}-${tokenAddresses[0]}`);
+                  done();
                 });
-              }
-            );
+              });
+            }).catch(done);
           });
         });
       });
@@ -6761,20 +6761,20 @@ describe('client API', function() {
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
               helpers.newClient(app),
-              (err, k, c) => {
-                // the eth wallet + 1 unknown token addresses on preferences.
-                c.length.should.equal(1);
-                const recoveryClient = c[0];
-                recoveryClient.openWallet(null, err => {
-                  should.not.exist(err);
-                  recoveryClient.credentials.walletName.should.equal(walletName);
-                  recoveryClient.credentials.copayerName.should.equal(copayerName);
-                  recoveryClient.credentials.walletId.should.equal(walletId);
-                  recoveryClient.credentials.coin.should.equal('eth');
-                  recoveryClient.credentials.chain.should.equal('eth');
-                  done();
-                });
+            ).then(({ key: k, clients: c }) => {
+              // the eth wallet + 1 unknown token addresses on preferences.
+              c.length.should.equal(1);
+              const recoveryClient = c[0];
+              recoveryClient.openWallet(null, err => {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.credentials.walletId.should.equal(walletId);
+                recoveryClient.credentials.coin.should.equal('eth');
+                recoveryClient.credentials.chain.should.equal('eth');
+                done();
               });
+            }).catch(done);
           });
         });
       });
@@ -6798,29 +6798,28 @@ describe('client API', function() {
               Client.serverAssistedImport(
                 { words, includeTestnetWallets: true },
                 helpers.newClient(app),
-                (err, k, c) => {
-                  // the matic wallet + 2 tokens.
-                  c.length.should.equal(3);
-                  const recoveryClient = c[0];
-                  recoveryClient.openWallet(null, err => {
+              ).then(({ key: k, clients: c }) => {
+                // the matic wallet + 2 tokens.
+                c.length.should.equal(3);
+                const recoveryClient = c[0];
+                recoveryClient.openWallet(null, err => {
+                  should.not.exist(err);
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
+                  recoveryClient.credentials.coin.should.equal('matic');
+                  recoveryClient.credentials.chain.should.equal('matic');
+                  const recoveryClient2 = c[2];
+                  recoveryClient2.openWallet(null, err => {
                     should.not.exist(err);
-                    recoveryClient.credentials.walletName.should.equal(walletName);
-                    recoveryClient.credentials.copayerName.should.equal(copayerName);
-                    recoveryClient.credentials.walletId.should.equal(walletId);
-                    recoveryClient.credentials.coin.should.equal('matic');
-                    recoveryClient.credentials.chain.should.equal('matic');
-                    const recoveryClient2 = c[2];
-                    recoveryClient2.openWallet(null, err => {
-                      should.not.exist(err);
-                      recoveryClient2.credentials.coin.should.equal('dai');
-                      should.exist(recoveryClient2.credentials.chain);
-                      recoveryClient2.credentials.chain.should.equal('matic');
-                      recoveryClient2.credentials.walletId.should.equal(`${walletId}-${maticTokenAddresses[1]}`);
-                      done();
-                    });
+                    recoveryClient2.credentials.coin.should.equal('dai');
+                    should.exist(recoveryClient2.credentials.chain);
+                    recoveryClient2.credentials.chain.should.equal('matic');
+                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${maticTokenAddresses[1]}`);
+                    done();
                   });
-                }
-              );
+                });
+              }).catch(done);
             }
           );
         });
@@ -6841,29 +6840,28 @@ describe('client API', function() {
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
               helpers.newClient(app),
-              (err, k, c) => {
-                // the matic wallet + 1 token.
-                c.length.should.equal(2);
-                const recoveryClient = c[0];
-                recoveryClient.openWallet(null, err => {
+            ).then(({ key: k, clients: c }) => {
+              // the matic wallet + 1 token.
+              c.length.should.equal(2);
+              const recoveryClient = c[0];
+              recoveryClient.openWallet(null, err => {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.credentials.walletId.should.equal(walletId);
+                recoveryClient.credentials.coin.should.equal('matic');
+                recoveryClient.credentials.chain.should.equal('matic');
+                const recoveryClient2 = c[1];
+                recoveryClient2.openWallet(null, err => {
                   should.not.exist(err);
-                  recoveryClient.credentials.walletName.should.equal(walletName);
-                  recoveryClient.credentials.copayerName.should.equal(copayerName);
-                  recoveryClient.credentials.walletId.should.equal(walletId);
-                  recoveryClient.credentials.coin.should.equal('matic');
-                  recoveryClient.credentials.chain.should.equal('matic');
-                  const recoveryClient2 = c[1];
-                  recoveryClient2.openWallet(null, err => {
-                    should.not.exist(err);
-                    recoveryClient2.credentials.coin.should.equal('usdc.e');
-                    should.exist(recoveryClient2.credentials.chain);
-                    recoveryClient2.credentials.chain.should.equal('matic');
-                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${maticTokenAddresses[0]}`);
-                    done();
-                  });
+                  recoveryClient2.credentials.coin.should.equal('usdc.e');
+                  should.exist(recoveryClient2.credentials.chain);
+                  recoveryClient2.credentials.chain.should.equal('matic');
+                  recoveryClient2.credentials.walletId.should.equal(`${walletId}-${maticTokenAddresses[0]}`);
+                  done();
                 });
-              }
-            );
+              });
+            }).catch(done);
           });
         });
       });
@@ -6883,20 +6881,20 @@ describe('client API', function() {
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
               helpers.newClient(app),
-              (err, k, c) => {
-                // the matic wallet + 1 unknown token addresses on preferences.
-                c.length.should.equal(1);
-                const recoveryClient = c[0];
-                recoveryClient.openWallet(null, err => {
-                  should.not.exist(err);
-                  recoveryClient.credentials.walletName.should.equal(walletName);
-                  recoveryClient.credentials.copayerName.should.equal(copayerName);
-                  recoveryClient.credentials.walletId.should.equal(walletId);
-                  recoveryClient.credentials.coin.should.equal('matic');
-                  recoveryClient.credentials.chain.should.equal('matic');
-                  done();
-                });
+            ).then(({ key: k, clients: c }) => {
+              // the matic wallet + 1 unknown token addresses on preferences.
+              c.length.should.equal(1);
+              const recoveryClient = c[0];
+              recoveryClient.openWallet(null, err => {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.credentials.walletId.should.equal(walletId);
+                recoveryClient.credentials.coin.should.equal('matic');
+                recoveryClient.credentials.chain.should.equal('matic');
+                done();
               });
+            }).catch(done);
           });
         });
       });
@@ -6920,29 +6918,28 @@ describe('client API', function() {
               Client.serverAssistedImport(
                 { words, includeTestnetWallets: true },
                 helpers.newClient(app),
-                (err, k, c) => {
-                  // the op wallet + 2 tokens.
-                  c.length.should.equal(3);
-                  const recoveryClient = c[0];
-                  recoveryClient.openWallet(null, err => {
+              ).then(({ key: k, clients: c }) => {
+                // the op wallet + 2 tokens.
+                c.length.should.equal(3);
+                const recoveryClient = c[0];
+                recoveryClient.openWallet(null, err => {
+                  should.not.exist(err);
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
+                  recoveryClient.credentials.coin.should.equal('eth');
+                  recoveryClient.credentials.chain.should.equal('op');
+                  const recoveryClient2 = c[2];
+                  recoveryClient2.openWallet(null, err => {
                     should.not.exist(err);
-                    recoveryClient.credentials.walletName.should.equal(walletName);
-                    recoveryClient.credentials.copayerName.should.equal(copayerName);
-                    recoveryClient.credentials.walletId.should.equal(walletId);
-                    recoveryClient.credentials.coin.should.equal('eth');
-                    recoveryClient.credentials.chain.should.equal('op');
-                    const recoveryClient2 = c[2];
-                    recoveryClient2.openWallet(null, err => {
-                      should.not.exist(err);
-                      recoveryClient2.credentials.coin.should.equal('wbtc');
-                      should.exist(recoveryClient2.credentials.chain);
-                      recoveryClient2.credentials.chain.should.equal('op');
-                      recoveryClient2.credentials.walletId.should.equal(`${walletId}-${opTokenAddresses[1]}`);
-                      done();
-                    });
+                    recoveryClient2.credentials.coin.should.equal('wbtc');
+                    should.exist(recoveryClient2.credentials.chain);
+                    recoveryClient2.credentials.chain.should.equal('op');
+                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${opTokenAddresses[1]}`);
+                    done();
                   });
-                }
-              );
+                });
+              }).catch(done);
             }
           );
         });
@@ -6963,29 +6960,28 @@ describe('client API', function() {
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
               helpers.newClient(app),
-              (err, k, c) => {
-                // the op wallet + 1 token.
-                c.length.should.equal(2);
-                const recoveryClient = c[0];
-                recoveryClient.openWallet(null, err => {
+            ).then(({ key: k, clients: c }) => {
+              // the op wallet + 1 token.
+              c.length.should.equal(2);
+              const recoveryClient = c[0];
+              recoveryClient.openWallet(null, err => {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.credentials.walletId.should.equal(walletId);
+                recoveryClient.credentials.coin.should.equal('eth');
+                recoveryClient.credentials.chain.should.equal('op');
+                const recoveryClient2 = c[1];
+                recoveryClient2.openWallet(null, err => {
                   should.not.exist(err);
-                  recoveryClient.credentials.walletName.should.equal(walletName);
-                  recoveryClient.credentials.copayerName.should.equal(copayerName);
-                  recoveryClient.credentials.walletId.should.equal(walletId);
-                  recoveryClient.credentials.coin.should.equal('eth');
-                  recoveryClient.credentials.chain.should.equal('op');
-                  const recoveryClient2 = c[1];
-                  recoveryClient2.openWallet(null, err => {
-                    should.not.exist(err);
-                    recoveryClient2.credentials.coin.should.equal('usdc');
-                    should.exist(recoveryClient2.credentials.chain);
-                    recoveryClient2.credentials.chain.should.equal('op');
-                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${opTokenAddresses[0]}`);
-                    done();
-                  });
+                  recoveryClient2.credentials.coin.should.equal('usdc');
+                  should.exist(recoveryClient2.credentials.chain);
+                  recoveryClient2.credentials.chain.should.equal('op');
+                  recoveryClient2.credentials.walletId.should.equal(`${walletId}-${opTokenAddresses[0]}`);
+                  done();
                 });
-              }
-            );
+              });
+            }).catch(done);
           });
         });
       });
@@ -7005,20 +7001,20 @@ describe('client API', function() {
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
               helpers.newClient(app),
-              (err, k, c) => {
-                // the op wallet + 1 unknown token addresses on preferences.
-                c.length.should.equal(1);
-                const recoveryClient = c[0];
-                recoveryClient.openWallet(null, err => {
-                  should.not.exist(err);
-                  recoveryClient.credentials.walletName.should.equal(walletName);
-                  recoveryClient.credentials.copayerName.should.equal(copayerName);
-                  recoveryClient.credentials.walletId.should.equal(walletId);
-                  recoveryClient.credentials.coin.should.equal('eth');
-                  recoveryClient.credentials.chain.should.equal('op');
-                  done();
-                });
+            ).then(({ key: k, clients: c }) => {
+              // the op wallet + 1 unknown token addresses on preferences.
+              c.length.should.equal(1);
+              const recoveryClient = c[0];
+              recoveryClient.openWallet(null, err => {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.credentials.walletId.should.equal(walletId);
+                recoveryClient.credentials.coin.should.equal('eth');
+                recoveryClient.credentials.chain.should.equal('op');
+                done();
               });
+            }).catch(done);
           });
         });
       });
@@ -7042,29 +7038,28 @@ describe('client API', function() {
               Client.serverAssistedImport(
                 { words, includeTestnetWallets: true },
                 helpers.newClient(app),
-                (err, k, c) => {
-                  // the base wallet + 2 tokens.
-                  c.length.should.equal(3);
-                  const recoveryClient = c[0];
-                  recoveryClient.openWallet(null, err => {
+              ).then(({ key: k, clients: c }) => {
+                // the base wallet + 2 tokens.
+                c.length.should.equal(3);
+                const recoveryClient = c[0];
+                recoveryClient.openWallet(null, err => {
+                  should.not.exist(err);
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
+                  recoveryClient.credentials.coin.should.equal('eth');
+                  recoveryClient.credentials.chain.should.equal('base');
+                  const recoveryClient2 = c[2];
+                  recoveryClient2.openWallet(null, err => {
                     should.not.exist(err);
-                    recoveryClient.credentials.walletName.should.equal(walletName);
-                    recoveryClient.credentials.copayerName.should.equal(copayerName);
-                    recoveryClient.credentials.walletId.should.equal(walletId);
-                    recoveryClient.credentials.coin.should.equal('eth');
-                    recoveryClient.credentials.chain.should.equal('base');
-                    const recoveryClient2 = c[2];
-                    recoveryClient2.openWallet(null, err => {
-                      should.not.exist(err);
-                      recoveryClient2.credentials.coin.should.equal('weth');
-                      should.exist(recoveryClient2.credentials.chain);
-                      recoveryClient2.credentials.chain.should.equal('base');
-                      recoveryClient2.credentials.walletId.should.equal(`${walletId}-${baseTokenAddresses[1]}`);
-                      done();
-                    });
+                    recoveryClient2.credentials.coin.should.equal('weth');
+                    should.exist(recoveryClient2.credentials.chain);
+                    recoveryClient2.credentials.chain.should.equal('base');
+                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${baseTokenAddresses[1]}`);
+                    done();
                   });
-                }
-              );
+                });
+              }).catch(done);
             }
           );
         });
@@ -7085,29 +7080,28 @@ describe('client API', function() {
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
               helpers.newClient(app),
-              (err, k, c) => {
-                // the base wallet + 1 token.
-                c.length.should.equal(2);
-                const recoveryClient = c[0];
-                recoveryClient.openWallet(null, err => {
+            ).then(({ key: k, clients: c }) => {
+              // the base wallet + 1 token.
+              c.length.should.equal(2);
+              const recoveryClient = c[0];
+              recoveryClient.openWallet(null, err => {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.credentials.walletId.should.equal(walletId);
+                recoveryClient.credentials.coin.should.equal('eth');
+                recoveryClient.credentials.chain.should.equal('base');
+                const recoveryClient2 = c[1];
+                recoveryClient2.openWallet(null, err => {
                   should.not.exist(err);
-                  recoveryClient.credentials.walletName.should.equal(walletName);
-                  recoveryClient.credentials.copayerName.should.equal(copayerName);
-                  recoveryClient.credentials.walletId.should.equal(walletId);
-                  recoveryClient.credentials.coin.should.equal('eth');
-                  recoveryClient.credentials.chain.should.equal('base');
-                  const recoveryClient2 = c[1];
-                  recoveryClient2.openWallet(null, err => {
-                    should.not.exist(err);
-                    recoveryClient2.credentials.coin.should.equal('usdc');
-                    should.exist(recoveryClient2.credentials.chain);
-                    recoveryClient2.credentials.chain.should.equal('base');
-                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${baseTokenAddresses[0]}`);
-                    done();
-                  });
+                  recoveryClient2.credentials.coin.should.equal('usdc');
+                  should.exist(recoveryClient2.credentials.chain);
+                  recoveryClient2.credentials.chain.should.equal('base');
+                  recoveryClient2.credentials.walletId.should.equal(`${walletId}-${baseTokenAddresses[0]}`);
+                  done();
                 });
-              }
-            );
+              });
+            }).catch(done);
           });
         });
       });
@@ -7127,20 +7121,20 @@ describe('client API', function() {
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
               helpers.newClient(app),
-              (err, k, c) => {
-                // the base wallet + unknown token addresses should be ignored.
-                c.length.should.equal(1);
-                const recoveryClient = c[0];
-                recoveryClient.openWallet(null, err => {
-                  should.not.exist(err);
-                  recoveryClient.credentials.walletName.should.equal(walletName);
-                  recoveryClient.credentials.copayerName.should.equal(copayerName);
-                  recoveryClient.credentials.walletId.should.equal(walletId);
-                  recoveryClient.credentials.coin.should.equal('eth');
-                  recoveryClient.credentials.chain.should.equal('base');
-                  done();
-                });
+            ).then(({ key: k, clients: c }) => {
+              // the base wallet + unknown token addresses should be ignored.
+              c.length.should.equal(1);
+              const recoveryClient = c[0];
+              recoveryClient.openWallet(null, err => {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.credentials.walletId.should.equal(walletId);
+                recoveryClient.credentials.coin.should.equal('eth');
+                recoveryClient.credentials.chain.should.equal('base');
+                done();
               });
+            }).catch(done);
           });
         });
       });
@@ -7164,29 +7158,28 @@ describe('client API', function() {
               Client.serverAssistedImport(
                 { words, includeTestnetWallets: true },
                 helpers.newClient(app),
-                (err, k, c) => {
-                  // the arb wallet + 2 tokens.
-                  c.length.should.equal(3);
-                  const recoveryClient = c[0];
-                  recoveryClient.openWallet(null, err => {
+              ).then(({ key: k, clients: c }) => {
+                // the arb wallet + 2 tokens.
+                c.length.should.equal(3);
+                const recoveryClient = c[0];
+                recoveryClient.openWallet(null, err => {
+                  should.not.exist(err);
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.walletId.should.equal(walletId);
+                  recoveryClient.credentials.coin.should.equal('eth');
+                  recoveryClient.credentials.chain.should.equal('arb');
+                  const recoveryClient2 = c[2];
+                  recoveryClient2.openWallet(null, err => {
                     should.not.exist(err);
-                    recoveryClient.credentials.walletName.should.equal(walletName);
-                    recoveryClient.credentials.copayerName.should.equal(copayerName);
-                    recoveryClient.credentials.walletId.should.equal(walletId);
-                    recoveryClient.credentials.coin.should.equal('eth');
-                    recoveryClient.credentials.chain.should.equal('arb');
-                    const recoveryClient2 = c[2];
-                    recoveryClient2.openWallet(null, err => {
-                      should.not.exist(err);
-                      recoveryClient2.credentials.coin.should.equal('wbtc');
-                      should.exist(recoveryClient2.credentials.chain);
-                      recoveryClient2.credentials.chain.should.equal('arb');
-                      recoveryClient2.credentials.walletId.should.equal(`${walletId}-${arbTokenAddresses[1]}`);
-                      done();
-                    });
+                    recoveryClient2.credentials.coin.should.equal('wbtc');
+                    should.exist(recoveryClient2.credentials.chain);
+                    recoveryClient2.credentials.chain.should.equal('arb');
+                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${arbTokenAddresses[1]}`);
+                    done();
                   });
-                }
-              );
+                });
+              }).catch(done);
             }
           );
         });
@@ -7207,29 +7200,28 @@ describe('client API', function() {
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
               helpers.newClient(app),
-              (err, k, c) => {
-                // the arb wallet + 1 token.
-                c.length.should.equal(2);
-                const recoveryClient = c[0];
-                recoveryClient.openWallet(null, err => {
+            ).then(({ key: k, clients: c }) => {
+              // the arb wallet + 1 token.
+              c.length.should.equal(2);
+              const recoveryClient = c[0];
+              recoveryClient.openWallet(null, err => {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.credentials.walletId.should.equal(walletId);
+                recoveryClient.credentials.coin.should.equal('eth');
+                recoveryClient.credentials.chain.should.equal('arb');
+                const recoveryClient2 = c[1];
+                recoveryClient2.openWallet(null, err => {
                   should.not.exist(err);
-                  recoveryClient.credentials.walletName.should.equal(walletName);
-                  recoveryClient.credentials.copayerName.should.equal(copayerName);
-                  recoveryClient.credentials.walletId.should.equal(walletId);
-                  recoveryClient.credentials.coin.should.equal('eth');
-                  recoveryClient.credentials.chain.should.equal('arb');
-                  const recoveryClient2 = c[1];
-                  recoveryClient2.openWallet(null, err => {
-                    should.not.exist(err);
-                    recoveryClient2.credentials.coin.should.equal('usdc');
-                    should.exist(recoveryClient2.credentials.chain);
-                    recoveryClient2.credentials.chain.should.equal('arb');
-                    recoveryClient2.credentials.walletId.should.equal(`${walletId}-${arbTokenAddresses[0]}`);
-                    done();
-                  });
+                  recoveryClient2.credentials.coin.should.equal('usdc');
+                  should.exist(recoveryClient2.credentials.chain);
+                  recoveryClient2.credentials.chain.should.equal('arb');
+                  recoveryClient2.credentials.walletId.should.equal(`${walletId}-${arbTokenAddresses[0]}`);
+                  done();
                 });
-              }
-            );
+              });
+            }).catch(done);
           });
         });
       });
@@ -7249,20 +7241,20 @@ describe('client API', function() {
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
               helpers.newClient(app),
-              (err, k, c) => {
-                // the arb wallet + unknown token addresses should be ignored.
-                c.length.should.equal(1);
-                const recoveryClient = c[0];
-                recoveryClient.openWallet(null, err => {
-                  should.not.exist(err);
-                  recoveryClient.credentials.walletName.should.equal(walletName);
-                  recoveryClient.credentials.copayerName.should.equal(copayerName);
-                  recoveryClient.credentials.walletId.should.equal(walletId);
-                  recoveryClient.credentials.coin.should.equal('eth');
-                  recoveryClient.credentials.chain.should.equal('arb');
-                  done();
-                });
+            ).then(({ key: k, clients: c }) => {
+              // the arb wallet + unknown token addresses should be ignored.
+              c.length.should.equal(1);
+              const recoveryClient = c[0];
+              recoveryClient.openWallet(null, err => {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.credentials.walletId.should.equal(walletId);
+                recoveryClient.credentials.coin.should.equal('eth');
+                recoveryClient.credentials.chain.should.equal('arb');
+                done();
               });
+            }).catch(done);
           });
         });
       });
@@ -7281,27 +7273,26 @@ describe('client API', function() {
               Client.serverAssistedImport(
                 { words, includeTestnetWallets: true },
                 helpers.newClient(app),
-                (err, k, c) => {
-                  should.not.exist(err);
-                  c.length.should.equal(2);
-                  c[0].credentials.coin.should.equal('btc');
-                  c[1].credentials.coin.should.equal('bch');
-                  c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
+              ).then(({ key: k, clients: c }) => {
+                should.not.exist(err);
+                c.length.should.equal(2);
+                c[0].credentials.coin.should.equal('btc');
+                c[1].credentials.coin.should.equal('bch');
+                c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
 
-                  const recoveryClient = c[1];
-                  recoveryClient.openWallet(null, err => {
+                const recoveryClient = c[1];
+                recoveryClient.openWallet(null, err => {
+                  should.not.exist(err);
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.getMainAddresses({}, (err, list) => {
                     should.not.exist(err);
-                    recoveryClient.credentials.walletName.should.equal(walletName);
-                    recoveryClient.credentials.copayerName.should.equal(copayerName);
-                    recoveryClient.getMainAddresses({}, (err, list) => {
-                      should.not.exist(err);
-                      should.exist(list);
-                      list[0].address.should.equal(addr.address);
-                      done();
-                    });
+                    should.exist(list);
+                    list[0].address.should.equal(addr.address);
+                    done();
                   });
-                }
-              );
+                });
+              });
             });
           });
         });
@@ -7320,26 +7311,25 @@ describe('client API', function() {
               Client.serverAssistedImport(
                 { words, includeTestnetWallets: true },
                 helpers.newClient(app),
-                (err, k, c) => {
+              ).then(({ key: k, clients: c }) => {
+                should.not.exist(err);
+                c.length.should.equal(2);
+                c[0].credentials.coin.should.equal('btc');
+                c[1].credentials.coin.should.equal('bch');
+                c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
+                const recoveryClient = c[1];
+                recoveryClient.openWallet(null, err => {
                   should.not.exist(err);
-                  c.length.should.equal(2);
-                  c[0].credentials.coin.should.equal('btc');
-                  c[1].credentials.coin.should.equal('bch');
-                  c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
-                  const recoveryClient = c[1];
-                  recoveryClient.openWallet(null, err => {
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.getMainAddresses({}, (err, list) => {
                     should.not.exist(err);
-                    recoveryClient.credentials.walletName.should.equal(walletName);
-                    recoveryClient.credentials.copayerName.should.equal(copayerName);
-                    recoveryClient.getMainAddresses({}, (err, list) => {
-                      should.not.exist(err);
-                      should.exist(list);
-                      list[0].address.should.equal(addr.address);
-                      done();
-                    });
+                    should.exist(list);
+                    list[0].address.should.equal(addr.address);
+                    done();
                   });
-                }
-              );
+                });
+              }).catch(done);
             });
           });
         });
@@ -7359,35 +7349,34 @@ describe('client API', function() {
                 Client.serverAssistedImport(
                   { words, includeTestnetWallets: true },
                   helpers.newClient(app),
-                  (err, k, c) => {
+                ).then(({ key: k, clients: c }) => {
+                  should.not.exist(err);
+                  c.length.should.equal(3);
+                  c[0].credentials.coin.should.equal('btc');
+                  c[1].credentials.coin.should.equal('btc');
+                  c[2].credentials.coin.should.equal('btc');
+                  c[0].credentials.account.should.equal(0);
+                  c[1].credentials.account.should.equal(1);
+                  c[2].credentials.account.should.equal(2);
+                  c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
+                  c[0].credentials.copayerId.should.not.equal(c[2].credentials.copayerId);
+                  c[1].credentials.copayerId.should.not.equal(c[2].credentials.copayerId);
+                  should.exist(c[0].credentials.walletId);
+                  should.exist(c[1].credentials.walletId);
+                  should.exist(c[2].credentials.walletId);
+                  const recoveryClient = c[2];
+                  recoveryClient.openWallet(null, err => {
                     should.not.exist(err);
-                    c.length.should.equal(3);
-                    c[0].credentials.coin.should.equal('btc');
-                    c[1].credentials.coin.should.equal('btc');
-                    c[2].credentials.coin.should.equal('btc');
-                    c[0].credentials.account.should.equal(0);
-                    c[1].credentials.account.should.equal(1);
-                    c[2].credentials.account.should.equal(2);
-                    c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
-                    c[0].credentials.copayerId.should.not.equal(c[2].credentials.copayerId);
-                    c[1].credentials.copayerId.should.not.equal(c[2].credentials.copayerId);
-                    should.exist(c[0].credentials.walletId);
-                    should.exist(c[1].credentials.walletId);
-                    should.exist(c[2].credentials.walletId);
-                    const recoveryClient = c[2];
-                    recoveryClient.openWallet(null, err => {
+                    recoveryClient.credentials.walletName.should.equal(walletName);
+                    recoveryClient.credentials.copayerName.should.equal(copayerName);
+                    recoveryClient.getMainAddresses({}, (err, list) => {
                       should.not.exist(err);
-                      recoveryClient.credentials.walletName.should.equal(walletName);
-                      recoveryClient.credentials.copayerName.should.equal(copayerName);
-                      recoveryClient.getMainAddresses({}, (err, list) => {
-                        should.not.exist(err);
-                        should.exist(list);
-                        list[0].address.should.equal(addr.address);
-                        done();
-                      });
+                      should.exist(list);
+                      list[0].address.should.equal(addr.address);
+                      done();
                     });
-                  }
-                );
+                  });
+                }).catch(done);
               });
             });
           });
@@ -7412,35 +7401,34 @@ describe('client API', function() {
                         Client.serverAssistedImport(
                           { words, includeTestnetWallets: true },
                           helpers.newClient(app),
-                          (err, k, c) => {
-                            should.not.exist(err);
-                            c.length.should.equal(7);
-                            // check the following data on each of the clients
-                            for (let i = 0; i < c.length; i++) {
-                              c[i].credentials.coin.should.equal('btc');
-                              c[i].credentials.account.should.equal(i);
-                            }
-                            // make sure only one client has each copayerId
-                            c.every(client => {
-                              const copayerId = client.credentials.copayerId;
-                              return c.filter(x => x.credentials.copayerId === copayerId).length === 1;
-                            }).should.equal(true);
-
-
-                            const recoveryClient = c[6];
-                            recoveryClient.openWallet(null, err => {
-                              should.not.exist(err);
-                              recoveryClient.credentials.walletName.should.equal(walletName);
-                              recoveryClient.credentials.copayerName.should.equal(copayerName);
-                              recoveryClient.getMainAddresses({}, (err, list) => {
-                                should.not.exist(err);
-                                should.exist(list);
-                                list[0].address.should.equal(addr.address);
-                                done();
-                              });
-                            });
+                        ).then(({ key: k, clients: c }) => {
+                          should.not.exist(err);
+                          c.length.should.equal(7);
+                          // check the following data on each of the clients
+                          for (let i = 0; i < c.length; i++) {
+                            c[i].credentials.coin.should.equal('btc');
+                            c[i].credentials.account.should.equal(i);
                           }
-                        );
+                          // make sure only one client has each copayerId
+                          c.every(client => {
+                            const copayerId = client.credentials.copayerId;
+                            return c.filter(x => x.credentials.copayerId === copayerId).length === 1;
+                          }).should.equal(true);
+
+
+                          const recoveryClient = c[6];
+                          recoveryClient.openWallet(null, err => {
+                            should.not.exist(err);
+                            recoveryClient.credentials.walletName.should.equal(walletName);
+                            recoveryClient.credentials.copayerName.should.equal(copayerName);
+                            recoveryClient.getMainAddresses({}, (err, list) => {
+                              should.not.exist(err);
+                              should.exist(list);
+                              list[0].address.should.equal(addr.address);
+                              done();
+                            });
+                          });
+                        }).catch(done);
                       });
                     });
                   });
@@ -7465,38 +7453,37 @@ describe('client API', function() {
                 Client.serverAssistedImport(
                   { words, includeTestnetWallets: true },
                   helpers.newClient(app),
-                  (err, k, c) => {
+                ).then(({ key: k, clients: c }) => {
+                  should.not.exist(err);
+                  c.length.should.equal(3);
+                  c[0].credentials.coin.should.equal('eth');
+                  c[1].credentials.coin.should.equal('eth');
+                  c[2].credentials.coin.should.equal('eth');
+                  c[0].credentials.chain.should.equal('arb');
+                  c[1].credentials.chain.should.equal('arb');
+                  c[2].credentials.chain.should.equal('arb');
+                  c[0].credentials.account.should.equal(0);
+                  c[1].credentials.account.should.equal(1);
+                  c[2].credentials.account.should.equal(2);
+                  c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
+                  c[0].credentials.copayerId.should.not.equal(c[2].credentials.copayerId);
+                  c[1].credentials.copayerId.should.not.equal(c[2].credentials.copayerId);
+                  should.exist(c[0].credentials.walletId);
+                  should.exist(c[1].credentials.walletId);
+                  should.exist(c[2].credentials.walletId);
+                  const recoveryClient = c[2];
+                  recoveryClient.openWallet(null, err => {
                     should.not.exist(err);
-                    c.length.should.equal(3);
-                    c[0].credentials.coin.should.equal('eth');
-                    c[1].credentials.coin.should.equal('eth');
-                    c[2].credentials.coin.should.equal('eth');
-                    c[0].credentials.chain.should.equal('arb');
-                    c[1].credentials.chain.should.equal('arb');
-                    c[2].credentials.chain.should.equal('arb');
-                    c[0].credentials.account.should.equal(0);
-                    c[1].credentials.account.should.equal(1);
-                    c[2].credentials.account.should.equal(2);
-                    c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
-                    c[0].credentials.copayerId.should.not.equal(c[2].credentials.copayerId);
-                    c[1].credentials.copayerId.should.not.equal(c[2].credentials.copayerId);
-                    should.exist(c[0].credentials.walletId);
-                    should.exist(c[1].credentials.walletId);
-                    should.exist(c[2].credentials.walletId);
-                    const recoveryClient = c[2];
-                    recoveryClient.openWallet(null, err => {
+                    recoveryClient.credentials.walletName.should.equal(walletName);
+                    recoveryClient.credentials.copayerName.should.equal(copayerName);
+                    recoveryClient.getMainAddresses({}, (err, list) => {
                       should.not.exist(err);
-                      recoveryClient.credentials.walletName.should.equal(walletName);
-                      recoveryClient.credentials.copayerName.should.equal(copayerName);
-                      recoveryClient.getMainAddresses({}, (err, list) => {
-                        should.not.exist(err);
-                        should.exist(list);
-                        list[0].address.should.equal(addr.address);
-                        done();
-                      });
+                      should.exist(list);
+                      list[0].address.should.equal(addr.address);
+                      done();
                     });
-                  }
-                );
+                  });
+                }).catch(done);
               });
             });
           });
@@ -7515,24 +7502,23 @@ describe('client API', function() {
             Client.serverAssistedImport(
               { words, passphrase, includeTestnetWallets: true },
               helpers.newClient(app),
-              (err, k, c) => {
-                should.not.exist(err);
-                c.length.should.equal(1);
+            ).then(({ key: k, clients: c }) => {
+              should.not.exist(err);
+              c.length.should.equal(1);
 
-                const recoveryClient = c[0];
-                recoveryClient.openWallet(null, err => {
+              const recoveryClient = c[0];
+              recoveryClient.openWallet(null, err => {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.getMainAddresses({}, (err, list) => {
                   should.not.exist(err);
-                  recoveryClient.credentials.walletName.should.equal(walletName);
-                  recoveryClient.credentials.copayerName.should.equal(copayerName);
-                  recoveryClient.getMainAddresses({}, (err, list) => {
-                    should.not.exist(err);
-                    should.exist(list);
-                    list[0].address.should.equal(addr.address);
-                    done();
-                  });
+                  should.exist(list);
+                  list[0].address.should.equal(addr.address);
+                  done();
                 });
-              }
-            );
+              });
+            }).catch(done);
           });
         });
       });
@@ -7548,28 +7534,27 @@ describe('client API', function() {
             Client.serverAssistedImport(
               { xPrivKey, includeTestnetWallets: true },
               helpers.newClient(app),
-              (err, key, c) => {
-                const k = key.toObj();
-                k.xPrivKey.should.equal(xPrivKey);
-                k.compliantDerivation.should.equal(true);
-                k.use0forBCH.should.equal(false);
-                k.use44forMultisig.should.equal(false);
+            ).then(({ key, clients: c }) => {
+              const k = key.toObj();
+              k.xPrivKey.should.equal(xPrivKey);
+              k.compliantDerivation.should.equal(true);
+              k.use0forBCH.should.equal(false);
+              k.use44forMultisig.should.equal(false);
+              should.not.exist(err);
+              c.length.should.equal(1);
+              const recoveryClient = c[0];
+              recoveryClient.openWallet(null, err => {
                 should.not.exist(err);
-                c.length.should.equal(1);
-                const recoveryClient = c[0];
-                recoveryClient.openWallet(null, err => {
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.getMainAddresses({}, (err, list) => {
                   should.not.exist(err);
-                  recoveryClient.credentials.walletName.should.equal(walletName);
-                  recoveryClient.credentials.copayerName.should.equal(copayerName);
-                  recoveryClient.getMainAddresses({}, (err, list) => {
-                    should.not.exist(err);
-                    should.exist(list);
-                    list[0].address.should.equal(addr.address);
-                    done();
-                  });
+                  should.exist(list);
+                  list[0].address.should.equal(addr.address);
+                  done();
                 });
-              }
-            );
+              });
+            }).catch(done);
           });
         });
       });
@@ -7585,28 +7570,27 @@ describe('client API', function() {
             Client.serverAssistedImport(
               { words, includeTestnetWallets: true },
               helpers.newClient(app),
-              (err, k, c) => {
-                k.compliantDerivation.should.equal(true);
-                k.use0forBCH.should.equal(false);
-                k.use44forMultisig.should.equal(false);
+            ).then(({ key, clients: c }) => {
+              key.compliantDerivation.should.equal(true);
+              key.use0forBCH.should.equal(false);
+              key.use44forMultisig.should.equal(false);
+              should.not.exist(err);
+              c.length.should.equal(1);
+              const recoveryClient = c[0];
+              recoveryClient.openWallet(null, err => {
                 should.not.exist(err);
-                c.length.should.equal(1);
-                const recoveryClient = c[0];
-                recoveryClient.openWallet(null, err => {
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.credentials.m.should.equal(2);
+                recoveryClient.credentials.n.should.equal(2);
+                recoveryClient.getMainAddresses({}, (err, list) => {
                   should.not.exist(err);
-                  recoveryClient.credentials.walletName.should.equal(walletName);
-                  recoveryClient.credentials.copayerName.should.equal(copayerName);
-                  recoveryClient.credentials.m.should.equal(2);
-                  recoveryClient.credentials.n.should.equal(2);
-                  recoveryClient.getMainAddresses({}, (err, list) => {
-                    should.not.exist(err);
-                    should.exist(list);
-                    list[0].address.should.equal(addr.address);
-                    done();
-                  });
+                  should.exist(list);
+                  list[0].address.should.equal(addr.address);
+                  done();
                 });
-              }
-            );
+              });
+            }).catch(done);
           });
         });
       });
@@ -7618,12 +7602,13 @@ describe('client API', function() {
           Client.serverAssistedImport(
             { words },
             helpers.newClient(app),
-            (err, k, c) => {
-              should.not.exist(err);
-              c.length.should.equal(0);
-              done();
-            }
-          );
+          ).then(({ key, clients: c }) => {
+            throw new Error('Should have thrown wallet not found error');
+          }).catch((err) => {
+            should.exist(err);
+            err.should.be.an.instanceOf(Errors.WALLET_DOES_NOT_EXIST);
+            done();
+          });
         });
       });
 
@@ -7646,31 +7631,30 @@ describe('client API', function() {
               Client.serverAssistedImport(
                 { words, includeLegacyWallets: true, includeTestnetWallets: true },
                 helpers.newClient(app),
-                (err, k, c) => {
-                  should.exist(k);
-                  should.exist(c[0]);
-                  k.compliantDerivation.should.equal(true);
-                  k.use0forBCH.should.equal(false);
-                  k.use44forMultisig.should.equal(true);
+              ).then(({ key, clients: c }) => {
+                should.exist(key);
+                should.exist(c[0]);
+                key.compliantDerivation.should.equal(true);
+                key.use0forBCH.should.equal(false);
+                key.use44forMultisig.should.equal(true);
 
+                should.not.exist(err);
+                c.length.should.equal(1);
+                const recoveryClient = c[0];
+                recoveryClient.openWallet(null, err => {
                   should.not.exist(err);
-                  c.length.should.equal(1);
-                  const recoveryClient = c[0];
-                  recoveryClient.openWallet(null, err => {
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.m.should.equal(2);
+                  recoveryClient.credentials.n.should.equal(2);
+                  recoveryClient.getMainAddresses({}, (err, list) => {
                     should.not.exist(err);
-                    recoveryClient.credentials.walletName.should.equal(walletName);
-                    recoveryClient.credentials.copayerName.should.equal(copayerName);
-                    recoveryClient.credentials.m.should.equal(2);
-                    recoveryClient.credentials.n.should.equal(2);
-                    recoveryClient.getMainAddresses({}, (err, list) => {
-                      should.not.exist(err);
-                      should.exist(list);
-                      list[0].address.should.equal(addr.address);
-                      done();
-                    });
+                    should.exist(list);
+                    list[0].address.should.equal(addr.address);
+                    done();
                   });
-                }
-              );
+                });
+              }).catch(done);
             });
           }
         );
@@ -7696,31 +7680,30 @@ describe('client API', function() {
               Client.serverAssistedImport(
                 { words, includeLegacyWallets: true, includeTestnetWallets: true },
                 helpers.newClient(app),
-                (err, k, c) => {
-                  should.exist(k);
-                  should.exist(c[0]);
-                  k.compliantDerivation.should.equal(true);
-                  k.use0forBCH.should.equal(false);
-                  k.use44forMultisig.should.equal(true);
+              ).then(({ key, clients: c }) => {
+                should.exist(key);
+                should.exist(c[0]);
+                key.compliantDerivation.should.equal(true);
+                key.use0forBCH.should.equal(false);
+                key.use44forMultisig.should.equal(true);
 
+                should.not.exist(err);
+                c.length.should.equal(1);
+                const recoveryClient = c[0];
+                recoveryClient.openWallet(null, err => {
                   should.not.exist(err);
-                  c.length.should.equal(1);
-                  const recoveryClient = c[0];
-                  recoveryClient.openWallet(null, err => {
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.credentials.m.should.equal(2);
+                  recoveryClient.credentials.n.should.equal(3);
+                  recoveryClient.getMainAddresses({}, (err, list) => {
                     should.not.exist(err);
-                    recoveryClient.credentials.walletName.should.equal(walletName);
-                    recoveryClient.credentials.copayerName.should.equal(copayerName);
-                    recoveryClient.credentials.m.should.equal(2);
-                    recoveryClient.credentials.n.should.equal(3);
-                    recoveryClient.getMainAddresses({}, (err, list) => {
-                      should.not.exist(err);
-                      should.exist(list);
-                      list[0].address.should.equal(addr.address);
-                      done();
-                    });
+                    should.exist(list);
+                    list[0].address.should.equal(addr.address);
+                    done();
                   });
-                }
-              );
+                });
+              }).catch(done);
             });
           }
         );
@@ -7728,12 +7711,13 @@ describe('client API', function() {
 
       it('should be able to restore with equal keyid an old bch wallet and an old multisig btc wallet', function(done) {  
         const words = 'famous ship happy oyster retire sponsor disease friend parent wise grunt voyage';
-        const k1 = new Key({ seedData: words, seedType: 'mnemonic', useLegacyCoinType: false, useLegacyPurpose: true }); // old bch wallets: /[44,48]/[0,0]'/
-        const k2 = new Key({ seedData: words, seedType: 'mnemonic', useLegacyCoinType: true, useLegacyPurpose: false });  // old BTC/BCH  multisig wallets: /[44]/[0,145]'/
-        helpers.createAndJoinWallet(clients, keys, 2, 2, { key: k1, network: 'livenet' }, () => {
-        // first create a "old" bch wallet (coin = 0).
-          clients[1].fromString(
-            k2.createCredentials(null, {
+        const keyOldMultisig = new Key({ seedData: words, seedType: 'mnemonic', useLegacyCoinType: false, useLegacyPurpose: true }); // old BTC/BCH multisig wallets: m/44'/[0,145]'/
+        const keyPreForkBch = new Key({ seedData: words, seedType: 'mnemonic', useLegacyCoinType: true, useLegacyPurpose: false }); // old BCH wallets: m/[44,48]'/0'/
+        // first create old btc multisig wallet
+        helpers.createAndJoinWallet(clients, keys, 2, 2, { key: keyOldMultisig, network: 'livenet' }, () => {
+          // then create a pre-fork bch wallet (derivation path's 'coin' index = 0).
+          clients[1].fromObj(
+            keyPreForkBch.createCredentials(null, {
               coin: 'bch',
               network: 'livenet',
               account: 0,
@@ -7754,15 +7738,15 @@ describe('client API', function() {
               Client.serverAssistedImport(
                 { words, includeTestnetWallets: false, includeLegacyWallets: true },
                 helpers.newClient(app),
-                (err, k, c) => {
-                  should.not.exist(err);
-                  should.exist(k);
-                  should.exist(c[0]);
-                  should.exist(c[1]);
-                  c[0].credentials.keyId.should.equal(c[1].credentials.keyId);
-                  c.length.should.equal(2);
-                  done();
-                });
+              ).then(({ key, clients: c }) => {
+                should.not.exist(err);
+                should.exist(key);
+                should.exist(c[0]);
+                should.exist(c[1]);
+                c[0].credentials.keyId.should.equal(c[1].credentials.keyId);
+                c.length.should.equal(2);
+                done();
+              }).catch(done);
             });
         });
       });
@@ -7786,21 +7770,20 @@ describe('client API', function() {
               Client.serverAssistedImport(
                 { xPrivKey, includeTestnetWallets: true },
                 helpers.newClient(app),
-                (err, k, c) => {
+              ).then(({ key, clients: c }) => {
+                should.not.exist(err);
+                c.length.should.equal(1);
+                const recoveryClient = c[0];
+                recoveryClient.openWallet(null, err => {
                   should.not.exist(err);
-                  c.length.should.equal(1);
-                  const recoveryClient = c[0];
-                  recoveryClient.openWallet(null, err => {
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.getTx(x.id, (err, x2) => {
                     should.not.exist(err);
-                    recoveryClient.credentials.walletName.should.equal(walletName);
-                    recoveryClient.getTx(x.id, (err, x2) => {
-                      should.not.exist(err);
-                      x2.message.should.equal(opts.message);
-                      done();
-                    });
+                    x2.message.should.equal(opts.message);
+                    done();
                   });
-                }
-              );
+                });
+              }).catch(done);
             });
           });
         });

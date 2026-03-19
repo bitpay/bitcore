@@ -45,15 +45,21 @@ export interface KeyOptions {
   id?: string;
   seedType: 'new' | 'extendedPrivateKey' | 'object' | 'mnemonic' | 'objectV1';
   seedData?: any;
-  passphrase?: string; // seed passphrase
-  password?: string; // encrypting password
-  encryptionOpts?: { iter?: number }; // options for encryption
-  use0forBCH?: boolean;
+  /** Seed passphrase (legacy) - essentially an extra, custom word in a mnemonic (no longer used) */
+  passphrase?: string;
+  /** Encrypting password */
+  password?: string;
+  /** Options for encryption */
+  encryptionOpts?: { iter?: number };
+  /** Use legacy 'purpose' in derivation path for multisig (44' => m/44'/coin_type'/account'/change/address_index */
   useLegacyPurpose?: boolean;
+  /** Use legacy 'coin_type' in derivation path for BCH (0' => m/purpose'/0'/account'/change/address_index */
   useLegacyCoinType?: boolean;
   nonCompliantDerivation?: boolean;
+  /** Language for mnemonic (default: en) */
   language?: Language;
-  algo?: KeyAlgorithm; // eddsa or ecdsa (Bitcoin) by default
+  /** "ECDSA" (default - Bitcoin, etc.) or "EDDSA" (Solana) */
+  algo?: KeyAlgorithm;
 };
 
 export interface ExportedKey {
@@ -110,7 +116,7 @@ export class Key {
    *
    *    // data for derived credentials.
    *    'use0forBCH': 'use0forBCH', // use the 0 coin' path element in BCH  (legacy)
-   *    'use44forMultisig': 'use44forMultisig', // use the purpose 44' for multisig wallts (legacy)
+   *    'use44forMultisig': 'use44forMultisig', // use the purpose 44' for multisig wallets (legacy)
    *    'id': 'id',
    *  };
    */
