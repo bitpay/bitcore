@@ -7810,6 +7810,7 @@ describe('Wallet service', function() {
       const address = await util.promisify(server.createAddress).call(server, {});
       fromAddr = address.address;
       await helpers.stubUtxos(server, wallet, [1, 2], { coin: 'eth' });
+      blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '5');
     });
 
     it('should create txp with nonce=null when deferNonce is true', async function() {
