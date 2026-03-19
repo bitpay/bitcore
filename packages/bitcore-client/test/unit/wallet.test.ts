@@ -3,7 +3,7 @@ import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { AddressTypes, Wallet } from '../../src/wallet';
+import { AddressTypes, IWalletExt, Wallet } from '../../src/wallet';
 import { Encryption } from '../../src/encryption';
 import { Api as bcnApi } from '../../../bitcore-node/build/src/services/api';
 import { Storage as bcnStorage } from '../../../bitcore-node/build/src/services/storage';
@@ -34,9 +34,21 @@ describe('Wallet', function() {
   const storageType = 'Level';
   const baseUrl = 'http://127.0.0.1:3000/api';
   let walletName;
-  let skipWalletCleanup = false;
   let wallet: Wallet;
   let api;
+  const walletsToCleanup: Array<{ name: string; storageType?: StorageType; path?: string }> = [];
+  const createWalletForTest = async (params: Partial<IWalletExt>) => {
+    if (!params.name) {
+      throw new Error('Tests must provide a wallet name');
+    }
+    const createdWallet = await Wallet.create(params);
+    walletsToCleanup.push({
+      name: params.name,
+      storageType: params.storageType,
+      path: params.path
+    });
+    return createdWallet;
+  };
   before(async function() {
     this.timeout(20000);
     await bcnStorage.start({
@@ -70,10 +82,12 @@ describe('Wallet', function() {
     });
   });
   afterEach(async function() {
-    if (walletName && !skipWalletCleanup) {
-      await Wallet.deleteWallet({ name: walletName, storageType });
+    while (walletsToCleanup.length) {
+      const walletToCleanup = walletsToCleanup.pop();
+      if (walletToCleanup) {
+        await Wallet.deleteWallet(walletToCleanup);
+      }
     }
-    skipWalletCleanup = false;
     sandbox.restore();
   });
   for (const chain of ['BTC', 'BCH', 'LTC', 'DOGE', 'ETH', 'XRP', 'MATIC']) {
@@ -82,7 +96,7 @@ describe('Wallet', function() {
       it(`should create a wallet for chain and addressType: ${chain} ${addressType}`, async function() {
         walletName = 'BitcoreClientTest' + chain + addressType;
 
-        wallet = await Wallet.create({
+        wallet = await createWalletForTest({
           chain,
           network: 'mainnet',
           name: walletName,
@@ -126,7 +140,7 @@ describe('Wallet', function() {
       walletName = 'BitcoreClientTestBumpFee-UTXO';
 
       beforeEach(async function() {
-        wallet = await Wallet.create({
+        wallet = await createWalletForTest({
           name: walletName,
           chain: 'BTC',
           network: 'testnet',
@@ -203,7 +217,7 @@ describe('Wallet', function() {
       walletName = 'BitcoreClientTestBumpFee-EVM';
 
       beforeEach(async function() {
-        wallet = await Wallet.create({
+        wallet = await createWalletForTest({
           name: walletName,
           chain: 'ETH',
           network: 'testnet',
@@ -309,7 +323,7 @@ describe('Wallet', function() {
     let sleepStub;
 
     beforeEach(async function() {
-      wallet = await Wallet.create({
+      wallet = await createWalletForTest({
         name: walletName,
         chain: 'BTC',
         network: 'testnet',
@@ -463,7 +477,7 @@ describe('Wallet', function() {
       let wallet: Wallet;
 
       beforeEach(async function() {
-        wallet = await Wallet.create({
+        wallet = await createWalletForTest({
           name: walletName,
           chain: 'BTC',
           network: 'testnet',
@@ -473,10 +487,6 @@ describe('Wallet', function() {
           baseUrl
         });
         await wallet.unlock('abc123');
-      });
-
-      afterEach(async function() {
-        await Wallet.deleteWallet({ name: walletName, storageType });
       });
 
       it('should decrypt stored ciphertext and hand WIF to Transactions.sign', async function() {
@@ -522,7 +532,7 @@ describe('Wallet', function() {
       let wallet: Wallet;
 
       beforeEach(async function() {
-        wallet = await Wallet.create({
+        wallet = await createWalletForTest({
           name: walletName,
           chain: 'ETH',
           network: 'testnet',
@@ -532,10 +542,6 @@ describe('Wallet', function() {
           baseUrl
         });
         await wallet.unlock('abc123');
-      });
-
-      afterEach(async function() {
-        await Wallet.deleteWallet({ name: walletName, storageType });
       });
 
       it('should decrypt stored ciphertext and hand hex privKey to Transactions.sign', async function() {
@@ -566,7 +572,7 @@ describe('Wallet', function() {
       let wallet: Wallet;
 
       beforeEach(async function() {
-        wallet = await Wallet.create({
+        wallet = await createWalletForTest({
           name: walletName,
           chain: 'XRP',
           network: 'testnet',
@@ -576,10 +582,6 @@ describe('Wallet', function() {
           baseUrl
         });
         await wallet.unlock('abc123');
-      });
-
-      afterEach(async function() {
-        await Wallet.deleteWallet({ name: walletName, storageType });
       });
 
       it('should decrypt stored ciphertext and hand uppercase hex privKey to Transactions.sign', async function() {
@@ -610,7 +612,7 @@ describe('Wallet', function() {
       let wallet: Wallet;
 
       beforeEach(async function() {
-        wallet = await Wallet.create({
+        wallet = await createWalletForTest({
           name: walletName,
           chain: 'SOL',
           network: 'devnet',
@@ -620,10 +622,6 @@ describe('Wallet', function() {
           baseUrl
         });
         await wallet.unlock('abc123');
-      });
-
-      afterEach(async function() {
-        await Wallet.deleteWallet({ name: walletName, storageType });
       });
 
       it('should decrypt stored ciphertext and hand base58 privKey to Transactions.sign', async function() {
@@ -654,7 +652,7 @@ describe('Wallet', function() {
     let wallet: Wallet;
     const createUnlockedWallet = async (params: { chain: string; network: string; xpriv: string }) => {
       walletName = `BitcoreClientTestDerivePrivateKey-${params.chain}`;
-      wallet = await Wallet.create({
+      wallet = await createWalletForTest({
         name: walletName,
         chain: params.chain,
         network: params.network,
@@ -742,7 +740,6 @@ describe('Wallet', function() {
 
   describe('unlock', function () {
     it('performs wallet migration for previous wallet versions', async () => {
-      skipWalletCleanup = true;
       const fixture = ethMigrationTestWalletFixture;
       const wallet = new Wallet(fixture.wallet as any);
       const tempHomeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bitcore-client-migration-unlock-'));
@@ -798,7 +795,6 @@ describe('Wallet', function() {
 
     
     beforeEach(async function () {
-      skipWalletCleanup = true;
       wallet = new Wallet(ethMigrationTestWalletFixture.wallet as any);
       tempHomeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bitcore-client-migration-'));
       backupDir = path.join(tempHomeDir, '.bitcore', 'bitcoreWallet', 'backup');
@@ -996,7 +992,7 @@ describe('Wallet', function() {
   describe('getBalance', function() {
     walletName = 'BitcoreClientTestGetBalance';
     beforeEach(async function() {
-      wallet = await Wallet.create({
+      wallet = await createWalletForTest({
         name: walletName,
         chain: 'MATIC',
         network: 'testnet',
@@ -1046,7 +1042,7 @@ describe('Wallet', function() {
   describe('getTokenObj', function() {
     walletName = 'BitcoreClientTestGetTokenObj';
     beforeEach(async function() {
-      wallet = await Wallet.create({
+      wallet = await createWalletForTest({
         name: walletName,
         chain: 'MATIC',
         network: 'testnet',
@@ -1125,7 +1121,7 @@ describe('Wallet', function() {
     };
 
     beforeEach(async function() {
-      wallet = await Wallet.create({
+      wallet = await createWalletForTest({
         chain: 'ETH',
         network: 'mainnet',
         name: walletName,
