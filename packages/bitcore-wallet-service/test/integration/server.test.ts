@@ -8031,16 +8031,16 @@ describe('Wallet service', function() {
       });
       withNonce.nonce.should.equal(6);
 
-      helpers.stubBroadcast('txid_normal');
       const sigs1 = helpers.clientSign(normalTxp, TestData.copayers[0].xPrivKey_44H_0H_0H);
       const signed1 = await util.promisify(server.signTx).call(server, {
         txProposalId: normalTxp.id,
         signatures: sigs1
       });
       signed1.status.should.equal('accepted');
+      helpers.stubBroadcast(signed1.txid);
+      await util.promisify(server.broadcastTx).call(server, { txProposalId: normalTxp.id });
 
       const fetchedDeferred = await util.promisify(server.getTx).call(server, { txProposalId: deferredTxp.id });
-      helpers.stubBroadcast('txid_deferred');
       const sigs2 = helpers.clientSign(fetchedDeferred, TestData.copayers[0].xPrivKey_44H_0H_0H);
       const signed2 = await util.promisify(server.signTx).call(server, {
         txProposalId: deferredTxp.id,
@@ -8051,7 +8051,6 @@ describe('Wallet service', function() {
 
     it('should complete full lifecycle for a deferred-nonce txp', async function() {
       blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '42');
-      helpers.stubBroadcast('0xabc123');
 
       const txOpts = {
         outputs: [{ toAddress: ETH_ADDR, amount: 8000 }],
@@ -8082,6 +8081,7 @@ describe('Wallet service', function() {
       });
       signed.status.should.equal('accepted');
 
+      helpers.stubBroadcast(signed.txid);
       const broadcasted = await util.promisify(server.broadcastTx).call(server, {
         txProposalId: created.id
       });
@@ -8103,25 +8103,26 @@ describe('Wallet service', function() {
         txps.push(txp);
       }
 
+      const assignedNonces = [];
       for (let i = 0; i < txps.length; i++) {
         const withNonce = await util.promisify(server.assignNonce).call(server, {
           txProposalId: txps[i].id
         });
         withNonce.nonce.should.equal(10 + i);
+        assignedNonces.push(withNonce.nonce);
 
         const fetched = await util.promisify(server.getTx).call(server, { txProposalId: txps[i].id });
-        helpers.stubBroadcast(`txid_${i}`);
         const signatures = helpers.clientSign(fetched, TestData.copayers[0].xPrivKey_44H_0H_0H);
         const signed = await util.promisify(server.signTx).call(server, {
           txProposalId: txps[i].id,
           signatures
         });
         signed.status.should.equal('accepted');
+        helpers.stubBroadcast(signed.txid);
+        await util.promisify(server.broadcastTx).call(server, { txProposalId: txps[i].id });
       }
 
-      const pending = await util.promisify(server.getPendingTxs).call(server, {});
-      const nonces = pending.map(t => t.nonce).sort();
-      nonces.should.deep.equal([10, 11, 12]);
+      assignedNonces.should.deep.equal([10, 11, 12]);
     });
   });
 
