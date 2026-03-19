@@ -17,7 +17,7 @@ import { PayPro } from './paypro';
 import { PayProV2 } from './payproV2';
 import { Request } from './request';
 import { Verifier } from './verifier';
-import type { ServerAssistedImportEvents } from 'src/types/serverAssistedImportEvents';
+import type { ServerAssistedImportEvents } from '../types/serverAssistedImportEvents';
 
 const $ = singleton();
 

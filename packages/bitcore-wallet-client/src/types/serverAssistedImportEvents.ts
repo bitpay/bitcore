@@ -3,7 +3,7 @@ import type { Key } from '../lib/key';
 import type { EventEmitter } from 'events';
 
 
-export class ServerAssistedImportEvents extends EventEmitter {
+export declare class ServerAssistedImportEvents extends EventEmitter {
   /** Total number of key configurations to be checked (not all configurations will necessarily be processed, as the process may exit early if wallets are found) */
   on(event: 'keyConfig.count', listener: (count: number) => void): this;
   /** Index of the current key configuration being processed */
