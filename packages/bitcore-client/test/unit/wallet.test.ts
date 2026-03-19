@@ -34,6 +34,7 @@ describe('Wallet', function() {
   const storageType = 'Level';
   const baseUrl = 'http://127.0.0.1:3000/api';
   let walletName;
+  let skipWalletCleanup = false;
   let wallet: Wallet;
   let api;
   before(async function() {
@@ -69,9 +70,10 @@ describe('Wallet', function() {
     });
   });
   afterEach(async function() {
-    if (walletName) {
+    if (walletName && !skipWalletCleanup) {
       await Wallet.deleteWallet({ name: walletName, storageType });
     }
+    skipWalletCleanup = false;
     sandbox.restore();
   });
   for (const chain of ['BTC', 'BCH', 'LTC', 'DOGE', 'ETH', 'XRP', 'MATIC']) {
@@ -740,10 +742,11 @@ describe('Wallet', function() {
 
   describe('unlock', function () {
     it('performs wallet migration for previous wallet versions', async () => {
+      skipWalletCleanup = true;
       const fixture = ethMigrationTestWalletFixture;
       const wallet = new Wallet(fixture.wallet as any);
       const tempHomeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bitcore-client-migration-unlock-'));
-      const backupDir = path.join(tempHomeDir, '.bitcore', 'bitcoreWallets', 'backup');
+      const backupDir = path.join(tempHomeDir, '.bitcore', 'bitcoreWallet', 'backup');
       const loadWalletStub = sandbox.stub();
       const getStoredKeysStub = sandbox.stub();
       const addKeysSafeStub = sandbox.stub();
@@ -761,7 +764,6 @@ describe('Wallet', function() {
       addKeysSafeStub.resolves();
       saveWalletStub.resolves();
 
-      fs.mkdirSync(backupDir, { recursive: true });
       const homedirStub = sandbox.stub(os, 'homedir').returns(tempHomeDir);
       sandbox.stub(wallet, 'getAddresses').resolves(fixture.addresses);
 
@@ -776,8 +778,8 @@ describe('Wallet', function() {
       expect(Buffer.isBuffer(wallet.unlocked?.encryptionKey)).to.equal(true);
       expect(Buffer.isBuffer(wallet.unlocked?.masterKey?.privateKey)).to.equal(true);
       expect(Buffer.isBuffer(wallet.unlocked?.masterKey?.xprivkey)).to.equal(true);
-      expect(fs.readFileSync(path.join(backupDir, `${fixture.name}.bak`), 'utf8')).to.equal(fixture.rawWallet);
-      expect(fs.readFileSync(path.join(backupDir, `${fixture.name}_keys.bak`), 'utf8')).to.equal(JSON.stringify(fixture.storedKeys));
+      expect(fs.readFileSync(path.join(backupDir, `${fixture.name}.v1.bak`), 'utf8')).to.equal(fixture.rawWallet);
+      expect(fs.readFileSync(path.join(backupDir, `${fixture.name}_keys.v1.bak`), 'utf8')).to.equal(JSON.stringify(fixture.storedKeys));
       homedirStub.restore();
       fs.rmSync(tempHomeDir, { recursive: true, force: true });
     });
@@ -796,10 +798,10 @@ describe('Wallet', function() {
 
     
     beforeEach(async function () {
+      skipWalletCleanup = true;
       wallet = new Wallet(ethMigrationTestWalletFixture.wallet as any);
       tempHomeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bitcore-client-migration-'));
-      backupDir = path.join(tempHomeDir, '.bitcore', 'bitcoreWallets', 'backup');
-      fs.mkdirSync(backupDir, { recursive: true });
+      backupDir = path.join(tempHomeDir, '.bitcore', 'bitcoreWallet', 'backup');
       wallet.storage = {
         loadWallet: async () => undefined,
         getStoredKeys: async () => [],
@@ -836,10 +838,10 @@ describe('Wallet', function() {
         addresses: ethMigrationTestWalletFixture.addresses,
         name: ethMigrationTestWalletFixture.name
       })).to.be.true;
-      expect(fs.readFileSync(path.join(backupDir, `${ethMigrationTestWalletFixture.name}.bak`), 'utf8')).to.equal(
+      expect(fs.readFileSync(path.join(backupDir, `${ethMigrationTestWalletFixture.name}.v1.bak`), 'utf8')).to.equal(
         ethMigrationTestWalletFixture.rawWallet
       );
-      expect(fs.readFileSync(path.join(backupDir, `${ethMigrationTestWalletFixture.name}_keys.bak`), 'utf8')).to.equal(
+      expect(fs.readFileSync(path.join(backupDir, `${ethMigrationTestWalletFixture.name}_keys.v1.bak`), 'utf8')).to.equal(
         JSON.stringify(ethMigrationTestWalletFixture.storedKeys)
       );
     });
@@ -970,7 +972,7 @@ describe('Wallet', function() {
       expect(getStoredKeysStub.called).to.equal(false);
       expect(addKeysSafeStub.called).to.equal(false);
       expect(saveWalletStub.called).to.equal(false);
-      expect(fs.existsSync(path.join(backupDir, `${ethMigrationTestWalletFixture.name}.bak`))).to.equal(false);
+      expect(fs.existsSync(path.join(backupDir, `${ethMigrationTestWalletFixture.name}.v2.bak`))).to.equal(false);
     });
 
     it('should no-op when the wallet version is newer than the current version', async () => {
@@ -987,7 +989,7 @@ describe('Wallet', function() {
       expect(getStoredKeysStub.called).to.equal(false);
       expect(addKeysSafeStub.called).to.equal(false);
       expect(saveWalletStub.called).to.equal(false);
-      expect(fs.existsSync(path.join(backupDir, `${ethMigrationTestWalletFixture.name}.bak`))).to.equal(false);
+      expect(fs.existsSync(path.join(backupDir, `${ethMigrationTestWalletFixture.name}.v3.bak`))).to.equal(false);
     });
   });
 

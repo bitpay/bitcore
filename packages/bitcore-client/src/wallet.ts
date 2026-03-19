@@ -1,4 +1,4 @@
-import { writeFile } from 'fs/promises';
+import { mkdir, writeFile } from 'fs/promises';
 import 'source-map-support/register';
 import os from 'os';
 import path from 'path';
@@ -331,20 +331,21 @@ export class Wallet {
   }
 
   async migrateWallet(encryptionKey: Buffer): Promise<Wallet> {
+    const preMigrationVersion = this.version ?? 1;
     /**
      * 0: Checks
      */
-    if (this.version == CURRENT_WALLET_VERSION) {
+    if (preMigrationVersion == CURRENT_WALLET_VERSION) {
       console.warn('Wallet migration unnecessarily called - wallet is current version');
       return this;
     }
 
-    if (this.version > CURRENT_WALLET_VERSION) {
-      console.warn(`Wallet version ${this.version} greater than expected current wallet version ${CURRENT_WALLET_VERSION}`);
+    if (preMigrationVersion > CURRENT_WALLET_VERSION) {
+      console.warn(`Wallet version ${preMigrationVersion} greater than expected current wallet version ${CURRENT_WALLET_VERSION}`);
       return this;
     }
 
-    console.log(`Migrating wallet from version ${this.version} to version ${CURRENT_WALLET_VERSION}`);
+    console.log(`Migrating wallet from version ${preMigrationVersion} to version ${CURRENT_WALLET_VERSION}`);
 
     /**
      * 1: Wallet to .bak
@@ -357,16 +358,17 @@ export class Wallet {
     const backupDir = path.join(
       os.homedir(),
       '.bitcore',
-      'bitcoreWallets',
+      'bitcoreWallet',
       'backup'
     );
+    await mkdir(backupDir, { recursive: true });
 
-    const walletFilePath = path.join(backupDir, `${this.name}.bak`);
+    const walletFilePath = path.join(backupDir, `${this.name}.v${preMigrationVersion}.bak`);
     
     await writeFile(walletFilePath, rawWallet, 'utf8')
       .then(() => console.log(`Pre-migration wallet backup written to ${walletFilePath}`))
       .catch(err => {
-        console.error('Wallet backup failed, aborting migration', err.msg);
+        console.error('Wallet backup failed, aborting migration', err.message);
         throw new Error('Migration failure: failed to write wallet backup file. Aborting.');
       });
 
@@ -381,11 +383,11 @@ export class Wallet {
 
     // Back up keys (enc)
     const backupKeysStr = JSON.stringify(storedKeys);
-    const keysFilePath = path.join(backupDir, `${this.name}_keys.bak`);
+    const keysFilePath = path.join(backupDir, `${this.name}_keys.v${preMigrationVersion}.bak`);
     await writeFile(keysFilePath, backupKeysStr, 'utf8')
       .then(() => console.log(`Pre-migration keys backup written to ${keysFilePath}`))
       .catch(err => {
-        console.error('Keys backup failed, aborting migration', err.msg);
+        console.error('Keys backup failed, aborting migration', err.message);
         throw new Error('Migration failure: failed to write keys backup file. Aborting.');
       });
 
