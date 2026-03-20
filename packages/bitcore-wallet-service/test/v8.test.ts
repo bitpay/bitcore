@@ -250,7 +250,7 @@ describe('V8', () => {
   describe('#getAaveUserAccountData', () => {
     it('should get aave user account data', (done) => {
       const fakeRequest = {
-        get: sinon.stub().resolves('{"totalCollateralBase":"1000","totalDebtBase":"500","healthFactor":"2.0"}'),
+        get: sinon.stub().resolves('{"totalCollateralBase":"1000","totalDebtBase":"500","availableBorrowsBase":"200","currentLiquidationThreshold":"8000","ltv":"7500","healthFactor":"2.0"}'),
       };
 
       const be = new V8({
@@ -266,6 +266,10 @@ describe('V8', () => {
         should.not.exist(err);
         should.exist(accountData);
         accountData.totalCollateralBase.should.equal('1000');
+        accountData.totalDebtBase.should.equal('500');
+        accountData.availableBorrowsBase.should.equal('200');
+        accountData.currentLiquidationThreshold.should.equal('8000');
+        accountData.ltv.should.equal('7500');
         accountData.healthFactor.should.equal('2.0');
         return done();
       });
@@ -323,7 +327,7 @@ describe('V8', () => {
   describe('#getTokenAllowance', () => {
     it('should get token allowance', (done) => {
       const fakeRequest = {
-        get: sinon.stub().resolves('{"allowance":"1000000000000000000"}'),
+        get: sinon.stub().resolves('5000000'),
       };
 
       const be = new V8({
@@ -337,10 +341,10 @@ describe('V8', () => {
 
       be.getTokenAllowance(
         { tokenAddress: '0xtoken', ownerAddress: '0xowner', spenderAddress: '0xspender' },
-        (err, token) => {
+        (err, allowance) => {
           should.not.exist(err);
-          should.exist(token);
-          token.allowance.should.equal('1000000000000000000');
+          should.exist(allowance);
+          allowance.should.equal(5000000);
           return done();
         }
       );

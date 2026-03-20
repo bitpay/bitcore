@@ -564,7 +564,7 @@ describe('ExpressApp', function() {
       describe('Token allowance', function() {
         it('/v1/token/allowance', function(done) {
           const server = {
-            getTokenAllowance: sinon.stub().resolves({ allowance: '1000000000000000000' }),
+            getTokenAllowance: sinon.stub().resolves(5000000),
           };
           sandbox.stub(WalletService, 'initialize').callsArg(1);
           sandbox.stub(WalletService, 'getInstanceWithAuth').callsArgWith(1, null, server);
@@ -581,7 +581,7 @@ describe('ExpressApp', function() {
             request(requestOptions, function(err, res, body) {
               should.not.exist(err);
               res.statusCode.should.equal(200);
-              body.allowance.should.equal('1000000000000000000');
+              body.should.equal(5000000);
               done();
             });
           });
