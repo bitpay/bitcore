@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=22.0.0"
   },
-  "version": "11.6.5",
+  "version": "11.6.6",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "contributors": [
     "Justin Langston <nitsujlangston@gmail.com>",
@@ -92,17 +92,17 @@
     "typescript": "5.7.3"
   },
   "dependencies": {
-    "@bitpay-labs/bitcore-client": "^11.6.4",
-    "@bitpay-labs/bitcore-lib": "^11.6.4",
-    "@bitpay-labs/bitcore-lib-cash": "^11.6.4",
-    "@bitpay-labs/bitcore-lib-doge": "^11.6.4",
-    "@bitpay-labs/bitcore-lib-ltc": "^11.6.4",
-    "@bitpay-labs/bitcore-p2p": "^11.6.4",
-    "@bitpay-labs/bitcore-p2p-cash": "^11.6.4",
-    "@bitpay-labs/bitcore-p2p-doge": "^11.6.4",
-    "@bitpay-labs/bitcore-wallet-client": "^11.6.5",
-    "@bitpay-labs/crypto-rpc": "^11.6.4",
-    "@bitpay-labs/crypto-wallet-core": "^11.6.4",
+    "@bitpay-labs/bitcore-client": "^11.6.6",
+    "@bitpay-labs/bitcore-lib": "^11.6.6",
+    "@bitpay-labs/bitcore-lib-cash": "^11.6.6",
+    "@bitpay-labs/bitcore-lib-doge": "^11.6.6",
+    "@bitpay-labs/bitcore-lib-ltc": "^11.6.6",
+    "@bitpay-labs/bitcore-p2p": "^11.6.6",
+    "@bitpay-labs/bitcore-p2p-cash": "^11.6.6",
+    "@bitpay-labs/bitcore-p2p-doge": "^11.6.6",
+    "@bitpay-labs/bitcore-wallet-client": "^11.6.6",
+    "@bitpay-labs/crypto-rpc": "^11.6.6",
+    "@bitpay-labs/crypto-wallet-core": "^11.6.6",
     "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
     "@metaplex-foundation/umi": "^1.2.0",
     "@metaplex-foundation/umi-bundle-defaults": "^1.2.0",
@@ -118,5 +118,5 @@
     "source-map-support": "^0.5.13",
     "winston": "3.3.0"
   },
-  "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4"
+  "gitHead": "a1890ef287c9e5d0e966fb445d15bc59a9393761"
 }
