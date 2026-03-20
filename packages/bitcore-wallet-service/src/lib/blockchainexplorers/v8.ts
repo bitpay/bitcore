@@ -486,6 +486,48 @@ export class V8 {
       });
   }
 
+  getAaveUserAccountData(opts: { address: string; version?: string }, cb) {
+    const url = this.baseUrl + '/aave/account/' + opts.address + '?version=' + (opts.version || 'v3');
+    logger.debug('[v8.js] GETTING AAVE USER ACCOUNT DATA %o', url);
+    this.request
+      .get(url, {})
+      .then(accountData => {
+        accountData = JSON.parse(accountData);
+        return cb(null, accountData);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
+  getAaveReserveData(opts: { asset: string; version?: string }, cb) {
+    const url = this.baseUrl + '/aave/reserve/' + opts.asset + '?version=' + (opts.version || 'v3');
+    logger.debug('[v8.js] GETTING AAVE RESERVE DATA %o', url);
+    this.request
+      .get(url, {})
+      .then(reserveData => {
+        reserveData = JSON.parse(reserveData);
+        return cb(null, reserveData);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
+  getAaveReserveTokensAddresses(opts: { asset: string; version?: string }, cb) {
+    const url = this.baseUrl + '/aave/reserve-tokens/' + opts.asset + '?version=' + (opts.version || 'v3');
+    logger.debug('[v8.js] GETTING AAVE RESERVE TOKENS ADDRESSES %o', url);
+    this.request
+      .get(url, {})
+      .then(tokensAddresses => {
+        tokensAddresses = JSON.parse(tokensAddresses);
+        return cb(null, tokensAddresses);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
   getMultisigTxpsInfo(opts: { multisigContractAddress: string }, cb) {
     const url = this.baseUrl + '/ethmultisig/txps/' + opts.multisigContractAddress;
     logger.debug('[v8.js] CHECKING CONTRACT TXPS INFO %o', url);

@@ -2559,6 +2559,62 @@ export class WalletService implements IWalletService {
     });
   }
 
+  getTokenAllowance(opts) {
+    const bc = this._getBlockchainExplorer(opts.chain || Defaults.EVM_CHAIN, opts.network);
+    return new Promise((resolve, reject) => {
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getTokenAllowance(opts, (err, allowance) => {
+        if (err) {
+          this.logw('Error getting token allowance:', err);
+          return reject(err);
+        }
+        return resolve(allowance);
+      });
+    });
+  }
+
+  getAaveUserAccountData(opts) {
+    const bc = this._getBlockchainExplorer(opts.chain || Defaults.EVM_CHAIN, opts.network);
+    return new Promise((resolve, reject) => {
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getAaveUserAccountData(opts, (err, accountData) => {
+        if (err) {
+          this.logw('Error getting Aave user account data:', err);
+          return reject(err);
+        }
+        return resolve(accountData);
+      });
+    });
+  }
+
+  getAaveReserveData(opts) {
+    const bc = this._getBlockchainExplorer(opts.chain || Defaults.EVM_CHAIN, opts.network);
+    return new Promise((resolve, reject) => {
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getAaveReserveData(opts, (err, reserveData) => {
+        if (err) {
+          this.logw('Error getting Aave reserve data:', err);
+          return reject(err);
+        }
+        return resolve(reserveData);
+      });
+    });
+  }
+
+  getAaveReserveTokensAddresses(opts) {
+    const bc = this._getBlockchainExplorer(opts.chain || Defaults.EVM_CHAIN, opts.network);
+    return new Promise((resolve, reject) => {
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getAaveReserveTokensAddresses(opts, (err, tokensAddresses) => {
+        if (err) {
+          this.logw('Error getting Aave reserve tokens addresses:', err);
+          return reject(err);
+        }
+        return resolve(tokensAddresses);
+      });
+    });
+  }
+
   getMultisigTxpsInfo(opts) {
     const bc = this._getBlockchainExplorer(opts.chain || Defaults.EVM_CHAIN, opts.network);
     return new Promise((resolve, reject) => {

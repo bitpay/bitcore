@@ -247,6 +247,105 @@ describe('V8', () => {
 
   });
 
+  describe('#getAaveUserAccountData', () => {
+    it('should get aave user account data', (done) => {
+      const fakeRequest = {
+        get: sinon.stub().resolves('{"totalCollateralBase":"1000","totalDebtBase":"500","healthFactor":"2.0"}'),
+      };
+
+      const be = new V8({
+        chain: 'eth',
+        network: 'livenet',
+        url: 'http://dummy/',
+        apiPrefix: 'dummyPath',
+        userAgent: 'testAgent',
+        request: fakeRequest,
+      });
+
+      be.getAaveUserAccountData({ address: '0x123', version: 'v3' }, (err, accountData) => {
+        should.not.exist(err);
+        should.exist(accountData);
+        accountData.totalCollateralBase.should.equal('1000');
+        accountData.healthFactor.should.equal('2.0');
+        return done();
+      });
+    });
+  });
+
+  describe('#getAaveReserveData', () => {
+    it('should get aave reserve data', (done) => {
+      const fakeRequest = {
+        get: sinon.stub().resolves('{"currentVariableBorrowRate":"35000000000000000000000000"}'),
+      };
+
+      const be = new V8({
+        chain: 'eth',
+        network: 'livenet',
+        url: 'http://dummy/',
+        apiPrefix: 'dummyPath',
+        userAgent: 'testAgent',
+        request: fakeRequest,
+      });
+
+      be.getAaveReserveData({ asset: '0xabc', version: 'v3' }, (err, reserveData) => {
+        should.not.exist(err);
+        should.exist(reserveData);
+        reserveData.currentVariableBorrowRate.should.equal('35000000000000000000000000');
+        return done();
+      });
+    });
+  });
+
+  describe('#getAaveReserveTokensAddresses', () => {
+    it('should get aave reserve tokens addresses', (done) => {
+      const fakeRequest = {
+        get: sinon.stub().resolves('{"variableDebtTokenAddress":"0xdef456"}'),
+      };
+
+      const be = new V8({
+        chain: 'eth',
+        network: 'livenet',
+        url: 'http://dummy/',
+        apiPrefix: 'dummyPath',
+        userAgent: 'testAgent',
+        request: fakeRequest,
+      });
+
+      be.getAaveReserveTokensAddresses({ asset: '0xabc', version: 'v3' }, (err, tokensAddresses) => {
+        should.not.exist(err);
+        should.exist(tokensAddresses);
+        tokensAddresses.variableDebtTokenAddress.should.equal('0xdef456');
+        return done();
+      });
+    });
+  });
+
+  describe('#getTokenAllowance', () => {
+    it('should get token allowance', (done) => {
+      const fakeRequest = {
+        get: sinon.stub().resolves('{"allowance":"1000000000000000000"}'),
+      };
+
+      const be = new V8({
+        chain: 'eth',
+        network: 'livenet',
+        url: 'http://dummy/',
+        apiPrefix: 'dummyPath',
+        userAgent: 'testAgent',
+        request: fakeRequest,
+      });
+
+      be.getTokenAllowance(
+        { tokenAddress: '0xtoken', ownerAddress: '0xowner', spenderAddress: '0xspender' },
+        (err, token) => {
+          should.not.exist(err);
+          should.exist(token);
+          token.allowance.should.equal('1000000000000000000');
+          return done();
+        }
+      );
+    });
+  });
 
   describe('#broadcast', () => {
     it('should broadcast a TX', (done) => {
