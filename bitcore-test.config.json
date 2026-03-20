@@ -12,6 +12,11 @@
         ]
       }
     },
+    "externalProviders": {
+      "alchemy": {
+        "apiKey": ""
+      }
+    },
     "chains": {
       "BTC": {
         "regtest": {
@@ -115,6 +120,12 @@
               "protocol": "https",
               "port": "",
               "dataType": "combined"
+            }
+          ],
+          "indexedProviderRouting": [
+            {
+              "name": "alchemy",
+              "priority": 0
             }
           ]
         }

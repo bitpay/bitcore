@@ -3181,7 +3181,7 @@ export class API extends EventEmitter {
     }
     try {
       $.checkState(this.credentials, 'Failed state: this.credentials at <getStatusByIdentifier()>');
-      $.checkArugment(opts?.identifier, 'Missing argument: identifier at <getStatusByIdentifier()>');
+      $.checkArgument(opts?.identifier, 'Missing argument: identifier at <getStatusByIdentifier()>');
 
       const qs = [];
       qs.push('includeExtendedInfo=' + (opts.includeExtendedInfo ? '1' : '0'));
