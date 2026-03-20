@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=22.0.0"
   },
-  "version": "11.6.4",
+  "version": "11.6.5",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "contributors": [
     "Justin Langston <nitsujlangston@gmail.com>",
@@ -100,7 +100,7 @@
     "@bitpay-labs/bitcore-p2p": "^11.6.4",
     "@bitpay-labs/bitcore-p2p-cash": "^11.6.4",
     "@bitpay-labs/bitcore-p2p-doge": "^11.6.4",
-    "@bitpay-labs/bitcore-wallet-client": "^11.6.4",
+    "@bitpay-labs/bitcore-wallet-client": "^11.6.5",
     "@bitpay-labs/crypto-rpc": "^11.6.4",
     "@bitpay-labs/crypto-wallet-core": "^11.6.4",
     "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
