@@ -3270,12 +3270,13 @@ export class WalletService implements IWalletService {
   }
 
   /**
-   * Assign a fresh nonce to a deferred-nonce transaction proposal.
+   * Prepare a transaction proposal for signing.
+   * Assigns JIT values (nonce, and in the future: fee, gas) to a deferred txp.
    * Called by the client just before signing.
    * @param {Object} opts
    * @param {string} opts.txProposalId - The identifier of the transaction.
    */
-  assignNonce(opts, cb) {
+  prepareTx(opts, cb) {
     if (!checkRequired(opts, ['txProposalId'], cb)) return;
 
     this._runLocked(cb, cb => {
