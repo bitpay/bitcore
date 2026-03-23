@@ -2,6 +2,7 @@ import { ObjectId } from 'bson';
 import { expect } from 'chai';
 import { EventEmitter } from 'events';
 import * as sinon from 'sinon';
+import * as aaveApi from '../../../../src/providers/chain-state/evm/api/aave';
 import { MongoBound } from '../../../../src/models/base';
 import { ETH } from '../../../../src/modules/ethereum/api/csp';
 import { BaseEVMStateProvider } from '../../../../src/providers/chain-state/evm/api/csp';
@@ -166,6 +167,197 @@ describe('ETH Chain State Provider', function() {
     expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
     expect(web3Stub.eth.sendSignedTransaction.calledWith('456')).to.eq(false);
     sandbox.restore();
+  });
+
+  it('should return expected fields for Aave v3 account data', async () => {
+    const sandbox = sinon.createSandbox();
+    const accountData = {
+      totalCollateralBase: 0n,
+      totalDebtBase: 0n,
+      availableBorrowsBase: 0n,
+      currentLiquidationThreshold: 8600n,
+      ltv: 8250n,
+      healthFactor: 123456n
+    };
+
+    const contractStub = {
+      methods: {
+        getUserAccountData: () => ({ call: sandbox.stub().resolves(accountData) })
+      }
+    };
+
+    const web3Stub: any = {
+      utils: { toChecksumAddress: (addr: string) => addr },
+      eth: { Contract: sandbox.stub().returns(contractStub) }
+    };
+
+    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({
+      [`ETH:${network}`]: {
+        realtime: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }]
+      }
+    });
+    sandbox.stub(aaveApi, 'getAavePoolAddress').returns('0xpool');
+
+    const result = await ETH.getAaveUserAccountData({
+      network,
+      address: '0x123',
+      version: 'v3'
+    });
+
+    expect(result).to.deep.include({
+      totalCollateralBase: '0',
+      totalDebtBase: '0',
+      availableBorrowsBase: '0',
+      currentLiquidationThreshold: '8600',
+      ltv: '8250',
+      healthFactor: '123456'
+    });
+    sandbox.restore();
+  });
+
+  it('should return expected fields for Aave v2 account data', async () => {
+    const sandbox = sinon.createSandbox();
+    const accountData = {
+      totalCollateralETH: 10n,
+      totalDebtETH: 2n,
+      availableBorrowsETH: 8n,
+      currentLiquidationThreshold: 8600n,
+      ltv: 8250n,
+      healthFactor: 999n
+    };
+
+    const contractStub = {
+      methods: {
+        getUserAccountData: () => ({ call: sandbox.stub().resolves(accountData) })
+      }
+    };
+
+    const web3Stub: any = {
+      utils: { toChecksumAddress: (addr: string) => addr },
+      eth: { Contract: sandbox.stub().returns(contractStub) }
+    };
+
+    sandbox.stub(BaseEVMStateProvider, 'rpcs').value({
+      [`ETH:${network}`]: {
+        realtime: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }]
+      }
+    });
+    sandbox.stub(aaveApi, 'getAavePoolAddress').returns('0xpool');
+
+    const result = await ETH.getAaveUserAccountData({
+      network,
+      address: '0x123',
+      version: 'v2'
+    });
+
+    expect(result).to.deep.include({
+      totalCollateralETH: '10',
+      totalDebtETH: '2',
+      availableBorrowsETH: '8',
+      currentLiquidationThreshold: '8600',
+      ltv: '8250',
+      healthFactor: '999'
+    });
+    sandbox.restore();
+  });
+
+  describe('getAaveReserveData', function() {
+    // Using USDC as a common asset for both v2 and v3 tests
+    const asset = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
+
+    const makeReserveDataStub = (sandbox: sinon.SinonSandbox) => {
+      const reserveData = {
+        currentVariableBorrowRate: 80000000000000000000000000n
+      };
+      const contractStub = {
+        methods: { getReserveData: () => ({ call: sandbox.stub().resolves(reserveData) }) }
+      };
+      const web3Stub: any = {
+        utils: { toChecksumAddress: (addr: string) => addr },
+        eth: { Contract: sandbox.stub().returns(contractStub) }
+      };
+      sandbox.stub(BaseEVMStateProvider, 'rpcs').value({
+        [`ETH:${network}`]: { realtime: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] }
+      });
+      sandbox.stub(aaveApi, 'getAavePoolAddress').returns('0xpool');
+      return reserveData;
+    };
+
+    it('should return currentVariableBorrowRate for Aave v3', async () => {
+      const sandbox = sinon.createSandbox();
+      makeReserveDataStub(sandbox);
+
+      const result = await ETH.getAaveReserveData({ network, asset, version: 'v3' });
+
+      expect(result).to.deep.equal({ currentVariableBorrowRate: '80000000000000000000000000' });
+      sandbox.restore();
+    });
+
+    it('should return currentVariableBorrowRate for Aave v2', async () => {
+      const sandbox = sinon.createSandbox();
+      makeReserveDataStub(sandbox);
+
+      const result = await ETH.getAaveReserveData({ network, asset, version: 'v2' });
+
+      expect(result).to.deep.equal({ currentVariableBorrowRate: '80000000000000000000000000' });
+      sandbox.restore();
+    });
+  });
+
+  describe('getAaveReserveTokensAddresses', function() {
+    it('should return variableDebtTokenAddress', async () => {
+      const sandbox = sinon.createSandbox();
+      const reserveData = {
+        variableDebtTokenAddress: '0xvariableDebtAddress'
+      };
+      const contractStub = {
+        methods: { getReserveData: () => ({ call: sandbox.stub().resolves(reserveData) }) }
+      };
+      const web3Stub: any = {
+        utils: { toChecksumAddress: (addr: string) => addr },
+        eth: { Contract: sandbox.stub().returns(contractStub) }
+      };
+      sandbox.stub(BaseEVMStateProvider, 'rpcs').value({
+        [`ETH:${network}`]: { realtime: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] }
+      });
+      sandbox.stub(aaveApi, 'getAavePoolAddress').returns('0xpool');
+
+      const result = await ETH.getAaveReserveTokensAddresses({
+        network,
+        asset: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        version: 'v3'
+      });
+
+      expect(result).to.deep.equal({ variableDebtTokenAddress: '0xvariableDebtAddress' });
+      sandbox.restore();
+    });
+
+    it('should return variableDebtTokenAddress for v2', async () => {
+      const sandbox = sinon.createSandbox();
+      const reserveData = {
+        variableDebtTokenAddress: '0xvariableDebtAddress'
+      };
+      const contractStub = {
+        methods: { getReserveData: () => ({ call: sandbox.stub().resolves(reserveData) }) }
+      };
+      const web3Stub: any = {
+        utils: { toChecksumAddress: (addr: string) => addr },
+        eth: { Contract: sandbox.stub().returns(contractStub) }
+      };
+      sandbox.stub(BaseEVMStateProvider, 'rpcs').value({
+        [`ETH:${network}`]: { realtime: [{ web3: web3Stub, rpc: sinon.stub(), dataType: 'combined' }] }
+      });
+      sandbox.stub(aaveApi, 'getAavePoolAddress').returns('0xpool');
+
+      const result = await ETH.getAaveReserveTokensAddresses({
+        network,
+        asset: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        version: 'v2'
+      });
+
+      expect(result).to.deep.equal({ variableDebtTokenAddress: '0xvariableDebtAddress' });
+      sandbox.restore();
+    });
   });
 
   it('should be able to find an ETH block', async () => {

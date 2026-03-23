@@ -47,10 +47,10 @@ const PUSHNOTIFICATIONS_TYPES = {
     dataOnly: true,
     broadcastToActiveUsers: true
   },
-  NewBlock: {
-    dataOnly: true,
-    broadcastToActiveUsers: true
-  },
+  // NewBlock: {
+  //   dataOnly: true,
+  //   broadcastToActiveUsers: true
+  // },
   TxProposalAcceptedBy: {
     dataOnly: true
   },
@@ -713,15 +713,15 @@ export class PushNotificationsService {
 
   private coinGeckoGetCredentials() {
     if (!config.coinGecko) throw new Error('coinGecko missing credentials');
- 
+
     const credentials = {
       API: config.coinGecko.api,
       API_KEY: config.coinGecko.apiKey,
     };
- 
+
     return credentials;
   }
- 
+
   getTokenData(chain: string): Promise<Array<{
     chainId: number;
     address: string;
@@ -733,11 +733,11 @@ export class PushNotificationsService {
     return new Promise((resolve, reject) => {
       const cacheKey = `cgTokenList:${chain}`;
       const credentials = this.coinGeckoGetCredentials();
- 
+
       this.storage.checkAndUseGlobalCache(cacheKey, Defaults.COIN_GECKO_CACHE_DURATION, (err, values, oldvalues) => {
         if (err) logger.warn('Cache check failed', err);
         if (values) return resolve(values);
- 
+
         const assetPlatformMap = {
           eth: 'ethereum',
           matic: 'polygon-pos',
@@ -747,17 +747,17 @@ export class PushNotificationsService {
           op: 'optimistic-ethereum',
           sol: 'solana',
         };
- 
+
         const assetId = assetPlatformMap[chain];
         if (!assetId) return reject(new Error(`Unsupported chain '${chain}'`));
- 
+
         const URL: string = `${credentials.API}/v3/token_lists/${assetId}/all.json`;
         const headers = {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'x-cg-pro-api-key': credentials.API_KEY
         };
- 
+
         this.request.get(
           URL,
           {

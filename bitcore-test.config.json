@@ -12,6 +12,11 @@
         ]
       }
     },
+    "externalProviders": {
+      "alchemy": {
+        "apiKey": ""
+      }
+    },
     "chains": {
       "BTC": {
         "regtest": {
@@ -64,6 +69,19 @@
             }
           ],
           "threads": 0
+        },
+        "sepolia": {
+          "chainSource": "external",
+          "trustedPeers": [],
+          "providers": [
+            {
+              "host": "ethereum-sepolia.publicnode.com",
+              "protocol": "https",
+              "port": "",
+              "dataType": "combined"
+            }
+          ],
+          "threads": 0
         }
       },
       "MATIC": {
@@ -102,6 +120,12 @@
               "protocol": "https",
               "port": "",
               "dataType": "combined"
+            }
+          ],
+          "indexedProviderRouting": [
+            {
+              "name": "alchemy",
+              "priority": 0
             }
           ]
         }

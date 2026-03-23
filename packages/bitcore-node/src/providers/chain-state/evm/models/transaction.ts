@@ -543,8 +543,8 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
   convertRawTx(chain: string, network: string, tx: Partial<Web3Types.TransactionInfo>, block?: IEVMBlock): IEVMTransactionInProcess {
     if (!block) {
       const txid = tx.hash as string || '';
-      const to = tx.to || '';
-      const from = tx.from || '';
+      const to = tx.to ? Web3.utils.toChecksumAddress(tx.to) : '';
+      const from = tx.from ? Web3.utils.toChecksumAddress(tx.from) : '';
       const value = BigInt(tx.value!);
       const gas = BigInt(tx.gas || -1); // -1 indicates unknown
       const gasPrice = BigInt(tx.gasPrice || -1);

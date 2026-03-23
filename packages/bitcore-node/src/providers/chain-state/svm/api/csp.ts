@@ -535,7 +535,8 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       if (tokenAddress) {
         const tokenBalance = tx.meta?.postTokenBalances?.find(tb => tb.accountIndex === index && tb.mint.toLowerCase() === tokenAddress.toLowerCase());
         const decimals = tokenBalance?.uiTokenAmount?.decimals;
-        balance = (Number(tokenBalance?.uiTokenAmount?.uiAmount) || 0) * (10 ** decimals);
+        const [left, right = ''] = (tokenBalance?.uiTokenAmount?.uiAmount || 0).toString().split('.');
+        balance = Number(left + right.padEnd(decimals, '0'));
       } else {
         balance = tx.meta?.postBalances?.[index];
       }
