@@ -7801,7 +7801,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('#assignNonce (deferred nonce)', function() {
+  describe('#prepareTx (deferred nonce)', function() {
     const ETH_ADDR = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
     let server, wallet, fromAddr;
 
@@ -7868,7 +7868,7 @@ describe('Wallet service', function() {
 
       should.not.exist(txp.nonce);
 
-      const result = await util.promisify(server.assignNonce).call(server, {
+      const result = await util.promisify(server.prepareTx).call(server, {
         txProposalId: txp.id
       });
       should.exist(result);
@@ -7884,14 +7884,14 @@ describe('Wallet service', function() {
 
       txp.nonce.should.equal('5');
 
-      const result = await util.promisify(server.assignNonce).call(server, {
+      const result = await util.promisify(server.prepareTx).call(server, {
         txProposalId: txp.id
       });
       result.nonce.should.equal('5');
     });
 
     it('should fail for non-existent txp', function(done) {
-      server.assignNonce({ txProposalId: 'nonexistent' }, function(err) {
+      server.prepareTx({ txProposalId: 'nonexistent' }, function(err) {
         should.exist(err);
         err.message.should.contain('not found');
         done();
@@ -7916,7 +7916,7 @@ describe('Wallet service', function() {
       }, TestData.copayers[0].privKey_1H_0);
       should.not.exist(txp2.nonce);
 
-      const result = await util.promisify(server.assignNonce).call(server, {
+      const result = await util.promisify(server.prepareTx).call(server, {
         txProposalId: txp2.id
       });
       result.nonce.should.equal(6);
@@ -7938,7 +7938,7 @@ describe('Wallet service', function() {
 
       const results = [];
       for (const txp of txps) {
-        const result = await util.promisify(server.assignNonce).call(server, {
+        const result = await util.promisify(server.prepareTx).call(server, {
           txProposalId: txp.id
         });
         results.push(result);
@@ -7973,12 +7973,12 @@ describe('Wallet service', function() {
         deferNonce: true
       }, TestData.copayers[0].privKey_1H_0);
 
-      const result1 = await util.promisify(server.assignNonce).call(server, {
+      const result1 = await util.promisify(server.prepareTx).call(server, {
         txProposalId: deferred1.id
       });
       result1.nonce.should.equal(4);
 
-      const result2 = await util.promisify(server.assignNonce).call(server, {
+      const result2 = await util.promisify(server.prepareTx).call(server, {
         txProposalId: deferred2.id
       });
       result2.nonce.should.equal(5);
@@ -7995,7 +7995,7 @@ describe('Wallet service', function() {
         deferNonce: true
       }, TestData.copayers[0].privKey_1H_0);
 
-      const withNonce = await util.promisify(server.assignNonce).call(server, {
+      const withNonce = await util.promisify(server.prepareTx).call(server, {
         txProposalId: txp.id
       });
       withNonce.nonce.should.equal(7);
@@ -8026,7 +8026,7 @@ describe('Wallet service', function() {
         deferNonce: true
       }, TestData.copayers[0].privKey_1H_0);
 
-      const withNonce = await util.promisify(server.assignNonce).call(server, {
+      const withNonce = await util.promisify(server.prepareTx).call(server, {
         txProposalId: deferredTxp.id
       });
       withNonce.nonce.should.equal(6);
@@ -8068,7 +8068,7 @@ describe('Wallet service', function() {
       published.status.should.equal('pending');
       should.exist(published.prePublishRaw);
 
-      const withNonce = await util.promisify(server.assignNonce).call(server, {
+      const withNonce = await util.promisify(server.prepareTx).call(server, {
         txProposalId: created.id
       });
       withNonce.nonce.should.equal(42);
@@ -8105,7 +8105,7 @@ describe('Wallet service', function() {
 
       const assignedNonces = [];
       for (let i = 0; i < txps.length; i++) {
-        const withNonce = await util.promisify(server.assignNonce).call(server, {
+        const withNonce = await util.promisify(server.prepareTx).call(server, {
           txProposalId: txps[i].id
         });
         withNonce.nonce.should.equal(10 + i);
@@ -8113,6 +8113,30 @@ describe('Wallet service', function() {
       }
 
       assignedNonces.should.deep.equal([10, 11, 12]);
+    });
+
+    it('should return txp with nonce set (extensibility baseline)', async function() {
+      const txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.01, TestData.copayers[0].privKey_1H_0, {
+        chain: 'eth',
+        coin: 'eth',
+        from: fromAddr,
+        nonce: null,
+        deferNonce: true
+      });
+      server.createTx(txOpts, function(err, txp) {
+        should.not.exist(err);
+        should.not.exist(txp.nonce);
+        const publishOpts = helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0);
+        server.publishTx(publishOpts, function(err, publishedTxp) {
+          should.not.exist(err);
+          server.prepareTx({ txProposalId: publishedTxp.id }, function(err, prepared) {
+            should.not.exist(err);
+            prepared.nonce.should.be.a('number');
+            prepared.nonce.should.equal(5);
+            // future: prepared.gasPrice, prepared.maxFee would also be set here
+          });
+        });
+      });
     });
   });
 
