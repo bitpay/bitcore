@@ -2559,8 +2559,21 @@ export class WalletService implements IWalletService {
     });
   }
 
+  /**
+   * Get ERC20 token allowance for a given owner/spender pair.
+   * @param {Object} opts
+   * @param {string} opts.chain - EVM chain name (e.g. 'eth', 'matic')
+   * @param {string} opts.network - Network name (e.g. 'mainnet', 'sepolia')
+   * @param {string} opts.tokenAddress - Token contract address
+   * @param {string} opts.ownerAddress - Token owner address
+   * @param {string} opts.spenderAddress - Spender contract address
+   * @returns {Promise<number>} Token allowance amount
+   */
   getTokenAllowance(opts) {
-    const bc = this._getBlockchainExplorer(opts.chain || Defaults.EVM_CHAIN, opts.network);
+    if (!checkRequired(opts, ['chain', 'network', 'tokenAddress', 'ownerAddress', 'spenderAddress'])) {
+      return Promise.reject(new ClientError('getTokenAllowance request missing arguments'));
+    }
+    const bc = this._getBlockchainExplorer(opts.chain, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getTokenAllowance(opts, (err, allowance) => {
@@ -2573,8 +2586,23 @@ export class WalletService implements IWalletService {
     });
   }
 
+  /**
+   * Get Aave user account data (health factor, collateral, debt, etc.).
+   * @param {Object} opts
+   * @param {string} opts.chain - EVM chain name (e.g. 'eth', 'matic')
+   * @param {string} opts.network - Network name (e.g. 'mainnet', 'sepolia')
+   * @param {string} opts.address - User wallet address
+   * @param {string} [opts.version='v3'] - Aave protocol version ('v2' or 'v3')
+   * @returns {Promise<Object>} Aave account data (totalCollateralBase, totalDebtBase, healthFactor, etc.)
+   */
   getAaveUserAccountData(opts) {
-    const bc = this._getBlockchainExplorer(opts.chain || Defaults.EVM_CHAIN, opts.network);
+    if (!checkRequired(opts, ['chain', 'network', 'address'])) {
+      return Promise.reject(new ClientError('getAaveUserAccountData request missing arguments'));
+    }
+    if (opts.version && !['v2', 'v3'].includes(opts.version)) {
+      return Promise.reject(new ClientError('Invalid Aave version. Supported: v2, v3'));
+    }
+    const bc = this._getBlockchainExplorer(opts.chain, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getAaveUserAccountData(opts, (err, accountData) => {
@@ -2587,8 +2615,23 @@ export class WalletService implements IWalletService {
     });
   }
 
+  /**
+   * Get Aave reserve data (variable borrow rate, etc.).
+   * @param {Object} opts
+   * @param {string} opts.chain - EVM chain name (e.g. 'eth', 'matic')
+   * @param {string} opts.network - Network name (e.g. 'mainnet', 'sepolia')
+   * @param {string} opts.asset - Reserve asset token address
+   * @param {string} [opts.version='v3'] - Aave protocol version ('v2' or 'v3')
+   * @returns {Promise<Object>} Aave reserve data (currentVariableBorrowRate, etc.)
+   */
   getAaveReserveData(opts) {
-    const bc = this._getBlockchainExplorer(opts.chain || Defaults.EVM_CHAIN, opts.network);
+    if (!checkRequired(opts, ['chain', 'network', 'asset'])) {
+      return Promise.reject(new ClientError('getAaveReserveData request missing arguments'));
+    }
+    if (opts.version && !['v2', 'v3'].includes(opts.version)) {
+      return Promise.reject(new ClientError('Invalid Aave version. Supported: v2, v3'));
+    }
+    const bc = this._getBlockchainExplorer(opts.chain, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getAaveReserveData(opts, (err, reserveData) => {
@@ -2601,8 +2644,23 @@ export class WalletService implements IWalletService {
     });
   }
 
+  /**
+   * Get Aave reserve token addresses (aToken, variableDebtToken, etc.).
+   * @param {Object} opts
+   * @param {string} opts.chain - EVM chain name (e.g. 'eth', 'matic')
+   * @param {string} opts.network - Network name (e.g. 'mainnet', 'sepolia')
+   * @param {string} opts.asset - Reserve asset token address
+   * @param {string} [opts.version='v3'] - Aave protocol version ('v2' or 'v3')
+   * @returns {Promise<Object>} Aave reserve token addresses (variableDebtTokenAddress, etc.)
+   */
   getAaveReserveTokensAddresses(opts) {
-    const bc = this._getBlockchainExplorer(opts.chain || Defaults.EVM_CHAIN, opts.network);
+    if (!checkRequired(opts, ['chain', 'network', 'asset'])) {
+      return Promise.reject(new ClientError('getAaveReserveTokensAddresses request missing arguments'));
+    }
+    if (opts.version && !['v2', 'v3'].includes(opts.version)) {
+      return Promise.reject(new ClientError('Invalid Aave version. Supported: v2, v3'));
+    }
+    const bc = this._getBlockchainExplorer(opts.chain, opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getAaveReserveTokensAddresses(opts, (err, tokensAddresses) => {

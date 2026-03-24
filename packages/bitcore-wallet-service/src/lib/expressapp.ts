@@ -974,15 +974,14 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v1/token/allowance', (req, res) => {
-      getServerWithAuth(req, res, async server => {
-        try {
-          const allowance = await server.getTokenAllowance(req.body);
-          res.json(allowance);
-        } catch (err) {
-          returnError(err, res, req);
-        }
-      });
+    router.post('/v1/token/allowance', async (req, res) => {
+      try {
+        const server = getServer(req, res);
+        const allowance = await server.getTokenAllowance(req.body);
+        res.json(allowance);
+      } catch (err) {
+        returnError(err, res, req);
+      }
     });
 
     router.get('/v1/sendmaxinfo/', (req, res) => {
@@ -2403,7 +2402,7 @@ export class ExpressApp {
     });
 
     /** Imported routes */
-    router.use(new AaveRouter({ returnError, getServerWithAuth }).router);
+    router.use(new AaveRouter({ returnError, getServer }).router);
     router.use(new TssRouter({ returnError, opts }).router);
 
 
