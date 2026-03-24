@@ -8116,27 +8116,21 @@ describe('Wallet service', function() {
     });
 
     it('should return txp with nonce set (extensibility baseline)', async function() {
-      const txOpts = helpers.createSimpleProposalOpts('18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7', 0.01, TestData.copayers[0].privKey_1H_0, {
-        chain: 'eth',
-        coin: 'eth',
+      const txp = await helpers.createAndPublishTx(server, {
+        outputs: [{ toAddress: ETH_ADDR, amount: 8000 }],
+        feePerKb: 123e2,
         from: fromAddr,
-        nonce: null,
         deferNonce: true
+      }, TestData.copayers[0].privKey_1H_0);
+
+      should.not.exist(txp.nonce);
+
+      const result = await util.promisify(server.prepareTx).call(server, {
+        txProposalId: txp.id
       });
-      server.createTx(txOpts, function(err, txp) {
-        should.not.exist(err);
-        should.not.exist(txp.nonce);
-        const publishOpts = helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0);
-        server.publishTx(publishOpts, function(err, publishedTxp) {
-          should.not.exist(err);
-          server.prepareTx({ txProposalId: publishedTxp.id }, function(err, prepared) {
-            should.not.exist(err);
-            prepared.nonce.should.be.a('number');
-            prepared.nonce.should.equal(5);
-            // future: prepared.gasPrice, prepared.maxFee would also be set here
-          });
-        });
-      });
+      result.nonce.should.be.a('number');
+      result.nonce.should.equal(5);
+      // future: result.gasPrice, result.maxFee would also be set here
     });
   });
 
