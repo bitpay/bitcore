@@ -2063,33 +2063,18 @@ export class API extends EventEmitter {
   }
 
   /**
-   * Assign a fresh nonce to a deferred-nonce transaction proposal.
+   * Prepare a transaction proposal for signing.
+   * Assigns JIT values (nonce, and in the future: fee, gas) to a deferred txp.
    * Call this just before signing a deferred-nonce txp.
    */
-  async assignNonce(
-    opts: {
-      /** The transaction proposal to assign nonce to */
-      txp: Txp;
-    },
-    /** @deprecated */
-    cb?: (err?: Error, txp?: Txp) => void
-  ) {
-    if (cb) {
-      log.warn('DEPRECATED: assignNonce will remove callback support in the future.');
-    }
-    try {
-      $.checkState(this.credentials && this.credentials.isComplete(),
-        'Failed state: this.credentials at <assignNonce()>');
+  async prepareTx(opts: { txp: Txp }): Promise<Txp> {
+    $.checkState(this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <prepareTx()>');
 
-      const url = '/v1/txproposals/' + opts.txp.id + '/assign-nonce/';
-      const { body: txp } = await this.request.post<object, Txp>(url, {});
-      this._processTxps(txp);
-      if (cb) { cb(null, txp); }
-      return txp;
-    } catch (err) {
-      if (cb) cb(err);
-      else throw err;
-    }
+    const url = '/v1/txproposals/' + opts.txp.id + '/prepare/';
+    const { body: txp } = await this.request.post<object, Txp>(url, {});
+    this._processTxps(txp);
+    return txp;
   }
 
   /**
