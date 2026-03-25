@@ -3314,6 +3314,11 @@ export class WalletService implements IWalletService {
           if (action) return cb(Errors.COPAYER_VOTED);
           if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
 
+          // Client-supplied nonce override
+          if (opts.nonce != null && [...Object.keys(Constants.EVM_CHAINS), 'XRP'].includes(wallet.chain.toUpperCase())) {
+            txp.nonce = Number(opts.nonce);
+          }
+
           if (this._upgradeNeeded(UPGRADES.BCH_schnorr, { signingMethod: txp.signingMethod, supportBchSchnorr: opts.supportBchSchnorr })) {
             return cb(Errors.UPGRADE_NEEDED);
           }
