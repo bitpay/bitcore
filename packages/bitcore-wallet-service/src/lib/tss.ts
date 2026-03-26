@@ -279,9 +279,9 @@ class TssKeyGenClass {
 export const TssKeyGen = new TssKeyGenClass();
 
 class TssSignClass {
-  async getMessagesForParty(params: { id: string; round: number; copayerId: string }): Promise<{ messages?: ITssSigMessageObject[]; signature?: ITssSigMessageObject['signature'] }> {
+  async getMessagesForParty(params: { id: string; round: number; copayerId: string }): Promise<{ messages?: ITssSigMessageObject[]; signature?: ITssSigMessageObject['signature']; participants?: string[] }> {
     const { id, round, copayerId } = params;
-    
+
     const storage = WalletService.getStorage();
     const session = await storage.fetchTssSigSession({ id });
     if (!session) {
@@ -297,14 +297,19 @@ class TssSignClass {
     }
 
     const otherPartyMsgs = session.rounds[round].filter(m => m.fromPartyId != party.partyId);
+    const participants = otherPartyMsgs.map(m => {
+      const p = session.participants.find(p => p.partyId === m.fromPartyId);
+      return p?.copayerId;
+    }).filter(Boolean) as string[];
+
     if (otherPartyMsgs.length === session.m - 1) {
       const messages = otherPartyMsgs.map(m => m.messages);
       for (const m of messages) {
         m.p2pMessages = m.p2pMessages.filter(m => m.to == party.partyId);
       }
-      return { messages, signature: session.signature };
+      return { messages, signature: session.signature, participants };
     }
-    return {};
+    return { participants };
   }
 
   async processMessage(params: { id: string; message: ITssSigMessageObject; m?: string | number; copayerId: string }) {
