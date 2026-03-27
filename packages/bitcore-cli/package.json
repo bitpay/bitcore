@@ -30,10 +30,12 @@
   },
 
   "scripts": {
-    "test": "npm run compile && mocha 'build/test/**/*.js'",
-    "coverage": "npm run compile && nyc mocha 'build/test/**/*.js'",
+    "test": "npm run compile && node copyTestWallets && mocha --exit 'build/test/**/*.js'",
+    "coverage": "npm run compile && node copyTestWallets && nyc mocha --exit 'build/test/**/*.js'",
     "build": "tsc",
+    "build:prod": "tsc -p tsconfig.prod.json",
     "postbuild": "node createBin -v",
+    "postbuild:prod": "npm run postbuild",
     "clean": "rm -rf ./build",
     "compile": "npm run clean && npm run build",
     "lint": "eslint .",
@@ -52,7 +54,7 @@
     "usb": "2.15.0"
   },
   "devDependencies": {
-    "@bitpay-labs/bitcore-wallet-service": "^11.6.0",
+    "@bitpay-labs/bitcore-wallet-service": "^11.6.6",
     "@types/chai": "5.2.2",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.14.1",

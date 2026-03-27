@@ -6,7 +6,11 @@ const config = {
   mongoDb: {
     uri: `mongodb://${host}:${port}/${dbname}`,
     dbname,
+    options: { useUnifiedTopology: true }
   },
+  bws: {
+    port: 4343
+  }
 };
  
 export default config;

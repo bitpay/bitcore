@@ -2,11 +2,13 @@ import sinon from 'sinon';
 import assert from 'assert';
 import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import BWS from '@bitpay-labs/bitcore-wallet-service';
-import { API } from '@bitpay-labs/bitcore-wallet-client';
-import { Constants } from '@bitpay-labs/bitcore-wallet-client/src/lib/common/constants';
+import { API, Constants } from '@bitpay-labs/bitcore-wallet-client';
 import { MongoClient } from 'mongodb';
 import supertest from 'supertest';
+import path from 'path';
+import util from 'util';
 import config from '../test/data/test-config';
+import type http from 'http';
 
 const Bitcore = CWC.BitcoreLib;
 const Bitcore_ = {
@@ -17,9 +19,36 @@ const { ExpressApp, Storage } = BWS;
 
 let client: MongoClient;
 let expressApp: InstanceType<typeof ExpressApp>;
+let server: http.Server;
+let storage: InstanceType<typeof Storage>;
+
+export const CONSTANTS = {
+  WALLETS: {
+    PASSWORD: 'testpassword',
+    CLI_EXEC: 'build/src/cli.js',
+    DIR: path.join(__dirname, './wallets'),
+    TEMP_DIR: path.join(__dirname, './wallets/temp'),
+    COMMON_OPTS: ['--verbose', '--host', `http://localhost:${config.bws.port}`],
+    BTC: {
+      SINGLE_SIG: 'btc-singlesig',
+      MULTI_SIG: 'btc-multisig',
+      THRESHOLD_SIG: 'btc-tss',
+    },
+  },
+  KEYSTROKES: {
+    ENTER: '\r',        // Enter/Return
+    ARROW_UP: '\x1b[A',    // Arrow Up
+    ARROW_DOWN: '\x1b[B',    // Arrow Down
+    ARROW_RIGHT: '\x1b[C',    // Arrow Right
+    ARROW_LEFT: '\x1b[D',    // Arrow Left
+    DELETE: '\x1b[3~',   // Delete
+    BACKSPACE: '\x7f',      // Backspace
+    CTRL_C: '\x03',      // Ctrl+C
+  }
+};
 
 export async function newDb() {
-  client = await MongoClient.connect(config.mongoDb.uri);
+  client = await MongoClient.connect(config.mongoDb.uri, config.mongoDb.options);
   const db = client.db(config.mongoDb.dbname);
   await db.dropDatabase();
   return { client, db };
@@ -27,10 +56,10 @@ export async function newDb() {
 
 export async function startBws() {
   const { db } = await newDb();
-  const storage = new Storage({ db });
+  storage = new Storage({ db });
   Storage.createIndexes(db);
   expressApp = new ExpressApp();
-  return new Promise<void>(resolve => {
+  return new Promise<{ storage: InstanceType<typeof Storage> }>(resolve => {
     expressApp.start(
       {
         ignoreRateLimiter: true,
@@ -44,7 +73,8 @@ export async function startBws() {
           opts.request = supertest(expressApp.app);
           return (API.prototype.constructor as any).wrappedMethod.call(API.prototype, opts);
         });
-        resolve();
+        server = expressApp.app.listen(config.bws.port);
+        resolve({ storage });
       }
     );
   });
@@ -52,10 +82,28 @@ export async function startBws() {
 
 export async function stopBws() {
   return new Promise<void>(resolve => {
+    (API.prototype.constructor as any).restore();
     expressApp.app.removeAllListeners();
+    server.close();
     client.close(false, resolve);
   });
 };
+
+export async function loadWalletData(wallet: any) {
+  await util.promisify(storage.storeWalletAndUpdateCopayersLookup).call(storage, wallet);
+}
+
+export async function loadWalletProposalData(proposal: any) {
+  await util.promisify(storage.storeTx).call(storage, proposal.walletId, proposal);
+}
+
+export async function loadWalletAddressData(wallet: any, addresses: any[]) {
+  await util.promisify(storage.storeAddressAndWallet).call(
+    storage,
+    wallet,
+    addresses.map((a, i) => ({ ...a, createdOn: Math.floor(Date.now() / 1000) + i }))
+  );
+}
 
 export const blockchainExplorerMock = {
   register: sinon.stub().callsArgWith(1, null, null),
