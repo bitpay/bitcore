@@ -214,6 +214,9 @@ export class MoonpayService {
     qs.push('externalTransactionId=' + encodeURIComponent(req.body.externalTransactionId));
     qs.push('redirectURL=' + encodeURIComponent(req.body.redirectURL));
     if (req.body.lockAmount) qs.push('lockAmount=' + encodeURIComponent(req.body.lockAmount));
+    if (req.body.colorCode) qs.push('colorCode=' + encodeURIComponent(req.body.colorCode));
+    if (req.body.theme) qs.push('theme=' + encodeURIComponent(req.body.theme));
+    if (req.body.language) qs.push('language=' + encodeURIComponent(req.body.language));
     if (req.body.showWalletAddressForm)
       qs.push('showWalletAddressForm=' + encodeURIComponent(req.body.showWalletAddressForm));
     if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
