@@ -257,13 +257,10 @@ export class Wallet implements IWallet {
 
     if (doNotComplete) return key;
 
-
-    this.client.on('walletCompleted', (_wallet) => {
-      this.save().then(() => {
-        _verbose && prompt.log.info('Your wallet has just been completed.');
-      });
-    });
-    await this.client.openWallet();
+    const status = await this.client.openWallet();
+    if (status?.wallet?.status === 'complete') {
+      await this.save();
+    }
     return key;
   };
 

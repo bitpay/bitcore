@@ -30,14 +30,25 @@ export class Utils {
   static goodbye() {
     const funMessages = [
       'Until next time!',
-      'See you later!',
       'Keep calm and HODL on!',
       'Goodbye!',
-      'Tata!',
-      'Chin-chin!',
       'Cheers!',
-      'Adios!',
-      'Ciao!',
+      'Goodbye, and may your transactions always confirm quickly!',
+      'Thanks for using Bitcore CLI!',
+      'Adiós!', // Spanish
+      'Ciao!', // Italian (informal)
+      'Arrivederci!', // Italian (formal)
+      'Tchau!', // Portuguese
+      'Salut!', // French (informal)
+      'Au revoir!', // French (formal)
+      'Tschüss!', // German (informal)
+      'Auf Wiedersehen!', // German (formal)
+      'さようなら (Sayōnara)!', // Japanese
+      'до свидания (Do svidaniya)!', // Russian (formal)
+      'пока (Poka)!', // Russian (informal)
+      'Aloha!', // Hawaiian
+      '안녕히 가세요 (Annyeonghi gaseyo)!', // Korean
+      '再见 (Zàijiàn)!', // Chinese/Mandarin
     ];
     const randomMessage = funMessages[Math.floor(Math.random() * funMessages.length)];
     console.log('👋 ' + randomMessage);
@@ -137,11 +148,23 @@ export class Utils {
   }
 
   static async paginate(
-    fn: (page: number, action?: string) => Promise<{ result?: any[]; extraChoices?: prompt.Option<string>[] }>,
+    /** Body function to handle calling for and display of data */
+    fn: (
+      /** Page number to display */
+      page: number,
+      /** Action to perform on the data */
+      viewAction?: string
+    ) => Promise<{
+      /** Data used to display on the current page */
+      result?: any[];
+      /** Extra choices to show in the pagination menu */
+      extraChoices?: prompt.Option<string>[];
+    }>,
     opts?: {
       pageSize?: number;
-      initialPage?: number | string; // Initial page, default is 1
-      /** Only applies if there are no extraChoices */
+      /** Default: 1 */
+      initialPage?: number | string;
+      /** Do not show pagination controls if there is only one page. Only applies if there are no extraChoices */
       exitOn1Page?: boolean;
     }
   ) {
