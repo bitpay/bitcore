@@ -10,6 +10,7 @@ import config from '../src/config';
 import { Common } from '../src/lib/common';
 import { WalletService } from '../src/lib/server';
 import { ExpressApp } from '../src/lib/expressapp';
+import { ClientError } from '../src/lib/errors/clienterror';
 
 const Defaults = Common.Defaults;
 const should = chai.should();
@@ -483,6 +484,175 @@ describe('ExpressApp', function() {
         });
         
       });
+      describe('Aave service routes', function() {
+        it('/v1/service/aave/userAccountData', function(done) {
+          const server = {
+            getAaveUserAccountData: sinon.stub().resolves({ totalCollateralBase: '1000', healthFactor: '2.0' }),
+          };
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstance').returns(server);
+          start(ExpressApp, function() {
+            const requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/service/aave/userAccountData',
+              method: 'post',
+              json: { chain: 'eth', network: 'mainnet', address: '0x123', version: 'v3' }
+            };
+            request(requestOptions, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              body.totalCollateralBase.should.equal('1000');
+              body.healthFactor.should.equal('2.0');
+              done();
+            });
+          });
+        });
+
+        it('/v1/service/aave/userAccountData should fail with missing arguments', function(done) {
+          const server = {
+            getAaveUserAccountData: sinon.stub().rejects(new ClientError('getAaveUserAccountData request missing arguments')),
+          };
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstance').returns(server);
+          start(ExpressApp, function() {
+            const requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/service/aave/userAccountData',
+              method: 'post',
+              json: { version: 'v3' }
+            };
+            request(requestOptions, function(err, res) {
+              should.not.exist(err);
+              res.statusCode.should.equal(400);
+              done();
+            });
+          });
+        });
+
+        it('/v1/service/aave/reserveData', function(done) {
+          const server = {
+            getAaveReserveData: sinon.stub().resolves({ currentVariableBorrowRate: '35000000' }),
+          };
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstance').returns(server);
+          start(ExpressApp, function() {
+            const requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/service/aave/reserveData',
+              method: 'post',
+              json: { chain: 'eth', network: 'mainnet', asset: '0xabc', version: 'v3' }
+            };
+            request(requestOptions, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              body.currentVariableBorrowRate.should.equal('35000000');
+              done();
+            });
+          });
+        });
+
+        it('/v1/service/aave/reserveData should fail with missing arguments', function(done) {
+          const server = {
+            getAaveReserveData: sinon.stub().rejects(new ClientError('getAaveReserveData request missing arguments')),
+          };
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstance').returns(server);
+          start(ExpressApp, function() {
+            const requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/service/aave/reserveData',
+              method: 'post',
+              json: { version: 'v3' }
+            };
+            request(requestOptions, function(err, res) {
+              should.not.exist(err);
+              res.statusCode.should.equal(400);
+              done();
+            });
+          });
+        });
+
+        it('/v1/service/aave/reserveTokensAddresses', function(done) {
+          const server = {
+            getAaveReserveTokensAddresses: sinon.stub().resolves({ variableDebtTokenAddress: '0xdef' }),
+          };
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstance').returns(server);
+          start(ExpressApp, function() {
+            const requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/service/aave/reserveTokensAddresses',
+              method: 'post',
+              json: { chain: 'eth', network: 'mainnet', asset: '0xabc', version: 'v3' }
+            };
+            request(requestOptions, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              body.variableDebtTokenAddress.should.equal('0xdef');
+              done();
+            });
+          });
+        });
+
+        it('/v1/service/aave/reserveTokensAddresses should fail with missing arguments', function(done) {
+          const server = {
+            getAaveReserveTokensAddresses: sinon.stub().rejects(new ClientError('getAaveReserveTokensAddresses request missing arguments')),
+          };
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstance').returns(server);
+          start(ExpressApp, function() {
+            const requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/service/aave/reserveTokensAddresses',
+              method: 'post',
+              json: { version: 'v3' }
+            };
+            request(requestOptions, function(err, res) {
+              should.not.exist(err);
+              res.statusCode.should.equal(400);
+              done();
+            });
+          });
+        });
+      });
+
+      describe('Token allowance', function() {
+        it('/v1/token/allowance', function(done) {
+          const server = {
+            getTokenAllowance: sinon.stub().resolves(5000000),
+          };
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstance').returns(server);
+          start(ExpressApp, function() {
+            const requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/token/allowance',
+              method: 'post',
+              json: { chain: 'eth', network: 'mainnet', tokenAddress: '0xtoken', ownerAddress: '0xowner', spenderAddress: '0xspender' }
+            };
+            request(requestOptions, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              body.should.equal(5000000);
+              done();
+            });
+          });
+        });
+
+        it('/v1/token/allowance should fail with missing arguments', function(done) {
+          const server = {
+            getTokenAllowance: sinon.stub().rejects(new ClientError('getTokenAllowance request missing arguments')),
+          };
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstance').returns(server);
+          start(ExpressApp, function() {
+            const requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/token/allowance',
+              method: 'post',
+              json: {}
+            };
+            request(requestOptions, function(err, res) {
+              should.not.exist(err);
+              res.statusCode.should.equal(400);
+              done();
+            });
+          });
+        });
+      });
+
       describe('Clear cache', function() {
         it('/v1/clearcache/', function(done) {
           const resolveStub = sinon.stub().callsFake( () => { return Promise.resolve(true);});
