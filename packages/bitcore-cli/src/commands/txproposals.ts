@@ -3,18 +3,19 @@ import os from 'os';
 import * as prompt from '@clack/prompts';
 import { ITokenObj } from '../../types/wallet';
 import { UserCancelled } from '../errors';
-import { getAction, getFileName } from '../prompts';
+import { getFileName } from '../prompts';
 import { Utils } from '../utils';
 import type { CommonArgs } from '../../types/cli';
 
 export function command(args: CommonArgs) {
   const { wallet, program } = args;
   program
-    .description('View, sign, and reject transaction proposals for a wallet')
+    .description('View or perform actions on transaction proposals for a wallet')
     .usage('<walletName> --command txproposals [options]')
     .optionsGroup('Tx Proposals Options')
     .option('--action <action>', 'Action to perform on transaction proposals: sign, reject, delete, broadcast')
     .option('--proposalId <proposalId>', 'ID of the transaction proposal to act upon')
+    .option('--page <page>', 'Page number to view (only 1 proposal is displayed per page)')
     .option('--raw', 'Print raw transaction proposal objects instead of formatted output')
     .option('--export [filename]', `Export the transaction proposal(s) to a file(s) (default: ~/${wallet.name}_txproposal_<proposalId>.json)`)
     .parse(process.argv);
@@ -27,6 +28,9 @@ export function command(args: CommonArgs) {
   if (!!opts.action !== !!opts.proposalId) {
     throw new Error('Both --action and --proposalId options must be provided together.');
   }
+  if (!!opts.proposalId === !!opts.page) {
+    throw new Error('--page option does not make sense with --proposalId.');
+  }
   return opts;
 }
 
@@ -37,6 +41,7 @@ export async function getTxProposals(
     proposalId?: string;
     raw?: boolean;
     export?: string | boolean;
+    page?: number | string;
   }>
 ) {
   const { wallet, opts } = args;
@@ -52,16 +57,93 @@ export async function getTxProposals(
       forAirGapped: false, // TODO
     });
 
-  let action: string | symbol | undefined;
-  let i = 0;
-  let printRaw = opts.raw ?? false;
+  enum ViewAction {
+    ACCEPT = 'a',
+    REJECT = 'j',
+    BROADCAST = 'b',
+    DELETE = 'd',
+    TOGGLE_RAW = 'r',
+    EXPORT = 'e'
+  }
 
-  do {
-    const txp = txps[i];
+  let lastPage = 1;
+  let printRaw = opts.raw ?? false;
+  let txp;
+
+  await Utils.paginate(async (page, action) => {
+    const i = page - 1;
+    txp = txps[i];
+
     if (!txp) {
       prompt.log.info('No more proposals');
+      return { result: [] };
+    }
+
+    const _txps = page < txps.length ? [txp] : [txp, { /* This element will prevent the paginator from showing Next Page option */}];
+
+    if (action === ViewAction.TOGGLE_RAW) {
+      printRaw = !printRaw;
+    } else if (lastPage !== page) {
+      printRaw = false; // reset to formatted view when changing pages
+    }
+    lastPage = page;
+
+    
+    if (action === ViewAction.ACCEPT) {
+      txps[i] = await wallet.signAndBroadcastTxp({ txp });
+      txp = txps[i];
+      if (txp.status === 'broadcasted') {
+        prompt.log.success(`Broadcasted txid: ${Utils.colorText(txp.txid, 'green')}`);
+      } else {
+        prompt.log.info(`Proposal ${txp.id} signed. More signatures needed to broadcast.`);
+      }
+      
+    } else if (action === ViewAction.REJECT) {
+      const rejectReason = await prompt.text({ message: 'Enter rejection reason:' });
+      if (prompt.isCancel(rejectReason)) {
+        throw new UserCancelled();
+      }
+      txps[i] = await wallet.client.rejectTxProposal(txp, rejectReason);
+      txp = txps[i];
+
+    } else if (action === ViewAction.BROADCAST) {
+      txps[i] = await wallet.client.broadcastTxProposal(txp);
+      if (txps[i].status === 'broadcasted') {
+        prompt.log.success(`Broadcasted txid: ${Utils.colorText(txp.txid, 'green')}`);
+      }
+      txp = txps[i];
+
+    } else if (action === ViewAction.DELETE) {
+      const confirmDelete = await prompt.confirm({
+        message: `Are you sure you want to delete proposal ${txp.id}?`,
+        initialValue: false
+      });
+      if (prompt.isCancel(confirmDelete)) {
+        throw new UserCancelled();
+      }
+      if (confirmDelete) {
+        await wallet.client.removeTxProposal(txp);
+        txps[i].status = 'deleted'; // Update status locally since it's removed from server
+
+        prompt.log.success(`Proposal ${txp.id} deleted.`);
+      } else {
+        prompt.log.step(`Proposal ${txp.id} not deleted.`);
+      }
+
+    } else if (action === ViewAction.EXPORT) {
+      const defaultValue = `~/${wallet.name}_txproposal_${txp.id}.json`;
+      const outputFile = opts.command
+        ? Utils.replaceTilde(typeof opts.export === 'string' ? opts.export : defaultValue)
+        : await getFileName({
+          message: 'Enter output file path to save proposal:',
+          defaultValue,
+        });
+      fs.writeFileSync(outputFile, JSON.stringify(txp, null, 2));
+      prompt.log.success(`Exported to ${outputFile}`);
+
     } else if (printRaw) {
       prompt.log.info(`ID: ${txp.id}` + os.EOL + JSON.stringify(txp, null, 2));
+    
     } else {
       const lines = [];
       const chain = txp.chain || txp.coin;
@@ -119,126 +201,35 @@ export async function getTxProposals(
       prompt.note(lines.join(os.EOL), `ID: ${txp.id}`);
     }
 
-    const options = [];
-    let initialValue;
-
-    if (txp) {
-      if (txp.status !== 'broadcasted' && !txp.actions.find(a => a.copayerId === myCopayerId)) {
-        options.push({ label: 'Accept', value: 'accept', hint: 'Accept and sign this proposal' });
-        options.push({ label: 'Reject', value: 'reject', hint: 'Reject this proposal' });
-        initialValue = 'accept';
-      }
-      if (txp.status !== 'broadcasted' && txp.actions.filter(a => a.type === 'accept').length >= txp.requiredSignatures) {
-        options.push({ label: 'Broadcast', value: 'broadcast', hint: 'Broadcast this proposal' });
-        initialValue = 'broadcast';
-      }
-      if (i > 0) {
-        options.push({ label: 'Previous', value: 'prev' });
-        initialValue = 'prev';
-      }
-      if (i < txps.length - 1) {
-        options.push({ label: 'Next', value: 'next' });
-        initialValue = 'next';
-      }
-      if (printRaw) {
-        options.push({ label: 'Print Pretty', value: 'pretty' });
-      } else {
-        options.push({ label: 'Print Raw Object', value: 'raw' });
-      }
-      if (txp.status !== 'broadcasted') {
-        options.push({ label: 'Delete', value: 'delete', hint: 'Delete this proposal' });
-      }
-      options.push({ label: 'Export', value: 'export', hint: 'Save to a file' });
-    }
-
-    action = opts.command
-      ? opts.action || (opts.export ? 'export' : 'exit')
-      : await getAction({
-        options,
-        initialValue
-      });
-    if (prompt.isCancel(action)) {
-      throw new UserCancelled();
-    }
-
-    switch (action) {
-      case 'accept':
-        txps[i] = await wallet.signAndBroadcastTxp({ txp });
-        if (txps[i].status === 'broadcasted') {
-          prompt.log.success(`Proposal ${txp.id} broadcasted.`);
-        } else {
-          prompt.log.info(`Proposal ${txps[i].id} signed. More signatures needed to broadcast.`);
-        }
-        break;
-      case 'reject':
-        const rejectReason = await prompt.text({
-          message: 'Enter rejection reason:'
-        });
-        if (prompt.isCancel(rejectReason)) {
-          throw new UserCancelled();
-        }
-        txps[i] = await wallet.client.rejectTxProposal(txp, rejectReason);
-        break;
-      case 'broadcast':
-        txps[i] = await wallet.client.broadcastTxProposal(txp);
-        if (txps[i].status === 'broadcasted') {
-          prompt.log.success(`Proposal ${txp.id} broadcasted.`);
-        }
-        break;
-      case 'prev':
-        i--;
-        printRaw = false;
-        break;
-      case 'next':
-        i++;
-        printRaw = false;
-        break;
-      case 'raw':
-      case 'pretty':
-        printRaw = !printRaw;
-        break;
-      case 'delete':
-        const confirmDelete = await prompt.confirm({
-          message: `Are you sure you want to delete proposal ${txp.id}?`,
-          initialValue: false
-        });
-        if (prompt.isCancel(confirmDelete)) {
-          throw new UserCancelled();
-        }
-        if (confirmDelete) {
-          await wallet.client.removeTxProposal(txp);
-          txps.splice(i, 1);
-          if (i >= txps.length) {
-            i = txps.length - 1; // adjust index if we deleted the last item
-          }
-          prompt.log.success(`Proposal ${txp.id} deleted.`);
-        } else {
-          prompt.log.step(`Proposal ${txp.id} not deleted.`);
-        }
-        break;
-      case 'export':
-        const defaultValue = `~/${wallet.name}_txproposal_${txp.id}.json`;
-        const outputFile = opts.command
-          ? Utils.replaceTilde(typeof opts.export === 'string' ? opts.export : defaultValue)
-          : await getFileName({
-            message: 'Enter output file path to save proposal:',
-            defaultValue,
-          });
-        fs.writeFileSync(outputFile, JSON.stringify(txp, null, 2));
-        prompt.log.success(`Exported to ${outputFile}`);
-        break;
-      case 'menu':
-      case 'exit':
-        break;
-      default:
-        if (opts.command) throw new Error(`Unknown action: ${action}`);
-    }
-
     if (opts.command) {
-      action = 'exit'; // Exit after processing the action in command mode
+      return {}; // Don't wait for user input in CLI mode
     }
-    // TODO: handle actions
-  } while (!['menu', 'exit'].includes(action));
 
-  return { action };
+    const extraChoices = []
+      .concat(
+        txp.status !== 'broadcasted' && !txp.actions.find(a => a.copayerId === myCopayerId) && txp.status !== 'deleted' ? [
+          { label: 'Accept', value: ViewAction.ACCEPT, hint: 'Accept and sign this proposal' },
+          { label: 'Reject', value: ViewAction.REJECT, hint: 'Reject this proposal' },
+        ] : []
+      ).concat(
+        txp.status !== 'broadcasted' && txp.actions.filter(a => a.type === 'accept').length >= txp.requiredSignatures && txp.status !== 'deleted' ? [
+          { label: 'Broadcast', value: ViewAction.BROADCAST, hint: 'Broadcast this proposal' }
+        ] : []
+      ).concat(
+        txp.status !== 'broadcasted' && txp.status !== 'rejected' && txp.status !== 'deleted' ? [
+          { label: 'Delete', value: ViewAction.DELETE, hint: 'Delete this proposal' }
+        ] : []
+      ).concat([
+        printRaw ? { label: 'Print Pretty', value: ViewAction.TOGGLE_RAW, hint: 'Print formatted proposal' } : { label: 'Print Raw Object', value: ViewAction.TOGGLE_RAW, hint: 'Print raw proposal object' },
+        { label: 'Export', value: ViewAction.EXPORT, hint: 'Save to a file' },
+      ]);
+
+    return { result: _txps, extraChoices };
+  }, {
+    pageSize: 1,
+    initialPage: opts.page,
+    exitOn1Page: !!opts.command
+  });
+
+  return { action: 'menu' };
 };
