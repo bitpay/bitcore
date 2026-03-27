@@ -19,6 +19,8 @@ export { Encryption } from './lib/common/encryption';
 export type * as EncryptionTypes from './lib/common/encryption';
 export { Utils } from './lib/common/utils';
 export type * as UtilsTypes from './lib/common/utils';
+export { Constants } from './lib/common/constants';
+export type * as ConstantsTypes from './lib/common/constants';
 export { Errors } from './lib/errors';
 
 export * as TssKey from './lib/tsskey';
