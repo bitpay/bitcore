@@ -6,7 +6,8 @@ import { Transform } from 'stream';
 import * as helpers from './helpers';
 
 describe('Create', function() {
-  const { KEYSTROKES, WALLETS: { CLI_EXEC, COMMON_OPTS, TEMP_DIR } } = helpers.CONSTANTS;
+  const { KEYSTROKES, WALLETS, OUTPUT_END_SEQ } = helpers.CONSTANTS;
+  const { CLI_EXEC, CLI_OPTS, COMMON_OPTS, TEMP_DIR } = WALLETS;
   const commonOpts = [...COMMON_OPTS, '--dir', TEMP_DIR];
 
   function cleanupTempWallets() {
@@ -47,7 +48,7 @@ describe('Create', function() {
           // Uncomment to see CLI output during test
           // process.stdout.write(chunk);
 
-          const isStep = chunk.endsWith('└\n') || step == 7;
+          const isStep = chunk.endsWith(OUTPUT_END_SEQ) || step == 7;
           if (isStep) {
             for (const input of stepInputs[step]) {
               this.push(input);
@@ -61,7 +62,7 @@ describe('Create', function() {
           respond();
         }
       });
-      const child = spawn('node', [CLI_EXEC, walletName, ...commonOpts]);
+      const child = spawn('node', [CLI_EXEC, walletName, ...commonOpts], CLI_OPTS);
       child.stderr.pipe(process.stderr);
       child.stdout.pipe(io).pipe(child.stdin);
       io.on('error', (e) => {

@@ -7,8 +7,8 @@ import * as addressesData from './data/addressesData';
 
 describe('Address', function() {
   this.timeout(Math.max(this['_timeout'] || 0, 5000));
-  const { KEYSTROKES, WALLETS } = helpers.CONSTANTS;
-  const { CLI_EXEC, COMMON_OPTS, DIR } = WALLETS;
+  const { KEYSTROKES, WALLETS, OUTPUT_END_SEQ } = helpers.CONSTANTS;
+  const { CLI_EXEC, CLI_OPTS, COMMON_OPTS, DIR } = WALLETS;
   const cmdOpts = [...COMMON_OPTS, '--dir', DIR];
 
   before(async function() {
@@ -48,7 +48,7 @@ describe('Address', function() {
         // Uncomment to see CLI output during test
         // process.stdout.write(chunk);
 
-        const isStep = chunk.endsWith('└\n');
+        const isStep = chunk.endsWith(OUTPUT_END_SEQ);
         if (isStep) {
           for (const input of stepInputs[step]) {
             this.push(input);
@@ -68,7 +68,7 @@ describe('Address', function() {
         respond();
       }
     });
-    const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts]);
+    const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts], CLI_OPTS);
     child.stderr.pipe(process.stderr);
     child.stdout.pipe(io).pipe(child.stdin);
     io.on('error', (e) => {
@@ -122,7 +122,7 @@ describe('Address', function() {
         // Uncomment to see CLI output during test
         // process.stdout.write(chunk);
 
-        const isStep = chunk.endsWith('└\n');
+        const isStep = chunk.endsWith(OUTPUT_END_SEQ);
         if (isStep) {
           for (const input of stepInputs[step]) {
             this.push(input);
@@ -157,7 +157,7 @@ describe('Address', function() {
         respond();
       }
     });
-    const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts]);
+    const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts], CLI_OPTS);
     child.stderr.pipe(process.stderr);
     child.stdout.pipe(io).pipe(child.stdin);
     io.on('error', (e) => {
@@ -206,7 +206,7 @@ describe('Address', function() {
           // Uncomment to see CLI output during test
           // process.stdout.write(chunk);
 
-          const isStep = chunk.endsWith('└\n');
+          const isStep = chunk.endsWith(OUTPUT_END_SEQ);
           if (isStep) {
             for (const input of stepInputs[step]) {
               this.push(input);
@@ -247,7 +247,7 @@ describe('Address', function() {
           respond();
         }
       });
-      const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts]);
+      const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts], CLI_OPTS);
       child.stderr.pipe(process.stderr);
       child.stdout.pipe(io).pipe(child.stdin);
       io.on('error', (e) => {

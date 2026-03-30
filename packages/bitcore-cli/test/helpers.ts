@@ -26,6 +26,7 @@ export const CONSTANTS = {
   WALLETS: {
     PASSWORD: 'testpassword',
     CLI_EXEC: 'build/src/cli.js',
+    CLI_OPTS: { env: { ...process.env, NO_COLOR: '1' } }, // FORCE_COLOR=1 to force colors in output, NO_COLOR=1 to disable colors in output (for easier testing)
     DIR: path.join(__dirname, './wallets'),
     TEMP_DIR: path.join(__dirname, './wallets/temp'),
     COMMON_OPTS: ['--verbose', '--host', `http://localhost:${config.bws.port}`],
@@ -44,7 +45,8 @@ export const CONSTANTS = {
     DELETE: '\x1b[3~',   // Delete
     BACKSPACE: '\x7f',      // Backspace
     CTRL_C: '\x03',      // Ctrl+C
-  }
+  },
+  OUTPUT_END_SEQ: '└\n' // '└\x1B[39m\n' <-- with FORCE_COLOR=1
 };
 
 export async function newDb() {
