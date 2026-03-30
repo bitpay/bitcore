@@ -42,6 +42,7 @@ export class TssSign extends EventEmitter {
   #credentials: Credentials;
   #subscriptionId: ReturnType<typeof setInterval>;
   #subscriptionRunning: boolean;
+  #emittedParticipants: Set<string>;
   id: string;
 
 
@@ -136,6 +137,8 @@ export class TssSign extends EventEmitter {
     const msg = await this.#sign.initJoin();
     const m = this.#tssKey.metadata.m;
     await this.#request.post('/v1/tss/sign/' + this.id, { message: msg, m });
+    this.#emittedParticipants = new Set([this.#credentials.copayerId]);
+    this.emit('copayerReady', this.#credentials.copayerId);
     return this;
   }
 
@@ -180,6 +183,7 @@ export class TssSign extends EventEmitter {
    * - `signature` => ISignature: The signature is ready. Emits the signature object
    * - `complete` => void: The signature generation process is complete
    * - `error` => Error: An error occurred during the process. Emits the error. Note that this will not stop the subscription.
+   * - `copayerReady` => string: A copayer has joined the session. Emits the copayer ID.
    * @returns {NodeJS.Timeout} Subscription ID
    */
   subscribe(params: {
@@ -202,6 +206,16 @@ export class TssSign extends EventEmitter {
         const thisRound = this.#sign.getRound();
         const prevRound = thisRound - 1; // Get previous round's messages
         const { body } = await this.#request.get(`/v1/tss/sign/${this.id}/${prevRound}`) as RequestResponse;
+
+        if (body.participants?.length) {
+          for (const copayerId of body.participants as string[]) {
+            if (!this.#emittedParticipants?.has(copayerId)) {
+              this.#emittedParticipants ??= new Set();
+              this.#emittedParticipants.add(copayerId);
+              this.emit('copayerReady', copayerId);
+            }
+          }
+        }
 
         const hasEveryoneSubmitted = body.messages?.length === this.#tssKey.metadata.m - 1; // subtract yourself
         if (hasEveryoneSubmitted && !this.#sign.isSignatureReady()) {
@@ -270,6 +284,7 @@ export class TssSign extends EventEmitter {
     }
     this.#subscriptionId = null;
     this.#subscriptionRunning = false;
+    this.#emittedParticipants = null;
   }
 
   /**

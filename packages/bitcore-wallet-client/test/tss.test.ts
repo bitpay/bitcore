@@ -634,6 +634,22 @@ describe('TSS', function() {
       sig0.id.should.equal(sig1.id);
     });
 
+    it(happyPath('should emit copayerReady for self on start() and for remote on subscribe()'), async function() {
+      const copayerReadyIds: string[] = [];
+      const sigA = new TssSign({ baseUrl: '/bws/api', request: request(app), credentials: party0Creds, tssKey: party0TssKey });
+      const sigB = new TssSign({ baseUrl: '/bws/api', request: request(app), credentials: party1Creds, tssKey: party1TssKey });
+      sigA.on('copayerReady', (id) => copayerReadyIds.push(id));
+      await sigA.start({ id: 'copayer-ready-test', messageHash, derivationPath });
+      copayerReadyIds.should.deep.equal([party0Creds.copayerId]);
+      await sigB.start({ id: 'copayer-ready-test', messageHash, derivationPath });
+      sigA.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      const roundsubmitted = new Promise(r => sigA.once('roundsubmitted', r));
+      sigA.subscribe({ timeout: 10, iterHandler: () => sigA.unsubscribe() });
+      await roundsubmitted;
+      copayerReadyIds.should.include(party0Creds.copayerId);
+      copayerReadyIds.should.include(party1Creds.copayerId);
+    });
+
     it('should reject too many participants', async function() {
       const sig2 = new TssSign({
         baseUrl: '/bws/api',
@@ -715,11 +731,12 @@ describe('TSS', function() {
       const error = new Promise<Error>(r => sig0.on('error', r));
       sig0.subscribe({ timeout: 10, iterHandler: () => sig0.unsubscribe() });
       const e = await error;
-      emitSpy.callCount.should.equal(3);
-      emitSpy.args[0][0].should.equal('roundready');
-      emitSpy.args[1][0].should.equal('roundprocessed');
-      emitSpy.args[2][0].should.equal('error');
-      emitSpy.args[2][1].should.equal(e);
+      emitSpy.callCount.should.equal(4);
+      emitSpy.args[0][0].should.equal('copayerReady');
+      emitSpy.args[1][0].should.equal('roundready');
+      emitSpy.args[2][0].should.equal('roundprocessed');
+      emitSpy.args[3][0].should.equal('error');
+      emitSpy.args[3][1].should.equal(e);
       e.message.should.include('TSS_ROUND_ALREADY_DONE');
     });
 
