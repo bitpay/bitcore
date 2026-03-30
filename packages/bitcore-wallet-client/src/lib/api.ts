@@ -2027,22 +2027,24 @@ export class API extends EventEmitter {
     txp: Txp,
     /** Array of signatures */
     signatures: Array<string>,
-    opts?: PushSignaturesOpts,
+    opts?: PushSignaturesOpts | ((err?: Error, txp?: Txp) => void),
     /** @deprecated */
-    cb?: (err?: Error, txp?: Txp) => void,
+    cb?: ((err?: Error, txp?: Txp) => void) | string,
     /** ONLY FOR TESTING */
     baseUrl?: string
   ) {
+    let _cb: ((err?: Error, txp?: Txp) => void) | undefined;
     if (typeof opts === 'function') {
-      if (typeof cb === 'string') baseUrl = cb;
-      cb = opts;
+      if (typeof cb === 'string') baseUrl = cb as any;
+      _cb = opts;
       opts = {};
+    } else if (typeof cb === 'function') {
+      _cb = cb;
     } else if (typeof cb === 'string') {
-      baseUrl = cb;
-      cb = undefined;
+      baseUrl = cb as any;
     }
 
-    if (cb) {
+    if (_cb) {
       log.warn('DEPRECATED: pushSignatures will remove callback support in the future.');
     }
 
@@ -2066,10 +2068,10 @@ export class API extends EventEmitter {
       }
       const { body: signedTxp } = await this.request.post<object, Txp>(url, args);
       this._processTxps(signedTxp);
-      if (cb) { cb(null, signedTxp); }
+      if (_cb) { _cb(null, signedTxp); }
       return signedTxp;
     } catch (err) {
-      if (cb) cb(err);
+      if (_cb) _cb(err);
       else throw err;
     }
   }
