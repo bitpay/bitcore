@@ -2808,7 +2808,7 @@ export class WalletService implements IWalletService {
                 },
                 async next => {
                   // SOL is skipped since its a non necessary field that is expected to be provided by the client.
-                  if (!opts.nonce && !Constants.SVM_CHAINS[wallet.chain.toUpperCase()]) { 
+                  if (!opts.nonce && !Constants.SVM_CHAINS[wallet.chain.toUpperCase()] && !opts.deferNonce) {
                     try {
                       opts.nonce = await ChainService.getTransactionCount(this, wallet, opts.from);
                     } catch (error) {
@@ -2908,7 +2908,8 @@ export class WalletService implements IWalletService {
                       memo: opts.memo,
                       fromAta: opts.fromAta,
                       decimals: opts.decimals,
-                      refreshOnPublish: opts.refreshOnPublish
+                      refreshOnPublish: opts.refreshOnPublish,
+                      deferNonce: opts.deferNonce
                     };
                     txp = TxProposal.create(txOpts);
                     next();
@@ -3020,7 +3021,7 @@ export class WalletService implements IWalletService {
         this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
           if (err) return cb(err);
           if (!txp) return cb(Errors.TX_NOT_FOUND);
-          if (!txp.isTemporary() && !txp.isRepublishEnabled()) return cb(null, txp);
+          if (!txp.isTemporary() && !txp.hasMutableTxData()) return cb(null, txp);
 
           const copayer = wallet.getCopayer(this.copayerId);
 
@@ -3034,7 +3035,7 @@ export class WalletService implements IWalletService {
           let signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
           if (!signingKey) {
             // If the txp has been published previously, we will verify the signature against the previously published raw tx
-            if (txp.isRepublishEnabled() && txp.prePublishRaw) {
+            if (txp.hasMutableTxData() && txp.prePublishRaw) {
               raw = txp.prePublishRaw;
               signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
             }
@@ -3057,7 +3058,7 @@ export class WalletService implements IWalletService {
             txp.status = 'pending';
             ChainService.refreshTxData(this, txp, opts, (err, txp) => {
               if (err) return cb(err);
-              if (txp.isRepublishEnabled() && !txp.prePublishRaw) {
+              if (txp.hasMutableTxData() && !txp.prePublishRaw) {
                 // We save the original raw transaction for verification on republish
                 txp.prePublishRaw = raw;
               }
@@ -3321,7 +3322,7 @@ export class WalletService implements IWalletService {
             try {
               const txps = await this.getPendingTxsPromise({});
               for (const t of txps) {
-                if (t.id !== txp.id && t.nonce <= txp.nonce && t.status !== 'rejected') {
+                if (t.id !== txp.id && t.nonce != null && txp.nonce != null && t.nonce <= txp.nonce && t.status !== 'rejected') {
                   return cb(Errors.TX_NONCE_CONFLICT);
                 }
               }
@@ -3379,6 +3380,68 @@ export class WalletService implements IWalletService {
           });
         }
       );
+    });
+  }
+
+  /**
+   * Prepare a transaction proposal for signing.
+   * Assigns JIT values (nonce, and in the future: fee, gas) to a deferred txp.
+   * Called by the client just before signing.
+   * @param {Object} opts
+   * @param {string} opts.txProposalId - The identifier of the transaction.
+   */
+  prepareTx(opts, cb) {
+    if (!checkRequired(opts, ['txProposalId'], cb)) return;
+
+    this._runLocked(cb, cb => {
+      this.getWallet({}, (err, wallet) => {
+        if (err) return cb(err);
+
+        this.storage.fetchTx(this.walletId, opts.txProposalId, async (err, txp) => {
+          if (err) return cb(err);
+          if (!txp) return cb(Errors.TX_NOT_FOUND);
+          if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
+
+          if (!txp.deferNonce) {
+            // Not a deferred-nonce txp. Return it as-is
+            return cb(null, txp);
+          }
+
+          if (!Constants.EVM_CHAINS[wallet.chain.toUpperCase()]) {
+            return cb(null, txp);
+          }
+
+          try {
+            // 1. Get confirmed nonce from blockchain
+            const confirmedNonce = await ChainService.getTransactionCount(this, wallet, txp.from);
+
+            // 2. Get pending TXP nonces from BWS's own database
+            const pendingTxps = await this.getPendingTxsPromise({});
+            const pendingNonces = pendingTxps
+              .filter(t => t.id !== txp.id && t.nonce != null && t.status !== 'rejected')
+              .map(t => Number(t.nonce));
+
+            // 3. Calculate gap-free nonce
+            let suggestedNonce = Number(confirmedNonce);
+            const allNonces = pendingNonces.sort((a, b) => a - b);
+            for (const n of allNonces) {
+              if (n === suggestedNonce) {
+                suggestedNonce++;
+              }
+            }
+
+            txp.nonce = suggestedNonce;
+
+            // 4. Store the updated txp
+            this.storage.storeTx(this.walletId, txp, err => {
+              if (err) return cb(err);
+              return cb(null, txp);
+            });
+          } catch (err) {
+            return cb(err);
+          }
+        });
+      });
     });
   }
 

@@ -2063,6 +2063,21 @@ export class API extends EventEmitter {
   }
 
   /**
+   * Prepare a transaction proposal for signing.
+   * Assigns JIT values (nonce, and in the future: fee, gas) to a deferred txp.
+   * Call this just before signing a deferred-nonce txp.
+   */
+  async prepareTx(opts: { txp: Txp }): Promise<Txp> {
+    $.checkState(this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <prepareTx()>');
+
+    const url = '/v1/txproposals/' + opts.txp.id + '/prepare/';
+    const { body: txp } = await this.request.post<object, Txp>(url, {});
+    this._processTxps(txp);
+    return txp;
+  }
+
+  /**
    * Create advertisement for bitpay app - (limited to marketing staff)
    * @returns {object} Returns the created advertisement
    */
