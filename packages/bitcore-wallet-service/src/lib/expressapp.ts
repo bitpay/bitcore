@@ -13,6 +13,7 @@ import { Common } from './common';
 import { ClientError } from './errors/clienterror';
 import { Errors } from './errors/errordefinitions';
 import { logger, transports } from './logger';
+import { AaveRouter } from './routes/aave';
 import { error } from './routes/helpers';
 import { createWalletLimiter } from './routes/middleware/createWalletLimiter';
 import { LogMiddleware } from './routes/middleware/log';
@@ -973,6 +974,16 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/token/allowance', async (req, res) => {
+      try {
+        const server = getServer(req, res);
+        const allowance = await server.getTokenAllowance(req.body);
+        res.json(allowance);
+      } catch (err) {
+        returnError(err, res, req);
+      }
+    });
+
     router.get('/v1/sendmaxinfo/', (req, res) => {
       getServerWithAuth(req, res, server => {
         const q = req.query;
@@ -1068,6 +1079,19 @@ export class ExpressApp {
       });
     });
     */
+
+    router.post('/v1/txproposals/:id/prepare/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        req.body.txProposalId = req.params['id'];
+        server.prepareTx(req.body, (err, txp) => {
+          if (err) return returnError(err, res, req);
+          res.json(txp);
+          res.end();
+        });
+      });
+    });
+
+
 
     //
     router.post('/v1/txproposals/:id/publish/', (req, res) => {
@@ -2391,6 +2415,7 @@ export class ExpressApp {
     });
 
     /** Imported routes */
+    router.use(new AaveRouter({ returnError, getServer }).router);
     router.use(new TssRouter({ returnError, opts }).router);
 
 

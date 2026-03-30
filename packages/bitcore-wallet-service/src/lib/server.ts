@@ -2559,6 +2559,120 @@ export class WalletService implements IWalletService {
     });
   }
 
+  /**
+   * Get ERC20 token allowance for a given owner/spender pair.
+   * @param {Object} opts
+   * @param {string} opts.chain - EVM chain name (e.g. 'eth', 'matic')
+   * @param {string} opts.network - Network name (e.g. 'mainnet', 'sepolia')
+   * @param {string} opts.tokenAddress - Token contract address
+   * @param {string} opts.ownerAddress - Token owner address
+   * @param {string} opts.spenderAddress - Spender contract address
+   * @returns {Promise<number>} Token allowance amount
+   */
+  getTokenAllowance(opts) {
+    if (!checkRequired(opts, ['chain', 'network', 'tokenAddress', 'ownerAddress', 'spenderAddress'])) {
+      return Promise.reject(new ClientError('getTokenAllowance request missing arguments'));
+    }
+    const bc = this._getBlockchainExplorer(opts.chain, opts.network);
+    return new Promise((resolve, reject) => {
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getTokenAllowance(opts, (err, allowance) => {
+        if (err) {
+          this.logw('Error getting token allowance:', err);
+          return reject(err);
+        }
+        return resolve(allowance);
+      });
+    });
+  }
+
+  /**
+   * Get Aave user account data (health factor, collateral, debt, etc.).
+   * @param {Object} opts
+   * @param {string} opts.chain - EVM chain name (e.g. 'eth', 'matic')
+   * @param {string} opts.network - Network name (e.g. 'mainnet', 'sepolia')
+   * @param {string} opts.address - User wallet address
+   * @param {string} [opts.version='v3'] - Aave protocol version ('v2' or 'v3')
+   * @returns {Promise<Object>} Aave account data (totalCollateralBase, totalDebtBase, healthFactor, etc.)
+   */
+  getAaveUserAccountData(opts) {
+    if (!checkRequired(opts, ['chain', 'network', 'address'])) {
+      return Promise.reject(new ClientError('getAaveUserAccountData request missing arguments'));
+    }
+    if (opts.version && !['v2', 'v3'].includes(opts.version)) {
+      return Promise.reject(new ClientError('Invalid Aave version. Supported: v2, v3'));
+    }
+    const bc = this._getBlockchainExplorer(opts.chain, opts.network);
+    return new Promise((resolve, reject) => {
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getAaveUserAccountData(opts, (err, accountData) => {
+        if (err) {
+          this.logw('Error getting Aave user account data:', err);
+          return reject(err);
+        }
+        return resolve(accountData);
+      });
+    });
+  }
+
+  /**
+   * Get Aave reserve data (variable borrow rate, etc.).
+   * @param {Object} opts
+   * @param {string} opts.chain - EVM chain name (e.g. 'eth', 'matic')
+   * @param {string} opts.network - Network name (e.g. 'mainnet', 'sepolia')
+   * @param {string} opts.asset - Reserve asset token address
+   * @param {string} [opts.version='v3'] - Aave protocol version ('v2' or 'v3')
+   * @returns {Promise<Object>} Aave reserve data (currentVariableBorrowRate, etc.)
+   */
+  getAaveReserveData(opts) {
+    if (!checkRequired(opts, ['chain', 'network', 'asset'])) {
+      return Promise.reject(new ClientError('getAaveReserveData request missing arguments'));
+    }
+    if (opts.version && !['v2', 'v3'].includes(opts.version)) {
+      return Promise.reject(new ClientError('Invalid Aave version. Supported: v2, v3'));
+    }
+    const bc = this._getBlockchainExplorer(opts.chain, opts.network);
+    return new Promise((resolve, reject) => {
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getAaveReserveData(opts, (err, reserveData) => {
+        if (err) {
+          this.logw('Error getting Aave reserve data:', err);
+          return reject(err);
+        }
+        return resolve(reserveData);
+      });
+    });
+  }
+
+  /**
+   * Get Aave reserve token addresses (aToken, variableDebtToken, etc.).
+   * @param {Object} opts
+   * @param {string} opts.chain - EVM chain name (e.g. 'eth', 'matic')
+   * @param {string} opts.network - Network name (e.g. 'mainnet', 'sepolia')
+   * @param {string} opts.asset - Reserve asset token address
+   * @param {string} [opts.version='v3'] - Aave protocol version ('v2' or 'v3')
+   * @returns {Promise<Object>} Aave reserve token addresses (variableDebtTokenAddress, etc.)
+   */
+  getAaveReserveTokensAddresses(opts) {
+    if (!checkRequired(opts, ['chain', 'network', 'asset'])) {
+      return Promise.reject(new ClientError('getAaveReserveTokensAddresses request missing arguments'));
+    }
+    if (opts.version && !['v2', 'v3'].includes(opts.version)) {
+      return Promise.reject(new ClientError('Invalid Aave version. Supported: v2, v3'));
+    }
+    const bc = this._getBlockchainExplorer(opts.chain, opts.network);
+    return new Promise((resolve, reject) => {
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getAaveReserveTokensAddresses(opts, (err, tokensAddresses) => {
+        if (err) {
+          this.logw('Error getting Aave reserve tokens addresses:', err);
+          return reject(err);
+        }
+        return resolve(tokensAddresses);
+      });
+    });
+  }
+
   getMultisigTxpsInfo(opts) {
     const bc = this._getBlockchainExplorer(opts.chain || Defaults.EVM_CHAIN, opts.network);
     return new Promise((resolve, reject) => {
@@ -2694,7 +2808,7 @@ export class WalletService implements IWalletService {
                 },
                 async next => {
                   // SOL is skipped since its a non necessary field that is expected to be provided by the client.
-                  if (!opts.nonce && !Constants.SVM_CHAINS[wallet.chain.toUpperCase()]) { 
+                  if (!opts.nonce && !Constants.SVM_CHAINS[wallet.chain.toUpperCase()] && !opts.deferNonce) {
                     try {
                       opts.nonce = await ChainService.getTransactionCount(this, wallet, opts.from);
                     } catch (error) {
@@ -2794,7 +2908,8 @@ export class WalletService implements IWalletService {
                       memo: opts.memo,
                       fromAta: opts.fromAta,
                       decimals: opts.decimals,
-                      refreshOnPublish: opts.refreshOnPublish
+                      refreshOnPublish: opts.refreshOnPublish,
+                      deferNonce: opts.deferNonce
                     };
                     txp = TxProposal.create(txOpts);
                     next();
@@ -2906,7 +3021,7 @@ export class WalletService implements IWalletService {
         this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
           if (err) return cb(err);
           if (!txp) return cb(Errors.TX_NOT_FOUND);
-          if (!txp.isTemporary() && !txp.isRepublishEnabled()) return cb(null, txp);
+          if (!txp.isTemporary() && !txp.hasMutableTxData()) return cb(null, txp);
 
           const copayer = wallet.getCopayer(this.copayerId);
 
@@ -2920,7 +3035,7 @@ export class WalletService implements IWalletService {
           let signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
           if (!signingKey) {
             // If the txp has been published previously, we will verify the signature against the previously published raw tx
-            if (txp.isRepublishEnabled() && txp.prePublishRaw) {
+            if (txp.hasMutableTxData() && txp.prePublishRaw) {
               raw = txp.prePublishRaw;
               signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
             }
@@ -2943,7 +3058,7 @@ export class WalletService implements IWalletService {
             txp.status = 'pending';
             ChainService.refreshTxData(this, txp, opts, (err, txp) => {
               if (err) return cb(err);
-              if (txp.isRepublishEnabled() && !txp.prePublishRaw) {
+              if (txp.hasMutableTxData() && !txp.prePublishRaw) {
                 // We save the original raw transaction for verification on republish
                 txp.prePublishRaw = raw;
               }
@@ -3207,7 +3322,7 @@ export class WalletService implements IWalletService {
             try {
               const txps = await this.getPendingTxsPromise({});
               for (const t of txps) {
-                if (t.id !== txp.id && t.nonce <= txp.nonce && t.status !== 'rejected') {
+                if (t.id !== txp.id && t.nonce != null && txp.nonce != null && t.nonce <= txp.nonce && t.status !== 'rejected') {
                   return cb(Errors.TX_NONCE_CONFLICT);
                 }
               }
@@ -3265,6 +3380,68 @@ export class WalletService implements IWalletService {
           });
         }
       );
+    });
+  }
+
+  /**
+   * Prepare a transaction proposal for signing.
+   * Assigns JIT values (nonce, and in the future: fee, gas) to a deferred txp.
+   * Called by the client just before signing.
+   * @param {Object} opts
+   * @param {string} opts.txProposalId - The identifier of the transaction.
+   */
+  prepareTx(opts, cb) {
+    if (!checkRequired(opts, ['txProposalId'], cb)) return;
+
+    this._runLocked(cb, cb => {
+      this.getWallet({}, (err, wallet) => {
+        if (err) return cb(err);
+
+        this.storage.fetchTx(this.walletId, opts.txProposalId, async (err, txp) => {
+          if (err) return cb(err);
+          if (!txp) return cb(Errors.TX_NOT_FOUND);
+          if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
+
+          if (!txp.deferNonce) {
+            // Not a deferred-nonce txp. Return it as-is
+            return cb(null, txp);
+          }
+
+          if (!Constants.EVM_CHAINS[wallet.chain.toUpperCase()]) {
+            return cb(null, txp);
+          }
+
+          try {
+            // 1. Get confirmed nonce from blockchain
+            const confirmedNonce = await ChainService.getTransactionCount(this, wallet, txp.from);
+
+            // 2. Get pending TXP nonces from BWS's own database
+            const pendingTxps = await this.getPendingTxsPromise({});
+            const pendingNonces = pendingTxps
+              .filter(t => t.id !== txp.id && t.nonce != null && t.status !== 'rejected')
+              .map(t => Number(t.nonce));
+
+            // 3. Calculate gap-free nonce
+            let suggestedNonce = Number(confirmedNonce);
+            const allNonces = pendingNonces.sort((a, b) => a - b);
+            for (const n of allNonces) {
+              if (n === suggestedNonce) {
+                suggestedNonce++;
+              }
+            }
+
+            txp.nonce = suggestedNonce;
+
+            // 4. Store the updated txp
+            this.storage.storeTx(this.walletId, txp, err => {
+              if (err) return cb(err);
+              return cb(null, txp);
+            });
+          } catch (err) {
+            return cb(err);
+          }
+        });
+      });
     });
   }
 
