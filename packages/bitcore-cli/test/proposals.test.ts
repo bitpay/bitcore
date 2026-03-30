@@ -126,7 +126,7 @@ describe('Proposals', function() {
                 const startIdx = lines.findIndex(l => l.includes('ID: e43b0fe2-c2d2-43c2-afaa-7fb28f212230 '));
                 assert.ok(startIdx > -1);
                 assert.ok(lines[startIdx + 2].includes('Chain: BTC'));
-                assert.ok(lines[startIdx + 3].includes('Network: Regtest'));
+                assert.ok(lines[startIdx + 3].includes('Network: Testnet'));
                 assert.ok(lines[startIdx + 4].includes('Amount: 0.123 BTC'));
                 assert.ok(lines[startIdx + 5].includes('Fee: 0.00000141 BTC'));
                 assert.ok(lines[startIdx + 6].includes('Total Amount: 0.12300141 BTC'));
@@ -136,8 +136,8 @@ describe('Proposals', function() {
                 assert.ok(lines[startIdx + 10].includes('Created: Tue Mar 24 2026 16:02:23 EDT'));
                 assert.ok(lines[startIdx + 11].includes('---------------------------'));
                 assert.ok(lines[startIdx + 12].includes('Recipients:'));
-                assert.ok(lines[startIdx + 13].includes('→ bcrt1qdq929kz9r7adapvruevgz0nkkqd3cpfvgh7wny: 0.123 BTC'));
-                assert.ok(lines[startIdx + 14].includes('↲ bcrt1q9nh7nzrcgzm96r4ms0mm9xvl3whfrucvdh0akr (change - m/1/0)'));
+                assert.ok(lines[startIdx + 13].includes('→ tb1qdq929kz9r7adapvruevgz0nkkqd3cpfv278ryd: 0.123 BTC'));
+                assert.ok(lines[startIdx + 14].includes('↲ tb1q9nh7nzrcgzm96r4ms0mm9xvl3whfrucv07ksp2 (change - m/1/0)'));
                 assert.ok(lines[startIdx + 15].includes('---------------------------'));
                 assert.ok(lines[startIdx + 16].includes(Utils.colorText('Missing Signatures: 1', 'yellow')));
                 break;

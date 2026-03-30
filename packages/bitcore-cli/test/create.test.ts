@@ -33,7 +33,7 @@ describe('Create', function() {
       const stepInputs = [
         [KEYSTROKES.ENTER], // Create Wallet
         [KEYSTROKES.ENTER], // Chain: btc
-        ['regtest', KEYSTROKES.ENTER], // Network: regtest
+        ['testnet', KEYSTROKES.ENTER], // Network: testnet
         [KEYSTROKES.ENTER], // Multi-party? No
         [KEYSTROKES.ENTER], // Address Type: default
         ['testpassword', KEYSTROKES.ENTER], // Password

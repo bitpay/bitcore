@@ -10,14 +10,14 @@ export const btcSingleSigProposal = {
   creatorId: '90348b306bb58881013c63fe1238eddabf327836b2be808cdc9ebf97a426d9a5',
   coin: 'btc',
   chain: 'btc',
-  network: 'regtest',
+  network: 'testnet',
   message: null,
   payProUrl: null,
   from: null,
   changeAddress: {
     version: '1.0.0',
     createdOn: 1774382543,
-    address: 'bcrt1q9nh7nzrcgzm96r4ms0mm9xvl3whfrucvdh0akr',
+    address: 'tb1q9nh7nzrcgzm96r4ms0mm9xvl3whfrucv07ksp2',
     walletId: '62e38685-f8e8-40d4-967f-04afc6aaf75a',
     isChange: true,
     isEscrow: false,
@@ -27,7 +27,7 @@ export const btcSingleSigProposal = {
     ],
     coin: 'btc',
     chain: 'btc',
-    network: 'regtest',
+    network: 'testnet',
     type: 'P2WPKH',
     hasActivity: null,
     beRegistered: null
@@ -35,7 +35,7 @@ export const btcSingleSigProposal = {
   escrowAddress: null,
   inputs: [
     {
-      address: 'bcrt1q6l953jevexkqrvvah8729nud289djcpae9jkx4',
+      address: 'tb1q6l953jevexkqrvvah8729nud289djcpamvtm3u',
       satoshis: 100000000,
       amount: 1,
       scriptPubKey: '0014d7cb48cb2cc9ac01b19db9fca2cf8d51cad9603d',
@@ -53,7 +53,7 @@ export const btcSingleSigProposal = {
   outputs: [
     {
       amount: 12300000,
-      toAddress: 'bcrt1qdq929kz9r7adapvruevgz0nkkqd3cpfvgh7wny',
+      toAddress: 'tb1qdq929kz9r7adapvruevgz0nkkqd3cpfv278ryd',
       message: null
     }
   ],

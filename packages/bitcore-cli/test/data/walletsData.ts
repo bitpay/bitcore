@@ -37,7 +37,7 @@ export const btcSingleSigWallet = {
   pubKey: '02665d4f16c446af06f4273bce80ff237f8c1eec77b710390722b4eded95a094ae',
   coin: 'btc',
   chain: 'btc',
-  network: 'regtest',
+  network: 'testnet',
   derivationStrategy: 'BIP44',
   addressType: 'P2WPKH',
   addressManager: {
