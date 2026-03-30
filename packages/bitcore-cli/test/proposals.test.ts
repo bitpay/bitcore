@@ -67,15 +67,13 @@ describe('Proposals', function() {
     const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts]);
     child.stderr.pipe(process.stderr);
     child.stdout.pipe(io).pipe(child.stdin);
-    let err;
     io.on('error', (e) => {
-      err = e;
+      done(e);
     });
     child.on('error', (e) => {
-      err = e;
+      done(e);
     });
     child.on('close', (code) => {
-      assert.ifError(err);
       assert.equal(code, 0);
       done();
     });
@@ -155,15 +153,13 @@ describe('Proposals', function() {
       const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts]);
       child.stderr.pipe(process.stderr);
       child.stdout.pipe(io).pipe(child.stdin);
-      let err;
       io.on('error', (e) => {
-        err = e;
+        done(e);
       });
       child.on('error', (e) => {
-        err = e;
+        done(e);
       });
       child.on('close', (code) => {
-        assert.ifError(err);
         assert.equal(code, 0);
         done();
       });
@@ -223,15 +219,13 @@ describe('Proposals', function() {
       const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts]);
       child.stderr.pipe(process.stderr);
       child.stdout.pipe(io).pipe(child.stdin);
-      let err;
       io.on('error', (e) => {
-        err = e;
+        done(e);
       });
       child.on('error', (e) => {
-        err = e;
+        done(e);
       });
       child.on('close', (code) => {
-        assert.ifError(err);
         assert.equal(code, 0);
         done();
       });
@@ -317,15 +311,13 @@ describe('Proposals', function() {
       const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts]);
       child.stderr.pipe(process.stderr);
       child.stdout.pipe(io).pipe(child.stdin);
-      let err;
       io.on('error', (e) => {
-        err = e;
+        done(e);
       });
       child.on('error', (e) => {
-        err = e;
+        done(e);
       });
       child.on('close', (code) => {
-        assert.ifError(err);
         assert.equal(code, 0);
         done();
       });
@@ -395,15 +387,13 @@ describe('Proposals', function() {
       const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts]);
       child.stderr.pipe(process.stderr);
       child.stdout.pipe(io).pipe(child.stdin);
-      let err;
       io.on('error', (e) => {
-        err = e;
+        done(e);
       });
       child.on('error', (e) => {
-        err = e;
+        done(e);
       });
       child.on('close', (code) => {
-        assert.ifError(err);
         assert.equal(code, 0);
         done();
       });
@@ -508,15 +498,13 @@ describe('Proposals', function() {
           const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts]);
           child.stderr.pipe(process.stderr);
           child.stdout.pipe(io).pipe(child.stdin);
-          let err;
           io.on('error', (e) => {
-            err = e;
+            done(e);
           });
           child.on('error', (e) => {
-            err = e;
+            done(e);
           });
           child.on('close', (code) => {
-            assert.ifError(err);
             assert.equal(code, 0);
             done();
           });

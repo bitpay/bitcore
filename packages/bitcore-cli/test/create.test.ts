@@ -64,15 +64,13 @@ describe('Create', function() {
       const child = spawn('node', [CLI_EXEC, walletName, ...commonOpts]);
       child.stderr.pipe(process.stderr);
       child.stdout.pipe(io).pipe(child.stdin);
-      let err;
       io.on('error', (e) => {
-        err = e;
+        done(e);
       });
       child.on('error', (e) => {
-        err = e;
+        done(e);
       });
       child.on('close', (code) => {
-        assert.ifError(err);
         assert.equal(code, 0);
         const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName + '.json'), 'utf-8'));
         // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
