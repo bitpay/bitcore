@@ -133,7 +133,7 @@ describe('Proposals', function() {
                 assert.ok(lines[startIdx + 7].includes('Fee Rate: 1 sat/B'));
                 assert.ok(lines[startIdx + 8].includes('Status: pending'));
                 assert.ok(lines[startIdx + 9].includes('Creator: kjoseph'));
-                assert.ok(lines[startIdx + 10].includes('Created: Tue Mar 24 2026 16:02:23 EDT'));
+                assert.ok(lines[startIdx + 10].includes('Created: Tue Mar 24 2026 16:02:23 EDT'), 'Unexpected created date line: ' + lines[startIdx + 10]);
                 assert.ok(lines[startIdx + 11].includes('---------------------------'));
                 assert.ok(lines[startIdx + 12].includes('Recipients:'));
                 assert.ok(lines[startIdx + 13].includes('→ tb1qdq929kz9r7adapvruevgz0nkkqd3cpfv278ryd: 0.123 BTC'));
