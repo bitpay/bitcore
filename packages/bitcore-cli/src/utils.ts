@@ -99,23 +99,25 @@ export class Utils {
     const match = new RegExp(regex, 'i').exec(text.trim());
 
     if (!match || match.length === 0) {
-      Utils.die('Invalid amount: ' + text);
+      // Die since this is likely a system error
+      throw Utils.die('Invalid amount: ' + text);
     }
 
     const amount = parseFloat(match[1]);
     if (isNaN(amount)) {
+      // Don't die as this is likely a user input error that can be corrected
       throw new Error('Invalid amount');
     }
 
     const unit = (match[3] || 'sat').toLowerCase();
     const rate = Constants.UNITS2[unit];
     if (!rate) {
-      Utils.die('Invalid unit: ' + unit);
+      throw Utils.die('Invalid unit: ' + unit);
     }
 
     const amountSat = parseFloat((amount * rate).toPrecision(12));
     if (amountSat != Math.round(amountSat)) {
-      Utils.die('Invalid amount: ' + amount + ' ' + unit);
+      throw Utils.die('Invalid amount: ' + amount + ' ' + unit);
     }
 
     return amountSat;
