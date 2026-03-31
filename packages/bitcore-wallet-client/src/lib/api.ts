@@ -2027,25 +2027,15 @@ export class API extends EventEmitter {
     txp: Txp,
     /** Array of signatures */
     signatures: Array<string>,
-    opts?: PushSignaturesOpts | ((err?: Error, txp?: Txp) => void),
     /** @deprecated */
-    cb?: ((err?: Error, txp?: Txp) => void) | string,
+    cb?: (err?: Error, txp?: Txp) => void,
     /** ONLY FOR TESTING */
     baseUrl?: string
   ) {
-    let _cb: ((err?: Error, txp?: Txp) => void) | undefined;
-    if (typeof opts === 'function') {
-      if (typeof cb === 'string') baseUrl = cb as any;
-      _cb = opts;
-      opts = {};
-    } else if (typeof cb === 'function') {
-      _cb = cb;
-    } else if (typeof cb === 'string') {
-      baseUrl = cb as any;
-    }
-
-    if (_cb) {
+    if (cb) {
       log.warn('DEPRECATED: pushSignatures will remove callback support in the future.');
+    } else if (typeof cb === 'string') {
+      baseUrl = cb;
     }
 
     try {
@@ -2062,16 +2052,13 @@ export class API extends EventEmitter {
 
       baseUrl = baseUrl || '/v2/txproposals/';
       const url = `${baseUrl}${txp.id}/signatures/`;
-      const args: any = { signatures };
-      if (opts?.nonce != null) {
-        args.nonce = opts.nonce;
-      }
+      const args: any = { signatures, nonce: txp.nonce };
       const { body: signedTxp } = await this.request.post<object, Txp>(url, args);
       this._processTxps(signedTxp);
-      if (_cb) { _cb(null, signedTxp); }
+      if (cb) { cb(null, signedTxp); }
       return signedTxp;
     } catch (err) {
-      if (_cb) _cb(err);
+      if (cb) cb(err);
       else throw err;
     }
   }
@@ -4051,11 +4038,6 @@ export class API extends EventEmitter {
 };
 
 export type Network = 'livenet' | 'testnet' | 'regtest';
-
-export interface PushSignaturesOpts {
-  /** Override the nonce at signing time (EVM only) */
-  nonce?: number;
-};
 
 export interface CreateWalletOpts {
   /**

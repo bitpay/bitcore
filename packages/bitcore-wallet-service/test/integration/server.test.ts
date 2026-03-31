@@ -8146,6 +8146,24 @@ describe('Wallet service', function() {
       blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '5');
     });
 
+    it('should accept nonce passthrough in signTx', async function() {
+      const txp = await helpers.createAndPublishTx(server, {
+        outputs: [{ toAddress: ETH_ADDR, amount: 8000 }],
+        feePerKb: 123e2,
+        from: fromAddr
+      }, TestData.copayers[0].privKey_1H_0);
+      txp.nonce.should.equal('5');
+
+      const signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+      const signed = await util.promisify(server.signTx).call(server, {
+        txProposalId: txp.id,
+        signatures,
+        nonce: Number(txp.nonce)
+      });
+      signed.status.should.equal('accepted');
+      signed.nonce.should.equal(5);
+    });
+
     it('should accept nonce override in signTx', async function() {
       const txp = await helpers.createAndPublishTx(server, {
         outputs: [{ toAddress: ETH_ADDR, amount: 8000 }],
@@ -8210,7 +8228,7 @@ describe('Wallet service', function() {
       }, TestData.copayers[0].privKey_1H_0);
       should.not.exist(txp.nonce);
 
-      // sign without nonce override - null nonce should not throw in conflict check
+      // null nonce on other txps should not throw in conflict check
       const fetched = await util.promisify(server.getTx).call(server, { txProposalId: txp.id });
       fetched.nonce = 99;
       const signatures = helpers.clientSign(fetched, TestData.copayers[0].xPrivKey_44H_0H_0H);
