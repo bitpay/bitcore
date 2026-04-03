@@ -28,6 +28,8 @@ export interface IUtxoNetworkConfig extends INetworkConfig {
   };
   defaultFeeMode?: FeeMode;
   syncStartHash?: string; // Start syncing from this block
+  prefetchSize?: number; // Number of blocks to prefetch during single-thread sync. Default: 10. Set to 0 to disable prefetching.
+  threads?: number; // Number of worker threads for initial sync. Defaults to CPU cores - 1. Set to 0 to disable multi-threaded sync.
 }
 
 export type ProviderDataType = 'realtime' | 'historical';
