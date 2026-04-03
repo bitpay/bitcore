@@ -16,24 +16,24 @@ export class UtxoMultiThreadSync extends EventEmitter {
   private chain: string;
   private network: string;
   private threads: Thread[] = [];
-  private stopping = false;
-  private syncing = false;
+  private stopping: boolean = false;
+  private syncing: boolean = false;
   private config: IUtxoNetworkConfig;
   private syncInterval?: NodeJS.Timeout;
-  protected currentHeight = 0;
+  protected currentHeight: number = 0;
 
   // Ordered block processing
-  private blockBuffer: Map<number, string> = new Map(); // height -> rawBlockHex
+  private blockBuffer: Map<number, string> = new Map();
   private headerQueue: Array<{ hash: string; height: number }> = [];
-  private headerQueueIdx = 0;
-  private nextProcessHeight = 0;
-  private isProcessing = false;
+  private headerQueueIdx: number = 0;
+  private nextProcessHeight: number = 0;
+  private isProcessing: boolean = false;
   private batchResolve?: () => void;
-  private batchTargetHeight = 0;
+  private batchTargetHeight: number = 0;
   private callbacks: SyncCallbacks;
 
-  private startHeight = 0;
-  private startTime = 0;
+  private startHeight: number = 0;
+  private startTime: number = 0;
 
   constructor({ chain, network, config, callbacks }: {
     chain: string;
@@ -49,7 +49,9 @@ export class UtxoMultiThreadSync extends EventEmitter {
   }
 
   async sync() {
-    if (this.syncing) return false;
+    if (this.syncing) {
+      return false;
+    }
     this.syncing = true;
 
     const { chain, network } = this;
@@ -79,7 +81,7 @@ export class UtxoMultiThreadSync extends EventEmitter {
     } catch (err: any) {
       logger.error(`Error in multi-thread sync for ${chain} ${network}: ${err.message}`);
       this.syncing = false;
-      clearInterval(this.syncInterval!);
+      clearInterval(this.syncInterval as NodeJS.Timeout);
       throw err;
     }
 
@@ -131,7 +133,7 @@ export class UtxoMultiThreadSync extends EventEmitter {
   }
 
   threadMessageHandler(thread: Thread) {
-    return (msg: any) => {
+    return (msg) => {
       if (msg.message === 'ready') {
         this.emit('THREADREADY');
       } else {
@@ -189,12 +191,16 @@ export class UtxoMultiThreadSync extends EventEmitter {
     }
   }
 
-  getWorkerThread(workerData: any): Thread {
-    return new Thread(__dirname + '/syncWorker.js', { workerData });
+  getWorkerThread(workerData): Thread {
+    return new Thread(__dirname + '/syncWorker.js', {
+      workerData
+    });
   }
 
   async initializeThreads() {
-    if (this.threads.length > 0) return;
+    if (this.threads.length > 0) {
+      return;
+    }
 
     const threadCnt = this.config.threads || os.cpus().length - 1;
     if (threadCnt <= 0) {
@@ -230,8 +236,10 @@ export class UtxoMultiThreadSync extends EventEmitter {
   }
 
   private finishSync() {
-    clearInterval(this.syncInterval!);
-    if (this.stopping) return;
+    clearInterval(this.syncInterval as NodeJS.Timeout);
+    if (this.stopping) {
+      return;
+    }
 
     logger.info(
       `${this.chain}:${this.network} multi-thread sync finished. Switching to single-thread P2P sync.`
@@ -245,7 +253,7 @@ export class UtxoMultiThreadSync extends EventEmitter {
     for (const thread of this.threads) {
       thread.postMessage({ message: 'shutdown' });
     }
-    clearInterval(this.syncInterval!);
+    clearInterval(this.syncInterval as NodeJS.Timeout);
   }
 
   stop() {

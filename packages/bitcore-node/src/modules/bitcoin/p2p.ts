@@ -284,14 +284,13 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
 
   useMultiThread(): boolean {
     if (this.chainConfig.threads == null) {
+      // use multithread by default if there are >2 threads in the CPU
       return os.cpus().length > 2;
     }
     return this.chainConfig.threads > 0;
   }
 
-  /**
-   * Get headers using locator hashes (shared between sync modes).
-   */
+  // Get headers using locator hashes (shared between sync modes)
   private async getHeadersForSync(): Promise<BitcoinHeaderObj[]> {
     const { chain, network } = this;
     let locators = await ChainStateProvider.getLocatorHashes({ chain, network });
@@ -301,9 +300,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     return this.getHeaders(locators);
   }
 
-  /**
-   * Handle genesis block fetch (needed when syncing from height 0).
-   */
+  // Handle genesis block fetch (needed when syncing from height 0)
   private async handleGenesisBlock(headers: BitcoinHeaderObj[]): Promise<number> {
     if (headers[0]) {
       const block = await this.getBlock(headers[0].hash);

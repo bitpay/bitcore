@@ -11,10 +11,10 @@ interface RpcConfig {
 }
 
 export class UtxoSyncWorker {
-  private parentPort = worker.parentPort!;
+  private parentPort: worker.MessagePort = worker.parentPort as worker.MessagePort;
   private rpc: RpcConfig = worker.workerData.rpc;
-  private stopping = false;
-  private isWorking = false;
+  private stopping: boolean = false;
+  private isWorking: boolean = false;
 
   async start() {
     this.parentPort.on('message', this.messageHandler.bind(this));
@@ -28,7 +28,7 @@ export class UtxoSyncWorker {
     process.exit(0);
   }
 
-  messageHandler(msg: any) {
+  messageHandler(msg) {
     switch (msg.message) {
       case 'shutdown':
         this.stop();
@@ -104,10 +104,10 @@ export class UtxoSyncWorker {
 }
 
 // Worker thread entry point
-worker.parentPort!.once('message', async (msg) => {
+worker.parentPort!.once('message', async function(msg) {
   if (msg.message !== 'start') {
     throw new Error('Unknown startup message');
   }
   await new UtxoSyncWorker().start();
-  worker.parentPort!.postMessage({ message: 'ready' });
+  return worker.parentPort!.postMessage({ message: 'ready' });
 });
