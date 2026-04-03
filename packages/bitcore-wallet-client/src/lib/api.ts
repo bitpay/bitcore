@@ -4208,6 +4208,7 @@ export interface Txp {
   encryptedMessage?: string; // is set equal to `message` before decryption in processTxps()
   network: string;
   nonce?: number;
+  deferNonce?: boolean;
   note?: Note;
   outputOrder: Array<number>;
   outputs?: Array<{
