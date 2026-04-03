@@ -194,11 +194,15 @@ export class Client {
   async importAddresses(params: { pubKey: string; payload: Array<{ address: string }> }): Promise<void> {
     const { payload, pubKey } = params;
     const url = `${this.apiUrl}/wallet/${pubKey}`;
+    const pageSize = 100;
 
-    for (let i = 0; i < payload.length; i += 100) {
-      const body = payload.slice(i, i + 100);
-      console.log(`Importing addresses ${i + 1}-${i + body.length} of ${payload.length}`);
-      if (i >= 100) {
+    for (let i = 0; i < payload.length; i += pageSize) {
+      const body = payload.slice(i, i + pageSize);
+      if (payload.length > pageSize) {
+        // If we're paginating through a long list of addresses, log progress so the user knows something is happening
+        console.log(`Importing addresses ${i + 1}-${i + body.length} of ${payload.length}`);
+      }
+      if (i >= pageSize) {
         await utils.sleep(1000); // cooldown
       }
       
