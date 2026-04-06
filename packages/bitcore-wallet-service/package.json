@@ -43,6 +43,7 @@
     "cp:templates": "cp -r ./templates ./ts_build/templates"
   },
   "dependencies": {
+    "@bitpay-labs/bitcore-logging": "^11.7.0",
     "@bitpay-labs/bitcore-tss": "^11.7.0",
     "@bitpay-labs/crypto-wallet-core": "^11.7.0",
     "@sendgrid/mail": "6.5.4",
@@ -72,8 +73,7 @@
     "socket.io-client": "4.8.1",
     "source-map-support": "0.5.16",
     "sticky-session": "0.1.0",
-    "uuid": "3.4.0",
-    "winston": "3.3.3"
+    "uuid": "3.4.0"
   },
   "devDependencies": {
     "@types/async": "^2.4.1",

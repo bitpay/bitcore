@@ -1,0 +1,47 @@
+{
+  "name": "@bitpay-labs/bitcore-logging",
+  "description": "Centralized logging for Bitcore services",
+  "author": "BitPay Inc",
+  "version": "11.6.6",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "keywords": [
+    "bitcore",
+    "logging",
+    "typescript",
+    "winston"
+  ],
+  "license": "MIT",
+  "main": "ts_build/src/index.js",
+  "types": "./ts_build/src/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-logging"
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:prod": "tsc -p tsconfig.prod.json",
+    "clean": "rm -rf ts_build",
+    "compile": "npm run clean && npm run build",
+    "test": "npm run compile && mocha --exit -r tsx 'test/**/*.test.ts'",
+    "test:ci": "TEST_LOG_LEVEL=none npm run test",
+    "lint": "eslint .",
+    "fix:errors": "eslint --fix --quiet .",
+    "fix:all": "eslint --fix .",
+    "fix": "npm run fix:errors",
+    "precommit": "npm run lint"
+  },
+  "dependencies": {
+    "winston": "3.3.3"
+  },
+  "devDependencies": {
+    "@types/chai": "^5.2.2",
+    "@types/mocha": "^5.2.0",
+    "@types/node": "^22.10.10",
+    "chai": "^5.2.0",
+    "mocha": "^5.2.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.3"
+  }
+}
