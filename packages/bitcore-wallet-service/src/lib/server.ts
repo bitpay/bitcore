@@ -3412,7 +3412,7 @@ export class WalletService implements IWalletService {
             return cb(null, txp);
           }
 
-          if (!Constants.EVM_CHAINS[wallet.chain.toUpperCase()]) {
+          if (!Constants.EVM_CHAINS[wallet.chain.toUpperCase()] && wallet.chain.toUpperCase() !== 'XRP') {
             return cb(null, txp);
           }
 
