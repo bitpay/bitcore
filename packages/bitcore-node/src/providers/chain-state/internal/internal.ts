@@ -305,8 +305,8 @@ export class InternalStateProvider implements IChainStateService {
   }
 
   streamWalletAddresses(params: StreamWalletAddressesParams) {
-    const { walletId, req, res } = params;
-    const query = { wallet: walletId };
+    const { chain, network, walletId, req, res } = params;
+    const query = { chain, network, wallet: walletId };
     Storage.apiStreamingFind(WalletAddressStorage, query, {}, req, res);
   }
 

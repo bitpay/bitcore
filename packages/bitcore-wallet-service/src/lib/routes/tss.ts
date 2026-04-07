@@ -100,8 +100,8 @@ export class TssRouter {
       try {
         const { id, round } = req.params as { [key: string]: string };
         const copayerId = req.headers['x-identity'];
-        const { messages, signature } = await TssSign.getMessagesForParty({ id, round: parseInt(round), copayerId });
-        return res.json({ messages, signature });
+        const { messages, signature, participants } = await TssSign.getMessagesForParty({ id, round: parseInt(round), copayerId });
+        return res.json({ messages, signature, participants });
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
       }

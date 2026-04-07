@@ -2037,6 +2037,7 @@ export class API extends EventEmitter {
     } else if (typeof cb === 'string') {
       baseUrl = cb;
     }
+
     try {
       $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <pushSignatures()>');
       $.checkArgument(txp.creatorId);
@@ -2051,7 +2052,7 @@ export class API extends EventEmitter {
 
       baseUrl = baseUrl || '/v2/txproposals/';
       const url = `${baseUrl}${txp.id}/signatures/`;
-      const args = { signatures };
+      const args: any = { signatures, nonce: txp.nonce };
       const { body: signedTxp } = await this.request.post<object, Txp>(url, args);
       this._processTxps(signedTxp);
       if (cb) { cb(null, signedTxp); }
@@ -2060,6 +2061,21 @@ export class API extends EventEmitter {
       if (cb) cb(err);
       else throw err;
     }
+  }
+
+  /**
+   * Prepare a transaction proposal for signing.
+   * Assigns JIT values (nonce, and in the future: fee, gas) to a deferred txp.
+   * Call this just before signing a deferred-nonce txp.
+   */
+  async prepareTx(opts: { txp: Txp }): Promise<Txp> {
+    $.checkState(this.credentials && this.credentials.isComplete(),
+      'Failed state: this.credentials at <prepareTx()>');
+
+    const url = '/v1/txproposals/' + opts.txp.id + '/prepare/';
+    const { body: txp } = await this.request.post<object, Txp>(url, {});
+    this._processTxps(txp);
+    return txp;
   }
 
   /**
@@ -3162,6 +3178,98 @@ export class API extends EventEmitter {
   }
 
   /**
+   * Get ERC20 token allowance for a given owner/spender pair
+   */
+  async getTokenAllowance(
+    opts: {
+      /** EVM chain name (e.g. 'eth', 'matic') */
+      chain: string;
+      /** Network name (e.g. 'mainnet', 'sepolia') */
+      network: string;
+      /** Token contract address */
+      tokenAddress: string;
+      /** Token owner address */
+      ownerAddress: string;
+      /** Spender contract address */
+      spenderAddress: string;
+    }
+  ) {
+    $.checkArgument(opts?.chain, 'Missing argument: chain at <getTokenAllowance()>');
+    $.checkArgument(opts?.network, 'Missing argument: network at <getTokenAllowance()>');
+    $.checkArgument(opts?.tokenAddress, 'Missing argument: tokenAddress at <getTokenAllowance()>');
+    $.checkArgument(opts?.ownerAddress, 'Missing argument: ownerAddress at <getTokenAllowance()>');
+    $.checkArgument(opts?.spenderAddress, 'Missing argument: spenderAddress at <getTokenAllowance()>');
+    const { body: allowance } = await this.request.post<object, number>('/v1/token/allowance', opts);
+    return allowance;
+  }
+
+  /**
+   * Get Aave user account data (health factor, collateral, debt, etc.)
+   */
+  async getAaveUserAccountData(
+    opts: {
+      /** EVM chain name (e.g. 'eth', 'matic') */
+      chain: string;
+      /** Network name (e.g. 'mainnet', 'sepolia') */
+      network: string;
+      /** User wallet address */
+      address: string;
+      /** Aave protocol version. Default: 'v3' */
+      version?: string;
+    }
+  ) {
+    $.checkArgument(opts?.chain, 'Missing argument: chain at <getAaveUserAccountData()>');
+    $.checkArgument(opts?.network, 'Missing argument: network at <getAaveUserAccountData()>');
+    $.checkArgument(opts?.address, 'Missing argument: address at <getAaveUserAccountData()>');
+    const { body: accountData } = await this.request.post<object, object>('/v1/service/aave/userAccountData', opts);
+    return accountData;
+  }
+
+  /**
+   * Get Aave reserve data (variable borrow rate, etc.)
+   */
+  async getAaveReserveData(
+    opts: {
+      /** EVM chain name (e.g. 'eth', 'matic') */
+      chain: string;
+      /** Network name (e.g. 'mainnet', 'sepolia') */
+      network: string;
+      /** Reserve asset token address */
+      asset: string;
+      /** Aave protocol version. Default: 'v3' */
+      version?: string;
+    }
+  ) {
+    $.checkArgument(opts?.chain, 'Missing argument: chain at <getAaveReserveData()>');
+    $.checkArgument(opts?.network, 'Missing argument: network at <getAaveReserveData()>');
+    $.checkArgument(opts?.asset, 'Missing argument: asset at <getAaveReserveData()>');
+    const { body: reserveData } = await this.request.post<object, object>('/v1/service/aave/reserveData', opts);
+    return reserveData;
+  }
+
+  /**
+   * Get Aave reserve token addresses (aToken, variableDebtToken, etc.)
+   */
+  async getAaveReserveTokensAddresses(
+    opts: {
+      /** EVM chain name (e.g. 'eth', 'matic') */
+      chain: string;
+      /** Network name (e.g. 'mainnet', 'sepolia') */
+      network: string;
+      /** Reserve asset token address */
+      asset: string;
+      /** Aave protocol version. Default: 'v3' */
+      version?: string;
+    }
+  ) {
+    $.checkArgument(opts?.chain, 'Missing argument: chain at <getAaveReserveTokensAddresses()>');
+    $.checkArgument(opts?.network, 'Missing argument: network at <getAaveReserveTokensAddresses()>');
+    $.checkArgument(opts?.asset, 'Missing argument: asset at <getAaveReserveTokensAddresses()>');
+    const { body: tokensAddresses } = await this.request.post<object, object>('/v1/service/aave/reserveTokensAddresses', opts);
+    return tokensAddresses;
+  }
+
+  /**
    * Get wallet status based on a string identifier
    */
   async getStatusByIdentifier(
@@ -3181,7 +3289,7 @@ export class API extends EventEmitter {
     }
     try {
       $.checkState(this.credentials, 'Failed state: this.credentials at <getStatusByIdentifier()>');
-      $.checkArugment(opts?.identifier, 'Missing argument: identifier at <getStatusByIdentifier()>');
+      $.checkArgument(opts?.identifier, 'Missing argument: identifier at <getStatusByIdentifier()>');
 
       const qs = [];
       qs.push('includeExtendedInfo=' + (opts.includeExtendedInfo ? '1' : '0'));

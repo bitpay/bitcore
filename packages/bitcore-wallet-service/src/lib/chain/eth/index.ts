@@ -317,9 +317,10 @@ export class EthChain implements IChain {
     }
     const unsignedTxs = [];
 
+    const nonceNum = txp.nonce != null ? Number(txp.nonce) : 0;
     if (multiSendContractAddress) {
       const multiSendParams = {
-        nonce: Number(txp.nonce),
+        nonce: nonceNum,
         recipients,
         contractAddress: multiSendContractAddress
       };
@@ -330,7 +331,7 @@ export class EthChain implements IChain {
         // Uses gas limit from the txp output level
         const params = {
           ...recipients[index],
-          nonce: Number(txp.nonce) + Number(index),
+          nonce: nonceNum + Number(index),
           recipients: [recipients[index]]
         };
         unsignedTxs.push(Transactions.create({ ...txp, chain, ...params }));
