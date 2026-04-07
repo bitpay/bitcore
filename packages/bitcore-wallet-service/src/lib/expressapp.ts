@@ -1180,12 +1180,14 @@ export class ExpressApp {
         const opts: {
           skip?: number;
           limit?: number;
+          reverse?: boolean;
           includeExtendedInfo?: boolean;
           tokenAddress?: string;
           multisigContractAddress?: string;
         } = {};
         if (req.query.skip) opts.skip = +req.query.skip;
         if (req.query.limit) opts.limit = +req.query.limit;
+        if (req.query.reverse == '1') opts.reverse = true;
         if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress as string;
         if (req.query.multisigContractAddress)
           opts.multisigContractAddress = req.query.multisigContractAddress as string;

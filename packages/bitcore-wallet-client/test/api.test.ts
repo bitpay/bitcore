@@ -5898,6 +5898,19 @@ describe('client API', function() {
         },
         {
           opts: {
+            reverse: true
+          },
+          expected: [10, 20]
+        },
+        {
+          opts: {
+            skip: 1,
+            reverse: true
+          },
+          expected: [20]
+        },
+        {
+          opts: {
             skip: 3
           },
           expected: []
