@@ -217,22 +217,6 @@ export class TextFile {
 
   /**
    * Rewrite the address file in place for a specific migration version.
-   *
-   * Why a transformer?
-   * The TextFile backend is append-only. That is simple for normal writes, but it means
-   * migration cannot "overwrite" an existing address entry by appending a new one because
-   * `getKey()` still resolves the first matching line it encounters. For migration we
-   * therefore treat `addresses.txt` like a stream of JSONL records:
-   *
-   * 1. Read bytes from the existing file.
-   * 2. Parse each JSONL line into an object.
-   * 3. Pass each object through a Transform stream that replaces only the records that
-   *    belong to this wallet/address set.
-   * 4. Serialize the transformed objects back to JSONL.
-   * 5. Write the result to a temporary file and atomically rename it into place.
-   *
-   * This lets us preserve the file order and all unrelated records while updating the
-   * migrated addresses in a single pass.
    */
   async migrate(params: { version: number; name: string; keys: any[] }) {
     const { version, name, keys } = params;
@@ -253,18 +237,6 @@ export class TextFile {
 
     const tempAddressFileName = `${this.addressFileName}.v${version}.migrating`;
 
-    /**
-     * The transform stream is the "rewrite policy" for migration.
-     *
-     * Each record coming in is one parsed JSON object from the source file.
-     * We either:
-     * - push it through unchanged, or
-     * - replace it with the migrated version for the same wallet/address.
-     *
-     * The important thing to notice is that Transform streams do not need to change the
-     * number of records. They can simply emit a modified version of the incoming record,
-     * which makes them a nice fit for "rewrite this file in one pass" jobs like this.
-     */
     const migrationTransform = new stream.Transform({
       writableObjectMode: true,
       readableObjectMode: true,
@@ -280,7 +252,7 @@ export class TextFile {
           const replacement = replacementRecords.get(record.address);
           /**
            * If replacement not in map, indicates a prior-existing address which was not included in the keys to migrate.
-           * Fall back to prior.
+           * Warn & fall back to prior.
            */
           if (!replacement) {
             console.warn(`TextFile migration warning: found address ${record.address} for wallet ${name}, but no replacement key was provided. Keeping original record.`);
