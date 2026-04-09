@@ -71,8 +71,13 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
         deserializeBlock: (rawHex) => new this.bitcoreLib.Block(Buffer.from(rawHex, 'hex'))
       }
     });
-    this.multiThreadSync.once('INITIALSYNCDONE', () => {
+    this.multiThreadSync.once('INITIALSYNCDONE', async () => {
       this.initialSyncComplete = true;
+      await StateStorage.collection.findOneAndUpdate(
+        {},
+        { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
+        { upsert: true }
+      );
       this.events.emit('SYNCDONE');
     });
   }
