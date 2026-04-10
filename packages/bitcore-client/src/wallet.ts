@@ -42,6 +42,21 @@ const chainLibs = {
 };
 const CURRENT_WALLET_VERSION = 2;
 
+const baseUrls = {
+  BTC: 'https://api.bitcore.io/api',
+  BCH: 'https://api.bitcore.io/api',
+  DOGE: 'https://api.bitcore.io/api',
+  LTC: 'https://api.bitcore.io/api',
+  ETH: 'https://api-eth.bitcore.io/api',
+  MATIC: 'https://api-matic.bitcore.io/api',
+  ARB: 'https://api-eth.bitcore.io/api',
+  OP: 'https://api-eth.bitcore.io/api',
+  BASE: 'https://api-eth.bitcore.io/api',
+  ARC: 'https://api-eth.bitcore.io/api',
+  XRP: 'https://api-xrp.bitcore.io/api',
+  SOL: 'https://api-sol.bitcore.io/api'
+};
+
 export interface IWalletExt extends IWallet {
   storage?: Storage;
   version?: 0 | 2; // Wallet versioning used for backwards compatibility
@@ -77,7 +92,7 @@ export class Wallet {
   constructor(params: Wallet | IWalletExt) {
     Object.assign(this, params);
     if (!this.baseUrl) {
-      this.baseUrl = 'https://api.bitcore.io/api';
+      this.baseUrl = baseUrls[this.chain.toUpperCase()] || 'https://api.bitcore.io/api';
     }
     this.client = new Client({
       apiUrl: this.getApiUrl(),
@@ -1042,7 +1057,7 @@ export class Wallet {
     let existingTx;
     if (rawTx) {
       if (lib.ethers) {
-        existingTx = lib.ethers.utils.parseTransaction(rawTx);
+        existingTx = lib.ethers.Transaction.from(rawTx);
       } else {
         const tx = new lib.Transaction(rawTx);
         txid = tx.id;

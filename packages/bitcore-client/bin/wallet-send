@@ -88,10 +88,11 @@ const main = async () => {
       } else if (wallet.isEvmChain()) {
         const balance = await wallet.getBalance({ tokenName, address: from, hex: true });
         const tx = await wallet.newTx({ ...params, recipients: [{ address: to, amount: 1 }] }); // create dummy tx to estimate gas
-        const { data } = wallet.getLib().ethers.utils.parseTransaction(tx);
+        const { data } = wallet.getLib().ethers.Transaction.from(tx);
         const gasLimit = await wallet.estimateGas({ to, from, data, value: BigInt(balance.confirmed).toString() });
         const l1FeeWei = await wallet.getL1Fee(tx); // OP-stack chains have a "hidden" layer-1 data fee (in wei). Returns 0 for non-OP-stack chains.
-        const amtToSend = (BigInt(balance.confirmed) - (BigInt(gasLimit) * BigInt(params.feeRate)) - BigInt(l1FeeWei)).toString();
+        const feeWei = (BigInt(gasLimit) * BigInt(params.feeRate)) - BigInt(l1FeeWei);
+        const amtToSend = (BigInt(balance.confirmed) - (tokenName ? 0n : feeWei)).toString();
         params.recipients.push({ address: to, amount: amtToSend });
         params.gasLimit = gasLimit;
       } else if (wallet.chain.toUpperCase() === 'XRP') {
