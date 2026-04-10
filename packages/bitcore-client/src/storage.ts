@@ -57,8 +57,11 @@ export class Storage {
     (this.storageType as Mongo)?.close?.();
   }
 
-  async loadWallet(params: { name: string }): Promise<void | IWallet> {
-    const { name } = params;
+  async loadWallet(params: { name: string }): Promise<void | IWallet>
+  async loadWallet(params: { name: string; raw: true }): Promise<void | string>
+  async loadWallet(params: { name: string; raw: false }): Promise<void | IWallet>
+  async loadWallet(params: { name: string; raw?: boolean }): Promise<void | IWallet | string> {
+    const { name, raw } = params;
     let wallet: string | void;
     for (const db of await this.verifyDbs(this.db)) {
       try {
@@ -72,7 +75,7 @@ export class Storage {
     if (!wallet) {
       return;
     }
-    return JSON.parse(wallet) as IWallet;
+    return raw ? wallet : JSON.parse(wallet) as IWallet;
   }
 
   async deleteWallet(params: { name: string }) {
@@ -113,6 +116,7 @@ export class Storage {
     return this.storageType.saveWallet({ wallet });
   }
 
+  /** @deprecated - Use getStoredKey */
   async getKey(params: {
     address: string;
     name: string;
@@ -132,6 +136,7 @@ export class Storage {
     }
   }
 
+  /** @deprecated - Use getStoredKeys */
   async getKeys(params: { addresses: string[]; name: string; encryptionKey: string }): Promise<Array<KeyImport>> {
     const { addresses, name, encryptionKey } = params;
     const keys = new Array<KeyImport>();
@@ -158,6 +163,7 @@ export class Storage {
     return keys;
   }
 
+  /** @deprecated - Use addKeysSafe */
   async addKeys(params: { name: string; keys: KeyImport[]; encryptionKey: string }) {
     const { name, keys, encryptionKey } = params;
     let open = true;
@@ -188,5 +194,65 @@ export class Storage {
   async getAddresses(params: { name: string; limit?: number; skip?: number }) {
     const { name, limit, skip } = params;
     return this.storageType.getAddresses({ name, limit, skip });
+  }
+
+  async addKeysSafe(params: { name: string; keys: KeyImport[] }) {
+    const { name, keys } = params;
+    let i = 0;
+    for (const key of keys) {
+      const { path } = key;
+      const pubKey = key.pubKey;
+      // key.privKey is encrypted - cannot be directly used to retrieve pubKey if required
+      if (!pubKey) {
+        throw new Error(`pubKey is undefined for ${name}. Keys not added to storage`);
+      }
+      let payload = {};
+      if (pubKey) {
+        payload = { key: JSON.stringify(key), pubKey, path };
+      }
+      const toStore = JSON.stringify(payload);
+      // open on first, close on last
+      await this.storageType.addKeys({ name, key, toStore, open: i === 0, keepAlive: i < keys.length - 1 });
+      ++i;
+    }
+  }
+
+  async getStoredKeys(params: { addresses: string[]; name: string }): Promise<Array<any>> {
+    const { addresses, name } = params;
+    const keys = new Array<any>();
+    let i = 0;
+    for (const address of addresses) {
+      try {
+        const key = await this.getStoredKey({
+          name,
+          address,
+          open: i === 0, // open on first
+          keepAlive: i < addresses.length - 1, // close on last
+        });
+        keys.push(key);
+      } catch (err) {
+        // don't continue from catch - i must be incremented
+        console.error(err);
+      }
+      ++i;
+    }
+    return keys;
+  }
+
+  private async getStoredKey(params: {
+    address: string;
+    name: string;
+    keepAlive: boolean;
+    open: boolean;
+  }): Promise<any> {
+    const { address, name, keepAlive, open } = params;
+    const payload = await this.storageType.getKey({ name, address, keepAlive, open });
+    const json = JSON.parse(payload) || payload;
+    const { key } = json; // pubKey available - not needed
+    if (key) {
+      return JSON.parse(key);
+    } else {
+      return json;
+    }
   }
 }
