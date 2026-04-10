@@ -231,6 +231,7 @@ Optional Arguments:
 
 - skip: Records to skip from the result (defaults to 0)
 - limit: Total number of records to return (return all available records if not specified).
+- reverse: Return oldest transactions first.
 
 Returns:
 

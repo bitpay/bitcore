@@ -4487,6 +4487,13 @@ export class WalletService implements IWalletService {
         next => {
           if (streamData) {
             lastTxs = streamData;
+            if (cacheStatus.tipTxId) {
+              // Stream data can outlive cache promotion, so trim any entries that
+              // are now part of the durable cache before paging.
+              lastTxs = _.takeWhile(lastTxs, (tx: any) => {
+                return tx.txid != cacheStatus.tipTxId;
+              });
+            }
             return next();
           }
 
@@ -4519,6 +4526,24 @@ export class WalletService implements IWalletService {
           });
         },
         next => {
+          if (opts.reverse) {
+            const cachedTxs = _.isNumber(cacheStatus.tipIndex) ? cacheStatus.tipIndex + 1 : 0;
+            const totalTxs = cachedTxs + lastTxs.length;
+            const oldestFirstSkip = skip;
+
+            // Keep the existing newest-first cache math by translating the requested
+            // oldest-first cursor into the equivalent newest-first slice.
+            limit = Math.max(0, Math.min(limit, totalTxs - oldestFirstSkip));
+            skip = Math.max(0, totalTxs - oldestFirstSkip - limit);
+          }
+
+          if (limit === 0) {
+            resultTxs = [];
+            fromCache = false;
+            fromBc = false;
+            return next();
+          }
+
           // Case 1.
           //            t -->
           //  | Old TXS    | ======= LAST TXS ========== \
@@ -4603,6 +4628,9 @@ export class WalletService implements IWalletService {
       ],
       err => {
         if (err) return cb(err);
+        if (opts.reverse) {
+          resultTxs.reverse();
+        }
         return cb(null, {
           items: resultTxs,
           fromCache,
@@ -4620,10 +4648,11 @@ export class WalletService implements IWalletService {
    * @param {Object} opts
    * @param {Number} opts.skip (defaults to 0)
    * @param {Number} opts.limit
+   * @param {Boolean} opts.reverse[=false] - Return oldest transactions first.
    * @param {String} opts.tokenAddress ERC20 Token Contract Address
    * @param {String} opts.multisigContractAddress MULTISIG ETH Contract Address
    * @param {Number} opts.includeExtendedInfo[=false] - Include all inputs/outputs for every tx.
-   * @returns {TxProposal[]} Transaction proposals, first newer
+   * @returns {TxProposal[]} Transaction proposals, newer first unless opts.reverse is set
    */
   getTxHistory(opts, cb) {
     opts = opts || {};
