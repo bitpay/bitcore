@@ -8,6 +8,14 @@ import { TextFile } from './storage/textFile';
 import { StorageType } from './types/storage';
 import { IWallet, KeyImport } from './types/wallet';
 
+function tryParse(json: string) {
+  try {
+    return JSON.parse(json);
+  } catch {
+    return json;
+  }
+}
+
 export class Storage {
   path: string;
   db: Array<Mongo | Level | TextFile>;
@@ -229,7 +237,11 @@ export class Storage {
           open: i === 0, // open on first
           keepAlive: i < addresses.length - 1, // close on last
         });
-        keys.push(key);
+        if (key) {
+          keys.push(key);
+        } else {
+          console.warn(`Key not found for address ${address}`);
+        }
       } catch (err) {
         // don't continue from catch - i must be incremented
         console.error(err);
@@ -247,8 +259,9 @@ export class Storage {
   }): Promise<any> {
     const { address, name, keepAlive, open } = params;
     const payload = await this.storageType.getKey({ name, address, keepAlive, open });
-    const json = JSON.parse(payload) || payload;
-    const { key } = json; // pubKey available - not needed
+    // Note: payload could be undefined if the server has an address that local storage did not save
+    const json = tryParse(payload) || payload;
+    const { key } = json || {}; // pubKey available - not needed
     if (key) {
       return JSON.parse(key);
     } else {
