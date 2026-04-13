@@ -1,10 +1,12 @@
 import { AlchemyAdapter } from './alchemy';
+import { MoralisAdapter } from './moralis';
 import type { IIndexedAPIAdapter } from './IIndexedAPIAdapter';
 import type { IMultiProviderConfig } from '../../../../types/Config';
 
 export class AdapterFactory {
   private static registry: Record<string, new (config: IMultiProviderConfig) => IIndexedAPIAdapter> = {
-    alchemy: AlchemyAdapter
+    alchemy: AlchemyAdapter,
+    moralis: MoralisAdapter
   };
 
   static createAdapter(providerConfig: IMultiProviderConfig): IIndexedAPIAdapter {
