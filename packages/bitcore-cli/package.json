@@ -2,7 +2,7 @@
   "name": "@bitpay-labs/bitcore-cli",
   "description": "A Bitcore CLI Wallet",
   "author": "BitPay, Inc",
-  "version": "11.7.2",
+  "version": "11.7.3",
   "licence": "MIT",
   "private": true,
   "keywords": [
@@ -42,9 +42,9 @@
     "precommit": "npm run lint"
   },
   "dependencies": {
-    "@bitpay-labs/bitcore-mnemonic": "^11.7.2",
-    "@bitpay-labs/bitcore-wallet-client": "^11.7.2",
-    "@bitpay-labs/crypto-wallet-core": "^11.7.2",
+    "@bitpay-labs/bitcore-mnemonic": "^11.7.3",
+    "@bitpay-labs/bitcore-wallet-client": "^11.7.3",
+    "@bitpay-labs/crypto-wallet-core": "^11.7.3",
     "@clack/prompts": "1.0.0-alpha.6",
     "commander": "14.0.0",
     "external-editor": "3.1.0",

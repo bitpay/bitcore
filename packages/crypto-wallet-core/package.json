@@ -1,6 +1,6 @@
 {
   "name": "@bitpay-labs/crypto-wallet-core",
-  "version": "11.7.2",
+  "version": "11.7.3",
   "description": "A multi-currency support library for address derivation, private key creation, and transaction creation",
   "main": "./ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
@@ -45,10 +45,10 @@
   "author": "Micah Riggan",
   "license": "MIT",
   "dependencies": {
-    "@bitpay-labs/bitcore-lib": "^11.7.2",
-    "@bitpay-labs/bitcore-lib-cash": "^11.7.2",
-    "@bitpay-labs/bitcore-lib-doge": "^11.7.2",
-    "@bitpay-labs/bitcore-lib-ltc": "^11.7.2",
+    "@bitpay-labs/bitcore-lib": "^11.7.3",
+    "@bitpay-labs/bitcore-lib-cash": "^11.7.3",
+    "@bitpay-labs/bitcore-lib-doge": "^11.7.3",
+    "@bitpay-labs/bitcore-lib-ltc": "^11.7.3",
     "@solana-program/compute-budget": "0.7.0",
     "@solana-program/memo": "0.7.0",
     "@solana-program/system": "0.7.0",
