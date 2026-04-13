@@ -58,6 +58,8 @@ import { Storage } from './storage';
 import type { ExternalServicesConfig } from '../types/externalservices';
 import type { GetAddressesOpts, UpgradeCheckOpts } from '../types/server';
 
+type BwsLogger = typeof logger;
+
 let request = _request;
 const $ = singleton();
 
@@ -489,7 +491,7 @@ export class WalletService implements IWalletService {
     return args;
   }
 
-  logi(message, ...args) {
+  logi(message: string, ...args: any[]): BwsLogger {
     args = this._cleanLogArgs(args);
 
     if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
@@ -506,7 +508,7 @@ export class WalletService implements IWalletService {
     return logger.info(message, ...args);
   }
 
-  logw(message, ...args) {
+  logw(message: string, ...args: any[]): BwsLogger {
     args = this._cleanLogArgs(args);
 
     if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
@@ -524,7 +526,7 @@ export class WalletService implements IWalletService {
     return logger.warn(message, ...args);
   }
 
-  logd(message, ...args) {
+  logd(message: string, ...args: any[]): BwsLogger {
     args = this._cleanLogArgs(args);
 
     if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
