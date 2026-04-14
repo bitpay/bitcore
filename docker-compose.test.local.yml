@@ -5,13 +5,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    volumes:
+      - .:/bitcore
     ports:
       - 8100:8100
       - 3000:3000
     environment:
       - DB_HOST=db
       - DB_NAME=bitcore-test
-      - BITCORE_CONFIG_PATH=../../../../bitcore-test.config.js
+      - BITCORE_CONFIG_PATH=/bitcore/bitcore-test.local.config.json
     depends_on:
       - db
       - bitcoin

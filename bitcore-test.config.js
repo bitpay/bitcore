@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+
+const fs = require('fs');
 const testConfig = require('./bitcore-test.config.json');
 
 testConfig.bitcoreNode.chains.BTC.regtest.trustedPeers[0].host = 'bitcoin';
@@ -20,4 +23,4 @@ testConfig.bitcoreNode.chains.XRP.testnet.provider.host = 'rippled';
 testConfig.bitcoreNode.chains.XRP.testnet.provider.port = 6006;
 testConfig.bitcoreNode.chains.XRP.testnet.provider.dataHost = 'rippled';
 
-module.exports = testConfig;
+fs.writeFileSync('./bitcore-test.local.config.json', JSON.stringify(testConfig, null, 2));
