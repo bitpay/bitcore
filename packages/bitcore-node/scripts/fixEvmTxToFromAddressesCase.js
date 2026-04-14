@@ -3,9 +3,19 @@
 import readline from 'readline';
 import util from 'util';
 import * as CWC from '@bitpay-labs/crypto-wallet-core';
+import { BitcoinBlockStorage } from '../build/src/models/block.js';
 import { TransactionStorage } from '../build/src/models/transaction.js';
 import { Storage } from '../build/src/services/storage.js';
 
+let shutdown = false;
+process.on('SIGINT', () => {
+  if (shutdown) {
+    console.log('Force exiting...');
+    process.exit(1);
+  }
+  shutdown = true;
+  console.log('Gracefully shutting down...');
+});
 
 function usage(errMsg) {
   console.log('USAGE: ./fixEvmTxToFromAddressesCase.js <options>');
@@ -13,7 +23,7 @@ function usage(errMsg) {
   console.log('  --chain <value>          REQUIRED - e.g. ETH, MATIC...');
   console.log('  --network <value>        REQUIRED - e.g. mainnet, sepolia, regtest...');
   console.log('  --startHeight <value>    REQUIRED Block height to start from');
-  console.log('  --endHeight [value]      Block height to end at (default: current block height)');
+  console.log('  --endHeight <value>      REQUIRED Block height to stop at');
   if (errMsg) {
     console.log('\nERROR: ' + errMsg);
   }
@@ -34,17 +44,21 @@ const endHeightIdx = args.indexOf('--endHeight');
 const chain = args[chainIdx + 1]?.toUpperCase();
 const network = args[networkIdx + 1]?.toLowerCase();
 const startHeight = parseInt(args[startHeightIdx + 1]);
-const endHeight = endHeightIdx !== -1 ? parseInt(args[endHeightIdx + 1]) : undefined;
+const endHeight = parseInt(args[endHeightIdx + 1]);
 
-if (chainIdx === -1 || networkIdx === -1 || startHeightIdx === -1 || !chain || !network || isNaN(startHeight)) {
+if (chainIdx === -1 || networkIdx === -1 || startHeightIdx === -1 || endHeightIdx === -1) {
   usage('Missing required options.');
+}
+
+if (!chain || !network || isNaN(startHeight) || isNaN(endHeight)) {
+  usage('Invalid option value(s).');
 }
 
 if (startHeight < 0) {
   usage('startHeight must be greater than or equal to 0.');
 }
 
-if ((endHeightIdx > -1 && isNaN(endHeight)) || endHeight <= startHeight) {
+if (endHeight <= startHeight) {
   usage('endHeight must be greater than startHeight.');
 }
 
@@ -55,41 +69,53 @@ console.log('Connecting to database...');
 
 Storage.start()
   .then(async () => {
-    const query = { $or: [
-      { chain, network, blockHeight: { $gte: startHeight, ...(endHeight ? { $lte: endHeight } : {}) } },
-      { chain, network, blockHeight: { $lt: 0 } }
-    ] };
-    const totalCount = await TransactionStorage.collection.countDocuments(query);
-    console.log(`Found ${totalCount} transactions to update.`);
+    console.log('Finding local tip...');
+    const lastBlockNum = Math.min(endHeight, (await BitcoinBlockStorage.getLocalTip({ chain, network }))?.height ?? Infinity);
+    const totalBlockCount = lastBlockNum - startHeight + 1;
+    console.log(`Updating ${totalBlockCount} block's worth of transactions.`);
 
     const ans = await util.promisify(rl.question).call(rl, 'Would you like to continue? (Y/n) ');
     if (ans?.toLowerCase() === 'n') {
       return;
     }
 
-    const txStream = TransactionStorage.collection.find(query).addCursorFlag('noCursorTimeout', true);
-    
+    let thisBlockNum = startHeight;
     let countModified = 0;
     let countRunning = 0;
-    for await (const tx of txStream) {
-      const res = await TransactionStorage.collection.updateOne(
-        { _id: tx._id },
-        {
-          $set: {
-            to: tx.to ? CWC.Web3.utils.toChecksumAddress(tx.to) : '',
-            from: tx.from ? CWC.Web3.utils.toChecksumAddress(tx.from) : ''
-          }
+
+    do {
+      if (shutdown) {
+        return;
+      }        
+      const txStream = TransactionStorage.collection.find({ chain, network, blockHeight: thisBlockNum }).addCursorFlag('noCursorTimeout', true);
+      
+      for await (const tx of txStream) {
+        if (shutdown) {
+          return;
         }
-      );
-      if (!res.result.ok) {
-        console.error(`Failed to update tx ${tx.txid}:`, res);
+        const res = await TransactionStorage.collection.updateOne(
+          { _id: tx._id },
+          {
+            $set: {
+              to: tx.to ? CWC.Web3.utils.toChecksumAddress(tx.to) : '',
+              from: tx.from ? CWC.Web3.utils.toChecksumAddress(tx.from) : ''
+            }
+          }
+        );
+        if (!res.result.ok) {
+          console.error(`Failed to update tx ${tx.txid}:`, res);
+        }
+        countModified += res.modifiedCount;
+        if (countRunning % 100 === 0) {
+          const percent = ((thisBlockNum - startHeight) / totalBlockCount * 100).toFixed(4);
+          process.stdout.write(`Processing block ${thisBlockNum} (${percent}%) -- (${countModified} txs updated)...         \r`);
+          await new Promise(r => setTimeout(r, 20));
+        }
+        countRunning++;
       }
-      countModified += res.modifiedCount;
-      countRunning++;
-      if (countRunning % 100 === 0) {
-        process.stdout.write(`Processed ${countRunning}/${totalCount} transactions (${countModified} updated)...         \r`);
-      }
-    }
+      thisBlockNum++;
+    } while (thisBlockNum <= lastBlockNum);
+    
     console.log(`\nUpdated ${countModified} transactions.`);
   })
   .catch(console.error)

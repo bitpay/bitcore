@@ -190,7 +190,11 @@ export class BanxaService {
         return reject(new ClientError("Banxa's request missing arguments"));
       }
 
-      delete req.body.payment_method_id;
+      if (!req.body.payment_method || req.body.payment_method === 'other') {
+        // Workaround to allow older versions of the app to freely choose the payment method on the checkout page when they select "other".
+        delete req.body.payment_method_id;
+      }
+      delete req.body.payment_method;
 
       const UriPath = '/orders';
       const URL: string = API + UriPath;

@@ -5898,6 +5898,19 @@ describe('client API', function() {
         },
         {
           opts: {
+            reverse: true
+          },
+          expected: [10, 20]
+        },
+        {
+          opts: {
+            skip: 1,
+            reverse: true
+          },
+          expected: [20]
+        },
+        {
+          opts: {
             skip: 3
           },
           expected: []
@@ -9020,6 +9033,95 @@ describe('client API', function() {
           txp.changeAddress.path.should.equal(address.path);
           done();
         });
+      });
+    });
+  });
+
+  describe('Aave service', () => {
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', chain: 'eth' }, () => {
+        done();
+      });
+    });
+
+    describe('#getAaveUserAccountData', () => {
+      it('should get aave user account data', async function() {
+        const accountData: any = await clients[0].getAaveUserAccountData({
+          chain: 'eth', network: 'mainnet', address: '0x123', version: 'v3'
+        });
+        should.exist(accountData);
+        accountData.totalCollateralBase.should.equal('1000');
+        accountData.totalDebtBase.should.equal('500');
+        accountData.availableBorrowsBase.should.equal('200');
+        accountData.currentLiquidationThreshold.should.equal('8000');
+        accountData.ltv.should.equal('7500');
+        accountData.healthFactor.should.equal('2.0');
+      });
+
+      it('should fail with missing arguments', async function() {
+        try {
+          await clients[0].getAaveUserAccountData({ network: 'mainnet' } as any);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Missing argument: chain at <getAaveUserAccountData()>');
+        }
+      });
+    });
+
+    describe('#getAaveReserveData', () => {
+      it('should get aave reserve data', async function() {
+        const reserveData: any = await clients[0].getAaveReserveData({
+          chain: 'eth', network: 'mainnet', asset: '0xabc', version: 'v3'
+        });
+        should.exist(reserveData);
+        reserveData.currentVariableBorrowRate.should.equal('35000000000000000000000000');
+      });
+
+      it('should fail with missing arguments', async function() {
+        try {
+          await clients[0].getAaveReserveData({ network: 'mainnet' } as any);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Missing argument: chain at <getAaveReserveData()>');
+        }
+      });
+    });
+
+    describe('#getAaveReserveTokensAddresses', () => {
+      it('should get aave reserve tokens addresses', async function() {
+        const tokensAddresses: any = await clients[0].getAaveReserveTokensAddresses({
+          chain: 'eth', network: 'mainnet', asset: '0xabc', version: 'v3'
+        });
+        should.exist(tokensAddresses);
+        tokensAddresses.variableDebtTokenAddress.should.equal('0xdef456');
+      });
+
+      it('should fail with missing arguments', async function() {
+        try {
+          await clients[0].getAaveReserveTokensAddresses({ network: 'mainnet' } as any);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Missing argument: chain at <getAaveReserveTokensAddresses()>');
+        }
+      });
+    });
+
+    describe('#getTokenAllowance', () => {
+      it('should get token allowance', async function() {
+        const allowance = await clients[0].getTokenAllowance({
+          chain: 'eth', network: 'mainnet', tokenAddress: '0xtoken', ownerAddress: '0xowner', spenderAddress: '0xspender'
+        });
+        should.exist(allowance);
+        allowance.should.equal(5000000);
+      });
+
+      it('should fail with missing arguments', async function() {
+        try {
+          await clients[0].getTokenAllowance({ network: 'mainnet' } as any);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Missing argument: chain at <getTokenAllowance()>');
+        }
       });
     });
   });

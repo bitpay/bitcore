@@ -346,6 +346,18 @@ export const blockchainExplorerMock = {
   getTransactionCount: (addr, cb) => {
     return cb(null, 0);
   },
+  getAaveUserAccountData: (opts, cb) => {
+    return cb(null, { totalCollateralBase: '1000', totalDebtBase: '500', availableBorrowsBase: '200', currentLiquidationThreshold: '8000', ltv: '7500', healthFactor: '2.0' });
+  },
+  getAaveReserveData: (opts, cb) => {
+    return cb(null, { currentVariableBorrowRate: '35000000000000000000000000' });
+  },
+  getAaveReserveTokensAddresses: (opts, cb) => {
+    return cb(null, { variableDebtTokenAddress: '0xdef456' });
+  },
+  getTokenAllowance: (opts, cb) => {
+    return cb(null, 5000000);
+  },
   reset: () => {
     blockchainExplorerMock.utxos = [];
     blockchainExplorerMock.txHistory = [];

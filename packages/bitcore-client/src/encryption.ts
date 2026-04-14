@@ -23,31 +23,81 @@ export function encryptEncryptionKey(encryptionKey, password) {
   return encData;
 }
 
-export function decryptEncryptionKey(encEncryptionKey, password) {
+export function decryptEncryptionKey(encEncryptionKey, password, toBuffer: true): Buffer;
+export function decryptEncryptionKey(encEncryptionKey, password, toBuffer: false): string;
+export function decryptEncryptionKey(encEncryptionKey, password, toBuffer?: boolean): Buffer | string {
   const password_hash = Buffer.from(SHA512(password));
   const key = password_hash.subarray(0, 32);
   const iv = password_hash.subarray(32, 48);
   const decipher = crypto.createDecipheriv(algo, key, iv);
-  const decrypted = decipher.update(encEncryptionKey, 'hex', 'hex' as any) + decipher.final('hex');
-  return decrypted;
+  
+  let payload: Buffer | undefined;
+  let final: Buffer | undefined;
+  let output: Buffer | undefined;
+  try {
+    payload = decipher.update(encEncryptionKey, 'hex');
+    final = decipher.final();
+    output = Buffer.concat([payload, final]);
+    return toBuffer ? output : output.toString('hex');
+  } finally {
+    payload.fill(0);
+    final.fill(0);
+    if (!toBuffer) {
+      // Don't fill output if it's what's returned directly
+      output.fill(0);
+    }
+  }
 }
 
+/** @deprecated - Use encryptBuffer */
 export function encryptPrivateKey(privKey, pubKey, encryptionKey) {
-  const key = Buffer.from(encryptionKey, 'hex');
-  const doubleHash = Buffer.from(SHA256(SHA256(pubKey)), 'hex');
-  const iv = doubleHash.subarray(0, 16);
-  const cipher = crypto.createCipheriv(algo, key, iv);
-  const encData = cipher.update(privKey, 'utf8', 'hex') + cipher.final('hex');
-  return encData;
+  encryptionKey = Buffer.from(encryptionKey, 'hex');
+  privKey = Buffer.from(privKey, 'utf8');
+  return encryptBuffer(privKey, pubKey, encryptionKey).toString('hex');
 }
 
-function decryptPrivateKey(encPrivateKey: string, pubKey: string, encryptionKey: string) {
-  const key = Buffer.from(encryptionKey, 'hex');
+function decryptPrivateKey(encPrivateKey: string, pubKey: string, encryptionKey: Buffer | string) {
+  if (!Buffer.isBuffer(encryptionKey)) {
+    encryptionKey = Buffer.from(encryptionKey, 'hex');
+  }
   const doubleHash = Buffer.from(SHA256(SHA256(pubKey)), 'hex');
   const iv = doubleHash.subarray(0, 16);
-  const decipher = crypto.createDecipheriv(algo, key, iv);
+  const decipher = crypto.createDecipheriv(algo, encryptionKey, iv);
   const decrypted = decipher.update(encPrivateKey, 'hex', 'utf8') + decipher.final('utf8');
   return decrypted;
+}
+
+function encryptBuffer(data: Buffer, pubKey: string, encryptionKey: Buffer): Buffer {
+  let payload: Buffer | undefined;
+  try {
+    const iv = Buffer.from(SHA256(SHA256(pubKey)), 'hex').subarray(0, 16);
+    const cipher = crypto.createCipheriv(algo, encryptionKey, iv);
+    payload = cipher.update(data);
+    return Buffer.concat([payload, cipher.final()]);
+  } finally {
+    if (Buffer.isBuffer(payload)) {
+      payload.fill(0);
+    }
+  }
+}
+
+function decryptToBuffer(encHex: string, pubKey: string, encryptionKey: Buffer): Buffer {
+  let decrypted: Buffer | undefined;
+  let final: Buffer | undefined;
+  try {
+    const iv = Buffer.from(SHA256(SHA256(pubKey)), 'hex').subarray(0, 16);
+    const decipher = crypto.createDecipheriv(algo, encryptionKey, iv);
+    decrypted = decipher.update(encHex, 'hex');
+    final = decipher.final();
+    return Buffer.concat([decrypted, final]);
+  } finally {
+    if (Buffer.isBuffer(decrypted)) {
+      decrypted.fill(0);
+    }
+    if (Buffer.isBuffer(final)) {
+      final.fill(0);
+    }
+  }
 }
 
 function sha512KDF(passphrase: string, salt: Buffer, derivationOptions: { rounds?: number }): string {
@@ -134,6 +184,8 @@ export const Encryption = {
   decryptEncryptionKey,
   encryptPrivateKey,
   decryptPrivateKey,
+  encryptBuffer,
+  decryptToBuffer,
   generateEncryptionKey,
   bitcoinCoreDecrypt
 };

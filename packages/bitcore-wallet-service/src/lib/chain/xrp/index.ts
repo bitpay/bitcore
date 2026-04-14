@@ -161,7 +161,7 @@ export class XrpChain implements IChain {
         ...txp,
         tag: _tag ? Number(_tag) : undefined,
         chain,
-        nonce: Number(txp.nonce) + Number(index),
+        nonce: (txp.nonce != null ? Number(txp.nonce) : 0) + Number(index),
         recipients: [recepient]
       });
       unsignedTxs.push(rawTx);
