@@ -4,7 +4,7 @@ import axios from 'axios';
 import { AdapterError, AdapterErrorCode } from '../../../src/providers/chain-state/external/adapters/errors';
 import { AlchemyAdapter, AlchemyAssetTransferStream } from '../../../src/providers/chain-state/external/adapters/alchemy';
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
-import config from '../../../src/config';
+import { Config } from '../../../src/services/config';
 
 // --- Mock data ---
 // Use lowercase addresses so real Web3.utils.toChecksumAddress always accepts them
@@ -31,14 +31,14 @@ describe('AlchemyAdapter', function() {
   let sandbox: sinon.SinonSandbox;
   let adapter: AlchemyAdapter;
   let axiosPostStub: sinon.SinonStub;
-  const savedExternalProviders = config.externalProviders;
+  const savedExternalProviders = Config.get().externalProviders;
 
   before(function() {
-    (config as any).externalProviders = { ...savedExternalProviders, alchemy: { apiKey: 'test-key' } };
+    (Config.get() as any).externalProviders = { ...savedExternalProviders, alchemy: { apiKey: 'test-key' } };
   });
 
   after(function() {
-    (config as any).externalProviders = savedExternalProviders;
+    (Config.get() as any).externalProviders = savedExternalProviders;
   });
 
   beforeEach(function() {
@@ -55,10 +55,10 @@ describe('AlchemyAdapter', function() {
   // --- Constructor ---
   describe('constructor', function() {
     it('should throw if apiKey is missing from config', function() {
-      const saved = config.externalProviders;
-      (config as any).externalProviders = { alchemy: { apiKey: '' } };
+      const saved = Config.get().externalProviders;
+      (Config.get() as any).externalProviders = { alchemy: { apiKey: '' } };
       expect(() => new AlchemyAdapter({ name: 'alchemy', priority: 1 })).to.throw('apiKey is required');
-      (config as any).externalProviders = saved;
+      (Config.get() as any).externalProviders = saved;
     });
 
     it('should set the adapter name', function() {

@@ -61,29 +61,28 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
       network: this.network,
       messages: this.messages
     });
-
+    this.multiThreadSync = new UtxoMultiThreadSync({
+      chain,
+      network,
+      config: chainConfig,
+      callbacks: {
+        getHeaders: () => this.getHeadersForSync(),
+        processBlock: (block) => this.processBlock(block),
+        getLocalTip: () => ChainStateProvider.getLocalTip({ chain, network }),
+        deserializeBlock: (rawHex) => new this.bitcoreLib.Block(Buffer.from(rawHex, 'hex'))
+      }
+    });
+    this.multiThreadSync.once('INITIALSYNCDONE', async () => {
+      this.initialSyncComplete = true;
+      await StateStorage.collection.findOneAndUpdate(
+        {},
+        { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
+        { upsert: true }
+      );
+      this.events.emit('SYNCDONE');
+    });
     process.on('SIGUSR1', async () => {
       await this.reload();
-      this.multiThreadSync = new UtxoMultiThreadSync({
-        chain,
-        network,
-        config: chainConfig,
-        callbacks: {
-          getHeaders: () => this.getHeadersForSync(),
-          processBlock: (block) => this.processBlock(block),
-          getLocalTip: () => ChainStateProvider.getLocalTip({ chain, network }),
-          deserializeBlock: (rawHex) => new this.bitcoreLib.Block(Buffer.from(rawHex, 'hex'))
-        }
-      });
-      this.multiThreadSync.once('INITIALSYNCDONE', async () => {
-        this.initialSyncComplete = true;
-        await StateStorage.collection.findOneAndUpdate(
-          {},
-          { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
-          { upsert: true }
-        );
-        this.events.emit('SYNCDONE');
-      });
     });
   }
 
