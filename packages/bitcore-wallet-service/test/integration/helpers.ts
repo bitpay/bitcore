@@ -559,6 +559,7 @@ class Helpers {
         // For eth => account, 0, change = 0
         const priv = xpriv.derive('m/0/0').privateKey;
         const privKey = priv.toString('hex');
+        const pubKey = priv.publicKey.toString('hex');
         let tx = ChainService.getBitcoreTx(txp).uncheckedSerialize();
         const isERC20 = txp.tokenAddress && !txp.payProUrl;
         const chain = isERC20 ? Utils.getChain(txp.coin) + 'ERC20' : Utils.getChain(txp.coin);
@@ -568,7 +569,7 @@ class Helpers {
           const signed = Transactions.getSignature({
             chain: chain.toUpperCase(),
             tx: rawTx,
-            key: { privKey: privKey.toString('hex') },
+            key: { privKey: privKey.toString('hex'), pubKey },
           });
           signatures.push(signed);
         }

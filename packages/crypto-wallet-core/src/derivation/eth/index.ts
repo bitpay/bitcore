@@ -55,4 +55,32 @@ export class EthDeriver implements IDeriver {
     pubKey = new BitcoreLib.PublicKey(pubKey, network); // network not needed here since ETH doesn't differentiate addresses by network.
     return this.addressFromPublicKeyBuffer(pubKey.toBuffer());
   }
+
+  getPublicKey(network: string, privKey: Buffer): string {
+    if (!Buffer.isBuffer(privKey)) {
+      throw new Error('Expected privKey to be a Buffer');
+    }
+    const bn = BitcoreLib.crypto.BN.fromBuffer(privKey);
+    const key = new BitcoreLib.PrivateKey({ bn, network, compressed: true });
+    return key.publicKey.toString('hex');
+  }
+
+  /**
+   * @param {Buffer | string} privKey - expects hex-encoded string, as returned from EthDeriver.derivePrivateKey
+   * @returns {Buffer}
+   * @throws {Error} If privKey is not a Buffer (planned forwards compatibility) or string. Propagates all other errors
+   */
+  privateKeyToBuffer(privKey: Buffer | string): Buffer {
+    if (Buffer.isBuffer(privKey)) return privKey;
+    if (typeof privKey !== 'string') throw new Error(`Expected string, got ${typeof privKey}`);
+    if (privKey.startsWith('0x')) {
+      privKey = privKey.slice(2);
+    };
+    // Expects to match return from derivePrivateKey's privKey.
+    return Buffer.from(privKey, 'hex');
+  }
+
+  bufferToPrivateKey_TEMP(buf: Buffer, _network: string): string {
+    return buf.toString('hex');
+  }
 }

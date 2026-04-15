@@ -16,6 +16,14 @@ export class SolDeriver implements IDeriver {
     return this.addressFromPublicKeyBuffer(Buffer.from(pubKey, 'hex'));
   }
 
+  getPublicKey(_network: string, privKey: Buffer): string {
+    if (!Buffer.isBuffer(privKey)) {
+      throw new Error('Expected privKey to be a Buffer');
+    }
+    const pubKey = ed25519.getPublicKey(privKey, false);
+    return Buffer.from(pubKey).toString('hex');
+  }
+
   addressFromPublicKeyBuffer(pubKey: Buffer): string {
     if (pubKey.length > 32) {
       pubKey = pubKey.subarray(pubKey.length - 32);
@@ -54,4 +62,20 @@ export class SolDeriver implements IDeriver {
       pubKey: Buffer.from(pubKey).toString('hex')
     } as Key;
   };
+
+  /**
+   * @param {Buffer | string} privKey - expects base 58 encoded string
+   * @returns {Buffer}
+   * @throws {Error} If privKey is not a Buffer (planned forwards compatibility) or string. Propagates all other errors
+   */
+  privateKeyToBuffer(privKey: Buffer | string): Buffer {
+    if (Buffer.isBuffer(privKey)) return privKey;
+    if (typeof privKey !== 'string') throw new Error(`Expected string, got ${typeof privKey}`);
+    // Expects to match return from derivePrivateKey's privKey.
+    return encoding.Base58.decode(privKey);
+  }
+
+  bufferToPrivateKey_TEMP(buf: Buffer, _network: string): string {
+    return encoding.Base58.encode(buf);
+  }
 }

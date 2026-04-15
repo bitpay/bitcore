@@ -33,6 +33,35 @@ export abstract class AbstractBitcoreLibDeriver implements IDeriver {
     pubKey = new this.bitcoreLib.PublicKey(pubKey);
     return new this.bitcoreLib.Address(pubKey, network, addressType).toString();
   }
+
+  getPublicKey(network: string, privKey: Buffer): string {
+    if (!Buffer.isBuffer(privKey)) {
+      throw new Error('Expected privKey to be a Buffer');
+    }
+    // Force compressed pubkey (buffer does not encode compression flag)
+    const bn = this.bitcoreLib.crypto.BN.fromBuffer(privKey);
+    const key = new this.bitcoreLib.PrivateKey({ bn, network, compressed: true });
+    return key.publicKey.toString();
+  }
+
+  /**
+   * @returns {Buffer} raw secpk1 private key buffer (32 bytes, big-endian)
+   * @throws {Error} If privKey is not a Buffer (planned forwards compatibility) or string. Propagates all other errors
+   */
+  privateKeyToBuffer(privKey: Buffer | string): Buffer {
+    if (Buffer.isBuffer(privKey)) return privKey; // forward compatibility
+    if (typeof privKey !== 'string') throw new Error(`Expected key to be a string, got ${typeof privKey}`);
+
+    const key = new this.bitcoreLib.PrivateKey(privKey);
+    return key.toBuffer();
+  }
+
+  bufferToPrivateKey_TEMP(buf: Buffer, network: string): string {
+    // force compressed WIF without mutating instances
+    const bn = this.bitcoreLib.crypto.BN.fromBuffer(buf);
+    const key = new this.bitcoreLib.PrivateKey({ bn, network, compressed: true });
+    return key.toWIF();
+  }
 }
 export class BtcDeriver extends AbstractBitcoreLibDeriver {
   bitcoreLib = BitcoreLib;

@@ -275,7 +275,7 @@ export class Utils {
   // no matter WHICH chain
   static xPubToCopayerId(chain: string, xpub: string): string {
     // this was introduced because we allowed coinType = 0' wallets for BCH
-    // for the  "wallet duplication" feature
+    // for the "wallet duplication" feature
     // now it is effective for all coins.
 
     chain = chain.toLowerCase();

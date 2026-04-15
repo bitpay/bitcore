@@ -433,9 +433,9 @@ export class ExpressApp {
           twoStep,
           silentFailure,
           includeServerMessages,
-          tokenAddresses: getParam('tokenAddress', true),
-          multisigContractAddress: getParam('multisigContractAddress'),
-          network: getParam('network')
+          tokenAddresses: getParam('tokenAddress', true) as string[] | null,
+          multisigContractAddress: getParam('multisigContractAddress') as string | null,
+          network: getParam('network') as string | null
         };
         return opts;
       };
@@ -446,7 +446,7 @@ export class ExpressApp {
             promise.then(
               (server: WalletService) =>
                 new Promise(resolve => {
-                  const options: any = buildOpts(req, server.copayerId);
+                  const options = buildOpts(req, server.copayerId);
                   if (options.tokenAddresses) {
                     // add a null entry to array so we can get the chain balance
                     options.tokenAddresses.unshift(null);
@@ -457,7 +457,7 @@ export class ExpressApp {
                         optsClone.tokenAddresses = null;
                         optsClone.tokenAddress = tokenAddress;
                         return server.getStatus(optsClone, (err, status) => {
-                          const result: any = {
+                          const result = {
                             walletId: server.walletId,
                             tokenAddress: optsClone.tokenAddress,
                             success: true,
@@ -468,7 +468,7 @@ export class ExpressApp {
                             logger.error(
                               `An error occurred retrieving wallet status - id: ${server.walletId} - token address: ${optsClone.tokenAddress} - err: ${err.message}`
                             );
-                          cb(null, result); // do not throw error, continue with next wallets
+                          cb(null, [result]); // do not throw error, continue with next wallets
                         });
                       },
                       (err, result) => {
@@ -503,6 +503,30 @@ export class ExpressApp {
       }
 
       return res.json(_.flatten(responses));
+    });
+
+    router.post('/v1/wallets/exist', async (req, res) => {
+      try {
+        const copayers = req.body.copayers;
+        if (!copayers || !Array.isArray(copayers)) {
+          logger.info('Invalid request to /v1/wallets/exist - copayers should be an array');
+          return res.json([]);
+        }
+
+        const storage = WalletService.getStorage();
+        const existing = await Promise.all<{ copayerId: string; verified: boolean }>(copayers.map(c => new Promise((resolve) => {
+          storage.fetchCopayerLookup(c.copayerId, (err, copayer) => {
+            if (err || !copayer) {
+              return resolve({ copayerId: c.copayerId, verified: false });
+            }
+            const verified = copayer.requestPubKeys.some(pubkey => Utils.verifyMessage(c.copayerId, c.signature, pubkey.key));
+            return resolve({ copayerId: c.copayerId, verified });
+          });
+        })));
+        return res.json(existing.filter(e => e.verified).map(e => e.copayerId));
+      } catch (err) {
+        return returnError(err, res, req);
+      }
     });
 
     router.get('/v1/wallets/:identifier/', (req, res) => {
@@ -1180,12 +1204,14 @@ export class ExpressApp {
         const opts: {
           skip?: number;
           limit?: number;
+          reverse?: boolean;
           includeExtendedInfo?: boolean;
           tokenAddress?: string;
           multisigContractAddress?: string;
         } = {};
         if (req.query.skip) opts.skip = +req.query.skip;
         if (req.query.limit) opts.limit = +req.query.limit;
+        if (req.query.reverse == '1') opts.reverse = true;
         if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress as string;
         if (req.query.multisigContractAddress)
           opts.multisigContractAddress = req.query.multisigContractAddress as string;

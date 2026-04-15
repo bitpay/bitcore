@@ -358,6 +358,14 @@ describe('Key', function() {
       const xpk = k.derive(null, "m/44'/1'/0'").toString();
       xpk.should.equal('tprv8gSy16H5hQ1MKNHzZDzsktr4aaGQSHg4XYVEbfsEiGSBcgw4J8dEm8uf19FH4L9h6W47VBKtc3bbYyjb6HAm6QdyRLpB6fsA7bW19RZnby2');
     });
+    it('should derive child to a different network', function() {
+      const k = new Key({ seedType: 'mnemonic', seedData: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about' });
+      const xpk1 = k.derive(null, "m/44'/0'/0'", null);
+      xpk1.toString().should.equal('xprv9xpXFhFpqdQK3TmytPBqXtGSwS3DLjojFhTGht8gwAAii8py5X6pxeBnQ6ehJiyJ6nDjWGJfZ95WxByFXVkDxHXrqu53WCRGypk2ttuqncb');
+      const xpk2 = k.derive(null, "m/44'/0'/0'", null, 'testnet');
+      xpk2.toString().should.equal('tprv8fVU32aAEuEPeH1WYx3LhXtSFZTRaFqjbFNPaJZ9R8fCVja44tSaUPZEKGpMK6McUDkWWMvRiVfKR3Wzei6AmLoTNYHMAZ9KtvVTLZZdhvA');
+      xpk1.privateKey.toString().should.equal(xpk2.privateKey.toString());
+    });
   });
 
   describe('#createCredentials', function() {

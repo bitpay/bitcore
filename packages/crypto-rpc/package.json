@@ -1,6 +1,6 @@
 {
   "name": "@bitpay-labs/crypto-rpc",
-  "version": "11.7.0",
+  "version": "11.7.3",
   "description": "A Normalized RPC Interface for Cryptocurrencies",
   "main": "index.js",
   "type": "module",
@@ -27,7 +27,7 @@
   "author": "Micah Riggan",
   "license": "MIT",
   "dependencies": {
-    "@bitpay-labs/crypto-wallet-core": "^11.7.0",
+    "@bitpay-labs/crypto-wallet-core": "^11.7.3",
     "@solana-program/address-lookup-table": "0.7.0",
     "bitcoind-rpc": "0.9.1",
     "commander": "2.8.1",

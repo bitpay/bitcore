@@ -1,6 +1,10 @@
 import * as chai from 'chai';
 import * as CWC from '@bitpay-labs/crypto-wallet-core';
-import { AddressTypes, Wallet } from '../../src/wallet';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import { AddressTypes, IWalletExt, Wallet } from '../../src/wallet';
+import { Encryption } from '../../src/encryption';
 import { Api as bcnApi } from '../../../bitcore-node/build/src/services/api';
 import { Storage as bcnStorage } from '../../../bitcore-node/build/src/services/storage';
 import crypto from 'crypto';
@@ -12,6 +16,7 @@ import sinon from 'sinon';
 import { StorageType } from '../../src/types/storage';
 import supertest from 'supertest';
 import { utils } from '../../src/utils';
+import ethMigrationTestWalletFixture from './data/ethMigrationTestWallet.fixture';
 
 
 const should = chai.should();
@@ -31,6 +36,19 @@ describe('Wallet', function() {
   let walletName;
   let wallet: Wallet;
   let api;
+  const walletsToCleanup: Array<{ name: string; storageType?: StorageType; path?: string }> = [];
+  const createWalletForTest = async (params: Partial<IWalletExt>) => {
+    if (!params.name) {
+      throw new Error('Tests must provide a wallet name');
+    }
+    const createdWallet = await Wallet.create(params);
+    walletsToCleanup.push({
+      name: params.name,
+      storageType: params.storageType,
+      path: params.path
+    });
+    return createdWallet;
+  };
   before(async function() {
     this.timeout(20000);
     await bcnStorage.start({
@@ -64,7 +82,12 @@ describe('Wallet', function() {
     });
   });
   afterEach(async function() {
-    await Wallet.deleteWallet({ name: walletName, storageType });
+    while (walletsToCleanup.length) {
+      const walletToCleanup = walletsToCleanup.pop();
+      if (walletToCleanup) {
+        await Wallet.deleteWallet(walletToCleanup);
+      }
+    }
     sandbox.restore();
   });
   for (const chain of ['BTC', 'BCH', 'LTC', 'DOGE', 'ETH', 'XRP', 'MATIC']) {
@@ -73,7 +96,7 @@ describe('Wallet', function() {
       it(`should create a wallet for chain and addressType: ${chain} ${addressType}`, async function() {
         walletName = 'BitcoreClientTest' + chain + addressType;
 
-        wallet = await Wallet.create({
+        wallet = await createWalletForTest({
           chain,
           network: 'mainnet',
           name: walletName,
@@ -82,7 +105,8 @@ describe('Wallet', function() {
           lite: false,
           addressType,
           storageType,
-          baseUrl
+          baseUrl,
+          version: 0
         });
 
         expect(wallet.addressType).to.equal(AddressTypes[chain]?.[addressType] || 'pubkeyhash');
@@ -116,14 +140,15 @@ describe('Wallet', function() {
       walletName = 'BitcoreClientTestBumpFee-UTXO';
 
       beforeEach(async function() {
-        wallet = await Wallet.create({
+        wallet = await createWalletForTest({
           name: walletName,
           chain: 'BTC',
           network: 'testnet',
           phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
           password: 'abc123',
           storageType,
-          baseUrl
+          baseUrl,
+          // version: 0
         });
         await wallet.unlock('abc123');
       });
@@ -192,14 +217,15 @@ describe('Wallet', function() {
       walletName = 'BitcoreClientTestBumpFee-EVM';
 
       beforeEach(async function() {
-        wallet = await Wallet.create({
+        wallet = await createWalletForTest({
           name: walletName,
           chain: 'ETH',
           network: 'testnet',
           phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
           password: 'abc123',
           storageType,
-          baseUrl
+          baseUrl,
+          version: 0
         });
         await wallet.unlock('abc123');
       });
@@ -262,7 +288,8 @@ describe('Wallet', function() {
               password: 'abc123',
               storageType,
               path,
-              baseUrl
+              baseUrl,
+              version: 0
             });
             await wallet.unlock('abc123');
             // 3 address pairs
@@ -296,14 +323,15 @@ describe('Wallet', function() {
     let sleepStub;
 
     beforeEach(async function() {
-      wallet = await Wallet.create({
+      wallet = await createWalletForTest({
         name: walletName,
         chain: 'BTC',
         network: 'testnet',
         phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
         password: 'abc123',
         storageType,
-        baseUrl
+        baseUrl,
+        version: 0
       });
       await wallet.unlock('abc123');
       requestStub = sandbox.stub(wallet.client, '_request').resolves();
@@ -366,18 +394,612 @@ describe('Wallet', function() {
       sleepStub.callCount.should.equal(1);
       requestStub.args.flatMap(arg => arg[0].body).should.deep.equal(keys.map(k => ({ address: k.address })));
     });
+
+    it('can derive the public key if not included', async function () {
+      const keys = [];
+      for (let i = 0; i < 101; i++) {
+        const pk = crypto.randomBytes(32).toString('hex');
+        keys.push({
+          privKey: pk,
+          address: libMap.BTC.PrivateKey(pk).toAddress().toString()
+        });
+      }
+      const getPublicKeyStub = sandbox.stub(CWC.Deriver, 'getPublicKey').returns('mockedPubKey');
+      sandbox.stub(wallet.storage, 'addKeysSafe').resolves();
+
+      await wallet.importKeys({
+        keys,
+        rederiveAddys: false
+      });
+
+      getPublicKeyStub.callCount.should.be.greaterThan(0);
+    });
+
+    it('encrypts key.privKey only', async function () {
+      const keys = [];
+      for (let i = 0; i < 1; i++) {
+        const pk = crypto.randomBytes(32).toString('hex');
+        keys.push({
+          privKey: pk,
+          address: libMap.BTC.PrivateKey(pk).toAddress().toString()
+        });
+      }
+      const addKeysSafeStub = sandbox.stub(wallet.storage, 'addKeysSafe').resolves();
+
+      await wallet.importKeys({
+        keys,
+        rederiveAddys: false
+      });
+
+      addKeysSafeStub.calledOnce.should.equal(true);
+      const savedKeys = addKeysSafeStub.firstCall.args[0].keys;
+
+      for (const originalKey of keys) {
+        const matchingSavedKey = savedKeys.find(sk => {
+          // Match on pubKey only if it was in originalKey
+          return !(originalKey.pubKey && sk.pubKey === originalKey.pubKey) && sk.address === originalKey.address;
+        });
+        expect(matchingSavedKey).to.exist;
+        matchingSavedKey.privKey.should.not.equal(originalKey.privKey);
+      }
+    });
+
+    it('can rederive addresses', async function () {
+      const keys = [];
+      for (let i = 0; i < 1; i++) {
+        const pk = crypto.randomBytes(32).toString('hex');
+        keys.push({
+          privKey: pk,
+          address: libMap.BTC.PrivateKey(pk).toAddress().toString()
+        });
+      }
+      const getPublicKeyStub = sandbox.stub(CWC.Deriver, 'getPublicKey').returns('mockedPubKey');
+      const getAddressStub = sandbox.stub(CWC.Deriver, 'getAddress').returns('mockedAddress');
+      sandbox.stub(wallet.storage, 'addKeysSafe').resolves();
+
+      await wallet.importKeys({
+        keys,
+        rederiveAddys: true
+      });
+
+      getAddressStub.callCount.should.be.greaterThan(0);
+    });
+  });
+
+  describe('signTx', function() {
+    let txStub: sinon.SinonStub;
+    afterEach(async function() {
+      sandbox.restore();
+    });
+
+    describe('BTC (UTXO) decrypts ciphertext to WIF', function() {
+      walletName = 'BitcoreClientTestSignTxV2-BTC';
+      let wallet: Wallet;
+
+      beforeEach(async function() {
+        wallet = await createWalletForTest({
+          name: walletName,
+          chain: 'BTC',
+          network: 'testnet',
+          phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
+          password: 'abc123',
+          storageType,
+          baseUrl
+        });
+        await wallet.unlock('abc123');
+      });
+
+      it('should decrypt stored ciphertext and hand WIF to Transactions.sign', async function() {
+        const pk = new CWC.BitcoreLib.PrivateKey(undefined, 'testnet');
+        const address = pk.toAddress().toString();
+        const privBuf = CWC.Deriver.privateKeyToBuffer('BTC', pk.toString());
+        // v2 key encryption uses the key's pubKey as the IV salt (not the wallet pubKey)
+        const encPriv = Encryption.encryptBuffer(privBuf, pk.publicKey.toString(), wallet.unlocked.encryptionKey).toString('hex');
+        privBuf.fill(0);
+
+        sandbox.stub(wallet.storage, 'getStoredKeys').resolves([
+          {
+            address,
+            privKey: encPriv,
+            pubKey: pk.publicKey.toString()
+          }
+        ]);
+        sandbox.stub(wallet, 'derivePrivateKey').resolves({
+          address: 'change',
+          privKey: pk.toString(),
+          pubKey: pk.publicKey.toString(),
+          path: 'm/1/0'
+        });
+        sandbox.stub(wallet, 'importKeys').resolves();
+
+        let capturedPayload;
+        txStub = sandbox.stub(CWC.Transactions, 'sign').callsFake(payload => {
+          capturedPayload = payload;
+          return 'signed';
+        });
+
+        const utxos = [{ address, value: 1 }];
+        await wallet.signTx({ tx: 'raw', utxos });
+
+        txStub.calledOnce.should.equal(true);
+        capturedPayload.keys[0].privKey.should.equal(pk.toWIF());
+        capturedPayload.key.privKey.should.equal(pk.toWIF());
+      });
+    });
+
+    describe('ETH (account) decrypts ciphertext to hex and skips plaintext', function() {
+      walletName = 'BitcoreClientTestSignTxV2-ETH';
+      let wallet: Wallet;
+
+      beforeEach(async function() {
+        wallet = await createWalletForTest({
+          name: walletName,
+          chain: 'ETH',
+          network: 'testnet',
+          phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
+          password: 'abc123',
+          storageType,
+          baseUrl
+        });
+        await wallet.unlock('abc123');
+      });
+
+      it('should decrypt stored ciphertext and hand hex privKey to Transactions.sign', async function() {
+        const privHex = crypto.randomBytes(32).toString('hex');
+        const privBufForPubKey = CWC.Deriver.privateKeyToBuffer('ETH', privHex);
+        const pubKey = CWC.Deriver.getPublicKey('ETH', wallet.network, privBufForPubKey);
+        privBufForPubKey.fill(0);
+        const privBuf = CWC.Deriver.privateKeyToBuffer('ETH', privHex);
+        const encPriv = Encryption.encryptBuffer(privBuf, pubKey, wallet.unlocked.encryptionKey).toString('hex');
+        privBuf.fill(0);
+
+        let capturedPayload;
+        txStub = sandbox.stub(CWC.Transactions, 'sign').callsFake(payload => {
+          capturedPayload = payload;
+          return 'signed';
+        });
+
+        const signingKeys = [{ address: '0xabc', privKey: encPriv, pubKey }];
+        await wallet.signTx({ tx: 'raw', signingKeys });
+
+        txStub.calledOnce.should.equal(true);
+        capturedPayload.keys[0].privKey.should.equal(privHex);
+      });
+    });
+
+    describe('XRP (account) decrypts ciphertext to uppercase hex and skips plaintext', function() {
+      walletName = 'BitcoreClientTestSignTxV2-XRP';
+      let wallet: Wallet;
+
+      beforeEach(async function() {
+        wallet = await createWalletForTest({
+          name: walletName,
+          chain: 'XRP',
+          network: 'testnet',
+          phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
+          password: 'abc123',
+          storageType,
+          baseUrl
+        });
+        await wallet.unlock('abc123');
+      });
+
+      it('should decrypt stored ciphertext and hand uppercase hex privKey to Transactions.sign', async function() {
+        const privHex = crypto.randomBytes(32).toString('hex').toUpperCase();
+        const privBufForPubKey = CWC.Deriver.privateKeyToBuffer('XRP', privHex);
+        const pubKey = CWC.Deriver.getPublicKey('XRP', wallet.network, privBufForPubKey);
+        privBufForPubKey.fill(0);
+        const privBuf = CWC.Deriver.privateKeyToBuffer('XRP', privHex);
+        const encPriv = Encryption.encryptBuffer(privBuf, pubKey, wallet.unlocked.encryptionKey).toString('hex');
+        privBuf.fill(0);
+
+        let capturedPayload;
+        txStub = sandbox.stub(CWC.Transactions, 'sign').callsFake(payload => {
+          capturedPayload = payload;
+          return 'signed';
+        });
+
+        const signingKeys = [{ address: 'rabc', privKey: encPriv, pubKey }];
+        await wallet.signTx({ tx: 'raw', signingKeys });
+
+        txStub.calledOnce.should.equal(true);
+        capturedPayload.keys[0].privKey.should.equal(privHex);
+      });
+    });
+
+    describe('SOL (account) decrypts ciphertext to base58 and skips plaintext', function() {
+      walletName = 'BitcoreClientTestSignTxV2-SOL';
+      let wallet: Wallet;
+
+      beforeEach(async function() {
+        wallet = await createWalletForTest({
+          name: walletName,
+          chain: 'SOL',
+          network: 'devnet',
+          phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
+          password: 'abc123',
+          storageType,
+          baseUrl
+        });
+        await wallet.unlock('abc123');
+      });
+
+      it('should decrypt stored ciphertext and hand base58 privKey to Transactions.sign', async function() {
+        const privBufForPubKey = crypto.randomBytes(32);
+        const pubKey = CWC.Deriver.getPublicKey('SOL', wallet.network, privBufForPubKey);
+        const privBuf = Buffer.from(privBufForPubKey);
+        privBufForPubKey.fill(0);
+        const encPriv = Encryption.encryptBuffer(privBuf, pubKey, wallet.unlocked.encryptionKey).toString('hex');
+        const expectedPrivKey = CWC.Deriver.bufferToPrivateKey_TEMP('SOL', wallet.network, Buffer.from(privBuf));
+        privBuf.fill(0);
+
+        let capturedPayload;
+        txStub = sandbox.stub(CWC.Transactions, 'sign').callsFake(payload => {
+          capturedPayload = payload;
+          return Promise.resolve('signed');
+        });
+
+        const signingKeys = [{ address: pubKey, privKey: encPriv, pubKey }];
+        await wallet.signTx({ tx: 'raw', signingKeys });
+
+        txStub.calledOnce.should.equal(true);
+        capturedPayload.keys[0].privKey.should.equal(expectedPrivKey);
+      });
+    });
+  });
+
+  describe('derivePrivateKey', function () {
+    let wallet: Wallet;
+    const createUnlockedWallet = async (params: { chain: string; network: string; xpriv: string }) => {
+      walletName = `BitcoreClientTestDerivePrivateKey-${params.chain}`;
+      wallet = await createWalletForTest({
+        name: walletName,
+        chain: params.chain,
+        network: params.network,
+        xpriv: params.xpriv,
+        password: 'abc123',
+        storageType,
+        baseUrl
+      });
+      await wallet.unlock('abc123');
+      expect(Buffer.isBuffer(wallet.unlocked?.masterKey?.xprivkey)).to.equal(true);
+      expect(Buffer.isBuffer(wallet.unlocked?.masterKey?.privateKey)).to.equal(true);
+      return wallet;
+    };
+
+    const walletVectors = {
+      BTC: {
+        chain: 'BTC',
+        network: 'mainnet',
+        xpriv: 'xprv9s21ZrQH143K3aKdQ6kXF1vj7R6LtkoLCiUXfM5bdbGXmhQkC1iXdnFfrxAAtaTunPUCCLwUQ3cpNixGLMbLAH1gzeCr8VZDe4gPgmKLb2X',
+        expected: {
+          address: '14FubqQhpG1dhTSgD5nRsiQRJEEcxVojRf',
+          privKey: '79cab08ffc77750721329a0033c43fd1e5c32e9e2da273c18e5e36abb05cca32',
+          pubKey: '03d69dd136b999433a9f6c8f38076831ec0d3a3cf7a555bec8bc8c6d76fc266231',
+          path: 'm/0/0'
+        }
+      },
+      ETH: {
+        chain: 'ETH',
+        network: 'mainnet',
+        xpriv: 'xprv9ypBjKErGMqCdzd44hfSdy1Vk6PGtU3si8ogZcow7rA23HTxMi9XfT99EKmiNdLMr9BAZ9S8ZKCYfN1eCmzYSmXYHje1jnYQseV1VJDDfdS',
+        expected: {
+          address: '0xb497281830dE4F19a3482AbF3D5C35c514e6fB36',
+          privKey: '62b8311c71f355c5c07f6bffe9b1ae60aa20d90e2e2ec93ec11b6014b2ae6340',
+          pubKey: '0386d153aad9395924631dbc78fa560107123a759eaa3e105958248c60cd4472ad',
+          path: 'm/0/0'
+        }
+      },
+      XRP: {
+        chain: 'XRP',
+        network: 'mainnet',
+        xpriv: 'xprvA58pn8bWSyoRGvEY97ALTHP4Dj6t47Q3PTBUEw78CF91kALMwhs7D2GutQSvpRN6ACR4RX4HbF3KmF7zDf48gR8nwG7DqLp6ezUcMiPHDtV',
+        expected: {
+          address: 'r9dmAJBfBe7JL2RRLiFWGJ8kM4CHEeTpgN',
+          privKey: 'D02C6801D8F328FF2EAD51D01F9580AF36C8D74E2BD463963AC4ADBE51AE5F2C',
+          pubKey: '03DBEEC5E9E76DA09C5B502A67136BC2D73423E8902A7C35A8CBC0C5A6AC0469E8',
+          path: 'm/0/0'
+        }
+      },
+      SOL: {
+        chain: 'SOL',
+        network: 'mainnet',
+        xpriv: 'xprv9s21ZrQH143K3aKdQ6kXF1vj7R6LtkoLCiUXfM5bdbGXmhQkC1iXdnFfrxAAtaTunPUCCLwUQ3cpNixGLMbLAH1gzeCr8VZDe4gPgmKLb2X',
+        expected: {
+          address: '7EWwMxKQa5Gru7oTcS1Wi3AaEgTfA6MU3z7MaLUT6hnD',
+          privKey: 'E4Tp4nTgMCa5dtGwqvkWoMGrJC7FKRNjcpeFFXi4nNb9',
+          pubKey: '5c9c85b20525ee81d3cc56da1f8307ec169086ae41458c5458519aced7683b66'
+        }
+      }
+    };
+
+    it('derives the expected BTC key material', async function () {
+      await createUnlockedWallet(walletVectors.BTC);
+      const result = await wallet.derivePrivateKey(false, 0);
+      expect(result).to.deep.equal(walletVectors.BTC.expected);
+    });
+
+    it('derives the expected ETH key material', async function () {
+      await createUnlockedWallet(walletVectors.ETH);
+      const result = await wallet.derivePrivateKey(false, 0);
+      expect(result).to.deep.equal(walletVectors.ETH.expected);
+    });
+
+    it('derives the expected XRP key material', async function () {
+      await createUnlockedWallet(walletVectors.XRP);
+      const result = await wallet.derivePrivateKey(false, 0);
+      expect(result).to.deep.equal(walletVectors.XRP.expected);
+    });
+
+    it('derives the expected SOL key material', async function () {
+      await createUnlockedWallet(walletVectors.SOL);
+      const result = await wallet.derivePrivateKey(false, 0);
+      expect(result).to.deep.equal(walletVectors.SOL.expected);
+    });
+  });
+
+  describe('unlock', function () {
+    it('performs wallet migration for previous wallet versions', async () => {
+      const fixture = ethMigrationTestWalletFixture;
+      const wallet = new Wallet(fixture.wallet as any);
+      const tempHomeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bitcore-client-migration-unlock-'));
+      const backupDir = path.join(tempHomeDir, '.bitcore', 'bitcoreWallet', 'backup');
+      const loadWalletStub = sandbox.stub();
+      const getStoredKeysStub = sandbox.stub();
+      const addKeysSafeStub = sandbox.stub();
+      const saveWalletStub = sandbox.stub();
+
+      wallet.storage = {
+        loadWallet: loadWalletStub,
+        getStoredKeys: getStoredKeysStub,
+        addKeysSafe: addKeysSafeStub,
+        saveWallet: saveWalletStub
+      } as any;
+
+      loadWalletStub.resolves(fixture.rawWallet);
+      getStoredKeysStub.resolves(fixture.storedKeys);
+      addKeysSafeStub.resolves();
+      saveWalletStub.resolves();
+
+      const homedirStub = sandbox.stub(os, 'homedir').returns(tempHomeDir);
+      sandbox.stub(wallet, 'getAddresses').resolves(fixture.addresses);
+
+      await wallet.unlock(fixture.password);
+
+      // Assert wallet.storage methods are called (from migrateWallet)
+      expect(addKeysSafeStub.calledOnce).to.equal(true);
+      expect(saveWalletStub.calledOnce).to.equal(true);
+
+      expect(wallet.version).to.equal(2);
+      expect(wallet.unlocked).to.exist;
+      expect(Buffer.isBuffer(wallet.unlocked?.encryptionKey)).to.equal(true);
+      expect(Buffer.isBuffer(wallet.unlocked?.masterKey?.privateKey)).to.equal(true);
+      expect(Buffer.isBuffer(wallet.unlocked?.masterKey?.xprivkey)).to.equal(true);
+      expect(fs.readFileSync(path.join(backupDir, `${fixture.name}.v1.bak`), 'utf8')).to.equal(fixture.rawWallet);
+      expect(fs.readFileSync(path.join(backupDir, `${fixture.name}_keys.v1.bak`), 'utf8')).to.equal(JSON.stringify(fixture.storedKeys));
+      homedirStub.restore();
+      fs.rmSync(tempHomeDir, { recursive: true, force: true });
+    });
+  });
+
+  describe('migrateWallet', function () {
+    let wallet: Wallet;
+    let decryptedEncryptionKey: Buffer | undefined;
+    let loadWalletStub: sinon.SinonStub;
+    let getStoredKeysStub: sinon.SinonStub;
+    let addKeysSafeStub: sinon.SinonStub;
+    let saveWalletStub: sinon.SinonStub;
+    let homedirStub: sinon.SinonStub;
+    let tempHomeDir: string;
+    let backupDir: string;
+
+    
+    beforeEach(async function () {
+      wallet = new Wallet(ethMigrationTestWalletFixture.wallet as any);
+      tempHomeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bitcore-client-migration-'));
+      backupDir = path.join(tempHomeDir, '.bitcore', 'bitcoreWallet', 'backup');
+      wallet.storage = {
+        loadWallet: async () => undefined,
+        getStoredKeys: async () => [],
+        addKeysSafe: async () => undefined,
+        saveWallet: async () => undefined
+      } as any;
+
+      loadWalletStub = sandbox.stub(wallet.storage, 'loadWallet').resolves(ethMigrationTestWalletFixture.rawWallet);
+      getStoredKeysStub = sandbox.stub(wallet.storage, 'getStoredKeys').resolves(ethMigrationTestWalletFixture.storedKeys);
+      addKeysSafeStub = sandbox.stub(wallet.storage, 'addKeysSafe').resolves();
+      saveWalletStub = sandbox.stub(wallet.storage, 'saveWallet').resolves();
+      homedirStub = sandbox.stub(os, 'homedir').returns(tempHomeDir);
+      sandbox.stub(wallet, 'getAddresses').resolves(ethMigrationTestWalletFixture.addresses);
+
+      decryptedEncryptionKey = Encryption.decryptEncryptionKey(
+        ethMigrationTestWalletFixture.wallet.encryptionKey,
+        ethMigrationTestWalletFixture.password,
+        true
+      ) as Buffer;
+    });
+
+    afterEach(function () {
+      homedirStub?.restore();
+      if (tempHomeDir) {
+        fs.rmSync(tempHomeDir, { recursive: true, force: true });
+      }
+    });
+
+    it('should back up existing raw wallet & keys (separately) before migration', async () => {
+      await wallet.migrateWallet(decryptedEncryptionKey);
+
+      expect(loadWalletStub.calledOnceWithExactly({ name: ethMigrationTestWalletFixture.name, raw: true })).to.be.true;
+      expect(getStoredKeysStub.calledOnceWithExactly({
+        addresses: ethMigrationTestWalletFixture.addresses,
+        name: ethMigrationTestWalletFixture.name
+      })).to.be.true;
+      expect(fs.readFileSync(path.join(backupDir, `${ethMigrationTestWalletFixture.name}.v1.bak`), 'utf8')).to.equal(
+        ethMigrationTestWalletFixture.rawWallet
+      );
+      expect(fs.readFileSync(path.join(backupDir, `${ethMigrationTestWalletFixture.name}_keys.v1.bak`), 'utf8')).to.equal(
+        JSON.stringify(ethMigrationTestWalletFixture.storedKeys)
+      );
+    });
+
+    it('should overwrite existing keys', async () => {
+      await wallet.migrateWallet(decryptedEncryptionKey);
+
+      expect(addKeysSafeStub.calledOnce).to.equal(true);
+      const { name, keys } = addKeysSafeStub.firstCall.args[0];
+      expect(name).to.equal(ethMigrationTestWalletFixture.name);
+      expect(keys).to.have.length(ethMigrationTestWalletFixture.storedKeys.length);
+
+      const expectedKeys = ethMigrationTestWalletFixture.storedKeys.map(storedKey => {
+        // Added keys encrypt privKey, convert to hex, and store that on key.privKey
+        const decryptedKey = JSON.parse(
+          Encryption.decryptPrivateKey(storedKey.encKey, storedKey.pubKey, decryptedEncryptionKey)
+        );
+        const privKeyBuffer = CWC.Deriver.privateKeyToBuffer(wallet.chain, decryptedKey.privKey);
+        const encryptedPrivKey = Encryption.encryptBuffer(privKeyBuffer, storedKey.pubKey, decryptedEncryptionKey).toString('hex');
+        privKeyBuffer.fill(0);
+        return {
+          ...decryptedKey,
+          privKey: encryptedPrivKey
+        };
+      });
+
+      // Stored keys exhibit new encryption process
+      expect(keys).to.deep.equal(expectedKeys);
+    });
+
+    it('should overwrite existing wallet', async () => {
+      await wallet.migrateWallet(decryptedEncryptionKey);
+
+      expect(saveWalletStub.calledOnce).to.equal(true);
+      const savedWallet = saveWalletStub.firstCall.args[0].wallet;
+
+      expect(savedWallet.version).to.equal(2);
+      expect(savedWallet.password).to.equal(ethMigrationTestWalletFixture.wallet.password);
+      expect(savedWallet.masterKey).to.not.equal(ethMigrationTestWalletFixture.wallet.masterKey);
+
+      const migratedMasterKey = JSON.parse(savedWallet.masterKey);
+      const originalMasterKey = JSON.parse(
+        Encryption.decryptPrivateKey(
+          ethMigrationTestWalletFixture.wallet.masterKey,
+          ethMigrationTestWalletFixture.wallet.pubKey,
+          decryptedEncryptionKey
+        )
+      );
+
+      const migratedXpriv = Encryption.decryptToBuffer(
+        migratedMasterKey.xprivkey,
+        ethMigrationTestWalletFixture.wallet.pubKey,
+        decryptedEncryptionKey
+      );
+      const migratedPrivateKey = Encryption.decryptToBuffer(
+        migratedMasterKey.privateKey,
+        ethMigrationTestWalletFixture.wallet.pubKey,
+        decryptedEncryptionKey
+      );
+
+      expect(wallet.version).to.equal(2);
+
+      // Decrypted master keys same as prior master keys
+      expect(migratedXpriv.toString('hex')).to.equal(
+        CWC.BitcoreLib.encoding.Base58Check.decode(originalMasterKey.xprivkey).toString('hex')
+      );
+      expect(migratedPrivateKey.toString('hex')).to.equal(originalMasterKey.privateKey);
+    });
+
+    it('should throw if the raw wallet cannot be loaded', async () => {
+      loadWalletStub.resolves(undefined);
+
+      try {
+        await wallet.migrateWallet(decryptedEncryptionKey);
+        expect.fail('Expected migrateWallet to throw');
+      } catch (err) {
+        expect(err.message).to.equal('Migration failed - wallet not found');
+      }
+
+      expect(getStoredKeysStub.called).to.equal(false);
+      expect(addKeysSafeStub.called).to.equal(false);
+      expect(saveWalletStub.called).to.equal(false);
+    });
+
+    it('should throw if the decrypted masterKey is malformed', async () => {
+      wallet.masterKey = Encryption.encryptPrivateKey(
+        JSON.stringify({ invalid: true }),
+        wallet.pubKey,
+        decryptedEncryptionKey.toString('hex')
+      );
+
+      try {
+        await wallet.migrateWallet(decryptedEncryptionKey);
+        expect.fail('Expected migrateWallet to throw');
+      } catch (err) {
+        expect(err.message).to.equal('Migration failure: masterKey is not formatted as expected');
+      }
+
+      expect(addKeysSafeStub.called).to.equal(false);
+      expect(saveWalletStub.called).to.equal(false);
+    });
+
+    it('should throw if addKeysSafe fails and should not save the wallet', async () => {
+      addKeysSafeStub.rejects(new Error('write failed'));
+
+      try {
+        await wallet.migrateWallet(decryptedEncryptionKey);
+        expect.fail('Expected migrateWallet to throw');
+      } catch (err) {
+        expect(err.message).to.equal(
+          'Migration failure: keys not successfully stored. Use backups to restore prior wallet and keys.'
+        );
+      }
+
+      expect(addKeysSafeStub.calledOnce).to.equal(true);
+      expect(saveWalletStub.called).to.equal(false);
+    });
+
+    it('should no-op when the wallet is already on the current version', async () => {
+      wallet.version = 2;
+      const warnStub = sandbox.stub(console, 'warn');
+
+      const migratedWallet = await wallet.migrateWallet(decryptedEncryptionKey);
+
+      expect(migratedWallet).to.equal(wallet);
+      expect(warnStub.calledOnceWithExactly('Wallet migration unnecessarily called - wallet is current version')).to.equal(true);
+      expect(loadWalletStub.called).to.equal(false);
+      expect(getStoredKeysStub.called).to.equal(false);
+      expect(addKeysSafeStub.called).to.equal(false);
+      expect(saveWalletStub.called).to.equal(false);
+      expect(fs.existsSync(path.join(backupDir, `${ethMigrationTestWalletFixture.name}.v2.bak`))).to.equal(false);
+    });
+
+    it('should no-op when the wallet version is newer than the current version', async () => {
+      wallet.version = 3;
+      const warnStub = sandbox.stub(console, 'warn');
+
+      const migratedWallet = await wallet.migrateWallet(decryptedEncryptionKey);
+
+      expect(migratedWallet).to.equal(wallet);
+      expect(
+        warnStub.calledOnceWithExactly('Wallet version 3 greater than expected current wallet version 2')
+      ).to.equal(true);
+      expect(loadWalletStub.called).to.equal(false);
+      expect(getStoredKeysStub.called).to.equal(false);
+      expect(addKeysSafeStub.called).to.equal(false);
+      expect(saveWalletStub.called).to.equal(false);
+      expect(fs.existsSync(path.join(backupDir, `${ethMigrationTestWalletFixture.name}.v3.bak`))).to.equal(false);
+    });
   });
 
   describe('getBalance', function() {
     walletName = 'BitcoreClientTestGetBalance';
     beforeEach(async function() {
-      wallet = await Wallet.create({
+      wallet = await createWalletForTest({
         name: walletName,
         chain: 'MATIC',
         network: 'testnet',
         phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
         password: 'abc123',
         storageType: 'Level',
+        version: 0,
       });
       await wallet.unlock('abc123');
     });
@@ -420,13 +1042,14 @@ describe('Wallet', function() {
   describe('getTokenObj', function() {
     walletName = 'BitcoreClientTestGetTokenObj';
     beforeEach(async function() {
-      wallet = await Wallet.create({
+      wallet = await createWalletForTest({
         name: walletName,
         chain: 'MATIC',
         network: 'testnet',
         phrase: 'snap impact summer because must pipe weasel gorilla actor acid web whip',
         password: 'abc123',
         storageType: 'Level',
+        version: 0,
       });
       await wallet.unlock('abc123');
     });
@@ -498,7 +1121,7 @@ describe('Wallet', function() {
     };
 
     beforeEach(async function() {
-      wallet = await Wallet.create({
+      wallet = await createWalletForTest({
         chain: 'ETH',
         network: 'mainnet',
         name: walletName,
@@ -506,7 +1129,8 @@ describe('Wallet', function() {
         password: 'abc123',
         lite: false,
         storageType,
-        baseUrl
+        baseUrl,
+        version: 0
       });
 
       wallet.tokens = [

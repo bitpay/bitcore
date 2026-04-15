@@ -157,7 +157,11 @@ export class Mongo {
         await this.init();
       }
       const { name, key, toStore } = params;
-      await this.addressCollection.insertOne({ name, address: key.address, data: toStore });
+      await this.addressCollection.updateOne(
+        { name, address: key.address },
+        { $set: { name, address: key.address, data: toStore } },
+        { upsert: true }
+      );
       if (!params.keepAlive) {
         await this.close();
       }
