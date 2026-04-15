@@ -152,7 +152,6 @@ export class RampService {
     if (req.body.useSendCryptoCallback) qs.push('useSendCryptoCallback=' + encodeURIComponent(req.body.useSendCryptoCallback));
     if (req.body.paymentMethodType) qs.push('paymentMethodType=' + encodeURIComponent(req.body.paymentMethodType));
     if (req.body.hideExitButton) qs.push('hideExitButton=' + encodeURIComponent(req.body.hideExitButton));
-    if (req.body.variant) qs.push('variant=' + encodeURIComponent(req.body.variant));
     if (req.body.useSendCryptoCallbackVersion) qs.push('useSendCryptoCallbackVersion=' + encodeURIComponent(req.body.useSendCryptoCallbackVersion));
 
     const queryString = qs.join('&');

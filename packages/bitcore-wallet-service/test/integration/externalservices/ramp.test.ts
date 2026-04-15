@@ -310,7 +310,6 @@ describe('Ramp integration', () => {
         defaultFlow: 'OFFRAMP',
         selectedCountryCode: 'US',
         defaultAsset: 'BTC_BTC',
-        variant: 'webview-mobile',
         useSendCryptoCallback: true,
         useSendCryptoCallbackVersion: 1,
         hideExitButton: false,
@@ -329,7 +328,6 @@ describe('Ramp integration', () => {
       params.swapAmount.should.equal('1000000');
       params.defaultAsset.should.equal('BTC_BTC');
       params.useSendCryptoCallback.should.equal('true');
-      params.variant.should.equal('webview-mobile');
       params.useSendCryptoCallbackVersion.should.equal('1');
 
       // timestamp must exist and be numeric
@@ -350,7 +348,6 @@ describe('Ramp integration', () => {
         defaultFlow: 'OFFRAMP',
         selectedCountryCode: 'US',
         defaultAsset: 'BTC_BTC',
-        variant: 'webview-mobile',
         useSendCryptoCallback: true,
         useSendCryptoCallbackVersion: 1,
         hideExitButton: false,
@@ -369,7 +366,6 @@ describe('Ramp integration', () => {
       params.swapAmount.should.equal('1000000');
       params.defaultAsset.should.equal('BTC_BTC');
       params.useSendCryptoCallback.should.equal('true');
-      params.variant.should.equal('webview-mobile');
       params.useSendCryptoCallbackVersion.should.equal('1');
 
       // timestamp must exist and be numeric
