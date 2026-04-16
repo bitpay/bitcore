@@ -1,7 +1,6 @@
 'use strict';
 
 const BN = require('bn.js');
-const _ = require('lodash');
 const BufferUtil = require('../util/buffer');
 const $ = require('../util/preconditions');
 
@@ -18,12 +17,12 @@ BN.One = new BN(1);
 BN.Minus1 = new BN(-1);
 
 BN.fromNumber = function(n) {
-  $.checkArgument(_.isNumber(n));
+  $.checkArgument(typeof n === 'number');
   return new BN(n);
 };
 
 BN.fromString = function(str, base) {
-  $.checkArgument(_.isString(str));
+  $.checkArgument(typeof str === 'string');
   return new BN(str, base);
 };
 
@@ -56,7 +55,9 @@ BN.fromSM = function(buf, opts) {
     buf = reversebuf(buf);
   }
 
+  // eslint-disable-next-line no-bitwise
   if (buf[0] & 0x80) {
+    // eslint-disable-next-line no-bitwise
     buf[0] = buf[0] & 0x7f;
     ret = BN.fromBuffer(buf);
     ret.neg().copy(ret);
@@ -78,9 +79,7 @@ BN.prototype.toBuffer = function(opts) {
     const natlen = hex.length / 2;
     buf = Buffer.from(hex, 'hex');
 
-    if (natlen === opts.size) {
-      buf = buf;
-    } else if (natlen > opts.size) {
+    if (natlen > opts.size) {
       buf = BN.trim(buf, natlen);
     } else if (natlen < opts.size) {
       buf = BN.pad(buf, natlen, opts.size);
@@ -101,18 +100,22 @@ BN.prototype.toSMBigEndian = function() {
   let buf;
   if (this.cmp(BN.Zero) === -1) {
     buf = this.neg().toBuffer();
+    // eslint-disable-next-line no-bitwise
     if (buf[0] & 0x80) {
       buf = Buffer.concat([Buffer.from([0x80]), buf]);
     } else {
+      // eslint-disable-next-line no-bitwise
       buf[0] = buf[0] | 0x80;
     }
   } else {
     buf = this.toBuffer();
+    // eslint-disable-next-line no-bitwise
     if (buf[0] & 0x80) {
       buf = Buffer.concat([Buffer.from([0x00]), buf]);
     }
   }
 
+  // eslint-disable-next-line no-bitwise
   if (buf.length === 1 & buf[0] === 0) {
     buf = Buffer.from([]);
   }
@@ -147,12 +150,14 @@ BN.fromScriptNumBuffer = function(buf, fRequireMinimal, size) {
     // If the most-significant-byte - excluding the sign bit - is zero
     // then we're not minimal. Note how this test also rejects the
     // negative-zero encoding, 0x80.
+    // eslint-disable-next-line no-bitwise
     if ((buf[buf.length - 1] & 0x7f) === 0) {
       // One exception: if there's more than one byte and the most
       // significant bit of the second-most-significant-byte is set
       // it would conflict with the sign bit. An example of this case
       // is +-255, which encode to 0xff00 and 0xff80 respectively.
       // (big-endian).
+      // eslint-disable-next-line no-bitwise
       if (buf.length <= 1 || (buf[buf.length - 2] & 0x80) === 0) {
         throw new Error('non-minimally encoded script number');
       }
