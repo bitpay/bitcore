@@ -191,6 +191,13 @@ describe('ECDSA', function() {
       ctrlSig.toString('hex').should.equal(testSig.toString('hex'));
     });
 
+    it('should normalize elliptic BN coordinates before modular arithmetic', function() {
+      const pk = PrivateKey.fromString('1471d2f131a665b24d419f0920e854993153391e64d1971704ded65ffc3d1f0c');
+      const hashbuf = Buffer.from('7afd0a663b64666242ef6edf3542bc18a6a4587b01249a1fd2d8164b0eedf8d6', 'hex');
+      const sig = ECDSA.sign(hashbuf, pk, { randomK: false });
+      ECDSA.verify(hashbuf, sig, pk.toPublicKey()).should.equal(true);
+    });
+
     it('should throw on improper input: Array', function() {
       const pk = PrivateKey.fromString('1471d2f131a665b24d419f0920e854993153391e64d1971704ded65ffc3d1f0c');
       const hashbuf = Buffer.from('7afd0a663b64666242ef6edf3542bc18a6a4587b01249a1fd2d8164b0eedf8d6', 'hex');
