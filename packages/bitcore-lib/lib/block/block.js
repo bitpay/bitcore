@@ -1,6 +1,5 @@
 'use strict';
 
-const _ = require('lodash');
 const BN = require('../crypto/bn');
 const Hash = require('../crypto/hash');
 const BufferReader = require('../encoding/bufferreader');
@@ -22,7 +21,7 @@ function Block(arg) {
   if (!(this instanceof Block)) {
     return new Block(arg);
   }
-  _.extend(this, Block._from(arg));
+  Object.assign(this, Block._from(arg));
   return this;
 }
 
@@ -39,7 +38,7 @@ Block._from = function _from(arg) {
   let info = {};
   if (BufferUtil.isBuffer(arg)) {
     info = Block._fromBufferReader(BufferReader(arg));
-  } else if (_.isObject(arg)) {
+  } else if (typeof arg === 'object' && arg !== null) {
     info = Block._fromObject(arg);
   } else {
     throw new TypeError('Unrecognized argument for Block');
@@ -261,7 +260,7 @@ const idProperty = {
     }
     return this._id;
   },
-  set: _.noop
+  set: () => {/** no op */}
 };
 Object.defineProperty(Block.prototype, 'id', idProperty);
 Object.defineProperty(Block.prototype, 'hash', idProperty);
