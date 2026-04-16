@@ -41,7 +41,7 @@ function Unit(amount, code) {
   }
 
   // convert fiat to BTC
-  if (_.isNumber(code)) {
+  if (typeof code === 'number') {
     if (code <= 0) {
       throw new errors.Unit.InvalidRate(code);
     }
