@@ -6,6 +6,12 @@ const JSUtil = require('../util/js');
 const $ = require('../util/preconditions');
 const BN = require('./bn');
 
+/** Whether the byte's high bit is set (DER integer sign bit). */
+function isDerByteMsbSet(byte) {
+  // eslint-disable-next-line no-bitwise
+  return (byte & 0x80) !== 0;
+}
+
 const Signature = function Signature(r, s, isSchnorr) {
   if (!(this instanceof Signature)) {
     return new Signature(r, s, isSchnorr);
@@ -189,8 +195,8 @@ Signature.prototype.toBuffer = Signature.prototype.toDER = function() {
   const rnbuf = this.r.toBuffer();
   const snbuf = this.s.toBuffer();
 
-  const rneg = rnbuf[0] & 0x80 ? true : false;
-  const sneg = snbuf[0] & 0x80 ? true : false;
+  const rneg = isDerByteMsbSet(rnbuf[0]);
+  const sneg = isDerByteMsbSet(snbuf[0]);
 
   const rbuf = rneg ? Buffer.concat([Buffer.from([0x00]), rnbuf]) : rnbuf;
   const sbuf = sneg ? Buffer.concat([Buffer.from([0x00]), snbuf]) : snbuf;
@@ -260,11 +266,11 @@ Signature.isTxDER = function(buf) {
     //  Non-canonical signature: R length is zero
     return false;
   }
-  if (R[0] & 0x80) {
+  if (isDerByteMsbSet(R[0])) {
     //  Non-canonical signature: R value negative
     return false;
   }
-  if (nLenR > 1 && (R[0] === 0x00) && !(R[1] & 0x80)) {
+  if (nLenR > 1 && (R[0] === 0x00) && !isDerByteMsbSet(R[1])) {
     //  Non-canonical signature: R value excessively padded
     return false;
   }
@@ -278,11 +284,11 @@ Signature.isTxDER = function(buf) {
     //  Non-canonical signature: S length is zero
     return false;
   }
-  if (S[0] & 0x80) {
+  if (isDerByteMsbSet(S[0])) {
     //  Non-canonical signature: S value negative
     return false;
   }
-  if (nLenS > 1 && (S[0] === 0x00) && !(S[1] & 0x80)) {
+  if (nLenS > 1 && (S[0] === 0x00) && !isDerByteMsbSet(S[1])) {
     //  Non-canonical signature: S value excessively padded
     return false;
   }
@@ -311,6 +317,7 @@ Signature.prototype.hasDefinedHashtype = function() {
     return false;
   }
   // accept with or without Signature.SIGHASH_ANYONECANPAY by ignoring the bit
+  // eslint-disable-next-line no-bitwise
   const temp = this.nhashtype & ~Signature.SIGHASH_ANYONECANPAY;
   if (temp < Signature.SIGHASH_ALL || temp > Signature.SIGHASH_SINGLE) {
     return false;
