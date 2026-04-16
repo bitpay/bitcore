@@ -1,24 +1,23 @@
 'use strict';
 
-var _ = require('lodash');
-var $ = require('./util/preconditions');
+const _ = require('lodash');
+const BN = require('./crypto/bn');
+const Hash = require('./crypto/hash');
+const Point = require('./crypto/point');
+const Base58 = require('./encoding/base58');
+const Base58Check = require('./encoding/base58check');
+const bitcoreErrors = require('./errors');
+const HDPrivateKey = require('./hdprivatekey');
+const Network = require('./networks');
+const PublicKey = require('./publickey');
+const $ = require('./util/preconditions');
 
-var BN = require('./crypto/bn');
-var Base58 = require('./encoding/base58');
-var Base58Check = require('./encoding/base58check');
-var Hash = require('./crypto/hash');
-var HDPrivateKey = require('./hdprivatekey');
-var Network = require('./networks');
-var Point = require('./crypto/point');
-var PublicKey = require('./publickey');
 
-var bitcoreErrors = require('./errors');
-var errors = bitcoreErrors;
-var hdErrors = bitcoreErrors.HDPublicKey;
-var assert = require('assert');
-
-var JSUtil = require('./util/js');
-var BufferUtil = require('./util/buffer');
+const errors = bitcoreErrors;
+const hdErrors = bitcoreErrors.HDPublicKey;
+const assert = require('assert');
+const JSUtil = require('./util/js');
+const BufferUtil = require('./util/buffer');
 
 /**
  * The representation of an hierarchically derived public key.
@@ -39,7 +38,7 @@ function HDPublicKey(arg) {
   }
   if (arg) {
     if (_.isString(arg) || BufferUtil.isBuffer(arg)) {
-      var error = HDPublicKey.getSerializedError(arg);
+      const error = HDPublicKey.getSerializedError(arg);
       if (!error) {
         return this._buildFromSerialized(arg);
       } else if (BufferUtil.isBuffer(arg) && !HDPublicKey.getSerializedError(arg.toString())) {
@@ -74,7 +73,7 @@ function HDPublicKey(arg) {
  */
 HDPublicKey.isValidPath = function(arg) {
   if (_.isString(arg)) {
-    var indexes = HDPrivateKey._getDerivationIndexes(arg);
+    const indexes = HDPrivateKey._getDerivationIndexes(arg);
     return indexes !== null && _.every(indexes, HDPublicKey.isValidPath);
   }
 
@@ -157,20 +156,20 @@ HDPublicKey.prototype._deriveWithNumber = function(index, hardened) {
     throw new hdErrors.InvalidPath(index);
   }
 
-  var indexBuffer = BufferUtil.integerAsBuffer(index);
-  var data = BufferUtil.concat([this.publicKey.toBuffer(), indexBuffer]);
-  var hash = Hash.sha512hmac(data, this._buffers.chainCode);
-  var leftPart = BN.fromBuffer(hash.slice(0, 32), {size: 32});
-  var chainCode = hash.slice(32, 64);
+  const indexBuffer = BufferUtil.integerAsBuffer(index);
+  const data = BufferUtil.concat([this.publicKey.toBuffer(), indexBuffer]);
+  const hash = Hash.sha512hmac(data, this._buffers.chainCode);
+  const leftPart = BN.fromBuffer(hash.slice(0, 32), { size: 32 });
+  const chainCode = hash.slice(32, 64);
 
-  var publicKey;
+  let publicKey;
   try {
     publicKey = PublicKey.fromPoint(Point.getG().mul(leftPart).add(this.publicKey.point));
-  } catch (e) {
+  } catch {
     return this._deriveWithNumber(index + 1);
   }
 
-  var derived = new HDPublicKey({
+  const derived = new HDPublicKey({
     network: this.network,
     depth: this.depth + 1,
     parentFingerPrint: this.fingerPrint,
@@ -190,8 +189,8 @@ HDPublicKey.prototype._deriveFromString = function(path) {
     throw new hdErrors.InvalidPath(path);
   }
 
-  var indexes = HDPrivateKey._getDerivationIndexes(path);
-  var derived = indexes.reduce(function(prev, index) {
+  const indexes = HDPrivateKey._getDerivationIndexes(path);
+  const derived = indexes.reduce(function(prev, index) {
     return prev._deriveWithNumber(index);
   }, this);
 
@@ -231,19 +230,19 @@ HDPublicKey.getSerializedError = function(data, network) {
   }
   try {
     data = Base58Check.decode(data);
-  } catch (e) {
+  } catch {
     return new errors.InvalidB58Checksum(data);
   }
   if (data.length !== HDPublicKey.DataSize) {
     return new hdErrors.InvalidLength(data);
   }
   if (!_.isUndefined(network)) {
-    var error = HDPublicKey._validateNetwork(data, network);
+    const error = HDPublicKey._validateNetwork(data, network);
     if (error) {
       return error;
     }
   }
-  var version = BufferUtil.integerFromBuffer(data.slice(0, 4));
+  const version = BufferUtil.integerFromBuffer(data.slice(0, 4));
   if (version === Network.livenet.xprivkey || version === Network.testnet.xprivkey ) {
     return new hdErrors.ArgumentIsPrivateExtended();
   }
@@ -251,11 +250,11 @@ HDPublicKey.getSerializedError = function(data, network) {
 };
 
 HDPublicKey._validateNetwork = function(data, networkArg) {
-  var network = Network.get(networkArg);
+  const network = Network.get(networkArg);
   if (!network) {
     return new errors.InvalidNetworkArgument(networkArg);
   }
-  var version = data.slice(HDPublicKey.VersionStart, HDPublicKey.VersionEnd);
+  const version = data.slice(HDPublicKey.VersionStart, HDPublicKey.VersionEnd);
   if (BufferUtil.integerFromBuffer(version) !== network.xpubkey) {
     return new errors.InvalidNetwork(version);
   }
@@ -263,8 +262,8 @@ HDPublicKey._validateNetwork = function(data, networkArg) {
 };
 
 HDPublicKey.prototype._buildFromPrivate = function (arg) {
-  var args = _.clone(arg._buffers);
-  var point = Point.getG().mul(BN.fromBuffer(args.privateKey));
+  const args = _.clone(arg._buffers);
+  const point = Point.getG().mul(BN.fromBuffer(args.privateKey));
   args.publicKey = Point.pointToCompressed(point);
   args.version = BufferUtil.integerAsBuffer(Network.get(BufferUtil.integerFromBuffer(args.version)).xpubkey);
   args.privateKey = undefined;
@@ -276,13 +275,13 @@ HDPublicKey.prototype._buildFromPrivate = function (arg) {
 HDPublicKey.prototype._buildFromObject = function(arg) {
   /* jshint maxcomplexity: 10 */
   // TODO: Type validation
-  var buffers = {
+  const buffers = {
     version: arg.network ? BufferUtil.integerAsBuffer(Network.get(arg.network).xpubkey) : arg.version,
     depth: _.isNumber(arg.depth) ? BufferUtil.integerAsSingleByteBuffer(arg.depth) : arg.depth,
     parentFingerPrint: _.isNumber(arg.parentFingerPrint) ? BufferUtil.integerAsBuffer(arg.parentFingerPrint) : arg.parentFingerPrint,
     childIndex: _.isNumber(arg.childIndex) ? BufferUtil.integerAsBuffer(arg.childIndex) : arg.childIndex,
-    chainCode: _.isString(arg.chainCode) ? Buffer.from(arg.chainCode,'hex') : arg.chainCode,
-    publicKey: _.isString(arg.publicKey) ? Buffer.from(arg.publicKey,'hex') :
+    chainCode: _.isString(arg.chainCode) ? Buffer.from(arg.chainCode, 'hex') : arg.chainCode,
+    publicKey: _.isString(arg.publicKey) ? Buffer.from(arg.publicKey, 'hex') :
       BufferUtil.isBuffer(arg.publicKey) ? arg.publicKey : arg.publicKey.toBuffer(),
     checksum: _.isNumber(arg.checksum) ? BufferUtil.integerAsBuffer(arg.checksum) : arg.checksum
   };
@@ -290,12 +289,12 @@ HDPublicKey.prototype._buildFromObject = function(arg) {
 };
 
 HDPublicKey.prototype._buildFromSerialized = function(arg) {
-  var decoded = Base58Check.decode(arg);
-  var buffers = {
+  const decoded = Base58Check.decode(arg);
+  const buffers = {
     version: decoded.slice(HDPublicKey.VersionStart, HDPublicKey.VersionEnd),
     depth: decoded.slice(HDPublicKey.DepthStart, HDPublicKey.DepthEnd),
     parentFingerPrint: decoded.slice(HDPublicKey.ParentFingerPrintStart,
-                                     HDPublicKey.ParentFingerPrintEnd),
+      HDPublicKey.ParentFingerPrintEnd),
     childIndex: decoded.slice(HDPublicKey.ChildIndexStart, HDPublicKey.ChildIndexEnd),
     chainCode: decoded.slice(HDPublicKey.ChainCodeStart, HDPublicKey.ChainCodeEnd),
     publicKey: decoded.slice(HDPublicKey.PublicKeyStart, HDPublicKey.PublicKeyEnd),
@@ -331,12 +330,12 @@ HDPublicKey.prototype._buildFromBuffers = function(arg) {
     _buffers: arg
   });
 
-  var sequence = [
+  const sequence = [
     arg.version, arg.depth, arg.parentFingerPrint, arg.childIndex, arg.chainCode,
     arg.publicKey
   ];
-  var concat = BufferUtil.concat(sequence);
-  var checksum = Base58Check.checksum(concat);
+  const concat = BufferUtil.concat(sequence);
+  const checksum = Base58Check.checksum(concat);
   if (!arg.checksum || !arg.checksum.length) {
     arg.checksum = checksum;
   } else {
@@ -344,15 +343,14 @@ HDPublicKey.prototype._buildFromBuffers = function(arg) {
       throw new errors.InvalidB58Checksum(concat, checksum);
     }
   }
-  var network = Network.get(BufferUtil.integerFromBuffer(arg.version));
+  const network = Network.get(BufferUtil.integerFromBuffer(arg.version));
 
-  var xpubkey;
-  xpubkey = Base58Check.encode(BufferUtil.concat(sequence));
+  const xpubkey = Base58Check.encode(BufferUtil.concat(sequence));
   arg.xpubkey = Buffer.from(xpubkey);
 
-  var publicKey = new PublicKey(arg.publicKey, {network: network});
-  var size = HDPublicKey.ParentFingerPrintSize;
-  var fingerPrint = Hash.sha256ripemd160(publicKey.toBuffer()).slice(0, size);
+  const publicKey = new PublicKey(arg.publicKey, { network: network });
+  const size = HDPublicKey.ParentFingerPrintSize;
+  const fingerPrint = Hash.sha256ripemd160(publicKey.toBuffer()).slice(0, size);
 
   JSUtil.defineImmutable(this, {
     xpubkey: xpubkey,
@@ -366,8 +364,8 @@ HDPublicKey.prototype._buildFromBuffers = function(arg) {
 };
 
 HDPublicKey._validateBufferArguments = function(arg) {
-  var checkBuffer = function(name, size) {
-    var buff = arg[name];
+  const checkBuffer = function(name, size) {
+    const buff = arg[name];
     assert(BufferUtil.isBuffer(buff), name + ' argument is not a buffer, it\'s ' + typeof buff);
     assert(
       buff.length === size,
@@ -475,20 +473,20 @@ HDPublicKey.CheckSumSize = 4;
 HDPublicKey.DataSize = 78;
 HDPublicKey.SerializedByteSize = 82;
 
-HDPublicKey.VersionStart           = 0;
-HDPublicKey.VersionEnd             = HDPublicKey.VersionStart + HDPublicKey.VersionSize;
-HDPublicKey.DepthStart             = HDPublicKey.VersionEnd;
-HDPublicKey.DepthEnd               = HDPublicKey.DepthStart + HDPublicKey.DepthSize;
+HDPublicKey.VersionStart = 0;
+HDPublicKey.VersionEnd = HDPublicKey.VersionStart + HDPublicKey.VersionSize;
+HDPublicKey.DepthStart = HDPublicKey.VersionEnd;
+HDPublicKey.DepthEnd = HDPublicKey.DepthStart + HDPublicKey.DepthSize;
 HDPublicKey.ParentFingerPrintStart = HDPublicKey.DepthEnd;
-HDPublicKey.ParentFingerPrintEnd   = HDPublicKey.ParentFingerPrintStart + HDPublicKey.ParentFingerPrintSize;
-HDPublicKey.ChildIndexStart        = HDPublicKey.ParentFingerPrintEnd;
-HDPublicKey.ChildIndexEnd          = HDPublicKey.ChildIndexStart + HDPublicKey.ChildIndexSize;
-HDPublicKey.ChainCodeStart         = HDPublicKey.ChildIndexEnd;
-HDPublicKey.ChainCodeEnd           = HDPublicKey.ChainCodeStart + HDPublicKey.ChainCodeSize;
-HDPublicKey.PublicKeyStart         = HDPublicKey.ChainCodeEnd;
-HDPublicKey.PublicKeyEnd           = HDPublicKey.PublicKeyStart + HDPublicKey.PublicKeySize;
-HDPublicKey.ChecksumStart          = HDPublicKey.PublicKeyEnd;
-HDPublicKey.ChecksumEnd            = HDPublicKey.ChecksumStart + HDPublicKey.CheckSumSize;
+HDPublicKey.ParentFingerPrintEnd = HDPublicKey.ParentFingerPrintStart + HDPublicKey.ParentFingerPrintSize;
+HDPublicKey.ChildIndexStart = HDPublicKey.ParentFingerPrintEnd;
+HDPublicKey.ChildIndexEnd = HDPublicKey.ChildIndexStart + HDPublicKey.ChildIndexSize;
+HDPublicKey.ChainCodeStart = HDPublicKey.ChildIndexEnd;
+HDPublicKey.ChainCodeEnd = HDPublicKey.ChainCodeStart + HDPublicKey.ChainCodeSize;
+HDPublicKey.PublicKeyStart = HDPublicKey.ChainCodeEnd;
+HDPublicKey.PublicKeyEnd = HDPublicKey.PublicKeyStart + HDPublicKey.PublicKeySize;
+HDPublicKey.ChecksumStart = HDPublicKey.PublicKeyEnd;
+HDPublicKey.ChecksumEnd = HDPublicKey.ChecksumStart + HDPublicKey.CheckSumSize;
 
 assert(HDPublicKey.PublicKeyEnd === HDPublicKey.DataSize);
 assert(HDPublicKey.ChecksumEnd === HDPublicKey.SerializedByteSize);
