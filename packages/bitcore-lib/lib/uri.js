@@ -1,7 +1,6 @@
 'use strict';
 
 const url = require('url');
-const _ = require('lodash');
 const Address = require('./address');
 const Unit = require('./unit');
 
@@ -178,7 +177,7 @@ URI.prototype.toObject = URI.prototype.toJSON = function toObject() {
       json[m] = this[m].toString();
     }
   }
-  _.extend(json, this.extras);
+  Object.assign(json, this.extras);
   return json;
 };
 
@@ -201,7 +200,7 @@ URI.prototype.toString = function() {
   if (this.r) {
     query.r = this.r;
   }
-  _.extend(query, this.extras);
+  Object.assign(query, this.extras);
 
   return url.format({
     protocol: 'bitcoin:',
