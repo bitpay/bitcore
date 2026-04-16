@@ -256,7 +256,7 @@ const idProperty = {
     }
     return this._id;
   },
-  set: () => {/** no op */}
+  set: function () {/** no op */}
 };
 Object.defineProperty(Block.prototype, 'id', idProperty);
 Object.defineProperty(Block.prototype, 'hash', idProperty);

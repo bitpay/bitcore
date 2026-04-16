@@ -1,6 +1,5 @@
 'use strict';
 
-const _ = require('lodash');
 const BN = require('../crypto/bn');
 const Hash = require('../crypto/hash');
 const BufferReader = require('../encoding/bufferreader');
@@ -51,7 +50,7 @@ BlockHeader._from = function _from(arg) {
   let info = {};
   if (BufferUtil.isBuffer(arg)) {
     info = BlockHeader._fromBufferReader(BufferReader(arg));
-  } else if (_.isObject(arg)) {
+  } else if (typeof arg === 'object' && arg !== null) {
     info = BlockHeader._fromObject(arg);
   } else {
     throw new TypeError('Unrecognized argument for BlockHeader');
@@ -68,10 +67,10 @@ BlockHeader._fromObject = function _fromObject(data) {
   $.checkArgument(data, 'data is required');
   let prevHash = data.prevHash;
   let merkleRoot = data.merkleRoot;
-  if (_.isString(data.prevHash)) {
+  if (typeof data.prevHash === 'string') {
     prevHash = BufferUtil.reverse(Buffer.from(data.prevHash, 'hex'));
   }
-  if (_.isString(data.merkleRoot)) {
+  if (typeof data.merkleRoot === 'string') {
     merkleRoot = BufferUtil.reverse(Buffer.from(data.merkleRoot, 'hex'));
   }
   const info = {
@@ -252,7 +251,7 @@ const idProperty = {
     }
     return this._id;
   },
-  set: _.noop
+  set: function () {/** no op */}
 };
 Object.defineProperty(BlockHeader.prototype, 'id', idProperty);
 Object.defineProperty(BlockHeader.prototype, 'hash', idProperty);
