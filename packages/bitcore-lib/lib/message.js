@@ -1,6 +1,5 @@
 'use strict';
 
-const _ = require('lodash');
 const Address = require('./address');
 const ECDSA = require('./crypto/ecdsa');
 const sha256sha256 = require('./crypto/hash').sha256sha256;
@@ -15,7 +14,7 @@ function Message(message) {
   if (!(this instanceof Message)) {
     return new Message(message);
   }
-  $.checkArgument(_.isString(message), 'First argument should be a string');
+  $.checkArgument(typeof message === 'string', 'First argument should be a string');
   this.message = message;
 
   return this;
@@ -72,9 +71,9 @@ Message.prototype._verify = function _verify(publicKey, signature) {
  */
 Message.prototype.verify = function verify(bitcoinAddress, signatureString) {
   $.checkArgument(bitcoinAddress);
-  $.checkArgument(signatureString && _.isString(signatureString));
+  $.checkArgument(typeof signatureString === 'string' && signatureString !== '');
 
-  if (_.isString(bitcoinAddress)) {
+  if (typeof bitcoinAddress === 'string') {
     bitcoinAddress = Address.fromString(bitcoinAddress);
   }
   const signature = Signature.fromCompact(Buffer.from(signatureString, 'base64'));
@@ -104,9 +103,9 @@ Message.prototype.verify = function verify(bitcoinAddress, signatureString) {
  */
 Message.prototype.recoverPublicKey = function recoverPublicKey(bitcoinAddress, signatureString) {
   $.checkArgument(bitcoinAddress);
-  $.checkArgument(signatureString && _.isString(signatureString));
+  $.checkArgument(typeof signatureString === 'string' && signatureString !== '');
 
-  if (_.isString(bitcoinAddress)) {
+  if (typeof bitcoinAddress === 'string') {
     bitcoinAddress = Address.fromString(bitcoinAddress);
   }
   const signature = Signature.fromCompact(Buffer.from(signatureString, 'base64'));
