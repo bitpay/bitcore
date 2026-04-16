@@ -324,7 +324,7 @@ HDPrivateKey.getSerializedError = function(data, network) {
   if (data.length !== HDPrivateKey.DataLength) {
     return new hdErrors.InvalidLength(data);
   }
-  if (network !== undefined) {
+  if (network != null) {
     const error = HDPrivateKey._validateNetwork(data, network);
     if (error) {
       return error;
