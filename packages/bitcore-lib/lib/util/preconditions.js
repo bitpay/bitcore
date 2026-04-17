@@ -1,7 +1,7 @@
 'use strict';
 
-var errors = require('../errors');
-var _ = require('lodash');
+const _ = require('lodash');
+const errors = require('../errors');
 
 module.exports = {
   checkState: function(condition, message) {
@@ -18,8 +18,7 @@ module.exports = {
     argumentName = argumentName || '(unknown name)';
     if (_.isString(type)) {
       if (type === 'Buffer') {
-        var buffer = require('buffer'); // './buffer' fails on cordova & RN
-        if (!buffer.Buffer.isBuffer(argument)) {
+        if (!Buffer.isBuffer(argument)) {
           throw new errors.InvalidArgumentType(argument, type, argumentName);
         }
       } else if (typeof argument !== type && (argument && argument.constructor && argument.constructor.name !== type)) {
