@@ -313,13 +313,13 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     const query = transformMoralisQueryParams({ chainId, args }); // throws if no chain or network
     const queryStr = buildMoralisQueryString({
       ...query,
-      order: args.order || 'DESC', // default to descending order
+      order: args.order ?? query.order ?? 'DESC', // preserve direction-derived order, default to descending
       limit: args.pageSize || 10, // limit per request/page. total limit (args.limit) is checked in apiStream._read()
       include: 'internal_transactions'
     });
     args.transform = (tx) => {
       const _tx: any = transformMoralisTransaction({ chain, network, ...tx });
-      const confirmations = this._calculateConfirmations(tx, args.tipHeight);
+      const confirmations = this._calculateConfirmations(_tx, args.tipHeight);
       return EVMTransactionStorage._apiTransform({ ..._tx, confirmations }, { object: true }) as EVMTransactionJSON;
     };
 
@@ -344,13 +344,13 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     const queryTransform = transformMoralisQueryParams({ chainId, args }); // throws if no chain or network
     const queryStr = buildMoralisQueryString({
       ...queryTransform,
-      order: args.order || 'DESC', // default to descending order
+      order: args.order ?? queryTransform.order ?? 'DESC', // preserve direction-derived order, default to descending
       limit: args.pageSize || 10, // limit per request/page. total limit (args.limit) is checked in apiStream._read()
       contract_addresses: [tokenAddress],
     });
     args.transform = (tx) => {
       const _tx: any = transformMoralisTokenTransfer({ chain, network, ...tx });
-      const confirmations = this._calculateConfirmations(tx, args.tipHeight);
+      const confirmations = this._calculateConfirmations(_tx, args.tipHeight);
       return EVMTransactionStorage._apiTransform({ ..._tx, confirmations }, { object: true }) as EVMTransactionJSON;
     };
 

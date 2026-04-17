@@ -74,7 +74,7 @@ export class MoralisAdapter implements IIndexedAPIAdapter {
     const query = transformMoralisQueryParams({ chainId, args });
     const queryStr = buildMoralisQueryString({
       ...query,
-      order: (args as any).order || 'DESC',
+      order: (args as any).order ?? query.order ?? 'DESC',
       limit: args.pageSize || 10,
       include: 'internal_transactions'
     });
@@ -83,7 +83,7 @@ export class MoralisAdapter implements IIndexedAPIAdapter {
       ...args,
       transform: (tx: any) => {
         const _tx: any = transformMoralisTransaction({ chain, network, ...tx });
-        const confirmations = args.tipHeight ? args.tipHeight - _tx.blockHeight + 1 : 0;
+        const confirmations = args.tipHeight && Number.isFinite(_tx.blockHeight) ? args.tipHeight - _tx.blockHeight + 1 : 0;
         return EVMTransactionStorage._apiTransform({ ..._tx, confirmations }, { object: true });
       }
     };
@@ -100,7 +100,7 @@ export class MoralisAdapter implements IIndexedAPIAdapter {
     const query = transformMoralisQueryParams({ chainId, args });
     const queryStr = buildMoralisQueryString({
       ...query,
-      order: (args as any).order || 'DESC',
+      order: (args as any).order ?? query.order ?? 'DESC',
       limit: args.pageSize || 10,
       contract_addresses: [tokenAddress]
     });
@@ -109,7 +109,7 @@ export class MoralisAdapter implements IIndexedAPIAdapter {
       ...args,
       transform: (tx: any) => {
         const _tx: any = transformMoralisTokenTransfer({ chain, network, ...tx });
-        const confirmations = args.tipHeight ? args.tipHeight - _tx.blockHeight + 1 : 0;
+        const confirmations = args.tipHeight && Number.isFinite(_tx.blockHeight) ? args.tipHeight - _tx.blockHeight + 1 : 0;
         return EVMTransactionStorage._apiTransform({ ..._tx, confirmations }, { object: true });
       }
     };
