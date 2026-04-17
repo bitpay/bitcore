@@ -34,6 +34,8 @@ if (config.https) {
       fs.readFileSync(config.CAinter2),
       fs.readFileSync(config.CAroot)
     ];
+  } else if (config.certificateAuthorities) {
+    serverOpts.ca = config.certificateAuthorities.map(caPath => fs.readFileSync(caPath));
   }
 }
 
