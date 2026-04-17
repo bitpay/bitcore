@@ -12,7 +12,7 @@ import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 describe('Wallet Model', function() {
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
-  this.timeout(50000);
+  this.timeout(Math.max(this['_timeout'] || 0, 50000));
 
   let lockedWallet: Wallet;
   const walletName = 'Test Wallet';
@@ -27,6 +27,7 @@ describe('Wallet Model', function() {
     chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
     creds = chainConfig.rpc;
     rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
+    await Wallet.deleteWallet({ name: walletName });
     await intBeforeHelper();
   });
 
