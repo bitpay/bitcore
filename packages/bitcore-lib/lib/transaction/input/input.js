@@ -1,25 +1,24 @@
 'use strict';
 
-var _ = require('lodash');
-var $ = require('../../util/preconditions');
+const _ = require('lodash');
+const BufferWriter = require('../../encoding/bufferwriter');
 const errors = require('../../errors');
-var BufferWriter = require('../../encoding/bufferwriter');
-var buffer = require('buffer');
-var BufferUtil = require('../../util/buffer');
-var JSUtil = require('../../util/js');
-var Script = require('../../script');
-var Sighash = require('../sighash');
-var Output = require('../output');
+const Script = require('../../script');
+const BufferUtil = require('../../util/buffer');
+const JSUtil = require('../../util/js');
+const $ = require('../../util/preconditions');
+const Output = require('../output');
+const Sighash = require('../sighash');
 
-var MAXINT = 0xffffffff; // Math.pow(2, 32) - 1;
-var DEFAULT_SEQNUMBER = MAXINT;
-var DEFAULT_LOCKTIME_SEQNUMBER = MAXINT - 1;
-var DEFAULT_RBF_SEQNUMBER = MAXINT - 2;
-const SEQUENCE_LOCKTIME_DISABLE_FLAG =  Math.pow(2,31); // (1 << 31);
-const SEQUENCE_LOCKTIME_TYPE_FLAG = Math.pow(2,22); // (1 << 22);
+const MAXINT = 0xffffffff; // Math.pow(2, 32) - 1;
+const DEFAULT_SEQNUMBER = MAXINT;
+const DEFAULT_LOCKTIME_SEQNUMBER = MAXINT - 1;
+const DEFAULT_RBF_SEQNUMBER = MAXINT - 2;
+const SEQUENCE_LOCKTIME_DISABLE_FLAG = Math.pow(2, 31); // (1 << 31);
+const SEQUENCE_LOCKTIME_TYPE_FLAG = Math.pow(2, 22); // (1 << 22);
 const SEQUENCE_LOCKTIME_MASK = 0xffff;
 const SEQUENCE_LOCKTIME_GRANULARITY = 512; // 512 seconds
-const SEQUENCE_BLOCKDIFF_LIMIT = Math.pow(2,16)-1; // 16 bits 
+const SEQUENCE_BLOCKDIFF_LIMIT = Math.pow(2, 16)-1; // 16 bits 
 
 
 function Input(params) {
@@ -54,12 +53,12 @@ Object.defineProperty(Input.prototype, 'script', {
 
 Input.fromObject = function(obj) {
   $.checkArgument(_.isObject(obj));
-  var input = new Input();
+  const input = new Input();
   return input._fromObject(obj);
 };
 
 Input.prototype._fromObject = function(params) {
-  var prevTxId;
+  let prevTxId;
   if (typeof params.prevTxId === 'string' && JSUtil.isHexa(params.prevTxId)) {
     prevTxId = Buffer.from(params.prevTxId, 'hex');
   } else {
@@ -81,7 +80,7 @@ Input.prototype._fromObject = function(params) {
 };
 
 Input.prototype.toObject = Input.prototype.toJSON = function toObject() {
-  var obj = {
+  const obj = {
     prevTxId: this.prevTxId.toString('hex'),
     outputIndex: this.outputIndex,
     sequenceNumber: this.sequenceNumber,
@@ -98,7 +97,7 @@ Input.prototype.toObject = Input.prototype.toJSON = function toObject() {
 };
 
 Input.fromBufferReader = function(br) {
-  var input = new Input();
+  const input = new Input();
   input.prevTxId = br.readReverse(32);
   input.outputIndex = br.readUInt32LE();
   input._scriptBuffer = br.readVarLengthBuffer();
@@ -114,7 +113,7 @@ Input.prototype.toBufferWriter = function(writer) {
   }
   writer.writeReverse(this.prevTxId);
   writer.writeUInt32LE(this.outputIndex);
-  var script = this._scriptBuffer;
+  const script = this._scriptBuffer;
   writer.writeVarintNum(script.length);
   writer.write(script);
   writer.writeUInt32LE(this.sequenceNumber);
@@ -243,12 +242,13 @@ Input.prototype._getBaseSize = function() {
  */
 Input.prototype.lockForSeconds = function(seconds) {
   $.checkArgument(_.isNumber(seconds));
-  if (seconds < 0 ||  seconds >= SEQUENCE_LOCKTIME_GRANULARITY * SEQUENCE_LOCKTIME_MASK) {
+  if (seconds < 0 || seconds >= SEQUENCE_LOCKTIME_GRANULARITY * SEQUENCE_LOCKTIME_MASK) {
     throw new errors.Transaction.Input.LockTimeRange();
   }
   seconds = parseInt(Math.floor(seconds / SEQUENCE_LOCKTIME_GRANULARITY));
 
   // SEQUENCE_LOCKTIME_DISABLE_FLAG = 1 
+  // eslint-disable-next-line no-bitwise
   this.sequenceNumber = seconds | SEQUENCE_LOCKTIME_TYPE_FLAG ;
   return this;
 };
@@ -279,15 +279,19 @@ Input.prototype.lockUntilBlockHeight = function(heightDiff) {
  *  else it returns a Date object.
  */
 Input.prototype.getLockTime = function() {
+  // eslint-disable-next-line no-bitwise
   if (this.sequenceNumber & SEQUENCE_LOCKTIME_DISABLE_FLAG) {
     return null;
   }
 
+  // eslint-disable-next-line no-bitwise
   if (this.sequenceNumber & SEQUENCE_LOCKTIME_TYPE_FLAG) {
-    var seconds = SEQUENCE_LOCKTIME_GRANULARITY * (this.sequenceNumber & SEQUENCE_LOCKTIME_MASK);
+    // eslint-disable-next-line no-bitwise
+    const seconds = SEQUENCE_LOCKTIME_GRANULARITY * (this.sequenceNumber & SEQUENCE_LOCKTIME_MASK);
     return seconds;
   } else {
-    var blockHeight = this.sequenceNumber & SEQUENCE_LOCKTIME_MASK;
+    // eslint-disable-next-line no-bitwise
+    const blockHeight = this.sequenceNumber & SEQUENCE_LOCKTIME_MASK;
     return blockHeight;
   }
 };
