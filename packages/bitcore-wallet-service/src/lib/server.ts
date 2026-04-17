@@ -1,3 +1,4 @@
+import util from 'util';
 import {
   BitcoreLib as Bitcore,
   BitcoreLibCash as BitcoreCash,
@@ -3340,9 +3341,9 @@ export class WalletService implements IWalletService {
           
 
           const copayer = wallet.getCopayer(this.copayerId);
+          const xPubKey = wallet.tssKeyId ? wallet.clientDerivedPublicKey : copayer.xPubKey;
 
           try {
-            const xPubKey = wallet.tssKeyId ? wallet.clientDerivedPublicKey : copayer.xPubKey;
             if (!txp.sign(this.copayerId, opts.signatures, xPubKey)) {
               this.logw('Error signing transaction (BAD_SIGNATURES)');
               this.logw('Client version:', this.clientVersion);
@@ -3355,6 +3356,27 @@ export class WalletService implements IWalletService {
           } catch (ex) {
             this.logw('Error signing transaction proposal:', ex);
             return cb(ex);
+          }
+
+          if (wallet.tssKeyId) {
+            try {
+              // Add the other copayers to the txp.copayers array
+              // so the client can see who participated in the signing.
+              const addrDbString = Utils.getAddressNetworkForDbLookup(txp.from || txp.inputs[0]?.address, wallet.network);
+              const address = await util.promisify(storage.fetchAddressByWalletId).call(storage, wallet.id, addrDbString);
+              const tssSigSeshId = `${txp.id}:${address.path.replace(/\//g, '-')}`;
+              const tssSigSession = await storage.fetchTssSigSession({ id: tssSigSeshId });
+              if (!tssSigSession) {
+                throw new Error('TSS signature session not found');
+              }
+              const copayerIds = tssSigSession.participants.map(p => p.copayerId);
+              for (const copayerId of copayerIds) {
+                if (copayerId === this.copayerId) continue;
+                txp.addAction(copayerId, 'accept', null, opts.signatures, xPubKey);
+              }
+            } catch (err) {
+              this.logw('Error finding accepting copayers for TSS txp: %o %o', txp.id, err);
+            }
           }
 
           this.storage.storeTx(this.walletId, txp, err => {
