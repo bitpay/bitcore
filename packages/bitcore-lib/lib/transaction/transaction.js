@@ -1,7 +1,6 @@
 'use strict';
 
 const buffer = require('buffer');
-const _ = require('lodash');
 const Address = require('../address');
 const BN = require('../crypto/bn');
 const Hash = require('../crypto/hash');
@@ -21,6 +20,8 @@ const Sighash = require('./sighash');
 const SighashSchnorr = require('./sighashschnorr');
 const SighashWitness = require('./sighashwitness');
 const UnspentOutput = require('./unspentoutput');
+
+const objectToString = Object.prototype.toString;
 
 const PublicKeyHashInput = Input.PublicKeyHash;
 const PublicKeyInput = Input.PublicKey;
@@ -51,7 +52,7 @@ function Transaction(serialized, opts) {
       this.fromString(serialized);
     } else if (BufferUtil.isBuffer(serialized)) {
       this.fromBuffer(serialized);
-    } else if (_.isObject(serialized)) {
+    } else if (typeof serialized === 'object' && serialized !== null) {
       this.fromObject(serialized, opts);
     } else {
       throw new errors.InvalidArgument('Must provide an object or string to deserialize a transaction');
@@ -437,7 +438,7 @@ Transaction.prototype.toObject = Transaction.prototype.toJSON = function toObjec
 
 Transaction.prototype.fromObject = function fromObject(arg, opts) {
   /* jshint maxstatements: 20 */
-  $.checkArgument(_.isObject(arg) || arg instanceof Transaction);
+  $.checkArgument(arg instanceof Transaction || (typeof arg === 'object' && arg !== null));
   let transaction;
   if (arg instanceof Transaction) {
     transaction = arg.toObject();
@@ -506,7 +507,8 @@ Transaction.prototype.lockUntilDate = function(time) {
   if (!isNaN(time) && time < Transaction.NLOCKTIME_BLOCKHEIGHT_LIMIT) {
     throw new errors.Transaction.LockTimeTooEarly();
   }
-  if (_.isDate(time)) {
+  // Handles all values that have an internal class of Date. like prior lodash implementation.
+  if (objectToString.call(time) === '[object Date]') {
     time = time.getTime() / 1000;
   }
 
@@ -967,12 +969,13 @@ Transaction.prototype._getOutputAmount = function() {
  */
 Transaction.prototype._getInputAmount = function() {
   if (this._inputAmount == null) {
-    this._inputAmount = _.sumBy(this.inputs, function(input) {
+    this._inputAmount = 0;
+    for (const input of this.inputs || []) {
       if (input.output == null) {
         throw new errors.Transaction.Input.MissingPreviousOutput();
       }
-      return input.output.satoshis;
-    });
+      this._inputAmount += input.output.satoshis;
+    }
   }
   return this._inputAmount;
 };
@@ -1108,7 +1111,8 @@ Transaction.prototype._calculateWeight = function() {
 
 Transaction.prototype._removeOutput = function(index) {
   const output = this.outputs[index];
-  this.outputs = _.without(this.outputs, output);
+  // Remove by object identity (maintains prior lodash .without implementation)
+  this.outputs = this.outputs.filter(el => el !== output);
   this._outputAmount = undefined;
 };
 
@@ -1161,7 +1165,17 @@ Transaction.prototype.sort = function() {
  * @return {Transaction} this
  */
 Transaction.prototype.shuffleOutputs = function() {
-  return this.sortOutputs(_.shuffle);
+  return this.sortOutputs(function(outputs) {
+    const shuffled = [...outputs];
+
+    // canonical Fisher-Yates shuffle JS implementation (https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle)
+    for (let i = shuffled.length - 1; i >= 1; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    return shuffled;
+  });
 };
 
 /**
@@ -1193,8 +1207,10 @@ Transaction.prototype.sortInputs = function(sortingFunction) {
 };
 
 Transaction.prototype._newOutputOrder = function(newOutputs) {
+  // TODO: Tighten this validation to account for duplicate output references (e.g. [A, A, B] = [A, B, B] should fail validation, but doesn't currently).
   const isInvalidSorting = (this.outputs.length !== newOutputs.length ||
-                          _.difference(this.outputs, newOutputs).length !== 0);
+                          !this.outputs.every(output => newOutputs.includes(output)));
+
   if (isInvalidSorting) {
     throw new errors.Transaction.InvalidSorting();
   }
@@ -1221,7 +1237,8 @@ Transaction.prototype.removeInput = function(txId, outputIndex) {
     throw new errors.Transaction.InvalidIndex(index, this.inputs.length);
   }
   const input = this.inputs[index];
-  this.inputs = _.without(this.inputs, input);
+  // Filter on object identity (maintain prior lodash `without()` implementation)
+  this.inputs = this.inputs.filter(el => el !== input);
   this._inputAmount = undefined;
   this._updateChangeOutput();
 };
