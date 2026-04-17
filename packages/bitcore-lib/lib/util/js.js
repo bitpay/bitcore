@@ -1,6 +1,6 @@
 'use strict';
 
-var _ = require('lodash');
+const _ = require('lodash');
 
 /**
  * Determines whether a string contains only hexadecimal values
@@ -9,7 +9,7 @@ var _ = require('lodash');
  * @param {string} value
  * @return {boolean} true if the string is the hexa representation of a number
  */
-var isHexa = function isHexa(value) {
+const isHexa = function isHexa(value) {
   if (!_.isString(value)) {
     return false;
   }
@@ -28,13 +28,13 @@ module.exports = {
    * @return {Object|boolean} false if the argument is not a JSON string.
    */
   isValidJSON: function isValidJSON(arg) {
-    var parsed;
+    let parsed;
     if (!_.isString(arg)) {
       return false;
     }
     try {
       parsed = JSON.parse(arg);
-    } catch (e) {
+    } catch {
       return false;
     }
     if (typeof(parsed) === 'object') {
@@ -60,13 +60,14 @@ module.exports = {
    * @return {Object} The target object
    */
   defineImmutable: function defineImmutable(target, values) {
-    Object.keys(values).forEach(function(key){
+    for (const key of Object.keys(values)) {
       Object.defineProperty(target, key, {
         configurable: false,
         enumerable: true,
         value: values[key]
       });
-    });
+    }
+
     return target;
   },
   /**
