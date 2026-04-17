@@ -1,6 +1,5 @@
 'use strict';
 
-const _ = require('lodash');
 const BN = require('../crypto/bn');
 const BufferUtil = require('../util/buffer');
 const $ = require('../util/preconditions');
@@ -9,18 +8,18 @@ const BufferReader = function BufferReader(buf) {
   if (!(this instanceof BufferReader)) {
     return new BufferReader(buf);
   }
-  if (_.isUndefined(buf)) {
+  if (buf == null) {
     return;
   }
   if (Buffer.isBuffer(buf)) {
     this.set({
       buf: buf
     });
-  } else if (_.isString(buf)) {
+  } else if (typeof buf === 'string') {
     this.set({
       buf: Buffer.from(buf, 'hex'),
     });
-  } else if (_.isObject(buf)) {
+  } else if (typeof buf === 'object' && buf !== null /** null case handled above, here for redundancy */) {
     const obj = buf;
     this.set(obj);
   } else {
@@ -45,7 +44,7 @@ BufferReader.prototype.eof = function() {
 BufferReader.prototype.finished = BufferReader.prototype.eof;
 
 BufferReader.prototype.read = function(len) {
-  $.checkArgument(!_.isUndefined(len), 'Must specify a length');
+  $.checkArgument(len != null, 'Must specify a length');
   const buf = this.buf.slice(this.pos, this.pos + len);
   this.pos = this.pos + len;
   return buf;
@@ -190,7 +189,7 @@ BufferReader.prototype.reverse = function() {
 };
 
 BufferReader.prototype.readReverse = function(len) {
-  if (_.isUndefined(len)) {
+  if (len == null) {
     len = this.buf.length;
   }
   const buf = this.buf.slice(this.pos, this.pos + len);
