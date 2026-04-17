@@ -9,11 +9,14 @@ const Signature = require('../crypto/signature');
 const BufferReader = require('../encoding/bufferreader');
 const BufferWriter = require('../encoding/bufferwriter');
 const errors = require('../errors');
+const PrivateKey = require('../privatekey');
+const Script = require('../script');
 const BufferUtil = require('../util/buffer');
 const JSUtil = require('../util/js');
 const $ = require('../util/preconditions');
 const compare = Buffer.compare || require('buffer-compare');
 const Input = require('./input');
+const Output = require('./output');
 const Sighash = require('./sighash');
 const SighashSchnorr = require('./sighashschnorr');
 const SighashWitness = require('./sighashwitness');
@@ -24,9 +27,6 @@ const PublicKeyInput = Input.PublicKey;
 const MultiSigScriptHashInput = Input.MultiSigScriptHash;
 const MultiSigInput = Input.MultiSig;
 const TaprootInput = Input.Taproot;
-const Output = require('./output');
-const Script = require('../script');
-const PrivateKey = require('../privatekey');
 
 /**
  * Represents a transaction, a set of inputs and outputs to change ownership of tokens
