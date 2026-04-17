@@ -1,6 +1,5 @@
 'use strict';
 
-const _ = require('lodash');
 const Address = require('../address');
 const Hash = require('../crypto/hash');
 const Signature = require('../crypto/signature');
@@ -38,14 +37,14 @@ const Script = function Script(from) {
     return Script.fromBuffer(from.toBuffer());
   } else if (typeof from === 'string') {
     return Script.fromString(from);
-  } else if (_.isObject(from) && Array.isArray(from.chunks)) {
+  } else if (typeof from === 'object' && Array.isArray(from?.chunks)) {
     this.set(from);
   }
 };
 
 
 Script.prototype.set = function(obj) {
-  $.checkArgument(_.isObject(obj));
+  $.checkArgument(typeof obj === 'object' && obj !== null);
   $.checkArgument(Array.isArray(obj.chunks));
   this.chunks = obj.chunks;
   return this;
@@ -812,8 +811,17 @@ Script.buildMultisigOut = function(publicKeys, threshold, opts) {
   publicKeys = publicKeys.map(PublicKey);
   let sorted = publicKeys;
   if (!opts.noSorting) {
-    sorted = _.sortBy(publicKeys, function(publicKey) {
-      return publicKey.toString('hex');
+    // avoid mutating input
+    sorted = [...publicKeys].sort(function(a, b) {
+      const aHex = a.toString('hex');
+      const bHex = b.toString('hex');
+      if (aHex < bHex) {
+        return -1;
+      }
+      if (aHex > bHex) {
+        return 1;
+      }
+      return 0;
     });
   }
   for (let i = 0; i < sorted.length; i++) {
