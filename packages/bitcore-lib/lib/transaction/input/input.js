@@ -1,6 +1,5 @@
 'use strict';
 
-const _ = require('lodash');
 const BufferWriter = require('../../encoding/bufferwriter');
 const errors = require('../../errors');
 const Script = require('../../script');
@@ -52,7 +51,7 @@ Object.defineProperty(Input.prototype, 'script', {
 });
 
 Input.fromObject = function(obj) {
-  $.checkArgument(_.isObject(obj));
+  $.checkArgument(typeof obj === 'object' && obj !== null);
   const input = new Input();
   return input._fromObject(obj);
 };
@@ -129,7 +128,7 @@ Input.prototype.setScript = function(script) {
   } else if (JSUtil.isHexa(script)) {
     // hex string script
     this._scriptBuffer = Buffer.from(script, 'hex');
-  } else if (_.isString(script)) {
+  } else if (typeof script === 'string') {
     // human readable string script
     this._script = new Script(script);
     this._script._isInput = true;
@@ -241,7 +240,7 @@ Input.prototype._getBaseSize = function() {
  * @return {Transaction} this
  */
 Input.prototype.lockForSeconds = function(seconds) {
-  $.checkArgument(_.isNumber(seconds));
+  $.checkArgument(typeof seconds === 'number');
   if (seconds < 0 || seconds >= SEQUENCE_LOCKTIME_GRANULARITY * SEQUENCE_LOCKTIME_MASK) {
     throw new errors.Transaction.Input.LockTimeRange();
   }
@@ -260,7 +259,7 @@ Input.prototype.lockForSeconds = function(seconds) {
  * @return {Transaction} this
  */
 Input.prototype.lockUntilBlockHeight = function(heightDiff) {
-  $.checkArgument(_.isNumber(heightDiff));
+  $.checkArgument(typeof heightDiff === 'number');
   if (heightDiff < 0 || heightDiff >= SEQUENCE_BLOCKDIFF_LIMIT) {
     throw new errors.Transaction.Input.BlockHeightOutOfRange();
   }
