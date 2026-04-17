@@ -1,6 +1,5 @@
 'use strict';
 
-const _ = require('lodash');
 const sha256sha256 = require('../crypto/hash').sha256sha256;
 const Base58 = require('./base58');
 
@@ -24,10 +23,10 @@ Base58Check.prototype.set = function(obj) {
 };
 
 Base58Check.validChecksum = function validChecksum(data, checksum) {
-  if (_.isString(data)) {
+  if (typeof data === 'string') {
     data = Buffer.from(Base58.decode(data));
   }
-  if (_.isString(checksum)) {
+  if (typeof checksum === 'string') {
     checksum = Buffer.from(Base58.decode(checksum));
   }
   if (!checksum) {
