@@ -1,11 +1,10 @@
 'use strict';
 
-const Message = require('../message');
 const inherits = require('util').inherits;
 const bitcore = require('@bitpay-labs/bitcore-lib');
+const Message = require('../message');
 
 const $ = bitcore.util.preconditions;
-const _ = bitcore.deps._;
 
 /**
  * @param {Transaction=} arg - An instance of Transaction
@@ -18,7 +17,7 @@ function TransactionMessage(arg, options) {
   this.command = 'tx';
   this.Transaction = options.Transaction;
   $.checkArgument(
-    _.isUndefined(arg) || arg instanceof this.Transaction,
+    arg == null || arg instanceof this.Transaction,
     'An instance of Transaction or undefined is expected'
   );
   this.transaction = arg;
