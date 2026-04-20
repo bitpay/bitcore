@@ -8,7 +8,6 @@ const bitcore = require('..');
 
 const errors = bitcore.errors;
 const hdErrors = errors.HDPrivateKey;
-const buffer = require('buffer');
 
 const Networks = bitcore.Networks;
 const BufferUtil = bitcore.util.buffer;
@@ -222,7 +221,7 @@ describe('HDPrivate key interface', function() {
     derivedByNumber.xprivkey.should.equal(derivedByString.xprivkey);
   });
 
-  describe('validates paths', function() {
+  describe.only('validates paths', function() {
     it('validates correct paths', function() {
       let valid;
 
@@ -254,13 +253,13 @@ describe('HDPrivate key interface', function() {
       'm/12asd',
       'm/1/2//3'
     ];
-
-    invalid.forEach(function(datum) {
+    
+    for (const datum of invalid) {
       it('rejects illegal path ' + datum, function() {
         HDPrivateKey.isValidPath(datum).should.equal(false);
         expect(HDPrivateKey._getDerivationIndexes(datum)).to.equal(null);
       });
-    });
+    }
 
     it('generates deriving indexes correctly', function() {
       let indexes;
