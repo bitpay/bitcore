@@ -1,6 +1,7 @@
 'use strict';
 
 const bitcore = require('@bitpay-labs/bitcore-lib');
+
 const $ = bitcore.util.preconditions;
 const BufferUtil = bitcore.util.buffer;
 const BufferReader = bitcore.encoding.BufferReader;
@@ -35,7 +36,7 @@ Inventory.forItem = function(type, hash) {
     hash = Buffer.from(hash, 'hex');
     hash = BufferUtil.reverse(hash);
   }
-  return new Inventory({type: type, hash: hash});
+  return new Inventory({ type: type, hash: hash });
 };
 
 /**
@@ -69,7 +70,7 @@ Inventory.forTransaction = function(hash) {
  * @returns {Buffer} - Serialized inventory
  */
 Inventory.prototype.toBuffer = function() {
-  var bw = new BufferWriter();
+  const bw = new BufferWriter();
   bw.writeUInt32LE(this.type);
   bw.write(this.hash);
   return bw.concat();
@@ -88,8 +89,8 @@ Inventory.prototype.toBufferWriter = function(bw) {
  * @param {Buffer} payload - Serialized buffer of the inventory
  */
 Inventory.fromBuffer = function(payload) {
-  var parser = new BufferReader(payload);
-  var obj = {};
+  const parser = new BufferReader(payload);
+  const obj = {};
   obj.type = parser.readUInt32LE();
   obj.hash = parser.read(32);
   return new Inventory(obj);
@@ -99,7 +100,7 @@ Inventory.fromBuffer = function(payload) {
  * @param {BufferWriter} br - An instance of BufferWriter
  */
 Inventory.fromBufferReader = function(br) {
-  var obj = {};
+  const obj = {};
   obj.type = br.readUInt32LE();
   obj.hash = br.read(32);
   return new Inventory(obj);
