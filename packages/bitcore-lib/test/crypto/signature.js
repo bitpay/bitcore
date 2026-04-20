@@ -1,7 +1,6 @@
 /* eslint-disable no-bitwise */
 'use strict';
 
-const _ = require('lodash');
 const should = require('chai').should();
 const bitcore = require('../..');
 
@@ -13,7 +12,7 @@ const Interpreter = bitcore.Script.Interpreter;
 const sig_canonical = require('../data/bitcoind/sig_canonical');
 const sig_noncanonical = require('../data/bitcoind/sig_noncanonical');
 
-describe.only('Signature', function() {
+describe('Signature', function() {
 
   it('should make a blank signature', function() {
     const sig = new Signature();
@@ -330,11 +329,10 @@ describe.only('Signature', function() {
         [(Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_SINGLE) + 1, false],
         [(Signature.SIGHASH_ANYONECANPAY | Signature.SIGHASH_ALL) - 1, false],
       ];
-      _.each(testCases, function(testCase) {
+      for (const testCase of testCases) {
         sig.nhashtype = testCase[0];
         sig.hasDefinedHashtype().should.equal(testCase[1]);
-      });
+      };
     });
   });
-
 });
