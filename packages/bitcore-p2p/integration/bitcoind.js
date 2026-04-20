@@ -1,22 +1,18 @@
 'use strict';
 
-const chai = require('chai');
-const sinon = require('sinon');
 const bitcore = require('@bitpay-labs/bitcore-lib');
+const chai = require('chai');
 const p2p = require('../');
 
 const should = chai.should();
 const _ = bitcore.deps._;
 const Random = bitcore.crypto.Random;
 const BN = bitcore.crypto.BN;
-const BufferUtil = bitcore.util.buffer;
 const Peer = p2p.Peer;
-const Pool = p2p.Pool;
 const Networks = bitcore.Networks;
 const Messages = p2p.Messages;
 const Inventory = p2p.Inventory;
 const Block = bitcore.Block;
-const Transaction = bitcore.Transaction;
 
 // config 
 const network = process.env.NETWORK === 'testnet' ? Networks.testnet : Networks.livenet;
@@ -30,10 +26,6 @@ const blockHash = {
 const stopBlock = {
   'livenet': '00000000000000000b539ef570128acb953af3dbcfc19dd8e6066949672311a1',
   'testnet': '00000000d0bc4271bcefaa7eb25000e345910ba16b91eb375cd944b68624de9f'
-};
-const txHash = {
-  'livenet': '22231e8219a0617a0ded618b5dc713fdf9b0db8ebd5bb3322d3011a703119d3b',
-  'testnet': '22231e8219a0617a0ded618b5dc713fdf9b0db8ebd5bb3322d3011a703119d3b'
 };
 
 // These tests require a running bitcoind instance
@@ -59,8 +51,8 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
     });
     peer.connect();
   });
-  var connect = function(cb) {
-    var peer = new Peer(opts);
+  const connect = function(cb) {
+    const peer = new Peer(opts);
     peer.once('ready', function() {
       cb(peer);
     });
@@ -97,7 +89,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
         });
         cb();
       });
-      var message = messages.GetAddr();
+      const message = messages.GetAddr();
       peer.sendMessage(message);
     });
   });
@@ -112,15 +104,15 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
         cb();
       });
       peer.once('inv', function(message) {
-        var get = messages.GetData(message.inventory);
+        const get = messages.GetData(message.inventory);
         peer.sendMessage(get);
       });
     });
   });
   it('sends tx inv and receives getdata for that tx', function(cb) {
     connect(function(peer) {
-      var type = Inventory.TYPE.TX;
-      var inv = [{
+      const type = Inventory.TYPE.TX;
+      const inv = [{
         type: type,
         hash: Buffer.from(Random.getRandomBuffer(32)) // needs to be random for repeatability
       }];
@@ -128,7 +120,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
         message.inventory[0].should.deep.equal(inv[0]);
         cb();
       });
-      var message = messages.Inventory(inv);
+      const message = messages.Inventory(inv);
       message.inventory[0].hash.length.should.equal(32);
       peer.sendMessage(message);
     });
@@ -139,27 +131,27 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
         (message.block instanceof Block).should.equal(true);
         cb();
       });
-      var message = messages.GetData.forBlock(blockHash[network.name]);
+      const message = messages.GetData.forBlock(blockHash[network.name]);
       peer.sendMessage(message);
     });
   });
-  var fakeHash = 'e2dfb8afe1575bfacae1a0b4afc49af7ddda69285857267bae0e22be15f74a3a';
+  const fakeHash = 'e2dfb8afe1575bfacae1a0b4afc49af7ddda69285857267bae0e22be15f74a3a';
   it('handles request tx data not found', function(cb) {
     connect(function(peer) {
-      var expected = messages.NotFound.forTransaction(fakeHash);
+      const expected = messages.NotFound.forTransaction(fakeHash);
       peer.once('notfound', function(message) {
         message.command.should.equal('notfound');
         message.inventory[0].type.should.equal(Inventory.TYPE.TX);
-        var expectedHash = expected.inventory[0].hash.toString('hex');
+        const expectedHash = expected.inventory[0].hash.toString('hex');
         message.inventory[0].hash.toString('hex').should.equal(expectedHash);
         cb();
       });
-      var message = messages.GetData.forTransaction(fakeHash);
+      const message = messages.GetData.forTransaction(fakeHash);
       peer.sendMessage(message);
     });
   });
-  var from = [blockHash[network.name]];
-  var stop = stopBlock[network.name];
+  const from = [blockHash[network.name]];
+  const stop = stopBlock[network.name];
   it('gets headers', function(cb) {
     connect(function(peer) {
       peer.once('headers', function(message) {
@@ -167,7 +159,7 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
         message.headers.length.should.equal(3);
         cb();
       });
-      var message = messages.GetHeaders({
+      const message = messages.GetHeaders({
         starts: from,
         stop: stop
       });
@@ -184,19 +176,19 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
           cb();
         }
       });
-      var message = messages.GetBlocks({
+      const message = messages.GetBlocks({
         starts: from,
         stop: stop
       });
       peer.sendMessage(message);
     });
   });
-  var testInvGetData = function(expected, message, cb) {
+  const testInvGetData = function(expected, message, cb) {
     connect(function(peer) {
       peer.once('getdata', function(message) {
         message.command.should.equal('getdata');
         message.inventory[0].type.should.equal(expected.inventory[0].type);
-        var expectedHash = expected.inventory[0].hash.toString('hex');
+        const expectedHash = expected.inventory[0].hash.toString('hex');
         message.inventory[0].hash.toString('hex').should.equal(expectedHash);
         cb();
       });
@@ -204,15 +196,15 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
     });
   };
   it('sends block inv and receives getdata', function(cb) {
-    var randomHash = Buffer.from(Random.getRandomBuffer(32)); // slow buffer
-    var expected = messages.GetData.forBlock(randomHash);
-    var message = messages.Inventory.forBlock(randomHash);
+    const randomHash = Buffer.from(Random.getRandomBuffer(32)); // slow buffer
+    const expected = messages.GetData.forBlock(randomHash);
+    const message = messages.Inventory.forBlock(randomHash);
     testInvGetData(expected, message, cb);
   });
   it('sends tx inv and receives getdata', function(cb) {
-    var randomHash = Buffer.from(Random.getRandomBuffer(32)); // slow buffer
-    var expected = messages.GetData.forTransaction(randomHash);
-    var message = messages.Inventory.forTransaction(randomHash);
+    const randomHash = Buffer.from(Random.getRandomBuffer(32)); // slow buffer
+    const expected = messages.GetData.forTransaction(randomHash);
+    const message = messages.Inventory.forTransaction(randomHash);
     testInvGetData(expected, message, cb);
   });
 });
