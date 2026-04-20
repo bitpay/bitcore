@@ -1,11 +1,7 @@
 'use strict';
 /* jshint unused: false */
-
-
-const _ = require('lodash');
-
 const bitcore = require('../../..');
-
+ 
 const Transaction = bitcore.Transaction;
 const PrivateKey = bitcore.PrivateKey;
 const Address = bitcore.Address;
@@ -64,18 +60,25 @@ describe('MultiSigScriptHashInput', function() {
       .to(address, 1000000);
     const input = transaction.inputs[0];
 
-    _.every(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
-      const serialized = publicKeyMissing.toString();
-      return serialized === public1.toString() ||
-              serialized === public2.toString() ||
-              serialized === public3.toString();
-    }).should.equal(true);
+    const missingPublicKeys = input.publicKeysWithoutSignature().map(function(publicKey) {
+      return publicKey.toString();
+    });
+    missingPublicKeys.should.have.members([
+      public1.toString(),
+      public2.toString(),
+      public3.toString()
+    ]);
+    missingPublicKeys.should.have.length(3);
+
     transaction.sign(privateKey1);
-    _.every(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
-      const serialized = publicKeyMissing.toString();
-      return serialized === public2.toString() ||
-              serialized === public3.toString();
-    }).should.equal(true);
+    const missingAfterSign = input.publicKeysWithoutSignature().map(function(publicKey) {
+      return publicKey.toString();
+    });
+    missingAfterSign.should.have.members([
+      public2.toString(),
+      public3.toString()
+    ]);
+    missingAfterSign.should.have.length(2);
   });
   it('can clear all signatures', function() {
     const transaction = new Transaction()
@@ -179,18 +182,25 @@ describe('MultiSigScriptHashInput', function() {
         .to(address, 1000000);
       const input = transaction.inputs[0];
 
-      _.every(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
-        const serialized = publicKeyMissing.toString();
-        return serialized === public1.toString() ||
-                serialized === public2.toString() ||
-                serialized === public3.toString();
-      }).should.equal(true);
+      const missingPublicKeys = input.publicKeysWithoutSignature().map(function(publicKey) {
+        return publicKey.toString();
+      });
+      missingPublicKeys.should.have.members([
+        public1.toString(),
+        public2.toString(),
+        public3.toString()
+      ]);
+      missingPublicKeys.should.have.length(3);
+
       transaction.sign(privateKey1);
-      _.every(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
-        const serialized = publicKeyMissing.toString();
-        return serialized === public2.toString() ||
-                serialized === public3.toString();
-      }).should.equal(true);
+      const missingAfterSign = input.publicKeysWithoutSignature().map(function(publicKey) {
+        return publicKey.toString();
+      });
+      missingAfterSign.should.have.members([
+        public2.toString(),
+        public3.toString()
+      ]);
+      missingAfterSign.should.have.length(2);
     });
     it('can clear all signatures', function() {
       const transaction = new Transaction()
