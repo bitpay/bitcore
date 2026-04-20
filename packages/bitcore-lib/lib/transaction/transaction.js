@@ -1159,8 +1159,7 @@ Transaction.prototype.sort = function() {
 };
 
 /**
- * Randomize this transaction's outputs ordering. The shuffling algorithm is a
- * version of the Fisher-Yates shuffle, provided by lodash's _.shuffle().
+ * Randomize this transaction's outputs ordering using Fisher-Yates.
  *
  * @return {Transaction} this
  */
@@ -1168,7 +1167,6 @@ Transaction.prototype.shuffleOutputs = function() {
   return this.sortOutputs(function(outputs) {
     const shuffled = [...outputs];
 
-    // canonical Fisher-Yates shuffle JS implementation (https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle)
     for (let i = shuffled.length - 1; i >= 1; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
