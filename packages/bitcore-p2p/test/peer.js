@@ -10,7 +10,6 @@ const P2P = require('../');
 const EventEmitter = require('events').EventEmitter;
 
 const expect = chai.expect;
-const _ = bitcore.deps._;
 const Peer = P2P.Peer;
 const Messages = P2P.Messages;
 const messages = new Messages();
@@ -56,7 +55,7 @@ describe('Peer', function() {
       });
       const check = function(message) {
         received[message.command]++;
-        if (_.isEqual(received, expected)) {
+        if (Object.keys(expected).every((command) => received[command] === expected[command])) {
           callback();
         }
       };
