@@ -1,3 +1,4 @@
+/* eslint-disable no-bitwise */
 'use strict';
 
 const _ = require('lodash');
