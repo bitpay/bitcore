@@ -5,7 +5,6 @@ const chai = require('chai');
 const p2p = require('../');
 
 const should = chai.should();
-const _ = bitcore.deps._;
 const Random = bitcore.crypto.Random;
 const BN = bitcore.crypto.BN;
 const Peer = p2p.Peer;
@@ -64,8 +63,8 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
   it('connects', function(cb) {
     connect(function(peer) {
       peer.version.should.be.above(70000);
-      _.isString(peer.subversion).should.equal(true);
-      _.isNumber(peer.bestHeight).should.equal(true);
+      (typeof peer.subversion).should.be(true);
+      (typeof peer.bestHeight).should.be(true);
       cb();
     });
   });
