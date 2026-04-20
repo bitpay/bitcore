@@ -13,7 +13,6 @@ const BN = bitcore.crypto.BN;
 const BufferWriter = bitcore.encoding.BufferWriter;
 const BufferReader = bitcore.encoding.BufferReader;
 const Opcode = bitcore.Opcode;
-const _ = require('lodash');
 
 const script_tests = require('../data/bitcoind/script_tests');
 const script_asset_tests = require('../data/bitcoind/script_assets_test.json');
@@ -351,7 +350,7 @@ describe('Interpreter', function() {
         c++;
 
         let witness, amount;
-        if (_.isArray(vector[0])) {
+        if (Array.isArray(vector[0])) {
           const extra = vector.shift();
           amount = extra.pop() * 1e8;
           witness = extra.map(function(x) {
