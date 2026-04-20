@@ -1,17 +1,12 @@
 'use strict';
 
 /* jshint unused: false */
-const _ = require('lodash');
-const assert = require('assert');
-const should = require('chai').should();
 const expect = require('chai').expect;
 const bitcore = require('..');
-const buffer = require('buffer');
 
 const errors = bitcore.errors;
 const hdErrors = bitcore.errors.HDPublicKey;
 const BufferUtil = bitcore.util.buffer;
-const HDPrivateKey = bitcore.HDPrivateKey;
 const HDPublicKey = bitcore.HDPublicKey;
 const Base58Check = bitcore.encoding.Base58Check;
 const Networks = bitcore.Networks;
@@ -99,10 +94,9 @@ describe('HDPublicKey interface', function() {
     });
 
     it('can generate a json that has a particular structure', function() {
-      assert(_.isEqual(
-        new HDPublicKey(JSON.parse(json)).toJSON(),
+      expect(new HDPublicKey(JSON.parse(json)).toJSON()).to.deep.equal(
         new HDPublicKey(xpubkey).toJSON()
-      ));
+      );
     });
 
     it('builds from a buffer object', function() {
