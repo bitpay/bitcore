@@ -9,7 +9,6 @@ const bitcore = require('@bitpay-labs/bitcore-lib');
 const P2P = require('../');
 const EventEmitter = require('events').EventEmitter;
 
-const should = chai.should();
 const expect = chai.expect;
 const _ = bitcore.deps._;
 const Peer = P2P.Peer;
@@ -252,15 +251,14 @@ describe('Peer', function() {
     peer3.relay.should.equal(true);
   });
 
-  it('relay setting respected', function() {
-    [true, false].forEach(function(relay) {
+  it('relay setting respected', function() {    
+    for (const relay of [true, false]) {
       const peer = new Peer({ host: 'localhost', relay: relay });
       const peerSendMessageStub = sinon.stub(Peer.prototype, 'sendMessage', function(message) {
         message.relay.should.equal(relay);
       });
       peer._sendVersion();
       peerSendMessageStub.restore();
-    });
+    }
   });
-
 });
