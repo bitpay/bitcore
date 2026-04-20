@@ -1,6 +1,5 @@
 'use strict';
 
-const _ = require('lodash');
 const chai = require('chai');
 
 const should = chai.should();
@@ -129,7 +128,7 @@ describe('Opcode', function() {
 
   describe('@map', function() {
     it('should have a map containing 119 elements', function() {
-      _.size(Opcode.map).should.equal(119);
+      Object.keys(Opcode.map).length.should.equal(119);
     });
   });
 
