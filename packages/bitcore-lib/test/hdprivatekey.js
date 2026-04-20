@@ -1,7 +1,5 @@
 'use strict';
 /* jshint unused: false */
-const _ = require('lodash');
-const assert = require('assert');
 const should = require('chai').should();
 const expect = require('chai').expect;
 const bitcore = require('..');
@@ -86,10 +84,9 @@ describe('HDPrivate key interface', function() {
   });
 
   it('builds a json keeping the structure and same members', function() {
-    assert(_.isEqual(
-      new HDPrivateKey(json).toJSON(),
+    expect(new HDPrivateKey(json).toJSON()).to.deep.equal(
       new HDPrivateKey(xprivkey).toJSON()
-    ));
+    );
   });
 
   describe('instantiation', function() {
@@ -221,7 +218,7 @@ describe('HDPrivate key interface', function() {
     derivedByNumber.xprivkey.should.equal(derivedByString.xprivkey);
   });
 
-  describe.only('validates paths', function() {
+  describe('validates paths', function() {
     it('validates correct paths', function() {
       let valid;
 
@@ -303,9 +300,9 @@ describe('HDPrivate key interface', function() {
     it('toObject leaves no Buffer instances', function() {
       const privKey = new HDPrivateKey(xprivkey);
       const object = privKey.toObject();
-      _.each(_.values(object), function(value) {
+      for (const value of Object.values(object)) {
         expect(BufferUtil.isBuffer(value)).to.equal(false);
-      });
+      }
     });
     it('roundtrips toObject', function() {
       expect(HDPrivateKey.fromObject(new HDPrivateKey(xprivkey).toObject()).xprivkey).to.equal(xprivkey);
