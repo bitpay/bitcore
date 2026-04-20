@@ -12,7 +12,7 @@ const Script = bitcore.Script;
 const PrivateKey = bitcore.PrivateKey;
 const errors = bitcore.errors;
 
-describe.only('TransactionSignature', function() {
+describe('TransactionSignature', function() {
 
   const fromAddress = 'mszYqVnqKoQx4jcTdJXxwKAissE3Jbrrc1';
   const privateKey = 'cSBnVM4xvxarwGQuAfQFwqDg9k5tErHUHzgWsEfD4zdwUasvqRVY';
