@@ -254,8 +254,8 @@ describe.only('Signature', function() {
 
     describe('bitcoind fixtures', function() {
       const test_sigs = function(set, expected) {
-        let i = 0;
-        set.forEach(function(vector) {
+        for (let i = 0; i < set.length; i++) {
+          const vector = set[i];
           if (!JSUtil.isHexa(vector)) {
             // non-hex strings are ignored
             return;
@@ -263,13 +263,11 @@ describe.only('Signature', function() {
           it('should be ' + (expected ? '' : 'in') + 'valid for fixture #' + i, function() {
             const sighex = vector;
             const interp = Interpreter();
-            interp.flags = Interpreter.SCRIPT_VERIFY_DERSIG |
-              Interpreter.SCRIPT_VERIFY_STRICTENC;
+            interp.flags = Interpreter.SCRIPT_VERIFY_DERSIG | Interpreter.SCRIPT_VERIFY_STRICTENC;
             const result = interp.checkSignatureEncoding(Buffer.from(sighex, 'hex'));
             result.should.equal(expected);
           });
-          i++;
-        });
+        }
       };
       test_sigs(sig_canonical, true);
       test_sigs(sig_noncanonical, false);
