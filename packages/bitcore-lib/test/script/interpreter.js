@@ -344,9 +344,9 @@ describe('Interpreter', function() {
 
     const testAllFixtures = function(set) {
       let c = 0;
-      set.forEach(function(vector) {
+      for (const vector of set) {
         if (vector.length === 1) {
-          return;
+          continue;
         }
         c++;
 
@@ -354,11 +354,11 @@ describe('Interpreter', function() {
         if (_.isArray(vector[0])) {
           const extra = vector.shift();
           amount = extra.pop() * 1e8;
-          witness = extra.map(function(x) { 
+          witness = extra.map(function(x) {
             return Buffer.from(x, 'hex');
           });
         } else {
-          return;
+          continue;
         }
 
         const fullScriptString = vector[0] + ' ' + vector[1];
@@ -371,10 +371,9 @@ describe('Interpreter', function() {
         function() {
           testFixture(vector, expected, witness, amount);
         });
-      });
+      }
     };
     testAllFixtures(script_tests);
-
   });
   describe('bitcoind transaction evaluation fixtures', function() {
     const test_txs = function(set, expected) {
