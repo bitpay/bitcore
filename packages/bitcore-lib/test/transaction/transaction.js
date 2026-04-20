@@ -3,7 +3,6 @@
 
 const should = require('chai').should();
 const expect = require('chai').expect;
-const _ = require('lodash');
 const sinon = require('sinon');
 const bitcore = require('../..');
 const transactionVector = require('../data/tx_creation');
@@ -25,7 +24,6 @@ const PrivateKey = bitcore.PrivateKey;
 const Script = bitcore.Script;
 const Interpreter = bitcore.Script.Interpreter;
 const Address = bitcore.Address;
-const Networks = bitcore.Networks;
 const Opcode = bitcore.Opcode;
 const errors = bitcore.errors;
 
@@ -1341,7 +1339,7 @@ describe('Transaction', function() {
       tx.outputs[2].script.toString().should.equal('0x01');
     });
 
-    describe.only('bitcoinjs fixtures', function() {
+    describe('bitcoinjs fixtures', function() {
 
       const fixture = require('../data/bip69.json');
 
