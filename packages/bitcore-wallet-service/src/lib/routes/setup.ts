@@ -4,8 +4,8 @@ import RateLimit from 'express-rate-limit';
 import config from '../../config';
 import { Common } from '../common';
 import { logger, transports } from '../logger';
-import { LogMiddleware } from '../routes/middleware/log';
 import { WalletService } from '../server';
+import { LogMiddleware } from './middleware/log';
 
 const Defaults = Common.Defaults;
 
