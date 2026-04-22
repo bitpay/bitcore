@@ -42,7 +42,7 @@ export function registerAdvertisementRoutes(router: express.Router, context: Rou
 
     if (testing) {
       server.getTestingAdverts(req.body, (err, ads) => {
-        if (err) returnError(err, res, req);
+        if (err) return returnError(err, res, req);
         res.json(ads);
       });
       return;
@@ -50,7 +50,7 @@ export function registerAdvertisementRoutes(router: express.Router, context: Rou
 
     setPublicCache(res, 5 * ONE_MINUTE);
     server.getAdverts(req.body, (err, ads) => {
-      if (err) returnError(err, res, req);
+      if (err) return returnError(err, res, req);
       res.json(ads);
     });
   });
@@ -68,7 +68,7 @@ export function registerAdvertisementRoutes(router: express.Router, context: Rou
 
     if (req.params['adId']) {
       server.getAdvert(opts, (err, ad) => {
-        if (err) returnError(err, res, req);
+        if (err) return returnError(err, res, req);
         res.json(ad);
       });
     }
@@ -85,7 +85,7 @@ export function registerAdvertisementRoutes(router: express.Router, context: Rou
     }
 
     server.getAdvertsByCountry(opts, (err, ads) => {
-      if (err) returnError(err, res, req);
+      if (err) return returnError(err, res, req);
       res.json(ads);
     });
   });
@@ -102,7 +102,7 @@ export function registerAdvertisementRoutes(router: express.Router, context: Rou
       server => {
         if (req.params['adId']) {
           server.activateAdvert(opts, err => {
-            if (err) returnError(err, res, req);
+            if (err) return returnError(err, res, req);
             res.json({ advertisementId: opts.adId, message: 'advert activated' });
           });
         }
@@ -122,7 +122,7 @@ export function registerAdvertisementRoutes(router: express.Router, context: Rou
       server => {
         if (req.params['adId']) {
           server.deactivateAdvert(opts, err => {
-            if (err) returnError(err, res, req);
+            if (err) return returnError(err, res, req);
             res.json({ advertisementId: opts.adId, message: 'advert deactivated' });
           });
         }
@@ -140,7 +140,7 @@ export function registerAdvertisementRoutes(router: express.Router, context: Rou
       server => {
         req.body.adId = req.params['adId'];
         server.removeAdvert(req.body, (err, removedAd) => {
-          if (err) returnError(err, res, req);
+          if (err) return returnError(err, res, req);
           if (removedAd) {
             res.json(removedAd);
           }

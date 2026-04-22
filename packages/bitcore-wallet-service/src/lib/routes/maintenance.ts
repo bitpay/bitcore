@@ -96,13 +96,16 @@ export function registerMaintenanceRoutes(router: express.Router, context: Route
 
   router.post('/v1/clearcache/', (req, res) => {
     getServerWithAuth(req, res, server => {
-      server.clearWalletCache(req.query).then(val => {
-        if (val) {
-          res.sendStatus(200);
-        } else {
-          res.sendStatus(500);
-        }
-      });
+      server
+        .clearWalletCache(req.query)
+        .then(val => {
+          if (val) {
+            res.sendStatus(200);
+          } else {
+            res.sendStatus(500);
+          }
+        })
+        .catch(err => returnError(err, res, req));
     });
   });
 }

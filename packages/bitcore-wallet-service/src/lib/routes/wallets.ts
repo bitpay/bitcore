@@ -194,16 +194,24 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
               ({ message }) => Promise.resolve({ success: false, error: message })
             )
             .catch(err => {
-              if (!silentFailure) {
-                returnError(err, res, req);
+              if (silentFailure) {
+                return [];
               }
+              returnError(err, res, req);
+              throw err;
             })
         )
       );
     } catch (err) {
+      if (res.headersSent) {
+        return;
+      }
       return returnError(err, res, req);
     }
 
+    if (res.headersSent) {
+      return;
+    }
     return res.json(_.flatten(responses));
   });
 

@@ -85,26 +85,26 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
         Defaults.COPAY_VERSION_CACHE_DURATION,
         async (err, version) => {
           if (err) {
-            res.send(err);
+            return res.send(err);
           }
           if (version) {
-            res.json({ version });
+            return res.json({ version });
           } else {
             try {
               const htmlString = await rp(options);
               if (htmlString['tag_name']) {
                 server.storage.storeGlobalCache('latest-copay-version', htmlString['tag_name'], () => {
-                  res.json({ version: htmlString['tag_name'] });
+                  return res.json({ version: htmlString['tag_name'] });
                 });
               }
             } catch (fetchErr) {
-              res.send(fetchErr);
+              return res.send(fetchErr);
             }
           }
         }
       );
     } catch (err) {
-      res.send(err);
+      return res.send(err);
     }
   });
 

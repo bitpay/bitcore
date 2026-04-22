@@ -105,7 +105,9 @@ export function createRouteHelpers(returnError: Types.ReturnErrorFn): RouteHelpe
   };
 
   const getServerWithMultiAuth: Types.GetServerWithMultiAuthFn = (req, res, opts = {}) => {
-    const identities = req.headers['x-identities'] ? req.headers['x-identities'].split(',') : false;
+    const identitiesHeader = req.headers['x-identities'];
+    const identitiesHeaderValue = Array.isArray(identitiesHeader) ? identitiesHeader.join(',') : identitiesHeader;
+    const identities = identitiesHeaderValue ? identitiesHeaderValue.split(',') : false;
     const signature = req.headers['x-signature'];
     if (!identities || !signature) {
       throw Errors.NOT_AUTHORIZED;
