@@ -87,11 +87,11 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
   it('handles addr', function(cb) {
     connect(function(peer) {
       peer.once('addr', function(message) {
-        message.addresses.forEach(function(address) {
+        for (const address of message.addresses) {
           (address.time instanceof Date).should.equal(true);
           should.exist(address.ip);
           (address.services instanceof BN).should.equal(true);
-        });
+        }
         cb();
       });
       const message = messages.GetAddr();

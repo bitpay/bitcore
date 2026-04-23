@@ -256,14 +256,14 @@ describe('Peer', function() {
   });
 
   it('relay setting respected', function() {
-    [true, false].forEach(function(relay) {
+    for (const relay of [true, false]) {
       const peer = new Peer({ host: 'localhost', relay: relay });
       const peerSendMessageStub = sinon.stub(Peer.prototype, 'sendMessage', function(message) {
         message.relay.should.equal(relay);
       });
       peer._sendVersion();
       peerSendMessageStub.restore();
-    });
+    }
   });
 
   it('version/subversion set properly', function() {
