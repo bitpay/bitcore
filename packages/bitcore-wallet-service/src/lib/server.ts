@@ -12,7 +12,6 @@ import Moralis from 'moralis';
 import { singleton } from 'preconditions';
 import _request from 'request';
 import 'source-map-support/register';
-import Uuid from 'uuid';
 import { version } from '../../package.json';
 import config from '../config';
 import { serverMessages as deprecatedServerMessage } from '../deprecated-serverMessages';
@@ -40,23 +39,26 @@ import { Lock } from './lock';
 import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import {
-  Advertisement,
   Copayer,
-  INotification,
   ITxProposal,
   IWallet,
-  Notification,
   Preferences,
-  PushNotificationSub,
-  Session,
   TxConfirmationSub,
-  TxNote,
   TxProposal,
   Wallet
 } from './model';
+import * as advertisementMethods from './server/advertisements';
+import * as authMethods from './server/auth';
+import * as loggingMethods from './server/logging';
+import * as moralisMethods from './server/moralis';
+import * as notesMethods from './server/notes';
+import * as notificationMethods from './server/notifications';
+import * as serviceMethods from './server/services';
+import { UPGRADES, checkRequired } from './server/shared';
+import * as upgradeMethods from './server/upgrade';
 import { Storage } from './storage';
-import type { ExternalServicesConfig } from '../types/externalservices';
 import type { GetAddressesOpts, UpgradeCheckOpts } from '../types/server';
+import type { Upgrade } from './server/shared';
 
 type BwsLogger = typeof logger;
 
@@ -81,7 +83,6 @@ const {
   Utils,
   Constants,
   Defaults,
-  Services,
 } = Common;
 
 let initialized = false;
@@ -354,18 +355,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.clientVersion - A string that identifies the client issuing the request
    */
   static getInstance(opts?): WalletService {
-    opts = opts || {};
-
-    const upgradeMessage = WalletService.upgradeNeeded(UPGRADES.bwc_$lt_1_2, opts);
-    if (upgradeMessage) {
-      throw Errors.UPGRADE_NEEDED.withMessageMaybe(upgradeMessage);
-    }
-
-    const server = new WalletService();
-    server._setClientVersion(opts.clientVersion);
-    server._setAppVersion(opts.userAgent);
-    server.userAgent = opts.userAgent;
-    return server;
+    return authMethods.getInstance(WalletService, opts);
   }
 
   /**
@@ -384,86 +374,7 @@ export class WalletService implements IWalletService {
    * for this request (only when copayer is support staff).
    */
   static getInstanceWithAuth(opts, cb: (err: Error, server?: WalletService) => void): void {
-    const withSignature = cb => {
-      if (!checkRequired(opts, ['copayerId', 'message', 'signature'], cb)) {
-        return;
-      }
-
-      let server: WalletService;
-      try {
-        server = WalletService.getInstance(opts);
-      } catch (ex) {
-        return cb(ex);
-      }
-
-      server.storage.fetchCopayerLookup(opts.copayerId, (err, copayer) => {
-        if (err) {
-          return cb(err);
-        }
-        if (!copayer) {
-          return cb(Errors.NOT_AUTHORIZED.withMessage('Copayer not found'));
-        }
-
-        const isValid = !!server._getSigningKey(opts.message, opts.signature, copayer.requestPubKeys);
-        if (!isValid) {
-          return cb(Errors.NOT_AUTHORIZED.withMessage('Invalid signature'));
-        }
-
-        server.walletId = copayer.walletId;
-
-        // allow overwrite walletid if the copayer is from the support team
-        if (copayer.isSupportStaff) {
-          server.walletId = opts.walletId || copayer.walletId;
-          server.copayerIsSupportStaff = true;
-        }
-        if (copayer.isMarketingStaff) {
-          server.copayerIsMarketingStaff = true;
-        }
-
-        server.copayerId = opts.copayerId;
-        return cb(null, server);
-      });
-    };
-
-    const withSession = cb => {
-      if (!checkRequired(opts, ['copayerId', 'session'], cb)) {
-        return;
-      }
-
-      let server;
-      try {
-        server = WalletService.getInstance(opts);
-      } catch (ex) {
-        return cb(ex);
-      }
-
-      server.storage.getSession(opts.copayerId, (err, s) => {
-        if (err) {
-          return cb(err);
-        }
-
-        const isValid = s && s.id === opts.session && s.isValid();
-        if (!isValid) {
-          return cb(Errors.NOT_AUTHORIZED.withMessage('Session expired'));
-        }
-
-        server.storage.fetchCopayerLookup(opts.copayerId, (err, copayer) => {
-          if (err) {
-            return cb(err);
-          }
-          if (!copayer) {
-            return cb(Errors.NOT_AUTHORIZED.withMessage('Copayer not found'));
-          }
-
-          server.copayerId = opts.copayerId;
-          server.walletId = copayer.walletId;
-          return cb(null, server);
-        });
-      });
-    };
-
-    const authFn = opts.session ? withSession : withSignature;
-    return authFn(cb);
+    return authMethods.getInstanceWithAuth(WalletService, opts, cb);
   }
 
   static getStorage() {
@@ -474,118 +385,31 @@ export class WalletService implements IWalletService {
   }
 
   _runLocked(cb, task, waitTime?: number) {
-    $.checkState(this.walletId, 'Failed state: this.walletId undefined at <_runLocked()>');
-    this.lock.runLocked(this.walletId, { waitTime }, cb, task);
+    return loggingMethods.runLocked(this, cb, task, waitTime);
   }
 
   _cleanLogArgs(args) {
-    if (!args || args.length === 0) {
-      return [];
-    }
-    if (!Array.isArray(args)) {
-      args = [args];
-    }
-    for (let i = 0; i < args.length; i++) {
-      args[i] = args[i]?.response ? JSON.parse(JSON.stringify(args[i])) : args[i];
-    }
-    return args;
+    return loggingMethods.cleanLogArgs(args);
   }
 
   logi(message: string, ...args: any[]): BwsLogger {
-    args = this._cleanLogArgs(args);
-
-    if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
-      for (let i = 0; i < args.length; i++) {
-        message += ' %o';
-      }
-    }
-
-    if (!this || !this.walletId) {
-      return logger.warn(message, ...args);
-    }
-
-    message = '<' + this.walletId + '>' + message;
-    return logger.info(message, ...args);
+    return loggingMethods.logInfo(this, message, ...args);
   }
 
   logw(message: string, ...args: any[]): BwsLogger {
-    args = this._cleanLogArgs(args);
-
-    if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
-      for (let i = 0; i < args.length; i++) {
-        message += ' %o';
-        args[i] = args[i]?.stack || args[i]?.message || args[i];
-      }
-    }
-
-    if (!this || !this.walletId) {
-      return logger.warn(message, ...args);
-    }
-
-    message = '<' + this.walletId + '>' + message;
-    return logger.warn(message, ...args);
+    return loggingMethods.logWarn(this, message, ...args);
   }
 
   logd(message: string, ...args: any[]): BwsLogger {
-    args = this._cleanLogArgs(args);
-
-    if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
-      for (let i = 0; i < args.length; i++) {
-        message += ' %o';
-      }
-    }
-
-    if (!this || !this.walletId) {
-      return logger.verbose(message, ...args);
-    }
-
-    message = '<' + this.walletId + '>' + message;
-    return logger.verbose(message, ...args);
+    return loggingMethods.logDebug(this, message, ...args);
   }
 
   login(opts, cb) {
-    let session;
-    async.series(
-      [
-        next => {
-          this.storage.getSession(this.copayerId, (err, s) => {
-            if (err) {
-              return next(err);
-            }
-            session = s;
-            next();
-          });
-        },
-        next => {
-          if (!session || !session.isValid()) {
-            session = Session.create({
-              copayerId: this.copayerId,
-              walletId: this.walletId
-            });
-          } else {
-            session.touch();
-          }
-          next();
-        },
-        next => {
-          this.storage.storeSession(session, next);
-        }
-      ],
-      err => {
-        if (err) {
-          return cb(err);
-        }
-        if (!session) {
-          return cb(new Error('Could not get current session for this copayer'));
-        }
-
-        return cb(null, session.id);
-      }
-    );
+    return authMethods.login(this, opts, cb);
   }
 
   logout(_opts, _cb) {
-    // this.storage.removeSession(this.copayerId, cb);
+    return authMethods.logout(this, _opts, _cb);
   }
 
   /**
@@ -988,53 +812,11 @@ export class WalletService implements IWalletService {
    * @param {Boolean} opts.isGlobal - If true, the notification is not issued on behalf of any particular copayer (defaults to false)
    */
   _notify(type, data, opts, cb?: (err?: any, data?: any) => void) {
-    if (typeof opts === 'function') {
-      cb = opts;
-      opts = {};
-    }
-    opts = opts || {};
-
-    // this.logi('Notification', type);
-
-    cb = cb || function() { };
-
-    const walletId = this.walletId || data.walletId;
-    const copayerId = this.copayerId || data.copayerId;
-
-    $.checkState(walletId, 'Failed state: walletId undefined at <_notify()>');
-
-    const notification = Notification.create({
-      type,
-      data,
-      ticker: this.notifyTicker++,
-      creatorId: opts.isGlobal ? null : copayerId,
-      walletId
-    });
-
-    this.storage.storeNotification(walletId, notification, () => {
-      this.messageBroker.send(notification);
-      return cb();
-    });
+    return notificationMethods.notify(this, type, data, opts, cb);
   }
 
   _notifyTxProposalAction(type, txp, extraArgs, cb?: (err?: any, data?: any) => void) {
-    if (typeof extraArgs === 'function') {
-      cb = extraArgs;
-      extraArgs = {};
-    }
-
-    const data = Object.assign(
-      {
-        txProposalId: txp.id,
-        creatorId: txp.creatorId,
-        amount: txp.getTotalAmount(),
-        message: txp.message,
-        tokenAddress: txp.tokenAddress,
-        multisigContractAddress: txp.multisigContractAddress
-      },
-      extraArgs
-    );
-    this._notify(type, data, {}, cb);
+    return notificationMethods.notifyTxProposalAction(this, type, txp, extraArgs, cb);
   }
 
   _addCopayerToWallet(wallet: Wallet, opts, cb) {
@@ -1156,33 +938,19 @@ export class WalletService implements IWalletService {
   }
 
   _setClientVersion(version) {
-    delete this.parsedClientVersion;
-    this.clientVersion = version;
+    return authMethods.setClientVersion(this, version);
   }
 
   _setAppVersion(userAgent) {
-    const parsed = Utils.parseAppVersion(userAgent);
-    if (!parsed) {
-      this.appName = this.appVersion = null;
-    } else {
-      this.appName = parsed.app;
-      this.appVersion = parsed;
-    }
+    return authMethods.setAppVersion(this, userAgent);
   }
 
   _parseClientVersion() {
-    if (this.parsedClientVersion == null) {
-      this.parsedClientVersion = Utils.parseVersion(this.clientVersion);
-    }
-    return this.parsedClientVersion;
+    return authMethods.parseClientVersion(this);
   }
 
   _clientSupportsPayProRefund() {
-    const version = this._parseClientVersion();
-    if (!version) return false;
-    if (version.agent != 'bwc') return true;
-    if (version.major < 1 || (version.major == 1 && version.minor < 2)) return false;
-    return true;
+    return authMethods.clientSupportsPayProRefund(this);
   }
 
   static _getCopayerHash(name, xPubKey, requestPubKey) {
@@ -3135,28 +2903,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.body - The contents of the note.
    */
   editTxNote(opts, cb) {
-    if (!checkRequired(opts, 'txid', cb)) return;
-
-    this._runLocked(cb, cb => {
-      this.storage.fetchTxNote(this.walletId, opts.txid, (err, note) => {
-        if (err) return cb(err);
-
-        if (!note) {
-          note = TxNote.create({
-            walletId: this.walletId,
-            txid: opts.txid,
-            copayerId: this.copayerId,
-            body: opts.body
-          });
-        } else {
-          note.edit(opts.body, this.copayerId);
-        }
-        this.storage.storeTxNote(note, err => {
-          if (err) return cb(err);
-          this.storage.fetchTxNote(this.walletId, opts.txid, cb);
-        });
-      });
-    });
+    return notesMethods.editTxNote(this, opts, cb);
   }
 
   /**
@@ -3165,8 +2912,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.txid - The txid associated with the note.
    */
   getTxNote(opts, cb) {
-    if (!checkRequired(opts, 'txid', cb)) return;
-    this.storage.fetchTxNote(this.walletId, opts.txid, cb);
+    return notesMethods.getTxNote(this, opts, cb);
   }
 
   /**
@@ -3175,8 +2921,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.minTs[=0] - The start date used to filter notes.
    */
   getTxNotes(opts, cb) {
-    opts = opts || {};
-    this.storage.fetchTxNotes(this.walletId, opts, cb);
+    return notesMethods.getTxNotes(this, opts, cb);
   }
 
   /**
@@ -3712,28 +3457,7 @@ export class WalletService implements IWalletService {
    * @returns {Notification[]} Notifications
    */
   getNotifications(opts, cb) {
-    opts = opts || {};
-
-    this.getWallet({}, (err, wallet) => {
-      if (err) return cb(err);
-
-      async.map(
-        [`${wallet.chain}:${wallet.network}`, this.walletId],
-        (walletId, next) => {
-          this.storage.fetchNotifications(walletId, opts.notificationId, opts.minTs || 0, next);
-        },
-        (err, res) => {
-          if (err) return cb(err);
-
-          const notifications = res
-            .flat()
-            .map((n: INotification) => ({ ...n, walletId: this.walletId }))
-            .sort((a, b) => a.id - b.id);
-
-          return cb(null, notifications);
-        }
-      );
-    });
+    return notificationMethods.getNotifications(this, opts, cb);
   }
 
   _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight, cb) {
@@ -4220,57 +3944,7 @@ export class WalletService implements IWalletService {
    * @param cb
    */
   createAdvert(opts, cb) {
-    opts = opts ? _.clone(opts) : {};
-
-    // Usually do error checking on preconditions
-    if (!checkRequired(opts, ['title'], cb)) {
-      return;
-    }
-    // Check if ad exists already
-
-    const checkIfAdvertExistsAlready = (adId, cb) => {
-      this.storage.fetchAdvert(opts.adId, (err, result) => {
-        if (err) return cb(err);
-
-        if (result) {
-          return cb(Errors.AD_ALREADY_EXISTS);
-        }
-
-        if (!result) {
-          const x = new Advertisement();
-
-          x.advertisementId = opts.advertisementId || Uuid.v4();
-          x.name = opts.name;
-          x.title = opts.title;
-          x.country = opts.country;
-          x.type = opts.type;
-          x.body = opts.body;
-          x.imgUrl = opts.imgUrl;
-          x.linkText = opts.linkText;
-          x.linkUrl = opts.linkUrl;
-          x.isAdActive = opts.isAdActive;
-          x.dismissible = opts.dismissible;
-          x.signature = opts.signature;
-          x.app = opts.app;
-          x.isTesting = opts.isTesting;
-
-          return cb(null, x);
-        }
-      });
-    };
-
-    this._runLocked(
-      cb,
-      cb => {
-        checkIfAdvertExistsAlready(opts.adId, (err, advert) => {
-          if (err) throw err;
-          if (advert) {
-            this.storage.storeAdvert(advert, cb);
-          }
-        });
-      },
-      10 * 1000
-    );
+    return advertisementMethods.createAdvert(this, opts, cb);
   }
 
   /**
@@ -4280,10 +3954,7 @@ export class WalletService implements IWalletService {
    * @param cb
    */
   getAdvert(opts, cb) {
-    this.storage.fetchAdvert(opts.adId, (err, advert) => {
-      if (err) return cb(err);
-      return cb(null, advert);
-    });
+    return advertisementMethods.getAdvert(this, opts, cb);
   }
 
   /**
@@ -4292,10 +3963,7 @@ export class WalletService implements IWalletService {
    * @param cb
    */
   getAdverts(opts, cb) {
-    this.storage.fetchActiveAdverts((err, adverts) => {
-      if (err) return cb(err);
-      return cb(null, adverts);
-    });
+    return advertisementMethods.getAdverts(this, opts, cb);
   }
 
   /**
@@ -4304,10 +3972,7 @@ export class WalletService implements IWalletService {
    * @param cb
    */
   getAdvertsByCountry(opts, cb) {
-    this.storage.fetchAdvertsByCountry(opts.country, (err, adverts) => {
-      if (err) return cb(err);
-      return cb(null, adverts);
-    });
+    return advertisementMethods.getAdvertsByCountry(this, opts, cb);
   }
 
   /**
@@ -4316,10 +3981,7 @@ export class WalletService implements IWalletService {
    * @param cb
    */
   getTestingAdverts(opts, cb) {
-    this.storage.fetchTestingAdverts((err, adverts) => {
-      if (err) return cb(err);
-      return cb(null, adverts);
-    });
+    return advertisementMethods.getTestingAdverts(this, opts, cb);
   }
 
   /**
@@ -4328,71 +3990,19 @@ export class WalletService implements IWalletService {
    * @param cb
    */
   getAllAdverts(opts, cb) {
-    this._runLocked(cb, cb => {
-      this.getAllAdverts(opts, cb);
-    });
+    return advertisementMethods.getAllAdverts(this, opts, cb);
   }
 
   removeAdvert(opts, cb) {
-    opts = opts ? _.clone(opts) : {};
-
-    // Usually do error checking on preconditions
-    if (!checkRequired(opts, ['adId'], cb)) {
-      throw new Error('adId is missing');
-    }
-    // Check if ad exists already
-
-    const checkIfAdvertExistsAlready = (adId, cb) => {
-      this.storage.fetchAdvert(opts.adId, (err, result) => {
-        if (err) return cb(err);
-
-        if (!result) {
-          throw new Error('Advertisement does not exist: ' + opts.adId);
-        }
-
-        if (result) {
-          this.logw('Advert already exists:', opts.adId);
-          return cb(null, adId);
-        }
-      });
-    };
-
-    this._runLocked(
-      cb,
-      cb => {
-        checkIfAdvertExistsAlready(opts.adId, (err, adId) => {
-          if (err) throw err;
-          this.storage.removeAdvert(adId, cb); // TODO: add to errordefinitions Errors.ADVERTISEMENT already exists
-        });
-      },
-      10 * 1000
-    );
+    return advertisementMethods.removeAdvert(this, opts, cb);
   }
 
   activateAdvert(opts, cb) {
-    opts = opts ? _.clone(opts) : {};
-    // Usually do error checking on preconditions
-    if (!checkRequired(opts, ['adId'], cb)) {
-      throw new Error('adId is missing');
-    }
-
-    this.storage.activateAdvert(opts.adId, (err, result) => {
-      if (err) return cb(err);
-      return cb(null, result);
-    });
+    return advertisementMethods.activateAdvert(this, opts, cb);
   }
 
   deactivateAdvert(opts, cb) {
-    opts = opts ? _.clone(opts) : {};
-    // Usually do error checking on preconditions
-    if (!checkRequired(opts, ['adId'], cb)) {
-      throw new Error('adId is missing');
-    }
-
-    this.storage.deactivateAdvert(opts.adId, (err, result) => {
-      if (err) return cb(err);
-      return cb(null, result);
-    });
+    return advertisementMethods.deactivateAdvert(this, opts, cb);
   }
 
   tagLowFeeTxs(wallet: IWallet, txs: any[], cb) {
@@ -4965,12 +4575,7 @@ export class WalletService implements IWalletService {
    * @returns {Object} rates - The exchange rate.
    */
   getFiatRate(opts, cb) {
-    if (!checkRequired(opts, ['code'], cb)) return;
-
-    this.fiatRateService.getRate(opts, (err, rate) => {
-      if (err) return cb(err);
-      return cb(null, rate);
-    });
+    return serviceMethods.getFiatRate(this, opts, cb);
   }
 
   /**
@@ -4982,12 +4587,7 @@ export class WalletService implements IWalletService {
    * @returns {Array} rates - The exchange rate.
    */
   getFiatRates(opts, cb) {
-    if (isNaN(opts.ts) || Array.isArray(opts.ts)) return cb(new ClientError('Invalid timestamp'));
-
-    this.fiatRateService.getRates(opts, (err, rates) => {
-      if (err) return cb(err);
-      return cb(null, rates);
-    });
+    return serviceMethods.getFiatRates(this, opts, cb);
   }
 
   /**
@@ -5000,13 +4600,7 @@ export class WalletService implements IWalletService {
    * @returns {Array} rates - The exchange rate.
    */
   getFiatRatesByCoin(opts, cb) {
-    if (!checkRequired(opts, ['coin'], cb)) return;
-    if (isNaN(opts.ts) || Array.isArray(opts.ts)) return cb(new ClientError('Invalid timestamp'));
-
-    this.fiatRateService.getRatesByCoin(opts, (err, rate) => {
-      if (err) return cb(err);
-      return cb(null, rate);
-    });
+    return serviceMethods.getFiatRatesByCoin(this, opts, cb);
   }
 
   /**
@@ -5018,12 +4612,7 @@ export class WalletService implements IWalletService {
    * @returns {Object} rates - The exchange rate.
    */
   getHistoricalRates(opts, cb) {
-    if (!checkRequired(opts, ['code'], cb)) return;
-
-    this.fiatRateService.getHistoricalRates(opts, (err, rates) => {
-      if (err) return cb(err);
-      return cb(null, rates);
-    });
+    return serviceMethods.getHistoricalRates(this, opts, cb);
   }
 
   /**
@@ -5035,16 +4624,7 @@ export class WalletService implements IWalletService {
    * @param {string} [opts.walletId] - The walletId associated with this token.
    */
   pushNotificationsSubscribe(opts, cb) {
-    if (!checkRequired(opts, ['token'], cb)) return;
-    const sub = PushNotificationSub.create({
-      copayerId: this.copayerId,
-      token: opts.token,
-      packageName: opts.packageName,
-      platform: opts.platform,
-      walletId: opts.walletId
-    });
-
-    this.storage.storePushNotificationSub(sub, cb);
+    return notificationMethods.pushNotificationsSubscribe(this, opts, cb);
   }
 
   /**
@@ -5056,17 +4636,7 @@ export class WalletService implements IWalletService {
    * @param {string} [opts.walletId] - The walletId associated with this token.
    */
   pushNotificationsBrazeSubscribe(opts, cb) {
-    if (!checkRequired(opts, ['externalUserId'], cb)) return;
-
-    const sub = PushNotificationSub.create({
-      copayerId: this.copayerId,
-      externalUserId: opts.externalUserId,
-      packageName: opts.packageName,
-      platform: opts.platform,
-      walletId: opts.walletId
-    });
-
-    this.storage.storePushNotificationBrazeSub(sub, cb);
+    return notificationMethods.pushNotificationsBrazeSubscribe(this, opts, cb);
   }
 
   /**
@@ -5075,9 +4645,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.token - The token representing the app/device.
    */
   pushNotificationsUnsubscribe(opts, cb) {
-    if (!checkRequired(opts, ['token'], cb)) return;
-
-    this.storage.removePushNotificationSub(this.copayerId, opts.token, cb);
+    return notificationMethods.pushNotificationsUnsubscribe(this, opts, cb);
   }
 
   /**
@@ -5086,9 +4654,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.externalUserId - The token representing the app/device. // Braze
    */
   pushNotificationsBrazeUnsubscribe(opts, cb) {
-    if (!checkRequired(opts, ['externalUserId'], cb)) return;
-
-    this.storage.removePushNotificationBrazeSub(this.copayerId, opts.externalUserId, cb);
+    return notificationMethods.pushNotificationsBrazeUnsubscribe(this, opts, cb);
   }
 
   /**
@@ -5097,20 +4663,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.txid - The txid of the tx to be notified of.
    */
   txConfirmationSubscribe(opts, cb) {
-    if (!checkRequired(opts, ['txid'], cb)) return;
-
-    const txids = Array.isArray(opts.txid) ? opts.txid : [opts.txid];
-    for (const txid of txids) {
-      const sub = TxConfirmationSub.create({
-        copayerId: this.copayerId,
-        walletId: this.walletId,
-        txid,
-        amount: opts.amount,
-        isCreator: true
-      });
-
-      this.storage.storeTxConfirmationSub(sub, cb);
-    }
+    return notificationMethods.txConfirmationSubscribe(this, opts, cb);
   }
 
   /**
@@ -5119,9 +4672,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.txid - The txid of the tx to be notified of.
    */
   txConfirmationUnsubscribe(opts, cb) {
-    if (!checkRequired(opts, ['txid'], cb)) return;
-
-    this.storage.removeTxConfirmationSub(this.copayerId, opts.txid, cb);
+    return notificationMethods.txConfirmationUnsubscribe(this, opts, cb);
   }
 
   /**
@@ -5135,81 +4686,15 @@ export class WalletService implements IWalletService {
    * @param {Object} opts.platform - (Optional) Operating system and version of the user's device.
    */
   getServicesData(opts, cb) {
-    const externalServicesConfig: ExternalServicesConfig = _.cloneDeep(config.services);
-
-    const isLoggedIn = !!opts?.bitpayIdLocationCountry;
-
-    // Swap crypto rules
-    const swapUsaBannedStates = ['HI', 'LA', 'NY'];
-
-    if (
-      // Logged in with bitpayId
-      (['US', 'USA'].includes(opts?.bitpayIdLocationCountry?.toUpperCase()) && swapUsaBannedStates.includes(opts?.bitpayIdLocationState?.toUpperCase())) ||
-      // Logged out (IP restriction)
-      (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && swapUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
-    ) {
-      externalServicesConfig.swapCrypto = { ...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledMessage: 'Swaps are currently unavailable in your area.' } };
-    }
-
-    if (opts?.platform?.os === 'ios' && opts?.currentAppVersion === '14.11.5') {
-      externalServicesConfig.swapCrypto = { ...externalServicesConfig.swapCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'Swaps are currently unavailable in your area.' } };
-    }
-
-    // Buy crypto rules
-    const buyCryptoUsaBannedStates = ['NY'];
-    if (
-      // Logged in with bitpayId
-      (['US', 'USA'].includes(opts?.bitpayIdLocationCountry?.toUpperCase()) && buyCryptoUsaBannedStates.includes(opts?.bitpayIdLocationState?.toUpperCase())) ||
-      // Logged out (IP restriction)
-      (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && buyCryptoUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
-    ) {
-      externalServicesConfig.buyCrypto = { ...externalServicesConfig.buyCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'This service is currently unavailable in your area.' } };
-    }
-
-    // Sell crypto rules
-    const sellCryptoUsaBannedStates = ['NY'];
-    if (
-      // Logged in with bitpayId
-      (['US', 'USA'].includes(opts?.bitpayIdLocationCountry?.toUpperCase()) && sellCryptoUsaBannedStates.includes(opts?.bitpayIdLocationState?.toUpperCase())) ||
-      // Logged out (IP restriction)
-      (!isLoggedIn && ['US', 'USA'].includes(opts?.currentLocationCountry?.toUpperCase()) && sellCryptoUsaBannedStates.includes(opts?.currentLocationState?.toUpperCase()))
-    ) {
-      externalServicesConfig.sellCrypto = { ...externalServicesConfig.sellCrypto, ...{ disabled: true, disabledTitle: 'Unavailable', disabledMessage: 'This service is currently unavailable in your area.' } };
-    }
-
-    return cb(null, externalServicesConfig);
+    return serviceMethods.getServicesData(this, opts, cb);
   }
 
   checkServiceAvailability(req): boolean {
-    if (!checkRequired(req.body, ['service', 'opts'])) {
-      throw new ClientError('checkServiceAvailability request missing arguments');
-    }
-
-    let serviceEnabled: boolean;
-
-    switch (req.body.service) {
-      case '1inch':
-        if (req.body.opts?.country?.toUpperCase() === 'US') {
-          serviceEnabled = false;
-        } else {
-          serviceEnabled = true;
-        }
-        break;
-
-      default:
-        serviceEnabled = true;
-        break;
-    }
-
-    return serviceEnabled;
+    return serviceMethods.checkServiceAvailability(this, req);
   }
 
   getSpenderApprovalWhitelist(cb) {
-    if (Services.ERC20_SPENDER_APPROVAL_WHITELIST) {
-      return cb(null, Services.ERC20_SPENDER_APPROVAL_WHITELIST);
-    } else {
-      return cb(new Error('Could not get ERC20 spender approval whitelist'));
-    }
+    return serviceMethods.getSpenderApprovalWhitelist(this, cb);
   }
 
   /**
@@ -5219,337 +4704,52 @@ export class WalletService implements IWalletService {
    * @returns {Boolean}
    */
   clearWalletCache(opts): Promise<boolean> {
-    return new Promise(resolve => {
-      const cacheKey = this.walletId + (opts.tokenAddress ? '-' + opts.tokenAddress : '');
-      this.storage.clearWalletCache(cacheKey, () => {
-        resolve(true);
-      });
-    });
+    return serviceMethods.clearWalletCache(this, opts);
   }
 
   static upgradeNeeded(
     paths: Upgrade | Upgrade[],
     opts: UpgradeCheckOpts & { clientVersion: string; userAgent: string }
   ) {
-    paths = Array.isArray(paths) ? paths : [paths];
-    const chain = opts.chain?.toLowerCase();
-    const v = Utils.parseVersion(opts.clientVersion);
-
-    let result: boolean | string = false;
-    for (const path of paths) {
-      switch (path) {
-        case UPGRADES.SOL_bwc_$lt_10_10_12:
-          result = (
-            chain === 'sol' &&
-            v?.agent === 'bwc' &&
-            (
-              v?.major < 10 ||
-              (v?.major == 10 && v?.minor < 10) ||
-              (v?.major == 10 && v?.minor == 10 && v?.patch < 12)
-            )
-          );
-          break;
-        case UPGRADES.BCH_bwc_$lt_8_3_multisig:
-          result = (
-            opts.n > 1 &&
-            chain === 'bch' &&
-            v?.agent === 'bwc' &&
-            (
-              v?.major < 8 ||
-              (v.major == 8 && v?.minor < 3)
-            )
-          )
-            ? 'BWC clients < 8.3 are no longer supported for multisig BCH wallets.'
-            : false;
-          break;
-        case UPGRADES.bwc_$lt_8_4_multisig_purpose48:
-          result = (
-            opts.n > 1 &&
-            opts.usePurpose48 &&
-            v?.agent === 'bwc' &&
-            (v?.major < 8 || (v.major == 8 && v?.minor < 4))
-          );
-          break;
-        case UPGRADES.bwc_$lt_8_17_multisig_p2wsh:
-          result = (
-            opts.n > 1 &&
-            opts.addressType?.toLowerCase() === 'p2wsh' &&
-            v?.agent === 'bwc' &&
-            (v?.major < 8 || (v.major == 8 && v?.minor < 17))
-          );
-          break;
-        case UPGRADES.version_$gt_maxTxpVersion:
-          result = parseInt(opts.version as string) > parseInt(opts.maxTxpVersion as string);
-          break;
-        case UPGRADES.BCH_schnorr:
-          result = (opts.signingMethod === 'schnorr' && !opts.supportBchSchnorr);
-          break;
-        case UPGRADES.bwc_$lt_1_2:
-          result = (
-            v?.agent === 'bwc' &&
-            (v?.major == 0 || (v?.major == 1 && v?.minor < 2))
-          )
-            ? 'BWC clients < 1.2 are no longer supported.'
-            : false;
-          break;
-        default:
-          throw new Error('Unknown upgrade path');
-      }
-      if (result) {
-        logger.warn(`Upgrade needed: ${path} | ${opts.clientVersion} | ${opts.userAgent}`);
-        break; // Stop checking other upgrade paths
-      }
-    }
-    // No upgrade needed
-    return result;
+    return upgradeMethods.upgradeNeeded(paths, opts);
   }
 
   _upgradeNeeded(
     paths: Upgrade | Upgrade[],
     opts?: UpgradeCheckOpts
   ) {
-    opts = opts || {};
-    const _opts = {
-      ...opts,
-      clientVersion: this.clientVersion,
-      userAgent: this.userAgent
-    };
-    return WalletService.upgradeNeeded(paths, _opts);
+    return upgradeMethods.getUpgradeNeeded(this, paths, opts);
   }
 
   // Moralis services
   moralisGetWalletTokenBalances(req): Promise<any> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const response = await Moralis.EvmApi.token.getWalletTokenBalances({
-          address: req.body.address,
-          chain: req.body.chain,
-          toBlock: req.body.toBlock,
-          tokenAddresses: req.body.tokenAddresses,
-          excludeSpam: req.body.excludeSpam,
-        });
-
-        return resolve(response.raw ?? response);
-      } catch (err) {
-        reject(err);
-      }
-    });
+    return moralisMethods.getWalletTokenBalances(this, req);
   }
 
   moralisGetTokenAllowance(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      if (!config.moralis) return reject(new Error('Moralis missing credentials'));
-      if (!checkRequired(req.body, ['address']) && !checkRequired(req.body, ['ownerAddress'])) {
-        return reject(new ClientError('moralisGetTokenAllowance request missing arguments'));
-      }
-      
-      const walletAddress = req.body.ownerAddress ?? req.body.address;
-      const headers = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'X-Api-Key': config.moralis.apiKey,
-      };
-
-      const qs = [];
-      if (req.body.chain) {
-        const chain = req.body.chain;
-        const formattedChain = typeof chain === 'number' && Number.isInteger(chain)
-          ? `0x${chain.toString(16)}`
-          : chain;
-
-        qs.push(`chain=${formattedChain}`);
-      }
-      if (req.body.cursor) qs.push('cursor=' + req.body.cursor);
-      if (req.body.limit) qs.push('limit=' + req.body.limit);
-
-      const URL: string = `https://deep-index.moralis.io/api/v2.2/wallets/${walletAddress}/approvals${qs.length > 0 ? '?' + qs.join('&') : ''}`;
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ?? err);
-          } else {
-            const { spenderAddress, ownerAddress, address } = req.body;
-
-            if (spenderAddress && ownerAddress) {
-              // Workaround to keep older versions running
-              const spendersList = data?.body?.result;
-
-              if (Array.isArray(spendersList)) {
-                const spenderData = spendersList.find(s => 
-                  s.spender?.address?.toLowerCase() === spenderAddress.toLowerCase() &&
-                  s.token?.address?.toLowerCase() === address.toLowerCase()
-                );
-
-                data.body = {
-                  allowance: spenderData?.value ?? '0'
-                };
-              }
-            }
-
-            return resolve(data.body ?? data);
-          }
-        }
-      );
-    });
+    return moralisMethods.getTokenAllowance(this, req);
   }
 
   moralisGetNativeBalance(req): Promise<any> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const response = await Moralis.EvmApi.balance.getNativeBalance({
-          address: req.body.address,
-          chain: req.body.chain,
-          toBlock: req.body.toBlock,
-        });
-
-        return resolve(response.raw ?? response);
-      } catch (err) {
-        reject(err);
-      }
-    });
+    return moralisMethods.getNativeBalance(this, req);
   }
 
   moralisGetTokenPrice(req): Promise<any> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const response = await Moralis.EvmApi.token.getTokenPrice({
-          address: req.body.address,
-          chain: req.body.chain,
-          include: req.body.include,
-          exchange: req.body.exchange,
-          toBlock: req.body.toBlock,
-        });
-
-        return resolve(response.raw ?? response);
-      } catch (err) {
-        reject(err);
-      }
-    });
+    return moralisMethods.getTokenPrice(this, req);
   }
 
   moralisGetMultipleERC20TokenPrices(req): Promise<any> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const response = await Moralis.EvmApi.token.getMultipleTokenPrices({
-          chain: req.body.chain,
-          include: req.body.include,
-        }, {
-          tokens: req.body.tokens,
-        });
-
-        return resolve(response.raw ?? response);
-      } catch (err) {
-        reject(err);
-      }
-    });
+    return moralisMethods.getMultipleERC20TokenPrices(this, req);
   }
 
   moralisGetERC20TokenBalancesWithPricesByWallet(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      if (!config.moralis) return reject(new Error('Moralis missing credentials'));
-      if (!checkRequired(req.body, ['address'])) {
-        return reject(new ClientError('moralisGetERC20TokenBalancesWithPricesByWallet request missing arguments'));
-      }
-
-      const headers = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'X-Api-Key': config.moralis.apiKey,
-      };
-
-      const qs = [];
-      if (req.body.chain) qs.push('chain=' + req.body.chain);
-      if (req.body.toBlock) qs.push('to_block=' + req.body.toBlock);
-      if (req.body.tokenAddresses) qs.push('token_addresses=' + req.body.tokenAddresses);
-      if (req.body.excludeSpam) qs.push('exclude_spam=' + req.body.excludeSpam);
-      if (req.body.cursor) qs.push('cursor=' + req.body.cursor);
-      if (req.body.limit) qs.push('limit=' + req.body.limit);
-      if (req.body.excludeNative) qs.push('exclude_native=' + req.body.excludeNative);
-
-      const URL: string = `https://deep-index.moralis.io/api/v2.2/wallets/${req.body.address}/tokens${qs.length > 0 ? '?' + qs.join('&') : ''}`;
-
-      this.request.get(
-        URL,
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ?? err);
-          } else {
-            return resolve(data.body ?? data);
-          }
-        }
-      );
-    });
+    return moralisMethods.getERC20TokenBalancesWithPricesByWallet(this, req);
   }
 
   moralisGetSolWalletPortfolio(req): Promise<any> {
-    return new Promise(async (resolve, reject) => {
-      let network;
-      const chain = req.body.network ?? req.body.chain ?? undefined;
-
-      const formattedChain = typeof chain === 'number' && Number.isInteger(chain)
-        ? `0x${chain.toString(16)}`
-        : chain;
-
-      switch (formattedChain) {
-        case '0x65':
-        case 'devnet':
-          network = 'devnet';
-          break;
-        case '0x66':
-        case 'testnet':
-          network = 'testnet';
-          break;
-        default:
-          network = 'mainnet';
-          break;
-      }
-
-      try {
-        // https://solana-gateway.moralis.io/account/:network/:address/portfolio
-        const response = await Moralis.SolApi.account.getPortfolio({
-          address: req.body.address,
-          network,
-        });
-
-        return resolve(response.raw ?? response);
-      } catch (err) {
-        reject(err);
-      }
-    });
+    return moralisMethods.getSolWalletPortfolio(this, req);
   }
 }
 
-export function checkRequired(obj, args, cb?: (e: any) => void) {
-  const missing = Utils.getMissingFields(obj, args);
-  if (!missing.length) {
-    return true;
-  }
-
-  if (typeof cb === 'function') {
-    return cb(new ClientError('Required argument: ' + missing[0] + ' missing.'));
-  }
-
-  return false;
-}
-
-export const UPGRADES = {
-  SOL_bwc_$lt_10_10_12: 'SOL:bwc<10.10.12',
-  BCH_bwc_$lt_8_3_multisig: 'BCH:bwc<8.3:multisig',
-  bwc_$lt_8_4_multisig_purpose48: 'bwc<8.4:multisig:purpose48',
-  bwc_$lt_8_17_multisig_p2wsh: 'bwc<8.17:multisig:p2wsh',
-  version_$gt_maxTxpVersion: 'version>maxTxpVersion',
-  BCH_schnorr: 'BCH:schnorr',
-  bwc_$lt_1_2: 'bwc<1.2',
-} as const;
-
-type Upgrade = typeof UPGRADES[keyof typeof UPGRADES];
+export { UPGRADES, checkRequired };
+export type { Upgrade };
