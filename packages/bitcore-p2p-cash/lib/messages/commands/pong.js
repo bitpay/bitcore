@@ -6,7 +6,6 @@ const Message = require('../message');
 const utils = require('../utils');
 
 const $ = bitcore.util.preconditions;
-const _ = bitcore.deps._;
 const BufferUtil = bitcore.util.buffer;
 const BufferReader = bitcore.encoding.BufferReader;
 
@@ -21,7 +20,7 @@ function PongMessage(arg, options) {
   Message.call(this, options);
   this.command = 'pong';
   $.checkArgument(
-    _.isUndefined(arg) || (BufferUtil.isBuffer(arg) && arg.length === 8),
+    arg == undefined || (BufferUtil.isBuffer(arg) && arg.length === 8),
     'First argument is expected to be an 8 byte buffer'
   );
   this.nonce = arg || utils.getNonce();
