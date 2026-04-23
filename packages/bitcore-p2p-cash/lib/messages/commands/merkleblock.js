@@ -1,8 +1,8 @@
 'use strict';
 
-const Message = require('../message');
 const inherits = require('util').inherits;
 const bitcore = require('@bitpay-labs/bitcore-lib-cash');
+const Message = require('../message');
 
 const BufferUtil = bitcore.util.buffer;
 const $ = bitcore.util.preconditions;
