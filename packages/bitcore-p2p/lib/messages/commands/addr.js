@@ -20,7 +20,11 @@ function AddrMessage(arg, options) {
   this.command = 'addr';
   $.checkArgument(
     arg === undefined ||
-    (Array.isArray(arg) && arg.every(el => el && !(el.services == null || el.ip == null || el.port == null))),
+    (Array.isArray(arg) &&
+      arg[0] &&
+      arg[0].services != null &&
+      arg[0].ip != null &&
+      arg[0].port != null),
     'First argument is expected to be an array of addrs'
   );
   this.addresses = arg;

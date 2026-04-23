@@ -8,14 +8,10 @@ let utils;
 
 module.exports = utils = {
   checkInventory: function(arg) {
-    /**
-     * Valid:
-     * arg is omitted
-     * OR arg is an array and every element has `type` and `hash` - empty array allowed
-     */
     $.checkArgument(
       arg === undefined ||
-      (Array.isArray(arg) && arg.every(el => !(el?.type == null || el?.hash == null))),
+      (Array.isArray(arg) &&
+        (arg.length === 0 || (arg[0].type != null && arg[0].hash != null))),
       'Argument is expected to be an array of inventory objects'
     );
   },
