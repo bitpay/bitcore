@@ -46,10 +46,10 @@ module.exports = utils = {
   },
   writeInventory: function writeInventory(inventory, bw) {
     bw.writeVarintNum(inventory.length);
-    inventory.forEach(function(value) {
+    for (const value of inventory) {
       bw.writeUInt32LE(value.type);
       bw.write(value.hash);
-    });
+    }
   },
   parseIP: function parseIP(parser) {
     let ipv6 = [];
