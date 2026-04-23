@@ -1,9 +1,9 @@
 'use strict';
 
-const Message = require('../message');
 const inherits = require('util').inherits;
 const bitcore = require('@bitpay-labs/bitcore-lib-cash');
 const BloomFilter = require('../../bloomfilter');
+const Message = require('../message');
 
 const BufferUtil = bitcore.util.buffer;
 const $ = bitcore.util.preconditions;
@@ -32,7 +32,7 @@ FilterloadMessage.prototype.setPayload = function(payload) {
 };
 
 FilterloadMessage.prototype.getPayload = function() {
-  if(this.filter) {
+  if (this.filter) {
     return this.filter.toBuffer();
   } else {
     return BufferUtil.EMPTY_BUFFER;
