@@ -63,8 +63,8 @@ describe('Integration with ' + network.name + ' bitcoind', function() {
   it('connects', function(cb) {
     connect(function(peer) {
       peer.version.should.be.above(70000);
-      (typeof peer.subversion).should.be(true);
-      (typeof peer.bestHeight).should.be(true);
+      (typeof peer.subversion === 'string').should.be(true);
+      (typeof peer.bestHeight === 'number').should.be(true);
       cb();
     });
   });
