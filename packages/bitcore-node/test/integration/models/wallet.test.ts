@@ -1,6 +1,5 @@
 import { Wallet, IWalletExt } from '@bitpay-labs/bitcore-client';
 import { expect } from 'chai';
-import config from '../../../src/config';
 import { WalletStorage } from '../../../src/models/wallet';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { AsyncRPC } from '../../../src/rpc';
@@ -8,6 +7,7 @@ import { Api } from '../../../src/services/api';
 import { Event } from '../../../src/services/event';
 import { IUtxoNetworkConfig } from '../../../src/types/Config';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
+import { Config } from '../../../src/services/config';
 
 describe('Wallet Model', function() {
   // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -24,7 +24,7 @@ describe('Wallet Model', function() {
   let rpc: AsyncRPC;
 
   before(async function() {
-    chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+    chainConfig = Config.get().chains[chain][network] as IUtxoNetworkConfig;
     creds = chainConfig.rpc;
     rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
     await intBeforeHelper();

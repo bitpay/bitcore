@@ -1,16 +1,16 @@
 import { expect } from 'chai';
 import { AdapterFactory } from '../../../src/providers/chain-state/external/adapters/factory';
-import config from '../../../src/config';
+import { Config } from '../../../src/services/config';
 
 describe('AdapterFactory', function() {
-  const savedExternalProviders = config.externalProviders;
+  const savedExternalProviders = Config.get().externalProviders;
 
   before(function() {
-    (config as any).externalProviders = { ...savedExternalProviders, alchemy: { apiKey: 'test-key' } };
+    (Config.get() as any).externalProviders = { ...savedExternalProviders, alchemy: { apiKey: 'test-key' } };
   });
 
   after(function() {
-    (config as any).externalProviders = savedExternalProviders;
+    (Config.get() as any).externalProviders = savedExternalProviders;
   });
 
   it('should throw for unknown provider', function() {

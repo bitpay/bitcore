@@ -1,5 +1,4 @@
 import * as http from 'http';
-import config from '../config';
 import { LoggifyClass } from '../decorators/Loggify';
 import logger from '../logger';
 import app from '../routes';
@@ -46,12 +45,33 @@ export class ApiService {
       this.stopped = false;
       this.httpServer = new http.Server(app);
       this.httpServer.timeout = this.timeout;
+
+      process.on('SIGUSR1', async () => {
+        this.reload();
+      });
+
+      process.on('message', async (msg: any) => {
+        if (msg === 'reloadconfig') {
+          await this.reload();
+        }
+      });
+
       this.httpServer.listen(this.port, () => {
         logger.info(`Starting API Service on port ${this.port}`);
         this.socketService.start({ server: this.httpServer });
       });
     }
     return this.httpServer;
+  }
+
+  async reload() {
+    if (this.port !== Config.get().port) {
+      this.port = Config.get().port;
+      if (!this.stopped) {
+        await this.stop();
+        await this.start();
+      }
+    }
   }
 
   async stop() {
@@ -69,5 +89,5 @@ export class ApiService {
 
 // TOOO: choose a place in the config for the API timeout and include it here
 export const Api = new ApiService({
-  port: config.port
+  port: Config.get().port
 });

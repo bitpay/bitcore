@@ -1,7 +1,7 @@
 import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import axios from 'axios';
-import config from '../../../../config';
 import logger from '../../../../logger';
+import { Config } from '../../../../services/config';
 import { EVMTransactionStorage } from '../../evm/models/transaction';
 import { ExternalApiStream } from '../streams/apiStream';
 import {
@@ -28,7 +28,7 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
   private requestTimeout: number;
 
   constructor(providerConfig: IMultiProviderConfig) {
-    const apiKey = config.externalProviders?.alchemy?.apiKey;
+    const apiKey = Config.get().externalProviders?.alchemy?.apiKey;
     if (!apiKey) throw new Error('AlchemyAdapter: apiKey is required in config.externalProviders.alchemy');
     this.apiKey = apiKey;
     this.requestTimeout = providerConfig.requestTimeout ?? 30000;
