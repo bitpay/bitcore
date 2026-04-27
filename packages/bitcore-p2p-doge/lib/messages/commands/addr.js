@@ -21,6 +21,7 @@ function AddrMessage(arg, options) {
   $.checkArgument(
     arg == null ||
       (Array.isArray(arg) &&
+       arg[0] &&
        arg[0].services != null &&
        arg[0].ip != null &&
        arg[0].port != null),

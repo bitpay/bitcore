@@ -81,7 +81,7 @@ module.exports = utils = {
   sanitizeStartStop: function sanitizeStartStop(obj) {
     /* jshint maxcomplexity: 10 */
     /* jshint maxstatements: 20 */
-    $.checkArgument(obj.starts == null || Array.isArray(obj.starts));
+    $.checkArgument(obj?.starts == null || Array.isArray(obj?.starts));
     let starts = obj.starts;
     let stop = obj.stop;
     if (starts) {
