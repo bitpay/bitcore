@@ -1,6 +1,7 @@
 /* eslint-disable no-bitwise */
 'use strict';
 
+const JSUtil = require('../../util/js');
 const BN = require('../crypto/bn');
 const Hash = require('../crypto/hash');
 const Signature = require('../crypto/signature');
@@ -504,6 +505,7 @@ Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS = (1 << 7);
 // be true".
 // (softfork safe, BIP62 rule 6)
 // Note: CLEANSTACK should never be used without P2SH or WITNESS.
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
 Interpreter.SCRIPT_VERIFY_CLEANSTACK = (1 << 8),
 
 // Verify CHECKLOCKTIMEVERIFY
