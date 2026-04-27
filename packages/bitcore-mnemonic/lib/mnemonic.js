@@ -2,8 +2,8 @@
 
 const bitcore = require('@bitpay-labs/bitcore-lib');
 const unorm = require('unorm');
-const pbkdf2 = require('./pbkdf2');
 const errors = require('./errors');
+const pbkdf2 = require('./pbkdf2');
 
 const BN = bitcore.crypto.BN;
 const _ = bitcore.deps._;
@@ -48,7 +48,7 @@ const Mnemonic = function(data, wordlist) {
 
 
   // handle data overloading
-  var ent, phrase, seed;
+  let ent, phrase, seed;
   if (Buffer.isBuffer(data)) {
     seed = data;
     ent = seed.length * 8;
@@ -120,22 +120,22 @@ Mnemonic.isValid = function(mnemonic, wordlist) {
     return false;
   }
 
-  var words = mnemonic.split(' ');
-  var bin = '';
-  for (var i = 0; i < words.length; i++) {
-    var ind = wordlist.indexOf(words[i]);
+  const words = mnemonic.split(' ');
+  let bin = '';
+  for (let i = 0; i < words.length; i++) {
+    const ind = wordlist.indexOf(words[i]);
     if (ind < 0) return false;
     bin = bin + ('00000000000' + ind.toString(2)).slice(-11);
   }
 
-  var cs = bin.length / 33;
-  var hash_bits = bin.slice(-cs);
-  var nonhash_bits = bin.slice(0, bin.length - cs);
-  var buf = Buffer.alloc(nonhash_bits.length / 8);
-  for (i = 0; i < nonhash_bits.length / 8; i++) {
+  const cs = bin.length / 33;
+  const hash_bits = bin.slice(-cs);
+  const nonhash_bits = bin.slice(0, bin.length - cs);
+  const buf = Buffer.alloc(nonhash_bits.length / 8);
+  for (let i = 0; i < nonhash_bits.length / 8; i++) {
     buf.writeUInt8(parseInt(bin.slice(i * 8, (i + 1) * 8), 2), i);
   }
-  var expected_hash_bits = Mnemonic._entropyChecksum(buf);
+  const expected_hash_bits = Mnemonic._entropyChecksum(buf);
   return expected_hash_bits === hash_bits;
 };
 
@@ -147,9 +147,9 @@ Mnemonic.isValid = function(mnemonic, wordlist) {
  * @returns {boolean}
  */
 Mnemonic._belongsToWordlist = function(mnemonic, wordlist) {
-  var words = unorm.nfkd(mnemonic).split(' ');
-  for (var i = 0; i < words.length; i++) {
-    var ind = wordlist.indexOf(words[i]);
+  const words = unorm.nfkd(mnemonic).split(' ');
+  for (let i = 0; i < words.length; i++) {
+    const ind = wordlist.indexOf(words[i]);
     if (ind < 0) return false;
   }
   return true;
@@ -164,9 +164,9 @@ Mnemonic._belongsToWordlist = function(mnemonic, wordlist) {
 Mnemonic._getDictionary = function(mnemonic) {
   if (!mnemonic) return null;
 
-  var dicts = Object.keys(Mnemonic.Words);
-  for (var i = 0; i < dicts.length; i++) {
-    var key = dicts[i];
+  const dicts = Object.keys(Mnemonic.Words);
+  for (let i = 0; i < dicts.length; i++) {
+    const key = dicts[i];
     if (Mnemonic._belongsToWordlist(mnemonic, Mnemonic.Words[key])) {
       return Mnemonic.Words[key];
     }
@@ -274,7 +274,7 @@ Mnemonic.prototype.inspect = function() {
  * @returns {String} Mnemonic string
  */
 Mnemonic._mnemonic = function(ENT, wordlist) {
-  var buf = Random.getRandomBuffer(ENT / 8);
+  const buf = Random.getRandomBuffer(ENT / 8);
   return Mnemonic._entropy2mnemonic(buf, wordlist);
 };
 
@@ -286,8 +286,8 @@ Mnemonic._mnemonic = function(ENT, wordlist) {
  * @returns {String} Mnemonic string
  */
 Mnemonic._entropy2mnemonic = function(entropy, wordlist) {
-  var bin = '';
-  for (var i = 0; i < entropy.length; i++) {
+  let bin = '';
+  for (let i = 0; i < entropy.length; i++) {
     bin = bin + ('00000000' + entropy[i].toString(2)).slice(-8);
   }
 
@@ -295,12 +295,12 @@ Mnemonic._entropy2mnemonic = function(entropy, wordlist) {
   if (bin.length % 11 !== 0) {
     throw new errors.InvalidEntropy(bin);
   }
-  var mnemonic = [];
-  for (i = 0; i < bin.length / 11; i++) {
-    var wi = parseInt(bin.slice(i * 11, (i + 1) * 11), 2);
+  const mnemonic = [];
+  for (let i = 0; i < bin.length / 11; i++) {
+    const wi = parseInt(bin.slice(i * 11, (i + 1) * 11), 2);
     mnemonic.push(wordlist[wi]);
   }
-  var ret;
+  let ret;
   if (wordlist === Mnemonic.Words.JAPANESE) {
     ret = mnemonic.join('\u3000');
   } else {
@@ -317,18 +317,18 @@ Mnemonic._entropy2mnemonic = function(entropy, wordlist) {
  * @private
  */
 Mnemonic._entropyChecksum = function(entropy) {
-  var hash = Hash.sha256(entropy);
-  var bits = entropy.length * 8;
-  var cs = bits / 32;
+  const hash = Hash.sha256(entropy);
+  const bits = entropy.length * 8;
+  const cs = bits / 32;
 
-  var hashbits = new BN(hash.toString('hex'), 16).toString(2);
+  let hashbits = new BN(hash.toString('hex'), 16).toString(2);
 
   // zero pad the hash bits
   while (hashbits.length % 256 !== 0) {
     hashbits = '0' + hashbits;
   }
 
-  var checksum = hashbits.slice(0, cs);
+  const checksum = hashbits.slice(0, cs);
 
   return checksum;
 };
