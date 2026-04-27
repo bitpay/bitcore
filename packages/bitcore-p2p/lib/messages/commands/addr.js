@@ -19,7 +19,7 @@ function AddrMessage(arg, options) {
   Message.call(this, options);
   this.command = 'addr';
   $.checkArgument(
-    arg === undefined ||
+    arg == null ||
     (Array.isArray(arg) &&
       arg[0] &&
       arg[0].services != null &&

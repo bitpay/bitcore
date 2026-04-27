@@ -20,7 +20,7 @@ function PongMessage(arg, options) {
   Message.call(this, options);
   this.command = 'pong';
   $.checkArgument(
-    arg == undefined || (BufferUtil.isBuffer(arg) && arg.length === 8),
+    arg == null || (BufferUtil.isBuffer(arg) && arg.length === 8),
     'First argument is expected to be an 8 byte buffer'
   );
   this.nonce = arg || utils.getNonce();

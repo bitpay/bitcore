@@ -9,7 +9,7 @@ let utils;
 module.exports = utils = {
   checkInventory: function(arg) {
     $.checkArgument(
-      arg === undefined ||
+      arg == null ||
       (Array.isArray(arg) &&
         (arg.length === 0 || (arg[0].type != null && arg[0].hash != null))),
       'Argument is expected to be an array of inventory objects'

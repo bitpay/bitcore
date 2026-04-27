@@ -19,7 +19,7 @@ function FilterloadMessage(arg, options) {
   Message.call(this, options);
   this.command = 'filterload';
   $.checkArgument(
-    arg == undefined || arg instanceof BloomFilter,
+    arg == null || arg instanceof BloomFilter,
     'An instance of BloomFilter or undefined is expected'
   );
   this.filter = arg;
