@@ -3,10 +3,9 @@ import logger from '../../logger';
 import { ICoin } from '../../models/coin';
 import { ITransaction } from '../../models/transaction';
 import { ChainStateProvider } from '../../providers/chain-state';
-import { AdapterError, AdapterErrorCode, AllProvidersUnavailableError } from '../../providers/chain-state/external/adapters/errors';
 import { StreamTransactionsParams } from '../../types/namespaces/ChainStateProvider';
-import { SetCache } from '../middleware';
-import { CacheTimes } from '../middleware';
+import { respondWithError } from '../apiUtils';
+import { CacheTimes, SetCache } from '../middleware';
 
 const router = Router({ mergeParams: true });
 
@@ -38,14 +37,8 @@ router.get('/', async function(req: Request, res: Response) {
     }
     return await ChainStateProvider.streamTransactions(payload);
   } catch (err: any) {
-    logger.error('Error streaming wallet utxos: %o', err.stack || err.message || err);
-    if (err instanceof AllProvidersUnavailableError) {
-      return res.status(503).json({ error: 'All indexed API providers unavailable', message: err.message });
-    }
-    if (err instanceof AdapterError && err.code === AdapterErrorCode.INVALID_REQUEST) {
-      return res.status(400).json({ error: 'Invalid request', message: err.message });
-    }
-    return res.status(500).send(err.message || err);
+    logger.error('Error streaming transactions: %o', err.stack || err.message || err);
+    return respondWithError(res, err);
   }
 });
 
@@ -74,13 +67,7 @@ router.get('/:txId', async (req: Request, res: Response) => {
     }
   } catch (err: any) {
     logger.error('Error getting transaction: %o', err.stack || err.message || err);
-    if (err instanceof AllProvidersUnavailableError) {
-      return res.status(503).json({ error: 'All indexed API providers unavailable', message: err.message });
-    }
-    if (err instanceof AdapterError && err.code === AdapterErrorCode.INVALID_REQUEST) {
-      return res.status(400).json({ error: 'Invalid request', message: err.message });
-    }
-    return res.status(500).send(err.message || err);
+    return respondWithError(res, err);
   }
 });
 
@@ -114,13 +101,7 @@ router.get('/:txId/populated', async (req: Request, res: Response) => {
     }
   } catch (err: any) {
     logger.error('Error getting populated transaction: %o', err.stack || err.message || err);
-    if (err instanceof AllProvidersUnavailableError) {
-      return res.status(503).json({ error: 'All indexed API providers unavailable', message: err.message });
-    }
-    if (err instanceof AdapterError && err.code === AdapterErrorCode.INVALID_REQUEST) {
-      return res.status(400).json({ error: 'Invalid request', message: err.message });
-    }
-    return res.status(500).send(err.message || err);
+    return respondWithError(res, err);
   }
 });
 
@@ -142,13 +123,7 @@ router.get('/:txId/authhead', async (req: Request, res: Response) => {
     }
   } catch (err: any) {
     logger.error('Error getting transaction authhead: %o', err.stack || err.message || err);
-    if (err instanceof AllProvidersUnavailableError) {
-      return res.status(503).json({ error: 'All indexed API providers unavailable', message: err.message });
-    }
-    if (err instanceof AdapterError && err.code === AdapterErrorCode.INVALID_REQUEST) {
-      return res.status(400).json({ error: 'Invalid request', message: err.message });
-    }
-    return res.status(500).send(err.message || err);
+    return respondWithError(res, err);
   }
 });
 
@@ -189,13 +164,7 @@ router.post('/send', async function(req: Request, res: Response) {
     return res.send({ txid });
   } catch (err: any) {
     logger.error('Broadcast error: %o %o %o %o', chain, network, rawTx, err.stack || err.message || err);
-    if (err instanceof AllProvidersUnavailableError) {
-      return res.status(503).json({ error: 'All indexed API providers unavailable', message: err.message });
-    }
-    if (err instanceof AdapterError && err.code === AdapterErrorCode.INVALID_REQUEST) {
-      return res.status(400).json({ error: 'Invalid request', message: err.message });
-    }
-    return res.status(500).send(err.message);
+    return respondWithError(res, err);
   }
 });
 
