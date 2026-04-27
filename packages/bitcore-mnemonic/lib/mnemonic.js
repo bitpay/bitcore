@@ -6,7 +6,6 @@ const errors = require('./errors');
 const pbkdf2 = require('./pbkdf2');
 
 const BN = bitcore.crypto.BN;
-const _ = bitcore.deps._;
 const Hash = bitcore.crypto.Hash;
 const Random = bitcore.crypto.Random;
 const Network = bitcore.Networks;
@@ -41,7 +40,7 @@ const Mnemonic = function(data, wordlist) {
     return new Mnemonic(data, wordlist);
   }
 
-  if (_.isArray(data)) {
+  if (Array.isArray(data)) {
     wordlist = data;
     data = null;
   }
@@ -52,9 +51,9 @@ const Mnemonic = function(data, wordlist) {
   if (Buffer.isBuffer(data)) {
     seed = data;
     ent = seed.length * 8;
-  } else if (_.isString(data)) {
+  } else if (typeof data === 'string') {
     phrase = unorm.nfkd(data);
-  } else if (_.isNumber(data)) {
+  } else if (typeof data === 'number') {
     ent = data;
   } else if (data) {
     throw new bitcore.errors.InvalidArgument('data', 'Must be a Buffer, a string or an integer');
@@ -194,7 +193,7 @@ Mnemonic.prototype.toSeed = function(passphrase) {
  */
 Mnemonic.fromSeed = function(seed, wordlist) {
   $.checkArgument(Buffer.isBuffer(seed), 'seed must be a Buffer.');
-  $.checkArgument(_.isArray(wordlist) || _.isString(wordlist), 'wordlist must be a string or an array.');
+  $.checkArgument(Array.isArray(wordlist) || typeof wordlist === 'string', 'wordlist must be a string or an array.');
   return new Mnemonic(seed, wordlist);
 };
 
