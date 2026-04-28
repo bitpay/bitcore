@@ -1,4 +1,3 @@
-import util from 'util';
 import {
   BitcoreLib as Bitcore,
   BitcoreLibCash as BitcoreCash,
@@ -3361,13 +3360,15 @@ export class WalletService implements IWalletService {
           if (wallet.tssKeyId) {
             try {
               // Add the other copayers to the txp.copayers array
-              // so the client can see who participated in the signing.
-              const addrDbString = Utils.getAddressNetworkForDbLookup(txp.from || txp.inputs[0]?.address, wallet.network);
-              const address = await util.promisify(storage.fetchAddressByWalletId).call(storage, wallet.id, addrDbString);
-              const tssSigSeshId = `${txp.id}:${address.path.replace(/\//g, '-')}`;
+              //  so the client can see who participated in the signing.
+              // Note we hardcode to input0 as that should always be present and should suffice for
+              //  gathering copayers. However, there is a possibility that input1 (or any input >0)
+              //  could contain a different set of copayers, depending on the client's implementation
+              //  of TSS. While technically possible, it's unlikely and the impact is mostly aesthetic.
+              const tssSigSeshId = `${txp.id}:input0`;
               const tssSigSession = await storage.fetchTssSigSession({ id: tssSigSeshId });
               if (!tssSigSession) {
-                throw new Error('TSS signature session not found');
+                throw new Error('TSS signature session not found: ' + tssSigSeshId);
               }
               const copayerIds = tssSigSession.participants.map(p => p.copayerId);
               for (const copayerId of copayerIds) {

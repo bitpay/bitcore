@@ -529,7 +529,7 @@ export class Wallet implements IWallet {
         messageHash: Buffer.from(messageHash, 'hex'),
         derivationPath,
         password,
-        id: `${txp.id}:${derivationPath.replace(/\//g, '-')}`,
+        id: `${txp.id}:input${i}`,
         logMessageWaiting: `Signing tx input ${i} (${i + 1}/${inputPaths.length}). Waiting for all parties to join...`,
         logMessageCompleted: `Tx input ${i} complete (${i + 1}/${inputPaths.length})`
       });
