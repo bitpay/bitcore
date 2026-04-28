@@ -9,6 +9,7 @@ import { IWallet, WalletStorage } from '../../../src/models/wallet';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { SOL } from '../../../src/modules/solana/api/csp';
 import { SVMRouter } from '../../../src/providers/chain-state/svm/api/routes';
+import { streamJsonArray } from '../../../src/routes/apiUtils';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
 describe('Solana API', function() {
@@ -210,10 +211,9 @@ describe('Solana API', function() {
           chain,
           network,
           wallet,
-          req,
-          res,
           args: {}
-        })
+        } as any)
+          .then((stream: any) => streamJsonArray(stream, req, res))
           .catch(e => r(e));
       });
 

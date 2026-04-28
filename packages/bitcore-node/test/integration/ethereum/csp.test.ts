@@ -12,6 +12,7 @@ import { ETH } from '../../../src/modules/ethereum/api/csp';
 import { EVMBlockStorage } from '../../../src/providers/chain-state/evm/models/block';
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
 import { IEVMTransactionInProcess } from '../../../src/providers/chain-state/evm/types';
+import { streamJsonArray } from '../../../src/routes/apiUtils';
 import { StreamWalletTransactionsParams } from '../../../src/types/namespaces/ChainStateProvider';
 import { ErigonEthBlocks } from '../../data/ETH/erigonDbBlocks';
 import { ErigonEthTransactions } from '../../data/ETH/erigonDbTransactions';
@@ -230,7 +231,8 @@ describe('Ethereum API', function() {
       transform: (_data, _, cb) => cb(null)
     }) as unknown) as Request;
 
-    await ETH.streamAddressTransactions({ chain, network, address, res, req, args: {} });
+    const stream = await ETH.streamAddressTransactions({ chain, network, address, args: {} });
+    await streamJsonArray(stream as any, req, res);
     let counter = 0;
     await new Promise(r => {
       res
@@ -271,7 +273,8 @@ describe('Ethereum API', function() {
       }
     }) as unknown) as Request;
 
-    await ETH.streamTransactions({ chain, network, res, req, args: { blockHeight: 1 } });
+    const stream = await ETH.streamTransactions({ chain, network, args: { blockHeight: 1 } });
+    await streamJsonArray(stream as any, req, res);
     let counter = 0;
     await new Promise<void>(r => {
       res
@@ -316,7 +319,8 @@ describe('Ethereum API', function() {
       }
     }) as unknown) as Request;
 
-    await ETH.streamTransactions({ chain, network, res, req, args: { blockHash: '12345' } });
+    const stream = await ETH.streamTransactions({ chain, network, args: { blockHash: '12345' } });
+    await streamJsonArray(stream as any, req, res);
     let counter = 0;
     await new Promise<void>(r => {
       res
@@ -455,12 +459,11 @@ const streamWalletTransactionsTest = async (chain: string, network: string, incl
       chain,
       network,
       wallet,
-      req,
-      res,
       args: {
         includeInvalidTxs
       }
     } as StreamWalletTransactionsParams)
+      .then((stream: any) => streamJsonArray(stream, req, res))
       .catch(e => r(e));
   });
 
@@ -485,7 +488,8 @@ const streamDexWalletTransactions = async (chain, network, wallet, address, web3
     }
   }) as unknown) as Request;
 
-  ETH.streamWalletTransactions({ chain, network, wallet, res, req, args: {} });
+  ETH.streamWalletTransactions({ chain, network, wallet, args: {} } as StreamWalletTransactionsParams)
+    .then((stream: any) => streamJsonArray(stream, req, res));
   let total = BigInt(0);
   let totalRejected = BigInt(0);
   let totalFee = BigInt(0);

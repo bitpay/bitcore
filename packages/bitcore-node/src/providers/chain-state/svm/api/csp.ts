@@ -183,89 +183,58 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async streamTransactions(params: StreamTransactionsParams): Promise<any> {
-    return new Promise<void>(async (resolve, reject) => {
-      try {
-        const { chain, network, req, res, args } = params;
-        let { blockHeight } = args;
-        const { limit = 50 } = args;
+    const { chain, network, args } = params;
+    let { blockHeight } = args;
+    const { limit = 50 } = args;
 
-        if (!chain || !network) {
-          throw new Error('Missing chain or network');
-        }
-        if (blockHeight !== undefined) {
-          blockHeight = Number(blockHeight);
-        } else {
-          throw new Error('Missing required block height / slot.');
-        }
+    if (!chain || !network) {
+      throw new Error('Missing chain or network');
+    }
+    if (blockHeight !== undefined) {
+      blockHeight = Number(blockHeight);
+    } else {
+      throw new Error('Missing required block height / slot.');
+    }
 
-        const { rpc } = await this.getRpc(network);
-        const block: any = await rpc.getBlock({ height: blockHeight, transactionDetails: 'signatures' });
-        if (!block) {
-          throw new Error('Block not found: ' + blockHeight);
-        }
-        const stream = new TransformWithEventPipe({
-          objectMode: true,
-          passThrough: true
-        });
-        let count = 0;
-        for (const signature of block?.signatures || []) {
-          if (limit && count >= limit) break;
-          const transformedTx = await this._getTransformedTx(rpc, network, { signature });
-          stream.push(transformedTx);
-          count++;
-        }
-        stream.push(null);
-        const result = await ExternalApiStream.onStream(stream, req!, res!);
-        if (!result?.success) {
-          logger.error('Error mid-stream (streamTransactions): %o', result.error?.log || result.error);
-        }  
-        return resolve();
-      } catch (err: any) {
-        logger.error('Error streaming block transactions: %o', err.stack || err.message || err);
-        reject(err);
-      }
+    const { rpc } = await this.getRpc(network);
+    const block: any = await rpc.getBlock({ height: blockHeight, transactionDetails: 'signatures' });
+    if (!block) {
+      throw new Error('Block not found: ' + blockHeight);
+    }
+    const stream = new TransformWithEventPipe({
+      objectMode: true,
+      passThrough: true
     });
+    let count = 0;
+    for (const signature of block?.signatures || []) {
+      if (limit && count >= limit) break;
+      const transformedTx = await this._getTransformedTx(rpc, network, { signature });
+      stream.push(transformedTx);
+      count++;
+    }
+    stream.push(null);
+    return stream;
   }
 
   async streamAddressTransactions(params: StreamAddressUtxosParams) {
-    return new Promise<void>(async (resolve, reject) => {
-      const { req, res } = params;
-      try {
-        const addressStream = await this._buildAddressTransactionsStream(params);
-        const result = await ExternalApiStream.onStream(addressStream, req!, res!, { jsonl: true });
-        if (!result?.success) {
-          logger.error('Error mid-stream (streamAddressTransactions): %o', result.error?.log || result.error);
-        }  
-        return resolve();
-      } catch (err) {
-        return reject(err);
-      }
-    });
+    const addressStream: any = await this._buildAddressTransactionsStream(params);
+    addressStream.jsonl = true;
+    return addressStream;
   }
 
   async streamWalletTransactions(params: StreamWalletTransactionsParams): Promise<any> {
-    return new Promise<void>(async (resolve, reject) => {
-      try {
-        const { wallet, req, res } = params;
-        const walletStream = new TransformWithEventPipe({ objectMode: true, passThrough: true });
-        const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddress => waddress.address);
-        const addressStreams: TransformWithEventPipe[] = [];
+    const { wallet } = params;
+    const walletStream: any = new TransformWithEventPipe({ objectMode: true, passThrough: true });
+    const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddress => waddress.address);
+    const addressStreams: TransformWithEventPipe[] = [];
 
-        for (const address of walletAddresses) {
-          const addressStream = await this._buildAddressTransactionsStream({ ...params, address });
-          addressStreams.push(addressStream);
-        }
-        ExternalApiStream.mergeStreams(addressStreams, walletStream);
-        const result = await ExternalApiStream.onStream(walletStream, req!, res!, { jsonl: true });
-        if (!result?.success) {
-          logger.error('Error mid-stream (streamWalletTransactions): %o', result.error?.log || result.error);
-        }
-        return resolve();
-      } catch (err: any) {
-        logger.error('Error streaming wallet transactions: %o', err.stack || err.message || err);
-        return reject(err);
-      }
-    });
+    for (const address of walletAddresses) {
+      const addressStream = await this._buildAddressTransactionsStream({ ...params, address });
+      addressStreams.push(addressStream);
+    }
+    ExternalApiStream.mergeStreams(addressStreams, walletStream);
+    walletStream.jsonl = true;
+    return walletStream;
   }
 
   async _buildAddressTransactionsStream(params: StreamAddressUtxosParams) {
@@ -617,48 +586,37 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async streamBlocks(params: StreamBlocksParams) {
-    return new Promise<void>(async (resolve, reject) => {
-      try {
-        const { chain, network, req, res } = params;
-        if (!chain || !network) {
-          throw new Error('Missing chain or network');
-        }
-        const { rpc } = await this.getRpc(network);
-        const blockRange = await this.getBlocksRange({ ...params });
-        const { height } = await rpc.getTip();
-        const stream = new TransformWithEventPipe({
-          objectMode: true,
-          passThrough: true
-        });
-        try {
-          let block;
-          let nextBlock;
-          for (const blockNum of blockRange) {
-            const thisNextBlock = Number(block?.height) === blockNum + 1 ? block : await this._getTransformedBlock(rpc, network, blockNum + 1);
-            block = Number(nextBlock?.number) === blockNum ? nextBlock : await this._getTransformedBlock(rpc, network, blockNum);
-            if (!block) {
-              continue;
-            }
-            nextBlock = thisNextBlock;
-            block.nextBlockHash = nextBlock?.hash;
-            block.confirmations = Number(BigInt(height) - BigInt(block.height) + 1n);
-            stream.push(block);
-          }
-        } catch (e: any) {
-          logger.error('Error streaming blocks: %o', e);
-        }
-        stream.push(null);
-        const result = await ExternalApiStream.onStream(stream, req!, res!, { jsonl: true });
-        if (!result?.success) {
-          logger.error('Error mid-stream (streamBlocks): %o', result.error?.log || result.error);
-        }  
-        return resolve();
-      } catch (err: any) {
-        logger.error('Error streaming blocks: %o', err.stack || err.message || err);
-        reject(err);
-      }
+    const { chain, network } = params;
+    if (!chain || !network) {
+      throw new Error('Missing chain or network');
+    }
+    const { rpc } = await this.getRpc(network);
+    const blockRange = await this.getBlocksRange({ ...params });
+    const { height } = await rpc.getTip();
+    const stream: any = new TransformWithEventPipe({
+      objectMode: true,
+      passThrough: true
     });
-
+    try {
+      let block;
+      let nextBlock;
+      for (const blockNum of blockRange) {
+        const thisNextBlock = Number(block?.height) === blockNum + 1 ? block : await this._getTransformedBlock(rpc, network, blockNum + 1);
+        block = Number(nextBlock?.number) === blockNum ? nextBlock : await this._getTransformedBlock(rpc, network, blockNum);
+        if (!block) {
+          continue;
+        }
+        nextBlock = thisNextBlock;
+        block.nextBlockHash = nextBlock?.hash;
+        block.confirmations = Number(BigInt(height) - BigInt(block.height) + 1n);
+        stream.push(block);
+      }
+    } catch (e: any) {
+      logger.error('Error streaming blocks: %o', e);
+    }
+    stream.push(null);
+    stream.jsonl = true;
+    return stream;
   }
 
   async _getTransformedBlock(rpc, network, height ) {
