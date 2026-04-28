@@ -2,6 +2,7 @@ import express, { Request } from 'express';
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { StreamAddressUtxosParams } from '../../types/namespaces/ChainStateProvider';
+import { respondWithError } from '../apiUtils';
 
 const router = express.Router({ mergeParams: true });
 
@@ -20,7 +21,7 @@ async function streamCoins(req: Request, res) {
     await ChainStateProvider.streamAddressTransactions(payload);
   } catch (err: any) {
     logger.error('Error streaming coins: %o', err.stack || err.message || err);
-    return res.status(500).send(err.message || err);
+    respondWithError(res, err);
   }
 }
 
@@ -40,7 +41,7 @@ router.get('/:address/balance', async function (req: Request, res) {
     return res.send(result || { confirmed: 0, unconfirmed: 0, balance: 0 });
   } catch (err: any) {
     logger.error('Error getting address balance: %o', err.stack || err.message || err);
-    return res.status(500).send(err.message || err);
+    return respondWithError(res, err);
   }
 });
 
