@@ -1698,8 +1698,15 @@ export class Storage {
       });
   }
 
-  fetchAllAdverts(_cb) {
-    this.db.collection(collections.ADVERTISEMENTS).find({});
+  fetchAllAdverts(cb) {
+    this.db
+      .collection(collections.ADVERTISEMENTS)
+      .find({})
+      .toArray((err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return cb(null, result.map(Advertisement.fromObj));
+      });
   }
 
   removeAdvert(adId, cb) {

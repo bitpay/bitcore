@@ -3,14 +3,14 @@ import { ClientError } from '../errors/clienterror';
 
 const { Utils } = Common;
 
-export function checkRequired(obj, args, cb?: (e: any) => void) {
+export function checkRequired(obj: any, args: string | string[], cb?: (e: any) => void): boolean {
   const missing = Utils.getMissingFields(obj, args);
   if (!missing.length) {
     return true;
   }
 
   if (typeof cb === 'function') {
-    return cb(new ClientError('Required argument: ' + missing[0] + ' missing.'));
+    cb(new ClientError('Required argument: ' + missing[0] + ' missing.'));
   }
 
   return false;

@@ -297,6 +297,28 @@ describe('Wallet service', function() {
       should.not.exist(ad);
     });
 
+    it('should report missing adId when removing an ad', async function() {
+      try {
+        await util.promisify(server.removeAdvert).call(server, {});
+        should.fail('Expected removeAdvert to fail');
+      } catch (err) {
+        err.should.be.instanceOf(ClientError);
+        err.message.should.equal('Required argument: adId missing.');
+      }
+    });
+
+    it('should create and get all ads', async function() {
+      await util.promisify(server.createAdvert).call(server, adOpts);
+      await util.promisify(server.createAdvert).call(server, {
+        ...adOpts,
+        advertisementId: '456',
+        title: 'title 2'
+      });
+
+      const ads = await util.promisify(server.getAllAdverts).call(server, {});
+      ads.map(ad => ad.advertisementId).sort().should.deep.equal(['123', '456']);
+    });
+
     it('should create ad initially inactive, retrieve, make active, retrieve again', async function() {
       let ad = await util.promisify(server.createAdvert).call(server, adOpts);
       ad = await util.promisify(server.getAdvert).call(server, { adId: '123' });

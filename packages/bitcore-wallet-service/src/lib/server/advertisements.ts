@@ -45,10 +45,11 @@ export function createAdvert(service: WalletService, opts, cb: Callback) {
     cb,
     next => {
       checkIfAdvertExistsAlready(opts.adId, (err, advert) => {
-        if (err) throw err;
+        if (err) return next(err);
         if (advert) {
-          service.storage.storeAdvert(advert, next);
+          return service.storage.storeAdvert(advert, next);
         }
+        return next();
       });
     },
     10 * 1000
@@ -83,9 +84,9 @@ export function getTestingAdverts(service: WalletService, _opts, cb: Callback) {
   });
 }
 
-export function getAllAdverts(service: WalletService, opts, cb: Callback) {
+export function getAllAdverts(service: WalletService, _opts, cb: Callback) {
   service._runLocked(cb, next => {
-    service.getAllAdverts(opts, next);
+    service.storage.fetchAllAdverts(next);
   });
 }
 
@@ -93,7 +94,7 @@ export function removeAdvert(service: WalletService, opts, cb: Callback) {
   opts = opts ? { ...opts } : {};
 
   if (!checkRequired(opts, ['adId'], cb)) {
-    throw new Error('adId is missing');
+    return;
   }
 
   const checkIfAdvertExistsAlready = (adId, next: Callback) => {
@@ -101,7 +102,7 @@ export function removeAdvert(service: WalletService, opts, cb: Callback) {
       if (err) return next(err);
 
       if (!result) {
-        throw new Error('Advertisement does not exist: ' + opts.adId);
+        return next(new Error('Advertisement does not exist: ' + opts.adId));
       }
 
       service.logw('Advert already exists:', opts.adId);
@@ -113,8 +114,8 @@ export function removeAdvert(service: WalletService, opts, cb: Callback) {
     cb,
     next => {
       checkIfAdvertExistsAlready(opts.adId, (err, adId) => {
-        if (err) throw err;
-        service.storage.removeAdvert(adId, next);
+        if (err) return next(err);
+        return service.storage.removeAdvert(adId, next);
       });
     },
     10 * 1000
@@ -124,7 +125,7 @@ export function removeAdvert(service: WalletService, opts, cb: Callback) {
 export function activateAdvert(service: WalletService, opts, cb: Callback) {
   opts = opts ? { ...opts } : {};
   if (!checkRequired(opts, ['adId'], cb)) {
-    throw new Error('adId is missing');
+    return;
   }
 
   service.storage.activateAdvert(opts.adId, (err, result) => {
@@ -136,7 +137,7 @@ export function activateAdvert(service: WalletService, opts, cb: Callback) {
 export function deactivateAdvert(service: WalletService, opts, cb: Callback) {
   opts = opts ? { ...opts } : {};
   if (!checkRequired(opts, ['adId'], cb)) {
-    throw new Error('adId is missing');
+    return;
   }
 
   service.storage.deactivateAdvert(opts.adId, (err, result) => {
