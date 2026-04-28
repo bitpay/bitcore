@@ -1,13 +1,12 @@
 'use strict';
 
-var BN = require('bn.js');
-var $ = require('../util/preconditions');
-var _ = require('lodash');
+const BN = require('bn.js');
 const BufferUtil = require('../util/buffer');
+const $ = require('../util/preconditions');
 
-var reversebuf = function(buf) {
-  var buf2 = Buffer.alloc(buf.length);
-  for (var i = 0; i < buf.length; i++) {
+const reversebuf = function(buf) {
+  const buf2 = Buffer.alloc(buf.length);
+  for (let i = 0; i < buf.length; i++) {
     buf2[i] = buf[buf.length - 1 - i];
   }
   return buf2;
@@ -18,12 +17,12 @@ BN.One = new BN(1);
 BN.Minus1 = new BN(-1);
 
 BN.fromNumber = function(n) {
-  $.checkArgument(_.isNumber(n));
+  $.checkArgument(typeof n === 'number');
   return new BN(n);
 };
 
 BN.fromString = function(str, base) {
-  $.checkArgument(_.isString(str));
+  $.checkArgument(typeof str === 'string');
   return new BN(str, base);
 };
 
@@ -33,8 +32,8 @@ BN.fromBuffer = function(buf, opts) {
   if (typeof opts !== 'undefined' && opts.endian === 'little') {
     buf = reversebuf(buf);
   }
-  var hex = buf.toString('hex');
-  var bn = new BN(hex, 16);
+  const hex = buf.toString('hex');
+  const bn = new BN(hex, 16);
   return bn;
 };
 
@@ -43,12 +42,12 @@ BN.fromBuffer = function(buf, opts) {
  * (a buffer where the most significant bit represents the sign (0 = positive, -1 = negative))
  */
 BN.fromSM = function(buf, opts) {
-  var ret;
+  let ret;
   if (buf.length === 0) {
     return BN.fromBuffer(Buffer.from([0]));
   }
 
-  var endian = 'big';
+  let endian = 'big';
   if (opts) {
     endian = opts.endian;
   }
@@ -56,7 +55,9 @@ BN.fromSM = function(buf, opts) {
     buf = reversebuf(buf);
   }
 
+  // eslint-disable-next-line no-bitwise
   if (buf[0] & 0x80) {
+    // eslint-disable-next-line no-bitwise
     buf[0] = buf[0] & 0x7f;
     ret = BN.fromBuffer(buf);
     ret.neg().copy(ret);
@@ -72,15 +73,13 @@ BN.prototype.toNumber = function() {
 };
 
 BN.prototype.toBuffer = function(opts) {
-  var buf, hex;
+  let buf, hex;
   if (opts && opts.size) {
     hex = this.toString(16, 2);
-    var natlen = hex.length / 2;
+    const natlen = hex.length / 2;
     buf = Buffer.from(hex, 'hex');
 
-    if (natlen === opts.size) {
-      buf = buf;
-    } else if (natlen > opts.size) {
+    if (natlen > opts.size) {
       buf = BN.trim(buf, natlen);
     } else if (natlen < opts.size) {
       buf = BN.pad(buf, natlen, opts.size);
@@ -98,21 +97,25 @@ BN.prototype.toBuffer = function(opts) {
 };
 
 BN.prototype.toSMBigEndian = function() {
-  var buf;
+  let buf;
   if (this.cmp(BN.Zero) === -1) {
     buf = this.neg().toBuffer();
+    // eslint-disable-next-line no-bitwise
     if (buf[0] & 0x80) {
       buf = Buffer.concat([Buffer.from([0x80]), buf]);
     } else {
+      // eslint-disable-next-line no-bitwise
       buf[0] = buf[0] | 0x80;
     }
   } else {
     buf = this.toBuffer();
+    // eslint-disable-next-line no-bitwise
     if (buf[0] & 0x80) {
       buf = Buffer.concat([Buffer.from([0x00]), buf]);
     }
   }
 
+  // eslint-disable-next-line no-bitwise
   if (buf.length === 1 & buf[0] === 0) {
     buf = Buffer.from([]);
   }
@@ -120,8 +123,8 @@ BN.prototype.toSMBigEndian = function() {
 };
 
 BN.prototype.toSM = function(opts) {
-  var endian = opts ? opts.endian : 'big';
-  var buf = this.toSMBigEndian();
+  const endian = opts ? opts.endian : 'big';
+  let buf = this.toSMBigEndian();
 
   if (endian === 'little') {
     buf = reversebuf(buf);
@@ -138,7 +141,7 @@ BN.prototype.toSM = function(opts) {
  * extend the hard limit of 4 bytes, as some usages require more than 4 bytes.
  */
 BN.fromScriptNumBuffer = function(buf, fRequireMinimal, size) {
-  var nMaxNumSize = size || 4;
+  const nMaxNumSize = size || 4;
   $.checkArgument(buf.length <= nMaxNumSize, new Error('script number overflow'));
   if (fRequireMinimal && buf.length > 0) {
     // Check that the number is encoded with the minimum possible
@@ -147,12 +150,14 @@ BN.fromScriptNumBuffer = function(buf, fRequireMinimal, size) {
     // If the most-significant-byte - excluding the sign bit - is zero
     // then we're not minimal. Note how this test also rejects the
     // negative-zero encoding, 0x80.
+    // eslint-disable-next-line no-bitwise
     if ((buf[buf.length - 1] & 0x7f) === 0) {
       // One exception: if there's more than one byte and the most
       // significant bit of the second-most-significant-byte is set
       // it would conflict with the sign bit. An example of this case
       // is +-255, which encode to 0xff00 and 0xff80 respectively.
       // (big-endian).
+      // eslint-disable-next-line no-bitwise
       if (buf.length <= 1 || (buf[buf.length - 2] & 0x80) === 0) {
         throw new Error('non-minimally encoded script number');
       }
@@ -180,11 +185,11 @@ BN.trim = function(buf, natlen) {
 };
 
 BN.pad = function(buf, natlen, size) {
-  var rbuf = Buffer.alloc(size);
-  for (var i = 0; i < buf.length; i++) {
+  const rbuf = Buffer.alloc(size);
+  for (let i = 0; i < buf.length; i++) {
     rbuf[rbuf.length - 1 - i] = buf[buf.length - 1 - i];
   }
-  for (i = 0; i < size - natlen; i++) {
+  for (let i = 0; i < size - natlen; i++) {
     rbuf[i] = 0;
   }
   return rbuf;

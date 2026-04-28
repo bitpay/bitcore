@@ -1,20 +1,19 @@
 'use strict';
 
-var _ = require('lodash');
-var $ = require('./util/preconditions');
-var BufferUtil = require('./util/buffer');
-var JSUtil = require('./util/js');
+const BufferUtil = require('./util/buffer');
+const JSUtil = require('./util/js');
+const $ = require('./util/preconditions');
 
 function Opcode(num) {
   if (!(this instanceof Opcode)) {
     return new Opcode(num);
   }
 
-  var value;
+  let value;
 
-  if (_.isNumber(num)) {
+  if (typeof num === 'number') {
     value = num;
-  } else if (_.isString(num)) {
+  } else if (typeof num === 'string') {
     value = Opcode.map[num];
   } else {
     throw new TypeError('Unrecognized num type: "' + typeof(num) + '" for Opcode');
@@ -33,13 +32,13 @@ Opcode.fromBuffer = function(buf) {
 };
 
 Opcode.fromNumber = function(num) {
-  $.checkArgument(_.isNumber(num));
+  $.checkArgument(typeof num === 'number');
   return new Opcode(num);
 };
 
 Opcode.fromString = function(str) {
-  $.checkArgument(_.isString(str));
-  var value = Opcode.map[str];
+  $.checkArgument(typeof str === 'string');
+  const value = Opcode.map[str];
   if (typeof value === 'undefined') {
     throw new TypeError('Invalid opcodestr');
   }
@@ -59,7 +58,7 @@ Opcode.prototype.toNumber = function() {
 };
 
 Opcode.prototype.toString = function() {
-  var str = Opcode.reverseMap[this.num];
+  const str = Opcode.reverseMap[this.num];
   if (typeof str === 'undefined') {
     throw new Error('Opcode does not have a string representation');
   }
@@ -67,7 +66,7 @@ Opcode.prototype.toString = function() {
 };
 
 Opcode.smallInt = function(n) {
-  $.checkArgument(_.isNumber(n), 'Invalid Argument: n should be number');
+  $.checkArgument(typeof n === 'number', 'Invalid Argument: n should be number');
   $.checkArgument(n >= 0 && n <= 16, 'Invalid Argument: n must be between 0 and 16');
   if (n === 0) {
     return Opcode('OP_0');
@@ -252,12 +251,12 @@ Opcode.map = {
 
 Opcode.reverseMap = [];
 
-for (var k in Opcode.map) {
+for (const k in Opcode.map) {
   Opcode.reverseMap[Opcode.map[k]] = k;
 }
 
 // Easier access to opcodes
-_.extend(Opcode, Opcode.map);
+Object.assign(Opcode, Opcode.map);
 
 /**
  * @returns true if opcode is one of OP_0, OP_1, ..., OP_16

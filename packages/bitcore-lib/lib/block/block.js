@@ -1,14 +1,13 @@
 'use strict';
 
-var _ = require('lodash');
-var BlockHeader = require('./blockheader');
-var BN = require('../crypto/bn');
-var BufferUtil = require('../util/buffer');
-var BufferReader = require('../encoding/bufferreader');
-var BufferWriter = require('../encoding/bufferwriter');
-var Hash = require('../crypto/hash');
-var Transaction = require('../transaction');
-var $ = require('../util/preconditions');
+const BN = require('../crypto/bn');
+const Hash = require('../crypto/hash');
+const BufferReader = require('../encoding/bufferreader');
+const BufferWriter = require('../encoding/bufferwriter');
+const Transaction = require('../transaction');
+const BufferUtil = require('../util/buffer');
+const $ = require('../util/preconditions');
+const BlockHeader = require('./blockheader');
 
 /**
  * Instantiate a Block from a Buffer, JSON object, or Object with
@@ -22,7 +21,7 @@ function Block(arg) {
   if (!(this instanceof Block)) {
     return new Block(arg);
   }
-  _.extend(this, Block._from(arg));
+  Object.assign(this, Block._from(arg));
   return this;
 }
 
@@ -36,10 +35,10 @@ Block.MAX_BLOCK_SIZE = 1000000;
  * @private
  */
 Block._from = function _from(arg) {
-  var info = {};
+  let info = {};
   if (BufferUtil.isBuffer(arg)) {
     info = Block._fromBufferReader(BufferReader(arg));
-  } else if (_.isObject(arg)) {
+  } else if (typeof arg === 'object' && arg !== null) {
     info = Block._fromObject(arg);
   } else {
     throw new TypeError('Unrecognized argument for Block');
@@ -53,15 +52,14 @@ Block._from = function _from(arg) {
  * @private
  */
 Block._fromObject = function _fromObject(data) {
-  var transactions = [];
-  data.transactions.forEach(function(tx) {
+  const transactions = data.transactions.map(tx => {
     if (tx instanceof Transaction) {
-      transactions.push(tx);
+      return tx;
     } else {
-      transactions.push(Transaction().fromObject(tx));
+      return Transaction().fromObject(tx);
     }
   });
-  var info = {
+  const info = {
     header: BlockHeader.fromObject(data.header),
     transactions: transactions
   };
@@ -73,7 +71,7 @@ Block._fromObject = function _fromObject(data) {
  * @returns {Block} - An instance of block
  */
 Block.fromObject = function fromObject(obj) {
-  var info = Block._fromObject(obj);
+  const info = Block._fromObject(obj);
   return new Block(info);
 };
 
@@ -83,12 +81,12 @@ Block.fromObject = function fromObject(obj) {
  * @private
  */
 Block._fromBufferReader = function _fromBufferReader(br) {
-  var info = {};
+  const info = {};
   $.checkState(!br.finished(), 'No block data received');
   info.header = BlockHeader.fromBufferReader(br);
-  var transactions = br.readVarintNum();
+  const transactions = br.readVarintNum();
   info.transactions = [];
-  for (var i = 0; i < transactions; i++) {
+  for (let i = 0; i < transactions; i++) {
     info.transactions.push(Transaction().fromBufferReader(br));
   }
   return info;
@@ -100,7 +98,7 @@ Block._fromBufferReader = function _fromBufferReader(br) {
  */
 Block.fromBufferReader = function fromBufferReader(br) {
   $.checkArgument(br, 'br is required');
-  var info = Block._fromBufferReader(br);
+  const info = Block._fromBufferReader(br);
   return new Block(info);
 };
 
@@ -117,7 +115,7 @@ Block.fromBuffer = function fromBuffer(buf) {
  * @returns {Block} - A hex encoded string of the block
  */
 Block.fromString = function fromString(str) {
-  var buf = Buffer.from(str, 'hex');
+  const buf = Buffer.from(str, 'hex');
   return Block.fromBuffer(buf);
 };
 
@@ -129,9 +127,9 @@ Block.fromRawBlock = function fromRawBlock(data) {
   if (!BufferUtil.isBuffer(data)) {
     data = Buffer.from(data, 'binary');
   }
-  var br = BufferReader(data);
+  const br = BufferReader(data);
   br.pos = Block.Values.START_OF_BLOCK;
-  var info = Block._fromBufferReader(br);
+  const info = Block._fromBufferReader(br);
   return new Block(info);
 };
 
@@ -139,10 +137,7 @@ Block.fromRawBlock = function fromRawBlock(data) {
  * @returns {Object} - A plain object with the block properties
  */
 Block.prototype.toObject = Block.prototype.toJSON = function toObject() {
-  var transactions = [];
-  this.transactions.forEach(function(tx) {
-    transactions.push(tx.toObject());
-  });
+  const transactions = this.transactions.map(tx => tx.toObject());
   return {
     header: this.header.toObject(),
     transactions: transactions
@@ -173,7 +168,7 @@ Block.prototype.toBufferWriter = function toBufferWriter(bw) {
   }
   bw.write(this.header.toBuffer());
   bw.writeVarintNum(this.transactions.length);
-  for (var i = 0; i < this.transactions.length; i++) {
+  for (let i = 0; i < this.transactions.length; i++) {
     this.transactions[i].toBufferWriter(bw);
   }
   return bw;
@@ -184,11 +179,11 @@ Block.prototype.toBufferWriter = function toBufferWriter(bw) {
  * @returns {Array} - An array with transaction hashes
  */
 Block.prototype.getTransactionHashes = function getTransactionHashes() {
-  var hashes = [];
+  const hashes = [];
   if (this.transactions.length === 0) {
     return [Block.Values.NULL_HASH];
   }
-  for (var t = 0; t < this.transactions.length; t++) {
+  for (let t = 0; t < this.transactions.length; t++) {
     hashes.push(this.transactions[t]._getHash());
   }
   return hashes;
@@ -202,13 +197,13 @@ Block.prototype.getTransactionHashes = function getTransactionHashes() {
  */
 Block.prototype.getMerkleTree = function getMerkleTree() {
 
-  var tree = this.getTransactionHashes();
+  const tree = this.getTransactionHashes();
 
-  var j = 0;
-  for (var size = this.transactions.length; size > 1; size = Math.floor((size + 1) / 2)) {
-    for (var i = 0; i < size; i += 2) {
-      var i2 = Math.min(i + 1, size - 1);
-      var buf = Buffer.concat([tree[j + i], tree[j + i2]]);
+  let j = 0;
+  for (let size = this.transactions.length; size > 1; size = Math.floor((size + 1) / 2)) {
+    for (let i = 0; i < size; i += 2) {
+      const i2 = Math.min(i + 1, size - 1);
+      const buf = Buffer.concat([tree[j + i], tree[j + i2]]);
       tree.push(Hash.sha256sha256(buf));
     }
     j += size;
@@ -222,7 +217,7 @@ Block.prototype.getMerkleTree = function getMerkleTree() {
  * @returns {Buffer} - A buffer of the merkle root hash
  */
 Block.prototype.getMerkleRoot = function getMerkleRoot() {
-  var tree = this.getMerkleTree();
+  const tree = this.getMerkleTree();
   return tree[tree.length - 1];
 };
 
@@ -232,8 +227,8 @@ Block.prototype.getMerkleRoot = function getMerkleRoot() {
  */
 Block.prototype.validMerkleRoot = function validMerkleRoot() {
 
-  var h = new BN(this.header.merkleRoot.toString('hex'), 'hex');
-  var c = new BN(this.getMerkleRoot().toString('hex'), 'hex');
+  const h = new BN(this.header.merkleRoot.toString('hex'), 'hex');
+  const c = new BN(this.getMerkleRoot().toString('hex'), 'hex');
 
   if (h.cmp(c) !== 0) {
     return false;
@@ -249,7 +244,7 @@ Block.prototype._getHash = function() {
   return this.header._getHash();
 };
 
-var idProperty = {
+const idProperty = {
   configurable: false,
   enumerable: true,
   /**
@@ -261,7 +256,7 @@ var idProperty = {
     }
     return this._id;
   },
-  set: _.noop
+  set: function () {/** no op */}
 };
 Object.defineProperty(Block.prototype, 'id', idProperty);
 Object.defineProperty(Block.prototype, 'hash', idProperty);

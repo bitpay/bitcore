@@ -1,16 +1,14 @@
 'use strict';
 
-var _ = require('lodash');
+const errors = require('./errors');
+const $ = require('./util/preconditions');
 
-var errors = require('./errors');
-var $ = require('./util/preconditions');
-
-var UNITS = {
-  'BTC'      : [1e8, 8],
-  'mBTC'     : [1e5, 5],
-  'uBTC'     : [1e2, 2],
-  'bits'     : [1e2, 2],
-  'satoshis' : [1, 0]
+const UNITS = {
+  'BTC': [1e8, 8],
+  'mBTC': [1e5, 5],
+  'uBTC': [1e2, 2],
+  'bits': [1e2, 2],
+  'satoshis': [1, 0]
 };
 
 /**
@@ -43,7 +41,7 @@ function Unit(amount, code) {
   }
 
   // convert fiat to BTC
-  if (_.isNumber(code)) {
+  if (typeof code === 'number') {
     if (code <= 0) {
       throw new errors.Unit.InvalidRate(code);
     }
@@ -53,20 +51,20 @@ function Unit(amount, code) {
 
   this._value = this._from(amount, code);
 
-  var self = this;
-  var defineAccesor = function(key) {
+  const self = this;
+  // Enumerable getters per unit name (e.g. instance.BTC → this.to('BTC')).
+  for (const key of Object.keys(UNITS)) {
     Object.defineProperty(self, key, {
       get: function() { return self.to(key); },
       enumerable: true,
     });
-  };
-
-  Object.keys(UNITS).forEach(defineAccesor);
+  }
 }
 
-Object.keys(UNITS).forEach(function(key) {
+// Unit.BTC, Unit.mBTC, ... — unit code string constants on the constructor.
+for (const key of Object.keys(UNITS)) {
   Unit[key] = key;
-});
+}
 
 /**
  * Returns a Unit instance created from JSON string or object
@@ -74,8 +72,8 @@ Object.keys(UNITS).forEach(function(key) {
  * @param {String|Object} json - JSON with keys: amount and code
  * @returns {Unit} A Unit instance
  */
-Unit.fromObject = function fromObject(data){
-  $.checkArgument(_.isObject(data), 'Argument is expected to be an object');
+Unit.fromObject = function fromObject(data) {
+  $.checkArgument(typeof data === 'object' && data !== null, 'Argument is expected to be an object');
   return new Unit(data.amount, data.code);
 };
 
@@ -144,7 +142,7 @@ Unit.prototype._from = function(amount, code) {
  * @returns {Number} The converted value
  */
 Unit.prototype.to = function(code) {
-  if (_.isNumber(code)) {
+  if (typeof code === 'number') {
     if (code <= 0) {
       throw new errors.Unit.InvalidRate(code);
     }
@@ -155,7 +153,7 @@ Unit.prototype.to = function(code) {
     throw new errors.Unit.UnknownCode(code);
   }
 
-  var value = this._value / UNITS[code][0];
+  const value = this._value / UNITS[code][0];
   return parseFloat(value.toFixed(UNITS[code][1]));
 };
 

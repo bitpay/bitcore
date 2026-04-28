@@ -1,13 +1,12 @@
 'use strict';
 
-var BN = require('./crypto/bn');
-var Point = require('./crypto/point');
-var Hash = require('./crypto/hash');
-var JSUtil = require('./util/js');
-var Network = require('./networks');
-var _ = require('lodash');
-var $ = require('./util/preconditions');
+const BN = require('./crypto/bn');
+const Hash = require('./crypto/hash');
+const Point = require('./crypto/point');
 const TaggedHash = require('./crypto/taggedhash');
+const Network = require('./networks');
+const JSUtil = require('./util/js');
+const $ = require('./util/preconditions');
 
 /**
  * Instantiate a PublicKey from a {@link PrivateKey}, {@link Point}, `string`, or `Buffer`.
@@ -48,7 +47,7 @@ function PublicKey(data, extra) {
   }
   extra = extra || {};
 
-  var info = this._classifyArgs(data, extra);
+  const info = this._classifyArgs(data, extra);
 
   // validation
   info.point.validate();
@@ -69,8 +68,9 @@ function PublicKey(data, extra) {
  */
 PublicKey.prototype._classifyArgs = function(data, extra) {
   /* jshint maxcomplexity: 10 */
-  var info = {
-    compressed: _.isUndefined(extra.compressed) || extra.compressed
+  let info = {
+    // Default true only if extra.compressed is left off
+    compressed: extra.compressed === undefined || extra.compressed
   };
 
   // detect type of data
@@ -88,7 +88,8 @@ PublicKey.prototype._classifyArgs = function(data, extra) {
     throw new TypeError('First argument is an unrecognized data format.');
   }
   if (!info.network) {
-    info.network = _.isUndefined(extra.network) ? undefined : Network.get(extra.network);
+    // Maintain undefined specifically
+    info.network = extra.network === undefined ? undefined : Network.get(extra.network);
   }
   return info;
 };
@@ -101,7 +102,7 @@ PublicKey.prototype._classifyArgs = function(data, extra) {
  * @private
  */
 PublicKey._isPrivateKey = function(param) {
-  var PrivateKey = require('./privatekey');
+  const PrivateKey = require('./privatekey');
   return param instanceof PrivateKey;
 };
 
@@ -125,7 +126,7 @@ PublicKey._isBuffer = function(param) {
  */
 PublicKey._transformPrivateKey = function(privkey) {
   $.checkArgument(PublicKey._isPrivateKey(privkey), 'Must be an instance of PrivateKey');
-  var info = {};
+  const info = {};
   info.point = Point.getG().mul(privkey.bn);
   info.compressed = privkey.compressed;
   info.network = privkey.network;
@@ -144,14 +145,14 @@ PublicKey._transformDER = function(buf, strict) {
   /* jshint maxstatements: 30 */
   /* jshint maxcomplexity: 12 */
   $.checkArgument(PublicKey._isBuffer(buf), 'Must be a hex buffer of DER encoded public key');
-  var info = {};
+  let info = {};
 
-  strict = _.isUndefined(strict) ? true : strict;
+  strict = strict === undefined ? true : strict;
 
-  var x;
-  var y;
-  var xbuf;
-  var ybuf;
+  let x;
+  let y;
+  let xbuf;
+  let ybuf;
 
   if (buf[0] === 0x04 || (!strict && (buf[0] === 0x06 || buf[0] === 0x07))) {
     xbuf = buf.slice(1, 33);
@@ -189,7 +190,7 @@ PublicKey._transformDER = function(buf, strict) {
  */
 PublicKey._transformX = function(odd, x) {
   $.checkArgument(typeof odd === 'boolean', 'Must specify whether y is odd or not (true or false)');
-  var info = {};
+  const info = {};
   info.point = Point.fromX(odd, x);
   return info;
 };
@@ -202,9 +203,9 @@ PublicKey._transformX = function(odd, x) {
  * @private
  */
 PublicKey._transformObject = function(json) {
-  var x = new BN(json.x, 'hex');
-  var y = new BN(json.y, 'hex');
-  var point = new Point(x, y);
+  const x = new BN(json.x, 'hex');
+  const y = new BN(json.y, 'hex');
+  const point = new Point(x, y);
   return new PublicKey(point, {
     compressed: json.compressed
   });
@@ -218,7 +219,7 @@ PublicKey._transformObject = function(json) {
  */
 PublicKey.fromPrivateKey = function(privkey) {
   $.checkArgument(PublicKey._isPrivateKey(privkey), 'Must be an instance of PrivateKey');
-  var info = PublicKey._transformPrivateKey(privkey);
+  const info = PublicKey._transformPrivateKey(privkey);
   return new PublicKey(info.point, {
     compressed: info.compressed,
     network: info.network
@@ -237,7 +238,7 @@ PublicKey.fromBuffer = function(buf, strict) {
     return PublicKey.fromX(false, buf);
   }
   return PublicKey.fromDER(buf, strict);
-}
+};
 
 /**
  * Instantiate a PublicKey from a DER buffer
@@ -247,7 +248,7 @@ PublicKey.fromBuffer = function(buf, strict) {
  */
 PublicKey.fromDER = function(buf, strict) {
   $.checkArgument(PublicKey._isBuffer(buf), 'Must be a hex buffer of DER encoded public key');
-  var info = PublicKey._transformDER(buf, strict);
+  const info = PublicKey._transformDER(buf, strict);
   return new PublicKey(info.point, {
     compressed: info.compressed
   });
@@ -275,8 +276,8 @@ PublicKey.fromPoint = function(point, compressed) {
  * @returns {PublicKey} A new valid instance of PublicKey
  */
 PublicKey.fromString = function(str, encoding) {
-  var buf = Buffer.from(str, encoding || 'hex');
-  var info = PublicKey._transformDER(buf);
+  const buf = Buffer.from(str, encoding || 'hex');
+  const info = PublicKey._transformDER(buf);
   return new PublicKey(info.point, {
     compressed: info.compressed
   });
@@ -290,7 +291,7 @@ PublicKey.fromString = function(str, encoding) {
  * @returns {PublicKey} A new valid instance of PublicKey
  */
 PublicKey.fromX = function(odd, x) {
-  var info = PublicKey._transformX(odd, x);
+  const info = PublicKey._transformX(odd, x);
   return new PublicKey(info.point, {
     compressed: info.compressed
   });
@@ -308,7 +309,7 @@ PublicKey.fromTaproot = function(hexBuf) {
   $.checkArgument(Buffer.isBuffer(hexBuf), 'hexBuf must be a hex string or buffer');
   $.checkArgument(hexBuf.length === 32, 'Taproot public keys must be 32 bytes');
   return new PublicKey.fromX(false, hexBuf);
-}
+};
 
 /**
  * Verifies if the input is a valid Taproot public key
@@ -318,7 +319,7 @@ PublicKey.fromTaproot = function(hexBuf) {
 PublicKey.isValidTaproot = function(hexBuf) {
   try {
     return !!PublicKey.fromTaproot(hexBuf);
-  } catch (e) {
+  } catch {
     return false;
   }
 };
@@ -364,6 +365,7 @@ PublicKey.prototype.checkTapTweak = function(p, merkleRoot, control) {
   const P = p.point.liftX();
   const Q = P.add(this.point.curve.g.mul(BN.fromBuffer(tweak)));
   
+  // eslint-disable-next-line no-bitwise
   return this.point.x.eq(Q.x) && Q.y.mod(new BN(2)).eq(new BN(control[0] & 1));
 };
 
@@ -393,7 +395,7 @@ PublicKey.prototype.createTapTweak = function(merkleRoot) {
  * @returns {null|Error} An error if exists
  */
 PublicKey.getValidationError = function(data) {
-  var error;
+  let error;
   try {
     /* jshint nonew: false */
     new PublicKey(data);
@@ -430,22 +432,22 @@ PublicKey.prototype.toObject = PublicKey.prototype.toJSON = function toObject() 
  * @returns {Buffer} A DER hex encoded buffer
  */
 PublicKey.prototype.toBuffer = PublicKey.prototype.toDER = function() {
-  var x = this.point.getX();
-  var y = this.point.getY();
+  const x = this.point.getX();
+  const y = this.point.getY();
 
-  var xbuf = x.toBuffer({
+  const xbuf = x.toBuffer({
     size: 32
   });
-  var ybuf = y.toBuffer({
+  const ybuf = y.toBuffer({
     size: 32
   });
 
-  var prefix;
+  let prefix;
   if (!this.compressed) {
     prefix = Buffer.from([0x04]);
     return Buffer.concat([prefix, xbuf, ybuf]);
   } else {
-    var odd = ybuf[ybuf.length - 1] % 2;
+    const odd = ybuf[ybuf.length - 1] % 2;
     if (odd) {
       prefix = Buffer.from([0x03]);
     } else {
@@ -472,7 +474,7 @@ PublicKey.prototype._getID = function _getID() {
  * @returns {Address} An address generated from the public key
  */
 PublicKey.prototype.toAddress = function(network, type) {
-  var Address = require('./address');
+  const Address = require('./address');
   return Address.fromPublicKey(this, network || this.network, type);
 };
 

@@ -1,16 +1,17 @@
 'use strict';
 
-var _ = require('lodash');
-var chai = require('chai');
-var should = chai.should();
-var expect = chai.expect;
-var bitcore = require('..');
-var Opcode = bitcore.Opcode;
+const chai = require('chai');
+
+const should = chai.should();
+const expect = chai.expect;
+const bitcore = require('..');
+
+const Opcode = bitcore.Opcode;
 
 describe('Opcode', function() {
 
   it('should create a new Opcode', function() {
-    var opcode = new Opcode(5);
+    const opcode = new Opcode(5);
     should.exist(opcode);
   });
 
@@ -54,7 +55,7 @@ describe('Opcode', function() {
 
   describe('#buffer', function() {
     it('should correctly input/output a buffer', function() {
-      var buf = Buffer.from('a6', 'hex');
+      const buf = Buffer.from('a6', 'hex');
       Opcode.fromBuffer(buf).toBuffer().should.deep.equal(buf);
     });
   });
@@ -78,7 +79,7 @@ describe('Opcode', function() {
     });
 
     it('should not work for non-opcode', function() {
-      expect(function(){
+      expect(function() {
         Opcode('OP_NOTACODE').toString();
       }).to.throw('Opcode does not have a string representation');
     });
@@ -97,7 +98,7 @@ describe('Opcode', function() {
       try {
         Opcode.decodeOpN(Opcode.OP_NOP);
         throw new Error('should have thrown');
-      } catch(e) {
+      } catch (e) {
         e.message.should.equal('Invalid Argument: Error: Invalid opcode: 97');
       }
     });
@@ -109,7 +110,7 @@ describe('Opcode', function() {
         return opcode == 80 || opcode == 98 || (opcode >= 126 && opcode <= 129) ||
           (opcode >= 131 && opcode <= 134) || (opcode >= 137 && opcode <= 138) ||
           (opcode >= 141 && opcode <= 142) || (opcode >= 149 && opcode <= 153) ||
-          (opcode >= 187 && opcode <= 254)
+          (opcode >= 187 && opcode <= 254);
       };
       for (let i = 0; i <= 255; i++) {
         Opcode.isOpSuccess(i).should.equal(isSuccess(i));
@@ -127,7 +128,7 @@ describe('Opcode', function() {
 
   describe('@map', function() {
     it('should have a map containing 119 elements', function() {
-      _.size(Opcode.map).should.equal(119);
+      Object.keys(Opcode.map).length.should.equal(119);
     });
   });
 
@@ -137,7 +138,7 @@ describe('Opcode', function() {
       Opcode.reverseMap[185].should.equal('OP_NOP10');
     });
   });
-  var smallints = [
+  const smallints = [
     Opcode('OP_0'),
     Opcode('OP_1'),
     Opcode('OP_2'),
@@ -158,12 +159,12 @@ describe('Opcode', function() {
   ];
 
   describe('@smallInt', function() {
-    var testSmallInt = function(n, op) {
+    const testSmallInt = function(n, op) {
       Opcode.smallInt(n).toString().should.equal(op.toString());
     };
 
-    for (var i = 0; i < smallints.length; i++) {
-      var op = smallints[i];
+    for (let i = 0; i < smallints.length; i++) {
+      const op = smallints[i];
       it('should work for small int ' + op, testSmallInt.bind(null, i, op));
     }
 
@@ -180,11 +181,11 @@ describe('Opcode', function() {
     });
   });
   describe('@isSmallIntOp', function() {
-    var testIsSmallInt = function(op) {
+    const testIsSmallInt = function(op) {
       Opcode.isSmallIntOp(op).should.equal(true);
     };
-    for (var i = 0; i < smallints.length; i++) {
-      var op = smallints[i];
+    for (let i = 0; i < smallints.length; i++) {
+      const op = smallints[i];
       it('should work for small int ' + op, testIsSmallInt.bind(null, op));
     }
 

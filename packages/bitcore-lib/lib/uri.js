@@ -1,10 +1,8 @@
 'use strict';
 
-var _ = require('lodash');
-var URL = require('url');
-
-var Address = require('./address');
-var Unit = require('./unit');
+const url = require('url');
+const Address = require('./address');
+const Unit = require('./unit');
 
 /**
  * Bitcore URI
@@ -32,7 +30,7 @@ var Unit = require('./unit');
  * @returns {URI} A new valid and frozen instance of URI
  * @constructor
  */
-var URI = function(data, knownParams) {
+const URI = function(data, knownParams) {
   if (!(this instanceof URI)) {
     return new URI(data, knownParams);
   }
@@ -42,7 +40,7 @@ var URI = function(data, knownParams) {
   this.address = this.network = this.amount = this.message = null;
 
   if (typeof(data) === 'string') {
-    var params = URI.parse(data);
+    const params = URI.parse(data);
     if (params.amount) {
       params.amount = this._parseAmount(params.amount);
     }
@@ -94,7 +92,7 @@ URI.fromObject = function fromObject(json) {
 URI.isValid = function(arg, knownParams) {
   try {
     new URI(arg, knownParams);
-  } catch (err) {
+  } catch {
     return false;
   }
   return true;
@@ -108,14 +106,14 @@ URI.isValid = function(arg, knownParams) {
  * @returns {Object} An object with the parsed params
  */
 URI.parse = function(uri) {
-  var info = URL.parse(uri, true);
+  const info = url.parse(uri, true);
 
   if (info.protocol !== 'bitcoin:') {
     throw new TypeError('Invalid bitcoin URI');
   }
 
   // workaround to host insensitiveness
-  var group = /[^:]*:\/?\/?([^?]*)/.exec(uri);
+  const group = /[^:]*:\/?\/?([^?]*)/.exec(uri);
   info.query.address = group && group[1] || undefined;
 
   return info.query;
@@ -142,7 +140,7 @@ URI.prototype._fromObject = function(obj) {
   this.network = this.address.network;
   this.amount = obj.amount;
 
-  for (var key in obj) {
+  for (const key in obj) {
     if (key === 'address' || key === 'amount') {
       continue;
     }
@@ -151,7 +149,7 @@ URI.prototype._fromObject = function(obj) {
       throw Error('Unknown required argument ' + key);
     }
 
-    var destination = URI.Members.indexOf(key) > -1 ? this : this.extras;
+    const destination = URI.Members.indexOf(key) > -1 ? this : this.extras;
     destination[key] = obj[key];
   }
 };
@@ -172,14 +170,14 @@ URI.prototype._parseAmount = function(amount) {
 };
 
 URI.prototype.toObject = URI.prototype.toJSON = function toObject() {
-  var json = {};
-  for (var i = 0; i < URI.Members.length; i++) {
-    var m = URI.Members[i];
+  const json = {};
+  for (let i = 0; i < URI.Members.length; i++) {
+    const m = URI.Members[i];
     if (this.hasOwnProperty(m) && typeof(this[m]) !== 'undefined') {
       json[m] = this[m].toString();
     }
   }
-  _.extend(json, this.extras);
+  Object.assign(json, this.extras);
   return json;
 };
 
@@ -189,7 +187,7 @@ URI.prototype.toObject = URI.prototype.toJSON = function toObject() {
  * @returns {string} Bitcoin URI string
  */
 URI.prototype.toString = function() {
-  var query = {};
+  const query = {};
   if (this.amount) {
     query.amount = Unit.fromSatoshis(this.amount).toBTC();
   }
@@ -202,9 +200,9 @@ URI.prototype.toString = function() {
   if (this.r) {
     query.r = this.r;
   }
-  _.extend(query, this.extras);
+  Object.assign(query, this.extras);
 
-  return URL.format({
+  return url.format({
     protocol: 'bitcoin:',
     host: this.address,
     query: query
