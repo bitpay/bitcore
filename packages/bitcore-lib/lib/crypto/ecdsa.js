@@ -205,7 +205,10 @@ const sign = function(hashbuf, privkey, opts) {
     k = randomK ? getRandomK() : getDeterministicK(hashbuf, privkey, badrs);
     badrs++;
     Q = G.mul(k);
-    r = Q.x.umod(N);
+    // elliptic points may carry coordinates backed by a different bn.js instance
+    // than bitcore's BN wrapper when bundled by tools like webpack. Normalize
+    // through bytes before doing BN arithmetic to avoid cross-instance asserts.
+    r = BN.fromBuffer(Buffer.from(Q.getX().toArray('be', 32))).umod(N);
     s = k.invm(N).mul(e.add(d.mul(r))).umod(N);
   } while (r.cmp(BN.Zero) <= 0 || s.cmp(BN.Zero) <= 0);
 
@@ -299,4 +302,3 @@ module.exports.__testing__ = {
   getRandomK,
   toLowS,
 };
-
