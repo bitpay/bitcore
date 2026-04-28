@@ -1,12 +1,11 @@
 'use strict';
 
-const Message = require('../message');
 const inherits = require('util').inherits;
 const bitcore = require('@bitpay-labs/bitcore-lib-cash');
+const Message = require('../message');
 
 const BufferUtil = bitcore.util.buffer;
 const $ = bitcore.util.preconditions;
-const _ = bitcore.deps._;
 
 /**
  * Contains information about a MerkleBlock
@@ -22,7 +21,7 @@ function MerkleblockMessage(arg, options) {
   this.MerkleBlock = options.MerkleBlock; // constructor
   this.command = 'merkleblock';
   $.checkArgument(
-    _.isUndefined(arg) || arg instanceof this.MerkleBlock,
+    arg == null || arg instanceof this.MerkleBlock,
     'An instance of MerkleBlock or undefined is expected'
   );
   this.merkleBlock = arg;

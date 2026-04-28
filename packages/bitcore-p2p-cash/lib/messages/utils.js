@@ -4,20 +4,19 @@ const bitcore = require('@bitpay-labs/bitcore-lib-cash');
 
 const BufferUtil = bitcore.util.buffer;
 const $ = bitcore.util.preconditions;
-const _ = bitcore.deps._;
 let utils;
 
 module.exports = utils = {
   checkInventory: function(arg) {
     $.checkArgument(
-      _.isUndefined(arg) ||
+      arg == null ||
         (Array.isArray(arg) && arg.length === 0) ||
-        (Array.isArray(arg) && !_.isUndefined(arg[0].type) && !_.isUndefined(arg[0].hash)),
+        (Array.isArray(arg) && arg[0].type != null && arg[0].hash != null),
       'Argument is expected to be an array of inventory objects'
     );
   },
   checkFinished: function checkFinished(parser) {
-    if(!parser.finished()) {
+    if (!parser.finished()) {
       throw new Error('Data still available after parsing');
     }
   },
@@ -25,17 +24,17 @@ module.exports = utils = {
     return bitcore.crypto.Random.getRandomBuffer(8);
   },
   writeIP: function writeIP(ip, bw) {
-    var words = ip.v6.split(':').map(function(s) {
+    const words = ip.v6.split(':').map(function(s) {
       return Buffer.from(s, 'hex');
     });
-    for (var i = 0; i < words.length; i++) {
-      var word = words[i];
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
       bw.write(word);
     }
   },
   writeAddr: function writeAddr(addr, bw) {
-    if (_.isUndefined(addr)) {
-      var pad = Buffer.from(Array(26));
+    if (addr == null) {
+      const pad = Buffer.from(Array(26));
       bw.write(pad);
       return;
     }
@@ -46,16 +45,16 @@ module.exports = utils = {
   },
   writeInventory: function writeInventory(inventory, bw) {
     bw.writeVarintNum(inventory.length);
-    inventory.forEach(function(value) {
+    for (const value of inventory) {
       bw.writeUInt32LE(value.type);
       bw.write(value.hash);
-    });
+    }
   },
   parseIP: function parseIP(parser) {
-    var ipv6 = [];
-    var ipv4 = [];
-    for (var a = 0; a < 8; a++) {
-      var word = parser.read(2);
+    let ipv6 = [];
+    let ipv4 = [];
+    for (let a = 0; a < 8; a++) {
+      const word = parser.read(2);
       ipv6.push(word.toString('hex'));
       if (a >= 6) {
         ipv4.push(word[0]);
@@ -70,9 +69,9 @@ module.exports = utils = {
     };
   },
   parseAddr: function parseAddr(parser) {
-    var services = parser.readUInt64LEBN();
-    var ip = utils.parseIP(parser);
-    var port = parser.readUInt16BE();
+    const services = parser.readUInt64LEBN();
+    const ip = utils.parseIP(parser);
+    const port = parser.readUInt16BE();
     return {
       services: services,
       ip: ip,
@@ -82,12 +81,12 @@ module.exports = utils = {
   sanitizeStartStop: function sanitizeStartStop(obj) {
     /* jshint maxcomplexity: 10 */
     /* jshint maxstatements: 20 */
-    $.checkArgument(_.isUndefined(obj.starts) || _.isArray(obj.starts));
-    var starts = obj.starts;
-    var stop = obj.stop;
+    $.checkArgument(obj?.starts == null || Array.isArray(obj?.starts));
+    let starts = obj.starts;
+    let stop = obj.stop;
     if (starts) {
       starts = starts.map(function(hash) {
-        if (_.isString(hash)) {
+        if (typeof hash === 'string') {
           return BufferUtil.reverse(Buffer.from(hash, 'hex'));
         } else {
           return hash;
@@ -97,14 +96,14 @@ module.exports = utils = {
       starts = [];
     }
 
-    for (var i = 0; i < starts.length; i++) {
+    for (let i = 0; i < starts.length; i++) {
       if (starts[i].length !== 32) {
         throw new Error('Invalid hash ' + i + ' length: ' + starts[i].length);
       }
     }
 
     stop = obj.stop;
-    if (_.isString(stop)) {
+    if (typeof stop === 'string') {
       stop = BufferUtil.reverse(Buffer.from(stop, 'hex'));
     }
     if (!stop) {

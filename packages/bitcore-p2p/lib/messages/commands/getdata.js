@@ -1,13 +1,12 @@
 'use strict';
 
-const Message = require('../message');
 const inherits = require('util').inherits;
 const bitcore = require('@bitpay-labs/bitcore-lib');
+const Message = require('../message');
 const utils = require('../utils');
 
 const BufferReader = bitcore.encoding.BufferReader;
 const BufferWriter = bitcore.encoding.BufferWriter;
-const _ = bitcore.deps._;
 
 /**
  * @param {Object|Array=} - options - If options is an array will use as "inventory"
@@ -26,19 +25,19 @@ inherits(GetdataMessage, Message);
 GetdataMessage.prototype.setPayload = function(payload) {
   this.inventory = [];
 
-  var parser = new BufferReader(payload);
-  var count = parser.readVarintNum();
-  for (var i = 0; i < count; i++) {
-    var type = parser.readUInt32LE();
-    var hash = parser.read(32);
-    this.inventory.push({type: type, hash: hash});
+  const parser = new BufferReader(payload);
+  const count = parser.readVarintNum();
+  for (let i = 0; i < count; i++) {
+    const type = parser.readUInt32LE();
+    const hash = parser.read(32);
+    this.inventory.push({ type: type, hash: hash });
   }
 
   utils.checkFinished(parser);
 };
 
 GetdataMessage.prototype.getPayload = function() {
-  var bw = new BufferWriter();
+  const bw = new BufferWriter();
   utils.writeInventory(this.inventory, bw);
   return bw.concat();
 };

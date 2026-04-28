@@ -1,11 +1,10 @@
 'use strict';
 
-const Message = require('../message');
 const inherits = require('util').inherits;
 const bitcore = require('@bitpay-labs/bitcore-lib-doge');
+const Message = require('../message');
 
 const $ = bitcore.util.preconditions;
-const _ = bitcore.deps._;
 
 /**
  * @param {Block=} arg - An instance of a Block
@@ -19,7 +18,7 @@ function BlockMessage(arg, options) {
   this.Block = options.Block;
   this.command = 'block';
   $.checkArgument(
-    _.isUndefined(arg) || arg instanceof this.Block,
+    arg == null || arg instanceof this.Block,
     'An instance of Block or undefined is expected'
   );
   this.block = arg;
