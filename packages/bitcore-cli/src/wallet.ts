@@ -257,13 +257,10 @@ export class Wallet implements IWallet {
 
     if (doNotComplete) return key;
 
-
-    this.client.on('walletCompleted', (_wallet) => {
-      this.save().then(() => {
-        _verbose && prompt.log.info('Your wallet has just been completed.');
-      });
-    });
-    await this.client.openWallet();
+    const status = await this.client.openWallet();
+    if (status?.wallet?.status === 'complete') {
+      await this.save();
+    }
     return key;
   };
 
@@ -362,6 +359,9 @@ export class Wallet implements IWallet {
         testnet: process.env['BITCORE_CLI_CURRENCIES_URL'] || 'https://test.bitpay.com/currencies',
         regtest: process.env['BITCORE_CLI_CURRENCIES_URL_REGTEST']
       };
+      if (network === 'regtest' && !urls[network]) {
+        throw new Error('Set BITCORE_CLI_CURRENCIES_URL_REGTEST environment variable.');
+      }
       let response: Response;
       try {
         response = await fetch(urls[network], { method: 'GET', headers: { 'Content-Type': 'application/json' } });
