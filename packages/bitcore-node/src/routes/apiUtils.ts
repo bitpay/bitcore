@@ -1,4 +1,5 @@
-import { Response } from 'express';
+import { Readable } from 'stream';
+import { Request, Response } from 'express';
 import { AdapterError, AdapterErrorCode, AllProvidersUnavailableError } from '../providers/chain-state/external/adapters/errors';
 
 export function respondWithError(res: Response, err: any) {
@@ -9,4 +10,113 @@ export function respondWithError(res: Response, err: any) {
     return res.status(400).json({ error: 'Invalid request', message: err.message });
   }
   return res.status(500).send(err.message || err);
+}
+
+export interface StreamJsonArrayOpts {
+  jsonl?: boolean;
+}
+
+export interface StreamJsonArrayResult {
+  success: boolean;
+  error?: any;
+}
+
+/**
+ * Pipe a Readable stream to an Express response as a JSON array (default) or JSONL.
+ *
+ * - Pre-data errors reject so the route can send a proper status code
+ * - Mid-stream errors append an inline error marker and end the response
+ * - Client/response disconnects destroy the stream (and call .close() if present, e.g. mongo cursor)
+ */
+export function streamJsonArray(
+  stream: Readable & { close?: () => void },
+  req: Request,
+  res: Response,
+  opts: StreamJsonArrayOpts = {}
+): Promise<StreamJsonArrayResult> {
+  return new Promise<StreamJsonArrayResult>((resolve, reject) => {
+    let closed = false;
+    let isFirst = true;
+
+    const cleanup = () => {
+      closed = true;
+      if (typeof stream.close === 'function') {
+        try { stream.close(); } catch { /* noop */ }
+      } else if (typeof stream.destroy === 'function') {
+        try { stream.destroy(); } catch { /* noop */ }
+      }
+    };
+
+    req.on('close', () => { closed = true; if (typeof stream.close === 'function') stream.close(); });
+    res.type('json');
+    res.on('close', () => { closed = true; if (typeof stream.close === 'function') stream.close(); });
+
+    stream.on('error', (err: any) => {
+      if (closed) return;
+      if (err?.isAxiosError) {
+        err.log = {
+          url: err?.config?.url,
+          statusCode: err?.response?.status,
+          statusMsg: err?.response?.statusText,
+          data: err?.response?.data,
+        };
+      }
+      if (err?.log?.data?.message?.includes('not supported')) {
+        closed = true;
+        res.write('[]');
+        res.end();
+        return resolve({ success: false, error: err });
+      }
+      if (!isFirst) {
+        // Headers already sent — emit inline error marker, end response, log upstream
+        closed = true;
+        const errMsg = '{"error": "An error occurred during data stream"}';
+        if (opts.jsonl) {
+          res.write(`${errMsg}`);
+        } else {
+          res.write(`,\n${errMsg}\n]`);
+        }
+        res.end();
+        cleanup();
+        return resolve({ success: false, error: err });
+      }
+      // Pre-data — caller can send proper 5xx status
+      return reject(err);
+    });
+
+    stream.on('data', (data: any) => {
+      if (closed) {
+        cleanup();
+        return;
+      }
+      if (!opts.jsonl) {
+        if (isFirst) {
+          res.write('[\n');
+        } else {
+          res.write(',\n');
+        }
+      }
+      if (isFirst) {
+        isFirst = false;
+      }
+      if (typeof data !== 'string' && !Buffer.isBuffer(data)) {
+        data = JSON.stringify(data);
+      }
+      res.write(data);
+    });
+
+    stream.on('end', () => {
+      if (closed) return;
+      closed = true;
+      if (!opts.jsonl) {
+        if (isFirst) {
+          res.write('[]');
+        } else {
+          res.write('\n]');
+        }
+      }
+      res.end();
+      resolve({ success: true });
+    });
+  });
 }
