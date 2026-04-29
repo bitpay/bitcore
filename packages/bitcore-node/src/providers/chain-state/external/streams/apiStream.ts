@@ -1,12 +1,7 @@
-import { Readable, Stream, Transform } from 'stream';
+import { Stream, Transform } from 'stream';
 import axios from 'axios';
-import { Request, Response } from 'express';
 import { ReadableWithEventPipe, TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 
-
-export interface StreamOpts {
-  jsonl?: boolean;
-}
 
 export class ExternalApiStream extends ReadableWithEventPipe {
   url: string;
@@ -71,97 +66,6 @@ export class ExternalApiStream extends ReadableWithEventPipe {
     } catch (error) {
       this.emit('error', error);
     }
-  }
-
-  // handles events emitted by the streamed response, request from client, and response to client
-  static onStream(stream: Readable, req: Request, res: Response, opts: StreamOpts = {}):
-  Promise<{ success: boolean; error?: any }> {
-    return new Promise<{ success: boolean; error?: any }>((resolve, reject) => {
-      let closed = false;
-      let isFirst = true;
-
-      req.on('close', function() {
-        closed = true;
-      });
-
-      res.type('json');
-      res.on('close', function() {
-        closed = true;
-      });
-
-      stream.on('error', function(err: any) {
-        if (!closed) {
-          closed = true;
-          if (err.isAxiosError) {
-            err.log = {
-              url: err?.config?.url,
-              statusCode: err?.response?.status,
-              statusMsg: err?.response?.statusText,
-              data: err?.response?.data,
-            };
-          }
-          if (err.log?.data?.message?.includes('not supported')) {
-            res.write('[]');
-            res.end();
-            return resolve({ success: false, error: err });
-          }
-          if (!isFirst) {
-            // Data has already been written to the stream and status 200 headers have already been sent
-            // We notify and log the error instead of throwing
-            const errMsg = '{"error": "An error occurred during data stream"}';
-            if (opts.jsonl) {
-              res.write(`${errMsg}`);
-            } else {
-              res.write(`,\n${errMsg}\n]`);
-            }
-            res.end();
-            res.destroy();
-            return resolve({ success: false, error: err });
-          } else {
-            // Rejecting here allows downstream to send status 500
-            return reject(err);
-          }
-        }
-        return;
-      });
-      stream.on('data', function(data) {
-        if (!closed) {
-          // We are assuming jsonl data appended a new line upstream
-          if (!opts.jsonl) {
-            if (isFirst) {
-              res.write('[\n');
-            } else {
-              res.write(',\n');
-            }
-          }
-          if (isFirst) {
-            // All cases need isFirst set correctly for proper error handling
-            isFirst = false;
-          }
-          if (typeof data !== 'string') {
-            data = JSON.stringify(data);
-          }
-          res.write(data);
-        } else {
-          stream.destroy();
-        }
-      });
-      stream.on('end', function() {
-        if (!closed) {
-          closed = true;
-          if (!opts.jsonl) {
-            if (isFirst) {
-              // there was no data
-              res.write('[]');
-            } else {
-              res.write('\n]');
-            }
-          }
-          res.end();
-          resolve({ success: true });
-        }
-      });
-    });
   }
 
   static mergeStreams(streams: Stream[], destination: Transform): Transform {
