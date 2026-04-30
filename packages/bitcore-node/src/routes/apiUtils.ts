@@ -29,11 +29,13 @@ export interface StreamJsonArrayResult {
  * - Client/response disconnects destroy the stream (and call .close() if present, e.g. mongo cursor)
  */
 export function streamJsonArray(
-  stream: Readable & { close?: () => void },
+  stream: Readable & { close?: () => void; jsonl?: boolean },
   req: Request,
   res: Response,
   opts: StreamJsonArrayOpts = {}
 ): Promise<StreamJsonArrayResult> {
+  // Auto-detect jsonl flag attached to the stream so routes stay chain-agnostic.
+  const jsonl = opts.jsonl ?? stream.jsonl ?? false;
   return new Promise<StreamJsonArrayResult>((resolve, reject) => {
     let closed = false;
     let isFirst = true;
@@ -71,7 +73,7 @@ export function streamJsonArray(
         // Headers already sent — emit inline error marker, end response, log upstream
         closed = true;
         const errMsg = '{"error": "An error occurred during data stream"}';
-        if (opts.jsonl) {
+        if (jsonl) {
           res.write(`${errMsg}`);
         } else {
           res.write(`,\n${errMsg}\n]`);
@@ -89,7 +91,7 @@ export function streamJsonArray(
         cleanup();
         return;
       }
-      if (!opts.jsonl) {
+      if (!jsonl) {
         if (isFirst) {
           res.write('[\n');
         } else {
@@ -108,7 +110,7 @@ export function streamJsonArray(
     stream.on('end', () => {
       if (closed) return;
       closed = true;
-      if (!opts.jsonl) {
+      if (!jsonl) {
         if (isFirst) {
           res.write('[]');
         } else {
