@@ -4,9 +4,10 @@ var bitcore = module.exports;
 
 // module information
 bitcore.version = 'v' + require('./package.json').version;
+
 bitcore.versionGuard = function(version) {
   if (version !== undefined) {
-    var message = 'More than one instance of bitcore-lib found. ' +
+    const message = 'More than one instance of bitcore-lib found. ' +
       'Please make sure to require bitcore-lib and check that submodules do' +
       ' not also include their own bitcore-lib dependency.';
     throw new Error(message);
@@ -64,9 +65,9 @@ bitcore.Unit = require('./lib/unit');
 bitcore.deps = {};
 bitcore.deps.bnjs = require('bn.js');
 bitcore.deps.bs58 = require('bs58');
+
 bitcore.deps.Buffer = Buffer;
 bitcore.deps.elliptic = require('elliptic');
-bitcore.deps._ = require('lodash');
 
 // Internal usage, exposed for testing/advanced tweaking
 bitcore.Transaction.sighash = require('./lib/transaction/sighash');
