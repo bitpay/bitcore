@@ -1,7 +1,6 @@
 /* eslint-disable no-bitwise */
 'use strict';
 
-const JSUtil = require('../../util/js');
 const BN = require('../crypto/bn');
 const Hash = require('../crypto/hash');
 const Signature = require('../crypto/signature');
@@ -11,6 +10,7 @@ const Opcode = require('../opcode');
 const PublicKey = require('../publickey');
 const SighashSchnorr = require('../transaction/sighashschnorr');
 const SighashWitness = require('../transaction/sighashwitness');
+const JSUtil = require('../util/js');
 const $ = require('../util/preconditions');
 const Script = require('./script');
 
