@@ -91,7 +91,7 @@ const Search: React.FC = () => {
                         <SearchTileHeader>
                           <HeaderImg>
                             <img
-                              src={`https://bitpay.com/img/icon/currencies/${chain}.svg`}
+                              src={`/insight/${chain}.svg`} onError={(e: any) => { e.target.onerror=null; e.target.src=`/insight/${chain}.png`; }}
                               width={35}
                               height={35}
                               alt='currency logo'
@@ -131,7 +131,7 @@ const Search: React.FC = () => {
                         <SearchTileHeader>
                           <HeaderImg>
                             <img
-                              src={`https://bitpay.com/img/icon/currencies/${chain}.svg`}
+                              src={`/insight/${chain}.svg`} onError={(e: any) => { e.target.onerror=null; e.target.src=`/insight/${chain}.png`; }}
                               width={35}
                               height={35}
                               alt='currency logo'
@@ -169,7 +169,7 @@ const Search: React.FC = () => {
                       <SearchTileHeader>
                         <HeaderImg>
                           <img
-                            src={`https://bitpay.com/img/icon/currencies/${chain}.svg`}
+                            src={`/insight/${chain}.svg`} onError={(e: any) => { e.target.onerror=null; e.target.src=`/insight/${chain}.png`; }}
                             width={35}
                             height={35}
                             alt='currency logo'

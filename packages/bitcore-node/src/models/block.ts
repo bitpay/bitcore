@@ -241,6 +241,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
     let mode = 0, maxCount = 0;
     for (const tx of transactions) {
       if (tx.coinbase) continue; // skip coinbase transaction
+      if (!tx.fee || tx.fee < 0) continue; // skip transactions with negative or zero fee (e.g. Sapling shielded)
       const rate = tx.fee && tx.size ? tx.fee / tx.size : 0; // does not add fee rate 0 or divide by zero
       feeRates.push(rate);
       feeRateSum += rate;

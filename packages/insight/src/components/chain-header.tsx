@@ -221,7 +221,7 @@ const ChainHeader: FC<{ currency: string; network: string }> = ({ currency, netw
     <div>
       <span style={{fontSize: '50px', fontWeight: 'bold'}}>Blocks </span>
         <img
-          src={`https://bitpay.com/img/icon/currencies/${currency}.svg`}
+          src={`/insight/${currency}.svg`} onError={(e: any) => { e.target.onerror=null; e.target.src=`/insight/${currency}.png`; }}
           alt={currency}
           style={{height: '25px', marginBottom: '0.25rem'}}
         />
