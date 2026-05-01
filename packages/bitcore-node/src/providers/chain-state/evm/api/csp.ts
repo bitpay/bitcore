@@ -554,6 +554,9 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       return Storage.apiStreamingFind(EVMTransactionStorage, query, { limit /* since, paging: '_id'*/ });
     }
     const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress, args);
+    // Streams elements one-by-one so the route wraps them via streamJsonArray.
+    // The response remains a JSON array of the same N transfer objects; only inter-element
+    // whitespace differs from the prior res.json() output (compact `[..]` vs newline-separated).
     return Readable.from(tokenTransfers, { objectMode: true });
   }
 
@@ -672,6 +675,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     let transactionStream = new TransformWithEventPipe({ objectMode: true, passThrough: true });
     const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddres => waddres.address);
     if (walletAddresses.length === 0) {
+      // Status remains 400 via respondWithError; body shape changes from text/plain to
+      // the JSON {error, message} shape used by every other 4xx path.
       throw new AdapterError('walletAddresses', AdapterErrorCode.INVALID_REQUEST, 'No addresses found for wallet');
     }
     const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses, args.tokenAddress);

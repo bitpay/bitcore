@@ -40,18 +40,24 @@ export function streamJsonArray(
     let closed = false;
     let isFirst = true;
 
-    const cleanup = () => {
-      closed = true;
+    const tearDown = () => {
+      // close() handles mongo cursor streams; destroy() tears down piped Transform chains
+      // so cursor-cleanup listeners hooked to the Transform's 'close' event fire eagerly on disconnect.
       if (typeof stream.close === 'function') {
         try { stream.close(); } catch { /* noop */ }
-      } else if (typeof stream.destroy === 'function') {
+      }
+      if (typeof stream.destroy === 'function' && !stream.destroyed) {
         try { stream.destroy(); } catch { /* noop */ }
       }
     };
+    const cleanup = () => {
+      closed = true;
+      tearDown();
+    };
 
-    req.on('close', () => { closed = true; if (typeof stream.close === 'function') stream.close(); });
+    req.on('close', () => { closed = true; tearDown(); });
     res.type('json');
-    res.on('close', () => { closed = true; if (typeof stream.close === 'function') stream.close(); });
+    res.on('close', () => { closed = true; tearDown(); });
 
     stream.on('error', (err: any) => {
       if (closed) return;
