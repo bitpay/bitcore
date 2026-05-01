@@ -352,9 +352,11 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
         let fee = 0;
         if (groupedSpends[txid]) {
           // TODO: Fee is negative for mempool txs
-          fee = groupedSpends[txid].total - tx.outputAmount;
-          if (fee < 0) {
-            logger.debug('Negative fee %o %o %o', txid, groupedSpends[txid], tx.outputAmount);
+          // For Zcash/ZClassic transactions, valueBalance (shielded pool) may cause negative fee
+          // Clamp to 0 as fee can never be negative
+          fee = Math.max(0, groupedSpends[txid].total - tx.outputAmount);
+          if (groupedSpends[txid].total - tx.outputAmount < 0) {
+            logger.debug('Negative fee clamped to 0 %o %o %o', txid, groupedSpends[txid], tx.outputAmount);
           }
         }
 

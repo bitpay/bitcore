@@ -1,0 +1,36 @@
+{
+  "name": "zclassic-bitcore-p2p",
+  "version": "11.4.0",
+  "description": "Interface to the Zclassic P2P network for bitcore",
+  "main": "index.js",
+  "scripts": {
+    "test": "gulp test",
+    "test:ci": "npm run test",
+    "coverage": "gulp coverage",
+    "build": "gulp",
+    "pub": "npm run build && npm publish"
+  },
+  "keywords": [
+    "zclassic",
+    "bitcore"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore-p2p.git"
+  },
+  "dependencies": {
+    "zclassic-bitcore-lib": "file:../zclassic-bitcore-lib",
+    "bloom-filter": "^0.2.0",
+    "buffers": "bitpay/node-buffers#v0.1.2-bitpay",
+    "socks5-client": "^0.3.6"
+  },
+  "devDependencies": {
+    "bitcore-build": "^11.3.7",
+    "brfs": "^1.2.0",
+    "chai": "~1.10.0",
+    "gulp": "^4.0.0",
+    "sinon": "^1.12.2"
+  },
+  "license": "MIT",
+  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
+}

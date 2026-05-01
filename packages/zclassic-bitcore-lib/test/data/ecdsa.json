@@ -1,0 +1,116 @@
+{
+  "valid": [
+    {
+      "d": "1c3a9c01d5ef9240df55bb49f4c275c1cd3adfe3ffd702a17ba1f5ae8b21a501",
+      "k": "b42d7e1df26498f54de24fc22ac9a901b812d95421b31b116e0c324cc3f42945",
+      "message": "ZClassic: Decentralized and community-driven.",
+      "i": 0,
+      "signature": {
+        "r": "67421793280194377483896574283719917234598348791876250982219829238192438916952",
+        "s": "30556880401432056934147492873191421748369099926622011494521885237450681054983"
+      }
+    },
+    {
+      "d": "ad9bb7f09417c0531e1a137b6f3cd2fbf2b1cb3b3af5240898c6c1c3e9bb2ece",
+      "k": "df613ba8e2239f7793557424accaa7f3cefa7e37315b9c3bba6f97b2fb05ef92",
+      "message": "Privacy matters, even without trusted setup.",
+      "i": 0,
+      "signature": {
+        "r": "92750870431161294785130173585921294439378825842762961475922977519737940256413",
+        "s": "14596463312879699169775501303412925185748930798693067268278376598721999054951"
+      }
+    }
+  ],
+
+  "invalid": {
+    "sigError": [
+      {
+        "description": "Wrong signature (ZCL test)",
+        "exception": "Invalid signature",
+        "d": "01",
+        "message": "foo",
+        "signature": {
+          "r": "92750870431161294785130173585921294439378825842762961475922977519737940256413",
+          "s": "14596463312879699169775501303412925185748930798693067268278376598721999054951"
+        }
+      },
+      {
+        "description": "Invalid r (< 0)",
+        "exception": "r and s not in range",
+        "d": "01",
+        "message": "foo",
+        "signature": {
+          "r": "-1",
+          "s": "2"
+        }
+      },
+      {
+        "description": "Invalid r = 0",
+        "exception": "r and s not in range",
+        "d": "01",
+        "message": "foo",
+        "signature": {
+          "r": "0",
+          "s": "2"
+        }
+      },
+      {
+        "description": "Invalid r (>= n)",
+        "exception": "r and s not in range",
+        "d": "01",
+        "message": "foo",
+        "signature": {
+          "r": "115792089237316195423570985008687907852837564279074904382605163141518161494337",
+          "s": "2"
+        }
+      },
+      {
+        "description": "Invalid s (< 0)",
+        "exception": "r and s not in range",
+        "d": "01",
+        "message": "foo",
+        "signature": {
+          "r": "2",
+          "s": "-1"
+        }
+      },
+      {
+        "description": "Invalid s = 0",
+        "exception": "r and s not in range",
+        "d": "01",
+        "message": "foo",
+        "signature": {
+          "r": "2",
+          "s": "0"
+        }
+      },
+      {
+        "description": "Invalid s >= n",
+        "exception": "r and s not in range",
+        "d": "01",
+        "message": "foo",
+        "signature": {
+          "r": "2",
+          "s": "115792089237316195423570985008687907852837564279074904382605163141518161494337"
+        }
+      }
+    ]
+  },
+
+  "deterministicK": [
+    {
+      "message": "ZClassic deterministic test vector 1",
+      "privkey": "dbe98fbc5f1fd924989122acb62d3e78d3a7b052c03b61d880274cbdf2fd31a4",
+      "k_bad00": "f2b3ac7a76c9d35cc23d984e4a780beeff8d93d0d688dfbdcc1af3ccb13a5e44",
+      "k_bad01": "a8f1fdce39db21641c8c1c4d2c36e5dc2d8b5e771c9f28fab2927661c2a6de51",
+      "k_bad15": "7f6cb680f0e51da12f5256a8ffc1ea65f2d3a3076aea2cdd13d5e2aa6232f612"
+    },
+    {
+      "message": "ZCL deterministic vector 2",
+      "privkey": "01",
+      "k_bad00": "bd72962e3e5b22c4a1c6c1d34b31e449f80bde1fd9f828c27d4fadee7294d115",
+      "k_bad01": "c4f6a7a51df2ef11165c9f49e2bc7c00e5ac0f9be5225d51660f58f35a9307fc",
+      "k_bad15": "75bd3e58fd292099f091e3c06d0f89bfbd69635085270eb8fcaec812d92471f8"
+    }
+  ]
+}

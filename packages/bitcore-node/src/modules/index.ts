@@ -55,7 +55,8 @@ class ModuleManager extends BaseModule {
     DOGE: './dogecoin',
     LTC: './litecoin',
     XRP: './ripple',
-    SOL: './solana'
+    SOL: './solana',
+    ZCL: './zclassic'
   };
 
   loadConfigured(params: Partial<ChainNetwork> = {}) {

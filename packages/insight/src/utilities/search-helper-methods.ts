@@ -38,6 +38,13 @@ const inputTypes: InputType[] = [
     type: 'address',
     chainNetworks: [{chain: 'LTC', network: 'mainnet'}],
   },
+  // Zclassic Address (t1 for pubkeyhash, t3 for scripthash)
+  {
+    regexes: [/^(zclassic:)?([t][13][a-km-zA-HJ-NP-Z1-9]{33,34})/],
+    dataIndex: 2,
+    type: 'address',
+    chainNetworks: [{chain: 'ZCL', network: 'mainnet'}],
+  },
 
   // Testnet BTC / BCH / Doge / LTC Address
   {
@@ -74,7 +81,7 @@ const inputTypes: InputType[] = [
     type: 'address',
     chainNetworks: [{chain: 'DOGE', network: 'mainnet'}],
   },
-  // BTC / BCH / DOGE / LTC block or tx
+  // BTC / BCH / DOGE / LTC / ZCL block or tx
   {
     regexes: [/^[A-Fa-f0-9]{64}$/],
     type: 'blockOrTx',
@@ -83,10 +90,12 @@ const inputTypes: InputType[] = [
       {chain: 'BCH', network: 'mainnet'},
       {chain: 'DOGE', network: 'mainnet'},
       {chain: 'LTC', network: 'mainnet'},
+      {chain: 'ZCL', network: 'mainnet'},
       {chain: 'BTC', network: 'testnet'},
       {chain: 'BCH', network: 'testnet'},
       {chain: 'DOGE', network: 'testnet'},
       {chain: 'LTC', network: 'testnet'},
+      {chain: 'ZCL', network: 'testnet'},
     ],
   },
   // ETH block or tx
@@ -98,7 +107,7 @@ const inputTypes: InputType[] = [
       {chain: 'ETH', network: 'testnet'},
     ],
   },
-  // BTC / BCH / DOGE / ETH block height
+  // BTC / BCH / DOGE / ETH / ZCL block height
   {
     regexes: [/^[0-9]{1,9}$/],
     type: 'block',
@@ -108,11 +117,13 @@ const inputTypes: InputType[] = [
       {chain: 'DOGE', network: 'mainnet'},
       {chain: 'ETH', network: 'mainnet'},
       {chain: 'LTC', network: 'mainnet'},
+      {chain: 'ZCL', network: 'mainnet'},
       {chain: 'BTC', network: 'testnet'},
       {chain: 'BCH', network: 'testnet'},
       {chain: 'DOGE', network: 'testnet'},
       {chain: 'ETH', network: 'testnet'},
       {chain: 'LTC', network: 'testnet'},
+      {chain: 'ZCL', network: 'testnet'},
     ],
   },
 ];

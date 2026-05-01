@@ -83,7 +83,7 @@ export const Pill: FC<PillProps> = ({ currency, network, onCloseClick }) => {
   return (
     currency ?
       <PillBubble>
-        <CurrencyImg src={`https://bitpay.com/img/icon/currencies/${currency}.svg`} alt={currency} />
+        <CurrencyImg src={`/insight/${currency}.svg`} onError={(e: any) => { e.target.onerror=null; e.target.src=`/insight/${currency}.png`; }} alt={currency} />
         <NetworkLabel>{network}</NetworkLabel>
         <PillCloseButtonScope onClick={onCloseClick}>
           <PillCloseButtonCircle>

@@ -1,0 +1,134 @@
+{
+  "hash": "00000497538e8848920a21e51b1d5090cb07659d02038f2cd6b7fd5a4da4b684",
+  "confirmations": 3104,
+  "size": 898,
+  "height": 2907966,
+  "version": 4,
+  "merkleroot": "639fe9fb72e38057812b8e832239e0066e7010654cb5db86d7144e24c576ae62",
+  "finalsaplingroot": "2c4e0620ece2a1871e159a6951854e4d1e63bd5cdf9cc5513e20469374d46b1c",
+  "tx": [
+    {
+      "txid": "9a4aab8432f2aec899a47a248c44a7fac03ea8a39aaed02b4c38bca8d0bf5747",
+      "overwintered": true,
+      "version": 4,
+      "size": 109,
+      "versiongroupid": "892f2085",
+      "locktime": 0,
+      "expiryheight": 0,
+      "vin": [
+        {
+          "coinbase": "033e5f2c00",
+          "sequence": 4294967295
+        }
+      ],
+      "vout": [
+        {
+          "value": 0.39062747,
+          "valueZat": 39062747,
+          "n": 0,
+          "scriptPubKey": {
+            "asm": "OP_DUP OP_HASH160 3b6d35a8b95908ba839d50dc0b7797f0fa4eb23e OP_EQUALVERIFY OP_CHECKSIG",
+            "hex": "76a9143b6d35a8b95908ba839d50dc0b7797f0fa4eb23e88ac",
+            "reqSigs": 1,
+            "type": "pubkeyhash",
+            "addresses": [
+              "t1TqPu1jQ22rK1ASjCyLWJ2amvVtFPJhtgx"
+            ]
+          }
+        }
+      ],
+      "vjoinsplit": [
+      ],
+      "valueBalance": 0.00000000,
+      "vShieldedSpend": [
+      ],
+      "vShieldedOutput": [
+      ]
+    },
+    {
+      "txid": "5ee3a9ff78f9d9cc537d222c5c01282ae2b6d6dfc553ce6f47a683225ec2f8d1",
+      "overwintered": true,
+      "version": 4,
+      "size": 245,
+      "versiongroupid": "892f2085",
+      "locktime": 0,
+      "expiryheight": 0,
+      "vin": [
+        {
+          "txid": "d18a1e7100882e3440bec3148d89c46f268ec8752f63faed6fa4a8f265833cfe",
+          "vout": 0,
+          "scriptSig": {
+            "asm": "3045022100a41d9a2561ef0d66ee14d638d6c8c5c57ec83c65e6abde168d56443f776cf369022054d1c054ff21de65e432d683be5165d39b5d4b3a0f47747653c79a4c30eed8e6[ALL] 02858baed01ef2f8ef1b18df0e00e31356ab03c4fba9c3913c3aa23a963e15372f",
+            "hex": "483045022100a41d9a2561ef0d66ee14d638d6c8c5c57ec83c65e6abde168d56443f776cf369022054d1c054ff21de65e432d683be5165d39b5d4b3a0f47747653c79a4c30eed8e6012102858baed01ef2f8ef1b18df0e00e31356ab03c4fba9c3913c3aa23a963e15372f"
+          },
+          "sequence": 4294967295
+        }
+      ],
+      "vout": [
+        {
+          "value": 100.00000000,
+          "valueZat": 10000000000,
+          "n": 0,
+          "scriptPubKey": {
+            "asm": "OP_DUP OP_HASH160 ee55908b9fe1dd9465b9f8c0a5f962d111d98940 OP_EQUALVERIFY OP_CHECKSIG",
+            "hex": "76a914ee55908b9fe1dd9465b9f8c0a5f962d111d9894088ac",
+            "reqSigs": 1,
+            "type": "pubkeyhash",
+            "addresses": [
+              "t1fJKb6DBa2qcfh7g9Uxs7er78iygTTcQuQ"
+            ]
+          }
+        },
+        {
+          "value": 453.97686229,
+          "valueZat": 45397686229,
+          "n": 1,
+          "scriptPubKey": {
+            "asm": "OP_DUP OP_HASH160 fd12bf8d082040ff080eab26e2013bf71abdf3e6 OP_EQUALVERIFY OP_CHECKSIG",
+            "hex": "76a914fd12bf8d082040ff080eab26e2013bf71abdf3e688ac",
+            "reqSigs": 1,
+            "type": "pubkeyhash",
+            "addresses": [
+              "t1RVLseXaTMBAwAMYXBMjpySuCqo8ZMHSnt"
+            ]
+          }
+        }
+      ],
+      "vjoinsplit": [
+      ],
+      "valueBalance": 0.00000000,
+      "vShieldedSpend": [
+      ],
+      "vShieldedOutput": [
+      ]
+    }
+  ],
+  "time": 1763015131,
+  "mediantime": 1763014754,
+  "nonce": "5594ec2c000000000000000064d62d5d40322e7b41a2d9c0cbf8da475a7dee00",
+  "solution": "00b156db01351242cf333f2d608d2e995c96d480403d2ac14607df3a9e33d89c6b8e95c12f67ee4f14f60dfeb2c99b628901637855f983ea62501c7cded9889249876e646a8f971b47eeec7b52674e6748317162be2bc2b9a6b42501060fa5b5f5f9d67e081b626b7b1a91d1704c52ddf1e096e7627ce9a12d051569d817be180dcd669085867739bb04c7372bcad92b708bf7f076aa0ebbb13f3f94d3098a54f76b92a91a96322cc5fbc6813a887a0ef687afb5238f8c680f92c53585ba559b0c056894494e37e001078d49c8b608b3da0f4cd520640e7ce5fa1459e779a73d701638034a7725cc8dd7dbac2067567b1c5d972dedc80787fa220aa93a78336938f886de85d046d27adea5d679e1f89b336e7e5919113699cafae5851e5dde889eb3673d30de301d3d4d9929114561b5903c4c9c3191392036e02b4d7fc9d22b02b15b8cc24234877088175a3022ff19be85d247779e04ce968da385fe8a16d99af78cfa1114a50db91df19eee5fceb83267961fb7f2b72bc2c570ed458af9801a18e072eb6e56b02698c13d832d0136",
+  "bits": "1e04c06a",
+  "difficulty": 431.0103082189581,
+  "chainwork": "000000000000000000000000000000000000000000000000000b3391aba319c7",
+  "anchor": "f6778afec080e900722fae24c8019bebadf5dbdb63176e7a7569d1371e62c3fc",
+  "valuePools": [
+    {
+      "id": "sprout",
+      "monitored": true,
+      "chainValue": 13164.12375709,
+      "chainValueZat": 1316412375709,
+      "valueDelta": 0.00000000,
+      "valueDeltaZat": 0
+    },
+    {
+      "id": "sapling",
+      "monitored": true,
+      "chainValue": 32538.22827027,
+      "chainValueZat": 3253822827027,
+      "valueDelta": 0.00000000,
+      "valueDeltaZat": 0
+    }
+  ],
+  "previousblockhash": "000002ac45130a8514ac10e8af66d78c30482e7dbfb11b556685091a27ac7adb",
+  "nextblockhash": "000000a2656e19b9a3ef74d30745a2079e79d2e1643f69f3789a3d9af999c5dc"
+}

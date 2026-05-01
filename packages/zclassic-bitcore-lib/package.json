@@ -1,0 +1,58 @@
+{
+  "name": "zclassic-bitcore-lib",
+  "version": "11.4.0",
+  "description": "A pure and powerful JavaScript Zclassic library.",
+  "author": "BitPay <dev@bitpay.com>",
+  "main": "index.js",
+  "scripts": {
+    "test": "gulp test:node",
+    "test:ci": "npm run test",
+    "coverage": "gulp coverage",
+    "build": "gulp test:node",
+    "pub": "npm run build && npm publish"
+  },
+  "keywords": [
+    "zclassic",
+    "transaction",
+    "address",
+    "p2p",
+    "ecies",
+    "cryptocurrency",
+    "blockchain",
+    "payment",
+    "bip21",
+    "bip32",
+    "bip37",
+    "bip69",
+    "bip70",
+    "multisig"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ZClassicCommunity/zclassic-bitcore-lib.git"
+  },
+  "browser": {
+    "request": "browser-request"
+  },
+  "dependencies": {
+    "bech32": "=2.0.0",
+    "bitcore-mnemonic": "^10.10.7",
+    "blake2b": "^2.1.4",
+    "bn.js": "=4.11.8",
+    "bs58": "^4.0.1",
+    "bs58check": "^4.0.0",
+    "buffer-compare": "=1.1.1",
+    "elliptic": "^6.5.3",
+    "inherits": "=2.0.1",
+    "lodash": "^4.17.20",
+    "scryptsy": "2.1.0"
+  },
+  "devDependencies": {
+    "bitcore-build": "^11.3.7",
+    "brfs": "^2.0.1",
+    "chai": "^4.2.0",
+    "gulp": "^4.0.0",
+    "sinon": "^7.1.1"
+  },
+  "license": "MIT"
+}

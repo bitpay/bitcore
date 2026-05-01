@@ -1,5 +1,5 @@
 
-export const UTXO_CHAINS = ['btc', 'bch', 'doge', 'ltc'];
+export const UTXO_CHAINS = ['btc', 'bch', 'doge', 'ltc', 'zcl'];
 export const EVM_CHAINS = ['eth', 'matic', 'arb', 'base', 'op'];
 export const SVM_CHAINS = ['sol'];
 export const RIPPLE_CHAINS = ['xrp'];

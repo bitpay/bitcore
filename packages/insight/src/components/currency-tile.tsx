@@ -10,11 +10,12 @@ import {FC, memo, useEffect, useRef} from 'react';
 import {useNavigate} from 'react-router-dom';
 import styled, {css} from 'styled-components';
 import {useApi} from '../api/api';
+
 import LargeThinSpinner from '../assets/images/large-thin-spinner.svg';
 import {Error, SlateDark, White} from '../assets/styles/colors';
 import {Spinner} from '../assets/styles/spinner';
 import {Tile} from '../assets/styles/tile';
-import {colorCodes} from '../utilities/constants';
+import {colorCodes, getCoinIconUrl} from '../utilities/constants';
 import {buildTime, getApiRoot, getDefaultRefreshInterval} from '../utilities/helper-methods';
 
 // Register necessary Chart.js components
@@ -205,7 +206,7 @@ const CurrencyTile: FC<CurrencyTileProps> = ({currency}) => {
   }
 
   const {height, time, transactionCount, size} = data[0];
-  const imgSrc = `https://bitpay.com/img/icon/currencies/${currency}.svg`;
+  const imgSrc = getCoinIconUrl(currency);
 
   const gotoChain = () => {
     navigate(`/${currency}/mainnet/blocks`);

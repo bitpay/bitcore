@@ -1,0 +1,17 @@
+import Bitcore from 'bitcore-lib';
+import type { IValidation } from '../../types/validation';
+
+export class ZclValidation implements IValidation {
+  validateAddress(network: string, address: string): boolean {
+    const Address = Bitcore.Address;
+    // Regular Address: try Bitcoin
+    return Address.isValid(address, network);
+  }
+
+  validateUri(addressUri: string): boolean {
+    // Check if the input is a valid uri or address
+    const URI = Bitcore.URI;
+    // Bip21 uri
+    return URI.isValid(addressUri);
+  }
+}

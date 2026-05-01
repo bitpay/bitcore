@@ -25,10 +25,6 @@
     "postbuild": "./postbuild.sh"
   },
   "dependencies": {
-    "@bitpay-labs/bitcore-lib": "^10.0.23",
-    "@bitpay-labs/bitcore-lib-cash": "^10.0.23",
-    "@bitpay-labs/bitcore-lib-doge": "^10.0.21",
-    "@bitpay-labs/bitcore-lib-ltc": "^10.0.21",
     "@reduxjs/toolkit": "2.3.0",
     "assert": "2.1.0",
     "axios": "1.7.9",
@@ -56,7 +52,11 @@
     "swr": "1.3.0",
     "url": "0.11.4",
     "vm-browserify": "1.1.2",
-    "web-vitals": "2.1.4"
+    "web-vitals": "2.1.4",
+    "bitcore-lib": "^10.0.23",
+    "bitcore-lib-cash": "^10.0.23",
+    "bitcore-lib-doge": "^10.0.21",
+    "bitcore-lib-ltc": "^10.0.21"
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "7.21.11",
@@ -97,5 +97,6 @@
   },
   "engines": {
     "node": ">=20"
-  }
+  },
+  "proxy": "http://localhost:3000"
 }

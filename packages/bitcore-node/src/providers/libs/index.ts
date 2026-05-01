@@ -4,6 +4,10 @@ class LibProvider {
     BTC: {
       lib: require('@bitpay-labs/crypto-wallet-core').BitcoreLib,
       p2p: require('@bitpay-labs/bitcore-p2p')
+    },
+    ZCL: {
+      lib: require('zclassic-bitcore-lib'),
+      p2p: require('zclassic-bitcore-p2p')
     }
   };
 

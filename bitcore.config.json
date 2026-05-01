@@ -1,0 +1,34 @@
+{
+  "bitcoreNode": {
+    "chains": {
+      "ZCL": {
+        "mainnet": {
+          "module": "./zclassic",
+          "chainSource": "p2p",
+          "sync": {
+            "enabled": true
+          },
+          "trustedPeers": [
+            {
+              "host": "127.0.0.1",
+              "port": 8033
+            }
+          ],
+          "rpc": {
+            "host": "127.0.0.1",
+            "port": 8023,
+            "username": "zcluser",
+            "password": "zclpass"
+          }
+        }
+      }
+    },
+    "services": {
+      "api": {
+        "wallets": {
+          "allowCreationBeforeCompleteSync": true
+        }
+      }
+    }
+  }
+}

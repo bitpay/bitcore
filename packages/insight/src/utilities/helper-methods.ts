@@ -1,10 +1,11 @@
-import BitcoreLib from '@bitpay-labs/bitcore-lib';
-import BitcoreLibCash from '@bitpay-labs/bitcore-lib-cash';
-import BitcoreLibDoge from '@bitpay-labs/bitcore-lib-doge';
-import BitcoreLibLtc from '@bitpay-labs/bitcore-lib-ltc';
+import BitcoreLib from 'bitcore-lib';
+import BitcoreLibCash from 'bitcore-lib-cash';
+import BitcoreLibDoge from 'bitcore-lib-doge';
+import BitcoreLibLtc from 'bitcore-lib-ltc';
 import {
   API_ROOT,
   API_ROOT_ETH,
+  API_ROOT_ZCL,
   COIN,
   DEFAULT_RBF_SEQ_NUMBER,
   ETH_DEFAULT_REFRESH_INTERVAL,
@@ -28,7 +29,9 @@ export const buildTime = (time: string): string => {
 };
 
 export const getApiRoot = (currency: string): string =>
-  ['ETH'].includes(currency) ? API_ROOT_ETH : API_ROOT;
+  ['ETH'].includes(currency) ? API_ROOT_ETH : 
+  ['ZCL'].includes(currency) ? API_ROOT_ZCL :
+  API_ROOT;
 export const getDefaultRefreshInterval = (currency: string): number =>
   ['ETH'].includes(currency) ? ETH_DEFAULT_REFRESH_INTERVAL : UTXO_DEFAULT_REFRESH_INTERVAL;
 export const urlSafetyCheck = (url: string) => (url.includes('undefined') ? null : url);
