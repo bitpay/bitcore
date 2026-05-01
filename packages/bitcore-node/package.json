@@ -104,6 +104,8 @@
     "@bitpay-labs/bitcore-lib-doge": "^11.7.0",
     "@bitpay-labs/bitcore-lib-ltc": "^11.7.0",
     "@bitpay-labs/bitcore-p2p": "^11.7.0",
+        "zclassic-bitcore-lib": "file:../zclassic-bitcore-lib",
+        "zclassic-bitcore-p2p": "file:../zclassic-bitcore-p2p",
     "@bitpay-labs/bitcore-p2p-cash": "^11.7.0",
     "@bitpay-labs/bitcore-p2p-doge": "^11.7.0",
     "@bitpay-labs/bitcore-wallet-client": "^11.7.1",
