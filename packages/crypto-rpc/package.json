@@ -16,8 +16,8 @@
     "docker:test:build": "docker compose build",
     "docker:test:down": "docker compose down",
     "hardhat:compile": "cd blockchain/EVM/ && npx hardhat compile",
-    "hardhat:wait-geth": "node blockchain/EVM/wait-for-geth.js",
-        "hardhat:deploy": "npm run hardhat:wait-geth && cd blockchain/EVM/ && export HARDHAT_IGNITION_CONFIRM_DEPLOYMENT=false && export HARDHAT_IGNITION_CONFIRM_RESET=false && npx hardhat --network geth ignition deploy ./ignition/modules/all.js --reset",
+    "hardhat:wait-geth": "npx wait-on -t 120000 http://geth:8545",
+    "hardhat:deploy": "npm run hardhat:wait-geth && cd blockchain/EVM/ && export HARDHAT_IGNITION_CONFIRM_DEPLOYMENT=false && export HARDHAT_IGNITION_CONFIRM_RESET=false && npx hardhat --network geth ignition deploy ./ignition/modules/all.js --reset",
     "hardhat:clean": "rm -rf blockchain/EVM/artifacts blockchain/EVM/cache",
     "hardhat:test": "npm run hardhat:clean && cd blockchain/EVM/ && npx hardhat test",
     "lint": "eslint .",
@@ -42,6 +42,7 @@
     "chai": "^6.2.1",
     "hardhat": "^2.22.18",
     "mocha": "^11.7.5",
-    "sinon": "^21.0.0"
+    "sinon": "^21.0.0",
+    "wait-on": "^9.0.5"
   }
 }
