@@ -31,6 +31,10 @@ export class ApiService {
     this.socketService = socketService;
     this.app = app;
     this.httpServer = new http.Server(app);
+
+    process.on('SIGUSR1', async () => {
+      await this.reload();
+    });
   }
 
   async start() {
@@ -45,10 +49,6 @@ export class ApiService {
       this.stopped = false;
       this.httpServer = new http.Server(app);
       this.httpServer.timeout = this.timeout;
-
-      process.on('SIGUSR1', async () => {
-        this.reload();
-      });
 
       process.on('message', async (msg: any) => {
         if (msg === 'reloadconfig') {

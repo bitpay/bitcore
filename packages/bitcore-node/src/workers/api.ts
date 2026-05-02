@@ -48,11 +48,11 @@ const stop = async () => {
     process.exit(1);
   }
   stopping = true;
-  
+
   if (cluster.isPrimary) {
-    fs.unlinkSync('pids/api.pid');
+    fs.rmSync('pids/api.pid', { force: true });
   }
-  
+
   setTimeout(() => {
     logger.warn('API Worker did not shut down gracefully after 30 seconds, exiting');
     process.exit(1);

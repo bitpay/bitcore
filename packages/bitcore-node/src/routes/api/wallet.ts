@@ -1,8 +1,8 @@
 import { Validation } from '@bitpay-labs/crypto-wallet-core';
 import { Request, Response, Router } from 'express';
-import { Config } from '../../../src/services/config';
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
+import { Config } from '../../services/config';
 import { StreamWalletAddressesParams } from '../../types/namespaces/ChainStateProvider';
 import { Auth, AuthenticatedRequest } from '../../utils/auth';
 

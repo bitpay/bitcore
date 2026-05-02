@@ -1,10 +1,10 @@
 import cluster, { Worker as ClusterWorker } from 'cluster';
 import { EventEmitter } from 'events';
-import { Config } from '../../src/services/config';
 import { LoggifyClass } from '../decorators/Loggify';
 import logger from '../logger';
 import { CallbackType } from '../types/Callback';
 import parseArgv from '../utils/parseArgv';
+import { Config } from './config';
 
 const args = parseArgv([], [{ arg: 'DEBUG', type: 'bool' }]);
 
