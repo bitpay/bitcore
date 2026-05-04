@@ -424,16 +424,20 @@ export class TxProposal implements ITxProposal {
   }
 
   getCurrentSignatures() {
-    const acceptedActions = _.filter(this.actions, a => {
-      return a.type == 'accept';
-    });
+    const acceptedActions = this.actions.filter(a => a.type == 'accept');
 
-    return _.map(acceptedActions, x => {
-      return {
-        signatures: x.signatures,
-        xpub: x.xpub
-      };
-    });
+    const uniqueXpubs = new Set();
+    const signatures = [];
+    for (const a of acceptedActions) {
+      // TSS will have multiple accept actions with the same xpub/signature (different copayerIds)
+      if (uniqueXpubs.has(a.xpub)) continue;
+      uniqueXpubs.add(a.xpub);
+      signatures.push({
+        signatures: a.signatures,
+        xpub: a.xpub
+      });
+    }
+    return signatures;
   }
 
   getRawTx() {

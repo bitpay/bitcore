@@ -1,5 +1,4 @@
 import os from 'os';
-import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import { LRUCache } from 'lru-cache';
 import request from 'request';
 import config from '../../../config';
@@ -11,7 +10,14 @@ import { WalletAddressStorage } from '../../../models/walletAddress';
 import { BaseEVMStateProvider, BuildWalletTxsStreamParams } from '../../../providers/chain-state/evm/api/csp';
 import { EVMBlockStorage } from '../../../providers/chain-state/evm/models/block';
 import { EVMTransactionStorage } from '../../../providers/chain-state/evm/models/transaction';
-import { EVMTransactionJSON, GethTraceCall, IEVMBlock, IEVMTransactionTransformed, Transaction } from '../../../providers/chain-state/evm/types';
+import { EVMTransactionJSON, IEVMBlock, IEVMTransactionTransformed } from '../../../providers/chain-state/evm/types';
+import {
+  buildMoralisQueryString,
+  formatMoralisChainId,
+  transformMoralisQueryParams,
+  transformMoralisTokenTransfer,
+  transformMoralisTransaction
+} from '../../../providers/chain-state/external/adapters/moralis-utils';
 import { ExternalApiStream } from '../../../providers/chain-state/external/streams/apiStream';
 import { IBlock } from '../../../types/Block';
 import { ChainId, ChainNetwork } from '../../../types/ChainNetwork';
@@ -242,8 +248,8 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       throw new Error('Invalid chainId');
     }
 
-    const query = this._transformQueryParams({ chainId, args: { date } });
-    const queryStr = this._buildQueryString(query);
+    const query = transformMoralisQueryParams({ chainId, args: { date } });
+    const queryStr = buildMoralisQueryString(query);
 
     return new Promise<number>((resolve, reject) => {
       request({
@@ -267,7 +273,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
   async _getTransactionFromMoralis(params: StreamTransactionParams & ChainId) {
     const { chain, network, chainId, txId } = params;
 
-    const query = this._buildQueryString({ chain: chainId, include: 'internal_transactions' });
+    const query = buildMoralisQueryString({ chain: formatMoralisChainId(chainId), include: 'internal_transactions' });
 
     return new Promise<IEVMTransactionTransformed | null>((resolve, reject) => {
       request({
@@ -286,7 +292,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
         if (tx.message === 'No transaction found') {
           return resolve(null);
         }
-        return resolve(this._transformTransaction({ chain, network, ...tx }));
+        return resolve(transformMoralisTransaction({ chain, network, ...tx }));
       });
     });
   }
@@ -304,16 +310,16 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       throw new Error('Invalid chainId');
     }
 
-    const query = this._transformQueryParams({ chainId, args }); // throws if no chain or network
-    const queryStr = this._buildQueryString({
+    const query = transformMoralisQueryParams({ chainId, args }); // throws if no chain or network
+    const queryStr = buildMoralisQueryString({
       ...query,
-      order: args.order || 'DESC', // default to descending order
+      order: args.order ?? query.order ?? 'DESC', // preserve direction-derived order, default to descending
       limit: args.pageSize || 10, // limit per request/page. total limit (args.limit) is checked in apiStream._read()
       include: 'internal_transactions'
     });
     args.transform = (tx) => {
-      const _tx: any = this._transformTransaction({ chain, network, ...tx });
-      const confirmations = this._calculateConfirmations(tx, args.tipHeight);
+      const _tx: any = transformMoralisTransaction({ chain, network, ...tx });
+      const confirmations = this._calculateConfirmations(_tx, args.tipHeight);
       return EVMTransactionStorage._apiTransform({ ..._tx, confirmations }, { object: true }) as EVMTransactionJSON;
     };
 
@@ -335,16 +341,16 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       throw new Error('Invalid chainId');
     }
 
-    const queryTransform = this._transformQueryParams({ chainId, args }); // throws if no chain or network
-    const queryStr = this._buildQueryString({
+    const queryTransform = transformMoralisQueryParams({ chainId, args }); // throws if no chain or network
+    const queryStr = buildMoralisQueryString({
       ...queryTransform,
-      order: args.order || 'DESC', // default to descending order
+      order: args.order ?? queryTransform.order ?? 'DESC', // preserve direction-derived order, default to descending
       limit: args.pageSize || 10, // limit per request/page. total limit (args.limit) is checked in apiStream._read()
       contract_addresses: [tokenAddress],
     });
     args.transform = (tx) => {
-      const _tx: any = this._transformTokenTransfer({ chain, network, ...tx });
-      const confirmations = this._calculateConfirmations(tx, args.tipHeight);
+      const _tx: any = transformMoralisTokenTransfer({ chain, network, ...tx });
+      const confirmations = this._calculateConfirmations(_tx, args.tipHeight);
       return EVMTransactionStorage._apiTransform({ ..._tx, confirmations }, { object: true }) as EVMTransactionJSON;
     };
 
@@ -355,127 +361,12 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
     );
   }
 
-  private _transformTransaction(tx) {
-    const txid = tx.hash || tx.transaction_hash; // erc20 transfer txs have transaction_hash
-    try {
-      const transformed = {
-        chain: tx.chain,
-        network: tx.network,
-        txid,
-        blockHeight: Number(tx.block_number ?? tx.blockNumber),
-        blockHash: tx.block_hash ?? tx.blockHash,
-        blockTime: new Date(tx.block_timestamp ?? tx.blockTimestamp),
-        blockTimeNormalized: new Date(tx.block_timestamp ?? tx.blockTimestamp),
-        value: tx.value,
-        gasLimit: tx.gas ?? 0,
-        gasPrice: tx.gas_price ?? tx.gasPrice ?? 0,
-        fee: Number(tx.receipt_gas_used ?? tx.receiptGasUsed ?? 0) * Number(tx.gas_price ?? tx.gasPrice ?? 0),
-        nonce: tx.nonce,
-        to: Web3.utils.toChecksumAddress(tx.to_address ?? tx.toAddress),
-        from: Web3.utils.toChecksumAddress(tx.from_address ?? tx.fromAddress),
-        data: tx.input,
-        internal: [],
-        calls: tx?.internal_transactions?.map(t => this._transformInternalTransaction(t)) || [],
-        effects: [],
-        category: tx.category,
-        wallets: [],
-        transactionIndex: tx.transaction_index ?? tx.transactionIndex
-      } as IEVMTransactionTransformed;
-      EVMTransactionStorage.addEffectsToTxs([transformed]);
-      return transformed;
-    } catch (e: any) {
-      logger.error('Error transforming transaction from Moralis: %o -- %o', txid || tx, e.stack || e.message || e);
-      throw e;
-    }
-  }
-
-  private _transformInternalTransaction(tx) {
-    return {
-      from: Web3.utils.toChecksumAddress(tx.from),
-      to: Web3.utils.toChecksumAddress(tx.to),
-      gas: tx.gas,
-      gasUsed: tx.gas_used,
-      input: tx.input,
-      output: tx.output,
-      type: tx.type,
-      value: tx.value,
-      abiType: EVMTransactionStorage.abiDecode(tx.input)
-    } as GethTraceCall;
-  }
-
-  private _transformTokenTransfer(transfer) {
-    const _transfer = this._transformTransaction(transfer);
-    return {
-      ..._transfer,
-      transactionHash: transfer.transaction_hash,
-      transactionIndex: transfer.transaction_index,
-      contractAddress: transfer.contract_address ?? transfer.address,
-      name: transfer.token_name
-    } as Partial<Transaction> | any;
-  }
-
-  private _transformQueryParams(params) {
-    const { chainId, args } = params;
-    const query = {
-      chain: this._formatChainId(chainId),
-    } as any;
-    if (args) {
-      if (args.startBlock || args.endBlock) {
-        if (args.startBlock) {
-          query.from_block = Number(args.startBlock);
-        }
-        if (args.endBlock) {
-          query.to_block = Number(args.endBlock);
-        }
-      } else {
-        if (args.startDate) {
-          query.from_date = args.startDate;
-        }
-        if (args.endDate) {
-          query.to_date = args.endDate;
-        }
-      }
-      if (args.direction) {
-        query.order = Number(args.direction) > 0 ? 'ASC' : 'DESC';
-      }
-      if (args.date) {
-        query.date = new Date(args.date).getTime();
-      }
-    }
-    return query;
-  }
-
   private _calculateConfirmations(tx, tip) {
     let confirmations = 0;
     if (tx.blockHeight && tx.blockHeight >= 0) {
       confirmations = tip - tx.blockHeight + 1;
     }
     return confirmations;
-  }
-
-  private _buildQueryString(params: Record<string, any>): string {
-    const query: string[] = [];
-
-    if (params.chain) {
-      params.chain = this._formatChainId(params.chain);
-    }
-
-    for (const [key, value] of Object.entries(params)) {
-      if (Array.isArray(value)) {
-        for (let i = 0; i < value.length; i++) {
-          // add array values in the form of key[i]=value
-          if (value[i] != null) query.push(`${key}%5B${i}%5D=${value[i]}`);
-        }
-      } else if (value != null) {
-        query.push(`${key}=${value}`);
-      }
-    }
-
-    return query.length ? `?${query.join('&')}` : '';
-  }
-
-  private _formatChainId(chainId) {
-    return '0x' + parseInt(chainId).toString(16);
   }
 
   /**
@@ -509,7 +400,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
 
   async createAddressSubscription(params: ChainNetwork & ChainId) {
     const { chain, network, chainId } = params;
-    const _chainId = this._formatChainId(chainId);
+    const _chainId = formatMoralisChainId(chainId);
 
     const result: any = await this._subsRequest('PUT', this.baseStreamUrl, {
       description: `Bitcore ${_chainId} - ${os.hostname()} - addresses`,

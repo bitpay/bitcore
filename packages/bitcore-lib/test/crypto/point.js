@@ -42,6 +42,13 @@ describe('Point', function() {
       a.should.deep.equal( Buffer.from(valid.x, 'hex'));
     });
 
+    it('should return a bitcore BN instance', function() {
+      var p = Point.getG();
+      var x = p.getX();
+      x.should.be.instanceof(BN);
+      x.constructor.should.equal(BN);
+    });
+
   });
 
   describe('#getY', function() {
