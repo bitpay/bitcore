@@ -39,6 +39,12 @@ export function streamJsonArray(
   return new Promise<StreamJsonArrayResult>((resolve, reject) => {
     let closed = false;
     let isFirst = true;
+    let settled = false;
+
+    // Single-shot guards keep the promise from being resolved/rejected twice when
+    // a client disconnect races a stream end/error or a stream 'close' event follows destroy().
+    const safeResolve = (result: StreamJsonArrayResult) => { if (!settled) { settled = true; resolve(result); } };
+    const safeReject = (err: any) => { if (!settled) { settled = true; reject(err); } };
 
     const tearDown = () => {
       // close() handles mongo cursor streams; destroy() tears down piped Transform chains
@@ -54,13 +60,21 @@ export function streamJsonArray(
       closed = true;
       tearDown();
     };
+    const onAbort = () => {
+      closed = true;
+      tearDown();
+      // Settle the awaiting route handler so it can fall through to its catch/finally
+      // instead of hanging until the stream eventually emits 'close' (which may not happen
+      // on a destroyed pipeline if upstream never settles).
+      safeResolve({ success: false, error: new Error('client disconnected') });
+    };
 
-    req.on('close', () => { closed = true; tearDown(); });
+    req.on('close', onAbort);
     res.type('json');
-    res.on('close', () => { closed = true; tearDown(); });
+    res.on('close', onAbort);
 
     stream.on('error', (err: any) => {
-      if (closed) return;
+      if (closed) { safeResolve({ success: false, error: err }); return; }
       if (err?.isAxiosError) {
         err.log = {
           url: err?.config?.url,
@@ -73,7 +87,7 @@ export function streamJsonArray(
         closed = true;
         res.write('[]');
         res.end();
-        return resolve({ success: false, error: err });
+        return safeResolve({ success: false, error: err });
       }
       if (!isFirst) {
         // Headers already sent — emit inline error marker, end response, log upstream
@@ -86,10 +100,10 @@ export function streamJsonArray(
         }
         res.end();
         cleanup();
-        return resolve({ success: false, error: err });
+        return safeResolve({ success: false, error: err });
       }
       // Pre-data — caller can send proper 5xx status
-      return reject(err);
+      return safeReject(err);
     });
 
     stream.on('data', (data: any) => {
@@ -124,7 +138,11 @@ export function streamJsonArray(
         }
       }
       res.end();
-      resolve({ success: true });
+      safeResolve({ success: true });
     });
+
+    // Backstop: if destroy() emits 'close' without a prior 'end' or 'error', settle the promise
+    // so the route handler doesn't await indefinitely on a torn-down pipeline.
+    stream.on('close', () => safeResolve({ success: closed, error: closed ? undefined : new Error('stream closed before end') }));
   });
 }

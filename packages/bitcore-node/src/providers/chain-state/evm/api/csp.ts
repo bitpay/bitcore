@@ -60,6 +60,10 @@ export interface BuildWalletTxsStreamParams {
   transactionStream: TransformWithEventPipe;
   populateEffects: PopulateEffectsForAddressTransform;
   walletAddresses: string[];
+  // _buildWalletTransactionsStream pushes teardown callbacks here (e.g. cursor.close).
+  // streamWalletTransactions runs them when the FINAL piped stream closes/ends, so the
+  // hook lives on the stream the route actually destroys on disconnect.
+  cleanups?: Array<() => void>;
 }
 
 
@@ -683,10 +687,12 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     const populateReceipt = new PopulateReceiptTransform(this);
     const populateEffects = new PopulateEffectsForAddressTransform(this, walletAddresses);
 
+    const cleanups: Array<() => void> = [];
     const streamParams: BuildWalletTxsStreamParams = {
       transactionStream,
       populateEffects,
-      walletAddresses
+      walletAddresses,
+      cleanups
     };
     transactionStream = await this._buildWalletTransactionsStream(params, streamParams);
 
@@ -698,6 +704,13 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     transactionStream = transactionStream
       .eventPipe(populateReceipt)
       .eventPipe(ethTransactionTransform);
+
+    // Run upstream teardown callbacks (e.g. cursor.close) when the FINAL stream the route
+    // pipes from closes or ends. destroy() on this stream does not reliably propagate
+    // upstream through eventPipe chains, so the cleanup must live here.
+    const runCleanups = () => { for (const fn of cleanups) { try { fn(); } catch { /* noop */ } } };
+    transactionStream.on('close', runCleanups);
+    transactionStream.on('end', runCleanups);
 
     (transactionStream as any).jsonl = true;
     return transactionStream;
@@ -714,24 +727,18 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       .sort({ blockTimeNormalized: 1 })
       .addCursorFlag('noCursorTimeout', true);
 
-    // Cursor cleanup is triggered when the consumer destroys the returned stream
-    // (streamJsonArray destroys on req/res close).
+    // Cursor cleanup is registered with the caller and triggered against the final piped
+    // stream. Hooking it here against the intermediate transform would miss disconnects
+    // because destroy() does not propagate upstream through eventPipe chains reliably.
     let cursorClosed = false;
-    const cleanupCursor = () => {
-      if (!cursorClosed) {
-        cursorClosed = true;
-        try {
-          cursor.close();
-        } catch {
-          // Cursor might already be closed, ignore
-        }
-      }
-    };
+    streamParams.cleanups?.push(() => {
+      if (cursorClosed) return;
+      cursorClosed = true;
+      try { cursor.close(); } catch { /* already closed */ }
+    });
 
     // Pipe cursor to transform stream
     transactionStream = cursor.pipe(new TransformWithEventPipe({ objectMode: true, passThrough: true }));
-    transactionStream.on('close', cleanupCursor);
-    transactionStream.on('end', cleanupCursor);
 
     transactionStream = transactionStream.eventPipe(populateEffects); // For old db entries
 
