@@ -16,43 +16,6 @@ export class P2pManager {
   constructor({ configService = Config } = {}) {
     this.configService = configService;
     this.workers = new Array<BaseP2PWorker>();
-
-    process.on('SIGUSR1', async () => {
-      const chainConfigs = this.configService.get().chains;
-      const activeChainNetworks: string[] = [];
-      for (const worker of this.workers) {
-        const { chain, network } = worker;
-        if (chainConfigs[chain][network].disabled) {
-          logger.info(`Stopping ${chain} ${network}`);
-          await worker.stop();
-          this.workers = this.workers.filter(w => w !== worker);
-        } else {
-          activeChainNetworks.push(chain + ':' + network);
-        }
-      }
-      for (const chain in chainConfigs) {
-        for (const network in chainConfigs[chain]) {
-          if (!chainConfigs[chain][network].disabled && !activeChainNetworks.includes(chain + ':' + network)) {
-            if (this.workerClasses[chain][network] === undefined) {
-              logger.warn(`${chain}:${network} has not been registered`);
-              continue;
-            }
-            const p2pWorker = new this.workerClasses[chain][network]({
-              chain,
-              network,
-              chainConfig: chainConfigs[chain][network],
-            });
-            this.workers.push(p2pWorker);
-            try {
-              logger.info(`Starting ${chain} ${network}`);
-              p2pWorker.start();
-            } catch (e: any) {
-              logger.error('P2P Worker %o:%o died: %o', chain, network, e.stack || e.message || e);
-            }
-          }
-        }
-      }
-    });
   }
 
   register(chain: string, network: string, worker: Class<BaseP2PWorker<any>>) {
