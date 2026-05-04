@@ -70,7 +70,9 @@ export function streamJsonArray(
     };
 
     req.on('close', onAbort);
-    res.type('json');
+    // ndjson in jsonl mode so JSON-aware clients (supertest, fetch().json()) don't try to
+    // parse a stream of newline-delimited objects as a single JSON document.
+    res.type(jsonl ? 'application/x-ndjson' : 'json');
     res.on('close', onAbort);
 
     stream.on('error', (err: any) => {
