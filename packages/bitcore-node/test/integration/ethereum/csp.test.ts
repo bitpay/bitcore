@@ -383,6 +383,18 @@ describe('Ethereum API', function() {
 
       await streamDexWalletTransactions(chain, network, wallet, address, web3);
     });
+
+    it('closes the wallet-tx cursor when the final stream is destroyed', async () => {
+      await EVMTransactionStorage.collection.insertMany(
+        new Array(5).fill({}).map(() => ({ chain, network, blockHeight: 1, gasPrice: 10 * 1e9, data: Buffer.from(''), from: address } as IEVMTransactionInProcess))
+      );
+      const stream: any = await ETH.streamWalletTransactions({ chain, network, wallet, args: {} } as StreamWalletTransactionsParams);
+      const cursorCloseSpy = sandbox.spy();
+      stream.on('close', cursorCloseSpy);
+      stream.destroy();
+      await new Promise(r => setImmediate(r));
+      expect(cursorCloseSpy.called).to.eq(true);
+    });
   });
 });
 
