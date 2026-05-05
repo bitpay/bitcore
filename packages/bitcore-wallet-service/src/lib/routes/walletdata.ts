@@ -1,5 +1,4 @@
 import express from 'express';
-import * as _ from 'lodash';
 import { Common } from '../common';
 import type * as Types from '../../types/expressapp';
 import type { GetAddressesOpts } from '../../types/server';
@@ -133,7 +132,7 @@ export function registerWalletDataRoutes(router: express.Router, context: RouteC
   router.get('/v1/utxos/', (req, res) => {
     const opts: { addresses?: string[] } = {};
     const addresses = req.query.addresses;
-    if (addresses && _.isString(addresses)) {
+    if (addresses && typeof addresses === 'string') {
       opts.addresses = (req.query.addresses as string).split(',');
     }
 

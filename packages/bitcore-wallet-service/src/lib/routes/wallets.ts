@@ -1,6 +1,5 @@
 import * as async from 'async';
 import express from 'express';
-import * as _ from 'lodash';
 import { Common } from '../common';
 import { ClientError } from '../errors/clienterror';
 import logger from '../logger';
@@ -212,7 +211,7 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
     if (res.headersSent) {
       return;
     }
-    return res.json(_.flatten(responses));
+    return res.json(responses.flat());
   });
 
   router.post('/v1/wallets/exist', async (req, res) => {

@@ -1,5 +1,4 @@
 import express from 'express';
-import * as _ from 'lodash';
 import { WalletService } from '../server';
 import { Stats } from '../stats';
 import type * as Types from '../../types/expressapp';
@@ -84,8 +83,12 @@ export function registerMaintenanceRoutes(router: express.Router, context: Route
   router.get('/v1/txnotes/', (req, res) => {
     getServerWithAuth(req, res, server => {
       const opts: { minTs?: number } = {};
-      if (req.query.minTs && _.isNumber(+req.query.minTs)) {
-        opts.minTs = +req.query.minTs;
+      const rawMinTs = req.query.minTs;
+      if (typeof rawMinTs === 'string' && rawMinTs.trim() !== '') {
+        const minTs = Number(rawMinTs);
+        if (Number.isFinite(minTs)) {
+          opts.minTs = minTs;
+        }
       }
       server.getTxNotes(opts, (err, notes) => {
         if (err) return returnError(err, res, req);

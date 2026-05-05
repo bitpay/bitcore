@@ -17,13 +17,13 @@ const $ = require('./util/preconditions');
  * @example
  * ```javascript
  * // instantiate from a private key
- * var key = PublicKey(privateKey, true);
+ * let key = PublicKey(privateKey, true);
  *
  * // export to as a DER hex encoded string
- * var exported = key.toString();
+ * let exported = key.toString();
  *
  * // import the public key
- * var imported = PublicKey.fromString(exported);
+ * let imported = PublicKey.fromString(exported);
  * ```
  *
  * @param {string|PrivateKey} [data] - The encoded data in various formats
@@ -181,15 +181,16 @@ PublicKey._transformDER = function(buf, strict) {
 };
 
 /**
- * Internal function to transform X into a public key point
+ * Internal function to transform an X coordinate into a public key point
  *
  * @param {Boolean} odd - If the point is above or below the x axis
- * @param {Point} x - The x point
+ * @param {BN} x - The x coordinate as a BN
  * @returns {Object} An object with keys: point and compressed
  * @private
  */
 PublicKey._transformX = function(odd, x) {
   $.checkArgument(typeof odd === 'boolean', 'Must specify whether y is odd or not (true or false)');
+  $.checkArgument(x instanceof BN, 'x must be an instance of BN');
   const info = {};
   info.point = Point.fromX(odd, x);
   return info;
@@ -235,7 +236,7 @@ PublicKey.fromPrivateKey = function(privkey) {
 PublicKey.fromBuffer = function(buf, strict) {
   $.checkArgument(PublicKey._isBuffer(buf), 'Must be a hex buffer of DER encoded public key or 32 byte X coordinate (taproot)');
   if (buf.length === 32) {
-    return PublicKey.fromX(false, buf);
+    return PublicKey.fromX(false, BN.fromBuffer(buf));
   }
   return PublicKey.fromDER(buf, strict);
 };
@@ -284,13 +285,14 @@ PublicKey.fromString = function(str, encoding) {
 };
 
 /**
- * Instantiate a PublicKey from an X Point
+ * Instantiate a PublicKey from an X coordinate
  *
  * @param {Boolean} odd - If the point is above or below the x axis
- * @param {Point} x - The x point
+ * @param {BN} x - The x coordinate as a BN
  * @returns {PublicKey} A new valid instance of PublicKey
  */
 PublicKey.fromX = function(odd, x) {
+  $.checkArgument(x instanceof BN, 'x must be an instance of BN');
   const info = PublicKey._transformX(odd, x);
   return new PublicKey(info.point, {
     compressed: info.compressed
@@ -308,7 +310,7 @@ PublicKey.fromTaproot = function(hexBuf) {
   }
   $.checkArgument(Buffer.isBuffer(hexBuf), 'hexBuf must be a hex string or buffer');
   $.checkArgument(hexBuf.length === 32, 'Taproot public keys must be 32 bytes');
-  return new PublicKey.fromX(false, hexBuf);
+  return PublicKey.fromX(false, BN.fromBuffer(hexBuf));
 };
 
 /**

@@ -1,5 +1,4 @@
 import express from 'express';
-import * as _ from 'lodash';
 import type * as Types from '../../types/expressapp';
 import type { WalletService } from '../server';
 
@@ -74,10 +73,10 @@ export function registerBlockchainRoutes(router: express.Router, context: RouteC
         if (req.query.network) opts.network = req.query.network as string;
         server.getFeeLevels(opts, resolve);
       }).then((feeLevels: any[]) => {
-        _.each(feeLevels, feeLevel => {
+        for (const feeLevel of feeLevels) {
           feeLevel.feePerKB = feeLevel.feePerKb;
           delete feeLevel.feePerKb;
-        });
+        }
         return feeLevels;
       })
     );

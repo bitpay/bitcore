@@ -114,9 +114,9 @@ Schnorr.verify = function(publicKey, message, signature) {
     const p = Point.getP();
     const n = Point.getN();
 
-    const P = Point.fromX(false, publicKey).liftX();
-    const r = new BN(signature.slice(0, 32));
-    const s = new BN(signature.slice(32, 64));
+    const P = Point.fromX(false, BN.fromBuffer(publicKey)).liftX();
+    const r = BN.fromBuffer(signature.slice(0, 32));
+    const s = BN.fromBuffer(signature.slice(32, 64));
     if (r.gte(p) || s.gte(n)) {
       return false;
     }
