@@ -85,20 +85,34 @@ const sortedFiles = content
 
 const hitsWidth = Math.max(String(sortedFiles[0].totalHits).length, 'Total Hits'.length);
 
-outputFile(await prompt.select({
-  message: '',
-  options: sortedFiles.map(
-    f => ({
-      value: f.filePath,
-      label: `${String(f.totalHits).padStart(hitsWidth)} ${f.filePath}`
-    })),
-}));
+// Recursively select a file and go back to file list until exit
+async function selectFile() {
+  outputFile(await prompt.select({
+    message: '',
+    options: sortedFiles.map(
+      f => ({
+        value: f.filePath,
+        label: `${String(f.totalHits).padStart(hitsWidth)} ${f.filePath}`
+      })),
+  }));
+  const exit = await prompt.select({
+    message: '',
+    options: [
+      { value: false, label: 'Continue' },
+      { value: true, label: 'Exit' },
+    ],
+  });
 
+  if (exit) process.exit(0);
+  selectFile();
+}
+
+await selectFile();
 
 function outputFile(filePath) {
   const header = '='.repeat(80) + '\n' + filePath + '\n' + '='.repeat(80) + '\n';
   const headerIndex = logData.indexOf(header);
-  prompt.outro('\n' +
+  prompt.note('\n' +
     logData.slice(
       headerIndex,
       logData.indexOf('='.repeat(80), headerIndex + header.length)
