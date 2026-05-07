@@ -8,15 +8,15 @@
 import fs from 'fs';
 import inspector from 'inspector';
 import { timestamp } from '@bitpay-labs/bitcore-logging';
-import { FullClusteredWorker } from '../src/workers/all';
-import { ClusteredApiWorker } from '../src/workers/api';
-import { P2pWorker } from '../src/workers/p2p';
-import { PruningWorker } from '../src/workers/pruning';
+import { FullClusteredWorker } from '../build/src/workers/all.js';
+import { ClusteredApiWorker } from '../build/src/workers/api.js';
+import { P2pWorker } from '../build/src/workers/p2p.js';
+import { PruningWorker } from '../build/src/workers/pruning.js';
 
 const session = new inspector.Session();
 session.connect();
 
-const logFile = `lineHits-${timestamp}.log`;
+const logFile = `lineHits-${timestamp()}.log`;
 
 const args = process.argv.slice(2);
 if (args.includes('--help') || args[0] === 'help') {
@@ -106,32 +106,27 @@ process.on('exit', () => {
   });
 });
 
-// Start and track the worker
-session.post('Profiler.enable', () => {
-  session.post('Profiler.startPreciseCoverage', { callCount: true, detailed: true }, err => {
-    if (err) {
-      console.error('[Worker Recorder] Failed to start precise coverage:', err);
-      process.exit(1);
-    }
+// Start profiling
+session.post('Profiler.enable');
+session.post('Profiler.startPreciseCoverage', { callCount: true, detailed: true });
 
-    switch (worker) {
-      case 'api':
-        console.log('[Worker Recorder] Starting API worker');
-        ClusteredApiWorker();
-        break;
-      case 'p2p':
-        console.log('[Worker Recorder] Starting P2P worker');
-        P2pWorker();
-        break;
-      case 'pruning':
-        console.log('[Worker Recorder] Starting pruning worker');
-        PruningWorker();
-        break;
-      case 'all':
-      default:
-        console.log('[Worker Recorder] Starting full clustered worker');
-        FullClusteredWorker();
-        break;
-    }
-  });
-});
+// Start the worker
+switch (worker) {
+  case 'api':
+    console.log('[Worker Recorder] Starting API worker');
+    ClusteredApiWorker();
+    break;
+  case 'p2p':
+    console.log('[Worker Recorder] Starting P2P worker');
+    P2pWorker();
+    break;
+  case 'pruning':
+    console.log('[Worker Recorder] Starting pruning worker');
+    PruningWorker();
+    break;
+  case 'all':
+  default:
+    console.log('[Worker Recorder] Starting full clustered worker');
+    FullClusteredWorker();
+    break;
+}
