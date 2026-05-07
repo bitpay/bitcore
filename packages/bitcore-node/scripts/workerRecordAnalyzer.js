@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import fs from 'fs';
+import path from 'path';
 import * as prompt from '@clack/prompts';
 
 const args = process.argv.slice(2);
@@ -41,14 +42,23 @@ if (sortTypeIndex !== -1) {
 
 let logFile = args[0];
 if (logFile === undefined) {
-  const logFiles = fs.readdirSync('.');
+  async function selectFrom(folder) {
+    const logFiles = fs.readdirSync(folder);
 
-  const selectedLog = await prompt.select({
-    message: 'Select a log file to analyze',
-    options: logFiles.map(file => ({ value: file, name: file }))
-  });
+    const selectedLog = path.join(folder, await prompt.select({
+      message: 'Select a log file to analyze',
+      options: [
+        { value: '..' },
+        ...logFiles.map(file => ({ value: file }))
+      ]
+    }));
+    if (fs.statSync(selectedLog).isFile()) {
+      return selectedLog;
+    }
+    return await selectFrom(selectedLog);
+  }
 
-  logFile = selectedLog;
+  logFile = await selectFrom('.');
 }
 
 const logData = fs.readFileSync('./' + logFile, 'utf8');
