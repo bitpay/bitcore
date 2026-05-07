@@ -10,6 +10,10 @@ if (['help', '--help'].includes(args[0])) {
 Options:
   --include <path>  Only include records from the specified path
   --file <path>     Output data for specified file
+  --sort <type>     Sort files with the given criteria:
+                      total (default): total lines executed
+                      most-hit-line: most executed line
+                      average: average executions per line
 `);
   process.exit(0);
 }
@@ -26,6 +30,13 @@ let file = undefined;
 if (fileIndex !== -1) {
   file = args[fileIndex + 1];
   args.splice(fileIndex, 2);
+}
+
+const sortTypeIndex = args.indexOf('--sort');
+let sortType = 'total';
+if (sortTypeIndex !== -1) {
+  sortType = args[sortTypeIndex + 1];
+  args.splice(sortTypeIndex, 2);
 }
 
 let logFile = args[0];
@@ -54,7 +65,7 @@ const separator = '\n\n' + '='.repeat(80) + '\n';
 
 const sections = logData.split(separator).slice(1); // skip empty prefix
 
-const content = sections.map(section => {
+const lineData = sections.map(section => {
   const divider = '\n' + '='.repeat(80) + '\n';
   const dividerIdx = section.indexOf(divider);
   const filePath = section.slice(0, dividerIdx);
@@ -79,20 +90,50 @@ const content = sections.map(section => {
   return { filePath, lines, totalHits };
 }).filter(f => f !== null);
 
-const sortedFiles = content
+let criteria;
+switch (sortType) {
+  case 'most-hit-line':
+    criteria = (a, b) => Math.max(...b.lines.map(l => l.hits || 0)) - Math.max(...a.lines.map(l => l.hits || 0));
+    break;
+  case 'average':
+    criteria = (a, b) => (b.totalHits / b.lines.length).toFixed(2) - (a.totalHits / a.lines.length).toFixed(2);
+    break;
+  case 'total':
+  default:
+    criteria = (a, b) => b.totalHits - a.totalHits;
+}
+
+const sortedFiles = lineData
   .filter(f => f.totalHits >= 1)
-  .sort((a, b) => b.totalHits - a.totalHits);
+  .sort(criteria);
 
 const hitsWidth = Math.max(String(sortedFiles[0].totalHits).length, 'Total Hits'.length);
 
 // Recursively select a file and go back to file list until exit
 async function selectFile() {
+  let criteria;
+  let message;
+  switch (sortType) {
+    case 'most-hit-line':
+      criteria = f => Math.max(...f.lines.map(l => l.hits || 0));
+      message = 'Sorted by file with the most executed line';
+      break;
+    case 'average':
+      criteria = f => (f.totalHits / f.lines.length).toFixed(2);
+      message = 'Sorted by average executions per a line of a file';
+      break;
+    case 'total':
+    default:
+      criteria = f => f.totalHits;
+      message = 'Sorted by total executions of all the lines of a file';
+  }
+
   outputFile(await prompt.select({
-    message: '',
+    message,
     options: sortedFiles.map(
       f => ({
         value: f.filePath,
-        label: `${String(f.totalHits).padStart(hitsWidth)} ${f.filePath}`
+        label: `${String(criteria(f)).padStart(hitsWidth)} ${f.filePath}`
       })),
   }));
   const exit = await prompt.select({
