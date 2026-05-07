@@ -15,6 +15,7 @@ Options:
                       total (default): total lines executed
                       most-hit-line: most executed line
                       average: average executions per line
+                      abc: alphabetical order
 `);
   process.exit(0);
 }
@@ -108,6 +109,9 @@ switch (sortType) {
   case 'average':
     criteria = (a, b) => (b.totalHits / b.lines.length).toFixed(2) - (a.totalHits / a.lines.length).toFixed(2);
     break;
+  case 'abc':
+    criteria = (a, b) => a.filePath.localeCompare(b.filePath);
+    break;
   case 'total':
   default:
     criteria = (a, b) => b.totalHits - a.totalHits;
@@ -131,6 +135,10 @@ async function selectFile() {
     case 'average':
       criteria = f => (f.totalHits / f.lines.length).toFixed(2);
       message = 'Sorted by average executions per a line of a file';
+      break;
+    case 'abc':
+      criteria = f => f.totalHits;
+      message = 'Sorted by alphabetical order';
       break;
     case 'total':
     default:
