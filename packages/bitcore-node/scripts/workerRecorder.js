@@ -7,11 +7,10 @@
 
 import fs from 'fs';
 import inspector from 'inspector';
+import { createRequire } from 'module';
 import { timestamp } from '@bitpay-labs/bitcore-logging';
-import { FullClusteredWorker } from '../build/src/workers/all.js';
-import { ClusteredApiWorker } from '../build/src/workers/api.js';
-import { P2pWorker } from '../build/src/workers/p2p.js';
-import { PruningWorker } from '../build/src/workers/pruning.js';
+
+const require = createRequire(import.meta.url);
 
 const session = new inspector.Session();
 session.connect();
@@ -20,11 +19,12 @@ const logFile = `lineHits-${timestamp()}.log`;
 
 const args = process.argv.slice(2);
 if (args.includes('--help') || args[0] === 'help') {
-  console.log('USAGE: node ./workerRecorder.js <worker: api, p2p, all, or pruning>');
+  console.log('USAGE: node ./workerRecorder.js <worker>\n' +
+    '  <worker> worker to start: api, p2p, pruning, or all');
   process.exit(0);
 }
 
-const worker = args[0];
+const worker = args[0] || 'all';
 
 function buildLineOffsets(source) {
   const offsets = [0];
@@ -111,22 +111,6 @@ session.post('Profiler.enable');
 session.post('Profiler.startPreciseCoverage', { callCount: true, detailed: true });
 
 // Start the worker
-switch (worker) {
-  case 'api':
-    console.log('[Worker Recorder] Starting API worker');
-    ClusteredApiWorker();
-    break;
-  case 'p2p':
-    console.log('[Worker Recorder] Starting P2P worker');
-    P2pWorker();
-    break;
-  case 'pruning':
-    console.log('[Worker Recorder] Starting pruning worker');
-    PruningWorker();
-    break;
-  case 'all':
-  default:
-    console.log('[Worker Recorder] Starting full clustered worker');
-    FullClusteredWorker();
-    break;
-}
+console.log(`[Worker Recorder] Starting ${worker.toString()}`);
+const Worker = Object.values(require(`../build/src/workers/${worker}.js`))[0];
+Worker();
