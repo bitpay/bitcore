@@ -396,7 +396,7 @@ PrivateKey.prototype.createTapTweak = function(merkleRoot) {
   const P = Point.getG().mul(this.bn);
   const secKey = P.y.isEven() ? this.bn : order.sub(this.bn);
   const taggedWriter = new TaggedHash('TapTweak');
-  taggedWriter.write(P.x.toBuffer({ size: 32 }));
+  taggedWriter.write(P.getX().toBuffer({ size: 32 }));
 
   if (merkleRoot) {
     $.checkArgument(Buffer.isBuffer(merkleRoot) && merkleRoot.length === 32, 'merkleRoot must be 32 byte buffer');

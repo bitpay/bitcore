@@ -195,7 +195,11 @@ describe('AlchemyAdapter', function() {
   // --- Asset transfer stream ---
   describe('AlchemyAssetTransferStream', function() {
     it('should query both fromAddress and toAddress and deduplicate', async function() {
-      const transfer1 = { hash: '0x1'.padEnd(66, '0'), blockNum: '0x1', from: VALID_FROM, to: VALID_ADDRESS, value: 1, category: 'external', uniqueId: 'u1', metadata: { blockTimestamp: '2023-01-01T00:00:00Z' } };
+      const transfer1 = {
+        hash: '0x1'.padEnd(66, '0'), blockNum: '0x1', from: VALID_FROM, to: VALID_ADDRESS,
+        value: 1, rawContract: { value: '0xde0b6b3a7640000' }, // 1 ETH in wei
+        category: 'external', uniqueId: 'u1', metadata: { blockTimestamp: '2023-01-01T00:00:00Z' }
+      };
       const transfer2 = { ...transfer1, uniqueId: 'u2', hash: '0x2'.padEnd(66, '0') };
       axiosPostStub.onCall(0).resolves({ status: 200, data: { result: { transfers: [transfer1], pageKey: null } } });
       axiosPostStub.onCall(1).resolves({ status: 200, data: { result: { transfers: [transfer1, transfer2], pageKey: null } } });
@@ -213,6 +217,31 @@ describe('AlchemyAdapter', function() {
       });
 
       expect(items).to.have.length(2);
+      // value comes from rawContract.value (wei), not the decimal display field
+      expect(items[0].value).to.equal('1000000000000000000');
+    });
+
+    it('should fall back to 0 when rawContract.value is missing', async function() {
+      const transfer = {
+        hash: '0xa'.padEnd(66, '0'), blockNum: '0x1', from: VALID_FROM, to: VALID_ADDRESS,
+        value: 1.2, // decimal display value, must be ignored
+        category: 'external', uniqueId: 'u3', metadata: { blockTimestamp: '2023-01-01T00:00:00Z' }
+      };
+      axiosPostStub.resolves({ status: 200, data: { result: { transfers: [transfer], pageKey: null } } });
+
+      const stream = adapter.streamAddressTransactions({
+        chain: 'ETH', network: 'mainnet', chainId: '1', address: VALID_ADDRESS,
+        args: { startBlock: 0, endBlock: 100 } as any
+      });
+
+      const items: any[] = [];
+      await new Promise<void>((resolve, reject) => {
+        stream.on('data', (d: any) => items.push(d));
+        stream.on('end', resolve);
+        stream.on('error', reject);
+      });
+
+      expect(items[0].value).to.equal('0');
     });
 
     it('should emit INVALID_REQUEST error for invalid address', function(done) {

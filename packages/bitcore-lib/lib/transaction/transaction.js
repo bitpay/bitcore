@@ -1378,7 +1378,7 @@ Transaction.prototype.checkEcdsaSignature = function(sig, pubkey, nin, subscript
  */
 Transaction.prototype.checkSchnorrSignature = function(sig, pubkey, nin, sigversion, execdata) {
   if ($.isType(pubkey, 'PublicKey')) {
-    pubkey = pubkey.point.x.toBuffer();
+    pubkey = pubkey.point.getX().toBuffer({ size: 32 });
   }
   $.checkArgument(pubkey && pubkey.length === 32, 'Schnorr signatures have 32-byte public keys. The caller is responsible for enforcing this.');
 

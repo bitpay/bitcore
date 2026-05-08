@@ -695,7 +695,7 @@ export class V8 {
           return cb(null, ret || Defaults.MIN_SOL_BALANCE);
         } catch (err) {
           logger.error('[v8.js] Error getting rentMinimum: %o', err);
-          return cb(null, Defaults.MIN_XRP_BALANCE);
+          return cb(null, Defaults.MIN_SOL_BALANCE);
         }
       })
       .catch(cb);
