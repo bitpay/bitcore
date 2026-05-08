@@ -26,7 +26,7 @@ export function command(args: CommonArgs) {
     .option('--proposalId <proposalId>', 'ID of the transaction proposal to act upon')
     .option('--page <page>', 'Page number to view (only 1 proposal is displayed per page)')
     .option('--raw', 'Print raw transaction proposal objects instead of formatted output')
-    .option('--export [filename]', `Export the transaction proposal(s) to a file(s) (default: ~/${wallet.name}_txproposal_<proposalId>.json)`)
+    .option('--file <filename>', `Specify the file to save the tx proposal to when using \`--action export\` (default: ~/${wallet.name}_txproposal_<proposalId>.json)`)
     .parse(process.argv);
 
   const opts = program.opts();
@@ -34,19 +34,26 @@ export function command(args: CommonArgs) {
     program.help();
   }
 
-  if (!!opts.action !== !!opts.proposalId) {
-    throw new Error('Both --action and --proposalId options must be provided together.');
-  }
   if (opts.proposalId && opts.page) {
     throw new Error('--page option does not make sense with --proposalId.');
   }
   if (opts.action) {
+    if (!opts.proposalId) {
+      throw new Error('--proposalId option must be provided when using --action.');
+    }
+    // Map the input to the corresponding ViewAction value
     if (ViewAction[opts.action.toUpperCase()]) {
       opts.action = ViewAction[opts.action.toUpperCase()] as ViewAction;
     } else if (Object.values(ViewAction).includes(opts.action.toLowerCase())) {
       opts.action = opts.action.toLowerCase() as ViewAction;
     } else {
       throw new Error(`Invalid action: ${opts.action}`);
+    }
+  }
+  if (opts.file) {
+    opts.export = opts.file;
+    if (ViewAction.EXPORT !== opts.action) {
+      throw new Error('--file option can only be used with `--action export`.');
     }
   }
   return opts;

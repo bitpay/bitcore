@@ -142,10 +142,12 @@ export class Wallet implements IWallet {
       key = new Key({ seedType: 'new', password });
     }
     const credOpts = { coin, chain, network, account, n, m, mnemonic, password, addressType, copayerName, singleAddress: BWCUtils.isSingleAddressChain(chain) };
-    const credentials = key.createCredentials(password, credOpts);
+    let credentials = key.createCredentials(password, credOpts);
     this.client.fromObj(credentials);
     this.#walletData = { key, credentials };
+    // Save here in case registering or joining fails (e.g. network issues)
     await this.save();
+
     let secret;
     let joinedWalletName;
     if (joinSecret) {
@@ -154,7 +156,13 @@ export class Wallet implements IWallet {
     } else {
       secret = await this.register({ copayerName });
     }
-    await this.load();
+    // Update credentials with joined/registered info (e.g. walletId, publicKeyRing, etc)
+    this.#walletData.credentials = credentials;
+    await this.save();
+    // this.load calls openWallet which completes the wallet by fetching any missing info
+    await this.load({ allowCache: true });
+
+    credentials = this.#walletData.credentials;
     return { key, credentials, secret, joinedWalletName };
   }
 

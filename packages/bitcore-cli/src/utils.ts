@@ -112,12 +112,12 @@ export class Utils {
     const unit = (match[3] || 'sat').toLowerCase();
     const rate = Constants.UNITS2[unit];
     if (!rate) {
-      throw Utils.die('Invalid unit: ' + unit);
+      Utils.die('Invalid unit: ' + unit);
     }
 
     const amountSat = parseFloat((amount * rate).toPrecision(12));
     if (amountSat != Math.round(amountSat)) {
-      throw Utils.die('Invalid amount: ' + amount + ' ' + unit);
+      Utils.die('Invalid amount: ' + amount + ' ' + unit);
     }
 
     return amountSat;
@@ -183,7 +183,7 @@ export class Utils {
         hasNextPage = result && result.length === pageSize,
         hasPrevPage = page > 1
       } = await fn(page, action as string);
-      if (!result || (page == 1 && exitOn1Page && result.length < pageSize && !extraChoices.length)) {
+      if (!result || (page == 1 && exitOn1Page && !hasNextPage && !extraChoices.length)) {
         return;
       }
 
