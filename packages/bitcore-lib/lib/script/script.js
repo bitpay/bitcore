@@ -37,7 +37,7 @@ const Script = function Script(from) {
     return Script.fromBuffer(from.toBuffer());
   } else if (typeof from === 'string') {
     return Script.fromString(from);
-  } else if (typeof from === 'object' && Array.isArray(from?.chunks)) {
+  } else if (typeof from === 'object' && from && Array.isArray(from.chunks)) {
     this.set(from);
   }
 };
