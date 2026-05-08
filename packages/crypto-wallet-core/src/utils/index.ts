@@ -103,6 +103,10 @@ export function isEqual(obj1: object, obj2: object): boolean {
   if (obj1 == null || obj2 == null) return false;
   if (typeof obj1 !== 'object' || typeof obj2 !== 'object') return false;
   const stack = [obj1, obj2];
+  // Use a WeakSet to track already compared objects to handle circular references
+  const weakRefs = new WeakSet();
+  const isWeak = (val) => val !== null && (typeof val === 'object' || typeof val === 'function');
+
   while (stack.length) {
     const a = stack.pop();
     const b = stack.pop();
@@ -118,11 +122,22 @@ export function isEqual(obj1: object, obj2: object): boolean {
       if (!(b instanceof RegExp) || a.source !== b.source || a.flags !== b.flags) return false;
       continue;
     }
-    for (const key in a) {
+    for (const key of Object.keys(a)) {
+      if (!(key in b)) return false;
+      if (isWeak(a[key])) {
+        if (weakRefs.has(a[key])) continue;
+        try { weakRefs.add(a[key]); } catch { /* ignore TypeError if a[key] is not a valid WeakSet key */ }
+      }
+      
       stack.push(a[key], b[key]);
     }
     const addtlBKeys = difference(Object.keys(b), Object.keys(a));
     for (const key of addtlBKeys) {
+      if (!(key in a)) return false;
+      if (isWeak(b[key])) {
+        if (weakRefs.has(b[key])) continue;
+        try { weakRefs.add(b[key]); } catch { /* ignore TypeError if b[key] is not a valid WeakSet key */ }
+      }
       stack.push(a[key], b[key]);
     }
   }

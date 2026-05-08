@@ -202,6 +202,35 @@ describe('Utils', function() {
       expect(utils.isEqual(obj1, obj2)).to.equal(false);
     });
 
+    it('should handle implicit vs explicit undefined values', function() {
+      const obj1 = {}; // obj1.a is implicitly undefined
+      const obj2 = { a: undefined }; // obj2.a is explicitly undefined
+      expect(utils.isEqual(obj1, obj2)).to.equal(false);
+      expect(utils.isEqual(obj2, obj1)).to.equal(false);
+
+      const obj3 = { a: undefined };
+      expect(utils.isEqual(obj2, obj3)).to.equal(true);
+    });
+
+    it('should handle null vs undefined values correctly', function() {
+      const obj1 = { a: null };
+      const obj2 = { a: undefined };
+      expect(utils.isEqual(obj1, obj2)).to.equal(false);
+    });
+
+    it('should prevent infinite recursion on circular references', function() {
+      const obj1: any = { a: 1 };
+      obj1.self = obj1;
+
+      const obj2: any = { a: 1 };
+      obj2.self = obj2;
+
+      expect(utils.isEqual(obj1, obj2)).to.equal(true);
+
+      obj2.extra = 'value';
+      expect(utils.isEqual(obj1, obj2)).to.equal(false);
+    });
+
     it('should handle large complex objects (stress test)', function() {
       const buildLargeObject = () => {
         const root: any = {
