@@ -4,7 +4,7 @@ import bitcoreLib from '@bitpay-labs/bitcore-lib';
 import bitcoreLibCash from '@bitpay-labs/bitcore-lib-cash';
 import bitcoreLibDoge from '@bitpay-labs/bitcore-lib-doge';
 import bitcoreLibLtc from '@bitpay-labs/bitcore-lib-ltc';
-import { Transactions } from '../src';
+import { Constants, Transactions } from '../src';
 
 describe('Transaction', function() {
   describe('create', () => {
@@ -1748,6 +1748,57 @@ describe('Transaction', function() {
 
       const regtestId = Transactions.get({ chain: 'MATIC' }).getChainId('regtest');
       expect(regtestId).to.equal(13375);
+    });
+  });
+
+  describe('ARC EVM support', () => {
+    it('should get the correct testnet chainId', () => {
+      const testnetId = Transactions.get({ chain: 'ARC' }).getChainId('testnet');
+      expect(testnetId).to.equal(5042002);
+    });
+
+    it('should create an ARC native transaction using 18-decimal base units', () => {
+      const tx = Transactions.create({
+        chain: 'ARC',
+        recipients: [{ address: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A', amount: '1000000000000000000' }],
+        nonce: 0,
+        gasPrice: 1,
+        gasLimit: 21000,
+        network: 'testnet',
+        data: '0x'
+      });
+      const parsed = ethers.Transaction.from(tx);
+      expect(parsed.chainId).to.equal(5042002n);
+      expect(parsed.value).to.equal(1000000000000000000n);
+    });
+
+    it('should create an ARC ERC20 transaction using ARC testnet chainId', () => {
+      const tokenAddress = '0x3600000000000000000000000000000000000000';
+      const recipient = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+      const amount = '1000000';
+      const tx = Transactions.create({
+        chain: 'ARCERC20',
+        recipients: [{ address: recipient, amount }],
+        nonce: 0,
+        gasPrice: 1,
+        gasLimit: 200000,
+        network: 'testnet',
+        tokenAddress
+      });
+      const parsed = ethers.Transaction.from(tx);
+
+      expect(parsed.chainId).to.equal(5042002n);
+      expect(parsed.to).to.equal(ethers.getAddress(tokenAddress));
+      expect(parsed.value).to.equal(0n);
+      expect(parsed.data).to.equal(
+        '0xa9059cbb' +
+        '00000000000000000000000037d7b3bbd88efde6a93cf74d2f5b0385d3e3b08a' +
+        '00000000000000000000000000000000000000000000000000000000000f4240'
+      );
+    });
+
+    it('should define ARC native units as 18 decimals', () => {
+      expect(Constants.UNITS.arc.toSatoshis).to.equal(1e18);
     });
   });
 
