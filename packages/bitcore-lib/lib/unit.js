@@ -9,6 +9,12 @@ const UNITS = {
   'uBTC': [1e2, 2],
   'bits': [1e2, 2],
   'satoshis': [1, 0]
+const UNITS = {
+  'BTC': [1e8, 8],
+  'mBTC': [1e5, 5],
+  'uBTC': [1e2, 2],
+  'bits': [1e2, 2],
+  'satoshis': [1, 0]
 };
 
 /**
@@ -24,10 +30,10 @@ const UNITS = {
  *
  * @example
  * ```javascript
- * var sats = Unit.fromBTC(1.3).toSatoshis();
- * var mili = Unit.fromBits(1.3).to(Unit.mBTC);
- * var bits = Unit.fromFiat(1.3, 350).bits;
- * var btc = new Unit(1.3, Unit.bits).BTC;
+ * let sats = Unit.fromBTC(1.3).toSatoshis();
+ * let mili = Unit.fromBits(1.3).to(Unit.mBTC);
+ * let bits = Unit.fromFiat(1.3, 350).bits;
+ * let btc = new Unit(1.3, Unit.bits).BTC;
  * ```
  *
  * @param {Number} amount - The amount to be represented
@@ -153,6 +159,7 @@ Unit.prototype.to = function(code) {
     throw new errors.Unit.UnknownCode(code);
   }
 
+  const value = this._value / UNITS[code][0];
   const value = this._value / UNITS[code][0];
   return parseFloat(value.toFixed(UNITS[code][1]));
 };

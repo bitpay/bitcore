@@ -1,6 +1,6 @@
 'use strict';
 
-var bitcore = module.exports;
+const bitcore = module.exports;
 
 // module information
 bitcore.version = 'v' + require('./package.json').version;

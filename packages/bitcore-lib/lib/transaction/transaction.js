@@ -609,7 +609,7 @@ Transaction.prototype._newTransaction = function() {
  *
  * @example
  * ```javascript
- * var transaction = new Transaction();
+ * let transaction = new Transaction();
  *
  * // From a pay to public key hash output from bitcoind's listunspent
  * transaction.from({'txid': '0000...', vout: 0, amount: 0.1, scriptPubKey: 'OP_DUP ...'});

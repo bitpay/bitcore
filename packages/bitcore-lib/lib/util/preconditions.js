@@ -17,7 +17,8 @@ module.exports = {
     argumentName = argumentName || '(unknown name)';
     if (typeof type === 'string') {
       if (type === 'Buffer') {
-        if (!require('buffer').Buffer.isBuffer(argument)) {
+        const buffer = require('buffer'); // './buffer' fails on cordova & RN
+        if (!buffer.Buffer.isBuffer(argument)) {
           throw new errors.InvalidArgumentType(argument, type, argumentName);
         }
       } else if (typeof argument !== type && (argument && argument.constructor && argument.constructor.name !== type)) {

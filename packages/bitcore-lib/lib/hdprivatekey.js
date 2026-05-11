@@ -17,7 +17,14 @@ const hdErrors = errors.HDPrivateKey;
 const BufferUtil = require('./util/buffer');
 const JSUtil = require('./util/js');
 const $ = require('./util/preconditions');
+const hdErrors = errors.HDPrivateKey;
+const BufferUtil = require('./util/buffer');
+const JSUtil = require('./util/js');
+const $ = require('./util/preconditions');
 
+const MINIMUM_ENTROPY_BITS = 128;
+const BITS_TO_BYTES = 1 / 8;
+const MAXIMUM_ENTROPY_BITS = 512;
 const MINIMUM_ENTROPY_BITS = 128;
 const BITS_TO_BYTES = 1 / 8;
 const MAXIMUM_ENTROPY_BITS = 512;
