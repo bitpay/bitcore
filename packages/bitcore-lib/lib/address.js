@@ -384,7 +384,6 @@ Address.createMultisig = function(publicKeys, threshold, network, nestedWitness,
     }
   }
   const redeemScript = Script.buildMultisigOut(publicKeys, threshold);
-  const redeemScript = Script.buildMultisigOut(publicKeys, threshold);
   if (nestedWitness) {
     return Address.payingTo(Script.buildWitnessMultisigOutFromScript(redeemScript), network);
   }

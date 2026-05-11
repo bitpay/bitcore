@@ -10,11 +10,6 @@ const Networks = require('./networks');
 const PublicKey = require('./publickey');
 const JSUtil = require('./util/js');
 const $ = require('./util/preconditions');
-const Base58Check = require('./encoding/base58check');
-const Networks = require('./networks');
-const PublicKey = require('./publickey');
-const JSUtil = require('./util/js');
-const $ = require('./util/preconditions');
 
 /**
  * Instantiate a PrivateKey from a BN, Buffer and WIF.
@@ -51,10 +46,8 @@ function PrivateKey(data, network) {
   }
 
   const info = this._classifyArguments(data, network);
-  const info = this._classifyArguments(data, network);
 
   // validation
-  if (!info.bn || info.bn.cmp(new BN(0)) === 0) {
   if (!info.bn || info.bn.cmp(new BN(0)) === 0) {
     throw new TypeError('Number can not be equal to zero, undefined, null or false');
   }
@@ -92,7 +85,6 @@ function PrivateKey(data, network) {
 PrivateKey.prototype._classifyArguments = function(data, network) {
   /* jshint maxcomplexity: 10 */
   let info = {
-  let info = {
     compressed: true,
     network: network ? Networks.get(network) : Networks.defaultNetwork
   };
@@ -105,12 +97,10 @@ PrivateKey.prototype._classifyArguments = function(data, network) {
   } else if (data instanceof Buffer || data instanceof Uint8Array) {
     info = PrivateKey._transformBuffer(data, network);
   } else if (data.bn && data.network) {
-  } else if (data.bn && data.network) {
     info = PrivateKey._transformObject(data);
   } else if (!network && Networks.get(data)) {
     info.bn = PrivateKey._getRandomBN();
     info.network = Networks.get(data);
-  } else if (typeof(data) === 'string') {
   } else if (typeof(data) === 'string') {
     if (JSUtil.isHexa(data)) {
       info.bn = new BN(data, 'hex');
@@ -132,11 +122,7 @@ PrivateKey.prototype._classifyArguments = function(data, network) {
 PrivateKey._getRandomBN = function() {
   let condition;
   let bn;
-PrivateKey._getRandomBN = function() {
-  let condition;
-  let bn;
   do {
-    const privbuf = Random.getRandomBuffer(32);
     const privbuf = Random.getRandomBuffer(32);
     bn = BN.fromBuffer(privbuf);
     condition = bn.lt(Point.getN());
@@ -154,7 +140,6 @@ PrivateKey._getRandomBN = function() {
  */
 PrivateKey._transformBuffer = function(buf, network) {
 
-  const info = {};
   const info = {};
 
   if (buf.length === 32) {
@@ -193,7 +178,6 @@ PrivateKey._transformBuffer = function(buf, network) {
  * @private
  */
 PrivateKey._transformBNBuffer = function(buf, network) {
-  const info = {};
   const info = {};
   info.network = Networks.get(network) || Networks.defaultNetwork;
   info.bn = BN.fromBuffer(buf);
@@ -234,8 +218,6 @@ PrivateKey.fromBuffer = function(arg, network) {
 PrivateKey._transformObject = function(json) {
   const bn = new BN(json.bn, 'hex');
   const network = Networks.get(json.network);
-  const bn = new BN(json.bn, 'hex');
-  const network = Networks.get(json.network);
   return {
     bn: bn,
     network: network,
@@ -272,7 +254,6 @@ PrivateKey.fromObject = function(obj) {
  */
 PrivateKey.fromRandom = function(network) {
   const bn = PrivateKey._getRandomBN();
-  const bn = PrivateKey._getRandomBN();
   return new PrivateKey(bn, network);
 };
 
@@ -284,7 +265,6 @@ PrivateKey.fromRandom = function(network) {
  * @returns {null|Error} An error if exists
  */
 PrivateKey.getValidationError = function(data, network) {
-  let error;
   let error;
   try {
     /* jshint nonew: false */
@@ -302,7 +282,6 @@ PrivateKey.getValidationError = function(data, network) {
  * @param {string=} network - Either "livenet" or "testnet"
  * @returns {Boolean} If the private key is would be valid
  */
-PrivateKey.isValid = function(data, network) {
 PrivateKey.isValid = function(data, network) {
   if (!data) {
     return false;
@@ -327,20 +306,14 @@ PrivateKey.prototype.toString = function() {
 PrivateKey.prototype.toWIF = function() {
   const network = this.network;
   const compressed = this.compressed;
-  const network = this.network;
-  const compressed = this.compressed;
 
-  let buf;
   let buf;
   if (compressed) {
     buf = Buffer.concat([Buffer.from([network.privatekey]),
       this.bn.toBuffer({ size: 32 }),
       Buffer.from([0x01])]);
-      this.bn.toBuffer({ size: 32 }),
-      Buffer.from([0x01])]);
   } else {
     buf = Buffer.concat([Buffer.from([network.privatekey]),
-      this.bn.toBuffer({ size: 32 })]);
       this.bn.toBuffer({ size: 32 })]);
   }
 
@@ -353,7 +326,6 @@ PrivateKey.prototype.toWIF = function() {
  * @returns {BN} A BN instance of the private key
  */
 PrivateKey.prototype.toBigNumber = function() {
-PrivateKey.prototype.toBigNumber = function() {
   return this.bn;
 };
 
@@ -362,8 +334,6 @@ PrivateKey.prototype.toBigNumber = function() {
  *
  * @returns {Buffer} A buffer of the private key
  */
-PrivateKey.prototype.toBuffer = function() {
-  return this.bn.toBuffer({ size: 32 });
 PrivateKey.prototype.toBuffer = function() {
   return this.bn.toBuffer({ size: 32 });
 };
@@ -386,7 +356,6 @@ PrivateKey.prototype.toBufferNoPadding = function() {
  * @returns {PublicKey} A public key generated from the private key
  */
 PrivateKey.prototype.toPublicKey = function() {
-PrivateKey.prototype.toPublicKey = function() {
   if (!this._pubkey) {
     this._pubkey = PublicKey.fromPrivateKey(this);
   }
@@ -402,7 +371,6 @@ PrivateKey.prototype.toPublicKey = function() {
  * @returns {Address} An address generated from the private key
  */
 PrivateKey.prototype.toAddress = function(network, type) {
-  const pubkey = this.toPublicKey();
   const pubkey = this.toPublicKey();
   return Address.fromPublicKey(pubkey, network || this.network, type);
 };
@@ -448,7 +416,6 @@ PrivateKey.prototype.createTapTweak = function(merkleRoot) {
  * @returns {string} Private key
  */
 PrivateKey.prototype.inspect = function() {
-  const uncompressed = !this.compressed ? ', uncompressed' : '';
   const uncompressed = !this.compressed ? ', uncompressed' : '';
   return '<PrivateKey: ' + this.toString() + ', network: ' + this.network + uncompressed + '>';
 };

@@ -59,7 +59,6 @@ Opcode.prototype.toNumber = function() {
 
 Opcode.prototype.toString = function() {
   const str = Opcode.reverseMap[this.num];
-  const str = Opcode.reverseMap[this.num];
   if (typeof str === 'undefined') {
     throw new Error('Opcode does not have a string representation');
   }
@@ -252,7 +251,6 @@ Opcode.map = {
 
 Opcode.reverseMap = [];
 
-for (const k in Opcode.map) {
 for (const k in Opcode.map) {
   Opcode.reverseMap[Opcode.map[k]] = k;
 }

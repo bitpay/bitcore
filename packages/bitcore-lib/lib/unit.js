@@ -9,12 +9,6 @@ const UNITS = {
   'uBTC': [1e2, 2],
   'bits': [1e2, 2],
   'satoshis': [1, 0]
-const UNITS = {
-  'BTC': [1e8, 8],
-  'mBTC': [1e5, 5],
-  'uBTC': [1e2, 2],
-  'bits': [1e2, 2],
-  'satoshis': [1, 0]
 };
 
 /**
@@ -159,7 +153,6 @@ Unit.prototype.to = function(code) {
     throw new errors.Unit.UnknownCode(code);
   }
 
-  const value = this._value / UNITS[code][0];
   const value = this._value / UNITS[code][0];
   return parseFloat(value.toFixed(UNITS[code][1]));
 };

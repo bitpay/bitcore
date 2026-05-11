@@ -28,11 +28,6 @@ Message.prototype.magicHash = function magicHash() {
   const prefix2 = BufferWriter.varintBufNum(messageBuffer.length);
   const buf = Buffer.concat([prefix1, Message.MAGIC_BYTES, prefix2, messageBuffer]);
   const hash = sha256sha256(buf);
-  const prefix1 = BufferWriter.varintBufNum(Message.MAGIC_BYTES.length);
-  const messageBuffer = Buffer.from(this.message);
-  const prefix2 = BufferWriter.varintBufNum(messageBuffer.length);
-  const buf = Buffer.concat([prefix1, Message.MAGIC_BYTES, prefix2, messageBuffer]);
-  const hash = sha256sha256(buf);
   return hash;
 };
 
@@ -52,15 +47,12 @@ Message.prototype._sign = function _sign(privateKey) {
  */
 Message.prototype.sign = function sign(privateKey) {
   const signature = this._sign(privateKey);
-  const signature = this._sign(privateKey);
   return signature.toCompact().toString('base64');
 };
 
 Message.prototype._verify = function _verify(publicKey, signature) {
   $.checkArgument(publicKey instanceof PublicKey, 'First argument should be an instance of PublicKey');
   $.checkArgument(signature instanceof Signature, 'Second argument should be an instance of Signature');
-  const hash = this.magicHash();
-  const verified = ECDSA.verify(hash, signature, publicKey);
   const hash = this.magicHash();
   const verified = ECDSA.verify(hash, signature, publicKey);
   if (!verified) {
@@ -85,14 +77,11 @@ Message.prototype.verify = function verify(bitcoinAddress, signatureString) {
     bitcoinAddress = Address.fromString(bitcoinAddress);
   }
   const signature = Signature.fromCompact(Buffer.from(signatureString, 'base64'));
-  const signature = Signature.fromCompact(Buffer.from(signatureString, 'base64'));
 
   // recover the public key
   const hashbuf = this.magicHash();
   const publicKey = ECDSA.recoverPublicKey(hashbuf, signature);
-  const publicKey = ECDSA.recoverPublicKey(hashbuf, signature);
 
-  const signatureAddress = Address.fromPublicKey(publicKey, bitcoinAddress.network);
   const signatureAddress = Address.fromPublicKey(publicKey, bitcoinAddress.network);
 
   // check that the recovered address and specified address match
@@ -120,14 +109,11 @@ Message.prototype.recoverPublicKey = function recoverPublicKey(bitcoinAddress, s
     bitcoinAddress = Address.fromString(bitcoinAddress);
   }
   const signature = Signature.fromCompact(Buffer.from(signatureString, 'base64'));
-  const signature = Signature.fromCompact(Buffer.from(signatureString, 'base64'));
 
   // recover the public key
   const hashbuf = this.magicHash();
   const publicKey = ECDSA.recoverPublicKey(hashbuf, signature);
-  const publicKey = ECDSA.recoverPublicKey(hashbuf, signature);
 
-  const signatureAddress = Address.fromPublicKey(publicKey, bitcoinAddress.network);
   const signatureAddress = Address.fromPublicKey(publicKey, bitcoinAddress.network);
 
   // check that the recovered address and specified address match
