@@ -1,4 +1,5 @@
 import { ArbValidation } from './arb';
+import { ArcValidation } from './arc';
 import { BaseValidation } from './base';
 import { BchValidation } from './bch';
 import { BtcValidation } from './btc';
@@ -11,9 +12,6 @@ import { SolValidation } from './sol';
 import { XrpValidation } from './xrp';
 import type { IValidation } from '../types/validation';
 
-const arcValidation = new EthValidation();
-arcValidation.regex = /arc/i;
-
 const validation: { [chain: string]: IValidation } = {
   BTC: new BtcValidation(),
   BCH: new BchValidation(),
@@ -25,7 +23,7 @@ const validation: { [chain: string]: IValidation } = {
   ARB: new ArbValidation(),
   BASE: new BaseValidation(),
   OP: new OpValidation(),
-  ARC: arcValidation,
+  ARC: new ArcValidation(),
   SOL: new SolValidation(),
 };
 

@@ -1799,6 +1799,8 @@ describe('Transaction', function() {
 
     it('should define ARC native units as 18 decimals', () => {
       expect(Constants.UNITS.arc.toSatoshis).to.equal(1e18);
+      expect(Constants.UNITS.arc.full.maxDecimals).to.equal(6);
+      expect(Constants.UNITS.arc.full.minDecimals).to.equal(6);
     });
   });
 

@@ -90,8 +90,8 @@ export const UNITS = {
   arc: {
     toSatoshis: 1e18,
     full: {
-      maxDecimals: 8,
-      minDecimals: 8
+      maxDecimals: 6,
+      minDecimals: 6
     },
     short: {
       maxDecimals: 6,
