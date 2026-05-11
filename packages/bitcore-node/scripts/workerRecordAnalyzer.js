@@ -10,6 +10,7 @@ if (['help', '--help'].includes(args[0])) {
   console.log(`USAGE: ./workerRecordAnalyzer <logfile> [options]\n
 Options:
   --include <path>  Only include records from the specified path
+  --recent          Use the most recent log file in the current directory
   --file <path>     Output data for specified file
   --sort <type>     Sort files with the given criteria:
                       total (default): total lines executed
@@ -41,7 +42,30 @@ if (sortTypeIndex !== -1) {
   args.splice(sortTypeIndex, 2);
 }
 
-let logFile = args[0];
+let logFile;
+const recentIndex = args.indexOf('--recent');
+if (recentIndex !== -1) {
+  args.splice(recentIndex, 1);
+  const dirFiles = fs
+    .readdirSync('.')
+    .filter(f => f.startsWith('executionLog-') && f.endsWith('.json'));
+
+  const start = 'executionLog-'.length;
+  let newest = 0;
+  let index;
+  for (let i = 0; i < dirFiles.length; i++) {
+    const file = dirFiles[i];
+    const time = new Date(file.substring(start, file.length - 5)).getTime();
+    if (time > newest) {
+      newest = time;
+      index = i;
+    }
+  }
+  logFile = dirFiles[index];
+} else {
+  logFile = args[0];
+};
+
 if (logFile === undefined) {
   async function selectFrom(folder) {
     const logFiles = fs.readdirSync(folder);
@@ -69,59 +93,39 @@ if (file !== undefined) {
 };
 
 prompt.note('Analyzing ' + logFile + '...');
-// eslint-disable-next-line no-control-regex
-const stripAnsi = s => s.replace(/\x1b\[[0-9;]*m/g, '');
+let executionData = JSON.parse(logData);
+if (include !== undefined) {
+  executionData = Object.fromEntries(
+    Object.entries(executionData)
+      .filter(([filePath]) => filePath.includes(include))
+  );
+}
+const metaData = {};
+for (const filePath in executionData) {
+  const total = executionData[filePath].reduce((a, b) => a + b.executions, 0);
+  metaData[filePath] = {
+    total,
+    average: total / executionData[filePath].length,
+    most: Math.max(...executionData[filePath].map(l => l.executions)),
+  };
+}
 
-const separator = '\n\n' + '='.repeat(80) + '\n';
-
-const sections = logData.split(separator).slice(1); // skip empty prefix
-
-const lineData = sections.map(section => {
-  const divider = '\n' + '='.repeat(80) + '\n';
-  const dividerIdx = section.indexOf(divider);
-  const filePath = section.slice(0, dividerIdx);
-  if (include !== undefined && !filePath.startsWith(include)) return null;
-  const linesRaw = section.slice(dividerIdx + divider.length);
-
-  const lines = linesRaw.split('\n').filter(l => l.length > 0).map(rawLine => {
-    const stripped = stripAnsi(rawLine);
-    const pipeIdx = stripped.indexOf('| ');
-    if (pipeIdx === -1) return null;
-
-    const meta = stripped.slice(0, pipeIdx);
-    const content = stripped.slice(pipeIdx + 2);
-    const lineNum = parseInt(meta.slice(0, 4), 10);
-    const hitsRaw = meta.slice(5).trim();
-    const hits = hitsRaw === '' ? null : parseInt(hitsRaw, 10);
-
-    return { lineNum, hits, content };
-  }).filter(Boolean);
-
-  const totalHits = lines.reduce((sum, l) => sum + (l.hits ?? 0), 0);
-  return { filePath, lines, totalHits };
-}).filter(f => f !== null);
-
-let criteria;
+let sortedFiles = Object.keys(executionData)
+  .filter(filePath => executionData[filePath].some(d => d.executions >= 1));
 switch (sortType) {
   case 'most-hit-line':
-    criteria = (a, b) => Math.max(...b.lines.map(l => l.hits || 0)) - Math.max(...a.lines.map(l => l.hits || 0));
+    sortedFiles = sortedFiles.sort((fileA, fileB) => metaData[fileB].most - metaData[fileA].most);
     break;
   case 'average':
-    criteria = (a, b) => (b.totalHits / b.lines.length).toFixed(2) - (a.totalHits / a.lines.length).toFixed(2);
+    sortedFiles = sortedFiles.sort((fileA, fileB) => metaData[fileB].average - metaData[fileA].average);
     break;
   case 'abc':
-    criteria = (a, b) => a.filePath.localeCompare(b.filePath);
+    sortedFiles = sortedFiles.sort((fileA, fileB) => fileA.localeCompare(fileB));
     break;
   case 'total':
   default:
-    criteria = (a, b) => b.totalHits - a.totalHits;
+    sortedFiles = sortedFiles.sort((fileA, fileB) => metaData[fileB].total - metaData[fileA].total);
 }
-
-const sortedFiles = lineData
-  .filter(f => f.totalHits >= 1)
-  .sort(criteria);
-
-const hitsWidth = Math.max(String(sortedFiles[0].totalHits).length, 'Total Hits'.length);
 
 // Recursively select a file and go back to file list until exit
 async function selectFile() {
@@ -129,29 +133,30 @@ async function selectFile() {
   let message;
   switch (sortType) {
     case 'most-hit-line':
-      criteria = f => Math.max(...f.lines.map(l => l.hits || 0));
+      criteria = f => metaData[f].most;
       message = 'Sorted by file with the most executed line';
       break;
     case 'average':
-      criteria = f => (f.totalHits / f.lines.length).toFixed(2);
+      criteria = f => metaData[f].average.toFixed(2);
       message = 'Sorted by average executions per a line of a file';
       break;
     case 'abc':
-      criteria = f => f.totalHits;
+      // Show total file executions even though the files aren't sorted by executions
+      criteria = f => metaData[f].total;
       message = 'Sorted by alphabetical order';
       break;
     case 'total':
     default:
-      criteria = f => f.totalHits;
+      criteria = f => metaData[f].total;
       message = 'Sorted by total executions of all the lines of a file';
   }
 
   outputFile(await prompt.select({
     message,
     options: sortedFiles.map(
-      f => ({
-        value: f.filePath,
-        label: `${String(criteria(f)).padStart(hitsWidth)} ${f.filePath}`
+      filePath => ({
+        value: filePath,
+        label: `${String(criteria(filePath)).padStart(8)} ${filePath}`
       })),
   }));
   const exit = await prompt.select({
@@ -169,12 +174,23 @@ async function selectFile() {
 await selectFile();
 
 function outputFile(filePath) {
-  const header = '='.repeat(80) + '\n' + filePath + '\n' + '='.repeat(80) + '\n';
-  const headerIndex = logData.indexOf(header);
-  prompt.note('\n' +
-    logData.slice(
-      headerIndex,
-      logData.indexOf('='.repeat(80), headerIndex + header.length)
-    )
-  );
+  const fileExecution = executionData[filePath];
+  const padding = Math.max(Math.floor(Math.log10(metaData[filePath].most)) + 1, 2);
+  let file = '';
+  for (let i = 0; i < fileExecution.length; i++) {
+    let start;
+    if (fileExecution[i].executions > 0) {
+      if (fileExecution[i].executions === metaData[filePath].most) {
+        // yellow for most executed line(s)
+        start = `\x1b[33m${String(fileExecution[i].executions).padStart(padding)}\x1b[0m`;
+      } else {
+        // green for other executed lines
+        start = `\x1b[32m${String(fileExecution[i].executions).padStart(padding)}\x1b[0m`;
+      }
+    } else {
+      start = ' '.repeat(padding);
+    }
+    file += `\n${start}  ${fileExecution[i].line}`;
+  }
+  prompt.note(file);
 }

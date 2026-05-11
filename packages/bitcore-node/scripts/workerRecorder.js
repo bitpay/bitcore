@@ -8,20 +8,28 @@
 import fs from 'fs';
 import inspector from 'inspector';
 import { createRequire } from 'module';
-import { timestamp } from '@bitpay-labs/bitcore-logging';
 
 const require = createRequire(import.meta.url);
 
 const session = new inspector.Session();
 session.connect();
 
-const logFile = `lineHits-${timestamp()}.log`;
+const logFile = `executionLog-${new Date().toISOString()}.json`;
 
 const args = process.argv.slice(2);
 if (args.includes('--help') || args[0] === 'help') {
   console.log('USAGE: node ./workerRecorder.js <worker>\n' +
     '  <worker> worker to start: api, p2p, pruning, or all');
   process.exit(0);
+}
+
+const pausedIdx = args.indexOf('--paused');
+let paused;
+if (pausedIdx === -1) {
+  paused = false;
+} else {
+  paused = true;
+  args.splice(pausedIdx, 1);
 }
 
 const worker = args[0] || 'all';
@@ -46,8 +54,8 @@ function offsetToLine(lineOffsets, offset) {
   return lo;
 }
 
-/* When the worker exits, log the line data to  */
-process.on('exit', () => {
+const programExecution = {};
+function save() {
   session.post('Profiler.takePreciseCoverage', (err, { result } = {}) => {
     if (err || !result) {
       console.error('[Worker Recorder] Error:', err);
@@ -55,7 +63,6 @@ process.on('exit', () => {
     }
     console.log('[Worker Recorder] Collecting line hits...');
 
-    let logContent = '';
     for (const script of result) {
       const url = script.url;
       if (!url.startsWith('file://')) continue;
@@ -70,9 +77,10 @@ process.on('exit', () => {
       }
 
       const lines = source.split('\n');
+      if (!programExecution[filePath]) programExecution[filePath] = lines.map(l => ({ line: l, executions: 0 }));
+      const fileExecution = programExecution[filePath];
+
       const lineOffsets = buildLineOffsets(source);
-      // null = no range touched this line, 0 = range exists but count 0, N = hit N times
-      const lineHits = new Array(lines.length).fill(null);
 
       // Count the hit counts based on function range data
       for (const func of script.functions) {
@@ -80,37 +88,92 @@ process.on('exit', () => {
           const startLine = offsetToLine(lineOffsets, range.startOffset);
           const endLine = offsetToLine(lineOffsets, range.endOffset);
           for (let l = startLine; l <= endLine; l++) {
-            lineHits[l] = Math.max(lineHits[l] ?? 0, range.count);
+            fileExecution[l].executions += range.count;
           }
         }
       }
-
-      // File headers separate files
-      logContent += `\n\n${'='.repeat(80)}`;
-      logContent += `\n${filePath}`;
-      logContent += `\n${'='.repeat(80)}`;
-
-      // Annotates files with hit counts
-      for (let i = 0; i < lines.length; i++) {
-        const hits = lineHits[i];
-        let hitsStr;
-        if (hits === null) hitsStr = '      ';         // no data
-        else hitsStr = `\x1b[32m${hits}\x1b[0m`.padStart(14) + ' '; // green: hit N times
-
-        const lineNum = String(i + 1).padStart(4);
-        logContent += `\n${lineNum} ${hitsStr}| ${lines[i]}`;
-      };
     }
-
-    fs.writeFileSync(logFile, logContent);
   });
+}
+
+/* When the worker exits, log the line data to  */
+process.on('exit', () => {
+  save();
+  fs.writeFileSync(logFile, JSON.stringify(programExecution));
 });
+
+function pause() {
+  if (!paused) {
+    console.log('[Worker Recorder] Pausing');
+    save();
+    paused = true;
+  } else {
+    console.log('[Worker Recorder] Already paused');
+  }
+}
+
+function record() {
+  if (paused) {
+    console.log('[Worker Recorder] Recording');
+    // Don't include previous sampling taken while paused
+    session.post('Profiler.takePreciseCoverage');
+    paused = false;
+  } else {
+    console.log('[Worker Recorder] Already recording');
+  }
+}
+
+process.stdin.setRawMode(true);
+process.stdin.resume();
+
+process.stdin.on('data', (key) => {
+  switch (getKeyName(key[0])) {
+    case '^C':
+      process.exit(0);
+      break;
+    case 'Delete':
+      process.stdout.write('\b');
+      break;
+    case 'p':
+      pause();
+      break;
+    case 'r':
+      record();
+      break;
+    default:
+      process.stdout.write(key);
+      break;
+  }
+});
+
+const getKeyName = (code) => {
+  const specials = {
+    9: 'Tab', 13: 'Enter', 27: 'Escape', 32: 'Space', 3: '^C',
+    37: 'ArrowLeft', 38: 'ArrowUp', 39: 'ArrowRight', 40: 'ArrowDown', 127: 'Delete'
+  };
+
+  return specials[code] || String.fromCharCode(code);
+};
+
+console.log(getKeyName(9));  // 'Tab'
+console.log(getKeyName(65)); // 'a'
 
 // Start profiling
 session.post('Profiler.enable');
 session.post('Profiler.startPreciseCoverage', { callCount: true, detailed: true });
 
+
 // Start the worker
 console.log(`[Worker Recorder] Starting ${worker.toString()}`);
 const Worker = Object.values(require(`../build/src/workers/${worker}.js`))[0];
 Worker();
+
+// function testProgram() {
+//   if (Date.now() % 2) {
+//     console.log('[Test] Even');
+//   } else {
+//     console.log('[Test] Odd');
+//   }
+//   setTimeout(testProgram, 500);
+// }
+// testProgram();
