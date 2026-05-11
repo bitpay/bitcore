@@ -255,7 +255,7 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
       blockHash: '',
       blockTime: safeBlockTime,
       blockTimeNormalized: safeBlockTime,
-      value: transfer.value != null ? String(transfer.value) : 0,
+      value: BigInt(transfer.rawContract?.value || 0).toString(),
       gasLimit: 0,
       gasPrice: 0,
       fee: 0,

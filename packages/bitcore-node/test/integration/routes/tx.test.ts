@@ -1,5 +1,6 @@
 import sinon from 'sinon';
 import supertest from 'supertest';
+import express from 'express';
 import app from '../../../src/routes';
 import { describe } from 'mocha';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
@@ -8,6 +9,9 @@ import { expect } from 'chai';
 import { ITransaction, TransactionStorage } from '../../../src/models/transaction';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
 import { MoralisStateProvider } from '../../../src/modules/moralis/api/csp';
+import { AdapterError, AdapterErrorCode, AllProvidersUnavailableError } from '../../../src/providers/chain-state/external/adapters/errors';
+import { ChainStateProvider } from '../../../src/providers/chain-state';
+import { txRoute } from '../../../src/routes/api/tx';
 
 
 describe('Tx Routes', function() {
@@ -460,6 +464,61 @@ describe('Tx Routes', function() {
         }
         done();
       });
+  });
+
+  describe('error mapping', function() {
+    let errorApp: express.Express;
+
+    beforeEach(function () {
+      errorApp = express();
+      errorApp.use('/:chain/:network/tx', txRoute.router);
+    });
+
+    describe('GET /:txId', function () {
+      it('should return 503 for AllProvidersUnavailableError', async function () {
+        sandbox.stub(ChainStateProvider, 'getTransaction').rejects(
+          new AllProvidersUnavailableError('getTransaction', 'ETH', 'mainnet')
+        );
+        const res = await supertest(errorApp).get('/ETH/mainnet/tx/' + '0x' + 'a'.repeat(64));
+        expect(res.status).to.equal(503);
+        expect(res.body.error).to.equal('All indexed API providers unavailable');
+      });
+
+      it('should return 400 for INVALID_REQUEST AdapterError', async function () {
+        sandbox.stub(ChainStateProvider, 'getTransaction').rejects(
+          new AdapterError('Alchemy', AdapterErrorCode.INVALID_REQUEST, 'bad txId')
+        );
+        const res = await supertest(errorApp).get('/ETH/mainnet/tx/' + '0x' + 'a'.repeat(64));
+        expect(res.status).to.equal(400);
+        expect(res.body.error).to.equal('Invalid request');
+      });
+
+      it('should still return 500 for generic errors', async function () {
+        sandbox.stub(ChainStateProvider, 'getTransaction').rejects(new Error('something broke'));
+        const res = await supertest(errorApp).get('/ETH/mainnet/tx/' + '0x' + 'a'.repeat(64));
+        expect(res.status).to.equal(500);
+      });
+    });
+
+    describe('GET / (streamTransactions)', function () {
+      it('should return 503 for AllProvidersUnavailableError', async function () {
+        sandbox.stub(ChainStateProvider, 'streamTransactions').rejects(
+          new AllProvidersUnavailableError('streamTransactions', 'ETH', 'mainnet')
+        );
+        const res = await supertest(errorApp).get('/ETH/mainnet/tx/?blockHash=0x' + 'a'.repeat(64));
+        expect(res.status).to.equal(503);
+        expect(res.body.error).to.equal('All indexed API providers unavailable');
+      });
+
+      it('should return 400 for INVALID_REQUEST AdapterError', async function () {
+        sandbox.stub(ChainStateProvider, 'streamTransactions').rejects(
+          new AdapterError('Alchemy', AdapterErrorCode.INVALID_REQUEST, 'bad block hash')
+        );
+        const res = await supertest(errorApp).get('/ETH/mainnet/tx/?blockHash=0x' + 'a'.repeat(64));
+        expect(res.status).to.equal(400);
+        expect(res.body.error).to.equal('Invalid request');
+      });
+    });
   });
 
   describe('EVM', function() {

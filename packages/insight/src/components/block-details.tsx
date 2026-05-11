@@ -193,7 +193,7 @@ const BlockDetails: FC<BlockDetailsProps> = ({currency, network, block}) => {
 
               <SecondaryTitle>Transactions</SecondaryTitle>
 
-              {transactionList.length ? (
+              {transactionList?.length ? (
                 <InfiniteScroll
                   next={() => loadMore()}
                   hasMore={hasMore}

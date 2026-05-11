@@ -58,6 +58,8 @@ import { Storage } from './storage';
 import type { ExternalServicesConfig } from '../types/externalservices';
 import type { GetAddressesOpts, UpgradeCheckOpts } from '../types/server';
 
+type BwsLogger = typeof logger;
+
 let request = _request;
 const $ = singleton();
 
@@ -489,7 +491,7 @@ export class WalletService implements IWalletService {
     return args;
   }
 
-  logi(message, ...args) {
+  logi(message: string, ...args: any[]): BwsLogger {
     args = this._cleanLogArgs(args);
 
     if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
@@ -506,7 +508,7 @@ export class WalletService implements IWalletService {
     return logger.info(message, ...args);
   }
 
-  logw(message, ...args) {
+  logw(message: string, ...args: any[]): BwsLogger {
     args = this._cleanLogArgs(args);
 
     if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
@@ -524,7 +526,7 @@ export class WalletService implements IWalletService {
     return logger.warn(message, ...args);
   }
 
-  logd(message, ...args) {
+  logd(message: string, ...args: any[]): BwsLogger {
     args = this._cleanLogArgs(args);
 
     if (typeof message === 'string' && args.length > 0 && !message.endsWith('%o')) {
@@ -944,7 +946,7 @@ export class WalletService implements IWalletService {
     );
   }
 
-  /*
+  /**
    * Verifies a signature
    * @param text
    * @param signature
@@ -954,7 +956,7 @@ export class WalletService implements IWalletService {
     return Utils.verifyMessage(text, signature, pubkey);
   }
 
-  /*
+  /**
    * Verifies a request public key
    * @param requestPubKey
    * @param signature
@@ -965,7 +967,7 @@ export class WalletService implements IWalletService {
     return Utils.verifyMessage(requestPubKey, signature, pub.toString());
   }
 
-  /*
+  /**
    * Verifies signature againt a collection of pubkeys
    * @param text
    * @param signature
@@ -3338,9 +3340,9 @@ export class WalletService implements IWalletService {
           
 
           const copayer = wallet.getCopayer(this.copayerId);
+          const xPubKey = wallet.tssKeyId ? wallet.clientDerivedPublicKey : copayer.xPubKey;
 
           try {
-            const xPubKey = wallet.tssKeyId ? wallet.clientDerivedPublicKey : copayer.xPubKey;
             if (!txp.sign(this.copayerId, opts.signatures, xPubKey)) {
               this.logw('Error signing transaction (BAD_SIGNATURES)');
               this.logw('Client version:', this.clientVersion);
@@ -3353,6 +3355,29 @@ export class WalletService implements IWalletService {
           } catch (ex) {
             this.logw('Error signing transaction proposal:', ex);
             return cb(ex);
+          }
+
+          if (wallet.tssKeyId) {
+            try {
+              // Add the other copayers to the txp.copayers array
+              //  so the client can see who participated in the signing.
+              // Note we hardcode to input0 as that should always be present and should suffice for
+              //  gathering copayers. However, there is a possibility that input1 (or any input >0)
+              //  could contain a different set of copayers, depending on the client's implementation
+              //  of TSS. While technically possible, it's unlikely and the impact is mostly aesthetic.
+              const tssSigSeshId = `${txp.id}:input0`;
+              const tssSigSession = await storage.fetchTssSigSession({ id: tssSigSeshId });
+              if (!tssSigSession) {
+                throw new Error('TSS signature session not found: ' + tssSigSeshId);
+              }
+              const copayerIds = tssSigSession.participants.map(p => p.copayerId);
+              for (const copayerId of copayerIds) {
+                if (copayerId === this.copayerId) continue;
+                txp.addAction(copayerId, 'accept', null, opts.signatures, xPubKey);
+              }
+            } catch (err) {
+              this.logw('Error finding accepting copayers for TSS txp: %o %o', txp.id, err);
+            }
           }
 
           this.storage.storeTx(this.walletId, txp, err => {

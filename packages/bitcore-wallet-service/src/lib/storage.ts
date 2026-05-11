@@ -166,6 +166,9 @@ export class Storage {
     db.collection(collections.TSS_KEYGEN).createIndex({
       id: 1
     }, { unique: true });
+    db.collection(collections.TSS_SIGN).createIndex({
+      id: 1
+    }, { unique: true });
   }
 
   connect(opts, cb) {

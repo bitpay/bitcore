@@ -1,12 +1,11 @@
 'use strict';
 
-const Message = require('../message');
 const inherits = require('util').inherits;
 const bitcore = require('@bitpay-labs/bitcore-lib-doge');
+const Message = require('../message');
 const utils = require('../utils');
 
 const $ = bitcore.util.preconditions;
-const _ = bitcore.deps._;
 const BufferReader = bitcore.encoding.BufferReader;
 const BufferWriter = bitcore.encoding.BufferWriter;
 
@@ -20,11 +19,12 @@ function AddrMessage(arg, options) {
   Message.call(this, options);
   this.command = 'addr';
   $.checkArgument(
-    _.isUndefined(arg) ||
+    arg == null ||
       (Array.isArray(arg) &&
-       !_.isUndefined(arg[0].services) &&
-       !_.isUndefined(arg[0].ip) &&
-       !_.isUndefined(arg[0].port)),
+       arg[0] &&
+       arg[0].services != null &&
+       arg[0].ip != null &&
+       arg[0].port != null),
     'First argument is expected to be an array of addrs'
   );
   this.addresses = arg;

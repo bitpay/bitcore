@@ -13,6 +13,7 @@ export function command(args: CommonArgs) {
     .usage('<walletName> --command export [options]')
     .optionsGroup('Export Options')
     .option('--filename <filename>', 'Filename to export to', `~/${wallet.name}-export.json`)
+    .option('--readonly', 'Export as read-only (cannot send funds)')
     .parse(process.argv);
   
   const opts = program.opts();
@@ -22,16 +23,24 @@ export function command(args: CommonArgs) {
   return opts;
 }
 
-export async function exportWallet(args: CommonArgs<{ filename?: string }>) {
+export async function exportWallet(args: CommonArgs<{ filename?: string; readonly?: boolean }>) {
   const { wallet, opts } = args;
   if (opts.command) {
     Object.assign(opts, command(args));
   }
   const replaceTilde = str => str.startsWith('~') ? str.replace('~', os.homedir()) : str;
 
+  const readOnly = !!opts.readonly || wallet.isReadOnly() || await prompt.confirm({
+    message: 'Export as read-only (cannot send funds)?',
+    initialValue: false
+  });
+  if (prompt.isCancel(readOnly)) {
+    throw new UserCancelled();
+  }
+
   const filename = opts.filename || await prompt.text({
     message: 'Enter filename to export to:',
-    initialValue: `~/${wallet.name}-export.json`,
+    initialValue: `~/${wallet.name}${readOnly ? '-nokey' : ''}-export.json`,
     validate: (value) => {
       value = value.trim();
       if (!value) return 'Filename is required';
@@ -61,7 +70,8 @@ export async function exportWallet(args: CommonArgs<{ filename?: string }>) {
 
   await wallet.export({
     filename: replaceTilde(filename),
-    exportPassword
+    exportPassword,
+    readOnly
   });
   
   prompt.log.success('Exported to ' + filename);

@@ -365,6 +365,12 @@ export const Utils = {
     return 'testnet';
   },
 
+  getAddressNetworkForDbLookup(address, network) {
+    const generic = Utils.getGenericName(network);
+    if (generic === 'livenet') return address;
+    return `${address}:${generic}`;
+  },
+
   castToBool(input: any) {
     input = input?.toString();
     if (input?.toLowerCase() === 'true' || input == '1') {

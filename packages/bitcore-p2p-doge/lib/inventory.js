@@ -6,7 +6,7 @@ const $ = bitcore.util.preconditions;
 const BufferUtil = bitcore.util.buffer;
 const BufferReader = bitcore.encoding.BufferReader;
 const BufferWriter = bitcore.encoding.BufferWriter;
-const _ = bitcore.deps._;
+
 
 /**
  * A constructor for inventory related Bitcoin messages such as
@@ -32,7 +32,7 @@ function Inventory(obj) {
  */
 Inventory.forItem = function(type, hash) {
   $.checkArgument(hash);
-  if (_.isString(hash)) {
+  if (typeof hash === 'string') {
     hash = Buffer.from(hash, 'hex');
     hash = BufferUtil.reverse(hash);
   }

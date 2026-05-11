@@ -1,13 +1,12 @@
 'use strict';
 
-const Message = require('../message');
 const inherits = require('util').inherits;
 const bitcore = require('@bitpay-labs/bitcore-lib-cash');
+const Message = require('../message');
 const utils = require('../utils');
 
 const BufferReader = bitcore.encoding.BufferReader;
 const BufferWriter = bitcore.encoding.BufferWriter;
-const _ = bitcore.deps._;
 const $ = bitcore.util.preconditions;
 
 /**
@@ -25,7 +24,7 @@ function HeadersMessage(arg, options) {
   this.BlockHeader = options.BlockHeader;
   this.command = 'headers';
   $.checkArgument(
-    _.isUndefined(arg) || (Array.isArray(arg) && arg[0] instanceof this.BlockHeader),
+    arg == null || (Array.isArray(arg) && arg[0] instanceof this.BlockHeader),
     'First argument is expected to be an array of BlockHeader instances'
   );
   this.headers = arg;

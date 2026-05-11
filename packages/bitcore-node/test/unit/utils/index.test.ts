@@ -1,5 +1,6 @@
 import { ObjectID } from 'mongodb';
 import * as utils from '../../../src/utils';
+import { redactUrl } from '../../../src/utils/redactUrl';
 import { expect } from 'chai';
 
 describe('Utils', function() {
@@ -356,6 +357,46 @@ describe('Utils', function() {
 
       const result = utils.merge(config, foundConfig);
       expect(result).to.deep.equal(expectedResult);
+    });
+  });
+
+  describe('redactUrl', function() {
+    it('should redact Alchemy v2 API key from URL', function() {
+      const url = 'https://eth-mainnet.g.alchemy.com/v2/abc123def456';
+      expect(redactUrl(url)).to.not.include('abc123def456');
+      expect(redactUrl(url)).to.include('REDACTED');
+    });
+
+    it('should redact Alchemy v3 API key and preserve version', function() {
+      const url = 'https://eth-mainnet.g.alchemy.com/v3/abc123def456';
+      const redacted = redactUrl(url);
+      expect(redacted).to.not.include('abc123def456');
+      expect(redacted).to.include('/v3/***REDACTED***');
+    });
+
+    it('should redact apikey query parameter', function() {
+      const url = 'https://api.example.com/data?apikey=secretkey123&chain=eth';
+      expect(redactUrl(url)).to.not.include('secretkey123');
+      expect(redactUrl(url)).to.include('chain=eth');
+    });
+
+    it('should redact api_key query parameter', function() {
+      const url = 'https://api.example.com/data?api_key=secretkey123';
+      expect(redactUrl(url)).to.not.include('secretkey123');
+    });
+
+    it('should redact key query parameter', function() {
+      const url = 'https://api.example.com/data?key=secretkey123';
+      expect(redactUrl(url)).to.not.include('secretkey123');
+    });
+
+    it('should return URL unchanged if no keys present', function() {
+      const url = 'https://api.example.com/data?chain=eth';
+      expect(redactUrl(url)).to.eq(url);
+    });
+
+    it('should handle empty string', function() {
+      expect(redactUrl('')).to.eq('');
     });
   });
 });

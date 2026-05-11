@@ -1,12 +1,12 @@
 'use strict';
 
-var BN = require('./bn');
-var _ = require('lodash');
-var $ = require('../util/preconditions');
-var BufferUtil = require('../util/buffer');
-var JSUtil = require('../util/js');
+const _ = require('lodash');
+const BufferUtil = require('../util/buffer');
+const JSUtil = require('../util/js');
+const $ = require('../util/preconditions');
+const BN = require('./bn');
 
-var Signature = function Signature(r, s, isSchnorr) {
+const Signature = function Signature(r, s, isSchnorr) {
   if (!(this instanceof Signature)) {
     return new Signature(r, s, isSchnorr);
   }
@@ -17,7 +17,7 @@ var Signature = function Signature(r, s, isSchnorr) {
       isSchnorr: isSchnorr
     });
   } else if (r) {
-    var obj = r;
+    const obj = r;
     this.set(obj);
   }
 };
@@ -39,17 +39,17 @@ Signature.prototype.set = function(obj) {
 Signature.fromCompact = function(buf) {
   $.checkArgument(BufferUtil.isBuffer(buf), 'Argument is expected to be a Buffer');
 
-  var sig = new Signature();
+  const sig = new Signature();
 
-  var compressed = true;
-  var i = buf.slice(0, 1)[0] - 27 - 4;
+  let compressed = true;
+  let i = buf.slice(0, 1)[0] - 27 - 4;
   if (i < 0) {
     compressed = false;
     i = i + 4;
   }
 
-  var b2 = buf.slice(1, 33);
-  var b3 = buf.slice(33, 65);
+  const b2 = buf.slice(1, 33);
+  const b3 = buf.slice(33, 65);
 
   $.checkArgument(i === 0 || i === 1 || i === 2 || i === 3, new Error('i must be 0, 1, 2, or 3'));
   $.checkArgument(b2.length === 32, new Error('r must be 32 bytes'));
@@ -64,17 +64,17 @@ Signature.fromCompact = function(buf) {
 };
 
 Signature.fromDER = Signature.fromBuffer = function(buf, strict) {
-  var sig = new Signature();
+  const sig = new Signature();
 
   // Schnorr Signatures use 65 byte for in tx r [len] 32 , s [len] 32, nhashtype
   // NOTE: this check is not very reliable. You should use .fromSchnorr directly if you know it's a schnorr sig.
-  if((buf.length === 64 || buf.length === 65) && buf[0] != 0x30) {
+  if ((buf.length === 64 || buf.length === 65) && buf[0] != 0x30) {
     return Signature.fromSchnorr(buf);
   }
   
   $.checkArgument(!(buf.length === 64 && buf[0] === 0x30), new Error('64 DER (ecdsa) signatures not allowed'));
   
-  var obj = Signature.parseDER(buf, strict);
+  const obj = Signature.parseDER(buf, strict);
 
   sig.r = obj.r;
   sig.s = obj.s;
@@ -84,15 +84,15 @@ Signature.fromDER = Signature.fromBuffer = function(buf, strict) {
 
 // The format used in a tx
 Signature.fromTxFormat = function(buf) {
-  var nhashtype = buf.readUInt8(buf.length - 1);
-  var derbuf = buf.slice(0, buf.length - 1);
-  var sig = new Signature.fromDER(derbuf, false);
+  const nhashtype = buf.readUInt8(buf.length - 1);
+  const derbuf = buf.slice(0, buf.length - 1);
+  const sig = new Signature.fromDER(derbuf, false);
   sig.nhashtype = nhashtype;
   return sig;
 };
 
 Signature.fromString = function(str) {
-  var buf = Buffer.from(str, 'hex');
+  const buf = Buffer.from(str, 'hex');
   return Signature.fromDER(buf);
 };
 
@@ -106,37 +106,37 @@ Signature.parseDER = function(buf, strict) {
     strict = true;
   }
 
-  var header = buf[0];
+  const header = buf[0];
   $.checkArgument(header === 0x30, new Error('Header byte should be 0x30'));
 
-  var length = buf[1];
-  var buflength = buf.slice(2).length;
+  let length = buf[1];
+  const buflength = buf.slice(2).length;
   $.checkArgument(!strict || length === buflength, new Error('Length byte should length of what follows'));
 
   length = length < buflength ? length : buflength;
 
-  var rheader = buf[2 + 0];
+  const rheader = buf[2 + 0];
   $.checkArgument(rheader === 0x02, new Error('Integer byte for r should be 0x02'));
 
-  var rlength = buf[2 + 1];
-  var rbuf = buf.slice(2 + 2, 2 + 2 + rlength);
-  var r = BN.fromBuffer(rbuf);
-  var rneg = buf[2 + 1 + 1] === 0x00 ? true : false;
+  const rlength = buf[2 + 1];
+  const rbuf = buf.slice(2 + 2, 2 + 2 + rlength);
+  const r = BN.fromBuffer(rbuf);
+  const rneg = buf[2 + 1 + 1] === 0x00 ? true : false;
   $.checkArgument(rlength === rbuf.length, new Error('Length of r incorrect'));
 
-  var sheader = buf[2 + 2 + rlength + 0];
+  const sheader = buf[2 + 2 + rlength + 0];
   $.checkArgument(sheader === 0x02, new Error('Integer byte for s should be 0x02'));
 
-  var slength = buf[2 + 2 + rlength + 1];
-  var sbuf = buf.slice(2 + 2 + rlength + 2, 2 + 2 + rlength + 2 + slength);
-  var s = BN.fromBuffer(sbuf);
-  var sneg = buf[2 + 2 + rlength + 2 + 2] === 0x00 ? true : false;
+  const slength = buf[2 + 2 + rlength + 1];
+  const sbuf = buf.slice(2 + 2 + rlength + 2, 2 + 2 + rlength + 2 + slength);
+  const s = BN.fromBuffer(sbuf);
+  const sneg = buf[2 + 2 + rlength + 2 + 2] === 0x00 ? true : false;
   $.checkArgument(slength === sbuf.length, new Error('Length of s incorrect'));
 
-  var sumlength = 2 + 2 + rlength + 2 + slength;
+  const sumlength = 2 + 2 + rlength + 2 + slength;
   $.checkArgument(length === sumlength - 2, new Error('Length of signature incorrect'));
 
-  var obj = {
+  const obj = {
     header: header,
     length: length,
     rheader: rheader,
@@ -163,15 +163,15 @@ Signature.prototype.toCompact = function(i, compressed) {
     throw new Error('i must be equal to 0, 1, 2, or 3');
   }
 
-  var val = i + 27 + 4;
+  let val = i + 27 + 4;
   if (compressed === false) {
     val = val - 4;
   }
-  var b1 = Buffer.from([val]);
-  var b2 = this.r.toBuffer({
+  const b1 = Buffer.from([val]);
+  const b2 = this.r.toBuffer({
     size: 32
   });
-  var b3 = this.s.toBuffer({
+  const b3 = this.s.toBuffer({
     size: 32
   });
   return Buffer.concat([b1, b2, b3]);
@@ -186,28 +186,28 @@ Signature.prototype.toBuffer = Signature.prototype.toDER = function() {
     return Buffer.concat([this.r.toBuffer({ size: 32 }), this.s.toBuffer({ size: 32 }), hashTypeBuf]);
   }
 
-  var rnbuf = this.r.toBuffer();
-  var snbuf = this.s.toBuffer();
+  const rnbuf = this.r.toBuffer();
+  const snbuf = this.s.toBuffer();
 
-  var rneg = rnbuf[0] & 0x80 ? true : false;
-  var sneg = snbuf[0] & 0x80 ? true : false;
+  const rneg = rnbuf[0] & 0x80 ? true : false;
+  const sneg = snbuf[0] & 0x80 ? true : false;
 
-  var rbuf = rneg ? Buffer.concat([Buffer.from([0x00]), rnbuf]) : rnbuf;
-  var sbuf = sneg ? Buffer.concat([Buffer.from([0x00]), snbuf]) : snbuf;
+  const rbuf = rneg ? Buffer.concat([Buffer.from([0x00]), rnbuf]) : rnbuf;
+  const sbuf = sneg ? Buffer.concat([Buffer.from([0x00]), snbuf]) : snbuf;
 
-  var rlength = rbuf.length;
-  var slength = sbuf.length;
-  var length = 2 + rlength + 2 + slength;
-  var rheader = 0x02;
-  var sheader = 0x02;
-  var header = 0x30;
+  const rlength = rbuf.length;
+  const slength = sbuf.length;
+  const length = 2 + rlength + 2 + slength;
+  const rheader = 0x02;
+  const sheader = 0x02;
+  const header = 0x30;
 
-  var der = Buffer.concat([Buffer.from([header, length, rheader, rlength]), rbuf, Buffer.from([sheader, slength]), sbuf]);
+  const der = Buffer.concat([Buffer.from([header, length, rheader, rlength]), rbuf, Buffer.from([sheader, slength]), sbuf]);
   return der;
 };
 
 Signature.prototype.toString = function() {
-  var buf = this.toDER();
+  const buf = this.toDER();
   return buf.toString('hex');
 };
 
@@ -240,18 +240,18 @@ Signature.isTxDER = function(buf) {
     //  Non-canonical signature: wrong length marker
     return false;
   }
-  var nLenR = buf[3];
+  const nLenR = buf[3];
   if (5 + nLenR >= buf.length) {
     //  Non-canonical signature: S length misplaced
     return false;
   }
-  var nLenS = buf[5 + nLenR];
+  const nLenS = buf[5 + nLenR];
   if ((nLenR + nLenS + 7) !== buf.length) {
     //  Non-canonical signature: R+S length mismatch
     return false;
   }
 
-  var R = buf.slice(4);
+  const R = buf.slice(4);
   if (buf[4 - 2] !== 0x02) {
     //  Non-canonical signature: R value type mismatch
     return false;
@@ -269,7 +269,7 @@ Signature.isTxDER = function(buf) {
     return false;
   }
 
-  var S = buf.slice(6 + nLenR);
+  const S = buf.slice(6 + nLenR);
   if (buf[6 + nLenR - 2] !== 0x02) {
     //  Non-canonical signature: S value type mismatch
     return false;
@@ -311,7 +311,7 @@ Signature.prototype.hasDefinedHashtype = function() {
     return false;
   }
   // accept with or without Signature.SIGHASH_ANYONECANPAY by ignoring the bit
-  var temp = this.nhashtype & ~Signature.SIGHASH_ANYONECANPAY;
+  const temp = this.nhashtype & ~Signature.SIGHASH_ANYONECANPAY;
   if (temp < Signature.SIGHASH_ALL || temp > Signature.SIGHASH_SINGLE) {
     return false;
   }
@@ -319,8 +319,8 @@ Signature.prototype.hasDefinedHashtype = function() {
 };
 
 Signature.prototype.toTxFormat = function() {
-  var derbuf = this.toDER();
-  var buf = Buffer.alloc(1);
+  const derbuf = this.toDER();
+  const buf = Buffer.alloc(1);
   buf.writeUInt8(this.nhashtype, 0);
   return Buffer.concat([derbuf, buf]);
 };
@@ -335,8 +335,8 @@ Signature.fromSchnorr = function(buf) {
   $.checkArgument(buf.length === 64 || buf.length === 65, 'Schnorr signatures must be 64 or 65 bytes');
 
   const sig = new Signature();
-  let r = buf.slice(0,32);
-  let s = buf.slice(32, 64);
+  const r = buf.slice(0, 32);
+  const s = buf.slice(32, 64);
   if (buf.length === 65) {
     sig.nhashtype = buf[buf.length - 1];
     $.checkState(sig.nhashtype !== Signature.SIGHASH_DEFAULT, new Error('invalid hashtype'));
@@ -349,19 +349,19 @@ Signature.fromSchnorr = function(buf) {
   return sig;
 };
 
-Signature.SIGHASH_DEFAULT       = 0x00; //!< Taproot only; implied when sighash byte is missing, and equivalent to SIGHASH_ALL
-Signature.SIGHASH_ALL           = 0x01;
-Signature.SIGHASH_NONE          = 0x02;
-Signature.SIGHASH_SINGLE        = 0x03;
-Signature.SIGHASH_ANYONECANPAY  = 0x80;
+Signature.SIGHASH_DEFAULT = 0x00; // !< Taproot only; implied when sighash byte is missing, and equivalent to SIGHASH_ALL
+Signature.SIGHASH_ALL = 0x01;
+Signature.SIGHASH_NONE = 0x02;
+Signature.SIGHASH_SINGLE = 0x03;
+Signature.SIGHASH_ANYONECANPAY = 0x80;
 
 Signature.SIGHASH_OUTPUT_MASK = 3;
-Signature.SIGHASH_INPUT_MASK  = 128; // 0x80,
+Signature.SIGHASH_INPUT_MASK = 128; // 0x80,
 
 Signature.Version = {};
-Signature.Version.BASE       = 0;
+Signature.Version.BASE = 0;
 Signature.Version.WITNESS_V0 = 1;
-Signature.Version.TAPROOT    = 2;
-Signature.Version.TAPSCRIPT  = 3;
+Signature.Version.TAPROOT = 2;
+Signature.Version.TAPSCRIPT = 3;
 
 module.exports = Signature;

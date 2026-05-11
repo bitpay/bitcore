@@ -27,9 +27,10 @@ describe('AdapterFactory', function() {
     AdapterFactory.registerAdapter('test', undefined as any);
   });
 
-  it('should list supported providers', function() {
+  it('should list moralis and alchemy as supported providers', function() {
     const providers = AdapterFactory.getSupportedProviders();
     expect(providers).to.include('alchemy');
+    expect(providers).to.include('moralis');
   });
 
   it('should be case-insensitive for provider names', function() {
