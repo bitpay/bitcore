@@ -1,4 +1,4 @@
-FROM node:18-bullseye
+FROM node:22-trixie
 
 RUN apt-get update
 RUN apt-get install sudo
