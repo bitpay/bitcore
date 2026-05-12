@@ -4,7 +4,7 @@ import { Transform } from 'stream';
 import { BitcoinBlockStorage } from '../../src/models/block';
 import { CoinStorage } from '../../src/models/coin';
 import { TransactionStorage } from '../../src/models/transaction';
-import { Modules } from '../../src/modules';
+import { loadModules } from '../../src/modules';
 import { Config } from '../../src/services/config';
 import { Storage } from '../../src/services/storage';
 import { Verification } from '../../src/services/verification';
@@ -19,7 +19,7 @@ import { Verification } from '../../src/services/verification';
   const chain = CHAIN || '';
   const network = NETWORK || '';
   await Storage.start();
-  Modules.loadConfigured();
+  loadModules();
 
   const chainConfig = Config.chainConfig({ chain, network });
   const workerClass = Verification.get(chain, network);

@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { Modules } from '../../src/modules';
+import { loadModules } from '../../src/modules';
+import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
+import { EthP2pWorker } from '../../src/modules/ethereum/p2p/p2p';
 import { ChainStateProvider } from '../../src/providers/chain-state';
 import { Libs } from '../../src/providers/libs';
 import { Config } from '../../src/services/config';
@@ -27,7 +29,7 @@ describe('Modules', function() {
     sandbox.stub(Config, 'get').returns(mockConfigCopy);
 
     try {
-      Modules.loadConfigured();
+      loadModules();
       throw new Error('it should have thrown due to a non-existing custom module');
     } catch (e: any) {
       expect(e.message).to.include('Cannot find module \'./bitcoin-custom\'');
@@ -108,10 +110,18 @@ const mockConfig = {
 };
 
 const validateModules = () => {
-  Modules.internalServices = []; // Remove all loaded modules from internalServices array for a fresh load
-  Modules.loadConfigured(); // Re-load modules with stubbed Config.get()
+  const p2pSpy = sinon.spy(P2P, 'register');
+  try {
+    expect(p2pSpy.calledWith('BTC', 'testnet', BitcoinP2PWorker)).to.be.false;
+    expect(p2pSpy.calledWith('ETH', 'dev', EthP2pWorker)).to.be.false;
+    expect(p2pSpy.callCount).to.equal(0);
 
-  expect(Modules.internalServices.length).to.equal(2);
-  expect(Modules.internalServices[0].constructor.name).to.equal('BitcoinModule');
-  expect(Modules.internalServices[1].constructor.name).to.equal('ETHModule');
+    loadModules(); // Re-load modules with stubbed Config.get()
+
+    expect(p2pSpy.calledWith('BTC', 'testnet', BitcoinP2PWorker)).to.be.true;
+    expect(p2pSpy.calledWith('ETH', 'dev', EthP2pWorker)).to.be.true;
+    expect(p2pSpy.callCount).to.equal(2);
+  } finally {
+    p2pSpy.restore();
+  }
 };

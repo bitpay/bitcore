@@ -2,7 +2,7 @@ import cluster from 'cluster';
 import 'source-map-support/register';
 import fs from 'fs';
 import logger from '../logger';
-import { Modules } from '../modules';
+import { loadModules } from '../modules';
 import { Api } from '../services/api';
 import { Event } from '../services/event';
 import { P2P } from '../services/p2p';
@@ -36,7 +36,7 @@ export const FullClusteredWorker = async () => {
     services.push(Api);
   }
 
-  Modules.loadConfigured();
+  loadModules();
 
   for (const service of services) {
     await service.start();
