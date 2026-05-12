@@ -1,5 +1,5 @@
 import axios from 'axios';
-import config from '../../../../config';
+import { Config } from '../../../../services/config';
 import { EVMTransactionStorage } from '../../evm/models/transaction';
 import { ExternalApiStream } from '../streams/apiStream';
 import {
@@ -31,7 +31,7 @@ export class MoralisAdapter implements IIndexedAPIAdapter {
   private requestTimeout: number;
 
   constructor(providerConfig: IMultiProviderConfig) {
-    const apiKey = config.externalProviders?.moralis?.apiKey;
+    const apiKey = Config.get().externalProviders?.moralis?.apiKey;
     if (!apiKey) throw new Error('MoralisAdapter: apiKey is required in config.externalProviders.moralis');
     this.apiKey = apiKey;
     this.requestTimeout = providerConfig.requestTimeout ?? 30000;
