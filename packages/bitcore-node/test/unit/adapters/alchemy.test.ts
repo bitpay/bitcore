@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import axios from 'axios';
+import EthDater from 'ethereum-block-by-date';
 import { AdapterError, AdapterErrorCode } from '../../../src/providers/chain-state/external/adapters/errors';
 import { AlchemyAdapter, AlchemyAssetTransferStream } from '../../../src/providers/chain-state/external/adapters/alchemy';
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
@@ -336,26 +337,36 @@ describe('AlchemyAdapter', function() {
 
   // --- getBlockNumberByDate ---
   describe('getBlockNumberByDate', function() {
-    it('should binary search for block closest to target date', async function() {
-      axiosPostStub.callsFake(async (_url: string, body: any) => {
-        if (body.method === 'eth_blockNumber') return rpcOk('0x64');
-        if (body.method === 'eth_getBlockByNumber') {
-          const num = parseInt(body.params[0], 16);
-          return rpcOk({ timestamp: `0x${num.toString(16)}`, number: body.params[0] });
-        }
-        return rpcOk(null);
-      });
+    it('should delegate to ethereum-block-by-date and return its block', async function() {
+      const getDateStub = sandbox.stub(EthDater.prototype, 'getDate')
+        .resolves({ block: 50, timestamp: 50, date: '1970-01-01T00:00:50Z' });
 
       const result = await adapter.getBlockNumberByDate({ chain: 'ETH', network: 'mainnet', chainId: '1', date: new Date(50000) });
+
       expect(result).to.equal(50);
+      // 'false' = "block before" semantics: largest block <= target timestamp
+      expect(getDateStub.calledOnce).to.be.true;
+      expect(getDateStub.firstCall.args[1]).to.equal(false);
     });
 
-    it('should return latest block if target is in the future', async function() {
-      axiosPostStub.onCall(0).resolves(rpcOk('0x64'));
-      axiosPostStub.onCall(1).resolves(rpcOk({ timestamp: '0x64', number: '0x64' }));
+    it('should cache the dater per chain:network across calls', async function() {
+      sandbox.stub(EthDater.prototype, 'getDate')
+        .resolves({ block: 50, timestamp: 50, date: '1970-01-01T00:00:50Z' });
 
-      const result = await adapter.getBlockNumberByDate({ chain: 'ETH', network: 'mainnet', chainId: '1', date: new Date(200000) });
-      expect(result).to.equal(100);
+      await adapter.getBlockNumberByDate({ chain: 'ETH', network: 'mainnet', chainId: '1', date: new Date(50000) });
+      await adapter.getBlockNumberByDate({ chain: 'ETH', network: 'mainnet', chainId: '1', date: new Date(60000) });
+
+      expect((adapter as any).daters.size).to.equal(1);
+    });
+
+    it('should build separate daters for different chain:network combinations', async function() {
+      sandbox.stub(EthDater.prototype, 'getDate')
+        .resolves({ block: 50, timestamp: 50, date: '1970-01-01T00:00:50Z' });
+
+      await adapter.getBlockNumberByDate({ chain: 'ETH', network: 'mainnet', chainId: '1', date: new Date(50000) });
+      await adapter.getBlockNumberByDate({ chain: 'MATIC', network: 'mainnet', chainId: '137', date: new Date(50000) });
+
+      expect((adapter as any).daters.size).to.equal(2);
     });
   });
 
