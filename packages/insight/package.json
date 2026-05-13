@@ -25,10 +25,10 @@
     "postbuild": "./postbuild.sh"
   },
   "dependencies": {
-    "@bitpay-labs/bitcore-lib": "^10.0.23",
-    "@bitpay-labs/bitcore-lib-cash": "^10.0.23",
-    "@bitpay-labs/bitcore-lib-doge": "^10.0.21",
-    "@bitpay-labs/bitcore-lib-ltc": "^10.0.21",
+    "@bitpay-labs/bitcore-lib": "^11.8.1",
+    "@bitpay-labs/bitcore-lib-cash": "^11.8.1",
+    "@bitpay-labs/bitcore-lib-doge": "^11.8.1",
+    "@bitpay-labs/bitcore-lib-ltc": "^11.8.1",
     "@reduxjs/toolkit": "2.3.0",
     "assert": "2.1.0",
     "axios": "1.7.9",

@@ -1,12 +1,11 @@
 'use strict';
 
-const Message = require('../message');
 const inherits = require('util').inherits;
 const bitcore = require('@bitpay-labs/bitcore-lib');
+const Message = require('../message');
 const utils = require('../utils');
 
 const $ = bitcore.util.preconditions;
-const _ = bitcore.deps._;
 const BufferReader = bitcore.encoding.BufferReader;
 const BufferWriter = bitcore.encoding.BufferWriter;
 
@@ -20,11 +19,12 @@ function AddrMessage(arg, options) {
   Message.call(this, options);
   this.command = 'addr';
   $.checkArgument(
-    _.isUndefined(arg) ||
-      (Array.isArray(arg) &&
-       !_.isUndefined(arg[0].services) &&
-       !_.isUndefined(arg[0].ip) &&
-       !_.isUndefined(arg[0].port)),
+    arg == null ||
+    (Array.isArray(arg) &&
+      arg[0] &&
+      arg[0].services != null &&
+      arg[0].ip != null &&
+      arg[0].port != null),
     'First argument is expected to be an array of addrs'
   );
   this.addresses = arg;
@@ -32,16 +32,16 @@ function AddrMessage(arg, options) {
 inherits(AddrMessage, Message);
 
 AddrMessage.prototype.setPayload = function(payload) {
-  var parser = new BufferReader(payload);
+  const parser = new BufferReader(payload);
 
-  var addrCount = parser.readVarintNum();
+  const addrCount = parser.readVarintNum();
 
   this.addresses = [];
-  for (var i = 0; i < addrCount; i++) {
+  for (let i = 0; i < addrCount; i++) {
     // todo: time only available on versions >=31402
-    var time = new Date(parser.readUInt32LE() * 1000);
+    const time = new Date(parser.readUInt32LE() * 1000);
 
-    var addr = utils.parseAddr(parser);
+    const addr = utils.parseAddr(parser);
     addr.time = time;
     this.addresses.push(addr);
   }
@@ -50,11 +50,11 @@ AddrMessage.prototype.setPayload = function(payload) {
 };
 
 AddrMessage.prototype.getPayload = function() {
-  var bw = new BufferWriter();
+  const bw = new BufferWriter();
   bw.writeVarintNum(this.addresses.length);
 
-  for (var i = 0; i < this.addresses.length; i++) {
-    var addr = this.addresses[i];
+  for (let i = 0; i < this.addresses.length; i++) {
+    const addr = this.addresses[i];
     bw.writeUInt32LE(addr.time.getTime() / 1000);
     utils.writeAddr(addr, bw);
   }

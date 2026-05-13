@@ -1,12 +1,12 @@
 'use strict';
 
-var BN = require('./bn');
-var BufferUtil = require('../util/buffer');
+const BufferUtil = require('../util/buffer');
+const BN = require('./bn');
+const EC = require('elliptic').ec;
 
-var EC = require('elliptic').ec;
-var ec = new EC('secp256k1');
-var ecPoint = ec.curve.point.bind(ec.curve);
-var ecPointFromX = ec.curve.pointFromX.bind(ec.curve);
+const ec = new EC('secp256k1');
+const ecPoint = ec.curve.point.bind(ec.curve);
+const ecPointFromX = ec.curve.pointFromX.bind(ec.curve);
 
 /**
  *
@@ -20,9 +20,10 @@ var ecPointFromX = ec.curve.pointFromX.bind(ec.curve);
  * @returns {Point} An instance of Point
  * @constructor
  */
-var Point = function Point(x, y, isRed) {
+const Point = function Point(x, y, isRed) {
+  let point;
   try {
-    var point = ecPoint(x, y, isRed);
+    point = ecPoint(x, y, isRed);
   } catch (e) {
     throw new Error('Invalid Point');
   }
@@ -41,9 +42,10 @@ Point.prototype = Object.getPrototypeOf(ec.curve.point());
  * @throws {Error} A validation error if exists
  * @returns {Point} An instance of Point
  */
-Point.fromX = function fromX(odd, x){
+Point.fromX = function fromX(odd, x) {
+  let point;
   try {
-    var point = ecPointFromX(x, odd);
+    point = ecPointFromX(x, odd);
   } catch (e) {
     throw new Error('Invalid X');
   }
@@ -82,7 +84,7 @@ Point.getP = function() {
 };
 
 if (!Point.prototype._getX)
-Point.prototype._getX = Point.prototype.getX;
+  Point.prototype._getX = Point.prototype.getX;
 
 /**
  *
@@ -95,7 +97,7 @@ Point.prototype.getX = function getX() {
 };
 
 if (!Point.prototype._getY)
-Point.prototype._getY = Point.prototype.getY;
+  Point.prototype._getY = Point.prototype.getY;
 
 /**
  *
@@ -118,11 +120,11 @@ Point.prototype.getY = function getY() {
  */
 Point.prototype.validate = function validate() {
 
-  if (this.isInfinity()){
+  if (this.isInfinity()) {
     throw new Error('Point cannot be equal to Infinity');
   }
 
-  var p2;
+  let p2;
   try {
     p2 = ecPointFromX(this.getX(), this.getY().isOdd());
   } catch (e) {
@@ -134,7 +136,7 @@ Point.prototype.validate = function validate() {
   }
 
 
-  //todo: needs test case
+  // todo: needs test case
   if (!(this.mul(Point.getN()).isInfinity())) {
     throw new Error('Point times N must be infinity');
   }
@@ -144,11 +146,11 @@ Point.prototype.validate = function validate() {
 };
 
 Point.pointToCompressed = function pointToCompressed(point) {
-  var xbuf = point.getX().toBuffer({size: 32});
-  var ybuf = point.getY().toBuffer({size: 32});
+  const xbuf = point.getX().toBuffer({ size: 32 });
+  const ybuf = point.getY().toBuffer({ size: 32 });
 
-  var prefix;
-  var odd = ybuf[ybuf.length - 1] % 2;
+  let prefix;
+  const odd = ybuf[ybuf.length - 1] % 2;
   if (odd) {
     prefix = Buffer.from([0x03]);
   } else {
@@ -176,7 +178,7 @@ Point.prototype.liftX = function() {
   }
   
   const pointX = this.x.red ? this.x.fromRed() : this.x;
-  const pointY = y.mod(two).eq(zero) ? y.fromRed() : fieldSize.sub(y)
+  const pointY = y.mod(two).eq(zero) ? y.fromRed() : fieldSize.sub(y);
   return new Point(pointX, pointY, true);
 };
 

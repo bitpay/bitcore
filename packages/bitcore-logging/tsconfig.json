@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "es5",
+      "es6",
+      "es2017",
+      "es2020",
+      "es2022",
+      "dom"
+    ],
+    "noImplicitAny": false,
+    "removeComments": true,
+    "declaration": true,
+    "declarationMap": true,
+    "module": "commonjs",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "target": "ES2023",
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
+    "outDir": "ts_build",
+    "sourceMap": true
+  },
+  "include": [
+    "./src/**/*.ts",
+    "./test/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

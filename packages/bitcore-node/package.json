@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=22.0.0"
   },
-  "version": "11.7.1",
+  "version": "11.8.2",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "contributors": [
     "Justin Langston <nitsujlangston@gmail.com>",
@@ -87,7 +87,6 @@
     "@types/request": "2.47.0",
     "@types/sinon": "4.3.3",
     "@types/through2": "2.0.33",
-    "@types/winston": "2.4.4",
     "axios": "0.21.1",
     "chai": "^5.2.0",
     "mocha": "5.0.5",
@@ -98,17 +97,18 @@
     "typescript": "5.7.3"
   },
   "dependencies": {
-    "@bitpay-labs/bitcore-client": "^11.7.0",
-    "@bitpay-labs/bitcore-lib": "^11.7.0",
-    "@bitpay-labs/bitcore-lib-cash": "^11.7.0",
-    "@bitpay-labs/bitcore-lib-doge": "^11.7.0",
-    "@bitpay-labs/bitcore-lib-ltc": "^11.7.0",
-    "@bitpay-labs/bitcore-p2p": "^11.7.0",
-    "@bitpay-labs/bitcore-p2p-cash": "^11.7.0",
-    "@bitpay-labs/bitcore-p2p-doge": "^11.7.0",
-    "@bitpay-labs/bitcore-wallet-client": "^11.7.1",
-    "@bitpay-labs/crypto-rpc": "^11.7.0",
-    "@bitpay-labs/crypto-wallet-core": "^11.7.0",
+    "@bitpay-labs/bitcore-client": "^11.8.1",
+    "@bitpay-labs/bitcore-lib": "^11.8.1",
+    "@bitpay-labs/bitcore-lib-cash": "^11.8.1",
+    "@bitpay-labs/bitcore-lib-doge": "^11.8.1",
+    "@bitpay-labs/bitcore-lib-ltc": "^11.8.1",
+    "@bitpay-labs/bitcore-logging": "^11.8.1",
+    "@bitpay-labs/bitcore-p2p": "^11.8.1",
+    "@bitpay-labs/bitcore-p2p-cash": "^11.8.1",
+    "@bitpay-labs/bitcore-p2p-doge": "^11.8.1",
+    "@bitpay-labs/bitcore-wallet-client": "^11.8.2",
+    "@bitpay-labs/crypto-rpc": "^11.8.1",
+    "@bitpay-labs/crypto-wallet-core": "^11.8.1",
     "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
     "@metaplex-foundation/umi": "^1.2.0",
     "@metaplex-foundation/umi-bundle-defaults": "^1.2.0",
@@ -121,8 +121,7 @@
     "request": "2.88.0",
     "secp256k1": "4.0.3",
     "socket.io": "4.8.1",
-    "source-map-support": "^0.5.13",
-    "winston": "3.3.0"
+    "source-map-support": "^0.5.13"
   },
   "gitHead": "a1890ef287c9e5d0e966fb445d15bc59a9393761"
 }

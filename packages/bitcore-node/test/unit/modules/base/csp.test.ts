@@ -1,8 +1,11 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { CryptoRpc } from '@bitpay-labs/crypto-rpc';
+import { MultiProviderEVMStateProvider } from '../../../../src/modules/multiProvider/api/csp';
 import { MoralisStateProvider } from '../../../../src/modules/moralis/api/csp';
+import { CacheStorage } from '../../../../src/models/cache';
 import { BaseEVMStateProvider } from '../../../../src/providers/chain-state/evm/api/csp';
+import { EVMBlockStorage } from '../../../../src/providers/chain-state/evm/models/block';
 import { Config } from '../../../../src/services/config';
 
 
@@ -319,5 +322,212 @@ describe('BASE Chain State Provider', function() {
       ({ web3 } = await BASE.getWeb3(network, { type: 'realtime' }));
       expect(web3).to.equal(web3StubRealtime1); // index 0
     });
+  });
+});
+
+describe('MultiProviderEVMStateProvider: getLocalTip', function() {
+  let cfgStub: sinon.SinonStub;
+  let convertStub: sinon.SinonStub;
+
+  before(function() {
+    cfgStub = sinon.stub(Config, 'get').returns({ chains: { ETH: {} } } as any);
+    (BaseEVMStateProvider as any).rpcInitialized = { ETH: true };
+    // convertRawBlock writes Binary buffers; stub to return a height-only IBlock.
+    convertStub = sinon.stub(EVMBlockStorage, 'convertRawBlock').callsFake((chain: string, network: string, raw: any) => ({
+      chain, network, height: Number(raw.number), hash: raw.hash
+    }) as any);
+  });
+  after(function() {
+    cfgStub.restore();
+    convertStub.restore();
+  });
+
+  function buildProvider(latestBlocks: any[]) {
+    const provider = new MultiProviderEVMStateProvider('ETH');
+    let i = 0;
+    const getBlock = sinon.stub().callsFake(async (_tag: any) => latestBlocks[Math.min(i++, latestBlocks.length - 1)]);
+    (provider as any).getWeb3 = async () => ({ web3: { eth: { getBlock } } });
+    return { provider, getBlock };
+  }
+
+  it('returns tip from realtime RPC, not Mongo storage', async function() {
+    const raw = { number: 12345, hash: '0xabc', timestamp: 1700000000 };
+    const { provider, getBlock } = buildProvider([raw]);
+    const tip = await provider.getLocalTip({ chain: 'ETH', network: 'mainnet' });
+    expect(tip.height).to.equal(12345);
+    expect(getBlock.calledWith('latest')).to.equal(true);
+  });
+
+  it('caches tip across calls within TTL window', async function() {
+    const raw = { number: 100, hash: '0xa', timestamp: 1 };
+    const { provider, getBlock } = buildProvider([raw, raw]);
+    await provider.getLocalTip({ chain: 'ETH', network: 'mainnet' });
+    await provider.getLocalTip({ chain: 'ETH', network: 'mainnet' });
+    await provider.getLocalTip({ chain: 'ETH', network: 'mainnet' });
+    expect(getBlock.callCount).to.equal(1);
+  });
+
+  it('caches per chain:network independently', async function() {
+    const raw1 = { number: 100, hash: '0xa', timestamp: 1 };
+    const raw2 = { number: 200, hash: '0xb', timestamp: 2 };
+    const { provider, getBlock } = buildProvider([raw1, raw2]);
+    const tip1 = await provider.getLocalTip({ chain: 'ETH', network: 'mainnet' });
+    const tip2 = await provider.getLocalTip({ chain: 'ETH', network: 'sepolia' });
+    expect(tip1.height).to.equal(100);
+    expect(tip2.height).to.equal(200);
+    expect(getBlock.callCount).to.equal(2);
+  });
+
+  it('throws when realtime RPC returns no block', async function() {
+    const { provider } = buildProvider([null]);
+    try {
+      await provider.getLocalTip({ chain: 'ETH', network: 'mainnet' });
+      throw new Error('should have thrown');
+    } catch (e: any) {
+      expect(e.message).to.match(/no latest block/i);
+    }
+  });
+});
+
+describe('MultiProviderEVMStateProvider: getFee', function() {
+  let cfgStub: sinon.SinonStub;
+  let cacheStub: sinon.SinonStub;
+  before(function() {
+    cfgStub = sinon.stub(Config, 'get').returns({ chains: { ETH: {} } } as any);
+    (BaseEVMStateProvider as any).rpcInitialized = { ETH: true };
+    // Bypass Mongo-backed CacheStorage; just call through to the refresh fn.
+    cacheStub = sinon.stub(CacheStorage, 'getGlobalOrRefresh').callsFake(async (_key: string, refresh: any) => refresh());
+  });
+  after(function() { cfgStub.restore(); cacheStub.restore(); });
+
+  it('uses RPC estimateFee, not Mongo tx history', async function() {
+    const provider = new MultiProviderEVMStateProvider('ETH');
+    const estimateFee = sinon.stub().resolves(2_000_000_000n);
+    (provider as any).getWeb3 = async () => ({ rpc: { estimateFee } });
+    const result = await provider.getFee({ network: 'mainnet-getfee-uniq1', target: 4, txType: 2 } as any);
+    expect(result.feerate).to.equal(2_000_000_000);
+    expect(result.blocks).to.equal(4);
+    expect(estimateFee.calledOnce).to.equal(true);
+    expect(estimateFee.firstCall.args[0]).to.deep.equal({ nBlocks: 4, txType: 2 });
+  });
+
+  it('accepts "livenet" alias without throwing', async function() {
+    const provider = new MultiProviderEVMStateProvider('ETH');
+    const estimateFee = sinon.stub().resolves(1_000_000_000n);
+    (provider as any).getWeb3 = async () => ({ rpc: { estimateFee } });
+    const result = await provider.getFee({ network: 'livenet', target: 7 } as any);
+    expect(result.feerate).to.equal(1_000_000_000);
+    expect(result.blocks).to.equal(7);
+  });
+});
+
+describe('MultiProviderEVMStateProvider: streamBlocks and _getBlocks', function() {
+  let cfgStub: sinon.SinonStub;
+  let convertStub: sinon.SinonStub;
+  before(function() {
+    cfgStub = sinon.stub(Config, 'get').returns({ chains: { ETH: {} } } as any);
+    (BaseEVMStateProvider as any).rpcInitialized = { ETH: true };
+    convertStub = sinon.stub(EVMBlockStorage, 'convertRawBlock').callsFake((chain: string, network: string, raw: any) => ({
+      chain, network, height: Number(raw.number), hash: raw.hash
+    }) as any);
+  });
+  after(function() {
+    cfgStub.restore();
+    convertStub.restore();
+  });
+
+  function setupProvider(blockMap: Record<number, any>, tipHeight = 100) {
+    const provider = new MultiProviderEVMStateProvider('ETH');
+    const getBlock = sinon.stub().callsFake(async (n: any) => blockMap[Number(n)] ?? null);
+    const getBlockNumber = sinon.stub().resolves(BigInt(tipHeight));
+    (provider as any).getWeb3 = async () => ({ web3: { eth: { getBlock, getBlockNumber } } });
+    (provider as any).getChainId = async () => 1n;
+    (provider as any).getBlocksRange = async () => [10, 11, 12];
+    return { provider, getBlock };
+  }
+
+  it('_getBlocks fetches blocks via RPC and computes tipHeight from getBlockNumber', async function() {
+    const blockMap: Record<number, any> = {
+      10: { number: 10n, hash: '0xa' },
+      11: { number: 11n, hash: '0xb' },
+      12: { number: 12n, hash: '0xc' },
+      13: { number: 13n, hash: '0xd' }
+    };
+    const { provider } = setupProvider(blockMap, 200);
+    const result = await (provider as any)._getBlocks({ chain: 'ETH', network: 'mainnet' });
+    expect(result.tipHeight).to.equal(200);
+    expect(result.blocks).to.have.length(3);
+    expect(result.blocks[0].height).to.equal(10);
+    expect(result.blocks[2].height).to.equal(12);
+  });
+
+  it('streamBlocks emits blocks from RPC range with confirmations and nextBlockHash', async function() {
+    const blockMap: Record<number, any> = {
+      10: { number: 10n, hash: '0xa' },
+      11: { number: 11n, hash: '0xb' },
+      12: { number: 12n, hash: '0xc' },
+      13: { number: 13n, hash: '0xd' }
+    };
+    const { provider } = setupProvider(blockMap, 100);
+    const stream: any = await (provider as any).streamBlocks({ chain: 'ETH', network: 'mainnet' });
+    const out: any[] = [];
+    await new Promise<void>((resolve, reject) => {
+      stream.on('data', (b: any) => out.push(b));
+      stream.on('end', () => resolve());
+      stream.on('error', reject);
+    });
+    expect(out).to.have.length(3);
+    expect(out[0].height).to.equal(10);
+    expect(out[0].confirmations).to.equal(100 - 10 + 1);
+    expect(out[0].nextBlockHash).to.equal('0xb');
+    expect(out[2].nextBlockHash).to.equal('0xd');
+  });
+});
+
+describe('MultiProviderEVMStateProvider: _buildWalletTransactionsStream tokenAddress routing', function() {
+  let cfgStub: sinon.SinonStub;
+  before(function() {
+    cfgStub = sinon.stub(Config, 'get').returns({ chains: { ETH: {} } } as any);
+    (BaseEVMStateProvider as any).rpcInitialized = { ETH: true };
+  });
+  after(function() { cfgStub.restore(); });
+
+  function buildProviderWithFakeAdapter() {
+    const provider = new MultiProviderEVMStateProvider('ETH');
+    const fakeStream = { eventPipe: (s: any) => s };
+    const adapter = {
+      name: 'fake',
+      streamAddressTransactions: sinon.stub().returns(fakeStream),
+      streamERC20Transfers: sinon.stub().returns(fakeStream)
+    };
+    const fakeProvider = { adapter, health: { isAvailable: () => true, recordFailure: sinon.stub() }, priority: 1 };
+    (provider as any).providersByNetwork = new Map([['mainnet', [fakeProvider]]]);
+    (provider as any).getChainId = async () => 1n;
+    // Minimal stub for WalletAddressStorage.updateLastQueryTime
+    (provider as any).updateLastQueryTime = async () => {};
+    return { provider, adapter };
+  }
+
+  it('routes to streamERC20Transfers when args.tokenAddress is set', async function() {
+    const { provider, adapter } = buildProviderWithFakeAdapter();
+    const transactionStream: any = { eventPipe: (s: any) => s };
+    await (provider as any)._buildWalletTransactionsStream(
+      { network: 'mainnet', args: { tokenAddress: '0xtoken' } },
+      { transactionStream, walletAddresses: ['0xaddr1', '0xaddr2'] }
+    );
+    expect(adapter.streamERC20Transfers.callCount).to.equal(2);
+    expect(adapter.streamAddressTransactions.callCount).to.equal(0);
+    expect(adapter.streamERC20Transfers.firstCall.args[0].tokenAddress).to.equal('0xtoken');
+  });
+
+  it('routes to streamAddressTransactions when no tokenAddress is set', async function() {
+    const { provider, adapter } = buildProviderWithFakeAdapter();
+    const transactionStream: any = { eventPipe: (s: any) => s };
+    await (provider as any)._buildWalletTransactionsStream(
+      { network: 'mainnet', args: {} },
+      { transactionStream, walletAddresses: ['0xaddr1'] }
+    );
+    expect(adapter.streamAddressTransactions.callCount).to.equal(1);
+    expect(adapter.streamERC20Transfers.callCount).to.equal(0);
   });
 });
