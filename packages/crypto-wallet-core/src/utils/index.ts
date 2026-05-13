@@ -91,13 +91,27 @@ export function toHex(input: number | string | bigint): string {
   }
 }
 
-export function difference(arr1: any[], arr2: any[]): any[] {
+/**
+ * Returns the elements that are in arr1 but not in arr2.
+ * Note, this does a primitive comparison of elements.
+ * @returns An array containing the elements that are in arr1 but not in arr2
+ * 
+ * @example difference([1,2,3], [2,3,4]) => [1]
+ * @example difference([{a:1}], [{a:1}]) => [{a:1}]
+ * @example const obj = {a:1};
+ * difference([obj], [obj]) => []
+ */
+export function difference<T>(arr1: T[], arr2: T[]): T[] {
   arr1 = arr1 || [];
   arr2 = arr2 || [];
   const arr2Set = new Set(arr2);
   return arr1.filter(x => !arr2Set.has(x));
 }
 
+/**
+ * Deeply compares two objects for equality, handling circular references.
+ * @returns True if the objects are deeply equal, false otherwise
+ */
 export function isEqual(obj1: object, obj2: object): boolean {
   if (obj1 === obj2) return true;
   if (obj1 == null || obj2 == null) return false;
