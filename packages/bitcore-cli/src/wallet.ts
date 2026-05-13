@@ -157,7 +157,7 @@ export class Wallet implements IWallet {
       secret = await this.register({ copayerName });
     }
     // Update credentials with joined/registered info (e.g. walletId, publicKeyRing, etc)
-    this.#walletData.credentials = credentials;
+    this.#walletData.credentials = this.client.credentials;
     await this.save();
     // this.load calls openWallet which completes the wallet by fetching any missing info
     await this.load({ allowCache: true });
