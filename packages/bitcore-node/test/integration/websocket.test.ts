@@ -112,7 +112,7 @@ describe('Websockets', function() {
     }
   });
 
-  it.only('should get websocket events', async () => {
+  it('should get websocket events', async () => {
     socket.emit('room', '/BTC/regtest/inv');
     let hasSeenTxEvent = false;
     let hasSeenBlockEvent = false;
