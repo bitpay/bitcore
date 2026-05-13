@@ -2,7 +2,7 @@
 
 import { BitcoinBlockStorage } from '../../src/models/block';
 import { CoinStorage } from '../../src/models/coin';
-import { Modules } from '../../src/modules';
+import { loadModules } from '../../src/modules';
 import { Config } from '../../src/services/config';
 import { Storage } from '../../src/services/storage';
 
@@ -35,7 +35,7 @@ if (require.main === module) {
       '<',
       forkHeight
     );
-    Modules.loadConfigured();
+    loadModules();
     await Storage.start();
     const tip = await BitcoinBlockStorage.getLocalTip({ chain, network });
     if (tip) {

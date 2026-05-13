@@ -333,7 +333,7 @@ PublicKey.isValidTaproot = function(hexBuf) {
  */
 PublicKey.prototype.computeTapTweakHash = function(merkleRoot) {
   const taggedWriter = new TaggedHash('TapTweak');
-  taggedWriter.write(this.point.x.toBuffer({ size: 32 }));
+  taggedWriter.write(this.point.getX().toBuffer({ size: 32 }));
 
   //  If !merkleRoot, then we have no scripts. The actual tweak does not matter, but 
   //  follow BIP341 here to allow for reproducible tweaking.
@@ -384,7 +384,7 @@ PublicKey.prototype.createTapTweak = function(merkleRoot) {
   const parity = Q.y.isEven() ? 0 : 1;
   return {
     parity,
-    tweakedPubKey: Q.x.toBuffer()
+    tweakedPubKey: Q.getX().toBuffer({ size: 32 })
   };
 };
 

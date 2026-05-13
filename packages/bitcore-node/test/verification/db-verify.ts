@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { BitcoinBlockStorage } from '../../src/models/block';
-import { Modules } from '../../src/modules';
+import { loadModules } from '../../src/modules';
 import { Config } from '../../src/services/config';
 import { Storage } from '../../src/services/storage';
 import { IVerificationPeer, Verification } from '../../src/services/verification';
@@ -13,7 +13,7 @@ if (require.main === module) {
     const chain = CHAIN || '';
     const network = NETWORK || '';
 
-    Modules.loadConfigured();
+    loadModules();
     const chainConfig = Config.chainConfig({ chain, network });
 
     let worker: IVerificationPeer;
