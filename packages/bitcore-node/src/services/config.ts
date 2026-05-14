@@ -36,24 +36,29 @@ export class ConfigService {
     // Only show config change for one process
     if (!cluster.isPrimary)
       return;
-    const diff = (obj1: any, obj2: any, path: string[] = []) => {
-      const changes: string[] = [];
+    const diff = (obj1: object, obj2: object, path: string[] = []) => {
+      const changes = {};
       const keys = new Set([...Object.keys(obj1 || {}), ...Object.keys(obj2 || {})]);
       for (const key of keys) {
-        const val1 = obj1?.[key];
-        const val2 = obj2?.[key];
+        const val1 = obj1[key];
+        const val2 = obj2[key];
         const currentPath = [...path, key];
         if (typeof val1 === 'object' && val1 !== null && typeof val2 === 'object' && val2 !== null) {
-          changes.push(...diff(val1, val2, currentPath));
+          Object.assign(changes, diff(val1, val2, currentPath));
         } else if (val1 !== val2) {
-          changes.push(currentPath.join('.'));
+          let propChange = { old: val1 ?? null, new: val2 ?? null };
+          for (const prop of currentPath.reverse()) {
+            (propChange as any) = { [prop]: propChange };
+          }
+          Object.assign(changes, propChange);
           logger.info(`${currentPath.join('.')} ${JSON.stringify(val1)} -> ${JSON.stringify(val2)}`);
         }
       }
       return changes;
     };
 
-    diff(oldConfig, this.config);
+    const changes = diff(oldConfig, this.config);
+    logger.info(changes);
   }
 
   public get() {
