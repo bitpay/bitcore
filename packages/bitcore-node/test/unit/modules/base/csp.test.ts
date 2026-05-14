@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+import EthDater from 'ethereum-block-by-date';
 import { CryptoRpc } from '@bitpay-labs/crypto-rpc';
 import { MultiProviderEVMStateProvider } from '../../../../src/modules/multiProvider/api/csp';
 import { MoralisStateProvider } from '../../../../src/modules/moralis/api/csp';
@@ -529,5 +530,50 @@ describe('MultiProviderEVMStateProvider: _buildWalletTransactionsStream tokenAdd
     );
     expect(adapter.streamAddressTransactions.callCount).to.equal(1);
     expect(adapter.streamERC20Transfers.callCount).to.equal(0);
+  });
+});
+
+describe('MultiProviderEVMStateProvider: _verifyBlockBeforeDate EthDater fallback', function() {
+  let cfgStub: sinon.SinonStub;
+  let sandbox: sinon.SinonSandbox;
+
+  before(function() {
+    cfgStub = sinon.stub(Config, 'get').returns({ chains: { ETH: {} } } as any);
+    (BaseEVMStateProvider as any).rpcInitialized = { ETH: true };
+  });
+  after(function() { cfgStub.restore(); });
+  beforeEach(function() { sandbox = sinon.createSandbox(); });
+  afterEach(function() { sandbox.restore(); });
+
+  // Timestamp larger than any target we'll set; ensures the bounded walk never converges
+  // and the fallback path executes.
+  const ALWAYS_AHEAD_TS = '0xffffffff';
+  const targetDate = new Date(1700000000 * 1000);
+
+  it('falls back to EthDater when the bounded walk exceeds MAX_ADJUSTMENTS', async function() {
+    const provider = new MultiProviderEVMStateProvider('ETH');
+    const fakeWeb3 = { eth: { getBlock: sandbox.stub().resolves({ timestamp: ALWAYS_AHEAD_TS }) } };
+    (provider as any).getWeb3 = async () => ({ web3: fakeWeb3 });
+    const getDateStub = sandbox.stub(EthDater.prototype, 'getDate')
+      .resolves({ block: 12345, timestamp: 1700000000, date: '2023-11-14T22:13:20Z' });
+
+    const result = await (provider as any)._verifyBlockBeforeDate('mainnet', 100, targetDate);
+
+    expect(result).to.equal(12345);
+    expect(getDateStub.calledOnce).to.be.true;
+    expect(getDateStub.firstCall.args[1]).to.equal(false);
+  });
+
+  it('caches the dater per network across calls', async function() {
+    const provider = new MultiProviderEVMStateProvider('ETH');
+    const fakeWeb3 = { eth: { getBlock: sandbox.stub().resolves({ timestamp: ALWAYS_AHEAD_TS }) } };
+    (provider as any).getWeb3 = async () => ({ web3: fakeWeb3 });
+    sandbox.stub(EthDater.prototype, 'getDate')
+      .resolves({ block: 1, timestamp: 1, date: '1970-01-01T00:00:01Z' });
+
+    await (provider as any)._verifyBlockBeforeDate('mainnet', 100, targetDate);
+    await (provider as any)._verifyBlockBeforeDate('mainnet', 100, targetDate);
+
+    expect((provider as any).daters.size).to.equal(1);
   });
 });
