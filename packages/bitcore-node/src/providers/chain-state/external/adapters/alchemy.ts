@@ -41,7 +41,10 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
     let dater = this.daters.get(key);
     if (!dater) {
       const web3 = new Web3(new Web3.providers.HttpProvider(this.getBaseUrl(chain, network)));
-      dater = new EthDater(web3);
+      // crypto-wallet-core's Web3 is web3 v4 (Web3<RegisteredSubscription>); the
+      // @types/ethereum-block-by-date defs target the older v1 shape. Compatible at
+      // runtime, so cast through.
+      dater = new EthDater(web3 as any);
       this.daters.set(key, dater);
     }
     return dater;
