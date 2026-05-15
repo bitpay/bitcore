@@ -16,6 +16,10 @@ export class P2pManager {
   constructor({ configService = Config } = {}) {
     this.configService = configService;
     this.workers = new Array<BaseP2PWorker>();
+
+    process.on('SIGUSR1', () => {
+      this.reload();
+    });
   }
 
   register(chain: string, network: string, worker: Class<BaseP2PWorker<any>>) {
@@ -33,6 +37,51 @@ export class P2pManager {
       await worker.stop();
     }
     this.workers = [];
+  }
+
+  async reload() {
+    if (this.workers.length > 0 && this.configService.isDisabled('p2p')) {
+      logger.info('Disabling P2P Manager');
+      await this.stop();
+      return;
+    }
+
+    // Stop all the workers not in the new config
+    const stoppedWorkers = this.workers.filter(
+      w => Config.get().chains[w.chain]?.[w.network] === undefined
+        || Config.get().chains[w.chain]?.[w.network]?.disabled
+    );
+    if (stoppedWorkers.length > 0) {
+      logger.info(`P2P Disabling: ${stoppedWorkers.map(w => `${w.chain}:${w.network}`)}`)
+      await Promise.allSettled(stoppedWorkers.map(w => w.stop()));
+
+      // Remove the stopped workers
+      this.workers = this.workers.filter(w => !stoppedWorkers.includes(w));
+    }
+
+    // Start new workers
+    for (const chainNetwork of Config.chainNetworks()) {
+      const { chain, network } = chainNetwork;
+      if (this.workers.find(w => w.chain === chain && w.network === network)) {
+        continue;
+      }
+      const chainConfig = Config.chainConfig(chainNetwork);
+      if ((chainConfig.chainSource && chainConfig.chainSource !== 'p2p') || chainConfig.disabled) {
+        continue;
+      }
+      logger.info(`Starting P2P worker ${chain}:${network}`);
+      const p2pWorker = new this.workerClasses[chain][network]({
+        chain,
+        network,
+        chainConfig
+      });
+      this.workers.push(p2pWorker);
+      try {
+        p2pWorker.start();
+      } catch (e: any) {
+        logger.error('P2P Worker %o:%o died: %o', chain, network, e.stack || e.message || e);
+      }
+    }
   }
 
   async start() {

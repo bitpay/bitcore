@@ -1,7 +1,6 @@
 import os from 'os';
 import { LRUCache } from 'lru-cache';
 import request from 'request';
-import { Config } from '../../../../src/services/config';
 import logger from '../../../logger';
 import { MongoBound } from '../../../models/base';
 import { CacheStorage } from '../../../models/cache';
@@ -19,6 +18,7 @@ import {
   transformMoralisTransaction
 } from '../../../providers/chain-state/external/adapters/moralis-utils';
 import { ExternalApiStream } from '../../../providers/chain-state/external/streams/apiStream';
+import { Config } from '../../../services/config';
 import { IBlock } from '../../../types/Block';
 import { ChainId, ChainNetwork } from '../../../types/ChainNetwork';
 import { IAddressSubscription } from '../../../types/ExternalProvider';
@@ -44,22 +44,9 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
   };
   blockAtTimeCache: { [key: string]: LRUCache<string, IBlock> } = {};
 
-
   constructor(chain: string) {
     super(chain);
-    this.loadConfig();
   }
-
-  loadConfig() {
-    const config = Config.get();
-    this.apiKey = config.externalProviders?.moralis?.apiKey;
-    this.baseWebhookurl = config.externalProviders?.moralis?.webhookBaseUrl;
-    this.headers = {
-      'Content-Type': 'application/json',
-      'X-API-Key': this.apiKey,
-    };
-  }
-
 
   // @override
   async getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock|null> {

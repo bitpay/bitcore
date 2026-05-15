@@ -31,10 +31,6 @@ export class ApiService {
     this.socketService = socketService;
     this.app = app;
     this.httpServer = new http.Server(app);
-
-    process.on('SIGUSR1', async () => {
-      await this.reload();
-    });
   }
 
   async start() {
@@ -50,28 +46,12 @@ export class ApiService {
       this.httpServer = new http.Server(app);
       this.httpServer.timeout = this.timeout;
 
-      process.on('message', async (msg: any) => {
-        if (msg === 'reloadconfig') {
-          await this.reload();
-        }
-      });
-
       this.httpServer.listen(this.port, () => {
         logger.info(`Starting API Service on port ${this.port}`);
         this.socketService.start({ server: this.httpServer });
       });
     }
     return this.httpServer;
-  }
-
-  async reload() {
-    if (this.port !== Config.get().port) {
-      this.port = Config.get().port;
-      if (!this.stopped) {
-        await this.stop();
-        await this.start();
-      }
-    }
   }
 
   async stop() {
