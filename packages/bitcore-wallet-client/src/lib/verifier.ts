@@ -133,6 +133,7 @@ export class Verifier {
       const o2 = args.outputs[i];
       if (!strEqual(o1.toAddress, o2.toAddress)) return false;
       if (!strEqual(o1.script, o2.script)) return false;
+      // Amounts need to be equal OR sendMax arg is set and amount arg is omitted, otherwise return check failure
       if (o1.amount != o2.amount && !(args.sendMax && o2.amount == null)) return false;
       let decryptedMessage: boolean | string = false;
       try {
