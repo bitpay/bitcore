@@ -214,7 +214,7 @@ module.exports = {
   // moonpay: {
   //   sandbox: {
   //     apiKey: 'moonpay_sandbox_api_key_here',
-  //     api: 'https://api.moonpay.com',
+  //     api: 'https://api.moonpay.dev',
   //     widgetApi: 'https://buy-sandbox.moonpay.com',
   //     sellWidgetApi: 'https://sell-sandbox.moonpay.com',
   //     secretKey: 'moonpay_sandbox_secret_key_here',
@@ -228,7 +228,7 @@ module.exports = {
   //   },
   //   sandboxWeb: {
   //     apiKey: 'moonpay_sandbox_web_api_key_here',
-  //     api: 'https://api.moonpay.com',
+  //     api: 'https://api.moonpay.dev',
   //     widgetApi: 'https://buy-sandbox.moonpay.com',
   //     sellWidgetApi: 'https://sell-sandbox.moonpay.com',
   //     secretKey: 'moonpay_sandbox_web_secret_key_here',
