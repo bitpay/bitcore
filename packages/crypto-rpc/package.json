@@ -21,7 +21,7 @@
     "hardhat:test": "npm run hardhat:clean && cd blockchain/EVM/ && npx hardhat test",
     "lint": "eslint .",
     "precommit": "npm run lint",
-    "test": "docker-compose down && docker-compose build && docker-compose run test_runner",
+    "test": "docker compose down && docker compose build && docker compose run test_runner",
     "test:local": "npm run docker:test:down && npm run docker:test:build && docker compose run test_runner"
   },
   "author": "Micah Riggan",

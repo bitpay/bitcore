@@ -33,7 +33,12 @@
     "reporter": [
       "html",
       "text-summary"
-    ]
+    ],
+    "check-coverage": true,
+    "statements": 70,
+    "branches": 50,
+    "functions": 60,
+    "lines": 70
   },
   "dependencies": {
     "@bitgo/sdk-lib-mpc": "^10.1.2",
