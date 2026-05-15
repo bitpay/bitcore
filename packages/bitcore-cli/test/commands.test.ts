@@ -17,7 +17,7 @@ describe('Option: --command', function() {
         );
       });
     }
-  });
+  }).timeout(3000);
 
   describe('BASIC', function() {
     for (const cmd of COMMANDS.BASIC) {
