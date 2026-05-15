@@ -39,8 +39,7 @@
     "assert": "^1.4.1",
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
-    "gulp": "^4.0.0",
-    "mocha": "^5.2.0"
+    "gulp": "^4.0.0"
   },
   "dependencies": {
     "@bitpay-labs/bitcore-lib": "^11.8.1",
