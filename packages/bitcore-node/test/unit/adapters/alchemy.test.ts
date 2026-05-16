@@ -244,6 +244,83 @@ describe('AlchemyAdapter', function() {
       expect(items[0].value).to.equal('0');
     });
 
+    it('should include erc20 in fromAddress query but not toAddress query', async function() {
+      axiosPostStub.resolves({ status: 200, data: { result: { transfers: [], pageKey: null } } });
+
+      const stream = adapter.streamAddressTransactions({
+        chain: 'ETH', network: 'mainnet', chainId: '1', address: VALID_ADDRESS,
+        args: { startBlock: 0, endBlock: 100 } as any
+      });
+      await new Promise<void>((resolve, reject) => {
+        stream.on('data', () => {});
+        stream.on('end', resolve);
+        stream.on('error', reject);
+      });
+
+      const fromCall = axiosPostStub.getCalls().find(c => c.args[1].params[0].fromAddress);
+      const toCall = axiosPostStub.getCalls().find(c => c.args[1].params[0].toAddress);
+      expect(fromCall!.args[1].params[0].category).to.deep.equal(['external', 'internal', 'erc20']);
+      expect(toCall!.args[1].params[0].category).to.deep.equal(['external', 'internal']);
+    });
+
+    it('should zero out value for erc20 sends so they show as 0-ETH txs', async function() {
+      const erc20Send = {
+        hash: '0xb'.padEnd(66, '0'), blockNum: '0x1', from: VALID_ADDRESS, to: VALID_FROM,
+        rawContract: { value: '0x5f5e100' }, // 100 USDC in token base units, not wei
+        category: 'erc20', uniqueId: 'u4', metadata: { blockTimestamp: '2023-01-01T00:00:00Z' }
+      };
+      axiosPostStub.onCall(0).resolves({ status: 200, data: { result: { transfers: [erc20Send], pageKey: null } } });
+      axiosPostStub.onCall(1).resolves({ status: 200, data: { result: { transfers: [], pageKey: null } } });
+
+      const stream = adapter.streamAddressTransactions({
+        chain: 'ETH', network: 'mainnet', chainId: '1', address: VALID_ADDRESS,
+        args: { startBlock: 0, endBlock: 100 } as any
+      });
+      const items: any[] = [];
+      await new Promise<void>((resolve, reject) => {
+        stream.on('data', d => items.push(d));
+        stream.on('end', resolve);
+        stream.on('error', reject);
+      });
+
+      expect(items).to.have.length(1);
+      // erc20 send: value normalized to '0' so EVMListTransactionsStream renders it
+      // as a 0-ETH 'send' (with gas/fee populated downstream by the receipt transform).
+      expect(items[0].value).to.equal('0');
+    });
+
+    it('should dedupe across categories preferring external over erc20', async function() {
+      const sharedHash = '0xc'.padEnd(66, '0');
+      const externalRow = {
+        hash: sharedHash, blockNum: '0x1', from: VALID_ADDRESS, to: VALID_FROM,
+        rawContract: { value: '0xde0b6b3a7640000' }, // 1 ETH
+        category: 'external', uniqueId: `${sharedHash}:external`, metadata: { blockTimestamp: '2023-01-01T00:00:00Z' }
+      };
+      const erc20Row = {
+        hash: sharedHash, blockNum: '0x1', from: VALID_ADDRESS, to: VALID_FROM,
+        rawContract: { value: '0x5f5e100' },
+        category: 'erc20', uniqueId: `${sharedHash}:erc20`, metadata: { blockTimestamp: '2023-01-01T00:00:00Z' }
+      };
+      axiosPostStub.onCall(0).resolves({ status: 200, data: { result: { transfers: [erc20Row, externalRow], pageKey: null } } });
+      axiosPostStub.onCall(1).resolves({ status: 200, data: { result: { transfers: [], pageKey: null } } });
+
+      const stream = adapter.streamAddressTransactions({
+        chain: 'ETH', network: 'mainnet', chainId: '1', address: VALID_ADDRESS,
+        args: { startBlock: 0, endBlock: 100 } as any
+      });
+      const items: any[] = [];
+      await new Promise<void>((resolve, reject) => {
+        stream.on('data', d => items.push(d));
+        stream.on('end', resolve);
+        stream.on('error', reject);
+      });
+
+      expect(items).to.have.length(1);
+      // Value of '1000000000000000000' (1 ETH) confirms the external row was kept
+      // over the erc20 row (which would've been zeroed out to '0').
+      expect(items[0].value).to.equal('1000000000000000000');
+    });
+
     it('should emit INVALID_REQUEST error for invalid address', function(done) {
       const stream = new AlchemyAssetTransferStream(
         'https://example.com', { chain: 'ETH', network: 'mainnet', address: 'bad-address', args: {} },

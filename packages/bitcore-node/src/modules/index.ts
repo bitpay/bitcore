@@ -1,6 +1,7 @@
 import logger from '../logger';
 import { Config } from '../services/config';
 import { ChainNetwork } from '../types/ChainNetwork';
+import { RegisterModule } from '../types/Module';
 
 export function loadModules(params: Partial<ChainNetwork> = {}) {
   // Chain names -> module paths map
@@ -31,12 +32,11 @@ export function loadModules(params: Partial<ChainNetwork> = {}) {
       }
       logger.info(`Registering module for ${chain}:${network}: ${modulePath}`);
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const loadedModule = require(modulePath);
-      const register = loadedModule.default ?? loadedModule;
-      if (typeof register !== 'function') {
+      const registerModule: RegisterModule = require(modulePath).default ?? require(modulePath);
+      if (typeof registerModule !== 'function') {
         throw new TypeError(`Invalid module for ${chain}:${network} at ${modulePath}: expected a default export or module.exports to be a register function`);
       }
-      register({ chain, network });
+      registerModule({ chain, network });
     }
   }
 }

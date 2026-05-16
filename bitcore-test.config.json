@@ -116,7 +116,7 @@
           ],
           "providers": [
             {
-              "host": "sepolia.base.org",
+              "host": "base-sepolia.drpc.org",
               "protocol": "https",
               "port": "",
               "dataType": "combined"
