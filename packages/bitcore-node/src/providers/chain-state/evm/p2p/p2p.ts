@@ -383,7 +383,6 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
     this.multiThreadSync.stop();
     logger.debug(`Stopping worker for chain ${this.chain} ${this.network}`);
     await this.disconnect();
-    setTimeout(BaseEVMStateProvider.teardownRpcs, 100);
   }
 
   async start() {
