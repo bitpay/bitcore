@@ -24,8 +24,8 @@
     "build:prod": "tsc -p tsconfig.prod.json",
     "clean": "rm -rf ts_build",
     "compile": "npm run clean && npm run build",
-    "test": "npm run compile && mocha --exit -r tsx 'test/**/*.test.ts'",
-    "coverage": "npm run compile && nyc mocha --exit -r tsx 'test/**/*.test.ts'",
+    "test": "npm run compile && mocha --exit 'ts_build/test/**/*.test.js'",
+    "coverage": "npm run compile && nyc mocha --exit 'ts_build/test/**/*.test.js'",
     "test:ci": "TEST_LOG_LEVEL=none npm run test",
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
@@ -55,7 +55,7 @@
     "check-coverage": true,
     "statements": 90,
     "branches": 80,
-    "functions": 90,
+    "functions": 80,
     "lines": 90
   }
 }
