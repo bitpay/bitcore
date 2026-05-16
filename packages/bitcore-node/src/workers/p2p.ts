@@ -1,7 +1,7 @@
 import cluster from 'cluster';
 import 'source-map-support/register';
 import logger from '../logger';
-import { Modules } from '../modules';
+import { loadModules } from '../modules';
 import { Config } from '../services/config';
 import { Event } from '../services/event';
 import { P2P } from '../services/p2p';
@@ -21,7 +21,7 @@ export const P2pWorker = async () => {
   services.push(Storage, Event);
 
   const { CHAIN: chain, NETWORK: network } = process.env;
-  Modules.loadConfigured({ chain, network }); // loads all if no chain and network specified
+  loadModules({ chain, network }); // loads all if no chain and network specified
 
   // start a particular chain and network, or all of them
   if (chain && network) {

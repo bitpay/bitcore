@@ -70,7 +70,7 @@ services:
     restart: always
 
   bitcoin-cash:
-    image: zquestz/bitcoin-cash-node:28.0.1
+    image: zquestz/bitcoin-cash-node:29.0.0
     ports:
       - "9333:9333"
     networks:
