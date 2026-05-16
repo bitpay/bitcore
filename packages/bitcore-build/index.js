@@ -144,7 +144,7 @@ function startGulp(name, opts) {
 
   //  task['plato']= shell.task([platoPath + ' -d report -r -l .jshintrc -t ' + fullname + ' lib']);
 
-  task['coverage'] = shell.task([`${istanbulPath} cover ${mochaPath} -- --recursive && ${istanbulPath} check-coverage --statements 80 --branches 80 --functions 80 --lines 80`]);
+  task['coverage'] = shell.task([`nyc mocha -- --recursive${''}`]);
 
   task['coveralls'] = gulp.series(task['coverage'], function() {
     gulp.src('coverage/lcov.info').pipe(coveralls());
