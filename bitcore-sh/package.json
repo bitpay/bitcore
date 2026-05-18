@@ -1,0 +1,14 @@
+{
+  "name": "bitcore-sh",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run compile && node build/index.js",
+    "compile": "rm -rf build && tsc",
+    "tsc": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
