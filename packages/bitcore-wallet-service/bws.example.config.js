@@ -218,6 +218,7 @@ module.exports = {
   //     widgetApi: 'https://buy-sandbox.moonpay.com',
   //     sellWidgetApi: 'https://sell-sandbox.moonpay.com',
   //     secretKey: 'moonpay_sandbox_secret_key_here',
+  //     secretKeyEmbedded: 'moonpay_sandbox_secret_key_embedded_here',
   //   },
   //   production: {
   //     apiKey: 'moonpay_production_api_key_here',
@@ -225,6 +226,7 @@ module.exports = {
   //     widgetApi: 'https://buy.moonpay.com',
   //     sellWidgetApi: 'https://sell.moonpay.com',
   //     secretKey: 'moonpay_production_secret_key_here',
+  //     secretKeyEmbedded: 'moonpay_production_secret_key_embedded_here',
   //   },
   //   sandboxWeb: {
   //     apiKey: 'moonpay_sandbox_web_api_key_here',

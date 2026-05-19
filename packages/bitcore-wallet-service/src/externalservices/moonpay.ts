@@ -26,12 +26,14 @@ export class MoonpayService {
       SELL_WIDGET_API: string;
       API_KEY: string;
       SECRET_KEY: string;
+      SECRET_KEY_EMBEDDED: string | undefined;
     } = {
       API: config.moonpay[env].api,
       WIDGET_API: config.moonpay[env].widgetApi,
       SELL_WIDGET_API: config.moonpay[env].sellWidgetApi,
       API_KEY: config.moonpay[env].apiKey,
-      SECRET_KEY: config.moonpay[env].secretKey
+      SECRET_KEY: config.moonpay[env].secretKey,
+      SECRET_KEY_EMBEDDED: config.moonpay[env].secretKeyEmbedded
     };
 
     return keys;
@@ -441,7 +443,7 @@ export class MoonpayService {
     return new Promise((resolve, reject) => {
       const keys = this.moonpayGetKeys(req);
       const API = keys.API;
-      const SECRET_KEY = keys.SECRET_KEY;
+      const SECRET_KEY = keys.SECRET_KEY_EMBEDDED;
 
       if (!checkRequired(req.body, ['externalCustomerId'])) {
         return reject(new ClientError("Moonpay's request missing arguments"));
@@ -454,7 +456,7 @@ export class MoonpayService {
 
       const headers = {
         'Content-Type': 'application/json',
-        Authorization: "Api-Key " + SECRET_KEY,
+        Authorization: 'Api-Key ' + SECRET_KEY,
       };
 
       const body: any = {
@@ -488,7 +490,7 @@ export class MoonpayService {
     return new Promise((resolve, reject) => {
       const keys = this.moonpayGetKeys(req);
       const API = keys.API;
-      const SECRET_KEY = keys.SECRET_KEY;
+      const SECRET_KEY = keys.SECRET_KEY_EMBEDDED;
 
       if (!checkRequired(req.body, ['externalCustomerId'])) {
         return reject(new ClientError("Moonpay's request missing arguments"));
