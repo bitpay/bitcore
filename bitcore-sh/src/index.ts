@@ -27,6 +27,11 @@ rl.on('line', async (line) => {
     end();
     return;
   }
+  if (args[0] === 'list') {
+    console.log(Object.keys(config.chains).join(' '));
+    end();
+    return;
+  }
   args = [...context, ...args];
 
   const chain = args[0].toUpperCase();
