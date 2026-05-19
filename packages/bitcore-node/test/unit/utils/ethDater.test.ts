@@ -6,8 +6,8 @@ import { EthDater } from '../../../src/utils/ethDater';
  * Fake web3 backed by a fixed map of block_number -> timestamp.
  * `latest` resolves to the largest block in the map.
  */
-function fakeWeb3(blocks: Record<number | 'latest', number>) {
-  const latestNum = Math.max(...Object.keys(blocks).filter(k => k !== 'latest').map(Number));
+function fakeWeb3(blocks: Record<number, number>) {
+  const latestNum = Math.max(...Object.keys(blocks).map(Number));
   return {
     eth: {
       getBlock: sinon.stub().callsFake(async (id: number | 'latest') => {
