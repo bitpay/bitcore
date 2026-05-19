@@ -2,10 +2,6 @@ import fs from 'fs';
 import readline from 'readline'
 const { CryptoRpc } = require('/home/micah/dev/bitcore/packages/crypto-rpc');
 
-const path: string = process.env.BITCORE_CONFIG_PATH || '';
-const config = JSON.parse(fs.readFileSync(path).toString()).bitcoreNode;
-config;
-
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
@@ -13,8 +9,26 @@ const rl = readline.createInterface({
 
 process.stdout.write('> ');
 
+const path: string = process.env.BITCORE_CONFIG_PATH || '';
+const config = JSON.parse(fs.readFileSync(path).toString()).bitcoreNode;
+
+const context: string[] = [];
+
 rl.on('line', async (line) => {
-  const args = line.split(' ');
+  let args = line.split(' ');
+  if (args[0] === 'use') {
+    for (const arg of args.slice(1)) {
+      if (arg === '..') {
+        context.pop();
+      } else {
+        context.push(arg);
+      }
+    }
+    end();
+    return;
+  }
+  args = [...context, ...args];
+
   const chain = args[0].toUpperCase();
   const network = args[1];
   const command = args[2];
@@ -42,6 +56,9 @@ rl.on('line', async (line) => {
   }).get(chain);
 
   console.log(await rpc[command](rpcArgs));
-
-  process.stdout.write('> ');
+  end();
 });
+
+function end() {
+  process.stdout.write(`${context.join(' ')}> `);
+}
