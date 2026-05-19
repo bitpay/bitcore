@@ -1,5 +1,6 @@
 import { PassThrough, Readable } from 'stream';
 import { LRUCache } from 'lru-cache';
+import { EthDater } from '../../../utils/ethDater';
 import logger from '../../../logger';
 import { CacheStorage } from '../../../models/cache';
 import { WalletAddressStorage } from '../../../models/walletAddress';
@@ -40,6 +41,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
   private providersByNetwork: Map<string, ProviderWithHealth[]> = new Map();
   blockAtTimeCache: { [key: string]: LRUCache<string, IBlock> } = {};
   private localTipCache: Map<string, { tip: IBlock; fetchedAtMs: number }> = new Map();
+  private daters: Map<string, EthDater> = new Map();
   private static readonly LOCAL_TIP_TTL_MS = 5_000;
 
   constructor(chain: string = 'ETH') {
@@ -435,8 +437,9 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
     }
 
     if (Number(block.timestamp) > targetTimestamp) {
-      logger.warn(`MultiProvider: block verification exceeded ${MAX_ADJUSTMENTS} adjustments, falling back to binary search`);
-      return this._binarySearchBlockByTimestamp(web3, targetTimestamp);
+      logger.warn(`MultiProvider: block verification exceeded ${MAX_ADJUSTMENTS} adjustments, falling back to EthDater`);
+      const result = await this._getDater(network, web3).getDate(date, false);
+      return result.block;
     }
 
     adjustments = 0;
@@ -450,24 +453,13 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
     return blockNum;
   }
 
-  private async _binarySearchBlockByTimestamp(web3: any, targetTimestamp: number): Promise<number> {
-    const latestBlock = await web3.eth.getBlock('latest');
-    let high = Number(latestBlock.number);
-    let low = 0;
-    const MAX_ITERATIONS = 64;
-    let iterations = 0;
-
-    while (low < high && iterations < MAX_ITERATIONS) {
-      const mid = Math.floor((low + high + 1) / 2);
-      const block = await web3.eth.getBlock(mid);
-      if (Number(block.timestamp) <= targetTimestamp) {
-        low = mid;
-      } else {
-        high = mid - 1;
-      }
-      iterations++;
+  private _getDater(network: string, web3: any): EthDater {
+    let dater = this.daters.get(network);
+    if (!dater) {
+      dater = new EthDater(web3);
+      this.daters.set(network, dater);
     }
-    return low;
+    return dater;
   }
 
   // @override
