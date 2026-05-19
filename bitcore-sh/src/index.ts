@@ -4,7 +4,12 @@ const { CryptoRpc } = require('/home/micah/dev/bitcore/packages/crypto-rpc');
 
 const rl = readline.createInterface({
   input: process.stdin,
-  output: process.stdout
+  output: process.stdout,
+  completer: (line: string) => {
+    const completions = Object.keys(config.chains);
+    const hits = completions.filter(c => c.startsWith(line.toUpperCase()));
+    return [hits.length ? hits : completions, line];
+  }
 });
 
 process.stdout.write('> ');
