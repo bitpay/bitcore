@@ -291,14 +291,9 @@ export const Utils = {
       }
     }
     if (!ip && req.ip) ip = req.ip;
-    if (!ip && req.connection && req.connection.remoteAddress) ip = req.connection.remoteAddress;
+    if (!ip && req.connection?.remoteAddress) ip = req.connection.remoteAddress;
 
-    ip = ip.trim();
-
-    // Normalize IPv4-mapped IPv6 addresses (e.g. ::ffff:1.2.3.4 -> 1.2.3.4)
-    if (ip.startsWith('::ffff:')) {
-      ip = ip.slice(7);
-    }
+    if (ip && typeof ip === 'string') ip = ip.trim();
 
     return ip;
   },

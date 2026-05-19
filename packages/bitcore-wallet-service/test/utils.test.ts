@@ -372,13 +372,13 @@ describe('Utils', function() {
       ip.should.equal('1.2.3.4');
     });
 
-    it('should normalize IPv4-mapped IPv6 addresses', function() {
+    it('should preserve IPv4-mapped IPv6 addresses', function() {
       const req = {
         ip: '::ffff:192.168.1.1'
       };
 
       const ip = Utils.getIpFromReq(req);
-      ip.should.equal('192.168.1.1');
+      ip.should.equal('::ffff:192.168.1.1');
     });
 
     it('should preserve regular IPv6 addresses', function() {
