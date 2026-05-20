@@ -1,6 +1,6 @@
 import fs from 'fs';
-import readline from 'readline'
-const { CryptoRpc } = require('/home/micah/dev/bitcore/packages/crypto-rpc');
+import readline from 'readline';
+const { CryptoRpc } = require('../../packages/crypto-rpc');
 
 const rl = readline.createInterface({
   input: process.stdin,
