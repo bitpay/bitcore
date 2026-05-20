@@ -34,7 +34,7 @@ const completer = (line: string) => {
     hits = completions.filter(c => c.startsWith(args[3]));
   }
   return [hits.length ? hits : completions, args[args.length - 1]];
-}
+};
 
 // repl environment
 const rl = readline.createInterface({

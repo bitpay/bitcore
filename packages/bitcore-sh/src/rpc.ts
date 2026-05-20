@@ -14,7 +14,7 @@ export const getRpc = (chain: string, network: string) => {
     user: rpcConfig.username,
     pass: rpcConfig.password
   }).get(chain);
-}
+};
 
 export const rpcMethods = Object.getOwnPropertyNames(CryptoRpc.prototype)
   .filter(p => typeof CryptoRpc.prototype[p] === 'function' && p !== 'constructor');
@@ -32,4 +32,4 @@ export const getRpcMethodParams = (chain: string, network: string, rpcMethod: st
     .map((key: string) => key.trim())
     .map((key: string) => '--' + (key.substring(0, key.indexOf(' ')) || key))
     .filter((key: string) => key);
-}
+};
