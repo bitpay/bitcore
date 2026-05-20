@@ -86,5 +86,6 @@ rl.on('line', async (line) => {
 });
 
 function end() {
-  process.stdout.write(`${context.join(' ')}> `);
+  rl.setPrompt(`${context.join(' ')}> `);
+  rl.prompt();
 }
