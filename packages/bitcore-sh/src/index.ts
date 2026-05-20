@@ -26,10 +26,28 @@ const rl = readline.createInterface({
         completions = rpcMethods;
         hits = completions.filter(c => c.startsWith(args[2])).map(h => `${args[0]} ${args[1]} ${h}`);
       }
+    } else if (args.length === 4) {
+      const rpc = getRpc(args[0].toUpperCase(), args[1]);
+      if (rpc) {
+        completions = getParams(rpc[args[2]]);
+        hits = completions.filter(c => c.startsWith(args[3])).map(h => `${args[0]} ${args[1]} ${args[2]} ${h}`)
+      }
     }
     return [hits.length ? hits : completions, line];
   }
 });
+
+function getParams(func) {
+  const funcStr = func.toString();
+  const match = funcStr.match(/\{\s*([^}]+)\s*\}/);
+  if (!match) return [];
+
+  return match[1]
+    .split(',')
+    .map((key: string) => key.trim())
+    .map((key: string) => '--' + (key.substring(0, key.indexOf(' ')) || key))
+    .filter((key: string) => key);
+}
 
 process.stdout.write('> ');
 
