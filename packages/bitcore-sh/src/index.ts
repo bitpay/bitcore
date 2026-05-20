@@ -1,6 +1,6 @@
 import readline from 'readline';
 import config from './config';
-import { getRpc, rpcMethods } from './rpc';
+import { getRpc, getRpcMethodParams, rpcMethods } from './rpc';
 
 const context: string[] = [];
 
@@ -28,28 +28,13 @@ const rl = readline.createInterface({
         hits = completions.filter(c => c.startsWith(args[2]));
       }
     } else if (args.length === 4) {
-      const rpc = getRpc(args[0].toUpperCase(), args[1]);
-      if (rpc) {
-        completions.push(getParams(rpc[args[2]]));
-        hits = completions.filter(c => c.startsWith(args[3]));
-      }
+      completions.push(...getRpcMethodParams(args[0], args[1], args[2]));
+      hits = completions.filter(c => c.startsWith(args[3]));
     }
     return [hits.length ? hits : completions, args[args.length - 1]];
   }
 });
 nextCommand();
-
-function getParams(func) {
-  const funcStr = func.toString();
-  const match = funcStr.match(/\{\s*([^}]+)\s*\}/);
-  if (!match) return [];
-
-  return match[1]
-    .split(',')
-    .map((key: string) => key.trim())
-    .map((key: string) => '--' + (key.substring(0, key.indexOf(' ')) || key))
-    .filter((key: string) => key);
-}
 
 rl.on('line', async (line) => {
   let args = line.split(' ');

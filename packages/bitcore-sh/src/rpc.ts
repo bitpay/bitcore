@@ -18,3 +18,18 @@ export const getRpc = (chain: string, network: string) => {
 
 export const rpcMethods = Object.getOwnPropertyNames(CryptoRpc.prototype)
   .filter(p => typeof CryptoRpc.prototype[p] === 'function' && p !== 'constructor');
+
+export const getRpcMethodParams = (chain: string, network: string, rpcMethod: string): string[] => {
+  const rpc = getRpc(chain, network);
+  if (!rpc || !rpc[rpcMethod])
+    return [];
+  const methodString = rpc[rpcMethod].toString();
+  const match = methodString.match(/\{\s*([^}]+)\s*\}/);
+  if (!match) return [];
+
+  return match[1]
+    .split(',')
+    .map((key: string) => key.trim())
+    .map((key: string) => '--' + (key.substring(0, key.indexOf(' ')) || key))
+    .filter((key: string) => key);
+}
