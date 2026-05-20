@@ -1,6 +1,6 @@
 {
   "name": "@bitpay-labs/bitcore-lib-ltc",
-  "version": "11.8.1",
+  "version": "11.9.0",
   "description": "A pure and powerful JavaScript Litecoin library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",

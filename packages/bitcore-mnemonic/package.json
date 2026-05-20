@@ -1,6 +1,6 @@
 {
   "name": "@bitpay-labs/bitcore-mnemonic",
-  "version": "11.8.1",
+  "version": "11.9.0",
   "description": "BIP39 Mnemonics implemented for Bitcore.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -42,7 +42,7 @@
     "gulp": "^4.0.0"
   },
   "dependencies": {
-    "@bitpay-labs/bitcore-lib": "^11.8.1",
+    "@bitpay-labs/bitcore-lib": "^11.9.0",
     "unorm": "^1.4.1"
   },
   "nyc": {
