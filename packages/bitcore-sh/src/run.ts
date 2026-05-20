@@ -4,6 +4,7 @@ import { getRpc, getRpcMethodParams, rpcMethods } from './rpc';
 
 // all the commands prepended by the use command
 const context: string[] = [];
+let exiting = false;
 
 // complete the chain, network, rpcCommand, and paramers
 const completer = (line: string) => {
@@ -56,6 +57,8 @@ rl.on('line', async (line) => {
     }
     nextCommand();
     return;
+  } else if (args[0] === 'exit') {
+    process.exit(0);
   }
   args = [...context, ...args];
 
@@ -83,7 +86,17 @@ rl.on('line', async (line) => {
   nextCommand();
 });
 
+rl.on('SIGINT', () => {
+  if (exiting) {
+    process.exit(0);
+  }
+  rl.setPrompt(`${context.join(' ')}> \n(To exit, press Ctrl+C again or Ctrl+D or type exit)`);
+  rl.prompt();
+  exiting = true;
+});
+
 function nextCommand() {
   rl.setPrompt(`${context.join(' ')}> `);
   rl.prompt();
+  exiting = false;
 }
