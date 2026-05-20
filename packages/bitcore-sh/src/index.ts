@@ -1,6 +1,6 @@
 import fs from 'fs';
 import readline from 'readline';
-const { CryptoRpc } = require('../../packages/crypto-rpc');
+const { CryptoRpc } = require('../../crypto-rpc');
 
 const rl = readline.createInterface({
   input: process.stdin,
