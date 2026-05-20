@@ -10,27 +10,29 @@ const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
   completer: (line: string) => {
-    const args = [...context, ...line.split(' ')];
-    let completions: string[] = [];
+    let args = [...context, ...line.split(' ')];
+    if (args.includes('use'))
+      args = args.filter(arg => arg !== 'use');
+    const completions: string[] = line.includes(' ') ? [] : ['use'];
     let hits: string[] = [];
     if (args.length <= 1) {
-      completions = [...'use list'.split(' '), ...Object.keys(config)];
+      completions.push(...Object.keys(config));
       hits = completions.filter(c => c.toLowerCase().startsWith(args[0].toLowerCase()));
     } else if (args.length === 2) {
       if (Object.keys(config).includes(args[0].toUpperCase())) {
-        completions = Object.keys(config[args[0].toUpperCase()]);
+        completions.push(...Object.keys(config[args[0].toUpperCase()]));
         hits = completions.filter(c => c.startsWith(args[1]));
       }
     } else if (args.length === 3) {
       const rpc = getRpc(args[0].toUpperCase(), args[1]);
       if (rpc) {
-        completions = rpcMethods;
+        completions.push(...rpcMethods);
         hits = completions.filter(c => c.startsWith(args[2]));
       }
     } else if (args.length === 4) {
       const rpc = getRpc(args[0].toUpperCase(), args[1]);
       if (rpc) {
-        completions = getParams(rpc[args[2]]);
+        completions.push(getParams(rpc[args[2]]));
         hits = completions.filter(c => c.startsWith(args[3]));
       }
     }
@@ -62,11 +64,6 @@ rl.on('line', async (line) => {
         context.push(arg);
       }
     }
-    nextCommand();
-    return;
-  }
-  if (args[0] === 'list') {
-    console.log(Object.keys(config.chains).join(' '));
     nextCommand();
     return;
   }
