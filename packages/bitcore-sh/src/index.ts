@@ -4,6 +4,7 @@ const { CryptoRpc } = require('../../crypto-rpc');
 
 const rpcMethods = Object.getOwnPropertyNames(CryptoRpc.prototype)
   .filter(p => typeof CryptoRpc.prototype[p] === 'function' && p !== 'constructor');
+const context: string[] = [];
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -18,24 +19,25 @@ const rl = readline.createInterface({
     } else if (args.length === 2) {
       if (Object.keys(config).includes(args[0].toUpperCase())) {
         completions = Object.keys(config[args[0].toUpperCase()]);
-        hits = completions.filter(c => c.startsWith(args[1])).map(h => `${args[0]} ${h}`)
+        hits = completions.filter(c => c.startsWith(args[1]));
       }
     } else if (args.length === 3) {
       const rpc = getRpc(args[0].toUpperCase(), args[1]);
       if (rpc) {
         completions = rpcMethods;
-        hits = completions.filter(c => c.startsWith(args[2])).map(h => `${args[0]} ${args[1]} ${h}`);
+        hits = completions.filter(c => c.startsWith(args[2]));
       }
     } else if (args.length === 4) {
       const rpc = getRpc(args[0].toUpperCase(), args[1]);
       if (rpc) {
         completions = getParams(rpc[args[2]]);
-        hits = completions.filter(c => c.startsWith(args[3])).map(h => `${args[0]} ${args[1]} ${args[2]} ${h}`)
+        hits = completions.filter(c => c.startsWith(args[3]));
       }
     }
-    return [hits.length ? hits : completions, line];
+    return [hits.length ? hits : completions, args[args.length - 1]];
   }
 });
+nextCommand();
 
 function getParams(func) {
   const funcStr = func.toString();
@@ -49,9 +51,6 @@ function getParams(func) {
     .filter((key: string) => key);
 }
 
-process.stdout.write('> ');
-
-const context: string[] = [];
 
 rl.on('line', async (line) => {
   let args = line.split(' ');
@@ -63,12 +62,12 @@ rl.on('line', async (line) => {
         context.push(arg);
       }
     }
-    end();
+    nextCommand();
     return;
   }
   if (args[0] === 'list') {
     console.log(Object.keys(config.chains).join(' '));
-    end();
+    nextCommand();
     return;
   }
   args = [...context, ...args];
@@ -77,7 +76,7 @@ rl.on('line', async (line) => {
     const chain = args[0].toUpperCase();
     const network = args[1];
     const command = args[2];
-    args.slice(0, 3);
+    args.splice(0, 3);
 
     const rpcArgs = {};
     for (let i = 0; i < args.length; i++) {
@@ -89,11 +88,12 @@ rl.on('line', async (line) => {
     }
 
     const rpc = getRpc(chain, network);
-    console.log(await rpc[command](rpcArgs));
+    if (rpc)
+      console.log(await rpc[command](rpcArgs));
   } catch (e) {
     console.log(e);
   }
-  end();
+  nextCommand();
 });
 
 function getRpc(chain: string, network: string) {
@@ -111,7 +111,7 @@ function getRpc(chain: string, network: string) {
   }).get(chain);
 }
 
-function end() {
+function nextCommand() {
   rl.setPrompt(`${context.join(' ')}> `);
   rl.prompt();
 }
