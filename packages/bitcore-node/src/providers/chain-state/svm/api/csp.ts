@@ -36,6 +36,11 @@ import type { SolRpc } from '@bitpay-labs/crypto-rpc/lib/sol/SolRpc';
 
 export interface GetSolWeb3Response { rpc: SolRpc; connection: any; umi: any; dataType: string; lastPingTime?: number };
 
+function isMissingAtaError(err: any): boolean {
+  const message = err?.message || '';
+  return message === 'Missing ATA' || message.includes('ATA not initialized');
+}
+
 export class BaseSVMStateProvider extends InternalStateProvider implements IChainStateService {
   static rpcs: { [chainNetwork: string]: { historical: GetSolWeb3Response[]; realtime: GetSolWeb3Response[] } } = {};
   static rpcIndicies: { [chainNetwork: string]: { historical: number; realtime: number } } = {};
@@ -285,13 +290,18 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         let _address = address;
         if (tokenAddress) {
           try {
-            const { rpc } = await this.getRpc(network);
             _address = await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
             if (!_address) throw new Error('Missing ATA');
           } catch (e: any) {
-            const errMsg = 'Error getting ATA address';
-            logger.error(`${errMsg} %o`, e.stack || e.message || e);
-            throw new Error(errMsg);
+            if (isMissingAtaError(e)) {
+              // A closed ATA is not returned by getConfirmedAta, but its address can still have history.
+              _address = await rpc.deriveAta({ solAddress: address, mintAddress: tokenAddress });
+              if (!_address) throw new Error('Missing ATA');
+            } else {
+              const errMsg = 'Error getting ATA address';
+              logger.error(`${errMsg} %o`, e.stack || e.message || e);
+              throw new Error(errMsg);
+            }
           }
         }
         do {

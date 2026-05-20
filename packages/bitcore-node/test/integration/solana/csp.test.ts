@@ -220,6 +220,58 @@ describe('Solana API', function() {
       expect(err).to.not.exist;
       expect(counter).to.be.gt(0);
     });
+
+    it('should stream empty SPL token history from derived ATA when current ATA is not initialized', async () => {
+      const tokenAddress = '11111111111111111111111111111112';
+      const derivedAtaAddress = 'derivedTokenAccountAddress';
+      const chunks: string[] = [];
+      const connection = {
+        getSignaturesForAddress: sandbox.stub().returns({ send: sandbox.stub().resolves([]) })
+      };
+      const rpc = {
+        getConfirmedAta: sandbox.stub().rejects(new Error('ATA not initialized on mint for provided account. Initialize ATA first.')),
+        deriveAta: sandbox.stub().resolves(derivedAtaAddress)
+      };
+
+      sandbox.stub(SOL, 'getRpc').resolves({ rpc, connection });
+      sandbox.stub(SOL, 'getWalletAddresses').resolves([{ address }]);
+
+      const req = (new Writable({
+        write: function(_data, _, cb) {
+          cb();
+        }
+      }) as unknown) as Request;
+
+      const res = (new Writable({
+        write: function(data, _, cb) {
+          chunks.push(data.toString());
+          cb();
+        }
+      }) as unknown) as Response;
+      res.type = () => res;
+
+      const err = await new Promise(r => {
+        res
+          .on('error', r)
+          .on('finish', () => r(undefined));
+
+        SOL.streamWalletTransactions({
+          chain,
+          network,
+          wallet,
+          req,
+          res,
+          args: { tokenAddress }
+        })
+          .catch(e => r(e));
+      });
+
+      expect(err).to.not.exist;
+      expect(chunks.join('')).to.equal('');
+      expect(rpc.deriveAta.calledOnceWithExactly({ solAddress: address, mintAddress: tokenAddress })).to.be.true;
+      expect(connection.getSignaturesForAddress.calledOnce).to.be.true;
+      expect(connection.getSignaturesForAddress.firstCall.args[0]).to.equal(derivedAtaAddress);
+    });
   });
 
   it('should correctly transform transaction data', () => {
