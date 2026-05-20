@@ -1,9 +1,7 @@
 import readline from 'readline';
 import config from './config';
-const { CryptoRpc } = require('../../crypto-rpc');
+import { getRpc, rpcMethods } from './rpc';
 
-const rpcMethods = Object.getOwnPropertyNames(CryptoRpc.prototype)
-  .filter(p => typeof CryptoRpc.prototype[p] === 'function' && p !== 'constructor');
 const context: string[] = [];
 
 const rl = readline.createInterface({
@@ -53,7 +51,6 @@ function getParams(func) {
     .filter((key: string) => key);
 }
 
-
 rl.on('line', async (line) => {
   let args = line.split(' ');
   if (args[0] === 'use') {
@@ -92,21 +89,6 @@ rl.on('line', async (line) => {
   }
   nextCommand();
 });
-
-function getRpc(chain: string, network: string) {
-  if (!config[chain][network])
-    return;
-  const rpcConfig = config[chain][network];
-
-  return new CryptoRpc({
-    chain,
-    protocol: rpcConfig.protocol || 'http',
-    host: rpcConfig.host,
-    port: rpcConfig.port,
-    user: rpcConfig.username,
-    pass: rpcConfig.password
-  }).get(chain);
-}
 
 function nextCommand() {
   rl.setPrompt(`${context.join(' ')}> `);
