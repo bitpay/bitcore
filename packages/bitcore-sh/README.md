@@ -1,5 +1,5 @@
 # Bitcore SH
-A repl environment to interact with crypto-rpc
+A repl environment to interact with `crypto-rpc` using the rpcs in the bitcore config
 
 ## Usage
 In packages/bitcore-sh run:
