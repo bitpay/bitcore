@@ -1,5 +1,5 @@
-import fs from 'fs';
 import readline from 'readline';
+import config from './config';
 const { CryptoRpc } = require('../../crypto-rpc');
 
 const rpcMethods = Object.getOwnPropertyNames(CryptoRpc.prototype)
@@ -13,11 +13,11 @@ const rl = readline.createInterface({
     let completions: string[] = [];
     let hits: string[] = [];
     if (args.length <= 1) {
-      completions = [...'use list'.split(' '), ...Object.keys(config.chains)];
+      completions = [...'use list'.split(' '), ...Object.keys(config)];
       hits = completions.filter(c => c.toLowerCase().startsWith(args[0].toLowerCase()));
     } else if (args.length === 2) {
-      if (Object.keys(config.chains).includes(args[0].toUpperCase())) {
-        completions = Object.keys(config.chains[args[0].toUpperCase()]);
+      if (Object.keys(config).includes(args[0].toUpperCase())) {
+        completions = Object.keys(config[args[0].toUpperCase()]);
         hits = completions.filter(c => c.startsWith(args[1])).map(h => `${args[0]} ${h}`)
       }
     } else if (args.length === 3) {
@@ -50,9 +50,6 @@ function getParams(func) {
 }
 
 process.stdout.write('> ');
-
-const path: string = process.env.BITCORE_CONFIG_PATH || '';
-const config = JSON.parse(fs.readFileSync(path).toString()).bitcoreNode;
 
 const context: string[] = [];
 
@@ -100,10 +97,9 @@ rl.on('line', async (line) => {
 });
 
 function getRpc(chain: string, network: string) {
-  if (!(config && config.chains && config.chains[chain] && config.chains[chain][network]))
+  if (!config[chain][network])
     return;
-  const networkConfig = config.chains[chain][network];
-  const rpcConfig = networkConfig.rpc || networkConfig.providers[0];
+  const rpcConfig = config[chain][network];
 
   return new CryptoRpc({
     chain,
