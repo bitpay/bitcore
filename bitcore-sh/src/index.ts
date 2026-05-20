@@ -6,8 +6,20 @@ const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
   completer: (line: string) => {
-    const completions = Object.keys(config.chains);
-    const hits = completions.filter(c => c.startsWith(line.toUpperCase()));
+    const args = [...context, ...line.split(' ')];
+    let completions: string[] = [];
+    let hits: string[] = [];
+    if (args.length <= 1) {
+      completions = [...'use list'.split(' '), ...Object.keys(config.chains)];
+      hits = completions.filter(c => c.toLowerCase().startsWith(args[0].toLowerCase()));
+    } else if (args.length === 2) {
+      if (Object.keys(config.chains).includes(args[0].toUpperCase())) {
+        completions = Object.keys(config.chains[args[0].toUpperCase()]);
+        hits = completions.filter(c => c.startsWith(args[1]));
+        if (hits.length === 1)
+          hits[0] = `${args[0]} ${hits[0]}`
+      }
+    }
     return [hits.length ? hits : completions, line];
   }
 });
