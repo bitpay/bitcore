@@ -2,6 +2,7 @@
   "name": "@bitcore-common/crypto",
   "version": "0.0.1",
   "description": "Crypto primitives for bitcore packages",
+  "type": "module",
   "main": "index.js",
   "license": "MIT",
   "repository": { "type": "git", "url": "https://github.com/bitcoin-bitcore/bitcore" },

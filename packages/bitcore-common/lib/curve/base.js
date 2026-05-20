@@ -1,12 +1,10 @@
 'use strict';
 
-var BN = require('../bn');
-var utils = require('../utils');
-var getNAF = utils.getNAF;
-var getJSF = utils.getJSF;
-var assert = utils.assert;
+import BN from '../bn.js';
+import * as utils from '../utils.js';
+import { getNAF, getJSF, assert } from '../utils.js';
 
-function BaseCurve(type, conf) {
+function BaseCurve (type, conf) {
   this.type = type;
   this.p = new BN(conf.p, 16);
 
@@ -39,17 +37,17 @@ function BaseCurve(type, conf) {
     this.redN = this.n.toRed(this.red);
   }
 }
-module.exports = BaseCurve;
+export default BaseCurve;
 
-BaseCurve.prototype.point = function point() {
+BaseCurve.prototype.point = function point () {
   throw new Error('Not implemented');
 };
 
-BaseCurve.prototype.validate = function validate() {
+BaseCurve.prototype.validate = function validate () {
   throw new Error('Not implemented');
 };
 
-BaseCurve.prototype._fixedNafMul = function _fixedNafMul(p, k) {
+BaseCurve.prototype._fixedNafMul = function _fixedNafMul (p, k) {
   assert(p.precomputed);
   var doubles = p._getDoubles();
 
@@ -81,7 +79,7 @@ BaseCurve.prototype._fixedNafMul = function _fixedNafMul(p, k) {
   return a.toP();
 };
 
-BaseCurve.prototype._wnafMul = function _wnafMul(p, k) {
+BaseCurve.prototype._wnafMul = function _wnafMul (p, k) {
   var w = 4;
 
   // Precompute window
@@ -123,7 +121,7 @@ BaseCurve.prototype._wnafMul = function _wnafMul(p, k) {
   return p.type === 'affine' ? acc.toP() : acc;
 };
 
-BaseCurve.prototype._wnafMulAdd = function _wnafMulAdd(defW,
+BaseCurve.prototype._wnafMulAdd = function _wnafMulAdd (defW,
                                                        points,
                                                        coeffs,
                                                        len,
@@ -247,22 +245,22 @@ BaseCurve.prototype._wnafMulAdd = function _wnafMulAdd(defW,
     return acc.toP();
 };
 
-function BasePoint(curve, type) {
+function BasePoint (curve, type) {
   this.curve = curve;
   this.type = type;
   this.precomputed = null;
 }
 BaseCurve.BasePoint = BasePoint;
 
-BasePoint.prototype.eq = function eq(/*other*/) {
+BasePoint.prototype.eq = function eq (/*other*/) {
   throw new Error('Not implemented');
 };
 
-BasePoint.prototype.validate = function validate() {
+BasePoint.prototype.validate = function validate () {
   return this.curve.validate(this);
 };
 
-BaseCurve.prototype.decodePoint = function decodePoint(bytes, enc) {
+BaseCurve.prototype.decodePoint = function decodePoint (bytes, enc) {
   bytes = utils.toArray(bytes, enc);
 
   var len = this.p.byteLength();
@@ -286,11 +284,11 @@ BaseCurve.prototype.decodePoint = function decodePoint(bytes, enc) {
   throw new Error('Unknown point format');
 };
 
-BasePoint.prototype.encodeCompressed = function encodeCompressed(enc) {
+BasePoint.prototype.encodeCompressed = function encodeCompressed (enc) {
   return this.encode(enc, true);
 };
 
-BasePoint.prototype._encode = function _encode(compact) {
+BasePoint.prototype._encode = function _encode (compact) {
   var len = this.curve.p.byteLength();
   var x = this.getX().toArray('be', len);
 
@@ -300,11 +298,11 @@ BasePoint.prototype._encode = function _encode(compact) {
   return [ 0x04 ].concat(x, this.getY().toArray('be', len)) ;
 };
 
-BasePoint.prototype.encode = function encode(enc, compact) {
+BasePoint.prototype.encode = function encode (enc, compact) {
   return utils.encode(this._encode(compact), enc);
 };
 
-BasePoint.prototype.precompute = function precompute(power) {
+BasePoint.prototype.precompute = function precompute (power) {
   if (this.precomputed)
     return this;
 
@@ -321,7 +319,7 @@ BasePoint.prototype.precompute = function precompute(power) {
   return this;
 };
 
-BasePoint.prototype._hasDoubles = function _hasDoubles(k) {
+BasePoint.prototype._hasDoubles = function _hasDoubles (k) {
   if (!this.precomputed)
     return false;
 
@@ -332,7 +330,7 @@ BasePoint.prototype._hasDoubles = function _hasDoubles(k) {
   return doubles.points.length >= Math.ceil((k.bitLength() + 1) / doubles.step);
 };
 
-BasePoint.prototype._getDoubles = function _getDoubles(step, power) {
+BasePoint.prototype._getDoubles = function _getDoubles (step, power) {
   if (this.precomputed && this.precomputed.doubles)
     return this.precomputed.doubles;
 
@@ -349,7 +347,7 @@ BasePoint.prototype._getDoubles = function _getDoubles(step, power) {
   };
 };
 
-BasePoint.prototype._getNAFPoints = function _getNAFPoints(wnd) {
+BasePoint.prototype._getNAFPoints = function _getNAFPoints (wnd) {
   if (this.precomputed && this.precomputed.naf)
     return this.precomputed.naf;
 
@@ -364,11 +362,11 @@ BasePoint.prototype._getNAFPoints = function _getNAFPoints(wnd) {
   };
 };
 
-BasePoint.prototype._getBeta = function _getBeta() {
+BasePoint.prototype._getBeta = function _getBeta () {
   return null;
 };
 
-BasePoint.prototype.dblp = function dblp(k) {
+BasePoint.prototype.dblp = function dblp (k) {
   var r = this;
   for (var i = 0; i < k; i++)
     r = r.dbl();

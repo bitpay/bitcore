@@ -1,6 +1,8 @@
 'use strict';
-var ShortCurve = require('./short');
-var curve = new ShortCurve({
+import ShortCurve from './short.js';
+import { assert } from '../utils.js';
+
+const curve = new ShortCurve({
   p: 'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f',
   n: 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141',
   g: ['79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
@@ -9,4 +11,6 @@ var curve = new ShortCurve({
   b: 7,
   h: 1
 });
-module.exports = curve;
+
+export default curve;
+export { assert };

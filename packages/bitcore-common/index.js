@@ -7,10 +7,7 @@
  * - All functions accept private keys as Buffer (32 bytes), NOT strings.
  * - Public keys are returned as Point objects or Buffer (32 bytes for x-only).
  */
-module.exports = {
-  BN: require('./lib/bn'),
-  Utils: require('./lib/utils'),
-  Curve: require('./lib/curve/secp256k1'),
-  Point: require('./lib/curve/short').Point,
-  Random: require('./lib/random'),
-};
+export { default as BN } from './lib/bn.js';
+export { default as Curve } from './lib/curve/secp256k1.js';
+export * as Utils from './lib/utils.js';
+export { default as Point } from './lib/curve/short.js';

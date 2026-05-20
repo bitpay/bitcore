@@ -1,13 +1,13 @@
 'use strict';
 
-const BN = require('../bn');
-const utils = require('../utils');
+import BN from '../bn.js';
+import * as utils from '../utils.js';
+import Base from './base.js';
 
 const inherits = function(cls, superCls) {
   cls.prototype = Object.create(superCls.prototype);
   cls.prototype.constructor = cls;
 };
-const Base = require('./base');
 
 const assert = utils.assert;
 
@@ -27,7 +27,7 @@ function ShortCurve(conf) {
   this._endoWnafT2 = new Array(4);
 }
 inherits(ShortCurve, Base);
-module.exports = ShortCurve;
+export default ShortCurve;
 
 ShortCurve.prototype._getEndomorphism = function _getEndomorphism(conf) {
   // No efficient endomorphism
