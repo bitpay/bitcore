@@ -1,6 +1,6 @@
 import readline from 'readline';
 import config from './config';
-import { getRpc, getRpcMethodParams, rpcMethods } from './rpc';
+import RPC from './rpc';
 
 // all the commands prepended by the use command
 const context: string[] = [];
@@ -24,13 +24,13 @@ const completer = (line: string) => {
       hits = completions.filter(c => c.startsWith(args[1]));
     }
   } else if (args.length === 3) {
-    const rpc = getRpc(args[0].toUpperCase(), args[1]);
+    const rpc = RPC.get(args[0].toUpperCase(), args[1]);
     if (rpc) {
-      completions.push(...rpcMethods);
+      completions.push(...RPC.methods);
       hits = completions.filter(c => c.startsWith(args[2]));
     }
   } else if (args.length === 4) {
-    completions.push(...getRpcMethodParams(args[0], args[1], args[2]));
+    completions.push(...RPC.getMethodParams(args[0], args[1], args[2]));
     hits = completions.filter(c => c.startsWith(args[3]));
   }
   return [hits.length ? hits : completions, args[args.length - 1]];
@@ -77,7 +77,7 @@ rl.on('line', async (line) => {
       i--;
     }
 
-    const rpc = getRpc(chain, network);
+    const rpc = RPC.get(chain, network);
     if (rpc)
       console.log(await rpc[command](rpcArgs));
   } catch (e) {
@@ -90,7 +90,7 @@ rl.on('SIGINT', () => {
   if (exiting) {
     process.exit(0);
   }
-  rl.setPrompt(`${context.join(' ')}> \n(To exit, press Ctrl+C again or Ctrl+D or type exit)`);
+  rl.setPrompt(`${context.join(' ')}> \n(To exit, press Ctrl+C again or Ctrl+D or type exit)\n${context.join(' ')}> `);
   rl.prompt();
   exiting = true;
 });
