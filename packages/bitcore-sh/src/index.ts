@@ -2,6 +2,9 @@ import fs from 'fs';
 import readline from 'readline';
 const { CryptoRpc } = require('../../crypto-rpc');
 
+const rpcMethods = Object.getOwnPropertyNames(CryptoRpc.prototype)
+  .filter(p => typeof CryptoRpc.prototype[p] === 'function' && p !== 'constructor');
+
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
@@ -15,9 +18,13 @@ const rl = readline.createInterface({
     } else if (args.length === 2) {
       if (Object.keys(config.chains).includes(args[0].toUpperCase())) {
         completions = Object.keys(config.chains[args[0].toUpperCase()]);
-        hits = completions.filter(c => c.startsWith(args[1]));
-        if (hits.length === 1)
-          hits[0] = `${args[0]} ${hits[0]}`
+        hits = completions.filter(c => c.startsWith(args[1])).map(h => `${args[0]} ${h}`)
+      }
+    } else if (args.length === 3) {
+      const rpc = getRpc(args[0].toUpperCase(), args[1]);
+      if (rpc) {
+        completions = rpcMethods;
+        hits = completions.filter(c => c.startsWith(args[2])).map(h => `${args[0]} ${args[1]} ${h}`);
       }
     }
     return [hits.length ? hits : completions, line];
@@ -66,24 +73,29 @@ rl.on('line', async (line) => {
       i--;
     }
 
-    const networkConfig = config.chains[chain][network];
-    const rpcConfig = networkConfig.rpc || networkConfig.providers[0];
-
-    const rpc = new CryptoRpc({
-      chain,
-      protocol: rpcConfig.protocol || 'http',
-      host: rpcConfig.host,
-      port: rpcConfig.port,
-      user: rpcConfig.username,
-      pass: rpcConfig.password
-    }).get(chain);
-
+    const rpc = getRpc(chain, network);
     console.log(await rpc[command](rpcArgs));
   } catch (e) {
     console.log(e);
   }
   end();
 });
+
+function getRpc(chain: string, network: string) {
+  if (!(config && config.chains && config.chains[chain] && config.chains[chain][network]))
+    return;
+  const networkConfig = config.chains[chain][network];
+  const rpcConfig = networkConfig.rpc || networkConfig.providers[0];
+
+  return new CryptoRpc({
+    chain,
+    protocol: rpcConfig.protocol || 'http',
+    host: rpcConfig.host,
+    port: rpcConfig.port,
+    user: rpcConfig.username,
+    pass: rpcConfig.password
+  }).get(chain);
+}
 
 function end() {
   rl.setPrompt(`${context.join(' ')}> `);
