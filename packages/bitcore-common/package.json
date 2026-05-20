@@ -1,0 +1,11 @@
+{
+  "name": "@bitcore-common/crypto",
+  "version": "0.0.1",
+  "description": "Crypto primitives for bitcore packages",
+  "main": "index.js",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/bitcoin-bitcore/bitcore" },
+  "scripts": { "test": "mocha test/**/*.js" },
+  "dependencies": {},
+  "devDependencies": { "mocha": "^10.2.0" }
+}
