@@ -502,9 +502,20 @@ BN.prototype.toJSON = function toJSON () {
   return this.toString(16);
 };
 
-BN.prototype.toBuffer = function toBuffer (endian, length) {
+BN.prototype.toBuffer = function toBuffer (optsOrEndian, length) {
+  // Support both positional (endian, length) and options-object ({ size, endian }) signatures
+  let endian, sz;
+  if (optsOrEndian !== null && typeof optsOrEndian === 'object') {
+    // opts-style: { size: 32, endian: 'little' }
+    sz = optsOrEndian.size;
+    endian = optsOrEndian.endian;
+  } else {
+    // positional-style: toBuffer('be', 32)
+    endian = optsOrEndian;
+    sz = length;
+  }
   assert(typeof Buffer !== 'undefined');
-  return this.toArrayLike(Buffer, endian, length);
+  return this.toArrayLike(Buffer, endian, sz);
 };
 
 BN.prototype.toArray = function toArray (endian, length) {
