@@ -37,6 +37,7 @@ const chainLibs = {
   ARB: { Web3, ethers },
   BASE: { Web3, ethers },
   OP: { Web3, ethers },
+  ARC: { Web3, ethers },
   XRP: xrpl,
   SOL: { SolKit, SolanaProgram }
 };
@@ -303,7 +304,7 @@ export class Wallet {
    * @returns {Boolean}
    */
   isEvmChain() {
-    return ['ETH', 'MATIC', 'ARB', 'OP', 'BASE'].includes(this.chain?.toUpperCase());
+    return ['ETH', 'MATIC', 'ARB', 'OP', 'BASE', 'ARC'].includes(this.chain?.toUpperCase());
   }
 
   isSolanaChain() {

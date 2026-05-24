@@ -1,4 +1,5 @@
 import { ArbValidation } from './arb';
+import { ArcValidation } from './arc';
 import { BaseValidation } from './base';
 import { BchValidation } from './bch';
 import { BtcValidation } from './btc';
@@ -22,6 +23,7 @@ const validation: { [chain: string]: IValidation } = {
   ARB: new ArbValidation(),
   BASE: new BaseValidation(),
   OP: new OpValidation(),
+  ARC: new ArcValidation(),
   SOL: new SolValidation(),
 };
 
