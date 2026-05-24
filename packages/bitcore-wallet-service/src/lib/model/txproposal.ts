@@ -614,7 +614,7 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
         convertFn = parseInt;
         break;
       case 'string':
-        convertFn = (n) => n.toString();
+        convertFn = (n) => typeof n === 'string' && n.startsWith('0x') ? BigInt(n).toString() : n.toString();
         break;
       case 'hex':
         convertFn = (n) => CWCUtils.toHex(n);
@@ -623,7 +623,8 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
         convertFn = (n) => BigInt(n);
         break;
       default:
-        throw new Error(`Invalid numberFormat: ${numberFormat}`);
+        logger.warn(`Invalid numberFormat: ${numberFormat}, no conversion will be applied to tx proposal ${txp.id}`);
+        return txp;
     }
 
     const convert = (key, value) => {
@@ -637,20 +638,22 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
       return value;
     };
 
-    const topKeys = ['amount', 'feePerKB', 'fee', 'nonce', 'gasPrice', 'maxGasFee', 'priorityGasFee', 'gasLimit', 'lockUntilBlockHeight', 'instantAcceptanceEscrow', 'space', 'blockHeight', 'computeUnits', 'decimals'];
+    const _txp = txp instanceof TxProposal ? TxProposal.fromObj(txp.toObject()) : TxProposal.fromObj(txp as ITxProposal<number>).toObject();
+
+    const topKeys = ['amount', 'feePerKb', 'fee', 'nonce', 'gasPrice', 'maxGasFee', 'priorityGasFee', 'gasLimit', 'lockUntilBlockHeight', 'instantAcceptanceEscrow', 'space', 'blockHeight', 'computeUnits', 'decimals'];
     for (const key of topKeys) {
-      const value = txp[key];
-      txp[key] = convert(key, value);
+      const value = _txp[key];
+      _txp[key] = convert(key, value);
     }
 
     const outputKeys = ['amount', 'gasLimit', 'satoshis'];
-    for (let i = 0; i < txp.outputs.length; i++) {
+    for (let i = 0; i < _txp.outputs.length; i++) {
       for (const key of outputKeys) {
-        const value = txp.outputs[i][key];
-        txp.outputs[i][key] = convert(`output.${i}.${key}`, value);
+        const value = _txp.outputs[i][key];
+        _txp.outputs[i][key] = convert(`output.${i}.${key}`, value);
       }
     }
 
-    return txp;
+    return _txp;
   }
 }
