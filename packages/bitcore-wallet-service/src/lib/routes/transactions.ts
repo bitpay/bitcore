@@ -5,10 +5,11 @@ import type * as Types from '../../types/expressapp';
 interface RouteContext {
   getServerWithAuth: Types.GetServerWithAuthFn;
   returnError: Types.ReturnErrorFn;
+  checkNumberFormat: Types.CheckNumberFormatFn;
 }
 
 export function registerTransactionRoutes(router: express.Router, context: RouteContext) {
-  const { getServerWithAuth, returnError } = context;
+  const { getServerWithAuth, returnError, checkNumberFormat } = context;
 
   router.get('/v1/txproposals/', (req, res) => {
     getServerWithAuth(req, res, server => {
@@ -21,6 +22,8 @@ export function registerTransactionRoutes(router: express.Router, context: Route
 
   router.get('/v2/txproposals/', (req, res) => {
     getServerWithAuth(req, res, server => {
+      checkNumberFormat(req.query.numberFormat, res);
+
       const opts = {
         numberFormat: req.query.numberFormat,
       };
@@ -49,6 +52,7 @@ export function registerTransactionRoutes(router: express.Router, context: Route
 
   router.post('/v3/txproposals/', (req, res) => {
     getServerWithAuth(req, res, server => {
+      checkNumberFormat(req.query.numberFormat, res);
       req.body.txpVersion = 3;
       req.body.numberFormat = req.query.numberFormat;
       server.createTx(req.body, (err, txp) => {
@@ -72,6 +76,7 @@ export function registerTransactionRoutes(router: express.Router, context: Route
 
   router.post('/v2/txproposals/:id/signatures/', (req, res) => {
     getServerWithAuth(req, res, server => {
+      checkNumberFormat(req.query.numberFormat, res);
       req.body.txProposalId = req.params['id'];
       req.body.maxTxpVersion = 3;
       req.body.supportBchSchnorr = true;
@@ -86,6 +91,7 @@ export function registerTransactionRoutes(router: express.Router, context: Route
 
   router.post('/v1/txproposals/:id/prepare/', (req, res) => {
     getServerWithAuth(req, res, server => {
+      checkNumberFormat(req.query.numberFormat, res);
       req.body.txProposalId = req.params['id'];
       req.body.numberFormat = req.query.numberFormat;
       server.prepareTx(req.body, (err, txp) => {
@@ -110,6 +116,7 @@ export function registerTransactionRoutes(router: express.Router, context: Route
 
   router.post('/v2/txproposals/:id/publish/', (req, res) => {
     getServerWithAuth(req, res, server => {
+      checkNumberFormat(req.query.numberFormat, res);
       req.body.txProposalId = req.params['id'];
       req.body.numberFormat = req.query.numberFormat;
       server.publishTx(req.body, (err, txp) => {

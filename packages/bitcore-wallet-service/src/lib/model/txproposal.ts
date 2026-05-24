@@ -106,7 +106,7 @@ export interface ITxProposal<NumberType = number> {
   note?: ITxNote;
 }
 
-export type NumberFormat = 'number' | 'string' | 'bigint' | 'hex';
+export type NumberFormat = 'hex' | 'number' | 'string' | 'bigint';
 
 export class TxProposal<NumberType = number> implements ITxProposal<NumberType> {
   version: number;
@@ -627,8 +627,9 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
         return txp;
     }
 
+    const primitiveTypes = new Set(['number', 'string', 'bigint']);
     const convert = (key, value) => {
-      if (typeof value !== numberFormat && ['number', 'string', 'bigint'].includes(typeof value)) {
+      if ((numberFormat === 'hex' || typeof value !== numberFormat) && primitiveTypes.has(typeof value)) {
         try {
           value = convertFn(value);
         } catch (e) {

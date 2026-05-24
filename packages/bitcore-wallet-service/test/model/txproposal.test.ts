@@ -141,6 +141,21 @@ describe('TxProposal', function() {
       txp.fee.should.be.a('number');
       txp.outputs[0].amount.should.be.a('number');
     });
+
+    it('should format string numbers as hex', function() {
+      const t1 = TxProposal.fromObj(aTXP());
+      const t2 = TxProposal.formatNumbers(t1, 'string');
+      t2.amount.should.be.a('string');
+      CWCUtils.isHexString(t2.amount).should.equal(false);
+
+      const txp = TxProposal.formatNumbers(t2, 'hex');
+      txp.amount.should.be.a('string');
+      CWCUtils.isHexString(txp.amount).should.equal(true);
+      txp.fee.should.be.a('string');
+      CWCUtils.isHexString(txp.fee).should.equal(true);
+      txp.outputs[0].amount.should.be.a('string');
+      CWCUtils.isHexString(txp.outputs[0].amount).should.equal(true);
+    });
   });
 });
 
