@@ -453,7 +453,11 @@ export class Wallet implements IWallet {
     const { address } = args;
     const chain = this.chain.toUpperCase();
     const network = this.network === 'livenet' ? 'mainnet' : this.network;
-    const web3 = new Web3(Constants.PUBLIC_API[chain][network]);
+    const publicApiUrl = Constants.PUBLIC_API[chain.toLowerCase()]?.[network];
+    if (!publicApiUrl) {
+      throw new Error(`Chain ${chain} is not supported for fetching token data from the chain`);
+    }
+    const web3 = new Web3(publicApiUrl);
     const contract = new web3.eth.Contract(ERC20Abi as any, address);
     const token = await contract.methods.symbol().call<string>();
     const decimals = Number(await contract.methods.decimals().call<bigint>());
