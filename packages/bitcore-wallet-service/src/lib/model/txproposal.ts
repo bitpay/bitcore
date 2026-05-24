@@ -523,8 +523,6 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
 
   sign(copayerId, signatures, xpub, numberFormat?: NumberFormat) {
     try {
-      // Tests signatures are OK
-
       // numberFormat as 'number' is to sidestep TS errors, but is not necessarily true.
       const txp = numberFormat ? TxProposal.formatNumbers(this, numberFormat as 'number') : this as TxProposal<number>;
       const tx = ChainService.getBitcoreTx(txp);
