@@ -1,6 +1,6 @@
 
 export const UTXO_CHAINS = ['btc', 'bch', 'doge', 'ltc'];
-export const EVM_CHAINS = ['eth', 'matic', 'arb', 'base', 'op'];
+export const EVM_CHAINS = ['eth', 'matic', 'arb', 'base', 'op', 'arc'];
 export const SVM_CHAINS = ['sol'];
 export const RIPPLE_CHAINS = ['xrp'];
 export const CHAINS = [...UTXO_CHAINS, ...EVM_CHAINS, ...SVM_CHAINS, ...RIPPLE_CHAINS];
@@ -12,7 +12,8 @@ export const EVM_CHAIN_DEFAULT_TESTNET = {
   MATIC: 'amoy',
   ARB: 'sepolia',
   BASE: 'sepolia',
-  OP: 'sepolia'
+  OP: 'sepolia',
+  ARC: 'testnet'
 };
 
 export const EVM_CHAIN_NETWORK_TO_CHAIN_ID = {
@@ -22,6 +23,7 @@ export const EVM_CHAIN_NETWORK_TO_CHAIN_ID = {
   ARB_mainnet: 42161,
   BASE_mainnet: 8453,
   OP_mainnet: 10,
+  ARC_mainnet: 'unsupported',
   // ETH testnets
   ETH_holesky: 17000,
   ETH_sepolia: 11155111,
@@ -41,6 +43,8 @@ export const EVM_CHAIN_NETWORK_TO_CHAIN_ID = {
   // OP testnets
   OP_sepolia: 11155420,
   OP_goerli: 28528,
+  // ARC testnets
+  ARC_testnet: 5042002,
   // Regtests
   ETH_regtest: 1337,
   MATIC_regtest: 13375,

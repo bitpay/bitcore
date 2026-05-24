@@ -41,6 +41,8 @@ const providers = {
   BASEERC20: new BASEERC20TxProvider(),
   OP: new OPTxProvider(),
   OPERC20: new OPERC20TxProvider(),
+  ARC: new ETHTxProvider('ARC'),
+  ARCERC20: new ERC20TxProvider('ARC'),
   SOL: new SOLTxProvider(),
   SOLSPL: new SPLTxProvider(),
 };
