@@ -102,7 +102,8 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
         includeServerMessages: false,
         tokenAddress: req.query.tokenAddress,
         multisigContractAddress: req.query.multisigContractAddress,
-        network: req.query.network
+        network: req.query.network,
+        numberFormat: req.query.numberFormat
       };
       if (req.query.includeExtendedInfo == '1') opts.includeExtendedInfo = true;
       if (req.query.twoStep == '1') opts.twoStep = true;
@@ -121,6 +122,7 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
     const twoStep = req.query.twoStep == '1';
     const silentFailure = req.query.silentFailure == '1';
     const includeServerMessages = req.query.serverMessageArray == '1';
+    const numberFormat = req.query.numberFormat;
 
     const buildOpts = (request, copayerId) => {
       const getParam = (param, returnArray = false) => {
@@ -136,6 +138,7 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
         twoStep,
         silentFailure,
         includeServerMessages,
+        numberFormat,
         tokenAddresses: getParam('tokenAddress', true) as string[] | null,
         multisigContractAddress: getParam('multisigContractAddress') as string | null,
         network: getParam('network') as string | null

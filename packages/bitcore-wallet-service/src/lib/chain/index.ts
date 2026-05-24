@@ -94,7 +94,7 @@ class ChainProxy {
     return this.get(wallet.chain).getFee(server, wallet, opts);
   }
 
-  getBitcoreTx(txp: TxProposal, opts = { signed: true }) {
+  getBitcoreTx(txp: TxProposal<any>, opts = { signed: true }) {
     return this.get(txp.chain).getBitcoreTx(txp, { signed: opts.signed });
   }
 

@@ -1,11 +1,13 @@
+import { Utils as CWCUtils } from '@bitpay-labs/crypto-wallet-core';
 import _ from 'lodash';
 import { singleton } from 'preconditions';
 import Uuid from 'uuid';
 import { ChainService } from '../chain/index';
 import { Common } from '../common';
 import logger from '../logger';
-import { IAddress } from './address';
-import { TxProposalLegacy } from './txproposal_legacy';
+import { type IAddress } from './address';
+import { type ITxNote, TxNote } from './txnote';
+import { type ITxProposalLegacy, TxProposalLegacy } from './txproposal_legacy';
 import { TxProposalAction } from './txproposalaction';
 
 const $ = singleton();
@@ -13,7 +15,8 @@ const { Constants, Defaults, Utils } = Common;
 
 type TxProposalStatus = 'temporary' | 'pending' | 'accepted' | 'rejected' | 'broadcasted';
 
-export interface ITxProposal {
+export interface ITxProposal<NumberType = number> {
+  version: number;
   type?: string;
   creatorName: string;
   createdOn: number;
@@ -28,19 +31,19 @@ export interface ITxProposal {
   message: string;
   payProUrl?: string;
   from: string;
-  changeAddress?: IAddress;
-  escrowAddress?: IAddress;
+  changeAddress?: Partial<IAddress>;
+  escrowAddress?: Partial<IAddress>;
   inputs: any[];
   outputs: Array<{
-    amount: number;
-    address: string;
+    amount: NumberType;
+    address?: string;
     toAddress?: string;
     sourceAddress?: string;
     message?: string;
     data?: string;
-    gasLimit?: number;
+    gasLimit?: NumberType;
     script?: string;
-    satoshis?: number;
+    satoshis?: NumberType;
     tag?: number;
   }>;
   outputOrder: number[];
@@ -51,13 +54,12 @@ export interface ITxProposal {
   status: TxProposalStatus;
   actions: any[];
   feeLevel: string;
-  feePerKb: number;
+  feePerKb: NumberType;
   excludeUnconfirmedUtxos: boolean;
   addressType: string;
   customData: any;
-  amount: string;
-  fee: number;
-  version: number;
+  amount: NumberType;
+  fee: NumberType;
   broadcastedOn: number;
   inputPaths: string | any[];
   proposalSignature: string;
@@ -65,39 +67,49 @@ export interface ITxProposal {
   proposalSignaturePubKeySig: string;
   signingMethod: string;
   lowFees?: boolean;
-  nonce?: number | string;
+  raw?: Array<string> | string;
+  nonce?: NumberType | string;
   deferNonce?: boolean;
-  gasPrice?: number;
-  maxGasFee?: number;
-  priorityGasFee?: number;
+  gasPrice?: NumberType;
+  maxGasFee?: NumberType;
+  priorityGasFee?: NumberType;
   txType?: number | string;
-  gasLimit?: number; // Backward compatibility for BWC <= 8.9.0
+  gasLimit?: NumberType; // Backward compatibility for BWC <= 8.9.0
   data?: string; // Backward compatibility for BWC <= 8.9.0
   tokenAddress?: string;
   multisigContractAddress?: string;
+  multisigTxId?: string;
   destinationTag?: string;
   invoiceID?: string;
-  lockUntilBlockHeight?: number;
-  instantAcceptanceEscrow?: number;
+  lockUntilBlockHeight?: NumberType;
+  instantAcceptanceEscrow?: NumberType;
   isTokenSwap?: boolean;
+  multiSendContractAddress?: string;
   enableRBF?: boolean;
   replaceTxByFee?: boolean;
   multiTx?: boolean; // proposal contains multiple transactions
-  space?: number;
+  space?: NumberType;
   nonceAddress?: string;
   blockHash?: string;
-  blockHeight?: number;
+  blockHeight?: NumberType;
   category?: string;
-  priorityFee?: number;
-  computeUnits?: number;
+  priorityFee?: NumberType;
+  computeUnits?: NumberType;
   memo?: string;
   fromAta?: string;
   decimals?: number;
   refreshOnPublish?: boolean;
   prePublishRaw?: string;
+  derivationStrategy?: string;
+
+  // Gets populated on fetch - does not get saved to txproposal collection
+  note?: ITxNote;
 }
 
-export class TxProposal implements ITxProposal {
+export type NumberFormat = 'number' | 'string' | 'bigint' | 'hex';
+
+export class TxProposal<NumberType = number> implements ITxProposal<NumberType> {
+  version: number;
   type?: string;
   creatorName: string;
   createdOn: number;
@@ -112,19 +124,19 @@ export class TxProposal implements ITxProposal {
   message: string;
   payProUrl?: string;
   from: string;
-  changeAddress?: IAddress;
-  escrowAddress?: IAddress;
+  changeAddress?: Partial<IAddress>;
+  escrowAddress?: Partial<IAddress>;
   inputs: any[];
   outputs: Array<{
-    amount: number;
-    address: string;
+    amount: NumberType;
+    address?: string;
     toAddress?: string;
     sourceAddress?: string;
     message?: string;
     data?: string;
-    gasLimit?: number;
+    gasLimit?: NumberType;
     script?: string;
-    satoshis?: number;
+    satoshis?: NumberType;
     tag?: number;
   }>;
   outputOrder: number[];
@@ -135,13 +147,12 @@ export class TxProposal implements ITxProposal {
   status: TxProposalStatus;
   actions: any[] = [];
   feeLevel: string;
-  feePerKb: number;
+  feePerKb: NumberType;
   excludeUnconfirmedUtxos: boolean;
   addressType: string;
   customData: any;
-  amount: string;
-  fee: number;
-  version: number;
+  amount: NumberType;
+  fee: NumberType;
   broadcastedOn: number;
   inputPaths: string | any[];
   proposalSignature: string;
@@ -150,38 +161,42 @@ export class TxProposal implements ITxProposal {
   signingMethod: string;
   lowFees?: boolean;
   raw?: Array<string> | string;
-  nonce?: number | string;
+  nonce?: NumberType;
   deferNonce?: boolean;
-  gasPrice?: number;
-  maxGasFee?: number;
-  priorityGasFee?: number;
+  gasPrice?: NumberType;
+  maxGasFee?: NumberType;
+  priorityGasFee?: NumberType;
   txType?: number | string;
-  gasLimit?: number; // Backward compatibility for BWC <= 8.9.0
+  gasLimit?: NumberType; // Backward compatibility for BWC <= 8.9.0
   data?: string; // Backward compatibility for BWC <= 8.9.0
   tokenAddress?: string;
   multisigContractAddress?: string;
   multisigTxId?: string;
   destinationTag?: string;
   invoiceID?: string;
-  lockUntilBlockHeight?: number;
-  instantAcceptanceEscrow?: number;
+  lockUntilBlockHeight?: NumberType;
+  instantAcceptanceEscrow?: NumberType;
   isTokenSwap?: boolean;
   multiSendContractAddress?: string;
   enableRBF?: boolean;
   replaceTxByFee?: boolean;
   multiTx?: boolean;
-  space?: number;
+  space?: NumberType;
   nonceAddress?: string;
   blockHash?: string;
-  blockHeight?: number;
+  blockHeight?: NumberType;
   category?: string;
-  priorityFee?: number;
-  computeUnits?: number;
+  priorityFee?: NumberType;
+  computeUnits?: NumberType;
   memo?: string;
   fromAta?: string;
   decimals?: number;
   refreshOnPublish?: boolean;
   prePublishRaw?: string;
+  derivationStrategy?: string;
+
+  // Gets populated on fetch - does not get saved to txproposal collection
+  note?: TxNote;
 
   static create(opts) {
     opts = opts || {};
@@ -305,6 +320,8 @@ export class TxProposal implements ITxProposal {
     return x;
   }
 
+  static fromObj(obj: Partial<ITxProposal>): TxProposal;
+  static fromObj(obj: Partial<ITxProposalLegacy>): TxProposalLegacy;
   static fromObj(obj) {
     if (!(obj.version >= 3)) {
       return TxProposalLegacy.fromObj(obj);
@@ -324,6 +341,7 @@ export class TxProposal implements ITxProposal {
     x.amount = obj.amount;
     x.message = obj.message;
     x.payProUrl = obj.payProUrl;
+    x.derivationStrategy = obj.derivationStrategy;
     x.changeAddress = obj.changeAddress;
     x.escrowAddress = obj.escrowAddress;
     x.instantAcceptanceEscrow = obj.instantAcceptanceEscrow;
@@ -440,8 +458,10 @@ export class TxProposal implements ITxProposal {
     return signatures;
   }
 
-  getRawTx() {
-    const t = ChainService.getBitcoreTx(this);
+  getRawTx(numberFormat?: NumberFormat) {
+    // Casting numberFormat to 'number' is to sidestep TS errors, but is not necessarily true.
+    const txp = numberFormat ? TxProposal.formatNumbers(this, numberFormat as 'number') : this as TxProposal<number>;
+    const t = ChainService.getBitcoreTx(txp);
     return t.uncheckedSerialize();
   }
 
@@ -451,7 +471,7 @@ export class TxProposal implements ITxProposal {
    * @return {Number} total amount of all outputs excluding change output
    */
   getTotalAmount() {
-    return Number((this.outputs || []).reduce((total, o) => total += BigInt(o.amount), 0n));
+    return Number(((this as TxProposal<number>).outputs || []).reduce((total, o) => total += BigInt(o.amount), 0n));
   }
 
   /**
@@ -501,10 +521,13 @@ export class TxProposal implements ITxProposal {
     this._updateStatus();
   }
 
-  sign(copayerId, signatures, xpub) {
+  sign(copayerId, signatures, xpub, numberFormat?: NumberFormat) {
     try {
       // Tests signatures are OK
-      const tx = ChainService.getBitcoreTx(this);
+
+      // numberFormat as 'number' is to sidestep TS errors, but is not necessarily true.
+      const txp = numberFormat ? TxProposal.formatNumbers(this, numberFormat as 'number') : this as TxProposal<number>;
+      const tx = ChainService.getBitcoreTx(txp);
       ChainService.addSignaturesToBitcoreTx(
         this.chain,
         tx,
@@ -569,5 +592,67 @@ export class TxProposal implements ITxProposal {
     $.checkState(this.txid, 'Failed state: this.txid at <setBroadcasted()>');
     this.status = 'broadcasted';
     this.broadcastedOn = Math.floor(Date.now() / 1000);
+  }
+
+  
+  /**
+   * Replaces tx-building number values with the specified number format.
+   * This is to ensure consistency across BWC and BWS when handling large numbers, especially for chains like ETH and SOL.
+   * @param {TxProposal|ITxProposal} txp Transaction Proposal
+   * @param {'number'|'string'|'bigint'|'hex'} numberFormat The desired number format for the tx-building values. Can be 'number', 'string', 'bigint', or 'hex'.
+   */
+  static formatNumbers<T>(txp: TxProposal<T>, numberFormat: 'string'): TxProposal<string>;
+  static formatNumbers<T>(txp: TxProposal<T>, numberFormat: 'hex'): TxProposal<string>;
+  static formatNumbers<T>(txp: TxProposal<T>, numberFormat: 'bigint'): TxProposal<bigint>;
+  static formatNumbers<T>(txp: TxProposal<T>, numberFormat: 'number'): TxProposal<number>;
+  static formatNumbers<T>(txp: ITxProposal<T>, numberFormat: 'string'): ITxProposal<string>;
+  static formatNumbers<T>(txp: ITxProposal<T>, numberFormat: 'hex'): ITxProposal<string>;
+  static formatNumbers<T>(txp: ITxProposal<T>, numberFormat: 'bigint'): ITxProposal<bigint>;
+  static formatNumbers<T>(txp: ITxProposal<T>, numberFormat: 'number'): ITxProposal<number>;
+  static formatNumbers<T>(txp: TxProposal<T> | ITxProposal<T>, numberFormat: NumberFormat = 'number') {
+    let convertFn;
+    switch (numberFormat) {
+      case 'number':
+        convertFn = parseInt;
+        break;
+      case 'string':
+        convertFn = (n) => n.toString();
+        break;
+      case 'hex':
+        convertFn = (n) => CWCUtils.toHex(n);
+        break;
+      case 'bigint':
+        convertFn = (n) => BigInt(n);
+        break;
+      default:
+        throw new Error(`Invalid numberFormat: ${numberFormat}`);
+    }
+
+    const convert = (key, value) => {
+      if (typeof value !== numberFormat && ['number', 'string', 'bigint'].includes(typeof value)) {
+        try {
+          value = convertFn(value);
+        } catch (e) {
+          logger.warn(`Failed to convert ${txp.id} > ${key} with value ${value} to ${numberFormat}: ${e.message}`);
+        }
+      }
+      return value;
+    };
+
+    const topKeys = ['amount', 'feePerKB', 'fee', 'nonce', 'gasPrice', 'maxGasFee', 'priorityGasFee', 'gasLimit', 'lockUntilBlockHeight', 'instantAcceptanceEscrow', 'space', 'blockHeight', 'computeUnits', 'decimals'];
+    for (const key of topKeys) {
+      const value = txp[key];
+      txp[key] = convert(key, value);
+    }
+
+    const outputKeys = ['amount', 'gasLimit', 'satoshis'];
+    for (let i = 0; i < txp.outputs.length; i++) {
+      for (const key of outputKeys) {
+        const value = txp.outputs[i][key];
+        txp.outputs[i][key] = convert(`output.${i}.${key}`, value);
+      }
+    }
+
+    return txp;
   }
 }

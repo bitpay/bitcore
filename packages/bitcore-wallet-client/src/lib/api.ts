@@ -1399,6 +1399,7 @@ export class API extends EventEmitter {
       qs.push('includeExtendedInfo=' + (opts.includeExtendedInfo ? '1' : '0'));
       qs.push('twoStep=' + (opts.twoStep ? '1' : '0'));
       qs.push('serverMessageArray=1');
+      qs.push('numberFormat=hex');
 
       if (opts.tokenAddress) {
         qs.push('tokenAddress=' + opts.tokenAddress);
@@ -1718,8 +1719,9 @@ export class API extends EventEmitter {
       const args = {
         proposalSignature: Utils.signMessage(hash, this.credentials.requestPrivKey)
       };
+      const qs = 'numberFormat=hex';
 
-      const url = '/v2/txproposals/' + opts.txp.id + '/publish/';
+      const url = `/v2/txproposals/${opts.txp.id}/publish?${qs}`;
       const { body: txp } = await this.request.post<object, PublishedTxp>(url, args);
       this._processTxps(txp);
       if (cb) { cb(null, txp); }
@@ -1920,8 +1922,9 @@ export class API extends EventEmitter {
 
       opts = opts || {};
       const { doNotVerify, forAirGapped, doNotEncryptPkr } = opts;
+      const qs = 'numberFormat=hex';
 
-      const { body: txps } = await this.request.get('/v2/txproposals/');
+      const { body: txps } = await this.request.get(`/v2/txproposals?${qs}`);
       this._processTxps(txps);
       
       if (!doNotVerify) {
@@ -2050,8 +2053,9 @@ export class API extends EventEmitter {
       const isLegit = Verifier.checkTxProposal(this.credentials, txp, { paypro });
       if (!isLegit) throw new Errors.SERVER_COMPROMISED();
 
+      const qs = 'numberFormat=hex';
       baseUrl = baseUrl || '/v2/txproposals/';
-      const url = `${baseUrl}${txp.id}/signatures/`;
+      const url = `${baseUrl}${txp.id}/signatures?${qs}`;
       const args: any = { signatures, nonce: txp.nonce };
       const { body: signedTxp } = await this.request.post<object, Txp>(url, args);
       this._processTxps(signedTxp);
@@ -2069,10 +2073,10 @@ export class API extends EventEmitter {
    * Call this just before signing a deferred-nonce txp.
    */
   async prepareTx(opts: { txp: Txp }): Promise<Txp> {
-    $.checkState(this.credentials && this.credentials.isComplete(),
-      'Failed state: this.credentials at <prepareTx()>');
+    $.checkState(this.credentials?.isComplete(), 'Failed state: this.credentials at <prepareTx()>');
+    const qs = 'numberFormat=hex';
 
-    const url = '/v1/txproposals/' + opts.txp.id + '/prepare/';
+    const url = `/v1/txproposals/${opts.txp.id}/prepare?${qs}`;
     const { body: txp } = await this.request.post<object, Txp>(url, {});
     this._processTxps(txp);
     return txp;

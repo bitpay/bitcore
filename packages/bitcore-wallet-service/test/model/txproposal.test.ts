@@ -2,6 +2,7 @@
 
 import * as chai from 'chai';
 import 'chai/register-should';
+import { Utils as CWCUtils } from '@bitpay-labs/crypto-wallet-core';
 import { TxProposal } from '../../src/lib/model/txproposal';
 
 const should = chai.should();
@@ -101,6 +102,46 @@ describe('TxProposal', function() {
     });
   });
 
+  describe('#formatNumbers', function() {
+    it('should format numbers as strings', function() {
+      const t = TxProposal.fromObj(aTXP());
+      t.amount.should.be.a('number');
+      const txp = TxProposal.formatNumbers(t, 'string');
+      txp.amount.should.be.a('string');
+      txp.fee.should.be.a('string');
+      txp.outputs[0].amount.should.be.a('string');
+    });
+
+    it('should format numbers as hex', function() {
+      const t = TxProposal.fromObj(aTXP());
+      const txp = TxProposal.formatNumbers(t, 'hex');
+      txp.amount.should.be.a('string');
+      CWCUtils.isHexString(txp.amount).should.equal(true);
+      txp.fee.should.be.a('string');
+      CWCUtils.isHexString(txp.fee).should.equal(true);
+      txp.outputs[0].amount.should.be.a('string');
+      CWCUtils.isHexString(txp.outputs[0].amount).should.equal(true);
+    });
+
+    it('should format numbers as bigints', function() {
+      const t = TxProposal.fromObj(aTXP());
+      const txp = TxProposal.formatNumbers(t, 'bigint');
+      txp.amount.should.be.a('bigint');
+      txp.fee.should.be.a('bigint');
+      txp.outputs[0].amount.should.be.a('bigint');
+    });
+
+    it('should format numbers as numbers', function() {
+      const t1 = TxProposal.fromObj(aTXP());
+      const t2 = TxProposal.formatNumbers(t1, 'string');
+      t2.amount.should.be.a('string');
+
+      const txp = TxProposal.formatNumbers(t2, 'number');
+      txp.amount.should.be.a('number');
+      txp.fee.should.be.a('number');
+      txp.outputs[0].amount.should.be.a('number');
+    });
+  });
 });
 
 const theXPriv = 'xprv9s21ZrQH143K2rMHbXTJmWTuFx6ssqn1vyRoZqPkCXYchBSkp5ey8kMJe84sxfXq5uChWH4gk94rWbXZt2opN9kg4ufKGvUM7HQSLjnoh7e';
@@ -142,6 +183,11 @@ const aTXP = function() {
       version: '1.0.0',
       createdOn: 1424372337,
       address: '3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH',
+      walletId: 'thisdoesntmatter',
+      coin: 'btc',
+      chain: 'btc',
+      network: 'livenet',
+      type: 'P2SH',
       path: 'm/2147483647/1/0',
       publicKeys: [
         '030562cb099e6043dc499eb359dd97c9d500a3586498e4bcf0228a178cc20e6f16',
@@ -166,15 +212,17 @@ const aTXP = function() {
     requiredRejections: 1,
     walletN: 2,
     addressType: 'P2SH',
-    status: 'pending',
+    status: 'pending' as const,
     actions: [],
     fee: 10000,
     outputs: [{
       toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+      address: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
       amount: 10000000,
       message: 'first message'
     }, {
       toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+      address: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
       amount: 20000000,
       message: 'second message'
     }],
