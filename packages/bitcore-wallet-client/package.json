@@ -51,12 +51,11 @@
     "nyc": "^17.1.0",
     "request-promise": "^4.2.4",
     "sinon": "^7.1.1",
-    "supertest": "*",
-    "tsx": "^4.21.0"
+    "supertest": "*"
   },
   "scripts": {
-    "coverage": "npm run compile && nyc mocha 'ts_build/test/**/*.test.js'",
-    "test": "tsc --noEmit && mocha -r tsx 'test/**/*.test.ts'",
+    "coverage": "npm run compile && node ./copyTestData && nyc mocha -n enable-source-maps 'ts_build/test/**/*.test.js'",
+    "test": "npm run compile && node ./copyTestData && mocha --exit -n enable-source-maps 'ts_build/test/**/*.test.js'",
     "test:ci": "npm run test",
     "docs": "TODO ./node_modules/.bin/tsdoc src/lib/* src/lib/common src/lib/errors -o docs && cat README.header.md  docs/*.md LICENSE > README.md",
     "compile": "npm run clean && tsc",

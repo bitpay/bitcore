@@ -1,0 +1,22 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const path = require('path');
+
+const rootDir = __dirname;
+const sourceDir = path.join(rootDir, 'test', 'data');
+const targetDir = path.join(rootDir, 'ts_build', 'test', 'data');
+
+if (!fs.existsSync(targetDir) || !fs.statSync(targetDir).isDirectory()) {
+  console.error("ts_build/test/data directory does not exist. Please run 'npm run build/compile' first.");
+  process.exit(1);
+}
+
+const sourceFiles = fs
+  .readdirSync(sourceDir, { withFileTypes: true })
+  .filter(entry => entry.isFile() && entry.name.endsWith('.json'))
+  .map(entry => entry.name);
+
+for (const fileName of sourceFiles) {
+  fs.copyFileSync(path.join(sourceDir, fileName), path.join(targetDir, fileName));
+}

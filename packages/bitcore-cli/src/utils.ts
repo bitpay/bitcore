@@ -30,14 +30,25 @@ export class Utils {
   static goodbye() {
     const funMessages = [
       'Until next time!',
-      'See you later!',
       'Keep calm and HODL on!',
       'Goodbye!',
-      'Tata!',
-      'Chin-chin!',
       'Cheers!',
-      'Adios!',
-      'Ciao!',
+      'Goodbye, and may your transactions always confirm quickly!',
+      'Thanks for using Bitcore CLI!',
+      'Adiós!', // Spanish
+      'Ciao!', // Italian (informal)
+      'Arrivederci!', // Italian (formal)
+      'Tchau!', // Portuguese
+      'Salut!', // French (informal)
+      'Au revoir!', // French (formal)
+      'Tschüss!', // German (informal)
+      'Auf Wiedersehen!', // German (formal)
+      'さようなら (Sayōnara)!', // Japanese
+      'до свидания (Do svidaniya)!', // Russian (formal)
+      'пока (Poka)!', // Russian (informal)
+      'Aloha!', // Hawaiian
+      '안녕히 가세요 (Annyeonghi gaseyo)!', // Korean
+      '再见 (Zàijiàn)!', // Chinese/Mandarin
     ];
     const randomMessage = funMessages[Math.floor(Math.random() * funMessages.length)];
     console.log('👋 ' + randomMessage);
@@ -88,11 +99,13 @@ export class Utils {
     const match = new RegExp(regex, 'i').exec(text.trim());
 
     if (!match || match.length === 0) {
+      // Die since this is likely a system error
       Utils.die('Invalid amount: ' + text);
     }
 
     const amount = parseFloat(match[1]);
     if (isNaN(amount)) {
+      // Don't die as this is likely a user input error that can be corrected
       throw new Error('Invalid amount');
     }
 
@@ -137,11 +150,25 @@ export class Utils {
   }
 
   static async paginate(
-    fn: (page: number, action?: string) => Promise<{ result?: any[]; extraChoices?: prompt.Option<string>[] }>,
+    /** Body function to handle calling for and display of data */
+    fn: (
+      /** Page number to display */
+      page: number,
+      /** Action to perform on the data */
+      viewAction?: string
+    ) => Promise<{
+      /** Data used to display on the current page */
+      result?: any[];
+      /** Extra choices to show in the pagination menu */
+      extraChoices?: prompt.Option<string>[];
+      hasNextPage?: boolean;
+      hasPrevPage?: boolean;
+    }>,
     opts?: {
       pageSize?: number;
-      initialPage?: number | string; // Initial page, default is 1
-      /** Only applies if there are no extraChoices */
+      /** Default: 1 */
+      initialPage?: number | string;
+      /** Do not show pagination controls if there is only one page. Only applies if there are no extraChoices */
       exitOn1Page?: boolean;
     }
   ) {
@@ -150,16 +177,21 @@ export class Utils {
     let page = parseInt(initialPage as string) || 1;
     let action: string | symbol;
     do {
-      const { result, extraChoices = [] } = await fn(page, action as string);
-      if (!result || (page == 1 && exitOn1Page && result.length < pageSize && !extraChoices.length)) {
+      const {
+        result,
+        extraChoices = [],
+        hasNextPage = result && result.length === pageSize,
+        hasPrevPage = page > 1
+      } = await fn(page, action as string);
+      if (!result || (page == 1 && exitOn1Page && !hasNextPage && !extraChoices.length)) {
         return;
       }
 
 
       const options: prompt.Option<string>[] = [].concat(
-        page > 1 ? [{ label: 'Previous Page', value: 'p' }] : [],
+        hasPrevPage ? [{ label: 'Previous Page', value: 'p' }] : [],
       ).concat(
-        result.length === pageSize ? [{ label: 'Next Page', value: 'n' }] : [],
+        hasNextPage ? [{ label: 'Next Page', value: 'n' }] : [],
       ).concat(
         extraChoices,
       ).concat(

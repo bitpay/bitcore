@@ -1,0 +1,123 @@
+export const btcSingleSigProposal = {
+  _id: '69c2edcf1351b13f22e61d7e',
+  type: null,
+  creatorName: '{"iv":"mRHROe2EFzG8ML8DJA==","v":1,"ts":128,"mode":"ccm","adata":"","cipher":"aes","ct":"OUsZkjyrsgCXfiesTtWihJtJ10O5zMg=","ks":128}',
+  createdOn: 1774382543,
+  id: 'e43b0fe2-c2d2-43c2-afaa-7fb28f212230',
+  txid: null,
+  txids: null,
+  walletId: '62e38685-f8e8-40d4-967f-04afc6aaf75a',
+  creatorId: '90348b306bb58881013c63fe1238eddabf327836b2be808cdc9ebf97a426d9a5',
+  coin: 'btc',
+  chain: 'btc',
+  network: 'testnet',
+  message: null,
+  payProUrl: null,
+  from: null,
+  changeAddress: {
+    version: '1.0.0',
+    createdOn: 1774382543,
+    address: 'tb1q9nh7nzrcgzm96r4ms0mm9xvl3whfrucv07ksp2',
+    walletId: '62e38685-f8e8-40d4-967f-04afc6aaf75a',
+    isChange: true,
+    isEscrow: false,
+    path: 'm/1/0',
+    publicKeys: [
+      '020c1597c53bc5d61d6bf35a142bebebfdc38837c80648c981cae8ec234b02660f'
+    ],
+    coin: 'btc',
+    chain: 'btc',
+    network: 'testnet',
+    type: 'P2WPKH',
+    hasActivity: null,
+    beRegistered: null
+  },
+  escrowAddress: null,
+  inputs: [
+    {
+      address: 'tb1q6l953jevexkqrvvah8729nud289djcpamvtm3u',
+      satoshis: 100000000,
+      amount: 1,
+      scriptPubKey: '0014d7cb48cb2cc9ac01b19db9fca2cf8d51cad9603d',
+      txid: 'f07424a4f92c5be4f7f9ae1b065caded243d951c76b4d0eedc06e534927ac23c',
+      vout: 0,
+      locked: false,
+      confirmations: 3,
+      spent: false,
+      path: 'm/0/0',
+      publicKeys: [
+        '0264f422ccd9234e65925549e1972a6fac2f61c67eedca999cf5661dc07116137d'
+      ]
+    }
+  ],
+  outputs: [
+    {
+      amount: 12300000,
+      toAddress: 'tb1qdq929kz9r7adapvruevgz0nkkqd3cpfv278ryd',
+      message: null
+    }
+  ],
+  outputOrder: [
+    1,
+    0
+  ],
+  walletM: 1,
+  walletN: 1,
+  requiredSignatures: 1,
+  requiredRejections: 1,
+  status: 'pending',
+  actions: [],
+  feeLevel: null,
+  feePerKb: 1000,
+  excludeUnconfirmedUtxos: false,
+  addressType: 'P2WPKH',
+  customData: null,
+  amount: 12300000,
+  fee: 141,
+  version: 3,
+  broadcastedOn: null,
+  inputPaths: [
+    'm/0/0'
+  ],
+  proposalSignature: '3045022100d88c317ce2f1577536cda7f276c38b76d84a6134ecb3f6de9c88ee7285906ce30220049d005c1bdbb4078733baa3d9d5c8416ee5b4e0bb83abac8dec24dc59abb002',
+  proposalSignaturePubKey: null,
+  proposalSignaturePubKeySig: null,
+  signingMethod: 'ecdsa',
+  lowFees: null,
+  raw: null,
+  nonce: null,
+  gasPrice: null,
+  maxGasFee: null,
+  priorityGasFee: null,
+  txType: null,
+  gasLimit: null,
+  data: null,
+  tokenAddress: null,
+  multisigContractAddress: null,
+  multisigTxId: null,
+  destinationTag: null,
+  invoiceID: null,
+  lockUntilBlockHeight: null,
+  instantAcceptanceEscrow: null,
+  isTokenSwap: null,
+  multiSendContractAddress: null,
+  enableRBF: null,
+  replaceTxByFee: null,
+  multiTx: null,
+  space: null,
+  nonceAddress: null,
+  blockHash: null,
+  blockHeight: null,
+  category: null,
+  priorityFee: null,
+  computeUnits: null,
+  memo: null,
+  fromAta: null,
+  decimals: null,
+  refreshOnPublish: null,
+  prePublishRaw: null,
+  derivationStrategy: 'BIP44',
+  isPending: true
+};
+
+btcSingleSigProposal['toObject'] = () => btcSingleSigProposal;

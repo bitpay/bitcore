@@ -9,7 +9,8 @@ import { API } from './lib/api';
 
 export default API;
 
-export { API, Network, CreateWalletOpts, Status, Txp } from './lib/api';
+export { API } from './lib/api';
+export type { Network, CreateWalletOpts, Status, Txp } from './lib/api';
 export { Credentials } from './lib/credentials';
 export { PayProV2 } from './lib/payproV2';
 export { PayPro } from './lib/paypro';
@@ -19,8 +20,11 @@ export { Encryption } from './lib/common/encryption';
 export type * as EncryptionTypes from './lib/common/encryption';
 export { Utils } from './lib/common/utils';
 export type * as UtilsTypes from './lib/common/utils';
+export { Constants } from './lib/common/constants';
+export type * as ConstantsTypes from './lib/common/constants';
 export { Errors } from './lib/errors';
 export type { ServerAssistedImportEvents } from './types/serverAssistedImportEvents';
+export type { Address } from './types/address';
 
 export * as TssKey from './lib/tsskey';
 export * as TssSign from './lib/tsssign';

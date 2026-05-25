@@ -20,6 +20,10 @@ export async function createThresholdSigWallet(
   const { wallet, chain, network, m, n, opts } = args;
   const { verbose, mnemonic } = opts;
 
+  if (chain.toLowerCase() === 'sol') {
+    throw new Error('Threshold signature wallets are not currently supported for Solana.');
+  }
+
   const copayerName = await getCopayerName();
   const addressType = await getAddressType({ chain, network, isMultiSig: false, isTss: true });
   const password = await getPassword('Enter a password for the wallet:', { hidden: false });

@@ -31,6 +31,7 @@ export interface ITxProposal<NumberType = number> {
   message: string;
   payProUrl?: string;
   from: string;
+  sendMax?: boolean;
   changeAddress?: Partial<IAddress>;
   escrowAddress?: Partial<IAddress>;
   inputs: any[];
@@ -124,6 +125,7 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
   message: string;
   payProUrl?: string;
   from: string;
+  sendMax?: boolean;
   changeAddress?: Partial<IAddress>;
   escrowAddress?: Partial<IAddress>;
   inputs: any[];
@@ -226,6 +228,7 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
     x.signingMethod = opts.signingMethod;
     x.message = opts.message;
     x.payProUrl = opts.payProUrl;
+    x.sendMax = opts.sendMax;
     x.changeAddress = opts.changeAddress;
     x.escrowAddress = opts.escrowAddress;
     x.instantAcceptanceEscrow = opts.instantAcceptanceEscrow;
@@ -342,6 +345,7 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
     x.message = obj.message;
     x.payProUrl = obj.payProUrl;
     x.derivationStrategy = obj.derivationStrategy;
+    x.sendMax = obj.sendMax;
     x.changeAddress = obj.changeAddress;
     x.escrowAddress = obj.escrowAddress;
     x.instantAcceptanceEscrow = obj.instantAcceptanceEscrow;

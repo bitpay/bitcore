@@ -230,7 +230,6 @@ export async function createTransaction(
   if (prompt.isCancel(confirmed) || !confirmed) {
     prompt.log.warn('Transaction cancelled by user.');
     return;
-    // await wallet.client.removeTxProposal(txp);
   }
 
   txp = await wallet.client.createTxProposal(txpParams);

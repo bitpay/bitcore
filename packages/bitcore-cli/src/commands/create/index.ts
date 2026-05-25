@@ -13,7 +13,8 @@ export async function createWallet(args: CommonArgs<{ mnemonic?: string }>) {
 
   const chain = await getChain();
   const network = await getNetwork();
-  const isMultiParty = await getIsMultiParty();
+  // No solana support for multi-party wallets right now (TSS is ECDSA only)
+  const isMultiParty = chain === 'sol' ? false : await getIsMultiParty();
 
   let mnemonic;
   if (!isMultiParty) {

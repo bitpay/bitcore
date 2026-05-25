@@ -12,6 +12,10 @@ export async function joinWallet(args: CommonArgs<{ mnemonic?: string }>) {
 
   const chain = await getChain();
 
+  if (chain === 'sol') {
+    throw new Error('Multi-party wallets do not currently support Solana.');
+  }
+
   let useTss = true;
   if (Constants.MULTISIG_CHAINS.includes(chain)) {
     const scheme = await prompt.select({
