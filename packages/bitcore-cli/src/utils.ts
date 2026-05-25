@@ -253,22 +253,22 @@ export class Utils {
     }
   }
 
-  static displayFeeRate(chain: string, feeRate: number) {
+  static displayFeeRate(chain: string, feeRate: number | string | bigint) {
     chain = chain.toLowerCase();
     const feeUnit = Utils.getFeeUnit(chain);
     switch (feeUnit) {
       case 'sat/kB':
-        return `${feeRate / 1000} sat/B`;
+        return `${Number(feeRate) / 1000} sat/B`;
       case 'gwei':
-        return `${feeRate / 1e9} Gwei`;
+        return `${Number(feeRate) / 1e9} Gwei`;
       case 'drops':
       case 'lamports':
       default:
-        return `${feeRate} ${feeUnit}`;
+        return `${Number(feeRate)} ${feeUnit}`;
     }
   }
 
-  static convertFeeRate(chain: string, feeRate: number) {
+  static convertFeeRate(chain: string, feeRate: number | string): number {
     const feeRateStr = Utils.displayFeeRate(chain, feeRate);
     return parseFloat(feeRateStr.split(' ')[0]);
   }
