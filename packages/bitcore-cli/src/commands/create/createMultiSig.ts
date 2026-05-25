@@ -1,5 +1,6 @@
 import os from 'os';
 import { type Network } from '@bitpay-labs/bitcore-wallet-client';
+import { Constants } from '@bitpay-labs/crypto-wallet-core';
 import * as prompt from '@clack/prompts';
 import { getAddressType, getCopayerName, getPassword } from '../../prompts';
 import { Utils } from '../../utils';
@@ -15,6 +16,10 @@ export async function createMultiSigWallet(
 ) {
   const { wallet, chain, network, m, n, opts } = args;
   const { verbose, mnemonic } = opts;
+
+  if (!Constants.MULTISIG_CHAINS.includes(chain.toLowerCase())) {
+    throw new Error(`Multisig wallets are not supported for ${chain.toUpperCase()}.`);
+  }
 
   const copayerName = await getCopayerName();
   const addressType = await getAddressType({ chain, network, isMultiSig: true });

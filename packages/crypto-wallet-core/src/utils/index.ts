@@ -91,4 +91,69 @@ export function toHex(input: number | string | bigint): string {
   }
 }
 
+/**
+ * Returns the elements that are in arr1 but not in arr2.
+ * Note, this does a primitive comparison of elements.
+ * @returns An array containing the elements that are in arr1 but not in arr2
+ * 
+ * @example difference([1,2,3], [2,3,4]) => [1]
+ * @example difference([{a:1}], [{a:1}]) => [{a:1}]
+ * @example const obj = {a:1};
+ * difference([obj], [obj]) => []
+ */
+export function difference<T>(arr1: T[], arr2: T[]): T[] {
+  arr1 = arr1 || [];
+  arr2 = arr2 || [];
+  const arr2Set = new Set(arr2);
+  return arr1.filter(x => !arr2Set.has(x));
+}
 
+/**
+ * Deeply compares two objects for equality, handling circular references.
+ * @returns True if the objects are deeply equal, false otherwise
+ */
+export function isEqual(obj1: object, obj2: object): boolean {
+  if (obj1 === obj2) return true;
+  if (obj1 == null || obj2 == null) return false;
+  if (typeof obj1 !== 'object' || typeof obj2 !== 'object') return false;
+  const stack = [obj1, obj2];
+  // Use a WeakSet to track already compared objects to handle circular references
+  const weakRefs = new WeakSet();
+  const isWeak = (val) => val !== null && (typeof val === 'object' || typeof val === 'function');
+
+  while (stack.length) {
+    const a = stack.pop();
+    const b = stack.pop();
+    if (a === b) continue;
+    if (a == null || b == null) return false;
+    if (typeof a !== 'object' || typeof b !== 'object') return false;
+    if (Object.getPrototypeOf(a) !== Object.getPrototypeOf(b)) return false;
+    if (a instanceof Date) {
+      if (!(b instanceof Date) || a.getTime() !== b.getTime()) return false;
+      continue;
+    }
+    if (a instanceof RegExp) {
+      if (!(b instanceof RegExp) || a.source !== b.source || a.flags !== b.flags) return false;
+      continue;
+    }
+    for (const key of Object.keys(a)) {
+      if (!(key in b)) return false;
+      if (isWeak(a[key])) {
+        if (weakRefs.has(a[key])) continue;
+        try { weakRefs.add(a[key]); } catch { /* ignore TypeError if a[key] is not a valid WeakSet key */ }
+      }
+      
+      stack.push(a[key], b[key]);
+    }
+    const addtlBKeys = difference(Object.keys(b), Object.keys(a));
+    for (const key of addtlBKeys) {
+      if (!(key in a)) return false;
+      if (isWeak(b[key])) {
+        if (weakRefs.has(b[key])) continue;
+        try { weakRefs.add(b[key]); } catch { /* ignore TypeError if b[key] is not a valid WeakSet key */ }
+      }
+      stack.push(a[key], b[key]);
+    }
+  }
+  return true;
+}

@@ -2869,6 +2869,7 @@ export class WalletService implements IWalletService {
                       outputs: opts.outputs,
                       message: opts.message,
                       from: opts.from,
+                      sendMax: opts.sendMax,
                       changeAddress,
                       feeLevel: opts.feeLevel,
                       feePerKb,

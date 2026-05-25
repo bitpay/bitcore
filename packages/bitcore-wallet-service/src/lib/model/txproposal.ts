@@ -28,6 +28,7 @@ export interface ITxProposal {
   message: string;
   payProUrl?: string;
   from: string;
+  sendMax?: boolean;
   changeAddress?: IAddress;
   escrowAddress?: IAddress;
   inputs: any[];
@@ -112,6 +113,7 @@ export class TxProposal implements ITxProposal {
   message: string;
   payProUrl?: string;
   from: string;
+  sendMax?: boolean;
   changeAddress?: IAddress;
   escrowAddress?: IAddress;
   inputs: any[];
@@ -211,6 +213,7 @@ export class TxProposal implements ITxProposal {
     x.signingMethod = opts.signingMethod;
     x.message = opts.message;
     x.payProUrl = opts.payProUrl;
+    x.sendMax = opts.sendMax;
     x.changeAddress = opts.changeAddress;
     x.escrowAddress = opts.escrowAddress;
     x.instantAcceptanceEscrow = opts.instantAcceptanceEscrow;
@@ -324,6 +327,7 @@ export class TxProposal implements ITxProposal {
     x.amount = obj.amount;
     x.message = obj.message;
     x.payProUrl = obj.payProUrl;
+    x.sendMax = obj.sendMax;
     x.changeAddress = obj.changeAddress;
     x.escrowAddress = obj.escrowAddress;
     x.instantAcceptanceEscrow = obj.instantAcceptanceEscrow;
