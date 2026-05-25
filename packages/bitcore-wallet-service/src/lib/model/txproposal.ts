@@ -355,9 +355,7 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
     x.txids = obj.txids;
     x.broadcastedOn = obj.broadcastedOn;
     x.inputPaths = obj.inputPaths;
-    x.actions = _.map(obj.actions, action => {
-      return TxProposalAction.fromObj(action);
-    });
+    x.actions = (obj.actions || []).map(action => TxProposalAction.fromObj(action));
     x.outputOrder = obj.outputOrder;
     x.fee = obj.fee;
     x.feeLevel = obj.feeLevel;
@@ -428,7 +426,7 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
 
   setInputs(inputs) {
     this.inputs = inputs || [];
-    this.inputPaths = _.map(inputs, 'path') || [];
+    this.inputPaths = this.inputs.map(input => input.path);
   }
 
   _updateStatus() {
@@ -480,7 +478,7 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
    * @return {String[]} copayerIds that performed actions in this proposal (accept / reject)
    */
   getActors() {
-    return _.map(this.actions, 'copayerId');
+    return (this.actions || []).map(a => a.copayerId);
   }
 
   /**
@@ -489,12 +487,9 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
    * @return {String[]} copayerIds that approved the tx proposal (accept)
    */
   getApprovers() {
-    return _.map(
-      _.filter(this.actions, a => {
-        return a.type == 'accept';
-      }),
-      'copayerId'
-    );
+    return (this.actions || [])
+      .filter(a => a.type == 'accept')
+      .map(a => a.copayerId);
   }
 
   /**
@@ -504,9 +499,7 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
    * @return {Object} type / createdOn
    */
   getActionBy(copayerId) {
-    return _.find(this.actions, {
-      copayerId
-    });
+    return (this.actions || []).find(a => a.copayerId == copayerId);
   }
 
   addAction(copayerId, type, comment, signatures?, xpub?) {

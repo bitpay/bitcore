@@ -146,7 +146,7 @@ describe('TxProposal', function() {
       const t1 = TxProposal.fromObj(aTXP());
       const t2 = TxProposal.formatNumbers(t1, 'string');
       t2.amount.should.be.a('string');
-      CWCUtils.isHexString(t2.amount).should.equal(false);
+      t2.amount.startsWith('0x').should.equal(false);
 
       const txp = TxProposal.formatNumbers(t2, 'hex');
       txp.amount.should.be.a('string');

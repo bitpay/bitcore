@@ -94,7 +94,7 @@ export class BulkClient extends Request<Array<Credentials>> {
       qs.push('twoStep=' + (opts.twoStep ? '1' : '0'));
       qs.push('serverMessageArray=1');
       qs.push('silentFailure=' + (opts.silentFailure ? '1' : '0'));
-      qs.push('numberFormat=hex');
+      qs.push('numberFormat=hex'); // Only applies to `pendingTxps` in response. TODO apply this to balances as well.
 
       const wallets = opts.wallets;
       if (wallets) {
