@@ -1,5 +1,6 @@
 import { spawn } from 'child_process';
 import assert from 'assert';
+import sinon from 'sinon';
 import { Transform } from 'stream';
 import * as helpers from './helpers';
 import * as walletData from './data/walletsData';
@@ -15,10 +16,12 @@ describe('Proposals', function() {
   before(async function() {
     await helpers.startBws();
     await helpers.loadWalletData(walletData.btcSingleSigWallet);
+    sinon.stub(process, 'exit').throws(new Error('process.exit was called')); // prevent accidental exits during test
   });
 
   after(async function() {
     await helpers.stopBws();
+    sinon.restore();
   });
 
   it('should show no pending proposals', function(done) {

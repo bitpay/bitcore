@@ -18,7 +18,6 @@ type TxProposalStatus = 'temporary' | 'pending' | 'accepted' | 'rejected' | 'bro
 export interface ITxProposal<NumberType = number> {
   version: number;
   type?: string;
-  creatorName: string;
   createdOn: number;
   txid: string;
   txids?: Array<string>;
@@ -101,9 +100,10 @@ export interface ITxProposal<NumberType = number> {
   decimals?: number;
   refreshOnPublish?: boolean;
   prePublishRaw?: string;
+  
+  // Non-persistent fields - populated on fetch
+  creatorName: string;
   derivationStrategy?: string;
-
-  // Gets populated on fetch - does not get saved to txproposal collection
   note?: ITxNote;
 }
 
@@ -112,7 +112,6 @@ export type NumberFormat = 'hex' | 'number' | 'string' | 'bigint';
 export class TxProposal<NumberType = number> implements ITxProposal<NumberType> {
   version: number;
   type?: string;
-  creatorName: string;
   createdOn: number;
   id: string;
   txid: string;
@@ -195,9 +194,10 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
   decimals?: number;
   refreshOnPublish?: boolean;
   prePublishRaw?: string;
+  
+  // Non-persistent fields - populated on fetch
+  creatorName: string;
   derivationStrategy?: string;
-
-  // Gets populated on fetch - does not get saved to txproposal collection
   note?: TxNote;
 
   static create(opts) {
@@ -337,6 +337,7 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
     x.id = obj.id;
     x.walletId = obj.walletId;
     x.creatorId = obj.creatorId;
+    x.creatorName = obj.creatorName;
     x.coin = obj.coin || Defaults.COIN;
     x.chain = obj.chain?.toLowerCase() || Utils.getChain(x.coin); // getChain -> backwards compatibility
     x.network = obj.network;
