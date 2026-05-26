@@ -39,12 +39,12 @@ export async function joinWallet(args: CommonArgs<{ mnemonic?: string }>) {
 
   let mnemonic;
   if (useTss) {
-    ({ mnemonic } = await joinThresholdSigWallet(Object.assign({}, args, { chain })));
+    await joinThresholdSigWallet(Object.assign({}, args, { chain }));
   } else {
     ({ mnemonic } = await joinMultiSigWallet(args));
   }
 
-  if (!opts.mnemonic) {
+  if (!opts.mnemonic && mnemonic) {
     await Utils.showMnemonic(wallet.name, mnemonic, opts);
   }
 };

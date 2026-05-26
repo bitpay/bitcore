@@ -24,7 +24,7 @@ export async function joinMultiSigWallet(args: CommonArgs<{ mnemonic?: string }>
   } = parsed;
 
   const copayerName = await getCopayerName();
-  const password = await getPassword('Enter a password for the wallet:', { hidden: false });
+  const password = await getPassword('Lock your wallet with a password:', { hidden: false });
   const { key, joinedWalletName } = await wallet.create({ chain, network, account: 0, n: 2, m: 1, password, mnemonic, copayerName, joinSecret }); // n gets overwritten
   
   prompt.log.success(Utils.colorText(`Wallet joined: ${joinedWalletName}`, 'green'));

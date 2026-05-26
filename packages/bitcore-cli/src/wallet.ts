@@ -188,7 +188,8 @@ export class Wallet implements IWallet {
     this.#walletData = { key, credentials: this.client.credentials };
     await this.save();
     // await this.register({ copayerName });
-    await this.load();
+    // this.load calls openWallet which completes the wallet by fetching any missing info
+    await this.load({ allowCache: true });
     return { key, credentials: this.client.toObj() };
   }
 
@@ -333,7 +334,7 @@ export class Wallet implements IWallet {
       }
 
       if (key.isPrivKeyEncrypted() || (key as TssKey.TssKey).isKeyChainEncrypted?.()) {
-        const walletPassword = await getPassword('Wallet password:');
+        const walletPassword = await getPassword('Unlock wallet:');
         key.decrypt(walletPassword);
       }
     }

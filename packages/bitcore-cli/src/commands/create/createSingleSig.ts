@@ -14,7 +14,7 @@ export async function createSingleSigWallet(
   const { verbose, mnemonic } = opts;
 
   const addressType = await getAddressType({ chain, network });
-  const password = await getPassword('Enter a password for the wallet:', { hidden: false });
+  const password = await getPassword('Lock your wallet with a password:', { hidden: false });
   const copayerName = process.env.USER || 'copayer';
 
   const { key } = await wallet.create({

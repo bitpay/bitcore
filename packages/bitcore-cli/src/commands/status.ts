@@ -53,7 +53,7 @@ export async function walletStatus(args: CommonArgs) {
     statusLines.push(`Secret: ${Utils.colorText(w.secret, 'yellow')}`);
   }
 
-  prompt.note(statusLines.join(os.EOL), `${tokenObj ? '(Linked) ' : ''}Wallet info`);
+  prompt.note(statusLines.join(os.EOL), `${tokenObj ? '(Linked) ' : ''}Wallet Info`);
 
   const currency = tokenObj?.displayCode || w.coin;
   displayBalance(currency, status.balance, Object.assign({ showByAddress: false }, tokenObj));

@@ -108,18 +108,18 @@ export const Constants = {
     }
   },
   COLOR: {
-    green: '\x1b[32m%s\x1b[0m',
-    red: '\x1b[31m%s\x1b[0m',
-    yellow: '\x1b[33m%s\x1b[0m',
-    blue: '\x1b[34m%s\x1b[0m',
-    orange: '\x1b[38;5;208m%s\x1b[0m',
-    gold: '\x1b[38;5;214m%s\x1b[0m',
-    tan: '\x1b[38;5;180m%s\x1b[0m',
-    beige: '\x1b[38;5;223m%s\x1b[0m',
-    purple: '\x1b[38;5;129m%s\x1b[0m',
-    lightgray: '\x1b[38;5;250m%s\x1b[0m',
-    darkgray: '\x1b[38;5;236m%s\x1b[0m',
-    pink: '\x1b[38;5;213m%s\x1b[0m',
+    green: '\x1b[32m%s\x1b[39m',
+    red: '\x1b[31m%s\x1b[39m',
+    yellow: '\x1b[33m%s\x1b[39m',
+    blue: '\x1b[34m%s\x1b[39m',
+    orange: '\x1b[38;5;208m%s\x1b[39m',
+    gold: '\x1b[38;5;214m%s\x1b[39m',
+    tan: '\x1b[38;5;180m%s\x1b[39m',
+    beige: '\x1b[38;5;223m%s\x1b[39m',
+    purple: '\x1b[38;5;129m%s\x1b[39m',
+    lightgray: '\x1b[38;5;250m%s\x1b[39m',
+    darkgray: '\x1b[38;5;236m%s\x1b[39m',
+    pink: '\x1b[38;5;213m%s\x1b[39m',
     none: '\x1b[0m%s',
   },
   ADDRESS_TYPE: {
@@ -177,7 +177,7 @@ export const Constants = {
     },
     default: 'pubkeyhash'
   }
-};
+} as const;
 
 export const bitcoreLogo = `
  _     _ _                     

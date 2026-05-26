@@ -63,19 +63,19 @@ export class Utils {
   }
 
   static boldText(text: string) {
-    return '\x1b[1m' + text + '\x1b[0m';
+    return '\x1b[1m' + text + '\x1b[22m';
   }
 
   static italicText(text: string) {
-    return '\x1b[3m' + text + '\x1b[0m';
+    return '\x1b[3m' + text + '\x1b[23m';
   }
 
   static underlineText(text: string) {
-    return '\x1b[4m' + text + '\x1b[0m';
+    return '\x1b[4m' + text + '\x1b[24m';
   }
 
   static strikeText(text: string) {
-    return '\x1b[9m' + text + '\x1b[0m';
+    return '\x1b[9m' + text + '\x1b[29m';
   }
 
   static capitalize(text: string): string {
