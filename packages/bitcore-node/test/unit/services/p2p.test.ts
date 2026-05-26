@@ -13,13 +13,13 @@ describe('P2P Service', function() {
   const sandbox = sinon.createSandbox();
   class MockP2PWorker extends BaseP2PWorker<any> {
     started = false;
-  
+
     constructor(params) {
       super(params);
       this.started = true;
     }
   }
-  
+
   before(unitBeforeHelper);
   after(unitAfterHelper);
 
@@ -120,7 +120,7 @@ describe('P2P Service', function() {
         super(params);
       }
     }
-    
+
     const p2p = new MockEVMP2pWorker({ chain: 'ETH', network: 'mainnet', chainConfig: {} });
     const converted = await p2p.convertBlock(block as any);
     expect(converted.convertedTxs.every(tx => {

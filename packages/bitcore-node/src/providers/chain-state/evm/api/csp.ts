@@ -79,7 +79,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       return;
     }
     BaseEVMStateProvider.rpcInitialized[chain] = true;
-    
+
     const configs = Config.get().chains[chain] as IChainConfig<IEVMNetworkConfig>;
     for (const [network, config] of Object.entries(configs)) {
       const chainNetwork = normalizeChainNetwork(chain, network);
@@ -207,7 +207,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   async getAaveUserAccountData(params: { network: string; address: string; version: AaveVersion }): Promise<AaveAccountData> {
     const { network, address, version } = params;
     const poolAddress = getAavePoolAddress(this.chain, network, version);
-    
+
     if (!poolAddress) {
       throw new Error(
         `Unsupported Aave pool for chain "${this.chain}", network "${network}", version "${version}".`
@@ -482,7 +482,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       const tx = await this._getTransaction(params);
       let { found } = tx;
       const { tipHeight } = tx;
-      
+
       if (found) {
         let confirmations = 0;
         if (found.blockHeight && found.blockHeight >= 0) {
@@ -712,7 +712,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         const result = await ExternalApiStream.onStream(transactionStream, req!, res!, { jsonl: true });
         if (!result?.success) {
           logger.error('Error mid-stream (streamWalletTransactions): %o', result.error?.log || result.error);
-        }  
+        }
         return resolve();
       } catch (err) {
         return reject(err);
@@ -770,7 +770,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     let windowSize = 100n;
     const { web3 } = await this.getWeb3(network);
     const tip = await web3.eth.getBlockNumber();
-    
+
     if (isNaN(args.startBlock!) || isNaN(args.endBlock!)) {
       throw new Error('startBlock and endBlock must be numbers');
     }
@@ -788,7 +788,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
     endBlock = Utils.BI.min<bigint>([endBlock ?? tip, tip]) as bigint;
     startBlock = Utils.BI.max<bigint>([startBlock != null ? startBlock : endBlock - 10000n, 0n]) as bigint;
-    
+
     if (startBlock! > endBlock) {
       throw new Error('startBlock cannot be greater than endBlock');
     } else if (endBlock - startBlock > 10000n) {
@@ -1011,7 +1011,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       }
       blockId = undefined;
     }
-  
+
     if (date) {
       startDate = new Date(date);
       endDate = new Date(date);

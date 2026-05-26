@@ -4,7 +4,7 @@ import { MoralisAdapter } from '../../../src/providers/chain-state/external/adap
 import { AlchemyAdapter } from '../../../src/providers/chain-state/external/adapters/alchemy';
 import { AdapterError, AdapterErrorCode } from '../../../src/providers/chain-state/external/adapters/errors';
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
-import config from '../../../src/config';
+import { Config } from '../../../src/services/config';
 
 const MORALIS_KEY = (process as NodeJS.Process).env.MORALIS_API_KEY;
 const ALCHEMY_KEY = (process as NodeJS.Process).env.ALCHEMY_API_KEY;
@@ -19,21 +19,23 @@ describe('Multi-Provider Integration (BASE mainnet)', function () {
   let sandbox: sinon.SinonSandbox;
   let moralis: MoralisAdapter;
   let alchemy: AlchemyAdapter;
-  const savedExternalProviders = config.externalProviders;
+  const savedExternalProviders = Config.get().externalProviders;
 
   before(function () {
     if (!MORALIS_KEY || !ALCHEMY_KEY) {
       this.skip();
     }
-    (config as any).externalProviders = {
-      ...savedExternalProviders,
-      moralis: { apiKey: MORALIS_KEY },
-      alchemy: { apiKey: ALCHEMY_KEY }
-    };
+    Config.updateConfig({
+      externalProviders: {
+        ...savedExternalProviders,
+        moralis: { apiKey: MORALIS_KEY as string },
+        alchemy: { apiKey: ALCHEMY_KEY as string }
+      }
+    });
   });
 
   after(function () {
-    (config as any).externalProviders = savedExternalProviders;
+    Config.updateConfig({ externalProviders: savedExternalProviders });
   });
 
   beforeEach(function () {
@@ -91,13 +93,15 @@ describe('Multi-Provider Integration (BASE mainnet)', function () {
   });
 
   it('should failover when primary API key is invalid', async function () {
-    const badConfig = config.externalProviders;
-    (config as any).externalProviders = {
-      ...badConfig,
-      moralis: { apiKey: 'invalid-key-12345' }
-    };
+    const badConfig = Config.get().externalProviders;
+    Config.updateConfig({
+      externalProviders: {
+        ...badConfig,
+        moralis: { apiKey: 'invalid-key-12345' }
+      }
+    });
     const badAdapter = new MoralisAdapter({ name: 'moralis', priority: 1 });
-    (config as any).externalProviders = badConfig;
+    Config.updateConfig({ externalProviders: badConfig });
 
     try {
       await badAdapter.getTransaction({

@@ -1,5 +1,5 @@
 import express from 'express';
-import config from '../config';
+import { Config } from '../../src/services/config';
 import { PerformanceTracker } from '../decorators/Loggify';
 import { StateStorage } from '../models/state';
 import { ChainNetwork } from '../types/ChainNetwork';
@@ -8,8 +8,8 @@ const router = express.Router({ mergeParams: true });
 
 router.get('/enabled-chains', function(_, res) {
   const chainNetworks = new Array<ChainNetwork>();
-  for (const chain of Object.keys(config.chains)) {
-    for (const network of Object.keys(config.chains[chain])) {
+  for (const chain of Object.keys(Config.get().chains)) {
+    for (const network of Object.keys(Config.get().chains[chain])) {
       chainNetworks.push({ chain, network });
     }
   }

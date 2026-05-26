@@ -1,4 +1,7 @@
-import config from '../config';
+import cluster from 'cluster';
+import loadConfig from '../config';
+import logger from '../logger';
+import { loadModules } from '../modules';
 import { ChainNetwork } from '../types/ChainNetwork';
 import { ConfigType } from '../types/Config';
 import { valueOrDefault } from '../utils';
@@ -6,19 +9,64 @@ import { valueOrDefault } from '../utils';
 type ServiceName = keyof ConfigType['services'];
 
 export class ConfigService {
-  _config: ConfigType;
+  config: ConfigType;
 
-  constructor({ _config = config } = {}) {
-    this._config = _config;
+  constructor({ config = loadConfig() } = {}) {
+    this.config = config;
+
+    // Listen for SIGUSR1 on both main and child processes
+    process.on('SIGUSR1', () => {
+      const changes = this.reload();
+      // Reload all modules with any changes in the config
+      if (changes.chains) {
+        for (const chain of Object.keys(changes.chains)) {
+          for (const network of Object.keys(changes.chains[chain])) {
+            loadModules({ chain, network });
+          }
+        }
+      }
+    });
+  }
+
+  public reload(): Partial<ConfigType> {
+    const oldConfig = this.config;
+    this.config = loadConfig();
+
+    // Only show config change for one process
+    if (!cluster.isPrimary)
+      return {};
+    const diff = (obj1: object, obj2: object, path: string[] = []): Partial<ConfigType> => {
+      const changes = {};
+      const keys = new Set([...Object.keys(obj1 || {}), ...Object.keys(obj2 || {})]);
+      for (const key of keys) {
+        const val1 = obj1[key];
+        const val2 = obj2[key];
+        const currentPath = [...path, key];
+        if (typeof val1 === 'object' && val1 !== null && typeof val2 === 'object' && val2 !== null) {
+          Object.assign(changes, diff(val1, val2, currentPath));
+        } else if (val1 !== val2) {
+          let propChange = { old: val1 ?? null, new: val2 ?? null };
+          for (const prop of currentPath.reverse()) {
+            (propChange as any) = { [prop]: propChange };
+          }
+          Object.assign(changes, propChange);
+          logger.info(`${currentPath.reverse().join('.')} ${JSON.stringify(val1)} -> ${JSON.stringify(val2)}`);
+        }
+      }
+      return changes;
+    };
+
+    const changes = diff(oldConfig, this.config);
+    return changes;
   }
 
   public get() {
-    return this._config;
+    return this.config;
   }
 
   public updateConfig(partialConfig: Partial<ConfigType>) {
     const newConfig = Object.assign({}, this.get(), partialConfig);
-    this._config = newConfig;
+    this.config = newConfig;
   }
 
   public chains() {

@@ -2,7 +2,6 @@ import { Wallet } from '@bitpay-labs/bitcore-client';
 import { ParseApiStream } from '@bitpay-labs/bitcore-client';
 import { expect } from 'chai';
 import * as io from 'socket.io-client';
-import config from '../../src/config';
 import { MongoBound } from '../../src/models/base';
 import { CoinStorage, ICoin } from '../../src/models/coin';
 import { TransactionStorage } from '../../src/models/transaction';
@@ -17,6 +16,7 @@ import { wait } from '../../src/utils';
 import { createWallet } from '../benchmark/wallet-benchmark';
 import { resetDatabase } from '../helpers';
 import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
+import { Config } from '../../src/services/config';
 
 
 describe('Wallet Benchmark', function() {
@@ -25,7 +25,7 @@ describe('Wallet Benchmark', function() {
   let chainConfig: IUtxoNetworkConfig;
   let creds: IUtxoNetworkConfig['rpc'];
   let rpc: AsyncRPC;
-  
+
   async function checkWalletExists(pubKey, expectedAddress) {
     // Check the database for the first wallet
     const dbWallet = await WalletStorage.collection.findOne({
@@ -33,7 +33,7 @@ describe('Wallet Benchmark', function() {
       network,
       pubKey
     });
-  
+
     // Verify the addresses match
     const foundAddresses = await WalletAddressStorage.collection
       .find({
@@ -46,7 +46,7 @@ describe('Wallet Benchmark', function() {
     expect(foundAddresses[0].address).to.eq(expectedAddress);
     return dbWallet;
   }
-  
+
   async function getWalletUtxos(wallet: Wallet) {
     const utxos = new Array<MongoBound<ICoin>>();
     return new Promise<Array<MongoBound<ICoin>>>(resolve =>
@@ -59,16 +59,16 @@ describe('Wallet Benchmark', function() {
         .on('end', () => resolve(utxos))
     );
   }
-  
+
   async function checkWalletUtxos(wallet: Wallet, expectedAddress: string) {
     const utxos = await getWalletUtxos(wallet);
     expect(utxos.length).to.eq(1);
     expect(utxos[0].address).to.eq(expectedAddress);
     return utxos;
   }
-  
+
   async function verifyCoinSpent(coin: MongoBound<ICoin>, spentTxid: string, wallet: IWallet) {
-    const wallet1Coin = await CoinStorage.collection.findOne({ 
+    const wallet1Coin = await CoinStorage.collection.findOne({
       chain: coin.chain,
       network: coin.network,
       mintTxid: coin.mintTxid,
@@ -84,28 +84,28 @@ describe('Wallet Benchmark', function() {
       mintTxid: txid,
       address
     });
-  
+
     expect(broadcastedOutput!.address).to.eq(address);
     expect(broadcastedOutput!.wallets.length).to.eq(1);
     expect(broadcastedOutput!.wallets[0].toHexString()).to.eq(receivingWallet!._id!.toHexString());
-  
+
     const broadcastedTransaction = await TransactionStorage.collection.findOne({ chain, network, txid });
     expect(broadcastedTransaction!.txid).to.eq(txid);
     expect(broadcastedTransaction!.fee).gt(0);
-  
+
     const txWallets = broadcastedTransaction!.wallets.map(w => w.toHexString());
     expect(txWallets.length).to.eq(2);
     expect(txWallets).to.include(receivingWallet!._id!.toHexString());
     expect(txWallets).to.include(sendingWallet!._id!.toHexString());
   }
-  
+
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(5000000);
   let p2pWorker: BitcoinP2PWorker;
 
   before(async function() {
-    chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+    chainConfig = Config.get().chains[chain][network] as IUtxoNetworkConfig;
     creds = chainConfig.rpc;
     rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
     await intBeforeHelper();

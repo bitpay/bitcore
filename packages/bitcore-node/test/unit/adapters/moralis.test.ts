@@ -12,7 +12,7 @@ import {
   transformMoralisTransaction
 } from '../../../src/providers/chain-state/external/adapters/moralis-utils';
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
-import config from '../../../src/config';
+import { Config } from '../../../src/services/config';
 
 const VALID_TX_HASH = '0xabc123def456abc123def456abc123def456abc123def456abc123def456abc1';
 
@@ -40,17 +40,17 @@ describe('MoralisAdapter', function () {
   let sandbox: sinon.SinonSandbox;
   let adapter: MoralisAdapter;
   let axiosGetStub: sinon.SinonStub;
-  const savedExternalProviders = config.externalProviders;
+  const savedExternalProviders = Config.get().externalProviders;
 
   before(function () {
-    (config as any).externalProviders = {
+    Config.get().externalProviders = {
       ...savedExternalProviders,
       moralis: { apiKey: 'test-moralis-key' }
     };
   });
 
   after(function () {
-    (config as any).externalProviders = savedExternalProviders;
+    Config.get().externalProviders = savedExternalProviders;
   });
 
   beforeEach(function () {
@@ -69,11 +69,11 @@ describe('MoralisAdapter', function () {
   // --- Constructor ---
   describe('constructor', function () {
     it('should throw if apiKey missing from config', function () {
-      const saved = config.externalProviders;
-      (config as any).externalProviders = { moralis: { apiKey: '' } };
+      const saved = Config.get().externalProviders;
+      Config.get().externalProviders = { moralis: { apiKey: '' } };
       expect(() => new MoralisAdapter({ name: 'moralis', priority: 1 }))
         .to.throw('apiKey is required');
-      (config as any).externalProviders = saved;
+      Config.get().externalProviders = saved;
     });
 
     it('should set the adapter name', function () {

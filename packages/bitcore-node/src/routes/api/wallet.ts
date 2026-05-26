@@ -1,8 +1,8 @@
 import { Validation } from '@bitpay-labs/crypto-wallet-core';
 import { Request, Response, Router } from 'express';
-import config from '../../config';
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
+import { Config } from '../../services/config';
 import { StreamWalletAddressesParams } from '../../types/namespaces/ChainStateProvider';
 import { Auth, AuthenticatedRequest } from '../../utils/auth';
 
@@ -112,7 +112,7 @@ router.post('/:pubKey', Auth.authenticateMiddleware, async (req: AuthenticatedRe
     if (req.headers['x-reprocess']) {
       const reprocessOk = Auth.verifyRequestSignature({
         message: ['reprocess', '/addAddresses' + pubKey, JSON.stringify(req.body)].join('|'),
-        pubKey: config.services.socket.bwsKeys[0],
+        pubKey: Config.get().services.socket.bwsKeys[0],
         signature: req.headers['x-reprocess']
       });
       if (!reprocessOk) {

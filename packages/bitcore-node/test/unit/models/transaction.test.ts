@@ -16,7 +16,7 @@ import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 
 describe('Transaction Model', function() {
   const { Transaction } = BitcoreLib;
-  
+
   before(unitBeforeHelper);
   after(unitAfterHelper);
 
