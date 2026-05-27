@@ -202,7 +202,7 @@ describe('Proposals', function() {
               case Array.from(checkpoints)[0]:
                 // Assert there's an indication of a pending proposal in main menu
                 // eslint-disable-next-line no-control-regex
-                assert.match(checkpointOutput, /Proposals\x1B\[33m \(1\)\x1B\[0m/);
+                assert.match(checkpointOutput, /Proposals\x1B\[33m \(1\)\x1B\[39m/);
                 break;
               case Array.from(checkpoints)[1]:
                 assert.ok(checkpointOutput.includes(`Broadcasted txid: ${Utils.colorText('5ba5df9de6c7f6043de8ade09c2dab08a1fb60724320f8cb4f00c9df2ec73035', 'green')}`));
@@ -274,7 +274,7 @@ describe('Proposals', function() {
               case Array.from(checkpoints)[0]:
                 // Assert there's an indication of a pending proposal in main menu
                 // eslint-disable-next-line no-control-regex
-                assert.match(checkpointOutput, /Proposals\x1B\[33m \(1\)\x1B\[0m/);
+                assert.match(checkpointOutput, /Proposals\x1B\[33m \(1\)\x1B\[39m/);
                 break;
               case Array.from(checkpoints)[1]:
                 assert.match(checkpointOutput, /Enter rejection reason:/);
@@ -366,7 +366,7 @@ describe('Proposals', function() {
               case Array.from(checkpoints)[0]:
                 // Assert there's an indication of a pending proposal in main menu
                 // eslint-disable-next-line no-control-regex
-                assert.match(checkpointOutput, /Proposals\x1B\[33m \(1\)\x1B\[0m/);
+                assert.match(checkpointOutput, /Proposals\x1B\[33m \(1\)\x1B\[39m/);
                 break;
               case Array.from(checkpoints)[1]:
               case Array.from(checkpoints)[2]:
@@ -452,7 +452,7 @@ describe('Proposals', function() {
                   case Array.from(checkpoints)[0]:
                     // Assert there's an indication of a pending proposal in main menu
                     // eslint-disable-next-line no-control-regex
-                    assert.match(checkpointOutput, /Proposals\x1B\[33m \(2\)\x1B\[0m/);
+                    assert.match(checkpointOutput, /Proposals\x1B\[33m \(2\)\x1B\[39m/);
                     checkpointOutput = ''; // reset output to avoid false positives in next checkpoints
                     break;
                   case Array.from(checkpoints)[1]:

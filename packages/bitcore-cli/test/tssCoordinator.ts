@@ -6,7 +6,7 @@ import * as helpers from './helpers';
 const { WALLETS } = helpers.CONSTANTS;
 const { CLI_EXEC, CLI_OPTS } = WALLETS;
 
-const tssInstances: { [key: string]: ChildProcess } = {};
+const tssInstances: { [key: string]: ChildProcess & { endIt?: boolean } } = {};
 
 export type TssTransformOptions = TransformOptions & {
   transform: (
@@ -49,8 +49,10 @@ export function startTssWallets(ioHandler: TssTransform, walletNames: string[], 
             endIt
           } = JSON.parse(data.toString());
           if (destWalletName === walletName) {
-            if (endIt) {
-              // send EOF to process so it can exit cleanly
+            tssInstances[walletName].endIt = endIt;
+            if (Object.values(tssInstances).every(instance => instance.endIt)) {
+              // send EOF so processes can exit cleanly
+              // Note, ending will trickle up and cause other walletProcesses to end as well, so we only call it once all tssInstances have signaled they're ready to end
               walletProcess.stdin.end();
             }
             next(null, chunk);
