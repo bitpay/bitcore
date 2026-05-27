@@ -208,7 +208,7 @@ export class Wallet implements IWallet {
       // This function will only register the wallet as a single-sig (non-TSS) wallet (BAD!).
       // Importing a TSS wallet to a new server will need to create a tsskeygen Mongo document
       // on the server and include the tssKeyId in the wallet registration process.
-      throw new Error('This wallet appears to to be a TSS wallet. Registering an existing TSS wallet on a different server is not yet supported.');
+      throw new Error('This wallet appears to be a TSS wallet. Registering an existing TSS wallet on a different server is not yet supported.');
     }
 
     const { secret } = await this.client.createWallet(

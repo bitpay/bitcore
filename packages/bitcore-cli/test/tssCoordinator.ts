@@ -53,7 +53,11 @@ export function startTssWallets(ioHandler: TssTransform, walletNames: string[], 
             if (Object.values(tssInstances).every(instance => instance.endIt)) {
               // send EOF so processes can exit cleanly
               // Note, ending will trickle up and cause other walletProcesses to end as well, so we only call it once all tssInstances have signaled they're ready to end
-              walletProcess.stdin.end();
+              for (const wn of walletNames) {
+                if (tssInstances[wn]?.stdin && !tssInstances[wn].stdin.closed) {
+                  tssInstances[wn].stdin.end();
+                }
+              }
             }
             next(null, chunk);
           } else {
