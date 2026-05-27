@@ -421,33 +421,12 @@ export class Utils {
     return fileName;
   }
 
-  static getChainColor(chain: string) {
-    switch (chain.toLowerCase()) {
-      case 'btc':
-        return 'orange';
-      case 'bch':
-        return 'green';
-      case 'doge':
-        return 'beige';
-      case 'ltc':
-        return 'lightgray';
-      case 'eth':
-        return 'blue';
-      case 'matic':
-        return 'pink';
-      case 'xrp':
-        return 'darkgray';
-      case 'sol':
-        return 'purple';
-    }
-  }
-
   static colorTextByChain(chain: string, text: string) {
-    const color = Utils.getChainColor(chain);
-    if (!color) {
+    const colorPattern = Constants.CHAIN_COLOR[chain.toLowerCase()];
+    if (!colorPattern) {
       return Utils.boldText(text);
     }
-    return Utils.colorText(text, color);
+    return colorPattern.replace('%s', text);
   }
 
   static colorizeChain(chain: string) {

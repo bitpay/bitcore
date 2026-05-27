@@ -585,30 +585,6 @@ describe('Utils', function() {
     });
   });
 
-  // ─── getChainColor ───────────────────────────────────────────────────────────
-
-  describe('getChainColor', function() {
-    const cases: [string, string][] = [
-      ['btc', 'orange'],
-      ['bch', 'green'],
-      ['doge', 'beige'],
-      ['ltc', 'lightgray'],
-      ['eth', 'blue'],
-      ['matic', 'pink'],
-      ['xrp', 'darkgray'],
-      ['sol', 'purple'],
-    ];
-
-    for (const [chain, color] of cases) {
-      it(`should return ${color} for ${chain}`, function() {
-        assert.strictEqual(Utils.getChainColor(chain), color);
-      });
-    }
-
-    it('should be case-insensitive', function() {
-      assert.strictEqual(Utils.getChainColor('BTC'), 'orange');
-    });
-  });
 
   // ─── colorTextByChain ────────────────────────────────────────────────────────
 

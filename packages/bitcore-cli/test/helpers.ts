@@ -259,7 +259,7 @@ export const blockchainExplorerMock = {
 
 export function decolor(text: string) {
   // eslint-disable-next-line no-control-regex
-  text = text?.replace(/\x1b\[[0-9]+m/g, ''); // Remove ANSI color codes
+  text = text?.replace(/\x1b\[[;0-9]+m/g, ''); // Remove ANSI color codes
   return text;
 };
 

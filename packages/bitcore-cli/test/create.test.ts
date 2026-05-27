@@ -69,18 +69,22 @@ describe('Create', function() {
         done(e);
       });
       child.on('close', (code) => {
-        assert.equal(code, 0);
-        const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName + '.json'), 'utf-8'));
-        assert.strictEqual(wallet.credentials.chain, 'btc');
-        assert.strictEqual(wallet.credentials.network, 'testnet');
-        // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
-        assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
-        assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
-        assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
-        done();
+        try {
+          assert.equal(code, 0);
+          const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName + '.json'), 'utf-8'));
+          assert.strictEqual(wallet.credentials.chain, 'btc');
+          assert.strictEqual(wallet.credentials.network, 'testnet');
+          // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
+          assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
+          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
+          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
+          done();
+        } catch (e) {
+          done(e);
+        }
       });
     });
 
@@ -128,18 +132,22 @@ describe('Create', function() {
         done(e);
       });
       child.on('close', (code) => {
-        assert.equal(code, 0);
-        const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName + '.json'), 'utf-8'));
-        assert.strictEqual(wallet.credentials.chain, 'eth');
-        assert.strictEqual(wallet.credentials.network, 'testnet');
-        // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
-        assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
-        assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
-        assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
-        done();
+        try {
+          assert.equal(code, 0);
+          const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName + '.json'), 'utf-8'));
+          assert.strictEqual(wallet.credentials.chain, 'eth');
+          assert.strictEqual(wallet.credentials.network, 'testnet');
+          // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
+          assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
+          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
+          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
+          done();
+        } catch (e) {
+          done(e);
+        }
       });
     });
 
@@ -187,18 +195,22 @@ describe('Create', function() {
         done(e);
       });
       child.on('close', (code) => {
-        assert.equal(code, 0);
-        const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName + '.json'), 'utf-8'));
-        assert.strictEqual(wallet.credentials.chain, 'xrp');
-        assert.strictEqual(wallet.credentials.network, 'testnet');
-        // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
-        assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
-        assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
-        assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
-        done();
+        try {
+          assert.equal(code, 0);
+          const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName + '.json'), 'utf-8'));
+          assert.strictEqual(wallet.credentials.chain, 'xrp');
+          assert.strictEqual(wallet.credentials.network, 'testnet');
+          // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
+          assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
+          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
+          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
+          done();
+        } catch (e) {
+          done(e);
+        }
       });
     });
 
@@ -246,18 +258,22 @@ describe('Create', function() {
         done(e);
       });
       child.on('close', (code) => {
-        assert.equal(code, 0);
-        const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName + '.json'), 'utf-8'));
-        assert.strictEqual(wallet.credentials.chain, 'sol');
-        assert.strictEqual(wallet.credentials.network, 'testnet');
-        // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
-        assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
-        assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
-        assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
-        done();
+        try {
+          assert.equal(code, 0);
+          const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName + '.json'), 'utf-8'));
+          assert.strictEqual(wallet.credentials.chain, 'sol');
+          assert.strictEqual(wallet.credentials.network, 'testnet');
+          // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
+          assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
+          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
+          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
+          done();
+        } catch (e) {
+          done(e);
+        }
       });
     });
   });
@@ -337,20 +353,24 @@ describe('Create', function() {
           done(e);
         });
         child.on('close', (code) => {
-          assert.equal(code, 0);
-          const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName1 + '.json'), 'utf-8'));
-          assert.strictEqual(wallet.credentials.chain, 'btc');
-          assert.strictEqual(wallet.credentials.network, 'testnet');
-          assert.strictEqual(wallet.credentials.m, 2);
-          assert.strictEqual(wallet.credentials.n, 2);
-          // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
-          assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
-          assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
-          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
-          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
-          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
-          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
-          done();
+          try {
+            assert.equal(code, 0);
+            const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName1 + '.json'), 'utf-8'));
+            assert.strictEqual(wallet.credentials.chain, 'btc');
+            assert.strictEqual(wallet.credentials.network, 'testnet');
+            assert.strictEqual(wallet.credentials.m, 2);
+            assert.strictEqual(wallet.credentials.n, 2);
+            // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
+            assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
+            assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
+            assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
+            assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
+            assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
+            assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
+            done();
+          } catch (e) {
+            done(e);
+          }
         });
       });
 
@@ -509,10 +529,14 @@ describe('Create', function() {
             done(e);
           });
           child.on('close', (code) => {
-            assert.equal(code, 1); // Exit code 1 since flow is cancelled with ctrl+c
-            // No wallet file should have been created or saved
-            assert.ok(!fs.existsSync(path.join(TEMP_DIR, walletName + '.json')));
-            done();
+            try {
+              assert.equal(code, 1); // Exit code 1 since flow is cancelled with ctrl+c
+              // No wallet file should have been created or saved
+              assert.ok(!fs.existsSync(path.join(TEMP_DIR, walletName + '.json')));
+              done();
+            } catch (e) {
+              done(e);
+            }
           });
         });
       }
