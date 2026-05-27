@@ -197,12 +197,20 @@ export class Wallet implements IWallet {
     if (!this.client) {
       await this.getClient({ mustExist: true });
     }
-    const { chain, coin, network, m, n, addressType } = this.client.credentials;
+    const { chain, coin, network, m, n, addressType, tssKeyId } = this.client.credentials;
     if (coin && coin !== chain) {
       // temporarily set it to chain for registration.
       // coin != chain for token wallets exported from the app.
       this.client.credentials.coin = chain;
     }
+
+    if (tssKeyId) {
+      // This function will only register the wallet as a single-sig (non-TSS) wallet (BAD!).
+      // Importing a TSS wallet to a new server will need to create a tsskeygen Mongo document
+      // on the server and include the tssKeyId in the wallet registration process.
+      throw new Error('This wallet appears to to be a TSS wallet. Registering an existing TSS wallet on a different server is not yet supported.');
+    }
+
     const { secret } = await this.client.createWallet(
       this.name,
       args.copayerName,
