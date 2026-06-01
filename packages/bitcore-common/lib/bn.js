@@ -31,14 +31,19 @@ function BN (number, base, endian) {
   // Reduction context
   this.red = null;
 
-  if (number !== null) {
-    if (base === 'le' || base === 'be') {
-      endian = base;
-      base = 10;
-    }
-
-    this._init(number || 0, base || 10, endian || 'be');
+  if (number === null) {
+    // Allow null to create an empty BN "shell". Methods like mul(), mulf(),
+    // clone(), divmodInner(), and MPrime._tmp() pre-allocate a blank BN and
+    // then populate .words directly as a performance optimization.
+    return;
   }
+
+  if (base === 'le' || base === 'be') {
+    endian = base;
+    base = 10;
+  }
+
+  this._init(number || 0, base || 10, endian || 'be');
 }
 
 BN.BN = BN;
@@ -81,6 +86,12 @@ BN.prototype._init = function init (number, base, endian) {
   let start = 0;
   if (number[0] === '-') {
     start++;
+  }
+
+  if (base === 16 && start === 0 && number.length >= 2) {
+    if (number[0] === '0' && (number[1] === 'x' || number[1] === 'X')) {
+      start = 2;
+    }
   }
 
   if (base === 16) {
@@ -307,6 +318,7 @@ BN.prototype.copy = function copy (dest) {
 };
 
 BN.prototype.clone = function clone () {
+  // BN(null) creates a blank shell; copy() fills in the properties
   const r = new BN(null);
   this.copy(r);
   return r;
@@ -1872,6 +1884,7 @@ FFTM.prototype.mulp = function mulp (x, y, out) {
 
 // Multiply `this` by `num`
 BN.prototype.mul = function mul (num) {
+  // BN(null) creates a blank shell; words are set below, then mulTo populates
   const out = new BN(null);
   out.words = new Array(this.length + num.length);
   return this.mulTo(num, out);
@@ -1879,6 +1892,7 @@ BN.prototype.mul = function mul (num) {
 
 // Multiply employing FFT
 BN.prototype.mulf = function mulf (num) {
+  // BN(null) creates a blank shell; words are set below, then jumboMulTo populates
   const out = new BN(null);
   out.words = new Array(this.length + num.length);
   return jumboMulTo(this, num, out);
@@ -1914,7 +1928,14 @@ BN.prototype.imuln = function imuln (num) {
 };
 
 BN.prototype.muln = function muln (num) {
-  return this.clone().imuln(num);
+  const res = this.clone();
+  if (num < 0) {
+    res.negative ^= 1;
+    num = -num;
+  }
+  res._normSign();
+  res.imuln(num);
+  return res;
 };
 
 // `this` * `this`
@@ -2269,6 +2290,7 @@ BN.prototype._wordDiv = function _wordDiv (num, mode) {
   let q;
 
   if (mode !== 'mod') {
+    // BN(null) creates a blank shell for the quotient; length and words set below
     q = new BN(null);
     q.length = m + 1;
     q.words = new Array(q.length);
@@ -2948,6 +2970,7 @@ function MPrime (name, p) {
 }
 
 MPrime.prototype._tmp = function _tmp () {
+  // BN(null) creates a blank shell for a reusable temporary BN; words set below
   const tmp = new BN(null);
   tmp.words = new Array(Math.ceil(this.n / 13));
   return tmp;

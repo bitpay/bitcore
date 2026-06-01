@@ -1,12 +1,33 @@
 {
-  "name": "@bitcore-common/crypto",
-  "version": "0.0.1",
+  "name": "@bitpay-labs/bitcore-common",
+  "version": "11.8.2",
   "description": "Crypto primitives for bitcore packages",
-  "type": "module",
+  "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
+  "scripts": {
+    "test": "gulp test",
+    "test:ci": "npm run test",
+    "test:pkg": "mocha test/*.js test/**/*.js --timeout 7000",
+    "coverage": "gulp coverage",
+    "build": "gulp",
+    "pub": "npm run build && npm publish"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitcoin-bitcore/bitcore/tree/master/packages/bitcore-common"
+  },
+  "keywords": [
+    "bitcoin",
+    "bitcore",
+    "crypto",
+    "cryptography"
+  ],
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/bitcoin-bitcore/bitcore" },
-  "scripts": { "test": "mocha test/**/*.js" },
-  "dependencies": {},
-  "devDependencies": { "mocha": "^10.2.0" }
+  "devDependencies": {
+    "@bitpay-labs/bitcore-build": "^11.8.1",
+    "chai": "^4.2.0",
+    "gulp": "^4.0.0",
+    "mocha": "^5.2.0"
+  },
+  "dependencies": {}
 }

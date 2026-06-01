@@ -9,5 +9,6 @@
  */
 export { default as BN } from './lib/bn.js';
 export { default as Curve } from './lib/curve/secp256k1.js';
+export { Point } from './lib/curve/point.js';
 export * as Utils from './lib/utils.js';
-export { default as Point } from './lib/point.js';
+

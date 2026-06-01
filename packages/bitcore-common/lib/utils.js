@@ -13,8 +13,9 @@ export const toArray = function toArray (str, encoding) {
   return str;
 };
 function hexToArray (hex) {
-  const arr = new Array(hex.length / 2);
-  for (let i = 0; i < hex.length; i++) arr[i] = parseInt(hex[i * 2] + hex[i * 2 + 1], 16);
+  const arr = [];
+  for (let i = 0; i < hex.length; i += 2)
+    arr.push(parseInt(hex[i] + hex[i + 1], 16));
   return arr;
 }
 export const zero2 = function zero2 (str) {

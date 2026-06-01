@@ -6,6 +6,8 @@
   "main": "index.js",
   "scripts": {
     "test": "gulp test",
+    "test:node": "./node_modules/@bitpay-labs/bitcore-build/node_modules/.bin/mocha --require ./node_modules/chai/register-should.js --recursive test/",
+    "test:node:sandbox": "./node_modules/@bitpay-labs/bitcore-build/node_modules/.bin/mocha --require ./node_modules/chai/register-should.js --timeout 5000 test/crypto/curve-diagnostic-sandbox.js",
     "test:ci": "npm run test",
     "coverage": "gulp coverage",
     "build": "gulp",
@@ -35,6 +37,7 @@
     "request": "browser-request"
   },
   "dependencies": {
+    "@bitpay-labs/bitcore-common": "^11.8.2",
     "bech32": "=2.0.0",
     "bn.js": "=4.11.8",
     "bs58": "^4.0.1",
