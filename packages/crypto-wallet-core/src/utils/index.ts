@@ -63,7 +63,10 @@ export function isHexString(str: string): boolean {
   if (typeof str !== 'string' || str === '') {
     return false;
   }
-  const normalizedStr = str.toLowerCase().slice(0, 2) === '0x' ? str.toLowerCase().slice(2) : str.toLowerCase();
+  let normalizedStr = str.toLowerCase().slice(0, 2) === '0x' ? str.toLowerCase().slice(2) : str.toLowerCase();
+  if (normalizedStr.length % 2) {
+    normalizedStr = '0' + normalizedStr; // add leading zero if odd length
+  }
   return Buffer.from(normalizedStr, 'hex').toString('hex') === normalizedStr;
 }
 

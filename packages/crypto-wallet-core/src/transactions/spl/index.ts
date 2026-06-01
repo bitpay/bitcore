@@ -28,7 +28,7 @@ export class SPLTxProvider extends SOLTxProvider {
           mint: SolKit.address(tokenAddress),
           destination: SolKit.address(recipientAddress), // ATA address
           amount: BigInt(recipientAmount),
-          decimals
+          decimals: Number(decimals)
         }));
       }
     }
@@ -164,7 +164,7 @@ interface CreateParams {
   // SPL token transfer fields (required for token transfers)
   tokenAddress: string; // mint address
   fromAta?: string;
-  decimals?: number;
+  decimals?: number | string;
 }
 
 interface CreateRecoverNestedAssociatedTokenParams {

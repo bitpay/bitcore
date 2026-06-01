@@ -49,7 +49,8 @@ export class ExpressApp {
       getServerWithAuth,
       getServerWithMultiAuth,
       logDeprecated,
-      setPublicCache
+      setPublicCache,
+      checkNumberFormat
     } = createRouteHelpers(returnError);
 
     registerWalletRoutes(router, {
@@ -58,12 +59,14 @@ export class ExpressApp {
       getServerWithAuth,
       getServerWithMultiAuth,
       logDeprecated,
-      returnError
+      returnError,
+      checkNumberFormat
     });
 
     registerTransactionRoutes(router, {
       getServerWithAuth,
-      returnError
+      returnError,
+      checkNumberFormat
     });
 
     registerAdvertisementRoutes(router, {

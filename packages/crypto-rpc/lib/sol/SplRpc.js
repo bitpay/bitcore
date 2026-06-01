@@ -58,8 +58,8 @@ export class SplRpc extends SolRpc {
             authority: fromAccountKeypairSigner.address,
             mint: SolKit.address(mintAddress),
             destination: destinationAtaAddress,
-            amount,
-            decimals
+            amount: BigInt(amount),
+            decimals: Number(decimals)
           })
         ],
         transactionMessage
