@@ -1,3 +1,4 @@
+import os from 'os';
 import { Network } from '@bitpay-labs/bitcore-wallet-client';
 import { BitcoreLib, BitcoreLibLtc, Constants as CWCConst } from '@bitpay-labs/crypto-wallet-core';
 import * as prompt from '@clack/prompts';
@@ -232,6 +233,10 @@ export async function getAddressType(
     addressTypes = addressTypes.singleSig;
   }
 
+  if (Object.keys(addressTypes).length === 1) {
+    return Object.values(addressTypes)[0] as string;
+  }
+
   const segwitPrefix = bech32Libs[chain]?.Networks.get(network).bech32prefix;
   const descriptions = {
     P2PKH: 'Standard public key address',
@@ -308,4 +313,29 @@ export async function getFileName(
     throw new UserCancelled();
   }
   return Utils.replaceTilde(fileName);
+}
+
+/**
+ * Informs the user what a keyshare backup is and asks them to confirm they're ready to save it.
+ */
+export async function promptKeyshareBackup(): Promise<boolean> {
+  prompt.note(
+    Utils.colorText('!!! IMPORTANT !!!', 'yellow') + os.EOL +
+    'A keyshare backup file contains the information needed to restore access to your Threshold Signature (TSS) wallet if you lose access to your device.' + os.EOL +
+    'Unlike other wallets, TSS wallets cannot be restored by a 12-24 word phrase alone. They also require your "keyshare" data which is your piece of the TSS key.' + os.EOL +
+    'This keyshare backup file contains both your 12-word mnemonic AND your keyshare data, encrypted with a password you will set in the following prompts.' + os.EOL +
+    'Make sure to:' + os.EOL +
+    `  - Store the file in a ${Utils.underlineText('safe place')}, like a USB drive in a safe, and do not share it with anyone.` + os.EOL +
+    `  - ${Utils.boldText('DO NOT FORGET')} the encryption password! The file is useless without it, and there is no way to reset the password.` + os.EOL +
+    'Both the file + encryption password are as valuable as a non-TSS wallet\'s 12-24 word phrase, so treat them with the same level of security.'
+  );
+  const a = await prompt.select({
+    message: 'Are you ready to save your keyshare backup file?',
+    options: [{ label: 'Yes, let\'s go!', value: true }]
+  });
+  if (prompt.isCancel(a)) {
+    prompt.log.warn('Keyshare backup file not saved. You can do so later with the "Export" option from the wallet Main Menu.');
+    return false;
+  }
+  return true;
 }

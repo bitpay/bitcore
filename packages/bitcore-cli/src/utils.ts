@@ -63,19 +63,19 @@ export class Utils {
   }
 
   static boldText(text: string) {
-    return '\x1b[1m' + text + '\x1b[0m';
+    return '\x1b[1m' + text + '\x1b[22m';
   }
 
   static italicText(text: string) {
-    return '\x1b[3m' + text + '\x1b[0m';
+    return '\x1b[3m' + text + '\x1b[23m';
   }
 
   static underlineText(text: string) {
-    return '\x1b[4m' + text + '\x1b[0m';
+    return '\x1b[4m' + text + '\x1b[24m';
   }
 
   static strikeText(text: string) {
-    return '\x1b[9m' + text + '\x1b[0m';
+    return '\x1b[9m' + text + '\x1b[29m';
   }
 
   static capitalize(text: string): string {
@@ -421,33 +421,12 @@ export class Utils {
     return fileName;
   }
 
-  static getChainColor(chain: string) {
-    switch (chain.toLowerCase()) {
-      case 'btc':
-        return 'orange';
-      case 'bch':
-        return 'green';
-      case 'doge':
-        return 'beige';
-      case 'ltc':
-        return 'lightgray';
-      case 'eth':
-        return 'blue';
-      case 'matic':
-        return 'pink';
-      case 'xrp':
-        return 'darkgray';
-      case 'sol':
-        return 'purple';
-    }
-  }
-
   static colorTextByChain(chain: string, text: string) {
-    const color = Utils.getChainColor(chain);
-    if (!color) {
+    const colorPattern = Constants.CHAIN_COLOR[chain.toLowerCase()];
+    if (!colorPattern) {
       return Utils.boldText(text);
     }
-    return Utils.colorText(text, color);
+    return colorPattern.replace('%s', text);
   }
 
   static colorizeChain(chain: string) {

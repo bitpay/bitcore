@@ -4,8 +4,9 @@ import url from 'url';
 import { Key, type Network, TssKey } from '@bitpay-labs/bitcore-wallet-client';
 import * as prompt from '@clack/prompts';
 import { UserCancelled } from '../../errors';
-import { getAddressType, getCopayerName, getPassword } from '../../prompts';
+import { getAddressType, getCopayerName, getPassword, promptKeyshareBackup } from '../../prompts';
 import { Utils } from '../../utils';
+import { exportWallet } from '../export';
 import type { CommonArgs } from '../../../types/cli';
 
 
@@ -26,7 +27,7 @@ export async function createThresholdSigWallet(
 
   const copayerName = await getCopayerName();
   const addressType = await getAddressType({ chain, network, isMultiSig: false, isTss: true });
-  const password = await getPassword('Enter a password for the wallet:', { hidden: false });
+  const password = await getPassword('Lock your wallet with a password:', { hidden: false });
 
   let key;
   if (mnemonic) {
@@ -46,6 +47,16 @@ export async function createThresholdSigWallet(
   const tssPassword = crypto.randomBytes(20).toString('hex');
   await tss.newKey({ m, n, password: tssPassword });
   
+  prompt.note(
+    'Next, you will be asked to enter party 1\'s public key. Once you enter it, ' +
+    'a personal join code will be generated for you to give to them.' + os.EOL +
+    'To get their public key, party 1 should go ahead and start the join process ' +
+    'for their wallet by running bitcore-cli and selecting `Join Wallet`. Then they follow the ' +
+    'prompts until it tells them to share the public key with the session leader (you).' + os.EOL + os.EOL +
+    'Repeat this process for the other party members. Once all members have joined, the TSS ' +
+    'wallet creation process will finish.'
+  );
+
   for (let i = 1; i < n; i++) {
     const pubkey = await prompt.text({
       message: `Enter party ${i}'s public key:`,
@@ -133,7 +144,15 @@ export async function createThresholdSigWallet(
     });
   });
 
+
+  // Keyshare backup
+  const ok = await promptKeyshareBackup();
+  if (ok) {
+    await exportWallet({ wallet, opts: { ...opts, readonly: false } });
+  }
+
   return {
-    mnemonic: key.get(password).mnemonic
+    // TSS wallets cannot be restored from a mnemonic alone, so we return null here. All the wallet recovery information is in the keyshare backup file.
+    mnemonic: null
   };
 }

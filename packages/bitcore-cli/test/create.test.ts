@@ -69,18 +69,22 @@ describe('Create', function() {
         done(e);
       });
       child.on('close', (code) => {
-        assert.equal(code, 0);
-        const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName + '.json'), 'utf-8'));
-        assert.strictEqual(wallet.credentials.chain, 'btc');
-        assert.strictEqual(wallet.credentials.network, 'testnet');
-        // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
-        assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
-        assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
-        assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
-        done();
+        try {
+          assert.equal(code, 0);
+          const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName + '.json'), 'utf-8'));
+          assert.strictEqual(wallet.credentials.chain, 'btc');
+          assert.strictEqual(wallet.credentials.network, 'testnet');
+          // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
+          assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
+          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
+          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
+          done();
+        } catch (e) {
+          done(e);
+        }
       });
     });
 
@@ -128,18 +132,22 @@ describe('Create', function() {
         done(e);
       });
       child.on('close', (code) => {
-        assert.equal(code, 0);
-        const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName + '.json'), 'utf-8'));
-        assert.strictEqual(wallet.credentials.chain, 'eth');
-        assert.strictEqual(wallet.credentials.network, 'testnet');
-        // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
-        assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
-        assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
-        assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
-        done();
+        try {
+          assert.equal(code, 0);
+          const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName + '.json'), 'utf-8'));
+          assert.strictEqual(wallet.credentials.chain, 'eth');
+          assert.strictEqual(wallet.credentials.network, 'testnet');
+          // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
+          assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
+          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
+          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
+          done();
+        } catch (e) {
+          done(e);
+        }
       });
     });
 
@@ -187,18 +195,22 @@ describe('Create', function() {
         done(e);
       });
       child.on('close', (code) => {
-        assert.equal(code, 0);
-        const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName + '.json'), 'utf-8'));
-        assert.strictEqual(wallet.credentials.chain, 'xrp');
-        assert.strictEqual(wallet.credentials.network, 'testnet');
-        // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
-        assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
-        assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
-        assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
-        done();
+        try {
+          assert.equal(code, 0);
+          const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName + '.json'), 'utf-8'));
+          assert.strictEqual(wallet.credentials.chain, 'xrp');
+          assert.strictEqual(wallet.credentials.network, 'testnet');
+          // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
+          assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
+          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
+          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
+          done();
+        } catch (e) {
+          done(e);
+        }
       });
     });
 
@@ -246,18 +258,22 @@ describe('Create', function() {
         done(e);
       });
       child.on('close', (code) => {
-        assert.equal(code, 0);
-        const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName + '.json'), 'utf-8'));
-        assert.strictEqual(wallet.credentials.chain, 'sol');
-        assert.strictEqual(wallet.credentials.network, 'testnet');
-        // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
-        assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
-        assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
-        assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
-        assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
-        done();
+        try {
+          assert.equal(code, 0);
+          const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName + '.json'), 'utf-8'));
+          assert.strictEqual(wallet.credentials.chain, 'sol');
+          assert.strictEqual(wallet.credentials.network, 'testnet');
+          // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
+          assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
+          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
+          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
+          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
+          done();
+        } catch (e) {
+          done(e);
+        }
       });
     });
   });
@@ -337,20 +353,24 @@ describe('Create', function() {
           done(e);
         });
         child.on('close', (code) => {
-          assert.equal(code, 0);
-          const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName1 + '.json'), 'utf-8'));
-          assert.strictEqual(wallet.credentials.chain, 'btc');
-          assert.strictEqual(wallet.credentials.network, 'testnet');
-          assert.strictEqual(wallet.credentials.m, 2);
-          assert.strictEqual(wallet.credentials.n, 2);
-          // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
-          assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
-          assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
-          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
-          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
-          assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
-          assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
-          done();
+          try {
+            assert.equal(code, 0);
+            const wallet = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName1 + '.json'), 'utf-8'));
+            assert.strictEqual(wallet.credentials.chain, 'btc');
+            assert.strictEqual(wallet.credentials.network, 'testnet');
+            assert.strictEqual(wallet.credentials.m, 2);
+            assert.strictEqual(wallet.credentials.n, 2);
+            // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
+            assert.ok(Object.hasOwn(wallet.key, 'mnemonicEncrypted'));
+            assert.ok(!Object.hasOwn(wallet.key, 'mnemonic'));
+            assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEncrypted'));
+            assert.ok(!Object.hasOwn(wallet.key, 'xPrivKey'));
+            assert.ok(Object.hasOwn(wallet.key, 'xPrivKeyEDDSAEncrypted'));
+            assert.ok(!Object.hasOwn(wallet.key, 'xPrivKeyEDDSA'));
+            done();
+          } catch (e) {
+            done(e);
+          }
         });
       });
 
@@ -509,10 +529,14 @@ describe('Create', function() {
             done(e);
           });
           child.on('close', (code) => {
-            assert.equal(code, 1); // Exit code 1 since flow is cancelled with ctrl+c
-            // No wallet file should have been created or saved
-            assert.ok(!fs.existsSync(path.join(TEMP_DIR, walletName + '.json')));
-            done();
+            try {
+              assert.equal(code, 1); // Exit code 1 since flow is cancelled with ctrl+c
+              // No wallet file should have been created or saved
+              assert.ok(!fs.existsSync(path.join(TEMP_DIR, walletName + '.json')));
+              done();
+            } catch (e) {
+              done(e);
+            }
           });
         });
       }
@@ -548,8 +572,10 @@ describe('Create', function() {
           [copayer2PubKey, KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
           // Checkpoint2: Extract join code to share with copayer2
           [KEYSTROKES.ENTER], // Done sharing -- (checkpoint2)
-          [KEYSTROKES.ENTER], // View mnemonic
-          [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
+          [KEYSTROKES.ENTER], // Yes, continue with keyshare export
+          [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName1}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
+          ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const stepInputsC2 = [
           [KEYSTROKES.ARROW_DOWN], // Create Wallet -> Join Wallet
@@ -565,8 +591,10 @@ describe('Create', function() {
           // Checkpoint2: Wait for and enter join code from copayer1 to join session
           [joinCode, KEYSTROKES.ENTER], // Enter session code from leader (copayer1)
           [KEYSTROKES.ENTER], // Confirm decoded join code looks correct
-          [KEYSTROKES.ENTER], // View mnemonic
-          [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
+          [KEYSTROKES.ENTER], // Yes, continue with keyshare export
+          [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName2}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
+          ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const step = {
           [walletName1]: 0,
@@ -600,7 +628,7 @@ describe('Create', function() {
             // walletName === walletName1 && process.stdout.write(chunk);
             const stepInputs = walletName === walletName1 ? stepInputsC1 : stepInputsC2;
 
-            const isStep = chunk.endsWith(OUTPUT_END_SEQ) || step[walletName] == stepInputs.length - 1; // viewing mnemonic
+            const isStep = chunk.endsWith(OUTPUT_END_SEQ);
             if (isStep) {
               const lines = checkpointOutput[walletName].split('\n');
               switch (step[walletName]) {
@@ -663,71 +691,87 @@ describe('Create', function() {
           done(e);
         });
         io.on('allClosed', (exitCodes: number[]) => {
-          assert.deepEqual(exitCodes, [0, 0]);
-          // Wallet 1
-          const wallet1 = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName1 + '.json'), 'utf-8'));
-          assert.strictEqual(wallet1.credentials.chain, 'btc');
-          assert.strictEqual(wallet1.credentials.network, 'testnet');
-          // Still treated as single sig wallet
-          assert.strictEqual(wallet1.credentials.m, 1);
-          assert.strictEqual(wallet1.credentials.n, 1);
-          // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
-          assert.ok(Object.hasOwn(wallet1.key, 'mnemonicEncrypted'));
-          assert.ok(!Object.hasOwn(wallet1.key, 'mnemonic'));
-          assert.ok(Object.hasOwn(wallet1.key, 'xPrivKeyEncrypted'));
-          assert.ok(!Object.hasOwn(wallet1.key, 'xPrivKey'));
-          assert.ok(Object.hasOwn(wallet1.key, 'xPrivKeyEDDSAEncrypted'));
-          assert.ok(!Object.hasOwn(wallet1.key, 'xPrivKeyEDDSA'));
-          // Ensure TSS fields are present and encrypted
-          assert.ok(Object.hasOwn(wallet1, 'key'), 'No key property found on wallet');
-          assert.ok(Object.hasOwn(wallet1.key, 'keychain'), 'No key.keychain property found on wallet');
-          assert.strictEqual(typeof wallet1.key.keychain.commonKeyChain, 'string');
-          assert.ok(wallet1.key.keychain.privateKeyShare == null, 'privateKeyShare should not be present on wallet keychain');
-          assert.strictEqual(typeof wallet1.key.keychain.privateKeyShareEncrypted, 'string');
-          assert.ok(wallet1.key.keychain.privateKeyShareEncrypted.startsWith('{"iv":"'), 'privateKeyShareEncrypted should be encrypted');
-          assert.ok(wallet1.key.keychain.reducedPrivateKeyShare == null, 'reducedPrivateKeyShare should not be present on wallet keychain');
-          assert.strictEqual(typeof wallet1.key.keychain.reducedPrivateKeyShareEncrypted, 'string');
-          assert.ok(wallet1.key.keychain.reducedPrivateKeyShareEncrypted.startsWith('{"iv":"'), 'reducedPrivateKeyShareEncrypted should be encrypted');
-          assert.ok(Object.hasOwn(wallet1.key, 'metadata'), 'No key.metadata property found on wallet');
-          assert.strictEqual(typeof wallet1.key.metadata.id, 'string');
-          assert.strictEqual(wallet1.key.metadata.m, 2);
-          assert.strictEqual(wallet1.key.metadata.n, 2);
+          try {
+            assert.deepEqual(exitCodes, [0, 0]);
+            // Wallet 1
+            const wallet1 = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName1 + '.json'), 'utf-8'));
+            assert.strictEqual(wallet1.credentials.chain, 'btc');
+            assert.strictEqual(wallet1.credentials.network, 'testnet');
+            // Still treated as single sig wallet
+            assert.strictEqual(wallet1.credentials.m, 1);
+            assert.strictEqual(wallet1.credentials.n, 1);
+            // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
+            assert.ok(Object.hasOwn(wallet1.key, 'mnemonicEncrypted'));
+            assert.ok(!Object.hasOwn(wallet1.key, 'mnemonic'));
+            assert.ok(Object.hasOwn(wallet1.key, 'xPrivKeyEncrypted'));
+            assert.ok(!Object.hasOwn(wallet1.key, 'xPrivKey'));
+            assert.ok(Object.hasOwn(wallet1.key, 'xPrivKeyEDDSAEncrypted'));
+            assert.ok(!Object.hasOwn(wallet1.key, 'xPrivKeyEDDSA'));
+            // Ensure TSS fields are present and encrypted
+            assert.ok(Object.hasOwn(wallet1, 'key'), 'No key property found on wallet');
+            assert.ok(Object.hasOwn(wallet1.key, 'keychain'), 'No key.keychain property found on wallet');
+            assert.strictEqual(typeof wallet1.key.keychain.commonKeyChain, 'string');
+            assert.ok(wallet1.key.keychain.privateKeyShare == null, 'privateKeyShare should not be present on wallet keychain');
+            assert.strictEqual(typeof wallet1.key.keychain.privateKeyShareEncrypted, 'string');
+            assert.ok(wallet1.key.keychain.privateKeyShareEncrypted.startsWith('{"iv":"'), 'privateKeyShareEncrypted should be encrypted');
+            assert.ok(wallet1.key.keychain.reducedPrivateKeyShare == null, 'reducedPrivateKeyShare should not be present on wallet keychain');
+            assert.strictEqual(typeof wallet1.key.keychain.reducedPrivateKeyShareEncrypted, 'string');
+            assert.ok(wallet1.key.keychain.reducedPrivateKeyShareEncrypted.startsWith('{"iv":"'), 'reducedPrivateKeyShareEncrypted should be encrypted');
+            assert.ok(Object.hasOwn(wallet1.key, 'metadata'), 'No key.metadata property found on wallet');
+            assert.strictEqual(typeof wallet1.key.metadata.id, 'string');
+            assert.strictEqual(wallet1.key.metadata.m, 2);
+            assert.strictEqual(wallet1.key.metadata.n, 2);
 
-          // Wallet 2
-          const wallet2 = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName2 + '.json'), 'utf-8'));
-          assert.strictEqual(wallet2.credentials.chain, 'btc');
-          assert.strictEqual(wallet2.credentials.network, 'testnet');
-          // Still treated as single sig wallet
-          assert.strictEqual(wallet2.credentials.m, 1);
-          assert.strictEqual(wallet2.credentials.n, 1);
-          // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
-          assert.ok(Object.hasOwn(wallet2.key, 'mnemonicEncrypted'));
-          assert.ok(!Object.hasOwn(wallet2.key, 'mnemonic'));
-          assert.ok(Object.hasOwn(wallet2.key, 'xPrivKeyEncrypted'));
-          assert.ok(!Object.hasOwn(wallet2.key, 'xPrivKey'));
-          assert.ok(Object.hasOwn(wallet2.key, 'xPrivKeyEDDSAEncrypted'));
-          assert.ok(!Object.hasOwn(wallet2.key, 'xPrivKeyEDDSA'));
-          // Ensure TSS fields are present and encrypted
-          assert.ok(Object.hasOwn(wallet2, 'key'), 'No key property found on wallet');
-          assert.ok(Object.hasOwn(wallet2.key, 'keychain'), 'No key.keychain property found on wallet');
-          assert.strictEqual(typeof wallet2.key.keychain.commonKeyChain, 'string');
-          assert.ok(wallet2.key.keychain.privateKeyShare == null, 'privateKeyShare should not be present on wallet keychain');
-          assert.strictEqual(typeof wallet2.key.keychain.privateKeyShareEncrypted, 'string');
-          assert.ok(wallet2.key.keychain.privateKeyShareEncrypted.startsWith('{"iv":"'), 'privateKeyShareEncrypted should be encrypted');
-          assert.ok(wallet2.key.keychain.reducedPrivateKeyShare == null, 'reducedPrivateKeyShare should not be present on wallet keychain');
-          assert.strictEqual(typeof wallet2.key.keychain.reducedPrivateKeyShareEncrypted, 'string');
-          assert.ok(wallet2.key.keychain.reducedPrivateKeyShareEncrypted.startsWith('{"iv":"'), 'reducedPrivateKeyShareEncrypted should be encrypted');
-          assert.ok(Object.hasOwn(wallet2.key, 'metadata'), 'No key.metadata property found on wallet');
-          assert.strictEqual(typeof wallet2.key.metadata.id, 'string');
-          assert.strictEqual(wallet2.key.metadata.m, 2);
-          assert.strictEqual(wallet2.key.metadata.n, 2);
+            // Wallet 2
+            const wallet2 = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName2 + '.json'), 'utf-8'));
+            assert.strictEqual(wallet2.credentials.chain, 'btc');
+            assert.strictEqual(wallet2.credentials.network, 'testnet');
+            // Still treated as single sig wallet
+            assert.strictEqual(wallet2.credentials.m, 1);
+            assert.strictEqual(wallet2.credentials.n, 1);
+            // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
+            assert.ok(Object.hasOwn(wallet2.key, 'mnemonicEncrypted'));
+            assert.ok(!Object.hasOwn(wallet2.key, 'mnemonic'));
+            assert.ok(Object.hasOwn(wallet2.key, 'xPrivKeyEncrypted'));
+            assert.ok(!Object.hasOwn(wallet2.key, 'xPrivKey'));
+            assert.ok(Object.hasOwn(wallet2.key, 'xPrivKeyEDDSAEncrypted'));
+            assert.ok(!Object.hasOwn(wallet2.key, 'xPrivKeyEDDSA'));
+            // Ensure TSS fields are present and encrypted
+            assert.ok(Object.hasOwn(wallet2, 'key'), 'No key property found on wallet');
+            assert.ok(Object.hasOwn(wallet2.key, 'keychain'), 'No key.keychain property found on wallet');
+            assert.strictEqual(typeof wallet2.key.keychain.commonKeyChain, 'string');
+            assert.ok(wallet2.key.keychain.privateKeyShare == null, 'privateKeyShare should not be present on wallet keychain');
+            assert.strictEqual(typeof wallet2.key.keychain.privateKeyShareEncrypted, 'string');
+            assert.ok(wallet2.key.keychain.privateKeyShareEncrypted.startsWith('{"iv":"'), 'privateKeyShareEncrypted should be encrypted');
+            assert.ok(wallet2.key.keychain.reducedPrivateKeyShare == null, 'reducedPrivateKeyShare should not be present on wallet keychain');
+            assert.strictEqual(typeof wallet2.key.keychain.reducedPrivateKeyShareEncrypted, 'string');
+            assert.ok(wallet2.key.keychain.reducedPrivateKeyShareEncrypted.startsWith('{"iv":"'), 'reducedPrivateKeyShareEncrypted should be encrypted');
+            assert.ok(Object.hasOwn(wallet2.key, 'metadata'), 'No key.metadata property found on wallet');
+            assert.strictEqual(typeof wallet2.key.metadata.id, 'string');
+            assert.strictEqual(wallet2.key.metadata.m, 2);
+            assert.strictEqual(wallet2.key.metadata.n, 2);
 
-          // Check wallets are copayers of the same wallet
-          assert.strictEqual(wallet1.credentials.walletId, wallet2.credentials.walletId, 'Wallet IDs do not match');
-          assert.strictEqual(wallet1.key.metadata.id, wallet2.key.metadata.id, 'Key metadata IDs do not match');
-          assert.strictEqual(wallet1.key.keychain.commonKeyChain, wallet2.key.keychain.commonKeyChain, 'Common key chains do not match');
+            // Check wallets are copayers of the same wallet
+            assert.strictEqual(wallet1.credentials.walletId, wallet2.credentials.walletId, 'Wallet IDs do not match');
+            assert.strictEqual(wallet1.key.metadata.id, wallet2.key.metadata.id, 'Key metadata IDs do not match');
+            assert.strictEqual(wallet1.key.keychain.commonKeyChain, wallet2.key.keychain.commonKeyChain, 'Common key chains do not match');
 
-          done();
+            // Check keyshare backup files
+            const keyshareBackup1 = path.join(TEMP_DIR, walletName1 + '-export.json');
+            assert.ok(fs.existsSync(keyshareBackup1), 'Keyshare backup file not found for wallet 1');
+            const keyshare1 = JSON.parse(fs.readFileSync(keyshareBackup1, 'utf-8'));
+            assert.ok(keyshare1.iv && keyshare1.mode && keyshare1.cipher && keyshare1.ct, 'Keyshare backup 1 does not appear to be encrypted');
+            assert.strictEqual(keyshare1.cipher + keyshare1.mode, 'aesgcm', 'Expected keyshare backup 1 to be encrypted with AES-GCM');
+            const keyshareBackup2 = path.join(TEMP_DIR, walletName2 + '-export.json');
+            assert.ok(fs.existsSync(keyshareBackup2), 'Keyshare backup file not found for wallet 2');
+            const keyshare2 = JSON.parse(fs.readFileSync(keyshareBackup2, 'utf-8'));
+            assert.ok(keyshare2.iv && keyshare2.mode && keyshare2.cipher && keyshare2.ct, 'Keyshare backup 2 does not appear to be encrypted');
+            assert.strictEqual(keyshare2.cipher + keyshare2.mode, 'aesgcm', 'Expected keyshare backup 2 to be encrypted with AES-GCM');
+
+            done();
+          } catch (e) {
+            done(e);
+          }
         });
       });
     });
@@ -757,8 +801,10 @@ describe('Create', function() {
           [copayer2PubKey, KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
           // Checkpoint2: Extract join code to share with copayer2
           [KEYSTROKES.ENTER], // Done sharing -- (checkpoint2)
-          [KEYSTROKES.ENTER], // View mnemonic
-          [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
+          [KEYSTROKES.ENTER], // Yes, continue with keyshare export
+          [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName1}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
+          ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const stepInputsC2 = [
           [KEYSTROKES.ARROW_DOWN], // Create Wallet -> Join Wallet
@@ -773,8 +819,10 @@ describe('Create', function() {
           // Checkpoint2: Wait for and enter join code from copayer1 to join session
           [joinCode, KEYSTROKES.ENTER], // Enter session code from leader (copayer1)
           [KEYSTROKES.ENTER], // Confirm decoded join code looks correct
-          [KEYSTROKES.ENTER], // View mnemonic
-          [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
+          [KEYSTROKES.ENTER], // Yes, continue with keyshare export
+          [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName2}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
+          ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const step = {
           [walletName1]: 0,
@@ -809,7 +857,7 @@ describe('Create', function() {
             // walletName === walletName2 && process.stdout.write(chunk);
             const stepInputs = walletName === walletName1 ? stepInputsC1 : stepInputsC2;
 
-            const isStep = chunk.endsWith(OUTPUT_END_SEQ) || step[walletName] == stepInputs.length - 1; // viewing mnemonic
+            const isStep = chunk.endsWith(OUTPUT_END_SEQ);
             if (isStep) {
               const lines = checkpointOutput[walletName].split('\n');
               switch (step[walletName]) {
@@ -872,71 +920,87 @@ describe('Create', function() {
           done(e);
         });
         io.on('allClosed', (exitCodes: number[]) => {
-          assert.deepEqual(exitCodes, [0, 0]);
-          // Wallet 1
-          const wallet1 = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName1 + '.json'), 'utf-8'));
-          assert.strictEqual(wallet1.credentials.chain, 'eth');
-          assert.strictEqual(wallet1.credentials.network, 'testnet');
-          // Still treated as single sig wallet
-          assert.strictEqual(wallet1.credentials.m, 1);
-          assert.strictEqual(wallet1.credentials.n, 1);
-          // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
-          assert.ok(Object.hasOwn(wallet1.key, 'mnemonicEncrypted'));
-          assert.ok(!Object.hasOwn(wallet1.key, 'mnemonic'));
-          assert.ok(Object.hasOwn(wallet1.key, 'xPrivKeyEncrypted'));
-          assert.ok(!Object.hasOwn(wallet1.key, 'xPrivKey'));
-          assert.ok(Object.hasOwn(wallet1.key, 'xPrivKeyEDDSAEncrypted'));
-          assert.ok(!Object.hasOwn(wallet1.key, 'xPrivKeyEDDSA'));
-          // Ensure TSS fields are present and encrypted
-          assert.ok(Object.hasOwn(wallet1, 'key'), 'No key property found on wallet');
-          assert.ok(Object.hasOwn(wallet1.key, 'keychain'), 'No key.keychain property found on wallet');
-          assert.strictEqual(typeof wallet1.key.keychain.commonKeyChain, 'string');
-          assert.ok(wallet1.key.keychain.privateKeyShare == null, 'privateKeyShare should not be present on wallet keychain');
-          assert.strictEqual(typeof wallet1.key.keychain.privateKeyShareEncrypted, 'string');
-          assert.ok(wallet1.key.keychain.privateKeyShareEncrypted.startsWith('{"iv":"'), 'privateKeyShareEncrypted should be encrypted');
-          assert.ok(wallet1.key.keychain.reducedPrivateKeyShare == null, 'reducedPrivateKeyShare should not be present on wallet keychain');
-          assert.strictEqual(typeof wallet1.key.keychain.reducedPrivateKeyShareEncrypted, 'string');
-          assert.ok(wallet1.key.keychain.reducedPrivateKeyShareEncrypted.startsWith('{"iv":"'), 'reducedPrivateKeyShareEncrypted should be encrypted');
-          assert.ok(Object.hasOwn(wallet1.key, 'metadata'), 'No key.metadata property found on wallet');
-          assert.strictEqual(typeof wallet1.key.metadata.id, 'string');
-          assert.strictEqual(wallet1.key.metadata.m, 2);
-          assert.strictEqual(wallet1.key.metadata.n, 2);
+          try {
+            assert.deepEqual(exitCodes, [0, 0]);
+            // Wallet 1
+            const wallet1 = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName1 + '.json'), 'utf-8'));
+            assert.strictEqual(wallet1.credentials.chain, 'eth');
+            assert.strictEqual(wallet1.credentials.network, 'testnet');
+            // Still treated as single sig wallet
+            assert.strictEqual(wallet1.credentials.m, 1);
+            assert.strictEqual(wallet1.credentials.n, 1);
+            // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
+            assert.ok(Object.hasOwn(wallet1.key, 'mnemonicEncrypted'));
+            assert.ok(!Object.hasOwn(wallet1.key, 'mnemonic'));
+            assert.ok(Object.hasOwn(wallet1.key, 'xPrivKeyEncrypted'));
+            assert.ok(!Object.hasOwn(wallet1.key, 'xPrivKey'));
+            assert.ok(Object.hasOwn(wallet1.key, 'xPrivKeyEDDSAEncrypted'));
+            assert.ok(!Object.hasOwn(wallet1.key, 'xPrivKeyEDDSA'));
+            // Ensure TSS fields are present and encrypted
+            assert.ok(Object.hasOwn(wallet1, 'key'), 'No key property found on wallet');
+            assert.ok(Object.hasOwn(wallet1.key, 'keychain'), 'No key.keychain property found on wallet');
+            assert.strictEqual(typeof wallet1.key.keychain.commonKeyChain, 'string');
+            assert.ok(wallet1.key.keychain.privateKeyShare == null, 'privateKeyShare should not be present on wallet keychain');
+            assert.strictEqual(typeof wallet1.key.keychain.privateKeyShareEncrypted, 'string');
+            assert.ok(wallet1.key.keychain.privateKeyShareEncrypted.startsWith('{"iv":"'), 'privateKeyShareEncrypted should be encrypted');
+            assert.ok(wallet1.key.keychain.reducedPrivateKeyShare == null, 'reducedPrivateKeyShare should not be present on wallet keychain');
+            assert.strictEqual(typeof wallet1.key.keychain.reducedPrivateKeyShareEncrypted, 'string');
+            assert.ok(wallet1.key.keychain.reducedPrivateKeyShareEncrypted.startsWith('{"iv":"'), 'reducedPrivateKeyShareEncrypted should be encrypted');
+            assert.ok(Object.hasOwn(wallet1.key, 'metadata'), 'No key.metadata property found on wallet');
+            assert.strictEqual(typeof wallet1.key.metadata.id, 'string');
+            assert.strictEqual(wallet1.key.metadata.m, 2);
+            assert.strictEqual(wallet1.key.metadata.n, 2);
 
-          // Wallet 2
-          const wallet2 = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName2 + '.json'), 'utf-8'));
-          assert.strictEqual(wallet2.credentials.chain, 'eth');
-          assert.strictEqual(wallet2.credentials.network, 'testnet');
-          // Still treated as single sig wallet
-          assert.strictEqual(wallet2.credentials.m, 1);
-          assert.strictEqual(wallet2.credentials.n, 1);
-          // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
-          assert.ok(Object.hasOwn(wallet2.key, 'mnemonicEncrypted'));
-          assert.ok(!Object.hasOwn(wallet2.key, 'mnemonic'));
-          assert.ok(Object.hasOwn(wallet2.key, 'xPrivKeyEncrypted'));
-          assert.ok(!Object.hasOwn(wallet2.key, 'xPrivKey'));
-          assert.ok(Object.hasOwn(wallet2.key, 'xPrivKeyEDDSAEncrypted'));
-          assert.ok(!Object.hasOwn(wallet2.key, 'xPrivKeyEDDSA'));
-          // Ensure TSS fields are present and encrypted
-          assert.ok(Object.hasOwn(wallet2, 'key'), 'No key property found on wallet');
-          assert.ok(Object.hasOwn(wallet2.key, 'keychain'), 'No key.keychain property found on wallet');
-          assert.strictEqual(typeof wallet2.key.keychain.commonKeyChain, 'string');
-          assert.ok(wallet2.key.keychain.privateKeyShare == null, 'privateKeyShare should not be present on wallet keychain');
-          assert.strictEqual(typeof wallet2.key.keychain.privateKeyShareEncrypted, 'string');
-          assert.ok(wallet2.key.keychain.privateKeyShareEncrypted.startsWith('{"iv":"'), 'privateKeyShareEncrypted should be encrypted');
-          assert.ok(wallet2.key.keychain.reducedPrivateKeyShare == null, 'reducedPrivateKeyShare should not be present on wallet keychain');
-          assert.strictEqual(typeof wallet2.key.keychain.reducedPrivateKeyShareEncrypted, 'string');
-          assert.ok(wallet2.key.keychain.reducedPrivateKeyShareEncrypted.startsWith('{"iv":"'), 'reducedPrivateKeyShareEncrypted should be encrypted');
-          assert.ok(Object.hasOwn(wallet2.key, 'metadata'), 'No key.metadata property found on wallet');
-          assert.strictEqual(typeof wallet2.key.metadata.id, 'string');
-          assert.strictEqual(wallet2.key.metadata.m, 2);
-          assert.strictEqual(wallet2.key.metadata.n, 2);
+            // Wallet 2
+            const wallet2 = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName2 + '.json'), 'utf-8'));
+            assert.strictEqual(wallet2.credentials.chain, 'eth');
+            assert.strictEqual(wallet2.credentials.network, 'testnet');
+            // Still treated as single sig wallet
+            assert.strictEqual(wallet2.credentials.m, 1);
+            assert.strictEqual(wallet2.credentials.n, 1);
+            // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
+            assert.ok(Object.hasOwn(wallet2.key, 'mnemonicEncrypted'));
+            assert.ok(!Object.hasOwn(wallet2.key, 'mnemonic'));
+            assert.ok(Object.hasOwn(wallet2.key, 'xPrivKeyEncrypted'));
+            assert.ok(!Object.hasOwn(wallet2.key, 'xPrivKey'));
+            assert.ok(Object.hasOwn(wallet2.key, 'xPrivKeyEDDSAEncrypted'));
+            assert.ok(!Object.hasOwn(wallet2.key, 'xPrivKeyEDDSA'));
+            // Ensure TSS fields are present and encrypted
+            assert.ok(Object.hasOwn(wallet2, 'key'), 'No key property found on wallet');
+            assert.ok(Object.hasOwn(wallet2.key, 'keychain'), 'No key.keychain property found on wallet');
+            assert.strictEqual(typeof wallet2.key.keychain.commonKeyChain, 'string');
+            assert.ok(wallet2.key.keychain.privateKeyShare == null, 'privateKeyShare should not be present on wallet keychain');
+            assert.strictEqual(typeof wallet2.key.keychain.privateKeyShareEncrypted, 'string');
+            assert.ok(wallet2.key.keychain.privateKeyShareEncrypted.startsWith('{"iv":"'), 'privateKeyShareEncrypted should be encrypted');
+            assert.ok(wallet2.key.keychain.reducedPrivateKeyShare == null, 'reducedPrivateKeyShare should not be present on wallet keychain');
+            assert.strictEqual(typeof wallet2.key.keychain.reducedPrivateKeyShareEncrypted, 'string');
+            assert.ok(wallet2.key.keychain.reducedPrivateKeyShareEncrypted.startsWith('{"iv":"'), 'reducedPrivateKeyShareEncrypted should be encrypted');
+            assert.ok(Object.hasOwn(wallet2.key, 'metadata'), 'No key.metadata property found on wallet');
+            assert.strictEqual(typeof wallet2.key.metadata.id, 'string');
+            assert.strictEqual(wallet2.key.metadata.m, 2);
+            assert.strictEqual(wallet2.key.metadata.n, 2);
 
-          // Check wallets are copayers of the same wallet
-          assert.strictEqual(wallet1.credentials.walletId, wallet2.credentials.walletId, 'Wallet IDs do not match');
-          assert.strictEqual(wallet1.key.metadata.id, wallet2.key.metadata.id, 'Key metadata IDs do not match');
-          assert.strictEqual(wallet1.key.keychain.commonKeyChain, wallet2.key.keychain.commonKeyChain, 'Common key chains do not match');
+            // Check wallets are copayers of the same wallet
+            assert.strictEqual(wallet1.credentials.walletId, wallet2.credentials.walletId, 'Wallet IDs do not match');
+            assert.strictEqual(wallet1.key.metadata.id, wallet2.key.metadata.id, 'Key metadata IDs do not match');
+            assert.strictEqual(wallet1.key.keychain.commonKeyChain, wallet2.key.keychain.commonKeyChain, 'Common key chains do not match');
 
-          done();
+            // Check keyshare backup files
+            const keyshareBackup1 = path.join(TEMP_DIR, walletName1 + '-export.json');
+            assert.ok(fs.existsSync(keyshareBackup1), 'Keyshare backup file not found for wallet 1');
+            const keyshare1 = JSON.parse(fs.readFileSync(keyshareBackup1, 'utf-8'));
+            assert.ok(keyshare1.iv && keyshare1.mode && keyshare1.cipher && keyshare1.ct, 'Keyshare backup 1 does not appear to be encrypted');
+            assert.strictEqual(keyshare1.cipher + keyshare1.mode, 'aesgcm', 'Expected keyshare backup 1 to be encrypted with AES-GCM');
+            const keyshareBackup2 = path.join(TEMP_DIR, walletName2 + '-export.json');
+            assert.ok(fs.existsSync(keyshareBackup2), 'Keyshare backup file not found for wallet 2');
+            const keyshare2 = JSON.parse(fs.readFileSync(keyshareBackup2, 'utf-8'));
+            assert.ok(keyshare2.iv && keyshare2.mode && keyshare2.cipher && keyshare2.ct, 'Keyshare backup 2 does not appear to be encrypted');
+            assert.strictEqual(keyshare2.cipher + keyshare2.mode, 'aesgcm', 'Expected keyshare backup 2 to be encrypted with AES-GCM');
+
+            done();
+          } catch (e) {
+            done(e);
+          }
         });
       });
     });
@@ -966,8 +1030,10 @@ describe('Create', function() {
           [copayer2PubKey, KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
           // Checkpoint2: Extract join code to share with copayer2
           [KEYSTROKES.ENTER], // Done sharing -- (checkpoint2)
-          [KEYSTROKES.ENTER], // View mnemonic
-          [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
+          [KEYSTROKES.ENTER], // Yes, continue with keyshare export
+          [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName1}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
+          ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const stepInputsC2 = [
           [KEYSTROKES.ARROW_DOWN], // Create Wallet -> Join Wallet
@@ -982,8 +1048,10 @@ describe('Create', function() {
           // Checkpoint2: Wait for and enter join code from copayer1 to join session
           [joinCode, KEYSTROKES.ENTER], // Enter session code from leader (copayer1)
           [KEYSTROKES.ENTER], // Confirm decoded join code looks correct
-          [KEYSTROKES.ENTER], // View mnemonic
-          [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
+          [KEYSTROKES.ENTER], // Yes, continue with keyshare export
+          [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName2}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
+          ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const step = {
           [walletName1]: 0,
@@ -1017,7 +1085,7 @@ describe('Create', function() {
             // walletName === walletName1 && process.stdout.write(chunk);
             const stepInputs = walletName === walletName1 ? stepInputsC1 : stepInputsC2;
 
-            const isStep = chunk.endsWith(OUTPUT_END_SEQ) || step[walletName] == stepInputs.length - 1; // viewing mnemonic
+            const isStep = chunk.endsWith(OUTPUT_END_SEQ);
             if (isStep) {
               const lines = checkpointOutput[walletName].split('\n');
               switch (step[walletName]) {
@@ -1080,71 +1148,87 @@ describe('Create', function() {
           done(e);
         });
         io.on('allClosed', (exitCodes: number[]) => {
-          assert.deepEqual(exitCodes, [0, 0]);
-          // Wallet 1
-          const wallet1 = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName1 + '.json'), 'utf-8'));
-          assert.strictEqual(wallet1.credentials.chain, 'xrp');
-          assert.strictEqual(wallet1.credentials.network, 'testnet');
-          // Still treated as single sig wallet
-          assert.strictEqual(wallet1.credentials.m, 1);
-          assert.strictEqual(wallet1.credentials.n, 1);
-          // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
-          assert.ok(Object.hasOwn(wallet1.key, 'mnemonicEncrypted'));
-          assert.ok(!Object.hasOwn(wallet1.key, 'mnemonic'));
-          assert.ok(Object.hasOwn(wallet1.key, 'xPrivKeyEncrypted'));
-          assert.ok(!Object.hasOwn(wallet1.key, 'xPrivKey'));
-          assert.ok(Object.hasOwn(wallet1.key, 'xPrivKeyEDDSAEncrypted'));
-          assert.ok(!Object.hasOwn(wallet1.key, 'xPrivKeyEDDSA'));
-          // Ensure TSS fields are present and encrypted
-          assert.ok(Object.hasOwn(wallet1, 'key'), 'No key property found on wallet');
-          assert.ok(Object.hasOwn(wallet1.key, 'keychain'), 'No key.keychain property found on wallet');
-          assert.strictEqual(typeof wallet1.key.keychain.commonKeyChain, 'string');
-          assert.ok(wallet1.key.keychain.privateKeyShare == null, 'privateKeyShare should not be present on wallet keychain');
-          assert.strictEqual(typeof wallet1.key.keychain.privateKeyShareEncrypted, 'string');
-          assert.ok(wallet1.key.keychain.privateKeyShareEncrypted.startsWith('{"iv":"'), 'privateKeyShareEncrypted should be encrypted');
-          assert.ok(wallet1.key.keychain.reducedPrivateKeyShare == null, 'reducedPrivateKeyShare should not be present on wallet keychain');
-          assert.strictEqual(typeof wallet1.key.keychain.reducedPrivateKeyShareEncrypted, 'string');
-          assert.ok(wallet1.key.keychain.reducedPrivateKeyShareEncrypted.startsWith('{"iv":"'), 'reducedPrivateKeyShareEncrypted should be encrypted');
-          assert.ok(Object.hasOwn(wallet1.key, 'metadata'), 'No key.metadata property found on wallet');
-          assert.strictEqual(typeof wallet1.key.metadata.id, 'string');
-          assert.strictEqual(wallet1.key.metadata.m, 2);
-          assert.strictEqual(wallet1.key.metadata.n, 2);
+          try {
+            assert.deepEqual(exitCodes, [0, 0]);
+            // Wallet 1
+            const wallet1 = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName1 + '.json'), 'utf-8'));
+            assert.strictEqual(wallet1.credentials.chain, 'xrp');
+            assert.strictEqual(wallet1.credentials.network, 'testnet');
+            // Still treated as single sig wallet
+            assert.strictEqual(wallet1.credentials.m, 1);
+            assert.strictEqual(wallet1.credentials.n, 1);
+            // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
+            assert.ok(Object.hasOwn(wallet1.key, 'mnemonicEncrypted'));
+            assert.ok(!Object.hasOwn(wallet1.key, 'mnemonic'));
+            assert.ok(Object.hasOwn(wallet1.key, 'xPrivKeyEncrypted'));
+            assert.ok(!Object.hasOwn(wallet1.key, 'xPrivKey'));
+            assert.ok(Object.hasOwn(wallet1.key, 'xPrivKeyEDDSAEncrypted'));
+            assert.ok(!Object.hasOwn(wallet1.key, 'xPrivKeyEDDSA'));
+            // Ensure TSS fields are present and encrypted
+            assert.ok(Object.hasOwn(wallet1, 'key'), 'No key property found on wallet');
+            assert.ok(Object.hasOwn(wallet1.key, 'keychain'), 'No key.keychain property found on wallet');
+            assert.strictEqual(typeof wallet1.key.keychain.commonKeyChain, 'string');
+            assert.ok(wallet1.key.keychain.privateKeyShare == null, 'privateKeyShare should not be present on wallet keychain');
+            assert.strictEqual(typeof wallet1.key.keychain.privateKeyShareEncrypted, 'string');
+            assert.ok(wallet1.key.keychain.privateKeyShareEncrypted.startsWith('{"iv":"'), 'privateKeyShareEncrypted should be encrypted');
+            assert.ok(wallet1.key.keychain.reducedPrivateKeyShare == null, 'reducedPrivateKeyShare should not be present on wallet keychain');
+            assert.strictEqual(typeof wallet1.key.keychain.reducedPrivateKeyShareEncrypted, 'string');
+            assert.ok(wallet1.key.keychain.reducedPrivateKeyShareEncrypted.startsWith('{"iv":"'), 'reducedPrivateKeyShareEncrypted should be encrypted');
+            assert.ok(Object.hasOwn(wallet1.key, 'metadata'), 'No key.metadata property found on wallet');
+            assert.strictEqual(typeof wallet1.key.metadata.id, 'string');
+            assert.strictEqual(wallet1.key.metadata.m, 2);
+            assert.strictEqual(wallet1.key.metadata.n, 2);
 
-          // Wallet 2
-          const wallet2 = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName2 + '.json'), 'utf-8'));
-          assert.strictEqual(wallet2.credentials.chain, 'xrp');
-          assert.strictEqual(wallet2.credentials.network, 'testnet');
-          // Still treated as single sig wallet
-          assert.strictEqual(wallet2.credentials.m, 1);
-          assert.strictEqual(wallet2.credentials.n, 1);
-          // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
-          assert.ok(Object.hasOwn(wallet2.key, 'mnemonicEncrypted'));
-          assert.ok(!Object.hasOwn(wallet2.key, 'mnemonic'));
-          assert.ok(Object.hasOwn(wallet2.key, 'xPrivKeyEncrypted'));
-          assert.ok(!Object.hasOwn(wallet2.key, 'xPrivKey'));
-          assert.ok(Object.hasOwn(wallet2.key, 'xPrivKeyEDDSAEncrypted'));
-          assert.ok(!Object.hasOwn(wallet2.key, 'xPrivKeyEDDSA'));
-          // Ensure TSS fields are present and encrypted
-          assert.ok(Object.hasOwn(wallet2, 'key'), 'No key property found on wallet');
-          assert.ok(Object.hasOwn(wallet2.key, 'keychain'), 'No key.keychain property found on wallet');
-          assert.strictEqual(typeof wallet2.key.keychain.commonKeyChain, 'string');
-          assert.ok(wallet2.key.keychain.privateKeyShare == null, 'privateKeyShare should not be present on wallet keychain');
-          assert.strictEqual(typeof wallet2.key.keychain.privateKeyShareEncrypted, 'string');
-          assert.ok(wallet2.key.keychain.privateKeyShareEncrypted.startsWith('{"iv":"'), 'privateKeyShareEncrypted should be encrypted');
-          assert.ok(wallet2.key.keychain.reducedPrivateKeyShare == null, 'reducedPrivateKeyShare should not be present on wallet keychain');
-          assert.strictEqual(typeof wallet2.key.keychain.reducedPrivateKeyShareEncrypted, 'string');
-          assert.ok(wallet2.key.keychain.reducedPrivateKeyShareEncrypted.startsWith('{"iv":"'), 'reducedPrivateKeyShareEncrypted should be encrypted');
-          assert.ok(Object.hasOwn(wallet2.key, 'metadata'), 'No key.metadata property found on wallet');
-          assert.strictEqual(typeof wallet2.key.metadata.id, 'string');
-          assert.strictEqual(wallet2.key.metadata.m, 2);
-          assert.strictEqual(wallet2.key.metadata.n, 2);
+            // Wallet 2
+            const wallet2 = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName2 + '.json'), 'utf-8'));
+            assert.strictEqual(wallet2.credentials.chain, 'xrp');
+            assert.strictEqual(wallet2.credentials.network, 'testnet');
+            // Still treated as single sig wallet
+            assert.strictEqual(wallet2.credentials.m, 1);
+            assert.strictEqual(wallet2.credentials.n, 1);
+            // Ensure that sensitive wallet key properties are encrypted and not present in plaintext
+            assert.ok(Object.hasOwn(wallet2.key, 'mnemonicEncrypted'));
+            assert.ok(!Object.hasOwn(wallet2.key, 'mnemonic'));
+            assert.ok(Object.hasOwn(wallet2.key, 'xPrivKeyEncrypted'));
+            assert.ok(!Object.hasOwn(wallet2.key, 'xPrivKey'));
+            assert.ok(Object.hasOwn(wallet2.key, 'xPrivKeyEDDSAEncrypted'));
+            assert.ok(!Object.hasOwn(wallet2.key, 'xPrivKeyEDDSA'));
+            // Ensure TSS fields are present and encrypted
+            assert.ok(Object.hasOwn(wallet2, 'key'), 'No key property found on wallet');
+            assert.ok(Object.hasOwn(wallet2.key, 'keychain'), 'No key.keychain property found on wallet');
+            assert.strictEqual(typeof wallet2.key.keychain.commonKeyChain, 'string');
+            assert.ok(wallet2.key.keychain.privateKeyShare == null, 'privateKeyShare should not be present on wallet keychain');
+            assert.strictEqual(typeof wallet2.key.keychain.privateKeyShareEncrypted, 'string');
+            assert.ok(wallet2.key.keychain.privateKeyShareEncrypted.startsWith('{"iv":"'), 'privateKeyShareEncrypted should be encrypted');
+            assert.ok(wallet2.key.keychain.reducedPrivateKeyShare == null, 'reducedPrivateKeyShare should not be present on wallet keychain');
+            assert.strictEqual(typeof wallet2.key.keychain.reducedPrivateKeyShareEncrypted, 'string');
+            assert.ok(wallet2.key.keychain.reducedPrivateKeyShareEncrypted.startsWith('{"iv":"'), 'reducedPrivateKeyShareEncrypted should be encrypted');
+            assert.ok(Object.hasOwn(wallet2.key, 'metadata'), 'No key.metadata property found on wallet');
+            assert.strictEqual(typeof wallet2.key.metadata.id, 'string');
+            assert.strictEqual(wallet2.key.metadata.m, 2);
+            assert.strictEqual(wallet2.key.metadata.n, 2);
 
-          // Check wallets are copayers of the same wallet
-          assert.strictEqual(wallet1.credentials.walletId, wallet2.credentials.walletId, 'Wallet IDs do not match');
-          assert.strictEqual(wallet1.key.metadata.id, wallet2.key.metadata.id, 'Key metadata IDs do not match');
-          assert.strictEqual(wallet1.key.keychain.commonKeyChain, wallet2.key.keychain.commonKeyChain, 'Common key chains do not match');
+            // Check wallets are copayers of the same wallet
+            assert.strictEqual(wallet1.credentials.walletId, wallet2.credentials.walletId, 'Wallet IDs do not match');
+            assert.strictEqual(wallet1.key.metadata.id, wallet2.key.metadata.id, 'Key metadata IDs do not match');
+            assert.strictEqual(wallet1.key.keychain.commonKeyChain, wallet2.key.keychain.commonKeyChain, 'Common key chains do not match');
 
-          done();
+            // Check keyshare backup files
+            const keyshareBackup1 = path.join(TEMP_DIR, walletName1 + '-export.json');
+            assert.ok(fs.existsSync(keyshareBackup1), 'Keyshare backup file not found for wallet 1');
+            const keyshare1 = JSON.parse(fs.readFileSync(keyshareBackup1, 'utf-8'));
+            assert.ok(keyshare1.iv && keyshare1.mode && keyshare1.cipher && keyshare1.ct, 'Keyshare backup 1 does not appear to be encrypted');
+            assert.strictEqual(keyshare1.cipher + keyshare1.mode, 'aesgcm', 'Expected keyshare backup 1 to be encrypted with AES-GCM');
+            const keyshareBackup2 = path.join(TEMP_DIR, walletName2 + '-export.json');
+            assert.ok(fs.existsSync(keyshareBackup2), 'Keyshare backup file not found for wallet 2');
+            const keyshare2 = JSON.parse(fs.readFileSync(keyshareBackup2, 'utf-8'));
+            assert.ok(keyshare2.iv && keyshare2.mode && keyshare2.cipher && keyshare2.ct, 'Keyshare backup 2 does not appear to be encrypted');
+            assert.strictEqual(keyshare2.cipher + keyshare2.mode, 'aesgcm', 'Expected keyshare backup 2 to be encrypted with AES-GCM');
+
+            done();
+          } catch (e) {
+            done(e);
+          }
         });
       });
     });

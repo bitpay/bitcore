@@ -26,7 +26,7 @@ export async function importWallet(args: CommonArgs) {
     throw new UserCancelled();
   }
 
-  const importPassword = await getPassword('Import/export password:', { hidden: true });
+  const importPassword = await getPassword('File decryption password:', { hidden: true });
   
   await wallet.import({
     filename: replaceTilde(filename),

@@ -113,17 +113,17 @@ describe('Utils', function() {
   describe('colorText', function() {
     it('should wrap text in green ANSI codes', function() {
       const result = Utils.colorText('hello', 'green');
-      assert.strictEqual(result, '\x1b[32mhello\x1b[0m');
+      assert.strictEqual(result, '\x1b[32mhello\x1b[39m');
     });
 
     it('should wrap text in red ANSI codes', function() {
       const result = Utils.colorText('error', 'red');
-      assert.strictEqual(result, '\x1b[31merror\x1b[0m');
+      assert.strictEqual(result, '\x1b[31merror\x1b[39m');
     });
 
     it('should wrap text in yellow ANSI codes', function() {
       const result = Utils.colorText('warn', 'yellow');
-      assert.strictEqual(result, '\x1b[33mwarn\x1b[0m');
+      assert.strictEqual(result, '\x1b[33mwarn\x1b[39m');
     });
   });
 
@@ -131,25 +131,25 @@ describe('Utils', function() {
 
   describe('boldText', function() {
     it('should wrap text in bold ANSI codes', function() {
-      assert.strictEqual(Utils.boldText('hi'), '\x1b[1mhi\x1b[0m');
+      assert.strictEqual(Utils.boldText('hi'), '\x1b[1mhi\x1b[22m');
     });
   });
 
   describe('italicText', function() {
     it('should wrap text in italic ANSI codes', function() {
-      assert.strictEqual(Utils.italicText('hi'), '\x1b[3mhi\x1b[0m');
+      assert.strictEqual(Utils.italicText('hi'), '\x1b[3mhi\x1b[23m');
     });
   });
 
   describe('underlineText', function() {
     it('should wrap text in underline ANSI codes', function() {
-      assert.strictEqual(Utils.underlineText('hi'), '\x1b[4mhi\x1b[0m');
+      assert.strictEqual(Utils.underlineText('hi'), '\x1b[4mhi\x1b[24m');
     });
   });
 
   describe('strikeText', function() {
     it('should wrap text in strikethrough ANSI codes', function() {
-      assert.strictEqual(Utils.strikeText('hi'), '\x1b[9mhi\x1b[0m');
+      assert.strictEqual(Utils.strikeText('hi'), '\x1b[9mhi\x1b[29m');
     });
   });
 
@@ -585,30 +585,6 @@ describe('Utils', function() {
     });
   });
 
-  // ─── getChainColor ───────────────────────────────────────────────────────────
-
-  describe('getChainColor', function() {
-    const cases: [string, string][] = [
-      ['btc', 'orange'],
-      ['bch', 'green'],
-      ['doge', 'beige'],
-      ['ltc', 'lightgray'],
-      ['eth', 'blue'],
-      ['matic', 'pink'],
-      ['xrp', 'darkgray'],
-      ['sol', 'purple'],
-    ];
-
-    for (const [chain, color] of cases) {
-      it(`should return ${color} for ${chain}`, function() {
-        assert.strictEqual(Utils.getChainColor(chain), color);
-      });
-    }
-
-    it('should be case-insensitive', function() {
-      assert.strictEqual(Utils.getChainColor('BTC'), 'orange');
-    });
-  });
 
   // ─── colorTextByChain ────────────────────────────────────────────────────────
 
