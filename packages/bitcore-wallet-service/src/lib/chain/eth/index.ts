@@ -3,13 +3,14 @@ import _ from 'lodash';
 import { IWallet } from 'src/lib/model';
 import { IAddress } from 'src/lib/model/address';
 import { WalletService } from 'src/lib/server';
-import { IChain } from '../../../types/chain';
 import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
 import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
 import { ERC20Abi } from './abi-erc20';
 import { InvoiceAbi } from './abi-invoice';
+import type { IChain } from '../../../types/chain';
+import type { TxProposal } from '../../model/txproposal';
 
 const {
   Constants,
@@ -98,24 +99,24 @@ export class EthChain implements IChain {
       // getPendingTxs returns all txps when given a native currency
       server.getPendingTxs(opts, (err, txps) => {
         if (err) return cb(err);
-        let fees = 0;
-        let amounts = 0;
+        let fees = 0n;
+        let amounts = 0n;
 
         txps.filter(txp => {
           // Add gas used for tokens when getting native balance
           if (!opts.tokenAddress) {
-            fees += txp.fee || 0;
+            fees += txp.fee ? BigInt(txp.fee) : 0n;
           }
           // Filter tokens when getting native balance
           if (txp.tokenAddress && !opts.tokenAddress) {
             return false;
           }
-          amounts += txp.amount;
+          amounts += txp.amount ? BigInt(txp.amount) : 0n;
           return true;
         });
 
         // TODO support big int
-        const lockedSum = (amounts + fees) || 0;  // previously set to 0 if opts.multisigContractAddress
+        const lockedSum = Number(amounts + fees) || 0;  // previously set to 0 if opts.multisigContractAddress
         const convertedBalance = this.convertBitcoreBalance(balance, lockedSum);
         server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
           if (err) return cb(err);
@@ -286,7 +287,7 @@ export class EthChain implements IChain {
     });
   }
 
-  getBitcoreTx(txp, opts = { signed: true }) {
+  getBitcoreTx(txp: TxProposal, opts = { signed: true }) {
     const {
       data,
       outputs,

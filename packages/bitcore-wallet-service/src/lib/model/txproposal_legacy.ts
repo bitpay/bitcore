@@ -15,7 +15,7 @@ function throwUnsupportedError() {
   throw new Error(msg);
 }
 
-export interface ITxProposal {
+export interface ITxProposalLegacy {
   version: string;
   type: string;
   createdOn: number;
@@ -35,7 +35,7 @@ export interface ITxProposal {
   walletN: number;
   status: string;
   txid: string;
-  broadcastedOn: string;
+  broadcastedOn: number;
   inputPaths: string;
   actions: any[];
   outputOrder: number;
@@ -49,8 +49,9 @@ export interface ITxProposal {
   addressType: string;
   derivationStrategy: string;
   customData: any;
-}
-export class TxProposalLegacy {
+};
+
+export class TxProposalLegacy implements ITxProposalLegacy {
   version: string;
   type: string;
   createdOn: number;
