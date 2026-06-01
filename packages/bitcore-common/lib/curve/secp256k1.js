@@ -1,13 +1,15 @@
 'use strict';
 import { assert } from '../utils.js';
 import ShortCurve from './short.js';
+import precomputed from '../precomputed/secp256k1.js';
 
 const curve = new ShortCurve({
   prime: 'k256',
   p: 'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f',
   n: 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141',
   g: ['79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
-    '483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8'],
+    '483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8',
+    precomputed],
   a: 0,
   b: 7,
   beta: '7ae96a2b657c07106e64479eac3434e99cf0497512f58995c1396c28719501ee',
@@ -23,8 +25,6 @@ const curve = new ShortCurve({
     }
   ]
 });
-
-curve.g.precompute(curve.n.bitLength() + 1);
 
 export default curve;
 export { assert };
