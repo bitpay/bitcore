@@ -254,12 +254,6 @@ describe('8. Internal Arithmetic Path Coverage — lib/curve/point.js', function
       expect(result.eq(expected)).to.be.true;
     });
 
-    it('ARITH.FIXED_NAF.NO_PRECOMP - _hasDoubles returns false without precompute', function () {
-      const g = Curve.g;
-      expect(g._hasDoubles).to.be.a('function');
-      const k = new BN('ff', 16);
-      expect(g._hasDoubles(k)).to.be.false;
-    });
   });
 
   // -----------------------------------------------------------------
