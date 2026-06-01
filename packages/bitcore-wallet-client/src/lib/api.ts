@@ -3954,6 +3954,14 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/moonpay/cancelSellTransaction', data);
   }
 
+  async moonpayCreateSession(data) {
+    return this.request.post('/v1/service/moonpay/createSession', data);
+  }
+
+  async moonpayRevokeActiveSession(data) {
+    return this.request.post('/v1/service/moonpay/revokeActiveSession', data);
+  }
+
   async rampGetQuote(data) {
     return this.request.post('/v1/service/ramp/quote', data);
   }
