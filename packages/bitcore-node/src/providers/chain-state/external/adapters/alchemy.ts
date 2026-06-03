@@ -2,8 +2,8 @@ import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import axios from 'axios';
 import config from '../../../../config';
 import logger from '../../../../logger';
-import { EVMTransactionStorage } from '../../evm/models/transaction';
 import { EthDater } from '../../../../utils/ethDater';
+import { EVMTransactionStorage } from '../../evm/models/transaction';
 import { ExternalApiStream } from '../streams/apiStream';
 import {
   type AdapterBlockByDateParams,

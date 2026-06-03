@@ -1,6 +1,5 @@
 import { PassThrough, Readable } from 'stream';
 import { LRUCache } from 'lru-cache';
-import { EthDater } from '../../../utils/ethDater';
 import logger from '../../../logger';
 import { CacheStorage } from '../../../models/cache';
 import { WalletAddressStorage } from '../../../models/walletAddress';
@@ -21,6 +20,7 @@ import {
   StreamWalletTransactionsParams
 } from '../../../types/namespaces/ChainStateProvider';
 import { normalizeChainNetwork } from '../../../utils';
+import { EthDater } from '../../../utils/ethDater';
 import { ReadableWithEventPipe } from '../../../utils/streamWithEventPipe';
 import type { MongoBound } from '../../../models/base';
 import type {
