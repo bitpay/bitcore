@@ -51,6 +51,12 @@ exports.G_X =
 exports.G_Y =
   '483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8';
 
+/** lambda · G, equivalent to the endomorphism map (beta · Gx, Gy) */
+exports.LAMBDA_G = {
+  x: 'bcace2e99da01887ab0102b696902325872844067f15e98da7bba04400b88fcb',
+  y: exports.G_Y,
+};
+
 // ---------------------------------------------------------------------------
 // Known scalar multiples of G  (k * G)
 //
@@ -118,6 +124,14 @@ exports.KG = {
     x: 'e60fce93b59e9ec53011aabc21c23e97b2a31369b87a5ae9c44ee89e2a6dec0a',
     y: 'f7e3507399e595929db99f34f57937101296891e44d23f0be1f32cce69616821',
   },
+  '0x20': { // 32 · G
+    x: 'd30199d74fb5a22d47b6e054e2f378cedacffcb89904a61d75d0dbd407143e65',
+    y: '95038d9d0ae3d5c3b3d6dec9e98380651f760cc364ed819605b3ff1f24106ab9',
+  },
+  '0x40': { // 64 · G
+    x: 'bf23c1542d16eab70b1051eaf832823cfc4c6f1dcdbafd81e37918e6f874ef8b',
+    y: '5cb3866fc33003737ad928a0ba5392e4c522fc54811e2f784dc37efe66831d9f',
+  },
   '0x63': { // 99 · G
     x: 'e22fbe15c0af8ccc5780c0735f84dbe9a790badee8245c06c7ca37331cb36980',
     y: '0a855babad5cd60c88b430a69f53a1a7a38289154964799be43d06d77d31da06',
@@ -149,6 +163,8 @@ exports.KG = {
     y: '662a9f2dba063986de1d90c2b6be215dbbea2cfe95510bfdf23cbf79501fff82',
   },
 };
+
+exports.KG['0x' + exports.LAMBDA] = exports.LAMBDA_G;
 
 // ---------------------------------------------------------------------------
 // Derived values (negated points)

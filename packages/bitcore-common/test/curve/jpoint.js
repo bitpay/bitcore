@@ -3,6 +3,7 @@
 
 const { BN, Curve } = require('../../');
 const { expect } = require('chai');
+const vectors = require('../data/secp256k1-vectors');
 
 // secp256k1 constants (BN hex strings)
 const SECP_P = 'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f';
@@ -210,12 +211,10 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
       const g = Curve.g;
       const g2 = Curve.g.mul('2');
       const g3 = Curve.g.mul('3');
-      const left = g.toJ().add(g2.toJ()).add(g3.toJ());
-      const right = g.toJ().add(g2.toJ()).add(g3.toJ());
-      // J1+J2+J3 = G+2G+3G = 6G
-      const expected = g.mul('6').toJ();
-      expect(left.eq(expected)).to.be.true;
-      expect(right.eq(expected)).to.be.true;
+      const result = g.toJ().add(g2.toJ()).add(g3.toJ());
+      // J1+J2+J3 = G+2G+3G = 6G, verified against independent vector
+      expect(result.toP().getX().toString(16)).to.equal(vectors.KG['0x6'].x);
+      expect(result.toP().getY().toString(16)).to.equal(vectors.KG['0x6'].y);
     });
 
     it('JP.ADD.IDENTITY.J_LEFT - J.add(infinity) == J', function () {
@@ -384,14 +383,14 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
 
     it('JP.DBL.G - G.toJ().dbl() produces 2G in Jacobian', function () {
       const dbl2G = Curve.g.toJ().dbl();
-      const expected2G = Curve.g.mul('2').toJ();
-      expect(dbl2G.eq(expected2G)).to.be.true;
+      expect(dbl2G.toP().getX().toString(16)).to.equal(vectors.KG['0x2'].x);
+      expect(dbl2G.toP().getY().toString(16)).to.equal(vectors.KG['0x2'].y);
     });
 
     it('JP.DBL.2G - 2G.toJ().dbl() produces 4G in Jacobian', function () {
       const dbl4G = Curve.g.mul('2').toJ().dbl();
-      const expected4G = Curve.g.mul('4').toJ();
-      expect(dbl4G.eq(expected4G)).to.be.true;
+      expect(dbl4G.toP().getX().toString(16)).to.equal(vectors.KG['0x4'].x);
+      expect(dbl4G.toP().getY().toString(16)).to.equal(vectors.KG['0x4'].y);
     });
   });
 
@@ -419,8 +418,10 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
       const j = Curve.g.toJ();
       for (let k = 1; k <= 4; k++) {
         const dblpResult = j.dblp(k);
-        const mulResult = Curve.g.mul(new BN(1).iushln(k)).toJ(); // 2^k
-        expect(dblpResult.eq(mulResult)).to.be.true;
+        const expected = vectors.KG['0x' + Math.pow(2, k).toString(16)];
+        const affine = dblpResult.toP();
+        expect(affine.getX().toString(16)).to.equal(expected.x);
+        expect(affine.getY().toString(16)).to.equal(expected.y);
       }
     });
 
@@ -478,15 +479,15 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
   describe('7.11 Scalar Multiplication', function () {
 
     it('JP.MUL.G_BY_3 - G.toJ().mul("3").eq(G.mul("3").toJ())', function () {
-      const jMul = Curve.g.toJ().mul('3');
-      const pMul = Curve.g.mul('3').toJ();
-      expect(jMul.eq(pMul)).to.be.true;
+      const result = Curve.g.toJ().mul('3');
+      expect(result.toP().getX().toString(16)).to.equal(vectors.KG['0x3'].x);
+      expect(result.toP().getY().toString(16)).to.equal(vectors.KG['0x3'].y);
     });
 
     it('JP.MUL.G_BY_FF - G.toJ().mul("ff", 16) matches affine mul', function () {
-      const jMul = Curve.g.toJ().mul('ff', 16);
-      const pMul = Curve.g.mul('ff').toJ();
-      expect(jMul.eq(pMul)).to.be.true;
+      const result = Curve.g.toJ().mul('ff', 16);
+      expect(result.toP().getX().toString(16)).to.equal(vectors.KG['0xff'].x);
+      expect(result.toP().getY().toString(16)).to.equal(vectors.KG['0xff'].y);
     });
 
     it('JP.MUL.INF - infinity.mul(k) = infinity', function () {
@@ -624,8 +625,9 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
       const j1 = p1.toJ();
       const j2 = p2.toJ();
       const jSum = j1.add(j2).toP();
-      const pSum = p1.add(p2);
-      expect(jSum.eq(pSum)).to.be.true;
+      // 3G + 7G = 10G, verified against independent vector
+      expect(jSum.getX().toString(16)).to.equal(vectors.KG['0xa'].x);
+      expect(jSum.getY().toString(16)).to.equal(vectors.KG['0xa'].y);
     });
 
     it('JP.INTEROP.DBL_MATCHES - J.dbl().toP() == P.dbl() for multiple points', function () {

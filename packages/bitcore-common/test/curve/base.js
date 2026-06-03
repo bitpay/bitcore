@@ -3,6 +3,7 @@
 
 const { BN, Curve } = require('../../');
 const { expect } = require('chai');
+const vectors = require('../data/secp256k1-vectors');
 
 // secp256k1 constants (BN hex strings)
 const SECP_P = 'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f';
@@ -448,22 +449,23 @@ describe('BaseCurve — Base Curve Operations', function () {
       expect(result.getY().toString(16)).to.equal(SECP_2G_Y);
     });
 
-    it('BASE.DBLP.G4 - point.dblp(2) == 4G (known coordinates via G+3G)', function () {
-      const pt = Curve.g;
-      const result = pt.dblp(2); // 4G
-      // Verify 4G = G + 3G
-      const threeG = Curve.g.mul('3');
-      const gPlus3g = Curve.g.add(threeG);
-      expect(result.eq(gPlus3g)).to.be.true;
+    it('BASE.DBLP.G4 - point.dblp(2) == 4G (known coordinates)', function () {
+      const result = Curve.g.dblp(2); // 4G
+      // Verify against independent vector oracle
+      const pad64 = (s) => s.padStart(64, '0');
+      expect(pad64(result.getX().toString(16))).to.equal(vectors.KG['0x4'].x);
+      expect(pad64(result.getY().toString(16))).to.equal(vectors.KG['0x4'].y);
     });
 
-    it('BASE.DBLP.CHALLENGE - point.dblp(k) == point.mul(2^k) for k=1..5', function () {
-      const pt = Curve.g;
+    it('BASE.DBLP.CHALLENGE - point.dblp(k) produces correct k·G for k=1..5', function () {
+      // dblp(k) doubles k times → scalar = 2^k
+      // k=1→2(0x2), k=2→4(0x4), k=3→8(0x8), k=4→16(0x10), k=5→32(0x20)
+      const vecKeys = ['0x2', '0x4', '0x8', '0x10', '0x20'];
+      const pad64 = (s) => s.padStart(64, '0');
       for (let k = 1; k <= 5; k++) {
-        const dblp = pt.dblp(k);
-        const mul = pt.mul((1 << k).toString(16)); // mul by 2^k in hex
-        expect(dblp.eq(mul)).to.be.true,
-        'dblp(' + k + ') != mul(2^' + k + ')';
+        const result = Curve.g.dblp(k);
+        expect(pad64(result.getX().toString(16))).to.equal(vectors.KG[vecKeys[k - 1]].x);
+        expect(pad64(result.getY().toString(16))).to.equal(vectors.KG[vecKeys[k - 1]].y);
       }
     });
 

@@ -3,6 +3,7 @@
 
 const { BN, Curve } = require('../../');
 const { expect } = require('chai');
+const vectors = require('../data/secp256k1-vectors');
 
 // secp256k1 constants (BN hex strings)
 const SECP_P = 'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f';
@@ -89,7 +90,14 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       const g = Curve.g;
       const g2 = Curve.g.mul('2');
       const g3 = Curve.g.mul('3');
-      expect(g.add(g2).add(g3).eq(g.add(g2.add(g3)))).to.be.true;
+      // Verify two groupings are equal (associativity)
+      const left = g.add(g2).add(g3);
+      const right = g.add(g2.add(g3));
+      expect(left.eq(right)).to.be.true;
+      // Also verify the result against an independent vector oracle: 6G
+      const pad64 = (s) => s.padStart(64, '0');
+      expect(pad64(left.getX().toString(16))).to.equal(vectors.KG['0x6'].x);
+      expect(pad64(left.getY().toString(16))).to.equal(vectors.KG['0x6'].y);
     });
 
     it('P.ADD.IDENTITY - P.add(infinity) == P and infinity.add(P) == P', function () {
@@ -302,7 +310,12 @@ describe('Point (Affine) — lib/curve/point.js', function () {
     it('P.MUL.DISTRIBUTIVE - G.mul("3").add(G.mul("5")) == G.mul("8")', function () {
       const left = Curve.g.mul('3').add(Curve.g.mul('5'));
       const right = Curve.g.mul('8');
+      // Verify structural equality: 3G + 5G == 8G
       expect(left.eq(right)).to.be.true;
+      // Also verify against an independent vector oracle: 8G
+      const pad64 = (s) => s.padStart(64, '0');
+      expect(pad64(left.getX().toString(16))).to.equal(vectors.KG['0x8'].x);
+      expect(pad64(left.getY().toString(16))).to.equal(vectors.KG['0x8'].y);
     });
 
     it('P.MUL.ASSOC_SCALAR - G.mul("6").eq(G.mul("3").mul("2"))', function () {
@@ -344,13 +357,17 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       expect(result.eq(expected)).to.be.true;
     });
 
-    it('P.JMULADD - jmulAdd(BN(3), G2, BN(5)) result equals mulAdd(BN(3), G2, BN(5)) (k1/k2 are BN objects)', function () {
+    it('P.JMULADD - jmulAdd(3, G2, 5) result equals mulAdd(3, G2, 5) — both accept BN scalar coefficients', function () {
       const g = Curve.g;
       const g2 = Curve.g.mul('2');
       const mulAddResult = g.mulAdd(new BN('3', 16), g2, new BN('5', 16));
       const jmulAddResult = g.jmulAdd(new BN('3', 16), g2, new BN('5', 16));
-      // jmulAdd returns a JPoint; convert to affine via toP()
+      // Verify structural equality: jmulAdd == mulAdd
       expect(jmulAddResult.toP().eq(mulAddResult)).to.be.true;
+      // Also verify against an independent vector oracle: 13G
+      const pad64 = (s) => s.padStart(64, '0');
+      expect(pad64(jmulAddResult.toP().getX().toString(16))).to.equal(vectors.KG['0xd'].x);
+      expect(pad64(jmulAddResult.toP().getY().toString(16))).to.equal(vectors.KG['0xd'].y);
     });
   });
 

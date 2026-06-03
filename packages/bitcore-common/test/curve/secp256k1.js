@@ -3,12 +3,19 @@
 
 const { BN, Curve } = require('../../');
 const { expect } = require('chai');
+const vectors = require('../data/secp256k1-vectors');
 
 // secp256k1 constants (BN hex strings)
 const SECP_P = 'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f';
 const SECP_N = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141';
 const SECP_G_X = '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798';
 const SECP_G_Y = '483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8';
+
+function expectPointMatchesVector(point, vector) {
+  expect(point.isInfinity()).to.be.false;
+  expect(point.getX().toString(16, 64)).to.equal(vector.x);
+  expect(point.getY().toString(16, 64)).to.equal(vector.y);
+}
 
 // Basis vectors from _getEndoBasis for secp256k1
 // a1 = 0x30e567f25f4c8ca219fe85e649bcaa830d6db3e9685841f38c69e643a36856e (approx 128 bit)
@@ -173,18 +180,22 @@ describe('Curve (secp256k1 Configuration)', function () {
       expect(lambda.cmpn(1)).to.not.equal(0);
     });
 
-    it('CURVE.ENDO.LAMBDA.IDENTITY - lambda * G == (beta * Gx, Gy)', function () {
+    it('CURVE.ENDO.LAMBDA.IDENTITY - lambda * G and (beta * Gx, Gy) match known lambdaG', function () {
       // Endomorphism identity: lambda * P = (beta * Px, Py)
       const lambda = Curve.endo.lambda;
       const beta = Curve.endo.beta;
       const g = Curve.g;
 
-      const lambdaG = Curve.g.mul(lambda);
-      const betaGx = g.x.redMul(beta);
-      const expected = Curve.point(betaGx, g.y);
+      expect(lambda.toString(16, 64)).to.equal(vectors.LAMBDA);
+      expect(beta.fromRed().toString(16, 64)).to.equal(vectors.BETA);
 
-      expect(lambdaG.x.cmp(expected.x)).to.equal(0);
-      expect(lambdaG.y.cmp(expected.y)).to.equal(0);
+      const lambdaG = g.mul(lambda);
+      const betaMappedG = Curve.point(g.x.redMul(beta), g.y);
+
+      expect(lambdaG.eq(betaMappedG)).to.be.true;
+      expect(Curve.validate(betaMappedG)).to.be.true;
+      expectPointMatchesVector(lambdaG, vectors.LAMBDA_G);
+      expectPointMatchesVector(betaMappedG, vectors.LAMBDA_G);
     });
 
     it('CURVE.ENDO.BASIS - endo.basis has 2 vectors', function () {

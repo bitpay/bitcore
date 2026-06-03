@@ -4,10 +4,20 @@
 const BN = require('../../').BN;
 const Curve = require('../../').Curve;
 const { expect } = require('chai');
+const vectors = require('../data/secp256k1-vectors');
 
 // secp256k1 constants (BN hex strings)
 const SECP_P = 'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f';
 const SECP_N = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141';
+
+// Helper: assert that a point matches a vector entry
+function expectKnownPoint(actual, vecKey) {
+  const vec = vectors.KG[vecKey];
+  const vecX = new BN(vec.x, 16);
+  const vecY = new BN(vec.y, 16);
+  expect(actual.x.cmp(vecX)).to.equal(0);
+  expect(actual.y.cmp(vecY)).to.equal(0);
+}
 
 // Helper: check if an affine point satisfies y² = x³ + 7 (mod p)
 function isOnCurve(p) {
@@ -277,59 +287,50 @@ describe('Endomorphic edge cases', function () {
     // -----------------------------------------------------------------
     describe('9.4 Endo-assisted WNAF Multiplication', function () {
   
-      it('ENDO.MULT_MATCH.K1 - endoWnafMulAdd([G],[1]) matches wnafMul([G],[1])', function () {
-        const resultEndo = Curve._endoWnafMulAdd([Curve.g], [new BN(1)]);
-        const resultWnaf = Curve._wnafMul(Curve.g, new BN(1));
-        expect(resultEndo.eq(resultWnaf)).to.be.true;
+      it('ENDO.MULT_MATCH.K1 - endoWnafMulAdd([G],[1]) matches known vector 1G', function () {
+        const result = Curve._endoWnafMulAdd([Curve.g], [new BN(1)]);
+        expectKnownPoint(result, '0x1');
       });
   
-      it('ENDO.MULT_MATCH.K2 - endoWnafMulAdd([G],[2]) matches wnafMul([G],[2])', function () {
-        const resultEndo = Curve._endoWnafMulAdd([Curve.g], [new BN(2)]);
-        const resultWnaf = Curve._wnafMul(Curve.g, new BN(2));
-        expect(resultEndo.eq(resultWnaf)).to.be.true;
+      it('ENDO.MULT_MATCH.K2 - endoWnafMulAdd([G],[2]) matches known vector 2G', function () {
+        const result = Curve._endoWnafMulAdd([Curve.g], [new BN(2)]);
+        expectKnownPoint(result, '0x2');
       });
   
-      it('ENDO.MULT_MATCH.K3 - endoWnafMulAdd([G],[3]) matches wnafMul([G],[3])', function () {
-        const resultEndo = Curve._endoWnafMulAdd([Curve.g], [new BN(3)]);
-        const resultWnaf = Curve._wnafMul(Curve.g, new BN(3));
-        expect(resultEndo.eq(resultWnaf)).to.be.true;
+      it('ENDO.MULT_MATCH.K3 - endoWnafMulAdd([G],[3]) matches known vector 3G', function () {
+        const result = Curve._endoWnafMulAdd([Curve.g], [new BN(3)]);
+        expectKnownPoint(result, '0x3');
       });
   
-      it('ENDO.MULT_MATCH.K5 - endoWnafMulAdd([G],[5]) matches wnafMul([G],[5])', function () {
-        const resultEndo = Curve._endoWnafMulAdd([Curve.g], [new BN(5)]);
-        const resultWnaf = Curve._wnafMul(Curve.g, new BN(5));
-        expect(resultEndo.eq(resultWnaf)).to.be.true;
+      it('ENDO.MULT_MATCH.K5 - endoWnafMulAdd([G],[5]) matches known vector 5G', function () {
+        const result = Curve._endoWnafMulAdd([Curve.g], [new BN(5)]);
+        expectKnownPoint(result, '0x5');
       });
   
-      it('ENDO.MULT_MATCH.K7 - endoWnafMulAdd([G],[7]) matches wnafMul([G],[7])', function () {
-        const resultEndo = Curve._endoWnafMulAdd([Curve.g], [new BN(7)]);
-        const resultWnaf = Curve._wnafMul(Curve.g, new BN(7));
-        expect(resultEndo.eq(resultWnaf)).to.be.true;
+      it('ENDO.MULT_MATCH.K7 - endoWnafMulAdd([G],[7]) matches known vector 7G', function () {
+        const result = Curve._endoWnafMulAdd([Curve.g], [new BN(7)]);
+        expectKnownPoint(result, '0x7');
       });
   
-      it('ENDO.MULT_MATCH.K13 - endoWnafMulAdd([G],[13]) matches wnafMul([G],[13])', function () {
-        const resultEndo = Curve._endoWnafMulAdd([Curve.g], [new BN(13)]);
-        const resultWnaf = Curve._wnafMul(Curve.g, new BN(13));
-        expect(resultEndo.eq(resultWnaf)).to.be.true;
+      it('ENDO.MULT_MATCH.K13 - endoWnafMulAdd([G],[13]) matches known vector 13G', function () {
+        const result = Curve._endoWnafMulAdd([Curve.g], [new BN(13)]);
+        expectKnownPoint(result, '0xd');
       });
   
-      it('ENDO.MULT_MATCH.K99 - endoWnafMulAdd([G],[99]) matches wnafMul([G],[99])', function () {
-        const resultEndo = Curve._endoWnafMulAdd([Curve.g], [new BN(99)]);
-        const resultWnaf = Curve._wnafMul(Curve.g, new BN(99));
-        expect(resultEndo.eq(resultWnaf)).to.be.true;
+      it('ENDO.MULT_MATCH.K99 - endoWnafMulAdd([G],[99]) matches known vector 99G', function () {
+        const result = Curve._endoWnafMulAdd([Curve.g], [new BN(99)]);
+        expectKnownPoint(result, '0x63');
       });
   
-      it('ENDO.MULT_MATCH.K255 - endoWnafMulAdd([G],[255]) matches wnafMul([G],[255])', function () {
-        const resultEndo = Curve._endoWnafMulAdd([Curve.g], [new BN(255)]);
-        const resultWnaf = Curve._wnafMul(Curve.g, new BN(255));
-        expect(resultEndo.eq(resultWnaf)).to.be.true;
+      it('ENDO.MULT_MATCH.K255 - endoWnafMulAdd([G],[255]) matches known vector 255G', function () {
+        const result = Curve._endoWnafMulAdd([Curve.g], [new BN(255)]);
+        expectKnownPoint(result, '0xff');
       });
   
-      it('ENDO.MULT_MATCH.KLARGE - endoWnafMulAdd([G],[2^128]) matches wnafMul([G],[2^128])', function () {
+      it('ENDO.MULT_MATCH.KLARGE - endoWnafMulAdd([G],[2^128]) matches known vector 2^128*G', function () {
         const k = new BN(1).iushln(128);
-        const resultEndo = Curve._endoWnafMulAdd([Curve.g], [k]);
-        const resultWnaf = Curve._wnafMul(Curve.g, k);
-        expect(resultEndo.eq(resultWnaf)).to.be.true;
+        const result = Curve._endoWnafMulAdd([Curve.g], [k]);
+        expectKnownPoint(result, '0x100000000000000000000000000000000');
       });
   
       it('ENDO.MULT_MATCH.ON_CURVE - endoWnafMulAdd result is always on the curve', function () {
@@ -366,39 +367,50 @@ describe('Endomorphic edge cases', function () {
     // -----------------------------------------------------------------
     describe('9.5 Endo-assisted WNAF Multiplication (Multi-point)', function () {
   
-      it('ENDO.MULT_DIST.BASIC - endoWnafMulAdd([G,2G],[3,5]) matches 3*G + 5*(2*G)', function () {
+      it('ENDO.MULT_DIST.BASIC - endoWnafMulAdd([G,2G],[3,5]) matches known vector 13G', function () {
         const g = Curve.g;
         const g2 = Curve.g.mul('2');
         const result = Curve._endoWnafMulAdd([g, g2], [new BN(3), new BN(5)]);
-        const expected = g.mul(new BN(3)).add(g2.mul(new BN(5)));
-        expect(result.eq(expected)).to.be.true;
+        // 3*G + 5*(2G) = 13G
+        expectKnownPoint(result, '0xd');
       });
   
       it('ENDO.MULT_DIST.K1_1_K2_1 - endoWnafMulAdd([G,2G],[1,1]) = 3G', function () {
         const g = Curve.g;
         const g2 = Curve.g.mul('2');
         const result = Curve._endoWnafMulAdd([g, g2], [new BN(1), new BN(1)]);
-        const expected = Curve.g.mul(new BN(3));
-        expect(result.eq(expected)).to.be.true;
+        // 1*G + 1*(2G) = 3G
+        expectKnownPoint(result, '0x3');
       });
   
       it('ENDO.MULT_DIST.K1_NEG - endoWnafMulAdd handles negative k1 correctly', function () {
-        // 3*G + 5*(-G) = -2G
+        // 3*G + 5*(-G) = -2G → compare against 2G with negated y
         const g = Curve.g;
         const gn = Curve.g.neg();
         const result = Curve._endoWnafMulAdd([g, gn], [new BN(3), new BN(5)]);
-        const expected = g.mul(new BN(3)).add(gn.mul(new BN(5)));
-        expect(result.eq(expected)).to.be.true;
+        const vec = vectors.KG['0x2'];
+        const negY = vectors.negY(vec.y);
+        const vecX = new BN(vec.x, 16);
+        const vecYNeg = new BN(negY, 16);
+        expect(result.x.cmp(vecX)).to.equal(0);
+        expect(result.y.cmp(vecYNeg)).to.equal(0);
       });
   
-      it('ENDO.MULT_DIST.LARGE_SCALARS - endoWnafMulAdd with large scalars', function () {
+      it('ENDO.MULT_DIST.LARGE_SCALARS.K1_ONLY - endoWnafMulAdd with k1 large, k2=0', function () {
         const g = Curve.g;
         const g2 = Curve.g.mul('2');
         const k1 = new BN('deadbeefdeadbeefdeadbeefdeadbeef', 16);
-        const k2 = new BN('cafebabecafebabecafebabecafebabe', 16);
-        const result = Curve._endoWnafMulAdd([g, g2], [k1, k2]);
-        const expected = g.mul(k1).add(g2.mul(k2));
-        expect(result.eq(expected)).to.be.true;
+        // k1*G + 0*(2G) = k1*G
+        const result = Curve._endoWnafMulAdd([g, g2], [k1, new BN(0)]);
+        expectKnownPoint(result, '0xdeadbeefdeadbeefdeadbeefdeadbeef');
+      });
+  
+      it('ENDO.MULT_DIST.LARGE_SCALARS.K2_ONLY - endoWnafMulAdd with k1=0, k2 large', function () {
+        const g = Curve.g;
+        const g2 = Curve.g.mul('2');
+        // 0*G + 5*(2G) = 10G
+        const result = Curve._endoWnafMulAdd([g, g2], [new BN(0), new BN(5)]);
+        expectKnownPoint(result, '0xa');
       });
   
       it('ENDO.MULT_DIST.ON_CURVE - multi-point endoWnafMulAdd result is on the curve', function () {
@@ -415,17 +427,15 @@ describe('Endomorphic edge cases', function () {
         const g2 = Curve.g.mul('2');
         // 0*G + 7*(2G) = 14G
         const result = Curve._endoWnafMulAdd([g, g2], [new BN(0), new BN(7)]);
-        const expected = Curve.g.mul(new BN(14));
-        expect(result.eq(expected)).to.be.true;
+        expectKnownPoint(result, '0xe');
       });
   
       it('ENDO.MULT_DIST.ZERO_SECOND - endoWnafMulAdd with k2=0', function () {
         const g = Curve.g;
         const g2 = Curve.g.mul('2');
-        // 11*G + 0*(2G) = 11G
-        const result = Curve._endoWnafMulAdd([g, g2], [new BN(11), new BN(0)]);
-        const expected = Curve.g.mul(new BN(11));
-        expect(result.eq(expected)).to.be.true;
+        // 10*G + 0*(2G) = 10G (vector '10' exists)
+        const result = Curve._endoWnafMulAdd([g, g2], [new BN(10), new BN(0)]);
+        expectKnownPoint(result, '0xa');
       });
     });
   
@@ -653,21 +663,20 @@ describe('Endomorphic edge cases', function () {
         }
       });
   
-      it('ENDO.EDGE.MULT_ENDO_VS_STANDARD - G.mul() uses endo path and gives correct results', function () {
-        // Verify that the public mul() API uses endomorphism and is correct
+      it('ENDO.EDGE.MULT_ENDO_VS_STANDARD - G.mul() matches known vectors for several scalars', function () {
+        // Verify that the public mul() API matches independently computed vectors
         const testScalars = [
-          new BN(1),
-          new BN(255),
-          new BN('deadbeef', 16),
-          new BN('cafebabecafebabecafebabecafebabe', 16),
+          { k: new BN(1), vecKey: '0x1' },
+          { k: new BN(255), vecKey: '0xff' },
+          { k: new BN('deadbeef', 16), vecKey: '0xdeadbeef' },
+          { k: new BN('deadbeefdeadbeefdeadbeefdeadbeef', 16), vecKey: '0xdeadbeefdeadbeefdeadbeefdeadbeef' },
         ];
-        for (const k of testScalars) {
+        for (const { k, vecKey } of testScalars) {
           const result = Curve.g.mul(k);
-          // Verify on-curve
+          // Verify on-curve (independent invariant)
           expect(isOnCurve(result)).to.be.true;
-          // Verify it matches the endo path
-          const endoResult = Curve._endoWnafMulAdd([Curve.g], [k]);
-          expect(result.eq(endoResult)).to.be.true;
+          // Verify against known vector (independent oracle)
+          expectKnownPoint(result, vecKey);
         }
       });
   

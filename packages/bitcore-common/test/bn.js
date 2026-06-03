@@ -263,9 +263,16 @@ describe('BN', function () {
     });
 
     // BN.SQR
-    it('BN.SQR - socr() vs mul(a, a) produces identical result', function () {
-      const a = new BN(SECP_P, 16);
-      expect(a.sqr().toString(16)).to.equal(a.mul(a).toString(16));
+    it('BN.SQR - s() produces correct square', function () {
+      // Test with SECP_P (large 256-bit value) via BigInt oracle
+      const expected = (BigInt('0x' + SECP_P) ** 2n).toString(16);
+      expect(new BN(SECP_P, 16).sqr().toString(16)).to.equal(expected);
+
+      // Test with small value: 12345^2 = 152399025
+      expect(new BN(12345).sqr().toNumber()).to.equal(152399025);
+
+      // Test with power-of-2 boundary: 0xffff^2 = 0xfffe0001 = 4294836225
+      expect(new BN(0xffff).sqr().toNumber()).to.equal(4294836225);
     });
 
     // BN.ISQR
@@ -890,13 +897,26 @@ describe('BN', function () {
       expect(s.fromRed().toNumber()).to.equal(49);
     });
 
-    // BN.RED.SQR_VS_MUL
-    it('BN.RED.SQR_VS_MUL - redSqr(a) ≡ redMul(a, a)', function () {
+    // BN.RED.SQR
+    it('BN.RED.SQR - redSqr(a) produces correct square mod p', function () {
       const ctx = BN.red('k256');
-      const a = new BN(TEST_BASE, 16).toRed(ctx);
-      const s = a.redSqr();
-      const m = a.redMul(a);
-      expect(s.fromRed().toString(16)).to.equal(m.fromRed().toString(16));
+
+      // Test 1: 7^2 mod p = 49 (trivial, no wrapping)
+      const a = new BN(7).toRed(ctx);
+      expect(a.redSqr().fromRed().toNumber()).to.equal(49);
+
+      // Test 2: (p-1)^2 mod p = 1 (boundary: full wrap)
+      const pm1 = new BN(SECP_P, 16).isubn(1).toRed(ctx);
+      expect(pm1.redSqr().fromRed().toNumber()).to.equal(1);
+
+      // Test 3: (p-2)^2 mod p = 4
+      const pm2 = new BN(SECP_P, 16).isubn(2).toRed(ctx);
+      expect(pm2.redSqr().fromRed().toNumber()).to.equal(4);
+
+      // Test 4: (10^10)^2 mod p verified via BigInt oracle
+      const ten10 = new BN('10000000000').toRed(ctx);
+      const expected = (BigInt('10000000000') ** 2n % BigInt('0x' + SECP_P)).toString(16);
+      expect(ten10.redSqr().fromRed().toString(16)).to.equal(expected);
     });
 
     // BN.RED.POW
