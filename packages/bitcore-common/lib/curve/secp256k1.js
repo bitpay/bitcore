@@ -1,7 +1,7 @@
 'use strict';
-import { assert } from '../utils.js';
-import ShortCurve from './short.js';
-import precomputed from '../precomputed/secp256k1.js';
+const assert = require('../utils').assert;
+const ShortCurve = require('./short');
+const precomputed = require('../precomputed/secp256k1');
 
 const curve = new ShortCurve({
   prime: 'k256',
@@ -26,5 +26,5 @@ const curve = new ShortCurve({
   ]
 });
 
-export default curve;
-export { assert };
+module.exports = curve;
+module.exports.assert = assert;

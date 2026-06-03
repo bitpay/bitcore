@@ -1,6 +1,6 @@
 /* eslint-disable no-bitwise */
 'use strict';
-import { Buffer } from 'buffer';
+const { Buffer } = require('buffer');
 
 // Utils
 function assert (val, msg) {
@@ -3449,4 +3449,4 @@ Mont.prototype.invm = function invm (a) {
   return res._forceRed(this);
 };
 
-export default BN;
+module.exports = BN;

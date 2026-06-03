@@ -1,8 +1,8 @@
 'use strict';
 
-import BN from '../bn.js';
-import * as utils from '../utils.js';
-import Base from './base.js';
+const BN = require('../bn');
+const utils = require('../utils');
+const Base = require('./base');
 
 const inherits = function(cls, superCls) {
   cls.prototype = Object.create(superCls.prototype);
@@ -687,4 +687,4 @@ JPoint.prototype.isInfinity = function isInfinity() {
   return this.z.cmpn(0) === 0;
 };
 
-export { Point, JPoint };
+module.exports = { Point, JPoint };

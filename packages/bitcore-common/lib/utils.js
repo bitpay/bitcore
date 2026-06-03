@@ -1,11 +1,11 @@
 'use strict';
 
-import BN from './bn.js';
+const BN = require('./bn');
 
-export const assert = function assert (cond, msg) {
+const assert = function assert (cond, msg) {
   if (!cond) throw new Error(msg || 'Assertion failed');
 };
-export const toArray = function toArray (str, encoding) {
+const toArray = function toArray (str, encoding) {
   if (typeof str === 'string') {
     if (encoding === 'hex') return hexToArray(str);
     return Array.prototype.slice.call(str, 0);
@@ -18,23 +18,23 @@ function hexToArray (hex) {
     arr.push(parseInt(hex[i] + hex[i + 1], 16));
   return arr;
 }
-export const zero2 = function zero2 (str) {
+const zero2 = function zero2 (str) {
   if (str.length % 2) str = '0' + str;
   return str;
 };
-export const toHex = function toHex (buf) {
+const toHex = function toHex (buf) {
   let hex = '';
   for (let i = 0; i < buf.length; i++) hex += zero2(buf[i].toString(16));
   return hex;
 };
-export const encode = function encode (arr, enc) {
+const encode = function encode (arr, enc) {
   if (enc === 'hex')
     return toHex(arr);
   return arr;
 };
 
 // Represent num in a w-NAF form
-export function getNAF (num, w, bits) {
+function getNAF (num, w, bits) {
   const naf = new Array(Math.max(num.bitLength(), bits) + 1);
   naf.fill(0);
 
@@ -62,7 +62,7 @@ export function getNAF (num, w, bits) {
 }
 
 // Represent k1, k2 in a Joint Sparse Form
-export function getJSF (k1, k2) {
+function getJSF (k1, k2) {
   const jsf = [
     [],
     []
@@ -117,7 +117,7 @@ export function getJSF (k1, k2) {
   return jsf;
 }
 
-export const cachedProperty = function cachedProperty (obj, name, computer) {
+const cachedProperty = function cachedProperty (obj, name, computer) {
   const key = '_' + name;
   obj.prototype[name] = function cachedProperty () {
     return this[key] !== undefined ? this[key] :
@@ -125,11 +125,13 @@ export const cachedProperty = function cachedProperty (obj, name, computer) {
   };
 };
 
-export const parseBytes = function parseBytes (bytes) {
+const parseBytes = function parseBytes (bytes) {
   return typeof bytes === 'string' ? toArray(bytes, 'hex') :
     bytes;
 };
 
-export const intFromLE = function intFromLE (bytes) {
+const intFromLE = function intFromLE (bytes) {
   return new BN(bytes, 'hex', 'le');
 };
+
+module.exports = { assert, toArray, zero2, toHex, encode, getNAF, getJSF, cachedProperty, parseBytes, intFromLE };

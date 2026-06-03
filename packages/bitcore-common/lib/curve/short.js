@@ -1,9 +1,9 @@
 'use strict';
 
-import BN from '../bn.js';
-import * as utils from '../utils.js';
-import Base from './base.js';
-import { Point, JPoint } from './point.js';
+const BN = require('../bn');
+const utils = require('../utils');
+const Base = require('./base');
+const { Point, JPoint } = require('./point');
 
 const inherits = function(cls, superCls) {
   cls.prototype = Object.create(superCls.prototype);
@@ -28,7 +28,7 @@ function ShortCurve(conf) {
   this._endoWnafT2 = new Array(4);
 }
 inherits(ShortCurve, Base);
-export default ShortCurve;
+module.exports = ShortCurve;
 
 ShortCurve.prototype._getEndomorphism = function _getEndomorphism(conf) {
   // No efficient endomorphism

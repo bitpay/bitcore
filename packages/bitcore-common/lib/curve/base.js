@@ -1,8 +1,8 @@
 'use strict';
 
-import BN from '../bn.js';
-import * as utils from '../utils.js';
-import { getNAF, getJSF, assert } from '../utils.js';
+const BN = require('../bn');
+const utils = require('../utils');
+const { getNAF, getJSF, assert } = require('../utils');
 
 function BaseCurve (type, conf) {
   this.type = type;
@@ -37,7 +37,8 @@ function BaseCurve (type, conf) {
     this.redN = this.n.toRed(this.red);
   }
 }
-export default BaseCurve;
+module.exports = BaseCurve;
+BaseCurve.BasePoint = BasePoint;
 
 BaseCurve.prototype.point = function point () {
   throw new Error('Not implemented');
