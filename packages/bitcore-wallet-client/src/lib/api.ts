@@ -1397,9 +1397,10 @@ export class API extends EventEmitter {
       opts = opts || {};
 
       const qs = [];
-      qs.push('includeExtendedInfo=' + (opts.includeExtendedInfo ? '1' : '0'));
-      qs.push('twoStep=' + (opts.twoStep ? '1' : '0'));
+      qs.push(`includeExtendedInfo=${opts.includeExtendedInfo ? '1' : '0'}`);
+      qs.push(`twoStep=${opts.twoStep ? '1' : '0'}`);
       qs.push('serverMessageArray=1');
+      qs.push('numberFormat=hex'); // Only applies to `pendingTxps` in response. TODO apply this to balances as well.
 
       if (opts.tokenAddress) {
         qs.push('tokenAddress=' + opts.tokenAddress);
@@ -1701,6 +1702,11 @@ export class API extends EventEmitter {
     opts: {
       /** The transaction proposal object returned by the API#createTxProposal method */
       txp: Txp;
+      /** 
+       * Number format for the tx-building numbers (e.g. amounts, nonce, etc.). Default: 'hex'
+       * Note: The given `txp` will be converted server-side and returned in the specified format.
+      */
+      numberFormat?: 'hex' | 'number' | 'string';
     },
     /** @deprecated */
     cb?: (err?: Error, txp?: any) => void
@@ -1719,8 +1725,9 @@ export class API extends EventEmitter {
       const args = {
         proposalSignature: Utils.signMessage(hash, this.credentials.requestPrivKey)
       };
+      const qs = `numberFormat=${opts.numberFormat || 'hex'}`;
 
-      const url = '/v2/txproposals/' + opts.txp.id + '/publish/';
+      const url = `/v2/txproposals/${opts.txp.id}/publish?${qs}`;
       const { body: txp } = await this.request.post<object, PublishedTxp>(url, args);
       this._processTxps(txp);
       if (cb) { cb(null, txp); }
@@ -1908,6 +1915,8 @@ export class API extends EventEmitter {
       forAirGapped?: boolean;
       /** Do not encrypt the public key ring */
       doNotEncryptPkr?: boolean;
+      /** Number format for the tx-building numbers (e.g. amounts, fee, nonce, etc.). Default: 'hex' */
+      numberFormat?: 'hex' | 'number' | 'string';
     },
     /** @deprecated */
     cb?: (err?: Error, txps?: any[]) => void
@@ -1921,8 +1930,9 @@ export class API extends EventEmitter {
 
       opts = opts || {};
       const { doNotVerify, forAirGapped, doNotEncryptPkr } = opts;
+      const qs = `numberFormat=${opts.numberFormat || 'hex'}`;
 
-      const { body: txps } = await this.request.get('/v2/txproposals/');
+      const { body: txps } = await this.request.get(`/v2/txproposals?${qs}`);
       this._processTxps(txps);
       
       if (!doNotVerify) {
@@ -2051,8 +2061,18 @@ export class API extends EventEmitter {
       const isLegit = Verifier.checkTxProposal(this.credentials, txp, { paypro });
       if (!isLegit) throw new Errors.SERVER_COMPROMISED();
 
+      // Determine number format for the API request based on the given txp's values.
+      // This ensures the server maintains number precision when verifying signatures.
+      const amt = txp.amount || txp.outputs?.[0]?.amount;
+      const numberFormat = typeof amt === 'number'
+        ? 'number'
+        : amt.startsWith('0x')
+          ? 'hex'
+          : 'string';
+
+      const qs = `numberFormat=${numberFormat}`;
       baseUrl = baseUrl || '/v2/txproposals/';
-      const url = `${baseUrl}${txp.id}/signatures/`;
+      const url = `${baseUrl}${txp.id}/signatures?${qs}`;
       const args: any = { signatures, nonce: txp.nonce };
       const { body: signedTxp } = await this.request.post<object, Txp>(url, args);
       this._processTxps(signedTxp);
@@ -2069,11 +2089,23 @@ export class API extends EventEmitter {
    * Assigns JIT values (nonce, and in the future: fee, gas) to a deferred txp.
    * Call this just before signing a deferred-nonce txp.
    */
-  async prepareTx(opts: { txp: Txp }): Promise<Txp> {
-    $.checkState(this.credentials && this.credentials.isComplete(),
-      'Failed state: this.credentials at <prepareTx()>');
+  async prepareTx(opts: {
+    txp: Txp;
+  }): Promise<Txp> {
+    $.checkState(this.credentials?.isComplete(), 'Failed state: this.credentials at <prepareTx()>');
 
-    const url = '/v1/txproposals/' + opts.txp.id + '/prepare/';
+    // Determine number format for the API request based on the type of txp.amount.
+    // This ensures the server maintains number precision when verifying signatures.
+    const amt = opts.txp.amount || opts.txp.outputs?.[0]?.amount;
+    const numberFormat = typeof amt === 'number'
+      ? 'number'
+      : amt.startsWith('0x')
+        ? 'hex'
+        : 'string';
+
+    const qs = `numberFormat=${numberFormat}`;
+
+    const url = `/v1/txproposals/${opts.txp.id}/prepare?${qs}`;
     const { body: txp } = await this.request.post<object, Txp>(url, {});
     this._processTxps(txp);
     return txp;
@@ -4189,7 +4221,7 @@ export interface Txp {
     comment?: string;
   }>; // TODO
   addressType: string;
-  amount: number;
+  amount: number | string;
   chain: string;
   coin: string;
   changeAddress?: {
@@ -4211,21 +4243,21 @@ export interface Txp {
   creatorId: string;
   creatorName?: string; // might be an encrypted object
   excludeUnconfirmedUtxos: boolean;
-  fee: number;
+  fee: number | string;
   feeLevel: string;
-  feePerKb: number;
+  feePerKb: number | string;
   from?: string;
   hasUnconfirmedInputs?: boolean;
   id: string;
   inputPaths: Array<string>;
   inputs?: Array<{
     address: string;
-    amount: number;
+    amount: number | string;
     confirmations: number;
     locked: boolean;
     path: string;
     publicKeys: Array<string>;
-    satoshis: number;
+    satoshis: number | string;
     scriptPubKey: string;
     spent: boolean;
     txid: string;
@@ -4235,12 +4267,12 @@ export interface Txp {
   message?: string; // might be an encrypted object
   encryptedMessage?: string; // is set equal to `message` before decryption in processTxps()
   network: string;
-  nonce?: number;
+  nonce?: number | string;
   deferNonce?: boolean;
   note?: Note;
   outputOrder: Array<number>;
   outputs?: Array<{
-    amount: number;
+    amount: number | string;
     toAddress: string;
     message?: string; // might be an encrypted object
     encryptedMessage?: string; // is set equal to `message` before decryption in processTxps()

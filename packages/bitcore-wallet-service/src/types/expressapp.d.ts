@@ -13,3 +13,4 @@ export type ServerCallback = (server: WalletService, err?: Error) => void;
 export type GetServerWithAuthFn = (req: express.Request, res: express.Response, opts?: ServerOpts | ServerCallback, cb?: ServerCallback) => Promise<WalletService | void>;
 export type GetServerWithMultiAuthFn = (req: express.Request, res: express.Response, opts?: ServerOpts) => Array<Promise<WalletService | void>>;
 export type CreateWalletLimiterFn = (req: express.Request, res: express.Response, next: express.NextFunction) => void;
+export type CheckNumberFormatFn = (numberFormat: string | undefined, res: express.Response) => void;

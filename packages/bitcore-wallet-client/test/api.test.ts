@@ -65,7 +65,7 @@ describe('client API', function() {
   let clients: Client[], app, sandbox, storage, keys, i;
   let dbConnection;
   let db;
-  this.timeout(8000);
+  this.timeout(Math.max(this['_timeout'], 8000));
 
   before(function(done) {
     i = 0;
@@ -4807,7 +4807,7 @@ describe('client API', function() {
             should.not.exist(err);
             const tx = txps[0];
             // From the hardcoded paypro request
-            tx.outputs[0].amount.should.equal(DATA.instructions[0].outputs[0].amount);
+            parseInt(tx.outputs[0].amount).should.equal(DATA.instructions[0].outputs[0].amount);
             tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
             tx.message.should.equal(DATA.memo);
             tx.payProUrl.should.equal('https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X');
@@ -4837,13 +4837,13 @@ describe('client API', function() {
             should.not.exist(err);
             const tx = txps[0];
             // From the hardcoded paypro request
-            tx.outputs[0].amount.should.equal(DATA.instructions[0].outputs[0].amount);
+            parseInt(tx.outputs[0].amount).should.equal(DATA.instructions[0].outputs[0].amount);
             tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
             tx.message.should.equal(DATA.memo);
             tx.payProUrl.should.equal('https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X');
             done();
           } catch (e) {
-            console.error(e);
+            done(e);
           }
         });
       });
@@ -4987,7 +4987,7 @@ describe('client API', function() {
           should.not.exist(err);
           const tx = txps[0];
 
-          tx.outputs[0].amount.should.equal(DATA.instructions[0].outputs[0].amount);
+          parseInt(tx.outputs[0].amount).should.equal(DATA.instructions[0].outputs[0].amount);
           tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
           tx.message.should.equal(DATA.memo);
           tx.payProUrl.should.equal('https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X');
@@ -5041,7 +5041,7 @@ describe('client API', function() {
           const signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, async (err, xx) => {
             should.not.exist(err);
-            xx.feePerKb /= 2;
+            xx.feePerKb = Number(xx.feePerKb) / 2;
             const signatures2 = await keys[1].sign(clients[1].getRootPath(), xx);
             clients[1].pushSignatures(xx, signatures2, (err, yy) => {
               should.not.exist(err);
@@ -5241,7 +5241,7 @@ describe('client API', function() {
           should.not.exist(err);
           const tx = txps[0];
           // From the hardcoded paypro request
-          tx.amount.should.equal(DATA.instructions[0].outputs[0].amount);
+          parseInt(tx.amount).should.equal(DATA.instructions[0].outputs[0].amount);
           tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
           tx.message.should.equal(DATA.memo);
           tx.payProUrl.should.equal('http://example.com');
@@ -5451,8 +5451,8 @@ describe('client API', function() {
             txp.outputs[0].message.should.equal('output 0');
             txp.message.should.equal('hello');
             txp.txType.should.equal(2);
-            txp.maxGasFee.should.equal(20000);
-            txp.priorityGasFee.should.equal(5000);
+            txp.maxGasFee.should.equal('0x4e20'); // 20000
+            txp.priorityGasFee.should.equal('0x1388'); // 5000
             const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
             clients[0].pushSignatures(txp, signatures, (err, txp) => {
               should.not.exist(err);

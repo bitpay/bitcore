@@ -15,6 +15,12 @@ describe('Utils', function() {
       expect(result).to.equal(true);
     });
 
+    it('should return true for valid odd-length hex string', function() {
+      const str = 'abcdef12345';
+      const result = utils.isHexString(str);
+      expect(result).to.be.true;
+    });
+
     it('should return false for invalid prefixed hex string', function() {
       const str = '0xabc123g';
       const result = utils.isHexString(str);

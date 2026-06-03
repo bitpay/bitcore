@@ -184,7 +184,7 @@ export async function getTxProposals(
       // lines.push(`Total Amount: ${Utils.amountFromSats(chain, txp.amount + txp.fee)} ${currency}`);
       lines.push(`Total Amount: ${tokenObj 
         ? Utils.renderAmount(currency, txp.amount, tokenObj) + ` + ${Utils.renderAmount(nativeCurrency, txp.fee)}`
-        : Utils.renderAmount(currency, txp.amount + txp.fee)
+        : Utils.renderAmount(currency, BigInt(txp.amount) + BigInt(txp.fee))
       }`);
       txp.gasPrice && lines.push(`Gas Price: ${Utils.displayFeeRate(chain, txp.gasPrice)}`);
       txp.gasLimit && lines.push(`Gas Limit: ${txp.gasLimit}`);

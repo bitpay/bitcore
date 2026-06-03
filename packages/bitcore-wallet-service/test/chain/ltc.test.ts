@@ -168,7 +168,7 @@ const aTXP = () => {
     coin: 'ltc',
     chain: 'ltc',
     network: 'livenet',
-    amount: '30000000',
+    amount: 30000000,
     message: 'some message',
     proposalSignature: '7035022100896aeb8db75fec22fddb5facf791927a996eb3aee23ee6deaa15471ea46047de02204c0c33f42a9d3ff93d62738712a8c8a5ecd21b45393fdd144e7b01b5a186f1f9',
     changeAddress: {
@@ -233,7 +233,7 @@ const aTXP = () => {
   return txp;
 };
 
-const signedTxp = {
+const signedTxp: ITxProposal = {
   actions: [
     {
       version: '1.0.0',
@@ -250,6 +250,7 @@ const signedTxp = {
   ],
   version: 3,
   createdOn: 1626385821,
+  creatorName: 'Ben',
   id: 'b89d4f4b-0c36-4054-8e09-0d3867f1fc89',
   walletId: '10f76944-ac95-494a-ba32-1eba9a581332',
   creatorId: '16f48373387600f00741e74488da2f82409e82105f515e6c7a856368cc95fc78',
@@ -261,7 +262,6 @@ const signedTxp = {
       amount: 10000,
       toAddress: 'mu2QPdDVzsuAJAcMKbhqWqZYfeWcAonGEf',
       message: null,
-      encryptedMessage: null
     }
   ],
   amount: 10000,
@@ -323,6 +323,5 @@ const signedTxp = {
   multisigContractAddress: undefined,
   multisigTxId: undefined,
   destinationTag: undefined,
-  invoiceID: undefined,
-  isPending: false
+  invoiceID: undefined
 };

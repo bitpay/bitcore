@@ -61,6 +61,7 @@ interface Errors<T> {
   WALLET_NOT_FOUND: T;
   WALLET_NEED_SCAN: T;
   WRONG_SIGNING_METHOD: T;
+  INVALID_NUMBER_FORMAT: T;
   TSS_SESSION_NOT_FOUND: T;
   TSS_INVALID_PASSWORD: T;
   TSS_ROUND_ALREADY_DONE: T;
@@ -132,6 +133,7 @@ const errors: Errors<string> = {
   WALLET_NOT_FOUND: 'Wallet not found',
   WALLET_NEED_SCAN: 'Wallet needs addresses scan',
   WRONG_SIGNING_METHOD: 'Wrong signed method for coin/network',
+  INVALID_NUMBER_FORMAT: 'Invalid number format. Supported formats are: number, string, hex',
   TSS_SESSION_NOT_FOUND: 'Session not found',
   TSS_INVALID_PASSWORD: 'Invalid password',
   TSS_ROUND_ALREADY_DONE: 'Your message is for a round that has already finished',
