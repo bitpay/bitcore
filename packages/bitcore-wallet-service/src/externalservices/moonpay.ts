@@ -456,7 +456,7 @@ export class MoonpayService {
 
       const headers = {
         'Content-Type': 'application/json',
-        Authorization: 'Api-Key ' + SECRET_KEY,
+        'X-Api-Key': SECRET_KEY,
       };
 
       const body: any = {
@@ -466,7 +466,7 @@ export class MoonpayService {
       if (req.body.email) body.email = req.body.email;
       if (req.body.phoneNumber) body.phoneNumber = req.body.phoneNumber;
 
-      const URL = API + '/platform/v1/session';
+      const URL = API + '/platform/v1/sessions';
 
       this.request.post(
         URL,
@@ -498,7 +498,7 @@ export class MoonpayService {
 
       const headers = {
         Accept: 'application/json',
-        Authorization: 'Api-Key ' + SECRET_KEY
+        'X-Api-Key': SECRET_KEY
       };
 
       const URL = API + '/platform/v1/sessions?externalCustomerId=' + encodeURIComponent(req.body.externalCustomerId);
