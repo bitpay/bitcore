@@ -1,6 +1,7 @@
 import { ObjectId } from 'bson';
 import { expect } from 'chai';
 import { Request, Response } from 'express-serve-static-core';
+import { SOL_ERROR_MESSAGES } from '@bitpay-labs/crypto-rpc/lib/sol/error_messages';
 import * as sinon from 'sinon';
 import { Writable } from 'stream';
 import { MongoBound } from '../../../src/models/base';
@@ -106,6 +107,8 @@ describe('Solana API', function() {
 
   describe('#streamWalletTransactions', () => {
     const address = 'DGqGrPJu5QgQ5pFHimGKX6wqPmUVnk5L1NAmpHdP6n8F';
+    const tokenAddress = 'So11111111111111111111111111111111111111112';
+    const derivedAtaAddress = '9xQeWvG816bUx9EPfEZbrrpK5n8W5x2nqE8h9vDOMkMt';
     let wallet: IWallet;
 
     // Set up wallet before running wallet tests
@@ -222,14 +225,12 @@ describe('Solana API', function() {
     });
 
     it('should stream empty SPL token history from derived ATA when current ATA is not initialized', async () => {
-      const tokenAddress = '11111111111111111111111111111112';
-      const derivedAtaAddress = 'derivedTokenAccountAddress';
       const chunks: string[] = [];
       const connection = {
         getSignaturesForAddress: sandbox.stub().returns({ send: sandbox.stub().resolves([]) })
       };
       const rpc = {
-        getConfirmedAta: sandbox.stub().rejects(new Error('ATA not initialized on mint for provided account. Initialize ATA first.')),
+        getConfirmedAta: sandbox.stub().rejects(new Error(SOL_ERROR_MESSAGES.ATA_NOT_INITIALIZED)),
         deriveAta: sandbox.stub().resolves(derivedAtaAddress)
       };
 
@@ -271,6 +272,73 @@ describe('Solana API', function() {
       expect(rpc.deriveAta.calledOnceWithExactly({ solAddress: address, mintAddress: tokenAddress })).to.be.true;
       expect(connection.getSignaturesForAddress.calledOnce).to.be.true;
       expect(connection.getSignaturesForAddress.firstCall.args[0]).to.equal(derivedAtaAddress);
+    });
+
+    it('should stream SPL token history from derived ATA when current ATA was closed', async () => {
+      const signature = {
+        signature: '2mtY1zc9B6vjXPkFvSRu1Fuz9VJQhVQJQ4VDaqq5y91U2coJMSM5JEbP9ubS3TbvBCNhYtVKURqtPE5AeJrTYz9S',
+        slot: 123,
+        confirmationStatus: 'finalized'
+      };
+      const transformedTx = {
+        txid: signature.signature,
+        category: 'receive',
+        satoshis: 1000000,
+        height: signature.slot,
+        chain,
+        network
+      };
+      const chunks: string[] = [];
+      const connection = {
+        getSignaturesForAddress: sandbox.stub().returns({ send: sandbox.stub().resolves([signature]) })
+      };
+      const rpc = {
+        getConfirmedAta: sandbox.stub().rejects(new Error(SOL_ERROR_MESSAGES.ATA_NOT_INITIALIZED)),
+        deriveAta: sandbox.stub().resolves(derivedAtaAddress)
+      };
+
+      sandbox.stub(SOL, 'getRpc').resolves({ rpc, connection });
+      sandbox.stub(SOL, 'getWalletAddresses').resolves([{ address }]);
+      const getTransformedTx = sandbox.stub(SOL, '_getTransformedTx').resolves(transformedTx as any);
+
+      const req = (new Writable({
+        write: function(_data, _, cb) {
+          cb();
+        }
+      }) as unknown) as Request;
+
+      const res = (new Writable({
+        write: function(data, _, cb) {
+          chunks.push(data.toString());
+          cb();
+        }
+      }) as unknown) as Response;
+      res.type = () => res;
+
+      const err = await new Promise(r => {
+        res
+          .on('error', r)
+          .on('finish', () => r(undefined));
+
+        SOL.streamWalletTransactions({
+          chain,
+          network,
+          wallet,
+          req,
+          res,
+          args: { tokenAddress, limit: 1 }
+        })
+          .catch(e => r(e));
+      });
+
+      const streamedTxs = chunks.join('').trim().split('\n').map(line => JSON.parse(line));
+
+      expect(err).to.not.exist;
+      expect(rpc.deriveAta.calledOnceWithExactly({ solAddress: address, mintAddress: tokenAddress })).to.be.true;
+      expect(connection.getSignaturesForAddress.calledOnce).to.be.true;
+      expect(connection.getSignaturesForAddress.firstCall.args[0]).to.equal(derivedAtaAddress);
+      expect(getTransformedTx.calledOnceWithExactly(rpc, network, signature, derivedAtaAddress, tokenAddress)).to.be.true;
+      expect(streamedTxs).to.deep.equal([transformedTx]);
     });
   });
 
