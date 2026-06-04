@@ -123,9 +123,11 @@ describe('ShortWeierstrass Curve Operations', function () {
     it('SHORT.POINT_FROM_X.NEG_G - pointFromX(Gx, true) recovers -G (odd-y)', function () {
       const recovered = Curve.pointFromX(SECP_G_X, true);
       expect(recovered.getX().toString(16)).to.equal(SECP_G_X);
-      // y coordinate should be -Gy mod p
-      const negGy = Curve.g.y.redNeg().fromRed();
-      expect(recovered.getY().toString(16)).to.equal(negGy.toString(16));
+      // Independently verify y = -Gy mod p (using field arithmetic, not the curve library)
+      const p = new BN(SECP_P, 16);
+      const gy = new BN(SECP_G_Y, 16);
+      const expectedNegGy = p.sub(gy).toString(16).padStart(64, '0');
+      expect(recovered.getY().toString(16)).to.equal(expectedNegGy);
       expect(recovered.eq(Curve.g.neg())).to.be.true;
     });
 
@@ -162,8 +164,8 @@ describe('ShortWeierstrass Curve Operations', function () {
       }).to.throw('invalid point');
     });
 
-    it('SHORT.POINT_FROM_X.EVEN_ODD_PAIR - pointFromX(x,false) + pointFromX(x,true) = 2G (sum to zero)', function () {
-      // The two points recovered from the same x should sum to infinity
+    it('SHORT.POINT_FROM_X.EVEN_ODD_PAIR - pointFromX(x,false) + pointFromX(x,true) = ∞ (sum to zero)', function () {
+      // The two points recovered from the same x coordinate are P and -P, so they sum to infinity.
       const gx = SECP_G_X;
       const even = Curve.pointFromX(gx, false);
       const odd = Curve.pointFromX(gx, true);

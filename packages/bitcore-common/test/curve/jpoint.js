@@ -414,7 +414,7 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
       expect(j.dblp(3).eq(j.dbl().dbl().dbl())).to.be.true;
     });
 
-    it('JP.DBLP.MUL_MATCH - J.dblp(k).eq(J.mul(2^k).toJ()) for k=1..4', function () {
+    it('JP.DBLP.MUL_MATCH - J.dblp(k) matches vectors.KG[2^k] for k=1..4', function () {
       const j = Curve.g.toJ();
       for (let k = 1; k <= 4; k++) {
         const dblpResult = j.dblp(k);
@@ -484,7 +484,7 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
       expect(result.toP().getY().toString(16)).to.equal(vectors.KG['0x3'].y);
     });
 
-    it('JP.MUL.G_BY_FF - G.toJ().mul("ff", 16) matches affine mul', function () {
+    it('JP.MUL.G_BY_FF - G.toJ().mul("ff", 16) matches vectors.KG[0xff]', function () {
       const result = Curve.g.toJ().mul('ff', 16);
       expect(result.toP().getX().toString(16)).to.equal(vectors.KG['0xff'].x);
       expect(result.toP().getY().toString(16)).to.equal(vectors.KG['0xff'].y);

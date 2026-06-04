@@ -143,16 +143,20 @@ describe('8. Internal Arithmetic Path Coverage — lib/curve/point.js', function
       expect(j._threeDbl).to.be.a('function');
     });
 
-    it('ARITH._THREEDBL.SELF_CONSISTENT - _threeDbl with z=1 and z≠1 produce on-curve results', function () {
+    it('ARITH._THREEDBL.SELF_CONSISTENT - _threeDbl with z=1 produces on-curve result', function () {
       // _threeDbl is mathematically correct for a=-3 curves.
-      // On secp256k1 (a=0), it still produces valid results, just not the
-      // mathematically expected ones for the curve equation.
-      // We verify it doesn't crash and produces a JPoint.
+      // On secp256k1 (a=0), _threeDbl with z=1 produces an on-curve result.
+      // For z≠1, the manually-projected point does not satisfy the curve
+      // equation after _threeDbl (which is expected — the formula is for a=-3).
       const j1 = Curve.g.toJ();
       expect(j1.zOne).to.be.true;
       const resultZ1 = j1._threeDbl();
       expect(resultZ1).to.exist;
+      expect(isOnCurveJ(resultZ1)).to.be.true;
 
+      // z≠1 path: verify the method does not crash and returns a JPoint
+      // (on-curve verification is skipped — _threeDbl is for a=-3 curves
+      // and the manually-projected z≠1 point is not a valid input for secp256k1).
       const z2 = Curve.two;
       const z2sq = z2.redSqr();
       const xProj = Curve.g.x.redMul(z2sq);
@@ -456,7 +460,7 @@ describe('8. Internal Arithmetic Path Coverage — lib/curve/point.js', function
   // -----------------------------------------------------------------
   describe('8.7 jmulAdd — Jacobian multi-scalar addition', function () {
 
-    it('ARITH.JMULADD.CORRECT - G.jmulAdd(3, G2, 5).eq(G.mulAdd(3, G2, 5))', function () {
+    it('ARITH.JMULADD.G_3_5 - 3G + 5*(2G) = 13G verified against vector', function () {
       const g = Curve.g;
       const g2 = Curve.g.mul('2');
 
@@ -506,7 +510,7 @@ describe('8. Internal Arithmetic Path Coverage — lib/curve/point.js', function
       expect(jAffine.y.toString(16, 64)).to.equal(expected8.y);
     });
 
-    it('ARITH.JMULADD.DISTRIBUTIVE - jmulAdd matches manual multiplication', function () {
+    it('ARITH.JMULADD.13_99 - 13G + 99*(5G) = 508G verified against vector', function () {
       const g = Curve.g;
       const g5 = Curve.g.mul('5');
       const k1 = new BN(13);

@@ -121,10 +121,10 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       expect(g5.add(g5).eq(g5.dbl())).to.be.true;
     });
 
-    it('P.ADD.COLLINEAR_X - P.add(Q) where P.x == Q.x but P ≠ ±Q returns infinity', function () {
-      // If P.x == Q.x and P.y != Q.y and P.y != -Q.y, the result should be infinity
-      // For secp256k1, two points with same x must have y and -y, so this only happens
-      // when they are inverses. Create a point and its inverse.
+    it('P.ADD.COLLINEAR_X - P.add(-P) returns infinity', function () {
+      // For secp256k1, two points with the same x coordinate must be P and -P.
+      // There is no scenario where P.x == Q.x with P ≠ ±Q.
+      // This test verifies that P + (-P) = ∞ (the inverse case).
       const p = Curve.g;
       const pInv = p.neg();
       // p.x === pInv.x, and p != pInv (unless y = 0 mod p which doesn't happen for secp256k1)
@@ -135,8 +135,9 @@ describe('Point (Affine) — lib/curve/point.js', function () {
 
     it('P.ADD.G_TO_G2 - G.add(G) produces 2G with known coordinates', function () {
       const sum = Curve.g.add(Curve.g);
-      expect(sum.getX().toString(16)).to.equal(SECP_2G_X);
-      expect(sum.getY().toString(16)).to.equal(SECP_2G_Y);
+      // Independent vector oracle — verifies correctness independently of the addition code path
+      expect(sum.getX().toString(16)).to.equal(vectors.KG['0x2'].x);
+      expect(sum.getY().toString(16)).to.equal(vectors.KG['0x2'].y);
       expect(sum.eq(Curve.g.dbl())).to.be.true;
     });
   });
@@ -162,8 +163,9 @@ describe('Point (Affine) — lib/curve/point.js', function () {
 
     it('P.DBL.G - G.dbl() produces correct 2G coordinates', function () {
       const dbl = Curve.g.dbl();
-      expect(dbl.getX().toString(16)).to.equal(SECP_2G_X);
-      expect(dbl.getY().toString(16)).to.equal(SECP_2G_Y);
+      // Independent vector oracle — verifies correctness independently of the doubling code path
+      expect(dbl.getX().toString(16)).to.equal(vectors.KG['0x2'].x);
+      expect(dbl.getY().toString(16)).to.equal(vectors.KG['0x2'].y);
     });
   });
 
@@ -273,8 +275,9 @@ describe('Point (Affine) — lib/curve/point.js', function () {
 
     it('P.MUL.G_BY_2_KNOWN - G.mul("2") produces known 2G coordinates', function () {
       const result = Curve.g.mul('2');
-      expect(result.getX().toString(16)).to.equal(SECP_2G_X);
-      expect(result.getY().toString(16)).to.equal(SECP_2G_Y);
+      // Independent vector oracle — verifies correctness independently of the multiplication code path
+      expect(result.getX().toString(16)).to.equal(vectors.KG['0x2'].x);
+      expect(result.getY().toString(16)).to.equal(vectors.KG['0x2'].y);
     });
 
     it('P.MUL.G_BY_N - G.mul(N) is infinity (order property)', function () {
@@ -324,13 +327,15 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       expect(left.eq(right)).to.be.true;
     });
 
-    it('P.MUL.HAS_DOUBLES - precompute path gives correct result for k=0x100', function () {
+    it('P.MUL.PRECOMP_PATH - precomputed mul matches non-precomputed mul for k=0x100', function () {
       const p = Curve.g;
       p.precompute(16);
       const withDoubles = p.mul('100'); // 0x100 = 256
-      // Verify against non-precomputed version
+      // Verify against non-precomputed version (internal path consistency)
       const noPre = Curve.g.mul('100');
       expect(withDoubles.eq(noPre)).to.be.true;
+      // Verify on-curve (independent mathematical check)
+      expect(isOnCurve(withDoubles)).to.be.true;
     });
 
     it('P.MUL.ENDO_PATH - G.mul("ff") uses endo path and matches non-endo result', function () {
@@ -477,12 +482,14 @@ describe('Point (Affine) — lib/curve/point.js', function () {
 
     it('P.GETX_2G - 2G.getX() matches known 2G x', function () {
       const g2 = Curve.g.dbl();
-      expect(g2.getX().toString(16)).to.equal(SECP_2G_X);
+      // Independent vector oracle — verifies getX() against external oracle
+      expect(g2.getX().toString(16)).to.equal(vectors.KG['0x2'].x);
     });
 
     it('P.GETY_2G - 2G.getY() matches known 2G y', function () {
       const g2 = Curve.g.dbl();
-      expect(g2.getY().toString(16)).to.equal(SECP_2G_Y);
+      // Independent vector oracle — verifies getY() against external oracle
+      expect(g2.getY().toString(16)).to.equal(vectors.KG['0x2'].y);
     });
   });
 

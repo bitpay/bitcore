@@ -445,8 +445,9 @@ describe('BaseCurve — Base Curve Operations', function () {
     it('BASE.DBLP.G3 - point.dblp(1) == 2G (known coordinates)', function () {
       const pt = Curve.point(SECP_G_X, SECP_G_Y);
       const result = pt.dblp(1);
-      expect(result.getX().toString(16)).to.equal(SECP_2G_X);
-      expect(result.getY().toString(16)).to.equal(SECP_2G_Y);
+      // Independent vector oracle — verifies dblp(1) against external oracle
+      expect(result.getX().toString(16)).to.equal(vectors.KG['0x2'].x);
+      expect(result.getY().toString(16)).to.equal(vectors.KG['0x2'].y);
     });
 
     it('BASE.DBLP.G4 - point.dblp(2) == 4G (known coordinates)', function () {
