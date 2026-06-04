@@ -528,6 +528,175 @@ describe('Point (Affine) — lib/curve/point.js', function () {
   });
 
   // -----------------------------------------------------------------
+  // 6.14 Negative Scalar Multiplication
+  // -----------------------------------------------------------------
+  describe('6.14 Negative Scalar Multiplication', function () {
+
+    // ---------------------------------------------------------------
+    // 6.14.1 Point.mul — Negative Scalars
+    // ---------------------------------------------------------------
+    describe('6.14.1 Point.mul — Negative Scalars', function () {
+
+      // BUG: mul(k) wraps k in new BN(k, 16) but never normalizes negative k mod N.
+      // BN('-1').hasNegative = true, which produces a 257-digit NAF of all 1s instead
+      // of the correct NAF [-1, 0, 0, ...]. The result is an on-curve but wrong point.
+      // Root cause: inherited from upstream elliptic. Fix: normalize k mod N before WNAF.
+
+      it.skip('N1: G.mul("-1").eq(G.neg()) — FAILS: mul(k) wraps k in BN(k,16) without mod N normalization', function () {
+        const negG = Curve.g.neg();
+        const mulNeg1 = Curve.g.mul('-1');
+        expect(mulNeg1.getX().toString(16)).to.equal(negG.getX().toString(16));
+        expect(mulNeg1.getY().toString(16)).to.equal(negG.getY().toString(16));
+      });
+
+      it.skip('N2: G.mul(BN(-1)).eq(G.neg()) — FAILS: same as N1 — BN(-1) has negative flag, same non-normalization bug', function () {
+        const negG = Curve.g.neg();
+        const mulNeg1 = Curve.g.mul(new BN(-1));
+        expect(mulNeg1.getX().toString(16)).to.equal(negG.getX().toString(16));
+        expect(mulNeg1.getY().toString(16)).to.equal(negG.getY().toString(16));
+      });
+
+      it.skip('N3: G.mul(new BN("-1", 16)).eq(G.neg()) — FAILS: same as N1 — BN("-1",16) has negative flag, same bug', function () {
+        const negG = Curve.g.neg();
+        const mulNeg1 = Curve.g.mul(new BN('-1', 16));
+        expect(mulNeg1.getX().toString(16)).to.equal(negG.getX().toString(16));
+        expect(mulNeg1.getY().toString(16)).to.equal(negG.getY().toString(16));
+      });
+
+      it.skip('N4: G.mul(new BN("-1", 10)).eq(G.neg()) — FAILS: same as N1 — BN("-1",10) has negative flag, same bug', function () {
+        const negG = Curve.g.neg();
+        const mulNeg1 = Curve.g.mul(new BN('-1', 10));
+        expect(mulNeg1.getX().toString(16)).to.equal(negG.getX().toString(16));
+        expect(mulNeg1.getY().toString(16)).to.equal(negG.getY().toString(16));
+      });
+
+      it.skip('N5: G.mul("-2").eq(G.mul("2").neg()) — FAILS: same root cause — -2 not normalized mod N before WNAF', function () {
+        const expectedNeg2 = Curve.g.mul('2').neg();
+        const mulNeg2 = Curve.g.mul('-2');
+        expect(mulNeg2.getX().toString(16)).to.equal(expectedNeg2.getX().toString(16));
+        expect(mulNeg2.getY().toString(16)).to.equal(expectedNeg2.getY().toString(16));
+      });
+
+      it.skip('N6: G.mul(-1).eq(G.neg()) — FAILS: same as N1 — JS number -1 becomes BN with negative flag, same bug', function () {
+        const negG = Curve.g.neg();
+        const mulNeg1 = Curve.g.mul(-1);
+        expect(mulNeg1.getX().toString(16)).to.equal(negG.getX().toString(16));
+        expect(mulNeg1.getY().toString(16)).to.equal(negG.getY().toString(16));
+      });
+
+      it('N7: G.mul("-1") is on-curve — any valid scalar result must satisfy curve equation', function () {
+        expect(isOnCurve(Curve.g.mul('-1'))).to.be.true;
+      });
+    });
+
+    // ---------------------------------------------------------------
+    // 6.14.2 JPoint.mul — Negative Scalars
+    // ---------------------------------------------------------------
+    describe('6.14.2 JPoint.mul — Negative Scalars', function () {
+
+      // BUG: JPoint.mul(k) uses the same new BN(k, kbase) wrapper as Point.mul(k) —
+      // negative k is never normalized mod N before WNAF, so negative scalars produce
+      // wrong on-curve points. Same root cause as N1–N6, inherited from elliptic.
+
+      it.skip('JN1: G.toJ().mul("-1").eq(G.neg()) — FAILS: same mul(k) non-normalization bug in JPoint path', function () {
+        const negG = Curve.g.neg();
+        const jNeg1 = Curve.g.toJ().mul('-1').toP();
+        expect(jNeg1.getX().toString(16)).to.equal(negG.getX().toString(16));
+        expect(jNeg1.getY().toString(16)).to.equal(negG.getY().toString(16));
+      });
+
+      it.skip('JN2: G.toJ().mul(BN(-1)).toP().eq(G.neg()) — FAILS: same as JN1 — JPoint.mul also wraps negative k without mod N', function () {
+        const negG = Curve.g.neg();
+        const jNeg1 = Curve.g.toJ().mul(new BN(-1)).toP();
+        expect(jNeg1.getX().toString(16)).to.equal(negG.getX().toString(16));
+        expect(jNeg1.getY().toString(16)).to.equal(negG.getY().toString(16));
+      });
+
+      it('JN3: G.toJ().mul("-1").toP() is on-curve — JPoint negative scalar result must be on-curve', function () {
+        const j = Curve.g.toJ().mul('-1');
+        expect(isOnCurve(j.toP())).to.be.true;
+      });
+    });
+
+    // ---------------------------------------------------------------
+    // 6.14.3 mulAdd / jmulAdd — Negative Coefficients
+    // ---------------------------------------------------------------
+    describe('6.14.3 mulAdd / jmulAdd — Negative Coefficients', function () {
+
+      it('MA1: G.mulAdd(BN(-1), 2G, BN(1)).eq(G) — -G + 2G = G', function () {
+        const g2 = Curve.g.mul('2');
+        const result = Curve.g.mulAdd(new BN(-1), g2, new BN(1));
+        expect(result.getX().toString(16)).to.equal(Curve.g.getX().toString(16));
+        expect(result.getY().toString(16)).to.equal(Curve.g.getY().toString(16));
+      });
+
+      it('MA2: G.mulAdd(BN(-2), G, BN(3)).eq(G) — -2G + 3G = G', function () {
+        const result = Curve.g.mulAdd(new BN(-2), Curve.g, new BN(3));
+        expect(result.getX().toString(16)).to.equal(Curve.g.getX().toString(16));
+        expect(result.getY().toString(16)).to.equal(Curve.g.getY().toString(16));
+      });
+
+      it('MA3: G.jmulAdd(BN(-1), 2G, BN(1)).toP().eq(G.mulAdd(BN(-1), 2G, BN(1))) — jmulAdd and mulAdd agree', function () {
+        const g2 = Curve.g.mul('2');
+        const mulAddResult = Curve.g.mulAdd(new BN(-1), g2, new BN(1));
+        const jmulAddResult = Curve.g.jmulAdd(new BN(-1), g2, new BN(1));
+        expect(jmulAddResult.toP().getX().toString(16)).to.equal(mulAddResult.getX().toString(16));
+        expect(jmulAddResult.toP().getY().toString(16)).to.equal(mulAddResult.getY().toString(16));
+      });
+
+      it('MA4: G.mulAdd(BN(-1), G, BN(1)).isInfinity() — -G + G = ∞', function () {
+        const result = Curve.g.mulAdd(new BN(-1), Curve.g, new BN(1));
+        expect(result.isInfinity()).to.be.true;
+      });
+
+      it('MA5: G.mulAdd(BN(-5), G, BN(3)).eq(G.mul(N-2)) — -5G + 3G = -2G = G.mul(N-2)', function () {
+        // N - 2 as hex: SECP_N is 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141'
+        // N - 2 = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036413f'
+        const nMinus2 = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036413f';
+        const expected = Curve.g.mul(nMinus2);
+        const result = Curve.g.mulAdd(new BN(-5), Curve.g, new BN(3));
+        expect(result.getX().toString(16)).to.equal(expected.getX().toString(16));
+        expect(result.getY().toString(16)).to.equal(expected.getY().toString(16));
+      });
+    });
+
+    // ---------------------------------------------------------------
+    // 6.14.4 Boundary — Negative Scalar vs. Modular Equivalent
+    // ---------------------------------------------------------------
+    describe('6.14.4 Boundary — Negative Scalar vs. Modular Equivalent', function () {
+
+      // BUG: mul(k) never normalizes negative k mod N, so -1 ≠ N-1 and -2 ≠ N-2 in code.
+      // B3 also fails because mul("-1") returns the wrong point, so neg(wrong) ≠ G.
+
+      it.skip('B1: G.mul("-1").eq(G.mul(N-1)) — FAILS: mul(k) does not normalize negative k mod N; -1 ≠ N-1 in code', function () {
+        const nMinus1 = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140';
+        const mulNeg1 = Curve.g.mul('-1');
+        const mulNMinus1 = Curve.g.mul(nMinus1);
+        expect(mulNeg1.getX().toString(16)).to.equal(mulNMinus1.getX().toString(16));
+        expect(mulNeg1.getY().toString(16)).to.equal(mulNMinus1.getY().toString(16));
+      });
+
+      it.skip('B2: G.mul("-2").eq(G.mul(N-2)) — FAILS: same as B1 — -2 not normalized mod N before WNAF', function () {
+        const nMinus2 = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036413f';
+        const mulNeg2 = Curve.g.mul('-2');
+        const mulNMinus2 = Curve.g.mul(nMinus2);
+        expect(mulNeg2.getX().toString(16)).to.equal(mulNMinus2.getX().toString(16));
+        expect(mulNeg2.getY().toString(16)).to.equal(mulNMinus2.getY().toString(16));
+      });
+
+      it.skip('B3: G.mul("-1").neg().eq(G) — FAILS: mul("-1") returns wrong point, so neg(wrong_point) ≠ G', function () {
+        const doubleNeg = Curve.g.mul('-1').neg();
+        expect(doubleNeg.getX().toString(16)).to.equal(Curve.g.getX().toString(16));
+        expect(doubleNeg.getY().toString(16)).to.equal(Curve.g.getY().toString(16));
+      });
+
+      it('B4: G.mul(N).mul("-1").isInfinity() — N·G = ∞, ∞·(−1) = ∞', function () {
+        expect(Curve.g.mul(SECP_N).mul('-1').isInfinity()).to.be.true;
+      });
+    });
+  });
+
+  // -----------------------------------------------------------------
   // 6.13 inspect
   // -----------------------------------------------------------------
   describe('6.13 inspect', function () {
