@@ -5,29 +5,56 @@ const BN = require('./bn');
 const assert = function assert (cond, msg) {
   if (!cond) throw new Error(msg || 'Assertion failed');
 };
-const toArray = function toArray (str, encoding) {
-  if (typeof str === 'string') {
-    if (encoding === 'hex') return hexToArray(str);
-    return Array.prototype.slice.call(str, 0);
+const toArray = function toArray (msg, enc) {
+  if (Array.isArray(msg))
+    return msg.slice();
+  if (!msg)
+    return [];
+
+  const res = [];
+  if (typeof msg !== 'string') {
+    for (let i = 0; i < msg.length; i++)
+      res[i] = msg[i] | 0;
+    return res;
   }
-  return str;
-};
-function hexToArray (hex) {
-  const arr = [];
-  for (let i = 0; i < hex.length; i += 2)
-    arr.push(parseInt(hex[i] + hex[i + 1], 16));
-  return arr;
-}
-const encode = function encode (arr, enc) {
+
   if (enc === 'hex') {
-    let hex = '';
-    for (let i = 0; i < arr.length; i++) {
-      let h = arr[i].toString(16);
-      if (h.length % 2) h = '0' + h;
-      hex += h;
+    msg = msg.replace(/[^a-z0-9]+/ig, '');
+    if (msg.length % 2 !== 0)
+      msg = '0' + msg;
+    for (let i = 0; i < msg.length; i += 2)
+      res.push(parseInt(msg[i] + msg[i + 1], 16));
+  } else {
+    for (let i = 0; i < msg.length; i++) {
+      const c = msg.charCodeAt(i);
+      const hi = c >> 8;
+      const lo = c & 0xff;
+      if (hi)
+        res.push(hi, lo);
+      else
+        res.push(lo);
     }
-    return hex;
   }
+  return res;
+};
+
+function zero2 (word) {
+  if (word.length === 1)
+    return '0' + word;
+  else
+    return word;
+}
+
+function toHex (msg) {
+  let res = '';
+  for (let i = 0; i < msg.length; i++)
+    res += zero2(msg[i].toString(16));
+  return res;
+}
+
+const encode = function encode (arr, enc) {
+  if (enc === 'hex')
+    return toHex(arr);
   return arr;
 };
 
@@ -116,4 +143,32 @@ function getJSF (k1, k2) {
   return jsf;
 }
 
-module.exports = { assert, toArray, encode, getNAF, getJSF };
+function cachedProperty (obj, name, computer) {
+  const key = '_' + name;
+  obj.prototype[name] = function cachedProperty () {
+    return this[key] !== undefined ? this[key] :
+      this[key] = computer.call(this);
+  };
+}
+
+function parseBytes (bytes) {
+  return typeof bytes === 'string' ? toArray(bytes, 'hex') :
+    bytes;
+}
+
+function intFromLE (bytes) {
+  return new BN(bytes, 'hex', 'le');
+}
+
+module.exports = {
+  assert,
+  toArray,
+  zero2,
+  toHex,
+  encode,
+  getNAF,
+  getJSF,
+  cachedProperty,
+  parseBytes,
+  intFromLE
+};
