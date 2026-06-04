@@ -7,7 +7,6 @@ const { expect } = require('chai');
 const vectors = require('../data/secp256k1-vectors');
 
 // secp256k1 constants (BN hex strings)
-const SECP_P = 'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f';
 const SECP_N = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141';
 
 // Helper: assert that a point matches a vector entry

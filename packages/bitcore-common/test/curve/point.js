@@ -10,8 +10,6 @@ const SECP_P = 'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f
 const SECP_N = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141';
 const SECP_G_X = '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798';
 const SECP_G_Y = '483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8';
-const SECP_2G_X = 'c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5';
-const SECP_2G_Y = '1ae168fea63dc339a3c58419466ceaeef7f632653266d0e1236431a950cfe52a';
 // Helper: check if a point satisfies y² = x³ + 7 (mod p) for secp256k1 (a=0)
 function isOnCurve(pt) {
   if (pt.isInfinity()) return true;

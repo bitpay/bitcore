@@ -15,11 +15,6 @@ const SECP_G_Y = '483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4
 // 2G (secp256k1)
 const SECP_2G_X = 'c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5';
 const SECP_2G_Y = '1ae168fea63dc339a3c58419466ceaeef7f632653266d0e1236431a950cfe52a';
-// 3G (secp256k1)
-const SECP_3G_X = 'f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9';
-const SECP_3G_Y = '388f7b0f632de8140fe337e62a37f3566500a99934c2231b6cb9fd30888e7a82';
-// 4G
-const SECP_4G_X = '0d382d3d97a57c5e46d1e6b05c82c7b92e3c8a0f8f8e0d4c0d2e1f0a5b3c4d5e';
 // G's y coordinate parity: G_y is even
 // G_y = 483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
 // Last hex nibble: 8 -> even

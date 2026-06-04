@@ -9,7 +9,6 @@ const SECP_P = 'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f
 const SECP_N = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141';
 
 // Bitcoin test vectors for red context (known k256 scalar ops)
-const TEST_SCALAR = 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef';
 const TEST_BASE = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 
 describe('BN', function () {
