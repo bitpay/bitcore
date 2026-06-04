@@ -95,6 +95,7 @@ export interface IWallet {
   isXrp(): boolean;
   isTokenChain(): boolean;
   isReadOnly(): boolean;
+  getAccountFlags(): Promise<any>;
 }
 
 export interface ITokenObj {

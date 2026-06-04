@@ -710,4 +710,16 @@ export class Wallet implements IWallet {
   isReadOnly() {
     return !this.#walletData.key;
   }
+
+  async getAccountFlags() {
+    if (!this.isXrp()) {
+      return;
+    }
+    if (!this.client) {
+      await this.getClient({ mustExist: true });
+    }
+
+    const flags = await this.client.getAccountFlags({ account: 0 });
+    return flags;
+  }
 };

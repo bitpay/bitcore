@@ -258,6 +258,9 @@ if (require.main === module) {
               case 'scan':
                 await commands.scan.scanWallet(cmdParams);
                 break;
+              case 'flags':
+                ({ action } = await commands.flags.getOrSetFlags(cmdParams));
+                break;
               case 'register':
                 await commands.register.registerWallet(cmdParams);
                 break;

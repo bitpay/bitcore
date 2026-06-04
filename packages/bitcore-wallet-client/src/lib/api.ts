@@ -3958,6 +3958,13 @@ export class API extends EventEmitter {
     }
   }
 
+  async getAccountFlags(params: { account: number }) {
+    const { account } = params;
+    const { body: flags } = await this.request.get(`/v1/flags${account ? `?account=${account}` : ''}`);
+    return flags;
+  }
+
+
   async banxaGetQuote(data) {
     return this.request.post('/v1/service/banxa/quote', data);
   }

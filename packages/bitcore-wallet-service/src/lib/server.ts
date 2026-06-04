@@ -1,3 +1,4 @@
+import util from 'util';
 import {
   BitcoreLib as Bitcore,
   BitcoreLibCash as BitcoreCash,
@@ -5301,6 +5302,27 @@ export class WalletService implements IWalletService {
         resolve(true);
       });
     });
+  }
+
+  async getFlags(opts: { account: number }) {
+    try {
+      const wallet = await util.promisify(this.getWallet).call(this, {});
+      if (wallet.chain !== 'xrp') throw new Error('Flags are only supported for XRP wallets');
+
+      const addresses = await util.promisify(this.storage.fetchAddresses).call(this.storage, this.walletId);
+      const addressObj = addresses.find(a => a.path === `m/0/${opts.account || 0}`);
+      if (!addressObj) throw new Error('Could not find address for account ' + opts.account);
+
+      const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
+      if (!bc) throw new Error('Could not get blockchain explorer instance');
+
+      const address = addressObj.address.split(':')[0]; // Remove testnet suffix
+      const flags = await bc.getFlags({ address });
+      return flags;
+    } catch (err) {
+      this.logw('Error getting flags: %o', err);
+      throw err;
+    }
   }
 
   static upgradeNeeded(

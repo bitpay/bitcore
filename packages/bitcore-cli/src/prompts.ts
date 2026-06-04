@@ -1,6 +1,6 @@
 import os from 'os';
 import { Network } from '@bitpay-labs/bitcore-wallet-client';
-import { BitcoreLib, BitcoreLibLtc, Constants as CWCConst } from '@bitpay-labs/crypto-wallet-core';
+import { BitcoreLib, BitcoreLibLtc, Constants as CWCConst, xrpl } from '@bitpay-labs/crypto-wallet-core';
 import * as prompt from '@clack/prompts';
 import { Constants } from './constants';
 import { UserCancelled } from './errors';
@@ -338,4 +338,21 @@ export async function promptKeyshareBackup(): Promise<boolean> {
     return false;
   }
   return true;
+}
+
+export async function promptXrpFlag() {
+  const flag = await prompt.select({
+    message: 'Select a flag to toggle:',
+    initialValue: null,
+    options: [].concat(
+      Object.entries(xrpl.AccountSetTfFlags)
+        .filter(([key]) => !parseInt(key))
+        .map(([label, value]) => ({ label, value })),
+      [{ label: 'None', value: null, hint: 'Do not set any flag' }]
+    ),
+  });
+  if (prompt.isCancel(flag)) {
+    throw new UserCancelled();
+  }
+  return flag as number | null;
 }

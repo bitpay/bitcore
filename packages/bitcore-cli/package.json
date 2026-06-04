@@ -12,6 +12,9 @@
     "tss",
     "wallet"
   ],
+  "engines":{
+    "node": "^22"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-cli"
