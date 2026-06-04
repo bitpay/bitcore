@@ -18,22 +18,21 @@ function hexToArray (hex) {
     arr.push(parseInt(hex[i] + hex[i + 1], 16));
   return arr;
 }
-const zero2 = function zero2 (str) {
-  if (str.length % 2) str = '0' + str;
-  return str;
-};
-const toHex = function toHex (buf) {
-  let hex = '';
-  for (let i = 0; i < buf.length; i++) hex += zero2(buf[i].toString(16));
-  return hex;
-};
 const encode = function encode (arr, enc) {
-  if (enc === 'hex')
-    return toHex(arr);
+  if (enc === 'hex') {
+    let hex = '';
+    for (let i = 0; i < arr.length; i++) {
+      let h = arr[i].toString(16);
+      if (h.length % 2) h = '0' + h;
+      hex += h;
+    }
+    return hex;
+  }
   return arr;
 };
 
-// Represent num in a w-NAF form
+// Represent num in a w-NAF (non-adjacent form)
+// Represent k1, k2 in a Joint Sparse Form (JSF)
 function getNAF (num, w, bits) {
   const naf = new Array(Math.max(num.bitLength(), bits) + 1);
   naf.fill(0);
@@ -61,7 +60,7 @@ function getNAF (num, w, bits) {
   return naf;
 }
 
-// Represent k1, k2 in a Joint Sparse Form
+// Represent k1, k2 in a Joint Sparse Form (JSF)
 function getJSF (k1, k2) {
   const jsf = [
     [],
@@ -117,21 +116,4 @@ function getJSF (k1, k2) {
   return jsf;
 }
 
-const cachedProperty = function cachedProperty (obj, name, computer) {
-  const key = '_' + name;
-  obj.prototype[name] = function cachedProperty () {
-    return this[key] !== undefined ? this[key] :
-      this[key] = computer.call(this);
-  };
-};
-
-const parseBytes = function parseBytes (bytes) {
-  return typeof bytes === 'string' ? toArray(bytes, 'hex') :
-    bytes;
-};
-
-const intFromLE = function intFromLE (bytes) {
-  return new BN(bytes, 'hex', 'le');
-};
-
-module.exports = { assert, toArray, zero2, toHex, encode, getNAF, getJSF, cachedProperty, parseBytes, intFromLE };
+module.exports = { assert, toArray, encode, getNAF, getJSF };
