@@ -466,14 +466,14 @@ describe('Endomorphic edge cases', function () {
       });
   
       it('ENDO.BETA_CACHE.PROPS - _getBeta() returns a valid point on the curve', function () {
-        const g = Curve.g;
+        const g = Curve.point(Curve.g.getX(), Curve.g.getY());
         const betaG = g._getBeta();
         expect(betaG.isInfinity()).to.be.false;
         expect(isOnCurve(betaG)).to.be.true;
       });
   
       it('ENDO.BETA_CACHE.BETA_X - beta*G has x = beta * Gx', function () {
-        const g = Curve.g;
+        const g = Curve.point(Curve.g.getX(), Curve.g.getY());
         const betaG = g._getBeta();
         const expectedX = g.x.redMul(Curve.endo.beta);
         expect(betaG.x.cmp(expectedX)).to.equal(0);
@@ -688,7 +688,7 @@ describe('Endomorphic edge cases', function () {
       });
   
       it('ENDO.EDGE.BETA_ON_CURVE - beta*G satisfies the curve equation', function () {
-        const g = Curve.g;
+        const g = Curve.point(Curve.g.getX(), Curve.g.getY());
         const betaG = g._getBeta();
         expect(isOnCurve(betaG)).to.be.true;
         // Also verify: betaG.y² = betaG.x³ + 7 mod p
@@ -697,7 +697,7 @@ describe('Endomorphic edge cases', function () {
   
       it('ENDO.EDGE.TWO_POINT_BASIS - _endoSplit produces consistent basis for both points', function () {
         // Two different points should use the same basis decomposition
-        const g = Curve.g;
+        const g = Curve.point(Curve.g.getX(), Curve.g.getY());
         const g2 = Curve.g.mul('2');
         const k = new BN('deadbeef', 16);
   

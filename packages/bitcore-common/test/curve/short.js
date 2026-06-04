@@ -85,7 +85,7 @@ describe('ShortWeierstrass Curve Operations', function () {
 
     it('SHORT.POINT_FROM_JSON_PRECOMP - pointFromJSON with precomputed data preserves tables', function () {
       // Generate a point with precomputed table, serialize to JSON, then deserialize
-      const G = Curve.g;
+      const G = Curve.point(Curve.g.getX(), Curve.g.getY());
       G.precompute(8);
       const json = G.toJSON();
 

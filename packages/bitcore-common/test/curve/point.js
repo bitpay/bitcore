@@ -191,7 +191,7 @@ describe('Point (Affine) — lib/curve/point.js', function () {
     });
 
     it('P.NEG.PRECOMPUTE - P.neg(true) propagates negation into precomputed tables', function () {
-      const p = Curve.g;
+      const p = Curve.point(Curve.g.getX(), Curve.g.getY());
       p.precompute(4);
       expect(p.precomputed).to.exist;
       const negP = p.neg(true);
@@ -328,11 +328,11 @@ describe('Point (Affine) — lib/curve/point.js', function () {
     });
 
     it('P.MUL.PRECOMP_PATH - precomputed mul matches non-precomputed mul for k=0x100', function () {
-      const p = Curve.g;
+      const p = Curve.point(Curve.g.getX(), Curve.g.getY());
       p.precompute(16);
       const withDoubles = p.mul('100'); // 0x100 = 256
       // Verify against non-precomputed version (internal path consistency)
-      const noPre = Curve.g.mul('100');
+      const noPre = Curve.point(Curve.g.getX(), Curve.g.getY()).mul('100');
       expect(withDoubles.eq(noPre)).to.be.true;
       // Verify on-curve (independent mathematical check)
       expect(isOnCurve(withDoubles)).to.be.true;
@@ -415,7 +415,7 @@ describe('Point (Affine) — lib/curve/point.js', function () {
     });
 
     it('P.TOJSON.WITH_PRECOMP - Point with precomputed toJSON returns [x, y, {doubles, naf}]', function () {
-      const p = Curve.g;
+      const p = Curve.point(Curve.g.getX(), Curve.g.getY());
       p.precompute(4);
       const json = p.toJSON();
       expect(Array.isArray(json)).to.be.true;
@@ -426,14 +426,14 @@ describe('Point (Affine) — lib/curve/point.js', function () {
     });
 
     it('P.FROMJSON.BASIC - Point.fromJSON(curve, [x,y]) recovers original point', function () {
-      const p = Curve.g;
+      const p = Curve.point(Curve.g.getX(), Curve.g.getY());
       const json = p.toJSON();
       const restored = Curve.pointFromJSON(json);
       expect(restored.eq(p)).to.be.true;
     });
 
     it('P.FROMJSON.WITH_PRECOMP - Point.fromJSON restores precomputed tables', function () {
-      const p = Curve.g;
+      const p = Curve.point(Curve.g.getX(), Curve.g.getY());
       p.precompute(4);
       const json = p.toJSON();
       const restored = Curve.pointFromJSON(json);
@@ -444,8 +444,9 @@ describe('Point (Affine) — lib/curve/point.js', function () {
     });
 
     it('P.FROMJSON.ROUNDTRIP - toJSON → fromJSON → eq for various points', function () {
+      const gCopy = Curve.point(Curve.g.getX(), Curve.g.getY());
       const points = [
-        Curve.g,
+        gCopy,
         Curve.g.mul('2'),
         Curve.g.mul('ff'),
         Curve.g.mul('100'),
@@ -499,7 +500,7 @@ describe('Point (Affine) — lib/curve/point.js', function () {
   describe('6.12 _getBeta — Endomorphism helper', function () {
 
     it('P.GETBETA - G._getBeta() returns beta*G = (beta*Gx, Gy)', function () {
-      const g = Curve.g;
+      const g = Curve.point(Curve.g.getX(), Curve.g.getY());
       const betaG = g._getBeta();
       expect(betaG).to.exist;
       expect(betaG.isInfinity()).to.be.false;
@@ -511,12 +512,12 @@ describe('Point (Affine) — lib/curve/point.js', function () {
     });
 
     it('P.GETBETA.CURVE_EQUATION - beta*G satisfies the curve equation', function () {
-      const betaG = Curve.g._getBeta();
+      const betaG = Curve.point(Curve.g.getX(), Curve.g.getY())._getBeta();
       expect(isOnCurve(betaG)).to.be.true;
     });
 
     it('P.GETBETA.CACHED - _getBeta() caches result in precomputed.beta', function () {
-      const g = Curve.g;
+      const g = Curve.point(Curve.g.getX(), Curve.g.getY());
       // Without precomputed, _getBeta returns a fresh point
       const first = g._getBeta();
       // With precompute, _getBeta caches into precomputed.beta

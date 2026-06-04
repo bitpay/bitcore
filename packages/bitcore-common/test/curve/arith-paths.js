@@ -346,7 +346,7 @@ describe('8. Internal Arithmetic Path Coverage — lib/curve/point.js', function
 
     it('ARITH.WNAF.WITH_PRECOMP_BYPASS - precomputed point uses _fixedNafMul, not _wnafMul', function () {
       // When precomputed doubles exist, mul() calls _fixedNafMul, bypassing _wnafMul
-      const g = Curve.g;
+      const g = Curve.point(Curve.g.getX(), Curve.g.getY());
       g.precompute(256);
       const k = new BN(13);
 
