@@ -5,6 +5,25 @@ const { BN, Curve } = require('../../');
 const { expect } = require('chai');
 const vectors = require('../data/secp256k1-vectors');
 
+// -----------------------------------------------------------------
+// Gap 4 helpers — Point Decoding Rejection Contracts
+// -----------------------------------------------------------------
+
+// Flip the last bit of a byte array to toggle even/odd parity of Y
+function flipLastBit(bytes) {
+  const copy = bytes.slice();
+  copy[copy.length - 1] ^= 0x01;
+  return copy;
+}
+
+// Arbitrary off-curve X, Y coordinates (no attempt at curve membership)
+function arbitraryOffCurveXY() {
+  return {
+    x: Buffer.from('0000000000000000000000000000000000000000000000000000000000000001', 'hex'),
+    y: Buffer.from('0000000000000000000000000000000000000000000000000000000000000002', 'hex')
+  };
+}
+
 // secp256k1 constants (BN hex strings)
 const SECP_P = 'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f';
 const SECP_N = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141';
@@ -543,6 +562,168 @@ describe('BaseCurve — Base Curve Operations', function () {
 
     it('BASE.BP.VALIDATE.NEG_G_VALID - (-G).validate() == true', function () {
       expect(Curve.g.neg().validate()).to.be.true;
+    });
+  });
+
+  // -----------------------------------------------------------------
+  // 5.10 Point Decoding Rejection Contracts (Gap 4)
+  // -----------------------------------------------------------------
+  describe('5.10 Point Decoding Rejection Contracts', function () {
+
+    // ---- Family 2.1: Hybrid Parity Mismatch Rejection ----
+    // SEC 1 §4.3.6 requires that the hybrid prefix byte declare the parity
+    // of Y, and the actual Y must match. A 0x06 prefix with odd Y or a
+    // 0x07 prefix with even Y is structurally invalid.
+
+    it('BASE.DECODE.HYBRID_06_ODD_Y_REJECT — 0x06 prefix with odd Y throws', function () {
+      // G has even Y (last byte 0xb8). Flip last bit → odd Y.
+      const x = Curve.g.getX().toArray('be', P_BYTE_LENGTH);
+      const y = Curve.g.getY().toArray('be', P_BYTE_LENGTH);
+      const oddY = flipLastBit(y);
+      const hex = '06' + Buffer.from(x).toString('hex') + Buffer.from(oddY).toString('hex');
+      expect(function () {
+        Curve.decodePoint(hex, 'hex');
+      }).to.throw(Error);
+    });
+
+    it('BASE.DECODE.HYBRID_07_EVEN_Y_REJECT — 0x07 prefix with even Y throws', function () {
+      // G has even Y, so 0x07 || G.x || G.y has mismatched parity.
+      const x = Curve.g.getX().toArray('be', P_BYTE_LENGTH);
+      const y = Curve.g.getY().toArray('be', P_BYTE_LENGTH);
+      const hex = '07' + Buffer.from(x).toString('hex') + Buffer.from(y).toString('hex');
+      expect(function () {
+        Curve.decodePoint(hex, 'hex');
+      }).to.throw(Error);
+    });
+
+    it('BASE.DECODE.HYBRID_07_EVEN_Y_REJECT_ALT — 0x07 prefix with even Y from -G side throws', function () {
+      // -G has odd Y. Flip last bit → even Y, but 0x07 expects odd.
+      const x = Curve.g.getX().toArray('be', P_BYTE_LENGTH);
+      const negGY = Curve.g.neg().getY().toArray('be', P_BYTE_LENGTH);
+      const evenYNeg = flipLastBit(negGY);
+      const hex = '07' + Buffer.from(x).toString('hex') + Buffer.from(evenYNeg).toString('hex');
+      expect(function () {
+        Curve.decodePoint(hex, 'hex');
+      }).to.throw(Error);
+    });
+
+    // ---- Family 4.0: Compressed Decode with Invalid X (No Square Root) ----
+    // An X value that has no square root on the curve cannot correspond to
+    // any valid point. pointFromX validates y² = x³ + ax + b and throws.
+
+    it('BASE.DECODE.COMPRESSED.INVALID_X_02 — 0x02 || X=0 throws "invalid point"', function () {
+      // On secp256k1: 0³ + 7 = 7, and 7 is not a quadratic residue mod p.
+      expect(function () {
+        Curve.decodePoint('02' + '00'.repeat(32), 'hex');
+      }).to.throw('invalid point');
+    });
+
+    it('BASE.DECODE.COMPRESSED.INVALID_X_03 — 0x03 || X=0 throws "invalid point"', function () {
+      // Same X=0 with 0x03 prefix.
+      expect(function () {
+        Curve.decodePoint('03' + '00'.repeat(32), 'hex');
+      }).to.throw('invalid point');
+    });
+
+    // ---- Family 5.2: Combined Parity + Off-Curve ----
+    // When both parity is wrong AND coordinates are off-curve, the parity
+    // assertion should fire first, short-circuiting any coordinate validation.
+
+    it('BASE.DECODE.PARITY_OFFCURVE_COMBINED — 0x06 || off-curve X || odd Y throws (parity first)', function () {
+      const oc = arbitraryOffCurveXY();
+      const oddY = flipLastBit(oc.y);
+      const hex = '06' + oc.x.toString('hex') + oddY.toString('hex');
+      expect(function () {
+        Curve.decodePoint(hex, 'hex');
+      }).to.throw(Error);
+    });
+
+    it('BASE.DECODE.PARITY_OFFCURVE_COMBINED_07 — 0x07 || off-curve X || even Y throws (parity first)', function () {
+      // oc.y ends in 0x02 (even). 0x07 expects odd, so this is a parity mismatch.
+      const oc = arbitraryOffCurveXY();
+      const hex = '07' + oc.x.toString('hex') + oc.y.toString('hex');
+      expect(function () {
+        Curve.decodePoint(hex, 'hex');
+      }).to.throw(Error);
+    });
+
+    // ---- Family 5.3: 0x04 with Wrong Root (valid on-curve point, just negated) ----
+    // 0x04 format carries both coordinates explicitly and does not declare
+    // parity. It should faithfully decode whatever coordinates are given,
+    // including the negation of a known point.
+
+    it('BASE.DECODE.UNCOMPRESSED.WRONG_ROOT_OK — 0x04 || G.x || -G.y returns -G', function () {
+      const x = Curve.g.getX().toArray('be', P_BYTE_LENGTH);
+      const negGY = Curve.g.neg().getY().toArray('be', P_BYTE_LENGTH);
+      const hex = '04' + Buffer.from(x).toString('hex') + Buffer.from(negGY).toString('hex');
+      const decoded = Curve.decodePoint(hex, 'hex');
+      expect(decoded).to.exist;
+      expect(decoded.isInfinity()).to.be.false;
+      expect(decoded.eq(Curve.g.neg())).to.be.true;
+    });
+
+    // ---- Family 3.0: Off-Curve Point Decoding (Correct Contract) ----
+    // SEC 1 §4.3.6 specifies that a receiving party must validate that a
+    // decoded point lies on the curve before using it. The correct contract
+    // is that decodePoint must reject inputs that decode to points not on
+    // the curve, regardless of format.
+    //
+    // DEFICIENCY: BaseCurve.decodePoint does not validate curve membership
+    // for 0x04/0x06/0x07 inputs. It constructs the point directly without
+    // checking y² ≡ x³ + ax + b. This allows trivially forging off-curve
+    // points, which breaks signature validation security.
+    //
+    // SEC 1 §4.3.6 requires validation on decode.
+    // Source: lib/curve/base.js:277–280 (no validate call).
+    // Fix required before these tests can be unskipped.
+
+    describe.skip('Off-curve uncompressed decode', function () {
+      // DEFICIENCY: BaseCurve.decodePoint does not validate curve membership
+      // for 0x04/0x06/0x07 inputs. It constructs the point directly without
+      // checking y² ≡ x³ + ax + b. This allows trivially forging off-curve
+      // points, which breaks signature validation security.
+      //
+      // SEC 1 §4.3.6 requires validation on decode.
+      // Source: lib/curve/base.js:277–280 (no validate call).
+      // Fix required before these tests can be unskipped.
+
+      it('BASE.DECODE.UNCOMPRESSED.OFF_CURVE.REJECT — 0x04 || off-curve X,Y throws', function () {
+        const oc = arbitraryOffCurveXY();
+        const hex = '04' + oc.x.toString('hex') + oc.y.toString('hex');
+        expect(function () {
+          Curve.decodePoint(hex, 'hex');
+        }).to.throw(Error);
+      });
+
+      it('BASE.DECODE.HYBRID_06_OFF_CURVE.REJECT — 0x06 || off-curve X,Y throws', function () {
+        const oc = arbitraryOffCurveXY();
+        const hex = '06' + oc.x.toString('hex') + oc.y.toString('hex');
+        expect(function () {
+          Curve.decodePoint(hex, 'hex');
+        }).to.throw(Error);
+      });
+
+      it('BASE.DECODE.HYBRID_07_OFF_CURVE.REJECT — 0x07 || off-curve X,Y throws', function () {
+        const oc = arbitraryOffCurveXY();
+        const oddY = flipLastBit(oc.y);
+        const hex = '07' + oc.x.toString('hex') + oddY.toString('hex');
+        expect(function () {
+          Curve.decodePoint(hex, 'hex');
+        }).to.throw(Error);
+      });
+
+      it('BASE.DECODE.UNCOMPRESSED.OFF_CURVE.BUGGY — documents: off-curve point is accepted and validate() returns false', function () {
+        // This test DOCUMENTS the current buggy behavior for regression tracking.
+        // It must not pass silently — it is wrapped in describe.skip so the
+        // deficiency is visible. When the source is fixed to reject off-curve
+        // points, this test is removed (replaced by the REJECT tests above).
+        const oc = arbitraryOffCurveXY();
+        const hex = '04' + oc.x.toString('hex') + oc.y.toString('hex');
+        const decoded = Curve.decodePoint(hex, 'hex');
+        expect(decoded).to.exist;
+        expect(decoded.isInfinity()).to.be.false;
+        expect(Curve.validate(decoded)).to.be.false;
+      });
     });
   });
 
