@@ -343,6 +343,90 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       const manually = Curve.g.mul('f').mul('11'); // ff = f * 11 (nope, 0xf * 0x11 = 0xff? 15*17=255=0xff yes)
       expect(withEndo.eq(manually)).to.be.true;
     });
+
+    // -----------------------------------------------------------------
+    // 6.7 Vector-Anchor Public Point.mul Tests (Gap 5)
+    // -----------------------------------------------------------------
+
+    it('P.MUL.VECTOR.0x100 - G.mul("100") [k=256] precompute path produces known vector', function () {
+      // k=256 triggers the precompute path in Point.mul (via _hasDoubles)
+      // Vector anchor: 256*G coordinates independently computed
+      const result = Curve.g.mul('100');
+      const vec = vectors.KG['0x100'];
+      expect(result.getX().toString(16, 64)).to.equal(vec.x);
+      expect(result.getY().toString(16, 64)).to.equal(vec.y);
+      // Transitive anchor: precomputed mul matches non-precomputed mul
+      const p = Curve.point(Curve.g.getX(), Curve.g.getY());
+      p.precompute(16);
+      expect(p.mul('100').eq(result)).to.be.true;
+    });
+
+    it('P.MUL.VECTOR.0xff - G.mul("ff") [k=255] endo path produces known vector', function () {
+      // k=255 triggers the endomorphism path in Point.mul (curve.endo exists)
+      // Vector anchor: 255*G coordinates independently computed
+      const result = Curve.g.mul('ff');
+      const vec = vectors.KG['0xff'];
+      expect(result.getX().toString(16, 64)).to.equal(vec.x);
+      expect(result.getY().toString(16, 64)).to.equal(vec.y);
+    });
+
+    it('P.MUL.VECTOR.FULL256 - G.mul(full 256-bit scalar) produces known vector', function () {
+      // Full-width 256-bit scalar (larger than existing deadbeef×4)
+      // Vector anchor: independently computed coordinates
+      const scalar = 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef';
+      const result = Curve.g.mul(scalar);
+      const vec = vectors.KG['0x' + scalar];
+      expect(result.getX().toString(16, 64)).to.equal(vec.x);
+      expect(result.getY().toString(16, 64)).to.equal(vec.y);
+    });
+
+    it('P.MUL.VECTOR.0x3 - G.mul("3") [k=3] produces known vector', function () {
+      const result = Curve.g.mul('3');
+      const vec = vectors.KG['0x3'];
+      expect(result.getX().toString(16, 64)).to.equal(vec.x);
+      expect(result.getY().toString(16, 64)).to.equal(vec.y);
+    });
+
+    it('P.MUL.VECTOR.0x7 - G.mul("7") [k=7] produces known vector', function () {
+      const result = Curve.g.mul('7');
+      const vec = vectors.KG['0x7'];
+      expect(result.getX().toString(16, 64)).to.equal(vec.x);
+      expect(result.getY().toString(16, 64)).to.equal(vec.y);
+    });
+
+    it('P.MUL.VECTOR.0x8 - G.mul("8") [k=8] power-of-2 produces known vector', function () {
+      // k=8 is a single-bit scalar (binary weight = 1), tests the power-of-2 path
+      const result = Curve.g.mul('8');
+      const vec = vectors.KG['0x8'];
+      expect(result.getX().toString(16, 64)).to.equal(vec.x);
+      expect(result.getY().toString(16, 64)).to.equal(vec.y);
+    });
+
+    // -----------------------------------------------------------------
+    // 6.7 Vector-Anchor N − 1 Negation Tests (Gap 5)
+    // -----------------------------------------------------------------
+
+    it('P.MUL.NMINUS1.X - G.mul(N−1) x-coordinate equals G x-coordinate', function () {
+      const nMinus1 = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140';
+      const result = Curve.g.mul(nMinus1);
+      expect(result.getX().toString(16, 64)).to.equal(vectors.G_X);
+    });
+
+    it('P.MUL.NMINUS1.Y - G.mul(N−1) y-coordinate equals negY(G.y)', function () {
+      const nMinus1 = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140';
+      const result = Curve.g.mul(nMinus1);
+      const expectedNegY = vectors.negY(vectors.G_Y);
+      expect(result.getY().toString(16, 64)).to.equal(expectedNegY);
+    });
+
+    it('P.MUL.NMINUS1.NEG_X - G.neg().getX() equals G.x', function () {
+      expect(Curve.g.neg().getX().toString(16, 64)).to.equal(vectors.KG['0x1'].x);
+    });
+
+    it('P.MUL.NMINUS1.NEG_Y - G.neg().getY() equals negY(G.y)', function () {
+      const expectedNegY = vectors.negY(vectors.KG['0x1'].y);
+      expect(Curve.g.neg().getY().toString(16, 64)).to.equal(expectedNegY);
+    });
   });
 
   // -----------------------------------------------------------------
@@ -657,6 +741,37 @@ describe('Point (Affine) — lib/curve/point.js', function () {
         const result = Curve.g.mulAdd(new BN(-5), Curve.g, new BN(3));
         expect(result.getX().toString(16)).to.equal(expected.getX().toString(16));
         expect(result.getY().toString(16)).to.equal(expected.getY().toString(16));
+      });
+
+      // -----------------------------------------------------------------
+      // 6.14.3 Vector-Anchor mulAdd / jmulAdd Negative Coefficients (Gap 5)
+      // -----------------------------------------------------------------
+
+      it('MA1-VEC: G.mulAdd(BN(-1), 2G, BN(1)) equals G via vector — -G + 2G = G', function () {
+        // Vector anchor: result should match KG['0x1']
+        const g2 = Curve.g.mul('2');
+        const result = Curve.g.mulAdd(new BN(-1), g2, new BN(1));
+        expect(result.getX().toString(16, 64)).to.equal(vectors.KG['0x1'].x);
+        expect(result.getY().toString(16, 64)).to.equal(vectors.KG['0x1'].y);
+      });
+
+      it('MA2-VEC: G.mulAdd(BN(-2), G, BN(3)) equals G via vector — -2G + 3G = G', function () {
+        // Vector anchor: result should match KG['0x1']
+        const result = Curve.g.mulAdd(new BN(-2), Curve.g, new BN(3));
+        expect(result.getX().toString(16, 64)).to.equal(vectors.KG['0x1'].x);
+        expect(result.getY().toString(16, 64)).to.equal(vectors.KG['0x1'].y);
+      });
+
+      it('MA4-VEC: G.mulAdd(BN(-1), G, BN(1)) produces infinity — -G + G = ∞', function () {
+        const result = Curve.g.mulAdd(new BN(-1), Curve.g, new BN(1));
+        expect(result.isInfinity()).to.be.true;
+      });
+
+      it('MA5-VEC: G.mulAdd(BN(-5), G, BN(3)) equals -2G via vector — -5G + 3G = -2G', function () {
+        // Vector anchor: result should match NEG_2G coordinates
+        const result = Curve.g.mulAdd(new BN(-5), Curve.g, new BN(3));
+        expect(result.getX().toString(16, 64)).to.equal(vectors.NEG_2G_X);
+        expect(result.getY().toString(16, 64)).to.equal(vectors.NEG_2G_Y);
       });
     });
 

@@ -158,9 +158,18 @@ exports.KG = {
     x: 'dd285e29fbd0d853699087b48ef44607cb791a7ddc4392ef82c571b11f6a922f',
     y: '9a7fe2ef963a641828209c6aa2a12036298f00cc296ef4501afd408d6f66ab38',
   },
+  '0x100': { // 256 * G — precompute path trigger (power-of-2, NAF weight 1)
+    x: '8282263212c609d9ea2a6e3e172de238d8c39cabd5ac1ca10646e23fd5f51508',
+    y: '11f8a8098557dfe45e8256e830b60ace62d613ac2f7b17bed31b6eaff6e26caf',
+  },
   '0x100000000000000000000000000000000': { // 2^128
     x: '8f68b9d2f63b5f339239c1ad981f162ee88c5678723ea3351b7b444c9ec4c0da',
     y: '662a9f2dba063986de1d90c2b6be215dbbea2cfe95510bfdf23cbf79501fff82',
+  },
+  // Full-width 256-bit scalar (larger than existing deadbeef×4, tests full-width path)
+  '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef': {
+    x: 'c6b754b20826eb925e052ee2c25285b162b51fdca732bcf67e39d647fb6830ae',
+    y: 'b651944a574a362082a77e3f2b5d9223eb54d7f2f76846522bf75f3bedb8178e',
   },
 };
 
