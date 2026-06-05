@@ -82,7 +82,7 @@ Schnorr.sign = function(privateKey, message, aux) {
  */
 Schnorr.verify = function(publicKey, message, signature) {
   if ($.isType(publicKey, 'PublicKey')) {
-    publicKey = publicKey.point.x.toBuffer();
+    publicKey = publicKey.point.getX().toBuffer({ size: 32 });
   }
   if (publicKey.length !== 32) {
     throw new Error('Public key should be 32 bytes for schnorr signatures');
@@ -135,7 +135,7 @@ Schnorr.verify = function(publicKey, message, signature) {
 /* Utility function used in Verify() */
 const getE = function(r, P, message) {
   const n = Point.getN();
-  const hash = new TaggedHash('BIP0340/challenge', Buffer.concat([r.toBuffer({ size: 32 }), P.x.toBuffer({ size: 32 }), message])).finalize();
+  const hash = new TaggedHash('BIP0340/challenge', Buffer.concat([r.toBuffer({ size: 32 }), P.getX().toBuffer({ size: 32 }), message])).finalize();
   return new BN(hash).mod(n);
 };
 

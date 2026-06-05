@@ -1,12 +1,13 @@
 import {
   BitcoreLib as Bitcore,
-  BitcoreLibCash 
+  BitcoreLibCash,
+  Utils as CWCUtils
 } from '@bitpay-labs/crypto-wallet-core';
-import _ from 'lodash';
 import { singleton } from 'preconditions';
 import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
 import log from './log';
+import type { Address } from '../types/address';
 
 const $ = singleton();
 const BCHAddress = BitcoreLibCash.Address;
@@ -29,15 +30,13 @@ export class Verifier {
   
   /**
    * Check address by deriving it from credentials and comparing
-   * @param {Credentials} credentials
-   * @param {object} address
-   * @param {string} address.address
-   * @param {string} address.type
-   * @param {string} address.path
-   * @param {Array} address.publicKeys
-   * @param {Array} [escrowInputs] Escrow inputs (BCH only)
    */
-  static checkAddress(credentials, address, escrowInputs?) {
+  static checkAddress(
+    credentials: Credentials,
+    address: Address,
+    /** Escrow inputs (BCH only) */
+    escrowInputs?: Array<any>
+  ) {
     $.checkState(credentials.isComplete(), 'Failed state: credentials at <checkAddress>');
 
     let network = credentials.network;
@@ -58,7 +57,7 @@ export class Verifier {
     );
     return (
       local.address == address.address &&
-      _.difference(local.publicKeys, address.publicKeys).length === 0
+      CWCUtils.difference(local.publicKeys, address.publicKeys).length === 0
     );
   }
 
@@ -134,7 +133,8 @@ export class Verifier {
       const o2 = args.outputs[i];
       if (!strEqual(o1.toAddress, o2.toAddress)) return false;
       if (!strEqual(o1.script, o2.script)) return false;
-      if (o1.amount != o2.amount) return false;
+      // Amounts need to be equal OR sendMax arg is set and amount arg is omitted, otherwise return check failure
+      if (o1.amount != o2.amount && !(args.sendMax && o2.amount == null)) return false;
       let decryptedMessage: boolean | string = false;
       try {
         decryptedMessage = Utils.decryptMessage(o2.message, encryptingKey);
@@ -159,7 +159,7 @@ export class Verifier {
     if (!strEqual(txp.message, decryptedMessage)) return false;
     if (
       (args.customData || txp.customData) &&
-      !_.isEqual(txp.customData, args.customData)
+      !CWCUtils.isEqual(txp.customData, args.customData)
     )
       return false;
 
@@ -217,8 +217,11 @@ export class Verifier {
     }
 
     if (Constants.UTXO_CHAINS.includes(chain)) {
-      if (!this.checkAddress(credentials, txp.changeAddress)) {
+      if (txp.changeAddress && !this.checkAddress(credentials, txp.changeAddress)) {
         log.debug(`[TXP ${txp.id}] Invalid change address`);
+        return false;
+      } else if (!txp.changeAddress && !txp.sendMax) {
+        log.warn(`[TXP ${txp.id}] Missing change address for non sendMax transaction proposal`);
         return false;
       }
       if (txp.escrowAddress && !this.checkAddress(credentials, txp.escrowAddress, txp.inputs)) {

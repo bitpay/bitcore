@@ -281,6 +281,18 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
     });
   });
 
+  router.post('/v1/service/moonpay/createSession', (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.moonpay.moonpayCreateSession(req);
+    });
+  });
+
+  router.post('/v1/service/moonpay/revokeActiveSession', (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.moonpay.moonpayRevokeActiveSession(req);
+    });
+  });
+
   router.post('/v1/service/ramp/quote', (req, res) => {
     respondWithAuthServer(req, res, context, server => {
       return server.externalServices.ramp.rampGetQuote(req);

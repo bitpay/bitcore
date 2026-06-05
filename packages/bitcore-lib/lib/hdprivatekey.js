@@ -1,27 +1,27 @@
 'use strict';
 
 
-var assert = require('assert');
-var buffer = require('buffer');
-var _ = require('lodash');
-var BN = require('./crypto/bn');
-var Hash = require('./crypto/hash');
-var Point = require('./crypto/point');
-var Random = require('./crypto/random');
-var Base58 = require('./encoding/base58');
-var Base58Check = require('./encoding/base58check');
-var errors = require('./errors');
-var Network = require('./networks');
-var PrivateKey = require('./privatekey');
+const assert = require('assert');
+const buffer = require('buffer');
+const _ = require('lodash');
+const BN = require('./crypto/bn');
+const Hash = require('./crypto/hash');
+const Point = require('./crypto/point');
+const Random = require('./crypto/random');
+const Base58 = require('./encoding/base58');
+const Base58Check = require('./encoding/base58check');
+const errors = require('./errors');
+const Network = require('./networks');
+const PrivateKey = require('./privatekey');
 
-var hdErrors = errors.HDPrivateKey;
-var BufferUtil = require('./util/buffer');
-var JSUtil = require('./util/js');
-var $ = require('./util/preconditions');
+const hdErrors = errors.HDPrivateKey;
+const BufferUtil = require('./util/buffer');
+const JSUtil = require('./util/js');
+const $ = require('./util/preconditions');
 
-var MINIMUM_ENTROPY_BITS = 128;
-var BITS_TO_BYTES = 1 / 8;
-var MAXIMUM_ENTROPY_BITS = 512;
+const MINIMUM_ENTROPY_BITS = 128;
+const BITS_TO_BYTES = 1 / 8;
+const MAXIMUM_ENTROPY_BITS = 512;
 
 
 /**
@@ -142,9 +142,9 @@ HDPrivateKey._getDerivationIndexes = function(path) {
  *
  * @example
  * ```javascript
- * var parent = new HDPrivateKey('xprv...');
- * var child_0_1_2h = parent.derive(0).derive(1).derive(2, true);
- * var copy_of_child_0_1_2h = parent.derive("m/0/1/2'");
+ * let parent = new HDPrivateKey('xprv...');
+ * let child_0_1_2h = parent.derive(0).derive(1).derive(2, true);
+ * let copy_of_child_0_1_2h = parent.derive("m/0/1/2'");
  * assert(child_0_1_2h.xprivkey === copy_of_child_0_1_2h);
  * ```
  *
@@ -175,9 +175,9 @@ HDPrivateKey.prototype.derive = function(arg, hardened) {
  *
  * @example
  * ```javascript
- * var parent = new HDPrivateKey('xprv...');
- * var child_0_1_2h = parent.deriveChild(0).deriveChild(1).deriveChild(2, true);
- * var copy_of_child_0_1_2h = parent.deriveChild("m/0/1/2'");
+ * let parent = new HDPrivateKey('xprv...');
+ * let child_0_1_2h = parent.deriveChild(0).deriveChild(1).deriveChild(2, true);
+ * let copy_of_child_0_1_2h = parent.deriveChild("m/0/1/2'");
  * assert(child_0_1_2h.xprivkey === copy_of_child_0_1_2h);
  * ```
  *

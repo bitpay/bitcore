@@ -10,6 +10,7 @@ interface RouteHelpers {
   getServerWithMultiAuth: Types.GetServerWithMultiAuthFn;
   logDeprecated: Types.LogDeprecatedFn;
   setPublicCache: (res: express.Response, seconds: number) => void;
+  checkNumberFormat: Types.CheckNumberFormatFn;
 }
 
 export function createRouteHelpers(returnError: Types.ReturnErrorFn): RouteHelpers {
@@ -139,11 +140,19 @@ export function createRouteHelpers(returnError: Types.ReturnErrorFn): RouteHelpe
     res.setHeader('Cache-Control', `public, max-age=${seconds}, stale-if-error=${10 * seconds}`);
   };
 
+  const checkNumberFormat = (numberFormat: string | undefined, res: express.Response) => {
+    const validFormats = ['hex', 'string', 'number']; // bigint cannot be serialized to JSON, so it's not supported in the API response
+    if (numberFormat && !validFormats.includes(numberFormat)) {
+      return returnError(Errors.INVALID_NUMBER_FORMAT, res, null);
+    }
+  };
+
   return {
     getServer,
     getServerWithAuth,
     getServerWithMultiAuth,
     logDeprecated,
-    setPublicCache
+    setPublicCache,
+    checkNumberFormat
   };
 }

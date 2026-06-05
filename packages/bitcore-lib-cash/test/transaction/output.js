@@ -194,7 +194,7 @@ describe("Output", function() {
     expect(() => new Output({ satoshis: 1000, script: '51', tokenData: { category: '0102030405060708091011121314151617181920212223242526272829303132', amount: 0, nft: { capability: 'unknown' } } })).to.throw('Invalid state: nft capability must be "none", "mutable", or "minting".');
     expect(() => new Output({ satoshis: 1000, script: '51', tokenData: { category: '0102030405060708091011121314151617181920212223242526272829303132', amount: 0, nft: { capability: 'none' } } })).to.not.throw();
     expect(new Output({ satoshis: 1000, script: '51', tokenData: { category: '0102030405060708091011121314151617181920212223242526272829303132', amount: 0, nft: { commitment: '' } } })).to.deep.equal(new Output({ satoshis: 1000, script: '51', tokenData: { category: '0102030405060708091011121314151617181920212223242526272829303132', amount: 0, nft: { commitment: Buffer.of() } } }));
-    expect(() => new Output({ satoshis: 1000, script: '51', tokenData: { category: '0102030405060708091011121314151617181920212223242526272829303132', amount: 0, nft: { commitment: Buffer.from(new Uint8Array(41)) } } })).to.throw('Invalid state: nft commitment length must be less than or equal to 40 bytes.');
+    expect(() => new Output({ satoshis: 1000, script: '51', tokenData: { category: '0102030405060708091011121314151617181920212223242526272829303132', amount: 0, nft: { commitment: Buffer.from(new Uint8Array(129)) } } })).to.throw('Invalid state: nft commitment length must be less than or equal to 128 bytes.');
   });
 
   it('output creation fails if script includes token prefix', function() {
