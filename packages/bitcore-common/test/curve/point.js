@@ -4,29 +4,18 @@
 const { BN, Curve } = require('../../');
 const { expect } = require('chai');
 const vectors = require('../data/secp256k1-vectors');
+const {
+  isOnCurve,
+  pad64,
+  SECP_N,
+  SECP_N_MINUS_1,
+  SECP_N_MINUS_2,
+  SECP_G_X,
+  SECP_G_Y
+} = require('./helpers');
 
-// secp256k1 constants (BN hex strings)
-const SECP_P = 'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f';
-const SECP_N = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141';
-const SECP_G_X = '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798';
-const SECP_G_Y = '483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8';
-// Helper: check if a point satisfies y² = x³ + 7 (mod p) for secp256k1 (a=0)
-function isOnCurve(pt) {
-  if (pt.isInfinity()) return true;
-  // getX()/getY() return plain BNs (fromRed()), so use plain arithmetic
-  const x = pt.getX();
-  const y = pt.getY();
-  const left = y.sqr().umod(Curve.p);
-  const right = x.sqr().imul(x).iaddn(7).umod(Curve.p);
-  return left.cmp(right) === 0;
-}
-
-describe('Point (Affine) — lib/curve/point.js', function () {
-
-  // -----------------------------------------------------------------
-  // 6.1 Construction
-  // -----------------------------------------------------------------
-  describe('6.1 Construction', function () {
+describe('Point (Affine) - lib/curve/point.js', function () {
+  describe('Construction', function () {
 
     it('P.CONSTR.NORMAL - Point(curve, x, y) creates affine point with hex coords', function () {
       const pt = Curve.point(SECP_G_X, SECP_G_Y);
@@ -46,13 +35,9 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       expect(inf.y).to.be.null;
     });
 
-    it.skip('P.CONSTR.ISRED - Point.fromJSON with red coords preserves Red BN identity', function () {
-      // INHERITED ELLIPTIC BUG: this path is dead code — gRed is always false
-      // in all elliptic curve configs, so Point.fromJSON(...) is never called
-      // with red=true in practice. Passing red=true with already-red coords
-      // triggers forceRed() on an already-red BN, asserting !this.red. Fix
-      // the Point constructor (guard the forceRed() call) rather than testing
-      // a path that should be unexecutable.
+    it.skip('P.CONSTR.ISRED - Point.fromJSON preserves red coordinates', function () {
+      // Known deficiency: red=true with already-red coordinates asserts in
+      // forceRed().
       const p = Curve.g;
       const json = p.toJSON();
       // json[0] and json[1] are Red BNs from toJSON()
@@ -65,11 +50,7 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       expect(restored.y.toString(16)).to.equal(SECP_G_Y);
     });
   });
-
-  // -----------------------------------------------------------------
-  // 6.2 Addition
-  // -----------------------------------------------------------------
-  describe('6.2 Addition', function () {
+  describe('Addition', function () {
 
     it('P.ADD.OFF_CURVE - Adding two points on the curve produces a result on the curve', function () {
       const p1 = Curve.g;
@@ -93,7 +74,6 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       const right = g.add(g2.add(g3));
       expect(left.eq(right)).to.be.true;
       // Also verify the result against an independent vector oracle: 6G
-      const pad64 = (s) => s.padStart(64, '0');
       expect(pad64(left.getX().toString(16))).to.equal(vectors.KG['0x6'].x);
       expect(pad64(left.getY().toString(16))).to.equal(vectors.KG['0x6'].y);
     });
@@ -121,11 +101,11 @@ describe('Point (Affine) — lib/curve/point.js', function () {
 
     it('P.ADD.COLLINEAR_X - P.add(-P) returns infinity', function () {
       // For secp256k1, two points with the same x coordinate must be P and -P.
-      // There is no scenario where P.x == Q.x with P ≠ ±Q.
-      // This test verifies that P + (-P) = ∞ (the inverse case).
+      // There is no scenario where P.x == Q.x with P != +/-Q.
+      // This test verifies that P + (-P) = infinity.
       const p = Curve.g;
       const pInv = p.neg();
-      // p.x === pInv.x, and p != pInv (unless y = 0 mod p which doesn't happen for secp256k1)
+      // p.x equals pInv.x, and p != pInv.
       expect(p.x.cmp(pInv.x)).to.equal(0);
       expect(p.eq(pInv)).to.be.false;
       expect(p.add(pInv).isInfinity()).to.be.true;
@@ -133,17 +113,13 @@ describe('Point (Affine) — lib/curve/point.js', function () {
 
     it('P.ADD.G_TO_G2 - G.add(G) produces 2G with known coordinates', function () {
       const sum = Curve.g.add(Curve.g);
-      // Independent vector oracle — verifies correctness independently of the addition code path
+      // Independent vector oracle.
       expect(sum.getX().toString(16)).to.equal(vectors.KG['0x2'].x);
       expect(sum.getY().toString(16)).to.equal(vectors.KG['0x2'].y);
       expect(sum.eq(Curve.g.dbl())).to.be.true;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 6.3 Doubling
-  // -----------------------------------------------------------------
-  describe('6.3 Doubling', function () {
+  describe('Doubling', function () {
 
     it('P.DBL.INF - infinity.dbl() returns infinity', function () {
       const inf = Curve.point(null, null);
@@ -161,16 +137,12 @@ describe('Point (Affine) — lib/curve/point.js', function () {
 
     it('P.DBL.G - G.dbl() produces correct 2G coordinates', function () {
       const dbl = Curve.g.dbl();
-      // Independent vector oracle — verifies correctness independently of the doubling code path
+      // Independent vector oracle.
       expect(dbl.getX().toString(16)).to.equal(vectors.KG['0x2'].x);
       expect(dbl.getY().toString(16)).to.equal(vectors.KG['0x2'].y);
     });
   });
-
-  // -----------------------------------------------------------------
-  // 6.4 Negation
-  // -----------------------------------------------------------------
-  describe('6.4 Negation', function () {
+  describe('Negation', function () {
 
     it('P.NEG.INF - infinity.neg() returns infinity', function () {
       const inf = Curve.point(null, null);
@@ -200,11 +172,7 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       expect(negP.neg(true).eq(p)).to.be.true;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 6.5 Equality
-  // -----------------------------------------------------------------
-  describe('6.5 Equality', function () {
+  describe('Equality', function () {
 
     it('P.EQ.SAME - P.eq(P) returns true', function () {
       expect(Curve.g.eq(Curve.g)).to.be.true;
@@ -234,11 +202,7 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       expect(inf.eq(Curve.g)).to.be.false;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 6.6 isInfinity
-  // -----------------------------------------------------------------
-  describe('6.6 isInfinity', function () {
+  describe('isInfinity', function () {
 
     it('P.IS_INFINITY - normal point returns false', function () {
       expect(Curve.g.isInfinity()).to.be.false;
@@ -257,11 +221,7 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       expect(Curve.g.mul(SECP_N).isInfinity()).to.be.true;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 6.7 Scalar Multiplication
-  // -----------------------------------------------------------------
-  describe('6.7 Scalar Multiplication', function () {
+  describe('Scalar Multiplication', function () {
 
     it('P.MUL.G_BY_1 - G.mul("1") == G', function () {
       expect(Curve.g.mul('1').eq(Curve.g)).to.be.true;
@@ -273,7 +233,7 @@ describe('Point (Affine) — lib/curve/point.js', function () {
 
     it('P.MUL.G_BY_2_KNOWN - G.mul("2") produces known 2G coordinates', function () {
       const result = Curve.g.mul('2');
-      // Independent vector oracle — verifies correctness independently of the multiplication code path
+      // Independent vector oracle.
       expect(result.getX().toString(16)).to.equal(vectors.KG['0x2'].x);
       expect(result.getY().toString(16)).to.equal(vectors.KG['0x2'].y);
     });
@@ -285,8 +245,7 @@ describe('Point (Affine) — lib/curve/point.js', function () {
     it('P.MUL.G_BY_NMINUS1 - G.mul(N-1) == G.neg()', function () {
       // N - 1 as hex: SECP_N is 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141'
       // N - 1 = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140'
-      const nMinus1 = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140';
-      expect(Curve.g.mul(nMinus1).eq(Curve.g.neg())).to.be.true;
+      expect(Curve.g.mul(SECP_N_MINUS_1).eq(Curve.g.neg())).to.be.true;
     });
 
     it('P.MUL.G_BY_0 - G.mul("0") is infinity', function () {
@@ -314,7 +273,6 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       // Verify structural equality: 3G + 5G == 8G
       expect(left.eq(right)).to.be.true;
       // Also verify against an independent vector oracle: 8G
-      const pad64 = (s) => s.padStart(64, '0');
       expect(pad64(left.getX().toString(16))).to.equal(vectors.KG['0x8'].x);
       expect(pad64(left.getY().toString(16))).to.equal(vectors.KG['0x8'].y);
     });
@@ -344,81 +302,6 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       expect(withEndo.eq(manually)).to.be.true;
     });
 
-    // -----------------------------------------------------------------
-    // 6.7 Vector-Anchor Public Point.mul Tests (Gap 5)
-    // -----------------------------------------------------------------
-
-    it('P.MUL.VECTOR.0x100 - G.mul("100") [k=256] precompute path produces known vector', function () {
-      // k=256 triggers the precompute path in Point.mul (via _hasDoubles)
-      // Vector anchor: 256*G coordinates independently computed
-      const result = Curve.g.mul('100');
-      const vec = vectors.KG['0x100'];
-      expect(result.getX().toString(16, 64)).to.equal(vec.x);
-      expect(result.getY().toString(16, 64)).to.equal(vec.y);
-      // Transitive anchor: precomputed mul matches non-precomputed mul
-      const p = Curve.point(Curve.g.getX(), Curve.g.getY());
-      p.precompute(16);
-      expect(p.mul('100').eq(result)).to.be.true;
-    });
-
-    it('P.MUL.VECTOR.0xff - G.mul("ff") [k=255] endo path produces known vector', function () {
-      // k=255 triggers the endomorphism path in Point.mul (curve.endo exists)
-      // Vector anchor: 255*G coordinates independently computed
-      const result = Curve.g.mul('ff');
-      const vec = vectors.KG['0xff'];
-      expect(result.getX().toString(16, 64)).to.equal(vec.x);
-      expect(result.getY().toString(16, 64)).to.equal(vec.y);
-    });
-
-    it('P.MUL.VECTOR.FULL256 - G.mul(full 256-bit scalar) produces known vector', function () {
-      // Full-width 256-bit scalar (larger than existing deadbeef×4)
-      // Vector anchor: independently computed coordinates
-      const scalar = 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef';
-      const result = Curve.g.mul(scalar);
-      const vec = vectors.KG['0x' + scalar];
-      expect(result.getX().toString(16, 64)).to.equal(vec.x);
-      expect(result.getY().toString(16, 64)).to.equal(vec.y);
-    });
-
-    it('P.MUL.VECTOR.0x3 - G.mul("3") [k=3] produces known vector', function () {
-      const result = Curve.g.mul('3');
-      const vec = vectors.KG['0x3'];
-      expect(result.getX().toString(16, 64)).to.equal(vec.x);
-      expect(result.getY().toString(16, 64)).to.equal(vec.y);
-    });
-
-    it('P.MUL.VECTOR.0x7 - G.mul("7") [k=7] produces known vector', function () {
-      const result = Curve.g.mul('7');
-      const vec = vectors.KG['0x7'];
-      expect(result.getX().toString(16, 64)).to.equal(vec.x);
-      expect(result.getY().toString(16, 64)).to.equal(vec.y);
-    });
-
-    it('P.MUL.VECTOR.0x8 - G.mul("8") [k=8] power-of-2 produces known vector', function () {
-      // k=8 is a single-bit scalar (binary weight = 1), tests the power-of-2 path
-      const result = Curve.g.mul('8');
-      const vec = vectors.KG['0x8'];
-      expect(result.getX().toString(16, 64)).to.equal(vec.x);
-      expect(result.getY().toString(16, 64)).to.equal(vec.y);
-    });
-
-    // -----------------------------------------------------------------
-    // 6.7 Vector-Anchor N − 1 Negation Tests (Gap 5)
-    // -----------------------------------------------------------------
-
-    it('P.MUL.NMINUS1.X - G.mul(N−1) x-coordinate equals G x-coordinate', function () {
-      const nMinus1 = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140';
-      const result = Curve.g.mul(nMinus1);
-      expect(result.getX().toString(16, 64)).to.equal(vectors.G_X);
-    });
-
-    it('P.MUL.NMINUS1.Y - G.mul(N−1) y-coordinate equals negY(G.y)', function () {
-      const nMinus1 = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140';
-      const result = Curve.g.mul(nMinus1);
-      const expectedNegY = vectors.negY(vectors.G_Y);
-      expect(result.getY().toString(16, 64)).to.equal(expectedNegY);
-    });
-
     it('P.MUL.NMINUS1.NEG_X - G.neg().getX() equals G.x', function () {
       expect(Curve.g.neg().getX().toString(16, 64)).to.equal(vectors.KG['0x1'].x);
     });
@@ -428,23 +311,19 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       expect(Curve.g.neg().getY().toString(16, 64)).to.equal(expectedNegY);
     });
   });
-
-  // -----------------------------------------------------------------
-  // 6.8 mulAdd and jmulAdd
-  // -----------------------------------------------------------------
-  describe('6.8 mulAdd / jmulAdd', function () {
+  describe('mulAdd / jmulAdd', function () {
 
     it('P.MULADD - G.mulAdd(BN(3), G2, BN(5)) == 3G + 5*(2G) == 13G (k1/k2 are BN objects, NOT hex strings)', function () {
       const g = Curve.g;
       const g2 = Curve.g.mul('2');
       // mulAdd passes coefficients directly to _endoWnafMulAdd / _wnafMulAdd
-      // without BN() conversion — unlike mul() which does new BN(k, 16).
+      // without BN() conversion, unlike mul() which does new BN(k, 16).
       const result = g.mulAdd(new BN('3', 16), g2, new BN('5', 16));
       const expected = Curve.g.mul('d');
       expect(result.eq(expected)).to.be.true;
     });
 
-    it('P.JMULADD - jmulAdd(3, G2, 5) result equals mulAdd(3, G2, 5) — both accept BN scalar coefficients', function () {
+    it('P.JMULADD - jmulAdd(3, G2, 5) equals mulAdd(3, G2, 5) with BN coefficients', function () {
       const g = Curve.g;
       const g2 = Curve.g.mul('2');
       const mulAddResult = g.mulAdd(new BN('3', 16), g2, new BN('5', 16));
@@ -452,16 +331,11 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       // Verify structural equality: jmulAdd == mulAdd
       expect(jmulAddResult.toP().eq(mulAddResult)).to.be.true;
       // Also verify against an independent vector oracle: 13G
-      const pad64 = (s) => s.padStart(64, '0');
       expect(pad64(jmulAddResult.toP().getX().toString(16))).to.equal(vectors.KG['0xd'].x);
       expect(pad64(jmulAddResult.toP().getY().toString(16))).to.equal(vectors.KG['0xd'].y);
     });
   });
-
-  // -----------------------------------------------------------------
-  // 6.9 toJ / toP (Jacobian conversion)
-  // -----------------------------------------------------------------
-  describe('6.9 toJ — Affine → Jacobian', function () {
+  describe('toJ - Affine to Jacobian', function () {
 
     it('P.TOJ - P.toJ() converts to Jacobian form and back', function () {
       const p = Curve.g;
@@ -482,11 +356,7 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       expect(g2.toJ().toP().eq(g2)).to.be.true;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 6.10 toJSON / fromJSON (Serialization)
-  // -----------------------------------------------------------------
-  describe('6.10 toJSON / fromJSON', function () {
+  describe('toJSON / fromJSON', function () {
 
     it('P.TOJSON.NO_PRECOMP - Point without precomputed toJSON returns [x, y]', function () {
       // Use a fresh point to avoid shared state pollution from prior precompute() calls
@@ -525,7 +395,7 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       expect(restored.eq(p)).to.be.true;
     });
 
-    it('P.FROMJSON.ROUNDTRIP - toJSON → fromJSON → eq for various points', function () {
+    it('P.FROMJSON.ROUNDTRIP - toJSON/fromJSON roundtrips for various points', function () {
       const gCopy = Curve.point(Curve.g.getX(), Curve.g.getY());
       const points = [
         gCopy,
@@ -541,15 +411,11 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       }
     });
   });
-
-  // -----------------------------------------------------------------
-  // 6.11 getX / getY (Internal getters)
-  // -----------------------------------------------------------------
-  describe('6.11 getX / getY', function () {
+  describe('getX / getY', function () {
 
     it('P.GETX - Point.getX() returns x coordinate as a plain BN (via .fromRed())', function () {
       const p = Curve.g;
-      // elliptic's getX() calls this.x.fromRed() — returns a plain BN, not a Red BN.
+      // getX() returns a plain BN.
       const x = p.getX();
       expect(BN.isBN(x)).to.be.true;
       expect(x.toString(16)).to.equal(SECP_G_X);
@@ -557,7 +423,7 @@ describe('Point (Affine) — lib/curve/point.js', function () {
 
     it('P.GETY - Point.getY() returns y coordinate as a plain BN (via .fromRed())', function () {
       const p = Curve.g;
-      // elliptic's getY() calls this.y.fromRed() — returns a plain BN, not a Red BN.
+      // getY() returns a plain BN.
       const y = p.getY();
       expect(BN.isBN(y)).to.be.true;
       expect(y.toString(16)).to.equal(SECP_G_Y);
@@ -565,38 +431,17 @@ describe('Point (Affine) — lib/curve/point.js', function () {
 
     it('P.GETX_2G - 2G.getX() matches known 2G x', function () {
       const g2 = Curve.g.dbl();
-      // Independent vector oracle — verifies getX() against external oracle
+      // Independent vector oracle.
       expect(g2.getX().toString(16)).to.equal(vectors.KG['0x2'].x);
     });
 
     it('P.GETY_2G - 2G.getY() matches known 2G y', function () {
       const g2 = Curve.g.dbl();
-      // Independent vector oracle — verifies getY() against external oracle
+      // Independent vector oracle.
       expect(g2.getY().toString(16)).to.equal(vectors.KG['0x2'].y);
     });
   });
-
-  // -----------------------------------------------------------------
-  // 6.12 _getBeta (Endomorphism helper)
-  // -----------------------------------------------------------------
-  describe('6.12 _getBeta — Endomorphism helper', function () {
-
-    it('P.GETBETA - G._getBeta() returns beta*G = (beta*Gx, Gy)', function () {
-      const g = Curve.point(Curve.g.getX(), Curve.g.getY());
-      const betaG = g._getBeta();
-      expect(betaG).to.exist;
-      expect(betaG.isInfinity()).to.be.false;
-      // Verify beta*Gx matches endo.beta * Gx
-      const expectedX = g.x.redMul(Curve.endo.beta);
-      expect(betaG.x.cmp(expectedX)).to.equal(0);
-      // Verify y coordinate is unchanged
-      expect(betaG.y.cmp(g.y)).to.equal(0);
-    });
-
-    it('P.GETBETA.CURVE_EQUATION - beta*G satisfies the curve equation', function () {
-      const betaG = Curve.point(Curve.g.getX(), Curve.g.getY())._getBeta();
-      expect(isOnCurve(betaG)).to.be.true;
-    });
+  describe('_getBeta - Endomorphism helper', function () {
 
     it('P.GETBETA.CACHED - _getBeta() caches result in precomputed.beta', function () {
       const g = Curve.point(Curve.g.getX(), Curve.g.getY());
@@ -610,117 +455,83 @@ describe('Point (Affine) — lib/curve/point.js', function () {
       expect(first.eq(second)).to.be.true;
     });
   });
+  describe('Negative Scalar Multiplication', function () {
+    describe('Point.mul - Negative Scalars', function () {
 
-  // -----------------------------------------------------------------
-  // 6.14 Negative Scalar Multiplication
-  // -----------------------------------------------------------------
-  describe('6.14 Negative Scalar Multiplication', function () {
+      // Known deficiency: Point.mul() does not normalize negative scalars mod N.
 
-    // ---------------------------------------------------------------
-    // 6.14.1 Point.mul — Negative Scalars
-    // ---------------------------------------------------------------
-    describe('6.14.1 Point.mul — Negative Scalars', function () {
-
-      // BUG: mul(k) wraps k in new BN(k, 16) but never normalizes negative k mod N.
-      // BN('-1').hasNegative = true, which produces a 257-digit NAF of all 1s instead
-      // of the correct NAF [-1, 0, 0, ...]. The result is an on-curve but wrong point.
-      // Root cause: inherited from upstream elliptic. Fix: normalize k mod N before WNAF.
-
-      it.skip('N1: G.mul("-1").eq(G.neg()) — FAILS: mul(k) wraps k in BN(k,16) without mod N normalization', function () {
+      it.skip('P.MUL.NEG_STRING_1 - G.mul("-1") equals -G', function () {
         const negG = Curve.g.neg();
         const mulNeg1 = Curve.g.mul('-1');
         expect(mulNeg1.getX().toString(16)).to.equal(negG.getX().toString(16));
         expect(mulNeg1.getY().toString(16)).to.equal(negG.getY().toString(16));
       });
 
-      it.skip('N2: G.mul(BN(-1)).eq(G.neg()) — FAILS: same as N1 — BN(-1) has negative flag, same non-normalization bug', function () {
+      it.skip('P.MUL.NEG_BN_1 - G.mul(BN(-1)) equals -G', function () {
         const negG = Curve.g.neg();
         const mulNeg1 = Curve.g.mul(new BN(-1));
         expect(mulNeg1.getX().toString(16)).to.equal(negG.getX().toString(16));
         expect(mulNeg1.getY().toString(16)).to.equal(negG.getY().toString(16));
       });
 
-      it.skip('N3: G.mul(new BN("-1", 16)).eq(G.neg()) — FAILS: same as N1 — BN("-1",16) has negative flag, same bug', function () {
+      it.skip('P.MUL.NEG_HEX_BN_1 - G.mul(new BN("-1", 16)) equals -G', function () {
         const negG = Curve.g.neg();
         const mulNeg1 = Curve.g.mul(new BN('-1', 16));
         expect(mulNeg1.getX().toString(16)).to.equal(negG.getX().toString(16));
         expect(mulNeg1.getY().toString(16)).to.equal(negG.getY().toString(16));
       });
 
-      it.skip('N4: G.mul(new BN("-1", 10)).eq(G.neg()) — FAILS: same as N1 — BN("-1",10) has negative flag, same bug', function () {
+      it.skip('P.MUL.NEG_DEC_BN_1 - G.mul(new BN("-1", 10)) equals -G', function () {
         const negG = Curve.g.neg();
         const mulNeg1 = Curve.g.mul(new BN('-1', 10));
         expect(mulNeg1.getX().toString(16)).to.equal(negG.getX().toString(16));
         expect(mulNeg1.getY().toString(16)).to.equal(negG.getY().toString(16));
       });
 
-      it.skip('N5: G.mul("-2").eq(G.mul("2").neg()) — FAILS: same root cause — -2 not normalized mod N before WNAF', function () {
+      it.skip('P.MUL.NEG_STRING_2 - G.mul("-2") equals -(2G)', function () {
         const expectedNeg2 = Curve.g.mul('2').neg();
         const mulNeg2 = Curve.g.mul('-2');
         expect(mulNeg2.getX().toString(16)).to.equal(expectedNeg2.getX().toString(16));
         expect(mulNeg2.getY().toString(16)).to.equal(expectedNeg2.getY().toString(16));
       });
 
-      it.skip('N6: G.mul(-1).eq(G.neg()) — FAILS: same as N1 — JS number -1 becomes BN with negative flag, same bug', function () {
+      it.skip('P.MUL.NEG_NUMBER_1 - G.mul(-1) equals -G', function () {
         const negG = Curve.g.neg();
         const mulNeg1 = Curve.g.mul(-1);
         expect(mulNeg1.getX().toString(16)).to.equal(negG.getX().toString(16));
         expect(mulNeg1.getY().toString(16)).to.equal(negG.getY().toString(16));
       });
 
-      it('N7: G.mul("-1") is on-curve — any valid scalar result must satisfy curve equation', function () {
+      it('P.MUL.NEG_STRING_1_CURRENT - current G.mul("-1") result remains on-curve', function () {
         expect(isOnCurve(Curve.g.mul('-1'))).to.be.true;
       });
     });
+    describe('JPoint.mul - Negative Scalars', function () {
 
-    // ---------------------------------------------------------------
-    // 6.14.2 JPoint.mul — Negative Scalars
-    // ---------------------------------------------------------------
-    describe('6.14.2 JPoint.mul — Negative Scalars', function () {
+      // Known deficiency: JPoint.mul() has the same negative-scalar issue as Point.mul().
 
-      // BUG: JPoint.mul(k) uses the same new BN(k, kbase) wrapper as Point.mul(k) —
-      // negative k is never normalized mod N before WNAF, so negative scalars produce
-      // wrong on-curve points. Same root cause as N1–N6, inherited from elliptic.
-
-      it.skip('JN1: G.toJ().mul("-1").eq(G.neg()) — FAILS: same mul(k) non-normalization bug in JPoint path', function () {
+      it.skip('JP.MUL.NEG_STRING_1 - G.toJ().mul("-1") equals -G', function () {
         const negG = Curve.g.neg();
         const jNeg1 = Curve.g.toJ().mul('-1').toP();
         expect(jNeg1.getX().toString(16)).to.equal(negG.getX().toString(16));
         expect(jNeg1.getY().toString(16)).to.equal(negG.getY().toString(16));
       });
 
-      it.skip('JN2: G.toJ().mul(BN(-1)).toP().eq(G.neg()) — FAILS: same as JN1 — JPoint.mul also wraps negative k without mod N', function () {
+      it.skip('JP.MUL.NEG_BN_1 - G.toJ().mul(BN(-1)) equals -G', function () {
         const negG = Curve.g.neg();
         const jNeg1 = Curve.g.toJ().mul(new BN(-1)).toP();
         expect(jNeg1.getX().toString(16)).to.equal(negG.getX().toString(16));
         expect(jNeg1.getY().toString(16)).to.equal(negG.getY().toString(16));
       });
 
-      it('JN3: G.toJ().mul("-1").toP() is on-curve — JPoint negative scalar result must be on-curve', function () {
+      it('JP.MUL.NEG_STRING_1_CURRENT - current JPoint result remains on-curve', function () {
         const j = Curve.g.toJ().mul('-1');
         expect(isOnCurve(j.toP())).to.be.true;
       });
     });
+    describe('mulAdd / jmulAdd - Negative Coefficients', function () {
 
-    // ---------------------------------------------------------------
-    // 6.14.3 mulAdd / jmulAdd — Negative Coefficients
-    // ---------------------------------------------------------------
-    describe('6.14.3 mulAdd / jmulAdd — Negative Coefficients', function () {
-
-      it('MA1: G.mulAdd(BN(-1), 2G, BN(1)).eq(G) — -G + 2G = G', function () {
-        const g2 = Curve.g.mul('2');
-        const result = Curve.g.mulAdd(new BN(-1), g2, new BN(1));
-        expect(result.getX().toString(16)).to.equal(Curve.g.getX().toString(16));
-        expect(result.getY().toString(16)).to.equal(Curve.g.getY().toString(16));
-      });
-
-      it('MA2: G.mulAdd(BN(-2), G, BN(3)).eq(G) — -2G + 3G = G', function () {
-        const result = Curve.g.mulAdd(new BN(-2), Curve.g, new BN(3));
-        expect(result.getX().toString(16)).to.equal(Curve.g.getX().toString(16));
-        expect(result.getY().toString(16)).to.equal(Curve.g.getY().toString(16));
-      });
-
-      it('MA3: G.jmulAdd(BN(-1), 2G, BN(1)).toP().eq(G.mulAdd(BN(-1), 2G, BN(1))) — jmulAdd and mulAdd agree', function () {
+      it('P.JMULADD.NEG_COEFF_MATCHES_MULADD - jmulAdd and mulAdd agree', function () {
         const g2 = Curve.g.mul('2');
         const mulAddResult = Curve.g.mulAdd(new BN(-1), g2, new BN(1));
         const jmulAddResult = Curve.g.jmulAdd(new BN(-1), g2, new BN(1));
@@ -728,93 +539,61 @@ describe('Point (Affine) — lib/curve/point.js', function () {
         expect(jmulAddResult.toP().getY().toString(16)).to.equal(mulAddResult.getY().toString(16));
       });
 
-      it('MA4: G.mulAdd(BN(-1), G, BN(1)).isInfinity() — -G + G = ∞', function () {
-        const result = Curve.g.mulAdd(new BN(-1), Curve.g, new BN(1));
-        expect(result.isInfinity()).to.be.true;
-      });
-
-      it('MA5: G.mulAdd(BN(-5), G, BN(3)).eq(G.mul(N-2)) — -5G + 3G = -2G = G.mul(N-2)', function () {
-        // N - 2 as hex: SECP_N is 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141'
-        // N - 2 = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036413f'
-        const nMinus2 = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036413f';
-        const expected = Curve.g.mul(nMinus2);
-        const result = Curve.g.mulAdd(new BN(-5), Curve.g, new BN(3));
-        expect(result.getX().toString(16)).to.equal(expected.getX().toString(16));
-        expect(result.getY().toString(16)).to.equal(expected.getY().toString(16));
-      });
-
-      // -----------------------------------------------------------------
-      // 6.14.3 Vector-Anchor mulAdd / jmulAdd Negative Coefficients (Gap 5)
-      // -----------------------------------------------------------------
-
-      it('MA1-VEC: G.mulAdd(BN(-1), 2G, BN(1)) equals G via vector — -G + 2G = G', function () {
-        // Vector anchor: result should match KG['0x1']
+      it('P.MULADD.NEG_COEFF_1 - -G + 2G equals G', function () {
         const g2 = Curve.g.mul('2');
         const result = Curve.g.mulAdd(new BN(-1), g2, new BN(1));
         expect(result.getX().toString(16, 64)).to.equal(vectors.KG['0x1'].x);
         expect(result.getY().toString(16, 64)).to.equal(vectors.KG['0x1'].y);
       });
 
-      it('MA2-VEC: G.mulAdd(BN(-2), G, BN(3)) equals G via vector — -2G + 3G = G', function () {
-        // Vector anchor: result should match KG['0x1']
+      it('P.MULADD.NEG_COEFF_2 - -2G + 3G equals G', function () {
         const result = Curve.g.mulAdd(new BN(-2), Curve.g, new BN(3));
         expect(result.getX().toString(16, 64)).to.equal(vectors.KG['0x1'].x);
         expect(result.getY().toString(16, 64)).to.equal(vectors.KG['0x1'].y);
       });
 
-      it('MA4-VEC: G.mulAdd(BN(-1), G, BN(1)) produces infinity — -G + G = ∞', function () {
+      it('P.MULADD.NEG_COEFF_CANCEL - -G + G is infinity', function () {
         const result = Curve.g.mulAdd(new BN(-1), Curve.g, new BN(1));
         expect(result.isInfinity()).to.be.true;
       });
 
-      it('MA5-VEC: G.mulAdd(BN(-5), G, BN(3)) equals -2G via vector — -5G + 3G = -2G', function () {
-        // Vector anchor: result should match NEG_2G coordinates
+      it('P.MULADD.NEG_COEFF_5 - -5G + 3G equals -2G', function () {
         const result = Curve.g.mulAdd(new BN(-5), Curve.g, new BN(3));
         expect(result.getX().toString(16, 64)).to.equal(vectors.NEG_2G_X);
         expect(result.getY().toString(16, 64)).to.equal(vectors.NEG_2G_Y);
       });
     });
+    describe('Boundary - Negative Scalar vs. Modular Equivalent', function () {
 
-    // ---------------------------------------------------------------
-    // 6.14.4 Boundary — Negative Scalar vs. Modular Equivalent
-    // ---------------------------------------------------------------
-    describe('6.14.4 Boundary — Negative Scalar vs. Modular Equivalent', function () {
+      // Known deficiency: negative scalar inputs are not equivalent to their
+      // positive representatives mod N.
 
-      // BUG: mul(k) never normalizes negative k mod N, so -1 ≠ N-1 and -2 ≠ N-2 in code.
-      // B3 also fails because mul("-1") returns the wrong point, so neg(wrong) ≠ G.
-
-      it.skip('B1: G.mul("-1").eq(G.mul(N-1)) — FAILS: mul(k) does not normalize negative k mod N; -1 ≠ N-1 in code', function () {
-        const nMinus1 = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140';
+      it.skip('P.MUL.NEG_STRING_1_EQ_N_MINUS_1 - -1 and N-1 are equivalent', function () {
         const mulNeg1 = Curve.g.mul('-1');
-        const mulNMinus1 = Curve.g.mul(nMinus1);
+        const mulNMinus1 = Curve.g.mul(SECP_N_MINUS_1);
         expect(mulNeg1.getX().toString(16)).to.equal(mulNMinus1.getX().toString(16));
         expect(mulNeg1.getY().toString(16)).to.equal(mulNMinus1.getY().toString(16));
       });
 
-      it.skip('B2: G.mul("-2").eq(G.mul(N-2)) — FAILS: same as B1 — -2 not normalized mod N before WNAF', function () {
-        const nMinus2 = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd036413f';
+      it.skip('P.MUL.NEG_STRING_2_EQ_N_MINUS_2 - -2 and N-2 are equivalent', function () {
         const mulNeg2 = Curve.g.mul('-2');
-        const mulNMinus2 = Curve.g.mul(nMinus2);
+        const mulNMinus2 = Curve.g.mul(SECP_N_MINUS_2);
         expect(mulNeg2.getX().toString(16)).to.equal(mulNMinus2.getX().toString(16));
         expect(mulNeg2.getY().toString(16)).to.equal(mulNMinus2.getY().toString(16));
       });
 
-      it.skip('B3: G.mul("-1").neg().eq(G) — FAILS: mul("-1") returns wrong point, so neg(wrong_point) ≠ G', function () {
+      it.skip('P.MUL.NEG_STRING_1_DOUBLE_NEGATION - -(-G) equals G', function () {
         const doubleNeg = Curve.g.mul('-1').neg();
         expect(doubleNeg.getX().toString(16)).to.equal(Curve.g.getX().toString(16));
         expect(doubleNeg.getY().toString(16)).to.equal(Curve.g.getY().toString(16));
       });
 
-      it('B4: G.mul(N).mul("-1").isInfinity() — N·G = ∞, ∞·(−1) = ∞', function () {
+      it('P.MUL.NEG_INFINITY - infinity remains infinity under negative multiplication', function () {
         expect(Curve.g.mul(SECP_N).mul('-1').isInfinity()).to.be.true;
       });
     });
   });
-
-  // -----------------------------------------------------------------
-  // 6.13 inspect
-  // -----------------------------------------------------------------
-  describe('6.13 inspect', function () {
+  describe('inspect', function () {
 
     it('P.INSPECT.NORMAL - point.inspect() returns string for normal point', function () {
       const p = Curve.g;

@@ -5,27 +5,11 @@ const BN = require('../../').BN;
 const Curve = require('../../').Curve;
 const vectors = require('../data/secp256k1-vectors');
 const { expect } = require('chai');
+const { isOnCurve, isOnCurveJ, SECP_N } = require('./helpers');
 
-// secp256k1 constants
-const SECP_N = vectors.N;
+describe('Internal Arithmetic Path Coverage — lib/curve/point.js', function () {
 
-// Helper: check if a Jacobian point satisfies y² = x³ + 7 (mod p) after conversion
-function isOnCurveJ(jp) {
-  return Curve.validate(jp.toP());
-}
-
-// Helper: check if an affine point satisfies y² = x³ + 7 (mod p)
-function isOnCurve(p) {
-  if (p.isInfinity()) return true;
-  return Curve.validate(p);
-}
-
-describe('8. Internal Arithmetic Path Coverage — lib/curve/point.js', function () {
-
-  // -----------------------------------------------------------------
-  // 8.1 _zeroDbl — Optimized Jacobian doubling for a=0 curves
-  // -----------------------------------------------------------------
-  describe('8.1 _zeroDbl — Jacobian doubling path for a=0', function () {
+  describe('_zeroDbl — Jacobian doubling path for a=0', function () {
 
     it('ARITH._ZERODBL.Z1 - _zeroDbl with z=1 path (zOne=true)', function () {
       // secp256k1 has a=0, so dbl() calls _zeroDbl()
@@ -116,10 +100,7 @@ describe('8. Internal Arithmetic Path Coverage — lib/curve/point.js', function
     });
   });
 
-  // -----------------------------------------------------------------
-  // 8.2 _threeDbl — Jacobian doubling path for a=-3 curves (secp256k1 guard)
-  // -----------------------------------------------------------------
-  describe('8.2 _threeDbl — Jacobian doubling path for a=-3 (guard path)', function () {
+  describe('_threeDbl — Jacobian doubling path for a=-3 (guard path)', function () {
 
     it('ARITH._THREEDBL.GUARD - secp256k1 does NOT use _threeDbl (a=0, not a=-3)', function () {
       // secp256k1 has a=0, not a=-3, so _threeDbl should never be called
@@ -168,10 +149,7 @@ describe('8. Internal Arithmetic Path Coverage — lib/curve/point.js', function
     });
   });
 
-  // -----------------------------------------------------------------
-  // 8.3 _dbl — General Jacobian doubling (fallback path)
-  // -----------------------------------------------------------------
-  describe('8.3 _dbl — General Jacobian doubling fallback', function () {
+  describe('_dbl — General Jacobian doubling fallback', function () {
 
     it('ARITH._DBL.EXISTS - _dbl is defined on JPoint', function () {
       const j = Curve.g.toJ();
@@ -218,10 +196,7 @@ describe('8. Internal Arithmetic Path Coverage — lib/curve/point.js', function
     });
   });
 
-  // -----------------------------------------------------------------
-  // 8.4 _fixedNafMul — Fixed-base NAF multiplication with precomputed doubles
-  // -----------------------------------------------------------------
-  describe('8.4 _fixedNafMul — Fixed-base NAF multiplication', function () {
+  describe('_fixedNafMul — Fixed-base NAF multiplication', function () {
 
     it('ARITH.FIXED_NAF.USING_PRECOMP - _fixedNafMul with precomputed doubles', function () {
       // Use a fresh generator so precompute state does not leak between tests.
@@ -246,29 +221,9 @@ describe('8. Internal Arithmetic Path Coverage — lib/curve/point.js', function
       expect(resultFixed.y.toString(16, 64)).to.equal(expected2p128.y);
     });
 
-    it('ARITH.FIXED_NAF.LARGE_SCALAR - _fixedNafMul with k=2^128', function () {
-      const g = Curve.point(Curve.g.getX(), Curve.g.getY());
-      g.precompute(256);
-
-      // k = 2^128
-      const k2_128 = new BN(1).iushln(128);
-      expect(g._hasDoubles(k2_128)).to.be.true;
-
-      const result = Curve._fixedNafMul(g, k2_128);
-      expect(isOnCurve(result)).to.be.true;
-
-      // Verify against known vector for k=2^128 — _fixedNafMul returns affine point
-      const expected2p128 = vectors.KG['0x100000000000000000000000000000000'];
-      expect(result.x.toString(16, 64)).to.equal(expected2p128.x);
-      expect(result.y.toString(16, 64)).to.equal(expected2p128.y);
-    });
-
   });
 
-  // -----------------------------------------------------------------
-  // 8.5 _wnafMul — Windowed NAF (WNAF) multiplication
-  // -----------------------------------------------------------------
-  describe('8.5 _wnafMul — Windowed NAF multiplication', function () {
+  describe('_wnafMul — Windowed NAF multiplication', function () {
 
     it('ARITH.WNAF.CORRECTNESS - _wnafMul with k=13', function () {
       const g = Curve.g;
@@ -366,10 +321,7 @@ describe('8. Internal Arithmetic Path Coverage — lib/curve/point.js', function
     });
   });
 
-  // -----------------------------------------------------------------
-  // 8.6 _wnafMulAdd — Windowed NAF multi-scalar multiplication
-  // -----------------------------------------------------------------
-  describe('8.6 _wnafMulAdd — Windowed NAF multi-scalar multiplication', function () {
+  describe('_wnafMulAdd — Windowed NAF multi-scalar multiplication', function () {
 
     it('ARITH.WNAF_MULD.G_2G_3_5 - _wnafMulAdd([G,2G],[3,5]) = 13G', function () {
       // Compute 3*G + 5*(2G) = 3G + 10G = 13G
@@ -455,10 +407,7 @@ describe('8. Internal Arithmetic Path Coverage — lib/curve/point.js', function
     });
   });
 
-  // -----------------------------------------------------------------
-  // 8.7 jmulAdd — Jacobian multi-scalar addition
-  // -----------------------------------------------------------------
-  describe('8.7 jmulAdd — Jacobian multi-scalar addition', function () {
+  describe('jmulAdd — Jacobian multi-scalar addition', function () {
 
     it('ARITH.JMULADD.G_3_5 - 3G + 5*(2G) = 13G verified against vector', function () {
       const g = Curve.g;
@@ -491,7 +440,7 @@ describe('8. Internal Arithmetic Path Coverage — lib/curve/point.js', function
     });
 
     it.skip('ARITH.JMULADD.INF - jmulAdd with infinity point', function () {
-      // Exposes brittle elliptic implementation which is unlikely to be used - keeping test for documentation
+      // Known deficiency: the multi-scalar path dereferences infinity coordinates.
       const g = Curve.g;
       const inf = Curve.point(null, null);
       const jResult = g.jmulAdd(new BN(3), inf, new BN(5));
@@ -526,10 +475,7 @@ describe('8. Internal Arithmetic Path Coverage — lib/curve/point.js', function
     });
   });
 
-  // -----------------------------------------------------------------
-  // 8.8 Greg Maxwell Trick — p/n ≈ 1 validation shortcut
-  // -----------------------------------------------------------------
-  describe('8.8 Greg Maxwell Trick — Point validation optimization', function () {
+  describe('Greg Maxwell Trick — Point validation optimization', function () {
 
     it('ARITH.MAXWELL_TRICK.SET - curve.redN is set for secp256k1 (p/n = 1 < 100)', function () {
       // For secp256k1, p/n ≈ 1.000... (very close to 1, since n is very close to p)

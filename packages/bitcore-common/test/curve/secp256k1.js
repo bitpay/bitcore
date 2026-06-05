@@ -4,12 +4,7 @@
 const { BN, Curve } = require('../../');
 const { expect } = require('chai');
 const vectors = require('../data/secp256k1-vectors');
-
-// secp256k1 constants (BN hex strings)
-const SECP_P = 'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f';
-const SECP_N = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141';
-const SECP_G_X = '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798';
-const SECP_G_Y = '483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8';
+const { SECP_P, SECP_N, SECP_G_X, SECP_G_Y } = require('./helpers');
 
 function expectPointMatchesVector(point, vector) {
   expect(point.isInfinity()).to.be.false;
@@ -25,11 +20,7 @@ function expectPointMatchesVector(point, vector) {
 // These are computed by the curve itself, so we test them dynamically.
 
 describe('Curve (secp256k1 Configuration)', function () {
-
-  // -----------------------------------------------------------------
-  // 3.1 Field Prime and Group Order
-  // -----------------------------------------------------------------
-  describe('3.1 Field Prime and Group Order', function () {
+  describe('Field Prime and Group Order', function () {
 
     it('CURVE.P - curve.p is the secp256k1 field prime', function () {
       expect(BN.isBN(Curve.p)).to.be.true;
@@ -53,11 +44,7 @@ describe('Curve (secp256k1 Configuration)', function () {
       expect(Curve.n.cmp(Curve.p)).to.be.lessThan(0);
     });
   });
-
-  // -----------------------------------------------------------------
-  // 3.2 Curve Equation Parameters (y² = x³ + ax + b)
-  // -----------------------------------------------------------------
-  describe('3.2 Curve Equation Parameters', function () {
+  describe('Curve Equation Parameters', function () {
 
     it('CURVE.A - curve.a is 0 (secp256k1 is y² = x³ + 7)', function () {
       const aRed = Curve.a;
@@ -79,22 +66,18 @@ describe('Curve (secp256k1 Configuration)', function () {
       expect(Curve.type).to.equal('short');
     });
   });
-
-  // -----------------------------------------------------------------
-  // 3.3 Generator Point
-  // -----------------------------------------------------------------
-  describe('3.3 Generator Point', function () {
+  describe('Generator Point', function () {
 
     it('CURVE.G - curve.g exists and is a Point', function () {
       expect(Curve.g).to.exist;
       expect(Curve.g.isInfinity()).to.be.false;
     });
 
-    it('CURVE.G.X - curve.g.x matches the BIP-specified X coordinate', function () {
+    it('CURVE.G.X - curve.g.x matches the generator X coordinate', function () {
       expect(Curve.g.getX().toString(16)).to.equal(SECP_G_X);
     });
 
-    it('CURVE.G.Y - curve.g.y matches the BIP-specified Y coordinate', function () {
+    it('CURVE.G.Y - curve.g.y matches the generator Y coordinate', function () {
       expect(Curve.g.getY().toString(16)).to.equal(SECP_G_Y);
     });
 
@@ -103,11 +86,7 @@ describe('Curve (secp256k1 Configuration)', function () {
     });
 
   });
-
-  // -----------------------------------------------------------------
-  // 3.4 Red (Montgomery) Context and Internal Constants
-  // -----------------------------------------------------------------
-  describe('3.4 Montgomery Context and Internal Constants', function () {
+  describe('Montgomery Context and Internal Constants', function () {
 
     it('CURVE.RED - curve.red is a defined BN red context', function () {
       expect(Curve.red).to.exist;
@@ -147,11 +126,7 @@ describe('Curve (secp256k1 Configuration)', function () {
       expect(Curve.threeA).to.be.false;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 3.5 Endomorphism Configuration
-  // -----------------------------------------------------------------
-  describe('3.5 Endomorphism Configuration', function () {
+  describe('Endomorphism Configuration', function () {
 
     it('CURVE.ENDO - curve.endo exists (secp256k1 has endomorphism)', function () {
       expect(Curve.endo).to.exist;
@@ -235,15 +210,9 @@ describe('Curve (secp256k1 Configuration)', function () {
     });
   });
 
-  // NOTE: _endoSplit tests were moved to short.js Section 4.5 (SHORT.ENDO.SPLIT,
-  // SHORT.ENDO.SPLIT_SMALL, SHORT.ENDO.SPLIT_EFFICIENCY) to avoid duplication.
-  // CURVE.ENDO.BETA.CUBIC was moved to Part 3 (ENDO.BETA_CUBIC).
-  // CURVE.G.ORDER was delegated to Part 2 (P.MUL.G_BY_N).
-
-  // -----------------------------------------------------------------
-  // 3.9 Bit Length and Curve Properties
-  // -----------------------------------------------------------------
-  describe('3.9 Bit Length and Derived Properties', function () {
+  // NOTE: _endoSplit coverage lives in short.js, beta cubic coverage lives in
+  // endomorphism_cross_check.js, and generator-order coverage lives in point.js.
+  describe('Bit Length and Derived Properties', function () {
 
     it('CURVE._BITLENGTH - curve._bitLength matches secp256k1 order bit length', function () {
       expect(Curve._bitLength).to.equal(256);

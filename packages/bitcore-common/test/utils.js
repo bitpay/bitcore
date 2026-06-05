@@ -2,8 +2,6 @@
 'use strict';
 
 const { BN, Utils } = require('../');
-const ellipticUtils = require('../../bitcore-lib/node_modules/elliptic/lib/elliptic/utils');
-const EllipticBN = require('../../bitcore-lib/node_modules/bn.js');
 const { expect } = require('chai');
 
 const {
@@ -22,10 +20,11 @@ const {
 function expectArrayWithNaN(actual, expected) {
   expect(actual).to.have.lengthOf(expected.length);
   for (let i = 0; i < expected.length; i++) {
-    if (Number.isNaN(expected[i]))
+    if (Number.isNaN(expected[i])) {
       expect(Number.isNaN(actual[i])).to.equal(true);
-    else
+    } else {
       expect(actual[i]).to.equal(expected[i]);
+    }
   }
 }
 
@@ -45,207 +44,209 @@ function nafToBN(naf) {
   return result;
 }
 
-function jsfToBN(jsf) {
-  return nafToBN(jsf);
-}
-
 function localBN(hex) {
   return new BN(hex, 16);
 }
 
-function referenceBN(hex) {
-  return new EllipticBN(hex, 16);
-}
-
 describe('Utils.assert', function () {
-  const falsyValues = [false, 0, '', null, undefined];
-  for (const val of falsyValues) {
-    it('throws for falsy value ' + JSON.stringify(val), function () {
+  it('throws for falsy values', function () {
+    for (const val of [false, 0, '', null, undefined])
       expect(function () { assert(val); }).to.throw(Error, 'Assertion failed');
-    });
-  }
+  });
 
-  it('throws with custom message', function () {
+  it('throws with a custom message', function () {
     expect(function () { assert(false, 'my error'); }).to.throw(Error, 'my error');
   });
 
   it('does not throw for truthy values', function () {
-    expect(function () { assert(true); }).to.not.throw();
-    expect(function () { assert(1); }).to.not.throw();
-    expect(function () { assert('yes'); }).to.not.throw();
+    for (const val of [true, 1, 'yes'])
+      expect(function () { assert(val); }).to.not.throw();
   });
 });
 
 describe('Utils.toArray', function () {
-  const stringCases = [
-    ['abc'],
-    ['hello'],
-    ['a'],
-    ['\u1234234'],
-    [''],
-    [null],
-    [undefined]
-  ];
+  it('converts ordinary strings to byte arrays', function () {
+    const cases = [
+      { input: 'abc', expected: [97, 98, 99] },
+      { input: 'hello', expected: [104, 101, 108, 108, 111] },
+      { input: 'a', expected: [97] },
+      { input: '\u1234234', expected: [0x12, 0x34, 0x32, 0x33, 0x34] },
+      { input: '', expected: [] },
+      { input: null, expected: [] },
+      { input: undefined, expected: [] }
+    ];
 
-  for (const pair of stringCases) {
-    const input = pair[0];
-    it('matches elliptic for string input ' + JSON.stringify(input), function () {
-      expectArrayWithNaN(toArray(input), ellipticUtils.toArray(input));
-    });
-  }
+    for (const { input, expected } of cases)
+      expect(toArray(input)).to.deep.equal(expected);
+  });
 
-  const hexCases = [
-    ['deadbeef'],
-    ['00ff01'],
-    ['DEADBEEF'],
-    ['abc'],
-    ['zz'],
-    ['1g'],
-    ['12 34'],
-    ['12:34'],
-    ['f'],
-    ['']
-  ];
+  it('parses hex strings after removing non-hex separators', function () {
+    const cases = [
+      { input: 'deadbeef', expected: [0xde, 0xad, 0xbe, 0xef] },
+      { input: '00ff01', expected: [0x00, 0xff, 0x01] },
+      { input: 'DEADBEEF', expected: [0xde, 0xad, 0xbe, 0xef] },
+      { input: 'abc', expected: [0x0a, 0xbc] },
+      { input: '12 34', expected: [0x12, 0x34] },
+      { input: '12:34', expected: [0x12, 0x34] },
+      { input: 'f', expected: [0x0f] },
+      { input: '', expected: [] }
+    ];
 
-  for (const pair of hexCases) {
-    const input = pair[0];
-    it('matches elliptic for hex input ' + JSON.stringify(input), function () {
-      expectArrayWithNaN(toArray(input, 'hex'), ellipticUtils.toArray(input, 'hex'));
-    });
-  }
+    for (const { input, expected } of cases)
+      expect(toArray(input, 'hex')).to.deep.equal(expected);
+  });
 
-  it('copies arrays like elliptic', function () {
+  it('preserves parseInt behavior for invalid hex pairs', function () {
+    expectArrayWithNaN(toArray('zz', 'hex'), [NaN]);
+    expect(toArray('1g', 'hex')).to.deep.equal([0x01]);
+  });
+
+  it('copies arrays without reusing the input reference', function () {
     const input = [1, 2, 3];
     const result = toArray(input);
 
-    expect(result).to.deep.equal(ellipticUtils.toArray(input));
+    expect(result).to.deep.equal(input);
     expect(result).to.not.equal(input);
   });
 
-  it('copies array-like inputs like elliptic', function () {
-    const input = Buffer.from([1, 2, 255]);
-    expect(toArray(input)).to.deep.equal(ellipticUtils.toArray(input));
+  it('converts array-like inputs with integer coercion', function () {
+    expect(toArray(Buffer.from([1, 2, 255]))).to.deep.equal([1, 2, 255]);
+    expect(toArray({ 0: '5', 1: 258, length: 2 })).to.deep.equal([5, 258]);
   });
 });
 
 describe('Utils.zero2', function () {
-  const cases = ['0', '1', '01', '100', '-1'];
+  it('left-pads one-character strings', function () {
+    expect(zero2('0')).to.equal('00');
+    expect(zero2('1')).to.equal('01');
+    expect(zero2('f')).to.equal('0f');
+  });
 
-  for (const word of cases) {
-    it('matches elliptic for ' + JSON.stringify(word), function () {
-      expect(zero2(word)).to.equal(ellipticUtils.zero2(word));
-    });
-  }
+  it('leaves other strings unchanged', function () {
+    for (const word of ['01', '100', '-1', ''])
+      expect(zero2(word)).to.equal(word);
+  });
 });
 
 describe('Utils.toHex', function () {
-  const cases = [
-    [],
-    [0, 1, 2, 3],
-    [15, 16, 255],
-    [256, 512],
-    [-1, -16]
-  ];
+  it('encodes array entries as concatenated hex words', function () {
+    const cases = [
+      { input: [], expected: '' },
+      { input: [0, 1, 2, 3], expected: '00010203' },
+      { input: [15, 16, 255], expected: '0f10ff' },
+      { input: [256, 512], expected: '100200' },
+      { input: [-1, -16], expected: '-1-10' }
+    ];
 
-  for (const arr of cases) {
-    it('matches elliptic for ' + JSON.stringify(arr), function () {
-      expect(toHex(arr)).to.equal(ellipticUtils.toHex(arr));
-    });
-  }
+    for (const { input, expected } of cases)
+      expect(toHex(input)).to.equal(expected);
+  });
 });
 
 describe('Utils.encode', function () {
-  const hexCases = [
-    [],
-    [0, 1, 255],
-    [10, 11, 12],
-    [128, 64, 32],
-    [256, 512],
-    [-1, -16]
-  ];
+  it('returns a hex string for hex encoding', function () {
+    expect(encode([0, 1, 255], 'hex')).to.equal('0001ff');
+    expect(encode([10, 11, 12], 'hex')).to.equal('0a0b0c');
+    expect(encode([256, 512], 'hex')).to.equal('100200');
+  });
 
-  for (const arr of hexCases) {
-    it('matches elliptic hex encoding for ' + JSON.stringify(arr), function () {
-      expect(encode(arr, 'hex')).to.equal(ellipticUtils.encode(arr, 'hex'));
-    });
-  }
-
-  const passthroughEncodings = ['binary', 'utf8', 'base64', undefined, null];
-  for (const enc of passthroughEncodings) {
-    it('returns same reference for encoding ' + JSON.stringify(enc), function () {
+  it('returns the original array for non-hex encodings', function () {
+    for (const enc of ['binary', 'utf8', 'base64', undefined, null]) {
       const input = [1, 2, 3];
       expect(encode(input, enc)).to.equal(input);
-    });
-  }
+    }
+  });
 });
 
 describe('Utils.getNAF', function () {
-  const scalarHex = [
-    '0', '1', '2', '3', '7', '8', 'f', '10', '1f', '7f',
-    '80', 'ff', '100', 'deadbeef'
-  ];
-  const windowSet = [1, 2, 3, 4, 5];
+  it('matches explicit NAF fixtures', function () {
+    const cases = [
+      { hex: '0', w: 1, expected: [0, 0, 0, 0, 0, 0, 0, 0, 0] },
+      { hex: '1', w: 2, expected: [1, 0, 0, 0, 0, 0, 0, 0, 0] },
+      { hex: '7', w: 2, expected: [-3, -1, 3, 0, 0, 0, 0, 0, 0] },
+      { hex: 'f', w: 3, expected: [-7, -3, 7, 0, 0, 0, 0, 0, 0] },
+      {
+        hex: 'deadbeef',
+        w: 5,
+        expected: [
+          -15, -31, 15, 0, 0, 0, 0, 0, -31, -15, -31, 15, 0, 0, 0, 0, 0,
+          23, 0, 0, 0, 0, 0, -29, -13, -29, 13, 0, 0, 0, 0, 0, 1
+        ]
+      }
+    ];
 
-  for (const hex of scalarHex) {
-    for (const w of windowSet) {
+    for (const { hex, w, expected } of cases) {
       const bits = Math.max(localBN(hex).bitLength(), 8);
-
-      it('matches elliptic getNAF(' + hex + ', w=' + w + ')', function () {
-        const actual = getNAF(localBN(hex), w, bits);
-        const expected = ellipticUtils.getNAF(referenceBN(hex), w, bits);
-        expect(actual).to.deep.equal(expected);
-      });
-
-      it('reconstructs getNAF(' + hex + ', w=' + w + ') numerically', function () {
-        const k = localBN(hex);
-        expectBNValue(nafToBN(getNAF(k, w, bits)), k);
-      });
+      expect(getNAF(localBN(hex), w, bits)).to.deep.equal(expected);
     }
-  }
+  });
+
+  it('reconstructs the original scalar and keeps digits inside the window', function () {
+    const scalarHex = [
+      '0', '1', '2', '3', '7', '8', 'f', '10', '1f', '7f',
+      '80', 'ff', '100', 'deadbeef'
+    ];
+    const windowSet = [1, 2, 3, 4, 5];
+
+    for (const hex of scalarHex) {
+      for (const w of windowSet) {
+        const k = localBN(hex);
+        const naf = getNAF(k, w, Math.max(k.bitLength(), 8));
+
+        expectBNValue(nafToBN(naf), k);
+        for (const digit of naf) {
+          expect(Math.abs(digit)).to.be.lessThan(1 << w);
+          if (digit !== 0)
+            expect(Math.abs(digit) % 2).to.equal(1);
+        }
+      }
+    }
+  });
 });
 
 describe('Utils.getJSF', function () {
-  const pairHex = [
-    ['0', '0'],
-    ['1', '0'],
-    ['0', '1'],
-    ['1', '1'],
-    ['2', '3'],
-    ['3', '4'],
-    ['7', '7'],
-    ['7', '8'],
-    ['f', '10'],
-    ['1f', '20'],
-    ['7f', '80'],
-    ['ff', 'ff'],
-    ['ff', '100'],
-    ['deadbeef', 'deadbef0']
-  ];
+  it('matches explicit JSF fixtures', function () {
+    const cases = [
+      { a: '0', b: '0', expected: [[], []] },
+      { a: '1', b: '1', expected: [[1], [1]] },
+      { a: '2', b: '3', expected: [[0, 1], [1, 1]] },
+      { a: '7', b: '8', expected: [[-1, 0, 0, 1], [0, 0, 0, 1]] },
+      { a: 'ff', b: '100', expected: [[-1, 0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 1]] }
+    ];
 
-  for (const pair of pairHex) {
-    const a = pair[0];
-    const b = pair[1];
+    for (const { a, b, expected } of cases)
+      expect(getJSF(localBN(a), localBN(b))).to.deep.equal(expected);
+  });
 
-    it('matches elliptic getJSF(' + a + ', ' + b + ')', function () {
-      const actual = getJSF(localBN(a), localBN(b));
-      const expected = ellipticUtils.getJSF(referenceBN(a), referenceBN(b));
-      expect(actual).to.deep.equal(expected);
-    });
+  it('reconstructs both original scalars with digits in {-1, 0, 1}', function () {
+    const pairs = [
+      ['0', '0'],
+      ['1', '0'],
+      ['0', '1'],
+      ['1', '1'],
+      ['2', '3'],
+      ['3', '4'],
+      ['7', '7'],
+      ['7', '8'],
+      ['f', '10'],
+      ['1f', '20'],
+      ['7f', '80'],
+      ['ff', 'ff'],
+      ['ff', '100'],
+      ['deadbeef', 'deadbef0']
+    ];
 
-    it('reconstructs getJSF(' + a + ', ' + b + ') numerically', function () {
+    for (const [a, b] of pairs) {
       const jsf = getJSF(localBN(a), localBN(b));
-      expectBNValue(jsfToBN(jsf[0]), localBN(a));
-      expectBNValue(jsfToBN(jsf[1]), localBN(b));
-    });
+      expectBNValue(nafToBN(jsf[0]), localBN(a));
+      expectBNValue(nafToBN(jsf[1]), localBN(b));
 
-    it('emits JSF digits in {-1, 0, 1} for ' + a + ', ' + b, function () {
-      const jsf = getJSF(localBN(a), localBN(b));
-      for (let i = 0; i < jsf.length; i++) {
-        for (let j = 0; j < jsf[i].length; j++)
-          expect(Math.abs(jsf[i][j])).to.be.at.most(1);
+      for (const digits of jsf) {
+        for (const digit of digits)
+          expect([-1, 0, 1]).to.include(digit);
       }
-    });
-  }
+    }
+  });
 });
 
 describe('Utils.cachedProperty', function () {
@@ -268,32 +269,29 @@ describe('Utils.cachedProperty', function () {
 });
 
 describe('Utils.parseBytes', function () {
-  const stringCases = ['deadbeef', 'abc', 'zz', '12 34'];
+  it('parses string input as hex bytes', function () {
+    expect(parseBytes('deadbeef')).to.deep.equal([0xde, 0xad, 0xbe, 0xef]);
+    expect(parseBytes('abc')).to.deep.equal([0x0a, 0xbc]);
+    expect(parseBytes('12 34')).to.deep.equal([0x12, 0x34]);
+    expectArrayWithNaN(parseBytes('zz'), [NaN]);
+  });
 
-  for (const input of stringCases) {
-    it('matches elliptic for string input ' + JSON.stringify(input), function () {
-      expectArrayWithNaN(parseBytes(input), ellipticUtils.parseBytes(input));
-    });
-  }
-
-  it('returns non-string input unchanged like elliptic', function () {
+  it('returns non-string input unchanged', function () {
     const input = [1, 2, 3];
     expect(parseBytes(input)).to.equal(input);
   });
 });
 
 describe('Utils.intFromLE', function () {
-  const cases = [
-    [],
-    [1],
-    [1, 2, 3],
-    [0xff, 0x00, 0x10]
-  ];
+  it('constructs a BN from little-endian bytes', function () {
+    const cases = [
+      { bytes: [], expected: '0' },
+      { bytes: [1], expected: '1' },
+      { bytes: [1, 2, 3], expected: '30201' },
+      { bytes: [0xff, 0x00, 0x10], expected: '1000ff' }
+    ];
 
-  for (const bytes of cases) {
-    it('matches elliptic for ' + JSON.stringify(bytes), function () {
-      expect(intFromLE(bytes).toString(16))
-        .to.equal(ellipticUtils.intFromLE(bytes).toString(16));
-    });
-  }
+    for (const { bytes, expected } of cases)
+      expect(intFromLE(bytes).toString(16)).to.equal(expected);
+  });
 });

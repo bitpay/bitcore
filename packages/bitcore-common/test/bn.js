@@ -3,20 +3,13 @@
 
 const { BN } = require('../');
 const { expect } = require('chai');
-
-// secp256k1 constants
-const SECP_P = 'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f';
-const SECP_N = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141';
+const { SECP_P, SECP_N } = require('./curve/helpers');
 
 // Bitcoin test vectors for red context (known k256 scalar ops)
 const TEST_BASE = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 
 describe('BN', function () {
-
-  // ====================================================================
-  // 1.1 Construction & Identity
-  // ====================================================================
-  describe('1.1 Construction & Identity', function () {
+  describe('Construction & Identity', function () {
 
     // BN.CONSTRUCT.NUM
     it('BN.CONSTRUCT.NUM - construct from JS number', function () {
@@ -107,11 +100,7 @@ describe('BN', function () {
     });
 
   });
-
-  // ====================================================================
-  // 1.2 Arithmetic - Addition & Subtraction
-  // ====================================================================
-  describe('1.2 Addition & Subtraction', function () {
+  describe('Addition & Subtraction', function () {
 
     // BN.ADD.BASIC
     it('BN.ADD.BASIC - basic addition', function () {
@@ -190,11 +179,7 @@ describe('BN', function () {
     });
 
   });
-
-  // ====================================================================
-  // 1.3 Arithmetic - Multiplication & Division
-  // ====================================================================
-  describe('1.3 Multiplication & Division', function () {
+  describe('Multiplication & Division', function () {
 
     // BN.MUL.BASIC
     it('BN.MUL.BASIC - basic multiplication', function () {
@@ -381,11 +366,7 @@ describe('BN', function () {
       expect(a.pow(new BN(1)).toNumber()).to.equal(99);
     });
   });
-
-  // ====================================================================
-  // 1.4 Bitwise Operations
-  // ====================================================================
-  describe('1.4 Bitwise Operations', function () {
+  describe('Bitwise Operations', function () {
 
     // BN.OR
     it('BN.OR - bitwise or (0b1010 | 0b1100 = 0b1110)', function () {
@@ -461,11 +442,7 @@ describe('BN', function () {
       expect(result.toNumber()).to.equal(0xffff);
     });
   });
-
-  // ====================================================================
-  // 1.5 Shift Operations
-  // ====================================================================
-  describe('1.5 Shift Operations', function () {
+  describe('Shift Operations', function () {
 
     // BN.SHL.WITHIN_WORD
     it('BN.SHL.WITHIN_WORD - shift within a single 26-bit word (1 << 20)', function () {
@@ -523,11 +500,7 @@ describe('BN', function () {
     });
 
   });
-
-  // ====================================================================
-  // 1.6 Comparison & Predicates
-  // ====================================================================
-  describe('1.6 Comparison & Predicates', function () {
+  describe('Comparison & Predicates', function () {
 
     // BN.CMP.POSITIVE
     it('BN.CMP.POSITIVE - compare positive values', function () {
@@ -630,11 +603,7 @@ describe('BN', function () {
     });
 
   });
-
-  // ====================================================================
-  // 1.7 Serialization & Conversion
-  // ====================================================================
-  describe('1.7 Serialization & Conversion', function () {
+  describe('Serialization & Conversion', function () {
 
     // BN.TO_BUFFER.BE
     it('BN.TO_BUFFER.BE - toBuffer big-endian for 256-bit number', function () {
@@ -801,11 +770,7 @@ describe('BN', function () {
     });
 
   });
-
-  // ====================================================================
-  // 1.8 Montgomery & Reduction Arithmetic
-  // ====================================================================
-  describe('1.8 Montgomery & Reduction Arithmetic', function () {
+  describe('Montgomery & Reduction Arithmetic', function () {
 
     // BN.RED.K256.CREATE
     it('BN.RED.K256.CREATE - BN.red("k256") creates k256 reduction context', function () {
@@ -1011,9 +976,9 @@ describe('BN', function () {
       const p = new BN(SECP_P, 16);
       const a = new BN(SECP_P, 16); // exact p
       const aRed = a.toRed(ctx);
-      // toRed does mod p, so p → 0
+      // toRed does mod p, so p maps to 0.
       expect(aRed.fromRed().isZero()).to.be.true;
-      // A large value (2 * p) → 0
+      // A large value (2 * p) maps to 0.
       const big = new BN(SECP_P, 16).muln(2);
       expect(big.toRed(ctx).fromRed().isZero()).to.be.true;
       // Within range should be unchanged
@@ -1072,11 +1037,7 @@ describe('BN', function () {
     });
 
   });
-
-  // ====================================================================
-  // 1.9 In-place Mutation Safety
-  // ====================================================================
-  describe('1.9 In-place Mutation Safety', function () {
+  describe('In-place Mutation Safety', function () {
 
     // BN.MUTATE.IADD_ORIGINAL
     it('BN.MUTATE.IADD_ORIGINAL - add() does not mutate the source', function () {
@@ -1213,16 +1174,8 @@ describe('BN', function () {
     });
 
   });
-
-  // ====================================================================
-  // 1.10 Invalid Inputs & Assertion Contracts
-  // ====================================================================
-  describe('1.10 Invalid inputs and assertion contracts', function () {
-
-    // --------------------------------------------------------------------
-    // 1.10.1 Constructor Base Validation
-    // --------------------------------------------------------------------
-    describe('1.10.1 Constructor Base Validation', function () {
+  describe('Invalid inputs and assertion contracts', function () {
+    describe('Constructor Base Validation', function () {
 
       // BN.INVALID.BASE_THROW - invalid bases all throw
       it('BN.INVALID.BASE_THROW - new BN("10", base) throws for all invalid bases', function () {
@@ -1255,11 +1208,7 @@ describe('BN', function () {
       });
 
     });
-
-    // --------------------------------------------------------------------
-    // 1.10.2 toString Base Validation
-    // --------------------------------------------------------------------
-    describe('1.10.2 toString Base Validation', function () {
+    describe('toString Base Validation', function () {
 
       // BN.INVALID.TOSTRING_BASE_THROW - out-of-range bases throw with explicit message
       it('BN.INVALID.TOSTRING_BASE_THROW - (new BN(10)).toString(base) throws for invalid bases', function () {
@@ -1278,11 +1227,7 @@ describe('BN', function () {
       });
 
     });
-
-    // --------------------------------------------------------------------
-    // 1.10.3 Division By Zero
-    // --------------------------------------------------------------------
-    describe('1.10.3 Division By Zero', function () {
+    describe('Division By Zero', function () {
 
       // BN.INVALID.DIV_ZERO_THROW - division methods throw on zero divisor
       it('BN.INVALID.DIV_ZERO_THROW - div/mod/divRound/divmod throw on zero divisor', function () {
@@ -1320,11 +1265,7 @@ describe('BN', function () {
       });
 
     });
-
-    // --------------------------------------------------------------------
-    // 1.10.4 setn / testn Invalid Arguments
-    // --------------------------------------------------------------------
-    describe('1.10.4 setn / testn Invalid Arguments', function () {
+    describe('setn / testn Invalid Arguments', function () {
 
       // BN.INVALID.SETN_INVALID_ARGS - negative, string, null all throw
       it('BN.INVALID.SETN_INVALID_ARGS - a.setn(invalid, true) throws', function () {
@@ -1365,11 +1306,7 @@ describe('BN', function () {
       });
 
     });
-
-    // --------------------------------------------------------------------
-    // 1.10.5 inotn / notn Invalid Arguments
-    // --------------------------------------------------------------------
-    describe('1.10.5 inotn / notn Invalid Arguments', function () {
+    describe('inotn / notn Invalid Arguments', function () {
 
       // BN.INVALID.NOTN_INVALID_ARGS - negative, string, null all throw
       it('BN.INVALID.NOTN_INVALID_ARGS - a.notn(invalid) throws', function () {
@@ -1381,14 +1318,14 @@ describe('BN', function () {
 
       // BN.INVALID.NOTN_VALID - valid widths work, including edge cases
       it('BN.NOTN_VALID - a.notn(validWidth) works for valid widths', function () {
-        // Width 0 produces 255 (note: this may be unexpected upstream behavior)
+        // Width 0 leaves the value unchanged.
         expect((new BN(0xff)).notn(0).toNumber()).to.equal(255);
         // Width 8 inverts 8 bits
         expect(new BN(0x00).notn(8).toNumber()).to.equal(0xff);
         expect(new BN(0xff).notn(8).toNumber()).to.equal(0);
         // Width 16 inverts 16 bits
         expect(new BN(0x00ff).notn(16).toNumber()).to.equal(0xff00);
-        // Fractional width accepted (upstream behavior)
+        // Fractional width is accepted by this implementation.
         expect(function () { new BN(0).notn(2.5); }).to.not.throw();
       });
 
@@ -1400,11 +1337,7 @@ describe('BN', function () {
         expect(() => pastBoundary.toNumber()).to.throw('Number can only safely store up to 53 bits');
       });
     });
-
-    // --------------------------------------------------------------------
-    // 1.10.6 imaskn / maskn Invalid Arguments
-    // --------------------------------------------------------------------
-    describe('1.10.6 imaskn / maskn Invalid Arguments', function () {
+    describe('imaskn / maskn Invalid Arguments', function () {
 
       // BN.INVALID.MASKN_INVALID_BITS - negative, string, null all throw
       it('BN.INVALID.MASKN_INVALID_BITS - a.maskn(invalid) throws', function () {
@@ -1428,12 +1361,16 @@ describe('BN', function () {
         expect(d.toNumber()).to.equal(0xef);
       });
 
-      // Legitimate edge case fails because maskn(0) behavior is not specifically addressed in code
-      it.skip('BN.INVALID.MASKN_VALID - a.maskn(0) works for valid bit positions', function () {
-        // maskn(0) sets length to 0
+      it('BN.MASKN_ZERO_BITS - maskn(0) returns zero-width result without mutating input', function () {
         const a = new BN(0xff);
-        a.maskn(0);
+        const result = a.maskn(0);
+        expect(result.length).to.equal(0);
+        expect(result.toString(16)).to.equal('');
+        expect(a.toString(16)).to.equal('ff');
+
+        a.imaskn(0);
         expect(a.length).to.equal(0);
+        expect(a.toString(16)).to.equal('');
       });
 
       // BN.INVALID.MASKN_NEGATIVE_BN - negative numbers throw explicit message
@@ -1446,11 +1383,7 @@ describe('BN', function () {
       });
 
     });
-
-    // --------------------------------------------------------------------
-    // 1.10.7 bincn Invalid Arguments
-    // --------------------------------------------------------------------
-    describe('1.10.7 bincn Invalid Arguments', function () {
+    describe('bincn Invalid Arguments', function () {
 
       // BN.INVALID.BINCN_INVALID_ARGS - non-number throws
       it('BN.INVALID.BINCN_INVALID_ARGS - a.bincn(invalid) throws for non-numbers', function () {
@@ -1476,11 +1409,7 @@ describe('BN', function () {
       });
 
     });
-
-    // --------------------------------------------------------------------
-    // 1.10.8 Unsigned Shift Invalid Arguments
-    // --------------------------------------------------------------------
-    describe('1.10.8 Unsigned Shift Invalid Arguments', function () {
+    describe('Unsigned Shift Invalid Arguments', function () {
 
       // BN.INVALID.USHLN_INVALID_ARGS - invalid shift amounts throw
       it('BN.INVALID.USHLN_INVALID_ARGS - a.ushln(invalid) throws', function () {
@@ -1513,11 +1442,7 @@ describe('BN', function () {
       });
 
     });
-
-    // --------------------------------------------------------------------
-    // 1.10.9 Signed Shift on Negative BNs
-    // --------------------------------------------------------------------
-    describe('1.10.9 Signed Shift on Negative BNs', function () {
+    describe('Signed Shift on Negative BNs', function () {
 
       // BN.INVALID.SIGNED_NEGATIVE_BN - signed shift methods reject negative BNs
       it('BN.INVALID.SIGNED_NEGATIVE_BN - shln/ishln/shrn/ishrn throw on negative BN', function () {

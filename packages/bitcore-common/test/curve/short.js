@@ -3,18 +3,10 @@
 
 const { BN, Curve } = require('../../');
 const { expect } = require('chai');
-
-// secp256k1 constants (BN hex strings)
-const SECP_P = 'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f';
-const SECP_G_X = '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798';
-const SECP_G_Y = '483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8';
+const { SECP_P, SECP_G_X, SECP_G_Y } = require('./helpers');
 
 describe('ShortWeierstrass Curve Operations', function () {
-
-  // -----------------------------------------------------------------
-  // 4.1 Point Factory Methods
-  // -----------------------------------------------------------------
-  describe('4.1 Point Factory Methods', function () {
+  describe('Point Factory Methods', function () {
 
     it('SHORT.POINT - curve.point(x, y) creates an affine Point with matching coordinates', function () {
       const pt = Curve.point(SECP_G_X, SECP_G_Y);
@@ -44,11 +36,7 @@ describe('ShortWeierstrass Curve Operations', function () {
       expect(jinf.isInfinity()).to.be.true;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 4.2 Point Validation (curve.validate)
-  // -----------------------------------------------------------------
-  describe('4.2 Curve Point Validation', function () {
+  describe('Curve Point Validation', function () {
 
     it('SHORT.VALIDATE.G - curve.validate(G) returns true (generator is on curve)', function () {
       expect(Curve.validate(Curve.g)).to.be.true;
@@ -70,11 +58,7 @@ describe('ShortWeierstrass Curve Operations', function () {
       expect(Curve.validate(offCurve)).to.be.false;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 4.3 Point Deserialization (pointFromJSON)
-  // -----------------------------------------------------------------
-  describe('4.3 Point Deserialization', function () {
+  describe('Point Deserialization', function () {
 
     it('SHORT.POINT_FROM_JSON - pointFromJSON([x, y]) recovers a point', function () {
       const pt = Curve.pointFromJSON([SECP_G_X, SECP_G_Y]);
@@ -106,11 +90,7 @@ describe('ShortWeierstrass Curve Operations', function () {
       expect(recovered.precomputed.doubles).to.exist;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 4.4 Point from X Coordinate (pointFromX)
-  // -----------------------------------------------------------------
-  describe('4.4 Point from X Coordinate', function () {
+  describe('Point from X Coordinate', function () {
 
     it('SHORT.POINT_FROM_X.G - pointFromX(Gx, false) recovers G (even-y)', function () {
       // secp256k1 generator G has an even y-coordinate
@@ -173,11 +153,7 @@ describe('ShortWeierstrass Curve Operations', function () {
       expect(sum.isInfinity()).to.be.true;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 4.5 Endomorphism Scalar Split (_endoSplit)
-  // -----------------------------------------------------------------
-  describe('4.5 Endomorphism Scalar Split', function () {
+  describe('Endomorphism Scalar Split', function () {
 
     it('SHORT.ENDO.SPLIT - _endoSplit(k) satisfies k ≡ k1 + k2*lambda (mod n)', function () {
       // The GLV decomposition satisfies: k ≡ k1 + k2 * lambda (mod n)

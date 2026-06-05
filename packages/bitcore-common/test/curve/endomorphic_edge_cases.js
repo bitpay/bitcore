@@ -5,9 +5,7 @@ const BN = require('../../').BN;
 const Curve = require('../../').Curve;
 const { expect } = require('chai');
 const vectors = require('../data/secp256k1-vectors');
-
-// secp256k1 constants (BN hex strings)
-const SECP_N = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141';
+const { isOnCurve, SECP_N } = require('./helpers');
 
 // Helper: assert that a point matches a vector entry
 function expectKnownPoint(actual, vecKey) {
@@ -18,19 +16,9 @@ function expectKnownPoint(actual, vecKey) {
   expect(actual.y.cmp(vecY)).to.equal(0);
 }
 
-// Helper: check if an affine point satisfies y² = x³ + 7 (mod p)
-function isOnCurve(p) {
-  if (p.isInfinity()) return true;
-  return Curve.validate(p);
-}
-
 describe('Endomorphic edge cases', function () {
   describe('lib/curve/short.js', function () {
-
-    // -----------------------------------------------------------------
-    // 9.1 Endomorphism Constants — beta and lambda
-    // -----------------------------------------------------------------
-    describe('9.1 Endomorphism Constants', function () {
+    describe('Endomorphism Constants', function () {
   
       it('ENDO.BETA_CUBIC - endo.beta^3 ≡ 1 (mod p) and beta ≠ 1', function () {
         // beta is a primitive cubic root of unity modulo p
@@ -75,16 +63,6 @@ describe('Endomorphic edge cases', function () {
         expect(lambda2.cmpn(1)).to.not.equal(0);
       });
   
-      it('ENDO.BETA_LAMBDA_PAIR - selected beta and lambda are consistent via G', function () {
-        // The pair (beta, lambda) is chosen so that lambda * G = (beta * Gx, Gy)
-        const beta = Curve.endo.beta;
-        const lambda = Curve.endo.lambda;
-        const betaGx = Curve.g.x.redMul(beta);
-        const lambdaG = Curve.g.mul(lambda);
-        expect(lambdaG.x.cmp(betaGx)).to.equal(0);
-        expect(lambdaG.y.cmp(Curve.g.y)).to.equal(0);
-      });
-  
       it('ENDO.BETA_VALUE - beta matches known secp256k1 beta value', function () {
         // secp256k1 beta = 0x7ae96a2b657c07106e64479eac3434e99cf0497512f58995c1396c28719501ee
         const beta = Curve.endo.beta.fromRed().toString(16);
@@ -103,21 +81,7 @@ describe('Endomorphic edge cases', function () {
         ]);
       });
     });
-  
-    // -----------------------------------------------------------------
-    // 9.2 Endomorphism Identity — lambda*P = (beta*Px, Py)
-    // -----------------------------------------------------------------
-    describe('9.2 Endomorphism Identity', function () {
-  
-      it('ENDO.IDENTITY.G - lambda*G == (beta*Gx, Gy)', function () {
-        const lambda = Curve.endo.lambda;
-        const beta = Curve.endo.beta;
-        const lambdaG = Curve.g.mul(lambda);
-        const expectedX = Curve.g.x.redMul(beta);
-        const expectedY = Curve.g.y;
-        expect(lambdaG.x.cmp(expectedX)).to.equal(0);
-        expect(lambdaG.y.cmp(expectedY)).to.equal(0);
-      });
+    describe('Endomorphism Identity', function () {
   
       it('ENDO.IDENTITY.2G - lambda*(2G) == (beta*2Gx, 2Gy)', function () {
         const lambda = Curve.endo.lambda;
@@ -193,11 +157,7 @@ describe('Endomorphic edge cases', function () {
         expect(lambda2G.y.cmp(expectedY)).to.equal(0);
       });
     });
-  
-    // -----------------------------------------------------------------
-    // 9.3 Basis Reconstruction — k = k1*a1 + k2*a2 (mod n)
-    // -----------------------------------------------------------------
-    describe('9.3 Basis Reconstruction', function () {
+    describe('Basis Reconstruction', function () {
   
       it('ENDO.BASIS_RECONSTRUCT.K1 - _endoSplit(1) reconstructs k=1', function () {
         const k = new BN(1);
@@ -280,11 +240,7 @@ describe('Endomorphic edge cases', function () {
         expect(split.k2.cmpn(0)).to.equal(0);
       });
     });
-  
-    // -----------------------------------------------------------------
-    // 9.4 Endo-assisted WNAF Multiplication — single point
-    // -----------------------------------------------------------------
-    describe('9.4 Endo-assisted WNAF Multiplication', function () {
+    describe('Endo-assisted WNAF Multiplication', function () {
   
       it('ENDO.MULT_MATCH.K1 - endoWnafMulAdd([G],[1]) matches known vector 1G', function () {
         const result = Curve._endoWnafMulAdd([Curve.g], [new BN(1)]);
@@ -360,11 +316,7 @@ describe('Endomorphic edge cases', function () {
   });
 
   describe('lib/curve/point.js', function () {
-
-    // -----------------------------------------------------------------
-    // 9.5 Endo-assisted WNAF Multiplication — two points
-    // -----------------------------------------------------------------
-    describe('9.5 Endo-assisted WNAF Multiplication (Multi-point)', function () {
+    describe('Endo-assisted WNAF Multiplication (Multi-point)', function () {
   
       it('ENDO.MULT_DIST.BASIC - endoWnafMulAdd([G,2G],[3,5]) matches known vector 13G', function () {
         const g = Curve.g;
@@ -437,11 +389,7 @@ describe('Endomorphic edge cases', function () {
         expectKnownPoint(result, '0xa');
       });
     });
-  
-    // -----------------------------------------------------------------
-    // 9.6 Beta Caching — Point._getBeta()
-    // -----------------------------------------------------------------
-    describe('9.6 Beta Caching', function () {
+    describe('Beta Caching', function () {
   
       it('ENDO.BETA_CACHE.CREATE - first call to _getBeta() creates the beta point', function () {
         const g = Curve.point(Curve.g.getX(), Curve.g.getY());
@@ -505,11 +453,7 @@ describe('Endomorphic edge cases', function () {
         expect(isOnCurve(betaNegG)).to.be.true;
       });
     });
-  
-    // -----------------------------------------------------------------
-    // 9.7 Precompute + Endo Interaction
-    // -----------------------------------------------------------------
-    describe('9.7 Precompute + Endo Interaction', function () {
+    describe('Precompute + Endo Interaction', function () {
   
       it('ENDO.MULT_WITH_PRECOMP.MATCH - G.precompute(); G.mul(k) matches non-precomputed path', function () {
         // Create a fresh point to avoid state leakage
@@ -585,11 +529,7 @@ describe('Endomorphic edge cases', function () {
         expect(withPrecomp.eq(withoutPrecomp)).to.be.true;
       });
     });
-  
-    // -----------------------------------------------------------------
-    // 9.8 Endomorphism Edge Cases
-    // -----------------------------------------------------------------
-    describe('9.8 Endomorphism Edge Cases', function () {
+    describe('Endomorphism Edge Cases', function () {
   
       it('ENDO.EDGE.LAMBDA_2_GIVES_BETA_2 - lambda^2 and beta^2 form a consistent pair', function () {
         // lambda^3 ≡ 1 (mod n) so lambda^2 is the other non-trivial cubic root
@@ -680,7 +620,7 @@ describe('Endomorphic edge cases', function () {
       });
   
       it.skip('ENDO.EDGE.INFINITY_MUL - endo path handles infinity correctly', function () {
-        // As is, bitcore-common & elliptic would throw "TypeError: Cannot read properties of null (reading 'redMul')" - bitcore-common could be made more robust, but would diverge from elliptic implementation
+        // Known deficiency: the endomorphism multi-scalar path dereferences infinity coordinates.
         const inf = Curve.point(null, null);
         const result = Curve._endoWnafMulAdd([inf], [new BN(42)]);
         expect(result.isInfinity()).to.be.true;
@@ -717,7 +657,5 @@ describe('Endomorphic edge cases', function () {
     });
   });
 });
-
-
 
 

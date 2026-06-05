@@ -4,9 +4,10 @@
 const { BN, Curve } = require('../../');
 const { expect } = require('chai');
 const vectors = require('../data/secp256k1-vectors');
+const { isOnCurve, SECP_N_MINUS_1 } = require('./helpers');
 
 /**
- * Endomorphic Cross-Check Tests — Section 3.8
+ * Endomorphic Cross-Check Tests
  *
  * These tests verify the endomorphism properties independently of the
  * scalar multiplication result by:
@@ -15,27 +16,12 @@ const vectors = require('../data/secp256k1-vectors');
  * 3. Verifying endo-split decomposition: k1*G + k2*(lambda*G) == G.mul(k)
  */
 
-describe('Endomorphic cross-check — endomorphism properties vs scalar multiplication', function () {
-
-  // Helper: check if a point satisfies y² = x³ + 7 (mod p)
-  function isOnCurve(pt) {
-    if (pt.isInfinity()) return true;
-    const x = pt.getX();
-    const y = pt.getY();
-    const left = y.sqr().umod(Curve.p);
-    const right = x.sqr().imul(x).iaddn(7).umod(Curve.p);
-    return left.cmp(right) === 0;
-  }
-
+describe('Endomorphic cross-check - endomorphism properties vs scalar multiplication', function () {
   const LAMBDA = Curve.endo.lambda;
   const BETA = Curve.endo.beta;
+  describe('Endomorphic X - beta * P.x = (lambda * k * G).x', function () {
 
-  // -----------------------------------------------------------------
-  // EC1: Endomorphism X property: endomorphismX(G.mul(k)) == G.mul(lambda*k mod n)
-  // -----------------------------------------------------------------
-  describe('EC1: Endomorphic X — beta * P.x = (lambda * k * G).x', function () {
-
-    // Scalars that are in the vector file (for direct vector comparison)
+    // Scalars that are in the vector file.
     const VECTOR_SCALARS = [
       { hex: '1', key: '0x1' },
       { hex: '2', key: '0x2' },
@@ -52,6 +38,8 @@ describe('Endomorphic cross-check — endomorphism properties vs scalar multipli
       it(`ENDO.X.K${key} - beta * (k*G).x == (lambda*k*G).x`, function () {
         const kP = Curve.g.mul(hex);
         expect(isOnCurve(kP)).to.be.true;
+        expect(kP.x.toString(16, 64)).to.equal(vectors.KG[key].x);
+        expect(kP.y.toString(16, 64)).to.equal(vectors.KG[key].y);
 
         // lambda * k mod n
         const kBN = new BN(hex, 16);
@@ -93,11 +81,10 @@ describe('Endomorphic cross-check — endomorphism properties vs scalar multipli
 
     // N-1 scalar (boundary test)
     it('ENDO.X.NMINUS1 - endomorphism holds for k = N-1', function () {
-      const nMinus1 = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140';
-      const kP = Curve.g.mul(nMinus1);
+      const kP = Curve.g.mul(SECP_N_MINUS_1);
       expect(isOnCurve(kP)).to.be.true;
 
-      const kBN = new BN(nMinus1, 16);
+      const kBN = new BN(SECP_N_MINUS_1, 16);
       const lambdaK = kBN.mul(LAMBDA).umod(Curve.n);
       const lambdaK_G = Curve.g.mul(lambdaK);
       expect(isOnCurve(lambdaK_G)).to.be.true;
@@ -123,11 +110,7 @@ describe('Endomorphic cross-check — endomorphism properties vs scalar multipli
       expect(lambdaK_G.y.cmp(kP.y)).to.equal(0);
     });
   });
-
-  // -----------------------------------------------------------------
-  // EC2: Endomorphic Y property: endomorphismY(G.mul(k)) == G.mul(k) (y unchanged)
-  // -----------------------------------------------------------------
-  describe('EC2: Endomorphic Y — lambda*k*G and k*G share the same y coordinate', function () {
+  describe('Endomorphic Y - lambda*k*G and k*G share the same y coordinate', function () {
 
     const TEST_SCALARS = [
       '1',
@@ -160,11 +143,7 @@ describe('Endomorphic cross-check — endomorphism properties vs scalar multipli
       expect(nG.isInfinity()).to.be.true;
     });
   });
-
-  // -----------------------------------------------------------------
-  // EC3: Endo-split decomposition: k1*G + k2*(lambda*G) == k*G
-  // -----------------------------------------------------------------
-  describe('EC3: Endo-split decomposition — k1*G + k2*(λ*G) == k*G', function () {
+  describe('Endo-split decomposition - k1*G + k2*(lambda*G) == k*G', function () {
 
     const TEST_SCALARS = [
       { hex: '1', tag: '1' },
@@ -174,12 +153,12 @@ describe('Endomorphic cross-check — endomorphism properties vs scalar multipli
       { hex: 'ff', tag: '0xff' },
       { hex: '100', tag: '0x100' },
       { hex: 'deadbeef', tag: 'deadbeef' },
-      { hex: 'deadbeefdeadbeefdeadbeefdeadbeef', tag: 'deadbeef×4' },
+      { hex: 'deadbeefdeadbeefdeadbeefdeadbeef', tag: 'deadbeefx4' },
       { hex: '100000000000000000000000000000000', tag: '2^128' },
     ];
 
     for (const { hex, tag } of TEST_SCALARS) {
-      it(`ENDO.SPLIT.K${tag} - k1*G + k2*(λ*G) == k*G`, function () {
+      it(`ENDO.SPLIT.K${tag} - k1*G + k2*(lambda*G) == k*G`, function () {
         const kBN = new BN(hex, 16);
 
         // Use the curve's _endoSplit to get k1, k2
@@ -203,8 +182,7 @@ describe('Endomorphic cross-check — endomorphism properties vs scalar multipli
 
     // N-1 boundary test
     it('ENDO.SPLIT.NMINUS1 - decomposition holds for k = N-1', function () {
-      const nMinus1 = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140';
-      const kBN = new BN(nMinus1, 16);
+      const kBN = new BN(SECP_N_MINUS_1, 16);
 
       const split = Curve._endoSplit(kBN);
       const k1G = Curve._endoWnafMulAdd([Curve.g], [split.k1]);
@@ -212,7 +190,7 @@ describe('Endomorphic cross-check — endomorphism properties vs scalar multipli
       const k2LambdaG = Curve._endoWnafMulAdd([lambdaG], [split.k2]);
       const decomposed = k1G.add(k2LambdaG);
 
-      const direct = Curve.g.mul(nMinus1);
+      const direct = Curve.g.mul(SECP_N_MINUS_1);
       expect(decomposed.eq(direct)).to.be.true;
     });
 
@@ -254,11 +232,7 @@ describe('Endomorphic cross-check — endomorphism properties vs scalar multipli
       }
     });
   });
-
-  // -----------------------------------------------------------------
-  // EC4: Endomorphism × precompute interaction
-  // -----------------------------------------------------------------
-  describe('EC4: Precomputed endomorphism — beta caching consistency', function () {
+  describe('Precomputed endomorphism - beta caching consistency', function () {
 
     it('ENDO.PRECOMP.BETA_SAME - _getBeta() on precomputed G returns same result', function () {
       const g = Curve.point(Curve.g.getX(), Curve.g.getY());
@@ -280,7 +254,7 @@ describe('Endomorphic cross-check — endomorphism properties vs scalar multipli
       expect(lambdaG.y.cmp(betaG.y)).to.equal(0);
     });
 
-    it('ENDO.PRECOMP.MULT_MATCH - precomputed mul matches vector for k=0x100', function () {
+    it('ENDO.PRECOMP.MULT_MATCH_0x100 - precomputed mul matches vector for k=0x100', function () {
       const g = Curve.point(Curve.g.getX(), Curve.g.getY());
       g.precompute(256);
 
@@ -290,7 +264,7 @@ describe('Endomorphic cross-check — endomorphism properties vs scalar multipli
       expect(result.y.toString(16, 64)).to.equal(vec.y);
     });
 
-    it('ENDO.PRECOMP.MULT_MATCH - precomputed mul matches vector for k=2^128', function () {
+    it('ENDO.PRECOMP.MULT_MATCH_2P128 - precomputed mul matches vector for k=2^128', function () {
       const g = Curve.point(Curve.g.getX(), Curve.g.getY());
       g.precompute(256);
 

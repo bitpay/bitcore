@@ -4,29 +4,10 @@
 const { BN, Curve } = require('../../');
 const { expect } = require('chai');
 const vectors = require('../data/secp256k1-vectors');
+const { isOnCurve, SECP_N, SECP_N_MINUS_1, SECP_G_X, SECP_G_Y } = require('./helpers');
 
-// secp256k1 constants (BN hex strings)
-const SECP_P = 'fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f';
-const SECP_N = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141';
-const SECP_G_X = '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798';
-const SECP_G_Y = '483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8';
-
-// Helper: check if a point satisfies y² = x³ + 7 (mod p) for secp256k1 (a=0)
-function isOnCurve(pt) {
-  if (pt.isInfinity()) return true;
-  const x = pt.getX();
-  const y = pt.getY();
-  const left = y.sqr().umod(Curve.p);
-  const right = x.sqr().imul(x).iaddn(7).umod(Curve.p);
-  return left.cmp(right) === 0;
-}
-
-describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
-
-  // -----------------------------------------------------------------
-  // 7.1 Construction
-  // -----------------------------------------------------------------
-  describe('7.1 Construction', function () {
+describe('JPoint (Jacobian) - lib/curve/point.js', function () {
+  describe('Construction', function () {
 
     it('JP.CONSTR.NORMAL - JPoint(curve, x, y, z) creates Jacobian point with hex coords', function () {
       const j = Curve.jpoint(SECP_G_X, SECP_G_Y, '1');
@@ -37,13 +18,15 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
       expect(j.z.red).to.equal(Curve.red);
     });
 
-    // Skip: zOne relies on === reference equality with this.curve.one.
-    // When jpoint is called with a hex string (e.g. '1'), a new BN is
-    // created and .toRed() produces a different object reference, so
-    // zOne is always false for string-constructed z=1 points. This is
-    // inherited behavior from the upstream elliptic package and not a
-    // bitcore-common regression.
-    it.skip('JP.CONSTR.ONE_Z - JPoint with z=1 has zOne=true', function () {
+    it('JP.CONSTR.ONE_Z_REFERENCE - JPoint with Curve.one has zOne=true', function () {
+      const j = Curve.jpoint(SECP_G_X, SECP_G_Y, Curve.one);
+      expect(j.zOne).to.be.true;
+      expect(j.z.fromRed().cmpn(1)).to.equal(0);
+    });
+
+    // Known deficiency: string z='1' creates a distinct red BN, and zOne is
+    // set using object identity instead of numeric equality.
+    it.skip('JP.CONSTR.ONE_Z_STRING - JPoint with string z=1 has zOne=true', function () {
       const j = Curve.jpoint(SECP_G_X, SECP_G_Y, '1');
       expect(j.zOne).to.be.true;
       expect(j.z.fromRed().cmpn(1)).to.equal(0);
@@ -60,11 +43,7 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
       expect(inf.z.cmpn(0)).to.equal(0);
     });
   });
-
-  // -----------------------------------------------------------------
-  // 7.2 toP — Jacobian to Affine conversion
-  // -----------------------------------------------------------------
-  describe('7.2 toP — Jacobian to Affine', function () {
+  describe('toP — Jacobian to Affine', function () {
 
     it('JP.TO_P - JPoint.toP() converts to affine, round-trip identity', function () {
       const p = Curve.g;
@@ -86,11 +65,7 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
       expect(back.eq(g)).to.be.true;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 7.3 Equality
-  // -----------------------------------------------------------------
-  describe('7.3 Equality', function () {
+  describe('Equality', function () {
 
     it('JP.EQ.SAME - JPoint.eq(same reference) returns true', function () {
       const j = Curve.g.toJ();
@@ -130,11 +105,7 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
       expect(j1.toP().eq(j2.toP())).to.be.true;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 7.4 isInfinity
-  // -----------------------------------------------------------------
-  describe('7.4 isInfinity', function () {
+  describe('isInfinity', function () {
 
     it('JP.IS_INFINITY - infinity JPoint returns true', function () {
       const inf = Curve.jpoint(null, null, null);
@@ -156,11 +127,7 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
       expect(j.isInfinity()).to.be.true;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 7.5 Negation
-  // -----------------------------------------------------------------
-  describe('7.5 Negation', function () {
+  describe('Negation', function () {
 
     it('JP.NEG.INF - infinity.neg() returns itself', function () {
       const inf = Curve.jpoint(null, null, null);
@@ -188,11 +155,7 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
       expect(doubleNeg.eq(j)).to.be.true;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 7.6 Addition
-  // -----------------------------------------------------------------
-  describe('7.6 Addition', function () {
+  describe('Addition', function () {
 
     it('JP.ADD.OFF_CURVE - Adding two valid JPoints produces a result on the curve', function () {
       const j1 = Curve.g.toJ();
@@ -309,11 +272,7 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
       expect(sum.eq(p.toJ().dbl())).to.be.true;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 7.7 Mixed Addition
-  // -----------------------------------------------------------------
-  describe('7.7 Mixed Addition', function () {
+  describe('Mixed Addition', function () {
 
     it('JP.MIXEDADD.NORMAL - J.mixedAdd(P) matches J.add(P.toJ())', function () {
       const j1 = Curve.g.toJ();
@@ -344,11 +303,7 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
       expect(isOnCurve(result.toP())).to.be.true;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 7.8 Doubling
-  // -----------------------------------------------------------------
-  describe('7.8 Doubling', function () {
+  describe('Doubling', function () {
 
     it('JP.DBL.INF - infinity.dbl() returns infinity', function () {
       const inf = Curve.jpoint(null, null, null);
@@ -393,11 +348,7 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
       expect(dbl4G.toP().getY().toString(16)).to.equal(vectors.KG['0x4'].y);
     });
   });
-
-  // -----------------------------------------------------------------
-  // 7.9 Repeated Doubling (dblP)
-  // -----------------------------------------------------------------
-  describe('7.9 Repeated Doubling (dblP)', function () {
+  describe('Repeated Doubling (dblP)', function () {
 
     it('JP.DBLP.1 - J.dblp(1).eq(J.dbl())', function () {
       const j = Curve.g.toJ();
@@ -437,11 +388,7 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
       expect(j.dblp(0).eq(j)).to.be.true;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 7.10 Tripling
-  // -----------------------------------------------------------------
-  describe('7.10 Tripling', function () {
+  describe('Tripling', function () {
 
     it('JP.TRPL.G - J.trpl().eq(J.dbl().add(J)) for G', function () {
       const j = Curve.g.toJ();
@@ -472,11 +419,7 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
       expect(trpl.eq(expected)).to.be.true;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 7.11 Scalar Multiplication
-  // -----------------------------------------------------------------
-  describe('7.11 Scalar Multiplication', function () {
+  describe('Scalar Multiplication', function () {
 
     it('JP.MUL.G_BY_3 - G.toJ().mul("3").eq(G.mul("3").toJ())', function () {
       const result = Curve.g.toJ().mul('3');
@@ -526,17 +469,12 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
     });
 
     it('JP.MUL.G_BY_NMINUS1 - G.toJ().mul(N-1, 16) == G.neg()', function () {
-      const nMinus1 = 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140';
-      const jMul = Curve.g.toJ().mul(nMinus1, 16);
+      const jMul = Curve.g.toJ().mul(SECP_N_MINUS_1, 16);
       const expected = Curve.g.neg().toJ();
       expect(jMul.eq(expected)).to.be.true;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 7.12 eqXToP
-  // -----------------------------------------------------------------
-  describe('7.12 eqXToP', function () {
+  describe('eqXToP', function () {
 
     it('JP.EQX_TOP.TRUE - G.toJ().eqXToP(G.x) is true', function () {
       const j = Curve.g.toJ();
@@ -572,11 +510,7 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
       expect(j.eqXToP(x)).to.be.true;
     });
   });
-
-  // -----------------------------------------------------------------
-  // 7.13 inspect
-  // -----------------------------------------------------------------
-  describe('7.13 inspect', function () {
+  describe('inspect', function () {
 
     it('JP.INSPECT.NORMAL - normal JPoint.inspect() returns correct format', function () {
       const j = Curve.g.toJ();
@@ -601,11 +535,7 @@ describe('JPoint (Jacobian) — lib/curve/point.js (Part 1)', function () {
       expect(str).to.contain('x:');
     });
   });
-
-  // -----------------------------------------------------------------
-  // 7.14 Cross-cutting: JPoint ↔ Point interoperability
-  // -----------------------------------------------------------------
-  describe('7.14 Interoperability', function () {
+  describe('Interoperability', function () {
 
     it('JP.INTEROP.TOJ_TO_P - P.toJ().toP().eq(P) for multiple points', function () {
       const points = [
