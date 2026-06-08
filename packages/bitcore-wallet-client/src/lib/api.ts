@@ -1661,6 +1661,8 @@ export class API extends EventEmitter {
       replaceTxByFee?: boolean;
       /** (XRP only) A comma-delimited list of account transaction flag(s) to set */
       flags?: string;
+      /** (XRP only) Destination tag for the transaction */
+      destinationTag?: number | string;
     },
     /** @deprecated */
     cb?: (err?: Error, txp?: any) => void,

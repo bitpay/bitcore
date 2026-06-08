@@ -19,6 +19,8 @@ export interface ITransactionArgs {
   flags?: string;
   /** Transaction type (e.g. 'AccountSet' for XRP). Not to be set explicitly by the user */
   txType?: string;
+  /** XRP destination tag */
+  destinationTag?: string;
 };
 
 function flagsDisplay() {
@@ -46,6 +48,7 @@ export function command(args: CommonArgs<ITransactionArgs & { isExtension?: bool
     .option('--tokenAddress <address>', 'Token contract address to get the balance for')
     .option('--note <note>', 'Note for the transaction')
     .option('--flags <flags>', '(XRP only) Comma-delimited list of account transaction flag(s) to set. ' + flagsDisplay())
+    .option('--tag <tag>', '(XRP only) Destination tag for the transaction')
     .option('--dry-run', 'Only create the transaction proposal without broadcasting')
     .parse(process.argv);
   
@@ -72,6 +75,12 @@ export function command(args: CommonArgs<ITransactionArgs & { isExtension?: bool
       throw new Error('Invalid flag(s) specified. ' + flagsDisplay());
     }
     opts.flags = flags.join(',');
+  }
+  if (opts.tag) {
+    if (isNaN(parseInt(opts.tag)) || parseInt(opts.tag) < 0) {
+      throw new Error('Invalid destination tag specified. It should be a non-negative integer.');
+    }
+    opts.destinationTag = opts.tag;
   }
 
   return opts;
@@ -121,7 +130,7 @@ export async function createTransaction(
   }
 
 
-  const to = opts.to || await prompt.text({
+  const to = opts.command ? opts.to : await prompt.text({
     message: 'Enter the recipient\'s address:',
     validate: (value) => {
       if (!Validation.validateAddress(chain, network, value)) {
@@ -134,7 +143,30 @@ export async function createTransaction(
     throw new UserCancelled();
   }
 
-  const amount = opts.amount || await prompt.text({
+  if (wallet.isXrp()) {
+    const tag = opts.command ? opts.destinationTag : await prompt.text({
+      message: 'Enter the destination tag (optional):',
+      placeholder: 'e.g. 12345',
+      validate: (value) => {
+        if (!value) {
+          return; // valid value, optional
+        }
+        const val = parseInt(value);
+        if (isNaN(val) || val < 0) {
+          return 'Please enter a valid destination tag';
+        }
+        return; // valid value
+      }
+    });
+    if (prompt.isCancel(tag)) {
+      throw new UserCancelled();
+    }
+    if (tag) {
+      opts.destinationTag = tag;
+    }
+  }
+
+  const amount = opts.command ? opts.amount : await prompt.text({
     message: 'Enter the amount to send:',
     placeholder: 'Type `help` for help and to see your balance',
     validate: (value) => {
@@ -228,7 +260,8 @@ export async function createTransaction(
     sendMax,
     tokenAddress: tokenObj?.contractAddress,
     flags: opts.flags,
-    txType: opts.txType
+    txType: opts.txType,
+    destinationTag: opts.destinationTag
   };
 
   let txp: Txp = await wallet.client.createTxProposal({
@@ -239,6 +272,9 @@ export async function createTransaction(
 
   const lines = [];
   lines.push(`To: ${to}`);
+  if (opts.destinationTag) { // Display txp.destinationTag below in case user entered but there's a discrepancy
+    lines.push(`DestTag: ${txp.destinationTag}`);
+  }
   lines.push(`Amount: ${Utils.renderAmount(currency, txp.amount, tokenObj)}`);
   lines.push(`Fee: ${Utils.renderAmount(chain, txp.fee)} (${Utils.displayFeeRate(chain, txp.feePerKb)})`);
   lines.push(`Total: ${tokenObj 
