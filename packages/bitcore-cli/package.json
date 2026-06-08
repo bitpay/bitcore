@@ -58,6 +58,7 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.14.1",
     "chai": "^5.2.1",
+    "mongodb": "^3.5.9",
     "sinon": "^21.0.0",
     "source-map-support": "0.5.16",
     "supertest": "^7.2.2",
