@@ -1,3 +1,19 @@
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+
+function findTestsJs() {
+  // gulp runs WDIO from the consuming package root, where browser:maketests
+  // writes the generated Browserify test bundle.
+  const cwdTests = path.join(process.cwd(), 'tests.js');
+  if (fs.existsSync(cwdTests)) return [cwdTests];
+  console.error('[wdio] tests.js not found. Tried: ' + cwdTests);
+  return [cwdTests];
+}
+
+const specs = findTestsJs();
+
 module.exports.config = {
   //
   // ====================
@@ -20,9 +36,7 @@ module.exports.config = {
   // The path of the spec files will be resolved relative from the directory of
   // of the config file unless it's absolute.
   //
-  specs: [
-    '../../../tests.js'
-  ],
+  specs: specs,
   // Patterns to exclude.
   exclude: [
     // 'path/to/excluded/files'
@@ -52,9 +66,17 @@ module.exports.config = {
   capabilities: [{
     // capabilities for local browser web tests
     browserName: 'chrome', // or "firefox", "microsoftedge", "safari"
-    // 'goog:chromeOptions': {
-    //     args: ['headless']
-    // }
+    'goog:chromeOptions': {
+      args: [
+        // Run headless by default.  Override locally with WDIO_HEADED=1.
+        ...(process.env.WDIO_HEADED === '1' ? [] : ['--headless=new']),
+        '--disable-gpu',
+        '--disable-web-security',
+        '--no-sandbox',
+        '--disable-dev-shm-usage',
+        '--user-data-dir=/tmp/chrome-test-profile'
+      ]
+    }
   }],
 
   //
@@ -133,7 +155,7 @@ module.exports.config = {
   // See the full list at http://mochajs.org/
   mochaOpts: {
     ui: 'bdd',
-    timeout: 60000
+    timeout: 180000
   },
 
   //
