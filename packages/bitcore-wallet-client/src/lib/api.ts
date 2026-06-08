@@ -1602,6 +1602,9 @@ export class API extends EventEmitter {
     for (const o of args.outputs) {
       o.message = API._encryptMessage(o.message, this.credentials.sharedEncryptingKey) || null;
     }
+    if (args.flags) {
+      args.flags = args.flags.split(',').map(f => CWC.Utils.normalizeXrpFlag(f.trim())).join(',');
+    }
     return args;
   }
 
@@ -1656,6 +1659,8 @@ export class API extends EventEmitter {
       tokenAddress?: string;
       /** Ignore locked utxos check (used for replacing a transaction designated as RBF) */
       replaceTxByFee?: boolean;
+      /** (XRP only) A comma-delimited list of account transaction flag(s) to set */
+      flags?: string;
     },
     /** @deprecated */
     cb?: (err?: Error, txp?: any) => void,

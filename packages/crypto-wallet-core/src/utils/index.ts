@@ -1,4 +1,5 @@
 import BitcoreLib from '@bitpay-labs/bitcore-lib';
+import * as xrpl from 'xrpl';
 import { Constants } from '../constants';
 
 
@@ -159,4 +160,12 @@ export function isEqual(obj1: object, obj2: object): boolean {
     }
   }
   return true;
+}
+
+export function normalizeXrpFlag(flag: string | number): string {
+  const normalizedFlag = isNaN(parseInt(flag as string)) ? (flag as string): xrpl.AccountSetTfFlags[flag as string];
+  if (!xrpl.AccountSetTfFlags[normalizedFlag]) {
+    throw new Error(`Invalid XRP flag: ${flag}`);
+  }
+  return normalizedFlag;
 }

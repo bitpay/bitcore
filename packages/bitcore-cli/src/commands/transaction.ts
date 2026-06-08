@@ -1,17 +1,40 @@
 import os from 'os';
 import { Utils as BWCUtils, type Txp } from '@bitpay-labs/bitcore-wallet-client'; 
-import { Validation } from '@bitpay-labs/crypto-wallet-core';
+import { Utils as CWCUtils, Validation, xrpl } from '@bitpay-labs/crypto-wallet-core';
 import * as prompt from '@clack/prompts';
 import { UserCancelled } from '../errors';
 import { Utils } from '../utils';
 import type { CommonArgs } from '../../types/cli';
 import type { ITokenObj } from '../../types/wallet';
 
-export function command(args: CommonArgs) {
-  const { program } = args;
+export interface ITransactionArgs {
+  to?: string;
+  amount?: string;
+  fee?: string;
+  feeRate?: string;
+  feeLevel?: string;
+  nonce?: number;
+  note?: string;
+  dryRun?: boolean;
+  flags?: string;
+  /** Transaction type (e.g. 'AccountSet' for XRP). Not to be set explicitly by the user */
+  txType?: string;
+};
+
+function flagsDisplay() {
+  const flags = Object.keys(xrpl.AccountSetTfFlags).filter(k => isNaN(parseInt(k))); // filter out numeric keys
+  return 'Possible flags are: ' + flags.join(', ');
+}
+
+export function command(args: CommonArgs<ITransactionArgs & { isExtension?: boolean }>) {
+  const { program, opts: { isExtension } = {} } = args;
+
+  if (!isExtension) {
+    program
+      .description('Create and send a transaction')
+      .usage('<walletName> --command transaction [options]');
+  }
   program
-    .description('Create and send a transaction')
-    .usage('<walletName> --command transaction [options]')
     .optionsGroup('Transaction Options')
     .option('--to <address>', 'Recipient address')
     .option('--amount <amount>', 'Amount to send (in BTC/ETH/etc). Use "max" to send all available balance')
@@ -22,6 +45,7 @@ export function command(args: CommonArgs) {
     .option('--token <token>', 'Token to get the balance for (e.g. USDC)')
     .option('--tokenAddress <address>', 'Token contract address to get the balance for')
     .option('--note <note>', 'Note for the transaction')
+    .option('--flags <flags>', '(XRP only) Comma-delimited list of account transaction flag(s) to set. ' + flagsDisplay())
     .option('--dry-run', 'Only create the transaction proposal without broadcasting')
     .parse(process.argv);
   
@@ -42,21 +66,19 @@ export function command(args: CommonArgs) {
   if (opts.feeRate && !parseFloat(opts.feeRate)) {
     throw new Error('Invalid fee rate specified.');
   }
+  if (opts.flags) {
+    const flags = opts.flags.split(',').map(f => CWCUtils.normalizeXrpFlag(f.trim()));
+    if (flags.some(f => !f)) {
+      throw new Error('Invalid flag(s) specified. ' + flagsDisplay());
+    }
+    opts.flags = flags.join(',');
+  }
 
   return opts;
 }
 
 export async function createTransaction(
-  args: CommonArgs<{
-    to?: string;
-    amount?: string;
-    fee?: string;
-    feeRate?: string;
-    feeLevel?: string;
-    nonce?: number;
-    note?: string;
-    dryRun?: boolean;
-  }>
+  args: CommonArgs<ITransactionArgs>
 ) {
   const { wallet, opts } = args;
   let { status } = args;
@@ -68,6 +90,12 @@ export async function createTransaction(
 
   if (wallet.isReadOnly()) {
     throw new Error('Read-only wallets cannot create transactions');
+  }
+
+  if (opts.flags) {
+    if (!wallet.isXrp()) {
+      throw new Error('Flags can only be set for XRP wallets');
+    }
   }
 
   let tokenObj: ITokenObj;
@@ -122,7 +150,7 @@ export async function createTransaction(
         return; // valid value, will be handled later
       }
       const val = parseFloat(value);
-      if (isNaN(val) || val <= 0) {
+      if (isNaN(val) || (!opts.flags && val <= 0)) {
         return 'Please enter a valid amount greater than 0';
       }
       if (val > Number(availableAmount)) {
@@ -198,7 +226,9 @@ export async function createTransaction(
     feePerKb: feeLevel === 'custom' ? parseFloat(customFeeRate) : undefined,
     fee: opts.fee ? parseFloat(opts.fee) : undefined,
     sendMax,
-    tokenAddress: tokenObj?.contractAddress
+    tokenAddress: tokenObj?.contractAddress,
+    flags: opts.flags,
+    txType: opts.txType
   };
 
   let txp: Txp = await wallet.client.createTxProposal({
@@ -220,6 +250,12 @@ export async function createTransaction(
   }
   if (note) {
     lines.push(`Note: ${txp.message}`);
+  }
+  if (opts.txType) {
+    lines.push(`Type: ${opts.txType}`);
+  }
+  if (opts.flags) {
+    lines.push(`Flags: ${opts.flags}`);
   }
   prompt.note(lines.join(os.EOL), 'Transaction Preview');
   

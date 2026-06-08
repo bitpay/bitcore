@@ -50,7 +50,7 @@
     "@bitpay-labs/bitcore-mnemonic": "^11.9.0",
     "@bitpay-labs/bitcore-wallet-client": "^11.10.1",
     "@bitpay-labs/crypto-wallet-core": "^11.10.0",
-    "@clack/prompts": "1.0.0-alpha.6",
+    "@clack/prompts": "1.5.1",
     "commander": "14.0.0",
     "external-editor": "3.1.0",
     "usb": "2.15.0"

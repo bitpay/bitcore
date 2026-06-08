@@ -340,19 +340,42 @@ export async function promptKeyshareBackup(): Promise<boolean> {
   return true;
 }
 
-export async function promptXrpFlag() {
-  const flag = await prompt.select({
-    message: 'Select a flag to toggle:',
-    initialValue: null,
-    options: [].concat(
-      Object.entries(xrpl.AccountSetTfFlags)
-        .filter(([key]) => !parseInt(key))
-        .map(([label, value]) => ({ label, value })),
-      [{ label: 'None', value: null, hint: 'Do not set any flag' }]
-    ),
-  });
-  if (prompt.isCancel(flag)) {
-    throw new UserCancelled();
-  }
-  return flag as number | null;
+export async function promptXrpFlag(): Promise<string | null> {
+  let ex;
+  do {
+    const flags = await prompt.multiselect<string | null>({
+      message: 'Select a tx flag to set:\n(Space = select, Enter = continue)',
+      options: [].concat(
+        Object.keys(xrpl.AccountSetTfFlags)
+          .filter((key) => !parseInt(key))
+          .map((key) => ({ label: key.slice(2), value: key })),
+        [{ label: 'None', value: null, hint: 'Do not set any flag' }]
+      ),
+    });
+    if (prompt.isCancel(flags)) {
+      throw new UserCancelled();
+    }
+    
+    ex = flags.length > 1 && flags.some(f => !f);
+    
+    if (ex) {
+      prompt.log.error('Cannot select "None" with other flags.');
+    }
+
+    const flagsSet = new Set(flags);
+    ex = flagsSet.has('tfRequireDestTag') && flagsSet.has('tfOptionalDestTag')
+      || flagsSet.has('tfRequireAuth') && flagsSet.has('tfOptionalAuth')
+      || flagsSet.has('tfDisallowXRP') && flagsSet.has('tfAllowXRP');
+
+    if (ex) {
+      prompt.log.error('Cannot select conflicting flags (e.g. tfRequireDestTag and tfOptionalDestTag). Please select again.');
+    }
+
+    if (!ex) {
+      if (flags[0] === null) {
+        return null;
+      }
+      return flags.join(',');
+    }
+  } while (ex);
 }

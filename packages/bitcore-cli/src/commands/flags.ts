@@ -1,36 +1,22 @@
-import { xrpl } from '@bitpay-labs/crypto-wallet-core';
 import * as prompt from '@clack/prompts';
 import { promptXrpFlag } from '../prompts';
 import { Utils } from '../utils';
+import { type ITransactionArgs, createTransaction, command as txCommand } from './transaction';
 import type { CommonArgs } from '../../types/cli';
 
-function flagsDisplay() {
-  const flags = Object.keys(xrpl.AccountSetTfFlags);
-  const half = flags.splice(flags.length / 2);
-  return 'Possible flags are: \n\t' + flags.map((f, i) => `${f} | ${half[i]}`).join('\n\t');
-}
 
-export function command(args: CommonArgs) {
+export function command(args: CommonArgs<ITransactionArgs>) {
   const { program } = args;
   program
     .description('View and manage XRP wallet flags')
-    .usage('<walletName> --command flags [options]')
-    .optionsGroup('Flags Options')
-    .option('--set <flag>', 'Toggle a chain-level flag on the wallet. ' + flagsDisplay())
-    .option('--fee <fee>', 'Set the fee (in drops) for the transaction')
-    .parse(process.argv);
-
-  const opts = program.opts();
-  if (opts.help) {
-    program.help();
-  }
-
-  opts.set = isNaN(parseInt(opts.set)) ? xrpl.AccountSetTfFlags[opts.set] : parseInt(opts.set);
+    .usage('<walletName> --command flags [options]');
+    
+  const opts = txCommand({ ...args, opts: { ...args.opts, isExtension: true } });
 
   return opts;
 }
 
-export async function getOrSetFlags(args: CommonArgs<{ set?: number }>) {
+export async function getOrSetFlags(args: CommonArgs<ITransactionArgs>) {
   const { wallet, opts } = args;
   if (opts.command) {
     Object.assign(opts, command(args));
@@ -48,9 +34,14 @@ export async function getOrSetFlags(args: CommonArgs<{ set?: number }>) {
     'Current XRP Account Flags'
   );
 
-  const flag = opts.command ? opts.set : await promptXrpFlag();
-  if (flag) {
-    // TODO: create tx to set the flag
+  const flags = opts.command ? opts.flags : await promptXrpFlag();
+
+  if (flags) {
+    opts.flags = flags;
+    opts.to = (await wallet.client.getMainAddresses())[0].address;
+    opts.amount = '0';
+    opts.txType = 'AccountSet';
+    await createTransaction(args);
   }
 
   return { action: 'menu' };
