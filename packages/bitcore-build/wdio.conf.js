@@ -76,7 +76,8 @@ module.exports.config = {
         '--disable-dev-shm-usage',
         '--user-data-dir=/tmp/chrome-test-profile'
       ]
-    }
+    },
+    'wdio:enforceWebDriverClassic': true
   }],
 
   //
