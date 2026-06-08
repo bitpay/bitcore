@@ -40,8 +40,7 @@
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
-    "fix": "npm run fix:errors",
-    "precommit": "npm run lint"
+    "fix": "npm run fix:errors"
   },
   "dependencies": {
     "@bitpay-labs/bitcore-mnemonic": "^11.9.0",
