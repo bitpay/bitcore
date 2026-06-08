@@ -13,7 +13,8 @@ export async function createWallet(args: CommonArgs<{ mnemonic?: string }>) {
 
   const chain = await getChain();
   const network = await getNetwork();
-  const isMultiParty = await getIsMultiParty();
+  // No solana support for multi-party wallets right now (TSS is ECDSA only)
+  const isMultiParty = chain === 'sol' ? false : await getIsMultiParty();
 
   let mnemonic;
   if (!isMultiParty) {
@@ -29,7 +30,7 @@ export async function createWallet(args: CommonArgs<{ mnemonic?: string }>) {
     const [m, n] = Utils.parseMN(mOfN);
 
     if (useTss) {
-      ({ mnemonic } = await createThresholdSigWallet({ wallet, chain, network, opts, m, n }));
+      await createThresholdSigWallet({ wallet, chain, network, opts, m, n });
     } else {
       ({ mnemonic } = await createMultiSigWallet({ wallet, chain, network, opts, m, n }));
     }
@@ -37,10 +38,9 @@ export async function createWallet(args: CommonArgs<{ mnemonic?: string }>) {
   
   // Re-fetch the client to ensure it has the latest state
   // and to complete the wallet creation process
-
   await wallet.getClient({});
 
-  if (!opts.mnemonic) {
+  if (!opts.mnemonic && mnemonic) {
     await Utils.showMnemonic(wallet.name, mnemonic, opts);
   }
 };

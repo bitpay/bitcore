@@ -23,6 +23,7 @@ const derivers: { [chain: string]: IDeriver } = {
   ARB: new ArbDeriver(),
   BASE: new BaseDeriver(),
   OP: new OpDeriver(),
+  ARC: new EthDeriver(),
   SOL: new SolDeriver()
 };
 

@@ -132,8 +132,9 @@ export class Wallet implements IWallet {
     mnemonic?: string;
     password?: string;
     addressType?: string;
+    joinSecret?: string;
   }) {
-    const { coin, chain, network, account, n, m, mnemonic, password, addressType, copayerName } = args;
+    const { coin, chain, network, account, n, m, mnemonic, password, addressType, copayerName, joinSecret } = args;
     let key: KeyType;
     if (mnemonic) {
       key = new Key({ seedType: 'mnemonic', seedData: mnemonic, password });
@@ -141,13 +142,28 @@ export class Wallet implements IWallet {
       key = new Key({ seedType: 'new', password });
     }
     const credOpts = { coin, chain, network, account, n, m, mnemonic, password, addressType, copayerName, singleAddress: BWCUtils.isSingleAddressChain(chain) };
-    const credentials = key.createCredentials(password, credOpts);
+    let credentials = key.createCredentials(password, credOpts);
     this.client.fromObj(credentials);
     this.#walletData = { key, credentials };
+    // Save here in case registering or joining fails (e.g. network issues)
     await this.save();
-    const secret = await this.register({ copayerName });
-    await this.load();
-    return { key, credentials, secret };
+
+    let secret;
+    let joinedWalletName;
+    if (joinSecret) {
+      const wallet = await this.client.joinWallet(joinSecret, copayerName, { chain });
+      joinedWalletName = wallet.name;
+    } else {
+      secret = await this.register({ copayerName });
+    }
+    // Update credentials with joined/registered info (e.g. walletId, publicKeyRing, etc)
+    this.#walletData.credentials = this.client.credentials;
+    await this.save();
+    // this.load calls openWallet which completes the wallet by fetching any missing info
+    await this.load({ allowCache: true });
+
+    credentials = this.#walletData.credentials;
+    return { key, credentials, secret, joinedWalletName };
   }
 
   async createFromTss(args: {
@@ -172,7 +188,8 @@ export class Wallet implements IWallet {
     this.#walletData = { key, credentials: this.client.credentials };
     await this.save();
     // await this.register({ copayerName });
-    await this.load();
+    // this.load calls openWallet which completes the wallet by fetching any missing info
+    await this.load({ allowCache: true });
     return { key, credentials: this.client.toObj() };
   }
 
@@ -180,12 +197,20 @@ export class Wallet implements IWallet {
     if (!this.client) {
       await this.getClient({ mustExist: true });
     }
-    const { chain, coin, network, m, n, addressType } = this.client.credentials;
+    const { chain, coin, network, m, n, addressType, tssKeyId } = this.client.credentials;
     if (coin && coin !== chain) {
       // temporarily set it to chain for registration.
       // coin != chain for token wallets exported from the app.
       this.client.credentials.coin = chain;
     }
+
+    if (tssKeyId) {
+      // This function will only register the wallet as a single-sig (non-TSS) wallet (BAD!).
+      // Importing a TSS wallet to a new server will need to create a tsskeygen Mongo document
+      // on the server and include the tssKeyId in the wallet registration process.
+      throw new Error('This wallet appears to be a TSS wallet. Registering an existing TSS wallet on a different server is not yet supported.');
+    }
+
     const { secret } = await this.client.createWallet(
       this.name,
       args.copayerName,
@@ -257,15 +282,22 @@ export class Wallet implements IWallet {
 
     if (doNotComplete) return key;
 
-
-    this.client.on('walletCompleted', (_wallet) => {
-      this.save().then(() => {
-        _verbose && prompt.log.info('Your wallet has just been completed.');
-      });
-    });
-    await this.client.openWallet();
+    const status = await this.client.openWallet();
+    let needsSave = status?.wallet?.status === 'complete';
+    if (
+      (!this.#walletData.credentials.isComplete() && this.client.credentials.isComplete()) ||
+      // For TSS creds, isComplete() may be true even if publicKeyRing isn't fully populated
+      this.#walletData.credentials.publicKeyRing.length < this.client.credentials.publicKeyRing.length ||
+      (!this.#walletData.credentials.walletId && this.client.credentials.walletId)
+    ) {
+      this.#walletData.credentials = this.client.credentials; // update with any new info from the chain
+      needsSave = true;
+    }
+    if (needsSave) {
+      await this.save();
+    }
     return key;
-  };
+  }
 
   async save(opts?: { encryptAll?: boolean }) {
     const { encryptAll } = opts || {};
@@ -310,7 +342,7 @@ export class Wallet implements IWallet {
       }
 
       if (key.isPrivKeyEncrypted() || (key as TssKey.TssKey).isKeyChainEncrypted?.()) {
-        const walletPassword = await getPassword('Wallet password:');
+        const walletPassword = await getPassword('Unlock wallet:');
         key.decrypt(walletPassword);
       }
     }
@@ -368,6 +400,9 @@ export class Wallet implements IWallet {
         testnet: process.env['BITCORE_CLI_CURRENCIES_URL'] || 'https://test.bitpay.com/currencies',
         regtest: process.env['BITCORE_CLI_CURRENCIES_URL_REGTEST']
       };
+      if (network === 'regtest' && !urls[network]) {
+        throw new Error('Set BITCORE_CLI_CURRENCIES_URL_REGTEST environment variable.');
+      }
       let response: Response;
       try {
         response = await fetch(urls[network], { method: 'GET', headers: { 'Content-Type': 'application/json' } });
@@ -427,7 +462,11 @@ export class Wallet implements IWallet {
     const { address } = args;
     const chain = this.chain.toUpperCase();
     const network = this.network === 'livenet' ? 'mainnet' : this.network;
-    const web3 = new Web3(Constants.PUBLIC_API[chain][network]);
+    const publicApiUrl = Constants.PUBLIC_API[chain.toLowerCase()]?.[network];
+    if (!publicApiUrl) {
+      throw new Error(`Chain ${chain} is not supported for fetching token data from the chain`);
+    }
+    const web3 = new Web3(publicApiUrl);
     const contract = new web3.eth.Contract(ERC20Abi as any, address);
     const token = await contract.methods.symbol().call<string>();
     const decimals = Number(await contract.methods.decimals().call<bigint>());

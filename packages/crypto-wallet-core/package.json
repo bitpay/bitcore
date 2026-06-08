@@ -1,6 +1,6 @@
 {
   "name": "@bitpay-labs/crypto-wallet-core",
-  "version": "11.9.0",
+  "version": "11.10.0",
   "description": "A multi-currency support library for address derivation, private key creation, and transaction creation",
   "main": "./ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
@@ -17,8 +17,8 @@
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
     "fix": "npm run fix:errors",
-    "test": "npm run compile && mocha 'ts_build/test/**/*.test.js'",
-    "coverage": "npm run compile && nyc mocha 'ts_build/test/**/*.test.js'",
+    "test": "npm run compile && mocha -n enable-source-maps 'ts_build/test/**/*.test.js'",
+    "coverage": "npm run compile && nyc mocha -n enable-source-maps 'ts_build/test/**/*.test.js'",
     "pub": "npm run compile && npm publish"
   },
   "keywords": [
