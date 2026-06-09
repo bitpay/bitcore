@@ -298,15 +298,15 @@ describe('Proposals', function() {
                 case Array.from(checkpoints)[2]:
                   const lines = checkpointOutput.split('\n');
                   const startIdx = lines.findIndex(l => l.includes('◆  Page Controls:'));
-                  assert.ok(startIdx > -1);
-                  assert.ok(lines[startIdx + 1].includes('r  Print Raw Object'));
-                  assert.ok(lines[startIdx + 2].includes('e  Export'));
-                  assert.ok(lines[startIdx + 3].includes('x  Close'));
-                  assert.ok(lines.findIndex(l => l.includes('n  Next Page')) === -1);
-                  assert.ok(lines.findIndex(l => l.includes('p  Previous Page')) === -1);
-                  assert.ok(lines.findIndex(l => l.includes('a  Accept')) === -1);
-                  assert.ok(lines.findIndex(l => l.includes('j  Reject')) === -1);
-                  assert.ok(lines.findIndex(l => l.includes('d  Delete')) === -1);
+                  assert.ok(startIdx > -1, `Could not find page controls in output: ${checkpointOutput}`);
+                  assert.ok(lines[startIdx + 1].includes('r  Print Raw Object'), `Expected "r  Print Raw Object" in page controls, got: ${lines[startIdx + 1]}`);
+                  assert.ok(lines[startIdx + 2].includes('e  Export'), `Expected "e  Export" in page controls, got: ${lines[startIdx + 2]}`);
+                  assert.ok(lines[startIdx + 3].includes('x  Close'), `Expected "x  Close" in page controls, got: ${lines[startIdx + 3]}`);
+                  assert.ok(lines.findIndex(l => l.includes('n  Next Page')) === -1, `Expected no "n  Next Page" in page controls, got: ${checkpointOutput}`);
+                  assert.ok(lines.findIndex(l => l.includes('p  Previous Page')) === -1, `Expected no "p  Previous Page" in page controls, got: ${checkpointOutput}`);
+                  assert.ok(lines.findIndex(l => l.includes('a  Accept')) === -1, `Expected no "a  Accept" in page controls, got: ${checkpointOutput}`);
+                  assert.ok(lines.findIndex(l => l.includes('j  Reject')) === -1, `Expected no "j  Reject" in page controls, got: ${checkpointOutput}`);
+                  assert.ok(lines.findIndex(l => l.includes('d  Delete')) === -1, `Expected no "d  Delete" in page controls, got: ${checkpointOutput}`);
                   break;
                 case Array.from(checkpoints)[3]:
                   // No pending proposals indicator
