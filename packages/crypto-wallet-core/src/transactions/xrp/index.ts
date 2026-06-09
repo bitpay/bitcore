@@ -138,12 +138,13 @@ export class XRPTxProvider {
     return this.sha512Half(encoded);
   }
 
-  private transformFlags<T extends xrpl.PaymentFlagsInterface | xrpl.AccountSetFlagsInterface>(flags: string | number): T {
+  private transformFlags<T extends xrpl.PaymentFlagsInterface | xrpl.AccountSetFlagsInterface>(flags: string | number): T | number {
     if (flags == null) {
-      return null;
+      throw new Error('No XRP flag(s) provided');
     }
     if (typeof flags === 'number') {
-      flags = flags.toString();
+      // Pass through numbers since they may be combined flags
+      return flags;
     }
     return flags.split(',').reduce((acc, flag) => {
       const flagValue = Utils.normalizeXrpFlag(flag.trim());
