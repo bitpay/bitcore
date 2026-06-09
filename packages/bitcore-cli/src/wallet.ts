@@ -18,7 +18,8 @@ import {
   Utils as CWCUtils,
   Message,
   Transactions,
-  Web3
+  Web3,
+  type xrpl
 } from '@bitpay-labs/crypto-wallet-core';
 import * as prompt from '@clack/prompts';
 import { Constants } from './constants';
@@ -719,7 +720,7 @@ export class Wallet implements IWallet {
       await this.getClient({ mustExist: true });
     }
 
-    const flags = await this.client.getAccountFlags({ account: 0 });
+    const flags: xrpl.AccountInfoAccountFlags = await this.client.getAccountFlags({ account: 0 });
     return flags;
   }
 };
