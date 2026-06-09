@@ -615,7 +615,9 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
       logger.error('Error streaming blocks: %o', e);
     }
     stream.push(null);
-    stream.jsonl = true;
+    // No jsonl flag: streamBlocks pushes plain block objects, so the route frames them as a
+    // JSON array — consistent with every other chain's block endpoint. (jsonl is reserved for
+    // unbounded streams like wallet-tx history where producers emit newline-delimited strings.)
     return stream;
   }
 

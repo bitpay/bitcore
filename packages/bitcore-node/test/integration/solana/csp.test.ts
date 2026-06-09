@@ -222,6 +222,41 @@ describe('Solana API', function() {
     });
   });
 
+  describe('#streamBlocks', () => {
+    it('frames blocks as a JSON array (no jsonl), consistent with other chains', async () => {
+      const blockRange = [100, 101];
+      sandbox.stub(SOL, 'getRpc').resolves({ rpc: { getTip: sandbox.stub().resolves({ height: 200 }) } } as any);
+      sandbox.stub(SOL as any, 'getBlocksRange').resolves(blockRange);
+      sandbox.stub(SOL, '_getTransformedBlock').callsFake(((_rpc: any, _network: string, height: any) =>
+        Promise.resolve({ height: Number(height), hash: `hash${Number(height)}` })) as any);
+
+      const chunks: string[] = [];
+      let contentType: string | undefined;
+      const req = (new Writable({ write: (_d, _e, cb) => cb() }) as unknown) as Request;
+      const res = (new Writable({ write: (d, _e, cb) => { chunks.push(d.toString()); cb(); } }) as unknown) as Response;
+      res.type = ((type: string) => { contentType = type; return res; }) as any;
+
+      const stream: any = await SOL.streamBlocks({ chain, network, args: {} } as any);
+      // The route auto-detects jsonl off the stream; blocks must not set it.
+      expect(stream.jsonl).to.be.undefined;
+
+      await new Promise<void>((resolve, reject) => {
+        res.on('error', reject).on('finish', () => resolve());
+        streamJsonArray(stream, req, res).catch(reject);
+      });
+
+      const body = chunks.join('');
+      // Array framing => application/json, and a single JSON.parse must succeed (concatenated
+      // objects from a stray jsonl flag would throw here).
+      expect(contentType).to.equal('json');
+      const parsed = JSON.parse(body);
+      expect(parsed).to.be.an('array').with.lengthOf(2);
+      expect(parsed[0].height).to.equal(100);
+      expect(parsed[0].nextBlockHash).to.equal('hash101');
+      expect(parsed[1].height).to.equal(101);
+    });
+  });
+
   it('should correctly transform transaction data', () => {
     const tx = {
       txid: 'tx1',
