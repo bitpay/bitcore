@@ -388,12 +388,26 @@ describe('Ethereum API', function() {
       await EVMTransactionStorage.collection.insertMany(
         new Array(5).fill({}).map(() => ({ chain, network, blockHeight: 1, gasPrice: 10 * 1e9, data: Buffer.from(''), from: address } as IEVMTransactionInProcess))
       );
+      // Capture the real Mongo cursor backing the stream and spy on its close(), so this
+      // asserts the cursor itself is torn down — not merely that the returned stream emits
+      // 'close' (which destroy() does unconditionally, regardless of cursor cleanup).
+      // `.collection` is a getter that returns a fresh wrapper each access, so pin a single
+      // collection instance and wrap its find() to capture the cursor.
+      const collection = EVMTransactionStorage.collection;
+      const realFind = collection.find.bind(collection);
+      let cursorCloseSpy: sinon.SinonSpy | undefined;
+      sandbox.stub(collection, 'find').callsFake((...findArgs: any[]) => {
+        const cursor = realFind(...findArgs);
+        cursorCloseSpy = cursorCloseSpy || sandbox.spy(cursor, 'close');
+        return cursor;
+      });
+      sandbox.stub(EVMTransactionStorage, 'collection').get(() => collection);
+
       const stream: any = await ETH.streamWalletTransactions({ chain, network, wallet, args: {} } as StreamWalletTransactionsParams);
-      const cursorCloseSpy = sandbox.spy();
-      stream.on('close', cursorCloseSpy);
       stream.destroy();
       await new Promise(r => setImmediate(r));
-      expect(cursorCloseSpy.called).to.eq(true);
+      expect(cursorCloseSpy, 'wallet-tx cursor was created').to.exist;
+      expect(cursorCloseSpy!.called, 'cursor.close() was called on destroy').to.eq(true);
     });
   });
 });
