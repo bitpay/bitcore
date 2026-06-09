@@ -47,7 +47,8 @@ export async function getOrSetFlags(args: CommonArgs<ITransactionArgs>) {
   }
   
   if (!wallet.isXrp()) {
-    prompt.log.error('Flags management is only available for XRP wallets');
+    // This code should only be reachable if using --command, so we should die.
+    Utils.die('Flags management is only available for XRP wallets');
   }
 
   const existingFlags = await wallet.getAccountFlags();
