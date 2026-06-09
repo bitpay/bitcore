@@ -3967,7 +3967,7 @@ export class API extends EventEmitter {
 
   async getAccountFlags(params: { account: number }) {
     const { account } = params;
-    const { body: flags } = await this.request.get(`/v1/flags${account ? `?account=${account}` : ''}`);
+    const { body: flags } = await this.request.get<CWC.xrpl.AccountInfoAccountFlags>(`/v1/flags${account ? `?account=${account}` : ''}`);
     return flags;
   }
 
@@ -4302,6 +4302,7 @@ export interface Txp {
   walletId: string;
   walletM: number;
   walletN: number;
+  destinationTag?: string; // XRP only
 };
 
 export interface PublishedTxp extends Txp {

@@ -7,7 +7,7 @@ import {
   TssSign,
   Txp
 } from '@bitpay-labs/bitcore-wallet-client';
-import { type Types as CWCTypes } from '@bitpay-labs/crypto-wallet-core';
+import { type Types as CWCTypes, type xrpl } from '@bitpay-labs/crypto-wallet-core';
 
 export type KeyType = Key;
 export type ClientType = API;
@@ -95,7 +95,7 @@ export interface IWallet {
   isXrp(): boolean;
   isTokenChain(): boolean;
   isReadOnly(): boolean;
-  getAccountFlags(): Promise<any>;
+  getAccountFlags(): Promise<xrpl.AccountInfoAccountFlags>;
 }
 
 export interface ITokenObj {

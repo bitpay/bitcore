@@ -130,7 +130,8 @@ export async function createTransaction(
   }
 
 
-  const to = opts.command ? opts.to : await prompt.text({
+  // Don't do opts.command tertiary check in case opts.to is passed in from an extension (e.g. flags management)
+  const to = opts.to || await prompt.text({
     message: 'Enter the recipient\'s address:',
     validate: (value) => {
       if (!Validation.validateAddress(chain, network, value)) {
@@ -166,7 +167,8 @@ export async function createTransaction(
     }
   }
 
-  const amount = opts.command ? opts.amount : await prompt.text({
+  // Don't do opts.command tertiary check in case opts.to is passed in from an extension (e.g. flags management)
+  const amount = opts.amount || await prompt.text({
     message: 'Enter the amount to send:',
     placeholder: 'Type `help` for help and to see your balance',
     validate: (value) => {

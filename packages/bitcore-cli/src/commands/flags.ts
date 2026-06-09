@@ -34,7 +34,7 @@ export async function getOrSetFlags(args: CommonArgs<ITransactionArgs>) {
     'Current XRP Account Flags'
   );
 
-  const flags = opts.command ? opts.flags : await promptXrpFlag();
+  const flags = opts.command ? opts.flags : await promptXrpFlag(existingFlags);
 
   if (flags) {
     opts.flags = flags;

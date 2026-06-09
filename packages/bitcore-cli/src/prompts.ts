@@ -340,17 +340,26 @@ export async function promptKeyshareBackup(): Promise<boolean> {
   return true;
 }
 
-export async function promptXrpFlag(): Promise<string | null> {
+export async function promptXrpFlag(existingFlags: Partial<xrpl.AccountInfoAccountFlags>): Promise<string | null> {
+  const toggleableFlags = new Set(['tfRequireDestTag', 'tfOptionalDestTag', 'tfRequireAuth', 'tfOptionalAuth', 'tfDisallowXRP', 'tfAllowXRP']);
+  const options: prompt.Option<string | null>[] = [
+    { label: 'None', value: null, hint: 'Do not set any flag' },
+    { label: 'DestTag', value: 'requiredesttag', hint: `Turn ${existingFlags.requireDestinationTag ? 'OFF' : 'ON'} destination tag requirement` },
+    { label: 'RequireAuth', value: 'requireauth', hint: `Turn ${existingFlags.requireAuthorization ? 'OFF' : 'ON'} authorization requirement` },
+    existingFlags.disallowIncomingXRP
+      ? { label: 'AllowXRP', value: 'allowxrp', hint: 'Turn ON XRP allowance' }
+      : { label: 'DisallowXRP', value: 'allowxrp', hint: 'Turn OFF XRP allowance' },
+    // Any other flags
+    ...Object.keys(xrpl.AccountSetTfFlags)
+      .filter((key) => !parseInt(key) && !toggleableFlags.has(key))
+      .map((key) => ({ label: key.slice(2), value: key }))
+  ];
+  
   let ex;
   do {
     const flags = await prompt.multiselect<string | null>({
       message: 'Select a tx flag to set:\n(Space = select, Enter = continue)',
-      options: [].concat(
-        Object.keys(xrpl.AccountSetTfFlags)
-          .filter((key) => !parseInt(key))
-          .map((key) => ({ label: key.slice(2), value: key })),
-        [{ label: 'None', value: null, hint: 'Do not set any flag' }]
-      ),
+      options
     });
     if (prompt.isCancel(flags)) {
       throw new UserCancelled();
@@ -362,19 +371,41 @@ export async function promptXrpFlag(): Promise<string | null> {
       prompt.log.error('Cannot select "None" with other flags.');
     }
 
-    const flagsSet = new Set(flags);
-    ex = flagsSet.has('tfRequireDestTag') && flagsSet.has('tfOptionalDestTag')
-      || flagsSet.has('tfRequireAuth') && flagsSet.has('tfOptionalAuth')
-      || flagsSet.has('tfDisallowXRP') && flagsSet.has('tfAllowXRP');
-
-    if (ex) {
-      prompt.log.error('Cannot select conflicting flags (e.g. tfRequireDestTag and tfOptionalDestTag). Please select again.');
-    }
-
     if (!ex) {
       if (flags[0] === null) {
         return null;
       }
+
+      const reqDestTagIdx = flags.indexOf('requiredesttag');
+      if (reqDestTagIdx > -1) {
+        flags.splice(reqDestTagIdx, 1);
+        if (existingFlags.requireDestinationTag) {
+          flags.push('tfOptionalDestTag');
+        } else {
+          flags.push('tfRequireDestTag');
+        }
+      }
+
+      const reqAuthIdx = flags.indexOf('requireauth');
+      if (reqAuthIdx > -1) {
+        flags.splice(reqAuthIdx, 1);
+        if (existingFlags.requireAuthorization) {
+          flags.push('tfOptionalAuth');
+        } else {
+          flags.push('tfRequireAuth');
+        }
+      }
+
+      const allowXrpIdx = flags.indexOf('allowxrp');
+      if (allowXrpIdx > -1) {
+        flags.splice(allowXrpIdx, 1);
+        if (existingFlags.disallowIncomingXRP) {
+          flags.push('tfAllowXRP');
+        } else {
+          flags.push('tfDisallowXRP');
+        }
+      }
+
       return flags.join(',');
     }
   } while (ex);
