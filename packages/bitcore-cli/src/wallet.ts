@@ -714,7 +714,7 @@ export class Wallet implements IWallet {
 
   async getAccountFlags() {
     if (!this.isXrp()) {
-      return;
+      throw new Error('Account flags are only available for XRP wallets');
     }
     if (!this.client) {
       await this.getClient({ mustExist: true });
