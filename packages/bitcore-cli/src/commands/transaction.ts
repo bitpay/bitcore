@@ -1,11 +1,12 @@
 import os from 'os';
 import { Utils as BWCUtils, type Txp } from '@bitpay-labs/bitcore-wallet-client'; 
-import { Utils as CWCUtils, Validation, xrpl } from '@bitpay-labs/crypto-wallet-core';
+import { Validation } from '@bitpay-labs/crypto-wallet-core';
 import * as prompt from '@clack/prompts';
 import { UserCancelled } from '../errors';
 import { Utils } from '../utils';
 import type { CommonArgs } from '../../types/cli';
 import type { ITokenObj } from '../../types/wallet';
+import type { OptionValues } from 'commander';
 
 export interface ITransactionArgs {
   to?: string;
@@ -23,13 +24,10 @@ export interface ITransactionArgs {
   destinationTag?: string;
 };
 
-function flagsDisplay() {
-  const flags = Object.keys(xrpl.AccountSetTfFlags).filter(k => isNaN(parseInt(k))); // filter out numeric keys
-  return 'Possible flags are: ' + flags.join(', ');
-}
 
-export function command(args: CommonArgs<ITransactionArgs & { isExtension?: boolean }>) {
-  const { program, opts: { isExtension } = {} } = args;
+export function command(args: CommonArgs<ITransactionArgs & { extensionOpts?: { excludedOptions?: Set<string>; parse: (opts: OptionValues) => void } }>) {
+  const { program, opts: { extensionOpts } = {} } = args;
+  const isExtension = !!extensionOpts;
 
   if (!isExtension) {
     program
@@ -37,31 +35,44 @@ export function command(args: CommonArgs<ITransactionArgs & { isExtension?: bool
       .usage('<walletName> --command transaction [options]');
   }
   program
-    .optionsGroup('Transaction Options')
-    .option('--to <address>', 'Recipient address')
-    .option('--amount <amount>', 'Amount to send (in BTC/ETH/etc). Use "max" to send all available balance')
-    .option('--fee <fee>', 'Fee to use')
-    .option('--feeRate <rate>', 'Custom fee rate in sats/b, gwei, drops, etc.')
-    .option('--feeLevel <level>', 'Fee level to use (e.g. low, normal, high)', 'normal')
-    .option('--nonce <nonce>', 'Nonce for the transaction (optional, for chains that require it)')
-    .option('--token <token>', 'Token to get the balance for (e.g. USDC)')
-    .option('--tokenAddress <address>', 'Token contract address to get the balance for')
-    .option('--note <note>', 'Note for the transaction')
-    .option('--flags <flags>', '(XRP only) Comma-delimited list of account transaction flag(s) to set. ' + flagsDisplay())
-    .option('--tag <tag>', '(XRP only) Destination tag for the transaction')
-    .option('--dry-run', 'Only create the transaction proposal without broadcasting')
-    .parse(process.argv);
+    .optionsGroup('Transaction Options');
+  const options = [
+    { option: '--to <address>', help: 'Recipient address' },
+    { option: '--amount <amount>', help: 'Amount to send (in BTC/ETH/etc). Use "max" to send all available balance' },
+    { option: '--fee <fee>', help: 'Fee to use' },
+    { option: '--feeRate <rate>', help: 'Custom fee rate in sats/b, gwei, drops, etc.' },
+    { option: '--feeLevel <level>', help: 'Fee level to use (e.g. low, normal, high)', default: 'normal' },
+    { option: '--nonce <nonce>', help: 'Nonce for the transaction (optional, for chains that require it)' },
+    { option: '--token <token>', help: 'Token to send (e.g. USDC). This is a convenient way to specify the token without needing the contract address, but only works for well-known, common tokens. Use --tokenAddress for more obscure tokens.' },
+    { option: '--tokenAddress <address>', help: 'Token contract address to send (takes precedence over --token)' },
+    { option: '--note <note>', help: 'Note for the transaction' },
+    { option: '--tag <tag>', help: '(XRP only) Destination tag for the transaction' },
+    { option: '--dry-run', help: 'Only create the transaction proposal without broadcasting' },
+  ];
+
+  for (const { option, help, default: defaultValue } of options) {
+    if (extensionOpts?.excludedOptions?.has(option.split(' ')[0])) {
+      continue; // skip it
+    }
+    program.option(option, help, defaultValue);
+  }
+
+  program.parse(process.argv);
   
   const opts = program.opts();
   if (opts.help) {
     program.help();
   }
 
-  if (!opts.to) {
-    throw new Error('Recipient address (--to) is required');
-  }
-  if (!parseFloat(opts.amount) && opts.amount !== 'max') {
-    throw new Error('Missing or invalid amount (--amount) specified');
+  if (!isExtension) {
+    // Don't require `--to` and `--amount` if this command is being called from an extension
+    // since the extension may provide the address and amount in a different way (e.g. flags management extension)  
+    if (!opts.to) {
+      throw new Error('Recipient address (--to) is required');
+    }
+    if (!parseFloat(opts.amount) && opts.amount !== 'max') {
+      throw new Error('Missing or invalid amount (--amount) specified');
+    }
   }
   if (opts.fee && !parseFloat(opts.fee)) {
     throw new Error('Invalid fee specified.');
@@ -69,19 +80,14 @@ export function command(args: CommonArgs<ITransactionArgs & { isExtension?: bool
   if (opts.feeRate && !parseFloat(opts.feeRate)) {
     throw new Error('Invalid fee rate specified.');
   }
-  if (opts.flags) {
-    const flags = opts.flags.split(',').map(f => CWCUtils.normalizeXrpFlag(f.trim()));
-    if (flags.some(f => !f)) {
-      throw new Error('Invalid flag(s) specified. ' + flagsDisplay());
-    }
-    opts.flags = flags.join(',');
-  }
   if (opts.tag) {
     if (isNaN(parseInt(opts.tag)) || parseInt(opts.tag) < 0) {
       throw new Error('Invalid destination tag specified. It should be a non-negative integer.');
     }
     opts.destinationTag = opts.tag;
   }
+
+  extensionOpts?.parse?.(opts);
 
   return opts;
 }
