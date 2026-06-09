@@ -306,4 +306,4 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
       }
     });
   });
-};
+}
