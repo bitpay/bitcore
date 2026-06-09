@@ -70,7 +70,6 @@ module.exports.config = {
       args: [
         // Run headless by default.  Override locally with WDIO_HEADED=1.
         ...(process.env.WDIO_HEADED === '1' ? [] : ['--headless=new']),
-        '--disable-gpu',
         '--disable-web-security',
         '--no-sandbox',
         '--disable-dev-shm-usage',
