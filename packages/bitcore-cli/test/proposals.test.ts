@@ -39,32 +39,36 @@ describe('Proposals', function() {
     const io = new Transform({
       encoding: 'utf-8',
       transform(chunk, encoding, respond) {
-        chunk = chunk.toString();
-        if (checkpoints.has(step)) {
-          checkpointOutput += chunk;
-        } else {
-          checkpointOutput = '';
-        }
-        // Uncomment to see CLI output during test
-        // process.stdout.write(chunk);
-
-        const isStep = chunk.endsWith(OUTPUT_END_SEQ);
-        if (isStep) {
-          for (const input of stepInputs[step]) {
-            this.push(input);
-          }
+        try {
+          chunk = chunk.toString();
           if (checkpoints.has(step)) {
-            // Assert proposals output contains expected info for no pending proposals
-            assert.match(checkpointOutput, /No more proposals/);
+            checkpointOutput += chunk;
+          } else {
+            checkpointOutput = '';
           }
-          step++;
-        } else if (chunk.includes('Error:')) {
-          return respond(chunk);
+          // Uncomment to see CLI output during test
+          // process.stdout.write(chunk);
+
+          const isStep = chunk.endsWith(OUTPUT_END_SEQ);
+          if (isStep) {
+            for (const input of stepInputs[step]) {
+              this.push(input);
+            }
+            if (checkpoints.has(step)) {
+              // Assert proposals output contains expected info for no pending proposals
+              assert.match(checkpointOutput, /No more proposals/);
+            }
+            step++;
+          } else if (chunk.includes('Error:')) {
+            return respond(chunk);
+          }
+          if (chunk.includes('👋')) {
+            child.stdin.end(); // send EOF to child so it can exit cleanly
+          }
+          respond();
+        } catch (e) {
+          respond(e);
         }
-        if (chunk.includes('👋')) {
-          child.stdin.end(); // send EOF to child so it can exit cleanly
-        }
-        respond();
       }
     });
     const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts], CLI_OPTS);
@@ -103,54 +107,58 @@ describe('Proposals', function() {
       const io = new Transform({
         encoding: 'utf-8',
         transform(chunk, encoding, respond) {
-          chunk = chunk.toString();
-          if (checkpoints.has(step)) {
-            checkpointOutput += chunk;
-          } else {
-            checkpointOutput = '';
-          }
-          // Uncomment to see CLI output during test
-          // process.stdout.write(chunk);
+          try {
+            chunk = chunk.toString();
+            if (checkpoints.has(step)) {
+              checkpointOutput += chunk;
+            } else {
+              checkpointOutput = '';
+            }
+            // Uncomment to see CLI output during test
+            // process.stdout.write(chunk);
 
-          const isStep = chunk.endsWith(OUTPUT_END_SEQ);
-          if (isStep) {
-            for (const input of stepInputs[step]) {
-              this.push(input);
+            const isStep = chunk.endsWith(OUTPUT_END_SEQ);
+            if (isStep) {
+              for (const input of stepInputs[step]) {
+                this.push(input);
+              }
+              switch (step) {
+                default:
+                  break; // no-op for non-checkpoint steps
+                case Array.from(checkpoints)[0]:
+                  // Assert there's an indication of a pending proposal in main menu
+                  assert.ok(checkpointOutput.includes(`Proposals${Utils.colorText(' (1)', 'yellow')}`));
+                  break;
+                case Array.from(checkpoints)[1]:
+                  const lines = checkpointOutput.split('\n');
+                  const startIdx = lines.findIndex(l => l.includes('ID: e43b0fe2-c2d2-43c2-afaa-7fb28f212230 '));
+                  assert.ok(startIdx > -1);
+                  assert.ok(lines[startIdx + 2].includes('Chain: BTC'));
+                  assert.ok(lines[startIdx + 3].includes('Network: Testnet'));
+                  assert.ok(lines[startIdx + 4].includes('Amount: 0.123 BTC'));
+                  assert.ok(lines[startIdx + 5].includes('Fee: 0.00000141 BTC'));
+                  assert.ok(lines[startIdx + 6].includes('Total Amount: 0.12300141 BTC'));
+                  assert.ok(lines[startIdx + 7].includes('Fee Rate: 1 sat/B'));
+                  assert.ok(lines[startIdx + 8].includes('Status: pending'));
+                  assert.ok(lines[startIdx + 9].includes('Creator: kjoseph'));
+                  assert.ok(lines[startIdx + 10].includes(`Created: ${Utils.formatDate(proposalData.btcSingleSigProposal.createdOn * 1000)}`));
+                  assert.ok(lines[startIdx + 11].includes('---------------------------'));
+                  assert.ok(lines[startIdx + 12].includes('Recipients:'));
+                  assert.ok(lines[startIdx + 13].includes('→ tb1qdq929kz9r7adapvruevgz0nkkqd3cpfv278ryd: 0.123 BTC'));
+                  assert.ok(lines[startIdx + 14].includes('↲ tb1q9nh7nzrcgzm96r4ms0mm9xvl3whfrucv07ksp2 (change - m/1/0)'));
+                  assert.ok(lines[startIdx + 15].includes('---------------------------'));
+                  assert.ok(lines[startIdx + 16].includes(Utils.colorText('Missing Signatures: 1', 'yellow')));
+                  break;
+              }
+              step++;
             }
-            switch (step) {
-              default:
-                break; // no-op for non-checkpoint steps
-              case Array.from(checkpoints)[0]:
-                // Assert there's an indication of a pending proposal in main menu
-                assert.ok(checkpointOutput.includes(`Proposals${Utils.colorText(' (1)', 'yellow')}`));
-                break;
-              case Array.from(checkpoints)[1]:
-                const lines = checkpointOutput.split('\n');
-                const startIdx = lines.findIndex(l => l.includes('ID: e43b0fe2-c2d2-43c2-afaa-7fb28f212230 '));
-                assert.ok(startIdx > -1);
-                assert.ok(lines[startIdx + 2].includes('Chain: BTC'));
-                assert.ok(lines[startIdx + 3].includes('Network: Testnet'));
-                assert.ok(lines[startIdx + 4].includes('Amount: 0.123 BTC'));
-                assert.ok(lines[startIdx + 5].includes('Fee: 0.00000141 BTC'));
-                assert.ok(lines[startIdx + 6].includes('Total Amount: 0.12300141 BTC'));
-                assert.ok(lines[startIdx + 7].includes('Fee Rate: 1 sat/B'));
-                assert.ok(lines[startIdx + 8].includes('Status: pending'));
-                assert.ok(lines[startIdx + 9].includes('Creator: kjoseph'));
-                assert.ok(lines[startIdx + 10].includes(`Created: ${Utils.formatDate(proposalData.btcSingleSigProposal.createdOn * 1000)}`));
-                assert.ok(lines[startIdx + 11].includes('---------------------------'));
-                assert.ok(lines[startIdx + 12].includes('Recipients:'));
-                assert.ok(lines[startIdx + 13].includes('→ tb1qdq929kz9r7adapvruevgz0nkkqd3cpfv278ryd: 0.123 BTC'));
-                assert.ok(lines[startIdx + 14].includes('↲ tb1q9nh7nzrcgzm96r4ms0mm9xvl3whfrucv07ksp2 (change - m/1/0)'));
-                assert.ok(lines[startIdx + 15].includes('---------------------------'));
-                assert.ok(lines[startIdx + 16].includes(Utils.colorText('Missing Signatures: 1', 'yellow')));
-                break;
+            if (chunk.includes('👋')) {
+              child.stdin.end(); // send EOF to child so it can exit cleanly
             }
-            step++;
+            respond();
+          } catch (e) {
+            respond(e);
           }
-          if (chunk.includes('👋')) {
-            child.stdin.end(); // send EOF to child so it can exit cleanly
-          }
-          respond();
         }
       });
       const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts], CLI_OPTS);
@@ -185,38 +193,42 @@ describe('Proposals', function() {
       const io = new Transform({
         encoding: 'utf-8',
         transform(chunk, encoding, respond) {
-          chunk = chunk.toString();
-          if (checkpoints.has(step)) {
-            checkpointOutput += chunk;
-          } else {
-            checkpointOutput = '';
-          }
-          // Uncomment to see CLI output during test
-          // process.stdout.write(chunk);
+          try {
+            chunk = chunk.toString();
+            if (checkpoints.has(step)) {
+              checkpointOutput += chunk;
+            } else {
+              checkpointOutput = '';
+            }
+            // Uncomment to see CLI output during test
+            // process.stdout.write(chunk);
 
-          const isStep = chunk.endsWith(OUTPUT_END_SEQ);
-          if (isStep) {
-            for (const input of stepInputs[step]) {
-              this.push(input);
+            const isStep = chunk.endsWith(OUTPUT_END_SEQ);
+            if (isStep) {
+              for (const input of stepInputs[step]) {
+                this.push(input);
+              }
+              switch (step) {
+                default:
+                  break; // no-op for non-checkpoint steps
+                case Array.from(checkpoints)[0]:
+                  // Assert there's an indication of a pending proposal in main menu
+                  // eslint-disable-next-line no-control-regex
+                  assert.match(checkpointOutput, /Proposals\x1B\[33m \(1\)\x1B\[39m/);
+                  break;
+                case Array.from(checkpoints)[1]:
+                  assert.ok(checkpointOutput.includes(`Broadcasted txid: ${Utils.colorText('5ba5df9de6c7f6043de8ade09c2dab08a1fb60724320f8cb4f00c9df2ec73035', 'green')}`));
+                  break;
+              }
+              step++;
             }
-            switch (step) {
-              default:
-                break; // no-op for non-checkpoint steps
-              case Array.from(checkpoints)[0]:
-                // Assert there's an indication of a pending proposal in main menu
-                // eslint-disable-next-line no-control-regex
-                assert.match(checkpointOutput, /Proposals\x1B\[33m \(1\)\x1B\[39m/);
-                break;
-              case Array.from(checkpoints)[1]:
-                assert.ok(checkpointOutput.includes(`Broadcasted txid: ${Utils.colorText('5ba5df9de6c7f6043de8ade09c2dab08a1fb60724320f8cb4f00c9df2ec73035', 'green')}`));
-                break;
+            if (chunk.includes('👋')) {
+              child.stdin.end(); // send EOF to child so it can exit cleanly
             }
-            step++;
+            respond();
+          } catch (e) {
+            respond(e);
           }
-          if (chunk.includes('👋')) {
-            child.stdin.end(); // send EOF to child so it can exit cleanly
-          }
-          respond();
         }
       });
       const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts], CLI_OPTS);
@@ -257,58 +269,62 @@ describe('Proposals', function() {
       const io = new Transform({
         encoding: 'utf-8',
         transform(chunk, encoding, respond) {
-          chunk = chunk.toString();
-          if (checkpoints.has(step)) {
-            checkpointOutput += chunk;
-          } else {
-            checkpointOutput = '';
-          }
-          // Uncomment to see CLI output during test
-          // process.stdout.write(chunk);
+          try {
+            chunk = chunk.toString();
+            if (checkpoints.has(step)) {
+              checkpointOutput += chunk;
+            } else {
+              checkpointOutput = '';
+            }
+            // Uncomment to see CLI output during test
+            // process.stdout.write(chunk);
 
-          const isStep = chunk.endsWith(OUTPUT_END_SEQ);
-          if (isStep) {
-            for (const input of stepInputs[step]) {
-              this.push(input);
+            const isStep = chunk.endsWith(OUTPUT_END_SEQ);
+            if (isStep) {
+              for (const input of stepInputs[step]) {
+                this.push(input);
+              }
+              switch (step) {
+                default:
+                  break; // no-op for non-checkpoint steps
+                case Array.from(checkpoints)[0]:
+                  // Assert there's an indication of a pending proposal in main menu
+                  // eslint-disable-next-line no-control-regex
+                  assert.match(checkpointOutput, /Proposals\x1B\[33m \(1\)\x1B\[39m/);
+                  break;
+                case Array.from(checkpoints)[1]:
+                  assert.match(checkpointOutput, /Enter rejection reason:/);
+                  break;
+                case Array.from(checkpoints)[2]:
+                  const lines = checkpointOutput.split('\n');
+                  const startIdx = lines.findIndex(l => l.includes('◆  Page Controls:'));
+                  assert.ok(startIdx > -1);
+                  assert.ok(lines[startIdx + 1].includes('r  Print Raw Object'));
+                  assert.ok(lines[startIdx + 2].includes('e  Export'));
+                  assert.ok(lines[startIdx + 3].includes('x  Close'));
+                  assert.ok(lines.findIndex(l => l.includes('n  Next Page')) === -1);
+                  assert.ok(lines.findIndex(l => l.includes('p  Previous Page')) === -1);
+                  assert.ok(lines.findIndex(l => l.includes('a  Accept')) === -1);
+                  assert.ok(lines.findIndex(l => l.includes('j  Reject')) === -1);
+                  assert.ok(lines.findIndex(l => l.includes('d  Delete')) === -1);
+                  break;
+                case Array.from(checkpoints)[3]:
+                  // No pending proposals indicator
+                  assert.match(checkpointOutput, /Proposals \(Get pending transaction proposals\)/);
+                  break;
+                case Array.from(checkpoints)[4]:
+                  assert.match(checkpointOutput, /No more proposals/);
+                  break;
+              }
+              step++;
             }
-            switch (step) {
-              default:
-                break; // no-op for non-checkpoint steps
-              case Array.from(checkpoints)[0]:
-                // Assert there's an indication of a pending proposal in main menu
-                // eslint-disable-next-line no-control-regex
-                assert.match(checkpointOutput, /Proposals\x1B\[33m \(1\)\x1B\[39m/);
-                break;
-              case Array.from(checkpoints)[1]:
-                assert.match(checkpointOutput, /Enter rejection reason:/);
-                break;
-              case Array.from(checkpoints)[2]:
-                const lines = checkpointOutput.split('\n');
-                const startIdx = lines.findIndex(l => l.includes('◆  Page Controls:'));
-                assert.ok(startIdx > -1);
-                assert.ok(lines[startIdx + 1].includes('r  Print Raw Object'));
-                assert.ok(lines[startIdx + 2].includes('e  Export'));
-                assert.ok(lines[startIdx + 3].includes('x  Close'));
-                assert.ok(lines.findIndex(l => l.includes('n  Next Page')) === -1);
-                assert.ok(lines.findIndex(l => l.includes('p  Previous Page')) === -1);
-                assert.ok(lines.findIndex(l => l.includes('a  Accept')) === -1);
-                assert.ok(lines.findIndex(l => l.includes('j  Reject')) === -1);
-                assert.ok(lines.findIndex(l => l.includes('d  Delete')) === -1);
-                break;
-              case Array.from(checkpoints)[3]:
-                // No pending proposals indicator
-                assert.match(checkpointOutput, /Proposals \(Get pending transaction proposals\)/);
-                break;
-              case Array.from(checkpoints)[4]:
-                assert.match(checkpointOutput, /No more proposals/);
-                break;
+            if (chunk.includes('👋')) {
+              child.stdin.end(); // send EOF to child so it can exit cleanly
             }
-            step++;
+            respond();
+          } catch (e) {
+            respond(e);
           }
-          if (chunk.includes('👋')) {
-            child.stdin.end(); // send EOF to child so it can exit cleanly
-          }
-          respond();
         }
       });
       const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts], CLI_OPTS);
@@ -349,42 +365,46 @@ describe('Proposals', function() {
       const io = new Transform({
         encoding: 'utf-8',
         transform(chunk, encoding, respond) {
-          chunk = chunk.toString();
-          if (checkpoints.has(step)) {
-            checkpointOutput += chunk;
-          } else {
-            checkpointOutput = '';
-          }
-          // Uncomment to see CLI output during test
-          // process.stdout.write(chunk);
+          try {
+            chunk = chunk.toString();
+            if (checkpoints.has(step)) {
+              checkpointOutput += chunk;
+            } else {
+              checkpointOutput = '';
+            }
+            // Uncomment to see CLI output during test
+            // process.stdout.write(chunk);
 
-          const isStep = chunk.endsWith(OUTPUT_END_SEQ);
-          if (isStep) {
-            for (const input of stepInputs[step]) {
-              this.push(input);
+            const isStep = chunk.endsWith(OUTPUT_END_SEQ);
+            if (isStep) {
+              for (const input of stepInputs[step]) {
+                this.push(input);
+              }
+              switch (step) {
+                default:
+                  break; // no-op for non-checkpoint steps
+                case Array.from(checkpoints)[0]:
+                  // Assert there's an indication of a pending proposal in main menu
+                  // eslint-disable-next-line no-control-regex
+                  assert.match(checkpointOutput, /Proposals\x1B\[33m \(1\)\x1B\[39m/);
+                  break;
+                case Array.from(checkpoints)[1]:
+                case Array.from(checkpoints)[2]:
+                  assert.match(checkpointOutput, /Are you sure you want to delete proposal/);
+                  break;
+                case Array.from(checkpoints)[3]:
+                  assert.match(checkpointOutput, /Proposal e43b0fe2-c2d2-43c2-afaa-7fb28f212230 deleted/);
+                  break;
+              }
+              step++;
             }
-            switch (step) {
-              default:
-                break; // no-op for non-checkpoint steps
-              case Array.from(checkpoints)[0]:
-                // Assert there's an indication of a pending proposal in main menu
-                // eslint-disable-next-line no-control-regex
-                assert.match(checkpointOutput, /Proposals\x1B\[33m \(1\)\x1B\[39m/);
-                break;
-              case Array.from(checkpoints)[1]:
-              case Array.from(checkpoints)[2]:
-                assert.match(checkpointOutput, /Are you sure you want to delete proposal/);
-                break;
-              case Array.from(checkpoints)[3]:
-                assert.match(checkpointOutput, /Proposal e43b0fe2-c2d2-43c2-afaa-7fb28f212230 deleted/);
-                break;
+            if (chunk.includes('👋')) {
+              child.stdin.end(); // send EOF to child so it can exit cleanly
             }
-            step++;
+            respond();
+          } catch (e) {
+            respond(e);
           }
-          if (chunk.includes('👋')) {
-            child.stdin.end(); // send EOF to child so it can exit cleanly
-          }
-          respond();
         }
       });
       const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts], CLI_OPTS);
@@ -434,68 +454,72 @@ describe('Proposals', function() {
           const io = new Transform({
             encoding: 'utf-8',
             transform(chunk, encoding, respond) {
-              chunk = chunk.toString();
-              if (checkpoints.has(step)) {
-                checkpointOutput += chunk;
-              } else {
-                checkpointOutput = '';
-              }
-              // Uncomment to see CLI output during test
-              // process.stdout.write(chunk);
+              try {
+                chunk = chunk.toString();
+                if (checkpoints.has(step)) {
+                  checkpointOutput += chunk;
+                } else {
+                  checkpointOutput = '';
+                }
+                // Uncomment to see CLI output during test
+                // process.stdout.write(chunk);
 
-              const isStep = chunk.endsWith(OUTPUT_END_SEQ);
-              if (isStep) {
-                for (const input of stepInputs[step]) {
-                  this.push(input);
+                const isStep = chunk.endsWith(OUTPUT_END_SEQ);
+                if (isStep) {
+                  for (const input of stepInputs[step]) {
+                    this.push(input);
+                  }
+                  const lines = checkpointOutput.split('\n');
+                  switch (step) {
+                    default:
+                      break; // no-op for non-checkpoint steps
+                    case Array.from(checkpoints)[0]:
+                      // Assert there's an indication of a pending proposal in main menu
+                      // eslint-disable-next-line no-control-regex
+                      assert.match(checkpointOutput, /Proposals\x1B\[33m \(2\)\x1B\[39m/);
+                      checkpointOutput = ''; // reset output to avoid false positives in next checkpoints
+                      break;
+                    case Array.from(checkpoints)[1]:
+                    case Array.from(checkpoints)[3]:
+                    case Array.from(checkpoints)[6]:
+                      assert.match(checkpointOutput, /ID: e43b0fe2-c2d2-43c2-afaa-7fb28f212230 /);
+                      assert.doesNotMatch(checkpointOutput, /ID: 2d7cb6e5-68b2-4791-bf9a-045bf0d34e06 /);
+                      const startIdx = lines.findIndex(l => l.includes('◆  Page Controls:'));
+                      assert.ok(startIdx > -1);
+                      assert.ok(lines[startIdx + 1].includes('n  Next Page'));
+                      assert.doesNotMatch(checkpointOutput, /p {2}Previous Page/);
+                      if (step < Array.from(checkpoints)[6]) {
+                        assert.ok(checkpointOutput.includes('Status: pending'));
+                      } else {
+                        assert.ok(checkpointOutput.includes('Status: deleted'));
+                      }
+                      checkpointOutput = ''; // reset output to avoid false positives in next checkpoints
+                      break;
+                    case Array.from(checkpoints)[2]:
+                      assert.doesNotMatch(checkpointOutput, /ID: e43b0fe2-c2d2-43c2-afaa-7fb28f212230 /);
+                      assert.match(checkpointOutput, /ID: 2d7cb6e5-68b2-4791-bf9a-045bf0d34e06 /);
+                      assert.ok(checkpointOutput.includes('p  Previous Page'));
+                      assert.doesNotMatch(checkpointOutput, /p {2}Next Page/);
+                      checkpointOutput = ''; // reset output to avoid false positives in next checkpoints
+                      break;
+                    case Array.from(checkpoints)[4]:
+                      assert.match(checkpointOutput, /Are you sure you want to delete proposal/);
+                      checkpointOutput = ''; // reset output to avoid false positives in next checkpoints
+                      break;
+                    case Array.from(checkpoints)[5]:
+                      assert.ok(checkpointOutput.includes(`Broadcasted txid: ${Utils.colorText('5ba5df9de6c7f6043de8ade09c2dab08a1fb60724320f8cb4f00c9df2ec73035', 'green')}`));
+                      checkpointOutput = ''; // reset output to avoid false positives in next checkpoints
+                      break;
+                  }
+                  step++;
                 }
-                const lines = checkpointOutput.split('\n');
-                switch (step) {
-                  default:
-                    break; // no-op for non-checkpoint steps
-                  case Array.from(checkpoints)[0]:
-                    // Assert there's an indication of a pending proposal in main menu
-                    // eslint-disable-next-line no-control-regex
-                    assert.match(checkpointOutput, /Proposals\x1B\[33m \(2\)\x1B\[39m/);
-                    checkpointOutput = ''; // reset output to avoid false positives in next checkpoints
-                    break;
-                  case Array.from(checkpoints)[1]:
-                  case Array.from(checkpoints)[3]:
-                  case Array.from(checkpoints)[6]:
-                    assert.match(checkpointOutput, /ID: e43b0fe2-c2d2-43c2-afaa-7fb28f212230 /);
-                    assert.doesNotMatch(checkpointOutput, /ID: 2d7cb6e5-68b2-4791-bf9a-045bf0d34e06 /);
-                    const startIdx = lines.findIndex(l => l.includes('◆  Page Controls:'));
-                    assert.ok(startIdx > -1);
-                    assert.ok(lines[startIdx + 1].includes('n  Next Page'));
-                    assert.doesNotMatch(checkpointOutput, /p {2}Previous Page/);
-                    if (step < Array.from(checkpoints)[6]) {
-                      assert.ok(checkpointOutput.includes('Status: pending'));
-                    } else {
-                      assert.ok(checkpointOutput.includes('Status: deleted'));
-                    }
-                    checkpointOutput = ''; // reset output to avoid false positives in next checkpoints
-                    break;
-                  case Array.from(checkpoints)[2]:
-                    assert.doesNotMatch(checkpointOutput, /ID: e43b0fe2-c2d2-43c2-afaa-7fb28f212230 /);
-                    assert.match(checkpointOutput, /ID: 2d7cb6e5-68b2-4791-bf9a-045bf0d34e06 /);
-                    assert.ok(checkpointOutput.includes('p  Previous Page'));
-                    assert.doesNotMatch(checkpointOutput, /p {2}Next Page/);
-                    checkpointOutput = ''; // reset output to avoid false positives in next checkpoints
-                    break;
-                  case Array.from(checkpoints)[4]:
-                    assert.match(checkpointOutput, /Are you sure you want to delete proposal/);
-                    checkpointOutput = ''; // reset output to avoid false positives in next checkpoints
-                    break;
-                  case Array.from(checkpoints)[5]:
-                    assert.ok(checkpointOutput.includes(`Broadcasted txid: ${Utils.colorText('5ba5df9de6c7f6043de8ade09c2dab08a1fb60724320f8cb4f00c9df2ec73035', 'green')}`));
-                    checkpointOutput = ''; // reset output to avoid false positives in next checkpoints
-                    break;
+                if (chunk.includes('👋')) {
+                  child.stdin.end(); // send EOF to child so it can exit cleanly
                 }
-                step++;
+                respond();
+              } catch (e) {
+                respond(e);
               }
-              if (chunk.includes('👋')) {
-                child.stdin.end(); // send EOF to child so it can exit cleanly
-              }
-              respond();
             }
           });
           const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts], CLI_OPTS);
