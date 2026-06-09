@@ -51,7 +51,7 @@ export class Utils {
       '再见 (Zàijiàn)!', // Chinese/Mandarin
     ];
     const randomMessage = funMessages[Math.floor(Math.random() * funMessages.length)];
-    console.log('👋 ' + randomMessage);
+    console.log('👋 ' + randomMessage + '\x1b[0m'); // Reset all console formatting after goodbye message
   }
 
   static getWalletFileName(walletName, dir) {
