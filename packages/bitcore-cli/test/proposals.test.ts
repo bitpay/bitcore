@@ -296,7 +296,7 @@ describe('Proposals', function() {
                   assert.match(checkpointOutput, /Enter rejection reason:/);
                   break;
                 case Array.from(checkpoints)[2]:
-                  const lines = checkpointOutput.split('\n');
+                  const lines = helpers.decolor(checkpointOutput).split('\n');
                   const startIdx = lines.findIndex(l => l.includes('◆  Page Controls:'));
                   assert.ok(startIdx > -1, `Could not find page controls in output: ${checkpointOutput}`);
                   assert.ok(lines[startIdx + 1].includes('r  Print Raw Object'), `Expected "r  Print Raw Object" in page controls, got: ${lines[startIdx + 1]}`);
@@ -482,11 +482,12 @@ describe('Proposals', function() {
                     case Array.from(checkpoints)[1]:
                     case Array.from(checkpoints)[3]:
                     case Array.from(checkpoints)[6]:
+                      checkpointOutput = helpers.decolor(checkpointOutput);
                       assert.match(checkpointOutput, /ID: e43b0fe2-c2d2-43c2-afaa-7fb28f212230 /);
                       assert.doesNotMatch(checkpointOutput, /ID: 2d7cb6e5-68b2-4791-bf9a-045bf0d34e06 /);
-                      const startIdx = lines.findIndex(l => l.includes('◆  Page Controls:'));
+                      const startIdx = lines.findIndex(l => helpers.decolor(l).includes('◆  Page Controls:'));
                       assert.ok(startIdx > -1);
-                      assert.ok(lines[startIdx + 1].includes('n  Next Page'));
+                      assert.ok(helpers.decolor(lines[startIdx + 1]).includes('n  Next Page'));
                       assert.doesNotMatch(checkpointOutput, /p {2}Previous Page/);
                       if (step < Array.from(checkpoints)[6]) {
                         assert.ok(checkpointOutput.includes('Status: pending'));
@@ -496,6 +497,7 @@ describe('Proposals', function() {
                       checkpointOutput = ''; // reset output to avoid false positives in next checkpoints
                       break;
                     case Array.from(checkpoints)[2]:
+                      checkpointOutput = helpers.decolor(checkpointOutput);
                       assert.doesNotMatch(checkpointOutput, /ID: e43b0fe2-c2d2-43c2-afaa-7fb28f212230 /);
                       assert.match(checkpointOutput, /ID: 2d7cb6e5-68b2-4791-bf9a-045bf0d34e06 /);
                       assert.ok(checkpointOutput.includes('p  Previous Page'));
