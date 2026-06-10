@@ -310,24 +310,25 @@ export class Storage {
   }
 
   // TODO: should be done client-side
-  _completeTxData(walletId, txs, cb) {
+  _completeTxData(walletId: string, txs: TxProposal | TxProposal[], cb: (err?: any, txs?: TxProposal | TxProposal[]) => void) {
     this.fetchWallet(walletId, (err, wallet) => {
       if (err) return cb(err);
-      _.each([].concat(txs), tx => {
+      for (const tx of [].concat(txs) as TxProposal[]) {
         tx.derivationStrategy = wallet.derivationStrategy || 'BIP45';
         tx.creatorName = wallet.getCopayer(tx.creatorId).name;
-        _.each(tx.actions, action => {
+        for (const action of tx.actions) {
           action.copayerName = wallet.getCopayer(action.copayerId).name;
-        });
+        }
 
-        if (tx.status == 'accepted') tx.raw = tx.getRawTx();
-      });
+        if (tx.status == 'accepted')
+          tx.raw = tx.getRawTx();
+      }
       return cb(null, txs);
     });
   }
 
   // TODO: remove walletId from signature
-  fetchTx(walletId, txProposalId, cb) {
+  fetchTx(walletId: string, txProposalId: string, cb: (err?: any, tx?: TxProposal) => void) {
     if (!this.db) return cb();
 
     this.db.collection(collections.TXS).findOne(
@@ -385,7 +386,7 @@ export class Storage {
   }
 
   fetchEthPendingTxs(multisigTxpsInfo) {
-    return new Promise((resolve, reject) => {
+    return new Promise<TxProposal[]>((resolve, reject) => {
       this.db
         .collection(collections.TXS)
         .find({
@@ -1286,7 +1287,7 @@ export class Storage {
       });
   }
 
-  fetchTxNote(walletId, txid, cb) {
+  fetchTxNote(walletId, txid, cb: (err?: any, note?: TxNote) => void) {
     this.db.collection(collections.TX_NOTES).findOne(
       {
         walletId,
@@ -1301,12 +1302,12 @@ export class Storage {
   }
 
   // TODO: should be done client-side
-  _completeTxNotesData(walletId, notes, cb) {
+  _completeTxNotesData(walletId, notes: TxNote | TxNote[], cb: (err?: any, notes?: TxNote | TxNote[]) => void) {
     this.fetchWallet(walletId, (err, wallet) => {
       if (err) return cb(err);
-      _.each([].concat(notes), note => {
+      for (const note of [].concat(notes) as TxNote[]) {
         note.editedByName = wallet.getCopayer(note.editedBy).name;
-      });
+      }
       return cb(null, notes);
     });
   }

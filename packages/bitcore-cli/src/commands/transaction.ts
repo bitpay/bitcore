@@ -213,7 +213,7 @@ export async function createTransaction(
   lines.push(`Fee: ${Utils.renderAmount(chain, txp.fee)} (${Utils.displayFeeRate(chain, txp.feePerKb)})`);
   lines.push(`Total: ${tokenObj 
     ? Utils.renderAmount(currency, txp.amount, tokenObj) + ` + ${Utils.renderAmount(chain, txp.fee)}`
-    : Utils.renderAmount(currency, txp.amount + txp.fee)
+    : Utils.renderAmount(currency, BigInt(txp.amount) + BigInt(txp.fee))
   }`);
   if (txp.nonce != null) {
     lines.push(`Nonce: ${txp.nonce}`);
@@ -230,7 +230,6 @@ export async function createTransaction(
   if (prompt.isCancel(confirmed) || !confirmed) {
     prompt.log.warn('Transaction cancelled by user.');
     return;
-    // await wallet.client.removeTxProposal(txp);
   }
 
   txp = await wallet.client.createTxProposal(txpParams);

@@ -73,6 +73,11 @@ const aTXP = function() {
       version: '1.0.0',
       createdOn: 1424372337,
       address: '3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH',
+      walletId: 'thisdoesntmatter',
+      coin: 'bch',
+      chain: 'bch',
+      network: 'livenet',
+      type: 'P2SH',
       path: 'm/2147483647/1/0',
       publicKeys: ['030562cb099e6043dc499eb359dd97c9d500a3586498e4bcf0228a178cc20e6f16',
         '0367027d17dbdfc27b5e31f8ed70e14d47949f0fa392261e977db0851c8b0d6fac',
@@ -96,15 +101,17 @@ const aTXP = function() {
     requiredRejections: 1,
     walletN: 2,
     addressType: 'P2SH',
-    status: 'pending',
+    status: 'pending' as const,
     actions: [],
     fee: 10000,
     outputs: [{
       toAddress: 'qq0zkyfjkjfec47hgcu0acdzw36td4s2evqyyllszk',
+      address: 'qq0zkyfjkjfec47hgcu0acdzw36td4s2evqyyllszk',
       amount: 10000000,
       message: 'first message'
     }, {
       toAddress: 'qq0zkyfjkjfec47hgcu0acdzw36td4s2evqyyllszk',
+      address: 'qq0zkyfjkjfec47hgcu0acdzw36td4s2evqyyllszk',
       amount: 20000000,
       message: 'second message'
     }],

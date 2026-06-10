@@ -56,18 +56,18 @@ export class SolChain implements IChain {
           const { fees, amounts } = txps.reduce((acc, txp) => {
             // Add gas used for tokens when getting native balance
             if (!opts.tokenAddress) {
-              acc.fees += txp.fee || 0;
+              acc.fees += txp.fee ? BigInt(txp.fee) : 0n;
             }
             
             // Filter tokens when getting native balance
             if (!(txp.tokenAddress && !opts.tokenAddress)) {
-              acc.amounts += txp.amount;
+              acc.amounts += txp.amount ? BigInt(txp.amount) : 0n;
             }
             
             return acc;
-          }, { fees: 0, amounts: 0 });
+          }, { fees: 0n, amounts: 0n });
 
-          const lockedSum = (amounts + fees) || 0;  // previously set to 0 if opts.multisigContractAddress
+          const lockedSum = Number(amounts + fees) || 0;  // previously set to 0 if opts.multisigContractAddress
           const reserveAmount = opts.tokenAddress ? 0 : reserve;
           const convertedBalance = this.convertBitcoreBalance(balance, lockedSum, reserveAmount);
           server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {

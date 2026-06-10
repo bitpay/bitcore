@@ -17,6 +17,7 @@ import { PayPro } from './paypro';
 import { PayProV2 } from './payproV2';
 import { Request } from './request';
 import { Verifier } from './verifier';
+import type { Address } from '../types/address';
 import type { ServerAssistedImportEvents } from '../types/serverAssistedImportEvents';
 
 const $ = singleton();
@@ -1396,9 +1397,10 @@ export class API extends EventEmitter {
       opts = opts || {};
 
       const qs = [];
-      qs.push('includeExtendedInfo=' + (opts.includeExtendedInfo ? '1' : '0'));
-      qs.push('twoStep=' + (opts.twoStep ? '1' : '0'));
+      qs.push(`includeExtendedInfo=${opts.includeExtendedInfo ? '1' : '0'}`);
+      qs.push(`twoStep=${opts.twoStep ? '1' : '0'}`);
       qs.push('serverMessageArray=1');
+      qs.push('numberFormat=hex'); // Only applies to `pendingTxps` in response. TODO apply this to balances as well.
 
       if (opts.tokenAddress) {
         qs.push('tokenAddress=' + opts.tokenAddress);
@@ -1700,6 +1702,11 @@ export class API extends EventEmitter {
     opts: {
       /** The transaction proposal object returned by the API#createTxProposal method */
       txp: Txp;
+      /** 
+       * Number format for the tx-building numbers (e.g. amounts, nonce, etc.). Default: 'hex'
+       * Note: The given `txp` will be converted server-side and returned in the specified format.
+      */
+      numberFormat?: 'hex' | 'number' | 'string';
     },
     /** @deprecated */
     cb?: (err?: Error, txp?: any) => void
@@ -1718,8 +1725,9 @@ export class API extends EventEmitter {
       const args = {
         proposalSignature: Utils.signMessage(hash, this.credentials.requestPrivKey)
       };
+      const qs = `numberFormat=${opts.numberFormat || 'hex'}`;
 
-      const url = '/v2/txproposals/' + opts.txp.id + '/publish/';
+      const url = `/v2/txproposals/${opts.txp.id}/publish?${qs}`;
       const { body: txp } = await this.request.post<object, PublishedTxp>(url, args);
       this._processTxps(txp);
       if (cb) { cb(null, txp); }
@@ -1907,6 +1915,8 @@ export class API extends EventEmitter {
       forAirGapped?: boolean;
       /** Do not encrypt the public key ring */
       doNotEncryptPkr?: boolean;
+      /** Number format for the tx-building numbers (e.g. amounts, fee, nonce, etc.). Default: 'hex' */
+      numberFormat?: 'hex' | 'number' | 'string';
     },
     /** @deprecated */
     cb?: (err?: Error, txps?: any[]) => void
@@ -1920,8 +1930,9 @@ export class API extends EventEmitter {
 
       opts = opts || {};
       const { doNotVerify, forAirGapped, doNotEncryptPkr } = opts;
+      const qs = `numberFormat=${opts.numberFormat || 'hex'}`;
 
-      const { body: txps } = await this.request.get('/v2/txproposals/');
+      const { body: txps } = await this.request.get(`/v2/txproposals?${qs}`);
       this._processTxps(txps);
       
       if (!doNotVerify) {
@@ -2050,8 +2061,18 @@ export class API extends EventEmitter {
       const isLegit = Verifier.checkTxProposal(this.credentials, txp, { paypro });
       if (!isLegit) throw new Errors.SERVER_COMPROMISED();
 
+      // Determine number format for the API request based on the given txp's values.
+      // This ensures the server maintains number precision when verifying signatures.
+      const amt = txp.amount || txp.outputs?.[0]?.amount;
+      const numberFormat = typeof amt === 'number'
+        ? 'number'
+        : amt.startsWith('0x')
+          ? 'hex'
+          : 'string';
+
+      const qs = `numberFormat=${numberFormat}`;
       baseUrl = baseUrl || '/v2/txproposals/';
-      const url = `${baseUrl}${txp.id}/signatures/`;
+      const url = `${baseUrl}${txp.id}/signatures?${qs}`;
       const args: any = { signatures, nonce: txp.nonce };
       const { body: signedTxp } = await this.request.post<object, Txp>(url, args);
       this._processTxps(signedTxp);
@@ -2068,11 +2089,23 @@ export class API extends EventEmitter {
    * Assigns JIT values (nonce, and in the future: fee, gas) to a deferred txp.
    * Call this just before signing a deferred-nonce txp.
    */
-  async prepareTx(opts: { txp: Txp }): Promise<Txp> {
-    $.checkState(this.credentials && this.credentials.isComplete(),
-      'Failed state: this.credentials at <prepareTx()>');
+  async prepareTx(opts: {
+    txp: Txp;
+  }): Promise<Txp> {
+    $.checkState(this.credentials?.isComplete(), 'Failed state: this.credentials at <prepareTx()>');
 
-    const url = '/v1/txproposals/' + opts.txp.id + '/prepare/';
+    // Determine number format for the API request based on the type of txp.amount.
+    // This ensures the server maintains number precision when verifying signatures.
+    const amt = opts.txp.amount || opts.txp.outputs?.[0]?.amount;
+    const numberFormat = typeof amt === 'number'
+      ? 'number'
+      : amt.startsWith('0x')
+        ? 'hex'
+        : 'string';
+
+    const qs = `numberFormat=${numberFormat}`;
+
+    const url = `/v1/txproposals/${opts.txp.id}/prepare?${qs}`;
     const { body: txp } = await this.request.post<object, Txp>(url, {});
     this._processTxps(txp);
     return txp;
@@ -3953,6 +3986,14 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/moonpay/cancelSellTransaction', data);
   }
 
+  async moonpayCreateSession(data) {
+    return this.request.post('/v1/service/moonpay/createSession', data);
+  }
+
+  async moonpayRevokeActiveSession(data) {
+    return this.request.post('/v1/service/moonpay/revokeActiveSession', data);
+  }
+
   async rampGetQuote(data) {
     return this.request.post('/v1/service/ramp/quote', data);
   }
@@ -4180,7 +4221,7 @@ export interface Txp {
     comment?: string;
   }>; // TODO
   addressType: string;
-  amount: number;
+  amount: number | string;
   chain: string;
   coin: string;
   changeAddress?: {
@@ -4202,21 +4243,21 @@ export interface Txp {
   creatorId: string;
   creatorName?: string; // might be an encrypted object
   excludeUnconfirmedUtxos: boolean;
-  fee: number;
+  fee: number | string;
   feeLevel: string;
-  feePerKb: number;
+  feePerKb: number | string;
   from?: string;
   hasUnconfirmedInputs?: boolean;
   id: string;
   inputPaths: Array<string>;
   inputs?: Array<{
     address: string;
-    amount: number;
+    amount: number | string;
     confirmations: number;
     locked: boolean;
     path: string;
     publicKeys: Array<string>;
-    satoshis: number;
+    satoshis: number | string;
     scriptPubKey: string;
     spent: boolean;
     txid: string;
@@ -4226,12 +4267,12 @@ export interface Txp {
   message?: string; // might be an encrypted object
   encryptedMessage?: string; // is set equal to `message` before decryption in processTxps()
   network: string;
-  nonce?: number;
+  nonce?: number | string;
   deferNonce?: boolean;
   note?: Note;
   outputOrder: Array<number>;
   outputs?: Array<{
-    amount: number;
+    amount: number | string;
     toAddress: string;
     message?: string; // might be an encrypted object
     encryptedMessage?: string; // is set equal to `message` before decryption in processTxps()
@@ -4275,117 +4316,3 @@ export interface PublishedTxp extends Txp {
   txType?: number; // or string?
 };
 
-export interface Address {
-  address: string;
-  type: string;
-  path: string;
-  isChange?: boolean;
-};
-
-// export class ServerAssistedImportEvents extends EventEmitter {
-//   on(event: 'keyConfig.count', listener: (count: number) => void): this;
-//   on(event: 'keyConfig.start', listener: (index: number) => void): this;
-//   on(event: 'keyConfig.keyCreated', listener: () => void): this;
-//   on(event: 'chainPermutations.count', listener: (count: number) => void): this;
-//   on(event: 'chainPermutations.getKey', listener: (index: number) => void): this;
-//   on(event: 'findingCopayers', listener: (num: number) => void): this;
-//   on(event: 'foundCopayers', listener: (num: number) => void): this;
-//   on(event: 'foundCopayers.count', listener: (count: number) => void): this;
-//   on(event: 'keyConfig.noCopayersFound', listener: () => void): this;
-//   on(event: 'creatingCredentials', listener: () => void): this;
-//   on(event: 'gettingStatuses', listener: () => void): this;
-//   on(event: 'gatheringWalletsInfos', listener: (num: number) => void): this;
-//   on(event: 'walletInfo.gatheringTokens', listener: (data: { chain: string; network: string }) => void): this;
-//   on(event: 'walletInfo.gatheringTokens.error', listener: (data: { chain: string; network: string; error: Error }) => void): this;
-//   on(event: 'walletInfo.importingToken', listener: (data: { chain: string; network: string; tokenName: string; tokenAddress: string }) => void): this;
-//   on(event: 'walletInfo.gatheringMultisig', listener: (data: { chain: string; network: string }) => void): this;
-//   on(event: 'walletInfo.multisig.creatingCredentials', listener: (data: { chain: string; network: string; walletName: string; multisigContractAddress: string; m: number; n: number }) => void): this;
-//   on(event: 'walletInfo.multisig.importingToken', listener: (data: { chain: string; network: string; walletName: string; multisigContractAddress: string; tokenName: string; tokenAddress: string }) => void): this;
-//   on(event: 'error', listener: (error: Error) => void): this;
-//   on(event: 'done', listener: (data: { key: Key; clients: API[] }) => void): this;
-
-//   once(...args: [event: 'keyConfig.count', listener: (count: number) => void] | [event: 'keyConfig.start', listener: (index: number) => void] | [event: 'keyConfig.keyCreated', listener: () => void] | [event: 'chainPermutations.count', listener: (count: number) => void] | [event: 'chainPermutations.getKey', listener: (index: number) => void] | [event: 'findingCopayers', listener: (num: number) => void] | [event: 'foundCopayers', listener: (num: number) => void] | [event: 'foundCopayers.count', listener: (count: number) => void] | [event: 'keyConfig.noCopayersFound', listener: () => void] | [event: 'creatingCredentials', listener: () => void] | [event: 'gettingStatuses', listener: () => void] | [event: 'gatheringWalletsInfos', listener: (num: number) => void] | [event: 'walletInfo.gatheringTokens', listener: (data: { chain: string; network: string; }) => void] | [event: 'walletInfo.gatheringTokens.error', listener: (data: { chain: string; network: string; error: Error; }) => void] | [event: 'walletInfo.importingToken', listener: (data: { chain: string; network: string; tokenName: string; tokenAddress: string; }) => void] | [event: 'walletInfo.gatheringMultisig', listener: (data: { chain: string; network: string; }) => void] | [event: 'walletInfo.multisig.creatingCredentials', listener: (data: { chain: string; network: string; walletName: string; multisigContractAddress: string; m: number; n: number; }) => void] | [event: 'walletInfo.multisig.importingToken', listener: (data: { chain: string; network: string; walletName: string; multisigContractAddress: string; tokenName: string; tokenAddress: string; }) => void] | [event: 'error', listener: (error: Error) => void] | [event: 'done', listener: (data: { key: Key; clients: API[]; }) => void]): this;
-
-//   addListener(event: 'keyConfig.count', listener: (count: number) => void): this;
-//   addListener(event: 'keyConfig.start', listener: (index: number) => void): this;
-//   addListener(event: 'keyConfig.keyCreated', listener: () => void): this;
-//   addListener(event: 'chainPermutations.count', listener: (count: number) => void): this;
-//   addListener(event: 'chainPermutations.getKey', listener: (index: number) => void): this;
-//   addListener(event: 'findingCopayers', listener: (num: number) => void): this;
-//   addListener(event: 'foundCopayers', listener: (num: number) => void): this;
-//   addListener(event: 'foundCopayers.count', listener: (count: number) => void): this;
-//   addListener(event: 'keyConfig.noCopayersFound', listener: () => void): this;
-//   addListener(event: 'creatingCredentials', listener: () => void): this;
-//   addListener(event: 'gettingStatuses', listener: () => void): this;
-//   addListener(event: 'gatheringWalletsInfos', listener: (num: number) => void): this;
-//   addListener(event: 'walletInfo.gatheringTokens', listener: (data: { chain: string; network: string }) => void): this;
-//   addListener(event: 'walletInfo.gatheringTokens.error', listener: (data: { chain: string; network: string; error: Error }) => void): this;
-//   addListener(event: 'walletInfo.importingToken', listener: (data: { chain: string; network: string; tokenName: string; tokenAddress: string }) => void): this;
-//   addListener(event: 'walletInfo.gatheringMultisig', listener: (data: { chain: string; network: string }) => void): this;
-//   addListener(event: 'walletInfo.multisig.creatingCredentials', listener: (data: { chain: string; network: string; walletName: string; multisigContractAddress: string; m: number; n: number }) => void): this;
-//   addListener(event: 'walletInfo.multisig.importingToken', listener: (data: { chain: string; network: string; walletName: string; multisigContractAddress: string; tokenName: string; tokenAddress: string }) => void): this;
-//   addListener(event: 'error', listener: (error: Error) => void): this;
-//   addListener(event: 'done', listener: (data: { key: Key; clients: API[] }) => void): this;
-
-//   removeListener(event: 'keyConfig.count', listener: (count: number) => void): this;
-//   removeListener(event: 'keyConfig.start', listener: (index: number) => void): this;
-//   removeListener(event: 'keyConfig.keyCreated', listener: () => void): this;
-//   removeListener(event: 'chainPermutations.count', listener: (count: number) => void): this;
-//   removeListener(event: 'chainPermutations.getKey', listener: (index: number) => void): this;
-//   removeListener(event: 'findingCopayers', listener: (num: number) => void): this;
-//   removeListener(event: 'foundCopayers', listener: (num: number) => void): this;
-//   removeListener(event: 'foundCopayers.count', listener: (count: number) => void): this;
-//   removeListener(event: 'keyConfig.noCopayersFound', listener: () => void): this;
-//   removeListener(event: 'creatingCredentials', listener: () => void): this;
-//   removeListener(event: 'gettingStatuses', listener: () => void): this;
-//   removeListener(event: 'gatheringWalletsInfos', listener: (num: number) => void): this;
-//   removeListener(event: 'walletInfo.gatheringTokens', listener: (data: { chain: string; network: string }) => void): this;
-//   removeListener(event: 'walletInfo.gatheringTokens.error', listener: (data: { chain: string; network: string; error: Error }) => void): this;
-//   removeListener(event: 'walletInfo.importingToken', listener: (data: { chain: string; network: string; tokenName: string; tokenAddress: string }) => void): this;
-//   removeListener(event: 'walletInfo.gatheringMultisig', listener: (data: { chain: string; network: string }) => void): this;
-//   removeListener(event: 'walletInfo.multisig.creatingCredentials', listener: (data: { chain: string; network: string; walletName: string; multisigContractAddress: string; m: number; n: number }) => void): this;
-//   removeListener(event: 'walletInfo.multisig.importingToken', listener: (data: { chain: string; network: string; walletName: string; multisigContractAddress: string; tokenName: string; tokenAddress: string }) => void): this;
-//   removeListener(event: 'error', listener: (error: Error) => void): this;
-//   removeListener(event: 'done', listener: (data: { key: Key; clients: API[] }) => void): this;
-// }
-//   /** Total number of key configurations to be checked (not all configurations will necessarily be processed, as the process may exit early if wallets are found) */
-//   'keyConfig.count': [number];
-//   /** Index of the current key configuration being processed */
-//   'keyConfig.start': [number];
-//   /** A key was successfully created from the provided backup data */
-//   'keyConfig.keyCreated': [];
-//   /** Total number of permutations of [chain/coin, network, and derivation strategy] to be checked for each key configuration */
-//   'chainPermutations.count': [number];
-//   /** Index of the current permutation being processed; the key is derived along the permutation to be sent to BWS for existence check */
-//   'chainPermutations.getKey': [number];
-//   /** Number of copayers being sent to BWS to check for existence. Called inside a loop and may fire more than once */
-//   'findingCopayers': [number];
-//   /** Number of copayers found in BWS for a single loop iteration (not the running total) */
-//   'foundCopayers': [number];
-//   /** Total number of copayers found in BWS — sum of all `foundCopayers` events, emitted when the copayer-check loop is complete */
-//   'foundCopayers.count': [number];
-//   /** No copayers were found for the current key configuration; moving on to the next one (if any) */
-//   'keyConfig.noCopayersFound': [];
-//   /** Client credentials are being created for the found copayers */
-//   'creatingCredentials': [];
-//   /** Wallet statuses are being fetched from BWS for the found copayers */
-//   'gettingStatuses': [];
-//   /** Number of wallets being processed to gather wallet info */
-//   'gatheringWalletsInfos': [number];
-//   /** Token info is being gathered for a wallet of the given chain/network */
-//   'walletInfo.gatheringTokens': [{ chain: string; network: string }];
-//   /** Gathering token info failed for a wallet of the given chain/network */
-//   'walletInfo.gatheringTokens.error': [{ chain: string; network: string; error: Error }];
-//   /** A token wallet is being imported for a wallet of the given chain/network */
-//   'walletInfo.importingToken': [{ chain: string; network: string; tokenName: string; tokenAddress: string }];
-//   /** Multisig info is being gathered for a wallet of the given chain/network */
-//   'walletInfo.gatheringMultisig': [{ chain: string; network: string }];
-//   /** Multisig wallet credentials are being created for a wallet of the given chain/network */
-//   'walletInfo.multisig.creatingCredentials': [{ chain: string; network: string; walletName: string; multisigContractAddress: string; m: number; n: number }];
-//   /** A token wallet is being imported for a multisig wallet of the given chain/network */
-//   'walletInfo.multisig.importingToken': [{ chain: string; network: string; walletName: string; multisigContractAddress: string; tokenName: string; tokenAddress: string }];
-//   /** Terminating error that was thrown during the process */
-//   'error': [Error];
-//   /** Final result containing the recovered key and all imported wallet clients */
-//   'done': [{ key: Key; clients: API[] }];
-// }>;

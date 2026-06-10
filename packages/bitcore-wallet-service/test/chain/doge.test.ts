@@ -168,7 +168,7 @@ const aTXP = () => {
     coin: 'doge',
     chain: 'doge',
     network: 'livenet',
-    amount: (1.2550574e14).toString(),
+    amount: 1.2550574e14,
     message: 'some message',
     proposalSignature: '304402207e8ba2f9e88c1e7a76979f7e9df4d1cf43784d196b4b92f7f605386d0562216c022025356aae37397771a5fcb7520e97096fed197598a0e68883f6b30f3ccddd636c',
     changeAddress: {
@@ -240,7 +240,7 @@ const aTXP = () => {
   return txp;
 };
 
-const signedTxp = {
+const signedTxp: ITxProposal = {
   actions: [
     {
       version: '1.0.0',
@@ -261,6 +261,7 @@ const signedTxp = {
   walletId: 'd98853c7-5a4b-48de-9f6c-8fb36aa271f1',
   creatorId: '5a49148ea402f06943b511912f31bc9114153e6055c38642fe789f7b2c7bf9f8',
   coin: 'doge',
+  chain: 'doge',
   network: 'testnet',
   outputs: [
     {
@@ -339,9 +340,6 @@ const signedTxp = {
   multisigTxId: null,
   destinationTag: null,
   invoiceID: null,
-  derivationStrategy: 'BIP44',
   creatorName: 'copayer 1',
-  raw: '0100000001b8a1d4773add3d5ca38652537310e9bd64d812d771e16f62b4a6e33e79f85453000000006b483045022100a9bee101f13eeb8f6bdf1b6421974a17b2aeb0bcf080526df20e93483a67bbca022071ba69e707430136fb65488b1e5413eb54279770b74b7e15fe15aeac16770ceb012102f4526941f57f37b8f1cd4970091ebcd1701980a82d26a781b2e44b384609eb22ffffffff026c81c9f6160900001976a914aeb332ea003a7efb5dab0dcc56d19fed84e26afb88acf4cb5156010000001976a914afbf96bfb28815cad8205c8f2f5a86819136664c88ac00000000',
-  note: null,
-  isPending: false
+  raw: '0100000001b8a1d4773add3d5ca38652537310e9bd64d812d771e16f62b4a6e33e79f85453000000006b483045022100a9bee101f13eeb8f6bdf1b6421974a17b2aeb0bcf080526df20e93483a67bbca022071ba69e707430136fb65488b1e5413eb54279770b74b7e15fe15aeac16770ceb012102f4526941f57f37b8f1cd4970091ebcd1701980a82d26a781b2e44b384609eb22ffffffff026c81c9f6160900001976a914aeb332ea003a7efb5dab0dcc56d19fed84e26afb88acf4cb5156010000001976a914afbf96bfb28815cad8205c8f2f5a86819136664c88ac00000000'
 };

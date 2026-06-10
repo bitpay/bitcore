@@ -1,10 +1,10 @@
-import { Modules } from '../../src/modules';
+import { loadModules } from '../../src/modules';
 
 let loaded = false;
 export async function unitBeforeHelper() {
   if (!loaded) {
     console.time('Loading Modules');
-    Modules.loadConfigured();
+    loadModules();
     loaded = true;
     console.timeEnd('Loading Modules');
   }

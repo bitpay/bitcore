@@ -1,4 +1,5 @@
 import { CryptoRpc } from '@bitpay-labs/crypto-rpc';
+import { SOL_ERROR_MESSAGES } from '@bitpay-labs/crypto-rpc/lib/sol/error_messages';
 import { instructionKeys } from '@bitpay-labs/crypto-rpc/lib/sol/transaction-parser';
 import { fetchDigitalAsset, mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
@@ -35,6 +36,13 @@ import { InternalStateProvider } from '../../internal/internal';
 import type { SolRpc } from '@bitpay-labs/crypto-rpc/lib/sol/SolRpc';
 
 export interface GetSolWeb3Response { rpc: SolRpc; connection: any; umi: any; dataType: string; lastPingTime?: number };
+
+const MISSING_ATA_ERROR = 'Missing ATA';
+
+function isMissingAtaError(err: any): boolean {
+  const message = err?.message || '';
+  return message === MISSING_ATA_ERROR || message === SOL_ERROR_MESSAGES.ATA_NOT_INITIALIZED;
+}
 
 export class BaseSVMStateProvider extends InternalStateProvider implements IChainStateService {
   static rpcs: { [chainNetwork: string]: { historical: GetSolWeb3Response[]; realtime: GetSolWeb3Response[] } } = {};
@@ -254,13 +262,18 @@ export class BaseSVMStateProvider extends InternalStateProvider implements IChai
         let _address = address;
         if (tokenAddress) {
           try {
-            const { rpc } = await this.getRpc(network);
             _address = await rpc.getConfirmedAta({ solAddress: address, mintAddress: tokenAddress });
-            if (!_address) throw new Error('Missing ATA');
+            if (!_address) throw new Error(MISSING_ATA_ERROR);
           } catch (e: any) {
-            const errMsg = 'Error getting ATA address';
-            logger.error(`${errMsg} %o`, e.stack || e.message || e);
-            throw new Error(errMsg);
+            if (isMissingAtaError(e)) {
+              // A closed ATA is not returned by getConfirmedAta, but its address can still have history.
+              _address = await rpc.deriveAta({ solAddress: address, mintAddress: tokenAddress });
+              if (!_address) throw new Error(MISSING_ATA_ERROR);
+            } else {
+              const errMsg = 'Error getting ATA address';
+              logger.error(`${errMsg} %o`, e.stack || e.message || e);
+              throw new Error(errMsg);
+            }
           }
         }
         do {

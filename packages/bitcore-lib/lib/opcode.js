@@ -1,16 +1,16 @@
 'use strict';
 
-var _ = require('lodash');
-var $ = require('./util/preconditions');
-var BufferUtil = require('./util/buffer');
-var JSUtil = require('./util/js');
+const _ = require('lodash');
+const BufferUtil = require('./util/buffer');
+const JSUtil = require('./util/js');
+const $ = require('./util/preconditions');
 
 function Opcode(num) {
   if (!(this instanceof Opcode)) {
     return new Opcode(num);
   }
 
-  var value;
+  let value;
 
   if (_.isNumber(num)) {
     value = num;
@@ -39,7 +39,7 @@ Opcode.fromNumber = function(num) {
 
 Opcode.fromString = function(str) {
   $.checkArgument(_.isString(str));
-  var value = Opcode.map[str];
+  const value = Opcode.map[str];
   if (typeof value === 'undefined') {
     throw new TypeError('Invalid opcodestr');
   }
@@ -59,7 +59,7 @@ Opcode.prototype.toNumber = function() {
 };
 
 Opcode.prototype.toString = function() {
-  var str = Opcode.reverseMap[this.num];
+  const str = Opcode.reverseMap[this.num];
   if (typeof str === 'undefined') {
     throw new Error('Opcode does not have a string representation');
   }
@@ -252,7 +252,7 @@ Opcode.map = {
 
 Opcode.reverseMap = [];
 
-for (var k in Opcode.map) {
+for (const k in Opcode.map) {
   Opcode.reverseMap[Opcode.map[k]] = k;
 }
 

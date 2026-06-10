@@ -1,6 +1,5 @@
 import * as async from 'async';
 import express from 'express';
-import * as _ from 'lodash';
 import { Common } from '../common';
 import { ClientError } from '../errors/clienterror';
 import logger from '../logger';
@@ -16,6 +15,7 @@ interface RouteContext {
   getServerWithMultiAuth: Types.GetServerWithMultiAuthFn;
   logDeprecated: Types.LogDeprecatedFn;
   returnError: Types.ReturnErrorFn;
+  checkNumberFormat: Types.CheckNumberFormatFn;
 }
 
 function getServerOrReturnError(req, res, context: RouteContext): WalletService | null {
@@ -28,7 +28,7 @@ function getServerOrReturnError(req, res, context: RouteContext): WalletService 
 }
 
 export function registerWalletRoutes(router: express.Router, context: RouteContext) {
-  const { createWalletLimiter, getServerWithAuth, getServerWithMultiAuth, logDeprecated, returnError } = context;
+  const { createWalletLimiter, getServerWithAuth, getServerWithMultiAuth, logDeprecated, returnError, checkNumberFormat } = context;
 
   router.post('/v1/wallets/', createWalletLimiter, (req, res) => {
     logDeprecated(req);
@@ -97,13 +97,15 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
 
   router.get('/v3/wallets/', (req, res) => {
     getServerWithAuth(req, res, server => {
+      checkNumberFormat(req.query.numberFormat, res);
       const opts = {
         includeExtendedInfo: false,
         twoStep: false,
         includeServerMessages: false,
         tokenAddress: req.query.tokenAddress,
         multisigContractAddress: req.query.multisigContractAddress,
-        network: req.query.network
+        network: req.query.network,
+        numberFormat: req.query.numberFormat
       };
       if (req.query.includeExtendedInfo == '1') opts.includeExtendedInfo = true;
       if (req.query.twoStep == '1') opts.twoStep = true;
@@ -122,6 +124,8 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
     const twoStep = req.query.twoStep == '1';
     const silentFailure = req.query.silentFailure == '1';
     const includeServerMessages = req.query.serverMessageArray == '1';
+    const numberFormat = req.query.numberFormat;
+    checkNumberFormat(numberFormat, res);
 
     const buildOpts = (request, copayerId) => {
       const getParam = (param, returnArray = false) => {
@@ -137,6 +141,7 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
         twoStep,
         silentFailure,
         includeServerMessages,
+        numberFormat,
         tokenAddresses: getParam('tokenAddress', true) as string[] | null,
         multisigContractAddress: getParam('multisigContractAddress') as string | null,
         network: getParam('network') as string | null
@@ -212,7 +217,7 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
     if (res.headersSent) {
       return;
     }
-    return res.json(_.flatten(responses));
+    return res.json(responses.flat());
   });
 
   router.post('/v1/wallets/exist', async (req, res) => {

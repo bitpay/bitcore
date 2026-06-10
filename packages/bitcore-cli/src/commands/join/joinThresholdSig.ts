@@ -3,8 +3,9 @@ import url from 'url';
 import { Key, TssKey } from '@bitpay-labs/bitcore-wallet-client';
 import * as prompt from '@clack/prompts';
 import { UserCancelled } from '../../errors';
-import { getCopayerName, getNetwork, getPassword } from '../../prompts';
+import { getCopayerName, getNetwork, getPassword, promptKeyshareBackup } from '../../prompts';
 import { Utils } from '../../utils';
+import { exportWallet } from '../export';
 import type { CommonArgs } from '../../../types/cli';
 
 export async function joinThresholdSigWallet(
@@ -15,7 +16,7 @@ export async function joinThresholdSigWallet(
   
   const network = await getNetwork();
   const copayerName = await getCopayerName();
-  const password = await getPassword('Enter a password for the wallet:', { hidden: false });
+  const password = await getPassword('Lock your wallet with a password:', { hidden: false });
 
   let key;
   if (mnemonic) {
@@ -114,7 +115,15 @@ export async function joinThresholdSigWallet(
     });
   });
 
+
+  // Keyshare backup
+  const ok = await promptKeyshareBackup();
+  if (ok) {
+    await exportWallet({ wallet, opts: { ...opts, readonly: false } });
+  }
+
   return {
-    mnemonic: key.get(password).mnemonic
+    // TSS wallets cannot be restored from a mnemonic alone, so we return null here. All the wallet recovery information is in the keyshare backup file.
+    mnemonic: null
   };
 }

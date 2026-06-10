@@ -103,6 +103,22 @@
           "threads": 0
         }
       },
+      "ARC": {
+        "testnet": {
+          "chainSource": "external",
+          "module": "./moralis",
+          "trustedPeers": [],
+          "providers": [
+            {
+              "host": "rpc.testnet.arc.network",
+              "protocol": "https",
+              "port": "",
+              "dataType": "combined"
+            }
+          ],
+          "threads": 0
+        }
+      },
       "BASE": {
         "sepolia": {
           "chainSource": "external",
@@ -116,7 +132,7 @@
           ],
           "providers": [
             {
-              "host": "sepolia.base.org",
+              "host": "base-sepolia.drpc.org",
               "protocol": "https",
               "port": "",
               "dataType": "combined"

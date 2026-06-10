@@ -47,7 +47,8 @@ export interface IWallet {
     mnemonic?: string;
     password?: string;
     addressType?: string;
-  }): Promise<{ key: KeyType | TssKeyType; secret?: string; credentials: Credentials }>;
+    joinSecret?: string;
+  }): Promise<{ key: KeyType | TssKeyType; credentials: Credentials; secret?: string; joinedWalletName?: string }>;
   createFromTss(args: {
     key: TssKeyType;
     chain: string;

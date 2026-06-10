@@ -2,7 +2,7 @@
 
 import { IBlock } from '../../src/types/Block';
 import { BitcoinBlockStorage, IBtcBlock } from '../../src/models/block';
-import { Modules } from '../../src/modules';
+import { loadModules } from '../../src/modules';
 import { Storage } from '../../src/services/storage';
 
 if (require.main === module) {
@@ -12,7 +12,7 @@ if (require.main === module) {
     const chain = CHAIN || '';
     const network = NETWORK || '';
 
-    Modules.loadConfigured();
+    loadModules();
     await Storage.start();
     let prevMatch = true;
     let nextMatch = true;
@@ -59,7 +59,7 @@ if (require.main === module) {
         console.log({ block: checkHeight, success });
       }
     }
-        
+
     process.exit(0);
   })();
 }

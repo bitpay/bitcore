@@ -30,10 +30,10 @@ export async function exportWallet(args: CommonArgs<{ filename?: string; readonl
   }
   const replaceTilde = str => str.startsWith('~') ? str.replace('~', os.homedir()) : str;
 
-  const readOnly = !!opts.readonly || wallet.isReadOnly() || await prompt.confirm({
+  const readOnly = opts.readonly ?? (wallet.isReadOnly() || await prompt.confirm({
     message: 'Export as read-only (cannot send funds)?',
     initialValue: false
-  });
+  }));
   if (prompt.isCancel(readOnly)) {
     throw new UserCancelled();
   }
@@ -66,7 +66,7 @@ export async function exportWallet(args: CommonArgs<{ filename?: string; readonl
     throw new UserCancelled();
   }
 
-  const exportPassword = await getPassword('Import/export password:', { hidden: false, minLength: 6 });
+  const exportPassword = await getPassword('File encryption password:', { hidden: false, minLength: 6 });
 
   await wallet.export({
     filename: replaceTilde(filename),
