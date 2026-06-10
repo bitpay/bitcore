@@ -5,8 +5,6 @@
   "main": "index.js",
   "scripts": {
     "test": "gulp test",
-    "test:ci": "npm run test",
-    "coverage": "gulp coverage",
     "build": "gulp",
     "pub": "npm run build && npm publish"
   },

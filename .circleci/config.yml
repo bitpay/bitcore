@@ -77,7 +77,7 @@ commands:
           command: |
             nvm use default
             npm run compile
-            npm run coverage:<< parameters.package >>
+            npm run test:<< parameters.package >>
 
 jobs:
   build:

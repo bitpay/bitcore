@@ -7,11 +7,10 @@
   "scripts": {
     "build": "webpack -c ./webpack.config.js",
     "test": "npm run test:mocha",
-    "test:mocha": "npx mocha ./test/**/*.test.js",
+    "test:mocha": "npx nyc mocha ./test/**/*.test.js",
     "test:node": "node --test $(find test -name *.test.js)",
     "test:node:only": "node --test --test-only $(find test -name *.test.js)",
     "test:web": "npm run build && npm run wdio",
-    "coverage": "nyc mocha test/**/*.test.js",
     "wdio": "wdio run ./wdio.conf.js"
   },
   "keywords": [

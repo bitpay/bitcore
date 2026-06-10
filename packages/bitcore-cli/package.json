@@ -29,8 +29,7 @@
     "bitcore-cli": "./bin/wallet"
   },
   "scripts": {
-    "test": "npm run compile && node copyTestWallets && mocha --exit 'build/test/**/*.js'",
-    "coverage": "npm run compile && node copyTestWallets && nyc mocha --exit 'build/test/**/*.js'",
+    "test": "npm run compile && node copyTestWallets && nyc mocha --exit 'build/test/**/*.js'",
     "build": "tsc",
     "build:prod": "tsc -p tsconfig.prod.json",
     "postbuild": "node createBin -v",
