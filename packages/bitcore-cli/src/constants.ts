@@ -123,7 +123,7 @@ const COLOR = {
   green: '\x1b[32m%s\x1b[39m',
   red: '\x1b[31m%s\x1b[39m',
   yellow: '\x1b[33m%s\x1b[39m',
-  blue: '\x1b[38;2;85;85;255m%s\x1b[39m',
+  blue: '\x1b[34m%s\x1b[39m',
   orange: '\x1b[38;5;208m%s\x1b[39m',
   gold: '\x1b[38;5;214m%s\x1b[39m',
   tan: '\x1b[38;5;180m%s\x1b[39m',

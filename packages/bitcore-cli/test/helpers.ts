@@ -29,7 +29,7 @@ export const CONSTANTS = {
     PASSWORD: 'testpassword',
     CLI_EXEC: 'build/src/cli.js',
     CLI_OPTS: {
-      env: { ...process.env, NO_COLOR: '1' }, // FORCE_COLOR=1 to force colors in output, NO_COLOR=1 to disable colors in output (for easier testing)
+      env: { ...process.env }, // @clack/prompts replaced picocolors with fast-wrap-ansi which is not NO_COLOR/FORCE_COLOR compliant
       detached: true // Ensure child process is in its own process group, so it can die without killing the parent test process
     },
     DIR: path.join(__dirname, './wallets'),

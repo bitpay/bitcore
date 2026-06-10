@@ -43,6 +43,13 @@ function v8network(bwsNetwork, chain = 'btc') {
   return bwsNetwork;
 }
 
+function scrubResponseError(err) {
+  if (err.response) {
+    return new Error(`HTTP ${err.response.statusCode} - ${err.response.statusMessage}: ${err.response.body}\n${err.response.request.method} ${err.response.request.href}`);
+  }
+  return new Error(err);
+}
+
 export type WalletWithOpts = IWallet & { tokenAddress?: string; multisigContractAddress?: string };
 
 export class V8 {
@@ -764,6 +771,18 @@ export class V8 {
 
       return callbacks.onIncomingPayments(notification);
     });
+  }
+
+  async getFlags(opts: { address: string }) {
+    try {
+      const url = `${this.baseUrl}/address/${opts.address}/flags`;
+      const ret = await this.request.get(url);
+      return JSON.parse(ret).flags;
+    } catch (err) {
+      const e = scrubResponseError(err);
+      logger.error(`Error getting flags for address ${opts.address}: %o`, e);
+      throw e;
+    }
   }
 }
 

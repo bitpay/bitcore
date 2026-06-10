@@ -335,4 +335,75 @@ describe('prompts', function() {
       await assert.rejects(() => promise, UserCancelled);
     });
   });
+
+  // ─── promptXrpFlag ──────────────────────────────────────────────────────────
+
+  describe('promptXrpFlag', function() {
+    it('should return null when None is selected', async function() {
+      const promise = prompts.promptXrpFlag({});
+      process.stdin.push(' ');
+      process.stdin.push(KEYSTROKES.ENTER);
+      assert.strictEqual(await promise, null);
+    });
+
+    it('should throw UserCancelled when user cancels', async function() {
+      const promise = prompts.promptXrpFlag({});
+      process.stdin.push(KEYSTROKES.CTRL_C);
+      await assert.rejects(() => promise, UserCancelled);
+    });
+
+    it('should map DestTag to tfRequireDestTag when destination tags are not required', async function() {
+      const promise = prompts.promptXrpFlag({ requireDestinationTag: false });
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(' ');
+      process.stdin.push(KEYSTROKES.ENTER);
+      assert.strictEqual(await promise, 'tfRequireDestTag');
+    });
+
+    it('should map DestTag to tfOptionalDestTag when destination tags are already required', async function() {
+      const promise = prompts.promptXrpFlag({ requireDestinationTag: true });
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(' ');
+      process.stdin.push(KEYSTROKES.ENTER);
+      assert.strictEqual(await promise, 'tfOptionalDestTag');
+    });
+
+    it('should map RequireAuth to tfRequireAuth when authorization is not required', async function() {
+      const promise = prompts.promptXrpFlag({ requireAuthorization: false });
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(' ');
+      process.stdin.push(KEYSTROKES.ENTER);
+      assert.strictEqual(await promise, 'tfRequireAuth');
+    });
+
+    it('should map RequireAuth to tfOptionalAuth when authorization is already required', async function() {
+      const promise = prompts.promptXrpFlag({ requireAuthorization: true });
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(' ');
+      process.stdin.push(KEYSTROKES.ENTER);
+      assert.strictEqual(await promise, 'tfOptionalAuth');
+    });
+
+    it('should map the XRP toggle to tfDisallowXRP when incoming XRP is currently allowed', async function() {
+      const promise = prompts.promptXrpFlag({ disallowIncomingXRP: false });
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(' ');
+      process.stdin.push(KEYSTROKES.ENTER);
+      assert.strictEqual(await promise, 'tfDisallowXRP');
+    });
+
+    it('should map the XRP toggle to tfAllowXRP when incoming XRP is currently disallowed', async function() {
+      const promise = prompts.promptXrpFlag({ disallowIncomingXRP: true });
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(' ');
+      process.stdin.push(KEYSTROKES.ENTER);
+      assert.strictEqual(await promise, 'tfAllowXRP');
+    });
+  });
 });

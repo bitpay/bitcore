@@ -3,6 +3,7 @@ import * as RBC from 'ripple-binary-codec';
 import * as binary from 'ripple-binary-codec/dist/binary';
 import { HashPrefix } from 'ripple-binary-codec/dist/hash-prefixes';
 import * as xrpl from 'xrpl';
+import * as Utils from '../../utils';
 import { BTCTxProvider } from '../btc';
 import type { Key } from '../../types/derivation';
 
@@ -15,12 +16,23 @@ export class XRPTxProvider {
     fee: number;
     feeRate: number;
     nonce: number;
-    type?: string;
-    flags?: number;
+    txType?: string;
+    flags?: number | string;
   }) {
-    const { recipients, tag, from, invoiceID, fee, nonce, type, flags } = params;
+    const {
+      recipients,
+      tag,
+      from,
+      invoiceID,
+      fee,
+      nonce,
+      // `params.type` is an old param to fallback to.
+      // Changed to txType to re-use similar property name from other chains (e.g. EVM)
+      txType = params['type'],
+      flags,
+    } = params;
 
-    switch (type?.toLowerCase()) {
+    switch (txType?.toLowerCase()) {
       case 'payment':
       default:
         const { address, amount } = recipients[0];
@@ -35,7 +47,8 @@ export class XRPTxProvider {
           Flags: 2147483648 // tfFullyCanonicalSig - DEPRECATED but still here for backward compatibility
         };
         if (flags != null) {
-          paymentTx.Flags = flags;
+          paymentTx.Flags = this.transformFlags<xrpl.PaymentFlagsInterface>(flags);
+          xrpl.setTransactionFlagsToNumber(paymentTx);
         }
         if (invoiceID) {
           paymentTx.InvoiceID = invoiceID;
@@ -45,16 +58,14 @@ export class XRPTxProvider {
         }
         return xrpl.encode(paymentTx);
       case 'accountset':
-        if (!xrpl.AccountSetTfFlags[flags]) {
-          throw new Error('Invalid tfAccountSet flag');
-        }
         const accountSetTx: xrpl.AccountSet = {
           TransactionType: 'AccountSet',
           Account: from,
-          Flags: (isNaN(flags) ? xrpl.AccountSetTfFlags[flags] : flags) as number, // in testing, only the number values take effect.
+          Flags: this.transformFlags<xrpl.AccountSetFlagsInterface>(flags),
           Fee: fee.toString(),
           Sequence: nonce
         };
+        xrpl.setTransactionFlagsToNumber(accountSetTx);
         return xrpl.encode(accountSetTx);
       case 'accountdelete':
         const accountDeleteTx: xrpl.AccountDelete = {
@@ -125,5 +136,20 @@ export class XRPTxProvider {
       signingFieldsOnly: true
     }).toString('hex');
     return this.sha512Half(encoded);
+  }
+
+  private transformFlags<T extends xrpl.PaymentFlagsInterface | xrpl.AccountSetFlagsInterface>(flags: string | number): T | number {
+    if (flags == null) {
+      throw new Error('No XRP flag(s) provided');
+    }
+    if (typeof flags === 'number') {
+      // Pass through numbers since they may be combined flags
+      return flags;
+    }
+    return flags.split(',').reduce((acc, flag) => {
+      const flagValue = Utils.normalizeXrpFlag(flag.trim());
+      acc[flagValue] = true;
+      return acc;
+    }, {} as T);
   }
 }
