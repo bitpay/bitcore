@@ -282,13 +282,20 @@ export const Utils = {
   },
 
   getIpFromReq(req): string {
+    let ip = '';
     if (req.headers) {
-      if (req.headers['x-forwarded-for']) return req.headers['x-forwarded-for'].split(',')[0];
-      if (req.headers['x-real-ip']) return req.headers['x-real-ip'].split(',')[0];
+      if (req.headers['x-forwarded-for']) {
+        ip = req.headers['x-forwarded-for'].split(',')[0];
+      } else if (req.headers['x-real-ip']) {
+        ip = req.headers['x-real-ip'].split(',')[0];
+      }
     }
-    if (req.ip) return req.ip;
-    if (req.connection && req.connection.remoteAddress) return req.connection.remoteAddress;
-    return '';
+    if (!ip && req.ip) ip = req.ip;
+    if (!ip && req.connection?.remoteAddress) ip = req.connection.remoteAddress;
+
+    if (ip && typeof ip === 'string') ip = ip.trim();
+
+    return ip;
   },
 
   checkValueInCollection(value, collection) {

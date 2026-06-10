@@ -108,7 +108,7 @@ Object.defineProperty(Output.prototype, 'tokenData', {
         nft.capability = tokenData.nft.capability === undefined ? 'none' : String(tokenData.nft.capability);
         $.checkState(nftCapabilityNumberToLabel.includes(nft.capability), 'nft capability must be "none", "mutable", or "minting".');
         const commitment = tokenData.nft.commitment === undefined ? Buffer.of() : typeof tokenData.nft.commitment === 'string' ? Buffer.from(tokenData.nft.commitment, 'hex') : Buffer.from(tokenData.nft.commitment);
-        $.checkState(commitment.length <= 40, 'nft commitment length must be less than or equal to 40 bytes.');
+        $.checkState(commitment.length <= 128, 'nft commitment length must be less than or equal to 128 bytes.');
         nft.commitment = commitment.toString('hex');
         this._tokenData = { category, amount, nft };
       } else {

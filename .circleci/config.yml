@@ -35,7 +35,9 @@ commands:
     steps:
       - run:
           name: Build & start blockchain containers
-          command: docker-compose -f docker-compose.test.base.yml -f docker-compose.test.ci.yml up --detach
+          command: |
+            docker buildx prune -f
+            docker compose -f docker-compose.test.base.yml -f docker-compose.test.ci.yml up --detach
   use_python2:
     description: Set python 2.7 as global python version on the executor machine
     steps:
