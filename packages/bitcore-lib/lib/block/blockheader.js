@@ -1,12 +1,10 @@
 'use strict';
 
-const _ = require('lodash');
 const BN = require('../crypto/bn');
 const Hash = require('../crypto/hash');
 const BufferReader = require('../encoding/bufferreader');
 const BufferWriter = require('../encoding/bufferwriter');
 const BufferUtil = require('../util/buffer');
-const JSUtil = require('../util/js');
 const $ = require('../util/preconditions');
 
 const GENESIS_BITS = 0x1d00ffff;
@@ -52,7 +50,7 @@ BlockHeader._from = function _from(arg) {
   let info = {};
   if (BufferUtil.isBuffer(arg)) {
     info = BlockHeader._fromBufferReader(BufferReader(arg));
-  } else if (_.isObject(arg)) {
+  } else if (typeof arg === 'object' && arg !== null) {
     info = BlockHeader._fromObject(arg);
   } else {
     throw new TypeError('Unrecognized argument for BlockHeader');
@@ -69,10 +67,10 @@ BlockHeader._fromObject = function _fromObject(data) {
   $.checkArgument(data, 'data is required');
   let prevHash = data.prevHash;
   let merkleRoot = data.merkleRoot;
-  if (_.isString(data.prevHash)) {
+  if (typeof data.prevHash === 'string') {
     prevHash = BufferUtil.reverse(Buffer.from(data.prevHash, 'hex'));
   }
-  if (_.isString(data.merkleRoot)) {
+  if (typeof data.merkleRoot === 'string') {
     merkleRoot = BufferUtil.reverse(Buffer.from(data.merkleRoot, 'hex'));
   }
   const info = {
@@ -208,7 +206,9 @@ BlockHeader.prototype.toBufferWriter = function toBufferWriter(bw) {
 BlockHeader.prototype.getTargetDifficulty = function getTargetDifficulty(bits) {
   bits = bits || this.bits;
 
+  // eslint-disable-next-line no-bitwise
   let target = new BN(bits & 0xffffff);
+  // eslint-disable-next-line no-bitwise
   let mov = 8 * ((bits >>> 24) - 3);
   while (mov-- > 0) {
     target = target.mul(new BN(2));
@@ -251,7 +251,7 @@ const idProperty = {
     }
     return this._id;
   },
-  set: _.noop
+  set: function () {/** no op */}
 };
 Object.defineProperty(BlockHeader.prototype, 'id', idProperty);
 Object.defineProperty(BlockHeader.prototype, 'hash', idProperty);
