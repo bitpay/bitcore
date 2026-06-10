@@ -260,10 +260,9 @@ describe('Solana API', function() {
           chain,
           network,
           wallet,
-          req,
-          res,
           args: { tokenAddress }
-        })
+        } as any)
+          .then((stream: any) => streamJsonArray(stream, req, res))
           .catch(e => r(e));
       });
 
@@ -324,10 +323,9 @@ describe('Solana API', function() {
           chain,
           network,
           wallet,
-          req,
-          res,
           args: { tokenAddress, limit: 1 }
-        })
+        } as any)
+          .then((stream: any) => streamJsonArray(stream, req, res))
           .catch(e => r(e));
       });
 
