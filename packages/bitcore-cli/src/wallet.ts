@@ -1,3 +1,4 @@
+import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import url from 'url';
@@ -229,19 +230,29 @@ export class Wallet implements IWallet {
   }
 
   private lockLoadedWallet() {
+    const lockFilename = Utils.getWalletLockFileName(this.name, this.dir);
     try {
-      const lockFilename = Utils.getWalletLockFileName(this.name, this.dir);
-      fs.writeFileSync(lockFilename, '', { flag: 'wx' }); // wx flag ensures it fails if the file already exists
+      fs.writeFileSync(lockFilename, process.pid.toString(), { flag: 'wx', mode: 0o444 }); // wx flag ensures it fails if the file already exists
       process.on('exit', () => {
-        // Note, this does not fire in a `kill -9` scenario, but that's unavoidable. In that case, the lock file will be left behind and should be removed manually.
         try {
           fs.rmSync(lockFilename);
         } catch (e) {
           _verbose && console.error(e);
-          console.error('Failed to remove wallet lock file on exit. Please check for orphaned lock files in the wallet directory.');
+          console.error('Failed to remove wallet lock file on exit.');
         }
       });
     } catch (e) {
+      if (e.code === 'EEXIST') {
+        // Check if process is still running
+        const pid = fs.readFileSync(lockFilename, 'utf-8')?.trim();
+        const response = execSync(`ps -q ${pid} -o args || true`, { encoding: 'utf-8' });
+        const command = response?.split('\n')[1] || '';
+        if (!command.includes(`bitcore-cli ${this.name}`)) {
+          // Stale lock file, remove it and continue
+          fs.rmSync(lockFilename);
+          return this.lockLoadedWallet();
+        }
+      }
       _verbose && console.error(e);
       Utils.die('Wallet is already open in another process.');
     }

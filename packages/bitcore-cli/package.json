@@ -26,7 +26,7 @@
     }
   ],
   "bin": {
-    "bitcore-cli": "./bin/wallet"
+    "bitcore-cli": "./bin/bitcore-cli"
   },
   "scripts": {
     "test": "npm run compile && node copyTestWallets && mocha --exit 'build/test/**/*.js'",
