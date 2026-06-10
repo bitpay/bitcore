@@ -108,6 +108,15 @@ describe('Utils', function() {
     });
   });
 
+  // ─── getWalletLockFileName ───────────────────────────────────────────────────────
+
+  describe('getWalletLockFileName', function() {
+    it('should return the wallet lock file path', function() {
+      const result = Utils.getWalletLockFileName('myWallet', '/home/user/wallets');
+      assert.strictEqual(result, path.join('/home/user/wallets', '.myWallet.LOCK'));
+    });
+  });
+
   // ─── colorText ───────────────────────────────────────────────────────────────
 
   describe('colorText', function() {

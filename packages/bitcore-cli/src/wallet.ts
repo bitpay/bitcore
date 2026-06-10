@@ -228,6 +228,25 @@ export class Wallet implements IWallet {
     return secret as string | undefined;
   }
 
+  private lockLoadedWallet() {
+    try {
+      const lockFilename = Utils.getWalletLockFileName(this.name, this.dir);
+      fs.writeFileSync(lockFilename, '', { flag: 'wx' }); // wx flag ensures it fails if the file already exists
+      process.on('exit', () => {
+        // Note, this does not fire in a `kill -9` scenario, but that's unavoidable. In that case, the lock file will be left behind and should be removed manually.
+        try {
+          fs.rmSync(lockFilename);
+        } catch (e) {
+          _verbose && console.error(e);
+          console.error('Failed to remove wallet lock file on exit. Please check for orphaned lock files in the wallet directory.');
+        }
+      });
+    } catch (e) {
+      _verbose && console.error(e);
+      Utils.die('Wallet is already open in another process.');
+    }
+  }
+
   async load(opts?: { doNotComplete?: boolean; allowCache?: boolean }) {
     const { doNotComplete, allowCache } = opts || {};
 
@@ -280,6 +299,7 @@ export class Wallet implements IWallet {
       credentials: Credentials.fromObj(walletData.credentials)
     } as WalletData;
 
+    this.lockLoadedWallet();
     if (doNotComplete) return key;
 
     const status = await this.client.openWallet();

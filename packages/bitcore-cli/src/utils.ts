@@ -58,6 +58,10 @@ export class Utils {
     return path.join(dir, walletName + '.json');
   }
 
+  static getWalletLockFileName(walletName, dir) {
+    return path.join(dir, '.' + walletName + '.LOCK');
+  }
+
   static colorText(text: string, color: Color): string {
     return Constants.COLOR[color.toLowerCase()].replace('%s', text);
   }
