@@ -395,7 +395,7 @@ PrivateKey.prototype.toObject = PrivateKey.prototype.toJSON = function toObject(
 PrivateKey.prototype.createTapTweak = function(merkleRoot) {
   const order = Point.getN();
   const P = Point.getG().mul(this.bn);
-  const secKey = P.y.isEven() ? this.bn : order.sub(this.bn);
+  const secKey = P.getY().isEven() ? this.bn : order.sub(this.bn);
   const taggedWriter = new TaggedHash('TapTweak');
   taggedWriter.write(P.getX().toBuffer({ size: 32 }));
 
