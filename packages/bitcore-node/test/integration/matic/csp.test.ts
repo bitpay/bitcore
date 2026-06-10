@@ -341,6 +341,57 @@ describe('Polygon/MATIC API', function() {
     it('should stream wallet\'s valid & invalid MATIC transactions', async () =>
       await streamWalletTransactionsTest(chain, network, true)
     );
+
+    it('should not duplicate top-level native EVM receives with root effects', async () => {
+      const sender = '0x9F1a8A1bCc8e45Db2aD542e98b7174a9b519A45C';
+      const amount = 17000;
+      const txid = '0xf1b8ad69d71cc68eb73a3778457fcb74f9a4471df9afae03dedd3e0de7ae7f58';
+
+      await EVMTransactionStorage.collection.insertOne({
+        chain,
+        network,
+        txid,
+        blockHeight: 1,
+        blockHash: '0xblock',
+        blockTime: new Date('2024-01-01T00:00:00.000Z'),
+        blockTimeNormalized: new Date('2024-01-01T00:00:00.000Z'),
+        fee: 21000,
+        value: amount,
+        wallets: [wallet._id as ObjectId],
+        to: address,
+        from: sender,
+        gasLimit: 21000,
+        gasPrice: 1,
+        nonce: 1,
+        transactionIndex: 0,
+        data: Buffer.from(''),
+        internal: [],
+        calls: [],
+        receipt: {
+          status: true,
+          transactionHash: txid,
+          transactionIndex: 0,
+          blockHash: '0xblock',
+          blockNumber: 1,
+          cumulativeGasUsed: 21000,
+          gasUsed: 21000,
+          logs: []
+        },
+        effects: [{
+          to: address,
+          from: sender,
+          amount: String(amount),
+          callStack: '0'
+        }]
+      } as IEVMTransactionInProcess);
+
+      const txs = await streamWalletTransactionRows(chain, network, wallet);
+
+      expect(txs).to.have.lengthOf(1);
+      expect(txs[0].txid).to.equal(txid);
+      expect(txs[0].category).to.equal('receive');
+      expect(txs[0].satoshis).to.equal(String(amount));
+    });
   });
 });
 
@@ -428,4 +479,46 @@ const streamWalletTransactionsTest = async (chain: string, network: string, incl
   expect(err).to.not.exist;
   expect(counter).to.eq(includeInvalidTxs ? txCount * 2 : txCount);
   sandbox.restore();
+};
+
+const streamWalletTransactionRows = async (chain: string, network: string, wallet: IWallet) => {
+  const chunks: string[] = [];
+  const req = (new Writable({
+    write: function(_data, _, cb) {
+      cb();
+    }
+  }) as unknown) as Request;
+
+  const res = (new Writable({
+    write: function(data, _, cb) {
+      chunks.push(data.toString());
+      cb();
+    }
+  }) as unknown) as Response;
+  res.type = () => res;
+
+  const err = await new Promise(r => {
+    res
+      .on('error', r)
+      .on('finish', r);
+
+    MATIC.streamWalletTransactions({
+      chain,
+      network,
+      wallet,
+      req,
+      res,
+      args: {}
+    } as StreamWalletTransactionsParams)
+      .catch(e => r(e));
+  });
+
+  expect(err).to.not.exist;
+
+  return chunks
+    .join('')
+    .trim()
+    .split('\n')
+    .filter(Boolean)
+    .map(line => JSON.parse(line));
 };
