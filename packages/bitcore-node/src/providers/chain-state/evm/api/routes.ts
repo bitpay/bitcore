@@ -4,6 +4,7 @@ import { Router } from 'express';
 import config from '../../../../config';
 import logger from '../../../../logger';
 import { WebhookStorage } from '../../../../models/webhook';
+import { respondWithError, streamJsonArray } from '../../../../routes/apiUtils';
 import { Config } from '../../../../services/config';
 import { IEVMNetworkConfig } from '../../../../types/Config';
 import { castToBool } from '../../../../utils';
@@ -235,22 +236,25 @@ export class EVMRouter {
     });
   };
 
-  private streamGnosisWalletTransactions(router: Router) { 
+  private streamGnosisWalletTransactions(router: Router) {
     router.get(`/api/${this.chain}/:network/ethmultisig/transactions/:multisigContractAddress`, async (req, res) => {
       const { network, multisigContractAddress } = req.params;
       try {
-        return await Gnosis.streamGnosisWalletTransactions({
+        const stream = await Gnosis.streamGnosisWalletTransactions({
           chain: this.chain,
           network,
           multisigContractAddress,
           wallet: {} as any,
-          req,
-          res,
           args: req.query
         });
+        const result = await streamJsonArray(stream, req, res);
+        if (!result.success) {
+          logger.error('Error mid-stream (streamGnosisWalletTransactions): %o', result.error?.log || result.error);
+        }
+        return;
       } catch (err: any) {
         logger.error('Multisig Transactions Error::%o', err.stack || err.message || err);
-        return res.status(500).send(err.message || err);
+        return respondWithError(res, err);
       }
     });
   };

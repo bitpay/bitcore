@@ -12,6 +12,7 @@ import { MATIC } from '../../../src/modules/matic/api/csp';
 import { IEVMTransactionInProcess } from '../../../src/providers/chain-state/evm//types';
 import { EVMBlockStorage } from '../../../src/providers/chain-state/evm/models/block';
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
+import { streamJsonArray } from '../../../src/routes/apiUtils';
 import { StreamWalletTransactionsParams } from '../../../src/types/namespaces/ChainStateProvider';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
@@ -195,7 +196,8 @@ describe('Polygon/MATIC API', function() {
       transform: (_data, _, cb) => cb(null)
     }) as unknown) as Request;
 
-    await MATIC.streamAddressTransactions({ chain, network, address, res, req, args: {} });
+    const stream = await MATIC.streamAddressTransactions({ chain, network, address, args: {} });
+    await streamJsonArray(stream as any, req, res);
     let counter = 0;
     await new Promise(r => {
       res
@@ -236,7 +238,8 @@ describe('Polygon/MATIC API', function() {
       }
     }) as unknown) as Request;
 
-    await MATIC.streamTransactions({ chain, network, res, req, args: { blockHeight: 1 } });
+    const stream = await MATIC.streamTransactions({ chain, network, args: { blockHeight: 1 } });
+    await streamJsonArray(stream as any, req, res);
     let counter = 0;
     await new Promise<void>(r => {
       res
@@ -281,7 +284,8 @@ describe('Polygon/MATIC API', function() {
       }
     }) as unknown) as Request;
 
-    await MATIC.streamTransactions({ chain, network, res, req, args: { blockHash: '12345' } });
+    const stream = await MATIC.streamTransactions({ chain, network, args: { blockHash: '12345' } });
+    await streamJsonArray(stream as any, req, res);
     let counter = 0;
     await new Promise<void>(r => {
       res
@@ -464,12 +468,11 @@ const streamWalletTransactionsTest = async (chain: string, network: string, incl
       chain,
       network,
       wallet,
-      req,
-      res,
       args: {
         includeInvalidTxs
       }
     } as StreamWalletTransactionsParams)
+      .then((stream: any) => streamJsonArray(stream, req, res))
       .catch(e => r(e));
   });
 
