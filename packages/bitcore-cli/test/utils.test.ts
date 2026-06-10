@@ -108,7 +108,7 @@ describe('Utils', function() {
     });
   });
 
-  // ─── getWalletLockFileName ───────────────────────────────────────────────────────
+  // ─── getWalletLockFileName ───────────────────────────────────────────────────
 
   describe('getWalletLockFileName', function() {
     it('should return the wallet lock file path', function() {

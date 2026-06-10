@@ -1,5 +1,6 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import url from 'url';
 import {
@@ -48,6 +49,7 @@ process.on('uncaughtException', (uncaught) => {
 });
 
 let _verbose = false;
+let _hasLockFile = false;
 
 export class Wallet implements IWallet {
   static _bpCurrencies: ITokenObj[];
@@ -230,9 +232,13 @@ export class Wallet implements IWallet {
   }
 
   private lockLoadedWallet() {
+    if (_hasLockFile) {
+      return;
+    }
     const lockFilename = Utils.getWalletLockFileName(this.name, this.dir);
     try {
       fs.writeFileSync(lockFilename, process.pid.toString(), { flag: 'wx', mode: 0o444 }); // wx flag ensures it fails if the file already exists
+      _hasLockFile = true;
       process.on('exit', () => {
         try {
           fs.rmSync(lockFilename);
@@ -245,12 +251,19 @@ export class Wallet implements IWallet {
       if (e.code === 'EEXIST') {
         // Check if process is still running
         const pid = fs.readFileSync(lockFilename, 'utf-8')?.trim();
-        const response = execSync(`ps -q ${pid} -o args || true`, { encoding: 'utf-8' });
-        const command = response?.split('\n')[1] || '';
-        if (!command.includes(`bitcore-cli ${this.name}`)) {
-          // Stale lock file, remove it and continue
-          fs.rmSync(lockFilename);
-          return this.lockLoadedWallet();
+        if (os.platform() === 'win32') {
+          // TODO
+        } else {
+          const stat = fs.statSync(lockFilename);
+          if (stat.uid === process.getuid()) { // make sure the lock file belongs to the current user
+            const response = execSync(`ps -q ${pid} -o args || true`, { encoding: 'utf-8' });
+            const command = response?.split('\n')[1] || '';
+            if (!command.includes(`bitcore-cli ${this.name}`) && !command.includes(`build/src/cli.js ${this.name}`)) {
+              // Stale lock file, remove it and continue
+              fs.rmSync(lockFilename);
+              return this.lockLoadedWallet();
+            }
+          }
         }
       }
       _verbose && console.error(e);
