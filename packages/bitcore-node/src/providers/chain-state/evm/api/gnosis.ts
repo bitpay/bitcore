@@ -1,5 +1,5 @@
 import { Readable } from 'stream';
-import { Utils } from '@bitpay-labs/crypto-wallet-core';
+import { Utils, Web3 } from '@bitpay-labs/crypto-wallet-core';
 import { ChainStateProvider } from '../../';
 import { Config } from '../../../../services/config';
 import { IEVMNetworkConfig } from '../../../../types/Config';
@@ -155,42 +155,49 @@ export class GnosisApi {
 
   async streamGnosisWalletTransactions(params: { multisigContractAddress: string } & StreamWalletTransactionsParams) {
     const { chain, network, multisigContractAddress, res, args } = params;
+    const normalizedMultisigContractAddress = Web3.utils.toChecksumAddress(multisigContractAddress);
+    const tokenAddress = args.tokenAddress ? Web3.utils.toChecksumAddress(args.tokenAddress) : undefined;
     const transactionQuery = getCSP(chain, network).getWalletTransactionQuery(params);
     delete transactionQuery.wallets;
     delete transactionQuery['wallets.0'];
     let query;
-    if (args.tokenAddress) {
+    if (tokenAddress) {
       query = {
         $or: [
           {
             ...transactionQuery,
-            to: args.tokenAddress,
-            'abiType.params.0.value': multisigContractAddress.toLowerCase()
+            to: tokenAddress,
+            'abiType.params.0.value': normalizedMultisigContractAddress.toLowerCase()
           },
           {
             ...transactionQuery,
-            'internal.action.to': args.tokenAddress.toLowerCase(),
-            'internal.action.from': multisigContractAddress.toLowerCase()
+            'internal.action.to': tokenAddress.toLowerCase(),
+            'internal.action.from': normalizedMultisigContractAddress.toLowerCase()
           },
           {
             ...transactionQuery,
-            'effects.contractAddress': args.tokenAddress,
-            'effects.from': multisigContractAddress
+            'effects.contractAddress': tokenAddress,
+            'effects.from': normalizedMultisigContractAddress
+          },
+          {
+            ...transactionQuery,
+            'effects.contractAddress': tokenAddress,
+            'effects.to': normalizedMultisigContractAddress
           }
         ]
       };
     } else {
       query = {
         $or: [
-          { ...transactionQuery, to: multisigContractAddress },
-          { ...transactionQuery, 'internal.action.to': multisigContractAddress.toLowerCase() },
-          { ...transactionQuery, 'effects.to': multisigContractAddress }
+          { ...transactionQuery, to: normalizedMultisigContractAddress },
+          { ...transactionQuery, 'internal.action.to': normalizedMultisigContractAddress.toLowerCase() },
+          { ...transactionQuery, 'effects.to': normalizedMultisigContractAddress }
         ]
       };
     }
 
     let transactionStream = new Readable({ objectMode: true });
-    const ethTransactionTransform = new EVMListTransactionsStream([multisigContractAddress, args.tokenAddress]);
+    const ethTransactionTransform = new EVMListTransactionsStream([normalizedMultisigContractAddress], tokenAddress);
     const EVM = getCSP(chain, network);
     const populateReceipt = new PopulateReceiptTransform(EVM);
     const populateEffects = new PopulateEffectsTransform(EVM);
@@ -221,7 +228,7 @@ export class GnosisApi {
     transactionStream = cursor.pipe(populateEffects); // For old db entries
 
     if (multisigContractAddress) {
-      const multisigTransform = new MultisigRelatedFilterTransform(multisigContractAddress, args.tokenAddress);
+      const multisigTransform = new MultisigRelatedFilterTransform(normalizedMultisigContractAddress, tokenAddress);
       transactionStream = transactionStream.pipe(multisigTransform);
     }
 

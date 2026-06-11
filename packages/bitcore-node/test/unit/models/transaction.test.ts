@@ -1,10 +1,14 @@
 import { ObjectId } from 'bson';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { Readable } from 'stream';
+import { Readable, Writable } from 'stream';
 import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import { CoinStorage } from '../../../src/models/coin';
 import { MintOp, SpendOp, TaggedBitcoinTx, TransactionStorage, TxOp } from '../../../src/models/transaction';
+import { ChainStateProvider } from '../../../src/providers/chain-state';
+import { Gnosis } from '../../../src/providers/chain-state/evm/api/gnosis';
+import { Config } from '../../../src/services/config';
+import { EVMListTransactionsStream } from '../../../src/providers/chain-state/evm/api/transform';
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { BitcoinTransaction, TransactionInput } from '../../../src/types/namespaces/Bitcoin';
@@ -16,6 +20,22 @@ import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 
 describe('Transaction Model', function() {
   const { Transaction } = BitcoreLib;
+  const collectEvmListTransactionRows = async (walletAddresses: Array<string>, tokenAddress: string | undefined, txs: Array<any>) => {
+    const rows = new Array<any>();
+    const stream = new EVMListTransactionsStream(walletAddresses, tokenAddress);
+    const done = new Promise<void>((resolve, reject) => {
+      stream
+        .on('data', chunk => rows.push(JSON.parse(chunk.toString())))
+        .on('error', reject)
+        .on('end', resolve);
+    });
+    for (const tx of txs) {
+      stream.write(tx);
+    }
+    stream.end();
+    await done;
+    return rows;
+  };
   
   before(unitBeforeHelper);
   after(unitAfterHelper);
@@ -198,6 +218,199 @@ describe('Transaction Model', function() {
   });
 
   describe('EVM', function() {
+    describe('EVM token wallet history filtering', function() {
+      beforeEach(() => {
+        sandbox.stub(Config, 'chainConfig').returns({ leanTransactionStorage: false } as any);
+      });
+
+      const gnosisBusdToken = Web3.utils.toChecksumAddress('0x4fabb145d64652a948d72533023f6e7a623c7c53');
+      const gnosisMultisigContractAddress = Web3.utils.toChecksumAddress('0xa91cfe0dcad33f36f3c9428d48eccbd8a71951b4');
+      const gnosisCounterpartyAddress = Web3.utils.toChecksumAddress('0x8489935991b0eac9ce9e9330d35b9734ecdf2cad');
+      const gnosisTokenEffect = (overrides: Record<string, any> = {}) => ({
+        to: gnosisCounterpartyAddress,
+        from: gnosisMultisigContractAddress,
+        amount: '112519572370000003072',
+        type: 'ERC20:transfer',
+        contractAddress: gnosisBusdToken,
+        callStack: '0',
+        ...overrides
+      });
+      const gnosisTokenTx = (overrides: Record<string, any> = {}) => ({
+        _id: new ObjectId(),
+        txid: '0x28d6aa82a06e58290d10cc33ed2bc782d6c7aeb38d29ce218be53678731fe911',
+        chain: 'ETH',
+        network: 'mainnet',
+        blockHeight: 15950646,
+        blockTimeNormalized: new Date('2022-11-12T01:26:59.000Z'),
+        from: gnosisMultisigContractAddress,
+        to: gnosisBusdToken,
+        value: 0,
+        fee: 622112000000000,
+        gasPrice: 16000000000,
+        gasLimit: 160000,
+        nonce: 5,
+        transactionIndex: 0,
+        data: Buffer.from(''),
+        internal: [],
+        calls: [],
+        receipt: { status: true },
+        effects: [gnosisTokenEffect()],
+        ...overrides
+      });
+      const collectGnosisTokenHistoryRows = async (
+        tx: Record<string, any>,
+        requestOverrides: { multisigContractAddress?: string; tokenAddress?: string } = {}
+      ) => {
+        const cursor = Readable.from([tx], { objectMode: true }) as any;
+        cursor.sort = sandbox.stub().returns(cursor);
+        cursor.addCursorFlag = sandbox.stub().returns(cursor);
+        cursor.close = sandbox.stub();
+        let findQuery: any;
+        sandbox.stub(EVMTransactionStorage, 'collection').get(() => ({
+          find: sandbox.stub().callsFake(query => {
+            findQuery = query;
+            return cursor;
+          })
+        }));
+        sandbox.stub(ChainStateProvider, 'get').returns({
+          getWalletTransactionQuery: sandbox.stub().returns({
+            chain: 'ETH',
+            network: 'mainnet',
+            wallets: new ObjectId(),
+            'wallets.0': { $exists: true }
+          }),
+          populateEffects: sandbox.stub().callsFake(tx => tx),
+          populateReceipt: sandbox.stub().callsFake(tx => tx)
+        } as any);
+
+        const rows = new Array<any>();
+        const req = new Readable({ read() {} }) as any;
+        const res = new Writable({
+          write(chunk, _, done) {
+            for (const line of chunk.toString().split('\n').filter(Boolean)) {
+              rows.push(JSON.parse(line));
+            }
+            done();
+          }
+        }) as any;
+        const finished = new Promise<void>((resolve, reject) => {
+          res.on('finish', resolve);
+          res.on('error', reject);
+        });
+
+        await Gnosis.streamGnosisWalletTransactions({
+          chain: 'ETH',
+          network: 'mainnet',
+          multisigContractAddress: requestOverrides.multisigContractAddress || gnosisMultisigContractAddress,
+          wallet: { _id: new ObjectId() },
+          req,
+          res,
+          args: { tokenAddress: requestOverrides.tokenAddress || gnosisBusdToken }
+        } as any);
+        await finished;
+        return { findQuery, rows };
+      };
+
+      it('should not emit token history rows for failed ERC20 sends', async () => {
+        const busdToken = Web3.utils.toChecksumAddress('0x4fabb145d64652a948d72533023f6e7a623c7c53');
+        const walletAddress = Web3.utils.toChecksumAddress('0xa91cfe0dcad33f36f3c9428d48eccbd8a71951b4');
+        const counterpartyAddress = Web3.utils.toChecksumAddress('0x8489935991b0eac9ce9e9330d35b9734ecdf2cad');
+        const rows = await collectEvmListTransactionRows([walletAddress], busdToken, [{
+          _id: new ObjectId(),
+          txid: '0x28d6aa82a06e58290d10cc33ed2bc782d6c7aeb38d29ce218be53678731fe911',
+          chain: 'ETH',
+          network: 'mainnet',
+          blockHeight: 15950646,
+          blockTimeNormalized: new Date('2022-11-12T01:26:59.000Z'),
+          from: walletAddress,
+          to: counterpartyAddress,
+          value: 112519572370000003072,
+          fee: 622112000000000,
+          gasPrice: 16000000000,
+          gasLimit: 160000,
+          nonce: 5,
+          transactionIndex: 0,
+          data: Buffer.from(''),
+          internal: [],
+          calls: [],
+          receipt: { status: false },
+          effects: [{
+            to: counterpartyAddress,
+            from: walletAddress,
+            amount: '112519572370000003072',
+            type: 'ERC20:transfer',
+            contractAddress: busdToken,
+            callStack: '0'
+          }]
+        }]);
+
+        expect(rows).to.deep.equal([]);
+      });
+
+      it('should not emit Gnosis token history rows for failed ERC20 sends', async () => {
+        const { rows } = await collectGnosisTokenHistoryRows(gnosisTokenTx({
+          receipt: { status: false }
+        }));
+
+        expect(rows).to.deep.equal([]);
+      });
+
+      it('should emit one Gnosis token history row for successful ERC20 sends', async () => {
+        const { rows } = await collectGnosisTokenHistoryRows(gnosisTokenTx({
+          effects: [gnosisTokenEffect({ amount: '100' })]
+        }));
+
+        expect(rows).to.have.length(1);
+        expect(rows[0].category).to.equal('send');
+        expect(rows[0].satoshis).to.equal(-100);
+      });
+
+      it('should emit one Gnosis token history row for successful ERC20 receives', async () => {
+        const { findQuery, rows } = await collectGnosisTokenHistoryRows(gnosisTokenTx({
+          from: gnosisCounterpartyAddress,
+          effects: [gnosisTokenEffect({
+            to: gnosisMultisigContractAddress,
+            from: gnosisCounterpartyAddress,
+            amount: '100'
+          })]
+        }));
+
+        expect(rows).to.have.length(1);
+        expect(rows[0].category).to.equal('receive');
+        expect(rows[0].satoshis).to.equal('100');
+        expect(findQuery.$or).to.deep.include({
+          chain: 'ETH',
+          network: 'mainnet',
+          'effects.contractAddress': gnosisBusdToken,
+          'effects.to': gnosisMultisigContractAddress
+        });
+      });
+
+      it('should match Gnosis token receives when request addresses are lowercase', async () => {
+        const { findQuery, rows } = await collectGnosisTokenHistoryRows(gnosisTokenTx({
+          from: gnosisCounterpartyAddress,
+          effects: [gnosisTokenEffect({
+            to: gnosisMultisigContractAddress,
+            from: gnosisCounterpartyAddress,
+            amount: '100'
+          })]
+        }), {
+          multisigContractAddress: gnosisMultisigContractAddress.toLowerCase(),
+          tokenAddress: gnosisBusdToken.toLowerCase()
+        });
+
+        expect(rows).to.have.length(1);
+        expect(rows[0].category).to.equal('receive');
+        expect(rows[0].satoshis).to.equal('100');
+        expect(findQuery.$or).to.deep.include({
+          chain: 'ETH',
+          network: 'mainnet',
+          'effects.contractAddress': gnosisBusdToken,
+          'effects.to': gnosisMultisigContractAddress
+        });
+      });
+    });
+
     describe('getEffects', function() {
       it('should get effects for simple USDC transaction', async () => {
         const effects = EVMTransactionStorage.getEffects(EvmTxData.SimpleUSDCTransfer);

@@ -5,11 +5,20 @@ import { jsonStringify, overlaps } from '../../../../utils';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { IEVMTransactionTransformed } from '../types';
 
+const isFailedReceipt = (receipt?: { status?: boolean | number | string | bigint }) => {
+  const status = receipt?.status;
+  return status === false || status === 0 || status === 0n || status === '0' || status === '0x0';
+};
+
 export class EVMListTransactionsStream extends TransformWithEventPipe {
   constructor(private walletAddresses: Array<string>, private tokenAddress?: string) {
     super({ objectMode: true });
   }
   async _transform(transaction: MongoBound<IEVMTransactionTransformed>, _, done) {
+    if (this.tokenAddress && isFailedReceipt(transaction.receipt)) {
+      return done();
+    }
+
     const baseTx = {
       id: transaction._id,
       txid: transaction.txid,
