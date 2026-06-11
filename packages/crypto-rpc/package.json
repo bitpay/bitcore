@@ -33,6 +33,7 @@
     "commander": "2.8.1",
     "dogecoind-rpc": "0.8.1",
     "lightning": "10.0.1",
+    "nyc": "^18.0.0",
     "promptly": "0.2.0"
   },
   "devDependencies": {
