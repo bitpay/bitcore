@@ -5,8 +5,6 @@
   "main": "index.js",
   "scripts": {
     "test": "gulp test",
-    "test:ci": "npm run test",
-    "coverage": "gulp coverage",
     "build": "gulp",
     "pub": "npm run build && npm publish"
   },
@@ -30,6 +28,20 @@
     "chai": "~1.10.0",
     "gulp": "^4.0.0",
     "sinon": "^1.12.2"
+  },
+  "nyc": {
+    "include": [
+      "lib"
+    ],
+    "reporter": [
+      "html",
+      "text-summary"
+    ],
+    "check-coverage": true,
+    "statements": 90,
+    "branches": 80,
+    "functions": 90,
+    "lines": 90
   },
   "license": "MIT",
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"

@@ -6,8 +6,6 @@
   "main": "index.js",
   "scripts": {
     "test": "gulp test",
-    "test:ci": "npm run test",
-    "coverage": "gulp coverage",
     "build": "gulp",
     "pub": "npm run build && npm publish"
   },
@@ -39,12 +37,25 @@
     "assert": "^1.4.1",
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
-    "gulp": "^4.0.0",
-    "mocha": "^5.2.0"
+    "gulp": "^4.0.0"
   },
   "dependencies": {
     "@bitpay-labs/bitcore-lib": "^11.9.0",
     "unorm": "^1.4.1"
+  },
+  "nyc": {
+    "include": [
+      "lib"
+    ],
+    "reporter": [
+      "html",
+      "text-summary"
+    ],
+    "check-coverage": true,
+    "statements": 90,
+    "branches": 80,
+    "functions": 90,
+    "lines": 90
   },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }

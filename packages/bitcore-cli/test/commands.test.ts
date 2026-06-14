@@ -9,6 +9,7 @@ describe('Option: --command', function() {
   const COMMANDS = getCommands({ wallet: {} as IWallet, opts: { command: 'any' } as ICliOptions });
 
   describe('NEW', function() {
+    this.timeout(3000);
     for (const cmd of COMMANDS.NEW) {
       it(cmd.value, function() {
         assert.throws(

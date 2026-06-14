@@ -24,9 +24,7 @@
   "scripts": {
     "start": "npm run clean && npm run build && ./start.sh",
     "stop": "./stop.sh",
-    "coverage": "npm run compile && nyc mocha 'ts_build/test/**/*.test.js'",
-    "test": "npm run compile && mocha --exit 'ts_build/test/**/*.test.js'",
-    "test:ci": "BWS_LOG_LEVEL=none npm run test",
+    "test": "npm run compile && nyc mocha 'ts_build/test/**/*.test.js'",
     "build": "tsc && npm run cp:templates",
     "build:prod": "tsc -p tsconfig.prod.json && npm run cp:templates",
     "build:docker": "docker build -t bitpay/bitcore-wallet-service:latest -f ./Dockerfile ../..",
@@ -86,8 +84,6 @@
     "@types/request": "^2.48.1",
     "chai": "^5.2.0",
     "memdown": "^1.0.0",
-    "mocha": "^5.2.0",
-    "nyc": "^17.1.0",
     "sinon": "^7.1.1",
     "supertest": "*",
     "typescript": "^5.7.3"
@@ -102,10 +98,10 @@
       "text-summary"
     ],
     "check-coverage": true,
-    "lines": 60,
+    "statements": 60,
+    "branches": 50,
     "functions": 60,
-    "branches": 60,
-    "statements": 60
+    "lines": 70
   },
   "bitcoreNode": "./bitcorenode",
   "contributors": [

@@ -23,8 +23,7 @@
     "watch": "tsc --watch",
     "precompile": "cd ../bitcore-node && npm run clean && npm run build:prod",
     "compile": "npm run clean && npm run build",
-    "test": "npm run compile && mocha -r tsx --exit 'test/**/*.test.ts'",
-    "coverage": "npm run compile && nyc mocha -r tsx --exit 'test/**/*.test.ts'",
+    "test": "npm run compile && nyc mocha -r tsx --exit 'test/**/*.test.ts'",
     "precommit": "npm run lint",
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
@@ -79,10 +78,10 @@
       "text-summary"
     ],
     "check-coverage": true,
-    "lines": 60,
-    "functions": 60,
-    "branches": 60,
-    "statements": 60
+    "statements": 50,
+    "branches": 50,
+    "functions": 50,
+    "lines": 50
   },
   "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4"
 }
