@@ -24,7 +24,9 @@ export class InternalTxRelatedFilterTransform extends TransformWithEventPipe {
     let internalTxsToProcess: Effect[] = [];
     if (tx.effects && tx.effects.length) {
       const walletRelatedInternalTxs = tx.effects.filter((internalTx: any) =>
-        walletAddresses.includes(internalTx.to) && !internalTx.contractAddress
+        walletAddresses.includes(internalTx.to) &&
+        !internalTx.contractAddress &&
+        !this.isRootNativeTransfer(tx, internalTx)
       );
       
       const refundTxs = walletRelatedInternalTxs.filter(i => i.to === tx.from);
@@ -65,6 +67,14 @@ export class InternalTxRelatedFilterTransform extends TransformWithEventPipe {
     }
 
     return done();
+  }
+
+  private isRootNativeTransfer(tx: MongoBound<IEVMTransactionInProcess>, internalTx: Effect) {
+    const callStack = internalTx.callStack || '';
+    return (callStack === '0' || callStack === '')
+      && internalTx.from?.toLowerCase() === tx.from?.toLowerCase()
+      && internalTx.to?.toLowerCase() === tx.to?.toLowerCase()
+      && Number(internalTx.amount) === Number(tx.value);
   }
 
   async getWalletAddresses(tx) {
