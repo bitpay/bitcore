@@ -506,10 +506,9 @@ const streamWalletTransactionRows = async (chain: string, network: string, walle
       chain,
       network,
       wallet,
-      req,
-      res,
       args: {}
     } as StreamWalletTransactionsParams)
+      .then((stream: any) => streamJsonArray(stream, req, res))
       .catch(e => r(e));
   });
 
