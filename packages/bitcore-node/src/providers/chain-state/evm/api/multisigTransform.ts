@@ -8,16 +8,21 @@ export class MultisigRelatedFilterTransform extends Transform {
   }
 
   async _transform(tx: MongoBound<IEVMTransactionInProcess>, _, done) {
+    const multisigContractAddressLower = this.multisigContractAddress.toLowerCase();
+    const tokenAddressLower = this.tokenAddress?.toLowerCase();
     let hasEffects = false;
     if (tx.effects && tx.effects.length) {
       // All internal to and from multisig - if tokenAddress is undefined then it only gets native transfers
       const walletRelatedInternalTxs = tx.effects.filter(
         (internalTx: any) => {
-          if (this.tokenAddress) {
-            return [internalTx.to, internalTx.from].includes(this.multisigContractAddress) && internalTx.contractAddress && internalTx.contractAddress.toLowerCase() === this.tokenAddress.toLowerCase();
+          const relatedToMultisig = [internalTx.to, internalTx.from].some(address => (
+            address?.toLowerCase() === multisigContractAddressLower
+          ));
+          if (tokenAddressLower) {
+            return relatedToMultisig && internalTx.contractAddress && internalTx.contractAddress.toLowerCase() === tokenAddressLower;
           } else {
             // contractAddress is undefined on native asset transfers
-            return [internalTx.to, internalTx.from].includes(this.multisigContractAddress) && !internalTx.contractAddress;
+            return relatedToMultisig && !internalTx.contractAddress;
           }
         }
       );
@@ -35,11 +40,11 @@ export class MultisigRelatedFilterTransform extends Transform {
       hasEffects = !!walletRelatedInternalTxs.length;
     } 
 
-    if (hasEffects && this.tokenAddress) {
+    if (hasEffects && tokenAddressLower) {
       return done();
     }
     
-    if (!hasEffects && tx.to !== this.multisigContractAddress) {
+    if (!hasEffects && tx.to?.toLowerCase() !== multisigContractAddressLower) {
       // If no effects and tx isn't to multisig, we don't care about original tx, return done()
       return done();
     }
