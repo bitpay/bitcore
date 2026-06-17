@@ -52,7 +52,7 @@
     "supertest": "*"
   },
   "scripts": {
-    "test": "npm run compile && node ./copyTestData && nyc mocha -n enable-source-maps 'ts_build/test/**/*.test.js'",
+    "test": "npm run compile && node ./copyTestData && nyc mocha 'ts_build/test/**/*.test.js'",
     "docs": "TODO ./node_modules/.bin/tsdoc src/lib/* src/lib/common src/lib/errors -o docs && cat README.header.md  docs/*.md LICENSE > README.md",
     "compile": "npm run clean && tsc",
     "build": "tsc && npm run lint",
