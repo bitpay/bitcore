@@ -1,21 +1,11 @@
 'use strict';
 
 const gulp = require('gulp');
-const coveralls = require('@kollavarsham/gulp-coveralls');
-const mocha = require('gulp-mocha');
 const rename = require('gulp-rename');
 const shell = require('gulp-shell');
 const terser = require('gulp-terser');
-// const bump = require('gulp-bump');
-// const git = require('gulp-git');
 const fs = require('fs');
 const assert = require('assert');
-
-function ignoreerror() {
-  /* jshint ignore:start */ // using `this` in this context is weird
-  this.emit('end');
-  /* jshint ignore:end */
-}
 
 function startGulp(name, opts) {
   const task = {};
@@ -32,7 +22,6 @@ function startGulp(name, opts) {
   const alljs = files.concat(tests);
 
   const buildPath = './node_modules/@bitpay-labs/bitcore-build/';
-  const buildModulesPath = buildPath + 'node_modules/';
   const buildBinPath = buildPath + 'node_modules/.bin/';
 
   let browserifyPath = buildBinPath + 'browserify';
