@@ -113,6 +113,7 @@ jobs:
             - packages/bitcore-lib-cash/node_modules
             - packages/bitcore-lib-doge/node_modules
             - packages/bitcore-lib-ltc/node_modules
+            - packages/bitcore-logging/node_modules
             - packages/bitcore-mnemonic/node_modules
             - packages/bitcore-node/node_modules
             - packages/bitcore-p2p/node_modules
@@ -188,6 +189,11 @@ jobs:
     steps:
       - run_test:
           package: bitcore-lib-ltc
+  bitcore-logging:
+    executor: main
+    steps:
+      - run_test:
+          package: bitcore-logging
   bitcore-mnemonic:
     executor: main
     steps:
@@ -242,6 +248,9 @@ workflows:
           requires:
             - build
       - bitcore-lib-ltc:
+          requires:
+            - build
+      - bitcore-logging:
           requires:
             - build
       - bitcore-mnemonic:
