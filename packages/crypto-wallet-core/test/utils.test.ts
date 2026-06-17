@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import * as xrpl from 'xrpl';
 import * as utils from '../src/utils';
 
 describe('Utils', function() {
@@ -302,6 +303,90 @@ describe('Utils', function() {
 
       right.buckets[119].tokens[19].tags[1] = 'mutated-tag';
       expect(utils.isEqual(left, right)).to.equal(false);
+    });
+  });
+
+  describe('normalizeXrpFlag', function() {
+    it('should return the same flag name when passed a valid AccountSetTfFlags string', function() {
+      const result = utils.normalizeXrpFlag('tfRequireDestTag');
+      expect(result).to.equal('tfRequireDestTag');
+    });
+
+    it('should return the same flag name when passed a valid PaymentFlags string', function() {
+      const result = utils.normalizeXrpFlag('tfPartialPayment', xrpl.PaymentFlags);
+      expect(result).to.equal('tfPartialPayment');
+    });
+
+    it('should convert numeric AccountSetTfFlags value to flag name', function() {
+      // 65536 maps to 'tfRequireDestTag' in xrpl.AccountSetTfFlags
+      const result = utils.normalizeXrpFlag(65536);
+      expect(result).to.equal('tfRequireDestTag');
+      expect(result).to.be.a('string');
+    });
+
+    it('should convert numeric PaymentFlags value to flag name', function() {
+      // 131072 maps to 'tfPartialPayment' in xrpl.PaymentFlags
+      const result = utils.normalizeXrpFlag(131072, xrpl.PaymentFlags);
+      expect(result).to.equal('tfPartialPayment');
+      expect(result).to.be.a('string');
+    });
+
+    it('should throw error for invalid string flag', function() {
+      expect(() => utils.normalizeXrpFlag('invalidFlag')).to.throw('Invalid XRP flag: invalidFlag');
+    });
+
+    it('should throw error for numeric string that is not a valid flag', function() {
+      expect(() => utils.normalizeXrpFlag('999')).to.throw('Invalid XRP flag: 999');
+    });
+
+    it('should throw error for invalid numeric flag', function() {
+      expect(() => utils.normalizeXrpFlag(99999)).to.throw('Invalid XRP flag: 99999');
+    });
+
+    it('should be case-sensitive for string flags', function() {
+      expect(() => utils.normalizeXrpFlag('tfrequiredestag')).to.throw('Invalid XRP flag: tfrequiredestag');
+    });
+
+    it('should handle negative numbers', function() {
+      expect(() => utils.normalizeXrpFlag(-1)).to.throw('Invalid XRP flag: -1');
+    });
+
+    it('should handle zero as input', function() {
+      expect(() => utils.normalizeXrpFlag(0)).to.throw('Invalid XRP flag: 0');
+    });
+
+    it('should accept numeric string input that maps to a valid AccountSetTfFlags', function() {
+      // '65536' should map to 'tfRequireDestTag'
+      const result = utils.normalizeXrpFlag('65536');
+      expect(result).to.equal('tfRequireDestTag');
+    });
+
+    it('should accept numeric string input that maps to PaymentFlags', function() {
+      // '131072' should map to 'tfPartialPayment'
+      const result = utils.normalizeXrpFlag('131072', xrpl.PaymentFlags);
+      expect(result).to.equal('tfPartialPayment');
+    });
+
+    it('should handle multiple AccountSetTfFlags values', function() {
+      // Test another flag: 262144 maps to 'tfRequireAuth'
+      const result = utils.normalizeXrpFlag(262144);
+      expect(result).to.equal('tfRequireAuth');
+    });
+
+    it('should handle multiple PaymentFlags values', function() {
+      // Test another flag: 262144 maps to 'tfLimitQuality'
+      const result = utils.normalizeXrpFlag(262144, xrpl.PaymentFlags);
+      expect(result).to.equal('tfLimitQuality');
+    });
+
+    it('should normalize a flag with a custom enum', function() {
+      enum CustomFlags {
+        CustomFlag1 = 1,
+        CustomFlag2 = 2,
+        CustomFlagX = 123
+      };
+      const result = utils.normalizeXrpFlag(123, CustomFlags as any);
+      expect(result).to.equal('CustomFlagX');
     });
   });
 });

@@ -47,7 +47,7 @@ export class XRPTxProvider {
           Flags: 2147483648 // tfFullyCanonicalSig - DEPRECATED but still here for backward compatibility
         };
         if (flags != null) {
-          paymentTx.Flags = this.transformFlags<xrpl.PaymentFlagsInterface>(flags);
+          paymentTx.Flags = this.transformFlags<xrpl.PaymentFlagsInterface>(flags, 'payment');
           xrpl.setTransactionFlagsToNumber(paymentTx);
         }
         if (invoiceID) {
@@ -61,7 +61,7 @@ export class XRPTxProvider {
         const accountSetTx: xrpl.AccountSet = {
           TransactionType: 'AccountSet',
           Account: from,
-          Flags: this.transformFlags<xrpl.AccountSetFlagsInterface>(flags),
+          Flags: this.transformFlags<xrpl.AccountSetFlagsInterface>(flags, 'accountset'),
           Fee: fee.toString(),
           Sequence: nonce
         };
@@ -138,7 +138,9 @@ export class XRPTxProvider {
     return this.sha512Half(encoded);
   }
 
-  private transformFlags<T extends xrpl.PaymentFlagsInterface | xrpl.AccountSetFlagsInterface>(flags: string | number): T | number {
+  private transformFlags<T extends xrpl.PaymentFlagsInterface>(flags: string | number, txType: 'payment'): T | number
+  private transformFlags<T extends xrpl.AccountSetFlagsInterface>(flags: string | number, txType: 'accountset'): T | number
+  private transformFlags<T extends xrpl.PaymentFlagsInterface | xrpl.AccountSetFlagsInterface>(flags: string | number, txType: 'payment' | 'accountset'): T | number {
     if (flags == null) {
       throw new Error('No XRP flag(s) provided');
     }
@@ -146,8 +148,9 @@ export class XRPTxProvider {
       // Pass through numbers since they may be combined flags
       return flags;
     }
+    const flagEnum = txType === 'payment' ? xrpl.PaymentFlags : xrpl.AccountSetTfFlags;
     return flags.split(',').reduce((acc, flag) => {
-      const flagValue = Utils.normalizeXrpFlag(flag.trim());
+      const flagValue = Utils.normalizeXrpFlag(flag.trim(), flagEnum);
       acc[flagValue] = true;
       return acc;
     }, {} as T);

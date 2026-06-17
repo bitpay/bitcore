@@ -162,9 +162,13 @@ export function isEqual(obj1: object, obj2: object): boolean {
   return true;
 }
 
-export function normalizeXrpFlag(flag: string | number): string {
-  const normalizedFlag = isNaN(parseInt(flag as string)) ? (flag as string): xrpl.AccountSetTfFlags[flag as string];
-  if (!xrpl.AccountSetTfFlags[normalizedFlag]) {
+export function normalizeXrpFlag(flag: string | number, flagEnum?: typeof xrpl.AccountSetTfFlags | typeof xrpl.PaymentFlags): string {
+  flagEnum = flagEnum || xrpl.AccountSetTfFlags; // default to AccountSet flags if not provided
+  const normalizedFlag = isNaN(parseInt(flag as string))
+    ? (flag as string) // flag is already a non-numeric string (e.g. 'tfRequireDestTag')
+    : (flagEnum[flag as string]);
+  
+  if (!flagEnum[normalizedFlag]) {
     throw new Error(`Invalid XRP flag: ${flag}`);
   }
   return normalizedFlag;
