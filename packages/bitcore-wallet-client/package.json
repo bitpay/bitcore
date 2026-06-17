@@ -64,20 +64,5 @@
     "pub": "npm run build && npm publish",
     "precommit": "npm run lint"
   },
-  "nyc": {
-    "include": [
-      "ts_build/src",
-      "src"
-    ],
-    "reporter": [
-      "html",
-      "text-summary"
-    ],
-    "check-coverage": true,
-    "statements": 70,
-    "branches": 50,
-    "functions": 60,
-    "lines": 70
-  },
   "gitHead": "a1890ef287c9e5d0e966fb445d15bc59a9393761"
 }

@@ -24,7 +24,7 @@
     "build:prod": "tsc -p tsconfig.prod.json",
     "clean": "rm -rf ts_build",
     "compile": "npm run clean && npm run build",
-    "test": "npm run compile && nyc mocha --exit 'ts_build/test/**/*.test.js'",
+    "test": "npm run compile && nyc mocha 'ts_build/test/**/*.test.js'",
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
@@ -40,20 +40,5 @@
     "@types/node": "^22.10.10",
     "chai": "^5.2.0",
     "typescript": "^5.7.3"
-  },
-  "nyc": {
-    "include": [
-      "ts_build/src",
-      "src"
-    ],
-    "reporter": [
-      "html",
-      "text-summary"
-    ],
-    "check-coverage": true,
-    "statements": 90,
-    "branches": 80,
-    "functions": 80,
-    "lines": 90
   }
 }

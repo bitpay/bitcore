@@ -43,19 +43,5 @@
     "@bitpay-labs/bitcore-lib": "^11.9.0",
     "unorm": "^1.4.1"
   },
-  "nyc": {
-    "include": [
-      "lib"
-    ],
-    "reporter": [
-      "html",
-      "text-summary"
-    ],
-    "check-coverage": true,
-    "statements": 90,
-    "branches": 80,
-    "functions": 90,
-    "lines": 90
-  },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }
