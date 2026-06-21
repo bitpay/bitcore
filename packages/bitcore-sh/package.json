@@ -1,0 +1,27 @@
+{
+  "name": "bitcore-sh",
+  "description": "",
+  "author": "BitPay, Inc",
+  "license": "MIT",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "npm run compile && node build/run.js",
+    "compile": "npm run clean && npm run tsc",
+    "clean": "rm -rf build",
+    "tsc": "tsc",
+    "fix:errors": "eslint --fix --quiet .",
+    "fix:all": "eslint --fix .",
+    "fix": "npm run fix:errors"
+  },
+  "keywords": [
+    "rpc",
+    "typescript",
+    "bitcoin"
+  ],
+  "contributors": [
+    {
+      "name": "Micah Maphet",
+      "email": "mmaphet@bitpay.com"
+    }
+  ]
+}
