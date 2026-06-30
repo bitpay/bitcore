@@ -1602,6 +1602,9 @@ export class API extends EventEmitter {
     for (const o of args.outputs) {
       o.message = API._encryptMessage(o.message, this.credentials.sharedEncryptingKey) || null;
     }
+    if (args.flags) {
+      args.flags = args.flags.split(',').map(f => CWC.Utils.normalizeXrpFlag(f.trim())).join(',');
+    }
     return args;
   }
 
@@ -1656,6 +1659,10 @@ export class API extends EventEmitter {
       tokenAddress?: string;
       /** Ignore locked utxos check (used for replacing a transaction designated as RBF) */
       replaceTxByFee?: boolean;
+      /** (XRP only) A comma-delimited list of account transaction flag(s) to set */
+      flags?: string;
+      /** (XRP only) Destination tag for the transaction */
+      destinationTag?: number | string;
     },
     /** @deprecated */
     cb?: (err?: Error, txp?: any) => void,
@@ -3958,6 +3965,13 @@ export class API extends EventEmitter {
     }
   }
 
+  async getAccountFlags(params: { account: number }) {
+    const { account } = params;
+    const { body: flags } = await this.request.get<CWC.xrpl.AccountInfoAccountFlags>(`/v1/flags${account ? `?account=${account}` : ''}`);
+    return flags;
+  }
+
+
   async banxaGetQuote(data) {
     return this.request.post('/v1/service/banxa/quote', data);
   }
@@ -4288,6 +4302,7 @@ export interface Txp {
   walletId: string;
   walletM: number;
   walletN: number;
+  destinationTag?: string; // XRP only
 };
 
 export interface PublishedTxp extends Txp {

@@ -31,6 +31,7 @@ export function getCommands(args: { wallet: IWallet; opts?: ICliOptions }) {
       { label: 'Derive', value: 'derive', hint: 'Derive a key along a path you will specify' },
       { label: 'Export', value: 'export', hint: 'Export the wallet to a file' },
       { label: 'Scan', value: 'scan', hint: 'Scan the wallet for funds' },
+      { label: 'Flags', value: 'flags', hint: 'Manage XRP wallet flags', show: () => wallet.isXrp() },
       { label: 'Register', value: 'register', hint: 'Register the wallet with the Bitcore Wallet Service' },
       { label: 'Clear Cache', value: 'clearcache', hint: 'Clear the wallet cache' }
     ]
