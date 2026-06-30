@@ -1,3 +1,5 @@
+// eslint-disable-next-line no-redeclare
+const crypto = require('crypto');
 const JS = require('../util/js');
 const $ = require('../util/preconditions');
 const BN = require('./bn');
