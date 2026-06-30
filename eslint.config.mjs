@@ -105,7 +105,8 @@ export default defineConfig([
     ],
     languageOptions: { sourceType: 'commonjs' },
     rules: {
-      // 'no-var': 'warn'
+      '@typescript-eslint/no-require-imports': 'warn',
+      '@typescript-eslint/no-unused-vars': 'warn',
     }
   },
   // Test files -- needs to be last so it can override other settings

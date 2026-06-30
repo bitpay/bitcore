@@ -1,21 +1,11 @@
 'use strict';
 
 const gulp = require('gulp');
-const coveralls = require('@kollavarsham/gulp-coveralls');
-const mocha = require('gulp-mocha');
 const rename = require('gulp-rename');
 const shell = require('gulp-shell');
 const terser = require('gulp-terser');
-// const bump = require('gulp-bump');
-// const git = require('gulp-git');
 const fs = require('fs');
 const assert = require('assert');
-
-function ignoreerror() {
-  /* jshint ignore:start */ // using `this` in this context is weird
-  this.emit('end');
-  /* jshint ignore:end */
-}
 
 function startGulp(name, opts) {
   const task = {};
@@ -32,7 +22,6 @@ function startGulp(name, opts) {
   const alljs = files.concat(tests);
 
   const buildPath = './node_modules/@bitpay-labs/bitcore-build/';
-  const buildModulesPath = buildPath + 'node_modules/';
   const buildBinPath = buildPath + 'node_modules/.bin/';
 
   let browserifyPath = buildBinPath + 'browserify';
@@ -67,15 +56,6 @@ function startGulp(name, opts) {
     mochaPath = './node_modules/.bin/_mocha';
   }
 
-  /**
-   * testing
-   */
-  const testmocha = function () {
-    return gulp.src(tests).pipe(mocha({
-      reporter: 'spec'
-    }));
-  };
-
   task['test:karma'] = shell.task([
     karmaPath + ' start ' + (opts.karmaConf || (buildPath + 'karma.conf.js')) + ' --single-run'
   ]);
@@ -83,12 +63,6 @@ function startGulp(name, opts) {
   task['test:webdriverio'] = shell.task([
     webdriverioPath + ' run ' + (opts.wdioConf || (buildPath + 'wdio.conf.js'))
   ]);
-
-  task['test:node'] = testmocha;
-  task['test:node:nofail'] = function() {
-    return testmocha().on('error', ignoreerror);
-  };
-
 
   task['noop']= function() {};
 
@@ -144,11 +118,7 @@ function startGulp(name, opts) {
 
   //  task['plato']= shell.task([platoPath + ' -d report -r -l .jshintrc -t ' + fullname + ' lib']);
 
-  task['coverage'] = shell.task([istanbulPath + ' cover ' + mochaPath + ' -- --recursive']);
-
-  task['coveralls'] = gulp.series(task['coverage'], function() {
-    gulp.src('coverage/lcov.info').pipe(coveralls());
-  });
+  task['test:node'] = shell.task(['nyc mocha -- --recursive']);
 
   /**
    * watch tasks
@@ -173,12 +143,6 @@ function startGulp(name, opts) {
       return gulp.watch(alljs, task['test:browser']);
     };
   }
-
-  task['watch:coverage'] = function() {
-    // todo: only run tests that are linked to file changes by doing
-    // something smart like reading through the require statements
-    return gulp.watch(alljs, task['coverage']);
-  };
 
   task['watch:lint'] = function() {
     // todo: only lint files that are linked to file changes by doing
@@ -209,4 +173,3 @@ function startGulp(name, opts) {
 }
 
 module.exports = startGulp;
-
