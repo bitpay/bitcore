@@ -114,7 +114,7 @@ jobs:
       # - restore_dependency_cache
       - run: | # TODO figure out how to make this only run on a cache miss in restore_dependency_cache
           nvm use default
-          npm install
+          npm ci
       - save_cache:
           key: node_modules-{{ checksum "package-lock.json" }}-{{ checksum "combined-package-lock.txt" }}
           paths:
@@ -150,7 +150,7 @@ jobs:
       # - restore_dependency_cache
       - run: | # TODO figure out how to make this only run on a cache miss in restore_dependency_cache
           nvm use default
-          npm install
+          npm ci
       - persist_to_workspace:
           root: ~/bitcore/packages/crypto-rpc # only persist crypto-rpc package
           paths:

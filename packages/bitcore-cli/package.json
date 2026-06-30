@@ -12,6 +12,9 @@
     "tss",
     "wallet"
   ],
+  "engines":{
+    "node": "^22"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-cli"
@@ -29,8 +32,8 @@
     "bitcore-cli": "./bin/bitcore-cli"
   },
   "scripts": {
-    "test": "npm run compile && node copyTestWallets && mocha --exit 'build/test/**/*.js'",
-    "coverage": "npm run compile && node copyTestWallets && nyc mocha --exit 'build/test/**/*.js'",
+    "test": "npm run compile && node copyTestWallets && mocha --exit -n enable-source-maps 'build/test/**/*.js'",
+    "coverage": "npm run compile && node copyTestWallets && nyc mocha --exit -n enable-source-maps 'build/test/**/*.js'",
     "build": "tsc",
     "build:prod": "tsc -p tsconfig.prod.json",
     "postbuild": "node createBin -v",
@@ -46,7 +49,7 @@
     "@bitpay-labs/bitcore-mnemonic": "^11.9.0",
     "@bitpay-labs/bitcore-wallet-client": "^11.10.2",
     "@bitpay-labs/crypto-wallet-core": "^11.10.0",
-    "@clack/prompts": "1.0.0-alpha.6",
+    "@clack/prompts": "1.5.1",
     "commander": "14.0.0",
     "external-editor": "3.1.0",
     "usb": "2.15.0"
