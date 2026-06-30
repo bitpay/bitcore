@@ -53,6 +53,8 @@
     "ci:bitcore-mnemonic": "./ci.sh 'npm run test:bitcore-mnemonic'",
     "test:bitcore-client": "cd ./packages/bitcore-client && npm run test",
     "ci:bitcore-client": "./ci.sh 'npm run test:bitcore-client'",
+    "test:bitcore-common": "cd ./packages/bitcore-common && npm run test",
+    "ci:bitcore-common": "./ci.sh 'npm run test:bitcore-common'",
     "test:bitcore-tss": "cd ./packages/bitcore-tss && npm run test",
     "ci:bitcore-tss": "./ci.sh 'npm run test:bitcore-tss'",
     "test:bitcore-cli": "cd ./packages/bitcore-cli && npm run test",
