@@ -14,7 +14,7 @@
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
     "fix": "npm run fix:errors",
-    "precommit": "./precommit.sh",
+    "precommit": "eslint --pass-on-no-patterns --no-warn-ignored $(git diff --name-only --cached --diff-filter=AM)",
     "test:ci:local": "npm run test:ci:build:local && npm run test:ci:all",
     "test:ci:build:local": "./ci.sh build local",
     "test:ci": "echo 'This command has been removed. Try running `npm run test:ci:local` to run tests locally using the test_runner docker container as before. The CI pipeline logic is now in .circleci/config.yml.'",
