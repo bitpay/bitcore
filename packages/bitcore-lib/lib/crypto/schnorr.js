@@ -1,6 +1,5 @@
-const crypto = require('crypto');
-const $ = require('../util/preconditions');
 const JS = require('../util/js');
+const $ = require('../util/preconditions');
 const BN = require('./bn');
 const Point = require('./point');
 const TaggedHash = require('./taggedhash');
@@ -30,16 +29,16 @@ Schnorr.sign = function(privateKey, message, aux) {
 
   if (typeof message === 'string') {
     $.checkArgument(JS.isHexaString(message), 'Schnorr message string is not hex');
-    message = Buffer.from(message, 'hex')
+    message = Buffer.from(message, 'hex');
   }
   $.checkArgument($.isType(message, 'Buffer'), 'Schnorr message must be a hex string or buffer');
 
   if (!aux) {
-    aux = Buffer.alloc(32, 0);
+    aux = crypto.randomBytes(32);
   }
   if (typeof aux === 'string') {
     $.checkArgument(JS.isHexaString(aux), 'Schnorr aux string is not hex');
-    aux = Buffer.from(aux, 'hex')
+    aux = Buffer.from(aux, 'hex');
   }
   $.checkArgument($.isType(aux, 'Buffer'), 'Schnorr aux must be a hex string or buffer');
 
@@ -127,7 +126,7 @@ Schnorr.verify = function(publicKey, message, signature) {
       return false;
     }
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 };
