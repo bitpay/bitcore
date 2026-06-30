@@ -2,8 +2,8 @@ import cluster from 'cluster';
 import 'source-map-support/register';
 import logger from '../logger';
 import { loadModules } from '../modules';
-import { BaseEVMStateProvider } from '../providers/chain-state/evm/api/csp';
 import { Api } from '../services/api';
+import { Config } from '../services/config';
 import { Event } from '../services/event';
 import { P2P } from '../services/p2p';
 import { Storage } from '../services/storage';
@@ -59,7 +59,11 @@ const stop = async () => {
   for (const service of services.reverse()) {
     await service.stop();
   }
-  BaseEVMStateProvider.teardownRpcs();
+
+  if (Config.anyEVMChain()) {
+    const { BaseEVMStateProvider } = await import('../providers/chain-state/evm/api/csp');
+    BaseEVMStateProvider.teardownRpcs();
+  }
 
   if (!cluster.isPrimary) {
     process.removeAllListeners();
