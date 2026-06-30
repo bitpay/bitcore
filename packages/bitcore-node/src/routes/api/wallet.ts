@@ -5,6 +5,7 @@ import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { StreamWalletAddressesParams } from '../../types/namespaces/ChainStateProvider';
 import { Auth, AuthenticatedRequest } from '../../utils/auth';
+import { respondWithError, streamJsonArray } from '../apiUtils';
 
 const router = Router({ mergeParams: true });
 
@@ -68,14 +69,17 @@ router.get('/:pubKey/addresses', Auth.authenticateMiddleware, async (req: Authen
       chain,
       network,
       walletId: wallet!._id!,
-      limit,
-      req,
-      res
+      limit
     };
-    return await ChainStateProvider.streamWalletAddresses(payload);
+    const stream = await ChainStateProvider.streamWalletAddresses(payload);
+    const result = await streamJsonArray(stream, req, res);
+    if (!result.success) {
+      logger.error('Error mid-stream (streamWalletAddresses): %o', result.error?.log || result.error);
+    }
+    return;
   } catch (err: any) {
     logger.error('Error streaming wallet addresses: %o', err.stack || err.message || err);
-    return res.status(500).send(err.message || err);
+    return respondWithError(res, err);
   }
 });
 
@@ -143,17 +147,20 @@ router.post('/:pubKey', Auth.authenticateMiddleware, async (req: AuthenticatedRe
 router.get('/:pubKey/transactions', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { chain, network } = req.params;
-    return await ChainStateProvider.streamWalletTransactions({
+    const stream = await ChainStateProvider.streamWalletTransactions({
       chain,
       network,
       wallet: req.wallet!,
-      req,
-      res,
       args: req.query
     });
+    const result = await streamJsonArray(stream, req, res);
+    if (!result.success) {
+      logger.error('Error mid-stream (streamWalletTransactions): %o', result.error?.log || result.error);
+    }
+    return;
   } catch (err: any) {
     logger.error('Error streaming wallet txs: %o', err.stack || err.message || err);
-    return res.status(500).send(err.message || err);
+    return respondWithError(res, err);
   }
 });
 
@@ -194,18 +201,21 @@ router.get('/:pubKey/utxos', Auth.authenticateMiddleware, async (req: Authentica
   const { chain, network } = req.params;
   const { limit } = req.query as any;
   try {
-    return ChainStateProvider.streamWalletUtxos({
+    const stream = await ChainStateProvider.streamWalletUtxos({
       chain,
       network,
       wallet: req.wallet!,
       limit,
-      req,
-      res,
       args: req.query
     });
+    const result = await streamJsonArray(stream, req, res);
+    if (!result.success) {
+      logger.error('Error mid-stream (streamWalletUtxos): %o', result.error?.log || result.error);
+    }
+    return;
   } catch (err: any) {
     logger.error('Error streaming wallet utxos: %o', err.stack || err.message || err);
-    return res.status(500).send(err.message || err);
+    return respondWithError(res, err);
   }
 });
 
