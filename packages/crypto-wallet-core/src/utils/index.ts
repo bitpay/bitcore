@@ -169,7 +169,11 @@ export function normalizeXrpFlag(flag: string | number, flagEnum?: typeof xrpl.A
     : (flagEnum[flag as string]);
   
   if (!flagEnum[normalizedFlag]) {
-    throw new Error(`Invalid XRP flag: ${flag}`);
+    const enumName =
+      flagEnum === xrpl.AccountSetTfFlags ? 'AccountSetTfFlags' :
+        flagEnum === xrpl.PaymentFlags ? 'PaymentFlags' :
+          '<unknown>';
+    throw new Error(`Invalid XRP flag: ${flag}. Flag is not in enum ${enumName}`);
   }
   return normalizedFlag;
 }

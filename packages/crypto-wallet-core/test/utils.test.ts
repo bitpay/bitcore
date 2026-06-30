@@ -332,27 +332,36 @@ describe('Utils', function() {
     });
 
     it('should throw error for invalid string flag', function() {
-      expect(() => utils.normalizeXrpFlag('invalidFlag')).to.throw('Invalid XRP flag: invalidFlag');
+      expect(() => utils.normalizeXrpFlag('invalidFlag')).to.throw(Error).with.property('message', 'Invalid XRP flag: invalidFlag. Flag is not in enum AccountSetTfFlags');
     });
 
     it('should throw error for numeric string that is not a valid flag', function() {
-      expect(() => utils.normalizeXrpFlag('999')).to.throw('Invalid XRP flag: 999');
+      expect(() => utils.normalizeXrpFlag('999')).to.throw(Error).with.property('message', 'Invalid XRP flag: 999. Flag is not in enum AccountSetTfFlags');
     });
 
     it('should throw error for invalid numeric flag', function() {
-      expect(() => utils.normalizeXrpFlag(99999)).to.throw('Invalid XRP flag: 99999');
+      expect(() => utils.normalizeXrpFlag(99999)).to.throw(Error).with.property('message', 'Invalid XRP flag: 99999. Flag is not in enum AccountSetTfFlags');
     });
 
     it('should be case-sensitive for string flags', function() {
-      expect(() => utils.normalizeXrpFlag('tfrequiredestag')).to.throw('Invalid XRP flag: tfrequiredestag');
+      expect(() => utils.normalizeXrpFlag('tfrequiredestag')).to.throw(Error).with.property('message', 'Invalid XRP flag: tfrequiredestag. Flag is not in enum AccountSetTfFlags');
     });
 
     it('should handle negative numbers', function() {
-      expect(() => utils.normalizeXrpFlag(-1)).to.throw('Invalid XRP flag: -1');
+      expect(() => utils.normalizeXrpFlag(-1)).to.throw(Error).with.property('message', 'Invalid XRP flag: -1. Flag is not in enum AccountSetTfFlags');
     });
 
     it('should handle zero as input', function() {
-      expect(() => utils.normalizeXrpFlag(0)).to.throw('Invalid XRP flag: 0');
+      expect(() => utils.normalizeXrpFlag(0)).to.throw(Error).with.property('message', 'Invalid XRP flag: 0. Flag is not in enum AccountSetTfFlags');
+    });
+
+    it('should throw if flag enum provided does not contain the flag', function() {
+      expect(() => utils.normalizeXrpFlag('tfRequireDestTag', xrpl.PaymentFlags)).to.throw(Error).with.property('message', 'Invalid XRP flag: tfRequireDestTag. Flag is not in enum PaymentFlags');
+      enum MyCustomFlags {
+        CustomFlag1 = 1,
+        CustomFlag2 = 2
+      };
+      expect(() => utils.normalizeXrpFlag('tfRequireDestTag', MyCustomFlags as any)).to.throw(Error).with.property('message', 'Invalid XRP flag: tfRequireDestTag. Flag is not in enum <unknown>');
     });
 
     it('should accept numeric string input that maps to a valid AccountSetTfFlags', function() {
@@ -387,6 +396,12 @@ describe('Utils', function() {
       };
       const result = utils.normalizeXrpFlag(123, CustomFlags as any);
       expect(result).to.equal('CustomFlagX');
+    });
+
+    it('should throw when a valid PaymentFlags string is passed without the enum', function() {                                                                                
+      // tfPartialPayment is valid for PaymentFlags, but without the enum the function                                                                                         
+      // falls back to AccountSetTfFlags, so this should throw                                                                                                                 
+      expect(() => utils.normalizeXrpFlag('tfPartialPayment')).to.throw(Error).with.property('message', 'Invalid XRP flag: tfPartialPayment. Flag is not in enum AccountSetTfFlags');                                                                 
     });
   });
 });
