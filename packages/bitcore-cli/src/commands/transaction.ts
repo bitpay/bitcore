@@ -29,6 +29,10 @@ export function command(args: CommonArgs<ITransactionArgs & { extensionOpts?: { 
   const { program, opts: { extensionOpts } = {} } = args;
   const isExtension = !!extensionOpts;
 
+  if (program.processedArgs.length > 0) {
+    return args.opts; // program.parse already called
+  }
+
   if (!isExtension) {
     program
       .description('Create and send a transaction')
@@ -303,6 +307,7 @@ export async function createTransaction(
   }
   prompt.note(lines.join(os.EOL), 'Transaction Preview');
   
+  // Always prompt for confirmation, even if --command is used.
   const confirmed = await prompt.confirm({
     message: 'Send this transaction?' + (wallet.isTss() ? ` (This wallet requires ${wallet.getMinSigners() - 1} other participant(s) be ready to sign)` : ''),
     initialValue: true,

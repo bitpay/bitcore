@@ -17,7 +17,7 @@ export function command(args: CommonArgs<ITransactionArgs>) {
     .usage('<walletName> --command flags [options]')
     .optionsGroup('Flags Options')
     .option('--flags <flags>', 'Comma-delimited list of account transaction flag(s) to set. If provided, see Transaction Options below for additional options to provide for the setting transaction. ' + flagsDisplay());
-    
+
   const opts = txCommand({
     ...args,
     opts: {
