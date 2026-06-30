@@ -1,15 +1,21 @@
 'use strict';
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
+
+const chromeUserDataDirRoot = path.join(
+  os.tmpdir(),
+  'bitcore-wdio-chrome-' + process.pid + '-' + Date.now()
+);
+let anonymousChromeProfileId = 0;
 
 function findTestsJs() {
   // gulp runs WDIO from the consuming package root, where browser:maketests
   // writes the generated Browserify test bundle.
   const cwdTests = path.join(process.cwd(), 'tests.js');
   if (fs.existsSync(cwdTests)) return [cwdTests];
-  console.error('[wdio] tests.js not found. Tried: ' + cwdTests);
-  return [cwdTests];
+  throw new Error('[wdio] tests.js not found. Run browser:maketests before WDIO. Tried: ' + cwdTests);
 }
 
 const specs = findTestsJs();
@@ -57,12 +63,14 @@ module.exports.config = {
   // and 30 processes will get spawned. The property handles how many capabilities
   // from the same test should run tests.
   //
-  maxInstances: 10,
+  maxInstances: 1,
   //
   // If you have trouble getting all important capabilities together, check out the
   // Sauce Labs platform configurator - a great tool to configure your capabilities:
   // https://saucelabs.com/platform/platform-configurator
   //
+  // This config currently runs Chrome only. If additional browsers are added,
+  // update beforeSession and onComplete to keep browser-specific setup/cleanup correct.
   capabilities: [{
     // capabilities for local browser web tests
     browserName: 'chrome', // or "firefox", "microsoftedge", "safari"
@@ -72,8 +80,7 @@ module.exports.config = {
         ...(process.env.WDIO_HEADED === '1' ? [] : ['--headless=new']),
         '--disable-web-security',
         '--no-sandbox',
-        '--disable-dev-shm-usage',
-        '--user-data-dir=/tmp/chrome-test-profile'
+        '--disable-dev-shm-usage'
       ]
     },
     'wdio:enforceWebDriverClassic': true
@@ -201,8 +208,20 @@ module.exports.config = {
      * @param {Array.<String>} specs List of spec file paths that are to be run
      * @param {string} cid worker id (e.g. 0-0)
      */
-  // beforeSession: function (config, capabilities, specs, cid) {
-  // },
+  beforeSession: function (config, capabilities, specs, cid) {
+    // Inject an isolated Chrome profile per worker to avoid lock contention.
+    const rawCid = typeof cid === 'string' ? cid : '';
+    const sanitizedCid = rawCid.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const safeCid = sanitizedCid || 'worker-' + (++anonymousChromeProfileId);
+    const userDataDir = path.join(chromeUserDataDirRoot, safeCid);
+    const chromeOptions = capabilities['goog:chromeOptions'] || {};
+    const args = chromeOptions.args || [];
+    fs.mkdirSync(userDataDir, { recursive: true });
+    chromeOptions.args = args
+      .filter(arg => !arg.startsWith('--user-data-dir='))
+      .concat('--user-data-dir=' + userDataDir);
+    capabilities['goog:chromeOptions'] = chromeOptions;
+  },
   /**
      * Gets executed before test execution begins. At this point you can access to all global
      * variables like `browser`. It is the perfect place to define custom commands.
@@ -303,8 +322,13 @@ module.exports.config = {
      * @param {Array.<Object>} capabilities list of capabilities details
      * @param {<Object>} results object containing test results
      */
-  // onComplete: function(exitCode, config, capabilities, results) {
-  // },
+  onComplete: function(exitCode, config, capabilities, results) {
+    try {
+      fs.rmSync(chromeUserDataDirRoot, { recursive: true, force: true });
+    } catch {
+      console.warn('[wdio] Could not remove Chrome user-data-dir: ' + chromeUserDataDirRoot);
+    }
+  },
   /**
     * Gets executed when a refresh happens.
     * @param {string} oldSessionId session ID of the old session
