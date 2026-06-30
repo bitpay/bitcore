@@ -9,6 +9,8 @@ node_modules/
 .zed
 coverage
 .nyc_output
+.agents
+.claude
 
 # VIM ignore
 [._]*.s[a-w][a-z]

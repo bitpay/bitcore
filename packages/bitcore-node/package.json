@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=22.0.0"
   },
-  "version": "11.10.0",
+  "version": "11.10.2",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "contributors": [
     "Justin Langston <nitsujlangston@gmail.com>",
@@ -50,7 +50,6 @@
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
     "fix": "npm run fix:errors",
-    "precommit": "npm run lint",
     "test:scripts": "npx mocha scripts/test"
   },
   "nyc": {
@@ -106,7 +105,7 @@
     "@bitpay-labs/bitcore-p2p": "^11.9.0",
     "@bitpay-labs/bitcore-p2p-cash": "^11.9.0",
     "@bitpay-labs/bitcore-p2p-doge": "^11.9.0",
-    "@bitpay-labs/bitcore-wallet-client": "^11.10.0",
+    "@bitpay-labs/bitcore-wallet-client": "^11.10.2",
     "@bitpay-labs/crypto-rpc": "^11.10.0",
     "@bitpay-labs/crypto-wallet-core": "^11.10.0",
     "@metaplex-foundation/mpl-token-metadata": "^3.4.0",

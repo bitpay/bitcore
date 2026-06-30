@@ -25,7 +25,6 @@
     "compile": "npm run clean && npm run build",
     "test": "npm run compile && mocha -r tsx --exit 'test/**/*.test.ts'",
     "coverage": "npm run compile && nyc mocha -r tsx --exit 'test/**/*.test.ts'",
-    "precommit": "npm run lint",
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",

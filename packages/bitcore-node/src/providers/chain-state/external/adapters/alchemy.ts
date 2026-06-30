@@ -2,6 +2,7 @@ import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import axios from 'axios';
 import config from '../../../../config';
 import logger from '../../../../logger';
+import { EthDater } from '../../../../utils/ethDater';
 import { EVMTransactionStorage } from '../../evm/models/transaction';
 import { ExternalApiStream } from '../streams/apiStream';
 import {
@@ -26,12 +27,24 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
 
   private apiKey: string;
   private requestTimeout: number;
+  private daters = new Map<string, EthDater>();
 
   constructor(providerConfig: IMultiProviderConfig) {
     const apiKey = config.externalProviders?.alchemy?.apiKey;
     if (!apiKey) throw new Error('AlchemyAdapter: apiKey is required in config.externalProviders.alchemy');
     this.apiKey = apiKey;
     this.requestTimeout = providerConfig.requestTimeout ?? 30000;
+  }
+
+  private getDater(chain: string, network: string): EthDater {
+    const key = `${chain}:${network}`;
+    let dater = this.daters.get(key);
+    if (!dater) {
+      const web3 = new Web3(new Web3.providers.HttpProvider(this.getBaseUrl(chain, network)));
+      dater = new EthDater(web3);
+      this.daters.set(key, dater);
+    }
+    return dater;
   }
 
   private getNetworkUrlString(chain: string, network: string): string {
@@ -111,35 +124,13 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
 
   async getBlockNumberByDate(params: AdapterBlockByDateParams): Promise<number> {
     const { chain, network, date } = params;
-    const url = this.getBaseUrl(chain, network);
-    const targetTimestamp = Math.floor(new Date(date).getTime() / 1000);
-
-    const MAX_ITERATIONS = 64;
-    const latestBlockResp = await this._jsonRpc(url, 'eth_blockNumber', []);
-    let high = parseInt(latestBlockResp.result, 16);
-    let low = 0;
-
-    const latestBlock = await this._jsonRpc(url, 'eth_getBlockByNumber', [latestBlockResp.result, false]);
-    const latestTimestamp = parseInt(latestBlock.result.timestamp, 16);
-    if (targetTimestamp >= latestTimestamp) return high; // Target in the future
-    if (targetTimestamp <= 0) return 0; // Target before genesis
-
-    // Binary search: largest block with timestamp <= target
-    let iterations = 0;
-    while (low < high && iterations < MAX_ITERATIONS) {
-      const mid = Math.floor((low + high + 1) / 2);
-      const blockResp = await this._jsonRpc(url, 'eth_getBlockByNumber', [`0x${mid.toString(16)}`, false]);
-      const blockTimestamp = parseInt(blockResp.result.timestamp, 16);
-
-      if (blockTimestamp <= targetTimestamp) {
-        low = mid;
-      } else {
-        high = mid - 1;
-      }
-      iterations++;
+    try {
+      // `false` = "block before" semantics: largest block whose timestamp < target.
+      const result = await this.getDater(chain, network).getDate(new Date(date), false);
+      return result.block;
+    } catch (error) {
+      this._classifyError(error);
     }
-
-    return low;
   }
 
   async healthCheck(): Promise<boolean> {

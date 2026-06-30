@@ -197,6 +197,7 @@ export class TransakService {
   transakGetSignedPaymentUrl(req): Promise<{ urlWithSignature: string }> {
     return new Promise(async (resolve, reject) => {
       const appRequiredParams = [
+        'accessToken',
         'walletAddress',
         'redirectURL',
         'fiatAmount',
@@ -207,7 +208,7 @@ export class TransakService {
         'partnerCustomerId',
       ];
 
-      const requiredParams = req.body.context === 'web' ? [] : appRequiredParams;
+      const requiredParams = req.body.context === 'web' ? ['accessToken'] : appRequiredParams;
       const referrerDomain = req.body.referrerDomain ?? req.body.context === 'web' ? 'bitpay.com' : 'bitpay';
       let keys;
       try {
@@ -222,22 +223,10 @@ export class TransakService {
         return reject(new ClientError("Transak's request missing arguments"));
       }
 
-      let accessToken;
-      if (req.body.accessToken) {
-        accessToken = req.body.accessToken;
-      } else {
-        try {
-          const accessTokenData = await this.transakGetAccessToken(req);
-          accessToken = accessTokenData?.data?.accessToken;
-        } catch (err) {
-          return reject(err?.body ? err.body : err);
-        }
-      }
-
       const headers = {
         Accept: 'application/json',
         'Content-Type': 'application/json',
-        'access-token': accessToken,
+        'access-token': req.body.accessToken,
       };
 
       const body = {
@@ -278,25 +267,13 @@ export class TransakService {
       }
       const API = keys.API;
 
-      if (!checkRequired(req.body, ['orderId'])) {
+      if (!checkRequired(req.body, ['orderId', 'accessToken'])) {
         return reject(new ClientError("Transak's request missing arguments"));
-      }
-
-      let accessToken;
-      if (req.body.accessToken) {
-        accessToken = req.body.accessToken;
-      } else {
-        try {
-          const accessTokenData = await this.transakGetAccessToken(req);
-          accessToken = accessTokenData?.data?.accessToken;
-        } catch (err) {
-          return reject(err?.body ? err.body : err);
-        }
       }
 
       const headers = {
         Accept: 'application/json',
-        'access-token': accessToken,
+        'access-token': req.body.accessToken,
       };
 
       const URL: string = API + `/partners/api/v2/order/${req.body.orderId}`;
