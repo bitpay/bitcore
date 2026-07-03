@@ -1,13 +1,16 @@
 import { BitcoreLibDoge } from '@bitpay-labs/crypto-wallet-core';
 import * as async from 'async';
 import _ from 'lodash';
-import { IChain } from '../../../types/chain';
 import { BtcChain } from '../../chain/btc';
 import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
 import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
 import { TxProposal } from '../../model';
+import type { IChain } from '../../../types/chain';
+import type { GetSendMaxInfoOpts } from '../../../types/server';
+import type { IWallet } from '../../model/wallet';
+import type { WalletService } from '../../server';
 
 const { Utils, Defaults } = Common;
 
@@ -298,7 +301,7 @@ export class DogeChain extends BtcChain implements IChain {
     });
   }
 
-  getWalletSendMaxInfo(server, wallet, opts, cb) {
+  getWalletSendMaxInfo(server: WalletService, wallet: IWallet, opts: GetSendMaxInfoOpts, cb) {
     server.getUtxosForCurrentWallet({}, (err, utxos) => {
       if (err) return cb(err);
 

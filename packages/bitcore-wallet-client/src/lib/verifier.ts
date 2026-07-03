@@ -125,6 +125,8 @@ export class Verifier {
     const strEqual = (str1, str2) => {
       return (!str1 && !str2) || str1 === str2;
     };
+    const numEqual = CWCUtils.BI.isEqual;
+    const objEqual = CWCUtils.isEqual;
 
     if (txp.outputs.length != args.outputs.length) return false;
 
@@ -134,7 +136,7 @@ export class Verifier {
       if (!strEqual(o1.toAddress, o2.toAddress)) return false;
       if (!strEqual(o1.script, o2.script)) return false;
       // Amounts need to be equal OR sendMax arg is set and amount arg is omitted, otherwise return check failure
-      if (o1.amount != o2.amount && !(args.sendMax && o2.amount == null)) return false;
+      if (!((args.sendMax && o2.amount == null) || numEqual(o1.amount, o2.amount))) return false;
       let decryptedMessage: boolean | string = false;
       try {
         decryptedMessage = Utils.decryptMessage(o2.message, encryptingKey);
@@ -148,7 +150,7 @@ export class Verifier {
     }
     if (args.changeAddress && !strEqual(changeAddress, args.changeAddress))
       return false;
-    if (typeof args.feePerKb === 'number' && txp.feePerKb != args.feePerKb)
+    if (args.feePerKb && !numEqual(txp.feePerKb, args.feePerKb))
       return false;
     if (!strEqual(txp.payProUrl, args.payProUrl)) return false;
 
@@ -159,7 +161,7 @@ export class Verifier {
     if (!strEqual(txp.message, decryptedMessage)) return false;
     if (
       (args.customData || txp.customData) &&
-      !CWCUtils.isEqual(txp.customData, args.customData)
+      !objEqual(txp.customData, args.customData)
     )
       return false;
 

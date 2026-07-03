@@ -2886,41 +2886,41 @@ describe('client API', function() {
         should.not.exist(err);
         should.exist(result);
         result.inputs.length.should.be.equal(2);
-        result.amount.should.be.equal(balance.totalAmount - result.fee);
+        result.amount.should.be.equal(BigInt(balance.totalAmount) - result.fee);
         result.utxosBelowFee.should.be.equal(0);
-        result.amountBelowFee.should.be.equal(0);
+        result.amountBelowFee.should.be.equal(0n);
         result.utxosAboveMaxSize.should.be.equal(0);
-        result.amountAboveMaxSize.should.be.equal(0);
+        result.amountAboveMaxSize.should.be.equal(0n);
         done();
       });
     });
     it('should return data excluding unconfirmed UTXOs', function(done) {
       const opts = {
-        feePerKb: 200,
+        feePerKb: 200n,
         excludeUnconfirmedUtxos: true,
         returnInputs: true
       };
       clients[0].getSendMaxInfo(opts, (err, result) => {
         should.not.exist(err);
-        result.amount.should.be.equal(balance.availableConfirmedAmount - result.fee);
+        result.amount.should.be.equal(BigInt(balance.availableConfirmedAmount) - result.fee);
         done();
       });
     });
     it('should return data including unconfirmed UTXOs', function(done) {
       const opts = {
-        feePerKb: 200,
+        feePerKb: 200n,
         excludeUnconfirmedUtxos: false,
         returnInputs: true
       };
       clients[0].getSendMaxInfo(opts, (err, result) => {
         should.not.exist(err);
-        result.amount.should.be.equal(balance.totalAmount - result.fee);
+        result.amount.should.be.equal(BigInt(balance.totalAmount) - result.fee);
         done();
       });
     });
     it('should return data without inputs', function(done) {
       const opts = {
-        feePerKb: 200,
+        feePerKb: 200n,
         excludeUnconfirmedUtxos: true,
         returnInputs: false
       };
@@ -2932,7 +2932,7 @@ describe('client API', function() {
     });
     it('should return data with inputs', function(done) {
       const opts = {
-        feePerKb: 200,
+        feePerKb: 200n,
         excludeUnconfirmedUtxos: true,
         returnInputs: true
       };
@@ -2943,7 +2943,7 @@ describe('client API', function() {
         for (const i of result.inputs) {
           totalSatoshis = totalSatoshis + i.satoshis;
         }
-        result.amount.should.be.equal(totalSatoshis - result.fee);
+        result.amount.should.be.equal(BigInt(totalSatoshis) - result.fee);
         done();
       });
     });
@@ -3276,12 +3276,12 @@ describe('client API', function() {
       const opts = {
         outputs: [
           {
-            amount: 1e8,
+            amount: BigInt(1e8),
             toAddress: toAddress,
             message: 'world'
           },
           {
-            amount: 2e8,
+            amount: BigInt(2e8),
             toAddress: toAddress
           }
         ],
@@ -3293,20 +3293,20 @@ describe('client API', function() {
           someStr: 'str'
         }
       };
-      clients[0].createTxProposal(opts, (err, txp) => {
+      clients[0].createTxProposal(opts, null, (err, txp) => {
         should.not.exist(err);
         should.exist(txp);
 
         txp.status.should.equal('temporary');
         txp.message.should.equal('hello');
         txp.outputs.length.should.equal(2);
-        txp.outputs.reduce((sum, output) => sum += output.amount, 0).should.equal(3e8);
+        txp.outputs.reduce((sum, output) => sum += Number(output.amount), 0).should.equal(3e8);
         txp.outputs[0].message.should.equal('world');
         new Set(txp.outputs.map(output => output.toAddress)).size.should.equal(1);
         Array.from(new Set(txp.outputs.map(o => o.toAddress)))[0].should.equal(toAddress);
         txp.hasUnconfirmedInputs.should.equal(false);
         txp.feeLevel.should.equal('normal');
-        txp.feePerKb.should.equal(123e2);
+        Number(txp.feePerKb).should.equal(123e2);
 
         should.exist(txp.encryptedMessage);
         should.exist(txp.outputs[0].encryptedMessage);
@@ -3315,32 +3315,27 @@ describe('client API', function() {
           should.not.exist(err);
           txps.should.be.empty;
 
-          clients[0].publishTxProposal(
-            {
-              txp: txp
-            },
-            (err, publishedTxp) => {
+          clients[0].publishTxProposal({ txp }, (err, publishedTxp) => {
+            should.not.exist(err);
+            should.exist(publishedTxp);
+            publishedTxp.status.should.equal('pending');
+            clients[0].getTxProposals({}, (err, txps) => {
               should.not.exist(err);
-              should.exist(publishedTxp);
-              publishedTxp.status.should.equal('pending');
-              clients[0].getTxProposals({}, (err, txps) => {
+              txps.length.should.equal(1);
+              const x = txps[0];
+              x.id.should.equal(txp.id);
+              should.exist(x.proposalSignature);
+              should.not.exist(x.proposalSignaturePubKey);
+              should.not.exist(x.proposalSignaturePubKeySig);
+              // Should be visible for other copayers as well
+              clients[1].getTxProposals({}, (err, txps) => {
                 should.not.exist(err);
                 txps.length.should.equal(1);
-                const x = txps[0];
-                x.id.should.equal(txp.id);
-                should.exist(x.proposalSignature);
-                should.not.exist(x.proposalSignaturePubKey);
-                should.not.exist(x.proposalSignaturePubKeySig);
-                // Should be visible for other copayers as well
-                clients[1].getTxProposals({}, (err, txps) => {
-                  should.not.exist(err);
-                  txps.length.should.equal(1);
-                  txps[0].id.should.equal(txp.id);
-                  done();
-                });
+                txps[0].id.should.equal(txp.id);
+                done();
               });
-            }
-          );
+            });
+          });
         });
       });
     });
@@ -3354,12 +3349,12 @@ describe('client API', function() {
         txProposalId: '1234',
         outputs: [
           {
-            amount: 1e8,
+            amount: BigInt(1e8),
             toAddress: toAddress,
             message: 'world'
           },
           {
-            amount: 2e8,
+            amount: BigInt(2e8),
             toAddress: toAddress
           }
         ],
@@ -3372,66 +3367,56 @@ describe('client API', function() {
           someStr: 'str'
         }
       };
-      clients[0].createTxProposal(opts, (err, txp) => {
+      clients[0].createTxProposal(opts, null, (err, txp) => {
         should.not.exist(err);
         should.exist(txp);
         txp.status.should.equal('temporary');
         txp.feeLevel.should.equal('economy');
-        txp.feePerKb.should.equal(123e2);
-        clients[0].publishTxProposal(
-          {
-            txp: txp
-          },
-          (err, publishedTxp) => {
+        Number(txp.feePerKb).should.equal(123e2);
+        clients[0].publishTxProposal({ txp }, (err, publishedTxp) => {
+          should.not.exist(err);
+          should.exist(publishedTxp);
+          publishedTxp.status.should.equal('pending');
+          clients[0].getTxProposals({}, (err, txps) => {
             should.not.exist(err);
-            should.exist(publishedTxp);
-            publishedTxp.status.should.equal('pending');
-            clients[0].getTxProposals({}, (err, txps) => {
+            txps.length.should.equal(1);
+            // Try to republish from copayer 1
+            clients[1].createTxProposal(opts, null, (err, txp) => {
               should.not.exist(err);
-              txps.length.should.equal(1);
-              // Try to republish from copayer 1
-              clients[1].createTxProposal(opts, (err, txp) => {
+              should.exist(txp);
+              txp.status.should.equal('pending');
+              clients[1].publishTxProposal({ txp }, (err, publishedTxp) => {
                 should.not.exist(err);
-                should.exist(txp);
-                txp.status.should.equal('pending');
-                clients[1].publishTxProposal(
-                  {
-                    txp: txp
-                  },
-                  (err, publishedTxp) => {
-                    should.not.exist(err);
-                    should.exist(publishedTxp);
-                    publishedTxp.status.should.equal('pending');
-                    done();
-                  }
-                );
+                should.exist(publishedTxp);
+                publishedTxp.status.should.equal('pending');
+                done();
               });
             });
-          }
-        );
+          });
+        });
       });
     });
     it('Should protect against tampering at proposal creation', function(done) {
       const opts = {
         outputs: [
           {
-            amount: 1e8,
+            amount: BigInt(1e8),
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'world'
           },
           {
-            amount: 2e8,
+            amount: BigInt(2e8),
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5'
           }
         ],
-        feePerKb: 123e2,
+        feePerKb: BigInt(123e2),
         changeAddress: myAddress.address,
         message: 'hello'
       };
 
       const tamperings = [
         txp => {
-          txp.feePerKb = 45600;
+          txp.feePerKb = BigInt(45600);
         },
         txp => {
           txp.message = 'dummy';
@@ -3449,10 +3434,10 @@ describe('client API', function() {
           txp.outputs[0].toAddress = 'mjfjcbuYwBUdEyq2m7AezjCAR4etUBqyiE';
         },
         txp => {
-          txp.outputs[0].amount = 2e8;
+          txp.outputs[0].amount = BigInt(2e8);
         },
         txp => {
-          txp.outputs[1].amount = 3e8;
+          txp.outputs[1].amount = BigInt(3e8);
         },
         txp => {
           txp.outputs[0].message = 'dummy';
@@ -3472,7 +3457,7 @@ describe('client API', function() {
         tamperings,
         (tamperFn, next) => {
           helpers.tamperResponse(clients[0], 'post', '/v2/txproposals/', args, tamperFn, () => {
-            clients[0].createTxProposal(opts, (err, txp) => {
+            clients[0].createTxProposal(opts, null, (err, txp) => {
               should.exist(err, 'For tamper function ' + tamperFn);
               err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
               next();
@@ -3490,24 +3475,24 @@ describe('client API', function() {
       const opts = {
         outputs: [
           {
-            amount: 3e8,
+            amount: BigInt(3e8),
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5'
           }
         ],
-        feePerKb: 100e2
+        feePerKb: BigInt(100e2)
       };
 
       let txp1, txp2;
       async.series(
         [
           next => {
-            clients[0].createTxProposal(opts, (err, txp) => {
+            clients[0].createTxProposal(opts, null, (err, txp) => {
               txp1 = txp;
               next(err);
             });
           },
           next => {
-            clients[0].createTxProposal(opts, (err, txp) => {
+            clients[0].createTxProposal(opts, null, (err, txp) => {
               txp2 = txp;
               next(err);
             });
@@ -3555,7 +3540,7 @@ describe('client API', function() {
     });
     it('Should create proposal with unconfirmed inputs', function(done) {
       const opts = {
-        amount: 4.5e8,
+        amount: BigInt(4.5e8),
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'hello'
       };
@@ -3570,7 +3555,7 @@ describe('client API', function() {
     });
     it('Should fail to create proposal with insufficient funds', function(done) {
       const opts = {
-        amount: 6e8,
+        amount: BigInt(6e8),
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'hello 1-1'
       };
@@ -3582,7 +3567,7 @@ describe('client API', function() {
     });
     it('Should fail to create proposal with insufficient funds for fee', function(done) {
       const opts = {
-        amount: 5e8 - 200e2,
+        amount: BigInt(5e8 - 200e2),
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'hello 1-1',
         feePerKb: 800e2
@@ -3603,7 +3588,7 @@ describe('client API', function() {
     });
     it('Should lock and release funds through rejection', function(done) {
       const opts = {
-        amount: 2.2e8,
+        amount: BigInt(2.2e8),
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5'
       };
       helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
@@ -3628,7 +3613,7 @@ describe('client API', function() {
     });
     it('Should lock and release funds through removal', function(done) {
       const opts = {
-        amount: 2.2e8,
+        amount: BigInt(2.2e8),
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'hello 1-1'
       };
@@ -3651,7 +3636,7 @@ describe('client API', function() {
     });
     it('Should keep message and refusal texts', function(done) {
       const opts = {
-        amount: 1e8,
+        amount: BigInt(1e8),
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'some message'
       };
@@ -3672,7 +3657,7 @@ describe('client API', function() {
     });
     it('Should hide message and refusal texts if not key is present', function(done) {
       const opts = {
-        amount: 1e8,
+        amount: BigInt(1e8),
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'some message'
       };
@@ -3698,15 +3683,15 @@ describe('client API', function() {
       const opts = {
         outputs: [
           {
-            amount: 1000e2,
+            amount: BigInt(1000e2),
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5'
           }
         ],
         message: 'some message',
-        feePerKb: 100e2
+        feePerKb: BigInt(100e2)
       };
       const spy = sandbox.spy(clients[0].request, 'post');
-      clients[0].createTxProposal(opts, (err, x) => {
+      clients[0].createTxProposal(opts, null, (err, x) => {
         should.not.exist(err);
         spy.calledOnce.should.be.true;
         JSON.stringify(spy.getCall(0).args).should.not.contain('some message');
@@ -3715,7 +3700,7 @@ describe('client API', function() {
     });
     it('Should encrypt proposal refusal comment', function(done) {
       const opts = {
-        amount: 1e8,
+        amount: BigInt(1e8),
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5'
       };
       helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
@@ -3733,7 +3718,7 @@ describe('client API', function() {
     describe('Detecting tampered tx proposals', () => {
       it('should detect wrong signature', function(done) {
         const opts = {
-          amount: 1000e2,
+          amount: BigInt(1000e2),
           toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
           message: 'hello'
         };
@@ -3761,7 +3746,7 @@ describe('client API', function() {
       });
       it('should detect tampered amount', function(done) {
         const opts = {
-          amount: 1000e2,
+          amount: BigInt(1000e2),
           toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
           message: 'hello'
         };
@@ -3774,7 +3759,7 @@ describe('client API', function() {
             '/v1/txproposals/',
             {},
             txps => {
-              txps[0].outputs[0].amount = 1e8;
+              txps[0].outputs[0].amount = BigInt(1e8);
             },
             () => {
               clients[0].getTxProposals({}, (err, txps) => {
@@ -3788,7 +3773,7 @@ describe('client API', function() {
       });
       it('should detect change address not it wallet', function(done) {
         const opts = {
-          amount: 1000e2,
+          amount: BigInt(1000e2),
           toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
           message: 'hello'
         };
@@ -3857,18 +3842,18 @@ describe('client API', function() {
         const opts = {
           outputs: [
             {
-              amount: 1e8,
+              amount: BigInt(1e8),
               toAddress: toAddress
             },
             {
-              amount: 2e8,
+              amount: BigInt(2e8),
               toAddress: toAddress
             }
           ],
-          feePerKb: 100e2,
+          feePerKb: BigInt(100e2),
           message: 'just some message'
         };
-        clients[0].createTxProposal(opts, (err, txp) => {
+        clients[0].createTxProposal(opts, null, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
           clients[0].publishTxProposal(
@@ -3900,19 +3885,19 @@ describe('client API', function() {
         const opts = {
           outputs: [
             {
-              amount: 1e8,
+              amount: BigInt(1e8),
               toAddress: toAddress
             },
             {
-              amount: 2e8,
+              amount: BigInt(2e8),
               toAddress: toAddress
             }
           ],
-          feePerKb: 100e2,
+          feePerKb: BigInt(100e2),
           message: 'just some message',
           enableRBF: true
         };
-        clients[0].createTxProposal(opts, (err, txp) => {
+        clients[0].createTxProposal(opts, null, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
           clients[0].publishTxProposal(
@@ -3944,14 +3929,14 @@ describe('client API', function() {
         const opts = {
           outputs: [
             {
-              amount: 4e8 - 100,
+              amount: BigInt(4e8 - 100),
               toAddress: toAddress
             }
           ],
           excludeUnconfirmedUtxos: true,
-          feePerKb: 1
+          feePerKb: 1n
         };
-        clients[0].createTxProposal(opts, (err, txp) => {
+        clients[0].createTxProposal(opts, null, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
           const t = Utils.buildTx(txp);
@@ -3982,7 +3967,7 @@ describe('client API', function() {
         const toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
         clients[0].getSendMaxInfo(
           {
-            feePerKb: 100e2,
+            feePerKb: BigInt(100e2),
             returnInputs: true
           },
           (err, info) => {
@@ -3997,7 +3982,7 @@ describe('client API', function() {
               inputs: info.inputs,
               fee: info.fee
             };
-            clients[0].createTxProposal(opts, (err, txp) => {
+            clients[0].createTxProposal(opts, null, (err, txp) => {
               should.not.exist(err);
               should.exist(txp);
               const t = Utils.buildTx(txp);
@@ -4037,19 +4022,20 @@ describe('client API', function() {
         const opts = {
           outputs: [
             {
-              amount: 1e8,
+              amount: BigInt(1e8),
               toAddress: toAddress
             },
             {
-              amount: 2e8,
+              amount: BigInt(2e8),
               toAddress: toAddress
             }
           ],
-          feePerKb: 100e2,
+          feePerKb: BigInt(100e2),
           message: 'just some message'
         };
         clients[0].createTxProposal(
           opts,
+          { baseUrl: '/v3/txproposals' },
           (err, txp) => {
             should.not.exist(err);
             should.exist(txp);
@@ -4075,8 +4061,7 @@ describe('client API', function() {
                 });
               }
             );
-          },
-          '/v3/txproposals'
+          }
         );
       });
 
@@ -4085,18 +4070,18 @@ describe('client API', function() {
         const opts = {
           outputs: [
             {
-              amount: 1e8,
+              amount: BigInt(1e8),
               toAddress: toAddress
             },
             {
-              amount: 2e8,
+              amount: BigInt(2e8),
               toAddress: toAddress
             }
           ],
-          feePerKb: 100e2,
+          feePerKb: BigInt(100e2),
           message: 'just some message'
         };
-        clients[0].createTxProposal(opts, (err, txp) => {
+        clients[0].createTxProposal(opts, null, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
           txp.version.should.equal(4);
@@ -4128,18 +4113,18 @@ describe('client API', function() {
         const opts = {
           outputs: [
             {
-              amount: 1e8,
+              amount: BigInt(1e8),
               toAddress: toAddress
             },
             {
-              amount: 2e8,
+              amount: BigInt(2e8),
               toAddress: toAddress
             }
           ],
-          feePerKb: 100e2,
+          feePerKb: BigInt(100e2),
           message: 'just some message'
         };
-        clients[0].createTxProposal(opts, (err, txp) => {
+        clients[0].createTxProposal(opts, null, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
           txp.version.should.equal(4);
@@ -4178,18 +4163,18 @@ describe('client API', function() {
         const opts = {
           outputs: [
             {
-              amount: 1e8,
+              amount: BigInt(1e8),
               toAddress: toAddress
             },
             {
-              amount: 2e8,
+              amount: BigInt(2e8),
               toAddress: toAddress
             }
           ],
-          feePerKb: 100e2,
+          feePerKb: BigInt(100e2),
           message: 'just some message'
         };
-        clients[0].createTxProposal(opts, (err, txp) => {
+        clients[0].createTxProposal(opts, null, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
           clients[0].publishTxProposal(
@@ -4226,19 +4211,19 @@ describe('client API', function() {
         const opts = {
           outputs: [
             {
-              amount: 1e8,
+              amount: BigInt(1e8),
               toAddress: toAddress
             },
             {
-              amount: 2e8,
+              amount: BigInt(2e8),
               toAddress: toAddress
             }
           ],
-          feePerKb: 100e2,
+          feePerKb: BigInt(100e2),
           message: 'just some message',
           signingMethod: 'schnorr' // forcing schnorr on BCH/livenet
         };
-        clients[0].createTxProposal(opts, (err, txp) => {
+        clients[0].createTxProposal(opts, null, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
           txp.signingMethod.should.equal('schnorr');
@@ -4288,19 +4273,19 @@ describe('client API', function() {
         const opts = {
           outputs: [
             {
-              amount: 1e8,
+              amount: BigInt(1e8),
               toAddress: toAddress
             },
             {
-              amount: 2e8,
+              amount: BigInt(2e8),
               toAddress: toAddress
             }
           ],
-          feePerKb: 100e2,
+          feePerKb: BigInt(100e2),
           message: 'just some message',
           signingMethod: 'schnorr' // forcing schnorr on BCH/livenet
         };
-        clients[0].createTxProposal(opts, (err, txp) => {
+        clients[0].createTxProposal(opts, null, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
           txp.signingMethod.should.equal('schnorr');
@@ -4336,19 +4321,19 @@ describe('client API', function() {
         const opts = {
           outputs: [
             {
-              amount: 1e8,
+              amount: BigInt(1e8),
               toAddress: toAddress
             },
             {
-              amount: 2e8,
+              amount: BigInt(2e8),
               toAddress: toAddress
             }
           ],
-          feePerKb: 100e2,
+          feePerKb: BigInt(100e2),
           message: 'just some message',
           coin: 'bch'
         };
-        clients[0].createTxProposal(opts, (err, txp) => {
+        clients[0].createTxProposal(opts, null, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
           clients[0].publishTxProposal(
@@ -4375,21 +4360,22 @@ describe('client API', function() {
         const opts = {
           outputs: [
             {
-              amount: 1e8,
+              amount: BigInt(1e8),
               toAddress: toAddress
             },
             {
-              amount: 2e8,
+              amount: BigInt(2e8),
               toAddress: toAddress
             }
           ],
-          feePerKb: 100e2,
+          feePerKb: BigInt(100e2),
           message: 'just some message',
           txpVersion: 3,
           coin: 'bch'
         };
         clients[0].createTxProposal(
           opts,
+          { baseUrl: '/v3/txproposals' },
           (err, txp) => {
             should.not.exist(err);
             should.exist(txp);
@@ -4413,8 +4399,7 @@ describe('client API', function() {
                 );
               }
             );
-          },
-          '/v3/txproposals'
+          }
         );
       });
 
@@ -4423,21 +4408,22 @@ describe('client API', function() {
         const opts = {
           outputs: [
             {
-              amount: 1e8,
+              amount: BigInt(1e8),
               toAddress: toAddress
             },
             {
-              amount: 2e8,
+              amount: BigInt(2e8),
               toAddress: toAddress
             }
           ],
-          feePerKb: 100e2,
+          feePerKb: BigInt(100e2),
           message: 'just some message',
           txpVersion: 3,
           coin: 'bch'
         };
         clients[0].createTxProposal(
           opts,
+          { baseUrl: '/v3/txproposals' },
           (err, txp) => {
             should.not.exist(err);
             should.exist(txp);
@@ -4462,8 +4448,7 @@ describe('client API', function() {
                 );
               }
             );
-          },
-          '/v3/txproposals'
+          }
         );
       });
 
@@ -4472,20 +4457,21 @@ describe('client API', function() {
         const opts = {
           outputs: [
             {
-              amount: 1e8,
+              amount: BigInt(1e8),
               toAddress: toAddress
             },
             {
-              amount: 2e8,
+              amount: BigInt(2e8),
               toAddress: toAddress
             }
           ],
-          feePerKb: 100e2,
+          feePerKb: BigInt(100e2),
           message: 'just some message',
           coin: 'bch'
         };
         clients[0].createTxProposal(
           opts,
+          { baseUrl: '/v3/txproposals' },
           (err, txp) => {
             should.not.exist(err);
             should.exist(txp);
@@ -4507,8 +4493,7 @@ describe('client API', function() {
                 });
               }
             );
-          },
-          '/v3/txproposals'
+          }
         );
       });
 
@@ -4517,18 +4502,18 @@ describe('client API', function() {
         const opts = {
           outputs: [
             {
-              amount: 1e8,
+              amount: BigInt(1e8),
               toAddress: toAddress
             },
             {
-              amount: 2e8,
+              amount: BigInt(2e8),
               toAddress: toAddress
             }
           ],
-          feePerKb: 100e2,
+          feePerKb: BigInt(100e2),
           message: 'just some message'
         };
-        clients[0].createTxProposal(opts, (err, txp) => {
+        clients[0].createTxProposal(opts, null, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
           txp.version.should.equal(4);
@@ -4560,18 +4545,18 @@ describe('client API', function() {
         const opts = {
           outputs: [
             {
-              amount: 1e8,
+              amount: BigInt(1e8),
               toAddress: toAddress
             },
             {
-              amount: 2e8,
+              amount: BigInt(2e8),
               toAddress: toAddress
             }
           ],
-          feePerKb: 100e2,
+          feePerKb: BigInt(100e2),
           message: 'just some message'
         };
-        clients[0].createTxProposal(opts, (err, txp) => {
+        clients[0].createTxProposal(opts, null, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
           txp.version.should.equal(4);
@@ -5041,7 +5026,7 @@ describe('client API', function() {
           const signatures = await keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, async (err, xx) => {
             should.not.exist(err);
-            xx.feePerKb = Number(xx.feePerKb) / 2;
+            xx.feePerKb = CWC.Utils.toHex((Number(xx.feePerKb) / 2).toFixed(0));
             const signatures2 = await keys[1].sign(clients[1].getRootPath(), xx);
             clients[1].pushSignatures(xx, signatures2, (err, yy) => {
               should.not.exist(err);
@@ -5215,8 +5200,9 @@ describe('client API', function() {
                     ],
                     message: DATA.memo,
                     payProUrl: opts.paymentUrl,
-                    feePerKb: 100e2
+                    feePerKb: BigInt(100e2)
                   },
+                  null,
                   (err, txp) => {
                     should.not.exist(err);
                     clients[0].publishTxProposal(
@@ -5263,14 +5249,14 @@ describe('client API', function() {
           const opts = {
             outputs: [
               {
-                amount: 40000,
+                amount: BigInt(40000),
                 toAddress: toAddress
               }
             ],
-            feePerKb: 100e2,
+            feePerKb: BigInt(100e2),
             txProposalId: id
           };
-          clients[0].createTxProposal(opts, (err, txp) => {
+          clients[0].createTxProposal(opts, null, (err, txp) => {
             should.not.exist(err);
             should.exist(txp);
             clients[0].publishTxProposal(
@@ -5282,7 +5268,7 @@ describe('client API', function() {
                 publishedTxp.id.should.equal(id);
                 clients[0].removeTxProposal(publishedTxp, err => {
                   opts.txProposalId = null;
-                  clients[0].createTxProposal(opts, (err, txp) => {
+                  clients[0].createTxProposal(opts, null, (err, txp) => {
                     should.not.exist(err);
                     should.exist(txp);
                     txp.id.should.not.equal(id);
@@ -5311,7 +5297,7 @@ describe('client API', function() {
             message: 'world'
           }
         ],
-        feePerKb: 100e2
+        feePerKb: BigInt(100e2)
       };
 
       const http = sandbox.stub();
@@ -5334,7 +5320,7 @@ describe('client API', function() {
           x2.creatorName.should.equal('creator');
           x2.message.should.equal('hello');
           x2.outputs[0].toAddress.should.equal(toAddress);
-          x2.outputs[0].amount.should.equal(10000);
+          x2.outputs[0].amount.should.equal('0x2710'); // 10000 in hex
           x2.outputs[0].message.should.equal('world');
           clients[0].doNotVerifyPayPro = doNotVerifyPayPro;
           const signatures = await keys[0].sign(clients[0].getRootPath(), x2);
@@ -5394,7 +5380,7 @@ describe('client API', function() {
               }
             ],
             message: 'hello',
-            feePerKb: 100e2
+            feePerKb: BigInt(100e2)
           };
           helpers.createAndPublishTxProposal(clients[0], opts, async (err, txp) => {
             should.not.exist(err);
@@ -5440,7 +5426,7 @@ describe('client API', function() {
               }
             ],
             message: 'hello',
-            feePerKb: 100e2,
+            feePerKb: BigInt(100e2),
             txType: 2
           };
           helpers.createAndPublishTxProposal(clients[0], opts, async (err, txp) => {
@@ -5487,7 +5473,7 @@ describe('client API', function() {
               }
             ],
             message: 'hello',
-            feePerKb: 100e2
+            feePerKb: BigInt(100e2)
           };
           const opts1 = { ...opts, nonce: 1 };
           helpers.createAndPublishTxProposal(clients[0], opts1, (err, txp1) => {
@@ -5535,7 +5521,7 @@ describe('client API', function() {
               }
             ],
             message: 'hello',
-            feePerKb: 100e2
+            feePerKb: BigInt(100e2)
           };
           helpers.createAndPublishTxProposal(clients[0], opts, async (err, txp) => {
             should.not.exist(err);
@@ -9107,13 +9093,13 @@ describe('client API', function() {
         const opts = {
           outputs: [
             {
-              amount: 1e8,
+              amount: BigInt(1e8),
               toAddress: toAddress
             }
           ],
-          feePerKb: 100e2
+          feePerKb: BigInt(100e2)
         };
-        clients[0].createTxProposal(opts, (err, txp) => {
+        clients[0].createTxProposal(opts, null, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
           should.exist(txp.changeAddress);
@@ -9210,6 +9196,216 @@ describe('client API', function() {
         } catch (err) {
           err.message.should.equal('Missing argument: chain at <getTokenAllowance()>');
         }
+      });
+    });
+  });
+
+  describe('Transaction proposal round trip', function() {
+    let txp;
+    let client: Client;
+    const keys = [];
+    const signedTxs = [];
+
+    const setup = async function(coin, network, m, n) {
+      const w = await helpers.createAndJoinWallet(
+        [client],
+        keys,
+        m,
+        n,
+        {
+          coin: coin,
+          network: network
+        },
+      );
+      const address = await client.createAddress(null);
+
+      if (CWC.Utils.isUtxoChain(coin)) {
+        blockchainExplorerMock.setUtxo(address, 2, m);
+        blockchainExplorerMock.setUtxo(address, 2, m);
+        blockchainExplorerMock.setUtxo(address, 1, m, 0);
+      }
+    };
+
+    describe('ETH', function() {
+      let nonce = 0n;
+      beforeEach(function(done) {
+        signedTxs.splice(0);
+        keys.splice(0);
+        const expressApp = new ExpressApp();
+        expressApp.start(
+          {
+            ignoreRateLimiter: true,
+            storage: storage,
+            blockchainExplorer: blockchainExplorerMock,
+            disableLogs: true,
+            doNotCheckV8: true
+          },
+          () => {
+            client = helpers.newClient(expressApp.app);
+            blockchainExplorerMock.reset();
+            setup('eth', 'regtest', 1, 1)
+              .then(done)
+              .catch(done);
+          }
+        );
+      });
+
+
+      it('should send specific amount', async function() {
+        txp = await client.createTxProposal({
+          outputs: [{
+            toAddress: '0x1234567890123456789012345678901234567890',
+            // eslint-disable-next-line no-loss-of-precision
+            amount: 12345678901234567890 as any, // large number to test big number handling with precision loss. 
+          }],
+          nonce: nonce++,
+          feePerKb: 1n
+        });
+        should.exist(txp);
+        txp.status.should.equal('temporary');
+
+        // should publish txp
+        txp = await client.publishTxProposal({ txp });
+        txp.status.should.equal('pending');
+
+        // should sign txp
+        const rootPath = client.getRootPath();
+        const signed = await keys[0].sign(rootPath, txp);
+        Array.isArray(signed).should.equal(true);
+        signed.length.should.equal(1);
+        CWC.Utils.isHexString(signed[0]).should.equal(true);
+        signedTxs.push(...signed);
+
+        // should push signature to txp
+        txp = await client.pushSignatures(txp, signedTxs);
+        txp.status.should.equal('accepted');
+
+        ({ txp } = await client.broadcastTxProposal(txp));
+        txp.status.should.equal('broadcasted');
+      });
+
+
+      it('should send max', async function() {
+        const info = await client.getSendMaxInfo({ feePerKb: 1n });
+        txp = await client.createTxProposal({
+          outputs: [{
+            toAddress: '0x1234567890123456789012345678901234567890',
+            amount: info.amount,
+          }],
+          nonce: nonce++,
+          feePerKb: 1n
+        });
+        should.exist(txp);
+        txp.status.should.equal('temporary');
+
+        // should publish txp
+        txp = await client.publishTxProposal({ txp });
+        txp.status.should.equal('pending');
+
+        // should sign txp
+        const rootPath = client.getRootPath();
+        const signed = await keys[0].sign(rootPath, txp);
+        Array.isArray(signed).should.equal(true);
+        signed.length.should.equal(1);
+        CWC.Utils.isHexString(signed[0]).should.equal(true);
+        signedTxs.push(...signed);
+
+        // should push signature to txp
+        txp = await client.pushSignatures(txp, signedTxs);
+        txp.status.should.equal('accepted');
+
+        ({ txp } = await client.broadcastTxProposal(txp));
+        txp.status.should.equal('broadcasted');
+      });
+    });
+
+    describe('BTC', function() {
+
+      beforeEach(function(done) {
+        signedTxs.splice(0);
+        keys.splice(0);
+        const expressApp = new ExpressApp();
+        expressApp.start(
+          {
+            ignoreRateLimiter: true,
+            storage: storage,
+            blockchainExplorer: blockchainExplorerMock,
+            disableLogs: true,
+            doNotCheckV8: true
+          },
+          () => {
+            client = helpers.newClient(expressApp.app);
+            blockchainExplorerMock.reset();
+            setup('btc', 'regtest', 1, 1)
+              .then(done)
+              .catch(done);
+          }
+        );
+      });
+
+
+      it('should send specific amount', async function() {
+        txp = await client.createTxProposal({
+          outputs: [{
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            amount: 123456798 as any,
+          }],
+          feePerKb: 1n
+        });
+        should.exist(txp);
+        txp.status.should.equal('temporary');
+
+        // should publish txp
+        txp = await client.publishTxProposal({ txp });
+        txp.status.should.equal('pending');
+
+        // should sign txp
+        const rootPath = client.getRootPath();
+        const signed = await keys[0].sign(rootPath, txp);
+        Array.isArray(signed).should.equal(true);
+        signed.length.should.equal(1);
+        CWC.Utils.isHexString(signed[0]).should.equal(true);
+        signedTxs.push(...signed);
+
+        // should push signature to txp
+        txp = await client.pushSignatures(txp, signedTxs);
+        txp.status.should.equal('accepted');
+
+        ({ txp } = await client.broadcastTxProposal(txp));
+        txp.status.should.equal('broadcasted');
+      });
+
+
+      it('should send max', async function() {
+        const info = await client.getSendMaxInfo({ feePerKb: 1n, excludeUnconfirmedUtxos: true });
+        txp = await client.createTxProposal({
+          outputs: [{
+            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+            amount: info.amount,
+          }],
+          feePerKb: 1n
+        });
+        should.exist(txp);
+        txp.status.should.equal('temporary');
+
+        // should publish txp
+        txp = await client.publishTxProposal({ txp });
+        txp.status.should.equal('pending');
+
+        // should sign txp
+        const rootPath = client.getRootPath();
+        const signed = await keys[0].sign(rootPath, txp);
+        Array.isArray(signed).should.equal(true);
+        signed.length.should.equal(2); // 2 utxos
+        CWC.Utils.isHexString(signed[0]).should.equal(true);
+        signedTxs.push(...signed);
+
+        // should push signature to txp
+        txp = await client.pushSignatures(txp, signedTxs);
+        txp.status.should.equal('accepted');
+
+        ({ txp } = await client.broadcastTxProposal(txp));
+        txp.status.should.equal('broadcasted');
       });
     });
   });

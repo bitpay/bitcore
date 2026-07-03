@@ -21,6 +21,7 @@ import type { Address } from '../types/address';
 import type { ServerAssistedImportEvents } from '../types/serverAssistedImportEvents';
 
 const $ = singleton();
+const BigIntTry = CWC.Utils.BI.BigIntTry;
 
 const Bitcore = CWC.BitcoreLib;
 const Bitcore_ = {
@@ -1613,7 +1614,7 @@ export class API extends EventEmitter {
    */
   async createTxProposal(
     /** Txp object */
-    opts: {
+    txOpts: {
       /** If provided it will be used as this TX proposal ID. Should be unique in the scope of the wallet. */
       txProposalId?: string;
       /** Transaction outputs. */
@@ -1621,7 +1622,7 @@ export class API extends EventEmitter {
         /** Destination address. */
         toAddress: string;
         /** Amount to transfer in satoshis. */
-        amount: number | bigint;
+        amount: bigint;
         /** A message to attach to this output. */
         message?: string;
       }>;
@@ -1630,7 +1631,7 @@ export class API extends EventEmitter {
       /** Specify the fee level for this TX. Default: normal */
       feeLevel?: 'priority' | 'normal' | 'economy' | 'superEconomy';
       /** Specify the fee per kilobyte for this tx (in satoshis). */
-      feePerKb?: number | bigint;
+      feePerKb?: bigint;
       /** Use this address as the change address for the tx. The address should belong to the wallet. In the case of singleAddress wallets, the first main address will be used. */
       changeAddress?: string;
       /** Send maximum amount of funds that make sense under the specified fee/feePerKb conditions. */
@@ -1644,7 +1645,7 @@ export class API extends EventEmitter {
       /** Inputs for this TX */
       inputs?: Array<any>; // TODO
       /** Use a fixed fee for this TX (only when opts.inputs is specified). */
-      fee?: number | bigint;
+      fee?: bigint;
       /** If set, TX outputs won't be shuffled. */
       noShuffleOutputs?: boolean;
       /** Specify signing method (ecdsa or schnorr) otherwise use default for chain. Only applies to BCH */
@@ -1663,32 +1664,46 @@ export class API extends EventEmitter {
       flags?: string;
       /** (XRP only) Destination tag for the transaction */
       destinationTag?: number | string;
+      /** (EVM only) Nonce for the transaction */
+      nonce?: string | bigint;
+    },
+    opts?: {
+      /** ONLY FOR TESTING */
+      baseUrl?: string;
+      /** 
+       * Number format for the tx-building numbers (e.g. amounts, nonce, etc.). Default: 'hex'
+       * Note: The given `txp` will be converted server-side and returned in the specified format.
+      */
+      numberFormat?: 'hex' | 'number' | 'string';
     },
     /** @deprecated */
-    cb?: (err?: Error, txp?: any) => void,
-    /** ONLY FOR TESTING */
-    baseUrl?: string
+    cb?: (err?: Error, txp?: any) => void
   ) {
+    opts = opts || {};
+    if (typeof opts === 'function') {
+      cb = opts;
+      opts = {};
+    }
     if (typeof cb === 'function') {
       log.warn('DEPRECATED: createTxProposal will remove callback support in the future.');
-    } else if (typeof cb === 'string') {
-      baseUrl = cb;
     }
+    
     try {
       $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <createTxProposal()>');
       $.checkState(this.credentials.sharedEncryptingKey);
-      $.checkArgument(opts);
+      $.checkArgument(txOpts);
 
       // BCH schnorr deployment
-      if (!opts.signingMethod && this.credentials.coin == 'bch') {
-        opts.signingMethod = 'schnorr';
+      if (!txOpts.signingMethod && this.credentials.coin == 'bch') {
+        txOpts.signingMethod = 'schnorr';
       }
 
-      const args = this._getCreateTxProposalArgs(opts);
-      baseUrl = baseUrl || '/v3/txproposals/';
+      const args = this._getCreateTxProposalArgs(txOpts);
+      const baseUrl = (typeof process !== 'undefined' && process.argv.some(arg => arg.includes('.test.js')) && opts.baseUrl) || '/v3/txproposals';
       // baseUrl = baseUrl || '/v4/txproposals/'; // DISABLED 2020-04-07
+      const qs = `?numberFormat=${opts.numberFormat || 'hex'}`;
 
-      const { body: txp } = await this.request.post<any, Txp>(baseUrl, args);
+      const { body: txp } = await this.request.post<any, Txp>(baseUrl + qs, args);
       this._processTxps(txp);
       if (!Verifier.checkProposalCreation(args, txp, this.credentials.sharedEncryptingKey)) {
         throw new Errors.SERVER_COMPROMISED();
@@ -2696,7 +2711,7 @@ export class API extends EventEmitter {
     try {
       $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <getTx()>');
 
-      const { body: txp } = await this.request.get<Txp>(`/v1/txproposals/${txProposalId}`);
+      const { body: txp } = await this.request.get<Txp>(`/v1/txproposals/${txProposalId}?numberFormat=hex`);
       this._processTxps(txp);
       if (cb) { cb(null, txp); }
       return txp;
@@ -3043,15 +3058,15 @@ export class API extends EventEmitter {
       /** Specify the fee level. Default: normal */
       feeLevel?: 'priority' | 'normal' | 'economy' | 'superEconomy';
       /** Specify the fee per KB (in satoshi) */
-      feePerKb?: number;
+      feePerKb?: bigint;
       /** Indicates it if should use (or not) the unconfirmed utxos */
       excludeUnconfirmedUtxos?: boolean;
       /** Return the inputs used to build the tx */
       returnInputs?: boolean;
     },
     /** @deprecated */
-    cb?: (err?: Error, result?: any) => void
-  ) {
+    cb?: (err?: Error, result?: SendMaxInfo<bigint>) => void
+  ): Promise<SendMaxInfo<bigint>> {
     if (cb) {
       log.warn('DEPRECATED: getSendMaxInfo will remove callback support in the future.');
     }
@@ -3059,17 +3074,24 @@ export class API extends EventEmitter {
       opts = opts || {};
 
       const args = [];
+      args.push('numberFormat=hex');
       if (opts.feeLevel) args.push('feeLevel=' + opts.feeLevel);
       if (opts.feePerKb != null) args.push('feePerKb=' + opts.feePerKb);
       if (opts.excludeUnconfirmedUtxos) args.push('excludeUnconfirmedUtxos=1');
       if (opts.returnInputs) args.push('returnInputs=1');
 
-      let qs = '';
-      if (args.length > 0) qs = '?' + args.join('&');
-
-      const { body: result } = await this.request.get('/v1/sendmaxinfo/' + qs);
-      if (cb) { cb(null, result); }
-      return result;
+      const { body: result } = await this.request.get<SendMaxInfo<string>>(`/v1/sendmaxinfo?${args.join('&')}`);
+      const resultWithBigInt: SendMaxInfo<bigint> = {
+        ...result,
+        amount: BigIntTry(result.amount),
+        amountBelowFee: BigIntTry(result.amountBelowFee),
+        fee: BigIntTry(result.fee),
+        feePerKb: BigIntTry(result.feePerKb),
+        size: BigIntTry(result.size),
+        amountAboveMaxSize: BigIntTry(result.amountAboveMaxSize)
+      };
+      if (cb) { cb(null, resultWithBigInt); }
+      return resultWithBigInt;
     } catch (err) {
       if (cb) cb(err);
       else throw err;
@@ -4235,7 +4257,7 @@ export interface Txp {
     comment?: string;
   }>; // TODO
   addressType: string;
-  amount: number | string;
+  amount: string;
   chain: string;
   coin: string;
   changeAddress?: {
@@ -4257,9 +4279,9 @@ export interface Txp {
   creatorId: string;
   creatorName?: string; // might be an encrypted object
   excludeUnconfirmedUtxos: boolean;
-  fee: number | string;
+  fee: string;
   feeLevel: string;
-  feePerKb: number | string;
+  feePerKb: string;
   from?: string;
   hasUnconfirmedInputs?: boolean;
   id: string;
@@ -4281,12 +4303,12 @@ export interface Txp {
   message?: string; // might be an encrypted object
   encryptedMessage?: string; // is set equal to `message` before decryption in processTxps()
   network: string;
-  nonce?: number | string;
+  nonce?: string;
   deferNonce?: boolean;
   note?: Note;
   outputOrder: Array<number>;
   outputs?: Array<{
-    amount: number | string;
+    amount: string;
     toAddress: string;
     message?: string; // might be an encrypted object
     encryptedMessage?: string; // is set equal to `message` before decryption in processTxps()
@@ -4314,20 +4336,31 @@ export interface PublishedTxp extends Txp {
   data?: string; // ?
   destinationTag?: string; // XRP
   enableRBF?: boolean; // Replace-By-Fee
-  gasLimit?: number;
-  gasPrice?: number;
+  gasLimit?: string;
+  gasPrice?: string;
   instantAcceptanceEscrow?: boolean; // BCH
   invoiceID?: string;
-  maxGasFee?: number;
+  maxGasFee?: string;
   multiSendContractAddress?: string;
   multisigContractAddress?: string;
   multiTx?: boolean; //
   nonceAddress?: string; // SOL
-  priorityFee?: number;
-  priorityGasFee?: number;
+  priorityFee?: string;
+  priorityGasFee?: string;
   proposalSignature: string;
   space?: any; // ?
   tokenAddress?: string;
   txType?: number; // or string?
 };
 
+export interface SendMaxInfo<NumberType = bigint | string> {
+  amount: NumberType;
+  amountBelowFee: NumberType;
+  fee: NumberType;
+  feePerKb: NumberType;
+  utxosBelowFee: number;
+  inputs?: Array<any>;
+  size?: NumberType;
+  utxosAboveMaxSize?: number;
+  amountAboveMaxSize?: NumberType;
+}

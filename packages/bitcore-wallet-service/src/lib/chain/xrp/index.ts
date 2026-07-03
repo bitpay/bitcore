@@ -1,12 +1,13 @@
 import { BitcoreLib, Deriver, Transactions, Validation, xrpl } from '@bitpay-labs/crypto-wallet-core';
 import _ from 'lodash';
-import { IWallet } from 'src/lib/model';
-import { IAddress } from 'src/lib/model/address';
-import { IChain } from '../../../types/chain';
 import { Common } from '../../common';
 import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
-import { WalletService } from '../../server';
+import type { IChain } from '../../../types/chain';
+import type { GetSendMaxInfoOpts } from '../../../types/server';
+import type { IWallet } from '../../model';
+import type { IAddress } from '../../model/address';
+import type { WalletService } from '../../server';
 
 const { Defaults, Utils } = Common;
 
@@ -87,7 +88,7 @@ export class XrpChain implements IChain {
     });
   }
 
-  getWalletSendMaxInfo(server, wallet, opts, cb) {
+  getWalletSendMaxInfo(server: WalletService, wallet: IWallet, opts: GetSendMaxInfoOpts, cb) {
     server.getBalance({}, (err, balance) => {
       if (err) return cb(err);
       const { availableAmount } = balance;

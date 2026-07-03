@@ -236,3 +236,26 @@ export function scrubBigIntsInObject<T>(obj: T, destType: 'number' | 'string' | 
   }
   return obj;
 }
+
+/**
+ * Checks if two potentially different formatted values are equal
+ * e.g.: 1n === '0x1' === 1 === '1.0'
+ */
+export function isEqual(int1: BigIntLike, int2: BigIntLike): boolean {
+  if (int1 == int2) return true;
+  if (!isBigIntLike(int1) || !isBigIntLike(int2)) return false;
+  return BigInt(int1) === BigInt(int2);
+}
+
+/**
+ * Attempts to convert a value to a BigInt, returning the original value if it fails
+ */
+export function BigIntTry(x: any): bigint | any {
+  if (x === '') return x;
+  
+  try {
+    return BigInt(x);
+  } catch {
+    return x;
+  }
+}

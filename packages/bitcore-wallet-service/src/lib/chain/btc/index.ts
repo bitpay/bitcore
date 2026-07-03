@@ -3,13 +3,15 @@ import * as async from 'async';
 import _ from 'lodash';
 import { singleton } from 'preconditions';
 import config from '../../../config';
-import { IChain } from '../../../types/chain';
 import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
 import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
-import { IWallet, TxProposal } from '../../model';
-import { WalletService } from '../../server';
+import { TxProposal } from '../../model';
+import type { IChain } from '../../../types/chain';
+import type { GetSendMaxInfoOpts } from '../../../types/server';
+import type { IWallet } from '../../model';
+import type { WalletService } from '../../server';
 
 const $ = singleton();
 const { Constants, Utils, Defaults } = Common;
@@ -72,7 +74,7 @@ export class BtcChain implements IChain {
   }
 
   // opts.payProUrl => only to use different safety margin or not
-  getWalletSendMaxInfo(server: WalletService, wallet, opts, cb) {
+  getWalletSendMaxInfo(server: WalletService, wallet: IWallet, opts: GetSendMaxInfoOpts, cb) {
     server.getUtxosForCurrentWallet({}, (err, utxos) => {
       if (err) return cb(err);
 
