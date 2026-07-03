@@ -124,6 +124,19 @@ describe('Utils', function() {
       const input = NaN;
       expect(() => utils.toHex(input)).to.throw('Invalid input for toHex: NaN');
     });
+
+    it('should maintain number precision loss for large numbers', function() {
+      // eslint-disable-next-line no-loss-of-precision
+      const input = 12345678901234567890123; // This number exceeds JS safe integer range
+      const result = utils.toHex(input);
+      expect(result).to.equal('0x29d42b64e767143f200'); // This is the hex representation of the 32-bit rounded number
+
+      // Another test with large number additions
+      const a1 = utils.toHex(53361793000000000000);
+      const a2 = utils.toHex(64034152000000010000);
+      const sum = BigInt(a1) + BigInt(a2);
+      expect(sum).to.equal(117395945000000010000n); // without toHex's internal toLocaleString conversion, this would end up being 117395945000000004096n since BigInt(input) would round the numbers inconsistently
+    });
   });
 
   describe('difference', function() {
