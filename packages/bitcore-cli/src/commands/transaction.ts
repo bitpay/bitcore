@@ -163,7 +163,7 @@ export async function createTransaction(
           return; // valid value, optional
         }
         const val = parseInt(value);
-        if (isNaN(val) || val < 0) {
+        if (isNaN(val) || val < 0 || !(/^\d+$/.test(value))) {
           return 'Please enter a valid destination tag';
         }
         return; // valid value
@@ -267,8 +267,8 @@ export async function createTransaction(
     }],
     message: note,
     feeLevel: feeLevel === 'custom' ? undefined : feeLevel,
-    feePerKb: feeLevel === 'custom' ? BigInt(Math.round(Number(customFeeRate))) : undefined,
-    fee: opts.fee ? BigInt(Math.round(parseFloat(opts.fee))) : undefined,
+    feePerKb: feeLevel === 'custom' ? BigInt(Math.ceil(Number(customFeeRate))) : undefined,
+    fee: opts.fee ? BigInt(Math.ceil(parseFloat(opts.fee))) : undefined,
     sendMax,
     tokenAddress: tokenObj?.contractAddress,
     flags: opts.flags,
@@ -294,7 +294,7 @@ export async function createTransaction(
     : Utils.renderAmount(currency, BigInt(txp.amount) + BigInt(txp.fee))
   }`);
   if (txp.nonce != null) {
-    lines.push(`Nonce: ${txp.nonce}`);
+    lines.push(`Nonce: ${BigInt(txp.nonce)}`);
   }
   if (note) {
     lines.push(`Note: ${txp.message}`);
