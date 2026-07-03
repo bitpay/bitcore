@@ -9243,7 +9243,7 @@ describe('client API', function() {
           () => {
             client = helpers.newClient(expressApp.app);
             blockchainExplorerMock.reset();
-            setup('eth', 'regtest', 1, 1)
+            setup('eth', 'testnet', 1, 1)
               .then(done)
               .catch(done);
           }
@@ -9336,7 +9336,7 @@ describe('client API', function() {
           () => {
             client = helpers.newClient(expressApp.app);
             blockchainExplorerMock.reset();
-            setup('btc', 'regtest', 1, 1)
+            setup('btc', 'testnet', 1, 1)
               .then(done)
               .catch(done);
           }
