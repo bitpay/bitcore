@@ -34,6 +34,7 @@ describe('Wallet Model', function() {
       await Api.start();
     } catch (e: any) {
       console.error(e.stack ? 'ERROR STACK: ' + e.stack : e);
+      throw e;
     }
   });
   
