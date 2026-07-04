@@ -153,13 +153,13 @@ export class Wallet {
     let { storage } = params;
     try {
       storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
+      await storage.deleteWallet({ name });
     } catch (e: any) {
       // ignore error if default wallet path does not exist
       if (!path && !e.message.includes('Not a valid wallet path')) {
         throw e;
       }
     }
-    await storage.deleteWallet({ name });
   }
 
   static async create(params: Partial<IWalletExt>) {

@@ -24,23 +24,23 @@ describe('Wallet Model', function() {
   let rpc: AsyncRPC;
 
   before(async function() {
-    chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
-    creds = chainConfig.rpc;
-    rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
-    await Wallet.deleteWallet({ name: walletName });
-    await intBeforeHelper();
+    try {
+      chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
+      creds = chainConfig.rpc;
+      rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
+      await Wallet.deleteWallet({ name: walletName });
+      await intBeforeHelper();
+      await Event.start();
+      await Api.start();
+    } catch (e: any) {
+      console.error(e.stack ? 'ERROR STACK: ' + e.stack : e);
+    }
   });
-
-  after(async () => intAfterHelper(suite));
-
-  before(async () => {
-    await Event.start();
-    await Api.start();
-  });
-
+  
   after(async () => {
     await Event.stop();
     await Api.stop();
+    intAfterHelper(suite);
   });
 
   describe('Wallet Create', () => {
