@@ -1,4 +1,4 @@
-import { Wallet, IWalletExt } from '@bitpay-labs/bitcore-client';
+import { Wallet, type IWalletExt } from '@bitpay-labs/bitcore-client';
 import { expect } from 'chai';
 import config from '../../../src/config';
 import { WalletStorage } from '../../../src/models/wallet';
@@ -6,8 +6,8 @@ import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { AsyncRPC } from '../../../src/rpc';
 import { Api } from '../../../src/services/api';
 import { Event } from '../../../src/services/event';
-import { IUtxoNetworkConfig } from '../../../src/types/Config';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
+import type { IUtxoNetworkConfig } from '../../../src/types/Config';
 
 describe('Wallet Model', function() {
   // eslint-disable-next-line @typescript-eslint/no-this-alias

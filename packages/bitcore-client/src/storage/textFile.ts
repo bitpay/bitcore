@@ -30,7 +30,7 @@ export class TextFile {
     if (!createIfMissing) {
       const walletPath = fs.existsSync(this.db);
       if (!walletPath) {
-        throw new Error('Not a valid wallet path');
+        throw new Error('Not a valid wallet path: ' + this.db);
       }
     }
     console.log('using wallets at', this.db);

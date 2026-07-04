@@ -151,7 +151,14 @@ export class Wallet {
   static async deleteWallet(params: { name: string; path?: string; storage?: Storage; storageType?: StorageType }) {
     const { name, path, storageType } = params;
     let { storage } = params;
-    storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
+    try {
+      storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
+    } catch (e: any) {
+      // ignore error if default wallet path does not exist
+      if (!path && !e.message.includes('Not a valid wallet path')) {
+        throw e;
+      }
+    }
     await storage.deleteWallet({ name });
   }
 
