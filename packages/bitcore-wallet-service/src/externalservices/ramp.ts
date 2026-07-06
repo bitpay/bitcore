@@ -3,6 +3,8 @@ import * as request from 'request';
 import config from '../config';
 import { Utils } from '../lib/common/utils';
 import { ClientError } from '../lib/errors/clienterror';
+import { logger } from '../lib/logger';
+import { OnrampWebhookEvent } from '../lib/model/onrampWebhookEvent';
 import { checkRequired } from '../lib/server';
 
 export class RampService {
@@ -275,4 +277,94 @@ export class RampService {
       );
     });
   }
+
+  /**
+   * Handles incoming Ramp webhook events.
+   * Ramp sends purchase/sale events via HTTP POST to webhookStatusUrl /
+   * offrampWebhookV3Url. https://docs.rampnetwork.com/webhooks
+   *
+   * Ramp signs every webhook with an ECDSA (secp256k1) key + SHA-256 digest.
+   * The message is the request body serialized deterministically (keys sorted
+   * alphabetically, no whitespace - fast-json-stable-stringify), NOT the raw body.
+   * The X-Body-Signature header is the base64 DER-encoded signature.
+   * Ramp publishes separate public keys for production and demo (sandbox), so the
+   * environment is determined by which configured key verifies the signature.
+   *
+   * Buy payload:  { type: 'CREATED'|'RELEASED'|'RETURNED', purchase: RampPurchase }
+   * Sell payload: { type: 'CREATED'|'RELEASED'|'EXPIRED', mode: 'OFFRAMP', payload: RampSale }
+   */
+  rampHandleWebhook(req): { event: OnrampWebhookEvent } {
+    if (!config.ramp) throw new Error('Ramp missing credentials');
+
+    const publicKeys: { key: string; env: string }[] = [
+      { key: (config.ramp.production as any)?.webhookSigningKey, env: 'production' },
+      { key: (config.ramp.sandbox as any)?.webhookSigningKey, env: 'sandbox' }
+    ].filter(k => !!k.key);
+
+    const body = req.body || {};
+
+    let env = 'production';
+    if (publicKeys.length) {
+      const sigHeader = req.headers['x-body-signature'] as string;
+      if (!sigHeader) {
+        throw new Error('Ramp webhook missing X-Body-Signature header');
+      }
+      try {
+        // The signed message is the stable-stringified JSON body (sorted keys, no whitespace)
+        const message = Buffer.from(stableStringify(body), 'utf8');
+        const sig = Buffer.from(sigHeader, 'base64');
+        // Signature is DER-encoded (crypto.verify's default dsaEncoding)
+        const matched = publicKeys.find(({ key }) => crypto.verify('sha256', message, key, sig));
+        if (!matched) {
+          throw new Error('Ramp webhook signature mismatch');
+        }
+        env = matched.env;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err);
+        logger.warn('Ramp webhook signature error: %s', errMsg);
+        throw new Error('Ramp webhook signature verification failed');
+      }
+    } else {
+      logger.warn('Ramp webhook: no webhookSigningKey configured, skipping signature verification');
+    }
+
+    // Buy events carry the tx in body.purchase; sell (offramp) events in body.payload
+    const isSell = body.mode === 'OFFRAMP' || !!body.payload;
+    const item = (isSell ? body.payload : body.purchase) || {};
+
+    const event = OnrampWebhookEvent.create({
+      partner: 'ramp',
+      externalId: item.id,
+      status: item.status || body.type || '',
+      eventName: body.type,
+      createdAt: item.createdAt,
+      fiatAmount: isSell
+        ? (item.fiat?.amount != null ? Number(item.fiat.amount) : undefined)
+        : (item.fiatValue != null ? Number(item.fiatValue) : undefined),
+      fiatCurrency: isSell ? item.fiat?.currencySymbol : item.fiatCurrency,
+      cryptoAmount: isSell
+        ? (item.crypto?.amount != null ? Number(item.crypto.amount) : undefined)
+        : (item.cryptoAmount != null ? Number(item.cryptoAmount) : undefined),
+      cryptoCurrency: isSell ? item.crypto?.assetInfo?.symbol : item.asset?.symbol,
+      paymentMethod: isSell ? item.fiat?.payoutMethod : item.paymentMethodType,
+      walletAddress: item.receiverAddress,
+      userId: item.purchaseViewToken || item.saleViewToken, // per-tx secret for follow-up lookups
+      rawPayload: body,
+      env
+    });
+
+    return { event };
+  }
+}
+
+/**
+ * Deterministic JSON serialization equivalent to fast-json-stable-stringify:
+ * object keys sorted alphabetically (recursively), no whitespace.
+ * Ramp signs webhook bodies over this representation.
+ */
+function stableStringify(obj: any): string {
+  if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
+  if (Array.isArray(obj)) return `[${obj.map(item => stableStringify(item === undefined ? null : item)).join(',')}]`;
+  const keys = Object.keys(obj).filter(k => obj[k] !== undefined).sort();
+  return `{${keys.map(k => `${JSON.stringify(k)}:${stableStringify(obj[k])}`).join(',')}}`;
 }

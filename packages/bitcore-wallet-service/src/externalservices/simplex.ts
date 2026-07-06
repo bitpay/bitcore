@@ -1,8 +1,11 @@
+import * as crypto from 'crypto';
 import * as request from 'request';
 import Uuid from 'uuid';
 import config from '../config';
 import { Utils } from '../lib/common/utils';
 import { ClientError } from '../lib/errors/clienterror';
+import { logger } from '../lib/logger';
+import { OnrampWebhookEvent } from '../lib/model/onrampWebhookEvent';
 import { checkRequired } from '../lib/server';
 
 export class SimplexService {
@@ -277,5 +280,79 @@ export class SimplexService {
         }
       );
     });
+  }
+
+  /**
+   * Handles incoming Simplex webhook events.
+   * Simplex signs each request with a RS256 JWT in the X-Signature-SHA256 header.
+   * The JWT expires after 5 minutes to prevent replay attacks.
+   * https://integrations.simplex.com/docs/webhooks
+   *
+   * Sandbox and production use different public keys, so the environment is
+   * determined by which configured key verifies the JWT, not by the request.
+   */
+  simplexHandleWebhook(req): { event: OnrampWebhookEvent } {
+    if (!config.simplex) throw new Error('Simplex missing credentials');
+
+    const publicKeys: { key: string; env: string }[] = [
+      { key: config.simplex.production?.publicKeyWebhook, env: 'production' },
+      { key: config.simplex.sandbox?.publicKeyWebhook, env: 'sandbox' }
+    ].filter(k => !!k.key);
+
+    let env = 'production';
+    if (publicKeys.length) {
+      const signature = req.headers['x-signature-sha256'] as string;
+      if (!signature) {
+        throw new Error('Simplex webhook missing X-Signature-SHA256 header');
+      }
+      try {
+        // Verify RS256 JWT: split into header.payload.signature parts
+        const parts = signature.split('.');
+        if (parts.length !== 3) throw new Error('Invalid JWT format');
+        const signingInput = `${parts[0]}.${parts[1]}`;
+        const sig = Buffer.from(parts[2], 'base64url');
+        const matched = publicKeys.find(({ key }) => {
+          const verifier = crypto.createVerify('RSA-SHA256');
+          verifier.update(signingInput);
+          return verifier.verify(key, sig);
+        });
+        if (!matched) {
+          throw new Error('Simplex webhook signature mismatch');
+        }
+        const jwtPayload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+        if (jwtPayload?.exp != null && jwtPayload.exp * 1000 < Date.now()) {
+          throw new Error('Simplex webhook JWT expired');
+        }
+        env = matched.env;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err);
+        logger.warn('Simplex webhook signature error: %s', errMsg);
+        throw new Error('Simplex webhook signature verification failed');
+      }
+    } else {
+      logger.warn('Simplex webhook: no publicKeyWebhook configured, skipping signature verification');
+    }
+
+    const body = req.body || {};
+    const payment = body.payment || {};
+    const fiatAmount = payment.fiat_total_amount?.amount;
+    const fiatCurrency = payment.fiat_total_amount?.currency;
+    const cryptoCurrency = payment.requested_digital_amount?.currency;
+
+    const event = OnrampWebhookEvent.create({
+      partner: 'simplex',
+      externalId: payment.id || body.event_id,
+      status: body.name || '',
+      eventName: body.name,
+      createdAt: payment.created_at || body.timestamp,
+      fiatAmount: fiatAmount != null ? Number(fiatAmount) : undefined,
+      fiatCurrency,
+      cryptoCurrency,
+      userId: payment.user_id,
+      rawPayload: body,
+      env
+    });
+
+    return { event };
   }
 }

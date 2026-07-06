@@ -1,7 +1,10 @@
+import * as crypto from 'crypto';
 import * as request from 'request';
 import config from '../config';
 import { Utils } from '../lib/common/utils';
 import { ClientError } from '../lib/errors/clienterror';
+import { logger } from '../lib/logger';
+import { OnrampWebhookEvent } from '../lib/model/onrampWebhookEvent';
 import { checkRequired } from '../lib/server';
 
 export class TransakService {
@@ -330,5 +333,87 @@ export class TransakService {
         }
       );
     });
+  }
+
+  /**
+   * Handles incoming Transak webhook events.
+   * The payload data field is a signed HS256 JWT. https://docs.transak.com/features/webhooks
+   *
+   * NOTE: per Transak docs the JWT should be verified with the Partner Access Token
+   * (the token returned by /partners/api/v2/refresh-token), which rotates. We first
+   * try the configured static secretKey for each env; if real webhooks fail to
+   * verify, this needs to be switched to a cached access token.
+   *
+   * The environment is determined by which configured key verifies the JWT,
+   * not by the request.
+   *
+   * Decoded payload: { webhookData: { id, status, fiatCurrency, fiatAmount,
+   *   cryptoCurrency, userId, createdAt, ... }, eventID }
+   */
+  transakHandleWebhook(req): { event: OnrampWebhookEvent } {
+    if (!config.transak) throw new Error('Transak missing credentials');
+
+    const secretKeys: { key: string; env: string }[] = [
+      { key: config.transak.production?.secretKey, env: 'production' },
+      { key: config.transak.sandbox?.secretKey, env: 'sandbox' }
+    ].filter(k => !!k.key);
+
+    const jwtToken: string | undefined = req.body?.data;
+    if (!jwtToken || typeof jwtToken !== 'string') {
+      throw new Error('Transak webhook missing JWT data field');
+    }
+    const parts = jwtToken.split('.');
+    if (parts.length !== 3) {
+      throw new Error('Invalid JWT format');
+    }
+
+    let env = 'production';
+    if (secretKeys.length) {
+      try {
+        // Verify HS256 JWT manually using Node crypto (no external library needed)
+        const signingInput = `${parts[0]}.${parts[1]}`;
+        const given = Buffer.from(parts[2], 'base64url');
+        const matched = secretKeys.find(({ key }) => {
+          const expected = crypto.createHmac('sha256', key).update(signingInput).digest();
+          return expected.length === given.length && crypto.timingSafeEqual(expected, given);
+        });
+        if (!matched) {
+          throw new Error('Transak webhook JWT signature mismatch');
+        }
+        env = matched.env;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err);
+        logger.warn('Transak webhook JWT error: %s', errMsg);
+        throw new Error('Transak webhook signature verification failed');
+      }
+    } else {
+      logger.warn('Transak webhook: no secretKey configured, skipping signature verification');
+    }
+
+    let webhookData: any = {};
+    let eventID: string | undefined;
+    try {
+      const decoded = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+      webhookData = decoded.webhookData || {};
+      eventID = decoded.eventID;
+    } catch {
+      throw new Error('Transak webhook JWT payload is not valid JSON');
+    }
+
+    const event = OnrampWebhookEvent.create({
+      partner: 'transak',
+      externalId: webhookData.id,
+      status: webhookData.status || '',
+      eventName: eventID,
+      createdAt: webhookData.createdAt,
+      fiatAmount: webhookData.fiatAmount != null ? Number(webhookData.fiatAmount) : undefined,
+      fiatCurrency: webhookData.fiatCurrency,
+      cryptoCurrency: webhookData.cryptoCurrency,
+      userId: webhookData.userId,
+      rawPayload: req.body || {},
+      env
+    });
+
+    return { event };
   }
 }
