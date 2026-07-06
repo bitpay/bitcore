@@ -559,9 +559,9 @@ describe('BigInt', function() {
       expect(typeof result).to.equal('bigint');
     });
 
-    it('should return original value for boolean', function() {
-      expect(BI.BigIntTry(true)).to.equal(true);
-      expect(BI.BigIntTry(false)).to.equal(false);
+    it('should return bigint value for boolean', function() {
+      expect(BI.BigIntTry(true)).to.equal(1n);
+      expect(BI.BigIntTry(false)).to.equal(0n);
     });
   });
 });
