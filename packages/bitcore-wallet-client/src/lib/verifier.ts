@@ -150,7 +150,7 @@ export class Verifier {
     }
     if (args.changeAddress && !strEqual(changeAddress, args.changeAddress))
       return false;
-    if (args.feePerKb && !numEqual(txp.feePerKb, args.feePerKb))
+    if (args.feePerKb != null && !numEqual(txp.feePerKb, args.feePerKb))
       return false;
     if (!strEqual(txp.payProUrl, args.payProUrl)) return false;
 

@@ -239,12 +239,22 @@ export function scrubBigIntsInObject<T>(obj: T, destType: 'number' | 'string' | 
 
 /**
  * Checks if two potentially different formatted values are equal
- * e.g.: 1n === '0x1' === 1 === '1.0'
+ * e.g.: 1n === '0x1' === 1 === '1.0' == '1e0'
  */
 export function isEqual(int1: BigIntLike, int2: BigIntLike): boolean {
   if (int1 == int2) return true;
   if (!isBigIntLike(int1) || !isBigIntLike(int2)) return false;
-  return BigInt(int1) === BigInt(int2);
+  try {
+    return BigInt(int1) === BigInt(int2);
+  } catch {
+    // BigInt() may throw for integer floats (e.g. '1.0') and/or scientific notation (e.g. '1e0')
+    int1 = int1.toString().includes('e') ? Number(int1).toString() : int1.toString();
+    int2 = int2.toString().includes('e') ? Number(int2).toString() : int2.toString();
+    const [left1, right1 = '0'] = int1.toString().split('.');
+    const [left2, right2 = '0'] = int2.toString().split('.');
+    if (BigInt(left1) !== BigInt(left2) || BigInt(right1) !== BigInt(right2)) return false;
+    return Number(int1) === Number(int2); // Note: NaN values are captured above in isBigIntLike()
+  }
 }
 
 /**

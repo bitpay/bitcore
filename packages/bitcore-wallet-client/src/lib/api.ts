@@ -1699,7 +1699,7 @@ export class API extends EventEmitter {
       }
 
       const args = this._getCreateTxProposalArgs(txOpts);
-      const baseUrl = (typeof process !== 'undefined' && process.argv.some(arg => arg.includes('.test.js')) && opts.baseUrl) || '/v3/txproposals';
+      const baseUrl = (!('window' in globalThis) && process?.argv?.some?.(arg => arg.includes('.test.js')) && opts.baseUrl) || '/v3/txproposals';
       // baseUrl = baseUrl || '/v4/txproposals/'; // DISABLED 2020-04-07
       const qs = `?numberFormat=${opts.numberFormat || 'hex'}`;
 

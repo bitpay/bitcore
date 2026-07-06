@@ -90,7 +90,7 @@ export function toHex(input: number | string | bigint): string {
       //  (12345678901234567890123).toString() => '1.2345678901234568e+22'    => ✗ Produces hard-to-parse scientific notation that cannot be directly converted to BigInt
       //  BigInt(12345678901234567890123) => 12345678901234567741440n         => ✗ Produces rounded value that is not the same as the original number
       //  (12345678901234567890123)
-      //    .toLocaleString('fullwide', { useGrouping: false }) => '12345678901234568000000' => ✔ Produces a string representation of the 32bit-rounded number that can be directly converted to BigInt
+      //    .toLocaleString('fullwide', { useGrouping: false }) => '12345678901234568000000' => ✔ Produces a string representation of the JavaScript rounded integer that can be directly converted to BigInt
       
       input = input.toLocaleString('fullwide', { useGrouping: false });
     }

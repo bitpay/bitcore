@@ -156,7 +156,7 @@ export class Wallet {
       await storage.deleteWallet({ name });
     } catch (e: any) {
       // ignore error if default wallet path does not exist
-      if (!path && !e.message.includes('Not a valid wallet path')) {
+      if (!path && !e.message?.includes?.('Not a valid wallet path')) {
         throw e;
       }
     }

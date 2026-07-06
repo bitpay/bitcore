@@ -162,6 +162,7 @@ export function registerTransactionRoutes(router: express.Router, context: Route
 
   router.get('/v1/txproposals/:id/', (req, res) => {
     getServerWithAuth(req, res, server => {
+      checkNumberFormat(req.query.numberFormat, res);
       req.body.txProposalId = req.params['id'];
       req.body.numberFormat = req.query.numberFormat;
       server.getTx(req.body, (err, tx) => {
