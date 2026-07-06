@@ -3,6 +3,8 @@ import * as _ from 'lodash';
 import * as request from 'request';
 import config from '../config';
 import { ClientError } from '../lib/errors/clienterror';
+import { logger } from '../lib/logger';
+import { OnrampWebhookEvent } from '../lib/model/onrampWebhookEvent';
 import { checkRequired } from '../lib/server';
 
 export class BanxaService {
@@ -261,5 +263,80 @@ export class BanxaService {
         }
       );
     });
+  }
+
+  /**
+   * Handles incoming Banxa webhook events.
+   * Banxa signs each webhook with HMAC-SHA256. Header format:
+   *   Authorization: Bearer {API_KEY}:{SIGNATURE}:{NONCE}
+   * Signature is computed over: POST\n{WEBHOOK_PATH}\n{NONCE}\n{RAW_BODY}
+   * https://docs.banxa.com/products/hosted-checkout/docs/transaction-lifecycle/webhooks
+   *
+   * WEBHOOK_PATH must be the full URI path of this endpoint as registered in the
+   * Banxa dashboard (including any proxy prefix, e.g. /bws/api/v1/service/banxa/webhook).
+   * Configure it per env in config.banxa[env].webhookPath.
+   *
+   * The environment is determined by which configured key verifies the signature
+   * (separate URLs/keys per env in the dashboard), not by the request.
+   */
+  banxaHandleWebhook(req): { event: OnrampWebhookEvent } {
+    if (!config.banxa) throw new Error('Banxa missing credentials');
+
+    const secretKeys: { key: string; env: string; webhookPath: string }[] = [
+      { key: config.banxa.production?.secretKey, env: 'production', webhookPath: (config.banxa.production as any)?.webhookPath || '/v1/service/banxa/webhook' },
+      { key: config.banxa.sandbox?.secretKey, env: 'sandbox', webhookPath: (config.banxa.sandbox as any)?.webhookPath || '/v1/service/banxa/webhook' }
+    ].filter(k => !!k.key);
+
+    let env = 'production';
+    if (secretKeys.length) {
+      const authHeader = req.headers['authorization'] as string;
+      if (!authHeader) {
+        throw new Error('Banxa webhook missing Authorization header');
+      }
+      try {
+        // Strip 'Bearer ' prefix
+        const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+        const parts = token.split(':');
+        if (parts.length !== 3) throw new Error('Invalid Banxa Authorization header format');
+        const [, receivedSig, nonce] = parts;
+        const rawBody: string = (req as any).rawBody ?? JSON.stringify(req.body);
+        const given = Buffer.from(receivedSig, 'hex');
+        const matched = secretKeys.find(({ key, webhookPath }) => {
+          const signingString = `POST\n${webhookPath}\n${nonce}\n${rawBody}`;
+          const expected = crypto.createHmac('sha256', key).update(signingString).digest();
+          return expected.length === given.length && crypto.timingSafeEqual(expected, given);
+        });
+        if (!matched) {
+          throw new Error('Banxa webhook signature mismatch');
+        }
+        env = matched.env;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err);
+        logger.warn('Banxa webhook signature error: %s', errMsg);
+        throw new Error('Banxa webhook signature verification failed');
+      }
+    } else {
+      logger.warn('Banxa webhook: no secretKey configured, skipping signature verification');
+    }
+
+    const body = req.body || {};
+
+    const event = OnrampWebhookEvent.create({
+      partner: 'banxa',
+      externalId: body.order_id,
+      status: body.status || '',
+      eventName: body.order_type,
+      createdAt: body.created_at || body.status_date,
+      fiatAmount: body.fiat_amount != null ? Number(body.fiat_amount) : undefined,
+      fiatCurrency: body.fiat_currency,
+      cryptoAmount: body.crypto_amount != null ? Number(body.crypto_amount) : undefined,
+      cryptoCurrency: body.crypto_coin,
+      paymentMethod: body.payment_method,
+      userId: body.external_id,
+      rawPayload: body,
+      env
+    });
+
+    return { event };
   }
 }
