@@ -260,7 +260,9 @@ describe('Moonpay integration', () => {
   describe('#moonpayGetSignedPaymentUrl', () => {
     beforeEach(() => {
       req = {
-        headers: {},
+        headers: {
+          'x-forwarded-for': '1.2.3.4'
+        },
         body: {
           env: 'production',
           currencyCode: 'btc',
@@ -277,7 +279,17 @@ describe('Moonpay integration', () => {
     it('should get the paymentUrl properly if req is OK', () => {
       const data = server.externalServices.moonpay.moonpayGetSignedPaymentUrl(req);
       should.exist(data.urlWithSignature);
-      data.urlWithSignature.should.equal('widgetApi2?apiKey=apiKey2&currencyCode=btc&walletAddress=bitcoin%3A123123&baseCurrencyCode=usd&baseCurrencyAmount=500&externalTransactionId=123123&redirectURL=bitpay%3A%2F%2Fmoonpay&signature=%2FDnbsboySgE%2FeAvMrwzROCLuuctkhgw5C2t2OofjOzo%3D');
+      data.urlWithSignature.should.equal('widgetApi2?apiKey=apiKey2&currencyCode=btc&walletAddress=bitcoin%3A123123&baseCurrencyCode=usd&baseCurrencyAmount=500&externalTransactionId=123123&redirectURL=bitpay%3A%2F%2Fmoonpay&allowedIpAddress=CN35SFB5PKS4vkiZ4CglTxRgTAaUHBLGZcenAw6gHEY%3D&signature=3XxjRX3EMj2RNaoAwgOwFBOiVTXsgAS7C50uJf9SsvM%3D');
+    });
+
+    it('should return error if request does not have IP', () => {
+      delete req.headers['x-forwarded-for'];
+      try {
+        server.externalServices.moonpay.moonpayGetSignedPaymentUrl(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Could not determine device IP address');
+      }
     });
 
     it('should return error if there is some missing arguments', () => {
