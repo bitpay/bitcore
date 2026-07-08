@@ -1,0 +1,36 @@
+{
+  "name": "@bitpay-labs/bitcore-hardware",
+  "version": "1.0.0",
+  "description": "\"Interface with multiple hardware wallets using one library\"",
+  "main": "./build/src/index.js",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore.git#master"
+  },
+  "scripts": {
+    "start": "npm run compile && node ./build/src/burner/index.js",
+    "compile": "npm run clean && npm run build",
+    "build": "tsc",
+    "clean": "rm -rf build",
+    "test": "npm run compile && mocha build/test"
+  },
+  "keywords": [
+    "bitcore",
+    "nfc",
+    "blockchain"
+  ],
+  "author": "Micah Maphet",
+  "license": "MIT",
+  "dependencies": {
+    "@arx-research/libhalo": "^1.19.0",
+    "nfc-pcsc": "^0.8.1"
+  },
+  "devDependencies": {
+    "@types/chai": "5.2.3",
+    "@types/mocha": "10.0.10",
+    "chai": "6.2.2",
+    "mocha": "11.7.6",
+    "typescript": "7.0.2"
+  }
+}

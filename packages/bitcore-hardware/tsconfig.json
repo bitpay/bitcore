@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "target": "ES2022",
+    "outDir": "./build",
+    "noImplicitAny": false,
+    "paths":
+      {"*": ["./*", "./src/*"]
+    },
+    "sourceMap": true
+  },
+  "include": [
+    "./src/**/*.ts",
+    "./test/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}
