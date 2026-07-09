@@ -9,7 +9,6 @@
     "url": "https://github.com/bitpay/bitcore.git#master"
   },
   "scripts": {
-    "start": "npm run compile && node ./build/src/burner/index.js",
     "compile": "npm run clean && npm run build",
     "build": "tsc",
     "clean": "rm -rf build",
