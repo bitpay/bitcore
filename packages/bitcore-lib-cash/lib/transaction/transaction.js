@@ -1,32 +1,31 @@
 'use strict';
 
-var _ = require('lodash');
-var $ = require('../util/preconditions');
-var buffer = require('buffer');
-var compare = Buffer.compare || require('buffer-compare');
+const buffer = require('buffer');
+const _ = require('lodash');
+const Address = require('../address');
+const BN = require('../crypto/bn');
+const Hash = require('../crypto/hash');
+const Signature = require('../crypto/signature');
+const BufferReader = require('../encoding/bufferreader');
+const BufferWriter = require('../encoding/bufferwriter');
+const errors = require('../errors');
+const PrivateKey = require('../privatekey');
+const PublicKey = require('../publickey');
+const Script = require('../script');
+const BufferUtil = require('../util/buffer');
+const JSUtil = require('../util/js');
+const $ = require('../util/preconditions');
+const compare = Buffer.compare || require('buffer-compare');
+const Input = require('./input');
+const Output = require('./output');
+const Sighash = require('./sighash');
+const UnspentOutput = require('./unspentoutput');
 
-var errors = require('../errors');
-var BufferUtil = require('../util/buffer');
-var JSUtil = require('../util/js');
-var BufferReader = require('../encoding/bufferreader');
-var BufferWriter = require('../encoding/bufferwriter');
-var Hash = require('../crypto/hash');
-var Signature = require('../crypto/signature');
-var Sighash = require('./sighash');
-
-var Address = require('../address');
-var UnspentOutput = require('./unspentoutput');
-var Input = require('./input');
-var PublicKeyHashInput = Input.PublicKeyHash;
-var PublicKeyInput = Input.PublicKey;
-var MultiSigScriptHashInput = Input.MultiSigScriptHash;
-var MultiSigInput = Input.MultiSig;
-var EscrowInput = Input.Escrow;
-var Output = require('./output');
-var Script = require('../script');
-var PrivateKey = require('../privatekey');
-var PublicKey = require('../publickey');
-var BN = require('../crypto/bn');
+const PublicKeyHashInput = Input.PublicKeyHash;
+const PublicKeyInput = Input.PublicKey;
+const MultiSigScriptHashInput = Input.MultiSigScriptHash;
+const MultiSigInput = Input.MultiSig;
+const EscrowInput = Input.Escrow;
 
 /**
  * Represents a transaction, a set of inputs and outputs to change ownership of tokens
@@ -60,9 +59,9 @@ function Transaction(serialized) {
   }
 }
 
-var CURRENT_VERSION = 2;
-var DEFAULT_NLOCKTIME = 0;
-var MAX_BLOCK_SIZE = 1000000;
+const CURRENT_VERSION = 2;
+const DEFAULT_NLOCKTIME = 0;
+const MAX_BLOCK_SIZE = 1000000;
 
 // Minimum amount for an output for it not to be considered a dust output
 Transaction.DUST_AMOUNT = 546;
@@ -97,11 +96,11 @@ Transaction.MAXIMUM_EXTRA_SIZE = 4 + 9 + 9 + 4;
  * @return {Transaction}
  */
 Transaction.shallowCopy = function(transaction) {
-  var copy = new Transaction(transaction.toBuffer());
+  const copy = new Transaction(transaction.toBuffer());
   return copy;
 };
 
-var hashProperty = {
+const hashProperty = {
   configurable: false,
   enumerable: true,
   get: function() {
@@ -112,7 +111,7 @@ var hashProperty = {
 Object.defineProperty(Transaction.prototype, 'hash', hashProperty);
 Object.defineProperty(Transaction.prototype, 'id', hashProperty);
 
-var ioProperty = {
+const ioProperty = {
   configurable: false,
   enumerable: true,
   get: function() {
@@ -174,7 +173,7 @@ Transaction.prototype.uncheckedSerialize = Transaction.prototype.toString = func
  * @return {string}
  */
 Transaction.prototype.checkedSerialize = function(opts) {
-  var serializationError = this.getSerializationError(opts);
+  const serializationError = this.getSerializationError(opts);
   if (serializationError) {
     serializationError.message += ' - For more information please see: ' +
       'https://bitcore.io/api/lib/transaction#serialization-checks';
@@ -184,8 +183,8 @@ Transaction.prototype.checkedSerialize = function(opts) {
 };
 
 Transaction.prototype.invalidSatoshis = function() {
-  var invalid = false;
-  for (var i = 0; i < this.outputs.length; i++) {
+  let invalid = false;
+  for (let i = 0; i < this.outputs.length; i++) {
     if (this.outputs[i].invalidSatoshis()) {
       invalid = true;
     }
@@ -207,8 +206,8 @@ Transaction.prototype.getSerializationError = function(opts) {
     return new errors.Transaction.InvalidSatoshis();
   }
 
-  var unspent = this._getUnspentValue();
-  var unspentError;
+  const unspent = this._getUnspentValue();
+  let unspentError;
   if (unspent < 0) {
     if (!opts.disableMoreOutputThanInput) {
       unspentError = new errors.Transaction.InvalidOutputAmountSum();
@@ -231,7 +230,7 @@ Transaction.prototype._hasFeeError = function(opts, unspent) {
   }
 
   if (!opts.disableLargeFees) {
-    var maximumFee = Math.floor(Transaction.FEE_SECURITY_MARGIN * this._estimateFee());
+    const maximumFee = Math.floor(Transaction.FEE_SECURITY_MARGIN * this._estimateFee());
     if (unspent > maximumFee) {
       if (this._missingChange()) {
         return new errors.Transaction.ChangeAddressMissing(
@@ -244,7 +243,7 @@ Transaction.prototype._hasFeeError = function(opts, unspent) {
     }
   }
   if (!opts.disableSmallFees) {
-    var minimumFee = Math.ceil(this._estimateFee() / Transaction.FEE_SECURITY_MARGIN);
+    const minimumFee = Math.ceil(this._estimateFee() / Transaction.FEE_SECURITY_MARGIN);
     if (unspent < minimumFee) {
       return new errors.Transaction.FeeError.TooSmall(
         'expected more than ' + minimumFee + ' but got ' + unspent
@@ -261,9 +260,8 @@ Transaction.prototype._hasDustOutputs = function(opts) {
   if (opts.disableDustOutputs) {
     return;
   }
-  var index, output;
-  for (index in this.outputs) {
-    output = this.outputs[index];
+  for (const index in this.outputs) {
+    const output = this.outputs[index];
     if (output.satoshis < Transaction.DUST_AMOUNT && !output.script.isDataOut()) {
       return new errors.Transaction.DustOutputs();
     }
@@ -284,7 +282,7 @@ Transaction.prototype.inspect = function() {
 };
 
 Transaction.prototype.toBuffer = function() {
-  var writer = new BufferWriter();
+  const writer = new BufferWriter();
   return this.toBufferWriter(writer).toBuffer();
 };
 
@@ -306,22 +304,20 @@ Transaction.prototype.toBufferWriter = function(writer) {
 };
 
 Transaction.prototype.fromBuffer = function(buffer) {
-  var reader = new BufferReader(buffer);
+  const reader = new BufferReader(buffer);
   return this.fromBufferReader(reader);
 };
 
 Transaction.prototype.fromBufferReader = function(reader) {
   $.checkArgument(!reader.finished(), 'No transaction data received');
-  var i, sizeTxIns, sizeTxOuts;
-
   this.version = reader.readInt32LE();
-  sizeTxIns = reader.readVarintNum();
-  for (i = 0; i < sizeTxIns; i++) {
-    var input = Input.fromBufferReader(reader);
+  const sizeTxIns = reader.readVarintNum();
+  for (let i = 0; i < sizeTxIns; i++) {
+    const input = Input.fromBufferReader(reader);
     this.inputs.push(input);
   }
-  sizeTxOuts = reader.readVarintNum();
-  for (i = 0; i < sizeTxOuts; i++) {
+  const sizeTxOuts = reader.readVarintNum();
+  for (let i = 0; i < sizeTxOuts; i++) {
     this.outputs.push(Output.fromBufferReader(reader));
   }
   this.nLockTime = reader.readUInt32LE();
@@ -329,15 +325,15 @@ Transaction.prototype.fromBufferReader = function(reader) {
 };
 
 Transaction.prototype.toObject = Transaction.prototype.toJSON = function toObject() {
-  var inputs = [];
-  this.inputs.forEach(function(input) {
+  const inputs = [];
+  for (const input of this.inputs) {
     inputs.push(input.toObject());
-  });
-  var outputs = [];
-  this.outputs.forEach(function(output) {
+  }
+  const outputs = [];
+  for (const output of this.outputs) {
     outputs.push(output.toObject());
-  });
-  var obj = {
+  }
+  const obj = {
     hash: this.hash,
     version: this.version,
     inputs: inputs,
@@ -359,7 +355,7 @@ Transaction.prototype.toObject = Transaction.prototype.toJSON = function toObjec
 Transaction.prototype.fromObject = function fromObject(arg) {
   /* jshint maxstatements: 20 */
   $.checkArgument(_.isObject(arg) || arg instanceof Transaction);
-  var transaction;
+  let transaction;
   if (arg instanceof Transaction) {
     transaction = arg.toObject();
   } else {
@@ -370,8 +366,8 @@ Transaction.prototype.fromObject = function fromObject(arg) {
       this.uncheckedAddInput(new Input(input));
       continue;
     }
-    var script = new Script(input.output.script);
-    var txin;
+    const script = new Script(input.output.script);
+    let txin;
     if (script.isPublicKeyHashOut()) {
       txin = new Input.PublicKeyHash(input);
     } else if (script.isScriptHashOut() && input.publicKeys && input.threshold) {
@@ -431,8 +427,8 @@ Transaction.prototype.lockUntilDate = function(time) {
     time = time.getTime() / 1000;
   }
 
-  for (var i = 0; i < this.inputs.length; i++) {
-    if (this.inputs[i].sequenceNumber === Input.DEFAULT_SEQNUMBER){
+  for (let i = 0; i < this.inputs.length; i++) {
+    if (this.inputs[i].sequenceNumber === Input.DEFAULT_SEQNUMBER) {
       this.inputs[i].sequenceNumber = Input.DEFAULT_LOCKTIME_SEQNUMBER;
     }
   }
@@ -457,8 +453,8 @@ Transaction.prototype.lockUntilBlockHeight = function(height) {
     throw new errors.Transaction.NLockTimeOutOfRange();
   }
 
-  for (var i = 0; i < this.inputs.length; i++) {
-    if (this.inputs[i].sequenceNumber === Input.DEFAULT_SEQNUMBER){
+  for (let i = 0; i < this.inputs.length; i++) {
+    if (this.inputs[i].sequenceNumber === Input.DEFAULT_SEQNUMBER) {
       this.inputs[i].sequenceNumber = Input.DEFAULT_LOCKTIME_SEQNUMBER;
     }
   }
@@ -555,7 +551,7 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, opts) {
     }
     return this;
   }
-  var exists = this.inputs.some(function(input) {
+  const exists = this.inputs.some(function(input) {
     // TODO: Maybe prevTxId should be a string? Or defined as read only property?
     return input.prevTxId.toString('hex') === utxo.txId && input.outputIndex === utxo.outputIndex;
   });
@@ -583,12 +579,12 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, opts) {
  * @returns {Array<number>}
  */
 Transaction.prototype.associateInputs = function(utxos, pubkeys, threshold, opts) {
-  let indexes = [];
+  const indexes = [];
 
-  for(let utxo of utxos) {
+  for (const utxo of utxos) {
     const index = this.inputs.findIndex(i => i.prevTxId.toString('hex') === utxo.txId && i.outputIndex === utxo.outputIndex);
     indexes.push(index);
-    if(index >= 0) {
+    if (index >= 0) {
       this.inputs[index] = this._getInputFrom(utxo, pubkeys, threshold, opts);
     }
   }
@@ -596,9 +592,9 @@ Transaction.prototype.associateInputs = function(utxos, pubkeys, threshold, opts
 };
 
 Transaction.prototype._selectInputType = function(utxo, pubkeys, threshold) {
-  var clazz;
+  let clazz;
   utxo = new UnspentOutput(utxo);
-  if(pubkeys && threshold) {
+  if (pubkeys && threshold) {
     if (utxo.script.isMultisigOut()) {
       clazz = MultiSigInput;
     } else if (utxo.script.isScriptHashOut() || utxo.script.isWitnessScriptHashOut()) {
@@ -627,9 +623,9 @@ Transaction.prototype._getInputFrom = function(utxo, pubkeys, threshold, opts) {
     sequenceNumber: utxo.sequenceNumber,
     script: Script.empty()
   };
-  let args = pubkeys && threshold ? [pubkeys, threshold, false, opts] : []
+  const args = pubkeys && threshold ? [pubkeys, threshold, false, opts] : [];
   return new InputClass(input, ...args);
-}
+};
 
 Transaction.prototype._fromEscrowUtxo = function(utxo, pubkeys) {
   const publicKeys = pubkeys.map(pubkey => new PublicKey(pubkey));
@@ -654,7 +650,7 @@ Transaction.prototype._fromEscrowUtxo = function(utxo, pubkeys) {
 };
 
 Transaction.prototype._fromNonP2SH = function(utxo) {
-  var clazz;
+  let clazz;
   utxo = new UnspentOutput(utxo);
   if (utxo.script.isPublicKeyHashOut()) {
     clazz = PublicKeyHashInput;
@@ -679,14 +675,14 @@ Transaction.prototype._fromNonP2SH = function(utxo) {
 Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, opts) {
   $.checkArgument(threshold <= pubkeys.length,
     'Number of required signatures must be greater than the number of public keys');
-  var clazz;
+  let clazz;
   utxo = new UnspentOutput(utxo);
   if (utxo.script.isMultisigOut()) {
     clazz = MultiSigInput;
   } else if (utxo.script.isScriptHashOut()) {
     clazz = MultiSigScriptHashInput;
   } else {
-    throw new Error("@TODO");
+    throw new Error('Provided utxo is not a multisig');
   }
   this.addInput(new clazz({
     output: new Output({
@@ -825,7 +821,7 @@ Transaction.prototype.change = function(address) {
  * @param {number} amount The amount in satoshis to send to the ZCE address
  * @return {Transaction} this, for chaining
  */
- Transaction.prototype.escrow = function(address, amount) {
+Transaction.prototype.escrow = function(address, amount) {
   amount = parseInt(amount);
   $.checkArgument(this.inputs.length > 0, 'inputs must have already been set when setting escrow');
   $.checkArgument(this.outputs.length > 0, 'non-change outputs must have already been set when setting escrow');
@@ -835,7 +831,7 @@ Transaction.prototype.change = function(address) {
   const totalSendAmountWithoutChange = this._getOutputAmount() + this.getFee() + amount;
   const hasChange = this._getInputAmount() - totalSendAmountWithoutChange > Transaction.DUST_AMOUNT;
   this.to(address, amount);
-  if(!hasChange) {
+  if (!hasChange) {
     this._fee = undefined;
   }
   return this;
@@ -869,7 +865,6 @@ Transaction.prototype.getChangeOutput = function() {
  */
 Transaction.prototype.to = function(address, amount) {
   if (Array.isArray(address)) {
-    var self = this;
     for (const to of address) {
       this.to(to.address, to.satoshis);
     }
@@ -980,9 +975,9 @@ Transaction.prototype._updateChangeOutput = function() {
   if (this._changeIndex != null) {
     this._removeOutput(this._changeIndex);
   }
-  var available = this._getUnspentValue();
-  var fee = this.getFee();
-  var changeAmount = available - fee;
+  const available = this._getUnspentValue();
+  const fee = this.getFee();
+  const changeAmount = available - fee;
   if (changeAmount >= Transaction.DUST_AMOUNT) {
     this._changeIndex = this.outputs.length;
     this._addOutput(new Output({
@@ -1067,7 +1062,7 @@ Transaction.prototype._clearSignatures = function() {
  * Estimate the tx size before input signatures are added.
  */
 Transaction.prototype._estimateSize = function() {
-  let result = 4 // version
+  let result = 4; // version
   
   result += BufferWriter.varintBufNum(this.inputs.length).length;
   for (const input of this.inputs) {
@@ -1088,7 +1083,7 @@ Transaction.prototype._calculateSize = function() {
 };
 
 Transaction.prototype._removeOutput = function(index) {
-  var output = this.outputs[index];
+  const output = this.outputs[index];
   this.outputs = _.without(this.outputs, output);
   this._outputAmount = undefined;
 };
@@ -1106,9 +1101,9 @@ Transaction.prototype.removeOutput = function(index) {
  */
 Transaction.prototype.sort = function() {
   this.sortInputs(function(inputs) {
-    var copy = Array.prototype.concat.apply([], inputs);
+    const copy = Array.prototype.concat.apply([], inputs);
     let i = 0;
-    copy.forEach((x) => { x.i = i++});
+    for (const x of copy) { x.i = i++; }
     copy.sort(function(first, second) {
       return compare(first.prevTxId, second.prevTxId)
         || first.outputIndex - second.outputIndex
@@ -1117,9 +1112,9 @@ Transaction.prototype.sort = function() {
     return copy;
   });
   this.sortOutputs(function(outputs) {
-    var copy = Array.prototype.concat.apply([], outputs);
+    const copy = Array.prototype.concat.apply([], outputs);
     let i = 0;
-    copy.forEach((x) => { x.i = i++});
+    for (const x of copy) { x.i = i++; }
     copy.sort(function(first, second) {
       return first.satoshis - second.satoshis
         || compare(first.script.toBuffer(), second.script.toBuffer())
@@ -1150,7 +1145,7 @@ Transaction.prototype.shuffleOutputs = function() {
  * @return {Transaction} this
  */
 Transaction.prototype.sortOutputs = function(sortingFunction) {
-  var outs = sortingFunction(this.outputs);
+  const outs = sortingFunction(this.outputs);
   return this._newOutputOrder(outs);
 };
 
@@ -1169,14 +1164,14 @@ Transaction.prototype.sortInputs = function(sortingFunction) {
 };
 
 Transaction.prototype._newOutputOrder = function(newOutputs) {
-  var isInvalidSorting = (this.outputs.length !== newOutputs.length ||
+  const isInvalidSorting = (this.outputs.length !== newOutputs.length ||
                           _.difference(this.outputs, newOutputs).length !== 0);
   if (isInvalidSorting) {
     throw new errors.Transaction.InvalidSorting();
   }
 
   if (this._changeIndex != null) {
-    var changeOutput = this.outputs[this._changeIndex];
+    const changeOutput = this.outputs[this._changeIndex];
     this._changeIndex = newOutputs.indexOf(changeOutput);
   }
 
@@ -1185,7 +1180,7 @@ Transaction.prototype._newOutputOrder = function(newOutputs) {
 };
 
 Transaction.prototype.removeInput = function(txId, outputIndex) {
-  var index;
+  let index;
   if (!outputIndex && !isNaN(txId)) {
     index = txId;
   } else {
@@ -1196,7 +1191,7 @@ Transaction.prototype.removeInput = function(txId, outputIndex) {
   if (index < 0 || index >= this.inputs.length) {
     throw new errors.Transaction.InvalidIndex(index, this.inputs.length);
   }
-  var input = this.inputs[index];
+  const input = this.inputs[index];
   this.inputs = _.without(this.inputs, input);
   this._inputAmount = undefined;
   this._updateChangeOutput();
@@ -1215,7 +1210,7 @@ Transaction.prototype.removeInput = function(txId, outputIndex) {
  * @return {Transaction} this, for chaining
  */
 Transaction.prototype.sign = function(privateKey, sigtype, signingMethod) {
-  signingMethod = signingMethod || "ecdsa"
+  signingMethod = signingMethod || 'ecdsa';
 
   $.checkState(this.hasAllUtxoInfo(), 'Not all utxo information is available to sign the transaction.');
   if (Array.isArray(privateKey)) {
@@ -1234,15 +1229,13 @@ Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod) 
   privKey = new PrivateKey(privKey);
 
   // By default, signs using ALL|FORKID
-  sigtype = sigtype || (Signature.SIGHASH_ALL |  Signature.SIGHASH_FORKID);
-  var transaction = this;
-  var results = [];
-
-  var hashData = Hash.sha256ripemd160(privKey.publicKey.toBuffer());
-  for (let index = 0; index < this.inputs.length; index++) {
-    var input = this.inputs[index];
-    var signatures = input.getSignatures(transaction, privKey, index, sigtype, hashData, signingMethod);
-    for (let signature of signatures) {
+  sigtype = sigtype || (Signature.SIGHASH_ALL | Signature.SIGHASH_FORKID);
+  const results = [];
+  const hashData = Hash.sha256ripemd160(privKey.publicKey.toBuffer());
+  for (let i = 0; i < this.inputs.length; i++) {
+    const input = this.inputs[i];
+    const signatures = input.getSignatures(this, privKey, i, sigtype, hashData, signingMethod);
+    for (const signature of signatures) {
       results.push(signature);
     }
   }
@@ -1303,7 +1296,7 @@ Transaction.prototype.validateTokens = function() {
   const tokenInputs = this.inputs.filter(input => input.output.tokenData);
   const tokenOutputs = this.outputs.filter(output => output.tokenData);
   const outputsGroupedByCategory = _.groupBy(tokenOutputs, (output) => output.tokenData.category);
-  Object.values(outputsGroupedByCategory).forEach(categoryOutputs => {
+  for (const categoryOutputs of Object.values(outputsGroupedByCategory)) {
     const category = categoryOutputs[0].tokenData.category;
     let unusedCategoryInputs = tokenInputs.filter(input => input.output.tokenData.category === category);
     const inputFungibleAmount = unusedCategoryInputs.reduce((sum, input) => {
@@ -1313,7 +1306,7 @@ Transaction.prototype.validateTokens = function() {
 
     let mintedAmount = new BN(0);
     let sentAmount = new BN(0);
-    categoryOutputs.forEach(output => {
+    for (const output of categoryOutputs) {
       const mintingUtxo = this.inputs.find(input => input.prevTxId.toString('hex') === output.tokenData.category);
       const tokenAmount = output.tokenData.amount;
       if (mintingUtxo) {
@@ -1341,14 +1334,14 @@ Transaction.prototype.validateTokens = function() {
         }
         sentAmount = sentAmount.add(tokenAmount);
       }
-    });
+    }
     if (mintedAmount.gt(new BN('9223372036854775807'))) {
       throw new Error('the transaction outputs include a sum of fungible tokens for a category exceeding the maximum supply (9223372036854775807)');
     }
     if (sentAmount.gt(inputFungibleAmount)) {
       throw new Error("the sum of fungible tokens in the transaction's outputs exceed that of the transactions inputs for a category");
     }
-  });
+  }
   return true;
 };
 
@@ -1368,9 +1361,9 @@ Transaction.prototype.verify = function() {
   }
 
   // Check for negative or overflow output values
-  var valueoutbn = new BN(0);
-  for (var i = 0; i < this.outputs.length; i++) {
-    var txout = this.outputs[i];
+  let valueoutbn = new BN(0);
+  for (let i = 0; i < this.outputs.length; i++) {
+    const txout = this.outputs[i];
 
     if (txout.invalidSatoshis()) {
       return 'transaction txout ' + i + ' satoshis is invalid';
@@ -1390,25 +1383,25 @@ Transaction.prototype.verify = function() {
   }
 
   // Check for duplicate inputs
-  var txinmap = {};
-  for (i = 0; i < this.inputs.length; i++) {
-    var txin = this.inputs[i];
+  const txinmap = {};
+  for (let i = 0; i < this.inputs.length; i++) {
+    const txin = this.inputs[i];
 
-    var inputid = txin.prevTxId + ':' + txin.outputIndex;
+    const inputid = txin.prevTxId + ':' + txin.outputIndex;
     if (txinmap[inputid] != null) {
       return 'transaction input ' + i + ' duplicate input';
     }
     txinmap[inputid] = true;
   }
 
-  var isCoinbase = this.isCoinbase();
+  const isCoinbase = this.isCoinbase();
   if (isCoinbase) {
-    var buf = this.inputs[0]._scriptBuffer;
+    const buf = this.inputs[0]._scriptBuffer;
     if (buf.length < 2 || buf.length > 100) {
       return 'coinbase transaction script size invalid';
     }
   } else {
-    for (i = 0; i < this.inputs.length; i++) {
+    for (let i = 0; i < this.inputs.length; i++) {
       if (this.inputs[i].isNull()) {
         return 'transaction input ' + i + ' has null input';
       }
@@ -1420,7 +1413,7 @@ Transaction.prototype.verify = function() {
 Transaction.prototype.isZceSecured = function(escrowReclaimTx, instantAcceptanceEscrow, requiredFeeRate) {
   // ZCE-secured transactions must not contain more than 2^16 inputs (65,536)
   // https://github.com/bitjson/bch-zce#zce-root-hash
-  if(this.inputs.length > 65536) {
+  if (this.inputs.length > 65536) {
     return false;
   }
 
@@ -1434,7 +1427,7 @@ Transaction.prototype.isZceSecured = function(escrowReclaimTx, instantAcceptance
   let reclaimTx;
   try {
     reclaimTx = new Transaction(escrowReclaimTx);
-  } catch (e) {
+  } catch {
     return false;
   }
 
