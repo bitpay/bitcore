@@ -1141,7 +1141,7 @@ Transaction.prototype.sort = function() {
   this.sortOutputs(function(outputs) {
     const copy = Array.prototype.concat.apply([], outputs);
     let i = 0;
-    for (const x of copy) { x.i = i++; };
+    for (const x of copy) { x.i = i++; }
     copy.sort(function(first, second) {
       return first.satoshis - second.satoshis
         || compare(first.script.toBuffer(), second.script.toBuffer())
