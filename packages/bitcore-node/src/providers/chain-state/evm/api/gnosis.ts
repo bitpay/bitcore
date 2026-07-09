@@ -154,7 +154,7 @@ export class GnosisApi {
   }
 
   async streamGnosisWalletTransactions(params: { multisigContractAddress: string } & StreamWalletTransactionsParams) {
-    const { chain, network, multisigContractAddress, res, args } = params;
+    const { chain, network, multisigContractAddress, args } = params;
     const transactionQuery = getCSP(chain, network).getWalletTransactionQuery(params);
     delete transactionQuery.wallets;
     delete transactionQuery['wallets.0'];
@@ -201,7 +201,6 @@ export class GnosisApi {
       .sort({ blockTimeNormalized: 1 })
       .addCursorFlag('noCursorTimeout', true);
 
-    // Add cleanup handlers when client disconnects
     let cursorClosed = false;
     const cleanupCursor = () => {
       if (!cursorClosed) {
@@ -214,10 +213,6 @@ export class GnosisApi {
       }
     };
 
-    const { req } = params;
-    req.on('close', cleanupCursor);
-    res.on('close', cleanupCursor);
-
     transactionStream = cursor.pipe(populateEffects); // For old db entries
 
     if (multisigContractAddress) {
@@ -225,10 +220,13 @@ export class GnosisApi {
       transactionStream = transactionStream.pipe(multisigTransform);
     }
 
-    transactionStream
+    const finalStream: any = transactionStream
       .pipe(populateReceipt)
-      .pipe(ethTransactionTransform)
-      .pipe(res);
+      .pipe(ethTransactionTransform);
+    finalStream.jsonl = true;
+    finalStream.on('close', cleanupCursor);
+    finalStream.on('end', cleanupCursor);
+    return finalStream;
   }
 }
 

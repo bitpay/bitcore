@@ -195,7 +195,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
   // @override — sequential failover with preflight check.
   // Buffers first item before piping to response; failover only before response bytes are written.
   async _buildAddressTransactionsStream(params: StreamAddressUtxosParams) {
-    const { req, res, args, network, address } = params;
+    const { args, network, address } = params;
     const chainId = await this.getChainId({ network });
     const providers = this.getProvidersForNetwork(network);
     const PREFLIGHT_TIMEOUT_MS = 5000;
@@ -270,11 +270,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
           txStream.resume();
         }
 
-        const result = await ExternalApiStream.onStream(outputStream, req!, res!);
-        if (!result?.success) {
-          logger.error('Error mid-stream (streamAddressTransactions): %o', result.error?.log || result.error);
-        }
-        return; // Stream handled
+        return outputStream;
       } catch (error) {
         if (error instanceof AdapterError && (error as AdapterError).code === AdapterErrorCode.INVALID_REQUEST) throw error; // 400 — no failover
         provider.health.recordFailure(error as Error);

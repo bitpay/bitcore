@@ -108,7 +108,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
 
   // @override
   async streamBlocks(params: StreamBlocksParams) {
-    const { chain, network, req, res } = params;
+    const { chain, network } = params;
     const { web3 } = await this.getWeb3(network);
     const chainId = await this.getChainId({ network });
     const blockRange = await this.getBlocksRange({ ...params, chainId });
@@ -146,8 +146,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       }
     });
 
-    return ExternalApiStream.onStream(stream, req!, res!);
-
+    return stream;
   }
 
   // @override
@@ -165,10 +164,10 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
 
   // @override
   async _buildAddressTransactionsStream(params: StreamAddressUtxosParams) {
-    const { req, res, args, network, address } = params;
+    const { args, network, address } = params;
 
     const chainId = await this.getChainId({ network });
-    const txStream = await this._streamAddressTransactionsFromMoralis({
+    return this._streamAddressTransactionsFromMoralis({
       chainId,
       chain: this.chain,
       network,
@@ -178,11 +177,6 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
         ...args
       }
     });
-    // TODO unify `ExternalApiStream.onStream` and `Storage.apiStream` which are effectively doing the same thing
-    const result = await ExternalApiStream.onStream(txStream, req!, res!);
-    if (!result?.success) {
-      logger.error('Error mid-stream (streamAddressTransactions): %o', result.error?.log || result.error);
-    }
   }
 
   // @override

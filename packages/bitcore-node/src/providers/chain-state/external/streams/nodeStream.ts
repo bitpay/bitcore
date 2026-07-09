@@ -1,5 +1,4 @@
 import { Readable, Stream, Transform } from 'stream';
-import { Request, Response } from 'express';
 import { ExternalApiStream } from './apiStream';
 
 export class NodeQueryStream extends Readable {
@@ -35,11 +34,6 @@ export class NodeQueryStream extends Readable {
     } catch (error) {
       this.emit('error', error); // Emit error event in case of failure
     }
-  }
-
-  static onStream(stream: Readable, req: Request, res: Response):
-  Promise<{ success: boolean; error?: any }> {
-    return ExternalApiStream.onStream(stream, req, res);
   }
 
   static mergeStreams(streams: Stream[], destination: Transform): Transform {
