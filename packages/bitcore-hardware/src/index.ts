@@ -1,4 +1,3 @@
-import assert from 'assert';
 import { Base } from './base.js';
 import Burner from './burner.js';
 
@@ -7,7 +6,9 @@ export default class BitcoreHardware implements Base {
   constructor(wallet: string, currency: string) {
     switch (wallet.toLowerCase()) {
       case ('burner'): {
-        assert(['btc', 'eth'].includes(currency.toLowerCase()));
+        if (!(['btc', 'eth'].includes(currency.toLowerCase()))) {
+          throw new Error(`Burner can only be run with btc or eth, not ${currency}`);
+        };
         this.hardwareWallet = new Burner(currency);
         break;
       }

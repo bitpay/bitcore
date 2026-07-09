@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
-    "module": "nodenext",
+    "module": "Node16",
     "target": "ES2022",
     "outDir": "./build",
+    "moduleResolution": "Node16",
     "noImplicitAny": false,
     "paths":
       {"*": ["./*", "./src/*"]
