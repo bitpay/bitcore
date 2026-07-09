@@ -1,4 +1,5 @@
 export interface Base {
-  sign(params: { amount: number }): object;
   connect(): void;
+  sign(params: { amount: number }): object;
+  genKey(params: { index: number; entropy: string }): object;
 };

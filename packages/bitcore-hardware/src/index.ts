@@ -21,4 +21,8 @@ export default class BitcoreHardware implements Base {
   async sign(params: { amount: number }) {
     return this.hardwareWallet?.sign(params) || {};
   }
+
+  async genKey(params: { index: number; entropy: string }) {
+    return this.hardwareWallet?.genKey(params) || {};
+  }
 }

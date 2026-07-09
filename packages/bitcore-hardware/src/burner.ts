@@ -2,6 +2,10 @@ import { execHaloCmdPCSC } from '@arx-research/libhalo/api/desktop';
 import { NFC } from 'nfc-pcsc';
 import { Base } from './base.js';
 
+/**
+ * Connect listens on the NFC reader for a card.
+ * Methods queue a command to run when the card is scanned.
+ */
 export default class Burner implements Base {
   nfc = new NFC();
   command = {};
@@ -10,6 +14,15 @@ export default class Burner implements Base {
 
   constructor(currency: string) {
     this.currency = currency;
+  }
+
+  async awaitResponse() {
+    return new Promise(async (resolve1) => {
+      while (this.responce === undefined) {
+        await new Promise(resolve2 => setTimeout(resolve2, 10));
+      }
+      resolve1(this.responce);
+    });
   }
 
   connect() {
@@ -36,18 +49,24 @@ export default class Burner implements Base {
 
   async sign(params: { amount: number }) {
     const { amount } = params;
+    this.responce = undefined;
     this.command = {
       name: 'sign',
       message: '010203',
       keyNo: 1
     };
     amount;
-    return new Promise(async (resolve) => {
-      while (this.responce === undefined) {
-        await new Promise(resolve2 => setTimeout(resolve2, 10));
-      }
-      resolve(this.responce);
-      this.responce = undefined;
-    });
+    return this.awaitResponse();
+  }
+
+  async genKey(params: { index: number; entropy: string }) {
+    const { index, entropy } = params;
+    this.command = {
+      name: 'gen_key',
+      keyNo: index,
+      entropy
+    };
+
+    return this.awaitResponse();
   }
 }
