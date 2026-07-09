@@ -72,28 +72,47 @@ export async function createThresholdSigWallet(
       extra: tssPassword
     });
 
-    const goBack = await prompt.select({
-      message: `Join code for party ${i}:${os.EOL}${joinCode}`,
-      initialValue: false,
-      options: [
-        {
-          label: 'Continue →',
-          value: false
-        },
-        {
-          label: '↩ Go Back',
-          value: true,
-          hint: `Re-enter party ${i}'s public key`
-        }
-      ]
-    });
-    if (prompt.isCancel(goBack)) {
-      throw new UserCancelled();
-    }
+    let joinCodeAction: 'copy' | 'continue' | 'goBack' | symbol;
+    do {
+      joinCodeAction = await prompt.select({
+        message: joinCodeAction === 'copy' ? 'Copied!' : `Join code for party ${i}:${os.EOL}${joinCode}`,
+        initialValue: joinCodeAction === 'copy' ? 'continue' : 'copy',
+        options: [
+          {
+            label: 'Continue →',
+            value: 'continue'
+          },
+          {
+            label: 'Copy to clipboard ⎘',
+            value: 'copy'
+          },
+          {
+            label: '↩ Go Back',
+            value: 'goBack',
+            hint: `Re-enter party ${i}'s public key`
+          }
+        ]
+      });
+      if (prompt.isCancel(joinCodeAction)) {
+        throw new UserCancelled();
+      }
 
-    if (goBack) {
-      i--; // Retry this party
-    }
+      switch (joinCodeAction) {
+        case 'goBack':
+          i--; // Retry this party
+          break;
+        case 'copy':
+          try {
+            Utils.copyToClipboard(joinCode);
+          } catch (error) {
+            prompt.log.error(`Error copying to clipboard: ${error instanceof Error ? error.message : String(error)}`);
+            joinCodeAction = null; // Reset to re-prompt the user
+          }
+          break;
+        case 'continue':
+          break;
+      }
+    } while (joinCodeAction !== 'continue');
   }
 
   const spinner = prompt.spinner({ indicator: 'timer' });

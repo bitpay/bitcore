@@ -225,12 +225,12 @@ export async function getTxProposals(
 
     const extraChoices = []
       .concat(
-        txp.status !== 'broadcasted' && !txp.actions.find(a => a.copayerId === myCopayerId) && txp.status !== 'deleted' ? [
+        txp.status !== 'broadcasted' && !txp.actions?.find(a => a.copayerId === myCopayerId) && txp.status !== 'deleted' ? [
           { label: 'Accept', value: ViewAction.ACCEPT, hint: 'Accept and sign this proposal' },
           { label: 'Reject', value: ViewAction.REJECT, hint: 'Reject this proposal' },
         ] : []
       ).concat(
-        txp.status !== 'broadcasted' && txp.actions.filter(a => a.type === 'accept').length >= txp.requiredSignatures && txp.status !== 'deleted' ? [
+        txp.status !== 'broadcasted' && txp.actions?.filter(a => a.type === 'accept').length >= txp.requiredSignatures && txp.status !== 'deleted' ? [
           { label: 'Broadcast', value: ViewAction.BROADCAST, hint: 'Broadcast this proposal' }
         ] : []
       ).concat(
