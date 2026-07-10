@@ -99,7 +99,7 @@ export async function joinThresholdSigWallet(
     });
     tss.subscribe({ copayerName });
     tss.on('roundsubmitted', (round) => spinner.message(`Round ${round} submitted`));
-    tss.on('error', prompt.log.error);
+    tss.on('error', e => prompt.log.error('Unexpected error during TSS wallet creation: ' + (e.stack || e)));
     tss.on('wallet', async (_wallet) => {
       // TOOD: what to do with this?
       // console.log('Joined wallet at BWS:', wallet);

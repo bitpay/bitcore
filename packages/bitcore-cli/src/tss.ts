@@ -67,7 +67,7 @@ export async function sign(args: {
 
     tssSign.subscribe();
     tssSign.on('roundsubmitted', (round) => spinner.message(`Round ${round} submitted`));
-    tssSign.on('error', e => prompt.log.error('Unexpected error during TSS signing: ' + e));
+    tssSign.on('error', e => prompt.log.error('Unexpected error during TSS signing: ' + (e.stack || e)));
     tssSign.on('complete', async () => {
       try {
         spinner.stop(logMessageCompleted || 'TSS signature generated');

@@ -131,7 +131,7 @@ export async function createThresholdSigWallet(
       createWalletOpts: Utils.getSegwitInfo(addressType)
     });
     tss.on('roundsubmitted', (round) => spinner.message(`Round ${round} submitted`));
-    tss.on('error', prompt.log.error);
+    tss.on('error', e => prompt.log.error('Unexpected error during TSS wallet creation: ' + (e.stack || e)));
     tss.on('wallet', async (_wallet) => {
       // TODO: what to do with the wallet?
       // console.log('Created wallet at BWS:', wallet);
