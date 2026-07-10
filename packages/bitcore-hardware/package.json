@@ -12,7 +12,9 @@
     "compile": "npm run clean && npm run build",
     "build": "tsc",
     "clean": "rm -rf build",
-    "test": "npm run compile && mocha build/test"
+    "test": "npm run compile && mocha build/test",
+    "burner:get-public-key": "npm run compile && node build/examples/burner/getPublicKey.js",
+    "burner:sign": "npm run compile && node build/examples/burner/sign.js"
   },
   "keywords": [
     "bitcore",

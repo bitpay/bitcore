@@ -1,5 +1,6 @@
 import { Base } from './base.js';
 import Burner from './burner.js';
+import { GetPublicKey, Sign } from './types/methods.js';
 
 export default class BitcoreHardware implements Base {
   hardwareWallet: Base | undefined;
@@ -19,11 +20,11 @@ export default class BitcoreHardware implements Base {
     this.hardwareWallet?.connect();
   }
 
-  async sign(params: { amount: number }) {
+  async sign(params: Sign): Promise<any> {
     return this.hardwareWallet?.sign(params) || {};
   }
 
-  async genKey(params: { index: number; entropy: string }) {
-    return this.hardwareWallet?.genKey(params) || {};
+  async getPublicKey(params: GetPublicKey): Promise<any> {
+    return this.hardwareWallet?.getPublicKey(params);
   }
 }

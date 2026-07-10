@@ -1,6 +1,7 @@
 import { execHaloCmdPCSC } from '@arx-research/libhalo/api/desktop';
 import { NFC } from 'nfc-pcsc';
 import { Base } from './base.js';
+import { GetPublicKey, Sign } from './types/methods.js';
 
 /**
  * Connect listens on the NFC reader for a card.
@@ -10,7 +11,7 @@ export default class Burner implements Base {
   nfc = new NFC();
   command = {};
   currency: string;
-  responce: object | string | number | undefined;
+  response: object | string | number | undefined;
 
   constructor(currency: string) {
     this.currency = currency;
@@ -18,10 +19,10 @@ export default class Burner implements Base {
 
   async awaitResponse() {
     return new Promise(async (resolve1) => {
-      while (this.responce === undefined) {
+      while (this.response === undefined) {
         await new Promise(resolve2 => setTimeout(resolve2, 10));
       }
-      resolve1(this.responce);
+      resolve1(this.response);
     });
   }
 
@@ -31,7 +32,7 @@ export default class Burner implements Base {
 
       reader.on('card', async () => {
         try {
-          this.responce = await execHaloCmdPCSC(this.command, reader);
+          this.response = await execHaloCmdPCSC(this.command, reader);
         } catch (e) {
           console.error(e);
         }
@@ -47,26 +48,25 @@ export default class Burner implements Base {
     });
   }
 
-  async sign(params: { amount: number }) {
-    const { amount } = params;
-    this.responce = undefined;
+  async sign(params: Sign) {
+    const { index, message } = params;
+    this.response = undefined;
     this.command = {
       name: 'sign',
-      message: '010203',
-      keyNo: 1
+      message,
+      keyNo: index
     };
-    amount;
     return this.awaitResponse();
   }
 
-  async genKey(params: { index: number; entropy: string }) {
-    const { index, entropy } = params;
+  async getPublicKey(params: GetPublicKey) {
+    const { index } = params;
+    this.response = undefined;
     this.command = {
-      name: 'gen_key',
-      keyNo: index,
-      entropy
+      name: 'get_data_struct_v2',
+      spec: [{ type: 'publicKey', index }]
     };
 
-    return this.awaitResponse();
+    return (await this.awaitResponse() as any).publicKey[index].value;
   }
 }
