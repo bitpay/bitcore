@@ -1,3 +1,3 @@
 export interface BaseMethod { index: number };
 
-export type Sign = BaseMethod & { message: string };
+export type Sign = BaseMethod & { message: string; password?: string };

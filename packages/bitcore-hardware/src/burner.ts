@@ -1,10 +1,10 @@
 import { execHaloCmdPCSC } from '@arx-research/libhalo/api/desktop';
-import Bitcore from '@bitpay-labs/bitcore-lib';
+import bitcore from '@bitpay-labs/bitcore-lib';
 import { NFC } from 'nfc-pcsc';
 import { Base } from './base.js';
 import { BaseMethod, Sign } from './types/methods.js';
 
-const { Address, PublicKey } = Bitcore;
+const { Address, PublicKey } = bitcore;
 
 /**
  * Connect listens on the NFC reader for a card.
@@ -52,11 +52,12 @@ export default class Burner implements Base {
   }
 
   async sign(params: Sign) {
-    const { index, message } = params;
+    const { index, message, password } = params;
     this.response = undefined;
     this.command = {
       name: 'sign',
       message,
+      password,
       keyNo: index
     };
     return this.awaitResponse();
