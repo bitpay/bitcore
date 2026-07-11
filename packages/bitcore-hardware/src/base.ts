@@ -5,4 +5,5 @@ export interface Base {
   sign(params: Sign): Promise<any>;
   getPublicKey(params: BaseMethod): Promise<any>;
   getAddress(params: BaseMethod): Promise<any>;
+  getVersion(params?: BaseMethod): Promise<any>;
 };

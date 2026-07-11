@@ -56,7 +56,7 @@ export default class Ledger {
     }
   }
 
-  async version() {
+  async getVersion() {
     console.log(this.sessionId);
     const { seVersion } = (await dmk.sendCommand({ sessionId: this.sessionId, command: new GetOsVersionCommand() })).data;
     return seVersion;

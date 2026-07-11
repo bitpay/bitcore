@@ -20,5 +20,5 @@ const transaction = new bitcore.Transaction()
 console.log('Tap burner wallet on an NFC reader to sign a transaction');
 console.log(await wallet.sign({ index: 9, message: transaction, password: '123456' }));
 
-console.log('Signed transaction with Burner wallet, exiting...');
+console.log('Signed transaction with burner wallet, exiting...');
 process.exit(0);

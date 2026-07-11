@@ -12,10 +12,11 @@
     "compile": "npm run clean && npm run build",
     "build": "tsc",
     "clean": "rm -rf build",
-    "test": "npm run compile && mocha build/test",
-    "burner:get-public-key": "npm run compile && node build/examples/burner/getPublicKey.js",
-    "burner:get-address": "npm run compile && node build/examples/burner/getAddress.js",
+    "test": "npm run compile && mocha build/test && node build/examples/burner/publicKey.js && node build/examples/burner/address.js && node build/examples/burner/sign.js && node build/examples/burner/version",
+    "burner:public-key": "npm run compile && node build/examples/burner/publicKey.js",
+    "burner:address": "npm run compile && node build/examples/burner/address.js",
     "burner:sign": "npm run compile && node build/examples/burner/sign.js",
+    "burner:version": "npm run compile && node build/examples/burner/version.js",
     "ledger:version": "npm run compile && node build/examples/ledger/version.js"
   },
   "keywords": [

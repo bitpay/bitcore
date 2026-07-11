@@ -2,6 +2,7 @@ import { execHaloCmdPCSC } from '@arx-research/libhalo/api/desktop';
 import bitcore from '@bitpay-labs/bitcore-lib';
 import { NFC } from 'nfc-pcsc';
 import { Base } from './base.js';
+import { DataType } from './types/burnerTypes.js';
 import { BaseMethod, Sign } from './types/methods.js';
 
 const { Address, PublicKey } = bitcore;
@@ -60,6 +61,7 @@ export default class Burner implements Base {
       password,
       keyNo: index
     };
+
     return this.awaitResponse();
   }
 
@@ -74,6 +76,21 @@ export default class Burner implements Base {
     return (await this.awaitResponse() as any).publicKey[index].value;
   }
 
+  /**
+   *
+   * @param req
+   * @returns
+   */
+  async getData(req: Array<{ type: DataType; index: number }>) {
+    this.response = undefined;
+    this.command = {
+      name: 'get_data_struct_v2',
+      spec: req
+    };
+
+    return this.awaitResponse();
+  }
+
   async getAddress(params: BaseMethod) {
     const { index } = params;
     this.response = undefined;
@@ -82,12 +99,21 @@ export default class Burner implements Base {
       spec: [{ type: 'compressedPublicKey', index }]
     };
 
+    const data: any = await this.getData([{ type: 'compressedPublicKey', index }]);
+
     try {
-      const pubKey = PublicKey.fromString((await this.awaitResponse() as any).compressedPublicKey[index].value);
+      const pubKey = PublicKey.fromString(data.compressedPublicKey[index].value);
       const address = Address.fromPublicKey(pubKey, 'livenet', 'witnesspubkeyhash');
       return address.toString();
-    } catch {
+    } catch (error) {
+      console.error(error);
       return undefined;
     }
+  }
+
+  async getVersion(params?: BaseMethod) {
+    const { index } = params || { index: 1 };
+    const data: any = await this.getData([{ type: 'firmwareVersion', index }]);
+    return data.firmwareVersion[index].value;
   }
 }

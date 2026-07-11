@@ -31,4 +31,8 @@ export default class BitcoreHardware implements Base {
   async getAddress(params: BaseMethod) {
     return this.hardwareWallet?.getAddress(params);
   }
+
+  async getVersion(params?: BaseMethod) {
+    return this.hardwareWallet?.getVersion(params);
+  }
 }
