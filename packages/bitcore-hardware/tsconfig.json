@@ -5,6 +5,7 @@
     "outDir": "./build",
     "moduleResolution": "Node16",
     "noImplicitAny": false,
+    "skipLibCheck": true,
     "paths":
       {"*": ["./*", "./src/*"]
     },

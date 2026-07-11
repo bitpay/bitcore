@@ -1,8 +1,3 @@
-export interface Sign {
-  index: number;
-  message: string;
-}
+export interface BaseMethod { index: number };
 
-export interface GetPublicKey {
-  index: number;
-}
+export type Sign = BaseMethod & { message: string };

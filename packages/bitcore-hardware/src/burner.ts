@@ -1,7 +1,10 @@
 import { execHaloCmdPCSC } from '@arx-research/libhalo/api/desktop';
+import Bitcore from '@bitpay-labs/bitcore-lib';
 import { NFC } from 'nfc-pcsc';
 import { Base } from './base.js';
-import { GetPublicKey, Sign } from './types/methods.js';
+import { BaseMethod, Sign } from './types/methods.js';
+
+const { Address, PublicKey } = Bitcore;
 
 /**
  * Connect listens on the NFC reader for a card.
@@ -59,7 +62,7 @@ export default class Burner implements Base {
     return this.awaitResponse();
   }
 
-  async getPublicKey(params: GetPublicKey) {
+  async getPublicKey(params: BaseMethod) {
     const { index } = params;
     this.response = undefined;
     this.command = {
@@ -68,5 +71,22 @@ export default class Burner implements Base {
     };
 
     return (await this.awaitResponse() as any).publicKey[index].value;
+  }
+
+  async getAddress(params: BaseMethod) {
+    const { index } = params;
+    this.response = undefined;
+    this.command = {
+      name: 'get_data_struct_v2',
+      spec: [{ type: 'compressedPublicKey', index }]
+    };
+
+    try {
+      const pubKey = PublicKey.fromString((await this.awaitResponse() as any).compressedPublicKey[index].value);
+      const address = Address.fromPublicKey(pubKey, 'livenet', 'witnesspubkeyhash');
+      return address.toString();
+    } catch {
+      return undefined;
+    }
   }
 }
