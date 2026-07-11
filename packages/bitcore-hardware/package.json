@@ -16,7 +16,7 @@
     "burner:get-public-key": "npm run compile && node build/examples/burner/getPublicKey.js",
     "burner:get-address": "npm run compile && node build/examples/burner/getAddress.js",
     "burner:sign": "npm run compile && node build/examples/burner/sign.js",
-    "ledger:connect": "npm run compile && node build/examples/ledger/connect.js"
+    "ledger:version": "npm run compile && node build/examples/ledger/version.js"
   },
   "keywords": [
     "bitcore",

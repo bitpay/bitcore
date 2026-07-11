@@ -1,4 +1,8 @@
+import { createRequire } from 'module';
 import { dmk } from './dmk.js';
+// @eslint disable import/newline-after-import
+const require = createRequire(import.meta.url);
+const { GetOsVersionCommand } = require('@ledgerhq/device-management-kit');
 
 export default class Ledger {
   device: any;
@@ -34,5 +38,27 @@ export default class Ledger {
         }
       });
     });
+  }
+
+  async disconnect() {
+    if (this.discoverySubscryption) {
+      this.discoverySubscryption.unsubscribe();
+    }
+
+    if (this.sessionId) {
+      try {
+        await dmk.disconnect({ sessionId: this.sessionId });
+        this.sessionId = null;
+        console.log(`Disconnected ${this.device.name}`);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
+
+  async version() {
+    console.log(this.sessionId);
+    const { seVersion } = (await dmk.sendCommand({ sessionId: this.sessionId, command: new GetOsVersionCommand() })).data;
+    return seVersion;
   }
 }
