@@ -7,6 +7,7 @@ import { dmk } from './dmk.js';
 // @eslint disable import/newline-after-import
 const require = createRequire(import.meta.url);
 const {
+  CloseAppCommand,
   GetOsVersionCommand
 } = require('@ledgerhq/device-management-kit');
 const { SignerBtcBuilder } = require('@ledgerhq/device-signer-kit-bitcoin');
@@ -67,6 +68,7 @@ export default class Ledger {
   }
 
   async getVersion() {
+    await dmk.sendCommand({ sessionId: this.sessionId, command: new CloseAppCommand() });
     const { seVersion } = (await dmk.sendCommand({ sessionId: this.sessionId, command: new GetOsVersionCommand() })).data;
     return seVersion;
   }
