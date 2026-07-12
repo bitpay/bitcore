@@ -1,13 +1,21 @@
 import { createRequire } from 'module';
+import {
+  Observable,
+  lastValueFrom
+} from 'rxjs';
 import { dmk } from './dmk.js';
 // @eslint disable import/newline-after-import
 const require = createRequire(import.meta.url);
-const { GetOsVersionCommand } = require('@ledgerhq/device-management-kit');
+const {
+  GetOsVersionCommand
+} = require('@ledgerhq/device-management-kit');
+const { SignerBtcBuilder } = require('@ledgerhq/device-signer-kit-bitcoin');
 
 export default class Ledger {
   device: any;
   sessionId: any;
   discoverySubscryption: any;
+  signer: any;
 
   async connect() {
     return new Promise(async (resolve) => {
@@ -26,6 +34,8 @@ export default class Ledger {
             this.device = dmk.getConnectedDevice({
               sessionId: this.sessionId
             });
+
+            this.signer = new SignerBtcBuilder({ dmk, sessionId: this.sessionId }).build();
             resolve(0);
           } catch (error) {
             console.error(error);
@@ -57,8 +67,13 @@ export default class Ledger {
   }
 
   async getVersion() {
-    console.log(this.sessionId);
     const { seVersion } = (await dmk.sendCommand({ sessionId: this.sessionId, command: new GetOsVersionCommand() })).data;
     return seVersion;
+  }
+
+  async getAddress() {
+    const ob: Observable<any> = this.signer.getWalletAddress({ derivationPath: "84'/0'/0'", template: 'wpkh(@0/**)' }, 0).observable;
+    const result = await lastValueFrom(ob);
+    return result.output.address;
   }
 }
