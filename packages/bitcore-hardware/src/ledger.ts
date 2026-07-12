@@ -78,4 +78,10 @@ export default class Ledger {
     const result = await lastValueFrom(ob);
     return result.output.address;
   }
+
+  async getPublicKey() {
+    const ob: Observable<any> = this.signer.getExtendedPublicKey("84'/0'/0'", 0).observable;
+    const result = await lastValueFrom(ob);
+    return result.output.extendedPublicKey;
+  }
 }

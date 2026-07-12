@@ -17,6 +17,7 @@
     "burner:address": "npm run compile && node build/examples/burner/address.js",
     "burner:sign": "npm run compile && node build/examples/burner/sign.js",
     "burner:version": "npm run compile && node build/examples/burner/version.js",
+    "ledger:public-key": "npm run compile && node build/examples/ledger/publicKey.js",
     "ledger:address": "npm run compile && node build/examples/ledger/address.js",
     "ledger:version": "npm run compile && node build/examples/ledger/version.js"
   },
