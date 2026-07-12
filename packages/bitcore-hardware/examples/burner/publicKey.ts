@@ -1,10 +1,10 @@
-import BitcoreHardware from '../../src/index.js';
+import Burner from '../../src/burner.js';
 
-const wallet = new BitcoreHardware('burner', 'btc');
-wallet.connect();
+const burner = new Burner('btc');
+burner.connect();
 
 console.log('Tap burner wallet on an NFC reader to output the public key...');
-console.log(await wallet.getPublicKey({ index: 9 }));
+console.log(await burner.getPublicKey({ index: 9 }));
 
 console.log('Recieved public key');
 process.exit(0);

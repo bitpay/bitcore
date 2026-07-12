@@ -1,10 +1,10 @@
-import BitcoreHardware from '../../src/index.js';
+import Burner from '../../src/burner.js';
 
-const wallet = new BitcoreHardware('burner', 'btc');
-wallet.connect();
+const burner = new Burner('btc');
+burner.connect();
 
 console.log('Tap burner wallet on an NFC reader to get the address...');
-console.log(await wallet.getAddress({ index: 9 }));
+console.log(await burner.getAddress({ index: 9 }));
 
 console.log('Recieved address');
 process.exit(0);

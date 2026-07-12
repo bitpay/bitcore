@@ -1,8 +1,8 @@
 import bitcore from '@bitpay-labs/bitcore-lib';
-import BitcoreHardware from '../../src/index.js';
+import Burner from '../../src/burner.js';
 
-const wallet = new BitcoreHardware('burner', 'btc');
-wallet.connect();
+const burner = new Burner('btc');
+burner.connect();
 
 const utxo = {
   txId: '115e8f72f39fad874cfab0deed11a80f24f967a84079fb56ddf53ea02e308986',
@@ -18,7 +18,7 @@ const transaction = new bitcore.Transaction()
   .toString();
 
 console.log('Tap burner wallet on an NFC reader to sign a transaction');
-console.log(await wallet.sign({ index: 9, message: transaction, password: '123456' }));
+console.log(await burner.sign({ index: 9, message: transaction, password: '123456' }));
 
 console.log('Signed transaction with burner wallet, exiting...');
 process.exit(0);
