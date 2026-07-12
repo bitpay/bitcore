@@ -3,7 +3,7 @@ import bitcore from '@bitpay-labs/bitcore-lib';
 import { NFC } from 'nfc-pcsc';
 import { Base } from './base.js';
 import { DataType } from './types/burnerTypes.js';
-import { BaseMethod, Sign } from './types/methods.js';
+import { BaseParams, SignParams } from './types/paramTypes.js';
 
 const { Address, PublicKey } = bitcore;
 
@@ -52,7 +52,7 @@ export default class Burner implements Base {
     });
   }
 
-  async sign(params: Sign) {
+  async sign(params: SignParams) {
     const { index, message, password } = params;
     this.response = undefined;
     this.command = {
@@ -65,7 +65,7 @@ export default class Burner implements Base {
     return this.awaitResponse();
   }
 
-  async getPublicKey(params: BaseMethod) {
+  async getPublicKey(params: BaseParams) {
     const { index } = params;
     this.response = undefined;
     this.command = {
@@ -91,7 +91,7 @@ export default class Burner implements Base {
     return this.awaitResponse();
   }
 
-  async getAddress(params: BaseMethod) {
+  async getAddress(params: BaseParams) {
     const { index } = params;
     this.response = undefined;
     this.command = {
@@ -111,7 +111,7 @@ export default class Burner implements Base {
     }
   }
 
-  async getVersion(params?: BaseMethod) {
+  async getVersion(params?: BaseParams) {
     const { index } = params || { index: 1 };
     const data: any = await this.getData([{ type: 'firmwareVersion', index }]);
     return data.firmwareVersion[index].value;

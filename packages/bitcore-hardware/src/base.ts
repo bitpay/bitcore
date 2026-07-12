@@ -1,9 +1,9 @@
-import { BaseMethod, Sign } from './types/methods.js';
+import { BaseParams, SignParams } from './types/paramTypes.js';
 
 export interface Base {
   connect(): void;
-  sign(params: Sign): Promise<any>;
-  getPublicKey(params: BaseMethod): Promise<any>;
-  getAddress(params: BaseMethod): Promise<any>;
-  getVersion(params?: BaseMethod): Promise<any>;
+  sign(params: SignParams): Promise<any>;
+  getPublicKey(params: BaseParams): Promise<any>;
+  getAddress(params: BaseParams): Promise<any>;
+  getVersion(params?: BaseParams): Promise<any>;
 };
