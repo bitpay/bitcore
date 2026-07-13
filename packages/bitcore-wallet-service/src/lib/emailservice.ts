@@ -561,7 +561,8 @@ export class EmailService {
   _checkShouldSendEmail(notification: Notification, cb) {
     if (notification.type != 'NewTxProposal') return cb(null, true);
     this.storage.fetchWallet(notification.walletId, (err, wallet) => {
-      return cb(err, wallet.m > 1);
+      // TSS wallets are stored as m=1 but still need other signers
+      return cb(err, wallet && (wallet.m > 1 || !!wallet.tssKeyId));
     });
   }
 

@@ -1,5 +1,7 @@
+import cors from 'cors';
 import express from 'express';
 import rp from 'request-promise-native';
+import config from '../../config';
 import { Common } from '../common';
 import type * as Types from '../../types/expressapp';
 import type { WalletService } from '../server';
@@ -64,6 +66,20 @@ function respondWithAuthServer(req, res, context: RouteContext, handler: RouteHa
 
 export function registerServiceRoutes(router: express.Router, context: RouteContext) {
   const { getServerWithAuth, setPublicCache, returnError } = context;
+
+  const transakCorsOptions = {
+    origin: (origin, cb) => {
+      if (!origin) {
+        return cb(null, true);
+      }
+      const transakWhiteList = config.transak?.whitelist ?? [];
+      if (transakWhiteList.indexOf(origin) !== -1) {
+        cb(null, true);
+      } else {
+        cb(new Error('Not allowed by CORS'));
+      }
+    }
+  };
 
   router.get('/latest-version', async (req, res) => {
     setPublicCache(res, 10 * ONE_MINUTE);
@@ -420,37 +436,37 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
     });
   });
 
-  router.post('/v1/service/transak/getAccessToken', (req, res) => {
+  router.post('/v1/service/transak/getAccessToken', cors(transakCorsOptions), (req, res) => {
     respondWithAuthServer(req, res, context, server => {
       return server.externalServices.transak.transakGetAccessToken(req);
     });
   });
 
-  router.post('/v1/service/transak/cryptoCurrencies', (req, res) => {
+  router.post('/v1/service/transak/cryptoCurrencies', cors(transakCorsOptions), (req, res) => {
     respondWithPublicServer(req, res, context, server => {
       return server.externalServices.transak.transakGetCryptoCurrencies(req);
     });
   });
 
-  router.post('/v1/service/transak/fiatCurrencies', (req, res) => {
+  router.post('/v1/service/transak/fiatCurrencies', cors(transakCorsOptions), (req, res) => {
     respondWithPublicServer(req, res, context, server => {
       return server.externalServices.transak.transakGetFiatCurrencies(req);
     });
   });
 
-  router.post('/v1/service/transak/quote', (req, res) => {
+  router.post('/v1/service/transak/quote', cors(transakCorsOptions), (req, res) => {
     respondWithAuthServer(req, res, context, server => {
       return server.externalServices.transak.transakGetQuote(req);
     });
   });
 
-  router.post('/v1/service/transak/signedPaymentUrl', (req, res) => {
+  router.post('/v1/service/transak/signedPaymentUrl', cors(transakCorsOptions), (req, res) => {
     respondWithAuthServer(req, res, context, server => {
       return server.externalServices.transak.transakGetSignedPaymentUrl(req);
     });
   });
 
-  router.post('/v1/service/transak/orderDetails', (req, res) => {
+  router.post('/v1/service/transak/orderDetails', cors(transakCorsOptions), (req, res) => {
     respondWithPublicServer(req, res, context, server => {
       return server.externalServices.transak.transakGetOrderDetails(req);
     });
