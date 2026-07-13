@@ -1,0 +1,13 @@
+include: [
+   ecies,
+   ecdsa
+]
+reporter: [
+   html,
+   text-summary
+]
+check-coverage: true
+statements: 95
+branches: 70
+functions: 90
+lines: 90

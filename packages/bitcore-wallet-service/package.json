@@ -2,7 +2,7 @@
   "name": "@bitpay-labs/bitcore-wallet-service",
   "description": "A service for Mutisig HD Bitcoin Wallets",
   "author": "BitPay Inc",
-  "version": "11.10.2",
+  "version": "11.10.3",
   "license": "MIT",
   "main": "ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
@@ -24,9 +24,7 @@
   "scripts": {
     "start": "npm run clean && npm run build && ./start.sh",
     "stop": "./stop.sh",
-    "coverage": "npm run compile && nyc mocha 'ts_build/test/**/*.test.js'",
-    "test": "npm run compile && mocha --exit 'ts_build/test/**/*.test.js'",
-    "test:ci": "BWS_LOG_LEVEL=none npm run test",
+    "test": "npm run compile && nyc mocha 'ts_build/test/**/*.test.js'",
     "build": "tsc && npm run cp:templates",
     "build:prod": "tsc -p tsconfig.prod.json && npm run cp:templates",
     "build:docker": "docker build -t bitpay/bitcore-wallet-service:latest -f ./Dockerfile ../..",
@@ -43,9 +41,9 @@
     "cp:templates": "cp -r ./templates ./ts_build/templates"
   },
   "dependencies": {
-    "@bitpay-labs/bitcore-logging": "^11.8.1",
-    "@bitpay-labs/bitcore-tss": "^11.10.0",
-    "@bitpay-labs/crypto-wallet-core": "^11.10.0",
+    "@bitpay-labs/bitcore-logging": "^11.10.3",
+    "@bitpay-labs/bitcore-tss": "^11.10.3",
+    "@bitpay-labs/crypto-wallet-core": "^11.10.3",
     "@sendgrid/mail": "6.5.4",
     "abi-decoder": "2.4.0",
     "async": "0.9.2",
@@ -86,26 +84,9 @@
     "@types/request": "^2.48.1",
     "chai": "^5.2.0",
     "memdown": "^1.0.0",
-    "mocha": "^5.2.0",
-    "nyc": "^17.1.0",
     "sinon": "^7.1.1",
     "supertest": "*",
     "typescript": "^5.7.3"
-  },
-  "nyc": {
-    "include": [
-      "ts_build/src",
-      "src"
-    ],
-    "reporter": [
-      "html",
-      "text-summary"
-    ],
-    "check-coverage": true,
-    "lines": 60,
-    "functions": 60,
-    "branches": 60,
-    "statements": 60
   },
   "bitcoreNode": "./bitcorenode",
   "contributors": [

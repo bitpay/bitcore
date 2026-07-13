@@ -107,6 +107,7 @@ export default defineConfig([
     rules: {
       '@typescript-eslint/no-require-imports': 'warn',
       'no-bitwise': 'off',
+      '@typescript-eslint/no-unused-vars': 'warn',
     }
   },
   // Test files -- needs to be last so it can override other settings

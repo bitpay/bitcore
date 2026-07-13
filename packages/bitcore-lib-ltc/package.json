@@ -1,13 +1,11 @@
 {
   "name": "@bitpay-labs/bitcore-lib-ltc",
-  "version": "11.9.0",
+  "version": "11.10.3",
   "description": "A pure and powerful JavaScript Litecoin library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
     "test": "gulp --tasks && gulp test",
-    "test:ci": "npm run test",
-    "coverage": "gulp coverage",
     "build": "gulp",
     "pub": "npm run build && npm publish"
   },
@@ -96,7 +94,7 @@
     "scryptsy": "2.1.0"
   },
   "devDependencies": {
-    "@bitpay-labs/bitcore-build": "^11.8.1",
+    "@bitpay-labs/bitcore-build": "^11.10.3",
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
     "gulp": "^4.0.0",
