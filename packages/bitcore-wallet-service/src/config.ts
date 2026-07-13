@@ -400,7 +400,7 @@ const Config = (): any => {
     //     publicKey: 'simplex_web_public_key_here',
     //   }
     // },
-    // thorswap : {
+    // thorswap: {
     //   sandbox: {
     //     api: 'https://dev-api.thorswap.net',
     //     apiKey: 'thorswap_sandbox_api_key_here',
@@ -414,7 +414,7 @@ const Config = (): any => {
     //     referer: 'thorswap_production_referer_here'
     //   },
     // },
-    // transak : {
+    // transak: {
     //   sandbox: {
     //     api: 'https://api-stg.transak.com',
     //     widgetApi: 'https://global-stg.transak.com',
@@ -438,7 +438,8 @@ const Config = (): any => {
     //     widgetApi: 'https://global.transak.com',
     //     apiKey: 'transak_production_web_api_key_here',
     //     secretKey: 'transak_production_web_secret_key_here',
-    //   }
+    //   },
+    //   whitelist: []
     // },
     // wyre: {
     //   sandbox: {

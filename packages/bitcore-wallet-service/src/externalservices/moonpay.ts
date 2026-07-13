@@ -225,6 +225,16 @@ export class MoonpayService {
     if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
     if (req.body.areFeesIncluded) qs.push('areFeesIncluded=' + encodeURIComponent(req.body.areFeesIncluded));
 
+    const deviceIp = Utils.getIpFromReq(req);
+    if (!deviceIp) {
+      throw new ClientError('Could not determine device IP address');
+    }
+    const allowedIpAddress: string = Bitcore.crypto.Hash.sha256hmac(
+      Buffer.from(deviceIp),
+      Buffer.from(SECRET_KEY)
+    ).toString('base64');
+    qs.push('allowedIpAddress=' + encodeURIComponent(allowedIpAddress));
+
     const URL_SEARCH: string = `?${qs.join('&')}`;
 
     const URLSignatureHash: string = Bitcore.crypto.Hash.sha256hmac(

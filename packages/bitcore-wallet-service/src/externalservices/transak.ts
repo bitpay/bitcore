@@ -1,5 +1,6 @@
 import * as request from 'request';
 import config from '../config';
+import { Utils } from '../lib/common/utils';
 import { ClientError } from '../lib/errors/clienterror';
 import { checkRequired } from '../lib/server';
 
@@ -50,6 +51,8 @@ export class TransakService {
       const headers = {
         'Content-Type': 'application/json',
         'api-secret': SECRET_KEY,
+        'x-api-key': API_KEY,
+        'x-user-ip': Utils.getIpFromReq(req),
       };
 
       const body = {
@@ -85,10 +88,13 @@ export class TransakService {
         return reject(err);
       }
       const API = keys.API;
+      const API_KEY = keys.API_KEY;
 
       const headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'x-user-ip': Utils.getIpFromReq(req),
       };
 
       const URL: string = API + '/api/v2/currencies/crypto-currencies';
@@ -124,6 +130,8 @@ export class TransakService {
       const headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'x-user-ip': Utils.getIpFromReq(req),
       };
 
       const URL: string = API + `/api/v2/currencies/fiat-currencies?apiKey=${API_KEY}`;
@@ -162,6 +170,8 @@ export class TransakService {
 
       const headers = {
         Accept: 'application/json',
+        'x-api-key': API_KEY,
+        'x-user-ip': Utils.getIpFromReq(req),
       };
 
       const qs: string[] = [];
@@ -227,6 +237,8 @@ export class TransakService {
         Accept: 'application/json',
         'Content-Type': 'application/json',
         'access-token': req.body.accessToken,
+        'x-api-key': API_KEY,
+        'x-user-ip': Utils.getIpFromReq(req),
       };
 
       const body = {
@@ -266,6 +278,7 @@ export class TransakService {
         return reject(err);
       }
       const API = keys.API;
+      const API_KEY = keys.API_KEY;
 
       if (!checkRequired(req.body, ['orderId', 'accessToken'])) {
         return reject(new ClientError("Transak's request missing arguments"));
@@ -274,6 +287,8 @@ export class TransakService {
       const headers = {
         Accept: 'application/json',
         'access-token': req.body.accessToken,
+        'x-api-key': API_KEY,
+        'x-user-ip': Utils.getIpFromReq(req),
       };
 
       const URL: string = API + `/partners/api/v2/order/${req.body.orderId}`;
