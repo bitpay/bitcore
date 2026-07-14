@@ -1,6 +1,6 @@
 import os from 'os';
 import { Network } from '@bitpay-labs/bitcore-wallet-client';
-import { BitcoreLib, BitcoreLibLtc, Constants as CWCConst } from '@bitpay-labs/crypto-wallet-core';
+import { BitcoreLib, BitcoreLibLtc, Constants as CWCConst, xrpl } from '@bitpay-labs/crypto-wallet-core';
 import * as prompt from '@clack/prompts';
 import { Constants } from './constants';
 import { UserCancelled } from './errors';
@@ -338,4 +338,75 @@ export async function promptKeyshareBackup(): Promise<boolean> {
     return false;
   }
   return true;
+}
+
+export async function promptXrpFlag(existingFlags: Partial<xrpl.AccountInfoAccountFlags>): Promise<string | null> {
+  const toggleableFlags = new Set(['tfRequireDestTag', 'tfOptionalDestTag', 'tfRequireAuth', 'tfOptionalAuth', 'tfDisallowXRP', 'tfAllowXRP']);
+  const options: prompt.Option<string | null>[] = [
+    { label: 'None', value: null, hint: 'Do not set any flag' },
+    { label: 'DestTag', value: 'requiredesttag', hint: `Turn ${existingFlags.requireDestinationTag ? 'OFF' : 'ON'} destination tag requirement` },
+    { label: 'RequireAuth', value: 'requireauth', hint: `Turn ${existingFlags.requireAuthorization ? 'OFF' : 'ON'} authorization requirement` },
+    existingFlags.disallowIncomingXRP
+      ? { label: 'AllowXRP', value: 'allowxrp', hint: 'Turn ON XRP allowance' }
+      : { label: 'DisallowXRP', value: 'allowxrp', hint: 'Turn OFF XRP allowance' },
+    // Any other flags
+    ...Object.keys(xrpl.AccountSetTfFlags)
+      .filter((key) => !parseInt(key) && !toggleableFlags.has(key))
+      .map((key) => ({ label: key.slice(2), value: key }))
+  ];
+  
+  let ex;
+  do {
+    const flags = await prompt.multiselect<string | null>({
+      message: 'Select a tx flag to set:\n(Space = select, Enter = continue)',
+      options
+    });
+    if (prompt.isCancel(flags)) {
+      throw new UserCancelled();
+    }
+    
+    ex = flags.length > 1 && flags.some(f => !f);
+    
+    if (ex) {
+      prompt.log.error('Cannot select "None" with other flags.');
+    }
+
+    if (!ex) {
+      if (flags[0] === null) {
+        return null;
+      }
+
+      const reqDestTagIdx = flags.indexOf('requiredesttag');
+      if (reqDestTagIdx > -1) {
+        flags.splice(reqDestTagIdx, 1);
+        if (existingFlags.requireDestinationTag) {
+          flags.push('tfOptionalDestTag');
+        } else {
+          flags.push('tfRequireDestTag');
+        }
+      }
+
+      const reqAuthIdx = flags.indexOf('requireauth');
+      if (reqAuthIdx > -1) {
+        flags.splice(reqAuthIdx, 1);
+        if (existingFlags.requireAuthorization) {
+          flags.push('tfOptionalAuth');
+        } else {
+          flags.push('tfRequireAuth');
+        }
+      }
+
+      const allowXrpIdx = flags.indexOf('allowxrp');
+      if (allowXrpIdx > -1) {
+        flags.splice(allowXrpIdx, 1);
+        if (existingFlags.disallowIncomingXRP) {
+          flags.push('tfAllowXRP');
+        } else {
+          flags.push('tfDisallowXRP');
+        }
+      }
+
+      return flags.join(',');
+    }
+  } while (ex);
 }

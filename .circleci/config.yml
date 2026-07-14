@@ -67,7 +67,7 @@ commands:
     parameters:
       package:
         type: string
-    steps:    
+    steps:
       - attach_workspace:
           at: ~/bitcore
       - use_node
@@ -78,18 +78,6 @@ commands:
             nvm use default
             npm run compile
             npm run test:<< parameters.package >>
-  run_crypto_rpc:
-    description: Execute the test suite for crypto-rpc package
-    steps:
-      - attach_workspace:
-          at: ~/bitcore # ~/bitcore is the crypto-rpc package persisted from build-crypto-rpc job
-      - use_node
-      - run:
-          name: Run crypto-rpc tests
-          command: |
-            nvm use default
-            npm run test:ci
-
 
 jobs:
   build:
@@ -114,7 +102,7 @@ jobs:
       # - restore_dependency_cache
       - run: | # TODO figure out how to make this only run on a cache miss in restore_dependency_cache
           nvm use default
-          npm install
+          npm ci
       - save_cache:
           key: node_modules-{{ checksum "package-lock.json" }}-{{ checksum "combined-package-lock.txt" }}
           paths:
@@ -126,6 +114,7 @@ jobs:
             - packages/bitcore-lib-cash/node_modules
             - packages/bitcore-lib-doge/node_modules
             - packages/bitcore-lib-ltc/node_modules
+            - packages/bitcore-logging/node_modules
             - packages/bitcore-mnemonic/node_modules
             - packages/bitcore-node/node_modules
             - packages/bitcore-p2p/node_modules
@@ -151,7 +140,7 @@ jobs:
       # - restore_dependency_cache
       - run: | # TODO figure out how to make this only run on a cache miss in restore_dependency_cache
           nvm use default
-          npm install
+          npm ci
       - persist_to_workspace:
           root: ~/bitcore/packages/crypto-rpc # only persist crypto-rpc package
           paths:
@@ -163,7 +152,7 @@ jobs:
           package: bitcore-node
   bitcore-wallet-service:
     executor: main
-    steps:    
+    steps:
       - run_test:
           package: bitcore-wallet-service
   bitcore-wallet-client:
@@ -201,6 +190,11 @@ jobs:
     steps:
       - run_test:
           package: bitcore-lib-ltc
+  bitcore-logging:
+    executor: main
+    steps:
+      - run_test:
+          package: bitcore-logging
   bitcore-mnemonic:
     executor: main
     steps:
@@ -231,11 +225,7 @@ jobs:
     steps:
       - run_test:
           package: crypto-rpc
-  # crypto-rpc:
-  #   executor: crypto-rpc
-  #   steps:
-  #     - run_crypto_rpc
-      
+
 workflows:
   version: 2
   build_and_test:
@@ -264,6 +254,9 @@ workflows:
           requires:
             - build
       - bitcore-lib-ltc:
+          requires:
+            - build
+      - bitcore-logging:
           requires:
             - build
       - bitcore-mnemonic:

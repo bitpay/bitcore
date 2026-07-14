@@ -1,3 +1,4 @@
+import util from 'util';
 import {
   BitcoreLib as Bitcore,
   BitcoreLibCash as BitcoreCash,
@@ -2924,7 +2925,8 @@ export class WalletService implements IWalletService {
                       fromAta: opts.fromAta,
                       decimals: opts.decimals,
                       refreshOnPublish: opts.refreshOnPublish,
-                      deferNonce: opts.deferNonce
+                      deferNonce: opts.deferNonce,
+                      flags: opts.flags
                     };
                     txp = TxProposal.create(txOpts);
                     next();
@@ -3358,6 +3360,19 @@ export class WalletService implements IWalletService {
                   return cb(Errors.TX_NONCE_CONFLICT);
                 }
               }
+              // A deferred txp matching a broadcasted txp's nonce means its JIT-assigned
+              // value went stale. Non-deferred txps may reuse an in-flight nonce
+              // intentionally (e.g. speed-up).
+              if (txp.nonce != null && txp.deferNonce) {
+                const broadcastedTxps = await util.promisify(this.storage.fetchBroadcastedTxs).call(this.storage, this.walletId, {
+                  minTs: Math.floor(Date.now() / 1000) - Defaults.BROADCASTED_NONCE_SCAN_WINDOW
+                });
+                for (const t of broadcastedTxps || []) {
+                  if (t.id !== txp.id && t.nonce != null && Number(t.nonce) === Number(txp.nonce)) {
+                    return cb(Errors.TX_NONCE_CONFLICT);
+                  }
+                }
+              }
             } catch (err) {
               return cb(err);
             }
@@ -3486,9 +3501,18 @@ export class WalletService implements IWalletService {
               .filter(t => t.id !== txp.id && t.nonce != null && t.status !== 'rejected')
               .map(t => Number(t.nonce));
 
+            // 2b. Broadcasted-but-unmined txps still occupy their nonces but appear in
+            // neither the confirmed count nor the pending set
+            const broadcastedTxps = await util.promisify(this.storage.fetchBroadcastedTxs).call(this.storage, this.walletId, {
+              minTs: Math.floor(Date.now() / 1000) - Defaults.BROADCASTED_NONCE_SCAN_WINDOW
+            });
+            const inFlightNonces = (broadcastedTxps || [])
+              .filter(t => t.nonce != null && Number(t.nonce) >= Number(confirmedNonce))
+              .map(t => Number(t.nonce));
+
             // 3. Calculate gap-free nonce
             let suggestedNonce = Number(confirmedNonce);
-            const allNonces = pendingNonces.sort((a, b) => a - b);
+            const allNonces = [...pendingNonces, ...inFlightNonces].sort((a, b) => a - b);
             for (const n of allNonces) {
               if (n === suggestedNonce) {
                 suggestedNonce++;
@@ -5301,6 +5325,27 @@ export class WalletService implements IWalletService {
         resolve(true);
       });
     });
+  }
+
+  async getFlags(opts: { account: number }) {
+    try {
+      const wallet = await util.promisify(this.getWallet).call(this, {});
+      if (wallet.chain !== 'xrp') throw new Error('Flags are only supported for XRP wallets');
+
+      const addresses = await util.promisify(this.storage.fetchAddresses).call(this.storage, this.walletId);
+      const addressObj = addresses.find(a => a.path === `m/0/${opts.account || 0}`);
+      if (!addressObj) throw new Error('Could not find address for account ' + opts.account);
+
+      const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
+      if (!bc) throw new Error('Could not get blockchain explorer instance');
+
+      const address = addressObj.address.split(':')[0]; // Remove testnet suffix
+      const flags = await bc.getFlags({ address });
+      return flags;
+    } catch (err) {
+      this.logw('Error getting flags: %o', err);
+      throw err;
+    }
   }
 
   static upgradeNeeded(

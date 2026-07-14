@@ -1,4 +1,4 @@
-import { Wallet, IWalletExt } from '@bitpay-labs/bitcore-client';
+import { Wallet, type IWalletExt } from '@bitpay-labs/bitcore-client';
 import { expect } from 'chai';
 import config from '../../../src/config';
 import { WalletStorage } from '../../../src/models/wallet';
@@ -6,13 +6,13 @@ import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { AsyncRPC } from '../../../src/rpc';
 import { Api } from '../../../src/services/api';
 import { Event } from '../../../src/services/event';
-import { IUtxoNetworkConfig } from '../../../src/types/Config';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
+import type { IUtxoNetworkConfig } from '../../../src/types/Config';
 
 describe('Wallet Model', function() {
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
-  this.timeout(50000);
+  this.timeout(Math.max(this['_timeout'] || 0, 50000));
 
   let lockedWallet: Wallet;
   const walletName = 'Test Wallet';
@@ -27,12 +27,8 @@ describe('Wallet Model', function() {
     chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;
     creds = chainConfig.rpc;
     rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
+    await Wallet.deleteWallet({ name: walletName });
     await intBeforeHelper();
-  });
-
-  after(async () => intAfterHelper(suite));
-
-  before(async () => {
     await Event.start();
     await Api.start();
   });
@@ -40,6 +36,7 @@ describe('Wallet Model', function() {
   after(async () => {
     await Event.stop();
     await Api.stop();
+    intAfterHelper(suite);
   });
 
   describe('Wallet Create', () => {

@@ -122,7 +122,7 @@ if (require.main === module) {
       const cmdParams: CommonArgs<any> = {
         wallet,
         program: opts.command ? program : undefined,
-        opts,
+        opts: { ...opts }, // make a copy so we don't modify the original opts
         status: null as Status
       };
 
@@ -165,11 +165,17 @@ if (require.main === module) {
           prompt.intro(`Status for ${Utils.colorTextByChain(wallet.chain, walletName)}`);
           const status = await commands.status.walletStatus({ wallet, opts });
           cmdParams.status = status;
+          if (wallet.isMultiSig() && !wallet.isComplete()) {
+            prompt.outro(Utils.boldText('This multisig wallet is not fully set up yet. You need to wait for all copayers to join.'));
+            return;
+          }
           prompt.outro(Utils.boldText('Welcome to the Bitcore CLI!'));
         }
 
         let advancedActions = false;
         do {
+          cmdParams.opts = { ...opts }; // reset to original opts in case they get modified by a command
+
           // Don't display the intro if running a specific command
           !opts.command && prompt.intro(`${Utils.boldText('[  Main Menu')} - ${Utils.colorTextByChain(wallet.chain, walletName)}  ${Utils.boldText(']')}`);
           cmdParams.status && (cmdParams.status.pendingTxps = opts.command || opts.register ? [] : await wallet.client.getTxProposals({}));
@@ -257,6 +263,9 @@ if (require.main === module) {
                 break;
               case 'scan':
                 await commands.scan.scanWallet(cmdParams);
+                break;
+              case 'flags':
+                ({ action } = await commands.flags.getOrSetFlags(cmdParams));
                 break;
               case 'register':
                 await commands.register.registerWallet(cmdParams);

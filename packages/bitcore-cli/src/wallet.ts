@@ -20,7 +20,8 @@ import {
   Utils as CWCUtils,
   Message,
   Transactions,
-  Web3
+  Web3,
+  type xrpl
 } from '@bitpay-labs/crypto-wallet-core';
 import * as prompt from '@clack/prompts';
 import { Constants } from './constants';
@@ -753,5 +754,17 @@ export class Wallet implements IWallet {
 
   isReadOnly() {
     return !this.#walletData.key;
+  }
+
+  async getAccountFlags() {
+    if (!this.isXrp()) {
+      throw new Error('Account flags are only available for XRP wallets');
+    }
+    if (!this.client) {
+      await this.getClient({ mustExist: true });
+    }
+
+    const flags: xrpl.AccountInfoAccountFlags = await this.client.getAccountFlags({ account: 0 });
+    return flags;
   }
 };
