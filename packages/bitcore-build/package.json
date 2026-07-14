@@ -59,7 +59,6 @@
     "karma-chrome-launcher": "^3.1.1",
     "karma-mocha": "^2.0.1",
     "lodash": "^4.17.15",
-    "mocha": "^6.2.0",
     "webdriverio": "^9.12.0"
   },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"

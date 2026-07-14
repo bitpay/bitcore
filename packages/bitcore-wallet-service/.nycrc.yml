@@ -1,0 +1,13 @@
+include: [
+   ts_build/src,
+   src
+]
+reporter: [
+   html,
+   text-summary
+]
+check-coverage: true
+statements: 60
+branches: 50
+functions: 60
+lines: 70

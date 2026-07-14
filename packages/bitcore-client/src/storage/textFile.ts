@@ -30,7 +30,7 @@ export class TextFile {
     if (!createIfMissing) {
       const walletPath = fs.existsSync(this.db);
       if (!walletPath) {
-        throw new Error('Not a valid wallet path');
+        throw new Error('Not a valid wallet path: ' + this.db);
       }
     }
     console.log('using wallets at', this.db);
@@ -56,7 +56,10 @@ export class TextFile {
     });
   }
 
-  async deleteWallet(params: { name: string; keepAddresses?: boolean }) {
+  async deleteWallet(params: { name: string; keepAddresses?: boolean }): Promise<void> {
+    if (!fs.existsSync(this.walletFileName)) {
+      return; // nothing to delete if the wallet file doesn't exist
+    }
     const { name, keepAddresses } = params;
     const wallets: Array<object> = await new Promise((resolve, reject) => {
       const walletArray = [];
