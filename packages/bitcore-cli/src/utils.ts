@@ -30,21 +30,36 @@ export class Utils {
   static goodbye() {
     const funMessages = [
       'Until next time!',
-      'See you later!',
       'Keep calm and HODL on!',
       'Goodbye!',
-      'Tata!',
-      'Chin-chin!',
       'Cheers!',
-      'Adios!',
-      'Ciao!',
+      'Goodbye, and may your transactions always confirm quickly!',
+      'Thanks for using Bitcore CLI!',
+      'Adiós!', // Spanish
+      'Ciao!', // Italian (informal)
+      'Arrivederci!', // Italian (formal)
+      'Tchau!', // Portuguese
+      'Salut!', // French (informal)
+      'Au revoir!', // French (formal)
+      'Tschüss!', // German (informal)
+      'Auf Wiedersehen!', // German (formal)
+      'さようなら (Sayōnara)!', // Japanese
+      'до свидания (Do svidaniya)!', // Russian (formal)
+      'пока (Poka)!', // Russian (informal)
+      'Aloha!', // Hawaiian
+      '안녕히 가세요 (Annyeonghi gaseyo)!', // Korean
+      '再见 (Zàijiàn)!', // Chinese/Mandarin
     ];
     const randomMessage = funMessages[Math.floor(Math.random() * funMessages.length)];
-    console.log('👋 ' + randomMessage);
+    console.log('👋 ' + randomMessage + '\x1b[0m'); // Reset all console formatting after goodbye message
   }
 
   static getWalletFileName(walletName, dir) {
     return path.join(dir, walletName + '.json');
+  }
+
+  static getWalletLockFileName(walletName, dir) {
+    return path.join(dir, '.' + walletName + '.LOCK');
   }
 
   static colorText(text: string, color: Color): string {
@@ -52,19 +67,19 @@ export class Utils {
   }
 
   static boldText(text: string) {
-    return '\x1b[1m' + text + '\x1b[0m';
+    return '\x1b[1m' + text + '\x1b[22m';
   }
 
   static italicText(text: string) {
-    return '\x1b[3m' + text + '\x1b[0m';
+    return '\x1b[3m' + text + '\x1b[23m';
   }
 
   static underlineText(text: string) {
-    return '\x1b[4m' + text + '\x1b[0m';
+    return '\x1b[4m' + text + '\x1b[24m';
   }
 
   static strikeText(text: string) {
-    return '\x1b[9m' + text + '\x1b[0m';
+    return '\x1b[9m' + text + '\x1b[29m';
   }
 
   static capitalize(text: string): string {
@@ -88,11 +103,13 @@ export class Utils {
     const match = new RegExp(regex, 'i').exec(text.trim());
 
     if (!match || match.length === 0) {
+      // Die since this is likely a system error
       Utils.die('Invalid amount: ' + text);
     }
 
     const amount = parseFloat(match[1]);
     if (isNaN(amount)) {
+      // Don't die as this is likely a user input error that can be corrected
       throw new Error('Invalid amount');
     }
 
@@ -137,11 +154,25 @@ export class Utils {
   }
 
   static async paginate(
-    fn: (page: number, action?: string) => Promise<{ result?: any[]; extraChoices?: prompt.Option<string>[] }>,
+    /** Body function to handle calling for and display of data */
+    fn: (
+      /** Page number to display */
+      page: number,
+      /** Action to perform on the data */
+      viewAction?: string
+    ) => Promise<{
+      /** Data used to display on the current page */
+      result?: any[];
+      /** Extra choices to show in the pagination menu */
+      extraChoices?: prompt.Option<string>[];
+      hasNextPage?: boolean;
+      hasPrevPage?: boolean;
+    }>,
     opts?: {
       pageSize?: number;
-      initialPage?: number | string; // Initial page, default is 1
-      /** Only applies if there are no extraChoices */
+      /** Default: 1 */
+      initialPage?: number | string;
+      /** Do not show pagination controls if there is only one page. Only applies if there are no extraChoices */
       exitOn1Page?: boolean;
     }
   ) {
@@ -150,16 +181,21 @@ export class Utils {
     let page = parseInt(initialPage as string) || 1;
     let action: string | symbol;
     do {
-      const { result, extraChoices = [] } = await fn(page, action as string);
-      if (!result || (page == 1 && exitOn1Page && result.length < pageSize && !extraChoices.length)) {
+      const {
+        result,
+        extraChoices = [],
+        hasNextPage = result && result.length === pageSize,
+        hasPrevPage = page > 1
+      } = await fn(page, action as string);
+      if (!result || (page == 1 && exitOn1Page && !hasNextPage && !extraChoices.length)) {
         return;
       }
 
 
       const options: prompt.Option<string>[] = [].concat(
-        page > 1 ? [{ label: 'Previous Page', value: 'p' }] : [],
+        hasPrevPage ? [{ label: 'Previous Page', value: 'p' }] : [],
       ).concat(
-        result.length === pageSize ? [{ label: 'Next Page', value: 'n' }] : [],
+        hasNextPage ? [{ label: 'Next Page', value: 'n' }] : [],
       ).concat(
         extraChoices,
       ).concat(
@@ -253,22 +289,22 @@ export class Utils {
     }
   }
 
-  static displayFeeRate(chain: string, feeRate: number) {
+  static displayFeeRate(chain: string, feeRate: number | string | bigint) {
     chain = chain.toLowerCase();
     const feeUnit = Utils.getFeeUnit(chain);
     switch (feeUnit) {
       case 'sat/kB':
-        return `${feeRate / 1000} sat/B`;
+        return `${Number(feeRate) / 1000} sat/B`;
       case 'gwei':
-        return `${feeRate / 1e9} Gwei`;
+        return `${Number(feeRate) / 1e9} Gwei`;
       case 'drops':
       case 'lamports':
       default:
-        return `${feeRate} ${feeUnit}`;
+        return `${Number(feeRate)} ${feeUnit}`;
     }
   }
 
-  static convertFeeRate(chain: string, feeRate: number) {
+  static convertFeeRate(chain: string, feeRate: number | string): number {
     const feeRateStr = Utils.displayFeeRate(chain, feeRate);
     return parseFloat(feeRateStr.split(' ')[0]);
   }
@@ -389,33 +425,12 @@ export class Utils {
     return fileName;
   }
 
-  static getChainColor(chain: string) {
-    switch (chain.toLowerCase()) {
-      case 'btc':
-        return 'orange';
-      case 'bch':
-        return 'green';
-      case 'doge':
-        return 'beige';
-      case 'ltc':
-        return 'lightgray';
-      case 'eth':
-        return 'blue';
-      case 'matic':
-        return 'pink';
-      case 'xrp':
-        return 'darkgray';
-      case 'sol':
-        return 'purple';
-    }
-  }
-
   static colorTextByChain(chain: string, text: string) {
-    const color = Utils.getChainColor(chain);
-    if (!color) {
+    const colorPattern = Constants.CHAIN_COLOR[chain.toLowerCase()];
+    if (!colorPattern) {
       return Utils.boldText(text);
     }
-    return Utils.colorText(text, color);
+    return colorPattern.replace('%s', text);
   }
 
   static colorizeChain(chain: string) {

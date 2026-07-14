@@ -360,6 +360,35 @@ describe('Utils', function() {
       const ip = Utils.getIpFromReq(req);
       ip.should.equal('');
     });
+
+    it('should trim whitespace from the ip', function() {
+      const req = {
+        headers: {
+          'x-forwarded-for': '  1.2.3.4 , 5.6.7.8'
+        }
+      };
+
+      const ip = Utils.getIpFromReq(req);
+      ip.should.equal('1.2.3.4');
+    });
+
+    it('should preserve IPv4-mapped IPv6 addresses', function() {
+      const req = {
+        ip: '::ffff:192.168.1.1'
+      };
+
+      const ip = Utils.getIpFromReq(req);
+      ip.should.equal('::ffff:192.168.1.1');
+    });
+
+    it('should preserve regular IPv6 addresses', function() {
+      const req = {
+        ip: '2001:0db8:85a3:0000:0000:8a2e:0370:7334'
+      };
+
+      const ip = Utils.getIpFromReq(req);
+      ip.should.equal('2001:0db8:85a3:0000:0000:8a2e:0370:7334');
+    });
   });
 
   describe('#sortAsc', function() {

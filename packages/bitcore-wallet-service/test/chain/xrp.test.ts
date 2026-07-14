@@ -10,6 +10,27 @@ const should = chai.should();
 const xpub = 'tpubDD7tYYerLNNm65Ez7pRjxQ2NpRHDoyRWoLWudnQ8agXjr7qs9BsPsRXk8Z6spPPJodnaY158YqeCKT5oXuZvbuNLfm1R4kXGJ2vPd9pUxDT';
 
 describe('Chain XRP', function() { 
+  describe('#getWalletSendMaxInfo', function() {
+    it('should resolve fee level before calculating sendMax amount', function(done) {
+      const server = {
+        getBalance: (_opts, cb) => cb(null, { availableAmount: 1000000 }),
+        _getFeePerKb: (_wallet, opts, cb) => {
+          opts.feeLevel.should.equal('normal');
+          return cb(null, 12);
+        }
+      };
+      const wallet = { chain: 'xrp' };
+
+      ChainService.get('xrp').getWalletSendMaxInfo(server as any, wallet as any, { feeLevel: 'normal' }, (err, info) => {
+        should.not.exist(err);
+        info.amount.should.equal(999988);
+        info.fee.should.equal(12);
+        info.feePerKb.should.equal(12);
+        done();
+      });
+    });
+  });
+
   describe('#getBitcoreTx', function() {
     it('should create a valid bitcore TX', function() {
       const txp = TxProposal.fromObj(aTXP()) as TxProposal;
@@ -91,7 +112,7 @@ const aTXP = function() {
     excludeUnconfirmedUtxos: true,
     addressType: 'P2PKH',
     customData: null,
-    amount: '1000000',
+    amount: 1000000,
     fee: 10,
     version: 3,
     broadcastedOn: 1763669150,
@@ -108,12 +129,11 @@ const aTXP = function() {
   return txp;
 };
 
-const signedTxp = {
+const signedTxp: ITxProposal = {
   creatorName: '{"iv":"aN+YwTvJRK73M7FfCFzIzA==","v":1,"iter":1,"ks":128,"ts":64,"mode":"ccm","adata":"","cipher":"aes","ct":"TqFvhWq2/F6ykA=="}',
   createdOn: 1763669147,
   id: 'a911faec-975e-4c53-a852-8ebf579ff1f6',
   txid: 'B6BB3DE3F87395619D108DC35E2CC88440C998D854A12E2E312BC5A8DC11F121',
-  txids: '',
   walletId: '093352fc-a597-4837-94ee-8b9e3f1a5039',
   creatorId: 'c10c8e84ac963c539d86451aea8ce6f92dfaeeebbef1f5dd212d324301ea278f',
   coin: 'xrp',
@@ -122,8 +142,6 @@ const signedTxp = {
   message: '',
   payProUrl: '',
   from: 'rPsaG3gUYCPdoN2X1EgynYfYbwKeSbdTCN',
-  changeAddress: '',
-  escrowAddress: '',
   inputs: [],
   outputs: [{
     amount: 1000000,
@@ -165,42 +183,10 @@ const signedTxp = {
   proposalSignaturePubKey: '',
   proposalSignaturePubKeySig: '',
   signingMethod: 'ecdsa',
-  lowFees: '',
   raw: [
     '12000022800000002400BF209C6140000000000F424068400000000000000A7321024DDE2306BEACF6D450495F40E69400824C99235FECEB742952FBA550C91F9C597446304402206188D1A90328D034F7D01E0ECEB6629AAEF47AF09EF33C4BF91871076AE60C81022056EE1DB7B90B7A701087FA8135E434616C5824F1CCC3FC87F741771E22BE9A138114F1B7FDA196A474A7A5CE0588E03B1BE41F8605978314D51E9EDD6905A6D2FDB4ADD86744C56323439285'
   ],
   nonce: 12525724,
-  gasPrice: '',
-  maxGasFee: '',
-  priorityGasFee: '',
-  txType: '',
-  gasLimit: '',
-  data: '',
-  tokenAddress: '',
-  multisigContractAddress: '',
-  multisigTxId: '',
-  destinationTag: '',
-  invoiceID: '',
-  lockUntilBlockHeight: '',
-  instantAcceptanceEscrow: '',
-  isTokenSwap: '',
-  multiSendContractAddress: '',
-  enableRBF: '',
-  replaceTxByFee: '',
-  multiTx: '',
-  space: '',
-  nonceAddress: '',
-  blockHash: '',
-  blockHeight: '',
-  category: '',
-  priorityFee: '',
-  computeUnits: '',
-  memo: '',
-  fromAta: '',
-  decimals: '',
-  refreshOnPublish: '',
-  prePublishRaw: '',
-  note: '',
-  derivationStrategy: 'BIP44',
-  isPending: false
+  destinationTag: null,
+  invoiceID: ''
 };

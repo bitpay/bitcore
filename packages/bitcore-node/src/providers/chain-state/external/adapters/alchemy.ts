@@ -2,6 +2,7 @@ import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import axios from 'axios';
 import config from '../../../../config';
 import logger from '../../../../logger';
+import { EthDater } from '../../../../utils/ethDater';
 import { EVMTransactionStorage } from '../../evm/models/transaction';
 import { ExternalApiStream } from '../streams/apiStream';
 import {
@@ -26,12 +27,24 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
 
   private apiKey: string;
   private requestTimeout: number;
+  private daters = new Map<string, EthDater>();
 
   constructor(providerConfig: IMultiProviderConfig) {
     const apiKey = config.externalProviders?.alchemy?.apiKey;
     if (!apiKey) throw new Error('AlchemyAdapter: apiKey is required in config.externalProviders.alchemy');
     this.apiKey = apiKey;
     this.requestTimeout = providerConfig.requestTimeout ?? 30000;
+  }
+
+  private getDater(chain: string, network: string): EthDater {
+    const key = `${chain}:${network}`;
+    let dater = this.daters.get(key);
+    if (!dater) {
+      const web3 = new Web3(new Web3.providers.HttpProvider(this.getBaseUrl(chain, network)));
+      dater = new EthDater(web3);
+      this.daters.set(key, dater);
+    }
+    return dater;
   }
 
   private getNetworkUrlString(chain: string, network: string): string {
@@ -111,35 +124,13 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
 
   async getBlockNumberByDate(params: AdapterBlockByDateParams): Promise<number> {
     const { chain, network, date } = params;
-    const url = this.getBaseUrl(chain, network);
-    const targetTimestamp = Math.floor(new Date(date).getTime() / 1000);
-
-    const MAX_ITERATIONS = 64;
-    const latestBlockResp = await this._jsonRpc(url, 'eth_blockNumber', []);
-    let high = parseInt(latestBlockResp.result, 16);
-    let low = 0;
-
-    const latestBlock = await this._jsonRpc(url, 'eth_getBlockByNumber', [latestBlockResp.result, false]);
-    const latestTimestamp = parseInt(latestBlock.result.timestamp, 16);
-    if (targetTimestamp >= latestTimestamp) return high; // Target in the future
-    if (targetTimestamp <= 0) return 0; // Target before genesis
-
-    // Binary search: largest block with timestamp <= target
-    let iterations = 0;
-    while (low < high && iterations < MAX_ITERATIONS) {
-      const mid = Math.floor((low + high + 1) / 2);
-      const blockResp = await this._jsonRpc(url, 'eth_getBlockByNumber', [`0x${mid.toString(16)}`, false]);
-      const blockTimestamp = parseInt(blockResp.result.timestamp, 16);
-
-      if (blockTimestamp <= targetTimestamp) {
-        low = mid;
-      } else {
-        high = mid - 1;
-      }
-      iterations++;
+    try {
+      // `false` = "block before" semantics: largest block whose timestamp < target.
+      const result = await this.getDater(chain, network).getDate(new Date(date), false);
+      return result.block;
+    } catch (error) {
+      this._classifyError(error);
     }
-
-    return low;
   }
 
   async healthCheck(): Promise<boolean> {
@@ -255,7 +246,7 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
       blockHash: '',
       blockTime: safeBlockTime,
       blockTimeNormalized: safeBlockTime,
-      value: BigInt(transfer.rawContract?.value || 0).toString(),
+      value: transfer.category === 'erc20' ? '0' : BigInt(transfer.rawContract?.value || 0).toString(),
       gasLimit: 0,
       gasPrice: 0,
       fee: 0,
@@ -266,7 +257,7 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
       internal: [],
       calls: [],
       effects: [],
-      category: transfer.category,
+      category: undefined,
       wallets: [],
       transactionIndex: 0
     } as IEVMTransactionTransformed;
@@ -282,8 +273,8 @@ export class AlchemyAdapter implements IIndexedAPIAdapter {
  * then deduplicates by uniqueId.
  */
 export class AlchemyAssetTransferStream extends ExternalApiStream {
-  private pageKey: string | null = null;
-  private toPageKey: string | null = null;
+  private sendsPageKey: string | null = null;
+  private receivesPageKey: string | null = null;
   private seenTxHashes: Set<string> = new Set();
   private static readonly MAX_DEDUP_ENTRIES = 10000;
   private requestTimeout: number;
@@ -317,7 +308,6 @@ export class AlchemyAssetTransferStream extends ExternalApiStream {
       const { address, args, category, contractAddresses } = this.alchemyParams;
 
       const baseParams: any = {
-        category: category || ['external', 'internal', 'erc20'],
         order: (args.order || 'DESC').toLowerCase() === 'asc' ? 'asc' : 'desc',
         maxCount: `0x${(args.pageSize || 100).toString(16)}`,
         withMetadata: true
@@ -333,36 +323,46 @@ export class AlchemyAssetTransferStream extends ExternalApiStream {
         baseParams.toBlock = `0x${Number(args.endBlock).toString(16)}`;
       }
 
-      const fromParams = { ...baseParams, fromAddress: address };
-      const toParams = { ...baseParams, toAddress: address };
-      if (this.pageKey) fromParams.pageKey = this.pageKey;
-      if (this.toPageKey) toParams.pageKey = this.toPageKey;
+      // Native tx history: sends include erc20 so token transfers surface as 0-ETH
+      // txs (the gas/fee still appears via the receipt transform downstream);
+      // receives omit erc20 so token receives don't pollute native tx history.
+      // Token-specific history (streamERC20Transfers) passes an explicit category
+      // and uses it for both directions.
+      const sendCategories = category || ['external', 'internal', 'erc20'];
+      const receiveCategories = category || ['external', 'internal'];
+      const sendsRequest = { ...baseParams, category: sendCategories, fromAddress: address };
+      const receivesRequest = { ...baseParams, category: receiveCategories, toAddress: address };
+      if (this.sendsPageKey) sendsRequest.pageKey = this.sendsPageKey;
+      if (this.receivesPageKey) receivesRequest.pageKey = this.receivesPageKey;
 
-      const [fromResponse, toResponse] = await Promise.all([
+      const requestStamp = `${process.pid}${Date.now()}`;
+      const [sendsResponse, receivesResponse] = await Promise.all([
         axios.post(this.url, {
-          jsonrpc: '2.0', id: 1,
+          jsonrpc: '2.0', id: `${requestStamp}0`,
           method: 'alchemy_getAssetTransfers',
-          params: [fromParams]
+          params: [sendsRequest]
         }, { timeout: this.requestTimeout }),
         axios.post(this.url, {
-          jsonrpc: '2.0', id: 2,
+          jsonrpc: '2.0', id: `${requestStamp}1`,
           method: 'alchemy_getAssetTransfers',
-          params: [toParams]
+          params: [receivesRequest]
         }, { timeout: this.requestTimeout })
       ]);
 
-      const fromData = fromResponse.data.result;
-      const toData = toResponse.data.result;
+      const sendsData = sendsResponse.data.result;
+      const receivesData = receivesResponse.data.result;
 
+      // Prefer external > internal > erc20 when a single tx hash appears in multiple
+      // categories (e.g. a defi tx with an ETH value and a token transfer log).
+      const CATEGORY_PRIORITY: Record<string, number> = { external: 0, internal: 1, erc20: 2 };
       const allTransfers = [
-        ...(fromData?.transfers || []),
-        ...(toData?.transfers || [])
-      ];
+        ...(sendsData?.transfers || []),
+        ...(receivesData?.transfers || [])
+      ].sort((a, b) => (CATEGORY_PRIORITY[a.category] ?? 99) - (CATEGORY_PRIORITY[b.category] ?? 99));
 
       for (const transfer of allTransfers) {
-        const key = transfer.uniqueId || `${transfer.hash}:${transfer.category}`;
-        if (this.seenTxHashes.has(key)) continue;
-        this.seenTxHashes.add(key);
+        if (this.seenTxHashes.has(transfer.hash)) continue;
+        this.seenTxHashes.add(transfer.hash);
 
         if (this.seenTxHashes.size > AlchemyAssetTransferStream.MAX_DEDUP_ENTRIES) {
           logger.debug(`Alchemy: dedup set exceeded ${AlchemyAssetTransferStream.MAX_DEDUP_ENTRIES}, evicting oldest entries`);
@@ -381,10 +381,10 @@ export class AlchemyAssetTransferStream extends ExternalApiStream {
         this.results++;
       }
 
-      this.pageKey = fromData?.pageKey || null;
-      this.toPageKey = toData?.pageKey || null;
+      this.sendsPageKey = sendsData?.pageKey || null;
+      this.receivesPageKey = receivesData?.pageKey || null;
 
-      if (!this.pageKey && !this.toPageKey) {
+      if (!this.sendsPageKey && !this.receivesPageKey) {
         this.push(null);
       }
       this.page++;

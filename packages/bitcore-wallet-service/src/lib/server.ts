@@ -1,3 +1,4 @@
+import util from 'util';
 import {
   BitcoreLib as Bitcore,
   BitcoreLibCash as BitcoreCash,
@@ -844,6 +845,7 @@ export class WalletService implements IWalletService {
    * @param {Object} opts.tokenAddress - (Optional) Token contract address to pass in getBalance
    * @param {Object} opts.multisigContractAddress - (Optional) Multisig ETH contract address to pass in getBalance
    * @param {Object} opts.network - (Optional ETH MULTISIG) Multisig ETH contract address network
+   * @param {string} opts.numberFormat Returns txp tx-build values as 'string', 'hex', or 'number' (default)
    * @returns {Object} status
    */
   getStatus(opts, cb) {
@@ -1879,7 +1881,7 @@ export class WalletService implements IWalletService {
         next => {
           utxoIndex = _.keyBy(allUtxos, utxoKey);
 
-          this.getPendingTxs({}, (err, txps) => {
+          this.getPendingTxs({ numberFormat: opts.numberFormat }, (err, txps) => {
             if (err) return next(err);
 
             const lockedInputs = txps.flatMap(t => t.inputs).map(utxoKey);
@@ -1888,7 +1890,7 @@ export class WalletService implements IWalletService {
                 utxoIndex[input].locked = true;
               }
             }
-            logger.debug(`Got  ${lockedInputs.length} locked utxos`);
+            logger.debug(`Got ${lockedInputs.length} locked utxos`);
             return next();
           });
         },
@@ -2689,6 +2691,17 @@ export class WalletService implements IWalletService {
     });
   }
 
+  createTx(opts, cb) {
+    this._createTx(opts, (err, txp) => {
+      if (err) return cb(err);
+      if (opts.numberFormat) {
+        txp = TxProposal.formatNumbers(txp, opts.numberFormat);
+      }
+      return cb(null, txp);
+    });
+  }
+
+
   /**
    * Creates a new transaction proposal.
    * @param {Object} opts
@@ -2736,7 +2749,7 @@ export class WalletService implements IWalletService {
    * @param {Boolean} opts.refreshOnPublish - Optional. Allows publish function to refresh txp data
    * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
    */
-  createTx(opts, cb) {
+  private _createTx(opts, cb) {
     opts = opts ? _.clone(opts) : {};
 
     const checkTxpAlreadyExists = (txProposalId, cb) => {
@@ -2869,6 +2882,7 @@ export class WalletService implements IWalletService {
                       outputs: opts.outputs,
                       message: opts.message,
                       from: opts.from,
+                      sendMax: opts.sendMax,
                       changeAddress,
                       feeLevel: opts.feeLevel,
                       feePerKb,
@@ -2911,7 +2925,8 @@ export class WalletService implements IWalletService {
                       fromAta: opts.fromAta,
                       decimals: opts.decimals,
                       refreshOnPublish: opts.refreshOnPublish,
-                      deferNonce: opts.deferNonce
+                      deferNonce: opts.deferNonce,
+                      flags: opts.flags
                     };
                     txp = TxProposal.create(txOpts);
                     next();
@@ -3000,6 +3015,17 @@ export class WalletService implements IWalletService {
     );
   }
 
+
+  publishTx(opts, cb) {
+    this._publishTx(opts, (err, txp) => {
+      if (err) return cb(err);
+      if (opts.numberFormat) {
+        txp = TxProposal.formatNumbers(txp, opts.numberFormat);
+      }
+      return cb(null, txp);
+    });
+  }
+
   /**
    * Publish an already created tx proposal so inputs are locked and other copayers in the wallet can see it.
    * @param {Object} opts
@@ -3007,7 +3033,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.proposalSignature - S(raw tx). Used by other copayers to verify the proposal.
    * @param {Boolean} [opts.noCashAddr] - do not use cashaddress for bch
    */
-  publishTx(opts, cb) {
+  private _publishTx(opts, cb) {
     if (!checkRequired(opts, ['txProposalId', 'proposalSignature'], cb)) return;
 
     this._runLocked(cb, cb => {
@@ -3088,7 +3114,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.txProposalId - The tx proposal id.
    * @returns {Object} txProposal
    */
-  getTx(opts, cb) {
+  getTx(opts, cb: (err: any, txp?: TxProposal) => void) {
     this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
       if (err) return cb(err);
       if (!txp) return cb(Errors.TX_NOT_FOUND);
@@ -3287,6 +3313,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.signatures - The signatures of the inputs of this tx for this copayer (in appearance order)
    * @param {string} opts.maxTxpVersion - Client's maximum supported txp version
    * @param {boolean} opts.supportBchSchnorr - indication whether to use schnorr for signing tx
+   * @param {string} opts.numberFormat - Optional. If specified, the tx proposal will ensure the numbers are in the format specified (e.g. 'string'). This is to ensure precision handling matches the client's
    */
   signTx(opts, cb) {
     if (!checkRequired(opts, ['txProposalId', 'signatures'], cb)) return;
@@ -3333,6 +3360,19 @@ export class WalletService implements IWalletService {
                   return cb(Errors.TX_NONCE_CONFLICT);
                 }
               }
+              // A deferred txp matching a broadcasted txp's nonce means its JIT-assigned
+              // value went stale. Non-deferred txps may reuse an in-flight nonce
+              // intentionally (e.g. speed-up).
+              if (txp.nonce != null && txp.deferNonce) {
+                const broadcastedTxps = await util.promisify(this.storage.fetchBroadcastedTxs).call(this.storage, this.walletId, {
+                  minTs: Math.floor(Date.now() / 1000) - Defaults.BROADCASTED_NONCE_SCAN_WINDOW
+                });
+                for (const t of broadcastedTxps || []) {
+                  if (t.id !== txp.id && t.nonce != null && Number(t.nonce) === Number(txp.nonce)) {
+                    return cb(Errors.TX_NONCE_CONFLICT);
+                  }
+                }
+              }
             } catch (err) {
               return cb(err);
             }
@@ -3343,7 +3383,7 @@ export class WalletService implements IWalletService {
           const xPubKey = wallet.tssKeyId ? wallet.clientDerivedPublicKey : copayer.xPubKey;
 
           try {
-            if (!txp.sign(this.copayerId, opts.signatures, xPubKey)) {
+            if (!txp.sign(this.copayerId, opts.signatures, xPubKey, opts.numberFormat)) {
               this.logw('Error signing transaction (BAD_SIGNATURES)');
               this.logw('Client version:', this.clientVersion);
               this.logw('Arguments:', JSON.stringify(opts));
@@ -3413,6 +3453,16 @@ export class WalletService implements IWalletService {
     });
   }
 
+  prepareTx(opts, cb) {
+    this._prepareTx(opts, (err, txp) => {
+      if (err) return cb(err);
+      if (opts.numberFormat) {
+        txp = TxProposal.formatNumbers(txp, opts.numberFormat);
+      }
+      return cb(null, txp);
+    });
+  }  
+
   /**
    * Prepare a transaction proposal for signing.
    * Assigns JIT values (nonce, and in the future: fee, gas) to a deferred txp.
@@ -3420,7 +3470,7 @@ export class WalletService implements IWalletService {
    * @param {Object} opts
    * @param {string} opts.txProposalId - The identifier of the transaction.
    */
-  prepareTx(opts, cb) {
+  private _prepareTx(opts, cb) {
     if (!checkRequired(opts, ['txProposalId'], cb)) return;
 
     this._runLocked(cb, cb => {
@@ -3451,9 +3501,18 @@ export class WalletService implements IWalletService {
               .filter(t => t.id !== txp.id && t.nonce != null && t.status !== 'rejected')
               .map(t => Number(t.nonce));
 
+            // 2b. Broadcasted-but-unmined txps still occupy their nonces but appear in
+            // neither the confirmed count nor the pending set
+            const broadcastedTxps = await util.promisify(this.storage.fetchBroadcastedTxs).call(this.storage, this.walletId, {
+              minTs: Math.floor(Date.now() / 1000) - Defaults.BROADCASTED_NONCE_SCAN_WINDOW
+            });
+            const inFlightNonces = (broadcastedTxps || [])
+              .filter(t => t.nonce != null && Number(t.nonce) >= Number(confirmedNonce))
+              .map(t => Number(t.nonce));
+
             // 3. Calculate gap-free nonce
             let suggestedNonce = Number(confirmedNonce);
-            const allNonces = pendingNonces.sort((a, b) => a - b);
+            const allNonces = [...pendingNonces, ...inFlightNonces].sort((a, b) => a - b);
             for (const n of allNonces) {
               if (n === suggestedNonce) {
                 suggestedNonce++;
@@ -3635,16 +3694,34 @@ export class WalletService implements IWalletService {
     );
   }
 
+
+  /**
+   * Retrieves pending transaction proposals.
+   * @param {'number'|'string'|'hex'|'bigint'} opts.numberFormat The format to return numbers in. Not ALL numbers - just certain ones that are needed for tx building/verifying by the client.
+   * @param cb
+   */
+  async getPendingTxs(opts, cb) {
+    this._getPendingTxs(opts, (err, txps) => {
+      if (err) return cb(err);
+      if (opts.numberFormat) {
+        const formattedTxps = txps.map(t => TxProposal.formatNumbers(t, opts.numberFormat));
+        return cb(null, formattedTxps);
+      }
+      return cb(null, txps);
+    });
+  }
+
   /**
    * Retrieves pending transaction proposals.
    * @param {Object} opts
    * @param {Boolean} opts.noCashAddr (do not use cashaddr, only for backwards compat)
    * @param {String} opts.tokenAddress ERC20 Token Contract Address
    * @param {String} opts.multisigContractAddress MULTISIG ETH Contract Address
-   * @param {String} opts.network  The network of the MULTISIG ETH transactions
+   * @param {String} opts.network The network of the MULTISIG ETH transactions
+   * @param {String} opts.numberFormat Return numbers as format. 'number' (default), 'hex', or 'string'
    * @returns {TxProposal[]} Transaction proposal.
    */
-  async getPendingTxs(opts, cb) {
+  private async _getPendingTxs(opts, cb: (err: any, txps?: ITxProposal[]) => void) {
     if (opts.multisigContractAddress) {
       try {
         const multisigTxpsInfo = await this.getMultisigTxpsInfo(opts);
@@ -5248,6 +5325,27 @@ export class WalletService implements IWalletService {
         resolve(true);
       });
     });
+  }
+
+  async getFlags(opts: { account: number }) {
+    try {
+      const wallet = await util.promisify(this.getWallet).call(this, {});
+      if (wallet.chain !== 'xrp') throw new Error('Flags are only supported for XRP wallets');
+
+      const addresses = await util.promisify(this.storage.fetchAddresses).call(this.storage, this.walletId);
+      const addressObj = addresses.find(a => a.path === `m/0/${opts.account || 0}`);
+      if (!addressObj) throw new Error('Could not find address for account ' + opts.account);
+
+      const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
+      if (!bc) throw new Error('Could not get blockchain explorer instance');
+
+      const address = addressObj.address.split(':')[0]; // Remove testnet suffix
+      const flags = await bc.getFlags({ address });
+      return flags;
+    } catch (err) {
+      this.logw('Error getting flags: %o', err);
+      throw err;
+    }
   }
 
   static upgradeNeeded(

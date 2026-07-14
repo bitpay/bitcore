@@ -24,13 +24,12 @@ Let's say we have a node_module, named `bitcore-node-bch` with the following cod
 ```
 // index.js
 
-module.exports = class BitcoinCashModule {
-  constructor(services, chain, network, config) {
-    // chain === 'BCH'
-    services.Libs.register(chain, '@bitpay-labs/bitcore-lib-cash', '@bitpay-labs/bitcore-p2p-cash');
-    services.P2P.register(chain, network, services.P2P.get('BTC'));
-  }
+const registerModule: RegisterModule = (chain, network) => {
+  // chain === 'BCH'
+    Libs.register(chain, '@bitpay-labs/bitcore-lib-cash', '@bitpay-labs/bitcore-p2p-cash');
+    P2P.register(chain, network, P2P.get('BTC'));
 }
+module.exports.default = registerModule
 ```
 
 The module has the following dependencies

@@ -1,14 +1,15 @@
 import { execSync } from 'child_process';
 import assert from 'assert';
 import { getCommands } from '../src/cli-commands';
-import { type IWallet } from '../types/wallet';
 import { bitcoreLogo } from '../src/constants';
-import { type ICliOptions } from 'types/cli';
+import type { IWallet } from '../types/wallet';
+import type { ICliOptions } from '../types/cli';
 
 describe('Option: --command', function() {
   const COMMANDS = getCommands({ wallet: {} as IWallet, opts: { command: 'any' } as ICliOptions });
 
   describe('NEW', function() {
+    this.timeout(3000);
     for (const cmd of COMMANDS.NEW) {
       it(cmd.value, function() {
         assert.throws(

@@ -1,7 +1,7 @@
 import cluster from 'cluster';
 import 'source-map-support/register';
 import logger from '../logger';
-import { Modules } from '../modules';
+import { loadModules } from '../modules';
 import { Api } from '../services/api';
 import { Event } from '../services/event';
 import { Storage } from '../services/storage';
@@ -31,7 +31,7 @@ export const ClusteredApiWorker = async () => {
     services.push(Api);
   }
 
-  Modules.loadConfigured();
+  loadModules();
 
   for (const service of services) {
     await service.start();
@@ -45,7 +45,7 @@ const stop = async () => {
     process.exit(1);
   }
   stopping = true;
-  
+
   setTimeout(() => {
     logger.warn('API Worker did not shut down gracefully after 30 seconds, exiting');
     process.exit(1);

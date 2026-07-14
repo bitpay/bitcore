@@ -239,6 +239,27 @@ describe('Address Validation', () => {
     expect(inValidMaticPrefix).to.equal(false);
   });
 
+  it('should validate ARC addresses', async () => {
+    const address = '37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+    const prefixedAddress = `0x${address}`;
+
+    expect(await Validation.validateAddress('ARC', 'testnet', address)).to.equal(true);
+    expect(await Validation.validateAddress('ARC', 'testnet', prefixedAddress)).to.equal(true);
+    expect(await Validation.validateAddress('ARC', 'testnet', address.slice(1))).to.equal(false);
+  });
+
+  it('should validate ARC URIs', async () => {
+    const address = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+    const uri = `arc:${address}`;
+    const uriParams = `${uri}?value=123&gasPrice=123&gas=123&gasLimit=123`;
+
+    expect(await Validation.validateUri('ARC', uri)).to.equal(true);
+    expect(await Validation.validateUri('ARC', uriParams)).to.equal(true);
+    expect(await Validation.validateUri('ARC', `${uri}?value=123`)).to.equal(true);
+    expect(await Validation.validateUri('ARC', address)).to.equal(false);
+    expect(await Validation.validateUri('ARC', `${uri}?value=invalid&gasLimit=123&gas=123`)).to.equal(false);
+  });
+
   it('should be able to validate a SOL address', async () => {
     const isValidAddress = await Validation.validateAddress('SOL', 'mainnet', solAddress);
     expect(isValidAddress).to.equal(true);

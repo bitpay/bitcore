@@ -182,4 +182,3 @@ Message.prototype.inspect = function() {
 };
 
 module.exports = Message;
-

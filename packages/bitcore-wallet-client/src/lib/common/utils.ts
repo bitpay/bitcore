@@ -408,7 +408,10 @@ export class Utils {
         );
       }
 
-      t.change(txp.changeAddress.address);
+      if (!txp.sendMax) {
+        $.checkState(txp.changeAddress?.address, 'Failed state: missing changeAddress for non sendMax transaction');
+        t.change(txp.changeAddress.address);
+      }
 
       if (txp.enableRBF) t.enableRBF();
 

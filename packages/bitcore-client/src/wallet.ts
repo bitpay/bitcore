@@ -3,7 +3,7 @@ import 'source-map-support/register';
 import os from 'os';
 import path from 'path';
 import Mnemonic from '@bitpay-labs/bitcore-mnemonic';
-import { 
+import {
   BitcoreLib,
   BitcoreLibCash,
   BitcoreLibDoge,
@@ -37,6 +37,7 @@ const chainLibs = {
   ARB: { Web3, ethers },
   BASE: { Web3, ethers },
   OP: { Web3, ethers },
+  ARC: { Web3, ethers },
   XRP: xrpl,
   SOL: { SolKit, SolanaProgram }
 };
@@ -150,8 +151,15 @@ export class Wallet {
   static async deleteWallet(params: { name: string; path?: string; storage?: Storage; storageType?: StorageType }) {
     const { name, path, storageType } = params;
     let { storage } = params;
-    storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
-    await storage.deleteWallet({ name });
+    try {
+      storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
+      await storage.deleteWallet({ name });
+    } catch (e: any) {
+      // ignore error if default wallet path does not exist
+      if (!path && !e.message?.includes?.('Not a valid wallet path')) {
+        throw e;
+      }
+    }
   }
 
   static async create(params: Partial<IWalletExt>) {
@@ -281,7 +289,7 @@ export class Wallet {
     let { storage } = params;
     storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
     const loadedWallet = await storage.loadWallet({ name });
-    
+
     if (!loadedWallet) {
       throw new Error('No wallet could be found');
     }
@@ -303,7 +311,7 @@ export class Wallet {
    * @returns {Boolean}
    */
   isEvmChain() {
-    return ['ETH', 'MATIC', 'ARB', 'OP', 'BASE'].includes(this.chain?.toUpperCase());
+    return ['ETH', 'MATIC', 'ARB', 'OP', 'BASE', 'ARC'].includes(this.chain?.toUpperCase());
   }
 
   isSolanaChain() {
@@ -458,11 +466,11 @@ export class Wallet {
       const privKeyBuffer = Deriver.privateKeyToBuffer(this.chain, decryptedKeyJSON.privKey);
       const encryptedPrivateKeyBuffer = Encryption.encryptBuffer(privKeyBuffer, pubKey, encryptionKey);
       privKeyBuffer.fill(0); // Zero out the plaintext buffer
-      
+
       decryptedKeyJSON.privKey = encryptedPrivateKeyBuffer.toString('hex');
       newKeys.push(decryptedKeyJSON);
     }
-    
+
     /**
      * 3. Overwrite
     */
@@ -474,7 +482,7 @@ export class Wallet {
       console.error('Migration failure: updated keys not successfully stored', err);
       throw new Error('Migration failure: keys not successfully stored. Use backups to restore prior wallet and keys.');
     });
-    
+
     // 3b. Overwrite wallet
     this.version = CURRENT_WALLET_VERSION;
     const storedEncryptedPassword = this.password; // Wallet.toObject() rehashes password - save and replace
@@ -521,7 +529,7 @@ export class Wallet {
    * @param params.tokenName Token to get by tokenName (Recommended over `token`)
    * @param params.address EVM Account address to get the balance for
    * @param params.hex Return the balance in hex
-   * @returns 
+   * @returns
    */
   getBalance(params: { time?: string; token?: string; tokenName?: string; address?: string; hex?: boolean } = {}) {
     const { time, token, tokenName, address, hex } = params;
@@ -572,7 +580,7 @@ export class Wallet {
 
   /**
    * Backwards compatible method for getting the token object
-   * 
+   *
    * `token` and `tokenName` are separate parameters because there are legacy token objects
    * without a `name` but modern implementations try to use the tokenName.
    * e.g.:
@@ -582,8 +590,8 @@ export class Wallet {
    * ]
    * params1 = { token: 'USDC', tokenName: 'USDC_m' } => returns tokens[0]
    * params2 = { token: 'USDC', tokenName: 'USDCn_m' } => returns tokens[1]
-   * 
-   * 
+   *
+   *
    * @param tokenName The `name` field on the token object
    * @param token The `symbol` field on the token object (deprecated)
    */
@@ -640,7 +648,7 @@ export class Wallet {
     if (!this.tokens) {
       return;
     }
-    this.tokens = this.tokens.filter(tok => 
+    this.tokens = this.tokens.filter(tok =>
       (tok.name && tok.name !== tokenName) ||
       /* legacy object */ (!tok.name && tok.symbol !== tokenName)
     );
@@ -881,10 +889,10 @@ export class Wallet {
         let privKeyBuf: Buffer | undefined;
         try {
           privKeyBuf = Encryption.decryptToBuffer(key.privKey, key.pubKey, this.unlocked.encryptionKey);
-          
+
           // Convert buffer to chain-specific native format (e.g., WIF for BTC, hex for ETH, base58 for SOL)
           const nativePrivKey = Deriver.bufferToPrivateKey_TEMP(this.chain, this.network, privKeyBuf);
-          
+
           key.privKey = nativePrivKey;
         } catch (e) {
           console.error('Failed to decrypt/convert private key:', e);
@@ -1099,7 +1107,7 @@ export class Wallet {
       params.chainId = chainId;
       params.type = type;
       params.recipients = [{ address: to, amount: value.toString() }];
-      
+
       // TODO fix type2 support
       // eslint-disable-next-line no-constant-condition, no-constant-binary-expression
       if (false && existingTx.type === 2) {
@@ -1110,7 +1118,7 @@ export class Wallet {
           // params.maxGasFee = (await wallet.getNetworkFee({ target: feeTarget })).feerate;
           // console.log(`Bumping max gas price to ${Web3.utils.fromWei(params.maxGasFee.toString(), 'gwei')} gwei`);
         }
-        if (feePriority) {    
+        if (feePriority) {
           params.maxPriorityFee = Web3.utils.toWei(feePriority.toString(), 'gwei');
         } else {
           // TODO placeholder until for type2 support is merged in another PR
@@ -1127,7 +1135,7 @@ export class Wallet {
           console.log(`Bumping gas price to ${Web3.utils.fromWei(params.gasPrice.toString(), 'gwei')} gwei`);
         }
       }
-      
+
     }
 
     const tx: string = await this.newTx(params);
@@ -1174,7 +1182,7 @@ export const AddressTypes = {
     // witnesspubkeyhash
     witnesspubkeyhash: 'witnesspubkeyhash',
     p2wpkh: 'witnesspubkeyhash',
-    
+
     // taproot
     taproot: 'taproot',
     p2tr: 'taproot'

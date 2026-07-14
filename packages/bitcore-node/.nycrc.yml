@@ -1,0 +1,13 @@
+include: [
+   build/src,
+   src
+]
+reporter: [
+   html,
+   text-summary
+]
+check-coverage: true
+statements: 60
+branches: 40
+functions: 60
+lines: 60

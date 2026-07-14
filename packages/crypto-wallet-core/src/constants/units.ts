@@ -87,6 +87,17 @@ export const UNITS = {
       minDecimals: 2
     }
   },
+  arc: {
+    toSatoshis: 1e18,
+    full: {
+      maxDecimals: 6,
+      minDecimals: 6
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2
+    }
+  },
   xrp: {
     toSatoshis: 1e6,
     full: {

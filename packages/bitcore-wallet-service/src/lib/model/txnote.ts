@@ -16,6 +16,9 @@ export class TxNote {
   editedOn: number;
   editedBy: string;
 
+  // Non-persisted fields - populated when fetching from storage
+  editedByName?: string;
+
   static create(opts) {
     opts = opts || {};
 

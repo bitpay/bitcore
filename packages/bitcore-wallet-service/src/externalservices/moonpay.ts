@@ -1,6 +1,7 @@
 import { BitcoreLib as Bitcore } from '@bitpay-labs/crypto-wallet-core';
 import * as request from 'request';
 import config from '../config';
+import { Utils } from '../lib/common/utils';
 import { ClientError } from '../lib/errors/clienterror';
 import { checkRequired } from '../lib/server';
 
@@ -25,12 +26,14 @@ export class MoonpayService {
       SELL_WIDGET_API: string;
       API_KEY: string;
       SECRET_KEY: string;
+      SECRET_KEY_EMBEDDED: string | undefined;
     } = {
       API: config.moonpay[env].api,
       WIDGET_API: config.moonpay[env].widgetApi,
       SELL_WIDGET_API: config.moonpay[env].sellWidgetApi,
       API_KEY: config.moonpay[env].apiKey,
-      SECRET_KEY: config.moonpay[env].secretKey
+      SECRET_KEY: config.moonpay[env].secretKey,
+      SECRET_KEY_EMBEDDED: config.moonpay[env].secretKeyEmbedded
     };
 
     return keys;
@@ -221,6 +224,16 @@ export class MoonpayService {
       qs.push('showWalletAddressForm=' + encodeURIComponent(req.body.showWalletAddressForm));
     if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
     if (req.body.areFeesIncluded) qs.push('areFeesIncluded=' + encodeURIComponent(req.body.areFeesIncluded));
+
+    const deviceIp = Utils.getIpFromReq(req);
+    if (!deviceIp) {
+      throw new ClientError('Could not determine device IP address');
+    }
+    const allowedIpAddress: string = Bitcore.crypto.Hash.sha256hmac(
+      Buffer.from(deviceIp),
+      Buffer.from(SECRET_KEY)
+    ).toString('base64');
+    qs.push('allowedIpAddress=' + encodeURIComponent(allowedIpAddress));
 
     const URL_SEARCH: string = `?${qs.join('&')}`;
 
@@ -420,6 +433,87 @@ export class MoonpayService {
       const URL = API + `/v3/accounts/me?${qs.join('&')}`;
 
       this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          } else {
+            return resolve(data.body ? data.body : data);
+          }
+        }
+      );
+    });
+  }
+
+  moonpayCreateSession(req): Promise<{ sessionToken: string }> {
+    return new Promise((resolve, reject) => {
+      const keys = this.moonpayGetKeys(req);
+      const API = keys.API;
+      const SECRET_KEY = keys.SECRET_KEY_EMBEDDED;
+
+      if (!checkRequired(req.body, ['externalCustomerId'])) {
+        return reject(new ClientError("Moonpay's request missing arguments"));
+      }
+
+      const deviceIp = Utils.getIpFromReq(req);
+      if (!deviceIp) {
+        return reject(new ClientError('Could not determine device IP address'));
+      }
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-Api-Key': SECRET_KEY,
+      };
+
+      const body: any = {
+        externalCustomerId: req.body.externalCustomerId,
+        deviceIp
+      };
+      if (req.body.email) body.email = req.body.email;
+      if (req.body.phoneNumber) body.phoneNumber = req.body.phoneNumber;
+
+      const URL = API + '/platform/v1/sessions';
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            return resolve(data.body ?? data);
+          }
+        }
+      );
+    });
+  }
+
+  moonpayRevokeActiveSession(req): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const keys = this.moonpayGetKeys(req);
+      const API = keys.API;
+      const SECRET_KEY = keys.SECRET_KEY_EMBEDDED;
+
+      if (!checkRequired(req.body, ['externalCustomerId'])) {
+        return reject(new ClientError("Moonpay's request missing arguments"));
+      }
+
+      const headers = {
+        Accept: 'application/json',
+        'X-Api-Key': SECRET_KEY
+      };
+
+      const URL = API + '/platform/v1/sessions?externalCustomerId=' + encodeURIComponent(req.body.externalCustomerId);
+
+      this.request.delete(
         URL,
         {
           headers,

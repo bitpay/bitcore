@@ -1,5 +1,6 @@
 import * as request from 'request';
 import config from '../config';
+import { Utils } from '../lib/common/utils';
 import { ClientError } from '../lib/errors/clienterror';
 import { checkRequired } from '../lib/server';
 
@@ -50,6 +51,8 @@ export class TransakService {
       const headers = {
         'Content-Type': 'application/json',
         'api-secret': SECRET_KEY,
+        'x-api-key': API_KEY,
+        'x-user-ip': Utils.getIpFromReq(req),
       };
 
       const body = {
@@ -85,10 +88,13 @@ export class TransakService {
         return reject(err);
       }
       const API = keys.API;
+      const API_KEY = keys.API_KEY;
 
       const headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'x-user-ip': Utils.getIpFromReq(req),
       };
 
       const URL: string = API + '/api/v2/currencies/crypto-currencies';
@@ -124,6 +130,8 @@ export class TransakService {
       const headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'x-user-ip': Utils.getIpFromReq(req),
       };
 
       const URL: string = API + `/api/v2/currencies/fiat-currencies?apiKey=${API_KEY}`;
@@ -162,6 +170,8 @@ export class TransakService {
 
       const headers = {
         Accept: 'application/json',
+        'x-api-key': API_KEY,
+        'x-user-ip': Utils.getIpFromReq(req),
       };
 
       const qs: string[] = [];
@@ -197,6 +207,7 @@ export class TransakService {
   transakGetSignedPaymentUrl(req): Promise<{ urlWithSignature: string }> {
     return new Promise(async (resolve, reject) => {
       const appRequiredParams = [
+        'accessToken',
         'walletAddress',
         'redirectURL',
         'fiatAmount',
@@ -207,7 +218,7 @@ export class TransakService {
         'partnerCustomerId',
       ];
 
-      const requiredParams = req.body.context === 'web' ? [] : appRequiredParams;
+      const requiredParams = req.body.context === 'web' ? ['accessToken'] : appRequiredParams;
       const referrerDomain = req.body.referrerDomain ?? req.body.context === 'web' ? 'bitpay.com' : 'bitpay';
       let keys;
       try {
@@ -222,22 +233,12 @@ export class TransakService {
         return reject(new ClientError("Transak's request missing arguments"));
       }
 
-      let accessToken;
-      if (req.body.accessToken) {
-        accessToken = req.body.accessToken;
-      } else {
-        try {
-          const accessTokenData = await this.transakGetAccessToken(req);
-          accessToken = accessTokenData?.data?.accessToken;
-        } catch (err) {
-          return reject(err?.body ? err.body : err);
-        }
-      }
-
       const headers = {
         Accept: 'application/json',
         'Content-Type': 'application/json',
-        'access-token': accessToken,
+        'access-token': req.body.accessToken,
+        'x-api-key': API_KEY,
+        'x-user-ip': Utils.getIpFromReq(req),
       };
 
       const body = {
@@ -277,26 +278,17 @@ export class TransakService {
         return reject(err);
       }
       const API = keys.API;
+      const API_KEY = keys.API_KEY;
 
-      if (!checkRequired(req.body, ['orderId'])) {
+      if (!checkRequired(req.body, ['orderId', 'accessToken'])) {
         return reject(new ClientError("Transak's request missing arguments"));
-      }
-
-      let accessToken;
-      if (req.body.accessToken) {
-        accessToken = req.body.accessToken;
-      } else {
-        try {
-          const accessTokenData = await this.transakGetAccessToken(req);
-          accessToken = accessTokenData?.data?.accessToken;
-        } catch (err) {
-          return reject(err?.body ? err.body : err);
-        }
       }
 
       const headers = {
         Accept: 'application/json',
-        'access-token': accessToken,
+        'access-token': req.body.accessToken,
+        'x-api-key': API_KEY,
+        'x-user-ip': Utils.getIpFromReq(req),
       };
 
       const URL: string = API + `/partners/api/v2/order/${req.body.orderId}`;

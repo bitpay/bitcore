@@ -6,35 +6,77 @@ import { UserCancelled } from '../errors';
 import { Utils } from '../utils';
 import type { CommonArgs } from '../../types/cli';
 import type { ITokenObj } from '../../types/wallet';
+import type { OptionValues } from 'commander';
 
-export function command(args: CommonArgs) {
-  const { program } = args;
+export interface ITransactionArgs {
+  to?: string;
+  amount?: string;
+  fee?: string;
+  feeRate?: string;
+  feeLevel?: string;
+  nonce?: number;
+  note?: string;
+  dryRun?: boolean;
+  flags?: string;
+  /** Transaction type (e.g. 'AccountSet' for XRP). Not to be set explicitly by the user */
+  txType?: string;
+  /** XRP destination tag */
+  destinationTag?: string;
+};
+
+
+export function command(args: CommonArgs<ITransactionArgs & { extensionOpts?: { excludedOptions?: Set<string>; parse: (opts: OptionValues) => void } }>) {
+  const { program, opts: { extensionOpts } = {} } = args;
+  const isExtension = !!extensionOpts;
+
+  if (program.processedArgs.length > 0) {
+    return args.opts; // program.parse already called
+  }
+
+  if (!isExtension) {
+    program
+      .description('Create and send a transaction')
+      .usage('<walletName> --command transaction [options]');
+  }
   program
-    .description('Create and send a transaction')
-    .usage('<walletName> --command transaction [options]')
-    .optionsGroup('Transaction Options')
-    .option('--to <address>', 'Recipient address')
-    .option('--amount <amount>', 'Amount to send (in BTC/ETH/etc). Use "max" to send all available balance')
-    .option('--fee <fee>', 'Fee to use')
-    .option('--feeRate <rate>', 'Custom fee rate in sats/b, gwei, drops, etc.')
-    .option('--feeLevel <level>', 'Fee level to use (e.g. low, normal, high)', 'normal')
-    .option('--nonce <nonce>', 'Nonce for the transaction (optional, for chains that require it)')
-    .option('--token <token>', 'Token to get the balance for (e.g. USDC)')
-    .option('--tokenAddress <address>', 'Token contract address to get the balance for')
-    .option('--note <note>', 'Note for the transaction')
-    .option('--dry-run', 'Only create the transaction proposal without broadcasting')
-    .parse(process.argv);
+    .optionsGroup('Transaction Options');
+  const options = [
+    { option: '--to <address>', help: 'Recipient address' },
+    { option: '--amount <amount>', help: 'Amount to send (in BTC/ETH/etc). Use "max" to send all available balance' },
+    { option: '--fee <fee>', help: 'Fee to use' },
+    { option: '--feeRate <rate>', help: 'Custom fee rate in sats/b, gwei, drops, etc.' },
+    { option: '--feeLevel <level>', help: 'Fee level to use (e.g. low, normal, high)', default: 'normal' },
+    { option: '--nonce <nonce>', help: 'Nonce for the transaction (optional, for chains that require it)' },
+    { option: '--token <token>', help: 'Token to send (e.g. USDC). This is a convenient way to specify the token without needing the contract address, but only works for well-known, common tokens. Use --tokenAddress for more obscure tokens.' },
+    { option: '--tokenAddress <address>', help: 'Token contract address to send (takes precedence over --token)' },
+    { option: '--note <note>', help: 'Note for the transaction' },
+    { option: '--tag <tag>', help: '(XRP only) Destination tag for the transaction' },
+    { option: '--dry-run', help: 'Only create the transaction proposal without broadcasting' },
+  ];
+
+  for (const { option, help, default: defaultValue } of options) {
+    if (extensionOpts?.excludedOptions?.has(option.split(' ')[0])) {
+      continue; // skip it
+    }
+    program.option(option, help, defaultValue);
+  }
+
+  program.parse(process.argv);
   
   const opts = program.opts();
   if (opts.help) {
     program.help();
   }
 
-  if (!opts.to) {
-    throw new Error('Recipient address (--to) is required');
-  }
-  if (!parseFloat(opts.amount) && opts.amount !== 'max') {
-    throw new Error('Missing or invalid amount (--amount) specified');
+  if (!isExtension) {
+    // Don't require `--to` and `--amount` if this command is being called from an extension
+    // since the extension may provide the address and amount in a different way (e.g. flags management extension)  
+    if (!opts.to) {
+      throw new Error('Recipient address (--to) is required');
+    }
+    if (!parseFloat(opts.amount) && opts.amount !== 'max') {
+      throw new Error('Missing or invalid amount (--amount) specified');
+    }
   }
   if (opts.fee && !parseFloat(opts.fee)) {
     throw new Error('Invalid fee specified.');
@@ -42,21 +84,20 @@ export function command(args: CommonArgs) {
   if (opts.feeRate && !parseFloat(opts.feeRate)) {
     throw new Error('Invalid fee rate specified.');
   }
+  if (opts.tag) {
+    if (isNaN(parseInt(opts.tag)) || parseInt(opts.tag) < 0) {
+      throw new Error('Invalid destination tag specified. It should be a non-negative integer.');
+    }
+    opts.destinationTag = opts.tag;
+  }
+
+  extensionOpts?.parse?.(opts);
 
   return opts;
 }
 
 export async function createTransaction(
-  args: CommonArgs<{
-    to?: string;
-    amount?: string;
-    fee?: string;
-    feeRate?: string;
-    feeLevel?: string;
-    nonce?: number;
-    note?: string;
-    dryRun?: boolean;
-  }>
+  args: CommonArgs<ITransactionArgs>
 ) {
   const { wallet, opts } = args;
   let { status } = args;
@@ -68,6 +109,12 @@ export async function createTransaction(
 
   if (wallet.isReadOnly()) {
     throw new Error('Read-only wallets cannot create transactions');
+  }
+
+  if (opts.flags) {
+    if (!wallet.isXrp()) {
+      throw new Error('Flags can only be set for XRP wallets');
+    }
   }
 
   let tokenObj: ITokenObj;
@@ -93,6 +140,7 @@ export async function createTransaction(
   }
 
 
+  // Don't do opts.command tertiary check in case opts.to is passed in from an extension (e.g. flags management)
   const to = opts.to || await prompt.text({
     message: 'Enter the recipient\'s address:',
     validate: (value) => {
@@ -106,6 +154,30 @@ export async function createTransaction(
     throw new UserCancelled();
   }
 
+  if (wallet.isXrp()) {
+    const tag = opts.command ? opts.destinationTag : await prompt.text({
+      message: 'Enter the destination tag (optional):',
+      placeholder: 'e.g. 12345',
+      validate: (value) => {
+        if (!value) {
+          return; // valid value, optional
+        }
+        const val = parseInt(value);
+        if (isNaN(val) || val < 0) {
+          return 'Please enter a valid destination tag';
+        }
+        return; // valid value
+      }
+    });
+    if (prompt.isCancel(tag)) {
+      throw new UserCancelled();
+    }
+    if (tag) {
+      opts.destinationTag = tag;
+    }
+  }
+
+  // Don't do opts.command tertiary check in case opts.to is passed in from an extension (e.g. flags management)
   const amount = opts.amount || await prompt.text({
     message: 'Enter the amount to send:',
     placeholder: 'Type `help` for help and to see your balance',
@@ -122,7 +194,7 @@ export async function createTransaction(
         return; // valid value, will be handled later
       }
       const val = parseFloat(value);
-      if (isNaN(val) || val <= 0) {
+      if (isNaN(val) || (!opts.flags && val <= 0)) {
         return 'Please enter a valid amount greater than 0';
       }
       if (val > Number(availableAmount)) {
@@ -198,7 +270,10 @@ export async function createTransaction(
     feePerKb: feeLevel === 'custom' ? parseFloat(customFeeRate) : undefined,
     fee: opts.fee ? parseFloat(opts.fee) : undefined,
     sendMax,
-    tokenAddress: tokenObj?.contractAddress
+    tokenAddress: tokenObj?.contractAddress,
+    flags: opts.flags,
+    txType: opts.txType,
+    destinationTag: opts.destinationTag
   };
 
   let txp: Txp = await wallet.client.createTxProposal({
@@ -209,11 +284,14 @@ export async function createTransaction(
 
   const lines = [];
   lines.push(`To: ${to}`);
+  if (opts.destinationTag) { // Display txp.destinationTag below in case user entered but there's a discrepancy
+    lines.push(`DestTag: ${txp.destinationTag}`);
+  }
   lines.push(`Amount: ${Utils.renderAmount(currency, txp.amount, tokenObj)}`);
   lines.push(`Fee: ${Utils.renderAmount(chain, txp.fee)} (${Utils.displayFeeRate(chain, txp.feePerKb)})`);
   lines.push(`Total: ${tokenObj 
     ? Utils.renderAmount(currency, txp.amount, tokenObj) + ` + ${Utils.renderAmount(chain, txp.fee)}`
-    : Utils.renderAmount(currency, txp.amount + txp.fee)
+    : Utils.renderAmount(currency, BigInt(txp.amount) + BigInt(txp.fee))
   }`);
   if (txp.nonce != null) {
     lines.push(`Nonce: ${txp.nonce}`);
@@ -221,8 +299,15 @@ export async function createTransaction(
   if (note) {
     lines.push(`Note: ${txp.message}`);
   }
+  if (opts.txType) {
+    lines.push(`Type: ${opts.txType}`);
+  }
+  if (opts.flags) {
+    lines.push(`Flags: ${opts.flags}`);
+  }
   prompt.note(lines.join(os.EOL), 'Transaction Preview');
   
+  // Always prompt for confirmation, even if --command is used.
   const confirmed = await prompt.confirm({
     message: 'Send this transaction?' + (wallet.isTss() ? ` (This wallet requires ${wallet.getMinSigners() - 1} other participant(s) be ready to sign)` : ''),
     initialValue: true,
@@ -230,7 +315,6 @@ export async function createTransaction(
   if (prompt.isCancel(confirmed) || !confirmed) {
     prompt.log.warn('Transaction cancelled by user.');
     return;
-    // await wallet.client.removeTxProposal(txp);
   }
 
   txp = await wallet.client.createTxProposal(txpParams);

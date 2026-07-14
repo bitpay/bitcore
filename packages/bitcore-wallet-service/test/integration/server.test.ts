@@ -8115,6 +8115,144 @@ describe('Wallet service', function() {
       assignedNonces.should.deep.equal([10, 11, 12]);
     });
 
+    async function prepareSignAndBroadcast(txp) {
+      const withNonce = await util.promisify(server.prepareTx).call(server, { txProposalId: txp.id });
+      const fetched = await util.promisify(server.getTx).call(server, { txProposalId: txp.id });
+      const signatures = helpers.clientSign(fetched, TestData.copayers[0].xPrivKey_44H_0H_0H);
+      const signed = await util.promisify(server.signTx).call(server, { txProposalId: txp.id, signatures });
+      helpers.stubBroadcast(signed.txid);
+      const broadcasted = await util.promisify(server.broadcastTx).call(server, { txProposalId: txp.id });
+      broadcasted.status.should.equal('broadcasted');
+      return withNonce;
+    }
+
+    it('should not reuse the nonce of a broadcasted-but-unmined txp', async function() {
+      // Chain count stays at 10 for the whole test: txp1 is broadcast but never mined
+      blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '10');
+
+      const txp1 = await helpers.createAndPublishTx(server, {
+        outputs: [{ toAddress: ETH_ADDR, amount: 1000 }],
+        feePerKb: 123e2,
+        from: fromAddr,
+        deferNonce: true
+      }, TestData.copayers[0].privKey_1H_0);
+      const prepared1 = await prepareSignAndBroadcast(txp1);
+      prepared1.nonce.should.equal(10);
+
+      const txp2 = await helpers.createAndPublishTx(server, {
+        outputs: [{ toAddress: ETH_ADDR, amount: 2000 }],
+        feePerKb: 123e2,
+        from: fromAddr,
+        deferNonce: true
+      }, TestData.copayers[0].privKey_1H_0);
+      const prepared2 = await util.promisify(server.prepareTx).call(server, { txProposalId: txp2.id });
+      prepared2.nonce.should.equal(11);
+    });
+
+    it('should assign sequential nonces when each txp is broadcast before the next is prepared', async function() {
+      // Bulk payout flow: full prepare -> sign -> broadcast per txp, no block mined in between
+      blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '10');
+
+      const assignedNonces = [];
+      for (let i = 0; i < 3; i++) {
+        const txp = await helpers.createAndPublishTx(server, {
+          outputs: [{ toAddress: ETH_ADDR, amount: 1000 * (i + 1) }],
+          feePerKb: 123e2,
+          from: fromAddr,
+          deferNonce: true
+        }, TestData.copayers[0].privKey_1H_0);
+        const prepared = await prepareSignAndBroadcast(txp);
+        assignedNonces.push(prepared.nonce);
+      }
+
+      assignedNonces.should.deep.equal([10, 11, 12]);
+    });
+
+    it('should not skip nonces of broadcasted txps already counted by the chain', async function() {
+      blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '10');
+
+      const txp1 = await helpers.createAndPublishTx(server, {
+        outputs: [{ toAddress: ETH_ADDR, amount: 1000 }],
+        feePerKb: 123e2,
+        from: fromAddr,
+        deferNonce: true
+      }, TestData.copayers[0].privKey_1H_0);
+      const prepared1 = await prepareSignAndBroadcast(txp1);
+      prepared1.nonce.should.equal(10);
+
+      // txp1 mines: chain count advances past its nonce
+      blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '11');
+
+      const txp2 = await helpers.createAndPublishTx(server, {
+        outputs: [{ toAddress: ETH_ADDR, amount: 2000 }],
+        feePerKb: 123e2,
+        from: fromAddr,
+        deferNonce: true
+      }, TestData.copayers[0].privKey_1H_0);
+      const prepared2 = await util.promisify(server.prepareTx).call(server, { txProposalId: txp2.id });
+      prepared2.nonce.should.equal(11);
+    });
+
+    it('should reject signing a deferred txp whose nonce collides with a broadcasted-but-unmined txp', async function() {
+      blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '10');
+
+      const txp1 = await helpers.createAndPublishTx(server, {
+        outputs: [{ toAddress: ETH_ADDR, amount: 1000 }],
+        feePerKb: 123e2,
+        from: fromAddr,
+        deferNonce: true
+      }, TestData.copayers[0].privKey_1H_0);
+      const prepared1 = await prepareSignAndBroadcast(txp1);
+      prepared1.nonce.should.equal(10);
+
+      const txp2 = await helpers.createAndPublishTx(server, {
+        outputs: [{ toAddress: ETH_ADDR, amount: 2000 }],
+        feePerKb: 123e2,
+        from: fromAddr,
+        deferNonce: true
+      }, TestData.copayers[0].privKey_1H_0);
+      const prepared2 = await util.promisify(server.prepareTx).call(server, { txProposalId: txp2.id });
+      prepared2.nonce.should.equal(11);
+
+      // Client signs with a stale nonce override that duplicates txp1's in-flight nonce
+      const fetched = await util.promisify(server.getTx).call(server, { txProposalId: txp2.id });
+      const signatures = helpers.clientSign(fetched, TestData.copayers[0].xPrivKey_44H_0H_0H);
+      try {
+        await util.promisify(server.signTx).call(server, { txProposalId: txp2.id, signatures, nonce: 10 });
+        throw new Error('should have thrown');
+      } catch (err) {
+        err.should.be.instanceof(ClientError);
+        err.code.should.equal('TX_NONCE_CONFLICT');
+      }
+    });
+
+    it('should allow signing a non-deferred txp that reuses an in-flight nonce (speed-up/replacement)', async function() {
+      blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '10');
+
+      const txp1 = await helpers.createAndPublishTx(server, {
+        outputs: [{ toAddress: ETH_ADDR, amount: 1000 }],
+        feePerKb: 123e2,
+        from: fromAddr
+      }, TestData.copayers[0].privKey_1H_0);
+      txp1.nonce.should.equal('10');
+      const sigs1 = helpers.clientSign(txp1, TestData.copayers[0].xPrivKey_44H_0H_0H);
+      const signed1 = await util.promisify(server.signTx).call(server, { txProposalId: txp1.id, signatures: sigs1 });
+      helpers.stubBroadcast(signed1.txid);
+      await util.promisify(server.broadcastTx).call(server, { txProposalId: txp1.id });
+
+      // Replacement txp deliberately reuses nonce 10 (e.g. app speedupEth flow)
+      const txp2 = await helpers.createAndPublishTx(server, {
+        outputs: [{ toAddress: ETH_ADDR, amount: 1000 }],
+        feePerKb: 246e2,
+        from: fromAddr
+      }, TestData.copayers[0].privKey_1H_0);
+      txp2.nonce.should.equal('10');
+
+      const sigs2 = helpers.clientSign(txp2, TestData.copayers[0].xPrivKey_44H_0H_0H);
+      const signed2 = await util.promisify(server.signTx).call(server, { txProposalId: txp2.id, signatures: sigs2 });
+      signed2.status.should.equal('accepted');
+    });
+
     it('should return txp with nonce set (extensibility baseline)', async function() {
       const txp = await helpers.createAndPublishTx(server, {
         outputs: [{ toAddress: ETH_ADDR, amount: 8000 }],

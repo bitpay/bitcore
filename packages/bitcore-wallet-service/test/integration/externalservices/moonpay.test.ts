@@ -260,7 +260,9 @@ describe('Moonpay integration', () => {
   describe('#moonpayGetSignedPaymentUrl', () => {
     beforeEach(() => {
       req = {
-        headers: {},
+        headers: {
+          'x-forwarded-for': '1.2.3.4'
+        },
         body: {
           env: 'production',
           currencyCode: 'btc',
@@ -277,7 +279,17 @@ describe('Moonpay integration', () => {
     it('should get the paymentUrl properly if req is OK', () => {
       const data = server.externalServices.moonpay.moonpayGetSignedPaymentUrl(req);
       should.exist(data.urlWithSignature);
-      data.urlWithSignature.should.equal('widgetApi2?apiKey=apiKey2&currencyCode=btc&walletAddress=bitcoin%3A123123&baseCurrencyCode=usd&baseCurrencyAmount=500&externalTransactionId=123123&redirectURL=bitpay%3A%2F%2Fmoonpay&signature=%2FDnbsboySgE%2FeAvMrwzROCLuuctkhgw5C2t2OofjOzo%3D');
+      data.urlWithSignature.should.equal('widgetApi2?apiKey=apiKey2&currencyCode=btc&walletAddress=bitcoin%3A123123&baseCurrencyCode=usd&baseCurrencyAmount=500&externalTransactionId=123123&redirectURL=bitpay%3A%2F%2Fmoonpay&allowedIpAddress=CN35SFB5PKS4vkiZ4CglTxRgTAaUHBLGZcenAw6gHEY%3D&signature=3XxjRX3EMj2RNaoAwgOwFBOiVTXsgAS7C50uJf9SsvM%3D');
+    });
+
+    it('should return error if request does not have IP', () => {
+      delete req.headers['x-forwarded-for'];
+      try {
+        server.externalServices.moonpay.moonpayGetSignedPaymentUrl(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Could not determine device IP address');
+      }
     });
 
     it('should return error if there is some missing arguments', () => {
@@ -560,6 +572,155 @@ describe('Moonpay integration', () => {
       config.moonpay = undefined;
       try {
         await server.externalServices.moonpay.moonpayCancelSellTransaction(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Moonpay missing credentials');
+      }
+    });
+  });
+
+  describe('#moonpayCreateSession', () => {
+    beforeEach(() => {
+      req = {
+        headers: {
+          'x-forwarded-for': '192.168.1.1'
+        },
+        body: {
+          env: 'sandbox',
+          externalCustomerId: 'externalCustomerId1'
+        }
+      };
+      server.externalServices.moonpay.request = fakeRequest;
+    });
+
+    it('should work properly if req is OK', async () => {
+      const data = await server.externalServices.moonpay.moonpayCreateSession(req);
+      should.exist(data);
+    });
+
+    it('should work properly if req is OK for web', async () => {
+      req.body.context = 'web';
+      const data = await server.externalServices.moonpay.moonpayCreateSession(req);
+      should.exist(data);
+    });
+
+    it('should work properly with optional email and phoneNumber', async () => {
+      req.body.email = 'user@example.com';
+      req.body.phoneNumber = '+14155551234';
+      const data = await server.externalServices.moonpay.moonpayCreateSession(req);
+      should.exist(data);
+    });
+
+    it('should return error if post returns error', async () => {
+      const fakeRequest2 = {
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
+      };
+
+      server.externalServices.moonpay.request = fakeRequest2;
+      try {
+        await server.externalServices.moonpay.moonpayCreateSession(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Error');
+      }
+    });
+
+    it('should return error if there is some missing arguments', async () => {
+      delete req.body.externalCustomerId;
+      try {
+        await server.externalServices.moonpay.moonpayCreateSession(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Moonpay\'s request missing arguments');
+      }
+    });
+
+    it('should return error if device IP cannot be determined', async () => {
+      req.headers = {};
+      delete req.ip;
+      delete req.connection;
+      try {
+        await server.externalServices.moonpay.moonpayCreateSession(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Could not determine device IP address');
+      }
+    });
+
+    it('should extract IP from x-forwarded-for header', async () => {
+      req.headers = { 'x-forwarded-for': '10.0.0.1, 10.0.0.2' };
+      let capturedBody;
+      const fakeRequest2 = {
+        post: (_url, _opts, _cb) => {
+          capturedBody = _opts.body;
+          return _cb(null, { body: { sessionToken: 'token123' } });
+        },
+      };
+      server.externalServices.moonpay.request = fakeRequest2;
+      await server.externalServices.moonpay.moonpayCreateSession(req);
+      capturedBody.deviceIp.should.equal('10.0.0.1');
+    });
+
+    it('should return error if moonpay is commented in config', async () => {
+      config.moonpay = undefined;
+      try {
+        await server.externalServices.moonpay.moonpayCreateSession(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Moonpay missing credentials');
+      }
+    });
+  });
+
+  describe('#moonpayRevokeActiveSession', () => {
+    beforeEach(() => {
+      req = {
+        headers: {},
+        body: {
+          env: 'sandbox',
+          externalCustomerId: 'externalCustomerId1'
+        }
+      };
+      server.externalServices.moonpay.request = fakeRequest;
+    });
+
+    it('should work properly if req is OK', async () => {
+      await server.externalServices.moonpay.moonpayRevokeActiveSession(req);
+    });
+
+    it('should work properly if req is OK for web', async () => {
+      req.body.context = 'web';
+      await server.externalServices.moonpay.moonpayRevokeActiveSession(req);
+    });
+
+    it('should return error if delete returns error', async () => {
+      const fakeRequest2 = {
+        delete: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
+      };
+
+      server.externalServices.moonpay.request = fakeRequest2;
+      try {
+        await server.externalServices.moonpay.moonpayRevokeActiveSession(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Error');
+      }
+    });
+
+    it('should return error if there is some missing arguments', async () => {
+      delete req.body.externalCustomerId;
+      try {
+        await server.externalServices.moonpay.moonpayRevokeActiveSession(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Moonpay\'s request missing arguments');
+      }
+    });
+
+    it('should return error if moonpay is commented in config', async () => {
+      config.moonpay = undefined;
+      try {
+        await server.externalServices.moonpay.moonpayRevokeActiveSession(req);
         should.fail('should have thrown');
       } catch (err) {
         err.message.should.equal('Moonpay missing credentials');

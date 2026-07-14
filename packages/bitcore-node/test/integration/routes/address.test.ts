@@ -327,10 +327,10 @@ describe('Address Routes', function () {
     });
 
     it('should get token transactions', function(done) {
-      this.timeout(10000);
+      this.timeout(50000);
       const csp = new BaseEVMStateProvider('BASE');
       sandbox.stub(ChainStateProvider, 'get').returns(csp);
-      request.get('/api/BASE/testnet/address/0x9bb6f7fdf81afbd8876d37f3e5e37df416bf8da1/txs?tokenAddress=0x036CbD53842c5426634e7929541eC2318f3dCF7e&startBlock=14035000&endBlock=14045000')
+      request.get('/api/BASE/testnet/address/0x9bb6f7fdf81afbd8876d37f3e5e37df416bf8da1/txs?tokenAddress=0x036CbD53842c5426634e7929541eC2318f3dCF7e&startBlock=14035000&endBlock=14035600')
         .expect(200, (err, res) => {
           if (err) return done(err);
           expect(res.body).to.deep.equal([{

@@ -1,0 +1,19 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+
+const sourceDir = path.join(__dirname, 'test/wallets');
+const targetDir = path.join(__dirname, 'build/test/wallets');
+
+if (!fs.existsSync(targetDir)) {
+  fs.mkdirSync(targetDir, { recursive: true });
+}
+
+const srcContents = fs.readdirSync(sourceDir);
+for (const item of srcContents) {
+  const srcPath = path.join(sourceDir, item);
+  const targetPath = path.join(targetDir, item);
+  fs.copyFileSync(srcPath, targetPath);
+}

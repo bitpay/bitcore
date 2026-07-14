@@ -13,7 +13,7 @@ export class Erc20RelatedFilterTransform extends TransformWithEventPipe {
     if (tx.effects && tx.effects.length) {
       // Get all effects where contractAddress is tokenAddress
       const tokenRelatedInternalTxs = tx.effects.filter(
-        (effect: any) => effect.contractAddress === this.tokenAddress
+        (effect: any) => effect.contractAddress?.toLowerCase() === this.tokenAddress.toLowerCase()
       );
 
       // Create a tx object for each erc20 transfer
@@ -22,6 +22,7 @@ export class Erc20RelatedFilterTransform extends TransformWithEventPipe {
         _tx.value = Number(internalTx.amount);
         _tx.to = internalTx.to;
         _tx.from = internalTx.from;
+        _tx.effects = [internalTx];
         if (internalTx.from != tx.from) {
           _tx.initialFrom = tx.from;
         }

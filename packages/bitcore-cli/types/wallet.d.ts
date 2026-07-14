@@ -7,7 +7,7 @@ import {
   TssSign,
   Txp
 } from '@bitpay-labs/bitcore-wallet-client';
-import { type Types as CWCTypes } from '@bitpay-labs/crypto-wallet-core';
+import { type Types as CWCTypes, type xrpl } from '@bitpay-labs/crypto-wallet-core';
 
 export type KeyType = Key;
 export type ClientType = API;
@@ -47,7 +47,8 @@ export interface IWallet {
     mnemonic?: string;
     password?: string;
     addressType?: string;
-  }): Promise<{ key: KeyType | TssKeyType; secret?: string; credentials: Credentials }>;
+    joinSecret?: string;
+  }): Promise<{ key: KeyType | TssKeyType; credentials: Credentials; secret?: string; joinedWalletName?: string }>;
   createFromTss(args: {
     key: TssKeyType;
     chain: string;
@@ -94,6 +95,7 @@ export interface IWallet {
   isXrp(): boolean;
   isTokenChain(): boolean;
   isReadOnly(): boolean;
+  getAccountFlags(): Promise<xrpl.AccountInfoAccountFlags>;
 }
 
 export interface ITokenObj {
