@@ -505,8 +505,8 @@ Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS = (1 << 7);
 // be true".
 // (softfork safe, BIP62 rule 6)
 // Note: CLEANSTACK should never be used without P2SH or WITNESS.
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-Interpreter.SCRIPT_VERIFY_CLEANSTACK = (1 << 8),
+ 
+Interpreter.SCRIPT_VERIFY_CLEANSTACK = (1 << 8);
 
 // Verify CHECKLOCKTIMEVERIFY
 //
