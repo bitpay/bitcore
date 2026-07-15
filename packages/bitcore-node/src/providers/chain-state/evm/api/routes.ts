@@ -238,6 +238,15 @@ export class EVMRouter {
   private streamGnosisWalletTransactions(router: Router) { 
     router.get(`/api/${this.chain}/:network/ethmultisig/transactions/:multisigContractAddress`, async (req, res) => {
       const { network, multisigContractAddress } = req.params;
+      const { tokenAddress } = req.query;
+      // Validate and return a helpful 400 before toChecksumAddress throws downstream (which
+      // would surface as a 500). isAddress(x, false) accepts exactly what toChecksumAddress accepts.
+      if (!Web3.utils.isAddress(multisigContractAddress, false)) {
+        return res.status(400).send('Invalid multisig contract address');
+      }
+      if (tokenAddress !== undefined && (typeof tokenAddress !== 'string' || !Web3.utils.isAddress(tokenAddress, false))) {
+        return res.status(400).send('Invalid token address');
+      }
       try {
         return await Gnosis.streamGnosisWalletTransactions({
           chain: this.chain,
