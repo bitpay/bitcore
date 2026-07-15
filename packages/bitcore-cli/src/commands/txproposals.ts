@@ -91,8 +91,10 @@ export async function getTxProposals(
     txp = txps[i];
 
     if (!txp) {
-      prompt.log.info('No more proposals');
-      return { result: [], hasNextPage: false, hasPrevPage: page > 1 };
+      !printRaw && prompt.log.info('No more proposals');
+      return opts.command
+        ? {} // Don't wait for user input in CLI mode
+        : { result: [], hasNextPage: false, hasPrevPage: page > 1 };
     }
 
     const hasNextPage = page < txps.length;
