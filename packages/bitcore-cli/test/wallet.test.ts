@@ -29,6 +29,12 @@ describe('Wallet', function() {
 
   describe('lockLoadedWallet', function() {
     it('should lock the loaded wallet', function(done) {
+      const expectedErrorLogs = [{
+        regex: /EEXIST: file already exists/,
+        assertMissMessage: 'Expected console.error to be called with EEXIST error for wallet lock file',
+        isHit: false
+      }];
+
       const stepInputs = [
         // Checkpoint1: Upon wallet load
         [KEYSTROKES.ARROW_UP], // Proposals -> Exit
@@ -85,7 +91,17 @@ describe('Wallet', function() {
                     });
 
                     const child2 = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts], CLI_OPTS);
-                    child2.stderr.pipe(process.stderr);
+                    child2.stderr.pipe(new Transform({
+                      encoding: 'utf-8',
+                      transform(chunk, encoding, respond) {
+                        chunk = chunk.toString();
+                        const expectedErrorLog = expectedErrorLogs.find(l => l.regex.test(chunk));
+                        if (expectedErrorLog) {
+                          expectedErrorLog.isHit = true;
+                        }
+                        respond();
+                      }
+                    }));
                     child2.stdout.pipe(io2).pipe(child2.stdin);
                     io2.on('close', () => {
                       try {
@@ -125,8 +141,13 @@ describe('Wallet', function() {
         done(e);
       });
       child.on('close', (code) => {
-        assert.equal(code, 0);
-        done();
+        try {
+          assert.equal(code, 0);
+          assert.equal(expectedErrorLogs.every(l => l.isHit), true, 'Some expected console.error logs were not hit: ' + JSON.stringify(expectedErrorLogs));
+          done();
+        } catch (e) {
+          done(e);
+        }
       });
     });
 
@@ -197,8 +218,12 @@ describe('Wallet', function() {
         done(e);
       });
       child.on('close', (code) => {
-        assert.equal(code, 0);
-        done();
+        try {
+          assert.equal(code, 0);
+          done();
+        } catch (e) {
+          done(e);
+        }
       });
     });
 
