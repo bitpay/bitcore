@@ -160,7 +160,7 @@ export async function getTxProposals(
       prompt.log.success(`Exported to ${outputFile}`);
 
     } else if (printRaw) {
-      prompt.log.info(`ID: ${txp.id}` + os.EOL + JSON.stringify(txp, null, 2));
+      console.log(JSON.stringify(txp, null, 2));
     
     } else {
       const lines = [];
@@ -223,24 +223,35 @@ export async function getTxProposals(
       return {}; // Don't wait for user input in CLI mode
     }
 
-    const extraChoices = []
-      .concat(
-        txp.status !== 'broadcasted' && !txp.actions.find(a => a.copayerId === myCopayerId) && txp.status !== 'deleted' ? [
+    const extraChoices: Array<{ label: string; value: string; hint?: string }> = [];
+    
+    if (txp.status !== 'broadcasted' && txp.status !== 'deleted') {
+      if (!txp.actions?.find(a => a.copayerId === myCopayerId)) {
+        extraChoices.push(
           { label: 'Accept', value: ViewAction.ACCEPT, hint: 'Accept and sign this proposal' },
           { label: 'Reject', value: ViewAction.REJECT, hint: 'Reject this proposal' },
-        ] : []
-      ).concat(
-        txp.status !== 'broadcasted' && txp.actions.filter(a => a.type === 'accept').length >= txp.requiredSignatures && txp.status !== 'deleted' ? [
+        );
+      }
+      
+      if (txp.actions?.filter(a => a.type === 'accept').length >= txp.requiredSignatures) {
+        extraChoices.push(
           { label: 'Broadcast', value: ViewAction.BROADCAST, hint: 'Broadcast this proposal' }
-        ] : []
-      ).concat(
-        txp.status !== 'broadcasted' && txp.status !== 'rejected' && txp.status !== 'deleted' ? [
+        );
+      }
+
+      if (txp.status !== 'rejected') {
+        extraChoices.push(
           { label: 'Delete', value: ViewAction.DELETE, hint: 'Delete this proposal' }
-        ] : []
-      ).concat([
-        printRaw ? { label: 'Print Pretty', value: ViewAction.TOGGLE_RAW, hint: 'Print formatted proposal' } : { label: 'Print Raw Object', value: ViewAction.TOGGLE_RAW, hint: 'Print raw proposal object' },
-        { label: 'Export', value: ViewAction.EXPORT, hint: 'Save to a file' },
-      ]);
+        );
+      }
+    }
+
+    extraChoices.push(
+      printRaw ?
+        { label: 'Print Pretty', value: ViewAction.TOGGLE_RAW, hint: 'Print formatted proposal' } :
+        { label: 'Print Raw Object', value: ViewAction.TOGGLE_RAW, hint: 'Print raw proposal object' },
+      { label: 'Export', value: ViewAction.EXPORT, hint: 'Save to a file' }
+    );
 
     return { result: txps, extraChoices, hasNextPage, hasPrevPage };
   }, {
