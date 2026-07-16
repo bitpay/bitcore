@@ -297,10 +297,11 @@ Transaction.prototype._hasDustOutputs = function(opts) {
   if (opts.disableDustOutputs) {
     return;
   }
-  for (const output of this.outputs) {
-    if (output.satoshis < Transaction.DUST_AMOUNT && !output.script.isDataOut()) {
-      return new errors.Transaction.DustOutputs();
-    }
+  
+  if (
+    this.outputs.some(output => output.satoshis < Transaction.DUST_AMOUNT && !output.script.isDataOut())
+  ) {
+    return new errors.Transaction.DustOutputs();
   }
 };
 
