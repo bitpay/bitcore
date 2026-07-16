@@ -297,9 +297,7 @@ Transaction.prototype._hasDustOutputs = function(opts) {
   if (opts.disableDustOutputs) {
     return;
   }
-  let index, output;
-  for (index in this.outputs) {
-    output = this.outputs[index];
+  for (const output of this.outputs) {
     if (output.satoshis < Transaction.DUST_AMOUNT && !output.script.isDataOut()) {
       return new errors.Transaction.DustOutputs();
     }
@@ -952,10 +950,9 @@ Transaction.prototype._addOutput = function(output) {
  */
 Transaction.prototype._getOutputAmount = function() {
   if (this._outputAmount == null) {
-    const self = this;
     this._outputAmount = 0;
     for (const output of this.outputs || []) {
-      self._outputAmount += output.satoshis;
+      this._outputAmount += output.satoshis;
     }
   }
   return this._outputAmount;

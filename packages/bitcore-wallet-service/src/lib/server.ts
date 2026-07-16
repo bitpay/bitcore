@@ -5612,6 +5612,55 @@ export class WalletService implements IWalletService {
     });
   }
 
+  moralisGetTransactionVerbose(req): Promise<any> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const response = await Moralis.EvmApi.transaction.getTransactionVerbose({
+          transactionHash: req.body.transactionHash,
+          chain: req.body.chain,
+        });
+
+        return resolve(response?.raw ?? response);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  moralisGetMultipleSolTokenPrices(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      if (!config.moralis) return reject(new Error('Moralis missing credentials'));
+      if (!checkRequired(req.body, ['addresses']) || !Array.isArray(req.body.addresses)) {
+        return reject(new ClientError('moralisGetMultipleSolTokenPrices request missing arguments'));
+      }
+
+      const network = req.body.network === 'devnet' ? 'devnet' : 'mainnet';
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Api-Key': config.moralis.apiKey,
+      };
+
+      const URL: string = `https://solana-gateway.moralis.io/token/${network}/prices`;
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: { addresses: req.body.addresses },
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            return resolve(data.body ?? data);
+          }
+        }
+      );
+    });
+  }
+
   moralisGetSolWalletPortfolio(req): Promise<any> {
     return new Promise(async (resolve, reject) => {
       let network;

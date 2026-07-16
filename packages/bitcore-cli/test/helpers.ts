@@ -142,7 +142,7 @@ export const blockchainExplorerMock = {
 
     return cb(null, JSON.parse(JSON.stringify(selected)));
   },
-  setUtxo: (address, amount, m, confirmations?) => {
+  setUtxo: (address, amount, m?, confirmations?) => {
     const B = Bitcore_[address.coin];
     let scriptPubKey;
     switch (address.type) {
@@ -160,7 +160,7 @@ export const blockchainExplorerMock = {
     assert(!!scriptPubKey, 'scriptPubKey not defined');
     blockchainExplorerMock.utxos.push({
       txid: new Bitcore.crypto.Hash.sha256(Buffer.alloc(Math.random() * 100000)).toString('hex'),
-      outputIndex: 0,
+      vout: 0,
       amount: amount,
       satoshis: amount * 1e8,
       address: address.address,

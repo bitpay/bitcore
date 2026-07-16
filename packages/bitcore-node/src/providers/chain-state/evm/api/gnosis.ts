@@ -160,6 +160,10 @@ export class GnosisApi {
     const transactionQuery = getCSP(chain, network).getWalletTransactionQuery(params);
     delete transactionQuery.wallets;
     delete transactionQuery['wallets.0'];
+    // effects.* addresses were stored raw (lowercase) until 1df63364f and were
+    // never backfilled (fixEvmTxToFromAddressesCase.js only rewrites top-level
+    // to/from), so match either casing
+    const eitherCase = (address: string) => ({ $in: [address, address.toLowerCase()] });
     let query;
     if (tokenAddress) {
       query = {
@@ -176,13 +180,13 @@ export class GnosisApi {
           },
           {
             ...transactionQuery,
-            'effects.contractAddress': tokenAddress,
-            'effects.from': normalizedMultisigContractAddress
+            'effects.contractAddress': eitherCase(tokenAddress),
+            'effects.from': eitherCase(normalizedMultisigContractAddress)
           },
           {
             ...transactionQuery,
-            'effects.contractAddress': tokenAddress,
-            'effects.to': normalizedMultisigContractAddress
+            'effects.contractAddress': eitherCase(tokenAddress),
+            'effects.to': eitherCase(normalizedMultisigContractAddress)
           }
         ]
       };
@@ -191,7 +195,7 @@ export class GnosisApi {
         $or: [
           { ...transactionQuery, to: normalizedMultisigContractAddress },
           { ...transactionQuery, 'internal.action.to': normalizedMultisigContractAddress.toLowerCase() },
-          { ...transactionQuery, 'effects.to': normalizedMultisigContractAddress }
+          { ...transactionQuery, 'effects.to': eitherCase(normalizedMultisigContractAddress) }
         ]
       };
     }

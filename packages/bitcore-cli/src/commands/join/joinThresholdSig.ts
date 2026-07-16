@@ -34,13 +34,28 @@ export async function joinThresholdSigWallet(
   });
   
   const authPubKey = tss.getAuthPublicKey();
-  const done = await prompt.select({
-    message: `Give the following public key to the session leader:${os.EOL}${Utils.colorText(authPubKey, 'blue')}`,
-    options: [{ label: 'Done', value: true, hint: 'Hit Enter/Return to continue' }]
-  });
-  if (prompt.isCancel(done)) {
-    throw new UserCancelled();
-  }
+  let pubKeyAction: 'copy' | 'done' | symbol;
+  do {
+    pubKeyAction = await prompt.select({
+      message: pubKeyAction === 'copy' ? 'Copied!' : `Give the following public key to the session leader:${os.EOL}${Utils.colorText(authPubKey, 'blue')}`,
+      initialValue: pubKeyAction === 'copy' ? 'done' : 'copy',
+      options: [
+        { label: 'Done', value: 'done', hint: 'Hit Enter/Return to continue' },
+        { label: 'Copy to clipboard ⎘', value: 'copy' }
+      ]
+    });
+    if (prompt.isCancel(pubKeyAction)) {
+      throw new UserCancelled();
+    }
+    if (pubKeyAction === 'copy') {
+      try {
+        Utils.copyToClipboard(authPubKey);
+      } catch (error) {
+        prompt.log.error(`Error copying to clipboard: ${error instanceof Error ? error.message : String(error)}`);
+        pubKeyAction = null; // Reset to re-prompt the user
+      }
+    }
+  } while (pubKeyAction !== 'done');
 
   const joinCode = await prompt.text({
     message: 'Enter the join code from the session leader:',
@@ -84,7 +99,7 @@ export async function joinThresholdSigWallet(
     });
     tss.subscribe({ copayerName });
     tss.on('roundsubmitted', (round) => spinner.message(`Round ${round} submitted`));
-    tss.on('error', prompt.log.error);
+    tss.on('error', e => prompt.log.error('Unexpected error during TSS wallet creation: ' + (e.stack || e)));
     tss.on('wallet', async (_wallet) => {
       // TOOD: what to do with this?
       // console.log('Joined wallet at BWS:', wallet);

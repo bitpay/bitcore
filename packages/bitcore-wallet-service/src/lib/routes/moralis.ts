@@ -86,4 +86,16 @@ export function registerMoralisRoutes(router: express.Router, context: RouteCont
       return server.moralisGetSolWalletPortfolio(req);
     });
   });
+
+  router.post('/v1/moralis/getTransactionVerbose', cors(moralisCorsOptions), (req, res) => {
+    respondWithPublicServer(req, res, context, server => {
+      return server.moralisGetTransactionVerbose(req);
+    });
+  });
+
+  router.post('/v1/moralis/getMultipleSolTokenPrices', cors(moralisCorsOptions), (req, res) => {
+    respondWithPublicServer(req, res, context, server => {
+      return server.moralisGetMultipleSolTokenPrices(req);
+    });
+  });
 }
