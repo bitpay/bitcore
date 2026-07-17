@@ -91,14 +91,19 @@ export class XrpChain implements IChain {
   getWalletSendMaxInfo(server: WalletService, wallet: IWallet, opts: GetSendMaxInfoOpts, cb) {
     server.getBalance({}, (err, balance) => {
       if (err) return cb(err);
-      const { availableAmount } = balance;
-      const fee = opts.feePerKb;
-      return cb(null, {
-        utxosBelowFee: 0,
-        amountBelowFee: 0,
-        amount: availableAmount - fee,
-        feePerKb: opts.feePerKb,
-        fee
+
+      server._getFeePerKb(wallet, opts, (err, feePerKb) => {
+        if (err) return cb(err);
+
+        const { availableAmount } = balance;
+        const fee = feePerKb;
+        return cb(null, {
+          utxosBelowFee: 0,
+          amountBelowFee: 0,
+          amount: availableAmount - fee,
+          feePerKb,
+          fee
+        });
       });
     });
   }

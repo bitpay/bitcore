@@ -3382,6 +3382,19 @@ export class WalletService implements IWalletService {
                   return cb(Errors.TX_NONCE_CONFLICT);
                 }
               }
+              // A deferred txp matching a broadcasted txp's nonce means its JIT-assigned
+              // value went stale. Non-deferred txps may reuse an in-flight nonce
+              // intentionally (e.g. speed-up).
+              if (txp.nonce != null && txp.deferNonce) {
+                const broadcastedTxps = await util.promisify(this.storage.fetchBroadcastedTxs).call(this.storage, this.walletId, {
+                  minTs: Math.floor(Date.now() / 1000) - Defaults.BROADCASTED_NONCE_SCAN_WINDOW
+                });
+                for (const t of broadcastedTxps || []) {
+                  if (t.id !== txp.id && t.nonce != null && Number(t.nonce) === Number(txp.nonce)) {
+                    return cb(Errors.TX_NONCE_CONFLICT);
+                  }
+                }
+              }
             } catch (err) {
               return cb(err);
             }
@@ -3510,9 +3523,18 @@ export class WalletService implements IWalletService {
               .filter(t => t.id !== txp.id && t.nonce != null && t.status !== 'rejected')
               .map(t => Number(t.nonce));
 
+            // 2b. Broadcasted-but-unmined txps still occupy their nonces but appear in
+            // neither the confirmed count nor the pending set
+            const broadcastedTxps = await util.promisify(this.storage.fetchBroadcastedTxs).call(this.storage, this.walletId, {
+              minTs: Math.floor(Date.now() / 1000) - Defaults.BROADCASTED_NONCE_SCAN_WINDOW
+            });
+            const inFlightNonces = (broadcastedTxps || [])
+              .filter(t => t.nonce != null && Number(t.nonce) >= Number(confirmedNonce))
+              .map(t => Number(t.nonce));
+
             // 3. Calculate gap-free nonce
             let suggestedNonce = Number(confirmedNonce);
-            const allNonces = pendingNonces.sort((a, b) => a - b);
+            const allNonces = [...pendingNonces, ...inFlightNonces].sort((a, b) => a - b);
             for (const n of allNonces) {
               if (n === suggestedNonce) {
                 suggestedNonce++;
@@ -5599,6 +5621,55 @@ export class WalletService implements IWalletService {
         URL,
         {
           headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            return resolve(data.body ?? data);
+          }
+        }
+      );
+    });
+  }
+
+  moralisGetTransactionVerbose(req): Promise<any> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const response = await Moralis.EvmApi.transaction.getTransactionVerbose({
+          transactionHash: req.body.transactionHash,
+          chain: req.body.chain,
+        });
+
+        return resolve(response?.raw ?? response);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  moralisGetMultipleSolTokenPrices(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      if (!config.moralis) return reject(new Error('Moralis missing credentials'));
+      if (!checkRequired(req.body, ['addresses']) || !Array.isArray(req.body.addresses)) {
+        return reject(new ClientError('moralisGetMultipleSolTokenPrices request missing arguments'));
+      }
+
+      const network = req.body.network === 'devnet' ? 'devnet' : 'mainnet';
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Api-Key': config.moralis.apiKey,
+      };
+
+      const URL: string = `https://solana-gateway.moralis.io/token/${network}/prices`;
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: { addresses: req.body.addresses },
           json: true
         },
         (err, data) => {
