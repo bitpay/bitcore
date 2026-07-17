@@ -3980,6 +3980,10 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/banxa/createOrder', data);
   }
 
+  async banxaGetOrder(data) {
+    return this.request.post('/v1/service/banxa/getOrder', data);
+  }
+
   async moonpayGetQuote(data) {
     return this.request.post('/v1/service/moonpay/quote', data);
   }
@@ -3996,8 +4000,20 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/moonpay/sellSignedPaymentUrl', data);
   }
 
+  async moonpayGetTransactionDetails(data) {
+    return this.request.post('/v1/service/moonpay/transactionDetails', data);
+  }
+
+  async moonpayGetSellTransactionDetails(data) {
+    return this.request.post('/v1/service/moonpay/sellTransactionDetails', data);
+  }
+
   async moonpayCancelSellTransaction(data) {
     return this.request.post('/v1/service/moonpay/cancelSellTransaction', data);
+  }
+
+  async moonpayGetAccountDetails(data) {
+    return this.request.post('/v1/service/moonpay/accountDetails', data);
   }
 
   async moonpayCreateSession(data) {
@@ -4020,12 +4036,20 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/ramp/signedPaymentUrl', data);
   }
 
+  async rampGetSellTransactionDetails(data) {
+    return this.request.post('/v1/service/ramp/sellTransactionDetails', data);
+  }
+
   async sardineGetQuote(data) {
     return this.request.post('/v1/service/sardine/quote', data);
   }
 
   async sardineGetToken(data) {
     return this.request.post('/v1/service/sardine/getToken', data);
+  }
+
+  async sardineGetOrdersDetails(data) {
+    return this.request.post('/v1/service/sardine/ordersDetails', data);
   }
 
   async simplexGetQuote(data) {
@@ -4052,6 +4076,10 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/thorswap/getSwapQuote', data);
   }
 
+  async thorswapGetSwapTx(data) {
+    return this.request.post('/v1/service/thorswap/getSwapTx', data);
+  }
+
   async transakGetAccessToken(data) {
     return this.request.post('/v1/service/transak/getAccessToken', data);
   }
@@ -4062,6 +4090,10 @@ export class API extends EventEmitter {
 
   async transakGetSignedPaymentUrl(data) {
     return this.request.post('/v1/service/transak/signedPaymentUrl', data);
+  }
+
+  async transakGetOrderDetails(data) {
+    return this.request.post('/v1/service/transak/orderDetails', data);
   }
 
   async wyreWalletOrderQuotation(data) {
@@ -4082,6 +4114,14 @@ export class API extends EventEmitter {
 
   async changellyCreateFixTransaction(data) {
     return this.request.post('/v1/service/changelly/createFixTransaction', data);
+  }
+
+  async changellyGetTransactions(data) {
+    return this.request.post('/v1/service/changelly/getTransactions', data);
+  }
+
+  async changellyGetStatus(data) {
+    return this.request.post('/v1/service/changelly/getStatus', data);
   }
 
   async oneInchGetSwap(data) {
