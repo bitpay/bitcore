@@ -46,6 +46,8 @@ for (const network in NetworkChar) { // invert NetworkChar
   NetworkChar[NetworkChar[network]] = network;
 }
 
+const defaultNumberFormat = 'number'; // 'number' | 'string' | 'hex'
+
 const BASE_URL = 'http://localhost:3232/bws/api';
 
 export class API extends EventEmitter {
@@ -1400,7 +1402,7 @@ export class API extends EventEmitter {
       qs.push(`includeExtendedInfo=${opts.includeExtendedInfo ? '1' : '0'}`);
       qs.push(`twoStep=${opts.twoStep ? '1' : '0'}`);
       qs.push('serverMessageArray=1');
-      qs.push('numberFormat=hex'); // Only applies to `pendingTxps` in response. TODO apply this to balances as well.
+      qs.push('numberFormat=' + defaultNumberFormat); // Only applies to `pendingTxps` in response. TODO apply this to balances as well.
 
       if (opts.tokenAddress) {
         qs.push('tokenAddress=' + opts.tokenAddress);
@@ -1732,7 +1734,7 @@ export class API extends EventEmitter {
       const args = {
         proposalSignature: Utils.signMessage(hash, this.credentials.requestPrivKey)
       };
-      const qs = `numberFormat=${opts.numberFormat || 'hex'}`;
+      const qs = `numberFormat=${opts.numberFormat || defaultNumberFormat}`;
 
       const url = `/v2/txproposals/${opts.txp.id}/publish?${qs}`;
       const { body: txp } = await this.request.post<object, PublishedTxp>(url, args);
@@ -1937,7 +1939,7 @@ export class API extends EventEmitter {
 
       opts = opts || {};
       const { doNotVerify, forAirGapped, doNotEncryptPkr } = opts;
-      const qs = `numberFormat=${opts.numberFormat || 'hex'}`;
+      const qs = `numberFormat=${opts.numberFormat || defaultNumberFormat}`;
 
       const { body: txps } = await this.request.get(`/v2/txproposals?${qs}`);
       this._processTxps(txps);
