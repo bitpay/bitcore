@@ -326,7 +326,7 @@ export async function promptKeyshareBackup(): Promise<boolean> {
     'This keyshare backup file contains both your 12-word mnemonic AND your keyshare data, encrypted with a password you will set in the following prompts.' + os.EOL +
     'Make sure to:' + os.EOL +
     `  - Store the file in a ${Utils.underlineText('safe place')}, like a USB drive in a safe, and do not share it with anyone.` + os.EOL +
-    `  - ${Utils.boldText('DO NOT FORGET')} the encryption password! The file is useless without it, and there is no way to reset the password.` + os.EOL +
+    `  - ${Utils.boldText('DO NOT FORGET', true)} the encryption password! The file is useless without it, and there is no way to reset the password.` + os.EOL +
     'Both the file + encryption password are as valuable as a non-TSS wallet\'s 12-24 word phrase, so treat them with the same level of security.'
   );
   const a = await prompt.select({

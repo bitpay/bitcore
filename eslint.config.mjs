@@ -106,6 +106,7 @@ export default defineConfig([
     languageOptions: { sourceType: 'commonjs' },
     rules: {
       '@typescript-eslint/no-require-imports': 'warn',
+      'no-bitwise': 'off',
       '@typescript-eslint/no-unused-vars': 'warn',
     }
   },

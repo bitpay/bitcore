@@ -504,8 +504,8 @@ describe('Transaction Model', function() {
         expect(findQuery.$or).to.deep.include({
           chain: 'ETH',
           network: 'mainnet',
-          'effects.contractAddress': gnosisBusdToken,
-          'effects.to': gnosisMultisigContractAddress
+          'effects.contractAddress': { $in: [gnosisBusdToken, gnosisBusdToken.toLowerCase()] },
+          'effects.to': { $in: [gnosisMultisigContractAddress, gnosisMultisigContractAddress.toLowerCase()] }
         });
       });
 
@@ -528,8 +528,8 @@ describe('Transaction Model', function() {
         expect(findQuery.$or).to.deep.include({
           chain: 'ETH',
           network: 'mainnet',
-          'effects.contractAddress': gnosisBusdToken,
-          'effects.to': gnosisMultisigContractAddress
+          'effects.contractAddress': { $in: [gnosisBusdToken, gnosisBusdToken.toLowerCase()] },
+          'effects.to': { $in: [gnosisMultisigContractAddress, gnosisMultisigContractAddress.toLowerCase()] }
         });
       });
 
