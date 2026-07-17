@@ -5451,8 +5451,8 @@ describe('client API', function() {
             txp.outputs[0].message.should.equal('output 0');
             txp.message.should.equal('hello');
             txp.txType.should.equal(2);
-            txp.maxGasFee.should.equal('0x4e20'); // 20000
-            txp.priorityGasFee.should.equal('0x1388'); // 5000
+            txp.maxGasFee.should.equal(20000); // 0x4e20
+            txp.priorityGasFee.should.equal(5000); // 0x1388
             const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
             clients[0].pushSignatures(txp, signatures, (err, txp) => {
               should.not.exist(err);
