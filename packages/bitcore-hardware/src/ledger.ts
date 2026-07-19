@@ -1,5 +1,6 @@
 import { createRequire } from 'module';
-import { Psbt } from 'bitcoinjs-lib';
+import Bitcore from '@bitpay-labs/bitcore-lib';
+import { Psbt, payments } from 'bitcoinjs-lib';
 import {
   Observable,
   lastValueFrom
@@ -18,6 +19,8 @@ const {
   SignerBtcBuilder
 } = require('@ledgerhq/device-signer-kit-bitcoin');
 
+const { HDPublicKey } = Bitcore;
+type Transaction = Bitcore.Transaction;
 
 export default class Ledger implements Base {
   device: any;
@@ -94,7 +97,28 @@ export default class Ledger implements Base {
     return result.output.extendedPublicKey;
   }
 
-  async sign(psbt: Psbt) {
+  async sign(tx: Transaction) {
+    const psbt = new Psbt();
+
+    const pubkey = new HDPublicKey(await this.getPublicKey({ index: 0 })).derive('m/0/0').publicKey.toBuffer();
+    const masterFingerprint = await this.getMasterKeyFingerprint();
+
+    psbt.addInputs(tx.inputs.map(input => ({
+      hash: input.prevTxId,
+      index: input.outputIndex,
+      witnessUtxo: {
+        script: payments.p2wpkh({ pubkey }).output,
+        value: input.output._satoshis
+      },
+      bip32Derivation: [{
+        masterFingerprint: Buffer.from(masterFingerprint.buffer, masterFingerprint.byteOffset, masterFingerprint.byteLength),
+        pubkey,
+        path: "m/84'/0'/0'/0/0",
+      }]
+    })));
+
+    psbt.addOutputs([{ address: 'bc1qj86hpgprdudkks84y52vdenz86kd26stkssrcq', value: 900 }]);
+
     const ob: Observable<any> = this.signer.signTransaction(
       new DefaultWallet("84'/0'/0'", 'wpkh(@0/**)'),
       psbt
