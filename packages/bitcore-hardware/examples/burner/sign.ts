@@ -1,6 +1,8 @@
 import bitcore from '@bitpay-labs/bitcore-lib';
 import Burner from '../../src/burner.js';
 
+const { Transaction, PublicKey, crypto } = bitcore;
+
 const burner = new Burner('btc');
 burner.connect();
 
@@ -12,13 +14,22 @@ const utxo = {
   satoshis: 500
 };
 
-const transaction = new bitcore.Transaction()
+const transaction = new Transaction()
   .from(utxo)
   .to('1Gokm82v6DmtwKEB8AiVhm82hyFSsEvBDK', 150)
   .toString();
 
 console.log('Tap burner wallet on an NFC reader to sign a transaction');
-console.log(await burner.sign({ index: 9, message: transaction, password: '123456' }));
+const result: any = await burner.sign({ index: 9, message: transaction.toString(), password: '123456' });
 
-console.log('Signed transaction with burner wallet, exiting...');
+console.log(result);
+console.log('Signed transaction');
+
+const sig = crypto.Signature.fromString(result.signature.der);
+const digest = Buffer.from(result.input.digest, 'hex');
+const publicKey = new PublicKey(result.publicKey);
+
+const verify = crypto.ECDSA.verify(digest, sig, publicKey);
+console.log(verify ? 'Verified signature' : 'Invalid signature');
+
 process.exit(0);

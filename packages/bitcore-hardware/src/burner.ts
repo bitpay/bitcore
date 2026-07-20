@@ -54,10 +54,13 @@ export default class Burner implements Base {
 
   async sign(params: SignParams) {
     const { index, message, password } = params;
+
     this.response = undefined;
+    const digest = bitcore.crypto.Hash.sha256sha256(Buffer.from(message, 'hex')).toString('hex');
+
     this.command = {
       name: 'sign',
-      message,
+      digest,
       password,
       keyNo: index
     };
