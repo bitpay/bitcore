@@ -15,12 +15,12 @@ const utxo = {
   outputIndex: 0,
   address: address.toString(),
   script: Script.buildWitnessV0Out(address),
-  satoshis: 500
+  satoshis: 1100
 };
 
 const transaction = new Transaction()
   .from(utxo)
-  .to('1Gokm82v6DmtwKEB8AiVhm82hyFSsEvBDK', 150);
+  .to('1Gokm82v6DmtwKEB8AiVhm82hyFSsEvBDK', 1000);
 
 const scriptCode = transaction.inputs[0].getScriptCode();
 const satoshisBuffer = transaction.inputs[0].getSatoshisBuffer();
@@ -48,5 +48,5 @@ const signature = {
 
 transaction.applySignature(signature);
 
-console.log(transaction.toString());
+console.log(transaction.serialize());
 process.exit(0);
