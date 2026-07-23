@@ -1,12 +1,11 @@
 'use strict';
 
+const { Curve: curve, Point: PointClass } = require('@bitpay-labs/bitcore-common');
 const BufferUtil = require('../util/buffer');
 const BN = require('./bn');
-const EC = require('elliptic').ec;
 
-const ec = new EC('secp256k1');
-const ecPoint = ec.curve.point.bind(ec.curve);
-const ecPointFromX = ec.curve.pointFromX.bind(ec.curve);
+const ecPoint = curve.point.bind(curve);
+const ecPointFromX = curve.pointFromX.bind(curve);
 
 /**
  *
@@ -24,14 +23,14 @@ const Point = function Point(x, y, isRed) {
   let point;
   try {
     point = ecPoint(x, y, isRed);
-  } catch (e) {
+  } catch {
     throw new Error('Invalid Point');
   }
   point.validate();
   return point;
 };
 
-Point.prototype = Object.getPrototypeOf(ec.curve.point());
+Point.prototype = PointClass.prototype;
 
 /**
  *
@@ -46,7 +45,7 @@ Point.fromX = function fromX(odd, x) {
   let point;
   try {
     point = ecPointFromX(x, odd);
-  } catch (e) {
+  } catch {
     throw new Error('Invalid X');
   }
   point.validate();
@@ -61,7 +60,7 @@ Point.fromX = function fromX(odd, x) {
  * @returns {Point} An instance of the base point.
  */
 Point.getG = function getG() {
-  return ec.curve.g;
+  return curve.g;
 };
 
 /**
@@ -72,7 +71,7 @@ Point.getG = function getG() {
  * @returns {BN} A BN instance of the number of points on the curve
  */
 Point.getN = function getN() {
-  return new BN(ec.curve.n.toArray());
+  return new BN(curve.n.toArray());
 };
 
 /**
@@ -80,11 +79,16 @@ Point.getN = function getN() {
  * @returns {BN} A BN instance of the field size
  */
 Point.getP = function() {
-  return ec.curve.p.clone();
+  return curve.p.clone();
 };
 
+// Ensure _getX / _getY exist as aliases to the curve's native methods,
+// so our overridden getX/getY can call them.
 if (!Point.prototype._getX)
   Point.prototype._getX = Point.prototype.getX;
+
+if (!Point.prototype._getY)
+  Point.prototype._getY = Point.prototype.getY;
 
 /**
  *
@@ -95,9 +99,6 @@ if (!Point.prototype._getX)
 Point.prototype.getX = function getX() {
   return new BN(this._getX().toArray());
 };
-
-if (!Point.prototype._getY)
-  Point.prototype._getY = Point.prototype.getY;
 
 /**
  *
@@ -127,7 +128,7 @@ Point.prototype.validate = function validate() {
   let p2;
   try {
     p2 = ecPointFromX(this.getX(), this.getY().isOdd());
-  } catch (e) {
+  } catch {
     throw new Error('Point does not lie on the curve');
   }
 
@@ -161,25 +162,8 @@ Point.pointToCompressed = function pointToCompressed(point) {
 
 
 Point.prototype.liftX = function() {
-  const fieldSize = Point.getP();
-  const zero = new BN(0);
-  const one = new BN(1);
-  const two = new BN(2);
-  const three = new BN(3);
-  const four = new BN(4);
-  const seven = new BN(7);
-  const red = BN.red('k256');
-
-  const c = this.x.pow(three).add(seven).mod(fieldSize);
-  const y = c.toRed(red).redPow(fieldSize.add(one).div(four)).mod(fieldSize);
-  
-  if (!c.eq(y.pow(two).mod(fieldSize))) {
-    throw new Error('liftX failed');
-  }
-  
   const pointX = this.x.red ? this.x.fromRed() : this.x;
-  const pointY = y.mod(two).eq(zero) ? y.fromRed() : fieldSize.sub(y);
-  return new Point(pointX, pointY, true);
+  return Point.fromX(false, pointX);
 };
 
 module.exports = Point;

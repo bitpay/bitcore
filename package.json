@@ -17,6 +17,7 @@
     "precommit": "eslint --pass-on-no-patterns --no-warn-ignored $(git diff --name-only --cached --diff-filter=AM)",
     "test:bitcore-cli": "cd ./packages/bitcore-cli && npm run test",
     "test:bitcore-client": "cd ./packages/bitcore-client && npm run test",
+    "test:bitcore-common": "cd ./packages/bitcore-common && npm run test",
     "test:bitcore-lib": "cd ./packages/bitcore-lib && npm run test",
     "test:bitcore-lib-cash": "cd ./packages/bitcore-lib-cash && npm run test",
     "test:bitcore-lib-doge": "cd ./packages/bitcore-lib-doge && npm run test",
