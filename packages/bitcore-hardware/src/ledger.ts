@@ -1,6 +1,6 @@
 import { createRequire } from 'module';
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
-import { Psbt, payments } from 'bitcoinjs-lib';
+import { Psbt } from 'bitcoinjs-lib';
 import {
   Observable,
   lastValueFrom
@@ -19,7 +19,7 @@ const {
   SignerBtcBuilder
 } = require('@ledgerhq/device-signer-kit-bitcoin');
 
-const { HDPublicKey } = BitcoreLib;
+const { HDPublicKey, Transaction } = BitcoreLib;
 
 export default class Ledger implements Base {
   device: any;
@@ -106,7 +106,7 @@ export default class Ledger implements Base {
       hash: input.prevTxId,
       index: input.outputIndex,
       witnessUtxo: {
-        script: payments.p2wpkh({ pubkey }).output,
+        script: input.output._script.toBuffer(),
         value: input.output._satoshis
       },
       bip32Derivation: [{
@@ -124,7 +124,7 @@ export default class Ledger implements Base {
     ).observable;
 
     const result = await lastValueFrom(ob);
-    return result.output;
+    return new Transaction(result.output.slice(2));
   }
 
   async getMasterKeyFingerprint(): Promise<Uint8Array> {

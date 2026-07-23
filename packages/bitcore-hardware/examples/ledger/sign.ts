@@ -13,10 +13,14 @@ const tx = new Transaction()
     address: 'bc1q0wsc0l2pzfn55ra67kr0vm40rjlllyh3a5kf88',
     txId: 'a78dbd15bde4d8678c7e01451d6e54e92629395c9b76de7d37bf464514c8bc04',
     outputIndex: 0,
-    script: new Script(publickey.toAddress()),
+    script: Script.buildWitnessV0Out(publickey.toAddress()),
     satoshis: 9290
   });
 
-console.log(await ledger.sign(tx));
+const signedTransaction = await ledger.sign(tx);
+console.log(signedTransaction);
+console.log(signedTransaction.toBuffer().toString('hex'));
 await ledger.disconnect();
+
+console.log('Signed transaction');
 process.exit(0);
