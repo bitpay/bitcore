@@ -4,46 +4,46 @@ import { BI } from '../src/utils';
 describe('BigInt', function() {
   describe('isBigIntLike', function() {
     it('should return true for a number', function() {
-      expect(BI.isBigIntLike(123)).to.be.true;
+      expect(BI.isBigIntLike(123)).to.equal(true);
     });
 
     it('should return true for a bigint', function() {
-      expect(BI.isBigIntLike(123n)).to.be.true;
+      expect(BI.isBigIntLike(123n)).to.equal(true);
     });
 
     it('should return true for a numeric string', function() {
-      expect(BI.isBigIntLike('123')).to.be.true;
+      expect(BI.isBigIntLike('123')).to.equal(true);
     });
     
     it('should return true for a numeric hex string', function() {
-      expect(BI.isBigIntLike('0x123')).to.be.true;
+      expect(BI.isBigIntLike('0x123')).to.equal(true);
     });
 
     it('should return false for a non-numeric string', function() {
       // Notice that `abc` are valid hex characters and sToBigInt('abc') => 2748n.
       // However, `abc` is not a valid number if it's desired to be treated as hex,
       //  you should call sToBigInt('abc') first OR append a '0x' hex prefix.
-      expect(BI.isBigIntLike('abc')).to.be.false;
+      expect(BI.isBigIntLike('abc')).to.equal(false);
     });
 
     it('should return false for an empty string', function() {
-      expect(BI.isBigIntLike('')).to.be.false;
+      expect(BI.isBigIntLike('')).to.equal(false);
     });
 
     it('should return false for a null value', function() {
-      expect(BI.isBigIntLike(null)).to.be.false;
+      expect(BI.isBigIntLike(null)).to.equal(false);
     });
 
     it('should return false for a NaN value', function() {
-      expect(BI.isBigIntLike(NaN)).to.be.false;
+      expect(BI.isBigIntLike(NaN)).to.equal(false);
     });
     
     it('should return false for undefined value', function() {
-      expect(BI.isBigIntLike(undefined)).to.be.false;
+      expect(BI.isBigIntLike(undefined)).to.equal(false);
     });
     
     it('should return false for a totally off the wall value', function() {
-      expect(BI.isBigIntLike({})).to.be.false;
+      expect(BI.isBigIntLike({})).to.equal(false);
     });
   });
 
@@ -368,6 +368,200 @@ describe('BigInt', function() {
     it('should convert all bigint values in an object to hex string when destType is "hex"', function() {
       const result = BI.scrubBigIntsInObject({ a: 123n, b: { c: 456n, d: 'test' }, e: [789n, 'value'] }, 'hex');
       expect(result).to.deep.equal({ a: '0x7b', b: { c: '0x1c8', d: 'test' }, e: ['0x315', 'value'] });
+    });
+  });
+
+  describe('isEqual', function() {
+    it('should return true for two identical bigints', function() {
+      expect(BI.isEqual(123n, 123n)).to.equal(true);
+    });
+
+    it('should return true for two identical numbers', function() {
+      expect(BI.isEqual(123, 123)).to.equal(true);
+    });
+
+    it('should return true for two identical numeric strings', function() {
+      expect(BI.isEqual('123', '123')).to.equal(true);
+    });
+
+    it('should return true for same value in different formats', function() {
+      expect(BI.isEqual(1n, 1)).to.equal(true);
+      expect(BI.isEqual(1n, 1.0)).to.equal(true);
+      expect(BI.isEqual(1n, '1')).to.equal(true);
+      expect(BI.isEqual(1n, '0x1')).to.equal(true);
+      expect(BI.isEqual(1n, '1.0')).to.equal(true);
+      expect(BI.isEqual(1n, '1e0')).to.equal(true);
+      expect(BI.isEqual(1, '1')).to.equal(true);
+      expect(BI.isEqual(1, '0x1')).to.equal(true);
+      expect(BI.isEqual(1, '1.0')).to.equal(true);
+      expect(BI.isEqual(1, '1e0')).to.equal(true);
+      expect(BI.isEqual('1', '0x1')).to.equal(true);
+      expect(BI.isEqual('1', '1.0')).to.equal(true);
+      expect(BI.isEqual('1', '1e0')).to.equal(true);
+      expect(BI.isEqual('0x1', '1.0')).to.equal(true);
+      expect(BI.isEqual('0x1', '1e0')).to.equal(true);
+      expect(BI.isEqual('1.0', '1e0')).to.equal(true);
+    });
+
+    it('should handle special numeric values and edge cases', function() {
+      expect(BI.isEqual(0n, 0)).to.equal(true);
+      expect(BI.isEqual('Infinity', Infinity)).to.equal(true);
+      expect(BI.isEqual('-Infinity', -Infinity)).to.equal(true);
+      expect(BI.isEqual('NaN', NaN)).to.equal(false);
+      expect(BI.isEqual('1.0', 1n)).to.equal(true);
+      expect(BI.isEqual('1e0', 1n)).to.equal(true);
+      expect(BI.isEqual(123456789012345678901234567890n, '123456789012345678901234567890')).to.equal(true);
+      expect(BI.isEqual(123456789012345678901234567890n, '123456789012345678901234567890.0000')).to.equal(true);
+      expect(BI.isEqual(123456789012345678901234567890n, '123456789012345678901234567890.0001')).to.equal(false);
+    });
+
+    it('should return true for zero in different formats', function() {
+      expect(BI.isEqual(0n, 0)).to.equal(true);
+      expect(BI.isEqual(0n, '0')).to.equal(true);
+      expect(BI.isEqual(0, '0')).to.equal(true);
+    });
+
+    it('should return true for large numbers in different formats', function() {
+      expect(BI.isEqual(123456789012345678901234567890n, '123456789012345678901234567890')).to.equal(true);
+      // eslint-disable-next-line no-loss-of-precision
+      expect(BI.isEqual(123456789012345678901234567890, '123456789012345678901234567890')).to.equal(true);
+    });
+
+    it('should return false when precision loss is inevitable', function() {
+      // eslint-disable-next-line no-loss-of-precision
+      expect(BI.isEqual(123456789012345678901234567890n, 123456789012345678901234567890)).to.equal(false);
+      // eslint-disable-next-line no-loss-of-precision
+      expect(BI.isEqual(123456789012345678901234567890, 123456789012345678901234567890n)).to.equal(false);
+    });
+
+    it('should return false for different values', function() {
+      expect(BI.isEqual(1n, 2n)).to.equal(false);
+      expect(BI.isEqual(1, 2)).to.equal(false);
+      expect(BI.isEqual('1', '2')).to.equal(false);
+      expect(BI.isEqual(1n, 2)).to.equal(false);
+    });
+
+    it('should return false when one value is invalid', function() {
+      expect(BI.isEqual(1n, 'invalid')).to.equal(false);
+      expect(BI.isEqual('invalid', 1n)).to.equal(false);
+      expect(BI.isEqual(1n, null)).to.equal(false);
+      expect(BI.isEqual(1n, undefined)).to.equal(false);
+      expect(BI.isEqual(1n, '')).to.equal(false);
+    });
+
+    it('should return true when both values are invalid but loosely equal', function() {
+      expect(BI.isEqual('invalid', 'invalid')).to.equal(true);
+      expect(BI.isEqual(null, null)).to.equal(true);
+      expect(BI.isEqual(undefined, undefined)).to.equal(true);
+      expect(BI.isEqual(null, undefined)).to.equal(true);
+      expect(BI.isEqual('', '')).to.equal(true);
+    });
+
+    it('should return false when both values are invalid but not loosely equal', function() {
+      expect(BI.isEqual('invalid', 'different')).to.equal(false);
+      expect(BI.isEqual(null, '')).to.equal(false);
+      expect(BI.isEqual(undefined, '')).to.equal(false);
+      expect(BI.isEqual('', ' ')).to.equal(false);
+    });
+
+    it('should handle negative numbers', function() {
+      expect(BI.isEqual(-5n, -5)).to.equal(true);
+      expect(BI.isEqual(-5n, '-5')).to.equal(true);
+      expect(BI.isEqual(-5, '-5')).to.equal(true);
+      expect(BI.isEqual(-5n, 5n)).to.equal(false);
+    });
+  });
+
+  describe('BigIntTry', function() {
+    it('should convert a number to bigint', function() {
+      const result = BI.BigIntTry(123);
+      expect(result).to.equal(123n);
+      expect(typeof result).to.equal('bigint');
+    });
+
+    it('should convert a numeric string to bigint', function() {
+      const result = BI.BigIntTry('123');
+      expect(result).to.equal(123n);
+      expect(typeof result).to.equal('bigint');
+    });
+
+    it('should convert a bigint to bigint', function() {
+      const result = BI.BigIntTry(123n);
+      expect(result).to.equal(123n);
+      expect(typeof result).to.equal('bigint');
+    });
+
+    it('should convert a hex string to bigint', function() {
+      const result = BI.BigIntTry('0x123');
+      expect(result).to.equal(0x123n);
+      expect(typeof result).to.equal('bigint');
+    });
+
+    it('should handle zero', function() {
+      expect(BI.BigIntTry(0)).to.equal(0n);
+      expect(BI.BigIntTry('0')).to.equal(0n);
+      expect(BI.BigIntTry('0x0')).to.equal(0n);
+    });
+
+    it('should handle negative numbers', function() {
+      expect(BI.BigIntTry(-5)).to.equal(-5n);
+      expect(BI.BigIntTry('-5')).to.equal(-5n);
+    });
+
+    it('should return original value for empty string', function() {
+      const result = BI.BigIntTry('');
+      expect(result).to.equal('');
+      expect(typeof result).to.equal('string');
+    });
+
+    it('should return original value for non-numeric string', function() {
+      const result = BI.BigIntTry('invalid');
+      expect(result).to.equal('invalid');
+      expect(typeof result).to.equal('string');
+    });
+
+    it('should return original value for null', function() {
+      const result = BI.BigIntTry(null);
+      expect(result).to.equal(null);
+      expect(typeof result).to.equal('object');
+    });
+
+    it('should return original value for undefined', function() {
+      const result = BI.BigIntTry(undefined);
+      expect(result).to.equal(undefined);
+      expect(typeof result).to.equal('undefined');
+    });
+
+    it('should return original value for object', function() {
+      const obj = { a: 1 };
+      const result = BI.BigIntTry(obj);
+      expect(result).to.equal(obj);
+      expect(typeof result).to.equal('object');
+    });
+
+    it('should return original value for array', function() {
+      const arr = [1, 2, 3];
+      const result = BI.BigIntTry(arr);
+      expect(result).to.equal(arr);
+      expect(Array.isArray(result)).to.equal(true);
+    });
+
+    it('should return original value for NaN', function() {
+      const result = BI.BigIntTry(NaN);
+      expect(Number.isNaN(result)).to.equal(true);
+      expect(typeof result).to.equal('number');
+    });
+
+    it('should handle large numbers', function() {
+      const largeNum = '123456789012345678901234567890';
+      const result = BI.BigIntTry(largeNum);
+      expect(result).to.equal(123456789012345678901234567890n);
+      expect(typeof result).to.equal('bigint');
+    });
+
+    it('should return bigint value for boolean', function() {
+      expect(BI.BigIntTry(true)).to.equal(1n);
+      expect(BI.BigIntTry(false)).to.equal(0n);
     });
   });
 });

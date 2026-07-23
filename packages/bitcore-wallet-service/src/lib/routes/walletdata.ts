@@ -1,7 +1,7 @@
 import express from 'express';
 import { Common } from '../common';
 import type * as Types from '../../types/expressapp';
-import type { GetAddressesOpts } from '../../types/server';
+import type { GetAddressesOpts, GetSendMaxInfoOpts, NumberFormatOpts } from '../../types/server';
 
 const Utils = Common.Utils;
 
@@ -111,16 +111,12 @@ export function registerWalletDataRoutes(router: express.Router, context: RouteC
   router.get('/v1/sendmaxinfo/', (req, res) => {
     getServerWithAuth(req, res, server => {
       const query = req.query;
-      const opts: {
-        feePerKb?: number;
-        feeLevel?: number;
-        returnInputs?: boolean;
-        excludeUnconfirmedUtxos?: boolean;
-      } = {};
+      const opts: GetSendMaxInfoOpts & NumberFormatOpts = {};
       if (query.feePerKb) opts.feePerKb = +query.feePerKb;
-      if (query.feeLevel) opts.feeLevel = Number(query.feeLevel);
+      if (query.feeLevel) opts.feeLevel = query.feeLevel;
       if (query.excludeUnconfirmedUtxos == '1') opts.excludeUnconfirmedUtxos = true;
       if (query.returnInputs == '1') opts.returnInputs = true;
+      if (query.numberFormat) opts.numberFormat = query.numberFormat as 'hex' | 'number' | 'string';
 
       server.getSendMaxInfo(opts, (err, info) => {
         if (err) return returnError(err, res, req);

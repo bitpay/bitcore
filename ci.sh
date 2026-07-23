@@ -16,6 +16,11 @@ for arg in "$@"; do
   fi
 done
 
+DOCKER_UID=$(id -u)
+DOCKER_GID=$(id -g)
+export DOCKER_UID
+export DOCKER_GID
+
 if [ "$1" == "build" ]; then
   docker compose -f docker-compose.test.base.yml -f docker-compose.test.local.yml build
 elif [ "$1" = "run" ]; then

@@ -4,7 +4,7 @@ import {
   BitcoreLibCash as BitcoreCash,
   BitcoreLibDoge as BitcoreDoge,
   BitcoreLibLtc as BitcoreLtc,
-  Validation
+  Validation,
 } from '@bitpay-labs/crypto-wallet-core';
 import * as async from 'async';
 import EmailValidator from 'email-validator';
@@ -57,7 +57,7 @@ import {
 } from './model';
 import { Storage } from './storage';
 import type { ExternalServicesConfig } from '../types/externalservices';
-import type { GetAddressesOpts, UpgradeCheckOpts } from '../types/server';
+import type { GetAddressesOpts, GetSendMaxInfoOpts, NumberFormatOpts, UpgradeCheckOpts } from '../types/server';
 
 type BwsLogger = typeof logger;
 
@@ -2073,24 +2073,34 @@ export class WalletService implements IWalletService {
     });
   }
 
+  getSendMaxInfo(opts: GetSendMaxInfoOpts & NumberFormatOpts, cb) {
+    this._getSendMaxInfo(opts, (err, sendMaxInfo) => {
+      if (err) return cb(err);
+      if (opts.numberFormat) {
+        const convertFn = Utils.getNumberConverter(opts.numberFormat);
+        if (!convertFn) {
+          logger.warn(`Invalid numberFormat: ${opts.numberFormat}, no conversion will be applied to sendMaxInfo for wallet ${this.walletId}`);
+        } else {
+          for (const key of ['amount', 'amountBelowFee', 'fee', 'feePerKb', 'amountAboveMaxSize', 'size']) {
+            sendMaxInfo[key] = convertFn(key, sendMaxInfo[key]);
+          }
+        }
+      }
+      return cb(null, sendMaxInfo);
+    });
+  }
+
+
   /**
    * Return info needed to send all funds in the wallet
-   * @param {Object} opts
-   * @param {number} opts.feeLevel[='normal'] - Optional. Specify the fee level for this TX ('priority', 'normal', 'economy', 'superEconomy') as defined in Defaults.FEE_LEVELS.
-   * @param {number} opts.feePerKb - Optional. Specify the fee per KB for this TX (in satoshi).
-   * @param {string} opts.excludeUnconfirmedUtxos[=false] - Optional. Do not use UTXOs of unconfirmed transactions as inputs
-   * @param {string} opts.returnInputs[=false] - Optional. Return the list of UTXOs that would be included in the tx.
-   * @param {string} opts.usePayPro[=false] - Optional. Use fee estimation for paypro
-   * @param {string} opts.from - Optional. Specify the sender ETH address.
-   * @returns {Object} sendMaxInfo
    */
-  getSendMaxInfo(opts, cb) {
+  private _getSendMaxInfo(opts: GetSendMaxInfoOpts, cb) {
     opts = opts || {};
 
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
 
-      const feeArgs = boolToNum(!!opts.feeLevel) + boolToNum(_.isNumber(opts.feePerKb));
+      const feeArgs = boolToNum(!!opts.feeLevel) + boolToNum(!isNaN(opts.feePerKb) && opts.feePerKb != null);
       if (feeArgs > 1) return cb(new ClientError('Only one of feeLevel/feePerKb can be specified'));
 
       if (feeArgs == 0) {
@@ -2461,8 +2471,8 @@ export class WalletService implements IWalletService {
     );
   }
 
-  _getFeePerKb(wallet, opts, cb) {
-    if (Utils.isNumber(opts.feePerKb)) return cb(null, opts.feePerKb);
+  _getFeePerKb(wallet: IWallet, opts: { feePerKb?: number; feeLevel?: string }, cb) {
+    if (Utils.isNumber(opts.feePerKb)) return cb(null, Number(opts.feePerKb));
     this.getFeeLevels(
       {
         chain: wallet.chain,
@@ -2509,7 +2519,7 @@ export class WalletService implements IWalletService {
 
   estimateGas(opts) {
     const bc = this._getBlockchainExplorer(opts.chain || opts.coin || Defaults.EVM_CHAIN, opts.network);
-    return new Promise((resolve, reject) => {
+    return new Promise<number | string | bigint>((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.estimateGas(opts, (err, gasLimit) => {
         if (err) {
@@ -2726,6 +2736,7 @@ export class WalletService implements IWalletService {
    * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
    * @param {Boolean} opts.noCashAddr - do not use cashaddress for bch
    * @param {Boolean} opts.signingMethod[=ecdsa] - do not use cashaddress for bch
+   * @param {number} opts.nonce - Nonce for this TX (only for EVM chains)
    * @param {string} opts.tokenAddress - optional. ERC20 Token Contract Address
    * @param {string} opts.multisigContractAddress - optional. MULTISIG ETH Contract Address
    * @param {Boolean} opts.isTokenSwap - Optional. To specify if we are trying to make a token swap
@@ -3108,13 +3119,24 @@ export class WalletService implements IWalletService {
     });
   }
 
+
+  getTx(opts, cb: (err: any, txp?: TxProposal) => void) {
+    this._getTx(opts, (err, txp: TxProposal<any>) => {
+      if (err) return cb(err);
+      if (opts.numberFormat) {
+        txp = TxProposal.formatNumbers(txp, opts.numberFormat);
+      }
+      return cb(null, txp);
+    });
+  }
+
   /**
    * Retrieves a tx from storage.
    * @param {Object} opts
    * @param {string} opts.txProposalId - The tx proposal id.
    * @returns {Object} txProposal
    */
-  getTx(opts, cb: (err: any, txp?: TxProposal) => void) {
+  private _getTx(opts, cb: (err: any, txp?: TxProposal) => void) {
     this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
       if (err) return cb(err);
       if (!txp) return cb(Errors.TX_NOT_FOUND);
