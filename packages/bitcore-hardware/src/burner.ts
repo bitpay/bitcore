@@ -6,8 +6,7 @@ import { DataType } from './types/burnerTypes.js';
 import { BaseParams, SignParams } from './types/paramTypes.js';
 
 
-
-const { Address, PublicKey } = CWC.BitcoreLib;
+const { Address, PublicKey, crypto } = CWC.BitcoreLib;
 
 /**
  * Connect listens on the NFC reader for a card.
@@ -67,7 +66,18 @@ export default class Burner implements Base {
       keyNo: index
     };
 
-    return this.awaitResponse();
+    const response: any = await this.awaitResponse();
+
+    const signature = crypto.Signature.fromString(response.signature.der);
+
+    tx.applySignature({
+      signature,
+      publicKey: new PublicKey(response.publicKey),
+      sigtype: crypto.Signature.SIGHASH_ALL,
+      inputIndex: 0
+    });
+
+    return tx;
   }
 
   async getPublicKey(params: BaseParams) {

@@ -1,7 +1,7 @@
-import bitcore from '@bitpay-labs/bitcore-lib';
+import CWC from '@bitpay-labs/crypto-wallet-core';
 import Burner from '../../src/burner.js';
 
-const { Transaction, PublicKey, Script, crypto } = bitcore;
+const { Transaction, PublicKey, Script } = CWC.BitcoreLib;
 
 const burner = new Burner('btc');
 burner.connect();
@@ -24,25 +24,10 @@ const tx = new Transaction()
 
 
 console.log('Tap burner wallet on an NFC reader to sign a transaction');
-const result: any = await burner.sign({ index: 9, tx, password: '123456' });
+const signedTransaction: any = await burner.sign({ index: 9, tx, password: '123456' });
 
-console.log(result);
+console.log(signedTransaction);
 console.log('Signed transaction');
 
-const sig = crypto.Signature.fromString(result.signature.der);
-const digest = Buffer.from(result.input.digest, 'hex');
-
-const verify = crypto.ECDSA.verify(digest, sig, publicKey);
-console.log(verify ? 'Verified signature' : 'Invalid signature');
-
-const signature = {
-  signature: sig,
-  publicKey,
-  sigtype: crypto.Signature.SIGHASH_ALL,
-  inputIndex: 0
-};
-
-tx.applySignature(signature);
-
-console.log(tx.serialize());
+console.log(signedTransaction.serialize());
 process.exit(0);
