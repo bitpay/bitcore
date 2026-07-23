@@ -1,12 +1,13 @@
 import { execHaloCmdPCSC } from '@arx-research/libhalo/api/desktop';
-import bitcore from '@bitpay-labs/bitcore-lib';
+import CWC from '@bitpay-labs/crypto-wallet-core';
 import { NFC } from 'nfc-pcsc';
 import { Base } from './base.js';
 import { DataType } from './types/burnerTypes.js';
 import { BaseParams, SignParams } from './types/paramTypes.js';
 
 
-const { Address, PublicKey } = bitcore;
+
+const { Address, PublicKey } = CWC.BitcoreLib;
 
 /**
  * Connect listens on the NFC reader for a card.
@@ -15,11 +16,11 @@ const { Address, PublicKey } = bitcore;
 export default class Burner implements Base {
   nfc = new NFC();
   command = {};
-  currency: string;
+  chain: string;
   response: object | string | number | undefined;
 
-  constructor(currency: string) {
-    this.currency = currency;
+  constructor(chain: string) {
+    this.chain = chain;
   }
 
   async awaitResponse() {
@@ -54,7 +55,8 @@ export default class Burner implements Base {
   }
 
   async sign(params: SignParams) {
-    const { index, message: digest, password } = params;
+    const { index, tx, password } = params;
+    const digest = CWC.Transactions.getSighash({ chain: this.chain, tx, index: 0 });
 
     this.response = undefined;
 

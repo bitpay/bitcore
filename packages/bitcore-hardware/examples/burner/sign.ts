@@ -18,17 +18,13 @@ const utxo = {
   satoshis: 1100
 };
 
-const transaction = new Transaction()
+const tx = new Transaction()
   .from(utxo)
   .to('1Gokm82v6DmtwKEB8AiVhm82hyFSsEvBDK', 1000);
 
-const scriptCode = transaction.inputs[0].getScriptCode();
-const satoshisBuffer = transaction.inputs[0].getSatoshisBuffer();
-
-const hashbuf = Transaction.SighashWitness.sighash(transaction, crypto.Signature.SIGHASH_ALL, 0, scriptCode, satoshisBuffer);
 
 console.log('Tap burner wallet on an NFC reader to sign a transaction');
-const result: any = await burner.sign({ index: 9, message: hashbuf.toString('hex'), password: '123456' });
+const result: any = await burner.sign({ index: 9, tx, password: '123456' });
 
 console.log(result);
 console.log('Signed transaction');
@@ -46,7 +42,7 @@ const signature = {
   inputIndex: 0
 };
 
-transaction.applySignature(signature);
+tx.applySignature(signature);
 
-console.log(transaction.serialize());
+console.log(tx.serialize());
 process.exit(0);

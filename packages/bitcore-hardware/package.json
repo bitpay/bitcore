@@ -31,7 +31,7 @@
   "license": "MIT",
   "dependencies": {
     "@arx-research/libhalo": "^1.19.0",
-    "@bitpay-labs/bitcore-lib": "^11.5.1",
+    "@bitpay-labs/crypto-wallet-core": "^11.5.1",
     "@ledgerhq/device-management-kit": "^1.7.1",
     "@ledgerhq/device-signer-kit-bitcoin": "^1.3.2",
     "@ledgerhq/device-transport-kit-node-hid": "^1.0.1",
