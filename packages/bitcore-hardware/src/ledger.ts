@@ -1,5 +1,5 @@
 import { createRequire } from 'module';
-import Bitcore from '@bitpay-labs/bitcore-lib';
+import bitcore from '@bitpay-labs/bitcore-lib';
 import { Psbt, payments } from 'bitcoinjs-lib';
 import {
   Observable,
@@ -19,8 +19,7 @@ const {
   SignerBtcBuilder
 } = require('@ledgerhq/device-signer-kit-bitcoin');
 
-const { HDPublicKey } = Bitcore;
-type Transaction = Bitcore.Transaction;
+const { HDPublicKey } = bitcore;
 
 export default class Ledger implements Base {
   device: any;
@@ -97,7 +96,7 @@ export default class Ledger implements Base {
     return result.output.extendedPublicKey;
   }
 
-  async sign(tx: Transaction) {
+  async sign(tx: bitcore.Transaction) {
     const psbt = new Psbt();
 
     const pubkey = new HDPublicKey(await this.getPublicKey({ index: 0 })).derive('m/0/0').publicKey.toBuffer();

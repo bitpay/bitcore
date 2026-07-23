@@ -5,6 +5,7 @@ import { Base } from './base.js';
 import { DataType } from './types/burnerTypes.js';
 import { BaseParams, SignParams } from './types/paramTypes.js';
 
+
 const { Address, PublicKey } = bitcore;
 
 /**

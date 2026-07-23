@@ -1,8 +1,7 @@
-import { createRequire } from 'module';
+import bitcore from '@bitpay-labs/bitcore-lib';
 import Ledger from '../../src/ledger.js';
-// @eslint disable import/newline-after-import
-const require = createRequire(import.meta.url);
-const { Script, Transaction, HDPublicKey } = require('@bitpay-labs/bitcore-lib');
+
+const { HDPublicKey, Script, Transaction } = bitcore;
 
 const ledger = new Ledger();
 await ledger.connect();
