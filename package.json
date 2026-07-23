@@ -40,6 +40,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",
+    "@lavamoat/allow-scripts": "^5.1.0",
+    "@lavamoat/preinstall-always-fail": "^3.0.0",
     "@stylistic/eslint-plugin": "^5.5.0",
     "@types/node": "22.13.1",
     "cz-customizable": "^5.2.0",
