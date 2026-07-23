@@ -190,6 +190,8 @@ export class MoonpayService {
   }
 
   moonpayGetSignedPaymentUrl(req): { urlWithSignature: string } {
+    // moonpayGetKeys deletes env/context from the body, so read context first
+    const isWebContext = req.body.context === 'web';
     const keys = this.moonpayGetKeys(req);
     const SECRET_KEY = keys.SECRET_KEY;
     const API_KEY = keys.API_KEY;
@@ -225,15 +227,28 @@ export class MoonpayService {
     if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
     if (req.body.areFeesIncluded) qs.push('areFeesIncluded=' + encodeURIComponent(req.body.areFeesIncluded));
 
-    const deviceIp = Utils.getIpFromReq(req);
-    if (!deviceIp) {
+    // Web requests are proxied through the bitpay backend, so the IP on this
+    // request belongs to that server, not the customer. The proxy captures the
+    // customer's public IP and forwards it as deviceIp. Web credentials are only
+    // held by the proxy, so the forwarded value is trusted for that context only.
+    // If the proxy does not forward an IP, omit allowedIpAddress rather than
+    // signing an IP the customer will never match.
+    let deviceIp = isWebContext ? req.body.deviceIp : Utils.getIpFromReq(req);
+    if (!deviceIp && !isWebContext) {
       throw new ClientError('Could not determine device IP address');
     }
-    const allowedIpAddress: string = Bitcore.crypto.Hash.sha256hmac(
-      Buffer.from(deviceIp),
-      Buffer.from(SECRET_KEY)
-    ).toString('base64');
-    qs.push('allowedIpAddress=' + encodeURIComponent(allowedIpAddress));
+    if (deviceIp) {
+      // Canonicalize before hashing: HMAC is byte-exact and MoonPay hashes the
+      // plain IPv4 it observes, while dual-stack sockets report IPv4 clients as
+      // IPv4-mapped IPv6 (::ffff:1.2.3.4) - strip the prefix so both sides
+      // hash the same string
+      deviceIp = String(deviceIp).trim().replace(/^::ffff:/i, '');
+      const allowedIpAddress: string = Bitcore.crypto.Hash.sha256hmac(
+        Buffer.from(deviceIp),
+        Buffer.from(SECRET_KEY)
+      ).toString('base64');
+      qs.push('allowedIpAddress=' + encodeURIComponent(allowedIpAddress));
+    }
 
     const URL_SEARCH: string = `?${qs.join('&')}`;
 
