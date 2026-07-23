@@ -1,0 +1,49 @@
+{
+  "name": "@bitpay-labs/bitcore-hardware",
+  "version": "1.0.0",
+  "description": "\"Interface with multiple hardware wallets using one library\"",
+  "main": "./build/src/index.js",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore.git#master"
+  },
+  "scripts": {
+    "compile": "npm run clean && npm run build",
+    "build": "tsc",
+    "clean": "rm -rf build",
+    "test": "npm run compile && mocha build/test && for f in build/examples/*/*.js; do node \"$f\"; done",
+    "burner:public-key": "npm run compile && node build/examples/burner/publicKey.js",
+    "burner:address": "npm run compile && node build/examples/burner/address.js",
+    "burner:sign": "npm run compile && node build/examples/burner/sign.js",
+    "burner:version": "npm run compile && node build/examples/burner/version.js",
+    "ledger:public-key": "npm run compile && node build/examples/ledger/publicKey.js",
+    "ledger:address": "npm run compile && node build/examples/ledger/address.js",
+    "ledger:sign": "npm run compile && node build/examples/ledger/sign.js",
+    "ledger:version": "npm run compile && node build/examples/ledger/version.js"
+  },
+  "keywords": [
+    "bitcore",
+    "nfc",
+    "blockchain"
+  ],
+  "author": "Micah Maphet",
+  "license": "MIT",
+  "dependencies": {
+    "@arx-research/libhalo": "^1.19.0",
+    "@bitpay-labs/crypto-wallet-core": "^11.5.1",
+    "@ledgerhq/device-management-kit": "^1.7.1",
+    "@ledgerhq/device-signer-kit-bitcoin": "^1.3.2",
+    "@ledgerhq/device-transport-kit-node-hid": "^1.0.1",
+    "@ledgerhq/signer-utils": "^1.3.0",
+    "nfc-pcsc": "^0.8.1",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@types/chai": "5.2.3",
+    "@types/mocha": "10.0.10",
+    "chai": "6.2.2",
+    "mocha": "11.7.6",
+    "typescript": "7.0.2"
+  }
+}
