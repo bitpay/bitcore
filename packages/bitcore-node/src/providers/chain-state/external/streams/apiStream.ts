@@ -1,9 +1,13 @@
 import { Stream, Transform } from 'stream';
 import axios from 'axios';
+import logger from '../../../../logger';
 import { ReadableWithEventPipe, TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 
 
 export class ExternalApiStream extends ReadableWithEventPipe {
+  static DEFAULT_REQUEST_TIMEOUT_MS = 30000;
+  static DEFAULT_MAX_PAGES = 1000;
+
   url: string;
   headers: any;
   cursor: string | null;
@@ -12,6 +16,8 @@ export class ExternalApiStream extends ReadableWithEventPipe {
   limit?: number;
   paging?: number;
   transform?: any;
+  timeout: number;
+  isDefaultCap: boolean;
 
   constructor(url, headers, args) {
     super({ objectMode: true });
@@ -22,19 +28,27 @@ export class ExternalApiStream extends ReadableWithEventPipe {
     this.results = 0; // Result count
 
     this.limit = args?.limit; // Results limit across all pages
-    this.paging = args?.paging; // Total pages to retrieve
+    // Total pages to retrieve. With neither an explicit paging nor limit bound, an external
+    // provider that keeps returning cursors would be paginated forever — cap it.
+    this.isDefaultCap = args?.paging == null && !args?.limit;
+    this.paging = args?.paging ?? (args?.limit ? undefined : ExternalApiStream.DEFAULT_MAX_PAGES);
     this.transform = args?.transform; // Function to transform results data
+    this.timeout = args?.timeout ?? ExternalApiStream.DEFAULT_REQUEST_TIMEOUT_MS; // Per-request timeout; a stalled provider response errors instead of hanging the stream
   }
 
   async _read() {
     try {
       // End stream if page limit is reached
       if (this.paging && this.page >= this.paging) {
+        if (this.isDefaultCap) {
+          logger.warn('External API stream hit the default page cap (%o pages) and was truncated: %o', this.paging, this.url);
+        }
         this.push(null);
+        return;
       }
 
       const urlWithCursor = this.cursor ? `${this.url}&cursor=${this.cursor}` : this.url;
-      const response = await axios.get(urlWithCursor, { headers: this.headers });
+      const response = await axios.get(urlWithCursor, { headers: this.headers, timeout: this.timeout });
 
       if (response?.data?.result?.length > 0) {
         for (const result of response.data.result) {
