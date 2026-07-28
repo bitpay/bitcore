@@ -104,5 +104,24 @@
     "socket.io": "4.8.1",
     "source-map-support": "^0.5.13"
   },
-  "gitHead": "a1890ef287c9e5d0e966fb445d15bc59a9393761"
+  "gitHead": "a1890ef287c9e5d0e966fb445d15bc59a9393761",
+  "lavamoat": {
+    "allowScripts": {
+      "@bitpay-labs/bitcore-client>@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1#1.1.7": false,
+      "@bitpay-labs/bitcore-client>bcrypt#5.1.0": true,
+      "@bitpay-labs/bitcore-client>leveldown#6.1.1": false,
+      "@bitpay-labs/bitcore-client>secp256k1#3.7.1": false,
+      "@bitpay-labs/bitcore-wallet-client>@bitpay-labs/bitcore-tss>@bitgo/sdk-lib-mpc>cbor-x>cbor-extract#2.2.1": false,
+      "@bitpay-labs/bitcore-wallet-client>@bitpay-labs/bitcore-tss>@bitgo/sdk-lib-mpc>secp256k1#5.0.1": false,
+      "@bitpay-labs/bitcore-wallet-client>@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1#1.1.7": false,
+      "@bitpay-labs/crypto-rpc>@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1#1.1.7": false,
+      "@bitpay-labs/crypto-rpc>lightning>@grpc/proto-loader>protobufjs#7.5.4": false,
+      "@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1#1.1.7": false,
+      "@metaplex-foundation/umi-bundle-defaults>@solana/web3.js>rpc-websockets>utf-8-validate#6.0.6": false,
+      "secp256k1#4.0.3": false,
+      "sinon#4.4.8": false,
+      "socket.io>engine.io>ws>bufferutil#4.1.0": false,
+      "socket.io>engine.io>ws>utf-8-validate#5.0.10": false
+    }
+  }
 }

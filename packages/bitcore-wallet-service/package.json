@@ -107,5 +107,14 @@
       "email": "kjoseph@bitpay.com"
     }
   ],
-  "gitHead": "a1890ef287c9e5d0e966fb445d15bc59a9393761"
+  "gitHead": "a1890ef287c9e5d0e966fb445d15bc59a9393761",
+  "lavamoat": {
+    "allowScripts": {
+      "@bitpay-labs/bitcore-tss>@bitgo/sdk-lib-mpc>cbor-x>cbor-extract#2.2.1": false,
+      "@bitpay-labs/bitcore-tss>@bitgo/sdk-lib-mpc>secp256k1#5.0.1": false,
+      "@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1#1.1.7": false,
+      "moralis>@moralisweb3/streams>ethereumjs-util>ethereum-cryptography>keccak#3.0.4": false,
+      "secp256k1#4.0.3": false
+    }
+  }
 }
