@@ -38,7 +38,9 @@ export class WalletStatsWalletModel extends BaseModel<IWalletStatsWallet> {
     if (!lastActivityDate) {
       return null;
     }
-    const ageDays = (asOf.getTime() - lastActivityDate.getTime()) / DAY_MS;
+    // A lastActivityDate after asOf (clock skew or a bad provider timestamp) would
+    // yield a negative age; clamp to 0 so it counts as just-active rather than skipping.
+    const ageDays = Math.max(0, (asOf.getTime() - lastActivityDate.getTime()) / DAY_MS);
     if (ageDays <= 14) return 'd14';
     if (ageDays <= 30) return 'd30';
     if (ageDays <= 90) return 'd90';
