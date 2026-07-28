@@ -16,7 +16,7 @@ export async function joinThresholdSigWallet(
   
   const network = await getNetwork();
   const copayerName = await getCopayerName();
-  const password = await getPassword('Lock your wallet with a password:', { hidden: false });
+  const password = await getPassword('Lock your wallet with a password:', { hidden: false, confirm: true });
 
   let key;
   if (mnemonic) {

@@ -75,26 +75,53 @@ export async function getPassword(
     hidden?: boolean;
     /** Custom validation function for the password input. Note, this does NOT override the minimum length check. */
     validate?: (input: string) => string | null;
+    /** Should user be prompted to confirm their password? */
+    confirm?: boolean;
+    /** Don't retry if confirmation fails */
+    noRetry?: boolean;
   }
 ): Promise<string> {
   opts = opts || {};
   opts.minLength = opts.minLength ?? 0;
   const hidden = opts.hidden ?? true;
+  const { confirm, noRetry } = opts;
 
-  const password = await prompt.password({
-    message: (msg || 'Password:') + (hidden ? ' (hidden)' : ''),
-    mask: hidden ? '' : undefined,
-    clearOnError: hidden,
-    validate: (input) => {
-      if (input?.length < opts.minLength) {
-        return `Password must be at least ${opts.minLength} characters long.`;
+  let confirmed = false;
+  let password: string | symbol = null;
+  do {
+    password = await prompt.password({
+      message: (msg || 'Password:') + (hidden ? ' (hidden)' : ''),
+      mask: hidden ? '' : undefined,
+      clearOnError: hidden,
+      validate: (input) => {
+        if (input?.length < opts.minLength) {
+          return `Password must be at least ${opts.minLength} characters long.`;
+        }
+        return opts.validate?.(input);
       }
-      return opts.validate?.(input);
+    });
+    if (prompt.isCancel(password)) {
+      throw new UserCancelled();
     }
-  });
-  if (prompt.isCancel(password)) {
-    throw new UserCancelled();
+    if (confirm) {
+      const password2 = await prompt.password({
+        message: 'Confirm:',
+        mask: hidden ? '' : undefined,
+        clearOnError: hidden
+      });
+      if (prompt.isCancel(password2)) {
+        throw new UserCancelled();
+      }
+      confirmed = password === password2; 
+    } else {
+      confirmed = true;
+    }
+  } while (!confirmed && !noRetry);
+
+  if (!confirmed) {
+    throw new Error('Passwords do not match');
   }
+
   return password as string;
 };
 

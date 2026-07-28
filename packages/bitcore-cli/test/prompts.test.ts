@@ -123,6 +123,49 @@ describe('prompts', function() {
       process.stdin.push(KEYSTROKES.ENTER);
       assert.strictEqual(await promise, 'validpw');
     });
+
+    it('confirm: should return the password when confirmation matches', async function() {
+      const promise = prompts.getPassword(undefined, { confirm: true });
+      process.stdin.push('mypassword');
+      process.stdin.push(KEYSTROKES.ENTER); // password
+      process.stdin.push('mypassword');
+      process.stdin.push(KEYSTROKES.ENTER); // confirm
+      assert.strictEqual(await promise, 'mypassword');
+    });
+
+    it('confirm: should throw UserCancelled when user cancels on the confirmation prompt', async function() {
+      const promise = prompts.getPassword(undefined, { confirm: true });
+      process.stdin.push('mypassword');
+      process.stdin.push(KEYSTROKES.ENTER); // password
+      process.stdin.push(KEYSTROKES.CTRL_C); // cancel on confirm
+      await assert.rejects(() => promise, UserCancelled);
+    });
+
+    it('confirm: should retry when passwords do not match and succeed on retry', async function() {
+      const promise = prompts.getPassword(undefined, { confirm: true });
+      process.stdin.push('firstpass');
+      process.stdin.push(KEYSTROKES.ENTER); // password — 1st attempt
+      process.stdin.push('wrongpass');
+      process.stdin.push(KEYSTROKES.ENTER); // confirm — mismatch, will retry
+      process.stdin.push('correctpass');
+      process.stdin.push(KEYSTROKES.ENTER); // password — 2nd attempt
+      process.stdin.push('correctpass');
+      process.stdin.push(KEYSTROKES.ENTER); // confirm — match
+      assert.strictEqual(await promise, 'correctpass');
+    });
+
+    it('confirm + noRetry: should throw when passwords do not match', async function() {
+      const promise = prompts.getPassword(undefined, { confirm: true, noRetry: true });
+      process.stdin.push('firstpass');
+      process.stdin.push(KEYSTROKES.ENTER); // password
+      process.stdin.push('wrongpass');
+      process.stdin.push(KEYSTROKES.ENTER); // confirm — mismatch, no retry
+      await assert.rejects(() => promise, (err: Error) => {
+        assert.ok(err instanceof Error && !(err instanceof UserCancelled));
+        assert.match(err.message, /do not match/i);
+        return true;
+      });
+    });
   });
 
   // ─── getMofN ────────────────────────────────────────────────────────────────
