@@ -133,6 +133,13 @@ export interface ConfigType {
     storage: {
       disabled?: boolean;
     };
+    walletStats: {
+      disabled?: boolean;
+      snapshotDayUTC?: number; // 0 (Sun) - 6 (Sat), default 1 (Mon)
+      snapshotHourUTC?: number; // 0-23, default 2
+      sleepMs?: number; // throttle: pause length between batches
+      every?: number; // throttle: pause every N wallets
+    };
   };
   externalProviders?: {
     moralis: {
