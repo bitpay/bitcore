@@ -113,7 +113,7 @@ jobs:
             nvm use default
             npm_config_ignore_scripts=true npm run bootstrap
       - run:
-          name: Validate and run approved dependency lifecycle scripts
+          name: Run approved dependency lifecycle scripts
           command: |
             nvm use default
             set -euo pipefail
@@ -139,20 +139,18 @@ jobs:
               packages/crypto-wallet-core
             do
               echo
-              echo "===== Checking $package ====="
+              echo "===== Running approved scripts for $package ====="
 
               (
                 cd "$package"
 
-                if ! ../../node_modules/.bin/allow-scripts check; then
+                if ! ../../node_modules/.bin/allow-scripts run; then
                   echo
-                  echo "ERROR: allow-scripts check failed for $package"
+                  echo "ERROR: allow-scripts run failed for $package"
                   echo
                   ../../node_modules/.bin/allow-scripts list
                   exit 1
                 fi
-
-                ../../node_modules/.bin/allow-scripts run
               )
             done
       - run:
