@@ -27,7 +27,7 @@ export async function sign(args: {
   logMessageCompleted?: string;
 }): Promise<CWCTypes.Message.ISignedMessage<string>> {
   const { host, chain, walletData, stateStoragePath, messageHash, derivationPath, password, id, logMessageWaiting, logMessageCompleted } = args;
-  const storedSessionPath = path.join(stateStoragePath, id);
+  const storedSessionFile = path.join(stateStoragePath, id);
 
   const transformISignature = (signature: TssSign.ISignature): string => {
     return Transactions.transformSignatureObject({ chain, obj: signature });
@@ -35,7 +35,7 @@ export async function sign(args: {
 
   const storeSession = (session: string) => {
     const encrypted = JSON.stringify(Encryption.encryptWithPassword(session, password));
-    fs.writeFileSync(storedSessionPath, encrypted, 'utf8');
+    fs.writeFileSync(storedSessionFile, encrypted, 'utf8');
   };
 
   const tssSign = new TssSign.TssSign({
@@ -45,8 +45,8 @@ export async function sign(args: {
   });
 
   // Restore a previously-interrupted TSS session if it exists
-  if (fs.existsSync(storedSessionPath)) {
-    const storedSession = Encryption.decryptWithPassword(fs.readFileSync(storedSessionPath, 'utf8'), password);
+  if (fs.existsSync(storedSessionFile)) {
+    const storedSession = Encryption.decryptWithPassword(fs.readFileSync(storedSessionFile, 'utf8'), password);
     await tssSign.restoreSession({ session: storedSession.toString(), password });
 
   // ...otherwise, start a new TSS session
@@ -95,7 +95,7 @@ export async function sign(args: {
       try {
         spinner.stop(logMessageCompleted || 'TSS signature generated');
         // Clean up the stored session file after successful signing
-        fs.rmSync(storedSessionPath, { force: true });
+        fs.rmSync(storedSessionFile, { force: true });
         const signature: TssSign.ISignature = tssSign.getSignature();
         const sigString = transformISignature(signature);
         resolve({

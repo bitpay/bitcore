@@ -350,7 +350,7 @@ export class Wallet implements IWallet {
       if (!this.#walletData) {
         throw new Error('No wallet data to save. Wallet not created or loaded');
       }
-      let data: WalletData | EncryptionTypes.IEncrypted = { key: this.#walletData.key?.toObj(), credentials: this.#walletData.credentials.toObj() };
+      let data: object /** TODO */ | EncryptionTypes.IEncrypted = { key: this.#walletData.key?.toObj(), credentials: this.#walletData.credentials.toObj() };
       if (encryptAll) {
         const password = await getPassword('Enter password to encrypt:', { minLength: 6 });
         await prompt.password({
@@ -361,6 +361,15 @@ export class Wallet implements IWallet {
 
         data = Encryption.encryptWithPassword(JSON.stringify(data), password, WALLET_ENCRYPTION_OPTS);
       }
+
+      if (
+        (data as any).key?.xPrivKey != null ||
+        (data as any).key?.mnemonic != null ||
+        (data as any).key?.keychain?.privateKeyShare != null
+      ) {
+        throw new Error('Wallet sensitive data is not encrypted. Cannot save wallet to disk.');
+      }
+
       await this.storage.save(JSON.stringify(data));
       return;
     } catch (err) {
