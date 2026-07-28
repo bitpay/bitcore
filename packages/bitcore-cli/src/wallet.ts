@@ -26,6 +26,7 @@ import {
 import * as prompt from '@clack/prompts';
 import { Constants } from './constants';
 import { ERC20Abi } from './erc20Abi';
+import { UserCancelled } from './errors';
 import { FileStorage } from './filestorage';
 import { getPassword } from './prompts';
 import { sign as tssSign } from './tss';
@@ -276,6 +277,7 @@ export class Wallet implements IWallet {
     const { doNotComplete, allowCache } = opts || {};
 
     let walletData: WalletData | EncryptionTypes.IEncrypted = allowCache ? this.#walletData : null;
+    const loadingFromCache = !!walletData;
     if (!walletData) {
       walletData = await this.storage.load();
     }
@@ -326,9 +328,31 @@ export class Wallet implements IWallet {
 
     this.lockLoadedWallet();
     if (doNotComplete) return key;
-
+    
     const status = await this.client.openWallet();
     let needsSave = status?.wallet?.status === 'complete';
+
+    if (!key.isPrivKeyEncrypted()) {
+      if (loadingFromCache) {
+        _verbose && prompt.log.warn('Warning: Loaded wallet is not encrypted. This may be a mistake. Try exiting and reloading your wallet.');
+      } else {
+        const ans = await prompt.confirm({ message: 'Loaded wallet is not encrypted. Do you want to encrypt it now?', initialValue: true });
+        if (!prompt.isCancel(ans) && ans) {
+          try {
+            const password = await getPassword('Enter wallet lock password:', { hidden: false, minLength: 6, confirm: true });
+            key.encrypt(password);
+            this.#walletData.key = key;
+            prompt.log.success('Wallet successfully encrypted.');
+            needsSave = true;
+          } catch (e) {
+            if (!(e instanceof UserCancelled)) {
+              prompt.log.error('Failed to encrypt wallet: ' + (_verbose && e.stack ? e.stack : e));
+            }
+          }
+        }
+      }
+    }
+
     if (
       (!this.#walletData.credentials.isComplete() && this.client.credentials.isComplete()) ||
       // For TSS creds, isComplete() may be true even if publicKeyRing isn't fully populated
@@ -338,6 +362,7 @@ export class Wallet implements IWallet {
       this.#walletData.credentials = this.client.credentials; // update with any new info from the chain
       needsSave = true;
     }
+
     if (needsSave) {
       await this.save();
     }
