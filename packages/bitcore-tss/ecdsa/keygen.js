@@ -196,10 +196,19 @@ class KeyGen {
     const commonKeyChain = DklsTypes.getCommonKeychain(keyShare);
 
     return {
-      privateKeyShare: keyShare,
-      reducedPrivateKeyShare: rKeyShare,
-      commonKeyChain: commonKeyChain
+      privateKeyShare: Buffer.copyBytesFrom(keyShare),
+      reducedPrivateKeyShare: Buffer.copyBytesFrom(rKeyShare),
+      commonKeyChain: commonKeyChain // string
     };
+  }
+
+  /**
+   * Clean up sensitive data from memory.
+   * Call this when you are done with the keygen session
+   */
+  cleanup() {
+    // The "reduced" keyshare is calculated from the keyshare buffer, so this clears both
+    this.#dkg.getKeyShare().fill(0);
   }
 };
 

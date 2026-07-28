@@ -160,6 +160,9 @@ export async function createThresholdSigWallet(
     });
   });
 
+  // Clean up sensitive data from memory after wallet creation is complete
+  tss.cleanup();
+
 
   // Keyshare backup
   const ok = await promptKeyshareBackup();

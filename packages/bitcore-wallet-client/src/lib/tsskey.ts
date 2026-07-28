@@ -9,6 +9,20 @@ import { Request, RequestResponse } from './request';
 
 const $ = BitcoreLib.util.preconditions;
 
+function bufferReplacer(key: string, val: any) {
+  if (Buffer.isBuffer(val)) {
+    return '_0x' + val.toString('hex');
+  }
+  return val;
+};
+
+function bufferReviver(key: string, val: any) {
+  if (typeof val === 'string' && val.startsWith('_0x')) {
+    return Buffer.from(val.slice(3), 'hex');
+  }
+  return val;
+}
+
 export interface ITssKeyGenConstructorParams {
   /**
    * Chain this key is for (e.g. 'btc', 'bch', 'eth')
@@ -79,8 +93,9 @@ export class TssKey extends Key implements ITssKey {
   toObj(): ITssKey {
     return {
       ...super.toObj(),
-      keychain: this.keychain,
-      metadata: this.metadata,
+      // Create de-referenced copies
+      keychain: JSON.parse(JSON.stringify(this.keychain, bufferReplacer), bufferReviver),
+      metadata: JSON.parse(JSON.stringify(this.metadata)),
     };
   }
 
@@ -146,7 +161,9 @@ export class TssKey extends Key implements ITssKey {
     this.keychain.privateKeyShareEncrypted = JSON.stringify(Encryption.encryptWithPassword(this.keychain.privateKeyShare, password, opts));
     this.keychain.reducedPrivateKeyShareEncrypted = JSON.stringify(Encryption.encryptWithPassword(this.keychain.reducedPrivateKeyShare, password, opts));
     // remove the private data
+    this.keychain.privateKeyShare.fill(0);
     this.keychain.privateKeyShare = null;
+    this.keychain.reducedPrivateKeyShare.fill(0);
     this.keychain.reducedPrivateKeyShare = null;
   }
 
@@ -450,7 +467,9 @@ export class TssKeyGen extends EventEmitter {
     session: string;
   }): Promise<TssKeyGen> {
     const { session } = params;
-    const [id, partyId, m, n, keygenSession] = session.split(':');
+    const parts = session.split(':');
+    const id = parts.slice(0, -4).join(':'); // id may contain colons, so we join all parts except the last 4
+    const [partyId, m, n, keygenSession] = parts.slice(-4);
     this.id = id;
     this.m = parseInt(m);
     this.n = parseInt(n);
@@ -724,5 +743,13 @@ export class TssKeyGen extends EventEmitter {
     });
     
     return wallet;
+  }
+
+  /**
+   * Clean up sensitive data from memory.
+   * Call this when you are done with the keygen session
+   */
+  cleanup() {
+    this.#keygen?.cleanup();
   }
 }
