@@ -100,9 +100,54 @@ jobs:
             nvm use default
             set -x && node -v && npm -v && google-chrome --version && docker version && python --version
       # - restore_dependency_cache
-      - run: | # TODO figure out how to make this only run on a cache miss in restore_dependency_cache
-          nvm use default
-          npm ci
+      # TODO: Run dependency installation, inert bootstrap, approved lifecycle
+      # scripts, and compilation only when restore_dependency_cache misses
+      - run:
+          name: Install root dependencies
+          command: |
+            nvm use default
+            npm ci
+      - run:
+          name: Bootstrap child dependencies without lifecycle scripts
+          command: |
+            nvm use default
+            npm_config_ignore_scripts=true npm run bootstrap
+      - run:
+          name: Validate and run approved dependency lifecycle scripts
+          command: |
+            nvm use default
+
+            for package in \
+              packages/bitcore-build \
+              packages/bitcore-cli \
+              packages/bitcore-client \
+              packages/bitcore-lib \
+              packages/bitcore-lib-cash \
+              packages/bitcore-lib-doge \
+              packages/bitcore-lib-ltc \
+              packages/bitcore-logging \
+              packages/bitcore-mnemonic \
+              packages/bitcore-node \
+              packages/bitcore-p2p \
+              packages/bitcore-p2p-cash \
+              packages/bitcore-p2p-doge \
+              packages/bitcore-tss \
+              packages/bitcore-wallet-client \
+              packages/bitcore-wallet-service \
+              packages/crypto-rpc \
+              packages/crypto-wallet-core
+            do
+              (
+                cd "$package"
+                ../../node_modules/.bin/allow-scripts check
+                ../../node_modules/.bin/allow-scripts run
+              )
+            done
+      - run:
+          name: Compile monorepo
+          command: |
+            nvm use default
+            npm run compile
       - save_cache:
           key: node_modules-{{ checksum "package-lock.json" }}-{{ checksum "combined-package-lock.txt" }}
           paths:
