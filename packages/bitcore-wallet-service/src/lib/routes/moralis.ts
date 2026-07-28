@@ -6,6 +6,7 @@ import type { WalletService } from '../server';
 
 interface RouteContext {
   getServer: Types.GetServerFn;
+  getServerWithAuth: Types.GetServerWithAuthFn;
   returnError: Types.ReturnErrorFn;
 }
 
@@ -33,6 +34,21 @@ function respondWithPublicServer(req, res, context: RouteContext, handler: Route
     });
 }
 
+function walletAuthOrPublic(context: RouteContext) {
+  return function(req, res, next) {
+    if (!req.header('x-identity')) {
+      // Not from wallet
+      return next();
+    }
+    return context.getServerWithAuth(req, res, _server => {
+      if (!req.header('origin')) {
+        req.headers['origin'] = config.moralis?.whitelist?.[0];
+      }
+      return next();
+    });
+  };
+}
+
 export function registerMoralisRoutes(router: express.Router, context: RouteContext) {
   const moralisCorsOptions = {
     origin: (origin, cb) => {
@@ -45,55 +61,55 @@ export function registerMoralisRoutes(router: express.Router, context: RouteCont
     }
   };
 
-  router.post('/v1/moralis/getWalletTokenBalances', cors(moralisCorsOptions), (req, res) => {
+  router.post('/v1/moralis/getWalletTokenBalances', walletAuthOrPublic(context), cors(moralisCorsOptions), (req, res) => {
     respondWithPublicServer(req, res, context, server => {
       return server.moralisGetWalletTokenBalances(req);
     });
   });
 
-  router.post('/v1/moralis/moralisGetTokenAllowance', cors(moralisCorsOptions), (req, res) => {
+  router.post('/v1/moralis/moralisGetTokenAllowance', walletAuthOrPublic(context), cors(moralisCorsOptions), (req, res) => {
     respondWithPublicServer(req, res, context, server => {
       return server.moralisGetTokenAllowance(req);
     });
   });
 
-  router.post('/v1/moralis/moralisGetNativeBalance', cors(moralisCorsOptions), (req, res) => {
+  router.post('/v1/moralis/moralisGetNativeBalance', walletAuthOrPublic(context), cors(moralisCorsOptions), (req, res) => {
     respondWithPublicServer(req, res, context, server => {
       return server.moralisGetNativeBalance(req);
     });
   });
 
-  router.post('/v1/moralis/GetTokenPrice', cors(moralisCorsOptions), (req, res) => {
+  router.post('/v1/moralis/GetTokenPrice', walletAuthOrPublic(context), cors(moralisCorsOptions), (req, res) => {
     respondWithPublicServer(req, res, context, server => {
       return server.moralisGetTokenPrice(req);
     });
   });
 
-  router.post('/v1/moralis/getMultipleERC20TokenPrices', cors(moralisCorsOptions), (req, res) => {
+  router.post('/v1/moralis/getMultipleERC20TokenPrices', walletAuthOrPublic(context), cors(moralisCorsOptions), (req, res) => {
     respondWithPublicServer(req, res, context, server => {
       return server.moralisGetMultipleERC20TokenPrices(req);
     });
   });
 
-  router.post('/v1/moralis/getERC20TokenBalancesWithPricesByWallet', cors(moralisCorsOptions), (req, res) => {
+  router.post('/v1/moralis/getERC20TokenBalancesWithPricesByWallet', walletAuthOrPublic(context), cors(moralisCorsOptions), (req, res) => {
     respondWithPublicServer(req, res, context, server => {
       return server.moralisGetERC20TokenBalancesWithPricesByWallet(req);
     });
   });
 
-  router.post('/v1/moralis/getSolWalletPortfolio', cors(moralisCorsOptions), (req, res) => {
+  router.post('/v1/moralis/getSolWalletPortfolio', walletAuthOrPublic(context), cors(moralisCorsOptions), (req, res) => {
     respondWithPublicServer(req, res, context, server => {
       return server.moralisGetSolWalletPortfolio(req);
     });
   });
 
-  router.post('/v1/moralis/getTransactionVerbose', cors(moralisCorsOptions), (req, res) => {
+  router.post('/v1/moralis/getTransactionVerbose', walletAuthOrPublic(context), cors(moralisCorsOptions), (req, res) => {
     respondWithPublicServer(req, res, context, server => {
       return server.moralisGetTransactionVerbose(req);
     });
   });
 
-  router.post('/v1/moralis/getMultipleSolTokenPrices', cors(moralisCorsOptions), (req, res) => {
+  router.post('/v1/moralis/getMultipleSolTokenPrices', walletAuthOrPublic(context), cors(moralisCorsOptions), (req, res) => {
     respondWithPublicServer(req, res, context, server => {
       return server.moralisGetMultipleSolTokenPrices(req);
     });

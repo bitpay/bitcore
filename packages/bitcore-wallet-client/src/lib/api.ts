@@ -4129,6 +4129,42 @@ export class API extends EventEmitter {
   async oneInchGetSwap(data) {
     return this.request.post('/v1/service/oneInch/getSwap', data);
   }
+
+  async moralisGetWalletTokenBalances(data) {
+    return this.request.post('/v1/moralis/getWalletTokenBalances', data);
+  }
+
+  async moralisGetTokenAllowance(data) {
+    return this.request.post('/v1/moralis/moralisGetTokenAllowance', data);
+  }
+
+  async moralisGetNativeBalance(data) {
+    return this.request.post('/v1/moralis/moralisGetNativeBalance', data);
+  }
+
+  async moralisGetTokenPrice(data) {
+    return this.request.post('/v1/moralis/GetTokenPrice', data);
+  }
+
+  async moralisGetMultipleERC20TokenPrices(data) {
+    return this.request.post('/v1/moralis/getMultipleERC20TokenPrices', data);
+  }
+
+  async moralisGetERC20TokenBalancesWithPricesByWallet(data) {
+    return this.request.post('/v1/moralis/getERC20TokenBalancesWithPricesByWallet', data);
+  }
+
+  async moralisGetSolWalletPortfolio(data) {
+    return this.request.post('/v1/moralis/getSolWalletPortfolio', data);
+  }
+
+  async moralisGetTransactionVerbose(data) {
+    return this.request.post('/v1/moralis/getTransactionVerbose', data);
+  }
+
+  async moralisGetMultipleSolTokenPrices(data) {
+    return this.request.post('/v1/moralis/getMultipleSolTokenPrices', data);
+  }
 };
 
 export type Network = 'livenet' | 'testnet' | 'regtest';
