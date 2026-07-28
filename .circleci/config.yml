@@ -116,6 +116,7 @@ jobs:
           name: Validate and run approved dependency lifecycle scripts
           command: |
             nvm use default
+            set -euo pipefail
 
             for package in \
               packages/bitcore-build \
@@ -137,9 +138,20 @@ jobs:
               packages/crypto-rpc \
               packages/crypto-wallet-core
             do
+              echo
+              echo "===== Checking $package ====="
+
               (
                 cd "$package"
-                ../../node_modules/.bin/allow-scripts check
+
+                if ! ../../node_modules/.bin/allow-scripts check; then
+                  echo
+                  echo "ERROR: allow-scripts check failed for $package"
+                  echo
+                  ../../node_modules/.bin/allow-scripts list
+                  exit 1
+                fi
+
                 ../../node_modules/.bin/allow-scripts run
               )
             done
