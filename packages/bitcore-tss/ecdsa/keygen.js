@@ -189,6 +189,7 @@ class KeyGen {
    * @returns {{ privateKeyShare: Buffer, reducedPrivateKeyShare: Buffer, commonKeyChain: string }} Keychain object
    */
   getKeyChain() {
+    $.checkState(this.#round !== -1, 'Cannot get key chain after cleanup');
     $.checkState(this.isKeyChainReady(), 'Key chain is not ready');
 
     const keyShare = this.#dkg.getKeyShare();
@@ -209,6 +210,7 @@ class KeyGen {
   cleanup() {
     // The "reduced" keyshare is calculated from the keyshare buffer, so this clears both
     this.#dkg.getKeyShare().fill(0);
+    this.#round = -1;
   }
 };
 
