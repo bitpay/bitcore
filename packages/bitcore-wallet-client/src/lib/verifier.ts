@@ -212,9 +212,9 @@ export class Verifier {
       return false;
     if (typeof args.feePerKb === 'number' && txp.feePerKb != args.feePerKb)
       return false;
-    if (args.fee !== undefined && !this.atomicValuesEqual(args.fee, txp.fee))
+    if (args.fee != null && !this.atomicValuesEqual(args.fee, txp.fee))
       return false;
-    if (args.inputs !== undefined && !this.explicitInputsEqual(args.inputs, txp.inputs))
+    if (args.inputs != null && !this.explicitInputsEqual(args.inputs, txp.inputs))
       return false;
     if (!this.optionalAtomicValuesEqual(args.destinationTag, txp.destinationTag))
       return false;

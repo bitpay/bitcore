@@ -99,6 +99,20 @@ describe('Verifier', function() {
       ).should.be.true;
     });
 
+    it('should treat a null fee as omitted', function() {
+      checkProposalCreation(
+        { fee: null },
+        { fee: 1000 }
+      ).should.be.true;
+    });
+
+    it('should treat null inputs as omitted', function() {
+      checkProposalCreation(
+        { inputs: null },
+        { inputs }
+      ).should.be.true;
+    });
+
     it('should accept matching XRP destination tags', function() {
       checkProposalCreation(
         {
