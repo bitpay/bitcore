@@ -48,6 +48,7 @@ export async function sign(args: {
   if (fs.existsSync(storedSessionFile)) {
     const storedSession = Encryption.decryptWithPassword(fs.readFileSync(storedSessionFile, 'utf8'), password);
     await tssSign.restoreSession({ session: storedSession.toString(), password });
+    storedSession.fill(0); // Clear sensitive data from memory
 
   // ...otherwise, start a new TSS session
   } else {
