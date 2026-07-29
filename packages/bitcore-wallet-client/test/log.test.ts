@@ -71,120 +71,72 @@ describe('log utils', function() {
 
 
   describe('individual log methods', function () {
-    it('should log .debug when level is debug', function () {
-      const cd = sandbox.stub(console, 'debug');
-      log.setLevel('debug');
-      log.debug('debug message');
-      cd.called.should.equal(true);
-      cd.getCall(0).args[0].should.contain('debug message');
-    });
+    const levelMethodPairs = [
+      // [levelName, method, message]
+      ['debug', 'debug', 'debug message'],
+      ['info', 'info', 'info message'],
+      ['log', 'log', 'log message'],
+      ['error', 'error', 'error message'],
+    ] as const;
 
-    it('should log .info when level is info', function () {
-      const ci = sandbox.stub(console, 'info');
-      log.setLevel('info');
-      log.info('info message');
-      ci.called.should.equal(true);
-      ci.getCall(0).args[0].should.contain('info message');
-    });
-
-    it('should log .log when level is log', function () {
-      const cl = sandbox.stub(console, 'log');
-      log.setLevel('log');
-      log.log('log message');
-      cl.called.should.equal(true);
-      cl.getCall(0).args[0].should.contain('log message');
-    });
-
-    it('should log .error when level is error', function () {
-      const ce = sandbox.stub(console, 'error');
-      log.setLevel('error');
-      log.error('error message');
-      ce.called.should.equal(true);
-      ce.getCall(0).args[0].should.contain('error message');
-    });
+    for (const [levelName, method, message] of levelMethodPairs) {
+      it(`should log .${method} when level is ${levelName}`, function () {
+        const stub = sandbox.stub(console, method as keyof globalThis.Console);
+        log.setLevel(levelName as any);
+        (log as any)[method](message);
+        stub.called.should.equal(true);
+        stub.getCall(0).args[0].should.contain(message);
+      });
+    }
   });
 
 
   describe('message format', function () {
-    it('should prefix .info message with [info]', function () {
-      const ci = sandbox.stub(console, 'info');
-      log.setLevel('info');
-      log.info('test');
-      ci.getCall(0).args[0].should.contain('[info]');
-    });
+    const prefixTests = [
+      // [method, consoleMethod, prefix]
+      ['info', 'info', '[info]'],
+      ['warn', 'warn', '[warn]'],
+      ['error', 'error', '[error]'],
+      ['fatal', 'log', '[fatal]'],
+    ] as const;
 
-    it('should prefix .warn message with [warn]', function () {
-      const cw = sandbox.stub(console, 'warn');
-      log.setLevel('info');
-      log.warn('test');
-      cw.getCall(0).args[0].should.contain('[warn]');
-    });
-
-    it('should prefix .error message with [error]', function () {
-      const ce = sandbox.stub(console, 'error');
-      log.setLevel('info');
-      log.error('test');
-      ce.getCall(0).args[0].should.contain('[error]');
-    });
-
-    it('should prefix .fatal message with [fatal] via console.log fallback', function () {
-      const cl = sandbox.stub(console, 'log');
-      log.setLevel('info');
-      log.fatal('test');
-      cl.getCall(0).args[0].should.contain('[fatal]');
-    });
+    for (const [method, consoleMethod, prefix] of prefixTests) {
+      it(`should prefix .${method} message with ${prefix}`, function () {
+        const stub = sandbox.stub(console, consoleMethod as keyof globalThis.Console);
+        log.setLevel('info' as any);
+        (log as any)[method]('test');
+        stub.getCall(0).args[0].should.contain(prefix);
+      });
+    }
   });
 
 
   describe('level filtering', function () {
-    it('should not log info when level is warn', function () {
-      const ci = sandbox.stub(console, 'info');
-      log.setLevel('warn');
-      log.info('test');
-      ci.called.should.equal(false);
-    });
+    const levelFilteringTests = [
+      // [activeLevel, callMethod, shouldCall, consoleMethod]
+      ['warn', 'info', false, 'info'],
+      ['warn', 'log', false, 'log'],
+      ['warn', 'warn', true, 'warn'],
+      ['warn', 'error', true, 'error'],
+      ['warn', 'fatal', true, 'log'],
+      ['error', 'warn', false, 'warn'],
+      ['error', 'error', true, 'error'],
+      ['error', 'fatal', true, 'log'],
+      ['fatal', 'error', false, 'error'],
+      ['fatal', 'fatal', true, 'log'],
+    ] as const;
 
-    it('should not log log when level is warn', function () {
-      const cl = sandbox.stub(console, 'log');
-      log.setLevel('warn');
-      log.log('test');
-      cl.called.should.equal(false);
-    });
-
-    it('should not log warn when level is error', function () {
-      const cw = sandbox.stub(console, 'warn');
-      log.setLevel('error');
-      log.warn('test');
-      cw.called.should.equal(false);
-    });
-
-    it('should not log error when level is fatal', function () {
-      const ce = sandbox.stub(console, 'error');
-      log.setLevel('fatal');
-      log.error('test');
-      ce.called.should.equal(false);
-    });
-
-    it('should log warn at warn level', function () {
-      const cw = sandbox.stub(console, 'warn');
-      log.setLevel('warn');
-      log.warn('test');
-      cw.called.should.equal(true);
-    });
-
-    it('should log error at warn level', function () {
-      const ce = sandbox.stub(console, 'error');
-      log.setLevel('warn');
-      log.error('test');
-      ce.called.should.equal(true);
-    });
-
-    it('should log fatal at warn level via console.log fallback', function () {
-      const cl = sandbox.stub(console, 'log');
-      log.setLevel('warn');
-      log.fatal('test');
-      cl.called.should.equal(true);
-    });
+    for (const [activeLevel, callMethod, shouldCall, consoleMethod] of levelFilteringTests) {
+      const label = shouldCall
+        ? `should log .${callMethod} at ${activeLevel} level`
+        : `should not log .${callMethod} when level is ${activeLevel}`;
+      it(label, function () {
+        const stub = sandbox.stub(console, consoleMethod as keyof globalThis.Console);
+        log.setLevel(activeLevel as any);
+        (log as any)[callMethod]('test');
+        stub.called.should.equal(shouldCall);
+      });
+    }
   });
 
 
@@ -255,33 +207,22 @@ describe('log utils', function() {
 
 
   describe('silent level suppresses individual console methods', function () {
-    it('should suppress .warn at silent level', function () {
-      const cw = sandbox.stub(console, 'warn');
-      log.setLevel('silent');
-      log.warn('foo');
-      cw.called.should.equal(false);
-    });
+    const silentSuppressTests = [
+      // [method, consoleMethod]
+      ['warn', 'warn'],
+      ['error', 'error'],
+      ['info', 'info'],
+      ['debug', 'debug'],
+    ] as const;
 
-    it('should suppress .error at silent level', function () {
-      const ce = sandbox.stub(console, 'error');
-      log.setLevel('silent');
-      log.error('foo');
-      ce.called.should.equal(false);
-    });
-
-    it('should suppress .info at silent level', function () {
-      const ci = sandbox.stub(console, 'info');
-      log.setLevel('silent');
-      log.info('foo');
-      ci.called.should.equal(false);
-    });
-
-    it('should suppress .debug at silent level', function () {
-      const cd = sandbox.stub(console, 'debug');
-      log.setLevel('silent');
-      log.debug('foo');
-      cd.called.should.equal(false);
-    });
+    for (const [method, consoleMethod] of silentSuppressTests) {
+      it(`should suppress .${method} at silent level`, function () {
+        const stub = sandbox.stub(console, consoleMethod as keyof globalThis.Console);
+        log.setLevel('silent');
+        (log as any)[method]('foo');
+        stub.called.should.equal(false);
+      });
+    }
   });
 
 
