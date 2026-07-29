@@ -1,6 +1,8 @@
 import logger from '../logger';
+import { CoinModel, CoinStorage } from '../models/coin';
 import { WalletStatsModel, WalletStatsStorage } from '../models/walletStats';
 import { WalletStatsWalletModel, WalletStatsWalletStorage } from '../models/walletStatsWallet';
+import { SpentHeightIndicators } from '../types/Coin';
 import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
 import { Config } from './config';
@@ -20,15 +22,18 @@ export class WalletStatsService {
   interval;
   walletStatsModel: WalletStatsModel;
   walletStatsWalletModel: WalletStatsWalletModel;
+  coinModel: CoinModel;
   configService;
 
   constructor({
     walletStatsModel = WalletStatsStorage,
     walletStatsWalletModel = WalletStatsWalletStorage,
+    coinModel = CoinStorage,
     configService = Config
   } = {}) {
     this.walletStatsModel = walletStatsModel;
     this.walletStatsWalletModel = walletStatsWalletModel;
+    this.coinModel = coinModel;
     this.configService = configService;
   }
 
@@ -55,6 +60,37 @@ export class WalletStatsService {
     logger.info('Stopping Wallet Stats Service');
     this.stopping = true;
     clearInterval(this.interval);
+  }
+
+  // Sum each wallet's spendable balance in one pass over the coins collection.
+  // Mirrors the "unspent, valid mint" predicate used by CoinModel.getWalletBalance
+  // (spentHeight below the spent threshold, mintHeight above conflicting), unwinding
+  // shared coins so a coin held by multiple wallets is counted for each.
+  async collectUtxoBalances(params: { chain: string; network: string }): Promise<Map<string, bigint>> {
+    const { chain, network } = params;
+    const rows = await this.coinModel.collection
+      .aggregate<{ _id: any; balance: number }>(
+        [
+          {
+            $match: {
+              chain,
+              network,
+              'wallets.0': { $exists: true },
+              spentHeight: { $lt: SpentHeightIndicators.minimum },
+              mintHeight: { $gt: SpentHeightIndicators.conflicting }
+            }
+          },
+          { $unwind: '$wallets' },
+          { $group: { _id: '$wallets', balance: { $sum: '$value' } } }
+        ],
+        { allowDiskUse: true }
+      )
+      .toArray();
+    const balances = new Map<string, bigint>();
+    for (const row of rows) {
+      balances.set(row._id.toString(), BigInt(row.balance));
+    }
+    return balances;
   }
 
   // Weekly snapshot is due once the configured day+hour has passed and the

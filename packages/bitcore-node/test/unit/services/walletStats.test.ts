@@ -41,4 +41,18 @@ describe('WalletStats Service', function() {
       expect(missed).to.deep.equal(['2026-07-20', '2026-07-27', '2026-08-03']);
     });
   });
+
+  describe('collectUtxoBalances', () => {
+    it('maps a coins aggregation into per-wallet balances', async () => {
+      const rows = [
+        { _id: 'a'.repeat(24), balance: 5000 },
+        { _id: 'b'.repeat(24), balance: 0 }
+      ];
+      const coinModel: any = { collection: { aggregate: sandbox.stub().returns({ toArray: async () => rows }) } };
+      const svc = new WalletStatsService({ coinModel } as any);
+      const balances = await svc.collectUtxoBalances({ chain: 'BTC', network: 'mainnet' });
+      expect(balances.get('a'.repeat(24))).to.equal(5000n);
+      expect(balances.get('b'.repeat(24))).to.equal(0n);
+    });
+  });
 });
