@@ -4423,6 +4423,31 @@ describe('Wallet service', function() {
             });
           });
 
+          if (coin === 'btc') {
+            it('should use the specified feeLevel when calculating send max', function(done) {
+              helpers.stubUtxos(server, wallet, [1, 2], { coin }).then(function() {
+                const getSendMaxInfo = sinon.spy(server, 'getSendMaxInfo');
+                const txOpts = Object.assign({
+                  outputs: [{
+                    toAddress: addressStr,
+                    amount: null,
+                  }],
+                  feeLevel: level,
+                  sendMax: true,
+                }, flags);
+                server.createTx(txOpts, function(err, txp) {
+                  should.not.exist(err);
+                  should.exist(txp);
+                  getSendMaxInfo.calledOnce.should.equal(true);
+                  getSendMaxInfo.firstCall.args[0].feeLevel.should.equal(level);
+                  txp.feeLevel.should.equal(level);
+                  txp.feePerKb.should.equal(expected);
+                  done();
+                });
+              });
+            });
+          }
+
           it('should fail if the specified fee level does not exist', function(done) {
             helpers.stubUtxos(server, wallet, 2).then(function() {
               const txOpts = Object.assign({
@@ -7232,6 +7257,30 @@ describe('Wallet service', function() {
     }
   });
 
+
+  describe('#getSendMaxInfo DOGE', function() {
+    let server: WalletService;
+    let wallet: Model.Wallet;
+
+    beforeEach(async function() {
+      ({ server, wallet } = await helpers.createAndJoinWallet(1, 1, { coin: 'doge' }));
+    });
+
+    it('should only return inputs that fit within the maximum transaction size', async function() {
+      sinon.stub(Defaults, 'MAX_TX_SIZE_IN_KB_DOGE').value(2);
+      await helpers.stubUtxos(server, wallet, new Array(20).fill(1), { coin: 'doge' });
+
+      const info = await util.promisify(server.getSendMaxInfo).call(server, {
+        feePerKb: 10000,
+        returnInputs: true,
+      });
+
+      info.size.should.be.below(2000);
+      info.inputs.length.should.be.below(20);
+      info.utxosAboveMaxSize.should.be.above(0);
+      info.inputs.reduce((sum, input) => sum + input.satoshis, 0).should.equal(info.amount + info.fee);
+    });
+  });
 
   describe('Check requiredFeeRate  DOGE', function() {
     let server: WalletService;
