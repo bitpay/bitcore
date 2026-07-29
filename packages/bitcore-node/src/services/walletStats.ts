@@ -1,4 +1,5 @@
 import logger from '../logger';
+import { BitcoinBlock, BitcoinBlockStorage } from '../models/block';
 import { CoinModel, CoinStorage } from '../models/coin';
 import { WalletStatsModel, WalletStatsStorage } from '../models/walletStats';
 import { WalletStatsWalletModel, WalletStatsWalletStorage } from '../models/walletStatsWallet';
@@ -23,17 +24,20 @@ export class WalletStatsService {
   walletStatsModel: WalletStatsModel;
   walletStatsWalletModel: WalletStatsWalletModel;
   coinModel: CoinModel;
+  blockModel: BitcoinBlock;
   configService;
 
   constructor({
     walletStatsModel = WalletStatsStorage,
     walletStatsWalletModel = WalletStatsWalletStorage,
     coinModel = CoinStorage,
+    blockModel = BitcoinBlockStorage,
     configService = Config
   } = {}) {
     this.walletStatsModel = walletStatsModel;
     this.walletStatsWalletModel = walletStatsWalletModel;
     this.coinModel = coinModel;
+    this.blockModel = blockModel;
     this.configService = configService;
   }
 
@@ -91,6 +95,67 @@ export class WalletStatsService {
       balances.set(row._id.toString(), BigInt(row.balance));
     }
     return balances;
+  }
+
+  // Best-known last-activity date per wallet since `since`. Coins carry block
+  // HEIGHTS, not times, so this resolves in three steps: map `since` to a block
+  // height, take each wallet's max mint-or-spend height, then resolve those
+  // heights back to block times. Mempool/unconfirmed activity lives at negative
+  // sentinel heights (SpentHeightIndicators) which have no block time; such
+  // wallets are omitted rather than dated, so a wallet appears active only once
+  // its activity has confirmed.
+  async collectUtxoActivity(params: { chain: string; network: string; since: Date }): Promise<Map<string, Date>> {
+    const { chain, network, since } = params;
+    const activity = new Map<string, Date>();
+
+    const [sinceBlock] = await this.blockModel.collection
+      .find({ chain, network, timeNormalized: { $gte: since } })
+      .project({ height: 1 })
+      .sort({ timeNormalized: 1 })
+      .limit(1)
+      .toArray();
+    if (!sinceBlock) {
+      return activity; // no blocks since `since` => nothing counts as recent
+    }
+    const sinceHeight = sinceBlock.height;
+
+    const rows = await this.coinModel.collection
+      .aggregate<{ _id: any; maxHeight: number }>(
+        [
+          {
+            $match: {
+              chain,
+              network,
+              'wallets.0': { $exists: true },
+              $or: [{ mintHeight: { $gte: sinceHeight } }, { spentHeight: { $gte: sinceHeight } }]
+            }
+          },
+          { $unwind: '$wallets' },
+          { $group: { _id: '$wallets', maxHeight: { $max: { $max: ['$mintHeight', '$spentHeight'] } } } }
+        ],
+        { allowDiskUse: true }
+      )
+      .toArray();
+
+    const heights = [...new Set(rows.map(r => r.maxHeight))].filter(h => h >= SpentHeightIndicators.minimum);
+    const heightToDate = new Map<number, Date>();
+    if (heights.length) {
+      const blocks = await this.blockModel.collection
+        .find({ chain, network, height: { $in: heights } })
+        .project({ height: 1, timeNormalized: 1 })
+        .toArray();
+      for (const block of blocks) {
+        heightToDate.set(block.height, block.timeNormalized);
+      }
+    }
+
+    for (const row of rows) {
+      const date = heightToDate.get(row.maxHeight);
+      if (date) {
+        activity.set(row._id.toString(), date);
+      }
+    }
+    return activity;
   }
 
   // Weekly snapshot is due once the configured day+hour has passed and the

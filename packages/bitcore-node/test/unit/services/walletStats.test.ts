@@ -55,4 +55,45 @@ describe('WalletStats Service', function() {
       expect(balances.get('b'.repeat(24))).to.equal(0n);
     });
   });
+
+  describe('collectUtxoActivity', () => {
+    // Chainable cursor stub: find().project().sort().limit().toArray() all resolve to `rows`.
+    const cursor = (rows: any[]) => {
+      const c: any = {};
+      c.project = () => c;
+      c.sort = () => c;
+      c.limit = () => c;
+      c.toArray = async () => rows;
+      return c;
+    };
+
+    it('maps mint/spend block heights into per-wallet last activity', async () => {
+      const since = new Date('2025-08-03T00:00:00Z');
+      const activityDate = new Date('2026-07-30T00:00:00Z');
+      const blockFind = sandbox.stub();
+      blockFind.onFirstCall().returns(cursor([{ height: 100 }])); // resolve sinceHeight
+      blockFind.onSecondCall().returns(cursor([{ height: 500, timeNormalized: activityDate }])); // heights -> dates
+      const blockModel: any = { collection: { find: blockFind } };
+      const coinModel: any = {
+        collection: { aggregate: sandbox.stub().returns({ toArray: async () => [{ _id: 'a'.repeat(24), maxHeight: 500 }] }) }
+      };
+      const svc = new WalletStatsService({ coinModel, blockModel } as any);
+      const activity = await svc.collectUtxoActivity({ chain: 'BTC', network: 'mainnet', since });
+      expect(activity.get('a'.repeat(24))).to.deep.equal(activityDate);
+    });
+
+    it('ignores wallets whose only recent activity is an unconfirmed sentinel height', async () => {
+      const since = new Date('2025-08-03T00:00:00Z');
+      const blockFind = sandbox.stub();
+      blockFind.onFirstCall().returns(cursor([{ height: 100 }]));
+      blockFind.onSecondCall().returns(cursor([])); // no confirmed heights to resolve
+      const blockModel: any = { collection: { find: blockFind } };
+      const coinModel: any = {
+        collection: { aggregate: sandbox.stub().returns({ toArray: async () => [{ _id: 'c'.repeat(24), maxHeight: -1 }] }) }
+      };
+      const svc = new WalletStatsService({ coinModel, blockModel } as any);
+      const activity = await svc.collectUtxoActivity({ chain: 'BTC', network: 'mainnet', since });
+      expect(activity.has('c'.repeat(24))).to.equal(false);
+    });
+  });
 });
