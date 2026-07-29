@@ -240,6 +240,344 @@ describe('Transaction Model', function() {
       const walletTxs = await EVMTransactionStorage.collection.find({ chain, network, wallets: wallet }).toArray();
       expect(walletTxs.length).eq(1);
     });
+
+    describe('erc20Effects persistence ownership', () => {
+      const height = 300;
+      const blockHash = `0x${'12'.repeat(32)}`;
+      const from = `0x${'23'.repeat(20)}`;
+      const to = `0x${'34'.repeat(20)}`;
+      const canonicalFrom = `0x${'45'.repeat(20)}`;
+      const canonicalTo = `0x${'56'.repeat(20)}`;
+      const token = `0x${'67'.repeat(20)}`;
+      const time = new Date('2026-07-02T00:00:00.000Z');
+
+      function transaction(txid: string, overrides: Record<string, any> = {}) {
+        return {
+          chain,
+          network,
+          txid,
+          blockHeight: height,
+          blockHash,
+          blockTime: time,
+          blockTimeNormalized: time,
+          fee: 1,
+          value: 0,
+          wallets: [],
+          gasLimit: 21000,
+          gasPrice: 1,
+          nonce: 1,
+          transactionIndex: 0,
+          to,
+          from,
+          data: '0x',
+          internal: [],
+          calls: [],
+          effects: [],
+          ...overrides
+        };
+      }
+
+      function materialization(version: number, amount: string) {
+        return {
+          blockHash,
+          version,
+          items: [{
+            type: 'ERC20:transfer',
+            from: canonicalFrom,
+            to: canonicalTo,
+            amount,
+            contractAddress: token,
+            logIndex: 1,
+            callStack: 'log:1'
+          }]
+        };
+      }
+
+      it('preserves an already stored newer generation while updating fields and canonical wallets', async () => {
+        const txid = `0x${'78'.repeat(32)}`;
+        const canonicalWallet = new ObjectId();
+        const version1 = materialization(1, '10');
+        const version2 = materialization(2, '20');
+        await WalletAddressStorage.collection.insertOne({
+          chain,
+          network,
+          wallet: canonicalWallet,
+          address: canonicalTo,
+          processed: true
+        });
+        await EVMTransactionStorage.collection.insertOne(transaction(txid, { erc20Effects: version2 }) as any);
+
+        await EVMTransactionStorage.batchImport({
+          txs: [transaction(txid, { fee: 99, erc20Effects: version1 }) as any],
+          height,
+          blockHash,
+          blockTime: time,
+          blockTimeNormalized: time,
+          chain,
+          network,
+          initialSyncComplete: false
+        });
+
+        const stored = await EVMTransactionStorage.collection.findOne({ chain, network, txid });
+        expect(stored!.fee).to.equal(99);
+        expect(stored!.erc20Effects).to.deep.equal(version2);
+        expect(stored!.wallets.map(walletId => walletId.toString())).to.deep.equal([canonicalWallet.toString()]);
+      });
+
+      it('preserves canonical wallet ownership only on rows that already own erc20Effects', async () => {
+        const materializedTxid = `0x${'89'.repeat(32)}`;
+        const unmaterializedTxid = `0x${'9a'.repeat(32)}`;
+        const canonicalWallet = new ObjectId();
+        const replacedWallet = new ObjectId();
+        const masterWallet = new ObjectId();
+        const storedMaterialization = materialization(1, '10');
+        await WalletAddressStorage.collection.insertOne({ chain, network, wallet: masterWallet, address: from, processed: true });
+        await EVMTransactionStorage.collection.insertMany([
+          transaction(materializedTxid, { wallets: [canonicalWallet], erc20Effects: storedMaterialization }),
+          transaction(unmaterializedTxid, { wallets: [replacedWallet], transactionIndex: 1 })
+        ] as any);
+
+        await EVMTransactionStorage.batchImport({
+          txs: [
+            transaction(materializedTxid, { fee: 10, erc20Effects: undefined }) as any,
+            transaction(unmaterializedTxid, { fee: 20, transactionIndex: 1, erc20Effects: undefined }) as any
+          ],
+          height,
+          blockHash,
+          blockTime: time,
+          blockTimeNormalized: time,
+          chain,
+          network,
+          initialSyncComplete: false
+        });
+
+        const materialized = await EVMTransactionStorage.collection.findOne({ chain, network, txid: materializedTxid });
+        const unmaterialized = await EVMTransactionStorage.collection.findOne({ chain, network, txid: unmaterializedTxid });
+        expect(materialized!.erc20Effects).to.deep.equal(storedMaterialization);
+        expect(materialized!.wallets.map(walletId => walletId.toString()).sort()).to.deep.equal(
+          [canonicalWallet.toString(), masterWallet.toString()].sort()
+        );
+        expect(unmaterialized).not.to.have.property('erc20Effects');
+        expect(unmaterialized!.wallets.map(walletId => walletId.toString())).to.deep.equal([masterWallet.toString()]);
+      });
+    });
+
+    describe('pre-fork materialized parent copies', () => {
+      const parentChain = 'ETH';
+      const childChain = 'ARB';
+      const height = 100;
+      const forkHeight = 200;
+      const childTxid = `0x${'ab'.repeat(32)}`;
+      const parentTxid = `0x${childTxid.slice(2).toUpperCase()}`;
+      const blockHash = `0x${'22'.repeat(32)}`;
+      const parentFrom = `0x${'33'.repeat(20)}`;
+      const parentTo = `0x${'44'.repeat(20)}`;
+      const canonicalFrom = `0x${'55'.repeat(20)}`;
+      const canonicalTo = `0x${'66'.repeat(20)}`;
+      const token = `0x${'77'.repeat(20)}`;
+      const time = new Date('2026-07-01T00:00:00.000Z');
+
+      const canonicalWallet = new ObjectId();
+
+      function parentTransaction(wallets: ObjectId[] = []) {
+        return {
+          chain: parentChain,
+          network,
+          txid: parentTxid,
+          blockHeight: height,
+          blockHash,
+          blockTime: time,
+          blockTimeNormalized: time,
+          fee: 1,
+          value: 0,
+          wallets,
+          gasLimit: 21000,
+          gasPrice: 1,
+          nonce: 1,
+          transactionIndex: 0,
+          to: parentTo,
+          from: parentFrom,
+          data: '0x',
+          internal: [],
+          calls: [],
+          effects: []
+        };
+      }
+
+      function preparedChildTransaction() {
+        return {
+          ...parentTransaction(),
+          chain: childChain,
+          txid: childTxid,
+          erc20Effects: {
+            blockHash,
+            version: 1,
+            items: [{
+              type: 'ERC20:transfer',
+              from: canonicalFrom,
+              to: canonicalTo,
+              amount: '10',
+              contractAddress: token,
+              logIndex: 1,
+              callStack: 'log:1'
+            }]
+          }
+        };
+      }
+
+      beforeEach(async () => {
+        await WalletAddressStorage.collection.insertOne({
+          chain: childChain,
+          network,
+          wallet: canonicalWallet,
+          address: canonicalTo,
+          processed: true
+        });
+      });
+
+      it('inserts a distinct child row without copying the parent Mongo identity or route', async () => {
+        const parentInsert = await EVMTransactionStorage.collection.insertOne(parentTransaction() as any);
+        const preparedTx = preparedChildTransaction();
+
+        await EVMTransactionStorage.batchImport({
+          txs: [preparedTx as any],
+          height,
+          blockTime: time,
+          blockHash,
+          blockTimeNormalized: time,
+          parentChain,
+          forkHeight,
+          chain: childChain,
+          network,
+          initialSyncComplete: false
+        });
+
+        const parent = await EVMTransactionStorage.collection.findOne({ _id: parentInsert.insertedId });
+        const child = await EVMTransactionStorage.collection.findOne({ txid: childTxid, chain: childChain, network });
+
+        expect(parent).to.exist;
+        expect(parent).not.to.have.property('erc20Effects');
+        expect(child).to.exist;
+        expect(child!._id!.toString()).not.to.equal(parentInsert.insertedId.toString());
+        expect(child!.chain).to.equal(childChain);
+        expect(child!.network).to.equal(network);
+        expect(child!.txid).to.equal(childTxid);
+        expect(child!.from).to.equal(parentFrom);
+        expect(child!.erc20Effects).to.deep.equal(preparedTx.erc20Effects);
+        expect(child!.wallets.map(walletId => walletId.toString())).to.deep.equal([canonicalWallet.toString()]);
+      });
+
+
+      it('updates a materialized child from an omitted-field pre-fork write without replacing its identity', async () => {
+        const masterWallet = new ObjectId();
+        await WalletAddressStorage.collection.insertOne({
+          chain: childChain,
+          network,
+          wallet: masterWallet,
+          address: parentTo,
+          processed: true
+        });
+        const parentInsert = await EVMTransactionStorage.collection.insertOne(parentTransaction() as any);
+        const preparedTx = preparedChildTransaction();
+        await EVMTransactionStorage.batchImport({
+          txs: [preparedTx as any],
+          height,
+          blockTime: time,
+          blockHash,
+          blockTimeNormalized: time,
+          parentChain,
+          forkHeight,
+          chain: childChain,
+          network,
+          initialSyncComplete: false
+        });
+        const originalChild = await EVMTransactionStorage.collection.findOne({ txid: childTxid, chain: childChain, network });
+        await EVMTransactionStorage.collection.updateOne({ _id: parentInsert.insertedId }, { $set: { fee: 9 } });
+        const omittedTx: any = preparedChildTransaction();
+        delete omittedTx.erc20Effects;
+
+        await EVMTransactionStorage.batchImport({
+          txs: [omittedTx],
+          height,
+          blockTime: time,
+          blockHash,
+          blockTimeNormalized: time,
+          parentChain,
+          forkHeight,
+          chain: childChain,
+          network,
+          initialSyncComplete: false
+        });
+
+        const children = await EVMTransactionStorage.collection.find({
+          chain: childChain,
+          network,
+          txid: { $in: [parentTxid, childTxid] }
+        }).toArray();
+        const child = children[0];
+        expect(children).to.have.length(1);
+        expect(child!._id!.toString()).to.equal(originalChild!._id!.toString());
+        expect(child!.chain).to.equal(childChain);
+        expect(child!.network).to.equal(network);
+        expect(child!.txid).to.equal(childTxid);
+        expect(child!.erc20Effects).to.deep.equal(originalChild!.erc20Effects);
+        expect(child!.wallets.map(walletId => walletId.toString()).sort()).to.deep.equal(
+          [canonicalWallet.toString(), masterWallet.toString()].sort()
+        );
+        expect(child!.fee).to.equal(9);
+      });
+
+      it('preserves an existing child identity, wallet, and newer materialization while adding the canonical wallet', async () => {
+        const existingWallet = new ObjectId();
+        const futureErc20Effects = {
+          ...preparedChildTransaction().erc20Effects,
+          version: 2,
+          items: [{ ...preparedChildTransaction().erc20Effects.items[0], amount: '20' }]
+        };
+        const parentInsert = await EVMTransactionStorage.collection.insertOne(parentTransaction() as any);
+        const childInsert = await EVMTransactionStorage.collection.insertOne({
+          ...parentTransaction([existingWallet]),
+          chain: childChain,
+          txid: childTxid,
+          erc20Effects: futureErc20Effects
+        } as any);
+        const preparedTx = preparedChildTransaction();
+
+        await EVMTransactionStorage.batchImport({
+          txs: [preparedTx as any],
+          height,
+          blockTime: time,
+          blockHash,
+          blockTimeNormalized: time,
+          parentChain,
+          forkHeight,
+          chain: childChain,
+          network,
+          initialSyncComplete: false
+        });
+
+        const parent = await EVMTransactionStorage.collection.findOne({ _id: parentInsert.insertedId });
+        const children = await EVMTransactionStorage.collection.find({
+          chain: childChain,
+          network,
+          txid: { $in: [parentTxid, childTxid] }
+        }).toArray();
+        const child = children[0];
+
+        expect(parent).to.exist;
+        expect(parent).not.to.have.property('erc20Effects');
+        expect(children).to.have.length(1);
+        expect(child).to.exist;
+        expect(child!._id!.toString()).to.equal(childInsert.insertedId.toString());
+        expect(child!.txid).to.equal(childTxid);
+        expect(child!.chain).to.equal(childChain);
+        expect(child!.network).to.equal(network);
+        expect(child!.erc20Effects).to.deep.equal(futureErc20Effects);
+        expect(child!.wallets.map(walletId => walletId.toString()).sort()).to.deep.equal(
+          [existingWallet.toString(), canonicalWallet.toString()].sort()
+        );
+      });
+    });
   });
 
 });

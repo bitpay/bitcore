@@ -23,6 +23,7 @@ import { AavePoolAbi } from '../abi/aavePool';
 import { AavePoolAbiV2 } from '../abi/aavePoolV2';
 import { ERC20Abi } from '../abi/erc20';
 import { MultisendAbi } from '../abi/multisend';
+import { getEffectiveEvmEffects, isTransactionRelevantToAddresses } from '../erc20Effects';
 import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
 import { EVMTransactionJSON, IEVMBlock, IEVMTransaction, IEVMTransactionInProcess } from '../types';
@@ -453,16 +454,78 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     return tx;
   }
 
-  populateEffects(tx: MongoBound<IEVMTransaction>) {
-    if (!tx.effects || (tx.effects && tx.effects.length == 0)) {
+  populateEffects<T extends Partial<IEVMTransactionInProcess>>(tx: T) {
+    // Canonical materialization applies only to local Mongo-backed rows. An
+    // external provider transaction has no BSON ObjectID and must retain the
+    // provider/current-master effects semantics.
+    const mongoId = (tx as any)._id;
+    const isLocalMongoRow = mongoId && typeof mongoId.toHexString === 'function';
+    if (isLocalMongoRow) {
+      tx.effects = EVMTransactionStorage.getEffectiveEffects(tx as IEVMTransactionInProcess);
+    } else if (!tx.effects || tx.effects.length === 0) {
       tx.effects = EVMTransactionStorage.getEffects(tx as IEVMTransactionInProcess);
     }
     return tx;
   }
 
-  populateEffectsForAddresses(tx: MongoBound<IEVMTransaction>, addresses: Array<string>) {
-    tx.effects = EVMTransactionStorage.getEffectsForAddresses(tx as IEVMTransactionInProcess, addresses);
+  populateEffectsForAddresses<T extends Partial<IEVMTransactionInProcess>>(tx: T, addresses: Array<string>) {
+    const mongoId = (tx as any)._id;
+    const isLocalMongoRow = mongoId && typeof mongoId.toHexString === 'function';
+    if (isLocalMongoRow) {
+      tx.effects = EVMTransactionStorage.getEffectsForAddresses(tx as IEVMTransactionInProcess, addresses);
+    } else {
+      const effects = tx.effects?.length
+        ? tx.effects
+        : EVMTransactionStorage.getEffects(tx as IEVMTransactionInProcess);
+      const addressSet = new Set(addresses.map(address => address.toLowerCase()));
+      tx.effects = effects.filter(effect =>
+        addressSet.has(effect.to.toLowerCase()) || addressSet.has(effect.from.toLowerCase())
+      );
+    }
     return tx;
+  }
+
+  private filterTransactionsForAddresses(
+    addresses: string[],
+    options: { includeInternalRecipients?: boolean } = {}
+  ) {
+    return new TransformWithEventPipe({
+      objectMode: true,
+      transform: (tx, _, done) => {
+        if (isTransactionRelevantToAddresses(tx, addresses, options)) {
+          return done(null, tx);
+        }
+        return done();
+      }
+    });
+  }
+
+  private normalizeAddressHistoryLimit(limit: unknown) {
+    const requestedLimit = Number(limit);
+    // Preserve master behavior for absent/zero values and values that master
+    // converted to NaN before handing them to the MongoDB driver.
+    if (requestedLimit === 0 || Number.isNaN(requestedLimit)) {
+      return undefined;
+    }
+    // Do not silently turn numeric values that the driver would reject into an
+    // unbounded post-filter stream.
+    if (!Number.isFinite(requestedLimit) || !Number.isSafeInteger(requestedLimit)) {
+      throw new Error('Address transaction limit must be a finite safe integer');
+    }
+    // MongoDB negative limits cap by magnitude and close the cursor. The
+    // post-normalization limiter must preserve that bounded behavior.
+    return Math.abs(requestedLimit);
+  }
+
+  private addressVariants(address: string) {
+    const variants = new Set([address, address.toLowerCase()]);
+    try {
+      variants.add(Web3.utils.toChecksumAddress(address));
+    } catch {
+      // Preserve the endpoint's existing validation behavior. A malformed
+      // address simply has no additional checksum query variant.
+    }
+    return Array.from(variants);
   }
 
   async getTransaction(params: StreamTransactionParams) {
@@ -546,18 +609,91 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     const { limit, /* since,*/ tokenAddress } = args;
 
     if (!args.tokenAddress) {
+      const requestedLimit = this.normalizeAddressHistoryLimit(limit);
+      const canonicalAddressVariants = this.addressVariants(address);
       const query = {
         $or: [
           { chain, network, from: address },
           { chain, network, to: address },
           { chain, network, 'internal.action.to': address }, // Retained for old db entries
-          { chain, network, 'effects.to': address }
+          { chain, network, 'effects.to': address },
+          { chain, network, 'erc20Effects.items.to': { $in: canonicalAddressVariants } },
+          { chain, network, 'erc20Effects.items.from': { $in: canonicalAddressVariants } }
         ]
       };
 
       // NOTE: commented out since and paging for now b/c they were causing extra long query times on insight.
-      // The case where an address has >1000 txns is an edge case ATM and can be addressed later
-      Storage.apiStreamingFind(EVMTransactionStorage, query, { limit /* since, paging: '_id'*/ }, req!, res!);
+      // The case where an address has >1000 txns is an edge case ATM and can be addressed later.
+      // Canonical normalization can discard rows that matched only through a
+      // stale heuristic ERC-20 effect. Apply the API limit after that filter so
+      // discarded rows cannot consume result slots ahead of canonical-only
+      // matches.
+      const cursor = EVMTransactionStorage.getTransactions({ query, options: { /* since, paging: '_id'*/ } });
+      const cursorStream = new TransformWithEventPipe({ objectMode: true, passThrough: true });
+      let cursorClosed = false;
+      const closeCursor = (): void => {
+        if (!cursorClosed) {
+          cursorClosed = true;
+          void cursor.close();
+        }
+      };
+      const stopCursor = () => {
+        cursor.unpipe(cursorStream);
+        closeCursor();
+        if (!cursorStream.writableEnded) {
+          cursorStream.end();
+        }
+      };
+      cursor.on('error', err => cursorStream.emit('error', err));
+      let transactionStream = cursor.pipe(cursorStream);
+      transactionStream = transactionStream.eventPipe(new TransformWithEventPipe({
+        objectMode: true,
+        transform: (tx, _, done) => {
+          let config: IEVMNetworkConfig | undefined;
+          if (tx.chain && tx.network) {
+            config = Config.chainConfig({ chain: tx.chain, network: tx.network }) as IEVMNetworkConfig;
+          }
+          // This endpoint historically exposed the stored effects array. Compose
+          // canonical ERC-20 items over that exact fallback instead of deriving
+          // new native/internal effects for older rows.
+          tx.effects = getEffectiveEvmEffects(
+            tx,
+            config,
+            Array.isArray(tx.effects) ? tx.effects : []
+          );
+          return done(null, tx);
+        }
+      }));
+      transactionStream = transactionStream.eventPipe(this.filterTransactionsForAddresses(
+        [address],
+        { includeInternalRecipients: true }
+      ));
+
+      if (requestedLimit !== undefined) {
+        let accepted = 0;
+        transactionStream = transactionStream.eventPipe(new TransformWithEventPipe({
+          objectMode: true,
+          transform: (tx, _, done) => {
+            if (accepted >= requestedLimit) {
+              return done();
+            }
+            accepted += 1;
+            if (accepted >= requestedLimit) {
+              stopCursor();
+            }
+            return done(null, tx);
+          }
+        }));
+      }
+      transactionStream = transactionStream.eventPipe(new TransformWithEventPipe({
+        objectMode: true,
+        transform: (tx, _, done) => done(null, EVMTransactionStorage._apiTransform(tx))
+      }));
+
+      // Keep the established local API streaming lifecycle while allowing the
+      // normalization pipeline to close its underlying MongoDB cursor.
+      (transactionStream as any).close = closeCursor;
+      return Storage.apiStream(transactionStream as any, req!, res!);
     } else {
       try {
         const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress, args);
@@ -595,10 +731,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       if (t.blockHeight !== undefined && t.blockHeight >= 0) {
         confirmations = tipHeight - t.blockHeight + 1;
       }
-      // Add effects to old db entries
-      if (!t.effects || (t.effects && t.effects.length == 0)) {
-        t.effects = EVMTransactionStorage.getEffects(t as IEVMTransactionInProcess);
-      }
+      t = this.populateEffects(t);
       const convertedTx = EVMTransactionStorage._apiTransform(t, { object: true }) as Partial<ITransaction>;
       return JSON.stringify({ ...convertedTx, confirmations });
     });
@@ -752,6 +885,9 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     transactionStream = cursor.pipe(new TransformWithEventPipe({ objectMode: true, passThrough: true }));
 
     transactionStream = transactionStream.eventPipe(populateEffects); // For old db entries
+    transactionStream = transactionStream.eventPipe(
+      this.filterTransactionsForAddresses(streamParams.walletAddresses)
+    );
 
     if (params.args.tokenAddress) {
       const erc20Transform = new Erc20RelatedFilterTransform(params.args.tokenAddress);
@@ -960,6 +1096,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       }
 
       const addressBatchLC = addressBatch.map(address => address.toLowerCase());
+      const canonicalAddressBatch = Array.from(new Set(addressBatch.flatMap(address => this.addressVariants(address))));
 
       await EVMTransactionStorage.collection.updateMany(
         {
@@ -978,6 +1115,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
             },
             { chain, network, 'effects.to': { $in: addressBatch } },
             { chain, network, 'effects.from': { $in: addressBatch } },
+            { chain, network, 'erc20Effects.items.to': { $in: canonicalAddressBatch } },
+            { chain, network, 'erc20Effects.items.from': { $in: canonicalAddressBatch } },
           ]
         },
         { $addToSet: { wallets: params.wallet._id } }

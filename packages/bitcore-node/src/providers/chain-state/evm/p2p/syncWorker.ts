@@ -4,6 +4,7 @@ import logger from '../../../../logger';
 import { Config } from '../../../../services/config';
 import { Storage } from '../../../../services/storage';
 import { wait } from '../../../../utils';
+import { prepareErc20EffectsForPersistence } from '../erc20Effects';
 import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
 import { type IRpc, Rpcs } from './rpcs';
@@ -116,6 +117,12 @@ export class SyncWorker {
   }
 
   async processBlock(block: IEVMBlock, transactions: IEVMTransactionInProcess[]): Promise<any> {
+    await prepareErc20EffectsForPersistence({
+      rpc: this.rpc!,
+      config: this.chainConfig,
+      block,
+      transactions
+    });
     await EVMBlockStorage.addBlock({
       chain: this.chain,
       network: this.network,

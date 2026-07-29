@@ -161,6 +161,7 @@ export type IEVMTransaction = ITransaction & {
   error?: string;
   receipt?: TxReceipt;
   effects?: Effect[]; // Meant to replace abiType, internal, calls and data on stored txs
+  erc20Effects?: Erc20Effects;
   confirmations?: number;
 };
 
@@ -171,6 +172,20 @@ export interface Effect {
   type?: 'ERC20:transfer' | 'MULTISIG:submitTransaction' | 'MULTISIG:confirmTransaction'; // These are the only txs types we care about
   contractAddress?: string;
   callStack?: string;
+  logIndex?: number;
+}
+
+export interface CanonicalErc20Effect extends Effect {
+  type: 'ERC20:transfer';
+  contractAddress: string;
+  callStack: string;
+  logIndex: number;
+}
+
+export interface Erc20Effects {
+  blockHash: string;
+  version: number;
+  items: CanonicalErc20Effect[];
 }
 
 export type IEVMTransactionInProcess = IEVMTransaction & {

@@ -67,6 +67,10 @@ export interface IEVMNetworkConfig extends INetworkConfig {
   leanTransactionStorage?: boolean; // Removes data, abiType, internal and calls before saving a transaction to the databases
   needsL1Fee?: boolean; // Does this chain require a layer-1 fee to be added to a transaction (e.g. OP-stack chains)?
   indexedProviderRouting?: IMultiProviderConfig[]; // Per-network indexed API routing order; provider credentials live under config.externalProviders
+  erc20Effects?: {
+    materializationEnabled?: boolean; // Populate inclusion-bound canonical ERC-20 effects on confirmed block writes
+    strictReadActivationHeight?: number; // At/above this height, missing or stale canonical ERC-20 effects fail closed
+  };
 }
 
 export interface IXrpNetworkConfig extends INetworkConfig {

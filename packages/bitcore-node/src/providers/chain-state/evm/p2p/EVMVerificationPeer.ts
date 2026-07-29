@@ -1,6 +1,7 @@
 import logger from '../../../../logger';
 import { ITransaction } from '../../../../models/baseTransaction';
 import { ErrorType, IVerificationPeer } from '../../../../services/verification';
+import { prepareErc20EffectsForPersistence } from '../erc20Effects';
 import { EVMBlockStorage } from '../models/block';
 import { EVMP2pWorker } from './p2p';
 
@@ -41,6 +42,13 @@ export class EVMVerificationPeer extends EVMP2pWorker implements IVerificationPe
       if (nextBlock) {
         convertedBlock.nextBlockHash = nextBlock.hash;
       }
+
+      await prepareErc20EffectsForPersistence({
+        rpc: this.rpc!,
+        config: this.chainConfig,
+        block: convertedBlock,
+        transactions: convertedTxs
+      });
 
       await this.blockModel.processBlock({
         chain: this.chain,
