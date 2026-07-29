@@ -578,7 +578,7 @@ export class Wallet implements IWallet {
     return retval;
   }
 
-  async getPasswordWithRetry(): Promise<string> {
+  async getWalletPassword(): Promise<string> {
     let password;
     if (this.isWalletEncrypted()) {
       password = await getPassword('Wallet password:', {
@@ -603,7 +603,7 @@ export class Wallet implements IWallet {
       await this.getClient({ mustExist: true });
     }
 
-    const password = await this.getPasswordWithRetry();
+    const password = await this.getWalletPassword();
     if (this.#walletData.key instanceof TssKey.TssKey) {
       return this._signTxpTss({ txp, password });
     }
@@ -703,7 +703,7 @@ export class Wallet implements IWallet {
     if (!this.client) {
       await this.getClient({ mustExist: true });
     }
-    const password = await this.getPasswordWithRetry();
+    const password = await this.getWalletPassword();
     const chain = this.client.credentials.chain;
 
     if (this.#walletData.key instanceof TssKey.TssKey) {

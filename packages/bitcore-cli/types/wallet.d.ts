@@ -75,7 +75,7 @@ export interface IWallet {
   getTokenByName(args: { token: string }): Promise<ITokenObj>;
   getTokenFromChain(args: { address: string }): Promise<ITokenObj>;
   getNativeCurrency(fallback?: boolean): Promise<ITokenObj | null>;
-  getPasswordWithRetry(): Promise<string>;
+  getWalletPassword(): Promise<string>;
   signTxp(args: { txp: Txp }): Promise<Array<string>>;
   signAndBroadcastTxp(args: { txp: Txp }): Promise<Txp>;
   signMessage(args: {

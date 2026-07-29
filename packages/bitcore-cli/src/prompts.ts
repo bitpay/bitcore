@@ -77,25 +77,24 @@ export async function getPassword(
     validate?: (input: string) => string | null;
     /** Should user be prompted to confirm their password? */
     confirm?: boolean;
-    /** Don't retry if confirmation fails */
-    noRetry?: boolean;
+    /** Retry if confirmation fails (default: true) */
+    retry?: boolean;
   }
 ): Promise<string> {
   opts = opts || {};
-  opts.minLength = opts.minLength ?? 0;
-  const hidden = opts.hidden ?? true;
-  const { confirm, noRetry } = opts;
+  const { confirm, retry = true, hidden = true, minLength = 0 } = opts;
 
   let confirmed = false;
   let password: string | symbol = null;
+  let backup = false;
   do {
     password = await prompt.password({
       message: (msg || 'Password:') + (hidden ? ' (hidden)' : ''),
       mask: hidden ? '' : undefined,
       clearOnError: hidden,
       validate: (input) => {
-        if (input?.length < opts.minLength) {
-          return `Password must be at least ${opts.minLength} characters long.`;
+        if (input?.length < minLength) {
+          return `Password must be at least ${minLength} characters long.`;
         }
         return opts.validate?.(input);
       }
@@ -104,19 +103,25 @@ export async function getPassword(
       throw new UserCancelled();
     }
     if (confirm) {
+      backup = false; // reset backup flag for each iteration
+      let confirmTries = 0;
       const password2 = await prompt.password({
         message: 'Confirm:',
         mask: hidden ? '' : undefined,
-        clearOnError: hidden
+        clearOnError: hidden,
+        validate: (input) => {
+          confirmTries++;
+          if (input !== password) {
+            return 'Passwords do not match' + (confirmTries > 1 ? '. Type Ctrl+C to return to the previous prompt.' : '');
+          }
+        }
       });
-      if (prompt.isCancel(password2)) {
-        throw new UserCancelled();
-      }
-      confirmed = password === password2; 
+      backup = prompt.isCancel(password2);
+      confirmed = password === password2;
     } else {
       confirmed = true;
     }
-  } while (!confirmed && !noRetry);
+  } while (!confirmed && (retry || backup));
 
   if (!confirmed) {
     throw new Error('Passwords do not match');
