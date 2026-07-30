@@ -100,64 +100,12 @@ jobs:
             nvm use default
             set -x && node -v && npm -v && google-chrome --version && docker version && python --version
       # - restore_dependency_cache
-      # TODO: Run dependency installation, inert bootstrap, approved lifecycle
-      # scripts, and compilation only when restore_dependency_cache misses
+      # TODO: Restore the dependency cache and run setup only on a cache miss.
       - run:
-          name: Install root dependencies
+          name: Set up monorepo
           command: |
             nvm use default
-            npm ci
-      - run:
-          name: Bootstrap child dependencies without lifecycle scripts
-          command: |
-            nvm use default
-            npm_config_ignore_scripts=true npm run bootstrap
-      - run:
-          name: Run approved dependency lifecycle scripts
-          command: |
-            nvm use default
-            set -euo pipefail
-
-            for package in \
-              packages/bitcore-build \
-              packages/bitcore-cli \
-              packages/bitcore-client \
-              packages/bitcore-lib \
-              packages/bitcore-lib-cash \
-              packages/bitcore-lib-doge \
-              packages/bitcore-lib-ltc \
-              packages/bitcore-logging \
-              packages/bitcore-mnemonic \
-              packages/bitcore-node \
-              packages/bitcore-p2p \
-              packages/bitcore-p2p-cash \
-              packages/bitcore-p2p-doge \
-              packages/bitcore-tss \
-              packages/bitcore-wallet-client \
-              packages/bitcore-wallet-service \
-              packages/crypto-rpc \
-              packages/crypto-wallet-core
-            do
-              echo
-              echo "===== Running approved scripts for $package ====="
-
-              (
-                cd "$package"
-
-                if ! ../../node_modules/.bin/allow-scripts run; then
-                  echo
-                  echo "ERROR: allow-scripts run failed for $package"
-                  echo
-                  ../../node_modules/.bin/allow-scripts list
-                  exit 1
-                fi
-              )
-            done
-      - run:
-          name: Compile monorepo
-          command: |
-            nvm use default
-            npm run compile
+            npm run setup
       - save_cache:
           key: node_modules-{{ checksum "package-lock.json" }}-{{ checksum "combined-package-lock.txt" }}
           paths:
@@ -194,7 +142,7 @@ jobs:
       # - restore_dependency_cache
       - run: | # TODO figure out how to make this only run on a cache miss in restore_dependency_cache
           nvm use default
-          npm ci
+          npm ci --ignore-scripts
       - persist_to_workspace:
           root: ~/bitcore/packages/crypto-rpc # only persist crypto-rpc package
           paths:

@@ -23,4 +23,4 @@ RUN set -x \
 WORKDIR /bitcore
 
 ADD . .
-RUN npm ci
+RUN npm ci --ignore-scripts
