@@ -31,7 +31,7 @@ async function main() {
   if (implicitTopLevelEvents.length > 0) {
     throw new Error(
       `${packageName} defines top-level lifecycle hooks that ` +
-      `allow-scripts run would execute outside lavamoat.allowScripts: ` +
+      'allow-scripts run would execute outside lavamoat.allowScripts: ' +
       implicitTopLevelEvents.join(', ')
     );
   }
@@ -39,7 +39,7 @@ async function main() {
   if (fs.existsSync(path.join(packageDir, 'binding.gyp'))) {
     throw new Error(
       `${packageName} contains binding.gyp, which would cause ` +
-      `allow-scripts run to synthesize an unconfigured install hook.`
+      'allow-scripts run to synthesize an unconfigured install hook.'
     );
   }
 
