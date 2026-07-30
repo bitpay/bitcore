@@ -258,4 +258,51 @@ describe('WalletStats Service', function() {
       expect(waitFn.calledOnce).to.equal(true);
     });
   });
+
+  describe('detectDups', () => {
+    it('honors the stored verdict for settled wallets without re-querying addresses', async () => {
+      const dupId = new ObjectID();
+      const cleanId = new ObjectID();
+      const aggregate = sandbox.stub().returns({
+        toArray: async () => [{ _id: dupId, isDup: true }, { _id: cleanId, isDup: false }]
+      });
+      const walletStatsWalletModel: any = { collection: { aggregate } };
+      const findOne = sandbox.stub();
+      const walletAddressModel: any = { collection: { findOne, find: sandbox.stub() } };
+      const svc = new WalletStatsService({ walletStatsWalletModel, walletAddressModel } as any);
+      const dups = await svc.detectDups({ chain: 'BTC', network: 'mainnet', wallets: [{ _id: dupId }, { _id: cleanId }] });
+      expect(dups.has(dupId.toHexString())).to.equal(true);
+      expect(dups.has(cleanId.toHexString())).to.equal(false);
+      expect(findOne.called).to.equal(false); // settled verdicts skip the address lookups
+    });
+
+    it('flags an unsettled cluster of wallets that share a first address', async () => {
+      const w1 = new ObjectID();
+      const w2 = new ObjectID();
+      const aggregate = sandbox.stub().returns({ toArray: async () => [] }); // no prior facts => unsettled
+      const walletStatsWalletModel: any = { collection: { aggregate } };
+      const findOne = sandbox.stub().resolves({ address: '0xshared', wallet: w1 });
+      const find = sandbox.stub().returns({
+        toArray: async () => [{ wallet: w1, address: '0xshared' }, { wallet: w2, address: '0xshared' }]
+      });
+      const walletAddressModel: any = { collection: { findOne, find } };
+      const svc = new WalletStatsService({ walletStatsWalletModel, walletAddressModel } as any);
+      const dups = await svc.detectDups({ chain: 'BTC', network: 'mainnet', wallets: [{ _id: w1 }, { _id: w2 }] });
+      expect(dups.has(w1.toHexString())).to.equal(true);
+      expect(dups.has(w2.toHexString())).to.equal(true);
+    });
+
+    it('does not flag an unsettled wallet that has no addresses', async () => {
+      const w = new ObjectID();
+      const aggregate = sandbox.stub().returns({ toArray: async () => [] });
+      const walletStatsWalletModel: any = { collection: { aggregate } };
+      const findOne = sandbox.stub().resolves(null); // wallet has no address
+      const find = sandbox.stub();
+      const walletAddressModel: any = { collection: { findOne, find } };
+      const svc = new WalletStatsService({ walletStatsWalletModel, walletAddressModel } as any);
+      const dups = await svc.detectDups({ chain: 'BTC', network: 'mainnet', wallets: [{ _id: w }] });
+      expect(dups.has(w.toHexString())).to.equal(false);
+      expect(find.called).to.equal(false); // no first address => no cluster query
+    });
+  });
 });

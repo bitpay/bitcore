@@ -2,6 +2,7 @@ import { ObjectID } from 'mongodb';
 import logger from '../logger';
 import { BitcoinBlock, BitcoinBlockStorage } from '../models/block';
 import { CoinModel, CoinStorage } from '../models/coin';
+import { WalletAddressModel, WalletAddressStorage } from '../models/walletAddress';
 import { IWalletStats, WalletStatsModel, WalletStatsStorage } from '../models/walletStats';
 import { IWalletStatsWallet, WalletStatsWalletModel, WalletStatsWalletStorage } from '../models/walletStatsWallet';
 import { SpentHeightIndicators } from '../types/Coin';
@@ -27,6 +28,7 @@ export class WalletStatsService {
   walletStatsWalletModel: WalletStatsWalletModel;
   coinModel: CoinModel;
   blockModel: BitcoinBlock;
+  walletAddressModel: WalletAddressModel;
   configService;
   waitFn: (ms: number) => Promise<unknown>;
 
@@ -35,6 +37,7 @@ export class WalletStatsService {
     walletStatsWalletModel = WalletStatsWalletStorage,
     coinModel = CoinStorage,
     blockModel = BitcoinBlockStorage,
+    walletAddressModel = WalletAddressStorage,
     configService = Config,
     waitFn = wait
   } = {}) {
@@ -42,6 +45,7 @@ export class WalletStatsService {
     this.walletStatsWalletModel = walletStatsWalletModel;
     this.coinModel = coinModel;
     this.blockModel = blockModel;
+    this.walletAddressModel = walletAddressModel;
     this.configService = configService;
     this.waitFn = waitFn;
   }
@@ -322,6 +326,64 @@ export class WalletStatsService {
     }
 
     return { balance: balanceStr, nonce: nonceStr, lastActivityDate };
+  }
+
+  // Resolve which of the given wallets are duplicates, returning their id hexes.
+  // Duplicate detection runs only ONCE per wallet: a wallet with any prior fact
+  // keeps that fact's stored isDup verdict (true or false, both settled) and skips
+  // the address scan. Only never-snapshotted wallets get the maintenance scripts'
+  // first-address check — if a wallet's earliest address is shared by more than one
+  // wallet, the whole cluster is flagged. This method performs NO writes; the verdict
+  // is persisted later when buildSnapshot stamps isDup onto the per-wallet facts.
+  async detectDups(params: {
+    chain: string;
+    network: string;
+    wallets: Array<{ _id: ObjectID }>;
+  }): Promise<Set<string>> {
+    const { chain, network, wallets } = params;
+    const dups = new Set<string>();
+    const walletIds = wallets.map(w => w._id);
+
+    // One round-trip for the latest fact per wallet; $first after a desc sort on
+    // snapshotDate yields each wallet's most recent stored verdict.
+    const priorFacts = await this.walletStatsWalletModel.collection
+      .aggregate<{ _id: ObjectID; isDup: boolean }>([
+        { $match: { chain, network, wallet: { $in: walletIds } } },
+        { $sort: { wallet: 1, snapshotDate: -1 } },
+        { $group: { _id: '$wallet', isDup: { $first: '$isDup' } } }
+      ])
+      .toArray();
+    const settled = new Set<string>();
+    for (const fact of priorFacts) {
+      const id = fact._id.toHexString();
+      settled.add(id);
+      if (fact.isDup) {
+        dups.add(id);
+      }
+    }
+
+    for (const wallet of wallets) {
+      if (settled.has(wallet._id.toHexString())) {
+        continue;
+      }
+      const firstAddress = await this.walletAddressModel.collection.findOne(
+        { chain, network, wallet: wallet._id, address: { $exists: true } },
+        { sort: { _id: 1 } }
+      );
+      if (!firstAddress) {
+        continue; // no address => cannot be a shared-first-address duplicate
+      }
+      const sharers = await this.walletAddressModel.collection
+        .find({ chain, network, address: firstAddress.address, wallet: { $exists: true } })
+        .toArray();
+      const clusterWallets = new Set(sharers.map(s => s.wallet.toHexString()));
+      if (clusterWallets.size > 1) {
+        for (const id of clusterWallets) {
+          dups.add(id); // flag the entire cluster, matching the maintenance scripts
+        }
+      }
+    }
+    return dups;
   }
 
   // Weekly snapshot is due once the configured day+hour has passed and the
