@@ -49,11 +49,17 @@ describe('WalletStats Service', function() {
         { _id: 'a'.repeat(24), balance: 5000 },
         { _id: 'b'.repeat(24), balance: 0 }
       ];
-      const coinModel: any = { collection: { aggregate: sandbox.stub().returns({ toArray: async () => rows }) } };
+      const aggregate = sandbox.stub().returns({ toArray: async () => rows });
+      const coinModel: any = { collection: { aggregate } };
       const svc = new WalletStatsService({ coinModel } as any);
       const balances = await svc.collectUtxoBalances({ chain: 'BTC', network: 'mainnet' });
       expect(balances.get('a'.repeat(24))).to.equal(5000n);
       expect(balances.get('b'.repeat(24))).to.equal(0n);
+      // Pin the unspent/valid-mint predicate and the index hint so a typo can't pass.
+      const [pipeline, options] = aggregate.firstCall.args;
+      expect(pipeline[0].$match.spentHeight).to.deep.equal({ $lt: 0 }); // SpentHeightIndicators.minimum
+      expect(pipeline[0].$match.mintHeight).to.deep.equal({ $gt: -3 }); // SpentHeightIndicators.conflicting
+      expect(options.hint).to.deep.equal({ wallets: 1, spentHeight: 1, value: 1, mintHeight: 1 });
     });
   });
 
@@ -68,12 +74,19 @@ describe('WalletStats Service', function() {
       return c;
     };
 
+    // Route block queries by shape: the sinceHeight lookup filters on timeNormalized,
+    // the height->date range scan filters on height.
+    const routeBlockFind = (sinceRows: any[], rangeRows: any[]) =>
+      sandbox.stub().callsFake((q: any) => {
+        if ('timeNormalized' in q) return cursor(sinceRows);
+        if ('height' in q) return cursor(rangeRows);
+        return cursor([]);
+      });
+
     it('maps mint/spend block heights into per-wallet last activity', async () => {
       const since = new Date('2025-08-03T00:00:00Z');
       const activityDate = new Date('2026-07-30T00:00:00Z');
-      const blockFind = sandbox.stub();
-      blockFind.onFirstCall().returns(cursor([{ height: 100 }])); // resolve sinceHeight
-      blockFind.onSecondCall().returns(cursor([{ height: 500, timeNormalized: activityDate }])); // heights -> dates
+      const blockFind = routeBlockFind([{ height: 100 }], [{ height: 500, timeNormalized: activityDate }]);
       const blockModel: any = { collection: { find: blockFind } };
       const coinModel: any = {
         collection: { aggregate: sandbox.stub().returns({ toArray: async () => [{ _id: 'a'.repeat(24), maxHeight: 500 }] }) }
@@ -83,11 +96,9 @@ describe('WalletStats Service', function() {
       expect(activity.get('a'.repeat(24))).to.deep.equal(activityDate);
     });
 
-    it('ignores wallets whose only recent activity is an unconfirmed sentinel height', async () => {
+    it('ignores unconfirmed sentinel heights and skips the block range scan', async () => {
       const since = new Date('2025-08-03T00:00:00Z');
-      const blockFind = sandbox.stub();
-      blockFind.onFirstCall().returns(cursor([{ height: 100 }]));
-      blockFind.onSecondCall().returns(cursor([])); // no confirmed heights to resolve
+      const blockFind = routeBlockFind([{ height: 100 }], [{ height: 500, timeNormalized: new Date() }]);
       const blockModel: any = { collection: { find: blockFind } };
       const coinModel: any = {
         collection: { aggregate: sandbox.stub().returns({ toArray: async () => [{ _id: 'c'.repeat(24), maxHeight: -1 }] }) }
@@ -95,6 +106,8 @@ describe('WalletStats Service', function() {
       const svc = new WalletStatsService({ coinModel, blockModel } as any);
       const activity = await svc.collectUtxoActivity({ chain: 'BTC', network: 'mainnet', since });
       expect(activity.has('c'.repeat(24))).to.equal(false);
+      // Only the sinceHeight lookup runs; nothing confirmed to resolve, so no range scan.
+      expect(blockFind.calledOnce).to.equal(true);
     });
   });
 

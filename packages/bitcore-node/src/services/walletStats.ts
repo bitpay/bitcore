@@ -88,7 +88,10 @@ export class WalletStatsService {
           { $unwind: '$wallets' },
           { $group: { _id: '$wallets', balance: { $sum: '$value' } } }
         ],
-        { allowDiskUse: true }
+        // The planner won't reach for the partial wallets index unaided; hint it
+        // explicitly as CoinModel.getBalanceAtTime does. Valid because our $match
+        // carries the index's partialFilterExpression predicate ('wallets.0' exists).
+        { allowDiskUse: true, hint: { wallets: 1, spentHeight: 1, value: 1, mintHeight: 1 } }
       )
       .toArray();
     const balances = new Map<string, bigint>();
@@ -138,11 +141,14 @@ export class WalletStatsService {
       )
       .toArray();
 
-    const heights = [...new Set(rows.map(r => r.maxHeight))].filter(h => h >= SpentHeightIndicators.minimum);
+    // Confirmed activity always maxes out at >= sinceHeight; sentinel-only
+    // (unconfirmed) wallets max out negative. Resolve heights via a single bounded
+    // range scan of the block index rather than a giant height:{$in:[...]} doc,
+    // and skip the scan entirely when nothing confirmed needs a date.
     const heightToDate = new Map<number, Date>();
-    if (heights.length) {
+    if (rows.some(row => row.maxHeight >= sinceHeight)) {
       const blocks = await this.blockModel.collection
-        .find({ chain, network, height: { $in: heights } })
+        .find({ chain, network, height: { $gte: sinceHeight } })
         .project({ height: 1, timeNormalized: 1 })
         .toArray();
       for (const block of blocks) {
