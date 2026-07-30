@@ -2,6 +2,16 @@
 
 'use strict';
 
+// Build a fail-closed lifecycle-script plan for one workspace package. Given
+// the package directory on the command line, this verifies that its LavaMoat
+// policy is complete and unambiguous, rejects top-level hooks that
+// allow-scripts could run outside that policy, and prints each uniquely
+// approved dependency's real path (one per line) for the repository runner to
+// deduplicate before execution. 
+// 
+// This script only plans
+// THIS SCRIPT NEVER RUNS LIFECYCLE SCRIPTS ITSELF.
+
 const fs = require('node:fs');
 const path = require('node:path');
 const { loadAllPackageConfigurations } = require('@lavamoat/allow-scripts');
