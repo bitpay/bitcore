@@ -1,8 +1,9 @@
+import { ObjectID } from 'mongodb';
 import logger from '../logger';
 import { BitcoinBlock, BitcoinBlockStorage } from '../models/block';
 import { CoinModel, CoinStorage } from '../models/coin';
-import { WalletStatsModel, WalletStatsStorage } from '../models/walletStats';
-import { WalletStatsWalletModel, WalletStatsWalletStorage } from '../models/walletStatsWallet';
+import { IWalletStats, WalletStatsModel, WalletStatsStorage } from '../models/walletStats';
+import { IWalletStatsWallet, WalletStatsWalletModel, WalletStatsWalletStorage } from '../models/walletStatsWallet';
 import { SpentHeightIndicators } from '../types/Coin';
 import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
@@ -156,6 +157,92 @@ export class WalletStatsService {
       }
     }
     return activity;
+  }
+
+  // Roll the collected per-wallet facts up into one snapshot document plus the
+  // per-wallet fact rows to persist. Pure: all inputs are pre-collected, no I/O.
+  // Duplicate wallets still get a fact (isDup: true) but are excluded from every
+  // rollup counter so they don't inflate totals. The bitcore/imported split keys
+  // off the wallet's creation time (from its ObjectID) versus the snapshot date.
+  buildSnapshot(params: {
+    chain: string;
+    network: string;
+    date: string;
+    wallets: Array<{ _id: ObjectID }>;
+    balances: Map<string, bigint>;
+    activity: Map<string, Date>;
+    dups: Set<string>;
+  }): { snapshot: IWalletStats; walletFacts: IWalletStatsWallet[] } {
+    const { chain, network, date, wallets, balances, activity, dups } = params;
+    const asOf = new Date(`${date}T00:00:00Z`);
+    const snapshot = this.walletStatsModel.newSnapshot({ chain, network, date });
+    const walletFacts: IWalletStatsWallet[] = [];
+
+    let walletCntTotal = 0n;
+    let walletCntWithBalance = 0n;
+    let walletCntBitcore = 0n;
+    let walletCntImported = 0n;
+    let totalBalance = 0n;
+    let totalBalanceImported = 0n;
+    let dupWalletCnt = 0n;
+    const active = { d14: 0n, d30: 0n, d90: 0n, m6: 0n, m12: 0n };
+
+    for (const wallet of wallets) {
+      const id = wallet._id.toHexString();
+      const balance = balances.get(id) ?? 0n;
+      const lastActivityDate = activity.get(id);
+      const createdDate = wallet._id.getTimestamp();
+      const isDup = dups.has(id);
+
+      walletFacts.push({
+        wallet: wallet._id,
+        chain,
+        network,
+        snapshotDate: date,
+        createdDate,
+        balance: balance.toString(),
+        lastActivityDate,
+        isDup
+      });
+
+      if (isDup) {
+        dupWalletCnt += 1n;
+        continue; // dups are excluded from every rollup counter
+      }
+
+      walletCntTotal += 1n;
+      totalBalance += balance;
+      if (balance > 0n) {
+        walletCntWithBalance += 1n;
+      }
+      if (createdDate < asOf) {
+        walletCntBitcore += 1n;
+      } else {
+        walletCntImported += 1n;
+        totalBalanceImported += balance;
+      }
+      const window = this.walletStatsWalletModel.activityWindow(lastActivityDate, asOf);
+      if (window) {
+        active[window] += 1n;
+      }
+    }
+
+    snapshot.walletCntTotal = walletCntTotal.toString();
+    snapshot.walletCntWithBalance = walletCntWithBalance.toString();
+    snapshot.walletCntBitcore = walletCntBitcore.toString();
+    snapshot.walletCntImported = walletCntImported.toString();
+    snapshot.totalBalance = totalBalance.toString();
+    snapshot.totalBalanceImported = totalBalanceImported.toString();
+    snapshot.dupWalletCnt = dupWalletCnt.toString();
+    snapshot.active = {
+      d14: active.d14.toString(),
+      d30: active.d30.toString(),
+      d90: active.d90.toString(),
+      m6: active.m6.toString(),
+      m12: active.m12.toString()
+    };
+
+    return { snapshot, walletFacts };
   }
 
   // Weekly snapshot is due once the configured day+hour has passed and the

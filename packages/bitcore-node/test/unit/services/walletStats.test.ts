@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { ObjectID } from 'mongodb';
 import * as sinon from 'sinon';
 import { WalletStatsService } from '../../../src/services/walletStats';
 
@@ -94,6 +95,53 @@ describe('WalletStats Service', function() {
       const svc = new WalletStatsService({ coinModel, blockModel } as any);
       const activity = await svc.collectUtxoActivity({ chain: 'BTC', network: 'mainnet', since });
       expect(activity.has('c'.repeat(24))).to.equal(false);
+    });
+  });
+
+  describe('buildSnapshot', () => {
+    it('rolls per-wallet facts up into snapshot counters', () => {
+      const svc = new WalletStatsService({} as any);
+      const date = '2026-08-03';
+      const oid = (c: string) => new ObjectID(c.repeat(24).slice(0, 24));
+      const wallets = [
+        { _id: oid('a'), chain: 'BTC', network: 'mainnet' },
+        { _id: oid('b'), chain: 'BTC', network: 'mainnet' },
+        { _id: oid('c'), chain: 'BTC', network: 'mainnet' }
+      ];
+      const balances = new Map([[oid('a').toHexString(), 5000n], [oid('b').toHexString(), 0n]]);
+      const activity = new Map([[oid('a').toHexString(), new Date('2026-07-27')], [oid('b').toHexString(), new Date('2026-06-04')]]);
+      const { snapshot, walletFacts } = svc.buildSnapshot({ chain: 'BTC', network: 'mainnet', date, wallets, balances, activity, dups: new Set<string>() });
+      expect(snapshot.walletCntTotal).to.equal('3');
+      expect(snapshot.walletCntWithBalance).to.equal('1');
+      expect(snapshot.totalBalance).to.equal('5000');
+      expect(snapshot.active.d14).to.equal('1');
+      expect(snapshot.active.d90).to.equal('1');
+      expect(walletFacts.length).to.equal(3);
+    });
+
+    it('splits wallets into bitcore vs imported by creation date and excludes dups', () => {
+      const svc = new WalletStatsService({} as any);
+      const date = '2026-08-03';
+      const asOfSecs = (iso: string) => Math.floor(new Date(iso).getTime() / 1000);
+      const before = ObjectID.createFromTime(asOfSecs('2026-07-01T00:00:00Z')); // created before snapshot
+      const after = ObjectID.createFromTime(asOfSecs('2026-08-10T00:00:00Z')); // created after snapshot
+      const dup = ObjectID.createFromTime(asOfSecs('2026-07-15T00:00:00Z'));
+      const wallets = [
+        { _id: before, chain: 'BTC', network: 'mainnet' },
+        { _id: after, chain: 'BTC', network: 'mainnet' },
+        { _id: dup, chain: 'BTC', network: 'mainnet' }
+      ];
+      const balances = new Map([[before.toHexString(), 1000n], [after.toHexString(), 2000n], [dup.toHexString(), 9000n]]);
+      const dups = new Set<string>([dup.toHexString()]);
+      const { snapshot, walletFacts } = svc.buildSnapshot({ chain: 'BTC', network: 'mainnet', date, wallets, balances, activity: new Map(), dups });
+      expect(snapshot.walletCntTotal).to.equal('2'); // dup excluded
+      expect(snapshot.walletCntBitcore).to.equal('1');
+      expect(snapshot.walletCntImported).to.equal('1');
+      expect(snapshot.totalBalanceImported).to.equal('2000');
+      expect(snapshot.totalBalance).to.equal('3000'); // dup's 9000 excluded
+      expect(snapshot.dupWalletCnt).to.equal('1');
+      expect(walletFacts.length).to.equal(3); // dup still gets a fact
+      expect(walletFacts.find(f => f.wallet.equals(dup))!.isDup).to.equal(true);
     });
   });
 });
