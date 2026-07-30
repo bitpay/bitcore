@@ -21,8 +21,8 @@ export async function sign(args: {
   stateStoragePath: string;
   messageHash: Buffer;
   derivationPath: string;
-  password?: string;
-  id?: string;
+  password: string;
+  id: string;
   logMessageWaiting?: string;
   logMessageCompleted?: string;
 }): Promise<CWCTypes.Message.ISignedMessage<string>> {

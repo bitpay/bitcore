@@ -719,7 +719,7 @@ export class Wallet implements IWallet {
   async _signMessageWithTss(args: {
     messageHash: Buffer;
     derivationPath?: string;
-    password?: string;
+    password: string;
     encoding?: BufferEncoding | 'base58';
   }): Promise<CWCTypes.Message.ISignedMessage> {
     const { messageHash, derivationPath, password, encoding } = args;
@@ -729,6 +729,7 @@ export class Wallet implements IWallet {
     }
 
     const stateStoragePath = await this.storage.getStatePath();
+    const id = BitcoreLib.crypto.Hash.sha256(messageHash).toString('hex');
 
     const sig = await tssSign({
       host: this.host,
@@ -737,7 +738,8 @@ export class Wallet implements IWallet {
       stateStoragePath,
       messageHash,
       derivationPath,
-      password
+      password,
+      id,
     });
 
     const buf = Buffer.from(sig.signature.replace('0x', ''), 'hex');

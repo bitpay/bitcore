@@ -3259,10 +3259,8 @@ export class WalletService implements IWalletService {
 
           this.storage.removeTx(this.walletId, txp.id, async () => {
             try { 
-              if (Array.isArray(txp.inputPaths)) {
-                const inputPaths = txp.inputPaths.length ? txp.inputPaths : ['m/0/0']; // doesn't actually matter what's in the array
-                await Promise.all(inputPaths.map((_, i) => this.storage.removeTssSigSession({ id: `${txp.id}:input${i}` })));
-              }
+              const inputPaths = Array.isArray(txp.inputPaths) && txp.inputPaths?.length ? txp.inputPaths : [txp.inputPaths || 'm/0/0']; // doesn't actually matter what's in the array
+              await Promise.all(inputPaths.map((_, i) => this.storage.removeTssSigSession({ id: `${txp.id}:input${i}` })));
             } catch (err) {
               logger.warn('Error removing tss sig session for wallet %s txp %s: %o', this.walletId, txp.id, err);
             }
