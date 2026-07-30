@@ -355,6 +355,42 @@ When adding, removing, or updating a dependency:
 8. Reproduce the result from a clean installation.
 9. Confirm platform-dependent results in Linux CI.
 
+### Policy versioning
+
+Use a hybrid versioning policy for `lavamoat.allowScripts`:
+
+* Entries set to `true` must include the exact reviewed dependency version.
+* Entries set to `false` may omit the final `#version` suffix.
+
+For example:
+
+```json
+{
+  "lavamoat": {
+    "allowScripts": {
+      "secp256k1": false,
+      "@bitpay-labs/crypto-wallet-core>tiny-secp256k1": false,
+      "bcrypt#5.1.0": true,
+      "@bitpay-labs/bitcore-client>bcrypt#5.1.0": true
+    }
+  }
+}
+```
+
+A versionless denied entry remains denied when that dependency is upgraded,
+which reduces policy churn. It applies only to the same path-sensitive
+dependency name; a new package or dependency path remains unconfigured and
+causes validation to fail.
+
+An approved entry remains version-pinned so an unreviewed future release cannot
+inherit permission to execute lifecycle code.
+
+Do not use `--skip-versions` with `allow-scripts auto`, `check`, or `run`.
+That option changes version matching globally, including approved entries, and
+using it for configuration but not execution creates incompatible policies.
+Convert existing denied entries to versionless keys as a deliberate,
+reviewable manifest change while leaving every approved entry pinned.
+
 Do not run repository-wide:
 
 ```sh

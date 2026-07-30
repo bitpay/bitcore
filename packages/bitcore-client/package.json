@@ -70,11 +70,11 @@
   "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4",
   "lavamoat": {
     "allowScripts": {
-      "@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1#1.1.7": false,
+      "@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1": false,
       "bcrypt#5.1.0": true,
-      "leveldown#6.1.1": false,
-      "secp256k1#3.7.1": false,
-      "tsx>esbuild#0.27.3": false
+      "leveldown": false,
+      "secp256k1": false,
+      "tsx>esbuild": false
     }
   }
 }

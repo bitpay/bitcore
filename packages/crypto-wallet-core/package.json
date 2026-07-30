@@ -54,7 +54,7 @@
   "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4",
   "lavamoat": {
     "allowScripts": {
-      "xrpl>bip32>tiny-secp256k1#1.1.7": false
+      "xrpl>bip32>tiny-secp256k1": false
     }
   }
 }

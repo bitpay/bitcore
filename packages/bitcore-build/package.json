@@ -64,14 +64,14 @@
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1",
   "lavamoat": {
     "allowScripts": {
-      "@wdio/browser-runner>@originjs/vite-plugin-commonjs>esbuild#0.14.54": false,
-      "@wdio/browser-runner>modern-node-polyfills>esbuild#0.18.20": false,
-      "@wdio/browser-runner>vite-plugin-top-level-await>@swc/core#1.11.13": false,
-      "@wdio/browser-runner>vite>esbuild#0.21.5": false,
-      "@wdio/cli>@wdio/utils>edgedriver#6.1.1": false,
-      "@wdio/cli>@wdio/utils>geckodriver#5.0.0": false,
-      "@wdio/cli>tsx>esbuild#0.25.1": false,
-      "gulp>glob-watcher>chokidar>fsevents#1.2.11": false
+      "@wdio/browser-runner>@originjs/vite-plugin-commonjs>esbuild": false,
+      "@wdio/browser-runner>modern-node-polyfills>esbuild": false,
+      "@wdio/browser-runner>vite-plugin-top-level-await>@swc/core": false,
+      "@wdio/browser-runner>vite>esbuild": false,
+      "@wdio/cli>@wdio/utils>edgedriver": false,
+      "@wdio/cli>@wdio/utils>geckodriver": false,
+      "@wdio/cli>tsx>esbuild": false,
+      "gulp>glob-watcher>chokidar>fsevents": false
     }
   }
 }

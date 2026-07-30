@@ -67,15 +67,15 @@
   "gitHead": "d1c7f8b0c3a2e4f5b6c7d8e9f0a1b2c3d4e5f6g7",
   "lavamoat": {
     "allowScripts": {
-      "@bitpay-labs/bitcore-wallet-client>@bitpay-labs/bitcore-tss>@bitgo/sdk-lib-mpc>cbor-x>cbor-extract#2.2.1": false,
-      "@bitpay-labs/bitcore-wallet-client>@bitpay-labs/bitcore-tss>@bitgo/sdk-lib-mpc>secp256k1#5.0.1": false,
-      "@bitpay-labs/bitcore-wallet-client>@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1#1.1.7": false,
-      "@bitpay-labs/bitcore-wallet-service>@bitpay-labs/bitcore-tss>@bitgo/sdk-lib-mpc>cbor-x>cbor-extract#2.2.1": false,
-      "@bitpay-labs/bitcore-wallet-service>@bitpay-labs/bitcore-tss>@bitgo/sdk-lib-mpc>secp256k1#5.0.1": false,
-      "@bitpay-labs/bitcore-wallet-service>@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1#1.1.7": false,
-      "@bitpay-labs/bitcore-wallet-service>moralis>@moralisweb3/streams>ethereumjs-util>ethereum-cryptography>keccak#3.0.4": false,
-      "@bitpay-labs/bitcore-wallet-service>secp256k1#4.0.3": false,
-      "@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1#1.1.7": false
+      "@bitpay-labs/bitcore-wallet-client>@bitpay-labs/bitcore-tss>@bitgo/sdk-lib-mpc>cbor-x>cbor-extract": false,
+      "@bitpay-labs/bitcore-wallet-client>@bitpay-labs/bitcore-tss>@bitgo/sdk-lib-mpc>secp256k1": false,
+      "@bitpay-labs/bitcore-wallet-client>@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1": false,
+      "@bitpay-labs/bitcore-wallet-service>@bitpay-labs/bitcore-tss>@bitgo/sdk-lib-mpc>cbor-x>cbor-extract": false,
+      "@bitpay-labs/bitcore-wallet-service>@bitpay-labs/bitcore-tss>@bitgo/sdk-lib-mpc>secp256k1": false,
+      "@bitpay-labs/bitcore-wallet-service>@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1": false,
+      "@bitpay-labs/bitcore-wallet-service>moralis>@moralisweb3/streams>ethereumjs-util>ethereum-cryptography>keccak": false,
+      "@bitpay-labs/bitcore-wallet-service>secp256k1": false,
+      "@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1": false
     }
   }
 }

@@ -33,16 +33,16 @@
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1",
   "lavamoat": {
     "allowScripts": {
-      "@bitpay-labs/bitcore-build>@wdio/browser-runner>@originjs/vite-plugin-commonjs>esbuild#0.14.54": false,
-      "@bitpay-labs/bitcore-build>@wdio/browser-runner>modern-node-polyfills>esbuild#0.18.20": false,
-      "@bitpay-labs/bitcore-build>@wdio/browser-runner>vite-plugin-top-level-await>@swc/core#1.11.13": false,
-      "@bitpay-labs/bitcore-build>@wdio/browser-runner>vite>esbuild#0.21.5": false,
-      "@bitpay-labs/bitcore-build>@wdio/cli>@wdio/utils>edgedriver#6.1.1": false,
-      "@bitpay-labs/bitcore-build>@wdio/cli>@wdio/utils>geckodriver#5.0.0": false,
-      "@bitpay-labs/bitcore-build>@wdio/cli>tsx>esbuild#0.25.1": false,
-      "@bitpay-labs/bitcore-build>gulp>glob-watcher>chokidar>fsevents#1.2.11": false,
-      "gulp>glob-watcher>chokidar>fsevents#1.2.11": false,
-      "gulp>undertaker>es6-weak-map>es5-ext#0.10.64": false
+      "@bitpay-labs/bitcore-build>@wdio/browser-runner>@originjs/vite-plugin-commonjs>esbuild": false,
+      "@bitpay-labs/bitcore-build>@wdio/browser-runner>modern-node-polyfills>esbuild": false,
+      "@bitpay-labs/bitcore-build>@wdio/browser-runner>vite-plugin-top-level-await>@swc/core": false,
+      "@bitpay-labs/bitcore-build>@wdio/browser-runner>vite>esbuild": false,
+      "@bitpay-labs/bitcore-build>@wdio/cli>@wdio/utils>edgedriver": false,
+      "@bitpay-labs/bitcore-build>@wdio/cli>@wdio/utils>geckodriver": false,
+      "@bitpay-labs/bitcore-build>@wdio/cli>tsx>esbuild": false,
+      "@bitpay-labs/bitcore-build>gulp>glob-watcher>chokidar>fsevents": false,
+      "gulp>glob-watcher>chokidar>fsevents": false,
+      "gulp>undertaker>es6-weak-map>es5-ext": false
     }
   }
 }

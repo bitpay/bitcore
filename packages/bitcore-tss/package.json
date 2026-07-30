@@ -42,16 +42,16 @@
   },
   "lavamoat": {
     "allowScripts": {
-      "@bitgo/sdk-lib-mpc>cbor-x>cbor-extract#2.2.1": false,
-      "@bitgo/sdk-lib-mpc>secp256k1#5.0.1": false,
-      "@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1#1.1.7": false,
-      "@wdio/browser-runner>@originjs/vite-plugin-commonjs>esbuild#0.14.54": false,
-      "@wdio/browser-runner>modern-node-polyfills>esbuild#0.18.20": false,
-      "@wdio/browser-runner>vite-plugin-top-level-await>@swc/core#1.15.18": false,
-      "@wdio/browser-runner>vite>esbuild#0.21.5": false,
-      "@wdio/cli>@wdio/utils>edgedriver#6.3.0": false,
-      "@wdio/cli>@wdio/utils>geckodriver#6.1.0": false,
-      "@wdio/cli>tsx>esbuild#0.27.3": false
+      "@bitgo/sdk-lib-mpc>cbor-x>cbor-extract": false,
+      "@bitgo/sdk-lib-mpc>secp256k1": false,
+      "@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1": false,
+      "@wdio/browser-runner>@originjs/vite-plugin-commonjs>esbuild": false,
+      "@wdio/browser-runner>modern-node-polyfills>esbuild": false,
+      "@wdio/browser-runner>vite-plugin-top-level-await>@swc/core": false,
+      "@wdio/browser-runner>vite>esbuild": false,
+      "@wdio/cli>@wdio/utils>edgedriver": false,
+      "@wdio/cli>@wdio/utils>geckodriver": false,
+      "@wdio/cli>tsx>esbuild": false
     }
   }
 }

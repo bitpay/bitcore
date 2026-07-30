@@ -59,9 +59,9 @@
   },
   "lavamoat": {
     "allowScripts": {
-      "@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1#1.1.7": false,
-      "hardhat>keccak#3.0.4": false,
-      "lightning>@grpc/proto-loader>protobufjs#7.5.4": false
+      "@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1": false,
+      "hardhat>keccak": false,
+      "lightning>@grpc/proto-loader>protobufjs": false
     }
   }
 }
