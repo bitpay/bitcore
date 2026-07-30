@@ -5,6 +5,7 @@ import { CoinModel, CoinStorage } from '../models/coin';
 import { IWalletStats, WalletStatsModel, WalletStatsStorage } from '../models/walletStats';
 import { IWalletStatsWallet, WalletStatsWalletModel, WalletStatsWalletStorage } from '../models/walletStatsWallet';
 import { SpentHeightIndicators } from '../types/Coin';
+import { wait } from '../utils';
 import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
 import { Config } from './config';
@@ -27,19 +28,22 @@ export class WalletStatsService {
   coinModel: CoinModel;
   blockModel: BitcoinBlock;
   configService;
+  waitFn: (ms: number) => Promise<unknown>;
 
   constructor({
     walletStatsModel = WalletStatsStorage,
     walletStatsWalletModel = WalletStatsWalletStorage,
     coinModel = CoinStorage,
     blockModel = BitcoinBlockStorage,
-    configService = Config
+    configService = Config,
+    waitFn = wait
   } = {}) {
     this.walletStatsModel = walletStatsModel;
     this.walletStatsWalletModel = walletStatsWalletModel;
     this.coinModel = coinModel;
     this.blockModel = blockModel;
     this.configService = configService;
+    this.waitFn = waitFn;
   }
 
   get serviceConfig() {
@@ -249,6 +253,75 @@ export class WalletStatsService {
     };
 
     return { snapshot, walletFacts };
+  }
+
+  // Retry a provider call through rate-limit (429) responses with exponential
+  // backoff (100ms doubling up to 60s). Non-429 errors propagate immediately, and
+  // a stop request aborts by rethrowing rather than sleeping further.
+  async withRateLimitRetry<T>(fn: () => Promise<T>): Promise<T> {
+    let delay = 100;
+    const cap = 60 * 1000;
+    for (;;) {
+      try {
+        return await fn();
+      } catch (err: any) {
+        const message = err?.message || '';
+        const is429 = message.includes('Too Many Requests') || err?.status === 429 || err?.statusCode === 429;
+        if (!is429 || this.stopping) {
+          throw err;
+        }
+        await this.waitFn(delay);
+        delay = Math.min(delay * 2, cap);
+      }
+    }
+  }
+
+  // Derive one EVM wallet's snapshot facts from live provider reads. Balance is
+  // summed across the wallet's addresses (hex-requested so large wei values keep
+  // full precision) and nonce is the max across them. Activity can't be read
+  // directly, so it's inferred: a balance or nonce change since the prior snapshot
+  // means activity happened in the interval (dated to asOf); an unchanged wallet
+  // carries its prior date forward; and a wallet with no usable date yet but that
+  // looks active (or has never been snapshotted) falls back to a token-transfer
+  // lookup over the last 12 months.
+  async collectEvmWalletFact(params: {
+    csp: { getBalanceForAddress: (p: any) => Promise<{ balance: any }>; getAccountNonce: (network: string, address: string) => Promise<number> };
+    wallet: { _id: ObjectID; chain: string; network: string };
+    addresses: string[];
+    prior?: { balance: string; nonce?: string; lastActivityDate?: Date };
+    asOf: Date;
+    checkTokenActivity: (addresses: string[], since: Date) => Promise<Date | null>;
+  }): Promise<{ balance: string; nonce: string; lastActivityDate?: Date }> {
+    const { csp, wallet, addresses, prior, asOf, checkTokenActivity } = params;
+    const { chain, network } = wallet;
+
+    let balance = 0n;
+    let nonce = 0n;
+    for (const address of addresses) {
+      const result = await this.withRateLimitRetry(() =>
+        csp.getBalanceForAddress({ chain, network, address, args: { hex: 'true' } })
+      );
+      balance += BigInt(result.balance);
+      const addressNonce = BigInt(await this.withRateLimitRetry(() => csp.getAccountNonce(network, address)));
+      if (addressNonce > nonce) {
+        nonce = addressNonce;
+      }
+    }
+    const balanceStr = balance.toString();
+    const nonceStr = nonce.toString();
+
+    let lastActivityDate: Date | undefined;
+    if (prior) {
+      const changed = prior.balance !== balanceStr || (prior.nonce ?? '0') !== nonceStr;
+      lastActivityDate = changed ? asOf : prior.lastActivityDate;
+    }
+    if (!lastActivityDate && (balance > 0n || nonce > 0n || !prior)) {
+      const since = new Date(asOf.getTime());
+      since.setUTCFullYear(since.getUTCFullYear() - 1);
+      lastActivityDate = (await checkTokenActivity(addresses, since)) ?? undefined;
+    }
+
+    return { balance: balanceStr, nonce: nonceStr, lastActivityDate };
   }
 
   // Weekly snapshot is due once the configured day+hour has passed and the

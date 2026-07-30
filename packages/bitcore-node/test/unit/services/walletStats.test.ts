@@ -157,4 +157,105 @@ describe('WalletStats Service', function() {
       expect(walletFacts.find(f => f.wallet.equals(dup))!.isDup).to.equal(true);
     });
   });
+
+  describe('collectEvmWalletFact', () => {
+    const asOf = new Date('2026-08-03T00:00:00Z');
+    const priorDate = new Date('2026-05-01T00:00:00Z');
+    const wallet = { _id: new ObjectID(), chain: 'ETH', network: 'mainnet' };
+    const twelveMonthsBefore = (d: Date) => {
+      const s = new Date(d.getTime());
+      s.setUTCFullYear(s.getUTCFullYear() - 1);
+      return s;
+    };
+
+    it('carries the prior activity date forward when balance and nonce are unchanged', async () => {
+      const csp = {
+        getBalanceForAddress: sandbox.stub().resolves({ balance: '0x64' }), // 100
+        getAccountNonce: sandbox.stub().resolves(5)
+      };
+      const checkTokenActivity = sandbox.stub().resolves(null);
+      const svc = new WalletStatsService({ waitFn: async () => {} } as any);
+      const fact = await svc.collectEvmWalletFact({
+        csp, wallet, addresses: ['0xabc'],
+        prior: { balance: '100', nonce: '5', lastActivityDate: priorDate },
+        asOf, checkTokenActivity
+      } as any);
+      expect(fact.balance).to.equal('100');
+      expect(fact.nonce).to.equal('5');
+      expect(fact.lastActivityDate).to.deep.equal(priorDate);
+      expect(checkTokenActivity.called).to.equal(false);
+      // Request hex balances so large wei values keep full precision.
+      expect(csp.getBalanceForAddress.firstCall.args[0].args).to.deep.equal({ hex: 'true' });
+    });
+
+    it('dates activity to asOf when the nonce changed since the prior snapshot', async () => {
+      const csp = {
+        getBalanceForAddress: sandbox.stub().resolves({ balance: '0x64' }),
+        getAccountNonce: sandbox.stub().resolves(6)
+      };
+      const checkTokenActivity = sandbox.stub().resolves(null);
+      const svc = new WalletStatsService({ waitFn: async () => {} } as any);
+      const fact = await svc.collectEvmWalletFact({
+        csp, wallet, addresses: ['0xabc'],
+        prior: { balance: '100', nonce: '5', lastActivityDate: priorDate },
+        asOf, checkTokenActivity
+      } as any);
+      expect(fact.nonce).to.equal('6');
+      expect(fact.lastActivityDate).to.deep.equal(asOf);
+      expect(checkTokenActivity.called).to.equal(false);
+    });
+
+    it('falls back to a token-activity lookup when a plausibly-active wallet has no prior date', async () => {
+      const tokenDate = new Date('2026-06-15T00:00:00Z');
+      const csp = {
+        getBalanceForAddress: sandbox.stub().resolves({ balance: '0x64' }),
+        getAccountNonce: sandbox.stub().resolves(5)
+      };
+      const checkTokenActivity = sandbox.stub().resolves(tokenDate);
+      const svc = new WalletStatsService({ waitFn: async () => {} } as any);
+      const fact = await svc.collectEvmWalletFact({
+        csp, wallet, addresses: ['0xabc'],
+        prior: { balance: '100', nonce: '5' }, // unchanged, but no lastActivityDate on record
+        asOf, checkTokenActivity
+      } as any);
+      expect(fact.lastActivityDate).to.deep.equal(tokenDate);
+      expect(checkTokenActivity.calledOnce).to.equal(true);
+      expect(checkTokenActivity.firstCall.args[0]).to.deep.equal(['0xabc']);
+      expect(checkTokenActivity.firstCall.args[1].getTime()).to.equal(twelveMonthsBefore(asOf).getTime());
+    });
+
+    it('still runs the token lookup for a zero-balance wallet on its first-ever snapshot', async () => {
+      const csp = {
+        getBalanceForAddress: sandbox.stub().resolves({ balance: '0x0' }),
+        getAccountNonce: sandbox.stub().resolves(0)
+      };
+      const checkTokenActivity = sandbox.stub().resolves(null);
+      const svc = new WalletStatsService({ waitFn: async () => {} } as any);
+      const fact = await svc.collectEvmWalletFact({
+        csp, wallet, addresses: ['0xabc'], asOf, checkTokenActivity // no prior
+      } as any);
+      expect(fact.balance).to.equal('0');
+      expect(fact.nonce).to.equal('0');
+      expect(fact.lastActivityDate).to.equal(undefined);
+      expect(checkTokenActivity.calledOnce).to.equal(true);
+    });
+
+    it('retries a rate-limited provider call with backoff', async () => {
+      const getBalanceForAddress = sandbox.stub();
+      getBalanceForAddress.onFirstCall().rejects(new Error('Too Many Requests'));
+      getBalanceForAddress.onSecondCall().resolves({ balance: '0x64' });
+      const csp = { getBalanceForAddress, getAccountNonce: sandbox.stub().resolves(5) };
+      const checkTokenActivity = sandbox.stub().resolves(null);
+      const waitFn = sandbox.stub().resolves();
+      const svc = new WalletStatsService({ waitFn } as any);
+      const fact = await svc.collectEvmWalletFact({
+        csp, wallet, addresses: ['0xabc'],
+        prior: { balance: '100', nonce: '5', lastActivityDate: priorDate },
+        asOf, checkTokenActivity
+      } as any);
+      expect(fact.balance).to.equal('100');
+      expect(getBalanceForAddress.calledTwice).to.equal(true);
+      expect(waitFn.calledOnce).to.equal(true);
+    });
+  });
 });
