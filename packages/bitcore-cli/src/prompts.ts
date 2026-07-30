@@ -86,7 +86,7 @@ export async function getPassword(
 
   let confirmed = false;
   let password: string | symbol = null;
-  let backup = false;
+  let beginAgain = false;
   do {
     password = await prompt.password({
       message: (msg || 'Password:') + (hidden ? ' (hidden)' : ''),
@@ -103,7 +103,7 @@ export async function getPassword(
       throw new UserCancelled();
     }
     if (confirm) {
-      backup = false; // reset backup flag for each iteration
+      beginAgain = false; // reset beginAgain flag for each iteration
       let confirmTries = 0;
       const password2 = await prompt.password({
         message: 'Confirm:',
@@ -111,17 +111,17 @@ export async function getPassword(
         clearOnError: hidden,
         validate: (input) => {
           confirmTries++;
-          if (input !== password) {
+          if (retry && input !== password) {
             return 'Passwords do not match' + (confirmTries > 1 ? '. Type Ctrl+C to return to the previous prompt.' : '');
           }
         }
       });
-      backup = prompt.isCancel(password2);
+      beginAgain = prompt.isCancel(password2);
       confirmed = password === password2;
     } else {
       confirmed = true;
     }
-  } while (!confirmed && (retry || backup));
+  } while (!confirmed && beginAgain);
 
   if (!confirmed) {
     throw new Error('Passwords do not match');

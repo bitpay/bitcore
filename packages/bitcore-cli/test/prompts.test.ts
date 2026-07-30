@@ -133,24 +133,14 @@ describe('prompts', function() {
       assert.strictEqual(await promise, 'mypassword');
     });
 
-    it('confirm: should throw UserCancelled when user cancels on the confirmation prompt', async function() {
+    it('confirm: should retry confirm when passwords do not match and succeed on retry', async function() {
       const promise = prompts.getPassword(undefined, { confirm: true });
-      process.stdin.push('mypassword');
-      process.stdin.push(KEYSTROKES.ENTER); // password
-      process.stdin.push(KEYSTROKES.CTRL_C); // cancel on confirm
-      await assert.rejects(() => promise, UserCancelled);
-    });
-
-    it('confirm: should retry when passwords do not match and succeed on retry', async function() {
-      const promise = prompts.getPassword(undefined, { confirm: true });
-      process.stdin.push('firstpass');
+      process.stdin.push('correctpass');
       process.stdin.push(KEYSTROKES.ENTER); // password — 1st attempt
       process.stdin.push('wrongpass');
       process.stdin.push(KEYSTROKES.ENTER); // confirm — mismatch, will retry
       process.stdin.push('correctpass');
       process.stdin.push(KEYSTROKES.ENTER); // password — 2nd attempt
-      process.stdin.push('correctpass');
-      process.stdin.push(KEYSTROKES.ENTER); // confirm — match
       assert.strictEqual(await promise, 'correctpass');
     });
 
@@ -179,7 +169,7 @@ describe('prompts', function() {
       assert.strictEqual(await promise, 'secondpass');
     });
 
-    it('confirm + no retry: cancel on confirmation still loops back (backup overrides retry:false)', async function() {
+    it('confirm + no retry: cancel on confirmation still loops back (cancel on confirm is not the same as retry on confirm)', async function() {
       const promise = prompts.getPassword(undefined, { confirm: true, retry: false });
       process.stdin.push('firstpass');
       process.stdin.push(KEYSTROKES.ENTER);    // password — 1st attempt
