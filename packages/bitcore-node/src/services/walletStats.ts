@@ -344,13 +344,15 @@ export class WalletStatsService {
     const dups = new Set<string>();
     const walletIds = wallets.map(w => w._id);
 
-    // One round-trip for the latest fact per wallet; $first after a desc sort on
-    // snapshotDate yields each wallet's most recent stored verdict.
+    // One round-trip for each wallet's settled verdict. A verdict never flips once
+    // set (a wallet stays a duplicate), so $max over the boolean isDup across all of
+    // a wallet's facts gives the same answer as picking the latest fact — without a
+    // $sort stage, which at production scale becomes a blocking in-memory sort over
+    // all historical facts and can trip the 100MB aggregation sort limit.
     const priorFacts = await this.walletStatsWalletModel.collection
       .aggregate<{ _id: ObjectID; isDup: boolean }>([
         { $match: { chain, network, wallet: { $in: walletIds } } },
-        { $sort: { wallet: 1, snapshotDate: -1 } },
-        { $group: { _id: '$wallet', isDup: { $first: '$isDup' } } }
+        { $group: { _id: '$wallet', isDup: { $max: '$isDup' } } }
       ])
       .toArray();
     const settled = new Set<string>();
