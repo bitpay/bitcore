@@ -29,6 +29,7 @@ export interface IWalletStats {
     completedAt?: Date;
     erroredWalletCnt: number;
     source: 'interval' | 'backfill';
+    gaps?: string[]; // scheduled snapshot dates skipped before this run
   };
 }
 

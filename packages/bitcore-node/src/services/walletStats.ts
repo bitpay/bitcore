@@ -1,15 +1,21 @@
+import { Utils } from '@bitpay-labs/crypto-wallet-core';
 import { ObjectID } from 'mongodb';
 import logger from '../logger';
 import { BitcoinBlock, BitcoinBlockStorage } from '../models/block';
 import { CoinModel, CoinStorage } from '../models/coin';
+import { WalletModel, WalletStorage } from '../models/wallet';
 import { WalletAddressModel, WalletAddressStorage } from '../models/walletAddress';
 import { IWalletStats, WalletStatsModel, WalletStatsStorage } from '../models/walletStats';
 import { IWalletStatsWallet, WalletStatsWalletModel, WalletStatsWalletStorage } from '../models/walletStatsWallet';
+import { ChainStateProvider } from '../providers/chain-state';
+import { ChainNetwork } from '../types/ChainNetwork';
 import { SpentHeightIndicators } from '../types/Coin';
 import { wait } from '../utils';
 import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
 import { Config } from './config';
+
+type TokenActivityFn = (params: { chain: string; network: string; addresses: string[]; since: Date }) => Promise<Date | null>;
 
 const args = parseArgv([], [
   { arg: 'CHAIN', type: 'string' },
@@ -29,9 +35,12 @@ export class WalletStatsService {
   coinModel: CoinModel;
   blockModel: BitcoinBlock;
   walletAddressModel: WalletAddressModel;
+  walletModel: WalletModel;
+  cspProvider: typeof ChainStateProvider;
   configService;
   waitFn: (ms: number) => Promise<unknown>;
   nowFn: () => number;
+  checkTokenActivity: TokenActivityFn;
   private scheduleWarned = false;
 
   constructor({
@@ -40,18 +49,36 @@ export class WalletStatsService {
     coinModel = CoinStorage,
     blockModel = BitcoinBlockStorage,
     walletAddressModel = WalletAddressStorage,
+    walletModel = WalletStorage,
+    cspProvider = ChainStateProvider,
     configService = Config,
     waitFn = wait,
-    nowFn = Date.now
+    nowFn = Date.now,
+    checkTokenActivity
+  }: {
+    walletStatsModel?: WalletStatsModel;
+    walletStatsWalletModel?: WalletStatsWalletModel;
+    coinModel?: CoinModel;
+    blockModel?: BitcoinBlock;
+    walletAddressModel?: WalletAddressModel;
+    walletModel?: WalletModel;
+    cspProvider?: typeof ChainStateProvider;
+    configService?: typeof Config;
+    waitFn?: (ms: number) => Promise<unknown>;
+    nowFn?: () => number;
+    checkTokenActivity?: TokenActivityFn;
   } = {}) {
     this.walletStatsModel = walletStatsModel;
     this.walletStatsWalletModel = walletStatsWalletModel;
     this.coinModel = coinModel;
     this.blockModel = blockModel;
     this.walletAddressModel = walletAddressModel;
+    this.walletModel = walletModel;
+    this.cspProvider = cspProvider;
     this.configService = configService;
     this.waitFn = waitFn;
     this.nowFn = nowFn;
+    this.checkTokenActivity = checkTokenActivity || (params => this.defaultCheckTokenActivity(params));
   }
 
   // Validated weekly schedule. Out-of-range day/hour fall back to the defaults
@@ -475,8 +502,227 @@ export class WalletStatsService {
     return missed;
   }
 
+  // One scheduler pass: for each target chain/network, take this week's snapshot
+  // if it's due. Re-entrant calls are dropped, per-chain failures are isolated so
+  // one bad chain doesn't sink the rest, and the whole body is guarded so neither
+  // the interval nor the --EXIT path ever surfaces an unhandled rejection.
   async tick() {
-    // filled in by later tasks: watermark lookup, per-chain collection run
+    if (this.running) {
+      return; // a prior tick is still in flight
+    }
+    this.running = true;
+    try {
+      const now = new Date(this.nowFn());
+      for (const chainNetwork of this.targetChainNetworks()) {
+        if (this.stopping) {
+          break;
+        }
+        try {
+          await this.runChainNetwork({ ...chainNetwork, now });
+        } catch (err: any) {
+          logger.error(`Wallet Stats error for ${chainNetwork.chain}:${chainNetwork.network}: ${err.stack || err.message || err}`);
+        }
+      }
+    } catch (err: any) {
+      logger.error(`Wallet Stats tick error: ${err.stack || err.message || err}`);
+    } finally {
+      this.running = false;
+    }
+  }
+
+  private targetChainNetworks(): ChainNetwork[] {
+    const all = this.configService.chainNetworks();
+    if (args.CHAIN) {
+      return all.filter(cn => cn.chain === args.CHAIN && (!args.NETWORK || cn.network === args.NETWORK));
+    }
+    return all;
+  }
+
+  // Latest snapshot date for a chain/network — the durable watermark that gates
+  // whether this week's snapshot is due.
+  async latestSnapshotDate(params: { chain: string; network: string }): Promise<string | null> {
+    const { chain, network } = params;
+    const [latest] = await this.walletStatsModel.collection
+      .find({ chain, network })
+      .project({ date: 1 })
+      .sort({ date: -1 })
+      .limit(1)
+      .toArray();
+    return latest ? latest.date : null;
+  }
+
+  async runChainNetwork(params: { chain: string; network: string; now: Date }) {
+    const { chain, network, now } = params;
+    const watermark = await this.latestSnapshotDate({ chain, network });
+    const date = this.snapshotDateIfDue(now, watermark);
+    if (!date) {
+      return; // this week's snapshot already exists (or the schedule time hasn't passed)
+    }
+    const asOf = new Date(`${date}T00:00:00Z`);
+    const gaps = watermark ? this.missedSnapshotDates(now, watermark).filter(d => d !== date) : [];
+
+    // toArray over all wallets for the chain is acceptable at current scale (prior
+    // reviews accepted this); revisit with a cursor if wallet counts grow large.
+    const wallets = (await this.walletModel.collection.find({ chain, network }).toArray()) as Array<{ _id: ObjectID }>;
+
+    const collected = Utils.isUtxoChain(chain)
+      ? await this.collectUtxo({ chain, network, date, asOf, wallets })
+      : await this.collectEvm({ chain, network, date, asOf, wallets, watermark });
+
+    if (!collected) {
+      return; // a stop was requested mid-collection; skip the snapshot for this partial run
+    }
+    const { snapshot, walletFacts } = collected;
+    snapshot.meta.gaps = gaps;
+    snapshot.meta.completedAt = new Date(this.nowFn());
+    await this.persist({ chain, network, snapshot, walletFacts });
+  }
+
+  private async collectUtxo(params: {
+    chain: string;
+    network: string;
+    date: string;
+    asOf: Date;
+    wallets: Array<{ _id: ObjectID }>;
+  }): Promise<{ snapshot: IWalletStats; walletFacts: IWalletStatsWallet[] }> {
+    const { chain, network, date, asOf, wallets } = params;
+    const since = new Date(asOf.getTime());
+    since.setUTCFullYear(since.getUTCFullYear() - 1);
+    const balances = await this.collectUtxoBalances({ chain, network });
+    const activity = await this.collectUtxoActivity({ chain, network, since });
+    const dups = await this.detectDups({ chain, network, wallets });
+    return this.buildSnapshot({ chain, network, date, wallets, balances, activity, dups });
+  }
+
+  private async collectEvm(params: {
+    chain: string;
+    network: string;
+    date: string;
+    asOf: Date;
+    wallets: Array<{ _id: ObjectID }>;
+    watermark: string | null;
+  }): Promise<{ snapshot: IWalletStats; walletFacts: IWalletStatsWallet[] } | null> {
+    const { chain, network, date, asOf, wallets, watermark } = params;
+    const csp: any = this.cspProvider.get({ chain, network });
+
+    // Prior facts read by snapshotDate EQUALITY on the unique
+    // {chain,network,snapshotDate,wallet} index — the last run's facts sit exactly
+    // at the watermark date, so no latest-per-wallet sort (the 100MB trap) is needed.
+    const priorByWallet = new Map<string, { balance: string; nonce?: string; lastActivityDate?: Date }>();
+    if (watermark) {
+      const priorFacts = await this.walletStatsWalletModel.collection
+        .find({ chain, network, snapshotDate: watermark })
+        .toArray();
+      for (const fact of priorFacts) {
+        priorByWallet.set(fact.wallet.toHexString(), {
+          balance: fact.balance,
+          nonce: fact.nonce,
+          lastActivityDate: fact.lastActivityDate
+        });
+      }
+    }
+    const dups = await this.detectDups({ chain, network, wallets });
+
+    const balances = new Map<string, bigint>();
+    const activity = new Map<string, Date>();
+    const nonces = new Map<string, string>();
+    const collectedWallets: Array<{ _id: ObjectID }> = [];
+    let erroredWalletCnt = 0;
+    const sleepMs = this.serviceConfig.sleepMs ?? 50;
+    const every = this.serviceConfig.every ?? 10;
+    let processed = 0;
+
+    for (const wallet of wallets) {
+      if (this.stopping) {
+        // Abort before writing anything for this chain; a later tick redoes it. Facts
+        // and snapshot are both idempotent upserts, so even a crash between those two
+        // write steps leaves only orphan facts that the next complete run overwrites.
+        return null;
+      }
+      const id = wallet._id.toHexString();
+      try {
+        const addresses = (
+          await this.walletAddressModel.collection.find({ chain, network, wallet: wallet._id }).project({ address: 1 }).toArray()
+        ).map(a => a.address);
+        const fact = await this.collectEvmWalletFact({
+          csp,
+          wallet: { _id: wallet._id, chain, network },
+          addresses,
+          prior: priorByWallet.get(id),
+          asOf,
+          checkTokenActivity: (addrs, since) => this.checkTokenActivity({ chain, network, addresses: addrs, since })
+        });
+        balances.set(id, BigInt(fact.balance));
+        nonces.set(id, fact.nonce);
+        if (fact.lastActivityDate) {
+          activity.set(id, fact.lastActivityDate);
+        }
+        collectedWallets.push(wallet); // only successful wallets get a fact this run
+      } catch (err: any) {
+        erroredWalletCnt++;
+        logger.error(`Wallet Stats: failed ${chain}:${network} wallet ${id}: ${err.message || err}`);
+      }
+      processed++;
+      if (every > 0 && processed % every === 0) {
+        await this.waitFn(sleepMs);
+      }
+    }
+
+    const { snapshot, walletFacts } = this.buildSnapshot({ chain, network, date, wallets: collectedWallets, balances, activity, dups, nonces });
+    snapshot.meta.erroredWalletCnt = erroredWalletCnt;
+    return { snapshot, walletFacts };
+  }
+
+  async persist(params: { chain: string; network: string; snapshot: IWalletStats; walletFacts: IWalletStatsWallet[] }) {
+    const { chain, network, snapshot, walletFacts } = params;
+    if (walletFacts.length) {
+      await this.walletStatsWalletModel.collection.bulkWrite(
+        walletFacts.map(fact => ({
+          updateOne: {
+            filter: { chain, network, snapshotDate: fact.snapshotDate, wallet: fact.wallet },
+            update: { $set: fact },
+            upsert: true
+          }
+        })),
+        { ordered: false }
+      );
+    }
+    // Snapshot upserted last and keyed on its unique {chain,network,date}, so a
+    // re-run overwrites cleanly rather than duplicating.
+    await this.walletStatsModel.collection.updateOne(
+      { chain, network, date: snapshot.date },
+      { $set: snapshot },
+      { upsert: true }
+    );
+  }
+
+  // Default token-activity probe: a limit-1 ERC-20 transfers existence check per
+  // address since `since`, built through MoralisClient (which carries its own 30s
+  // timeout and query-string builder — no raw URL assembly here). Lazy-imported so
+  // non-EVM deployments never load the Moralis module, and fully swappable via the
+  // constructor. Any failure degrades to null rather than breaking the tick.
+  async defaultCheckTokenActivity(params: { chain: string; network: string; addresses: string[]; since: Date }): Promise<Date | null> {
+    const { chain, network, addresses, since } = params;
+    try {
+      const csp: any = this.cspProvider.get({ chain, network });
+      const chainId = await csp.getChainId({ network });
+      const { MoralisClient } = await import('../providers/chain-state/external/clients/moralis');
+      const { formatMoralisChainId } = await import('../providers/chain-state/external/adapters/moralis-utils');
+      const client = new MoralisClient();
+      for (const address of addresses) {
+        const data = await client.get<{ result?: Array<{ block_timestamp?: string }> }>(
+          `/${address}/erc20/transfers`,
+          { chain: formatMoralisChainId(chainId), from_date: since.toISOString(), order: 'DESC', limit: 1 }
+        );
+        const first = data?.result?.[0];
+        if (first?.block_timestamp) {
+          return new Date(first.block_timestamp);
+        }
+      }
+    } catch (err: any) {
+      logger.warn(`Wallet Stats: token activity probe failed for ${chain}:${network}: ${err.message || err}`);
+    }
+    return null;
   }
 }
 

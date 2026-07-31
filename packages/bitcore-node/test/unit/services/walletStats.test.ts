@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { ObjectID } from 'mongodb';
 import * as sinon from 'sinon';
+import { WalletStatsStorage } from '../../../src/models/walletStats';
+import { WalletStatsWalletStorage } from '../../../src/models/walletStatsWallet';
 import { WalletStatsService } from '../../../src/services/walletStats';
 
 describe('WalletStats Service', function() {
@@ -368,6 +370,175 @@ describe('WalletStats Service', function() {
       try { await svc.withRateLimitRetry(fn); } catch (e) { thrown = e; }
       expect(thrown).to.equal(err);
       expect(fn.calledOnce).to.equal(true); // one attempt, stop noticed during the sleep
+    });
+  });
+
+  describe('tick orchestration', () => {
+    const NOW = new Date('2026-08-05T12:00:00Z'); // current scheduled date = 2026-08-03 (Mon)
+    // Chainable cursor: find().project().sort().limit().toArray() all resolve to rows.
+    const cursor = (rows: any[]) => {
+      const c: any = { project: () => c, sort: () => c, limit: () => c, toArray: async () => rows };
+      return c;
+    };
+
+    // Standard stubbed deps; each test overrides what it cares about.
+    const makeDeps = (over: any = {}) => {
+      const updateOne = over.updateOne ?? sandbox.stub().resolves();
+      const bulkWrite = over.bulkWrite ?? sandbox.stub().resolves();
+      const deps: any = {
+        walletStatsModel: {
+          collection: { find: () => cursor(over.watermarkRows ?? []), updateOne },
+          newSnapshot: (p: any) => WalletStatsStorage.newSnapshot(p) // pure; no DB
+        },
+        walletStatsWalletModel: {
+          collection: {
+            find: over.priorFind ?? (() => cursor([])),
+            aggregate: () => cursor([]),
+            bulkWrite
+          },
+          activityWindow: (d: any, asOf: any) => WalletStatsWalletStorage.activityWindow(d, asOf) // pure; no DB
+        },
+        walletModel: { collection: { find: () => cursor(over.wallets ?? []) } },
+        walletAddressModel: {
+          collection: { find: () => cursor(over.addresses ?? [{ address: '0xabc' }]), findOne: sandbox.stub().resolves(null) }
+        },
+        cspProvider: { get: () => over.csp ?? {} },
+        configService: {
+          chainNetworks: over.chainNetworks ?? (() => [{ chain: over.chain ?? 'BTC', network: 'mainnet' }]),
+          for: () => over.serviceConfig ?? {},
+          isDisabled: () => false
+        },
+        nowFn: () => NOW.getTime(),
+        waitFn: async () => {},
+        checkTokenActivity: sandbox.stub().resolves(null)
+      };
+      return { deps, updateOne, bulkWrite };
+    };
+
+    it('does nothing when this week is already snapshotted', async () => {
+      const { deps, updateOne, bulkWrite } = makeDeps({ watermarkRows: [{ date: '2026-08-03' }] });
+      const svc = new WalletStatsService(deps);
+      await svc.tick();
+      expect(updateOne.called).to.equal(false);
+      expect(bulkWrite.called).to.equal(false);
+    });
+
+    it('runs a UTXO chain end to end and advances the watermark', async () => {
+      const oid = new ObjectID();
+      const { deps, updateOne, bulkWrite } = makeDeps({ chain: 'BTC', wallets: [{ _id: oid }] });
+      const svc = new WalletStatsService(deps);
+      sandbox.stub(svc, 'collectUtxoBalances').resolves(new Map([[oid.toHexString(), 5000n]]));
+      sandbox.stub(svc, 'collectUtxoActivity').resolves(new Map());
+      sandbox.stub(svc, 'detectDups').resolves(new Set());
+      await svc.tick();
+      expect(updateOne.calledOnce).to.equal(true);
+      const [filter, update] = updateOne.firstCall.args;
+      expect(filter).to.deep.equal({ chain: 'BTC', network: 'mainnet', date: '2026-08-03' });
+      expect(update.$set.walletCntTotal).to.equal('1');
+      expect(update.$set.totalBalance).to.equal('5000');
+      expect(update.$set.meta.completedAt).to.be.an.instanceof(Date);
+      expect(bulkWrite.calledOnce).to.equal(true);
+      expect(bulkWrite.firstCall.args[1]).to.deep.equal({ ordered: false });
+    });
+
+    it('runs an EVM chain, reads prior facts by snapshotDate equality, and stamps nonces', async () => {
+      const oid = new ObjectID();
+      const priorFind = sandbox.stub().returns(cursor([]));
+      const csp = {
+        getBalanceForAddress: sandbox.stub().resolves({ balance: '0x0' }),
+        getAccountNonce: sandbox.stub().resolves(3),
+        getChainId: sandbox.stub().resolves(1)
+      };
+      const { deps, updateOne, bulkWrite } = makeDeps({
+        chain: 'ETH', wallets: [{ _id: oid }], watermarkRows: [{ date: '2026-07-27' }], priorFind, csp
+      });
+      const svc = new WalletStatsService(deps);
+      await svc.tick();
+      expect(priorFind.firstCall.args[0]).to.deep.equal({ chain: 'ETH', network: 'mainnet', snapshotDate: '2026-07-27' });
+      expect(bulkWrite.calledOnce).to.equal(true);
+      expect(bulkWrite.firstCall.args[0][0].updateOne.update.$set.nonce).to.equal('3');
+      expect(updateOne.calledOnce).to.equal(true);
+    });
+
+    it('drops a re-entrant tick while one is running', async () => {
+      const chainNetworks = sandbox.stub().returns([]);
+      const { deps } = makeDeps({ chainNetworks });
+      const svc = new WalletStatsService(deps);
+      svc.running = true;
+      await svc.tick();
+      expect(chainNetworks.called).to.equal(false);
+    });
+
+    it('counts a per-wallet failure, still writes the other facts, and completes the snapshot', async () => {
+      const w1 = new ObjectID();
+      const w2 = new ObjectID();
+      const { deps, updateOne, bulkWrite } = makeDeps({ chain: 'ETH', wallets: [{ _id: w1 }, { _id: w2 }], watermarkRows: [{ date: '2026-07-27' }] });
+      const svc = new WalletStatsService(deps);
+      sandbox.stub(svc, 'detectDups').resolves(new Set());
+      const collect = sandbox.stub(svc, 'collectEvmWalletFact');
+      collect.onFirstCall().resolves({ balance: '10', nonce: '1', lastActivityDate: undefined });
+      collect.onSecondCall().rejects(new Error('boom'));
+      await svc.tick();
+      expect(bulkWrite.firstCall.args[0].length).to.equal(1); // only the successful wallet gets a fact
+      expect(updateOne.firstCall.args[1].$set.meta.erroredWalletCnt).to.equal(1);
+    });
+
+    it('records skipped schedule dates as meta.gaps (excluding the date being taken)', async () => {
+      const { deps, updateOne } = makeDeps({ chain: 'BTC', wallets: [], watermarkRows: [{ date: '2026-07-13' }] }); // 3 weeks back
+      const svc = new WalletStatsService(deps);
+      sandbox.stub(svc, 'collectUtxoBalances').resolves(new Map());
+      sandbox.stub(svc, 'collectUtxoActivity').resolves(new Map());
+      sandbox.stub(svc, 'detectDups').resolves(new Set());
+      await svc.tick();
+      expect(updateOne.firstCall.args[1].$set.meta.gaps).to.deep.equal(['2026-07-20', '2026-07-27']);
+    });
+
+    it('anchors meta.gaps to the schedule day for an off-schedule watermark', async () => {
+      const { deps, updateOne } = makeDeps({ chain: 'BTC', wallets: [], watermarkRows: [{ date: '2026-07-15' }] }); // Wednesday
+      const svc = new WalletStatsService(deps);
+      sandbox.stub(svc, 'collectUtxoBalances').resolves(new Map());
+      sandbox.stub(svc, 'collectUtxoActivity').resolves(new Map());
+      sandbox.stub(svc, 'detectDups').resolves(new Set());
+      await svc.tick();
+      expect(updateOne.firstCall.args[1].$set.meta.gaps).to.deep.equal(['2026-07-20', '2026-07-27']);
+    });
+
+    it('counts a wallet stuck on rate limits as errored once the retry cap trips', async () => {
+      const oid = new ObjectID();
+      const csp = {
+        getBalanceForAddress: sandbox.stub().rejects(new Error('Too Many Requests')),
+        getAccountNonce: sandbox.stub().resolves(0),
+        getChainId: sandbox.stub().resolves(1)
+      };
+      // maxRetryMs 0 => the cap trips on the first 429, so the perma-limited wallet errors
+      // out promptly instead of looping, and the snapshot still completes.
+      const { deps, updateOne } = makeDeps({
+        chain: 'ETH', wallets: [{ _id: oid }], watermarkRows: [{ date: '2026-07-27' }], csp, serviceConfig: { maxRetryMs: 0 }
+      });
+      const svc = new WalletStatsService(deps);
+      sandbox.stub(svc, 'detectDups').resolves(new Set());
+      await svc.tick();
+      expect(updateOne.firstCall.args[1].$set.meta.erroredWalletCnt).to.equal(1);
+    });
+
+    it('resolves without throwing when a chain query fails, and writes nothing', async () => {
+      const { deps, updateOne } = makeDeps();
+      deps.walletStatsModel.collection.find = () => { throw new Error('db down'); };
+      const svc = new WalletStatsService(deps);
+      await svc.tick(); // must not reject
+      expect(updateOne.called).to.equal(false);
+    });
+
+    it('skips the snapshot when a stop is requested mid EVM loop', async () => {
+      const w1 = new ObjectID();
+      const w2 = new ObjectID();
+      const { deps, updateOne, bulkWrite } = makeDeps({ chain: 'ETH', wallets: [{ _id: w1 }, { _id: w2 }], watermarkRows: [{ date: '2026-07-27' }] });
+      const svc = new WalletStatsService(deps);
+      sandbox.stub(svc, 'detectDups').resolves(new Set());
+      sandbox.stub(svc, 'collectEvmWalletFact').callsFake(async () => { svc.stopping = true; return { balance: '1', nonce: '1' } as any; });
+      await svc.tick();
+      expect(updateOne.called).to.equal(false); // aborted chain writes no snapshot
+      expect(bulkWrite.called).to.equal(false);
     });
   });
 });
