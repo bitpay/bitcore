@@ -666,7 +666,7 @@ export class TssKeyGen extends EventEmitter {
         }
       });
       if (password) {
-        key.encrypt(password);
+        key.encrypt(password, { iter: 500_000 });
       }
       return key;
     }

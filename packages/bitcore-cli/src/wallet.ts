@@ -43,7 +43,7 @@ import type {
 const Client = API;
 
 const WALLET_ENCRYPTION_OPTS = {
-  iter: 5000
+  iter: 500_000
 };
 
 process.on('uncaughtException', (uncaught) => {
