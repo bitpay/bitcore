@@ -107,8 +107,11 @@ while IFS= read -r package_dir; do
 
   if (
     cd "$package_dir" &&
-      "$ALLOW_SCRIPTS" check
+      "$ALLOW_SCRIPTS" check > /dev/null
   ); then
+    echo "PASS: $package_name"
+  elif node "$PLAN_ALLOWED_SCRIPTS" "$package_dir" > /dev/null; then
+    echo "WARN: $package_name has inactive denied lifecycle policies that are not installed on this platform."
     echo "PASS: $package_name"
   else
     check_failures=$((check_failures + 1))

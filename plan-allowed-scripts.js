@@ -58,22 +58,25 @@ async function main() {
     somePoliciesAreMissing
   } = await loadAllPackageConfigurations({ rootDir: packageDir });
 
-  if (
-    somePoliciesAreMissing ||
-    lifecycle.missingPolicies.length > 0 ||
-    lifecycle.excessPolicies.length > 0
-  ) {
-    throw new Error(
-      `${packageName}'s lifecycle policy changed after validation.`
-    );
-  }
-
   for (const [pattern, decision] of Object.entries(lifecycle.allowConfig)) {
     if (typeof decision !== 'boolean') {
       throw new Error(
         `${packageName}'s policy decision for ${pattern} must be boolean.`
       );
     }
+  }
+
+  const inactiveApprovedPatterns = lifecycle.excessPolicies.filter(
+    pattern => lifecycle.allowConfig[pattern] === true
+  );
+  if (
+    somePoliciesAreMissing ||
+    lifecycle.missingPolicies.length > 0 ||
+    inactiveApprovedPatterns.length > 0
+  ) {
+    throw new Error(
+      `${packageName}'s lifecycle policy changed after validation.`
+    );
   }
 
   const approvedPaths = new Set();

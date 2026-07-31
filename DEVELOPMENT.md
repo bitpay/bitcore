@@ -162,7 +162,12 @@ After bootstrap, the repository runs:
 npm run lifecycle:approved
 ```
 
-The underlying script first runs `allow-scripts check` from each Lerna-managed child package directory.
+The underlying script first runs `allow-scripts check` from each Lerna-managed
+child package directory. If that strict check fails only because a denied
+dependency is not installed on the current platform, the repository planner
+confirms that the inactive entries are all set to `false` and reports a
+non-fatal warning. This permits one policy to deny macOS-only dependencies such
+as `fsevents` while also validating on Linux.
 
 Each package has its own:
 
@@ -179,8 +184,12 @@ A validation failure generally means one of the following:
 
 * a dependency with a lifecycle script was added but is not represented in policy;
 * a dependency path or version changed;
-* a committed policy entry no longer matches an installed dependency;
+* an approved policy entry no longer matches an installed dependency;
 * the package lockfile and policy are out of sync.
+
+An inactive denied entry is not a validation failure because it cannot
+authorize code. Missing policy entries and inactive approved entries remain
+fatal.
 
 Do not bypass this failure by automatically approving new entries.
 

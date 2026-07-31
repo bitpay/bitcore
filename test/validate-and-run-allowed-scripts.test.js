@@ -206,6 +206,111 @@ test('production planner rejects an implicit node-gyp install hook', () => {
   assert.match(result.stderr, /binding\.gyp.*unconfigured install hook/);
 });
 
+test('production planner accepts an inactive denied policy', () => {
+  const packageDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'bitcore-planner-package-')
+  );
+  temporaryDirectories.add(packageDir);
+  fs.writeFileSync(
+    path.join(packageDir, 'package.json'),
+    `${JSON.stringify({
+      name: 'package-with-inactive-denial',
+      lavamoat: {
+        allowScripts: {
+          fsevents: false
+        }
+      }
+    }, null, 2)}\n`
+  );
+
+  const result = spawnSync(
+    process.execPath,
+    [path.join(REPOSITORY_ROOT, 'plan-allowed-scripts.js'), packageDir],
+    { encoding: 'utf8' }
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, '');
+});
+
+test('production planner rejects an inactive approved policy', () => {
+  const packageDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'bitcore-planner-package-')
+  );
+  temporaryDirectories.add(packageDir);
+  fs.writeFileSync(
+    path.join(packageDir, 'package.json'),
+    `${JSON.stringify({
+      name: 'package-with-inactive-approval',
+      lavamoat: {
+        allowScripts: {
+          'fsevents#1.2.11': true
+        }
+      }
+    }, null, 2)}\n`
+  );
+
+  const result = spawnSync(
+    process.execPath,
+    [path.join(REPOSITORY_ROOT, 'plan-allowed-scripts.js'), packageDir],
+    { encoding: 'utf8' }
+  );
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /lifecycle policy changed after validation/);
+});
+
+test('accepts inactive denied policies on the current platform', () => {
+  const fixture = createFixture([
+    {
+      directory: 'package-a',
+      packageJson: {
+        name: 'package-a',
+        testApprovedPaths: []
+      }
+    }
+  ]);
+
+  const result = runFixture(fixture, {
+    BITCORE_TEST_FAIL_CHECK: 'package-a'
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(readLog(fixture.logPath), ['check\tpackage-a']);
+  assert.match(
+    result.stdout,
+    /inactive denied lifecycle policies.*not installed on this platform/
+  );
+});
+
+test('does not mask a failed check when the planner rejects the package', () => {
+  const fixture = createFixture([
+    {
+      directory: 'package-a',
+      packageJson: {
+        name: 'package-a',
+        scripts: {
+          prepare: 'echo unsafe implicit execution'
+        },
+        testApprovedPaths: []
+      }
+    }
+  ]);
+
+  const result = runFixture(fixture, {
+    BITCORE_TEST_FAIL_CHECK: 'package-a'
+  });
+
+  assert.equal(result.status, 1);
+  assert.deepEqual(readLog(fixture.logPath), [
+    'check\tpackage-a',
+    'list\tpackage-a'
+  ]);
+  assert.match(result.stderr, /implicit top-level lifecycle hooks: prepare/);
+  assert.match(result.stdout, /policy validation failed for 1 package/);
+  assert.match(result.stdout, /Approved lifecycle scripts were not executed/);
+});
+
 test('executes a shared physical approved path only once', () => {
   const sharedDependency = fs.mkdtempSync(
     path.join(os.tmpdir(), 'bitcore-shared-dependency-')
