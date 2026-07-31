@@ -305,4 +305,69 @@ describe('WalletStats Service', function() {
       expect(find.called).to.equal(false); // no first address => no cluster query
     });
   });
+
+  describe('missedSnapshotDates schedule anchoring', () => {
+    it('produces schedule dates for an on-schedule watermark', () => {
+      const svc = new WalletStatsService();
+      const missed = svc.missedSnapshotDates(new Date('2026-08-05T12:00:00Z'), '2026-07-13'); // Monday watermark
+      expect(missed).to.deep.equal(['2026-07-20', '2026-07-27', '2026-08-03']);
+    });
+
+    it('anchors to the schedule day when the watermark is off-schedule', () => {
+      const svc = new WalletStatsService();
+      // 2026-07-15 is a Wednesday; the old watermark+7k walk would drift to 07-22/07-29.
+      const missed = svc.missedSnapshotDates(new Date('2026-08-05T12:00:00Z'), '2026-07-15');
+      expect(missed).to.deep.equal(['2026-07-20', '2026-07-27', '2026-08-03']);
+    });
+  });
+
+  describe('schedule config validation', () => {
+    it('falls back to defaults when snapshotDayUTC is out of range', () => {
+      const configService = { for: () => ({ snapshotDayUTC: 9 }), isDisabled: () => false };
+      const svc = new WalletStatsService({ configService } as any);
+      // day 9 is invalid; must behave as the Monday default (2026-08-03), not day-9 arithmetic (2026-08-04).
+      expect(svc.snapshotDateIfDue(new Date('2026-08-05T12:00:00Z'), null)).to.equal('2026-08-03');
+    });
+  });
+
+  describe('buildSnapshot nonce stamping', () => {
+    it('stamps EVM nonces into the facts when a nonce map is provided', () => {
+      const svc = new WalletStatsService({} as any);
+      const oid = new ObjectID();
+      const wallets = [{ _id: oid, chain: 'ETH', network: 'mainnet' }];
+      const balances = new Map([[oid.toHexString(), 10n]]);
+      const nonces = new Map([[oid.toHexString(), '7']]);
+      const { walletFacts } = svc.buildSnapshot({
+        chain: 'ETH', network: 'mainnet', date: '2026-08-03',
+        wallets, balances, activity: new Map(), dups: new Set<string>(), nonces
+      });
+      expect(walletFacts[0].nonce).to.equal('7');
+    });
+  });
+
+  describe('withRateLimitRetry hardening', () => {
+    it('gives up after the total-elapsed retry cap and throws the last error', async () => {
+      const err = new Error('Too Many Requests');
+      const fn = sandbox.stub().rejects(err);
+      const nowFn = sandbox.stub();
+      nowFn.returns(0);
+      nowFn.onCall(2).returns(700000); // exceeds the 10min default cap on the second check
+      const svc = new WalletStatsService({ waitFn: async () => {}, nowFn } as any);
+      let thrown: any;
+      try { await svc.withRateLimitRetry(fn); } catch (e) { thrown = e; }
+      expect(thrown).to.equal(err);
+      expect(fn.calledTwice).to.equal(true);
+    });
+
+    it('stops retrying promptly when a stop is requested during backoff', async () => {
+      const err = new Error('Too Many Requests');
+      const fn = sandbox.stub().rejects(err);
+      const svc = new WalletStatsService({ nowFn: () => 0 } as any);
+      svc.waitFn = async () => { svc.stopping = true; };
+      let thrown: any;
+      try { await svc.withRateLimitRetry(fn); } catch (e) { thrown = e; }
+      expect(thrown).to.equal(err);
+      expect(fn.calledOnce).to.equal(true); // one attempt, stop noticed during the sleep
+    });
+  });
 });

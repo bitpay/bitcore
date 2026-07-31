@@ -31,6 +31,8 @@ export class WalletStatsService {
   walletAddressModel: WalletAddressModel;
   configService;
   waitFn: (ms: number) => Promise<unknown>;
+  nowFn: () => number;
+  private scheduleWarned = false;
 
   constructor({
     walletStatsModel = WalletStatsStorage,
@@ -39,7 +41,8 @@ export class WalletStatsService {
     blockModel = BitcoinBlockStorage,
     walletAddressModel = WalletAddressStorage,
     configService = Config,
-    waitFn = wait
+    waitFn = wait,
+    nowFn = Date.now
   } = {}) {
     this.walletStatsModel = walletStatsModel;
     this.walletStatsWalletModel = walletStatsWalletModel;
@@ -48,6 +51,31 @@ export class WalletStatsService {
     this.walletAddressModel = walletAddressModel;
     this.configService = configService;
     this.waitFn = waitFn;
+    this.nowFn = nowFn;
+  }
+
+  // Validated weekly schedule. Out-of-range day/hour fall back to the defaults
+  // (Monday 02:00 UTC) with a single warning rather than crashing a running node.
+  private getSchedule(): { targetDay: number; targetHour: number } {
+    let targetDay = this.serviceConfig.snapshotDayUTC ?? 1;
+    let targetHour = this.serviceConfig.snapshotHourUTC ?? 2;
+    const dayValid = Number.isInteger(targetDay) && targetDay >= 0 && targetDay <= 6;
+    const hourValid = Number.isInteger(targetHour) && targetHour >= 0 && targetHour <= 23;
+    if (!dayValid || !hourValid) {
+      if (!this.scheduleWarned) {
+        logger.warn(
+          `Invalid walletStats schedule (snapshotDayUTC=${targetDay}, snapshotHourUTC=${targetHour}); using defaults`
+        );
+        this.scheduleWarned = true;
+      }
+      if (!dayValid) {
+        targetDay = 1;
+      }
+      if (!hourValid) {
+        targetHour = 2;
+      }
+    }
+    return { targetDay, targetHour };
   }
 
   get serviceConfig() {
@@ -186,8 +214,9 @@ export class WalletStatsService {
     balances: Map<string, bigint>;
     activity: Map<string, Date>;
     dups: Set<string>;
+    nonces?: Map<string, string>; // EVM only; UTXO callers omit it
   }): { snapshot: IWalletStats; walletFacts: IWalletStatsWallet[] } {
-    const { chain, network, date, wallets, balances, activity, dups } = params;
+    const { chain, network, date, wallets, balances, activity, dups, nonces } = params;
     const asOf = new Date(`${date}T00:00:00Z`);
     const snapshot = this.walletStatsModel.newSnapshot({ chain, network, date });
     const walletFacts: IWalletStatsWallet[] = [];
@@ -215,6 +244,7 @@ export class WalletStatsService {
         snapshotDate: date,
         createdDate,
         balance: balance.toString(),
+        nonce: nonces?.get(id),
         lastActivityDate,
         isDup
       });
@@ -260,21 +290,29 @@ export class WalletStatsService {
   }
 
   // Retry a provider call through rate-limit (429) responses with exponential
-  // backoff (100ms doubling up to 60s). Non-429 errors propagate immediately, and
-  // a stop request aborts by rethrowing rather than sleeping further.
+  // backoff (100ms doubling up to 60s). Non-429 errors propagate immediately. A
+  // total-elapsed cap (default 10min) bounds how long one stuck call can hold up
+  // the tick — on expiry the last error is thrown so the caller counts it and
+  // moves on. Stop is honored both before and after each sleep so shutdown waits
+  // at most one backoff interval.
   async withRateLimitRetry<T>(fn: () => Promise<T>): Promise<T> {
     let delay = 100;
     const cap = 60 * 1000;
+    const maxRetryMs = this.serviceConfig.maxRetryMs ?? 10 * 60 * 1000;
+    const start = this.nowFn();
     for (;;) {
       try {
         return await fn();
       } catch (err: any) {
         const message = err?.message || '';
         const is429 = message.includes('Too Many Requests') || err?.status === 429 || err?.statusCode === 429;
-        if (!is429 || this.stopping) {
+        if (!is429 || this.stopping || this.nowFn() - start >= maxRetryMs) {
           throw err;
         }
         await this.waitFn(delay);
+        if (this.stopping) {
+          throw err;
+        }
         delay = Math.min(delay * 2, cap);
       }
     }
@@ -391,8 +429,7 @@ export class WalletStatsService {
   // Weekly snapshot is due once the configured day+hour has passed and the
   // current week's date exceeds the durable watermark (latest snapshot date in DB).
   snapshotDateIfDue(now: Date, watermarkDate: string | null): string | null {
-    const targetDay = this.serviceConfig.snapshotDayUTC ?? 1;
-    const targetHour = this.serviceConfig.snapshotHourUTC ?? 2;
+    const { targetDay, targetHour } = this.getSchedule();
     const current = this.currentSnapshotDate(now, targetDay, targetHour);
     if (!current) {
       return null;
@@ -415,22 +452,25 @@ export class WalletStatsService {
     return d.toISOString().split('T')[0];
   }
 
+  // Scheduled snapshot dates in (watermark, current], most-recent last. Walking
+  // BACK from `current` (itself an on-schedule date) in weekly steps keeps every
+  // result on the schedule day even when the watermark is off-schedule; walking
+  // forward from the watermark would drift by the watermark's day-of-week.
   missedSnapshotDates(now: Date, watermarkDate: string): string[] {
-    const targetDay = this.serviceConfig.snapshotDayUTC ?? 1;
-    const targetHour = this.serviceConfig.snapshotHourUTC ?? 2;
+    const { targetDay, targetHour } = this.getSchedule();
     const current = this.currentSnapshotDate(now, targetDay, targetHour);
     const missed: string[] = [];
     if (!current) {
       return missed;
     }
-    let cursor = new Date(`${watermarkDate}T00:00:00Z`);
+    let cursor = new Date(`${current}T00:00:00Z`);
     for (;;) {
-      cursor = new Date(cursor.getTime() + 7 * DAY_MS);
       const date = cursor.toISOString().split('T')[0];
-      if (date > current) {
+      if (date <= watermarkDate) {
         break;
       }
-      missed.push(date);
+      missed.unshift(date);
+      cursor = new Date(cursor.getTime() - 7 * DAY_MS);
     }
     return missed;
   }
