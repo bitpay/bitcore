@@ -23,9 +23,13 @@ export class Verifier {
   private static normalizeAtomicValue(value) {
     if (typeof value === 'bigint') return value >= 0n ? value : null;
     if (typeof value === 'number') {
-      return Number.isSafeInteger(value) && value >= 0 ? BigInt(value) : null;
+      // Preserve the integer value actually represented by JavaScript, including unsafe Numbers.
+      return Number.isInteger(value) && value >= 0 ? BigInt(value) : null;
     }
-    if (typeof value === 'string' && /^(0|[1-9]\d*)$/.test(value)) {
+    if (
+      typeof value === 'string' &&
+      (/^(0|[1-9]\d*)$/.test(value) || /^0x[0-9a-fA-F]+$/.test(value))
+    ) {
       return BigInt(value);
     }
     return null;
@@ -40,8 +44,8 @@ export class Verifier {
   }
 
   private static optionalAtomicValuesEqual(value1, value2) {
-    const value1Missing = value1 === undefined || value1 === null;
-    const value2Missing = value2 === undefined || value2 === null;
+    const value1Missing = value1 == null;
+    const value2Missing = value2 == null;
     if (value1Missing || value2Missing) return value1Missing && value2Missing;
     return this.atomicValuesEqual(value1, value2);
   }

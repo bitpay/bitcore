@@ -44,7 +44,7 @@ describe('Verifier', function() {
       checkProposalCreation(
         { fee: 1000n, inputs },
         {
-          fee: '1000',
+          fee: '0x3e8',
           inputs: [
             { ...inputs[1], vout: '1', satoshis: '5000' },
             { ...inputs[0], vout: '0', satoshis: '6000' }
@@ -57,12 +57,22 @@ describe('Verifier', function() {
       const feePairs = [
         [1000, 1001],
         [-1, -1],
-        [Number.MAX_SAFE_INTEGER + 1, Number.MAX_SAFE_INTEGER + 1],
-        ['01', '01']
+        [1.5, 1.5],
+        ['01', '01'],
+        ['0x', '0x'],
+        ['0xgg', '0xgg']
       ];
       for (const [requestedFee, returnedFee] of feePairs) {
         checkProposalCreation({ fee: requestedFee }, { fee: returnedFee }).should.be.false;
       }
+    });
+
+    it('should compare unsafe integer fees using their represented JavaScript value', function() {
+      const unsafeFee = Number.MAX_SAFE_INTEGER + 1;
+
+      checkProposalCreation({ fee: unsafeFee }, { fee: unsafeFee }).should.be.true;
+      checkProposalCreation({ fee: unsafeFee }, { fee: unsafeFee.toString() }).should.be.true;
+      checkProposalCreation({ fee: unsafeFee }, { fee: unsafeFee + 2 }).should.be.false;
     });
 
     it('should reject changed or invalid explicit inputs', function() {
