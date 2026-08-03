@@ -1,20 +1,14 @@
 import cluster from 'cluster';
 import 'source-map-support/register';
 import logger from '../logger';
-import { loadModules } from '../modules';
-import { Api } from '../services/api';
 import { Event } from '../services/event';
-import { P2P } from '../services/p2p';
 import { Storage } from '../services/storage';
 import { WalletStats } from '../services/walletStats';
-import { Worker } from '../services/worker';
-import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
 
-const args = parseArgv([], [{ arg: 'DEBUG', type: 'bool' }]);
 const services: Array<any> = [];
 
-export const FullClusteredWorker = async () => {
+export const WalletStatsWorker = async () => {
   process.on('unhandledRejection', (error: any) => {
     console.error('Unhandled Rejection at:', error.stack || error);
     stop();
@@ -22,21 +16,7 @@ export const FullClusteredWorker = async () => {
   process.on('SIGTERM', stop);
   process.on('SIGINT', stop);
 
-  services.push(Storage, Event);
-  if (cluster.isPrimary) {
-    services.push(P2P);
-    services.push(WalletStats); // self-gates via isDisabled; defaults disabled
-    if (args.DEBUG) {
-      services.push(Api);
-    } else {
-      services.push(Worker);
-    }
-  } else {
-    services.push(Api);
-  }
-
-  loadModules();
-
+  services.push(Storage, Event, WalletStats);
   for (const service of services) {
     await service.start();
   }
@@ -45,18 +25,18 @@ export const FullClusteredWorker = async () => {
 let stopping = false;
 const stop = async () => {
   if (stopping) {
-    logger.error('Force stopping all workers');
+    logger.error('Force stopping Wallet Stats Worker');
     process.exit(1);
   }
   stopping = true;
 
   setTimeout(() => {
-    logger.error('All workers did not shut down gracefully after 30 seconds, exiting');
+    logger.error('Wallet Stats Worker did not shut down gracefully after 30 seconds, exiting');
     process.exit(1);
   }, 30 * 1000).unref();
 
 
-  logger.info(`Shutting down ${cluster.isPrimary ? 'primary' : 'worker'} process ${process.pid}`);
+  logger.info(`Shutting down wallet stats ${process.pid}`);
   for (const service of services.reverse()) {
     await service.stop();
   }
@@ -67,5 +47,5 @@ const stop = async () => {
 };
 
 if (require.main === module) {
-  FullClusteredWorker();
+  WalletStatsWorker();
 }
