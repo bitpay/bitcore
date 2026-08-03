@@ -98,6 +98,16 @@ canary: setup succeeds only while the root install remains inert. Keep trusted
 first-party setup work in explicitly named root scripts, not workspace install
 hooks.
 
+> **Warning: package-level lifecycle scripts run unconditionally when
+> `allowScripts` is configured.** If a managed package has any
+> `lavamoat.allowScripts` entries, `allow-scripts run` will also execute that
+> package's own `install`, `postinstall`, `prepublish`, and `prepare` hooks —
+> regardless of whether those hooks appear in the `allowScripts` policy.
+> The policy only gates *dependency* lifecycle scripts. This is by design in
+> LavaMoat, but it means adding a top-level lifecycle script to a package with
+> an active `allowScripts` config will cause that script to execute during
+> `npm run setup`. Validate the intended behavior before adding such hooks.
+
 ## Update dependencies
 
 When adding or updating a dependency:
