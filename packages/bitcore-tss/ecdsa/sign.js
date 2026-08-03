@@ -1,5 +1,5 @@
-const bitcoreLib = require('@bitpay-labs/bitcore-lib');
 const { DklsDsg, DklsTypes, DklsUtils } = require('@bitgo/sdk-lib-mpc');
+const bitcoreLib = require('@bitpay-labs/bitcore-lib');
 const { DklsComms } = require('./dklsComms');
 const { encrypt, decrypt } = require('./utils');
 

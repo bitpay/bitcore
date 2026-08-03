@@ -14,7 +14,7 @@ describe('ECDSA', function() {
     if (v.only || v.signing.some(s => s.only)) {
       arr.push(i);
     }
-    return arr
+    return arr;
   }, []);
 
   for (const vector of vectors) {
@@ -292,7 +292,7 @@ describe('ECDSA', function() {
         const n = vector.n;
         const signers = {};
         for (let i = 0; i < n; i++) {
-          signers[`party${i}`] = {}
+          signers[`party${i}`] = {};
           for (let j = 1; j < n; j++) {
             signers[`party${i}`][`party${(i + j) % n}`] = null;
           }
