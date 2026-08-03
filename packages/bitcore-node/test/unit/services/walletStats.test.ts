@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { expect } from 'chai';
 import { ObjectID } from 'mongodb';
 import * as sinon from 'sinon';
@@ -569,6 +570,43 @@ describe('WalletStats Service', function() {
       await svc.tick();
       expect(updateOne.called).to.equal(false); // aborted chain writes no snapshot
       expect(bulkWrite.called).to.equal(false);
+    });
+  });
+
+  describe('defaultCheckTokenActivity', () => {
+    const makeSvc = (apiKey?: string) => new WalletStatsService({
+      configService: {
+        get: () => ({ externalProviders: apiKey ? { moralis: { apiKey } } : {} }),
+        for: () => ({}),
+        isDisabled: () => false
+      },
+      cspProvider: { get: () => ({ getChainId: async () => 1 }) }
+    } as any);
+    const call = (svc: any) =>
+      svc.defaultCheckTokenActivity({ chain: 'ETH', network: 'mainnet', addresses: ['0xabc'], since: new Date('2025-08-03T00:00:00Z') });
+
+    it('returns the block time of the most recent ERC-20 transfer', async () => {
+      const get = sandbox.stub(axios, 'get').resolves({ data: { result: [{ block_timestamp: '2026-07-30T00:00:00Z' }] } });
+      const result = await call(makeSvc('key'));
+      expect(result).to.deep.equal(new Date('2026-07-30T00:00:00Z'));
+      expect(get.calledOnce).to.equal(true);
+    });
+
+    it('returns null when there are no transfers', async () => {
+      sandbox.stub(axios, 'get').resolves({ data: { result: [] } });
+      expect(await call(makeSvc('key'))).to.equal(null);
+    });
+
+    it('returns null when the request fails', async () => {
+      sandbox.stub(axios, 'get').rejects(new Error('network down'));
+      sandbox.stub(logger, 'warn');
+      expect(await call(makeSvc('key'))).to.equal(null);
+    });
+
+    it('returns null without a request when no apiKey is configured', async () => {
+      const get = sandbox.stub(axios, 'get');
+      expect(await call(makeSvc(undefined))).to.equal(null);
+      expect(get.called).to.equal(false);
     });
   });
 });

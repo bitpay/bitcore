@@ -1,4 +1,5 @@
 import { Utils } from '@bitpay-labs/crypto-wallet-core';
+import axios from 'axios';
 import { ObjectID } from 'mongodb';
 import logger from '../logger';
 import { BitcoinBlock, BitcoinBlockStorage } from '../models/block';
@@ -710,22 +711,30 @@ export class WalletStatsService {
   }
 
   // Default token-activity probe: a limit-1 ERC-20 transfers existence check per
-  // address since `since`, built through MoralisClient (which carries its own 30s
-  // timeout and query-string builder — no raw URL assembly here). Lazy-imported so
-  // non-EVM deployments never load the Moralis module, and fully swappable via the
-  // constructor. Any failure degrades to null rather than breaking the tick.
+  // address since `since`, hitting Moralis directly through axios on tracked
+  // surfaces only (formatMoralisChainId from the adapters util; apiKey from config).
+  // No apiKey configured => null without a request. Any failure degrades to null so
+  // the tick is never broken, and the whole thing is swappable via the constructor.
+  // TODO: migrate onto MoralisClient once the external client extraction lands.
   async defaultCheckTokenActivity(params: { chain: string; network: string; addresses: string[]; since: Date }): Promise<Date | null> {
     const { chain, network, addresses, since } = params;
+    const apiKey = this.configService.get()?.externalProviders?.moralis?.apiKey;
+    if (!apiKey) {
+      return null;
+    }
     try {
       const csp: any = this.cspProvider.get({ chain, network });
       const chainId = await csp.getChainId({ network });
-      const { MoralisClient } = await import('../providers/chain-state/external/clients/moralis');
       const { formatMoralisChainId } = await import('../providers/chain-state/external/adapters/moralis-utils');
-      const client = new MoralisClient();
+      const moralisChain = formatMoralisChainId(chainId);
       for (const address of addresses) {
-        const data = await client.get<{ result?: Array<{ block_timestamp?: string }> }>(
-          `/${address}/erc20/transfers`,
-          { chain: formatMoralisChainId(chainId), from_date: since.toISOString(), order: 'DESC', limit: 1 }
+        const { data } = await axios.get<{ result?: Array<{ block_timestamp?: string }> }>(
+          `https://deep-index.moralis.io/api/v2.2/${address}/erc20/transfers`,
+          {
+            params: { chain: moralisChain, from_date: since.toISOString(), order: 'DESC', limit: 1 },
+            headers: { 'X-API-Key': apiKey },
+            timeout: 30000
+          }
         );
         const first = data?.result?.[0];
         if (first?.block_timestamp) {
