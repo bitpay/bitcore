@@ -22,17 +22,15 @@ describe('ECIES', function() {
   };
 
   const message = 'attack at dawn';
-  const encrypted = '0339e504d6492b082da96e11e8f039796b06cd4855c101e2492a6f10f3e056a9e712c732611c6917ab5c57a1926973bc44a1586e94a783f81d05ce72518d9b0a804ef5cf06e78bacf8fa1751e3dfd68a507dff5b0527ddfa91de9c293d2d6de920';
+  const encrypted = '0339e504d6492b082da96e11e8f039796b06cd4855c101e2492a6f10f3e056a9e712c732611c6917ab5c57a1926973bc443f82df921cd5c8593113579d66dd26a0aa42e31b7b00158387ac5f846f0a49e702bf8155d027a4cc4bd7ae9f7681d188';
   const encBuf = Buffer.from(encrypted, 'hex');
-  const encryptedNoKey = '12c732611c6917ab5c57a1926973bc44a1586e94a783f81d05ce72518d9b0a804ef5cf06e78bacf8fa1751e3dfd68a507dff5b0527ddfa91de9c293d2d6de920';
+  const encryptedNoKey = '12c732611c6917ab5c57a1926973bc443f82df921cd5c8593113579d66dd26a0aa42e31b7b00158387ac5f846f0a49e702bf8155d027a4cc4bd7ae9f7681d188';
   const encNoKeyBuf = Buffer.from(encryptedNoKey, 'hex');
-  const encryptedShortTag = '0339e504d6492b082da96e11e8f039796b06cd4855c101e2492a6f10f3e056a9e712c732611c6917ab5c57a1926973bc44a1586e94a783f81d05ce72518d9b0a804ef5cf06';
-  const encShortTagBuf = Buffer.from(encryptedShortTag, 'hex');
 
   describe('KDF', function() {
     it('should generate the same keys', function() {
       const [kE1, kM1] = ECIES.KDF(aliceKey, bobKey.publicKey);
-      const [kE2, kM2] = ECIES.KDF(bobKey, aliceKey.publicKey);
+      const [kE2, kM2] = ECIES.KDF(bobKey, aliceKey.publicKey, true);
       assert.strictEqual(kE1.toString('hex'), kE2.toString('hex'));
       assert.strictEqual(kM1.toString('hex'), kM2.toString('hex'));
     });
@@ -41,7 +39,7 @@ describe('ECIES', function() {
   it('correctly encrypts a message', function() {
     const ciphertext = alice.encrypt(message, { deterministicIv: true });
     assert.strictEqual(Buffer.isBuffer(ciphertext), true);
-    assert.strictEqual(ciphertext.toString('hex'), encrypted)
+    assert.strictEqual(ciphertext.toString('hex'), encrypted);
   });
 
   it('correctly decrypts a message', function() {
@@ -53,23 +51,11 @@ describe('ECIES', function() {
   it('correctly encrypts a message without key', function() {
     const ciphertext = alice.encrypt(message, { noKey: true, deterministicIv: true });
     assert.strictEqual(Buffer.isBuffer(ciphertext), true);
-    assert.strictEqual(ciphertext.toString('hex'), encryptedNoKey)
+    assert.strictEqual(ciphertext.toString('hex'), encryptedNoKey);
   });
 
   it('correctly decrypts a message without key', function() {
     const decrypted = bob.decrypt(encNoKeyBuf, { noKey: true, deterministicIv: true });
-    assert.strictEqual(Buffer.isBuffer(decrypted), true);
-    assert.strictEqual(decrypted.toString(), message);
-  });
-
-  it('correctly encrypts a message with short tag', function() {
-    const ciphertext = alice.encrypt(message, { shortTag: true, deterministicIv: true });
-    assert.strictEqual(Buffer.isBuffer(ciphertext), true);
-    assert.strictEqual(ciphertext.toString('hex'), encryptedShortTag)
-  });
-
-  it('correctly decrypts a message with short tag', function() {
-    const decrypted = bob.decrypt(encShortTagBuf, { shortTag: true, deterministicIv: true });
     assert.strictEqual(Buffer.isBuffer(decrypted), true);
     assert.strictEqual(decrypted.toString(), message);
   });
@@ -99,16 +85,6 @@ describe('ECIES', function() {
     assert.strictEqual(decrypted, secret);
   });
 
-  it('roundtrips (short tag)', function() {
-    const opts = { shortTag: true };
-    const secret = 'some secret message!!!';
-    const encrypted = alice.encrypt(secret, opts);
-    const decrypted = bob
-      .decrypt(encrypted, opts)
-      .toString();
-    assert.strictEqual(decrypted, secret);
-  });
-
   it('roundtrips (deterministic iv)', function() {
     const opts = { deterministicIv: true };
     const secret = 'some secret message!!!';
@@ -117,35 +93,6 @@ describe('ECIES', function() {
       .decrypt(encrypted, opts)
       .toString();
     assert.strictEqual(decrypted, secret);
-  });
-
-  it('roundtrips (no public key & short tag)', function() {
-    const opts = { noKey: true, shortTag: true };
-    const secret = 'some secret message!!!';
-    const encrypted = alice.encrypt(secret, opts);
-    const decrypted = bob
-      .decrypt(encrypted, opts)
-      .toString();
-    assert.strictEqual(decrypted, secret);
-  });
-
-  it('roundtrips (short tag mismatch)', function() {
-    const opts1 = { shortTag: true };
-    const opts2 = { shortTag: false };
-    const secret = 'some secret message!!!';
-    const encrypted1 = alice.encrypt(secret, opts1);
-    const encrypted2 = alice.encrypt(secret, opts2);
-    assert.notEqual(encrypted1.toString('hex'), encrypted2.toString('hex'));
-    assert.throws(() => {
-      bob
-        .decrypt(encrypted1, opts2) // intentionally mismatched
-        .toString();
-    }, { message: 'Invalid checksum' });
-    assert.throws(() => {
-      bob
-        .decrypt(encrypted2, opts1) // intentionally mismatched
-        .toString();
-    }, { message: 'Invalid checksum' });
   });
 
   it('roundtrips (no key mismatch)', function() {
