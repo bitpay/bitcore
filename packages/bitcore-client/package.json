@@ -71,6 +71,7 @@
   "lavamoat": {
     "allowScripts": {
       "@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1": false,
+      "bcrypt": false,
       "bcrypt#5.1.0": true,
       "leveldown": false,
       "secp256k1": false,

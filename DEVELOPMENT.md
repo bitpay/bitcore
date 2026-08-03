@@ -65,11 +65,17 @@ The root scripts are:
 ```json
 {
   "setup": "npm ci --ignore-scripts && npm run setup:installed",
-  "setup:installed": "npm run bootstrap:inert && npm run lifecycle:approved && npm run compile",
+  "setup:installed": "npm run bootstrap:inert && npm run allow-scripts:run && npm run compile",
   "bootstrap:inert": "npm_config_ignore_scripts=true lerna bootstrap",
-  "lifecycle:approved": "./validate-and-run-allowed-scripts.sh"
+  "allow-scripts:config": "lerna exec --concurrency 1 -- \"$PWD/node_modules/.bin/allow-scripts\" auto --skip-versions",
+  "allow-scripts:check": "./validate-and-run-allowed-scripts.sh --check-only",
+  "allow-scripts:run": "./validate-and-run-allowed-scripts.sh",
+  "lifecycle:approved": "npm run allow-scripts:run"
 }
 ```
+
+`lifecycle:approved` remains as a compatibility alias. New automation and
+documentation should use the `allow-scripts:*` names.
 
 ## Why `npm ci` is not enough
 
@@ -159,7 +165,7 @@ The repository intentionally does not expose an unguarded `bootstrap` npm script
 After bootstrap, the repository runs:
 
 ```sh
-npm run lifecycle:approved
+npm run allow-scripts:run
 ```
 
 The underlying script first runs `allow-scripts check` from each Lerna-managed
@@ -219,6 +225,17 @@ all-or-nothing validation boundary.
 
 Trusted first-party setup work belongs in an explicit root npm script, not in a
 workspace lifecycle hook.
+
+To perform the same validation and planning without executing dependency
+lifecycle scripts, run:
+
+```sh
+npm run allow-scripts:check
+```
+
+This is useful after updating policy, during review, or as a separate CI gate.
+It validates every managed package and the deduplicated execution plan, then
+stops before `allow-scripts run` is invoked.
 
 ### Approved dependency lifecycle execution
 
@@ -356,20 +373,27 @@ When adding, removing, or updating a dependency:
 
 1. Update the appropriate package manifest and lockfile.
 2. Perform an inert installation or bootstrap.
-3. Run the package's `allow-scripts list` and `allow-scripts check`.
-4. Review any new or changed lifecycle dependency paths.
-5. Keep new entries denied unless real Bitcore build, test, runtime, or CLI behavior proves that the lifecycle-produced artifact is required.
-6. Approve one exact path-sensitive key at a time.
-7. Rerun the failing first-party behavior.
-8. Reproduce the result from a clean installation.
-9. Confirm platform-dependent results in Linux CI.
+3. Run `npm run allow-scripts:config` to add newly discovered lifecycle paths
+   as versionless denials.
+4. Review every resulting `package.json` change and inspect affected packages
+   with `allow-scripts list` where necessary.
+5. Keep new entries denied unless real Bitcore build, test, runtime, or CLI
+   behavior proves that the lifecycle-produced artifact is required.
+6. For a required script, retain its versionless denial as the default and add
+   one exact, versioned, path-sensitive approval.
+7. Run `npm run allow-scripts:check`.
+8. Rerun the failing first-party behavior through `npm run allow-scripts:run`.
+9. Reproduce the result from a clean installation.
+10. Confirm platform-dependent results in Linux CI.
 
 ### Policy versioning
 
 Use a hybrid versioning policy for `lavamoat.allowScripts`:
 
 * Entries set to `true` must include the exact reviewed dependency version.
-* Entries set to `false` may omit the final `#version` suffix.
+* Entries set to `false` omit the final `#version` suffix.
+* An approved dependency may have both a versionless `false` baseline and an
+  exact versioned `true` exception.
 
 For example:
 
@@ -379,7 +403,9 @@ For example:
     "allowScripts": {
       "secp256k1": false,
       "@bitpay-labs/crypto-wallet-core>tiny-secp256k1": false,
+      "bcrypt": false,
       "bcrypt#5.1.0": true,
+      "@bitpay-labs/bitcore-client>bcrypt": false,
       "@bitpay-labs/bitcore-client>bcrypt#5.1.0": true
     }
   }
@@ -394,19 +420,47 @@ causes validation to fail.
 An approved entry remains version-pinned so an unreviewed future release cannot
 inherit permission to execute lifecycle code.
 
-Do not use `--skip-versions` with `allow-scripts auto`, `check`, or `run`.
-That option changes version matching globally, including approved entries, and
-using it for configuration but not execution creates incompatible policies.
-Convert existing denied entries to versionless keys as a deliberate,
-reviewable manifest change while leaving every approved entry pinned.
+The developer-only configuration command runs `allow-scripts auto
+--skip-versions` in each managed package. In this mode, `allow-scripts` adds
+newly detected lifecycle paths as versionless `false` entries. It does not
+grant permission to execute them. It may add a versionless denial alongside an
+existing pinned approval; that is the expected default-deny plus exact-exception
+representation.
 
-Do not run repository-wide:
+Validation and execution deliberately do not pass `--skip-versions`. Normal
+matching recognizes versionless `false` entries but requires a `true` entry to
+match the installed version exactly. Never change a generated versionless
+denial to `true`, and never run `allow-scripts run --skip-versions`, because
+that would make approval version-agnostic.
+
+`allow-scripts:config` is a maintenance command, not part of `setup` or CI. It
+updates tracked manifests, so always review its diff. CI must report missing or
+stale policy instead of modifying policy automatically.
+
+### Why configuration iterates Lerna packages
+
+`allow-scripts` inspects the dependency tree and `package.json` in its current
+working directory. Running it once from the repository root would inspect only
+the root dependency tree, not the 18 separately bootstrapped child trees.
+Package-by-package execution is therefore necessary.
+
+A command such as:
 
 ```sh
-allow-scripts auto
+lerna exec -- npx allow-scripts auto --skip-versions
 ```
 
-as a substitute for review.
+is a concise way to enter every Lerna package, which is why it may be suggested.
+The Lerna part solves a real package-scoping problem; `npx` is unnecessary and
+less deterministic here. If a suitable local binary is not found, `npx` can
+resolve or download a different package/version rather than guaranteeing the
+one in the root lockfile.
+
+The committed npm command keeps Lerna's authoritative package scope but passes
+it an absolute path to the root `node_modules/.bin/allow-scripts` executable.
+The npm shell expands `$PWD` before Lerna enters each package, guaranteeing the
+root-lockfile version. `--concurrency 1` keeps policy updates and output serial.
+No additional orchestration script is required.
 
 Do not approve lifecycle scripts merely because a package declares one or because installation reports an unconfigured entry.
 
@@ -468,10 +522,10 @@ compilation.
 
 ### `allow-scripts - allowlist needs update`
 
-Run the lifecycle command to identify every failing package:
+Run the non-executing lifecycle check to identify every failing package:
 
 ```sh
-npm run lifecycle:approved
+npm run allow-scripts:check
 ```
 
 The validation phase will print the current lifecycle inventory for each package whose policy does not match its installed tree.
@@ -496,7 +550,7 @@ This indicates that the approved `bcrypt#5.1.0` lifecycle script did not run suc
 Run:
 
 ```sh
-npm run lifecycle:approved
+npm run allow-scripts:run
 ```
 
 Then confirm the generated native binding exists:

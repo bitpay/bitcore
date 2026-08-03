@@ -107,6 +107,7 @@
   "gitHead": "a1890ef287c9e5d0e966fb445d15bc59a9393761",
   "lavamoat": {
     "allowScripts": {
+      "@bitpay-labs/bitcore-client>bcrypt": false,
       "@bitpay-labs/bitcore-client>@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1": false,
       "@bitpay-labs/bitcore-client>bcrypt#5.1.0": true,
       "@bitpay-labs/bitcore-client>leveldown": false,

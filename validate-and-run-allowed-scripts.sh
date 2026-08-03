@@ -5,7 +5,8 @@
 #
 # If all policies validate, build a fail-closed execution plan and then run
 # each physical approved dependency tree at most once. Execution stops on the
-# first failure.
+# first failure. Pass --check-only to stop after successful planning without
+# running any lifecycle scripts.
 
 set -u
 
@@ -13,41 +14,65 @@ ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 LERNA="$ROOT_DIR/node_modules/.bin/lerna"
 ALLOW_SCRIPTS="$ROOT_DIR/node_modules/.bin/allow-scripts"
 PLAN_ALLOWED_SCRIPTS="$ROOT_DIR/plan-allowed-scripts.js"
+LIFECYCLE_COORDINATOR="$ROOT_DIR/lifecycle-plan-coordinator.js"
+LIFECYCLE_RUN_WRAPPER="$ROOT_DIR/run-allowed-scripts.js"
 
-PACKAGE_LIST=
-RUN_PACKAGE_LIST=
-SEEN_SCRIPT_PATHS=
-CURRENT_SCRIPT_PATHS=
+PACKAGE_INVENTORY=
+PLAN_DIR=
+GLOBAL_PLAN=
+ACTIVE_CHILD=
+CHECK_ONLY=false
+
+case "${1:-}" in
+  '')
+    ;;
+  --check-only)
+    CHECK_ONLY=true
+    ;;
+  *)
+    echo "Usage: $0 [--check-only]"
+    exit 2
+    ;;
+esac
+
+if [ "$#" -gt 1 ]; then
+  echo "Usage: $0 [--check-only]"
+  exit 2
+fi
 
 cleanup() {
-  [ -z "$PACKAGE_LIST" ] || rm -f -- "$PACKAGE_LIST"
-  [ -z "$RUN_PACKAGE_LIST" ] || rm -f -- "$RUN_PACKAGE_LIST"
-  [ -z "$SEEN_SCRIPT_PATHS" ] || rm -f -- "$SEEN_SCRIPT_PATHS"
-  [ -z "$CURRENT_SCRIPT_PATHS" ] || rm -f -- "$CURRENT_SCRIPT_PATHS"
+  [ -z "$PACKAGE_INVENTORY" ] || rm -f -- "$PACKAGE_INVENTORY"
+  [ -z "$PLAN_DIR" ] || rm -rf -- "$PLAN_DIR"
+  [ -z "$GLOBAL_PLAN" ] || rm -f -- "$GLOBAL_PLAN"
+}
+
+handle_signal() {
+  signal_name=$1
+  signal_status=$2
+  if [ -n "$ACTIVE_CHILD" ]; then
+    kill -s "$signal_name" "$ACTIVE_CHILD" 2>/dev/null || true
+    wait "$ACTIVE_CHILD" 2>/dev/null || true
+  fi
+  exit "$signal_status"
 }
 
 trap cleanup 0
-trap 'exit 129' HUP
-trap 'exit 130' INT
-trap 'exit 143' TERM
+trap 'handle_signal HUP 129' HUP
+trap 'handle_signal INT 130' INT
+trap 'handle_signal TERM 143' TERM
 
-if ! PACKAGE_LIST=$(mktemp); then
-  echo "ERROR: Unable to create a temporary package-list file."
+if ! PACKAGE_INVENTORY=$(mktemp); then
+  echo "ERROR: Unable to create a temporary package-inventory file."
   exit 1
 fi
 
-if ! RUN_PACKAGE_LIST=$(mktemp); then
-  echo "ERROR: Unable to create a temporary execution-plan file."
+if ! GLOBAL_PLAN=$(mktemp); then
+  echo "ERROR: Unable to create a temporary global-plan file."
   exit 1
 fi
 
-if ! SEEN_SCRIPT_PATHS=$(mktemp); then
-  echo "ERROR: Unable to create a temporary approved-path file."
-  exit 1
-fi
-
-if ! CURRENT_SCRIPT_PATHS=$(mktemp); then
-  echo "ERROR: Unable to create a temporary package-path file."
+if ! PLAN_DIR=$(mktemp -d); then
+  echo "ERROR: Unable to create a temporary lifecycle-plan directory."
   exit 1
 fi
 
@@ -71,74 +96,58 @@ if [ ! -f "$PLAN_ALLOWED_SCRIPTS" ]; then
   exit 1
 fi
 
+if [ ! -f "$LIFECYCLE_COORDINATOR" ]; then
+  echo "ERROR: Lifecycle plan coordinator not found:"
+  echo "  $LIFECYCLE_COORDINATOR"
+  exit 1
+fi
+
+if [ ! -f "$LIFECYCLE_RUN_WRAPPER" ]; then
+  echo "ERROR: Lifecycle execution wrapper not found:"
+  echo "  $LIFECYCLE_RUN_WRAPPER"
+  exit 1
+fi
+
 if ! cd "$ROOT_DIR"; then
   echo "ERROR: Unable to enter the repository root:"
   echo "  $ROOT_DIR"
   exit 1
 fi
 
-# Using Lerna to generate the package list preserves the repository's
-# configured package scope and therefore excludes packages/insight.
-if ! "$LERNA" list --all --parseable > "$PACKAGE_LIST"; then
-  echo "ERROR: Unable to obtain the Lerna package list."
+# This structured inventory establishes only the closed expected artifact set.
+# Lerna exec remains responsible for per-package invocation and working dirs.
+if ! node "$LIFECYCLE_COORDINATOR" discover \
+  "$ROOT_DIR" "$LERNA" > "$PACKAGE_INVENTORY"; then
+  echo "ERROR: Unable to establish the managed-package inventory."
   exit 1
 fi
 
 echo "Validating LavaMoat lifecycle policies..."
 echo
 
-check_failures=0
-package_count=0
-
-while IFS= read -r package_dir; do
-  [ -n "$package_dir" ] || continue
-
-  package_count=$((package_count + 1))
-  if ! package_name=$(
-    cd "$package_dir" &&
-      node -p 'require("./package.json").name'
-  ); then
-    echo "ERROR: Unable to determine package name for:"
-    echo "  $package_dir"
-    exit 1
-  fi
-
-  echo "Checking $package_name"
-
-  if (
-    cd "$package_dir" &&
-      "$ALLOW_SCRIPTS" check > /dev/null
-  ); then
-    echo "PASS: $package_name"
-  elif node "$PLAN_ALLOWED_SCRIPTS" "$package_dir" > /dev/null; then
-    echo "WARN: $package_name has inactive denied lifecycle policies that are not installed on this platform."
-    echo "PASS: $package_name"
-  else
-    check_failures=$((check_failures + 1))
-
-    echo "FAIL: $package_name"
-    echo
-    echo "Current lifecycle inventory for $package_name:"
-    echo "------------------------------------------------------------"
-
-    (
-      cd "$package_dir" &&
-        "$ALLOW_SCRIPTS" list
-    ) || true
-
-    echo "------------------------------------------------------------"
-  fi
-
-  echo
-done < "$PACKAGE_LIST"
+if ! package_count=$(node "$LIFECYCLE_COORDINATOR" count "$PACKAGE_INVENTORY"); then
+  echo "ERROR: Unable to count the managed packages."
+  exit 1
+fi
 
 if [ "$package_count" -eq 0 ]; then
   echo "ERROR: Lerna returned no managed packages."
   exit 1
 fi
 
-if [ "$check_failures" -ne 0 ]; then
-  echo "ERROR: LavaMoat policy validation failed for $check_failures package(s)."
+if ! BITCORE_LIFECYCLE_PLAN_DIR="$PLAN_DIR" \
+  "$LERNA" exec --concurrency 1 --no-bail --stream -- \
+  node '$LERNA_ROOT_PATH/plan-allowed-scripts.js' .; then
+  echo
+  echo "ERROR: LavaMoat policy validation or lifecycle planning failed."
+  echo "Approved lifecycle scripts were not executed."
+  exit 1
+fi
+
+if ! node "$LIFECYCLE_COORDINATOR" global-plan \
+  "$PACKAGE_INVENTORY" "$PLAN_DIR" > "$GLOBAL_PLAN"; then
+  echo
+  echo "ERROR: The global lifecycle execution plan is incomplete or invalid."
   echo "Approved lifecycle scripts were not executed."
   exit 1
 fi
@@ -148,145 +157,32 @@ echo
 echo "Planning approved dependency lifecycle execution..."
 echo
 
-plan_failures=0
-
-while IFS= read -r package_dir; do
-  [ -n "$package_dir" ] || continue
-
-  if ! package_name=$(
-    cd "$package_dir" &&
-      node -p 'require("./package.json").name'
-  ); then
-    echo "ERROR: Unable to determine package name for:"
-    echo "  $package_dir"
-    exit 1
-  fi
-
-  if ! node "$PLAN_ALLOWED_SCRIPTS" "$package_dir" > "$CURRENT_SCRIPT_PATHS"; then
-    echo "FAIL: Unable to plan approved lifecycle scripts for $package_name."
-    echo
-    plan_failures=$((plan_failures + 1))
-    continue
-  fi
-
-  if ! duplicate_current_paths=$(
-    awk 'seen[$0]++ { print }' "$CURRENT_SCRIPT_PATHS"
-  ); then
-    echo "ERROR: Unable to check $package_name for duplicate approved paths."
-    exit 1
-  fi
-
-  if [ -n "$duplicate_current_paths" ]; then
-    echo "FAIL: $package_name resolves multiple approvals to the same path:"
-    echo "$duplicate_current_paths"
-    echo "The runner cannot safely invoke allow-scripts without executing that path more than once."
-    echo
-    plan_failures=$((plan_failures + 1))
-    continue
-  fi
-
-  path_count=0
-  new_path_count=0
-  seen_path_count=0
-
-  while IFS= read -r approved_path; do
-    [ -n "$approved_path" ] || continue
-
-    path_count=$((path_count + 1))
-    if grep -Fqx -- "$approved_path" "$SEEN_SCRIPT_PATHS"; then
-      seen_path_count=$((seen_path_count + 1))
-    else
-      grep_status=$?
-      if [ "$grep_status" -ne 1 ]; then
-        echo "ERROR: Unable to read the approved lifecycle path plan."
-        exit 1
-      fi
-      new_path_count=$((new_path_count + 1))
-    fi
-  done < "$CURRENT_SCRIPT_PATHS"
-
-  if [ "$path_count" -eq 0 ]; then
-    echo "SKIP: $package_name has no approved dependency lifecycle scripts."
-    echo
-    continue
-  fi
-
-  if [ "$new_path_count" -ne 0 ] && [ "$seen_path_count" -ne 0 ]; then
-    echo "FAIL: $package_name has a partial overlap with an earlier package's approved paths."
-    echo "The runner cannot safely invoke allow-scripts without repeating a lifecycle script."
-    echo
-    plan_failures=$((plan_failures + 1))
-    continue
-  fi
-
-  if [ "$seen_path_count" -eq "$path_count" ]; then
-    echo "SKIP: $package_name's approved dependency scripts are already planned."
-    echo
-    continue
-  fi
-
-  if ! cat "$CURRENT_SCRIPT_PATHS" >> "$SEEN_SCRIPT_PATHS"; then
-    echo "ERROR: Unable to update the approved lifecycle path plan."
-    exit 1
-  fi
-
-  if ! printf '%s\n' "$package_dir" >> "$RUN_PACKAGE_LIST"; then
-    echo "ERROR: Unable to update the package execution plan."
-    exit 1
-  fi
-
-  echo "PLAN: Run approved dependency lifecycle scripts for $package_name."
-  echo
-done < "$PACKAGE_LIST"
-
-if [ "$plan_failures" -ne 0 ]; then
-  echo "ERROR: Approved lifecycle execution planning failed for $plan_failures package(s)."
-  echo "Approved lifecycle scripts were not executed."
+if ! node "$LIFECYCLE_COORDINATOR" report "$GLOBAL_PLAN"; then
+  echo "ERROR: Unable to report the global lifecycle execution plan."
   exit 1
+fi
+
+if [ "$CHECK_ONLY" = true ]; then
+  echo "All package policies and the approved lifecycle execution plan passed validation."
+  echo "Approved lifecycle scripts were not executed."
+  exit 0
 fi
 
 echo "Executing approved dependency lifecycle scripts..."
 echo
 
-while IFS= read -r package_dir; do
-  [ -n "$package_dir" ] || continue
+node "$LIFECYCLE_COORDINATOR" execute \
+  "$GLOBAL_PLAN" "$ROOT_DIR" "$LERNA" "$LIFECYCLE_RUN_WRAPPER" &
+ACTIVE_CHILD=$!
+wait "$ACTIVE_CHILD"
+run_status=$?
+ACTIVE_CHILD=
 
-  if ! package_name=$(
-    cd "$package_dir" &&
-      node -p 'require("./package.json").name'
-  ); then
-    echo "ERROR: Unable to determine package name for:"
-    echo "  $package_dir"
-    exit 1
-  fi
-
-  echo "Running approved lifecycle scripts for $package_name"
-
-  if (
-    cd "$package_dir" &&
-      "$ALLOW_SCRIPTS" run
-  ); then
-    echo "PASS: $package_name"
-  else
-    run_status=$?
-
-    echo
-    echo "ERROR: Approved lifecycle execution failed for $package_name."
-    echo "Exit status: $run_status"
-    echo
-    echo "Current lifecycle inventory:"
-    echo "------------------------------------------------------------"
-
-    (
-      cd "$package_dir" &&
-        "$ALLOW_SCRIPTS" list
-    ) || true
-
-    echo "------------------------------------------------------------"
-    exit "$run_status"
-  fi
-
+if [ "$run_status" -ne 0 ]; then
   echo
-done < "$RUN_PACKAGE_LIST"
+  echo "ERROR: Approved lifecycle execution failed."
+  echo "Exit status: $run_status"
+  exit "$run_status"
+fi
 
 echo "Approved dependency lifecycle scripts completed successfully."
