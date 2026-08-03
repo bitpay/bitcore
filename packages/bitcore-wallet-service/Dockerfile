@@ -6,7 +6,7 @@ WORKDIR /bitcore
 # NOTE(danny): not the most optimal layering, but it works for now
 COPY lerna.json ./
 COPY package*.json ./
-COPY lifecycle-plan-coordinator.js plan-allowed-scripts.js run-allowed-scripts.js validate-and-run-allowed-scripts.sh ./
+COPY validate-lifecycle-policy.js ./
 COPY packages/ ./packages/
 
 # Install dependencies and build
