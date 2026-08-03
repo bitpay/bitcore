@@ -42,6 +42,7 @@ export class WalletStatsService {
   nowFn: () => number;
   checkTokenActivity: TokenActivityFn;
   private scheduleWarned = false;
+  private unsupportedWarned = new Set<string>();
 
   constructor({
     walletStatsModel = WalletStatsStorage,
@@ -553,6 +554,16 @@ export class WalletStatsService {
 
   async runChainNetwork(params: { chain: string; network: string; now: Date }) {
     const { chain, network, now } = params;
+    // Only UTXO and EVM chains have a collection path. Skip anything else (XRP, SOL)
+    // BEFORE touching the DB so an unsupported chain never persists a junk zeroed
+    // snapshot and silently advances its watermark. Warn once per chain, not per tick.
+    if (!Utils.isUtxoChain(chain) && !Utils.isEvmChain(chain)) {
+      if (!this.unsupportedWarned.has(chain)) {
+        logger.warn(`Wallet Stats: skipping unsupported chain ${chain}:${network} (not UTXO or EVM)`);
+        this.unsupportedWarned.add(chain);
+      }
+      return;
+    }
     const watermark = await this.latestSnapshotDate({ chain, network });
     const date = this.snapshotDateIfDue(now, watermark);
     if (!date) {
@@ -608,6 +619,8 @@ export class WalletStatsService {
     // Prior facts read by snapshotDate EQUALITY on the unique
     // {chain,network,snapshotDate,wallet} index — the last run's facts sit exactly
     // at the watermark date, so no latest-per-wallet sort (the 100MB trap) is needed.
+    // Trade-off: a wallet that errored last run has no fact at the watermark, so its
+    // native-activity carry-forward is lost and it re-derives from scratch this run.
     const priorByWallet = new Map<string, { balance: string; nonce?: string; lastActivityDate?: Date }>();
     if (watermark) {
       const priorFacts = await this.walletStatsWalletModel.collection

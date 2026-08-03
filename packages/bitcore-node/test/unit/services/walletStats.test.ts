@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { ObjectID } from 'mongodb';
 import * as sinon from 'sinon';
+import logger from '../../../src/logger';
 import { WalletStatsStorage } from '../../../src/models/walletStats';
 import { WalletStatsWalletStorage } from '../../../src/models/walletStatsWallet';
 import { WalletStatsService } from '../../../src/services/walletStats';
@@ -527,6 +528,35 @@ describe('WalletStats Service', function() {
       const svc = new WalletStatsService(deps);
       await svc.tick(); // must not reject
       expect(updateOne.called).to.equal(false);
+    });
+
+    it('skips an unsupported chain without writing a snapshot', async () => {
+      const { deps, updateOne, bulkWrite } = makeDeps({ chain: 'SOL', wallets: [] });
+      const warn = sandbox.stub(logger, 'warn');
+      const svc = new WalletStatsService(deps);
+      await svc.tick();
+      expect(updateOne.called).to.equal(false);
+      expect(bulkWrite.called).to.equal(false);
+      expect(warn.called).to.equal(true);
+    });
+
+    it('isolates a failing chain so the next chain still snapshots', async () => {
+      const oidB = new ObjectID();
+      const { deps, updateOne } = makeDeps({ chain: 'LTC', wallets: [{ _id: oidB }] });
+      deps.configService.chainNetworks = () => [{ chain: 'BTC', network: 'mainnet' }, { chain: 'LTC', network: 'mainnet' }];
+      deps.walletStatsModel.collection.find = (q: any) => {
+        if (q.chain === 'BTC') {
+          throw new Error('chain A boom');
+        }
+        return cursor([]); // LTC: no watermark => due
+      };
+      const svc = new WalletStatsService(deps);
+      sandbox.stub(svc, 'collectUtxoBalances').resolves(new Map());
+      sandbox.stub(svc, 'collectUtxoActivity').resolves(new Map());
+      sandbox.stub(svc, 'detectDups').resolves(new Set());
+      await svc.tick();
+      expect(updateOne.calledOnce).to.equal(true);
+      expect(updateOne.firstCall.args[0].chain).to.equal('LTC'); // B snapshotted despite A failing
     });
 
     it('skips the snapshot when a stop is requested mid EVM loop', async () => {
