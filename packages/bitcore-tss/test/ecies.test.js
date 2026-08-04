@@ -7,7 +7,7 @@ const ECIES = require('../ecies/ecies');
 
 const PrivateKey = bitcore.PrivateKey;
 
-describe.only('ECIES', function() {
+describe('ECIES', function() {
   const aliceKey = new PrivateKey('L1Ejc5dAigm5XrM3mNptMEsNnHzS7s51YxU7J61ewGshZTKkbmzJ');
   const bobKey = new PrivateKey('KxfxrUXSMjJQcb3JgnaaA6MqsrKQ1nBSxvhuigdKRyFiEm6BZDgG');
 
