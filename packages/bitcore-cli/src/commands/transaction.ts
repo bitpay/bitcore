@@ -43,9 +43,9 @@ export function command(args: CommonArgs<ITransactionArgs & { extensionOpts?: { 
   const options = [
     { option: '--to <address>', help: 'Recipient address' },
     { option: '--amount <amount>', help: 'Amount to send (in BTC/ETH/etc). Use "max" to send all available balance' },
-    { option: '--fee <fee>', help: 'Fee to use' },
+    { option: '--feeLevel <level>', help: 'Fee level to use (e.g. low, normal, high). The levels are computed using fees from recent blocks', default: 'normal' },
     { option: '--feeRate <rate>', help: 'Custom fee rate in sats/b, gwei, drops, etc.' },
-    { option: '--feeLevel <level>', help: 'Fee level to use (e.g. low, normal, high)', default: 'normal' },
+    { option: '--fee <fee>', help: 'Exact fee to use in base units (sats, wei, drops, etc.)' },
     { option: '--nonce <nonce>', help: 'Nonce for the transaction (optional, for chains that require it)' },
     { option: '--token <token>', help: 'Token to send (e.g. USDC). This is a convenient way to specify the token without needing the contract address, but only works for well-known, common tokens. Use --tokenAddress for more obscure tokens.' },
     { option: '--tokenAddress <address>', help: 'Token contract address to send (takes precedence over --token)' },
