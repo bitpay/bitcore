@@ -98,7 +98,7 @@ export class TssSign extends EventEmitter {
      * Blockchain transactions should be pre-hashed and passed as `messageHash` since
      * they often require specific hashing methods (e.g. EVM => keccak256, UTXO => sha256).
      */
-    message?: string | Buffer;
+    message?: string;
     /**
      * Encoding of the `message` (if a string)
      * @default 'utf8'
@@ -109,7 +109,7 @@ export class TssSign extends EventEmitter {
     const { id, derivationPath, password, encoding = 'utf8' } = params;
     $.checkArgument(messageHash || message, 'message or messageHash must be provided');
     $.checkArgument(!messageHash || Buffer.isBuffer(messageHash), 'messageHash must be a Buffer');
-    $.checkArgument(!message || Buffer.isBuffer(message) || typeof message === 'string', 'message must be a string or Buffer');
+    $.checkArgument(!message || typeof message === 'string', 'message must be a string');
     $.checkArgument(id == null || typeof id === 'string', 'id must be a string or not provided');
     $.checkArgument(password || this.#tssKey.keychain.privateKeyShare, 'password is required to decrypt the TSS private key share');
     
@@ -118,8 +118,7 @@ export class TssSign extends EventEmitter {
       if (encoding === 'hex') {
         message = message.startsWith('0x') ? message.slice(2) : message; // Remove '0x' prefix if present
       }
-      message = Buffer.from(message, encoding);
-      messageHash = BitcoreLib.crypto.Hash.sha256(message);
+      messageHash = BitcoreLib.crypto.Hash.sha256(Buffer.from(message, encoding));
     }
 
     this.#sign = new ECDSA.Sign({
