@@ -2398,6 +2398,7 @@ export class WalletService implements IWalletService {
 
           this.getSendMaxInfo(
             {
+              feeLevel: opts.feeLevel,
               feePerKb: opts.feePerKb,
               excludeUnconfirmedUtxos: !!opts.excludeUnconfirmedUtxos,
               returnInputs: true,
