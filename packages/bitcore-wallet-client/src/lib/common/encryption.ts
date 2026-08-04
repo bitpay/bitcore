@@ -3,7 +3,7 @@
 import crypto from 'crypto';
 import sjcl from 'sjcl';
 
-const PBKDF2_ITERATIONS = 1000;
+const PBKDF2_ITERATIONS = 600_000;
 const DEFAULT_KEY_SIZE = 256; // bits
 const ALGORITHM = ks => `aes-${ks || DEFAULT_KEY_SIZE}-gcm`;
 const AUTH_TAG_LENGTH = 16; // 128 bits
