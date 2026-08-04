@@ -18,9 +18,12 @@ function KDF(privateKey, publicKey, isDecrypt) {
   const P = KB.mul(r);
   const S = P.getX();
   const Sbuf = S.toBuffer({ size: 32 });
+  // Ensure that the public keys are in compressed format so the salt is consistent
+  const pubA = PublicKey.fromPoint(publicKey.point, true).toBuffer();
+  const pubB = PublicKey.fromPoint(privateKey.publicKey.point, true).toBuffer();
   const salt = isDecrypt
-    ? Buffer.concat([privateKey.publicKey.toBuffer(), publicKey.toBuffer()])
-    : Buffer.concat([publicKey.toBuffer(), privateKey.publicKey.toBuffer()]);
+    ? Buffer.concat([pubB, pubA])
+    : Buffer.concat([pubA, pubB]);
   // HKDF with distinct info values provides domain separation between kE and kM
   const kE = Buffer.from(crypto.hkdfSync('sha256', Sbuf, salt, Buffer.from('ecies-kE'), 32));
   const kM = Buffer.from(crypto.hkdfSync('sha256', Sbuf, salt, Buffer.from('ecies-kM'), 32));
@@ -131,7 +134,7 @@ function decrypt({ payload, privateKey, publicKey }) {
   const [kE, kM] = KDF(privateKey, publicKey, true);
 
   const tag2 = Hash.sha256hmac(Buffer.concat([ivbuf, cipherText]), kM).subarray(0, tagLength);
-  if (!crypto.timingSafeEqual(tag2, tag)) {
+  if (tag.length !== tag2.length || !crypto.timingSafeEqual(tag2, tag)) {
     throw new Error('Invalid checksum');
   }
 
