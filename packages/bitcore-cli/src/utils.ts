@@ -336,23 +336,26 @@ export class Utils {
   }
 
   static amountToSats(chain: string, amount: number | string, opts?: ITokenObj): bigint {
+    const convert = (multiplier: number) => BigInt(Math.round(amount as number * multiplier));
+    
     if (opts) {
-      return BigInt(amount as number * opts.toSatoshis);
+      return convert(opts.toSatoshis);
     }
+    
     chain = chain.toLowerCase();
     switch (chain) {
       case 'btc':
       case 'bch':
       case 'doge':
       case 'ltc':
-        return BigInt(amount as number * 1e8);
+        return convert(1e8);
       case 'xrp':
-        return BigInt(amount as number * 1e6);
+        return convert(1e6);
       case 'sol':
-        return BigInt(amount as number * 1e9);
+        return convert(1e9);
       default:
         // Assume EVM chain
-        return BigInt(amount as number * 1e18);
+        return convert(1e18);
     }
   }
 
