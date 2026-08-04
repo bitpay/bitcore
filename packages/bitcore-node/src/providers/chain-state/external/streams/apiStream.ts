@@ -5,7 +5,7 @@ import { ReadableWithEventPipe, TransformWithEventPipe } from '../../../../utils
 
 
 export class ExternalApiStream extends ReadableWithEventPipe {
-  static DEFAULT_REQUEST_TIMEOUT_MS = 30000;
+  static DEFAULT_REQUEST_TIMEOUT_MS = 90000;
   static DEFAULT_MAX_PAGES = 1000;
 
   url: string;
