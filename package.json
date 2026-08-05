@@ -16,6 +16,7 @@
     "compile:bitcore-node": "npm_config_ignore_scripts=true lerna run compile --scope @bitpay-labs/bitcore-node",
     "compile:bitcore-cli-postbuild": "npm --ignore-scripts --prefix packages/bitcore-cli run postbuild",
     "allow-scripts:config": "lerna exec --concurrency 1 -- \"$PWD/node_modules/.bin/allow-scripts\" auto --skip-versions",
+    "update": "npm install --ignore-scripts && npm run bootstrap:inert && npm run allow-scripts:config",
     "insight:build": "cd ./packages/insight && npm i && npm run build",
     "node": "cd packages/bitcore-node && npm start",
     "bws": "cd packages/bitcore-wallet-service && npm start",

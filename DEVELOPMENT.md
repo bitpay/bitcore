@@ -112,24 +112,23 @@ hooks.
 
 When adding or updating a dependency:
 
-1. Update its manifest and lockfile.
-2. Install without lifecycle scripts:
+1. Manually update or add the dependency in the relevant `package.json`.
+2. From the repository root, run:
 
    ```sh
-   npm ci --ignore-scripts
-   npm run bootstrap:inert
+   npm run update
    ```
 
-3. Populate new lifecycle paths as versionless denials:
-
-   ```sh
-   npm run allow-scripts:config
-   ```
-
-4. Review every policy change. Approve a script only when Bitcore requires its
-   generated artifact, and use an exact versioned `true` entry.
-5. Run `npm run allow-scripts:validate`.
-6. Run `npm run setup` from clean dependency trees and confirm Linux CI.
+   This runs `npm install` to sync the lockfile, bootstraps managed packages
+   without lifecycle scripts, and runs `allow-scripts:config` to populate new
+   lifecycle paths as versionless denials.
+3. Review every policy change in the `lavamoat.allowScripts` sections.
+   Approve a script only when Bitcore requires its generated artifact, and use
+   an exact versioned `true` entry.
+4. Run `npm run setup` from the repository root to validate policies, execute
+   approved scripts, and compile the monorepo.
+5. Commit the manifest, lockfile, and policy changes, push a branch, and open a
+   pull request. Verify the Linux CI build passes.
 
 `allow-scripts:config` uses Lerna to inspect every managed dependency tree with
 the root-locked executable. It does not use `npx` or approve scripts
