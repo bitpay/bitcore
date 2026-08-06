@@ -377,13 +377,7 @@ export class Wallet implements IWallet {
       }
       let data: object /** TODO */ | EncryptionTypes.IEncrypted = { key: this.#walletData.key?.toObj(), credentials: this.#walletData.credentials.toObj() };
       if (encryptAll) {
-        const password = await getPassword('Enter password to encrypt:', { minLength: 6 });
-        await prompt.password({
-          message: 'Confirm password:',
-          mask: '*',
-          validate: (val) => val === password ? undefined : 'Passwords do not match'
-        });
-
+        const password = await getPassword('Enter password to encrypt:', { minLength: 6, confirm: true });
         data = Encryption.encryptWithPassword(JSON.stringify(data), password, WALLET_ENCRYPTION_OPTS);
       }
 

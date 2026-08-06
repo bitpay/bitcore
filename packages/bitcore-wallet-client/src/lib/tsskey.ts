@@ -9,22 +9,6 @@ import { Request, RequestResponse } from './request';
 
 const $ = BitcoreLib.util.preconditions;
 
-function bufferReplacer(key: string, val: any) {
-  if (Buffer.isBuffer(val)) {
-    return '_0x' + val.toString('hex');
-  }
-  if (val?.type === 'Buffer' && Array.isArray(val?.data)) {
-    return '_0x' + Buffer.from(val.data).toString('hex');
-  }
-  return val;
-};
-
-function bufferReviver(key: string, val: any) {
-  if (typeof val === 'string' && val.startsWith('_0x')) {
-    return Buffer.from(val.slice(3), 'hex');
-  }
-  return val;
-}
 
 export interface ITssKeyGenConstructorParams {
   /**
@@ -97,8 +81,18 @@ export class TssKey extends Key implements ITssKey {
     return {
       ...super.toObj(),
       // Create de-referenced copies
-      keychain: JSON.parse(JSON.stringify(this.keychain, bufferReplacer), bufferReviver),
-      metadata: JSON.parse(JSON.stringify(this.metadata)),
+      keychain: {
+        privateKeyShare: this.keychain.privateKeyShare ? Buffer.from(this.keychain.privateKeyShare) : undefined,
+        privateKeyShareEncrypted: this.keychain.privateKeyShareEncrypted,
+        reducedPrivateKeyShare: this.keychain.reducedPrivateKeyShare ? Buffer.from(this.keychain.reducedPrivateKeyShare) : undefined,
+        reducedPrivateKeyShareEncrypted: this.keychain.reducedPrivateKeyShareEncrypted,
+      },
+      metadata: {
+        id: this.metadata.id,
+        m: this.metadata.m,
+        n: this.metadata.n,
+        partyId: this.metadata.partyId
+      }
     };
   }
 
@@ -669,7 +663,7 @@ export class TssKeyGen extends EventEmitter {
         }
       });
       if (password) {
-        key.encrypt(password, { iter: 500_000 });
+        key.encrypt(password);
       }
       return key;
     }
