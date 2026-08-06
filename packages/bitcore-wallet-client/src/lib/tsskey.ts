@@ -13,6 +13,9 @@ function bufferReplacer(key: string, val: any) {
   if (Buffer.isBuffer(val)) {
     return '_0x' + val.toString('hex');
   }
+  if (val?.type === 'Buffer' && Array.isArray(val?.data)) {
+    return '_0x' + Buffer.from(val.data).toString('hex');
+  }
   return val;
 };
 

@@ -3,7 +3,7 @@ import { ECDSA } from '@bitpay-labs/bitcore-tss';
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { Credentials } from './credentials';
 import { Request, RequestResponse } from './request';
-import { TssKey } from './tsskey';
+import { type TssExportedKey, TssKey } from './tsskey';
 
 const $ = BitcoreLib.util.preconditions;
 
@@ -39,6 +39,7 @@ export class TssSign extends EventEmitter {
   #request: Request;
   #sign: ECDSA.Sign;
   #tssKey: TssKey;
+  #decryptedKeychain: TssExportedKey['keychain'];
   #credentials: Credentials;
   #subscriptionId: ReturnType<typeof setInterval>;
   #subscriptionRunning: boolean;
@@ -122,8 +123,9 @@ export class TssSign extends EventEmitter {
       messageHash = BitcoreLib.crypto.Hash.sha256(message);
     }
 
+    this.#decryptedKeychain = this.#tssKey.get(password).keychain;
     this.#sign = new ECDSA.Sign({
-      keychain: this.#tssKey.get(password).keychain,
+      keychain: this.#decryptedKeychain,
       partyId: this.#tssKey.metadata.partyId,
       m: this.#tssKey.metadata.m,
       n: this.#tssKey.metadata.n,
@@ -173,13 +175,18 @@ export class TssSign extends EventEmitter {
     const { session, password } = params;
     $.checkArgument(password || this.#tssKey.keychain.privateKeyShare, 'password is required to decrypt the TSS private key share');
 
+    this.#decryptedKeychain = this.#tssKey.get(password).keychain;
+    return this.#restoreSession(session);
+  }
+
+  async #restoreSession(session: string): Promise<TssSign> {
     const parts = session.split(':');
     const id = parts.slice(0, -1).join(':');
     const sigSession = parts[parts.length - 1];
     this.id = id;
     this.#sign = await ECDSA.Sign.restore({
       session: sigSession,
-      keychain: this.#tssKey.get(password).keychain,
+      keychain: this.#decryptedKeychain,
       authKey: this.#credentials.requestPrivKey
     });
     return this;
@@ -247,7 +254,7 @@ export class TssSign extends EventEmitter {
             }
           } catch (err) {
             // Restore the session to the previous state
-            await this.restoreSession({ session: sessionBak });
+            await this.#restoreSession(sessionBak);
             throw err;
           }
         }
