@@ -333,10 +333,20 @@ export const blockchainExplorerMock = {
   estimatePriorityFee: (opts, cb) => {
     return cb(null, 5000);
   },
-  estimateGas: (nbBlocks, cb) => {
+  estimateGas: (nbBlocksOrOpts, cb) => {
+    if (typeof nbBlocksOrOpts === 'object' && Utils.isEvmChain(nbBlocksOrOpts.chain)) {
+      return cb(null, '21000');
+    }
     return cb(null, '20000000000');
   },
-  getBalance: (nbBlocks, cb) => {
+  getBalance: (nbBlocksOrWallet, cb) => {
+    if (typeof nbBlocksOrWallet === 'object' && Utils.isEvmChain(nbBlocksOrWallet.chain)) {
+      return cb(null, {
+        unconfirmed: 0,
+        confirmed: 20e18, // 20 ETH
+        balance: 20e18
+      });
+    }
     return cb(null, {
       unconfirmed: 0,
       confirmed: 20000000000 * 5,

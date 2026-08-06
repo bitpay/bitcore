@@ -1,13 +1,15 @@
 import { Transactions, Utils, Validation } from '@bitpay-labs/crypto-wallet-core';
 import _ from 'lodash';
-import { IChain } from '../../../types/chain';
-import { WalletWithOpts } from '../../blockchainexplorers/v8';
 import { Defaults } from '../../common/defaults';
 import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
-import { IWallet, TxProposal, Wallet } from '../../model';
-import { IAddress } from '../../model/address';
-import { WalletService } from '../../server';
+import { TxProposal } from '../../model';
+import type { IChain } from '../../../types/chain';
+import type { GetSendMaxInfoOpts } from '../../../types/server';
+import type { WalletWithOpts } from '../../blockchainexplorers/v8';
+import type { IWallet, Wallet } from '../../model';
+import type { IAddress } from '../../model/address';
+import type { WalletService } from '../../server';
 
 export class SolChain implements IChain {
   chain: string;
@@ -176,7 +178,7 @@ export class SolChain implements IChain {
     });
   }
 
-  getWalletSendMaxInfo(server: WalletService, wallet, opts, cb) {
+  getWalletSendMaxInfo(server: WalletService, wallet: IWallet, opts: GetSendMaxInfoOpts, cb) {
     server.getBalance({}, (err, balance) => {
       if (err) return cb(err);
       const { availableAmount } = balance;
@@ -198,7 +200,7 @@ export class SolChain implements IChain {
         output.amount == null ||
         output.amount < 0 ||
         isNaN(output.amount) ||
-        Utils.toHex(output.amount) !== '0x' + BigInt(output.amount).toString(16)
+        !Utils.toHex(output.amount) // ensure toHex doesn't throw
       ) {
         logger.warn('output.amount is not a valid value: ' + output.amount);
         return false;

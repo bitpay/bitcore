@@ -32,7 +32,7 @@ describe('Wallet Model', function() {
     await Event.start();
     await Api.start();
   });
-
+  
   after(async () => {
     await Event.stop();
     await Api.stop();

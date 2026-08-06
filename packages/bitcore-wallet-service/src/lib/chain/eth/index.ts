@@ -1,8 +1,5 @@
-import { Transactions, Utils, Validation, Web3 } from '@bitpay-labs/crypto-wallet-core';
+import { Utils as CWCUtils, Transactions, Validation, Web3 } from '@bitpay-labs/crypto-wallet-core';
 import _ from 'lodash';
-import { IWallet } from 'src/lib/model';
-import { IAddress } from 'src/lib/model/address';
-import { WalletService } from 'src/lib/server';
 import { Common } from '../../common';
 import { ClientError } from '../../errors/clienterror';
 import { Errors } from '../../errors/errordefinitions';
@@ -10,7 +7,11 @@ import logger from '../../logger';
 import { ERC20Abi } from './abi-erc20';
 import { InvoiceAbi } from './abi-invoice';
 import type { IChain } from '../../../types/chain';
+import type { GetSendMaxInfoOpts } from '../../../types/server';
+import type { IAddress } from '../../model/address';
 import type { TxProposal } from '../../model/txproposal';
+import type { IWallet } from '../../model/wallet';
+import type { WalletService } from '../../server';
 
 const {
   Constants,
@@ -136,7 +137,7 @@ export class EthChain implements IChain {
     });
   }
 
-  getWalletSendMaxInfo(server, wallet, opts, cb) {
+  getWalletSendMaxInfo(server: WalletService, wallet: IWallet, opts: GetSendMaxInfoOpts, cb) {
     server.getBalance({}, (err, balance) => {
       if (err) return cb(err);
       const { availableAmount } = balance;
@@ -170,7 +171,7 @@ export class EthChain implements IChain {
 
   checkScriptOutput(_output) { }
 
-  getFee(server, wallet, opts) {
+  getFee(server: WalletService, wallet: IWallet, opts) {
     return new Promise(resolve => {
       server._getFeePerKb(wallet, opts, async (err, inFeePerKb) => {
         let feePerKb = inFeePerKb;
@@ -228,7 +229,7 @@ export class EthChain implements IChain {
               output.gasLimit = defaultGasLimit;
             }
           }
-          inGasLimit += output.gasLimit;
+          inGasLimit += Number(output.gasLimit);
           logger.info(`[${from}][${output?.toAddress || opts?.tokenAddress}] Output level gas limit: ${output.gasLimit}`);
           // Add gas Limit buffer to output level gasLimit
           if (gasLimitBuffer) {
@@ -237,7 +238,7 @@ export class EthChain implements IChain {
             inGasLimit += gasBuffer;
             logger.info(`[${from}][${output?.toAddress || opts?.tokenAddress}] Output gas limit with buffer: ${output.gasLimit}`);
           }
-          if (_.isNumber(opts.fee)) {
+          if (!isNaN(opts.fee)) {
             // This is used for sendmax
             gasPrice = feePerKb = Number((opts.fee / (inGasLimit || defaultGasLimit)).toFixed());
           }
@@ -530,7 +531,7 @@ export class EthChain implements IChain {
         output.amount == null ||
         output.amount < 0 ||
         isNaN(output.amount) ||
-        Utils.toHex(output.amount) !== '0x' + BigInt(output.amount).toString(16)
+        !CWCUtils.toHex(output.amount) // ensure toHex doesn't throw
       ) {
         throw new Error('output.amount is not a valid value: ' + output.amount);
       }

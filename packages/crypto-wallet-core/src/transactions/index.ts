@@ -22,6 +22,7 @@ import { OPERC20TxProvider, OPTxProvider } from './op';
 import { SOLTxProvider } from './sol';
 import { SPLTxProvider } from './spl';
 import { XRPTxProvider } from './xrp';
+import type { Key } from '../types/derivation';
 
 const providers = {
   BTC: new BTCTxProvider(),
@@ -47,8 +48,10 @@ const providers = {
   SOLSPL: new SPLTxProvider(),
 };
 
+type Chain = keyof typeof providers;
+
 export class TransactionsProxy {
-  get({ chain }) {
+  get({ chain }: { chain: Chain }) {
     const normalizedChain = chain.toUpperCase();
     return providers[normalizedChain];
   }
@@ -57,7 +60,7 @@ export class TransactionsProxy {
     return this.get(params).create(params);
   }
 
-  sign(params): string {
+  sign(params: { chain: Chain; tx: any; key: Key } & any): string {
     return this.get(params).sign(params);
   }
 

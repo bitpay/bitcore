@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    user: "${DOCKER_UID}:${DOCKER_GID}"
     volumes:
       - .:/bitcore
     ports:

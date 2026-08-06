@@ -5,8 +5,9 @@ import {
   BitcoreLibCash,
   BitcoreLibDoge,
   BitcoreLibLtc,
+  Utils as CWCUtils,
   Deriver,
-  Transactions
+  Transactions,
 } from '@bitpay-labs/crypto-wallet-core';
 import Stringify from 'json-stable-stringify';
 import { singleton } from 'preconditions';
@@ -36,6 +37,8 @@ const crypto = BitcoreLib.crypto;
 const MAX_DECIMAL_ANY_CHAIN = 18; // more that 14 gives rounding errors
 
 export class Utils {
+  static CWCUtils = CWCUtils;
+
   // only used for backwards compatibility
   static getChain(coin: string): string {
     try {

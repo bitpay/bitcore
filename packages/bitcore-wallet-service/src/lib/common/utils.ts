@@ -3,7 +3,8 @@ import {
   BitcoreLibCash,
   BitcoreLibDoge,
   BitcoreLibLtc,
-  Constants as CWConstants
+  Constants as CWCConstants,
+  Utils as CWCUtils,
 } from '@bitpay-labs/crypto-wallet-core';
 import _ from 'lodash';
 import { singleton } from 'preconditions';
@@ -157,8 +158,43 @@ export const Utils = {
     }
   },
 
+  getNumberConverter(numberFormat) {
+    let convertFn;
+    switch (numberFormat) {
+      case 'number':
+        convertFn = parseInt;
+        break;
+      case 'string':
+        convertFn = (n) => typeof n === 'string' && n.startsWith('0x') ? BigInt(n).toString() : n.toString();
+        break;
+      case 'hex':
+        convertFn = (n) => CWCUtils.toHex(n);
+        break;
+      case 'bigint':
+        convertFn = (n) => BigInt(n);
+        break;
+      default:
+        logger.warn(`Invalid numberFormat: ${numberFormat}`);
+        return;
+    }
+
+    const primitiveTypes = new Set(['number', 'string', 'bigint']);
+    const convert = (key, value) => {
+      if ((numberFormat === 'hex' || typeof value !== numberFormat) && primitiveTypes.has(typeof value)) {
+        try {
+          value = convertFn(value);
+        } catch (e) {
+          logger.warn(`Failed to convert key ${key} with value ${value} to ${numberFormat}: ${e.message}`);
+        }
+      }
+      return value;
+    };
+
+    return convert;
+  },
+
   formatAmount(satoshis, unit, opts) {
-    const UNITS = Object.entries(CWConstants.UNITS).reduce((units, [currency, currencyConfig]) => {
+    const UNITS = Object.entries(CWCConstants.UNITS).reduce((units, [currency, currencyConfig]) => {
       units[currency] = {
         toSatoshis: currencyConfig.toSatoshis,
         maxDecimals: currencyConfig.short.maxDecimals,

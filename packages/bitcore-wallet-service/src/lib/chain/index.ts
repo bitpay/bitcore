@@ -1,7 +1,4 @@
-import { IChain } from '../../types/chain';
 import { Common } from '../common';
-import { IWallet, TxProposal } from '../model';
-import { WalletService } from '../server';
 import logger from './../logger';
 import { ArbChain } from './arb';
 import { BaseChain } from './base';
@@ -14,6 +11,10 @@ import { MaticChain } from './matic';
 import { OpChain } from './op';
 import { SolChain } from './sol';
 import { XrpChain } from './xrp';
+import type { IChain } from '../../types/chain';
+import type { GetSendMaxInfoOpts } from '../../types/server';
+import type { IWallet, TxProposal } from '../model';
+import type { WalletService } from '../server';
 
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
@@ -66,7 +67,7 @@ class ChainProxy {
     return this.get(wallet.chain).getWalletBalance(server, wallet, opts, cb);
   }
 
-  getWalletSendMaxInfo(server, wallet, opts, cb) {
+  getWalletSendMaxInfo(server: WalletService, wallet: IWallet, opts: GetSendMaxInfoOpts, cb) {
     return this.get(wallet.chain).getWalletSendMaxInfo(server, wallet, opts, cb);
   }
 
