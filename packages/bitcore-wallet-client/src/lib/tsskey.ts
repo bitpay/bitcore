@@ -364,14 +364,6 @@ export class TssKeyGen extends EventEmitter {
        * Encoding for the join code (default: 'hex')
        */
       encoding?: BufferEncoding;
-      /**
-       * ECIES.decrypt: The public key is not included in the payload
-       */
-      noKey?: boolean;
-      /**
-       * ECIES.decrypt: A short tag was used during encryption
-       */
-      shortTag?: boolean;
     };
     /**
      * Server password to join the TSS key. This was set by the initiator and should be told to you by them.
@@ -386,7 +378,7 @@ export class TssKeyGen extends EventEmitter {
     code = Buffer.isBuffer(code) ? code : Buffer.from(code, opts?.encoding || 'hex');
 
     const authKey = this.#credentials.requestPrivKey;
-    const decryptedCode = ECIES.decrypt({ payload: code, privateKey: authKey, opts }).toString();
+    const decryptedCode = ECIES.decrypt({ payload: code, privateKey: authKey }).toString();
     const [id, partyId, chain, network, m, n, ...more] = decryptedCode.split(':');
     const extra = more.join(':');
 
