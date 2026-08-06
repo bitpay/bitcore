@@ -94,7 +94,7 @@ class EncryptionClass {
     };
   }
 
-  _baseDecrypt(data: string | IEncrypted, key: Buffer) {
+  _baseDecrypt(data: string | IEncrypted, key: Buffer): Buffer {
     const json: IEncrypted = typeof data === 'string' ? JSON.parse(data) : data;
     const ct = Buffer.from(json.ct, 'base64');
     const authTagLength = json.ts / 8;
@@ -124,7 +124,7 @@ class EncryptionClass {
     return decrypted;
   }
 
-  decryptWithKey(data: string | IEncrypted, key: string | Buffer) {
+  decryptWithKey(data: string | IEncrypted, key: string | Buffer): Buffer {
     try {
       const keyBuffer = Buffer.isBuffer(key) ? key : Buffer.from(key, 'base64');
       return this._baseDecrypt(data, keyBuffer);
@@ -138,7 +138,7 @@ class EncryptionClass {
     }
   }
 
-  decryptWithPassword(data: string | IEncrypted, password: string) {
+  decryptWithPassword(data: string | IEncrypted, password: string): Buffer {
     let json: IEncrypted;
     try {
       json = typeof data === 'string' ? JSON.parse(data) : data;

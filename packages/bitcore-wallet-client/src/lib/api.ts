@@ -4334,6 +4334,7 @@ export interface Txp {
   fee: number | string;
   feeLevel: string;
   feePerKb: number | string;
+  gasLimit?: number;
   from?: string;
   hasUnconfirmedInputs?: boolean;
   id: string;

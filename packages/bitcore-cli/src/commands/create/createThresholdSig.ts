@@ -27,7 +27,7 @@ export async function createThresholdSigWallet(
 
   const copayerName = await getCopayerName();
   const addressType = await getAddressType({ chain, network, isMultiSig: false, isTss: true });
-  const password = await getPassword('Lock your wallet with a password:', { hidden: false });
+  const password = await getPassword('Lock your wallet with a password:', { hidden: false, confirm: true });
 
   let key;
   if (mnemonic) {
@@ -115,16 +115,10 @@ export async function createThresholdSigWallet(
     } while (joinCodeAction !== 'continue');
   }
 
-  const spinner = prompt.spinner({ indicator: 'timer' });
+  const spinner = prompt.spinner({ indicator: 'timer', onCancel: () => { tss.unsubscribe(); } });
   spinner.start('Waiting for all parties to join...');
 
   await new Promise<void>((resolve, reject) => {
-    process.on('SIGINT', () => {
-      tss.unsubscribe();
-      spinner.stop('Cancelled by user');
-      reject(new UserCancelled());
-    });
-
     tss.subscribe({
       walletName: wallet.name,
       copayerName,
@@ -161,7 +155,13 @@ export async function createThresholdSigWallet(
         reject(err);
       }
     });
+    tss.on('unsubscribe', () => {
+      reject(new UserCancelled());
+    });
   });
+
+  // Clean up sensitive data from memory after wallet creation is complete
+  tss.cleanup();
 
 
   // Keyshare backup

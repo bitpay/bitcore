@@ -284,6 +284,20 @@ describe('ECDSA', function() {
             });
           }
         });
+
+        describe('cleanup', function() {
+          for (let i = 0; i < vector.n; i++) {
+            const party = `party${i}`;
+
+            it(`should cleanup key for ${party}`, async function() {
+              assert.equal(keygens[party].isKeyChainReady(), true);
+              const keyChain = keygens[party].getKeyChain();
+              keygens[party].cleanup();
+              assert.equal(keygens[party].isKeyChainReady(), false);
+              assert.throws(keygens[party].getKeyChain.bind(keygens[party]), { message: 'Invalid state: Cannot get key chain after cleanup' });
+            });
+          }
+        });
       });
 
 
