@@ -307,14 +307,6 @@ export class TssKeyGen extends EventEmitter {
        * ECIES.encrypt: Don't include the public key in the result
        */
       noKey?: boolean;
-      /**
-       * ECIES.encrypt: Use a short tag
-       */
-      shortTag?: boolean;
-      /**
-       * ECIES.encrypt: Use a deterministic IV
-       */
-      deterministicIv?: boolean;
     };
   }): string {
     const { partyId, partyPubKey, opts } = params;
@@ -336,14 +328,6 @@ export class TssKeyGen extends EventEmitter {
        * Encoding for the join code (default: 'hex')
        */
       encoding?: BufferEncoding;
-      /**
-       * ECIES.decrypt: The public key is not included in the payload
-       */
-      noKey?: boolean;
-      /**
-       * ECIES.decrypt: A short tag was used during encryption
-       */
-      shortTag?: boolean;
     };
   }) {
     let { code } = params;
@@ -352,7 +336,7 @@ export class TssKeyGen extends EventEmitter {
     $.checkArgument(typeof code === 'string' || Buffer.isBuffer(code), '`code` must be a string or buffer');
     code = Buffer.isBuffer(code) ? code : Buffer.from(code, opts?.encoding || 'hex');
     const authKey = this.#credentials.requestPrivKey;
-    const decryptedCode = ECIES.decrypt({ payload: code, privateKey: authKey, opts }).toString();
+    const decryptedCode = ECIES.decrypt({ payload: code, privateKey: authKey }).toString();
     const [id, partyId, chain, network, m, n] = decryptedCode.split(':');
     return {
       id,
