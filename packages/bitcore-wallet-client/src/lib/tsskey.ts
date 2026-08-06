@@ -86,13 +86,14 @@ export class TssKey extends Key implements ITssKey {
         privateKeyShareEncrypted: this.keychain.privateKeyShareEncrypted,
         reducedPrivateKeyShare: this.keychain.reducedPrivateKeyShare ? Buffer.from(this.keychain.reducedPrivateKeyShare) : undefined,
         reducedPrivateKeyShareEncrypted: this.keychain.reducedPrivateKeyShareEncrypted,
-      },
+        commonKeyChain: this.keychain.commonKeyChain
+      } as ITssKey['keychain'],
       metadata: {
         id: this.metadata.id,
         m: this.metadata.m,
         n: this.metadata.n,
         partyId: this.metadata.partyId
-      }
+      } as ITssKey['metadata']
     };
   }
 
