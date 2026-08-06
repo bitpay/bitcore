@@ -139,11 +139,16 @@ class EncryptionClass {
   }
 
   decryptWithPassword(data: string | IEncrypted, password: string) {
+    let json: IEncrypted;
     try {
-      const json = typeof data === 'string' ? JSON.parse(data) : data;
+      json = typeof data === 'string' ? JSON.parse(data) : data;
       const key = crypto.pbkdf2Sync(password, Buffer.from(json.salt, 'base64'), json.iter, json.ks / 8, 'sha256');
       return this._baseDecrypt(json, key);
     } catch (err) {
+      // sjcl is VERY slow and was only used when iter were low, so we should avoid using it for large iterations (e.g. 600k)
+      if (json?.iter > 100_000) {
+        throw err;
+      }
       try {
         return sjcl.decrypt(password, data);
       } catch {
