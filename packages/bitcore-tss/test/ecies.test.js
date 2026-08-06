@@ -13,12 +13,12 @@ describe('ECIES', function() {
 
   const alice = {
     encrypt: (msg, opts) => ECIES.encrypt({ message: msg, privateKey: aliceKey, publicKey: bobKey.publicKey, opts }),
-    decrypt: (enc, opts) => ECIES.decrypt({ payload: enc, privateKey: aliceKey, publicKey: opts?.noKey ? bobKey.publicKey : undefined, opts })
+    decrypt: (enc, opts) => ECIES.decrypt({ payload: enc, privateKey: aliceKey, publicKey: opts?.noKey ? bobKey.publicKey : undefined })
   };
 
   const bob = {
     encrypt: (msg, opts) => ECIES.encrypt({ message: msg, privateKey: bobKey, publicKey: aliceKey.publicKey, opts }),
-    decrypt: (enc, opts) => ECIES.decrypt({ payload: enc, privateKey: bobKey, publicKey: opts?.noKey ? aliceKey.publicKey : undefined, opts })
+    decrypt: (enc, opts) => ECIES.decrypt({ payload: enc, privateKey: bobKey, publicKey: opts?.noKey ? aliceKey.publicKey : undefined })
   };
 
   const message = 'attack at dawn';
@@ -95,7 +95,7 @@ describe('ECIES', function() {
   });
 
   it('correctly decrypts a message without key', function() {
-    const decrypted = bob.decrypt(encNoKeyBuf, { noKey: true, deterministicIv: true });
+    const decrypted = bob.decrypt(encNoKeyBuf, { noKey: true });
     assert.strictEqual(Buffer.isBuffer(decrypted), true);
     assert.strictEqual(decrypted.toString(), message);
   });
@@ -130,7 +130,7 @@ describe('ECIES', function() {
     const secret = 'some secret message!!!';
     const encrypted = alice.encrypt(secret, opts);
     const decrypted = bob
-      .decrypt(encrypted, opts)
+      .decrypt(encrypted)
       .toString();
     assert.strictEqual(decrypted, secret);
   });
