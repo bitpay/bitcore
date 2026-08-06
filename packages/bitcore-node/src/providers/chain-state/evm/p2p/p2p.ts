@@ -7,6 +7,7 @@ import { StateStorage } from '../../../../models/state';
 import { BaseP2PWorker } from '../../../../services/p2p';
 import { wait } from '../../../../utils';
 import { BaseEVMStateProvider } from '../api/csp';
+import { prepareErc20EffectsForPersistence } from '../erc20Effects';
 import { EVMBlockModel, EVMBlockStorage } from '../models/block';
 import { EVMTransactionModel, EVMTransactionStorage } from '../models/transaction';
 import { type IRpc, Rpcs } from './rpcs';
@@ -212,6 +213,12 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
   }
 
   async processBlock(block: IEVMBlock, transactions: IEVMTransactionInProcess[]): Promise<any> {
+    await prepareErc20EffectsForPersistence({
+      rpc: this.rpc!,
+      config: this.chainConfig,
+      block,
+      transactions
+    });
     await this.blockModel.addBlock({
       chain: this.chain,
       network: this.network,

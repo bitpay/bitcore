@@ -16,12 +16,25 @@ import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
 import { MultisendAbi } from '../abi/multisend';
 import { MultisigAbi } from '../abi/multisig';
+import {
+  getCanonicalErc20ParticipantAddresses,
+  getEffectiveEvmEffects,
+  isValidErc20EffectsForTransaction
+} from '../erc20Effects';
 import type { IEVMNetworkConfig } from '../../../../types/Config';
 import type { StreamingFindOptions } from '../../../../types/Query';
 import type { TransformOptions } from '../../../../types/TransformOptions';
 import type { EVMTransactionJSON, Effect, IAbiDecodeResponse, IAbiDecodedData, IEVMBlock, IEVMCachedAddress, IEVMTransaction, IEVMTransactionInProcess, ParsedAbiParams } from '../types';
 import type { Web3Types } from '@bitpay-labs/crypto-wallet-core';
 
+interface EVMTransactionWriteOperation {
+  updateOne: {
+    filter: any;
+    update: any;
+    upsert: boolean;
+    forceServerObjectId?: boolean;
+  };
+}
 
 function requireUncached(module) {
   delete require.cache[require.resolve(module)];
@@ -112,6 +125,20 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
         partialFilterExpression: { 'effects.from': { $exists: true } }
       }
     );
+    this.collection.createIndex(
+      { chain: 1, network: 1, 'erc20Effects.items.to': 1, blockTimeNormalized: 1 },
+      {
+        background: true,
+        partialFilterExpression: { 'erc20Effects.items.to': { $exists: true } }
+      }
+    );
+    this.collection.createIndex(
+      { chain: 1, network: 1, 'erc20Effects.items.from': 1, blockTimeNormalized: 1 },
+      {
+        background: true,
+        partialFilterExpression: { 'erc20Effects.items.from': { $exists: true } }
+      }
+    );
   }
 
   async batchImport(params: {
@@ -143,6 +170,9 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
 
     if (params.initialSyncComplete) {
       await this.expireBalanceCache(txOps);
+      for (const tx of params.txs) {
+        await this.expireErc20BalanceCacheForTransaction({ chain: params.chain, network: params.network, tx });
+      }
     }
 
     // Create events for mempool txs
@@ -160,7 +190,8 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
   }
 
   getAllTouchedAddresses(tx: Partial<IEVMTransaction>): { tos: IEVMCachedAddress[]; froms: IEVMCachedAddress[] } {
-    const { to, from, effects } = tx;
+    const { to, from } = tx;
+    const effects = getEffectiveEvmEffects(tx, undefined, Array.isArray(tx.effects) ? tx.effects : []);
     const toBatch = new Set<string>();
     const fromBatch = new Set<string>();
     const addToBatch = (batch: Set<string>, obj: IEVMCachedAddress) => {
@@ -190,19 +221,46 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     return { tos, froms };
   }
 
+  async expireBalanceCacheForTransaction(params: { chain: string; network: string; tx: Partial<IEVMTransaction> }) {
+    const { chain, network, tx } = params;
+    const { tos, froms } = this.getAllTouchedAddresses(tx);
+    for (const payload of tos.concat(froms)) {
+      const lowerAddress = payload.address.toLowerCase();
+      const cacheKey = payload.tokenAddress
+        ? `getBalanceForAddress-${chain}-${network}-${lowerAddress}-${payload.tokenAddress.toLowerCase()}`
+        : `getBalanceForAddress-${chain}-${network}-${lowerAddress}`;
+      await CacheStorage.expire(cacheKey);
+    }
+  }
+
+  async expireErc20BalanceCacheForTransaction(params: { chain: string; network: string; tx: Partial<IEVMTransaction> }) {
+    const { chain, network, tx } = params;
+    const canonical = tx.erc20Effects;
+    if (!isValidErc20EffectsForTransaction(tx, canonical)) {
+      return;
+    }
+    const cacheKeys = new Set<string>();
+    for (const item of canonical.items) {
+      const tokenAddress = item.contractAddress.toLowerCase();
+      for (const address of [item.from, item.to]) {
+        cacheKeys.add(
+          `getBalanceForAddress-${chain}-${network}-${address.toLowerCase()}-${tokenAddress}`
+        );
+      }
+    }
+    for (const cacheKey of cacheKeys) {
+      await CacheStorage.expire(cacheKey);
+    }
+  }
+
   async expireBalanceCache(txOps: Array<any>) {
     for (const op of txOps) {
       const { chain, network } = op.updateOne.filter;
-
-      const { tos, froms } = this.getAllTouchedAddresses(op.updateOne.update.$set);
-      const uniqueBatch = tos.concat(froms);
-      for (const payload of uniqueBatch) {
-        const lowerAddress = payload.address.toLowerCase();
-        const cacheKey = payload.tokenAddress
-          ? `getBalanceForAddress-${chain}-${network}-${lowerAddress}-${payload.tokenAddress.toLowerCase()}`
-          : `getBalanceForAddress-${chain}-${network}-${lowerAddress}`;
-        await CacheStorage.expire(cacheKey);
-      }
+      await this.expireBalanceCacheForTransaction({
+        chain,
+        network,
+        tx: op.updateOne.update.$set
+      });
     }
   }
 
@@ -218,37 +276,138 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
     chain: string;
     network: string;
     mempoolTime?: Date;
-  }) {
+  }): Promise<EVMTransactionWriteOperation[]> {
     const { blockTimeNormalized, chain, height, network, parentChain, forkHeight } = params;
+    const findStoredErc20Effects = async (txids: string[]) => new Map<string, any>(txids.length
+      ? (await this.collection.find({ chain, network, txid: { $in: Array.from(new Set(txids)) }, erc20Effects: { $exists: true } })
+        .project({ txid: 1, 'erc20Effects.version': 1 }).toArray()).map(tx => [tx.txid, tx])
+      : []);
+    const findWallets = async (addresses: string[]) => uniqBy((addresses.length
+      ? await WalletAddressStorage.collection.find({ chain, network, address: { $in: Array.from(new Set(addresses)) } }).toArray()
+      : []).map(w => w.wallet), wallet => wallet.toHexString());
     if (parentChain && forkHeight && height < forkHeight) {
       const parentTxs = await EVMTransactionStorage.collection
         .find({ blockHeight: height, chain: parentChain, network })
         .toArray();
-      return parentTxs.map(parentTx => {
+      const hasPreparedMaterialization = params.txs.some(tx =>
+        isValidErc20EffectsForTransaction(tx, tx.erc20Effects)
+      );
+      const toChildSnapshot = (parentTx: any) => {
+        const snapshot = { ...parentTx };
+        for (const key of ['_id', 'wallets', 'chain', 'network', 'txid', 'erc20Effects']) delete snapshot[key];
+        return { ...snapshot, chain, network };
+      };
+      if (!hasPreparedMaterialization) {
+        const findPreparedTx = (txid: string) => params.txs.find(tx =>
+          typeof tx.txid === 'string' && tx.txid.toLowerCase() === txid.toLowerCase());
+        const storedErc20Effects = await findStoredErc20Effects(parentTxs.flatMap(parentTx => {
+          const preparedTx = findPreparedTx(parentTx.txid);
+          return preparedTx ? [parentTx.txid, preparedTx.txid] : [parentTx.txid];
+        }));
+        return Promise.all(parentTxs.map(async parentTx => {
+          const preparedTx = findPreparedTx(parentTx.txid);
+          const variants = preparedTx ? [preparedTx.txid, parentTx.txid] : [parentTx.txid];
+          const storedChild = variants.map(txid => storedErc20Effects.get(txid)).find(Boolean);
+          if (!storedChild) {
+            const parentSnapshot = { ...parentTx };
+            delete parentSnapshot.erc20Effects;
+            return { updateOne: { filter: { txid: parentTx.txid, chain, network },
+              update: { $set: { ...parentSnapshot, wallets: new Array<ObjectID>() } },
+              upsert: true, forceServerObjectId: true } };
+          }
+          const touched = preparedTx ? this.getAllTouchedAddresses(preparedTx) : { tos: [], froms: [] };
+          const wallets = await findWallets([...touched.froms, ...touched.tos].map(({ address }) => address));
+          const update: any = { $set: toChildSnapshot(parentTx) };
+          if (wallets.length) update.$addToSet = { wallets: { $each: wallets } };
+          return { updateOne: { filter: { _id: storedChild._id, txid: storedChild.txid, chain, network },
+            update, upsert: false } };
+        }));
+      }
+
+      const normalizeTxid = (txid: unknown, source: string) => {
+        if (typeof txid !== 'string' || !txid.length) {
+          throw new Error(`Invalid ${source} transaction id in pre-fork persistence`);
+        }
+        return txid.toLowerCase();
+      };
+      const preparedByTxid = new Map<string, IEVMTransactionInProcess>();
+      for (const tx of params.txs) {
+        if (!isValidErc20EffectsForTransaction(tx, tx.erc20Effects)) {
+          throw new Error(`Missing valid ERC-20 materialization for pre-fork transaction ${tx.txid}`);
+        }
+        const normalizedTxid = normalizeTxid(tx.txid, 'prepared child');
+        if (preparedByTxid.has(normalizedTxid)) {
+          throw new Error(`Duplicate prepared child transaction ${tx.txid} in pre-fork persistence`);
+        }
+        preparedByTxid.set(normalizedTxid, tx);
+      }
+      if (parentTxs.length !== preparedByTxid.size) {
+        throw new Error('Pre-fork parent and prepared child transaction counts do not match');
+      }
+      const seenParentTxids = new Set<string>();
+      const targetTxsByTxid = new Map<string, IEVMTransactionInProcess>();
+      for (const parentTx of parentTxs) {
+        const normalizedTxid = normalizeTxid(parentTx.txid, 'parent');
+        if (seenParentTxids.has(normalizedTxid)) {
+          throw new Error(`Duplicate parent transaction ${parentTx.txid} in pre-fork persistence`);
+        }
+        if (!preparedByTxid.has(normalizedTxid)) {
+          throw new Error(`No prepared child transaction matches pre-fork parent transaction ${parentTx.txid}`);
+        }
+        const preparedTx = preparedByTxid.get(normalizedTxid)!;
+        if (!isValidErc20EffectsForTransaction(parentTx, preparedTx.erc20Effects)) {
+          throw new Error(`Prepared ERC-20 materialization does not match pre-fork parent inclusion ${parentTx.txid}`);
+        }
+        targetTxsByTxid.set(parentTx.txid, preparedTx).set(preparedTx.txid, preparedTx);
+        seenParentTxids.add(normalizedTxid);
+      }
+      const storedErc20Effects = await findStoredErc20Effects(Array.from(targetTxsByTxid.keys()));
+      return Promise.all(parentTxs.map(async parentTx => {
+        const preparedTx = preparedByTxid.get(normalizeTxid(parentTx.txid, 'parent'))!;
+        const canonicalAddresses = getCanonicalErc20ParticipantAddresses(preparedTx);
+        const wallets = await findWallets(canonicalAddresses.flatMap(address => [address, address.toLowerCase()]));
+        const txidVariants = Array.from(new Set([parentTx.txid, preparedTx.txid]));
+        const update: any = {
+          $set: toChildSnapshot(parentTx),
+          $setOnInsert: { txid: preparedTx.txid }
+        };
+        if (!txidVariants.some(txid => {
+          const storedVersion = storedErc20Effects.get(txid)?.erc20Effects?.version;
+          return typeof storedVersion === 'number' && storedVersion > preparedTx.erc20Effects!.version;
+        })) {
+          update.$set.erc20Effects = preparedTx.erc20Effects;
+        }
+        if (wallets.length) {
+          update.$addToSet = { wallets: { $each: wallets } };
+        } else {
+          update.$setOnInsert.wallets = [];
+        }
         return {
           updateOne: {
-            filter: { txid: parentTx.txid, chain, network },
-            update: {
-              $set: {
-                ...parentTx,
-                wallets: new Array<ObjectID>()
-              }
-            },
+            filter: { txid: { $in: txidVariants }, chain, network },
+            update,
             upsert: true,
             forceServerObjectId: true
           }
         };
-      });
+      }));
     } else {
+      const materializedByTxid = new Map(params.txs.filter(tx =>
+        height >= SpentHeightIndicators.minimum && isValidErc20EffectsForTransaction(tx)
+      ).map(tx => [tx.txid, tx]));
+      const storedErc20Effects = height >= SpentHeightIndicators.minimum
+        ? await findStoredErc20Effects(params.txs.map(tx => tx.txid))
+        : new Map<string, any>();
       return Promise.all(
-        // Get all "to" and "from" addresses so we can add the any corresponding wallets
         params.txs.map(async (tx: IEVMTransactionInProcess) => {
           const { tos, froms } = this.getAllTouchedAddresses(tx);
-          const toAddresses = tos.map(a => a.address);
-          const fromAddresses = froms.map(a => a.address);
+          const hasValidCanonicalMaterialization = materializedByTxid.has(tx.txid);
+          const touchedAddresses = [...froms, ...tos].map(({ address }) => address);
+          const canonicalAddressVariants = hasValidCanonicalMaterialization ? getCanonicalErc20ParticipantAddresses(tx).map(address => address.toLowerCase()) : [];
+          const walletLookupAddresses = Array.from(new Set(touchedAddresses.concat(canonicalAddressVariants)));
 
           const walletsAddys = await WalletAddressStorage.collection
-            .find({ chain, network, address: { $in: [...fromAddresses, ...toAddresses] } })
+            .find({ chain, network, address: { $in: walletLookupAddresses } })
             .toArray();
           const wallets = uniqBy(
             walletsAddys.map(w => w.wallet),
@@ -260,16 +419,31 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           if ((Config.chainConfig({ chain, network }) as IEVMNetworkConfig).leanTransactionStorage) {
             leanTx = EVMTransactionStorage.toLeanTransaction(tx);
           }
+          const update: any = {
+            $set: {
+              ...leanTx,
+              blockTimeNormalized
+            }
+          };
+          delete update.$set.wallets;
+          const storedVersion = storedErc20Effects.get(tx.txid)?.erc20Effects?.version;
+          if (!hasValidCanonicalMaterialization ||
+            (typeof storedVersion === 'number' && storedVersion > tx.erc20Effects!.version)) {
+            delete update.$set.erc20Effects;
+          }
+          if (hasValidCanonicalMaterialization || storedErc20Effects.has(tx.txid)) {
+            if (wallets.length) {
+              update.$addToSet = { wallets: { $each: wallets } };
+            } else {
+              update.$setOnInsert = { wallets: [] };
+            }
+          } else {
+            update.$set.wallets = wallets;
+          }
           return {
             updateOne: {
               filter: { txid: tx.txid, chain, network },
-              update: {
-                $set: {
-                  ...leanTx,
-                  blockTimeNormalized,
-                  wallets
-                }
-              },
+              update,
               upsert: true,
               forceServerObjectId: true
             }
@@ -456,8 +630,17 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
    * @param {IEVMTransactionInProcess} tx 
    * @param {Array<string>} addresses
    */
+  getEffectiveEffects(tx: Partial<IEVMTransactionInProcess>): Effect[] {
+    const legacyEffects = tx.effects?.length ? tx.effects : this.getEffects(tx as IEVMTransactionInProcess);
+    let config: IEVMNetworkConfig | undefined;
+    if (tx.chain && tx.network) {
+      config = Config.chainConfig({ chain: tx.chain, network: tx.network }) as IEVMNetworkConfig;
+    }
+    return getEffectiveEvmEffects(tx, config, legacyEffects);
+  }
+
   getEffectsForAddresses(tx: IEVMTransactionInProcess, addresses: Array<string>): Effect[] {
-    const effects = tx.effects?.length ? tx.effects : this.getEffects(tx);
+    const effects = this.getEffectiveEffects(tx);
     const addySet = new Set(addresses.map(a => a.toLowerCase()));
     return effects.filter(effect => addySet.has(effect.to.toLowerCase()) || addySet.has(effect.from.toLowerCase()));
   }

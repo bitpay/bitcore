@@ -1,4 +1,4 @@
-import { Readable } from 'stream';
+import { Readable, Transform, type TransformCallback } from 'stream';
 import { Utils, Web3 } from '@bitpay-labs/crypto-wallet-core';
 import { ChainStateProvider } from '../../';
 import { Config } from '../../../../services/config';
@@ -187,6 +187,24 @@ export class GnosisApi {
             ...transactionQuery,
             'effects.contractAddress': eitherCase(tokenAddress),
             'effects.to': eitherCase(normalizedMultisigContractAddress)
+          },
+          {
+            ...transactionQuery,
+            'erc20Effects.items': {
+              $elemMatch: {
+                contractAddress: eitherCase(tokenAddress),
+                from: eitherCase(normalizedMultisigContractAddress)
+              }
+            }
+          },
+          {
+            ...transactionQuery,
+            'erc20Effects.items': {
+              $elemMatch: {
+                contractAddress: eitherCase(tokenAddress),
+                to: eitherCase(normalizedMultisigContractAddress)
+              }
+            }
           }
         ]
       };
@@ -230,6 +248,20 @@ export class GnosisApi {
     res.on('close', cleanupCursor);
 
     transactionStream = cursor.pipe(populateEffects); // For old db entries
+    if (tokenAddress) {
+      const tokenAddressLower = tokenAddress.toLowerCase();
+      const multisigAddressLower = normalizedMultisigContractAddress.toLowerCase();
+      transactionStream = transactionStream.pipe(new Transform({
+        objectMode: true,
+        transform(tx: any, _: BufferEncoding, done: TransformCallback) {
+          const relevant = tx.effects?.some((effect: any) =>
+            effect.contractAddress?.toLowerCase() === tokenAddressLower &&
+            [effect.from, effect.to].some((address: string | undefined) => address?.toLowerCase() === multisigAddressLower)
+          );
+          return relevant ? done(null, tx) : done();
+        }
+      }));
+    }
 
     if (multisigContractAddress) {
       const multisigTransform = new MultisigRelatedFilterTransform(normalizedMultisigContractAddress, tokenAddress);
