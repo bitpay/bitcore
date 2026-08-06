@@ -178,6 +178,11 @@ if (require.main === module) {
           // Don't display the intro if running a specific command
           !opts.command && prompt.intro(`${Utils.boldText('[  Main Menu')} - ${Utils.colorTextByChain(wallet.chain, walletName)}  ${Utils.boldText(']')}`);
           cmdParams.status && (cmdParams.status.pendingTxps = opts.command || opts.register ? [] : await wallet.client.getTxProposals({}));
+
+          // Update the balance when returning to the main menu (e.g. right after sending a tx)
+          if (!opts.command && cmdParams.status) {
+            cmdParams.status.balance = await commands.balance.getBalance(cmdParams);
+          }
           
           const dynamicCmdArgs = {
             ppNum: cmdParams.status?.pendingTxps.length ? Utils.colorText(` (${cmdParams.status.pendingTxps.length})`, 'yellow') : '',
