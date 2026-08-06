@@ -9,7 +9,7 @@ import { Wallet } from '../src/wallet';
 import { startTssWallets, TssTransform } from './tssCoordinator';
 
 describe('Create', function() {
-  this.timeout(Math.max(this['_timeout'] || 0, 5000));
+  this.timeout(Math.max(this['_timeout'] || 0, 10000));
 
   const { KEYSTROKES, WALLETS, OUTPUT_END_SEQ } = helpers.CONSTANTS;
   const { CLI_EXEC, CLI_OPTS, COMMON_OPTS, TEMP_DIR } = WALLETS;

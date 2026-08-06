@@ -156,10 +156,6 @@ export class API extends EventEmitter {
     log.setLevel(this.logLevel);
   }
 
-  static privateKeyEncryptionOpts = {
-    iter: 10000
-  };
-
   initNotifications(cb) {
     log.warn('DEPRECATED: use initialize() instead.');
     this.initialize({}, cb);
