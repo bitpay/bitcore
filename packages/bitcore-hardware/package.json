@@ -44,6 +44,7 @@
     "@types/mocha": "10.0.10",
     "chai": "6.2.2",
     "mocha": "11.7.6",
+    "source-map-support": "^0.5.21",
     "typescript": "7.0.2"
   }
 }

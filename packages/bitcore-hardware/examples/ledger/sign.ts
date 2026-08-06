@@ -1,3 +1,4 @@
+import 'source-map-support/register.js';
 import bitcore from '@bitpay-labs/bitcore-lib';
 import Ledger from '../../src/ledger.js';
 

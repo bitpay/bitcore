@@ -1,3 +1,4 @@
+import 'source-map-support/register.js';
 import CWC from '@bitpay-labs/crypto-wallet-core';
 import Burner from '../../src/burner.js';
 

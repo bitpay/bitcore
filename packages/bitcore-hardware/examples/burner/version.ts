@@ -1,3 +1,4 @@
+import 'source-map-support/register.js';
 import Burner from '../../src/burner.js';
 
 const burner = new Burner('btc');

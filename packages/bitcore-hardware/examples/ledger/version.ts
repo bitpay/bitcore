@@ -1,3 +1,4 @@
+import 'source-map-support/register.js';
 import Ledger from '../../src/ledger.js';
 
 const ledger = new Ledger();

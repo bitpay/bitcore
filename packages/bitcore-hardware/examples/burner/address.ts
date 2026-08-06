@@ -1,8 +1,10 @@
+import 'source-map-support/register.js';
 import Burner from '../../src/burner.js';
 
 const burner = new Burner('btc');
 burner.connect();
 
+throw new Error('htest');
 console.log('Tap burner wallet on an NFC reader to get the address...');
 console.log(await burner.getAddress({ index: 9 }));
 
