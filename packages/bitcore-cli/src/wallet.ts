@@ -415,8 +415,18 @@ export class Wallet implements IWallet {
       }
 
       if (key.isPrivKeyEncrypted() || (key as TssKey.TssKey).isKeyChainEncrypted?.()) {
-        const walletPassword = await getPassword('Unlock wallet:');
-        key.decrypt(walletPassword);
+        await getPassword('Unlock wallet:', {
+          hidden: true,
+          validate: (input) => {
+            try {
+              key.decrypt(input);
+              return null; // valid password
+            } catch (err) {
+              if (_verbose) prompt.log.warn(err?.stack || err?.message || err.toString());
+              return 'Invalid password';
+            }
+          }
+        });
       }
     }
     

@@ -310,7 +310,9 @@ describe('Wallet', function() {
       fs.copyFileSync(path.join(DIR, BTC.SINGLE_SIG + '.json'), path.join(TEMP_DIR, BTC.SINGLE_SIG + '.json'));
       wallet = new Wallet({ name: BTC.SINGLE_SIG, dir: TEMP_DIR });
       await wallet.getClient({ mustExist: true, doNotComplete: true });
-      getPasswordStub = sandbox.stub(promptsModule, 'getPassword').resolves(PASSWORD);
+      getPasswordStub = sandbox.stub(promptsModule, 'getPassword').callsFake(async function(_, opts) {
+        opts.validate(PASSWORD);
+      });
     });
 
     afterEach(function() {
