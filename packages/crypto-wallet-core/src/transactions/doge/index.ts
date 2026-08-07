@@ -5,7 +5,7 @@ export class DOGETxProvider extends BTCTxProvider {
   lib = BitcoreLibDoge;
   create({ recipients, utxos = [], change, feeRate, fee = 20000 }) {
     const filteredUtxos = this.selectCoins(recipients, utxos, fee);
-    const btcUtxos = filteredUtxos[0].mintTxid == undefined ? filteredUtxos : this.nodeToLibUtxos(filteredUtxos);
+    const btcUtxos = this.isNodeUtxo(filteredUtxos[0]) ? this.nodeToLibUtxos(filteredUtxos) : filteredUtxos;
     const tx = new this.lib.Transaction().from(btcUtxos);
     if (fee) {
       tx.fee(fee);

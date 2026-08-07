@@ -5,7 +5,7 @@ export class BCHTxProvider extends BTCTxProvider {
   lib = BitcoreLibCash;
   create({ recipients, utxos = [], change, fee = 20000, isSweep }) {
     const filteredUtxos = isSweep ? utxos : this.selectCoins(recipients, utxos, fee);
-    const btcUtxos = filteredUtxos[0].mintTxid == undefined ? filteredUtxos : this.nodeToLibUtxos(filteredUtxos);
+    const btcUtxos = this.isNodeUtxo(filteredUtxos[0]) ? this.nodeToLibUtxos(filteredUtxos) : filteredUtxos;
     const tx = new this.lib.Transaction().from(btcUtxos).feePerByte(Number(fee) + 2);
     if (change) {
       tx.change(change);

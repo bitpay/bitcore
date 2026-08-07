@@ -20,7 +20,7 @@ export class BTCTxProvider {
     fee: number
   ) {
     // Only sort by block height if utxos are bitcore-node style
-    if (utxos[0].mintHeight != undefined) {
+    if (this.isNodeUtxo(utxos[0])) {
       utxos = utxos.sort(function(a, b) {
         return a.mintHeight - b.mintHeight;
       });
@@ -51,9 +51,8 @@ export class BTCTxProvider {
   }) {
     const { recipients, utxos = [], change, feeRate, fee, isSweep, replaceByFee, lockUntilDate, lockUntilBlock } = params;
     const filteredUtxos = isSweep ? utxos : this.selectCoins(recipients, utxos, fee);
-    const btcUtxos = utxos[0].mintTxid ? this.nodeToLibUtxos(filteredUtxos) : filteredUtxos;
+    const btcUtxos = this.isNodeUtxo(utxos[0]) ? this.nodeToLibUtxos(filteredUtxos) : filteredUtxos;
     const tx = new this.lib.Transaction().from(btcUtxos);
-    
     if (fee) {
       tx.fee(fee);
     }
@@ -171,11 +170,21 @@ export class BTCTxProvider {
     }));
   }
 
+  /**
+   * Return true if utxo is a bitcore-node utxo
+   * 
+   * @param utxo either a bitcore-lib or bitcore-node utxo
+   * @returns true if node utxo
+   */
+  isNodeUtxo(utxo: UtxoType): boolean {
+    return utxo.mintTxid != undefined;
+  }
+
   getRelatedUtxos(params: { outputs: any[]; utxos: UtxoType[] }) {
     const { outputs, utxos } = params;
     const txids = outputs.map(output => output.toObject().prevTxId);
     const applicableUtxos = utxos.filter(utxo => txids.includes(utxo.txid || utxo.mintTxid));
-    return utxos[0].mintTxid == undefined ? applicableUtxos : this.nodeToLibUtxos(applicableUtxos);
+    return this.isNodeUtxo(utxos[0]) ? this.nodeToLibUtxos(applicableUtxos) : applicableUtxos;
   }
 
   getOutputsFromTx({ tx }) {
@@ -218,7 +227,7 @@ export class BTCTxProvider {
       tx = new this.lib.Transaction(tx);
     }
     if (utxos) {
-      tx.associateInputs(utxos[0].mintTxid ? this.nodeToLibUtxos(utxos) : utxos, pubKeys, threshold, opts);
+      tx.associateInputs(this.isNodeUtxo(utxos[0]) ? this.nodeToLibUtxos(utxos) : utxos, pubKeys, threshold, opts);
     }
     $.checkState(tx.inputs[index].output instanceof this.lib.Transaction.Output, 'Input must have all utxo info');
 
