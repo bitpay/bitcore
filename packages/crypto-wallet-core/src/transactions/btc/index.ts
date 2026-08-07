@@ -16,42 +16,44 @@ export class BTCTxProvider {
 
   selectCoins(
     recipients: Array<{ amount: number }>,
-    utxos: Array<{
-      value: number;
-      mintHeight: number;
-      txid?: string;
-      mintTxid?: string;
-      mintIndex?: number;
-    }>,
+    utxos: UtxoType[],
     fee: number
   ) {
-    utxos = utxos.sort(function(a, b) {
-      return a.mintHeight - b.mintHeight;
-    });
+    // Only sort by block height if utxos are bitcore-node style
+    if (utxos[0].mintHeight != undefined) {
+      utxos = utxos.sort(function(a, b) {
+        return a.mintHeight - b.mintHeight;
+      });
+    }
 
     let index = 0;
     let utxoSum = 0;
     const recepientSum = recipients.reduce((sum, cur) => sum + Number(cur.amount), fee || 0);
     while (utxoSum < recepientSum) {
       const utxo = utxos[index];
-      utxoSum += Number(utxo.value);
+      utxoSum += Number(utxo.value ?? utxo.satoshis);
       index += 1;
     }
     const filteredUtxos = utxos.slice(0, index);
     return filteredUtxos;
   }
 
-  create({ recipients, utxos = [], change, feeRate, fee, isSweep, replaceByFee, lockUntilDate, lockUntilBlock }) {
+  create(params: {
+    recipients: Array<{ address: string; amount: number }>;
+    utxos: UtxoType[];
+    change: string;
+    feeRate: number;
+    fee: number;
+    isSweep: boolean;
+    replaceByFee: boolean;
+    lockUntilDate: number;
+    lockUntilBlock: number;
+  }) {
+    const { recipients, utxos = [], change, feeRate, fee, isSweep, replaceByFee, lockUntilDate, lockUntilBlock } = params;
     const filteredUtxos = isSweep ? utxos : this.selectCoins(recipients, utxos, fee);
-    const btcUtxos = filteredUtxos.map(utxo => {
-      const btcUtxo = Object.assign({}, utxo, {
-        amount: utxo.value / 1e8,
-        txid: utxo.mintTxid,
-        outputIndex: utxo.mintIndex
-      });
-      return new this.lib.Transaction.UnspentOutput(btcUtxo);
-    });
+    const btcUtxos = utxos[0].mintTxid ? this.nodeToLibUtxos(filteredUtxos) : filteredUtxos;
     const tx = new this.lib.Transaction().from(btcUtxos);
+    
     if (fee) {
       tx.fee(fee);
     }
@@ -62,7 +64,7 @@ export class BTCTxProvider {
       tx.change(change);
     }
     for (const recipient of recipients) {
-      tx.to(recipient.address, parseInt(recipient.amount));
+      tx.to(recipient.address, parseInt(recipient.amount as any));
     }
     if (replaceByFee && typeof tx.enableRBF === 'function') {
       tx.enableRBF();
@@ -133,7 +135,7 @@ export class BTCTxProvider {
     return bitcoreTx.hash;
   }
 
-  sign(params: { tx: string; keys: Array<Key>; utxos: any[]; pubkeys?: any[]; threshold?: number; opts: any }) {
+  sign(params: { tx: string; keys: Array<Key>; utxos: UtxoType[]; pubkeys?: any[]; threshold?: number; opts: any }) {
     const { tx, keys, pubkeys, threshold, opts } = params;
     const utxos = params.utxos || [];
     const bitcoreTx = new this.lib.Transaction(tx);
@@ -152,17 +154,28 @@ export class BTCTxProvider {
     return signedTx;
   }
 
-  getRelatedUtxos({ outputs, utxos }) {
+  /**
+   * Converts the utxos in a bitcore-nodes database to bitcore lib utxos
+   * 
+   * @param utxos bitcore-node style utxos
+   * @returns lib style utxos
+   */
+  nodeToLibUtxos(utxos: NodeUtxoType[]): BitcoreLib.Transaction.UnspentOutput[] {
+    return utxos.map(utxo => new this.lib.Transaction.UnspentOutput({
+      satoshis: utxo.value,
+      // bitcore-node utxos have both mintTxid and spentTxid
+      txid: utxo.mintTxid,
+      outputIndex: utxo.mintIndex,
+      script: utxo.script,
+      address: utxo.address
+    }));
+  }
+
+  getRelatedUtxos(params: { outputs: any[]; utxos: UtxoType[] }) {
+    const { outputs, utxos } = params;
     const txids = outputs.map(output => output.toObject().prevTxId);
     const applicableUtxos = utxos.filter(utxo => txids.includes(utxo.txid || utxo.mintTxid));
-    return applicableUtxos.map(utxo => {
-      const btcUtxo = Object.assign({}, utxo, {
-        amount: utxo.value / Math.pow(10, 8),
-        txid: utxo.mintTxid,
-        outputIndex: utxo.mintIndex
-      });
-      return new this.lib.Transaction.UnspentOutput(btcUtxo);
-    });
+    return utxos[0].mintTxid == undefined ? applicableUtxos : this.nodeToLibUtxos(applicableUtxos);
   }
 
   getOutputsFromTx({ tx }) {
@@ -172,7 +185,8 @@ export class BTCTxProvider {
     });
   }
 
-  getSigningAddresses({ tx, utxos }): string[] {
+  getSigningAddresses(params: { tx: string | BitcoreLib.Transaction; utxos: UtxoType[] }): string[] {
+    const { tx, utxos } = params;
     const bitcoreTx = new this.lib.Transaction(tx);
     const applicableUtxos = this.getRelatedUtxos({
       outputs: bitcoreTx.inputs,
@@ -184,7 +198,7 @@ export class BTCTxProvider {
   getSighash(params: {
     tx: string | BitcoreLib.Transaction;
     index: number;
-    utxos?: BitcoreLib.Transaction.UnspentOutput[];
+    utxos?: UtxoType[];
     pubKey?: string | BitcoreLib.PublicKey | BitcoreLib.HDPublicKey;
     path?: string;
     sigtype?: number;
@@ -204,7 +218,7 @@ export class BTCTxProvider {
       tx = new this.lib.Transaction(tx);
     }
     if (utxos) {
-      tx.associateInputs(utxos.map(this.lib.Transaction.UnspentOutput), pubKeys, threshold, opts);
+      tx.associateInputs(utxos[0].mintTxid ? this.nodeToLibUtxos(utxos) : utxos, pubKeys, threshold, opts);
     }
     $.checkState(tx.inputs[index].output instanceof this.lib.Transaction.Output, 'Input must have all utxo info');
 
@@ -225,3 +239,21 @@ export class BTCTxProvider {
 }
 
 type SignatureType = BitcoreLib.Transaction.Signature | BitcoreLib.crypto.Signature | TssSig;
+// bitcore-node style utxo minus values that are not used
+type NodeUtxoType = {
+  // network: string;
+  // chain: string;
+  mintTxid: string;
+  mintIndex: number;
+  mintHeight: number;
+  // coinbase: boolean;
+  value: number;
+  address: string;
+  script: string;
+  // spentTxid: string;
+  // spentHeight?: number;
+  // confirmations?: number;
+  // sequenceNumber?: number;
+}
+// utxo type recieved externaly from this class that could either be from bitcore-node or already a lib utxo
+type UtxoType = NodeUtxoType | BitcoreLib.Transaction.UnspentOutput;
