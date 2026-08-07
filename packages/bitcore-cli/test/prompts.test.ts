@@ -123,6 +123,72 @@ describe('prompts', function() {
       process.stdin.push(KEYSTROKES.ENTER);
       assert.strictEqual(await promise, 'validpw');
     });
+
+    it('confirm: should return the password when confirmation matches', async function() {
+      const promise = prompts.getPassword(undefined, { confirm: true });
+      process.stdin.push('mypassword');
+      process.stdin.push(KEYSTROKES.ENTER); // password
+      process.stdin.push('mypassword');
+      process.stdin.push(KEYSTROKES.ENTER); // confirm
+      assert.strictEqual(await promise, 'mypassword');
+    });
+
+    it('confirm: should retry confirm when passwords do not match and succeed on retry', async function() {
+      const promise = prompts.getPassword(undefined, { confirm: true });
+      process.stdin.push('correctpass');
+      process.stdin.push(KEYSTROKES.ENTER); // password — 1st attempt
+      process.stdin.push('wrongpass');
+      process.stdin.push(KEYSTROKES.ENTER); // confirm — mismatch, will retry
+      process.stdin.push('correctpass');
+      process.stdin.push(KEYSTROKES.ENTER); // password — 2nd attempt
+      assert.strictEqual(await promise, 'correctpass');
+    });
+
+    it('confirm + no retry: should throw when passwords do not match', async function() {
+      const promise = prompts.getPassword(undefined, { confirm: true, retry: false });
+      process.stdin.push('firstpass');
+      process.stdin.push(KEYSTROKES.ENTER); // password
+      process.stdin.push('wrongpass');
+      process.stdin.push(KEYSTROKES.ENTER); // confirm — mismatch, no retry
+      await assert.rejects(() => promise, (err: Error) => {
+        assert.ok(err instanceof Error && !(err instanceof UserCancelled));
+        assert.match(err.message, /do not match/i);
+        return true;
+      });
+    });
+
+    it('confirm: cancel on confirmation loops back to password prompt and succeeds', async function() {
+      const promise = prompts.getPassword(undefined, { confirm: true });
+      process.stdin.push('firstpass');
+      process.stdin.push(KEYSTROKES.ENTER);    // password — 1st attempt
+      process.stdin.push(KEYSTROKES.CTRL_C);   // cancel on confirm — backup=true, loops back
+      process.stdin.push('secondpass');
+      process.stdin.push(KEYSTROKES.ENTER);    // password — 2nd attempt
+      process.stdin.push('secondpass');
+      process.stdin.push(KEYSTROKES.ENTER);    // confirm — match
+      assert.strictEqual(await promise, 'secondpass');
+    });
+
+    it('confirm + no retry: cancel on confirmation still loops back (cancel on confirm is not the same as retry on confirm)', async function() {
+      const promise = prompts.getPassword(undefined, { confirm: true, retry: false });
+      process.stdin.push('firstpass');
+      process.stdin.push(KEYSTROKES.ENTER);    // password — 1st attempt
+      process.stdin.push(KEYSTROKES.CTRL_C);   // cancel on confirm — backup=true overrides retry:false
+      process.stdin.push('secondpass');
+      process.stdin.push(KEYSTROKES.ENTER);    // password — 2nd attempt
+      process.stdin.push('secondpass');
+      process.stdin.push(KEYSTROKES.ENTER);    // confirm — match
+      assert.strictEqual(await promise, 'secondpass');
+    });
+
+    it('confirm: cancel on confirmation then cancel on password throws UserCancelled', async function() {
+      const promise = prompts.getPassword(undefined, { confirm: true });
+      process.stdin.push('firstpass');
+      process.stdin.push(KEYSTROKES.ENTER);    // password — 1st attempt
+      process.stdin.push(KEYSTROKES.CTRL_C);   // cancel on confirm — loops back to password
+      process.stdin.push(KEYSTROKES.CTRL_C);   // cancel on password — throws UserCancelled
+      await assert.rejects(() => promise, UserCancelled);
+    });
   });
 
   // ─── getMofN ────────────────────────────────────────────────────────────────
@@ -333,6 +399,77 @@ describe('prompts', function() {
       const promise = prompts.getFileName({ defaultValue: '/tmp/x.json' });
       process.stdin.push(KEYSTROKES.CTRL_C);
       await assert.rejects(() => promise, UserCancelled);
+    });
+  });
+
+  // ─── promptXrpFlag ──────────────────────────────────────────────────────────
+
+  describe('promptXrpFlag', function() {
+    it('should return null when None is selected', async function() {
+      const promise = prompts.promptXrpFlag({});
+      process.stdin.push(' ');
+      process.stdin.push(KEYSTROKES.ENTER);
+      assert.strictEqual(await promise, null);
+    });
+
+    it('should throw UserCancelled when user cancels', async function() {
+      const promise = prompts.promptXrpFlag({});
+      process.stdin.push(KEYSTROKES.CTRL_C);
+      await assert.rejects(() => promise, UserCancelled);
+    });
+
+    it('should map DestTag to tfRequireDestTag when destination tags are not required', async function() {
+      const promise = prompts.promptXrpFlag({ requireDestinationTag: false });
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(' ');
+      process.stdin.push(KEYSTROKES.ENTER);
+      assert.strictEqual(await promise, 'tfRequireDestTag');
+    });
+
+    it('should map DestTag to tfOptionalDestTag when destination tags are already required', async function() {
+      const promise = prompts.promptXrpFlag({ requireDestinationTag: true });
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(' ');
+      process.stdin.push(KEYSTROKES.ENTER);
+      assert.strictEqual(await promise, 'tfOptionalDestTag');
+    });
+
+    it('should map RequireAuth to tfRequireAuth when authorization is not required', async function() {
+      const promise = prompts.promptXrpFlag({ requireAuthorization: false });
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(' ');
+      process.stdin.push(KEYSTROKES.ENTER);
+      assert.strictEqual(await promise, 'tfRequireAuth');
+    });
+
+    it('should map RequireAuth to tfOptionalAuth when authorization is already required', async function() {
+      const promise = prompts.promptXrpFlag({ requireAuthorization: true });
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(' ');
+      process.stdin.push(KEYSTROKES.ENTER);
+      assert.strictEqual(await promise, 'tfOptionalAuth');
+    });
+
+    it('should map the XRP toggle to tfDisallowXRP when incoming XRP is currently allowed', async function() {
+      const promise = prompts.promptXrpFlag({ disallowIncomingXRP: false });
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(' ');
+      process.stdin.push(KEYSTROKES.ENTER);
+      assert.strictEqual(await promise, 'tfDisallowXRP');
+    });
+
+    it('should map the XRP toggle to tfAllowXRP when incoming XRP is currently disallowed', async function() {
+      const promise = prompts.promptXrpFlag({ disallowIncomingXRP: true });
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(KEYSTROKES.ARROW_DOWN);
+      process.stdin.push(' ');
+      process.stdin.push(KEYSTROKES.ENTER);
+      assert.strictEqual(await promise, 'tfAllowXRP');
     });
   });
 });

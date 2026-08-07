@@ -120,4 +120,4 @@ export class TssRouter {
 
     this.router = router;
   }
-};
+}

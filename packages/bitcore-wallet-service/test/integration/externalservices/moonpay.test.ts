@@ -260,7 +260,9 @@ describe('Moonpay integration', () => {
   describe('#moonpayGetSignedPaymentUrl', () => {
     beforeEach(() => {
       req = {
-        headers: {},
+        headers: {
+          'x-forwarded-for': '1.2.3.4'
+        },
         body: {
           env: 'production',
           currencyCode: 'btc',
@@ -277,7 +279,47 @@ describe('Moonpay integration', () => {
     it('should get the paymentUrl properly if req is OK', () => {
       const data = server.externalServices.moonpay.moonpayGetSignedPaymentUrl(req);
       should.exist(data.urlWithSignature);
-      data.urlWithSignature.should.equal('widgetApi2?apiKey=apiKey2&currencyCode=btc&walletAddress=bitcoin%3A123123&baseCurrencyCode=usd&baseCurrencyAmount=500&externalTransactionId=123123&redirectURL=bitpay%3A%2F%2Fmoonpay&signature=%2FDnbsboySgE%2FeAvMrwzROCLuuctkhgw5C2t2OofjOzo%3D');
+      data.urlWithSignature.should.equal('widgetApi2?apiKey=apiKey2&currencyCode=btc&walletAddress=bitcoin%3A123123&baseCurrencyCode=usd&baseCurrencyAmount=500&externalTransactionId=123123&redirectURL=bitpay%3A%2F%2Fmoonpay&allowedIpAddress=CN35SFB5PKS4vkiZ4CglTxRgTAaUHBLGZcenAw6gHEY%3D&signature=3XxjRX3EMj2RNaoAwgOwFBOiVTXsgAS7C50uJf9SsvM%3D');
+    });
+
+    it('should return error if request does not have IP', () => {
+      delete req.headers['x-forwarded-for'];
+      try {
+        server.externalServices.moonpay.moonpayGetSignedPaymentUrl(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Could not determine device IP address');
+      }
+    });
+
+    it('should hash the forwarded deviceIp instead of the request IP for web context', () => {
+      req.body.context = 'web';
+      req.body.deviceIp = '203.0.113.42';
+      const data = server.externalServices.moonpay.moonpayGetSignedPaymentUrl(req);
+      should.exist(data.urlWithSignature);
+      data.urlWithSignature.should.equal('widgetApi4?apiKey=apiKey4&currencyCode=btc&walletAddress=bitcoin%3A123123&baseCurrencyCode=usd&baseCurrencyAmount=500&externalTransactionId=123123&redirectURL=bitpay%3A%2F%2Fmoonpay&allowedIpAddress=HkPyqsZMUzAgsEx27Tlz%2B5XfZHaH0fSfWV%2FMKR7JAPc%3D&signature=B%2Bw0TTQiy8%2Ffq6QeoeSf4dKpdPHZ%2F2EnBB1S4UotNGM%3D');
+    });
+
+    it('should canonicalize IPv4-mapped IPv6 deviceIp before hashing', () => {
+      req.body.context = 'web';
+      req.body.deviceIp = '::ffff:203.0.113.42';
+      const data = server.externalServices.moonpay.moonpayGetSignedPaymentUrl(req);
+      should.exist(data.urlWithSignature);
+      data.urlWithSignature.should.equal('widgetApi4?apiKey=apiKey4&currencyCode=btc&walletAddress=bitcoin%3A123123&baseCurrencyCode=usd&baseCurrencyAmount=500&externalTransactionId=123123&redirectURL=bitpay%3A%2F%2Fmoonpay&allowedIpAddress=HkPyqsZMUzAgsEx27Tlz%2B5XfZHaH0fSfWV%2FMKR7JAPc%3D&signature=B%2Bw0TTQiy8%2Ffq6QeoeSf4dKpdPHZ%2F2EnBB1S4UotNGM%3D');
+    });
+
+    it('should omit allowedIpAddress for web context when no deviceIp is forwarded', () => {
+      req.body.context = 'web';
+      const data = server.externalServices.moonpay.moonpayGetSignedPaymentUrl(req);
+      should.exist(data.urlWithSignature);
+      data.urlWithSignature.should.equal('widgetApi4?apiKey=apiKey4&currencyCode=btc&walletAddress=bitcoin%3A123123&baseCurrencyCode=usd&baseCurrencyAmount=500&externalTransactionId=123123&redirectURL=bitpay%3A%2F%2Fmoonpay&signature=13Q%2BET1UQLnCqCyg3stDAN4%2FTQ8QB009LcuAP1y6B%2FI%3D');
+    });
+
+    it('should ignore a body deviceIp for non-web context and use the request IP', () => {
+      req.body.deviceIp = '203.0.113.42';
+      const data = server.externalServices.moonpay.moonpayGetSignedPaymentUrl(req);
+      should.exist(data.urlWithSignature);
+      data.urlWithSignature.should.equal('widgetApi2?apiKey=apiKey2&currencyCode=btc&walletAddress=bitcoin%3A123123&baseCurrencyCode=usd&baseCurrencyAmount=500&externalTransactionId=123123&redirectURL=bitpay%3A%2F%2Fmoonpay&allowedIpAddress=CN35SFB5PKS4vkiZ4CglTxRgTAaUHBLGZcenAw6gHEY%3D&signature=3XxjRX3EMj2RNaoAwgOwFBOiVTXsgAS7C50uJf9SsvM%3D');
     });
 
     it('should return error if there is some missing arguments', () => {

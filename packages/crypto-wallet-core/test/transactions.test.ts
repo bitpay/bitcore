@@ -714,6 +714,66 @@ describe('Transaction', function() {
       }
     });
 
+    it('should create an AccountSet tx with string flag', () => {
+      const xrpParams = {
+        chain: 'XRP',
+        network: 'testnet',
+        from: 'rMmUqMZRzKKnzrTnN3B6Zcz4qQQvmHowt8',
+        fee: 10,
+        nonce: 11876358,
+        txType: 'accountset',
+        flags: 'tfRequireDestTag'
+      };
+      const cryptoTx = Transactions.create(xrpParams);
+      const expectedTx = '12000322000100002400B5380668400000000000000A8114E3BEB23E9931CEE681B8CBFDA2F9203EFC18C5BA';
+      expect(cryptoTx).to.equal(expectedTx);
+    });
+
+    it('should create an AccountSet tx with comma-delimited string flags', () => {
+      const xrpParams = {
+        chain: 'XRP',
+        network: 'testnet',
+        from: 'rMmUqMZRzKKnzrTnN3B6Zcz4qQQvmHowt8',
+        fee: 10,
+        nonce: 11876358,
+        txType: 'accountset',
+        flags: 'tfRequireDestTag,tfDisallowXRP'
+      };
+      const cryptoTx = Transactions.create(xrpParams);
+      const expectedTx = '12000322001100002400B5380668400000000000000A8114E3BEB23E9931CEE681B8CBFDA2F9203EFC18C5BA';
+      expect(cryptoTx).to.equal(expectedTx);
+    });
+
+    it('should create an AccountSet tx with number flag', () => {
+      const xrpParams = {
+        chain: 'XRP',
+        network: 'testnet',
+        from: 'rMmUqMZRzKKnzrTnN3B6Zcz4qQQvmHowt8',
+        fee: 10,
+        nonce: 11876358,
+        txType: 'accountset',
+        flags: 65536 // tfRequireDestTag
+      };
+      const cryptoTx = Transactions.create(xrpParams);
+      const expectedTx = '12000322000100002400B5380668400000000000000A8114E3BEB23E9931CEE681B8CBFDA2F9203EFC18C5BA';
+      expect(cryptoTx).to.equal(expectedTx);
+    });
+
+    it('should throw on invalid flag(s)', () => {
+      const xrpParams = {
+        chain: 'XRP',
+        network: 'testnet',
+        from: 'rMmUqMZRzKKnzrTnN3B6Zcz4qQQvmHowt8',
+        fee: 10,
+        nonce: 11876358,
+        txType: 'accountset'
+      };
+      expect(() => Transactions.create({ ...xrpParams, flags: undefined })).to.throw('No XRP flag(s) provided');
+      expect(() => Transactions.create({ ...xrpParams, flags: null })).to.throw('No XRP flag(s) provided');
+      expect(() => Transactions.create({ ...xrpParams, flags: 'tfInvalidFlag' })).to.throw('Invalid XRP flag: tfInvalidFlag');
+      expect(() => Transactions.create({ ...xrpParams, flags: 'tfRequireDestTag,tfInvalidFlag' })).to.throw('Invalid XRP flag: tfInvalidFlag');
+    });
+
     it('should create a DOGE tx', () => {
       const recipients = [{ address: 'mpNpzMoprLnSBu8CWDunNCYeJq3Mzdk59V', amount: 1e8 }];
       const change = 'msnAsQcCdtzDyiSWb4ZnNxFwUy3P9ogQvY';

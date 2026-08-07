@@ -10,6 +10,27 @@ const should = chai.should();
 const xpub = 'tpubDD7tYYerLNNm65Ez7pRjxQ2NpRHDoyRWoLWudnQ8agXjr7qs9BsPsRXk8Z6spPPJodnaY158YqeCKT5oXuZvbuNLfm1R4kXGJ2vPd9pUxDT';
 
 describe('Chain XRP', function() { 
+  describe('#getWalletSendMaxInfo', function() {
+    it('should resolve fee level before calculating sendMax amount', function(done) {
+      const server = {
+        getBalance: (_opts, cb) => cb(null, { availableAmount: 1000000 }),
+        _getFeePerKb: (_wallet, opts, cb) => {
+          opts.feeLevel.should.equal('normal');
+          return cb(null, 12);
+        }
+      };
+      const wallet = { chain: 'xrp' };
+
+      ChainService.get('xrp').getWalletSendMaxInfo(server as any, wallet as any, { feeLevel: 'normal' }, (err, info) => {
+        should.not.exist(err);
+        info.amount.should.equal(999988);
+        info.fee.should.equal(12);
+        info.feePerKb.should.equal(12);
+        done();
+      });
+    });
+  });
+
   describe('#getBitcoreTx', function() {
     it('should create a valid bitcore TX', function() {
       const txp = TxProposal.fromObj(aTXP()) as TxProposal;

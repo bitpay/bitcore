@@ -1,3 +1,9 @@
 const startGulp = require('@bitpay-labs/bitcore-build');
 
-Object.assign(exports, startGulp('lib'));
+Object.assign(
+  exports,
+  startGulp(
+    'lib',
+    { browserRunner: 'webdriverio' }
+  )
+);

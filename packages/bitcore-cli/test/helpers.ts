@@ -29,7 +29,7 @@ export const CONSTANTS = {
     PASSWORD: 'testpassword',
     CLI_EXEC: 'build/src/cli.js',
     CLI_OPTS: {
-      env: { ...process.env, NO_COLOR: '1' }, // FORCE_COLOR=1 to force colors in output, NO_COLOR=1 to disable colors in output (for easier testing)
+      env: { ...process.env }, // @clack/prompts replaced picocolors with fast-wrap-ansi which is not NO_COLOR/FORCE_COLOR compliant
       detached: true // Ensure child process is in its own process group, so it can die without killing the parent test process
     },
     DIR: path.join(__dirname, './wallets'),
@@ -142,7 +142,7 @@ export const blockchainExplorerMock = {
 
     return cb(null, JSON.parse(JSON.stringify(selected)));
   },
-  setUtxo: (address, amount, m, confirmations?) => {
+  setUtxo: (address, amount, m?, confirmations?) => {
     const B = Bitcore_[address.coin];
     let scriptPubKey;
     switch (address.type) {
@@ -160,7 +160,7 @@ export const blockchainExplorerMock = {
     assert(!!scriptPubKey, 'scriptPubKey not defined');
     blockchainExplorerMock.utxos.push({
       txid: new Bitcore.crypto.Hash.sha256(Buffer.alloc(Math.random() * 100000)).toString('hex'),
-      outputIndex: 0,
+      vout: 0,
       amount: amount,
       satoshis: amount * 1e8,
       address: address.address,
@@ -278,6 +278,6 @@ export function filterStderr() {
 export function cleanupTempWallets() {
   const { TEMP_DIR } = CONSTANTS.WALLETS;
   if (fs.existsSync(TEMP_DIR)) {
-    fs.rmdirSync(TEMP_DIR, { recursive: true });
+    fs.rmSync(TEMP_DIR, { recursive: true, force: true });
   }
 };

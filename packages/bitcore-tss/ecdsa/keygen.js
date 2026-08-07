@@ -1,5 +1,5 @@
-const bitcoreLib = require('@bitpay-labs/bitcore-lib');
 const { DklsDkg, DklsTypes } = require('@bitgo/sdk-lib-mpc');
+const bitcoreLib = require('@bitpay-labs/bitcore-lib');
 const { DklsComms } = require('./dklsComms');
 const { encrypt, decrypt } = require('./utils');
 
@@ -189,6 +189,7 @@ class KeyGen {
    * @returns {{ privateKeyShare: Buffer, reducedPrivateKeyShare: Buffer, commonKeyChain: string }} Keychain object
    */
   getKeyChain() {
+    $.checkState(this.#round !== -1, 'Cannot get key chain after cleanup');
     $.checkState(this.isKeyChainReady(), 'Key chain is not ready');
 
     const keyShare = this.#dkg.getKeyShare();
@@ -196,10 +197,20 @@ class KeyGen {
     const commonKeyChain = DklsTypes.getCommonKeychain(keyShare);
 
     return {
-      privateKeyShare: keyShare,
-      reducedPrivateKeyShare: rKeyShare,
-      commonKeyChain: commonKeyChain
+      privateKeyShare: Buffer.copyBytesFrom(keyShare),
+      reducedPrivateKeyShare: Buffer.copyBytesFrom(rKeyShare),
+      commonKeyChain: commonKeyChain // string
     };
+  }
+
+  /**
+   * Clean up sensitive data from memory.
+   * Call this when you are done with the keygen session
+   */
+  cleanup() {
+    // The "reduced" keyshare is calculated from the keyshare buffer, so this clears both
+    this.#dkg.getKeyShare().fill(0);
+    this.#round = -1;
   }
 };
 

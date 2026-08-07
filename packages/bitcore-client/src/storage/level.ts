@@ -31,7 +31,7 @@ export class Level {
       const walletExists =
         fs.existsSync(this.path) && fs.existsSync(this.path + '/LOCK') && fs.existsSync(this.path + '/LOG');
       if (!walletExists) {
-        throw new Error('Not a valid wallet path');
+        throw new Error('Not a valid wallet path: ' + this.path);
       }
     }
     if (StorageCache[this.path]) {

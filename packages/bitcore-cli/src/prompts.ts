@@ -1,6 +1,6 @@
 import os from 'os';
 import { Network } from '@bitpay-labs/bitcore-wallet-client';
-import { BitcoreLib, BitcoreLibLtc, Constants as CWCConst } from '@bitpay-labs/crypto-wallet-core';
+import { BitcoreLib, BitcoreLibLtc, Constants as CWCConst, xrpl } from '@bitpay-labs/crypto-wallet-core';
 import * as prompt from '@clack/prompts';
 import { Constants } from './constants';
 import { UserCancelled } from './errors';
@@ -75,26 +75,58 @@ export async function getPassword(
     hidden?: boolean;
     /** Custom validation function for the password input. Note, this does NOT override the minimum length check. */
     validate?: (input: string) => string | null;
+    /** Should user be prompted to confirm their password? */
+    confirm?: boolean;
+    /** Retry if confirmation fails (default: true) */
+    retry?: boolean;
   }
 ): Promise<string> {
   opts = opts || {};
-  opts.minLength = opts.minLength ?? 0;
-  const hidden = opts.hidden ?? true;
+  const { confirm, retry = true, hidden = true, minLength = 0 } = opts;
 
-  const password = await prompt.password({
-    message: (msg || 'Password:') + (hidden ? ' (hidden)' : ''),
-    mask: hidden ? '' : undefined,
-    clearOnError: hidden,
-    validate: (input) => {
-      if (input?.length < opts.minLength) {
-        return `Password must be at least ${opts.minLength} characters long.`;
+  let confirmed = false;
+  let password: string | symbol = null;
+  let beginAgain = false;
+  do {
+    password = await prompt.password({
+      message: (msg || 'Password:') + (hidden ? ' (hidden)' : ''),
+      mask: hidden ? '' : undefined,
+      clearOnError: hidden,
+      validate: (input) => {
+        if (input?.length < minLength) {
+          return `Password must be at least ${minLength} characters long.`;
+        }
+        return opts.validate?.(input);
       }
-      return opts.validate?.(input);
+    });
+    if (prompt.isCancel(password)) {
+      throw new UserCancelled();
     }
-  });
-  if (prompt.isCancel(password)) {
-    throw new UserCancelled();
+    if (confirm) {
+      beginAgain = false; // reset beginAgain flag for each iteration
+      let confirmTries = 0;
+      const password2 = await prompt.password({
+        message: 'Confirm:',
+        mask: hidden ? '' : undefined,
+        clearOnError: hidden,
+        validate: (input) => {
+          confirmTries++;
+          if (retry && input !== password) {
+            return 'Passwords do not match' + (confirmTries > 1 ? '. Type Ctrl+C to return to the previous prompt.' : '');
+          }
+        }
+      });
+      beginAgain = prompt.isCancel(password2);
+      confirmed = password === password2;
+    } else {
+      confirmed = true;
+    }
+  } while (!confirmed && beginAgain);
+
+  if (!confirmed) {
+    throw new Error('Passwords do not match');
   }
+
   return password as string;
 };
 
@@ -326,7 +358,7 @@ export async function promptKeyshareBackup(): Promise<boolean> {
     'This keyshare backup file contains both your 12-word mnemonic AND your keyshare data, encrypted with a password you will set in the following prompts.' + os.EOL +
     'Make sure to:' + os.EOL +
     `  - Store the file in a ${Utils.underlineText('safe place')}, like a USB drive in a safe, and do not share it with anyone.` + os.EOL +
-    `  - ${Utils.boldText('DO NOT FORGET')} the encryption password! The file is useless without it, and there is no way to reset the password.` + os.EOL +
+    `  - ${Utils.boldText('DO NOT FORGET', true)} the encryption password! The file is useless without it, and there is no way to reset the password.` + os.EOL +
     'Both the file + encryption password are as valuable as a non-TSS wallet\'s 12-24 word phrase, so treat them with the same level of security.'
   );
   const a = await prompt.select({
@@ -338,4 +370,75 @@ export async function promptKeyshareBackup(): Promise<boolean> {
     return false;
   }
   return true;
+}
+
+export async function promptXrpFlag(existingFlags: Partial<xrpl.AccountInfoAccountFlags>): Promise<string | null> {
+  const toggleableFlags = new Set(['tfRequireDestTag', 'tfOptionalDestTag', 'tfRequireAuth', 'tfOptionalAuth', 'tfDisallowXRP', 'tfAllowXRP']);
+  const options: prompt.Option<string | null>[] = [
+    { label: 'None', value: null, hint: 'Do not set any flag' },
+    { label: 'DestTag', value: 'requiredesttag', hint: `Turn ${existingFlags.requireDestinationTag ? 'OFF' : 'ON'} destination tag requirement` },
+    { label: 'RequireAuth', value: 'requireauth', hint: `Turn ${existingFlags.requireAuthorization ? 'OFF' : 'ON'} authorization requirement` },
+    existingFlags.disallowIncomingXRP
+      ? { label: 'AllowXRP', value: 'allowxrp', hint: 'Turn ON XRP allowance' }
+      : { label: 'DisallowXRP', value: 'allowxrp', hint: 'Turn OFF XRP allowance' },
+    // Any other flags
+    ...Object.keys(xrpl.AccountSetTfFlags)
+      .filter((key) => !parseInt(key) && !toggleableFlags.has(key))
+      .map((key) => ({ label: key.slice(2), value: key }))
+  ];
+  
+  let ex;
+  do {
+    const flags = await prompt.multiselect<string | null>({
+      message: 'Select a tx flag to set:\n(Space = select, Enter = continue)',
+      options
+    });
+    if (prompt.isCancel(flags)) {
+      throw new UserCancelled();
+    }
+    
+    ex = flags.length > 1 && flags.some(f => !f);
+    
+    if (ex) {
+      prompt.log.error('Cannot select "None" with other flags.');
+    }
+
+    if (!ex) {
+      if (flags[0] === null) {
+        return null;
+      }
+
+      const reqDestTagIdx = flags.indexOf('requiredesttag');
+      if (reqDestTagIdx > -1) {
+        flags.splice(reqDestTagIdx, 1);
+        if (existingFlags.requireDestinationTag) {
+          flags.push('tfOptionalDestTag');
+        } else {
+          flags.push('tfRequireDestTag');
+        }
+      }
+
+      const reqAuthIdx = flags.indexOf('requireauth');
+      if (reqAuthIdx > -1) {
+        flags.splice(reqAuthIdx, 1);
+        if (existingFlags.requireAuthorization) {
+          flags.push('tfOptionalAuth');
+        } else {
+          flags.push('tfRequireAuth');
+        }
+      }
+
+      const allowXrpIdx = flags.indexOf('allowxrp');
+      if (allowXrpIdx > -1) {
+        flags.splice(allowXrpIdx, 1);
+        if (existingFlags.disallowIncomingXRP) {
+          flags.push('tfAllowXRP');
+        } else {
+          flags.push('tfDisallowXRP');
+        }
+      }
+
+      return flags.join(',');
+    }
+  } while (ex);
 }

@@ -740,6 +740,40 @@ describe('TSS', function() {
       e.message.should.include('TSS_ROUND_ALREADY_DONE');
     });
 
+    it('should roll back an encrypted signing session without masking the original error', async function() {
+      const password = 'encrypted-tss-password';
+      party0TssKey.encrypt(password, { iter: 1 });
+
+      try {
+        should.not.exist(party0TssKey.keychain.privateKeyShare);
+
+        const encryptedSig = await new TssSign({
+          baseUrl: '/bws/api',
+          request: request(app),
+          credentials: party0Creds,
+          tssKey: party0TssKey,
+        }).restoreSession({ session: export0, password });
+
+        const error = new Promise<Error>(r => encryptedSig.once('error', r));
+        encryptedSig.subscribe({ timeout: 10 });
+        const e = await error;
+        encryptedSig.unsubscribe();
+
+        e.message.should.include('TSS_ROUND_ALREADY_DONE');
+        e.message.should.not.include('password is required');
+
+        const retryError = new Promise<Error>(r => encryptedSig.once('error', r));
+        encryptedSig.subscribe({ timeout: 10 });
+        const retry = await retryError;
+        encryptedSig.unsubscribe();
+
+        retry.message.should.include('TSS_ROUND_ALREADY_DONE');
+        retry.message.should.not.include('password is required');
+      } finally {
+        party0TssKey.decrypt(password);
+      }
+    });
+
     it(happyPath('should do round 3'), async function() {
       const response0 = new Promise(r => sig0.once('roundsubmitted', r));
       const response1 = new Promise(r => sig1.once('roundsubmitted', r));
@@ -870,5 +904,95 @@ describe('TSS', function() {
       }
     });
   
+  });
+
+  describe('TssKey', function() {
+    const expectedPrivateKeyShare = Buffer.from('aabbccdd00112233aabbccdd00112233aabbccdd00112233aabbccdd00112233', 'hex');
+    const expectedReducedPrivateKeyShare = Buffer.from('11223344aabbccdd11223344aabbccdd11223344aabbccdd11223344aabbccdd', 'hex');
+
+    function createTssKey(): TssKey {
+      const key = new Key({ seedType: 'new' });
+      return new TssKey({
+        ...key.toObj(),
+        keychain: {
+          privateKeyShare: expectedPrivateKeyShare,
+          privateKeyShareEncrypted: null,
+          reducedPrivateKeyShare: expectedReducedPrivateKeyShare,
+          reducedPrivateKeyShareEncrypted: null,
+          commonKeyChain: '03' + 'aabbccdd00112233'.repeat(6),
+        },
+        metadata: { id: 'test-tss-id', m: 2, n: 3, partyId: 0 },
+      });
+    }
+
+    describe('toObj', function() {
+      describe('buffer serialization', function () {
+        function assertKeychainBuffers(tssKey: TssKey) {
+          Buffer.isBuffer(tssKey.keychain.privateKeyShare).should.be.true;
+          Buffer.isBuffer(tssKey.keychain.reducedPrivateKeyShare).should.be.true;
+        }
+
+        it('should return Buffer instances in the keychain after toObj()', function () {
+          const tssKey = createTssKey();
+          assertKeychainBuffers(tssKey);
+          Buffer.compare(tssKey.keychain.privateKeyShare, expectedPrivateKeyShare).should.equal(0);
+          Buffer.compare(tssKey.keychain.reducedPrivateKeyShare, expectedReducedPrivateKeyShare).should.equal(0);
+
+          const exported = tssKey.toObj();
+
+          Buffer.isBuffer(exported.keychain.privateKeyShare).should.be.true;
+          Buffer.isBuffer(exported.keychain.reducedPrivateKeyShare).should.be.true;
+
+          // Ensure that the exported buffers are not the same references as the original TssKey buffers
+          exported.keychain.privateKeyShare.should.not.equal(tssKey.keychain.privateKeyShare);
+          exported.keychain.reducedPrivateKeyShare.should.not.equal(tssKey.keychain.reducedPrivateKeyShare);
+        });
+
+        it('should preserve buffer contents after toObj()', function () {
+          const tssKey = createTssKey();
+          assertKeychainBuffers(tssKey);
+
+          const exported = tssKey.toObj();
+
+          Buffer.isBuffer(exported.keychain.privateKeyShare).should.be.true;
+          Buffer.isBuffer(exported.keychain.reducedPrivateKeyShare).should.be.true;
+
+          Buffer.compare(exported.keychain.privateKeyShare, expectedPrivateKeyShare).should.equal(0);
+          Buffer.compare(exported.keychain.reducedPrivateKeyShare, expectedReducedPrivateKeyShare).should.equal(0);
+        });
+
+        it('should survive a full JSON.stringify → JSON.parse round-trip', function () {
+          const tssKey = createTssKey();
+          assertKeychainBuffers(tssKey);
+
+          const exported = tssKey.toObj();
+          const serialized = JSON.stringify(exported);
+          const loaded = JSON.parse(serialized, (key, value) => {
+            if (value && value.type === 'Buffer' && Array.isArray(value.data)) {
+              return Buffer.from(value.data);
+            }
+            return value;
+          });
+
+          Buffer.isBuffer(loaded.keychain.privateKeyShare).should.be.true;
+          Buffer.isBuffer(loaded.keychain.reducedPrivateKeyShare).should.be.true;
+
+          Buffer.compare(loaded.keychain.privateKeyShare, expectedPrivateKeyShare).should.equal(0);
+          Buffer.compare(loaded.keychain.reducedPrivateKeyShare, expectedReducedPrivateKeyShare).should.equal(0);
+        });
+
+        it('should allow constructing a new TssKey from toObj() output with valid Buffers', function () {
+          const tssKey = createTssKey();
+          assertKeychainBuffers(tssKey);
+
+          const exported = tssKey.toObj();
+          const reconstructed = new TssKey(exported);
+
+          assertKeychainBuffers(reconstructed);
+          Buffer.compare(reconstructed.keychain.privateKeyShare, expectedPrivateKeyShare).should.equal(0);
+          Buffer.compare(reconstructed.keychain.reducedPrivateKeyShare, expectedReducedPrivateKeyShare).should.equal(0);
+        });
+      });
+    });
   });
 });

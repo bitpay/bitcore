@@ -35,4 +35,16 @@ export class FileStorage {
   exists() {
     return fs.existsSync(this.filename);
   }
+
+  /**
+   * Returns the path to the state directory for this wallet, creating it if it doesn't exist.
+   * The state directory is located at .state/<walletName> relative to the wallet file.
+   */
+  async getStatePath(): Promise<string> {
+    const walletName = path.basename(this.filename, path.extname(this.filename));
+    const statePath = path.join(path.dirname(this.filename), '.state', walletName);
+    // Ensure state directory exists
+    await fs.promises.mkdir(statePath, { recursive: true });
+    return statePath;
+  }
 };

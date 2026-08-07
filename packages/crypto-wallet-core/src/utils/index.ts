@@ -1,4 +1,5 @@
 import BitcoreLib from '@bitpay-labs/bitcore-lib';
+import * as xrpl from 'xrpl';
 import { Constants } from '../constants';
 
 
@@ -159,4 +160,20 @@ export function isEqual(obj1: object, obj2: object): boolean {
     }
   }
   return true;
+}
+
+export function normalizeXrpFlag(flag: string | number, flagEnum?: typeof xrpl.AccountSetTfFlags | typeof xrpl.PaymentFlags): string {
+  flagEnum = flagEnum || xrpl.AccountSetTfFlags; // default to AccountSet flags if not provided
+  const normalizedFlag = isNaN(parseInt(flag as string))
+    ? (flag as string) // flag is already a non-numeric string (e.g. 'tfRequireDestTag')
+    : (flagEnum[flag as string]);
+  
+  if (!flagEnum[normalizedFlag]) {
+    const enumName =
+      flagEnum === xrpl.AccountSetTfFlags ? 'AccountSetTfFlags' :
+        flagEnum === xrpl.PaymentFlags ? 'PaymentFlags' :
+          '<unknown>';
+    throw new Error(`Invalid XRP flag: ${flag}. Flag is not in enum ${enumName}`);
+  }
+  return normalizedFlag;
 }

@@ -8,7 +8,7 @@ const verbose = process.argv.includes('-v');
 
 const source = path.join(__dirname, 'build/src/cli.js');
 const targetDir = path.join(__dirname, 'bin');
-const target = path.join(targetDir, 'wallet');
+const target = path.join(targetDir, 'bitcore-cli');
 
 if (!fs.existsSync(targetDir)) {
   fs.mkdirSync(targetDir);

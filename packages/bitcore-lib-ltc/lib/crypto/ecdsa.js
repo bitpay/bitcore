@@ -40,7 +40,7 @@ const calci = function(hashbuf, sig, pubkey) {
 /**
  * Information about public key recovery:
  * https://bitcointalk.org/index.php?topic=6430.0
- * http://stackoverflow.com/questions/19665491/how-do-i-get-an-ecdsa-public-key-from-just-a-bitcoin-signature-sec1-4-1-6-k 
+ * http://stackoverflow.com/questions/19665491/how-do-i-get-an-ecdsa-public-key-from-just-a-bitcoin-signature-sec1-4-1-6-k
  * @param {Buffer} hashbuf
  * @param {Signature} sig
  * @param {Number} i
@@ -188,7 +188,7 @@ const sign = function(hashbuf, privkey, opts) {
   const { endian = 'big', randomK = false } = opts || {};
   $.checkState(BufferUtil.isBuffer(hashbuf) && hashbuf.length === 32, 'hashbuf must be a 32 byte buffer');
   $.checkState(privkey && privkey.bn, 'privkey must be a PrivateKey');
-  
+
   var d = privkey.bn;
   hashbuf = Buffer.from(hashbuf);
   if (endian === 'little') {
@@ -205,7 +205,7 @@ const sign = function(hashbuf, privkey, opts) {
     k = randomK ? getRandomK() : getDeterministicK(hashbuf, privkey, badrs);
     badrs++;
     Q = G.mul(k);
-    r = Q.x.umod(N);
+    r = Q.getX().umod(N);
     s = k.invm(N).mul(e.add(d.mul(r))).umod(N);
   } while (r.cmp(BN.Zero) <= 0 || s.cmp(BN.Zero) <= 0);
 
@@ -274,7 +274,7 @@ const verify = function(hashbuf, sig, pubkey, opts) {
     throw new Error('pubkey required for signature verification');
   }
   pubkey = new PublicKey(pubkey);
-  
+
   if (!sig) {
     throw new Error('signature required for verification');
   }
@@ -287,7 +287,7 @@ module.exports = {
   sign,
   verify,
   verificationError,
- 
+
   // pubkey recovery methods
   calci,
   recoverPublicKey,
@@ -299,4 +299,3 @@ module.exports.__testing__ = {
   getRandomK,
   toLowS,
 };
-

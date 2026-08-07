@@ -9,7 +9,7 @@ import { Wallet } from '../src/wallet';
 import { startTssWallets, TssTransform } from './tssCoordinator';
 
 describe('Create', function() {
-  this.timeout(Math.max(this['_timeout'] || 0, 5000));
+  this.timeout(Math.max(this['_timeout'] || 0, 10000));
 
   const { KEYSTROKES, WALLETS, OUTPUT_END_SEQ } = helpers.CONSTANTS;
   const { CLI_EXEC, CLI_OPTS, COMMON_OPTS, TEMP_DIR } = WALLETS;
@@ -34,6 +34,7 @@ describe('Create', function() {
         [KEYSTROKES.ENTER], // Multi-party? No
         [KEYSTROKES.ENTER], // Address Type: default
         ['testpassword', KEYSTROKES.ENTER], // Password
+        ['testpassword', KEYSTROKES.ENTER], // Confirm password
         [KEYSTROKES.ENTER], // View mnemonic
         [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
       ];
@@ -41,22 +42,26 @@ describe('Create', function() {
       const io = new Transform({
         encoding: 'utf-8',
         transform(chunk, encoding, respond) {
-          chunk = chunk.toString();
-          // Uncomment to see CLI output during test
-          // process.stdout.write(chunk);
+          try {
+            chunk = chunk.toString();
+            // Uncomment to see CLI output during test
+            // process.stdout.write(chunk);
 
-          const isStep = chunk.endsWith(OUTPUT_END_SEQ) || step == stepInputs.length - 1; // viewing mnemonic (vim)
-          if (isStep) {
-            for (const input of stepInputs[step]) {
-              this.push(input);
+            const isStep = chunk.endsWith(OUTPUT_END_SEQ) || step == stepInputs.length - 1; // viewing mnemonic (vim)
+            if (isStep) {
+              for (const input of stepInputs[step]) {
+                this.push(input);
+              }
+              step++;
+            } else if (chunk.includes('Error:')) {
+              return respond(chunk);
+            } else if (chunk.endsWith(' created successfully!\n\n')) {
+              child.stdin.end(); // send EOF to child so it can exit cleanly
             }
-            step++;
-          } else if (chunk.includes('Error:')) {
-            return respond(chunk);
-          } else if (chunk.endsWith(' created successfully!\n\n')) {
-            child.stdin.end(); // send EOF to child so it can exit cleanly
+            respond();
+          } catch (e) {
+            respond(e);
           }
-          respond();
         }
       });
       const child = spawn('node', [CLI_EXEC, walletName, ...commonOpts], CLI_OPTS);
@@ -97,6 +102,7 @@ describe('Create', function() {
         [KEYSTROKES.ENTER], // Multi-party? No
         // [KEYSTROKES.ENTER], // Address Type: default
         ['testpassword', KEYSTROKES.ENTER], // Password
+        ['testpassword', KEYSTROKES.ENTER], // Confirm password
         [KEYSTROKES.ENTER], // View mnemonic
         [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
       ];
@@ -104,22 +110,26 @@ describe('Create', function() {
       const io = new Transform({
         encoding: 'utf-8',
         transform(chunk, encoding, respond) {
-          chunk = chunk.toString();
-          // Uncomment to see CLI output during test
-          // process.stdout.write(chunk);
+          try {
+            chunk = chunk.toString();
+            // Uncomment to see CLI output during test
+            // process.stdout.write(chunk);
 
-          const isStep = chunk.endsWith(OUTPUT_END_SEQ) || step == stepInputs.length - 1; // viewing mnemonic (vim)
-          if (isStep) {
-            for (const input of stepInputs[step]) {
-              this.push(input);
+            const isStep = chunk.endsWith(OUTPUT_END_SEQ) || step == stepInputs.length - 1; // viewing mnemonic (vim)
+            if (isStep) {
+              for (const input of stepInputs[step]) {
+                this.push(input);
+              }
+              step++;
+            } else if (chunk.includes('Error:')) {
+              return respond(chunk);
+            } else if (chunk.endsWith(' created successfully!\n\n')) {
+              child.stdin.end(); // send EOF to child so it can exit cleanly
             }
-            step++;
-          } else if (chunk.includes('Error:')) {
-            return respond(chunk);
-          } else if (chunk.endsWith(' created successfully!\n\n')) {
-            child.stdin.end(); // send EOF to child so it can exit cleanly
+            respond();
+          } catch (e) {
+            respond(e);
           }
-          respond();
         }
       });
       const child = spawn('node', [CLI_EXEC, walletName, ...commonOpts], CLI_OPTS);
@@ -160,6 +170,7 @@ describe('Create', function() {
         [KEYSTROKES.ENTER], // Multi-party? No
         // [KEYSTROKES.ENTER], // Address Type: default
         ['testpassword', KEYSTROKES.ENTER], // Password
+        ['testpassword', KEYSTROKES.ENTER], // Confirm password
         [KEYSTROKES.ENTER], // View mnemonic
         [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
       ];
@@ -167,22 +178,26 @@ describe('Create', function() {
       const io = new Transform({
         encoding: 'utf-8',
         transform(chunk, encoding, respond) {
-          chunk = chunk.toString();
-          // Uncomment to see CLI output during test
-          // process.stdout.write(chunk);
+          try {
+            chunk = chunk.toString();
+            // Uncomment to see CLI output during test
+            // process.stdout.write(chunk);
 
-          const isStep = chunk.endsWith(OUTPUT_END_SEQ) || step == stepInputs.length - 1; // viewing mnemonic (vim)
-          if (isStep) {
-            for (const input of stepInputs[step]) {
-              this.push(input);
+            const isStep = chunk.endsWith(OUTPUT_END_SEQ) || step == stepInputs.length - 1; // viewing mnemonic (vim)
+            if (isStep) {
+              for (const input of stepInputs[step]) {
+                this.push(input);
+              }
+              step++;
+            } else if (chunk.includes('Error:')) {
+              return respond(chunk);
+            } else if (chunk.endsWith(' created successfully!\n\n')) {
+              child.stdin.end(); // send EOF to child so it can exit cleanly
             }
-            step++;
-          } else if (chunk.includes('Error:')) {
-            return respond(chunk);
-          } else if (chunk.endsWith(' created successfully!\n\n')) {
-            child.stdin.end(); // send EOF to child so it can exit cleanly
+            respond();
+          } catch (e) {
+            respond(e);
           }
-          respond();
         }
       });
       const child = spawn('node', [CLI_EXEC, walletName, ...commonOpts], CLI_OPTS);
@@ -214,7 +229,7 @@ describe('Create', function() {
       });
     });
 
-    it('should create an SOL wallet', function(done) {
+    it('should create a SOL wallet', function(done) {
       const walletName = 'sol-temp';
       const stepInputs = [
         [KEYSTROKES.ENTER], // Create Wallet
@@ -223,6 +238,7 @@ describe('Create', function() {
         // [KEYSTROKES.ENTER], // Multi-party? No
         // [KEYSTROKES.ENTER], // Address Type: default
         ['testpassword', KEYSTROKES.ENTER], // Password
+        ['testpassword', KEYSTROKES.ENTER], // Confirm password
         [KEYSTROKES.ENTER], // View mnemonic
         [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
       ];
@@ -230,22 +246,26 @@ describe('Create', function() {
       const io = new Transform({
         encoding: 'utf-8',
         transform(chunk, encoding, respond) {
-          chunk = chunk.toString();
-          // Uncomment to see CLI output during test
-          // process.stdout.write(chunk);
+          try {
+            chunk = chunk.toString();
+            // Uncomment to see CLI output during test
+            // process.stdout.write(chunk);
 
-          const isStep = chunk.endsWith(OUTPUT_END_SEQ) || step == stepInputs.length - 1; // viewing mnemonic (vim)
-          if (isStep) {
-            for (const input of stepInputs[step]) {
-              this.push(input);
+            const isStep = chunk.endsWith(OUTPUT_END_SEQ) || step == stepInputs.length - 1; // viewing mnemonic (vim)
+            if (isStep) {
+              for (const input of stepInputs[step]) {
+                this.push(input);
+              }
+              step++;
+            } else if (chunk.includes('Error:')) {
+              return respond(chunk);
+            } else if (chunk.endsWith(' created successfully!\n\n')) {
+              child.stdin.end(); // send EOF to child so it can exit cleanly
             }
-            step++;
-          } else if (chunk.includes('Error:')) {
-            return respond(chunk);
-          } else if (chunk.endsWith(' created successfully!\n\n')) {
-            child.stdin.end(); // send EOF to child so it can exit cleanly
+            respond();
+          } catch (e) {
+            respond(e);
           }
-          respond();
         }
       });
       const child = spawn('node', [CLI_EXEC, walletName, ...commonOpts], CLI_OPTS);
@@ -295,6 +315,7 @@ describe('Create', function() {
           ['copayer1', KEYSTROKES.ENTER], // Copayer name
           [KEYSTROKES.ENTER], // Address Type: default
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           [KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
           // Checkpoint1: Get secret to share with copayer 2
           [KEYSTROKES.ENTER], // View mnemonic
@@ -303,44 +324,50 @@ describe('Create', function() {
         let step = 0;
         let checkpointOutput = '';
         // stepInputs indexes corresponding to checkpoints in test flow where we want to assert on CLI output
-        const checkpoints = new Set([10]);
+        const checkpoints = new Set([11]);
         const io = new Transform({
           encoding: 'utf-8',
           transform(chunk, encoding, respond) {
-            chunk = chunk.toString();
-            if (checkpoints.has(step)) {
-              checkpointOutput += chunk;
-            } else {
-              checkpointOutput = '';
-            }
-            // Uncomment to see CLI output during test
-            // process.stdout.write(chunk);
+            try {
+              chunk = chunk.toString();
+              if (checkpoints.has(step)) {
+                checkpointOutput += chunk;
+              } else {
+                checkpointOutput = '';
+              }
+              // Uncomment to see CLI output during test
+              // process.stdout.write(chunk);
 
-            const isStep = chunk.endsWith(OUTPUT_END_SEQ) || step == stepInputs.length - 1; // viewing mnemonic
-            if (isStep) {
-              switch (step) {
-                default:
-                  break; // no-op for non-checkpoint steps
-                case Array.from(checkpoints)[0]:
-                  const lines = checkpointOutput.split('\n');
-                  const startIdx = lines.findIndex(l => l.includes('Share this secret with the other participants:'));
-                  assert.ok(startIdx > -1);
-                  secret = helpers.decolor(lines[startIdx + 1].trim());
-                  assert.match(secret, /^[0-9A-z]{64,}$/); // base58 string at least 64 chars long
-                  assert.ok(secret.endsWith('Tbtc')); // testnet btc
-                  checkpointOutput = '';
-                  break;
+              const isStep = chunk.endsWith(OUTPUT_END_SEQ) || step == stepInputs.length - 1; // viewing mnemonic
+              if (isStep) {
+                switch (step) {
+                  default:
+                    break; // no-op for non-checkpoint steps
+                  case Array.from(checkpoints)[0]:
+                    const lines = checkpointOutput.split('\n');
+                    const startIdx = lines.findIndex(l => l.includes('Share this secret with the other participants:'));
+                    const endIdx = lines.findIndex(l => l.includes('Done'));
+                    assert.ok(startIdx > -1, 'Did not find expected prompt to share secret with other participants. Output was: ' + checkpointOutput);
+                    // secret may be across multiple lines due to terminal width, so join all lines between start and end indexes and remove any CLI formatting before asserting on it
+                    secret = helpers.decolor(lines.slice(startIdx + 1, endIdx).map(l => l.replace('│', '').trim()).join(''));
+                    assert.match(secret, /^[0-9A-z]{64,}$/); // base58 string at least 64 chars long
+                    assert.ok(secret.endsWith('Tbtc'), 'Secret should end with Tbtc for testnet btc. Got: ' + secret); // testnet btc
+                    checkpointOutput = '';
+                    break;
+                }
+                for (const input of stepInputs[step]) {
+                  this.push(input);
+                }
+                step++;
+              } else if (chunk.includes('Error:')) {
+                return respond(chunk);
+              } else if (chunk.endsWith(' created successfully!\n\n')) {
+                child.stdin.end(); // send EOF to child so it can exit cleanly
               }
-              for (const input of stepInputs[step]) {
-                this.push(input);
-              }
-              step++;
-            } else if (chunk.includes('Error:')) {
-              return respond(chunk);
-            } else if (chunk.endsWith(' created successfully!\n\n')) {
-              child.stdin.end(); // send EOF to child so it can exit cleanly
+              respond();
+            } catch (e) {
+              respond(e);
             }
-            respond();
           }
         });
         const child = spawn('node', [CLI_EXEC, walletName1, ...commonOpts], CLI_OPTS);
@@ -374,6 +401,44 @@ describe('Create', function() {
         });
       });
 
+      it('should not load incomplete multi-sig wallet - copayer1', function(done) {
+        let checkpointOutput = '';
+        const io = new Transform({
+          encoding: 'utf-8',
+          transform(chunk, encoding, respond) {
+            try {
+              chunk = chunk.toString();
+              checkpointOutput += chunk;
+              respond();
+            } catch (e) {
+              respond(e);
+            }
+          }
+        });
+        const child = spawn('node', [CLI_EXEC, walletName1, ...commonOpts], CLI_OPTS);
+        child.stderr.pipe(helpers.filterStderr()).pipe(process.stderr);
+        child.stdout.pipe(io).pipe(child.stdin);
+        io.on('error', (e) => {
+          done(e);
+        });
+        child.on('error', (e) => {
+          done(e);
+        });
+        child.on('close', (code) => {
+          try {
+            assert.equal(code, 0);
+            const lines = checkpointOutput.split('\n').filter(l => l.trim() !== '');
+            const expectedMessage = 'This multisig wallet is not fully set up yet. You need to wait for all copayers to join.';
+            // Uncomment to see CLI output during test
+            // console.log(lines);
+            assert.ok(lines[lines.length - 1].includes(expectedMessage), 'Did not find expected message about multisig wallet not being fully set up.');
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+
       it('should create a multi-sig BTC wallet - copayer2', function(done) {
         const stepInputs = [
           [KEYSTROKES.ARROW_DOWN], // Create Wallet -> Join Wallet
@@ -383,6 +448,7 @@ describe('Create', function() {
           [secret, KEYSTROKES.ENTER], // Enter secret created by copayer 1
           ['copayer2', KEYSTROKES.ENTER], // Copayer name
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           [KEYSTROKES.ENTER], // View mnemonic
           [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
         ];
@@ -393,33 +459,37 @@ describe('Create', function() {
         const io = new Transform({
           encoding: 'utf-8',
           transform(chunk, encoding, respond) {
-            chunk = chunk.toString();
-            if (checkpoints.has(step)) {
-              checkpointOutput += chunk;
-            } else {
-              checkpointOutput = '';
-            }
-            // Uncomment to see CLI output during test
-            // process.stdout.write(chunk);
+            try {
+              chunk = chunk.toString();
+              if (checkpoints.has(step)) {
+                checkpointOutput += chunk;
+              } else {
+                checkpointOutput = '';
+              }
+              // Uncomment to see CLI output during test
+              // process.stdout.write(chunk);
 
-            const isStep = chunk.endsWith(OUTPUT_END_SEQ) || step == stepInputs.length - 1; // viewing mnemonic (vim)
-            if (isStep) {
-              switch (step) {
-                default:
-                  break; // no-op for non-checkpoint steps
-                case Array.from(checkpoints)[0]:
-                  return respond(new Error('No checkpoints expected'));
+              const isStep = chunk.endsWith(OUTPUT_END_SEQ) || step == stepInputs.length - 1; // viewing mnemonic (vim)
+              if (isStep) {
+                switch (step) {
+                  default:
+                    break; // no-op for non-checkpoint steps
+                  case Array.from(checkpoints)[0]:
+                    return respond(new Error('No checkpoints expected'));
+                }
+                for (const input of stepInputs[step]) {
+                  this.push(input);
+                }
+                step++;
+              } else if (chunk.includes('Error:')) {
+                return respond(chunk);
+              } else if (chunk.endsWith(' created successfully!\n\n')) {
+                child.stdin.end(); // send EOF to child so it can exit cleanly
               }
-              for (const input of stepInputs[step]) {
-                this.push(input);
-              }
-              step++;
-            } else if (chunk.includes('Error:')) {
-              return respond(chunk);
-            } else if (chunk.endsWith(' created successfully!\n\n')) {
-              child.stdin.end(); // send EOF to child so it can exit cleanly
+              respond();
+            } catch (e) {
+              respond(e);
             }
-            respond();
           }
         });
         const child = spawn('node', [CLI_EXEC, walletName2, ...commonOpts], CLI_OPTS);
@@ -462,6 +532,64 @@ describe('Create', function() {
           }
         });
       });
+
+      it('should load complete multi-sig wallet after copayer2 joins - copayer1', function(done) {
+        const stepInputs = [
+          [KEYSTROKES.ARROW_UP], // Main Menu -> Exit
+          [KEYSTROKES.ENTER], // Exit
+        ];
+        let step = 0;
+        let checkpointOutput = '';
+        const io = new Transform({
+          encoding: 'utf-8',
+          transform(chunk, encoding, respond) {
+            try {
+              chunk = chunk.toString();
+              checkpointOutput += chunk;
+              
+              // Uncomment to see CLI output during test
+              // process.stdout.write(chunk);
+
+              const isStep = chunk.endsWith(OUTPUT_END_SEQ);
+              if (isStep) {
+                switch (step) {
+                  default:
+                    break; // no-op for non-checkpoint steps
+                }
+                for (const input of stepInputs[step]) {
+                  this.push(input);
+                }
+                step++;
+              } else if (chunk.includes('Error:')) {
+                return respond(chunk);
+              } else if (chunk.includes('👋')) {
+                child.stdin.end(); // send EOF to child so it can exit cleanly
+              }
+              respond();
+            } catch (e) {
+              respond(e);
+            }
+          }
+        });
+        const child = spawn('node', [CLI_EXEC, walletName1, ...commonOpts], CLI_OPTS);
+        child.stderr.pipe(helpers.filterStderr()).pipe(process.stderr);
+        child.stdout.pipe(io).pipe(child.stdin);
+        io.on('error', (e) => {
+          done(e);
+        });
+        child.on('error', (e) => {
+          done(e);
+        });
+        child.on('close', (code) => {
+          try {
+            assert.equal(code, 0);
+            assert.ok(!checkpointOutput.includes('This multisig wallet is not fully set up yet.'), 'Expected multisig wallet to be completed');
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
     });
 
     describe('Non-multisig Chains', function() {
@@ -483,40 +611,44 @@ describe('Create', function() {
           const io = new Transform({
             encoding: 'utf-8',
             transform(chunk, encoding, respond) {
-              chunk = chunk.toString();
-              if (checkpoints.has(step)) {
-                checkpointOutput += chunk;
-              } else {
-                checkpointOutput = '';
-              }
-              // Uncomment to see CLI output during test
-              // process.stdout.write(chunk);
+              try {
+                chunk = chunk.toString();
+                if (checkpoints.has(step)) {
+                  checkpointOutput += chunk;
+                } else {
+                  checkpointOutput = '';
+                }
+                // Uncomment to see CLI output during test
+                // process.stdout.write(chunk);
 
-              const isStep = chunk.endsWith(OUTPUT_END_SEQ);
-              if (isStep) {
-                switch (step) {
-                  default:
-                    break; // no-op for non-checkpoint steps
-                  case Array.from(checkpoints)[0]:
-                    // Asked if it's multi-party
-                    assert.match(checkpointOutput, /Is this a multi-party wallet\?/);
-                    // Asked for m-n
-                    assert.match(checkpointOutput, /M-N:/);
-                    // Should NOT have prompted multi-party scheme options (MultiSig, TSS, etc)
-                    assert.doesNotMatch(checkpointOutput, /MultiSig|TSS/);
-                    checkpointOutput = '';
-                    break;
+                const isStep = chunk.endsWith(OUTPUT_END_SEQ);
+                if (isStep) {
+                  switch (step) {
+                    default:
+                      break; // no-op for non-checkpoint steps
+                    case Array.from(checkpoints)[0]:
+                      // Asked if it's multi-party
+                      assert.match(checkpointOutput, /Is this a multi-party wallet\?/);
+                      // Asked for m-n
+                      assert.match(checkpointOutput, /M-N:/);
+                      // Should NOT have prompted multi-party scheme options (MultiSig, TSS, etc)
+                      assert.doesNotMatch(checkpointOutput, /MultiSig|TSS/);
+                      checkpointOutput = '';
+                      break;
+                  }
+                  for (const input of stepInputs[step]) {
+                    this.push(input);
+                  }
+                  step++;
+                } else if (chunk.includes('Error:')) {
+                  assert.match(chunk, /Error: Cancelled by user/);
+                  assert.ok(step > stepInputs.length - 1); // Ensure that flow was cancelled at end of steps
+                  child.stdin.end(); // send EOF to child so it can exit cleanly
                 }
-                for (const input of stepInputs[step]) {
-                  this.push(input);
-                }
-                step++;
-              } else if (chunk.includes('Error:')) {
-                assert.match(chunk, /Error: Cancelled by user/);
-                assert.ok(step > stepInputs.length - 1); // Ensure that flow was cancelled at end of steps
-                child.stdin.end(); // send EOF to child so it can exit cleanly
+                respond();
+              } catch (e) {
+                respond(e);
               }
-              respond();
             }
           });
           const child = spawn('node', [CLI_EXEC, walletName, ...commonOpts], CLI_OPTS);
@@ -568,13 +700,16 @@ describe('Create', function() {
           ['copayer1', KEYSTROKES.ENTER], // Copayer name
           [KEYSTROKES.ENTER], // Address Type: default
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           // Checkpoint1: Wait for copayer2's pubkey
           [copayer2PubKey, KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
           // Checkpoint2: Extract join code to share with copayer2
+          [KEYSTROKES.ARROW_UP], // Copy to clipboard -> Done -- (checkpoint2)
           [KEYSTROKES.ENTER], // Done sharing -- (checkpoint2)
           [KEYSTROKES.ENTER], // Yes, continue with keyshare export
           [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName1}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
           ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['exportpassword', KEYSTROKES.ENTER], // Confirm password
           ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const stepInputsC2 = [
@@ -586,14 +721,17 @@ describe('Create', function() {
           ['testnet', KEYSTROKES.ENTER], // Network: testnet
           ['copayer2', KEYSTROKES.ENTER], // Copayer name
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           // Checkpoint1: Extract pubkey to give to session leader (copayer1)
-          [KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
+          [KEYSTROKES.ARROW_UP], // Copy to clipboard -> Done -- (checkpoint1)
+          [KEYSTROKES.ENTER], // Done sharing
           // Checkpoint2: Wait for and enter join code from copayer1 to join session
           [joinCode, KEYSTROKES.ENTER], // Enter session code from leader (copayer1)
           [KEYSTROKES.ENTER], // Confirm decoded join code looks correct
           [KEYSTROKES.ENTER], // Yes, continue with keyshare export
           [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName2}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
           ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['exportpassword', KEYSTROKES.ENTER], // Confirm password
           ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const step = {
@@ -606,8 +744,8 @@ describe('Create', function() {
         };
         // stepInputs indexes corresponding to checkpoints in test flow where we want to assert on CLI output
         const checkpoints = {
-          [walletName1]: new Set([10, 11]),
-          [walletName2]: new Set([8, 9])
+          [walletName1]: new Set([11, 12]),
+          [walletName2]: new Set([9, 11])
         };
         function pushInputs(walletName, stepInputs) {
           for (const input of stepInputs) {
@@ -617,72 +755,78 @@ describe('Create', function() {
         const io = new TssTransform({
           encoding: 'utf-8',
           transform: async function(data, encoding, respond) {
-            data = JSON.parse(data.toString());
-            const { walletName, chunk } = data;
-            if (checkpoints[walletName].has(step[walletName])) {
-              checkpointOutput[walletName] += chunk;
-            } else {
-              checkpointOutput[walletName] = '';
-            }
-            // Uncomment to see CLI output during test
-            // walletName === walletName1 && process.stdout.write(chunk);
-            const stepInputs = walletName === walletName1 ? stepInputsC1 : stepInputsC2;
-
-            const isStep = chunk.endsWith(OUTPUT_END_SEQ);
-            if (isStep) {
-              const lines = checkpointOutput[walletName].split('\n');
-              switch (step[walletName]) {
-                default:
-                  pushInputs.call(this, walletName, stepInputs[step[walletName]]);
-                  break; // no-op for non-checkpoint steps
-                case Array.from(checkpoints[walletName])[0]:
-                  if (walletName === walletName1) {
-                    const startIdx = lines.findIndex(l => l.includes('Enter party 1\'s public key:'));
-                    assert.ok(startIdx > -1);
-                    const cachedStep = step[walletName]; // cache the step num so it's preserved for the promise handler
-                    copayer2PubKeySet.then(() => {
-                      stepInputs[cachedStep][0] = copayer2PubKey;
-                      pushInputs.call(this, walletName, stepInputs[cachedStep]);
-                    });
-                  } else {
-                    const startIdx = lines.findIndex(l => l.includes('Give the following public key to the session leader:'));
-                    assert.ok(startIdx > -1);
-                    copayer2PubKey = helpers.decolor(lines[startIdx + 1].trim());
-                    assert.match(copayer2PubKey, /^[0-9a-f]{66}$/); // 66 byte hex pubkey string
-                    emitter.emit('copayer2PubKey');
-                    pushInputs.call(this, walletName, stepInputs[step[walletName]]);
-                  }
-                  checkpointOutput[walletName] = '';
-                  break;
-                case Array.from(checkpoints[walletName])[1]:
-                  if (walletName === walletName1) {
-                    const startIdx = lines.findIndex(l => l.includes('Join code for party 1:'));
-                    assert.ok(startIdx > -1);
-                    joinCode = helpers.decolor(lines[startIdx + 1].trim());
-                    assert.match(joinCode, /^[0-9a-f]{400,500}$/); // hex string between 400-500 chars long (expected to be around 418 chars. Length is just a sanity check. If any data is added to join code it'll need to be adjusted)
-                    emitter.emit('joinCode');
-                    pushInputs.call(this, walletName, stepInputs[step[walletName]]);
-                  } else {
-                    const startIdx = lines.findIndex(l => l.includes('Enter the join code from the session leader:'));
-                    assert.ok(startIdx > -1);
-                    const cachedStep = step[walletName]; // cache the step num so it's preserved for the promise handler
-                    joinCodeSet.then(() => {
-                      stepInputs[cachedStep][0] = joinCode;
-                      pushInputs.call(this, walletName, stepInputs[cachedStep]);
-                    });
-                  }
-                  checkpointOutput[walletName] = '';
-                  break;
+            try {
+              data = JSON.parse(data.toString());
+              const { walletName, chunk } = data;
+              if (checkpoints[walletName].has(step[walletName])) {
+                checkpointOutput[walletName] += chunk;
+              } else {
+                checkpointOutput[walletName] = '';
               }
-              
-              step[walletName]++;
-            } else if (chunk.includes('Error:')) {
-              return respond(chunk);
-            } else if (chunk.endsWith(' created successfully!\n\n')) {
-              this.push(JSON.stringify({ walletName, endIt: true })); // send EOF to child so it can exit cleanly
-            }
+              // Uncomment to see CLI output during test
+              // walletName === walletName1 && process.stdout.write(chunk);
+              const stepInputs = walletName === walletName1 ? stepInputsC1 : stepInputsC2;
 
-            respond();
+              const isStep = chunk.endsWith(OUTPUT_END_SEQ);
+              if (isStep) {
+                const lines = checkpointOutput[walletName].split('\n');
+                switch (step[walletName]) {
+                  default:
+                    pushInputs.call(this, walletName, stepInputs[step[walletName]]);
+                    break; // no-op for non-checkpoint steps
+                  case Array.from(checkpoints[walletName])[0]:
+                    if (walletName === walletName1) {
+                      const startIdx = lines.findIndex(l => l.includes('Enter party 1\'s public key:'));
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to enter party 1\'s public key.');
+                      const cachedStep = step[walletName]; // cache the step num so it's preserved for the promise handler
+                      copayer2PubKeySet.then(() => {
+                        stepInputs[cachedStep][0] = copayer2PubKey;
+                        pushInputs.call(this, walletName, stepInputs[cachedStep]);
+                      });
+                    } else {
+                      const startIdx = lines.findIndex(l => l.includes('Give the following public key to the session leader:'));
+                      const endIdx = lines.findIndex(l => l.includes('Done'));
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to share public key with session leader.');
+                      copayer2PubKey = helpers.decolor(lines.slice(startIdx + 1, endIdx).map(l => l.replace('│', '').trim()).join(''));
+                      assert.match(copayer2PubKey, /^[0-9a-f]{66}$/, 'Invalid copayer2 public key. Got: ' + copayer2PubKey); // 66 byte hex pubkey string
+                      emitter.emit('copayer2PubKey');
+                      pushInputs.call(this, walletName, stepInputs[step[walletName]]);
+                    }
+                    checkpointOutput[walletName] = '';
+                    break;
+                  case Array.from(checkpoints[walletName])[1]:
+                    if (walletName === walletName1) {
+                      const startIdx = lines.findIndex(l => l.includes('Join code for party 1:'));
+                      const endIdx = lines.findIndex(l => l.includes('Continue'));
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to share join code with session leader.');
+                      joinCode = helpers.decolor(lines.slice(startIdx + 1, endIdx).map(l => l.replace('│', '').trim()).join(''));
+                      assert.match(joinCode, /^[0-9a-f]{400,500}$/, 'Invalid join code. Got: ' + joinCode); // hex string between 400-500 chars long (expected to be around 418 chars. Length is just a sanity check. If any data is added to join code it'll need to be adjusted)
+                      emitter.emit('joinCode');
+                      pushInputs.call(this, walletName, stepInputs[step[walletName]]);
+                    } else {
+                      const startIdx = lines.findIndex(l => l.includes('Enter the join code from the session leader:'));
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to enter join code from session leader.');
+                      const cachedStep = step[walletName]; // cache the step num so it's preserved for the promise handler
+                      joinCodeSet.then(() => {
+                        stepInputs[cachedStep][0] = joinCode;
+                        pushInputs.call(this, walletName, stepInputs[cachedStep]);
+                      });
+                    }
+                    checkpointOutput[walletName] = '';
+                    break;
+                }
+                
+                step[walletName]++;
+              } else if (chunk.includes('Error:')) {
+                return respond(chunk);
+              } else if (chunk.endsWith(' created successfully!\n\n')) {
+                this.push(JSON.stringify({ walletName, endIt: true })); // send EOF to child so it can exit cleanly
+              }
+
+              respond();
+            } catch (e) {
+              respond(e);
+            }
           }
         });
 
@@ -797,13 +941,16 @@ describe('Create', function() {
           ['copayer1', KEYSTROKES.ENTER], // Copayer name
           // No address type prompt here since ETH only has 1 address type
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           // Checkpoint1: Wait for copayer2's pubkey
           [copayer2PubKey, KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
           // Checkpoint2: Extract join code to share with copayer2
+          [KEYSTROKES.ARROW_UP], // Copy to clipboard -> Done -- (checkpoint2)
           [KEYSTROKES.ENTER], // Done sharing -- (checkpoint2)
           [KEYSTROKES.ENTER], // Yes, continue with keyshare export
           [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName1}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
           ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['exportpassword', KEYSTROKES.ENTER], // Confirm password
           ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const stepInputsC2 = [
@@ -814,14 +961,17 @@ describe('Create', function() {
           ['testnet', KEYSTROKES.ENTER], // Network: testnet
           ['copayer2', KEYSTROKES.ENTER], // Copayer name
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           // Checkpoint1: Extract pubkey to give to session leader (copayer1)
-          [KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
+          [KEYSTROKES.ARROW_UP], // Copy to clipboard -> Done -- (checkpoint1)
+          [KEYSTROKES.ENTER], // Done sharing
           // Checkpoint2: Wait for and enter join code from copayer1 to join session
           [joinCode, KEYSTROKES.ENTER], // Enter session code from leader (copayer1)
           [KEYSTROKES.ENTER], // Confirm decoded join code looks correct
           [KEYSTROKES.ENTER], // Yes, continue with keyshare export
           [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName2}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
           ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['exportpassword', KEYSTROKES.ENTER], // Confirm password
           ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const step = {
@@ -834,8 +984,8 @@ describe('Create', function() {
         };
         // stepInputs indexes corresponding to checkpoints in test flow where we want to assert on CLI output
         const checkpoints = {
-          [walletName1]: new Set([7, 8]),
-          [walletName2]: new Set([6, 7])
+          [walletName1]: new Set([8, 9]),
+          [walletName2]: new Set([7, 9])
         };
         function pushInputs(walletName, stepInputs) {
           for (const input of stepInputs) {
@@ -845,73 +995,79 @@ describe('Create', function() {
         const io = new TssTransform({
           encoding: 'utf-8',
           transform: async function(data, encoding, respond) {
-            data = JSON.parse(data.toString());
-            const { walletName, chunk } = data;
-            if (checkpoints[walletName].has(step[walletName])) {
-              checkpointOutput[walletName] += chunk;
-            } else {
-              checkpointOutput[walletName] = '';
-            }
-            // Uncomment to see CLI output during test
-            // walletName === walletName1 && process.stdout.write(chunk);
-            // walletName === walletName2 && process.stdout.write(chunk);
-            const stepInputs = walletName === walletName1 ? stepInputsC1 : stepInputsC2;
-
-            const isStep = chunk.endsWith(OUTPUT_END_SEQ);
-            if (isStep) {
-              const lines = checkpointOutput[walletName].split('\n');
-              switch (step[walletName]) {
-                default:
-                  pushInputs.call(this, walletName, stepInputs[step[walletName]]);
-                  break; // no-op for non-checkpoint steps
-                case Array.from(checkpoints[walletName])[0]:
-                  if (walletName === walletName1) {
-                    const startIdx = lines.findIndex(l => l.includes('Enter party 1\'s public key:'));
-                    assert.ok(startIdx > -1);
-                    const cachedStep = step[walletName]; // cache the step num so it's preserved for the promise handler
-                    copayer2PubKeySet.then(() => {
-                      stepInputs[cachedStep][0] = copayer2PubKey;
-                      pushInputs.call(this, walletName, stepInputs[cachedStep]);
-                    });
-                  } else {
-                    const startIdx = lines.findIndex(l => l.includes('Give the following public key to the session leader:'));
-                    assert.ok(startIdx > -1);
-                    copayer2PubKey = helpers.decolor(lines[startIdx + 1].trim());
-                    assert.match(copayer2PubKey, /^[0-9a-f]{66}$/); // 66 byte hex pubkey string
-                    emitter.emit('copayer2PubKey');
-                    pushInputs.call(this, walletName, stepInputs[step[walletName]]);
-                  }
-                  checkpointOutput[walletName] = '';
-                  break;
-                case Array.from(checkpoints[walletName])[1]:
-                  if (walletName === walletName1) {
-                    const startIdx = lines.findIndex(l => l.includes('Join code for party 1:'));
-                    assert.ok(startIdx > -1);
-                    joinCode = helpers.decolor(lines[startIdx + 1].trim());
-                    assert.match(joinCode, /^[0-9a-f]{400,500}$/); // hex string between 400-500 chars long (expected to be around 418 chars. Length is just a sanity check. If any data is added to join code it'll need to be adjusted)
-                    emitter.emit('joinCode');
-                    pushInputs.call(this, walletName, stepInputs[step[walletName]]);
-                  } else {
-                    const startIdx = lines.findIndex(l => l.includes('Enter the join code from the session leader:'));
-                    assert.ok(startIdx > -1);
-                    const cachedStep = step[walletName]; // cache the step num so it's preserved for the promise handler
-                    joinCodeSet.then(() => {
-                      stepInputs[cachedStep][0] = joinCode;
-                      pushInputs.call(this, walletName, stepInputs[cachedStep]);
-                    });
-                  }
-                  checkpointOutput[walletName] = '';
-                  break;
+            try {
+              data = JSON.parse(data.toString());
+              const { walletName, chunk } = data;
+              if (checkpoints[walletName].has(step[walletName])) {
+                checkpointOutput[walletName] += chunk;
+              } else {
+                checkpointOutput[walletName] = '';
               }
-              
-              step[walletName]++;
-            } else if (chunk.includes('Error:')) {
-              return respond(chunk);
-            } else if (chunk.endsWith(' created successfully!\n\n')) {
-              this.push(JSON.stringify({ walletName, endIt: true })); // send EOF to child so it can exit cleanly
-            }
+              // Uncomment to see CLI output during test
+              // walletName === walletName1 && process.stdout.write(chunk);
+              // walletName === walletName2 && process.stdout.write(chunk);
+              const stepInputs = walletName === walletName1 ? stepInputsC1 : stepInputsC2;
 
-            respond();
+              const isStep = chunk.endsWith(OUTPUT_END_SEQ);
+              if (isStep) {
+                const lines = checkpointOutput[walletName].split('\n');
+                switch (step[walletName]) {
+                  default:
+                    pushInputs.call(this, walletName, stepInputs[step[walletName]]);
+                    break; // no-op for non-checkpoint steps
+                  case Array.from(checkpoints[walletName])[0]:
+                    if (walletName === walletName1) {
+                      const startIdx = lines.findIndex(l => l.includes('Enter party 1\'s public key:'));
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to enter party 1\'s public key.');
+                      const cachedStep = step[walletName]; // cache the step num so it's preserved for the promise handler
+                      copayer2PubKeySet.then(() => {
+                        stepInputs[cachedStep][0] = copayer2PubKey;
+                        pushInputs.call(this, walletName, stepInputs[cachedStep]);
+                      });
+                    } else {
+                      const startIdx = lines.findIndex(l => l.includes('Give the following public key to the session leader:'));
+                      const endIdx = lines.findIndex(l => l.includes('Done'));
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to share public key with session leader.');
+                      copayer2PubKey = helpers.decolor(lines.slice(startIdx + 1, endIdx).map(l => l.replace('│', '').trim()).join(''));
+                      assert.match(copayer2PubKey, /^[0-9a-f]{66}$/, 'Invalid copayer2 public key. Got: ' + copayer2PubKey); // 66 byte hex pubkey string
+                      emitter.emit('copayer2PubKey');
+                      pushInputs.call(this, walletName, stepInputs[step[walletName]]);
+                    }
+                    checkpointOutput[walletName] = '';
+                    break;
+                  case Array.from(checkpoints[walletName])[1]:
+                    if (walletName === walletName1) {
+                      const startIdx = lines.findIndex(l => l.includes('Join code for party 1:'));
+                      const endIdx = lines.findIndex(l => l.includes('Continue'));
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to share join code with session leader.');
+                      joinCode = helpers.decolor(lines.slice(startIdx + 1, endIdx).map(l => l.replace('│', '').trim()).join(''));
+                      assert.match(joinCode, /^[0-9a-f]{400,500}$/, 'Invalid join code. Got: ' + joinCode); // hex string between 400-500 chars long (expected to be around 418 chars. Length is just a sanity check. If any data is added to join code it'll need to be adjusted)
+                      emitter.emit('joinCode');
+                      pushInputs.call(this, walletName, stepInputs[step[walletName]]);
+                    } else {
+                      const startIdx = lines.findIndex(l => l.includes('Enter the join code from the session leader:'));
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to enter join code from session leader.');
+                      const cachedStep = step[walletName]; // cache the step num so it's preserved for the promise handler
+                      joinCodeSet.then(() => {
+                        stepInputs[cachedStep][0] = joinCode;
+                        pushInputs.call(this, walletName, stepInputs[cachedStep]);
+                      });
+                    }
+                    checkpointOutput[walletName] = '';
+                    break;
+                }
+                
+                step[walletName]++;
+              } else if (chunk.includes('Error:')) {
+                return respond(chunk);
+              } else if (chunk.endsWith(' created successfully!\n\n')) {
+                this.push(JSON.stringify({ walletName, endIt: true })); // send EOF to child so it can exit cleanly
+              }
+
+              respond();
+            } catch (e) {
+              respond(e);
+            }
           }
         });
 
@@ -1026,13 +1182,16 @@ describe('Create', function() {
           ['copayer1', KEYSTROKES.ENTER], // Copayer name
           // No address type prompt here since XRP only has 1 address type
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           // Checkpoint1: Wait for copayer2's pubkey
           [copayer2PubKey, KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
           // Checkpoint2: Extract join code to share with copayer2
+          [KEYSTROKES.ARROW_UP], // Copy to clipboard -> Done -- (checkpoint2)
           [KEYSTROKES.ENTER], // Done sharing -- (checkpoint2)
           [KEYSTROKES.ENTER], // Yes, continue with keyshare export
           [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName1}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
           ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['exportpassword', KEYSTROKES.ENTER], // Confirm password
           ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const stepInputsC2 = [
@@ -1043,14 +1202,17 @@ describe('Create', function() {
           ['testnet', KEYSTROKES.ENTER], // Network: testnet
           ['copayer2', KEYSTROKES.ENTER], // Copayer name
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           // Checkpoint1: Extract pubkey to give to session leader (copayer1)
-          [KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
+          [KEYSTROKES.ARROW_UP], // Copy to clipboard -> Done -- (checkpoint1)
+          [KEYSTROKES.ENTER], // Done sharing
           // Checkpoint2: Wait for and enter join code from copayer1 to join session
           [joinCode, KEYSTROKES.ENTER], // Enter session code from leader (copayer1)
           [KEYSTROKES.ENTER], // Confirm decoded join code looks correct
           [KEYSTROKES.ENTER], // Yes, continue with keyshare export
           [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName2}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
           ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['exportpassword', KEYSTROKES.ENTER], // Confirm password
           ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const step = {
@@ -1063,8 +1225,8 @@ describe('Create', function() {
         };
         // stepInputs indexes corresponding to checkpoints in test flow where we want to assert on CLI output
         const checkpoints = {
-          [walletName1]: new Set([7, 8]),
-          [walletName2]: new Set([6, 7])
+          [walletName1]: new Set([8, 9]),
+          [walletName2]: new Set([7, 9])
         };
         function pushInputs(walletName, stepInputs) {
           for (const input of stepInputs) {
@@ -1074,72 +1236,78 @@ describe('Create', function() {
         const io = new TssTransform({
           encoding: 'utf-8',
           transform: async function(data, encoding, respond) {
-            data = JSON.parse(data.toString());
-            const { walletName, chunk } = data;
-            if (checkpoints[walletName].has(step[walletName])) {
-              checkpointOutput[walletName] += chunk;
-            } else {
-              checkpointOutput[walletName] = '';
-            }
-            // Uncomment to see CLI output during test
-            // walletName === walletName1 && process.stdout.write(chunk);
-            const stepInputs = walletName === walletName1 ? stepInputsC1 : stepInputsC2;
-
-            const isStep = chunk.endsWith(OUTPUT_END_SEQ);
-            if (isStep) {
-              const lines = checkpointOutput[walletName].split('\n');
-              switch (step[walletName]) {
-                default:
-                  pushInputs.call(this, walletName, stepInputs[step[walletName]]);
-                  break; // no-op for non-checkpoint steps
-                case Array.from(checkpoints[walletName])[0]:
-                  if (walletName === walletName1) {
-                    const startIdx = lines.findIndex(l => l.includes('Enter party 1\'s public key:'));
-                    assert.ok(startIdx > -1);
-                    const cachedStep = step[walletName]; // cache the step num so it's preserved for the promise handler
-                    copayer2PubKeySet.then(() => {
-                      stepInputs[cachedStep][0] = copayer2PubKey;
-                      pushInputs.call(this, walletName, stepInputs[cachedStep]);
-                    });
-                  } else {
-                    const startIdx = lines.findIndex(l => l.includes('Give the following public key to the session leader:'));
-                    assert.ok(startIdx > -1);
-                    copayer2PubKey = helpers.decolor(lines[startIdx + 1].trim());
-                    assert.match(copayer2PubKey, /^[0-9a-f]{66}$/); // 66 byte hex pubkey string
-                    emitter.emit('copayer2PubKey');
-                    pushInputs.call(this, walletName, stepInputs[step[walletName]]);
-                  }
-                  checkpointOutput[walletName] = '';
-                  break;
-                case Array.from(checkpoints[walletName])[1]:
-                  if (walletName === walletName1) {
-                    const startIdx = lines.findIndex(l => l.includes('Join code for party 1:'));
-                    assert.ok(startIdx > -1);
-                    joinCode = helpers.decolor(lines[startIdx + 1].trim());
-                    assert.match(joinCode, /^[0-9a-f]{400,500}$/); // hex string between 400-500 chars long (expected to be around 418 chars. Length is just a sanity check. If any data is added to join code it'll need to be adjusted)
-                    emitter.emit('joinCode');
-                    pushInputs.call(this, walletName, stepInputs[step[walletName]]);
-                  } else {
-                    const startIdx = lines.findIndex(l => l.includes('Enter the join code from the session leader:'));
-                    assert.ok(startIdx > -1);
-                    const cachedStep = step[walletName]; // cache the step num so it's preserved for the promise handler
-                    joinCodeSet.then(() => {
-                      stepInputs[cachedStep][0] = joinCode;
-                      pushInputs.call(this, walletName, stepInputs[cachedStep]);
-                    });
-                  }
-                  checkpointOutput[walletName] = '';
-                  break;
+            try {
+              data = JSON.parse(data.toString());
+              const { walletName, chunk } = data;
+              if (checkpoints[walletName].has(step[walletName])) {
+                checkpointOutput[walletName] += chunk;
+              } else {
+                checkpointOutput[walletName] = '';
               }
-              
-              step[walletName]++;
-            } else if (chunk.includes('Error:')) {
-              return respond(chunk);
-            } else if (chunk.endsWith(' created successfully!\n\n')) {
-              this.push(JSON.stringify({ walletName, endIt: true })); // send EOF to child so it can exit cleanly
-            }
+              // Uncomment to see CLI output during test
+              // walletName === walletName1 && process.stdout.write(chunk);
+              const stepInputs = walletName === walletName1 ? stepInputsC1 : stepInputsC2;
 
-            respond();
+              const isStep = chunk.endsWith(OUTPUT_END_SEQ);
+              if (isStep) {
+                const lines = checkpointOutput[walletName].split('\n');
+                switch (step[walletName]) {
+                  default:
+                    pushInputs.call(this, walletName, stepInputs[step[walletName]]);
+                    break; // no-op for non-checkpoint steps
+                  case Array.from(checkpoints[walletName])[0]:
+                    if (walletName === walletName1) {
+                      const startIdx = lines.findIndex(l => l.includes('Enter party 1\'s public key:'));
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to enter party 1\'s public key.');
+                      const cachedStep = step[walletName]; // cache the step num so it's preserved for the promise handler
+                      copayer2PubKeySet.then(() => {
+                        stepInputs[cachedStep][0] = copayer2PubKey;
+                        pushInputs.call(this, walletName, stepInputs[cachedStep]);
+                      });
+                    } else {
+                      const startIdx = lines.findIndex(l => l.includes('Give the following public key to the session leader:'));
+                      const endIdx = lines.findIndex(l => l.includes('Done'));
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to share public key with session leader.');
+                      copayer2PubKey = helpers.decolor(lines.slice(startIdx + 1, endIdx).map(l => l.replace('│', '').trim()).join(''));
+                      assert.match(copayer2PubKey, /^[0-9a-f]{66}$/, 'Invalid copayer2 public key. Got: ' + copayer2PubKey); // 66 byte hex pubkey string
+                      emitter.emit('copayer2PubKey');
+                      pushInputs.call(this, walletName, stepInputs[step[walletName]]);
+                    }
+                    checkpointOutput[walletName] = '';
+                    break;
+                  case Array.from(checkpoints[walletName])[1]:
+                    if (walletName === walletName1) {
+                      const startIdx = lines.findIndex(l => l.includes('Join code for party 1:'));
+                      const endIdx = lines.findIndex(l => l.includes('Continue'));
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to share join code with session leader.');
+                      joinCode = helpers.decolor(lines.slice(startIdx + 1, endIdx).map(l => l.replace('│', '').trim()).join(''));
+                      assert.match(joinCode, /^[0-9a-f]{400,500}$/, 'Invalid join code. Got: ' + joinCode); // hex string between 400-500 chars long (expected to be around 418 chars. Length is just a sanity check. If any data is added to join code it'll need to be adjusted)
+                      emitter.emit('joinCode');
+                      pushInputs.call(this, walletName, stepInputs[step[walletName]]);
+                    } else {
+                      const startIdx = lines.findIndex(l => l.includes('Enter the join code from the session leader:'));
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to enter join code from session leader.');
+                      const cachedStep = step[walletName]; // cache the step num so it's preserved for the promise handler
+                      joinCodeSet.then(() => {
+                        stepInputs[cachedStep][0] = joinCode;
+                        pushInputs.call(this, walletName, stepInputs[cachedStep]);
+                      });
+                    }
+                    checkpointOutput[walletName] = '';
+                    break;
+                }
+                
+                step[walletName]++;
+              } else if (chunk.includes('Error:')) {
+                return respond(chunk);
+              } else if (chunk.endsWith(' created successfully!\n\n')) {
+                this.push(JSON.stringify({ walletName, endIt: true })); // send EOF to child so it can exit cleanly
+              }
+
+              respond();
+            } catch (e) {
+              respond(e);
+            }
           }
         });
 

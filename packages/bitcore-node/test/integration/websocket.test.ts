@@ -40,7 +40,7 @@ describe('Websockets', function() {
 
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
-  this.timeout(60000);
+  this.timeout(Math.max(this['_timeout'] || 0, 60000));
 
   before(async function() {
     chainConfig = config.chains[chain][network] as IUtxoNetworkConfig;

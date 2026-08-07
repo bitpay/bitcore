@@ -81,6 +81,7 @@ export interface ITxProposal<NumberType = number> {
   multisigTxId?: string;
   destinationTag?: string;
   invoiceID?: string;
+  flags?: string; // Comma-delimited list of XRP account flags to set (e.g. "tfRequireDestTag,tfDisallowXRP")
   lockUntilBlockHeight?: NumberType;
   instantAcceptanceEscrow?: NumberType;
   isTokenSwap?: boolean;
@@ -175,6 +176,7 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
   multisigTxId?: string;
   destinationTag?: string;
   invoiceID?: string;
+  flags?: string; // Comma-delimited list of XRP account flags to set (e.g. "tfRequireDestTag,tfDisallowXRP")
   lockUntilBlockHeight?: NumberType;
   instantAcceptanceEscrow?: NumberType;
   isTokenSwap?: boolean;
@@ -305,6 +307,7 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
     x.destinationTag = opts.destinationTag;
     x.invoiceID = opts.invoiceID;
     x.multiTx = opts.multiTx; // proposal contains multiple transactions
+    x.flags = opts.flags; // XRP account flags to set
     
     // SOL
     x.space = opts.space; // space to allocate for account creation
@@ -400,6 +403,7 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
     x.destinationTag = obj.destinationTag;
     x.invoiceID = obj.invoiceID;
     x.multiTx = obj.multiTx;
+    x.flags = obj.flags; // XRP account flags to set
 
     // SOL
     x.space = obj.space; // space to allocate for account creation

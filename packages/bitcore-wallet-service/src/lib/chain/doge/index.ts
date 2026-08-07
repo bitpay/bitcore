@@ -377,7 +377,7 @@ export class DogeChain extends BtcChain implements IChain {
         if (amount < Defaults.MIN_OUTPUT_AMOUNT) return cb(null, info);
 
         if (opts.returnInputs) {
-          info.inputs = _.shuffle(inputs);
+          info.inputs = _.shuffle(txp.inputs);
         }
 
         return cb(null, info);

@@ -1,3 +1,4 @@
+import { type StdioOptions, spawnSync } from 'child_process';
 import os from 'os';
 import path from 'path';
 import * as prompt from '@clack/prompts';
@@ -51,19 +52,27 @@ export class Utils {
       '再见 (Zàijiàn)!', // Chinese/Mandarin
     ];
     const randomMessage = funMessages[Math.floor(Math.random() * funMessages.length)];
-    console.log('👋 ' + randomMessage);
+    console.log('👋 ' + randomMessage + '\x1b[0m'); // Reset all console formatting after goodbye message
   }
 
   static getWalletFileName(walletName, dir) {
     return path.join(dir, walletName + '.json');
   }
 
+  static getWalletLockFileName(walletName, dir) {
+    return path.join(dir, '.' + walletName + '.LOCK');
+  }
+
   static colorText(text: string, color: Color): string {
     return Constants.COLOR[color.toLowerCase()].replace('%s', text);
   }
 
-  static boldText(text: string) {
-    return '\x1b[1m' + text + '\x1b[22m';
+  static boldText(text: string, isDim?: boolean) {
+    return '\x1b[1m' + text + '\x1b[22m' + (isDim ? '\x1b[2m' : ''); // 22 is the ANSI code to turn off bold AND dim. So, need to re-apply dim if applicable
+  }
+
+  static dimText(text: string, isBold?: boolean) {
+    return '\x1b[2m' + text + '\x1b[22m' + (isBold ? '\x1b[1m' : ''); // 22 is the ANSI code to turn off bold AND dim. So, need to re-apply bold if applicable
   }
 
   static italicText(text: string) {
@@ -327,23 +336,26 @@ export class Utils {
   }
 
   static amountToSats(chain: string, amount: number | string, opts?: ITokenObj): bigint {
+    const convert = (multiplier: number) => BigInt(Math.round(amount as number * multiplier));
+    
     if (opts) {
-      return BigInt(amount as number * opts.toSatoshis);
+      return convert(opts.toSatoshis);
     }
+    
     chain = chain.toLowerCase();
     switch (chain) {
       case 'btc':
       case 'bch':
       case 'doge':
       case 'ltc':
-        return BigInt(amount as number * 1e8);
+        return convert(1e8);
       case 'xrp':
-        return BigInt(amount as number * 1e6);
+        return convert(1e6);
       case 'sol':
-        return BigInt(amount as number * 1e9);
+        return convert(1e9);
       default:
         // Assume EVM chain
-        return BigInt(amount as number * 1e18);
+        return convert(1e18);
     }
   }
 
@@ -431,5 +443,70 @@ export class Utils {
 
   static colorizeChain(chain: string) {
     return Utils.colorTextByChain(chain, chain);
+  }
+
+  static copyToClipboard(text: string): void {
+    const platform = os.platform();
+    let attempts: Array<{ cmd: string; args: string[] }>;
+
+    if (platform === 'darwin') {
+      attempts = [{ cmd: 'pbcopy', args: [] }];
+    } else if (platform === 'linux') {
+      // Prefer wl-copy first (Wayland), then fall back to X11 tools.
+      attempts = [
+        { cmd: 'wl-copy', args: [] },
+        { cmd: 'xclip', args: ['-selection', 'clipboard'] },
+        { cmd: 'xsel', args: ['--clipboard', '--input'] }
+      ];
+    } else if (platform === 'win32') {
+      attempts = [{ cmd: 'clip', args: [] }];
+    } else {
+      throw new Error(`Unsupported platform: ${platform}`);
+    }
+
+    const missing: string[] = [];
+    const failures: string[] = [];
+
+    for (const attempt of attempts) {
+      // wl-copy can fork and keep inherited pipes open; piping stderr/stdout can
+      // cause spawnSync to block even after successful copy.
+      const stdio: StdioOptions = attempt.cmd === 'wl-copy'
+        ? ['pipe', 'ignore', 'ignore']
+        : ['pipe', 'ignore', 'pipe'];
+
+      const result = spawnSync(attempt.cmd, attempt.args, {
+        input: text,
+        encoding: 'utf8',
+        stdio
+      });
+
+      if (result.error) {
+        const err = result.error as NodeJS.ErrnoException;
+        if (err.code === 'ENOENT') {
+          missing.push(attempt.cmd);
+          continue;
+        }
+        failures.push(`${attempt.cmd}: ${err.message}`);
+        continue;
+      }
+
+      if (result.status === 0) {
+        return;
+      }
+
+      const stderr = (result.stderr ?? '').trim();
+      failures.push(`${attempt.cmd}: ${stderr || `exited with code ${result.status}`}`);
+    }
+
+    if (missing.length === attempts.length) {
+      throw new Error(`No clipboard utility found. Tried: ${attempts.map(a => a.cmd).join(', ')}`);
+    }
+
+    const detailParts = [
+      failures.length ? `Failures: ${failures.join(' | ')}` : '',
+      missing.length ? `Not installed: ${missing.join(', ')}` : ''
+    ].filter(Boolean);
+
+    throw new Error(`Failed to copy to clipboard. ${detailParts.join(' ; ')}`);
   }
 };

@@ -1,5 +1,5 @@
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
 const webpack = require('webpack');
 // const TerserPlugin = require('terser-webpack-plugin');
 
@@ -62,7 +62,7 @@ module.exports = {
       process: 'process/browser'
     }),
     new webpack.NormalModuleReplacementPlugin(
-      /\@silencelaboratories\/dkls-wasm-ll-node/,
+      /@silencelaboratories\/dkls-wasm-ll-node/,
       '@silencelaboratories/dkls-wasm-ll-web'
     ),
   ],

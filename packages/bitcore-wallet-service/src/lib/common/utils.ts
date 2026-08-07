@@ -81,11 +81,11 @@ export const Utils = {
 
   /**
    *
-   * @desc rounds a JAvascript number
-   * @param number
+   * @desc rounds a Javascript number
+   * @param {number} number
    * @return {number}
    */
-  strip(number) {
+  strip(number: number): number {
     return parseFloat(number.toPrecision(12));
   },
 

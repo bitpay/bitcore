@@ -1,3 +1,4 @@
+import util from 'util';
 import {
   BitcoreLib as Bitcore,
   BitcoreLibCash as BitcoreCash,
@@ -2397,6 +2398,7 @@ export class WalletService implements IWalletService {
 
           this.getSendMaxInfo(
             {
+              feeLevel: opts.feeLevel,
               feePerKb: opts.feePerKb,
               excludeUnconfirmedUtxos: !!opts.excludeUnconfirmedUtxos,
               returnInputs: true,
@@ -2924,7 +2926,8 @@ export class WalletService implements IWalletService {
                       fromAta: opts.fromAta,
                       decimals: opts.decimals,
                       refreshOnPublish: opts.refreshOnPublish,
-                      deferNonce: opts.deferNonce
+                      deferNonce: opts.deferNonce,
+                      flags: opts.flags
                     };
                     txp = TxProposal.create(txOpts);
                     next();
@@ -3247,7 +3250,7 @@ export class WalletService implements IWalletService {
         {
           txProposalId: opts.txProposalId
         },
-        (err, txp) => {
+        (err, txp: TxProposal) => {
           if (err) return cb(err);
 
           if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
@@ -3255,7 +3258,13 @@ export class WalletService implements IWalletService {
           const deleteLockTime = this.getRemainingDeleteLockTime(txp);
           if (deleteLockTime > 0) return cb(Errors.TX_CANNOT_REMOVE);
 
-          this.storage.removeTx(this.walletId, txp.id, () => {
+          this.storage.removeTx(this.walletId, txp.id, async () => {
+            try { 
+              const inputPaths = Array.isArray(txp.inputPaths) && txp.inputPaths?.length ? txp.inputPaths : [txp.inputPaths || 'm/0/0']; // doesn't actually matter what's in the array
+              await Promise.all(inputPaths.map((_, i) => this.storage.removeTssSigSession({ id: `${txp.id}:input${i}` })));
+            } catch (err) {
+              logger.warn('Error removing tss sig session for wallet %s txp %s: %o', this.walletId, txp.id, err);
+            }
             this._notifyTxProposalAction('TxProposalRemoved', txp, cb);
           });
         }
@@ -3356,6 +3365,19 @@ export class WalletService implements IWalletService {
               for (const t of txps) {
                 if (t.id !== txp.id && t.nonce != null && txp.nonce != null && t.nonce <= txp.nonce && t.status !== 'rejected') {
                   return cb(Errors.TX_NONCE_CONFLICT);
+                }
+              }
+              // A deferred txp matching a broadcasted txp's nonce means its JIT-assigned
+              // value went stale. Non-deferred txps may reuse an in-flight nonce
+              // intentionally (e.g. speed-up).
+              if (txp.nonce != null && txp.deferNonce) {
+                const broadcastedTxps = await util.promisify(this.storage.fetchBroadcastedTxs).call(this.storage, this.walletId, {
+                  minTs: Math.floor(Date.now() / 1000) - Defaults.BROADCASTED_NONCE_SCAN_WINDOW
+                });
+                for (const t of broadcastedTxps || []) {
+                  if (t.id !== txp.id && t.nonce != null && Number(t.nonce) === Number(txp.nonce)) {
+                    return cb(Errors.TX_NONCE_CONFLICT);
+                  }
                 }
               }
             } catch (err) {
@@ -3486,9 +3508,18 @@ export class WalletService implements IWalletService {
               .filter(t => t.id !== txp.id && t.nonce != null && t.status !== 'rejected')
               .map(t => Number(t.nonce));
 
+            // 2b. Broadcasted-but-unmined txps still occupy their nonces but appear in
+            // neither the confirmed count nor the pending set
+            const broadcastedTxps = await util.promisify(this.storage.fetchBroadcastedTxs).call(this.storage, this.walletId, {
+              minTs: Math.floor(Date.now() / 1000) - Defaults.BROADCASTED_NONCE_SCAN_WINDOW
+            });
+            const inFlightNonces = (broadcastedTxps || [])
+              .filter(t => t.nonce != null && Number(t.nonce) >= Number(confirmedNonce))
+              .map(t => Number(t.nonce));
+
             // 3. Calculate gap-free nonce
             let suggestedNonce = Number(confirmedNonce);
-            const allNonces = pendingNonces.sort((a, b) => a - b);
+            const allNonces = [...pendingNonces, ...inFlightNonces].sort((a, b) => a - b);
             for (const n of allNonces) {
               if (n === suggestedNonce) {
                 suggestedNonce++;
@@ -5303,6 +5334,27 @@ export class WalletService implements IWalletService {
     });
   }
 
+  async getFlags(opts: { account: number }) {
+    try {
+      const wallet = await util.promisify(this.getWallet).call(this, {});
+      if (wallet.chain !== 'xrp') throw new Error('Flags are only supported for XRP wallets');
+
+      const addresses = await util.promisify(this.storage.fetchAddresses).call(this.storage, this.walletId);
+      const addressObj = addresses.find(a => a.path === `m/0/${opts.account || 0}`);
+      if (!addressObj) throw new Error('Could not find address for account ' + opts.account);
+
+      const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
+      if (!bc) throw new Error('Could not get blockchain explorer instance');
+
+      const address = addressObj.address.split(':')[0]; // Remove testnet suffix
+      const flags = await bc.getFlags({ address });
+      return flags;
+    } catch (err) {
+      this.logw('Error getting flags: %o', err);
+      throw err;
+    }
+  }
+
   static upgradeNeeded(
     paths: Upgrade | Upgrade[],
     opts: UpgradeCheckOpts & { clientVersion: string; userAgent: string }
@@ -5554,6 +5606,55 @@ export class WalletService implements IWalletService {
         URL,
         {
           headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ?? err);
+          } else {
+            return resolve(data.body ?? data);
+          }
+        }
+      );
+    });
+  }
+
+  moralisGetTransactionVerbose(req): Promise<any> {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const response = await Moralis.EvmApi.transaction.getTransactionVerbose({
+          transactionHash: req.body.transactionHash,
+          chain: req.body.chain,
+        });
+
+        return resolve(response?.raw ?? response);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  moralisGetMultipleSolTokenPrices(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      if (!config.moralis) return reject(new Error('Moralis missing credentials'));
+      if (!checkRequired(req.body, ['addresses']) || !Array.isArray(req.body.addresses)) {
+        return reject(new ClientError('moralisGetMultipleSolTokenPrices request missing arguments'));
+      }
+
+      const network = req.body.network === 'devnet' ? 'devnet' : 'mainnet';
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Api-Key': config.moralis.apiKey,
+      };
+
+      const URL: string = `https://solana-gateway.moralis.io/token/${network}/prices`;
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: { addresses: req.body.addresses },
           json: true
         },
         (err, data) => {

@@ -1,4 +1,6 @@
+import { execSync } from 'child_process';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import url from 'url';
 import {
@@ -18,11 +20,13 @@ import {
   Utils as CWCUtils,
   Message,
   Transactions,
-  Web3
+  Web3,
+  type xrpl
 } from '@bitpay-labs/crypto-wallet-core';
 import * as prompt from '@clack/prompts';
 import { Constants } from './constants';
 import { ERC20Abi } from './erc20Abi';
+import { UserCancelled } from './errors';
 import { FileStorage } from './filestorage';
 import { getPassword } from './prompts';
 import { sign as tssSign } from './tss';
@@ -39,7 +43,7 @@ import type {
 const Client = API;
 
 const WALLET_ENCRYPTION_OPTS = {
-  iter: 5000
+  iter: 800_000
 };
 
 process.on('uncaughtException', (uncaught) => {
@@ -47,6 +51,7 @@ process.on('uncaughtException', (uncaught) => {
 });
 
 let _verbose = false;
+let _hasLockFile = false;
 
 export class Wallet implements IWallet {
   static _bpCurrencies: ITokenObj[];
@@ -228,10 +233,51 @@ export class Wallet implements IWallet {
     return secret as string | undefined;
   }
 
+  private lockLoadedWallet() {
+    if (_hasLockFile) {
+      return;
+    }
+    const lockFilename = Utils.getWalletLockFileName(this.name, this.dir);
+    try {
+      fs.writeFileSync(lockFilename, process.pid.toString(), { flag: 'wx', mode: 0o444 }); // wx flag ensures it fails if the file already exists
+      _hasLockFile = true;
+      process.on('exit', () => {
+        try {
+          fs.rmSync(lockFilename);
+        } catch (e) {
+          _verbose && console.error(e);
+          console.error('Failed to remove wallet lock file on exit.');
+        }
+      });
+    } catch (e) {
+      if (e.code === 'EEXIST') {
+        // Check if process is still running
+        const pid = fs.readFileSync(lockFilename, 'utf-8')?.trim();
+        if (os.platform() === 'win32') {
+          // TODO
+        } else {
+          const stat = fs.statSync(lockFilename);
+          if (stat.uid === process.getuid()) { // make sure the lock file belongs to the current user
+            const response = execSync(`ps -q ${pid} -o args || true`, { encoding: 'utf-8' });
+            const command = response?.split('\n')[1] || '';
+            if (!command.includes(`bitcore-cli ${this.name}`) && !command.includes(`build/src/cli.js ${this.name}`)) {
+              // Stale lock file, remove it and continue
+              fs.rmSync(lockFilename);
+              return this.lockLoadedWallet();
+            }
+          }
+        }
+      }
+      _verbose && console.error(e);
+      Utils.die('Wallet is already open in another process.');
+    }
+  }
+
   async load(opts?: { doNotComplete?: boolean; allowCache?: boolean }) {
     const { doNotComplete, allowCache } = opts || {};
 
     let walletData: WalletData | EncryptionTypes.IEncrypted = allowCache ? this.#walletData : null;
+    const loadingFromCache = !!walletData;
     if (!walletData) {
       walletData = await this.storage.load();
     }
@@ -280,10 +326,33 @@ export class Wallet implements IWallet {
       credentials: Credentials.fromObj(walletData.credentials)
     } as WalletData;
 
+    this.lockLoadedWallet();
     if (doNotComplete) return key;
-
+    
     const status = await this.client.openWallet();
     let needsSave = status?.wallet?.status === 'complete';
+
+    if (!key.isPrivKeyEncrypted()) {
+      if (loadingFromCache) {
+        _verbose && prompt.log.warn('Warning: Loaded wallet is not encrypted. This may be a mistake. Try exiting and reloading your wallet.');
+      } else {
+        const ans = await prompt.confirm({ message: 'Loaded wallet is not encrypted. Do you want to encrypt it now?', initialValue: true });
+        if (!prompt.isCancel(ans) && ans) {
+          try {
+            const password = await getPassword('Enter wallet lock password:', { hidden: false, minLength: 6, confirm: true });
+            key.encrypt(password);
+            this.#walletData.key = key;
+            prompt.log.success('Wallet successfully encrypted.');
+            needsSave = true;
+          } catch (e) {
+            if (!(e instanceof UserCancelled)) {
+              prompt.log.error('Failed to encrypt wallet: ' + (_verbose && e.stack ? e.stack : e));
+            }
+          }
+        }
+      }
+    }
+
     if (
       (!this.#walletData.credentials.isComplete() && this.client.credentials.isComplete()) ||
       // For TSS creds, isComplete() may be true even if publicKeyRing isn't fully populated
@@ -293,6 +362,7 @@ export class Wallet implements IWallet {
       this.#walletData.credentials = this.client.credentials; // update with any new info from the chain
       needsSave = true;
     }
+
     if (needsSave) {
       await this.save();
     }
@@ -305,17 +375,20 @@ export class Wallet implements IWallet {
       if (!this.#walletData) {
         throw new Error('No wallet data to save. Wallet not created or loaded');
       }
-      let data: WalletData | EncryptionTypes.IEncrypted = { key: this.#walletData.key?.toObj(), credentials: this.#walletData.credentials.toObj() };
+      let data: object /** TODO */ | EncryptionTypes.IEncrypted = { key: this.#walletData.key?.toObj(), credentials: this.#walletData.credentials.toObj() };
       if (encryptAll) {
-        const password = await getPassword('Enter password to encrypt:', { minLength: 6 });
-        await prompt.password({
-          message: 'Confirm password:',
-          mask: '*',
-          validate: (val) => val === password ? undefined : 'Passwords do not match'
-        });
-
+        const password = await getPassword('Enter password to encrypt:', { minLength: 6, confirm: true });
         data = Encryption.encryptWithPassword(JSON.stringify(data), password, WALLET_ENCRYPTION_OPTS);
       }
+
+      if (
+        (data as any).key?.xPrivKey != null ||
+        (data as any).key?.mnemonic != null ||
+        (data as any).key?.keychain?.privateKeyShare != null
+      ) {
+        throw new Error('Wallet sensitive data is not encrypted. Cannot save wallet to disk.');
+      }
+
       await this.storage.save(JSON.stringify(data));
       return;
     } catch (err) {
@@ -342,8 +415,18 @@ export class Wallet implements IWallet {
       }
 
       if (key.isPrivKeyEncrypted() || (key as TssKey.TssKey).isKeyChainEncrypted?.()) {
-        const walletPassword = await getPassword('Unlock wallet:');
-        key.decrypt(walletPassword);
+        await getPassword('Unlock wallet:', {
+          hidden: true,
+          validate: (input) => {
+            try {
+              key.decrypt(input);
+              return null; // valid password
+            } catch (err) {
+              if (_verbose) prompt.log.warn(err?.stack || err?.message || err.toString());
+              return 'Invalid password';
+            }
+          }
+        });
       }
     }
     
@@ -499,7 +582,7 @@ export class Wallet implements IWallet {
     return retval;
   }
 
-  async getPasswordWithRetry(): Promise<string> {
+  async getWalletPassword(): Promise<string> {
     let password;
     if (this.isWalletEncrypted()) {
       password = await getPassword('Wallet password:', {
@@ -524,7 +607,7 @@ export class Wallet implements IWallet {
       await this.getClient({ mustExist: true });
     }
 
-    const password = await this.getPasswordWithRetry();
+    const password = await this.getWalletPassword();
     if (this.#walletData.key instanceof TssKey.TssKey) {
       return this._signTxpTss({ txp, password });
     }
@@ -546,6 +629,8 @@ export class Wallet implements IWallet {
     if (isSvm) {
       throw new Error('TSS wallets do not yet support Solana.');
     }
+
+    const stateStoragePath = await this.storage.getStatePath();
 
     const sigs: string[] = [];
 
@@ -571,6 +656,7 @@ export class Wallet implements IWallet {
         host: this.host,
         chain: txp.chain,
         walletData: this.#walletData,
+        stateStoragePath,
         messageHash: Buffer.from(messageHash, 'hex'),
         derivationPath,
         password,
@@ -621,7 +707,7 @@ export class Wallet implements IWallet {
     if (!this.client) {
       await this.getClient({ mustExist: true });
     }
-    const password = await this.getPasswordWithRetry();
+    const password = await this.getWalletPassword();
     const chain = this.client.credentials.chain;
 
     if (this.#walletData.key instanceof TssKey.TssKey) {
@@ -637,7 +723,7 @@ export class Wallet implements IWallet {
   async _signMessageWithTss(args: {
     messageHash: Buffer;
     derivationPath?: string;
-    password?: string;
+    password: string;
     encoding?: BufferEncoding | 'base58';
   }): Promise<CWCTypes.Message.ISignedMessage> {
     const { messageHash, derivationPath, password, encoding } = args;
@@ -646,13 +732,18 @@ export class Wallet implements IWallet {
       throw new Error('TSS signing is only supported for TSS wallets.');
     }
 
+    const stateStoragePath = await this.storage.getStatePath();
+    const id = BitcoreLib.crypto.Hash.sha256(messageHash).toString('hex');
+
     const sig = await tssSign({
       host: this.host,
       chain: this.client.credentials.chain,
       walletData: this.#walletData,
+      stateStoragePath,
       messageHash,
       derivationPath,
-      password
+      password,
+      id,
     });
 
     const buf = Buffer.from(sig.signature.replace('0x', ''), 'hex');
@@ -709,5 +800,17 @@ export class Wallet implements IWallet {
 
   isReadOnly() {
     return !this.#walletData.key;
+  }
+
+  async getAccountFlags() {
+    if (!this.isXrp()) {
+      throw new Error('Account flags are only available for XRP wallets');
+    }
+    if (!this.client) {
+      await this.getClient({ mustExist: true });
+    }
+
+    const flags: xrpl.AccountInfoAccountFlags = await this.client.getAccountFlags({ account: 0 });
+    return flags;
   }
 };
