@@ -5,7 +5,7 @@ export class LTCTxProvider extends BTCTxProvider {
   lib = BitcoreLibLtc;
   create({ recipients, utxos = [], change, feeRate, fee = 20000 }) {
     const filteredUtxos = this.selectCoins(recipients, utxos, fee);
-    const btcUtxos = this.isNodeUtxo(filteredUtxos[0]) ? this.nodeToLibUtxos(filteredUtxos) : filteredUtxos;
+    const btcUtxos = filteredUtxos.map(this.standardizeUtxo);
     const tx = new this.lib.Transaction().from(btcUtxos);
     if (fee) {
       tx.fee(fee);
