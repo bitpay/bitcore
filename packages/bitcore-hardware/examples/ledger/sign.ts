@@ -1,8 +1,8 @@
 import 'source-map-support/register.js';
-import bitcore from '@bitpay-labs/bitcore-lib';
+import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import Ledger from '../../src/ledger.js';
 
-const { HDPublicKey, Script, Transaction } = bitcore;
+const { HDPublicKey, Script, Transaction } = BitcoreLib;
 
 const ledger = new Ledger();
 await ledger.connect();
