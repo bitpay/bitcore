@@ -4,3 +4,8 @@ export class UserCancelled extends Error {
   }
 };
 
+export class ProcessCancelled extends Error {
+  constructor() {
+    super('Cancelled by process');
+  }
+}

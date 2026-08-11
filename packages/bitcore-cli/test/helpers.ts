@@ -278,6 +278,6 @@ export function filterStderr() {
 export function cleanupTempWallets() {
   const { TEMP_DIR } = CONSTANTS.WALLETS;
   if (fs.existsSync(TEMP_DIR)) {
-    fs.rmdirSync(TEMP_DIR, { recursive: true });
+    fs.rmSync(TEMP_DIR, { recursive: true, force: true });
   }
 };

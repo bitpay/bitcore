@@ -4,6 +4,9 @@
   "description": "Bitcore Library for Threshold Signature Schemes",
   "main": "index.js",
   "type": "commonjs",
+  "engines": {
+    "node": ">=18.16.0 <19.0.0 || >=19.8.0"
+  },
   "scripts": {
     "build": "webpack -c ./webpack.config.js",
     "test": "npm run test:mocha",
@@ -11,7 +14,11 @@
     "test:node": "node --test $(find test -name *.test.js)",
     "test:node:only": "node --test --test-only $(find test -name *.test.js)",
     "test:web": "npm run build && npm run wdio",
-    "wdio": "wdio run ./wdio.conf.js"
+    "wdio": "wdio run ./wdio.conf.js",
+    "lint": "eslint .",
+    "fix:errors": "eslint --fix --quiet .",
+    "fix:all": "eslint --fix .",
+    "fix": "npm run fix:errors"
   },
   "keywords": [
     "tss",
@@ -25,7 +32,7 @@
     "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-tss"
   },
   "dependencies": {
-    "@bitgo/sdk-lib-mpc": "^10.1.2",
+    "@bitgo/sdk-lib-mpc": "^10.15.0",
     "@bitpay-labs/bitcore-lib": "^11.10.4"
   },
   "devDependencies": {

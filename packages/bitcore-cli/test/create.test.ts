@@ -9,7 +9,7 @@ import { Wallet } from '../src/wallet';
 import { startTssWallets, TssTransform } from './tssCoordinator';
 
 describe('Create', function() {
-  this.timeout(Math.max(this['_timeout'] || 0, 5000));
+  this.timeout(Math.max(this['_timeout'] || 0, 10000));
 
   const { KEYSTROKES, WALLETS, OUTPUT_END_SEQ } = helpers.CONSTANTS;
   const { CLI_EXEC, CLI_OPTS, COMMON_OPTS, TEMP_DIR } = WALLETS;
@@ -34,6 +34,7 @@ describe('Create', function() {
         [KEYSTROKES.ENTER], // Multi-party? No
         [KEYSTROKES.ENTER], // Address Type: default
         ['testpassword', KEYSTROKES.ENTER], // Password
+        ['testpassword', KEYSTROKES.ENTER], // Confirm password
         [KEYSTROKES.ENTER], // View mnemonic
         [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
       ];
@@ -101,6 +102,7 @@ describe('Create', function() {
         [KEYSTROKES.ENTER], // Multi-party? No
         // [KEYSTROKES.ENTER], // Address Type: default
         ['testpassword', KEYSTROKES.ENTER], // Password
+        ['testpassword', KEYSTROKES.ENTER], // Confirm password
         [KEYSTROKES.ENTER], // View mnemonic
         [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
       ];
@@ -168,6 +170,7 @@ describe('Create', function() {
         [KEYSTROKES.ENTER], // Multi-party? No
         // [KEYSTROKES.ENTER], // Address Type: default
         ['testpassword', KEYSTROKES.ENTER], // Password
+        ['testpassword', KEYSTROKES.ENTER], // Confirm password
         [KEYSTROKES.ENTER], // View mnemonic
         [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
       ];
@@ -235,6 +238,7 @@ describe('Create', function() {
         // [KEYSTROKES.ENTER], // Multi-party? No
         // [KEYSTROKES.ENTER], // Address Type: default
         ['testpassword', KEYSTROKES.ENTER], // Password
+        ['testpassword', KEYSTROKES.ENTER], // Confirm password
         [KEYSTROKES.ENTER], // View mnemonic
         [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
       ];
@@ -311,6 +315,7 @@ describe('Create', function() {
           ['copayer1', KEYSTROKES.ENTER], // Copayer name
           [KEYSTROKES.ENTER], // Address Type: default
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           [KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
           // Checkpoint1: Get secret to share with copayer 2
           [KEYSTROKES.ENTER], // View mnemonic
@@ -319,7 +324,7 @@ describe('Create', function() {
         let step = 0;
         let checkpointOutput = '';
         // stepInputs indexes corresponding to checkpoints in test flow where we want to assert on CLI output
-        const checkpoints = new Set([10]);
+        const checkpoints = new Set([11]);
         const io = new Transform({
           encoding: 'utf-8',
           transform(chunk, encoding, respond) {
@@ -443,6 +448,7 @@ describe('Create', function() {
           [secret, KEYSTROKES.ENTER], // Enter secret created by copayer 1
           ['copayer2', KEYSTROKES.ENTER], // Copayer name
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           [KEYSTROKES.ENTER], // View mnemonic
           [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
         ];
@@ -694,6 +700,7 @@ describe('Create', function() {
           ['copayer1', KEYSTROKES.ENTER], // Copayer name
           [KEYSTROKES.ENTER], // Address Type: default
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           // Checkpoint1: Wait for copayer2's pubkey
           [copayer2PubKey, KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
           // Checkpoint2: Extract join code to share with copayer2
@@ -702,6 +709,7 @@ describe('Create', function() {
           [KEYSTROKES.ENTER], // Yes, continue with keyshare export
           [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName1}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
           ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['exportpassword', KEYSTROKES.ENTER], // Confirm password
           ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const stepInputsC2 = [
@@ -713,6 +721,7 @@ describe('Create', function() {
           ['testnet', KEYSTROKES.ENTER], // Network: testnet
           ['copayer2', KEYSTROKES.ENTER], // Copayer name
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           // Checkpoint1: Extract pubkey to give to session leader (copayer1)
           [KEYSTROKES.ARROW_UP], // Copy to clipboard -> Done -- (checkpoint1)
           [KEYSTROKES.ENTER], // Done sharing
@@ -722,6 +731,7 @@ describe('Create', function() {
           [KEYSTROKES.ENTER], // Yes, continue with keyshare export
           [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName2}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
           ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['exportpassword', KEYSTROKES.ENTER], // Confirm password
           ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const step = {
@@ -734,8 +744,8 @@ describe('Create', function() {
         };
         // stepInputs indexes corresponding to checkpoints in test flow where we want to assert on CLI output
         const checkpoints = {
-          [walletName1]: new Set([10, 11]),
-          [walletName2]: new Set([8, 10])
+          [walletName1]: new Set([11, 12]),
+          [walletName2]: new Set([9, 11])
         };
         function pushInputs(walletName, stepInputs) {
           for (const input of stepInputs) {
@@ -931,6 +941,7 @@ describe('Create', function() {
           ['copayer1', KEYSTROKES.ENTER], // Copayer name
           // No address type prompt here since ETH only has 1 address type
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           // Checkpoint1: Wait for copayer2's pubkey
           [copayer2PubKey, KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
           // Checkpoint2: Extract join code to share with copayer2
@@ -939,6 +950,7 @@ describe('Create', function() {
           [KEYSTROKES.ENTER], // Yes, continue with keyshare export
           [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName1}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
           ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['exportpassword', KEYSTROKES.ENTER], // Confirm password
           ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const stepInputsC2 = [
@@ -949,6 +961,7 @@ describe('Create', function() {
           ['testnet', KEYSTROKES.ENTER], // Network: testnet
           ['copayer2', KEYSTROKES.ENTER], // Copayer name
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           // Checkpoint1: Extract pubkey to give to session leader (copayer1)
           [KEYSTROKES.ARROW_UP], // Copy to clipboard -> Done -- (checkpoint1)
           [KEYSTROKES.ENTER], // Done sharing
@@ -958,6 +971,7 @@ describe('Create', function() {
           [KEYSTROKES.ENTER], // Yes, continue with keyshare export
           [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName2}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
           ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['exportpassword', KEYSTROKES.ENTER], // Confirm password
           ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const step = {
@@ -970,8 +984,8 @@ describe('Create', function() {
         };
         // stepInputs indexes corresponding to checkpoints in test flow where we want to assert on CLI output
         const checkpoints = {
-          [walletName1]: new Set([7, 8]),
-          [walletName2]: new Set([6, 8])
+          [walletName1]: new Set([8, 9]),
+          [walletName2]: new Set([7, 9])
         };
         function pushInputs(walletName, stepInputs) {
           for (const input of stepInputs) {
@@ -1168,6 +1182,7 @@ describe('Create', function() {
           ['copayer1', KEYSTROKES.ENTER], // Copayer name
           // No address type prompt here since XRP only has 1 address type
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           // Checkpoint1: Wait for copayer2's pubkey
           [copayer2PubKey, KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
           // Checkpoint2: Extract join code to share with copayer2
@@ -1176,6 +1191,7 @@ describe('Create', function() {
           [KEYSTROKES.ENTER], // Yes, continue with keyshare export
           [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName1}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
           ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['exportpassword', KEYSTROKES.ENTER], // Confirm password
           ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const stepInputsC2 = [
@@ -1186,6 +1202,7 @@ describe('Create', function() {
           ['testnet', KEYSTROKES.ENTER], // Network: testnet
           ['copayer2', KEYSTROKES.ENTER], // Copayer name
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           // Checkpoint1: Extract pubkey to give to session leader (copayer1)
           [KEYSTROKES.ARROW_UP], // Copy to clipboard -> Done -- (checkpoint1)
           [KEYSTROKES.ENTER], // Done sharing
@@ -1195,6 +1212,7 @@ describe('Create', function() {
           [KEYSTROKES.ENTER], // Yes, continue with keyshare export
           [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName2}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
           ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['exportpassword', KEYSTROKES.ENTER], // Confirm password
           ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const step = {
@@ -1207,8 +1225,8 @@ describe('Create', function() {
         };
         // stepInputs indexes corresponding to checkpoints in test flow where we want to assert on CLI output
         const checkpoints = {
-          [walletName1]: new Set([7, 8]),
-          [walletName2]: new Set([6, 8])
+          [walletName1]: new Set([8, 9]),
+          [walletName2]: new Set([7, 9])
         };
         function pushInputs(walletName, stepInputs) {
           for (const input of stepInputs) {

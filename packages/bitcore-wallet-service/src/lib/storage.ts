@@ -1920,4 +1920,8 @@ export class Storage {
     );
   }
 
+  async removeTssSigSession({ id }: { id: string }) {
+    return this.db.collection(collections.TSS_SIGN).deleteOne({ id }, { w: 1 });
+  }
+
 }

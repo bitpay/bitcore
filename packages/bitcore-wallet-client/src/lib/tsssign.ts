@@ -3,7 +3,7 @@ import { ECDSA } from '@bitpay-labs/bitcore-tss';
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { Credentials } from './credentials';
 import { Request, RequestResponse } from './request';
-import { TssKey } from './tsskey';
+import { type TssExportedKey, TssKey } from './tsskey';
 
 const $ = BitcoreLib.util.preconditions;
 
@@ -39,6 +39,7 @@ export class TssSign extends EventEmitter {
   #request: Request;
   #sign: ECDSA.Sign;
   #tssKey: TssKey;
+  #decryptedKeychain: TssExportedKey['keychain'];
   #credentials: Credentials;
   #subscriptionId: ReturnType<typeof setInterval>;
   #subscriptionRunning: boolean;
@@ -98,7 +99,7 @@ export class TssSign extends EventEmitter {
      * Blockchain transactions should be pre-hashed and passed as `messageHash` since
      * they often require specific hashing methods (e.g. EVM => keccak256, UTXO => sha256).
      */
-    message?: string | Buffer;
+    message?: string;
     /**
      * Encoding of the `message` (if a string)
      * @default 'utf8'
@@ -109,7 +110,7 @@ export class TssSign extends EventEmitter {
     const { id, derivationPath, password, encoding = 'utf8' } = params;
     $.checkArgument(messageHash || message, 'message or messageHash must be provided');
     $.checkArgument(!messageHash || Buffer.isBuffer(messageHash), 'messageHash must be a Buffer');
-    $.checkArgument(!message || Buffer.isBuffer(message) || typeof message === 'string', 'message must be a string or Buffer');
+    $.checkArgument(!message || typeof message === 'string', 'message must be a string');
     $.checkArgument(id == null || typeof id === 'string', 'id must be a string or not provided');
     $.checkArgument(password || this.#tssKey.keychain.privateKeyShare, 'password is required to decrypt the TSS private key share');
     
@@ -118,12 +119,12 @@ export class TssSign extends EventEmitter {
       if (encoding === 'hex') {
         message = message.startsWith('0x') ? message.slice(2) : message; // Remove '0x' prefix if present
       }
-      message = Buffer.from(message, encoding);
-      messageHash = BitcoreLib.crypto.Hash.sha256(message);
+      messageHash = BitcoreLib.crypto.Hash.sha256(Buffer.from(message, encoding));
     }
 
+    this.#decryptedKeychain = this.#tssKey.get(password).keychain;
     this.#sign = new ECDSA.Sign({
-      keychain: this.#tssKey.get(password).keychain,
+      keychain: this.#decryptedKeychain,
       partyId: this.#tssKey.metadata.partyId,
       m: this.#tssKey.metadata.m,
       n: this.#tssKey.metadata.n,
@@ -162,13 +163,29 @@ export class TssSign extends EventEmitter {
      * Session string to restore
      */
     session: string;
+    /**
+     * Password to decrypt the TSS private key share.
+     * Only needed if
+     *  a) you're restoring a cold session (i.e. instantiating a new TssSig instance), and
+     *  b) the TSS private key share is encrypted
+     */
+    password?: string;
   }): Promise<TssSign> {
-    const { session } = params;
-    const [id, sigSession] = session.split(':');
+    const { session, password } = params;
+    $.checkArgument(password || this.#tssKey.keychain.privateKeyShare, 'password is required to decrypt the TSS private key share');
+
+    this.#decryptedKeychain = this.#tssKey.get(password).keychain;
+    return this.#restoreSession(session);
+  }
+
+  async #restoreSession(session: string): Promise<TssSign> {
+    const parts = session.split(':');
+    const id = parts.slice(0, -1).join(':');
+    const sigSession = parts[parts.length - 1];
     this.id = id;
     this.#sign = await ECDSA.Sign.restore({
       session: sigSession,
-      keychain: this.#tssKey.keychain,
+      keychain: this.#decryptedKeychain,
       authKey: this.#credentials.requestPrivKey
     });
     return this;
@@ -236,7 +253,7 @@ export class TssSign extends EventEmitter {
             }
           } catch (err) {
             // Restore the session to the previous state
-            await this.restoreSession({ session: sessionBak });
+            await this.#restoreSession(sessionBak);
             throw err;
           }
         }
@@ -266,9 +283,8 @@ export class TssSign extends EventEmitter {
   }
 
   /**
-   * Unsubscribe from the TSS key generation process
-   * @param {object} [params]
-   * @param {boolean} [params.clearEvents] Whether to remove all event listeners (default: true)
+   * Unsubscribe from the TSS key generation process.
+   * Calling this method will emit the 'unsubscribe' event.
    */
   unsubscribe(params: {
     /**
@@ -285,6 +301,7 @@ export class TssSign extends EventEmitter {
     this.#subscriptionId = null;
     this.#subscriptionRunning = false;
     this.#emittedParticipants = null;
+    this.emit('unsubscribe');
   }
 
   /**

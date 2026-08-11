@@ -9,7 +9,7 @@ module.exports.vectors = [
     xPubKey: 'xpub661MyMwAqRbcGvRAUJpL6nMhYqanMb6xT7fJw7au2CxhA4Ye661AS6JHze8vGLdaxsxwmqw7g8iXKJn4TgC4Rzq87GueZbzzv1jz6XMsnr2',
     addresses: [
       { chain: 'ETH', network: 'mainnet', address: '0xD57cF5ac4CC763D83E0892a07a02fE1BBD123b27', path: 'm' },
-      { chain: 'ETH', network: 'mainnet', address: '0x8CeAD6bE77E8668016658Ab4a8f6B2B21C7C1959', path: 'm/0/0'},
+      { chain: 'ETH', network: 'mainnet', address: '0x8CeAD6bE77E8668016658Ab4a8f6B2B21C7C1959', path: 'm/0/0' },
       { chain: 'BTC', network: 'mainnet', address: 'bc1qlhghx9pt5sj805cx6gwapgdgvvk27uea2nehv2', path: 'm', addressType: 'p2wpkh' },
       { chain: 'BTC', network: 'regtest', address: 'bcrt1qc9ecm64c5hnsn62dj3sswssnlxegk6vqh0qw3x', path: 'm/0/0', addressType: 'p2wpkh' },
       { chain: 'BTC', network: 'regtest', address: 'bcrt1qvyyl7ez48qdyfezmfrk03epekshph5k5fptsf0', path: 'm/0/1', addressType: 'p2wpkh' },
@@ -161,8 +161,8 @@ module.exports.vectors = [
               {
                 from: 0,
                 payload: {
-                  message: "pGdmcm9tX2lkAGpwdWJsaWNfa2V5mCEDGLIYNRjfGDMYzhiCGOAY4wAY6hgnGBgYtBg9GEQYmhigGN4YXRiaGHoYrxikGI4YRBjRGJQYwhiZFhjyGENnYmlnX3NfaZghAxi9GJ8YmhiqGGcYIBj2GKUYhxjpGDQYohhYGIAYWwwYpBjHGFkYxBiaGMoY6BjUGPwY2hgmGP0YgBgiExibZXByb29momF0mCEDGMkYQRgkGEcYMRhxGP0Y4xigGJAYSRgpGJAYnBhGGKUYkBifGJkY8Rh+GCsYsxirGIcMGPAYiBjjGLEY9xhMYXOYIBhKGOMYnhi7ERjrGKYYTBIYPRiQGHIYURhLGOkYixicGJMJGLEY7xisGF8YeBicGE0IFwoIGC8YVA==",
-                  signature: "3045022100e7d1209ab8463ba6af71d0df953eaecd7cf1cbb06f7a5f4f0bacde9cd555cf310220220251083ea1d6453ff376a5520f87b9f6fe2c1fa099d034453aa41b81e54f9c",
+                  message: 'pGdmcm9tX2lkAGpwdWJsaWNfa2V5mCEDGLIYNRjfGDMYzhiCGOAY4wAY6hgnGBgYtBg9GEQYmhigGN4YXRiaGHoYrxikGI4YRBjRGJQYwhiZFhjyGENnYmlnX3NfaZghAxi9GJ8YmhiqGGcYIBj2GKUYhxjpGDQYohhYGIAYWwwYpBjHGFkYxBiaGMoY6BjUGPwY2hgmGP0YgBgiExibZXByb29momF0mCEDGMkYQRgkGEcYMRhxGP0Y4xigGJAYSRgpGJAYnBhGGKUYkBifGJkY8Rh+GCsYsxirGIcMGPAYiBjjGLEY9xhMYXOYIBhKGOMYnhi7ERjrGKYYTBIYPRiQGHIYURhLGOkYixicGJMJGLEY7xisGF8YeBicGE0IFwoIGC8YVA==',
+                  signature: '3045022100e7d1209ab8463ba6af71d0df953eaecd7cf1cbb06f7a5f4f0bacde9cd555cf310220220251083ea1d6453ff376a5520f87b9f6fe2c1fa099d034453aa41b81e54f9c',
                 },
                 signatureR: undefined,
               },
@@ -382,8 +382,8 @@ module.exports.vectors = [
               {
                 from: 0,
                 payload: {
-                  message: "pGdmcm9tX2lkAGpwdWJsaWNfa2V5mCEDGLIYNRjfGDMYzhiCGOAY4wAY6hgnGBgYtBg9GEQYmhigGN4YXRiaGHoYrxikGI4YRBjRGJQYwhiZFhjyGENnYmlnX3NfaZghAhhHGEcY4BhBGIgYlwEXGHoYVxhNGIgYUxjqGI4Y/RiUGIgYZhicBRhwGIUYThhmGPsYtRhLGEsY7xj8GIBlcHJvb2aiYXSYIQMSGC4XGGYY8xgnEA4YRxgyGEUYGxjfGNcYuAwLGKAY0xinCBi+GBgYKhiTGDUY4BiwGNoYLxiIGNVhc5ggGIYXGC0Y5RimGFwYehjcBgMY2hi5GCoYywEYyRgbGC0KGEcEBgAY0BjHGM4Y3RjEGFoY5hgqGCM=",
-                  signature: "3045022100a53a76558f8bafc971d1fb6996853bfd8aed870ce93803d3b4ecfb042827cf3b022039642622fcf5d5e7825a62ab2c9b1b6e62e99648968c69f8cb1a26b10b2f405a",
+                  message: 'pGdmcm9tX2lkAGpwdWJsaWNfa2V5mCEDGLIYNRjfGDMYzhiCGOAY4wAY6hgnGBgYtBg9GEQYmhigGN4YXRiaGHoYrxikGI4YRBjRGJQYwhiZFhjyGENnYmlnX3NfaZghAhhHGEcY4BhBGIgYlwEXGHoYVxhNGIgYUxjqGI4Y/RiUGIgYZhicBRhwGIUYThhmGPsYtRhLGEsY7xj8GIBlcHJvb2aiYXSYIQMSGC4XGGYY8xgnEA4YRxgyGEUYGxjfGNcYuAwLGKAY0xinCBi+GBgYKhiTGDUY4BiwGNoYLxiIGNVhc5ggGIYXGC0Y5RimGFwYehjcBgMY2hi5GCoYywEYyRgbGC0KGEcEBgAY0BjHGM4Y3RjEGFoY5hgqGCM=',
+                  signature: '3045022100a53a76558f8bafc971d1fb6996853bfd8aed870ce93803d3b4ecfb042827cf3b022039642622fcf5d5e7825a62ab2c9b1b6e62e99648968c69f8cb1a26b10b2f405a',
                 },
                 signatureR: undefined,
               },
