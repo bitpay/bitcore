@@ -3,13 +3,7 @@ import { BTCTxProvider, EveryUtxoType } from '../btc';
 
 export class DOGETxProvider extends BTCTxProvider {
   lib = BitcoreLibDoge;
-  create(params: {
-    recipients: Array<{ address: string; amount: number }>;
-    utxos?: EveryUtxoType[];
-    change?: string;
-    feeRate?: number | string;
-    fee?: number | string;
-  }): string {
+  create(params: DogeCreateParams): string {
     const { recipients, utxos = [], change, feeRate, fee = 20000 } = params;
     const filteredUtxos = this.selectCoins(recipients, utxos, Number(fee));
     const btcUtxos = filteredUtxos.map(utxo => this.standardizeUtxo(utxo));
@@ -29,3 +23,11 @@ export class DOGETxProvider extends BTCTxProvider {
     return tx.uncheckedSerialize();
   }
 }
+
+export interface DogeCreateParams {
+  recipients: Array<{ address: string; amount: number }>;
+  utxos?: EveryUtxoType[];
+  change?: string;
+  feeRate?: number | string;
+  fee?: number | string;
+};

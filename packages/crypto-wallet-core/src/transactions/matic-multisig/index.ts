@@ -10,16 +10,7 @@ export class MATICMULTISIGTxProvider extends MATICTxProvider {
     return contract;
   }
 
-  create(params: {
-    recipients: Array<{ address: string; amount: string }>;
-    nonce: number;
-    gasPrice: number;
-    data: string;
-    gasLimit: number;
-    multisigContractAddress: string;
-    network: string;
-    chainId?: number;
-  }) {
+  create(params: MaticMultisigCreateParams) {
     const { multisigContractAddress } = params;
     const recipients = [{ address: multisigContractAddress, amount: '0' }];
     const newParams = { ...params, recipients };
@@ -169,4 +160,15 @@ export class MATICMULTISIGTxProvider extends MATICTxProvider {
     const contract = this.getMultisigContract(multisigContractAddress);
     return contract.methods.submitTransaction(address, amountStr, data).encodeABI();
   }
+}
+
+export interface MaticMultisigCreateParams {
+  recipients: Array<{ address: string; amount: string }>;
+  nonce: number;
+  gasPrice: number;
+  data: string;
+  gasLimit: number;
+  multisigContractAddress: string;
+  network: string;
+  chainId?: number;
 }

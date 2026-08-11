@@ -3,13 +3,7 @@ import { BTCTxProvider, EveryUtxoType } from '../btc';
 
 export class BCHTxProvider extends BTCTxProvider {
   lib = BitcoreLibCash;
-  create(params: {
-    recipients: Array<{ address: string; amount: number }>;
-    utxos?: EveryUtxoType[];
-    change?: string;
-    fee?: number | string;
-    isSweep?: boolean;
-  }): string {
+  create(params: BchCreateParams): string {
     const { recipients, utxos = [], change, fee = 20000, isSweep } = params;
     const filteredUtxos = isSweep ? utxos : this.selectCoins(recipients, utxos, Number(fee));
     const btcUtxos = filteredUtxos.map(utxo => this.standardizeUtxo(utxo));
@@ -23,3 +17,11 @@ export class BCHTxProvider extends BTCTxProvider {
     return tx.uncheckedSerialize();
   }
 }
+
+export interface BchCreateParams {
+  recipients: Array<{ address: string; amount: number }>;
+  utxos?: EveryUtxoType[];
+  change?: string;
+  fee?: number | string;
+  isSweep?: boolean;
+};

@@ -57,17 +57,7 @@ export class BTCTxProvider {
     };
   }
 
-  create(params: {
-    recipients: Array<{ address: string; amount: number | string }>;
-    utxos?: EveryUtxoType[];
-    change?: string;
-    feeRate?: number | string;
-    fee?: number | string;
-    isSweep?: boolean;
-    replaceByFee?: boolean;
-    lockUntilDate?: number;
-    lockUntilBlock?: number;
-  }): string {
+  create(params: BtcCreateParams): string {
     const { recipients, utxos = [], change, feeRate, fee, isSweep, replaceByFee, lockUntilDate, lockUntilBlock } = params;
     const filteredUtxos = isSweep ? utxos : this.selectCoins(recipients, utxos, Number(fee));
     const btcUtxos = filteredUtxos.map(utxo => this.standardizeUtxo(utxo));
@@ -99,7 +89,7 @@ export class BTCTxProvider {
     throw new Error('function getSignature not implemented for UTXO coins');
   }
 
-  transformSignatureObject(params: { obj: any; sigtype?: number }): string {
+  transformSignatureObject(params: BtcTransformSignatureObjectParams): string {
     const { obj, sigtype } = params;
     const { v } = obj;
     let { r, s, i, nhashtype } = obj;
@@ -127,12 +117,7 @@ export class BTCTxProvider {
     return new this.lib.crypto.Signature({ r, s, i, nhashtype }).toString();
   }
 
-  applySignature(params: {
-    tx: BitcoreLib.Transaction;
-    signature: SignatureType;
-    index: number;
-    sigtype?: number;
-  }): BitcoreLib.Transaction {
+  applySignature(params: BtcApplySignatureParams): BitcoreLib.Transaction {
     const { index, sigtype, tx } = params;
     let { signature } = params;
     assert(tx instanceof this.lib.Transaction, 'tx must be an instance of Transaction');
@@ -153,19 +138,12 @@ export class BTCTxProvider {
     return tx;
   }
 
-  getHash(params: { tx: TransactionType }): string {
+  getHash(params: BtcGetHashParams): string {
     const bitcoreTx = new this.lib.Transaction(params.tx);
     return bitcoreTx.hash;
   }
 
-  sign(params: {
-    tx: TransactionType;
-    keys: Key[];
-    utxos: EveryUtxoType[];
-    pubkeys?: any[];
-    threshold?: number;
-    opts: any;
-  }): string {
+  sign(params: BtcSignParams): string {
     const { tx, keys, pubkeys, threshold, opts } = params;
     const utxos = params.utxos || [];
     const bitcoreTx = new this.lib.Transaction(tx);
@@ -217,22 +195,7 @@ export class BTCTxProvider {
     return applicableUtxos.map(utxo => utxo.address);
   }
 
-  getSighash(params: {
-    tx: TransactionType;
-    index: number;
-    utxos?: EveryUtxoType[];
-    pubKey?: string | BitcoreLib.PublicKey | BitcoreLib.HDPublicKey;
-    path?: string;
-    sigtype?: number;
-    // Multisig params for `associateInputs()`
-    /** Multisig public keys */
-    pubKeys?: string[] | BitcoreLib.PublicKey[];
-    /** Threshold for multisig */
-    threshold?: number;
-    /** Options for multisig */
-    opts?: any;
-    // end Multisig params for `associateInputs()`
-  }): string {
+  getSighash(params: BtcGetSighashParams): string {
     const { index, utxos, path, sigtype, pubKeys, threshold, opts } = params;
     let { tx, pubKey } = params;
     
@@ -299,3 +262,52 @@ export type EveryUtxoType = Partial<UtxoType & {
   script: string | BitcoreLib.Script;
   address: string | BitcoreLib.Address;
 }>;
+
+export interface BtcCreateParams {
+  recipients: Array<{ address: string; amount: number | string }>;
+  utxos?: EveryUtxoType[];
+  change?: string;
+  feeRate?: number | string;
+  fee?: number | string;
+  isSweep?: boolean;
+  replaceByFee?: boolean;
+  lockUntilDate?: number;
+  lockUntilBlock?: number;
+};
+
+export interface BtcSignParams {
+  tx: TransactionType;
+  keys: Key[];
+  utxos: EveryUtxoType[];
+  pubkeys?: any[];
+  threshold?: number;
+  opts?: any;
+};
+
+export interface BtcApplySignatureParams {
+  tx: BitcoreLib.Transaction;
+  signature: SignatureType;
+  index: number;
+  sigtype?: number;
+};
+
+export interface BtcGetHashParams { tx: TransactionType };
+
+export interface BtcTransformSignatureObjectParams { obj: any; sigtype?: number };
+
+export interface BtcGetSighashParams {
+  tx: TransactionType;
+  index: number;
+  utxos?: EveryUtxoType[];
+  pubKey?: string | BitcoreLib.PublicKey | BitcoreLib.HDPublicKey;
+  path?: string;
+  sigtype?: number;
+  // Multisig params for `associateInputs()`
+  /** Multisig public keys */
+  pubKeys?: string[] | BitcoreLib.PublicKey[];
+  /** Threshold for multisig */
+  threshold?: number;
+  /** Options for multisig */
+  opts?: any;
+  // end Multisig params for `associateInputs()`
+};
