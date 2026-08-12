@@ -2,7 +2,7 @@ import express, { Request } from 'express';
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { StreamAddressUtxosParams } from '../../types/namespaces/ChainStateProvider';
-import { respondWithError, streamJsonArray } from '../apiUtils';
+import { logStreamFailure, respondWithError, streamJsonArray } from '../apiUtils';
 
 const router = express.Router({ mergeParams: true });
 
@@ -19,7 +19,7 @@ async function streamCoins(req: Request, res) {
     const stream = await ChainStateProvider.streamAddressTransactions(payload);
     const result = await streamJsonArray(stream, req, res);
     if (!result.success) {
-      logger.error('Error mid-stream (streamAddressTransactions): %o', result.error?.log || result.error);
+      logStreamFailure(result, 'streamAddressTransactions');
     }
   } catch (err: any) {
     logger.error('Error streaming coins: %o', err.stack || err.message || err);

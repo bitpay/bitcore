@@ -1,6 +1,8 @@
 import { Readable } from 'stream';
 import { Request, Response } from 'express';
+import logger from '../logger';
 import { AdapterError, AdapterErrorCode, AllProvidersUnavailableError } from '../providers/chain-state/external/adapters/errors';
+import { jsonStringify } from '../utils';
 
 export function respondWithError(res: Response, err: any) {
   if (err instanceof AllProvidersUnavailableError) {
@@ -16,9 +18,51 @@ export interface StreamJsonArrayOpts {
   jsonl?: boolean;
 }
 
-export interface StreamJsonArrayResult {
-  success: boolean;
-  error?: any;
+/**
+ * Why a stream stopped short of a clean end.
+ *
+ * - `client-disconnect` req or res closed before the stream finished
+ * - `not-supported`     upstream reported the query is unsupported before any data; `[]` was sent
+ * - `stream-error`      stream errored mid-body; an inline error marker was appended
+ * - `closed-before-end` stream emitted 'close' without ever emitting 'end' or 'error'
+ */
+export type StreamJsonArrayFailureReason =
+  | 'client-disconnect'
+  | 'not-supported'
+  | 'stream-error'
+  | 'closed-before-end';
+
+export type StreamJsonArrayResult =
+  | { success: true }
+  | { success: false; reason: StreamJsonArrayFailureReason; error?: any };
+
+// One log message per reason, kept out of the result shape so they can't drift per call site.
+const FAILURE_MESSAGES: Record<StreamJsonArrayFailureReason, string> = {
+  'client-disconnect': 'Client disconnected mid-stream',
+  'not-supported': 'Upstream reported the query is not supported',
+  'stream-error': 'Error mid-stream',
+  'closed-before-end': 'Stream closed before end',
+};
+
+/**
+ * Log a non-success streamJsonArray() result. Disconnects log at info: a single hangup is
+ * normal traffic, but a stalled upstream shows up as every client timing out, so the
+ * pattern needs to stay visible in production logs without tripping error alerting.
+ *
+ * @param result the result returned by streamJsonArray
+ * @param context the stream entry point, e.g. 'streamAddressTransactions'
+ */
+export function logStreamFailure(result: StreamJsonArrayResult, context: string) {
+  if (result.success) {
+    return;
+  }
+  const detail = result.error?.log || result.error;
+  const message = `${FAILURE_MESSAGES[result.reason]} (${context}): %o`;
+  if (result.reason === 'client-disconnect') {
+    logger.info(message, detail);
+  } else {
+    logger.error(message, detail);
+  }
 }
 
 /**
@@ -36,6 +80,11 @@ export function streamJsonArray(
 ): Promise<StreamJsonArrayResult> {
   // Auto-detect jsonl flag attached to the stream so routes stay chain-agnostic.
   const jsonl = opts.jsonl ?? stream.jsonl ?? false;
+  // A stream that died before this call already emitted 'error'/'close', so we'd never
+  // hear it. Reject now so the route sends a 5xx instead of hanging.
+  if (stream.destroyed) {
+    return Promise.reject(new Error('stream destroyed before piping began'));
+  }
   return new Promise<StreamJsonArrayResult>((resolve, reject) => {
     let closed = false;
     let isFirst = true;
@@ -45,6 +94,8 @@ export function streamJsonArray(
     // a client disconnect races a stream end/error or a stream 'close' event follows destroy().
     const safeResolve = (result: StreamJsonArrayResult) => { if (!settled) { settled = true; resolve(result); } };
     const safeReject = (err: any) => { if (!settled) { settled = true; reject(err); } };
+    const fail = (reason: StreamJsonArrayFailureReason, error?: any) =>
+      safeResolve({ success: false, reason, error });
 
     const tearDown = () => {
       // close() handles mongo cursor streams; destroy() tears down piped Transform chains
@@ -66,7 +117,7 @@ export function streamJsonArray(
       // Settle the awaiting route handler so it can fall through to its catch/finally
       // instead of hanging until the stream eventually emits 'close' (which may not happen
       // on a destroyed pipeline if upstream never settles).
-      safeResolve({ success: false, error: new Error('client disconnected') });
+      fail('client-disconnect', new Error('client disconnected'));
     };
 
     req.on('close', onAbort);
@@ -75,8 +126,11 @@ export function streamJsonArray(
     res.type(jsonl ? 'application/x-ndjson' : 'json');
     res.on('close', onAbort);
 
-    stream.on('error', (err: any) => {
-      if (closed) { safeResolve({ success: false, error: err }); return; }
+    // Named so the 'data' handler can route serialization failures through the same path
+    // instead of throwing out of an event handler (which becomes an uncaughtException).
+    const onStreamError = (err: any) => {
+      // closed means the promise already settled; nothing left to do
+      if (closed) { return; }
       if (err?.isAxiosError) {
         err.log = {
           url: err?.config?.url,
@@ -85,11 +139,14 @@ export function streamJsonArray(
           data: err?.response?.data,
         };
       }
-      if (err?.log?.data?.message?.includes('not supported')) {
+      // '[]' is only a valid body if no rows went out yet. After data, fall through to
+      // the mid-stream path so the array gets closed properly.
+      if (isFirst && err?.log?.data?.message?.includes('not supported')) {
         closed = true;
         res.write('[]');
         res.end();
-        return safeResolve({ success: false, error: err });
+        tearDown();
+        return fail('not-supported', err);
       }
       if (!isFirst) {
         // Headers already sent — emit inline error marker, end response, log upstream
@@ -102,31 +159,37 @@ export function streamJsonArray(
         }
         res.end();
         cleanup();
-        return safeResolve({ success: false, error: err });
+        return fail('stream-error', err);
       }
-      // Pre-data — caller can send proper 5xx status
+      // Pre-data: caller can send a proper 5xx. Mark closed first so a still-live stream
+      // (e.g. after a serialization failure) can't emit 'end' and write '[]' into a body
+      // the route is about to replace with an error.
+      cleanup();
       return safeReject(err);
-    });
+    };
+    stream.on('error', onStreamError);
 
     stream.on('data', (data: any) => {
       if (closed) {
         cleanup();
         return;
       }
-      if (!jsonl) {
-        if (isFirst) {
-          res.write('[\n');
-        } else {
-          res.write(',\n');
+      // Serialize before writing anything. A stringify failure must not leave a dangling
+      // '[\n' or ',\n' in the body, and throwing from here would unwind through the stream
+      // internals to uncaughtException rather than the route's catch block.
+      let payload = data;
+      if (typeof data !== 'string' && !Buffer.isBuffer(data)) {
+        try {
+          payload = jsonStringify(data);
+        } catch (err) {
+          return onStreamError(err);
         }
       }
-      if (isFirst) {
-        isFirst = false;
+      if (!jsonl) {
+        res.write(isFirst ? '[\n' : ',\n');
       }
-      if (typeof data !== 'string' && !Buffer.isBuffer(data)) {
-        data = JSON.stringify(data);
-      }
-      res.write(data);
+      isFirst = false;
+      res.write(payload);
     });
 
     stream.on('end', () => {
@@ -144,7 +207,11 @@ export function streamJsonArray(
     });
 
     // Backstop: if destroy() emits 'close' without a prior 'end' or 'error', settle the promise
-    // so the route handler doesn't await indefinitely on a torn-down pipeline.
-    stream.on('close', () => safeResolve({ success: closed, error: closed ? undefined : new Error('stream closed before end') }));
+    // so the route handler doesn't await indefinitely on a torn-down pipeline. When `closed`
+    // is set the promise was already settled in the same frame, so there is nothing to do.
+    stream.on('close', () => {
+      if (closed) return;
+      fail('closed-before-end', new Error('stream closed before end'));
+    });
   });
 }

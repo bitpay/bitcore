@@ -5,7 +5,7 @@ import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { StreamWalletAddressesParams } from '../../types/namespaces/ChainStateProvider';
 import { Auth, AuthenticatedRequest } from '../../utils/auth';
-import { respondWithError, streamJsonArray } from '../apiUtils';
+import { logStreamFailure, respondWithError, streamJsonArray } from '../apiUtils';
 
 const router = Router({ mergeParams: true });
 
@@ -74,7 +74,7 @@ router.get('/:pubKey/addresses', Auth.authenticateMiddleware, async (req: Authen
     const stream = await ChainStateProvider.streamWalletAddresses(payload);
     const result = await streamJsonArray(stream, req, res);
     if (!result.success) {
-      logger.error('Error mid-stream (streamWalletAddresses): %o', result.error?.log || result.error);
+      logStreamFailure(result, 'streamWalletAddresses');
     }
     return;
   } catch (err: any) {
@@ -155,7 +155,7 @@ router.get('/:pubKey/transactions', Auth.authenticateMiddleware, async (req: Aut
     });
     const result = await streamJsonArray(stream, req, res);
     if (!result.success) {
-      logger.error('Error mid-stream (streamWalletTransactions): %o', result.error?.log || result.error);
+      logStreamFailure(result, 'streamWalletTransactions');
     }
     return;
   } catch (err: any) {
@@ -210,7 +210,7 @@ router.get('/:pubKey/utxos', Auth.authenticateMiddleware, async (req: Authentica
     });
     const result = await streamJsonArray(stream, req, res);
     if (!result.success) {
-      logger.error('Error mid-stream (streamWalletUtxos): %o', result.error?.log || result.error);
+      logStreamFailure(result, 'streamWalletUtxos');
     }
     return;
   } catch (err: any) {

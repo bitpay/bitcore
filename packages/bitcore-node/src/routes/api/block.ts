@@ -5,7 +5,7 @@ import { CoinStorage, ICoin } from '../../models/coin';
 import { TransactionStorage } from '../../models/transaction';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { isDateValid } from '../../utils';
-import { respondWithError, streamJsonArray } from '../apiUtils';
+import { logStreamFailure, respondWithError, streamJsonArray } from '../apiUtils';
 import { CacheTimes, Confirmations, SetCache } from '../middleware';
 
 const router = express.Router({ mergeParams: true });
@@ -28,7 +28,7 @@ router.get('/', async function(req: Request, res: Response) {
     const stream = await ChainStateProvider.streamBlocks(payload);
     const result = await streamJsonArray(stream, req, res);
     if (!result.success) {
-      logger.error('Error mid-stream (streamBlocks): %o', result.error?.log || result.error);
+      logStreamFailure(result, 'streamBlocks');
     }
     return;
   } catch (err: any) {

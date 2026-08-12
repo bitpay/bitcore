@@ -4,7 +4,7 @@ import { ICoin } from '../../models/coin';
 import { ITransaction } from '../../models/transaction';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { StreamTransactionsParams } from '../../types/namespaces/ChainStateProvider';
-import { respondWithError, streamJsonArray } from '../apiUtils';
+import { logStreamFailure, respondWithError, streamJsonArray } from '../apiUtils';
 import { CacheTimes, SetCache } from '../middleware';
 
 const router = Router({ mergeParams: true });
@@ -36,7 +36,7 @@ router.get('/', async function(req: Request, res: Response) {
     const stream = await ChainStateProvider.streamTransactions(payload);
     const result = await streamJsonArray(stream, req, res);
     if (!result.success) {
-      logger.error('Error mid-stream (streamTransactions): %o', result.error?.log || result.error);
+      logStreamFailure(result, 'streamTransactions');
     }
     return;
   } catch (err: any) {

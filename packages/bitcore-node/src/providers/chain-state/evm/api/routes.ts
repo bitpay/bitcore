@@ -4,7 +4,7 @@ import { Router } from 'express';
 import config from '../../../../config';
 import logger from '../../../../logger';
 import { WebhookStorage } from '../../../../models/webhook';
-import { respondWithError, streamJsonArray } from '../../../../routes/apiUtils';
+import { logStreamFailure, respondWithError, streamJsonArray } from '../../../../routes/apiUtils';
 import { Config } from '../../../../services/config';
 import { IEVMNetworkConfig } from '../../../../types/Config';
 import { castToBool } from '../../../../utils';
@@ -258,7 +258,7 @@ export class EVMRouter {
         });
         const result = await streamJsonArray(stream, req, res);
         if (!result.success) {
-          logger.error('Error mid-stream (streamGnosisWalletTransactions): %o', result.error?.log || result.error);
+          logStreamFailure(result, 'streamGnosisWalletTransactions');
         }
         return;
       } catch (err: any) {
