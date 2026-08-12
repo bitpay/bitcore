@@ -22,6 +22,8 @@ export interface ITssSigMessageObject {
   partyId: number;
   publicKey: string;
   round: number;
+  createdOn: number;
+  timeLimit?: number;
   signature?: {
     r: string;
     s: string;
@@ -61,6 +63,14 @@ export interface ITssSigGenModel {
     messages: ITssSigMessageObject;
   }>>;
   /**
+   * Timestamp the session was created
+   */
+  createdOn: number;
+  /**
+   * Session expires after this many milliseconds.
+   */
+  timeLimit?: number;
+  /**
    * The signature generated as the result of the TSS signature generation process.
    * The signature can be generated along a derivation path, which produces a pubKey that's
    *  dfferent from the key gen sharedPublicKey.
@@ -90,16 +100,20 @@ export class TssSigGenModel implements ITssSigGenModel {
   }>>;
   signature?: ITssSigMessageObject['signature'];
   schemeVersion: number;
+  createdOn: number;
+  timeLimit?: number;
   __v: number;
 
 
-  static create(params: { id: string; message: ITssSigMessageObject; m: number; copayerId: string }): TssSigGenModel {
-    const { id, message, m, copayerId } = params;
+  static create(params: { id: string; message: ITssSigMessageObject; m: number; copayerId: string; version: number }): TssSigGenModel {
+    const { id, message, m, copayerId, version } = params;
     const { partyId } = message;
 
     const x = new TssSigGenModel();
     x.id = id;
-    x.schemeVersion = Defaults.TSS_SIGGEN_SCHEME_VERSION;
+    x.schemeVersion = version || Defaults.TSS_SIGGEN_SCHEME_VERSION;
+    x.createdOn = Date.now();
+    x.timeLimit = Defaults.TSS_SIGGEN_TIME_LIMIT;
     x.m = m;
     x.participants = [{
       partyId,
@@ -117,6 +131,8 @@ export class TssSigGenModel implements ITssSigGenModel {
     const x = new TssSigGenModel();
     x.id = obj.id;
     x.schemeVersion = obj.schemeVersion;
+    x.createdOn = obj.createdOn;
+    x.timeLimit = obj.timeLimit;
     x.m = obj.m;
     x.participants = obj.participants;
     x.rounds = obj.rounds;

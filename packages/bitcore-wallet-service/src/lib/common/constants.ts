@@ -226,6 +226,9 @@ export const Constants = {
 
   // May be different from the defaults if we rollback
   // or want to beta test new versions.
-  TSS_KEYGEN_SCHEME_VERSION_MAX: 1,
-  TSS_SIGGEN_SCHEME_VERSION_MAX: 1,
+  TSS_KEYGEN_SCHEME_VERSION_MAX: 1.1,
+  TSS_SIGGEN_SCHEME_VERSION_MAX: 1.1,
+  
+  TSS_KEYGEN_SCHEME_MIN_SERVER_VERSION: 1,
+  TSS_SIGGEN_SCHEME_MIN_SERVER_VERSION: 1,
 } as const;

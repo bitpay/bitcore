@@ -434,6 +434,15 @@ export const Defaults = {
     { code: 'NZD', name: 'New Zealand Dollar' }
   ],
 
-  TSS_KEYGEN_SCHEME_VERSION: 1,
-  TSS_SIGGEN_SCHEME_VERSION: 1,
+  // In general, the major version represents server upgrades or major security upgrades, and the minor version represents client upgrades.
+  // Example1: If the server has an API response overhaul, that's a breaking change for older clients - it should increment the major version.
+  //           This will result in an UPGRADE_NEEDED error for older clients.
+  // Example2: If the client upgrades the encryption scheme, older clients will still be compatible with the server and
+  //           other older clients - it should increment the minor version. Mismatching client versions will still break the process, but
+  //           the difference from a major version bump is that matching older clients will still work.
+  TSS_KEYGEN_SCHEME_VERSION: 1.1,
+  TSS_SIGGEN_SCHEME_VERSION: 1.1,
+
+  TSS_KEYGEN_TIME_LIMIT: 20 * 60 * 1000, // 20 minutes
+  TSS_SIGGEN_TIME_LIMIT: 20 * 60 * 1000, // 20 minutes
 } as const;

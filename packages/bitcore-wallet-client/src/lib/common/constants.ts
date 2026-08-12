@@ -66,5 +66,8 @@ export const Constants = {
     arb: 'arb',
     base: 'base',
     op: 'op',
-  }
+  },
+
+  TSS_KEYGEN_VERSION: 1.1,
+  TSS_SIGN_VERSION: 1.1
 };

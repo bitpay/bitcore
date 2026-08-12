@@ -5,7 +5,8 @@ import { Errors } from '../../errors/errordefinitions';
 import { WalletService, checkRequired } from '../../server';
 import { error } from '../helpers';
 import { getCredentials, getMessage } from './authRequest';
-
+import type { TssKeyGenModel } from '../../model/tsskeygen';
+import type { TssSigGenModel } from '../../model/tsssign';
 
 /**
  * Middleware to authenticate TSS requests and attach the TSS session to the request.
@@ -13,7 +14,6 @@ import { getCredentials, getMessage } from './authRequest';
  * and retrieves the TSS session based on the request path.
  */
 export function authTssRequest(): express.RequestHandler {
-
   return async function(req, res, next) {
     try {
       const storage = WalletService.getStorage();
@@ -28,7 +28,8 @@ export function authTssRequest(): express.RequestHandler {
       } = credentials;
       
       const { id } = req.params as { [key: string]: string };
-      let session;
+
+      let session: TssKeyGenModel | TssSigGenModel | null = null;
       let partyId = null;
       let pubKey = null;
       if (req.path.includes('/tss/keygen/')) {
@@ -46,6 +47,9 @@ export function authTssRequest(): express.RequestHandler {
       }
       if (!pubKey) {
         throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found in session');
+      }
+      if (session.timeLimit && Date.now() > session.createdOn + session.timeLimit) {
+        throw Errors.TSS_SESSION_EXPIRED;
       }
 
       const message = getMessage(req);
