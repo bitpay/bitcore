@@ -12,6 +12,16 @@ import '../utils/polyfills';
 const args = parseArgv([], [{ arg: 'DEBUG', type: 'bool' }, { arg: 'CLUSTER', type: 'bool' }]);
 const services: Array<any> = [];
 
+function sesSignal() {
+  return {
+    hasHarden: typeof (globalThis as any).harden === 'function',
+    hasLockdown: typeof (globalThis as any).lockdown === 'function',
+    hasCompartment: typeof (globalThis as any).Compartment === 'function',
+    objectProtoFrozen: Object.isFrozen(Object.prototype),
+    canAddPropToObjectProto: Object.isExtensible(Object.prototype)
+  };
+}
+
 export const ClusteredApiWorker = async () => {
   process.on('unhandledRejection', (error: any) => {
     console.error('Unhandled Rejection at:', error.stack || error);
@@ -28,6 +38,7 @@ export const ClusteredApiWorker = async () => {
       services.push(Worker);
     }
   } else {
+    logger.info(`LAVAMOAT_WORKER_SES_SIGNAL ${JSON.stringify(sesSignal())}`);
     services.push(Api);
   }
 
