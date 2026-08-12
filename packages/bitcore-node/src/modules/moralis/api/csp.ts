@@ -7,7 +7,7 @@ import { MongoBound } from '../../../models/base';
 import { CacheStorage } from '../../../models/cache';
 import { CoinEvent } from '../../../models/events';
 import { WalletAddressStorage } from '../../../models/walletAddress';
-import { BaseEVMStateProvider, BuildWalletTxsStreamParams } from '../../../providers/chain-state/evm/api/csp';
+import { BaseEVMStateProvider, BuildWalletTxsStreamParams, BuildWalletTxsStreamResult } from '../../../providers/chain-state/evm/api/csp';
 import { EVMBlockStorage } from '../../../providers/chain-state/evm/models/block';
 import { EVMTransactionStorage } from '../../../providers/chain-state/evm/models/transaction';
 import { EVMTransactionJSON, IEVMBlock, IEVMTransactionTransformed } from '../../../providers/chain-state/evm/types';
@@ -180,7 +180,10 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
   }
 
   // @override
-  async _buildWalletTransactionsStream(params: StreamWalletTransactionsParams, streamParams: BuildWalletTxsStreamParams) {
+  async _buildWalletTransactionsStream(
+    params: StreamWalletTransactionsParams,
+    streamParams: BuildWalletTxsStreamParams
+  ): Promise<BuildWalletTxsStreamResult> {
     const { network, args } = params;
     let { transactionStream } = streamParams;
     const { walletAddresses } = streamParams;
@@ -206,7 +209,8 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       this._addAddressToSubscription({ chainId, address })
         .catch(e => logger.warn(`Failed to add address to ${this.chain}:${network} Moralis subscription: %o`, e));
     }
-    return transactionStream;
+    // nothing to tear down here; the adapter streams run to completion on their own
+    return { stream: transactionStream };
   }
 
   // @override

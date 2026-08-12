@@ -388,11 +388,9 @@ describe('Ethereum API', function() {
       await EVMTransactionStorage.collection.insertMany(
         new Array(5).fill({}).map(() => ({ chain, network, blockHeight: 1, gasPrice: 10 * 1e9, data: Buffer.from(''), from: address } as IEVMTransactionInProcess))
       );
-      // Capture the real Mongo cursor backing the stream and spy on its close(), so this
-      // asserts the cursor itself is torn down — not merely that the returned stream emits
-      // 'close' (which destroy() does unconditionally, regardless of cursor cleanup).
-      // `.collection` is a getter that returns a fresh wrapper each access, so pin a single
-      // collection instance and wrap its find() to capture the cursor.
+      // Spy on the real cursor's close() so this asserts the cursor is torn down, not just
+      // that the stream emits 'close' (destroy() always does that).
+      // .collection returns a fresh wrapper each access, so pin one and wrap its find().
       const collection = EVMTransactionStorage.collection;
       const realFind = collection.find.bind(collection);
       let cursorCloseSpy: sinon.SinonSpy | undefined;

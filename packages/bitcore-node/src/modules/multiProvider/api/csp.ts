@@ -24,7 +24,8 @@ import { EthDater } from '../../../utils/ethDater';
 import { ReadableWithEventPipe } from '../../../utils/streamWithEventPipe';
 import type { MongoBound } from '../../../models/base';
 import type {
-  BuildWalletTxsStreamParams
+  BuildWalletTxsStreamParams,
+  BuildWalletTxsStreamResult
 } from '../../../providers/chain-state/evm/api/csp';
 import type { EVMTransactionJSON, IEVMBlock } from '../../../providers/chain-state/evm/types';
 import type { IIndexedAPIAdapter } from '../../../providers/chain-state/external/adapters/IIndexedAPIAdapter';
@@ -337,7 +338,10 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
   }
 
   // @override — sequential failover for wallet transaction streaming
-  async _buildWalletTransactionsStream(params: StreamWalletTransactionsParams, streamParams: BuildWalletTxsStreamParams) {
+  async _buildWalletTransactionsStream(
+    params: StreamWalletTransactionsParams,
+    streamParams: BuildWalletTxsStreamParams
+  ): Promise<BuildWalletTxsStreamResult> {
     const { network, args } = params;
     let { transactionStream } = streamParams;
     const { walletAddresses } = streamParams;
@@ -387,7 +391,8 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
       }
     }
 
-    return transactionStream;
+    // nothing to tear down here; the adapter streams run to completion on their own
+    return { stream: transactionStream };
   }
 
   // @override

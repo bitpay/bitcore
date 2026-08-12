@@ -1,7 +1,7 @@
 import { ObjectId } from 'bson';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { Readable, Writable } from 'stream';
+import { Readable } from 'stream';
 import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import { CoinStorage } from '../../../src/models/coin';
 import { MintOp, SpendOp, TaggedBitcoinTx, TransactionStorage, TxOp } from '../../../src/models/transaction';
@@ -321,31 +321,27 @@ describe('Transaction Model', function() {
           populateReceipt: sandbox.stub().callsFake(tx => tx)
         } as any);
 
-        const rows = new Array<any>();
-        const req = new Readable({ read() {} }) as any;
-        const res = new Writable({
-          write(chunk, _, done) {
-            for (const line of chunk.toString().split('\n').filter(Boolean)) {
-              rows.push(JSON.parse(line));
-            }
-            done();
-          }
-        }) as any;
-        const finished = new Promise<void>((resolve, reject) => {
-          res.on('finish', resolve);
-          res.on('error', reject);
-        });
-
-        await Gnosis.streamGnosisWalletTransactions({
+        // streamGnosisWalletTransactions returns a jsonl stream now; the route does the
+        // HTTP framing, so collect the newline-delimited rows straight off the stream.
+        const stream = await Gnosis.streamGnosisWalletTransactions({
           chain: 'ETH',
           network: 'mainnet',
           multisigContractAddress: requestOverrides.multisigContractAddress || gnosisMultisigContractAddress,
           wallet: { _id: new ObjectId() },
-          req,
-          res,
           args: { tokenAddress: requestOverrides.tokenAddress || gnosisBusdToken }
         } as any);
-        await finished;
+
+        const rows = new Array<any>();
+        await new Promise<void>((resolve, reject) => {
+          stream
+            .on('data', chunk => {
+              for (const line of chunk.toString().split('\n').filter(Boolean)) {
+                rows.push(JSON.parse(line));
+              }
+            })
+            .on('error', reject)
+            .on('end', resolve);
+        });
         return { findQuery, rows };
       };
 

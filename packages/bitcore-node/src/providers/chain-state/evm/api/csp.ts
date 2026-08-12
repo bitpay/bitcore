@@ -16,7 +16,7 @@ import { Storage } from '../../../../services/storage';
 import { IBlock } from '../../../../types/Block';
 import { ChainId } from '../../../../types/ChainNetwork';
 import { SpentHeightIndicators } from '../../../../types/Coin';
-import { normalizeChainNetwork, partition, range } from '../../../../utils';
+import { disposeOnce, normalizeChainNetwork, partition, range } from '../../../../utils';
 import { StatsUtil } from '../../../../utils/stats';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { AdapterError, AdapterErrorCode } from '../../external/adapters/errors';
@@ -60,10 +60,14 @@ export interface BuildWalletTxsStreamParams {
   transactionStream: TransformWithEventPipe;
   populateEffects: PopulateEffectsForAddressTransform;
   walletAddresses: string[];
-  // _buildWalletTransactionsStream pushes teardown callbacks here (e.g. cursor.close).
-  // streamWalletTransactions runs them when the FINAL piped stream closes/ends, so the
-  // hook lives on the stream the route actually destroys on disconnect.
-  cleanups?: Array<() => void>;
+}
+
+export interface BuildWalletTxsStreamResult {
+  stream: TransformWithEventPipe;
+  // Teardown for whatever the builder opened (e.g. the mongo cursor). streamWalletTransactions
+  // runs it against the FINAL piped stream, because destroy() does not propagate upstream
+  // through eventPipe chains and the route only ever destroys the final stream.
+  dispose?: () => void | Promise<unknown>;
 }
 
 
@@ -687,14 +691,13 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     const populateReceipt = new PopulateReceiptTransform(this);
     const populateEffects = new PopulateEffectsForAddressTransform(this, walletAddresses);
 
-    const cleanups: Array<() => void> = [];
     const streamParams: BuildWalletTxsStreamParams = {
       transactionStream,
       populateEffects,
-      walletAddresses,
-      cleanups
+      walletAddresses
     };
-    transactionStream = await this._buildWalletTransactionsStream(params, streamParams);
+    const { stream: builtStream, dispose } = await this._buildWalletTransactionsStream(params, streamParams);
+    transactionStream = builtStream;
 
     if (!args.tokenAddress && wallet._id) {
       const internalTxTransform = new InternalTxRelatedFilterTransform(web3, wallet._id);
@@ -705,37 +708,40 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       .eventPipe(populateReceipt)
       .eventPipe(ethTransactionTransform);
 
-    // Run upstream teardown callbacks (e.g. cursor.close) when the FINAL stream the route
-    // pipes from closes or ends. destroy() on this stream does not reliably propagate
-    // upstream through eventPipe chains, so the cleanup must live here.
-    const runCleanups = () => { for (const fn of cleanups) { try { fn(); } catch { /* noop */ } } };
-    transactionStream.on('close', runCleanups);
-    transactionStream.on('end', runCleanups);
+    // Run the builder's teardown (e.g. cursor.close) when the FINAL stream the route pipes
+    // from settles. destroy() on this stream does not reliably propagate upstream through
+    // eventPipe chains, so the hook must live here rather than beside the cursor.
+    const runDispose = disposeOnce(dispose, err =>
+      logger.warn(`Failed to tear down ${this.chain} wallet transaction stream: %o`, err));
+    const finalStream = transactionStream;
+    finalStream.on('close', runDispose);
+    finalStream.on('end', runDispose);
+    finalStream.on('error', err => {
+      runDispose();
+      // Don't just consume the error: if it fires before the route attaches its own
+      // handlers the request would hang. Destroying the stream surfaces it, since
+      // streamJsonArray rejects up front on a destroyed stream.
+      if (!finalStream.destroyed) {
+        finalStream.destroy(err);
+      }
+    });
 
     (transactionStream as any).jsonl = true;
     return transactionStream;
   }
 
-  async _buildWalletTransactionsStream(params: StreamWalletTransactionsParams, streamParams: BuildWalletTxsStreamParams) {
+  async _buildWalletTransactionsStream(
+    params: StreamWalletTransactionsParams,
+    streamParams: BuildWalletTxsStreamParams
+  ): Promise<BuildWalletTxsStreamResult> {
     const query = this.getWalletTransactionQuery(params);
     let { transactionStream } = streamParams;
     const { populateEffects } = streamParams;
 
-    // Store cursor reference for cleanup
     const cursor = EVMTransactionStorage.collection
       .find(query)
       .sort({ blockTimeNormalized: 1 })
       .addCursorFlag('noCursorTimeout', true);
-
-    // Cursor cleanup is registered with the caller and triggered against the final piped
-    // stream. Hooking it here against the intermediate transform would miss disconnects
-    // because destroy() does not propagate upstream through eventPipe chains reliably.
-    let cursorClosed = false;
-    streamParams.cleanups?.push(() => {
-      if (cursorClosed) return;
-      cursorClosed = true;
-      try { cursor.close(); } catch { /* already closed */ }
-    });
 
     // Pipe cursor to transform stream
     transactionStream = cursor.pipe(new TransformWithEventPipe({ objectMode: true, passThrough: true }));
@@ -746,7 +752,10 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       const erc20Transform = new Erc20RelatedFilterTransform(params.args.tokenAddress);
       transactionStream = transactionStream.eventPipe(erc20Transform);
     }
-    return transactionStream;
+
+    // cursor.close() resolves a promise; awaiting it is what lets a failure reach the
+    // caller's dispose error handler instead of becoming an unhandled rejection.
+    return { stream: transactionStream, dispose: async () => { await cursor.close(); } };
   }
 
   async getErc20Transfers(
