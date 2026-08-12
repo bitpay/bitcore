@@ -1,4 +1,5 @@
 import express from 'express';
+import { brazeService } from '../braze';
 import { logger } from '../logger';
 import { OnrampWebhookEvent } from '../model/onrampWebhookEvent';
 import type * as Types from '../../types/expressapp';
@@ -28,6 +29,28 @@ function handleWebhook(
   }
 
   logger.info(`[webhook:${partner}] Received event externalId=%s status=%s`, event?.externalId, event?.status);
+
+  // Fire-and-forget: analytics tracking must never block or fail the webhook ack.
+  brazeService
+    .trackEvent({
+      externalId: event?.userId,
+      name: 'onramp_webhook_received',
+      properties: {
+        partner: event?.partner,
+        status: event?.status,
+        eventName: event?.eventName,
+        externalId: event?.externalId,
+        fiatAmount: event?.fiatAmount,
+        fiatCurrency: event?.fiatCurrency,
+        cryptoAmount: event?.cryptoAmount,
+        cryptoCurrency: event?.cryptoCurrency,
+        paymentMethod: event?.paymentMethod,
+        env: event?.env,
+        isEmbedded: event?.isEmbedded
+      }
+    })
+    .catch(err => logger.warn(`[webhook:${partner}] Braze tracking failed: %o`, err));
+
   return res.status(200).json({ ok: true });
 }
 
