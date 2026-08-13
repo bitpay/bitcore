@@ -6,7 +6,13 @@ import bitcoreLibDoge from '@bitpay-labs/bitcore-lib-doge';
 import bitcoreLibLtc from '@bitpay-labs/bitcore-lib-ltc';
 import { Constants, Transactions } from '../src';
 
-describe('Transaction', function() {
+describe('Transaction', function () {
+  const libs = {
+    BTC: bitcoreLib,
+    BCH: bitcoreLibCash,
+    DOGE: bitcoreLibDoge,
+    LTC: bitcoreLibLtc
+  };
   describe('create', () => {
     it('should create a BTC tx', () => {
       const recipients = [{ address: 'mpNpzMoprLnSBu8CWDunNCYeJq3Mzdk59V', amount: 1e8 }];
@@ -43,6 +49,167 @@ describe('Transaction', function() {
       const expected =
         '0200000002ab189f0d3bf494d3307effb79bafe0758907b86621edb8bd4cad4c6c6dc63e64010000006a47304402202eeb967801c0aad4f8241d8f90e2a9e2236f95c189165ba6b2ba4dc6b17bacbe02201b5d4dc0c32f6aa134d93698f85bf4c098d15fcbaada0b6ca2b8076fd8aa2741012102c8f8fa438666cbd287e28fb384b99555e4acce610e8141e887c9c458bba5db5cffffffffab189f0d3bf494d3307effb79bafe0758907b86621edb8bd4cad4c6c6dc63e64000000006a473044022072bdde2c0b413fc42d15d93e768a26f818dc5b225b9359235c09fd0452d6121a022007c00afa396d60d5b7919f2ba31e638817561cab4e2afed7a86dd636ee293c1001210321f2f13aed42db7257b64f77d574071a6e81e460ab3693eefb7482c12d1ff697ffffffff0200e1f505000000001976a914612fb4d5e27a28f5c54018d8948ca3a650741c4188acee152600000000001976a91486823ef7c8e210184cc8675189d37c4c9d8e1e0288ac00000000';
       expect(signed).to.eq(expected);
+    });
+
+    describe.only('every utxo type: bitcore-node, UnspentOutput, and UnspentOutput.toObject', () => {
+      const keys = [{
+        address: '15GBbJcKKKcXt9fMx4drHvb2GLWMksEvAq',
+        privKey: '37ffacfa88637b5b1835e44e2976a92e883b5480bde433f42735d1d1943270df'
+      }];
+
+      const bitcoreNodeUtxos =
+        [
+          {
+            mintTxid: '643ec66d6c4cad4cbdb8ed2166b8078975e0af9bb7ff7e30d394f43b0d9f18ab',
+            mintIndex: 1,
+            value: 90_000,
+            script: '76a91457884dcfe2ab46d3354a42d97333c95e5b80cf0188ac',
+            address: 'moVnNJpHHfssYJEnMTS5xXyGV8RhRQNRz5',
+            sequenceNumber: 4294967294
+          },
+          {
+            mintTxid: '643ec66d6c4cad4cbdb8ed2166b8078975e0af9bb7ff7e30d394f43b0d9f18ab',
+            mintIndex: 0,
+            value: 30_000,
+            script: '76a9144e744a19a009a9dd43a23a7c12045c83e82ac9d288ac',
+            address: 'mnfnJx2xWWptYmBzck3rdE851Dtu9GaZ3F',
+            sequenceNumber: 4294967294
+          }
+        ];
+      const unspentOutputUtxos = [
+        {
+          txId: '643ec66d6c4cad4cbdb8ed2166b8078975e0af9bb7ff7e30d394f43b0d9f18ab',
+          outputIndex: 1,
+          satoshis: 90_000,
+          script: '76a91457884dcfe2ab46d3354a42d97333c95e5b80cf0188ac'
+        },
+        {
+          txId: '643ec66d6c4cad4cbdb8ed2166b8078975e0af9bb7ff7e30d394f43b0d9f18ab',
+          outputIndex: 0,
+          satoshis: 30_000,
+          script: '76a9144e744a19a009a9dd43a23a7c12045c83e82ac9d288ac'
+        }
+      ];
+      const unspentOutputToObjectUtxos = [
+        {
+          txid: '643ec66d6c4cad4cbdb8ed2166b8078975e0af9bb7ff7e30d394f43b0d9f18ab',
+          outputIndex: 1,
+          amount: 0.0009,
+          scriptPubKey: '76a91457884dcfe2ab46d3354a42d97333c95e5b80cf0188ac'
+        },
+        {
+          txid: '643ec66d6c4cad4cbdb8ed2166b8078975e0af9bb7ff7e30d394f43b0d9f18ab',
+          vout: 0,
+          amount: 0.0003,
+          scriptPubKey: '76a9144e744a19a009a9dd43a23a7c12045c83e82ac9d288ac'
+        }
+      ];
+      const utxoSet = [
+        bitcoreNodeUtxos,
+        unspentOutputUtxos,
+        unspentOutputToObjectUtxos
+      ];
+
+      const recipients = [{ address: 'moVnNJpHHfssYJEnMTS5xXyGV8RhRQNRz5', amount: 100_000 }];
+      for (const chain of ['BTC', 'BCH', 'DOGE', 'LTC']) {
+        let tx: string;
+        const lib = libs[chain];
+        it(`should create a tx with every utxo type for ${chain}`, () => {
+          const txs = utxoSet.map(utxos => Transactions.create({
+            chain,
+            recipients,
+            utxos
+          }));
+          
+          tx = txs[0];
+          for (const _tx of txs.slice(1)) {
+            expect(tx, 'all transactions should be the same regardless of the utxo format').to.equal(_tx);
+          }
+          
+          let expectedTx: string;
+          if (chain === 'DOGE') {
+            expectedTx = '0100000002ab189f0d3bf494d3307effb79bafe0758907b86621edb8bd4cad4c6c6dc63e640100000000ffffffffab189f0d3bf494d3307effb79bafe0758907b86621edb8bd4cad4c6c6dc63e640000000000ffffffff01a0860100000000001976a91457884dcfe2ab46d3354a42d97333c95e5b80cf0188ac00000000';
+          } else {
+            expectedTx = '0200000002ab189f0d3bf494d3307effb79bafe0758907b86621edb8bd4cad4c6c6dc63e640100000000ffffffffab189f0d3bf494d3307effb79bafe0758907b86621edb8bd4cad4c6c6dc63e640000000000ffffffff01a0860100000000001976a91457884dcfe2ab46d3354a42d97333c95e5b80cf0188ac00000000';
+          }
+          expect(tx).to.equal(expectedTx);
+        });
+
+        it(`should sign a tx with every utxo type ${chain}`, () => {
+          const signedTxs = utxoSet.map(utxos => Transactions.sign({
+            chain,
+            tx,
+            utxos,
+            keys
+          }));
+          const signedTx = signedTxs[0];
+          for (const _signedTx of signedTxs.slice(1)) {
+            expect(signedTx, 'signed transactions should all be the same regardless of utxo type').to.equal(_signedTx);
+          }
+
+          let expectedTx: string;
+          if (chain === 'DOGE') {
+            expectedTx = '0100000002ab189f0d3bf494d3307effb79bafe0758907b86621edb8bd4cad4c6c6dc63e640100000000ffffffffab189f0d3bf494d3307effb79bafe0758907b86621edb8bd4cad4c6c6dc63e640000000000ffffffff01a0860100000000001976a91457884dcfe2ab46d3354a42d97333c95e5b80cf0188ac00000000';
+          } else {
+            expectedTx = '0200000002ab189f0d3bf494d3307effb79bafe0758907b86621edb8bd4cad4c6c6dc63e640100000000ffffffffab189f0d3bf494d3307effb79bafe0758907b86621edb8bd4cad4c6c6dc63e640000000000ffffffff01a0860100000000001976a91457884dcfe2ab46d3354a42d97333c95e5b80cf0188ac00000000';
+          }
+          expect(signedTx).to.equal(expectedTx);
+        });
+        
+        it(`should create valid sighashes for all utxo types ${chain}`, () => {
+          const bitcoreTx = lib.Transaction()
+            .from(unspentOutputUtxos)
+            .to(recipients[0].address, recipients[0].amount);
+          const signedTx = lib.Transaction()
+            .from(unspentOutputUtxos)
+            .to(recipients[0].address, recipients[0].amount);
+          
+          for (let index = 0; index < unspentOutputUtxos.length; index++) {
+            const sighashes: string[] = [];
+            for (const utxos of utxoSet) {
+              sighashes.push(Transactions.getSighash({
+                chain,
+                tx,
+                utxos,
+                index,
+                sigtype: lib.crypto.Signature.SIGHASH_ALL
+              }));
+            }
+            
+            // getSighash should work without utxos if a complete lib transaction is provided
+            sighashes.push(Transactions.getSighash({
+              chain,
+              tx: bitcoreTx,
+              index,
+              sigtype: lib.crypto.Signature.SIGHASH_ALL
+            }));
+
+            const sighash = sighashes[0];
+            for (const hash of sighashes) {
+              expect(sighash).to.equal(hash);
+            }
+            expect(sighash.length).to.equal(64);
+            const privateKey = new lib.PrivateKey(keys[0].privKey);
+            const publicKey = privateKey.toPublicKey();
+            const signature = lib.crypto.ECDSA.sign(Buffer.from(sighash, 'hex'), privateKey);
+            signature.pubKey = publicKey;
+
+            Transactions.applySignature({
+              chain,
+              tx: signedTx,
+              signature,
+              index
+            });
+          }
+          if (chain === 'DOGE') {
+            const serializedSignedTx = '0100000002ab189f0d3bf494d3307effb79bafe0758907b86621edb8bd4cad4c6c6dc63e64010000006b483045022100a2399f85c809a1f8dbc0a5c38c80651330e1c48f744915c7692b36436a2cfd2302200daf1fa95dde4d16faaf0b2c6fd35998d905b868da73e2cb9d071bb1143e96d40121022df004d5108312f62ae085913b1d029007d980ed61f04816ae9ccfc404c99e2cffffffffab189f0d3bf494d3307effb79bafe0758907b86621edb8bd4cad4c6c6dc63e64000000006b48304502210098e92c8adf6240c7550adb527d76498d18d565ab0ad8735e2d7405cb2bfd26a1022054eb13e7b3d5bea3ad7298698e3e740293a009c11a2ba37c607a50b8be4706cd0121022df004d5108312f62ae085913b1d029007d980ed61f04816ae9ccfc404c99e2cffffffff01a0860100000000001976a91457884dcfe2ab46d3354a42d97333c95e5b80cf0188ac00000000';
+            expect(signedTx.serialize({ disableSmallFees: true, disableDustOutputs: true })).to.equal(serializedSignedTx);
+          } else {
+            const serializedSignedTx = '0200000002ab189f0d3bf494d3307effb79bafe0758907b86621edb8bd4cad4c6c6dc63e64010000006a47304402207442da2e4ad78e5527c401ac9af350678fb1268bc060a873836eaa30577085a10220692b49e134be6f4c7edd8a0a237f6a0826853f18b2902953a50f3838d2cb76330121022df004d5108312f62ae085913b1d029007d980ed61f04816ae9ccfc404c99e2cffffffffab189f0d3bf494d3307effb79bafe0758907b86621edb8bd4cad4c6c6dc63e64000000006b483045022100d03db3157a7fe45f0e3240c693b8bdc041a48e1869b9d91858c38288def30cd802206c5c3679adb66cbe5c32dd0ea9d80c798e69167e78423f99a9158138076a2bbc0121022df004d5108312f62ae085913b1d029007d980ed61f04816ae9ccfc404c99e2cffffffff01a0860100000000001976a91457884dcfe2ab46d3354a42d97333c95e5b80cf0188ac00000000';
+            expect(signedTx.serialize()).to.equal(serializedSignedTx);
+          }
+        });
+      }
     });
 
     it('should sign a BTC opreturn tx', () => {
