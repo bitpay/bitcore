@@ -12,7 +12,8 @@
     "compile": "npm run clean && npm run build",
     "build": "tsc",
     "clean": "rm -rf build",
-    "test": "npm run compile && mocha build/test && for f in build/examples/*/*.js; do node \"$f\"; done",
+    "test:mocha": "npm run compile && mocha --recursive build/test",
+    "test": "npm run compile && mocha --recursive build/test && for f in build/examples/*/*.js; do node \"$f\"; done",
     "burner:public-key": "npm run compile && node build/examples/burner/publicKey.js",
     "burner:address": "npm run compile && node build/examples/burner/address.js",
     "burner:sign": "npm run compile && node build/examples/burner/sign.js",
@@ -42,8 +43,10 @@
   "devDependencies": {
     "@types/chai": "5.2.3",
     "@types/mocha": "10.0.10",
+    "@types/sinon": "^22.0.0",
     "chai": "6.2.2",
     "mocha": "11.7.6",
+    "sinon": "^22.1.0",
     "source-map-support": "^0.5.21",
     "typescript": "7.0.2"
   }
