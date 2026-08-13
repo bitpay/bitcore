@@ -1,12 +1,12 @@
 import { execHaloCmdPCSC } from '@arx-research/libhalo/api/desktop';
-import CWC from '@bitpay-labs/crypto-wallet-core';
+import CWC, { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { NFC } from 'nfc-pcsc';
 import { Base } from './base.js';
 import { DataType } from './types/burnerTypes.js';
 import { BaseParams, SignParams } from './types/paramTypes.js';
 
 
-const { Address, PublicKey, crypto } = CWC.BitcoreLib;
+const { Address, PublicKey, crypto } = BitcoreLib;
 
 /**
  * Connect listens on the NFC reader for a card.
@@ -68,13 +68,19 @@ export default class Burner implements Base {
 
     const response: any = await this.awaitResponse();
 
+    const publicKey = new PublicKey('04161f62f9778a44bd3d07009b1f2e9df7ab1dc57e74665db7ed8baa95780452ab39f4975099f3ae36f7b6a874b46edd79d1d88573a325b9976fd8f120bed704aa');
     const signature = crypto.Signature.fromString(response.signature.der);
+    signature.pubKey = publicKey;
 
-    tx.applySignature({
+    const verify = crypto.ECDSA.verify(Buffer.from(digest, 'hex'), signature, publicKey);
+    if (!verify)
+      throw new Error('Invalid signature');
+
+    CWC.Transactions.applySignature({
+      chain: this.chain,
+      tx,
       signature,
-      publicKey: new PublicKey(response.publicKey),
-      sigtype: crypto.Signature.SIGHASH_ALL,
-      inputIndex: 0
+      index: 0
     });
 
     return tx;

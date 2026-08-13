@@ -7,8 +7,9 @@ const { Transaction, PublicKey, Script } = CWC.BitcoreLib;
 const burner = new Burner('btc');
 burner.connect();
 
-console.log('Tap burner for public key (used for the address and verifying the signature)');
-const publicKey = new PublicKey(await burner.getPublicKey({ index: 9 }));
+// Predefined for now. For other wallets:
+// const publicKey = new PublicKey(await burner.getPublicKey({ index: 9 }))
+const publicKey = new PublicKey('04161f62f9778a44bd3d07009b1f2e9df7ab1dc57e74665db7ed8baa95780452ab39f4975099f3ae36f7b6a874b46edd79d1d88573a325b9976fd8f120bed704aa');
 const address = publicKey.toAddress();
 
 const utxo = {
@@ -27,8 +28,7 @@ const tx = new Transaction()
 console.log('Tap burner wallet on an NFC reader to sign a transaction');
 const signedTransaction: any = await burner.sign({ index: 9, tx, password: '123456' });
 
-console.log(signedTransaction);
 console.log('Signed transaction');
+console.log(signedTransaction);
 
-console.log(signedTransaction.serialize());
 process.exit(0);
