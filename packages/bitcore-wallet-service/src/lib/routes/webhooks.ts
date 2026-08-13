@@ -10,15 +10,25 @@ interface RouteContext {
 }
 
 /**
- * Shared handler: parse/verify event via service handler, log it, respond 200.
- * Invalid payloads/signatures get a 400 so the partner knows it was rejected.
+ * Shared handler: parse/verify event via service handler, log it, optionally
+ * store it, respond 200.
+ * Invalid signatures and payloads that cannot be keyed get a 400; a storage
+ * outage gets a 503 so the partner retries the delivery.
+ * Never rejects: any unexpected error falls through to a 500 so the partner
+ * always gets a response instead of hanging until it times out.
+ *
+ * storeEvent (when provided) must run BEFORE the Braze track call: partners
+ * can (and do) redeliver the same event, so we only want to emit analytics
+ * once per unique delivery. If storeEvent reports `inserted: false`, this was
+ * already handled before (a duplicate/retry) and tracking is skipped.
  */
-function handleWebhook(
+async function handleWebhook(
   req: express.Request,
   res: express.Response,
   partner: string,
-  parseEvent: () => { event: OnrampWebhookEvent }
-) {
+  parseEvent: () => { event: OnrampWebhookEvent },
+  storeEvent?: (event: OnrampWebhookEvent) => Promise<{ inserted: boolean } | undefined>
+): Promise<express.Response> {
   let event: OnrampWebhookEvent;
   try {
     ({ event } = parseEvent());
@@ -28,30 +38,60 @@ function handleWebhook(
     return res.status(400).json({ error: (err as Error).message });
   }
 
-  logger.info(`[webhook:${partner}] Received event externalId=%s status=%s`, event?.externalId, event?.status);
+  try {
+    logger.info(`[webhook:${partner}] Received event externalId=%s status=%s`, event?.externalId, event?.status);
 
-  // Fire-and-forget: analytics tracking must never block or fail the webhook ack.
-  brazeService
-    .trackEvent({
-      externalId: event?.userId,
-      name: 'onramp_webhook_received',
-      properties: {
-        partner: event?.partner,
-        status: event?.status,
-        eventName: event?.eventName,
-        externalId: event?.externalId,
-        fiatAmount: event?.fiatAmount,
-        fiatCurrency: event?.fiatCurrency,
-        cryptoAmount: event?.cryptoAmount,
-        cryptoCurrency: event?.cryptoCurrency,
-        paymentMethod: event?.paymentMethod,
-        env: event?.env,
-        isEmbedded: event?.isEmbedded
+    // Persist first (if applicable) so we know whether this delivery was
+    // already handled before deciding whether to emit analytics for it.
+    let isDuplicate = false;
+    if (storeEvent) {
+      try {
+        const result = await storeEvent(event);
+        isDuplicate = result?.inserted === false;
+        if (isDuplicate) {
+          logger.info(`[webhook:${partner}] Duplicate delivery detected, skipping Braze tracking externalId=%s`, event?.externalId);
+        }
+      } catch (err) {
+        logger.error(`[webhook:${partner}] Failed to store event: %o`, err);
+        if ((err as any)?.invalidPayload) {
+          return res.status(400).json({ error: (err as Error).message });
+        }
+        return res.status(503).json({ error: 'Webhook storage temporarily unavailable' });
       }
-    })
-    .catch(err => logger.warn(`[webhook:${partner}] Braze tracking failed: %o`, err));
+    }
 
-  return res.status(200).json({ ok: true });
+    if (!isDuplicate) {
+      // Fire-and-forget: analytics tracking must never block or fail the webhook ack.
+      brazeService
+        .trackEvent({
+          externalId: event?.userId,
+          name: 'onramp_webhook_received',
+          properties: {
+            partner: event?.partner,
+            status: event?.status,
+            eventName: event?.eventName,
+            externalId: event?.externalId,
+            fiatAmount: event?.fiatAmount,
+            fiatCurrency: event?.fiatCurrency,
+            cryptoAmount: event?.cryptoAmount,
+            cryptoCurrency: event?.cryptoCurrency,
+            paymentMethod: event?.paymentMethod,
+            env: event?.env,
+            isEmbedded: event?.isEmbedded
+          }
+        })
+        .catch(err => logger.warn(`[webhook:${partner}] Braze tracking failed: %o`, err));
+    }
+
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    // Safety net: guarantees a response even if something above throws
+    // unexpectedly (e.g. a bug in a fire-and-forget call), instead of leaving
+    // an unhandled rejection and the partner request hanging.
+    logger.error(`[webhook:${partner}] Unexpected error handling webhook: %o`, err);
+    if (res.headersSent) return res;
+    return res.status(500).json({ error: 'Internal error handling webhook' });
+  }
 }
 
 export function registerWebhookRoutes(router: express.Router, context: RouteContext) {
@@ -64,10 +104,10 @@ export function registerWebhookRoutes(router: express.Router, context: RouteCont
   router.post('/v1/service/simplex/webhook', (req, res) => {
     const server = getServer(req, res);
     if (!server) return;
-    handleWebhook(
+    return handleWebhook(
       req, res, 'simplex',
       () => server.externalServices.simplex.simplexHandleWebhook(req)
-    );
+    ).catch(err => logger.error('[webhook:simplex] Unhandled error: %o', err));
   });
 
   /**
@@ -77,10 +117,11 @@ export function registerWebhookRoutes(router: express.Router, context: RouteCont
   router.post('/v1/service/moonpay/webhook', (req, res) => {
     const server = getServer(req, res);
     if (!server) return;
-    handleWebhook(
+    return handleWebhook(
       req, res, 'moonpay',
-      () => server.externalServices.moonpay.moonpayHandleWebhook(req)
-    );
+      () => server.externalServices.moonpay.moonpayHandleWebhook(req),
+      event => server.storage.storeOnrampWebhookEvent({ event })
+    ).catch(err => logger.error('[webhook:moonpay] Unhandled error: %o', err));
   });
 
   /**
@@ -90,10 +131,10 @@ export function registerWebhookRoutes(router: express.Router, context: RouteCont
   router.post('/v1/service/ramp/webhook', (req, res) => {
     const server = getServer(req, res);
     if (!server) return;
-    handleWebhook(
+    return handleWebhook(
       req, res, 'ramp',
       () => server.externalServices.ramp.rampHandleWebhook(req)
-    );
+    ).catch(err => logger.error('[webhook:ramp] Unhandled error: %o', err));
   });
 
   /**
@@ -103,10 +144,10 @@ export function registerWebhookRoutes(router: express.Router, context: RouteCont
   router.post('/v1/service/ramp/offramp-webhook', (req, res) => {
     const server = getServer(req, res);
     if (!server) return;
-    handleWebhook(
+    return handleWebhook(
       req, res, 'ramp',
       () => server.externalServices.ramp.rampHandleWebhook(req)
-    );
+    ).catch(err => logger.error('[webhook:ramp] Unhandled error: %o', err));
   });
 
   /**
@@ -116,10 +157,10 @@ export function registerWebhookRoutes(router: express.Router, context: RouteCont
   router.post('/v1/service/transak/webhook', (req, res) => {
     const server = getServer(req, res);
     if (!server) return;
-    handleWebhook(
+    return handleWebhook(
       req, res, 'transak',
       () => server.externalServices.transak.transakHandleWebhook(req)
-    );
+    ).catch(err => logger.error('[webhook:transak] Unhandled error: %o', err));
   });
 
   /**
@@ -129,10 +170,10 @@ export function registerWebhookRoutes(router: express.Router, context: RouteCont
   router.post('/v1/service/banxa/webhook', (req, res) => {
     const server = getServer(req, res);
     if (!server) return;
-    handleWebhook(
+    return handleWebhook(
       req, res, 'banxa',
       () => server.externalServices.banxa.banxaHandleWebhook(req)
-    );
+    ).catch(err => logger.error('[webhook:banxa] Unhandled error: %o', err));
   });
 
   /**
@@ -142,9 +183,9 @@ export function registerWebhookRoutes(router: express.Router, context: RouteCont
   router.post('/v1/service/sardine/webhook', (req, res) => {
     const server = getServer(req, res);
     if (!server) return;
-    handleWebhook(
+    return handleWebhook(
       req, res, 'sardine',
       () => server.externalServices.sardine.sardineHandleWebhook(req)
-    );
+    ).catch(err => logger.error('[webhook:sardine] Unhandled error: %o', err));
   });
 }
