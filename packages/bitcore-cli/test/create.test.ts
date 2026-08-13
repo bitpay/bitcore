@@ -9,7 +9,7 @@ import { Wallet } from '../src/wallet';
 import { startTssWallets, TssTransform } from './tssCoordinator';
 
 describe('Create', function() {
-  this.timeout(Math.max(this['_timeout'] || 0, 5000));
+  this.timeout(Math.max(this['_timeout'] || 0, 10000));
 
   const { KEYSTROKES, WALLETS, OUTPUT_END_SEQ } = helpers.CONSTANTS;
   const { CLI_EXEC, CLI_OPTS, COMMON_OPTS, TEMP_DIR } = WALLETS;
@@ -34,6 +34,7 @@ describe('Create', function() {
         [KEYSTROKES.ENTER], // Multi-party? No
         [KEYSTROKES.ENTER], // Address Type: default
         ['testpassword', KEYSTROKES.ENTER], // Password
+        ['testpassword', KEYSTROKES.ENTER], // Confirm password
         [KEYSTROKES.ENTER], // View mnemonic
         [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
       ];
@@ -101,6 +102,7 @@ describe('Create', function() {
         [KEYSTROKES.ENTER], // Multi-party? No
         // [KEYSTROKES.ENTER], // Address Type: default
         ['testpassword', KEYSTROKES.ENTER], // Password
+        ['testpassword', KEYSTROKES.ENTER], // Confirm password
         [KEYSTROKES.ENTER], // View mnemonic
         [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
       ];
@@ -168,6 +170,7 @@ describe('Create', function() {
         [KEYSTROKES.ENTER], // Multi-party? No
         // [KEYSTROKES.ENTER], // Address Type: default
         ['testpassword', KEYSTROKES.ENTER], // Password
+        ['testpassword', KEYSTROKES.ENTER], // Confirm password
         [KEYSTROKES.ENTER], // View mnemonic
         [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
       ];
@@ -235,6 +238,7 @@ describe('Create', function() {
         // [KEYSTROKES.ENTER], // Multi-party? No
         // [KEYSTROKES.ENTER], // Address Type: default
         ['testpassword', KEYSTROKES.ENTER], // Password
+        ['testpassword', KEYSTROKES.ENTER], // Confirm password
         [KEYSTROKES.ENTER], // View mnemonic
         [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
       ];
@@ -311,6 +315,7 @@ describe('Create', function() {
           ['copayer1', KEYSTROKES.ENTER], // Copayer name
           [KEYSTROKES.ENTER], // Address Type: default
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           [KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
           // Checkpoint1: Get secret to share with copayer 2
           [KEYSTROKES.ENTER], // View mnemonic
@@ -319,7 +324,7 @@ describe('Create', function() {
         let step = 0;
         let checkpointOutput = '';
         // stepInputs indexes corresponding to checkpoints in test flow where we want to assert on CLI output
-        const checkpoints = new Set([10]);
+        const checkpoints = new Set([11]);
         const io = new Transform({
           encoding: 'utf-8',
           transform(chunk, encoding, respond) {
@@ -443,6 +448,7 @@ describe('Create', function() {
           [secret, KEYSTROKES.ENTER], // Enter secret created by copayer 1
           ['copayer2', KEYSTROKES.ENTER], // Copayer name
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           [KEYSTROKES.ENTER], // View mnemonic
           [':', 'q', KEYSTROKES.ENTER] // vim input to quit viewing mnemonic
         ];
@@ -694,13 +700,16 @@ describe('Create', function() {
           ['copayer1', KEYSTROKES.ENTER], // Copayer name
           [KEYSTROKES.ENTER], // Address Type: default
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           // Checkpoint1: Wait for copayer2's pubkey
           [copayer2PubKey, KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
           // Checkpoint2: Extract join code to share with copayer2
+          [KEYSTROKES.ARROW_UP], // Copy to clipboard -> Done -- (checkpoint2)
           [KEYSTROKES.ENTER], // Done sharing -- (checkpoint2)
           [KEYSTROKES.ENTER], // Yes, continue with keyshare export
           [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName1}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
           ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['exportpassword', KEYSTROKES.ENTER], // Confirm password
           ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const stepInputsC2 = [
@@ -712,14 +721,17 @@ describe('Create', function() {
           ['testnet', KEYSTROKES.ENTER], // Network: testnet
           ['copayer2', KEYSTROKES.ENTER], // Copayer name
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           // Checkpoint1: Extract pubkey to give to session leader (copayer1)
-          [KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
+          [KEYSTROKES.ARROW_UP], // Copy to clipboard -> Done -- (checkpoint1)
+          [KEYSTROKES.ENTER], // Done sharing
           // Checkpoint2: Wait for and enter join code from copayer1 to join session
           [joinCode, KEYSTROKES.ENTER], // Enter session code from leader (copayer1)
           [KEYSTROKES.ENTER], // Confirm decoded join code looks correct
           [KEYSTROKES.ENTER], // Yes, continue with keyshare export
           [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName2}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
           ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['exportpassword', KEYSTROKES.ENTER], // Confirm password
           ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const step = {
@@ -732,8 +744,8 @@ describe('Create', function() {
         };
         // stepInputs indexes corresponding to checkpoints in test flow where we want to assert on CLI output
         const checkpoints = {
-          [walletName1]: new Set([10, 11]),
-          [walletName2]: new Set([8, 9])
+          [walletName1]: new Set([11, 12]),
+          [walletName2]: new Set([9, 11])
         };
         function pushInputs(walletName, stepInputs) {
           for (const input of stepInputs) {
@@ -765,7 +777,7 @@ describe('Create', function() {
                   case Array.from(checkpoints[walletName])[0]:
                     if (walletName === walletName1) {
                       const startIdx = lines.findIndex(l => l.includes('Enter party 1\'s public key:'));
-                      assert.ok(startIdx > -1);
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to enter party 1\'s public key.');
                       const cachedStep = step[walletName]; // cache the step num so it's preserved for the promise handler
                       copayer2PubKeySet.then(() => {
                         stepInputs[cachedStep][0] = copayer2PubKey;
@@ -774,7 +786,7 @@ describe('Create', function() {
                     } else {
                       const startIdx = lines.findIndex(l => l.includes('Give the following public key to the session leader:'));
                       const endIdx = lines.findIndex(l => l.includes('Done'));
-                      assert.ok(startIdx > -1, 'Did not find expected prompt to share public key with session leader. Output was: ' + checkpointOutput);
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to share public key with session leader.');
                       copayer2PubKey = helpers.decolor(lines.slice(startIdx + 1, endIdx).map(l => l.replace('│', '').trim()).join(''));
                       assert.match(copayer2PubKey, /^[0-9a-f]{66}$/, 'Invalid copayer2 public key. Got: ' + copayer2PubKey); // 66 byte hex pubkey string
                       emitter.emit('copayer2PubKey');
@@ -786,14 +798,14 @@ describe('Create', function() {
                     if (walletName === walletName1) {
                       const startIdx = lines.findIndex(l => l.includes('Join code for party 1:'));
                       const endIdx = lines.findIndex(l => l.includes('Continue'));
-                      assert.ok(startIdx > -1, 'Did not find expected prompt to share join code with session leader. Output was: ' + checkpointOutput);
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to share join code with session leader.');
                       joinCode = helpers.decolor(lines.slice(startIdx + 1, endIdx).map(l => l.replace('│', '').trim()).join(''));
                       assert.match(joinCode, /^[0-9a-f]{400,500}$/, 'Invalid join code. Got: ' + joinCode); // hex string between 400-500 chars long (expected to be around 418 chars. Length is just a sanity check. If any data is added to join code it'll need to be adjusted)
                       emitter.emit('joinCode');
                       pushInputs.call(this, walletName, stepInputs[step[walletName]]);
                     } else {
                       const startIdx = lines.findIndex(l => l.includes('Enter the join code from the session leader:'));
-                      assert.ok(startIdx > -1);
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to enter join code from session leader.');
                       const cachedStep = step[walletName]; // cache the step num so it's preserved for the promise handler
                       joinCodeSet.then(() => {
                         stepInputs[cachedStep][0] = joinCode;
@@ -929,13 +941,16 @@ describe('Create', function() {
           ['copayer1', KEYSTROKES.ENTER], // Copayer name
           // No address type prompt here since ETH only has 1 address type
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           // Checkpoint1: Wait for copayer2's pubkey
           [copayer2PubKey, KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
           // Checkpoint2: Extract join code to share with copayer2
+          [KEYSTROKES.ARROW_UP], // Copy to clipboard -> Done -- (checkpoint2)
           [KEYSTROKES.ENTER], // Done sharing -- (checkpoint2)
           [KEYSTROKES.ENTER], // Yes, continue with keyshare export
           [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName1}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
           ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['exportpassword', KEYSTROKES.ENTER], // Confirm password
           ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const stepInputsC2 = [
@@ -946,14 +961,17 @@ describe('Create', function() {
           ['testnet', KEYSTROKES.ENTER], // Network: testnet
           ['copayer2', KEYSTROKES.ENTER], // Copayer name
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           // Checkpoint1: Extract pubkey to give to session leader (copayer1)
-          [KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
+          [KEYSTROKES.ARROW_UP], // Copy to clipboard -> Done -- (checkpoint1)
+          [KEYSTROKES.ENTER], // Done sharing
           // Checkpoint2: Wait for and enter join code from copayer1 to join session
           [joinCode, KEYSTROKES.ENTER], // Enter session code from leader (copayer1)
           [KEYSTROKES.ENTER], // Confirm decoded join code looks correct
           [KEYSTROKES.ENTER], // Yes, continue with keyshare export
           [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName2}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
           ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['exportpassword', KEYSTROKES.ENTER], // Confirm password
           ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const step = {
@@ -966,8 +984,8 @@ describe('Create', function() {
         };
         // stepInputs indexes corresponding to checkpoints in test flow where we want to assert on CLI output
         const checkpoints = {
-          [walletName1]: new Set([7, 8]),
-          [walletName2]: new Set([6, 7])
+          [walletName1]: new Set([8, 9]),
+          [walletName2]: new Set([7, 9])
         };
         function pushInputs(walletName, stepInputs) {
           for (const input of stepInputs) {
@@ -1000,7 +1018,7 @@ describe('Create', function() {
                   case Array.from(checkpoints[walletName])[0]:
                     if (walletName === walletName1) {
                       const startIdx = lines.findIndex(l => l.includes('Enter party 1\'s public key:'));
-                      assert.ok(startIdx > -1);
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to enter party 1\'s public key.');
                       const cachedStep = step[walletName]; // cache the step num so it's preserved for the promise handler
                       copayer2PubKeySet.then(() => {
                         stepInputs[cachedStep][0] = copayer2PubKey;
@@ -1009,7 +1027,7 @@ describe('Create', function() {
                     } else {
                       const startIdx = lines.findIndex(l => l.includes('Give the following public key to the session leader:'));
                       const endIdx = lines.findIndex(l => l.includes('Done'));
-                      assert.ok(startIdx > -1, 'Did not find expected prompt to share public key with session leader. Output was: ' + checkpointOutput);
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to share public key with session leader.');
                       copayer2PubKey = helpers.decolor(lines.slice(startIdx + 1, endIdx).map(l => l.replace('│', '').trim()).join(''));
                       assert.match(copayer2PubKey, /^[0-9a-f]{66}$/, 'Invalid copayer2 public key. Got: ' + copayer2PubKey); // 66 byte hex pubkey string
                       emitter.emit('copayer2PubKey');
@@ -1021,14 +1039,14 @@ describe('Create', function() {
                     if (walletName === walletName1) {
                       const startIdx = lines.findIndex(l => l.includes('Join code for party 1:'));
                       const endIdx = lines.findIndex(l => l.includes('Continue'));
-                      assert.ok(startIdx > -1, 'Did not find expected prompt to share join code with session leader. Output was: ' + checkpointOutput);
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to share join code with session leader.');
                       joinCode = helpers.decolor(lines.slice(startIdx + 1, endIdx).map(l => l.replace('│', '').trim()).join(''));
                       assert.match(joinCode, /^[0-9a-f]{400,500}$/, 'Invalid join code. Got: ' + joinCode); // hex string between 400-500 chars long (expected to be around 418 chars. Length is just a sanity check. If any data is added to join code it'll need to be adjusted)
                       emitter.emit('joinCode');
                       pushInputs.call(this, walletName, stepInputs[step[walletName]]);
                     } else {
                       const startIdx = lines.findIndex(l => l.includes('Enter the join code from the session leader:'));
-                      assert.ok(startIdx > -1);
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to enter join code from session leader.');
                       const cachedStep = step[walletName]; // cache the step num so it's preserved for the promise handler
                       joinCodeSet.then(() => {
                         stepInputs[cachedStep][0] = joinCode;
@@ -1164,13 +1182,16 @@ describe('Create', function() {
           ['copayer1', KEYSTROKES.ENTER], // Copayer name
           // No address type prompt here since XRP only has 1 address type
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           // Checkpoint1: Wait for copayer2's pubkey
           [copayer2PubKey, KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
           // Checkpoint2: Extract join code to share with copayer2
+          [KEYSTROKES.ARROW_UP], // Copy to clipboard -> Done -- (checkpoint2)
           [KEYSTROKES.ENTER], // Done sharing -- (checkpoint2)
           [KEYSTROKES.ENTER], // Yes, continue with keyshare export
           [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName1}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
           ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['exportpassword', KEYSTROKES.ENTER], // Confirm password
           ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const stepInputsC2 = [
@@ -1181,14 +1202,17 @@ describe('Create', function() {
           ['testnet', KEYSTROKES.ENTER], // Network: testnet
           ['copayer2', KEYSTROKES.ENTER], // Copayer name
           ['testpassword', KEYSTROKES.ENTER], // Password
+          ['testpassword', KEYSTROKES.ENTER], // Confirm password
           // Checkpoint1: Extract pubkey to give to session leader (copayer1)
-          [KEYSTROKES.ENTER], // Done sharing -- (checkpoint1)
+          [KEYSTROKES.ARROW_UP], // Copy to clipboard -> Done -- (checkpoint1)
+          [KEYSTROKES.ENTER], // Done sharing
           // Checkpoint2: Wait for and enter join code from copayer1 to join session
           [joinCode, KEYSTROKES.ENTER], // Enter session code from leader (copayer1)
           [KEYSTROKES.ENTER], // Confirm decoded join code looks correct
           [KEYSTROKES.ENTER], // Yes, continue with keyshare export
           [...Array(50).fill(KEYSTROKES.BACKSPACE), `${TEMP_DIR}/${walletName2}-export.json`, KEYSTROKES.ENTER], // Export keyshare backup file to temp dir
           ['exportpassword', KEYSTROKES.ENTER], // Password for exported keyshare backup file
+          ['exportpassword', KEYSTROKES.ENTER], // Confirm password
           ['testpassword', KEYSTROKES.ENTER], // Unlock wallet
         ];
         const step = {
@@ -1201,8 +1225,8 @@ describe('Create', function() {
         };
         // stepInputs indexes corresponding to checkpoints in test flow where we want to assert on CLI output
         const checkpoints = {
-          [walletName1]: new Set([7, 8]),
-          [walletName2]: new Set([6, 7])
+          [walletName1]: new Set([8, 9]),
+          [walletName2]: new Set([7, 9])
         };
         function pushInputs(walletName, stepInputs) {
           for (const input of stepInputs) {
@@ -1234,7 +1258,7 @@ describe('Create', function() {
                   case Array.from(checkpoints[walletName])[0]:
                     if (walletName === walletName1) {
                       const startIdx = lines.findIndex(l => l.includes('Enter party 1\'s public key:'));
-                      assert.ok(startIdx > -1);
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to enter party 1\'s public key.');
                       const cachedStep = step[walletName]; // cache the step num so it's preserved for the promise handler
                       copayer2PubKeySet.then(() => {
                         stepInputs[cachedStep][0] = copayer2PubKey;
@@ -1243,7 +1267,7 @@ describe('Create', function() {
                     } else {
                       const startIdx = lines.findIndex(l => l.includes('Give the following public key to the session leader:'));
                       const endIdx = lines.findIndex(l => l.includes('Done'));
-                      assert.ok(startIdx > -1, 'Did not find expected prompt to share public key with session leader. Output was: ' + checkpointOutput);
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to share public key with session leader.');
                       copayer2PubKey = helpers.decolor(lines.slice(startIdx + 1, endIdx).map(l => l.replace('│', '').trim()).join(''));
                       assert.match(copayer2PubKey, /^[0-9a-f]{66}$/, 'Invalid copayer2 public key. Got: ' + copayer2PubKey); // 66 byte hex pubkey string
                       emitter.emit('copayer2PubKey');
@@ -1255,14 +1279,14 @@ describe('Create', function() {
                     if (walletName === walletName1) {
                       const startIdx = lines.findIndex(l => l.includes('Join code for party 1:'));
                       const endIdx = lines.findIndex(l => l.includes('Continue'));
-                      assert.ok(startIdx > -1, 'Did not find expected prompt to share join code with session leader. Output was: ' + checkpointOutput);
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to share join code with session leader.');
                       joinCode = helpers.decolor(lines.slice(startIdx + 1, endIdx).map(l => l.replace('│', '').trim()).join(''));
                       assert.match(joinCode, /^[0-9a-f]{400,500}$/, 'Invalid join code. Got: ' + joinCode); // hex string between 400-500 chars long (expected to be around 418 chars. Length is just a sanity check. If any data is added to join code it'll need to be adjusted)
                       emitter.emit('joinCode');
                       pushInputs.call(this, walletName, stepInputs[step[walletName]]);
                     } else {
                       const startIdx = lines.findIndex(l => l.includes('Enter the join code from the session leader:'));
-                      assert.ok(startIdx > -1);
+                      assert.ok(startIdx > -1, 'Did not find expected prompt to enter join code from session leader.');
                       const cachedStep = step[walletName]; // cache the step num so it's preserved for the promise handler
                       joinCodeSet.then(() => {
                         stepInputs[cachedStep][0] = joinCode;

@@ -75,26 +75,58 @@ export async function getPassword(
     hidden?: boolean;
     /** Custom validation function for the password input. Note, this does NOT override the minimum length check. */
     validate?: (input: string) => string | null;
+    /** Should user be prompted to confirm their password? */
+    confirm?: boolean;
+    /** Retry if confirmation fails (default: true) */
+    retry?: boolean;
   }
 ): Promise<string> {
   opts = opts || {};
-  opts.minLength = opts.minLength ?? 0;
-  const hidden = opts.hidden ?? true;
+  const { confirm, retry = true, hidden = true, minLength = 0 } = opts;
 
-  const password = await prompt.password({
-    message: (msg || 'Password:') + (hidden ? ' (hidden)' : ''),
-    mask: hidden ? '' : undefined,
-    clearOnError: hidden,
-    validate: (input) => {
-      if (input?.length < opts.minLength) {
-        return `Password must be at least ${opts.minLength} characters long.`;
+  let confirmed = false;
+  let password: string | symbol = null;
+  let beginAgain = false;
+  do {
+    password = await prompt.password({
+      message: (msg || 'Password:') + (hidden ? ' (hidden)' : ''),
+      mask: hidden ? '' : undefined,
+      clearOnError: hidden,
+      validate: (input) => {
+        if (input?.length < minLength) {
+          return `Password must be at least ${minLength} characters long.`;
+        }
+        return opts.validate?.(input);
       }
-      return opts.validate?.(input);
+    });
+    if (prompt.isCancel(password)) {
+      throw new UserCancelled();
     }
-  });
-  if (prompt.isCancel(password)) {
-    throw new UserCancelled();
+    if (confirm) {
+      beginAgain = false; // reset beginAgain flag for each iteration
+      let confirmTries = 0;
+      const password2 = await prompt.password({
+        message: 'Confirm:',
+        mask: hidden ? '' : undefined,
+        clearOnError: hidden,
+        validate: (input) => {
+          confirmTries++;
+          if (retry && input !== password) {
+            return 'Passwords do not match' + (confirmTries > 1 ? '. Type Ctrl+C to return to the previous prompt.' : '');
+          }
+        }
+      });
+      beginAgain = prompt.isCancel(password2);
+      confirmed = password === password2;
+    } else {
+      confirmed = true;
+    }
+  } while (!confirmed && beginAgain);
+
+  if (!confirmed) {
+    throw new Error('Passwords do not match');
   }
+
   return password as string;
 };
 
@@ -326,7 +358,7 @@ export async function promptKeyshareBackup(): Promise<boolean> {
     'This keyshare backup file contains both your 12-word mnemonic AND your keyshare data, encrypted with a password you will set in the following prompts.' + os.EOL +
     'Make sure to:' + os.EOL +
     `  - Store the file in a ${Utils.underlineText('safe place')}, like a USB drive in a safe, and do not share it with anyone.` + os.EOL +
-    `  - ${Utils.boldText('DO NOT FORGET')} the encryption password! The file is useless without it, and there is no way to reset the password.` + os.EOL +
+    `  - ${Utils.boldText('DO NOT FORGET', true)} the encryption password! The file is useless without it, and there is no way to reset the password.` + os.EOL +
     'Both the file + encryption password are as valuable as a non-TSS wallet\'s 12-24 word phrase, so treat them with the same level of security.'
   );
   const a = await prompt.select({

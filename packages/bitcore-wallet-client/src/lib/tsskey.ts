@@ -9,6 +9,7 @@ import { Request, RequestResponse } from './request';
 
 const $ = BitcoreLib.util.preconditions;
 
+
 export interface ITssKeyGenConstructorParams {
   /**
    * Chain this key is for (e.g. 'btc', 'bch', 'eth')
@@ -79,8 +80,20 @@ export class TssKey extends Key implements ITssKey {
   toObj(): ITssKey {
     return {
       ...super.toObj(),
-      keychain: this.keychain,
-      metadata: this.metadata,
+      // Create de-referenced copies
+      keychain: {
+        privateKeyShare: this.keychain.privateKeyShare ? Buffer.from(this.keychain.privateKeyShare) : undefined,
+        privateKeyShareEncrypted: this.keychain.privateKeyShareEncrypted,
+        reducedPrivateKeyShare: this.keychain.reducedPrivateKeyShare ? Buffer.from(this.keychain.reducedPrivateKeyShare) : undefined,
+        reducedPrivateKeyShareEncrypted: this.keychain.reducedPrivateKeyShareEncrypted,
+        commonKeyChain: this.keychain.commonKeyChain
+      } as ITssKey['keychain'],
+      metadata: {
+        id: this.metadata.id,
+        m: this.metadata.m,
+        n: this.metadata.n,
+        partyId: this.metadata.partyId
+      } as ITssKey['metadata']
     };
   }
 
@@ -146,7 +159,9 @@ export class TssKey extends Key implements ITssKey {
     this.keychain.privateKeyShareEncrypted = JSON.stringify(Encryption.encryptWithPassword(this.keychain.privateKeyShare, password, opts));
     this.keychain.reducedPrivateKeyShareEncrypted = JSON.stringify(Encryption.encryptWithPassword(this.keychain.reducedPrivateKeyShare, password, opts));
     // remove the private data
+    this.keychain.privateKeyShare.fill(0);
     this.keychain.privateKeyShare = null;
+    this.keychain.reducedPrivateKeyShare.fill(0);
     this.keychain.reducedPrivateKeyShare = null;
   }
 
@@ -307,14 +322,6 @@ export class TssKeyGen extends EventEmitter {
        * ECIES.encrypt: Don't include the public key in the result
        */
       noKey?: boolean;
-      /**
-       * ECIES.encrypt: Use a short tag
-       */
-      shortTag?: boolean;
-      /**
-       * ECIES.encrypt: Use a deterministic IV
-       */
-      deterministicIv?: boolean;
     };
   }): string {
     const { partyId, partyPubKey, opts } = params;
@@ -336,14 +343,6 @@ export class TssKeyGen extends EventEmitter {
        * Encoding for the join code (default: 'hex')
        */
       encoding?: BufferEncoding;
-      /**
-       * ECIES.decrypt: The public key is not included in the payload
-       */
-      noKey?: boolean;
-      /**
-       * ECIES.decrypt: A short tag was used during encryption
-       */
-      shortTag?: boolean;
     };
   }) {
     let { code } = params;
@@ -352,7 +351,7 @@ export class TssKeyGen extends EventEmitter {
     $.checkArgument(typeof code === 'string' || Buffer.isBuffer(code), '`code` must be a string or buffer');
     code = Buffer.isBuffer(code) ? code : Buffer.from(code, opts?.encoding || 'hex');
     const authKey = this.#credentials.requestPrivKey;
-    const decryptedCode = ECIES.decrypt({ payload: code, privateKey: authKey, opts }).toString();
+    const decryptedCode = ECIES.decrypt({ payload: code, privateKey: authKey }).toString();
     const [id, partyId, chain, network, m, n] = decryptedCode.split(':');
     return {
       id,
@@ -380,14 +379,6 @@ export class TssKeyGen extends EventEmitter {
        * Encoding for the join code (default: 'hex')
        */
       encoding?: BufferEncoding;
-      /**
-       * ECIES.decrypt: The public key is not included in the payload
-       */
-      noKey?: boolean;
-      /**
-       * ECIES.decrypt: A short tag was used during encryption
-       */
-      shortTag?: boolean;
     };
     /**
      * Server password to join the TSS key. This was set by the initiator and should be told to you by them.
@@ -402,7 +393,7 @@ export class TssKeyGen extends EventEmitter {
     code = Buffer.isBuffer(code) ? code : Buffer.from(code, opts?.encoding || 'hex');
 
     const authKey = this.#credentials.requestPrivKey;
-    const decryptedCode = ECIES.decrypt({ payload: code, privateKey: authKey, opts }).toString();
+    const decryptedCode = ECIES.decrypt({ payload: code, privateKey: authKey }).toString();
     const [id, partyId, chain, network, m, n, ...more] = decryptedCode.split(':');
     const extra = more.join(':');
 
@@ -450,7 +441,9 @@ export class TssKeyGen extends EventEmitter {
     session: string;
   }): Promise<TssKeyGen> {
     const { session } = params;
-    const [id, partyId, m, n, keygenSession] = session.split(':');
+    const parts = session.split(':');
+    const id = parts.slice(0, -4).join(':'); // id may contain colons, so we join all parts except the last 4
+    const [partyId, m, n, keygenSession] = parts.slice(-4);
     this.id = id;
     this.m = parseInt(m);
     this.n = parseInt(n);
@@ -610,6 +603,7 @@ export class TssKeyGen extends EventEmitter {
 
   /**
    * Unsubscribe from the TSS key generation process
+   * Calling this method will emit the 'unsubscribe' event.
    */
   unsubscribe(params: {
     /**
@@ -625,6 +619,7 @@ export class TssKeyGen extends EventEmitter {
     }
     this.#subscriptionId = null;
     this.#subscriptionRunning = false;
+    this.emit('unsubscribe');
   }
 
   /**
@@ -722,5 +717,13 @@ export class TssKeyGen extends EventEmitter {
     });
     
     return wallet;
+  }
+
+  /**
+   * Clean up sensitive data from memory.
+   * Call this when you are done with the keygen session
+   */
+  cleanup() {
+    this.#keygen?.cleanup();
   }
 }

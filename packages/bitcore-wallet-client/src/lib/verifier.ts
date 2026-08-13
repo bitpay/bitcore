@@ -20,6 +20,71 @@ const BCHAddress = BitcoreLibCash.Address;
 export class Verifier {
   private static _useRegtest: boolean = false;
 
+  private static normalizeAtomicValue(value) {
+    if (typeof value === 'bigint') return value >= 0n ? value : null;
+    if (typeof value === 'number') {
+      // Preserve the integer value actually represented by JavaScript, including unsafe Numbers.
+      return Number.isInteger(value) && value >= 0 ? BigInt(value) : null;
+    }
+    if (
+      typeof value === 'string' &&
+      (/^(0|[1-9]\d*)$/.test(value) || /^0x[0-9a-fA-F]+$/.test(value))
+    ) {
+      return BigInt(value);
+    }
+    return null;
+  }
+
+  private static atomicValuesEqual(value1, value2) {
+    const normalizedValue1 = this.normalizeAtomicValue(value1);
+    const normalizedValue2 = this.normalizeAtomicValue(value2);
+    return normalizedValue1 !== null &&
+      normalizedValue2 !== null &&
+      normalizedValue1 === normalizedValue2;
+  }
+
+  private static optionalAtomicValuesEqual(value1, value2) {
+    const value1Missing = value1 == null;
+    const value2Missing = value2 == null;
+    if (value1Missing || value2Missing) return value1Missing && value2Missing;
+    return this.atomicValuesEqual(value1, value2);
+  }
+
+  private static mapInputsByOutpoint(inputs) {
+    if (!Array.isArray(inputs)) return null;
+
+    const inputsByOutpoint = new Map<string, bigint>();
+    let total = 0n;
+    for (const input of inputs) {
+      const vout = this.normalizeAtomicValue(input?.vout);
+      const satoshis = this.normalizeAtomicValue(input?.satoshis);
+      if (typeof input?.txid !== 'string' || !input.txid || vout === null || satoshis === null) {
+        return null;
+      }
+
+      const outpoint = `${input.txid}:${vout}`;
+      if (inputsByOutpoint.has(outpoint)) return null;
+
+      inputsByOutpoint.set(outpoint, satoshis);
+      total += satoshis;
+    }
+
+    return { inputsByOutpoint, total };
+  }
+
+  private static explicitInputsEqual(inputs1, inputs2) {
+    const mappedInputs1 = this.mapInputsByOutpoint(inputs1);
+    const mappedInputs2 = this.mapInputsByOutpoint(inputs2);
+    if (!mappedInputs1 || !mappedInputs2) return false;
+    if (mappedInputs1.inputsByOutpoint.size !== mappedInputs2.inputsByOutpoint.size) return false;
+    if (mappedInputs1.total !== mappedInputs2.total) return false;
+
+    for (const [outpoint, satoshis] of mappedInputs1.inputsByOutpoint) {
+      if (mappedInputs2.inputsByOutpoint.get(outpoint) !== satoshis) return false;
+    }
+    return true;
+  }
+
   static useRegtest() {
     this._useRegtest = true;
   }
@@ -133,6 +198,7 @@ export class Verifier {
       const o2 = args.outputs[i];
       if (!strEqual(o1.toAddress, o2.toAddress)) return false;
       if (!strEqual(o1.script, o2.script)) return false;
+      if (!this.optionalAtomicValuesEqual(o1.tag, o2.tag)) return false;
       // Amounts need to be equal OR sendMax arg is set and amount arg is omitted, otherwise return check failure
       if (o1.amount != o2.amount && !(args.sendMax && o2.amount == null)) return false;
       let decryptedMessage: boolean | string = false;
@@ -149,6 +215,12 @@ export class Verifier {
     if (args.changeAddress && !strEqual(changeAddress, args.changeAddress))
       return false;
     if (typeof args.feePerKb === 'number' && txp.feePerKb != args.feePerKb)
+      return false;
+    if (args.fee != null && !this.atomicValuesEqual(args.fee, txp.fee))
+      return false;
+    if (args.inputs != null && !this.explicitInputsEqual(args.inputs, txp.inputs))
+      return false;
+    if (!this.optionalAtomicValuesEqual(args.destinationTag, txp.destinationTag))
       return false;
     if (!strEqual(txp.payProUrl, args.payProUrl)) return false;
 

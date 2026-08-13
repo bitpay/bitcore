@@ -223,7 +223,28 @@ describe('Ramp integration', () => {
       server.externalServices.ramp.request = fakeRequest;
     });
 
-    it('should get the paymentUrl properly if req is OK', () => {
+    // ONRAMP (buy) - legacy params sent by older app versions.
+    // The service must translate them into Ramp's new unified search params:
+    //   swapAsset    -> enabledCryptoAssets
+    //   defaultAsset -> outAsset
+    //   swapAmount   -> outAssetValue
+    //   fiatCurrency -> inAsset
+    //   fiatValue    -> inAssetValue
+    it('should get the paymentUrl properly with legacy onramp params', () => {
+      req.body = {
+        env: 'production',
+        flow: 'buy',
+        swapAsset: 'BTC_BTC',
+        swapAmount: '1000000',
+        defaultAsset: 'BTC_BTC',
+        fiatCurrency: 'USD',
+        fiatValue: 50,
+        enabledFlows: 'ONRAMP',
+        defaultFlow: 'ONRAMP',
+        userAddress: 'bitcoin:123123',
+        selectedCountryCode: 'US',
+        finalUrl: 'bitpay://ramp',
+      };
       const data = server.externalServices.ramp.rampGetSignedPaymentUrl(req);
       should.exist(data.urlWithSignature);
       const [base, qs] = data.urlWithSignature.split('?');
@@ -235,11 +256,65 @@ describe('Ramp integration', () => {
       params.selectedCountryCode.should.equal('US');
       params.finalUrl.should.equal('bitpay://ramp');
       params.userAddress.should.equal('bitcoin:123123');
-      params.swapAsset.should.equal('BTC_BTC');
       params.enabledFlows.should.equal('ONRAMP');
       params.defaultFlow.should.equal('ONRAMP');
-      params.swapAmount.should.equal('1000000');
-      params.defaultAsset.should.equal('BTC_BTC');
+
+      // legacy fields must be translated into the new unified params
+      params.enabledCryptoAssets.should.equal('BTC_BTC');
+      params.outAsset.should.equal('BTC_BTC');
+      params.outAssetValue.should.equal('1000000');
+      params.inAsset.should.equal('USD');
+      params.inAssetValue.should.equal('50');
+
+      // legacy fields must NOT be forwarded to Ramp
+      should.not.exist(params.swapAsset);
+      should.not.exist(params.swapAmount);
+      should.not.exist(params.defaultAsset);
+      should.not.exist(params.fiatCurrency);
+      should.not.exist(params.fiatValue);
+
+      // timestamp must exist and be numeric
+      params.timestamp.should.match(/^\d+$/);
+
+      // signature must exist and not be empty
+      params.signature.should.be.a('string').and.not.equal('');
+    });
+
+    // ONRAMP (buy) - new unified params sent by newer app versions.
+    // They must be forwarded as-is.
+    it('should get the paymentUrl properly with new onramp params', () => {
+      req.body = {
+        env: 'production',
+        flow: 'buy',
+        enabledCryptoAssets: 'BTC_BTC',
+        outAsset: 'BTC_BTC',
+        outAssetValue: '1000000',
+        inAsset: 'USD',
+        inAssetValue: 50,
+        enabledFlows: 'ONRAMP',
+        defaultFlow: 'ONRAMP',
+        userAddress: 'bitcoin:123123',
+        selectedCountryCode: 'US',
+        finalUrl: 'bitpay://ramp',
+      };
+      const data = server.externalServices.ramp.rampGetSignedPaymentUrl(req);
+      should.exist(data.urlWithSignature);
+      const [base, qs] = data.urlWithSignature.split('?');
+
+      base.should.equal('widgetApi2');
+
+      const params = Object.fromEntries(new URLSearchParams(qs));
+      params.hostApiKey.should.equal('apiKey2');
+      params.selectedCountryCode.should.equal('US');
+      params.finalUrl.should.equal('bitpay://ramp');
+      params.userAddress.should.equal('bitcoin:123123');
+      params.enabledFlows.should.equal('ONRAMP');
+      params.defaultFlow.should.equal('ONRAMP');
+      params.enabledCryptoAssets.should.equal('BTC_BTC');
+      params.outAsset.should.equal('BTC_BTC');
+      params.outAssetValue.should.equal('1000000');
+      params.inAsset.should.equal('USD');
+      params.inAssetValue.should.equal('50');
 
       // timestamp must exist and be numeric
       params.timestamp.should.match(/^\d+$/);
@@ -269,8 +344,8 @@ describe('Ramp integration', () => {
       params.selectedCountryCode.should.equal('US');
       params.finalUrl.should.equal('bitpay://ramp');
       params.userAddress.should.equal('bitcoin:123123');
-      params.swapAsset.should.equal('BTC_BTC');
-      params.defaultAsset.should.equal('BTC_BTC');
+      params.enabledCryptoAssets.should.equal('BTC_BTC');
+      params.outAsset.should.equal('BTC_BTC');
 
       // timestamp must exist and be numeric
       params.timestamp.should.match(/^\d+$/);
@@ -280,7 +355,7 @@ describe('Ramp integration', () => {
     });
 
     it('should return error if there is some missing arguments', () => {
-      delete req.body.defaultAsset;
+      delete req.body.selectedCountryCode;
       try {
         server.externalServices.ramp.rampGetSignedPaymentUrl(req);
         should.fail('should have thrown');
@@ -300,18 +375,26 @@ describe('Ramp integration', () => {
       }
     });
 
-    it('should get the sell paymentUrl properly if req is OK', () => {
+    // OFFRAMP (sell) - legacy params sent by older app versions.
+    // The service must translate them into Ramp's new unified search params:
+    //   offrampAsset -> enabledCryptoAssets
+    //   defaultAsset -> inAsset
+    //   swapAmount   -> inAssetValue
+    //   fiatCurrency -> outAsset
+    //   fiatValue    -> outAssetValue
+    it('should get the sell paymentUrl properly with legacy offramp params', () => {
       req.body = {
         env: 'production',
         flow: 'sell',
         offrampAsset: 'BTC_BTC',
         swapAmount: '1000000',
+        defaultAsset: 'BTC_BTC',
+        fiatCurrency: 'USD',
+        fiatValue: 50,
         enabledFlows: 'OFFRAMP',
         defaultFlow: 'OFFRAMP',
         selectedCountryCode: 'US',
-        defaultAsset: 'BTC_BTC',
         useSendCryptoCallback: true,
-        useSendCryptoCallbackVersion: 1,
         hideExitButton: false,
       };
       const data = server.externalServices.ramp.rampGetSignedPaymentUrl(req);
@@ -322,13 +405,63 @@ describe('Ramp integration', () => {
       const params = Object.fromEntries(new URLSearchParams(qs));
       params.hostApiKey.should.equal('apiKey2');
       params.selectedCountryCode.should.equal('US');
-      params.offrampAsset.should.equal('BTC_BTC');
       params.enabledFlows.should.equal('OFFRAMP');
       params.defaultFlow.should.equal('OFFRAMP');
-      params.swapAmount.should.equal('1000000');
-      params.defaultAsset.should.equal('BTC_BTC');
       params.useSendCryptoCallback.should.equal('true');
-      params.useSendCryptoCallbackVersion.should.equal('1');
+
+      // legacy fields must be translated into the new unified params
+      params.enabledCryptoAssets.should.equal('BTC_BTC');
+      params.inAsset.should.equal('BTC_BTC');
+      params.inAssetValue.should.equal('1000000');
+      params.outAsset.should.equal('USD');
+      params.outAssetValue.should.equal('50');
+
+      // legacy fields must NOT be forwarded to Ramp
+      should.not.exist(params.offrampAsset);
+      should.not.exist(params.swapAmount);
+      should.not.exist(params.defaultAsset);
+      should.not.exist(params.fiatCurrency);
+      should.not.exist(params.fiatValue);
+
+      // timestamp must exist and be numeric
+      params.timestamp.should.match(/^\d+$/);
+
+      // signature must exist and not be empty
+      params.signature.should.be.a('string').and.not.equal('');
+    });
+
+    // OFFRAMP (sell) - new unified params sent by newer app versions.
+    it('should get the sell paymentUrl properly with new offramp params', () => {
+      req.body = {
+        env: 'production',
+        flow: 'sell',
+        enabledCryptoAssets: 'BTC_BTC',
+        inAsset: 'BTC_BTC',
+        inAssetValue: '1000000',
+        outAsset: 'USD',
+        outAssetValue: 50,
+        enabledFlows: 'OFFRAMP',
+        defaultFlow: 'OFFRAMP',
+        selectedCountryCode: 'US',
+        useSendCryptoCallback: true,
+        hideExitButton: false,
+      };
+      const data = server.externalServices.ramp.rampGetSignedPaymentUrl(req);
+      should.exist(data.urlWithSignature);
+      const [base, qs] = data.urlWithSignature.split('?');
+      base.should.equal('widgetApi2');
+
+      const params = Object.fromEntries(new URLSearchParams(qs));
+      params.hostApiKey.should.equal('apiKey2');
+      params.selectedCountryCode.should.equal('US');
+      params.enabledFlows.should.equal('OFFRAMP');
+      params.defaultFlow.should.equal('OFFRAMP');
+      params.useSendCryptoCallback.should.equal('true');
+      params.enabledCryptoAssets.should.equal('BTC_BTC');
+      params.inAsset.should.equal('BTC_BTC');
+      params.inAssetValue.should.equal('1000000');
+      params.outAsset.should.equal('USD');
+      params.outAssetValue.should.equal('50');
 
       // timestamp must exist and be numeric
       params.timestamp.should.match(/^\d+$/);
@@ -344,12 +477,11 @@ describe('Ramp integration', () => {
         context: 'web',
         offrampAsset: 'BTC_BTC',
         swapAmount: '1000000',
+        defaultAsset: 'BTC_BTC',
         enabledFlows: 'OFFRAMP',
         defaultFlow: 'OFFRAMP',
         selectedCountryCode: 'US',
-        defaultAsset: 'BTC_BTC',
         useSendCryptoCallback: true,
-        useSendCryptoCallbackVersion: 1,
         hideExitButton: false,
       };
       const data = server.externalServices.ramp.rampGetSignedPaymentUrl(req);
@@ -360,13 +492,12 @@ describe('Ramp integration', () => {
       const params = Object.fromEntries(new URLSearchParams(qs));
       params.hostApiKey.should.equal('apiKey4');
       params.selectedCountryCode.should.equal('US');
-      params.offrampAsset.should.equal('BTC_BTC');
       params.enabledFlows.should.equal('OFFRAMP');
       params.defaultFlow.should.equal('OFFRAMP');
-      params.swapAmount.should.equal('1000000');
-      params.defaultAsset.should.equal('BTC_BTC');
       params.useSendCryptoCallback.should.equal('true');
-      params.useSendCryptoCallbackVersion.should.equal('1');
+      params.enabledCryptoAssets.should.equal('BTC_BTC');
+      params.inAsset.should.equal('BTC_BTC');
+      params.inAssetValue.should.equal('1000000');
 
       // timestamp must exist and be numeric
       params.timestamp.should.match(/^\d+$/);

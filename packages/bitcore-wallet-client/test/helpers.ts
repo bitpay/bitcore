@@ -262,7 +262,7 @@ export const blockchainExplorerMock = {
     should.exist(scriptPubKey);
     blockchainExplorerMock.utxos.push({
       txid: new Bitcore.crypto.Hash.sha256(Buffer.alloc(Math.random() * 100000)).toString('hex'),
-      outputIndex: 0,
+      vout: 0,
       amount: amount,
       satoshis: amount * 1e8,
       address: address.address,

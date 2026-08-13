@@ -46,6 +46,8 @@ for (const network in NetworkChar) { // invert NetworkChar
   NetworkChar[NetworkChar[network]] = network;
 }
 
+const defaultNumberFormat = 'number'; // 'number' | 'string' | 'hex'
+
 const BASE_URL = 'http://localhost:3232/bws/api';
 
 export class API extends EventEmitter {
@@ -153,10 +155,6 @@ export class API extends EventEmitter {
 
     log.setLevel(this.logLevel);
   }
-
-  static privateKeyEncryptionOpts = {
-    iter: 10000
-  };
 
   initNotifications(cb) {
     log.warn('DEPRECATED: use initialize() instead.');
@@ -1400,7 +1398,7 @@ export class API extends EventEmitter {
       qs.push(`includeExtendedInfo=${opts.includeExtendedInfo ? '1' : '0'}`);
       qs.push(`twoStep=${opts.twoStep ? '1' : '0'}`);
       qs.push('serverMessageArray=1');
-      qs.push('numberFormat=hex'); // Only applies to `pendingTxps` in response. TODO apply this to balances as well.
+      qs.push('numberFormat=' + defaultNumberFormat); // Only applies to `pendingTxps` in response. TODO apply this to balances as well.
 
       if (opts.tokenAddress) {
         qs.push('tokenAddress=' + opts.tokenAddress);
@@ -1732,7 +1730,7 @@ export class API extends EventEmitter {
       const args = {
         proposalSignature: Utils.signMessage(hash, this.credentials.requestPrivKey)
       };
-      const qs = `numberFormat=${opts.numberFormat || 'hex'}`;
+      const qs = `numberFormat=${opts.numberFormat || defaultNumberFormat}`;
 
       const url = `/v2/txproposals/${opts.txp.id}/publish?${qs}`;
       const { body: txp } = await this.request.post<object, PublishedTxp>(url, args);
@@ -1937,7 +1935,7 @@ export class API extends EventEmitter {
 
       opts = opts || {};
       const { doNotVerify, forAirGapped, doNotEncryptPkr } = opts;
-      const qs = `numberFormat=${opts.numberFormat || 'hex'}`;
+      const qs = `numberFormat=${opts.numberFormat || defaultNumberFormat}`;
 
       const { body: txps } = await this.request.get(`/v2/txproposals?${qs}`);
       this._processTxps(txps);
@@ -3980,6 +3978,10 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/banxa/createOrder', data);
   }
 
+  async banxaGetOrder(data) {
+    return this.request.post('/v1/service/banxa/getOrder', data);
+  }
+
   async moonpayGetQuote(data) {
     return this.request.post('/v1/service/moonpay/quote', data);
   }
@@ -3996,8 +3998,20 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/moonpay/sellSignedPaymentUrl', data);
   }
 
+  async moonpayGetTransactionDetails(data) {
+    return this.request.post('/v1/service/moonpay/transactionDetails', data);
+  }
+
+  async moonpayGetSellTransactionDetails(data) {
+    return this.request.post('/v1/service/moonpay/sellTransactionDetails', data);
+  }
+
   async moonpayCancelSellTransaction(data) {
     return this.request.post('/v1/service/moonpay/cancelSellTransaction', data);
+  }
+
+  async moonpayGetAccountDetails(data) {
+    return this.request.post('/v1/service/moonpay/accountDetails', data);
   }
 
   async moonpayCreateSession(data) {
@@ -4020,12 +4034,20 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/ramp/signedPaymentUrl', data);
   }
 
+  async rampGetSellTransactionDetails(data) {
+    return this.request.post('/v1/service/ramp/sellTransactionDetails', data);
+  }
+
   async sardineGetQuote(data) {
     return this.request.post('/v1/service/sardine/quote', data);
   }
 
   async sardineGetToken(data) {
     return this.request.post('/v1/service/sardine/getToken', data);
+  }
+
+  async sardineGetOrdersDetails(data) {
+    return this.request.post('/v1/service/sardine/ordersDetails', data);
   }
 
   async simplexGetQuote(data) {
@@ -4052,6 +4074,10 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/thorswap/getSwapQuote', data);
   }
 
+  async thorswapGetSwapTx(data) {
+    return this.request.post('/v1/service/thorswap/getSwapTx', data);
+  }
+
   async transakGetAccessToken(data) {
     return this.request.post('/v1/service/transak/getAccessToken', data);
   }
@@ -4062,6 +4088,10 @@ export class API extends EventEmitter {
 
   async transakGetSignedPaymentUrl(data) {
     return this.request.post('/v1/service/transak/signedPaymentUrl', data);
+  }
+
+  async transakGetOrderDetails(data) {
+    return this.request.post('/v1/service/transak/orderDetails', data);
   }
 
   async wyreWalletOrderQuotation(data) {
@@ -4084,8 +4114,52 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/changelly/createFixTransaction', data);
   }
 
+  async changellyGetTransactions(data) {
+    return this.request.post('/v1/service/changelly/getTransactions', data);
+  }
+
+  async changellyGetStatus(data) {
+    return this.request.post('/v1/service/changelly/getStatus', data);
+  }
+
   async oneInchGetSwap(data) {
     return this.request.post('/v1/service/oneInch/getSwap', data);
+  }
+
+  async moralisGetWalletTokenBalances(data) {
+    return this.request.post('/v1/moralis/getWalletTokenBalances', data);
+  }
+
+  async moralisGetTokenAllowance(data) {
+    return this.request.post('/v1/moralis/moralisGetTokenAllowance', data);
+  }
+
+  async moralisGetNativeBalance(data) {
+    return this.request.post('/v1/moralis/moralisGetNativeBalance', data);
+  }
+
+  async moralisGetTokenPrice(data) {
+    return this.request.post('/v1/moralis/GetTokenPrice', data);
+  }
+
+  async moralisGetMultipleERC20TokenPrices(data) {
+    return this.request.post('/v1/moralis/getMultipleERC20TokenPrices', data);
+  }
+
+  async moralisGetERC20TokenBalancesWithPricesByWallet(data) {
+    return this.request.post('/v1/moralis/getERC20TokenBalancesWithPricesByWallet', data);
+  }
+
+  async moralisGetSolWalletPortfolio(data) {
+    return this.request.post('/v1/moralis/getSolWalletPortfolio', data);
+  }
+
+  async moralisGetTransactionVerbose(data) {
+    return this.request.post('/v1/moralis/getTransactionVerbose', data);
+  }
+
+  async moralisGetMultipleSolTokenPrices(data) {
+    return this.request.post('/v1/moralis/getMultipleSolTokenPrices', data);
   }
 };
 
@@ -4260,6 +4334,7 @@ export interface Txp {
   fee: number | string;
   feeLevel: string;
   feePerKb: number | string;
+  gasLimit?: number;
   from?: string;
   hasUnconfirmedInputs?: boolean;
   id: string;

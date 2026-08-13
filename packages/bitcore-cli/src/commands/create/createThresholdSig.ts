@@ -27,7 +27,7 @@ export async function createThresholdSigWallet(
 
   const copayerName = await getCopayerName();
   const addressType = await getAddressType({ chain, network, isMultiSig: false, isTss: true });
-  const password = await getPassword('Lock your wallet with a password:', { hidden: false });
+  const password = await getPassword('Lock your wallet with a password:', { hidden: false, confirm: true });
 
   let key;
   if (mnemonic) {
@@ -72,47 +72,60 @@ export async function createThresholdSigWallet(
       extra: tssPassword
     });
 
-    const goBack = await prompt.select({
-      message: `Join code for party ${i}:${os.EOL}${joinCode}`,
-      initialValue: false,
-      options: [
-        {
-          label: 'Continue →',
-          value: false
-        },
-        {
-          label: '↩ Go Back',
-          value: true,
-          hint: `Re-enter party ${i}'s public key`
-        }
-      ]
-    });
-    if (prompt.isCancel(goBack)) {
-      throw new UserCancelled();
-    }
+    let joinCodeAction: 'copy' | 'continue' | 'goBack' | symbol;
+    do {
+      joinCodeAction = await prompt.select({
+        message: joinCodeAction === 'copy' ? 'Copied!' : `Join code for party ${i}:${os.EOL}${joinCode}`,
+        initialValue: joinCodeAction === 'copy' ? 'continue' : 'copy',
+        options: [
+          {
+            label: 'Continue →',
+            value: 'continue'
+          },
+          {
+            label: 'Copy to clipboard ⎘',
+            value: 'copy'
+          },
+          {
+            label: '↩ Go Back',
+            value: 'goBack',
+            hint: `Re-enter party ${i}'s public key`
+          }
+        ]
+      });
+      if (prompt.isCancel(joinCodeAction)) {
+        throw new UserCancelled();
+      }
 
-    if (goBack) {
-      i--; // Retry this party
-    }
+      switch (joinCodeAction) {
+        case 'goBack':
+          i--; // Retry this party
+          break;
+        case 'copy':
+          try {
+            Utils.copyToClipboard(joinCode);
+          } catch (error) {
+            prompt.log.error(`Error copying to clipboard: ${error instanceof Error ? error.message : String(error)}`);
+            joinCodeAction = null; // Reset to re-prompt the user
+          }
+          break;
+        case 'continue':
+          break;
+      }
+    } while (joinCodeAction !== 'continue');
   }
 
-  const spinner = prompt.spinner({ indicator: 'timer' });
+  const spinner = prompt.spinner({ indicator: 'timer', onCancel: () => { tss.unsubscribe(); } });
   spinner.start('Waiting for all parties to join...');
 
   await new Promise<void>((resolve, reject) => {
-    process.on('SIGINT', () => {
-      tss.unsubscribe();
-      spinner.stop('Cancelled by user');
-      reject(new UserCancelled());
-    });
-
     tss.subscribe({
       walletName: wallet.name,
       copayerName,
       createWalletOpts: Utils.getSegwitInfo(addressType)
     });
     tss.on('roundsubmitted', (round) => spinner.message(`Round ${round} submitted`));
-    tss.on('error', prompt.log.error);
+    tss.on('error', e => prompt.log.error('Unexpected error during TSS wallet creation: ' + (e.stack || e)));
     tss.on('wallet', async (_wallet) => {
       // TODO: what to do with the wallet?
       // console.log('Created wallet at BWS:', wallet);
@@ -142,7 +155,13 @@ export async function createThresholdSigWallet(
         reject(err);
       }
     });
+    tss.on('unsubscribe', () => {
+      reject(new UserCancelled());
+    });
   });
+
+  // Clean up sensitive data from memory after wallet creation is complete
+  tss.cleanup();
 
 
   // Keyshare backup
