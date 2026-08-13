@@ -3,8 +3,7 @@ import CWC, { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { NFC } from 'nfc-pcsc';
 import { Base } from './base.js';
 import { DataType } from './types/burnerTypes.js';
-import { BaseParams, SignParams } from './types/paramTypes.js';
-
+import { BaseParams } from './types/paramTypes.js';
 
 const { Address, PublicKey, crypto } = BitcoreLib;
 
@@ -53,10 +52,51 @@ export default class Burner implements Base {
     });
   }
 
-  async sign(params: SignParams) {
-    const { index, tx, password } = params;
-    const digest = CWC.Transactions.getSighash({ chain: this.chain, tx, index: 0 });
+  /**
+   * Standardize utxo for internal funcionality.
+   * Accepts either a bitcore-node or a lib (bitcore-lib, bitcore-lib-cash, etc.) utxo.
+   * Handles both lib style utxos: UnspentOutput properties and UnspentOutput.toObject properties.
+   *
+   * @param utxos either a bitcore-node or lib utxo
+   * @returns utxo in the standard, internaly used format
+   */
+  standardizeUtxo(utxo: EveryUtxoType): UtxoType {
+    return {
+      satoshis: Number(utxo.satoshis ?? utxo.value ?? BitcoreLib.Unit.fromBTC(utxo.amount ?? 0).toSatoshis()),
+      txId: utxo.txId ?? utxo.mintTxid ?? utxo.txid ?? '',
+      outputIndex: Number(utxo.outputIndex ?? utxo.mintIndex ?? utxo.vout ?? 0),
+      script: utxo.scriptPubKey ?? new BitcoreLib.Script(utxo.script).toHex(),
+      address: utxo.address != undefined ? new BitcoreLib.Address(utxo.address).toString() : undefined
+    };
+  }
 
+  getRelatedUtxos(params: {
+    outputs: BitcoreLib.Transaction.Input[];
+    utxos: UtxoType[];
+  }): UtxoType[] {
+    const { outputs, utxos } = params;
+    const txids = outputs.map(output => output.toObject().prevTxId);
+    return utxos.filter(utxo => txids.includes(utxo.txId));
+  }
+
+  async sign(params: {
+    tx: TransactionType;
+    utxos?: EveryUtxoType[];
+    index: number;
+    password: string;
+  }) {
+    const { tx, utxos, index, password } = params;
+    const bitcoreTx = tx instanceof BitcoreLib.Transaction ? tx : new BitcoreLib.Transaction(tx);
+    if (utxos) {
+      const btcUtxos = utxos.map(utxo => this.standardizeUtxo(utxo));
+      const applicableUtxos = this.getRelatedUtxos({
+        outputs: bitcoreTx.inputs,
+        utxos: btcUtxos
+      });
+      bitcoreTx.associateInputs(applicableUtxos.map(utxo => new BitcoreLib.Transaction.UnspentOutput(utxo)));
+    }
+
+    const digest = CWC.Transactions.getSighash({ chain: this.chain, tx: bitcoreTx, index: 0 });
     this.response = undefined;
 
     this.command = {
@@ -78,12 +118,12 @@ export default class Burner implements Base {
 
     CWC.Transactions.applySignature({
       chain: this.chain,
-      tx,
+      tx: bitcoreTx,
       signature,
       index: 0
     });
 
-    return tx;
+    return bitcoreTx.serialize();
   }
 
   async getPublicKey(params: BaseParams) {
@@ -138,3 +178,40 @@ export default class Burner implements Base {
     return data.firmwareVersion[index].value;
   }
 }
+
+/** Transaction data that can be converted into a Transaction via Transaction(tx) */
+type TransactionType = BitcoreLib.Transaction | string | Buffer | object;
+
+/**
+ * Standard utxo type use for internal processing.
+ * Property names are from bitcore-lib's UnspentOutput.
+ * Note, UnspentOutput addresses and scripts are Address and Script classes respectively,
+ * here they are both strings.
+ */
+export type UtxoType = {
+  txId: string;
+  outputIndex: number;
+  satoshis: number;
+  script: string;
+  address?: string;
+};
+
+/** 
+ * Utxo type for functions were the received utxo type is unknown.
+ * Could either be in the format of UnspentOutput, UnspentOutput.toObject, or from bitcore-node.
+ */
+export type EveryUtxoType = Partial<UtxoType & {
+  // bitcore-node specific properties
+  mintTxid: string;
+  mintIndex: number;
+  mintHeight: number;
+  value: number;
+  // UnspentOutput.toObject specific properties
+  txid: string;
+  amount: number;
+  vout: number;
+  scriptPubKey: string;
+  // UnspentOutput specific, allow for Script and Address objects
+  script: string | BitcoreLib.Script;
+  address: string | BitcoreLib.Address;
+}>;
