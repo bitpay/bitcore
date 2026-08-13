@@ -19,7 +19,7 @@ describe('Burner Signing', function () {
     sandbox.restore();
   });
 
-  it('should sign transactions', async function () {
+  it('should sign a transaction', async function () {
     const address = publicKey.toAddress();
     
     const utxos = [{
@@ -52,15 +52,15 @@ describe('Burner Signing', function () {
     
     const signature = crypto.ECDSA.sign(Buffer.from(hash, 'hex'), privateKey);
     
-    burner.response = {
-      input: (burner.command as any).keyNo,
-      digest: (burner.command as any).digest,
+    burner.responses = [{
+      input: (burner.commandQueue[0] as any).keyNo,
+      digest: (burner.commandQueue[0] as any).digest,
       signature: {
         raw: {},
         der: signature.toString(),
       },
       publicKey: publicKey.toString()
-    };
+    }];
     
     const signedTransaction = new Transaction(await signRequest);
     expect(signedTransaction.inputs[0].witnesses[0].length).to.be.greaterThan(70).and.lessThan(73);

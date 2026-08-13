@@ -13,30 +13,71 @@ const { Address, PublicKey, crypto } = BitcoreLib;
  */
 export default class Burner implements Base {
   nfc = new NFC();
-  command = {};
+  // list of commands waiting to be sent to the wallet
+  commandQueue: Record<string, any>[] = [];
+  // responses to all the commands from commandQueue
+  responses: Record<string, any>[] = [];
   chain: string;
-  response: object | string | number | undefined;
 
   constructor(chain: string) {
     this.chain = chain;
   }
 
-  async awaitResponse() {
+  /**
+   * Queues a command to be sent off to the wallet when it is scanned with an NFC reader.
+   * 
+   * Logic for getting the response is not in this function, but in connect.
+   * This function simply waits for the card listener to add the responses.
+   * 
+   * @param command command to queue
+   * @returns response from the wallet
+   */
+  async sendCommand(command: CommandType): Promise<Record<string, any>> {
+    const index = this.commandQueue.length;
+    this.commandQueue.push(command);
     return new Promise(async (resolve1) => {
-      while (this.response === undefined) {
+      while (this.responses[index] === undefined) {
         await new Promise(resolve2 => setTimeout(resolve2, 10));
       }
-      resolve1(this.response);
+      resolve1(this.responses[index]);
     });
   }
 
+  /**
+   * Queues a commands to be sent off to the wallet when it is scanned with an NFC reader.
+   * 
+   * Logic for getting the response is not in this function, but in connect.
+   * This function simply waits for the card listener to add the responses.
+   * 
+   * @param command commands to queue
+   * @returns responses from the wallet
+   */
+  async sendManyCommands(commands: CommandType[]): Promise<Record<string, any>[]> {
+    const index = this.commandQueue.length;
+    for (const command of commands) {
+      this.commandQueue.push(command);
+    }
+    return new Promise(async (resolve1) => {
+      while (this.responses.length < index + commands.length) {
+        await new Promise(resolve2 => setTimeout(resolve2, 10));
+      }
+      resolve1(this.responses.slice(index, index + commands.length));
+    });
+  }
+
+  /**
+   * Sends all commands to the wallet and recieves all responses
+   */
   connect() {
     this.nfc.on('reader', (reader) => {
       reader.autoProcessing = false;
 
       reader.on('card', async () => {
         try {
-          this.response = await execHaloCmdPCSC(this.command, reader);
+          this.responses = [];
+          for (const command of this.commandQueue) {
+            this.responses.push(await execHaloCmdPCSC(command, reader));
+          }
         } catch (e) {
           console.error(e);
         }
@@ -96,45 +137,42 @@ export default class Burner implements Base {
       bitcoreTx.associateInputs(applicableUtxos.map(utxo => new BitcoreLib.Transaction.UnspentOutput(utxo)));
     }
 
-    const digest = CWC.Transactions.getSighash({ chain: this.chain, tx: bitcoreTx, index: 0 });
-    this.response = undefined;
-
-    this.command = {
-      name: 'sign',
-      digest,
-      password,
-      keyNo: index
+    const commands: CommandType[] = [];
+    for (let i = 0; i < bitcoreTx.inputs.length; i++) {
+      const digest = CWC.Transactions.getSighash({ chain: this.chain, tx: bitcoreTx, index: i });
+      commands.push({
+        name: 'sign',
+        digest,
+        password,
+        keyNo: index
+      });
     };
-
-    const response: any = await this.awaitResponse();
-
-    const publicKey = new PublicKey(response.publicKey);
-    const signature = crypto.Signature.fromString(response.signature.der);
-    signature.pubKey = publicKey;
-
-    const verify = crypto.ECDSA.verify(Buffer.from(digest, 'hex'), signature, publicKey);
-    if (!verify)
-      throw new Error('Invalid signature');
-
-    CWC.Transactions.applySignature({
-      chain: this.chain,
-      tx: bitcoreTx,
-      signature,
-      index: 0
-    });
+    const responses = await this.sendManyCommands(commands);
+    
+    for (let i = 0; i < bitcoreTx.inputs.length; i++) {
+      const response = responses[i];
+      const publicKey = new PublicKey(response.publicKey);
+      const signature = crypto.Signature.fromString(response.signature.der);
+      signature.pubKey = publicKey;
+  
+      CWC.Transactions.applySignature({
+        chain: this.chain,
+        tx: bitcoreTx,
+        signature,
+        index: i
+      });
+    }
 
     return bitcoreTx.serialize();
   }
 
   async getPublicKey(params: BaseParams) {
     const { index } = params;
-    this.response = undefined;
-    this.command = {
+
+    return (await this.sendCommand({
       name: 'get_data_struct_v2',
       spec: [{ type: 'publicKey', index }]
-    };
-
-    return (await this.awaitResponse() as any).publicKey[index].value;
+    }) as any).publicKey[index].value;
   }
 
   /**
@@ -143,22 +181,14 @@ export default class Burner implements Base {
    * @returns
    */
   async getData(req: Array<{ type: DataType; index: number }>) {
-    this.response = undefined;
-    this.command = {
+    return this.sendCommand({
       name: 'get_data_struct_v2',
       spec: req
-    };
-
-    return this.awaitResponse();
+    });
   }
 
   async getAddress(params: BaseParams) {
     const { index } = params;
-    this.response = undefined;
-    this.command = {
-      name: 'get_data_struct_v2',
-      spec: [{ type: 'compressedPublicKey', index }]
-    };
 
     const data: any = await this.getData([{ type: 'compressedPublicKey', index }]);
 
@@ -215,3 +245,5 @@ export type EveryUtxoType = Partial<UtxoType & {
   script: string | BitcoreLib.Script;
   address: string | BitcoreLib.Address;
 }>;
+
+type CommandType = Record<string, any> & { name: string };

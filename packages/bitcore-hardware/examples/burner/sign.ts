@@ -12,13 +12,40 @@ burner.connect();
 const publicKey = new PublicKey('04161f62f9778a44bd3d07009b1f2e9df7ab1dc57e74665db7ed8baa95780452ab39f4975099f3ae36f7b6a874b46edd79d1d88573a325b9976fd8f120bed704aa');
 const address = publicKey.toAddress();
 
-const utxos = [{
-  txId: '115e8f72f39fad874cfab0deed11a80f24f967a84079fb56ddf53ea02e308986',
-  outputIndex: 0,
-  address: address.toString(),
-  script: Script.buildWitnessV0Out(address),
-  satoshis: 1100
-}];
+const utxos = [
+  {
+    chain: 'BTC',
+    network: 'regtest',
+    coinbase: true,
+    mintIndex: 0,
+    spentTxid: '517dc566fb3a82121840eecdcce4636fb776b6b64ccc4f29f74b870e6bcc44b0',
+    mintTxid: 'd3667993af738c3db4033dc462ab95f9916da455c628bbf71488484e2b6803c3',
+    mintHeight: 5,
+    spentHeight: 111,
+    address: address.toString(),
+    script: Script.buildWitnessV0Out(address),
+    value: 600,
+    confirmations: 1,
+    sequenceNumber: 4294967293,
+    wallets: []
+  },
+  {
+    chain: 'BTC',
+    network: 'regtest',
+    coinbase: false,
+    mintIndex: 1,
+    spentTxid: '',
+    mintTxid: '517dc566fb3a82121840eecdcce4636fb776b6b64ccc4f29f74b870e6bcc44b0',
+    mintHeight: 111,
+    spentHeight: -2,
+    address: address.toString(),
+    script: Script.buildWitnessV0Out(address),
+    value: 600,
+    confirmations: 1,
+    sequenceNumber: 4294967295,
+    wallets: []
+  }
+];
 
 const tx = CWC.Transactions.create({
   chain: 'BTC',
