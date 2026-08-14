@@ -62,6 +62,7 @@ describe('Transaction', function () {
           {
             mintTxid: '643ec66d6c4cad4cbdb8ed2166b8078975e0af9bb7ff7e30d394f43b0d9f18ab',
             mintIndex: 1,
+            mintHeight: 100,
             value: 90_000,
             script: '76a9144e744a19a009a9dd43a23a7c12045c83e82ac9d288ac',
             address: 'mnfnJx2xWWptYmBzck3rdE851Dtu9GaZ3F',
@@ -70,6 +71,7 @@ describe('Transaction', function () {
           {
             mintTxid: '643ec66d6c4cad4cbdb8ed2166b8078975e0af9bb7ff7e30d394f43b0d9f18ab',
             mintIndex: 0,
+            mintHeight: 100,
             value: 30_000,
             script: '76a9144e744a19a009a9dd43a23a7c12045c83e82ac9d288ac',
             address: 'mnfnJx2xWWptYmBzck3rdE851Dtu9GaZ3F',
