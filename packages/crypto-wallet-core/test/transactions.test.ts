@@ -51,7 +51,7 @@ describe('Transaction', function () {
       expect(signed).to.eq(expected);
     });
 
-    describe.only('every utxo type: bitcore-node, UnspentOutput, and UnspentOutput.toObject', () => {
+    describe('every utxo type: bitcore-node, UnspentOutput, and UnspentOutput.toObject', () => {
       const keys = [{
         address: 'mnfnJx2xWWptYmBzck3rdE851Dtu9GaZ3F',
         privKey: 'cSFjiifSbZ2hU4jTFwE993LCe2rkZGULCTGWTDWXzHvuXRKxpnc1'
