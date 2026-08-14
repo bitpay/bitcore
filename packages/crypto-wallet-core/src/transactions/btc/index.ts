@@ -162,11 +162,12 @@ export class BTCTxProvider {
     tx: TransactionType;
     keys: Key[];
     utxos: EveryUtxoType[];
+    sigtype?: number;
     pubkeys?: any[];
     threshold?: number;
     opts: any;
   }): string {
-    const { tx, keys, pubkeys, threshold, opts } = params;
+    const { tx, keys, pubkeys, sigtype, threshold, opts } = params;
     const utxos = params.utxos || [];
     const bitcoreTx = new this.lib.Transaction(tx);
     const btcUtxos = utxos.map(utxo => this.standardizeUtxo(utxo));
@@ -181,7 +182,7 @@ export class BTCTxProvider {
       map[pk.publicKey.toString()] = pk;
       return map;
     }, {}));
-    const signedTx = bitcoreTx.sign(uniqePrivKeys).toString();
+    const signedTx = bitcoreTx.sign(uniqePrivKeys, sigtype).toString();
     return signedTx;
   }
 
