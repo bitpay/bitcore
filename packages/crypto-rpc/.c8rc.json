@@ -1,0 +1,15 @@
+{
+  "include": [
+    "lib/**"
+  ],
+  "reporter": [
+    "html",
+    "text-summary"
+  ],
+  "all": true,
+  "check-coverage": true,
+  "statements": 80,
+  "branches": 80,
+  "functions": 70,
+  "lines": 80
+}

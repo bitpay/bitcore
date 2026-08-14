@@ -24,7 +24,7 @@
   "scripts": {
     "start": "npm run clean && npm run build && ./start.sh",
     "stop": "./stop.sh",
-    "test": "npm run compile && nyc mocha 'ts_build/test/**/*.test.js'",
+    "test": "npm run compile && c8 mocha ts_build/test",
     "build": "tsc && npm run cp:templates",
     "build:prod": "tsc -p tsconfig.prod.json && npm run cp:templates",
     "build:docker": "docker build -t bitpay/bitcore-wallet-service:latest -f ./Dockerfile ../..",

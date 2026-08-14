@@ -45,6 +45,7 @@
     "@eslint/js": "^9.37.0",
     "@stylistic/eslint-plugin": "^5.5.0",
     "@types/node": "22.13.1",
+    "c8": "^12.0.0",
     "cz-customizable": "^5.2.0",
     "eslint": "^9.37.0",
     "eslint-plugin-import": "2.32.0",
@@ -52,7 +53,6 @@
     "husky": "^2.4.0",
     "lint-staged": "^9.5.0",
     "mocha": "^11.7.5",
-    "nyc": "^18.0.0",
     "ts-node": "^8.0.3",
     "typedoc": "^0.15.0",
     "typescript-eslint": "^8.46.0"

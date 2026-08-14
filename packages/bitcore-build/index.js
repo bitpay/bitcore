@@ -1,11 +1,12 @@
 'use strict';
+/* eslint-disable @typescript-eslint/no-require-imports */
 
+const assert = require('assert');
+const fs = require('fs');
 const gulp = require('gulp');
 const rename = require('gulp-rename');
 const shell = require('gulp-shell');
 const terser = require('gulp-terser');
-const fs = require('fs');
-const assert = require('assert');
 
 function startGulp(name, opts) {
   const task = {};
@@ -118,7 +119,7 @@ function startGulp(name, opts) {
 
   //  task['plato']= shell.task([platoPath + ' -d report -r -l .jshintrc -t ' + fullname + ' lib']);
 
-  task['test:node'] = shell.task(['nyc mocha -- --recursive']);
+  task['test:node'] = shell.task(['c8 mocha -- --recursive']);
 
   /**
    * watch tasks

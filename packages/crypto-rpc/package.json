@@ -12,7 +12,7 @@
     "url": "https://github.com/bitpay/bitcore/tree/master/packages/crypto-rpc"
   },
   "scripts": {
-    "docker:test": "npm run hardhat:compile && npm run hardhat:deploy && npm run hardhat:test && c8 mocha --recursive ./test",
+    "docker:test": "npm run hardhat:compile && npm run hardhat:deploy && npm run hardhat:test && c8 mocha test",
     "docker:test:build": "docker compose build",
     "docker:test:down": "docker compose down",
     "hardhat:compile": "cd blockchain/EVM/ && npx hardhat compile",
@@ -41,20 +41,5 @@
     "chai": "^6.2.1",
     "hardhat": "^2.22.18",
     "sinon": "^21.0.0"
-  },
-  "c8": {
-    "include": [
-      "lib/**"
-    ],
-    "reporter": [
-      "html",
-      "text-summary"
-    ],
-    "all": true,
-    "check-coverage": true,
-    "statements": 80,
-    "branches": 80,
-    "functions": 70,
-    "lines": 80
   }
 }

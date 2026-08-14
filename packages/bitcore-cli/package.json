@@ -32,7 +32,7 @@
     "bitcore-cli": "./bin/bitcore-cli"
   },
   "scripts": {
-    "test": "npm run compile && node copyTestWallets && nyc mocha 'build/test/**/*.js'",
+    "test": "npm run compile && node copyTestWallets && c8 mocha build/test",
     "build": "tsc",
     "build:prod": "tsc -p tsconfig.prod.json",
     "postbuild": "node createBin -v",
