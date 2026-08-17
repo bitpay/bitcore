@@ -5,7 +5,9 @@ import {
   Observable,
   lastValueFrom
 } from 'rxjs';
-import { BaseModule } from 'src/base.js';
+import { BaseModule } from 'src/types/base.js';
+import { EveryUtxoType, TransactionType } from 'src/types/txTypes.js';
+import Util from '../../util.js';
 // @eslint disable import/newline-after-import
 const require = createRequire(import.meta.url);
 const {
@@ -21,15 +23,18 @@ export default class BitcoinModule implements BaseModule {
   constructor(signer: any) {
     this.signer = signer;
   }
-  
-  async sign(params: { tx: BitcoreLib.Transaction }) {
-    const { tx } = params;
+
+  async sign(params: { tx: string; utxos: EveryUtxoType[] })
+  async sign(params: { tx: TransactionType; utxos?: EveryUtxoType[] }) {
+    const { tx, utxos } = params;
+    const bitcoreTx = Util.buildTransaction(tx, utxos);
+    
     const psbt = new Psbt();
 
     const pubkey = new HDPublicKey(await this.getPublicKey()).derive('m/0/0').publicKey.toBuffer();
     const masterFingerprint = await this.getMasterKeyFingerprint();
 
-    psbt.addInputs(tx.inputs.map(input => ({
+    psbt.addInputs(bitcoreTx.inputs.map(input => ({
       hash: input.prevTxId,
       index: input.outputIndex,
       witnessUtxo: {

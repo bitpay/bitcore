@@ -1,6 +1,6 @@
 import { createRequire } from 'module';
+import { Base, BaseModule } from 'src/types/base.js';
 import { EveryUtxoType, TransactionType } from 'src/types/txTypes.js';
-import { Base, BaseModule } from '../base.js';
 import { dmk } from './dmk.js';
 import { BitcoinModule, EthereumModule } from './modules/index.js';
 // @eslint disable import/newline-after-import

@@ -3,7 +3,7 @@ import {
   Observable,
   lastValueFrom
 } from 'rxjs';
-import { BaseModule } from 'src/base.js';
+import { BaseModule } from 'src/types/base.js';
 
 export default class EthereumModule implements BaseModule {
   signer: any;

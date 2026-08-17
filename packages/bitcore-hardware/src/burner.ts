@@ -1,10 +1,11 @@
 import { execHaloCmdPCSC } from '@arx-research/libhalo/api/desktop';
 import CWC, { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { NFC } from 'nfc-pcsc';
-import { Base } from './base.js';
+import { Base } from 'src/types/base.js';
 import { DataType } from './types/burnerTypes.js';
 import { BaseParams } from './types/paramTypes.js';
-import { EveryUtxoType, TransactionType, UtxoType } from './types/txTypes.js';
+import { EveryUtxoType, TransactionType } from './types/txTypes.js';
+import Util from './util.js';
 
 const { Address, PublicKey, crypto } = BitcoreLib;
 
@@ -89,33 +90,6 @@ export default class Burner implements Base {
     });
   }
 
-  /**
-   * Standardize utxo for internal funcionality.
-   * Accepts either a bitcore-node or a lib (bitcore-lib, bitcore-lib-cash, etc.) utxo.
-   * Handles both lib style utxos: UnspentOutput properties and UnspentOutput.toObject properties.
-   *
-   * @param utxos either a bitcore-node or lib utxo
-   * @returns utxo in the standard, internaly used format
-   */
-  standardizeUtxo(utxo: EveryUtxoType): UtxoType {
-    return {
-      satoshis: Number(utxo.satoshis ?? utxo.value ?? BitcoreLib.Unit.fromBTC(utxo.amount ?? 0).toSatoshis()),
-      txId: utxo.txId ?? utxo.mintTxid ?? utxo.txid ?? '',
-      outputIndex: Number(utxo.outputIndex ?? utxo.mintIndex ?? utxo.vout ?? 0),
-      script: utxo.scriptPubKey ?? new BitcoreLib.Script(utxo.script).toHex(),
-      address: utxo.address != undefined ? new BitcoreLib.Address(utxo.address).toString() : undefined
-    };
-  }
-
-  getRelatedUtxos(params: {
-    outputs: BitcoreLib.Transaction.Input[];
-    utxos: UtxoType[];
-  }): UtxoType[] {
-    const { outputs, utxos } = params;
-    const txids = outputs.map(output => output.toObject().prevTxId);
-    return utxos.filter(utxo => txids.includes(utxo.txId));
-  }
-
   async sign(params: {
     chain: 'ETH';
     tx: string;
@@ -159,15 +133,7 @@ export default class Burner implements Base {
     password: string;
   }) {
     const { tx, utxos, index, password } = params;
-    const bitcoreTx = tx instanceof BitcoreLib.Transaction ? tx : new BitcoreLib.Transaction(tx);
-    if (utxos) {
-      const btcUtxos = utxos.map(utxo => this.standardizeUtxo(utxo));
-      const applicableUtxos = this.getRelatedUtxos({
-        outputs: bitcoreTx.inputs,
-        utxos: btcUtxos
-      });
-      bitcoreTx.associateInputs(applicableUtxos.map(utxo => new BitcoreLib.Transaction.UnspentOutput(utxo)));
-    }
+    const bitcoreTx = Util.buildTransaction(tx, utxos);
 
     const commands: CommandType[] = [];
     for (let i = 0; i < bitcoreTx.inputs.length; i++) {
