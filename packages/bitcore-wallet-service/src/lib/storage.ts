@@ -53,7 +53,7 @@ const Defaults = Common.Defaults;
 const Utils = Common.Utils;
 
 const ObjectID = mongodb.ObjectID;
-const ONRAMP_WEBHOOK_EVENT_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
+const ONRAMP_WEBHOOK_EVENT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
 const requireOnrampValue = (value: string | undefined, name: string): string => {
   if (typeof value !== 'string' || !value.trim()) {
@@ -1997,18 +1997,37 @@ export class Storage {
       ...(event.cryptoAmount !== undefined && { cryptoAmount: event.cryptoAmount }),
       ...(event.cryptoCurrency !== undefined && { cryptoCurrency: event.cryptoCurrency }),
       ...(event.paymentMethod !== undefined && { paymentMethod: event.paymentMethod }),
+      ...(event.walletAddress !== undefined && { walletAddress: event.walletAddress }),
+      ...(event.walletAddressTag !== undefined && { walletAddressTag: event.walletAddressTag }),
       ...(event.userId !== undefined && { userId: event.userId }),
       ...(event.isEmbedded !== undefined && { isEmbedded: event.isEmbedded })
     };
 
+    console.log(`Storing onramp webhook event ${eventName} for partner ${event.partner} with id ${id} storedEvent:`, JSON.stringify(storedEvent));
+
     try {
       await this.db.collection(collections.ONRAMP_WEBHOOK_EVENTS).insertOne(storedEvent);
-      return { inserted: true, id, event: storedEvent };
+      let isStale = false;
+      if (storedEvent.updatedAt) {
+        const newer = await this.db.collection(collections.ONRAMP_WEBHOOK_EVENTS).findOne(
+          {
+            partner: event.partner,
+            env: event.env,
+            externalId: event.externalId,
+            _id: { $ne: id },
+            updatedAt: { $gt: storedEvent.updatedAt }
+          },
+          { projection: { _id: 1 } }
+        );
+        isStale = !!newer;
+      }
+
+      return { inserted: true, id, event: storedEvent, isStale };
     } catch (err) {
       if (!isDuplicateKeyError(err)) throw err;
       const existing = await this.db.collection(collections.ONRAMP_WEBHOOK_EVENTS).findOne({ _id: id });
       if (!existing) throw err;
-      return { inserted: false, id, event: existing as IStoredOnrampWebhookEvent };
+      return { inserted: false, id, event: existing as IStoredOnrampWebhookEvent, isStale: false };
     }
   }
 
