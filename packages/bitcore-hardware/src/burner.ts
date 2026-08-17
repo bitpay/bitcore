@@ -117,6 +117,26 @@ export default class Burner implements Base {
   }
 
   async sign(params: {
+    chain: 'ETH';
+    tx: string;
+    index: number;
+    password: string;
+  })
+  async sign(params: {
+    chain: 'BTC';
+    tx: string;
+    utxos: EveryUtxoType[];
+    index: number;
+    password: string;
+  })
+  async sign(params: {
+    chain: 'BTC';
+    tx: object;
+    utxos?: EveryUtxoType[];
+    index: number;
+    password: string;
+  })
+  async sign(params: {
     chain: 'BTC' | 'ETH';
     tx: TransactionType;
     utxos?: EveryUtxoType[];

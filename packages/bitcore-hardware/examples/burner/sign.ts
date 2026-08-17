@@ -47,7 +47,7 @@ const utxos = [
   }
 ];
 
-const tx = CWC.Transactions.create({
+const tx: string = CWC.Transactions.create({
   chain: 'BTC',
   recipients: [{ address: '1Gokm82v6DmtwKEB8AiVhm82hyFSsEvBDK', amount: 1000 }],
   utxos

@@ -5,7 +5,7 @@ import Burner from '../../src/burner.js';
 const burner = new Burner();
 burner.connect();
 
-const tx = CWC.Transactions.create({
+const tx: string = CWC.Transactions.create({
   chain: 'ETH',
   recipients: [{ address: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A', amount: 3896000000000000 }],
   nonce: 0,
