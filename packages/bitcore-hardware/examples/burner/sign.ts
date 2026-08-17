@@ -4,7 +4,7 @@ import Burner from '../../src/burner.js';
 
 const { PublicKey, Script } = CWC.BitcoreLib;
 
-const burner = new Burner('btc');
+const burner = new Burner();
 burner.connect();
 
 // Predefined for now. For other wallets:
@@ -54,7 +54,13 @@ const tx = CWC.Transactions.create({
 });
 
 console.log('Tap burner wallet on an NFC reader to sign a transaction');
-const signedTransaction: any = await burner.sign({ tx, utxos, index: 9, password: '123456' });
+const signedTransaction: any = await burner.sign({
+  chain: 'BTC',
+  tx,
+  utxos,
+  index: 9,
+  password: '123456'
+});
 
 console.log('Signed transaction');
 console.log(signedTransaction);

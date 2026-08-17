@@ -17,11 +17,6 @@ export default class Burner implements Base {
   commandQueue: Record<string, any>[] = [];
   // responses to all the commands from commandQueue
   responses: Record<string, any>[] = [];
-  chain: string;
-
-  constructor(chain: string) {
-    this.chain = chain;
-  }
 
   /**
    * Queues a command to be sent off to the wallet when it is scanned with an NFC reader.
@@ -121,6 +116,22 @@ export default class Burner implements Base {
   }
 
   async sign(params: {
+    chain: 'BTC' | 'ETH';
+    tx: TransactionType;
+    utxos?: EveryUtxoType[];
+    index: number;
+    password: string;
+  }) {
+    switch (params.chain) {
+      case 'ETH':
+        return this.signEth(params);
+      case 'BTC':
+      default:
+        return this.signBtc(params);
+    }
+  }
+  
+  async signBtc(params: {
     tx: TransactionType;
     utxos?: EveryUtxoType[];
     index: number;
@@ -139,10 +150,10 @@ export default class Burner implements Base {
 
     const commands: CommandType[] = [];
     for (let i = 0; i < bitcoreTx.inputs.length; i++) {
-      const digest = CWC.Transactions.getSighash({ chain: this.chain, tx: bitcoreTx, index: i });
+      const sighash = CWC.Transactions.getSighash({ chain: 'BTC', tx: bitcoreTx, index: i });
       commands.push({
         name: 'sign',
-        digest,
+        digest: sighash,
         password,
         keyNo: index
       });
@@ -156,7 +167,7 @@ export default class Burner implements Base {
       signature.pubKey = publicKey;
   
       CWC.Transactions.applySignature({
-        chain: this.chain,
+        chain: 'BTC',
         tx: bitcoreTx,
         signature,
         index: i
@@ -164,6 +175,31 @@ export default class Burner implements Base {
     }
 
     return bitcoreTx.serialize();
+  }
+
+  async signEth(params: { tx: string; index: number; password: string }) {
+    const { tx, index, password } = params;
+    
+    const sighash = CWC.Transactions.getSighash({
+      chain: 'ETH',
+      tx
+    });
+    
+    const response = await this.sendCommand({
+      name: 'sign',
+      digest: sighash,
+      password,
+      keyNo: index
+    });
+    const signature = response.signature.ether;
+    
+    const signedTx = CWC.Transactions.applySignature({
+      chain: 'ETH',
+      tx,
+      signature
+    });
+
+    return signedTx;
   }
 
   async getPublicKey(params: BaseParams) {
@@ -246,4 +282,8 @@ export type EveryUtxoType = Partial<UtxoType & {
   address: string | BitcoreLib.Address;
 }>;
 
-type CommandType = Record<string, any> & { name: string };
+type CommandType = Record<string, any> & {
+  name: string;
+  password?: string;
+  keyNo?: number;
+};
