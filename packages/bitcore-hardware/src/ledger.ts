@@ -1,5 +1,5 @@
 import { createRequire } from 'module';
-import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
+import CWC, { BitcoreLib, ethers } from '@bitpay-labs/crypto-wallet-core';
 import { Psbt } from 'bitcoinjs-lib';
 import {
   Observable,
@@ -18,6 +18,9 @@ const {
   DefaultWallet,
   SignerBtcBuilder
 } = require('@ledgerhq/device-signer-kit-bitcoin');
+const {
+  SignerEthBuilder
+} = require('@ledgerhq/device-signer-kit-ethereum');
 
 const { HDPublicKey, Transaction } = BitcoreLib;
 
@@ -25,7 +28,8 @@ export default class Ledger implements Base {
   device: any;
   sessionId: any;
   discoverySubscryption: any;
-  signer: any;
+  signerBtc: any;
+  signerEth: any;
 
   async connect() {
     return new Promise(async (resolve) => {
@@ -45,7 +49,8 @@ export default class Ledger implements Base {
               sessionId: this.sessionId
             });
 
-            this.signer = new SignerBtcBuilder({ dmk, sessionId: this.sessionId }).build();
+            this.signerBtc = new SignerBtcBuilder({ dmk, sessionId: this.sessionId }).build();
+            this.signerEth = new SignerEthBuilder({ dmk, sessionId: this.sessionId }).build();
             resolve(0);
           } catch (error) {
             console.error(error);
@@ -84,14 +89,20 @@ export default class Ledger implements Base {
 
   async getAddress(params: BaseParams) {
     const { index } = params;
-    const ob: Observable<any> = this.signer.getWalletAddress({ derivationPath: "84'/0'/0'", template: 'wpkh(@0/**)' }, index).observable;
+    const ob: Observable<any> = this.signerBtc.getWalletAddress({ derivationPath: "84'/0'/0'", template: 'wpkh(@0/**)' }, index).observable;
     const result = await lastValueFrom(ob);
     return result.output.address;
   }
 
   async getPublicKey(params: BaseParams) {
     const { index } = params;
-    const ob: Observable<any> = this.signer.getExtendedPublicKey("84'/0'/0'", index).observable;
+    const ob: Observable<any> = this.signerBtc.getExtendedPublicKey("84'/0'/0'", index).observable;
+    const result = await lastValueFrom(ob);
+    return result.output.extendedPublicKey;
+  }
+  async getPublicKeyEth(params: BaseParams) {
+    const { index } = params;
+    const ob: Observable<any> = this.signerEth.getExtendedPublicKey("84'/0'/0'", index).observable;
     const result = await lastValueFrom(ob);
     return result.output.extendedPublicKey;
   }
@@ -118,7 +129,7 @@ export default class Ledger implements Base {
 
     psbt.addOutputs([{ address: 'bc1qj86hpgprdudkks84y52vdenz86kd26stkssrcq', value: 900 }]);
 
-    const ob: Observable<any> = this.signer.signTransaction(
+    const ob: Observable<any> = this.signerBtc.signTransaction(
       new DefaultWallet("84'/0'/0'", 'wpkh(@0/**)'),
       psbt
     ).observable;
@@ -127,8 +138,25 @@ export default class Ledger implements Base {
     return new Transaction(result.output.slice(2));
   }
 
+  async signEth(tx: string) {
+    const bytes = ethers.getBytes(tx);
+    const ob: Observable<any> = this.signerEth.signTransaction(
+      "44'/60'/0'/0/0",
+      bytes
+    ).observable;
+
+    const result = await lastValueFrom(ob);
+    const signature = result.output;
+    const signedTx = CWC.Transactions.applySignature({
+      chain: 'ETH',
+      tx,
+      signature
+    });
+    return signedTx;
+  }
+
   async getMasterKeyFingerprint(): Promise<Uint8Array> {
-    const ob: Observable<any> = this.signer.getMasterFingerprint().observable;
+    const ob: Observable<any> = this.signerBtc.getMasterFingerprint().observable;
     const result = await lastValueFrom(ob);
 
     return result.output.masterFingerprint;
