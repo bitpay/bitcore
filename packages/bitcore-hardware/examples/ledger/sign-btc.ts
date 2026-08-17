@@ -7,7 +7,7 @@ const { HDPublicKey, Script, Transaction } = BitcoreLib;
 const ledger = new Ledger();
 await ledger.connect();
 
-const publickey = new HDPublicKey(await ledger.getPublicKey({ chain: 'BTC', index: 0 })).derive('m/0/0').publicKey;
+const publickey = new HDPublicKey(await ledger.getPublicKey({ chain: 'BTC' })).derive('m/0/0').publicKey;
 
 const tx = new Transaction()
   .from({

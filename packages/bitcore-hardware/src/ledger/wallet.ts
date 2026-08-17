@@ -2,8 +2,7 @@ import { createRequire } from 'module';
 import { Base, BaseModule } from 'src/types/base.js';
 import { EveryUtxoType, TransactionType } from 'src/types/txTypes.js';
 import { dmk } from './dmk.js';
-import { BitcoinModule, EthereumModule } from './modules/index.js';
-import SolanaModule from './modules/sol.js';
+import { BitcoinModule, EthereumModule, SolanaModule } from './modules/index.js';
 // @eslint disable import/newline-after-import
 const require = createRequire(import.meta.url);
 const {
