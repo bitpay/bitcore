@@ -1216,9 +1216,17 @@ export class WalletService implements IWalletService {
     }
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
 
+    // SECURITY: xPubKey is required for every join, including hardwareSourcePublicKey/
+    // clientDerivedPublicKey ones. Copayer.xPubToCopayerId() (called below both for the TSS
+    // participant check and inside Copayer.create()) hashes opts.xPubKey directly; passing it
+    // undefined throws for the default coin and produces a colliding constant hash for every
+    // other coin. bitcore-wallet-client's only join path (_doJoinWallet) always sends a real
+    // xPubKey regardless of these two fields, so this doesn't restrict any flow this repo's
+    // own client exercises - see the TSS-participant comment below for how that was confirmed.
+    if (!checkRequired(opts, ['xPubKey'], cb)) return;
+
     let xPubKey;
     if (!opts.hardwareSourcePublicKey && !opts.clientDerivedPublicKey) {
-      if (!checkRequired(opts, ['xPubKey'], cb)) return;
       try {
         xPubKey = Bitcore_[opts.chain].HDPublicKey(opts.xPubKey);
       } catch {
@@ -1235,10 +1243,25 @@ export class WalletService implements IWalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
-        if ((opts.hardwareSourcePublicKey || opts.clientDerivedPublicKey) && !opts.tssKeyId) {
-          this._addCopayerToWallet(wallet, opts, cb);
-          return;
-        }
+        // SECURITY: do not add a shortcut here that calls _addCopayerToWallet() before the
+        // copayerSignature check (and, for TSS wallets, the participant check) below has run.
+        // This method used to return early into _addCopayerToWallet() whenever
+        // hardwareSourcePublicKey or clientDerivedPublicKey was present, which let anyone who
+        // knew a joinable walletId join as a real copayer without proving knowledge of the
+        // wallet secret - and, for TSS wallets, without ever being checked against the key
+        // generation session's participant list. bitcore-wallet-client's only join path
+        // (api.ts#_doJoinWallet) always sends a real xPubKey and computes a real
+        // copayerSignature regardless of these two fields - for a TSS join, that xPubKey is
+        // the copayer's ordinary seed-derived auth key, distinct from the TSS common-keychain
+        // pubkey carried in clientDerivedPublicKey, and it's what the join secret is checked
+        // against and what keySession.participants below is keyed on - so there is no
+        // legitimate flow in this repo's own client that needs to skip verification here.
+        // (xPubKey is also required unconditionally a few lines up, so opts.xPubKey can't be
+        // undefined by the time any of this runs.) Every join, hardware, TSS, or plain
+        // multisig, must go through the same checks below. TSS wallets get their own
+        // participant check further down, gated on the wallet's persisted wallet.tssKeyId;
+        // never gate it on an opts.tssKeyId instead - join requests never carry one, so that
+        // condition is always true and the gate would be a no-op.
 
         if (this._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, { chain: opts.chain, n: wallet.n })) {
           return cb(Errors.UPGRADE_NEEDED.withMessage('BWC clients < 8.3 are no longer supported for multisig BCH wallets.'));
@@ -1255,7 +1278,10 @@ export class WalletService implements IWalletService {
           return cb(new ClientError('The wallet you are trying to join was created for a different chain'));
         }
 
-        if (!Utils.compareNetworks(wallet.network, xPubKey.network.name, wallet.chain)) {
+        // xPubKey is only parsed above when neither hardwareSourcePublicKey nor
+        // clientDerivedPublicKey was supplied (that block skips HDPublicKey parsing for
+        // key formats it doesn't apply to) - guard the network check accordingly.
+        if (xPubKey && !Utils.compareNetworks(wallet.network, xPubKey.network.name, wallet.chain)) {
           return cb(new ClientError('The wallet you are trying to join was created for a different network'));
         }
 
