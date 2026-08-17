@@ -2,6 +2,7 @@ import * as request from 'request';
 import config from '../config';
 import { logger } from './logger';
 
+const TRACK_EVENT_TIMEOUT_MS = 3000;
 export interface BrazeTrackEvent {
   externalId: string;
   name: string;
@@ -52,11 +53,22 @@ class BrazeService {
             Authorization: 'Bearer ' + apiKey
           },
           body,
-          json: true
+          json: true,
+          timeout: TRACK_EVENT_TIMEOUT_MS
         },
-        (err, _res, data) => {
+        (err, res, data) => {
+          const statusCode = res?.statusCode;
           if (err) {
             logger.warn('Braze trackEvent request failed (event=%s): %o', event.name, err);
+          } else if (!statusCode || statusCode < 200 || statusCode >= 300) {
+            const redactApiKey = (message: any, apiKey: string): string =>
+              String(message ?? '').split(apiKey).join('[redacted]');
+            logger.warn(
+              'Braze trackEvent rejected with HTTP %s (event=%s): %s',
+              statusCode,
+              event.name,
+              redactApiKey(data?.message, apiKey)
+            );
           } else if (data?.errors?.length) {
             logger.warn('Braze trackEvent returned errors (event=%s): %o', event.name, data.errors);
           }
