@@ -20,14 +20,17 @@ interface RouteContext {
  * storeEvent (when provided) must run BEFORE the Braze track call: partners
  * can (and do) redeliver the same event, so we only want to emit analytics
  * once per unique delivery. If storeEvent reports `inserted: false`, this was
- * already handled before (a duplicate/retry) and tracking is skipped.
+ * already handled before (a duplicate/retry) and tracking is skipped. If it
+ * reports `isStale: true`, a newer state for the same transaction was already
+ * recorded (the partner delivered events out of order) and tracking is
+ * skipped too, so a late/older update never overwrites newer state downstream.
  */
 async function handleWebhook(
   req: express.Request,
   res: express.Response,
   partner: string,
   parseEvent: () => { event: OnrampWebhookEvent },
-  storeEvent?: (event: OnrampWebhookEvent) => Promise<{ inserted: boolean } | undefined>
+  storeEvent?: (event: OnrampWebhookEvent) => Promise<{ inserted: boolean; isStale?: boolean } | undefined>
 ): Promise<express.Response> {
   let event: OnrampWebhookEvent;
   try {
@@ -47,9 +50,9 @@ async function handleWebhook(
     if (storeEvent) {
       try {
         const result = await storeEvent(event);
-        isDuplicate = result?.inserted === false;
+        isDuplicate = result?.inserted === false || result?.isStale === true;
         if (isDuplicate) {
-          logger.info(`[webhook:${partner}] Duplicate delivery detected, skipping Braze tracking externalId=%s`, event?.externalId);
+          logger.info(`[webhook:${partner}] Duplicate or stale/out-of-order delivery detected, skipping Braze tracking externalId=%s`, event?.externalId);
         }
       } catch (err) {
         logger.error(`[webhook:${partner}] Failed to store event: %o`, err);
@@ -65,7 +68,7 @@ async function handleWebhook(
       brazeService
         .trackEvent({
           externalId: event?.userId,
-          name: 'onramp_webhook_received',
+          name: 'BWS - ONRAMP Webhook Received',
           properties: {
             partner: event?.partner,
             status: event?.status,
@@ -76,6 +79,8 @@ async function handleWebhook(
             cryptoAmount: event?.cryptoAmount,
             cryptoCurrency: event?.cryptoCurrency,
             paymentMethod: event?.paymentMethod,
+            walletAddress: event?.walletAddress,
+            walletAddressTag: event?.walletAddressTag,
             env: event?.env,
             isEmbedded: event?.isEmbedded
           }

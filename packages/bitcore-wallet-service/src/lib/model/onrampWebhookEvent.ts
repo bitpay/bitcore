@@ -81,7 +81,7 @@ export class OnrampWebhookEvent implements IOnrampWebhookEvent {
 /** Shape persisted in the onramp_webhook_events collection. */
 export interface IStoredOnrampWebhookEvent extends Omit<
   IOnrampWebhookEvent,
-  'eventName' | 'rawPayload' | 'deliveryVersion' | 'walletAddress' | 'walletAddressTag'
+  'eventName' | 'rawPayload' | 'deliveryVersion'
 > {
   _id: string;
   eventName: string;
@@ -92,4 +92,5 @@ export interface IStoreOnrampWebhookEventResult {
   inserted: boolean;
   id: string;
   event: IStoredOnrampWebhookEvent;
+  isStale: boolean;
 }
