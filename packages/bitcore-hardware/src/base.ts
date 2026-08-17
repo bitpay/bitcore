@@ -1,9 +1,12 @@
-import { BaseParams } from './types/paramTypes.js';
-
+export interface BaseModule {
+  sign(params: any): Promise<string>;
+  getPublicKey(params: any): Promise<string>;
+  getAddress(params: any): Promise<string>;
+};
 export interface Base {
   connect(): void;
-  sign(params: any): Promise<any>;
-  getPublicKey(params: BaseParams): Promise<any>;
-  getAddress(params: BaseParams): Promise<any>;
-  getVersion(params?: BaseParams): Promise<any>;
+  sign(params: any): Promise<string>;
+  getPublicKey(params: any): Promise<string>;
+  getAddress(params: any): Promise<string>;
+  getVersion(params: any): Promise<any>;
 };

@@ -1,13 +1,13 @@
 import 'source-map-support/register.js';
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
-import Ledger from '../../src/ledger.js';
+import Ledger from '../../src/ledger/wallet.js';
 
 const { HDPublicKey, Script, Transaction } = BitcoreLib;
 
 const ledger = new Ledger();
 await ledger.connect();
 
-const publickey = new HDPublicKey(await ledger.getPublicKey({ index: 0 })).derive('m/0/0').publicKey;
+const publickey = new HDPublicKey(await ledger.getPublicKey({ chain: 'BTC', index: 0 })).derive('m/0/0').publicKey;
 
 const tx = new Transaction()
   .from({
@@ -18,9 +18,11 @@ const tx = new Transaction()
     satoshis: 9290
   });
 
-const signedTransaction = await ledger.sign(tx);
+const signedTransaction = await ledger.sign({
+  chain: 'BTC',
+  tx
+});
 console.log(signedTransaction);
-console.log(signedTransaction.toBuffer().toString('hex'));
 await ledger.disconnect();
 
 console.log('Signed transaction');

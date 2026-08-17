@@ -1,6 +1,6 @@
 import 'source-map-support/register.js';
 import CWC from '@bitpay-labs/crypto-wallet-core';
-import Ledger from '../../src/ledger.js';
+import Ledger from '../../src/ledger/wallet.js';
 
 const ledger = new Ledger();
 await ledger.connect();
@@ -14,7 +14,10 @@ const tx = CWC.Transactions.create({
 });
 
 console.log(`Sign ${tx}`);
-const signedTransaction = await ledger.signEth(tx);
+const signedTransaction = await ledger.sign({
+  chain: 'ETH',
+  tx
+});
 
 console.log('Signed transaction');
 console.log(signedTransaction);
