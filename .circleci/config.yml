@@ -112,6 +112,7 @@ jobs:
             - node_modules
             - packages/bitcore-build/node_modules
             - packages/bitcore-client/node_modules
+            - packages/bitcore-hardware/node_modules
             - packages/bitcore-lib/node_modules
             - packages/bitcore-lib-cash/node_modules
             - packages/bitcore-lib-doge/node_modules
@@ -222,7 +223,11 @@ jobs:
     steps:
       - run_test:
           package: crypto-rpc
-
+  bitcore-hardware:
+    executor: main
+    steps:
+      - run_test:
+          package: bitcore-hardware
 workflows:
   version: 2
   build_and_test:
@@ -272,5 +277,8 @@ workflows:
           requires:
             - build
       - crypto-rpc:
+          requires:
+            - build
+      - bitcore-hardware:
           requires:
             - build
