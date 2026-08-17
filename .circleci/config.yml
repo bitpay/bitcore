@@ -86,6 +86,9 @@ jobs:
       - checkout
       - use_python2
       - use_node
+      - run:
+          name: Install PC/SC Lite dev headers
+          command: sudo apt-get update && sudo apt-get install -y libpcsclite-dev
     #   - run:
     #       name: Install Chrome
     #       command: |
