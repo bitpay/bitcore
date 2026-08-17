@@ -90,6 +90,20 @@ export default class Ledger implements Base {
   }
 
   async sign(params: {
+    chain: 'BTC';
+    tx: string;
+    utxos: EveryUtxoType[];
+  })
+  async sign(params: {
+    chain: 'BTC';
+    tx: object;
+    utxos?: EveryUtxoType[];
+  })
+  async sign(params: {
+    chain: 'ETH' | 'SOL';
+    tx: string;
+  })
+  async sign(params: {
     chain: string;
     tx: TransactionType;
     utxos?: EveryUtxoType[];
@@ -101,11 +115,11 @@ export default class Ledger implements Base {
     });
   }
   
-  async getAddress(params: any) {
-    return this.modules[params.chain].getAddress(params);
+  async getAddress(params: { chain: string }) {
+    return this.modules[params.chain].getAddress();
   }
 
-  async getPublicKey(params: any) {
-    return this.modules[params.chain].getPublicKey(params);
+  async getPublicKey(params: { chain: string }) {
+    return this.modules[params.chain].getPublicKey();
   }
 }
