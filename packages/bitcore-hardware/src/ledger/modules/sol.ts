@@ -1,45 +1,47 @@
-import CWC, { ethers } from '@bitpay-labs/crypto-wallet-core';
+import { SolKit } from '@bitpay-labs/crypto-wallet-core';
 import {
   Observable,
   lastValueFrom
 } from 'rxjs';
 import { BaseModule } from 'src/types/base.js';
 
-export default class EthereumModule implements BaseModule {
+
+export default class SolanaModule implements BaseModule {
   signer: any;
-  derivationPath = "44'/60'/0'/0/0";
-  
-  constructor(signer: any) {
+  derivationPath = "44'/501'/0'";
+  constructor(signer) {
     this.signer = signer;
   }
 
   async sign(params: { tx: string }) {
     const { tx } = params;
-    const bytes = ethers.getBytes(tx);
+    const wireBytes = SolKit.getBase64Encoder().encode(tx);
+    const transaction = SolKit.getTransactionDecoder().decode(wireBytes);
+    
     const ob: Observable<any> = this.signer.signTransaction(
       this.derivationPath,
-      bytes
+      transaction.messageBytes
     ).observable;
 
     const result = await lastValueFrom(ob);
     const signature = result.output;
-    const signedTx = CWC.Transactions.applySignature({
-      chain: 'ETH',
-      tx,
-      signature
-    });
-    return signedTx;
-  }
 
+    return SolKit.getBase64EncodedWireTransaction({
+      ...transaction,
+      signatures: {
+        ...transaction.signatures,
+        [await this.getAddress()]: signature
+      }
+    });
+  }
+  
   async getAddress() {
     const ob: Observable<any> = this.signer.getAddress(this.derivationPath).observable;
     const result = await lastValueFrom(ob);
-    return result.output.address;
+    return result.output;
   }
 
   async getPublicKey() {
-    const ob: Observable<any> = this.signer.getAddress(this.derivationPath).observable;
-    const result = await lastValueFrom(ob);
-    return result.output.publicKey;
+    return this.getAddress();
   }
 }

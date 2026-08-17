@@ -3,6 +3,7 @@ import { Base, BaseModule } from 'src/types/base.js';
 import { EveryUtxoType, TransactionType } from 'src/types/txTypes.js';
 import { dmk } from './dmk.js';
 import { BitcoinModule, EthereumModule } from './modules/index.js';
+import SolanaModule from './modules/sol.js';
 // @eslint disable import/newline-after-import
 const require = createRequire(import.meta.url);
 const {
@@ -15,6 +16,9 @@ const {
 const {
   SignerEthBuilder
 } = require('@ledgerhq/device-signer-kit-ethereum');
+const {
+  SignerSolanaBuilder
+} = require('@ledgerhq/device-signer-kit-solana');
 
 
 export default class Ledger implements Base {
@@ -43,6 +47,11 @@ export default class Ledger implements Base {
 
             this.modules.BTC = new BitcoinModule(new SignerBtcBuilder({ dmk, sessionId: this.sessionId }).build());
             this.modules.ETH = new EthereumModule(new SignerEthBuilder({ dmk, sessionId: this.sessionId }).build());
+            this.modules.SOL = new SolanaModule(new SignerSolanaBuilder({
+              dmk,
+              sessionId: this.sessionId,
+              solanaRPCURL: 'https://api.mainnet-beta.solana.com/',
+            }).build());
             
             resolve(0);
           } catch (error) {
