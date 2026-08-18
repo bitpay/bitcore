@@ -1216,6 +1216,9 @@ export class WalletService implements IWalletService {
     }
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
 
+    // xPubKey is the canonical copayer identity in the current protocol. Alternate public-key
+    // fields are ancillary metadata; supporting an xPubKey-less copayer requires a versioned
+    // end-to-end identity protocol rather than a local identity fallback.
     // SECURITY: xPubKey is required for every join, including hardwareSourcePublicKey/
     // clientDerivedPublicKey ones. Copayer.xPubToCopayerId() (called below both for the TSS
     // participant check and inside Copayer.create()) hashes opts.xPubKey directly; passing it
