@@ -14,7 +14,7 @@ const { Address, PublicKey, crypto } = BitcoreLib;
  * Methods queue a command to run when the card is scanned.
  */
 export default class Burner implements Base {
-  nfc = new NFC();
+  nfc?: NFC;
   // list of commands waiting to be sent to the wallet
   commandQueue: Record<string, any>[] = [];
   // responses to all the commands from commandQueue
@@ -66,6 +66,8 @@ export default class Burner implements Base {
    * Sends all commands to the wallet and recieves all responses
    */
   connect() {
+    this.nfc = this.nfc ?? new NFC();
+
     this.nfc.on('reader', (reader) => {
       reader.autoProcessing = false;
 
