@@ -344,6 +344,7 @@ export class SimplexService {
       externalId: payment.id || body.event_id,
       status: body.name || '',
       eventName: body.name,
+      deliveryVersion: body.event_id, // Simplex docs: "Use event_id for idempotency"
       createdAt: payment.created_at || body.timestamp,
       fiatAmount: fiatAmount != null ? Number(fiatAmount) : undefined,
       fiatCurrency,

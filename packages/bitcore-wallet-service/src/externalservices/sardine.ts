@@ -240,10 +240,8 @@ export class SardineService {
 
   /**
    * Handles incoming Sardine webhook events.
-   * NOTE: the Sardine on/off-ramp docs do not document any signature header
-   * (https://docs.payments.sardine.ai/integration_guides/onofframps/webhooks).
-   * If a webhookSecret is configured and an X-Sardine-Signature header is present,
-   * we verify it as HMAC-SHA256 over the raw body. Confirm the exact scheme with
+   * Docs: https://docs.payments.sardine.ai/integration_guides/onofframps/webhooks.
+   * TODO: Confirm the exact scheme with
    * Sardine before relying on it.
    *
    * Payload contains order status updates (draft, expired, declined, processing,
@@ -281,7 +279,8 @@ export class SardineService {
     }
 
     const body = req.body || {};
-    // Sardine order payload fields (from GET /v1/orders response shape)
+    // Sardine order payload fields, per the documented Order object shape
+    // (GET /v1/orders/{orderId} response, see api_reference/onramp):
     const order = body.order || body;
 
     const event = OnrampWebhookEvent.create({
@@ -290,8 +289,8 @@ export class SardineService {
       status: order.status || body.eventType || '',
       eventName: body.eventType,
       createdAt: order.createdAt,
-      fiatAmount: order.fiatAmount != null ? Number(order.fiatAmount) : undefined,
-      fiatCurrency: order.currency,
+      fiatAmount: order.total != null ? Number(order.total) : undefined,
+      fiatCurrency: order.fiatCurrency,
       cryptoCurrency: order.assetType || order.cryptoCurrency,
       userId: order.userId || order.externalUserId,
       rawPayload: body,
