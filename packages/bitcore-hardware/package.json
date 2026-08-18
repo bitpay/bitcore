@@ -21,6 +21,9 @@
     "ledger:public-key": "npm run compile && node build/examples/ledger/publicKey.js",
     "ledger:address": "npm run compile && node build/examples/ledger/address.js",
     "ledger:sign-btc": "npm run compile && node build/examples/ledger/sign-btc.js",
+    "ledger:sign-bch": "npm run compile && node build/examples/ledger/sign-bch.js",
+    "ledger:sign-doge": "npm run compile && node build/examples/ledger/sign-doge.js",
+    "ledger:sign-ltc": "npm run compile && node build/examples/ledger/sign-ltc.js",
     "ledger:sign-eth": "npm run compile && node build/examples/ledger/sign-eth.js",
     "ledger:sign-sol": "npm run compile && node build/examples/ledger/sign-sol.js",
     "ledger:version": "npm run compile && node build/examples/ledger/version.js"

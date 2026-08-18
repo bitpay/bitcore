@@ -1,11 +1,11 @@
 import { createRequire } from 'module';
-import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { Psbt } from 'bitcoinjs-lib';
 import {
   Observable,
   lastValueFrom
 } from 'rxjs';
 import { BaseModule } from 'src/types/base.js';
+import { UtxoChain } from 'src/types/chains.js';
 import { EveryUtxoType, TransactionType } from 'src/types/txTypes.js';
 import Util from '../../util.js';
 import type * as SignerKitBtc from '@ledgerhq/device-signer-kit-bitcoin';
@@ -16,11 +16,11 @@ const {
   DefaultWallet
 }: typeof SignerKitBtc = require('@ledgerhq/device-signer-kit-bitcoin');
 
-const { HDPublicKey } = BitcoreLib;
-
 export default class BitcoinModule implements BaseModule {
   signer: SignerKitBtc.SignerBtc;
   derivationPath = "84'/0'/0'";
+  // BitcoinModule is extended by other utxo chains
+  chain: UtxoChain = 'BTC';
   
   constructor(signer: SignerKitBtc.SignerBtc) {
     this.signer = signer;
@@ -29,11 +29,11 @@ export default class BitcoinModule implements BaseModule {
   async sign(params: { tx: string; utxos: EveryUtxoType[] })
   async sign(params: { tx: TransactionType; utxos?: EveryUtxoType[] }) {
     const { tx, utxos } = params;
-    const bitcoreTx = Util.buildTransaction(tx, utxos);
+    const bitcoreTx = Util.buildTransaction(tx, utxos, this.chain);
     
     const psbt = new Psbt();
 
-    const pubkey = new HDPublicKey(await this.getPublicKey()).derive('m/0/0').publicKey.toBuffer();
+    const pubkey = new Util.libs[this.chain].HDPublicKey(await this.getPublicKey()).derive('m/0/0').publicKey.toBuffer();
     const masterFingerprint = await this.getMasterKeyFingerprint();
 
     
@@ -47,7 +47,7 @@ export default class BitcoinModule implements BaseModule {
       bip32Derivation: [{
         masterFingerprint: Buffer.from(masterFingerprint.buffer, masterFingerprint.byteOffset, masterFingerprint.byteLength),
         pubkey,
-        path: "m/84'/0'/0'/0/0",
+        path: 'm/' + this.derivationPath + '/0/0',
       }]
     })));
     psbt.addOutputs(bitcoreTx.outputs.map(utxo => ({ script: utxo.script.toBuffer(), value: utxo.satoshis })));
@@ -58,18 +58,21 @@ export default class BitcoinModule implements BaseModule {
     ).observable;
 
     const result = await lastValueFrom(ob);
+    console.log(result);
     return result.output.slice(2);
   }
   
   async getAddress() {
     const ob: Observable<any> = this.signer.getWalletAddress({ derivationPath: this.derivationPath, template: DefaultDescriptorTemplate.NATIVE_SEGWIT }, 0).observable;
     const result = await lastValueFrom(ob);
+    console.log(result);
     return result.output.address;
   }
 
   async getPublicKey() {
     const ob: Observable<any> = this.signer.getExtendedPublicKey(this.derivationPath).observable;
     const result = await lastValueFrom(ob);
+    console.log(result);
     return result.output.extendedPublicKey;
   }
 
