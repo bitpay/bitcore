@@ -7,8 +7,22 @@ import { logger } from '../lib/logger';
 import { OnrampWebhookEvent } from '../lib/model/onrampWebhookEvent';
 import { checkRequired } from '../lib/server';
 
+interface CachedAccessToken {
+  token: string;
+  expiresAt: number; // epoch ms
+}
+
+const ACCESS_TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000;
+
 export class TransakService {
   request: any = request;
+
+  // In-memory cache of Partner Access Tokens used ONLY to verify webhook JWTs.
+  // Docs: https://docs.transak.com/guides/how-to-decrypt-webhook-payload), the
+  // webhook `data` JWT must be verified with the Partner Access Token
+  // (returned by POST /partners/api/v2/refresh-token), not a static secret.
+  // Tokens are valid ~7 days.
+  private webhookAccessTokenCache: Partial<Record<'sandbox' | 'production', CachedAccessToken>> = {};
 
   private transakGetKeys(req, cleanBody: boolean = true) {
     if (!config.transak) throw new Error('Transak missing credentials');
@@ -55,6 +69,66 @@ export class TransakService {
       userIp = String(userIp).trim().replace(/^::ffff:/i, '');
     }
     return userIp || '';
+  }
+
+  // Calls POST to obtain/refresh the Partner Access Token that verifies webhook JWTs.
+  private transakFetchAccessTokenForEnv(env: 'sandbox' | 'production'): Promise<CachedAccessToken> {
+    return new Promise((resolve, reject) => {
+      if (!config.transak?.[env]) return reject(new Error(`Transak missing ${env} credentials`));
+
+      const API = config.transak[env].api;
+      const API_KEY = config.transak[env].apiKey;
+      const SECRET_KEY = config.transak[env].secretKey;
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'api-secret': SECRET_KEY,
+        'x-api-key': API_KEY
+      };
+      const body = { apiKey: API_KEY };
+      const URL: string = API + '/partners/api/v2/refresh-token';
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : err);
+          }
+          const res = data.body ? data.body : data;
+          const accessToken: string | undefined = res?.data?.accessToken;
+          const expiresAtSecs: number | undefined = res?.data?.expiresAt;
+          if (!accessToken) {
+            return reject(new Error(`Transak refresh-token response missing accessToken (env=${env})`));
+          }
+          resolve({
+            token: accessToken,
+            expiresAt: expiresAtSecs ? expiresAtSecs * 1000 : Date.now() + 60 * 1000
+          });
+        }
+      );
+    });
+  }
+
+  // Returns a cached, still-valid Partner Access Token for the given env,
+  // refreshing it first if missing/expired.
+  private async transakGetWebhookAccessToken(env: 'sandbox' | 'production'): Promise<string | undefined> {
+    const cached = this.webhookAccessTokenCache[env];
+    if (cached && cached.expiresAt - ACCESS_TOKEN_REFRESH_MARGIN_MS > Date.now()) {
+      return cached.token;
+    }
+    try {
+      const fresh = await this.transakFetchAccessTokenForEnv(env);
+      this.webhookAccessTokenCache[env] = fresh;
+      return fresh.token;
+    } catch (err) {
+      logger.warn('Transak webhook: failed to refresh access token for env=%s: %o', env, err);
+      return undefined;
+    }
   }
 
   transakGetAccessToken(req): Promise<any> {
@@ -339,24 +413,15 @@ export class TransakService {
    * Handles incoming Transak webhook events.
    * The payload data field is a signed HS256 JWT. https://docs.transak.com/features/webhooks
    *
-   * NOTE: per Transak docs the JWT should be verified with the Partner Access Token
-   * (the token returned by /partners/api/v2/refresh-token), which rotates. We first
-   * try the configured static secretKey for each env; if real webhooks fail to
-   * verify, this needs to be switched to a cached access token.
+   * the JWT must be verified with the Partner Access Token https://docs.transak.com/guides/how-to-decrypt-webhook-payload,
    *
-   * The environment is determined by which configured key verifies the JWT,
+   * The env is determined by which env's access token verifies the JWT,
    * not by the request.
    *
-   * Decoded payload: { webhookData: { id, status, fiatCurrency, fiatAmount,
-   *   cryptoCurrency, userId, createdAt, ... }, eventID }
+   * Decoded payload docs: https://docs.transak.com/api/public/get-webhooks
    */
-  transakHandleWebhook(req): { event: OnrampWebhookEvent } {
+  async transakHandleWebhook(req): Promise<{ event: OnrampWebhookEvent }> {
     if (!config.transak) throw new Error('Transak missing credentials');
-
-    const secretKeys: { key: string; env: string }[] = [
-      { key: config.transak.production?.secretKey, env: 'production' },
-      { key: config.transak.sandbox?.secretKey, env: 'sandbox' }
-    ].filter(k => !!k.key);
 
     const jwtToken: string | undefined = req.body?.data;
     if (!jwtToken || typeof jwtToken !== 'string') {
@@ -367,13 +432,19 @@ export class TransakService {
       throw new Error('Invalid JWT format');
     }
 
+    const envsToTry: ('production' | 'sandbox')[] = ['production', 'sandbox'].filter(e => !!config.transak[e]) as any;
+    const fetchedTokens = await Promise.all(envsToTry.map(e => this.transakGetWebhookAccessToken(e)));
+    const verificationKeys: { key: string; env: string }[] = envsToTry
+      .map((e, i) => ({ key: fetchedTokens[i], env: e }))
+      .filter(k => !!k.key) as { key: string; env: string }[];
+
     let env = 'production';
-    if (secretKeys.length) {
+    if (verificationKeys.length) {
       try {
         // Verify HS256 JWT manually using Node crypto (no external library needed)
         const signingInput = `${parts[0]}.${parts[1]}`;
         const given = Buffer.from(parts[2], 'base64url');
-        const matched = secretKeys.find(({ key }) => {
+        const matched = verificationKeys.find(({ key }) => {
           const expected = crypto.createHmac('sha256', key).update(signingInput).digest();
           return expected.length === given.length && crypto.timingSafeEqual(expected, given);
         });
@@ -387,7 +458,7 @@ export class TransakService {
         throw new Error('Transak webhook signature verification failed');
       }
     } else {
-      logger.warn('Transak webhook: no secretKey configured, skipping signature verification');
+      logger.warn('Transak webhook: no access token available for any env, skipping signature verification');
     }
 
     let webhookData: any = {};
@@ -406,9 +477,16 @@ export class TransakService {
       status: webhookData.status || '',
       eventName: eventID,
       createdAt: webhookData.createdAt,
+      // webhookData.updatedAt is the last time this order's state changed at
+      // Transak - used as the delivery version key for idempotency/out-of-order detection.
+      updatedAt: webhookData.updatedAt,
+      deliveryVersion: webhookData.updatedAt,
       fiatAmount: webhookData.fiatAmount != null ? Number(webhookData.fiatAmount) : undefined,
       fiatCurrency: webhookData.fiatCurrency,
+      cryptoAmount: webhookData.cryptoAmount != null ? Number(webhookData.cryptoAmount) : undefined,
       cryptoCurrency: webhookData.cryptoCurrency,
+      paymentMethod: webhookData.paymentOptionId,
+      walletAddress: webhookData.walletAddress,
       userId: webhookData.userId,
       rawPayload: req.body || {},
       env

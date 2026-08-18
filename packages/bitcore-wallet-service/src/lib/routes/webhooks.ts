@@ -29,12 +29,12 @@ async function handleWebhook(
   req: express.Request,
   res: express.Response,
   partner: string,
-  parseEvent: () => { event: OnrampWebhookEvent },
+  parseEvent: () => { event: OnrampWebhookEvent } | Promise<{ event: OnrampWebhookEvent }>,
   storeEvent?: (event: OnrampWebhookEvent) => Promise<{ inserted: boolean; isStale?: boolean } | undefined>
 ): Promise<express.Response> {
   let event: OnrampWebhookEvent;
   try {
-    ({ event } = parseEvent());
+    ({ event } = await parseEvent());
   } catch (err) {
     logger.error(`[webhook:${partner}] Failed to process payload: %o`, err);
     // Return 400 so partner knows the payload was rejected (e.g. bad signature)
@@ -111,7 +111,8 @@ export function registerWebhookRoutes(router: express.Router, context: RouteCont
     if (!server) return;
     return handleWebhook(
       req, res, 'simplex',
-      () => server.externalServices.simplex.simplexHandleWebhook(req)
+      () => server.externalServices.simplex.simplexHandleWebhook(req),
+      event => server.storage.storeOnrampWebhookEvent({ event })
     ).catch(err => logger.error('[webhook:simplex] Unhandled error: %o', err));
   });
 
@@ -138,7 +139,8 @@ export function registerWebhookRoutes(router: express.Router, context: RouteCont
     if (!server) return;
     return handleWebhook(
       req, res, 'ramp',
-      () => server.externalServices.ramp.rampHandleWebhook(req)
+      () => server.externalServices.ramp.rampHandleWebhook(req),
+      event => server.storage.storeOnrampWebhookEvent({ event })
     ).catch(err => logger.error('[webhook:ramp] Unhandled error: %o', err));
   });
 
@@ -151,20 +153,23 @@ export function registerWebhookRoutes(router: express.Router, context: RouteCont
     if (!server) return;
     return handleWebhook(
       req, res, 'ramp',
-      () => server.externalServices.ramp.rampHandleWebhook(req)
+      () => server.externalServices.ramp.rampHandleWebhook(req),
+      event => server.storage.storeOnrampWebhookEvent({ event })
     ).catch(err => logger.error('[webhook:ramp] Unhandled error: %o', err));
   });
 
   /**
    * POST /v1/service/transak/webhook
-   * Transak order event. Payload data field is a HS256 JWT signed with SECRET_KEY.
+   * Transak order event. Payload data field is a HS256 JWT signed with the
+   * Partner Access Token (rotates, cached per env in TransakService).
    */
   router.post('/v1/service/transak/webhook', (req, res) => {
     const server = getServer(req, res);
     if (!server) return;
     return handleWebhook(
       req, res, 'transak',
-      () => server.externalServices.transak.transakHandleWebhook(req)
+      () => server.externalServices.transak.transakHandleWebhook(req),
+      event => server.storage.storeOnrampWebhookEvent({ event })
     ).catch(err => logger.error('[webhook:transak] Unhandled error: %o', err));
   });
 
@@ -183,14 +188,15 @@ export function registerWebhookRoutes(router: express.Router, context: RouteCont
 
   /**
    * POST /v1/service/sardine/webhook
-   * Sardine order event. Optionally secured with HMAC-SHA256 in X-Sardine-Signature.
+   * Sardine order event.
    */
   router.post('/v1/service/sardine/webhook', (req, res) => {
     const server = getServer(req, res);
     if (!server) return;
     return handleWebhook(
       req, res, 'sardine',
-      () => server.externalServices.sardine.sardineHandleWebhook(req)
+      () => server.externalServices.sardine.sardineHandleWebhook(req),
+      event => server.storage.storeOnrampWebhookEvent({ event })
     ).catch(err => logger.error('[webhook:sardine] Unhandled error: %o', err));
   });
 }
