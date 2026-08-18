@@ -50,26 +50,26 @@ Hash.hmac = function(hashf, data, key) {
   $.checkArgument(BufferUtil.isBuffer(key));
   $.checkArgument(hashf.blocksize);
 
-  const blocksize = hashf.blocksize / 8;
+  var blocksize = hashf.blocksize / 8;
 
   if (key.length > blocksize) {
     key = hashf(key);
   } else if (key < blocksize) {
-    const fill = Buffer.alloc(blocksize);
+    var fill = Buffer.alloc(blocksize);
     fill.fill(0);
     key.copy(fill);
     key = fill;
   }
 
-  const o_key = Buffer.alloc(blocksize);
+  var o_key = Buffer.alloc(blocksize);
   o_key.fill(0x5c);
 
-  const i_key = Buffer.alloc(blocksize);
+  var i_key = Buffer.alloc(blocksize);
   i_key.fill(0x36);
 
-  const o_key_pad = Buffer.alloc(blocksize);
-  const i_key_pad = Buffer.alloc(blocksize);
-  for (let i = 0; i < blocksize; i++) {
+  var o_key_pad = Buffer.alloc(blocksize);
+  var i_key_pad = Buffer.alloc(blocksize);
+  for (var i = 0; i < blocksize; i++) {
     o_key_pad[i] = o_key[i] ^ key[i];
     i_key_pad[i] = i_key[i] ^ key[i];
   }
@@ -85,7 +85,7 @@ Hash.sha512hmac = function(data, key) {
   return Hash.hmac(Hash.sha512, data, key);
 };
 
-// Dogecoin Scrypt hashing
+// Litecoin Scrypt hashing
 Hash.scrypt = function(buf) {
   $.checkArgument(BufferUtil.isBuffer(buf));
   return BufferUtil.reverse(Scrypt(buf, buf, 1024, 1, 1, 32));

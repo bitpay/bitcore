@@ -5,8 +5,8 @@ var BN = require('../crypto/bn');
 var Hash = require('../crypto/hash');
 var BufferReader = require('../encoding/bufferreader');
 var BufferWriter = require('../encoding/bufferwriter');
-var Script = require('../script');
 var BufferUtil = require('../util/buffer');
+// eslint-disable-next-line import/order
 var $ = require('../util/preconditions');
 
 var GENESIS_BITS = 0x1e0ffff0; // Regtest: 0x207fffff
@@ -137,8 +137,6 @@ BlockHeader.fromString = function fromString(str) {
  * @private
  */
 BlockHeader._fromBufferReader = function _fromBufferReader(br) {
-  // Required lazily to avoid a circular dependency with ./auxpow
-  const AuxPow = require('./auxpow');
   const info = {};
   info.version = br.readInt32LE();
   info.prevHash = br.read(32);
@@ -348,3 +346,5 @@ BlockHeader.Constants = {
 };
 
 module.exports = BlockHeader;
+
+var AuxPow = require('./auxpow');
