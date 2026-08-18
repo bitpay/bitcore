@@ -56,6 +56,12 @@ commands:
             nvm install 22.13.1
             nvm alias default 22.13.1
             nvm use default
+  pcsc:
+    description: Install PC/SC Lite for bitcore-hardware NFC library
+    steps:
+      - run:
+          name: Install PC/SC Lite
+          command: sudo apt-get update && sudo apt-get install -y libpcsclite-dev
   restore_dependency_cache:
     steps:
       - create_concatenated_package_lock:
@@ -86,9 +92,7 @@ jobs:
       - checkout
       - use_python2
       - use_node
-      - run:
-          name: Install PC/SC Lite dev headers
-          command: sudo apt-get update && sudo apt-get install -y libpcsclite-dev
+      - pcsc
     #   - run:
     #       name: Install Chrome
     #       command: |
@@ -226,6 +230,7 @@ jobs:
   bitcore-hardware:
     executor: main
     steps:
+      - pcsc
       - run_test:
           package: bitcore-hardware
 workflows:
