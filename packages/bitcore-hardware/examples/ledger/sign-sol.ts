@@ -25,4 +25,6 @@ const signedTransaction = await ledger.sign({
 
 console.log('Signed transaction');
 console.log(signedTransaction);
+
+await ledger.disconnect();
 process.exit(0);

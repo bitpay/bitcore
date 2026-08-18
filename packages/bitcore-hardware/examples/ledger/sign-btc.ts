@@ -1,30 +1,49 @@
 import 'source-map-support/register.js';
-import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
+import CWC from '@bitpay-labs/crypto-wallet-core';
 import Ledger from '../../src/ledger/wallet.js';
-
-const { HDPublicKey, Script, Transaction } = BitcoreLib;
 
 const ledger = new Ledger();
 await ledger.connect();
 
-const publickey = new HDPublicKey(await ledger.getPublicKey({ chain: 'BTC' })).derive('m/0/0').publicKey;
+// utxos from https://api.bitcore.io/api/BTC/mainnet/address/bc1qj86hpgprdudkks84y52vdenz86kd26stkssrcq/coins
+const utxos = [
+  {
+    chain: 'BTC',
+    network: 'mainnet',
+    coinbase: false,
+    mintIndex: 0,
+    spentTxid: '',
+    mintTxid: '78519a191327dfdc0c2ea64a04d09d87c3909ce8365d0e0c0dbd0bc80d0405b4',
+    mintHeight: 957071,
+    spentHeight: -2,
+    address: 'bc1qj86hpgprdudkks84y52vdenz86kd26stkssrcq',
+    script: '001491f570a0236f1b6b40f52514c6e6623eacd56a0b',
+    value: 1562,
+    confirmations: -1
+  }
+];
 
-const tx = new Transaction()
-  .from({
-    address: 'bc1q0wsc0l2pzfn55ra67kr0vm40rjlllyh3a5kf88',
-    txId: 'a78dbd15bde4d8678c7e01451d6e54e92629395c9b76de7d37bf464514c8bc04',
-    outputIndex: 0,
-    script: Script.buildWitnessV0Out(publickey.toAddress()),
-    satoshis: 9290
-  });
+const tx: string = CWC.Transactions.create({
+  chain: 'BTC',
+  recipients: [{ address: 'bc1qm5anagcsad5kx2kuq3lv0j5zaxkxr7teuk9wfa', amount: 1200 }],
+  utxos
+});
 
 console.log(`Sign ${tx}`);
 const signedTransaction = await ledger.sign({
   chain: 'BTC',
-  tx
+  tx,
+  utxos
 });
-console.log(signedTransaction);
-await ledger.disconnect();
 
 console.log('Signed transaction');
+console.log(signedTransaction);
+/* 
+Broadcasted using bitcore-node
+$ curl --header "Content-Type: application/json" --request POST -d '{"rawTx": "02000000000101b405040dc80bbd0d0c0e5d36e89c90c3879dd0044aa62e0cdcdf2713199a51780000000000ffffffff01b004000000000000160014dd3b3ea310eb69632adc047ec7ca82e9ac61f9790247304402205e0bc606e3e76e8c623b4de8fd1c1ac098aaf32b161310f7dbaa14d8d29dcd2602203fd47d3d1fb0b223b203a5d01fd28804296666d1a15d1040d4140ba4bfee6125012103a7c7057355969fb52b23744aae7275f10440620654a912a78684a8a697d92e2b00000000"}' https://api.bitcore.io/api/BTC/mainnet/tx/send
+{"txid":"3049a6c75390696260366672693ebccf1a5a9892e3aa728b1f51c59e8f137a26"}
+
+View on Insight: https://bitpay.com/insight/BTC/mainnet/tx/3049a6c75390696260366672693ebccf1a5a9892e3aa728b1f51c59e8f137a26
+*/
+await ledger.disconnect();
 process.exit(0);

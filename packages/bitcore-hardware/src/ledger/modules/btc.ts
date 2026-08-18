@@ -36,8 +36,9 @@ export default class BitcoinModule implements BaseModule {
     const pubkey = new HDPublicKey(await this.getPublicKey()).derive('m/0/0').publicKey.toBuffer();
     const masterFingerprint = await this.getMasterKeyFingerprint();
 
+    
     psbt.addInputs(bitcoreTx.inputs.map(input => ({
-      hash: input.prevTxId,
+      hash: input.prevTxId.toString('hex'),
       index: input.outputIndex,
       witnessUtxo: {
         script: input.output._script.toBuffer(),
@@ -49,8 +50,7 @@ export default class BitcoinModule implements BaseModule {
         path: "m/84'/0'/0'/0/0",
       }]
     })));
-
-    psbt.addOutputs([{ address: 'bc1qj86hpgprdudkks84y52vdenz86kd26stkssrcq', value: 900 }]);
+    psbt.addOutputs(bitcoreTx.outputs.map(utxo => ({ script: utxo.script.toBuffer(), value: utxo.satoshis })));
 
     const ob: Observable<any> = this.signer.signTransaction(
       new DefaultWallet(this.derivationPath, DefaultDescriptorTemplate.NATIVE_SEGWIT),
