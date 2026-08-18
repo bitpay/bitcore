@@ -153,7 +153,7 @@ export default class Burner implements Base {
       const response = responses[i];
       const publicKey = new PublicKey(response.publicKey);
       const signature = crypto.Signature.fromString(response.signature.der);
-      signature.pubKey = publicKey;
+      signature.pubKey = BitcoreLib.crypto.Point.pointToCompressed(publicKey.point).toString('hex');
   
       CWC.Transactions.applySignature({
         chain: 'BTC',
