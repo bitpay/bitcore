@@ -4,12 +4,13 @@ import {
   lastValueFrom
 } from 'rxjs';
 import { BaseModule } from 'src/types/base.js';
+import type * as SignerKitEth from '@ledgerhq/device-signer-kit-ethereum';
 
 export default class EthereumModule implements BaseModule {
-  signer: any;
+  signer: SignerKitEth.SignerEth;
   derivationPath = "44'/60'/0'/0/0";
   
-  constructor(signer: any) {
+  constructor(signer: SignerKitEth.SignerEth) {
     this.signer = signer;
   }
 

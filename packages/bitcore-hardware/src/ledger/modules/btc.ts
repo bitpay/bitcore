@@ -8,19 +8,21 @@ import {
 import { BaseModule } from 'src/types/base.js';
 import { EveryUtxoType, TransactionType } from 'src/types/txTypes.js';
 import Util from '../../util.js';
+import type * as SignerKitBtc from '@ledgerhq/device-signer-kit-bitcoin';
 // @eslint disable import/newline-after-import
 const require = createRequire(import.meta.url);
 const {
+  DefaultDescriptorTemplate,
   DefaultWallet
-} = require('@ledgerhq/device-signer-kit-bitcoin');
+}: typeof SignerKitBtc = require('@ledgerhq/device-signer-kit-bitcoin');
 
 const { HDPublicKey } = BitcoreLib;
 
 export default class BitcoinModule implements BaseModule {
-  signer: any;
+  signer: SignerKitBtc.SignerBtc;
   derivationPath = "84'/0'/0'";
   
-  constructor(signer: any) {
+  constructor(signer: SignerKitBtc.SignerBtc) {
     this.signer = signer;
   }
 
@@ -51,7 +53,7 @@ export default class BitcoinModule implements BaseModule {
     psbt.addOutputs([{ address: 'bc1qj86hpgprdudkks84y52vdenz86kd26stkssrcq', value: 900 }]);
 
     const ob: Observable<any> = this.signer.signTransaction(
-      new DefaultWallet(this.derivationPath, 'wpkh(@0/**)'),
+      new DefaultWallet(this.derivationPath, DefaultDescriptorTemplate.NATIVE_SEGWIT),
       psbt
     ).observable;
 
@@ -60,13 +62,13 @@ export default class BitcoinModule implements BaseModule {
   }
   
   async getAddress() {
-    const ob: Observable<any> = this.signer.getWalletAddress({ derivationPath: this.derivationPath, template: 'wpkh(@0/**)' }, 0).observable;
+    const ob: Observable<any> = this.signer.getWalletAddress({ derivationPath: this.derivationPath, template: DefaultDescriptorTemplate.NATIVE_SEGWIT }, 0).observable;
     const result = await lastValueFrom(ob);
     return result.output.address;
   }
 
   async getPublicKey() {
-    const ob: Observable<any> = this.signer.getExtendedPublicKey(this.derivationPath, 0).observable;
+    const ob: Observable<any> = this.signer.getExtendedPublicKey(this.derivationPath).observable;
     const result = await lastValueFrom(ob);
     return result.output.extendedPublicKey;
   }

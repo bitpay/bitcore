@@ -4,12 +4,13 @@ import {
   lastValueFrom
 } from 'rxjs';
 import { BaseModule } from 'src/types/base.js';
+import type * as SignerKitSolana from '@ledgerhq/device-signer-kit-solana';
 
 
 export default class SolanaModule implements BaseModule {
-  signer: any;
+  signer: SignerKitSolana.SignerSolana;
   derivationPath = "44'/501'/0'";
-  constructor(signer) {
+  constructor(signer: SignerKitSolana.SignerSolana) {
     this.signer = signer;
   }
 
@@ -20,7 +21,7 @@ export default class SolanaModule implements BaseModule {
     
     const ob: Observable<any> = this.signer.signTransaction(
       this.derivationPath,
-      transaction.messageBytes
+      Uint8Array.from(transaction.messageBytes)
     ).observable;
 
     const result = await lastValueFrom(ob);
