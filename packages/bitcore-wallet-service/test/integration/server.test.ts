@@ -1228,37 +1228,78 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should join with a valid signature and hardwareSourcePublicKey present when xPubKey is absent', function(done) {
-        // SECURITY: defensive coverage for a model contract (Copayer.create() has always
-        // tolerated an absent xPubKey when an alternate credential is present) that no client
-        // in this monorepo currently exercises - bitcore-wallet-client's only join path always
-        // sends a real xPubKey. The copayer ID must be derived from the effective identity
-        // credential (hardwareSourcePublicKey here), never from `undefined` (hashing which
-        // throws for the default coin and collides into one constant hash per chain for every
-        // other coin). The signature is created while xPubKey is genuinely absent - it covers
-        // [name, undefined, requestPubKey].join('|') === 'me||<requestPubKey>', exactly what
-        // the client would compute for the same omission, so this also proves that hash form
-        // verifies server-side.
+      it('should reject a join with hardwareSourcePublicKey present when xPubKey is absent', function(done) {
+        // xPubKey is the canonical copayer identity for every join; the ancillary
+        // hardwareSourcePublicKey field is metadata and must not stand in for it. The
+        // signature is created while xPubKey is genuinely absent - it covers
+        // [name, undefined, requestPubKey].join('|') === 'me||<requestPubKey>' - so the
+        // rejection below is attributable to the missing identity field, not to a
+        // signature invalidated by deleting an xpub after signing.
         const copayerOpts: any = helpers.getSignedCopayerOpts({
           walletId: walletId,
           name: 'me',
           requestPubKey: TestData.copayers[0].pubKey_1H_0,
         });
         should.not.exist(copayerOpts.xPubKey);
-        const legitHwPubkeyNoXpub = 'legit-hw-pubkey-no-xpub';
-        copayerOpts.hardwareSourcePublicKey = legitHwPubkeyNoXpub;
-        const expectedCopayerId = Model.Copayer.xPubToCopayerId('btc', legitHwPubkeyNoXpub);
+        copayerOpts.hardwareSourcePublicKey = 'legit-hw-pubkey-no-xpub';
         server.joinWallet(copayerOpts, function(err, result) {
-          should.not.exist(err);
-          should.exist(result);
-          result.copayerId.should.equal(expectedCopayerId);
-          server.getWallet({}, function(err, wallet) {
+          should.not.exist(result);
+          should.exist(err);
+          err.should.be.instanceof(ClientError);
+          // The rejected join must not have persisted a copayer. The join is rejected
+          // before WalletService.walletId is set, so an unauthenticated getWallet({})
+          // cannot address the wallet, and there is no copayerId to authenticate with;
+          // read persisted state at the storage level instead.
+          server.storage.fetchWallet(walletId, function(err, wallet) {
             should.not.exist(err);
-            wallet.copayers.length.should.equal(1);
-            const copayer = wallet.copayers[0];
-            copayer.id.should.equal(expectedCopayerId);
-            should.not.exist(copayer.xPubKey);
-            copayer.hardwareSourcePublicKey.should.equal(legitHwPubkeyNoXpub);
+            should.exist(wallet);
+            wallet.copayers.length.should.equal(0);
+            done();
+          });
+        });
+      });
+
+      it('should fail to join with a malformed xPubKey even when hardwareSourcePublicKey is present', function(done) {
+        const copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'me',
+          xPubKey: 'invalid',
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+        });
+        copayerOpts.hardwareSourcePublicKey = 'legit-hw-pubkey';
+        server.joinWallet(copayerOpts, function(err, result) {
+          should.not.exist(result);
+          should.exist(err);
+          err.should.be.instanceof(ClientError);
+          // The rejected join must not have persisted a copayer; read persisted state
+          // at the storage level (the join may be rejected before WalletService.walletId
+          // is set, in which case getWallet({}) cannot address the wallet).
+          server.storage.fetchWallet(walletId, function(err, wallet) {
+            should.not.exist(err);
+            should.exist(wallet);
+            wallet.copayers.length.should.equal(0);
+            done();
+          });
+        });
+      });
+
+      it('should fail to join with a malformed xPubKey even when clientDerivedPublicKey is present', function(done) {
+        const copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'me',
+          xPubKey: 'invalid',
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+        });
+        copayerOpts.clientDerivedPublicKey = 'legit-client-derived-pubkey';
+        server.joinWallet(copayerOpts, function(err, result) {
+          should.not.exist(result);
+          should.exist(err);
+          err.should.be.instanceof(ClientError);
+          // Same persisted-state guard as the hardwareSourcePublicKey case above.
+          server.storage.fetchWallet(walletId, function(err, wallet) {
+            should.not.exist(err);
+            should.exist(wallet);
+            wallet.copayers.length.should.equal(0);
             done();
           });
         });
@@ -1642,29 +1683,26 @@ describe('Wallet service', function() {
         wallet.copayers.length.should.equal(0);
       });
 
-      it('should join a TSS wallet with a valid signature and clientDerivedPublicKey present when xPubKey is absent, if the copayer is a keygen session participant', async function() {
-        // SECURITY: defensive coverage for a model contract (Copayer.create() has always
-        // tolerated an absent xPubKey when an alternate credential is present) that no client
-        // in this monorepo currently exercises - bitcore-wallet-client's only join path always
-        // sends a real xPubKey, and its TSS participants are registered under the ID derived
-        // from it. Here the session participant list carries the ID derived from
-        // clientDerivedPublicKey instead, so the TSS_NON_PARTICIPANT check must be fed the same
-        // effective identity credential that Copayer.create() will use when persisting - never
-        // `undefined` (hashing which throws for the default coin and collides into one constant
-        // hash per chain for every other coin). The signature is created while xPubKey is
-        // genuinely absent - it covers [name, undefined, requestPubKey].join('|') ===
-        // 'me||<requestPubKey>', exactly what the client would compute for the same omission,
-        // so this also proves that hash form verifies server-side on a TSS wallet.
+      it('should reject a TSS join with clientDerivedPublicKey present when xPubKey is absent, even if the ancillary-derived ID is a keygen session participant', async function() {
+        // xPubKey is the canonical copayer identity for every join, including TSS ones;
+        // the ancillary clientDerivedPublicKey field must not stand in for it. The
+        // session participant list below carries the ID derived from
+        // clientDerivedPublicKey, so this proves the join is rejected for the missing
+        // identity field itself rather than by the TSS participant check. The signature
+        // is created while xPubKey is genuinely absent - it covers
+        // [name, undefined, requestPubKey].join('|') === 'me||<requestPubKey>' - so it is
+        // valid for the request as sent and the rejection is attributable to the missing
+        // xPubKey, not to an invalidated signature.
         const server = new WalletService();
 
         const clientDerivedPublicKey = 'legit-client-derived-pubkey-no-xpub';
-        const participantCopayerId = Model.Copayer.xPubToCopayerId('btc', clientDerivedPublicKey);
+        const ancillaryDerivedCopayerId = Model.Copayer.xPubToCopayerId('btc', clientDerivedPublicKey);
 
         const session = TssKeyGenModel.create({
-          id: 'tss-no-xpubkey-crash-test-session',
+          id: 'tss-no-xpubkey-rejected-test-session',
           message: { partyId: 0, broadcastMessages: [], p2pMessages: [], publicKey: 'dummy', round: 0 },
           n: 1,
-          copayerId: participantCopayerId,
+          copayerId: ancillaryDerivedCopayerId,
         });
         session.sharedPublicKey = 'dummy-shared-public-key';
         await server.storage.db.collection('tss_keygen').deleteMany({ id: session.id });
@@ -1692,18 +1730,16 @@ describe('Wallet service', function() {
           server.joinWallet(copayerOpts, (err, result) => resolve({ err, result }));
         });
 
-        should.not.exist(err);
-        should.exist(result);
-        result.copayerId.should.equal(participantCopayerId);
+        should.not.exist(result);
+        should.exist(err);
+        err.should.be.instanceof(ClientError);
 
-        // The join must have persisted the copayer with an ID derived from
-        // clientDerivedPublicKey and no xPubKey.
-        const wallet = await util.promisify(server.getWallet).call(server, {});
-        wallet.copayers.length.should.equal(1);
-        const copayer = wallet.copayers[0];
-        copayer.id.should.equal(participantCopayerId);
-        should.not.exist(copayer.xPubKey);
-        copayer.clientDerivedPublicKey.should.equal(clientDerivedPublicKey);
+        // The rejected join must not have persisted a copayer. The join is rejected
+        // before WalletService.walletId is set, so an unauthenticated getWallet({})
+        // cannot address the wallet; read persisted state at the storage level instead.
+        const wallet = await util.promisify(server.storage.fetchWallet).call(server.storage, walletId);
+        should.exist(wallet);
+        wallet.copayers.length.should.equal(0);
       });
     });
   });

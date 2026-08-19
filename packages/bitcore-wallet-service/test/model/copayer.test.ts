@@ -8,15 +8,13 @@ import { Copayer } from '../../src/lib/model/copayer';
 const should = chai.should();
 
 describe('Copayer', function() {
-  // SECURITY: copayer identity must be derived from exactly one effective credential,
-  // in a fixed precedence (xPubKey, then hardwareSourcePublicKey, then
-  // clientDerivedPublicKey), so that IDs stay stable for every xpub-bearing caller and
-  // never hash `undefined` (which throws for the default coin and collides into one
-  // constant hash per chain for every other coin).
-  describe('#create identity key selection', function() {
-    // SECURITY: `chain` is passed explicitly below because the service layer
+  // xPubKey is the canonical copayer identity: the ID is always derived from it, and
+  // hardwareSourcePublicKey / clientDerivedPublicKey are persisted ancillary metadata
+  // that never select identity.
+  describe('#create identity', function() {
+    // `chain` is passed explicitly below because the service layer
     // (joinWallet / _addCopayerToWallet) always supplies a resolved chain (backfilled
-    // from coin via Wallet.fromObj); these model tests encode the identity-key contract
+    // from coin via Wallet.fromObj); these model tests encode the identity contract
     // under that precondition rather than pinning a coin-only input shape.
     const baseOpts = {
       coin: 'btc',
@@ -54,50 +52,18 @@ describe('Copayer', function() {
       c.id.should.equal(Copayer.xPubToCopayerId('btc', xPubKey));
     });
 
-    it('should fall back to hardwareSourcePublicKey when xPubKey is absent', function() {
-      const hardwareSourcePublicKey = 'hw-key';
-      const c = Copayer.create({ ...baseOpts, hardwareSourcePublicKey });
-      c.id.should.equal(Copayer.xPubToCopayerId('btc', hardwareSourcePublicKey));
-    });
-
-    it('should fall back to clientDerivedPublicKey when xPubKey and hardwareSourcePublicKey are absent', function() {
-      const clientDerivedPublicKey = 'cdk-key';
-      const c = Copayer.create({ ...baseOpts, clientDerivedPublicKey: clientDerivedPublicKey });
-      c.id.should.equal(Copayer.xPubToCopayerId('btc', clientDerivedPublicKey));
-    });
-
-    it('should deterministically prefer hardwareSourcePublicKey over clientDerivedPublicKey when xPubKey is absent', function() {
-      const hardwareSourcePublicKey = 'hw-key';
-      const clientDerivedPublicKey = 'cdk-key';
-      const c = Copayer.create({ ...baseOpts, hardwareSourcePublicKey, clientDerivedPublicKey });
-      c.id.should.equal(Copayer.xPubToCopayerId('btc', hardwareSourcePublicKey));
-    });
-
-    it('should assign distinct IDs to copayers with different hardwareSourcePublicKey values on btc', function() {
-      const hardwareSourcePublicKey_a = 'hw-key-a';
-      const hardwareSourcePublicKey_b = 'hw-key-b';
-
-      const a = Copayer.create({ ...baseOpts, hardwareSourcePublicKey: hardwareSourcePublicKey_a });
-      const b = Copayer.create({ ...baseOpts, hardwareSourcePublicKey: hardwareSourcePublicKey_b });
-      should.exist(a.id);
-      a.id.should.equal(Copayer.xPubToCopayerId('btc', hardwareSourcePublicKey_a));
-      b.id.should.equal(Copayer.xPubToCopayerId('btc', hardwareSourcePublicKey_b));
-      a.id.should.not.equal(b.id);
-    });
-
-    it('should assign distinct IDs to copayers with different hardwareSourcePublicKey values on a non-default chain', function() {
-      const hardwareSourcePublicKey_a = 'hw-key-a';
-      const hardwareSourcePublicKey_b = 'hw-key-b';
-
+    it('should derive the same xpub-based ID on a non-default chain', function() {
+      const xPubKey = 'xpub-abc';
       const opts = { ...baseOpts, coin: 'bch', chain: 'bch' };
-      const a = Copayer.create({ ...opts, hardwareSourcePublicKey: hardwareSourcePublicKey_a });
-      const b = Copayer.create({ ...opts, hardwareSourcePublicKey: hardwareSourcePublicKey_b });
-      a.id.should.equal(Copayer.xPubToCopayerId('bch', hardwareSourcePublicKey_a));
-      b.id.should.equal(Copayer.xPubToCopayerId('bch', hardwareSourcePublicKey_b));
-      a.id.should.not.equal(b.id);
+      const c = Copayer.create({ ...opts, xPubKey });
+      c.id.should.equal(Copayer.xPubToCopayerId('bch', xPubKey));
     });
 
-    it('should persist the supplied credential fields and leave unsupplied ones absent', function() {
+    it('should reject creation without xPubKey and without ancillary fields', function() {
+      should.throw(() => Copayer.create({ ...baseOpts }));
+    });
+
+    it('should persist the supplied ancillary fields and leave unsupplied ones absent', function() {
       const xPubKey = 'xpub-abc';
       const hardwareSourcePublicKey = 'hw-key';
 
@@ -105,6 +71,18 @@ describe('Copayer', function() {
       c.xPubKey.should.equal(xPubKey);
       c.hardwareSourcePublicKey.should.equal(hardwareSourcePublicKey);
       should.not.exist(c.clientDerivedPublicKey);
+    });
+
+    it('should persist both ancillary fields without changing the xpub-derived ID', function() {
+      const xPubKey = 'xpub-abc';
+      const hardwareSourcePublicKey = 'hw-key';
+      const clientDerivedPublicKey = 'cdk-key';
+
+      const c = Copayer.create({ ...baseOpts, xPubKey, hardwareSourcePublicKey, clientDerivedPublicKey });
+      c.id.should.equal(Copayer.xPubToCopayerId('btc', xPubKey));
+      c.xPubKey.should.equal(xPubKey);
+      c.hardwareSourcePublicKey.should.equal(hardwareSourcePublicKey);
+      c.clientDerivedPublicKey.should.equal(clientDerivedPublicKey);
     });
   });
 
