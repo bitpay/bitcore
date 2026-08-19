@@ -191,15 +191,6 @@ export default class Burner implements Base {
     return signedTx;
   }
 
-  async getPublicKey(params: BaseParams) {
-    const { index } = params;
-
-    return (await this.sendCommand({
-      name: 'get_data_struct_v2',
-      spec: [{ type: 'publicKey', index }]
-    }) as any).publicKey[index].value;
-  }
-
   /**
    *
    * @param req
@@ -210,6 +201,14 @@ export default class Burner implements Base {
       name: 'get_data_struct_v2',
       spec: req
     });
+  }
+
+  async getPublicKey(params: BaseParams) {
+    const { index } = params;
+
+    return (await this.getData(
+      [{ type: 'publicKey', index }]
+    ) as any).publicKey[index].value;
   }
 
   async getAddress(params: BaseParams) {
@@ -235,7 +234,18 @@ export default class Burner implements Base {
 }
 
 type CommandType = Record<string, any> & {
-  name: string;
+  name: 'sign'
+  | 'sign_random'
+  | 'sign_challenge'
+  | 'write_latch'
+  | 'cfg_ndef'
+  | 'gen_key'
+  | 'gen_key_confirm'
+  | 'get_pkeys'
+  | 'get_key_info'
+  | 'set_password'
+  | 'unset_password'
+  | 'get_data_struct_v2';
   password?: string;
   keyNo?: number;
 };
