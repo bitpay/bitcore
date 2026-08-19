@@ -3171,6 +3171,112 @@ describe('Wallet service', function() {
         });
       });
     });
+
+    describe('#add access with historical copayer state', function() {
+      beforeEach(async function() {
+        ({ server, wallet } = await helpers.createAndJoinWallet(1, 1));
+      });
+
+      function snapshotState(cb) {
+        server.storage.db.collection(Storage.collections.WALLETS).findOne(
+          { id: wallet.id },
+          (err, walletDoc) => {
+            if (err) return cb(err);
+            server.storage.db.collection(Storage.collections.COPAYERS_LOOKUP).findOne(
+              { copayerId: opts.copayerId },
+              (err2, lookupDoc) => {
+                if (err2) return cb(err2);
+                return cb(null, {
+                  wallet: JSON.parse(JSON.stringify(walletDoc)),
+                  lookup: JSON.parse(JSON.stringify(lookupDoc))
+                });
+              }
+            );
+          }
+        );
+      }
+
+      function mutateWalletDoc(mutation, cb) {
+        server.storage.db.collection(Storage.collections.WALLETS).findOne(
+          { id: wallet.id },
+          (err, walletDoc) => {
+            if (err) return cb(err);
+            mutation(walletDoc);
+            server.storage.db.collection(Storage.collections.WALLETS).replaceOne(
+              { id: wallet.id },
+              walletDoc,
+              cb
+            );
+          }
+        );
+      }
+
+      it('should return NOT_AUTHORIZED when the target copayer is missing from the wallet', function(done) {
+        mutateWalletDoc(doc => {
+          doc.copayers = doc.copayers.filter(c => c.id !== opts.copayerId);
+        }, (err) => {
+          should.not.exist(err);
+          snapshotState((err, before) => {
+            should.not.exist(err);
+            ws.addAccess(opts, (err, res) => {
+              err.should.be.instanceof(ClientError);
+              err.code.should.equal('NOT_AUTHORIZED');
+              should.not.exist(res);
+              snapshotState((err, after) => {
+                should.not.exist(err);
+                // The rejected attempt must not have persisted anything: no new access key, no other state change.
+                after.should.deep.equal(before);
+                done();
+              });
+            });
+          });
+        });
+      });
+
+      it('should return NOT_AUTHORIZED when the target copayer has no xPubKey', function(done) {
+        mutateWalletDoc(doc => {
+          delete doc.copayers[0].xPubKey;
+        }, (err) => {
+          should.not.exist(err);
+          snapshotState((err, before) => {
+            should.not.exist(err);
+            ws.addAccess(opts, (err, res) => {
+              err.should.be.instanceof(ClientError);
+              err.code.should.equal('NOT_AUTHORIZED');
+              should.not.exist(res);
+              snapshotState((err, after) => {
+                should.not.exist(err);
+                // The rejected attempt must not have persisted anything: no new access key, no other state change.
+                after.should.deep.equal(before);
+                done();
+              });
+            });
+          });
+        });
+      });
+
+      it('should return NOT_AUTHORIZED when the target copayer has a malformed xPubKey', function(done) {
+        mutateWalletDoc(doc => {
+          doc.copayers[0].xPubKey = 'invalid';
+        }, (err) => {
+          should.not.exist(err);
+          snapshotState((err, before) => {
+            should.not.exist(err);
+            ws.addAccess(opts, (err, res) => {
+              err.should.be.instanceof(ClientError);
+              err.code.should.equal('NOT_AUTHORIZED');
+              should.not.exist(res);
+              snapshotState((err, after) => {
+                should.not.exist(err);
+                // The rejected attempt must not have persisted anything: no new access key, no other state change.
+                after.should.deep.equal(before);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
   });
 
   describe('#getBalance', function() {

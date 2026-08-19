@@ -1144,9 +1144,15 @@ export class WalletService implements IWalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.NOT_AUTHORIZED);
 
-        const xPubKey = wallet.copayers.find(c => c.id === opts.copayerId).xPubKey;
+        // Malformed historical copayer state must fail closed at this boundary,
+        // never escape as an uncaught exception.
+        const target = wallet.copayers.find(c => c.id === opts.copayerId);
+        if (!target?.xPubKey) return cb(Errors.NOT_AUTHORIZED);
 
-        if (!this._verifyRequestPubKey(opts.requestPubKey, opts.signature, xPubKey)) {
+        try {
+          const isValid = this._verifyRequestPubKey(opts.requestPubKey, opts.signature, target.xPubKey);
+          if (!isValid) return cb(Errors.NOT_AUTHORIZED);
+        } catch (e) {
           return cb(Errors.NOT_AUTHORIZED);
         }
 
