@@ -21,6 +21,36 @@ const { privateKey: privDer } = crypto.generateKeyPairSync('ed25519', {
   },
 });
 
+// Separate secp256k1 keypair used to sign/verify webhook payloads (Ramp uses
+// ECDSA + SHA-256 for webhooks, unlike the Ed25519 key used for widget URL signing above).
+const { privateKey: rampWebhookPrivateKey, publicKey: rampWebhookPublicKey } = crypto.generateKeyPairSync('ec', {
+  namedCurve: 'secp256k1',
+  publicKeyEncoding: {
+    type: 'spki',
+    format: 'pem',
+  },
+  privateKeyEncoding: {
+    type: 'pkcs8',
+    format: 'pem',
+  },
+});
+
+/**
+ * Deterministic JSON serialization equivalent to fast-json-stable-stringify,
+ * mirroring the one used internally by ramp.ts to sign webhook bodies.
+ */
+function stableStringify(obj: any): string {
+  if (obj === null || typeof obj !== 'object') return JSON.stringify(obj);
+  if (Array.isArray(obj)) return `[${obj.map(item => stableStringify(item === undefined ? null : item)).join(',')}]`;
+  const keys = Object.keys(obj).filter(k => obj[k] !== undefined).sort();
+  return `{${keys.map(k => `${JSON.stringify(k)}:${stableStringify(obj[k])}`).join(',')}}`;
+}
+
+function signRampBody(body: any, privateKey: string): string {
+  const message = Buffer.from(stableStringify(body), 'utf8');
+  return crypto.sign('sha256', message, privateKey).toString('base64');
+}
+
 describe('Ramp integration', () => {
   let server;
   let wallet;
@@ -593,6 +623,112 @@ describe('Ramp integration', () => {
 
       try {
         await server.externalServices.ramp.rampGetSellTransactionDetails(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Ramp missing credentials');
+      }
+    });
+  });
+
+  describe('#rampHandleWebhook', () => {
+    beforeEach(() => {
+      config.ramp.production.webhookSigningKey = rampWebhookPublicKey;
+      config.ramp.sandbox.webhookSigningKey = rampWebhookPublicKey;
+    });
+
+    it('should verify and parse a valid buy (purchase) webhook payload', () => {
+      const body = {
+        type: 'RELEASED',
+        purchase: {
+          id: 'purchase1',
+          status: 'RELEASED',
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:05:00.000Z',
+          fiatValue: 100,
+          fiatCurrency: 'USD',
+          cryptoAmount: '2000000',
+          asset: { symbol: 'BTC' },
+          paymentMethodType: 'CARD',
+          receiverAddress: 'bc1qxyz'
+        }
+      };
+      const signature = signRampBody(body, rampWebhookPrivateKey);
+      req = { headers: { 'x-body-signature': signature }, query: { userId: 'user1' }, body };
+      const { event } = server.externalServices.ramp.rampHandleWebhook(req);
+      event.partner.should.equal('ramp');
+      event.externalId.should.equal('purchase1');
+      event.status.should.equal('RELEASED');
+      event.eventName.should.equal('RELEASED');
+      event.updatedAt.should.equal('2024-01-01T00:05:00.000Z');
+      event.deliveryVersion.should.equal('2024-01-01T00:05:00.000Z');
+      event.fiatAmount.should.equal(100);
+      event.fiatCurrency.should.equal('USD');
+      event.cryptoAmount.should.equal(2000000);
+      event.cryptoCurrency.should.equal('BTC');
+      event.paymentMethod.should.equal('CARD');
+      event.walletAddress.should.equal('bc1qxyz');
+      event.userId.should.equal('user1');
+      event.env.should.equal('production');
+    });
+
+    it('should verify and parse a valid sell (offramp) webhook payload', () => {
+      const body = {
+        type: 'RELEASED',
+        mode: 'OFFRAMP',
+        payload: {
+          id: 'sale1',
+          status: 'RELEASED',
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:05:00.000Z',
+          fiat: { amount: 100, currencySymbol: 'USD', payoutMethod: 'BANK_TRANSFER' },
+          crypto: { amount: 0.002, assetInfo: { symbol: 'BTC' } },
+          receiverAddress: 'bc1qxyz'
+        }
+      };
+      const signature = signRampBody(body, rampWebhookPrivateKey);
+      req = { headers: { 'x-body-signature': signature }, query: {}, body };
+      const { event } = server.externalServices.ramp.rampHandleWebhook(req);
+      event.externalId.should.equal('sale1');
+      event.fiatAmount.should.equal(100);
+      event.fiatCurrency.should.equal('USD');
+      event.cryptoAmount.should.equal(0.002);
+      event.cryptoCurrency.should.equal('BTC');
+      event.paymentMethod.should.equal('BANK_TRANSFER');
+      should.not.exist(event.userId);
+    });
+
+    it('should throw if the signature does not match', () => {
+      const body = { type: 'RELEASED', purchase: { id: 'purchase1' } };
+      const { privateKey: otherKey } = crypto.generateKeyPairSync('ec', {
+        namedCurve: 'secp256k1',
+        publicKeyEncoding: { type: 'spki', format: 'pem' },
+        privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+      });
+      const signature = signRampBody(body, otherKey);
+      req = { headers: { 'x-body-signature': signature }, query: {}, body };
+      try {
+        server.externalServices.ramp.rampHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Ramp webhook signature verification failed');
+      }
+    });
+
+    it('should throw if the X-Body-Signature header is missing', () => {
+      req = { headers: {}, query: {}, body: { type: 'RELEASED', purchase: { id: 'purchase1' } } };
+      try {
+        server.externalServices.ramp.rampHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Ramp webhook missing X-Body-Signature header');
+      }
+    });
+
+    it('should return error if ramp is commented in config', () => {
+      config.ramp = undefined;
+      req = { headers: {}, query: {}, body: {} };
+      try {
+        server.externalServices.ramp.rampHandleWebhook(req);
         should.fail('should have thrown');
       } catch (err) {
         err.message.should.equal('Ramp missing credentials');

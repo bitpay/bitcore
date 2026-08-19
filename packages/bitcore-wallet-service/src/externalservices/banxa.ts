@@ -198,6 +198,14 @@ export class BanxaService {
       }
       delete req.body.payment_method;
 
+      // Banxa's webhook payload doesn't carry any partner-supplied user identifier
+      // `meta_data` is a free-form string Banxa echoes back (as `metadata`) on the
+      // webhook
+      if (req.body.userId && !req.body.meta_data) {
+        req.body.meta_data = req.body.userId;
+      }
+      delete req.body.userId;
+
       const UriPath = '/orders';
       const URL: string = API + UriPath;
       const auth = this.getBanxaSignature('post', UriPath, API_KEY, SECRET_KEY, req.body);
@@ -283,8 +291,8 @@ export class BanxaService {
     if (!config.banxa) throw new Error('Banxa missing credentials');
 
     const secretKeys: { key: string; env: string; webhookPath: string }[] = [
-      { key: config.banxa.production?.secretKey, env: 'production', webhookPath: (config.banxa.production as any)?.webhookPath || '/v1/service/banxa/webhook' },
-      { key: config.banxa.sandbox?.secretKey, env: 'sandbox', webhookPath: (config.banxa.sandbox as any)?.webhookPath || '/v1/service/banxa/webhook' }
+      { key: (config.banxa.production as any)?.webhookSecretKey || config.banxa.production?.secretKey, env: 'production', webhookPath: (config.banxa.production as any)?.webhookPath || '/v1/service/banxa/webhook' },
+      { key: (config.banxa.sandbox as any)?.webhookSecretKey || config.banxa.sandbox?.secretKey, env: 'sandbox', webhookPath: (config.banxa.sandbox as any)?.webhookPath || '/v1/service/banxa/webhook' }
     ].filter(k => !!k.key);
 
     let env = 'production';
@@ -325,14 +333,20 @@ export class BanxaService {
       partner: 'banxa',
       externalId: body.order_id,
       status: body.status || '',
-      eventName: body.order_type,
-      createdAt: body.created_at || body.status_date,
+      eventName: body.status,
+      createdAt: body.created_at,
+      // Banxa docs recommend order_id + status as the dedup key; updated_at is
+      // also used here for out-of-order detection.
+      updatedAt: body.updated_at,
+      deliveryVersion: body.updated_at,
       fiatAmount: body.fiat_amount != null ? Number(body.fiat_amount) : undefined,
       fiatCurrency: body.fiat_currency,
       cryptoAmount: body.crypto_amount != null ? Number(body.crypto_amount) : undefined,
       cryptoCurrency: body.crypto_coin,
       paymentMethod: body.payment_method,
-      userId: body.external_id,
+      // `metadata` is what we ask Banxa to echo back for the meta_data sent at
+      // order creation (see banxaCreateOrder).
+      userId: typeof body.metadata === 'string' ? body.metadata : undefined,
       rawPayload: body,
       env
     });
