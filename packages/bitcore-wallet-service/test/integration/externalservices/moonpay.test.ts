@@ -2,6 +2,7 @@
 
 import * as chai from 'chai';
 import 'chai/register-should';
+import * as crypto from 'crypto';
 import util from 'util';
 import { WalletService } from '../../../src/lib/server';
 import * as TestData from '../../testdata';
@@ -754,6 +755,138 @@ describe('Moonpay integration', () => {
         should.fail('should have thrown');
       } catch (err) {
         err.message.should.equal('Moonpay missing credentials');
+      }
+    });
+  });
+
+  describe('#moonpayHandleWebhook', () => {
+    const webhookSecret = 'moonpayWebhookSecret1';
+    let body;
+
+    function moonpaySignatureHeader(secret, ts, rawBody) {
+      const sig = crypto.createHmac('sha256', secret).update(`${ts}.${rawBody}`).digest('hex');
+      return `t=${ts},s=${sig}`;
+    }
+
+    beforeEach(() => {
+      config.moonpay.production.webhookSecretKey = webhookSecret;
+      body = {
+        type: 'transaction_updated',
+        externalCustomerId: 'user1',
+        data: {
+          id: 'tx1',
+          status: 'completed',
+          createdAt: '2024-01-01T00:00:00.000Z',
+          updatedAt: '2024-01-01T00:05:00.000Z',
+          baseCurrencyAmount: 100,
+          baseCurrency: { code: 'usd' },
+          quoteCurrencyAmount: 0.002,
+          currency: { code: 'btc' },
+          paymentMethod: 'credit_debit_card',
+          walletAddress: 'bc1qxyz',
+          walletAddressTag: 'tag1',
+          externalCustomerId: 'user1'
+        }
+      };
+      req = { headers: {}, body };
+    });
+
+    it('should verify and parse a valid webhook payload', () => {
+      const ts = Date.now();
+      req.headers['moonpay-signature-v2'] = moonpaySignatureHeader(webhookSecret, ts, JSON.stringify(body));
+      const { event } = server.externalServices.moonpay.moonpayHandleWebhook(req);
+      event.partner.should.equal('moonpay');
+      event.externalId.should.equal('tx1');
+      event.status.should.equal('completed');
+      event.eventName.should.equal('transaction_updated');
+      event.updatedAt.should.equal('2024-01-01T00:05:00.000Z');
+      event.deliveryVersion.should.equal('2024-01-01T00:05:00.000Z');
+      event.fiatAmount.should.equal(100);
+      event.fiatCurrency.should.equal('USD');
+      event.cryptoAmount.should.equal(0.002);
+      event.cryptoCurrency.should.equal('BTC');
+      event.walletAddress.should.equal('bc1qxyz');
+      event.walletAddressTag.should.equal('tag1');
+      event.userId.should.equal('user1');
+      event.env.should.equal('production');
+      event.isEmbedded.should.equal(false);
+    });
+
+    it('should mark the event as embedded when verified with the embedded secret', () => {
+      const embeddedSecret = 'moonpayEmbeddedSecret1';
+      config.moonpay.production.webhookSecretKeyEmbedded = embeddedSecret;
+      const ts = Date.now();
+      req.headers['moonpay-signature-v2'] = moonpaySignatureHeader(embeddedSecret, ts, JSON.stringify(body));
+      const { event } = server.externalServices.moonpay.moonpayHandleWebhook(req);
+      event.isEmbedded.should.equal(true);
+    });
+
+    it('should throw if the signature does not match', () => {
+      const ts = Date.now();
+      req.headers['moonpay-signature-v2'] = moonpaySignatureHeader('wrongSecret', ts, JSON.stringify(body));
+      try {
+        server.externalServices.moonpay.moonpayHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('MoonPay webhook signature verification failed');
+      }
+    });
+
+    it('should throw if the signature header is missing while a secret is configured', () => {
+      try {
+        server.externalServices.moonpay.moonpayHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('MoonPay webhook missing Moonpay-Signature-V2 header');
+      }
+    });
+
+    it('should skip verification and still parse if no webhookSecretKey is configured', () => {
+      delete config.moonpay.production.webhookSecretKey;
+      const { event } = server.externalServices.moonpay.moonpayHandleWebhook(req);
+      event.externalId.should.equal('tx1');
+    });
+
+    it('should throw if event type is missing', () => {
+      delete config.moonpay.production.webhookSecretKey;
+      delete req.body.type;
+      try {
+        server.externalServices.moonpay.moonpayHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('MoonPay webhook missing event type');
+      }
+    });
+
+    it('should throw if transaction id is missing', () => {
+      delete config.moonpay.production.webhookSecretKey;
+      delete req.body.data.id;
+      try {
+        server.externalServices.moonpay.moonpayHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('MoonPay webhook missing transaction id');
+      }
+    });
+
+    it('should throw if updatedAt is missing or invalid', () => {
+      delete config.moonpay.production.webhookSecretKey;
+      req.body.data.updatedAt = 'not-a-date';
+      try {
+        server.externalServices.moonpay.moonpayHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('MoonPay webhook missing valid updatedAt');
+      }
+    });
+
+    it('should return error if moonpay is commented in config', () => {
+      config.moonpay = undefined;
+      try {
+        server.externalServices.moonpay.moonpayHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('MoonPay missing credentials');
       }
     });
   });
