@@ -182,7 +182,8 @@ export function registerWebhookRoutes(router: express.Router, context: RouteCont
     if (!server) return;
     return handleWebhook(
       req, res, 'banxa',
-      () => server.externalServices.banxa.banxaHandleWebhook(req)
+      () => server.externalServices.banxa.banxaHandleWebhook(req),
+      event => server.storage.storeOnrampWebhookEvent({ event })
     ).catch(err => logger.error('[webhook:banxa] Unhandled error: %o', err));
   });
 
