@@ -1228,16 +1228,15 @@ export class WalletService implements IWalletService {
     // own client exercises - see the TSS-participant comment below for how that was confirmed.
     if (!checkRequired(opts, ['xPubKey'], cb)) return;
 
+    // xPubKey is parsed and validated for every join; ancillary fields never suppress it.
     let xPubKey;
-    if (!opts.hardwareSourcePublicKey && !opts.clientDerivedPublicKey) {
-      try {
-        xPubKey = Bitcore_[opts.chain].HDPublicKey(opts.xPubKey);
-      } catch {
-        return cb(new ClientError('Invalid extended public key'));
-      }
-      if (xPubKey.network == null) {
-        return cb(new ClientError('Invalid extended public key'));
-      }
+    try {
+      xPubKey = Bitcore_[opts.chain].HDPublicKey(opts.xPubKey);
+    } catch {
+      return cb(new ClientError('Invalid extended public key'));
+    }
+    if (xPubKey.network == null) {
+      return cb(new ClientError('Invalid extended public key'));
     }
 
     this.walletId = opts.walletId;
@@ -1281,10 +1280,7 @@ export class WalletService implements IWalletService {
           return cb(new ClientError('The wallet you are trying to join was created for a different chain'));
         }
 
-        // xPubKey is only parsed above when neither hardwareSourcePublicKey nor
-        // clientDerivedPublicKey was supplied (that block skips HDPublicKey parsing for
-        // key formats it doesn't apply to) - guard the network check accordingly.
-        if (xPubKey && !Utils.compareNetworks(wallet.network, xPubKey.network.name, wallet.chain)) {
+        if (!Utils.compareNetworks(wallet.network, xPubKey.network.name, wallet.chain)) {
           return cb(new ClientError('The wallet you are trying to join was created for a different network'));
         }
 
