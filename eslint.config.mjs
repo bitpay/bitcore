@@ -101,11 +101,13 @@ export default defineConfig([
   {
     files: [
       'packages/bitcore-lib*/**/*.js',
-      'packages/bitcore-p2p*/**/*.js'
+      'packages/bitcore-p2p*/**/*.js',
+      'packages/bitcore-tss/**/*.js',
     ],
     languageOptions: { sourceType: 'commonjs' },
     rules: {
       '@typescript-eslint/no-require-imports': 'warn',
+      'no-bitwise': 'off',
       '@typescript-eslint/no-unused-vars': 'warn',
     }
   },

@@ -21,7 +21,7 @@ const { version } = JSON.parse(fs.readFileSync(path.join(__dirname, '../../packa
 
 program
   .addHelpText('beforeAll', bitcoreLogo)
-  .usage('<walletName> [options]')
+  .usage('<walletName>|list [options]')
   .description('A command line tool for Bitcore wallets')
   .argument('<walletName>', 'Name of the wallet you want to create, join, or interact with. Use "list" to see all wallets in the specified directory.')
   .optionsGroup('Global Options')
@@ -31,7 +31,6 @@ program
   .option('--no-status', 'Do not display the wallet status on startup. Defaults to true when running with --command')
   .option('-s, --pageSize <number>', 'Number of items per page of a list output', (value) => parseInt(value, 10), 10)
   .option('-v, --verbose', 'Show more data and logs')
-  .option('--list', 'See all wallets in the specified directory')
   .option('--register', 'Register the wallet with the Bitcore Wallet Service if it does not exist')
   .option('--walletId <walletId>', 'Support Staff Only: Wallet ID to provide support for')
   .option('-h, --help', 'Display help message. Use with --command to get help for a specific command')
@@ -179,6 +178,11 @@ if (require.main === module) {
           // Don't display the intro if running a specific command
           !opts.command && prompt.intro(`${Utils.boldText('[  Main Menu')} - ${Utils.colorTextByChain(wallet.chain, walletName)}  ${Utils.boldText(']')}`);
           cmdParams.status && (cmdParams.status.pendingTxps = opts.command || opts.register ? [] : await wallet.client.getTxProposals({}));
+
+          // Update the balance when returning to the main menu (e.g. right after sending a tx)
+          if (!opts.command && cmdParams.status) {
+            cmdParams.status.balance = await commands.balance.getBalance(cmdParams);
+          }
           
           const dynamicCmdArgs = {
             ppNum: cmdParams.status?.pendingTxps.length ? Utils.colorText(` (${cmdParams.status.pendingTxps.length})`, 'yellow') : '',
@@ -215,8 +219,9 @@ if (require.main === module) {
                   // ...update status
                   cmdParams.status = await wallet.client.getStatus({ tokenAddress: tokenObj?.contractAddress });
                 }
-                cmdParams.opts.tokenAddress = tokenObj?.contractAddress;
-                cmdParams.opts.token = tokenObj?.displayCode;
+                // Update persistent opts (cmdParams.opts gets reset to opts since is susceptible to being overwritten in other commands)
+                opts.tokenAddress = tokenObj?.contractAddress;
+                opts.token = tokenObj?.displayCode;
                 break;
               case 'address':
                 await commands.address.createAddress(cmdParams);

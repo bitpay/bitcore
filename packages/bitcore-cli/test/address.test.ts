@@ -82,8 +82,12 @@ describe('Address', function() {
       done(e);
     });
     child.on('close', (code) => {
-      assert.equal(code, 0);
-      done();
+      try {
+        assert.equal(code, 0);
+        done();
+      } catch (e) {
+        done(e);
+      }
     });
   });
 
@@ -175,8 +179,12 @@ describe('Address', function() {
       done(e);
     });
     child.on('close', (code) => {
-      assert.equal(code, 0);
-      done();
+      try {
+        assert.equal(code, 0);
+        done();
+      } catch (e) {
+        done(e);
+      }
     });
   });
 
@@ -269,8 +277,12 @@ describe('Address', function() {
         done(e);
       });
       child.on('close', (code) => {
-        assert.equal(code, 0);
-        done();
+        try {
+          assert.equal(code, 0);
+          done();
+        } catch (e) {
+          done(e);
+        }
       });
     });
   });

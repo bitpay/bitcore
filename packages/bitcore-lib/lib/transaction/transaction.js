@@ -9,12 +9,14 @@ const Signature = require('../crypto/signature');
 const BufferReader = require('../encoding/bufferreader');
 const BufferWriter = require('../encoding/bufferwriter');
 const errors = require('../errors');
+const PrivateKey = require('../privatekey');
+const Script = require('../script');
 const BufferUtil = require('../util/buffer');
 const JSUtil = require('../util/js');
 const $ = require('../util/preconditions');
 const compare = Buffer.compare || require('buffer-compare');
-
 const Input = require('./input');
+const Output = require('./output');
 const Sighash = require('./sighash');
 const SighashSchnorr = require('./sighashschnorr');
 const SighashWitness = require('./sighashwitness');
@@ -25,9 +27,6 @@ const PublicKeyInput = Input.PublicKey;
 const MultiSigScriptHashInput = Input.MultiSigScriptHash;
 const MultiSigInput = Input.MultiSig;
 const TaprootInput = Input.Taproot;
-const Output = require('./output');
-const Script = require('../script');
-const PrivateKey = require('../privatekey');
 
 /**
  * Represents a transaction, a set of inputs and outputs to change ownership of tokens
@@ -297,9 +296,7 @@ Transaction.prototype._hasDustOutputs = function(opts) {
   if (opts.disableDustOutputs) {
     return;
   }
-  let index, output;
-  for (index in this.outputs) {
-    output = this.outputs[index];
+  for (const output of this.outputs) {
     if (output.satoshis < Transaction.DUST_AMOUNT && !output.script.isDataOut()) {
       return new errors.Transaction.DustOutputs();
     }
@@ -416,13 +413,13 @@ Transaction.prototype.fromBufferReader = function(reader) {
 
 Transaction.prototype.toObject = Transaction.prototype.toJSON = function toObject() {
   const inputs = [];
-  this.inputs.forEach(function(input) {
+  for (const input of this.inputs) {
     inputs.push(input.toObject());
-  });
+  }
   const outputs = [];
-  this.outputs.forEach(function(output) {
+  for (const output of this.outputs) {
     outputs.push(output.toObject());
-  });
+  }
   const obj = {
     hash: this.hash,
     version: this.version,
@@ -957,10 +954,9 @@ Transaction.prototype._addOutput = function(output) {
  */
 Transaction.prototype._getOutputAmount = function() {
   if (this._outputAmount == null) {
-    const self = this;
     this._outputAmount = 0;
     for (const output of this.outputs || []) {
-      self._outputAmount += output.satoshis;
+      this._outputAmount += output.satoshis;
     }
   }
   return this._outputAmount;
@@ -1134,7 +1130,7 @@ Transaction.prototype.sort = function() {
   this.sortInputs(function(inputs) {
     const copy = Array.prototype.concat.apply([], inputs);
     let i = 0;
-    copy.forEach((x) => { x.i = i++;});
+    for (const x of copy) { x.i = i++; }
     copy.sort(function(first, second) {
       return compare(first.prevTxId, second.prevTxId)
         || first.outputIndex - second.outputIndex
@@ -1145,7 +1141,7 @@ Transaction.prototype.sort = function() {
   this.sortOutputs(function(outputs) {
     const copy = Array.prototype.concat.apply([], outputs);
     let i = 0;
-    copy.forEach((x) => { x.i = i++;});
+    for (const x of copy) { x.i = i++; }
     copy.sort(function(first, second) {
       return first.satoshis - second.satoshis
         || compare(first.script.toBuffer(), second.script.toBuffer())

@@ -78,9 +78,11 @@ export async function getTxProposals(
 
   const txps = opts.command && opts.proposalId
     ? [await wallet.client.getTx(opts.proposalId)]
-    : await wallet.client.getTxProposals({
+    : (await wallet.client.getTxProposals({
       forAirGapped: false, // TODO
-    });
+    }))
+      // Sort ascending by lowest nonce first, then by createdOn timestamp if nonce is not present
+      .sort((a, b) => (a.nonce != null || b.nonce != null) ? ((a.nonce || 0) - (b.nonce || 0)) : (a.createdOn - b.createdOn));
 
   let lastPage = 1;
   let printRaw = opts.raw ?? false;
@@ -91,8 +93,10 @@ export async function getTxProposals(
     txp = txps[i];
 
     if (!txp) {
-      prompt.log.info('No more proposals');
-      return { result: [], hasNextPage: false, hasPrevPage: page > 1 };
+      !printRaw && prompt.log.info('No more proposals');
+      return opts.command
+        ? {} // Don't wait for user input in CLI mode
+        : { result: [], hasNextPage: false, hasPrevPage: page > 1 };
     }
 
     const hasNextPage = page < txps.length;
@@ -160,7 +164,7 @@ export async function getTxProposals(
       prompt.log.success(`Exported to ${outputFile}`);
 
     } else if (printRaw) {
-      prompt.log.info(`ID: ${txp.id}` + os.EOL + JSON.stringify(txp, null, 2));
+      console.log(JSON.stringify(txp, null, 2));
     
     } else {
       const lines = [];
@@ -187,9 +191,9 @@ export async function getTxProposals(
         : Utils.renderAmount(currency, BigInt(txp.amount) + BigInt(txp.fee))
       }`);
       txp.gasPrice && lines.push(`Gas Price: ${Utils.displayFeeRate(chain, txp.gasPrice)}`);
-      txp.gasLimit && lines.push(`Gas Limit: ${txp.gasLimit}`);
+      txp.gasLimit && lines.push(`Gas Limit: ${BigInt(txp.gasLimit)}`);
       txp.feePerKb && lines.push(`Fee Rate: ${Utils.displayFeeRate(chain, txp.feePerKb)}`);
-      txp.nonce != null && lines.push(`Nonce: ${txp.nonce}`);
+      txp.nonce != null && lines.push(`Nonce: ${BigInt(txp.nonce)}`);
       lines.push(`Status: ${txp.status}`);
       lines.push(`Creator: ${txp.creatorName}`);
       lines.push(`Created: ${Utils.formatDate(txp.createdOn * 1000)}`);
@@ -223,24 +227,35 @@ export async function getTxProposals(
       return {}; // Don't wait for user input in CLI mode
     }
 
-    const extraChoices = []
-      .concat(
-        txp.status !== 'broadcasted' && !txp.actions.find(a => a.copayerId === myCopayerId) && txp.status !== 'deleted' ? [
+    const extraChoices: Array<{ label: string; value: string; hint?: string }> = [];
+    
+    if (txp.status !== 'broadcasted' && txp.status !== 'deleted') {
+      if (!txp.actions?.find(a => a.copayerId === myCopayerId)) {
+        extraChoices.push(
           { label: 'Accept', value: ViewAction.ACCEPT, hint: 'Accept and sign this proposal' },
           { label: 'Reject', value: ViewAction.REJECT, hint: 'Reject this proposal' },
-        ] : []
-      ).concat(
-        txp.status !== 'broadcasted' && txp.actions.filter(a => a.type === 'accept').length >= txp.requiredSignatures && txp.status !== 'deleted' ? [
+        );
+      }
+      
+      if (txp.actions?.filter(a => a.type === 'accept').length >= txp.requiredSignatures) {
+        extraChoices.push(
           { label: 'Broadcast', value: ViewAction.BROADCAST, hint: 'Broadcast this proposal' }
-        ] : []
-      ).concat(
-        txp.status !== 'broadcasted' && txp.status !== 'rejected' && txp.status !== 'deleted' ? [
+        );
+      }
+
+      if (txp.status !== 'rejected') {
+        extraChoices.push(
           { label: 'Delete', value: ViewAction.DELETE, hint: 'Delete this proposal' }
-        ] : []
-      ).concat([
-        printRaw ? { label: 'Print Pretty', value: ViewAction.TOGGLE_RAW, hint: 'Print formatted proposal' } : { label: 'Print Raw Object', value: ViewAction.TOGGLE_RAW, hint: 'Print raw proposal object' },
-        { label: 'Export', value: ViewAction.EXPORT, hint: 'Save to a file' },
-      ]);
+        );
+      }
+    }
+
+    extraChoices.push(
+      printRaw ?
+        { label: 'Print Pretty', value: ViewAction.TOGGLE_RAW, hint: 'Print formatted proposal' } :
+        { label: 'Print Raw Object', value: ViewAction.TOGGLE_RAW, hint: 'Print raw proposal object' },
+      { label: 'Export', value: ViewAction.EXPORT, hint: 'Save to a file' }
+    );
 
     return { result: txps, extraChoices, hasNextPage, hasPrevPage };
   }, {
