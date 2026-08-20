@@ -134,4 +134,8 @@ export default class Ledger implements Base {
   async getPublicKey(params: { chain: string }) {
     return this.modules[params.chain].getPublicKey();
   }
+
+  static isValidChain(value: string): value is 'BTC' | 'ETH' | 'SOL' {
+    return ['BTC', 'ETH', 'SOL'].includes(value);
+  }
 }

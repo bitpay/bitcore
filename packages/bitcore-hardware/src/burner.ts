@@ -2,8 +2,7 @@ import { execHaloCmdPCSC } from '@arx-research/libhalo/api/desktop';
 import CWC, { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { NFC } from 'nfc-pcsc';
 import { Base } from 'src/types/base.js';
-import { DataType } from './types/burnerTypes.js';
-import { BaseParams } from './types/paramTypes.js';
+import { CommandNameType, DataType } from './types/burnerTypes.js';
 import { EveryUtxoType, TransactionType } from './types/txTypes.js';
 import Util from './util.js';
 
@@ -30,18 +29,11 @@ export default class Burner implements Base {
    * @returns response from the wallet
    */
   async sendCommand(command: CommandType): Promise<Record<string, any>> {
-    const index = this.commandQueue.length;
-    this.commandQueue.push(command);
-    return new Promise(async (resolve1) => {
-      while (this.responses[index] === undefined) {
-        await new Promise(resolve2 => setTimeout(resolve2, 10));
-      }
-      resolve1(this.responses[index]);
-    });
+    return this.sendManyCommands([command]).then(responses => responses[0]);
   }
 
   /**
-   * Queues a commands to be sent off to the wallet when it is scanned with an NFC reader.
+   * Queues commands to be sent off to the wallet when it is scanned with an NFC reader.
    * 
    * Logic for getting the response is not in this function, but in connect.
    * This function simply waits for the card listener to add the responses.
@@ -203,7 +195,7 @@ export default class Burner implements Base {
     });
   }
 
-  async getPublicKey(params: BaseParams) {
+  async getPublicKey(params: { index: number }) {
     const { index } = params;
 
     return (await this.getData(
@@ -211,13 +203,26 @@ export default class Burner implements Base {
     ) as any).publicKey[index].value;
   }
 
-  async getAddress(params: BaseParams) {
+  async getAddress(params: {
+    chain: 'BTC' | 'ETH';
+    index: number;
+  }) {
+    switch (params.chain) {
+      case 'ETH':
+        return this.getAddressEth(params);
+      case 'BTC':
+      default:
+        return this.getAddressBtc(params);
+    }
+  }
+
+  async getAddressBtc(params: { index: number }) {
     const { index } = params;
 
-    const data: any = await this.getData([{ type: 'compressedPublicKey', index }]);
+    const data: any = await this.getData([{ type: 'publicKey', index }]);
 
     try {
-      const pubKey = PublicKey.fromString(data.compressedPublicKey[index].value);
+      const pubKey = PublicKey.fromString(data.publicKey[index].value);
       const address = Address.fromPublicKey(pubKey, 'livenet', 'witnesspubkeyhash');
       return address.toString();
     } catch (error) {
@@ -226,26 +231,33 @@ export default class Burner implements Base {
     }
   }
 
-  async getVersion(params?: BaseParams) {
+  async getAddressEth(params: { index: number }) {
+    const { index } = params;
+
+    const data: any = await this.getData([{ type: 'publicKey', index }]);
+
+    try {
+      const address = CWC.ethers.computeAddress('0x' + data.publicKey[index].value);
+      return address.toString();
+    } catch (error) {
+      console.error(error);
+      return undefined;
+    }
+  }
+
+  async getVersion(params?: { index: number }) {
     const { index } = params || { index: 1 };
     const data: any = await this.getData([{ type: 'firmwareVersion', index }]);
     return data.firmwareVersion[index].value;
   }
+
+  static isValidChain(value: string): value is 'BTC' | 'ETH' {
+    return ['BTC', 'ETH'].includes(value);
+  }
 }
 
 type CommandType = Record<string, any> & {
-  name: 'sign'
-  | 'sign_random'
-  | 'sign_challenge'
-  | 'write_latch'
-  | 'cfg_ndef'
-  | 'gen_key'
-  | 'gen_key_confirm'
-  | 'get_pkeys'
-  | 'get_key_info'
-  | 'set_password'
-  | 'unset_password'
-  | 'get_data_struct_v2';
+  name: CommandNameType;
   password?: string;
   keyNo?: number;
 };
