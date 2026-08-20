@@ -11,6 +11,9 @@ describe('Copayer', function() {
   // xPubKey is the canonical copayer identity: the ID is always derived from it, and
   // hardwareSourcePublicKey / clientDerivedPublicKey are persisted ancillary metadata
   // that never select identity.
+
+  // 20 Aug '26 - support for hardware wallets lacking xPubKey will
+  // change the above statement and change the nature of these tests
   describe('#create identity', function() {
     // `chain` is passed explicitly below because the service layer
     // (joinWallet / _addCopayerToWallet) always supplies a resolved chain (backfilled

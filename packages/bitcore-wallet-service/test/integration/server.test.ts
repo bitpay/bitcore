@@ -1615,13 +1615,7 @@ describe('Wallet service', function() {
     });
 
     // SECURITY: this guards against a copayer joining a TSS wallet without ever being checked
-    // against the key generation session's participant list. A join carrying
-    // hardwareSourcePublicKey/clientDerivedPublicKey must never be able to add a copayer
-    // before joinWallet()'s TSS_NON_PARTICIPANT check has run - a gate that (incorrectly)
-    // keyed off an opts.tssKeyId the join request never actually carries, instead of the
-    // wallet's own persisted wallet.tssKeyId, previously let this slip through entirely. Keep
-    // this test paired with the plain-signature-bypass tests above; both guard the same
-    // control-flow mistake from two different angles.
+    // against the key generation session's participant list.
     describe('TSS wallets (non-participant bypass)', function() {
       it('should reject a join from a copayer who is not a TSS keygen session participant, even with clientDerivedPublicKey supplied', async function() {
         const server = new WalletService();
@@ -1693,6 +1687,8 @@ describe('Wallet service', function() {
         // [name, undefined, requestPubKey].join('|') === 'me||<requestPubKey>' - so it is
         // valid for the request as sent and the rejection is attributable to the missing
         // xPubKey, not to an invalidated signature.
+
+        // 20 Aug '26: Support for joining a wallet without xPubKey will fast-follow
         const server = new WalletService();
 
         const clientDerivedPublicKey = 'legit-client-derived-pubkey-no-xpub';

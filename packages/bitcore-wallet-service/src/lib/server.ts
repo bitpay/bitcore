@@ -1144,8 +1144,6 @@ export class WalletService implements IWalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.NOT_AUTHORIZED);
 
-        // Malformed historical copayer state must fail closed at this boundary,
-        // never escape as an uncaught exception.
         const target = wallet.copayers.find(c => c.id === opts.copayerId);
         if (!target?.xPubKey) return cb(Errors.NOT_AUTHORIZED);
 
@@ -1213,15 +1211,6 @@ export class WalletService implements IWalletService {
    * @param {boolean} [opts.dryRun] Simulate the action but do not change server state.
    */
   joinWallet(opts, cb) {
-    if (!checkRequired(opts, ['walletId', 'name', 'requestPubKey', 'copayerSignature'], cb)) return;
-    if (!opts.name) return cb(new ClientError('Invalid copayer name'));
-
-    opts.coin = opts.coin || Defaults.COIN;
-    if (!opts.chain) {
-      opts.chain = opts.coin; // chain === coin for stored clients
-    }
-    if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
-
     // xPubKey is the canonical copayer identity in the current protocol. Alternate public-key
     // fields are ancillary metadata; supporting an xPubKey-less copayer requires a versioned
     // end-to-end identity protocol rather than a local identity fallback.
@@ -1232,9 +1221,18 @@ export class WalletService implements IWalletService {
     // other coin. bitcore-wallet-client's only join path (_doJoinWallet) always sends a real
     // xPubKey regardless of these two fields, so this doesn't restrict any flow this repo's
     // own client exercises - see the TSS-participant comment below for how that was confirmed.
-    if (!checkRequired(opts, ['xPubKey'], cb)) return;
+    if (!checkRequired(opts, ['walletId', 'name', 'requestPubKey', 'copayerSignature', 'xPubKey'], cb)) return;
+    if (!opts.name) return cb(new ClientError('Invalid copayer name'));
+
+    opts.coin = opts.coin || Defaults.COIN;
+    if (!opts.chain) {
+      opts.chain = opts.coin; // chain === coin for stored clients
+    }
+    if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
 
     // xPubKey is parsed and validated for every join; ancillary fields never suppress it.
+    // A future update will re-add conditional logic which allows opts.hardwareSourcePublicKey
+    // or opts.clientDerivedPublicKey to circumvent this requirement
     let xPubKey;
     try {
       xPubKey = Bitcore_[opts.chain].HDPublicKey(opts.xPubKey);
@@ -1251,25 +1249,9 @@ export class WalletService implements IWalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
-        // SECURITY: do not add a shortcut here that calls _addCopayerToWallet() before the
-        // copayerSignature check (and, for TSS wallets, the participant check) below has run.
-        // This method used to return early into _addCopayerToWallet() whenever
-        // hardwareSourcePublicKey or clientDerivedPublicKey was present, which let anyone who
-        // knew a joinable walletId join as a real copayer without proving knowledge of the
-        // wallet secret - and, for TSS wallets, without ever being checked against the key
-        // generation session's participant list. bitcore-wallet-client's only join path
-        // (api.ts#_doJoinWallet) always sends a real xPubKey and computes a real
-        // copayerSignature regardless of these two fields - for a TSS join, that xPubKey is
-        // the copayer's ordinary seed-derived auth key, distinct from the TSS common-keychain
-        // pubkey carried in clientDerivedPublicKey, and it's what the join secret is checked
-        // against and what keySession.participants below is keyed on - so there is no
-        // legitimate flow in this repo's own client that needs to skip verification here.
-        // (xPubKey is also required unconditionally a few lines up, so opts.xPubKey can't be
-        // undefined by the time any of this runs.) Every join, hardware, TSS, or plain
-        // multisig, must go through the same checks below. TSS wallets get their own
-        // participant check further down, gated on the wallet's persisted wallet.tssKeyId;
-        // never gate it on an opts.tssKeyId instead - join requests never carry one, so that
-        // condition is always true and the gate would be a no-op.
+        // SECURITY: opts.hardwareSourcePublicKey or opts.clientDerivedPublicKey may not
+        // circumvent the required checks below. A future update may enable either to replace xPubKey
+        // That is currently not supported
 
         if (this._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, { chain: opts.chain, n: wallet.n })) {
           return cb(Errors.UPGRADE_NEEDED.withMessage('BWC clients < 8.3 are no longer supported for multisig BCH wallets.'));
