@@ -265,6 +265,23 @@ export class Verifier {
     return true;
   }
 
+  /**
+   * Check transaction proposal
+   * 
+   * Confirms tx proposal signature, and if paypro included in ops, confirms it
+   *
+   * @param {Function} credentials
+   * @param {Object} txp
+   * @param {Object} Optional: paypro
+   * @param {Boolean} isLegit
+   */
+  static checkTxProposal(credentials, txp, opts) {
+    opts = opts || {};
+
+    return this.checkTxProposalSignature(credentials, txp) &&
+      (!opts.paypro || this.checkPaypro(txp, opts.paypro));
+  }
+
   static checkTxProposalSignature(credentials, txp) {
     $.checkArgument(txp.creatorId, 'Invalid txp: Missing creatorId');
     $.checkState(credentials.isComplete(), 'Failed state: credentials at checkTxProposalSignature');
@@ -492,21 +509,4 @@ export class Verifier {
     );
   }
 
-  /**
-   * Check transaction proposal
-   *
-   * @param {Function} credentials
-   * @param {Object} txp
-   * @param {Object} Optional: paypro
-   * @param {Boolean} isLegit
-   */
-  static checkTxProposal(credentials, txp, opts) {
-    opts = opts || {};
-
-    if (!this.checkTxProposalSignature(credentials, txp)) return false;
-
-    if (opts.paypro && !this.checkPaypro(txp, opts.paypro)) return false;
-
-    return true;
-  }
 }
