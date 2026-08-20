@@ -1,6 +1,8 @@
 import {
   BitcoreLib as Bitcore,
   BitcoreLibCash,
+  BitcoreLibDoge,
+  BitcoreLibLtc,
   Utils as CWCUtils
 } from '@bitpay-labs/crypto-wallet-core';
 import { singleton } from 'preconditions';
@@ -10,7 +12,19 @@ import log from './log';
 import type { Address } from '../types/address';
 
 const $ = singleton();
-const BCHAddress = BitcoreLibCash.Address;
+
+// Each supported multisig/UTXO chain canonicalizes destinations through its
+// own bitcore-lib fork's Address class rather than raw string/lowercase
+// comparison, so equivalent encodings (BTC/LTC Bech32 case, LTC legacy
+// `3...`/modern `M...` P2SH, BCH cashaddr/legacy) compare equal while
+// unparseable addresses throw and are treated as a verification failure
+// instead of matching merely because their raw strings match.
+const ADDRESS_LIB_BY_CHAIN: Record<string, { Address: new (address: string) => { toString(): string } }> = {
+  btc: Bitcore,
+  bch: BitcoreLibCash,
+  doge: BitcoreLibDoge,
+  ltc: BitcoreLibLtc
+};
 
 interface PayproEntry {
   toAddress: string;
@@ -461,26 +475,20 @@ export class Verifier {
     //      feeRate < payproOpts.requiredFeeRate)
     //  return false;
 
-    // Accept only a complete address-and-amount match for the resolved UTXO chain.
-    const exactAddress = (address: string) => address;
-    switch (chain) {
-      case 'btc':
-      case 'doge':
-      case 'ltc':
-        if (this.payproEntrySetsMatch(outputs, instructions, exactAddress)) return true;
-        return falseWithLogWarn(
-          `${chain.toUpperCase()} outputs do not match PayPro instructions`
-        );
-      case 'bch':
-        try {
-          const normalizeBchAddress = (address: string) => new BCHAddress(address).toString();
-          if (this.payproEntrySetsMatch(outputs, instructions, normalizeBchAddress)) return true;
-          return falseWithLogWarn('BCH outputs do not match PayPro instructions');
-        } catch {
-          return falseWithLogWarn('invalid BCH address');
-        }
-      default:
-        return falseWithLogWarn(`unsupported transaction chain: ${chain}`);
+    // Accept only a complete address-and-amount match for the resolved
+    // UTXO chain, comparing each chain's own canonical parsed destination.
+    const addressLib = ADDRESS_LIB_BY_CHAIN[chain];
+    if (!addressLib) {
+      return falseWithLogWarn(`unsupported transaction chain: ${chain}`);
+    }
+    try {
+      const normalizeAddress = (address: string) => new addressLib.Address(address).toString();
+      if (this.payproEntrySetsMatch(outputs, instructions, normalizeAddress)) return true;
+      return falseWithLogWarn(
+        `${chain.toUpperCase()} outputs do not match PayPro instructions`
+      );
+    } catch {
+      return falseWithLogWarn(`invalid ${chain.toUpperCase()} address`);
     }
   }
 
