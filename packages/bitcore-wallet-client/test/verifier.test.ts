@@ -348,6 +348,43 @@ describe('Verifier', function() {
     });
   });
 
+  describe('checkTxProposal PayPro boundary', function() {
+    const amount = 10000;
+    const merchantAddress = 'LQqWdV81RmiEzXoACvWDQPZEXXU1Q16suH';
+    const substitutedAddress = 'Lcyaicjq2aFgcgRX5mDhhQkXN8RFvzWowa';
+    const paypro = {
+      instructions: [{ toAddress: merchantAddress, amount }]
+    };
+    const createTxp = toAddress => ({
+      version: 3,
+      chain: 'ltc',
+      coin: 'ltc',
+      amount,
+      outputs: [{ toAddress, amount }]
+    });
+    let checkTxProposalSignatureStub;
+
+    beforeEach(function() {
+      checkTxProposalSignatureStub = sinon
+        .stub(Verifier, 'checkTxProposalSignature')
+        .returns(true);
+    });
+
+    afterEach(function() {
+      checkTxProposalSignatureStub.restore();
+    });
+
+    it('accepts a matching LTC PayPro proposal through checkTxProposal', function() {
+      Verifier.checkTxProposal({}, createTxp(merchantAddress), { paypro }).should.equal(true);
+      sinon.assert.calledOnce(checkTxProposalSignatureStub);
+    });
+
+    it('rejects a substituted LTC PayPro destination through checkTxProposal', function() {
+      Verifier.checkTxProposal({}, createTxp(substitutedAddress), { paypro }).should.equal(false);
+      sinon.assert.calledOnce(checkTxProposalSignatureStub);
+    });
+  });
+
   describe('checkProposalCreation', function() {
     const inputs = [
       {
