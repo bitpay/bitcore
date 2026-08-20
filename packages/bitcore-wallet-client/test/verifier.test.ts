@@ -1,8 +1,10 @@
 'use strict';
 
 import chai from 'chai';
+import sinon from 'sinon';
 import { Verifier } from '../src/lib/verifier';
 import { Key } from '../src/lib/key';
+import log from '../src/lib/log';
 
 chai.should();
 
@@ -126,6 +128,30 @@ describe('Verifier', function() {
       Verifier.checkPaypro(txp, createPaypro('btc')).should.equal(false);
     });
 
+    it('rejects missing transaction or PayPro data without throwing', function() {
+      const cases = [
+        { txp: null, paypro: createPaypro('btc') },
+        { txp: createTxp('btc'), paypro: null }
+      ];
+      for (const testCase of cases) {
+        let result;
+        chai.expect(() => {
+          result = Verifier.checkPaypro(testCase.txp, testCase.paypro);
+        }).not.to.throw();
+        chai.expect(result).to.equal(false);
+      }
+    });
+
+    it('rejects invalid transaction proposal versions instead of coercing them', function() {
+      const invalidVersions = [undefined, null, true, {}, [], [3], 0, -1, 1.5, '', ' ', '3x'];
+      for (const version of invalidVersions) {
+        chai.expect(
+          Verifier.checkPaypro(createTxp('btc', { version }), createPaypro('btc')),
+          String(version)
+        ).to.equal(false);
+      }
+    });
+
     const malformedInstructionCases = [
       { description: 'rejects missing PayPro instructions without throwing', paypro: {} },
       { description: 'rejects empty PayPro instructions without throwing', paypro: { instructions: [] } }
@@ -156,6 +182,42 @@ describe('Verifier', function() {
         chai.expect(result).to.equal(false);
       });
     }
+
+    it('logs the entry index and invalid field for malformed outputs and instructions', function() {
+      const warn = sinon.stub(log, 'warn');
+      try {
+        const outputs = [
+          { toAddress: addresses.btc[0], amount: 5000 },
+          { toAddress: ' ', amount: 5000 }
+        ];
+        const instructions = [
+          { toAddress: addresses.btc[0], amount: 5000 },
+          { toAddress: addresses.btc[1], amount: 5000 }
+        ];
+        Verifier.checkPaypro(
+          createTxp('btc', { id: 'txp-id', outputs }),
+          createPaypro('btc', { instructions })
+        ).should.equal(false);
+        sinon.assert.calledOnceWithExactly(
+          warn,
+          '[TXP txp-id] PayPro verification failed: transaction output at index 1 has an invalid destination address'
+        );
+
+        warn.resetHistory();
+        instructions[1] = { toAddress: addresses.btc[1], amount: -1 };
+        outputs[1] = { toAddress: addresses.btc[1], amount: 5000 };
+        Verifier.checkPaypro(
+          createTxp('btc', { id: 'txp-id', outputs }),
+          createPaypro('btc', { instructions })
+        ).should.equal(false);
+        sinon.assert.calledOnceWithExactly(
+          warn,
+          '[TXP txp-id] PayPro verification failed: PayPro instruction at index 1 has an invalid amount'
+        );
+      } finally {
+        warn.restore();
+      }
+    });
 
     const unparseableBchCases = [
       {
@@ -225,6 +287,16 @@ describe('Verifier', function() {
       Verifier.checkPaypro(txp, paypro).should.equal(true);
     });
 
+    it('accepts matching duplicate output and instruction pairs', function() {
+      const entries = [
+        { toAddress: addresses.btc[0], amount: 5000 },
+        { toAddress: addresses.btc[0], amount: 5000 }
+      ];
+      const txp = createTxp('btc', { outputs: entries });
+      const paypro = createPaypro('btc', { instructions: entries });
+      Verifier.checkPaypro(txp, paypro).should.equal(true);
+    });
+
     it('rejects a proposal when a non-first PayPro destination is changed', function() {
       const txp = createTxp('btc', {
         outputs: [
@@ -266,6 +338,13 @@ describe('Verifier', function() {
         ]
       });
       Verifier.checkPaypro(txp, paypro).should.equal(false);
+    });
+
+    it('rejects an output total that differs from the transaction amount', function() {
+      const txp = createTxp('btc', {
+        outputs: [{ toAddress: addresses.btc[0], amount: amount + 1 }]
+      });
+      Verifier.checkPaypro(txp, createPaypro('btc')).should.equal(false);
     });
   });
 
