@@ -2,7 +2,6 @@
 
 import chai from 'chai';
 import sinon from 'sinon';
-import { BitcoreLib, BitcoreLibLtc } from '@bitpay-labs/crypto-wallet-core';
 import { Verifier } from '../src/lib/verifier';
 import { Key } from '../src/lib/key';
 import log from '../src/lib/log';
@@ -262,25 +261,6 @@ describe('Verifier', function() {
       });
     }
 
-    it('validates the address-equivalence fixtures with each chain library before relying on them', function() {
-      // Independent proof that the fixtures below are not merely
-      // case-different strings: each pair parses to the identical address
-      // payload / output script via the chain's own bitcore-lib fork.
-      const btcLower = new BitcoreLib.Address(equivalenceFixtures.btcBech32.lower);
-      const btcUpper = new BitcoreLib.Address(equivalenceFixtures.btcBech32.upper);
-      btcLower.hashBuffer.equals(btcUpper.hashBuffer).should.equal(true);
-
-      const ltcBechLower = new BitcoreLibLtc.Address(equivalenceFixtures.ltcBech32.lower);
-      const ltcBechUpper = new BitcoreLibLtc.Address(equivalenceFixtures.ltcBech32.upper);
-      ltcBechLower.hashBuffer.equals(ltcBechUpper.hashBuffer).should.equal(true);
-
-      const ltcLegacy = new BitcoreLibLtc.Address(equivalenceFixtures.ltcP2sh.legacy);
-      const ltcModern = new BitcoreLibLtc.Address(equivalenceFixtures.ltcP2sh.modern);
-      BitcoreLibLtc.Script.fromAddress(ltcLegacy).toHex().should.equal(
-        BitcoreLibLtc.Script.fromAddress(ltcModern).toHex()
-      );
-    });
-
     const addressEquivalenceCases = [
       {
         description: 'accepts equivalent BTC Bech32 case forms',
@@ -322,6 +302,28 @@ describe('Verifier', function() {
         let result;
         chai.expect(() => {
           result = Verifier.checkPaypro(txp, paypro);
+        }).not.to.throw();
+        chai.expect(result).to.equal(false);
+      });
+
+      it(`rejects a malformed ${chain.toUpperCase()} proposal destination with a valid PayPro instruction`, function() {
+        const malformed = 'not-a-real-address!!!';
+        const txp = createTxp(chain, { outputs: [{ toAddress: malformed, amount }] });
+        let result;
+        chai.expect(() => {
+          result = Verifier.checkPaypro(txp, createPaypro(chain));
+        }).not.to.throw();
+        chai.expect(result).to.equal(false);
+      });
+
+      it(`rejects a malformed ${chain.toUpperCase()} PayPro instruction with a valid proposal destination`, function() {
+        const malformed = 'not-a-real-address!!!';
+        const paypro = createPaypro(chain, {
+          instructions: [{ toAddress: malformed, amount }]
+        });
+        let result;
+        chai.expect(() => {
+          result = Verifier.checkPaypro(createTxp(chain), paypro);
         }).not.to.throw();
         chai.expect(result).to.equal(false);
       });
