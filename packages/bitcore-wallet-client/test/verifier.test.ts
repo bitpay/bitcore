@@ -2,6 +2,7 @@
 
 import chai from 'chai';
 import sinon from 'sinon';
+import { BitcoreLib, BitcoreLibLtc } from '@bitpay-labs/crypto-wallet-core';
 import { Verifier } from '../src/lib/verifier';
 import { Key } from '../src/lib/key';
 import log from '../src/lib/log';
@@ -34,6 +35,24 @@ describe('Verifier', function() {
         'LQqWdV81RmiEzXoACvWDQPZEXXU1Q16suH',
         'Lcyaicjq2aFgcgRX5mDhhQkXN8RFvzWowa'
       ]
+    };
+    // Equivalent-but-not-identical-string encodings that a chain's own address
+    // library treats as the same destination. Bech32 forms below are derived
+    // from a fixed test-only private key scalar so they are deterministic and
+    // independently reproducible; the P2SH pair is the ticket's own fixture.
+    const equivalenceFixtures = {
+      btcBech32: {
+        lower: 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
+        upper: 'BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4'
+      },
+      ltcBech32: {
+        lower: 'ltc1qw508d6qejxtdg4y5r3zarvary0c5xw7kgmn4n9',
+        upper: 'LTC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KGMN4N9'
+      },
+      ltcP2sh: {
+        legacy: '3GueMn6ruWVfQTN4XKBGEbCbGLwRSUhfnS',
+        modern: 'MP7nffWprdM6CxdxdCAc4ESzb3XsQQPZMp'
+      }
     };
     const supportedChains = ['btc', 'bch', 'doge', 'ltc'];
     const addressFor = chain => chain === 'bch' ? addresses.bch.cashaddr : addresses[chain][0];
@@ -238,6 +257,71 @@ describe('Verifier', function() {
         let result;
         chai.expect(() => {
           result = Verifier.checkPaypro(testCase.txp, testCase.paypro);
+        }).not.to.throw();
+        chai.expect(result).to.equal(false);
+      });
+    }
+
+    it('validates the address-equivalence fixtures with each chain library before relying on them', function() {
+      // Independent proof that the fixtures below are not merely
+      // case-different strings: each pair parses to the identical address
+      // payload / output script via the chain's own bitcore-lib fork.
+      const btcLower = new BitcoreLib.Address(equivalenceFixtures.btcBech32.lower);
+      const btcUpper = new BitcoreLib.Address(equivalenceFixtures.btcBech32.upper);
+      btcLower.hashBuffer.equals(btcUpper.hashBuffer).should.equal(true);
+
+      const ltcBechLower = new BitcoreLibLtc.Address(equivalenceFixtures.ltcBech32.lower);
+      const ltcBechUpper = new BitcoreLibLtc.Address(equivalenceFixtures.ltcBech32.upper);
+      ltcBechLower.hashBuffer.equals(ltcBechUpper.hashBuffer).should.equal(true);
+
+      const ltcLegacy = new BitcoreLibLtc.Address(equivalenceFixtures.ltcP2sh.legacy);
+      const ltcModern = new BitcoreLibLtc.Address(equivalenceFixtures.ltcP2sh.modern);
+      BitcoreLibLtc.Script.fromAddress(ltcLegacy).toHex().should.equal(
+        BitcoreLibLtc.Script.fromAddress(ltcModern).toHex()
+      );
+    });
+
+    const addressEquivalenceCases = [
+      {
+        description: 'accepts equivalent BTC Bech32 case forms',
+        chain: 'btc',
+        outputAddress: equivalenceFixtures.btcBech32.lower,
+        instructionAddress: equivalenceFixtures.btcBech32.upper
+      },
+      {
+        description: 'accepts equivalent LTC Bech32 case forms',
+        chain: 'ltc',
+        outputAddress: equivalenceFixtures.ltcBech32.lower,
+        instructionAddress: equivalenceFixtures.ltcBech32.upper
+      },
+      {
+        description: 'accepts equivalent LTC legacy 3... and modern M... P2SH destinations',
+        chain: 'ltc',
+        outputAddress: equivalenceFixtures.ltcP2sh.legacy,
+        instructionAddress: equivalenceFixtures.ltcP2sh.modern
+      }
+    ];
+    for (const testCase of addressEquivalenceCases) {
+      it(testCase.description, function() {
+        const txp = createTxp(testCase.chain, {
+          outputs: [{ toAddress: testCase.outputAddress, amount }]
+        });
+        const paypro = createPaypro(testCase.chain, {
+          instructions: [{ toAddress: testCase.instructionAddress, amount }]
+        });
+        Verifier.checkPaypro(txp, paypro).should.equal(true);
+      });
+    }
+
+    const identicalMalformedDestinationChains = ['btc', 'doge', 'ltc'];
+    for (const chain of identicalMalformedDestinationChains) {
+      it(`rejects identical malformed ${chain.toUpperCase()} destinations without throwing`, function() {
+        const malformed = 'not-a-real-address!!!';
+        const txp = createTxp(chain, { outputs: [{ toAddress: malformed, amount }] });
+        const paypro = createPaypro(chain, { instructions: [{ toAddress: malformed, amount }] });
+        let result;
+        chai.expect(() => {
+          result = Verifier.checkPaypro(txp, paypro);
         }).not.to.throw();
         chai.expect(result).to.equal(false);
       });
