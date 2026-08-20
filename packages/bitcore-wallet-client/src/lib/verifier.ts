@@ -77,66 +77,6 @@ export class Verifier {
     return this.atomicValuesEqual(value1, value2);
   }
 
-  /**
-   * Returns normalized entries or identifies the index and field of the first invalid entry.
-   */
-  private static normalizePayproEntries(entries: any[]): PayproEntriesNormalizationResult {
-    const normalizedEntries: PayproEntry[] = [];
-    for (const [index, entry] of entries.entries()) {
-      if (typeof entry?.toAddress !== 'string' || entry.toAddress.trim() === '') {
-        return {
-          valid: false,
-          invalidEntryIndex: index,
-          invalidField: 'destination address'
-        };
-      }
-
-      const amount = this.normalizeAtomicValue(entry.amount);
-      if (amount === null) {
-        return {
-          valid: false,
-          invalidEntryIndex: index,
-          invalidField: 'amount'
-        };
-      }
-
-      normalizedEntries.push({ toAddress: entry.toAddress, amount });
-    }
-    return { valid: true, entries: normalizedEntries };
-  }
-
-  /**
-   * Returns true if both args are empty arrays - should be handled upstream
-   */
-  private static payproEntrySetsMatch(
-    outputs: PayproEntry[],
-    instructions: PayproEntry[],
-    normalizeAddress: (address: string) => string
-  ): boolean {
-    if (outputs.length !== instructions.length) return false;
-
-    const entriesSortCompareFn = (entry1: PayproEntry, entry2: PayproEntry) => {
-      if (entry1.toAddress !== entry2.toAddress) {
-        return entry1.toAddress < entry2.toAddress ? -1 : 1;
-      }
-      if (entry1.amount === entry2.amount) return 0;
-      return entry1.amount < entry2.amount ? -1 : 1;
-    };
-    const normalizeAndSort = (entries: PayproEntry[]) => entries
-      .map(entry => ({
-        toAddress: normalizeAddress(entry.toAddress),
-        amount: entry.amount
-      }))
-      .sort(entriesSortCompareFn);
-
-    const normalizedOutputs = normalizeAndSort(outputs);
-    const normalizedInstructions = normalizeAndSort(instructions);
-    return normalizedOutputs.every((output, index) =>
-      output.toAddress === normalizedInstructions[index].toAddress &&
-      output.amount === normalizedInstructions[index].amount
-    );
-  }
-
   private static mapInputsByOutpoint(inputs) {
     if (!Array.isArray(inputs)) return null;
 
@@ -490,6 +430,66 @@ export class Verifier {
     } catch {
       return falseWithLogWarn(`invalid ${chain.toUpperCase()} address`);
     }
+  }
+
+  /**
+   * Returns normalized entries or identifies the index and field of the first invalid entry.
+   */
+  private static normalizePayproEntries(entries: any[]): PayproEntriesNormalizationResult {
+    const normalizedEntries: PayproEntry[] = [];
+    for (const [index, entry] of entries.entries()) {
+      if (typeof entry?.toAddress !== 'string' || entry.toAddress.trim() === '') {
+        return {
+          valid: false,
+          invalidEntryIndex: index,
+          invalidField: 'destination address'
+        };
+      }
+
+      const amount = this.normalizeAtomicValue(entry.amount);
+      if (amount === null) {
+        return {
+          valid: false,
+          invalidEntryIndex: index,
+          invalidField: 'amount'
+        };
+      }
+
+      normalizedEntries.push({ toAddress: entry.toAddress, amount });
+    }
+    return { valid: true, entries: normalizedEntries };
+  }
+
+  /**
+   * Returns true if both args are empty arrays - should be handled upstream
+   */
+  private static payproEntrySetsMatch(
+    outputs: PayproEntry[],
+    instructions: PayproEntry[],
+    normalizeAddress: (address: string) => string
+  ): boolean {
+    if (outputs.length !== instructions.length) return false;
+
+    const entriesSortCompareFn = (entry1: PayproEntry, entry2: PayproEntry) => {
+      if (entry1.toAddress !== entry2.toAddress) {
+        return entry1.toAddress < entry2.toAddress ? -1 : 1;
+      }
+      if (entry1.amount === entry2.amount) return 0;
+      return entry1.amount < entry2.amount ? -1 : 1;
+    };
+    const normalizeAndSort = (entries: PayproEntry[]) => entries
+      .map(entry => ({
+        toAddress: normalizeAddress(entry.toAddress),
+        amount: entry.amount
+      }))
+      .sort(entriesSortCompareFn);
+
+    const normalizedOutputs = normalizeAndSort(outputs);
+    const normalizedInstructions = normalizeAndSort(instructions);
+    return normalizedOutputs.every((output, index) =>
+      output.toAddress === normalizedInstructions[index].toAddress &&
+      output.amount === normalizedInstructions[index].amount
+    );
   }
 
   /**
