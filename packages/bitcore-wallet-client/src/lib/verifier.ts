@@ -12,6 +12,19 @@ import type { Address } from '../types/address';
 const $ = singleton();
 const BCHAddress = BitcoreLibCash.Address;
 
+interface PayproEntry {
+  toAddress: string;
+  amount: bigint;
+}
+
+type PayproEntriesNormalizationResult =
+  | { valid: true; entries: PayproEntry[] }
+  | {
+    valid: false;
+    invalidEntryIndex: number;
+    invalidField: 'destination address' | 'amount';
+  };
+
 /**
  * @desc Verifier constructor. Checks data given by the server
  *
@@ -48,6 +61,66 @@ export class Verifier {
     const value2Missing = value2 == null;
     if (value1Missing || value2Missing) return value1Missing && value2Missing;
     return this.atomicValuesEqual(value1, value2);
+  }
+
+  /**
+   * Returns normalized entries or identifies the index and field of the first invalid entry.
+   */
+  private static normalizePayproEntries(entries: any[]): PayproEntriesNormalizationResult {
+    const normalizedEntries: PayproEntry[] = [];
+    for (const [index, entry] of entries.entries()) {
+      if (typeof entry?.toAddress !== 'string' || entry.toAddress.trim() === '') {
+        return {
+          valid: false,
+          invalidEntryIndex: index,
+          invalidField: 'destination address'
+        };
+      }
+
+      const amount = this.normalizeAtomicValue(entry.amount);
+      if (amount === null) {
+        return {
+          valid: false,
+          invalidEntryIndex: index,
+          invalidField: 'amount'
+        };
+      }
+
+      normalizedEntries.push({ toAddress: entry.toAddress, amount });
+    }
+    return { valid: true, entries: normalizedEntries };
+  }
+
+  /**
+   * Returns true if both args are empty arrays - should be handled upstream
+   */
+  private static payproEntrySetsMatch(
+    outputs: PayproEntry[],
+    instructions: PayproEntry[],
+    normalizeAddress: (address: string) => string
+  ): boolean {
+    if (outputs.length !== instructions.length) return false;
+
+    const entriesSortCompareFn = (entry1: PayproEntry, entry2: PayproEntry) => {
+      if (entry1.toAddress !== entry2.toAddress) {
+        return entry1.toAddress < entry2.toAddress ? -1 : 1;
+      }
+      if (entry1.amount === entry2.amount) return 0;
+      return entry1.amount < entry2.amount ? -1 : 1;
+    };
+    const normalizeAndSort = (entries: PayproEntry[]) => entries
+      .map(entry => ({
+        toAddress: normalizeAddress(entry.toAddress),
+        amount: entry.amount
+      }))
+      .sort(entriesSortCompareFn);
+
+    const normalizedOutputs = normalizeAndSort(outputs);
+    const normalizedInstructions = normalizeAndSort(instructions);
+    return normalizedOutputs.every((output, index) =>
+      output.toAddress === normalizedInstructions[index].toAddress &&
+      output.amount === normalizedInstructions[index].amount
+    );
   }
 
   private static mapInputsByOutpoint(inputs) {
@@ -306,35 +379,109 @@ export class Verifier {
   }
 
   static checkPaypro(txp, payproOpts) {
-    let toAddress, amount;
+    const falseWithLogWarn = (reason: string): false => {
+      const txpId = txp && typeof txp === 'object' && typeof txp.id === 'string'
+        ? txp.id
+        : 'unknown';
+      log.warn(`[TXP ${txpId}] PayPro verification failed: ${reason}`);
+      return false;
+    };
 
-    if (parseInt(txp.version) >= 3) {
-      toAddress = txp.outputs[0].toAddress;
-      amount = txp.amount;
-    } else {
-      toAddress = txp.toAddress;
-      amount = txp.amount;
+    // Validate and normalize the complete proposal and invoice before comparing them.
+    if (!txp || typeof txp !== 'object') return falseWithLogWarn('missing transaction proposal');
+    if (!payproOpts || typeof payproOpts !== 'object') return falseWithLogWarn('missing PayPro data');
+    if (!Array.isArray(payproOpts.instructions) || payproOpts.instructions.length === 0) {
+      return falseWithLogWarn('missing PayPro instructions');
     }
 
-    if (amount != (payproOpts.instructions || []).reduce((sum, i) => sum += i.amount, 0)) return false;
+    let chain: string;
+    if (txp.chain == null || txp.chain === '') {
+      if (typeof txp.coin !== 'string' || txp.coin === '') {
+        return falseWithLogWarn('missing transaction chain');
+      }
+      chain = Utils.getChain(txp.coin);
+    } else {
+      if (typeof txp.chain !== 'string') return falseWithLogWarn('invalid transaction chain');
+      chain = txp.chain.toLowerCase();
+    }
 
-    if (txp.coin == 'btc' && toAddress != payproOpts.instructions[0].toAddress)
-      return false;
-
-    // Workaround for cashaddr/legacy address problems...
+    // txp.version snapshot
+    const versionValue = txp.version;
     if (
-      txp.coin == 'bch' &&
-      new BCHAddress(toAddress).toString() !=
-        new BCHAddress(payproOpts.instructions[0].toAddress).toString()
-    )
-      return false;
+      typeof versionValue !== 'number' &&
+      typeof versionValue !== 'string'
+    ) return falseWithLogWarn('invalid transaction proposal version');
+    const version = Number(versionValue);
+    if (!Number.isInteger(version) || version < 1) {
+      return falseWithLogWarn('invalid transaction proposal version');
+    }
+
+    const rawOutputs = version >= 3
+      ? txp.outputs
+      : [{ toAddress: txp.toAddress, amount: txp.amount }];
+    if (!Array.isArray(rawOutputs) || rawOutputs.length === 0) {
+      return falseWithLogWarn('missing transaction outputs');
+    }
+
+    const normalizedOutputs = this.normalizePayproEntries(rawOutputs);
+    if (normalizedOutputs.valid === false) {
+      return falseWithLogWarn(
+        `transaction output at index ${normalizedOutputs.invalidEntryIndex} ` +
+        `has an invalid ${normalizedOutputs.invalidField}`
+      );
+    }
+    const outputs = normalizedOutputs.entries;
+
+    const normalizedInstructions = this.normalizePayproEntries(payproOpts.instructions);
+    if (normalizedInstructions.valid === false) {
+      return falseWithLogWarn(
+        `PayPro instruction at index ${normalizedInstructions.invalidEntryIndex} ` +
+        `has an invalid ${normalizedInstructions.invalidField}`
+      );
+    }
+    const instructions = normalizedInstructions.entries;
+
+    if (outputs.length !== instructions.length) {
+      return falseWithLogWarn('transaction output and PayPro instruction counts differ');
+    }
+
+    const txpAmount = this.normalizeAtomicValue(txp.amount);
+    if (txpAmount === null) return falseWithLogWarn('invalid transaction amount');
+    const instructionTotal = instructions.reduce((total, entry) => total + entry.amount, 0n);
+    if (txpAmount !== instructionTotal) {
+      return falseWithLogWarn('transaction and PayPro instruction amounts differ');
+    }
+    const outputTotal = outputs.reduce((total, entry) => total + entry.amount, 0n);
+    if (txpAmount !== outputTotal) {
+      return falseWithLogWarn('transaction amount and output total differ');
+    }
 
     // this generates problems...
     //  if (feeRate && payproOpts.requiredFeeRate &&
     //      feeRate < payproOpts.requiredFeeRate)
     //  return false;
 
-    return true;
+    // Accept only a complete address-and-amount match for the resolved UTXO chain.
+    const exactAddress = (address: string) => address;
+    switch (chain) {
+      case 'btc':
+      case 'doge':
+      case 'ltc':
+        if (this.payproEntrySetsMatch(outputs, instructions, exactAddress)) return true;
+        return falseWithLogWarn(
+          `${chain.toUpperCase()} outputs do not match PayPro instructions`
+        );
+      case 'bch':
+        try {
+          const normalizeBchAddress = (address: string) => new BCHAddress(address).toString();
+          if (this.payproEntrySetsMatch(outputs, instructions, normalizeBchAddress)) return true;
+          return falseWithLogWarn('BCH outputs do not match PayPro instructions');
+        } catch {
+          return falseWithLogWarn('invalid BCH address');
+        }
+      default:
+        return falseWithLogWarn(`unsupported transaction chain: ${chain}`);
+    }
   }
 
   /**
