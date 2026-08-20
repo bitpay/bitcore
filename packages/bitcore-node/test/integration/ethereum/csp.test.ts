@@ -405,7 +405,7 @@ describe('Ethereum API', function() {
       stream.destroy();
       await new Promise(r => setImmediate(r));
       expect(cursorCloseSpy, 'wallet-tx cursor was created').to.exist;
-      expect(cursorCloseSpy!.called, 'cursor.close() was called on destroy').to.eq(true);
+      expect(cursorCloseSpy!.callCount, 'cursor.close() ran exactly once on destroy').to.eq(1);
     });
   });
 });

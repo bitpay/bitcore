@@ -295,7 +295,9 @@ describe('Transaction Model', function() {
         await done;
         return rows;
       };
-      const collectGnosisTokenHistoryRows = async (
+      // stream over a stubbed cursor, separate from the collector so lifecycle tests
+      // can destroy it unconsumed
+      const buildGnosisTokenStream = async (
         tx: Record<string, any>,
         requestOverrides: { multisigContractAddress?: string; tokenAddress?: string } = {}
       ) => {
@@ -322,7 +324,7 @@ describe('Transaction Model', function() {
         } as any);
 
         // streamGnosisWalletTransactions returns a jsonl stream now; the route does the
-        // HTTP framing, so collect the newline-delimited rows straight off the stream.
+        // HTTP framing, so consumers read the newline-delimited rows straight off the stream.
         const stream = await Gnosis.streamGnosisWalletTransactions({
           chain: 'ETH',
           network: 'mainnet',
@@ -330,7 +332,14 @@ describe('Transaction Model', function() {
           wallet: { _id: new ObjectId() },
           args: { tokenAddress: requestOverrides.tokenAddress || gnosisBusdToken }
         } as any);
+        return { stream, cursor, findQuery };
+      };
 
+      const collectGnosisTokenHistoryRows = async (
+        tx: Record<string, any>,
+        requestOverrides: { multisigContractAddress?: string; tokenAddress?: string } = {}
+      ) => {
+        const { stream, findQuery } = await buildGnosisTokenStream(tx, requestOverrides);
         const rows = new Array<any>();
         await new Promise<void>((resolve, reject) => {
           stream
@@ -464,6 +473,20 @@ describe('Transaction Model', function() {
 
         expect(rows).to.have.length(2);
         expect(rows.map(row => row.satoshis)).to.deep.equal(['100', '200']);
+      });
+
+      it('should close the mongo cursor once when the gnosis stream is destroyed', async () => {
+        const { stream, cursor } = await buildGnosisTokenStream(gnosisTokenTx({
+          effects: [gnosisTokenEffect({ amount: '100' })]
+        }));
+        stream.destroy();
+        await new Promise(r => setImmediate(r));
+        expect(cursor.close.callCount).to.equal(1);
+        // repeated terminal events must not re-close the cursor
+        stream.destroy();
+        stream.emit('close');
+        await new Promise(r => setImmediate(r));
+        expect(cursor.close.callCount).to.equal(1);
       });
 
       it('should not emit Gnosis token history rows for failed ERC20 sends', async () => {

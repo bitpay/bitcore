@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import { EventEmitter } from 'events';
+import sinon from 'sinon';
 import { Readable } from 'stream';
+import logger from '../../../src/logger';
 import { streamJsonArray } from '../../../src/routes/apiUtils';
 import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 
@@ -19,9 +21,10 @@ describe('streamJsonArray', function() {
     const req = new EventEmitter() as any;
     const writes: string[] = [];
     const res = Object.assign(new EventEmitter(), {
+      writableFinished: false,
       type: () => res,
       write: (chunk: any) => { writes.push(typeof chunk === 'string' ? chunk : chunk.toString()); return true; },
-      end: () => { (res as any).ended = true; },
+      end: () => { res.ended = true; res.writableFinished = true; },
     }) as any;
     return { req, res, writes };
   }
@@ -75,7 +78,7 @@ describe('streamJsonArray', function() {
   it('settles the promise on client disconnect', async () => {
     const { req, res } = fakes();
     const stream = new Readable({ objectMode: true, read() {} });
-    setImmediate(() => req.emit('close'));
+    setImmediate(() => res.emit('close'));
     const result = await streamJsonArray(stream, req, res);
     expect(result.success).to.equal(false);
     if (result.success) throw new Error('expected a failure result');
@@ -83,14 +86,107 @@ describe('streamJsonArray', function() {
     expect(result.error?.message).to.contain('disconnected');
   });
 
-  it('calls .close() on cursor-style streams when the client disconnects', async () => {
+  it('calls close() once and skips destroy() on cursor-style streams when the client disconnects', async () => {
     const { req, res } = fakes();
     const stream = new Readable({ objectMode: true, read() {} }) as any;
-    let closed = false;
-    stream.close = () => { closed = true; };
-    setImmediate(() => req.emit('close'));
+    let closeCalls = 0;
+    let destroyed = false;
+    stream.close = () => { closeCalls++; };
+    stream.destroy = () => { destroyed = true; };
+    setImmediate(() => {
+      res.emit('close');
+      res.emit('close'); // overlapping terminal events must not re-run teardown
+    });
     await streamJsonArray(stream, req, res);
-    expect(closed).to.equal(true);
+    await new Promise(r => setImmediate(r));
+    expect(closeCalls).to.equal(1);
+    expect(destroyed).to.equal(false);
+  });
+
+  it('treats a response error as a client abort and tears down the source', async () => {
+    const { req, res } = fakes();
+    const stream = new Readable({ objectMode: true, read() {} }) as any;
+    let closeCalls = 0;
+    stream.close = () => { closeCalls++; };
+    setImmediate(() => {
+      res.emit('error', new Error('EPIPE'));
+      res.emit('close'); // real responses emit close after error
+    });
+    const result = await streamJsonArray(stream, req, res);
+    expect(result.success).to.equal(false);
+    if (result.success) throw new Error('expected a failure result');
+    expect(result.reason).to.equal('client-disconnect');
+    await new Promise(r => setImmediate(r));
+    expect(closeCalls).to.equal(1);
+  });
+
+  it('ignores request close so body draining cannot abort the stream', async () => {
+    // req 'close' fires once the body is consumed; it says nothing about the connection
+    const { req, res, writes } = fakes();
+    const stream = new Readable({ objectMode: true, read() {} });
+    setImmediate(() => {
+      req.emit('close');
+      setImmediate(() => {
+        stream.push({ a: 1 });
+        stream.push(null);
+      });
+    });
+    const result = await streamJsonArray(stream, req, res);
+    expect(result.success).to.equal(true);
+    expect(writes.join('')).to.equal('[\n{"a":1}\n]');
+  });
+
+  it('does not tear down when the response closes after a normal finish', async () => {
+    const { req, res } = fakes();
+    const stream = Readable.from([{ a: 1 }], { objectMode: true }) as any;
+    let closeCalls = 0;
+    stream.close = () => { closeCalls++; };
+    const result = await streamJsonArray(stream, req, res);
+    expect(result.success).to.equal(true);
+    res.emit('close'); // normal post-finish close
+    await new Promise(r => setImmediate(r));
+    expect(closeCalls).to.equal(0);
+  });
+
+  it('observes a rejected close() promise instead of leaving it unhandled', async () => {
+    const warnSpy = sinon.spy(logger, 'warn');
+    try {
+      const { req, res } = fakes();
+      const stream = new Readable({ objectMode: true, read() {} }) as any;
+      stream.close = () => Promise.reject(new Error('session ended'));
+      setImmediate(() => res.emit('close'));
+      await streamJsonArray(stream, req, res);
+      await new Promise(r => setImmediate(r));
+      expect(warnSpy.called).to.equal(true);
+    } finally {
+      warnSpy.restore();
+    }
+  });
+
+  it('finalizes the body when the stream closes without end after data', async () => {
+    const { req, res, writes } = fakes();
+    const stream = new Readable({ objectMode: true, read() {} });
+    setImmediate(() => {
+      stream.push({ a: 1 });
+      setImmediate(() => stream.destroy());
+    });
+    const result = await streamJsonArray(stream, req, res);
+    expect(result.success).to.equal(false);
+    if (result.success) throw new Error('expected a failure result');
+    expect(result.reason).to.equal('closed-before-end');
+    expect(res.ended).to.equal(true);
+    expect(writes.join('')).to.equal('[\n{"a":1},\n{"error": "An error occurred during data stream"}\n]');
+  });
+
+  it('rejects when the stream closes without end before any data', async () => {
+    const { req, res, writes } = fakes();
+    const stream = new Readable({ objectMode: true, read() {} });
+    setImmediate(() => stream.destroy());
+    let caught: any;
+    await streamJsonArray(stream, req, res).catch(e => caught = e);
+    expect(caught).to.be.instanceOf(Error);
+    expect(caught.message).to.contain('closed before end');
+    expect(writes.join('')).to.equal('');
   });
 
   it('serializes BigInt values instead of throwing', async () => {
