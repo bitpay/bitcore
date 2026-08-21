@@ -3139,7 +3139,12 @@ export class WalletService implements IWalletService {
    * @returns {Object} txProposal
    */
   getTxByHash(opts, cb) {
-    this.storage.fetchTxByHash(opts.txid, (err, txp) => {
+    // Scoped to this.walletId: the global storage.fetchTxByHash
+    // would return any wallet's TxProposal for a known txid, disclosing a
+    // foreign wallet's proposal data to any authenticated copayer. The
+    // internal global consumers (BlockchainMonitor, getWalletFromIdentifier)
+    // are unaffected; they keep calling storage.fetchTxByHash directly.
+    this.storage.fetchTxByHashForWallet(this.walletId, opts.txid, (err, txp) => {
       if (err) return cb(err);
       if (!txp) return cb(Errors.TX_NOT_FOUND);
 
