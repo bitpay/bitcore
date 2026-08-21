@@ -1,7 +1,14 @@
-import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
+import { BitcoreLib, BitcoreLibCash, BitcoreLibDoge, BitcoreLibLtc } from '@bitpay-labs/crypto-wallet-core';
 import { EveryUtxoType, TransactionType, UtxoType } from 'src/types/txTypes.js';
+import { UtxoChainType } from './types/chains.js';
 
 class UtilClass {
+  libs: Record<UtxoChainType, BitcoreLib> = {
+    BTC: BitcoreLib,
+    BCH: BitcoreLibCash,
+    DOGE: BitcoreLibDoge,
+    LTC: BitcoreLibLtc
+  } as const;
   /**
   * Standardize utxo for internal funcionality.
   * Accepts either a bitcore-node or a lib (bitcore-lib, bitcore-lib-cash, etc.) utxo.
@@ -10,13 +17,14 @@ class UtilClass {
   * @param utxos either a bitcore-node or lib utxo
   * @returns utxo in the standard, internaly used format
   */
-  standardizeUtxo(utxo: EveryUtxoType): UtxoType {
+  standardizeUtxo(utxo: EveryUtxoType, chain: UtxoChainType = 'BTC'): UtxoType {
+    const lib = this.libs[chain];
     return {
-      satoshis: Number(utxo.satoshis ?? utxo.value ?? BitcoreLib.Unit.fromBTC(utxo.amount ?? 0).toSatoshis()),
+      satoshis: Number(utxo.satoshis ?? utxo.value ?? lib.Unit.fromBTC(utxo.amount ?? 0).toSatoshis()),
       txId: utxo.txId ?? utxo.mintTxid ?? utxo.txid ?? '',
       outputIndex: Number(utxo.outputIndex ?? utxo.mintIndex ?? utxo.vout ?? 0),
-      script: utxo.scriptPubKey ?? new BitcoreLib.Script(utxo.script).toHex(),
-      address: utxo.address != undefined ? new BitcoreLib.Address(utxo.address).toString() : undefined
+      script: utxo.scriptPubKey ?? new lib.Script(utxo.script).toHex(),
+      address: utxo.address != undefined ? new lib.Address(utxo.address).toString() : undefined
     };
   }
   
@@ -36,15 +44,16 @@ class UtilClass {
    * @param utxos utxo data
    * @returns bitcore-lib transaction
    */
-  buildTransaction(tx: TransactionType, utxos?: EveryUtxoType[]): BitcoreLib.Transaction {
-    const bitcoreTx = tx instanceof BitcoreLib.Transaction ? tx : new BitcoreLib.Transaction(tx);
+  buildTransaction(tx: TransactionType, utxos?: EveryUtxoType[], chain: UtxoChainType = 'BTC'): BitcoreLib.Transaction {
+    const lib = this.libs[chain];
+    const bitcoreTx = tx instanceof lib.Transaction ? tx : new lib.Transaction(tx);
     if (utxos) {
-      const btcUtxos = utxos.map(utxo => Util.standardizeUtxo(utxo));
+      const btcUtxos = utxos.map(utxo => Util.standardizeUtxo(utxo, chain));
       const applicableUtxos = Util.getRelatedUtxos({
         outputs: bitcoreTx.inputs,
         utxos: btcUtxos
       });
-      bitcoreTx.associateInputs(applicableUtxos.map(utxo => new BitcoreLib.Transaction.UnspentOutput(utxo)));
+      bitcoreTx.associateInputs(applicableUtxos.map(utxo => new lib.Transaction.UnspentOutput(utxo)));
     }
     return bitcoreTx;
   }

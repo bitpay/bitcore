@@ -1,5 +1,6 @@
 import 'source-map-support/register.js';
 import CWC from '@bitpay-labs/crypto-wallet-core';
+import Utils from '../../src/util.js';
 import Ledger from '../../src/ledger/wallet.js';
 
 const args = process.argv.slice(2);
@@ -54,6 +55,48 @@ switch (chain) {
     console.log('Signed transaction');
     console.log(signedTransaction);
     break;
+  }
+  case 'LTC':
+  case 'DOGE':
+  case 'BCH': {
+    const lib = Utils.libs[chain];
+    const privateKey = new lib.PrivateKey();
+    const publicKey = privateKey.toPublicKey();
+    const address = publicKey.toAddress();
+    
+    const utxos = [
+      {
+        chain: 'BCH',
+        network: 'mainnet',
+        coinbase: false,
+        mintIndex: 0,
+        spentTxid: '',
+        mintTxid: '78519a191327dfdc0c2ea64a04d09d87c3909ce8365d0e0c0dbd0bc80d0405b4',
+        mintHeight: 957071,
+        spentHeight: -2,
+        address: address.toString(),
+        script: '001491f570a0236f1b6b40f52514c6e6623eacd56a0b',
+        value: 1562,
+        confirmations: -1
+      }
+    ];
+    
+    const tx: string = CWC.Transactions.create({
+      chain,
+      recipients: [{ address: new lib.PrivateKey().toAddress().toString(), amount: 1200 }],
+      utxos,
+      fee: 362
+    });
+    
+    console.log(`Sign ${tx}`);
+    const signedTransaction = await ledger.sign({
+      chain,
+      tx,
+      utxos
+    });
+    
+    console.log('Signed transaction');
+    console.log(signedTransaction);
   }
   default:
   case 'BTC': {

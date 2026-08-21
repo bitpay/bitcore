@@ -1,9 +1,17 @@
 import { createRequire } from 'module';
 import { Subscription } from 'rxjs';
-import { Base, BaseModule } from 'src/types/base.js';
-import { EveryUtxoType, TransactionType } from 'src/types/txTypes.js';
+import { Base, BaseModule } from '../types/base.js';
+import { chains, ChainType, UtxoChainType } from '../types/chains.js';
+import { EveryUtxoType, TransactionType } from '../types/txTypes.js';
 import { dmk } from './dmk.js';
-import { BitcoinModule, EthereumModule, SolanaModule } from './modules/index.js';
+import {
+  BitcoinCashModule,
+  BitcoinModule,
+  DogeModule,
+  EthereumModule,
+  LitecoinModule,
+  SolanaModule
+} from './modules/index.js';
 import type * as DMK from '@ledgerhq/device-management-kit';
 import type * as SignerKitBtc from '@ledgerhq/device-signer-kit-bitcoin';
 import type * as SignerKitEth from '@ledgerhq/device-signer-kit-ethereum';
@@ -30,7 +38,7 @@ export default class Ledger implements Base {
   device: DMK.ConnectedDevice | null = null;
   sessionId: DMK.DeviceSessionId | null = null;
   discoverySubscryption: Subscription | null = null;
-  modules: Record<string, BaseModule> = {};
+  modules = {} as Record<ChainType, BaseModule>;
 
   async connect() {
     return new Promise(async (resolve) => {
@@ -50,13 +58,19 @@ export default class Ledger implements Base {
               sessionId: this.sessionId
             });
 
-            this.modules.BTC = new BitcoinModule(new SignerBtcBuilder({ dmk, sessionId: this.sessionId }).build());
-            this.modules.ETH = new EthereumModule(new SignerEthBuilder({ dmk, sessionId: this.sessionId }).build());
-            this.modules.SOL = new SolanaModule(new SignerSolanaBuilder({
+            const signerBtc = new SignerBtcBuilder({ dmk, sessionId: this.sessionId }).build();
+            const signerEth = new SignerEthBuilder({ dmk, sessionId: this.sessionId }).build();
+            const signerSol = new SignerSolanaBuilder({
               dmk,
               sessionId: this.sessionId,
               solanaRPCURL: 'https://api.mainnet-beta.solana.com/',
-            }).build());
+            }).build();
+            this.modules.BTC = new BitcoinModule(signerBtc);
+            this.modules.BCH = new BitcoinCashModule(signerBtc);
+            this.modules.DOGE = new DogeModule(signerBtc);
+            this.modules.LTC = new LitecoinModule(signerBtc);
+            this.modules.ETH = new EthereumModule(signerEth);
+            this.modules.SOL = new SolanaModule(signerSol);
             
             resolve(0);
           } catch (error) {
@@ -102,12 +116,12 @@ export default class Ledger implements Base {
   }
 
   async sign(params: {
-    chain: 'BTC';
+    chain: UtxoChainType;
     tx: string;
     utxos: EveryUtxoType[];
   })
   async sign(params: {
-    chain: 'BTC';
+    chain: UtxoChainType;
     tx: object;
     utxos?: EveryUtxoType[];
   })
@@ -135,7 +149,7 @@ export default class Ledger implements Base {
     return this.modules[params.chain].getPublicKey();
   }
 
-  static isValidChain(value: string): value is 'BTC' | 'ETH' | 'SOL' {
-    return ['BTC', 'ETH', 'SOL'].includes(value);
+  static isValidChain(value: string): value is ChainType {
+    return chains.includes(value);
   }
 }
