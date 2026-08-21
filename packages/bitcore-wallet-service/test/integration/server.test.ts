@@ -4,6 +4,8 @@ import * as chai from 'chai';
 import 'chai/register-should';
 import util from 'util';
 import sinon from 'sinon';
+import http from 'http';
+import request from 'request';
 import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import { ChainService } from '../../src/lib/chain/index';
 import config from '../../src/config';
@@ -15,6 +17,7 @@ import { BCHAddressTranslator } from '../../src/lib/bchaddresstranslator';
 import * as TestData from '../testdata';
 import helpers from './helpers';
 import { ClientError } from '../../src/lib/errors/clienterror';
+import { ExpressApp } from '../../src/lib/expressapp';
 
 const should = chai.should();
 config.moralis = config.moralis ?? {
@@ -9030,8 +9033,217 @@ describe('Wallet service', function() {
     });
     
     it.skip('should get accepted/rejected transaction proposal', function(done) { });
-    
+
     it.skip('should get broadcasted transaction proposal', function(done) { });
+  });
+
+  describe('#getTxByHash', function() {
+    // Two unrelated wallets (the multi-wallet `{ offset: 1 }` pattern used
+    // elsewhere in this file, e.g. 'should delete a wallet, and only that
+    // wallet') so wallet B has no legitimate relationship to wallet A's
+    // TxProposal.
+    let serverA: WalletService;
+    let walletA: Model.Wallet;
+    let serverB: WalletService;
+    let txp;
+
+    beforeEach(async function() {
+      ({ server: serverA, wallet: walletA } = await helpers.createAndJoinWallet(1, 1));
+      await helpers.stubUtxos(serverA, walletA, 1);
+      const txOpts = {
+        outputs: [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 0.5e8
+        }],
+        feePerKb: 100e2,
+        message: 'some message',
+      };
+      txp = await helpers.createAndPublishTx(serverA, txOpts, TestData.copayers[0].privKey_1H_0);
+      should.exist(txp);
+      // Sign to accepted status, which is when TxProposal#sign populates
+      // `txid`/`raw` (Phase 1 finding); no broadcast is required. signTx's
+      // callback returns the updated txp, since the local `txp` reference
+      // above predates signing.
+      const signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+      txp = await util.promisify(serverA.signTx).call(serverA, {
+        txProposalId: txp.id,
+        signatures,
+      });
+      should.exist(txp.txid);
+
+      ({ server: serverB } = await helpers.createAndJoinWallet(1, 1, { offset: 1 }));
+    });
+
+    it('should not disclose another wallet\'s transaction proposal by hash', function(done) {
+      serverB.getTxByHash({
+        txid: txp.txid
+      }, function(err, res) {
+        should.exist(err);
+        should.not.exist(res);
+        err.should.be.instanceof(ClientError);
+        err.code.should.equal('TX_NOT_FOUND');
+        err.message.should.equal('Transaction proposal not found');
+        // Belt-and-suspenders: confirm the error itself carries none of
+        // wallet A's data (no walletId/creatorId/raw leaking via the error).
+        JSON.stringify(err).should.not.include(walletA.id);
+        done();
+      });
+    });
+
+    it('should get own transaction proposal by hash, unchanged from before the fix', function(done) {
+      // Also covers the note: getTx's sibling reader attaches the caller's
+      // own note to the response, and that attachment is unconditional on
+      // ownership (it always used this.walletId) -- confirm the fix didn't
+      // disturb it.
+      serverA.editTxNote({
+        txid: txp.txid,
+        body: 'a note from wallet A'
+      }, function(err) {
+        should.not.exist(err);
+        serverA.getTxByHash({
+          txid: txp.txid
+        }, function(err, res) {
+          should.not.exist(err);
+          should.exist(res);
+          res.id.should.equal(txp.id);
+          res.walletId.should.equal(walletA.id);
+          res.txid.should.equal(txp.txid);
+          should.exist(res.raw);
+          should.exist(res.note);
+          res.note.body.should.equal('a note from wallet A');
+          done();
+        });
+      });
+    });
+
+    it('should return the identical not-found error for a foreign txid and an unknown txid', function(done) {
+      serverB.getTxByHash({
+        txid: txp.txid
+      }, function(errForeign, resForeign) {
+        should.exist(errForeign);
+        should.not.exist(resForeign);
+        serverB.getTxByHash({
+          txid: helpers.randomTXID()
+        }, function(errUnknown, resUnknown) {
+          should.exist(errUnknown);
+          should.not.exist(resUnknown);
+          errForeign.code.should.equal(errUnknown.code);
+          errForeign.message.should.equal(errUnknown.message);
+          errForeign.code.should.equal('TX_NOT_FOUND');
+          done();
+        });
+      });
+    });
+  });
+
+  describe('GET /v1/txproposalsbyhash/:id/ (HTTP route)', function() {
+    // Exercises the real Express route (registerTransactionRoutes ->
+    // getServerWithAuth -> WalletService.getInstanceWithAuth), not just the
+    // service method, so route wiring, request-auth plumbing, and HTTP
+    // status/body serialization are covered, not only the underlying
+    // service logic already tested above. Only the cryptographic signature
+    // check is stubbed to return true (matching helpers.getAuthServer's
+    // established pattern) -- copayer/wallet lookup, ownership scoping, and
+    // JSON serialization all run for real, against the same real storage
+    // instance the rest of this file uses.
+    const testPort = 3240;
+    const testHost = 'http://127.0.0.1';
+    let httpServer;
+    let verifyStub;
+    let walletA: Model.Wallet;
+    let walletB: Model.Wallet;
+    let txp;
+
+    beforeEach(async function() {
+      let serverA: WalletService;
+      let serverB: WalletService;
+      ({ server: serverA, wallet: walletA } = await helpers.createAndJoinWallet(1, 1));
+      await helpers.stubUtxos(serverA, walletA, 1);
+      const txOpts = {
+        outputs: [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 0.5e8
+        }],
+        feePerKb: 100e2,
+        message: 'some message',
+      };
+      txp = await helpers.createAndPublishTx(serverA, txOpts, TestData.copayers[0].privKey_1H_0);
+      const signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+      txp = await util.promisify(serverA.signTx).call(serverA, {
+        txProposalId: txp.id,
+        signatures,
+      });
+      should.exist(txp.txid);
+
+      ({ server: serverB, wallet: walletB } = await helpers.createAndJoinWallet(1, 1, { offset: 1 }));
+
+      // Bypass only the crypto signature check, same as helpers.getAuthServer;
+      // the real ExpressApp/WalletService/Storage stack does everything else,
+      // including the actual walletId scoping under test.
+      verifyStub = sinon.stub(WalletService.prototype, '_verifySignature').returns(true);
+
+      const app = new ExpressApp();
+      httpServer = new http.Server(app.app);
+      await util.promisify(app.start).call(app, {
+        storage: helpers.getStorage(),
+        blockchainExplorer: helpers.getBlockchainExplorer(),
+        request: sinon.stub(),
+        disableLogs: true,
+        basePath: config.basePath
+      });
+      httpServer.listen(testPort);
+    });
+
+    afterEach(function() {
+      verifyStub.restore();
+      httpServer.close();
+    });
+
+    function getByHash(copayerId, txid, cb) {
+      request({
+        method: 'GET',
+        url: testHost + ':' + testPort + config.basePath + '/v1/txproposalsbyhash/' + txid + '/',
+        headers: {
+          'x-identity': copayerId,
+          'x-signature': 'stubbed'
+        },
+        json: true
+      }, (err, res, body) => cb(err, res, body));
+    }
+
+    it('foreign wallet gets HTTP 400 TX_NOT_FOUND with no owner data in the body', function(done) {
+      getByHash(walletB.copayers[0].id, txp.txid, (err, res, body) => {
+        should.not.exist(err);
+        res.statusCode.should.equal(400);
+        body.code.should.equal('TX_NOT_FOUND');
+        JSON.stringify(body).should.not.include(walletA.id);
+        done();
+      });
+    });
+
+    it('owner wallet gets HTTP 200 with the full proposal, unchanged', function(done) {
+      getByHash(walletA.copayers[0].id, txp.txid, (err, res, body) => {
+        should.not.exist(err);
+        res.statusCode.should.equal(200);
+        body.walletId.should.equal(walletA.id);
+        body.txid.should.equal(txp.txid);
+        should.exist(body.raw);
+        done();
+      });
+    });
+
+    it('foreign and unknown txids produce an identical HTTP 400 TX_NOT_FOUND body', function(done) {
+      getByHash(walletB.copayers[0].id, txp.txid, (err, resForeign, bodyForeign) => {
+        should.not.exist(err);
+        getByHash(walletB.copayers[0].id, helpers.randomTXID(), (err, resUnknown, bodyUnknown) => {
+          should.not.exist(err);
+          resForeign.statusCode.should.equal(resUnknown.statusCode);
+          bodyForeign.code.should.equal(bodyUnknown.code);
+          bodyForeign.code.should.equal('TX_NOT_FOUND');
+          done();
+        });
+      });
+    });
   });
 
   describe('#getTxs', function() {
