@@ -65,7 +65,7 @@ function respondWithAuthServer(req, res, context: RouteContext, handler: RouteHa
 }
 
 export function registerServiceRoutes(router: express.Router, context: RouteContext) {
-  const { getServerWithAuth, setPublicCache, returnError } = context;
+  const { setPublicCache } = context;
 
   const transakCorsOptions = {
     origin: (origin, cb) => {
@@ -396,19 +396,6 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
   router.post('/v1/service/simplex/sellPaymentRequest', (req, res) => {
     respondWithAuthServer(req, res, context, server => {
       return server.externalServices.simplex.simplexSellPaymentRequest(req);
-    });
-  });
-
-  router.get('/v1/service/simplex/events', (req, res) => {
-    getServerWithAuth(req, res, server => {
-      Promise.resolve()
-        .then(() => server.externalServices.simplex.simplexGetEvents({ env: req.query.env }))
-        .then(response => {
-          res.json(response);
-        })
-        .catch(err => {
-          returnError(err ?? 'unknown', res, req);
-        });
     });
   });
 
