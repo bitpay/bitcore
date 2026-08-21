@@ -9038,10 +9038,6 @@ describe('Wallet service', function() {
   });
 
   describe('#getTxByHash', function() {
-    // Two unrelated wallets (the multi-wallet `{ offset: 1 }` pattern used
-    // elsewhere in this file, e.g. 'should delete a wallet, and only that
-    // wallet') so wallet B has no legitimate relationship to wallet A's
-    // TxProposal.
     let serverA: WalletService;
     let walletA: Model.Wallet;
     let serverB: WalletService;
@@ -9060,10 +9056,7 @@ describe('Wallet service', function() {
       };
       txp = await helpers.createAndPublishTx(serverA, txOpts, TestData.copayers[0].privKey_1H_0);
       should.exist(txp);
-      // Sign to accepted status, which is when TxProposal#sign populates
-      // `txid`/`raw` (Phase 1 finding); no broadcast is required. signTx's
-      // callback returns the updated txp, since the local `txp` reference
-      // above predates signing.
+
       const signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
       txp = await util.promisify(serverA.signTx).call(serverA, {
         txProposalId: txp.id,
@@ -9091,10 +9084,6 @@ describe('Wallet service', function() {
     });
 
     it('should get own transaction proposal by hash, unchanged from before the fix', function(done) {
-      // Also covers the note: getTx's sibling reader attaches the caller's
-      // own note to the response, and that attachment is unconditional on
-      // ownership (it always used this.walletId) -- confirm the fix didn't
-      // disturb it.
       serverA.editTxNote({
         txid: txp.txid,
         body: 'a note from wallet A'
@@ -9142,10 +9131,7 @@ describe('Wallet service', function() {
     // service method, so route wiring, request-auth plumbing, and HTTP
     // status/body serialization are covered, not only the underlying
     // service logic already tested above. Only the cryptographic signature
-    // check is stubbed to return true (matching helpers.getAuthServer's
-    // established pattern) -- copayer/wallet lookup, ownership scoping, and
-    // JSON serialization all run for real, against the same real storage
-    // instance the rest of this file uses.
+    // check is stubbed to return true
     const testPort = 3240;
     const testHost = 'http://127.0.0.1';
     let httpServer;
@@ -9177,9 +9163,6 @@ describe('Wallet service', function() {
 
       ({ server: serverB, wallet: walletB } = await helpers.createAndJoinWallet(1, 1, { offset: 1 }));
 
-      // Bypass only the crypto signature check, same as helpers.getAuthServer;
-      // the real ExpressApp/WalletService/Storage stack does everything else,
-      // including the actual walletId scoping under test.
       verifyStub = sinon.stub(WalletService.prototype, '_verifySignature').returns(true);
 
       const app = new ExpressApp();
