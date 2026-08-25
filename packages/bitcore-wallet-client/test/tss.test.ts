@@ -1182,8 +1182,9 @@ describe('TSS', function() {
 
   describe('Session Expiration', function() {
     // Stubs Date.now() past the server's 20-minute default time limit
-    function simulateExpiry() {
-      sandbox.stub(Date, 'now').returns(Date.now() + 25 * 60 * 1000);
+    function simulateExpiry(mins) {
+      const now = Date.now();
+      sandbox.stub(Date, 'now').returns(now + mins * 60 * 1000);
     }
 
     describe('Key Generation', function() {
@@ -1207,7 +1208,7 @@ describe('TSS', function() {
         await tss2.restoreSession({ session: data.party2Session });
         await storage.storeTssKeyGenSession({ doc: data.keygenModel });
 
-        simulateExpiry();
+        simulateExpiry(25); // 25 minutes, past the 20-minute default limit
 
         const error0 = new Promise<Error>(r => tss0.once('error', (e) => { tss0.unsubscribe(); r(e); }));
         tss0.subscribe({ timeout: 10, iterHandler: () => tss0.unsubscribe() });
@@ -1230,7 +1231,7 @@ describe('TSS', function() {
         await tss.newKey({ m, n });
 
         // Advance time to just under the 20-minute limit (19 min)
-        sandbox.stub(Date, 'now').returns(Date.now() + 19 * 60 * 1000);
+        simulateExpiry(19);
 
         // If the session were expired, an error event would fire and fail this test
         tss.on('error', (e) => { should.not.exist(e?.message ?? e); });
@@ -1291,7 +1292,7 @@ describe('TSS', function() {
         await sig0.start({ id: 'expiry-sign', messageHash: eMessageHash, derivationPath: eDerivPath });
         await sig1.start({ id: 'expiry-sign', messageHash: eMessageHash, derivationPath: eDerivPath });
 
-        simulateExpiry();
+        simulateExpiry(25); // 25 minutes, past the 20-minute default limit
 
         const error = new Promise<Error>(r => sig0.once('error', (e) => { sig0.unsubscribe(); r(e); }));
         sig0.subscribe({ timeout: 10, iterHandler: () => sig0.unsubscribe() });
@@ -1306,7 +1307,7 @@ describe('TSS', function() {
         await sig1.start({ id: 'expiry-sign-valid', messageHash: eMessageHash, derivationPath: eDerivPath });
 
         // Advance time to just under the 20-minute limit (19 min)
-        sandbox.stub(Date, 'now').returns(Date.now() + 19 * 60 * 1000);
+        simulateExpiry(19);
 
         const response0 = new Promise(r => sig0.once('roundsubmitted', r));
         const response1 = new Promise(r => sig1.once('roundsubmitted', r));
