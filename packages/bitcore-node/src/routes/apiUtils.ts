@@ -200,7 +200,12 @@ export function streamJsonArray(
         res.write(isFirst ? '[\n' : ',\n');
       }
       isFirst = false;
-      res.write(payload);
+      // honor backpressure so a slow client throttles the source instead of buffering the
+      // whole result set in the response
+      if (!res.write(payload) && !closed) {
+        stream.pause();
+        res.once('drain', () => { if (!closed) stream.resume(); });
+      }
     });
 
     stream.on('end', () => {

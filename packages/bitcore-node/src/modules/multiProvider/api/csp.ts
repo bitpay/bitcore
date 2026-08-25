@@ -250,6 +250,13 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
           continue;
         }
 
+        // empty result set: the stream already ended (and is destroyed), so hand back a
+        // fresh empty stream instead of a dead one
+        if (preflight.firstItem == null) {
+          provider.health.recordSuccess();
+          return Readable.from([], { objectMode: true });
+        }
+
         logger.debug(`MultiProvider: ${provider.adapter.name} streaming ${address} on ${this.chain}:${network}`);
         txStream.on('error', (err) => {
           logger.warn(`MultiProvider: ${provider.adapter.name} mid-stream error for ${address}: ${err.message}`);
@@ -260,18 +267,11 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
         txStream.on('end', () => provider.health.recordSuccess());
 
         // PassThrough prepends the buffered first item to the stream
-        let outputStream: Readable = txStream;
-        if (preflight.firstItem) {
-          const wrapper = new PassThrough({ objectMode: true });
-          wrapper.write(preflight.firstItem);
-          txStream.resume();
-          txStream.pipe(wrapper);
-          outputStream = wrapper;
-        } else {
-          txStream.resume();
-        }
-
-        return outputStream;
+        const wrapper = new PassThrough({ objectMode: true });
+        wrapper.write(preflight.firstItem);
+        txStream.resume();
+        txStream.pipe(wrapper);
+        return wrapper;
       } catch (error) {
         if (error instanceof AdapterError && (error as AdapterError).code === AdapterErrorCode.INVALID_REQUEST) throw error; // 400 — no failover
         provider.health.recordFailure(error as Error);

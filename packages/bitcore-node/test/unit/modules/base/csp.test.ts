@@ -1,5 +1,7 @@
 import { expect } from 'chai';
+import { EventEmitter } from 'events';
 import * as sinon from 'sinon';
+import { Readable } from 'stream';
 import { CryptoRpc } from '@bitpay-labs/crypto-rpc';
 import { EthDater } from '../../../../src/utils/ethDater';
 import { MultiProviderEVMStateProvider } from '../../../../src/modules/multiProvider/api/csp';
@@ -7,6 +9,7 @@ import { MoralisStateProvider } from '../../../../src/modules/moralis/api/csp';
 import { CacheStorage } from '../../../../src/models/cache';
 import { BaseEVMStateProvider } from '../../../../src/providers/chain-state/evm/api/csp';
 import { EVMBlockStorage } from '../../../../src/providers/chain-state/evm/models/block';
+import { streamJsonArray } from '../../../../src/routes/apiUtils';
 import { Config } from '../../../../src/services/config';
 
 
@@ -482,6 +485,66 @@ describe('MultiProviderEVMStateProvider: streamBlocks and _getBlocks', function(
     expect(out[0].confirmations).to.equal(100 - 10 + 1);
     expect(out[0].nextBlockHash).to.equal('0xb');
     expect(out[2].nextBlockHash).to.equal('0xd');
+  });
+});
+
+describe('MultiProviderEVMStateProvider: address transaction streaming', function() {
+  let cfgStub: sinon.SinonStub;
+
+  before(function() {
+    cfgStub = sinon.stub(Config, 'get').returns({ chains: { ETH: {} } } as any);
+    (BaseEVMStateProvider as any).rpcInitialized = { ETH: true };
+  });
+
+  after(function() {
+    cfgStub.restore();
+  });
+
+  it('returns an empty JSON array when provider preflight finds no transactions', async function() {
+    const provider = new MultiProviderEVMStateProvider('ETH');
+    const upstream = Readable.from([], { objectMode: true });
+    const health = {
+      isAvailable: sinon.stub().returns(true),
+      recordSuccess: sinon.stub(),
+      recordFailure: sinon.stub()
+    };
+    const adapter = {
+      name: 'fake',
+      streamAddressTransactions: sinon.stub().returns(upstream)
+    };
+
+    (provider as any).providersByNetwork = new Map([
+      ['mainnet', [{ adapter, health, priority: 1 }]]
+    ]);
+    (provider as any).getChainId = sinon.stub().resolves(1n);
+
+    const stream = await (provider as any)._buildAddressTransactionsStream({
+      chain: 'ETH',
+      network: 'mainnet',
+      address: '0xaddress',
+      args: {}
+    });
+
+    const req = new EventEmitter() as any;
+    const writes: string[] = [];
+    const res = Object.assign(new EventEmitter(), {
+      writableFinished: false,
+      type: () => res,
+      write: (chunk: any) => {
+        writes.push(String(chunk));
+        return true;
+      },
+      end: () => {
+        res.writableFinished = true;
+      }
+    }) as any;
+
+    const result = await streamJsonArray(stream, req, res);
+
+    expect(result).to.deep.equal({ success: true });
+    expect(writes.join('')).to.equal('[]');
+    expect(health.recordFailure.called).to.equal(false);
+    expect(health.recordSuccess.calledOnce).to.equal(true);
   });
 });
 

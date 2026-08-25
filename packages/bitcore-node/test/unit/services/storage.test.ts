@@ -189,6 +189,57 @@ describe('streamJsonArray', function() {
     expect(writes.join('')).to.equal('');
   });
 
+  it('pauses the source when the response buffer is full and resumes on drain', async () => {
+    const { req, res, writes } = fakes();
+    // reject writes until drain
+    res.write = (chunk: any) => { writes.push(String(chunk)); return false; };
+    const stream = new Readable({ objectMode: true, read() {} });
+    const promise = streamJsonArray(stream, req, res);
+    // count after attach; on('data') itself calls resume()
+    let paused = 0;
+    let resumed = 0;
+    const origPause = stream.pause.bind(stream);
+    const origResume = stream.resume.bind(stream);
+    stream.pause = () => { paused++; return origPause(); };
+    stream.resume = () => { resumed++; return origResume(); };
+    setImmediate(() => {
+      stream.push({ a: 1 });
+      setImmediate(() => {
+        expect(paused).to.equal(1);
+        expect(resumed).to.equal(0);
+        res.write = (chunk: any) => { writes.push(String(chunk)); return true; };
+        res.emit('drain');
+        expect(resumed).to.equal(1);
+        stream.push({ a: 2 });
+        stream.push(null);
+      });
+    });
+    const result = await promise;
+    expect(result.success).to.equal(true);
+    expect(writes.join('')).to.equal('[\n{"a":1},\n{"a":2}\n]');
+  });
+
+  it('does not resume the source on drain after the response settled', async () => {
+    const { req, res } = fakes();
+    res.write = () => false;
+    const stream = new Readable({ objectMode: true, read() {} });
+    const promise = streamJsonArray(stream, req, res);
+    // count after attach; on('data') itself calls resume()
+    let resumed = 0;
+    const origResume = stream.resume.bind(stream);
+    stream.resume = () => { resumed++; return origResume(); };
+    setImmediate(() => {
+      stream.push({ a: 1 });
+      setImmediate(() => {
+        res.emit('close'); // client disconnects while paused
+        res.emit('drain');
+        expect(resumed).to.equal(0);
+      });
+    });
+    const result = await promise;
+    expect(result.success).to.equal(false);
+  });
+
   it('serializes BigInt values instead of throwing', async () => {
     const { req, res, writes } = fakes();
     const result = await streamJsonArray(Readable.from([{ a: 1n }], { objectMode: true }), req, res);

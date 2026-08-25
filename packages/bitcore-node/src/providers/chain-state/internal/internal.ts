@@ -3,6 +3,7 @@ import { Transform } from 'stream';
 import { Validation } from '@bitpay-labs/crypto-wallet-core';
 import { LRUCache } from 'lru-cache';
 import { LoggifyClass } from '../../../decorators/Loggify';
+import logger from '../../../logger';
 import { BitcoinBlockStorage, type IBtcBlock } from '../../../models/block';
 import { CacheStorage } from '../../../models/cache';
 import { CoinStorage, type ICoin } from '../../../models/coin';
@@ -14,7 +15,7 @@ import { RPC } from '../../../rpc';
 import { Config } from '../../../services/config';
 import { Storage } from '../../../services/storage';
 import { type CoinJSON, SpentHeightIndicators } from '../../../types/Coin';
-import { normalizeChainNetwork } from '../../../utils';
+import { disposeOnce, normalizeChainNetwork } from '../../../utils';
 import { StringifyJsonStream } from '../../../utils/jsonStream';
 import { ListTransactionsStream } from './transforms';
 import type { MongoBound } from '../../../models/base';
@@ -431,7 +432,14 @@ export class InternalStateProvider implements IChainStateService {
       .addCursorFlag('noCursorTimeout', true);
     const listTransactionsStream: any = transactionStream.pipe(new this.WalletStreamTransform(wallet));
     listTransactionsStream.jsonl = true;
-    listTransactionsStream.on('close', () => { try { transactionStream.close(); } catch { /* noop */ } });
+    // close() resolves a promise; disposeOnce keeps it observed and single-shot
+    const closeCursor = disposeOnce(
+      async () => { await transactionStream.close(); },
+      err => logger.warn(`Failed to close ${this.chain} wallet transaction cursor: %o`, err)
+    );
+    listTransactionsStream.on('close', closeCursor);
+    listTransactionsStream.on('end', closeCursor);
+    listTransactionsStream.on('error', closeCursor);
     return listTransactionsStream;
   }
 
