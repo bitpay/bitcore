@@ -500,6 +500,38 @@ describe('MultiProviderEVMStateProvider: address transaction streaming', functio
     cfgStub.restore();
   });
 
+  it('destroys the returned stream when the adapter errors after preflight', async function() {
+    const provider = new MultiProviderEVMStateProvider('ETH');
+    const upstream: any = new Readable({ objectMode: true, read() {} });
+    const health = {
+      isAvailable: sinon.stub().returns(true),
+      recordSuccess: sinon.stub(),
+      recordFailure: sinon.stub()
+    };
+    const adapter = {
+      name: 'fake',
+      streamAddressTransactions: sinon.stub().returns(upstream)
+    };
+    (provider as any).providersByNetwork = new Map([
+      ['mainnet', [{ adapter, health, priority: 1 }]]
+    ]);
+    (provider as any).getChainId = sinon.stub().resolves(1n);
+
+    setImmediate(() => upstream.push({ txid: '0x1' })); // preflight commits to this provider
+    const stream = await (provider as any)._buildAddressTransactionsStream({
+      chain: 'ETH',
+      network: 'mainnet',
+      address: '0xaddress',
+      args: {}
+    });
+
+    const observed = new Promise<Error>(resolve => stream.on('error', resolve));
+    const boom = new Error('page 2 failed');
+    upstream.emit('error', boom);
+    expect(await observed).to.equal(boom);
+    expect(stream.destroyed).to.equal(true);
+  });
+
   it('returns an empty JSON array when provider preflight finds no transactions', async function() {
     const provider = new MultiProviderEVMStateProvider('ETH');
     const upstream = Readable.from([], { objectMode: true });

@@ -744,7 +744,15 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       .addCursorFlag('noCursorTimeout', true);
 
     // Pipe cursor to transform stream
-    transactionStream = cursor.pipe(new TransformWithEventPipe({ objectMode: true, passThrough: true }));
+    const cursorTransform = new TransformWithEventPipe({ objectMode: true, passThrough: true });
+    // pipe() does not forward source errors, and the driver only emits them when a listener
+    // exists; without this a cursor failure ends the stream cleanly as a truncated success
+    cursor.on('error', (err: any) => {
+      if (!cursorTransform.destroyed) {
+        cursorTransform.destroy(err);
+      }
+    });
+    transactionStream = cursor.pipe(cursorTransform);
 
     transactionStream = transactionStream.eventPipe(populateEffects); // For old db entries
 

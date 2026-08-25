@@ -70,6 +70,11 @@ export class ExternalApiStream extends ReadableWithEventPipe {
 
   static mergeStreams(streams: Stream[], destination: Transform): Transform {
     let activeStreams = streams.length;
+    // no sources means no 'end' events; end the destination now or it never settles
+    if (activeStreams === 0) {
+      destination.end();
+      return destination;
+    }
 
     for (const stream of streams) {
       // Pipe each stream to the destination

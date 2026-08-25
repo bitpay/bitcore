@@ -258,16 +258,20 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
         }
 
         logger.debug(`MultiProvider: ${provider.adapter.name} streaming ${address} on ${this.chain}:${network}`);
+        // PassThrough prepends the buffered first item to the stream
+        const wrapper = new PassThrough({ objectMode: true });
         txStream.on('error', (err) => {
           logger.warn(`MultiProvider: ${provider.adapter.name} mid-stream error for ${address}: ${err.message}`);
           if (err instanceof AdapterError && err.affectsHealth) {
             provider.health.recordFailure(err);
           }
+          // surface the failure downstream; logging alone leaves the response hanging
+          if (!wrapper.destroyed) {
+            wrapper.destroy(err);
+          }
         });
         txStream.on('end', () => provider.health.recordSuccess());
 
-        // PassThrough prepends the buffered first item to the stream
-        const wrapper = new PassThrough({ objectMode: true });
         wrapper.write(preflight.firstItem);
         txStream.resume();
         txStream.pipe(wrapper);

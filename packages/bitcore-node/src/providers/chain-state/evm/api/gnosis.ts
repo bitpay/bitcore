@@ -1,4 +1,3 @@
-import { Readable } from 'stream';
 import { Utils, Web3 } from '@bitpay-labs/crypto-wallet-core';
 import { ChainStateProvider } from '../../';
 import logger from '../../../../logger';
@@ -6,6 +5,7 @@ import { Config } from '../../../../services/config';
 import { IEVMNetworkConfig } from '../../../../types/Config';
 import { StreamWalletTransactionsParams } from '../../../../types/namespaces/ChainStateProvider';
 import { disposeOnce } from '../../../../utils';
+import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { MultisigAbi } from '../abi/multisig';
 import { MultisigRelatedFilterTransform } from '../api/multisigTransform';
 import { PopulateEffectsTransform } from '../api/populateEffectsTransform';
@@ -202,7 +202,6 @@ export class GnosisApi {
       };
     }
 
-    let transactionStream = new Readable({ objectMode: true });
     const ethTransactionTransform = new EVMListTransactionsStream([normalizedMultisigContractAddress], tokenAddress);
     const EVM = getCSP(chain, network);
     const populateReceipt = new PopulateReceiptTransform(EVM);
@@ -221,16 +220,18 @@ export class GnosisApi {
       err => logger.warn(`Failed to close ${chain}:${network} gnosis transaction cursor: %o`, err)
     );
 
-    transactionStream = cursor.pipe(populateEffects); // For old db entries
+    let transactionStream: TransformWithEventPipe = cursor.pipe(populateEffects); // For old db entries
 
     if (multisigContractAddress) {
       const multisigTransform = new MultisigRelatedFilterTransform(normalizedMultisigContractAddress, tokenAddress);
-      transactionStream = transactionStream.pipe(multisigTransform);
+      transactionStream = transactionStream.eventPipe(multisigTransform);
     }
 
+    // eventPipe so a mid-chain transform error reaches finalStream instead of
+    // re-emitting with no listeners and crashing the worker
     const finalStream: any = transactionStream
-      .pipe(populateReceipt)
-      .pipe(ethTransactionTransform);
+      .eventPipe(populateReceipt)
+      .eventPipe(ethTransactionTransform);
     finalStream.jsonl = true;
     finalStream.on('close', cleanupCursor);
     finalStream.on('end', cleanupCursor);

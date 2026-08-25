@@ -384,28 +384,56 @@ describe('Ethereum API', function() {
       await streamDexWalletTransactions(chain, network, wallet, address, web3);
     });
 
+    // pins one collection wrapper (the getter returns a fresh one per access) and captures
+    // the real cursor so tests can assert on cursor.close() itself
+    const captureCursor = (box: sinon.SinonSandbox) => {
+      const collection = EVMTransactionStorage.collection;
+      const realFind = collection.find.bind(collection);
+      const captured: { cursor?: any; closeSpy?: sinon.SinonSpy } = {};
+      box.stub(collection, 'find').callsFake((...findArgs: any[]) => {
+        captured.cursor = realFind(...findArgs);
+        captured.closeSpy = captured.closeSpy || box.spy(captured.cursor, 'close');
+        return captured.cursor;
+      });
+      box.stub(EVMTransactionStorage, 'collection').get(() => collection);
+      return captured;
+    };
+
     it('closes the wallet-tx cursor when the final stream is destroyed', async () => {
       await EVMTransactionStorage.collection.insertMany(
         new Array(5).fill({}).map(() => ({ chain, network, blockHeight: 1, gasPrice: 10 * 1e9, data: Buffer.from(''), from: address } as IEVMTransactionInProcess))
       );
-      // Spy on the real cursor's close() so this asserts the cursor is torn down, not just
-      // that the stream emits 'close' (destroy() always does that).
-      // .collection returns a fresh wrapper each access, so pin one and wrap its find().
-      const collection = EVMTransactionStorage.collection;
-      const realFind = collection.find.bind(collection);
-      let cursorCloseSpy: sinon.SinonSpy | undefined;
-      sandbox.stub(collection, 'find').callsFake((...findArgs: any[]) => {
-        const cursor = realFind(...findArgs);
-        cursorCloseSpy = cursorCloseSpy || sandbox.spy(cursor, 'close');
-        return cursor;
-      });
-      sandbox.stub(EVMTransactionStorage, 'collection').get(() => collection);
+      const box = sinon.createSandbox();
+      try {
+        const captured = captureCursor(box);
+        const stream: any = await ETH.streamWalletTransactions({ chain, network, wallet, args: {} } as StreamWalletTransactionsParams);
+        stream.destroy();
+        await new Promise(r => setImmediate(r));
+        expect(captured.closeSpy, 'wallet-tx cursor was created').to.exist;
+        expect(captured.closeSpy!.callCount, 'cursor.close() ran exactly once on destroy').to.eq(1);
+      } finally {
+        box.restore();
+      }
+    });
 
-      const stream: any = await ETH.streamWalletTransactions({ chain, network, wallet, args: {} } as StreamWalletTransactionsParams);
-      stream.destroy();
-      await new Promise(r => setImmediate(r));
-      expect(cursorCloseSpy, 'wallet-tx cursor was created').to.exist;
-      expect(cursorCloseSpy!.callCount, 'cursor.close() ran exactly once on destroy').to.eq(1);
+    it('propagates a wallet-tx cursor error to the final stream', async () => {
+      await EVMTransactionStorage.collection.insertMany(
+        new Array(5).fill({}).map(() => ({ chain, network, blockHeight: 1, gasPrice: 10 * 1e9, data: Buffer.from(''), from: address } as IEVMTransactionInProcess))
+      );
+      const box = sinon.createSandbox();
+      try {
+        const captured = captureCursor(box);
+        const stream: any = await ETH.streamWalletTransactions({ chain, network, wallet, args: {} } as StreamWalletTransactionsParams);
+        const observed = new Promise<Error>(resolve => stream.on('error', resolve));
+        const boom = new Error('cursor boom');
+        captured.cursor.emit('error', boom);
+        expect(await observed).to.eq(boom);
+        await new Promise(r => setImmediate(r));
+        expect(stream.destroyed).to.eq(true);
+        expect(captured.closeSpy!.callCount, 'cursor.close() ran exactly once on error').to.eq(1);
+      } finally {
+        box.restore();
+      }
     });
   });
 });

@@ -1,8 +1,9 @@
 import { expect } from 'chai';
 import { EventEmitter } from 'events';
 import sinon from 'sinon';
-import { Readable } from 'stream';
+import { PassThrough, Readable } from 'stream';
 import logger from '../../../src/logger';
+import { ExternalApiStream } from '../../../src/providers/chain-state/external/streams/apiStream';
 import { streamJsonArray } from '../../../src/routes/apiUtils';
 import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 
@@ -12,6 +13,16 @@ describe('Storage Service', function() {
 
   it('should have a test which runs', function() {
     expect(true).to.equal(true);
+  });
+});
+
+describe('mergeStreams', function() {
+  it('ends the destination immediately when there are no source streams', async () => {
+    const dest = new PassThrough({ objectMode: true });
+    const ended = new Promise<void>(resolve => dest.on('end', resolve));
+    dest.on('data', () => {});
+    ExternalApiStream.mergeStreams([], dest);
+    await ended;
   });
 });
 
