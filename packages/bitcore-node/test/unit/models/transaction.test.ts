@@ -489,6 +489,20 @@ describe('Transaction Model', function() {
         expect(cursor.close.callCount).to.equal(1);
       });
 
+      it('should propagate cursor errors to the gnosis stream and close the cursor', async () => {
+        // pipe() does not forward source errors; the explicit cursor listener must
+        const { stream, cursor } = await buildGnosisTokenStream(gnosisTokenTx({
+          effects: [gnosisTokenEffect({ amount: '100' })]
+        }));
+        const observed = new Promise<Error>(resolve => stream.on('error', resolve));
+        const boom = new Error('cursor boom');
+        cursor.emit('error', boom);
+        expect(await observed).to.equal(boom);
+        expect(stream.destroyed).to.equal(true);
+        await new Promise(r => setImmediate(r));
+        expect(cursor.close.callCount).to.equal(1);
+      });
+
       it('should not emit Gnosis token history rows for failed ERC20 sends', async () => {
         const { rows } = await collectGnosisTokenHistoryRows(gnosisTokenTx({
           receipt: { status: false }

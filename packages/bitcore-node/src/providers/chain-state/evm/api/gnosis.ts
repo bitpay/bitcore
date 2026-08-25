@@ -235,6 +235,14 @@ export class GnosisApi {
     finalStream.on('close', cleanupCursor);
     finalStream.on('end', cleanupCursor);
     finalStream.on('error', cleanupCursor);
+    // pipe() does not forward source errors; surface cursor failures on the returned
+    // stream so the caller settles instead of hanging
+    cursor.on('error', (err: any) => {
+      cleanupCursor();
+      if (!finalStream.destroyed) {
+        finalStream.destroy(err);
+      }
+    });
     return finalStream;
   }
 }

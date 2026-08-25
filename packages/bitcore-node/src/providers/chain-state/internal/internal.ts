@@ -430,7 +430,7 @@ export class InternalStateProvider implements IChainStateService {
       .find(query)
       .sort({ blockTimeNormalized: 1 })
       .addCursorFlag('noCursorTimeout', true);
-    const listTransactionsStream: any = transactionStream.pipe(new this.WalletStreamTransform(wallet));
+    const listTransactionsStream: any = new this.WalletStreamTransform(wallet);
     listTransactionsStream.jsonl = true;
     // close() resolves a promise; disposeOnce keeps it observed and single-shot
     const closeCursor = disposeOnce(
@@ -440,6 +440,16 @@ export class InternalStateProvider implements IChainStateService {
     listTransactionsStream.on('close', closeCursor);
     listTransactionsStream.on('end', closeCursor);
     listTransactionsStream.on('error', closeCursor);
+    // pipe() does not forward source errors; surface cursor failures on the returned
+    // stream so the caller settles instead of hanging
+    transactionStream.on('error', err => {
+      closeCursor();
+      if (!listTransactionsStream.destroyed) {
+        listTransactionsStream.destroy(err);
+      }
+    });
+    // start flowing only after the full lifecycle contract is installed
+    transactionStream.pipe(listTransactionsStream);
     return listTransactionsStream;
   }
 
