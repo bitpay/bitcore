@@ -1259,6 +1259,35 @@ describe('Wallet service', function() {
         });
       });
 
+      // Table-driven rather than one near-identical 'it' per field: the point of each case is
+      // that this *particular* ancillary field must not stand in for xPubKey, so looping over
+      // the field name keeps that assertion identical across cases and makes it obvious if a
+      // future ancillary field (a third credential type) is added without a matching case here.
+      for (const ancillaryField of ['hardwareSourcePublicKey', 'clientDerivedPublicKey']) {
+        it(`should reject an xPubKey-less ${ancillaryField} join without persisting a copayer`, function(done) {
+          const copayerOpts: any = helpers.getSignedCopayerOpts({
+            walletId: walletId,
+            name: 'me',
+            requestPubKey: TestData.copayers[0].pubKey_1H_0,
+          });
+          should.not.exist(copayerOpts.xPubKey);
+          copayerOpts[ancillaryField] = 'legit-value-no-xpub';
+          server.joinWallet(copayerOpts, function(err, result) {
+            should.not.exist(result);
+            should.exist(err);
+            err.should.be.instanceof(ClientError);
+            // The join is rejected before WalletService.walletId is set, so an unauthenticated
+            // getWallet({}) cannot address the wallet; read persisted state at the storage level.
+            server.storage.fetchWallet(walletId, function(err, wallet) {
+              should.not.exist(err);
+              should.exist(wallet);
+              wallet.copayers.length.should.equal(0);
+              done();
+            });
+          });
+        });
+      }
+
       it('should fail to join with a malformed xPubKey even when hardwareSourcePublicKey is present', function(done) {
         const copayerOpts = helpers.getSignedCopayerOpts({
           walletId: walletId,
