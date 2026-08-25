@@ -99,7 +99,11 @@ const Config = function(): ConfigType {
       },
       storage: {},
       walletStats: {
-        disabled: true
+        disabled: true,
+        api: {
+          disabled: true,
+          authKeys: []
+        }
       }
     },
     externalProviders: {
