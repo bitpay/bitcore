@@ -5306,6 +5306,49 @@ describe('client API', function() {
         }
       });
     });
+
+    // Same destination and amount, different calldata - proves the
+    // destination/amount check alone is not enough to catch a tampered
+    // EVM PayPro proposal at this caller boundary.
+    const evmData = '0xa9059cbb0000000000000000000000009858effd232b4033e47d90003d41ec34ecaeda94000000000000000000000000000000000000000000000000000000000000989680';
+    const differentEvmData = '0xa9059cbb0000000000000000000000009858effd232b4033e47d90003d41ec34ecaeda940000000000000000000000000000000000000000000000000000000000000001';
+    const dataPaypro = { instructions: [{ toAddress: merchantAddress, amount, to: merchantAddress, value: amount, data: evmData }] };
+    const createEthTxpWithData = data => ({
+      id: 'txp-eth-paypro-boundary-data',
+      version: 3,
+      chain: 'eth',
+      coin: 'eth',
+      amount,
+      outputs: [{ toAddress: merchantAddress, amount, data }],
+      payProUrl: 'https://bitpay.com/i/EthAccountChainBoundary',
+      creatorId: 'creator'
+    });
+
+    it('accepts a matching ETH PayPro proposal with identical calldata through getTxProposals', function(done) {
+      getPayProV2Stub.resolves(dataPaypro);
+      requestGetStub = sandbox.stub(clients[0].request, 'get').resolves({ body: [createEthTxpWithData(evmData)] });
+      clients[0].getTxProposals({}, (err, txps) => {
+        try {
+          should.not.exist(err);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
+
+    it('raises SERVER_COMPROMISED for an ETH PayPro proposal whose calldata was substituted', function(done) {
+      getPayProV2Stub.resolves(dataPaypro);
+      requestGetStub = sandbox.stub(clients[0].request, 'get').resolves({ body: [createEthTxpWithData(differentEvmData)] });
+      clients[0].getTxProposals({}, (err, txps) => {
+        try {
+          err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
   });
 
   describe('Proposals with explicit ID', () => {
