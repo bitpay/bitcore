@@ -99,6 +99,10 @@ class TssKeyGenClass {
     let session = await storage.fetchTssKeyGenSession({ id });
 
     if (session) {
+      if (session.isExpired()) {
+        throw Errors.TSS_SESSION_EXPIRED;
+      }
+
       if (!this._isValidBroadcastMessage({ message }) && !this._isValidP2pMessage({ message })) {
         throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid message provided');
       }
@@ -454,6 +458,9 @@ class TssSignClass {
     let session = await storage.fetchTssSigSession({ id });
 
     if (session) {
+      if (session.isExpired()) {
+        throw Errors.TSS_SESSION_EXPIRED;
+      }
       if (!this._isValidBroadcastMessage({ message }) && !this._isValidP2pMessage({ message })) {
         throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid message provided');
       }

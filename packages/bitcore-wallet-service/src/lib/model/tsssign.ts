@@ -154,4 +154,11 @@ export class TssSigGenModel implements ITssSigGenModel {
     }
     return mostRecentRound;
   }
+
+  isExpired(): boolean {
+    if (!this.timeLimit) {
+      return false;
+    }
+    return Date.now() > this.createdOn + this.timeLimit;
+  }
 }

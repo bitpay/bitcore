@@ -8,6 +8,7 @@ import BWS from '../../src/index';
 import helpers from './helpers';
 import { TssKeyGen } from '../../src/lib/tss';
 import { TssSigGenModel } from '../../src/lib/model/tsssign';
+import { TssKeyGenModel } from '../../src/lib/model/tsskeygen';
 import { Common } from '../../src/lib/common/index';
 
 const should = chai.should();
@@ -255,6 +256,11 @@ describe('TSS', function() {
   describe('POST /v1/tss/keygen/:id', function() {
     const url = id => `${urlPrefix}/v1/tss/keygen/${id}`;
 
+    beforeEach(async function() {
+      const storage = helpers.getStorage();
+      await storage.db.collection(BWS.Storage.collections.TSS_KEYGEN).deleteMany({});
+    });
+
     describe('middleware', function() {
       beforeEach(function() {
         sandbox.stub(TssKeyGen, 'processMessage').resolves();
@@ -340,6 +346,89 @@ describe('TSS', function() {
             done();
           });
       });
+    });
+
+    it('should error if session is expired', function(done) {
+      const storage = helpers.getStorage();
+      const publicKey = vector.party0.authKey.publicKey.toString();
+      const keyGen = TssKeyGenModel.create({
+        id: 'test',
+        message: { partyId: 0, publicKey } as any,
+        n: 2,
+        copayerId: publicKey,
+        version: 1.1,
+        timeLimit: 1, // 1 minute
+      });
+      storage.storeTssKeyGenSession({ doc: keyGen }).then(() => {
+        // advance time by 2 minutes
+        const now = Date.now() + 2 * 60 * 1000;
+        sandbox.stub(Date, 'now').returns(now);
+
+        const message = JSON.parse(JSON.stringify(vector.keygen.messages.round1.party0));
+        message.publicKey = publicKey;
+
+        app.post(url('test'))
+          .set('x-identity', publicKey)
+          .send({ message })
+          .expect((res) => {
+            res.status.should.equal(400);
+            res.body.code.should.equal('TSS_SESSION_EXPIRED');
+          })
+          .end(done);
+      }).catch(done);
+    });
+  });
+
+  describe('POST /v1/tss/sign/:id', function() {
+    const url = id => `${urlPrefix}/v1/tss/sign/${id}`;
+    const signRequest = body => {
+      const message = `post|${url('test').replace(urlPrefix, '')}|${JSON.stringify(body)}`;
+      const hash = Utils.hashMessage(message, false); // BWC hashes the message with reversal, then signs
+      const xSignature = BitcoreLib.crypto.ECDSA.sign(hash, privateKey, { endian: 'little' }).toString();
+      return xSignature;
+    };
+    const privateKey = new BitcoreLib.PrivateKey('cd643c4f2e68b669d97c51877905e8d77efc98cabb5a36a8eda66bc143055d37');
+    const publicKey = privateKey.publicKey.toString();
+
+    beforeEach(async function() {
+      const storage = helpers.getStorage();
+      await storage.db.collection(BWS.Storage.collections.TSS_SIGN).deleteMany({});
+      await storage.db.collection(BWS.Storage.collections.COPAYERS_LOOKUP).deleteMany({});
+      await storage.db.collection(BWS.Storage.collections.COPAYERS_LOOKUP).insertOne({
+        copayerId: publicKey,
+        walletId: 'test',
+        requestPubKey: publicKey,
+      });
+    });
+
+    it('should error if session is expired', function(done) {
+      const storage = helpers.getStorage();
+      const sigGen = TssSigGenModel.create({
+        id: 'test',
+        message: { partyId: 0, publicKey } as any,
+        m: 2,
+        copayerId: publicKey,
+        version: 1.1,
+        timeLimit: 1, // 1 minute
+      });
+      storage.storeTssSigSession({ doc: sigGen }).then(() => {
+        // advance time by 2 minutes
+        const now = Date.now() + 2 * 60 * 1000;
+        sandbox.stub(Date, 'now').returns(now);
+
+        const message = { publicKey, p2pMessages: [{ payload: { encryptedMessage: 'encryptie', signature: 'siggie' } }], broadcastMessages: [] };
+        const xSignature = signRequest({ message });
+
+        app.post(url('test'))
+          .set('x-identity', publicKey)
+          .set('x-signature', xSignature)
+          .send({ message })
+          .expect((res) => {
+            res.status.should.equal(400);
+            res.body.code.should.equal('TSS_SESSION_EXPIRED');
+          })
+          .end(done);
+      }).catch(done);
     });
   });
 

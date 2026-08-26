@@ -48,7 +48,7 @@ export function authTssRequest(): express.RequestHandler {
       if (!pubKey) {
         throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found in session');
       }
-      if (session.timeLimit && Date.now() > session.createdOn + session.timeLimit) {
+      if (session.isExpired()) {
         throw Errors.TSS_SESSION_EXPIRED;
       }
 
