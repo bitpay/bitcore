@@ -1677,9 +1677,10 @@ export class API extends EventEmitter {
       $.checkState(this.credentials.sharedEncryptingKey);
       $.checkArgument(opts);
 
-      // BCH schnorr deployment
-      if (!opts.signingMethod && this.credentials.coin == 'bch') {
-        opts.signingMethod = 'schnorr';
+      if (!opts.signingMethod && this.credentials.chain == 'bch') {
+        // TSS produces ECDSA signatures, otherwise use Schnorr for BCH
+        // If we were to ever implement FROST for TSS, we would need to revisit this logic.
+        opts.signingMethod = this.credentials.tssKeyId ? 'ecdsa' : 'schnorr';
       }
 
       const args = this._getCreateTxProposalArgs(opts);
