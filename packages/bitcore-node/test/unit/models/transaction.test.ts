@@ -9,6 +9,7 @@ import { ChainStateProvider } from '../../../src/providers/chain-state';
 import { Gnosis } from '../../../src/providers/chain-state/evm/api/gnosis';
 import { Erc20RelatedFilterTransform } from '../../../src/providers/chain-state/evm/api/erc20Transform';
 import { MultisigRelatedFilterTransform } from '../../../src/providers/chain-state/evm/api/multisigTransform';
+import * as MultisigTransformModule from '../../../src/providers/chain-state/evm/api/multisigTransform';
 import { Config } from '../../../src/services/config';
 import { EVMListTransactionsStream } from '../../../src/providers/chain-state/evm/api/transform';
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
@@ -499,6 +500,34 @@ describe('Transaction Model', function() {
         cursor.emit('error', boom);
         expect(await observed).to.equal(boom);
         expect(stream.destroyed).to.equal(true);
+        await new Promise(r => setImmediate(r));
+        expect(cursor.close.callCount).to.equal(1);
+      });
+
+      it('should propagate a mid-chain transform error to the gnosis stream and close the cursor', async () => {
+        // pipe() re-emits a mid-chain transform error with no listener, which crashes the
+        // worker; eventPipe wires each stage to forward into the next so it reaches
+        // finalStream instead. Capture the real multisigTransform instance mid-chain (it's
+        // constructed inside streamGnosisWalletTransactions) so we can trigger its error
+        // directly, the way an unexpected per-item failure would.
+        const RealMultisigTransform = MultisigTransformModule.MultisigRelatedFilterTransform;
+        let capturedMultisigTransform: MultisigRelatedFilterTransform | undefined;
+        sandbox.stub(MultisigTransformModule, 'MultisigRelatedFilterTransform').callsFake((...args: any[]) => {
+          capturedMultisigTransform = new (RealMultisigTransform as any)(...args);
+          return capturedMultisigTransform;
+        });
+
+        const { stream, cursor } = await buildGnosisTokenStream(gnosisTokenTx({
+          effects: [gnosisTokenEffect({ amount: '100' })]
+        }));
+        const observed = new Promise<Error>(resolve => stream.on('error', resolve));
+        // let the pipeline construct and wire up before triggering the failure
+        await new Promise(r => setImmediate(r));
+        expect(capturedMultisigTransform, 'multisig transform was constructed').to.exist;
+
+        const boom = new Error('multisig transform boom');
+        capturedMultisigTransform!.emit('error', boom);
+        expect(await observed).to.equal(boom);
         await new Promise(r => setImmediate(r));
         expect(cursor.close.callCount).to.equal(1);
       });
