@@ -1,4 +1,7 @@
+import { singleton } from 'preconditions';
 import { Common } from '../common';
+
+const $ = singleton();
 
 const { Defaults } = Common;
 
@@ -22,8 +25,6 @@ export interface ITssSigMessageObject {
   partyId: number;
   publicKey: string;
   round: number;
-  createdOn: number;
-  timeLimit?: number;
   signature?: {
     r: string;
     s: string;
@@ -105,15 +106,19 @@ export class TssSigGenModel implements ITssSigGenModel {
   __v: number;
 
 
-  static create(params: { id: string; message: ITssSigMessageObject; m: number; copayerId: string; version: number }): TssSigGenModel {
+  static create(params: { id: string; message: ITssSigMessageObject; m: number; copayerId: string; version: number; timeLimit?: number }): TssSigGenModel {
     const { id, message, m, copayerId, version } = params;
     const { partyId } = message;
+    const timeLimit = Number(params.timeLimit);
+    $.checkArgument(!timeLimit || (Number.isFinite(timeLimit) && timeLimit > 0), 'Time limit must be a positive number');
+
+    const MAX_TIME_LIMIT = 7 * 24 * 60; // 7 days in minutes
 
     const x = new TssSigGenModel();
     x.id = id;
     x.schemeVersion = version || Defaults.TSS_SIGGEN_SCHEME_VERSION;
     x.createdOn = Date.now();
-    x.timeLimit = Defaults.TSS_SIGGEN_TIME_LIMIT;
+    x.timeLimit = Math.min(timeLimit || Defaults.TSS_SIGGEN_TIME_LIMIT, MAX_TIME_LIMIT) * 60 * 1000; // capped at 7 days
     x.m = m;
     x.participants = [{
       partyId,

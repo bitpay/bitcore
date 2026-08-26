@@ -27,9 +27,9 @@ export class TssRouter {
       try {
         const id = req.params.id;
         // version was not given by client until 1.1, so fallback to 1.0
-        const { message, n, password, version = 1.0 } = req.body;
+        const { message, n, password, version = 1.0, timeLimit } = req.body;
         const copayerId = req.headers['x-identity'];
-        await TssKeyGen.processMessage({ id, message, n, password, copayerId, version });
+        await TssKeyGen.processMessage({ id, message, n, password, copayerId, version, timeLimit });
         return res.send();
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
@@ -94,9 +94,9 @@ export class TssRouter {
       try {
         const id = req.params.id;
         // version was not given by client until 1.1, so fallback to 1.0
-        const { message, m, version = 1.0 } = req.body;
+        const { message, m, version = 1.0, timeLimit } = req.body;
         const copayerId = req.headers['x-identity'];
-        await TssSign.processMessage({ id, message, m, copayerId, version });
+        await TssSign.processMessage({ id, message, m, copayerId, version, timeLimit });
         return res.send();
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);

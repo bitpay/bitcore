@@ -3,6 +3,7 @@
 import sinon from 'sinon';
 import * as chai from 'chai';
 import BWS from '@bitpay-labs/bitcore-wallet-service';
+import { Defaults as BwsDefaults } from '@bitpay-labs/bitcore-wallet-service/ts_build/src/lib/common/defaults';
 import request from 'supertest';
 import crypto from 'crypto';
 import fs from 'fs';
@@ -1208,7 +1209,7 @@ describe('TSS', function() {
         await tss2.restoreSession({ session: data.party2Session });
         await storage.storeTssKeyGenSession({ doc: data.keygenModel });
 
-        simulateExpiry(25); // 25 minutes, past the 20-minute default limit
+        simulateExpiry(BwsDefaults.TSS_KEYGEN_TIME_LIMIT + 1); // 1 minute past the default limit
 
         const error0 = new Promise<Error>(r => tss0.once('error', (e) => { tss0.unsubscribe(); r(e); }));
         tss0.subscribe({ timeout: 10, iterHandler: () => tss0.unsubscribe() });
@@ -1230,8 +1231,7 @@ describe('TSS', function() {
         const tss = new TssKeyGen({ chain, network, baseUrl: '/bws/api', request: request(app), key });
         await tss.newKey({ m, n });
 
-        // Advance time to just under the 20-minute limit (19 min)
-        simulateExpiry(19);
+        simulateExpiry(BwsDefaults.TSS_KEYGEN_TIME_LIMIT - 1); // 1 minute before the default limit
 
         // If the session were expired, an error event would fire and fail this test
         tss.on('error', (e) => { should.not.exist(e?.message ?? e); });
@@ -1292,7 +1292,7 @@ describe('TSS', function() {
         await sig0.start({ id: 'expiry-sign', messageHash: eMessageHash, derivationPath: eDerivPath });
         await sig1.start({ id: 'expiry-sign', messageHash: eMessageHash, derivationPath: eDerivPath });
 
-        simulateExpiry(25); // 25 minutes, past the 20-minute default limit
+        simulateExpiry(BwsDefaults.TSS_SIGGEN_TIME_LIMIT + 1); // 1 minute past the default limit
 
         const error = new Promise<Error>(r => sig0.once('error', (e) => { sig0.unsubscribe(); r(e); }));
         sig0.subscribe({ timeout: 10, iterHandler: () => sig0.unsubscribe() });
@@ -1306,8 +1306,7 @@ describe('TSS', function() {
         await sig0.start({ id: 'expiry-sign-valid', messageHash: eMessageHash, derivationPath: eDerivPath });
         await sig1.start({ id: 'expiry-sign-valid', messageHash: eMessageHash, derivationPath: eDerivPath });
 
-        // Advance time to just under the 20-minute limit (19 min)
-        simulateExpiry(19);
+        simulateExpiry(BwsDefaults.TSS_SIGGEN_TIME_LIMIT - 1); // 1 minute before the default limit
 
         const response0 = new Promise(r => sig0.once('roundsubmitted', r));
         const response1 = new Promise(r => sig1.once('roundsubmitted', r));

@@ -443,6 +443,6 @@ export const Defaults = {
   TSS_KEYGEN_SCHEME_VERSION: 1.1,
   TSS_SIGGEN_SCHEME_VERSION: 1.1,
 
-  TSS_KEYGEN_TIME_LIMIT: 20 * 60 * 1000, // 20 minutes
-  TSS_SIGGEN_TIME_LIMIT: 20 * 60 * 1000, // 20 minutes
+  TSS_KEYGEN_TIME_LIMIT: 20, // minutes
+  TSS_SIGGEN_TIME_LIMIT: 60 * 24, // minutes - 1 day (TODO tighten this up after testing)
 } as const;

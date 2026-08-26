@@ -72,8 +72,10 @@ class TssKeyGenClass {
     copayerId: string;
     /** TSS keygen version */
     version: number;
+    /** Time limit for the session in minutes, after which the session expires. Only applies on session initialization */
+    timeLimit?: number;
   }): Promise<void> {
-    const { id, message, n, password, copayerId } = params;
+    const { id, message, n, password, copayerId, timeLimit } = params;
     if (!id || typeof id !== 'string') {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid id provided: ' + id);
     }
@@ -82,7 +84,10 @@ class TssKeyGenClass {
     }
 
     // version was not given by client until 1.1, so fallback to 1.0
-    const version = Number(params.version || 1.0);
+    const version = Number(params.version ?? 1.0);
+    if (!Number.isFinite(version)) {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid version provided: ' + params.version);
+    }
     if (version < Constants.TSS_SIGGEN_SCHEME_MIN_SERVER_VERSION) {
       throw Errors.UPGRADE_NEEDED;
     }
@@ -121,7 +126,7 @@ class TssKeyGenClass {
       if (!this._isValidBroadcastMessage({ message })) {
         throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid broadcast message provided');
       }
-      await this._initSession({ id, message, n, password, storage, copayerId, version });
+      await this._initSession({ id, message, n, password, storage, copayerId, version, timeLimit });
     } else {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
@@ -181,8 +186,10 @@ class TssKeyGenClass {
     storage: Storage;
     /** Copayer ID of the submitting party (party 0) */
     copayerId: string;
+    /** Time limit for the session in minutes, after which the session expires */
+    timeLimit?: number;
   }) {
-    const { id, message, password, storage, copayerId, version } = params;
+    const { id, message, password, storage, copayerId, version, timeLimit } = params;
     const n = parseInt(params.n as string);
     if (!n || n < 1) {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid n provided: ' + n);
@@ -199,7 +206,8 @@ class TssKeyGenClass {
       n,
       copayerId,
       passwordHash,
-      version: version || 1.0 // Initial version of TSS keygen was 1.0, but BWC didn't pass it in
+      version: version || 1.0, // Initial version of TSS keygen was 1.0, but BWC didn't pass it in
+      timeLimit
     });
     const result = await storage.storeTssKeyGenSession({ doc });
     if (!result.result.ok) {
@@ -419,8 +427,10 @@ class TssSignClass {
     copayerId: string;
     /** TSS sig generation version */
     version: number;
+    /** Time limit for the session in minutes, after which the session expires. Only applies on session initialization */
+    timeLimit?: number;
   }) {
-    const { id, message, m, copayerId } = params;
+    const { id, message, m, copayerId, timeLimit } = params;
     if (!id || typeof id !== 'string') {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid id provided: ' + id);
     }
@@ -429,7 +439,10 @@ class TssSignClass {
     }
 
     // version was not given by client until 1.1, so fallback to 1.0
-    const version = Number(params.version || 1.0);
+    const version = Number(params.version ?? 1.0);
+    if (!Number.isFinite(version)) {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid version provided: ' + params.version);
+    }
     if (version < Constants.TSS_SIGGEN_SCHEME_MIN_SERVER_VERSION) {
       throw Errors.UPGRADE_NEEDED;
     }
@@ -477,7 +490,7 @@ class TssSignClass {
       if (!this._isValidBroadcastMessage({ message })) {
         throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid broadcast message provided');
       }  
-      await this._initSession({ id, message, m, storage, copayerId, version });
+      await this._initSession({ id, message, m, storage, copayerId, version, timeLimit });
     } else {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
@@ -516,8 +529,10 @@ class TssSignClass {
     copayerId: string;
     /** TSS sig generation version given by client to ensure compatibility with others */
     version: number;
+    /** Time limit for the session in minutes, after which the session expires. Only applies on session initialization */
+    timeLimit?: number;
   }): Promise<void> {
-    const { id, message, storage, copayerId, version } = params;
+    const { id, message, storage, copayerId, version, timeLimit } = params;
     const m = parseInt(params.m as string);
     if (!m || m < 1) {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid m provided: ' + m);
@@ -527,7 +542,8 @@ class TssSignClass {
       message,
       m,
       copayerId,
-      version
+      version,
+      timeLimit
     });
     const result = await storage.storeTssSigSession({ doc });
     if (!result.result.ok) {
@@ -602,6 +618,13 @@ class TssSignClass {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
 
+    const verifySig = (sig1, sig2) => {
+      return sig1.r === sig2.r &&
+        sig1.s === sig2.s &&
+        sig1.v === sig2.v &&
+        sig1.pubKey === sig2.pubKey;
+    };
+
     if (!session.signature) {
       const result = await storage.storeTssSignature({ id, signature: {
         r: signature.r,
@@ -613,12 +636,16 @@ class TssSignClass {
         logger.error('Failed to store TSS signature %o %o', id, result);
         throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS signature');
       }
-    } else if (
-      session.signature.r !== signature.r ||
-      session.signature.s !== signature.s ||
-      session.signature.v !== signature.v ||
-      session.signature.pubKey !== signature.pubKey
-    ) {
+      if (result.modifiedCount === 0) {
+        const updatedSesh = await storage.fetchTssSigSession({ id });
+        if (!updatedSesh.signature) {
+          throw Errors.TSS_FINAL_SIGNATURE_MISMATCH.withMessage('Unable to fetch stored TSS signature');
+        }
+        if (updatedSesh?.signature && !verifySig(updatedSesh.signature, signature)) {
+          throw Errors.TSS_FINAL_SIGNATURE_MISMATCH;
+        }
+      }
+    } else if (!verifySig(session.signature, signature)) {
       throw Errors.TSS_FINAL_SIGNATURE_MISMATCH;
     }
   }
