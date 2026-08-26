@@ -88,10 +88,10 @@ class TssKeyGenClass {
     if (!Number.isFinite(version)) {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid version provided: ' + params.version);
     }
-    if (version < Constants.TSS_SIGGEN_SCHEME_MIN_SERVER_VERSION) {
+    if (version < Constants.TSS_KEYGEN_SCHEME_MIN_SERVER_VERSION) {
       throw Errors.UPGRADE_NEEDED;
     }
-    if (version > Constants.TSS_SIGGEN_SCHEME_VERSION_MAX) {
+    if (version > Constants.TSS_KEYGEN_SCHEME_VERSION_MAX) {
       throw Errors.UPGRADE_NEEDED.withMessage('TSS version too new: ' + version);
     }
 
