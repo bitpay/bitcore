@@ -142,7 +142,7 @@ describe('Verifier', function() {
     });
 
     it('rejects an unsupported chain instead of accepting it by default', function() {
-      const txp = createTxp('btc', { chain: 'eth' });
+      const txp = createTxp('btc', { chain: 'unsupportedchain' });
       Verifier.checkPaypro(txp, createPaypro('btc')).should.equal(false);
     });
 
@@ -432,6 +432,149 @@ describe('Verifier', function() {
       });
       Verifier.checkPaypro(txp, createPaypro('btc')).should.equal(false);
     });
+
+    // `ADDRESS_LIB_BY_CHAIN` only maps btc/bch/doge/ltc, so every case below
+    // that expects `true` currently fails - a matching account-chain PayPro
+    // proposal is indistinguishable from a tampered one today. Cases that
+    // assert `false` are guard rails and are expected to stay green.
+    describe('account chains (EVM/XRP/SOL)', function() {
+      const evmAddress = '0x9858EfFD232B4033E47d90003D41EC34EcaEda94';
+      const evmAddressUppercase = '0x' + evmAddress.slice(2).toUpperCase();
+      const evmAddressLowercase = evmAddress.toLowerCase();
+      const differentEvmAddress = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+      // Same digits as evmAddress with one letter's case flipped - a valid
+      // EIP-55 checksum encodes case, so this is a different, invalid
+      // checksum rather than an equivalent encoding.
+      const invalidChecksumEvmAddress = '0x9858effD232B4033E47d90003D41EC34EcaEda94';
+      const xrpAddress = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh';
+      const differentXrpAddress = 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe';
+      const solAddress = '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d';
+      const differentSolAddress = '7VHUFJHWu2CuExkJcJrzhQPJ2oygupTWkL2A2For4BiF';
+
+      const createAccountTxp = (chain, overrides = {}) => ({
+        version: 3,
+        chain,
+        coin: chain,
+        amount,
+        outputs: [{ toAddress: evmAddress, amount }],
+        ...overrides
+      });
+      const createAccountPaypro = (overrides = {}) => ({
+        instructions: [{ toAddress: evmAddress, amount }],
+        ...overrides
+      });
+
+      const matchingAccountCases = [
+        { description: 'accepts a matching ETH PayPro destination and amount', chain: 'eth' },
+        { description: 'accepts a matching MATIC PayPro destination and amount', chain: 'matic' },
+        { description: 'accepts a matching ARB PayPro destination and amount', chain: 'arb' },
+        { description: 'accepts a matching BASE PayPro destination and amount', chain: 'base' },
+        { description: 'accepts a matching OP PayPro destination and amount', chain: 'op' },
+        { description: 'accepts a matching ARC PayPro destination and amount', chain: 'arc' }
+      ];
+      for (const testCase of matchingAccountCases) {
+        it(testCase.description, function() {
+          Verifier.checkPaypro(
+            createAccountTxp(testCase.chain),
+            createAccountPaypro()
+          ).should.equal(true);
+        });
+      }
+
+      it('accepts a matching XRP PayPro destination and amount', function() {
+        const txp = createAccountTxp('xrp', { outputs: [{ toAddress: xrpAddress, amount }] });
+        const paypro = createAccountPaypro({ instructions: [{ toAddress: xrpAddress, amount }] });
+        Verifier.checkPaypro(txp, paypro).should.equal(true);
+      });
+
+      it('accepts a matching SOL PayPro destination and amount', function() {
+        const txp = createAccountTxp('sol', { outputs: [{ toAddress: solAddress, amount }] });
+        const paypro = createAccountPaypro({ instructions: [{ toAddress: solAddress, amount }] });
+        Verifier.checkPaypro(txp, paypro).should.equal(true);
+      });
+
+      it('accepts a matching USDC-on-ETH PayPro destination and amount', function() {
+        const txp = createAccountTxp('eth', { coin: 'usdc' });
+        Verifier.checkPaypro(txp, createAccountPaypro()).should.equal(true);
+      });
+
+      it('accepts a matching token on a non-ETH EVM chain (USDC on MATIC)', function() {
+        const txp = createAccountTxp('matic', { coin: 'usdc' });
+        Verifier.checkPaypro(txp, createAccountPaypro()).should.equal(true);
+      });
+
+      it('rejects an ETH PayPro destination mismatch with the correct amount', function() {
+        const txp = createAccountTxp('eth');
+        const paypro = createAccountPaypro({ instructions: [{ toAddress: differentEvmAddress, amount }] });
+        Verifier.checkPaypro(txp, paypro).should.equal(false);
+      });
+
+      it('rejects an XRP PayPro destination mismatch with the correct amount', function() {
+        const txp = createAccountTxp('xrp', { outputs: [{ toAddress: xrpAddress, amount }] });
+        const paypro = createAccountPaypro({ instructions: [{ toAddress: differentXrpAddress, amount }] });
+        Verifier.checkPaypro(txp, paypro).should.equal(false);
+      });
+
+      it('rejects a SOL PayPro destination mismatch with the correct amount', function() {
+        const txp = createAccountTxp('sol', { outputs: [{ toAddress: solAddress, amount }] });
+        const paypro = createAccountPaypro({ instructions: [{ toAddress: differentSolAddress, amount }] });
+        Verifier.checkPaypro(txp, paypro).should.equal(false);
+      });
+
+      it('accepts equivalent EVM checksum, lowercase, and uppercase destination forms', function() {
+        const txp = createAccountTxp('eth', { outputs: [{ toAddress: evmAddressLowercase, amount }] });
+        const paypro = createAccountPaypro({ instructions: [{ toAddress: evmAddressUppercase, amount }] });
+        Verifier.checkPaypro(txp, paypro).should.equal(true);
+      });
+
+      it('rejects an EVM destination with an invalid mixed-case checksum', function() {
+        const txp = createAccountTxp('eth', { outputs: [{ toAddress: invalidChecksumEvmAddress, amount }] });
+        let result;
+        chai.expect(() => {
+          result = Verifier.checkPaypro(txp, createAccountPaypro());
+        }).not.to.throw();
+        chai.expect(result).to.equal(false);
+      });
+
+      it('rejects identical malformed XRP destinations without throwing', function() {
+        const malformed = 'not-a-real-xrp-address';
+        const txp = createAccountTxp('xrp', { outputs: [{ toAddress: malformed, amount }] });
+        const paypro = createAccountPaypro({ instructions: [{ toAddress: malformed, amount }] });
+        let result;
+        chai.expect(() => {
+          result = Verifier.checkPaypro(txp, paypro);
+        }).not.to.throw();
+        chai.expect(result).to.equal(false);
+      });
+
+      it('rejects identical malformed SOL destinations without throwing', function() {
+        const malformed = 'not-a-real-sol-address';
+        const txp = createAccountTxp('sol', { outputs: [{ toAddress: malformed, amount }] });
+        const paypro = createAccountPaypro({ instructions: [{ toAddress: malformed, amount }] });
+        let result;
+        chai.expect(() => {
+          result = Verifier.checkPaypro(txp, paypro);
+        }).not.to.throw();
+        chai.expect(result).to.equal(false);
+      });
+
+      it('accepts a known legacy ERC-20 coin fallback with no explicit chain', function() {
+        // Utils.getChain() maps Constants.BITPAY_SUPPORTED_ETH_ERC20 coins
+        // (e.g. 'usdc') to 'eth' for backwards compatibility when txp.chain
+        // is absent - old-style token proposals rely on this.
+        const txp = createAccountTxp('eth', { chain: undefined, coin: 'usdc' });
+        Verifier.checkPaypro(txp, createAccountPaypro()).should.equal(true);
+      });
+
+      it('rejects an unknown chain-less coin instead of silently resolving it to ETH', function() {
+        // Utils.getChain() also maps every *unrecognized* coin to 'eth' as a
+        // catch-all. A PayPro-specific resolver must not inherit that
+        // fallback, or an unknown coin paired with an ETH-shaped instruction
+        // would be silently accepted once ETH support lands.
+        const txp = createAccountTxp('eth', { chain: undefined, coin: 'notarealcoin' });
+        Verifier.checkPaypro(txp, createAccountPaypro()).should.equal(false);
+      });
+    });
   });
 
   describe('checkTxProposal PayPro boundary', function() {
@@ -467,6 +610,28 @@ describe('Verifier', function() {
 
     it('rejects a substituted LTC PayPro destination through checkTxProposal', function() {
       Verifier.checkTxProposal({}, createTxp(substitutedAddress), { paypro }).should.equal(false);
+      sinon.assert.calledOnce(checkTxProposalSignatureStub);
+    });
+
+    // Account-chain equivalent of the LTC boundary control above.
+    const evmAddress = '0x9858EfFD232B4033E47d90003D41EC34EcaEda94';
+    const differentEvmAddress = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+    const evmPaypro = { instructions: [{ toAddress: evmAddress, amount }] };
+    const createEvmTxp = toAddress => ({
+      version: 3,
+      chain: 'eth',
+      coin: 'eth',
+      amount,
+      outputs: [{ toAddress, amount }]
+    });
+
+    it('accepts a matching ETH PayPro proposal through checkTxProposal', function() {
+      Verifier.checkTxProposal({}, createEvmTxp(evmAddress), { paypro: evmPaypro }).should.equal(true);
+      sinon.assert.calledOnce(checkTxProposalSignatureStub);
+    });
+
+    it('rejects a substituted ETH PayPro destination through checkTxProposal', function() {
+      Verifier.checkTxProposal({}, createEvmTxp(differentEvmAddress), { paypro: evmPaypro }).should.equal(false);
       sinon.assert.calledOnce(checkTxProposalSignatureStub);
     });
   });

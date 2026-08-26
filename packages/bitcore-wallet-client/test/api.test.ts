@@ -13,6 +13,7 @@ import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import BWS from '@bitpay-labs/bitcore-wallet-service';
 import Client, { Credentials } from '../src';
 import { Request } from '../src/lib/request';
+import { Verifier } from '../src/lib/verifier';
 import { Utils } from '../src/lib/common';
 import * as TestData from './data/testdata';
 import { Errors } from '../src/lib/errors';
@@ -5247,6 +5248,62 @@ describe('client API', function() {
           tx.payProUrl.should.equal('http://example.com');
           done();
         });
+      });
+    });
+  });
+
+  // `getPayProV2` and the txproposals response are stubbed directly, rather
+  // than driven through a fully signed PayProV2 fixture, because the point
+  // here is caller-boundary reachability, not instruction-shape fidelity:
+  // there's no UTXO condition between getTxProposals() and checkPaypro(), so
+  // an ETH proposal must reach the same SERVER_COMPROMISED gate a BTC one does.
+  describe('Payment Protocol V2 account-chain boundary', function() {
+    const amount = 10000;
+    const merchantAddress = '0x9858EfFD232B4033E47d90003D41EC34EcaEda94';
+    const substitutedAddress = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+    const paypro = { instructions: [{ toAddress: merchantAddress, amount }] };
+    const createEthTxp = toAddress => ({
+      id: 'txp-eth-paypro-boundary',
+      version: 3,
+      chain: 'eth',
+      coin: 'eth',
+      amount,
+      outputs: [{ toAddress, amount }],
+      payProUrl: 'https://bitpay.com/i/EthAccountChainBoundary',
+      creatorId: 'creator'
+    });
+    let checkTxProposalSignatureStub, getPayProV2Stub, requestGetStub;
+
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth' }, () => {
+        checkTxProposalSignatureStub = sandbox.stub(Verifier, 'checkTxProposalSignature').returns(true);
+        getPayProV2Stub = sandbox.stub(clients[0], 'getPayProV2').resolves(paypro);
+        done();
+      });
+    });
+
+    it('accepts a matching ETH PayPro proposal through getTxProposals', function(done) {
+      requestGetStub = sandbox.stub(clients[0].request, 'get').resolves({ body: [createEthTxp(merchantAddress)] });
+      clients[0].getTxProposals({}, (err, txps) => {
+        try {
+          should.not.exist(err);
+          sinon.assert.calledOnce(getPayProV2Stub);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
+
+    it('raises SERVER_COMPROMISED for a substituted ETH PayPro destination through getTxProposals', function(done) {
+      requestGetStub = sandbox.stub(clients[0].request, 'get').resolves({ body: [createEthTxp(substitutedAddress)] });
+      clients[0].getTxProposals({}, (err, txps) => {
+        try {
+          err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+          done();
+        } catch (e) {
+          done(e);
+        }
       });
     });
   });
