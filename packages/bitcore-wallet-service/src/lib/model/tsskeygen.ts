@@ -124,9 +124,11 @@ export class TssKeyGenModel implements ITssKeyGenModel {
   }): TssKeyGenModel {
     const { id, message, n, copayerId, passwordHash, version } = params;
     const { partyId } = message;
-    const timeLimit = Number(params.timeLimit);
+    const timeLimit = parseFloat(params.timeLimit?.toString());
     $.checkArgument(partyId === 0, 'Key generation session must be started by partyId 0');
     $.checkArgument(!timeLimit || (Number.isFinite(timeLimit) && timeLimit > 0), 'Time limit must be a positive number');
+
+    const ONE_MINUTE = 60 * 1000;
 
     const x = new TssKeyGenModel();
     x.id = id;
@@ -141,7 +143,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
     x.joinPassword = passwordHash;
     x.keyShares = new Array(n);
     x.createdOn = Date.now();
-    x.timeLimit = Math.min(timeLimit || Defaults.TSS_KEYGEN_TIME_LIMIT, 60) * 60 * 1000; // capped at 60 minutes
+    x.timeLimit = Math.min(timeLimit || Defaults.TSS_KEYGEN_TIME_LIMIT, 60) * ONE_MINUTE; // capped at 60 minutes
     x.__v = 0;
     return x;
   }

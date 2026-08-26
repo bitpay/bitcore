@@ -109,16 +109,19 @@ export class TssSigGenModel implements ITssSigGenModel {
   static create(params: { id: string; message: ITssSigMessageObject; m: number; copayerId: string; version: number; timeLimit?: number }): TssSigGenModel {
     const { id, message, m, copayerId, version } = params;
     const { partyId } = message;
-    const timeLimit = Number(params.timeLimit);
+    const timeLimit = parseFloat(params.timeLimit?.toString());
     $.checkArgument(!timeLimit || (Number.isFinite(timeLimit) && timeLimit > 0), 'Time limit must be a positive number');
 
     const MAX_TIME_LIMIT = 7 * 24 * 60; // 7 days in minutes
+    const ONE_MINUTE = 60 * 1000;
 
     const x = new TssSigGenModel();
     x.id = id;
     x.schemeVersion = version || Defaults.TSS_SIGGEN_SCHEME_VERSION;
     x.createdOn = Date.now();
-    x.timeLimit = Math.min(timeLimit || Defaults.TSS_SIGGEN_TIME_LIMIT, MAX_TIME_LIMIT) * 60 * 1000; // capped at 7 days
+    x.timeLimit = (timeLimit === 0
+      ? MAX_TIME_LIMIT
+      : Math.min(timeLimit || Defaults.TSS_SIGGEN_TIME_LIMIT, MAX_TIME_LIMIT)) * ONE_MINUTE;
     x.m = m;
     x.participants = [{
       partyId,
