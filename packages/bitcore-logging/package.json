@@ -24,7 +24,7 @@
     "build:prod": "tsc -p tsconfig.prod.json",
     "clean": "rm -rf ts_build",
     "compile": "npm run clean && npm run build",
-    "test": "npm run compile && nyc mocha 'ts_build/test/**/*.test.js'",
+    "test": "npm run compile && mcr mocha ts_build/test",
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",

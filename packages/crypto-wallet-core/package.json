@@ -16,7 +16,7 @@
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
     "fix": "npm run fix:errors",
-    "test": "npm run compile && nyc mocha 'ts_build/test/**/*.test.js'",
+    "test": "npm run compile && mcr mocha ts_build/test",
     "pub": "npm run compile && npm publish"
   },
   "keywords": [

@@ -1,0 +1,5 @@
+{
+  "exit": true,
+  "recursive": true,
+  "extension": ".test.js"
+}
