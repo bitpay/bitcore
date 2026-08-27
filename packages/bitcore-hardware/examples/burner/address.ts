@@ -11,8 +11,6 @@ if (!Burner.isValidChain(chain)) {
 const burner = new Burner();
 burner.connect();
 
-console.log('Tap burner wallet on an NFC reader to get the address...');
+console.log('Tap an NFC reader with a burner wallet...');
 console.log(await burner.getAddress({ chain, index: 9 }));
-
-console.log('Recieved address');
 process.exit(0);

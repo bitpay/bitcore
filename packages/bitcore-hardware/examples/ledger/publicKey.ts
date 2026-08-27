@@ -10,6 +10,8 @@ if (!Ledger.isValidChain(chain)) {
 
 const ledger = new Ledger();
 await ledger.connect();
+
+console.log('Awaiting approval from your ledger...');
 console.log(await ledger.getPublicKey({ chain }));
 await ledger.disconnect();
 process.exit(0);

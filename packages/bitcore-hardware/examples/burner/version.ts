@@ -4,8 +4,6 @@ import Burner from '../../src/burner.js';
 const burner = new Burner();
 burner.connect();
 
-console.log('Tap burner wallet on an NFC reader to get the firmware version...');
+console.log('Tap an NFC reader with a burner wallet...');
 console.log(await burner.getVersion({ index: 1 }));
-
-console.log('Recieved version');
 process.exit(0);

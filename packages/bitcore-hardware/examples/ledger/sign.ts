@@ -1,7 +1,7 @@
 import 'source-map-support/register.js';
 import CWC from '@bitpay-labs/crypto-wallet-core';
-import Utils from '../../src/util.js';
 import Ledger from '../../src/ledger/wallet.js';
+import Utils from '../../src/util.js';
 
 const args = process.argv.slice(2);
 const chain = args[0]?.toUpperCase() || 'BTC';
@@ -13,6 +13,7 @@ if (!Ledger.isValidChain(chain)) {
 const ledger = new Ledger();
 await ledger.connect();
 
+console.log('Awaiting approval from your ledger...');
 switch (chain) {
   case 'SOL': {
     const address = await ledger.getAddress({ chain: 'SOL' });
@@ -27,13 +28,10 @@ switch (chain) {
       category: 'transfer'
     });
     
-    console.log(`Sign ${tx}`);
     const signedTransaction = await ledger.sign({
       chain: 'SOL',
       tx
     });
-    
-    console.log('Signed transaction');
     console.log(signedTransaction);
     break;
   }
@@ -46,13 +44,10 @@ switch (chain) {
       data: '0x'
     });
     
-    console.log(`Sign ${tx}`);
     const signedTransaction = await ledger.sign({
       chain: 'ETH',
       tx
     });
-    
-    console.log('Signed transaction');
     console.log(signedTransaction);
     break;
   }
@@ -88,15 +83,14 @@ switch (chain) {
       fee: 362
     });
     
-    console.log(`Sign ${tx}`);
     const signedTransaction = await ledger.sign({
       chain,
       tx,
       utxos
     });
     
-    console.log('Signed transaction');
     console.log(signedTransaction);
+    break;
   }
   default:
   case 'BTC': {
@@ -124,14 +118,12 @@ switch (chain) {
       utxos
     });
     
-    console.log(`Sign ${tx}`);
     const signedTransaction = await ledger.sign({
       chain: 'BTC',
       tx,
       utxos
     });
     
-    console.log('Signed transaction');
     console.log(signedTransaction);
     /* 
     Broadcasted using bitcore-node

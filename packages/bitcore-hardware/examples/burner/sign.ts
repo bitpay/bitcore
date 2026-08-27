@@ -13,6 +13,7 @@ if (!Burner.isValidChain(chain)) {
 const burner = new Burner();
 burner.connect();
 
+console.log('Tap an NFC reader with a burner wallet...');
 switch (chain) {
   case 'ETH': {
     const tx: string = CWC.Transactions.create({
@@ -25,18 +26,15 @@ switch (chain) {
       data: '0x'
     });
     
-    console.log('Tap burner wallet on an NFC reader to sign a transaction');
     const signedTransaction = await burner.sign({
       chain: 'ETH',
       tx,
       password: '123456',
       index: 9
     });
-    
-    console.log('Signed transaction');
     console.log(signedTransaction);
     /*
-    Broadcasted using bitcore-node:
+    Broadcasted using a sepolia rpc:
     $ curl -X POST https://ethereum-sepolia.publicnode.com   -H "Content-Type: application/json"   -d '{
         "jsonrpc": "2.0",
         "method": "eth_sendRawTransaction",
@@ -75,7 +73,6 @@ switch (chain) {
       utxos
     });
     
-    console.log('Tap burner wallet on an NFC reader to sign a transaction');
     const signedTransaction: any = await burner.sign({
       chain: 'BTC',
       tx,
@@ -83,8 +80,6 @@ switch (chain) {
       index: 9,
       password: '123456'
     });
-    
-    console.log('Signed transaction');
     console.log(signedTransaction);
     /*
     Broadcasted using bitcore-node:
