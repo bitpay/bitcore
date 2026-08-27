@@ -621,9 +621,11 @@ export class API extends EventEmitter {
         log.warn('DEPRECATED: openWallet will remove callback support in the future.');
       }
       opts = opts || {};
+      const { forceOpen = false } = opts;
+      delete opts.forceOpen; // don't pass to addWalletInfo
 
       $.checkState(this.credentials, 'Failed state: this.credentials at <openWallet()>');
-      if (!opts.forceOpen && this.credentials.isComplete() && this.credentials.hasWalletInfo()) {
+      if (!forceOpen && this.credentials.isComplete() && this.credentials.hasWalletInfo()) {
         if (cb) { cb(null, true); }
         return true; // ?? TODO: should return status?
       }
@@ -632,8 +634,10 @@ export class API extends EventEmitter {
       const wallet = status.wallet;
       this._processStatus(status);
 
+      $.checkState(!this.credentials.tssKeyId || this.credentials.tssKeyId === wallet.tssKeyId, 'Failed state: tssKeyId mismatch at <openWallet()>');
+
       const needsWalletInfo = !this.credentials.hasWalletInfo();
-      const needsTssInfo = wallet.tssKeyId && !this.credentials.tssKeyId;
+      const needsTssInfo = wallet.tssKeyId && !this.credentials.hasTssInfo();
       if (needsWalletInfo || needsTssInfo) {
         const me = (wallet.copayers || []).find(c => c.id === this.credentials.copayerId);
         if (!me) throw new Error('Copayer not in wallet');
