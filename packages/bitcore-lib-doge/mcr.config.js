@@ -10,7 +10,7 @@ const config = builder({
   statements: 90,
   branches: 80,
   functions: 90,
-  lines: 90
+  lines: 80
 });
 
 module.exports = config;

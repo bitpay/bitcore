@@ -1,6 +1,5 @@
 // @ts-check
-/* eslint-disable */
-const builder = require('./coverage-builder.js').default;
+import builder from './coverage-builder.js';
 
 
 /**
@@ -14,4 +13,4 @@ const config = builder({
   lines: 70
 });
 
-module.exports = config;
+export default config;
