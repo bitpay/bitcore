@@ -632,7 +632,9 @@ export class API extends EventEmitter {
       const wallet = status.wallet;
       this._processStatus(status);
 
-      if (!this.credentials.hasWalletInfo()) {
+      const needsWalletInfo = !this.credentials.hasWalletInfo();
+      const needsTssInfo = wallet.tssKeyId && !this.credentials.tssKeyId;
+      if (needsWalletInfo || needsTssInfo) {
         const me = (wallet.copayers || []).find(c => c.id === this.credentials.copayerId);
         if (!me) throw new Error('Copayer not in wallet');
 
@@ -1062,6 +1064,7 @@ export class API extends EventEmitter {
       c.addWalletInfo(walletId, walletName, m, n, copayerName, {
         useNativeSegwit: opts.useNativeSegwit,
         segwitVersion: opts.segwitVersion,
+        tssKeyId: opts.tssKeyId,
         allowOverwrite: !!opts.tssKeyId,
       });
       const secret = API._buildSecret(
@@ -1166,6 +1169,7 @@ export class API extends EventEmitter {
           {
             useNativeSegwit: Utils.isNativeSegwit(wallet.addressType),
             segwitVersion: Utils.getSegwitVersion(wallet.addressType),
+            tssKeyId: wallet.tssKeyId,
             allowOverwrite: true
           }
         );

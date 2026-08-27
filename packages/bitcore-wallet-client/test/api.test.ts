@@ -3814,6 +3814,78 @@ describe('client API', function() {
         });
       });
     });
+
+    it('should default BCH TSS wallet proposals to ECDSA immediately after wallet creation', async function() {
+      const tssKeyId = 'bch-tss-signing-method-test';
+      const walletId = '00000000-0000-4000-8000-000000000001';
+      const creatorKey = new Key({ seedType: 'new' });
+      const joiningKey = new Key({ seedType: 'new' });
+      const creatorCredentials = creatorKey.createCredentials(null, {
+        coin: 'bch',
+        chain: 'bch',
+        network: 'testnet',
+        account: 0,
+        n: 1
+      });
+      const joiningCredentials = joiningKey.createCredentials(null, {
+        coin: 'bch',
+        chain: 'bch',
+        network: 'testnet',
+        account: 0,
+        n: 1
+      });
+      const client = new Client({ baseUrl: 'http://unused' });
+      client.fromObj(creatorCredentials);
+  
+      const requestPost = sandbox.stub(client.request, 'post').resolves({ body: { walletId } });
+      sandbox.stub(client, '_doJoinWallet').resolves({
+        id: walletId,
+        name: 'mywallet',
+        m: 1,
+        n: 1,
+        addressType: 'P2PKH',
+        tssKeyId
+      });
+      await client.createWallet('mywallet', 'creator', 2, 2, {
+        coin: 'bch',
+        chain: 'bch',
+        network: 'testnet',
+        tssKeyId
+      });
+  
+      // A complete TSS wallet has the public keys of all participants in its ring.
+      client.credentials.addPublicKeyRing([
+        {
+          xPubKey: creatorCredentials.xPubKey,
+          requestPubKey: creatorCredentials.requestPubKey
+        },
+        {
+          xPubKey: joiningCredentials.xPubKey,
+          requestPubKey: joiningCredentials.requestPubKey
+        }
+      ]);
+  
+      const stopAfterCapture = new Error('stop after capturing tx proposal');
+      let submittedSigningMethod;
+      requestPost.resetBehavior();
+      requestPost.callsFake((async (url, args) => {
+        url.should.equal('/v3/txproposals/');
+        submittedSigningMethod = args.signingMethod;
+        throw stopAfterCapture;
+      }) as any);
+  
+      let proposalError;
+      try {
+        await client.createTxProposal({ outputs: [] });
+      } catch (err) {
+        proposalError = err;
+      }
+  
+      should.exist(proposalError);
+      proposalError.should.equal(stopAfterCapture);
+      submittedSigningMethod.should.equal('ecdsa');
+      client.credentials.tssKeyId.should.equal(tssKeyId);
+    });
   });
 
   describe('Transaction Proposal signing', function() {
