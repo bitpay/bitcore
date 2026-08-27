@@ -19,6 +19,7 @@ import {
   helpers,
   blockchainExplorerMock
 } from './helpers';
+import type { IErrorSpec } from '../src/lib/errors/spec';
 
 const should = chai.should();
 const datadir = path.join(__dirname, 'data');
@@ -1211,7 +1212,7 @@ describe('TSS', function() {
 
         simulateExpiry(BwsDefaults.TSS_KEYGEN_TIME_LIMIT + 1); // 1 minute past the default limit
 
-        const error0 = new Promise<Error>(r => tss0.once('error', (e) => { tss0.unsubscribe(); r(e); }));
+        const error0 = new Promise<IErrorSpec>(r => tss0.once('error', (e) => { tss0.unsubscribe(); r(e); }));
         tss0.subscribe({ timeout: 10, iterHandler: () => tss0.unsubscribe() });
         const error1 = new Promise<Error>(r => tss1.once('error', (e) => { tss1.unsubscribe(); r(e); }));
         tss1.subscribe({ timeout: 10, iterHandler: () => tss1.unsubscribe() });
@@ -1219,11 +1220,11 @@ describe('TSS', function() {
         tss2.subscribe({ timeout: 10, iterHandler: () => tss2.unsubscribe() });
         
         const err0 = await error0;
-        err0.message.should.include('TSS_SESSION_EXPIRED');
+        err0.name.should.include('TSS_SESSION_EXPIRED');
         const err1 = await error1;
-        err1.message.should.include('TSS_SESSION_EXPIRED');
+        err1.name.should.include('TSS_SESSION_EXPIRED');
         const err2 = await error2;
-        err2.message.should.include('TSS_SESSION_EXPIRED');
+        err2.name.should.include('TSS_SESSION_EXPIRED');
       });
 
       it('should not expire a session before the time limit is reached', async function() {
@@ -1294,10 +1295,10 @@ describe('TSS', function() {
 
         simulateExpiry(BwsDefaults.TSS_SIGGEN_TIME_LIMIT + 1); // 1 minute past the default limit
 
-        const error = new Promise<Error>(r => sig0.once('error', (e) => { sig0.unsubscribe(); r(e); }));
+        const error = new Promise<IErrorSpec>(r => sig0.once('error', (e) => { sig0.unsubscribe(); r(e); }));
         sig0.subscribe({ timeout: 10, iterHandler: () => sig0.unsubscribe() });
         const err = await error;
-        err.message.should.include('TSS_SESSION_EXPIRED');
+        err.name.should.include('TSS_SESSION_EXPIRED');
       });
 
       it('should not expire a signing session before the time limit is reached', async function() {
