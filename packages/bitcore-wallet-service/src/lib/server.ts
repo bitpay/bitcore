@@ -675,7 +675,7 @@ export class WalletService implements IWalletService {
       }
 
       opts.tssVersion = opts.tssVersion || keySession.schemeVersion || Defaults.TSS_KEYGEN_SCHEME_VERSION;
-      if (!(opts.tssVersion > 0 && opts.tssVersion <= Constants.TSS_KEYGEN_SCHEME_VERSION_MAX)) {
+      if (!(opts.tssVersion >= Constants.TSS_KEYGEN_SCHEME_VERSION_MIN && opts.tssVersion <= Constants.TSS_KEYGEN_SCHEME_VERSION_MAX)) {
         return cb(new ClientError('Invalid TSS version'));
       }
 
