@@ -329,8 +329,10 @@ export class Wallet implements IWallet {
     this.lockLoadedWallet();
     if (doNotComplete) return key;
     
-    // All copayers may not have synced to my public key ring yet
-    const forceOpen = this.client.credentials.publicKeyRing.length < (key as TssKeyType).metadata?.n;
+    // All cosigners may not have synced to my public key ring yet
+    const nCosigners = (key as TssKeyType).metadata?.n;
+    const nPubKeys = this.client.credentials.publicKeyRing?.length ?? 0;
+    const forceOpen = nCosigners != null && nPubKeys < nCosigners;
     const status = await this.client.openWallet({ forceOpen });
     let needsSave = status?.wallet?.status === 'complete';
 

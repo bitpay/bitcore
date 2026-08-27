@@ -605,7 +605,6 @@ export class API extends EventEmitter {
     opts?: {
       useNativeSegwit?: boolean;
       segwitVersion?: number;
-      tssKeyid?: string;
       allowOverwrite?: boolean;
       /** Bypass the check for an already complete wallet and proceed to pulling data from server */
       forceOpen?: boolean;
