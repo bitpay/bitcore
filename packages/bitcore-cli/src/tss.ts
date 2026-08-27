@@ -78,7 +78,10 @@ export async function sign(args: {
   const spinner = prompt.spinner({ indicator: 'timer', onCancel: () => { tssSign.unsubscribe(); } });
   spinner.start(logMessageWaiting || 'Waiting for all parties to join...');
 
-  const sig = await new Promise<CWCTypes.Message.ISignedMessage<string>>((resolve, reject) => {
+  const sig = await new Promise<CWCTypes.Message.ISignedMessage<string>>((resolve, _reject) => {
+    let rejected = false;
+    const reject = (err) => { if (!rejected) { rejected = true; _reject(err); } };
+
     tssSign.subscribe();
     tssSign.on('roundsubmitted', (round) => {
       storeSession(tssSign.exportSession());
@@ -88,6 +91,10 @@ export async function sign(args: {
       if (e instanceof Errors.NOT_AUTHORIZED && e.message === 'Session not found') {
         tssSign.unsubscribe({ clearEvents: true });
         spinner.cancel('TSS session not found. It may have been deleted by another party.');
+        return reject(new ProcessCancelled());
+      } else if (e instanceof Errors.TSS_SESSION_EXPIRED) {
+        tssSign.unsubscribe({ clearEvents: true });
+        spinner.cancel(e.message);
         return reject(new ProcessCancelled());
       }
       prompt.log.error('Unexpected error during TSS signing: ' + (e.stack || e));
