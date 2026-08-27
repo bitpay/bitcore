@@ -607,6 +607,8 @@ export class API extends EventEmitter {
       segwitVersion?: number;
       tssKeyid?: string;
       allowOverwrite?: boolean;
+      /** Bypass the check for an already complete wallet and proceed to pulling data from server */
+      forceOpen?: boolean;
     },
     /** @deprecated */
     cb?: (err?: Error, status?: any) => void
@@ -622,7 +624,7 @@ export class API extends EventEmitter {
       opts = opts || {};
 
       $.checkState(this.credentials, 'Failed state: this.credentials at <openWallet()>');
-      if (this.credentials.isComplete() && this.credentials.hasWalletInfo()) {
+      if (!opts.forceOpen && this.credentials.isComplete() && this.credentials.hasWalletInfo()) {
         if (cb) { cb(null, true); }
         return true; // ?? TODO: should return status?
       }
