@@ -40,6 +40,8 @@ export function authTssRequest(): express.RequestHandler {
         session = await storage.fetchTssSigSession({ id });
         partyId = session?.participants.find(p => p.copayerId === copayerId)?.partyId;
         pubKey = partyId == null ? null : session?.rounds[0]?.find(r => r.fromPartyId === partyId)?.messages.publicKey;
+      } else {
+        throw Errors.NOT_AUTHORIZED.withMessage('Invalid TSS request path');
       }
 
       if (!session) {

@@ -88,7 +88,7 @@ class TssKeyGenClass {
     if (!Number.isFinite(version)) {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid version provided: ' + params.version);
     }
-    if (version < Constants.TSS_KEYGEN_SCHEME_MIN_SERVER_VERSION) {
+    if (version < Constants.TSS_KEYGEN_SCHEME_VERSION_MIN) {
       throw Errors.UPGRADE_NEEDED;
     }
     if (version > Constants.TSS_KEYGEN_SCHEME_VERSION_MAX) {
@@ -447,7 +447,7 @@ class TssSignClass {
     if (!Number.isFinite(version)) {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid version provided: ' + params.version);
     }
-    if (version < Constants.TSS_SIGGEN_SCHEME_MIN_SERVER_VERSION) {
+    if (version < Constants.TSS_SIGGEN_SCHEME_VERSION_MIN) {
       throw Errors.UPGRADE_NEEDED;
     }
     if (version > Constants.TSS_SIGGEN_SCHEME_VERSION_MAX) {
