@@ -13,10 +13,13 @@ import { Auth } from '../utils/auth';
 export function walletStatsAuth(req: Request, res: Response, next: any) {
   const apiConfig = Config.for('walletStats').api;
   if (!apiConfig || apiConfig.disabled) {
-    return res.status(404).send('Not found');
+    return res.status(404).json({ error: 'Not found' });
   }
 
   const signature = req.headers['x-signature'];
+  if (!signature) {
+    return res.status(401).json({ error: 'Authentication failed' });
+  }
   const authKeys = apiConfig.authKeys || [];
   const message = [req.method, req.originalUrl, JSON.stringify(req.body)].join('|');
 

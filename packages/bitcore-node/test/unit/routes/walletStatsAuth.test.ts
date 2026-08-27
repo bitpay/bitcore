@@ -2,6 +2,7 @@ import { BitcoreLib as bitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { expect } from 'chai';
 import secp256k1 from 'secp256k1';
 import sinon from 'sinon';
+import { Auth } from '../../../src/utils/auth';
 import { walletStatsAuth } from '../../../src/routes/walletStatsAuth';
 import { Config } from '../../../src/services/config';
 
@@ -61,6 +62,7 @@ describe('WalletStats auth middleware', function() {
     apiConfig.disabled = true;
     const key = makeKey();
     apiConfig.authKeys = [key.pub];
+    const verify = sandbox.spy(Auth, 'verifyRequestSignature');
     const { req, res } = makeReqRes();
     req.headers['x-signature'] = sign(key, req);
     const next = sandbox.stub();
@@ -68,7 +70,18 @@ describe('WalletStats auth middleware', function() {
     walletStatsAuth(req, res, next);
 
     expect(res.statusCode).to.equal(404);
+    expect(verify.called).to.equal(false);
     expect(next.called).to.equal(false);
+  });
+
+  it('404s as json, like every other response from these routes', () => {
+    apiConfig.disabled = true;
+    const { req, res } = makeReqRes();
+    const next = sandbox.stub();
+
+    walletStatsAuth(req, res, next);
+
+    expect(res.body).to.deep.equal({ error: 'Not found' });
   });
 
   it('404s when the api config subsection is missing entirely', () => {
@@ -80,6 +93,18 @@ describe('WalletStats auth middleware', function() {
 
     expect(res.statusCode).to.equal(404);
     expect(next.called).to.equal(false);
+  });
+
+  it('401s on a missing signature without walking the key list', () => {
+    apiConfig.authKeys = [makeKey().pub];
+    const verify = sandbox.spy(Auth, 'verifyRequestSignature');
+    const { req, res } = makeReqRes();
+    const next = sandbox.stub();
+
+    walletStatsAuth(req, res, next);
+
+    expect(res.statusCode).to.equal(401);
+    expect(verify.called).to.equal(false);
   });
 
   it('401s when no signature header is present', () => {

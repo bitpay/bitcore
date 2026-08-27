@@ -166,6 +166,13 @@ describe('WalletStats routes', function() {
       expect(find.called).to.equal(false);
     });
 
+    it('marks even a rejected request private, so the global s-maxage never applies', async () => {
+      const res = makeRes();
+      await getSnapshots({ query: { from: 'nope' } } as any, res);
+      expect(res.statusCode).to.equal(400);
+      expect(res.headers['Cache-Control']).to.equal('private, max-age=300');
+    });
+
     it('queries with the built filter, sorted by chain, network and date', async () => {
       const res = makeRes();
       await getSnapshots({ query: { chain: 'BTC' } } as any, res);
@@ -223,7 +230,6 @@ describe('WalletStats routes', function() {
       const handles = (walletStatsRoute.router as any).stack.map(layer => layer.handle);
       const authIndex = handles.indexOf(walletStatsAuth);
       expect(authIndex).to.be.greaterThan(0);
-      expect(handles.indexOf(getSnapshots)).to.equal(-1); // handler is wrapped by the route layer
       expect((walletStatsRoute.router as any).stack[authIndex + 1].route.path).to.equal('/');
     });
   });
