@@ -9,7 +9,7 @@ const builder = require('../../coverage-builder.js').default;
 const config = builder({
   bytes: 70,
   statements: 70,
-  branches: 50,
+  branches: 60,
   functions: 60,
   lines: 70
 });

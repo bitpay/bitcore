@@ -7,7 +7,7 @@ const builder = require('../../coverage-builder.js').default;
  * @type {import('monocart-coverage-reports').CoverageReportOptions}
 */
 const config = builder({
-  bytes: 60,
+  bytes: 70,
   statements: 60,
   branches: 60,
   functions: 60,

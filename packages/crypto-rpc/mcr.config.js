@@ -7,9 +7,9 @@ import builder from './coverage-builder.js';
 */
 const config = builder({
   bytes: 80,
-  statements: 70,
+  statements: 80,
   branches: 60,
-  functions: 70,
+  functions: 80,
   lines: 70
 });
 
