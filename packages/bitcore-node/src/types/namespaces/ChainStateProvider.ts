@@ -61,8 +61,6 @@ export type StreamBlocksParams = ChainNetwork & {
   blockId?: string;
   sinceBlock: number | string;
   args?: Partial<{ startDate: Date; endDate: Date; date: Date } & StreamingFindOptions<IBtcBlock>>;
-  req: Request;
-  res: Response;
 };
 
 export type FeeMode = 'ECONOMICAL' | 'CONSERVATIVE';
@@ -104,14 +102,10 @@ export type GetWalletBalanceAtTimeParams = ChainNetwork & {
 
 export type StreamAddressUtxosParams = ChainNetwork & {
   address: string;
-  req?: Request;
-  res?: Response;
   args: Partial<StreamAddressUtxosArgs & StreamingFindOptions<ICoin> & any>;
 };
 
 export type StreamTransactionsParams = ChainNetwork & {
-  req: Request;
-  res: Response;
   args: any;
 };
 export type StreamTransactionParams = ChainNetwork & {
@@ -119,8 +113,6 @@ export type StreamTransactionParams = ChainNetwork & {
 };
 export type StreamWalletAddressesParams = ChainNetwork & {
   walletId: ObjectId;
-  req: Request;
-  res: Response;
   limit: number;
 };
 
@@ -141,8 +133,6 @@ export type StreamWalletMissingAddressesParams = ChainNetwork & {
 
 export type StreamWalletTransactionsParams = ChainNetwork & {
   wallet: MongoBound<IWallet>;
-  req: Request;
-  res: Response;
   args: StreamWalletTransactionsArgs & any;
 };
 
@@ -160,8 +150,6 @@ export type StreamWalletUtxosParams = ChainNetwork & {
   wallet: MongoBound<IWallet>;
   limit: number;
   args: Partial<StreamWalletUtxosArgs>;
-  req: Request;
-  res: Response;
 };
 
 export type isValidParams = ChainNetwork & {
