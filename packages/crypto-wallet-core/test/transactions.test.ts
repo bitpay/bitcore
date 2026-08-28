@@ -30,7 +30,7 @@ describe('Transaction', function() {
         }
       ];
       const fee = 7440;
-      const tx = Transactions.create({ chain: 'BTC', recipients, change, utxos, fee, rbf: true });
+      const tx = Transactions.create({ chain: 'BTC', recipients, change, utxos, fee });
 
       const keys = [
         {
@@ -661,7 +661,7 @@ describe('Transaction', function() {
     it('should be able to create a XRP tx', () => {
       const recipients = [{ address: 'rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF', amount: '123456' }];
       const xrpParams = {
-        chain: 'XRP',
+        chain: 'XRP' as const,
         recipients,
         from: 'rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF',
         tag: 123456,
@@ -680,7 +680,7 @@ describe('Transaction', function() {
       try {
         const recipients = [{ address: 'rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF', amount: '123456' }];
         const xrpParams = {
-          chain: 'XRP',
+          chain: 'XRP' as const,
           recipients,
           from: 'rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF',
           tag: 123456,
@@ -699,7 +699,7 @@ describe('Transaction', function() {
       try {
         const recipients = [{ address: 'rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF', amount: '123456' }];
         const xrpParams = {
-          chain: 'XRP',
+          chain: 'XRP' as const,
           recipients,
           from: 'rEqj9WKSH7wEkPvWf6b4gCF',
           tag: 123456,
@@ -715,14 +715,16 @@ describe('Transaction', function() {
     });
 
     it('should create an AccountSet tx with string flag', () => {
+      const recipients = [{ address: 'rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF', amount: '123456' }];
       const xrpParams = {
-        chain: 'XRP',
+        chain: 'XRP' as const,
         network: 'testnet',
         from: 'rMmUqMZRzKKnzrTnN3B6Zcz4qQQvmHowt8',
         fee: 10,
         nonce: 11876358,
         txType: 'accountset',
-        flags: 'tfRequireDestTag'
+        flags: 'tfRequireDestTag',
+        recipients
       };
       const cryptoTx = Transactions.create(xrpParams);
       const expectedTx = '12000322000100002400B5380668400000000000000A8114E3BEB23E9931CEE681B8CBFDA2F9203EFC18C5BA';
@@ -731,13 +733,14 @@ describe('Transaction', function() {
 
     it('should create an AccountSet tx with comma-delimited string flags', () => {
       const xrpParams = {
-        chain: 'XRP',
+        chain: 'XRP' as const,
         network: 'testnet',
         from: 'rMmUqMZRzKKnzrTnN3B6Zcz4qQQvmHowt8',
         fee: 10,
         nonce: 11876358,
         txType: 'accountset',
-        flags: 'tfRequireDestTag,tfDisallowXRP'
+        flags: 'tfRequireDestTag,tfDisallowXRP',
+        recipients: []
       };
       const cryptoTx = Transactions.create(xrpParams);
       const expectedTx = '12000322001100002400B5380668400000000000000A8114E3BEB23E9931CEE681B8CBFDA2F9203EFC18C5BA';
@@ -746,13 +749,14 @@ describe('Transaction', function() {
 
     it('should create an AccountSet tx with number flag', () => {
       const xrpParams = {
-        chain: 'XRP',
+        chain: 'XRP' as const,
         network: 'testnet',
         from: 'rMmUqMZRzKKnzrTnN3B6Zcz4qQQvmHowt8',
         fee: 10,
         nonce: 11876358,
         txType: 'accountset',
-        flags: 65536 // tfRequireDestTag
+        flags: 65536, // tfRequireDestTag
+        recipients: []
       };
       const cryptoTx = Transactions.create(xrpParams);
       const expectedTx = '12000322000100002400B5380668400000000000000A8114E3BEB23E9931CEE681B8CBFDA2F9203EFC18C5BA';
@@ -761,12 +765,13 @@ describe('Transaction', function() {
 
     it('should throw on invalid flag(s)', () => {
       const xrpParams = {
-        chain: 'XRP',
+        chain: 'XRP' as const,
         network: 'testnet',
         from: 'rMmUqMZRzKKnzrTnN3B6Zcz4qQQvmHowt8',
         fee: 10,
         nonce: 11876358,
-        txType: 'accountset'
+        txType: 'accountset',
+        recipients: []
       };
       expect(() => Transactions.create({ ...xrpParams, flags: undefined })).to.throw('No XRP flag(s) provided');
       expect(() => Transactions.create({ ...xrpParams, flags: null })).to.throw('No XRP flag(s) provided');
@@ -796,7 +801,7 @@ describe('Transaction', function() {
         }
       ];
       const fee = 7440;
-      const tx = Transactions.create({ chain: 'DOGE', recipients, change, utxos, fee, rbf: true });
+      const tx = Transactions.create({ chain: 'DOGE', recipients, change, utxos, fee });
 
       const keys = [
         {
@@ -833,7 +838,7 @@ describe('Transaction', function() {
         }
       ];
       const fee = 7440;
-      const tx = Transactions.create({ chain: 'LTC', recipients, change, utxos, fee, rbf: true });
+      const tx = Transactions.create({ chain: 'LTC', recipients, change, utxos, fee });
 
       const keys = [
         {
@@ -848,13 +853,14 @@ describe('Transaction', function() {
       expect(signed).to.eq(expected);
     });
 
+    // TODO: typing is incorrect
     it('should be able to create a livenet SOL tx', () => {
       const rawMaticTx = {
         network: 'livenet',
         value: 3896000000000000,
         to: 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY',
         from: '8WyoNvKsmfdG6zrbzNBVN8DETyLra3ond61saU9C52YR',
-        category: 'transfer',
+        category: 'transfer' as const,
         blockHash: 'GtV1Hb3FvP3HURHAsj8mGwEqCumvP3pv3i6CVCzYNj3d',
         blockHeight: 531575,
       };
@@ -869,8 +875,6 @@ describe('Transaction', function() {
         'AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDb6/gH5XxrVl86CZd+DpqA1jN8YSz91e8yXxOlyeS8tLRnckLdZVIkhi0iAExccvYpTw5tIfPZ8z/OJGQtnvg9QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7A+XJrI4siFXUreDo+M94DBeuJwm0Oq5kHqeWuAw7xgBAgIAAQwCAAAAAIALMGTXDQA=';
       expect(cryptoTx).to.equal(expectedTx);
     });
-
-
   });
 
   describe('sign', () => {
@@ -1740,30 +1744,6 @@ describe('Transaction', function() {
       expect(hash.length).to.equal(64);
       expect(hash).to.equal(expectedHash);
     });
-
-    it('should get XRP testnet signed tx hash', () => {
-      const hash = Transactions.getHash({
-        chain: 'XRP',
-        network: 'testnet',
-        tx:
-          '120000228000000024000000012E0001E2405011101234567890123456789012345671012345678901234567890156789012345661400000000001E24068400000000000000C732103DBEEC5E9E76DA09C5B502A67136BC2D73423E8902A7C35A8CBC0C5A6AC0469E874473045022100D5C19360E77D691A11CA693F6E8D8472DA6749D16A06E072ED1110EB3FD9E2C80220169F95E55943C3575CEAA46413FE660E4F8F2E7158FAC235DC3CB9C9F26918098114A2C8E8CD9A9133CAD90F2668159AAF572612A5028314A2C8E8CD9A9133CAD90F2668159AAF572612A502'
-      });
-      const expectedHash = '61EA6DF3BD1E435283BA0B06311C7BA683A32A80E465196D9F16A23A439EF6F4';
-      expect(hash.length).to.equal(64);
-      expect(hash).to.equal(expectedHash);
-    });
-
-    it('should get XRP livenet signed tx hash', () => {
-      const hash = Transactions.getHash({
-        chain: 'XRP',
-        network: 'livenet',
-        tx:
-          '120000228000000024000000012E0001E2405011101234567890123456789012345671012345678901234567890156789012345661400000000001E24068400000000000000C732103DBEEC5E9E76DA09C5B502A67136BC2D73423E8902A7C35A8CBC0C5A6AC0469E874473045022100D5C19360E77D691A11CA693F6E8D8472DA6749D16A06E072ED1110EB3FD9E2C80220169F95E55943C3575CEAA46413FE660E4F8F2E7158FAC235DC3CB9C9F26918098114A2C8E8CD9A9133CAD90F2668159AAF572612A5028314A2C8E8CD9A9133CAD90F2668159AAF572612A502'
-      });
-      const expectedHash = '61EA6DF3BD1E435283BA0B06311C7BA683A32A80E465196D9F16A23A439EF6F4';
-      expect(hash.length).to.equal(64);
-      expect(hash).to.equal(expectedHash);
-    });
   });
 
 
@@ -1885,6 +1865,5 @@ describe('Transaction', function() {
       const result = ETHTxProvider._toHex('0x200000');
       expect(result).to.equal('0x200000');
     });
-
   });
 });

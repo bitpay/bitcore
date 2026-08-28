@@ -4,7 +4,7 @@ import { SOLTxProvider } from '../sol';
 
 export class SPLTxProvider extends SOLTxProvider {
 
-  create(params: CreateParams) {
+  create(params: SplCreateParams) {
     // Reuse exposed TransactionProxy API (Create)
     // @ts-expect-error - so public api is minimally changed
     if (params.category === 'recoverNestedAssociatedToken') {
@@ -143,7 +143,7 @@ export class SPLTxProvider extends SOLTxProvider {
   }
 }
 
-interface CreateParams {
+export interface SplCreateParams {
   recipients: Array<{ address: string; amount: string; addressKeyPair?: SolKit.KeyPairSigner }>;
   from: string;
   fee?: number;
