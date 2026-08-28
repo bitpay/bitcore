@@ -293,7 +293,7 @@ describe('Verifier', function() {
       });
     }
 
-    const identicalMalformedDestinationChains = ['btc', 'doge', 'ltc'];
+    const identicalMalformedDestinationChains = ['btc', 'bch', 'doge', 'ltc'];
     for (const chain of identicalMalformedDestinationChains) {
       it(`rejects identical malformed ${chain.toUpperCase()} destinations without throwing`, function() {
         const malformed = 'not-a-real-address!!!';
@@ -433,10 +433,6 @@ describe('Verifier', function() {
       Verifier.checkPaypro(txp, createPaypro('btc')).should.equal(false);
     });
 
-    // `ADDRESS_LIB_BY_CHAIN` only maps btc/bch/doge/ltc, so every case below
-    // that expects `true` currently fails - a matching account-chain PayPro
-    // proposal is indistinguishable from a tampered one today. Cases that
-    // assert `false` are guard rails and are expected to stay green.
     describe('account chains (EVM/XRP/SOL)', function() {
       const evmAddress = '0x9858EfFD232B4033E47d90003D41EC34EcaEda94';
       const evmAddressUppercase = '0x' + evmAddress.slice(2).toUpperCase();
