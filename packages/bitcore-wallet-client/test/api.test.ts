@@ -5536,6 +5536,27 @@ describe('client API', function() {
         }
       });
     });
+
+    // Output-level calldata matches the signed instruction, but Utils.buildTx()
+    // (common/utils.ts) still applies the top-level `txp.data` BWC <= 8.9.0
+    // compatibility field by overwriting outputs[0].data at sign time - after
+    // checkPaypro has already accepted the proposal based on outputs[0].data
+    // alone. This lets a matching output carry a top-level override that
+    // signs different calldata than what was verified.
+    it('raises SERVER_COMPROMISED for an ETH PayPro proposal whose top-level legacy txp.data overrides the accepted calldata', function(done) {
+      getPayProV2Stub.resolves(dataPaypro);
+      const txp: any = createEthTxpWithData(evmData);
+      txp.data = differentEvmData;
+      requestGetStub = sandbox.stub(clients[0].request, 'get').resolves({ body: [txp] });
+      clients[0].getTxProposals({}, (err, txps) => {
+        try {
+          err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
   });
 
   describe('Proposals with explicit ID', () => {

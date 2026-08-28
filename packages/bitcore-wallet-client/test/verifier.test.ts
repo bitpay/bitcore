@@ -613,6 +613,17 @@ describe('Verifier', function() {
           Verifier.checkPaypro(createNativeEvmTxp(undefined), createNativeEvmPaypro(nativeData)).should.equal(false);
         });
 
+        // Utils.buildTx() (common/utils.ts) still applies a BWC <= 8.9.0
+        // compatibility field, top-level `txp.data`, by overwriting
+        // `outputs[0].data` at sign time. checkPaypro only ever inspects
+        // `outputs[i].data`, so a proposal whose output already matches the
+        // signed instruction can still carry a top-level override that
+        // signs different calldata than what was just verified.
+        it('rejects a native EVM PayPro instruction when a top-level legacy txp.data override differs from the signed calldata', function() {
+          const txp = { ...createNativeEvmTxp(nativeData), data: differentNativeData };
+          Verifier.checkPaypro(txp, createNativeEvmPaypro(nativeData)).should.equal(false);
+        });
+
         it('rejects identical malformed native EVM calldata without throwing', function() {
           let result;
           chai.expect(() => {
