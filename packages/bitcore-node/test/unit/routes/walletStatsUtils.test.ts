@@ -70,6 +70,24 @@ describe('WalletStats API utils', function() {
       expect(parseParams({ d: '2026-08-03T00:00:00Z' }, { d: { type: 'date' } }).error).to.exist;
     });
 
+    it('rejects a date that is well formed but not a real day', () => {
+      expect(parseParams({ d: '2026-13-45' }, { d: { type: 'date' } }).error).to.exist;
+      expect(parseParams({ d: '2026-02-30' }, { d: { type: 'date' } }).error).to.exist;
+      expect(parseParams({ d: '2026-00-10' }, { d: { type: 'date' } }).error).to.exist;
+      expect(parseParams({ d: '2026-01-00' }, { d: { type: 'date' } }).error).to.exist;
+    });
+
+    it('accepts a leap day in UTC regardless of the local timezone', () => {
+      expect(parseParams({ d: '2024-02-29' }, { d: { type: 'date' } }).values).to.deep.equal({ d: '2024-02-29' });
+      expect(parseParams({ d: '2026-02-29' }, { d: { type: 'date' } }).error).to.exist;
+    });
+
+    it('uppercases a chain so callers can send btc or BTC', () => {
+      expect(parseParams({ chain: 'btc' }, { chain: { type: 'chain' } }).values).to.deep.equal({ chain: 'BTC' });
+      expect(parseParams({ chain: 'BTC' }, { chain: { type: 'chain' } }).values).to.deep.equal({ chain: 'BTC' });
+      expect(parseParams({ chain: 'b tc' }, { chain: { type: 'chain' } }).error).to.exist;
+    });
+
     it('validates ints against their bounds', () => {
       expect(parseParams({ n: '50' }, { n: { type: 'int', max: 100 } }).values).to.deep.equal({ n: 50 });
       expect(parseParams({ n: '0' }, { n: { type: 'int', max: 100 } }).error).to.exist;

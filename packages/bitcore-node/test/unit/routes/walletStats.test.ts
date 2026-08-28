@@ -76,6 +76,28 @@ describe('WalletStats routes', function() {
       expect(parseSnapshotQuery({ network: 'main/net' }).error).to.exist;
     });
 
+    it('uppercases the chain, which is how the collector stores it', () => {
+      expect(parseSnapshotQuery({ chain: 'btc' }).filter).to.deep.equal({ chain: 'BTC' });
+    });
+
+    it('rejects a date that is not a real day', () => {
+      expect(parseSnapshotQuery({ from: '2026-13-45' }).error).to.exist;
+    });
+
+    it('defaults the limit and caps it', () => {
+      expect(parseSnapshotQuery({}).limit).to.equal(1000);
+      expect(parseSnapshotQuery({ limit: '25' }).limit).to.equal(25);
+      expect(parseSnapshotQuery({ limit: '5000' }).limit).to.equal(5000);
+      expect(parseSnapshotQuery({ limit: '5001' }).error).to.exist;
+      expect(parseSnapshotQuery({ limit: '0' }).error).to.exist;
+      expect(parseSnapshotQuery({ limit: '-1' }).error).to.exist;
+      expect(parseSnapshotQuery({ limit: '10.5' }).error).to.exist;
+    });
+
+    it('keys the cache on the limit, so a capped page is not served as a full one', () => {
+      expect(parseSnapshotQuery({ limit: '10' }).cacheKey).to.not.equal(parseSnapshotQuery({ limit: '20' }).cacheKey);
+    });
+
     it('gives the same cache key regardless of param order', () => {
       const a = parseSnapshotQuery({ chain: 'BTC', from: '2026-07-01' }).cacheKey;
       const b = parseSnapshotQuery({ from: '2026-07-01', chain: 'BTC' }).cacheKey;
@@ -150,9 +172,12 @@ describe('WalletStats routes', function() {
     let find: sinon.SinonStub;
     let sort: sinon.SinonStub;
 
+    let limit: sinon.SinonStub;
+
     beforeEach(() => {
       toArray = sandbox.stub().resolves([]);
-      sort = sandbox.stub().returns({ toArray });
+      limit = sandbox.stub().returns({ toArray });
+      sort = sandbox.stub().returns({ limit });
       find = sandbox.stub().returns({ sort });
       sandbox.stub(WalletStatsStorage, 'collection').get(() => ({ find }));
       sandbox.stub(CacheStorage, 'getGlobalOrRefresh').callsFake(async (_key, onMiss) => onMiss());
@@ -178,6 +203,16 @@ describe('WalletStats routes', function() {
       await getSnapshots({ query: { chain: 'BTC' } } as any, res);
       expect(find.calledOnceWith({ chain: 'BTC' })).to.equal(true);
       expect(sort.calledOnceWith({ chain: 1, network: 1, date: 1 })).to.equal(true);
+    });
+
+    it('bounds the result set', async () => {
+      const res = makeRes();
+      await getSnapshots({ query: {} } as any, res);
+      expect(limit.calledOnceWith(1000)).to.equal(true);
+
+      limit.resetHistory();
+      await getSnapshots({ query: { limit: '25' } } as any, res);
+      expect(limit.calledOnceWith(25)).to.equal(true);
     });
 
     it('returns transformed snapshots', async () => {
