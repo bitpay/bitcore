@@ -1216,9 +1216,9 @@ export class WalletService implements IWalletService {
     // end-to-end identity protocol rather than a local identity fallback.
     // SECURITY: xPubKey is required for every join, including hardwareSourcePublicKey/
     // clientDerivedPublicKey ones. Copayer.xPubToCopayerId() (called below both for the TSS
-    // participant check and inside Copayer.create()) hashes opts.xPubKey directly; passing it
-    // undefined throws for the default coin and produces a colliding constant hash for every
-    // other coin. bitcore-wallet-client's only join path (_doJoinWallet) always sends a real
+    // participant check and inside Copayer.create()) now throws on a missing xpub for every
+    // coin (see its own guard), so an xPubKey-less join can no longer derive a copayer id at
+    // all. bitcore-wallet-client's only join path (_doJoinWallet) always sends a real
     // xPubKey regardless of these two fields, so this doesn't restrict any flow this repo's
     // own client exercises - see the TSS-participant comment below for how that was confirmed.
     if (!checkRequired(opts, ['walletId', 'name', 'requestPubKey', 'copayerSignature', 'xPubKey'], cb)) return;
