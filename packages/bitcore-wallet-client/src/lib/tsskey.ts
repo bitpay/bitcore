@@ -679,6 +679,7 @@ export class TssKeyGen extends EventEmitter {
     this.#credentials.addWalletInfo(credObj.walletId, walletName, 1, 1, copayerName, {
       useNativeSegwit: ['P2WPKH', 'P2WSH', 'P2TR'].includes(wallet.addressType),
       segwitVersion: wallet.addressType === 'P2TR' ? 1 : 0,
+      tssKeyId: this.id,
     });
     return wallet;
   }
@@ -714,6 +715,7 @@ export class TssKeyGen extends EventEmitter {
     this.#credentials.addWalletInfo(credObj.walletId, credObj.walletName, 1, 1, copayerName, {
       useNativeSegwit: ['P2WPKH', 'P2WSH', 'P2TR'].includes(wallet.addressType),
       segwitVersion: wallet.addressType === 'P2TR' ? 1 : 0,
+      tssKeyId: this.id,
     });
     
     return wallet;

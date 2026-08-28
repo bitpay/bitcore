@@ -605,8 +605,9 @@ export class API extends EventEmitter {
     opts?: {
       useNativeSegwit?: boolean;
       segwitVersion?: number;
-      tssKeyid?: string;
       allowOverwrite?: boolean;
+      /** Bypass the check for an already complete wallet and proceed to pulling data from server */
+      forceOpen?: boolean;
     },
     /** @deprecated */
     cb?: (err?: Error, status?: any) => void
@@ -620,9 +621,11 @@ export class API extends EventEmitter {
         log.warn('DEPRECATED: openWallet will remove callback support in the future.');
       }
       opts = opts || {};
+      const { forceOpen = false } = opts;
+      delete opts.forceOpen; // don't pass to addWalletInfo
 
       $.checkState(this.credentials, 'Failed state: this.credentials at <openWallet()>');
-      if (this.credentials.isComplete() && this.credentials.hasWalletInfo()) {
+      if (!forceOpen && this.credentials.isComplete() && this.credentials.hasWalletInfo()) {
         if (cb) { cb(null, true); }
         return true; // ?? TODO: should return status?
       }
@@ -631,7 +634,11 @@ export class API extends EventEmitter {
       const wallet = status.wallet;
       this._processStatus(status);
 
-      if (!this.credentials.hasWalletInfo()) {
+      $.checkState(!this.credentials.tssKeyId || this.credentials.tssKeyId === wallet.tssKeyId, 'Failed state: tssKeyId mismatch at <openWallet()>');
+
+      const needsWalletInfo = !this.credentials.hasWalletInfo();
+      const needsTssInfo = wallet.tssKeyId && !this.credentials.hasTssInfo();
+      if (needsWalletInfo || needsTssInfo) {
         const me = (wallet.copayers || []).find(c => c.id === this.credentials.copayerId);
         if (!me) throw new Error('Copayer not in wallet');
 
@@ -1061,6 +1068,7 @@ export class API extends EventEmitter {
       c.addWalletInfo(walletId, walletName, m, n, copayerName, {
         useNativeSegwit: opts.useNativeSegwit,
         segwitVersion: opts.segwitVersion,
+        tssKeyId: opts.tssKeyId,
         allowOverwrite: !!opts.tssKeyId,
       });
       const secret = API._buildSecret(
@@ -1165,6 +1173,7 @@ export class API extends EventEmitter {
           {
             useNativeSegwit: Utils.isNativeSegwit(wallet.addressType),
             segwitVersion: Utils.getSegwitVersion(wallet.addressType),
+            tssKeyId: wallet.tssKeyId,
             allowOverwrite: true
           }
         );
@@ -1677,9 +1686,10 @@ export class API extends EventEmitter {
       $.checkState(this.credentials.sharedEncryptingKey);
       $.checkArgument(opts);
 
-      // BCH schnorr deployment
-      if (!opts.signingMethod && this.credentials.coin == 'bch') {
-        opts.signingMethod = 'schnorr';
+      if (!opts.signingMethod && this.credentials.chain == 'bch') {
+        // TSS produces ECDSA signatures, otherwise use Schnorr for BCH
+        // If we were to ever implement FROST for TSS, we would need to revisit this logic.
+        opts.signingMethod = this.credentials.tssKeyId ? 'ecdsa' : 'schnorr';
       }
 
       const args = this._getCreateTxProposalArgs(opts);
