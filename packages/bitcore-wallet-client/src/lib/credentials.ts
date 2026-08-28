@@ -378,6 +378,10 @@ export class Credentials {
     return !!this.walletId;
   }
 
+  hasTssInfo() {
+    return !!this.tssKeyId;
+  }
+
   addPublicKeyRing(publicKeyRing) {
     this.publicKeyRing = JSON.parse(JSON.stringify(publicKeyRing));
   }
