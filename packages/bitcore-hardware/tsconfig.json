@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "module": "Node16",
+    "target": "ES2022",
+    "outDir": "./build",
+    "moduleResolution": "Node16",
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+    "paths":
+      {"*": ["./*", "./src/*"]
+    },
+    "sourceMap": true
+  },
+  "include": [
+    "./src/**/*.ts",
+    "./test/**/*.ts",
+    "./examples/**/*.ts",
+  ],
+  "exclude": ["node_modules"]
+}

@@ -1,0 +1,4 @@
+enable-source-maps: true
+exit: true
+recursive: true
+timeout: 5000

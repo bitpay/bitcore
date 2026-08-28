@@ -1,0 +1,81 @@
+import { createRequire } from 'module';
+import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
+import { Psbt } from 'bitcoinjs-lib';
+import {
+  Observable,
+  lastValueFrom
+} from 'rxjs';
+import { BaseModule } from 'src/types/base.js';
+import { EveryUtxoType, TransactionType } from 'src/types/txTypes.js';
+import Util from '../../util.js';
+import type * as SignerKitBtc from '@ledgerhq/device-signer-kit-bitcoin';
+// @eslint disable import/newline-after-import
+const require = createRequire(import.meta.url);
+const {
+  DefaultDescriptorTemplate,
+  DefaultWallet
+}: typeof SignerKitBtc = require('@ledgerhq/device-signer-kit-bitcoin');
+
+const { HDPublicKey } = BitcoreLib;
+
+export default class BitcoinModule implements BaseModule {
+  signer: SignerKitBtc.SignerBtc;
+  derivationPath = "84'/0'/0'";
+  
+  constructor(signer: SignerKitBtc.SignerBtc) {
+    this.signer = signer;
+  }
+
+  async sign(params: { tx: string; utxos: EveryUtxoType[] })
+  async sign(params: { tx: TransactionType; utxos?: EveryUtxoType[] }) {
+    const { tx, utxos } = params;
+    const bitcoreTx = Util.buildTransaction(tx, utxos);
+    
+    const psbt = new Psbt();
+
+    const pubkey = new HDPublicKey(await this.getPublicKey()).derive('m/0/0').publicKey.toBuffer();
+    const masterFingerprint = await this.getMasterKeyFingerprint();
+
+    
+    psbt.addInputs(bitcoreTx.inputs.map(input => ({
+      hash: input.prevTxId.toString('hex'),
+      index: input.outputIndex,
+      witnessUtxo: {
+        script: input.output._script.toBuffer(),
+        value: input.output._satoshis
+      },
+      bip32Derivation: [{
+        masterFingerprint: Buffer.from(masterFingerprint.buffer, masterFingerprint.byteOffset, masterFingerprint.byteLength),
+        pubkey,
+        path: "m/84'/0'/0'/0/0",
+      }]
+    })));
+    psbt.addOutputs(bitcoreTx.outputs.map(utxo => ({ script: utxo.script.toBuffer(), value: utxo.satoshis })));
+
+    const ob: Observable<any> = this.signer.signTransaction(
+      new DefaultWallet(this.derivationPath, DefaultDescriptorTemplate.NATIVE_SEGWIT),
+      psbt
+    ).observable;
+
+    const result = await lastValueFrom(ob);
+    return result.output.slice(2);
+  }
+  
+  async getAddress() {
+    const ob: Observable<any> = this.signer.getWalletAddress({ derivationPath: this.derivationPath, template: DefaultDescriptorTemplate.NATIVE_SEGWIT }, 0).observable;
+    const result = await lastValueFrom(ob);
+    return result.output.address;
+  }
+
+  async getPublicKey() {
+    const ob: Observable<any> = this.signer.getExtendedPublicKey(this.derivationPath).observable;
+    const result = await lastValueFrom(ob);
+    return result.output.extendedPublicKey;
+  }
+
+  async getMasterKeyFingerprint(): Promise<Uint8Array> {
+    const ob: Observable<any> = this.signer.getMasterFingerprint().observable;
+    const result = await lastValueFrom(ob);
+    return result.output.masterFingerprint;
+  }
+}
