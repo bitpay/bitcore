@@ -32,12 +32,13 @@ function Output(args) {
     }
 
     if (args.type === 'taproot') {
-      this.branch = [];
+      this._branch = [];
+      this._isValid = true;
       Object.defineProperty(this, 'isValid', {
         configurable: false,
         enumerable: false,
         get: function() {
-          this._isValid || this._branch.length === 0;
+          return this._isValid;
         },
         set: function(isValid) {
           this._isValid = isValid;
@@ -240,7 +241,7 @@ Output.prototype._insertNode = function(node, depth) {
    * The 'node' variable is overwritten here with the newly combined node. */
   while (this.isValid && this._branch.length > depth && this._branch[depth]) {
     node = this._combineNodes(node, this._branch[depth]);
-    this._branch = this._branch.slice(0, this._branch.length - 2);
+    this._branch.pop();
     if (depth == 0) {
       this.isValid = false; /* Can't propagate further up than the root */
     }
@@ -249,10 +250,10 @@ Output.prototype._insertNode = function(node, depth) {
   if (this.isValid) {
     /* Make sure the branch is big enough to place the new node. */
     if (this._branch.length <= depth) {
-      this._branch = this._branch.slice(0, depth + 1);
+      this._branch.length = depth + 1;
     }
-    $.checkState(!this._nodes[depth]);
-    m_branch[depth] = node;
+    $.checkState(!this._branch[depth]);
+    this._branch[depth] = node;
   }
 };
 
@@ -285,11 +286,11 @@ Output.prototype._combineNodes = function(a, b) {
  * Finalize the construction. Can only be called when IsComplete() is true.
  *  internal_key.IsFullyValid() must be true.
  * @param {PublicKey} pubKey 
+ * @returns {{ parity: Number, tweakedPubKey: Buffer }}
  */
 Output.prototype.finalize = function(pubKey) {
   $.checkState(this.isComplete === true, 'finalize can only be called when isComplete is true');
-  const ret = pubKey.createTapTweak(this._branch.length === 0 ? null : this._branch[0].hash);
-
+  return pubKey.createTapTweak(this._branch.length === 0 ? null : this._branch[0].hash);
 };
 
 module.exports = Output;

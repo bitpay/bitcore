@@ -1,21 +1,18 @@
 'use strict';
 
 var inherits = require('inherits');
-
-var $ = require('../../util/preconditions');
-var BufferUtil = require('../../util/buffer');
-
-var PublicKey = require('../../publickey');
 var Hash = require('../../crypto/hash');
-var Input = require('./input');
+var Signature = require('../../crypto/signature');
+var BufferWriter = require('../../encoding/bufferwriter');
+var PublicKey = require('../../publickey');
+var Script = require('../../script');
+var BufferUtil = require('../../util/buffer');
+var $ = require('../../util/preconditions');
 var Output = require('../output');
 var Sighash = require('../sighash');
 var SighashWitness = require('../sighashwitness');
-var BufferWriter = require('../../encoding/bufferwriter');
-var BufferUtil = require('../../util/buffer');
-var Script = require('../../script');
-var Signature = require('../../crypto/signature');
 var TransactionSignature = require('../signature');
+var Input = require('./input');
 
 /**
  * Represents a special kind of input of PayToPublicKeyHash kind.
@@ -40,14 +37,14 @@ PublicKeyHashInput.prototype.getRedeemScript = function(publicKey) {
 };
 
 PublicKeyHashInput.prototype.getScriptCode = function(publicKey) {
-  var writer = new BufferWriter();
-  var script;
+  const writer = new BufferWriter();
+  let script;
   if (this.output.script.isScriptHashOut()) {
     script = this.getRedeemScript(publicKey);
   } else {
     script = this.output.script;
   }
-  var scriptBuffer = Script.buildPublicKeyHashOut(script.toAddress()).toBuffer();
+  const scriptBuffer = Script.buildPublicKeyHashOut(script.toAddress()).toBuffer();
   writer.writeVarintNum(scriptBuffer.length);
   writer.write(scriptBuffer);
   return writer.toBuffer();
@@ -177,8 +174,8 @@ PublicKeyHashInput.prototype.isValidSignature = function(transaction, signature,
   // FIXME: Refactor signature so this is not necessary
   signature.signature.nhashtype = signature.sigtype;
   if (this.output.script.isWitnessPublicKeyHashOut() || this.output.script.isScriptHashOut()) {
-    var scriptCode = this.getScriptCode(signature.publicKey);
-    var satoshisBuffer = this.getSatoshisBuffer();
+    const scriptCode = this.getScriptCode(signature.publicKey);
+    const satoshisBuffer = this.getSatoshisBuffer();
     return SighashWitness.verify(
       transaction,
       signature.signature,

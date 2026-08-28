@@ -1,16 +1,15 @@
 'use strict';
 
 var _ = require('lodash');
-
-var Script = require('./script');
-var Opcode = require('../opcode');
 var BN = require('../crypto/bn');
-var Hash = require('../crypto/hash');
-var Signature = require('../crypto/signature');
-var PublicKey = require('../publickey');
 var ECDSA = require('../crypto/ecdsa');
+var Hash = require('../crypto/hash');
 var Schnorr = require('../crypto/schnorr');
+var Signature = require('../crypto/signature');
 var BufferWriter = require('../encoding/bufferwriter');
+var Opcode = require('../opcode');
+var PublicKey = require('../publickey');
+var Script = require('./script');
 
 
 
@@ -51,7 +50,7 @@ var Interpreter = function Interpreter(obj) {
  * Translated from bitcoind's VerifyScript
  */
 Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags, satoshisBN) {
-  var Transaction = require('../transaction');
+  const Transaction = require('../transaction');
 
   this.nSigChecks = 0;
 
@@ -86,7 +85,7 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
     flags: flags,
     satoshisBN: satoshisBN,
   });
-  var stackCopy;
+  let stackCopy;
 
   if ((flags & Interpreter.SCRIPT_VERIFY_SIGPUSHONLY) !== 0 && !scriptSig.isPushOnly()) {
     this.errstr = 'SCRIPT_ERR_SIG_PUSHONLY';
@@ -102,7 +101,7 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
     stackCopy = this.stack.slice();
   }
 
-  var stack = this.stack;
+  const stack = this.stack;
   this.initialize();
   this.set({
     script: scriptPubkey,
@@ -123,7 +122,7 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
     return false;
   }
 
-  var buf = this.stack[this.stack.length - 1];
+  const buf = this.stack[this.stack.length - 1];
   if (!Interpreter.castToBool(buf)) {
     this.errstr = 'SCRIPT_ERR_EVAL_FALSE_IN_STACK';
     return false;
@@ -145,8 +144,8 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
       throw new Error('internal error - stack copy empty');
     }
 
-    var redeemScriptSerialized = stackCopy[stackCopy.length - 1];
-    var redeemScript = Script.fromBuffer(redeemScriptSerialized);
+    const redeemScriptSerialized = stackCopy[stackCopy.length - 1];
+    const redeemScript = Script.fromBuffer(redeemScriptSerialized);
     stackCopy.pop();
 
     this.initialize();
@@ -186,17 +185,17 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
   // a clean stack (the P2SH inputs remain). The same holds for witness
   // evaluation.
   if ((flags & Interpreter.SCRIPT_VERIFY_CLEANSTACK) != 0) {
-      // Disallow CLEANSTACK without P2SH, as otherwise a switch
-      // CLEANSTACK->P2SH+CLEANSTACK would be possible, which is not a
-      // softfork (and P2SH should be one).
-      if ((flags & Interpreter.SCRIPT_VERIFY_P2SH) == 0) {
-        throw new Error('internal error - CLEANSTACK without P2SH');
-      }
+    // Disallow CLEANSTACK without P2SH, as otherwise a switch
+    // CLEANSTACK->P2SH+CLEANSTACK would be possible, which is not a
+    // softfork (and P2SH should be one).
+    if ((flags & Interpreter.SCRIPT_VERIFY_P2SH) == 0) {
+      throw new Error('internal error - CLEANSTACK without P2SH');
+    }
 
-      if (this.stack.length != 1) {
-        this.errstr = 'SCRIPT_ERR_CLEANSTACK';
-        return false;
-      }
+    if (this.stack.length != 1) {
+      this.errstr = 'SCRIPT_ERR_CLEANSTACK';
+      return false;
+    }
   }
 
   if (flags & Interpreter.SCRIPT_VERIFY_INPUT_SIGCHECKS) {
@@ -398,7 +397,7 @@ Interpreter.SCRIPT_ENABLE_P2SH_32 = (1 << 26);
 Interpreter.SCRIPT_ENABLE_TOKENS = (1 << 27);
 
 Interpreter.castToBool = function(buf) {
-  for (var i = 0; i < buf.length; i++) {
+  for (let i = 0; i < buf.length; i++) {
     if (buf[i] !== 0) {
       // can be negative zero
       if (i === buf.length - 1 && buf[i] === 0x80) {
@@ -412,16 +411,16 @@ Interpreter.castToBool = function(buf) {
 
 Interpreter.isSchnorrSig = function(buf) {
   return (buf.length === 64 || buf.length === 65) && (buf[0] !== 0x30);
-}
+};
 
 /**
  * Translated from bitcoind's CheckSignatureEncoding
  */
 Interpreter.prototype.checkRawSignatureEncoding = function(buf) {
-  var sig;
+  let sig;
 
-  //TODO update interpreter.js and necessary functions to match bitcoin-abc interpreter.cpp
-  if(Interpreter.isSchnorrSig(buf)) {
+  // TODO update interpreter.js and necessary functions to match bitcoin-abc interpreter.cpp
+  if (Interpreter.isSchnorrSig(buf)) {
     return true;
   }
 
@@ -443,20 +442,20 @@ Interpreter.prototype.checkRawSignatureEncoding = function(buf) {
 
 // Back compat
 Interpreter.prototype.checkSignatureEncoding =
-Interpreter.prototype.checkTxSignatureEncoding = function(buf) {
+  Interpreter.prototype.checkTxSignatureEncoding = function(buf) {
 
     // Empty signature. Not strictly DER encoded, but allowed to provide a
     // compact way to provide an invalid signature for use with CHECK(MULTI)SIG
     if (buf.length == 0) {
-        return true;
+      return true;
     }
 
-    if (!this.checkRawSignatureEncoding(buf.slice(0,buf.length-1))) {
+    if (!this.checkRawSignatureEncoding(buf.slice(0, buf.length-1))) {
       return false;
     }
 
     if ((this.flags & Interpreter.SCRIPT_VERIFY_STRICTENC) !== 0) {
-      var sig = Signature.fromTxFormat(buf);
+      const sig = Signature.fromTxFormat(buf);
       if (!sig.hasDefinedHashtype()) {
         this.errstr = 'SCRIPT_ERR_SIG_HASHTYPE';
         return false;
@@ -475,16 +474,16 @@ Interpreter.prototype.checkTxSignatureEncoding = function(buf) {
     }
 
     return true;
-};
+  };
 
 Interpreter.prototype.checkDataSignatureEncoding = function(buf) {
-    // Empty signature. Not strictly DER encoded, but allowed to provide a
-    // compact way to provide an invalid signature for use with CHECK(MULTI)SIG
-    if (buf.length == 0) {
-        return true;
-    }
+  // Empty signature. Not strictly DER encoded, but allowed to provide a
+  // compact way to provide an invalid signature for use with CHECK(MULTI)SIG
+  if (buf.length == 0) {
+    return true;
+  }
 
-    return this.checkRawSignatureEncoding(buf);
+  return this.checkRawSignatureEncoding(buf);
 };
 
 
@@ -502,7 +501,7 @@ Interpreter.prototype.checkPubkeyEncoding = function(buf) {
 };
 
 function IsCompressedOrUncompressedPubkey(bufPubkey) {
-  switch(bufPubkey.length) {
+  switch (bufPubkey.length) {
     case 33:
       return bufPubkey[0] === 0x02 || bufPubkey[0] === 0x03;
     case 64:
@@ -523,27 +522,27 @@ function IsCompressedOrUncompressedPubkey(bufPubkey) {
 
 Interpreter._isMinimallyEncoded = function(buf, nMaxNumSize) {
   nMaxNumSize = nMaxNumSize || Interpreter.MAXIMUM_ELEMENT_SIZE;
-  if (buf.length >  nMaxNumSize ) {
-      return false;
+  if (buf.length > nMaxNumSize ) {
+    return false;
   }
 
   if (buf.length > 0) {
-      // Check that the number is encoded with the minimum possible number
-      // of bytes.
-      //
-      // If the most-significant-byte - excluding the sign bit - is zero
-      // then we're not minimal. Note how this test also rejects the
-      // negative-zero encoding, 0x80.
-      if ((buf[buf.length-1] & 0x7f) == 0) {
-          // One exception: if there's more than one byte and the most
-          // significant bit of the second-most-significant-byte is set it
-          // would conflict with the sign bit. An example of this case is
-          // +-255, which encode to 0xff00 and 0xff80 respectively.
-          // (big-endian).
-          if (buf.length <= 1 || (buf[buf.length - 2] & 0x80) == 0) {
-              return false;
-          }
+    // Check that the number is encoded with the minimum possible number
+    // of bytes.
+    //
+    // If the most-significant-byte - excluding the sign bit - is zero
+    // then we're not minimal. Note how this test also rejects the
+    // negative-zero encoding, 0x80.
+    if ((buf[buf.length-1] & 0x7f) == 0) {
+      // One exception: if there's more than one byte and the most
+      // significant bit of the second-most-significant-byte is set it
+      // would conflict with the sign bit. An example of this case is
+      // +-255, which encode to 0xff00 and 0xff80 respectively.
+      // (big-endian).
+      if (buf.length <= 1 || (buf[buf.length - 2] & 0x80) == 0) {
+        return false;
       }
+    }
   }
   return true;
 };
@@ -555,47 +554,47 @@ Interpreter._isMinimallyEncoded = function(buf, nMaxNumSize) {
   * @param {number} nMaxNumSize (max allowed size)
   */
 Interpreter._minimallyEncode = function(buf) {
-    if (buf.length == 0) {
-        return buf;
-    }
+  if (buf.length == 0) {
+    return buf;
+  }
 
-    // If the last byte is not 0x00 or 0x80, we are minimally encoded.
-    var last = buf[buf.length - 1];
-    if (last & 0x7f) {
-        return buf;
-    }
+  // If the last byte is not 0x00 or 0x80, we are minimally encoded.
+  const last = buf[buf.length - 1];
+  if (last & 0x7f) {
+    return buf;
+  }
 
-    // If the script is one byte long, then we have a zero, which encodes as an
-    // empty array.
-    if (buf.length == 1) {
-      return Buffer.from('');
-    }
-
-    // If the next byte has it sign bit set, then we are minimaly encoded.
-    if (buf[buf.length - 2] & 0x80) {
-        return buf;
-    }
-
-    // We are not minimally encoded, we need to figure out how much to trim.
-    for (var i = buf.length - 1; i > 0; i--) {
-        // We found a non zero byte, time to encode.
-        if (buf[i - 1] != 0) {
-            if (buf[i - 1] & 0x80) {
-                // We found a byte with it sign bit set so we need one more
-                // byte.
-                buf[i++] = last;
-            } else {
-                // the sign bit is clear, we can use it.
-                buf[i - 1] |= last;
-            }
-
-            return buf.slice(0,i);
-        }
-    }
-
-    // If we the whole thing is zeros, then we have a zero.
+  // If the script is one byte long, then we have a zero, which encodes as an
+  // empty array.
+  if (buf.length == 1) {
     return Buffer.from('');
-}
+  }
+
+  // If the next byte has it sign bit set, then we are minimaly encoded.
+  if (buf[buf.length - 2] & 0x80) {
+    return buf;
+  }
+
+  // We are not minimally encoded, we need to figure out how much to trim.
+  for (let i = buf.length - 1; i > 0; i--) {
+    // We found a non zero byte, time to encode.
+    if (buf[i - 1] != 0) {
+      if (buf[i - 1] & 0x80) {
+        // We found a byte with it sign bit set so we need one more
+        // byte.
+        buf[i++] = last;
+      } else {
+        // the sign bit is clear, we can use it.
+        buf[i - 1] |= last;
+      }
+
+      return buf.slice(0, i);
+    }
+  }
+
+  // If we the whole thing is zeros, then we have a zero.
+  return Buffer.from('');
+};
 
 
 
@@ -612,7 +611,7 @@ Interpreter.prototype.evaluate = function() {
 
   try {
     while (this.pc < this.script.chunks.length) {
-      var fSuccess = this.step();
+      const fSuccess = this.step();
       if (!fSuccess) {
         return false;
       }
@@ -654,7 +653,7 @@ Interpreter.prototype.checkLockTime = function(nLockTime) {
   // unless the type of nLockTime being tested is the same as
   // the nLockTime in the transaction.
   if (!(
-    (this.tx.nLockTime <  Interpreter.LOCKTIME_THRESHOLD && nLockTime.lt(Interpreter.LOCKTIME_THRESHOLD_BN)) ||
+    (this.tx.nLockTime < Interpreter.LOCKTIME_THRESHOLD && nLockTime.lt(Interpreter.LOCKTIME_THRESHOLD_BN)) ||
     (this.tx.nLockTime >= Interpreter.LOCKTIME_THRESHOLD && nLockTime.gte(Interpreter.LOCKTIME_THRESHOLD_BN))
   )) {
     return false;
@@ -681,7 +680,7 @@ Interpreter.prototype.checkLockTime = function(nLockTime) {
   }
 
   return true;
-}
+};
 
 
 /**
@@ -692,54 +691,54 @@ Interpreter.prototype.checkLockTime = function(nLockTime) {
  */
 Interpreter.prototype.checkSequence = function(nSequence) {
 
-    // Relative lock times are supported by comparing the passed in operand to
-    // the sequence number of the input.
-    var txToSequence = this.tx.inputs[this.nin].sequenceNumber;
+  // Relative lock times are supported by comparing the passed in operand to
+  // the sequence number of the input.
+  const txToSequence = this.tx.inputs[this.nin].sequenceNumber;
 
-    // Fail if the transaction's version number is not set high enough to
-    // trigger BIP 68 rules.
-    if (this.tx.version < 2) {
-        return false;
-    }
+  // Fail if the transaction's version number is not set high enough to
+  // trigger BIP 68 rules.
+  if (this.tx.version < 2) {
+    return false;
+  }
 
-    // Sequence numbers with their most significant bit set are not consensus
-    // constrained. Testing that the transaction's sequence number do not have
-    // this bit set prevents using this property to get around a
-    // CHECKSEQUENCEVERIFY check.
-    if (txToSequence & SEQUENCE_LOCKTIME_DISABLE_FLAG) {
-        return false;
-    }
+  // Sequence numbers with their most significant bit set are not consensus
+  // constrained. Testing that the transaction's sequence number do not have
+  // this bit set prevents using this property to get around a
+  // CHECKSEQUENCEVERIFY check.
+  if (txToSequence & Interpreter.SEQUENCE_LOCKTIME_DISABLE_FLAG) {
+    return false;
+  }
 
-    // Mask off any bits that do not have consensus-enforced meaning before
-    // doing the integer comparisons
-    var nLockTimeMask =
-        Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG | Interpreter.SEQUENCE_LOCKTIME_MASK;
-    var txToSequenceMasked = new BN(txToSequence & nLockTimeMask);
-    var nSequenceMasked = nSequence.and(nLockTimeMask);
+  // Mask off any bits that do not have consensus-enforced meaning before
+  // doing the integer comparisons
+  const nLockTimeMask =
+    Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG | Interpreter.SEQUENCE_LOCKTIME_MASK;
+  const txToSequenceMasked = new BN(txToSequence & nLockTimeMask);
+  const nSequenceMasked = nSequence.and(nLockTimeMask);
 
-    // There are two kinds of nSequence: lock-by-blockheight and
-    // lock-by-blocktime, distinguished by whether nSequenceMasked <
-    // CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG.
-    //
-    // We want to compare apples to apples, so fail the script unless the type
-    // of nSequenceMasked being tested is the same as the nSequenceMasked in the
-    // transaction.
-    var SEQUENCE_LOCKTIME_TYPE_FLAG_BN = new BN(Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG);
+  // There are two kinds of nSequence: lock-by-blockheight and
+  // lock-by-blocktime, distinguished by whether nSequenceMasked <
+  // CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG.
+  //
+  // We want to compare apples to apples, so fail the script unless the type
+  // of nSequenceMasked being tested is the same as the nSequenceMasked in the
+  // transaction.
+  const SEQUENCE_LOCKTIME_TYPE_FLAG_BN = new BN(Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG);
 
-    if (!((txToSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)  &&
+  if (!((txToSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN) &&
            nSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)) ||
           (txToSequenceMasked.gte(SEQUENCE_LOCKTIME_TYPE_FLAG_BN) &&
            nSequenceMasked.gte(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)))) {
-        return false;
-    }
-
-    // Now that we know we're comparing apples-to-apples, the comparison is a
-    // simple numeric one.
-    if (nSequenceMasked.gt(txToSequenceMasked)) {
-        return false;
-    }
-    return true;
+    return false;
   }
+
+  // Now that we know we're comparing apples-to-apples, the comparison is a
+  // simple numeric one.
+  if (nSequenceMasked.gt(txToSequenceMasked)) {
+    return false;
+  }
+  return true;
+};
 
 /**
  * Implemented from bitcoin-abc
@@ -749,19 +748,19 @@ Interpreter.prototype.checkSequence = function(nSequence) {
  */
 function DecodeBitfield(dummy, size) {
   if (size > 32) {
-    this.errstr = "INVALID_BITFIELD_SIZE";
-    return {result: false};
+    this.errstr = 'INVALID_BITFIELD_SIZE';
+    return { result: false };
   }
 
-  let bitfieldSize = Math.floor((size + 7) / 8);
-  let dummyBitlength = dummy.length;
+  const bitfieldSize = Math.floor((size + 7) / 8);
+  const dummyBitlength = dummy.length;
   if (dummyBitlength !== bitfieldSize) {
-    this.errstr = "INVALID_BITFIELD_SIZE";
-    return {result: false};
+    this.errstr = 'INVALID_BITFIELD_SIZE';
+    return { result: false };
   }
 
   let bitfield = 0;
-  let dummyAs32Bit = Uint32Array.from(dummy);
+  const dummyAs32Bit = Uint32Array.from(dummy);
   // let one = new Uint8Array([1]);
   // let oneAs64Bit = BigUint64Array.from(one);
 
@@ -769,13 +768,13 @@ function DecodeBitfield(dummy, size) {
     bitfield = bitfield | (dummyAs32Bit[i] << (8*i));
   }
 
-  let mask = (0x01 << size) - 1
-  if((bitfield & mask) != bitfield) {
-    this.errstr = "INVALID_BIT_RANGE";
-    return {result: false};
+  const mask = (0x01 << size) - 1;
+  if ((bitfield & mask) != bitfield) {
+    this.errstr = 'INVALID_BIT_RANGE';
+    return { result: false };
   }
 
-  return {result: true, bitfield: bitfield};
+  return { result: true, bitfield: bitfield };
 }
 
 /**
@@ -792,9 +791,9 @@ function countBits(v) {
     * More detailed explanation can be found at
     * https://www.playingwithpointers.com/blog/swar.html
   */
-   v = v - (((v) >> 1) & 0x55555555);
-   v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
-   return ((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
+  v = v - (((v) >> 1) & 0x55555555);
+  v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
+  return ((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
 }
 
 /**
@@ -802,11 +801,9 @@ function countBits(v) {
  * bitcoind commit: b5d1b1092998bc95313856d535c632ea5a8f9104
  */
 Interpreter.prototype.step = function() {
-  var self = this;
-
-  function stacktop(i) {
-    return self.stack[self.stack.length+i];
-  }
+  const stacktop = (i) => {
+    return this.stack[this.stack.length+i];
+  };
 
   function isOpcodeDisabled(opcode, f64BitIntegers) {
     switch (opcode) {
@@ -850,16 +847,16 @@ Interpreter.prototype.step = function() {
   const fNativeTokens = (this.flags & Interpreter.SCRIPT_ENABLE_TOKENS) !== 0;
   const maxScriptIntegerSize = f64BitIntegers ? 8 : 4;
 
-  //bool fExec = !count(vfExec.begin(), vfExec.end(), false);
-  var fExec = (this.vfExec.indexOf(false) === -1);
-  var buf, buf1, buf2, spliced, n, x1, x2, bn, bn1, bn2, bufSig, bufPubkey, bufMessage, subscript;
-  var sig, pubkey;
-  var fValue, fSuccess;
+  // bool fExec = !count(vfExec.begin(), vfExec.end(), false);
+  const fExec = (this.vfExec.indexOf(false) === -1);
+  let buf, buf1, buf2, spliced, n, x1, x2, bn, bn1, bn2, bufSig, bufPubkey, bufMessage, subscript;
+  let sig, pubkey;
+  let fValue, fSuccess;
 
   // Read instruction
-  var chunk = this.script.chunks[this.pc];
+  const chunk = this.script.chunks[this.pc];
   this.pc++;
-  var opcodenum = chunk.opcodenum;
+  const opcodenum = chunk.opcodenum;
   if (_.isUndefined(opcodenum)) {
     this.errstr = 'SCRIPT_ERR_UNDEFINED_OPCODE';
     return false;
@@ -1117,16 +1114,15 @@ Interpreter.prototype.step = function() {
         break;
 
       case Opcode.OP_RETURN:
-        {
-          this.errstr = 'SCRIPT_ERR_OP_RETURN';
-          return false;
-        }
-        break;
+      {
+        this.errstr = 'SCRIPT_ERR_OP_RETURN';
+        return false;
+      }
 
 
-        //
-        // Stack ops
-        //
+      //
+      // Stack ops
+      //
       case Opcode.OP_TOALTSTACK:
         {
           if (this.stack.length < 1) {
@@ -1182,7 +1178,7 @@ Interpreter.prototype.step = function() {
           }
           buf1 = stacktop(-3);
           buf2 = stacktop(-2);
-          var buf3 = stacktop(-1);
+          const buf3 = stacktop(-1);
           this.stack.push(buf1);
           this.stack.push(buf2);
           this.stack.push(buf3);
@@ -1313,7 +1309,7 @@ Interpreter.prototype.step = function() {
             this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
             return false;
           }
-          buf =  stacktop(-n-1);
+          buf = stacktop(-n-1);
           if (opcodenum === Opcode.OP_ROLL) {
             this.stack.splice(this.stack.length - n - 1, 1);
           }
@@ -1332,7 +1328,7 @@ Interpreter.prototype.step = function() {
           }
           x1 = stacktop(-3);
           x2 = stacktop(-2);
-          var x3 = stacktop(-1);
+          const x3 = stacktop(-1);
           this.stack[this.stack.length - 3] = x2;
           this.stack[this.stack.length - 2] = x3;
           this.stack[this.stack.length - 1] = x1;
@@ -1401,17 +1397,17 @@ Interpreter.prototype.step = function() {
           // To avoid allocating, we modify vch1 in place.
           switch (opcodenum) {
             case Opcode.OP_AND:
-              for (var i = 0; i < buf1.length; i++) {
+              for (let i = 0; i < buf1.length; i++) {
                 buf1[i] &= buf2[i];
               }
               break;
             case Opcode.OP_OR:
-              for (var i = 0; i < buf1.length; i++) {
+              for (let i = 0; i < buf1.length; i++) {
                 buf1[i] |= buf2[i];
               }
               break;
             case Opcode.OP_XOR:
-              for (var i = 0; i < buf1.length; i++) {
+              for (let i = 0; i < buf1.length; i++) {
                 buf1[i] ^= buf2[i];
               }
               break;
@@ -1420,13 +1416,13 @@ Interpreter.prototype.step = function() {
           }
 
           // And pop vch2.
-          this.stack.pop()
+          this.stack.pop();
         }
         break;
 
       case Opcode.OP_EQUAL:
       case Opcode.OP_EQUALVERIFY:
-        //case Opcode.OP_NOTEQUAL: // use Opcode.OP_NUMNOTEQUAL
+        // case Opcode.OP_NOTEQUAL: // use Opcode.OP_NUMNOTEQUAL
         {
           // (x1 x2 - bool)
           if (this.stack.length < 2) {
@@ -1435,7 +1431,7 @@ Interpreter.prototype.step = function() {
           }
           buf1 = stacktop(-2);
           buf2 = stacktop(-1);
-          var fEqual = buf1.toString('hex') === buf2.toString('hex');
+          const fEqual = buf1.toString('hex') === buf2.toString('hex');
           this.stack.pop();
           this.stack.pop();
           this.stack.push(fEqual ? Interpreter.true : Interpreter.false);
@@ -1489,7 +1485,7 @@ Interpreter.prototype.step = function() {
             case Opcode.OP_0NOTEQUAL:
               bn = new BN((bn.cmp(BN.Zero) !== 0) + 0);
               break;
-              //default:      assert(!'invalid opcode'); break; // TODO: does this ever occur?
+              // default:      assert(!'invalid opcode'); break; // TODO: does this ever occur?
           }
           this.stack.pop();
           this.stack.push(bn.toScriptNumBuffer());
@@ -1621,8 +1617,8 @@ Interpreter.prototype.step = function() {
           }
           bn1 = BN.fromScriptNumBuffer(stacktop(-3), fRequireMinimal, maxScriptIntegerSize);
           bn2 = BN.fromScriptNumBuffer(stacktop(-2), fRequireMinimal, maxScriptIntegerSize);
-          var bn3 = BN.fromScriptNumBuffer(stacktop(-1), fRequireMinimal, maxScriptIntegerSize);
-          //bool fValue = (bn2 <= bn1 && bn1 < bn3);
+          const bn3 = BN.fromScriptNumBuffer(stacktop(-1), fRequireMinimal, maxScriptIntegerSize);
+          // bool fValue = (bn2 <= bn1 && bn1 < bn3);
           fValue = (bn2.cmp(bn1) <= 0) && (bn1.cmp(bn3) < 0);
           this.stack.pop();
           this.stack.pop();
@@ -1647,7 +1643,7 @@ Interpreter.prototype.step = function() {
             return false;
           }
           buf = stacktop(-1);
-          //valtype vchHash((opcode == Opcode.OP_RIPEMD160 ||
+          // valtype vchHash((opcode == Opcode.OP_RIPEMD160 ||
           //                 opcode == Opcode.OP_SHA1 || opcode == Opcode.OP_HASH160) ? 20 : 32);
           var bufHash;
           if (opcodenum === Opcode.OP_RIPEMD160) {
@@ -1696,20 +1692,20 @@ Interpreter.prototype.step = function() {
           });
 
           // Drop the signature, since there's no way for a signature to sign itself
-          var tmpScript = new Script().add(bufSig);
+          const tmpScript = new Script().add(bufSig);
           subscript.findAndDelete(tmpScript);
 
           try {
             sig = Signature.fromTxFormat(bufSig);
             pubkey = PublicKey.fromBuffer(bufPubkey, false);
 
-            if(!sig.isSchnorr) {
+            if (!sig.isSchnorr) {
               fSuccess = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags);
             } else {
               fSuccess = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags, 'schnorr');
             }
           } catch (e) {
-            //invalid sig or pubkey
+            // invalid sig or pubkey
             fSuccess = false;
           }
 
@@ -1771,7 +1767,7 @@ Interpreter.prototype.step = function() {
               fSuccess = Schnorr.verify(bufHash, sig, pubkey, 'big');
             }
           } catch (e) {
-            //invalid sig or pubkey
+            // invalid sig or pubkey
             fSuccess = false;
           }
 
@@ -1810,7 +1806,7 @@ Interpreter.prototype.step = function() {
           }
 
           buf1 = stacktop(-1);
-          var reversedBuf = Buffer.from(buf1).reverse();
+          const reversedBuf = Buffer.from(buf1).reverse();
           this.stack.pop();
           this.stack.push(reversedBuf);
         }
@@ -1821,15 +1817,15 @@ Interpreter.prototype.step = function() {
         {
           // ([dummy] [sig ...] num_of_signatures [pubkey ...] num_of_pubkeys -- bool)
 
-          var i = 1;
-          let idxTopKey = i + 1;
+          let i = 1;
+          const idxTopKey = i + 1;
           if (this.stack.length < i) {
             this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
             return false;
           }
 
-          var nKeysCount = BN.fromScriptNumBuffer(stacktop(-i), fRequireMinimal).toNumber();
-          var idxSigCount = idxTopKey + nKeysCount;
+          const nKeysCount = BN.fromScriptNumBuffer(stacktop(-i), fRequireMinimal).toNumber();
+          const idxSigCount = idxTopKey + nKeysCount;
           if (nKeysCount < 0 || nKeysCount > 20) {
             this.errstr = 'SCRIPT_ERR_PUBKEY_COUNT';
             return false;
@@ -1842,8 +1838,8 @@ Interpreter.prototype.step = function() {
 
           // todo map interpreter.cpp variables with interpreter.js variables for future readability, maintainability
           // ikey maps to idxTopKey in interpreter.cpp (MULTISIG case)
-          var ikey = ++i; // top pubkey
-          var idxTopSig = idxSigCount + 1;
+          const ikey = ++i; // top pubkey
+          const idxTopSig = idxSigCount + 1;
 
           // i maps to idxSigCount in interpreter.cpp (MULTISIG case) (stack depth of nSigsCount)
           i += nKeysCount;
@@ -1852,22 +1848,22 @@ Interpreter.prototype.step = function() {
           // the stack. Top stack item = 1. With
           // SCRIPT_VERIFY_NULLFAIL, this is used for cleanup if
           // operation fails.
-          var ikey2 = nKeysCount + 2; // ?dummy variable
+          let ikey2 = nKeysCount + 2; // ?dummy variable
 
           if (this.stack.length < i) {
             this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
             return false;
           }
 
-          var nSigsCount = BN.fromScriptNumBuffer(stacktop(-idxSigCount), fRequireMinimal).toNumber();
-          var idxDummy = idxTopSig + nSigsCount;
+          const nSigsCount = BN.fromScriptNumBuffer(stacktop(-idxSigCount), fRequireMinimal).toNumber();
+          const idxDummy = idxTopSig + nSigsCount;
 
           if (nSigsCount < 0 || nSigsCount > nKeysCount) {
             this.errstr = 'SCRIPT_ERR_SIG_COUNT';
             return false;
           }
           // int isig = ++i;
-          var isig = ++i;
+          const isig = ++i;
           i += nSigsCount;
           if (this.stack.length < idxDummy) {
             this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
@@ -1882,87 +1878,87 @@ Interpreter.prototype.step = function() {
 
           fSuccess = true;
 
-          if((this.flags & Interpreter.SCRIPT_ENABLE_SCHNORR_MULTISIG) && stacktop(-idxDummy).length !== 0) {
+          if ((this.flags & Interpreter.SCRIPT_ENABLE_SCHNORR_MULTISIG) && stacktop(-idxDummy).length !== 0) {
             // SCHNORR MULTISIG
 
-            let dummy = stacktop(-idxDummy);
+            const dummy = stacktop(-idxDummy);
 
-            let bitfieldObj = DecodeBitfield(dummy, nKeysCount);
+            const bitfieldObj = DecodeBitfield(dummy, nKeysCount);
 
-            if(!bitfieldObj["result"]) {
+            if (!bitfieldObj['result']) {
               fSuccess = false;
             }
 
-            let nSigs8bit = new Uint8Array([nSigsCount]);
-            let nSigs32 = Uint32Array.from(nSigs8bit);
+            const nSigs8bit = new Uint8Array([nSigsCount]);
+            const nSigs32 = Uint32Array.from(nSigs8bit);
 
-            if (countBits(bitfieldObj["bitfield"]) !== nSigs32[0]) {
-              this.errstr = "INVALID_BIT_COUNT";
+            if (countBits(bitfieldObj['bitfield']) !== nSigs32[0]) {
+              this.errstr = 'INVALID_BIT_COUNT';
               fSuccess = false;
             }
 
-            var bottomKey = idxTopKey + nKeysCount - 1;
-            var bottomSig = idxTopSig + nSigsCount - 1;
+            const bottomKey = idxTopKey + nKeysCount - 1;
+            const bottomSig = idxTopSig + nSigsCount - 1;
 
             let iKey = 0;
-            for(let iSig = 0; iSig < nSigsCount;
+            for (let iSig = 0; iSig < nSigsCount;
               iSig++, iKey++) {
-                if((bitfieldObj["bitfield"] >> iKey) === 0) {
-                  this.errstr = "INVALID_BIT_RANGE";
-                  fSuccess = false;
-                }
-
-                while(((bitfieldObj["bitfield"] >> iKey) & 0x01) == 0) {
-                  if(iKey >= nKeysCount) {
-                    this.errstr = "wrong";
-                    fSuccess = false;
-                    break;
-                  }
-                  iKey++;
-                }
-
-                // this is a sanity check and should be
-                // unreachable
-                if(iKey >= nKeysCount) {
-                  this.errstr = "PUBKEY_COUNT";
-                  fSuccess = false;
-                }
-
-                // Check the signature
-                let bufsig = stacktop(-bottomSig + iSig)
-                let bufPubkey = stacktop(-bottomKey + iKey)
-
-                // Note that only pubkeys associated with a
-                // signature are check for validity
-
-                if(!this.checkRawSignatureEncoding(bufsig) || !this.checkPubkeyEncoding(bufPubkey)) {
-                  fSuccess = false;
-                }
-
-                let sig = Signature.fromTxFormat(bufsig);
-                let pubkey = PublicKey.fromBuffer(bufPubkey, false);
-                let fOk = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags, "schnorr");
-
-                if(!fOk) {
-                  this.errstr = "SIG_NULLFAIL"
-                  fSuccess = false;
-                }
-
-                if (bufsig.length) {
-                  this.nSigChecks += 1;
-                }
-              }
-
-              if ((bitfieldObj["bitfield"] >> iKey) != 0) {
-                // This is a sanity check and should be
-                // unreachable.
-                this.errstr = "INVALID_BIT_COUNT"
+              if ((bitfieldObj['bitfield'] >> iKey) === 0) {
+                this.errstr = 'INVALID_BIT_RANGE';
                 fSuccess = false;
               }
+
+              while (((bitfieldObj['bitfield'] >> iKey) & 0x01) == 0) {
+                if (iKey >= nKeysCount) {
+                  this.errstr = 'wrong';
+                  fSuccess = false;
+                  break;
+                }
+                iKey++;
+              }
+
+              // this is a sanity check and should be
+              // unreachable
+              if (iKey >= nKeysCount) {
+                this.errstr = 'PUBKEY_COUNT';
+                fSuccess = false;
+              }
+
+              // Check the signature
+              const bufsig = stacktop(-bottomSig + iSig);
+              const bufPubkey = stacktop(-bottomKey + iKey);
+
+              // Note that only pubkeys associated with a
+              // signature are check for validity
+
+              if (!this.checkRawSignatureEncoding(bufsig) || !this.checkPubkeyEncoding(bufPubkey)) {
+                fSuccess = false;
+              }
+
+              const sig = Signature.fromTxFormat(bufsig);
+              const pubkey = PublicKey.fromBuffer(bufPubkey, false);
+              const fOk = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags, 'schnorr');
+
+              if (!fOk) {
+                this.errstr = 'SIG_NULLFAIL';
+                fSuccess = false;
+              }
+
+              if (bufsig.length) {
+                this.nSigChecks += 1;
+              }
+            }
+
+            if ((bitfieldObj['bitfield'] >> iKey) != 0) {
+              // This is a sanity check and should be
+              // unreachable.
+              this.errstr = 'INVALID_BIT_COUNT';
+              fSuccess = false;
+            }
           }
           else {
             // Drop the signatures, since there's no way for a signature to sign itself
-            for (var k = 0; k < nSigsCount; k++) {
+            for (let k = 0; k < nSigsCount; k++) {
               bufSig = stacktop(-isig-k);
               subscript.findAndDelete(new Script().add(bufSig));
             }
@@ -1970,49 +1966,49 @@ Interpreter.prototype.step = function() {
             let nSigsRemaining = nSigsCount;
             let nKeysRemaining = nKeysCount;
             while (fSuccess && nSigsRemaining > 0) {
-                bufSig = stacktop(-isig - (nSigsCount - nSigsRemaining));
-                if (bufSig.length === 65) {
-                  return false;
-                }
-                bufPubkey = stacktop(-ikey - (nKeysCount - nKeysRemaining));
+              bufSig = stacktop(-isig - (nSigsCount - nSigsRemaining));
+              if (bufSig.length === 65) {
+                return false;
+              }
+              bufPubkey = stacktop(-ikey - (nKeysCount - nKeysRemaining));
 
-                if (!this.checkTxSignatureEncoding(bufSig) || !this.checkPubkeyEncoding(bufPubkey)) {
-                  return false;
-                }
-
-                var fOk;
-                try {
-                  sig = Signature.fromTxFormat(bufSig);
-                  pubkey = PublicKey.fromBuffer(bufPubkey, false);
-                  fOk = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags);
-                } catch (e) {
-                  //invalid sig or pubkey
-                  fOk = false;
-                }
-
-                if (fOk) {
-                  nSigsRemaining--;
-                }
-                nKeysRemaining--;
-
-                // If there are more signatures left than keys left,
-                // then too many signatures have failed
-                if (nSigsRemaining > nKeysRemaining) {
-                  fSuccess = false;
-                }
+              if (!this.checkTxSignatureEncoding(bufSig) || !this.checkPubkeyEncoding(bufPubkey)) {
+                return false;
               }
 
-              let areAllSignaturesNull = true;
-              for (let l = 0; l < nSigsCount; l++) {
-                if (stacktop(-isig-l) && stacktop(-isig-l).length) {
-                  areAllSignaturesNull = false;
-                  break;
-                }
+              var fOk;
+              try {
+                sig = Signature.fromTxFormat(bufSig);
+                pubkey = PublicKey.fromBuffer(bufPubkey, false);
+                fOk = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags);
+              } catch (e) {
+                // invalid sig or pubkey
+                fOk = false;
               }
 
-              if (!areAllSignaturesNull) {
-                this.nSigChecks += nKeysCount;
+              if (fOk) {
+                nSigsRemaining--;
               }
+              nKeysRemaining--;
+
+              // If there are more signatures left than keys left,
+              // then too many signatures have failed
+              if (nSigsRemaining > nKeysRemaining) {
+                fSuccess = false;
+              }
+            }
+
+            let areAllSignaturesNull = true;
+            for (let l = 0; l < nSigsCount; l++) {
+              if (stacktop(-isig-l) && stacktop(-isig-l).length) {
+                areAllSignaturesNull = false;
+                break;
+              }
+            }
+
+            if (!areAllSignaturesNull) {
+              this.nSigChecks += nKeysCount;
+            }
           }
 
           // Clean up stack of actual arguments
@@ -2063,360 +2059,361 @@ Interpreter.prototype.step = function() {
         //
         // Byte string operations
         //
-        case Opcode.OP_CAT: {
+      case Opcode.OP_CAT: {
 
-          if (this.stack.length < 2) {
-            this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
-            return false;
-          }
-
-          buf1 = stacktop(-2);
-          buf2 = stacktop(-1);
-          if (buf1.length + buf2.length > Interpreter.MAX_SCRIPT_ELEMENT_SIZE) {
-            this.errstr = 'SCRIPT_ERR_PUSH_SIZE';
-            return false;
-          }
-          this.stack[this.stack.length - 2] = Buffer.concat([buf1,buf2]);
-          this.stack.pop();
+        if (this.stack.length < 2) {
+          this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
+          return false;
         }
+
+        buf1 = stacktop(-2);
+        buf2 = stacktop(-1);
+        if (buf1.length + buf2.length > Interpreter.MAX_SCRIPT_ELEMENT_SIZE) {
+          this.errstr = 'SCRIPT_ERR_PUSH_SIZE';
+          return false;
+        }
+        this.stack[this.stack.length - 2] = Buffer.concat([buf1, buf2]);
+        this.stack.pop();
+      }
         break;
 
-        case Opcode.OP_SPLIT: {
-          if (this.stack.length < 2) {
-            this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
-            return false;
-          }
-          buf1 = stacktop(-2);
-
-          // Make sure the split point is apropriate.
-          var position = BN.fromScriptNumBuffer(stacktop(-1), fRequireMinimal).toNumber();
-          if (position < 0 || position > buf1.length) {
-            this.errstr = 'SCRIPT_ERR_INVALID_SPLIT_RANGE';
-            return false;
-          }
-
-          // Prepare the results in their own buffer as `data`
-          // will be invalidated.
-          // Copy buffer data, to slice it before
-          var n1 = Buffer.from(buf1);
-
-          // Replace existing stack values by the new values.
-          this.stack[this.stack.length - 2] = n1.slice(0, position);
-          this.stack[this.stack.length - 1] = n1.slice(position);
+      case Opcode.OP_SPLIT: {
+        if (this.stack.length < 2) {
+          this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
+          return false;
         }
+        buf1 = stacktop(-2);
+
+        // Make sure the split point is apropriate.
+        const position = BN.fromScriptNumBuffer(stacktop(-1), fRequireMinimal).toNumber();
+        if (position < 0 || position > buf1.length) {
+          this.errstr = 'SCRIPT_ERR_INVALID_SPLIT_RANGE';
+          return false;
+        }
+
+        // Prepare the results in their own buffer as `data`
+        // will be invalidated.
+        // Copy buffer data, to slice it before
+        const n1 = Buffer.from(buf1);
+
+        // Replace existing stack values by the new values.
+        this.stack[this.stack.length - 2] = n1.slice(0, position);
+        this.stack[this.stack.length - 1] = n1.slice(position);
+      }
         break;
 
         //
         // Conversion operations
         //
-        case Opcode.OP_NUM2BIN: {
+      case Opcode.OP_NUM2BIN: {
 
-          // (in -- out)
-          if (this.stack.length < 2) {
-            this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
-            return false;
-          }
-
-          var size = BN.fromScriptNumBuffer(stacktop(-1), fRequireMinimal).toNumber();
-          if (size > Interpreter.MAX_SCRIPT_ELEMENT_SIZE) {
-            this.errstr = 'SCRIPT_ERR_PUSH_SIZE';
-            return false;
-          }
-
-          this.stack.pop();
-          var rawnum = stacktop(-1);
-
-          // Try to see if we can fit that number in the number of
-          // byte requested.
-          rawnum=Interpreter._minimallyEncode(rawnum);
-
-          if (rawnum.length > size) {
-            // We definitively cannot.
-            this.errstr = 'SCRIPT_ERR_IMPOSSIBLE_ENCODING';
-            return false;
-          }
-
-          // We already have an element of the right size, we
-          // don't need to do anything.
-          if (rawnum.length == size) {
-            this.stack[this.stack.length-1] = rawnum;
-            break;
-          }
-
-          var signbit = 0x00;
-          if (rawnum.length > 0) {
-            signbit = rawnum[rawnum.length - 1] & 0x80;
-            rawnum[rawnum.length - 1] &= 0x7f;
-          }
-
-          var num = Buffer.alloc(size);
-          rawnum.copy(num,0);
-
-          var l = rawnum.length - 1;
-          while (l++ < size - 2) {
-            num[l]=0x00;
-          }
-
-          num[l]=signbit;
-
-          this.stack[this.stack.length-1] = num;
+        // (in -- out)
+        if (this.stack.length < 2) {
+          this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
+          return false;
         }
+
+        const size = BN.fromScriptNumBuffer(stacktop(-1), fRequireMinimal).toNumber();
+        if (size > Interpreter.MAX_SCRIPT_ELEMENT_SIZE) {
+          this.errstr = 'SCRIPT_ERR_PUSH_SIZE';
+          return false;
+        }
+
+        this.stack.pop();
+        let rawnum = stacktop(-1);
+
+        // Try to see if we can fit that number in the number of
+        // byte requested.
+        rawnum=Interpreter._minimallyEncode(rawnum);
+
+        if (rawnum.length > size) {
+          // We definitively cannot.
+          this.errstr = 'SCRIPT_ERR_IMPOSSIBLE_ENCODING';
+          return false;
+        }
+
+        // We already have an element of the right size, we
+        // don't need to do anything.
+        if (rawnum.length == size) {
+          this.stack[this.stack.length-1] = rawnum;
+          break;
+        }
+
+        let signbit = 0x00;
+        if (rawnum.length > 0) {
+          signbit = rawnum[rawnum.length - 1] & 0x80;
+          rawnum[rawnum.length - 1] &= 0x7f;
+        }
+
+        const num = Buffer.alloc(size);
+        rawnum.copy(num, 0);
+
+        let l = rawnum.length - 1;
+        while (l++ < size - 2) {
+          num[l]=0x00;
+        }
+
+        num[l]=signbit;
+
+        this.stack[this.stack.length-1] = num;
+      }
         break;
 
 
 
-        case Opcode.OP_BIN2NUM: {
-          // (in -- out)
-          if (this.stack.length < 1) {
-            this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
-            return false;
-          }
-
-          buf1 = stacktop(-1);
-          buf2 = Interpreter._minimallyEncode(buf1);
-
-          this.stack[this.stack.length - 1] = buf2;
-
-          // The resulting number must be a valid number.
-          if (!Interpreter._isMinimallyEncoded(buf2, maxScriptIntegerSize)) {
-            this.errstr = 'SCRIPT_ERR_INVALID_NUMBER_RANGE';
-            return false;
-          }
+      case Opcode.OP_BIN2NUM: {
+        // (in -- out)
+        if (this.stack.length < 1) {
+          this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
+          return false;
         }
+
+        buf1 = stacktop(-1);
+        buf2 = Interpreter._minimallyEncode(buf1);
+
+        this.stack[this.stack.length - 1] = buf2;
+
+        // The resulting number must be a valid number.
+        if (!Interpreter._isMinimallyEncoded(buf2, maxScriptIntegerSize)) {
+          this.errstr = 'SCRIPT_ERR_INVALID_NUMBER_RANGE';
+          return false;
+        }
+      }
         break;
 
         // Native Introspection opcodes (Nullary)
-        case Opcode.OP_INPUTINDEX:
-        case Opcode.OP_ACTIVEBYTECODE:
-        case Opcode.OP_TXVERSION:
-        case Opcode.OP_TXINPUTCOUNT:
-        case Opcode.OP_TXOUTPUTCOUNT:
-        case Opcode.OP_TXLOCKTIME: {
-          if (!fNativeIntrospection) {
+      case Opcode.OP_INPUTINDEX:
+      case Opcode.OP_ACTIVEBYTECODE:
+      case Opcode.OP_TXVERSION:
+      case Opcode.OP_TXINPUTCOUNT:
+      case Opcode.OP_TXOUTPUTCOUNT:
+      case Opcode.OP_TXLOCKTIME: {
+        if (!fNativeIntrospection) {
+          this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
+          return false;
+        }
+        if (!this.tx || !this.tx.inputs.every(input => input.output)) {
+          this.errstr = 'SCRIPT_ERR_CONTEXT_NOT_PRESENT';
+          return false;
+        }
+
+        switch (opcodenum) {
+          case Opcode.OP_INPUTINDEX: {
+            const bn = BN.fromNumber(this.nin);
+            this.stack.push(bn.toScriptNumBuffer());
+          } break;
+          case Opcode.OP_ACTIVEBYTECODE: {
+            // Subset of script starting at the most recent code separator (if any)
+            // or the entire script if no code separators are present.
+            subscript = new Script().set({
+              chunks: this.script.chunks.slice(this.pbegincodehash)
+            });
+            this.stack.push(subscript.toBuffer());
+          } break;
+          case Opcode.OP_TXVERSION: {
+            const bn = BN.fromNumber(this.tx.version);
+            this.stack.push(bn.toScriptNumBuffer());
+          } break;
+          case Opcode.OP_TXINPUTCOUNT: {
+            const bn = BN.fromNumber(this.tx.inputs.length);
+            this.stack.push(bn.toScriptNumBuffer());
+          } break;
+          case Opcode.OP_TXOUTPUTCOUNT: {
+            const bn = BN.fromNumber(this.tx.outputs.length);
+            this.stack.push(bn.toScriptNumBuffer());
+          } break;
+          case Opcode.OP_TXLOCKTIME: {
+            const bn = BN.fromNumber(this.tx.nLockTime);
+            this.stack.push(bn.toScriptNumBuffer());
+          } break;
+          default: {
             this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
             return false;
           }
-          if (!this.tx || !this.tx.inputs.every(input => input.output)) {
-            this.errstr = 'SCRIPT_ERR_CONTEXT_NOT_PRESENT';
-            return false;
-          }
-
-          switch (opcodenum) {
-            case Opcode.OP_INPUTINDEX: {
-              const bn = BN.fromNumber(this.nin);
-              this.stack.push(bn.toScriptNumBuffer());
-            } break;
-            case Opcode.OP_ACTIVEBYTECODE: {
-              // Subset of script starting at the most recent code separator (if any)
-              // or the entire script if no code separators are present.
-              subscript = new Script().set({
-                chunks: this.script.chunks.slice(this.pbegincodehash)
-              });
-              this.stack.push(subscript.toBuffer());
-            } break;
-            case Opcode.OP_TXVERSION: {
-              const bn = BN.fromNumber(this.tx.version);
-              this.stack.push(bn.toScriptNumBuffer());
-            } break;
-            case Opcode.OP_TXINPUTCOUNT: {
-              const bn = BN.fromNumber(this.tx.inputs.length);
-              this.stack.push(bn.toScriptNumBuffer());
-            } break;
-            case Opcode.OP_TXOUTPUTCOUNT: {
-              const bn = BN.fromNumber(this.tx.outputs.length);
-              this.stack.push(bn.toScriptNumBuffer());
-            } break;
-            case Opcode.OP_TXLOCKTIME: {
-              const bn = BN.fromNumber(this.tx.nLockTime);
-              this.stack.push(bn.toScriptNumBuffer());
-            } break;
-            default: {
-              this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
-              return false;
-            }
-          }
-        } break; // end of Native Introspection opcodes (Nullary)
+        }
+      } break; // end of Native Introspection opcodes (Nullary)
 
         // Native Introspection opcodes (Unary)
-        case Opcode.OP_UTXOTOKENCATEGORY:
-        case Opcode.OP_UTXOTOKENCOMMITMENT:
-        case Opcode.OP_UTXOTOKENAMOUNT:
-        case Opcode.OP_OUTPUTTOKENCATEGORY:
-        case Opcode.OP_OUTPUTTOKENCOMMITMENT:
-        case Opcode.OP_OUTPUTTOKENAMOUNT:
-          if (!fNativeTokens) {
-            this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
-            return false;
-          }
-        case Opcode.OP_UTXOVALUE:
-        case Opcode.OP_UTXOBYTECODE:
-        case Opcode.OP_OUTPOINTTXHASH:
-        case Opcode.OP_OUTPOINTINDEX:
-        case Opcode.OP_INPUTBYTECODE:
-        case Opcode.OP_INPUTSEQUENCENUMBER:
-        case Opcode.OP_OUTPUTVALUE:
-        case Opcode.OP_OUTPUTBYTECODE: {
-          if (!fNativeIntrospection) {
-            this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
-            return false;
-          }
-          if (!this.tx || !this.tx.inputs.every(input => input.output)) {
-            this.errstr = 'SCRIPT_ERR_CONTEXT_NOT_PRESENT';
-            return false;
-          }
-          const bn = BN.fromScriptNumBuffer(stacktop(-1), fRequireMinimal, maxScriptIntegerSize);
-          const index = bn.toNumber();
-          this.stack.pop();
+      case Opcode.OP_UTXOTOKENCATEGORY:
+      case Opcode.OP_UTXOTOKENCOMMITMENT:
+      case Opcode.OP_UTXOTOKENAMOUNT:
+      case Opcode.OP_OUTPUTTOKENCATEGORY:
+      case Opcode.OP_OUTPUTTOKENCOMMITMENT:
+      case Opcode.OP_OUTPUTTOKENAMOUNT:
+        if (!fNativeTokens) {
+          this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
+          return false;
+        }
+        // falls through
+      case Opcode.OP_UTXOVALUE:
+      case Opcode.OP_UTXOBYTECODE:
+      case Opcode.OP_OUTPOINTTXHASH:
+      case Opcode.OP_OUTPOINTINDEX:
+      case Opcode.OP_INPUTBYTECODE:
+      case Opcode.OP_INPUTSEQUENCENUMBER:
+      case Opcode.OP_OUTPUTVALUE:
+      case Opcode.OP_OUTPUTBYTECODE: {
+        if (!fNativeIntrospection) {
+          this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
+          return false;
+        }
+        if (!this.tx || !this.tx.inputs.every(input => input.output)) {
+          this.errstr = 'SCRIPT_ERR_CONTEXT_NOT_PRESENT';
+          return false;
+        }
+        const bn = BN.fromScriptNumBuffer(stacktop(-1), fRequireMinimal, maxScriptIntegerSize);
+        const index = bn.toNumber();
+        this.stack.pop();
 
-          const indexType = [
-            Opcode.OP_OUTPUTVALUE,
-            Opcode.OP_OUTPUTBYTECODE,
-            Opcode.OP_OUTPUTTOKENCATEGORY,
-            Opcode.OP_OUTPUTTOKENCOMMITMENT,
-            Opcode.OP_OUTPUTTOKENAMOUNT
-          ].includes(opcodenum) ? 'OUTPUT' : 'INPUT';
+        const indexType = [
+          Opcode.OP_OUTPUTVALUE,
+          Opcode.OP_OUTPUTBYTECODE,
+          Opcode.OP_OUTPUTTOKENCATEGORY,
+          Opcode.OP_OUTPUTTOKENCOMMITMENT,
+          Opcode.OP_OUTPUTTOKENAMOUNT
+        ].includes(opcodenum) ? 'OUTPUT' : 'INPUT';
 
-          const maxIndex = indexType === 'OUTPUT' 
-            ? this.tx.outputs.length 
-            : this.tx.inputs.length;
+        const maxIndex = indexType === 'OUTPUT' 
+          ? this.tx.outputs.length 
+          : this.tx.inputs.length;
 
-          if (index < 0 || index >= maxIndex) {
-            this.errstr = `SCRIPT_ERR_INVALID_TX_${indexType}_INDEX`;
-            return false;
-          }
+        if (index < 0 || index >= maxIndex) {
+          this.errstr = `SCRIPT_ERR_INVALID_TX_${indexType}_INDEX`;
+          return false;
+        }
 
-          const tokenCapabilities = {
-            mutable: 1,
-            minting: 2,
-          };
+        const tokenCapabilities = {
+          mutable: 1,
+          minting: 2,
+        };
 
-          switch (opcodenum) {
-            case Opcode.OP_UTXOVALUE: {
-              const bn = this.tx.inputs[index].output.satoshisBN;
-              if (bn.getSize() > maxScriptIntegerSize) {
-                this.errstr = 'SCRIPT_ERR_INTEGER_SIZE';
-                return false;
-              }
-              this.stack.push(bn.toScriptNumBuffer());
-            } break;
-            case Opcode.OP_UTXOBYTECODE: {
-              const bytecode = this.tx.inputs[index].output.script.toBuffer();
-              if (bytecode.length > Interpreter.MAX_SCRIPT_ELEMENT_SIZE) {
-                this.errstr = 'SCRIPT_ERR_PUSH_SIZE';
-                return false;
-              }
-              this.stack.push(bytecode);
-            } break;
-            case Opcode.OP_OUTPOINTTXHASH: {
-              const writer = new BufferWriter();
-              writer.writeReverse(this.tx.inputs[index].prevTxId);
-              this.stack.push(writer.toBuffer());
-            } break;
-            case Opcode.OP_OUTPOINTINDEX: {
-              const bn = BN.fromNumber(this.tx.inputs[index].outputIndex);
-              this.stack.push(bn.toScriptNumBuffer());
-            } break;
-            case Opcode.OP_INPUTBYTECODE: {
-              const bytecode = this.tx.inputs[index].script.toBuffer();
-              if (bytecode.length > Interpreter.MAX_SCRIPT_ELEMENT_SIZE) {
-                this.errstr = 'SCRIPT_ERR_PUSH_SIZE';
-                return false;
-              }
-              this.stack.push(bytecode);
-            } break;
-            case Opcode.OP_INPUTSEQUENCENUMBER: {
-              const bn = BN.fromNumber(this.tx.inputs[index].sequenceNumber);
-              this.stack.push(bn.toScriptNumBuffer());
-            } break;
-            case Opcode.OP_OUTPUTVALUE: {
-              const bn = this.tx.outputs[index].satoshisBN;
-              if (bn.getSize() > maxScriptIntegerSize) {
-                this.errstr = 'SCRIPT_ERR_INTEGER_SIZE';
-                return false;
-              }
-              this.stack.push(bn.toScriptNumBuffer());
-            } break;
-            case Opcode.OP_OUTPUTBYTECODE: {
-              const bytecode = this.tx.outputs[index].script.toBuffer();
-              if (bytecode.length > Interpreter.MAX_SCRIPT_ELEMENT_SIZE) {
-                this.errstr = 'SCRIPT_ERR_PUSH_SIZE';
-                return false;
-              }
-              this.stack.push(bytecode);
-            } break;
-            // Token introspection
-            case Opcode.OP_UTXOTOKENCATEGORY: {
-              const tokenData = this.tx.inputs[index].output.tokenData;
-              if (!tokenData) {
-                const bn = BN.fromNumber(0);
-                this.stack.push(bn.toScriptNumBuffer());
-                break;
-              }
-              const category = tokenData.category;
-              const capability = tokenData.nft && tokenData.nft.capability && tokenCapabilities[tokenData.nft.capability] || 0;
-              const capabilityBuf = BN.fromNumber(capability).toScriptNumBuffer();
-              const categoryBuf = Buffer.from(category, 'hex').reverse();
-              const fullBuffer = Buffer.concat([categoryBuf, capabilityBuf]);
-              this.stack.push(fullBuffer);
-            } break;
-            case Opcode.OP_UTXOTOKENCOMMITMENT: {
-              const tokenData = this.tx.inputs[index].output.tokenData;
-              if (!tokenData || !tokenData.nft) {
-                const bn = BN.fromNumber(0);
-                this.stack.push(bn.toScriptNumBuffer());
-                break;
-              }
-              const commitment = tokenData.nft.commitment;
-              this.stack.push(Buffer.from(commitment, 'hex'));
-            } break;
-            case Opcode.OP_UTXOTOKENAMOUNT: {
-              const tokenData = this.tx.inputs[index].output.tokenData;
-              if (!tokenData || !tokenData.amount) {
-                const bn = BN.fromNumber(0);
-                this.stack.push(bn.toScriptNumBuffer());
-                break;
-              }
-              this.stack.push(tokenData.amount.toScriptNumBuffer());
-            } break;
-            case Opcode.OP_OUTPUTTOKENCATEGORY: {
-              const tokenData = this.tx.outputs[index].tokenData;
-              if (!tokenData) {
-                const bn = BN.fromNumber(0);
-                this.stack.push(bn.toScriptNumBuffer());
-                break;
-              }
-              const category = tokenData.category;
-              const capability = tokenData.nft && tokenData.nft.capability && tokenCapabilities[tokenData.nft.capability] || 0;
-              const capabilityBuf = BN.fromNumber(capability).toScriptNumBuffer();
-              const categoryBuf = Buffer.from(category, 'hex').reverse();
-              const fullBuffer = Buffer.concat([categoryBuf, capabilityBuf]);
-              this.stack.push(fullBuffer);
-            } break;
-            case Opcode.OP_OUTPUTTOKENCOMMITMENT: {
-              const tokenData = this.tx.outputs[index].tokenData;
-              if (!tokenData || !tokenData.nft) {
-                const bn = BN.fromNumber(0);
-                this.stack.push(bn.toScriptNumBuffer());
-                break;
-              }
-              const commitment = tokenData.nft.commitment;
-              this.stack.push(Buffer.from(commitment, 'hex'));
-            } break;
-            case Opcode.OP_OUTPUTTOKENAMOUNT: {
-              const tokenData = this.tx.outputs[index].tokenData;
-              if (!tokenData || !tokenData.amount) {
-                const bn = BN.fromNumber(0);
-                this.stack.push(bn.toScriptNumBuffer());
-                break;
-              }
-              this.stack.push(tokenData.amount.toScriptNumBuffer());
-            } break;
-            default: {
-              this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
+        switch (opcodenum) {
+          case Opcode.OP_UTXOVALUE: {
+            const bn = this.tx.inputs[index].output.satoshisBN;
+            if (bn.getSize() > maxScriptIntegerSize) {
+              this.errstr = 'SCRIPT_ERR_INTEGER_SIZE';
               return false;
             }
+            this.stack.push(bn.toScriptNumBuffer());
+          } break;
+          case Opcode.OP_UTXOBYTECODE: {
+            const bytecode = this.tx.inputs[index].output.script.toBuffer();
+            if (bytecode.length > Interpreter.MAX_SCRIPT_ELEMENT_SIZE) {
+              this.errstr = 'SCRIPT_ERR_PUSH_SIZE';
+              return false;
+            }
+            this.stack.push(bytecode);
+          } break;
+          case Opcode.OP_OUTPOINTTXHASH: {
+            const writer = new BufferWriter();
+            writer.writeReverse(this.tx.inputs[index].prevTxId);
+            this.stack.push(writer.toBuffer());
+          } break;
+          case Opcode.OP_OUTPOINTINDEX: {
+            const bn = BN.fromNumber(this.tx.inputs[index].outputIndex);
+            this.stack.push(bn.toScriptNumBuffer());
+          } break;
+          case Opcode.OP_INPUTBYTECODE: {
+            const bytecode = this.tx.inputs[index].script.toBuffer();
+            if (bytecode.length > Interpreter.MAX_SCRIPT_ELEMENT_SIZE) {
+              this.errstr = 'SCRIPT_ERR_PUSH_SIZE';
+              return false;
+            }
+            this.stack.push(bytecode);
+          } break;
+          case Opcode.OP_INPUTSEQUENCENUMBER: {
+            const bn = BN.fromNumber(this.tx.inputs[index].sequenceNumber);
+            this.stack.push(bn.toScriptNumBuffer());
+          } break;
+          case Opcode.OP_OUTPUTVALUE: {
+            const bn = this.tx.outputs[index].satoshisBN;
+            if (bn.getSize() > maxScriptIntegerSize) {
+              this.errstr = 'SCRIPT_ERR_INTEGER_SIZE';
+              return false;
+            }
+            this.stack.push(bn.toScriptNumBuffer());
+          } break;
+          case Opcode.OP_OUTPUTBYTECODE: {
+            const bytecode = this.tx.outputs[index].script.toBuffer();
+            if (bytecode.length > Interpreter.MAX_SCRIPT_ELEMENT_SIZE) {
+              this.errstr = 'SCRIPT_ERR_PUSH_SIZE';
+              return false;
+            }
+            this.stack.push(bytecode);
+          } break;
+            // Token introspection
+          case Opcode.OP_UTXOTOKENCATEGORY: {
+            const tokenData = this.tx.inputs[index].output.tokenData;
+            if (!tokenData) {
+              const bn = BN.fromNumber(0);
+              this.stack.push(bn.toScriptNumBuffer());
+              break;
+            }
+            const category = tokenData.category;
+            const capability = tokenData.nft && tokenData.nft.capability && tokenCapabilities[tokenData.nft.capability] || 0;
+            const capabilityBuf = BN.fromNumber(capability).toScriptNumBuffer();
+            const categoryBuf = Buffer.from(category, 'hex').reverse();
+            const fullBuffer = Buffer.concat([categoryBuf, capabilityBuf]);
+            this.stack.push(fullBuffer);
+          } break;
+          case Opcode.OP_UTXOTOKENCOMMITMENT: {
+            const tokenData = this.tx.inputs[index].output.tokenData;
+            if (!tokenData || !tokenData.nft) {
+              const bn = BN.fromNumber(0);
+              this.stack.push(bn.toScriptNumBuffer());
+              break;
+            }
+            const commitment = tokenData.nft.commitment;
+            this.stack.push(Buffer.from(commitment, 'hex'));
+          } break;
+          case Opcode.OP_UTXOTOKENAMOUNT: {
+            const tokenData = this.tx.inputs[index].output.tokenData;
+            if (!tokenData || !tokenData.amount) {
+              const bn = BN.fromNumber(0);
+              this.stack.push(bn.toScriptNumBuffer());
+              break;
+            }
+            this.stack.push(tokenData.amount.toScriptNumBuffer());
+          } break;
+          case Opcode.OP_OUTPUTTOKENCATEGORY: {
+            const tokenData = this.tx.outputs[index].tokenData;
+            if (!tokenData) {
+              const bn = BN.fromNumber(0);
+              this.stack.push(bn.toScriptNumBuffer());
+              break;
+            }
+            const category = tokenData.category;
+            const capability = tokenData.nft && tokenData.nft.capability && tokenCapabilities[tokenData.nft.capability] || 0;
+            const capabilityBuf = BN.fromNumber(capability).toScriptNumBuffer();
+            const categoryBuf = Buffer.from(category, 'hex').reverse();
+            const fullBuffer = Buffer.concat([categoryBuf, capabilityBuf]);
+            this.stack.push(fullBuffer);
+          } break;
+          case Opcode.OP_OUTPUTTOKENCOMMITMENT: {
+            const tokenData = this.tx.outputs[index].tokenData;
+            if (!tokenData || !tokenData.nft) {
+              const bn = BN.fromNumber(0);
+              this.stack.push(bn.toScriptNumBuffer());
+              break;
+            }
+            const commitment = tokenData.nft.commitment;
+            this.stack.push(Buffer.from(commitment, 'hex'));
+          } break;
+          case Opcode.OP_OUTPUTTOKENAMOUNT: {
+            const tokenData = this.tx.outputs[index].tokenData;
+            if (!tokenData || !tokenData.amount) {
+              const bn = BN.fromNumber(0);
+              this.stack.push(bn.toScriptNumBuffer());
+              break;
+            }
+            this.stack.push(tokenData.amount.toScriptNumBuffer());
+          } break;
+          default: {
+            this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
+            return false;
           }
-        } break; // end of Native Introspection opcodes (Unary)
+        }
+      } break; // end of Native Introspection opcodes (Unary)
 
 
       default:

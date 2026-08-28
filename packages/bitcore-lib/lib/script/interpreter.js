@@ -1,4 +1,4 @@
-/* eslint-disable no-bitwise */
+ 
 'use strict';
 
 const _ = require('lodash');
@@ -11,6 +11,7 @@ const Opcode = require('../opcode');
 const PublicKey = require('../publickey');
 const SighashSchnorr = require('../transaction/sighashschnorr');
 const SighashWitness = require('../transaction/sighashwitness');
+const JSUtil = require('../util/js');
 const $ = require('../util/preconditions');
 const Script = require('./script');
 
@@ -505,7 +506,7 @@ Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS = (1 << 7);
 // be true".
 // (softfork safe, BIP62 rule 6)
 // Note: CLEANSTACK should never be used without P2SH or WITNESS.
-Interpreter.SCRIPT_VERIFY_CLEANSTACK = (1 << 8),
+Interpreter.SCRIPT_VERIFY_CLEANSTACK = (1 << 8);
 
 // Verify CHECKLOCKTIMEVERIFY
 //
