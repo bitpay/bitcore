@@ -1910,7 +1910,7 @@ export class Storage {
 
   async storeTssSignature({ id, signature }: { id: string; signature: ITssSigMessageObject['signature'] }) {
     return this.db.collection(collections.TSS_SIGN).updateOne(
-      { id },
+      { id, $or: [{ signature: null }, { signature: { $exists: false } }] },
       {
         $set: {
           signature

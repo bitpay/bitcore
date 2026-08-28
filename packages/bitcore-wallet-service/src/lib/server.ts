@@ -668,15 +668,17 @@ export class WalletService implements IWalletService {
     }
 
     if (opts.tssKeyId) {
-      opts.tssVersion = opts.tssVersion || Defaults.TSS_KEYGEN_SCHEME_VERSION;
-      if (!(opts.tssVersion > 0 && opts.tssVersion <= Constants.TSS_KEYGEN_SCHEME_VERSION_MAX)) {
+      const keySession = await storage.fetchTssKeyGenSession({ id: opts.tssKeyId });
+      if (!keySession || !keySession.sharedPublicKey) {
+        // TODO: support importing a TSS key that was generated outside of this BWS instance.
+        return cb(new ClientError('Invalid TSS key session id'));
+      }
+
+      opts.tssVersion = opts.tssVersion || keySession.schemeVersion || Defaults.TSS_KEYGEN_SCHEME_VERSION;
+      if (!(opts.tssVersion >= Constants.TSS_KEYGEN_SCHEME_VERSION_MIN && opts.tssVersion <= Constants.TSS_KEYGEN_SCHEME_VERSION_MAX)) {
         return cb(new ClientError('Invalid TSS version'));
       }
 
-      const keySession = await storage.fetchTssKeyGenSession({ id: opts.tssKeyId });
-      if (!keySession || !keySession.sharedPublicKey) {
-        return cb(new ClientError('Invalid TSS key session id'));
-      }
       // TSS wallets behave like a single-sig
       opts.m = 1;
       opts.n = 1;

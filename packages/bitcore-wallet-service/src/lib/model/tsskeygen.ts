@@ -103,14 +103,36 @@ export class TssKeyGenModel implements ITssKeyGenModel {
   __v: number;
 
 
-  static create(params: { id: string; message: ITssKeyMessageObject; n: number; copayerId: string; passwordHash?: string }): TssKeyGenModel {
-    const { id, message, n, copayerId, passwordHash } = params;
+  /**
+   * Create a new TssKeyGenModel instance. This is used to create a new TSS keygen session.
+   */
+  static create(params: {
+    /** Session ID */
+    id: string;
+    /** Initial broadcast message from party 0 */
+    message: ITssKeyMessageObject;
+    /** Number of key participants */
+    n: number;
+    /** Copayer ID of party 0 */
+    copayerId: string;
+    /** Password hash for joining the session */
+    passwordHash?: string;
+    /** TSS keygen version */
+    version: number;
+    /** Time limit for the session in minutes, after which the session expires */
+    timeLimit?: number;
+  }): TssKeyGenModel {
+    const { id, message, n, copayerId, passwordHash, version } = params;
     const { partyId } = message;
+    const timeLimit = parseFloat(params.timeLimit?.toString());
     $.checkArgument(partyId === 0, 'Key generation session must be started by partyId 0');
+    $.checkArgument(!timeLimit || (Number.isFinite(timeLimit) && timeLimit > 0), 'Time limit must be a positive number');
+
+    const ONE_MINUTE = 60 * 1000;
 
     const x = new TssKeyGenModel();
     x.id = id;
-    x.schemeVersion = Defaults.TSS_KEYGEN_SCHEME_VERSION;
+    x.schemeVersion = version || Defaults.TSS_KEYGEN_SCHEME_VERSION;
     x.n = n;
     x.participants = new Array(n);
     x.participants[partyId] = copayerId;
@@ -121,7 +143,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
     x.joinPassword = passwordHash;
     x.keyShares = new Array(n);
     x.createdOn = Date.now();
-    x.timeLimit = null; // TODO - add a session time limit
+    x.timeLimit = Math.min(timeLimit || Defaults.TSS_KEYGEN_TIME_LIMIT, 60) * ONE_MINUTE; // capped at 60 minutes
     x.__v = 0;
     return x;
   }
@@ -150,5 +172,12 @@ export class TssKeyGenModel implements ITssKeyGenModel {
       return mostRecentRound + 1;
     }
     return mostRecentRound;
+  }
+
+  isExpired(): boolean {
+    if (!this.timeLimit) {
+      return false;
+    }
+    return Date.now() > this.createdOn + this.timeLimit;
   }
 }

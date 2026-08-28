@@ -1,11 +1,14 @@
 import { EventEmitter } from 'events';
 import { ECDSA } from '@bitpay-labs/bitcore-tss';
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
+import { Constants } from './common';
 import { Credentials } from './credentials';
 import { Request, RequestResponse } from './request';
 import { type TssExportedKey, TssKey } from './tsskey';
 
 const $ = BitcoreLib.util.preconditions;
+
+const { TSS_SIGN_VERSION } = Constants;
 
 export interface ISignature {
   r: string;
@@ -137,7 +140,7 @@ export class TssSign extends EventEmitter {
 
     const msg = await this.#sign.initJoin();
     const m = this.#tssKey.metadata.m;
-    await this.#request.post('/v1/tss/sign/' + this.id, { message: msg, m });
+    await this.#request.post('/v1/tss/sign/' + this.id, { message: msg, m, version: TSS_SIGN_VERSION });
     this.#emittedParticipants = new Set([this.#credentials.copayerId]);
     this.emit('copayerReady', this.#credentials.copayerId);
     return this;
@@ -248,7 +251,7 @@ export class TssSign extends EventEmitter {
             if (!this.#sign.isSignatureReady() && !body.signature) {
               // For 2 P2P messages (i.e. party of 3), it already exceeds 100 KB (190 KB)
               // Assuming ~80KB per message, the max server size of 2MB would be ~25 P2P messages
-              await this.#request.post(`/v1/tss/sign/${this.id}`, { message: msg });
+              await this.#request.post(`/v1/tss/sign/${this.id}`, { message: msg, version: TSS_SIGN_VERSION });
               this.emit('roundsubmitted', thisRound);
             }
           } catch (err) {
