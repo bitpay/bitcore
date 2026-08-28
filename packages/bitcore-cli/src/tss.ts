@@ -38,6 +38,11 @@ export async function sign(args: {
     fs.writeFileSync(storedSessionFile, encrypted, 'utf8');
   };
 
+  const rmSessionState = () => {
+    // Clean up the stored session file after successful signing/terminal exit
+    fs.rmSync(storedSessionFile, { force: true });
+  };
+
   const tssSign = new TssSign.TssSign({
     baseUrl: url.resolve(host, '/bws/api'),
     credentials: walletData.credentials,
@@ -91,10 +96,12 @@ export async function sign(args: {
       if (e instanceof Errors.NOT_AUTHORIZED && e.message === 'Session not found') {
         tssSign.unsubscribe({ clearEvents: true });
         spinner.cancel('TSS session not found. It may have been deleted by another party.');
+        rmSessionState();
         return reject(new ProcessCancelled());
       } else if (e instanceof Errors.TSS_SESSION_EXPIRED) {
         tssSign.unsubscribe({ clearEvents: true });
         spinner.cancel(e.message);
+        rmSessionState();
         return reject(new ProcessCancelled());
       }
       prompt.log.error('Unexpected error during TSS signing: ' + (e.stack || e));
@@ -102,8 +109,7 @@ export async function sign(args: {
     tssSign.on('complete', async () => {
       try {
         spinner.stop(logMessageCompleted || 'TSS signature generated');
-        // Clean up the stored session file after successful signing
-        fs.rmSync(storedSessionFile, { force: true });
+        rmSessionState();
         const signature: TssSign.ISignature = tssSign.getSignature();
         const sigString = transformISignature(signature);
         resolve({
