@@ -3,7 +3,8 @@ import {
   BitcoreLibCash,
   BitcoreLibDoge,
   BitcoreLibLtc,
-  Constants as CWConstants
+  Constants as CWConstants,
+  Transactions
 } from '@bitpay-labs/crypto-wallet-core';
 import _ from 'lodash';
 import { singleton } from 'preconditions';
@@ -22,6 +23,34 @@ const Bitcore_ = {
 };
 
 export const Utils = {
+
+  /**
+   * Shared implementation of IChain.isPrePublishRawBound for account-based chains (SVM/EVM/XRP). True only if
+   * txp.prePublishRaw is the same transaction as the current proposal, differing solely in the field BWS
+   * mutates at publish (blockhash on SVM, nonce on EVM/XRP). Recovers that field from prePublishRaw, rebuilds
+   * the proposal via the chain's own getBitcoreTx, and requires byte-for-byte equality -- so a tampered
+   * stored proposal cannot reuse an old, still-valid proposalSignature. Fails closed on any error.
+   *
+   * @param chain - the IChain implementation (provides chain + getBitcoreTx)
+   * @param txp - the transaction proposal (must carry prePublishRaw)
+   */
+  isPrePublishRawBound(chain, txp): boolean {
+    try {
+      const prePublishRaw = Array.isArray(txp.prePublishRaw) ? txp.prePublishRaw : [txp.prePublishRaw];
+      const provider = Transactions.get({ chain: txp.chain }) as any;
+      if (typeof provider?.getMutableFields !== 'function') return false;
+      const mutableFields = provider.getMutableFields(prePublishRaw[0]);
+      if (!mutableFields || Object.values(mutableFields).every(v => v == null)) return false;
+      const cloned = Object.assign(Object.create(Object.getPrototypeOf(txp)), txp, mutableFields);
+      const rebuilt = chain.getBitcoreTx(cloned).uncheckedSerialize();
+      const rebuiltArr = Array.isArray(rebuilt) ? rebuilt : [rebuilt];
+      if (rebuiltArr.length !== prePublishRaw.length) return false;
+      return rebuiltArr.every((raw, i) => raw === prePublishRaw[i]);
+    } catch (err) {
+      logger.warn('prePublishRaw binding check failed: %o', err);
+      return false;
+    }
+  },
 
   /**
    * @deprecated

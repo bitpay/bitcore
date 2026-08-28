@@ -1,7 +1,8 @@
 import {
   BitcoreLib as Bitcore,
   BitcoreLibCash,
-  Utils as CWCUtils
+  Utils as CWCUtils,
+  Transactions
 } from '@bitpay-labs/crypto-wallet-core';
 import { singleton } from 'preconditions';
 import { Constants, Utils } from './common';
@@ -278,14 +279,24 @@ export class Verifier {
     log.debug(`[TXP ${txp.id}] Regenerating & verifying tx proposal hash -> Hash: ${hash}, Signature: ${txp.proposalSignature}`);
   
     const verified = Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey);
-    if (!verified && !txp.prePublishRaw) {
-      log.debug(`[TXP ${txp.id}] Invalid proposal signature, no prePublishRaw to fall back to`);
-      return false;
-    }
-    
-    if (!verified && txp.prePublishRaw && !Utils.verifyMessage(txp.prePublishRaw, txp.proposalSignature, creatorSigningPubKey)) {
-      log.debug(`[TXP ${txp.id}] Invalid proposal signature, even with prePublishRaw fallback`);
-      return false;
+    if (!verified) {
+      // Local rebuild != creator's signature. Legit only when BWS mutated a field at publish (SVM recent
+      // blockhash, or EVM/XRP deferred nonce): the creator signed the pre-publish serialization, stored as
+      // txp.prePublishRaw. Fall back to it only if the signature is valid over it AND it is bound to this
+      // proposal -- else a hostile server could pair a valid (prePublishRaw, proposalSignature) with a
+      // tampered destination. See checkPrePublishRaw.
+      if (!txp.prePublishRaw) {
+        log.debug(`[TXP ${txp.id}] Invalid proposal signature, no prePublishRaw to fall back to`);
+        return false;
+      }
+      if (!Utils.verifyMessage(txp.prePublishRaw, txp.proposalSignature, creatorSigningPubKey)) {
+        log.debug(`[TXP ${txp.id}] Invalid proposal signature, even with prePublishRaw fallback`);
+        return false;
+      }
+      if (!this.checkPrePublishRaw(chain, txp)) {
+        log.warn(`[TXP ${txp.id}] prePublishRaw is not bound to this proposal; possible server tampering`);
+        return false;
+      }
     }
 
     if (Constants.UTXO_CHAINS.includes(chain)) {
@@ -303,6 +314,51 @@ export class Verifier {
     }
 
     return true;
+  }
+
+  /**
+   * True only if txp.prePublishRaw is the same transaction as the current proposal, differing solely in a
+   * field BWS mutates at publish (SVM blockhash / EVM-XRP nonce). Binds the creator's fallback signature to
+   * this proposal: without it a compromised server could pair a valid (prePublishRaw, proposalSignature)
+   * with a tampered destination/amount. Rejects non-mutable chains and fails closed on any error.
+   *
+   * @param {string} chain - lower-cased chain of the proposal
+   * @param {Object} txp - the transaction proposal (must carry prePublishRaw)
+   */
+  static checkPrePublishRaw(chain, txp) {
+    // Only chains with a publish-mutable serialized field legitimately carry prePublishRaw: the recent
+    // blockhash (SVM) or account nonce (EVM/XRP). Anywhere else (e.g. UTXO) its presence is illegitimate.
+    const canHaveMutableLifetime = [
+      ...Constants.SVM_CHAINS,
+      ...Constants.EVM_CHAINS,
+      ...Constants.RIPPLE_CHAINS
+    ].includes(chain);
+    if (!canHaveMutableLifetime) {
+      log.warn(`[TXP ${txp.id}] prePublishRaw present on chain ${chain} that cannot mutate at publish; refusing fallback`);
+      return false;
+    }
+    try {
+      const prePublishRaw = Array.isArray(txp.prePublishRaw) ? txp.prePublishRaw : [txp.prePublishRaw];
+      // Recover the mutable field (blockhash / nonce) from the pre-publish serialization the creator signed;
+      // the stored proposal carries the refreshed value, so it isn't readable off txp directly.
+      const provider: any = Transactions.get({ chain });
+      const mutableFields = provider.getMutableFields(prePublishRaw[0]);
+      if (!mutableFields || Object.values(mutableFields).every(v => v == null)) {
+        log.warn(`[TXP ${txp.id}] Could not recover pre-publish mutable fields from prePublishRaw; refusing fallback`);
+        return false;
+      }
+      // Rebuild with the pre-publish mutable field: an untampered proposal reproduces prePublishRaw exactly;
+      // any changed field (destination, amount, from, contract) serializes differently and fails the compare.
+      const rebuilt = Utils.buildTx({ ...txp, ...mutableFields }).uncheckedSerialize();
+      const rebuiltArr = Array.isArray(rebuilt) ? rebuilt : [rebuilt];
+      if (rebuiltArr.length !== prePublishRaw.length) {
+        return false;
+      }
+      return rebuiltArr.every((raw, i) => raw === prePublishRaw[i]);
+    } catch (err) {
+      log.warn(`[TXP ${txp.id}] Failed to verify prePublishRaw binding: ${err?.message || err}`);
+      return false;
+    }
   }
 
   static checkPaypro(txp, payproOpts) {

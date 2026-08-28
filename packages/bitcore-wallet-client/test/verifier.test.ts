@@ -1,6 +1,7 @@
 'use strict';
 
 import chai from 'chai';
+import { Utils } from '../src/lib/common';
 import { Verifier } from '../src/lib/verifier';
 import { Key } from '../src/lib/key';
 
@@ -220,6 +221,63 @@ describe('Verifier', function() {
         path: 'm/0/0',
         publicKeys: ['0237b0bb7a8288d38ed49a524b5dc98cff3eb5ca824c9f9dc0dfdb3d9cd600f299']
       }).should.be.true;
+    });
+  });
+
+  describe('checkPrePublishRaw', function() {
+    const ATTACKER_EVM = '0x1111111111111111111111111111111111111111';
+    const ATTACKER_SOL = 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY';
+
+    const solTxp = (overrides = {}) => ({
+      chain: 'sol',
+      category: 'transfer',
+      from: '8WyoNvKsmfdG6zrbzNBVN8DETyLra3ond61saU9C52YR',
+      outputs: [{ toAddress: '3xkNjKm2zvGRvH2z2Nf9Y5hFvHZFtQXbQb1PBxDT56Xy', amount: 3896000000000000 }],
+      blockHash: 'GtV1Hb3FvP3HURHAsj8mGwEqCumvP3pv3i6CVCzYNj3d',
+      blockHeight: 531575,
+      ...overrides
+    });
+
+    const evmTxp = (overrides = {}) => ({
+      chain: 'eth',
+      network: 'livenet',
+      outputs: [{ toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A', amount: 1000 }],
+      from: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+      nonce: 0,
+      gasLimit: 21000,
+      gasPrice: 20000000000,
+      data: '0x',
+      ...overrides
+    });
+
+    it('accepts a SOL proposal whose blockhash was refreshed at publish', function() {
+      const prePublishRaw = Utils.buildTx(solTxp()).uncheckedSerialize();
+      const current = solTxp({ blockHash: 'H1oRr1nfr4b6eZjs9Ssn3bxUmcRAjqRxrbTKuwSPZ9mE', prePublishRaw });
+      Verifier.checkPrePublishRaw('sol', current).should.be.true;
+    });
+
+    it('rejects a SOL proposal whose destination was tampered', function() {
+      const prePublishRaw = Utils.buildTx(solTxp()).uncheckedSerialize();
+      const current = solTxp({
+        blockHash: 'H1oRr1nfr4b6eZjs9Ssn3bxUmcRAjqRxrbTKuwSPZ9mE',
+        outputs: [{ toAddress: ATTACKER_SOL, amount: 3896000000000000 }],
+        prePublishRaw
+      });
+      Verifier.checkPrePublishRaw('sol', current).should.be.false;
+    });
+
+    it('rejects an EVM proposal whose destination was tampered', function() {
+      const prePublishRaw = Utils.buildTx(evmTxp()).uncheckedSerialize();
+      const current = evmTxp({
+        nonce: 9,
+        outputs: [{ toAddress: ATTACKER_EVM, amount: 1000 }],
+        prePublishRaw
+      });
+      Verifier.checkPrePublishRaw('eth', current).should.be.false;
+    });
+
+    it('rejects prePublishRaw on a non-mutable (UTXO) chain', function() {
+      Verifier.checkPrePublishRaw('btc', { chain: 'btc', prePublishRaw: 'anything' }).should.be.false;
     });
   });
 });

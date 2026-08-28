@@ -287,6 +287,10 @@ export class EthChain implements IChain {
     });
   }
 
+  isPrePublishRawBound(txp: TxProposal) {
+    return Common.Utils.isPrePublishRawBound(this, txp);
+  }
+
   getBitcoreTx(txp: TxProposal, opts = { signed: true }) {
     const {
       data,
