@@ -6,6 +6,9 @@
   "license": "MIT",
   "main": "ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
+  "engines": {
+    "node": ">=18.17.0"
+  },
   "keywords": [
     "bitcoin",
     "copay",
