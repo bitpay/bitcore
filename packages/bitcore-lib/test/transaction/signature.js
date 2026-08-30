@@ -2,9 +2,7 @@
 
 /* jshint unused: false */
 /* jshint latedef: false */
-const should = require('chai').should();
 const expect = require('chai').expect;
-const _ = require('lodash');
 
 const bitcore = require('../..');
 

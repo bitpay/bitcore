@@ -1,10 +1,5 @@
 'use strict';
 /* jshint unused: false */
-
-const should = require('chai').should();
-const expect = require('chai').expect;
-const _ = require('lodash');
-
 const bitcore = require('../../..');
 
 const Transaction = bitcore.Transaction;
@@ -12,7 +7,6 @@ const PrivateKey = bitcore.PrivateKey;
 const Address = bitcore.Address;
 const Script = bitcore.Script;
 const Networks = bitcore.Networks;
-const Signature = bitcore.crypto.Signature;
 
 describe('PublicKeyHashInput', function() {
 
