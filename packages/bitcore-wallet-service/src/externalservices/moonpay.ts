@@ -1,8 +1,11 @@
+import * as crypto from 'crypto';
 import { BitcoreLib as Bitcore } from '@bitpay-labs/crypto-wallet-core';
 import * as request from 'request';
 import config from '../config';
 import { Utils } from '../lib/common/utils';
 import { ClientError } from '../lib/errors/clienterror';
+import { logger } from '../lib/logger';
+import { OnrampWebhookEvent } from '../lib/model/onrampWebhookEvent';
 import { checkRequired } from '../lib/server';
 
 export class MoonpayService {
@@ -543,5 +546,96 @@ export class MoonpayService {
         }
       );
     });
+  }
+
+  /**
+   * Handles incoming MoonPay webhook events.
+   * MoonPay signs requests with HMAC-SHA256. Header: Moonpay-Signature-V2
+   * Format: t=<timestamp>,s=<signature>
+   * Signed string: timestamp + '.' + rawBody
+   * https://dev.moonpay.com/api-reference/widget/webhooks/signature
+   */
+  moonpayHandleWebhook(req): { event: OnrampWebhookEvent } {
+    if (!config.moonpay) throw new Error('MoonPay missing credentials');
+
+    const secretKeys: { key: string; isEmbedded: boolean }[] = [
+      { key: config.moonpay.production?.webhookSecretKey, isEmbedded: false },
+      { key: config.moonpay.production?.webhookSecretKeyEmbedded, isEmbedded: true }
+    ].filter(k => !!k.key);
+
+    let isEmbedded: boolean | undefined;
+    if (secretKeys.length) {
+      const signatureHeader = req.headers['moonpay-signature-v2'] as string;
+      if (!signatureHeader) {
+        throw new Error('MoonPay webhook missing Moonpay-Signature-V2 header');
+      }
+      try {
+        // Parse: t=timestamp,s=signature
+        const parts: Record<string, string> = {};
+        for (const part of signatureHeader.split(',')) {
+          const [k, v] = part.split('=');
+          if (k && v !== undefined) parts[k] = v;
+        }
+        if (!parts.t || !parts.s) throw new Error('Invalid Moonpay-Signature-V2 header');
+
+        // signed_payload = timestamp + '.' + rawBody
+        const rawBody: string = (req as any).rawBody ?? JSON.stringify(req.body);
+        const signedPayload = `${parts.t}.${rawBody}`;
+        const given = Buffer.from(parts.s, 'hex');
+        const matched = secretKeys.find(({ key }) => {
+          const expected = crypto.createHmac('sha256', key).update(signedPayload).digest();
+          return expected.length === given.length && crypto.timingSafeEqual(expected, given);
+        });
+        if (!matched) {
+          throw new Error('MoonPay webhook signature mismatch');
+        }
+        isEmbedded = matched.isEmbedded;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err);
+        logger.warn('MoonPay webhook signature error: %s', errMsg);
+        throw new Error('MoonPay webhook signature verification failed');
+      }
+    } else {
+      logger.warn('MoonPay webhook: no webhookSecretKey configured, skipping signature verification');
+    }
+
+    const body = req.body || {};
+    const data = body.data || {};
+
+    // MoonPay documents deduplication on type + data.id + data.updatedAt, so a
+    // delivery missing any of them cannot be stored under a stable key.
+    if (typeof body.type !== 'string' || !body.type) {
+      throw new Error('MoonPay webhook missing event type');
+    }
+    if (typeof data.id !== 'string' || !data.id) {
+      throw new Error('MoonPay webhook missing transaction id');
+    }
+    if (typeof data.updatedAt !== 'string' || Number.isNaN(Date.parse(data.updatedAt))) {
+      throw new Error('MoonPay webhook missing valid updatedAt');
+    }
+
+    const event = OnrampWebhookEvent.create({
+      partner: 'moonpay',
+      externalId: data.id,
+      externalTransactionId: data.externalTransactionId,
+      status: data.status || '',
+      eventName: body.type,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+      deliveryVersion: data.updatedAt,
+      fiatAmount: data.baseCurrencyAmount != null ? Number(data.baseCurrencyAmount) : undefined,
+      fiatCurrency: data.baseCurrency?.code?.toUpperCase(),
+      cryptoAmount: data.quoteCurrencyAmount != null ? Number(data.quoteCurrencyAmount) : undefined,
+      cryptoCurrency: data.currency?.code?.toUpperCase(),
+      paymentMethod: data.paymentMethod,
+      walletAddress: data.walletAddress,
+      walletAddressTag: data.walletAddressTag,
+      userId: data.externalCustomerId || body.externalCustomerId,
+      rawPayload: body,
+      env: 'production',
+      isEmbedded
+    });
+
+    return { event };
   }
 }

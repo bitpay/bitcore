@@ -1,6 +1,9 @@
+import * as crypto from 'crypto';
 import * as request from 'request';
 import config from '../config';
 import { ClientError } from '../lib/errors/clienterror';
+import { logger } from '../lib/logger';
+import { OnrampWebhookEvent } from '../lib/model/onrampWebhookEvent';
 import { checkRequired } from '../lib/server';
 
 export class SardineService {
@@ -233,5 +236,67 @@ export class SardineService {
         }
       );
     });
+  }
+
+  /**
+   * Handles incoming Sardine webhook events.
+   * Docs: https://docs.payments.sardine.ai/integration_guides/onofframps/webhooks.
+   * TODO: Confirm the exact scheme with
+   * Sardine before relying on it.
+   *
+   * Payload contains order status updates (draft, expired, declined, processing,
+   * processed, complete).
+   */
+  sardineHandleWebhook(req): { event: OnrampWebhookEvent } {
+    if (!config.sardine) throw new Error('Sardine missing credentials');
+
+    const webhookSecrets: { key: string; env: string }[] = [
+      { key: (config.sardine.production as any)?.webhookSecret, env: 'production' },
+      { key: (config.sardine.sandbox as any)?.webhookSecret, env: 'sandbox' }
+    ].filter(k => !!k.key);
+
+    let env = 'production';
+    const sigHeader = req.headers['x-sardine-signature'] as string | undefined;
+    if (sigHeader && webhookSecrets.length) {
+      try {
+        const rawBody: string = (req as any).rawBody ?? JSON.stringify(req.body);
+        const given = Buffer.from(sigHeader, 'hex');
+        const matched = webhookSecrets.find(({ key }) => {
+          const expected = crypto.createHmac('sha256', key).update(rawBody).digest();
+          return expected.length === given.length && crypto.timingSafeEqual(expected, given);
+        });
+        if (!matched) {
+          throw new Error('Sardine webhook signature mismatch');
+        }
+        env = matched.env;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err);
+        logger.warn('Sardine webhook signature error: %s', errMsg);
+        throw new Error('Sardine webhook signature verification failed');
+      }
+    } else {
+      logger.warn('Sardine webhook: signature not verified (header present: %s, secret configured: %s)', !!sigHeader, !!webhookSecrets.length);
+    }
+
+    const body = req.body || {};
+    // Sardine order payload fields, per the documented Order object shape
+    // (GET /v1/orders/{orderId} response, see api_reference/onramp):
+    const order = body.order || body;
+
+    const event = OnrampWebhookEvent.create({
+      partner: 'sardine',
+      externalId: order.id || order.orderId,
+      status: order.status || body.eventType || '',
+      eventName: body.eventType,
+      createdAt: order.createdAt,
+      fiatAmount: order.total != null ? Number(order.total) : undefined,
+      fiatCurrency: order.fiatCurrency,
+      cryptoCurrency: order.assetType || order.cryptoCurrency,
+      userId: order.userId || order.externalUserId,
+      rawPayload: body,
+      env
+    });
+
+    return { event };
   }
 }

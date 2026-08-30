@@ -11,6 +11,9 @@ import {
   Advertisement,
   Copayer,
   Email,
+  IOnrampWebhookEvent,
+  IStoreOnrampWebhookEventResult,
+  IStoredOnrampWebhookEvent,
   Notification,
   Preferences,
   PushNotificationSub,
@@ -42,13 +45,36 @@ const collections = {
   TX_CONFIRMATION_SUBS: 'tx_confirmation_subs',
   LOCKS: 'locks',
   TSS_KEYGEN: 'tss_keygen',
-  TSS_SIGN: 'tss_sign'
+  TSS_SIGN: 'tss_sign',
+  ONRAMP_WEBHOOK_EVENTS: 'onramp_webhook_events'
 };
 
 const Defaults = Common.Defaults;
 const Utils = Common.Utils;
 
 const ObjectID = mongodb.ObjectID;
+const ONRAMP_WEBHOOK_EVENT_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
+
+const requireOnrampValue = (value: string | undefined, name: string): string => {
+  if (typeof value !== 'string' || !value.trim()) {
+    // Flagged so the route answers 400 instead of 503: no amount of partner
+    // retries will add a field the payload never carried.
+    const err: any = new Error(`Missing onramp webhook ${name}`);
+    err.invalidPayload = true;
+    throw err;
+  }
+  return value;
+};
+
+const requireOnrampIdPart = (value: string | undefined, name: string) => {
+  return encodeURIComponent(requireOnrampValue(value, name));
+};
+
+const onrampDocumentId = (prefix: string, parts: Array<{ name: string; value: string }>) => {
+  return [prefix, ...parts.map(part => requireOnrampIdPart(part.value, part.name))].join(':');
+};
+
+const isDuplicateKeyError = (err: any) => err && err.code === 11000;
 
 const objectIdDate = function(date) {
   return Math.floor(date / 1000).toString(16) + '0000000000000000';
@@ -169,6 +195,15 @@ export class Storage {
     db.collection(collections.TSS_SIGN).createIndex({
       id: 1
     }, { unique: true });
+    db.collection(collections.ONRAMP_WEBHOOK_EVENTS).createIndex({
+      partner: 1,
+      env: 1,
+      externalId: 1,
+      updatedAt: -1
+    });
+    db.collection(collections.ONRAMP_WEBHOOK_EVENTS).createIndex({
+      expiresAt: 1
+    }, { expireAfterSeconds: 0 });
   }
 
   connect(opts, cb) {
@@ -1922,6 +1957,78 @@ export class Storage {
 
   async removeTssSigSession({ id }: { id: string }) {
     return this.db.collection(collections.TSS_SIGN).deleteOne({ id }, { w: 1 });
+  }
+
+  /**
+   * Persists a webhook delivery keyed by (partner, env, eventName, externalId,
+   * deliveryVersion) so retried deliveries are idempotent: a duplicate insert
+   * (same _id) is detected via the unique key violation (E11000) and the
+   * previously stored event is returned instead of throwing.
+   */
+  async storeOnrampWebhookEvent({ event }: {
+    event: IOnrampWebhookEvent;
+  }): Promise<IStoreOnrampWebhookEventResult> {
+    if (!this.db) throw new Error('Storage not ready');
+
+    const eventName = requireOnrampValue(event.eventName, 'eventName');
+    const deliveryVersion = requireOnrampValue(event.deliveryVersion ?? event.status, 'deliveryVersion');
+    const id = onrampDocumentId('onramp-webhook', [
+      { name: 'provider', value: event.partner },
+      { name: 'env', value: event.env },
+      { name: 'eventName', value: eventName },
+      { name: 'transactionId', value: event.externalId },
+      { name: 'deliveryVersion', value: deliveryVersion }
+    ]);
+    const receivedAt = Number.isFinite(event.receivedAt) ? event.receivedAt : Date.now();
+    const storedEvent: IStoredOnrampWebhookEvent = {
+      _id: id,
+      partner: event.partner,
+      externalId: event.externalId,
+      status: event.status,
+      eventName,
+      receivedAt,
+      expiresAt: new Date(receivedAt + ONRAMP_WEBHOOK_EVENT_RETENTION_MS),
+      env: event.env,
+      ...(event.createdAt !== undefined && { createdAt: event.createdAt }),
+      ...(event.updatedAt !== undefined && { updatedAt: event.updatedAt }),
+      ...(event.externalTransactionId !== undefined && { externalTransactionId: event.externalTransactionId }),
+      ...(event.fiatAmount !== undefined && { fiatAmount: event.fiatAmount }),
+      ...(event.fiatCurrency !== undefined && { fiatCurrency: event.fiatCurrency }),
+      ...(event.cryptoAmount !== undefined && { cryptoAmount: event.cryptoAmount }),
+      ...(event.cryptoCurrency !== undefined && { cryptoCurrency: event.cryptoCurrency }),
+      ...(event.paymentMethod !== undefined && { paymentMethod: event.paymentMethod }),
+      ...(event.walletAddress !== undefined && { walletAddress: event.walletAddress }),
+      ...(event.walletAddressTag !== undefined && { walletAddressTag: event.walletAddressTag }),
+      ...(event.userId !== undefined && { userId: event.userId }),
+      ...(event.isEmbedded !== undefined && { isEmbedded: event.isEmbedded })
+    };
+
+    console.log(`Storing onramp webhook event ${eventName} for partner ${event.partner} with id ${id} storedEvent:`, JSON.stringify(storedEvent));
+
+    try {
+      await this.db.collection(collections.ONRAMP_WEBHOOK_EVENTS).insertOne(storedEvent);
+      let isStale = false;
+      if (storedEvent.updatedAt) {
+        const newer = await this.db.collection(collections.ONRAMP_WEBHOOK_EVENTS).findOne(
+          {
+            partner: event.partner,
+            env: event.env,
+            externalId: event.externalId,
+            _id: { $ne: id },
+            updatedAt: { $gt: storedEvent.updatedAt }
+          },
+          { projection: { _id: 1 } }
+        );
+        isStale = !!newer;
+      }
+
+      return { inserted: true, id, event: storedEvent, isStale };
+    } catch (err) {
+      if (!isDuplicateKeyError(err)) throw err;
+      const existing = await this.db.collection(collections.ONRAMP_WEBHOOK_EVENTS).findOne({ _id: id });
+      if (!existing) throw err;
+      return { inserted: false, id, event: existing as IStoredOnrampWebhookEvent, isStale: false };
+    }
   }
 
 }
