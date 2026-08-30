@@ -1,6 +1,7 @@
+// eslint-disable-next-line no-redeclare
 const crypto = require('crypto');
-const $ = require('../util/preconditions');
 const JS = require('../util/js');
+const $ = require('../util/preconditions');
 const BN = require('./bn');
 const Point = require('./point');
 const TaggedHash = require('./taggedhash');
@@ -30,7 +31,7 @@ Schnorr.sign = function(privateKey, message, aux) {
 
   if (typeof message === 'string') {
     $.checkArgument(JS.isHexaString(message), 'Schnorr message string is not hex');
-    message = Buffer.from(message, 'hex')
+    message = Buffer.from(message, 'hex');
   }
   $.checkArgument($.isType(message, 'Buffer'), 'Schnorr message must be a hex string or buffer');
 
@@ -39,7 +40,7 @@ Schnorr.sign = function(privateKey, message, aux) {
   }
   if (typeof aux === 'string') {
     $.checkArgument(JS.isHexaString(aux), 'Schnorr aux string is not hex');
-    aux = Buffer.from(aux, 'hex')
+    aux = Buffer.from(aux, 'hex');
   }
   $.checkArgument($.isType(aux, 'Buffer'), 'Schnorr aux must be a hex string or buffer');
 
@@ -52,7 +53,7 @@ Schnorr.sign = function(privateKey, message, aux) {
   }
   const P = G.mul(dPrime);
   const Pbuf = Buffer.from(P.encodeCompressed().slice(1)); // slice(1) removes the encoding prefix byte
-  const d = P.y.isEven() ? dPrime : n.sub(dPrime);
+  const d = P.getY().isEven() ? dPrime : n.sub(dPrime);
   const t = d.xor(new BN(new TaggedHash('BIP0340/aux', aux).finalize()));
   const rand = new TaggedHash('BIP0340/nonce', Buffer.concat([t.toBuffer(), Pbuf, message])).finalize();
   const kPrime = new BN(rand).mod(n);
@@ -61,7 +62,7 @@ Schnorr.sign = function(privateKey, message, aux) {
   }
   const R = G.mul(kPrime);
   const Rbuf = Buffer.from(R.encodeCompressed().slice(1)); // slice(1) removes the encoding prefix byte
-  const k = R.y.isEven() ? kPrime : n.sub(kPrime);
+  const k = R.getY().isEven() ? kPrime : n.sub(kPrime);
   const e = new BN(new TaggedHash('BIP0340/challenge', Buffer.concat([Rbuf, Pbuf, message])).finalize()).mod(n);
   const sig = Buffer.concat([Rbuf, k.add(e.mul(d)).mod(n).toBuffer({ size: 32 })]);
 
@@ -123,11 +124,11 @@ Schnorr.verify = function(publicKey, message, signature) {
     const e = getE(r, P, message);
     const G = Point.getG();
     const R = G.mul(s).add(P.mul(e).neg());
-    if (R.inf || !R.y.isEven() || !R.x.eq(r)) {
+    if (R.inf || !R.getY().isEven() || !R.getX().eq(r)) {
       return false;
     }
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 };

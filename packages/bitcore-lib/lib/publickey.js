@@ -366,7 +366,7 @@ PublicKey.prototype.checkTapTweak = function(p, merkleRoot, control) {
   const P = p.point.liftX();
   const Q = P.add(this.point.curve.g.mul(BN.fromBuffer(tweak)));
   
-  return this.point.x.eq(Q.x) && Q.y.mod(new BN(2)).eq(new BN(control[0] & 1));
+  return this.point.getX().eq(Q.getX()) && Q.getY().mod(new BN(2)).eq(new BN(control[0] & 1));
 };
 
 
@@ -381,7 +381,7 @@ PublicKey.prototype.createTapTweak = function(merkleRoot) {
   let t = this.computeTapTweakHash(merkleRoot);
   t = new BN(t);
   const Q = this.point.liftX().add(Point.getG().mul(t));
-  const parity = Q.y.isEven() ? 0 : 1;
+  const parity = Q.getY().isEven() ? 0 : 1;
   return {
     parity,
     tweakedPubKey: Q.getX().toBuffer({ size: 32 })

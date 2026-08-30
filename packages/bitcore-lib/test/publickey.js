@@ -82,8 +82,8 @@ describe('PublicKey', function() {
         var privkey = new PrivateKey(knownKeys[i].wif);
         var pubkey = privkey.toPublicKey();
         pubkey.toString().should.equal(knownKeys[i].pub);
-        pubkey.point.x.toString('hex').should.equal(knownKeys[i].pubx);
-        pubkey.point.y.toString('hex').should.equal(knownKeys[i].puby);
+        pubkey.point.getX().toBuffer({ size: 32 }).toString('hex').should.equal(knownKeys[i].pubx);
+        pubkey.point.getY().toBuffer({ size: 32 }).toString('hex').should.equal(knownKeys[i].puby);
       }
 
     });
