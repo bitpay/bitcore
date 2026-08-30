@@ -61,5 +61,17 @@
     "lodash": "^4.17.15",
     "webdriverio": "^9.12.0"
   },
-  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
+  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1",
+  "lavamoat": {
+    "allowScripts": {
+      "@wdio/browser-runner>@originjs/vite-plugin-commonjs>esbuild": false,
+      "@wdio/browser-runner>modern-node-polyfills>esbuild": false,
+      "@wdio/browser-runner>vite-plugin-top-level-await>@swc/core": false,
+      "@wdio/browser-runner>vite>esbuild": false,
+      "@wdio/cli>@wdio/utils>edgedriver": false,
+      "@wdio/cli>@wdio/utils>geckodriver": false,
+      "@wdio/cli>tsx>esbuild": false,
+      "gulp>glob-watcher>chokidar>fsevents": false
+    }
+  }
 }

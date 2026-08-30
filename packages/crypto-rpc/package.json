@@ -56,5 +56,12 @@
     "branches": 80,
     "functions": 70,
     "lines": 80
+  },
+  "lavamoat": {
+    "allowScripts": {
+      "@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1": false,
+      "hardhat>keccak": false,
+      "lightning>@grpc/proto-loader>protobufjs": false
+    }
   }
 }

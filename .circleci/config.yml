@@ -100,9 +100,12 @@ jobs:
             nvm use default
             set -x && node -v && npm -v && google-chrome --version && docker version && python --version
       # - restore_dependency_cache
-      - run: | # TODO figure out how to make this only run on a cache miss in restore_dependency_cache
-          nvm use default
-          npm ci
+      # TODO: Restore the dependency cache and run setup only on a cache miss.
+      - run:
+          name: Set up monorepo
+          command: |
+            nvm use default
+            npm run setup
       - save_cache:
           key: node_modules-{{ checksum "package-lock.json" }}-{{ checksum "combined-package-lock.txt" }}
           paths:
@@ -139,7 +142,7 @@ jobs:
       # - restore_dependency_cache
       - run: | # TODO figure out how to make this only run on a cache miss in restore_dependency_cache
           nvm use default
-          npm ci
+          npm run setup
       - persist_to_workspace:
           root: ~/bitcore/packages/crypto-rpc # only persist crypto-rpc package
           paths:

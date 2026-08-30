@@ -63,5 +63,17 @@
     "fix": "npm run fix:errors",
     "pub": "npm run build && npm publish"
   },
-  "gitHead": "a1890ef287c9e5d0e966fb445d15bc59a9393761"
+  "gitHead": "a1890ef287c9e5d0e966fb445d15bc59a9393761",
+  "lavamoat": {
+    "allowScripts": {
+      "@bitpay-labs/bitcore-tss>@bitgo/sdk-lib-mpc>cbor-x>cbor-extract": false,
+      "@bitpay-labs/bitcore-tss>@bitgo/sdk-lib-mpc>secp256k1": false,
+      "@bitpay-labs/bitcore-wallet-service>@bitpay-labs/bitcore-tss>@bitgo/sdk-lib-mpc>cbor-x>cbor-extract": false,
+      "@bitpay-labs/bitcore-wallet-service>@bitpay-labs/bitcore-tss>@bitgo/sdk-lib-mpc>secp256k1": false,
+      "@bitpay-labs/bitcore-wallet-service>@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1": false,
+      "@bitpay-labs/bitcore-wallet-service>moralis>@moralisweb3/streams>ethereumjs-util>ethereum-cryptography>keccak": false,
+      "@bitpay-labs/bitcore-wallet-service>secp256k1": false,
+      "@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1": false
+    }
+  }
 }

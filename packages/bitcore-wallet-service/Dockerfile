@@ -6,12 +6,12 @@ WORKDIR /bitcore
 # NOTE(danny): not the most optimal layering, but it works for now
 COPY lerna.json ./
 COPY package*.json ./
+COPY validate-lifecycle-policy.js ./
 COPY packages/ ./packages/
 
 # Install dependencies and build
-RUN npm install --ignore-scripts
-RUN npm run bootstrap
-RUN npm run compile
+RUN npm ci --ignore-scripts
+RUN npm run setup:installed
 
 # Start the server
 WORKDIR /bitcore/packages/bitcore-wallet-service
