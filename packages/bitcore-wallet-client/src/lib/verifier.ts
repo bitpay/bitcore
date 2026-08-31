@@ -469,11 +469,24 @@ export class Verifier {
       return falseWithLogWarn('invalid transaction proposal version');
     }
 
-    const rawOutputs = version >= 3
+    let rawOutputs = version >= 3
       ? txp.outputs
       : [{ toAddress: txp.toAddress, amount: txp.amount }];
     if (!Array.isArray(rawOutputs) || rawOutputs.length === 0) {
       return falseWithLogWarn('missing transaction outputs');
+    }
+
+    // Utils.buildTx() still honors a legacy BWC <= 8.9.0 compatibility
+    // field, top-level `txp.data`, by overwriting outputs[0].data with it
+    // right before signing. Fold that same override into outputs[0] here,
+    // on a local copy, so the calldata comparison below judges the value
+    // that will actually be signed rather than the pre-override one -
+    // otherwise a matching outputs[0].data could pass verification while a
+    // divergent top-level txp.data silently changes what gets signed. This
+    // also means only an *identical* legacy value can still pass; a
+    // disagreeing one now reads as a plain calldata mismatch.
+    if (isEvmChain && txp.data) {
+      rawOutputs = [{ ...rawOutputs[0], data: txp.data }, ...rawOutputs.slice(1)];
     }
 
     const normalizedOutputs = this.normalizePayproEntries(rawOutputs);

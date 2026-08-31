@@ -624,6 +624,11 @@ describe('Verifier', function() {
           Verifier.checkPaypro(txp, createNativeEvmPaypro(nativeData)).should.equal(false);
         });
 
+        it('accepts a native EVM PayPro instruction whose top-level legacy txp.data matches the signed calldata', function() {
+          const txp = { ...createNativeEvmTxp(nativeData), data: nativeData };
+          Verifier.checkPaypro(txp, createNativeEvmPaypro(nativeData)).should.equal(true);
+        });
+
         it('rejects identical malformed native EVM calldata without throwing', function() {
           let result;
           chai.expect(() => {
