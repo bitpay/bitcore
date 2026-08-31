@@ -362,7 +362,8 @@ export class Verifier {
 
   /**
    * Checks a PayPro-funded transaction proposal against the signed PayPro
-   * response it was supposed to pay.
+   * response it was supposed to pay. Should never be used to check multiTx
+   * or multiSendContractAddress txps
    *
    * `txp` is sourced from BWS and is untrusted - a compromised server or a
    * malicious co-signer could have altered it. `payproOpts` is derived from
