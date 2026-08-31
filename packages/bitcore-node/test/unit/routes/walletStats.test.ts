@@ -3,7 +3,17 @@ import { ObjectID } from 'mongodb';
 import sinon from 'sinon';
 import { CacheStorage } from '../../../src/models/cache';
 import { WalletStatsStorage } from '../../../src/models/walletStats';
-import { getSnapshots, parseSnapshotQuery, transformSnapshot, walletStatsRoute } from '../../../src/routes/walletStats';
+import { WalletStatsWalletStorage } from '../../../src/models/walletStatsWallet';
+import {
+  buildCohortMatch,
+  getCohorts,
+  getSnapshots,
+  latestSnapshotDate,
+  parseCohortQuery,
+  parseSnapshotQuery,
+  transformSnapshot,
+  walletStatsRoute
+} from '../../../src/routes/walletStats';
 import { walletStatsAuth } from '../../../src/routes/walletStatsAuth';
 
 function makeRes() {
@@ -33,6 +43,20 @@ function makeRes() {
 describe('WalletStats routes', function() {
   const sandbox = sinon.createSandbox();
   afterEach(() => sandbox.restore());
+
+  /** Stubs the facts collection: the first query answers the latest-date lookup, the second the facts. */
+  function stubFactsCollection(latestDocs: any[] = [], factDocs: any[] = []) {
+    const toArray = sandbox.stub();
+    toArray.onFirstCall().resolves(latestDocs);
+    toArray.onSecondCall().resolves(factDocs);
+    const cursor: any = { toArray };
+    cursor.sort = sandbox.stub().returns(cursor);
+    cursor.limit = sandbox.stub().returns(cursor);
+    cursor.project = sandbox.stub().returns(cursor);
+    const collection: any = { find: sandbox.stub().returns(cursor) };
+    sandbox.stub(WalletStatsWalletStorage, 'collection').get(() => collection);
+    return { collection, cursor };
+  }
 
   describe('parseSnapshotQuery', () => {
     it('builds an empty filter with no query params', () => {
@@ -253,6 +277,162 @@ describe('WalletStats routes', function() {
       const res = makeRes();
       await getSnapshots({ query: {} } as any, res);
       expect(res.statusCode).to.equal(500);
+    });
+  });
+
+  describe('parseCohortQuery', () => {
+    it('requires chain and network', () => {
+      expect(parseCohortQuery({ network: 'mainnet' }).error).to.include('chain');
+      expect(parseCohortQuery({ chain: 'BTC' }).error).to.include('network');
+    });
+
+    it('accepts the optional date filters', () => {
+      const { error, values } = parseCohortQuery({
+        chain: 'btc',
+        network: 'mainnet',
+        date: '2026-08-03',
+        createdFrom: '2026-01-01',
+        createdTo: '2026-06-30',
+        activeSince: '2026-07-01'
+      });
+      expect(error).to.equal(undefined);
+      expect(values).to.deep.equal({
+        chain: 'BTC',
+        network: 'mainnet',
+        date: '2026-08-03',
+        createdFrom: '2026-01-01',
+        createdTo: '2026-06-30',
+        activeSince: '2026-07-01'
+      });
+    });
+
+    it('rejects a bad date', () => {
+      expect(parseCohortQuery({ chain: 'BTC', network: 'mainnet', activeSince: '2026-02-30' }).error).to.exist;
+    });
+  });
+
+  describe('buildCohortMatch', () => {
+    const base = { chain: 'BTC', network: 'mainnet', snapshotDate: '2026-08-03' };
+
+    it('matches the snapshot and skips duplicates', () => {
+      expect(buildCohortMatch(base)).to.deep.equal({
+        chain: 'BTC',
+        network: 'mainnet',
+        snapshotDate: '2026-08-03',
+        isDup: false
+      });
+    });
+
+    it('bounds createdDate in UTC, with createdTo covering its whole day', () => {
+      const match: any = buildCohortMatch({ ...base, createdFrom: '2026-01-01', createdTo: '2026-06-30' });
+      expect(match.createdDate.$gte.toISOString()).to.equal('2026-01-01T00:00:00.000Z');
+      expect(match.createdDate.$lt.toISOString()).to.equal('2026-07-01T00:00:00.000Z');
+    });
+
+    it('treats activeSince as from the start of that UTC day', () => {
+      const match: any = buildCohortMatch({ ...base, activeSince: '2026-07-01' });
+      expect(match.lastActivityDate.$gte.toISOString()).to.equal('2026-07-01T00:00:00.000Z');
+    });
+
+    it('leaves out the date clauses that were not asked for', () => {
+      const match: any = buildCohortMatch({ ...base, createdFrom: '2026-01-01' });
+      expect(match.createdDate.$lt).to.equal(undefined);
+      expect(match.lastActivityDate).to.equal(undefined);
+    });
+  });
+
+  describe('latestSnapshotDate', () => {
+    it('returns the newest snapshot date for the chain and network', async () => {
+      const { collection, cursor } = stubFactsCollection([{ snapshotDate: '2026-08-03' }]);
+      const date = await latestSnapshotDate('BTC', 'mainnet');
+      expect(date).to.equal('2026-08-03');
+      expect(collection.find.calledOnceWith({ chain: 'BTC', network: 'mainnet' })).to.equal(true);
+      expect(cursor.sort.calledOnceWith({ snapshotDate: -1 })).to.equal(true);
+      expect(cursor.limit.calledOnceWith(1)).to.equal(true);
+    });
+
+    it('returns null when the chain has never been snapshotted', async () => {
+      stubFactsCollection([]);
+      expect(await latestSnapshotDate('BTC', 'mainnet')).to.equal(null);
+    });
+  });
+
+  describe('GET /cohorts', () => {
+    beforeEach(() => {
+      sandbox.stub(CacheStorage, 'getGlobalOrRefresh').callsFake(async (_key, onMiss) => onMiss());
+    });
+
+    it('400s on a missing chain', async () => {
+      const res = makeRes();
+      await getCohorts({ query: { network: 'mainnet' } } as any, res);
+      expect(res.statusCode).to.equal(400);
+      expect(res.headers['Cache-Control']).to.equal('private, max-age=300');
+    });
+
+    it('404s when there is no snapshot for the chain and network', async () => {
+      stubFactsCollection([]);
+      const res = makeRes();
+      await getCohorts({ query: { chain: 'BTC', network: 'mainnet' } } as any, res);
+      expect(res.statusCode).to.equal(404);
+    });
+
+    it('counts wallets and sums balances at the latest snapshot', async () => {
+      const { collection } = stubFactsCollection([{ snapshotDate: '2026-08-03' }], [
+        { balance: '100' },
+        { balance: '250' }
+      ]);
+      const res = makeRes();
+      await getCohorts({ query: { chain: 'btc', network: 'mainnet' } } as any, res);
+      expect(res.body).to.deep.equal({
+        chain: 'BTC',
+        network: 'mainnet',
+        snapshotDate: '2026-08-03',
+        walletCnt: 2,
+        totalBalance: '350',
+        filters: {}
+      });
+      expect(collection.find.secondCall.args[0]).to.deep.equal({
+        chain: 'BTC',
+        network: 'mainnet',
+        snapshotDate: '2026-08-03',
+        isDup: false
+      });
+    });
+
+    it('sums balances beyond what a double can hold', async () => {
+      const big = '9007199254740993'; // Number.MAX_SAFE_INTEGER + 2
+      stubFactsCollection([{ snapshotDate: '2026-08-03' }], [{ balance: big }, { balance: big }]);
+      const res = makeRes();
+      await getCohorts({ query: { chain: 'BTC', network: 'mainnet' } } as any, res);
+      expect(res.body.totalBalance).to.equal('18014398509481986');
+    });
+
+    it('treats a missing or empty balance as zero', async () => {
+      stubFactsCollection([{ snapshotDate: '2026-08-03' }], [{ balance: '5' }, {}, { balance: '' }]);
+      const res = makeRes();
+      await getCohorts({ query: { chain: 'BTC', network: 'mainnet' } } as any, res);
+      expect(res.body.walletCnt).to.equal(3);
+      expect(res.body.totalBalance).to.equal('5');
+    });
+
+    it('uses the requested date instead of the latest, and echoes the filters', async () => {
+      const { collection } = stubFactsCollection([], [{ balance: '1' }]);
+      const res = makeRes();
+      await getCohorts(
+        {
+          query: {
+            chain: 'BTC',
+            network: 'mainnet',
+            date: '2026-07-27',
+            createdFrom: '2026-01-01',
+            activeSince: '2026-07-01'
+          }
+        } as any,
+        res
+      );
+      expect(res.body.snapshotDate).to.equal('2026-07-27');
+      expect(res.body.filters).to.deep.equal({ createdFrom: '2026-01-01', activeSince: '2026-07-01' });
+      expect(collection.find.calledOnce).to.equal(true); // no lookup for the latest date
     });
   });
 
