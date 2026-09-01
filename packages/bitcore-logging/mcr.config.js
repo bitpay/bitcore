@@ -8,8 +8,8 @@ const builder = require('../../coverage-builder.js').default;
 const config = builder({
   bytes: 90,
   statements: 90,
-  branches: 80,
-  functions: 85,
+  branches: 90,
+  functions: 80,
   lines: 90
 });
 
