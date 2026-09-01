@@ -1662,6 +1662,7 @@ describe('Wallet service', function() {
           message: { partyId: 0, broadcastMessages: [], p2pMessages: [], publicKey: 'dummy', round: 0 },
           n: 1,
           copayerId: legitCopayerId,
+          version: 1.1,
         });
         session.sharedPublicKey = 'dummy-shared-public-key';
         await server.storage.db.collection('tss_keygen').deleteMany({ id: session.id });
@@ -1728,6 +1729,7 @@ describe('Wallet service', function() {
           message: { partyId: 0, broadcastMessages: [], p2pMessages: [], publicKey: 'dummy', round: 0 },
           n: 1,
           copayerId: ancillaryDerivedCopayerId,
+          version: 1.1,
         });
         session.sharedPublicKey = 'dummy-shared-public-key';
         await server.storage.db.collection('tss_keygen').deleteMany({ id: session.id });
