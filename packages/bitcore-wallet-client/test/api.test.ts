@@ -5437,6 +5437,90 @@ describe('client API', function() {
         });
       });
     });
+
+    // drives historical *native* ETH PayPro fixture 
+    describe('signed native ETH instruction fidelity', function() {
+      let savedTrustedKeys;
+      const ethBody = JSON.parse(TestData.payProJsonV2Body.eth);
+      const [ethInstruction] = ethBody.instructions;
+      const createEthTxp = (overrides: any = {}) => ({
+        id: 'txp-eth-native-fidelity',
+        version: 3,
+        chain: 'eth',
+        coin: 'eth',
+        network: 'livenet',
+        amount: ethInstruction.amount,
+        outputs: [{ toAddress: ethInstruction.toAddress, amount: ethInstruction.amount, data: ethInstruction.data }],
+        payProUrl: ethBody.paymentUrl,
+        creatorId: 'creator',
+        ...overrides
+      });
+
+      beforeEach(function(done) {
+        savedTrustedKeys = Client.PayProV2.trustedKeys;
+        Client.PayProV2.trustedKeys = {
+          ...savedTrustedKeys,
+          [TestData.payProJsonV2TestKey.identity]: TestData.payProJsonV2TestKey.keyData
+        };
+        mockRequest(TestData.payProJsonV2.eth.body, TestData.payProJsonV2.eth.headers);
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', network: 'livenet' }, () => {
+          sandbox.stub(Verifier, 'checkTxProposalSignature').returns(true);
+          done();
+        });
+      });
+
+      afterEach(function() {
+        Client.PayProV2.trustedKeys = savedTrustedKeys;
+      });
+
+      it('accepts a BWS proposal whose native ETH output matches the signed PayPro instruction', function(done) {
+        const selectPaymentOptionSpy = sandbox.spy(Client.PayProV2, 'selectPaymentOption');
+        sandbox.stub(clients[0].request, 'get').resolves({ body: [createEthTxp()] });
+        clients[0].getTxProposals({}, (err, txps) => {
+          try {
+            should.not.exist(err);
+            should.exist(txps);
+            txps.should.have.lengthOf(1);
+            sinon.assert.calledOnce(selectPaymentOptionSpy);
+            txps[0].outputs[0].toAddress.should.equal(ethInstruction.toAddress);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+
+      it('raises SERVER_COMPROMISED for a substituted native ETH destination', function(done) {
+        const substitutedAddress = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+        const txp = createEthTxp({
+          outputs: [{ toAddress: substitutedAddress, amount: ethInstruction.amount, data: ethInstruction.data }]
+        });
+        sandbox.stub(clients[0].request, 'get').resolves({ body: [txp] });
+        clients[0].getTxProposals({}, (err, txps) => {
+          try {
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+
+      it('raises SERVER_COMPROMISED when the proposal drops the signed invoice calldata', function(done) {
+        const txp = createEthTxp({
+          outputs: [{ toAddress: ethInstruction.toAddress, amount: ethInstruction.amount }]
+        });
+        sandbox.stub(clients[0].request, 'get').resolves({ body: [txp] });
+        clients[0].getTxProposals({}, (err, txps) => {
+          try {
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+    });
   });
 
   // `getPayProV2` and the txproposals response are stubbed directly, rather
