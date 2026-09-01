@@ -13,6 +13,7 @@ import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import BWS from '@bitpay-labs/bitcore-wallet-service';
 import Client, { Credentials } from '../src';
 import { Request } from '../src/lib/request';
+import { Verifier } from '../src/lib/verifier';
 import { Utils } from '../src/lib/common';
 import * as TestData from './data/testdata';
 import { Errors } from '../src/lib/errors';
@@ -597,6 +598,44 @@ describe('client API', function() {
         rawTxp.should.deep.equal([
           '0xeb068504a817c80082520894a062a07a0a56beb2872b12f388f511d694626730870dd764300b800080018080'
         ]);
+      });
+      it('should build unsigned ERC-20 approve/pay transactions in PayPro instruction order', () => {
+        // The verifier compares txp.outputs against the signed PayPro
+        // instructions as logical arrays; this proves the security-relevant
+        // result - the actual unsigned transactions handed to the signer -
+        // also preserves that same approve-then-pay order and nonce spacing.
+        const erc20Body = JSON.parse(TestData.payProJsonV2Body.erc20);
+        const [approveInstruction, payInstruction] = erc20Body.instructions;
+        const from = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+        const baseNonce = 5;
+
+        const txp = {
+          version: 3,
+          chain: 'eth',
+          coin: 'usdc',
+          from,
+          payProUrl: erc20Body.paymentUrl,
+          amount: 0,
+          nonce: baseNonce,
+          gasPrice: 20000000000,
+          outputs: [
+            { toAddress: approveInstruction.toAddress, amount: 0, data: approveInstruction.data, gasLimit: 60000 },
+            { toAddress: payInstruction.toAddress, amount: 0, data: payInstruction.data, gasLimit: 120000 }
+          ]
+        };
+
+        const rawTxs = Utils.buildTx(txp).uncheckedSerialize();
+        rawTxs.should.have.lengthOf(2);
+
+        const [approveTx, payTx] = rawTxs.map(raw => CWC.ethers.Transaction.from(raw));
+
+        approveTx.to.toLowerCase().should.equal(approveInstruction.toAddress.toLowerCase());
+        approveTx.data.toLowerCase().should.equal(approveInstruction.data.toLowerCase());
+        approveTx.nonce.should.equal(baseNonce);
+
+        payTx.to.toLowerCase().should.equal(payInstruction.toAddress.toLowerCase());
+        payTx.data.toLowerCase().should.equal(payInstruction.data.toLowerCase());
+        payTx.nonce.should.equal(baseNonce + 1);
       });
       it('should build a matic txp correctly', () => {
         const toAddress = '0xa062a07a0a56beb2872b12f388f511d694626730';
@@ -5319,6 +5358,287 @@ describe('client API', function() {
           tx.payProUrl.should.equal('http://example.com');
           done();
         });
+      });
+    });
+
+    // Unlike 'Payment Protocol V2 account-chain boundary' below, this suite
+    // drives a genuinely signed ERC-20 PayPro fixture through the real
+    // getPayProV2 -> selectPaymentOption -> signature verification ->
+    // processResponse path, so it proves the *signed* instruction order
+    // survives to checkPaypro, not just that some ordering is enforced.
+    describe('signed account-chain instruction ordering', function() {
+      let savedTrustedKeys;
+      const erc20Body = JSON.parse(TestData.payProJsonV2Body.erc20);
+      const [approveInstruction, payInstruction] = erc20Body.instructions;
+      const approveOutput = { toAddress: approveInstruction.toAddress, amount: 0, data: approveInstruction.data };
+      const payOutput = { toAddress: payInstruction.toAddress, amount: 0, data: payInstruction.data };
+      const createUsdcTxp = outputs => ({
+        id: 'txp-usdc-erc20-ordering',
+        version: 3,
+        chain: 'eth',
+        coin: 'usdc',
+        network: 'livenet',
+        amount: 0,
+        from: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+        outputs,
+        payProUrl: erc20Body.paymentUrl,
+        creatorId: 'creator'
+      });
+
+      beforeEach(function(done) {
+        savedTrustedKeys = Client.PayProV2.trustedKeys;
+        Client.PayProV2.trustedKeys = {
+          ...savedTrustedKeys,
+          [TestData.payProJsonV2TestKey.identity]: TestData.payProJsonV2TestKey.keyData
+        };
+        mockRequest(TestData.payProJsonV2.erc20.body, TestData.payProJsonV2.erc20.headers);
+        // The wallet itself is a plain ETH wallet - BWS only registers a
+        // copayer's coin as a chain name (see Copayer.create's
+        // Constants.CHAINS check), never a token symbol. The token being
+        // spent (USDC) lives on the transaction proposal's own `coin`
+        // field below, not on the wallet.
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', network: 'livenet' }, () => {
+          sandbox.stub(Verifier, 'checkTxProposalSignature').returns(true);
+          done();
+        });
+      });
+
+      afterEach(function() {
+        Client.PayProV2.trustedKeys = savedTrustedKeys;
+      });
+
+      it('accepts a BWS proposal whose approve/pay outputs match the signed PayPro instruction order', function(done) {
+        const selectPaymentOptionSpy = sandbox.spy(Client.PayProV2, 'selectPaymentOption');
+        sandbox.stub(clients[0].request, 'get').resolves({ body: [createUsdcTxp([approveOutput, payOutput])] });
+        clients[0].getTxProposals({}, (err, txps) => {
+          try {
+            should.not.exist(err);
+            should.exist(txps);
+            txps.should.have.lengthOf(1);
+            sinon.assert.calledOnce(selectPaymentOptionSpy);
+            txps[0].outputs[0].toAddress.should.equal(approveOutput.toAddress);
+            txps[0].outputs[1].toAddress.should.equal(payOutput.toAddress);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+
+      it('raises SERVER_COMPROMISED when BWS reverses the signed approve/pay order', function(done) {
+        sandbox.stub(clients[0].request, 'get').resolves({ body: [createUsdcTxp([payOutput, approveOutput])] });
+        clients[0].getTxProposals({}, (err, txps) => {
+          try {
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+    });
+
+    // drives historical *native* ETH PayPro fixture 
+    describe('signed native ETH instruction fidelity', function() {
+      let savedTrustedKeys;
+      const ethBody = JSON.parse(TestData.payProJsonV2Body.eth);
+      const [ethInstruction] = ethBody.instructions;
+      const createEthTxp = (overrides: any = {}) => ({
+        id: 'txp-eth-native-fidelity',
+        version: 3,
+        chain: 'eth',
+        coin: 'eth',
+        network: 'livenet',
+        amount: ethInstruction.amount,
+        outputs: [{ toAddress: ethInstruction.toAddress, amount: ethInstruction.amount, data: ethInstruction.data }],
+        payProUrl: ethBody.paymentUrl,
+        creatorId: 'creator',
+        ...overrides
+      });
+
+      beforeEach(function(done) {
+        savedTrustedKeys = Client.PayProV2.trustedKeys;
+        Client.PayProV2.trustedKeys = {
+          ...savedTrustedKeys,
+          [TestData.payProJsonV2TestKey.identity]: TestData.payProJsonV2TestKey.keyData
+        };
+        mockRequest(TestData.payProJsonV2.eth.body, TestData.payProJsonV2.eth.headers);
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth', network: 'livenet' }, () => {
+          sandbox.stub(Verifier, 'checkTxProposalSignature').returns(true);
+          done();
+        });
+      });
+
+      afterEach(function() {
+        Client.PayProV2.trustedKeys = savedTrustedKeys;
+      });
+
+      it('accepts a BWS proposal whose native ETH output matches the signed PayPro instruction', function(done) {
+        const selectPaymentOptionSpy = sandbox.spy(Client.PayProV2, 'selectPaymentOption');
+        sandbox.stub(clients[0].request, 'get').resolves({ body: [createEthTxp()] });
+        clients[0].getTxProposals({}, (err, txps) => {
+          try {
+            should.not.exist(err);
+            should.exist(txps);
+            txps.should.have.lengthOf(1);
+            sinon.assert.calledOnce(selectPaymentOptionSpy);
+            txps[0].outputs[0].toAddress.should.equal(ethInstruction.toAddress);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+
+      it('raises SERVER_COMPROMISED for a substituted native ETH destination', function(done) {
+        const substitutedAddress = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+        const txp = createEthTxp({
+          outputs: [{ toAddress: substitutedAddress, amount: ethInstruction.amount, data: ethInstruction.data }]
+        });
+        sandbox.stub(clients[0].request, 'get').resolves({ body: [txp] });
+        clients[0].getTxProposals({}, (err, txps) => {
+          try {
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+
+      it('raises SERVER_COMPROMISED when the proposal drops the signed invoice calldata', function(done) {
+        const txp = createEthTxp({
+          outputs: [{ toAddress: ethInstruction.toAddress, amount: ethInstruction.amount }]
+        });
+        sandbox.stub(clients[0].request, 'get').resolves({ body: [txp] });
+        clients[0].getTxProposals({}, (err, txps) => {
+          try {
+            err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+    });
+  });
+
+  // `getPayProV2` and the txproposals response are stubbed directly, rather
+  // than driven through a fully signed PayProV2 fixture, because the point
+  // here is caller-boundary reachability, not instruction-shape fidelity:
+  // there's no UTXO condition between getTxProposals() and checkPaypro(), so
+  // an ETH proposal must reach the same SERVER_COMPROMISED gate a BTC one does.
+  describe('Payment Protocol V2 account-chain boundary', function() {
+    const amount = 10000;
+    const merchantAddress = '0x9858EfFD232B4033E47d90003D41EC34EcaEda94';
+    const substitutedAddress = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+    const paypro = { instructions: [{ toAddress: merchantAddress, amount }] };
+    const createEthTxp = toAddress => ({
+      id: 'txp-eth-paypro-boundary',
+      version: 3,
+      chain: 'eth',
+      coin: 'eth',
+      amount,
+      outputs: [{ toAddress, amount }],
+      payProUrl: 'https://bitpay.com/i/EthAccountChainBoundary',
+      creatorId: 'creator'
+    });
+    let checkTxProposalSignatureStub, getPayProV2Stub, requestGetStub;
+
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth' }, () => {
+        checkTxProposalSignatureStub = sandbox.stub(Verifier, 'checkTxProposalSignature').returns(true);
+        getPayProV2Stub = sandbox.stub(clients[0], 'getPayProV2').resolves(paypro);
+        done();
+      });
+    });
+
+    it('accepts a matching ETH PayPro proposal through getTxProposals', function(done) {
+      requestGetStub = sandbox.stub(clients[0].request, 'get').resolves({ body: [createEthTxp(merchantAddress)] });
+      clients[0].getTxProposals({}, (err, txps) => {
+        try {
+          should.not.exist(err);
+          sinon.assert.calledOnce(getPayProV2Stub);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
+
+    it('raises SERVER_COMPROMISED for a substituted ETH PayPro destination through getTxProposals', function(done) {
+      requestGetStub = sandbox.stub(clients[0].request, 'get').resolves({ body: [createEthTxp(substitutedAddress)] });
+      clients[0].getTxProposals({}, (err, txps) => {
+        try {
+          err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
+
+    // Same destination and amount, different calldata - proves the
+    // destination/amount check alone is not enough to catch a tampered
+    // EVM PayPro proposal at this caller boundary.
+    const evmData = '0xa9059cbb0000000000000000000000009858effd232b4033e47d90003d41ec34ecaeda94000000000000000000000000000000000000000000000000000000000000989680';
+    const differentEvmData = '0xa9059cbb0000000000000000000000009858effd232b4033e47d90003d41ec34ecaeda940000000000000000000000000000000000000000000000000000000000000001';
+    const dataPaypro = { instructions: [{ toAddress: merchantAddress, amount, to: merchantAddress, value: amount, data: evmData }] };
+    const createEthTxpWithData = data => ({
+      id: 'txp-eth-paypro-boundary-data',
+      version: 3,
+      chain: 'eth',
+      coin: 'eth',
+      amount,
+      outputs: [{ toAddress: merchantAddress, amount, data }],
+      payProUrl: 'https://bitpay.com/i/EthAccountChainBoundary',
+      creatorId: 'creator'
+    });
+
+    it('accepts a matching ETH PayPro proposal with identical calldata through getTxProposals', function(done) {
+      getPayProV2Stub.resolves(dataPaypro);
+      requestGetStub = sandbox.stub(clients[0].request, 'get').resolves({ body: [createEthTxpWithData(evmData)] });
+      clients[0].getTxProposals({}, (err, txps) => {
+        try {
+          should.not.exist(err);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
+
+    it('raises SERVER_COMPROMISED for an ETH PayPro proposal whose calldata was substituted', function(done) {
+      getPayProV2Stub.resolves(dataPaypro);
+      requestGetStub = sandbox.stub(clients[0].request, 'get').resolves({ body: [createEthTxpWithData(differentEvmData)] });
+      clients[0].getTxProposals({}, (err, txps) => {
+        try {
+          err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
+
+    // Output-level calldata matches the signed instruction, but Utils.buildTx()
+    // (common/utils.ts) still applies the top-level `txp.data` BWC <= 8.9.0
+    // compatibility field by overwriting outputs[0].data at sign time - after
+    // checkPaypro has already accepted the proposal based on outputs[0].data
+    // alone. This lets a matching output carry a top-level override that
+    // signs different calldata than what was verified.
+    it('raises SERVER_COMPROMISED for an ETH PayPro proposal whose top-level legacy txp.data overrides the accepted calldata', function(done) {
+      getPayProV2Stub.resolves(dataPaypro);
+      const txp: any = createEthTxpWithData(evmData);
+      txp.data = differentEvmData;
+      requestGetStub = sandbox.stub(clients[0].request, 'get').resolves({ body: [txp] });
+      clients[0].getTxProposals({}, (err, txps) => {
+        try {
+          err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+          done();
+        } catch (e) {
+          done(e);
+        }
       });
     });
   });
