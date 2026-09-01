@@ -305,34 +305,158 @@ export class Verifier {
     return true;
   }
 
-  static checkPaypro(txp, payproOpts) {
-    let toAddress, amount;
+  private static payproAddressesEqual(chain, address1, address2) {
+    if (typeof address1 !== 'string' || typeof address2 !== 'string') return false;
+    if (Constants.EVM_CHAINS.includes(chain)) {
+      return address1.toLowerCase() === address2.toLowerCase();
+    }
+    if (chain !== 'bch') return address1 === address2;
+    const normalize = address => {
+      try {
+        return new BCHAddress(address).toCashAddress(true);
+      } catch {
+        try {
+          return BCHAddress.fromObject(new Bitcore.Address(address).toObject()).toCashAddress(true);
+        } catch { return; }
+      }
+    };
+    const normalizedAddress = normalize(address1);
+    return !!normalizedAddress && normalizedAddress === normalize(address2);
+  }
 
-    if (parseInt(txp.version) >= 3) {
-      toAddress = txp.outputs[0].toAddress;
-      amount = txp.amount;
-    } else {
-      toAddress = txp.toAddress;
-      amount = txp.amount;
+  private static expectedPayproOutputs(chain, instructions): any[] | undefined {
+    if (!Array.isArray(instructions) || !instructions.length) return;
+
+    if (Constants.UTXO_CHAINS.includes(chain)) {
+      if (instructions.some(instruction => !Array.isArray(instruction?.outputs) || !instruction.outputs.length)) return;
+      return instructions.flatMap(instruction =>
+        instruction.outputs.map(output => ({
+          toAddress: output?.address,
+          amount: output?.amount
+        }))
+      );
     }
 
-    if (amount != (payproOpts.instructions || []).reduce((sum, i) => sum += i.amount, 0)) return false;
+    if (Constants.EVM_CHAINS.includes(chain)) {
+      return instructions.map(instruction => ({
+        toAddress: instruction?.to,
+        amount: instruction?.value,
+        data: instruction?.data
+      }));
+    }
 
-    if (txp.coin == 'btc' && toAddress != payproOpts.instructions[0].toAddress)
+    if (Constants.RIPPLE_CHAINS.includes(chain) || Constants.SVM_CHAINS.includes(chain)) {
+      if (instructions.length !== 1) return;
+      const outputs = instructions[0]?.outputs;
+      if (!Array.isArray(outputs) || outputs.length !== 1) return;
+      const output = outputs[0];
+      return [{
+        toAddress: output?.address,
+        amount: output?.amount,
+        destinationTag: output?.destinationTag,
+        invoiceID: output?.invoiceID
+      }];
+    }
+  }
+
+  /**
+   * Verify every output against signed PayPro instructions so a copayer cannot hide unauthorized outputs.
+   */
+  static checkPaypro(txp, payproOpts) {
+    const chain = typeof txp?.chain === 'string'
+      ? txp.chain.toLowerCase()
+      : Utils.getChain(txp?.coin); // backwards compatibility
+
+    if (!Constants.CHAINS.includes(chain)) {
+      log.debug(`[TXP ${txp?.id}] Unsupported PayPro chain`);
       return false;
+    }
+    // EVM addresses are identical across chains and networks, so comparing the destination alone
+    // won't catch a proposal paying a mainnet address against a testnet (or other chain) invoice.
+    if (chain !== payproOpts?.chain?.toLowerCase()) {
+      log.debug(`[TXP ${txp?.id}] PayPro chain does not match transaction proposal`);
+      return false;
+    }
+    if (txp?.network !== payproOpts?.network) {
+      log.debug(`[TXP ${txp?.id}] PayPro network does not match transaction proposal`);
+      return false;
+    }
+    if (!(parseInt(txp?.version) >= 3)) {
+      log.debug(`[TXP ${txp?.id}] Transaction proposal version not supported by PayPro`);
+      return false;
+    }
 
-    // Workaround for cashaddr/legacy address problems...
+    const outputs = txp.outputs;
+    const expectedOutputs = this.expectedPayproOutputs(chain, payproOpts?.instructions);
+    if (!expectedOutputs?.length) {
+      log.debug(`[TXP ${txp?.id}] Invalid PayPro instructions`);
+      return false;
+    }
+    if (!Array.isArray(outputs)) {
+      log.debug(`[TXP ${txp?.id}] Invalid transaction proposal outputs`);
+      return false;
+    }
+    if (outputs.length !== expectedOutputs.length) {
+      log.debug(`[TXP ${txp?.id}] PayPro output count does not match transaction proposal`);
+      return false;
+    }
+
+    for (let i = 0; i < outputs.length; i++) {
+      const output = outputs[i];
+      const expectedOutput = expectedOutputs[i];
+      if (!this.atomicValuesEqual(output?.amount, expectedOutput.amount)) {
+        log.debug(`[TXP ${txp?.id}] PayPro output ${i} amount does not match transaction proposal`);
+        return false;
+      }
+      if (!this.payproAddressesEqual(chain, output?.toAddress, expectedOutput.toAddress)) {
+        log.debug(`[TXP ${txp?.id}] PayPro output ${i} address does not match transaction proposal`);
+        return false;
+      }
+      if (
+        Constants.EVM_CHAINS.includes(chain) &&
+        (i === 0 && txp.data ? txp.data : output?.data) !== expectedOutput.data
+      ) {
+        log.debug(`[TXP ${txp?.id}] PayPro output ${i} data does not match transaction proposal`);
+        return false;
+      }
+    }
+
+    if (Constants.RIPPLE_CHAINS.includes(chain)) {
+      if (txp.multiTx) {
+        log.debug(`[TXP ${txp?.id}] PayPro does not support XRP multiTx transaction proposals`);
+        return false;
+      }
+      if (
+        txp.txType != null &&
+        (typeof txp.txType !== 'string' || txp.txType.toLowerCase() !== 'payment')
+      ) {
+        log.debug(`[TXP ${txp?.id}] PayPro does not support non-payment XRP transaction proposals`);
+        return false;
+      }
+      // XRP puts both the destination tag and the invoice ID on-chain, and the merchant reconciles
+      // the payment with them - so neither is free for the proposal to choose.
+      if (this.normalizeAtomicValue(expectedOutputs[0].destinationTag) === 0n) {
+        log.debug(`[TXP ${txp?.id}] PayPro destination tag 0 is not supported`);
+        return false;
+      }
+      if (!this.optionalAtomicValuesEqual(txp.destinationTag, expectedOutputs[0].destinationTag)) {
+        log.debug(`[TXP ${txp?.id}] PayPro destination tag does not match transaction proposal`);
+        return false;
+      }
+      if ((txp.invoiceID ?? null) !== (expectedOutputs[0].invoiceID ?? null)) {
+        log.debug(`[TXP ${txp?.id}] PayPro invoice ID does not match transaction proposal`);
+        return false;
+      }
+    }
+
+    // On SOL the invoice ID travels as a memo instruction rather than as a transaction field
     if (
-      txp.coin == 'bch' &&
-      new BCHAddress(toAddress).toString() !=
-        new BCHAddress(payproOpts.instructions[0].toAddress).toString()
-    )
+      Constants.SVM_CHAINS.includes(chain) &&
+      (txp.memo ?? null) !== (expectedOutputs[0].invoiceID ?? null)
+    ) {
+      log.debug(`[TXP ${txp?.id}] PayPro memo does not match transaction proposal`);
       return false;
-
-    // this generates problems...
-    //  if (feeRate && payproOpts.requiredFeeRate &&
-    //      feeRate < payproOpts.requiredFeeRate)
-    //  return false;
+    }
 
     return true;
   }
