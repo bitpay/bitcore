@@ -5,7 +5,10 @@ import { CacheStorage } from '../../../src/models/cache';
 import { WalletStatsStorage } from '../../../src/models/walletStats';
 import { WalletStatsWalletStorage } from '../../../src/models/walletStatsWallet';
 import {
+  bucketBoundaries,
   buildCohortMatch,
+  countIntoBuckets,
+  getBuckets,
   getCohorts,
   getSnapshots,
   latestSnapshotDate,
@@ -433,6 +436,128 @@ describe('WalletStats routes', function() {
       expect(res.body.snapshotDate).to.equal('2026-07-27');
       expect(res.body.filters).to.deep.equal({ createdFrom: '2026-01-01', activeSince: '2026-07-01' });
       expect(collection.find.calledOnce).to.equal(true); // no lookup for the latest date
+    });
+  });
+
+  describe('bucketBoundaries', () => {
+    const BTC = 100000000;
+
+    it('converts a usd threshold into base units at the given rate', () => {
+      const [bucket] = bucketBoundaries([115000], 115000, BTC);
+      expect(bucket.threshold).to.equal(115000);
+      expect(bucket.minBaseUnits).to.equal(BigInt(BTC)); // one whole BTC
+    });
+
+    it('sorts descending so a wallet lands in its highest bucket', () => {
+      const boundaries = bucketBoundaries([10000, 100000, 50000], 100000, BTC);
+      expect(boundaries.map(b => b.threshold)).to.deep.equal([100000, 50000, 10000]);
+    });
+
+    it('stays exact at eighteen decimal places', () => {
+      const ETH = 1000000000000000000;
+      const [bucket] = bucketBoundaries([4000], 4000, ETH);
+      expect(bucket.minBaseUnits).to.equal(BigInt('1000000000000000000'));
+    });
+
+    it('handles a fractional rate without floating point drift', () => {
+      const [bucket] = bucketBoundaries([1], 0.5, BTC);
+      expect(bucket.minBaseUnits).to.equal(BigInt(2 * BTC)); // 2 BTC at 50 cents each
+    });
+  });
+
+  describe('countIntoBuckets', () => {
+    const BTC = 100000000;
+    const boundaries = bucketBoundaries([10000, 50000], 100000, BTC); // 0.5 BTC and 0.1 BTC
+
+    it('counts a wallet exactly on a boundary as inside it', () => {
+      expect(countIntoBuckets(['50000000'], boundaries)).to.deep.equal({ '50000': 1, '10000': 0 });
+    });
+
+    it('leaves out a wallet one base unit short', () => {
+      expect(countIntoBuckets(['49999999'], boundaries)).to.deep.equal({ '50000': 0, '10000': 1 });
+    });
+
+    it('counts each wallet in its highest bucket only', () => {
+      const counts = countIntoBuckets(['60000000', '20000000', '1000000'], boundaries);
+      expect(counts).to.deep.equal({ '50000': 1, '10000': 1 });
+    });
+
+    it('ignores wallets below every threshold, and empty balances', () => {
+      expect(countIntoBuckets(['1', '', undefined], boundaries)).to.deep.equal({ '50000': 0, '10000': 0 });
+    });
+  });
+
+  describe('GET /buckets', () => {
+    beforeEach(() => {
+      sandbox.stub(CacheStorage, 'getGlobalOrRefresh').callsFake(async (_key, onMiss) => onMiss());
+    });
+
+    it('400s without thresholds or rate', async () => {
+      const res = makeRes();
+      await getBuckets({ query: { chain: 'BTC', network: 'mainnet', rate: '115000' } } as any, res);
+      expect(res.statusCode).to.equal(400);
+      expect(res.body.error).to.include('thresholds');
+
+      const res2 = makeRes();
+      await getBuckets({ query: { chain: 'BTC', network: 'mainnet', thresholds: '10000' } } as any, res2);
+      expect(res2.statusCode).to.equal(400);
+      expect(res2.body.error).to.include('rate');
+    });
+
+    it('400s on a non-positive rate', async () => {
+      const res = makeRes();
+      await getBuckets({ query: { chain: 'BTC', network: 'mainnet', thresholds: '10000', rate: '0' } } as any, res);
+      expect(res.statusCode).to.equal(400);
+    });
+
+    it('400s for a chain whose units we do not know', async () => {
+      const res = makeRes();
+      await getBuckets({ query: { chain: 'NOPE', network: 'mainnet', thresholds: '1', rate: '1' } } as any, res);
+      expect(res.statusCode).to.equal(400);
+      expect(res.body.error).to.include('NOPE');
+    });
+
+    it('404s when there is no snapshot to bucket', async () => {
+      stubFactsCollection([]);
+      const res = makeRes();
+      await getBuckets({ query: { chain: 'BTC', network: 'mainnet', thresholds: '1', rate: '1' } } as any, res);
+      expect(res.statusCode).to.equal(404);
+    });
+
+    it('buckets the wallets at the latest snapshot', async () => {
+      const { collection } = stubFactsCollection([{ snapshotDate: '2026-08-03' }], [
+        { balance: '200000000' }, // 2 BTC, $200k
+        { balance: '50000000' }, // 0.5 BTC, $50k
+        { balance: '1000' } // dust
+      ]);
+      const res = makeRes();
+      await getBuckets(
+        { query: { chain: 'btc', network: 'mainnet', thresholds: '50000,100000', rate: '100000' } } as any,
+        res
+      );
+      expect(res.body).to.deep.equal({
+        chain: 'BTC',
+        network: 'mainnet',
+        snapshotDate: '2026-08-03',
+        rate: 100000,
+        buckets: { '100000': 1, '50000': 1 }
+      });
+      expect(collection.find.secondCall.args[0]).to.deep.equal({
+        chain: 'BTC',
+        network: 'mainnet',
+        snapshotDate: '2026-08-03',
+        isDup: false
+      });
+    });
+
+    it('keys the cache on the rate, so a new rate is not served a stale count', async () => {
+      stubFactsCollection([{ snapshotDate: '2026-08-03' }], []);
+      const res = makeRes();
+      const query = { chain: 'BTC', network: 'mainnet', thresholds: '10000', rate: '100000' };
+      await getBuckets({ query } as any, res);
+      const firstKey = (CacheStorage.getGlobalOrRefresh as sinon.SinonStub).firstCall.args[0];
+      expect(firstKey).to.include('100000');
+      expect(firstKey).to.include('buckets');
     });
   });
 

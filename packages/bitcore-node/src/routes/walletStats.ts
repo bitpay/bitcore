@@ -1,3 +1,4 @@
+import { Constants } from '@bitpay-labs/crypto-wallet-core';
 import express from 'express';
 import { Request, Response } from 'express';
 import { CacheStorage } from '../models/cache';
@@ -220,10 +221,110 @@ function pickDefined(values: Record<string, string | undefined>) {
   return Object.fromEntries(Object.entries(values).filter(([, value]) => value !== undefined));
 }
 
+/**
+ * Rates are USD per whole unit and thresholds are USD, both of which arrive as
+ * floats. Scale them to integers once so every balance comparison afterwards is
+ * exact BigInt arithmetic: an ETH balance in wei overruns a double long before
+ * it reaches an interesting USD value.
+ */
+const RATE_SCALE = 1e8;
+
+export interface BucketBoundary {
+  threshold: number;
+  minBaseUnits: bigint;
+}
+
+export function bucketBoundaries(thresholds: number[], rate: number, unitsPerWhole: number): BucketBoundary[] {
+  const scaledRate = BigInt(Math.round(rate * RATE_SCALE));
+  return [...thresholds]
+    .sort((a, b) => b - a)
+    .map(threshold => ({
+      threshold,
+      minBaseUnits: (BigInt(Math.round(threshold * RATE_SCALE)) * BigInt(unitsPerWhole)) / scaledRate
+    }));
+}
+
+/** Counts each balance in the highest bucket it reaches, and in no other. */
+export function countIntoBuckets(balances: Array<string | undefined>, boundaries: BucketBoundary[]) {
+  const counts: Record<string, number> = {};
+  for (const boundary of boundaries) {
+    counts[String(boundary.threshold)] = 0;
+  }
+  for (const balance of balances) {
+    if (!balance) {
+      continue;
+    }
+    const baseUnits = BigInt(balance);
+    for (const boundary of boundaries) {
+      if (baseUnits >= boundary.minBaseUnits) {
+        counts[String(boundary.threshold)]++;
+        break;
+      }
+    }
+  }
+  return counts;
+}
+
+function unitsPerWholeFor(chain: string): number | null {
+  return Constants.UNITS[chain.toLowerCase()]?.toSatoshis || null;
+}
+
+export async function getBuckets(req: Request, res: Response) {
+  setPrivateCache(res);
+  const { error, values } = parseParams<{
+    chain: string;
+    network: string;
+    date?: string;
+    thresholds: number[];
+    rate: number;
+  }>(req.query, {
+    chain: { type: 'chain', required: true },
+    network: { type: 'identifier', required: true },
+    date: { type: 'date' },
+    thresholds: { type: 'numberList', required: true },
+    rate: { type: 'number', required: true }
+  });
+  if (error) {
+    return res.status(400).json({ error });
+  }
+  const { chain, network, date, thresholds, rate } = values!;
+
+  const unitsPerWhole = unitsPerWholeFor(chain);
+  if (!unitsPerWhole) {
+    return res.status(400).json({ error: `Unknown units for chain ${chain}` });
+  }
+
+  const snapshotDate = date || (await latestSnapshotDate(chain, network));
+  if (!snapshotDate) {
+    return res.status(404).json({ error: `No wallet stats for ${chain} ${network}` });
+  }
+
+  return respondCached(
+    res,
+    cacheKeyFor('buckets', { ...values!, date: snapshotDate, thresholds: thresholds.join(',') }),
+    CacheStorage.Times.Hour,
+    async () => {
+      const facts = await WalletStatsWalletStorage.collection
+        .find({ chain, network, snapshotDate, isDup: false })
+        .project({ balance: 1 })
+        .toArray();
+      const boundaries = bucketBoundaries(thresholds, rate, unitsPerWhole);
+      return {
+        chain,
+        network,
+        snapshotDate,
+        rate,
+        buckets: countIntoBuckets(facts.map(fact => fact.balance), boundaries)
+      };
+    }
+  );
+}
+
 router.use(RateLimiter('WALLETSTATS', 5, 60, 600));
 router.use(walletStatsAuth);
 router.get('/', getSnapshots);
 router.get('/cohorts', getCohorts);
+router.get('/buckets', getBuckets);
 
 export const walletStatsRoute = {
   router,
