@@ -3,6 +3,7 @@ import { Transform } from 'stream';
 import { Validation } from '@bitpay-labs/crypto-wallet-core';
 import { LRUCache } from 'lru-cache';
 import { LoggifyClass } from '../../../decorators/Loggify';
+import logger from '../../../logger';
 import { BitcoinBlockStorage, type IBtcBlock } from '../../../models/block';
 import { CacheStorage } from '../../../models/cache';
 import { CoinStorage, type ICoin } from '../../../models/coin';
@@ -14,7 +15,7 @@ import { RPC } from '../../../rpc';
 import { Config } from '../../../services/config';
 import { Storage } from '../../../services/storage';
 import { type CoinJSON, SpentHeightIndicators } from '../../../types/Coin';
-import { normalizeChainNetwork } from '../../../utils';
+import { disposeOnce, normalizeChainNetwork } from '../../../utils';
 import { StringifyJsonStream } from '../../../utils/jsonStream';
 import { ListTransactionsStream } from './transforms';
 import type { MongoBound } from '../../../models/base';
@@ -81,10 +82,10 @@ export class InternalStateProvider implements IChainStateService {
   }
 
   async streamAddressTransactions(params: StreamAddressUtxosParams) {
-    const { req, res, args } = params;
+    const { args } = params;
     const { limit, since } = args;
     const query = this.getAddressQuery(params);
-    Storage.apiStreamingFind(CoinStorage, query, { limit, since, paging: '_id' }, req!, res!);
+    return Storage.apiStreamingFind(CoinStorage, query, { limit, since, paging: '_id' });
   }
 
   async getBalanceForAddress(params: GetBalanceForAddressParams): Promise<WalletBalanceType> {
@@ -100,10 +101,9 @@ export class InternalStateProvider implements IChainStateService {
     return balance;
   }
 
-  streamBlocks(params: StreamBlocksParams) {
-    const { req, res } = params;
+  async streamBlocks(params: StreamBlocksParams) {
     const { query, options } = this.getBlocksQuery(params);
-    Storage.apiStreamingFind(BitcoinBlockStorage, query, options, req, res);
+    return Storage.apiStreamingFind(BitcoinBlockStorage, query, options);
   }
 
   async getBlocks(params: GetBlockParams): Promise<Array<IBlock>> {
@@ -202,7 +202,7 @@ export class InternalStateProvider implements IChainStateService {
   }
 
   async streamTransactions(params: StreamTransactionsParams) {
-    const { chain, network, req, res, args } = params;
+    const { chain, network, args } = params;
     const { blockHash, blockHeight } = args;
     if (!chain || !network) {
       throw new Error('Missing chain or network');
@@ -219,7 +219,7 @@ export class InternalStateProvider implements IChainStateService {
     }
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
-    return Storage.apiStreamingFind(TransactionStorage, query, args, req, res, t => {
+    return Storage.apiStreamingFind(TransactionStorage, query, args, t => {
       let confirmations = 0;
       if (t.blockHeight !== undefined && t.blockHeight >= 0) {
         confirmations = tipHeight - t.blockHeight + 1;
@@ -305,9 +305,9 @@ export class InternalStateProvider implements IChainStateService {
   }
 
   streamWalletAddresses(params: StreamWalletAddressesParams) {
-    const { chain, network, walletId, req, res } = params;
+    const { chain, network, walletId } = params;
     const query = { chain, network, wallet: walletId };
-    Storage.apiStreamingFind(WalletAddressStorage, query, {}, req, res);
+    return Storage.apiStreamingFind(WalletAddressStorage, query, {});
   }
 
   async walletCheck(params: WalletCheckParams) {
@@ -384,7 +384,7 @@ export class InternalStateProvider implements IChainStateService {
   }
 
   async streamWalletTransactions(params: StreamWalletTransactionsParams) {
-    const { chain, network, wallet, res, args } = params;
+    const { chain, network, wallet, args } = params;
     const query: any = {
       chain,
       network,
@@ -430,8 +430,27 @@ export class InternalStateProvider implements IChainStateService {
       .find(query)
       .sort({ blockTimeNormalized: 1 })
       .addCursorFlag('noCursorTimeout', true);
-    const listTransactionsStream = new this.WalletStreamTransform(wallet);
-    transactionStream.pipe(listTransactionsStream).pipe(res);
+    const listTransactionsStream: any = new this.WalletStreamTransform(wallet);
+    listTransactionsStream.jsonl = true;
+    // close() resolves a promise; disposeOnce keeps it observed and single-shot
+    const closeCursor = disposeOnce(
+      async () => { await transactionStream.close(); },
+      err => logger.warn(`Failed to close ${this.chain} wallet transaction cursor: %o`, err)
+    );
+    listTransactionsStream.on('close', closeCursor);
+    listTransactionsStream.on('end', closeCursor);
+    listTransactionsStream.on('error', closeCursor);
+    // pipe() does not forward source errors; surface cursor failures on the returned
+    // stream so the caller settles instead of hanging
+    transactionStream.on('error', err => {
+      closeCursor();
+      if (!listTransactionsStream.destroyed) {
+        listTransactionsStream.destroy(err);
+      }
+    });
+    // start flowing only after the full lifecycle contract is installed
+    transactionStream.pipe(listTransactionsStream);
+    return listTransactionsStream;
   }
 
   async getWalletBalance(params: GetWalletBalanceParams): Promise<WalletBalanceType> {
@@ -457,7 +476,7 @@ export class InternalStateProvider implements IChainStateService {
   }
 
   async streamWalletUtxos(params: StreamWalletUtxosParams) {
-    const { wallet, limit, args = {}, req, res } = params;
+    const { wallet, limit, args = {} } = params;
     const query: any = {
       wallets: wallet._id,
       'wallets.0': { $exists: true },
@@ -484,7 +503,7 @@ export class InternalStateProvider implements IChainStateService {
       return CoinStorage._apiTransform(c) as string;
     };
 
-    Storage.apiStreamingFind(CoinStorage, query, { limit }, req, res, utxoTransform);
+    return Storage.apiStreamingFind(CoinStorage, query, { limit }, utxoTransform);
   }
 
   async getFee(params: GetEstimateSmartFeeParams) {

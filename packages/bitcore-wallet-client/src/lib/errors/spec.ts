@@ -212,5 +212,9 @@ export const errorSpec: IErrorSpec[] = [
   {
     name: 'UPGRADE_NEEDED',
     message: 'Please update your client.'
+  },
+  {
+    name: 'TSS_SESSION_EXPIRED',
+    message: 'TSS session expired.'
   }
 ];

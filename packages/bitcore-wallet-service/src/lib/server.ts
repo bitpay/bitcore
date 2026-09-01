@@ -668,15 +668,17 @@ export class WalletService implements IWalletService {
     }
 
     if (opts.tssKeyId) {
-      opts.tssVersion = opts.tssVersion || Defaults.TSS_KEYGEN_SCHEME_VERSION;
-      if (!(opts.tssVersion > 0 && opts.tssVersion <= Constants.TSS_KEYGEN_SCHEME_VERSION_MAX)) {
+      const keySession = await storage.fetchTssKeyGenSession({ id: opts.tssKeyId });
+      if (!keySession || !keySession.sharedPublicKey) {
+        // TODO: support importing a TSS key that was generated outside of this BWS instance.
+        return cb(new ClientError('Invalid TSS key session id'));
+      }
+
+      opts.tssVersion = opts.tssVersion || keySession.schemeVersion || Defaults.TSS_KEYGEN_SCHEME_VERSION;
+      if (!(opts.tssVersion >= Constants.TSS_KEYGEN_SCHEME_VERSION_MIN && opts.tssVersion <= Constants.TSS_KEYGEN_SCHEME_VERSION_MAX)) {
         return cb(new ClientError('Invalid TSS version'));
       }
 
-      const keySession = await storage.fetchTssKeyGenSession({ id: opts.tssKeyId });
-      if (!keySession || !keySession.sharedPublicKey) {
-        return cb(new ClientError('Invalid TSS key session id'));
-      }
       // TSS wallets behave like a single-sig
       opts.m = 1;
       opts.n = 1;
@@ -1144,9 +1146,13 @@ export class WalletService implements IWalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.NOT_AUTHORIZED);
 
-        const xPubKey = wallet.copayers.find(c => c.id === opts.copayerId).xPubKey;
+        const target = wallet.copayers.find(c => c.id === opts.copayerId);
+        if (!target?.xPubKey) return cb(Errors.NOT_AUTHORIZED);
 
-        if (!this._verifyRequestPubKey(opts.requestPubKey, opts.signature, xPubKey)) {
+        try {
+          const isValid = this._verifyRequestPubKey(opts.requestPubKey, opts.signature, target.xPubKey);
+          if (!isValid) return cb(Errors.NOT_AUTHORIZED);
+        } catch (e) {
           return cb(Errors.NOT_AUTHORIZED);
         }
 
@@ -1207,7 +1213,17 @@ export class WalletService implements IWalletService {
    * @param {boolean} [opts.dryRun] Simulate the action but do not change server state.
    */
   joinWallet(opts, cb) {
-    if (!checkRequired(opts, ['walletId', 'name', 'requestPubKey', 'copayerSignature'], cb)) return;
+    // xPubKey is the canonical copayer identity in the current protocol. Alternate public-key
+    // fields are ancillary metadata; supporting an xPubKey-less copayer requires a versioned
+    // end-to-end identity protocol rather than a local identity fallback.
+    // SECURITY: xPubKey is required for every join, including hardwareSourcePublicKey/
+    // clientDerivedPublicKey ones. Copayer.xPubToCopayerId() (called below both for the TSS
+    // participant check and inside Copayer.create()) now throws on a missing xpub for every
+    // coin (see its own guard), so an xPubKey-less join can no longer derive a copayer id at
+    // all. bitcore-wallet-client's only join path (_doJoinWallet) always sends a real
+    // xPubKey regardless of these two fields, so this doesn't restrict any flow this repo's
+    // own client exercises - see the TSS-participant comment below for how that was confirmed.
+    if (!checkRequired(opts, ['walletId', 'name', 'requestPubKey', 'copayerSignature', 'xPubKey'], cb)) return;
     if (!opts.name) return cb(new ClientError('Invalid copayer name'));
 
     opts.coin = opts.coin || Defaults.COIN;
@@ -1216,17 +1232,17 @@ export class WalletService implements IWalletService {
     }
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
 
+    // xPubKey is parsed and validated for every join; ancillary fields never suppress it.
+    // A future update will re-add conditional logic which allows opts.hardwareSourcePublicKey
+    // or opts.clientDerivedPublicKey to circumvent this requirement
     let xPubKey;
-    if (!opts.hardwareSourcePublicKey && !opts.clientDerivedPublicKey) {
-      if (!checkRequired(opts, ['xPubKey'], cb)) return;
-      try {
-        xPubKey = Bitcore_[opts.chain].HDPublicKey(opts.xPubKey);
-      } catch {
-        return cb(new ClientError('Invalid extended public key'));
-      }
-      if (xPubKey.network == null) {
-        return cb(new ClientError('Invalid extended public key'));
-      }
+    try {
+      xPubKey = Bitcore_[opts.chain].HDPublicKey(opts.xPubKey);
+    } catch {
+      return cb(new ClientError('Invalid extended public key'));
+    }
+    if (xPubKey.network == null) {
+      return cb(new ClientError('Invalid extended public key'));
     }
 
     this.walletId = opts.walletId;
@@ -1235,10 +1251,9 @@ export class WalletService implements IWalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
-        if ((opts.hardwareSourcePublicKey || opts.clientDerivedPublicKey) && !opts.tssKeyId) {
-          this._addCopayerToWallet(wallet, opts, cb);
-          return;
-        }
+        // SECURITY: opts.hardwareSourcePublicKey or opts.clientDerivedPublicKey may not
+        // circumvent the required checks below. A future update may enable either to replace xPubKey
+        // That is currently not supported
 
         if (this._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, { chain: opts.chain, n: wallet.n })) {
           return cb(Errors.UPGRADE_NEEDED.withMessage('BWC clients < 8.3 are no longer supported for multisig BCH wallets.'));

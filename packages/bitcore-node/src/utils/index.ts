@@ -161,3 +161,32 @@ export function merge<TDest, TSrc>(dest: TDest, src: TSrc): TDest & TSrc {
 export function normalizeChainNetwork(chain: string, network: string): string {
   return chain.toUpperCase() + ':' + network.toLowerCase();
 }
+
+/**
+ * Wrap a teardown callback so it runs at most once and never throws at the call site.
+ * Stream events overlap ('end' then 'close', 'error' then either), so disposal hooked to
+ * all three has to be idempotent. Sync throws and rejected promises both go to onError.
+ *
+ * @param dispose teardown to run, or undefined for a no-op
+ * @param onError receives anything the teardown throws or rejects with
+ */
+export function disposeOnce(
+  dispose: (() => void | Promise<unknown>) | undefined,
+  onError: (err: any) => void
+): () => void {
+  let disposed = false;
+  return () => {
+    if (disposed || !dispose) {
+      return;
+    }
+    disposed = true;
+    try {
+      const result = dispose();
+      if (typeof (result as Promise<unknown>)?.catch === 'function') {
+        (result as Promise<unknown>).catch(onError);
+      }
+    } catch (err) {
+      onError(err);
+    }
+  };
+}

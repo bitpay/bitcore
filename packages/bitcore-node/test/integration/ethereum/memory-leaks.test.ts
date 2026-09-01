@@ -7,6 +7,7 @@ import { MongoBound } from '../../../src/models/base';
 import { IWallet, WalletStorage } from '../../../src/models/wallet';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
+import { streamJsonArray } from '../../../src/routes/apiUtils';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
 const chain = 'ETH';
@@ -97,13 +98,8 @@ describe('EVM Memory Leak Prevention', function() {
       const { req, res, reqEmitter } = createMockReqRes();
 
       const streamPromise = ETH.streamWalletTransactions({
-        chain,
-        network,
-        wallet,
-        req,
-        res,
-        args: {}
-      });
+        chain, network, wallet, args: {}
+      }).then(stream => streamJsonArray(stream, req, res));
 
       // Wait for stream to start
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -164,13 +160,8 @@ describe('EVM Memory Leak Prevention', function() {
         const { req, res, reqEmitter } = createMockReqRes();
 
         const streamPromise = ETH.streamWalletTransactions({
-          chain,
-          network,
-          wallet,
-          req,
-          res,
-          args: {}
-        });
+          chain, network, wallet, args: {}
+        }).then(stream => streamJsonArray(stream, req, res));
 
         await new Promise(resolve => setTimeout(resolve, 50));
         reqEmitter.emit('close');
@@ -232,14 +223,9 @@ describe('EVM Memory Leak Prevention', function() {
         resEmitter.on('finish', resolve);
         resEmitter.on('error', reject);
 
-        ETH.streamWalletTransactions({
-          chain,
-          network,
-          wallet,
-          req,
-          res,
-          args: {}
-        }).catch(reject);
+        ETH.streamWalletTransactions({ chain, network, wallet, args: {} })
+          .then(stream => streamJsonArray(stream, req, res))
+          .catch(reject);
       });
 
       // Verify that we received some transactions (stream worked)
