@@ -360,6 +360,25 @@ export class Storage {
     );
   }
 
+  // Wallet-scoped counterpart to fetchTxByHash, used by the authenticated
+  // by-hash API read.
+  fetchTxByHashForWallet(walletId: string, hash, cb: (err?: any, tx?: TxProposal) => void) {
+    if (!this.db) return cb();
+
+    this.db.collection(collections.TXS).findOne(
+      {
+        walletId,
+        txid: hash
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return this._completeTxData(walletId, TxProposal.fromObj(result), cb);
+      }
+    );
+  }
+
   fetchLastTxs(walletId, creatorId, limit, cb) {
     this.db
       .collection(collections.TXS)
