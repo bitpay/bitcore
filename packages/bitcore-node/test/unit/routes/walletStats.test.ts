@@ -14,6 +14,7 @@ import {
   latestSnapshotDate,
   parseCohortQuery,
   parseSnapshotQuery,
+  sumBalances,
   transformSnapshot,
   walletStatsRoute
 } from '../../../src/routes/walletStats';
@@ -47,12 +48,21 @@ describe('WalletStats routes', function() {
   const sandbox = sinon.createSandbox();
   afterEach(() => sandbox.restore());
 
-  /** Stubs the facts collection: the first query answers the latest-date lookup, the second the facts. */
+  /**
+   * Stubs the facts collection. The latest-date lookup reads through toArray (it is
+   * capped at one document); the facts themselves are only reachable by iterating,
+   * so a handler that materializes them sees nothing.
+   */
   function stubFactsCollection(latestDocs: any[] = [], factDocs: any[] = []) {
-    const toArray = sandbox.stub();
-    toArray.onFirstCall().resolves(latestDocs);
-    toArray.onSecondCall().resolves(factDocs);
-    const cursor: any = { toArray };
+    const toArray = sandbox.stub().resolves(latestDocs);
+    const cursor: any = {
+      toArray,
+      async *[Symbol.asyncIterator]() {
+        for (const doc of factDocs) {
+          yield doc;
+        }
+      }
+    };
     cursor.sort = sandbox.stub().returns(cursor);
     cursor.limit = sandbox.stub().returns(cursor);
     cursor.project = sandbox.stub().returns(cursor);
@@ -360,6 +370,22 @@ describe('WalletStats routes', function() {
     });
   });
 
+  describe('sumBalances', () => {
+    it('counts and sums what it is given', async () => {
+      expect(await sumBalances([{ balance: '100' }, { balance: '250' }])).to.deep.equal({ walletCnt: 2, totalBalance: BigInt(350) });
+    });
+
+    it('stays exact past what a double can hold', async () => {
+      const big = '9007199254740993'; // Number.MAX_SAFE_INTEGER + 2
+      const { totalBalance } = await sumBalances([{ balance: big }, { balance: big }]);
+      expect(totalBalance.toString()).to.equal('18014398509481986');
+    });
+
+    it('treats a missing or empty balance as zero, but still counts the wallet', async () => {
+      expect(await sumBalances([{ balance: '5' }, {}, { balance: '' }])).to.deep.equal({ walletCnt: 3, totalBalance: BigInt(5) });
+    });
+  });
+
   describe('GET /cohorts', () => {
     beforeEach(() => {
       sandbox.stub(CacheStorage, 'getGlobalOrRefresh').callsFake(async (_key, onMiss) => onMiss());
@@ -400,6 +426,15 @@ describe('WalletStats routes', function() {
         snapshotDate: '2026-08-03',
         isDup: false
       });
+    });
+
+    it('streams the facts rather than pulling the whole snapshot into memory', async () => {
+      const { cursor } = stubFactsCollection([{ snapshotDate: '2026-08-03' }], [{ balance: '1' }, { balance: '2' }]);
+      const res = makeRes();
+      await getCohorts({ query: { chain: 'BTC', network: 'mainnet' } } as any, res);
+      expect(res.body.totalBalance).to.equal('3');
+      // Only the capped latest-date lookup may materialize; the facts must be iterated.
+      expect(cursor.toArray.callCount).to.equal(1);
     });
 
     it('sums balances beyond what a double can hold', async () => {
@@ -469,21 +504,21 @@ describe('WalletStats routes', function() {
     const BTC = 100000000;
     const boundaries = bucketBoundaries([10000, 50000], 100000, BTC); // 0.5 BTC and 0.1 BTC
 
-    it('counts a wallet exactly on a boundary as inside it', () => {
-      expect(countIntoBuckets(['50000000'], boundaries)).to.deep.equal({ '50000': 1, '10000': 0 });
+    it('counts a wallet exactly on a boundary as inside it', async () => {
+      expect(await countIntoBuckets([{ balance: '50000000' }], boundaries)).to.deep.equal({ '50000': 1, '10000': 0 });
     });
 
-    it('leaves out a wallet one base unit short', () => {
-      expect(countIntoBuckets(['49999999'], boundaries)).to.deep.equal({ '50000': 0, '10000': 1 });
+    it('leaves out a wallet one base unit short', async () => {
+      expect(await countIntoBuckets([{ balance: '49999999' }], boundaries)).to.deep.equal({ '50000': 0, '10000': 1 });
     });
 
-    it('counts each wallet in its highest bucket only', () => {
-      const counts = countIntoBuckets(['60000000', '20000000', '1000000'], boundaries);
+    it('counts each wallet in its highest bucket only', async () => {
+      const counts = await countIntoBuckets([{ balance: '60000000' }, { balance: '20000000' }, { balance: '1000000' }], boundaries);
       expect(counts).to.deep.equal({ '50000': 1, '10000': 1 });
     });
 
-    it('ignores wallets below every threshold, and empty balances', () => {
-      expect(countIntoBuckets(['1', '', undefined], boundaries)).to.deep.equal({ '50000': 0, '10000': 0 });
+    it('ignores wallets below every threshold, and empty balances', async () => {
+      expect(await countIntoBuckets([{ balance: '1' }, { balance: '' }, {}], boundaries)).to.deep.equal({ '50000': 0, '10000': 0 });
     });
   });
 
@@ -548,6 +583,17 @@ describe('WalletStats routes', function() {
         snapshotDate: '2026-08-03',
         isDup: false
       });
+    });
+
+    it('streams the facts rather than pulling the whole snapshot into memory', async () => {
+      const { cursor } = stubFactsCollection([{ snapshotDate: '2026-08-03' }], [{ balance: '200000000' }]);
+      const res = makeRes();
+      await getBuckets(
+        { query: { chain: 'BTC', network: 'mainnet', thresholds: '50000', rate: '100000' } } as any,
+        res
+      );
+      expect(res.body.buckets).to.deep.equal({ '50000': 1 });
+      expect(cursor.toArray.callCount).to.equal(1);
     });
 
     it('keys the cache on the rate, so a new rate is not served a stale count', async () => {

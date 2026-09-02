@@ -193,28 +193,38 @@ export async function getCohorts(req: Request, res: Response) {
 
   return respondCached(res, cacheKeyFor('cohorts', { ...values!, date: snapshotDate }), CacheStorage.Times.Hour, async () => {
     const match = buildCohortMatch({ chain, network, snapshotDate, createdFrom, createdTo, activeSince });
-    // Facts are one document per wallet per snapshot, so the matched set is bounded by
-    // the wallet count and cheap enough to sum here. Summing in JS keeps the balances
-    // as exact integers; $sum would have to go through $toDecimal to avoid rounding
-    // them, and would then hand back a type that has to be stringified anyway.
-    const facts = await WalletStatsWalletStorage.collection
-      .find(match)
-      .project({ balance: 1 })
-      .toArray();
-
-    let totalBalance = BigInt(0);
-    for (const fact of facts) {
-      totalBalance += fact.balance ? BigInt(fact.balance) : BigInt(0);
-    }
+    // Summing in JS keeps the balances as exact integers; $sum would have to go through
+    // $toDecimal to avoid rounding them, and would hand back a type needing stringifying
+    // anyway. Iterate the cursor rather than collecting it: there is one fact per wallet
+    // per snapshot, so a mainnet snapshot is millions of documents and only the running
+    // total needs to be held.
+    const cursor = WalletStatsWalletStorage.collection.find(match).project({ balance: 1 });
+    const { walletCnt, totalBalance } = await sumBalances(cursor);
     return {
       chain,
       network,
       snapshotDate,
-      walletCnt: facts.length,
+      walletCnt,
       totalBalance: totalBalance.toString(),
       filters: pickDefined({ createdFrom, createdTo, activeSince })
     };
   });
+}
+
+/** One projected fact, as both the cursor and the counting helpers see it. */
+export type BalanceFact = { balance?: string };
+
+/** Counts wallets and totals their balances, holding only the running total. */
+export async function sumBalances(facts: AsyncIterable<BalanceFact> | Iterable<BalanceFact>) {
+  let walletCnt = 0;
+  let totalBalance = BigInt(0);
+  for await (const fact of facts) {
+    walletCnt++;
+    if (fact.balance) {
+      totalBalance += BigInt(fact.balance);
+    }
+  }
+  return { walletCnt, totalBalance };
 }
 
 function pickDefined(values: Record<string, string | undefined>) {
@@ -244,17 +254,23 @@ export function bucketBoundaries(thresholds: number[], rate: number, unitsPerWho
     }));
 }
 
-/** Counts each balance in the highest bucket it reaches, and in no other. */
-export function countIntoBuckets(balances: Array<string | undefined>, boundaries: BucketBoundary[]) {
+/**
+ * Counts each wallet in the highest bucket it reaches, and in no other. Takes the
+ * cursor itself so a snapshot's worth of facts never has to be held at once.
+ */
+export async function countIntoBuckets(
+  facts: AsyncIterable<BalanceFact> | Iterable<BalanceFact>,
+  boundaries: BucketBoundary[]
+) {
   const counts: Record<string, number> = {};
   for (const boundary of boundaries) {
     counts[String(boundary.threshold)] = 0;
   }
-  for (const balance of balances) {
-    if (!balance) {
+  for await (const fact of facts) {
+    if (!fact.balance) {
       continue;
     }
-    const baseUnits = BigInt(balance);
+    const baseUnits = BigInt(fact.balance);
     for (const boundary of boundaries) {
       if (baseUnits >= boundary.minBaseUnits) {
         counts[String(boundary.threshold)]++;
@@ -304,17 +320,16 @@ export async function getBuckets(req: Request, res: Response) {
     cacheKeyFor('buckets', { ...values!, date: snapshotDate, thresholds: thresholds.join(',') }),
     CacheStorage.Times.Hour,
     async () => {
-      const facts = await WalletStatsWalletStorage.collection
+      const cursor = WalletStatsWalletStorage.collection
         .find({ chain, network, snapshotDate, isDup: false })
-        .project({ balance: 1 })
-        .toArray();
+        .project({ balance: 1 });
       const boundaries = bucketBoundaries(thresholds, rate, unitsPerWhole);
       return {
         chain,
         network,
         snapshotDate,
         rate,
-        buckets: countIntoBuckets(facts.map(fact => fact.balance), boundaries)
+        buckets: await countIntoBuckets(cursor, boundaries)
       };
     }
   );
