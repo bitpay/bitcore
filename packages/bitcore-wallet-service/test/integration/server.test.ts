@@ -9123,6 +9123,17 @@ describe('Wallet service', function() {
         });
       });
     });
+
+    it('should return a bad-request error when txid is missing', function(done) {
+      serverA.getTxByHash({}, function(err, res) {
+        should.exist(err);
+        should.not.exist(res);
+        err.should.be.instanceof(ClientError);
+        err.code.should.equal('BADREQUEST');
+        err.message.should.equal('Required argument: txid missing.');
+        done();
+      });
+    });
   });
 
   describe('GET /v1/txproposalsbyhash/:id/ (HTTP route)', function() {
@@ -9132,8 +9143,8 @@ describe('Wallet service', function() {
     // status/body serialization are covered, not only the underlying
     // service logic already tested above. Only the cryptographic signature
     // check is stubbed to return true
-    const testPort = 3240;
     const testHost = 'http://127.0.0.1';
+    let testPort: number;
     let httpServer;
     let verifyStub;
     let walletA: Model.Wallet;
@@ -9141,6 +9152,9 @@ describe('Wallet service', function() {
     let txp;
 
     beforeEach(async function() {
+      httpServer = undefined;
+      verifyStub = undefined;
+
       let serverA: WalletService;
       let serverB: WalletService;
       ({ server: serverA, wallet: walletA } = await helpers.createAndJoinWallet(1, 1));
@@ -9174,12 +9188,34 @@ describe('Wallet service', function() {
         disableLogs: true,
         basePath: config.basePath
       });
-      httpServer.listen(testPort);
+
+      await new Promise<void>((resolve, reject) => {
+        httpServer.once('error', reject);
+        httpServer.listen(0, '127.0.0.1', () => {
+          httpServer.off('error', reject);
+          const address = httpServer.address();
+          if (!address || typeof address === 'string') {
+            return reject(new Error('HTTP test server did not bind to a TCP port'));
+          }
+          testPort = address.port;
+          resolve();
+        });
+      });
     });
 
-    afterEach(function() {
-      verifyStub.restore();
-      httpServer.close();
+    afterEach(function(done) {
+      if (verifyStub) {
+        verifyStub.restore();
+        verifyStub = undefined;
+      }
+      if (!httpServer?.listening) {
+        httpServer = undefined;
+        return done();
+      }
+      httpServer.close(err => {
+        httpServer = undefined;
+        done(err);
+      });
     });
 
     function getByHash(copayerId, txid, cb) {

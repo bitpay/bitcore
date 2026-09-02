@@ -3139,6 +3139,8 @@ export class WalletService implements IWalletService {
    * @returns {Object} txProposal
    */
   getTxByHash(opts, cb) {
+    if (!checkRequired(opts, 'txid', cb)) return;
+
     // Scoped to this.walletId: the global storage.fetchTxByHash
     // would return any wallet's TxProposal for a known txid, disclosing a
     // foreign wallet's proposal data to any authenticated copayer. The
