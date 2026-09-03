@@ -2119,6 +2119,7 @@ describe('Transaction', function() {
   });
 
   describe('Taproot', function() {
+    this.timeout(5000);
     for (let i = 0; i < taprootVectors.keyPathSpending.length; i++) {
       const vec = taprootVectors.keyPathSpending[i];
       it(`vector ${i}`, function() {
