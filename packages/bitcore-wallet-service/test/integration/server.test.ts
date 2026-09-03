@@ -8816,6 +8816,64 @@ describe('Wallet service', function() {
       result.nonce.should.equal(5);
       // future: result.gasPrice, result.maxFee would also be set here
     });
+
+    describe('prePublishRaw binding (isPrePublishRawBound)', function() {
+      const ATTACKER_ADDR = '0x1111111111111111111111111111111111111111';
+
+      it('accepts prePublishRaw when only the mutable field (nonce) changed', async function() {
+        blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '42');
+        const created = await helpers.createAndPublishTx(server, {
+          outputs: [{ toAddress: ETH_ADDR, amount: 8000 }],
+          feePerKb: 123e2, from: fromAddr, deferNonce: true
+        }, TestData.copayers[0].privKey_1H_0);
+
+        // Server assigns the JIT nonce -> the stored tx now differs from prePublishRaw only in the nonce.
+        await util.promisify(server.prepareTx).call(server, { txProposalId: created.id });
+        const withNonce = await util.promisify(server.getTx).call(server, { txProposalId: created.id });
+        should.exist(withNonce.prePublishRaw);
+        withNonce.nonce.should.equal(42);
+
+        ChainService.isPrePublishRawBound(withNonce).should.equal(true);
+      });
+
+      it('rejects prePublishRaw when the destination was tampered', async function() {
+        const created = await helpers.createAndPublishTx(server, {
+          outputs: [{ toAddress: ETH_ADDR, amount: 8000 }],
+          feePerKb: 123e2, from: fromAddr, deferNonce: true
+        }, TestData.copayers[0].privKey_1H_0);
+
+        const txp = await util.promisify(server.getTx).call(server, { txProposalId: created.id });
+        should.exist(txp.prePublishRaw);
+        ChainService.isPrePublishRawBound(txp).should.equal(true); // bound before tampering
+        txp.outputs[0].toAddress = ATTACKER_ADDR; // swap payee, keep prePublishRaw + proposalSignature
+        ChainService.isPrePublishRawBound(txp).should.equal(false);
+      });
+
+      it('rejects the publishTx fallback when the stored proposal was tampered', async function() {
+        blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '7');
+        const created = await util.promisify(server.createTx).call(server, {
+          outputs: [{ toAddress: ETH_ADDR, amount: 8000 }],
+          feePerKb: 123e2, from: fromAddr, deferNonce: true
+        });
+        const publishOpts = helpers.getProposalSignatureOpts(created, TestData.copayers[0].privKey_1H_0);
+        await util.promisify(server.publishTx).call(server, publishOpts);
+
+        // Assign the nonce so a re-publish must fall back to prePublishRaw...
+        await util.promisify(server.prepareTx).call(server, { txProposalId: created.id });
+        // ...then tamper the stored destination and replay the original (still-valid) proposalSignature.
+        const stored = await util.promisify(server.storage.fetchTx).call(server.storage, wallet.id, created.id);
+        should.exist(stored.prePublishRaw);
+        stored.outputs[0].toAddress = ATTACKER_ADDR;
+        await util.promisify(server.storage.storeTx).call(server.storage, wallet.id, stored);
+
+        let err;
+        try {
+          await util.promisify(server.publishTx).call(server, publishOpts);
+        } catch (e) { err = e; }
+        should.exist(err);
+        err.message.should.contain('Invalid proposal signature');
+      });
+    });
   });
 
   describe('#prepareTx XRP (deferred nonce)', function() {
@@ -8906,6 +8964,20 @@ describe('Wallet service', function() {
         signatures
       });
       signed.status.should.equal('accepted');
+    });
+
+    it('rejects prePublishRaw binding when an XRP destination was tampered', async function() {
+      const ATTACKER_XRP = 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe';
+      const created = await helpers.createAndPublishTx(server, {
+        outputs: [{ toAddress: XRP_ADDR, amount: 8000 }],
+        feePerKb: 123e2, from: fromAddr, deferNonce: true
+      }, TestData.copayers[0].privKey_1H_0);
+
+      const txp = await util.promisify(server.getTx).call(server, { txProposalId: created.id });
+      should.exist(txp.prePublishRaw);
+      ChainService.isPrePublishRawBound(txp).should.equal(true); // untampered baseline
+      txp.outputs[0].toAddress = ATTACKER_XRP;
+      ChainService.isPrePublishRawBound(txp).should.equal(false);
     });
   });
 

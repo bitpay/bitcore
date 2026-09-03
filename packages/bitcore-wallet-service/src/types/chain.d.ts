@@ -33,6 +33,7 @@ export interface IChain {
   checkScriptOutput(output: { script: string; amount: number });
   getFee(server: WalletService, wallet: IWallet, opts: { fee: number; feePerKb: number; signatures?: number } & any);
   getBitcoreTx(txp: TxProposal, opts: { signed: boolean });
+  isPrePublishRawBound(txp: TxProposal): boolean;
   convertFeePerKb(p: number, feePerKb: number);
   checkTx(server: WalletService, txp: ITxProposal);
   checkTxUTXOs(server: WalletService, txp: ITxProposal, opts: { noCashAddr: boolean } & any, cb);

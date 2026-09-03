@@ -2,6 +2,7 @@ import { Transactions, Utils, Validation } from '@bitpay-labs/crypto-wallet-core
 import _ from 'lodash';
 import { IChain } from '../../../types/chain';
 import { WalletWithOpts } from '../../blockchainexplorers/v8';
+import { Common } from '../../common';
 import { Defaults } from '../../common/defaults';
 import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
@@ -96,6 +97,10 @@ export class SolChain implements IChain {
       const fee = feePerKb * numSignatures;
       return resolve({ fee, feePerKb });
     });
+  }
+
+  isPrePublishRawBound(txp) {
+    return Common.Utils.isPrePublishRawBound(this, txp);
   }
 
   getBitcoreTx(txp, opts = { signed: true }) {
