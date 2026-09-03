@@ -47,7 +47,7 @@ export const Utils = {
       if (rebuiltArr.length !== prePublishRaw.length) return false;
       return rebuiltArr.every((raw, i) => raw === prePublishRaw[i]);
     } catch (err) {
-      logger.warn('prePublishRaw binding check failed: %o', err);
+      logger.warn('prePublishRaw binding check failed: %o', err.stack || err.message || err);
       return false;
     }
   },
