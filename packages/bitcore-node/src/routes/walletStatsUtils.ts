@@ -142,6 +142,6 @@ export async function respondCached<T>(res: Response, cacheKey: string, ttl: num
     return res.json(data);
   } catch (err: any) {
     logger.error('Error serving %o: %o', cacheKey, err.stack || err.message || err);
-    return res.status(500).send('Error getting wallet stats');
+    return res.status(500).json({ error: 'Error getting wallet stats' });
   }
 }

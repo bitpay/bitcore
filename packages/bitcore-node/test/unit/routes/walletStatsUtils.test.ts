@@ -165,13 +165,14 @@ describe('WalletStats API utils', function() {
       expect(res.body).to.deep.equal({ ok: true });
     });
 
-    it('500s when the miss handler throws', async () => {
+    it('500s as json when the miss handler throws', async () => {
       sandbox.stub(CacheStorage, 'getGlobalOrRefresh').callsFake(async (_k, onMiss) => onMiss());
       const res = makeRes();
       await respondCached(res, 'k', 1, async () => {
         throw new Error('db is gone');
       });
       expect(res.statusCode).to.equal(500);
+      expect(res.body).to.deep.equal({ error: 'Error getting wallet stats' });
     });
   });
 });

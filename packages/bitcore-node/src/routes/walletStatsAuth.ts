@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import logger from '../logger';
 import { Config } from '../services/config';
 import { Auth } from '../utils/auth';
+import { setPrivateCache } from './walletStatsUtils';
 
 /**
  * How far a request's x-timestamp may sit from our clock. Wide enough for
@@ -21,6 +22,9 @@ const MAX_TIMESTAMP_SKEW_MS = 5 * 60 * 1000;
  * so this never touches the database.
  */
 export function walletStatsAuth(req: Request, res: Response, next: any) {
+  // Rejections are per-caller too: without this they inherit the global s-maxage and a
+  // shared cache keyed on url alone could hand a stored 401 to a properly signed request.
+  setPrivateCache(res);
   const apiConfig = Config.for('walletStats').api;
   if (!apiConfig || apiConfig.disabled) {
     return res.status(404).json({ error: 'Not found' });

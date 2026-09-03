@@ -437,6 +437,15 @@ describe('WalletStats routes', function() {
       expect(cursor.toArray.callCount).to.equal(1);
     });
 
+    it('keys the cache on the resolved date, not the absent date param', async () => {
+      stubFactsCollection([{ snapshotDate: '2026-08-03' }], [{ balance: '1' }]);
+      const res = makeRes();
+      await getCohorts({ query: { chain: 'BTC', network: 'mainnet' } } as any, res);
+      const key = (CacheStorage.getGlobalOrRefresh as sinon.SinonStub).firstCall.args[0];
+      expect(key).to.include('2026-08-03');
+      expect(key).to.not.include('undefined');
+    });
+
     it('sums balances beyond what a double can hold', async () => {
       const big = '9007199254740993'; // Number.MAX_SAFE_INTEGER + 2
       stubFactsCollection([{ snapshotDate: '2026-08-03' }], [{ balance: big }, { balance: big }]);
@@ -492,6 +501,14 @@ describe('WalletStats routes', function() {
       const ETH = 1000000000000000000;
       const [bucket] = bucketBoundaries([4000], 4000, ETH);
       expect(bucket.minBaseUnits).to.equal(BigInt('1000000000000000000'));
+    });
+
+    it('floors the boundary when the rate does not divide evenly', () => {
+      // 10000 usd at 115000.33 usd/BTC is 8695627.2212... sats. Flooring is what makes
+      // a >= comparison include the wallet sitting exactly on the true boundary; pinning
+      // it here so a switch to ceiling division cannot pass unnoticed.
+      const [bucket] = bucketBoundaries([10000], 115000.33, BTC);
+      expect(bucket.minBaseUnits).to.equal(BigInt(8695627));
     });
 
     it('handles a fractional rate without floating point drift', () => {
@@ -594,6 +611,28 @@ describe('WalletStats routes', function() {
       );
       expect(res.body.buckets).to.deep.equal({ '50000': 1 });
       expect(cursor.toArray.callCount).to.equal(1);
+    });
+
+    it('keys the cache on the resolved date, not the absent date param', async () => {
+      stubFactsCollection([{ snapshotDate: '2026-08-03' }], []);
+      const res = makeRes();
+      await getBuckets(
+        { query: { chain: 'BTC', network: 'mainnet', thresholds: '10000', rate: '100000' } } as any,
+        res
+      );
+      const key = (CacheStorage.getGlobalOrRefresh as sinon.SinonStub).firstCall.args[0];
+      expect(key).to.include('2026-08-03');
+      expect(key).to.not.include('undefined');
+    });
+
+    it('shares one cache entry however the thresholds are ordered', async () => {
+      stubFactsCollection([{ snapshotDate: '2026-08-03' }], []);
+      const res = makeRes();
+      const base = { chain: 'BTC', network: 'mainnet', rate: '100000' };
+      await getBuckets({ query: { ...base, thresholds: '10000,50000' } } as any, res);
+      await getBuckets({ query: { ...base, thresholds: '50000,10000' } } as any, res);
+      const cache = CacheStorage.getGlobalOrRefresh as sinon.SinonStub;
+      expect(cache.firstCall.args[0]).to.equal(cache.secondCall.args[0]);
     });
 
     it('keys the cache on the rate, so a new rate is not served a stale count', async () => {

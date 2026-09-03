@@ -238,6 +238,8 @@ function pickDefined(values: Record<string, string | undefined>) {
  * it reaches an interesting USD value.
  */
 const RATE_SCALE = 1e8;
+// The ceiling: rate * RATE_SCALE must stay under Number.MAX_SAFE_INTEGER, so rates and
+// thresholds above roughly 9.0e7 would start losing precision before they reach BigInt.
 
 export interface BucketBoundary {
   threshold: number;
@@ -315,9 +317,13 @@ export async function getBuckets(req: Request, res: Response) {
     return res.status(404).json({ error: `No wallet stats for ${chain} ${network}` });
   }
 
+  // Sorted, because bucketBoundaries sorts internally: two orderings of the same
+  // thresholds produce the same response and should share one cache entry.
+  const sortedThresholds = [...thresholds].sort((a, b) => a - b).join(',');
+
   return respondCached(
     res,
-    cacheKeyFor('buckets', { ...values!, date: snapshotDate, thresholds: thresholds.join(',') }),
+    cacheKeyFor('buckets', { ...values!, date: snapshotDate, thresholds: sortedThresholds }),
     CacheStorage.Times.Hour,
     async () => {
       const cursor = WalletStatsWalletStorage.collection

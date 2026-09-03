@@ -40,6 +40,10 @@ function makeReqRes(over: any = {}) {
   const res: any = {
     statusCode: null,
     body: null,
+    headers: {},
+    setHeader(name: string, value: string) {
+      res.headers[name] = value;
+    },
     status(code: number) {
       res.statusCode = code;
       return res;
@@ -103,6 +107,27 @@ describe('WalletStats auth middleware', function() {
 
       expect(res.statusCode).to.equal(404);
       expect(next.called).to.equal(false);
+    });
+  });
+
+  describe('caching of rejections', () => {
+    it('keeps a 404 out of shared caches', () => {
+      apiConfig.disabled = true;
+      const { req, res } = makeReqRes();
+
+      walletStatsAuth(req, res, sandbox.stub());
+
+      expect(res.headers['Cache-Control']).to.equal('private, max-age=300');
+    });
+
+    it('keeps a 401 out of shared caches, so no cdn can replay it at a valid caller', () => {
+      apiConfig.authKeys = [makeKey().pub];
+      const { req, res } = makeReqRes();
+
+      walletStatsAuth(req, res, sandbox.stub());
+
+      expect(res.statusCode).to.equal(401);
+      expect(res.headers['Cache-Control']).to.equal('private, max-age=300');
     });
   });
 
@@ -278,6 +303,30 @@ describe('WalletStats auth middleware', function() {
       walletStatsAuth(req, res, next);
 
       expect(next.calledOnce).to.equal(true);
+    });
+
+    it('401s when the timestamp header arrives twice', () => {
+      const { req, res } = makeReqRes();
+      const signedAt = authorize(req, key);
+      req.headers['x-timestamp'] = [signedAt, signedAt]; // express hands back an array
+      const next = sandbox.stub();
+
+      walletStatsAuth(req, res, next);
+
+      expect(res.statusCode).to.equal(401);
+      expect(next.called).to.equal(false);
+    });
+
+    it('401s when the signature header arrives twice', () => {
+      const { req, res } = makeReqRes();
+      authorize(req, key);
+      req.headers['x-signature'] = [req.headers['x-signature'], req.headers['x-signature']];
+      const next = sandbox.stub();
+
+      walletStatsAuth(req, res, next);
+
+      expect(res.statusCode).to.equal(401);
+      expect(next.called).to.equal(false);
     });
 
     it('401s when the sent timestamp is not the one that was signed', () => {
