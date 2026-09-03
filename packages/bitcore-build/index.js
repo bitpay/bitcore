@@ -118,7 +118,7 @@ function startGulp(name, opts) {
 
   //  task['plato']= shell.task([platoPath + ' -d report -r -l .jshintrc -t ' + fullname + ' lib']);
 
-  task['test:node'] = shell.task(['mcr mocha --exit -- --recursive']);
+  task['test:node'] = shell.task(['mcr mocha --exit --recursive']);
 
   /**
    * watch tasks
