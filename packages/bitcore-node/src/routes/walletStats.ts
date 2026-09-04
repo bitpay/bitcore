@@ -24,16 +24,13 @@ export interface SnapshotFilter {
 const DEFAULT_LIMIT = 1000;
 const MAX_LIMIT = 5000;
 
-export interface SnapshotQuery {
-  filter?: SnapshotFilter;
-  limit?: number;
-  cacheKey?: string;
-  error?: string;
-}
+export type SnapshotQuery =
+  | { error: string; filter?: undefined; limit?: undefined; cacheKey?: undefined }
+  | { error?: undefined; filter: SnapshotFilter; limit: number; cacheKey: string };
 
 /** Validates the snapshot query params and turns them into a mongo filter. */
 export function parseSnapshotQuery(query: any): SnapshotQuery {
-  const { error, values } = parseParams<{
+  const parsed = parseParams<{
     chain?: string;
     network?: string;
     from?: string;
@@ -46,10 +43,10 @@ export function parseSnapshotQuery(query: any): SnapshotQuery {
     to: { type: 'date' },
     limit: { type: 'int', default: DEFAULT_LIMIT, max: MAX_LIMIT }
   });
-  if (error) {
-    return { error };
+  if (parsed.error !== undefined) {
+    return { error: parsed.error };
   }
-  const { chain, network, from, to, limit } = values!;
+  const { chain, network, from, to, limit } = parsed.values;
   if (from && to && from > to) {
     return { error: 'Invalid date range, from is after to' };
   }
@@ -70,7 +67,7 @@ export function parseSnapshotQuery(query: any): SnapshotQuery {
       filter.date.$lte = to;
     }
   }
-  return { filter, limit, cacheKey: cacheKeyFor('snapshots', values!) };
+  return { filter, limit, cacheKey: cacheKeyFor('snapshots', parsed.values) };
 }
 
 export function transformSnapshot(snapshot: IWalletStats) {
@@ -99,15 +96,16 @@ export function transformSnapshot(snapshot: IWalletStats) {
 
 export async function getSnapshots(req: Request, res: Response) {
   setPrivateCache(res);
-  const { error, filter, limit, cacheKey } = parseSnapshotQuery(req.query);
-  if (error) {
-    return res.status(400).json({ error });
+  const query = parseSnapshotQuery(req.query);
+  if (query.error !== undefined) {
+    return res.status(400).json({ error: query.error });
   }
-  return respondCached(res, cacheKey!, CacheStorage.Times.Hour, async () => {
+  const { filter, limit, cacheKey } = query;
+  return respondCached(res, cacheKey, CacheStorage.Times.Hour, async () => {
     const found = await WalletStatsStorage.collection
-      .find(filter!)
+      .find(filter)
       .sort({ chain: 1, network: 1, date: 1 })
-      .limit(limit!)
+      .limit(limit)
       .toArray();
     return found.map(transformSnapshot);
   });
@@ -180,18 +178,20 @@ export async function latestSnapshotDate(chain: string, network: string): Promis
 
 export async function getCohorts(req: Request, res: Response) {
   setPrivateCache(res);
-  const { error, values } = parseCohortQuery(req.query);
-  if (error) {
-    return res.status(400).json({ error });
+  const parsed = parseCohortQuery(req.query);
+  if (parsed.error !== undefined) {
+    return res.status(400).json({ error: parsed.error });
   }
-  const { chain, network, date, createdFrom, createdTo, activeSince } = values!;
+  const { chain, network, date, createdFrom, createdTo, activeSince } = parsed.values;
 
   const snapshotDate = date || (await latestSnapshotDate(chain, network));
   if (!snapshotDate) {
     return res.status(404).json({ error: `No wallet stats for ${chain} ${network}` });
   }
 
-  return respondCached(res, cacheKeyFor('cohorts', { ...values!, date: snapshotDate }), CacheStorage.Times.Hour, async () => {
+  const cacheKey = cacheKeyFor('cohorts', { ...parsed.values, date: snapshotDate });
+
+  return respondCached(res, cacheKey, CacheStorage.Times.Hour, async () => {
     const match = buildCohortMatch({ chain, network, snapshotDate, createdFrom, createdTo, activeSince });
     // Summing in JS keeps the balances as exact integers; $sum would have to go through
     // $toDecimal to avoid rounding them, and would hand back a type needing stringifying
@@ -287,25 +287,31 @@ function unitsPerWholeFor(chain: string): number | null {
   return Constants.UNITS[chain.toLowerCase()]?.toSatoshis || null;
 }
 
-export async function getBuckets(req: Request, res: Response) {
-  setPrivateCache(res);
-  const { error, values } = parseParams<{
-    chain: string;
-    network: string;
-    date?: string;
-    thresholds: number[];
-    rate: number;
-  }>(req.query, {
+export interface BucketParams {
+  chain: string;
+  network: string;
+  date?: string;
+  thresholds: number[];
+  rate: number;
+}
+
+export function parseBucketQuery(query: any) {
+  return parseParams<BucketParams>(query, {
     chain: { type: 'chain', required: true },
     network: { type: 'identifier', required: true },
     date: { type: 'date' },
     thresholds: { type: 'numberList', required: true },
     rate: { type: 'number', required: true }
   });
-  if (error) {
-    return res.status(400).json({ error });
+}
+
+export async function getBuckets(req: Request, res: Response) {
+  setPrivateCache(res);
+  const parsed = parseBucketQuery(req.query);
+  if (parsed.error !== undefined) {
+    return res.status(400).json({ error: parsed.error });
   }
-  const { chain, network, date, thresholds, rate } = values!;
+  const { chain, network, date, thresholds, rate } = parsed.values;
 
   const unitsPerWhole = unitsPerWholeFor(chain);
   if (!unitsPerWhole) {
@@ -323,7 +329,7 @@ export async function getBuckets(req: Request, res: Response) {
 
   return respondCached(
     res,
-    cacheKeyFor('buckets', { ...values!, date: snapshotDate, thresholds: sortedThresholds }),
+    cacheKeyFor('buckets', { ...parsed.values, date: snapshotDate, thresholds: sortedThresholds }),
     CacheStorage.Times.Hour,
     async () => {
       const cursor = WalletStatsWalletStorage.collection

@@ -19,30 +19,7 @@ import {
   walletStatsRoute
 } from '../../../src/routes/walletStats';
 import { walletStatsAuth } from '../../../src/routes/walletStatsAuth';
-
-function makeRes() {
-  const res: any = {
-    statusCode: null,
-    body: null,
-    headers: {},
-    status(code: number) {
-      res.statusCode = code;
-      return res;
-    },
-    json(payload: any) {
-      res.body = payload;
-      return res;
-    },
-    send(payload: any) {
-      res.body = payload;
-      return res;
-    },
-    setHeader(name: string, value: string) {
-      res.headers[name] = value;
-    }
-  };
-  return res;
-}
+import { makeRes } from '../../helpers/routes';
 
 describe('WalletStats routes', function() {
   const sandbox = sinon.createSandbox();

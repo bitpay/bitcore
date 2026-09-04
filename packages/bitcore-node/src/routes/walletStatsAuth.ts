@@ -11,6 +11,9 @@ import { setPrivateCache } from './walletStatsUtils';
  */
 const MAX_TIMESTAMP_SKEW_MS = 5 * 60 * 1000;
 
+/** A compact secp256k1 signature: 64 bytes, hex encoded. */
+const COMPACT_SIGNATURE = /^[0-9a-fA-F]{128}$/;
+
 /**
  * Shared-key auth for the wallet stats API. Consumers sign
  * [method, originalUrl, JSON.stringify(body), timestamp].join('|') with a
@@ -32,7 +35,14 @@ export function walletStatsAuth(req: Request, res: Response, next: any) {
 
   const signature = req.headers['x-signature'];
   const timestamp = req.headers['x-timestamp'];
-  if (!signature || typeof timestamp !== 'string' || !/^\d+$/.test(timestamp)) {
+  // Buffer.from(hex) stops at the first character it cannot read rather than failing, so
+  // anything trailing a valid signature would otherwise be quietly discarded — including
+  // the second copy node splices in when the header is sent twice. Demand the exact
+  // shape of a compact secp256k1 signature instead.
+  if (typeof signature !== 'string' || !COMPACT_SIGNATURE.test(signature)) {
+    return res.status(401).json({ error: 'Authentication failed' });
+  }
+  if (typeof timestamp !== 'string' || !/^\d+$/.test(timestamp)) {
     return res.status(401).json({ error: 'Authentication failed' });
   }
   if (Math.abs(Date.now() - Number(timestamp)) > MAX_TIMESTAMP_SKEW_MS) {

@@ -5,6 +5,7 @@ import sinon from 'sinon';
 import { walletStatsAuth } from '../../../src/routes/walletStatsAuth';
 import { Config } from '../../../src/services/config';
 import { Auth } from '../../../src/utils/auth';
+import { makeReqRes } from '../../helpers/routes';
 
 const MINUTE = 60 * 1000;
 
@@ -28,36 +29,6 @@ function authorize(req: any, key: { priv: Buffer }, over: { signedAt?: number; s
   req.headers['x-signature'] = signature(key, { ...req, timestamp: signedAt });
   req.headers['x-timestamp'] = String(over.sentAt ?? signedAt);
   return signedAt;
-}
-
-function makeReqRes(over: any = {}) {
-  const req: any = {
-    method: over.method || 'GET',
-    originalUrl: over.originalUrl || '/api/wallet-stats',
-    body: over.body !== undefined ? over.body : {},
-    headers: over.headers || {}
-  };
-  const res: any = {
-    statusCode: null,
-    body: null,
-    headers: {},
-    setHeader(name: string, value: string) {
-      res.headers[name] = value;
-    },
-    status(code: number) {
-      res.statusCode = code;
-      return res;
-    },
-    json(payload: any) {
-      res.body = payload;
-      return res;
-    },
-    send(payload: any) {
-      res.body = payload;
-      return res;
-    }
-  };
-  return { req, res };
 }
 
 describe('WalletStats auth middleware', function() {
@@ -308,7 +279,9 @@ describe('WalletStats auth middleware', function() {
     it('401s when the timestamp header arrives twice', () => {
       const { req, res } = makeReqRes();
       const signedAt = authorize(req, key);
-      req.headers['x-timestamp'] = [signedAt, signedAt]; // express hands back an array
+      // Defensive: node joins duplicate headers into one comma-separated string, so an
+      // array only reaches us if something upstream builds one. Guard holds either way.
+      req.headers['x-timestamp'] = [signedAt, signedAt];
       const next = sandbox.stub();
 
       walletStatsAuth(req, res, next);
@@ -317,7 +290,31 @@ describe('WalletStats auth middleware', function() {
       expect(next.called).to.equal(false);
     });
 
-    it('401s when the signature header arrives twice', () => {
+    it('401s when a duplicate timestamp header is joined into one value', () => {
+      const { req, res } = makeReqRes();
+      const signedAt = authorize(req, key);
+      req.headers['x-timestamp'] = `${signedAt},${signedAt}`; // what node actually produces
+      const next = sandbox.stub();
+
+      walletStatsAuth(req, res, next);
+
+      expect(res.statusCode).to.equal(401);
+      expect(next.called).to.equal(false);
+    });
+
+    it('401s when a duplicate signature header is joined into one value', () => {
+      const { req, res } = makeReqRes();
+      authorize(req, key);
+      req.headers['x-signature'] = `${req.headers['x-signature']},${req.headers['x-signature']}`;
+      const next = sandbox.stub();
+
+      walletStatsAuth(req, res, next);
+
+      expect(res.statusCode).to.equal(401);
+      expect(next.called).to.equal(false);
+    });
+
+    it('401s when the signature header arrives twice as an array', () => {
       const { req, res } = makeReqRes();
       authorize(req, key);
       req.headers['x-signature'] = [req.headers['x-signature'], req.headers['x-signature']];

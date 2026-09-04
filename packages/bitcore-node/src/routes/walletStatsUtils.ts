@@ -15,10 +15,8 @@ export interface ParamRule {
   max?: number;
 }
 
-export interface ParseResult<T> {
-  error?: string;
-  values?: T;
-}
+/** Either the parse failed with a reason, or it produced values — never both. */
+export type ParseResult<T> = { error: string; values?: undefined } | { error?: undefined; values: T };
 
 /**
  * Validates the query params named in the spec and returns them typed, ignoring

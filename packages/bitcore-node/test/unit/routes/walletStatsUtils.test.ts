@@ -2,30 +2,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import { CacheStorage } from '../../../src/models/cache';
 import { cacheKeyFor, parseParams, respondCached, setPrivateCache } from '../../../src/routes/walletStatsUtils';
-
-function makeRes() {
-  const res: any = {
-    statusCode: null,
-    body: null,
-    headers: {},
-    status(code: number) {
-      res.statusCode = code;
-      return res;
-    },
-    json(payload: any) {
-      res.body = payload;
-      return res;
-    },
-    send(payload: any) {
-      res.body = payload;
-      return res;
-    },
-    setHeader(name: string, value: string) {
-      res.headers[name] = value;
-    }
-  };
-  return res;
-}
+import { makeRes } from '../../helpers/routes';
 
 describe('WalletStats API utils', function() {
   const sandbox = sinon.createSandbox();
