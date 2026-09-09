@@ -67,5 +67,15 @@
     "tsx": "^4.21.0",
     "typescript": "5.7.3"
   },
-  "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4"
+  "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4",
+  "lavamoat": {
+    "allowScripts": {
+      "@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1": false,
+      "bcrypt": false,
+      "bcrypt#5.1.0": true,
+      "leveldown": false,
+      "secp256k1": false,
+      "tsx>esbuild": false
+    }
+  }
 }

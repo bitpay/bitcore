@@ -46,5 +46,19 @@
     "webdriverio": "^9.12.0",
     "webpack": "^5.98.0",
     "webpack-cli": "^6.0.1"
+  },
+  "lavamoat": {
+    "allowScripts": {
+      "@bitgo/sdk-lib-mpc>cbor-x>cbor-extract": false,
+      "@bitgo/sdk-lib-mpc>secp256k1": false,
+      "@bitpay-labs/crypto-wallet-core>xrpl>bip32>tiny-secp256k1": false,
+      "@wdio/browser-runner>@originjs/vite-plugin-commonjs>esbuild": false,
+      "@wdio/browser-runner>modern-node-polyfills>esbuild": false,
+      "@wdio/browser-runner>vite-plugin-top-level-await>@swc/core": false,
+      "@wdio/browser-runner>vite>esbuild": false,
+      "@wdio/cli>@wdio/utils>edgedriver": false,
+      "@wdio/cli>@wdio/utils>geckodriver": false,
+      "@wdio/cli>tsx>esbuild": false
+    }
   }
 }
