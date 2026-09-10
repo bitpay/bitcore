@@ -79,19 +79,20 @@ describe('Transaction', function () {
           }
         ];
       const unspentOutputUtxos = [
-        {
+        new bitcoreLib.Transaction.UnspentOutput({
           txId: '643ec66d6c4cad4cbdb8ed2166b8078975e0af9bb7ff7e30d394f43b0d9f18ab',
           outputIndex: 1,
           satoshis: 90_000,
           script: '76a9144e744a19a009a9dd43a23a7c12045c83e82ac9d288ac'
-        },
-        {
+        }),
+        new bitcoreLib.Transaction.UnspentOutput({
           txId: '643ec66d6c4cad4cbdb8ed2166b8078975e0af9bb7ff7e30d394f43b0d9f18ab',
           outputIndex: 0,
           satoshis: 30_000,
           script: '76a9144e744a19a009a9dd43a23a7c12045c83e82ac9d288ac'
-        }
+        })
       ];
+      
       const unspentOutputToObjectUtxos = [
         {
           txid: '643ec66d6c4cad4cbdb8ed2166b8078975e0af9bb7ff7e30d394f43b0d9f18ab',
