@@ -40,7 +40,7 @@ export class BTCTxProvider {
   }
 
   /**
-   * Standardize utxo for internal funcionality.
+   * Standardize utxo for internal functionality.
    * Accepts either a bitcore-node or a lib (bitcore-lib, bitcore-lib-cash, etc.) utxo.
    * Handles both lib style utxos: UnspentOutput properties and UnspentOutput.toObject properties.
    *
@@ -53,7 +53,7 @@ export class BTCTxProvider {
       txId: utxo.txId ?? utxo.mintTxid ?? utxo.txid,
       outputIndex: Number(utxo.outputIndex ?? utxo.mintIndex ?? utxo.vout ?? 0),
       script: utxo.scriptPubKey ?? new this.lib.Script(utxo.script).toHex(),
-      address: utxo.address != undefined ? new this.lib.Address(utxo.address).toString() : undefined
+      address: utxo.address ? new this.lib.Address(utxo.address).toString() : undefined
     };
   }
 
