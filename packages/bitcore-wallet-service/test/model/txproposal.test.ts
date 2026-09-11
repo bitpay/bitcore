@@ -142,6 +142,13 @@ describe('TxProposal', function() {
       txp.outputs[0].amount.should.be.a('number');
     });
 
+    it('should keep a base-unit amount that a number cannot represent exactly', function() {
+      const amount = '70000000000000010';
+      const t = TxProposal.fromObj({ ...aTXP(), amount, outputs: [{ ...aTXP().outputs[0], amount }] } as any);
+      const txp = TxProposal.formatNumbers(t, 'number');
+      txp.outputs[0].amount.should.equal(amount);
+    });
+
     it('should format string numbers as hex', function() {
       const t1 = TxProposal.fromObj(aTXP());
       const t2 = TxProposal.formatNumbers(t1, 'string');

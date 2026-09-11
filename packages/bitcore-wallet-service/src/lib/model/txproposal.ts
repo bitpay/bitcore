@@ -604,16 +604,26 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
   static formatNumbers<T>(txp: TxProposal<T>, numberFormat: 'string'): TxProposal<string>;
   static formatNumbers<T>(txp: TxProposal<T>, numberFormat: 'hex'): TxProposal<string>;
   static formatNumbers<T>(txp: TxProposal<T>, numberFormat: 'bigint'): TxProposal<bigint>;
-  static formatNumbers<T>(txp: TxProposal<T>, numberFormat: 'number'): TxProposal<number>;
+  static formatNumbers<T>(txp: TxProposal<T>, numberFormat: 'number'): TxProposal<number | T>;
   static formatNumbers<T>(txp: ITxProposal<T>, numberFormat: 'string'): ITxProposal<string>;
   static formatNumbers<T>(txp: ITxProposal<T>, numberFormat: 'hex'): ITxProposal<string>;
   static formatNumbers<T>(txp: ITxProposal<T>, numberFormat: 'bigint'): ITxProposal<bigint>;
-  static formatNumbers<T>(txp: ITxProposal<T>, numberFormat: 'number'): ITxProposal<number>;
+  static formatNumbers<T>(txp: ITxProposal<T>, numberFormat: 'number'): ITxProposal<number | T>;
   static formatNumbers<T>(txp: TxProposal<T> | ITxProposal<T>, numberFormat: NumberFormat = 'number') {
     let convertFn;
     switch (numberFormat) {
       case 'number':
-        convertFn = parseInt;
+        // Clients rebuild the raw tx from these values to check the proposal signature, so a value
+        // parseInt cannot round-trip must be returned as stored rather than rounded.
+        convertFn = (n) => {
+          const parsed = parseInt(n);
+          const value = typeof n === 'string' ? n.trim() : n;
+          try {
+            return BigInt(parsed) === BigInt(value) ? parsed : n;
+          } catch {
+            return Number.isSafeInteger(parsed) && !/e/i.test(String(value)) ? parsed : n;
+          }
+        };
         break;
       case 'string':
         convertFn = (n) => typeof n === 'string' && n.startsWith('0x') ? BigInt(n).toString() : n.toString();
