@@ -1,4 +1,7 @@
+import { singleton } from 'preconditions';
 import { Common } from '../common';
+
+const $ = singleton();
 
 const { Defaults } = Common;
 
@@ -61,6 +64,14 @@ export interface ITssSigGenModel {
     messages: ITssSigMessageObject;
   }>>;
   /**
+   * Timestamp the session was created
+   */
+  createdOn: number;
+  /**
+   * Session expires after this many milliseconds.
+   */
+  timeLimit?: number;
+  /**
    * The signature generated as the result of the TSS signature generation process.
    * The signature can be generated along a derivation path, which produces a pubKey that's
    *  dfferent from the key gen sharedPublicKey.
@@ -90,16 +101,27 @@ export class TssSigGenModel implements ITssSigGenModel {
   }>>;
   signature?: ITssSigMessageObject['signature'];
   schemeVersion: number;
+  createdOn: number;
+  timeLimit?: number;
   __v: number;
 
 
-  static create(params: { id: string; message: ITssSigMessageObject; m: number; copayerId: string }): TssSigGenModel {
-    const { id, message, m, copayerId } = params;
+  static create(params: { id: string; message: ITssSigMessageObject; m: number; copayerId: string; version: number; timeLimit?: number }): TssSigGenModel {
+    const { id, message, m, copayerId, version } = params;
     const { partyId } = message;
+    const timeLimit = parseFloat(params.timeLimit?.toString());
+    $.checkArgument(!timeLimit || (Number.isFinite(timeLimit) && timeLimit > 0), 'Time limit must be a positive number');
+
+    const MAX_TIME_LIMIT = 7 * 24 * 60; // 7 days in minutes
+    const ONE_MINUTE = 60 * 1000;
 
     const x = new TssSigGenModel();
     x.id = id;
-    x.schemeVersion = Defaults.TSS_SIGGEN_SCHEME_VERSION;
+    x.schemeVersion = version || Defaults.TSS_SIGGEN_SCHEME_VERSION;
+    x.createdOn = Date.now();
+    x.timeLimit = (timeLimit === 0
+      ? MAX_TIME_LIMIT
+      : Math.min(timeLimit || Defaults.TSS_SIGGEN_TIME_LIMIT, MAX_TIME_LIMIT)) * ONE_MINUTE;
     x.m = m;
     x.participants = [{
       partyId,
@@ -117,6 +139,8 @@ export class TssSigGenModel implements ITssSigGenModel {
     const x = new TssSigGenModel();
     x.id = obj.id;
     x.schemeVersion = obj.schemeVersion;
+    x.createdOn = obj.createdOn;
+    x.timeLimit = obj.timeLimit;
     x.m = obj.m;
     x.participants = obj.participants;
     x.rounds = obj.rounds;
@@ -132,5 +156,12 @@ export class TssSigGenModel implements ITssSigGenModel {
       return mostRecentRound + 1;
     }
     return mostRecentRound;
+  }
+
+  isExpired(): boolean {
+    if (!this.timeLimit) {
+      return false;
+    }
+    return Date.now() > this.createdOn + this.timeLimit;
   }
 }

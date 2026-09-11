@@ -1,59 +1,12 @@
 export const InvoiceAbi = [
   {
-    constant: true,
-    inputs: [],
-    name: 'owner',
-    outputs: [
-      {
-        name: '',
-        type: 'address'
-      }
-    ],
-    payable: false,
-    stateMutability: 'view',
-    type: 'function'
-  },
-  {
-    constant: true,
-    inputs: [],
-    name: 'quoteSigner',
-    outputs: [
-      {
-        name: '',
-        type: 'address'
-      }
-    ],
-    payable: false,
-    stateMutability: 'view',
-    type: 'function'
-  },
-  {
-    constant: true,
     inputs: [
       {
-        name: '',
-        type: 'bytes32'
-      }
-    ],
-    name: 'isPaid',
-    outputs: [
-      {
-        name: '',
-        type: 'bool'
-      }
-    ],
-    payable: false,
-    stateMutability: 'view',
-    type: 'function'
-  },
-  {
-    inputs: [
-      {
+        internalType: 'address',
         name: 'valueSigner',
         type: 'address'
       }
     ],
-    payable: false,
     stateMutability: 'nonpayable',
     type: 'constructor'
   },
@@ -62,21 +15,25 @@ export const InvoiceAbi = [
     inputs: [
       {
         indexed: true,
+        internalType: 'bytes32',
         name: 'hash',
         type: 'bytes32'
       },
       {
         indexed: true,
+        internalType: 'address',
         name: 'tokenContract',
         type: 'address'
       },
       {
         indexed: false,
+        internalType: 'uint256',
         name: 'time',
         type: 'uint256'
       },
       {
         indexed: false,
+        internalType: 'uint256',
         name: 'value',
         type: 'uint256'
       }
@@ -85,41 +42,95 @@ export const InvoiceAbi = [
     type: 'event'
   },
   {
-    constant: true,
+    inputs: [],
+    name: 'activate',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'deactivate',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'deactivated',
+    outputs: [
+      {
+        internalType: 'bool',
+        name: '',
+        type: 'bool'
+      }
+    ],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
     inputs: [
       {
+        internalType: 'bytes32',
+        name: '',
+        type: 'bytes32'
+      }
+    ],
+    name: 'isPaid',
+    outputs: [
+      {
+        internalType: 'bool',
+        name: '',
+        type: 'bool'
+      }
+    ],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
         name: 'value',
         type: 'uint256'
       },
       {
+        internalType: 'uint256',
         name: 'gasPrice',
         type: 'uint256'
       },
       {
+        internalType: 'uint256',
         name: 'expiration',
         type: 'uint256'
       },
       {
+        internalType: 'bytes32',
         name: 'payload',
         type: 'bytes32'
       },
       {
+        internalType: 'bytes32',
         name: 'hash',
         type: 'bytes32'
       },
       {
+        internalType: 'uint8',
         name: 'v',
         type: 'uint8'
       },
       {
+        internalType: 'bytes32',
         name: 'r',
         type: 'bytes32'
       },
       {
+        internalType: 'bytes32',
         name: 's',
         type: 'bytes32'
       },
       {
+        internalType: 'address',
         name: 'tokenContract',
         type: 'address'
       }
@@ -127,50 +138,163 @@ export const InvoiceAbi = [
     name: 'isValidPayment',
     outputs: [
       {
+        internalType: 'bool',
         name: 'valid',
         type: 'bool'
       }
     ],
-    payable: false,
     stateMutability: 'view',
     type: 'function'
   },
   {
-    constant: true,
+    inputs: [],
+    name: 'owner',
+    outputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address'
+      }
+    ],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
     inputs: [
       {
+        internalType: 'uint256',
         name: 'value',
         type: 'uint256'
       },
       {
+        internalType: 'uint256',
         name: 'gasPrice',
         type: 'uint256'
       },
       {
+        internalType: 'uint256',
         name: 'expiration',
         type: 'uint256'
       },
       {
+        internalType: 'bytes32',
         name: 'payload',
         type: 'bytes32'
       },
       {
+        internalType: 'bytes32',
         name: 'hash',
         type: 'bytes32'
       },
       {
+        internalType: 'uint8',
         name: 'v',
         type: 'uint8'
       },
       {
+        internalType: 'bytes32',
         name: 'r',
         type: 'bytes32'
       },
       {
+        internalType: 'bytes32',
         name: 's',
         type: 'bytes32'
       },
       {
+        internalType: 'address',
+        name: 'tokenContract',
+        type: 'address'
+      }
+    ],
+    name: 'pay',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'quoteSigner',
+    outputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address'
+      }
+    ],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'newAdmin',
+        type: 'address'
+      }
+    ],
+    name: 'setAdmin',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: 'newQuoteSigner',
+        type: 'address'
+      }
+    ],
+    name: 'setSigner',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function'
+  },
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: 'value',
+        type: 'uint256'
+      },
+      {
+        internalType: 'uint256',
+        name: 'gasPrice',
+        type: 'uint256'
+      },
+      {
+        internalType: 'uint256',
+        name: 'expiration',
+        type: 'uint256'
+      },
+      {
+        internalType: 'bytes32',
+        name: 'payload',
+        type: 'bytes32'
+      },
+      {
+        internalType: 'bytes32',
+        name: 'hash',
+        type: 'bytes32'
+      },
+      {
+        internalType: 'uint8',
+        name: 'v',
+        type: 'uint8'
+      },
+      {
+        internalType: 'bytes32',
+        name: 'r',
+        type: 'bytes32'
+      },
+      {
+        internalType: 'bytes32',
+        name: 's',
+        type: 'bytes32'
+      },
+      {
+        internalType: 'address',
         name: 'tokenContract',
         type: 'address'
       }
@@ -178,100 +302,25 @@ export const InvoiceAbi = [
     name: 'validatePayment',
     outputs: [
       {
+        internalType: 'bool',
         name: 'valid',
         type: 'bool'
       }
     ],
-    payable: false,
     stateMutability: 'view',
     type: 'function'
   },
   {
-    constant: false,
     inputs: [
       {
-        name: 'value',
-        type: 'uint256'
-      },
-      {
-        name: 'gasPrice',
-        type: 'uint256'
-      },
-      {
-        name: 'expiration',
-        type: 'uint256'
-      },
-      {
-        name: 'payload',
-        type: 'bytes32'
-      },
-      {
-        name: 'hash',
-        type: 'bytes32'
-      },
-      {
-        name: 'v',
-        type: 'uint8'
-      },
-      {
-        name: 'r',
-        type: 'bytes32'
-      },
-      {
-        name: 's',
-        type: 'bytes32'
-      },
-      {
-        name: 'tokenContract',
-        type: 'address'
-      }
-    ],
-    name: 'pay',
-    outputs: [],
-    payable: true,
-    stateMutability: 'payable',
-    type: 'function'
-  },
-  {
-    constant: false,
-    inputs: [
-      {
+        internalType: 'address',
         name: 'tokenContract',
         type: 'address'
       }
     ],
     name: 'withdraw',
     outputs: [],
-    payable: false,
-    stateMutability: 'nonpayable',
-    type: 'function'
-  },
-  {
-    constant: false,
-    inputs: [
-      {
-        name: 'newQuoteSigner',
-        type: 'address'
-      }
-    ],
-    name: 'setSigner',
-    outputs: [],
-    payable: false,
-    stateMutability: 'nonpayable',
-    type: 'function'
-  },
-  {
-    constant: false,
-    inputs: [
-      {
-        name: 'newAdmin',
-        type: 'address'
-      }
-    ],
-    name: 'setAdmin',
-    outputs: [],
-    payable: false,
     stateMutability: 'nonpayable',
     type: 'function'
   }
-];
+] as const;

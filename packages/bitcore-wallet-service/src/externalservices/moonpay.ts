@@ -218,14 +218,32 @@ export class MoonpayService {
     qs.push('baseCurrencyAmount=' + encodeURIComponent(req.body.baseCurrencyAmount));
     qs.push('externalTransactionId=' + encodeURIComponent(req.body.externalTransactionId));
     qs.push('redirectURL=' + encodeURIComponent(req.body.redirectURL));
+    if (req.body.defaultCurrencyCode) qs.push('defaultCurrencyCode=' + encodeURIComponent(req.body.defaultCurrencyCode));
+    if (req.body.walletAddressTag) qs.push('walletAddressTag=' + encodeURIComponent(req.body.walletAddressTag));
+    if (req.body.walletAddresses) qs.push('walletAddresses=' + encodeURIComponent(req.body.walletAddresses));
+    if (req.body.walletAddressTags) qs.push('walletAddressTags=' + encodeURIComponent(req.body.walletAddressTags));
     if (req.body.lockAmount) qs.push('lockAmount=' + encodeURIComponent(req.body.lockAmount));
     if (req.body.colorCode) qs.push('colorCode=' + encodeURIComponent(req.body.colorCode));
     if (req.body.theme) qs.push('theme=' + encodeURIComponent(req.body.theme));
+    if (req.body.themeId) qs.push('themeId=' + encodeURIComponent(req.body.themeId));
     if (req.body.language) qs.push('language=' + encodeURIComponent(req.body.language));
+    if (req.body.quoteCurrencyAmount) qs.push('quoteCurrencyAmount=' + encodeURIComponent(req.body.quoteCurrencyAmount));
+    if (req.body.email) qs.push('email=' + encodeURIComponent(req.body.email));
+    if (req.body.externalCustomerId) qs.push('externalCustomerId=' + encodeURIComponent(req.body.externalCustomerId));
     if (req.body.showWalletAddressForm)
       qs.push('showWalletAddressForm=' + encodeURIComponent(req.body.showWalletAddressForm));
     if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
     if (req.body.areFeesIncluded) qs.push('areFeesIncluded=' + encodeURIComponent(req.body.areFeesIncluded));
+    if (req.body.showAllCurrencies) qs.push('showAllCurrencies=' + encodeURIComponent(req.body.showAllCurrencies));
+    if (req.body.showOnlyCurrencies) qs.push('showOnlyCurrencies=' + encodeURIComponent(req.body.showOnlyCurrencies));
+    if (req.body.unsupportedRegionRedirectUrl)
+      qs.push('unsupportedRegionRedirectUrl=' + encodeURIComponent(req.body.unsupportedRegionRedirectUrl));
+    if (req.body.skipUnsupportedRegionScreen)
+      qs.push('skipUnsupportedRegionScreen=' + encodeURIComponent(req.body.skipUnsupportedRegionScreen));
+
+    // Only supported for DeFi Buy integrations
+    if (req.body.contractAddress) qs.push('contractAddress=' + encodeURIComponent(req.body.contractAddress));
+    if (req.body.networkCode) qs.push('networkCode=' + encodeURIComponent(req.body.networkCode));
 
     // Web requests are proxied through the bitpay backend, so the IP on this
     // request belongs to that server, not the customer. The proxy captures the
@@ -286,16 +304,20 @@ export class MoonpayService {
     qs.push('externalTransactionId=' + encodeURIComponent(req.body.externalTransactionId));
     qs.push('redirectURL=' + encodeURIComponent(req.body.redirectURL));
 
+    if (req.body.defaultBaseCurrencyCode) qs.push('defaultBaseCurrencyCode=' + encodeURIComponent(req.body.defaultBaseCurrencyCode));
     if (req.body.quoteCurrencyCode) qs.push('quoteCurrencyCode=' + encodeURIComponent(req.body.quoteCurrencyCode));
+    if (req.body.quoteCurrencyAmount) qs.push('quoteCurrencyAmount=' + encodeURIComponent(req.body.quoteCurrencyAmount));
     if (req.body.paymentMethod) qs.push('paymentMethod=' + encodeURIComponent(req.body.paymentMethod));
     if (req.body.externalCustomerId) qs.push('externalCustomerId=' + encodeURIComponent(req.body.externalCustomerId));
     if (req.body.refundWalletAddress) qs.push('refundWalletAddress=' + encodeURIComponent(req.body.refundWalletAddress));
+    if (req.body.refundWalletAddresses) qs.push('refundWalletAddresses=' + encodeURIComponent(req.body.refundWalletAddresses));
     if (req.body.lockAmount) qs.push('lockAmount=' + encodeURIComponent(req.body.lockAmount));
     if (req.body.colorCode) qs.push('colorCode=' + encodeURIComponent(req.body.colorCode));
     if (req.body.theme) qs.push('theme=' + encodeURIComponent(req.body.theme));
+    if (req.body.themeId) qs.push('themeId=' + encodeURIComponent(req.body.themeId));
     if (req.body.language) qs.push('language=' + encodeURIComponent(req.body.language));
     if (req.body.email) qs.push('email=' + encodeURIComponent(req.body.email));
-    if (req.body.externalCustomerId) qs.push('externalCustomerId=' + encodeURIComponent(req.body.externalCustomerId));
+    if (req.body.showAllCurrencies) qs.push('showAllCurrencies=' + encodeURIComponent(req.body.showAllCurrencies));
     if (req.body.showWalletAddressForm)
       qs.push('showWalletAddressForm=' + encodeURIComponent(req.body.showWalletAddressForm));
     if (req.body.unsupportedRegionRedirectUrl) qs.push('unsupportedRegionRedirectUrl=' + encodeURIComponent(req.body.unsupportedRegionRedirectUrl));

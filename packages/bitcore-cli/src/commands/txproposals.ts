@@ -202,7 +202,7 @@ export async function getTxProposals(
       lines.push('---------------------------');
       lines.push('Recipients:');
       lines.push(...txp.outputs.map(o => {
-        return ` → ${Utils.maxLength(o.toAddress)}${o.tag ? `:${o.tag}` : ''}: ${Utils.renderAmount(currency, o.amount)}${o.message ? ` (${o.message})` : ''}`;
+        return ` → ${Utils.maxLength(o.toAddress)}${o.tag ? `:${o.tag}` : ''}: ${Utils.renderAmount(currency, o.amount, tokenObj)}${o.message ? ` (${o.message})` : ''}`;
       }));
       txp.changeAddress && lines.push(` ↲ ${Utils.maxLength(txp.changeAddress.address)} (change - ${txp.changeAddress.path})`);
       lines.push('---------------------------');

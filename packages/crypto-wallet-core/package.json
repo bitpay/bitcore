@@ -1,6 +1,6 @@
 {
   "name": "@bitpay-labs/crypto-wallet-core",
-  "version": "11.10.4",
+  "version": "11.10.9",
   "description": "A multi-currency support library for address derivation, private key creation, and transaction creation",
   "main": "./ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
@@ -16,7 +16,7 @@
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
     "fix": "npm run fix:errors",
-    "test": "npm run compile && nyc mocha 'ts_build/test/**/*.test.js'",
+    "test": "npm run compile && mcr mocha ts_build/test",
     "pub": "npm run compile && npm publish"
   },
   "keywords": [
@@ -28,10 +28,10 @@
   "author": "Micah Riggan",
   "license": "MIT",
   "dependencies": {
-    "@bitpay-labs/bitcore-lib": "^11.10.4",
-    "@bitpay-labs/bitcore-lib-cash": "^11.10.4",
-    "@bitpay-labs/bitcore-lib-doge": "^11.10.4",
-    "@bitpay-labs/bitcore-lib-ltc": "^11.10.4",
+    "@bitpay-labs/bitcore-lib": "^11.10.9",
+    "@bitpay-labs/bitcore-lib-cash": "^11.10.9",
+    "@bitpay-labs/bitcore-lib-doge": "^11.10.9",
+    "@bitpay-labs/bitcore-lib-ltc": "^11.10.9",
     "@solana-program/compute-budget": "0.7.0",
     "@solana-program/memo": "0.7.0",
     "@solana-program/system": "0.7.0",

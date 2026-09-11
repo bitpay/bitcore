@@ -399,4 +399,37 @@ describe('Utils', function() {
       expect(redactUrl('')).to.eq('');
     });
   });
+
+  describe('disposeOnce', function() {
+    it('should run the teardown only once across repeated calls', function() {
+      let count = 0;
+      const dispose = utils.disposeOnce(() => { count++; }, () => { /* noop */ });
+      dispose();
+      dispose();
+      dispose();
+      expect(count).to.eq(1);
+    });
+
+    it('should be a no-op when there is nothing to dispose', function() {
+      let errored = false;
+      const dispose = utils.disposeOnce(undefined, () => { errored = true; });
+      dispose();
+      expect(errored).to.eq(false);
+    });
+
+    it('should route synchronous throws to onError', function() {
+      let caught: any;
+      const dispose = utils.disposeOnce(() => { throw new Error('sync boom'); }, err => caught = err);
+      dispose();
+      expect(caught?.message).to.eq('sync boom');
+    });
+
+    it('should route rejected promises to onError', async function() {
+      let caught: any;
+      const dispose = utils.disposeOnce(async () => { throw new Error('async boom'); }, err => caught = err);
+      dispose();
+      await new Promise(r => setImmediate(r));
+      expect(caught?.message).to.eq('async boom');
+    });
+  });
 });
