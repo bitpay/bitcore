@@ -4,6 +4,8 @@ import * as chai from 'chai';
 import 'chai/register-should';
 import util from 'util';
 import sinon from 'sinon';
+import http from 'http';
+import request from 'request';
 import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import { ChainService } from '../../src/lib/chain/index';
 import config from '../../src/config';
@@ -11,10 +13,12 @@ import { WalletService, UPGRADES } from '../../src/lib/server';
 import { Storage } from '../../src/lib/storage';
 import { Common } from '../../src/lib/common';
 import * as Model from '../../src/lib/model';
+import { TssKeyGenModel } from '../../src/lib/model/tsskeygen';
 import { BCHAddressTranslator } from '../../src/lib/bchaddresstranslator';
 import * as TestData from '../testdata';
 import helpers from './helpers';
 import { ClientError } from '../../src/lib/errors/clienterror';
+import { ExpressApp } from '../../src/lib/expressapp';
 
 const should = chai.should();
 config.moralis = config.moralis ?? {
@@ -1135,6 +1139,271 @@ describe('Wallet service', function() {
         });
       });
 
+      it('should fail to join with wrong signature even when hardwareSourcePublicKey is present', function(done) {
+        const copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'me',
+          xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+        });
+        copayerOpts.name = 'me2'; // invalidates the signature, same as the plain wrong-signature case above
+        copayerOpts.hardwareSourcePublicKey = 'attacker-controlled-hw-pubkey';
+        server.joinWallet(copayerOpts, function(err, result) {
+          should.not.exist(result);
+          should.exist(err);
+          err.message.should.equal('Bad request');
+          // The rejected join must not have persisted a copayer despite carrying
+          // hardwareSourcePublicKey - a regression that returns an error but still adds the
+          // copayer would pass the assertions above alone.
+          server.getWallet({}, function(err, wallet) {
+            should.not.exist(err);
+            wallet.copayers.length.should.equal(0);
+            done();
+          });
+        });
+      });
+
+      it('should fail to join with wrong signature even when clientDerivedPublicKey is present', function(done) {
+        const copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'me',
+          xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+        });
+        copayerOpts.name = 'me2'; // invalidates the signature, same as the plain wrong-signature case above
+        copayerOpts.clientDerivedPublicKey = 'attacker-controlled-client-derived-pubkey';
+        server.joinWallet(copayerOpts, function(err, result) {
+          should.not.exist(result);
+          should.exist(err);
+          err.message.should.equal('Bad request');
+          // Same persisted-state guard as the hardwareSourcePublicKey case above.
+          server.getWallet({}, function(err, wallet) {
+            should.not.exist(err);
+            wallet.copayers.length.should.equal(0);
+            done();
+          });
+        });
+      });
+
+      it('should join existing wallet with a valid signature and hardwareSourcePublicKey present', function(done) {
+        const copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'me',
+          xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+        });
+        copayerOpts.hardwareSourcePublicKey = 'legit-hw-pubkey';
+        server.joinWallet(copayerOpts, function(err, result) {
+          should.not.exist(err);
+          should.exist(result);
+          should.exist(result.copayerId);
+          server.getWallet({}, function(err, wallet) {
+            should.not.exist(err);
+            wallet.copayers.length.should.equal(1);
+            const copayer = wallet.copayers[0];
+            copayer.id.should.equal(result.copayerId);
+            copayer.hardwareSourcePublicKey.should.equal('legit-hw-pubkey');
+            done();
+          });
+        });
+      });
+
+      it('should join existing wallet with a valid signature and clientDerivedPublicKey present', function(done) {
+        const copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'me',
+          xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+        });
+        copayerOpts.clientDerivedPublicKey = 'legit-client-derived-pubkey';
+        server.joinWallet(copayerOpts, function(err, result) {
+          should.not.exist(err);
+          should.exist(result);
+          should.exist(result.copayerId);
+          server.getWallet({}, function(err, wallet) {
+            should.not.exist(err);
+            wallet.copayers.length.should.equal(1);
+            const copayer = wallet.copayers[0];
+            copayer.id.should.equal(result.copayerId);
+            copayer.clientDerivedPublicKey.should.equal('legit-client-derived-pubkey');
+            done();
+          });
+        });
+      });
+
+      it('should reject a join with hardwareSourcePublicKey present when xPubKey is absent', function(done) {
+        // xPubKey is the canonical copayer identity for every join; the ancillary
+        // hardwareSourcePublicKey field is metadata and must not stand in for it. The
+        // signature is created while xPubKey is genuinely absent - it covers
+        // [name, undefined, requestPubKey].join('|') === 'me||<requestPubKey>' - so the
+        // rejection below is attributable to the missing identity field, not to a
+        // signature invalidated by deleting an xpub after signing.
+        const copayerOpts: any = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'me',
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+        });
+        should.not.exist(copayerOpts.xPubKey);
+        copayerOpts.hardwareSourcePublicKey = 'legit-hw-pubkey-no-xpub';
+        server.joinWallet(copayerOpts, function(err, result) {
+          should.not.exist(result);
+          should.exist(err);
+          err.should.be.instanceof(ClientError);
+          // The rejected join must not have persisted a copayer. The join is rejected
+          // before WalletService.walletId is set, so an unauthenticated getWallet({})
+          // cannot address the wallet, and there is no copayerId to authenticate with;
+          // read persisted state at the storage level instead.
+          server.storage.fetchWallet(walletId, function(err, wallet) {
+            should.not.exist(err);
+            should.exist(wallet);
+            wallet.copayers.length.should.equal(0);
+            done();
+          });
+        });
+      });
+
+      // Table-driven rather than one near-identical 'it' per field: the point of each case is
+      // that this *particular* ancillary field must not stand in for xPubKey, so looping over
+      // the field name keeps that assertion identical across cases and makes it obvious if a
+      // future ancillary field (a third credential type) is added without a matching case here.
+      for (const ancillaryField of ['hardwareSourcePublicKey', 'clientDerivedPublicKey']) {
+        it(`should reject an xPubKey-less ${ancillaryField} join without persisting a copayer`, function(done) {
+          const copayerOpts: any = helpers.getSignedCopayerOpts({
+            walletId: walletId,
+            name: 'me',
+            requestPubKey: TestData.copayers[0].pubKey_1H_0,
+          });
+          should.not.exist(copayerOpts.xPubKey);
+          copayerOpts[ancillaryField] = 'legit-value-no-xpub';
+          server.joinWallet(copayerOpts, function(err, result) {
+            should.not.exist(result);
+            should.exist(err);
+            err.should.be.instanceof(ClientError);
+            // The join is rejected before WalletService.walletId is set, so an unauthenticated
+            // getWallet({}) cannot address the wallet; read persisted state at the storage level.
+            server.storage.fetchWallet(walletId, function(err, wallet) {
+              should.not.exist(err);
+              should.exist(wallet);
+              wallet.copayers.length.should.equal(0);
+              done();
+            });
+          });
+        });
+      }
+
+      it('should fail to join with a malformed xPubKey even when hardwareSourcePublicKey is present', function(done) {
+        const copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'me',
+          xPubKey: 'invalid',
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+        });
+        copayerOpts.hardwareSourcePublicKey = 'legit-hw-pubkey';
+        server.joinWallet(copayerOpts, function(err, result) {
+          should.not.exist(result);
+          should.exist(err);
+          err.should.be.instanceof(ClientError);
+          // The rejected join must not have persisted a copayer; read persisted state
+          // at the storage level (the join may be rejected before WalletService.walletId
+          // is set, in which case getWallet({}) cannot address the wallet).
+          server.storage.fetchWallet(walletId, function(err, wallet) {
+            should.not.exist(err);
+            should.exist(wallet);
+            wallet.copayers.length.should.equal(0);
+            done();
+          });
+        });
+      });
+
+      it('should fail to join with a malformed xPubKey even when clientDerivedPublicKey is present', function(done) {
+        const copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'me',
+          xPubKey: 'invalid',
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+        });
+        copayerOpts.clientDerivedPublicKey = 'legit-client-derived-pubkey';
+        server.joinWallet(copayerOpts, function(err, result) {
+          should.not.exist(result);
+          should.exist(err);
+          err.should.be.instanceof(ClientError);
+          // Same persisted-state guard as the hardwareSourcePublicKey case above.
+          server.storage.fetchWallet(walletId, function(err, wallet) {
+            should.not.exist(err);
+            should.exist(wallet);
+            wallet.copayers.length.should.equal(0);
+            done();
+          });
+        });
+      });
+
+      it('should reject a join when xPubKey, hardwareSourcePublicKey and clientDerivedPublicKey are all missing or empty', function(done) {
+        const copayerOpts: any = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'me',
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+        });
+        should.not.exist(copayerOpts.xPubKey);
+        copayerOpts.hardwareSourcePublicKey = '';
+        copayerOpts.clientDerivedPublicKey = '';
+        server.joinWallet(copayerOpts, function(err, result) {
+          should.not.exist(result);
+          should.exist(err);
+          err.should.be.instanceof(ClientError);
+          // The rejected join must not have persisted a copayer. The join is rejected
+          // before WalletService.walletId is set, so an unauthenticated getWallet({})
+          // cannot address the wallet, and there is no copayerId to authenticate with;
+          // read persisted state at the storage level instead.
+          server.storage.fetchWallet(walletId, function(err, wallet) {
+            should.not.exist(err);
+            should.exist(wallet);
+            wallet.copayers.length.should.equal(0);
+            done();
+          });
+        });
+      });
+
+      it('should fail to join a full wallet with a valid signature and hardwareSourcePublicKey present', function(done) {
+        // walletId is m=1/n=2 (see beforeEach above); fill both slots with normal joins first
+        // so the third, hardware-flagged join hits WALLET_FULL rather than succeeding.
+        const firstCopayerOpts = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'copayer 1',
+          xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+        });
+        server.joinWallet(firstCopayerOpts, function(err) {
+          should.not.exist(err);
+          const secondCopayerOpts = helpers.getSignedCopayerOpts({
+            walletId: walletId,
+            name: 'copayer 2',
+            xPubKey: TestData.copayers[1].xPubKey_44H_0H_0H,
+            requestPubKey: TestData.copayers[1].pubKey_1H_0,
+          });
+          server.joinWallet(secondCopayerOpts, function(err) {
+            should.not.exist(err);
+            const thirdCopayerOpts = helpers.getSignedCopayerOpts({
+              walletId: walletId,
+              name: 'copayer 3',
+              xPubKey: TestData.copayers[2].xPubKey_44H_0H_0H,
+              requestPubKey: TestData.copayers[2].pubKey_1H_0,
+            });
+            thirdCopayerOpts.hardwareSourcePublicKey = 'attacker-or-legit-hw-pubkey';
+            server.joinWallet(thirdCopayerOpts, function(err, result) {
+              should.not.exist(result);
+              should.exist(err);
+              err.should.be.instanceof(ClientError);
+              err.code.should.equal('WALLET_FULL');
+              server.getWallet({}, function(err, wallet) {
+                should.not.exist(err);
+                wallet.copayers.length.should.equal(2);
+                done();
+              });
+            });
+          });
+        });
+      });
+
       it('should set pkr and status = complete on last copayer joining (2-3)', function(done) {
         helpers.createAndJoinWallet(2, 3).then(function({ server }) {
           server.getWallet({}, function(err, wallet) {
@@ -1374,6 +1643,133 @@ describe('Wallet service', function() {
             done();
           });
         });
+      });
+    });
+
+    // SECURITY: this guards against a copayer joining a TSS wallet without ever being checked
+    // against the key generation session's participant list.
+    describe('TSS wallets (non-participant bypass)', function() {
+      it('should reject a join from a copayer who is not a TSS keygen session participant, even with clientDerivedPublicKey supplied', async function() {
+        const server = new WalletService();
+
+        const legitXPubKey = TestData.copayers[0].xPubKey_44H_0H_0H;
+        const legitCopayerId = Model.Copayer.xPubToCopayerId('btc', legitXPubKey);
+
+        // A completed TSS key-gen session whose sole participant is the legit copayer above.
+        // NOTE: helpers.beforeEach()'s collection wipe-list doesn't include tss_keygen (it's
+        // marked // TODO in helpers.ts), so this collection isn't reset between test runs the
+        // way the rest of the suite's state is. Clear our fixture id explicitly so this test
+        // stays repeatable regardless of that pre-existing gap.
+        const session = TssKeyGenModel.create({
+          id: 'tss-non-participant-bypass-test-session',
+          message: { partyId: 0, broadcastMessages: [], p2pMessages: [], publicKey: 'dummy', round: 0 },
+          n: 1,
+          copayerId: legitCopayerId,
+          version: 1.1,
+        });
+        session.sharedPublicKey = 'dummy-shared-public-key';
+        await server.storage.db.collection('tss_keygen').deleteMany({ id: session.id });
+        await server.storage.storeTssKeyGenSession({ doc: session });
+
+        // createWallet forces m=n=1 for any wallet created against a tssKeyId.
+        const walletId = await util.promisify(server.createWallet).call(server, {
+          name: 'tss wallet',
+          m: 1,
+          n: 1,
+          pubKey: TestData.keyPair.pub,
+          coin: 'btc',
+          tssKeyId: session.id,
+        });
+        should.exist(walletId);
+
+        // Attacker knows the wallet's join secret (so they CAN produce a valid
+        // copayerSignature - e.g. they were handed the invite link/secret for this wallet)
+        // but their copayerId is NOT in session.participants: they never actually took part
+        // in the TSS key generation. A valid copayerSignature alone must not be enough to
+        // join a TSS wallet; only listed DKG participants may.
+        const copayerOpts: any = helpers.getSignedCopayerOpts({
+          walletId,
+          name: 'attacker',
+          xPubKey: TestData.copayers[1].xPubKey_44H_0H_0H,
+          clientDerivedPublicKey: 'attacker-controlled-client-derived-pubkey',
+          requestPubKey: TestData.copayers[1].pubKey_1H_0,
+        });
+
+        const { err, result } = await new Promise<{ err: any; result: any }>(resolve => {
+          server.joinWallet(copayerOpts, (err, result) => resolve({ err, result }));
+        });
+
+        should.not.exist(result);
+        should.exist(err);
+        err.code.should.equal('TSS_NON_PARTICIPANT');
+
+        // The rejected join must not have persisted the attacker as a copayer despite
+        // supplying a valid copayerSignature - a regression that returns TSS_NON_PARTICIPANT
+        // but still adds the copayer would pass the assertions above alone.
+        const wallet = await util.promisify(server.getWallet).call(server, {});
+        wallet.copayers.length.should.equal(0);
+      });
+
+      it('should reject a TSS join with clientDerivedPublicKey present when xPubKey is absent, even if the ancillary-derived ID is a keygen session participant', async function() {
+        // xPubKey is the canonical copayer identity for every join, including TSS ones;
+        // the ancillary clientDerivedPublicKey field must not stand in for it. The
+        // session participant list below carries the ID derived from
+        // clientDerivedPublicKey, so this proves the join is rejected for the missing
+        // identity field itself rather than by the TSS participant check. The signature
+        // is created while xPubKey is genuinely absent - it covers
+        // [name, undefined, requestPubKey].join('|') === 'me||<requestPubKey>' - so it is
+        // valid for the request as sent and the rejection is attributable to the missing
+        // xPubKey, not to an invalidated signature.
+
+        // 20 Aug '26: Support for joining a wallet without xPubKey will fast-follow
+        const server = new WalletService();
+
+        const clientDerivedPublicKey = 'legit-client-derived-pubkey-no-xpub';
+        const ancillaryDerivedCopayerId = Model.Copayer.xPubToCopayerId('btc', clientDerivedPublicKey);
+
+        const session = TssKeyGenModel.create({
+          id: 'tss-no-xpubkey-rejected-test-session',
+          message: { partyId: 0, broadcastMessages: [], p2pMessages: [], publicKey: 'dummy', round: 0 },
+          n: 1,
+          copayerId: ancillaryDerivedCopayerId,
+          version: 1.1,
+        });
+        session.sharedPublicKey = 'dummy-shared-public-key';
+        await server.storage.db.collection('tss_keygen').deleteMany({ id: session.id });
+        await server.storage.storeTssKeyGenSession({ doc: session });
+
+        const walletId = await util.promisify(server.createWallet).call(server, {
+          name: 'tss wallet',
+          m: 1,
+          n: 1,
+          pubKey: TestData.keyPair.pub,
+          coin: 'btc',
+          tssKeyId: session.id,
+        });
+        should.exist(walletId);
+
+        const copayerOpts: any = helpers.getSignedCopayerOpts({
+          walletId,
+          name: 'me',
+          clientDerivedPublicKey,
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+        });
+        should.not.exist(copayerOpts.xPubKey);
+
+        const { err, result } = await new Promise<{ err: any; result: any }>(resolve => {
+          server.joinWallet(copayerOpts, (err, result) => resolve({ err, result }));
+        });
+
+        should.not.exist(result);
+        should.exist(err);
+        err.should.be.instanceof(ClientError);
+
+        // The rejected join must not have persisted a copayer. The join is rejected
+        // before WalletService.walletId is set, so an unauthenticated getWallet({})
+        // cannot address the wallet; read persisted state at the storage level instead.
+        const wallet = await util.promisify(server.storage.fetchWallet).call(server.storage, walletId);
+        should.exist(wallet);
+        wallet.copayers.length.should.equal(0);
       });
     });
   });
@@ -2798,6 +3194,112 @@ describe('Wallet service', function() {
                 should.not.exist(err);
                 should.exist(txs[0].proposalSignaturePubKey);
                 should.exist(txs[0].proposalSignaturePubKeySig);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+    describe('#add access with historical copayer state', function() {
+      beforeEach(async function() {
+        ({ server, wallet } = await helpers.createAndJoinWallet(1, 1));
+      });
+
+      function snapshotState(cb) {
+        server.storage.db.collection(Storage.collections.WALLETS).findOne(
+          { id: wallet.id },
+          (err, walletDoc) => {
+            if (err) return cb(err);
+            server.storage.db.collection(Storage.collections.COPAYERS_LOOKUP).findOne(
+              { copayerId: opts.copayerId },
+              (err2, lookupDoc) => {
+                if (err2) return cb(err2);
+                return cb(null, {
+                  wallet: JSON.parse(JSON.stringify(walletDoc)),
+                  lookup: JSON.parse(JSON.stringify(lookupDoc))
+                });
+              }
+            );
+          }
+        );
+      }
+
+      function mutateWalletDoc(mutation, cb) {
+        server.storage.db.collection(Storage.collections.WALLETS).findOne(
+          { id: wallet.id },
+          (err, walletDoc) => {
+            if (err) return cb(err);
+            mutation(walletDoc);
+            server.storage.db.collection(Storage.collections.WALLETS).replaceOne(
+              { id: wallet.id },
+              walletDoc,
+              cb
+            );
+          }
+        );
+      }
+
+      it('should return NOT_AUTHORIZED when the target copayer is missing from the wallet', function(done) {
+        mutateWalletDoc(doc => {
+          doc.copayers = doc.copayers.filter(c => c.id !== opts.copayerId);
+        }, (err) => {
+          should.not.exist(err);
+          snapshotState((err, before) => {
+            should.not.exist(err);
+            ws.addAccess(opts, (err, res) => {
+              err.should.be.instanceof(ClientError);
+              err.code.should.equal('NOT_AUTHORIZED');
+              should.not.exist(res);
+              snapshotState((err, after) => {
+                should.not.exist(err);
+                // The rejected attempt must not have persisted anything: no new access key, no other state change.
+                after.should.deep.equal(before);
+                done();
+              });
+            });
+          });
+        });
+      });
+
+      it('should return NOT_AUTHORIZED when the target copayer has no xPubKey', function(done) {
+        mutateWalletDoc(doc => {
+          delete doc.copayers[0].xPubKey;
+        }, (err) => {
+          should.not.exist(err);
+          snapshotState((err, before) => {
+            should.not.exist(err);
+            ws.addAccess(opts, (err, res) => {
+              err.should.be.instanceof(ClientError);
+              err.code.should.equal('NOT_AUTHORIZED');
+              should.not.exist(res);
+              snapshotState((err, after) => {
+                should.not.exist(err);
+                // The rejected attempt must not have persisted anything: no new access key, no other state change.
+                after.should.deep.equal(before);
+                done();
+              });
+            });
+          });
+        });
+      });
+
+      it('should return NOT_AUTHORIZED when the target copayer has a malformed xPubKey', function(done) {
+        mutateWalletDoc(doc => {
+          doc.copayers[0].xPubKey = 'invalid';
+        }, (err) => {
+          should.not.exist(err);
+          snapshotState((err, before) => {
+            should.not.exist(err);
+            ws.addAccess(opts, (err, res) => {
+              err.should.be.instanceof(ClientError);
+              err.code.should.equal('NOT_AUTHORIZED');
+              should.not.exist(res);
+              snapshotState((err, after) => {
+                should.not.exist(err);
+                // The rejected attempt must not have persisted anything: no new access key, no other state change.
+                after.should.deep.equal(before);
                 done();
               });
             });
@@ -9030,8 +9532,236 @@ describe('Wallet service', function() {
     });
     
     it.skip('should get accepted/rejected transaction proposal', function(done) { });
-    
+
     it.skip('should get broadcasted transaction proposal', function(done) { });
+  });
+
+  describe('#getTxByHash', function() {
+    let serverA: WalletService;
+    let walletA: Model.Wallet;
+    let serverB: WalletService;
+    let txp;
+
+    beforeEach(async function() {
+      ({ server: serverA, wallet: walletA } = await helpers.createAndJoinWallet(1, 1));
+      await helpers.stubUtxos(serverA, walletA, 1);
+      const txOpts = {
+        outputs: [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 0.5e8
+        }],
+        feePerKb: 100e2,
+        message: 'some message',
+      };
+      txp = await helpers.createAndPublishTx(serverA, txOpts, TestData.copayers[0].privKey_1H_0);
+      should.exist(txp);
+
+      const signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+      txp = await util.promisify(serverA.signTx).call(serverA, {
+        txProposalId: txp.id,
+        signatures,
+      });
+      should.exist(txp.txid);
+
+      ({ server: serverB } = await helpers.createAndJoinWallet(1, 1, { offset: 1 }));
+    });
+
+    it('should not disclose another wallet\'s transaction proposal by hash', function(done) {
+      serverB.getTxByHash({
+        txid: txp.txid
+      }, function(err, res) {
+        should.exist(err);
+        should.not.exist(res);
+        err.should.be.instanceof(ClientError);
+        err.code.should.equal('TX_NOT_FOUND');
+        err.message.should.equal('Transaction proposal not found');
+        // Belt-and-suspenders: confirm the error itself carries none of
+        // wallet A's data (no walletId/creatorId/raw leaking via the error).
+        JSON.stringify(err).should.not.include(walletA.id);
+        done();
+      });
+    });
+
+    it('should get own transaction proposal by hash, unchanged from before the fix', function(done) {
+      serverA.editTxNote({
+        txid: txp.txid,
+        body: 'a note from wallet A'
+      }, function(err) {
+        should.not.exist(err);
+        serverA.getTxByHash({
+          txid: txp.txid
+        }, function(err, res) {
+          should.not.exist(err);
+          should.exist(res);
+          res.id.should.equal(txp.id);
+          res.walletId.should.equal(walletA.id);
+          res.txid.should.equal(txp.txid);
+          should.exist(res.raw);
+          should.exist(res.note);
+          res.note.body.should.equal('a note from wallet A');
+          done();
+        });
+      });
+    });
+
+    it('should return the identical not-found error for a foreign txid and an unknown txid', function(done) {
+      serverB.getTxByHash({
+        txid: txp.txid
+      }, function(errForeign, resForeign) {
+        should.exist(errForeign);
+        should.not.exist(resForeign);
+        serverB.getTxByHash({
+          txid: helpers.randomTXID()
+        }, function(errUnknown, resUnknown) {
+          should.exist(errUnknown);
+          should.not.exist(resUnknown);
+          errForeign.code.should.equal(errUnknown.code);
+          errForeign.message.should.equal(errUnknown.message);
+          errForeign.code.should.equal('TX_NOT_FOUND');
+          done();
+        });
+      });
+    });
+
+    it('should return a bad-request error when txid is missing', function(done) {
+      serverA.getTxByHash({}, function(err, res) {
+        should.exist(err);
+        should.not.exist(res);
+        err.should.be.instanceof(ClientError);
+        err.code.should.equal('BADREQUEST');
+        err.message.should.equal('Required argument: txid missing.');
+        done();
+      });
+    });
+  });
+
+  describe('GET /v1/txproposalsbyhash/:id/ (HTTP route)', function() {
+    // Exercises the real Express route (registerTransactionRoutes ->
+    // getServerWithAuth -> WalletService.getInstanceWithAuth), not just the
+    // service method, so route wiring, request-auth plumbing, and HTTP
+    // status/body serialization are covered, not only the underlying
+    // service logic already tested above. Only the cryptographic signature
+    // check is stubbed to return true
+    const testHost = 'http://127.0.0.1';
+    let testPort: number;
+    let httpServer;
+    let verifyStub;
+    let walletA: Model.Wallet;
+    let walletB: Model.Wallet;
+    let txp;
+
+    beforeEach(async function() {
+      httpServer = undefined;
+      verifyStub = undefined;
+
+      let serverA: WalletService;
+      let serverB: WalletService;
+      ({ server: serverA, wallet: walletA } = await helpers.createAndJoinWallet(1, 1));
+      await helpers.stubUtxos(serverA, walletA, 1);
+      const txOpts = {
+        outputs: [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 0.5e8
+        }],
+        feePerKb: 100e2,
+        message: 'some message',
+      };
+      txp = await helpers.createAndPublishTx(serverA, txOpts, TestData.copayers[0].privKey_1H_0);
+      const signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+      txp = await util.promisify(serverA.signTx).call(serverA, {
+        txProposalId: txp.id,
+        signatures,
+      });
+      should.exist(txp.txid);
+
+      ({ server: serverB, wallet: walletB } = await helpers.createAndJoinWallet(1, 1, { offset: 1 }));
+
+      verifyStub = sinon.stub(WalletService.prototype, '_verifySignature').returns(true);
+
+      const app = new ExpressApp();
+      httpServer = new http.Server(app.app);
+      await util.promisify(app.start).call(app, {
+        storage: helpers.getStorage(),
+        blockchainExplorer: helpers.getBlockchainExplorer(),
+        request: sinon.stub(),
+        disableLogs: true,
+        basePath: config.basePath
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        httpServer.once('error', reject);
+        httpServer.listen(0, '127.0.0.1', () => {
+          httpServer.off('error', reject);
+          const address = httpServer.address();
+          if (!address || typeof address === 'string') {
+            return reject(new Error('HTTP test server did not bind to a TCP port'));
+          }
+          testPort = address.port;
+          resolve();
+        });
+      });
+    });
+
+    afterEach(function(done) {
+      if (verifyStub) {
+        verifyStub.restore();
+        verifyStub = undefined;
+      }
+      if (!httpServer?.listening) {
+        httpServer = undefined;
+        return done();
+      }
+      httpServer.close(err => {
+        httpServer = undefined;
+        done(err);
+      });
+    });
+
+    function getByHash(copayerId, txid, cb) {
+      request({
+        method: 'GET',
+        url: testHost + ':' + testPort + config.basePath + '/v1/txproposalsbyhash/' + txid + '/',
+        headers: {
+          'x-identity': copayerId,
+          'x-signature': 'stubbed'
+        },
+        json: true
+      }, (err, res, body) => cb(err, res, body));
+    }
+
+    it('foreign wallet gets HTTP 400 TX_NOT_FOUND with no owner data in the body', function(done) {
+      getByHash(walletB.copayers[0].id, txp.txid, (err, res, body) => {
+        should.not.exist(err);
+        res.statusCode.should.equal(400);
+        body.code.should.equal('TX_NOT_FOUND');
+        JSON.stringify(body).should.not.include(walletA.id);
+        done();
+      });
+    });
+
+    it('owner wallet gets HTTP 200 with the full proposal, unchanged', function(done) {
+      getByHash(walletA.copayers[0].id, txp.txid, (err, res, body) => {
+        should.not.exist(err);
+        res.statusCode.should.equal(200);
+        body.walletId.should.equal(walletA.id);
+        body.txid.should.equal(txp.txid);
+        should.exist(body.raw);
+        done();
+      });
+    });
+
+    it('foreign and unknown txids produce an identical HTTP 400 TX_NOT_FOUND body', function(done) {
+      getByHash(walletB.copayers[0].id, txp.txid, (err, resForeign, bodyForeign) => {
+        should.not.exist(err);
+        getByHash(walletB.copayers[0].id, helpers.randomTXID(), (err, resUnknown, bodyUnknown) => {
+          should.not.exist(err);
+          resForeign.statusCode.should.equal(resUnknown.statusCode);
+          bodyForeign.code.should.equal(bodyUnknown.code);
+          bodyForeign.code.should.equal('TX_NOT_FOUND');
+          done();
+        });
+      });
+    });
   });
 
   describe('#getTxs', function() {

@@ -1,9 +1,11 @@
-import { Readable } from 'stream';
 import { Utils, Web3 } from '@bitpay-labs/crypto-wallet-core';
 import { ChainStateProvider } from '../../';
+import logger from '../../../../logger';
 import { Config } from '../../../../services/config';
 import { IEVMNetworkConfig } from '../../../../types/Config';
 import { StreamWalletTransactionsParams } from '../../../../types/namespaces/ChainStateProvider';
+import { disposeOnce } from '../../../../utils';
+import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { MultisigAbi } from '../abi/multisig';
 import { MultisigRelatedFilterTransform } from '../api/multisigTransform';
 import { PopulateEffectsTransform } from '../api/populateEffectsTransform';
@@ -154,7 +156,7 @@ export class GnosisApi {
   }
 
   async streamGnosisWalletTransactions(params: { multisigContractAddress: string } & StreamWalletTransactionsParams) {
-    const { chain, network, multisigContractAddress, res, args } = params;
+    const { chain, network, multisigContractAddress, args } = params;
     const normalizedMultisigContractAddress = Web3.utils.toChecksumAddress(multisigContractAddress);
     const tokenAddress = args.tokenAddress ? Web3.utils.toChecksumAddress(args.tokenAddress) : undefined;
     const transactionQuery = getCSP(chain, network).getWalletTransactionQuery(params);
@@ -200,7 +202,6 @@ export class GnosisApi {
       };
     }
 
-    let transactionStream = new Readable({ objectMode: true });
     const ethTransactionTransform = new EVMListTransactionsStream([normalizedMultisigContractAddress], tokenAddress);
     const EVM = getCSP(chain, network);
     const populateReceipt = new PopulateReceiptTransform(EVM);
@@ -212,34 +213,38 @@ export class GnosisApi {
       .sort({ blockTimeNormalized: 1 })
       .addCursorFlag('noCursorTimeout', true);
 
-    // Add cleanup handlers when client disconnects
-    let cursorClosed = false;
-    const cleanupCursor = () => {
-      if (!cursorClosed) {
-        cursorClosed = true;
-        try {
-          cursor.close();
-        } catch {
-          // Cursor might already be closed, ignore
-        }
-      }
-    };
+    // cursor.close() resolves a promise, so a plain try/catch around it would never see a
+    // failure. disposeOnce awaits it and keeps the overlapping stream events idempotent.
+    const cleanupCursor = disposeOnce(
+      async () => { await cursor.close(); },
+      err => logger.warn(`Failed to close ${chain}:${network} gnosis transaction cursor: %o`, err)
+    );
 
-    const { req } = params;
-    req.on('close', cleanupCursor);
-    res.on('close', cleanupCursor);
-
-    transactionStream = cursor.pipe(populateEffects); // For old db entries
+    let transactionStream: TransformWithEventPipe = cursor.pipe(populateEffects); // For old db entries
 
     if (multisigContractAddress) {
       const multisigTransform = new MultisigRelatedFilterTransform(normalizedMultisigContractAddress, tokenAddress);
-      transactionStream = transactionStream.pipe(multisigTransform);
+      transactionStream = transactionStream.eventPipe(multisigTransform);
     }
 
-    transactionStream
-      .pipe(populateReceipt)
-      .pipe(ethTransactionTransform)
-      .pipe(res);
+    // eventPipe so a mid-chain transform error reaches finalStream instead of
+    // re-emitting with no listeners and crashing the worker
+    const finalStream: any = transactionStream
+      .eventPipe(populateReceipt)
+      .eventPipe(ethTransactionTransform);
+    finalStream.jsonl = true;
+    finalStream.on('close', cleanupCursor);
+    finalStream.on('end', cleanupCursor);
+    finalStream.on('error', cleanupCursor);
+    // pipe() does not forward source errors; surface cursor failures on the returned
+    // stream so the caller settles instead of hanging
+    cursor.on('error', (err: any) => {
+      cleanupCursor();
+      if (!finalStream.destroyed) {
+        finalStream.destroy(err);
+      }
+    });
+    return finalStream;
   }
 }
 

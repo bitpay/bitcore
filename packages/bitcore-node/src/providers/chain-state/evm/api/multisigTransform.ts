@@ -1,8 +1,8 @@
-import { Transform } from 'stream';
 import { MongoBound } from '../../../../models/base';
+import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 import { IEVMTransactionInProcess } from '../types';
 
-export class MultisigRelatedFilterTransform extends Transform {
+export class MultisigRelatedFilterTransform extends TransformWithEventPipe {
   constructor(private multisigContractAddress: string, private tokenAddress?: string) {
     super({ objectMode: true });
   }

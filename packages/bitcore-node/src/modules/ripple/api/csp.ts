@@ -9,7 +9,6 @@ import { CacheStorage } from '../../../models/cache';
 import { ICoin } from '../../../models/coin';
 import { WalletAddressStorage } from '../../../models/walletAddress';
 import { InternalStateProvider } from '../../../providers/chain-state/internal/internal';
-import { Storage } from '../../../services/storage';
 import { IBlock } from '../../../types/Block';
 import { ChainNetwork } from '../../../types/ChainNetwork';
 import {
@@ -305,7 +304,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     const transformed = txs.map(tx => this.transformAccountTx(tx, params.network));
     this.streamTxs(transformed, readable);
     readable.push(null);
-    Storage.stream(readable, params.req!, params.res!);
+    return readable;
   }
 
   async streamTransactions(params: StreamTransactionsParams) {
@@ -316,7 +315,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     const txs = ledger.transactions || [];
     this.streamTxs(txs, readable);
     readable.push(null);
-    Storage.stream(readable, params.req, params.res);
+    return readable;
   }
 
   async getTransaction(params: StreamTransactionParams) {
