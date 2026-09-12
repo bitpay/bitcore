@@ -1,7 +1,7 @@
 import { createRequire } from 'module';
 import { Subscription } from 'rxjs';
 import { Base, BaseModule } from '../types/base.js';
-import { chains, ChainType, UtxoChainType } from '../types/chains.js';
+import { ChainType, UtxoChainType, chains } from '../types/chains.js';
 import { EveryUtxoType, TransactionType } from '../types/txTypes.js';
 import { dmk } from './dmk.js';
 import {

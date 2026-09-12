@@ -1,0 +1,11 @@
+services:
+  speculos:
+    image: ghcr.io/ledgerhq/speculos
+    volumes:
+      - ./test/ledger/apps:/speculos/apps
+    ports:
+      - "1234:1234" # gdb
+      - "5000:5000" # api
+      - "40000:40000" # apdu
+      - "41000:41000" # vnc
+    command: "./apps/boil.elf --display headless --apdu-port 40000 --vnc-port 41000"
