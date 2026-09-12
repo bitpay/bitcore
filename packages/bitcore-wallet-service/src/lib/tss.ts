@@ -6,6 +6,7 @@ import { ITssKeyMessageObject, TssKeyGenModel } from './model/tsskeygen';
 import { ITssSigMessageObject, TssSigGenModel } from './model/tsssign';
 import { WalletService, checkRequired } from './server';
 import { Storage } from './storage';
+import { assertKeygenPartyOwnership } from './tss-keygen-party';
 
 class TssKeyGenClass {
   /**
@@ -111,6 +112,12 @@ class TssKeyGenClass {
         throw Errors.TSS_MISMATCH_VERSION.withMessage(`TSS version (${version}) does not match session version (${session.schemeVersion})`);
       }
 
+      assertKeygenPartyOwnership({
+        participants: session.participants,
+        partyId: message.partyId,
+        copayerId,
+        n: session.n
+      });
 
       if (!session.participants[message.partyId]) {
         if (!this._checkPassword({ session, password })) {
