@@ -80,8 +80,10 @@ async function listenForSessionComplete<T extends TssKeyGenModel | TssSigGenMode
   fetchSession: (params: { id: string }) => Promise<T>;
   /** Maximum time (in milliseconds) to wait for the round to complete */
   maxWaitTime: number;
+  /** Abort signal to cancel waiting for a complete round */
+  abortSignal?: AbortSignal;
 }): Promise<T> {
-  const { messageType, isComplete, fetchSession, maxWaitTime } = params;
+  const { messageType, isComplete, fetchSession, maxWaitTime, abortSignal } = params;
   let { session } = params;
 
   const events = new EventEmitter();
@@ -103,7 +105,8 @@ async function listenForSessionComplete<T extends TssKeyGenModel | TssSigGenMode
   let timer: NodeJS.Timeout;
   const sessionUpdate = Promise.race([
     new Promise<T>(r => events.once('session', r)),
-    new Promise<T>(r => timer = setTimeout(() => { unsubscribe(); r(session); }, maxWaitTime))
+    new Promise<T>(r => timer = setTimeout(() => { unsubscribe(); r(session); }, maxWaitTime)),
+    new Promise<T>((_, j) => abortSignal?.addEventListener('abort', () => { unsubscribe(); j(new Error('Aborted')); }))
   ]);
 
   try {
@@ -112,7 +115,7 @@ async function listenForSessionComplete<T extends TssKeyGenModel | TssSigGenMode
     const _session = await fetchSession({ id: session.id });
     if (isComplete(_session)) {
       session = _session;
-    } else {
+    } else if (!abortSignal?.aborted) {
       session = await sessionUpdate;
     }
     return session;
@@ -164,12 +167,14 @@ class TssKeyGenClass {
     copayerId: string;
     /** Maximum time (in seconds) to wait for a complete round */
     maxWaitTimeSec?: number;
+    /** Abort signal to cancel waiting for a complete round */
+    abortSignal?: AbortSignal;
   }): Promise<{
     messages?: ITssKeyMessageObject[];
     publicKey?: string;
     hasKeyBackup?: boolean;
   }> {
-    const { round, copayerId } = params;
+    const { round, copayerId, abortSignal } = params;
     let { session } = params;
     const maxWaitTime = getBoundedWaitTime(params.maxWaitTimeSec);
     
@@ -194,7 +199,8 @@ class TssKeyGenClass {
         session,
         isComplete: isRoundComplete,
         fetchSession: storage.fetchTssKeyGenSession.bind(storage),
-        maxWaitTime
+        maxWaitTime,
+        abortSignal
       });
     }
 
@@ -575,8 +581,10 @@ class TssSignClass {
     copayerId: string;
     /** Maximum time (in seconds) to wait for a complete round */
     maxWaitTimeSec?: number;
+    /** Abort signal to cancel waiting for a complete round */
+    abortSignal?: AbortSignal;
   }): Promise<{ messages?: ITssSigMessageObject[]; signature?: ITssSigMessageObject['signature']; participants?: string[] }> {
-    const { round, copayerId } = params;
+    const { round, copayerId, abortSignal } = params;
     let { session } = params;
     const maxWaitTime = getBoundedWaitTime(params.maxWaitTimeSec);
 
@@ -601,7 +609,8 @@ class TssSignClass {
         session,
         isComplete: isRoundComplete,
         fetchSession: storage.fetchTssSigSession.bind(storage),
-        maxWaitTime
+        maxWaitTime,
+        abortSignal
       });
     }
 
