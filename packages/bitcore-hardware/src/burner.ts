@@ -219,10 +219,9 @@ export default class Burner implements Base {
   async getAddressBtc(params: { index: number }) {
     const { index } = params;
 
-    const data: any = await this.getData([{ type: 'publicKey', index }]);
-
+    const data: any = await this.getData([{ type: 'compressedPublicKey', index }]);
     try {
-      const pubKey = PublicKey.fromString(data.publicKey[index].value);
+      const pubKey = PublicKey.fromString(data.compressedPublicKey[index].value);
       const address = Address.fromPublicKey(pubKey, 'livenet', 'witnesspubkeyhash');
       return address.toString();
     } catch (error) {
