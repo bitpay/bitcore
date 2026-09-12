@@ -52,7 +52,7 @@ export class BTCTxProvider {
       satoshis: Number(utxo.satoshis ?? utxo.value ?? this.lib.Unit.fromBTC(utxo.amount ?? 0).toSatoshis()),
       txId: utxo.txId ?? utxo.mintTxid ?? utxo.txid,
       outputIndex: Number(utxo.outputIndex ?? utxo.mintIndex ?? utxo.vout ?? 0),
-      script: utxo.scriptPubKey ?? utxo.script ? new this.lib.Script(utxo.script).toHex() : undefined,
+      script: utxo.scriptPubKey ?? (utxo.script ? new this.lib.Script(utxo.script).toHex() : undefined),
       address: utxo.address ? new this.lib.Address(utxo.address).toString() : undefined
     };
   }
