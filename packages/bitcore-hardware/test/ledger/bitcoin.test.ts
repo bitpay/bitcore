@@ -3,9 +3,11 @@ import { createRequire } from 'module';
 import { expect } from 'chai';
 import { describe } from 'mocha';
 import Ledger from '../../src/ledger/wallet.js';
+import CWC from '@bitpay-labs/crypto-wallet-core';
 
 const require = createRequire(import.meta.url);
 const { deviceControllerClientFactory } = require('@ledgerhq/speculos-device-controller');
+const { BitcoreLib } = CWC;
 
 describe('Ledger', function () {
   const deviceClient = deviceControllerClientFactory('http://localhost:5000');
@@ -22,7 +24,7 @@ describe('Ledger', function () {
 
   it('should scroll', async () => {
     await deviceButtons.right();    
-    await deviceButtons.left();    
+    await deviceButtons.left(); 
   });
 
   it('should be able to validate chain', async () => {
@@ -33,8 +35,11 @@ describe('Ledger', function () {
     expect(Ledger.isValidChain('btc')).to.be.false;
     expect(Ledger.isValidChain(' BTC')).to.be.false;
   });
-  
-  it('should be able to get version', async () => {
-    // TODO: get version
+
+  it('should get address and publickey', async () => {
+    const publicKey = await ledger.getPublicKey({ chain: 'BTC' });
+    const address = await ledger.getAddress({ chain: 'BTC' });
+
+    expect(BitcoreLib.Address.fromPublicKey(new BitcoreLib.PublicKey(publicKey), 'livenet', 'witnesspubkeyhash').toString()).to.equal(address);
   });
 });

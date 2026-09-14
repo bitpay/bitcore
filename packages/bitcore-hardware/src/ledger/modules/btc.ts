@@ -1,4 +1,5 @@
 import { createRequire } from 'module';
+import CWC from '@bitpay-labs/crypto-wallet-core';
 import { Psbt } from 'bitcoinjs-lib';
 import {
   Observable,
@@ -15,6 +16,8 @@ const {
   DefaultDescriptorTemplate,
   DefaultWallet
 }: typeof SignerKitBtc = require('@ledgerhq/device-signer-kit-bitcoin');
+
+const { BitcoreLib } = CWC;
 
 export default class BitcoinModule implements BaseModule {
   signer: SignerKitBtc.SignerBtc;
@@ -33,7 +36,7 @@ export default class BitcoinModule implements BaseModule {
     
     const psbt = new Psbt();
 
-    const pubkey = new Util.libs[this.chain].HDPublicKey(await this.getPublicKey()).derive('m/0/0').publicKey.toBuffer();
+    const pubkey = new Util.libs[this.chain].PublicKey(await this.getPublicKey()).toBuffer();
     const masterFingerprint = await this.getMasterKeyFingerprint();
 
     psbt.addInputs(bitcoreTx.inputs.map(input => ({
@@ -69,8 +72,7 @@ export default class BitcoinModule implements BaseModule {
   async getPublicKey() {
     const ob: Observable<any> = this.signer.getExtendedPublicKey(this.derivationPath).observable;
     const result = await lastValueFrom(ob);
-    console.log(result);
-    return result.output.extendedPublicKey;
+    return BitcoreLib.HDPublicKey(result.output.extendedPublicKey).derive('m/0/0').publicKey.toString();
   }
 
   async getMasterKeyFingerprint(): Promise<Uint8Array> {

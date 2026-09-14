@@ -8,4 +8,4 @@ services:
       - "5000:5000" # api
       - "40000:40000" # apdu
       - "41000:41000" # vnc
-    command: "./apps/boil.elf --display headless --apdu-port 40000 --vnc-port 41000"
+    command: "./apps/bitcoin.elf --display headless --apdu-port 40000 --vnc-port 41000"
