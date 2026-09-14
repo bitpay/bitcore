@@ -227,9 +227,9 @@ export class SolChain implements IChain {
       const { totalAmount, availableAmount } = balance;
       // calculate how much space is needed to find rent amount
       const minRentException = opts.tokenAddress ? 0 : Defaults.MIN_SOL_BALANCE;
-      if (totalAmount - minRentException < txp.getTotalAmount()) {
+      if (totalAmount - minRentException < txp.getTotalAmountBigInt()) {
         return cb(Errors.INSUFFICIENT_FUNDS);
-      } else if (availableAmount < txp.getTotalAmount()) {
+      } else if (availableAmount < txp.getTotalAmountBigInt()) {
         return cb(Errors.LOCKED_FUNDS);
       } else {
         return cb(this.checkTx(txp));

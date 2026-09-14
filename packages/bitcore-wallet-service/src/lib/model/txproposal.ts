@@ -478,7 +478,11 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
    * @return {Number} total amount of all outputs excluding change output
    */
   getTotalAmount() {
-    return Number(((this as TxProposal<number>).outputs || []).reduce((total, o) => total += BigInt(o.amount), 0n));
+    return Number(this.getTotalAmountBigInt());
+  }
+
+  getTotalAmountBigInt() {
+    return ((this as TxProposal<number>).outputs || []).reduce((total, o) => total += BigInt(o.amount), 0n);
   }
 
   /**
@@ -526,11 +530,19 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
   sign(copayerId, signatures, xpub, numberFormat?: NumberFormat) {
     try {
       // numberFormat as 'number' is to sidestep TS errors, but is not necessarily true.
-      const txp = numberFormat ? TxProposal.formatNumbers(this, numberFormat as 'number') : this as TxProposal<number>;
-      const tx = ChainService.getBitcoreTx(txp);
+      const clientTxp = numberFormat ? TxProposal.formatNumbers(this, numberFormat as 'number') : this as TxProposal<number>;
+      const clientTx = ChainService.getBitcoreTx(clientTxp);
+      if (numberFormat) {
+        // Signatures only bind the bytes the copayer signed, and every later rebuild starts from
+        // the stored values, so a format that rebuilds other bytes signs a different transaction.
+        const storedTx = ChainService.getBitcoreTx(this as TxProposal<number>);
+        if (JSON.stringify(clientTx.uncheckedSerialize()) !== JSON.stringify(storedTx.uncheckedSerialize())) {
+          throw new Error(`numberFormat ${numberFormat} rebuilds a different tx for proposal ${this.id}`);
+        }
+      }
       ChainService.addSignaturesToBitcoreTx(
         this.chain,
-        tx,
+        clientTx,
         this.inputs,
         this.inputPaths,
         signatures,
@@ -540,10 +552,10 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 
       if (this.status == 'accepted') {
-        this.raw = tx.uncheckedSerialize();
-        this.txid = tx.id;
+        this.raw = clientTx.uncheckedSerialize();
+        this.txid = clientTx.id;
         if (this.multiTx) {
-          this.txids = tx?.txids && tx.txids() || [tx.id];
+          this.txids = clientTx?.txids && clientTx.txids() || [clientTx.id];
         }
       }
 
@@ -626,7 +638,13 @@ export class TxProposal<NumberType = number> implements ITxProposal<NumberType> 
         };
         break;
       case 'string':
-        convertFn = (n) => typeof n === 'string' && n.startsWith('0x') ? BigInt(n).toString() : n.toString();
+        // toString() renders large integers in exponential notation, which no tx builder can parse.
+        convertFn = (n) => {
+          if (typeof n === 'string') return n.startsWith('0x') ? BigInt(n).toString() : n;
+          return typeof n === 'number' && Number.isInteger(n)
+            ? n.toLocaleString('fullwide', { useGrouping: false, maximumFractionDigits: 0 })
+            : n.toString();
+        };
         break;
       case 'hex':
         convertFn = (n) => CWCUtils.toHex(n);

@@ -46,8 +46,6 @@ for (const network in NetworkChar) { // invert NetworkChar
   NetworkChar[NetworkChar[network]] = network;
 }
 
-const defaultNumberFormat = 'number'; // 'number' | 'string' | 'hex'
-
 const BASE_URL = 'http://localhost:3232/bws/api';
 
 export class API extends EventEmitter {
@@ -1407,7 +1405,6 @@ export class API extends EventEmitter {
       qs.push(`includeExtendedInfo=${opts.includeExtendedInfo ? '1' : '0'}`);
       qs.push(`twoStep=${opts.twoStep ? '1' : '0'}`);
       qs.push('serverMessageArray=1');
-      qs.push('numberFormat=' + defaultNumberFormat); // Only applies to `pendingTxps` in response. TODO apply this to balances as well.
 
       if (opts.tokenAddress) {
         qs.push('tokenAddress=' + opts.tokenAddress);
@@ -1718,8 +1715,7 @@ export class API extends EventEmitter {
       /** The transaction proposal object returned by the API#createTxProposal method */
       txp: Txp;
       /** 
-       * Number format for the tx-building numbers (e.g. amounts, nonce, etc.). Default: 'hex'
-       * Note: The given `txp` will be converted server-side and returned in the specified format.
+       * Number format for the tx-building numbers (e.g. amounts, nonce, etc.). Omitted by default, which returns the stored values unconverted.
       */
       numberFormat?: 'hex' | 'number' | 'string';
     },
@@ -1740,9 +1736,9 @@ export class API extends EventEmitter {
       const args = {
         proposalSignature: Utils.signMessage(hash, this.credentials.requestPrivKey)
       };
-      const qs = `numberFormat=${opts.numberFormat || defaultNumberFormat}`;
+      const qs = opts.numberFormat ? `?numberFormat=${opts.numberFormat}` : '';
 
-      const url = `/v2/txproposals/${opts.txp.id}/publish?${qs}`;
+      const url = `/v2/txproposals/${opts.txp.id}/publish${qs}`;
       const { body: txp } = await this.request.post<object, PublishedTxp>(url, args);
       this._processTxps(txp);
       if (cb) { cb(null, txp); }
@@ -1930,7 +1926,7 @@ export class API extends EventEmitter {
       forAirGapped?: boolean;
       /** Do not encrypt the public key ring */
       doNotEncryptPkr?: boolean;
-      /** Number format for the tx-building numbers (e.g. amounts, fee, nonce, etc.). Default: 'hex' */
+      /** Number format for the tx-building numbers (e.g. amounts, fee, nonce, etc.). Omitted by default, which returns the stored values unconverted. */
       numberFormat?: 'hex' | 'number' | 'string';
     },
     /** @deprecated */
@@ -1945,9 +1941,9 @@ export class API extends EventEmitter {
 
       opts = opts || {};
       const { doNotVerify, forAirGapped, doNotEncryptPkr } = opts;
-      const qs = `numberFormat=${opts.numberFormat || defaultNumberFormat}`;
+      const qs = opts.numberFormat ? `?numberFormat=${opts.numberFormat}` : '';
 
-      const { body: txps } = await this.request.get(`/v2/txproposals?${qs}`);
+      const { body: txps } = await this.request.get(`/v2/txproposals${qs}`);
       this._processTxps(txps);
       
       if (!doNotVerify) {
@@ -2076,18 +2072,8 @@ export class API extends EventEmitter {
       const isLegit = Verifier.checkTxProposal(this.credentials, txp, { paypro });
       if (!isLegit) throw new Errors.SERVER_COMPROMISED();
 
-      // Determine number format for the API request based on the given txp's values.
-      // This ensures the server maintains number precision when verifying signatures.
-      const amt = txp.amount || txp.outputs?.[0]?.amount;
-      const numberFormat = typeof amt === 'number'
-        ? 'number'
-        : amt.startsWith('0x')
-          ? 'hex'
-          : 'string';
-
-      const qs = `numberFormat=${numberFormat}`;
       baseUrl = baseUrl || '/v2/txproposals/';
-      const url = `${baseUrl}${txp.id}/signatures?${qs}`;
+      const url = `${baseUrl}${txp.id}/signatures`;
       const args: any = { signatures, nonce: txp.nonce };
       const { body: signedTxp } = await this.request.post<object, Txp>(url, args);
       this._processTxps(signedTxp);
@@ -2109,18 +2095,7 @@ export class API extends EventEmitter {
   }): Promise<Txp> {
     $.checkState(this.credentials?.isComplete(), 'Failed state: this.credentials at <prepareTx()>');
 
-    // Determine number format for the API request based on the type of txp.amount.
-    // This ensures the server maintains number precision when verifying signatures.
-    const amt = opts.txp.amount || opts.txp.outputs?.[0]?.amount;
-    const numberFormat = typeof amt === 'number'
-      ? 'number'
-      : amt.startsWith('0x')
-        ? 'hex'
-        : 'string';
-
-    const qs = `numberFormat=${numberFormat}`;
-
-    const url = `/v1/txproposals/${opts.txp.id}/prepare?${qs}`;
+    const url = `/v1/txproposals/${opts.txp.id}/prepare`;
     const { body: txp } = await this.request.post<object, Txp>(url, {});
     this._processTxps(txp);
     return txp;

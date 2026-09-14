@@ -22,7 +22,7 @@ export function registerTransactionRoutes(router: express.Router, context: Route
 
   router.get('/v2/txproposals/', (req, res) => {
     getServerWithAuth(req, res, server => {
-      checkNumberFormat(req.query.numberFormat, res);
+      if (!checkNumberFormat(req.query.numberFormat, res)) return;
 
       const opts = {
         numberFormat: req.query.numberFormat,
@@ -52,7 +52,7 @@ export function registerTransactionRoutes(router: express.Router, context: Route
 
   router.post('/v3/txproposals/', (req, res) => {
     getServerWithAuth(req, res, server => {
-      checkNumberFormat(req.query.numberFormat, res);
+      if (!checkNumberFormat(req.query.numberFormat, res)) return;
       req.body.txpVersion = 3;
       req.body.numberFormat = req.query.numberFormat;
       server.createTx(req.body, (err, txp) => {
@@ -76,7 +76,7 @@ export function registerTransactionRoutes(router: express.Router, context: Route
 
   router.post('/v2/txproposals/:id/signatures/', (req, res) => {
     getServerWithAuth(req, res, server => {
-      checkNumberFormat(req.query.numberFormat, res);
+      if (!checkNumberFormat(req.query.numberFormat, res)) return;
       req.body.txProposalId = req.params['id'];
       req.body.maxTxpVersion = 3;
       req.body.supportBchSchnorr = true;
@@ -91,7 +91,7 @@ export function registerTransactionRoutes(router: express.Router, context: Route
 
   router.post('/v1/txproposals/:id/prepare/', (req, res) => {
     getServerWithAuth(req, res, server => {
-      checkNumberFormat(req.query.numberFormat, res);
+      if (!checkNumberFormat(req.query.numberFormat, res)) return;
       req.body.txProposalId = req.params['id'];
       req.body.numberFormat = req.query.numberFormat;
       server.prepareTx(req.body, (err, txp) => {
@@ -116,7 +116,7 @@ export function registerTransactionRoutes(router: express.Router, context: Route
 
   router.post('/v2/txproposals/:id/publish/', (req, res) => {
     getServerWithAuth(req, res, server => {
-      checkNumberFormat(req.query.numberFormat, res);
+      if (!checkNumberFormat(req.query.numberFormat, res)) return;
       req.body.txProposalId = req.params['id'];
       req.body.numberFormat = req.query.numberFormat;
       server.publishTx(req.body, (err, txp) => {

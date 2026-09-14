@@ -53,6 +53,28 @@ describe('TxProposal', function() {
     });
   });
 
+  describe('#fromObj', function() {
+    it('should keep the stored output amount type untouched', function() {
+      const stored: any = { ...aTXP(), outputs: [{ ...aTXP().outputs[0], amount: 70000000000000010 }] };
+
+      const txp = TxProposal.fromObj(stored);
+
+      txp.outputs[0].amount.should.equal(70000000000000010);
+    });
+  });
+
+  describe('#getTotalAmountBigInt', function() {
+    it('should keep a total that a number cannot represent', function() {
+      const txp = TxProposal.fromObj({
+        ...aTXP(),
+        outputs: [{ ...aTXP().outputs[0], amount: '9007199254740992' }, { ...aTXP().outputs[1], amount: '1' }]
+      } as any);
+
+      txp.getTotalAmountBigInt().should.equal(9007199254740993n);
+      txp.getTotalAmount().should.equal(9007199254740992);
+    });
+  });
+
   describe('#getTotalAmount', function() {
     it('should compute total amount', function() {
       const x = TxProposal.fromObj(aTXP());
@@ -78,6 +100,21 @@ describe('TxProposal', function() {
       const txp = TxProposal.fromObj(aTXP());
       txp.sign('1', theSignatures, theXPub);
       txp.getRawTx().should.equal(theRawTx);
+    });
+  });
+
+  describe('#sign with a number format', function() {
+    it('should keep the signatures in the persisted raw tx', function() {
+      const plain = TxProposal.fromObj(aTXP());
+      plain.sign('1', theSignatures, theXPub);
+      plain.sign('2', theSignatures, theXPub);
+
+      const formatted = TxProposal.fromObj(aTXP());
+      formatted.sign('1', theSignatures, theXPub, 'number');
+      formatted.sign('2', theSignatures, theXPub, 'number');
+
+      formatted.raw.should.deep.equal(plain.raw);
+      formatted.txid.should.equal(plain.txid);
     });
   });
 
@@ -162,6 +199,80 @@ describe('TxProposal', function() {
       CWCUtils.isHexString(txp.fee).should.equal(true);
       txp.outputs[0].amount.should.be.a('string');
       CWCUtils.isHexString(txp.outputs[0].amount).should.equal(true);
+    });
+
+
+    describe('legacy format contracts', function() {
+      const cases: Array<[string, any, any]> = [
+        ['safe integer boundary', '9007199254740991', 9007199254740991],
+        ['first representable unsafe integer', '9007199254740992', 9007199254740992],
+        ['first unrepresentable integer', '9007199254740993', '9007199254740993'],
+        ['representable amount', '70000000000000008', Number('70000000000000008')],
+        ['inexact amount', '70000000000000010', '70000000000000010'],
+        ['representable hex', '0x20000000000000', 9007199254740992],
+        ['unrepresentable hex', '0x20000000000001', '0x20000000000001'],
+        ['exponential string', '1e+21', '1e+21'],
+        ['exponential number', 1e21, 1e21],
+        ['overflow string', '9'.repeat(400), '9'.repeat(400)],
+        ['empty string', '', ''],
+        ['nonnumeric string', 'abc', 'abc'],
+        ['null', null, null],
+        ['undefined', undefined, undefined],
+        ['NaN', NaN, NaN],
+        ['Infinity', Infinity, Infinity],
+        ['small bigint', 5n, 5],
+        ['inexact bigint', 9007199254740993n, 9007199254740993n],
+        ['positive sign', '+5', 5],
+        ['negative zero', '-0', -0],
+        ['leading zeros', '007', 7],
+        ['whitespace', ' 42 ', 42],
+        ['fractional prefix', '1.5', 1],
+        ['malformed prefix', '12xyz', 12],
+        ['SOL nonce prefix', '2' + 'A'.repeat(43), 2]
+      ];
+
+      for (const [label, value, expected] of cases) {
+        it(`should leave the legacy number behavior unchanged for ${label}`, function() {
+          const source: any = TxProposal.fromObj(aTXP());
+          source.amount = value;
+          source.outputs[0].amount = value;
+          const formatted = TxProposal.formatNumbers(source, 'number');
+
+          chai.expect(Object.is(formatted.amount, expected)).to.equal(true);
+          chai.expect(Object.is(formatted.outputs[0].amount, expected)).to.equal(true);
+          chai.expect(Object.is(source.outputs[0].amount, value)).to.equal(true);
+        });
+      }
+
+      for (const format of ['string', 'hex', 'bigint'] as const) {
+        it(`should leave the legacy ${format} behavior unchanged`, function() {
+          const source: any = TxProposal.fromObj(aTXP());
+          source.amount = 42;
+          source.outputs[0].amount = '70000000000000010';
+          const formatted = TxProposal.formatNumbers(source, format as 'string') as any;
+          const expected = {
+            string: ['42', '70000000000000010'],
+            hex: ['0x2a', '0xf8b0a10e47000a'],
+            bigint: [42n, 70000000000000010n]
+          }[format];
+
+          formatted.amount.should.equal(expected[0]);
+          formatted.outputs[0].amount.should.equal(expected[1]);
+          source.amount.should.equal(42);
+          source.outputs[0].amount.should.equal('70000000000000010');
+        });
+      }
+
+      it('should expand large integers and keep existing hex strings in string mode', function() {
+        const source: any = TxProposal.fromObj(aTXP());
+        source.amount = 1e21;
+        source.outputs[0].amount = '0x2a';
+        const formatted = TxProposal.formatNumbers(source, 'string');
+
+        formatted.amount.should.equal('1000000000000000000000');
+        BigInt(formatted.amount).should.equal(1000000000000000000000n);
+        formatted.outputs[0].amount.should.equal('0x2a');
+      });
     });
   });
 });

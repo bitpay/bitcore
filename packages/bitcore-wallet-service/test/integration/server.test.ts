@@ -3934,6 +3934,45 @@ describe('Wallet service', function() {
     });
   });
 
+  describe('#createTx token allowance', function() {
+    let server: WalletService;
+    let wallet: Model.Wallet;
+
+    beforeEach(async function() {
+      ({ server, wallet } = await helpers.createAndJoinWallet(1, 1, { coin: 'eth' }));
+      await util.promisify(server.createAddress).call(server, {});
+    });
+
+    it('should reject a total that a number rounds down to the allowance', async function() {
+      const be = helpers.getBlockchainExplorer();
+      be.getBalance = sinon.stub().callsArgWith(1, null, { unconfirmed: 0, confirmed: '1' + '0'.repeat(20), balance: '1' + '0'.repeat(20) });
+      be.getTokenAllowance = sinon.stub().callsArgWith(1, null, '9007199254740992');
+
+      const opts = {
+        outputs: [
+          { toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A', amount: '9007199254740992' },
+          { toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A', amount: '1' }
+        ],
+        from: '0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622',
+        tokenAddress: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+        multiSendContractAddress: '0x30e5bfa1e83c9c6f0a4c4bd4a1f0e0d7d0c4d3a2',
+        feePerKb: 25000000000,
+        nonce: 5
+      };
+
+      let error;
+      try {
+        await util.promisify(server.createTx).call(server, opts);
+      } catch (e) {
+        error = e;
+      }
+
+      should.exist(error);
+      error.message.should.contain('Insufficient token allowance');
+      error.message.should.contain('Want: 9007199254740993');
+    });
+  });
+
   const testSet = [
     {
       coin: 'btc',
