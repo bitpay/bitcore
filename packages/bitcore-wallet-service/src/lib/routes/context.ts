@@ -143,8 +143,10 @@ export function createRouteHelpers(returnError: Types.ReturnErrorFn): RouteHelpe
   const checkNumberFormat = (numberFormat: string | undefined, res: express.Response) => {
     const validFormats = ['hex', 'string', 'number']; // bigint cannot be serialized to JSON, so it's not supported in the API response
     if (numberFormat && !validFormats.includes(numberFormat)) {
-      return returnError(Errors.INVALID_NUMBER_FORMAT, res, null);
+      returnError(Errors.INVALID_NUMBER_FORMAT, res, null);
+      return false;
     }
+    return true;
   };
 
   return {
