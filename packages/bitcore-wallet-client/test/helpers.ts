@@ -222,6 +222,17 @@ export const helpers = {
         return cb(err, db, connection);
       });
     });
+  },
+  finishIndexCreation: async (db) => {
+    let inprog;
+    do {
+      ({ inprog } = await db.admin().command({
+        currentOp: 1,
+        'command.createIndexes': { $exists: true },
+        'command.$db': db.databaseName
+      }));
+      if (inprog.length > 0) await new Promise(r2 => setTimeout(r2, 10));
+    } while (inprog.length > 0);
   }
 };
 

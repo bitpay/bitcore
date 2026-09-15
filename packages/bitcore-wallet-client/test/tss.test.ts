@@ -4,6 +4,10 @@ import sinon from 'sinon';
 import * as chai from 'chai';
 import BWS from '@bitpay-labs/bitcore-wallet-service';
 import { Defaults as BwsDefaults } from '@bitpay-labs/bitcore-wallet-service/ts_build/src/lib/common/defaults';
+import {
+  TssKeyGen as BwsTssKeyGen,
+  TssSign as BwsTssSign
+} from '@bitpay-labs/bitcore-wallet-service/ts_build/src/lib/tss';
 import request from 'supertest';
 import crypto from 'crypto';
 import fs from 'fs';
@@ -68,6 +72,17 @@ describe('TSS', function() {
           done();
         }
       );
+    });
+  });
+
+  beforeEach(function() {
+    sandbox.stub(BwsTssKeyGen, 'getMessagesForParty').callsFake(async function(params) {
+      params.maxWaitTimeSec = 1;
+      return (BwsTssKeyGen.getMessagesForParty as any).wrappedMethod.call(this, params);
+    });
+    sandbox.stub(BwsTssSign, 'getMessagesForParty').callsFake(async function(params) {
+      params.maxWaitTimeSec = 1;
+      return (BwsTssSign.getMessagesForParty as any).wrappedMethod.call(this, params);
     });
   });
 

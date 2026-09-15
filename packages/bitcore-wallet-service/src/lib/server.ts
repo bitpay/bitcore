@@ -326,12 +326,9 @@ export class WalletService implements IWalletService {
     );
   }
 
-  static handleIncomingNotifications(notification, cb) {
-    cb = cb || function() { };
-
+  static handleIncomingNotifications(_notification: INotification) {
     // do nothing here....
     // bc height cache is cleared on bcmonitor
-    return cb();
   }
 
   static shutDown(cb) {
@@ -472,6 +469,13 @@ export class WalletService implements IWalletService {
       throw new Error('Storage requested before server was initialized');
     }
     return storage;
+  }
+
+  static getMessageBroker() {
+    if (!initialized) {
+      throw new Error('Message broker requested before server was initialized');
+    }
+    return messageBroker;
   }
 
   _runLocked(cb, task, waitTime?: number) {
@@ -1152,7 +1156,7 @@ export class WalletService implements IWalletService {
         try {
           const isValid = this._verifyRequestPubKey(opts.requestPubKey, opts.signature, target.xPubKey);
           if (!isValid) return cb(Errors.NOT_AUTHORIZED);
-        } catch (e) {
+        } catch {
           return cb(Errors.NOT_AUTHORIZED);
         }
 
@@ -3857,7 +3861,7 @@ export class WalletService implements IWalletService {
           const notifications = res
             .flat()
             .map((n: INotification) => ({ ...n, walletId: this.walletId }))
-            .sort((a, b) => a.id - b.id);
+            .sort((a, b) => a.id?.toString()?.localeCompare(b.id?.toString()));
 
           return cb(null, notifications);
         }
