@@ -65,6 +65,11 @@ const stop = async () => {
     await service.stop();
   }
 
+  if (Config.anyEVMChain()) {
+    const { BaseEVMStateProvider } = await import('../providers/chain-state/evm/api/csp');
+    BaseEVMStateProvider.teardownRpcs();
+  }
+
   if (!cluster.isPrimary) {
     process.removeAllListeners();
   }

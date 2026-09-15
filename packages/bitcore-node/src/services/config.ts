@@ -66,6 +66,11 @@ export class ConfigService {
     }
     return { chain: aliasChain, network: aliasNetwork };
   }
+
+  public anyEVMChain() {
+    const evmChains = ['ETH', 'MATIC', 'BASE'];
+    return evmChains.some(chain => this.chains().includes(chain));
+  }
 }
 
 export const Config = new ConfigService();
