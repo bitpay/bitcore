@@ -56,7 +56,7 @@ export class TssRouter {
         const session = await TssKeyGen.getSessionForCopayer({ id, copayerId });
 
         if (abort.signal.aborted || res.closed) {
-          throw new Error('TSS request connection closed by client');
+          return; // Connection closed by client, stop processing
         }
 
         // Keep the connection alive while waiting for the change stream to return a result.
@@ -142,7 +142,7 @@ export class TssRouter {
         const session = await TssSign.getSessionForCopayer({ id, copayerId });
         
         if (abort.signal.aborted || res.closed) {
-          throw new Error('TSS request connection closed by client');
+          return; // Connection closed by client, stop processing
         }
 
         // Keep the connection alive while waiting for the change stream to return a result.
