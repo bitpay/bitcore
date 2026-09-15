@@ -415,6 +415,7 @@ describe('Verifier', function() {
   describe('checkPrePublishRaw', function() {
     const ATTACKER_EVM = '0x1111111111111111111111111111111111111111';
     const ATTACKER_SOL = 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY';
+    const ATTACKER_XRP = 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe';
 
     const solTxp = (overrides = {}) => ({
       chain: 'sol',
@@ -435,6 +436,15 @@ describe('Verifier', function() {
       gasLimit: 21000,
       gasPrice: 20000000000,
       data: '0x',
+      ...overrides
+    });
+
+    const xrpTxp = (overrides = {}) => ({
+      chain: 'xrp',
+      outputs: [{ toAddress: 'rDzTZxa7NwD9vmNf5dvTbW4FQDNSRsfPv6', amount: 8000 }],
+      from: 'rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF',
+      fee: 12,
+      nonce: 1,
       ...overrides
     });
 
@@ -462,6 +472,22 @@ describe('Verifier', function() {
         prePublishRaw
       });
       Verifier.checkPrePublishRaw('eth', current).should.be.false;
+    });
+
+    it('accepts an XRP proposal whose nonce was assigned at publish', function() {
+      const prePublishRaw = Utils.buildTx(xrpTxp()).uncheckedSerialize();
+      const current = xrpTxp({ nonce: 9, prePublishRaw });
+      Verifier.checkPrePublishRaw('xrp', current).should.be.true;
+    });
+
+    it('rejects an XRP proposal whose destination was tampered', function() {
+      const prePublishRaw = Utils.buildTx(xrpTxp()).uncheckedSerialize();
+      const current = xrpTxp({
+        nonce: 9,
+        outputs: [{ toAddress: ATTACKER_XRP, amount: 8000 }],
+        prePublishRaw
+      });
+      Verifier.checkPrePublishRaw('xrp', current).should.be.false;
     });
 
     it('rejects prePublishRaw on a non-mutable (UTXO) chain', function() {

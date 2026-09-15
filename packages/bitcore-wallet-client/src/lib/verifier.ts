@@ -278,41 +278,59 @@ export class Verifier {
 
     log.debug(`[TXP ${txp.id}] Regenerating & verifying tx proposal hash -> Hash: ${hash}, Signature: ${txp.proposalSignature}`);
   
-    const verified = Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey);
-    if (!verified) {
+    // Establish signature trust affirmatively: a proposal is trusted only when the creator's signature
+    // matches the transaction we rebuilt, or (for publish-mutable chains) matches the pre-publish
+    // serialization that is provably bound to this exact proposal. Every other case leaves it untrusted and
+    // is rejected -- we never fall through to "trusted" for a situation we didn't explicitly establish.
+    let signatureTrusted = Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey);
+    if (!signatureTrusted) {
       // Local rebuild != creator's signature. Legit only when BWS mutated a field at publish (SVM recent
       // blockhash, or EVM/XRP deferred nonce): the creator signed the pre-publish serialization, stored as
-      // txp.prePublishRaw. Fall back to it only if the signature is valid over it AND it is bound to this
-      // proposal -- else a hostile server could pair a valid (prePublishRaw, proposalSignature) with a
-      // tampered destination. See checkPrePublishRaw.
+      // txp.prePublishRaw. Trust it only if the signature is valid over it AND it is bound to this proposal.
       if (!txp.prePublishRaw) {
         log.debug(`[TXP ${txp.id}] Invalid proposal signature, no prePublishRaw to fall back to`);
-        return false;
-      }
-      if (!Utils.verifyMessage(txp.prePublishRaw, txp.proposalSignature, creatorSigningPubKey)) {
+      } else if (!Utils.verifyMessage(txp.prePublishRaw, txp.proposalSignature, creatorSigningPubKey)) {
         log.debug(`[TXP ${txp.id}] Invalid proposal signature, even with prePublishRaw fallback`);
-        return false;
-      }
-      if (!this.checkPrePublishRaw(chain, txp)) {
+      } else if (!this.checkPrePublishRaw(chain, txp)) {
         log.warn(`[TXP ${txp.id}] prePublishRaw is not bound to this proposal; possible server tampering`);
-        return false;
+      } else {
+        signatureTrusted = true;
       }
     }
-
-    if (Constants.UTXO_CHAINS.includes(chain)) {
-      if (txp.changeAddress && !this.checkAddress(credentials, txp.changeAddress)) {
-        log.debug(`[TXP ${txp.id}] Invalid change address`);
-        return false;
-      } else if (!txp.changeAddress && !txp.sendMax) {
-        log.warn(`[TXP ${txp.id}] Missing change address for non sendMax transaction proposal`);
-        return false;
-      }
-      if (txp.escrowAddress && !this.checkAddress(credentials, txp.escrowAddress, txp.inputs)) {
-        log.debug(`[TXP ${txp.id}] Invalid escrow address`);
-        return false;
-      }
+    if (!signatureTrusted) {
+      return false;
     }
 
+    // Accept only when every required invariant is affirmatively proven: the signature is trusted (above)
+    // and, for UTXO chains, the change/escrow addresses are ours. The proposal is trusted because these held,
+    // not because no known-bad condition was hit.
+    return this.checkUtxoAddresses(credentials, chain, txp);
+  }
+
+  /**
+   * For UTXO chains, verifies the change and escrow addresses belong to this wallet. Returns true for
+   * non-UTXO chains (they carry no such addresses to prove). Split out of checkTxProposalSignature so that
+   * function terminates on an explicit proven-accept verdict rather than a fall-through.
+   *
+   * @param {Object} credentials
+   * @param {string} chain - lower-cased chain of the proposal
+   * @param {Object} txp - the transaction proposal
+   */
+  static checkUtxoAddresses(credentials, chain, txp) {
+    if (!Constants.UTXO_CHAINS.includes(chain)) {
+      return true;
+    }
+    if (txp.changeAddress && !this.checkAddress(credentials, txp.changeAddress)) {
+      log.debug(`[TXP ${txp.id}] Invalid change address`);
+      return false;
+    } else if (!txp.changeAddress && !txp.sendMax) {
+      log.warn(`[TXP ${txp.id}] Missing change address for non sendMax transaction proposal`);
+      return false;
+    }
+    if (txp.escrowAddress && !this.checkAddress(credentials, txp.escrowAddress, txp.inputs)) {
+      log.debug(`[TXP ${txp.id}] Invalid escrow address`);
+      return false;
+    }
     return true;
   }
 
@@ -351,7 +369,8 @@ export class Verifier {
       // any changed field (destination, amount, from, contract) serializes differently and fails the compare.
       const rebuilt = Utils.buildTx({ ...txp, ...mutableFields }).uncheckedSerialize();
       const rebuiltArr = Array.isArray(rebuilt) ? rebuilt : [rebuilt];
-      if (rebuiltArr.length !== prePublishRaw.length) {
+      // Require a non-empty, positive match: an empty set would make `.every()` vacuously true.
+      if (rebuiltArr.length === 0 || rebuiltArr.length !== prePublishRaw.length) {
         return false;
       }
       return rebuiltArr.every((raw, i) => raw === prePublishRaw[i]);
