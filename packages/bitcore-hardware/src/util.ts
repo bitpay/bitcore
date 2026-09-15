@@ -1,5 +1,6 @@
 import { BitcoreLib, BitcoreLibCash, BitcoreLibDoge, BitcoreLibLtc } from '@bitpay-labs/crypto-wallet-core';
-import { EveryUtxoType, TransactionType, UtxoType } from 'src/types/txTypes.js';
+import CWC from '@bitpay-labs/crypto-wallet-core';
+import { EveryUtxoType, TransactionType } from 'src/types/txTypes.js';
 import { UtxoChainType } from './types/chains.js';
 
 class UtilClass {
@@ -9,33 +10,6 @@ class UtilClass {
     DOGE: BitcoreLibDoge,
     LTC: BitcoreLibLtc
   } as const;
-  /**
-  * Standardize utxo for internal funcionality.
-  * Accepts either a bitcore-node or a lib (bitcore-lib, bitcore-lib-cash, etc.) utxo.
-  * Handles both lib style utxos: UnspentOutput properties and UnspentOutput.toObject properties.
-  *
-  * @param utxos either a bitcore-node or lib utxo
-  * @returns utxo in the standard, internaly used format
-  */
-  standardizeUtxo(utxo: EveryUtxoType, chain: UtxoChainType = 'BTC'): UtxoType {
-    const lib = this.libs[chain];
-    return {
-      satoshis: Number(utxo.satoshis ?? utxo.value ?? lib.Unit.fromBTC(utxo.amount ?? 0).toSatoshis()),
-      txId: utxo.txId ?? utxo.mintTxid ?? utxo.txid ?? '',
-      outputIndex: Number(utxo.outputIndex ?? utxo.mintIndex ?? utxo.vout ?? 0),
-      script: utxo.scriptPubKey ?? new lib.Script(utxo.script).toHex(),
-      address: utxo.address != undefined ? new lib.Address(utxo.address).toString() : undefined
-    };
-  }
-  
-  getRelatedUtxos(params: {
-    outputs: BitcoreLib.Transaction.Input[];
-    utxos: UtxoType[];
-  }): UtxoType[] {
-    const { outputs, utxos } = params;
-    const txids = outputs.map(output => output.toObject().prevTxId);
-    return utxos.filter(utxo => txids.includes(utxo.txId));
-  }
 
   /**
    * Convert some kind of transaction and utxo data into a bitcore-lib transaction
@@ -48,8 +22,8 @@ class UtilClass {
     const lib = this.libs[chain];
     const bitcoreTx = tx instanceof lib.Transaction ? tx : new lib.Transaction(tx);
     if (utxos) {
-      const btcUtxos = utxos.map(utxo => Util.standardizeUtxo(utxo, chain));
-      const applicableUtxos = Util.getRelatedUtxos({
+      const btcUtxos = utxos.map(utxo => CWC.Transactions.get({ chain: 'BTC' }).standardizeUtxo(utxo, chain));
+      const applicableUtxos = CWC.Transactions.get({ chain: 'BTC' }).getRelatedUtxos({
         outputs: bitcoreTx.inputs,
         utxos: btcUtxos
       });
