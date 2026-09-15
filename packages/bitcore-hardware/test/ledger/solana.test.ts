@@ -4,10 +4,10 @@ import { describe } from 'mocha';
 import Ledger from '../../src/ledger/wallet.js';
 import CWC from '@bitpay-labs/crypto-wallet-core';
 
-const { ethers } = CWC;
+const { SolKit } = CWC;
 
-describe('Ledger Ethereum', function () {
-  const ledger = new Ledger({ transport: 'speculos', apiPort: 5001 });
+describe('Ledger Solana', function () {
+  const ledger = new Ledger({ transport: 'speculos', apiPort: 5002 });
 
   before(async () => {
     await ledger.connect();
@@ -18,10 +18,10 @@ describe('Ledger Ethereum', function () {
   });
 
   it('should get address and publickey', async () => {
-    const publicKey = await ledger.getPublicKey({ chain: 'ETH' });
-    const address = await ledger.getAddress({ chain: 'ETH' });
-  
-    expect(ethers.computeAddress('0x' + publicKey)).to.equal(address);
-    expect(ethers.isAddress(address)).to.be.true;
+    const publicKey = await ledger.getPublicKey({ chain: 'SOL' });
+    const address = await ledger.getAddress({ chain: 'SOL' });
+
+    expect(publicKey).to.equal(address);
+    expect(SolKit.isAddress(address)).to.be.true;
   });
 });
