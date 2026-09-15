@@ -49,19 +49,19 @@ export class BTCTxProvider {
    */
   standardizeUtxo(utxo: EveryUtxoType): UtxoType {
     const outputIndex = utxo.outputIndex ?? utxo.mintIndex ?? utxo.vout;
-    const satoshis = utxo.satoshis ?? utxo.value ?? (utxo.amount ? this.lib.Unit.fromBTC(utxo.amount ?? 0).toSatoshis() : undefined);
+    const satoshis = utxo.satoshis ?? utxo.value ?? (utxo.amount != undefined ? this.lib.Unit.fromBTC(utxo.amount ?? 0).toSatoshis() : undefined);
     const txId = utxo.txId ?? utxo.mintTxid ?? utxo.txid;
-    const script = utxo.scriptPubKey ?? (utxo.script ? new this.lib.Script(utxo.script).toHex() : undefined);
-    $.checkArgument(outputIndex != undefined, 'Output index required');
-    $.checkArgument(satoshis != undefined, 'Satoshis required');
-    $.checkArgument(txId, 'txId required');
-    $.checkArgument(script, 'script required');
+    const script = utxo.script ?? utxo.scriptPubKey;
+    $.checkArgument(outputIndex != undefined, 'output index required (outputIndex|mintIndex|vout)');
+    $.checkArgument(satoshis != undefined, 'satoshis required (satoshis|value|amount)');
+    $.checkArgument(txId, 'txid required (txid|txId|mintTxid');
+    $.checkArgument(script, 'script required (script|scriptPubKey)');
     
     return {
       satoshis: Number(satoshis),
       txId,
       outputIndex: Number(outputIndex),
-      script,
+      script: new this.lib.Script(script).toHex(),
       address: utxo.address ? new this.lib.Address(utxo.address).toString() : undefined
     };
   }
@@ -174,7 +174,7 @@ export class BTCTxProvider {
     sigtype?: number;
     pubkeys?: any[];
     threshold?: number;
-    opts: any;
+    opts?: any;
   }): string {
     const { tx, keys, pubkeys, sigtype, threshold, opts } = params;
     const utxos = params.utxos || [];
@@ -277,7 +277,7 @@ type SignatureType = BitcoreLib.Transaction.Signature | BitcoreLib.crypto.Signat
 type TransactionType = BitcoreLib.Transaction | string | Buffer | object;
 
 /**
- * Standard utxo type use for internal processing.
+ * Standard utxo type used for internal processing.
  * Property names are from bitcore-lib's UnspentOutput.
  * Note, UnspentOutput addresses and scripts are Address and Script classes respectively,
  * here they are both strings.
