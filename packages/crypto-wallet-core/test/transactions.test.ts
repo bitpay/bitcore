@@ -95,7 +95,7 @@ describe('Transaction', function () {
       ];
 
       const recipients = [{ address: 'moVnNJpHHfssYJEnMTS5xXyGV8RhRQNRz5', amount: 100_000 }];
-      for (const chain of ['BTC']) {
+      for (const chain of ['BTC', 'BCH', 'DOGE', 'LTC']) {
         const unspentOutputUtxos = [
           new libs[chain].Transaction.UnspentOutput({
             txId: '643ec66d6c4cad4cbdb8ed2166b8078975e0af9bb7ff7e30d394f43b0d9f18ab',

@@ -4,7 +4,7 @@ import { BTCTxProvider, EveryUtxoType } from '../btc';
 export class BCHTxProvider extends BTCTxProvider {
   lib = BitcoreLibCash;
   create(params: {
-    recipients: Array<{ address: string; amount: number }>;
+    recipients: Array<{ address: string; amount: number | string }>;
     utxos?: EveryUtxoType[];
     change?: string;
     fee?: number | string;
