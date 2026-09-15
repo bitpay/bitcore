@@ -70,6 +70,7 @@ export async function sign(args: {
     let connErrs = 0;
     do {
       try {
+        isTransientError = false; // reset on loop
         await tssSign.start({
           id,
           messageHash,
@@ -78,7 +79,6 @@ export async function sign(args: {
         });
         storeSession(tssSign.exportSession());
       } catch (err) {
-        isTransientError = false; // reset
         if (err.message?.startsWith('TSS_ROUND_ALREADY_DONE')) {
           const sig = await tssSign.getSignatureFromServer();
           if (!sig) {
