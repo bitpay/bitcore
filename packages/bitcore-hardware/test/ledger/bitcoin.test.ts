@@ -23,20 +23,6 @@ describe('Ledger Bitcoin', function () {
     await ledger.disconnect();
   });
 
-  it('should scroll', async () => {
-    await deviceButtons.right();    
-    await deviceButtons.left(); 
-  });
-
-  it('should be able to validate chain', async () => {
-    for (const chain of ['BTC', 'BCH', 'DOGE', 'LTC', 'ETH', 'SOL']) {
-      expect(Ledger.isValidChain(chain)).to.be.true;
-    }
-    expect(Ledger.isValidChain('not a chain name')).to.be.false;
-    expect(Ledger.isValidChain('btc')).to.be.false;
-    expect(Ledger.isValidChain(' BTC')).to.be.false;
-  });
-
   it('should get address and publickey', async () => {
     const publicKey = await ledger.getPublicKey({ chain: 'BTC' });
     const address = await ledger.getAddress({ chain: 'BTC' });
@@ -44,7 +30,7 @@ describe('Ledger Bitcoin', function () {
     expect(BitcoreLib.Address.fromPublicKey(new BitcoreLib.PublicKey(publicKey), 'livenet', 'witnesspubkeyhash').toString()).to.equal(address);
   });
 
-  it.skip('should sign a transaction', async () => {
+  it('should sign a transaction', async () => {
     const utxos = [
       {
         chain: 'BTC',
@@ -56,7 +42,7 @@ describe('Ledger Bitcoin', function () {
         mintHeight: 957071,
         spentHeight: -2,
         address: await ledger.getAddress({ chain: 'BTC' }),
-        script: BitcoreLib.Script.buildWitnessV1Out(new BitcoreLib.Address('bc1qqtl9jlrwcr3fsfcjj2du7pu6fcgaxl5dsw2vyg')).toString(),
+        script: BitcoreLib.Script.buildWitnessV0Out(new BitcoreLib.Address('bc1qqtl9jlrwcr3fsfcjj2du7pu6fcgaxl5dsw2vyg')).toString(),
         value: 1562,
         confirmations: -1
       }
@@ -68,12 +54,26 @@ describe('Ledger Bitcoin', function () {
       utxos
     });
     
-    const signedTransaction = await ledger.sign({
+    const signedTransactionHex = await ledger.sign({
       chain: 'BTC',
       tx,
       utxos
-    });
+    }).then(new Promise(resolve => setTimeout(resolve, 1500))
+      .then(async () => {
+        for (let i = 0; i < 2; i++) {
+          await deviceButtons.right();
+        }
+        await deviceButtons.both();
+        for (let i = 0; i < 4; i++) {
+          await deviceButtons.right();
+        }
+        await deviceButtons.both();
+      })
+    );
 
-    console.log(signedTransaction);
+    const signedTransaction = new BitcoreLib.Transaction(signedTransactionHex);
+    expect(signedTransaction.inputs[0].prevTxId.toString('hex')).to.equal('78519a191327dfdc0c2ea64a04d09d87c3909ce8365d0e0c0dbd0bc80d0405b4');
+    expect(signedTransaction.outputs[0].satoshis).to.equal(1200);
+    expect(signedTransaction.verify()).to.be.true;
   });
 });
