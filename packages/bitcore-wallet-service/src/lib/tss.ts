@@ -1,4 +1,5 @@
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
+import { Constants } from './common/constants';
 import { Errors } from './errors/errordefinitions';
 import logger from './logger';
 import { ITssKeyMessageObject, TssKeyGenModel } from './model/tsskeygen';
@@ -7,9 +8,16 @@ import { WalletService, checkRequired } from './server';
 import { Storage } from './storage';
 
 class TssKeyGenClass {
+  /**
+   * Get messages for a given party in a TSS keygen session.
+   * Only returns messages if all other parties have sent their messages for the round.
+   */
   async getMessagesForParty(params: {
+    /** Session ID */
     id: string;
+    /** Round number */
     round: number;
+    /** Copayer ID of the requesting party */
     copayerId: string;
   }): Promise<{
     messages?: ITssKeyMessageObject[];
@@ -48,8 +56,26 @@ class TssKeyGenClass {
     return { messages, publicKey: session.sharedPublicKey, hasKeyBackup: !!session.keyShares?.[partyId] };
   }
 
-  async processMessage(params: { id: string; message: ITssKeyMessageObject; n?: string | number; password?: string; copayerId: string }) {
-    const { id, message, n, password, copayerId } = params;
+  /**
+   * Process a TSS keygen message. This will create a new session if the message is from party 0 and is for round 0.
+   */
+  async processMessage(params: {
+    /** Session ID */
+    id: string;
+    /** Submitted message to send to others */
+    message: ITssKeyMessageObject;
+    /** Number of participants (only required for the initial message from party 0) */
+    n?: string | number;
+    /** Password for the session */
+    password?: string;
+    /** Copayer ID of the submitting party */
+    copayerId: string;
+    /** TSS keygen version */
+    version: number;
+    /** Time limit for the session in minutes, after which the session expires. Only applies on session initialization */
+    timeLimit?: number;
+  }): Promise<void> {
+    const { id, message, n, password, copayerId, timeLimit } = params;
     if (!id || typeof id !== 'string') {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid id provided: ' + id);
     }
@@ -57,13 +83,34 @@ class TssKeyGenClass {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid copayerId provided: ' + copayerId);
     }
 
+    // version was not given by client until 1.1, so fallback to 1.0
+    const version = Number(params.version ?? 1.0);
+    if (!Number.isFinite(version)) {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid version provided: ' + params.version);
+    }
+    if (version < Constants.TSS_KEYGEN_SCHEME_VERSION_MIN) {
+      throw Errors.UPGRADE_NEEDED;
+    }
+    if (version > Constants.TSS_KEYGEN_SCHEME_VERSION_MAX) {
+      throw Errors.UPGRADE_NEEDED.withMessage('TSS version too new: ' + version);
+    }
+
     const storage = WalletService.getStorage();
     let session = await storage.fetchTssKeyGenSession({ id });
 
     if (session) {
+      if (session.isExpired()) {
+        throw Errors.TSS_SESSION_EXPIRED;
+      }
+
       if (!this._isValidBroadcastMessage({ message }) && !this._isValidP2pMessage({ message })) {
         throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid message provided');
       }
+
+      if (session.schemeVersion != version) {
+        throw Errors.TSS_MISMATCH_VERSION.withMessage(`TSS version (${version}) does not match session version (${session.schemeVersion})`);
+      }
+
 
       if (!session.participants[message.partyId]) {
         if (!this._checkPassword({ session, password })) {
@@ -83,13 +130,21 @@ class TssKeyGenClass {
       if (!this._isValidBroadcastMessage({ message })) {
         throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid broadcast message provided');
       }
-      await this._initSession({ id, message, n, password, storage, copayerId });
+      await this._initSession({ id, message, n, password, storage, copayerId, version, timeLimit });
     } else {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
   }
 
-  private _checkPassword(params: { session: TssKeyGenModel; password: string }) {
+  /**
+   * Check the password for a TSS keygen session. Returns true if the password is valid or if no password is set for the session.
+   */
+  private _checkPassword(params: {
+    /** TSS keygen session fetched from BWS storage */
+    session: TssKeyGenModel;
+    /** Password to check */
+    password: string;
+  }): boolean {
     const { session, password } = params;
     if (!session.joinPassword) {
       return true;
@@ -101,6 +156,7 @@ class TssKeyGenClass {
     return session.joinPassword === passwordHash;
   }
 
+  /** Validate if the message is a valid broadcast message */
   private _isValidBroadcastMessage(params: { message: ITssKeyMessageObject }) {
     const { message } = params;
     return typeof message?.broadcastMessages?.[0]?.from === 'number' &&
@@ -108,6 +164,7 @@ class TssKeyGenClass {
       typeof message?.broadcastMessages?.[0]?.payload?.signature === 'string';
   }
 
+  /** Validate if the message is a valid P2P message */
   private _isValidP2pMessage(params: { message: ITssKeyMessageObject }) {
     const { message } = params;
     return typeof message?.p2pMessages?.[0]?.from === 'number' &&
@@ -117,15 +174,26 @@ class TssKeyGenClass {
       typeof message?.p2pMessages?.[0]?.commitment === 'string';
   }
 
+  /** Initialize a new TSS keygen session */
   private async _initSession(params: {
+    /** Session ID */
     id: string;
+    /** Broadcast message from party 0 */
     message: ITssKeyMessageObject;
+    /** Number of participants */
     n: number | string;
+    /** Password needed to join the session */
     password?: string;
+    /** TSS keygen version */
+    version: number;
+    /** BWS storage instance */
     storage: Storage;
+    /** Copayer ID of the submitting party (party 0) */
     copayerId: string;
+    /** Time limit for the session in minutes, after which the session expires */
+    timeLimit?: number;
   }) {
-    const { id, message, password, storage, copayerId } = params;
+    const { id, message, password, storage, copayerId, version, timeLimit } = params;
     const n = parseInt(params.n as string);
     if (!n || n < 1) {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid n provided: ' + n);
@@ -141,7 +209,9 @@ class TssKeyGenClass {
       message,
       n,
       copayerId,
-      passwordHash
+      passwordHash,
+      version: version || 1.0, // Initial version of TSS keygen was 1.0, but BWC didn't pass it in
+      timeLimit
     });
     const result = await storage.storeTssKeyGenSession({ doc });
     if (!result.result.ok) {
@@ -150,7 +220,20 @@ class TssKeyGenClass {
     }
   }
 
-  private async _pushMessage(params: { id: string; session: TssKeyGenModel; message: ITssKeyMessageObject; storage: Storage }) {
+  /**
+   * Push a TSS keygen message to the session.
+   * This will fail if the round is already complete or if the message is from a party that has already sent a message for the round.
+   */
+  private async _pushMessage(params: {
+    /** Session ID */
+    id: string;
+    /** TSS keygen session fetched from BWS storage */
+    session: TssKeyGenModel;
+    /** Message to push to the session */
+    message: ITssKeyMessageObject;
+    /** BWS storage instance */
+    storage: Storage;
+  }) {
     const { id, session, message, storage } = params;
     const { round } = message;
 
@@ -181,14 +264,15 @@ class TssKeyGenClass {
     }
   }
 
+  /** Save the generated public key to the TSS keygen session */
   async storeKey(params: {
     id: string;
     message: {
       publicKey: ITssKeyMessageObject['publicKey'];
-      /** unused */
+      /** Unused - removed support for saving keychain */
       encryptedKeyChain: string;
     };
-    /** unused - only needed for storing the encryptedKeyChain */
+    /** Unused - only needed for storing the encryptedKeyChain */
     copayerId: string;
   }) {
     const { id, message } = params;
@@ -229,9 +313,13 @@ class TssKeyGenClass {
     // }
   }
 
+  /** Store the BWS join secret for the TSS keygen session */
   async storeBwsJoinSecret(params: {
+    /** Session ID */
     id: string;
+    /** BWS join secret */
     secret: string;
+    /** Copayer ID of the submitting party (must be the session creator) */
     copayerId: string;
   }) {
     const { id, secret, copayerId } = params;
@@ -259,7 +347,13 @@ class TssKeyGenClass {
     }
   }
 
-  async getBwsJoinSecret(params: { id: string; copayerId: string }) {
+  /** Get the BWS join secret for the TSS keygen session */
+  async getBwsJoinSecret(params: {
+    /** Session ID */
+    id: string;
+    /** Copayer ID of the requesting party */
+    copayerId: string;
+  }): Promise<string> {
     const { id, copayerId } = params;
     const storage = WalletService.getStorage();
     const session = await storage.fetchTssKeyGenSession({ id });
@@ -279,7 +373,18 @@ class TssKeyGenClass {
 export const TssKeyGen = new TssKeyGenClass();
 
 class TssSignClass {
-  async getMessagesForParty(params: { id: string; round: number; copayerId: string }): Promise<{ messages?: ITssSigMessageObject[]; signature?: ITssSigMessageObject['signature']; participants?: string[] }> {
+  /**
+   * Get messages for a given party in a TSS signature session.
+   * Only returns messages if all other parties have sent their messages for the round.
+   */
+  async getMessagesForParty(params: {
+    /** Session ID */
+    id: string;
+    /** Round number */
+    round: number;
+    /** Copayer ID of the requesting party */
+    copayerId: string;
+  }): Promise<{ messages?: ITssSigMessageObject[]; signature?: ITssSigMessageObject['signature']; participants?: string[] }> {
     const { id, round, copayerId } = params;
 
     const storage = WalletService.getStorage();
@@ -312,8 +417,24 @@ class TssSignClass {
     return { participants };
   }
 
-  async processMessage(params: { id: string; message: ITssSigMessageObject; m?: string | number; copayerId: string }) {
-    const { id, message, m, copayerId } = params;
+  /**
+   * Process a TSS signature message. This will create a new session if the message is from party 0 and is for round 0.
+   */
+  async processMessage(params: {
+    /** Session ID */
+    id: string;
+    /** Submitted message to send to others */
+    message: ITssSigMessageObject;
+    /** Number of signers (only required for the initial message from party 0) */
+    m?: string | number;
+    /** Copayer ID of the sender */
+    copayerId: string;
+    /** TSS sig generation version */
+    version: number;
+    /** Time limit for the session in minutes, after which the session expires. Only applies on session initialization */
+    timeLimit?: number;
+  }) {
+    const { id, message, m, copayerId, timeLimit } = params;
     if (!id || typeof id !== 'string') {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid id provided: ' + id);
     }
@@ -321,12 +442,31 @@ class TssSignClass {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid copayerId provided: ' + copayerId);
     }
 
+    // version was not given by client until 1.1, so fallback to 1.0
+    const version = Number(params.version ?? 1.0);
+    if (!Number.isFinite(version)) {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid version provided: ' + params.version);
+    }
+    if (version < Constants.TSS_SIGGEN_SCHEME_VERSION_MIN) {
+      throw Errors.UPGRADE_NEEDED;
+    }
+    if (version > Constants.TSS_SIGGEN_SCHEME_VERSION_MAX) {
+      throw Errors.UPGRADE_NEEDED.withMessage('TSS version too new: ' + version);
+    }
+
     const storage = WalletService.getStorage();
     let session = await storage.fetchTssSigSession({ id });
 
     if (session) {
+      if (session.isExpired()) {
+        throw Errors.TSS_SESSION_EXPIRED;
+      }
       if (!this._isValidBroadcastMessage({ message }) && !this._isValidP2pMessage({ message })) {
         throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid message provided');
+      }
+
+      if (session.schemeVersion != version) {
+        throw Errors.TSS_MISMATCH_VERSION.withMessage(`TSS version (${version}) does not match session version (${session.schemeVersion})`);
       }
   
       const isParticipant = session.participants.some(p => p.copayerId === copayerId && p.partyId === message.partyId);
@@ -357,20 +497,22 @@ class TssSignClass {
       if (!this._isValidBroadcastMessage({ message })) {
         throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid broadcast message provided');
       }  
-      await this._initSession({ id, message, m, storage, copayerId });
+      await this._initSession({ id, message, m, storage, copayerId, version, timeLimit });
     } else {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
   }
 
-  private _isValidBroadcastMessage(params: { message: ITssSigMessageObject }) {
+  /** Checks if a broadcast message is in a valid format */
+  private _isValidBroadcastMessage(params: { message: ITssSigMessageObject }): boolean {
     const { message } = params;
     return typeof message?.broadcastMessages?.[0]?.from === 'number' &&
       typeof message?.broadcastMessages?.[0]?.payload?.message === 'string' &&
       typeof message?.broadcastMessages?.[0]?.payload?.signature === 'string';
   }
 
-  private _isValidP2pMessage(params: { message: ITssSigMessageObject }) {
+  /** Checks if a P2P message is in a valid format */
+  private _isValidP2pMessage(params: { message: ITssSigMessageObject }): boolean {
     const { message } = params;
     return typeof message?.p2pMessages?.[0]?.from === 'number' &&
       typeof message?.p2pMessages?.[0]?.to === 'number' &&
@@ -378,8 +520,26 @@ class TssSignClass {
       typeof message?.p2pMessages?.[0]?.payload?.signature === 'string';
   }
 
-  private async _initSession(params: { id: string; message: ITssSigMessageObject; m: number | string; storage: Storage; copayerId: string }) {
-    const { id, message, storage, copayerId } = params;
+  /**
+   * Initialize a new TSS signature session. This is only called when the first message from party 0 for round 0 is received.
+   */
+  private async _initSession(params: {
+    /** Session ID */
+    id: string;
+    /** Initial broadcast message by party 0 */
+    message: ITssSigMessageObject;
+    /** Number of signers */
+    m: number | string;
+    /** BWS storage instance */
+    storage: Storage;
+    /** Party 0's copayer ID */
+    copayerId: string;
+    /** TSS sig generation version given by client to ensure compatibility with others */
+    version: number;
+    /** Time limit for the session in minutes, after which the session expires. Only applies on session initialization */
+    timeLimit?: number;
+  }): Promise<void> {
+    const { id, message, storage, copayerId, version, timeLimit } = params;
     const m = parseInt(params.m as string);
     if (!m || m < 1) {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid m provided: ' + m);
@@ -388,7 +548,9 @@ class TssSignClass {
       id,
       message,
       m,
-      copayerId
+      copayerId,
+      version,
+      timeLimit
     });
     const result = await storage.storeTssSigSession({ doc });
     if (!result.result.ok) {
@@ -397,7 +559,19 @@ class TssSignClass {
     }
   }
 
-  private async _pushMessage(params: { id: string; session: TssSigGenModel; message: ITssSigMessageObject; storage: Storage }) {
+  /**
+   * Push a TSS signature message to the session.
+   */
+  private async _pushMessage(params: {
+    /** Session ID */
+    id: string;
+    /** TSS sig generation session fetched from BWS storage */
+    session: TssSigGenModel;
+    /** TSS signature message to be pushed */
+    message: ITssSigMessageObject;
+    /** BWS storage instance */
+    storage: Storage;
+  }): Promise<boolean> {
     const { id, session, message, storage } = params;
     const { round } = message;
 
@@ -428,7 +602,15 @@ class TssSignClass {
     }
   }
 
-  async storeSignature(params: { id: string; signature: ITssSigMessageObject['signature'] }) {
+  /**
+   * Stores the signature to the session
+  */
+  async storeSignature(params: {
+    /** Session ID */
+    id: string;
+    /** Signature to store */
+    signature: ITssSigMessageObject['signature'];
+  }): Promise<void> {
     const { id, signature } = params;
     if (!signature) {
       throw Errors.TSS_NO_FINAL_SIGNATURE;
@@ -443,15 +625,35 @@ class TssSignClass {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
 
-    const result = await storage.storeTssSignature({ id, signature: {
-      r: signature.r,
-      s: signature.s,
-      v: signature.v,
-      pubKey: signature.pubKey,
-    } });
-    if (!result.result.ok) {
-      logger.error('Failed to store TSS signature %o %o', id, result);
-      throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS signature');
+    const verifySig = (sig1, sig2) => {
+      return sig1.r === sig2.r &&
+        sig1.s === sig2.s &&
+        sig1.v === sig2.v &&
+        sig1.pubKey === sig2.pubKey;
+    };
+
+    if (!session.signature) {
+      const result = await storage.storeTssSignature({ id, signature: {
+        r: signature.r,
+        s: signature.s,
+        v: signature.v,
+        pubKey: signature.pubKey,
+      } });
+      if (!result.result.ok) {
+        logger.error('Failed to store TSS signature %o %o', id, result);
+        throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS signature');
+      }
+      if (result.modifiedCount === 0) {
+        const updatedSesh = await storage.fetchTssSigSession({ id });
+        if (!updatedSesh.signature) {
+          throw Errors.TSS_FINAL_SIGNATURE_MISMATCH.withMessage('Unable to fetch stored TSS signature');
+        }
+        if (updatedSesh?.signature && !verifySig(updatedSesh.signature, signature)) {
+          throw Errors.TSS_FINAL_SIGNATURE_MISMATCH;
+        }
+      }
+    } else if (!verifySig(session.signature, signature)) {
+      throw Errors.TSS_FINAL_SIGNATURE_MISMATCH;
     }
   }
 };

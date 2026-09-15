@@ -52,7 +52,7 @@
     "husky": "^2.4.0",
     "lint-staged": "^9.5.0",
     "mocha": "^11.7.5",
-    "nyc": "^18.0.0",
+    "monocart-coverage-reports": "^2.13.0",
     "ts-node": "^8.0.3",
     "typedoc": "^0.15.0",
     "typescript-eslint": "^8.46.0"

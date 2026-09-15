@@ -36,8 +36,13 @@ type CoinGeckoRequest = Pick<Request, 'params' | 'query'>;
 
 const SUPPORTED_FIAT_CODES = new Set<string>(Defaults.FIAT_CURRENCIES.map(f => f.code));
 
-const ALLOWED_DAYS = new Set([1, 7, 30, 90, 365, 1825]);
-const DEFAULT_ALL_TIME_DAYS = 100000;
+const ALLOWED_NUMERIC_DAYS = new Set([1, 7, 30, 90, 365, 1825]);
+
+// CoinGecko's documented all-time value for `market_chart` is the literal string `max`
+const ALL_TIME_DAYS = 'max';
+
+type FiatRateNumericDays = 1 | 7 | 30 | 90 | 365 | 1825;
+type FiatRateDays = FiatRateNumericDays | typeof ALL_TIME_DAYS;
 
 const MAX_QUERY_PARAM_LENGTH = 64;
 const CHAIN_PARAM_PATTERN = /^[a-z0-9-_]+$/i;
@@ -120,6 +125,16 @@ function validateQueryParam(query: Record<string, unknown> | undefined, key: str
   } catch {
     throw badRequest(`Unsupported ${key}`);
   }
+}
+
+function isAllowedNumericDays(value: number): value is FiatRateNumericDays {
+  return ALLOWED_NUMERIC_DAYS.has(value);
+}
+
+function parseFiatRateNumericDays(raw: string): FiatRateNumericDays {
+  const parsed = +raw;
+  if (!isAllowedNumericDays(parsed)) throw badRequest('Invalid days');
+  return parsed;
 }
 
 function parseCoinChainTokenAddress(
@@ -320,12 +335,12 @@ export class CoinGeckoService {
     throw badRequest('Unsupported coin. For token symbols, pass `chain` and `tokenAddress`.');
   }
 
-  private async fetchFiatRatesForId(id: string, vsCurrency: string, days: number): Promise<FiatRatePoint[]> {
+  private async fetchFiatRatesForId(id: string, vsCurrency: string, days: FiatRateDays): Promise<FiatRatePoint[]> {
     const { API_KEY } = this.coinGeckoGetCredentials();
     const headers = this.coinGeckoGetHeaders(API_KEY);
 
-    const params: any = { vs_currency: vsCurrency, days };
-    if (days >= 90) params.interval = 'daily';
+    const params: Record<string, string | number | boolean | undefined> = { vs_currency: vsCurrency, days };
+    if (days === ALL_TIME_DAYS || days >= 90) params.interval = 'daily';
 
     const url = this.cgUrl(`/v3/coins/${encodeURIComponent(id)}/market_chart`, params);
     const body = await this.coinGeckoGetJson(url, headers);
@@ -341,7 +356,7 @@ export class CoinGeckoService {
   private async getFiatRatesForId(
     id: string,
     vsCurrency: string,
-    days: number,
+    days: FiatRateDays,
     useDbCache: boolean
   ): Promise<FiatRatePoint[]> {
     if (!useDbCache) return this.fetchFiatRatesForId(id, vsCurrency, days);
@@ -465,13 +480,12 @@ export class CoinGeckoService {
 
     const { coin: coinParam, chain: chainParam, tokenAddress: tokenAddressParam } = parseCoinChainTokenAddress(req.query);
 
-    let days = DEFAULT_ALL_TIME_DAYS;
+    // An omitted `days` means ALL-time history.
+    let days: FiatRateDays = ALL_TIME_DAYS;
     try {
       const daysParam = getQueryString(req.query, 'days');
       if (daysParam !== undefined) {
-        const parsed = +daysParam;
-        if (!ALLOWED_DAYS.has(parsed)) throw badRequest('Invalid days');
-        days = parsed;
+        days = parseFiatRateNumericDays(daysParam);
       }
     } catch {
       throw badRequest('Invalid days');
