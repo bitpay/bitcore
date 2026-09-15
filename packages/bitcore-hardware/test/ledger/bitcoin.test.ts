@@ -43,4 +43,37 @@ describe('Ledger Bitcoin', function () {
 
     expect(BitcoreLib.Address.fromPublicKey(new BitcoreLib.PublicKey(publicKey), 'livenet', 'witnesspubkeyhash').toString()).to.equal(address);
   });
+
+  it.skip('should sign a transaction', async () => {
+    const utxos = [
+      {
+        chain: 'BTC',
+        network: 'mainnet',
+        coinbase: false,
+        mintIndex: 0,
+        spentTxid: '',
+        mintTxid: '78519a191327dfdc0c2ea64a04d09d87c3909ce8365d0e0c0dbd0bc80d0405b4',
+        mintHeight: 957071,
+        spentHeight: -2,
+        address: await ledger.getAddress({ chain: 'BTC' }),
+        script: BitcoreLib.Script.buildWitnessV1Out(new BitcoreLib.Address('bc1qqtl9jlrwcr3fsfcjj2du7pu6fcgaxl5dsw2vyg')).toString(),
+        value: 1562,
+        confirmations: -1
+      }
+    ];
+    
+    const tx: string = CWC.Transactions.create({
+      chain: 'BTC',
+      recipients: [{ address: 'bc1qm5anagcsad5kx2kuq3lv0j5zaxkxr7teuk9wfa', amount: 1200 }],
+      utxos
+    });
+    
+    const signedTransaction = await ledger.sign({
+      chain: 'BTC',
+      tx,
+      utxos
+    });
+
+    console.log(signedTransaction);
+  });
 });
