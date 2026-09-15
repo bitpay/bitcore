@@ -9,23 +9,24 @@ const {
 }: typeof DMK = require('@ledgerhq/device-management-kit');
 const { speculosTransportFactory } = require('@ledgerhq/device-transport-kit-speculos');
 
-const ENV = process.env;
-
 let dmkBuilder = new DeviceManagementKitBuilder();
 
-switch ((ENV.BITCORE_HARDWARE_LEDGER_TRANSPORT ?? '').toLowerCase()) {
-  case 'speculos':
-  case 'test':
-    dmkBuilder = dmkBuilder.addTransport(speculosTransportFactory());
-    break;
-  default:
-  case 'node':
-    dmkBuilder = dmkBuilder.addTransport(nodeHidTransportFactory);
-    break;
-}
-
-if ((ENV.BITCORE_HARDWARE_LEDGER_LOGGER ?? '').toLowerCase() === 'true') {
-  dmkBuilder = dmkBuilder.addLogger(new ConsoleLogger());
-}
-
-export const dmk = dmkBuilder.build();
+export type DMKConfig = Partial<{ transport: 'node' | 'speculos'; logger: boolean }>;
+export const getDmk = (params?: DMKConfig) => {
+  const { transport = 'node', logger = process.argv.includes('--debug') } = params || {};
+  switch (transport) {
+    case 'speculos':
+      dmkBuilder = dmkBuilder.addTransport(speculosTransportFactory());
+      break;
+    default:
+    case 'node':
+      dmkBuilder = dmkBuilder.addTransport(nodeHidTransportFactory);
+      break;
+  }
+  
+  if (logger) {
+    dmkBuilder = dmkBuilder.addLogger(new ConsoleLogger());
+  }
+  
+  return dmkBuilder.build();
+};

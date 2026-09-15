@@ -3,7 +3,7 @@ import { Subscription } from 'rxjs';
 import { Base, BaseModule } from '../types/base.js';
 import { ChainType, UtxoChainType, chains } from '../types/chains.js';
 import { EveryUtxoType, TransactionType } from '../types/txTypes.js';
-import { dmk } from './dmk.js';
+import { DMKConfig, getDmk } from './dmk.js';
 import {
   BitcoinCashModule,
   BitcoinModule,
@@ -39,6 +39,11 @@ export default class Ledger implements Base {
   sessionId: DMK.DeviceSessionId | null = null;
   discoverySubscryption: Subscription | null = null;
   modules = {} as Record<ChainType, BaseModule>;
+  dmk: DMK.DeviceManagementKit;
+
+  constructor(params?: DMKConfig) {
+    this.dmk = getDmk(params);
+  }
 
   async connect() {
     return new Promise(async (resolve) => {
@@ -47,21 +52,21 @@ export default class Ledger implements Base {
         this.discoverySubscryption.unsubscribe();
       }
 
-      this.discoverySubscryption = dmk.startDiscovering({}).subscribe({
+      this.discoverySubscryption = this.dmk.startDiscovering({}).subscribe({
         next: async (device) => {
           console.log(`Found ${device.id}, model: ${device.deviceModel.model}`);
           try {
-            this.sessionId = await dmk.connect({ device });
+            this.sessionId = await this.dmk.connect({ device });
             this.discoverySubscryption?.unsubscribe();
 
-            this.device = dmk.getConnectedDevice({
+            this.device = this.dmk.getConnectedDevice({
               sessionId: this.sessionId
             });
 
-            const signerBtc = new SignerBtcBuilder({ dmk, sessionId: this.sessionId }).build();
-            const signerEth = new SignerEthBuilder({ dmk, sessionId: this.sessionId }).build();
+            const signerBtc = new SignerBtcBuilder({ dmk: this.dmk, sessionId: this.sessionId }).build();
+            const signerEth = new SignerEthBuilder({ dmk: this.dmk, sessionId: this.sessionId }).build();
             const signerSol = new SignerSolanaBuilder({
-              dmk,
+              dmk: this.dmk,
               sessionId: this.sessionId,
               solanaRPCURL: 'https://api.mainnet-beta.solana.com/',
             }).build();
@@ -93,7 +98,7 @@ export default class Ledger implements Base {
 
     if (this.sessionId) {
       try {
-        await dmk.disconnect({ sessionId: this.sessionId });
+        await this.dmk.disconnect({ sessionId: this.sessionId });
         this.sessionId = null;
         console.log(`Disconnected ${this.device?.name}`);
       } catch (error) {
@@ -107,8 +112,8 @@ export default class Ledger implements Base {
     if (!sessionId) {
       throw new Error('Not connected to a Ledger device');
     }
-    await dmk.sendCommand({ sessionId, command: new CloseAppCommand() });
-    const result = await dmk.sendCommand({ sessionId, command: new GetOsVersionCommand() });
+    await this.dmk.sendCommand({ sessionId, command: new CloseAppCommand() });
+    const result = await this.dmk.sendCommand({ sessionId, command: new GetOsVersionCommand() });
     if (!isSuccessCommandResult(result)) {
       throw result.error;
     }

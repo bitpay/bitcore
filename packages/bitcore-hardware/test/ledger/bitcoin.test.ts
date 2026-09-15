@@ -7,12 +7,13 @@ import CWC from '@bitpay-labs/crypto-wallet-core';
 
 const require = createRequire(import.meta.url);
 const { deviceControllerClientFactory } = require('@ledgerhq/speculos-device-controller');
+
 const { BitcoreLib } = CWC;
 
 describe('Ledger', function () {
   const deviceClient = deviceControllerClientFactory('http://localhost:5000');
   const deviceButtons = deviceClient.buttonFactory();
-  const ledger = new Ledger();
+  const ledger = new Ledger({ transport: 'speculos' });
 
   before(async () => {
     await ledger.connect();

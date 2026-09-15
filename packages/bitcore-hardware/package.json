@@ -12,7 +12,7 @@
     "compile": "npm run clean && npm run build",
     "build": "tsc",
     "clean": "rm -rf build",
-    "test": "docker compose up -d && npm run compile && BITCORE_HARDWARE_LEDGER_TRANSPORT=speculos mcr mocha build/test",
+    "test": "docker compose up -d && npm run compile && mcr mocha build/test",
     "burner:public-key": "npm run compile && node build/examples/burner/publicKey.js",
     "burner:address": "npm run compile && node build/examples/burner/address.js",
     "burner:sign": "npm run compile && node build/examples/burner/sign.js",
