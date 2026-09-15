@@ -705,7 +705,7 @@ Interpreter.prototype.checkSequence = function(nSequence) {
   // constrained. Testing that the transaction's sequence number do not have
   // this bit set prevents using this property to get around a
   // CHECKSEQUENCEVERIFY check.
-  if (txToSequence & Interpreter.SEQUENCE_LOCKTIME_DISABLE_FLAG) {
+  if (txToSequence & this.SEQUENCE_LOCKTIME_DISABLE_FLAG) {
     return false;
   }
 
@@ -746,7 +746,7 @@ Interpreter.prototype.checkSequence = function(nSequence) {
  * @param {*} dummy
  * @param {*} size
  */
-function DecodeBitfield(dummy, size) {
+Interpreter.prototype._decodeBitfield = function(dummy, size) {
   if (size > 32) {
     this.errstr = 'INVALID_BITFIELD_SIZE';
     return { result: false };
@@ -775,7 +775,7 @@ function DecodeBitfield(dummy, size) {
   }
 
   return { result: true, bitfield: bitfield };
-}
+};
 
 /**
  * countBits
@@ -800,10 +800,13 @@ function countBits(v) {
  * Based on the inner loop of bitcoind's EvalScript function
  * bitcoind commit: b5d1b1092998bc95313856d535c632ea5a8f9104
  */
-Interpreter.prototype.step = function() {
-  const stacktop = (i) => {
-    return this.stack[this.stack.length+i];
-  };
+Interpreter.prototype.step = function () {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
+  const self = this;
+
+  function stacktop(i) {
+    return self.stack[self.stack.length+i];
+  }
 
   function isOpcodeDisabled(opcode, f64BitIntegers) {
     switch (opcode) {
@@ -1118,7 +1121,6 @@ Interpreter.prototype.step = function() {
         this.errstr = 'SCRIPT_ERR_OP_RETURN';
         return false;
       }
-
 
       //
       // Stack ops
@@ -1883,7 +1885,7 @@ Interpreter.prototype.step = function() {
 
             const dummy = stacktop(-idxDummy);
 
-            const bitfieldObj = DecodeBitfield(dummy, nKeysCount);
+            const bitfieldObj = this._decodeBitfield(dummy, nKeysCount);
 
             if (!bitfieldObj['result']) {
               fSuccess = false;
@@ -2244,7 +2246,7 @@ Interpreter.prototype.step = function() {
           this.errstr = 'SCRIPT_ERR_BAD_OPCODE';
           return false;
         }
-        // falls through
+      // eslint-disable-next-line no-fallthrough
       case Opcode.OP_UTXOVALUE:
       case Opcode.OP_UTXOBYTECODE:
       case Opcode.OP_OUTPOINTTXHASH:
@@ -2424,4 +2426,3 @@ Interpreter.prototype.step = function() {
 
   return true;
 };
-
