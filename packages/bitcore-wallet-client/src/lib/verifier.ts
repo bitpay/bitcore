@@ -1,7 +1,8 @@
 import {
   BitcoreLib as Bitcore,
   BitcoreLibCash,
-  Utils as CWCUtils
+  Utils as CWCUtils,
+  Transactions
 } from '@bitpay-labs/crypto-wallet-core';
 import { singleton } from 'preconditions';
 import { Constants, Utils } from './common';
@@ -277,32 +278,106 @@ export class Verifier {
 
     log.debug(`[TXP ${txp.id}] Regenerating & verifying tx proposal hash -> Hash: ${hash}, Signature: ${txp.proposalSignature}`);
   
-    const verified = Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey);
-    if (!verified && !txp.prePublishRaw) {
-      log.debug(`[TXP ${txp.id}] Invalid proposal signature, no prePublishRaw to fall back to`);
-      return false;
+    // Establish signature trust affirmatively: a proposal is trusted only when the creator's signature
+    // matches the transaction we rebuilt, or (for publish-mutable chains) matches the pre-publish
+    // serialization that is provably bound to this exact proposal. Every other case leaves it untrusted and
+    // is rejected -- we never fall through to "trusted" for a situation we didn't explicitly establish.
+    let signatureTrusted = Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey);
+    if (!signatureTrusted) {
+      // Local rebuild != creator's signature. Legit only when BWS mutated a field at publish (SVM recent
+      // blockhash, or EVM/XRP deferred nonce): the creator signed the pre-publish serialization, stored as
+      // txp.prePublishRaw. Trust it only if the signature is valid over it AND it is bound to this proposal.
+      if (!txp.prePublishRaw) {
+        log.debug(`[TXP ${txp.id}] Invalid proposal signature, no prePublishRaw to fall back to`);
+      } else if (!Utils.verifyMessage(txp.prePublishRaw, txp.proposalSignature, creatorSigningPubKey)) {
+        log.debug(`[TXP ${txp.id}] Invalid proposal signature, even with prePublishRaw fallback`);
+      } else if (!this.checkPrePublishRaw(chain, txp)) {
+        log.warn(`[TXP ${txp.id}] prePublishRaw is not bound to this proposal; possible server tampering`);
+      } else {
+        signatureTrusted = true;
+      }
     }
-    
-    if (!verified && txp.prePublishRaw && !Utils.verifyMessage(txp.prePublishRaw, txp.proposalSignature, creatorSigningPubKey)) {
-      log.debug(`[TXP ${txp.id}] Invalid proposal signature, even with prePublishRaw fallback`);
+    if (!signatureTrusted) {
       return false;
     }
 
-    if (Constants.UTXO_CHAINS.includes(chain)) {
-      if (txp.changeAddress && !this.checkAddress(credentials, txp.changeAddress)) {
-        log.debug(`[TXP ${txp.id}] Invalid change address`);
-        return false;
-      } else if (!txp.changeAddress && !txp.sendMax) {
-        log.warn(`[TXP ${txp.id}] Missing change address for non sendMax transaction proposal`);
-        return false;
-      }
-      if (txp.escrowAddress && !this.checkAddress(credentials, txp.escrowAddress, txp.inputs)) {
-        log.debug(`[TXP ${txp.id}] Invalid escrow address`);
-        return false;
-      }
-    }
+    // Accept only when every required invariant is affirmatively proven: the signature is trusted (above)
+    // and, for UTXO chains, the change/escrow addresses are ours. The proposal is trusted because these held,
+    // not because no known-bad condition was hit.
+    return this.checkUtxoAddresses(credentials, chain, txp);
+  }
 
+  /**
+   * For UTXO chains, verifies the change and escrow addresses belong to this wallet. Returns true for
+   * non-UTXO chains (they carry no such addresses to prove). Split out of checkTxProposalSignature so that
+   * function terminates on an explicit proven-accept verdict rather than a fall-through.
+   *
+   * @param {Object} credentials
+   * @param {string} chain - lower-cased chain of the proposal
+   * @param {Object} txp - the transaction proposal
+   */
+  static checkUtxoAddresses(credentials, chain, txp) {
+    if (!Constants.UTXO_CHAINS.includes(chain)) {
+      return true;
+    }
+    if (txp.changeAddress && !this.checkAddress(credentials, txp.changeAddress)) {
+      log.debug(`[TXP ${txp.id}] Invalid change address`);
+      return false;
+    } else if (!txp.changeAddress && !txp.sendMax) {
+      log.warn(`[TXP ${txp.id}] Missing change address for non sendMax transaction proposal`);
+      return false;
+    }
+    if (txp.escrowAddress && !this.checkAddress(credentials, txp.escrowAddress, txp.inputs)) {
+      log.debug(`[TXP ${txp.id}] Invalid escrow address`);
+      return false;
+    }
     return true;
+  }
+
+  /**
+   * True only if txp.prePublishRaw is the same transaction as the current proposal, differing solely in a
+   * field BWS mutates at publish (SVM blockhash / EVM-XRP nonce). Binds the creator's fallback signature to
+   * this proposal: without it a compromised server could pair a valid (prePublishRaw, proposalSignature)
+   * with a tampered destination/amount. Rejects non-mutable chains and fails closed on any error.
+   *
+   * @param {string} chain - lower-cased chain of the proposal
+   * @param {Object} txp - the transaction proposal (must carry prePublishRaw)
+   */
+  static checkPrePublishRaw(chain, txp) {
+    // Only chains with a publish-mutable serialized field legitimately carry prePublishRaw: the recent
+    // blockhash (SVM) or account nonce (EVM/XRP). Anywhere else (e.g. UTXO) its presence is illegitimate.
+    const canHaveMutableLifetime = [
+      ...Constants.SVM_CHAINS,
+      ...Constants.EVM_CHAINS,
+      ...Constants.RIPPLE_CHAINS
+    ].includes(chain);
+    if (!canHaveMutableLifetime) {
+      log.warn(`[TXP ${txp.id}] prePublishRaw present on chain ${chain} that cannot mutate at publish; refusing fallback`);
+      return false;
+    }
+    try {
+      const prePublishRaw = Array.isArray(txp.prePublishRaw) ? txp.prePublishRaw : [txp.prePublishRaw];
+      // Recover the mutable field (blockhash / nonce) from the pre-publish serialization the creator signed;
+      // the stored proposal carries the refreshed value, so it isn't readable off txp directly.
+      const provider: any = Transactions.get({ chain });
+      const mutableFields = provider.getMutableFields(prePublishRaw[0]);
+      if (!mutableFields || Object.values(mutableFields).every(v => v == null)) {
+        log.warn(`[TXP ${txp.id}] Could not recover pre-publish mutable fields from prePublishRaw; refusing fallback`);
+        return false;
+      }
+      // Rebuild with the pre-publish mutable field: an untampered proposal reproduces prePublishRaw exactly;
+      // any changed field (destination, amount, from, contract) serializes differently and fails the compare.
+      const rebuilt = Utils.buildTx({ ...txp, ...mutableFields }).uncheckedSerialize();
+      const rebuiltArr = Array.isArray(rebuilt) ? rebuilt : [rebuilt];
+      // Require a non-empty, positive match: an empty set would make `.every()` vacuously true.
+      if (rebuiltArr.length === 0 || rebuiltArr.length !== prePublishRaw.length) {
+        return false;
+      }
+      return rebuiltArr.every((raw, i) => raw === prePublishRaw[i]);
+    } catch (err) {
+      log.warn(`[TXP ${txp.id}] Failed to verify prePublishRaw binding: ${err?.message || err}`);
+      return false;
+    }
   }
 
   private static payproAddressesEqual(chain, address1, address2) {

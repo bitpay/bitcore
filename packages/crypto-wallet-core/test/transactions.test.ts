@@ -873,6 +873,48 @@ describe('Transaction', function() {
 
   });
 
+  describe('getMutableFields', () => {
+    it('recovers the SOL recent blockhash only (not blockHeight)', () => {
+      const blockHash = 'GtV1Hb3FvP3HURHAsj8mGwEqCumvP3pv3i6CVCzYNj3d';
+      const raw = Transactions.create({
+        chain: 'SOL',
+        category: 'transfer',
+        from: '8WyoNvKsmfdG6zrbzNBVN8DETyLra3ond61saU9C52YR',
+        recipients: [{ address: 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY', amount: 3896000000000000 }],
+        blockHash,
+        blockHeight: 531575
+      });
+      const fields = (Transactions.get({ chain: 'SOL' }) as any).getMutableFields(raw);
+      expect(fields).to.deep.equal({ blockHash });
+    });
+
+    it('recovers the EVM nonce', () => {
+      const raw = Transactions.create({
+        chain: 'ETH',
+        network: 'livenet',
+        recipients: [{ address: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A', amount: 1000 }],
+        nonce: 7,
+        gasLimit: 21000,
+        gasPrice: 20000000000,
+        data: '0x'
+      });
+      const fields = (Transactions.get({ chain: 'ETH' }) as any).getMutableFields(raw);
+      expect(fields).to.deep.equal({ nonce: 7 });
+    });
+
+    it('recovers the XRP sequence (nonce)', () => {
+      const raw = Transactions.create({
+        chain: 'XRP',
+        recipients: [{ address: 'rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF', amount: '123456' }],
+        from: 'rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF',
+        fee: 12,
+        nonce: 4
+      });
+      const fields = (Transactions.get({ chain: 'XRP' }) as any).getMutableFields(raw);
+      expect(fields).to.deep.equal({ nonce: 4 });
+    });
+  });
+
   describe('sign', () => {
     it('should sign an ETH tx', () => {
       const signedTx = Transactions.sign({
