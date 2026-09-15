@@ -16,19 +16,7 @@ export class ETHTxProvider {
     this.chain = chain;
   }
 
-  create(params: {
-    recipients: Array<{ address: string; amount: string }>;
-    nonce: number;
-    gasPrice?: number;
-    data: string;
-    gasLimit: number;
-    network: string;
-    chainId?: number;
-    contractAddress?: string;
-    maxGasFee?: number;
-    priorityGasFee?: number;
-    txType?: number;
-  }) {
+  create(params: EthCreateParams) {
     const { recipients, nonce, gasPrice, gasLimit, network, contractAddress, maxGasFee, priorityGasFee, txType } = params;
     let { data } = params;
     let to;
@@ -116,18 +104,18 @@ export class ETHTxProvider {
     return signingKey.sign(ethers.keccak256(tx));
   }
 
-  getSignature(params: { tx: string; key: Key }) {
+  getSignature(params: EthGetSignatureParams) {
     const signatureHex = this.getSignatureObject(params).serialized;
     return signatureHex;
   }
 
-  getHash(params: { tx: string }) {
+  getHash(params: EthGetHashParams) {
     const { tx } = params;
     // tx must be signed for hash to exist
     return ethers.Transaction.from(tx).hash;
   }
 
-  applySignature(params: { tx: string; signature: any }) {
+  applySignature(params: EthApplySignatureParams) {
     const { tx, signature } = params;
     const parsedTx = ethers.Transaction.from(tx);
     const { gasPrice, maxFeePerGas, maxPriorityFeePerGas } = parsedTx;
@@ -160,7 +148,7 @@ export class ETHTxProvider {
     return signedTx.serialized;
   }
 
-  sign(params: { tx: string; key: Key }) {
+  sign(params: EthSignParams) {
     const { tx, key } = params;
     const signature = this.getSignatureObject({ tx, key });
     return this.applySignature({ tx, signature });
@@ -171,13 +159,39 @@ export class ETHTxProvider {
     // Web3.utils.toHex('20000') -> '0x323030303030' because it calls utf8ToHex for strings
     return value != null ? Web3.utils.toHex(BigInt(value)) : undefined;
   }
-  transformSignatureObject(params: { obj: any }) {
+  transformSignatureObject(params: EthTransformSignatureObjectParams) {
     const { obj } = params;
     return ethers.Signature.from(obj).serialized;
   }
 
-  getSighash(params: { tx: string }): string {
+  getSighash(params: EthGetSighashParams): string {
     const { tx } = params;
     return ethers.keccak256(tx).slice(2); // remove 0x prefix
   }
 }
+
+export interface EthCreateParams {
+  recipients: Array<{ address: string; amount: number | bigint | string }>;
+  nonce: number;
+  network: string;
+  data?: string;
+  gasLimit?: number;
+  gasPrice?: number;
+  chainId?: number;
+  contractAddress?: string;
+  maxGasFee?: number;
+  priorityGasFee?: number;
+  txType?: number;
+};
+
+export interface EthGetSignatureParams { tx: string; key: Key };
+
+export interface EthGetHashParams { tx: string };
+
+export interface EthApplySignatureParams { tx: string; signature: any };
+
+export interface EthSignParams { tx: string; key: Key };
+
+export interface EthTransformSignatureObjectParams { obj: any };
+
+export interface EthGetSighashParams { tx: string };

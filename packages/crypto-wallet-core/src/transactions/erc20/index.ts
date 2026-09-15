@@ -10,19 +10,7 @@ export class ERC20TxProvider extends ETHTxProvider {
     return contract;
   }
 
-  create(params: {
-    recipients: Array<{ address: string; amount: string }>;
-    nonce: number;
-    gasPrice?: number;
-    data: string;
-    gasLimit: number;
-    tokenAddress: string;
-    network: string;
-    chainId?: number;
-    contractAddress?: string;
-    maxGasFee?: number;
-    priorityGasFee?: number;
-  }) {
+  create(params: Erc20CreateParams) {
     const { tokenAddress, contractAddress } = params;
     const data = this.encodeData(params);
     const recipients = [{ address: contractAddress || tokenAddress, amount: '0' }];
@@ -31,7 +19,7 @@ export class ERC20TxProvider extends ETHTxProvider {
   }
 
   encodeData(params: {
-    recipients: Array<{ address: string; amount: string }>;
+    recipients: Array<{ address: string; amount: number | string }>;
     tokenAddress: string;
     contractAddress?: string;
   }) {
@@ -55,3 +43,17 @@ export class ERC20TxProvider extends ETHTxProvider {
     }
   }
 }
+
+export interface Erc20CreateParams {
+  recipients: Array<{ address: string; amount: number | string }>;
+  nonce: number;
+  gasPrice?: number;
+  gasLimit?: number;
+  tokenAddress: string;
+  data?: string;
+  network: string;
+  chainId?: number;
+  contractAddress?: string;
+  maxGasFee?: number;
+  priorityGasFee?: number;
+};

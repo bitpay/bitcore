@@ -8,17 +8,7 @@ import { BTCTxProvider } from '../btc';
 import type { Key } from '../../types/derivation';
 
 export class XRPTxProvider {
-  create(params: {
-    recipients: Array<{ address: string; amount: string; tag?: number }>;
-    tag?: number;
-    from: string;
-    invoiceID?: string;
-    fee: number;
-    feeRate: number;
-    nonce: number;
-    txType?: string;
-    flags?: number | string;
-  }) {
+  create(params: XrpCreateParams) {
     const {
       recipients,
       tag,
@@ -87,19 +77,19 @@ export class XRPTxProvider {
     return { signedTransaction: signedTx.tx_blob, hash: signedTx.hash };
   }
 
-  getSignature(params: { tx: string; key: Key }): string {
+  getSignature(params: XrpGetSignatureParams): string {
     const { signedTransaction } = this.getSignatureObject(params);
     const decoded = (xrpl.decode(signedTransaction) as any) as xrpl.Transaction;
     return decoded.TxnSignature;
   }
 
-  getHash(params: { tx: string }): string {
+  getHash(params: XrpGetHashParams): string {
     const { tx } = params;
     const prefix = HashPrefix.transactionID.toString('hex').toUpperCase();
     return this.sha512Half(prefix + tx);
   }
 
-  applySignature(params: { tx: string; signature: string; pubKey: string }): string {
+  applySignature(params: XrpApplySignatureParams): string {
     const { tx, signature, pubKey } = params;
     const txJSON = (xrpl.decode(tx) as any) as xrpl.Transaction;
     txJSON.TxnSignature = signature;
@@ -108,7 +98,7 @@ export class XRPTxProvider {
     return signedTx;
   }
 
-  sign(params: { tx: string; key: Key }): string {
+  sign(params: XrpSignParams): string {
     const { tx, key } = params;
     const signature = this.getSignature({ tx, key });
     return this.applySignature({ tx, signature, pubKey: key.pubKey });
@@ -122,12 +112,12 @@ export class XRPTxProvider {
       .slice(0, 64);
   }
 
-  transformSignatureObject(params: { obj: any }) {
+  transformSignatureObject(params: XrpTransformSignatureObjectParams) {
     const { obj } = params;
     return new BTCTxProvider().transformSignatureObject({ obj });
   }
 
-  getSighash(params: { tx: string; pubKey: string }) {
+  getSighash(params: XrpGetSighashParams) {
     const { tx, pubKey } = params;
     const decoded = RBC.decode(tx);
     decoded.SigningPubKey = pubKey;
@@ -156,3 +146,27 @@ export class XRPTxProvider {
     }, {} as T);
   }
 }
+
+export interface XrpCreateParams {
+  recipients: Array<{ address: string; amount: string; tag?: number }>;
+  tag?: number;
+  from: string;
+  invoiceID?: string;
+  fee: number;
+  feeRate?: number;
+  nonce: number;
+  txType?: string;
+  flags?: number | string;
+};
+
+export interface XrpGetSignatureParams { tx: string; key: Key }
+
+export interface XrpGetHashParams { tx: string };
+
+export interface XrpApplySignatureParams { tx: string; signature: string; pubKey: string };
+
+export interface XrpSignParams { tx: string; key: Key };
+
+export interface XrpTransformSignatureObjectParams { obj: any };
+
+export interface XrpGetSighashParams { tx: string; pubKey: string };

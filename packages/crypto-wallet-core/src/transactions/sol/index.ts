@@ -11,27 +11,7 @@ export class SOLTxProvider {
   MAX_TRANSFERS = 12;
   MINIMUM_PRIORITY_FEE = 1000;
 
-  create(params: {
-    recipients: Array<{ address: string; amount: string; addressKeyPair?: SolKit.KeyPairSigner }>;
-    from: string;
-    fee?: number;
-    feeRate: number;
-    txType?: 'legacy' | '0'; // legacy, version 0
-    category?: 'transfer' | 'createAccount'; // transfer, create account
-    nonce?: string; // nonce is represented as a transaction id
-    nonceAddress?: string;
-    blockHash?: string;
-    blockHeight?: number;
-    priorityFee?: number;
-    computeUnits?: number;
-    memo?: string;
-    txInstructions?: Array<SolKit.BaseTransactionMessage['instructions'][number]>;
-    // account creation fields
-    fromKeyPair?: any;
-    space?: number; // amount of space to reserve a new account in bytes
-    mint?: string; // mint address for createATA
-    ataAddress?: any; // ATA address for createATA
-  }) {
+  create(params: SolCreateParams) {
     const { recipients, from, nonce, nonceAddress, category, space, blockHash, blockHeight, priorityFee, txInstructions, computeUnits, fromKeyPair, memo } = params;
     const fromAddress = SolKit.address(from);
     const txType: SolKit.TransactionVersion = ['0', 0].includes(params?.txType) ? 0 : 'legacy';
@@ -180,7 +160,7 @@ export class SOLTxProvider {
     return SolKit.decompileTransactionMessage(compiledTransactionMessage);
   }
 
-  async sign(params: { tx: string; key: Key }): Promise<string> {
+  async sign(params: SolSignParams): Promise<string> {
     const { tx, key } = params;
     const decodedTx = this.decodeRawTransaction({ rawTx: tx, decodeTransactionMessage: false });
     const privKeyBytes = SolKit.getBase58Encoder().encode(key.privKey);
@@ -206,7 +186,7 @@ export class SOLTxProvider {
     return SolKit.getBase58Decoder().decode(signedBytes);
   }
 
-  async getSignature(params: { tx: string; keys: Array<Key> }) {
+  async getSignature(params: SolGetSignatureParams) {
     const { tx, keys } = params;
     const key = keys[0];
     const signedTx = await this.sign({ tx, key });
@@ -215,7 +195,7 @@ export class SOLTxProvider {
     return SolKit.getBase58Decoder().decode(sigEncoding);
   }
 
-  applySignature(params: { tx: string; signature: string }): string {
+  applySignature(params: SolApplySignatureParams): string {
     const { tx, signature } = params;
     const signatures = [SolKit.getBase58Encoder().encode(signature)];
     const transaction = SolKit.getBase64Encoder().encode(tx);
@@ -262,7 +242,7 @@ export class SOLTxProvider {
     return SolKit.getBase64EncodedWireTransaction(signedTx);
   }
 
-  getHash(params: { tx: string }): string {
+  getHash(params: SolGetHashParams): string {
     const { tx } = params;
     const decodedTx = this.decodeRawTransaction({ rawTx: tx, decodeTransactionMessage: false });
     const pubKeys = Object.keys(decodedTx.signatures);
@@ -286,7 +266,39 @@ export class SOLTxProvider {
     return SolKit.getBase58Decoder().decode(signature);
   }
 
-  getSighash(_params: { tx: string }): string {
+  getSighash(_params: SolGetSighashParams): string {
     return null; // TODO
   }
 }
+
+export interface SolCreateParams {
+  recipients: Array<{ address: string; amount: number | string; addressKeyPair?: SolKit.KeyPairSigner }>;
+  from: string;
+  fee?: number;
+  feeRate?: number;
+  txType?: 'legacy' | '0'; // legacy, version 0
+  category?: 'transfer' | 'createAccount'; // transfer, create account
+  nonce?: string; // nonce is represented as a transaction id
+  nonceAddress?: string;
+  blockHash?: string;
+  blockHeight?: number;
+  priorityFee?: number;
+  computeUnits?: number;
+  memo?: string;
+  txInstructions?: Array<SolKit.BaseTransactionMessage['instructions'][number]>;
+  // account creation fields
+  fromKeyPair?: any;
+  space?: number; // amount of space to reserve a new account in bytes
+  mint?: string; // mint address for createATA
+  ataAddress?: any; // ATA address for createATA
+};
+
+export interface SolSignParams { tx: string; key: Key };
+
+export interface SolGetSignatureParams { tx: string; keys: Array<Key> };
+
+export interface SolApplySignatureParams { tx: string; signature: string };
+
+export interface SolGetHashParams { tx: string };
+
+export interface SolGetSighashParams { tx: string };
