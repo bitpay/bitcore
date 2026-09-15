@@ -108,6 +108,7 @@ async function listenForSessionComplete<T extends TssKeyGenModel | TssSigGenMode
     new Promise<T>(r => timer = setTimeout(() => { unsubscribe(); r(session); }, maxWaitTime)),
     new Promise<T>((_, j) => abortSignal?.addEventListener('abort', () => { unsubscribe(); j(new Error('Aborted')); }))
   ]);
+  sessionUpdate.catch(() => {}); // marks sessionUpdate as "handled" immediately; the await below still sees the rejection
 
   try {
     // Check for an updated session one last time before awaiting the subscription.
@@ -146,8 +147,8 @@ class TssKeyGenClass {
       throw Errors.TSS_SESSION_NOT_FOUND;
     }
 
-    const partyId = session.participants.indexOf(copayerId);
-    if (partyId === -1) {
+    const isParticipant = session.participants.includes(copayerId);
+    if (!isParticipant) {
       throw Errors.TSS_NON_PARTICIPANT;
     }
 
