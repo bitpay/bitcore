@@ -2,13 +2,14 @@ import { EventEmitter } from 'events';
 import { ECDSA, ECIES } from '@bitpay-labs/bitcore-tss';
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { API as Client, CreateWalletOpts } from './api';
-import { Encryption } from './common';
+import { Constants, Encryption } from './common';
 import { Credentials } from './credentials';
 import { ExportedKey, Key, KeyAlgorithm, PasswordMaybe } from './key';
 import { Request, RequestResponse } from './request';
 
 const $ = BitcoreLib.util.preconditions;
 
+const { TSS_KEYGEN_VERSION } = Constants;
 
 export interface ITssKeyGenConstructorParams {
   /**
@@ -274,7 +275,7 @@ export class TssKeyGen extends EventEmitter {
     this.partyId = 0;
 
     const msg = await keygen.initJoin();
-    await this.#request.post('/v1/tss/keygen/' + this.id, { message: msg, n, password });
+    await this.#request.post('/v1/tss/keygen/' + this.id, { message: msg, n, password, version: TSS_KEYGEN_VERSION });
     this.#keygen = keygen;
     return this;
   }
@@ -415,7 +416,7 @@ export class TssKeyGen extends EventEmitter {
 
     const msg = await keygen.initJoin();
     password = password || extra;
-    await this.#request.post('/v1/tss/keygen/' + this.id, { message: msg, password });
+    await this.#request.post('/v1/tss/keygen/' + this.id, { message: msg, password, version: TSS_KEYGEN_VERSION });
     return this;
   }
 
@@ -532,7 +533,7 @@ export class TssKeyGen extends EventEmitter {
             if (!this.#keygen.isKeyChainReady()) {
               // For 2 P2P messages (i.e. party of 3), it already exceeds 100 KB (190 KB)
               // Assuming ~80KB per message, the max server size of 2MB would be ~25 P2P messages
-              await this.#request.post(`/v1/tss/keygen/${this.id}`, { message: msg });
+              await this.#request.post(`/v1/tss/keygen/${this.id}`, { message: msg, version: TSS_KEYGEN_VERSION });
               this.emit('roundsubmitted', thisRound);
             }
           } catch (err) {
@@ -679,6 +680,7 @@ export class TssKeyGen extends EventEmitter {
     this.#credentials.addWalletInfo(credObj.walletId, walletName, 1, 1, copayerName, {
       useNativeSegwit: ['P2WPKH', 'P2WSH', 'P2TR'].includes(wallet.addressType),
       segwitVersion: wallet.addressType === 'P2TR' ? 1 : 0,
+      tssKeyId: this.id,
     });
     return wallet;
   }
@@ -714,6 +716,7 @@ export class TssKeyGen extends EventEmitter {
     this.#credentials.addWalletInfo(credObj.walletId, credObj.walletName, 1, 1, copayerName, {
       useNativeSegwit: ['P2WPKH', 'P2WSH', 'P2TR'].includes(wallet.addressType),
       segwitVersion: wallet.addressType === 'P2TR' ? 1 : 0,
+      tssKeyId: this.id,
     });
     
     return wallet;

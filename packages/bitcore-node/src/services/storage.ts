@@ -1,9 +1,8 @@
 import { EventEmitter } from 'events';
 import { Readable } from 'stream';
 import { ObjectId } from 'bson';
-import { Request, Response } from 'express';
 import { ObjectID } from 'mongodb';
-import { Cursor, Db, MongoClient } from 'mongodb';
+import { Db, MongoClient } from 'mongodb';
 import { LoggifyClass } from '../decorators/Loggify';
 import logger from '../logger';
 import '../models';
@@ -113,91 +112,6 @@ export class StorageService {
     return typecastedValue;
   }
 
-  stream(input: Readable, req: Request, res: Response) {
-    let closed = false;
-    req.on('close', function() {
-      closed = true;
-    });
-    res.on('close', function() {
-      closed = true;
-    });
-    input.on('error', function(err) {
-      if (!closed) {
-        closed = true;
-        return res.status(500).end(err.message);
-      }
-      return;
-    });
-    let isFirst = true;
-    res.type('json');
-    input.on('data', function(data) {
-      if (!closed) {
-        if (isFirst) {
-          res.write('[\n');
-          isFirst = false;
-        } else {
-          res.write(',\n');
-        }
-        res.write(JSON.stringify(data));
-      }
-    });
-    input.on('end', function() {
-      if (!closed) {
-        if (isFirst) {
-          // there was no data
-          res.write('[]');
-        } else {
-          res.write('\n]');
-        }
-        res.end();
-      }
-    });
-  }
-
-  apiStream<T>(cursor: Cursor<T>, req: Request, res: Response) {
-    let closed = false;
-    req.on('close', function() {
-      closed = true;
-      cursor.close();
-    });
-    res.on('close', function() {
-      closed = true;
-      cursor.close();
-    });
-    cursor.on('error', function(err) {
-      if (!closed) {
-        closed = true;
-        return res.status(500).end(err.message);
-      }
-      return;
-    });
-    let isFirst = true;
-    res.type('json');
-    cursor.on('data', function(data) {
-      if (!closed) {
-        if (isFirst) {
-          res.write('[\n');
-          isFirst = false;
-        } else {
-          res.write(',\n');
-        }
-        res.write(data);
-      } else {
-        cursor.close();
-      }
-    });
-    cursor.on('end', function() {
-      if (!closed) {
-        if (isFirst) {
-          // there was no data
-          res.write('[]');
-        } else {
-          res.write('\n]');
-        }
-        res.end();
-      }
-    });
-  }
   getFindOptions<T>(model: TransformableModel<T>, originalOptions: StreamingFindOptions<T>) {
     const query: any = {};
     let since: any = null;
@@ -232,10 +146,8 @@ export class StorageService {
     model: TransformableModel<T>,
     originalQuery: any,
     originalOptions: StreamingFindOptions<T>,
-    req: Request,
-    res: Response,
     transform?: (data: T) => string | Buffer
-  ) {
+  ): Readable & { close?: () => void } {
     const { query, options } = this.getFindOptions(model, originalOptions);
     const finalQuery = Object.assign({}, originalQuery, query);
     let cursor = model.collection
@@ -247,7 +159,7 @@ export class StorageService {
     if (options.sort) {
       cursor = cursor.sort(options.sort);
     }
-    return this.apiStream(cursor, req, res);
+    return cursor;
   }
 }
 

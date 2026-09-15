@@ -200,6 +200,97 @@ describe('Storage', function() {
       });
     });
 
+    it('should fetch tx by hash scoped to wallet, disambiguating duplicate txids across wallets', async function() {
+      // A second, unrelated wallet with its own proposal reusing 'txid0'. The
+      // txid index is non-unique, so this can happen in production; the
+      // scoped method must still resolve deterministically per walletId
+      // while the legacy global fetchTxByHash contract stays unchanged.
+      const otherWallet = Model.Wallet.create({
+        id: '456',
+        name: 'other wallet',
+        m: 1,
+        n: 1,
+        coin: 'btc',
+        chain: 'btc',
+        network: 'livenet',
+        pubKey: '',
+        singleAddress: false,
+        derivationStrategy: 'BIP45',
+        addressType: 'P2SH',
+      });
+      const otherCopayer = Model.Copayer.create({
+        coin: 'btc',
+        name: 'other copayer',
+        xPubKey: 'other xPubKey',
+        requestPubKey: 'other requestPubKey',
+        signature: 'other signature',
+      });
+      otherWallet.addCopayer(otherCopayer);
+      await util.promisify(storage.storeWalletAndUpdateCopayersLookup).call(storage, otherWallet);
+
+      const otherTx = Model.TxProposal.create({
+        walletId: '456',
+        coin: 'btc',
+        network: 'livenet',
+        outputs: [{
+          toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+          amount: 999,
+        }],
+        feePerKb: 100e2,
+        creatorId: otherWallet.copayers[0].id,
+      });
+      otherTx.status = 'pending';
+      otherTx.txid = 'txid0';
+      await util.promisify(storage.storeTx).call(storage, '456', otherTx);
+
+      // Global lookup is unchanged: it still finds *a* proposal with this
+      // txid (which one is not guaranteed with duplicates), proving the
+      // existing internal-caller contract was not altered.
+      const globalTx = await util.promisify(storage.fetchTxByHash).call(storage, 'txid0');
+      should.exist(globalTx);
+      globalTx.txid.should.equal('txid0');
+
+      // The scoped method resolves the correct wallet's proposal regardless
+      // of the duplicate.
+      const txForWalletA = await util.promisify(storage.fetchTxByHashForWallet).call(storage, '123', 'txid0');
+      should.exist(txForWalletA);
+      txForWalletA.walletId.should.equal('123');
+      txForWalletA.id.should.equal(proposals[0].id);
+
+      const txForWalletB = await util.promisify(storage.fetchTxByHashForWallet).call(storage, '456', 'txid0');
+      should.exist(txForWalletB);
+      txForWalletB.walletId.should.equal('456');
+      txForWalletB.id.should.equal(otherTx.id);
+
+      // A wallet with no proposal for this txid gets nothing (not the other
+      // wallet's data) -- proving the query is scoped, not just filtered
+      // client-side.
+      const otherWallet2 = Model.Wallet.create({
+        id: '789',
+        name: 'third wallet',
+        m: 1,
+        n: 1,
+        coin: 'btc',
+        chain: 'btc',
+        network: 'livenet',
+        pubKey: '',
+        singleAddress: false,
+        derivationStrategy: 'BIP45',
+        addressType: 'P2SH',
+      });
+      const thirdCopayer = Model.Copayer.create({
+        coin: 'btc',
+        name: 'third copayer',
+        xPubKey: 'third xPubKey',
+        requestPubKey: 'third requestPubKey',
+        signature: 'third signature',
+      });
+      otherWallet2.addCopayer(thirdCopayer);
+      await util.promisify(storage.storeWalletAndUpdateCopayersLookup).call(storage, otherWallet2);
+      const noTx = await util.promisify(storage.fetchTxByHashForWallet).call(storage, '789', 'txid0');
+      should.not.exist(noTx);
+    });
+
     it('should fetch all pending txs', function(done) {
       storage.fetchPendingTxs('123', function(err, txs) {
         should.not.exist(err);

@@ -21,12 +21,15 @@ export class TssRouter {
     const { returnError, opts } = params;
     const router = express.Router();
     
+    /** Key generation methods */
+
     router.post('/v1/tss/keygen/:id', createWalletLimiter(opts), verifyTssMessage, async function(req, res) {
       try {
         const id = req.params.id;
-        const { message, n, password } = req.body;
+        // version was not given by client until 1.1, so fallback to 1.0
+        const { message, n, password, version = 1.0, timeLimit } = req.body;
         const copayerId = req.headers['x-identity'];
-        await TssKeyGen.processMessage({ id, message, n, password, copayerId });
+        await TssKeyGen.processMessage({ id, message, n, password, copayerId, version, timeLimit });
         return res.send();
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
@@ -84,12 +87,16 @@ export class TssRouter {
       }
     });
 
+
+    /** Signature Methods */
+
     router.post('/v1/tss/sign/:id', authRequest(), verifyTssMessage, async function(req, res) {
       try {
         const id = req.params.id;
-        const { message, m } = req.body;
+        // version was not given by client until 1.1, so fallback to 1.0
+        const { message, m, version = 1.0, timeLimit } = req.body;
         const copayerId = req.headers['x-identity'];
-        await TssSign.processMessage({ id, message, m, copayerId });
+        await TssSign.processMessage({ id, message, m, copayerId, version, timeLimit });
         return res.send();
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);

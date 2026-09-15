@@ -1,7 +1,7 @@
 {
   "name": "@bitpay-labs/bitcore-client",
   "description": "Wallet client for Bitcore-Node",
-  "version": "11.10.4",
+  "version": "11.10.9",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "main": "./ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
@@ -23,15 +23,15 @@
     "watch": "tsc --watch",
     "precompile": "cd ../bitcore-node && npm run clean && npm run build:prod",
     "compile": "npm run clean && npm run build",
-    "test": "npm run compile && nyc mocha -r tsx 'test/**/*.test.ts'",
+    "test": "npm run compile && mcr mocha ts_build/test",
     "lint": "eslint .",
     "fix:errors": "eslint --fix --quiet .",
     "fix:all": "eslint --fix .",
     "fix": "npm run fix:errors"
   },
   "dependencies": {
-    "@bitpay-labs/bitcore-mnemonic": "^11.10.4",
-    "@bitpay-labs/crypto-wallet-core": "^11.10.4",
+    "@bitpay-labs/bitcore-mnemonic": "^11.10.9",
+    "@bitpay-labs/crypto-wallet-core": "^11.10.9",
     "async": "2.5.0",
     "bcrypt": "5.1.0",
     "commander": "11.1.0",
@@ -61,10 +61,8 @@
     "@types/secp256k1": "3.5.0",
     "chai": "5.1.2",
     "mocha": "11.1.0",
-    "nyc": "^17.1.0",
     "sinon": "19.0.2",
     "supertest": "7.0.0",
-    "tsx": "^4.21.0",
     "typescript": "5.7.3"
   },
   "gitHead": "e091d99915d099863ad3e78dbe867aa7780191e4"
