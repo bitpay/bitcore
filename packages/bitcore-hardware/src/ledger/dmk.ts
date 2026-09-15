@@ -9,14 +9,15 @@ const {
 }: typeof DMK = require('@ledgerhq/device-management-kit');
 const { speculosTransportFactory } = require('@ledgerhq/device-transport-kit-speculos');
 
-let dmkBuilder = new DeviceManagementKitBuilder();
 
-export type DMKConfig = Partial<{ transport: 'node' | 'speculos'; logger: boolean }>;
+export type DMKConfig = Partial<{ transport: 'node' | 'speculos'; logger: boolean; apiPort: number }>;
 export const getDmk = (params?: DMKConfig) => {
-  const { transport = 'node', logger = process.argv.includes('--debug') } = params || {};
+  const { transport = 'node', logger = process.argv.includes('--debug'), apiPort = 5000 } = params || {};
+  
+  let dmkBuilder = new DeviceManagementKitBuilder();
   switch (transport) {
     case 'speculos':
-      dmkBuilder = dmkBuilder.addTransport(speculosTransportFactory());
+      dmkBuilder = dmkBuilder.addTransport(speculosTransportFactory('http://localhost:' + apiPort));
       break;
     default:
     case 'node':
