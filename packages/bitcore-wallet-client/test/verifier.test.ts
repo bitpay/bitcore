@@ -1463,6 +1463,149 @@ describe('Verifier', function() {
     });
   });
 
+  describe('BCH PayPro address matrix', function() {
+    // All fixtures use hash 76a04053bda0a88bda5177b86a15c3b29f559873.
+    // Fixed encodings keep the expected equivalence independent of the verifier.
+    const fixtures = [
+      {
+        network: 'livenet', type: 'P2PKH',
+        cash: 'bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a',
+        legacy: 'CTH8H8Zj6DSnXFBKQeDG28ogAS92iS16Bp',
+        bitcoinLegacy: '1BpEi6DfDAUFd7GtittLSdBeYJvcoaVggu'
+      },
+      {
+        network: 'livenet', type: 'P2SH',
+        cash: 'bitcoincash:ppm2qsznhks23z7629mms6s4cwef74vcwvn0h829pq',
+        legacy: 'HHLN6S9BcP1JLSrMhgD5qe57iVEMFMLCBT',
+        bitcoinLegacy: '3CWFddi6m4ndiGyKqzYvsFYagqDLPVMTzC'
+      },
+      {
+        network: 'testnet', type: 'P2PKH',
+        cash: 'bchtest:qpm2qsznhks23z7629mms6s4cwef74vcwvqcw003ap',
+        legacy: 'mrLC19Je2BuWQDkWSTriGYPyQJXKkkBmCx',
+        bitcoinLegacy: 'mrLC19Je2BuWQDkWSTriGYPyQJXKkkBmCx'
+      },
+      {
+        network: 'testnet', type: 'P2SH',
+        cash: 'bchtest:ppm2qsznhks23z7629mms6s4cwef74vcwvhanqgjxu',
+        legacy: '2N44ThNe8NXHyv4bsX8AoVCXquBRW94Ls7W',
+        bitcoinLegacy: '2N44ThNe8NXHyv4bsX8AoVCXquBRW94Ls7W'
+      },
+      {
+        network: 'regtest', type: 'P2PKH',
+        cash: 'bchreg:qpm2qsznhks23z7629mms6s4cwef74vcwv6ycwvz78',
+        legacy: 'mrLC19Je2BuWQDkWSTriGYPyQJXKkkBmCx',
+        bitcoinLegacy: 'mrLC19Je2BuWQDkWSTriGYPyQJXKkkBmCx'
+      },
+      {
+        network: 'regtest', type: 'P2SH',
+        cash: 'bchreg:ppm2qsznhks23z7629mms6s4cwef74vcwvdp9ptp96',
+        legacy: '2N44ThNe8NXHyv4bsX8AoVCXquBRW94Ls7W',
+        bitcoinLegacy: '2N44ThNe8NXHyv4bsX8AoVCXquBRW94Ls7W'
+      }
+    ];
+    const encodings = fixture => ({
+      cashaddr: fixture.cash,
+      prefixless: fixture.cash.split(':')[1],
+      uppercase: fixture.cash.toUpperCase(),
+      uppercasePrefixless: fixture.cash.split(':')[1].toUpperCase(),
+      legacy: fixture.legacy,
+      bitcoinLegacy: fixture.bitcoinLegacy
+    });
+    const txpFor = (network, address) => ({
+      version: 3, chain: 'bch', coin: 'bch', network, amount: 10000,
+      outputs: [{ toAddress: address, amount: 10000 }]
+    });
+    const payproFor = (network, address) => ({
+      chain: 'bch', network, currency: 'BCH',
+      instructions: [{ outputs: [{ address, amount: 10000 }] }]
+    });
+
+    for (const fixture of fixtures) {
+      describe(`${fixture.network} ${fixture.type}`, function() {
+        for (const [name, address] of Object.entries(encodings(fixture))) {
+          it(`matches ${name} against every equivalent invoice encoding`, function() {
+            for (const [otherName, otherAddress] of Object.entries(encodings(fixture))) {
+              chai.expect(Verifier.checkPaypro(
+                txpFor(fixture.network, address), payproFor(fixture.network, otherAddress)
+              ), `${name} -> ${otherName}`).to.equal(true);
+            }
+          });
+        }
+
+        it('rejects mixed-case and bad-checksum addresses on either side', function() {
+          const [prefix, payload] = fixture.cash.split(':');
+          const malformed = [
+            `${prefix.toUpperCase()}:${payload}`,
+            `${prefix}:${payload.toUpperCase()}`,
+            payload[0].toUpperCase() + payload.slice(1),
+            fixture.cash.slice(0, -1) + (fixture.cash.endsWith('q') ? 'p' : 'q'),
+            fixture.bitcoinLegacy.slice(0, -1) + (fixture.bitcoinLegacy.endsWith('1') ? '2' : '1')
+          ];
+          for (const address of malformed) {
+            for (const [proposalAddress, invoiceAddress] of [
+              [address, fixture.cash], [fixture.cash, address], [address, address]
+            ]) {
+              chai.expect(Verifier.checkPaypro(
+                txpFor(fixture.network, proposalAddress), payproFor(fixture.network, invoiceAddress)
+              ), `${proposalAddress} -> ${invoiceAddress}`).to.equal(false);
+            }
+          }
+        });
+
+        it('rejects the other script type even when its hash is identical', function() {
+          const other = fixtures.find(f => f.network === fixture.network && f.type !== fixture.type);
+          for (const address of Object.values(encodings(other))) {
+            Verifier.checkPaypro(txpFor(fixture.network, fixture.cash), payproFor(fixture.network, address)).should.equal(false);
+          }
+        });
+
+        it('rejects addresses from another network, even when both addresses agree', function() {
+          for (const other of fixtures.filter(f => f.type === fixture.type && f.network !== fixture.network)) {
+            // Testnet and regtest share legacy bytes; the declared network
+            // disambiguates them. CashAddr identifies the network explicitly.
+            const otherEncodings = Object.values(encodings(other)).filter(address =>
+              address !== fixture.legacy && address !== fixture.bitcoinLegacy
+            );
+            for (const address of otherEncodings) {
+              Verifier.checkPaypro(txpFor(fixture.network, address), payproFor(fixture.network, fixture.cash)).should.equal(false);
+              Verifier.checkPaypro(txpFor(fixture.network, fixture.cash), payproFor(fixture.network, address)).should.equal(false);
+              Verifier.checkPaypro(txpFor(fixture.network, address), payproFor(fixture.network, address)).should.equal(false);
+            }
+            Verifier.checkPaypro(txpFor(fixture.network, fixture.cash), payproFor(other.network, fixture.cash)).should.equal(false);
+          }
+        });
+      });
+    }
+
+    for (const network of ['livenet', 'testnet', 'regtest']) {
+      it(`matches reordered mixed encodings and preserves duplicate counts on ${network}`, function() {
+        const pkh = fixtures.find(f => f.network === network && f.type === 'P2PKH');
+        const sh = fixtures.find(f => f.network === network && f.type === 'P2SH');
+        const txp = {
+          ...txpFor(network, pkh.cash),
+          outputs: [
+            { toAddress: sh.bitcoinLegacy, amount: 4000 },
+            { toAddress: pkh.cash.toUpperCase(), amount: 3000 },
+            { toAddress: pkh.legacy, amount: 3000 }
+          ]
+        };
+        const paypro = {
+          ...payproFor(network, pkh.cash),
+          instructions: [{ outputs: [
+            { address: pkh.cash.split(':')[1], amount: 3000 },
+            { address: pkh.bitcoinLegacy, amount: 3000 },
+            { address: sh.cash, amount: 4000 }
+          ] }]
+        };
+        Verifier.checkPaypro(txp, paypro).should.equal(true);
+        // Same count and total, but one duplicate pays the wrong script type.
+        txp.outputs[2].toAddress = sh.cash;
+        Verifier.checkPaypro(txp, paypro).should.equal(false);
+      });
+    }
+  });
+
   describe('checkAddress', function() {
     it('should verify a BTC  address', () => {
       const cred = aKey.createCredentials(null, { coin: 'btc', network: 'livenet', account: 0, n: 1 });

@@ -5,6 +5,7 @@ import {
   BitcoreLibLtc,
   Utils as CWCUtils,
   Validation as CWCValidation,
+  Transactions,
   Web3
 } from '@bitpay-labs/crypto-wallet-core';
 import { singleton } from 'preconditions';
@@ -362,8 +363,8 @@ export class Verifier {
 
   /**
    * Checks a PayPro-funded transaction proposal against the signed PayPro
-   * response it was supposed to pay. Should never be used to check multiTx
-   * or multiSendContractAddress txps
+   * response it was supposed to pay. Rejects transaction modes that rewrite
+   * the verified outputs during construction.
    *
    * `txp` is sourced from BWS and is untrusted - a compromised server or a
    * malicious co-signer could have altered it. `payproOpts` is derived from
@@ -424,6 +425,21 @@ export class Verifier {
       return falseWithLogWarn(`unsupported transaction chain: ${chain}`);
     }
 
+    // Alternate account-chain builders can replace recipients, calldata or ordering.
+    if (!isUtxoChain && (
+      txp.multiTx || txp.multiSendContractAddress || txp.multisigContractAddress ||
+      (txp.tokenAddress && !txp.payProUrl && !txp.isTokenSwap)
+    )) {
+      return falseWithLogWarn('unsupported PayPro transaction mode');
+    }
+    if (isRippleChain) {
+      // Match the XRP builder's legacy `type` fallback exactly.
+      const txType = txp.txType === undefined ? txp.type : txp.txType;
+      if (txType != null && (typeof txType !== 'string' || txType.toLowerCase() !== 'payment')) {
+        return falseWithLogWarn('unsupported XRP transaction type');
+      }
+    }
+
     // payproOpts chain/network/currency optional - validate if present
     if (payproOpts.chain != null) {
       // If payproOpts.chain present
@@ -434,11 +450,11 @@ export class Verifier {
     }
     if (payproOpts.network != null) {
       // If payproOpts.network present
-      // must be a string, txp.network must also be a string, and they must match (case-insensitive)
+      // Network names must match exactly: builders interpret them case-sensitively.
       if (
         typeof payproOpts.network !== 'string' ||
         typeof txp.network !== 'string' ||
-        payproOpts.network.toLowerCase() !== txp.network.toLowerCase()
+        payproOpts.network !== txp.network
       ) {
         return falseWithLogWarn('signed PayPro network does not match transaction network');
       }
@@ -477,6 +493,12 @@ export class Verifier {
       return falseWithLogWarn('missing transaction outputs');
     }
 
+    // The UTXO builder gives script precedence over toAddress. Address-only
+    // PayPro instructions cannot authorize a proposal-supplied script.
+    if (isUtxoChain && rawOutputs.some(output => output?.script)) {
+      return falseWithLogWarn('PayPro outputs cannot override destination addresses with scripts');
+    }
+
     // Utils.buildTx() still honors a legacy BWC <= 8.9.0 compatibility
     // field, top-level `txp.data`, by overwriting outputs[0].data with it
     // right before signing. Fold that same override into outputs[0] here,
@@ -499,7 +521,9 @@ export class Verifier {
     }
     const outputs = normalizedOutputs.entries;
 
-    const normalizedPayproInstructions = this.normalizePayproEntries(payproOpts.instructions);
+    const expectedOutputs = this.expectedPayproOutputs(chain, payproOpts.instructions);
+    if (!expectedOutputs) return falseWithLogWarn('invalid PayPro instruction shape');
+    const normalizedPayproInstructions = this.normalizePayproEntries(expectedOutputs);
     if (normalizedPayproInstructions.valid === false) {
       return falseWithLogWarn(
         `PayPro instruction at index ${normalizedPayproInstructions.invalidEntryIndex} ` +
@@ -523,11 +547,6 @@ export class Verifier {
       return falseWithLogWarn('transaction amount and output total differ');
     }
 
-    // this generates problems...
-    //  if (feeRate && payproOpts.requiredFeeRate &&
-    //      feeRate < payproOpts.requiredFeeRate)
-    //  return false;
-
     // Accept only a complete match for the resolved chain, comparing each
     // chain family's own canonical parsed destination plus whatever else in
     // that family determines what the merchant receives or how the payment
@@ -540,12 +559,29 @@ export class Verifier {
     try {
       if (isUtxoChain) {
         const addressLib = ADDRESS_LIB_BY_CHAIN[chain];
-        const normalizeAddress = (address: string) => new addressLib.Address(address).toString();
+        const normalizeAddress = (address: string) => {
+          if (chain !== 'bch') return new addressLib.Address(address).toString();
+          // Bind BCH addresses to the declared network. In particular, testnet
+          // and regtest share legacy bytes and need this context to compare
+          // correctly against their distinct CashAddr prefixes.
+          try {
+            return new BitcoreLibCash.Address(address, txp.network).toString();
+          } catch {
+            // This BCH fork uses different legacy version bytes. Also accept
+            // conventional Bitcoin-style BCH legacy encodings.
+            return BitcoreLibCash.Address.fromObject(new Bitcore.Address(address, txp.network).toObject()).toString();
+          }
+        };
         if (this.payproEntrySetsMatch(outputs, payproInstructions, normalizeAddress)) return true;
         return falseWithLogWarn(`${chain.toUpperCase()} outputs do not match PayPro instructions`);
       }
 
       if (isEvmChain) {
+        // The builder permits an explicit chainId to override chain/network.
+        const provider = Transactions.get({ chain }) as { getChainId(network: string): number };
+        if (txp.chainId && !this.atomicValuesEqual(txp.chainId, provider.getChainId(txp.network))) {
+          return falseWithLogWarn('EVM chain ID does not match transaction chain and network');
+        }
         const compareCalldata = (output: PayproEntry, instruction: PayproEntry) =>
           this.normalizeEvmCalldata(output.raw?.data) === this.normalizeEvmCalldata(instruction.raw?.data);
         if (this.accountEntriesMatch(outputs, payproInstructions, this.normalizeEvmAddress, compareCalldata)) {
@@ -575,6 +611,36 @@ export class Verifier {
     } catch {
       return falseWithLogWarn(`invalid ${chain.toUpperCase()} address or instruction data`);
     }
+  }
+
+  /**
+   * Read every signed output, not the first-output aliases added by PayProV2.
+   * Retain normalized-only instructions for older callers, but never fall back
+   * to aliases when raw fields are present, even if those fields are malformed.
+   */
+  private static expectedPayproOutputs(chain: string, instructions: any[]): any[] | undefined {
+    const isEvm = Constants.EVM_CHAINS.includes(chain);
+    const isSinglePayment = Constants.RIPPLE_CHAINS.includes(chain) || Constants.SVM_CHAINS.includes(chain);
+    if (isSinglePayment && instructions.length !== 1) return;
+
+    const outputs: any[] = [];
+    for (const instruction of instructions) {
+      if (!instruction || typeof instruction !== 'object') return;
+      if (isEvm) {
+        outputs.push('to' in instruction || 'value' in instruction
+          ? { toAddress: instruction.to, amount: instruction.value, data: instruction.data }
+          : instruction);
+      } else if ('outputs' in instruction) {
+        if (!Array.isArray(instruction.outputs) || !instruction.outputs.length) return;
+        if (isSinglePayment && instruction.outputs.length !== 1) return;
+        for (const output of instruction.outputs) {
+          outputs.push({ ...output, toAddress: output?.address });
+        }
+      } else {
+        outputs.push(instruction);
+      }
+    }
+    return outputs;
   }
 
   /**
@@ -709,11 +775,11 @@ export class Verifier {
    * copies the PayPro instruction's destination tag and invoice ID onto the
    * top-level transaction proposal (`txp.destinationTag`/`txp.invoiceID`),
    * and both route the payment to a specific account holder behind a shared
-   * XRP address. Compares those against the signed instruction's nested
-   * `outputs[0]` fields.
+   * XRP address. Compares those against the extracted signed output.
    */
-  private static ripplePaymentDetailsMatch(txp: any, signedInstruction: any): boolean {
-    const signedOutput = signedInstruction?.outputs?.[0];
+  private static ripplePaymentDetailsMatch(txp: any, signedOutput: any): boolean {
+    // The builder currently omits tag zero, so it cannot fulfill this invoice.
+    if (this.normalizeAtomicValue(signedOutput?.destinationTag) === 0n) return false;
     return this.optionalAtomicValuesEqual(txp.destinationTag, signedOutput?.destinationTag) &&
       this.optionalStringsEqual(txp.invoiceID, signedOutput?.invoiceID);
   }
@@ -723,8 +789,7 @@ export class Verifier {
    * the app maps the PayPro instruction's `outputs[0].invoiceID` to
    * `txp.memo`, which is serialized on-chain as a memo instruction.
    */
-  private static solPaymentDetailsMatch(txp: any, signedInstruction: any): boolean {
-    const signedOutput = signedInstruction?.outputs?.[0];
+  private static solPaymentDetailsMatch(txp: any, signedOutput: any): boolean {
     return this.optionalStringsEqual(txp.memo, signedOutput?.invoiceID);
   }
 
