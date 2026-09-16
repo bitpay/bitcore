@@ -1,7 +1,6 @@
 /* eslint-disable no-bitwise */
 'use strict';
 
-const _ = require('lodash');
 const BN = require('../crypto/bn');
 const Hash = require('../crypto/hash');
 const Signature = require('../crypto/signature');
@@ -11,6 +10,7 @@ const Opcode = require('../opcode');
 const PublicKey = require('../publickey');
 const SighashSchnorr = require('../transaction/sighashschnorr');
 const SighashWitness = require('../transaction/sighashwitness');
+const JSUtil = require('../util/js');
 const $ = require('../util/preconditions');
 const Script = require('./script');
 
@@ -237,19 +237,19 @@ Interpreter.prototype.executeWitnessScript = function(scriptPubKey, stack, sigve
 Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags, witness, satoshis) {
 
   const Transaction = require('../transaction');
-  if (_.isUndefined(tx)) {
+  if (tx == null) {
     tx = new Transaction();
   }
-  if (_.isUndefined(nin)) {
+  if (nin == null) {
     nin = 0;
   }
-  if (_.isUndefined(flags)) {
+  if (flags == null) {
     flags = 0;
   }
-  if (_.isUndefined(witness)) {
+  if (witness == null) {
     witness = null;
   }
-  if (_.isUndefined(satoshis)) {
+  if (satoshis == null) {
     satoshis = 0;
   }
 
@@ -505,7 +505,8 @@ Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS = (1 << 7);
 // be true".
 // (softfork safe, BIP62 rule 6)
 // Note: CLEANSTACK should never be used without P2SH or WITNESS.
-Interpreter.SCRIPT_VERIFY_CLEANSTACK = (1 << 8),
+ 
+Interpreter.SCRIPT_VERIFY_CLEANSTACK = (1 << 8);
 
 // Verify CHECKLOCKTIMEVERIFY
 //
@@ -1080,7 +1081,7 @@ Interpreter.prototype.step = function() {
   const chunk = this.script.chunks[this.pc];
   this.pc++;
   const opcodenum = chunk.opcodenum;
-  if (_.isUndefined(opcodenum)) {
+  if (opcodenum == null) {
     this.errstr = 'SCRIPT_ERR_UNDEFINED_OPCODE';
     return false;
   }

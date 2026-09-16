@@ -1,6 +1,5 @@
 'use strict';
 
-const _ = require('lodash');
 const $ = require('./util/preconditions');
 const Hash = require('./crypto/hash');
 const Base58Check = require('./encoding/base58check');
@@ -29,16 +28,16 @@ const PublicKey = require('./publickey');
  * @example
  * ```javascript
  * // validate that an input field is valid
- * let error = Address.getValidationError(input, 'testnet');
+ * const error = Address.getValidationError(input, 'testnet');
  * if (!error) {
- *   let address = Address(input, 'testnet');
+ *   const address = Address(input, 'testnet');
  * } else {
  *   // invalid network or checksum (typo?)
- *   let message = error.messsage;
+ *   const message = error.messsage;
  * }
  *
  * // get an address from a public key
- * let address = Address(publicKey, 'testnet').toString();
+ * const address = Address(publicKey, 'testnet').toString();
  * ```
  *
  * @param {*} data - The encoded data in various formats
@@ -56,7 +55,7 @@ function Address(data, network, type, multisigType) {
     return new Address(data, network, type);
   }
 
-  if (_.isArray(data) && _.isNumber(network)) {
+  if (Array.isArray(data) && typeof network === 'number') {
     return Address.createMultisig(data, network, type, false, multisigType);
   }
 
@@ -113,7 +112,7 @@ Address.prototype._classifyArguments = function(data, network, type) {
     return Address._transformScript(data, network);
   } else if (typeof(data) === 'string') {
     return Address._transformString(data, network, type);
-  } else if (_.isObject(data)) {
+  } else if (typeof data === 'object' && data !== null) {
     return Address._transformObject(data);
   } else {
     throw new TypeError('First argument is an unrecognized data format.');
@@ -247,7 +246,6 @@ Address._classifyFromVersion = function(buffer) {
       } else {
         throw new TypeError('Witness data must be 32 bytes for v1');
       }
-    } else {
     }
     version.network = Networks.get(info.prefix, 'bech32prefix');
   } else {
@@ -378,7 +376,7 @@ Address.createMultisig = function(publicKeys, threshold, network, nestedWitness,
     throw new TypeError('Type must be either scripthash or witnessscripthash to create multisig.');
   }
   if (nestedWitness || Address.isPayToWitnessScriptHash(type)) {
-    publicKeys = _.map(publicKeys, PublicKey);
+    publicKeys = publicKeys.map(key => PublicKey(key));
     for (let i = 0; i < publicKeys.length; i++) {
       if (!publicKeys[i].compressed) {
         throw new TypeError('Witness addresses must use compressed public keys.');
@@ -563,7 +561,7 @@ Address.fromObject = function fromObject(obj) {
  * @example
  * ```javascript
  * // a network mismatch error
- * let error = Address.getValidationError('15vkcKf7gB23wLAnZLmbVuMiiVDc1Nm4a2', 'testnet');
+ * const error = Address.getValidationError('15vkcKf7gB23wLAnZLmbVuMiiVDc1Nm4a2', 'testnet');
  * ```
  *
  * @param {string} data - The encoded data

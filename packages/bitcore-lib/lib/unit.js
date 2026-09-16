@@ -1,6 +1,5 @@
 'use strict';
 
-const _ = require('lodash');
 const errors = require('./errors');
 const $ = require('./util/preconditions');
 
@@ -42,7 +41,7 @@ function Unit(amount, code) {
   }
 
   // convert fiat to BTC
-  if (_.isNumber(code)) {
+  if (typeof code === 'number') {
     if (code <= 0) {
       throw new errors.Unit.InvalidRate(code);
     }
@@ -53,19 +52,19 @@ function Unit(amount, code) {
   this._value = this._from(amount, code);
 
   const self = this;
-  const defineAccesor = function(key) {
+  // Enumerable getters per unit name (e.g. instance.BTC → this.to('BTC')).
+  for (const key of Object.keys(UNITS)) {
     Object.defineProperty(self, key, {
       get: function() { return self.to(key); },
       enumerable: true,
     });
-  };
-
-  Object.keys(UNITS).forEach(defineAccesor);
+  }
 }
 
-Object.keys(UNITS).forEach(function(key) {
+// Unit.BTC, Unit.mBTC, ... — unit code string constants on the constructor.
+for (const key of Object.keys(UNITS)) {
   Unit[key] = key;
-});
+}
 
 /**
  * Returns a Unit instance created from JSON string or object
@@ -74,7 +73,7 @@ Object.keys(UNITS).forEach(function(key) {
  * @returns {Unit} A Unit instance
  */
 Unit.fromObject = function fromObject(data) {
-  $.checkArgument(_.isObject(data), 'Argument is expected to be an object');
+  $.checkArgument(typeof data === 'object' && data !== null, 'Argument is expected to be an object');
   return new Unit(data.amount, data.code);
 };
 
@@ -143,7 +142,7 @@ Unit.prototype._from = function(amount, code) {
  * @returns {Number} The converted value
  */
 Unit.prototype.to = function(code) {
-  if (_.isNumber(code)) {
+  if (typeof code === 'number') {
     if (code <= 0) {
       throw new errors.Unit.InvalidRate(code);
     }

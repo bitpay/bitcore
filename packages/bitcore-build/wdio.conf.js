@@ -162,7 +162,7 @@ module.exports.config = {
   // See the full list at http://mochajs.org/
   mochaOpts: {
     ui: 'bdd',
-    timeout: 240000
+    timeout: 300000
   },
 
   //

@@ -1,8 +1,8 @@
 'use strict';
 
+const EC = require('elliptic').ec;
 const BufferUtil = require('../util/buffer');
 const BN = require('./bn');
-const EC = require('elliptic').ec;
 
 const ec = new EC('secp256k1');
 const ecPoint = ec.curve.point.bind(ec.curve);
@@ -24,7 +24,7 @@ const Point = function Point(x, y, isRed) {
   let point;
   try {
     point = ecPoint(x, y, isRed);
-  } catch (e) {
+  } catch {
     throw new Error('Invalid Point');
   }
   point.validate();
@@ -46,7 +46,7 @@ Point.fromX = function fromX(odd, x) {
   let point;
   try {
     point = ecPointFromX(x, odd);
-  } catch (e) {
+  } catch {
     throw new Error('Invalid X');
   }
   point.validate();
@@ -127,7 +127,7 @@ Point.prototype.validate = function validate() {
   let p2;
   try {
     p2 = ecPointFromX(this.getX(), this.getY().isOdd());
-  } catch (e) {
+  } catch {
     throw new Error('Point does not lie on the curve');
   }
 
