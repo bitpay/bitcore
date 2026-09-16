@@ -1681,6 +1681,35 @@ describe('client API', function() {
       });
     });
 
+    it('should request balance at a specific time when time is provided', function(done) {
+      clients[0].fromString(
+        k.createCredentials(null, {
+          coin: 'btc',
+          network: 'livenet',
+          account: 0,
+          n: 1
+        })
+      );
+
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+        const getStub = sinon.stub(clients[0].request, 'get').resolves({ body: { totalAmount: 0 } });
+        clients[0]
+          .getBalance({
+            time: '2024-01-01T00:00:00.000Z',
+            tokenAddress: '0xTOKEN'
+          })
+          .then(() => {
+            getStub.calledOnce.should.be.true;
+            const url = getStub.getCall(0).args[0];
+            url.should.contain('/v1/balance/2024-01-01T00%3A00%3A00.000Z/');
+            url.should.contain('tokenAddress=0xTOKEN');
+            getStub.restore();
+            done();
+          })
+          .catch(done);
+      });
+    });
+
     it('should be able to complete wallet in copayer that joined later', function(done) {
       clients[0].fromString(
         k.createCredentials(null, {
