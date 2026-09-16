@@ -2994,8 +2994,8 @@ export class WalletService implements IWalletService {
                     spenderAddress: txp.multiSendContractAddress
                   }, (err, allowance) => {
                     if (err) { return next(err); }
-                    if (BigInt(allowance) < BigInt(txp.getTotalAmount())) {
-                      return next(new Error(`Insufficient token allowance. Allowed: ${BigInt(allowance)}, Want: ${BigInt(txp.getTotalAmount())}`));
+                    if (BigInt(allowance) < txp.getTotalAmountBigInt()) {
+                      return next(new Error(`Insufficient token allowance. Allowed: ${BigInt(allowance)}, Want: ${txp.getTotalAmountBigInt()}`));
                     }
                     return next();
                   });
