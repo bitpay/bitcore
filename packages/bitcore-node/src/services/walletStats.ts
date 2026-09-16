@@ -386,7 +386,11 @@ export class WalletStatsService {
       const changed = prior.balance !== balanceStr || (prior.nonce ?? '0') !== nonceStr;
       lastActivityDate = changed ? asOf : prior.lastActivityDate;
     }
-    if (!lastActivityDate && (balance > 0n || nonce > 0n || !prior)) {
+    // Any wallet without a known activity date gets the token probe, prior or not.
+    // Gating this on nonzero balance/nonce or first-ever snapshot froze token-only
+    // wallets (relayer-funded, meta-tx): their native signals never move, so a wallet
+    // that started transferring tokens after its first snapshot could never be dated.
+    if (!lastActivityDate) {
       const since = new Date(asOf.getTime());
       since.setUTCFullYear(since.getUTCFullYear() - 1);
       lastActivityDate = (await checkTokenActivity(addresses, since)) ?? undefined;

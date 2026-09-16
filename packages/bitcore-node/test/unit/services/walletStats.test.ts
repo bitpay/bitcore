@@ -228,6 +228,27 @@ describe('WalletStats Service', function() {
       expect(checkTokenActivity.firstCall.args[1].getTime()).to.equal(twelveMonthsBefore(asOf).getTime());
     });
 
+    it('re-probes token activity for an undated wallet even when a prior fact exists', async () => {
+      // A relayer-funded wallet only ever moves tokens: native balance and nonce sit
+      // at 0 forever, so the delta check can never date it. If the probe only ran on
+      // the first-ever snapshot, a wallet that STARTS transferring tokens later would
+      // stay invisible in every activity window permanently.
+      const tokenDate = new Date('2026-07-20T00:00:00Z');
+      const csp = {
+        getBalanceForAddress: sandbox.stub().resolves({ balance: '0x0' }),
+        getAccountNonce: sandbox.stub().resolves(0)
+      };
+      const checkTokenActivity = sandbox.stub().resolves(tokenDate);
+      const svc = new WalletStatsService({ waitFn: async () => {} } as any);
+      const fact = await svc.collectEvmWalletFact({
+        csp, wallet, addresses: ['0xabc'],
+        prior: { balance: '0', nonce: '0' }, // seen before, never dated, still zero on-chain
+        asOf, checkTokenActivity
+      } as any);
+      expect(fact.lastActivityDate).to.deep.equal(tokenDate);
+      expect(checkTokenActivity.calledOnce).to.equal(true);
+    });
+
     it('still runs the token lookup for a zero-balance wallet on its first-ever snapshot', async () => {
       const csp = {
         getBalanceForAddress: sandbox.stub().resolves({ balance: '0x0' }),
