@@ -1,0 +1,6 @@
+This package contains code derived from:
+- elliptic (MIT) - https://github.com/indutny/elliptic
+  Copyright (c) 2014-2018, Fedor Indutny.
+- bn.js (MIT) - https://github.com/indutny/bn.js
+  Copyright (c) 2014-2019, Fedor Indutny.
+All derived code retains its original MIT license headers.
