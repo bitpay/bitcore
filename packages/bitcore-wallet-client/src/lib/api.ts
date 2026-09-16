@@ -4079,10 +4079,6 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/simplex/sellPaymentRequest', data);
   }
 
-  async simplexGetEvents(data) {
-    return this.request.get(`/v1/service/simplex/events/?env=${data.env}`);
-  }
-
   async thorswapGetSwapQuote(data) {
     return this.request.post('/v1/service/thorswap/getSwapQuote', data);
   }
