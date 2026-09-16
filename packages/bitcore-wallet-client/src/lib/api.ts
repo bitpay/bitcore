@@ -1873,6 +1873,8 @@ export class API extends EventEmitter {
       tokenAddress?: string;
       /** MULTISIG ETH Contract Address */
       multisigContractAddress?: string;
+      /** Get the balance as of this date/time instead of the current balance */
+      time?: string;
     },
     /** @deprecated */
     cb?: (err?: Error, balance?: any) => void
@@ -1904,7 +1906,8 @@ export class API extends EventEmitter {
         qs = '?' + args.join('&');
       }
 
-      const { body } = await this.request.get('/v1/balance/' + qs);
+      const url = opts.time ? `/v1/balance/${encodeURIComponent(opts.time)}/` : '/v1/balance/';
+      const { body } = await this.request.get(url + qs);
       if (cb) { cb(null, body); }
       return body;
     } catch (err) {

@@ -2074,6 +2074,44 @@ export class WalletService implements IWalletService {
   }
 
   /**
+   * Get wallet balance at a specific time.
+   * @param {Object} opts
+   * @param {string} opts.time - Date or time accepted by the bitcore-node API.
+   * @returns {Object} balance - The chain-state provider balance at the requested time.
+   */
+  getBalanceAtTime(opts, cb) {
+    opts = opts || {};
+    if (!opts.time) {
+      return cb(new ClientError('time is required in getBalanceAtTime'));
+    }
+    let wallet = opts.wallet;
+
+    const setWallet = cb1 => {
+      if (wallet) return cb1();
+      this.getWallet({}, (err, ret) => {
+        if (err) return cb(err);
+        wallet = ret;
+        return cb1(null, wallet);
+      });
+    };
+
+    setWallet(() => {
+      if (!wallet.isComplete()) {
+        return cb(null, { confirmed: 0, unconfirmed: 0, balance: 0 });
+      }
+
+      this.syncWallet(wallet, err => {
+        if (err) return cb(err);
+        const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
+        if (!bc) {
+          return cb(new Error('Could not get blockchain explorer instance'));
+        }
+        return bc.getBalanceAtTime({ ...wallet, tokenAddress: opts.tokenAddress }, opts.time, cb);
+      });
+    });
+  }
+
+  /**
    * Return info needed to send all funds in the wallet
    * @param {Object} opts
    * @param {number} opts.feeLevel[='normal'] - Optional. Specify the fee level for this TX ('priority', 'normal', 'economy', 'superEconomy') as defined in Defaults.FEE_LEVELS.

@@ -108,6 +108,17 @@ export function registerWalletDataRoutes(router: express.Router, context: RouteC
     });
   });
 
+  router.get('/v1/balance/:time/', (req, res) => {
+    getServerWithAuth(req, res, server => {
+      const opts: { time: string; tokenAddress?: string } = { time: req.params.time };
+      if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress as string;
+      server.getBalanceAtTime(opts, (err, balance) => {
+        if (err) return returnError(err, res, req);
+        res.json(balance);
+      });
+    });
+  });
+
   router.get('/v1/sendmaxinfo/', (req, res) => {
     getServerWithAuth(req, res, server => {
       const query = req.query;
