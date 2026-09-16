@@ -302,6 +302,8 @@ const Config = (): any => {
     //     sellWidgetApi: 'https://sell.moonpay.com',
     //     secretKey: 'moonpay_production_secret_key_here',
     //     secretKeyEmbedded: 'moonpay_production_secret_key_embedded_here',
+    //     webhookSecretKey: 'moonpay_production_webhook_secret_key_here',
+    //     webhookSecretKeyEmbedded: 'moonpay_production_webhook_secret_key_embedded_here',
     //   },
     //   sandboxWeb: {
     //     apiKey: 'moonpay_sandbox_web_api_key_here',
@@ -319,17 +321,20 @@ const Config = (): any => {
     //   }
     // },
     // ramp: {
+    //   webhookCallbackBaseUrl: 'https://bws.bitpay.com/bws/api',
     //   sandbox: {
     //     apiKey: 'ramp_sandbox_api_key_here',
     //     api: 'https://api.demo.ramp.network/api',
     //     widgetApi: 'https://app.demo.ramp.network/',
     //     signingKey: 'ramp_sandbox_signing_key_here',
+    //     webhookSigningKey: 'ramp_sandbox_webhook_signing_key_here',
     //   },
     //   production: {
     //     apiKey: 'ramp_production_api_key_here',
     //     api: 'https://api.ramp.network/api',
     //     widgetApi: 'https://app.ramp.network/',
     //     signingKey: 'ramp_production_signing_key_here',
+    //     webhookSigningKey: 'ramp_production_webhook_signing_key_here',
     //   },
     //   sandboxWeb: {
     //     apiKey: 'ramp_sandbox_web_api_key_here',
@@ -374,6 +379,7 @@ const Config = (): any => {
     //     appProviderId: 'simplex_provider_id_here',
     //     appSellRefId: 'simplex_sell_ref_id_here',
     //     publicKey: 'simplex_sandbox_public_key_here',
+    //     publicKeyWebhook: 'simplex_sandbox_webhook_public_key_here',
     //   },
     //   production: {
     //     apiKey: 'simplex_production_api_key_here',
@@ -382,6 +388,7 @@ const Config = (): any => {
     //     appProviderId: 'simplex_provider_id_here',
     //     appSellRefId: 'simplex_sell_ref_id_here',
     //     publicKey: 'simplex_public_key_here',
+    //     publicKeyWebhook: 'simplex_production_webhook_public_key_here',
     //   },
     //   sandboxWeb: {
     //     apiKey: 'simplex_sandbox_web_api_key_here',
@@ -482,6 +489,10 @@ const Config = (): any => {
     // moralis: {
     //   apiKey: 'moralis_api_key_here',
     //   whitelist: []
+    // },
+    // braze: {
+    //   bwsTrackEventApiKey: 'braze_bws_track_event_api_key_here',
+    //   bwsTrackEventApi: 'https://rest.iad-05.braze.com'
     // },
   };
 
