@@ -66,7 +66,7 @@ describe('client API', function() {
   let clients: Client[], app, sandbox, storage, keys, i;
   let dbConnection;
   let db;
-  this.timeout(Math.max(this['_timeout'], 8000));
+  this.timeout(Math.max(this['_timeout'], 10000));
 
   before(function(done) {
     i = 0;

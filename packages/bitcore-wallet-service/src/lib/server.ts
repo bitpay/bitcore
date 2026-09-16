@@ -326,12 +326,9 @@ export class WalletService implements IWalletService {
     );
   }
 
-  static handleIncomingNotifications(notification, cb) {
-    cb = cb || function() { };
-
+  static handleIncomingNotifications(_notification: INotification) {
     // do nothing here....
     // bc height cache is cleared on bcmonitor
-    return cb();
   }
 
   static shutDown(cb) {
@@ -472,6 +469,13 @@ export class WalletService implements IWalletService {
       throw new Error('Storage requested before server was initialized');
     }
     return storage;
+  }
+
+  static getMessageBroker() {
+    if (!initialized) {
+      throw new Error('Message broker requested before server was initialized');
+    }
+    return messageBroker;
   }
 
   _runLocked(cb, task, waitTime?: number) {
@@ -1152,7 +1156,7 @@ export class WalletService implements IWalletService {
         try {
           const isValid = this._verifyRequestPubKey(opts.requestPubKey, opts.signature, target.xPubKey);
           if (!isValid) return cb(Errors.NOT_AUTHORIZED);
-        } catch (e) {
+        } catch {
           return cb(Errors.NOT_AUTHORIZED);
         }
 
@@ -3154,7 +3158,14 @@ export class WalletService implements IWalletService {
    * @returns {Object} txProposal
    */
   getTxByHash(opts, cb) {
-    this.storage.fetchTxByHash(opts.txid, (err, txp) => {
+    if (!checkRequired(opts, 'txid', cb)) return;
+
+    // Scoped to this.walletId: the global storage.fetchTxByHash
+    // would return any wallet's TxProposal for a known txid, disclosing a
+    // foreign wallet's proposal data to any authenticated copayer. The
+    // internal global consumers (BlockchainMonitor, getWalletFromIdentifier)
+    // are unaffected; they keep calling storage.fetchTxByHash directly.
+    this.storage.fetchTxByHashForWallet(this.walletId, opts.txid, (err, txp) => {
       if (err) return cb(err);
       if (!txp) return cb(Errors.TX_NOT_FOUND);
 
@@ -3850,7 +3861,7 @@ export class WalletService implements IWalletService {
           const notifications = res
             .flat()
             .map((n: INotification) => ({ ...n, walletId: this.walletId }))
-            .sort((a, b) => a.id - b.id);
+            .sort((a, b) => a.id?.toString()?.localeCompare(b.id?.toString()));
 
           return cb(null, notifications);
         }

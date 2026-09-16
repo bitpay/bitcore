@@ -147,7 +147,7 @@ export const errorSpec: IErrorSpec[] = [
       'We were unable to parse your payment. Please try again or contact your wallet provider.'
   },
   {
-    name: 'NO_TRASACTION',
+    name: 'NO_TRANSACTION',
     message:
       'Your request did not include a transaction. Please try again or contact your wallet provider.'
   },

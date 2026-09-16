@@ -2,10 +2,12 @@ import { EventEmitter } from 'events';
 import * as io from 'socket.io-client';
 import 'source-map-support/register';
 import logger from './logger';
+import type { Notification } from './model/notification';
 
 export class MessageBroker extends EventEmitter {
-  remote: boolean;
+  remote: boolean = false;
   mq: io.Socket;
+
   constructor(opts) {
     super();
 
@@ -28,7 +30,7 @@ export class MessageBroker extends EventEmitter {
     }
   }
 
-  send(data) {
+  send(data: Notification) {
     if (this.remote) {
       this.mq.emit('msg', data);
     } else {
@@ -36,7 +38,11 @@ export class MessageBroker extends EventEmitter {
     }
   }
 
-  onMessage(handler) {
+  onMessage(handler: (data: Notification) => void) {
     this.on('msg', handler);
+  }
+
+  offMessage(handler: (data: Notification) => void) {
+    this.off('msg', handler);
   }
 }

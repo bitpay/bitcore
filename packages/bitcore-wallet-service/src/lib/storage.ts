@@ -1,6 +1,5 @@
 import * as async from 'async';
 import _ from 'lodash';
-import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
 import preconditions from 'preconditions';
 import { BCHAddressTranslator } from './bchaddresstranslator'; // only for migration
@@ -19,8 +18,11 @@ import {
   TxProposal,
   Wallet
 } from './model';
-import { ITssKeyMessageObject, TssKeyGenModel } from './model/tsskeygen';
-import { ITssSigMessageObject, TssSigGenModel } from './model/tsssign';
+import { TssKeyGenModel } from './model/tsskeygen';
+import { TssSigGenModel } from './model/tsssign';
+import type { ITssKeyMessageObject } from './model/tsskeygen';
+import type { ITssSigMessageObject } from './model/tsssign';
+import type { Db } from 'mongodb';
 
 const $ = preconditions.singleton();
 
@@ -356,6 +358,25 @@ export class Storage {
         if (!result) return cb();
 
         return this._completeTxData(result.walletId, TxProposal.fromObj(result), cb);
+      }
+    );
+  }
+
+  // Wallet-scoped counterpart to fetchTxByHash, used by the authenticated
+  // by-hash API read.
+  fetchTxByHashForWallet(walletId: string, hash, cb: (err?: any, tx?: TxProposal) => void) {
+    if (!this.db) return cb();
+
+    this.db.collection(collections.TXS).findOne(
+      {
+        walletId,
+        txid: hash
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return this._completeTxData(walletId, TxProposal.fromObj(result), cb);
       }
     );
   }
