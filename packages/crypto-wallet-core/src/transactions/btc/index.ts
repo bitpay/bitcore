@@ -177,6 +177,8 @@ export class BTCTxProvider {
     opts?: any;
   }): string {
     const { tx, keys, pubkeys, sigtype, threshold, opts } = params;
+    $.checkArgument(keys.every(k => !!k.privKey), 'Keys must contain private key data for signing');
+    
     const utxos = params.utxos || [];
     const bitcoreTx = new this.lib.Transaction(tx);
     const btcUtxos = utxos.map(utxo => this.standardizeUtxo(utxo));
