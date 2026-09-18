@@ -15,42 +15,71 @@ export class BTCTxProvider {
   lib = BitcoreLib;
 
   selectCoins(
-    recipients: Array<{ amount: number }>,
-    utxos: Array<{
-      value: number;
-      mintHeight: number;
-      txid?: string;
-      mintTxid?: string;
-      mintIndex?: number;
-    }>,
-    fee: number
-  ) {
-    utxos = utxos.sort(function(a, b) {
-      return a.mintHeight - b.mintHeight;
-    });
+    recipients: Array<{ amount: number | string }>,
+    utxos: EveryUtxoType[],
+    fee?: number
+  ): EveryUtxoType[] {
+    // Only sort by block height if utxos are bitcore-node style
+    if (utxos.length > 0 && utxos.every(utxo => utxo.mintHeight != undefined)) {
+      utxos = utxos.sort(function(a, b) {
+        return a.mintHeight - b.mintHeight;
+      });
+    }
 
     let index = 0;
     let utxoSum = 0;
     const recepientSum = recipients.reduce((sum, cur) => sum + Number(cur.amount), fee || 0);
     while (utxoSum < recepientSum) {
+      assert(index < utxos.length, 'insufficient funds');
       const utxo = utxos[index];
-      utxoSum += Number(utxo.value);
+      utxoSum += Number(utxo.satoshis ?? utxo.value ?? this.lib.Unit.fromBTC(utxo.amount ?? 0).toSatoshis());
       index += 1;
     }
     const filteredUtxos = utxos.slice(0, index);
     return filteredUtxos;
   }
 
-  create({ recipients, utxos = [], change, feeRate, fee, isSweep, replaceByFee, lockUntilDate, lockUntilBlock }) {
-    const filteredUtxos = isSweep ? utxos : this.selectCoins(recipients, utxos, fee);
-    const btcUtxos = filteredUtxos.map(utxo => {
-      const btcUtxo = Object.assign({}, utxo, {
-        amount: utxo.value / 1e8,
-        txid: utxo.mintTxid,
-        outputIndex: utxo.mintIndex
-      });
-      return new this.lib.Transaction.UnspentOutput(btcUtxo);
-    });
+  /**
+   * Standardize utxo for internal functionality.
+   * Accepts either a bitcore-node or a lib (bitcore-lib, bitcore-lib-cash, etc.) utxo.
+   * Handles both lib style utxos: UnspentOutput properties and UnspentOutput.toObject properties.
+   *
+   * @param utxo either a bitcore-node or lib utxo
+   * @returns utxo in the standard, internally used format
+   */
+  standardizeUtxo(utxo: EveryUtxoType): UtxoType {
+    const outputIndex = utxo.outputIndex ?? utxo.mintIndex ?? utxo.vout;
+    const satoshis = utxo.satoshis ?? utxo.value ?? (utxo.amount != undefined ? this.lib.Unit.fromBTC(utxo.amount ?? 0).toSatoshis() : undefined);
+    const txId = utxo.txId ?? utxo.mintTxid ?? utxo.txid;
+    const script = utxo.script ?? utxo.scriptPubKey;
+    $.checkArgument(outputIndex != undefined, 'output index required (outputIndex|mintIndex|vout)');
+    $.checkArgument(satoshis != undefined, 'satoshis required (satoshis|value|amount)');
+    $.checkArgument(txId, 'txid required (txid|txId|mintTxid)');
+    $.checkArgument(script || utxo.address, 'script or address required (script|scriptPubKey|address)');
+    
+    return {
+      satoshis: Number(satoshis),
+      txId,
+      outputIndex: Number(outputIndex),
+      script: script != undefined ? new this.lib.Script(script).toHex() : undefined,
+      address: utxo.address != undefined ? new this.lib.Address(utxo.address).toString() : undefined
+    };
+  }
+
+  create(params: {
+    recipients: Array<{ address: string; amount: number | string }>;
+    utxos?: EveryUtxoType[];
+    change?: string;
+    feeRate?: number | string;
+    fee?: number | string;
+    isSweep?: boolean;
+    replaceByFee?: boolean;
+    lockUntilDate?: number;
+    lockUntilBlock?: number;
+  }): string {
+    const { recipients, utxos = [], change, feeRate, fee, isSweep, replaceByFee, lockUntilDate, lockUntilBlock } = params;
+    const filteredUtxos = isSweep ? utxos : this.selectCoins(recipients, utxos, Number(fee));
+    const btcUtxos = filteredUtxos.map(utxo => this.standardizeUtxo(utxo));
     const tx = new this.lib.Transaction().from(btcUtxos);
     if (fee) {
       tx.fee(fee);
@@ -62,7 +91,7 @@ export class BTCTxProvider {
       tx.change(change);
     }
     for (const recipient of recipients) {
-      tx.to(recipient.address, parseInt(recipient.amount));
+      tx.to(recipient.address, Number(recipient.amount));
     }
     if (replaceByFee && typeof tx.enableRBF === 'function') {
       tx.enableRBF();
@@ -79,7 +108,7 @@ export class BTCTxProvider {
     throw new Error('function getSignature not implemented for UTXO coins');
   }
 
-  transformSignatureObject(params: { obj: any; sigtype?: number }) {
+  transformSignatureObject(params: { obj: any; sigtype?: number }): string {
     const { obj, sigtype } = params;
     const { v } = obj;
     let { r, s, i, nhashtype } = obj;
@@ -107,7 +136,12 @@ export class BTCTxProvider {
     return new this.lib.crypto.Signature({ r, s, i, nhashtype }).toString();
   }
 
-  applySignature(params: { tx: BitcoreLib.Transaction; signature: SignatureType; index: number; sigtype?: number }) {
+  applySignature(params: {
+    tx: BitcoreLib.Transaction;
+    signature: SignatureType;
+    index: number;
+    sigtype?: number;
+  }): BitcoreLib.Transaction {
     const { index, sigtype, tx } = params;
     let { signature } = params;
     assert(tx instanceof this.lib.Transaction, 'tx must be an instance of Transaction');
@@ -128,63 +162,77 @@ export class BTCTxProvider {
     return tx;
   }
 
-  getHash(params: { tx: string }) {
+  getHash(params: { tx: TransactionType }): string {
     const bitcoreTx = new this.lib.Transaction(params.tx);
     return bitcoreTx.hash;
   }
 
-  sign(params: { tx: string; keys: Array<Key>; utxos: any[]; pubkeys?: any[]; threshold?: number; opts: any }) {
-    const { tx, keys, pubkeys, threshold, opts } = params;
+  sign(params: {
+    tx: TransactionType;
+    keys: Key[];
+    utxos: EveryUtxoType[];
+    sigtype?: number;
+    pubkeys?: any[];
+    threshold?: number;
+    opts?: any;
+  }): string {
+    const { tx, keys, pubkeys, sigtype, threshold, opts } = params;
+    $.checkArgument(keys.every(k => !!k.privKey), 'Keys must contain private key data for signing');
+    
     const utxos = params.utxos || [];
     const bitcoreTx = new this.lib.Transaction(tx);
+    const btcUtxos = utxos.map(utxo => this.standardizeUtxo(utxo));
     const applicableUtxos = this.getRelatedUtxos({
       outputs: bitcoreTx.inputs,
-      utxos
+      utxos: btcUtxos
     });
-    bitcoreTx.associateInputs(applicableUtxos, pubkeys, threshold, opts);
+    bitcoreTx.associateInputs(applicableUtxos.map(utxo => new this.lib.Transaction.UnspentOutput(utxo)), pubkeys, threshold, opts);
     const uniqePrivKeys = Object.values(keys.reduce((map, key) => {
       // Need to preserve (un)compressed property, so don't use key.privKey.toString();
       const pk = new this.lib.PrivateKey(key.privKey);
       map[pk.publicKey.toString()] = pk;
       return map;
     }, {}));
-    const signedTx = bitcoreTx.sign(uniqePrivKeys).toString();
+    const signedTx = bitcoreTx.sign(uniqePrivKeys, sigtype).toString();
     return signedTx;
   }
 
-  getRelatedUtxos({ outputs, utxos }) {
+  getRelatedUtxos(params: {
+    outputs: BitcoreLib.Transaction.Input[];
+    utxos: UtxoType[];
+  }): UtxoType[] {
+    const { outputs, utxos } = params;
     const txids = outputs.map(output => output.toObject().prevTxId);
-    const applicableUtxos = utxos.filter(utxo => txids.includes(utxo.txid || utxo.mintTxid));
-    return applicableUtxos.map(utxo => {
-      const btcUtxo = Object.assign({}, utxo, {
-        amount: utxo.value / Math.pow(10, 8),
-        txid: utxo.mintTxid,
-        outputIndex: utxo.mintIndex
-      });
-      return new this.lib.Transaction.UnspentOutput(btcUtxo);
-    });
+    return utxos.filter(utxo => txids.includes(utxo.txId));
   }
 
-  getOutputsFromTx({ tx }) {
-    return tx.outputs.map(({ script, satoshis }) => {
+  getOutputsFromTx(params: {
+    tx: BitcoreLib.Transaction;
+  }): Array<{ address: string | BitcoreLib.Script; satoshis: number }> {
+    return params.tx.outputs.map(({ script, satoshis }) => {
       const address = script;
       return { address, satoshis };
     });
   }
 
-  getSigningAddresses({ tx, utxos }): string[] {
+  getSigningAddresses(params: {
+    tx: TransactionType;
+    utxos: EveryUtxoType[];
+  }): (string | undefined)[] {
+    const { tx, utxos } = params;
     const bitcoreTx = new this.lib.Transaction(tx);
+    const btcUtxos = utxos.map(utxo => this.standardizeUtxo(utxo));
     const applicableUtxos = this.getRelatedUtxos({
       outputs: bitcoreTx.inputs,
-      utxos
+      utxos: btcUtxos
     });
     return applicableUtxos.map(utxo => utxo.address);
   }
 
   getSighash(params: {
-    tx: string | BitcoreLib.Transaction;
+    tx: TransactionType;
     index: number;
-    utxos?: BitcoreLib.Transaction.UnspentOutput[];
+    utxos?: EveryUtxoType[];
     pubKey?: string | BitcoreLib.PublicKey | BitcoreLib.HDPublicKey;
     path?: string;
     sigtype?: number;
@@ -204,7 +252,8 @@ export class BTCTxProvider {
       tx = new this.lib.Transaction(tx);
     }
     if (utxos) {
-      tx.associateInputs(utxos.map(this.lib.Transaction.UnspentOutput), pubKeys, threshold, opts);
+      const btcUtxos = utxos.map(utxo => this.standardizeUtxo(utxo));
+      tx.associateInputs(btcUtxos.map(utxo => new this.lib.Transaction.UnspentOutput(utxo)), pubKeys, threshold, opts);
     }
     $.checkState(tx.inputs[index].output instanceof this.lib.Transaction.Output, 'Input must have all utxo info');
 
@@ -225,3 +274,43 @@ export class BTCTxProvider {
 }
 
 type SignatureType = BitcoreLib.Transaction.Signature | BitcoreLib.crypto.Signature | TssSig;
+
+/** Transaction data that can be converted into a Transaction via Transaction(tx) */
+type TransactionType = BitcoreLib.Transaction | string | Buffer | object;
+
+/**
+ * Standard utxo type used for internal processing.
+ * Property names are from bitcore-lib's UnspentOutput.
+ * Note, UnspentOutput addresses and scripts are Address and Script classes respectively,
+ * here they are both strings.
+ */
+export type UtxoType = {
+  txId: string;
+  outputIndex: number;
+  satoshis: number;
+  script?: string;
+  address?: string;
+};
+
+/** 
+ * Utxo type for functions where the received utxo type is unknown.
+ * Could either be in the format of UnspentOutput, UnspentOutput.toObject, or from bitcore-node.
+ */
+export type EveryUtxoType = Partial<{
+  // UnspentOutput properties
+  txId: string;
+  outputIndex: number | string;
+  satoshis: number | string;
+  script: string | BitcoreLib.Script;
+  address: string | BitcoreLib.Address;
+  // bitcore-node specific properties
+  mintTxid: string;
+  mintIndex: number;
+  mintHeight: number;
+  value: number;
+  // UnspentOutput.toObject specific properties
+  txid: string;
+  amount: number;
+  vout: number;
+  scriptPubKey: string;
+}>;
