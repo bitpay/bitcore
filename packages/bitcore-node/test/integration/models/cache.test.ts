@@ -48,6 +48,25 @@ describe('Cache Model', function() {
     expect(got).to.eq(null);
   });
 
+  it('should delete an expired entry before returning the miss', async () => {
+    await CacheStorage.setGlobal(key, value, -1);
+    const got = await CacheStorage.getGlobal(key);
+    expect(got).to.eq(null);
+    const found = await CacheStorage.collection.findOne({ key });
+    expect(found).to.not.exist;
+  });
+
+  it('should not delete a refreshed entry with a stale delete', async () => {
+    const freshValue = { hello: 'again' };
+    await CacheStorage.setGlobal(key, value, -1);
+    const stale = await CacheStorage.collection.findOne({ key });
+    // refresh reuses the same document; the stale-versioned delete must no-op
+    await CacheStorage.setGlobal(key, freshValue, CacheStorage.Times.Hour);
+    await CacheStorage.collection.remove({ _id: stale!._id, created: stale!.created });
+    const got = await CacheStorage.getGlobal(key);
+    expect(got).to.deep.eq(freshValue);
+  });
+
   it('should cache the value returned by fn', async () => {
     const got = await CacheStorage.getGlobalOrRefresh(key, async () => value, CacheStorage.Times.Hour);
     const found = await CacheStorage.collection.findOne({ key });
