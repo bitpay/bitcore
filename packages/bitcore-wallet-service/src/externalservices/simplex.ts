@@ -248,34 +248,4 @@ export class SimplexService {
       );
     });
   }
-
-  simplexGetEvents(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      if (!config.simplex) return reject(new Error('Simplex missing credentials'));
-      if (!req.env || (req.env != 'sandbox' && req.env != 'production'))
-        return reject(new Error("Simplex's request wrong environment"));
-
-      const API = config.simplex[req.env].api;
-      const API_KEY = config.simplex[req.env].apiKey;
-      const headers = {
-        'Content-Type': 'application/json',
-        Authorization: 'ApiKey ' + API_KEY
-      };
-
-      this.request.get(
-        API + '/wallet/merchant/v2/events',
-        {
-          headers,
-          json: true
-        },
-        (err, data) => {
-          if (err) {
-            return reject(err.body ? err.body : null);
-          } else {
-            return resolve(data.body ? data.body : null);
-          }
-        }
-      );
-    });
-  }
 }

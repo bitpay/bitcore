@@ -363,22 +363,4 @@ describe('Simplex integration', () => {
       }
     });
   });
-
-  describe('#simplexGetEvents', () => {
-    beforeEach(() => {
-      req = {
-        env: 'production'
-      };
-
-      fakeRequest = {
-        get: (_url, _opts, _cb) => { return _cb(null, { body: {} }); },
-      };
-      server.externalServices.simplex.request = fakeRequest;
-    });
-
-    it('should work properly if req is OK', async () => {
-      const data = await server.externalServices.simplex.simplexGetEvents(req);
-      should.exist(data);
-    });
-  });
 });
