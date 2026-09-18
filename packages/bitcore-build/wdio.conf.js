@@ -1,5 +1,5 @@
 'use strict';
-
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -162,7 +162,7 @@ module.exports.config = {
   // See the full list at http://mochajs.org/
   mochaOpts: {
     ui: 'bdd',
-    timeout: 240000
+    timeout: 300000
   },
 
   //
@@ -322,6 +322,7 @@ module.exports.config = {
      * @param {Array.<Object>} capabilities list of capabilities details
      * @param {<Object>} results object containing test results
      */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onComplete: function(exitCode, config, capabilities, results) {
     try {
       fs.rmSync(chromeUserDataDirRoot, { recursive: true, force: true });

@@ -1,22 +1,22 @@
 'use strict';
 
-var crypto = require('crypto');
+var nodeCrypto = require('crypto');
+var Scrypt = require('scryptsy');
 var BufferUtil = require('../util/buffer');
-var Scrypt = require('scryptsy')
 var $ = require('../util/preconditions');
 
 var Hash = module.exports;
 
 Hash.sha1 = function(buf) {
   $.checkArgument(BufferUtil.isBuffer(buf));
-  return crypto.createHash('sha1').update(buf).digest();
+  return nodeCrypto.createHash('sha1').update(buf).digest();
 };
 
 Hash.sha1.blocksize = 512;
 
 Hash.sha256 = function(buf) {
   $.checkArgument(BufferUtil.isBuffer(buf));
-  return crypto.createHash('sha256').update(buf).digest();
+  return nodeCrypto.createHash('sha256').update(buf).digest();
 };
 
 Hash.sha256.blocksize = 512;
@@ -28,7 +28,7 @@ Hash.sha256sha256 = function(buf) {
 
 Hash.ripemd160 = function(buf) {
   $.checkArgument(BufferUtil.isBuffer(buf));
-  return crypto.createHash('ripemd160').update(buf).digest();
+  return nodeCrypto.createHash('ripemd160').update(buf).digest();
 };
 
 Hash.sha256ripemd160 = function(buf) {
@@ -38,14 +38,14 @@ Hash.sha256ripemd160 = function(buf) {
 
 Hash.sha512 = function(buf) {
   $.checkArgument(BufferUtil.isBuffer(buf));
-  return crypto.createHash('sha512').update(buf).digest();
+  return nodeCrypto.createHash('sha512').update(buf).digest();
 };
 
 Hash.sha512.blocksize = 1024;
 
 Hash.hmac = function(hashf, data, key) {
-  //http://en.wikipedia.org/wiki/Hash-based_message_authentication_code
-  //http://tools.ietf.org/html/rfc4868#section-2
+  // http://en.wikipedia.org/wiki/Hash-based_message_authentication_code
+  // http://tools.ietf.org/html/rfc4868#section-2
   $.checkArgument(BufferUtil.isBuffer(data));
   $.checkArgument(BufferUtil.isBuffer(key));
   $.checkArgument(hashf.blocksize);
