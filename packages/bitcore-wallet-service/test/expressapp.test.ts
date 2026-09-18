@@ -274,6 +274,32 @@ describe('ExpressApp', function() {
             });
           });
         });
+
+        it('should get the balance at a given time', function(done) {
+          const server = {
+            getBalanceAtTime: sinon.stub().callsArgWith(1, null, { balance: 123 }),
+          };
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstanceWithAuth').callsArgWith(1, null, server);
+          start(ExpressApp, function() {
+            const reqOpts = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/balance/2025-01-15T12%3A00%3A00.000Z?tokenAddress=0xToken',
+              headers: {
+                'x-identity': 'identity',
+                'x-signature': 'signature'
+              }
+            };
+            request(reqOpts, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              server.getBalanceAtTime.calledOnce.should.be.true;
+              server.getBalanceAtTime.getCall(0).args[0].time.should.equal('2025-01-15T12:00:00.000Z');
+              server.getBalanceAtTime.getCall(0).args[0].tokenAddress.should.equal('0xToken');
+              JSON.parse(body).balance.should.equal(123);
+              done();
+            });
+          });
+        });
       });
 
       describe('v1/wallets/all', function() {
