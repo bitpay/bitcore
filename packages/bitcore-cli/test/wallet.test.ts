@@ -192,7 +192,8 @@ describe('Wallet', function() {
                   const lines = helpers.decolor(checkpointOutput).split(os.EOL);
                   const mainmenuLine = lines.findIndex(l => l.match(`[  Main Menu - ${WALLETS.BTC.SINGLE_SIG}  ]`));
                   assert(mainmenuLine > -1, 'Did not reach main menu. Got: ' + checkpointOutput);
-                  assert(fs.readFileSync(lockFileName, 'utf-8') === child.pid.toString(), 'Lock file does not match child PID');
+                  const [lockedPid] = fs.readFileSync(lockFileName, 'utf-8').split('\n');
+                  assert.equal(lockedPid, child.pid.toString(), 'Lock file does not match child PID');
                   break;
               }
 
@@ -224,6 +225,164 @@ describe('Wallet', function() {
       child.on('close', (code) => {
         try {
           assert.equal(code, 0);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
+
+    it('should record the pid and full invocation command in the lock file', function(done) {
+      const lockFileName = Utils.getWalletLockFileName(WALLETS.BTC.SINGLE_SIG, DIR);
+      const stepInputs = [
+        // Checkpoint1: Upon wallet load
+        [KEYSTROKES.ARROW_UP], // Proposals -> Exit
+        [KEYSTROKES.ENTER], // Exit
+      ];
+      let step = 0;
+      const io = new Transform({
+        encoding: 'utf-8',
+        transform: function (chunk, encoding, respond) {
+          try {
+            chunk = chunk.toString();
+
+            // Uncomment to see CLI output during test
+            // process.stdout.write(chunk);
+
+            const isStep = chunk.endsWith(OUTPUT_END_SEQ);
+            if (isStep) {
+              switch (step) {
+                default:
+                  break; // no-op for non-checkpoint steps
+                case 0: {
+                  const [lockedPid, lockedArgvJson] = fs.readFileSync(lockFileName, 'utf-8').split('\n');
+                  assert.equal(lockedPid, child.pid.toString(), 'Lock file pid should match the running process');
+                  const lockedArgv = JSON.parse(lockedArgvJson);
+                  assert.ok(Array.isArray(lockedArgv), 'Lock file should contain the full process.argv as JSON');
+                  assert.ok(lockedArgv[1]?.endsWith('cli.js'), 'Lock file argv should include the path to cli.js');
+                  break;
+                }
+              }
+
+              for (const input of stepInputs[step]) {
+                this.push(input);
+              }
+              step++;
+            } else if (chunk.includes('Error:')) {
+              return respond(chunk);
+            }
+            if (chunk.includes('👋')) {
+              child.stdin.end(); // send EOF to child so it can exit cleanly
+            }
+            respond();
+          } catch (e) {
+            return respond(e);
+          }
+        }
+      });
+      const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts], CLI_OPTS);
+      child.stderr.pipe(process.stderr);
+      child.stdout.pipe(io).pipe(child.stdin);
+      io.on('error', (e) => {
+        done(e);
+      });
+      child.on('error', (e) => {
+        done(e);
+      });
+      child.on('close', (code) => {
+        try {
+          assert.equal(code, 0);
+          done();
+        } catch (e) {
+          done(e);
+        }
+      });
+    });
+
+    it('should treat a lock file as stale when its pid is reused by an unrelated process', function(done) {
+      // Simulates a crashed bitcore-cli process whose pid has since been reused by some other, unrelated
+      // process that also happens to be invoked via a `cli.js` script (regression: an exact script-path
+      // comparison must be used instead of a loose "looks like bitcore-cli" heuristic).
+      const fakeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'bitcore-cli-fake-'));
+      const fakeCliPath = path.join(fakeDir, 'cli.js');
+      fs.writeFileSync(fakeCliPath, 'setInterval(() => {}, 100000);\n');
+      const fakeProcess = spawn('node', [fakeCliPath], { detached: true, stdio: 'ignore' });
+
+      const lockFileName = Utils.getWalletLockFileName(WALLETS.BTC.SINGLE_SIG, DIR);
+      // Recorded lock claims a different cli.js path than the one the reused pid is now actually running
+      const originalArgv = ['/usr/bin/node', '/original/path/to/bitcore-cli/build/src/cli.js'];
+      fs.writeFileSync(lockFileName, `${fakeProcess.pid}\n${JSON.stringify(originalArgv)}`, { mode: 0o444 });
+
+      const stepInputs = [
+        // Checkpoint1: Upon wallet load
+        [KEYSTROKES.ARROW_UP], // Proposals -> Exit
+        [KEYSTROKES.ENTER], // Exit
+      ];
+      let step = 0;
+      let output = '';
+      const checkpoints = new Set([0]);
+      let checkpointOutput = '';
+      const io = new Transform({
+        encoding: 'utf-8',
+        transform: function (chunk, encoding, respond) {
+          try {
+            chunk = chunk.toString();
+            output += chunk;
+            if (checkpoints.has(step)) {
+              checkpointOutput += chunk;
+            } else {
+              checkpointOutput = '';
+            }
+
+            // Uncomment to see CLI output during test
+            // process.stdout.write(chunk);
+
+            const isStep = chunk.endsWith(OUTPUT_END_SEQ);
+            if (isStep) {
+              switch (step) {
+                default:
+                  break; // no-op for non-checkpoint steps
+                case Array.from(checkpoints)[0]: {
+                  const lines = helpers.decolor(checkpointOutput).split(os.EOL);
+                  const mainmenuLine = lines.findIndex(l => l.match(`[  Main Menu - ${WALLETS.BTC.SINGLE_SIG}  ]`));
+                  assert(mainmenuLine > -1, 'Did not reach main menu. Got: ' + checkpointOutput);
+                  break;
+                }
+              }
+
+              for (const input of stepInputs[step]) {
+                this.push(input);
+              }
+              step++;
+            } else if (chunk.includes('Error:')) {
+              return respond(chunk);
+            }
+            if (chunk.includes('👋')) {
+              child.stdin.end(); // send EOF to child so it can exit cleanly
+            }
+            respond();
+          } catch (e) {
+            return respond(e);
+          }
+        }
+      });
+      const child = spawn('node', [CLI_EXEC, WALLETS.BTC.SINGLE_SIG, ...cmdOpts], CLI_OPTS);
+      child.stderr.pipe(process.stderr);
+      child.stdout.pipe(io).pipe(child.stdin);
+      io.on('error', (e) => {
+        done(e);
+      });
+      child.on('error', (e) => {
+        done(e);
+      });
+      child.on('close', (code) => {
+        try {
+          fakeProcess.kill();
+        } catch { /* already dead */ }
+        fs.rmSync(fakeDir, { recursive: true, force: true });
+        try {
+          assert.equal(code, 0);
+          assert.match(helpers.decolor(output), /Stale wallet lock file detected/);
           done();
         } catch (e) {
           done(e);

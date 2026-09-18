@@ -177,3 +177,12 @@ export function normalizeXrpFlag(flag: string | number, flagEnum?: typeof xrpl.A
   }
   return normalizedFlag;
 }
+
+export function tryParse(json: string, fallback?: any) {
+  try {
+    if (typeof json === 'object') return json; // already parsed
+    return JSON.parse(json);
+  } catch {
+    return fallback;
+  }
+}
