@@ -404,4 +404,25 @@ describe('Utils', function() {
       expect(() => utils.normalizeXrpFlag('tfPartialPayment')).to.throw(Error).with.property('message', 'Invalid XRP flag: tfPartialPayment. Flag is not in enum AccountSetTfFlags');                                                                 
     });
   });
+
+  describe('tryParse', function() {
+    it('should parse valid JSON', function() {
+      const json = '{"key":"value"}';
+      const result = utils.tryParse(json);
+      expect(result).to.deep.equal({ key: 'value' });
+    });
+
+    it('should return fallback for invalid JSON', function() {
+      const json = '{"key": "value"';
+      const fallback = { fallback: true };
+      const result = utils.tryParse(json, fallback);
+      expect(result).to.deep.equal(fallback);
+    });
+
+    it('should return the object itself if already parsed', function() {
+      const obj = { key: 'value' };
+      const result = utils.tryParse(obj as any);
+      expect(result).to.deep.equal(obj);
+    });
+  });
 });
