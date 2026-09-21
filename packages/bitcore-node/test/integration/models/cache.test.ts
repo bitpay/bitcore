@@ -62,7 +62,7 @@ describe('Cache Model', function() {
     const stale = await CacheStorage.collection.findOne({ key });
     // refresh reuses the same document; the stale-versioned delete must no-op
     await CacheStorage.setGlobal(key, freshValue, CacheStorage.Times.Hour);
-    await CacheStorage.collection.remove({ _id: stale!._id, created: stale!.created });
+    await CacheStorage.collection.deleteOne({ _id: stale!._id, created: stale!.created });
     const got = await CacheStorage.getGlobal(key);
     expect(got).to.deep.eq(freshValue);
   });

@@ -60,7 +60,7 @@ export class CacheModel extends BaseModel<ICache<any>> {
       return found.value as T;
     } else {
       // cache miss - only delete the version seen expiring; a refresh reuses the _id
-      await this.collection.remove({ _id: found._id, created: found.created });
+      await this.collection.deleteOne({ _id: found._id, created: found.created });
       return null;
     }
   }
@@ -74,9 +74,8 @@ export class CacheModel extends BaseModel<ICache<any>> {
       // cache hit
       return found.value as T;
     } else {
-      // cache miss
       // cache miss - only delete the version seen expiring; a refresh reuses the _id
-      await this.collection.remove({ _id: found._id, created: found.created });
+      await this.collection.deleteOne({ _id: found._id, created: found.created });
       return null;
     }
   }
