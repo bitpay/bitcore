@@ -32,6 +32,18 @@ export class SimplexService {
     return keys;
   }
 
+  private simplexGetUserIp(req): string {
+    const isWebContext = req.body?.context === 'web';
+    let userIp = (isWebContext && req.body.deviceIp) || Utils.getIpFromReq(req);
+    delete req.body.deviceIp;
+    if (userIp) {
+      // Canonicalize IPv4-mapped IPv6 (dual-stack sockets report IPv4 clients as
+      // ::ffff:1.2.3.4) so Simplex sees a plain IPv4 address.
+      userIp = String(userIp).trim().replace(/^::ffff:/i, '');
+    }
+    return userIp || '';
+  }
+
   simplexGetCurrencies(req): Promise<any> {
     return new Promise((resolve, reject) => {
       const keys = this.simplexGetKeys(req);
@@ -63,11 +75,11 @@ export class SimplexService {
 
   simplexGetQuote(req): Promise<any> {
     return new Promise((resolve, reject) => {
+      const ip = this.simplexGetUserIp(req);
       const keys = this.simplexGetKeys(req);
 
       const API = keys.API;
       const API_KEY = keys.API_KEY;
-      const ip = Utils.getIpFromReq(req);
 
       req.body.client_ip = ip;
       req.body.wallet_id = keys.APP_PROVIDER_ID;
@@ -147,6 +159,7 @@ export class SimplexService {
 
   simplexPaymentRequest(req): Promise<any> {
     return new Promise((resolve, reject) => {
+      const ip = this.simplexGetUserIp(req);
       const keys = this.simplexGetKeys(req);
 
       const API = keys.API;
@@ -155,7 +168,6 @@ export class SimplexService {
       const paymentId = Uuid.v4();
       const orderId = Uuid.v4();
       const apiHost = keys.API;
-      const ip = Utils.getIpFromReq(req);
 
       if (
         !checkRequired(req.body, ['account_details', 'transaction_details']) &&
