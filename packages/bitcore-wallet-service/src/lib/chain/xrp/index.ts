@@ -218,9 +218,9 @@ export class XrpChain implements IChain {
       if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
       const minXrpBalance = Defaults.MIN_XRP_BALANCE;
-      if (totalAmount - minXrpBalance < txp.getTotalAmount()) {
+      if (totalAmount - minXrpBalance < txp.getTotalAmountBigInt()) {
         return cb(Errors.INSUFFICIENT_FUNDS);
-      } else if (availableAmount < txp.getTotalAmount()) {
+      } else if (availableAmount < txp.getTotalAmountBigInt()) {
         return cb(Errors.LOCKED_FUNDS);
       } else {
         return cb(this.checkTx(txp));

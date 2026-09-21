@@ -15,11 +15,43 @@ const { Constants } = Common;
 const segWitToAddress = 'BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4'; // 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
 
 describe('Chain BTC', function() { 
+  describe('#getEstimatedFee', function() {
+    const btcChain = ChainService.get('btc') as BtcChain;
+    const readyTxp = (satoshis, amounts) => ({
+      inputs: satoshis.map(s => ({ satoshis: s })),
+      outputs: amounts.map(amount => ({ amount })),
+      changeAddress: null,
+      feePerKb: 10000
+    });
+    const feeOf = txp => btcChain.getEstimatedFee(txp as any, { conservativeEstimation: false });
+
+    it('should derive the same fee from string and number amounts', function() {
+      const fromNumbers = feeOf(readyTxp([2000, 1000], [1000, 1000]));
+
+      fromNumbers.should.equal(1000);
+      feeOf(readyTxp([2000, 1000], ['1000', '1000'])).should.equal(fromNumbers);
+      feeOf(readyTxp(['2000', '1000'], [1000, 1000])).should.equal(fromNumbers);
+      feeOf(readyTxp(['2000', '1000'], ['1000', '1000'])).should.equal(fromNumbers);
+    });
+  });
+
   describe('#getBitcoreTx', function() {
     it('should create a valid bitcore TX', function() {
       const txp = TxProposal.fromObj(aTXP()) as TxProposal;
       const t = ChainService.getBitcoreTx(txp);
       should.exist(t);
+    });
+
+    it('should build the same tx from string and number amounts without mutating the proposal', function() {
+      const asStrings: any = aTXP();
+      asStrings.outputs = asStrings.outputs.map(o => ({ ...o, amount: String(o.amount) }));
+      const fromStrings = TxProposal.fromObj(asStrings) as TxProposal;
+      const fromNumbers = TxProposal.fromObj(aTXP()) as TxProposal;
+
+      const built = ChainService.getBitcoreTx(fromStrings);
+
+      built.uncheckedSerialize().should.equal(ChainService.getBitcoreTx(fromNumbers).uncheckedSerialize());
+      fromStrings.outputs[0].amount.should.equal(String(aTXP().outputs[0].amount));
     });
 
     it('should order outputs as specified by outputOrder', function() {

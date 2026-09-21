@@ -4,6 +4,7 @@ import * as chai from 'chai';
 import 'chai/register-should';
 import { ChainService } from '../../src/lib/chain';
 import { ITxProposal, TxProposal } from '../../src/lib/model/txproposal';
+import { Defaults } from '../../src/lib/common/defaults';
 
 const should = chai.should();
 
@@ -26,6 +27,26 @@ describe('Chain XRP', function() {
         info.amount.should.equal(999988);
         info.fee.should.equal(12);
         info.feePerKb.should.equal(12);
+        done();
+      });
+    });
+  });
+
+  describe('#selectTxInputs', function() {
+    const balanceOf = amount => ({
+      getBalance: (_opts, cb) => cb(null, { totalAmount: amount, availableAmount: amount })
+    });
+    const txpOf = amounts => TxProposal.fromObj({
+      ...aTXP(),
+      outputs: amounts.map(amount => ({ ...aTXP().outputs[0], amount }))
+    } as any);
+
+    it('should reject a total that a number rounds down to the balance', function(done) {
+      const balance = 9007199254740992 + Defaults.MIN_XRP_BALANCE;
+
+      ChainService.get('xrp').selectTxInputs(balanceOf(balance) as any, txpOf(['9007199254740992', '1']), {} as any, {}, err => {
+        should.exist(err);
+        err.code.should.equal('INSUFFICIENT_FUNDS');
         done();
       });
     });

@@ -404,7 +404,7 @@ export class Utils {
       if (txp.instantAcceptanceEscrow && txp.escrowAddress) {
         t.escrow(
           txp.escrowAddress.address,
-          txp.instantAcceptanceEscrow + txp.fee
+          Number(txp.instantAcceptanceEscrow) + Number(txp.fee)
         );
       }
 
