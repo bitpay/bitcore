@@ -2,6 +2,7 @@
 
 import * as chai from 'chai';
 import 'chai/register-should';
+import * as crypto from 'crypto';
 import util from 'util';
 import { WalletService } from '../../../src/lib/server';
 import * as TestData from '../../testdata';
@@ -9,6 +10,21 @@ import helpers from '../helpers';
 import config from '../../../src/config';
 
 const should = chai.should();
+
+// RSA keypair used to sign/verify the Simplex webhook JWT (X-Signature-SHA256).
+const { privateKey: simplexPrivateKey, publicKey: simplexPublicKey } = crypto.generateKeyPairSync('rsa', {
+  modulusLength: 2048,
+  publicKeyEncoding: { type: 'spki', format: 'pem' },
+  privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+});
+
+function buildSimplexJwt(privateKey: string, exp: number): string {
+  const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
+  const payload = Buffer.from(JSON.stringify({ exp })).toString('base64url');
+  const signingInput = `${header}.${payload}`;
+  const signature = crypto.createSign('RSA-SHA256').update(signingInput).sign(privateKey).toString('base64url');
+  return `${signingInput}.${signature}`;
+}
 
 describe('Simplex integration', () => {
   let server;
@@ -379,6 +395,93 @@ describe('Simplex integration', () => {
     it('should work properly if req is OK', async () => {
       const data = await server.externalServices.simplex.simplexGetEvents(req);
       should.exist(data);
+    });
+  });
+
+  describe('#simplexHandleWebhook', () => {
+    let body;
+
+    beforeEach(() => {
+      config.simplex.production.publicKeyWebhook = simplexPublicKey;
+      body = {
+        name: 'wallet_status_changed',
+        event_id: 'evt1',
+        payment: {
+          id: 'payment1',
+          created_at: '2024-01-01T00:00:00.000Z',
+          fiat_total_amount: { amount: '100', currency: 'USD' },
+          requested_digital_amount: { currency: 'BTC' },
+          user_id: 'user1'
+        }
+      };
+      req = { headers: {}, body };
+    });
+
+    it('should verify and parse a valid webhook payload', () => {
+      const exp = Math.floor(Date.now() / 1000) + 300;
+      req.headers['x-signature-sha256'] = buildSimplexJwt(simplexPrivateKey, exp);
+      const { event } = server.externalServices.simplex.simplexHandleWebhook(req);
+      event.partner.should.equal('simplex');
+      event.externalId.should.equal('payment1');
+      event.status.should.equal('wallet_status_changed');
+      event.deliveryVersion.should.equal('evt1');
+      event.fiatAmount.should.equal(100);
+      event.fiatCurrency.should.equal('USD');
+      event.cryptoCurrency.should.equal('BTC');
+      event.userId.should.equal('user1');
+      event.env.should.equal('production');
+    });
+
+    it('should throw if the JWT is expired', () => {
+      const exp = Math.floor(Date.now() / 1000) - 60;
+      req.headers['x-signature-sha256'] = buildSimplexJwt(simplexPrivateKey, exp);
+      try {
+        server.externalServices.simplex.simplexHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Simplex webhook signature verification failed');
+      }
+    });
+
+    it('should throw if the signature does not match', () => {
+      const { privateKey: otherKey } = crypto.generateKeyPairSync('rsa', {
+        modulusLength: 2048,
+        publicKeyEncoding: { type: 'spki', format: 'pem' },
+        privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
+      });
+      const exp = Math.floor(Date.now() / 1000) + 300;
+      req.headers['x-signature-sha256'] = buildSimplexJwt(otherKey, exp);
+      try {
+        server.externalServices.simplex.simplexHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Simplex webhook signature verification failed');
+      }
+    });
+
+    it('should throw if the signature header is missing while a public key is configured', () => {
+      try {
+        server.externalServices.simplex.simplexHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Simplex webhook missing X-Signature-SHA256 header');
+      }
+    });
+
+    it('should skip verification and still parse if no publicKeyWebhook is configured', () => {
+      delete config.simplex.production.publicKeyWebhook;
+      const { event } = server.externalServices.simplex.simplexHandleWebhook(req);
+      event.externalId.should.equal('payment1');
+    });
+
+    it('should return error if simplex is commented in config', () => {
+      config.simplex = undefined;
+      try {
+        server.externalServices.simplex.simplexHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Simplex missing credentials');
+      }
     });
   });
 });
