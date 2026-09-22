@@ -118,7 +118,7 @@ export class PayProV2 {
       case errMsg.includes('We were unable to parse your payment.'):
         return new Errors.UNABLE_TO_PARSE_PAYMENT();
       case errMsg.includes('Request must include exactly one'):
-        return new Errors.NO_TRASACTION();
+        return new Errors.NO_TRANSACTION();
       case errMsg.includes('Your transaction was an in an invalid format'):
         return new Errors.INVALID_TX_FORMAT();
       case errMsg.includes('We were unable to parse the transaction you sent'):

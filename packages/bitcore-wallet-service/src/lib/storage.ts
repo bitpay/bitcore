@@ -1,6 +1,5 @@
 import * as async from 'async';
 import _ from 'lodash';
-import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
 import preconditions from 'preconditions';
 import { BCHAddressTranslator } from './bchaddresstranslator'; // only for migration
@@ -19,8 +18,11 @@ import {
   TxProposal,
   Wallet
 } from './model';
-import { ITssKeyMessageObject, TssKeyGenModel } from './model/tsskeygen';
-import { ITssSigMessageObject, TssSigGenModel } from './model/tsssign';
+import { TssKeyGenModel } from './model/tsskeygen';
+import { TssSigGenModel } from './model/tsssign';
+import type { ITssKeyMessageObject } from './model/tsskeygen';
+import type { ITssSigMessageObject } from './model/tsssign';
+import type { Db } from 'mongodb';
 
 const $ = preconditions.singleton();
 

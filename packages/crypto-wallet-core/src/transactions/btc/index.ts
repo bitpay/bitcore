@@ -20,7 +20,7 @@ export class BTCTxProvider {
     fee?: number
   ): EveryUtxoType[] {
     // Only sort by block height if utxos are bitcore-node style
-    if (utxos.length > 0 && utxos[0].mintHeight != undefined) {
+    if (utxos.length > 0 && utxos.every(utxo => utxo.mintHeight != undefined)) {
       utxos = utxos.sort(function(a, b) {
         return a.mintHeight - b.mintHeight;
       });
@@ -32,7 +32,7 @@ export class BTCTxProvider {
     while (utxoSum < recepientSum) {
       assert(index < utxos.length, 'insufficient funds');
       const utxo = utxos[index];
-      utxoSum += Number(utxo.value ?? utxo.satoshis ?? this.lib.Unit.fromBTC(utxo.amount).toSatoshis());
+      utxoSum += Number(utxo.satoshis ?? utxo.value ?? this.lib.Unit.fromBTC(utxo.amount ?? 0).toSatoshis());
       index += 1;
     }
     const filteredUtxos = utxos.slice(0, index);
@@ -40,19 +40,28 @@ export class BTCTxProvider {
   }
 
   /**
-   * Standardize utxo for internal funcionality.
+   * Standardize utxo for internal functionality.
    * Accepts either a bitcore-node or a lib (bitcore-lib, bitcore-lib-cash, etc.) utxo.
    * Handles both lib style utxos: UnspentOutput properties and UnspentOutput.toObject properties.
    *
-   * @param utxos either a bitcore-node or lib utxo
-   * @returns utxo in the standard, internaly used format
+   * @param utxo either a bitcore-node or lib utxo
+   * @returns utxo in the standard, internally used format
    */
   standardizeUtxo(utxo: EveryUtxoType): UtxoType {
+    const outputIndex = utxo.outputIndex ?? utxo.mintIndex ?? utxo.vout;
+    const satoshis = utxo.satoshis ?? utxo.value ?? (utxo.amount != undefined ? this.lib.Unit.fromBTC(utxo.amount ?? 0).toSatoshis() : undefined);
+    const txId = utxo.txId ?? utxo.mintTxid ?? utxo.txid;
+    const script = utxo.script ?? utxo.scriptPubKey;
+    $.checkArgument(outputIndex != undefined, 'output index required (outputIndex|mintIndex|vout)');
+    $.checkArgument(satoshis != undefined, 'satoshis required (satoshis|value|amount)');
+    $.checkArgument(txId, 'txid required (txid|txId|mintTxid)');
+    $.checkArgument(script || utxo.address, 'script or address required (script|scriptPubKey|address)');
+    
     return {
-      satoshis: Number(utxo.satoshis ?? utxo.value ?? this.lib.Unit.fromBTC(utxo.amount ?? 0).toSatoshis()),
-      txId: utxo.txId ?? utxo.mintTxid ?? utxo.txid,
-      outputIndex: Number(utxo.outputIndex ?? utxo.mintIndex ?? utxo.vout ?? 0),
-      script: utxo.scriptPubKey ?? new this.lib.Script(utxo.script).toHex(),
+      satoshis: Number(satoshis),
+      txId,
+      outputIndex: Number(outputIndex),
+      script: script != undefined ? new this.lib.Script(script).toHex() : undefined,
       address: utxo.address != undefined ? new this.lib.Address(utxo.address).toString() : undefined
     };
   }
@@ -162,11 +171,14 @@ export class BTCTxProvider {
     tx: TransactionType;
     keys: Key[];
     utxos: EveryUtxoType[];
+    sigtype?: number;
     pubkeys?: any[];
     threshold?: number;
-    opts: any;
+    opts?: any;
   }): string {
-    const { tx, keys, pubkeys, threshold, opts } = params;
+    const { tx, keys, pubkeys, sigtype, threshold, opts } = params;
+    $.checkArgument(keys.every(k => !!k.privKey), 'Keys must contain private key data for signing');
+    
     const utxos = params.utxos || [];
     const bitcoreTx = new this.lib.Transaction(tx);
     const btcUtxos = utxos.map(utxo => this.standardizeUtxo(utxo));
@@ -181,7 +193,7 @@ export class BTCTxProvider {
       map[pk.publicKey.toString()] = pk;
       return map;
     }, {}));
-    const signedTx = bitcoreTx.sign(uniqePrivKeys).toString();
+    const signedTx = bitcoreTx.sign(uniqePrivKeys, sigtype).toString();
     return signedTx;
   }
 
@@ -267,7 +279,7 @@ type SignatureType = BitcoreLib.Transaction.Signature | BitcoreLib.crypto.Signat
 type TransactionType = BitcoreLib.Transaction | string | Buffer | object;
 
 /**
- * Standard utxo type use for internal processing.
+ * Standard utxo type used for internal processing.
  * Property names are from bitcore-lib's UnspentOutput.
  * Note, UnspentOutput addresses and scripts are Address and Script classes respectively,
  * here they are both strings.
@@ -276,15 +288,21 @@ export type UtxoType = {
   txId: string;
   outputIndex: number;
   satoshis: number;
-  script: string;
+  script?: string;
   address?: string;
 };
 
 /** 
- * Utxo type for functions were the received utxo type is unknown.
+ * Utxo type for functions where the received utxo type is unknown.
  * Could either be in the format of UnspentOutput, UnspentOutput.toObject, or from bitcore-node.
  */
-export type EveryUtxoType = Partial<UtxoType & {
+export type EveryUtxoType = Partial<{
+  // UnspentOutput properties
+  txId: string;
+  outputIndex: number | string;
+  satoshis: number | string;
+  script: string | BitcoreLib.Script;
+  address: string | BitcoreLib.Address;
   // bitcore-node specific properties
   mintTxid: string;
   mintIndex: number;
@@ -295,7 +313,4 @@ export type EveryUtxoType = Partial<UtxoType & {
   amount: number;
   vout: number;
   scriptPubKey: string;
-  // UnspentOutput specific, allow for Script and Address objects
-  script: string | BitcoreLib.Script;
-  address: string | BitcoreLib.Address;
 }>;

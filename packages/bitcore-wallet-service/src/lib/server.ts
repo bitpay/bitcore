@@ -326,12 +326,9 @@ export class WalletService implements IWalletService {
     );
   }
 
-  static handleIncomingNotifications(notification, cb) {
-    cb = cb || function() { };
-
+  static handleIncomingNotifications(_notification: INotification) {
     // do nothing here....
     // bc height cache is cleared on bcmonitor
-    return cb();
   }
 
   static shutDown(cb) {
@@ -472,6 +469,13 @@ export class WalletService implements IWalletService {
       throw new Error('Storage requested before server was initialized');
     }
     return storage;
+  }
+
+  static getMessageBroker() {
+    if (!initialized) {
+      throw new Error('Message broker requested before server was initialized');
+    }
+    return messageBroker;
   }
 
   _runLocked(cb, task, waitTime?: number) {
@@ -1152,7 +1156,7 @@ export class WalletService implements IWalletService {
         try {
           const isValid = this._verifyRequestPubKey(opts.requestPubKey, opts.signature, target.xPubKey);
           if (!isValid) return cb(Errors.NOT_AUTHORIZED);
-        } catch (e) {
+        } catch {
           return cb(Errors.NOT_AUTHORIZED);
         }
 
@@ -2084,6 +2088,44 @@ export class WalletService implements IWalletService {
       this.syncWallet(wallet, err => {
         if (err) return cb(err);
         return ChainService.getWalletBalance(this, wallet, opts, cb);
+      });
+    });
+  }
+
+  /**
+   * Get wallet balance at a specific time.
+   * @param {Object} opts
+   * @param {string} opts.time - Date or time accepted by the bitcore-node API.
+   * @returns {Object} balance - The chain-state provider balance at the requested time.
+   */
+  getBalanceAtTime(opts, cb) {
+    opts = opts || {};
+    if (!opts.time) {
+      return cb(new ClientError('time is required in getBalanceAtTime'));
+    }
+    let wallet = opts.wallet;
+
+    const setWallet = cb1 => {
+      if (wallet) return cb1();
+      this.getWallet({}, (err, ret) => {
+        if (err) return cb(err);
+        wallet = ret;
+        return cb1(null, wallet);
+      });
+    };
+
+    setWallet(() => {
+      if (!wallet.isComplete()) {
+        return cb(null, { confirmed: 0, unconfirmed: 0, balance: 0 });
+      }
+
+      this.syncWallet(wallet, err => {
+        if (err) return cb(err);
+        const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
+        if (!bc) {
+          return cb(new Error('Could not get blockchain explorer instance'));
+        }
+        return bc.getBalanceAtTime({ ...wallet, tokenAddress: opts.tokenAddress }, opts.time, cb);
       });
     });
   }
@@ -3857,7 +3899,7 @@ export class WalletService implements IWalletService {
           const notifications = res
             .flat()
             .map((n: INotification) => ({ ...n, walletId: this.walletId }))
-            .sort((a, b) => a.id - b.id);
+            .sort((a, b) => a.id?.toString()?.localeCompare(b.id?.toString()));
 
           return cb(null, notifications);
         }
