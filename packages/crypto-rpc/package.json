@@ -36,9 +36,9 @@
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.8",
-    "@nomicfoundation/hardhat-ignition-ethers": "^0.15.9",
+    "@nomicfoundation/hardhat-ignition-ethers": "^3.1.6",
     "chai": "^6.2.1",
-    "hardhat": "^2.22.18",
+    "hardhat": "^3.16.0",
     "monocart-coverage-reports": "^2.13.0",
     "sinon": "^21.0.0"
   }
