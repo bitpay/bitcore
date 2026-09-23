@@ -143,6 +143,10 @@ export class XrpChain implements IChain {
     });
   }
 
+  isPrePublishRawBound(txp) {
+    return Common.Utils.isPrePublishRawBound(this, txp);
+  }
+
   getBitcoreTx(txp, opts = { signed: true }) {
     const { destinationTag, outputs, outputOrder, multiTx } = txp;
     const chain = 'XRP';
