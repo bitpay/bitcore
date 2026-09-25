@@ -17,14 +17,20 @@ describe('Burner Data', function () {
   });
 
   beforeEach(function () {
-    burner.responses = [];
-    burner.commandQueue = [];
+    burner.responses.clear();
+    burner.commandQueue.clear();
+  });
+
+  afterEach(function () {
+    expect(burner.responses.size).to.equal(0, 'response queue not cleaning properly');
+    expect(burner.commandQueue.size).to.equal(0, 'command queue not cleaning properly');
   });
 
   it('should get public key', async function () {
     const publicKeyRequest: Promise<string> = burner.getPublicKey({ index: 9 });
 
-    burner.responses = [
+    burner.responses.set(
+      'get_data_struct_v20',
       {
         publicKey: {
           9: {
@@ -32,7 +38,7 @@ describe('Burner Data', function () {
           }
         }
       }
-    ];
+    );
     
     const fetchedPublicKey = await publicKeyRequest;
     expect(fetchedPublicKey).to.equal(publicKey.toString());
@@ -40,7 +46,8 @@ describe('Burner Data', function () {
 
   it('should get bitcoin address', async function () {
     const addressRequest: Promise<string> = burner.getAddress({ chain: 'BTC', index: 9 });
-    burner.responses = [
+    burner.responses.set(
+      'get_data_struct_v20',
       {
         compressedPublicKey: {
           9: {
@@ -48,14 +55,15 @@ describe('Burner Data', function () {
           }
         },
       }
-    ];
+    );
     const fetchedAddress = await addressRequest;
     expect(fetchedAddress).to.equal(address.toString());
   });
 
   it('should get return undefined for invalid bitcoin address', async function () {
     const addressRequest: Promise<string> = burner.getAddress({ chain: 'BTC', index: 9 });
-    burner.responses = [
+    burner.responses.set(
+      'get_data_struct_v20',
       {
         compressedPublicKey: {
           9: {
@@ -63,14 +71,15 @@ describe('Burner Data', function () {
           }
         },
       }
-    ];
+    );
     const fetchedAddress = await addressRequest;
     expect(fetchedAddress).to.be.undefined;
   });
   
   it('should get ethereum address', async function () {
     const addressRequest: Promise<string> = burner.getAddress({ chain: 'ETH', index: 9 });
-    burner.responses = [
+    burner.responses.set(
+      'get_data_struct_v20',
       {
         publicKey: {
           9: {
@@ -78,14 +87,15 @@ describe('Burner Data', function () {
           }
         },
       }
-    ];
+    );
     const fetchedAddress = await addressRequest;
     expect(fetchedAddress).to.equal(etherAddress.toString());
   });
 
   it('should get return undefined for invalid ethereum address', async function () {
     const addressRequest: Promise<string> = burner.getAddress({ chain: 'ETH', index: 9 });
-    burner.responses = [
+    burner.responses.set(
+      'get_data_struct_v20',
       {
         publicKey: {
           9: {
@@ -93,7 +103,7 @@ describe('Burner Data', function () {
           }
         },
       }
-    ];
+    );
     const fetchedAddress = await addressRequest;
     expect(fetchedAddress).to.be.undefined;
   });
@@ -101,7 +111,8 @@ describe('Burner Data', function () {
   it('should get firmware version', async function () {
     const versionRequest: Promise<string> = burner.getVersion();
     const expectedVersion = '30312e43382e3030303034332e3930333943363334';
-    burner.responses = [
+    burner.responses.set(
+      'get_data_struct_v20',
       {
         firmwareVersion: {
           1: {
@@ -109,7 +120,7 @@ describe('Burner Data', function () {
           }
         }
       }
-    ];
+    );
     const version = await versionRequest;
     expect(version).to.equal(expectedVersion);
   });

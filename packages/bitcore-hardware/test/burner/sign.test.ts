@@ -16,8 +16,13 @@ describe('Burner Signing', function () {
   });
 
   beforeEach(function () {
-    burner.responses = [];
-    burner.commandQueue = [];
+    burner.responses.clear();
+    burner.commandQueue.clear();
+  });
+
+  afterEach(function () {
+    expect(burner.responses.size).to.equal(0, 'response queue not cleaning properly');
+    expect(burner.commandQueue.size).to.equal(0, 'command queue not cleaning properly');
   });
 
   it('should sign a BTC transaction', async function () {
@@ -51,16 +56,20 @@ describe('Burner Signing', function () {
     });
     
     const signature = crypto.ECDSA.sign(Buffer.from(hash, 'hex'), privateKey);
-    
-    burner.responses = [{
-      input: (burner.commandQueue[0] as any).keyNo,
-      digest: (burner.commandQueue[0] as any).digest,
-      signature: {
-        raw: {},
-        der: signature.toString(),
-      },
-      publicKey: publicKey.toString()
-    }];
+
+    const id = 'sign0';
+    burner.responses.set(
+      id,
+      {
+        input: (burner.commandQueue.get(id) as any).keyNo,
+        digest: (burner.commandQueue.get(id) as any).digest,
+        signature: {
+          raw: {},
+          der: signature.toString(),
+        },
+        publicKey: publicKey.toString()
+      }
+    );
     
     const signedTransaction = new Transaction(await signRequest);
     expect(signedTransaction.inputs[0].witnesses[0].length).to.be.greaterThan(5).and.lessThan(100);
@@ -94,14 +103,18 @@ describe('Burner Signing', function () {
       key
     });
 
-    burner.responses = [{
-      input: (burner.commandQueue[0] as any).keyNo,
-      digest: (burner.commandQueue[0] as any).digest,
-      signature: {
-        raw: {},
-        ether: signature,
+    const id = 'sign0';
+    burner.responses.set(
+      id,
+      {
+        input: (burner.commandQueue.get(id) as any).keyNo,
+        digest: (burner.commandQueue.get(id) as any).digest,
+        signature: {
+          raw: {},
+          ether: signature,
+        }
       }
-    }];
+    );
     const signedTx = await signRequest;
 
     const expectedSignedTx = CWC.Transactions.sign({
@@ -143,17 +156,21 @@ describe('Burner Signing', function () {
       password: 'password not relevant to test',
       index: 0
     });
-    
-    burner.responses = [{
-      input: (burner.commandQueue[0] as any).keyNo,
-      digest: (burner.commandQueue[0] as any).digest,
-      signature: {
-        raw: {},
-        der: signature.toString(),
-      },
-      // random, incorrect public key
-      publicKey: new PrivateKey().toPublicKey().toString()
-    }];
+
+    const id = 'sign0';
+    burner.responses.set(
+      id,
+      {
+        input: (burner.commandQueue.get(id) as any).keyNo,
+        digest: (burner.commandQueue.get(id) as any).digest,
+        signature: {
+          raw: {},
+          der: signature.toString(),
+        },
+        // random, incorrect public key
+        publicKey: new PrivateKey().toPublicKey().toString()
+      }
+    );
 
     let error = false;
     try {
@@ -193,15 +210,19 @@ describe('Burner Signing', function () {
     
     const signature = crypto.ECDSA.sign(Buffer.from(hash, 'hex'), privateKey);
     
-    burner.responses = [{
-      input: (burner.commandQueue[0] as any).keyNo,
-      digest: (burner.commandQueue[0] as any).digest,
-      signature: {
-        raw: {},
-        der: signature.toString(),
-      },
-      publicKey: publicKey.toString()
-    }];
+    const id = 'sign0';
+    burner.responses.set(
+      id,
+      {
+        input: (burner.commandQueue.get(id) as any).keyNo,
+        digest: (burner.commandQueue.get(id) as any).digest,
+        signature: {
+          raw: {},
+          der: signature.toString(),
+        },
+        publicKey: publicKey.toString()
+      }
+    );
     
     const signedTransaction = new Transaction(await signRequest);
     expect(signedTransaction.inputs[0].witnesses[0].length).to.be.greaterThan(70).and.lessThan(73);
@@ -266,16 +287,20 @@ describe('Burner Signing', function () {
         index: i
       });
       const signature = crypto.ECDSA.sign(Buffer.from(hash, 'hex'), privateKey);
-      
-      burner.responses.push({
-        input: (burner.commandQueue[0] as any).keyNo,
-        digest: (burner.commandQueue[0] as any).digest,
-        signature: {
-          raw: {},
-          der: signature.toString(),
-        },
-        publicKey: publicKey.toString()
-      });
+
+      const id = 'sign' + i;
+      burner.responses.set(
+        id,
+        {
+          input: (burner.commandQueue.get(id) as any).keyNo,
+          digest: (burner.commandQueue.get(id) as any).digest,
+          signature: {
+            raw: {},
+            der: signature.toString(),
+          },
+          publicKey: publicKey.toString()
+        }
+      );
     }
     
     const signedTransaction = new Transaction(await signRequest);

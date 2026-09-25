@@ -15,9 +15,9 @@ const { Address, PublicKey, crypto } = BitcoreLib;
 export default class Burner implements Base {
   nfc?: NFC;
   // list of commands waiting to be sent to the wallet
-  commandQueue: Record<string, any>[] = [];
+  commandQueue = new Map<string, Record<string, any>>();
   // responses to all the commands from commandQueue
-  responses: Record<string, any>[] = [];
+  responses = new Map<string, Record<string, any>>();
 
   /**
    * Queues a command to be sent off to the wallet when it is scanned with an NFC reader.
@@ -42,15 +42,28 @@ export default class Burner implements Base {
    * @returns responses from the wallet
    */
   async sendManyCommands(commands: CommandType[]): Promise<Record<string, any>[]> {
-    const index = this.commandQueue.length;
+    const ids: string[] = [];
     for (const command of commands) {
-      this.commandQueue.push(command);
-    }
-    return new Promise(async (resolve1) => {
-      while (this.responses.length < index + commands.length) {
-        await new Promise(resolve2 => setTimeout(resolve2, 10));
+      for (let i = 0; i < 100; i++) {
+        const id = command.name + '' + i;
+        if (!this.commandQueue.has(id)) {
+          this.commandQueue.set(id, command);
+          ids.push(id);
+          break;
+        }
       }
-      resolve1(this.responses.slice(index, index + commands.length));
+    }
+    return new Promise(async resolve1 => {
+      const _responses: Record<string, object>[] = [];
+      for (const id of ids) {
+        while (this.responses.get(id) == undefined) {
+          await new Promise(async resolve2 => setTimeout(resolve2, 500));
+        }
+        _responses.push(this.responses.get(id) ?? { error: 'no command' });
+        this.responses.delete(id);
+        this.commandQueue.delete(id);
+      }
+      resolve1(_responses);
     });
   }
 
@@ -65,9 +78,8 @@ export default class Burner implements Base {
 
       reader.on('card', async () => {
         try {
-          this.responses = [];
-          for (const command of this.commandQueue) {
-            this.responses.push(await execHaloCmdPCSC(command, reader));
+          for (const id of this.commandQueue.keys()) {
+            this.responses.set(id, await execHaloCmdPCSC(this.commandQueue.get(id), reader));
           }
         } catch (e) {
           console.error(e);
