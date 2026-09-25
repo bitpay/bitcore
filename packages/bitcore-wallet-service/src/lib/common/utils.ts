@@ -28,8 +28,8 @@ export const Utils = {
    * Shared implementation of IChain.isPrePublishRawBound for account-based chains (SVM/EVM/XRP). True only if
    * txp.prePublishRaw is the same transaction as the current proposal, differing solely in the field BWS
    * mutates at publish (blockhash on SVM, nonce on EVM/XRP). Recovers that field from prePublishRaw, rebuilds
-   * the proposal via the chain's own getBitcoreTx, and requires byte-for-byte equality -- so a tampered
-   * stored proposal cannot reuse an old, still-valid proposalSignature. Fails closed on any error.
+   * the proposal via the chain's own getBitcoreTx, and requires byte-for-byte equality, so a tampered stored
+   * proposal cannot reuse an old, still-valid proposalSignature. Fails closed on any error.
    *
    * @param chain - the IChain implementation (provides chain + getBitcoreTx)
    * @param txp - the transaction proposal (must carry prePublishRaw)
@@ -42,7 +42,8 @@ export const Utils = {
       const mutableFields = provider.getMutableFields(prePublishRaw[0]);
       if (!mutableFields || Object.values(mutableFields).every(v => v == null)) return false;
       const cloned = Object.assign(Object.create(Object.getPrototypeOf(txp)), txp, mutableFields);
-      const rebuilt = chain.getBitcoreTx(cloned).uncheckedSerialize();
+      // signed: false to match prePublishRaw, which is captured before any copayer signature exists.
+      const rebuilt = chain.getBitcoreTx(cloned, { signed: false }).uncheckedSerialize();
       const rebuiltArr = Array.isArray(rebuilt) ? rebuilt : [rebuilt];
       if (rebuiltArr.length !== prePublishRaw.length) return false;
       return rebuiltArr.every((raw, i) => raw === prePublishRaw[i]);
