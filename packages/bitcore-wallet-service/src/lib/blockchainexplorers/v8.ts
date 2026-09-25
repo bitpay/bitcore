@@ -178,6 +178,17 @@ export class V8 {
       .catch(cb);
   }
 
+  async getBalanceAtTime(wallet: WalletWithOpts, time: string, cb) {
+    const client = this._getAuthClient(wallet);
+    const { tokenAddress } = wallet;
+    client
+      .getBalanceAtTime({ pubKey: wallet.beAuthPublicKey2, payload: {}, time, tokenAddress })
+      .then(ret => {
+        return cb(null, ret);
+      })
+      .catch(cb);
+  }
+
   getConnectionInfo() {
     return 'V8 (' + this.chain + '/' + this.v8network + ') @ ' + this.host;
   }

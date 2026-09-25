@@ -61,6 +61,20 @@ export class Client {
     });
   }
 
+  async getBalanceAtTime(params) {
+    const { payload, pubKey, time, tokenAddress } = params;
+    let url = `${this.baseUrl}/wallet/${pubKey}/balance/${encodeURIComponent(time)}`;
+    if (tokenAddress) {
+      url += `?tokenAddress=${encodeURIComponent(tokenAddress)}`;
+    }
+    const signature = this.sign({ method: 'GET', url, payload });
+    return request.get(url, {
+      headers: { 'x-signature': signature },
+      body: payload,
+      json: true
+    });
+  }
+
   async getCheckData(params) {
     const { payload, pubKey } = params;
     const url = `${this.baseUrl}/wallet/${pubKey}/check`;
