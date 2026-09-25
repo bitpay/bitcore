@@ -412,6 +412,50 @@ describe('Verifier', function() {
     });
   });
 
+  describe('checkProposalAddresses', function() {
+    const btcCred = () => {
+      const cred = aKey.createCredentials(null, { coin: 'btc', network: 'livenet', account: 0, n: 1 });
+      cred.addWalletInfo('id', 'name', 1, 1, 'copayer');
+      return cred;
+    };
+    const ourChange = {
+      address: '1LqBGSKuX5yYUonjxT5qGfpUsXKYYWeabA',
+      path: 'm/0/0',
+      publicKeys: ['03aaeb52dd7494c361049de67cc680e83ebcbbbdbeb13637d92cd845f70308af5e']
+    };
+    const theirChange = { ...ourChange, address: '1BitcoinEaterAddressDontSendf59kuE' };
+
+    it('should reject a change or escrow address on account-based chains', function() {
+      const cred = btcCred();
+
+      for (const chain of ['eth', 'matic', 'sol', 'xrp']) {
+        Verifier.checkProposalAddresses(cred, chain, { id: 'txp' }).should.be.true;
+        Verifier.checkProposalAddresses(cred, chain, { id: 'txp', changeAddress: ourChange }).should.be.false;
+        Verifier.checkProposalAddresses(cred, chain, { id: 'txp', escrowAddress: ourChange }).should.be.false;
+      }
+    });
+
+    it('should reject a chain it has no address rules for', function() {
+      Verifier.checkProposalAddresses(btcCred(), 'notachain', { id: 'txp', sendMax: true }).should.be.false;
+    });
+
+    it('should require our change address and, when escrow is requested, an escrow address', function() {
+      const cred = btcCred();
+
+      Verifier.checkProposalAddresses(cred, 'btc', { id: 'txp', changeAddress: ourChange }).should.be.true;
+      Verifier.checkProposalAddresses(cred, 'btc', { id: 'txp', sendMax: true }).should.be.true;
+      Verifier.checkProposalAddresses(cred, 'btc', { id: 'txp', changeAddress: theirChange }).should.be.false;
+      Verifier.checkProposalAddresses(cred, 'btc', { id: 'txp' }).should.be.false;
+      // a proposal that asks for escrow but carries no escrow address cannot be verified
+      Verifier.checkProposalAddresses(cred, 'btc', {
+        id: 'txp', changeAddress: ourChange, instantAcceptanceEscrow: 1000
+      }).should.be.false;
+      Verifier.checkProposalAddresses(cred, 'btc', {
+        id: 'txp', changeAddress: ourChange, instantAcceptanceEscrow: 1000, escrowAddress: theirChange
+      }).should.be.false;
+    });
+  });
+
   describe('checkPrePublishRaw', function() {
     const ATTACKER_EVM = '0x1111111111111111111111111111111111111111';
     const ATTACKER_SOL = 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY';

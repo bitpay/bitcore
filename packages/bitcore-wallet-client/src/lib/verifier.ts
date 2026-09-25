@@ -278,10 +278,8 @@ export class Verifier {
 
     log.debug(`[TXP ${txp.id}] Regenerating & verifying tx proposal hash -> Hash: ${hash}, Signature: ${txp.proposalSignature}`);
   
-    // Establish signature trust affirmatively: a proposal is trusted only when the creator's signature
-    // matches the transaction we rebuilt, or (for publish-mutable chains) matches the pre-publish
-    // serialization that is provably bound to this exact proposal. Every other case leaves it untrusted and
-    // is rejected -- we never fall through to "trusted" for a situation we didn't explicitly establish.
+    // The signature is only trusted if it matches the tx we rebuilt, or (on publish-mutable chains) the
+    // pre-publish serialization that we can tie back to this proposal. Anything else stays untrusted.
     let signatureTrusted = Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey);
     if (!signatureTrusted) {
       // Local rebuild != creator's signature. Legit only when BWS mutated a field at publish (SVM recent
@@ -301,30 +299,49 @@ export class Verifier {
       return false;
     }
 
-    // Accept only when every required invariant is affirmatively proven: the signature is trusted (above)
-    // and, for UTXO chains, the change/escrow addresses are ours. The proposal is trusted because these held,
-    // not because no known-bad condition was hit.
-    return this.checkUtxoAddresses(credentials, chain, txp);
+    // The signature is trusted at this point. Still need the proposal's addresses to be what this wallet
+    // expects before accepting it.
+    return this.checkProposalAddresses(credentials, chain, txp);
   }
 
   /**
-   * For UTXO chains, verifies the change and escrow addresses belong to this wallet. Returns true for
-   * non-UTXO chains (they carry no such addresses to prove). Split out of checkTxProposalSignature so that
-   * function terminates on an explicit proven-accept verdict rather than a fall-through.
+   * Checks the proposal carries the address fields this wallet expects for its chain. Account-based chains
+   * have no change or escrow address, so they must carry neither. UTXO chains need a change address that is
+   * ours (or sendMax), plus an escrow address that is ours whenever the proposal asks for escrow. A chain we
+   * don't recognize gets no pass: we can't state its address rules, so we can't verify them.
    *
    * @param {Object} credentials
    * @param {string} chain - lower-cased chain of the proposal
    * @param {Object} txp - the transaction proposal
    */
-  static checkUtxoAddresses(credentials, chain, txp) {
-    if (!Constants.UTXO_CHAINS.includes(chain)) {
+  static checkProposalAddresses(credentials, chain, txp) {
+    const isAccountChain = [
+      ...Constants.EVM_CHAINS,
+      ...Constants.SVM_CHAINS,
+      ...Constants.RIPPLE_CHAINS
+    ].includes(chain);
+    if (isAccountChain) {
+      if (txp.changeAddress || txp.escrowAddress) {
+        log.warn(`[TXP ${txp.id}] Unexpected change/escrow address on ${chain} proposal`);
+        return false;
+      }
       return true;
     }
-    if (txp.changeAddress && !this.checkAddress(credentials, txp.changeAddress)) {
-      log.debug(`[TXP ${txp.id}] Invalid change address`);
+    if (!Constants.UTXO_CHAINS.includes(chain)) {
+      log.warn(`[TXP ${txp.id}] Cannot verify addresses for unrecognized chain ${chain}`);
       return false;
-    } else if (!txp.changeAddress && !txp.sendMax) {
+    }
+    if (txp.changeAddress) {
+      if (!this.checkAddress(credentials, txp.changeAddress)) {
+        log.debug(`[TXP ${txp.id}] Invalid change address`);
+        return false;
+      }
+    } else if (!txp.sendMax) {
       log.warn(`[TXP ${txp.id}] Missing change address for non sendMax transaction proposal`);
+      return false;
+    }
+    if (txp.instantAcceptanceEscrow && !txp.escrowAddress) {
+      log.warn(`[TXP ${txp.id}] Missing escrow address for instant acceptance proposal`);
       return false;
     }
     if (txp.escrowAddress && !this.checkAddress(credentials, txp.escrowAddress, txp.inputs)) {
