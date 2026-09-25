@@ -178,9 +178,9 @@ export function normalizeXrpFlag(flag: string | number, flagEnum?: typeof xrpl.A
   return normalizedFlag;
 }
 
-export function tryParse(json: string, fallback?: any) {
+export function tryParse(json: unknown, fallback?: any) {
   try {
-    if (typeof json === 'object') return json; // already parsed
+    if (typeof json !== 'string') return json; // already parsed
     return JSON.parse(json);
   } catch {
     return fallback;

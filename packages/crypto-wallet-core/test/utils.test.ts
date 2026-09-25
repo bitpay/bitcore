@@ -412,6 +412,13 @@ describe('Utils', function() {
       expect(result).to.deep.equal({ key: 'value' });
     });
 
+    it('should parse JSON primitives and arrays', function() {
+      expect(utils.tryParse('0')).to.equal(0);
+      expect(utils.tryParse('false')).to.equal(false);
+      expect(utils.tryParse('null', 'fallback')).to.equal(null);
+      expect(utils.tryParse('[1,2]')).to.deep.equal([1, 2]);
+    });
+
     it('should return fallback for invalid JSON', function() {
       const json = '{"key": "value"';
       const fallback = { fallback: true };
@@ -419,10 +426,21 @@ describe('Utils', function() {
       expect(result).to.deep.equal(fallback);
     });
 
+    it('should return undefined for invalid JSON without a fallback', function() {
+      expect(utils.tryParse('{invalid')).to.equal(undefined);
+    });
+
     it('should return the object itself if already parsed', function() {
       const obj = { key: 'value' };
-      const result = utils.tryParse(obj as any);
-      expect(result).to.deep.equal(obj);
+      const result = utils.tryParse(obj);
+      expect(result).to.equal(obj);
+    });
+
+    it('should return non-string inputs unchanged even when a fallback is provided', function() {
+      expect(utils.tryParse(0, 'fallback')).to.equal(0);
+      expect(utils.tryParse(false, 'fallback')).to.equal(false);
+      expect(utils.tryParse(null, 'fallback')).to.equal(null);
+      expect(utils.tryParse(undefined, 'fallback')).to.equal(undefined);
     });
   });
 });
