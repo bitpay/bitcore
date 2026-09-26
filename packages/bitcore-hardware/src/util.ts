@@ -22,8 +22,8 @@ class UtilClass {
     const lib = this.libs[chain];
     const bitcoreTx = tx instanceof lib.Transaction ? tx : new lib.Transaction(tx);
     if (utxos) {
-      const btcUtxos = utxos.map(utxo => CWC.Transactions.get({ chain: 'BTC' }).standardizeUtxo(utxo, chain));
-      const applicableUtxos = CWC.Transactions.get({ chain: 'BTC' }).getRelatedUtxos({
+      const btcUtxos = utxos.map(utxo => CWC.Transactions.get({ chain }).standardizeUtxo(utxo, chain));
+      const applicableUtxos = CWC.Transactions.get({ chain }).getRelatedUtxos({
         outputs: bitcoreTx.inputs,
         utxos: btcUtxos
       });

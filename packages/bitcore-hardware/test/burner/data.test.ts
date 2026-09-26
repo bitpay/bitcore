@@ -131,4 +131,24 @@ describe('Burner Data', function () {
     expect(Burner.isValidChain('not a chain name')).to.be.false;
     expect(Burner.isValidChain('btc')).to.be.false;
   });
+  
+  it('should throw error when filling queue', async function () {
+    for (let i = 0; i < 100; i++) {
+      burner.commandQueue.set(
+        'get_data_struct_v2' + i,
+        {
+          name: 'get_data_struct_v2',
+          spec: [ { type: 'publicKey', index: 9 } ]
+        }
+      );
+    }
+    let error = false;
+    try {
+      await burner.getPublicKey({ index: 9 });
+    } catch (e) {
+      error = true;
+    }
+    expect(error, 'did not throw error when filling queue').to.be.true;
+    burner.commandQueue.clear();
+  });
 });

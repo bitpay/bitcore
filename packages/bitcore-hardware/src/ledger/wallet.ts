@@ -37,7 +37,7 @@ const {
 export default class Ledger implements Base {
   device: DMK.ConnectedDevice | null = null;
   sessionId: DMK.DeviceSessionId | null = null;
-  discoverySubscryption: Subscription | null = null;
+  discoverySubscription: Subscription | null = null;
   modules = {} as Record<ChainType, BaseModule>;
   dmk: DMK.DeviceManagementKit;
 
@@ -48,16 +48,16 @@ export default class Ledger implements Base {
   async connect() {
     return new Promise(async (resolve) => {
       console.log('Discovering Ledger device...');
-      if (this.discoverySubscryption) {
-        this.discoverySubscryption.unsubscribe();
+      if (this.discoverySubscription) {
+        this.discoverySubscription.unsubscribe();
       }
 
-      this.discoverySubscryption = this.dmk.startDiscovering({}).subscribe({
+      this.discoverySubscription = this.dmk.startDiscovering({}).subscribe({
         next: async (device) => {
           console.log(`Found ${device.id}, model: ${device.deviceModel.model}`);
           try {
             this.sessionId = await this.dmk.connect({ device });
-            this.discoverySubscryption?.unsubscribe();
+            this.discoverySubscription?.unsubscribe();
 
             this.device = this.dmk.getConnectedDevice({
               sessionId: this.sessionId
@@ -92,8 +92,8 @@ export default class Ledger implements Base {
   }
 
   async disconnect() {
-    if (this.discoverySubscryption) {
-      this.discoverySubscryption.unsubscribe();
+    if (this.discoverySubscription) {
+      this.discoverySubscription.unsubscribe();
     }
 
     if (this.sessionId) {

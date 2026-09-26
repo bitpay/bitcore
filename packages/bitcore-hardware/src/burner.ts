@@ -18,6 +18,7 @@ export default class Burner implements Base {
   commandQueue = new Map<string, Record<string, any>>();
   // responses to all the commands from commandQueue
   responses = new Map<string, Record<string, any>>();
+  private queueCapacity = 100;
 
   /**
    * Queues a command to be sent off to the wallet when it is scanned with an NFC reader.
@@ -44,7 +45,10 @@ export default class Burner implements Base {
   async sendManyCommands(commands: CommandType[]): Promise<Record<string, any>[]> {
     const ids: string[] = [];
     for (const command of commands) {
-      for (let i = 0; i < 100; i++) {
+      if (this.commandQueue.size >= this.queueCapacity) {
+        throw new Error('queue filled');
+      }
+      for (let i = 0; i < this.queueCapacity; i++) {
         const id = command.name + '' + i;
         if (!this.commandQueue.has(id)) {
           this.commandQueue.set(id, command);
@@ -57,7 +61,7 @@ export default class Burner implements Base {
       const _responses: Record<string, object>[] = [];
       for (const id of ids) {
         while (this.responses.get(id) == undefined) {
-          await new Promise(async resolve2 => setTimeout(resolve2, 500));
+          await new Promise(async resolve2 => setTimeout(resolve2, 10));
         }
         _responses.push(this.responses.get(id) ?? { error: 'no command' });
         this.responses.delete(id);

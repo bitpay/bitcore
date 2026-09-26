@@ -1,7 +1,7 @@
 {
   "name": "@bitpay-labs/bitcore-hardware",
-  "version": "1.0.0",
-  "description": "\"Interface with multiple hardware wallets using one library\"",
+  "version": "11.10.10",
+  "description": "Interface with multiple hardware wallets using one library",
   "main": "./build/src/index.js",
   "type": "module",
   "repository": {
@@ -39,6 +39,7 @@
     "@ledgerhq/device-transport-kit-node-hid": "^1.0.1",
     "@ledgerhq/device-transport-kit-speculos": "^1.2.1",
     "@ledgerhq/signer-utils": "^1.3.0",
+    "bitcoinjs-lib": "^6.1.8",
     "nfc-pcsc": "^0.8.1",
     "rxjs": "^7.8.2"
   },
