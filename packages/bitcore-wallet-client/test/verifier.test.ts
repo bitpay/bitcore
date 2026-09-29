@@ -534,6 +534,13 @@ describe('Verifier', function() {
       Verifier.checkPrePublishRaw('xrp', current).should.be.false;
     });
 
+    it('rejects an unusable prePublishRaw instead of throwing on it', function() {
+      // the server chooses this value, so it can be any shape, including one that hashes to nothing
+      for (const prePublishRaw of [[], [''], [null], ['', ''], '', [Utils.buildTx(solTxp()).uncheckedSerialize()[0], '']]) {
+        Verifier.checkPrePublishRaw('sol', solTxp({ prePublishRaw })).should.be.false;
+      }
+    });
+
     it('rejects prePublishRaw on a non-mutable (UTXO) chain', function() {
       Verifier.checkPrePublishRaw('btc', { chain: 'btc', prePublishRaw: 'anything' }).should.be.false;
     });

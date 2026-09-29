@@ -285,9 +285,10 @@ export class Verifier {
       // Local rebuild != creator's signature. Legit only when BWS mutated a field at publish (SVM recent
       // blockhash, or EVM/XRP deferred nonce): the creator signed the pre-publish serialization, stored as
       // txp.prePublishRaw. Trust it only if the signature is valid over it AND it is bound to this proposal.
-      if (!txp.prePublishRaw) {
-        log.debug(`[TXP ${txp.id}] Invalid proposal signature, no prePublishRaw to fall back to`);
-      } else if (!Utils.verifyMessage(txp.prePublishRaw, txp.proposalSignature, creatorSigningPubKey)) {
+      const prePublishRaw = this.prePublishRawParts(txp);
+      if (!prePublishRaw) {
+        log.debug(`[TXP ${txp.id}] Invalid proposal signature, no usable prePublishRaw to fall back to`);
+      } else if (!Utils.verifyMessage(prePublishRaw, txp.proposalSignature, creatorSigningPubKey)) {
         log.debug(`[TXP ${txp.id}] Invalid proposal signature, even with prePublishRaw fallback`);
       } else if (!this.checkPrePublishRaw(chain, txp)) {
         log.warn(`[TXP ${txp.id}] prePublishRaw is not bound to this proposal; possible server tampering`);
@@ -352,6 +353,25 @@ export class Verifier {
   }
 
   /**
+   * txp.prePublishRaw as a list of raw transactions, or null when it isn't one. The server supplies this
+   * value, so it arrives in whatever shape the server chose: one raw tx, a list of them, or something
+   * unusable like an empty list, which hashes to nothing and makes Utils.verifyMessage throw rather than
+   * report a failed check.
+   *
+   * @param {Object} txp - the transaction proposal
+   */
+  static prePublishRawParts(txp): string[] | null {
+    if (!txp.prePublishRaw) {
+      return null;
+    }
+    const parts = Array.isArray(txp.prePublishRaw) ? txp.prePublishRaw : [txp.prePublishRaw];
+    if (!parts.length || parts.some(raw => !raw || typeof raw !== 'string')) {
+      return null;
+    }
+    return parts;
+  }
+
+  /**
    * True only if txp.prePublishRaw is the same transaction as the current proposal, differing solely in a
    * field BWS mutates at publish (SVM blockhash / EVM-XRP nonce). Binds the creator's fallback signature to
    * this proposal: without it a compromised server could pair a valid (prePublishRaw, proposalSignature)
@@ -373,7 +393,10 @@ export class Verifier {
       return false;
     }
     try {
-      const prePublishRaw = Array.isArray(txp.prePublishRaw) ? txp.prePublishRaw : [txp.prePublishRaw];
+      const prePublishRaw = this.prePublishRawParts(txp);
+      if (!prePublishRaw) {
+        return false;
+      }
       // Recover the mutable field (blockhash / nonce) from the pre-publish serialization the creator signed;
       // the stored proposal carries the refreshed value, so it isn't readable off txp directly.
       const provider: any = Transactions.get({ chain });
@@ -386,8 +409,8 @@ export class Verifier {
       // any changed field (destination, amount, from, contract) serializes differently and fails the compare.
       const rebuilt = Utils.buildTx({ ...txp, ...mutableFields }).uncheckedSerialize();
       const rebuiltArr = Array.isArray(rebuilt) ? rebuilt : [rebuilt];
-      // Require a non-empty, positive match: an empty set would make `.every()` vacuously true.
-      if (rebuiltArr.length === 0 || rebuiltArr.length !== prePublishRaw.length) {
+      // Require a non-empty, positive match: two empty sets would make `.every()` vacuously true.
+      if (!rebuiltArr.length || rebuiltArr.length !== prePublishRaw.length) {
         return false;
       }
       return rebuiltArr.every((raw, i) => raw === prePublishRaw[i]);
