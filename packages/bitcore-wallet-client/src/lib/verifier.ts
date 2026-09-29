@@ -308,8 +308,8 @@ export class Verifier {
   /**
    * Checks the proposal carries the address fields this wallet expects for its chain. Account-based chains
    * have no change or escrow address, so they must carry neither. UTXO chains need a change address that is
-   * ours (or sendMax), plus an escrow address that is ours whenever the proposal asks for escrow. A chain we
-   * don't recognize gets no pass: we can't state its address rules, so we can't verify them.
+   * ours (or sendMax), an escrow address on the wallets that can escrow, and any address present must be
+   * ours. A chain we don't recognize gets no pass: we can't state its address rules, so we can't verify them.
    *
    * @param {Object} credentials
    * @param {string} chain - lower-cased chain of the proposal
@@ -341,7 +341,11 @@ export class Verifier {
       log.warn(`[TXP ${txp.id}] Missing change address for non sendMax transaction proposal`);
       return false;
     }
-    if (txp.instantAcceptanceEscrow && !txp.escrowAddress) {
+    // BWS copies instantAcceptanceEscrow onto every proposal but only creates an escrow address for a
+    // ZCE-capable wallet, so the flag alone does not mean one is owed. Require it exactly where the server
+    // would have made one, otherwise a BTC wallet whose client sent the flag fails a proposal that is fine.
+    const zceCapable = chain === 'bch' && credentials.addressType === Constants.SCRIPT_TYPES.P2PKH;
+    if (zceCapable && txp.instantAcceptanceEscrow && !txp.escrowAddress) {
       log.warn(`[TXP ${txp.id}] Missing escrow address for instant acceptance proposal`);
       return false;
     }

@@ -439,19 +439,32 @@ describe('Verifier', function() {
       Verifier.checkProposalAddresses(btcCred(), 'notachain', { id: 'txp', sendMax: true }).should.be.false;
     });
 
-    it('should require our change address and, when escrow is requested, an escrow address', function() {
+    it('should require our change address on UTXO chains', function() {
       const cred = btcCred();
 
       Verifier.checkProposalAddresses(cred, 'btc', { id: 'txp', changeAddress: ourChange }).should.be.true;
       Verifier.checkProposalAddresses(cred, 'btc', { id: 'txp', sendMax: true }).should.be.true;
       Verifier.checkProposalAddresses(cred, 'btc', { id: 'txp', changeAddress: theirChange }).should.be.false;
       Verifier.checkProposalAddresses(cred, 'btc', { id: 'txp' }).should.be.false;
-      // a proposal that asks for escrow but carries no escrow address cannot be verified
-      Verifier.checkProposalAddresses(cred, 'btc', {
-        id: 'txp', changeAddress: ourChange, instantAcceptanceEscrow: 1000
-      }).should.be.false;
-      Verifier.checkProposalAddresses(cred, 'btc', {
-        id: 'txp', changeAddress: ourChange, instantAcceptanceEscrow: 1000, escrowAddress: theirChange
+    });
+
+    it('should require an escrow address only where the wallet can escrow', function() {
+      const bchCred = (addressType) => {
+        const cred = aKey.createCredentials(null, { coin: 'bch', network: 'livenet', account: 0, n: 1 });
+        cred.addWalletInfo('id', 'name', 1, 1, 'copayer');
+        cred.addressType = addressType;
+        return cred;
+      };
+      // sendMax so the change check passes without deriving a per-chain change address
+      const escrowTxp = { id: 'txp', sendMax: true, instantAcceptanceEscrow: 1000 };
+
+      // BWS only creates an escrow address for a ZCE-capable wallet, so the flag alone owes us nothing
+      Verifier.checkProposalAddresses(btcCred(), 'btc', escrowTxp).should.be.true;
+      Verifier.checkProposalAddresses(bchCred('P2SH'), 'bch', escrowTxp).should.be.true;
+      // on a wallet that can escrow, a proposal asking for it must carry an address, and it must be ours
+      Verifier.checkProposalAddresses(bchCred('P2PKH'), 'bch', escrowTxp).should.be.false;
+      Verifier.checkProposalAddresses(bchCred('P2PKH'), 'bch', {
+        ...escrowTxp, escrowAddress: theirChange
       }).should.be.false;
     });
   });
