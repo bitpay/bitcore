@@ -25,6 +25,24 @@ const Bitcore_ = {
 export const Utils = {
 
   /**
+   * txp.prePublishRaw as a list of raw transactions, or null when it isn't one. An empty list is truthy and
+   * hashes to nothing, so without this the value reaches the tx provider and fails as a thrown error rather
+   * than a refused check. Mirrors the client-side Verifier helper so both ends agree on a usable fallback.
+   *
+   * @param txp - the transaction proposal
+   */
+  prePublishRawParts(txp): string[] | null {
+    if (!txp?.prePublishRaw) {
+      return null;
+    }
+    const parts = Array.isArray(txp.prePublishRaw) ? txp.prePublishRaw : [txp.prePublishRaw];
+    if (!parts.length || parts.some(raw => !raw || typeof raw !== 'string')) {
+      return null;
+    }
+    return parts;
+  },
+
+  /**
    * Shared implementation of IChain.isPrePublishRawBound for account-based chains (SVM/EVM/XRP). True only if
    * txp.prePublishRaw is the same transaction as the current proposal, differing solely in the field BWS
    * mutates at publish (blockhash on SVM, nonce on EVM/XRP). Recovers that field from prePublishRaw, rebuilds
@@ -36,7 +54,8 @@ export const Utils = {
    */
   isPrePublishRawBound(chain, txp): boolean {
     try {
-      const prePublishRaw = Array.isArray(txp.prePublishRaw) ? txp.prePublishRaw : [txp.prePublishRaw];
+      const prePublishRaw = Utils.prePublishRawParts(txp);
+      if (!prePublishRaw) return false;
       const provider = Transactions.get({ chain: txp.chain }) as any;
       if (typeof provider?.getMutableFields !== 'function') return false;
       const mutableFields = provider.getMutableFields(prePublishRaw[0]);
@@ -48,7 +67,7 @@ export const Utils = {
       if (rebuiltArr.length !== prePublishRaw.length) return false;
       return rebuiltArr.every((raw, i) => raw === prePublishRaw[i]);
     } catch (err) {
-      logger.warn('prePublishRaw binding check failed: %o', err.stack || err.message || err);
+      logger.warn('prePublishRaw binding check failed for txp %s on %s: %o', txp?.id, txp?.chain, err.stack || err.message || err);
       return false;
     }
   },

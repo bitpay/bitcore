@@ -12,6 +12,7 @@ import config from '../../src/config';
 import { WalletService, UPGRADES } from '../../src/lib/server';
 import { Storage } from '../../src/lib/storage';
 import { Common } from '../../src/lib/common';
+import logger from '../../src/lib/logger';
 import * as Model from '../../src/lib/model';
 import { TssKeyGenModel } from '../../src/lib/model/tsskeygen';
 import { BCHAddressTranslator } from '../../src/lib/bchaddresstranslator';
@@ -8852,6 +8853,27 @@ describe('Wallet service', function() {
         ChainService.isPrePublishRawBound(txp).should.equal(true); // bound before tampering
         txp.outputs[0].toAddress = ATTACKER_ADDR; // swap payee, keep prePublishRaw + proposalSignature
         ChainService.isPrePublishRawBound(txp).should.equal(false);
+      });
+
+      it('rejects a prePublishRaw that holds no usable raw tx', async function() {
+        const created = await helpers.createAndPublishTx(server, {
+          outputs: [{ toAddress: ETH_ADDR, amount: 8000 }],
+          feePerKb: 123e2, from: fromAddr, deferNonce: true
+        }, TestData.copayers[0].privKey_1H_0);
+
+        const txp = await util.promisify(server.getTx).call(server, { txProposalId: created.id });
+        const warn = sinon.spy(logger, 'warn');
+        try {
+          // an empty list is truthy, so it has to be refused up front rather than handed to the tx
+          // provider, which would fail the same check by throwing
+          for (const prePublishRaw of [[], [''], ['', '']]) {
+            txp.prePublishRaw = prePublishRaw;
+            ChainService.isPrePublishRawBound(txp).should.equal(false);
+          }
+          warn.called.should.equal(false);
+        } finally {
+          warn.restore();
+        }
       });
 
       it('rejects the publishTx fallback when the stored proposal was tampered', async function() {
