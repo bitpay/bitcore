@@ -599,10 +599,10 @@ Transaction.prototype._selectInputType = function(utxo, pubkeys, threshold) {
   if (pubkeys && threshold) {
     if (utxo.script.isMultisigOut()) {
       clazz = MultiSigInput;
-    } else if (utxo.script.isScriptHashOut() || utxo.script.isWitnessScriptHashOut()) {
+    } else if (utxo.script.isScriptHashOut()) {
       clazz = MultiSigScriptHashInput;
     }
-  } else if (utxo.script.isPublicKeyHashOut() || utxo.script.isWitnessPublicKeyHashOut() || utxo.script.isScriptHashOut()) {
+  } else if (utxo.script.isPublicKeyHashOut() || utxo.script.isScriptHashOut()) {
     clazz = PublicKeyHashInput;
   } else if (utxo.script.isPublicKeyOut()) {
     clazz = PublicKeyInput;

@@ -1,5 +1,4 @@
 'use strict';
-/* eslint-disable @typescript-eslint/no-require-imports */
 const assert = require('assert');
 const fs = require('fs');
 const gulp = require('gulp');
