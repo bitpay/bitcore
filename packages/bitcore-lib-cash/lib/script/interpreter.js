@@ -1,15 +1,15 @@
 'use strict';
 
-var _ = require('lodash');
-var BN = require('../crypto/bn');
-var ECDSA = require('../crypto/ecdsa');
-var Hash = require('../crypto/hash');
-var Schnorr = require('../crypto/schnorr');
-var Signature = require('../crypto/signature');
-var BufferWriter = require('../encoding/bufferwriter');
-var Opcode = require('../opcode');
-var PublicKey = require('../publickey');
-var Script = require('./script');
+const _ = require('lodash');
+const BN = require('../crypto/bn');
+const ECDSA = require('../crypto/ecdsa');
+const Hash = require('../crypto/hash');
+const Schnorr = require('../crypto/schnorr');
+const Signature = require('../crypto/signature');
+const BufferWriter = require('../encoding/bufferwriter');
+const Opcode = require('../opcode');
+const PublicKey = require('../publickey');
+const Script = require('./script');
 
 
 
@@ -23,7 +23,7 @@ var Script = require('./script');
  * The primary way to use this class is via the verify function.
  * e.g., Interpreter().verify( ... );
  */
-var Interpreter = function Interpreter(obj) {
+const Interpreter = function Interpreter(obj) {
   if (!(this instanceof Interpreter)) {
     return new Interpreter(obj);
   }
@@ -705,7 +705,7 @@ Interpreter.prototype.checkSequence = function(nSequence) {
   // constrained. Testing that the transaction's sequence number do not have
   // this bit set prevents using this property to get around a
   // CHECKSEQUENCEVERIFY check.
-  if (txToSequence & this.SEQUENCE_LOCKTIME_DISABLE_FLAG) {
+  if (txToSequence & Interpreter.SEQUENCE_LOCKTIME_DISABLE_FLAG) {
     return false;
   }
 
@@ -961,7 +961,7 @@ Interpreter.prototype.step = function () {
         // Thus as a special case we tell CScriptNum to accept up
         // to 5-byte bignums, which are good until 2**39-1, well
         // beyond the 2**32-1 limit of the nLockTime field itself.
-        var nLockTime = BN.fromScriptNumBuffer(this.stack[this.stack.length - 1], fRequireMinimal, 5);
+        const nLockTime = BN.fromScriptNumBuffer(this.stack[this.stack.length - 1], fRequireMinimal, 5);
 
         // In the rare event that the argument may be < 0 due tod
         // some arithmetic being done first, you can always use
@@ -1000,7 +1000,7 @@ Interpreter.prototype.step = function () {
         // integer field. See the comment in CHECKLOCKTIMEVERIFY
         // regarding 5-byte numeric operands.
 
-        var nSequence = BN.fromScriptNumBuffer(stacktop(-1), fRequireMinimal, 5);
+        const nSequence = BN.fromScriptNumBuffer(stacktop(-1), fRequireMinimal, 5);
 
 
         // In the rare event that the argument may be < 0 due to
@@ -1647,7 +1647,7 @@ Interpreter.prototype.step = function () {
           buf = stacktop(-1);
           // valtype vchHash((opcode == Opcode.OP_RIPEMD160 ||
           //                 opcode == Opcode.OP_SHA1 || opcode == Opcode.OP_HASH160) ? 20 : 32);
-          var bufHash;
+          let bufHash;
           if (opcodenum === Opcode.OP_RIPEMD160) {
             bufHash = Hash.ripemd160(buf);
           } else if (opcodenum === Opcode.OP_SHA1) {
@@ -1706,7 +1706,7 @@ Interpreter.prototype.step = function () {
             } else {
               fSuccess = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags, 'schnorr');
             }
-          } catch (e) {
+          } catch {
             // invalid sig or pubkey
             fSuccess = false;
           }
@@ -1762,13 +1762,13 @@ Interpreter.prototype.step = function () {
           try {
             sig = Signature.fromDataFormat(bufSig);
             pubkey = PublicKey.fromBuffer(bufPubkey, false);
-            bufHash = Hash.sha256(bufMessage);
+            const bufHash = Hash.sha256(bufMessage);
             if (!sig.isSchnorr) {
               fSuccess = ECDSA.verify(bufHash, sig, pubkey, 'big');
             } else {
               fSuccess = Schnorr.verify(bufHash, sig, pubkey, 'big');
             }
-          } catch (e) {
+          } catch {
             // invalid sig or pubkey
             fSuccess = false;
           }
@@ -1978,12 +1978,12 @@ Interpreter.prototype.step = function () {
                 return false;
               }
 
-              var fOk;
+              let fOk;
               try {
                 sig = Signature.fromTxFormat(bufSig);
                 pubkey = PublicKey.fromBuffer(bufPubkey, false);
                 fOk = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags);
-              } catch (e) {
+              } catch {
                 // invalid sig or pubkey
                 fOk = false;
               }
@@ -2126,7 +2126,7 @@ Interpreter.prototype.step = function () {
 
         // Try to see if we can fit that number in the number of
         // byte requested.
-        rawnum=Interpreter._minimallyEncode(rawnum);
+        rawnum = Interpreter._minimallyEncode(rawnum);
 
         if (rawnum.length > size) {
           // We definitively cannot.
@@ -2155,7 +2155,7 @@ Interpreter.prototype.step = function () {
           num[l]=0x00;
         }
 
-        num[l]=signbit;
+        num[l] = signbit;
 
         this.stack[this.stack.length-1] = num;
       }

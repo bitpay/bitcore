@@ -33,12 +33,12 @@ function Output(args) {
 
     if (args.type === 'taproot') {
       this._branch = [];
-      this._isValid = true;
+      this._isValid = true; // true because _branch is empty
       Object.defineProperty(this, 'isValid', {
         configurable: false,
         enumerable: false,
         get: function() {
-          return this._isValid;
+          return this._isValid || this._branch.length === 0;
         },
         set: function(isValid) {
           this._isValid = isValid;
@@ -250,7 +250,7 @@ Output.prototype._insertNode = function(node, depth) {
   if (this.isValid) {
     /* Make sure the branch is big enough to place the new node. */
     if (this._branch.length <= depth) {
-      this._branch.length = depth + 1;
+      this._branch = this._branch.concat(new Array(depth + 1 - this._branch.length).fill(null));
     }
     $.checkState(!this._branch[depth]);
     this._branch[depth] = node;

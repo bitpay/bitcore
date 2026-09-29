@@ -2078,4 +2078,3 @@ Interpreter.prototype.step = function() {
 
   return true;
 };
-
