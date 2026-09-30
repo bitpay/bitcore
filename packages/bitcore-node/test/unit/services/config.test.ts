@@ -21,6 +21,12 @@ describe('Config', function() {
     }
   });
 
+  it('should have a default walletStats service config that is disabled', () => {
+    const config = Config.get();
+    expect(config.services.walletStats).to.exist;
+    expect(config.services.walletStats.disabled).to.equal(true);
+  });
+
   it('should be able to update config', () => {
     const originalConfig = Config.get();
     const chain = 'BTC';

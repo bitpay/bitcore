@@ -196,7 +196,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
         network,
         address,
         args: {
-          limit: args.limit, // no default limit when querying by wallet. Note: BWS caches txs
+          limit: args.limit, // no default result limit when querying by wallet (BWS caches txs), but ExternalApiStream caps pagination at DEFAULT_MAX_PAGES as a safety net
           order: 'ASC',
           ...args
         }
