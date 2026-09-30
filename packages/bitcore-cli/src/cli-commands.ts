@@ -33,7 +33,8 @@ export function getCommands(args: { wallet: IWallet; opts?: ICliOptions }) {
       { label: 'Scan', value: 'scan', hint: 'Scan the wallet for funds' },
       { label: 'Flags', value: 'flags', hint: 'Manage XRP wallet flags', show: () => wallet.isXrp() },
       { label: 'Register', value: 'register', hint: 'Register the wallet with the Bitcore Wallet Service' },
-      { label: 'Clear Cache', value: 'clearcache', hint: 'Clear the wallet cache' }
+      { label: 'Clear Cache', value: 'clearcache', hint: 'Clear the wallet cache' },
+      { label: 'Change Password', value: 'changepassword', hint: 'Change the wallet password', noCmd: true }
     ]
   } as const;
   return COMMANDS;

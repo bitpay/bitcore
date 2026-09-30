@@ -817,4 +817,41 @@ export class Wallet implements IWallet {
     const flags: xrpl.AccountInfoAccountFlags = await this.client.getAccountFlags({ account: 0 });
     return flags;
   }
+
+  async updatePassword(currentPassword: string, newPassword: string, opts?: { silent?: boolean }) {
+    const { silent } = opts || {};
+    this.#walletData.key.decrypt(currentPassword);
+    this.#walletData.key.encrypt(newPassword);
+    await this.save();
+
+    if (!silent) prompt.log.success('Wallet password updated successfully');
+    
+    // Update state files with new password
+    const stateStoragePath = await this.storage.getStatePath();
+    const dir = fs.readdirSync(stateStoragePath);
+    if (dir.length) {
+      if (!silent) prompt.log.info('Re-encrypting state files...');
+      for (const item of dir) {
+        const itemPath = path.join(stateStoragePath, item);
+        try {
+          const stat = fs.statSync(itemPath);
+          if (stat.isFile()) {
+            let decrypted: Buffer;
+            try {
+              const content = fs.readFileSync(itemPath, 'utf-8');
+              decrypted = Encryption.decryptWithPassword(content, currentPassword);
+              const updatedContent = JSON.stringify(Encryption.encryptWithPassword(decrypted, newPassword));
+              fs.writeFileSync(itemPath, updatedContent, { encoding: 'utf-8', mode: 'w' });
+            } finally {
+              decrypted?.fill(0); // Clear the decrypted buffer from memory
+            }
+          }
+        } catch (err) {
+          prompt.log.warn(`Failed to re-encrypt state file ${itemPath}: "${err.message || err}". This might be ok if you're changing back to a previous password, otherwise you'll probably need to delete the associated transaction proposal.`);
+        }
+      }
+
+      if (!silent) prompt.log.success('Done');
+    }
+  }
 };
