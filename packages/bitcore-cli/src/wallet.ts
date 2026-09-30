@@ -841,7 +841,7 @@ export class Wallet implements IWallet {
               const content = fs.readFileSync(itemPath, 'utf-8');
               decrypted = Encryption.decryptWithPassword(content, currentPassword);
               const updatedContent = JSON.stringify(Encryption.encryptWithPassword(decrypted, newPassword));
-              fs.writeFileSync(itemPath, updatedContent, { encoding: 'utf-8', mode: 'w' });
+              fs.writeFileSync(itemPath, updatedContent, { encoding: 'utf-8', flag: 'w' });
             } finally {
               decrypted?.fill(0); // Clear the decrypted buffer from memory
             }
