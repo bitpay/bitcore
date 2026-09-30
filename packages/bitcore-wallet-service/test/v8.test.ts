@@ -30,6 +30,38 @@ describe('V8', () => {
     beAuthPrivateKey2: new BitcoreLib.PrivateKey()
   };
 
+  describe('#getBalanceAtTime', () => {
+    it('should request the wallet balance at the supplied time', done => {
+      const balance = { confirmed: 100, unconfirmed: 0, balance: 100 };
+      const balanceWallet = {
+        ...wallet,
+        beAuthPublicKey2: wallet.beAuthPrivateKey2.toPublicKey().toString(),
+        tokenAddress: '0xToken'
+      };
+      class BalanceAtTimeClient {
+        getBalanceAtTime(opts) {
+          opts.pubKey.should.equal(balanceWallet.beAuthPublicKey2);
+          opts.time.should.equal('2025-01-15T12:00:00.000Z');
+          opts.tokenAddress.should.equal('0xToken');
+          return Promise.resolve(balance);
+        }
+      }
+      const be = new V8({
+        chain: 'btc',
+        network: 'livenet',
+        url: 'http://dummy/',
+        apiPrefix: 'dummyPath',
+        client: BalanceAtTimeClient as any
+      });
+
+      be.getBalanceAtTime(balanceWallet as any, '2025-01-15T12:00:00.000Z', (err, result) => {
+        should.not.exist(err);
+        result.should.deep.equal(balance);
+        done();
+      });
+    });
+  });
+
   describe('#listTransactions', () => {
     it('should handle partial json results', (done) => {
       class PartialJson {

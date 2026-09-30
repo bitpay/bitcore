@@ -24,7 +24,8 @@ import { EthDater } from '../../../utils/ethDater';
 import { ReadableWithEventPipe } from '../../../utils/streamWithEventPipe';
 import type { MongoBound } from '../../../models/base';
 import type {
-  BuildWalletTxsStreamParams
+  BuildWalletTxsStreamParams,
+  BuildWalletTxsStreamResult
 } from '../../../providers/chain-state/evm/api/csp';
 import type { EVMTransactionJSON, IEVMBlock } from '../../../providers/chain-state/evm/types';
 import type { IIndexedAPIAdapter } from '../../../providers/chain-state/external/adapters/IIndexedAPIAdapter';
@@ -195,7 +196,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
   // @override — sequential failover with preflight check.
   // Buffers first item before piping to response; failover only before response bytes are written.
   async _buildAddressTransactionsStream(params: StreamAddressUtxosParams) {
-    const { req, res, args, network, address } = params;
+    const { args, network, address } = params;
     const chainId = await this.getChainId({ network });
     const providers = this.getProvidersForNetwork(network);
     const PREFLIGHT_TIMEOUT_MS = 5000;
@@ -249,32 +250,32 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
           continue;
         }
 
+        // empty result set: the stream already ended (and is destroyed), so hand back a
+        // fresh empty stream instead of a dead one
+        if (preflight.firstItem == null) {
+          provider.health.recordSuccess();
+          return Readable.from([], { objectMode: true });
+        }
+
         logger.debug(`MultiProvider: ${provider.adapter.name} streaming ${address} on ${this.chain}:${network}`);
+        // PassThrough prepends the buffered first item to the stream
+        const wrapper = new PassThrough({ objectMode: true });
         txStream.on('error', (err) => {
           logger.warn(`MultiProvider: ${provider.adapter.name} mid-stream error for ${address}: ${err.message}`);
           if (err instanceof AdapterError && err.affectsHealth) {
             provider.health.recordFailure(err);
           }
+          // surface the failure downstream; logging alone leaves the response hanging
+          if (!wrapper.destroyed) {
+            wrapper.destroy(err);
+          }
         });
         txStream.on('end', () => provider.health.recordSuccess());
 
-        // PassThrough prepends the buffered first item to the stream
-        let outputStream: Readable = txStream;
-        if (preflight.firstItem) {
-          const wrapper = new PassThrough({ objectMode: true });
-          wrapper.write(preflight.firstItem);
-          txStream.resume();
-          txStream.pipe(wrapper);
-          outputStream = wrapper;
-        } else {
-          txStream.resume();
-        }
-
-        const result = await ExternalApiStream.onStream(outputStream, req!, res!);
-        if (!result?.success) {
-          logger.error('Error mid-stream (streamAddressTransactions): %o', result.error?.log || result.error);
-        }
-        return; // Stream handled
+        wrapper.write(preflight.firstItem);
+        txStream.resume();
+        txStream.pipe(wrapper);
+        return wrapper;
       } catch (error) {
         if (error instanceof AdapterError && (error as AdapterError).code === AdapterErrorCode.INVALID_REQUEST) throw error; // 400 — no failover
         provider.health.recordFailure(error as Error);
@@ -341,7 +342,10 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
   }
 
   // @override — sequential failover for wallet transaction streaming
-  async _buildWalletTransactionsStream(params: StreamWalletTransactionsParams, streamParams: BuildWalletTxsStreamParams) {
+  async _buildWalletTransactionsStream(
+    params: StreamWalletTransactionsParams,
+    streamParams: BuildWalletTxsStreamParams
+  ): Promise<BuildWalletTxsStreamResult> {
     const { network, args } = params;
     let { transactionStream } = streamParams;
     const { walletAddresses } = streamParams;
@@ -391,7 +395,8 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
       }
     }
 
-    return transactionStream;
+    // nothing to tear down here; the adapter streams run to completion on their own
+    return { stream: transactionStream };
   }
 
   // @override

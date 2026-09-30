@@ -1,7 +1,8 @@
 'use strict';
 
-const bitcore = require('@bitpay-labs/bitcore-lib');
+// eslint-disable-next-line no-redeclare
 const crypto = require('crypto');
+const bitcore = require('@bitpay-labs/bitcore-lib');
 
 const PublicKey = bitcore.PublicKey;
 const PrivateKey = bitcore.PrivateKey;
@@ -11,15 +12,21 @@ const $ = bitcore.util.preconditions;
 
 // http://en.wikipedia.org/wiki/Integrated_Encryption_Scheme
 
-function KDF(privateKey, publicKey) {
+function KDF(privateKey, publicKey, isDecrypt) {
   const r = privateKey.bn;
   const KB = publicKey.point;
   const P = KB.mul(r);
   const S = P.getX();
   const Sbuf = S.toBuffer({ size: 32 });
-  const kEkM = Hash.sha512(Sbuf);
-  const kE = kEkM.subarray(0, 32);
-  const kM = kEkM.subarray(32, 64);
+  // Ensure that the public keys are in compressed format so the salt is consistent
+  const pubA = PublicKey.fromPoint(publicKey.point, true).toBuffer();
+  const pubB = PublicKey.fromPoint(privateKey.publicKey.point, true).toBuffer();
+  const salt = isDecrypt
+    ? Buffer.concat([pubB, pubA])
+    : Buffer.concat([pubA, pubB]);
+  // HKDF with distinct info values provides domain separation between kE and kM
+  const kE = Buffer.from(crypto.hkdfSync('sha256', Sbuf, salt, Buffer.from('ecies-kE'), 32));
+  const kM = Buffer.from(crypto.hkdfSync('sha256', Sbuf, salt, Buffer.from('ecies-kM'), 32));
   return [kE, kM];
 };
 
@@ -33,7 +40,6 @@ function KDF(privateKey, publicKey) {
  *                    By default, `ivbuf` is randomly generated. A specified `ivbuf` is prioritized over opts.deterministicIv.
  * @param {object} [params.opts] Options object. Every field is optional.
  * @param {boolean} [params.opts.noKey] Do not include pubkey in the output.
- * @param {boolean} [params.opts.shortTag] Use 4-byte tag instead of 32-byte. This must be communicated to the payload recipient.
  * @param {boolean} [params.opts.deterministicIv] Compute IV deterministically from message and private key using HMAC-SHA256.
  *                    A deterministic IV enables end-to-end test vectors for alternative implementations.
  *                    Note that identical messages have identical ciphertexts. If it is important to not allow an attacker
@@ -69,10 +75,7 @@ function encrypt({ message, publicKey, privateKey, ivbuf, opts = {} }) {
   const cipher = crypto.createCipheriv('aes-256-cbc', kE, ivbuf);
   const cipherText = Buffer.concat([cipher.update(message), cipher.final()]);
   
-  let tag = Hash.sha256hmac(cipherText, kM);
-  if (opts.shortTag) {
-    tag = tag.subarray(0, 4);
-  }
+  const tag = Hash.sha256hmac(Buffer.concat([ivbuf, cipherText]), kM);
 
   let encbuf;
   if (opts.noKey) {
@@ -91,12 +94,9 @@ function encrypt({ message, publicKey, privateKey, ivbuf, opts = {} }) {
  * @param {PrivateKey} params.privateKey Your private key is used to decrypt the payload.
  * @param {PublicKey} params.publicKey Sender's public key is used to verify the payload.
  *                              *Only* include this if the encrypter specified the `noKey` option, otherwise the public key is included in the payload.
- * @param {object} [params.opts] Options object. Every field is optional.
- * @param {boolean} [params.opts.shortTag] - Use 4-byte tag instead of 32-byte.
- *                              This was decided during encryption and must be communicated by the sender.
  * @returns {Buffer} Decrypted message buffer.
  */
-function decrypt({ payload, privateKey, publicKey, opts = {} }) {
+function decrypt({ payload, privateKey, publicKey }) {
   $.checkArgument(Buffer.isBuffer(payload), 'payload must be a Buffer');
   $.checkArgument(privateKey, 'privateKey is required');
   
@@ -109,10 +109,9 @@ function decrypt({ payload, privateKey, publicKey, opts = {} }) {
   }
 
   let offset = 0;
-  const tagLength = opts.shortTag ? 4 : 32;
   if (!publicKey) {
     let pub;
-    switch(payload[0]) {
+    switch (payload[0]) {
       case 4:
         pub = payload.subarray(0, 65);
         break;
@@ -127,14 +126,15 @@ function decrypt({ payload, privateKey, publicKey, opts = {} }) {
     offset += pub.length;
   }
 
+  const tagLength = 32;
   const ivbuf = payload.subarray(offset, offset + 16);
   const cipherText = payload.subarray(offset + 16, payload.length - tagLength);
   const tag = payload.subarray(payload.length - tagLength, payload.length);
 
-  const [kE, kM] = KDF(privateKey, publicKey);
+  const [kE, kM] = KDF(privateKey, publicKey, true);
 
-  const tag2 = Hash.sha256hmac(cipherText, kM).subarray(0, tagLength);
-  if (tag2.compare(tag) !== 0) {
+  const tag2 = Hash.sha256hmac(Buffer.concat([ivbuf, cipherText]), kM).subarray(0, tagLength);
+  if (tag.length !== tag2.length || !crypto.timingSafeEqual(tag2, tag)) {
     throw new Error('Invalid checksum');
   }
 

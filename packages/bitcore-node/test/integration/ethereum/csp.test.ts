@@ -12,6 +12,7 @@ import { ETH } from '../../../src/modules/ethereum/api/csp';
 import { EVMBlockStorage } from '../../../src/providers/chain-state/evm/models/block';
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
 import { IEVMTransactionInProcess } from '../../../src/providers/chain-state/evm/types';
+import { streamJsonArray } from '../../../src/routes/apiUtils';
 import { StreamWalletTransactionsParams } from '../../../src/types/namespaces/ChainStateProvider';
 import { ErigonEthBlocks } from '../../data/ETH/erigonDbBlocks';
 import { ErigonEthTransactions } from '../../data/ETH/erigonDbTransactions';
@@ -230,7 +231,8 @@ describe('Ethereum API', function() {
       transform: (_data, _, cb) => cb(null)
     }) as unknown) as Request;
 
-    await ETH.streamAddressTransactions({ chain, network, address, res, req, args: {} });
+    const stream = await ETH.streamAddressTransactions({ chain, network, address, args: {} });
+    await streamJsonArray(stream as any, req, res);
     let counter = 0;
     await new Promise(r => {
       res
@@ -271,7 +273,8 @@ describe('Ethereum API', function() {
       }
     }) as unknown) as Request;
 
-    await ETH.streamTransactions({ chain, network, res, req, args: { blockHeight: 1 } });
+    const stream = await ETH.streamTransactions({ chain, network, args: { blockHeight: 1 } });
+    await streamJsonArray(stream as any, req, res);
     let counter = 0;
     await new Promise<void>(r => {
       res
@@ -316,7 +319,8 @@ describe('Ethereum API', function() {
       }
     }) as unknown) as Request;
 
-    await ETH.streamTransactions({ chain, network, res, req, args: { blockHash: '12345' } });
+    const stream = await ETH.streamTransactions({ chain, network, args: { blockHash: '12345' } });
+    await streamJsonArray(stream as any, req, res);
     let counter = 0;
     await new Promise<void>(r => {
       res
@@ -378,6 +382,58 @@ describe('Ethereum API', function() {
       await EVMTransactionStorage.collection.insertMany(ErigonEthTransactions as any);
 
       await streamDexWalletTransactions(chain, network, wallet, address, web3);
+    });
+
+    // pins one collection wrapper (the getter returns a fresh one per access) and captures
+    // the real cursor so tests can assert on cursor.close() itself
+    const captureCursor = (box: sinon.SinonSandbox) => {
+      const collection = EVMTransactionStorage.collection;
+      const realFind = collection.find.bind(collection);
+      const captured: { cursor?: any; closeSpy?: sinon.SinonSpy } = {};
+      box.stub(collection, 'find').callsFake((...findArgs: any[]) => {
+        captured.cursor = realFind(...findArgs);
+        captured.closeSpy = captured.closeSpy || box.spy(captured.cursor, 'close');
+        return captured.cursor;
+      });
+      box.stub(EVMTransactionStorage, 'collection').get(() => collection);
+      return captured;
+    };
+
+    it('closes the wallet-tx cursor when the final stream is destroyed', async () => {
+      await EVMTransactionStorage.collection.insertMany(
+        new Array(5).fill({}).map(() => ({ chain, network, blockHeight: 1, gasPrice: 10 * 1e9, data: Buffer.from(''), from: address } as IEVMTransactionInProcess))
+      );
+      const box = sinon.createSandbox();
+      try {
+        const captured = captureCursor(box);
+        const stream: any = await ETH.streamWalletTransactions({ chain, network, wallet, args: {} } as StreamWalletTransactionsParams);
+        stream.destroy();
+        await new Promise(r => setImmediate(r));
+        expect(captured.closeSpy, 'wallet-tx cursor was created').to.exist;
+        expect(captured.closeSpy!.callCount, 'cursor.close() ran exactly once on destroy').to.eq(1);
+      } finally {
+        box.restore();
+      }
+    });
+
+    it('propagates a wallet-tx cursor error to the final stream', async () => {
+      await EVMTransactionStorage.collection.insertMany(
+        new Array(5).fill({}).map(() => ({ chain, network, blockHeight: 1, gasPrice: 10 * 1e9, data: Buffer.from(''), from: address } as IEVMTransactionInProcess))
+      );
+      const box = sinon.createSandbox();
+      try {
+        const captured = captureCursor(box);
+        const stream: any = await ETH.streamWalletTransactions({ chain, network, wallet, args: {} } as StreamWalletTransactionsParams);
+        const observed = new Promise<Error>(resolve => stream.on('error', resolve));
+        const boom = new Error('cursor boom');
+        captured.cursor.emit('error', boom);
+        expect(await observed).to.eq(boom);
+        await new Promise(r => setImmediate(r));
+        expect(stream.destroyed).to.eq(true);
+        expect(captured.closeSpy!.callCount, 'cursor.close() ran exactly once on error').to.eq(1);
+      } finally {
+        box.restore();
+      }
     });
   });
 });
@@ -455,12 +511,11 @@ const streamWalletTransactionsTest = async (chain: string, network: string, incl
       chain,
       network,
       wallet,
-      req,
-      res,
       args: {
         includeInvalidTxs
       }
     } as StreamWalletTransactionsParams)
+      .then((stream: any) => streamJsonArray(stream, req, res))
       .catch(e => r(e));
   });
 
@@ -485,7 +540,8 @@ const streamDexWalletTransactions = async (chain, network, wallet, address, web3
     }
   }) as unknown) as Request;
 
-  ETH.streamWalletTransactions({ chain, network, wallet, res, req, args: {} });
+  ETH.streamWalletTransactions({ chain, network, wallet, args: {} } as StreamWalletTransactionsParams)
+    .then((stream: any) => streamJsonArray(stream, req, res));
   let total = BigInt(0);
   let totalRejected = BigInt(0);
   let totalFee = BigInt(0);

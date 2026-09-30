@@ -112,14 +112,13 @@ export class RampService {
     const webRequiredParams = [
       'selectedCountryCode',
     ];
-    const appRequiredParams = [
+    let appRequiredParams = [
       'enabledFlows',
       'defaultFlow',
       'selectedCountryCode',
-      'defaultAsset',
     ];
-    const extraRequiredParams = req.body.flow && req.body.flow === 'sell' ? ['offrampAsset'] : ['finalUrl', 'userAddress', 'swapAmount', 'swapAsset'];
-    appRequiredParams.concat(extraRequiredParams);
+    const extraRequiredParams = req.body.flow && req.body.flow === 'sell' ? [] : ['finalUrl', 'userAddress'];
+    appRequiredParams = appRequiredParams.concat(extraRequiredParams);
 
     const requiredParams = req.body.context === 'web' ? webRequiredParams : appRequiredParams;
     const keys = this.rampGetKeys(req);
@@ -138,21 +137,42 @@ export class RampService {
     qs.push('selectedCountryCode=' + encodeURIComponent(req.body.selectedCountryCode));
     if (req.body.finalUrl) qs.push('finalUrl=' + encodeURIComponent(req.body.finalUrl));
     if (req.body.userAddress) qs.push('userAddress=' + encodeURIComponent(req.body.userAddress));
-    if (req.body.swapAsset) qs.push('swapAsset=' + encodeURIComponent(req.body.swapAsset));
-    if (req.body.offrampAsset) qs.push('offrampAsset=' + encodeURIComponent(req.body.offrampAsset));
     if (req.body.enabledFlows) qs.push('enabledFlows=' + encodeURIComponent(req.body.enabledFlows));
     if (req.body.defaultFlow) qs.push('defaultFlow=' + encodeURIComponent(req.body.defaultFlow));
     if (req.body.hostLogoUrl) qs.push('hostLogoUrl=' + encodeURIComponent(req.body.hostLogoUrl));
     if (req.body.hostAppName) qs.push('hostAppName=' + encodeURIComponent(req.body.hostAppName));
-    if (req.body.swapAmount) qs.push('swapAmount=' + encodeURIComponent(req.body.swapAmount));
-    if (req.body.fiatValue) qs.push('fiatValue=' + encodeURIComponent(req.body.fiatValue));
-    if (req.body.fiatCurrency) qs.push('fiatCurrency=' + encodeURIComponent(req.body.fiatCurrency));
-    if (req.body.defaultAsset) qs.push('defaultAsset=' + encodeURIComponent(req.body.defaultAsset));
     if (req.body.userEmailAddress) qs.push('userEmailAddress=' + encodeURIComponent(req.body.userEmailAddress));
     if (req.body.useSendCryptoCallback) qs.push('useSendCryptoCallback=' + encodeURIComponent(req.body.useSendCryptoCallback));
     if (req.body.paymentMethodType) qs.push('paymentMethodType=' + encodeURIComponent(req.body.paymentMethodType));
     if (req.body.hideExitButton) qs.push('hideExitButton=' + encodeURIComponent(req.body.hideExitButton));
-    if (req.body.useSendCryptoCallbackVersion) qs.push('useSendCryptoCallbackVersion=' + encodeURIComponent(req.body.useSendCryptoCallbackVersion));
+
+    // Ramp deprecated the legacy per-flow search params in favor of a unified format.
+    // Ref: https://docs.rampnetwork.com/search-params-migration
+    // Older app versions still send the legacy fields, so we translate them into the new
+    // unified params here to keep those requests working going forward.
+    // `flow === 'sell'` => OFFRAMP; otherwise => ONRAMP.
+    // If a newer client already sends the new params, those take precedence.
+    const isOfframp = req.body.flow === 'sell';
+
+    // enabledCryptoAssets <- swapAsset (onramp) / offrampAsset (offramp)
+    const enabledCryptoAssets = req.body.enabledCryptoAssets ?? (isOfframp ? req.body.offrampAsset : req.body.swapAsset);
+    if (enabledCryptoAssets) qs.push('enabledCryptoAssets=' + encodeURIComponent(enabledCryptoAssets));
+
+    // inAsset (incoming, paid by the user) <- fiatCurrency (onramp) / defaultAsset (offramp)
+    const inAsset = req.body.inAsset ?? (isOfframp ? req.body.defaultAsset : req.body.fiatCurrency);
+    if (inAsset) qs.push('inAsset=' + encodeURIComponent(inAsset));
+
+    // outAsset (outgoing, received by the user) <- defaultAsset (onramp) / fiatCurrency (offramp)
+    const outAsset = req.body.outAsset ?? (isOfframp ? req.body.fiatCurrency : req.body.defaultAsset);
+    if (outAsset) qs.push('outAsset=' + encodeURIComponent(outAsset));
+
+    // inAssetValue (units, no decimals) <- fiatValue (onramp) / swapAmount (offramp)
+    const inAssetValue = req.body.inAssetValue ?? (isOfframp ? req.body.swapAmount : req.body.fiatValue);
+    if (inAssetValue) qs.push('inAssetValue=' + encodeURIComponent(inAssetValue));
+
+    // outAssetValue (units, no decimals) <- swapAmount (onramp) / fiatValue (offramp)
+    const outAssetValue = req.body.outAssetValue ?? (isOfframp ? req.body.fiatValue : req.body.swapAmount);
+    if (outAssetValue) qs.push('outAssetValue=' + encodeURIComponent(outAssetValue));
 
     const queryString = qs.join('&');
 

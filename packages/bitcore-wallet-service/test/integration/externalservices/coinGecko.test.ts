@@ -150,6 +150,22 @@ describe('CoinGecko integration', function() {
     sandbox.stub(cg().storage, 'storeGlobalCache').callsFake((_key, _values, cb) => cb(null));
   }
 
+  /** Wraps the active fakeRequest so every outgoing market_chart URL is recorded, in order. */
+  function captureMarketChartUrls(): string[] {
+    const urls: string[] = [];
+    const baseGet = fakeRequest.get;
+    fakeRequest.get = (url, opts, cb) => {
+      if (matchCoinIdFromMarketChartUrl(url)) urls.push(url);
+      return baseGet(url, opts, cb);
+    };
+    return urls;
+  }
+
+  function daysAndInterval(url: string): { days: string | null; interval: string | null } {
+    const u = toURL(url);
+    return { days: u.searchParams.get('days'), interval: u.searchParams.get('interval') };
+  }
+
   before(async () => {
     await helpers.before();
   });
@@ -840,9 +856,9 @@ describe('CoinGecko integration', function() {
 
       should.exist(data);
       checkCacheStub.callCount.should.equal(1);
-      checkCacheStub.getCall(0).args[0].should.equal('cgFiatRates:bitcoin:usd:100000');
+      checkCacheStub.getCall(0).args[0].should.equal('cgFiatRates:bitcoin:usd:max');
       storeCacheStub.callCount.should.equal(1);
-      storeCacheStub.getCall(0).args[0].should.equal('cgFiatRates:bitcoin:usd:100000');
+      storeCacheStub.getCall(0).args[0].should.equal('cgFiatRates:bitcoin:usd:max');
     });
 
     it('should bypass DB cache for token fiatrates requests', async () => {
@@ -881,12 +897,20 @@ describe('CoinGecko integration', function() {
     });
 
     it('should return error on invalid days', async () => {
-      try {
-        await getFiatRates({ coin: 'BTC', days: 0 });
-        should.fail('should have thrown');
-      } catch (err) {
-        err.message.should.equal('Invalid days');
+      const getSpy = sandbox.spy();
+      cg().request = { get: getSpy };
+
+      for (const days of [0, 100000, 'max', 'MAX']) {
+        try {
+          await getFiatRates({ coin: 'BTC', days });
+          should.fail(`should have thrown for days=${JSON.stringify(days)}`);
+        } catch (err) {
+          err.message.should.equal('Invalid days');
+          err.statusCode.should.equal(400);
+        }
       }
+
+      getSpy.callCount.should.equal(0);
     });
 
     it('should return rates for default coins if missing coin', async () => {
@@ -934,6 +958,46 @@ describe('CoinGecko integration', function() {
         .map(c => c.args)
         .filter(args => args?.[0]?.toString().includes('CoinGecko fiat rates fetch failed') && args?.[1]?.coin === 'bch');
       bchWarns.length.should.be.greaterThan(0);
+    });
+
+    describe('all-time window', () => {
+      it('should request days=max when days is omitted', async () => {
+        forceGlobalCacheMisses();
+        const urls = captureMarketChartUrls();
+
+        const data = await getFiatRates({ coin: 'BTC' });
+
+        data.should.deep.equal([
+          { ts: 1, rate: 100 },
+          { ts: 2, rate: 110 }
+        ]);
+        urls.should.have.length(1);
+        daysAndInterval(urls[0]).should.deep.equal({ days: 'max', interval: 'daily' });
+      });
+    });
+
+    describe('numeric day windows', () => {
+      it('should keep every allowed numeric window accepted and unchanged', async () => {
+        forceGlobalCacheMisses();
+        const urls = captureMarketChartUrls();
+
+        for (const days of [1, 7, 30, 90, 365, 1825]) {
+          const data = await getFiatRates({ coin: 'BTC', days });
+          data.should.deep.equal([
+            { ts: 1, rate: 100 },
+            { ts: 2, rate: 110 }
+          ]);
+        }
+
+        urls.map(daysAndInterval).should.deep.equal([
+          { days: '1', interval: null },
+          { days: '7', interval: null },
+          { days: '30', interval: null },
+          { days: '90', interval: 'daily' },
+          { days: '365', interval: 'daily' },
+          { days: '1825', interval: 'daily' }
+        ]);
+      });
     });
   });
 });

@@ -326,12 +326,9 @@ export class WalletService implements IWalletService {
     );
   }
 
-  static handleIncomingNotifications(notification, cb) {
-    cb = cb || function() { };
-
+  static handleIncomingNotifications(_notification: INotification) {
     // do nothing here....
     // bc height cache is cleared on bcmonitor
-    return cb();
   }
 
   static shutDown(cb) {
@@ -472,6 +469,13 @@ export class WalletService implements IWalletService {
       throw new Error('Storage requested before server was initialized');
     }
     return storage;
+  }
+
+  static getMessageBroker() {
+    if (!initialized) {
+      throw new Error('Message broker requested before server was initialized');
+    }
+    return messageBroker;
   }
 
   _runLocked(cb, task, waitTime?: number) {
@@ -668,15 +672,17 @@ export class WalletService implements IWalletService {
     }
 
     if (opts.tssKeyId) {
-      opts.tssVersion = opts.tssVersion || Defaults.TSS_KEYGEN_SCHEME_VERSION;
-      if (!(opts.tssVersion > 0 && opts.tssVersion <= Constants.TSS_KEYGEN_SCHEME_VERSION_MAX)) {
+      const keySession = await storage.fetchTssKeyGenSession({ id: opts.tssKeyId });
+      if (!keySession || !keySession.sharedPublicKey) {
+        // TODO: support importing a TSS key that was generated outside of this BWS instance.
+        return cb(new ClientError('Invalid TSS key session id'));
+      }
+
+      opts.tssVersion = opts.tssVersion || keySession.schemeVersion || Defaults.TSS_KEYGEN_SCHEME_VERSION;
+      if (!(opts.tssVersion >= Constants.TSS_KEYGEN_SCHEME_VERSION_MIN && opts.tssVersion <= Constants.TSS_KEYGEN_SCHEME_VERSION_MAX)) {
         return cb(new ClientError('Invalid TSS version'));
       }
 
-      const keySession = await storage.fetchTssKeyGenSession({ id: opts.tssKeyId });
-      if (!keySession || !keySession.sharedPublicKey) {
-        return cb(new ClientError('Invalid TSS key session id'));
-      }
       // TSS wallets behave like a single-sig
       opts.m = 1;
       opts.n = 1;
@@ -1144,9 +1150,13 @@ export class WalletService implements IWalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.NOT_AUTHORIZED);
 
-        const xPubKey = wallet.copayers.find(c => c.id === opts.copayerId).xPubKey;
+        const target = wallet.copayers.find(c => c.id === opts.copayerId);
+        if (!target?.xPubKey) return cb(Errors.NOT_AUTHORIZED);
 
-        if (!this._verifyRequestPubKey(opts.requestPubKey, opts.signature, xPubKey)) {
+        try {
+          const isValid = this._verifyRequestPubKey(opts.requestPubKey, opts.signature, target.xPubKey);
+          if (!isValid) return cb(Errors.NOT_AUTHORIZED);
+        } catch {
           return cb(Errors.NOT_AUTHORIZED);
         }
 
@@ -1207,7 +1217,17 @@ export class WalletService implements IWalletService {
    * @param {boolean} [opts.dryRun] Simulate the action but do not change server state.
    */
   joinWallet(opts, cb) {
-    if (!checkRequired(opts, ['walletId', 'name', 'requestPubKey', 'copayerSignature'], cb)) return;
+    // xPubKey is the canonical copayer identity in the current protocol. Alternate public-key
+    // fields are ancillary metadata; supporting an xPubKey-less copayer requires a versioned
+    // end-to-end identity protocol rather than a local identity fallback.
+    // SECURITY: xPubKey is required for every join, including hardwareSourcePublicKey/
+    // clientDerivedPublicKey ones. Copayer.xPubToCopayerId() (called below both for the TSS
+    // participant check and inside Copayer.create()) now throws on a missing xpub for every
+    // coin (see its own guard), so an xPubKey-less join can no longer derive a copayer id at
+    // all. bitcore-wallet-client's only join path (_doJoinWallet) always sends a real
+    // xPubKey regardless of these two fields, so this doesn't restrict any flow this repo's
+    // own client exercises - see the TSS-participant comment below for how that was confirmed.
+    if (!checkRequired(opts, ['walletId', 'name', 'requestPubKey', 'copayerSignature', 'xPubKey'], cb)) return;
     if (!opts.name) return cb(new ClientError('Invalid copayer name'));
 
     opts.coin = opts.coin || Defaults.COIN;
@@ -1216,17 +1236,17 @@ export class WalletService implements IWalletService {
     }
     if (!Utils.checkValueInCollection(opts.chain, Constants.CHAINS)) return cb(new ClientError('Invalid coin'));
 
+    // xPubKey is parsed and validated for every join; ancillary fields never suppress it.
+    // A future update will re-add conditional logic which allows opts.hardwareSourcePublicKey
+    // or opts.clientDerivedPublicKey to circumvent this requirement
     let xPubKey;
-    if (!opts.hardwareSourcePublicKey && !opts.clientDerivedPublicKey) {
-      if (!checkRequired(opts, ['xPubKey'], cb)) return;
-      try {
-        xPubKey = Bitcore_[opts.chain].HDPublicKey(opts.xPubKey);
-      } catch {
-        return cb(new ClientError('Invalid extended public key'));
-      }
-      if (xPubKey.network == null) {
-        return cb(new ClientError('Invalid extended public key'));
-      }
+    try {
+      xPubKey = Bitcore_[opts.chain].HDPublicKey(opts.xPubKey);
+    } catch {
+      return cb(new ClientError('Invalid extended public key'));
+    }
+    if (xPubKey.network == null) {
+      return cb(new ClientError('Invalid extended public key'));
     }
 
     this.walletId = opts.walletId;
@@ -1235,10 +1255,9 @@ export class WalletService implements IWalletService {
         if (err) return cb(err);
         if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
 
-        if ((opts.hardwareSourcePublicKey || opts.clientDerivedPublicKey) && !opts.tssKeyId) {
-          this._addCopayerToWallet(wallet, opts, cb);
-          return;
-        }
+        // SECURITY: opts.hardwareSourcePublicKey or opts.clientDerivedPublicKey may not
+        // circumvent the required checks below. A future update may enable either to replace xPubKey
+        // That is currently not supported
 
         if (this._upgradeNeeded(UPGRADES.BCH_bwc_$lt_8_3_multisig, { chain: opts.chain, n: wallet.n })) {
           return cb(Errors.UPGRADE_NEEDED.withMessage('BWC clients < 8.3 are no longer supported for multisig BCH wallets.'));
@@ -2074,6 +2093,44 @@ export class WalletService implements IWalletService {
   }
 
   /**
+   * Get wallet balance at a specific time.
+   * @param {Object} opts
+   * @param {string} opts.time - Date or time accepted by the bitcore-node API.
+   * @returns {Object} balance - The chain-state provider balance at the requested time.
+   */
+  getBalanceAtTime(opts, cb) {
+    opts = opts || {};
+    if (!opts.time) {
+      return cb(new ClientError('time is required in getBalanceAtTime'));
+    }
+    let wallet = opts.wallet;
+
+    const setWallet = cb1 => {
+      if (wallet) return cb1();
+      this.getWallet({}, (err, ret) => {
+        if (err) return cb(err);
+        wallet = ret;
+        return cb1(null, wallet);
+      });
+    };
+
+    setWallet(() => {
+      if (!wallet.isComplete()) {
+        return cb(null, { confirmed: 0, unconfirmed: 0, balance: 0 });
+      }
+
+      this.syncWallet(wallet, err => {
+        if (err) return cb(err);
+        const bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
+        if (!bc) {
+          return cb(new Error('Could not get blockchain explorer instance'));
+        }
+        return bc.getBalanceAtTime({ ...wallet, tokenAddress: opts.tokenAddress }, opts.time, cb);
+      });
+    });
+  }
+
+  /**
    * Return info needed to send all funds in the wallet
    * @param {Object} opts
    * @param {number} opts.feeLevel[='normal'] - Optional. Specify the fee level for this TX ('priority', 'normal', 'economy', 'superEconomy') as defined in Defaults.FEE_LEVELS.
@@ -2398,6 +2455,7 @@ export class WalletService implements IWalletService {
 
           this.getSendMaxInfo(
             {
+              feeLevel: opts.feeLevel,
               feePerKb: opts.feePerKb,
               excludeUnconfirmedUtxos: !!opts.excludeUnconfirmedUtxos,
               returnInputs: true,
@@ -3138,7 +3196,14 @@ export class WalletService implements IWalletService {
    * @returns {Object} txProposal
    */
   getTxByHash(opts, cb) {
-    this.storage.fetchTxByHash(opts.txid, (err, txp) => {
+    if (!checkRequired(opts, 'txid', cb)) return;
+
+    // Scoped to this.walletId: the global storage.fetchTxByHash
+    // would return any wallet's TxProposal for a known txid, disclosing a
+    // foreign wallet's proposal data to any authenticated copayer. The
+    // internal global consumers (BlockchainMonitor, getWalletFromIdentifier)
+    // are unaffected; they keep calling storage.fetchTxByHash directly.
+    this.storage.fetchTxByHashForWallet(this.walletId, opts.txid, (err, txp) => {
       if (err) return cb(err);
       if (!txp) return cb(Errors.TX_NOT_FOUND);
 
@@ -3249,7 +3314,7 @@ export class WalletService implements IWalletService {
         {
           txProposalId: opts.txProposalId
         },
-        (err, txp) => {
+        (err, txp: TxProposal) => {
           if (err) return cb(err);
 
           if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
@@ -3257,7 +3322,13 @@ export class WalletService implements IWalletService {
           const deleteLockTime = this.getRemainingDeleteLockTime(txp);
           if (deleteLockTime > 0) return cb(Errors.TX_CANNOT_REMOVE);
 
-          this.storage.removeTx(this.walletId, txp.id, () => {
+          this.storage.removeTx(this.walletId, txp.id, async () => {
+            try { 
+              const inputPaths = Array.isArray(txp.inputPaths) && txp.inputPaths?.length ? txp.inputPaths : [txp.inputPaths || 'm/0/0']; // doesn't actually matter what's in the array
+              await Promise.all(inputPaths.map((_, i) => this.storage.removeTssSigSession({ id: `${txp.id}:input${i}` })));
+            } catch (err) {
+              logger.warn('Error removing tss sig session for wallet %s txp %s: %o', this.walletId, txp.id, err);
+            }
             this._notifyTxProposalAction('TxProposalRemoved', txp, cb);
           });
         }
@@ -3828,7 +3899,7 @@ export class WalletService implements IWalletService {
           const notifications = res
             .flat()
             .map((n: INotification) => ({ ...n, walletId: this.walletId }))
-            .sort((a, b) => a.id - b.id);
+            .sort((a, b) => a.id?.toString()?.localeCompare(b.id?.toString()));
 
           return cb(null, notifications);
         }

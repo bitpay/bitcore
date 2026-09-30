@@ -7,7 +7,7 @@ import { MongoBound } from '../../../models/base';
 import { CacheStorage } from '../../../models/cache';
 import { CoinEvent } from '../../../models/events';
 import { WalletAddressStorage } from '../../../models/walletAddress';
-import { BaseEVMStateProvider, BuildWalletTxsStreamParams } from '../../../providers/chain-state/evm/api/csp';
+import { BaseEVMStateProvider, BuildWalletTxsStreamParams, BuildWalletTxsStreamResult } from '../../../providers/chain-state/evm/api/csp';
 import { EVMBlockStorage } from '../../../providers/chain-state/evm/models/block';
 import { EVMTransactionStorage } from '../../../providers/chain-state/evm/models/transaction';
 import { EVMTransactionJSON, IEVMBlock, IEVMTransactionTransformed } from '../../../providers/chain-state/evm/types';
@@ -108,7 +108,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
 
   // @override
   async streamBlocks(params: StreamBlocksParams) {
-    const { chain, network, req, res } = params;
+    const { chain, network } = params;
     const { web3 } = await this.getWeb3(network);
     const chainId = await this.getChainId({ network });
     const blockRange = await this.getBlocksRange({ ...params, chainId });
@@ -146,8 +146,7 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       }
     });
 
-    return ExternalApiStream.onStream(stream, req!, res!);
-
+    return stream;
   }
 
   // @override
@@ -165,10 +164,10 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
 
   // @override
   async _buildAddressTransactionsStream(params: StreamAddressUtxosParams) {
-    const { req, res, args, network, address } = params;
+    const { args, network, address } = params;
 
     const chainId = await this.getChainId({ network });
-    const txStream = await this._streamAddressTransactionsFromMoralis({
+    return this._streamAddressTransactionsFromMoralis({
       chainId,
       chain: this.chain,
       network,
@@ -178,15 +177,13 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
         ...args
       }
     });
-    // TODO unify `ExternalApiStream.onStream` and `Storage.apiStream` which are effectively doing the same thing
-    const result = await ExternalApiStream.onStream(txStream, req!, res!);
-    if (!result?.success) {
-      logger.error('Error mid-stream (streamAddressTransactions): %o', result.error?.log || result.error);
-    }
   }
 
   // @override
-  async _buildWalletTransactionsStream(params: StreamWalletTransactionsParams, streamParams: BuildWalletTxsStreamParams) {
+  async _buildWalletTransactionsStream(
+    params: StreamWalletTransactionsParams,
+    streamParams: BuildWalletTxsStreamParams
+  ): Promise<BuildWalletTxsStreamResult> {
     const { network, args } = params;
     let { transactionStream } = streamParams;
     const { walletAddresses } = streamParams;
@@ -212,7 +209,8 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
       this._addAddressToSubscription({ chainId, address })
         .catch(e => logger.warn(`Failed to add address to ${this.chain}:${network} Moralis subscription: %o`, e));
     }
-    return transactionStream;
+    // nothing to tear down here; the adapter streams run to completion on their own
+    return { stream: transactionStream };
   }
 
   // @override

@@ -274,6 +274,32 @@ describe('ExpressApp', function() {
             });
           });
         });
+
+        it('should get the balance at a given time', function(done) {
+          const server = {
+            getBalanceAtTime: sinon.stub().callsArgWith(1, null, { balance: 123 }),
+          };
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstanceWithAuth').callsArgWith(1, null, server);
+          start(ExpressApp, function() {
+            const reqOpts = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/balance/2025-01-15T12%3A00%3A00.000Z?tokenAddress=0xToken',
+              headers: {
+                'x-identity': 'identity',
+                'x-signature': 'signature'
+              }
+            };
+            request(reqOpts, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              server.getBalanceAtTime.calledOnce.should.be.true;
+              server.getBalanceAtTime.getCall(0).args[0].time.should.equal('2025-01-15T12:00:00.000Z');
+              server.getBalanceAtTime.getCall(0).args[0].tokenAddress.should.equal('0xToken');
+              JSON.parse(body).balance.should.equal(123);
+              done();
+            });
+          });
+        });
       });
 
       describe('v1/wallets/all', function() {
@@ -604,6 +630,89 @@ describe('ExpressApp', function() {
             request(requestOptions, function(err, res) {
               should.not.exist(err);
               res.statusCode.should.equal(400);
+              done();
+            });
+          });
+        });
+      });
+
+      describe('Moralis routes (wallet-authenticated or public)', function() {
+        const whitelistedOrigin = 'https://whitelisted-dapp.example';
+        let originalMoralisConfig;
+        beforeEach(function() {
+          originalMoralisConfig = config.moralis;
+          config.moralis = { whitelist: [whitelistedOrigin] };
+        });
+        afterEach(function() {
+          config.moralis = originalMoralisConfig;
+        });
+
+        it('/v1/moralis/getMultipleERC20TokenPrices should work without auth headers (public/dApp)', function(done) {
+          const server = {
+            moralisGetMultipleERC20TokenPrices: sinon.stub().resolves([{ tokenAddress: '0xaaa', usdPrice: 1 }]),
+          };
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstance').returns(server);
+          start(ExpressApp, function() {
+            const requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/moralis/getMultipleERC20TokenPrices',
+              method: 'post',
+              json: { chain: '0x1', tokens: [{ tokenAddress: '0xaaa' }] },
+              headers: {
+                origin: whitelistedOrigin
+              }
+            };
+            request(requestOptions, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              body[0].tokenAddress.should.equal('0xaaa');
+              done();
+            });
+          });
+        });
+
+        it('/v1/moralis/getMultipleERC20TokenPrices should work with valid wallet auth headers', function(done) {
+          const server = {
+            moralisGetMultipleERC20TokenPrices: sinon.stub().resolves([{ tokenAddress: '0xaaa', usdPrice: 1 }]),
+          };
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstance').returns(server);
+          sandbox.stub(WalletService, 'getInstanceWithAuth').callsArgWith(1, null, server);
+          start(ExpressApp, function() {
+            const requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/moralis/getMultipleERC20TokenPrices',
+              method: 'post',
+              json: { chain: '0x1', tokens: [{ tokenAddress: '0xaaa' }] },
+              headers: {
+                'x-identity': 'identity',
+                'x-signature': 'signature'
+              }
+            };
+            request(requestOptions, function(err, res, body) {
+              should.not.exist(err);
+              res.statusCode.should.equal(200);
+              body[0].tokenAddress.should.equal('0xaaa');
+              done();
+            });
+          });
+        });
+
+        it('/v1/moralis/getMultipleERC20TokenPrices should fail with invalid wallet auth headers', function(done) {
+          sandbox.stub(WalletService, 'initialize').callsArg(1);
+          sandbox.stub(WalletService, 'getInstanceWithAuth').callsArgWith(1, new ClientError('NOT_AUTHORIZED', 'Not authorized'));
+          start(ExpressApp, function() {
+            const requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/moralis/getMultipleERC20TokenPrices',
+              method: 'post',
+              json: { chain: '0x1', tokens: [{ tokenAddress: '0xaaa' }] },
+              headers: {
+                'x-identity': 'identity',
+                'x-signature': 'bad-signature'
+              }
+            };
+            request(requestOptions, function(err, res) {
+              should.not.exist(err);
+              res.statusCode.should.equal(401);
               done();
             });
           });

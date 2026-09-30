@@ -1,9 +1,9 @@
 import crypto from 'crypto';
 import os from 'os';
 import url from 'url';
-import { Key, type Network, TssKey } from '@bitpay-labs/bitcore-wallet-client';
+import { Errors, Key, type Network, TssKey } from '@bitpay-labs/bitcore-wallet-client';
 import * as prompt from '@clack/prompts';
-import { UserCancelled } from '../../errors';
+import { ProcessCancelled, UserCancelled } from '../../errors';
 import { getAddressType, getCopayerName, getPassword, promptKeyshareBackup } from '../../prompts';
 import { Utils } from '../../utils';
 import { exportWallet } from '../export';
@@ -27,7 +27,7 @@ export async function createThresholdSigWallet(
 
   const copayerName = await getCopayerName();
   const addressType = await getAddressType({ chain, network, isMultiSig: false, isTss: true });
-  const password = await getPassword('Lock your wallet with a password:', { hidden: false });
+  const password = await getPassword('Lock your wallet with a password:', { hidden: false, confirm: true });
 
   let key;
   if (mnemonic) {
@@ -115,15 +115,12 @@ export async function createThresholdSigWallet(
     } while (joinCodeAction !== 'continue');
   }
 
-  const spinner = prompt.spinner({ indicator: 'timer' });
+  const spinner = prompt.spinner({ indicator: 'timer', onCancel: () => { tss.unsubscribe(); } });
   spinner.start('Waiting for all parties to join...');
 
-  await new Promise<void>((resolve, reject) => {
-    process.on('SIGINT', () => {
-      tss.unsubscribe();
-      spinner.stop('Cancelled by user');
-      reject(new UserCancelled());
-    });
+  await new Promise<void>((resolve, _reject) => {
+    let rejected = false;
+    const reject = (err) => { if (!rejected) { rejected = true; _reject(err); } };
 
     tss.subscribe({
       walletName: wallet.name,
@@ -131,10 +128,13 @@ export async function createThresholdSigWallet(
       createWalletOpts: Utils.getSegwitInfo(addressType)
     });
     tss.on('roundsubmitted', (round) => spinner.message(`Round ${round} submitted`));
-    tss.on('error', e => prompt.log.error('Unexpected error during TSS wallet creation: ' + (e.stack || e)));
-    tss.on('wallet', async (_wallet) => {
-      // TODO: what to do with the wallet?
-      // console.log('Created wallet at BWS:', wallet);
+    tss.on('error', e => {
+      if (e instanceof Errors.TSS_SESSION_EXPIRED) {
+        tss.unsubscribe({ clearEvents: true });
+        spinner.cancel(e.message);
+        return reject(new ProcessCancelled());
+      }
+      prompt.log.error('Unexpected error during TSS wallet creation: ' + (e.stack || e));
     });
     tss.on('complete', async () => {
       try {
@@ -161,7 +161,13 @@ export async function createThresholdSigWallet(
         reject(err);
       }
     });
+    tss.on('unsubscribe', () => {
+      reject(new UserCancelled());
+    });
   });
+
+  // Clean up sensitive data from memory after wallet creation is complete
+  tss.cleanup();
 
 
   // Keyshare backup

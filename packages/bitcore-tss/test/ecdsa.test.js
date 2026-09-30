@@ -14,7 +14,7 @@ describe('ECDSA', function() {
     if (v.only || v.signing.some(s => s.only)) {
       arr.push(i);
     }
-    return arr
+    return arr;
   }, []);
 
   for (const vector of vectors) {
@@ -284,6 +284,20 @@ describe('ECDSA', function() {
             });
           }
         });
+
+        describe('cleanup', function() {
+          for (let i = 0; i < vector.n; i++) {
+            const party = `party${i}`;
+
+            it(`should cleanup key for ${party}`, async function() {
+              assert.equal(keygens[party].isKeyChainReady(), true);
+              const keyChain = keygens[party].getKeyChain();
+              keygens[party].cleanup();
+              assert.equal(keygens[party].isKeyChainReady(), false);
+              assert.throws(keygens[party].getKeyChain.bind(keygens[party]), { message: 'Invalid state: Cannot get key chain after cleanup' });
+            });
+          }
+        });
       });
 
 
@@ -292,7 +306,7 @@ describe('ECDSA', function() {
         const n = vector.n;
         const signers = {};
         for (let i = 0; i < n; i++) {
-          signers[`party${i}`] = {}
+          signers[`party${i}`] = {};
           for (let j = 1; j < n; j++) {
             signers[`party${i}`][`party${(i + j) % n}`] = null;
           }

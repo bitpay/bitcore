@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import * as chai from 'chai';
 import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import fs from 'fs';
@@ -5,10 +6,7 @@ import os from 'os';
 import path from 'path';
 import { AddressTypes, IWalletExt, Wallet } from '../../src/wallet';
 import { Encryption } from '../../src/encryption';
-import { Api as bcnApi } from '../../../bitcore-node/build/src/services/api';
-import { Storage as bcnStorage } from '../../../bitcore-node/build/src/services/storage';
 import crypto from 'crypto';
-import { loadModules } from '../../../bitcore-node/build/src/modules';
 import request from 'request-promise-native';
 import requestStream from 'request';
 import { Server } from 'http';
@@ -17,6 +15,10 @@ import { StorageType } from '../../src/types/storage';
 import supertest from 'supertest';
 import { utils } from '../../src/utils';
 import ethMigrationTestWalletFixture from './data/ethMigrationTestWallet.fixture';
+
+const { Api: bcnApi } = require('../../../../bitcore-node/build/src/services/api');
+const { Storage: bcnStorage } = require('../../../../bitcore-node/build/src/services/storage');
+const { loadModules } = require('../../../../bitcore-node/build/src/modules');
 
 const should = chai.should();
 const expect = chai.expect;
@@ -58,6 +60,7 @@ describe('Wallet', function() {
     loadModules();
     const httpServer: Server = await bcnApi.start();
     api = supertest(httpServer);
+    await Wallet.deleteWallet({ name: walletName });
   });
   after(async function() {
     this.timeout(20000);

@@ -123,6 +123,72 @@ describe('prompts', function() {
       process.stdin.push(KEYSTROKES.ENTER);
       assert.strictEqual(await promise, 'validpw');
     });
+
+    it('confirm: should return the password when confirmation matches', async function() {
+      const promise = prompts.getPassword(undefined, { confirm: true });
+      process.stdin.push('mypassword');
+      process.stdin.push(KEYSTROKES.ENTER); // password
+      process.stdin.push('mypassword');
+      process.stdin.push(KEYSTROKES.ENTER); // confirm
+      assert.strictEqual(await promise, 'mypassword');
+    });
+
+    it('confirm: should retry confirm when passwords do not match and succeed on retry', async function() {
+      const promise = prompts.getPassword(undefined, { confirm: true });
+      process.stdin.push('correctpass');
+      process.stdin.push(KEYSTROKES.ENTER); // password — 1st attempt
+      process.stdin.push('wrongpass');
+      process.stdin.push(KEYSTROKES.ENTER); // confirm — mismatch, will retry
+      process.stdin.push('correctpass');
+      process.stdin.push(KEYSTROKES.ENTER); // password — 2nd attempt
+      assert.strictEqual(await promise, 'correctpass');
+    });
+
+    it('confirm + no retry: should throw when passwords do not match', async function() {
+      const promise = prompts.getPassword(undefined, { confirm: true, retry: false });
+      process.stdin.push('firstpass');
+      process.stdin.push(KEYSTROKES.ENTER); // password
+      process.stdin.push('wrongpass');
+      process.stdin.push(KEYSTROKES.ENTER); // confirm — mismatch, no retry
+      await assert.rejects(() => promise, (err: Error) => {
+        assert.ok(err instanceof Error && !(err instanceof UserCancelled));
+        assert.match(err.message, /do not match/i);
+        return true;
+      });
+    });
+
+    it('confirm: cancel on confirmation loops back to password prompt and succeeds', async function() {
+      const promise = prompts.getPassword(undefined, { confirm: true });
+      process.stdin.push('firstpass');
+      process.stdin.push(KEYSTROKES.ENTER);    // password — 1st attempt
+      process.stdin.push(KEYSTROKES.CTRL_C);   // cancel on confirm — backup=true, loops back
+      process.stdin.push('secondpass');
+      process.stdin.push(KEYSTROKES.ENTER);    // password — 2nd attempt
+      process.stdin.push('secondpass');
+      process.stdin.push(KEYSTROKES.ENTER);    // confirm — match
+      assert.strictEqual(await promise, 'secondpass');
+    });
+
+    it('confirm + no retry: cancel on confirmation still loops back (cancel on confirm is not the same as retry on confirm)', async function() {
+      const promise = prompts.getPassword(undefined, { confirm: true, retry: false });
+      process.stdin.push('firstpass');
+      process.stdin.push(KEYSTROKES.ENTER);    // password — 1st attempt
+      process.stdin.push(KEYSTROKES.CTRL_C);   // cancel on confirm — backup=true overrides retry:false
+      process.stdin.push('secondpass');
+      process.stdin.push(KEYSTROKES.ENTER);    // password — 2nd attempt
+      process.stdin.push('secondpass');
+      process.stdin.push(KEYSTROKES.ENTER);    // confirm — match
+      assert.strictEqual(await promise, 'secondpass');
+    });
+
+    it('confirm: cancel on confirmation then cancel on password throws UserCancelled', async function() {
+      const promise = prompts.getPassword(undefined, { confirm: true });
+      process.stdin.push('firstpass');
+      process.stdin.push(KEYSTROKES.ENTER);    // password — 1st attempt
+      process.stdin.push(KEYSTROKES.CTRL_C);   // cancel on confirm — loops back to password
+      process.stdin.push(KEYSTROKES.CTRL_C);   // cancel on password — throws UserCancelled
+      await assert.rejects(() => promise, UserCancelled);
+    });
   });
 
   // ─── getMofN ────────────────────────────────────────────────────────────────

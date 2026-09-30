@@ -16,6 +16,7 @@ describe('Proposals', function() {
   before(async function() {
     await helpers.startBws();
     await helpers.loadWalletData(walletData.btcSingleSigWallet);
+    sinon.stub(Utils, 'die').callsFake((msg => { throw new Error('Utils.die was called: ' + msg); }));
     sinon.stub(process, 'exit').throws(new Error('process.exit was called')); // prevent accidental exits during test
   });
 
@@ -181,6 +182,7 @@ describe('Proposals', function() {
         // Checkpoint1: Proposals option should show 1 pending proposal
         [KEYSTROKES.ENTER], // Proposals -- (checkpoint1)
         ['a'], // Accept
+        [WALLETS.PASSWORD, KEYSTROKES.ENTER], // Enter password
         // Checkpoint2: Proposals view shows accepted proposal
         ['x'], // Close -- (checkpoint2)
         [KEYSTROKES.ARROW_UP], // Proposals -> Exit
@@ -189,7 +191,7 @@ describe('Proposals', function() {
       let step = 0;
       let checkpointOutput = '';
       // stepInputs indexes corresponding to checkpoints in test flow where we want to assert on CLI output
-      const checkpoints = new Set([0, 2]);
+      const checkpoints = new Set([0, 3]);
       const io = new Transform({
         encoding: 'utf-8',
         transform(chunk, encoding, respond) {
@@ -440,6 +442,7 @@ describe('Proposals', function() {
             [KEYSTROKES.ARROW_LEFT, KEYSTROKES.ENTER], // No -> Yes -- (checkpoint5)
             ['n'], // Next Page
             ['a'], // Accept (second proposal)
+            [WALLETS.PASSWORD, KEYSTROKES.ENTER], // Enter password
             // Checkpoint6: Should show txid
             ['p'], // Previous Page -- (checkpoint6)
             // Checkpoint7: Should show deleted proposal
@@ -450,7 +453,7 @@ describe('Proposals', function() {
           let step = 0;
           let checkpointOutput = '';
           // stepInputs indexes corresponding to checkpoints in test flow where we want to assert on CLI output
-          const checkpoints = new Set([0, 1, 2, 3, 4, 7, 8]);
+          const checkpoints = new Set([0, 1, 2, 3, 4, 8, 9]);
           const io = new Transform({
             encoding: 'utf-8',
             transform(chunk, encoding, respond) {

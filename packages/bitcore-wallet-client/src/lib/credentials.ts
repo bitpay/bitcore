@@ -378,6 +378,10 @@ export class Credentials {
     return !!this.walletId;
   }
 
+  hasTssInfo() {
+    return !!this.tssKeyId;
+  }
+
   addPublicKeyRing(publicKeyRing) {
     this.publicKeyRing = JSON.parse(JSON.stringify(publicKeyRing));
   }
@@ -390,6 +394,7 @@ export class Credentials {
       (!this.publicKeyRing || this.publicKeyRing.length != this.n)
     )
       return false;
+    if (this.tssKeyId && (!this.publicKeyRing || this.publicKeyRing.length <= 1)) return false; // need at least 2 participants for TSS
     return true;
   }
 }

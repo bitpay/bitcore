@@ -1,8 +1,8 @@
 import os from 'os';
 import url from 'url';
-import { Key, TssKey } from '@bitpay-labs/bitcore-wallet-client';
+import { Errors, Key, TssKey } from '@bitpay-labs/bitcore-wallet-client';
 import * as prompt from '@clack/prompts';
-import { UserCancelled } from '../../errors';
+import { ProcessCancelled, UserCancelled } from '../../errors';
 import { getCopayerName, getNetwork, getPassword, promptKeyshareBackup } from '../../prompts';
 import { Utils } from '../../utils';
 import { exportWallet } from '../export';
@@ -16,7 +16,7 @@ export async function joinThresholdSigWallet(
   
   const network = await getNetwork();
   const copayerName = await getCopayerName();
-  const password = await getPassword('Lock your wallet with a password:', { hidden: false });
+  const password = await getPassword('Lock your wallet with a password:', { hidden: false, confirm: true });
 
   let key;
   if (mnemonic) {
@@ -91,7 +91,10 @@ export async function joinThresholdSigWallet(
   const spinner = prompt.spinner({ indicator: 'timer' });
   spinner.start('Waiting for all parties to join...');
 
-  await new Promise<void>((resolve, reject) => {
+  await new Promise<void>((resolve, _reject) => {
+    let rejected = false;
+    const reject = (err) => { if (!rejected) { rejected = true; _reject(err); } };
+
     process.on('SIGINT', () => {
       tss.unsubscribe();
       spinner.stop('Cancelled by user');
@@ -99,10 +102,13 @@ export async function joinThresholdSigWallet(
     });
     tss.subscribe({ copayerName });
     tss.on('roundsubmitted', (round) => spinner.message(`Round ${round} submitted`));
-    tss.on('error', e => prompt.log.error('Unexpected error during TSS wallet creation: ' + (e.stack || e)));
-    tss.on('wallet', async (_wallet) => {
-      // TOOD: what to do with this?
-      // console.log('Joined wallet at BWS:', wallet);
+    tss.on('error', e => {
+      if (e instanceof Errors.TSS_SESSION_EXPIRED) {
+        tss.unsubscribe({ clearEvents: true });
+        spinner.cancel(e.message);
+        return reject(new ProcessCancelled());
+      }
+      prompt.log.error('Unexpected error during TSS wallet creation: ' + (e.stack || e));
     });
     tss.on('complete', async () => {
       try {
@@ -129,6 +135,9 @@ export async function joinThresholdSigWallet(
       }
     });
   });
+
+  // Clean up sensitive data from memory after wallet creation is complete
+  tss.cleanup();
 
 
   // Keyshare backup

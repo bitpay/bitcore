@@ -178,6 +178,11 @@ if (require.main === module) {
           // Don't display the intro if running a specific command
           !opts.command && prompt.intro(`${Utils.boldText('[  Main Menu')} - ${Utils.colorTextByChain(wallet.chain, walletName)}  ${Utils.boldText(']')}`);
           cmdParams.status && (cmdParams.status.pendingTxps = opts.command || opts.register ? [] : await wallet.client.getTxProposals({}));
+
+          // Update the balance when returning to the main menu (e.g. right after sending a tx)
+          if (!opts.command && cmdParams.status) {
+            cmdParams.status.balance = await commands.balance.getBalance(cmdParams);
+          }
           
           const dynamicCmdArgs = {
             ppNum: cmdParams.status?.pendingTxps.length ? Utils.colorText(` (${cmdParams.status.pendingTxps.length})`, 'yellow') : '',
@@ -214,8 +219,9 @@ if (require.main === module) {
                   // ...update status
                   cmdParams.status = await wallet.client.getStatus({ tokenAddress: tokenObj?.contractAddress });
                 }
-                cmdParams.opts.tokenAddress = tokenObj?.contractAddress;
-                cmdParams.opts.token = tokenObj?.displayCode;
+                // Update persistent opts (cmdParams.opts gets reset to opts since is susceptible to being overwritten in other commands)
+                opts.tokenAddress = tokenObj?.contractAddress;
+                opts.token = tokenObj?.displayCode;
                 break;
               case 'address':
                 await commands.address.createAddress(cmdParams);

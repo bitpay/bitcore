@@ -1,5 +1,4 @@
 'use strict';
-
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -322,7 +321,8 @@ module.exports.config = {
      * @param {Array.<Object>} capabilities list of capabilities details
      * @param {<Object>} results object containing test results
      */
-  onComplete: function(exitCode, config, capabilities, results) {
+
+  onComplete: function (exitCode, config, capabilities, results) {
     try {
       fs.rmSync(chromeUserDataDirRoot, { recursive: true, force: true });
     } catch {

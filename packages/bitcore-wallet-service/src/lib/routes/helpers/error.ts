@@ -13,6 +13,7 @@ export class ApiErrorHelper {
   returnError(err: any, res: express.Response, req: express.Request): void {
     // make sure headers have not been sent as this leads to an uncaught error
     if (res.headersSent) {
+      res.end();
       return;
     }
     if (err instanceof ClientError) {

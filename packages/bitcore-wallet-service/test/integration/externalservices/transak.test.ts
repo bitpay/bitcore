@@ -94,6 +94,20 @@ describe('Transak integration', () => {
       should.exist(data);
     });
 
+    it('should forward the deviceIp as x-user-ip for web context', async () => {
+      let capturedHeaders;
+      server.externalServices.transak.request = {
+        post: (_url, opts, cb) => {
+          capturedHeaders = opts.headers;
+          return cb(null, { body: 'data' });
+        },
+      };
+      req.body.context = 'web';
+      req.body.deviceIp = '203.0.113.42';
+      await server.externalServices.transak.transakGetAccessToken(req);
+      capturedHeaders['x-user-ip'].should.equal('203.0.113.42');
+    });
+
     it('should return error if post returns error', async () => {
       const fakeRequest2 = {
         post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
@@ -331,6 +345,76 @@ describe('Transak integration', () => {
       } catch (err) {
         err.message.should.equal('Transak\'s request missing arguments');
       }
+    });
+
+    it('should forward the deviceIp as x-user-ip for web context', async () => {
+      let capturedHeaders;
+      server.externalServices.transak.request = {
+        post: (_url, opts, cb) => {
+          capturedHeaders = opts.headers;
+          return cb(null, { body: 'data' });
+        },
+      };
+      req.body.context = 'web';
+      req.body.deviceIp = '203.0.113.42';
+      await server.externalServices.transak.transakGetSignedPaymentUrl(req);
+      capturedHeaders['x-user-ip'].should.equal('203.0.113.42');
+    });
+
+    it('should canonicalize an IPv4-mapped IPv6 deviceIp for web context', async () => {
+      let capturedHeaders;
+      server.externalServices.transak.request = {
+        post: (_url, opts, cb) => {
+          capturedHeaders = opts.headers;
+          return cb(null, { body: 'data' });
+        },
+      };
+      req.body.context = 'web';
+      req.body.deviceIp = '::ffff:203.0.113.42';
+      await server.externalServices.transak.transakGetSignedPaymentUrl(req);
+      capturedHeaders['x-user-ip'].should.equal('203.0.113.42');
+    });
+
+    it('should not leak deviceIp into the widgetParams sent to Transak', async () => {
+      let capturedBody;
+      server.externalServices.transak.request = {
+        post: (_url, opts, cb) => {
+          capturedBody = opts.body;
+          return cb(null, { body: 'data' });
+        },
+      };
+      req.body.context = 'web';
+      req.body.deviceIp = '203.0.113.42';
+      await server.externalServices.transak.transakGetSignedPaymentUrl(req);
+      should.not.exist(capturedBody.widgetParams.deviceIp);
+    });
+
+    it('should ignore a body deviceIp for non-web context and use the request IP', async () => {
+      let capturedHeaders;
+      server.externalServices.transak.request = {
+        post: (_url, opts, cb) => {
+          capturedHeaders = opts.headers;
+          return cb(null, { body: 'data' });
+        },
+      };
+      req.headers['x-forwarded-for'] = '198.51.100.7';
+      req.body.deviceIp = '203.0.113.42';
+      await server.externalServices.transak.transakGetSignedPaymentUrl(req);
+      capturedHeaders['x-user-ip'].should.equal('198.51.100.7');
+    });
+
+    it('should fall back to the request IP for web context when deviceIp is not forwarded', async () => {
+      let capturedHeaders;
+      server.externalServices.transak.request = {
+        post: (_url, opts, cb) => {
+          capturedHeaders = opts.headers;
+          return cb(null, { body: 'data' });
+        },
+      };
+      req.body.context = 'web';
+      req.headers['x-forwarded-for'] = '198.51.100.7';
+      await server.externalServices.transak.transakGetSignedPaymentUrl(req);
+      capturedHeaders['x-user-ip'].should.equal('198.51.100.7');
     });
 
     it('should return error if post returns error', async () => {

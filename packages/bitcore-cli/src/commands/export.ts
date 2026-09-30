@@ -66,7 +66,7 @@ export async function exportWallet(args: CommonArgs<{ filename?: string; readonl
     throw new UserCancelled();
   }
 
-  const exportPassword = await getPassword('File encryption password:', { hidden: false, minLength: 6 });
+  const exportPassword = await getPassword('File encryption password:', { hidden: false, minLength: 6, confirm: true });
 
   await wallet.export({
     filename: replaceTilde(filename),

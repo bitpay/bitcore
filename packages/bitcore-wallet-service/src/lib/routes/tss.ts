@@ -21,12 +21,15 @@ export class TssRouter {
     const { returnError, opts } = params;
     const router = express.Router();
     
+    /** Key generation methods */
+
     router.post('/v1/tss/keygen/:id', createWalletLimiter(opts), verifyTssMessage, async function(req, res) {
       try {
         const id = req.params.id;
-        const { message, n, password } = req.body;
+        // version was not given by client until 1.1, so fallback to 1.0
+        const { message, n, password, version = 1.0, timeLimit } = req.body;
         const copayerId = req.headers['x-identity'];
-        await TssKeyGen.processMessage({ id, message, n, password, copayerId });
+        await TssKeyGen.processMessage({ id, message, n, password, copayerId, version, timeLimit });
         return res.send();
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
@@ -34,17 +37,40 @@ export class TssRouter {
     });
 
     router.get('/v1/tss/keygen/:id/:round', authTssRequest(), async function(req, res) {
+      let interval: NodeJS.Timeout;
       try {
+        const abort = new AbortController();
+        res.on('close', () => { clearInterval(interval); abort.abort(); });
+
         const { id, round } = req.params as { [key: string]: string };
+        const { maxWaitTime } = req.query as { [key: string]: string };
         const copayerId = req.headers['x-identity'];
         if (round === 'secret') {
           const secret = await TssKeyGen.getBwsJoinSecret({ id, copayerId });
           return res.json({ secret });
         }
-        const { messages, publicKey } = await TssKeyGen.getMessagesForParty({ id, round: parseInt(round), copayerId });
-        return res.json({ messages, publicKey });
+
+        // Validate access and fetch session before committing to a streaming response, so that errors like
+        //   "session not found" or "not a participant" can still be returned with a proper
+        //   HTTP status instead of silently becoming an empty 200 (see below).
+        const session = await TssKeyGen.getSessionForCopayer({ id, copayerId });
+
+        if (abort.signal.aborted || res.closed) {
+          return; // Connection closed by client, stop processing
+        }
+
+        // Keep the connection alive while waiting for the change stream to return a result.
+        // Headers must be finalized before writing the first heartbeat byte.
+        // Flush ensures the heartbeat is sent immediately to keep the connection alive.
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        interval = setInterval(() => { res.write('\n'); res.flush(); }, 1000);
+
+        const { messages, publicKey } = await TssKeyGen.getMessagesForParty({ session, round: parseInt(round), copayerId, maxWaitTimeSec: parseInt(maxWaitTime), abortSignal: abort.signal });
+        return res.end(JSON.stringify({ messages, publicKey }));
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
+      } finally {
+        clearInterval(interval);
       }
     });
 
@@ -84,12 +110,16 @@ export class TssRouter {
       }
     });
 
+
+    /** Signature Methods */
+
     router.post('/v1/tss/sign/:id', authRequest(), verifyTssMessage, async function(req, res) {
       try {
         const id = req.params.id;
-        const { message, m } = req.body;
+        // version was not given by client until 1.1, so fallback to 1.0
+        const { message, m, version = 1.0, timeLimit } = req.body;
         const copayerId = req.headers['x-identity'];
-        await TssSign.processMessage({ id, message, m, copayerId });
+        await TssSign.processMessage({ id, message, m, copayerId, version, timeLimit });
         return res.send();
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
@@ -97,13 +127,37 @@ export class TssRouter {
     });
 
     router.get('/v1/tss/sign/:id/:round', authTssRequest(), async function(req, res) {
+      let interval: NodeJS.Timeout;
       try {
+        const abort = new AbortController();
+        res.on('close', () => { clearInterval(interval); abort.abort(); });
+
         const { id, round } = req.params as { [key: string]: string };
+        const { maxWaitTime } = req.query as { [key: string]: string };
         const copayerId = req.headers['x-identity'];
-        const { messages, signature, participants } = await TssSign.getMessagesForParty({ id, round: parseInt(round), copayerId });
-        return res.json({ messages, signature, participants });
+
+        // Validate access and fetch session before committing to a streaming response, so that errors like
+        //   "session not found" or "not a participant" can still be returned with a proper
+        //   HTTP status instead of silently becoming an empty 200 (see below).
+        const session = await TssSign.getSessionForCopayer({ id, copayerId });
+        
+        if (abort.signal.aborted || res.closed) {
+          return; // Connection closed by client, stop processing
+        }
+
+        // Keep the connection alive while waiting for the change stream to return a result.
+        // Headers must be finalized before writing the first heartbeat byte.
+        // Flush ensures the heartbeat is sent immediately to keep the connection alive.
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        interval = setInterval(() => { res.write('\n'); res.flush(); }, 1000);
+
+        const { messages, signature, participants } = await TssSign.getMessagesForParty({ session, round: parseInt(round), copayerId, maxWaitTimeSec: parseInt(maxWaitTime), abortSignal: abort.signal });
+        clearInterval(interval);
+        return res.end(JSON.stringify({ messages, signature, participants }));
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
+      } finally {
+        clearInterval(interval);
       }
     });
 

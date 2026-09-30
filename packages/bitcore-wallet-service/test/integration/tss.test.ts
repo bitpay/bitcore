@@ -7,10 +7,16 @@ import * as twoOfThree from './data/tss/2of3';
 import BWS from '../../src/index';
 import helpers from './helpers';
 import { TssKeyGen } from '../../src/lib/tss';
+import { TssSigGenModel } from '../../src/lib/model/tsssign';
+import { TssKeyGenModel } from '../../src/lib/model/tsskeygen';
+import { Common } from '../../src/lib/common/index';
 
 const should = chai.should();
+const { Utils } = Common;
 
 describe('TSS', function() {
+  this.timeout(Math.max(this['_timeout'], 2000));
+
   const vector = {
     m: 2,
     n: 3,
@@ -250,6 +256,11 @@ describe('TSS', function() {
   describe('POST /v1/tss/keygen/:id', function() {
     const url = id => `${urlPrefix}/v1/tss/keygen/${id}`;
 
+    beforeEach(async function() {
+      const storage = helpers.getStorage();
+      await storage.db.collection(BWS.Storage.collections.TSS_KEYGEN).deleteMany({});
+    });
+
     describe('middleware', function() {
       beforeEach(function() {
         sandbox.stub(TssKeyGen, 'processMessage').resolves();
@@ -336,5 +347,269 @@ describe('TSS', function() {
           });
       });
     });
+
+    it('should error if session is expired', function(done) {
+      const storage = helpers.getStorage();
+      const publicKey = vector.party0.authKey.publicKey.toString();
+      const keyGen = TssKeyGenModel.create({
+        id: 'test',
+        message: { partyId: 0, publicKey } as any,
+        n: 2,
+        copayerId: publicKey,
+        version: 1.1,
+        timeLimit: 1, // 1 minute
+      });
+      storage.storeTssKeyGenSession({ doc: keyGen }).then(() => {
+        // advance time by 2 minutes
+        const now = Date.now() + 2 * 60 * 1000;
+        sandbox.stub(Date, 'now').returns(now);
+
+        const message = JSON.parse(JSON.stringify(vector.keygen.messages.round1.party0));
+        message.publicKey = publicKey;
+
+        app.post(url('test'))
+          .set('x-identity', publicKey)
+          .send({ message })
+          .expect((res) => {
+            res.status.should.equal(400);
+            res.body.code.should.equal('TSS_SESSION_EXPIRED');
+          })
+          .end(done);
+      }).catch(done);
+    });
   });
+
+  describe('POST /v1/tss/sign/:id', function() {
+    const url = id => `${urlPrefix}/v1/tss/sign/${id}`;
+    const signRequest = body => {
+      const message = `post|${url('test').replace(urlPrefix, '')}|${JSON.stringify(body)}`;
+      const hash = Utils.hashMessage(message, false); // BWC hashes the message with reversal, then signs
+      const xSignature = BitcoreLib.crypto.ECDSA.sign(hash, privateKey, { endian: 'little' }).toString();
+      return xSignature;
+    };
+    const privateKey = new BitcoreLib.PrivateKey('cd643c4f2e68b669d97c51877905e8d77efc98cabb5a36a8eda66bc143055d37');
+    const publicKey = privateKey.publicKey.toString();
+
+    beforeEach(async function() {
+      const storage = helpers.getStorage();
+      await storage.db.collection(BWS.Storage.collections.TSS_SIGN).deleteMany({});
+      await storage.db.collection(BWS.Storage.collections.COPAYERS_LOOKUP).deleteMany({});
+      await storage.db.collection(BWS.Storage.collections.COPAYERS_LOOKUP).insertOne({
+        copayerId: publicKey,
+        walletId: 'test',
+        requestPubKey: publicKey,
+      });
+    });
+
+    it('should error if session is expired', function(done) {
+      const storage = helpers.getStorage();
+      const sigGen = TssSigGenModel.create({
+        id: 'test',
+        message: { partyId: 0, publicKey } as any,
+        m: 2,
+        copayerId: publicKey,
+        version: 1.1,
+        timeLimit: 1, // 1 minute
+      });
+      storage.storeTssSigSession({ doc: sigGen }).then(() => {
+        // advance time by 2 minutes
+        const now = Date.now() + 2 * 60 * 1000;
+        sandbox.stub(Date, 'now').returns(now);
+
+        const message = { publicKey, p2pMessages: [{ payload: { encryptedMessage: 'encryptie', signature: 'siggie' } }], broadcastMessages: [] };
+        const xSignature = signRequest({ message });
+
+        app.post(url('test'))
+          .set('x-identity', publicKey)
+          .set('x-signature', xSignature)
+          .send({ message })
+          .expect((res) => {
+            res.status.should.equal(400);
+            res.body.code.should.equal('TSS_SESSION_EXPIRED');
+          })
+          .end(done);
+      }).catch(done);
+    });
+  });
+
+  describe('POST /v1/tss/sign/:id/store', function() {
+    const url = id => `${urlPrefix}/v1/tss/sign/${id}/store`;
+    const signRequest = body => {
+      const message = `post|${url('test').replace(urlPrefix, '')}|${JSON.stringify(body)}`;
+      const hash = Utils.hashMessage(message, false); // BWC hashes the message with reversal, then signs
+      const xSignature = BitcoreLib.crypto.ECDSA.sign(hash, privateKey, { endian: 'little' }).toString();
+      return xSignature;
+    };
+    const privateKey = new BitcoreLib.PrivateKey('cd643c4f2e68b669d97c51877905e8d77efc98cabb5a36a8eda66bc143055d37');
+    const publicKey = privateKey.publicKey.toString();
+    const signature = {
+      r: '0x71a8fb6b23203f7ae7f5df7dac410204d8b8d8b74e31c3919e0c764a00925f74',
+      s: '0x18048c9ce4a860f6354b4bb795178ff3cde858ed3afef6c2e2c51c8fac8b9257',
+      v: 1,
+      pubKey: '0267c2c572fcc1a5026d0e5d8e60a04ff6adeaf1a3a996c9c69f3b1714cff1db85',
+    };
+
+
+    beforeEach(async function() {
+      const storage = helpers.getStorage();
+      await storage.db.collection(BWS.Storage.collections.TSS_SIGN).deleteMany({});
+      const sigGen = TssSigGenModel.create({
+        id: 'test',
+        message: { partyId: 0, publicKey } as any,
+        m: 2,
+        copayerId: publicKey,
+        version: 1.1,
+      });
+      await storage.storeTssSigSession({ doc: sigGen });
+      await storage.storeTssSignature({ id: 'test', signature });
+    });
+
+    it('should throw a mismatch error for a mismatched signature: r', function(done) {
+      const modifiedSignature = {
+        ...signature,
+        r: '0x71a8fb6b23203f7ae7f5df7dac410204d8b8d8b74e31c3919e0c764a00925f75', // modified r value to create a mismatch
+      };
+      const xSignature = signRequest({ signature: modifiedSignature });
+
+      app.post(url('test'))
+        .set('x-identity', publicKey)
+        .set('x-signature', xSignature)
+        .send({
+          signature: modifiedSignature
+        })
+        .expect(res => {
+          res.status.should.equal(400);
+          res.body.should.have.property('code');
+          res.body.code.should.equal('TSS_FINAL_SIGNATURE_MISMATCH');
+          res.body.message.should.equal('Final signature does not match the one generated by the session');
+        })
+        .end(done);
+    });
+
+    it('should throw a mismatch error for a mismatched signature: s', function(done) {
+      const modifiedSignature = {
+        ...signature,
+        s: '0x18048c9ce4a860f6354b4bb795178ff3cde858ed3afef6c2e2c51c8fac8b9256', // modified s value to create a mismatch
+      };
+      const xSignature = signRequest({ signature: modifiedSignature });
+
+      app.post(url('test'))
+        .set('x-identity', publicKey)
+        .set('x-signature', xSignature)
+        .send({
+          signature: modifiedSignature
+        })
+        .expect(res => {
+          res.status.should.equal(400);
+          res.body.should.have.property('code');
+          res.body.code.should.equal('TSS_FINAL_SIGNATURE_MISMATCH');
+          res.body.message.should.equal('Final signature does not match the one generated by the session');
+        })
+        .end(done);
+    });
+
+    it('should throw a mismatch error for a mismatched signature: v', function(done) {
+      const modifiedSignature = {
+        ...signature,
+        v: 123, // modified v value to create a mismatch
+      };
+      const xSignature = signRequest({ signature: modifiedSignature });
+
+      app.post(url('test'))
+        .set('x-identity', publicKey)
+        .set('x-signature', xSignature)
+        .send({
+          signature: modifiedSignature
+        })
+        .expect(res => {
+          res.status.should.equal(400);
+          res.body.should.have.property('code');
+          res.body.code.should.equal('TSS_FINAL_SIGNATURE_MISMATCH');
+          res.body.message.should.equal('Final signature does not match the one generated by the session');
+        })
+        .end(done);
+    });
+
+    it('should throw a mismatch error for a mismatched signature: pubKey', function(done) {
+      const modifiedSignature = {
+        ...signature,
+        pubKey: 'not-equal-pub-key', // modified pubKey value to create a mismatch
+      };
+      const xSignature = signRequest({ signature: modifiedSignature });
+
+      app.post(url('test'))
+        .set('x-identity', publicKey)
+        .set('x-signature', xSignature)
+        .send({
+          signature: modifiedSignature
+        })
+        .expect(res => {
+          res.status.should.equal(400);
+          res.body.should.have.property('code');
+          res.body.code.should.equal('TSS_FINAL_SIGNATURE_MISMATCH');
+          res.body.message.should.equal('Final signature does not match the one generated by the session');
+        })
+        .end(done);
+    });
+
+    it('should cleanly handle race condition when saving signature', function(done) {
+      const fetchSessionStub = sandbox.stub(BWS.Storage.prototype, 'fetchTssSigSession');
+      fetchSessionStub.callsFake(async function({ id }) {
+        const session = await fetchSessionStub.wrappedMethod.call(this, { id });
+        session.signature = null;
+        return session;
+      });
+      fetchSessionStub.onThirdCall().callsFake(async function({ id }) {
+        const session = await fetchSessionStub.wrappedMethod.call(this, { id });
+        return session;
+      });
+      const xSignature = signRequest({ signature });
+
+      app.post(url('test'))
+        .set('x-identity', publicKey)
+        .set('x-signature', xSignature)
+        .send({
+          signature
+        })
+        .expect(res => {
+          res.status.should.equal(200);
+        })
+        .end(done);
+    });
+
+    it('should handle race condition when saving signature but mismatched signature', function(done) {
+      const fetchSessionStub = sandbox.stub(BWS.Storage.prototype, 'fetchTssSigSession');
+      fetchSessionStub.callsFake(async function({ id }) {
+        const session = await fetchSessionStub.wrappedMethod.call(this, { id });
+        session.signature = null;
+        return session;
+      });
+      fetchSessionStub.onThirdCall().callsFake(async function({ id }) {
+        const session = await fetchSessionStub.wrappedMethod.call(this, { id });
+        return session;
+      });
+
+      const modifiedSignature = {
+        ...signature,
+        r: '0x71a8fb6b23203f7ae7f5df7dac410204d8b8d8b74e31c3919e0c764a00925f75', // modified r value to create a mismatch
+      };
+
+      const xSignature = signRequest({ signature: modifiedSignature });
+
+      app.post(url('test'))
+        .set('x-identity', publicKey)
+        .set('x-signature', xSignature)
+        .send({
+          signature: modifiedSignature
+        })
+        .expect(res => {
+          res.status.should.equal(400);
+          res.body.should.have.property('code');
+          res.body.code.should.equal('TSS_FINAL_SIGNATURE_MISMATCH');
+          res.body.message.should.equal('Final signature does not match the one generated by the session');
+        })
+        .end(done);
+    });
+  });
+
 });

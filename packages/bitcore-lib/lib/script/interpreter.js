@@ -1,4 +1,3 @@
-/* eslint-disable no-bitwise */
 'use strict';
 
 const BN = require('../crypto/bn');
@@ -505,7 +504,6 @@ Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS = (1 << 7);
 // be true".
 // (softfork safe, BIP62 rule 6)
 // Note: CLEANSTACK should never be used without P2SH or WITNESS.
- 
 Interpreter.SCRIPT_VERIFY_CLEANSTACK = (1 << 8);
 
 // Verify CHECKLOCKTIMEVERIFY
@@ -2079,4 +2077,3 @@ Interpreter.prototype.step = function() {
 
   return true;
 };
-

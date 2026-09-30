@@ -126,6 +126,7 @@ export class ExpressApp {
 
     registerMoralisRoutes(router, {
       getServer,
+      getServerWithAuth,
       returnError
     });
 

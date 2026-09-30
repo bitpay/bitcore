@@ -9,20 +9,22 @@ This can be used to operate Bitcoin and Bitcoin Cash wallets.
 ## Quick Guide
 
 ```sh
-# Start a local BWS instance by doing:
+# First, start a local BWS instance by doing:
 # cd packages/bitcore-wallet-service
 # npm stop; npm start
 
-cd bin
+# Then, in bitcore-cli...
+
+cd packages/bitcore-cli/bin
 
 # List all commands:
-wallet --help
+./bitcore-cli --help
 
 # Interact with the wallet via the <walletName> argument (~/.wallets/<walletName>.json is the default filename where the wallet critical data will be stored)
 #
 # TIP: Use -H or BITCORE_CLI_HOST to point to your local BWS URL. By default, it points to https://bws.bitpay.com/
 
-wallet my-wallet -H http://localhost:3232
+./bitcore-cli my-wallet -H http://localhost:3232
 
 ```
 
@@ -39,6 +41,9 @@ Air gapped (non connected) devices are supported. This setup can be useful if ma
 > Note: Airgapped signing is not supported for Threshold Signature (TSS) wallets.
 
 > The below is obsolete. To be updated once completed
+
+<details>
+<summary>TODO</summary>
 
 ```sh
 # On the Air-gapped device
@@ -78,6 +83,8 @@ airgapped$ wallet airsign txproposals.dat -o signatures.dat
 proxy$ wallet sign -i signatures.dat
   Transaction 014255.... signed by you.
 ```
+
+</details>
 
 ## Contributing
 

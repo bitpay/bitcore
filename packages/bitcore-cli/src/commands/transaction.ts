@@ -43,9 +43,9 @@ export function command(args: CommonArgs<ITransactionArgs & { extensionOpts?: { 
   const options = [
     { option: '--to <address>', help: 'Recipient address' },
     { option: '--amount <amount>', help: 'Amount to send (in BTC/ETH/etc). Use "max" to send all available balance' },
-    { option: '--fee <fee>', help: 'Fee to use' },
+    { option: '--feeLevel <level>', help: 'Fee level to use (e.g. low, normal, high). The levels are computed using fees from recent blocks', default: 'normal' },
     { option: '--feeRate <rate>', help: 'Custom fee rate in sats/b, gwei, drops, etc.' },
-    { option: '--feeLevel <level>', help: 'Fee level to use (e.g. low, normal, high)', default: 'normal' },
+    { option: '--fee <fee>', help: 'Exact fee to use in base units (sats, wei, drops, etc.)' },
     { option: '--nonce <nonce>', help: 'Nonce for the transaction (optional, for chains that require it)' },
     { option: '--token <token>', help: 'Token to send (e.g. USDC). This is a convenient way to specify the token without needing the contract address, but only works for well-known, common tokens. Use --tokenAddress for more obscure tokens.' },
     { option: '--tokenAddress <address>', help: 'Token contract address to send (takes precedence over --token)' },
@@ -266,8 +266,8 @@ export async function createTransaction(
       amount: amountSats,
     }],
     message: note,
-    feeLevel: feeLevel === 'custom' ? undefined : feeLevel,
-    feePerKb: feeLevel === 'custom' ? BigInt(Math.ceil(Number(customFeeRate))) : undefined,
+    feeLevel: feeLevel === 'custom' || opts.fee != null ? undefined : feeLevel,
+    feePerKb: feeLevel === 'custom' && opts.fee == null ? BigInt(Math.ceil(Number(customFeeRate))) : undefined,
     fee: opts.fee ? BigInt(Math.ceil(parseFloat(opts.fee))) : undefined,
     sendMax,
     tokenAddress: tokenObj?.contractAddress,
@@ -282,13 +282,15 @@ export async function createTransaction(
   });
 
 
+  const calculatedFeePerKb = txp.feePerKb || (txp.fee != null && txp.gasLimit ? Math.round(Number(txp.fee) / Number(txp.gasLimit)) : undefined);
+
   const lines = [];
   lines.push(`To: ${to}`);
   if (opts.destinationTag) { // Display txp.destinationTag below in case user entered but there's a discrepancy
     lines.push(`DestTag: ${txp.destinationTag}`);
   }
   lines.push(`Amount: ${Utils.renderAmount(currency, txp.amount, tokenObj)}`);
-  lines.push(`Fee: ${Utils.renderAmount(chain, txp.fee)} (${Utils.displayFeeRate(chain, txp.feePerKb)})`);
+  lines.push(`Fee: ${Utils.renderAmount(chain, txp.fee)} (${Utils.displayFeeRate(chain, calculatedFeePerKb)})`);
   lines.push(`Total: ${tokenObj 
     ? Utils.renderAmount(currency, txp.amount, tokenObj) + ` + ${Utils.renderAmount(chain, txp.fee)}`
     : Utils.renderAmount(currency, BigInt(txp.amount) + BigInt(txp.fee))
@@ -306,6 +308,10 @@ export async function createTransaction(
     lines.push(`Flags: ${opts.flags}`);
   }
   prompt.note(lines.join(os.EOL), 'Transaction Preview');
+
+  if (opts.dryRun) {
+    return;
+  }
   
   // Always prompt for confirmation, even if --command is used.
   const confirmed = await prompt.confirm({

@@ -8,6 +8,7 @@ import { pipe } from '@solana/functional';
 import { SolRpc } from '../lib/sol/SolRpc.js';
 import { SplRpc } from '../lib/sol/SplRpc.js';
 import { SOL_ERROR_MESSAGES } from '../lib/sol/error_messages.js';
+import { assertAccountInfoShape, SYSTEM_PROGRAM_ADDRESS, TOKEN_2022_PROGRAM_ADDRESS } from './getAccountInfo.helper.js';
 
 const require = createRequire(import.meta.url);
 const privateKey1 = require('../blockchain/solana/test/keypair/id.json');
@@ -241,6 +242,70 @@ describe('SPL Tests', () => {
       await createMint({ splRpc, payer: senderKeypair, mint: mintKeypair, mintAuthority: senderKeypair, decimals: topLevelConfig.decimals });
       senderAta = await createAta({ splRpc, owner: senderKeypair.address, mint: mintKeypair.address, payer: senderKeypair });
       await mintTokens({ splRpc, payer: senderKeypair, mint: mintKeypair.address, mintAuthority: senderKeypair, targetAta: senderAta, decimals: topLevelConfig.decimals });
+    });
+
+    describe('getAccountInfo', function () {
+      it('inherits SOL account info including owned ATAs and space', async () => {
+        const result = await splRpc.getAccountInfo({ address: senderKeypair.address });
+        assertAccountInfoShape(result);
+        expect(result).to.have.property('lamports').that.is.greaterThan(0);
+        expect(result).to.have.property('space', 0);
+        expect(result.atas.some(ata => ata.pubkey === senderAta && ata.mint === mintKeypair.address)).to.be.true;
+      });
+
+      it('returns ATA rent lamports and space even when it holds tokens', async () => {
+        const result = await splRpc.getAccountInfo({ address: senderAta });
+        assertAccountInfoShape(result);
+        const rent = await splRpc.rpc.getMinimumBalanceForRentExemption(SolToken.getTokenSize()).send();
+        expect(result).to.deep.equal({ lamports: Number(rent), atas: [], owner: SolToken.TOKEN_PROGRAM_ADDRESS, space: SolToken.getTokenSize() });
+      });
+
+      it('reports the System Program as the owner of a SOL wallet address', async () => {
+        // `owner` is the program that controls the account, not the person holding the keys. Every
+        // ordinary SOL wallet is a System Program account, so this is the value callers can key off of to
+        // tell a wallet address apart from a token account without fetching the account data itself.
+        const result = await splRpc.getAccountInfo({ address: senderKeypair.address });
+        assertAccountInfoShape(result);
+        expect(result).to.have.property('owner').that.equals(SYSTEM_PROGRAM_ADDRESS);
+        expect(result.owner).to.equal('11111111111111111111111111111111'); // The literal value, spelled out as documentation
+      });
+
+      it('reports a token program as the owner of an ATA address', async () => {
+        // An ATA is owned by whichever token program created it. Only the original SPL Token program is
+        // in play here (getTokenAccountsByOwner queries no other), but asserting against both valid token
+        // programs documents that a Token-2022 ATA would be an equally correct owner.
+        const result = await splRpc.getAccountInfo({ address: senderAta });
+        assertAccountInfoShape(result);
+        expect(result).to.have.property('owner').that.is.oneOf([SolToken.TOKEN_PROGRAM_ADDRESS, TOKEN_2022_PROGRAM_ADDRESS]);  // Either is a valid ATA owner in the general case
+        expect(result.owner).to.equal(SolToken.TOKEN_PROGRAM_ADDRESS);
+        expect(result.owner).to.not.equal(SYSTEM_PROGRAM_ADDRESS);
+      });
+
+      it('still discovers ATAs owned by an address that has no SOL account of its own', async () => {
+        // An "owner" on a token account is just a pubkey reference - it can own ATAs (funded by someone
+        // else acting as payer) without ever having been initialized as a SOL account itself. getAccountInfo
+        // must not skip ATA discovery just because its own getAccountInfo call for the owner came back null.
+        const unfundedOwner = await SolKit.generateKeyPairSigner();
+        const ata = await createAta({ splRpc, owner: unfundedOwner.address, mint: mintKeypair.address, payer: senderKeypair });
+
+        const result = await splRpc.getAccountInfo({ address: unfundedOwner.address });
+        assertAccountInfoShape(result);
+        expect(result).to.have.property('lamports').that.equals(0);
+        expect(result).to.have.property('owner', undefined);
+        expect(result).to.have.property('space', undefined);
+        expect(result).to.have.property('atas').that.has.length(1);
+        expect(result.atas[0]).to.have.property('pubkey').that.equals(ata);
+        expect(result.atas[0]).to.have.property('mint').that.equals(mintKeypair.address);
+      });
+    });
+
+    describe('getTokenAccountsByOwner', function () {
+      it('runs its own existence check against an ATA without hitting the base58 size-limit RPC error', async () => {
+        // An ATA's account data (165 bytes) is over the RPC's base58 encoding limit (128 bytes), so this
+        // call only succeeds if the existence check inside getTokenAccountsByOwner requests base64.
+        const result = await splRpc.getTokenAccountsByOwner({ address: senderAta });
+        expect(result).to.be.an('array');
+      });
     });
 
     describe('getBalance', function () {
@@ -569,6 +634,13 @@ describe('SPL Tests', () => {
       expect(result).to.have.property('destinationAta').that.equals(destinationAta);
       expect(result).to.have.property('sourceAta').that.equals(sourceAta);
       expect(splRpc.getOrCreateAta.callCount).to.equal(0); // b/c destinationAta not included AND sourceAta not included
+    });
+
+    it('can retrieve account info including lamports and ata array', async () => {
+      const result = await splRpc.getAccountInfo({ address: senderKeypair.address });
+      assertAccountInfoShape(result);
+      expect(result).to.have.property('lamports').that.is.greaterThan(0);
+      expect(result.atas.some(ata => ata.pubkey === senderAta)).to.be.true;
     });
   });
 });

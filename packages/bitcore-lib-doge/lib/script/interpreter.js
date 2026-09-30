@@ -962,16 +962,15 @@ Interpreter.prototype.step = function() {
         break;
 
       case Opcode.OP_RETURN:
-        {
-          this.errstr = 'SCRIPT_ERR_OP_RETURN';
-          return false;
-        }
-        break;
+      {
+        this.errstr = 'SCRIPT_ERR_OP_RETURN';
+        return false;
+      }
 
 
-        //
-        // Stack ops
-        //
+      //
+      // Stack ops
+      //
       case Opcode.OP_TOALTSTACK:
         {
           if (this.stack.length < 1) {

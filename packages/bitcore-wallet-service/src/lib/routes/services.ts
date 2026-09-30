@@ -232,7 +232,7 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
   });
 
   router.post('/v1/service/banxa/getOrder', (req, res) => {
-    respondWithPublicServer(req, res, context, server => {
+    respondWithAuthServer(req, res, context, server => {
       return server.externalServices.banxa.banxaGetOrder(req);
     });
   });
@@ -274,7 +274,7 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
   });
 
   router.post('/v1/service/moonpay/transactionDetails', (req, res) => {
-    respondWithPublicServer(req, res, context, server => {
+    respondWithAuthServer(req, res, context, server => {
       return server.externalServices.moonpay.moonpayGetTransactionDetails(req);
     });
   });
@@ -292,7 +292,7 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
   });
 
   router.post('/v1/service/moonpay/accountDetails', (req, res) => {
-    respondWithPublicServer(req, res, context, server => {
+    respondWithAuthServer(req, res, context, server => {
       return server.externalServices.moonpay.moonpayGetAccountDetails(req);
     });
   });
@@ -364,7 +364,7 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
   });
 
   router.post('/v1/service/sardine/ordersDetails', (req, res) => {
-    respondWithPublicServer(req, res, context, server => {
+    respondWithAuthServer(req, res, context, server => {
       return server.externalServices.sardine.sardineGetOrdersDetails(req);
     });
   });
@@ -431,7 +431,7 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
   });
 
   router.post('/v1/service/thorswap/getSwapTx', (req, res) => {
-    respondWithPublicServer(req, res, context, server => {
+    respondWithAuthServer(req, res, context, server => {
       return server.externalServices.thorswap.thorswapGetSwapTx(req);
     });
   });
@@ -467,7 +467,7 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
   });
 
   router.post('/v1/service/transak/orderDetails', cors(transakCorsOptions), (req, res) => {
-    respondWithPublicServer(req, res, context, server => {
+    respondWithAuthServer(req, res, context, server => {
       return server.externalServices.transak.transakGetOrderDetails(req);
     });
   });
@@ -509,13 +509,13 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
   });
 
   router.post('/v1/service/changelly/getTransactions', (req, res) => {
-    respondWithPublicServer(req, res, context, server => {
+    respondWithAuthServer(req, res, context, server => {
       return server.externalServices.changelly.changellyGetTransactions(req);
     });
   });
 
   router.post('/v1/service/changelly/getStatus', (req, res) => {
-    respondWithPublicServer(req, res, context, server => {
+    respondWithAuthServer(req, res, context, server => {
       return server.externalServices.changelly.changellyGetStatus(req);
     });
   });

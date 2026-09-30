@@ -3,7 +3,7 @@
 import crypto from 'crypto';
 import sjcl from 'sjcl';
 
-const PBKDF2_ITERATIONS = 1000;
+const PBKDF2_ITERATIONS = 600_000;
 const DEFAULT_KEY_SIZE = 256; // bits
 const ALGORITHM = ks => `aes-${ks || DEFAULT_KEY_SIZE}-gcm`;
 const AUTH_TAG_LENGTH = 16; // 128 bits
@@ -94,7 +94,7 @@ class EncryptionClass {
     };
   }
 
-  _baseDecrypt(data: string | IEncrypted, key: Buffer) {
+  _baseDecrypt(data: string | IEncrypted, key: Buffer): Buffer {
     const json: IEncrypted = typeof data === 'string' ? JSON.parse(data) : data;
     const ct = Buffer.from(json.ct, 'base64');
     const authTagLength = json.ts / 8;
@@ -124,7 +124,7 @@ class EncryptionClass {
     return decrypted;
   }
 
-  decryptWithKey(data: string | IEncrypted, key: string | Buffer) {
+  decryptWithKey(data: string | IEncrypted, key: string | Buffer): Buffer {
     try {
       const keyBuffer = Buffer.isBuffer(key) ? key : Buffer.from(key, 'base64');
       return this._baseDecrypt(data, keyBuffer);
@@ -138,12 +138,17 @@ class EncryptionClass {
     }
   }
 
-  decryptWithPassword(data: string | IEncrypted, password: string) {
+  decryptWithPassword(data: string | IEncrypted, password: string): Buffer {
+    let json: IEncrypted;
     try {
-      const json = typeof data === 'string' ? JSON.parse(data) : data;
+      json = typeof data === 'string' ? JSON.parse(data) : data;
       const key = crypto.pbkdf2Sync(password, Buffer.from(json.salt, 'base64'), json.iter, json.ks / 8, 'sha256');
       return this._baseDecrypt(json, key);
     } catch (err) {
+      // sjcl is VERY slow and was only used when iter were low, so we should avoid using it for large iterations (e.g. 600k)
+      if (json?.iter > 100_000) {
+        throw err;
+      }
       try {
         return sjcl.decrypt(password, data);
       } catch {

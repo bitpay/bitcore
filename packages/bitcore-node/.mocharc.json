@@ -1,0 +1,7 @@
+{
+  "enable-source-maps": true,
+  "exit": true,
+  "recursive": true,
+  "extension": ".test.js",
+  "timeout": 5000
+}

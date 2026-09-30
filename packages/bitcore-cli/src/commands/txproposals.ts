@@ -78,9 +78,11 @@ export async function getTxProposals(
 
   const txps = opts.command && opts.proposalId
     ? [await wallet.client.getTx(opts.proposalId)]
-    : await wallet.client.getTxProposals({
+    : (await wallet.client.getTxProposals({
       forAirGapped: false, // TODO
-    });
+    }))
+      // Sort ascending by lowest nonce first, then by createdOn timestamp if nonce is not present
+      .sort((a, b) => (a.nonce != null || b.nonce != null) ? ((a.nonce || 0) - (b.nonce || 0)) : (a.createdOn - b.createdOn));
 
   let lastPage = 1;
   let printRaw = opts.raw ?? false;
@@ -189,9 +191,9 @@ export async function getTxProposals(
         : Utils.renderAmount(currency, BigInt(txp.amount) + BigInt(txp.fee))
       }`);
       txp.gasPrice && lines.push(`Gas Price: ${Utils.displayFeeRate(chain, txp.gasPrice)}`);
-      txp.gasLimit && lines.push(`Gas Limit: ${txp.gasLimit}`);
+      txp.gasLimit && lines.push(`Gas Limit: ${BigInt(txp.gasLimit)}`);
       txp.feePerKb && lines.push(`Fee Rate: ${Utils.displayFeeRate(chain, txp.feePerKb)}`);
-      txp.nonce != null && lines.push(`Nonce: ${txp.nonce}`);
+      txp.nonce != null && lines.push(`Nonce: ${BigInt(txp.nonce)}`);
       lines.push(`Status: ${txp.status}`);
       lines.push(`Creator: ${txp.creatorName}`);
       lines.push(`Created: ${Utils.formatDate(txp.createdOn * 1000)}`);
@@ -200,7 +202,7 @@ export async function getTxProposals(
       lines.push('---------------------------');
       lines.push('Recipients:');
       lines.push(...txp.outputs.map(o => {
-        return ` → ${Utils.maxLength(o.toAddress)}${o.tag ? `:${o.tag}` : ''}: ${Utils.renderAmount(currency, o.amount)}${o.message ? ` (${o.message})` : ''}`;
+        return ` → ${Utils.maxLength(o.toAddress)}${o.tag ? `:${o.tag}` : ''}: ${Utils.renderAmount(currency, o.amount, tokenObj)}${o.message ? ` (${o.message})` : ''}`;
       }));
       txp.changeAddress && lines.push(` ↲ ${Utils.maxLength(txp.changeAddress.address)} (change - ${txp.changeAddress.path})`);
       lines.push('---------------------------');

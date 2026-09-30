@@ -1,7 +1,7 @@
 import { ObjectId } from 'bson';
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { Readable, Writable } from 'stream';
+import { Readable } from 'stream';
 import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import { CoinStorage } from '../../../src/models/coin';
 import { MintOp, SpendOp, TaggedBitcoinTx, TransactionStorage, TxOp } from '../../../src/models/transaction';
@@ -9,6 +9,7 @@ import { ChainStateProvider } from '../../../src/providers/chain-state';
 import { Gnosis } from '../../../src/providers/chain-state/evm/api/gnosis';
 import { Erc20RelatedFilterTransform } from '../../../src/providers/chain-state/evm/api/erc20Transform';
 import { MultisigRelatedFilterTransform } from '../../../src/providers/chain-state/evm/api/multisigTransform';
+import * as MultisigTransformModule from '../../../src/providers/chain-state/evm/api/multisigTransform';
 import { Config } from '../../../src/services/config';
 import { EVMListTransactionsStream } from '../../../src/providers/chain-state/evm/api/transform';
 import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
@@ -295,7 +296,9 @@ describe('Transaction Model', function() {
         await done;
         return rows;
       };
-      const collectGnosisTokenHistoryRows = async (
+      // stream over a stubbed cursor, separate from the collector so lifecycle tests
+      // can destroy it unconsumed
+      const buildGnosisTokenStream = async (
         tx: Record<string, any>,
         requestOverrides: { multisigContractAddress?: string; tokenAddress?: string } = {}
       ) => {
@@ -321,31 +324,34 @@ describe('Transaction Model', function() {
           populateReceipt: sandbox.stub().callsFake(tx => tx)
         } as any);
 
-        const rows = new Array<any>();
-        const req = new Readable({ read() {} }) as any;
-        const res = new Writable({
-          write(chunk, _, done) {
-            for (const line of chunk.toString().split('\n').filter(Boolean)) {
-              rows.push(JSON.parse(line));
-            }
-            done();
-          }
-        }) as any;
-        const finished = new Promise<void>((resolve, reject) => {
-          res.on('finish', resolve);
-          res.on('error', reject);
-        });
-
-        await Gnosis.streamGnosisWalletTransactions({
+        // streamGnosisWalletTransactions returns a jsonl stream now; the route does the
+        // HTTP framing, so consumers read the newline-delimited rows straight off the stream.
+        const stream = await Gnosis.streamGnosisWalletTransactions({
           chain: 'ETH',
           network: 'mainnet',
           multisigContractAddress: requestOverrides.multisigContractAddress || gnosisMultisigContractAddress,
           wallet: { _id: new ObjectId() },
-          req,
-          res,
           args: { tokenAddress: requestOverrides.tokenAddress || gnosisBusdToken }
         } as any);
-        await finished;
+        return { stream, cursor, findQuery };
+      };
+
+      const collectGnosisTokenHistoryRows = async (
+        tx: Record<string, any>,
+        requestOverrides: { multisigContractAddress?: string; tokenAddress?: string } = {}
+      ) => {
+        const { stream, findQuery } = await buildGnosisTokenStream(tx, requestOverrides);
+        const rows = new Array<any>();
+        await new Promise<void>((resolve, reject) => {
+          stream
+            .on('data', chunk => {
+              for (const line of chunk.toString().split('\n').filter(Boolean)) {
+                rows.push(JSON.parse(line));
+              }
+            })
+            .on('error', reject)
+            .on('end', resolve);
+        });
         return { findQuery, rows };
       };
 
@@ -468,6 +474,62 @@ describe('Transaction Model', function() {
 
         expect(rows).to.have.length(2);
         expect(rows.map(row => row.satoshis)).to.deep.equal(['100', '200']);
+      });
+
+      it('should close the mongo cursor once when the gnosis stream is destroyed', async () => {
+        const { stream, cursor } = await buildGnosisTokenStream(gnosisTokenTx({
+          effects: [gnosisTokenEffect({ amount: '100' })]
+        }));
+        stream.destroy();
+        await new Promise(r => setImmediate(r));
+        expect(cursor.close.callCount).to.equal(1);
+        // repeated terminal events must not re-close the cursor
+        stream.destroy();
+        stream.emit('close');
+        await new Promise(r => setImmediate(r));
+        expect(cursor.close.callCount).to.equal(1);
+      });
+
+      it('should propagate cursor errors to the gnosis stream and close the cursor', async () => {
+        // pipe() does not forward source errors; the explicit cursor listener must
+        const { stream, cursor } = await buildGnosisTokenStream(gnosisTokenTx({
+          effects: [gnosisTokenEffect({ amount: '100' })]
+        }));
+        const observed = new Promise<Error>(resolve => stream.on('error', resolve));
+        const boom = new Error('cursor boom');
+        cursor.emit('error', boom);
+        expect(await observed).to.equal(boom);
+        expect(stream.destroyed).to.equal(true);
+        await new Promise(r => setImmediate(r));
+        expect(cursor.close.callCount).to.equal(1);
+      });
+
+      it('should propagate a mid-chain transform error to the gnosis stream and close the cursor', async () => {
+        // pipe() re-emits a mid-chain transform error with no listener, which crashes the
+        // worker; eventPipe wires each stage to forward into the next so it reaches
+        // finalStream instead. Capture the real multisigTransform instance mid-chain (it's
+        // constructed inside streamGnosisWalletTransactions) so we can trigger its error
+        // directly, the way an unexpected per-item failure would.
+        const RealMultisigTransform = MultisigTransformModule.MultisigRelatedFilterTransform;
+        let capturedMultisigTransform: MultisigRelatedFilterTransform | undefined;
+        sandbox.stub(MultisigTransformModule, 'MultisigRelatedFilterTransform').callsFake((...args: any[]) => {
+          capturedMultisigTransform = new (RealMultisigTransform as any)(...args);
+          return capturedMultisigTransform;
+        });
+
+        const { stream, cursor } = await buildGnosisTokenStream(gnosisTokenTx({
+          effects: [gnosisTokenEffect({ amount: '100' })]
+        }));
+        const observed = new Promise<Error>(resolve => stream.on('error', resolve));
+        // let the pipeline construct and wire up before triggering the failure
+        await new Promise(r => setImmediate(r));
+        expect(capturedMultisigTransform, 'multisig transform was constructed').to.exist;
+
+        const boom = new Error('multisig transform boom');
+        capturedMultisigTransform!.emit('error', boom);
+        expect(await observed).to.equal(boom);
+        await new Promise(r => setImmediate(r));
+        expect(cursor.close.callCount).to.equal(1);
       });
 
       it('should not emit Gnosis token history rows for failed ERC20 sends', async () => {

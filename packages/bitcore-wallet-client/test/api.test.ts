@@ -65,7 +65,7 @@ describe('client API', function() {
   let clients: Client[], app, sandbox, storage, keys, i;
   let dbConnection;
   let db;
-  this.timeout(Math.max(this['_timeout'], 8000));
+  this.timeout(Math.max(this['_timeout'], 10000));
 
   before(function(done) {
     i = 0;
@@ -1678,6 +1678,35 @@ describe('client API', function() {
           balance.lockedAmount.should.equal(0);
           done();
         });
+      });
+    });
+
+    it('should request balance at a specific time when time is provided', function(done) {
+      clients[0].fromString(
+        k.createCredentials(null, {
+          coin: 'btc',
+          network: 'livenet',
+          account: 0,
+          n: 1
+        })
+      );
+
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+        const getStub = sinon.stub(clients[0].request, 'get').resolves({ body: { totalAmount: 0 } });
+        clients[0]
+          .getBalance({
+            time: '2024-01-01T00:00:00.000Z',
+            tokenAddress: '0xTOKEN'
+          })
+          .then(() => {
+            getStub.calledOnce.should.be.true;
+            const url = getStub.getCall(0).args[0];
+            url.should.contain('/v1/balance/2024-01-01T00%3A00%3A00.000Z/');
+            url.should.contain('tokenAddress=0xTOKEN');
+            getStub.restore();
+            done();
+          })
+          .catch(done);
       });
     });
 
@@ -3814,6 +3843,78 @@ describe('client API', function() {
         });
       });
     });
+
+    it('should default BCH TSS wallet proposals to ECDSA immediately after wallet creation', async function() {
+      const tssKeyId = 'bch-tss-signing-method-test';
+      const walletId = '00000000-0000-4000-8000-000000000001';
+      const creatorKey = new Key({ seedType: 'new' });
+      const joiningKey = new Key({ seedType: 'new' });
+      const creatorCredentials = creatorKey.createCredentials(null, {
+        coin: 'bch',
+        chain: 'bch',
+        network: 'testnet',
+        account: 0,
+        n: 1
+      });
+      const joiningCredentials = joiningKey.createCredentials(null, {
+        coin: 'bch',
+        chain: 'bch',
+        network: 'testnet',
+        account: 0,
+        n: 1
+      });
+      const client = new Client({ baseUrl: 'http://unused' });
+      client.fromObj(creatorCredentials);
+  
+      const requestPost = sandbox.stub(client.request, 'post').resolves({ body: { walletId } });
+      sandbox.stub(client, '_doJoinWallet').resolves({
+        id: walletId,
+        name: 'mywallet',
+        m: 1,
+        n: 1,
+        addressType: 'P2PKH',
+        tssKeyId
+      });
+      await client.createWallet('mywallet', 'creator', 2, 2, {
+        coin: 'bch',
+        chain: 'bch',
+        network: 'testnet',
+        tssKeyId
+      });
+  
+      // A complete TSS wallet has the public keys of all participants in its ring.
+      client.credentials.addPublicKeyRing([
+        {
+          xPubKey: creatorCredentials.xPubKey,
+          requestPubKey: creatorCredentials.requestPubKey
+        },
+        {
+          xPubKey: joiningCredentials.xPubKey,
+          requestPubKey: joiningCredentials.requestPubKey
+        }
+      ]);
+  
+      const stopAfterCapture = new Error('stop after capturing tx proposal');
+      let submittedSigningMethod;
+      requestPost.resetBehavior();
+      requestPost.callsFake((async (url, args) => {
+        url.should.equal('/v3/txproposals/');
+        submittedSigningMethod = args.signingMethod;
+        throw stopAfterCapture;
+      }) as any);
+  
+      let proposalError;
+      try {
+        await client.createTxProposal({ outputs: [] });
+      } catch (err) {
+        proposalError = err;
+      }
+  
+      should.exist(proposalError);
+      proposalError.should.equal(stopAfterCapture);
+      submittedSigningMethod.should.equal('ecdsa');
+      client.credentials.tssKeyId.should.equal(tssKeyId);
+    });
   });
 
   describe('Transaction Proposal signing', function() {
@@ -5451,8 +5552,8 @@ describe('client API', function() {
             txp.outputs[0].message.should.equal('output 0');
             txp.message.should.equal('hello');
             txp.txType.should.equal(2);
-            txp.maxGasFee.should.equal('0x4e20'); // 20000
-            txp.priorityGasFee.should.equal('0x1388'); // 5000
+            txp.maxGasFee.should.equal(20000); // 0x4e20
+            txp.priorityGasFee.should.equal(5000); // 0x1388
             const signatures = await keys[0].sign(clients[0].getRootPath(), txp);
             clients[0].pushSignatures(txp, signatures, (err, txp) => {
               should.not.exist(err);

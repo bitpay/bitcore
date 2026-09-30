@@ -23,7 +23,7 @@ export async function createMultiSigWallet(
 
   const copayerName = await getCopayerName();
   const addressType = await getAddressType({ chain, network, isMultiSig: true });
-  const password = await getPassword('Lock your wallet with a password:', { hidden: false });
+  const password = await getPassword('Lock your wallet with a password:', { hidden: false, confirm: true });
   
   const { key, secret } = await wallet.create({ chain, network, account: 0, n, m, password, mnemonic, addressType, copayerName });
 

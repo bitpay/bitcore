@@ -224,6 +224,7 @@ export class PushNotificationsService {
                 const chain = notification?.data?.chain || notification?.data?.coin;
                 const coin = chain; // backwards compatibility
                 const network = notification?.data?.network ? Utils.getNetworkName(chain, notification.data.network) : null;
+                const txid = typeof notification?.data?.txid === 'string' ? notification.data.txid : null;
 
                 if (sub.token) {
                   notificationData = {
@@ -267,10 +268,11 @@ export class PushNotificationsService {
                     network,
                     tokenAddress,
                     multisigContractAddress,
+                    txid,
                     title,
                     body
                   };
-                  const custom_uri = `bitpay://wallet?walletId=${walletId}&tokenAddress=${tokenAddress}&multisigContractAddress=${multisigContractAddress}&copayerId=${copayerId}&coin=${coin}&chain=${chain}&network=${network}&notification_type=${notification_type}&title=${title}&body=${body}`;
+                  const custom_uri = `bitpay://wallet?walletId=${walletId}&tokenAddress=${tokenAddress}&multisigContractAddress=${multisigContractAddress}&copayerId=${copayerId}&coin=${coin}&chain=${chain}&network=${network}&notification_type=${notification_type}&txid=${txid}&title=${title}&body=${body}`;
                   notificationData = {
                     external_user_ids: [sub.externalUserId],
                     messages: {

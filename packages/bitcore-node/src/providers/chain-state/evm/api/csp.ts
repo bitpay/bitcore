@@ -1,3 +1,4 @@
+import { Readable } from 'stream';
 import { CryptoRpc } from '@bitpay-labs/crypto-rpc';
 import { Utils, Web3, type Web3Types } from '@bitpay-labs/crypto-wallet-core';
 import {
@@ -15,10 +16,10 @@ import { Storage } from '../../../../services/storage';
 import { IBlock } from '../../../../types/Block';
 import { ChainId } from '../../../../types/ChainNetwork';
 import { SpentHeightIndicators } from '../../../../types/Coin';
-import { normalizeChainNetwork, partition, range } from '../../../../utils';
+import { disposeOnce, normalizeChainNetwork, partition, range } from '../../../../utils';
 import { StatsUtil } from '../../../../utils/stats';
 import { TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
-import { ExternalApiStream } from '../../external/streams/apiStream';
+import { AdapterError, AdapterErrorCode } from '../../external/adapters/errors';
 import { AavePoolAbi } from '../abi/aavePool';
 import { AavePoolAbiV2 } from '../abi/aavePoolV2';
 import { ERC20Abi } from '../abi/erc20';
@@ -59,6 +60,14 @@ export interface BuildWalletTxsStreamParams {
   transactionStream: TransformWithEventPipe;
   populateEffects: PopulateEffectsForAddressTransform;
   walletAddresses: string[];
+}
+
+export interface BuildWalletTxsStreamResult {
+  stream: TransformWithEventPipe;
+  // Teardown for whatever the builder opened (e.g. the mongo cursor). streamWalletTransactions
+  // runs it against the FINAL piped stream, because destroy() does not propagate upstream
+  // through eventPipe chains and the route only ever destroys the final stream.
+  dispose?: () => void | Promise<unknown>;
 }
 
 
@@ -531,18 +540,11 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async streamAddressTransactions(params: StreamAddressUtxosParams) {
-    return new Promise<void>(async (resolve, reject) => {
-      try {
-        await this._buildAddressTransactionsStream(params);
-        return resolve();
-      } catch (err) {
-        return reject(err);
-      }
-    });
+    return this._buildAddressTransactionsStream(params);
   }
 
   async _buildAddressTransactionsStream(params: StreamAddressUtxosParams) {
-    const { req, res, args, chain, network, address } = params;
+    const { args, chain, network, address } = params;
     const { limit, /* since,*/ tokenAddress } = args;
 
     if (!args.tokenAddress) {
@@ -557,23 +559,20 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
 
       // NOTE: commented out since and paging for now b/c they were causing extra long query times on insight.
       // The case where an address has >1000 txns is an edge case ATM and can be addressed later
-      Storage.apiStreamingFind(EVMTransactionStorage, query, { limit /* since, paging: '_id'*/ }, req!, res!);
-    } else {
-      try {
-        const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress, args);
-        res!.json(tokenTransfers);
-      } catch (err: any) {
-        logger.error('Error streaming address transactions: %o', err.stack || err.message || err);
-        throw err;
-      }
+      return Storage.apiStreamingFind(EVMTransactionStorage, query, { limit /* since, paging: '_id'*/ });
     }
+    const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress, args);
+    // Streams elements one-by-one so the route wraps them via streamJsonArray.
+    // The response remains a JSON array of the same N transfer objects; only inter-element
+    // whitespace differs from the prior res.json() output (compact `[..]` vs newline-separated).
+    return Readable.from(tokenTransfers, { objectMode: true });
   }
 
 
   @historical
   @internal
   async streamTransactions(params: StreamTransactionsParams) {
-    const { chain, network, req, res, args } = params;
+    const { chain, network, args } = params;
     const { blockHash, blockHeight } = args;
     if (!chain || !network) {
       throw new Error('Missing chain or network');
@@ -590,7 +589,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     }
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
-    return Storage.apiStreamingFind(EVMTransactionStorage, query, args, req, res, t => {
+    return Storage.apiStreamingFind(EVMTransactionStorage, query, args, t => {
       let confirmations = 0;
       if (t.blockHeight !== undefined && t.blockHeight >= 0) {
         confirmations = tipHeight - t.blockHeight + 1;
@@ -677,79 +676,83 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async streamWalletTransactions(params: StreamWalletTransactionsParams) {
-    return new Promise<void>(async (resolve, reject) => {
-      const { network, wallet, req, res, args } = params;
-      const { web3 } = await this.getWeb3(network);
-      args.tokenAddress = args.tokenAddress ? web3.utils.toChecksumAddress(args.tokenAddress) : undefined;
+    const { network, wallet, args } = params;
+    const { web3 } = await this.getWeb3(network);
+    args.tokenAddress = args.tokenAddress ? web3.utils.toChecksumAddress(args.tokenAddress) : undefined;
 
-      let transactionStream = new TransformWithEventPipe({ objectMode: true, passThrough: true });
-      const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddres => waddres.address);
-      if (walletAddresses.length === 0) {
-        res.status(400).send('No addresses found for wallet');
-        return resolve();
-      }
-      const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses, args.tokenAddress);
-      const populateReceipt = new PopulateReceiptTransform(this);
-      const populateEffects = new PopulateEffectsForAddressTransform(this, walletAddresses);
+    let transactionStream = new TransformWithEventPipe({ objectMode: true, passThrough: true });
+    const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddres => waddres.address);
+    if (walletAddresses.length === 0) {
+      // Status remains 400 via respondWithError; body shape changes from text/plain to
+      // the JSON {error, message} shape used by every other 4xx path.
+      throw new AdapterError('walletAddresses', AdapterErrorCode.INVALID_REQUEST, 'No addresses found for wallet');
+    }
+    const ethTransactionTransform = new EVMListTransactionsStream(walletAddresses, args.tokenAddress);
+    const populateReceipt = new PopulateReceiptTransform(this);
+    const populateEffects = new PopulateEffectsForAddressTransform(this, walletAddresses);
 
-      const streamParams: BuildWalletTxsStreamParams = {
-        transactionStream,
-        populateEffects,
-        walletAddresses
-      };
-      transactionStream = await this._buildWalletTransactionsStream(params, streamParams);
+    const streamParams: BuildWalletTxsStreamParams = {
+      transactionStream,
+      populateEffects,
+      walletAddresses
+    };
+    const { stream: builtStream, dispose } = await this._buildWalletTransactionsStream(params, streamParams);
+    transactionStream = builtStream;
 
-      if (!args.tokenAddress && wallet._id) {
-        const internalTxTransform = new InternalTxRelatedFilterTransform(web3, wallet._id);
-        transactionStream = transactionStream.eventPipe(internalTxTransform);
-      }
+    if (!args.tokenAddress && wallet._id) {
+      const internalTxTransform = new InternalTxRelatedFilterTransform(web3, wallet._id);
+      transactionStream = transactionStream.eventPipe(internalTxTransform);
+    }
 
-      transactionStream = transactionStream
-        .eventPipe(populateReceipt)
-        .eventPipe(ethTransactionTransform);
+    transactionStream = transactionStream
+      .eventPipe(populateReceipt)
+      .eventPipe(ethTransactionTransform);
 
-      try {
-        const result = await ExternalApiStream.onStream(transactionStream, req!, res!, { jsonl: true });
-        if (!result?.success) {
-          logger.error('Error mid-stream (streamWalletTransactions): %o', result.error?.log || result.error);
-        }  
-        return resolve();
-      } catch (err) {
-        return reject(err);
+    // Run the builder's teardown (e.g. cursor.close) when the FINAL stream the route pipes
+    // from settles. destroy() on this stream does not reliably propagate upstream through
+    // eventPipe chains, so the hook must live here rather than beside the cursor.
+    const runDispose = disposeOnce(dispose, err =>
+      logger.warn(`Failed to tear down ${this.chain} wallet transaction stream: %o`, err));
+    const finalStream = transactionStream;
+    finalStream.on('close', runDispose);
+    finalStream.on('end', runDispose);
+    finalStream.on('error', err => {
+      runDispose();
+      // Don't just consume the error: if it fires before the route attaches its own
+      // handlers the request would hang. Destroying the stream surfaces it, since
+      // streamJsonArray rejects up front on a destroyed stream.
+      if (!finalStream.destroyed) {
+        finalStream.destroy(err);
       }
     });
+
+    (transactionStream as any).jsonl = true;
+    return transactionStream;
   }
 
-  async _buildWalletTransactionsStream(params: StreamWalletTransactionsParams, streamParams: BuildWalletTxsStreamParams) {
+  async _buildWalletTransactionsStream(
+    params: StreamWalletTransactionsParams,
+    streamParams: BuildWalletTxsStreamParams
+  ): Promise<BuildWalletTxsStreamResult> {
     const query = this.getWalletTransactionQuery(params);
     let { transactionStream } = streamParams;
     const { populateEffects } = streamParams;
 
-    // Store cursor reference for cleanup
     const cursor = EVMTransactionStorage.collection
       .find(query)
       .sort({ blockTimeNormalized: 1 })
       .addCursorFlag('noCursorTimeout', true);
 
-    // Add cleanup handlers when client disconnects
-    let cursorClosed = false;
-    const cleanupCursor = () => {
-      if (!cursorClosed) {
-        cursorClosed = true;
-        try {
-          cursor.close();
-        } catch {
-          // Cursor might already be closed, ignore
-        }
-      }
-    };
-
-    const { req, res } = params;
-    req.on('close', cleanupCursor);
-    res.on('close', cleanupCursor);
-
     // Pipe cursor to transform stream
-    transactionStream = cursor.pipe(new TransformWithEventPipe({ objectMode: true, passThrough: true }));
+    const cursorTransform = new TransformWithEventPipe({ objectMode: true, passThrough: true });
+    // pipe() does not forward source errors, and the driver only emits them when a listener
+    // exists; without this a cursor failure ends the stream cleanly as a truncated success
+    cursor.on('error', (err: any) => {
+      if (!cursorTransform.destroyed) {
+        cursorTransform.destroy(err);
+      }
+    });
+    transactionStream = cursor.pipe(cursorTransform);
 
     transactionStream = transactionStream.eventPipe(populateEffects); // For old db entries
 
@@ -757,7 +760,10 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       const erc20Transform = new Erc20RelatedFilterTransform(params.args.tokenAddress);
       transactionStream = transactionStream.eventPipe(erc20Transform);
     }
-    return transactionStream;
+
+    // cursor.close() resolves a promise; awaiting it is what lets a failure reach the
+    // caller's dispose error handler instead of becoming an unhandled rejection.
+    return { stream: transactionStream, dispose: async () => { await cursor.close(); } };
   }
 
   async getErc20Transfers(

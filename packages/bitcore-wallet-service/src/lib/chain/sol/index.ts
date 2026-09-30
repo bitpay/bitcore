@@ -28,6 +28,7 @@ export class SolChain implements IChain {
       totalConfirmedAmount: confirmed,
       lockedAmount: activatedLocked,
       lockedConfirmedAmount: activatedLocked,
+      reserve: balance > 0 ? minRent : 0,
       availableAmount: balance - activatedLocked,
       availableConfirmedAmount: confirmed - activatedLocked,
       byAddress: []

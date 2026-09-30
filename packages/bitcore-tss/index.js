@@ -5,4 +5,4 @@ module.exports = {
   },
   utils: require('./ecdsa/utils'),
   ECIES: require('./ecies/ecies')
-}
+};

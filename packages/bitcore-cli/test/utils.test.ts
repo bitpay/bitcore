@@ -439,6 +439,7 @@ describe('Utils', function() {
   describe('amountToSats', function() {
     it('should convert BTC to sats', function() {
       assert.strictEqual(Utils.amountToSats('btc', 1), BigInt(1e8));
+      assert.strictEqual(Utils.amountToSats('BTC', .00001), BigInt(1e3)); // test for rounding edge case (.00001 * 1e8 => 1000.000000000001)
     });
 
     it('should convert XRP to drops', function() {
@@ -447,6 +448,10 @@ describe('Utils', function() {
 
     it('should convert SOL to lamports', function() {
       assert.strictEqual(Utils.amountToSats('sol', 1), BigInt(1e9));
+    });
+
+    it('should convert ETH to wei', function() {
+      assert.strictEqual(Utils.amountToSats('eth', 1), BigInt(1e18));
     });
 
     it('should use token opts when provided', function() {
