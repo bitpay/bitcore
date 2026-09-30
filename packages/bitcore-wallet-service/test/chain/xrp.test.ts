@@ -10,6 +10,36 @@ const should = chai.should();
 const xpub = 'tpubDD7tYYerLNNm65Ez7pRjxQ2NpRHDoyRWoLWudnQ8agXjr7qs9BsPsRXk8Z6spPPJodnaY158YqeCKT5oXuZvbuNLfm1R4kXGJ2vPd9pUxDT';
 
 describe('Chain XRP', function() { 
+  describe('#getWalletBalance', function() {
+    it('should expose the reserve separately from pending amounts and fees', function(done) {
+      const server = {
+        walletId: '1',
+        _getBlockchainExplorer: () => ({
+          getBalance: (_wallet, cb) => cb(null, { balance: 2000000, confirmed: 2000000 }),
+          getReserve: cb => cb(null, 1000000)
+        }),
+        getPendingTxs: (_opts, cb) => cb(null, [{ amount: '3000000', fee: '12' }]),
+        storage: { fetchAddresses: (_walletId, cb) => cb(null, []) }
+      };
+      const wallet = { chain: 'xrp', network: 'livenet' };
+
+      ChainService.get('xrp').getWalletBalance(server as any, wallet as any, {}, (err, balance) => {
+        should.not.exist(err);
+        balance.should.deep.equal({
+          totalAmount: 2000000,
+          totalConfirmedAmount: 2000000,
+          lockedAmount: 4000012,
+          lockedConfirmedAmount: 4000012,
+          reserve: 1000000,
+          availableAmount: -2000012,
+          availableConfirmedAmount: -2000012,
+          byAddress: []
+        });
+        done();
+      });
+    });
+  });
+
   describe('#getWalletSendMaxInfo', function() {
     it('should resolve fee level before calculating sendMax amount', function(done) {
       const server = {
