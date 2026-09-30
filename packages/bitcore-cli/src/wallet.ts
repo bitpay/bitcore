@@ -820,8 +820,21 @@ export class Wallet implements IWallet {
 
   async updatePassword(currentPassword: string, newPassword: string, opts?: { silent?: boolean }) {
     const { silent } = opts || {};
+
+    // Decrypt
     this.#walletData.key.decrypt(currentPassword);
+    if (this.isSvm()) {
+      // Note: EDDSA keys are is not currently supported by TssKey,
+      //  so if isSvm() then key must be of type BWC Key
+      (this.#walletData.key as Key).decrypt(currentPassword, 'EDDSA');
+    }
+
+    // Re-encrypt with new password
     this.#walletData.key.encrypt(newPassword);
+    if (this.isSvm()) {
+      this.#walletData.key.encrypt(newPassword, null, 'EDDSA');
+    }
+
     await this.save();
 
     if (!silent) prompt.log.success('Wallet password updated successfully');

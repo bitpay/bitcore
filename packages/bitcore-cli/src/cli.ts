@@ -283,7 +283,7 @@ if (require.main === module) {
                 await commands.clearcache.clearCache(cmdParams);
                 break;
               case 'changepassword':
-                await commands.changePassword.changePassword(cmdParams);
+                await commands.changepassword.changePassword(cmdParams);
                 break;
               default:
               case 'exit':

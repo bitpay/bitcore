@@ -406,6 +406,46 @@ describe('Wallet', function() {
       assert.throws(() => Encryption.decryptWithPassword(updatedState, PASSWORD));
     });
 
+    it('re-encrypts both ECDSA and EDDSA keys for a SOL wallet', async function() {
+      const solName = 'sol-password';
+      const solFile = path.join(tempDir, solName + '.json');
+      const key = new Key({
+        seedType: 'mnemonic',
+        seedData: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
+        password: PASSWORD,
+        encryptionOpts: { iter: 1000 }
+      });
+      const credentials = key.createCredentials(PASSWORD, {
+        coin: 'sol',
+        chain: 'sol',
+        network: 'testnet',
+        account: 0,
+        n: 1
+      });
+      const originalEddsaKey = key.get(PASSWORD, 'EDDSA').xPrivKey;
+      fs.writeFileSync(solFile, JSON.stringify({ key: key.toObj(), credentials: credentials.toObj() }));
+      wallet = new Wallet({ name: solName, dir: tempDir });
+      sandbox.stub(wallet as any, 'lockLoadedWallet');
+      await wallet.getClient({ mustExist: true, doNotComplete: true });
+
+      assert.strictEqual(wallet.chain, 'sol');
+      await wallet.updatePassword(PASSWORD, newPassword, { silent: true });
+
+      const saved = JSON.parse(fs.readFileSync(solFile, 'utf-8'));
+      const savedKey = new Key({ seedType: 'object', seedData: saved.key });
+      assert.ok(saved.key.xPrivKeyEncrypted);
+      assert.ok(saved.key.xPrivKeyEDDSAEncrypted);
+      assert.ok(saved.key.xPrivKey == null);
+      assert.ok(saved.key.xPrivKeyEDDSA == null);
+      assert.strictEqual(savedKey.checkPassword(newPassword, 'ECDSA'), true);
+      assert.strictEqual(savedKey.checkPassword(newPassword, 'EDDSA'), true);
+      assert.strictEqual(savedKey.checkPassword(PASSWORD, 'ECDSA'), false);
+      assert.strictEqual(savedKey.checkPassword(PASSWORD, 'EDDSA'), false);
+      assert.strictEqual(savedKey.get(newPassword, 'EDDSA').xPrivKey, originalEddsaKey);
+      assert.strictEqual(savedKey.get(newPassword, 'EDDSA').mnemonic,
+        'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
+    });
+
     it('leaves the wallet and state files unchanged when the current password is wrong', async function() {
       const stateFile = path.join(stateDir, 'proposal.json');
       fs.writeFileSync(stateFile, JSON.stringify(Encryption.encryptWithPassword('state', PASSWORD)));
