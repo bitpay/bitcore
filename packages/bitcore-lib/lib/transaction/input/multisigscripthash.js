@@ -3,7 +3,6 @@
 /* jshint maxparams:5 */
 
 const inherits = require('inherits');
-const _ = require('lodash');
 const Address = require('../../address');
 const Signature = require('../../crypto/signature');
 const BufferWriter = require('../../encoding/bufferwriter');
@@ -29,7 +28,17 @@ function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, opts) {
   if (opts.noSorting) {
     this.publicKeys = pubkeys;
   } else {
-    this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
+    this.publicKeys = [...pubkeys].sort(function(a, b) {
+      const aHex = a.toString('hex');
+      const bHex = b.toString('hex');
+      if (aHex < bHex) {
+        return -1;
+      }
+      if (aHex > bHex) {
+        return 1;
+      }
+      return 0;
+    });
   }
   this.redeemScript = Script.buildMultisigOut(this.publicKeys, threshold, opts);
   const nested = Script.buildWitnessMultisigOutFromScript(this.redeemScript);
