@@ -172,6 +172,7 @@ if (require.main === module) {
         }
 
         let advancedActions = false;
+        let skipBalance = true; // skip on initial load b/c it was already fetched/displayed above in walletStatus()
         do {
           cmdParams.opts = { ...opts }; // reset to original opts in case they get modified by a command
 
@@ -180,9 +181,11 @@ if (require.main === module) {
           cmdParams.status && (cmdParams.status.pendingTxps = opts.command || opts.register ? [] : await wallet.client.getTxProposals({}));
 
           // Update the balance when returning to the main menu (e.g. right after sending a tx)
-          if (!opts.command && cmdParams.status) {
+          if (!skipBalance && !opts.command && cmdParams.status) {
             cmdParams.status.balance = await commands.balance.getBalance(cmdParams);
           }
+          // reset so it doesn't continue to skip forever
+          skipBalance = false;
           
           const dynamicCmdArgs = {
             ppNum: cmdParams.status?.pendingTxps.length ? Utils.colorText(` (${cmdParams.status.pendingTxps.length})`, 'yellow') : '',
@@ -250,6 +253,7 @@ if (require.main === module) {
               case 'advanced':
                 advancedActions = true;
                 action = 'advanced';
+                skipBalance = true;
                 break;
               case 'addresses':
                 await commands.addresses.getAddresses(cmdParams);
