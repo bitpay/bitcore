@@ -854,9 +854,13 @@ export class Wallet implements IWallet {
               const content = fs.readFileSync(itemPath, 'utf-8');
               decrypted = Encryption.decryptWithPassword(content, currentPassword);
               const updatedContent = JSON.stringify(Encryption.encryptWithPassword(decrypted, newPassword));
-              fs.writeFileSync(itemPath, updatedContent, { encoding: 'utf-8', flag: 'w' });
+              // Write the updated content to a temporary file first.
+              // This ensures that a corrupted save can be rolled back (e.g. filesystem full)
+              fs.writeFileSync(itemPath + '-temp', updatedContent, { encoding: 'utf-8', flag: 'w' });
+              fs.renameSync(itemPath + '-temp', itemPath);
             } finally {
               decrypted?.fill(0); // Clear the decrypted buffer from memory
+              fs.rmSync(itemPath + '-temp', { force: true }); // Remove the temporary file (if it exists)
             }
           }
         } catch (err) {

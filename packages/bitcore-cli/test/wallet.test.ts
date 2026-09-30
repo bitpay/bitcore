@@ -458,6 +458,31 @@ describe('Wallet', function() {
       assert.strictEqual(fs.readFileSync(stateFile, 'utf-8'), originalState);
     });
 
+    it('keeps the original state file when writing its replacement fails', async function() {
+      const stateFile = path.join(stateDir, 'proposal.json');
+      const tempFile = stateFile + '-temp';
+      const stateData = 'transaction proposal state';
+      fs.writeFileSync(stateFile, JSON.stringify(Encryption.encryptWithPassword(stateData, PASSWORD)));
+      const originalState = fs.readFileSync(stateFile, 'utf-8');
+      const writeFile = fs.writeFileSync;
+      const writeStub = sandbox.stub(fs, 'writeFileSync').callsFake((filename) => {
+        writeFile(filename, 'partial encrypted data');
+        throw new Error('ENOSPC: disk full');
+      });
+      const warn = sandbox.stub(prompt.log, 'warn');
+
+      await wallet.updatePassword(PASSWORD, newPassword, { silent: true });
+
+      assert.strictEqual(writeStub.callCount, 1);
+      assert.strictEqual(writeStub.firstCall.args[0], tempFile);
+      assert.strictEqual(fs.readFileSync(stateFile, 'utf-8'), originalState);
+      assert.strictEqual(Encryption.decryptWithPassword(originalState, PASSWORD).toString(), stateData);
+      assert.strictEqual(fs.existsSync(tempFile), false);
+      assert.strictEqual(warn.callCount, 1);
+      assert.ok(warn.firstCall.args[0].includes(stateFile));
+      assert.match(warn.firstCall.args[0], /ENOSPC: disk full/);
+    });
+
     it('warns about a state file it cannot decrypt and continues with the other files', async function() {
       const badFile = path.join(stateDir, 'bad.json');
       const goodFile = path.join(stateDir, 'good.json');
