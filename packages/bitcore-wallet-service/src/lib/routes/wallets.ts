@@ -97,7 +97,7 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
 
   router.get('/v3/wallets/', (req, res) => {
     getServerWithAuth(req, res, server => {
-      checkNumberFormat(req.query.numberFormat, res);
+      if (!checkNumberFormat(req.query.numberFormat, res)) return;
       const opts = {
         includeExtendedInfo: false,
         twoStep: false,
@@ -125,7 +125,7 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
     const silentFailure = req.query.silentFailure == '1';
     const includeServerMessages = req.query.serverMessageArray == '1';
     const numberFormat = req.query.numberFormat;
-    checkNumberFormat(numberFormat, res);
+    if (!checkNumberFormat(numberFormat, res)) return;
 
     const buildOpts = (request, copayerId) => {
       const getParam = (param, returnArray = false) => {
