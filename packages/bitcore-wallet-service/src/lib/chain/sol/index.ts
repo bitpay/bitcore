@@ -3,6 +3,7 @@ import _ from 'lodash';
 import { IChain } from '../../../types/chain';
 import { WalletWithOpts } from '../../blockchainexplorers/v8';
 import { Defaults } from '../../common/defaults';
+import { ClientError } from '../../errors/clienterror';
 import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
 import { IWallet, TxProposal, Wallet } from '../../model';
@@ -232,10 +233,35 @@ export class SolChain implements IChain {
         return cb(Errors.INSUFFICIENT_FUNDS);
       } else if (availableAmount < txp.getTotalAmount()) {
         return cb(Errors.LOCKED_FUNDS);
+      } else if (opts.tokenAddress) {
+        // SPL fees are paid in SOL. Fetch the native balance without opts.wallet,
+        // since getWalletBalance leaves tokenAddress set on that object.
+        server.getBalance({}, (err, solBalance) => {
+          if (err) return cb(err);
+          if (solBalance.totalAmount < txp.fee) {
+            return cb(this.getFeeError('INSUFFICIENT_SOL_FEE', txp));
+          } else if (solBalance.availableAmount < txp.fee) {
+            return cb(this.getFeeError('LOCKED_SOL_FEE', txp));
+          } else {
+            return cb(this.checkTx(txp));
+          }
+        });
+      } else if (availableAmount - txp.fee < txp.getTotalAmount()) {
+        return cb(this.getFeeError('INSUFFICIENT_FUNDS_FOR_FEE', txp));
       } else {
         return cb(this.checkTx(txp));
       }
     });
+  }
+
+  private getFeeError(code: 'INSUFFICIENT_SOL_FEE' | 'LOCKED_SOL_FEE' | 'INSUFFICIENT_FUNDS_FOR_FEE', txp: TxProposal) {
+    return new ClientError(
+      Errors.codes[code],
+      `${Errors[code].message}. RequiredFee: ${txp.fee}`,
+      {
+        requiredFee: txp.fee
+      }
+    );
   }
 
   validateAddress(wallet, inaddr, opts) {
