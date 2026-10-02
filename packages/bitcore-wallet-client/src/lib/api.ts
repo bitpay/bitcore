@@ -4240,6 +4240,7 @@ export interface Status {
     availableConfirmedAmount: number;
     lockedAmount: number;
     lockedConfirmedAmount: number;
+    reserve?: number;
     totalAmount: number;
     totalConfirmedAmount: number;
     byAddress: Array<{
