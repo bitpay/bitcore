@@ -239,7 +239,7 @@ export class Wallet implements IWallet {
     }
     const lockFilename = Utils.getWalletLockFileName(this.name, this.dir);
     try {
-      fs.writeFileSync(lockFilename, process.pid.toString(), { flag: 'wx', mode: 0o444 }); // wx flag ensures it fails if the file already exists
+      fs.writeFileSync(lockFilename, process.pid.toString() + '\n' + JSON.stringify(process.argv), { flag: 'wx', mode: 0o444 }); // wx flag ensures it fails if the file already exists
       _hasLockFile = true;
       process.on('exit', () => {
         try {
@@ -252,16 +252,24 @@ export class Wallet implements IWallet {
     } catch (e) {
       if (e.code === 'EEXIST') {
         // Check if process is still running
-        const pid = fs.readFileSync(lockFilename, 'utf-8')?.trim();
+        const lockFileData = fs.readFileSync(lockFilename, 'utf-8')?.trim();
+        const [pid, lockedFullCommand] = lockFileData.split('\n');
+        const lockedScriptPath: string = CWCUtils.tryParse(lockedFullCommand)?.[1];
         if (os.platform() === 'win32') {
           // TODO
         } else {
           const stat = fs.statSync(lockFilename);
           if (stat.uid === process.getuid()) { // make sure the lock file belongs to the current user
-            const response = execSync(`ps -q ${pid} -o args || true`, { encoding: 'utf-8' });
-            const command = response?.split('\n')[1] || '';
-            if (!command.includes(`bitcore-cli ${this.name}`) && !command.includes(`build/src/cli.js ${this.name}`)) {
+            const runningPid = execSync(`ps -q ${pid} -o args || true`, { encoding: 'utf-8' });
+            const runningScriptPath = runningPid?.split('\n')[1]?.split(' ')[1];
+            // Ensure the PID hasn't been re-assigned to another process
+            // Resolve both paths (relative to this process' cwd) since argv[1] may be relative or absolute
+            // depending on how bitcore-cli was invoked. The lock file name includes the wallet name, so the
+            // lock should indeed be for this wallet.
+            const isSameProcess = !!runningScriptPath && !!lockedScriptPath && path.resolve(runningScriptPath) === path.resolve(lockedScriptPath);
+            if (!isSameProcess) {
               // Stale lock file, remove it and continue
+              prompt.log.warn('Stale wallet lock file detected. Removing it now, but please make sure you do not have another instance of bitcore-cli running for this wallet.');
               fs.rmSync(lockFilename);
               return this.lockLoadedWallet();
             }
