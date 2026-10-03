@@ -1,0 +1,33 @@
+services:
+  speculos-bitcoin:
+    image: ghcr.io/ledgerhq/speculos
+    volumes:
+      - ./test/ledger/apps:/speculos/apps
+    ports:
+      - "1234:1234" # gdb
+      - "5000:5000" # api
+      - "40000:40000" # apdu
+      - "41000:41000" # vnc
+    command: "./apps/bitcoin.elf --display headless --apdu-port 40000 --vnc-port 41000"
+
+  speculos-ethereum:
+    image: ghcr.io/ledgerhq/speculos
+    volumes:
+      - ./test/ledger/apps:/speculos/apps
+    ports:
+      - "1235:1234" # gdb
+      - "5001:5000" # api
+      - "40001:40000" # apdu
+      - "41001:41000" # vnc
+    command: "./apps/ethereum.elf --display headless --apdu-port 40000 --vnc-port 41000"
+
+  speculos-solana:
+    image: ghcr.io/ledgerhq/speculos
+    volumes:
+      - ./test/ledger/apps:/speculos/apps
+    ports:
+      - "1236:1234" # gdb
+      - "5002:5000" # api
+      - "40002:40000" # apdu
+      - "41002:41000" # vnc
+    command: "./apps/solana.elf --display headless --apdu-port 40000 --vnc-port 41000"
