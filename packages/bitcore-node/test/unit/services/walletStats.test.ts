@@ -731,6 +731,40 @@ describe('WalletStats Service', function() {
       expect(get.calledOnce).to.equal(true);
     });
 
+    it('asks the provider to leave spam out', async () => {
+      const get = sandbox.stub(axios, 'get').resolves({ data: { result: [] } });
+      await call(makeSvc('key'));
+      expect(get.firstCall.args[1].params.exclude_spam).to.equal(true);
+    });
+
+    it('skips a spam transfer and dates the wallet by a real one', async () => {
+      // The probe cannot ask for a single row any more: with exclude_spam unsupported
+      // or incomplete, one spam transfer would occupy the only slot and the wallet
+      // would read as active on a date it was not.
+      sandbox.stub(axios, 'get').resolves({
+        data: {
+          result: [
+            { block_timestamp: '2026-07-31T00:00:00Z', possible_spam: true },
+            { block_timestamp: '2026-07-30T00:00:00Z', possible_spam: false }
+          ]
+        }
+      });
+      expect(await call(makeSvc('key'))).to.deep.equal(new Date('2026-07-30T00:00:00Z'));
+    });
+
+    it('asks for more than one row so a spam row cannot crowd out a real one', async () => {
+      const get = sandbox.stub(axios, 'get').resolves({ data: { result: [] } });
+      await call(makeSvc('key'));
+      expect(get.firstCall.args[1].params.limit).to.be.greaterThan(1);
+    });
+
+    it('returns null when every transfer in the page is spam', async () => {
+      sandbox.stub(axios, 'get').resolves({
+        data: { result: [{ block_timestamp: '2026-07-31T00:00:00Z', possible_spam: true }] }
+      });
+      expect(await call(makeSvc('key'))).to.equal(null);
+    });
+
     it('returns null when there are no transfers', async () => {
       sandbox.stub(axios, 'get').resolves({ data: { result: [] } });
       expect(await call(makeSvc('key'))).to.equal(null);
