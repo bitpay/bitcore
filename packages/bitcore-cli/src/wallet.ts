@@ -824,7 +824,7 @@ export class Wallet implements IWallet {
     // Decrypt
     this.#walletData.key.decrypt(currentPassword);
     if (this.isSvm()) {
-      // Note: EDDSA keys are is not currently supported by TssKey,
+      // Note: EDDSA keys are not currently supported by TssKey,
       //  so if isSvm() then key must be of type BWC Key
       (this.#walletData.key as Key).decrypt(currentPassword, 'EDDSA');
     }
@@ -850,17 +850,18 @@ export class Wallet implements IWallet {
           const stat = fs.statSync(itemPath);
           if (stat.isFile()) {
             let decrypted: Buffer;
+            const tempFile = itemPath + '-temp';
             try {
               const content = fs.readFileSync(itemPath, 'utf-8');
               decrypted = Encryption.decryptWithPassword(content, currentPassword);
               const updatedContent = JSON.stringify(Encryption.encryptWithPassword(decrypted, newPassword));
               // Write the updated content to a temporary file first.
               // This ensures that a corrupted save can be rolled back (e.g. filesystem full)
-              fs.writeFileSync(itemPath + '-temp', updatedContent, { encoding: 'utf-8', flag: 'w' });
-              fs.renameSync(itemPath + '-temp', itemPath);
+              fs.writeFileSync(tempFile, updatedContent, { encoding: 'utf-8', flag: 'w' });
+              fs.renameSync(tempFile, itemPath);
             } finally {
               decrypted?.fill(0); // Clear the decrypted buffer from memory
-              fs.rmSync(itemPath + '-temp', { force: true }); // Remove the temporary file (if it exists)
+              fs.rmSync(tempFile, { force: true }); // Remove the temporary file (if it exists)
             }
           }
         } catch (err) {
