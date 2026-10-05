@@ -1,6 +1,5 @@
 import { Stream, Transform } from 'stream';
 import axios from 'axios';
-import logger from '../../../../logger';
 import { ReadableWithEventPipe, TransformWithEventPipe } from '../../../../utils/streamWithEventPipe';
 
 
@@ -40,8 +39,11 @@ export class ExternalApiStream extends ReadableWithEventPipe {
     try {
       // End stream if page limit is reached
       if (this.paging && this.page >= this.paging) {
+        // Reaching the cap means the last page still had a cursor. Ending normally here
+        // would hand the caller a truncated history that looks complete.
         if (this.isDefaultCap) {
-          logger.warn('External API stream hit the default page cap (%o pages) and was truncated: %o', this.paging, this.url);
+          this.emit('error', new Error(`External API stream hit the page cap (${this.paging} pages) with more results available`));
+          return;
         }
         this.push(null);
         return;

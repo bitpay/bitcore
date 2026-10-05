@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import axios from 'axios';
-import logger from '../../src/logger';
 import { ExternalApiStream } from '../../src/providers/chain-state/external/streams/apiStream';
 
 function consume(stream: ExternalApiStream): Promise<any[]> {
@@ -76,15 +75,41 @@ describe('ExternalApiStream', function() {
       expect(results.length).to.equal(2);
     });
 
-    it('applies a default page cap when neither limit nor paging is given', async () => {
-      // Provider always returns another cursor; without a cap this would paginate forever
-      axiosGetStub.callsFake(() => Promise.resolve({ data: { result: [{ id: 1 }], cursor: 'next' } }));
+    describe('default cap', () => {
+      const realCap = ExternalApiStream.DEFAULT_MAX_PAGES;
+      beforeEach(() => {
+        ExternalApiStream.DEFAULT_MAX_PAGES = 3;
+      });
+      afterEach(() => {
+        ExternalApiStream.DEFAULT_MAX_PAGES = realCap;
+      });
 
-      const stream = new ExternalApiStream('http://example.test/txs?', {}, {});
-      const results = await consume(stream);
+      it('errors instead of ending when the cap is reached with pages left', async () => {
+        // Provider always returns another cursor; a normal end here would hand callers a truncated history
+        axiosGetStub.callsFake(() => Promise.resolve({ data: { result: [{ id: 1 }], cursor: 'next' } }));
 
-      expect(axiosGetStub.callCount).to.equal(ExternalApiStream.DEFAULT_MAX_PAGES);
-      expect(results.length).to.equal(ExternalApiStream.DEFAULT_MAX_PAGES);
+        const stream = new ExternalApiStream('http://example.test/txs?', {}, {});
+        const results: any[] = [];
+        stream.on('data', d => results.push(d));
+        const err: any = await new Promise(resolve => {
+          stream.on('error', resolve);
+          stream.on('end', () => resolve(null));
+        });
+
+        expect(err).to.be.an.instanceof(Error);
+        expect(err.message).to.contain('page cap');
+        expect(axiosGetStub.callCount).to.equal(3);
+        expect(results.length).to.equal(3);
+      });
+
+      it('ends normally when the last page lands exactly on the cap', async () => {
+        axiosGetStub.onCall(0).resolves({ data: { result: [{ id: 1 }], cursor: 'a' } });
+        axiosGetStub.onCall(1).resolves({ data: { result: [{ id: 2 }], cursor: 'b' } });
+        axiosGetStub.onCall(2).resolves({ data: { result: [{ id: 3 }], cursor: null } });
+
+        const results = await consume(new ExternalApiStream('http://example.test/txs?', {}, {}));
+        expect(results.length).to.equal(3);
+      });
     });
 
     it('does not apply the default page cap when an explicit limit is given', async () => {
@@ -96,19 +121,11 @@ describe('ExternalApiStream', function() {
       expect(results.length).to.equal(3);
     });
 
-    it('logs a warning when the default page cap truncates results', async () => {
-      const warnSpy = sandbox.spy(logger, 'warn');
+    it('ends quietly at an explicit paging bound even with pages left', async () => {
       axiosGetStub.callsFake(() => Promise.resolve({ data: { result: [{ id: 1 }], cursor: 'next' } }));
 
-      const defaultCapped = new ExternalApiStream('http://example.test/txs?', {}, {});
-      await consume(defaultCapped);
-      expect(warnSpy.called).to.equal(true);
-
-      warnSpy.resetHistory();
-      // An explicit paging bound is a caller choice, not a safety-net truncation — no warning
-      const explicitlyCapped = new ExternalApiStream('http://example.test/txs?', {}, { paging: 2 });
-      await consume(explicitlyCapped);
-      expect(warnSpy.called).to.equal(false);
+      const results = await consume(new ExternalApiStream('http://example.test/txs?', {}, { paging: 2 }));
+      expect(results.length).to.equal(2);
     });
   });
 });
