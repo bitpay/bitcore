@@ -6,6 +6,9 @@ import { ReadableWithEventPipe, TransformWithEventPipe } from '../../../../utils
 export class ExternalApiStream extends ReadableWithEventPipe {
   static DEFAULT_REQUEST_TIMEOUT_MS = 90000;
   static DEFAULT_MAX_PAGES = 1000;
+  // Page size for unbounded wallet history. The cap above is in pages, so this sets the
+  // per-address ceiling (100k rows); the old default of 10 rows put it at 10k.
+  static WALLET_PAGE_SIZE = 100;
 
   url: string;
   headers: any;

@@ -6,7 +6,7 @@ import { IWalletStats, WalletStatsStorage } from '../models/walletStats';
 import { WalletStatsWalletStorage } from '../models/walletStatsWallet';
 import { RateLimiter } from './middleware';
 import { walletStatsAuth } from './walletStatsAuth';
-import { cacheKeyFor, parseParams, respondCached, setPrivateCache } from './walletStatsUtils';
+import { cacheKeyFor, parseParams, respondCached, setPrivateCache, withErrorResponse } from './walletStatsUtils';
 
 const router = express.Router({ mergeParams: true });
 
@@ -165,15 +165,18 @@ function startOfUtcDay(date: string, addDays = 0) {
   return new Date(Date.UTC(year, month - 1, day + addDays));
 }
 
-/** Newest snapshot the facts collection holds for a chain and network, or null if it has none. */
+/**
+ * Newest completed snapshot for a chain and network, or null if it has none. Facts are
+ * written before their snapshot, so a date that only exists in the facts may be partial.
+ */
 export async function latestSnapshotDate(chain: string, network: string): Promise<string | null> {
-  const [latest] = await WalletStatsWalletStorage.collection
+  const [latest] = await WalletStatsStorage.collection
     .find({ chain, network })
-    .project({ snapshotDate: 1 })
-    .sort({ snapshotDate: -1 })
+    .project({ date: 1 })
+    .sort({ date: -1 })
     .limit(1)
     .toArray();
-  return latest?.snapshotDate || null;
+  return latest?.date || null;
 }
 
 export async function getCohorts(req: Request, res: Response) {
@@ -349,9 +352,9 @@ export async function getBuckets(req: Request, res: Response) {
 
 router.use(RateLimiter('WALLETSTATS', 5, 60, 600));
 router.use(walletStatsAuth);
-router.get('/', getSnapshots);
-router.get('/cohorts', getCohorts);
-router.get('/buckets', getBuckets);
+router.get('/', withErrorResponse(getSnapshots));
+router.get('/cohorts', withErrorResponse(getCohorts));
+router.get('/buckets', withErrorResponse(getBuckets));
 
 export const walletStatsRoute = {
   router,

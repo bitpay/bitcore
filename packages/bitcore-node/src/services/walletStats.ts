@@ -647,9 +647,8 @@ export class WalletStatsService {
 
     // Prior facts read by snapshotDate EQUALITY on the unique
     // {chain,network,snapshotDate,wallet} index — the last run's facts sit exactly
-    // at the watermark date, so no latest-per-wallet sort (the 100MB trap) is needed.
-    // Trade-off: a wallet that errored last run has no fact at the watermark, so its
-    // native-activity carry-forward is lost and it re-derives from scratch this run.
+    // at the watermark date, so no latest-per-wallet sort (the 100MB trap) is needed
+    // for the bulk of wallets.
     const priorByWallet = new Map<string, { balance: string; nonce?: string; lastActivityDate?: Date }>();
     if (watermark) {
       const priorFacts = await this.walletStatsWalletModel.collection
@@ -661,6 +660,36 @@ export class WalletStatsService {
           nonce: fact.nonce,
           lastActivityDate: fact.lastActivityDate
         });
+      }
+      // A wallet that errored last run has no fact at the watermark. Without its older
+      // fact, an ETH-only wallet would be written dateless and every later week would
+      // carry that forward. Only these few (plus wallets new since then) take the sort.
+      const missing = wallets.filter(w => !priorByWallet.has(w._id.toHexString())).map(w => w._id);
+      if (missing.length) {
+        const latest = await this.walletStatsWalletModel.collection
+          .aggregate<{ _id: ObjectID; balance: string; nonce?: string; lastActivityDate?: Date }>(
+            [
+              { $match: { chain, network, wallet: { $in: missing } } },
+              { $sort: { wallet: 1, snapshotDate: -1 } },
+              {
+                $group: {
+                  _id: '$wallet',
+                  balance: { $first: '$balance' },
+                  nonce: { $first: '$nonce' },
+                  lastActivityDate: { $first: '$lastActivityDate' }
+                }
+              }
+            ],
+            { allowDiskUse: true }
+          )
+          .toArray();
+        for (const fact of latest) {
+          priorByWallet.set(fact._id.toHexString(), {
+            balance: fact.balance,
+            nonce: fact.nonce,
+            lastActivityDate: fact.lastActivityDate ?? undefined
+          });
+        }
       }
     }
     const dups = await this.detectDups({ chain, network, wallets });

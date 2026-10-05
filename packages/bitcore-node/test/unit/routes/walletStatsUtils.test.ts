@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { CacheStorage } from '../../../src/models/cache';
-import { cacheKeyFor, parseParams, respondCached, setPrivateCache } from '../../../src/routes/walletStatsUtils';
-import { makeRes } from '../../helpers/routes';
+import { cacheKeyFor, parseParams, respondCached, setPrivateCache, withErrorResponse } from '../../../src/routes/walletStatsUtils';
+import { makeReqRes, makeRes } from '../../helpers/routes';
 
 describe('WalletStats API utils', function() {
   const sandbox = sinon.createSandbox();
@@ -150,6 +150,33 @@ describe('WalletStats API utils', function() {
       });
       expect(res.statusCode).to.equal(500);
       expect(res.body).to.deep.equal({ error: 'Error getting wallet stats' });
+    });
+  });
+
+  describe('withErrorResponse', () => {
+    it('turns a thrown error into a private 500 instead of an unhandled rejection', async () => {
+      const { req, res } = makeReqRes();
+      await withErrorResponse(async () => {
+        throw new Error('db is gone');
+      })(req, res);
+      expect(res.statusCode).to.equal(500);
+      expect(res.body).to.deep.equal({ error: 'Error getting wallet stats' });
+      expect(res.headers['Cache-Control']).to.equal('private, max-age=300');
+    });
+
+    it('leaves a response alone once it has been sent', async () => {
+      const { req, res } = makeReqRes();
+      res.headersSent = true;
+      await withErrorResponse(async () => {
+        throw new Error('late failure');
+      })(req, res);
+      expect(res.statusCode).to.equal(null);
+    });
+
+    it('passes a successful response through', async () => {
+      const { req, res } = makeReqRes();
+      await withErrorResponse(async (_req, r) => r.json({ ok: true }))(req, res);
+      expect(res.body).to.deep.equal({ ok: true });
     });
   });
 });

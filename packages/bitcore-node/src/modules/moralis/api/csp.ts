@@ -198,7 +198,8 @@ export class MoralisStateProvider extends BaseEVMStateProvider {
         args: {
           limit: args.limit, // no default result limit when querying by wallet (BWS caches txs), but ExternalApiStream errors past DEFAULT_MAX_PAGES rather than loop forever
           order: 'ASC',
-          ...args
+          ...args,
+          pageSize: args.pageSize || ExternalApiStream.WALLET_PAGE_SIZE
         }
       });
       transactionStream = txStream.eventPipe(transactionStream);

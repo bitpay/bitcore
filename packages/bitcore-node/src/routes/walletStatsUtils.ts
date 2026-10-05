@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import logger from '../logger';
 import { CacheStorage } from '../models/cache';
 
@@ -131,6 +131,24 @@ export function cacheKeyFor(endpoint: string, values: Record<string, any>): stri
  */
 export function setPrivateCache(res: Response) {
   res.setHeader('Cache-Control', `private, max-age=${BROWSER_CACHE_SECONDS}`);
+}
+
+/**
+ * Express 4 doesn't catch async rejections, and the api workers stop the process on an
+ * unhandled one, so every handler goes through this to turn a throw into a 500.
+ */
+export function withErrorResponse(handler: (req: Request, res: Response) => Promise<unknown>) {
+  return async (req: Request, res: Response) => {
+    try {
+      await handler(req, res);
+    } catch (err: any) {
+      logger.error('Error handling %o: %o', req.originalUrl, err.stack || err.message || err);
+      if (!res.headersSent) {
+        setPrivateCache(res);
+        res.status(500).json({ error: 'Error getting wallet stats' });
+      }
+    }
+  };
 }
 
 /** Serves a cached payload, computing it on a miss, and turns failures into a 500. */

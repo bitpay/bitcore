@@ -534,6 +534,40 @@ describe('WalletStats Service', function() {
       expect(updateOne.calledOnce).to.equal(true);
     });
 
+    it('falls back to a wallet\'s latest fact when it has none at the watermark', async () => {
+      // The wallet errored in the watermark week, so its only fact is older. Without the
+      // fallback it would start from nothing and an ETH-only wallet would lose its date.
+      const oid = new ObjectID();
+      const older = { _id: oid, balance: '100', nonce: '5', lastActivityDate: new Date('2026-07-01T00:00:00Z') };
+      const aggregate = sandbox.stub().callsFake((pipeline: any[]) => cursor(pipeline.some(st => st.$sort) ? [older] : []));
+      const { deps } = makeDeps({ chain: 'ETH', wallets: [{ _id: oid }], watermarkRows: [{ date: '2026-07-27' }] });
+      deps.walletStatsWalletModel.collection.aggregate = aggregate;
+      const svc = new WalletStatsService(deps);
+      const collect = sandbox.stub(svc, 'collectEvmWalletFact').resolves({ balance: '100', nonce: '5' } as any);
+      await svc.tick();
+      const fallback = aggregate.getCalls().find(c => c.args[0].some((st: any) => st.$sort))!;
+      expect(fallback.args[0][0].$match.wallet.$in.map((id: any) => id.toHexString())).to.deep.equal([oid.toHexString()]);
+      expect(collect.firstCall.args[0].prior).to.deep.equal({
+        balance: '100',
+        nonce: '5',
+        lastActivityDate: new Date('2026-07-01T00:00:00Z')
+      });
+    });
+
+    it('skips the fallback lookup when every wallet has a fact at the watermark', async () => {
+      const oid = new ObjectID();
+      const aggregate = sandbox.stub().returns(cursor([]));
+      const { deps } = makeDeps({
+        chain: 'ETH', wallets: [{ _id: oid }], watermarkRows: [{ date: '2026-07-27' }],
+        priorFind: () => cursor([{ wallet: oid, balance: '1', nonce: '1' }])
+      });
+      deps.walletStatsWalletModel.collection.aggregate = aggregate;
+      const svc = new WalletStatsService(deps);
+      sandbox.stub(svc, 'collectEvmWalletFact').resolves({ balance: '1', nonce: '1' } as any);
+      await svc.tick();
+      expect(aggregate.getCalls().some(c => c.args[0].some((st: any) => st.$sort))).to.equal(false);
+    });
+
     it('drops a re-entrant tick while one is running', async () => {
       const chainNetworks = sandbox.stub().returns([]);
       const { deps } = makeDeps({ chainNetworks });

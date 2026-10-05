@@ -26,14 +26,20 @@ describe('WalletStats routes', function() {
   afterEach(() => sandbox.restore());
 
   /**
-   * Stubs the facts collection. The latest-date lookup reads through toArray (it is
-   * capped at one document); the facts themselves are only reachable by iterating,
-   * so a handler that materializes them sees nothing.
+   * Stubs the snapshots collection, which the latest-date lookup reads, and the facts
+   * collection. Facts are only reachable by iterating, so a handler that materializes
+   * them sees nothing.
    */
   function stubFactsCollection(latestDocs: any[] = [], factDocs: any[] = []) {
-    const toArray = sandbox.stub().resolves(latestDocs);
+    const snapshotCursor: any = { toArray: sandbox.stub().resolves(latestDocs.map(d => ({ date: d.snapshotDate }))) };
+    snapshotCursor.sort = sandbox.stub().returns(snapshotCursor);
+    snapshotCursor.limit = sandbox.stub().returns(snapshotCursor);
+    snapshotCursor.project = sandbox.stub().returns(snapshotCursor);
+    const snapshots: any = { find: sandbox.stub().returns(snapshotCursor) };
+    sandbox.stub(WalletStatsStorage, 'collection').get(() => snapshots);
+
     const cursor: any = {
-      toArray,
+      toArray: sandbox.stub().resolves([]),
       async *[Symbol.asyncIterator]() {
         for (const doc of factDocs) {
           yield doc;
@@ -45,7 +51,7 @@ describe('WalletStats routes', function() {
     cursor.project = sandbox.stub().returns(cursor);
     const collection: any = { find: sandbox.stub().returns(cursor) };
     sandbox.stub(WalletStatsWalletStorage, 'collection').get(() => collection);
-    return { collection, cursor };
+    return { collection, cursor, snapshots, snapshotCursor };
   }
 
   describe('parseSnapshotQuery', () => {
@@ -332,13 +338,16 @@ describe('WalletStats routes', function() {
   });
 
   describe('latestSnapshotDate', () => {
-    it('returns the newest snapshot date for the chain and network', async () => {
-      const { collection, cursor } = stubFactsCollection([{ snapshotDate: '2026-08-03' }]);
+    it('returns the newest completed snapshot date for the chain and network', async () => {
+      // Facts land before their snapshot doc, so the snapshots collection is the one
+      // that only names a date once it's complete.
+      const { snapshots, snapshotCursor, collection } = stubFactsCollection([{ snapshotDate: '2026-08-03' }]);
       const date = await latestSnapshotDate('BTC', 'mainnet');
       expect(date).to.equal('2026-08-03');
-      expect(collection.find.calledOnceWith({ chain: 'BTC', network: 'mainnet' })).to.equal(true);
-      expect(cursor.sort.calledOnceWith({ snapshotDate: -1 })).to.equal(true);
-      expect(cursor.limit.calledOnceWith(1)).to.equal(true);
+      expect(snapshots.find.calledOnceWith({ chain: 'BTC', network: 'mainnet' })).to.equal(true);
+      expect(snapshotCursor.sort.calledOnceWith({ date: -1 })).to.equal(true);
+      expect(snapshotCursor.limit.calledOnceWith(1)).to.equal(true);
+      expect(collection.find.called).to.equal(false);
     });
 
     it('returns null when the chain has never been snapshotted', async () => {
@@ -397,7 +406,7 @@ describe('WalletStats routes', function() {
         totalBalance: '350',
         filters: {}
       });
-      expect(collection.find.secondCall.args[0]).to.deep.equal({
+      expect(collection.find.firstCall.args[0]).to.deep.equal({
         chain: 'BTC',
         network: 'mainnet',
         snapshotDate: '2026-08-03',
@@ -410,8 +419,7 @@ describe('WalletStats routes', function() {
       const res = makeRes();
       await getCohorts({ query: { chain: 'BTC', network: 'mainnet' } } as any, res);
       expect(res.body.totalBalance).to.equal('3');
-      // Only the capped latest-date lookup may materialize; the facts must be iterated.
-      expect(cursor.toArray.callCount).to.equal(1);
+      expect(cursor.toArray.called).to.equal(false);
     });
 
     it('keys the cache on the resolved date, not the absent date param', async () => {
@@ -571,7 +579,7 @@ describe('WalletStats routes', function() {
         rate: 100000,
         buckets: { '100000': 1, '50000': 1 }
       });
-      expect(collection.find.secondCall.args[0]).to.deep.equal({
+      expect(collection.find.firstCall.args[0]).to.deep.equal({
         chain: 'BTC',
         network: 'mainnet',
         snapshotDate: '2026-08-03',
@@ -587,7 +595,7 @@ describe('WalletStats routes', function() {
         res
       );
       expect(res.body.buckets).to.deep.equal({ '50000': 1 });
-      expect(cursor.toArray.callCount).to.equal(1);
+      expect(cursor.toArray.called).to.equal(false);
     });
 
     it('keys the cache on the resolved date, not the absent date param', async () => {

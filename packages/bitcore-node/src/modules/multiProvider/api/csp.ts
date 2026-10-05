@@ -361,7 +361,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
 
     for (const address of walletAddresses) {
       try {
-        const streamArgs = { order: 'ASC', ...args } as any;
+        const streamArgs = { order: 'ASC', ...args, pageSize: (args as any).pageSize || ExternalApiStream.WALLET_PAGE_SIZE } as any;
         const txStream = tokenAddress
           ? activeProvider.adapter.streamERC20Transfers({
             chainId,
