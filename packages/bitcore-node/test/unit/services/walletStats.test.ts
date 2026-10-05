@@ -536,7 +536,7 @@ describe('WalletStats Service', function() {
       // maxRetryMs 0 => the cap trips on the first 429, so the perma-limited wallet errors
       // out promptly instead of looping, and the snapshot still completes.
       const { deps, updateOne } = makeDeps({
-        chain: 'ETH', wallets: [{ _id: oid }], watermarkRows: [{ date: '2026-07-27' }], csp, serviceConfig: { maxRetryMs: 0 }
+        chain: 'ETH', wallets: [{ _id: oid }], watermarkRows: [{ date: '2026-07-27' }], csp, serviceConfig: { maxRetryMs: 0, maxErrorRatio: 1 }
       });
       const svc = new WalletStatsService(deps);
       sandbox.stub(svc, 'detectDups').resolves(new Set());
@@ -581,10 +581,76 @@ describe('WalletStats Service', function() {
       expect(updateOne.firstCall.args[0].chain).to.equal('LTC'); // B snapshotted despite A failing
     });
 
-    it('skips the snapshot when a stop is requested mid EVM loop', async () => {
+    it('saves nothing when every EVM wallet fails, so the week is retried', async () => {
       const w1 = new ObjectID();
       const w2 = new ObjectID();
       const { deps, updateOne, bulkWrite } = makeDeps({ chain: 'ETH', wallets: [{ _id: w1 }, { _id: w2 }], watermarkRows: [{ date: '2026-07-27' }] });
+      const svc = new WalletStatsService(deps);
+      sandbox.stub(svc, 'detectDups').resolves(new Set());
+      sandbox.stub(svc, 'collectEvmWalletFact').rejects(new Error('provider down'));
+      sandbox.stub(logger, 'error');
+      await svc.tick();
+      expect(updateOne.called).to.equal(false);
+      expect(bulkWrite.called).to.equal(false);
+    });
+
+    it('saves nothing when the failure rate is above maxErrorRatio', async () => {
+      const wallets = [0, 1, 2, 3].map(() => ({ _id: new ObjectID() }));
+      const { deps, updateOne } = makeDeps({
+        chain: 'ETH', wallets, watermarkRows: [{ date: '2026-07-27' }], serviceConfig: { maxErrorRatio: 0.25 }
+      });
+      const svc = new WalletStatsService(deps);
+      sandbox.stub(svc, 'detectDups').resolves(new Set());
+      const collect = sandbox.stub(svc, 'collectEvmWalletFact').resolves({ balance: '1', nonce: '1' } as any);
+      collect.onCall(0).rejects(new Error('boom'));
+      collect.onCall(1).rejects(new Error('boom'));
+      sandbox.stub(logger, 'error');
+      await svc.tick();
+      expect(updateOne.called).to.equal(false); // 2 of 4 failed > 25%
+    });
+
+    it('waits retryMs before retrying an incomplete week, then saves it once it succeeds', async () => {
+      const oid = new ObjectID();
+      const { deps, updateOne } = makeDeps({
+        chain: 'ETH', wallets: [{ _id: oid }], watermarkRows: [{ date: '2026-07-27' }], serviceConfig: { retryMs: 60 * 60 * 1000 }
+      });
+      let now = NOW.getTime();
+      deps.nowFn = () => now;
+      const svc = new WalletStatsService(deps);
+      sandbox.stub(svc, 'detectDups').resolves(new Set());
+      const collect = sandbox.stub(svc, 'collectEvmWalletFact');
+      collect.onFirstCall().rejects(new Error('provider down'));
+      collect.resolves({ balance: '1', nonce: '1' } as any);
+      sandbox.stub(logger, 'error');
+
+      await svc.tick();
+      expect(collect.callCount).to.equal(1);
+
+      now += 30 * 60 * 1000; // still inside the backoff
+      await svc.tick();
+      expect(collect.callCount).to.equal(1);
+
+      now += 31 * 60 * 1000;
+      await svc.tick();
+      expect(collect.callCount).to.equal(2);
+      expect(updateOne.calledOnce).to.equal(true);
+      expect(updateOne.firstCall.args[0].date).to.equal('2026-08-03');
+    });
+
+    it('saves an EVM snapshot with zero wallets', async () => {
+      const { deps, updateOne } = makeDeps({ chain: 'ETH', wallets: [], watermarkRows: [{ date: '2026-07-27' }] });
+      const svc = new WalletStatsService(deps);
+      sandbox.stub(svc, 'detectDups').resolves(new Set());
+      await svc.tick();
+      expect(updateOne.calledOnce).to.equal(true);
+    });
+
+    it('skips the snapshot when a stop is requested mid EVM loop', async () => {
+      const w1 = new ObjectID();
+      const w2 = new ObjectID();
+      const { deps, updateOne, bulkWrite } = makeDeps({
+        chain: 'ETH', wallets: [{ _id: w1 }, { _id: w2 }], watermarkRows: [{ date: '2026-07-27' }], serviceConfig: { maxErrorRatio: 0.5 }
+      });
       const svc = new WalletStatsService(deps);
       sandbox.stub(svc, 'detectDups').resolves(new Set());
       sandbox.stub(svc, 'collectEvmWalletFact').callsFake(async () => { svc.stopping = true; return { balance: '1', nonce: '1' } as any; });

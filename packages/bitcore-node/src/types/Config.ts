@@ -140,6 +140,8 @@ export interface ConfigType {
       sleepMs?: number; // throttle: pause length between batches
       every?: number; // throttle: pause every N wallets
       maxRetryMs?: number; // rate-limit retry: give up on one call after this long, default 10min
+      maxErrorRatio?: number; // EVM: share of wallets allowed to fail before the week is held back, default 0.05
+      retryMs?: number; // EVM: wait before retrying a held-back week, default 1h
     };
   };
   externalProviders?: {

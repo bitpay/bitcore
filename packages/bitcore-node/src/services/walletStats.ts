@@ -44,6 +44,7 @@ export class WalletStatsService {
   checkTokenActivity: TokenActivityFn;
   private scheduleWarned = false;
   private unsupportedWarned = new Set<string>();
+  private retryAfter = new Map<string, number>();
 
   constructor({
     walletStatsModel = WalletStatsStorage,
@@ -569,6 +570,10 @@ export class WalletStatsService {
       }
       return;
     }
+    const key = `${chain}:${network}`;
+    if ((this.retryAfter.get(key) ?? 0) > now.getTime()) {
+      return; // last attempt this week was incomplete; wait out the backoff
+    }
     const watermark = await this.latestSnapshotDate({ chain, network });
     const date = this.snapshotDateIfDue(now, watermark);
     if (!date) {
@@ -589,6 +594,19 @@ export class WalletStatsService {
       return; // a stop was requested mid-collection; skip the snapshot for this partial run
     }
     const { snapshot, walletFacts } = collected;
+    // Saving a mostly-failed run would advance the watermark and lock in the undercount,
+    // so hold it back and retry the same week after the backoff.
+    const errored = snapshot.meta.erroredWalletCnt ?? 0;
+    const maxErrorRatio = this.serviceConfig.maxErrorRatio ?? 0.05;
+    if (errored > 0 && errored / wallets.length > maxErrorRatio) {
+      const retryMs = this.serviceConfig.retryMs ?? 60 * ONE_MIN;
+      this.retryAfter.set(key, this.nowFn() + retryMs);
+      logger.error(
+        `Wallet Stats: ${key} ${date} incomplete (${errored}/${wallets.length} wallets failed); not saved, retrying in ${Math.round(retryMs / ONE_MIN)} min`
+      );
+      return;
+    }
+    this.retryAfter.delete(key);
     snapshot.meta.gaps = gaps;
     snapshot.meta.completedAt = new Date(this.nowFn());
     await this.persist({ chain, network, snapshot, walletFacts });
