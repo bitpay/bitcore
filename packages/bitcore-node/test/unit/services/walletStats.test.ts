@@ -495,7 +495,9 @@ describe('WalletStats Service', function() {
     it('counts a per-wallet failure, still writes the other facts, and completes the snapshot', async () => {
       const w1 = new ObjectID();
       const w2 = new ObjectID();
-      const { deps, updateOne, bulkWrite } = makeDeps({ chain: 'ETH', wallets: [{ _id: w1 }, { _id: w2 }], watermarkRows: [{ date: '2026-07-27' }] });
+      const { deps, updateOne, bulkWrite } = makeDeps({
+        chain: 'ETH', wallets: [{ _id: w1 }, { _id: w2 }], watermarkRows: [{ date: '2026-07-27' }], serviceConfig: { maxErrorRatio: 0.5 }
+      });
       const svc = new WalletStatsService(deps);
       sandbox.stub(svc, 'detectDups').resolves(new Set());
       const collect = sandbox.stub(svc, 'collectEvmWalletFact');
@@ -648,9 +650,7 @@ describe('WalletStats Service', function() {
     it('skips the snapshot when a stop is requested mid EVM loop', async () => {
       const w1 = new ObjectID();
       const w2 = new ObjectID();
-      const { deps, updateOne, bulkWrite } = makeDeps({
-        chain: 'ETH', wallets: [{ _id: w1 }, { _id: w2 }], watermarkRows: [{ date: '2026-07-27' }], serviceConfig: { maxErrorRatio: 0.5 }
-      });
+      const { deps, updateOne, bulkWrite } = makeDeps({ chain: 'ETH', wallets: [{ _id: w1 }, { _id: w2 }], watermarkRows: [{ date: '2026-07-27' }] });
       const svc = new WalletStatsService(deps);
       sandbox.stub(svc, 'detectDups').resolves(new Set());
       sandbox.stub(svc, 'collectEvmWalletFact').callsFake(async () => { svc.stopping = true; return { balance: '1', nonce: '1' } as any; });
@@ -669,8 +669,9 @@ describe('WalletStats Service', function() {
       },
       cspProvider: { get: () => ({ getChainId: async () => 1 }) }
     } as any);
-    const call = (svc: any) =>
-      svc.defaultCheckTokenActivity({ chain: 'ETH', network: 'mainnet', addresses: ['0xabc'], since: new Date('2025-08-03T00:00:00Z') });
+    const call = (svc: any, addresses = ['0xabc']) =>
+      svc.defaultCheckTokenActivity({ chain: 'ETH', network: 'mainnet', addresses, since: new Date('2025-08-03T00:00:00Z') });
+    const transfer = (ts: string) => ({ data: { result: [{ block_timestamp: ts }] } });
 
     it('returns the block time of the most recent ERC-20 transfer', async () => {
       const get = sandbox.stub(axios, 'get').resolves({ data: { result: [{ block_timestamp: '2026-07-30T00:00:00Z' }] } });
@@ -684,10 +685,35 @@ describe('WalletStats Service', function() {
       expect(await call(makeSvc('key'))).to.equal(null);
     });
 
-    it('returns null when the request fails', async () => {
+    it('returns the newest transfer across all of a wallet\'s addresses', async () => {
+      const get = sandbox.stub(axios, 'get');
+      get.onCall(0).resolves(transfer('2026-05-01T00:00:00Z'));
+      get.onCall(1).resolves(transfer('2026-07-30T00:00:00Z'));
+      get.onCall(2).resolves({ data: { result: [] } });
+      const result = await call(makeSvc('key'), ['0xa', '0xb', '0xc']);
+      expect(result).to.deep.equal(new Date('2026-07-30T00:00:00Z'));
+      expect(get.callCount).to.equal(3);
+    });
+
+    it('keeps checking the other addresses when one fails', async () => {
+      const get = sandbox.stub(axios, 'get');
+      get.onCall(0).rejects(new Error('network down'));
+      get.onCall(1).resolves(transfer('2026-07-30T00:00:00Z'));
+      sandbox.stub(logger, 'warn');
+      const result = await call(makeSvc('key'), ['0xa', '0xb']);
+      expect(result).to.deep.equal(new Date('2026-07-30T00:00:00Z'));
+    });
+
+    it('throws when every address fails, so the wallet counts as errored instead of inactive', async () => {
       sandbox.stub(axios, 'get').rejects(new Error('network down'));
       sandbox.stub(logger, 'warn');
-      expect(await call(makeSvc('key'))).to.equal(null);
+      let caught: any;
+      try {
+        await call(makeSvc('key'), ['0xa', '0xb']);
+      } catch (err) {
+        caught = err;
+      }
+      expect(caught).to.be.an.instanceof(Error);
     });
 
     it('returns null without a request when no apiKey is configured', async () => {

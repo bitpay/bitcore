@@ -732,11 +732,11 @@ export class WalletStatsService {
     );
   }
 
-  // Default token-activity probe: a limit-1 ERC-20 transfers existence check per
-  // address since `since`, hitting Moralis directly through axios on tracked
-  // surfaces only (formatMoralisChainId from the adapters util; apiKey from config).
-  // No apiKey configured => null without a request. Any failure degrades to null so
-  // the tick is never broken, and the whole thing is swappable via the constructor.
+  // Default token-activity probe: the newest ERC-20 transfer since `since` across the
+  // wallet's addresses, one limit-1 Moralis request per address (formatMoralisChainId
+  // from the adapters util; apiKey from config). No apiKey configured => null without a
+  // request. A failed address is skipped, but if every address fails this throws so the
+  // wallet counts as errored rather than inactive. Swappable via the constructor.
   // TODO: migrate onto MoralisClient once the external client extraction lands.
   async defaultCheckTokenActivity(params: { chain: string; network: string; addresses: string[]; since: Date }): Promise<Date | null> {
     const { chain, network, addresses, since } = params;
@@ -744,12 +744,15 @@ export class WalletStatsService {
     if (!apiKey) {
       return null;
     }
-    try {
-      const csp: any = this.cspProvider.get({ chain, network });
-      const chainId = await csp.getChainId({ network });
-      const { formatMoralisChainId } = await import('../providers/chain-state/external/adapters/moralis-utils');
-      const moralisChain = formatMoralisChainId(chainId);
-      for (const address of addresses) {
+    const csp: any = this.cspProvider.get({ chain, network });
+    const chainId = await csp.getChainId({ network });
+    const { formatMoralisChainId } = await import('../providers/chain-state/external/adapters/moralis-utils');
+    const moralisChain = formatMoralisChainId(chainId);
+    let latest: Date | null = null;
+    let lastError: any;
+    let failed = 0;
+    for (const address of addresses) {
+      try {
         const { data } = await axios.get<{ result?: Array<{ block_timestamp?: string }> }>(
           `https://deep-index.moralis.io/api/v2.2/${address}/erc20/transfers`,
           {
@@ -758,15 +761,20 @@ export class WalletStatsService {
             timeout: 30000
           }
         );
-        const first = data?.result?.[0];
-        if (first?.block_timestamp) {
-          return new Date(first.block_timestamp);
+        const timestamp = data?.result?.[0]?.block_timestamp;
+        if (timestamp && (!latest || new Date(timestamp) > latest)) {
+          latest = new Date(timestamp);
         }
+      } catch (err: any) {
+        failed++;
+        lastError = err;
+        logger.warn(`Wallet Stats: token activity probe failed for ${chain}:${network} ${address}: ${err.message || err}`);
       }
-    } catch (err: any) {
-      logger.warn(`Wallet Stats: token activity probe failed for ${chain}:${network}: ${err.message || err}`);
     }
-    return null;
+    if (addresses.length && failed === addresses.length) {
+      throw lastError;
+    }
+    return latest;
   }
 }
 
