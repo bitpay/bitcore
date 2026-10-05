@@ -352,10 +352,8 @@ export class WalletStatsService {
   // summed across the wallet's addresses (hex-requested so large wei values keep
   // full precision) and nonce is the max across them. Activity can't be read
   // directly, so it's inferred: a balance or nonce change since the prior snapshot
-  // means activity happened in the interval (dated to asOf); an unchanged wallet
-  // carries its prior date forward; and a wallet with no usable date yet but that
-  // looks active (or has never been snapshotted) falls back to a token-transfer
-  // lookup over the last 12 months.
+  // means activity happened in the interval (dated to asOf). Otherwise a token-transfer
+  // lookup runs from the known date (or 12 months back) and the newer date wins.
   async collectEvmWalletFact(params: {
     csp: { getBalanceForAddress: (p: any) => Promise<{ balance: any }>; getAccountNonce: (network: string, address: string) => Promise<number> };
     wallet: { _id: ObjectID; chain: string; network: string };
@@ -382,20 +380,17 @@ export class WalletStatsService {
     const balanceStr = balance.toString();
     const nonceStr = nonce.toString();
 
-    let lastActivityDate: Date | undefined;
-    if (prior) {
-      const changed = prior.balance !== balanceStr || (prior.nonce ?? '0') !== nonceStr;
-      lastActivityDate = changed ? asOf : prior.lastActivityDate;
+    if (prior && (prior.balance !== balanceStr || (prior.nonce ?? '0') !== nonceStr)) {
+      return { balance: balanceStr, nonce: nonceStr, lastActivityDate: asOf };
     }
-    // Any wallet without a known activity date gets the token probe, prior or not.
-    // Gating this on nonzero balance/nonce or first-ever snapshot froze token-only
-    // wallets (relayer-funded, meta-tx): their native signals never move, so a wallet
-    // that started transferring tokens after its first snapshot could never be dated.
-    if (!lastActivityDate) {
-      const since = new Date(asOf.getTime());
-      since.setUTCFullYear(since.getUTCFullYear() - 1);
-      lastActivityDate = (await checkTokenActivity(addresses, since)) ?? undefined;
-    }
+    // Receiving tokens, or moving them through a relayer, leaves native balance and
+    // nonce untouched, so an unchanged wallet still needs the token lookup to stay dated.
+    const known = prior?.lastActivityDate;
+    const yearAgo = new Date(asOf.getTime());
+    yearAgo.setUTCFullYear(yearAgo.getUTCFullYear() - 1);
+    const since = known && known > yearAgo ? known : yearAgo;
+    const probed = await checkTokenActivity(addresses, since);
+    const lastActivityDate = probed && (!known || probed > known) ? probed : known;
 
     return { balance: balanceStr, nonce: nonceStr, lastActivityDate };
   }

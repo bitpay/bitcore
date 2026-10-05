@@ -172,7 +172,7 @@ describe('WalletStats Service', function() {
       return s;
     };
 
-    it('carries the prior activity date forward when balance and nonce are unchanged', async () => {
+    it('carries the prior activity date forward when balance and nonce are unchanged and no newer token activity exists', async () => {
       const csp = {
         getBalanceForAddress: sandbox.stub().resolves({ balance: '0x64' }), // 100
         getAccountNonce: sandbox.stub().resolves(5)
@@ -187,7 +187,9 @@ describe('WalletStats Service', function() {
       expect(fact.balance).to.equal('100');
       expect(fact.nonce).to.equal('5');
       expect(fact.lastActivityDate).to.deep.equal(priorDate);
-      expect(checkTokenActivity.called).to.equal(false);
+      // only look for token transfers newer than the date already known
+      expect(checkTokenActivity.calledOnce).to.equal(true);
+      expect(checkTokenActivity.firstCall.args[1].getTime()).to.equal(priorDate.getTime());
       // Request hex balances so large wei values keep full precision.
       expect(csp.getBalanceForAddress.firstCall.args[0].args).to.deep.equal({ hex: 'true' });
     });
@@ -207,6 +209,55 @@ describe('WalletStats Service', function() {
       expect(fact.nonce).to.equal('6');
       expect(fact.lastActivityDate).to.deep.equal(asOf);
       expect(checkTokenActivity.called).to.equal(false);
+    });
+
+    it('moves a known date forward when token transfers happened since', async () => {
+      // Receiving or relaying tokens leaves native balance and nonce untouched
+      const tokenDate = new Date('2026-07-30T00:00:00Z');
+      const csp = {
+        getBalanceForAddress: sandbox.stub().resolves({ balance: '0x64' }),
+        getAccountNonce: sandbox.stub().resolves(5)
+      };
+      const checkTokenActivity = sandbox.stub().resolves(tokenDate);
+      const svc = new WalletStatsService({ waitFn: async () => {} } as any);
+      const fact = await svc.collectEvmWalletFact({
+        csp, wallet, addresses: ['0xabc'],
+        prior: { balance: '100', nonce: '5', lastActivityDate: priorDate },
+        asOf, checkTokenActivity
+      } as any);
+      expect(fact.lastActivityDate).to.deep.equal(tokenDate);
+    });
+
+    it('never moves a known date backward', async () => {
+      const csp = {
+        getBalanceForAddress: sandbox.stub().resolves({ balance: '0x64' }),
+        getAccountNonce: sandbox.stub().resolves(5)
+      };
+      const checkTokenActivity = sandbox.stub().resolves(new Date('2026-04-01T00:00:00Z'));
+      const svc = new WalletStatsService({ waitFn: async () => {} } as any);
+      const fact = await svc.collectEvmWalletFact({
+        csp, wallet, addresses: ['0xabc'],
+        prior: { balance: '100', nonce: '5', lastActivityDate: priorDate },
+        asOf, checkTokenActivity
+      } as any);
+      expect(fact.lastActivityDate).to.deep.equal(priorDate);
+    });
+
+    it('limits the token lookup to the last 12 months when the known date is older', async () => {
+      const oldDate = new Date('2024-01-01T00:00:00Z');
+      const csp = {
+        getBalanceForAddress: sandbox.stub().resolves({ balance: '0x64' }),
+        getAccountNonce: sandbox.stub().resolves(5)
+      };
+      const checkTokenActivity = sandbox.stub().resolves(null);
+      const svc = new WalletStatsService({ waitFn: async () => {} } as any);
+      const fact = await svc.collectEvmWalletFact({
+        csp, wallet, addresses: ['0xabc'],
+        prior: { balance: '100', nonce: '5', lastActivityDate: oldDate },
+        asOf, checkTokenActivity
+      } as any);
+      expect(checkTokenActivity.firstCall.args[1].getTime()).to.equal(twelveMonthsBefore(asOf).getTime());
+      expect(fact.lastActivityDate).to.deep.equal(oldDate);
     });
 
     it('falls back to a token-activity lookup when a plausibly-active wallet has no prior date', async () => {
