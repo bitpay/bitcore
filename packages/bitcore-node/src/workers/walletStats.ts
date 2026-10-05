@@ -1,6 +1,7 @@
 import cluster from 'cluster';
 import 'source-map-support/register';
 import logger from '../logger';
+import { loadModules } from '../modules';
 import { Event } from '../services/event';
 import { Storage } from '../services/storage';
 import { WalletStats } from '../services/walletStats';
@@ -17,6 +18,9 @@ export const WalletStatsWorker = async () => {
   process.on('SIGINT', stop);
 
   services.push(Storage, Event, WalletStats);
+
+  loadModules();
+
   for (const service of services) {
     await service.start();
   }
