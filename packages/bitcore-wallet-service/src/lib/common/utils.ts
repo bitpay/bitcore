@@ -13,6 +13,8 @@ import Config from '../../config';
 import { logger } from '../logger';
 import { Constants } from './constants';
 import { Defaults } from './defaults';
+import type { IChain } from '../../types/chain';
+import type { TxProposal } from '../model/txproposal';
 
 const $ = singleton();
 const Bitcore_ = {
@@ -31,7 +33,7 @@ export const Utils = {
    *
    * @param txp - the transaction proposal
    */
-  prePublishRawParts(txp): string[] | null {
+  prePublishRawParts(txp: TxProposal<any>): string[] | null {
     if (!txp?.prePublishRaw) {
       return null;
     }
@@ -52,7 +54,7 @@ export const Utils = {
    * @param chain - the IChain implementation (provides chain + getBitcoreTx)
    * @param txp - the transaction proposal (must carry prePublishRaw)
    */
-  isPrePublishRawBound(chain, txp): boolean {
+  isPrePublishRawBound(chain: IChain, txp: TxProposal<any>): boolean {
     try {
       const prePublishRaw = Utils.prePublishRawParts(txp);
       if (!prePublishRaw) return false;
