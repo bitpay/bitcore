@@ -255,11 +255,9 @@ describe('Wallet', function() {
                 default:
                   break; // no-op for non-checkpoint steps
                 case 0: {
-                  const [lockedPid, lockedArgvJson] = fs.readFileSync(lockFileName, 'utf-8').split('\n');
+                  const [lockedPid, lockedArgv] = fs.readFileSync(lockFileName, 'utf-8').split('\n');
                   assert.equal(lockedPid, child.pid.toString(), 'Lock file pid should match the running process');
-                  const lockedArgv = JSON.parse(lockedArgvJson);
-                  assert.ok(Array.isArray(lockedArgv), 'Lock file should contain the full process.argv as JSON');
-                  assert.ok(lockedArgv[1]?.endsWith('cli.js'), 'Lock file argv should include the path to cli.js');
+                  assert.ok(lockedArgv.split(' ')[1].endsWith('cli.js'), 'Lock file argv should include the path to cli.js');
                   break;
                 }
               }
@@ -310,8 +308,8 @@ describe('Wallet', function() {
 
       const lockFileName = Utils.getWalletLockFileName(WALLETS.BTC.SINGLE_SIG, DIR);
       // Recorded lock claims a different cli.js path than the one the reused pid is now actually running
-      const originalArgv = ['/usr/bin/node', '/original/path/to/bitcore-cli/build/src/cli.js'];
-      fs.writeFileSync(lockFileName, `${fakeProcess.pid}\n${JSON.stringify(originalArgv)}`, { mode: 0o444 });
+      const originalArgv = 'node /original/path/to/bitcore-cli/build/src/cli.js';
+      fs.writeFileSync(lockFileName, `${fakeProcess.pid}\n${originalArgv}`, { mode: 0o444 });
 
       const stepInputs = [
         // Checkpoint1: Upon wallet load

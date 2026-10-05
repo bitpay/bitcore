@@ -7,6 +7,7 @@ import { EventEmitter } from 'events';
 import * as helpers from './helpers';
 import { Wallet } from '../src/wallet';
 import { startTssWallets, TssTransform } from './tssCoordinator';
+import { Utils } from '../src/utils';
 
 describe('Create', function() {
   this.timeout(Math.max(this['_timeout'] || 0, 10000));
@@ -526,6 +527,9 @@ describe('Create', function() {
             await w.getClient({ mustExist: true });
             const copayer1_afterLoad = JSON.parse(fs.readFileSync(path.join(TEMP_DIR, walletName1 + '.json'), 'utf-8'));
             assert.strictEqual(copayer1_afterLoad.credentials.publicKeyRing.length, 2);
+            // Remove the lock file for copayer1's wallet to allow subsequent tests to run without interference
+            const lockfile = Utils.getWalletLockFileName(walletName1, TEMP_DIR);
+            fs.rmSync(lockfile);
             done();
           } catch (e) {
             done(e);
