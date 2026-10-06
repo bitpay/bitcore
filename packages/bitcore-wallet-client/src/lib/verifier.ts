@@ -161,6 +161,7 @@ export class Verifier {
     );
     return (
       local.address == address.address &&
+      Array.isArray(address.publicKeys) && // type narrowing
       CWCUtils.difference(local.publicKeys, address.publicKeys).length === 0
     );
   }
@@ -365,6 +366,7 @@ export class Verifier {
    * Checks a PayPro-funded transaction proposal against the signed PayPro
    * response it was supposed to pay. Rejects transaction modes that rewrite
    * the verified outputs during construction.
+   * The caller decides whether PayPro applies and supplies its verified response.
    *
    * `txp` is sourced from BWS and is untrusted - a compromised server or a
    * malicious co-signer could have altered it. `payproOpts` is derived from
@@ -397,6 +399,16 @@ export class Verifier {
     if (!Array.isArray(payproOpts.instructions) || payproOpts.instructions.length === 0) {
       return falseWithLogWarn('missing PayPro instructions');
     }
+    // txp.version snapshot validation
+    const versionValue = txp.version;
+    if (
+      typeof versionValue !== 'number' &&
+      typeof versionValue !== 'string'
+    ) return falseWithLogWarn('invalid transaction proposal version');
+    const version = Number(versionValue);
+    if (!Number.isInteger(version) || version < 3) {
+      return falseWithLogWarn('invalid transaction proposal version');
+    }
 
     let chain: string;
     if (txp.chain == null || txp.chain === '') {
@@ -425,39 +437,24 @@ export class Verifier {
       return falseWithLogWarn(`unsupported transaction chain: ${chain}`);
     }
 
-    // Alternate account-chain builders can replace recipients, calldata or ordering.
-    if (!isUtxoChain && (
-      txp.multiTx || txp.multiSendContractAddress || txp.multisigContractAddress ||
-      (txp.tokenAddress && !txp.payProUrl && !txp.isTokenSwap)
-    )) {
-      return falseWithLogWarn('unsupported PayPro transaction mode');
+    // A shared address/call format cannot establish which chain or network
+    // the invoice requires. Require the signed metadata for every PayPro check.
+    if (typeof payproOpts.chain !== 'string' || payproOpts.chain.toLowerCase() !== chain) {
+      return falseWithLogWarn('signed PayPro chain does not match transaction chain');
     }
-    if (isRippleChain) {
-      // Match the XRP builder's legacy `type` fallback exactly.
-      const txType = txp.txType === undefined ? txp.type : txp.txType;
-      if (txType != null && (typeof txType !== 'string' || txType.toLowerCase() !== 'payment')) {
-        return falseWithLogWarn('unsupported XRP transaction type');
-      }
+    // Network names must match exactly: builders interpret them case-sensitively.
+    if (
+      typeof payproOpts.network !== 'string' ||
+      !['livenet', 'testnet', 'regtest'].includes(payproOpts.network) ||
+      payproOpts.network !== txp.network
+    ) {
+      return falseWithLogWarn('signed PayPro network does not match transaction network');
     }
-
-    // payproOpts chain/network/currency optional - validate if present
-    if (payproOpts.chain != null) {
-      // If payproOpts.chain present
-      // must be a string in agreement with chain derived above
-      if (typeof payproOpts.chain !== 'string' || payproOpts.chain.toLowerCase() !== chain) {
-        return falseWithLogWarn('signed PayPro chain does not match transaction chain');
-      }
-    }
-    if (payproOpts.network != null) {
-      // If payproOpts.network present
-      // Network names must match exactly: builders interpret them case-sensitively.
-      if (
-        typeof payproOpts.network !== 'string' ||
-        typeof txp.network !== 'string' ||
-        payproOpts.network !== txp.network
-      ) {
-        return falseWithLogWarn('signed PayPro network does not match transaction network');
-      }
+    // A native SOL payment is the only SVM payment this builder can safely
+    // verify. Without signed currency, matching address and amount cannot
+    // establish whether those units are lamports or token atomic units.
+    if (isSvmChain && payproOpts.currency !== 'SOL') {
+      return falseWithLogWarn('missing or unsupported signed SOL PayPro currency');
     }
     if (payproOpts.currency != null) {
       // If payproOpts.currency present
@@ -475,28 +472,9 @@ export class Verifier {
       }
     }
 
-    // txp.version snapshot
-    const versionValue = txp.version;
-    if (
-      typeof versionValue !== 'number' &&
-      typeof versionValue !== 'string'
-    ) return falseWithLogWarn('invalid transaction proposal version');
-    const version = Number(versionValue);
-    if (!Number.isInteger(version) || version < 1) {
-      return falseWithLogWarn('invalid transaction proposal version');
-    }
-
-    let rawOutputs = version >= 3
-      ? txp.outputs
-      : [{ toAddress: txp.toAddress, amount: txp.amount }];
+    let rawOutputs = txp.outputs;
     if (!Array.isArray(rawOutputs) || rawOutputs.length === 0) {
       return falseWithLogWarn('missing transaction outputs');
-    }
-
-    // The UTXO builder gives script precedence over toAddress. Address-only
-    // PayPro instructions cannot authorize a proposal-supplied script.
-    if (isUtxoChain && rawOutputs.some(output => output?.script)) {
-      return falseWithLogWarn('PayPro outputs cannot override destination addresses with scripts');
     }
 
     // Utils.buildTx() still honors a legacy BWC <= 8.9.0 compatibility
@@ -547,6 +525,14 @@ export class Verifier {
       return falseWithLogWarn('transaction amount and output total differ');
     }
 
+    // Alternate account-chain builders can replace recipients, calldata or ordering.
+    if (!isUtxoChain && (
+      txp.multiTx || txp.multiSendContractAddress || txp.multisigContractAddress ||
+      (txp.tokenAddress && !txp.payProUrl && !txp.isTokenSwap)
+    )) {
+      return falseWithLogWarn('unsupported PayPro transaction mode');
+    }
+
     // Accept only a complete match for the resolved chain, comparing each
     // chain family's own canonical parsed destination plus whatever else in
     // that family determines what the merchant receives or how the payment
@@ -558,6 +544,10 @@ export class Verifier {
     // the same transaction with its two calls swapped.
     try {
       if (isUtxoChain) {
+        // The UTXO builder gives script precedence over toAddress.
+        if (rawOutputs.some(output => output?.script)) {
+          return falseWithLogWarn('PayPro outputs cannot override destination addresses with scripts');
+        }
         const addressLib = ADDRESS_LIB_BY_CHAIN[chain];
         const normalizeAddress = (address: string) => {
           if (chain !== 'bch') return new addressLib.Address(address).toString();
@@ -579,8 +569,24 @@ export class Verifier {
       if (isEvmChain) {
         // The builder permits an explicit chainId to override chain/network.
         const provider = Transactions.get({ chain }) as { getChainId(network: string): number };
-        if (txp.chainId && !this.atomicValuesEqual(txp.chainId, provider.getChainId(txp.network))) {
+        const expectedChainId = provider.getChainId(txp.network);
+        if (!Number.isInteger(expectedChainId) || expectedChainId <= 0) {
+          return falseWithLogWarn('unsupported EVM chain and network');
+        }
+        if (txp.chainId && !this.atomicValuesEqual(txp.chainId, expectedChainId)) {
           return falseWithLogWarn('EVM chain ID does not match transaction chain and network');
+        }
+        // Native transfers need no calldata. A token-labeled proposal without
+        // any call data would instead serialize a native-asset transfer.
+        const nativeCoins: Record<string, string[]> = {
+          eth: ['eth'], matic: ['matic', 'pol'], arb: ['eth'],
+          base: ['eth'], op: ['eth'], arc: ['arc']
+        };
+        if (
+          !nativeCoins[chain].includes(txp.coin?.toLowerCase()) &&
+          !payproInstructions.some(entry => typeof entry.raw?.data === 'string' && entry.raw.data.length > 2)
+        ) {
+          return falseWithLogWarn('token payment has no EVM calldata');
         }
         const compareCalldata = (output: PayproEntry, instruction: PayproEntry) =>
           this.normalizeEvmCalldata(output.raw?.data) === this.normalizeEvmCalldata(instruction.raw?.data);
@@ -591,6 +597,13 @@ export class Verifier {
       }
 
       if (isRippleChain) {
+        // Match the XRP builder's legacy `type` fallback exactly.
+        const txType = txp.txType === undefined ? txp.type : txp.txType;
+        if (txType != null && (typeof txType !== 'string' || txType.toLowerCase() !== 'payment')) {
+          return falseWithLogWarn('unsupported XRP transaction type');
+        }
+        // This builder creates direct native XRP payments, which cannot deliver less than Amount.
+        // Flags are not signed PayPro payment requirements.
         if (
           this.accountEntriesMatch(outputs, payproInstructions, this.normalizeRippleAddress) &&
           this.ripplePaymentDetailsMatch(txp, payproInstructions[0]?.raw)
@@ -600,17 +613,30 @@ export class Verifier {
         return falseWithLogWarn('XRP outputs do not match PayPro instructions');
       }
 
-      // isSvmChain
-      if (
-        this.accountEntriesMatch(outputs, payproInstructions, this.normalizeSolAddress) &&
-        this.solPaymentDetailsMatch(txp, payproInstructions[0]?.raw)
-      ) {
-        return true;
+      if (isSvmChain) {
+        // The SOL builder must create native transfers from these outputs.
+        if (txp.category != null && (typeof txp.category !== 'string' || txp.category.toLowerCase() !== 'transfer')) {
+          return falseWithLogWarn('unsupported SOL transaction category');
+        }
+        if (txp.txInstructions != null) return falseWithLogWarn('unsupported SOL custom instructions');
+        // With payProUrl, Utils.buildTx selects the native SOL provider even
+        // when a tokenAddress is present. A token-labeled proposal cannot be
+        // accepted until its actual SPL transfer is verified.
+        if (typeof txp.coin !== 'string' || txp.coin.toLowerCase() !== 'sol' || txp.tokenAddress || txp.isTokenSwap) {
+          return falseWithLogWarn('unsupported SOL PayPro asset');
+        }
+        if (
+          this.accountEntriesMatch(outputs, payproInstructions, this.normalizeSolAddress) &&
+          this.solPaymentDetailsMatch(txp, payproInstructions[0]?.raw)
+        ) {
+          return true;
+        }
+        return falseWithLogWarn('SOL outputs do not match PayPro instructions');
       }
-      return falseWithLogWarn('SOL outputs do not match PayPro instructions');
     } catch {
       return falseWithLogWarn(`invalid ${chain.toUpperCase()} address or instruction data`);
     }
+    return falseWithLogWarn(`unsupported transaction chain: ${chain}`);
   }
 
   /**

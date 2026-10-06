@@ -3,7 +3,7 @@
 import chai from 'chai';
 import 'chai/register-should';
 import sinon from 'sinon';
-import { BitcoreLib, ethers, xrpl } from '@bitpay-labs/crypto-wallet-core';
+import { BitcoreLib, ethers, SolKit, xrpl } from '@bitpay-labs/crypto-wallet-core';
 import { Utils } from '../src/lib/common';
 import { PayProV2 } from '../src/lib/payproV2';
 import { Verifier } from '../src/lib/verifier';
@@ -64,11 +64,14 @@ describe('Verifier', function() {
       version: 3,
       chain,
       coin: chain,
+      network: 'livenet',
       amount,
       outputs: [{ toAddress: addressFor(chain), amount }],
       ...overrides
     });
     const createPaypro = (chain, overrides = {}) => ({
+      chain,
+      network: 'livenet',
       instructions: [{ toAddress: addressFor(chain), amount }],
       ...overrides
     });
@@ -340,14 +343,14 @@ describe('Verifier', function() {
       { chain: 'ltc' }
     ];
     for (const testCase of legacyCases) {
-      it(`preserves matching legacy ${testCase.chain.toUpperCase()} transaction proposal behavior`, function() {
+      it(`rejects legacy ${testCase.chain.toUpperCase()} transaction proposals`, function() {
         const txp = createTxp(testCase.chain, {
           version: 2,
           chain: undefined,
           toAddress: addressFor(testCase.chain),
           outputs: undefined
         });
-        Verifier.checkPaypro(txp, createPaypro(testCase.chain)).should.equal(true);
+        Verifier.checkPaypro(txp, createPaypro(testCase.chain)).should.equal(false);
       });
 
       it(`rejects a legacy ${testCase.chain.toUpperCase()} transaction proposal destination mismatch`, function() {
@@ -455,52 +458,56 @@ describe('Verifier', function() {
         version: 3,
         chain,
         coin: chain,
+        network: 'livenet',
         amount,
         outputs: [{ toAddress: evmAddress, amount }],
         ...overrides
       });
-      const createAccountPaypro = (overrides = {}) => ({
+      const createAccountPaypro = (overrides: any = {}) => ({
+        chain: 'eth',
+        network: 'livenet',
         instructions: [{ toAddress: evmAddress, amount }],
+        ...(overrides.chain === 'sol' ? { currency: 'SOL' } : {}),
         ...overrides
       });
 
       const matchingAccountCases = [
         { description: 'accepts a matching ETH PayPro destination and amount', chain: 'eth' },
         { description: 'accepts a matching MATIC PayPro destination and amount', chain: 'matic' },
-        { description: 'accepts a matching ARB PayPro destination and amount', chain: 'arb' },
-        { description: 'accepts a matching BASE PayPro destination and amount', chain: 'base' },
-        { description: 'accepts a matching OP PayPro destination and amount', chain: 'op' },
-        { description: 'accepts a matching ARC PayPro destination and amount', chain: 'arc' }
+        { description: 'accepts a matching ARB PayPro destination and amount', chain: 'arb', coin: 'eth' },
+        { description: 'accepts a matching BASE PayPro destination and amount', chain: 'base', coin: 'eth' },
+        { description: 'accepts a matching OP PayPro destination and amount', chain: 'op', coin: 'eth' },
+        { description: 'accepts a matching ARC testnet PayPro destination and amount', chain: 'arc', network: 'testnet' }
       ];
       for (const testCase of matchingAccountCases) {
         it(testCase.description, function() {
           Verifier.checkPaypro(
-            createAccountTxp(testCase.chain),
-            createAccountPaypro()
+            createAccountTxp(testCase.chain, { coin: testCase.coin || testCase.chain, network: testCase.network || 'livenet' }),
+            createAccountPaypro({ chain: testCase.chain, network: testCase.network || 'livenet' })
           ).should.equal(true);
         });
       }
 
       it('accepts a matching XRP PayPro destination and amount', function() {
         const txp = createAccountTxp('xrp', { outputs: [{ toAddress: xrpAddress, amount }] });
-        const paypro = createAccountPaypro({ instructions: [{ toAddress: xrpAddress, amount }] });
+        const paypro = createAccountPaypro({ chain: 'xrp', instructions: [{ toAddress: xrpAddress, amount }] });
         Verifier.checkPaypro(txp, paypro).should.equal(true);
       });
 
       it('accepts a matching SOL PayPro destination and amount', function() {
         const txp = createAccountTxp('sol', { outputs: [{ toAddress: solAddress, amount }] });
-        const paypro = createAccountPaypro({ instructions: [{ toAddress: solAddress, amount }] });
+        const paypro = createAccountPaypro({ chain: 'sol', instructions: [{ toAddress: solAddress, amount }] });
         Verifier.checkPaypro(txp, paypro).should.equal(true);
       });
 
-      it('accepts a matching USDC-on-ETH PayPro destination and amount', function() {
+      it('rejects a token-labeled ETH proposal with no token calldata', function() {
         const txp = createAccountTxp('eth', { coin: 'usdc' });
-        Verifier.checkPaypro(txp, createAccountPaypro()).should.equal(true);
+        Verifier.checkPaypro(txp, createAccountPaypro()).should.equal(false);
       });
 
-      it('accepts a matching token on a non-ETH EVM chain (USDC on MATIC)', function() {
+      it('rejects a token-labeled MATIC proposal with no token calldata', function() {
         const txp = createAccountTxp('matic', { coin: 'usdc' });
-        Verifier.checkPaypro(txp, createAccountPaypro()).should.equal(true);
+        Verifier.checkPaypro(txp, createAccountPaypro({ chain: 'matic' })).should.equal(false);
       });
 
       it('rejects an ETH PayPro destination mismatch with the correct amount', function() {
@@ -562,8 +569,10 @@ describe('Verifier', function() {
         // Utils.getChain() maps Constants.BITPAY_SUPPORTED_ETH_ERC20 coins
         // (e.g. 'usdc') to 'eth' for backwards compatibility when txp.chain
         // is absent - old-style token proposals rely on this.
-        const txp = createAccountTxp('eth', { chain: undefined, coin: 'usdc' });
-        Verifier.checkPaypro(txp, createAccountPaypro()).should.equal(true);
+        const txp = createAccountTxp('eth', {
+          chain: undefined, coin: 'usdc', outputs: [{ toAddress: evmAddress, amount, data: '0xabcdef' }]
+        });
+        Verifier.checkPaypro(txp, createAccountPaypro({ instructions: [{ toAddress: evmAddress, amount, data: '0xabcdef' }] })).should.equal(true);
       });
 
       it('rejects an unknown chain-less coin instead of silently resolving it to ETH', function() {
@@ -715,6 +724,7 @@ describe('Verifier', function() {
           invoiceID
         });
         const createXrpPaypro = (destinationTag, invoiceID) => createAccountPaypro({
+          chain: 'xrp',
           instructions: [{
             toAddress: xrpAddress,
             amount,
@@ -766,6 +776,7 @@ describe('Verifier', function() {
           memo
         });
         const createSolPaypro = memo => createAccountPaypro({
+          chain: 'sol',
           instructions: [{
             toAddress: solAddress,
             amount,
@@ -833,13 +844,21 @@ describe('Verifier', function() {
           // real signed response for a `coin: 'usdp'` proposal carries
           // currency 'PAX', not 'USDP'. That request-time rewrite is exactly
           // why this equivalence must be checked here, not a reason to skip it.
-          const txp = createAccountTxp('eth', { network: 'livenet', coin: 'usdp' });
-          Verifier.checkPaypro(txp, createSignedPaypro({ chain: 'eth', currency: 'PAX' })).should.equal(true);
+          const txp = createAccountTxp('eth', {
+            network: 'livenet', coin: 'usdp', outputs: [{ toAddress: evmAddress, amount, data: '0xabcdef' }]
+          });
+          Verifier.checkPaypro(txp, createSignedPaypro({
+            chain: 'eth', currency: 'PAX', instructions: [{ toAddress: evmAddress, amount, data: '0xabcdef' }]
+          })).should.equal(true);
         });
 
         it('accepts a matching PayPro currency when the Matic USDC chain-suffix alias applies', function() {
-          const txp = createAccountTxp('matic', { network: 'livenet', coin: 'usdc' });
-          Verifier.checkPaypro(txp, createSignedPaypro({ chain: 'matic', currency: 'USDCn_m' })).should.equal(true);
+          const txp = createAccountTxp('matic', {
+            network: 'livenet', coin: 'usdc', outputs: [{ toAddress: evmAddress, amount, data: '0xabcdef' }]
+          });
+          Verifier.checkPaypro(txp, createSignedPaypro({
+            chain: 'matic', currency: 'USDCn_m', instructions: [{ toAddress: evmAddress, amount, data: '0xabcdef' }]
+          })).should.equal(true);
         });
 
         it('rejects a PayPro currency that skips the required Matic USDC chain-suffix alias', function() {
@@ -858,12 +877,15 @@ describe('Verifier', function() {
     const merchantAddress = 'LQqWdV81RmiEzXoACvWDQPZEXXU1Q16suH';
     const substitutedAddress = 'Lcyaicjq2aFgcgRX5mDhhQkXN8RFvzWowa';
     const paypro = {
+      chain: 'ltc',
+      network: 'livenet',
       instructions: [{ toAddress: merchantAddress, amount }]
     };
     const createTxp = toAddress => ({
       version: 3,
       chain: 'ltc',
       coin: 'ltc',
+      network: 'livenet',
       amount,
       outputs: [{ toAddress, amount }]
     });
@@ -879,6 +901,16 @@ describe('Verifier', function() {
       checkTxProposalSignatureStub.restore();
     });
 
+    it('does not run PayPro comparison when no PayPro response is supplied', function() {
+      const checkPayproStub = sinon.stub(Verifier, 'checkPaypro');
+      try {
+        Verifier.checkTxProposal({}, createTxp(merchantAddress), { paypro: undefined }).should.equal(true);
+        sinon.assert.notCalled(checkPayproStub);
+      } finally {
+        checkPayproStub.restore();
+      }
+    });
+
     it('accepts a matching LTC PayPro proposal through checkTxProposal', function() {
       Verifier.checkTxProposal({}, createTxp(merchantAddress), { paypro }).should.equal(true);
       sinon.assert.calledOnce(checkTxProposalSignatureStub);
@@ -892,11 +924,12 @@ describe('Verifier', function() {
     // Account-chain equivalent of the LTC boundary control above.
     const evmAddress = '0x9858EfFD232B4033E47d90003D41EC34EcaEda94';
     const differentEvmAddress = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
-    const evmPaypro = { instructions: [{ toAddress: evmAddress, amount }] };
+    const evmPaypro = { chain: 'eth', network: 'livenet', instructions: [{ toAddress: evmAddress, amount }] };
     const createEvmTxp = toAddress => ({
       version: 3,
       chain: 'eth',
       coin: 'eth',
+      network: 'livenet',
       amount,
       outputs: [{ toAddress, amount }]
     });
@@ -915,11 +948,12 @@ describe('Verifier', function() {
     // check alone is not be enough to accept an EVM PayPro proposal.
     const evmData = '0xa9059cbb0000000000000000000000009858effd232b4033e47d90003d41ec34ecaeda94000000000000000000000000000000000000000000000000000000000000989680';
     const differentEvmData = '0xa9059cbb0000000000000000000000009858effd232b4033e47d90003d41ec34ecaeda940000000000000000000000000000000000000000000000000000000000000001';
-    const evmDataPaypro = { instructions: [{ toAddress: evmAddress, amount, to: evmAddress, value: amount, data: evmData }] };
+    const evmDataPaypro = { chain: 'eth', network: 'livenet', instructions: [{ toAddress: evmAddress, amount, to: evmAddress, value: amount, data: evmData }] };
     const createEvmTxpWithData = data => ({
       version: 3,
       chain: 'eth',
       coin: 'eth',
+      network: 'livenet',
       amount,
       outputs: [{ toAddress: evmAddress, amount, data }]
     });
@@ -1203,6 +1237,15 @@ describe('Verifier', function() {
       Verifier.checkPaypro({ ...txp, chain: 'unknown' }, { ...paypro, chain: 'unknown' }).should.be.false;
     });
 
+    it('requires signed chain and network metadata and a supported network', function() {
+      const paypro = createPaypro('btc', [{ address: addresses.btc[0], amount: 10000 }]);
+      const txp = createTxp(paypro, [{ toAddress: addresses.btc[0], amount: 10000 }]);
+      Verifier.checkPaypro(txp, paypro).should.be.true;
+      Verifier.checkPaypro(txp, { ...paypro, chain: undefined }).should.be.false;
+      Verifier.checkPaypro(txp, { ...paypro, network: undefined }).should.be.false;
+      Verifier.checkPaypro({ ...txp, network: 'typo' }, { ...paypro, network: 'typo' }).should.be.false;
+    });
+
     it('should bind EVM payments to their contract and calldata', function() {
       const contract = '0xc27eD3DF0DE776246cdAD5a052A9982473FceaB8';
       const paypro = {
@@ -1258,6 +1301,7 @@ describe('Verifier', function() {
       const paypro = {
         chain: 'sol',
         network: 'livenet',
+        currency: 'SOL',
         instructions: [{ outputs: [{ address, amount: 10000, invoiceID: 'LanynqCPoL2JQb8z8s5Z3X' }] }]
       };
       const txp = {
@@ -1313,6 +1357,7 @@ describe('Verifier', function() {
     });
     const invoiceFor = (chain, address) => ({
       chain, network: 'livenet',
+      ...(chain === 'sol' ? { currency: 'SOL' } : {}),
       instructions: chain === 'eth'
         ? [{ to: address, value: 10000 }]
         : [{ outputs: [{ address, amount: 10000 }] }]
@@ -1413,10 +1458,48 @@ describe('Verifier', function() {
       xrpl.decode(raw).TransactionType.should.equal('AccountSet');
       const paypro = invoiceFor('xrp', xrpAddress);
       Verifier.checkPaypro(txp, paypro).should.equal(false);
-      Verifier.checkPaypro({ ...txp, txType: 'payment' }, paypro).should.equal(true);
+      Verifier.checkPaypro({ ...txp, txType: 'payment', flags: undefined }, paypro).should.equal(true);
       for (const type of ['accountdelete', 'accountset', 1, {}]) {
         Verifier.checkPaypro({ ...txp, type }, paypro).should.equal(false);
       }
+    });
+
+    it('compares XRP PayPro payment fields without treating flags as invoice terms', function() {
+      const txp = txpFor('xrp', xrpAddress, { from: xrpAddress, fee: 12, nonce: 1 });
+      const paypro = invoiceFor('xrp', xrpAddress);
+      Verifier.checkPaypro(txp, paypro).should.equal(true);
+      const partial = { ...txp, flags: 'tfPartialPayment' };
+      xrpl.decode(Utils.buildTx(partial).uncheckedSerialize()[0]).Flags.should.equal(131072);
+      for (const flags of ['tfPartialPayment', 131072, 0x80020000, 0]) {
+        Verifier.checkPaypro({ ...txp, flags }, paypro).should.equal(true);
+      }
+    });
+
+    it('rejects SOL transactions whose builder ignores the verified payment', function() {
+      const txp = txpFor('sol', solAddress);
+      const paypro = invoiceFor('sol', solAddress);
+      Verifier.checkPaypro(txp, paypro).should.equal(true);
+      Verifier.checkPaypro(txp, { ...paypro, currency: undefined }).should.equal(false);
+      Verifier.checkPaypro(txp, { ...paypro, currency: 'USDC_sol' }).should.equal(false);
+      for (const category of ['createAccount', 'createATA', 'closeTokenAccount', 'unknown']) {
+        Verifier.checkPaypro({ ...txp, category }, paypro).should.equal(false);
+      }
+      Verifier.checkPaypro({ ...txp, txInstructions: [{ programAddress: solAddress }] }, paypro).should.equal(false);
+      Verifier.checkPaypro({ ...txp, txInstructions: [] }, paypro).should.equal(false);
+    });
+
+    it('rejects a token-labeled SOL proposal that builds a native SOL transfer', function() {
+      const txp = txpFor('sol', solAddress, {
+        coin: 'usdc', tokenAddress: solAddress, payProUrl: 'https://example.com/i/test',
+        from: '4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi',
+        blockHash: '11111111111111111111111111111111', blockHeight: 100
+      });
+      const paypro = { ...invoiceFor('sol', solAddress), currency: 'USDC' };
+      const raw = Utils.buildTx(txp).uncheckedSerialize()[0];
+      const decoded = SolKit.getTransactionDecoder().decode(Buffer.from(raw, 'base64'));
+      const message = SolKit.getCompiledTransactionMessageDecoder().decode(decoded.messageBytes);
+      message.staticAccounts[message.instructions[0].programAddressIndex].should.equal('11111111111111111111111111111111');
+      Verifier.checkPaypro(txp, paypro).should.equal(false);
     });
 
     it('rejects tag zero because the XRP builder omits it from the payment', function() {
@@ -1441,11 +1524,25 @@ describe('Verifier', function() {
       Verifier.checkPaypro({ ...txp, chainId: '1' }, paypro).should.equal(true);
     });
 
+    it('rejects an unknown EVM network even when both inputs use it', function() {
+      const txp = txpFor('eth', evmAddress, { network: 'typo', nonce: 0, gasPrice: 1000000000, gasLimit: 21000 });
+      const paypro = { ...invoiceFor('eth', evmAddress), network: 'typo' };
+      ethers.Transaction.from(Utils.buildTx(txp).uncheckedSerialize()[0]).chainId.should.equal(1n);
+      Verifier.checkPaypro(txp, paypro).should.equal(false);
+    });
+
+    it('rejects EVM networks without a configured numeric chain ID', function() {
+      const txp = txpFor('arc', evmAddress);
+      const paypro = { chain: 'arc', network: 'livenet', instructions: [{ to: evmAddress, value: 10000 }] };
+      Verifier.checkPaypro(txp, paypro).should.equal(false);
+      Verifier.checkPaypro({ ...txp, network: 'testnet' }, { ...paypro, network: 'testnet' }).should.equal(true);
+    });
+
     it('does not mutate proposal calldata or signed invoice fields', function() {
       const txp = txpFor('eth', evmAddress, {
         data: '0xAABB', outputs: [{ toAddress: evmAddress, amount: 10000, data: '0xccdd' }]
       });
-      const paypro = { instructions: [{ to: evmAddress, value: 10000, data: '0xaabb' }] };
+      const paypro = { chain: 'eth', network: 'livenet', instructions: [{ to: evmAddress, value: 10000, data: '0xaabb' }] };
       const before = JSON.stringify({ txp, paypro });
       Verifier.checkPaypro(txp, paypro).should.equal(true);
       JSON.stringify({ txp, paypro }).should.equal(before);
