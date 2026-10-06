@@ -1,5 +1,5 @@
 import os from 'os';
-import { ObjectID } from 'mongodb';
+import { FindOneAndUpdateOption, ObjectID } from 'mongodb';
 import { StorageService } from '../services/storage';
 import { BaseModel } from './base';
 
@@ -30,7 +30,7 @@ export class StateModel extends BaseModel<IState> {
     return this.collection.findOneAndUpdate(
       {},
       { $setOnInsert: { created: new Date() } },
-      { upsert: true, returnOriginal: false }
+      { upsert: true, returnDocument: 'after' } as FindOneAndUpdateOption
     );
   }
 
