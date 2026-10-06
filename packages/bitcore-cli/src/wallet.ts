@@ -242,8 +242,15 @@ export class Wallet implements IWallet {
         // TODO
         return '';
       } else {
-        const runningCmd = execSync(`ps -q ${pid} -o args -h || true`, { encoding: 'utf-8' });
-        return runningCmd;
+        try {
+          const runningCmd = execSync(`ps -p ${pid} -o args -h`, { encoding: 'utf-8' });
+          return runningCmd;
+        } catch (e) {
+          if (!e.stderr && !e.stdout) {
+            return '';
+          }
+          throw e;
+        }
       }
     };
     const lockFilename = Utils.getWalletLockFileName(this.name, this.dir);
