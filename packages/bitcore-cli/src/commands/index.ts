@@ -18,3 +18,4 @@ export * as token from './token';
 export * as register from './register';
 export * as clearcache from './clearcache';
 export * as flags from './flags';
+export * as changepassword from './changepassword';

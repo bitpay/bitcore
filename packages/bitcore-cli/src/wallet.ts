@@ -817,4 +817,59 @@ export class Wallet implements IWallet {
     const flags: xrpl.AccountInfoAccountFlags = await this.client.getAccountFlags({ account: 0 });
     return flags;
   }
+
+  async updatePassword(currentPassword: string, newPassword: string, opts?: { silent?: boolean }) {
+    const { silent } = opts || {};
+
+    // Decrypt
+    this.#walletData.key.decrypt(currentPassword);
+    if (this.isSvm()) {
+      // Note: EDDSA keys are not currently supported by TssKey,
+      //  so if isSvm() then key must be of type BWC Key
+      (this.#walletData.key as Key).decrypt(currentPassword, 'EDDSA');
+    }
+
+    // Re-encrypt with new password
+    this.#walletData.key.encrypt(newPassword);
+    if (this.isSvm()) {
+      this.#walletData.key.encrypt(newPassword, null, 'EDDSA');
+    }
+
+    await this.save();
+
+    if (!silent) prompt.log.success('Wallet password updated successfully');
+    
+    // Update state files with new password
+    const stateStoragePath = await this.storage.getStatePath();
+    const dir = fs.readdirSync(stateStoragePath);
+    if (dir.length) {
+      if (!silent) prompt.log.info('Re-encrypting state files...');
+      for (const item of dir) {
+        const itemPath = path.join(stateStoragePath, item);
+        try {
+          const stat = fs.statSync(itemPath);
+          if (stat.isFile()) {
+            let decrypted: Buffer;
+            const tempFile = itemPath + '-temp';
+            try {
+              const content = fs.readFileSync(itemPath, 'utf-8');
+              decrypted = Encryption.decryptWithPassword(content, currentPassword);
+              const updatedContent = JSON.stringify(Encryption.encryptWithPassword(decrypted, newPassword));
+              // Write the updated content to a temporary file first.
+              // This ensures that a corrupted save can be rolled back (e.g. filesystem full)
+              fs.writeFileSync(tempFile, updatedContent, { encoding: 'utf-8', flag: 'w' });
+              fs.renameSync(tempFile, itemPath);
+            } finally {
+              decrypted?.fill(0); // Clear the decrypted buffer from memory
+              fs.rmSync(tempFile, { force: true }); // Remove the temporary file (if it exists)
+            }
+          }
+        } catch (err) {
+          prompt.log.warn(`Failed to re-encrypt state file ${itemPath}: "${err.message || err}". This might be ok if you're changing back to a previous password, otherwise you'll probably need to delete the associated transaction proposal.`);
+        }
+      }
+
+      if (!silent) prompt.log.success('Done');
+    }
+  }
 };

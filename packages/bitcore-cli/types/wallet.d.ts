@@ -96,6 +96,7 @@ export interface IWallet {
   isTokenChain(): boolean;
   isReadOnly(): boolean;
   getAccountFlags(): Promise<xrpl.AccountInfoAccountFlags>;
+  updatePassword(currentPassword: string, newPassword: string): Promise<void>;
 }
 
 export interface ITokenObj {
