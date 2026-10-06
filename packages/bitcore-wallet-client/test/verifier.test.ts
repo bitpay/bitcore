@@ -1737,4 +1737,151 @@ describe('Verifier', function() {
       }).should.be.true;
     });
   });
+
+  describe('checkProposalAddresses', function() {
+    const btcCred = () => {
+      const cred = aKey.createCredentials(null, { coin: 'btc', network: 'livenet', account: 0, n: 1 });
+      cred.addWalletInfo('id', 'name', 1, 1, 'copayer');
+      return cred;
+    };
+    const ourChange = {
+      address: '1LqBGSKuX5yYUonjxT5qGfpUsXKYYWeabA',
+      path: 'm/0/0',
+      publicKeys: ['03aaeb52dd7494c361049de67cc680e83ebcbbbdbeb13637d92cd845f70308af5e']
+    };
+    const theirChange = { ...ourChange, address: '1BitcoinEaterAddressDontSendf59kuE' };
+
+    it('should reject a change or escrow address on account-based chains', function() {
+      const cred = btcCred();
+
+      for (const chain of ['eth', 'matic', 'sol', 'xrp']) {
+        Verifier.checkProposalAddresses(cred, chain, { id: 'txp' }).should.be.true;
+        Verifier.checkProposalAddresses(cred, chain, { id: 'txp', changeAddress: ourChange }).should.be.false;
+        Verifier.checkProposalAddresses(cred, chain, { id: 'txp', escrowAddress: ourChange }).should.be.false;
+      }
+    });
+
+    it('should reject a chain it has no address rules for', function() {
+      Verifier.checkProposalAddresses(btcCred(), 'notachain', { id: 'txp', sendMax: true }).should.be.false;
+    });
+
+    it('should require our change address on UTXO chains', function() {
+      const cred = btcCred();
+
+      Verifier.checkProposalAddresses(cred, 'btc', { id: 'txp', changeAddress: ourChange }).should.be.true;
+      Verifier.checkProposalAddresses(cred, 'btc', { id: 'txp', sendMax: true }).should.be.true;
+      Verifier.checkProposalAddresses(cred, 'btc', { id: 'txp', changeAddress: theirChange }).should.be.false;
+      Verifier.checkProposalAddresses(cred, 'btc', { id: 'txp' }).should.be.false;
+    });
+
+    it('should require an escrow address only where the wallet can escrow', function() {
+      const bchCred = (addressType) => {
+        const cred = aKey.createCredentials(null, { coin: 'bch', network: 'livenet', account: 0, n: 1 });
+        cred.addWalletInfo('id', 'name', 1, 1, 'copayer');
+        cred.addressType = addressType;
+        return cred;
+      };
+      // sendMax so the change check passes without deriving a per-chain change address
+      const escrowTxp = { id: 'txp', sendMax: true, instantAcceptanceEscrow: 1000 };
+
+      // BWS only creates an escrow address for a ZCE-capable wallet, so the flag alone owes us nothing
+      Verifier.checkProposalAddresses(btcCred(), 'btc', escrowTxp).should.be.true;
+      Verifier.checkProposalAddresses(bchCred('P2SH'), 'bch', escrowTxp).should.be.true;
+      // on a wallet that can escrow, a proposal asking for it must carry an address, and it must be ours
+      Verifier.checkProposalAddresses(bchCred('P2PKH'), 'bch', escrowTxp).should.be.false;
+      Verifier.checkProposalAddresses(bchCred('P2PKH'), 'bch', {
+        ...escrowTxp, escrowAddress: theirChange
+      }).should.be.false;
+    });
+  });
+
+  describe('checkPrePublishRaw', function() {
+    const ATTACKER_EVM = '0x1111111111111111111111111111111111111111';
+    const ATTACKER_SOL = 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY';
+    const ATTACKER_XRP = 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe';
+
+    const solTxp = (overrides = {}) => ({
+      chain: 'sol',
+      category: 'transfer',
+      from: '8WyoNvKsmfdG6zrbzNBVN8DETyLra3ond61saU9C52YR',
+      outputs: [{ toAddress: '3xkNjKm2zvGRvH2z2Nf9Y5hFvHZFtQXbQb1PBxDT56Xy', amount: 3896000000000000 }],
+      blockHash: 'GtV1Hb3FvP3HURHAsj8mGwEqCumvP3pv3i6CVCzYNj3d',
+      blockHeight: 531575,
+      ...overrides
+    });
+
+    const evmTxp = (overrides = {}) => ({
+      chain: 'eth',
+      network: 'livenet',
+      outputs: [{ toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A', amount: 1000 }],
+      from: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+      nonce: 0,
+      gasLimit: 21000,
+      gasPrice: 20000000000,
+      data: '0x',
+      ...overrides
+    });
+
+    const xrpTxp = (overrides = {}) => ({
+      chain: 'xrp',
+      outputs: [{ toAddress: 'rDzTZxa7NwD9vmNf5dvTbW4FQDNSRsfPv6', amount: 8000 }],
+      from: 'rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF',
+      fee: 12,
+      nonce: 1,
+      ...overrides
+    });
+
+    it('accepts a SOL proposal whose blockhash was refreshed at publish', function() {
+      const prePublishRaw = Utils.buildTx(solTxp()).uncheckedSerialize();
+      const current = solTxp({ blockHash: 'H1oRr1nfr4b6eZjs9Ssn3bxUmcRAjqRxrbTKuwSPZ9mE', prePublishRaw });
+      Verifier.checkPrePublishRaw('sol', current).should.be.true;
+    });
+
+    it('rejects a SOL proposal whose destination was tampered', function() {
+      const prePublishRaw = Utils.buildTx(solTxp()).uncheckedSerialize();
+      const current = solTxp({
+        blockHash: 'H1oRr1nfr4b6eZjs9Ssn3bxUmcRAjqRxrbTKuwSPZ9mE',
+        outputs: [{ toAddress: ATTACKER_SOL, amount: 3896000000000000 }],
+        prePublishRaw
+      });
+      Verifier.checkPrePublishRaw('sol', current).should.be.false;
+    });
+
+    it('rejects an EVM proposal whose destination was tampered', function() {
+      const prePublishRaw = Utils.buildTx(evmTxp()).uncheckedSerialize();
+      const current = evmTxp({
+        nonce: 9,
+        outputs: [{ toAddress: ATTACKER_EVM, amount: 1000 }],
+        prePublishRaw
+      });
+      Verifier.checkPrePublishRaw('eth', current).should.be.false;
+    });
+
+    it('accepts an XRP proposal whose nonce was assigned at publish', function() {
+      const prePublishRaw = Utils.buildTx(xrpTxp()).uncheckedSerialize();
+      const current = xrpTxp({ nonce: 9, prePublishRaw });
+      Verifier.checkPrePublishRaw('xrp', current).should.be.true;
+    });
+
+    it('rejects an XRP proposal whose destination was tampered', function() {
+      const prePublishRaw = Utils.buildTx(xrpTxp()).uncheckedSerialize();
+      const current = xrpTxp({
+        nonce: 9,
+        outputs: [{ toAddress: ATTACKER_XRP, amount: 8000 }],
+        prePublishRaw
+      });
+      Verifier.checkPrePublishRaw('xrp', current).should.be.false;
+    });
+
+    it('rejects an unusable prePublishRaw instead of throwing on it', function() {
+      // the server chooses this value, so it can be any shape, including one that hashes to nothing
+      for (const prePublishRaw of [[], [''], [null], ['', ''], '', [Utils.buildTx(solTxp()).uncheckedSerialize()[0], '']]) {
+        Verifier.checkPrePublishRaw('sol', solTxp({ prePublishRaw })).should.be.false;
+      }
+    });
+
+    it('rejects prePublishRaw on a non-mutable (UTXO) chain', function() {
+      Verifier.checkPrePublishRaw('btc', { chain: 'btc', prePublishRaw: 'anything' }).should.be.false;
+    });
+  });
 });

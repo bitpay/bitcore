@@ -349,6 +349,11 @@ export class BtcChain implements IChain {
     });
   }
 
+  isPrePublishRawBound(_txp: TxProposal) {
+    // UTXO chains never mutate tx data at publish, so they never legitimately carry prePublishRaw.
+    return false;
+  }
+
   getBitcoreTx(txp, opts = { signed: true }) {
     const t = new this.bitcoreLib.Transaction();
 

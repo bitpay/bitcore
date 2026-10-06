@@ -99,6 +99,15 @@ export class XRPTxProvider {
     return this.sha512Half(prefix + tx);
   }
 
+  /**
+   * Reads the fields BWS may mutate between proposal creation and publish out of a raw tx, to bind
+   * txp.prePublishRaw to the proposal. For XRP that is only the account sequence/nonce (deferred-nonce).
+   */
+  getMutableFields(rawTx: string): { nonce?: number } {
+    const txJSON = (xrpl.decode(rawTx) as any);
+    return { nonce: txJSON?.Sequence != null ? Number(txJSON.Sequence) : undefined };
+  }
+
   applySignature(params: { tx: string; signature: string; pubKey: string }): string {
     const { tx, signature, pubKey } = params;
     const txJSON = (xrpl.decode(tx) as any) as xrpl.Transaction;
