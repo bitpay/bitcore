@@ -243,7 +243,7 @@ export class Wallet implements IWallet {
         return '';
       } else {
         try {
-          const runningCmd = execSync(`ps -p ${pid} -o args -h`, { encoding: 'utf-8' });
+          const runningCmd = execSync(`ps -p ${pid} -o args --no-headers`, { encoding: 'utf-8' });
           return runningCmd;
         } catch (e) {
           if (!e.stderr && !e.stdout) {
