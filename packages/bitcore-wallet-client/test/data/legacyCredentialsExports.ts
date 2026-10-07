@@ -100,7 +100,7 @@ export default [
         xPrivKey: 'tprv8ZgxMBicQKsPdAYhtd2RKsiMCKBKZfTqgTQp8aSFnE8UaHWdHEeWkX4ruppk5mUJNvbQddBs72qy6AdxzUS6jrXap9vrwHttwAgscY7WHJM',
         use0forBCH: false,
         use44forMultisig: false,
-        compliantDerivation: true,
+        compliantDerivation: false,
         BIP45: true,
       },
       credentials: {
