@@ -1,6 +1,6 @@
 {
   "name": "@bitpay-labs/bitcore-build",
-  "version": "11.10.9",
+  "version": "11.10.12",
   "description": "A helper for common tasks to build bitcore modules'",
   "main": "index.js",
   "scripts": {
