@@ -5561,12 +5561,16 @@ describe('client API', function() {
     const amount = 10000;
     const merchantAddress = '0x9858EfFD232B4033E47d90003D41EC34EcaEda94';
     const substitutedAddress = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
-    const paypro = { instructions: [{ toAddress: merchantAddress, amount }] };
+    // A real getPayProV2 result always carries the signed chain/network
+    // (see PayProV2.processResponse); checkPaypro rejects one without them.
+    const payproMeta = { chain: 'eth', network: 'livenet', currency: 'ETH' };
+    const paypro = { ...payproMeta, instructions: [{ toAddress: merchantAddress, amount }] };
     const createEthTxp = toAddress => ({
       id: 'txp-eth-paypro-boundary',
       version: 3,
       chain: 'eth',
       coin: 'eth',
+      network: 'livenet',
       amount,
       outputs: [{ toAddress, amount }],
       payProUrl: 'https://bitpay.com/i/EthAccountChainBoundary',
@@ -5612,12 +5616,13 @@ describe('client API', function() {
     // EVM PayPro proposal at this caller boundary.
     const evmData = '0xa9059cbb0000000000000000000000009858effd232b4033e47d90003d41ec34ecaeda94000000000000000000000000000000000000000000000000000000000000989680';
     const differentEvmData = '0xa9059cbb0000000000000000000000009858effd232b4033e47d90003d41ec34ecaeda940000000000000000000000000000000000000000000000000000000000000001';
-    const dataPaypro = { instructions: [{ toAddress: merchantAddress, amount, to: merchantAddress, value: amount, data: evmData }] };
+    const dataPaypro = { ...payproMeta, instructions: [{ toAddress: merchantAddress, amount, to: merchantAddress, value: amount, data: evmData }] };
     const createEthTxpWithData = data => ({
       id: 'txp-eth-paypro-boundary-data',
       version: 3,
       chain: 'eth',
       coin: 'eth',
+      network: 'livenet',
       amount,
       outputs: [{ toAddress: merchantAddress, amount, data }],
       payProUrl: 'https://bitpay.com/i/EthAccountChainBoundary',
