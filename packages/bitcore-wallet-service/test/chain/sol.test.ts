@@ -49,6 +49,46 @@ describe('Chain SOL', function() {
     }
   });
 
+  describe('#getFee', function() {
+    const sol = ChainService.get('sol');
+    const getFee = async opts => (await sol.getFee(null, null, opts)).fee;
+    const outputs = n => Array.from({ length: n }, () => ({ toAddress: 'addr', amount: 1 }));
+
+    it('should be the signature fee when no priority fee is set', async function() {
+      (await getFee({ outputs: outputs(1) })).should.equal(5000);
+      (await getFee({ outputs: outputs(1), numSignatures: 2 })).should.equal(10000);
+      (await getFee({ outputs: outputs(1), computeUnits: 300000 })).should.equal(5000);
+    });
+
+    it('should add the priority fee for the given compute unit limit', async function() {
+      // 50,000 micro-lamports/CU * 300,000 CU = 15,000 lamports
+      (await getFee({ outputs: outputs(1), priorityFee: 50000, computeUnits: 300000 })).should.equal(5000 + 15000);
+    });
+
+    it('should round the priority fee up to a whole lamport', async function() {
+      // 1,001 micro-lamports/CU * 1,000 CU = 1,001,000 micro-lamports = 1.001 lamports
+      (await getFee({ outputs: outputs(1), priorityFee: 1001, computeUnits: 1000 })).should.equal(5000 + 2);
+    });
+
+    it('should raise the priority fee to the minimum CWC applies', async function() {
+      // 1 micro-lamport/CU is raised to 1,000; 1,000 * 200,000 CU = 200 lamports
+      (await getFee({ outputs: outputs(1), priorityFee: 1, computeUnits: 200000 })).should.equal(5000 + 200);
+    });
+
+    it('should use the default compute unit limit per instruction without computeUnits', async function() {
+      // 200,000 CU per transfer instruction
+      (await getFee({ outputs: outputs(1), priorityFee: 10000 })).should.equal(5000 + 2000);
+      (await getFee({ outputs: outputs(3), priorityFee: 10000 })).should.equal(5000 + 6000);
+      // the memo is one more instruction
+      (await getFee({ outputs: outputs(1), memo: 'refund', priorityFee: 10000 })).should.equal(5000 + 4000);
+    });
+
+    it('should cap the default compute unit limit at the per-transaction maximum', async function() {
+      // 12 transfers would be 2.4M CU, capped at 1.4M
+      (await getFee({ outputs: outputs(12), priorityFee: 10000 })).should.equal(5000 + 14000);
+    });
+  });
+
   describe('#selectTxInputs', function() {
     const sol = ChainService.get('sol');
     const wallet = { chain: 'sol', network: 'livenet' };

@@ -414,6 +414,12 @@ export const Defaults = {
 
   SOL_BASE_FEE: 5000,
 
+  // SOL prioritization fee: CWC raises any priority fee to at least this many micro-lamports per compute unit
+  SOL_MIN_PRIORITY_FEE: 1000,
+  // Compute unit limit the runtime reserves per instruction when no limit is set, and the per-tx maximum
+  SOL_COMPUTE_UNITS_PER_INSTRUCTION: 200000,
+  SOL_MAX_COMPUTE_UNITS: 1400000,
+
   // Time to get the latest push notification subscriptions. In ms.
   PUSH_NOTIFICATION_SUBS_TIME: 10 * 60 * 1000, // 10 min.
 

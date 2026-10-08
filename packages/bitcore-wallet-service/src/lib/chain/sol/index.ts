@@ -96,9 +96,25 @@ export class SolChain implements IChain {
     return new Promise(resolve => {
       const numSignatures = opts.numSignatures || 1;
       const feePerKb = Defaults.SOL_BASE_FEE; // Fee per signature in lamports
-      const fee = feePerKb * numSignatures;
+      let fee = feePerKb * numSignatures;
+      if (opts.priorityFee) {
+        fee += this.getPriorityFee(opts);
+      }
       return resolve({ fee, feePerKb });
     });
+  }
+
+  /**
+   * Lamports charged on top of the signature fee when a priority fee is set:
+   * ceil(micro-lamports per compute unit * compute unit limit / 1e6).
+   * Without computeUnits the runtime reserves a fixed limit per instruction, so count the
+   * instructions CWC builds for a transfer: one per recipient, plus one for a memo.
+   */
+  private getPriorityFee({ priorityFee, computeUnits, outputs = [], memo }) {
+    const microLamportsPerUnit = Math.max(Defaults.SOL_MIN_PRIORITY_FEE, priorityFee);
+    const instructions = Math.max(outputs.length, 1) + (memo ? 1 : 0);
+    const units = computeUnits || Math.min(Defaults.SOL_MAX_COMPUTE_UNITS, Defaults.SOL_COMPUTE_UNITS_PER_INSTRUCTION * instructions);
+    return Math.ceil(microLamportsPerUnit * units / 1e6);
   }
 
   isPrePublishRawBound(txp) {
