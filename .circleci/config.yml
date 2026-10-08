@@ -109,6 +109,7 @@ jobs:
             - node_modules
             - packages/bitcore-build/node_modules
             - packages/bitcore-client/node_modules
+            - packages/bitcore-common/node_modules
             - packages/bitcore-lib/node_modules
             - packages/bitcore-lib-cash/node_modules
             - packages/bitcore-lib-doge/node_modules
@@ -214,6 +215,11 @@ jobs:
     steps:
       - run_test:
           package: bitcore-tss
+  bitcore-common:
+    executor: main
+    steps:
+      - run_test:
+          package: bitcore-common
   crypto-rpc:
     executor: main
     steps:
@@ -263,6 +269,9 @@ workflows:
           requires:
             - build
       - bitcore-tss:
+          requires:
+            - build
+      - bitcore-common:
           requires:
             - build
       - bitcore-cli:

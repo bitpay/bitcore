@@ -1,6 +1,6 @@
 'use strict';
 
-const BN = require('bn.js');
+const { BN } = require('@bitpay-labs/bitcore-common');   
 const _ = require('lodash');
 const BufferUtil = require('../util/buffer');
 const $ = require('../util/preconditions');
