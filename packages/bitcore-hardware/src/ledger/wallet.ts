@@ -1,0 +1,160 @@
+import { createRequire } from 'module';
+import { Subscription } from 'rxjs';
+import { Base, BaseModule } from '../types/base.js';
+import { ChainType, UtxoChainType, chains } from '../types/chains.js';
+import { EveryUtxoType, TransactionType } from '../types/txTypes.js';
+import { DMKConfig, getDmk } from './dmk.js';
+import {
+  BitcoinCashModule,
+  BitcoinModule,
+  DogeModule,
+  EthereumModule,
+  LitecoinModule,
+  SolanaModule
+} from './modules/index.js';
+import type * as DMK from '@ledgerhq/device-management-kit';
+import type * as SignerKitBtc from '@ledgerhq/device-signer-kit-bitcoin';
+import type * as SignerKitEth from '@ledgerhq/device-signer-kit-ethereum';
+import type * as SignerKitSolana from '@ledgerhq/device-signer-kit-solana';
+// @eslint disable import/newline-after-import
+const require = createRequire(import.meta.url);
+const {
+  CloseAppCommand,
+  GetOsVersionCommand,
+  isSuccessCommandResult
+}: typeof DMK = require('@ledgerhq/device-management-kit');
+const {
+  SignerBtcBuilder
+}: typeof SignerKitBtc = require('@ledgerhq/device-signer-kit-bitcoin');
+const {
+  SignerEthBuilder
+}: typeof SignerKitEth = require('@ledgerhq/device-signer-kit-ethereum');
+const {
+  SignerSolanaBuilder
+}: typeof SignerKitSolana = require('@ledgerhq/device-signer-kit-solana');
+
+
+export default class Ledger implements Base {
+  device: DMK.ConnectedDevice | null = null;
+  sessionId: DMK.DeviceSessionId | null = null;
+  discoverySubscription: Subscription | null = null;
+  modules = {} as Record<ChainType, BaseModule>;
+  dmk: DMK.DeviceManagementKit;
+
+  constructor(params?: DMKConfig) {
+    this.dmk = getDmk(params);
+  }
+
+  async connect() {
+    return new Promise(async (resolve) => {
+      console.log('Discovering Ledger device...');
+      if (this.discoverySubscription) {
+        this.discoverySubscription.unsubscribe();
+      }
+
+      this.discoverySubscription = this.dmk.startDiscovering({}).subscribe({
+        next: async (device) => {
+          console.log(`Found ${device.id}, model: ${device.deviceModel.model}`);
+          try {
+            this.sessionId = await this.dmk.connect({ device });
+            this.discoverySubscription?.unsubscribe();
+
+            this.device = this.dmk.getConnectedDevice({
+              sessionId: this.sessionId
+            });
+
+            const signerBtc = new SignerBtcBuilder({ dmk: this.dmk, sessionId: this.sessionId }).build();
+            const signerEth = new SignerEthBuilder({ dmk: this.dmk, sessionId: this.sessionId }).build();
+            const signerSol = new SignerSolanaBuilder({
+              dmk: this.dmk,
+              sessionId: this.sessionId,
+              solanaRPCURL: 'https://api.mainnet-beta.solana.com/',
+            }).build();
+            this.modules.BTC = new BitcoinModule(signerBtc);
+            this.modules.BCH = new BitcoinCashModule(signerBtc);
+            this.modules.DOGE = new DogeModule(signerBtc);
+            this.modules.LTC = new LitecoinModule(signerBtc);
+            this.modules.ETH = new EthereumModule(signerEth);
+            this.modules.SOL = new SolanaModule(signerSol);
+            
+            resolve(0);
+          } catch (error) {
+            console.error(error);
+            resolve(1);
+          }
+        },
+        error: (error) => {
+          console.error(error);
+          resolve(1);
+        }
+      });
+    });
+  }
+
+  async disconnect() {
+    if (this.discoverySubscription) {
+      this.discoverySubscription.unsubscribe();
+    }
+
+    if (this.sessionId) {
+      try {
+        await this.dmk.disconnect({ sessionId: this.sessionId });
+        this.sessionId = null;
+        console.log(`Disconnected ${this.device?.name}`);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }
+
+  async getVersion() {
+    const sessionId = this.sessionId;
+    if (!sessionId) {
+      throw new Error('Not connected to a Ledger device');
+    }
+    await this.dmk.sendCommand({ sessionId, command: new CloseAppCommand() });
+    const result = await this.dmk.sendCommand({ sessionId, command: new GetOsVersionCommand() });
+    if (!isSuccessCommandResult(result)) {
+      throw result.error;
+    }
+    return result.data.seVersion;
+  }
+
+  async sign(params: {
+    chain: UtxoChainType;
+    tx: string;
+    utxos: EveryUtxoType[];
+  })
+  async sign(params: {
+    chain: UtxoChainType;
+    tx: object;
+    utxos?: EveryUtxoType[];
+  })
+  async sign(params: {
+    chain: 'ETH' | 'SOL';
+    tx: string;
+  })
+  async sign(params: {
+    chain: string;
+    tx: TransactionType;
+    utxos?: EveryUtxoType[];
+  }) {
+    const { chain, tx, utxos } = params;
+    return this.modules[chain].sign({
+      tx,
+      utxos
+    });
+  }
+  
+  async getAddress(params: { chain: string }) {
+    return this.modules[params.chain].getAddress();
+  }
+
+  async getPublicKey(params: { chain: string }) {
+    return this.modules[params.chain].getPublicKey();
+  }
+
+  static isValidChain(value: string): value is ChainType {
+    return chains.includes(value);
+  }
+}
