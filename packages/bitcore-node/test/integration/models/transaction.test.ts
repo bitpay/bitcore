@@ -242,4 +242,63 @@ describe('Transaction Model', function() {
     });
   });
 
+  describe('#pruneMempool (EVM)', () => {
+    const chain = 'ETH';
+    const network = 'regtest';
+    const from = '0x3Ec3dA6E14BE9518A9a6e92DdCC6ACfF2CEFf4ef';
+
+    const mempoolTx = (txid: string, nonce: number) =>
+      ({ chain, network, txid, from, nonce, blockHeight: SpentHeightIndicators.pending }) as any;
+
+    // pruneMempool writes with w:0, so the update can land after the call returns
+    async function waitForBlockHeight(txid: string, blockHeight: number) {
+      for (let i = 0; i < 50; i++) {
+        const tx = await EVMTransactionStorage.collection.findOne({ chain, network, txid });
+        if (tx?.blockHeight === blockHeight) {
+          return tx;
+        }
+        await new Promise(resolve => setTimeout(resolve, 20));
+      }
+      return EVMTransactionStorage.collection.findOne({ chain, network, txid });
+    }
+
+    beforeEach(async () => {
+      await EVMTransactionStorage.collection.insertMany([
+        mempoolTx('replaced', 7),
+        mempoolTx('other-nonce', 8)
+      ]);
+    });
+
+    it('should mark a pending tx with the same sender and nonce as conflicting', async () => {
+      await EVMTransactionStorage.pruneMempool({
+        chain,
+        network,
+        height: 100,
+        initialSyncComplete: true,
+        txs: [{ txid: 'mined', from, nonce: 7 } as any]
+      });
+
+      const replaced = await waitForBlockHeight('replaced', SpentHeightIndicators.conflicting);
+      expect(replaced!.blockHeight).to.eq(SpentHeightIndicators.conflicting);
+      expect(replaced!.replacedByTxid).to.eq('mined');
+
+      const otherNonce = await EVMTransactionStorage.collection.findOne({ chain, network, txid: 'other-nonce' });
+      expect(otherNonce!.blockHeight).to.eq(SpentHeightIndicators.pending);
+      expect(otherNonce!.replacedByTxid).to.not.exist;
+    });
+
+    it('should not touch the mempool before initial sync is complete', async () => {
+      await EVMTransactionStorage.pruneMempool({
+        chain,
+        network,
+        height: 100,
+        initialSyncComplete: false,
+        txs: [{ txid: 'mined', from, nonce: 7 } as any]
+      });
+
+      const replaced = await EVMTransactionStorage.collection.findOne({ chain, network, txid: 'replaced' });
+      expect(replaced!.blockHeight).to.eq(SpentHeightIndicators.pending);
+    });
+  });
+
 });
