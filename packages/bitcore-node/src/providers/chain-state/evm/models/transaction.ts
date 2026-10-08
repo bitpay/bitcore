@@ -1,6 +1,5 @@
 import { Utils, Web3 } from '@bitpay-labs/crypto-wallet-core';
 import { ObjectID } from 'bson';
-import { UpdateManyOptions } from 'mongodb';
 import { LoggifyClass } from '../../../../decorators/Loggify';
 import logger from '../../../../logger';
 import { MongoBound } from '../../../../models/base';
@@ -304,7 +303,7 @@ export class EVMTransactionModel extends BaseTransaction<IEVMTransaction> {
           blockHeight: SpentHeightIndicators.pending
         },
         { $set: { blockHeight: SpentHeightIndicators.conflicting, replacedByTxid: tx.txid } },
-        { writeConcern: { w: 0, j: false } } as UpdateManyOptions
+        { writeConcern: { w: 0, j: false } }
       );
     }
     return;
