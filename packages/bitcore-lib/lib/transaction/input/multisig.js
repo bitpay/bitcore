@@ -22,16 +22,16 @@ function MultiSigInput(input, pubkeys, threshold, signatures, opts) {
   if (opts.noSorting) {
     this.publicKeys = pubkeys;
   } else {
-    this.publicKeys = [...pubkeys].sort(function(a, b) {
+    this.publicKeys = pubkeys.toSorted((a, b) => {
       const aHex = a.toString('hex');
       const bHex = b.toString('hex');
       if (aHex < bHex) {
         return -1;
-      }
-      if (aHex > bHex) {
+      } else if (aHex > bHex) {
         return 1;
+      } else {
+        return 0;
       }
-      return 0;
     });
   }
   $.checkState(Script.buildMultisigOut(this.publicKeys, threshold).equals(this.output.script),

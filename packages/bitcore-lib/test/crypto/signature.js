@@ -258,7 +258,7 @@ describe('Signature', function() {
           const vector = set[i];
           if (!JSUtil.isHexa(vector)) {
             // non-hex strings are ignored
-            return;
+            continue;
           }
           it('should be ' + (expected ? '' : 'in') + 'valid for fixture #' + i, function() {
             const sighex = vector;

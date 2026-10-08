@@ -1,5 +1,6 @@
 'use strict';
 /* jshint unused: false */
+require('chai').should();
 const bitcore = require('../../..');
 
 const Transaction = bitcore.Transaction;

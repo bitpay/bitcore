@@ -51,11 +51,10 @@ function Unit(amount, code) {
 
   this._value = this._from(amount, code);
 
-  const self = this;
   // Enumerable getters per unit name (e.g. instance.BTC → this.to('BTC')).
   for (const key of Object.keys(UNITS)) {
-    Object.defineProperty(self, key, {
-      get: function() { return self.to(key); },
+    Object.defineProperty(this, key, {
+      get: () => this.to(key),
       enumerable: true,
     });
   }

@@ -229,10 +229,6 @@ Output.prototype.add = function(depth, script, leafVersion, track = true) {
 
 
 Output.prototype._insertNode = function(node, depth) {
-  // FIXME: This helper is currently inconsistent with the state initialized above:
-  // it reads `_branch` / `_nodes`, but the taproot constructor path initializes `branch`,
-  // and `m_branch` below is undefined. If this path is ever revived, it likely needs a full
-  // pass rather than an isolated lint fix.
   $.checkArgument(depth >= 0 && depth <= Interpreter.TAPROOT_CONTROL_MAX_NODE_COUNT, 'invalid depth');
   /* We cannot insert a leaf at a lower depth while a deeper branch is unfinished. Doing
    * so would mean the Add() invocations do not correspond to a DFS traversal of a

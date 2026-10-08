@@ -1,5 +1,6 @@
 'use strict';
 /* jshint unused: false */
+require('chai').should();
 const bitcore = require('../../..');
  
 const Transaction = bitcore.Transaction;
@@ -35,6 +36,42 @@ describe('MultiSigScriptHashInput', function() {
     script: new Script(witnessAddress),
     satoshis: 1000000
   };
+
+  it('sorts objects, hex strings, buffers, and mixed keys without mutating caller arrays', function() {
+    const expected = [public2, public3, public1].map(key => key.toString());
+    const representations = [
+      [public1, public2, public3],
+      expected,
+      [public1, public2, public3].map(key => key.toBuffer()),
+      [public1.toString(), public2, public3.toBuffer()]
+    ];
+    const permutations = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
+    for (const outputData of [output, witnessOutput]) {
+      for (const keys of representations) {
+        for (const permutation of permutations) {
+          const pubkeys = permutation.map(index => keys[index]);
+          const original = [...pubkeys];
+          const input = new MultiSigScriptHashInput({ output: outputData, script: Script.empty() }, pubkeys, 2);
+          input.publicKeys.map(key => key.toString('hex')).should.deep.equal(expected);
+          pubkeys.should.deep.equal(original);
+        }
+      }
+    }
+  });
+
+  it('orders Buffer keys by their bytes rather than decoded text', function() {
+    const first = Buffer.from('02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5', 'hex');
+    const second = Buffer.from('02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e', 'hex');
+    const pubkeys = [first, second];
+    const redeemScript = Script.buildMultisigOut(pubkeys, 2);
+    const scripts = [Script.buildScriptHashOut(redeemScript), Script.buildWitnessMultisigOutFromScript(redeemScript)];
+    for (const script of scripts) {
+      const outputData = { script, satoshis: 1000000 };
+      const input = new MultiSigScriptHashInput({ output: outputData, script: Script.empty() }, pubkeys, 2);
+      input.publicKeys.should.deep.equal([first, second]);
+      pubkeys.should.deep.equal([first, second]);
+    }
+  });
 
   it('can count missing signatures', function() {
     const transaction = new Transaction()

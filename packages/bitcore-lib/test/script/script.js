@@ -730,6 +730,34 @@ describe('Script', function() {
       s.toString().should.equal('OP_2 33 0x021f2f6e1e50cb6a953935c3601284925decd3fd21bc445712576873fb8c6ebc18 33 0x022df8750480ad5b26950b25c7ba79d3e37d75f640f8e5d9bcd5b150a0f85014da 33 0x03e3818b65bcc73a7d64064106a859cc1a5a728c4345ff0b641209fba0d90de6e9 OP_3 OP_CHECKMULTISIG');
       s.isMultisigOut().should.equal(true);
     });
+    it('preserves key order across representations and leaves caller arrays unchanged', function() {
+      const expected = [pubKeyHexes[2], pubKeyHexes[0], pubKeyHexes[1]];
+      const representations = [
+        sortkeys,
+        pubKeyHexes.slice(0, 3),
+        sortkeys.map(key => key.toBuffer()),
+        [sortkeys[0], pubKeyHexes[1], sortkeys[2].toBuffer()]
+      ];
+      const permutations = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
+      for (const keys of representations) {
+        for (const permutation of permutations) {
+          const publicKeys = permutation.map(index => keys[index]);
+          const original = [...publicKeys];
+          const script = Script.buildMultisigOut(publicKeys, 2);
+          expect(script.chunks.slice(1, -2).map(chunk => chunk.buf.toString('hex'))).to.deep.equal(expected);
+          expect(publicKeys).to.deep.equal(original);
+        }
+      }
+    });
+    it('orders compressed and uncompressed keys by their serialized bytes', function() {
+      const first = sortkeys[0];
+      const second = sortkeys[1];
+      const firstUncompressed = new PublicKey(first.point, { compressed: false });
+      const secondUncompressed = new PublicKey(second.point, { compressed: false });
+      const script = Script.buildMultisigOut([secondUncompressed, second, firstUncompressed, first], 2);
+      const expected = [first, second, firstUncompressed, secondUncompressed].map(key => key.toString());
+      expect(script.chunks.slice(1, -2).map(chunk => chunk.buf.toString('hex'))).to.deep.equal(expected);
+    });
     it('should fail when number of required signatures is greater than number of pubkeys', function() {
       expect(sortkeys.length).to.equal(3);
       expect(function() {

@@ -2,7 +2,7 @@
 
 const bs58 = require('bs58');
 
-const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'.split('');
+const ALPHABET = new Set('123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz');
 
 const Base58 = function Base58(obj) {
   /* jshint maxcomplexity: 8 */
@@ -28,16 +28,21 @@ Base58.validCharacters = function validCharacters(chars) {
   if (chars == null) {
     return true;
   }
-  if (typeof chars !== 'string') {
-    // Backwards compat: lodash _.map on non-string primitives (number, boolean, etc.) yields [].
-    // Boxed strings must be unwrapped: lodash maps each character of String objects.
-    if (chars instanceof String) {
-      chars = chars.valueOf();
-    } else {
-      return true;
+  const length = chars.length;
+  // is array-like
+  if (
+    typeof chars !== 'function' &&
+    Number.isSafeInteger(length) &&
+    length >= 0
+  ) {
+    for (let i = 0; i < length; i++) {
+      if (!ALPHABET.has(chars[i])) {
+        return false;
+      }
     }
+    return true;
   }
-  return Array.prototype.every.call(chars, char => ALPHABET.includes(char));
+  return Object.values(Object(chars)).every(char => ALPHABET.has(char));
 };
 
 Base58.prototype.set = function(obj) {

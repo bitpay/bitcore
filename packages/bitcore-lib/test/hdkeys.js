@@ -10,7 +10,9 @@
 /* jshint maxstatements: 100 */
 /* jshint unused: false */
 
-const expect = require('chai').expect;
+const chai = require('chai');
+chai.should();
+const expect = chai.expect;
 const sinon = require('sinon');
 const bitcore = require('..');
 

@@ -811,18 +811,8 @@ Script.buildMultisigOut = function(publicKeys, threshold, opts) {
   publicKeys = publicKeys.map(PublicKey);
   let sorted = publicKeys;
   if (!opts.noSorting) {
-    // avoid mutating input
-    sorted = [...publicKeys].sort(function(a, b) {
-      const aHex = a.toString('hex');
-      const bHex = b.toString('hex');
-      if (aHex < bHex) {
-        return -1;
-      }
-      if (aHex > bHex) {
-        return 1;
-      }
-      return 0;
-    });
+    // base comparator uses string comparison - PublicKey.toString() converts to lowercase hex strings
+    sorted = publicKeys.toSorted();
   }
   for (let i = 0; i < sorted.length; i++) {
     const publicKey = sorted[i];
@@ -850,7 +840,7 @@ Script.buildWitnessMultisigOutFromScript = function(script) {
  * @param {PublicKey[]} pubkeys list of all public keys controlling the output
  * @param {number} threshold amount of required signatures to spend the output
  * @param {Array} signatures and array of signature buffers to append to the script
- * @param {Object=} _opts
+ * @param {Object=} opts
  * @param {boolean=} opts.noSorting don't sort the given public keys before creating the script (false by default)
  * @param {Script=} opts.cachedMultisig don't recalculate the redeemScript
  *

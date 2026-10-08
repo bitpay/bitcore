@@ -29,6 +29,27 @@ describe('Base58', function() {
     Base58.validCharacters('!@#%^$&*()\\').should.equal(false);
   });
 
+  it('validates array elements and object values', function() {
+    Base58.validCharacters(['1', 'A']).should.equal(true);
+    Base58.validCharacters(['0']).should.equal(false);
+    Base58.validCharacters({ first: '1', second: 'A' }).should.equal(true);
+    Base58.validCharacters({ char: '0' }).should.equal(false);
+  });
+
+  it('validates array-like inputs by index, including missing elements', function() {
+    Base58.validCharacters(Array(1)).should.equal(false);
+    Base58.validCharacters({ 0: '1', length: 1, extra: '0' }).should.equal(true);
+    Base58.validCharacters({ length: 1 }).should.equal(false);
+  });
+
+  it('preserves empty collections and validates boxed strings', function() {
+    [null, undefined, 42, true, '', [], {}].forEach(function(chars) {
+      Base58.validCharacters(chars).should.equal(true);
+    });
+    Base58.validCharacters(new String('1A')).should.equal(true);
+    Base58.validCharacters(new String('0')).should.equal(false);
+  });
+
   it('should make an instance without "new"', function() {
     var b58 = Base58();
     should.exist(b58);

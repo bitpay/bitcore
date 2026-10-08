@@ -967,13 +967,12 @@ Transaction.prototype._getOutputAmount = function() {
  */
 Transaction.prototype._getInputAmount = function() {
   if (this._inputAmount == null) {
-    this._inputAmount = 0;
-    for (const input of this.inputs || []) {
+    this._inputAmount = (this.inputs || []).reduce((amt, input) => {
       if (input.output == null) {
         throw new errors.Transaction.Input.MissingPreviousOutput();
       }
-      this._inputAmount += input.output.satoshis;
-    }
+      return amt + input.output.satoshis;
+    }, 0);
   }
   return this._inputAmount;
 };

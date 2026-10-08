@@ -72,7 +72,7 @@ function HDPrivateKey(arg) {
 HDPrivateKey.isValidPath = function(arg, hardened) {
   if (typeof arg === 'string') {
     const indexes = HDPrivateKey._getDerivationIndexes(arg);
-    return indexes !== null && indexes.every(index => HDPrivateKey.isValidPath(index));
+    return Array.isArray(indexes) && indexes.every(index => HDPrivateKey.isValidPath(index));
   }
 
   if (typeof arg === 'number') {
