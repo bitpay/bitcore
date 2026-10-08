@@ -119,8 +119,11 @@ export class Utils {
 
     const pub = new PublicKey(pubKey);
     const flattenedMessage = Array.isArray(message) ? message.join(',') : message;
-    const hash = this.hashMessage(flattenedMessage);
     try {
+      // hashMessage rejects an empty message, which an array argument reaches by being empty or by holding
+      // only empty strings. A message we cannot hash is a message we cannot verify, so report it as such
+      // instead of throwing at callers who are asking a yes or no question.
+      const hash = this.hashMessage(flattenedMessage);
       const sig = new crypto.Signature.fromString(signature);
       return crypto.ECDSA.verify(hash, sig, pub, { endian: 'little' });
     } catch {

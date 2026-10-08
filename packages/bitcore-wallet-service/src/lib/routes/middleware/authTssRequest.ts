@@ -35,7 +35,7 @@ export function authTssRequest(): express.RequestHandler {
       if (req.path.includes('/tss/keygen/')) {
         session = await storage.fetchTssKeyGenSession({ id });
         partyId = session?.participants.indexOf(copayerId);
-        pubKey = partyId > -1 ? session.rounds[0][partyId].messages.publicKey : null;
+        pubKey = partyId > -1 ? session.rounds[0].find(r => r.fromPartyId === partyId)?.messages.publicKey : null;
       } else if (req.path.includes('/tss/sign/')) {
         session = await storage.fetchTssSigSession({ id });
         partyId = session?.participants.find(p => p.copayerId === copayerId)?.partyId;

@@ -3425,6 +3425,10 @@ export class API extends EventEmitter {
       throw new Error('Could not recognize old version');
     }
 
+    v1 = { ...v1 };
+    v1.derivationStrategy = v1.derivationStrategy ?? Constants.DERIVATION_STRATEGIES.BIP45;
+    v1.compliantDerivation = v1.compliantDerivation ?? false;
+
     let k: Key;
     if (v1.xPrivKey || v1.xPrivKeyEncrypted) {
       k = new Key({ seedData: v1, seedType: 'objectV1' });
@@ -4077,10 +4081,6 @@ export class API extends EventEmitter {
 
   async simplexSellPaymentRequest(data) {
     return this.request.post('/v1/service/simplex/sellPaymentRequest', data);
-  }
-
-  async simplexGetEvents(data) {
-    return this.request.get(`/v1/service/simplex/events/?env=${data.env}`);
   }
 
   async thorswapGetSwapQuote(data) {
