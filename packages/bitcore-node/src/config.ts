@@ -97,7 +97,14 @@ const Config = function(): ConfigType {
       socket: {
         bwsKeys: []
       },
-      storage: {}
+      storage: {},
+      walletStats: {
+        disabled: true,
+        api: {
+          disabled: true,
+          authKeys: []
+        }
+      }
     },
     externalProviders: {
       moralis: {

@@ -4,6 +4,12 @@ import { ReadableWithEventPipe, TransformWithEventPipe } from '../../../../utils
 
 
 export class ExternalApiStream extends ReadableWithEventPipe {
+  static DEFAULT_REQUEST_TIMEOUT_MS = 90000;
+  static DEFAULT_MAX_PAGES = 1000;
+  // Page size for unbounded wallet history. The cap above is in pages, so this sets the
+  // per-address ceiling (100k rows); the old default of 10 rows put it at 10k.
+  static WALLET_PAGE_SIZE = 100;
+
   url: string;
   headers: any;
   cursor: string | null;
@@ -12,6 +18,8 @@ export class ExternalApiStream extends ReadableWithEventPipe {
   limit?: number;
   paging?: number;
   transform?: any;
+  timeout: number;
+  isDefaultCap: boolean;
 
   constructor(url, headers, args) {
     super({ objectMode: true });
@@ -22,19 +30,30 @@ export class ExternalApiStream extends ReadableWithEventPipe {
     this.results = 0; // Result count
 
     this.limit = args?.limit; // Results limit across all pages
-    this.paging = args?.paging; // Total pages to retrieve
+    // Total pages to retrieve. With neither an explicit paging nor limit bound, an external
+    // provider that keeps returning cursors would be paginated forever — cap it.
+    this.isDefaultCap = args?.paging == null && !args?.limit;
+    this.paging = args?.paging ?? (args?.limit ? undefined : ExternalApiStream.DEFAULT_MAX_PAGES);
     this.transform = args?.transform; // Function to transform results data
+    this.timeout = args?.timeout ?? ExternalApiStream.DEFAULT_REQUEST_TIMEOUT_MS; // Per-request timeout; a stalled provider response errors instead of hanging the stream
   }
 
   async _read() {
     try {
       // End stream if page limit is reached
       if (this.paging && this.page >= this.paging) {
+        // Reaching the cap means the last page still had a cursor. Ending normally here
+        // would hand the caller a truncated history that looks complete.
+        if (this.isDefaultCap) {
+          this.emit('error', new Error(`External API stream hit the page cap (${this.paging} pages) with more results available`));
+          return;
+        }
         this.push(null);
+        return;
       }
 
       const urlWithCursor = this.cursor ? `${this.url}&cursor=${this.cursor}` : this.url;
-      const response = await axios.get(urlWithCursor, { headers: this.headers });
+      const response = await axios.get(urlWithCursor, { headers: this.headers, timeout: this.timeout });
 
       if (response?.data?.result?.length > 0) {
         for (const result of response.data.result) {
