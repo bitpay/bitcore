@@ -3,6 +3,7 @@ import 'source-map-support/register';
 import logger from '../logger';
 import { loadModules } from '../modules';
 import { Api } from '../services/api';
+import { Config } from '../services/config';
 import { Event } from '../services/event';
 import { Storage } from '../services/storage';
 import { Worker } from '../services/worker';
@@ -57,6 +58,10 @@ const stop = async () => {
     await service.stop();
   }
 
+  if (Config.anyEVMChain()) {
+    const { BaseEVMStateProvider } = await import('../providers/chain-state/evm/api/csp');
+    BaseEVMStateProvider.teardownRpcs();
+  }
   if (!cluster.isPrimary) {
     process.removeAllListeners();
   }
