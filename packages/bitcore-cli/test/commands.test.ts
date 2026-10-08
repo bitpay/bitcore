@@ -3,10 +3,10 @@ import assert from 'assert';
 import { getCommands } from '../src/cli-commands';
 import { bitcoreLogo } from '../src/constants';
 import type { IWallet } from '../types/wallet';
-import type { ICliOptions } from '../types/cli';
+import type { ICliWalletOptions } from '../types/cli';
 
 describe('Option: --command', function() {
-  const COMMANDS = getCommands({ wallet: {} as IWallet, opts: { command: 'any' } as ICliOptions });
+  const COMMANDS = getCommands({ wallet: {} as IWallet, opts: { command: 'any' } as ICliWalletOptions });
 
   describe('NEW', function() {
     this.timeout(3000);
