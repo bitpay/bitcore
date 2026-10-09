@@ -46,8 +46,8 @@ export class TssRouter {
         const { maxWaitTime } = req.query as { [key: string]: string };
         const copayerId = req.headers['x-identity'];
         if (round === 'secret') {
-          const secret = await TssKeyGen.getBwsJoinSecret({ id, copayerId });
-          return res.json({ secret });
+          const { secret, secrets } = await TssKeyGen.getBwsJoinSecret({ id, copayerId });
+          return res.json({ secret, secrets });
         }
 
         // Validate access and fetch session before committing to a streaming response, so that errors like
@@ -90,9 +90,9 @@ export class TssRouter {
     router.post('/v1/tss/keygen/:id/secret', authTssRequest(), async function(req, res) {
       try {
         const id = req.params.id;
-        const { secret } = req.body;
+        const { secret, secrets } = req.body;
         const copayerId = req.headers['x-identity'];
-        await TssKeyGen.storeBwsJoinSecret({ id, secret, copayerId });
+        await TssKeyGen.storeBwsJoinSecret({ id, secret, secrets, copayerId });
         return res.send();
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
@@ -103,8 +103,8 @@ export class TssRouter {
       try {
         const id = req.params.id;
         const copayerId = req.headers['x-identity'];
-        const secret = await TssKeyGen.getBwsJoinSecret({ id, copayerId });
-        return res.json({ secret });
+        const { secret, secrets } = await TssKeyGen.getBwsJoinSecret({ id, copayerId });
+        return res.json({ secret, secrets });
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
       }

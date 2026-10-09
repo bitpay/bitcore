@@ -1295,8 +1295,8 @@ export class WalletService implements IWalletService {
 
         if (wallet.tssKeyId) {
           const keySession = await storage.fetchTssKeyGenSession({ id: wallet.tssKeyId });
-          const copayerId = Copayer.xPubToCopayerId(opts.chain, opts.xPubKey);
-          if (!keySession.participants.includes(copayerId)) {
+          const chains = Utils.checkValueInCollection(wallet.chain, Constants.EVM_CHAINS) ? Object.values(Constants.EVM_CHAINS) : [wallet.chain];
+          if (!chains.some(chain => keySession.participants.includes(Copayer.xPubToCopayerId(chain, opts.xPubKey)))) {
             return cb(Errors.TSS_NON_PARTICIPANT);
           }
           return this._addCopayerToWallet(wallet, opts, cb);
@@ -4139,6 +4139,9 @@ export class WalletService implements IWalletService {
         return cb(err);
       }
       wallet.beRegistered = true;
+      if (wallet.tssKeyId) {
+        return this.storage.storeTssWalletRegistration(wallet, err => cb(err, true));
+      }
       return this.storage.storeWallet(wallet, err => cb(err, true));
     });
   }

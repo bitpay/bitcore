@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { Constants } from './common/constants';
+import { Utils } from './common/utils';
 import { Errors } from './errors/errordefinitions';
 import logger from './logger';
 import { TssKeyGenModel } from './model/tsskeygen';
@@ -487,15 +488,22 @@ class TssKeyGenClass {
     id: string;
     /** BWS join secret */
     secret: string;
+    secrets?: { [chain: string]: string };
     /** Copayer ID of the submitting party (must be the session creator) */
     copayerId: string;
   }) {
-    const { id, secret, copayerId } = params;
+    const { id, secret, secrets, copayerId } = params;
     if (!secret) {
       throw Errors.TSS_GENERIC_ERROR.withMessage('No BWS join secret provided');
     }
     if (typeof secret !== 'string') {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid BWS join secret provided');
+    }
+    if (secrets != null && (
+      typeof secrets !== 'object' ||
+      Object.entries(secrets).some(([chain, s]) => !Utils.checkValueInCollection(chain, Constants.EVM_CHAINS) || !s || typeof s !== 'string')
+    )) {
+      throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid BWS join secrets provided');
     }
     const storage = WalletService.getStorage();
     const session = await storage.fetchTssKeyGenSession({ id });
@@ -508,7 +516,7 @@ class TssKeyGenClass {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Only the session creator can store the BWS join secret');
     }
 
-    const result = await storage.storeTssKeyBwsJoinSecret({ id, secret });
+    const result = await storage.storeTssKeyBwsJoinSecret({ id, secret, secrets });
     if (!result.result.ok) {
       logger.error('Failed to store TSS key generation BWS join secret %o %o', id, result);
       throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS key generation BWS join secret');
@@ -521,7 +529,7 @@ class TssKeyGenClass {
     id: string;
     /** Copayer ID of the requesting party */
     copayerId: string;
-  }): Promise<string> {
+  }): Promise<{ secret: string; secrets: { [chain: string]: string } }> {
     const { id, copayerId } = params;
     const storage = WalletService.getStorage();
     const session = await storage.fetchTssKeyGenSession({ id });
@@ -534,7 +542,7 @@ class TssKeyGenClass {
     if (!session.bwsJoinSecret) {
       throw Errors.TSS_BWS_JOIN_SECRET_NOT_FOUND;
     }
-    return session.bwsJoinSecret;
+    return { secret: session.bwsJoinSecret, secrets: session.bwsJoinSecrets || {} };
   }
 };
 

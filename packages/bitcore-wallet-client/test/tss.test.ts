@@ -634,6 +634,76 @@ describe('TSS', function() {
         tss2.getTssKey().keychain.commonKeyChain.should.equal(session.sharedPublicKey);
       });
     });
+
+    describe('EVM chains', function() {
+      let server;
+      let baseUrl: string;
+      let tss0: TssKeyGen;
+      let tss1: TssKeyGen;
+      let tss2: TssKeyGen;
+
+      before(function(done) {
+        server = app.listen(0, '127.0.0.1', () => {
+          baseUrl = `http://127.0.0.1:${server.address().port}/bws/api`;
+          done();
+        });
+      });
+
+      after(function(done) {
+        server.close(done);
+      });
+
+      afterEach(function() {
+        tss0?.unsubscribe();
+        tss1?.unsubscribe();
+        tss2?.unsubscribe();
+      });
+
+      it(happyPath('should create and join a wallet for every chain with the same key'), async function() {
+        const partyKeys = [new Key({ seedType: 'new' }), new Key({ seedType: 'new' }), new Key({ seedType: 'new' })];
+        [tss0, tss1, tss2] = partyKeys.map(key => new TssKeyGen({
+          chain,
+          network,
+          baseUrl,
+          key
+        }));
+        await tss0.newKey({ m, n });
+        for (const [partyId, tss] of [[1, tss1], [2, tss2]] as const) {
+          await tss.joinKey({
+            code: tss0.createJoinCode({
+              partyId,
+              partyPubKey: partyKeys[partyId].createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
+            })
+          });
+        }
+
+        const created = [tss0, tss1, tss2].map(tss => new Promise<[any, any[]]>(resolve => tss.once('wallet', (wallet, chainWallets) => resolve([wallet, chainWallets]))));
+        for (const tss of [tss0, tss1, tss2]) {
+          tss.on('error', (e) => { should.not.exist(e?.message ?? e); });
+        }
+        tss0.subscribe({
+          timeout: 10,
+          walletName: 'evm account',
+          copayerName: 'party0',
+          chains: [{ chain: 'arb', coin: 'eth' }, { chain: 'matic', coin: 'matic' }]
+        });
+        tss1.subscribe({ timeout: 10, copayerName: 'party1' });
+        tss2.subscribe({ timeout: 10, copayerName: 'party2' });
+        const [[wallet0, chainWallets0], ...joined] = await Promise.all(created);
+
+        chainWallets0.map(w => [w.chain, w.coin]).should.deep.equal([['arb', 'eth'], ['matic', 'matic']]);
+        for (const [wallet, chainWallets] of joined) {
+          wallet.id.should.equal(wallet0.id);
+          chainWallets.map(w => w.id).should.deep.equal(chainWallets0.map(w => w.id));
+        }
+        for (const { id } of [wallet0, ...chainWallets0]) {
+          const wallet = await new Promise<any>((resolve, reject) => storage.fetchWallet(id, (err, w) => err ? reject(err) : resolve(w)));
+          wallet.tssKeyId.should.equal(tss0.id);
+          wallet.clientDerivedPublicKey.should.equal(tss0.getTssKey().getXPubKey(network));
+          wallet.copayers.length.should.equal(n);
+        }
+      });
+    });
   });
 
 
