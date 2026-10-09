@@ -776,6 +776,26 @@ export class Storage {
     );
   }
 
+  storeTssWalletRegistration(wallet, cb) {
+    this.db.collection(collections.WALLETS).updateOne(
+      {
+        id: wallet.id
+      },
+      {
+        $set: {
+          beRegistered: wallet.beRegistered,
+          beAuthPrivateKey2: wallet.beAuthPrivateKey2,
+          beAuthPublicKey2: wallet.beAuthPublicKey2
+        }
+      },
+      {
+        w: 1,
+        upsert: false
+      },
+      cb
+    );
+  }
+
   deregisterWallet(walletId, cb) {
     this.db.collection(collections.WALLETS).updateOne(
       {

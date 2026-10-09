@@ -1843,6 +1843,28 @@ describe('Wallet service', function() {
         should.exist(err);
         err.code.should.equal('TSS_NON_PARTICIPANT');
       });
+
+      it('should keep a copayer that joins while the wallet registers with the explorer', async function() {
+        const server = new WalletService();
+        const walletId = await createTssWallet(server, { coin: 'eth', chain: 'eth' });
+        await server.storage.db.collection('tss_keygen').updateOne(
+          { id: 'tss-evm-chains-test-session' },
+          { $push: { participants: Model.Copayer.xPubToCopayerId('eth', TestData.copayers[1].xPubKey_44H_0H_0H) } }
+        );
+        await joinTssWallet(server, walletId, { coin: 'eth', chain: 'eth' });
+        blockchainExplorer.register = sinon.stub().callsFake((wallet, cb) => {
+          joinTssWallet(new WalletService(), walletId, { coin: 'eth', chain: 'eth' }, TestData.copayers[1]).then(() => cb());
+        });
+
+        const wallet = await util.promisify(server.storage.fetchWallet).call(server.storage, walletId);
+        await util.promisify(server.syncWallet).call(server, wallet);
+
+        const stored = await util.promisify(server.storage.fetchWallet).call(server.storage, walletId);
+        stored.copayers.length.should.equal(2);
+        stored.beRegistered.should.equal(true);
+        stored.beAuthPrivateKey2.should.equal(wallet.beAuthPrivateKey2);
+        stored.beAuthPublicKey2.should.equal(wallet.beAuthPublicKey2);
+      });
     });
   });
 

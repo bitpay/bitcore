@@ -4139,6 +4139,9 @@ export class WalletService implements IWalletService {
         return cb(err);
       }
       wallet.beRegistered = true;
+      if (wallet.tssKeyId) {
+        return this.storage.storeTssWalletRegistration(wallet, err => cb(err, true));
+      }
       return this.storage.storeWallet(wallet, err => cb(err, true));
     });
   }
