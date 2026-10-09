@@ -315,7 +315,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
         let feerate;
         if (txType?.toString() === '2') {
           const { rpc } = await this.getWeb3(network, { type: 'historical' });
-          feerate = await rpc.estimateFee({ nBlocks: target, txType: txType?.toString() });
+          // RPC type-2 estimates are BigInt; the Mongo cache and API use numbers.
+          feerate = Number(await rpc.estimateFee({ nBlocks: target, txType: txType?.toString() }));
         } else {
           const txs = await EVMTransactionStorage.collection
             .find({ chain, network, blockHeight: { $gt: 0 } })

@@ -1635,6 +1635,14 @@ export class API extends EventEmitter {
       feeLevel?: 'priority' | 'normal' | 'economy' | 'superEconomy';
       /** Specify the fee per kilobyte for this tx (in satoshis). */
       feePerKb?: number | bigint;
+      /** Numeric EVM transaction type (0 or 2 for gas fee overrides), or named XRP transaction type. */
+      txType?: number | string;
+      /** Type 0 gas price in wei. Overrides feeLevel; cannot be combined with fee, feePerKb, or sendMax. */
+      gasPrice?: number;
+      /** Type 2 maximum fee per gas in wei; requires priorityGasFee. Cannot be combined with gasPrice, fee, feePerKb, or sendMax. */
+      maxGasFee?: number;
+      /** Positive type 2 priority fee per gas in wei; requires maxGasFee and must not exceed it. */
+      priorityGasFee?: number;
       /** Use this address as the change address for the tx. The address should belong to the wallet. In the case of singleAddress wallets, the first main address will be used. */
       changeAddress?: string;
       /** Send maximum amount of funds that make sense under the specified fee/feePerKb conditions. */
@@ -4394,4 +4402,3 @@ export interface PublishedTxp extends Txp {
   tokenAddress?: string;
   txType?: number; // or string?
 };
-
