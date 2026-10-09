@@ -839,6 +839,45 @@ describe('TSS', function() {
         });
       });
     });
+
+    describe('/v1/tss/keygen/:id/secret', function() {
+      const path = `/v1/tss/keygen/${SESSION_ID}/secret`;
+
+      beforeEach(async function() {
+        await createKeyGenSession({ joined: [1, 2] });
+      });
+
+      it('should return the join secrets of the other EVM chains to every participant', async function() {
+        const secrets = { arb: 'arb-secret', base: 'base-secret', matic: 'matic-secret', op: 'op-secret' };
+        const res = await post(path, { secret: 'eth-secret', secrets }, partyAuth(0));
+        res.status.should.equal(200);
+
+        for (const partyId of [1, 2]) {
+          const res = await get(path, partyAuth(partyId));
+          res.status.should.equal(200);
+          res.body.should.deep.equal({ secret: 'eth-secret', secrets });
+        }
+      });
+
+      it('should return no chain secrets when only the wallet secret was stored', async function() {
+        const res = await post(path, { secret: 'eth-secret' }, partyAuth(0));
+        res.status.should.equal(200);
+
+        const getRes = await get(path, partyAuth(1));
+        getRes.status.should.equal(200);
+        getRes.body.should.deep.equal({ secret: 'eth-secret', secrets: {} });
+      });
+
+      it('should reject chain secrets that are not keyed by EVM chain with a non-empty secret', async function() {
+        for (const secrets of [{ btc: 'btc-secret' }, { arb: '' }, { arb: 1 }, 1]) {
+          const res = await post(path, { secret: 'eth-secret', secrets }, partyAuth(0));
+          expectError(res, 400, 'TSS_GENERIC_ERROR', 'Invalid BWS join secrets provided');
+        }
+
+        const res = await get(path, partyAuth(1));
+        expectError(res, 400, 'TSS_BWS_JOIN_SECRET_NOT_FOUND');
+      });
+    });
   });
 
   describe('Signing', function() {
