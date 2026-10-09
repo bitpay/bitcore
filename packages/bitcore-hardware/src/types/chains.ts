@@ -1,4 +1,4 @@
-export type UtxoChainType = 'BTC' | 'BCH' | 'DOGE' | 'LTC';
+export type UtxoChainType = 'BTC' | 'BTC_LEGACY' | 'BCH' | 'DOGE' | 'LTC';
 export type EvmChainType = 'ETH';
 export type SolChainType = 'SOL';
 export type ChainType = UtxoChainType | EvmChainType | SolChainType;

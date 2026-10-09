@@ -6,6 +6,7 @@ import { UtxoChainType } from './types/chains.js';
 class UtilClass {
   libs: Record<UtxoChainType, BitcoreLib> = {
     BTC: BitcoreLib,
+    BTC_LEGACY: BitcoreLib,
     BCH: BitcoreLibCash,
     DOGE: BitcoreLibDoge,
     LTC: BitcoreLibLtc

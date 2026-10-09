@@ -8,10 +8,10 @@ if (!Ledger.isValidChain(chain)) {
   throw new Error(`Invalid chain: ${chain}`);
 }
 
-const ledger = new Ledger();
+const ledger = new Ledger({ transport: 'speculos' });
 await ledger.connect();
 
 console.log('Awaiting approval from your ledger...');
-console.log(await ledger.getPublicKey({ chain }));
+console.log(await ledger.getPublicKey({ chain: 'BTC_LEGACY' }));
 await ledger.disconnect();
 process.exit(0);

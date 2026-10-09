@@ -1,4 +1,5 @@
 import BitcoinCashModule from './bch.js';
+import BitcoinLegacyModule from './btc-legacy.js';
 import BitcoinModule from './btc.js';
 import DogeModule from './doge.js';
 import EthereumModule from './eth.js';
@@ -10,6 +11,7 @@ export {
   BitcoinCashModule,
   DogeModule,
   LitecoinModule,
+  BitcoinLegacyModule,
   EthereumModule,
   SolanaModule
 };
