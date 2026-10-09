@@ -1,10 +1,8 @@
 'use strict';
 
-const buffer = require('buffer');
 const bs58 = require('bs58');
-const _ = require('lodash');
 
-const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'.split('');
+const ALPHABET = new Set('123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz');
 
 const Base58 = function Base58(obj) {
   /* jshint maxcomplexity: 8 */
@@ -23,10 +21,28 @@ const Base58 = function Base58(obj) {
 };
 
 Base58.validCharacters = function validCharacters(chars) {
-  if (buffer.Buffer.isBuffer(chars)) {
+  if (Buffer.isBuffer(chars)) {
     chars = chars.toString();
   }
-  return _.every(_.map(chars, function(char) { return _.includes(ALPHABET, char); }));
+  // Backwards compat: lodash _.map(null/undefined) yields [], _.every([]) is true.
+  if (chars == null) {
+    return true;
+  }
+  const length = chars.length;
+  // is array-like
+  if (
+    typeof chars !== 'function' &&
+    Number.isSafeInteger(length) &&
+    length >= 0
+  ) {
+    for (let i = 0; i < length; i++) {
+      if (!ALPHABET.has(chars[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+  return Object.values(Object(chars)).every(char => ALPHABET.has(char));
 };
 
 Base58.prototype.set = function(obj) {
@@ -35,7 +51,7 @@ Base58.prototype.set = function(obj) {
 };
 
 Base58.encode = function(buf) {
-  if (!buffer.Buffer.isBuffer(buf)) {
+  if (!Buffer.isBuffer(buf)) {
     throw new Error('Input should be a buffer');
   }
   return bs58.encode(buf);

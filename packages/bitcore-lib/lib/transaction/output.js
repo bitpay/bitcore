@@ -1,6 +1,5 @@
 'use strict';
 
-const _ = require('lodash');
 const BN = require('../crypto/bn');
 const TaggedHash = require('../crypto/taggedhash');
 const BufferWriter = require('../encoding/bufferwriter');
@@ -17,13 +16,13 @@ function Output(args) {
   if (!(this instanceof Output)) {
     return new Output(args);
   }
-  if (_.isObject(args)) {
+  if (typeof args === 'object' && args !== null) {
     this.satoshis = args.satoshis;
     if (bufferUtil.isBuffer(args.script)) {
       this.setScriptFromBuffer(args.script);
     } else {
       let script;
-      if (_.isString(args.script) && JSUtil.isHexa(args.script)) {
+      if (typeof args.script === 'string' && JSUtil.isHexa(args.script)) {
         script = Buffer.from(args.script, 'hex');
       } else {
         script = args.script;
@@ -81,7 +80,7 @@ Object.defineProperty(Output.prototype, 'satoshis', {
     if (num instanceof BN) {
       this._satoshisBN = num;
       this._satoshis = num.toNumber();
-    } else if (_.isString(num)) {
+    } else if (typeof num === 'string') {
       this._satoshis = parseInt(num);
       this._satoshisBN = BN.fromNumber(this._satoshis);
     } else {
@@ -143,7 +142,7 @@ Output.prototype.setScript = function(script) {
     this._scriptBuffer = script.toBuffer();
     this._script = script;
     this._script._isOutput = true;
-  } else if (_.isString(script)) {
+  } else if (typeof script === 'string') {
     this._script = Script.fromString(script);
     this._scriptBuffer = this._script.toBuffer();
     this._script._isOutput = true;
@@ -206,6 +205,7 @@ Output.prototype.calculateSize = function() {
  * @param {Boolean} track If true, the leaf will be included in GetSpendData() output
  */
 Output.prototype.add = function(depth, script, leafVersion, track = true) {
+  // eslint-disable-next-line no-bitwise
   $.checkArgument((leafVersion & ~Interpreter.TAPROOT_LEAF_MASK) === 0, 'invalid leafVersion');
   if (!this.isValid) {
     return;

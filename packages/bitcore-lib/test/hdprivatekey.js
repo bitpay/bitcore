@@ -1,14 +1,11 @@
 'use strict';
 /* jshint unused: false */
-const _ = require('lodash');
-const assert = require('assert');
 const should = require('chai').should();
 const expect = require('chai').expect;
 const bitcore = require('..');
 
 const errors = bitcore.errors;
 const hdErrors = errors.HDPrivateKey;
-const buffer = require('buffer');
 
 const Networks = bitcore.Networks;
 const BufferUtil = bitcore.util.buffer;
@@ -87,10 +84,9 @@ describe('HDPrivate key interface', function() {
   });
 
   it('builds a json keeping the structure and same members', function() {
-    assert(_.isEqual(
-      new HDPrivateKey(json).toJSON(),
+    expect(new HDPrivateKey(json).toJSON()).to.deep.equal(
       new HDPrivateKey(xprivkey).toJSON()
-    ));
+    );
   });
 
   describe('instantiation', function() {
@@ -254,13 +250,13 @@ describe('HDPrivate key interface', function() {
       'm/12asd',
       'm/1/2//3'
     ];
-
-    invalid.forEach(function(datum) {
+    
+    for (const datum of invalid) {
       it('rejects illegal path ' + datum, function() {
         HDPrivateKey.isValidPath(datum).should.equal(false);
         expect(HDPrivateKey._getDerivationIndexes(datum)).to.equal(null);
       });
-    });
+    }
 
     it('generates deriving indexes correctly', function() {
       let indexes;
@@ -304,9 +300,9 @@ describe('HDPrivate key interface', function() {
     it('toObject leaves no Buffer instances', function() {
       const privKey = new HDPrivateKey(xprivkey);
       const object = privKey.toObject();
-      _.each(_.values(object), function(value) {
+      for (const value of Object.values(object)) {
         expect(BufferUtil.isBuffer(value)).to.equal(false);
-      });
+      }
     });
     it('roundtrips toObject', function() {
       expect(HDPrivateKey.fromObject(new HDPrivateKey(xprivkey).toObject()).xprivkey).to.equal(xprivkey);
