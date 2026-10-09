@@ -6255,10 +6255,11 @@ describe('Wallet service', function() {
 
     for (const scenario of [
       { name: 'type 0', fees: { gasPrice: 3000000000 }, tokenAddress: undefined },
+      { name: 'type 0 token', fees: { gasPrice: 3000000000 }, tokenAddress: TOKENS[0] },
       { name: 'type 2 native', fees: { txType: 2, maxGasFee: 3000000000, priorityGasFee: 1000000000 }, tokenAddress: undefined },
       { name: 'type 2 token', fees: { txType: 2, maxGasFee: 3000000000, priorityGasFee: 1000000000 }, tokenAddress: TOKENS[0] }
     ]) {
-      it(`should preserve ${scenario.name} overrides through publication and signing`, async function() {
+      it(`should preserve ${scenario.name} overrides through publication, signing and broadcast`, async function() {
         const feeLevels = sinon.stub(server, 'getFeeLevels').callsArgWith(1, new Error('Unexpected fee estimation'));
         const maxFee = sinon.stub(server, 'estimateFee').rejects(new Error('Unexpected fee estimation'));
         const priorityFee = sinon.stub(server, 'estimatePriorityFee').rejects(new Error('Unexpected fee estimation'));
@@ -6271,8 +6272,16 @@ describe('Wallet service', function() {
           txProposalId: txp.id,
           signatures: helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H)
         });
+        const accepted = await util.promisify(server.getTx).call(server, { txProposalId: txp.id });
+        accepted.status.should.equal('accepted');
+        const signedRaw = accepted.getRawTx();
+        helpers.stubBroadcast(accepted.txid);
+        await util.promisify(server.broadcastTx).call(server, { txProposalId: txp.id });
+        blockchainExplorer.broadcast.calledOnce.should.be.true;
+        blockchainExplorer.broadcast.firstCall.args[0].should.deep.equal(signedRaw);
         const stored = await util.promisify(server.getTx).call(server, { txProposalId: txp.id });
-        stored.status.should.equal('accepted');
+        stored.status.should.equal('broadcasted');
+        stored.txid.should.equal(accepted.txid);
         should.not.exist(stored.feeLevel);
         stored.fee.should.equal(300000000000000);
         for (const [key, value] of Object.entries(scenario.fees)) {
