@@ -2,6 +2,7 @@
 
 import * as chai from 'chai';
 import 'chai/register-should';
+import * as crypto from 'crypto';
 import util from 'util';
 import { WalletService } from '../../../src/lib/server';
 import * as TestData from '../../testdata';
@@ -343,6 +344,96 @@ describe('Sardine integration', () => {
       config.sardine = undefined;
       try {
         await server.externalServices.sardine.sardineGetOrdersDetails(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Sardine missing credentials');
+      }
+    });
+  });
+
+  describe('#sardineHandleWebhook', () => {
+    const webhookSecret = 'sardineWebhookSecret1';
+    let body;
+
+    beforeEach(() => {
+      config.sardine.production.webhookSecret = webhookSecret;
+      body = {
+        eventType: 'processed',
+        order: {
+          id: 'order1',
+          status: 'Processed',
+          createdAt: '2024-01-01T00:00:00.000Z',
+          fiatCurrency: 'USD',
+          total: 100,
+          assetType: 'BTC',
+          userId: 'user1'
+        }
+      };
+      req = { headers: {}, body };
+    });
+
+    it('should verify and parse a valid webhook payload', () => {
+      const rawBody = JSON.stringify(body);
+      const sig = crypto.createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
+      req.headers['x-sardine-signature'] = sig;
+      const { event } = server.externalServices.sardine.sardineHandleWebhook(req);
+      event.partner.should.equal('sardine');
+      event.externalId.should.equal('order1');
+      event.status.should.equal('Processed');
+      event.eventName.should.equal('processed');
+      event.fiatAmount.should.equal(100);
+      event.fiatCurrency.should.equal('USD');
+      event.cryptoCurrency.should.equal('BTC');
+      event.userId.should.equal('user1');
+      event.env.should.equal('production');
+    });
+
+    it('should parse a flat (non-nested) payload when there is no order wrapper', () => {
+      delete config.sardine.production.webhookSecret;
+      req.body = {
+        id: 'order2',
+        status: 'complete',
+        createdAt: '2024-01-02T00:00:00.000Z',
+        fiatCurrency: 'EUR',
+        total: 50,
+        cryptoCurrency: 'ETH',
+        externalUserId: 'user2'
+      };
+      const { event } = server.externalServices.sardine.sardineHandleWebhook(req);
+      event.externalId.should.equal('order2');
+      event.fiatCurrency.should.equal('EUR');
+      event.cryptoCurrency.should.equal('ETH');
+      event.userId.should.equal('user2');
+    });
+
+    it('should throw if the signature does not match', () => {
+      const rawBody = JSON.stringify(body);
+      const sig = crypto.createHmac('sha256', 'wrongSecret').update(rawBody).digest('hex');
+      req.headers['x-sardine-signature'] = sig;
+      try {
+        server.externalServices.sardine.sardineHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Sardine webhook signature verification failed');
+      }
+    });
+
+    it('should not throw and skip verification if the signature header is missing, even with a secret configured', () => {
+      const { event } = server.externalServices.sardine.sardineHandleWebhook(req);
+      event.externalId.should.equal('order1');
+    });
+
+    it('should not throw and skip verification if no webhookSecret is configured', () => {
+      delete config.sardine.production.webhookSecret;
+      req.headers['x-sardine-signature'] = 'some-signature';
+      const { event } = server.externalServices.sardine.sardineHandleWebhook(req);
+      event.externalId.should.equal('order1');
+    });
+
+    it('should return error if sardine is commented in config', () => {
+      config.sardine = undefined;
+      try {
+        server.externalServices.sardine.sardineHandleWebhook(req);
         should.fail('should have thrown');
       } catch (err) {
         err.message.should.equal('Sardine missing credentials');

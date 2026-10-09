@@ -2,6 +2,7 @@
 
 import * as chai from 'chai';
 import 'chai/register-should';
+import * as crypto from 'crypto';
 import util from 'util';
 import { WalletService } from '../../../src/lib/server';
 import * as TestData from '../../testdata';
@@ -488,6 +489,118 @@ describe('Transak integration', () => {
         should.fail('should have thrown');
       } catch (err) {
         err.message.should.equal('Transak\'s request missing arguments');
+      }
+    });
+  });
+
+  describe('#transakHandleWebhook', () => {
+    const accessTokenSecret = 'transakAccessTokenSecret1';
+    let body;
+
+    function buildTransakJwt(payload, secret) {
+      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+      const payloadEncoded = Buffer.from(JSON.stringify(payload)).toString('base64url');
+      const signingInput = `${header}.${payloadEncoded}`;
+      const signature = crypto.createHmac('sha256', secret).update(signingInput).digest('base64url');
+      return `${signingInput}.${signature}`;
+    }
+
+    function fakeRefreshTokenRequest(secret) {
+      return {
+        post: (_url, _opts, cb) => cb(null, {
+          body: { data: { accessToken: secret, expiresAt: Math.floor(Date.now() / 1000) + 7 * 24 * 3600 } }
+        }),
+      };
+    }
+
+    beforeEach(() => {
+      server.externalServices.transak.request = fakeRefreshTokenRequest(accessTokenSecret);
+      const webhookData = {
+        id: 'order1',
+        status: 'COMPLETED',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-01T00:05:00.000Z',
+        fiatAmount: 100,
+        fiatCurrency: 'USD',
+        cryptoAmount: 0.002,
+        cryptoCurrency: 'BTC',
+        paymentOptionId: 'usd_bank_transfer',
+        walletAddress: 'bc1qxyz',
+        userId: 'user1'
+      };
+      body = { data: buildTransakJwt({ webhookData, eventID: 'ORDER_COMPLETED' }, accessTokenSecret) };
+      req = { headers: {}, body };
+    });
+
+    it('should verify and parse a valid webhook payload', async () => {
+      const { event } = await server.externalServices.transak.transakHandleWebhook(req);
+      event.partner.should.equal('transak');
+      event.externalId.should.equal('order1');
+      event.status.should.equal('COMPLETED');
+      event.eventName.should.equal('ORDER_COMPLETED');
+      event.updatedAt.should.equal('2024-01-01T00:05:00.000Z');
+      event.deliveryVersion.should.equal('2024-01-01T00:05:00.000Z');
+      event.fiatAmount.should.equal(100);
+      event.fiatCurrency.should.equal('USD');
+      event.cryptoAmount.should.equal(0.002);
+      event.cryptoCurrency.should.equal('BTC');
+      event.paymentMethod.should.equal('usd_bank_transfer');
+      event.walletAddress.should.equal('bc1qxyz');
+      event.userId.should.equal('user1');
+      event.env.should.equal('production');
+    });
+
+    it('should cache the access token and not call refresh-token again on a second webhook', async () => {
+      let callCount = 0;
+      server.externalServices.transak.request = {
+        post: (_url, _opts, cb) => {
+          callCount++;
+          return cb(null, { body: { data: { accessToken: accessTokenSecret, expiresAt: Math.floor(Date.now() / 1000) + 7 * 24 * 3600 } } });
+        },
+      };
+      await server.externalServices.transak.transakHandleWebhook(req);
+      const firstCallCount = callCount;
+      firstCallCount.should.be.greaterThan(0);
+      await server.externalServices.transak.transakHandleWebhook(req);
+      callCount.should.equal(firstCallCount);
+    });
+
+    it('should throw if the JWT signature does not match', async () => {
+      req.body = { data: buildTransakJwt({ webhookData: { id: 'order1' }, eventID: 'ORDER_COMPLETED' }, 'wrongSecret') };
+      try {
+        await server.externalServices.transak.transakHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Transak webhook signature verification failed');
+      }
+    });
+
+    it('should throw if the JWT data field is missing', async () => {
+      req.body = {};
+      try {
+        await server.externalServices.transak.transakHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Transak webhook missing JWT data field');
+      }
+    });
+
+    it('should skip verification and still parse if refresh-token fails for both envs', async () => {
+      server.externalServices.transak.request = {
+        post: (_url, _opts, cb) => cb(new Error('network error'), null),
+      };
+      const { event } = await server.externalServices.transak.transakHandleWebhook(req);
+      should.exist(event);
+      event.externalId.should.equal('order1');
+    });
+
+    it('should return error if transak is commented in config', async () => {
+      config.transak = undefined;
+      try {
+        await server.externalServices.transak.transakHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Transak missing credentials');
       }
     });
   });
