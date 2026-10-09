@@ -1773,6 +1773,77 @@ describe('Wallet service', function() {
         wallet.copayers.length.should.equal(0);
       });
     });
+
+    describe('TSS wallets (EVM chains)', function() {
+      const xPubKey = TestData.copayers[0].xPubKey_44H_0H_0H;
+
+      const createTssWallet = async (server: WalletService, chainOpts: { coin: string; chain: string }) => {
+        const session = TssKeyGenModel.create({
+          id: 'tss-evm-chains-test-session',
+          message: { partyId: 0, broadcastMessages: [], p2pMessages: [], publicKey: 'dummy', round: 0 },
+          n: 1,
+          copayerId: Model.Copayer.xPubToCopayerId('eth', xPubKey),
+          version: Defaults.TSS_KEYGEN_SCHEME_VERSION
+        });
+        session.sharedPublicKey = 'dummy-shared-public-key';
+        await server.storage.db.collection('tss_keygen').deleteMany({ id: session.id });
+        await server.storage.storeTssKeyGenSession({ doc: session });
+
+        return util.promisify(server.createWallet).call(server, {
+          name: 'tss wallet',
+          m: 1,
+          n: 1,
+          pubKey: TestData.keyPair.pub,
+          ...chainOpts,
+          tssKeyId: session.id,
+        });
+      };
+
+      const joinTssWallet = (server: WalletService, walletId: string, chainOpts: { coin: string; chain: string }, copayer = TestData.copayers[0]) => {
+        const copayerOpts: any = helpers.getSignedCopayerOpts({
+          walletId,
+          ...chainOpts,
+          name: 'copayer',
+          xPubKey: copayer.xPubKey_44H_0H_0H,
+          requestPubKey: copayer.pubKey_1H_0,
+        });
+        return new Promise<{ err: any; result: any }>(resolve => {
+          server.joinWallet(copayerOpts, (err, result) => resolve({ err, result }));
+        });
+      };
+
+      it('should let a keygen participant join the TSS wallet of another EVM chain', async function() {
+        const server = new WalletService();
+        const walletId = await createTssWallet(server, { coin: 'eth', chain: 'arb' });
+
+        const { err, result } = await joinTssWallet(server, walletId, { coin: 'eth', chain: 'arb' });
+
+        should.not.exist(err);
+        result.copayerId.should.equal(Model.Copayer.xPubToCopayerId('arb', xPubKey));
+      });
+
+      it('should reject a copayer that did not take part in the keygen from an EVM TSS wallet', async function() {
+        const server = new WalletService();
+        const walletId = await createTssWallet(server, { coin: 'eth', chain: 'arb' });
+
+        const { err, result } = await joinTssWallet(server, walletId, { coin: 'eth', chain: 'arb' }, TestData.copayers[1]);
+
+        should.not.exist(result);
+        should.exist(err);
+        err.code.should.equal('TSS_NON_PARTICIPANT');
+      });
+
+      it('should not accept an EVM keygen participant id on a non-EVM TSS wallet', async function() {
+        const server = new WalletService();
+        const walletId = await createTssWallet(server, { coin: 'btc', chain: 'btc' });
+
+        const { err, result } = await joinTssWallet(server, walletId, { coin: 'btc', chain: 'btc' });
+
+        should.not.exist(result);
+        should.exist(err);
+        err.code.should.equal('TSS_NON_PARTICIPANT');
+      });
+    });
   });
 
   describe('#removeWallet', function() {

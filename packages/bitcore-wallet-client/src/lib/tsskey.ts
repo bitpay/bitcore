@@ -194,6 +194,7 @@ export class TssKeyGen extends EventEmitter {
   #requestPrivateKey: BitcoreLib.PrivateKey;
   #subscriptionId: ReturnType<typeof setInterval>;
   #subscriptionRunning: boolean;
+  #chainWallets: any[] = [];
   id: string;
   chain: string;
   network: 'livenet' | 'testnet' | 'regtest';
@@ -493,8 +494,9 @@ export class TssKeyGen extends EventEmitter {
      * Only provided by party 0 (the session initiator).
      */
     createWalletOpts?: CreateWalletOpts;
+    chains?: Array<{ chain: string; coin: string }>;
   } = {}): NodeJS.Timeout {
-    const { timeout, iterHandler, walletName, copayerName, createWalletOpts } = params;
+    const { timeout, iterHandler, walletName, copayerName, createWalletOpts, chains } = params;
     $.checkArgument(
       this.partyId > 0 || 
       (this.partyId === 0 &&
@@ -569,7 +571,8 @@ export class TssKeyGen extends EventEmitter {
               wallet = await this.createWallet({
                 walletName,
                 copayerName,
-                opts: createWalletOpts
+                opts: createWalletOpts,
+                chains
               });
             } else if (this.partyId > 0) {
               try {
@@ -583,7 +586,7 @@ export class TssKeyGen extends EventEmitter {
             }
           
             if (wallet) {
-              this.emit('wallet', wallet);
+              this.emit('wallet', wallet, this.#chainWallets);
               complete();
               // Anything after complete()/unsubscribe() will not be executed
             }
@@ -652,8 +655,9 @@ export class TssKeyGen extends EventEmitter {
     walletName: string;
     copayerName: string;
     opts?: CreateWalletOpts & { addressType?: string };
+    chains?: Array<{ chain: string; coin: string }>;
   }) {
-    const { walletName, copayerName, opts = {} } = params;
+    const { walletName, copayerName, opts = {}, chains = [] } = params;
     const key = this.getTssKey();
     if (!key) {
       throw new Error('TSS Key generation is not complete. This should be called after the `complete` event is emitted.');
@@ -675,13 +679,27 @@ export class TssKeyGen extends EventEmitter {
       })
     );
 
-    await this.#request.post(`/v1/tss/keygen/${this.id}/secret`, { secret });
+    const chainWallets: any[] = [];
+    const secrets: { [chain: string]: string } = {};
+    for (const { chain, coin } of chains) {
+      const created = await this.#chainClient(chain, coin).createWallet(walletName, copayerName, key.metadata.m, key.metadata.n, {
+        chain,
+        coin,
+        network: this.network,
+        tssKeyId: this.id
+      });
+      chainWallets.push(created?.wallet);
+      secrets[chain] = created?.secret;
+    }
+
+    await this.#request.post(`/v1/tss/keygen/${this.id}/secret`, { secret, secrets });
     const credObj = client.toObj();
     this.#credentials.addWalletInfo(credObj.walletId, walletName, 1, 1, copayerName, {
       useNativeSegwit: ['P2WPKH', 'P2WSH', 'P2TR'].includes(wallet.addressType),
       segwitVersion: wallet.addressType === 'P2TR' ? 1 : 0,
       tssKeyId: this.id,
     });
+    this.#chainWallets = chainWallets;
     return wallet;
   }
 
@@ -699,7 +717,7 @@ export class TssKeyGen extends EventEmitter {
     }
     this.#credentials.clientDerivedPublicKey = key.getXPubKey(this.network);
 
-    const { body: { secret } } = await this.#request.get(`/v1/tss/keygen/${this.id}/secret`);
+    const { body: { secret, secrets } } = await this.#request.get(`/v1/tss/keygen/${this.id}/secret`);
 
     const client = new Client({ baseUrl: this.#request.baseUrl });
     client.fromObj(this.#credentials.toObj());
@@ -712,14 +730,40 @@ export class TssKeyGen extends EventEmitter {
       })
     );
 
+    const chainWallets: any[] = [];
+    for (const [chain, chainSecret] of Object.entries<string>(secrets || {})) {
+      const { coin } = Client.parseSecret(chainSecret);
+      chainWallets.push(await this.#chainClient(chain, coin).joinWallet(chainSecret, copayerName, { chain, coin, dryRun: opts.dryRun }));
+    }
+
     const credObj = client.toObj();
     this.#credentials.addWalletInfo(credObj.walletId, credObj.walletName, 1, 1, copayerName, {
       useNativeSegwit: ['P2WPKH', 'P2WSH', 'P2TR'].includes(wallet.addressType),
       segwitVersion: wallet.addressType === 'P2TR' ? 1 : 0,
       tssKeyId: this.id,
     });
+    this.#chainWallets = chainWallets;
     
     return wallet;
+  }
+
+  #chainClient(chain: string, coin: string) {
+    $.checkArgument(Constants.EVM_CHAINS.includes(this.chain) && Constants.EVM_CHAINS.includes(chain), 'Additional chains are only supported between EVM chains');
+    const client = new Client({ baseUrl: this.#request.baseUrl });
+    client.fromObj(Credentials.fromDerivedKey({
+      chain,
+      coin,
+      network: this.network,
+      account: 0,
+      m: 1,
+      n: 1,
+      xPubKey: this.#credentials.xPubKey,
+      rootPath: this.#credentials.rootPath,
+      keyId: this.#credentials.keyId,
+      requestPrivKey: this.#credentials.requestPrivKey,
+      clientDerivedPublicKey: this.#credentials.clientDerivedPublicKey
+    }).toObj());
+    return client;
   }
 
   /**

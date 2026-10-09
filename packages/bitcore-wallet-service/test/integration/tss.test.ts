@@ -446,6 +446,82 @@ describe('TSS', function() {
     });
   });
 
+  describe('/v1/tss/keygen/:id/secret', function() {
+    const secretUrl = '/v1/tss/keygen/test/secret';
+    const parties = [vector.party0, vector.party1, vector.party2];
+    const round0Messages = [vector.keygen.messages.round0.party0, vector.keygen.messages.round0.party1, vector.keygen.messages.round0.party2];
+
+    const joinRound0 = async (partyId: number) => {
+      const publicKey = parties[partyId].authKey.publicKey.toString();
+      const message = { ...round0Messages[partyId], partyId, round: 0, publicKey };
+      await app.post(`${urlPrefix}/v1/tss/keygen/test`)
+        .set('x-identity', publicKey)
+        .send({ message, n: 3, version: 1.1 })
+        .expect(200);
+    };
+
+    const postSecret = (partyId: number, body) => {
+      const { authKey } = parties[partyId];
+      const hash = Utils.hashMessage(`post|${secretUrl}|${JSON.stringify(body)}`, false);
+      const xSignature = BitcoreLib.crypto.ECDSA.sign(hash, authKey, { endian: 'little' }).toString();
+      return app.post(urlPrefix + secretUrl)
+        .set('x-identity', authKey.publicKey.toString())
+        .set('x-signature', xSignature)
+        .send(body);
+    };
+
+    const getSecret = (partyId: number) => {
+      const { authKey } = parties[partyId];
+      const hash = Utils.hashMessage(`get|${secretUrl}|{}`, false);
+      const xSignature = BitcoreLib.crypto.ECDSA.sign(hash, authKey, { endian: 'little' }).toString();
+      return app.get(urlPrefix + secretUrl)
+        .set('x-identity', authKey.publicKey.toString())
+        .set('x-signature', xSignature);
+    };
+
+    beforeEach(async function() {
+      const storage = helpers.getStorage();
+      await storage.db.collection(BWS.Storage.collections.TSS_KEYGEN).deleteMany({});
+      await joinRound0(0);
+      await joinRound0(1);
+      await joinRound0(2);
+    });
+
+    it('should return the join secrets of the other EVM chains to every participant', async function() {
+      const secrets = { arb: 'arb-secret', base: 'base-secret', matic: 'matic-secret', op: 'op-secret' };
+      const res = await postSecret(0, { secret: 'eth-secret', secrets });
+      res.status.should.equal(200);
+
+      for (const partyId of [1, 2]) {
+        const res = await getSecret(partyId);
+        res.status.should.equal(200);
+        res.body.should.deep.equal({ secret: 'eth-secret', secrets });
+      }
+    });
+
+    it('should return no chain secrets when only the wallet secret was stored', async function() {
+      const res = await postSecret(0, { secret: 'eth-secret' });
+      res.status.should.equal(200);
+
+      const getRes = await getSecret(1);
+      getRes.status.should.equal(200);
+      getRes.body.should.deep.equal({ secret: 'eth-secret', secrets: {} });
+    });
+
+    it('should reject chain secrets that are not keyed by EVM chain with a non-empty secret', async function() {
+      for (const secrets of [{ btc: 'btc-secret' }, { arb: '' }, { arb: 1 }, 1]) {
+        const res = await postSecret(0, { secret: 'eth-secret', secrets });
+        res.status.should.equal(400);
+        res.body.code.should.equal('TSS_GENERIC_ERROR');
+        res.body.message.should.equal('Invalid BWS join secrets provided');
+      }
+
+      const res = await getSecret(1);
+      res.status.should.equal(400);
+      res.body.code.should.equal('TSS_BWS_JOIN_SECRET_NOT_FOUND');
+    });
+  });
+
   describe('POST /v1/tss/sign/:id', function() {
     const url = id => `${urlPrefix}/v1/tss/sign/${id}`;
     const signRequest = body => {

@@ -1864,13 +1864,14 @@ export class Storage {
     );
   }
 
-  async storeTssKeyBwsJoinSecret({ id, secret }: { id: string; secret: string }) {
+  async storeTssKeyBwsJoinSecret({ id, secret, secrets }: { id: string; secret: string; secrets?: { [chain: string]: string } }) {
     return this.db.collection(collections.TSS_KEYGEN).updateOne({
       id
     },
     {
       $set: {
-        bwsJoinSecret: secret
+        bwsJoinSecret: secret,
+        bwsJoinSecrets: secrets
       }
     },
     { upsert: false });
