@@ -452,7 +452,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       const receipt = await this.getReceipt(tx.network, tx.txid);
       if (receipt) {
         const fee = Number(BigInt(receipt.gasUsed) * BigInt(tx.gasPrice));
-        await EVMTransactionStorage.collection.updateOne({ _id: tx._id }, { $set: { receipt, fee } });
+        await EVMTransactionStorage.collection.updateOne({ _id: tx._id }, { $set: { receipt: receipt as any, fee } });
         tx.receipt = receipt as any;
         tx.fee = fee;
       }
@@ -952,7 +952,7 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
       const walletAddressInserts = addressBatch.map(address => {
         return {
           insertOne: {
-            document: { chain, network, wallet: params.wallet._id, address, processed: false }
+            document: { chain, network, wallet: params.wallet._id!, address, processed: false }
           }
         };
       });

@@ -5,7 +5,7 @@ import { BaseModel } from './base';
 
 export interface IState {
   _id?: ObjectID;
-  initialSyncComplete: any;
+  initialSyncComplete: string[];
   verifiedBlockHeight?: {
     [chain: string]: {
       [network: string]: number;
@@ -30,7 +30,7 @@ export class StateModel extends BaseModel<IState> {
     return this.collection.findOneAndUpdate(
       {},
       { $setOnInsert: { created: new Date() } },
-      { upsert: true, returnOriginal: false }
+      { upsert: true, returnDocument: 'after' }
     );
   }
 
