@@ -6,9 +6,9 @@ import Utils from '../../src/util.js';
 const args = process.argv.slice(2);
 const chain = args[0]?.toUpperCase() || 'BTC';
 
-if (!Ledger.isValidChain(chain)) {
-  throw new Error(`Invalid chain: ${chain}`);
-}
+// if (!Ledger.isValidChain(chain)) {
+//   throw new Error(`Invalid chain: ${chain}`);
+// }
 
 const ledger = new Ledger();
 await ledger.connect();
@@ -92,6 +92,39 @@ switch (chain) {
     console.log(signedTransaction);
     break;
   }
+  case 'BTC_LEGACY': {
+    const utxos = [
+      {
+        chain: 'BTC',
+        network: 'mainnet',
+        coinbase: false,
+        mintIndex: 0,
+        spentTxid: '10952a135e03db06c4bca131235862283a5333e9b2a06b907dddb3a79fe07417',
+        mintTxid: 'df82b6ad7452a1df887765a60bb50954495ea65b16505a4d02ff11fa048df00c',
+        mintHeight: 878245,
+        spentHeight: 878646,
+        address: 'bc1qqtl9jlrwcr3fsfcjj2du7pu6fcgaxl5dsw2vyg',
+        script: '001402fe597c6ec0e2982712929bcf079a4e11d37e8d',
+        value: 1023,
+        confirmations: -1,
+        sequenceNumber: 0
+      }
+    ];
+    const tx: string = CWC.Transactions.create({
+      chain: 'BTC',
+      recipients: [{ address: 'bc1qj86hpgprdudkks84y52vdenz86kd26stkssrcq', amount: 800 }],
+      utxos
+    });
+    
+    const signedTransaction = await ledger.sign({
+      chain: 'BTC_LEGACY',
+      tx,
+      utxos
+    });
+    
+    console.log(signedTransaction);
+    break;
+  };
   default:
   case 'BTC': {
     // utxos from https://api.bitcore.io/api/BTC/mainnet/address/bc1qj86hpgprdudkks84y52vdenz86kd26stkssrcq/coins

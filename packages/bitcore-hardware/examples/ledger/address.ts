@@ -12,6 +12,6 @@ const ledger = new Ledger();
 await ledger.connect();
 
 console.log('Awaiting approval from your ledger...');
-console.log(await ledger.getAddress({ chain }));
+console.log(await ledger.getAddress({ chain: 'BTC_LEGACY' }));
 await ledger.disconnect();
 process.exit(0);
