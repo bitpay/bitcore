@@ -32,6 +32,17 @@ services:
       - "41002:41000" # vnc
     command: "./apps/solana.elf --display headless --apdu-port 40000 --vnc-port 41000"
 
+  speculos-bitcoin-cash:
+    image: ghcr.io/ledgerhq/speculos
+    volumes:
+      - ./test/ledger/apps:/speculos/apps
+    ports:
+      - "1237:1234" # gdb
+      - "5003:5000" # api
+      - "40003:40000" # apdu
+      - "41003:41000" # vnc
+    command: "./apps/bitcoin-cash.elf --display headless --apdu-port 40000 --vnc-port 41000"
+
   speculos-dogecoin:
     image: ghcr.io/ledgerhq/speculos
     volumes:
@@ -42,3 +53,14 @@ services:
       - "40004:40000" # apdu
       - "41004:41000" # vnc
     command: "./apps/dogecoin.elf --display headless --apdu-port 40000 --vnc-port 41000"
+
+  speculos-litecoin:
+    image: ghcr.io/ledgerhq/speculos
+    volumes:
+      - ./test/ledger/apps:/speculos/apps
+    ports:
+      - "1239:1234" # gdb
+      - "5005:5000" # api
+      - "40005:40000" # apdu
+      - "41005:41000" # vnc
+    command: "./apps/litecoin.elf --display headless --apdu-port 40000 --vnc-port 41000"

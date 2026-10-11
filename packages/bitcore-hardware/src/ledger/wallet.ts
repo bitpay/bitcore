@@ -5,12 +5,12 @@ import { ChainType, UtxoChainType, chains } from '../types/chains.js';
 import { EveryUtxoType, TransactionType } from '../types/txTypes.js';
 import { DMKConfig, getDmk } from './dmk.js';
 import {
-  // BitcoinCashModule,
+  BitcoinCashModule,
   BitcoinLegacyModule,
   // BitcoinModule,
   DogeModule,
   // EthereumModule,
-  // LitecoinModule,
+  LitecoinModule,
   // SolanaModule
 } from './modules/index.js';
 import type * as DMK from '@ledgerhq/device-management-kit';
@@ -50,10 +50,10 @@ export default class Ledger implements Base {
   }
 
   async connect() {
-    const transport = await TransportNodeSpeculos.open({ apduPort: 40000 });
-    this.modules.BTC_LEGACY = new BitcoinLegacyModule(transport);
-    const _transport = await TransportNodeSpeculos.open({ apduPort: 40004 });
-    this.modules.DOGE = new DogeModule(_transport);
+    this.modules.BTC_LEGACY = new BitcoinLegacyModule(await TransportNodeSpeculos.open({ apduPort: 40000 }));
+    this.modules.BCH = new BitcoinCashModule(await TransportNodeSpeculos.open({ apduPort: 40003 }));
+    this.modules.DOGE = new DogeModule(await TransportNodeSpeculos.open({ apduPort: 40004 }));
+    this.modules.LTC = new LitecoinModule(await TransportNodeSpeculos.open({ apduPort: 40005 }));
     // return new Promise(async resolve => {
     //   console.log('Discovering Ledger device...');
     //   if (this.discoverySubscription) {

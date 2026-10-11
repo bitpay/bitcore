@@ -1,12 +1,14 @@
 import { UtxoChainType } from 'src/types/chains.js';
-import BitcoinModule from './btc.js';
-import type * as SignerKitBtc from '@ledgerhq/device-signer-kit-bitcoin';
+import BitcoinLegacyModule from './btc-legacy.js';
+import type { AddressFormat } from '@ledgerhq/hw-app-btc/getWalletPublicKey';
+import type * as HwTransport from '@ledgerhq/hw-transport';
 
-export default class LitecoinModule extends BitcoinModule {
-  derivationPath = "84'/2'/0'";
+export default class LitecoinModule extends BitcoinLegacyModule {
   chain: UtxoChainType = 'LTC';
+  derivationPath = "44'/2'/0'";
+  addressFormat: AddressFormat = 'legacy';
   
-  constructor(signer: SignerKitBtc.SignerBtc) {
-    super(signer);
+  constructor(transport: HwTransport.default) {
+    super(transport);
   }
 }
