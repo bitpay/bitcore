@@ -29,6 +29,7 @@ export class XrpChain implements IChain {
       totalConfirmedAmount: confirmed,
       lockedAmount: activatedLocked,
       lockedConfirmedAmount: activatedLocked,
+      reserve: balance > 0 ? reserve : 0,
       availableAmount: balance - activatedLocked,
       availableConfirmedAmount: confirmed - activatedLocked,
       byAddress: []
@@ -143,6 +144,10 @@ export class XrpChain implements IChain {
     });
   }
 
+  isPrePublishRawBound(txp) {
+    return Common.Utils.isPrePublishRawBound(this, txp);
+  }
+
   getBitcoreTx(txp, opts = { signed: true }) {
     const { destinationTag, outputs, outputOrder, multiTx } = txp;
     const chain = 'XRP';
@@ -218,9 +223,9 @@ export class XrpChain implements IChain {
       if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
       const minXrpBalance = Defaults.MIN_XRP_BALANCE;
-      if (totalAmount - minXrpBalance < txp.getTotalAmount()) {
+      if (totalAmount - minXrpBalance < txp.getTotalAmountBigInt()) {
         return cb(Errors.INSUFFICIENT_FUNDS);
-      } else if (availableAmount < txp.getTotalAmount()) {
+      } else if (availableAmount < txp.getTotalAmountBigInt()) {
         return cb(Errors.LOCKED_FUNDS);
       } else {
         return cb(this.checkTx(txp));

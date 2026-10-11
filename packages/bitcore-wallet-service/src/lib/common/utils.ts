@@ -3,7 +3,8 @@ import {
   BitcoreLibCash,
   BitcoreLibDoge,
   BitcoreLibLtc,
-  Constants as CWConstants
+  Constants as CWConstants,
+  Transactions
 } from '@bitpay-labs/crypto-wallet-core';
 import _ from 'lodash';
 import { singleton } from 'preconditions';
@@ -12,6 +13,8 @@ import Config from '../../config';
 import { logger } from '../logger';
 import { Constants } from './constants';
 import { Defaults } from './defaults';
+import type { IChain } from '../../types/chain';
+import type { TxProposal } from '../model/txproposal';
 
 const $ = singleton();
 const Bitcore_ = {
@@ -22,6 +25,54 @@ const Bitcore_ = {
 };
 
 export const Utils = {
+
+  /**
+   * txp.prePublishRaw as a list of raw transactions, or null when it isn't one. An empty list is truthy and
+   * hashes to nothing, so without this the value reaches the tx provider and fails as a thrown error rather
+   * than a refused check. Mirrors the client-side Verifier helper so both ends agree on a usable fallback.
+   *
+   * @param txp - the transaction proposal
+   */
+  prePublishRawParts(txp: TxProposal<any>): string[] | null {
+    if (!txp?.prePublishRaw) {
+      return null;
+    }
+    const parts = Array.isArray(txp.prePublishRaw) ? txp.prePublishRaw : [txp.prePublishRaw];
+    if (!parts.length || parts.some(raw => !raw || typeof raw !== 'string')) {
+      return null;
+    }
+    return parts;
+  },
+
+  /**
+   * Shared implementation of IChain.isPrePublishRawBound for account-based chains (SVM/EVM/XRP). True only if
+   * txp.prePublishRaw is the same transaction as the current proposal, differing solely in the field BWS
+   * mutates at publish (blockhash on SVM, nonce on EVM/XRP). Recovers that field from prePublishRaw, rebuilds
+   * the proposal via the chain's own getBitcoreTx, and requires byte-for-byte equality, so a tampered stored
+   * proposal cannot reuse an old, still-valid proposalSignature. Fails closed on any error.
+   *
+   * @param chain - the IChain implementation (provides chain + getBitcoreTx)
+   * @param txp - the transaction proposal (must carry prePublishRaw)
+   */
+  isPrePublishRawBound(chain: IChain, txp: TxProposal<any>): boolean {
+    try {
+      const prePublishRaw = Utils.prePublishRawParts(txp);
+      if (!prePublishRaw) return false;
+      const provider = Transactions.get({ chain: txp.chain }) as any;
+      if (typeof provider?.getMutableFields !== 'function') return false;
+      const mutableFields = provider.getMutableFields(prePublishRaw[0]);
+      if (!mutableFields || Object.values(mutableFields).every(v => v == null)) return false;
+      const cloned = Object.assign(Object.create(Object.getPrototypeOf(txp)), txp, mutableFields);
+      // signed: false to match prePublishRaw, which is captured before any copayer signature exists.
+      const rebuilt = chain.getBitcoreTx(cloned, { signed: false }).uncheckedSerialize();
+      const rebuiltArr = Array.isArray(rebuilt) ? rebuilt : [rebuilt];
+      if (rebuiltArr.length !== prePublishRaw.length) return false;
+      return rebuiltArr.every((raw, i) => raw === prePublishRaw[i]);
+    } catch (err) {
+      logger.warn('prePublishRaw binding check failed for txp %s on %s: %o', txp?.id, txp?.chain, err.stack || err.message || err);
+      return false;
+    }
+  },
 
   /**
    * @deprecated

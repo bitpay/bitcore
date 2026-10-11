@@ -2,7 +2,9 @@ import { Transactions, Utils, Validation } from '@bitpay-labs/crypto-wallet-core
 import _ from 'lodash';
 import { IChain } from '../../../types/chain';
 import { WalletWithOpts } from '../../blockchainexplorers/v8';
+import { Common } from '../../common';
 import { Defaults } from '../../common/defaults';
+import { ClientError } from '../../errors/clienterror';
 import { Errors } from '../../errors/errordefinitions';
 import logger from '../../logger';
 import { IWallet, TxProposal, Wallet } from '../../model';
@@ -28,6 +30,7 @@ export class SolChain implements IChain {
       totalConfirmedAmount: confirmed,
       lockedAmount: activatedLocked,
       lockedConfirmedAmount: activatedLocked,
+      reserve: balance > 0 ? minRent : 0,
       availableAmount: balance - activatedLocked,
       availableConfirmedAmount: confirmed - activatedLocked,
       byAddress: []
@@ -93,9 +96,29 @@ export class SolChain implements IChain {
     return new Promise(resolve => {
       const numSignatures = opts.numSignatures || 1;
       const feePerKb = Defaults.SOL_BASE_FEE; // Fee per signature in lamports
-      const fee = feePerKb * numSignatures;
+      let fee = feePerKb * numSignatures;
+      if (opts.priorityFee) {
+        fee += this.getPriorityFee(opts);
+      }
       return resolve({ fee, feePerKb });
     });
+  }
+
+  /**
+   * Lamports charged on top of the signature fee when a priority fee is set:
+   * ceil(micro-lamports per compute unit * compute unit limit / 1e6).
+   * Without computeUnits the runtime reserves a fixed limit per instruction, so count the
+   * instructions CWC builds for a transfer: one per recipient, plus one for a memo.
+   */
+  private getPriorityFee({ priorityFee, computeUnits, outputs = [], memo }) {
+    const microLamportsPerUnit = Math.max(Defaults.SOL_MIN_PRIORITY_FEE, priorityFee);
+    const instructions = Math.max(outputs.length, 1) + (memo ? 1 : 0);
+    const units = computeUnits || Math.min(Defaults.SOL_MAX_COMPUTE_UNITS, Defaults.SOL_COMPUTE_UNITS_PER_INSTRUCTION * instructions);
+    return Math.ceil(microLamportsPerUnit * units / 1e6);
+  }
+
+  isPrePublishRawBound(txp) {
+    return Common.Utils.isPrePublishRawBound(this, txp);
   }
 
   getBitcoreTx(txp, opts = { signed: true }) {
@@ -227,14 +250,39 @@ export class SolChain implements IChain {
       const { totalAmount, availableAmount } = balance;
       // calculate how much space is needed to find rent amount
       const minRentException = opts.tokenAddress ? 0 : Defaults.MIN_SOL_BALANCE;
-      if (totalAmount - minRentException < txp.getTotalAmount()) {
+      if (totalAmount - minRentException < txp.getTotalAmountBigInt()) {
         return cb(Errors.INSUFFICIENT_FUNDS);
-      } else if (availableAmount < txp.getTotalAmount()) {
+      } else if (availableAmount < txp.getTotalAmountBigInt()) {
         return cb(Errors.LOCKED_FUNDS);
+      } else if (opts.tokenAddress) {
+        // SPL fees are paid in SOL. Fetch the native balance without opts.wallet,
+        // since getWalletBalance leaves tokenAddress set on that object.
+        server.getBalance({}, (err, solBalance) => {
+          if (err) return cb(err);
+          if (solBalance.totalAmount < txp.fee) {
+            return cb(this.getFeeError('INSUFFICIENT_SOL_FEE', txp));
+          } else if (solBalance.availableAmount < txp.fee) {
+            return cb(this.getFeeError('LOCKED_SOL_FEE', txp));
+          } else {
+            return cb(this.checkTx(txp));
+          }
+        });
+      } else if (availableAmount - txp.fee < txp.getTotalAmountBigInt()) {
+        return cb(this.getFeeError('INSUFFICIENT_FUNDS_FOR_FEE', txp));
       } else {
         return cb(this.checkTx(txp));
       }
     });
+  }
+
+  private getFeeError(code: 'INSUFFICIENT_SOL_FEE' | 'LOCKED_SOL_FEE' | 'INSUFFICIENT_FUNDS_FOR_FEE', txp: TxProposal) {
+    return new ClientError(
+      Errors.codes[code],
+      `${Errors[code].message}. RequiredFee: ${txp.fee}`,
+      {
+        requiredFee: txp.fee
+      }
+    );
   }
 
   validateAddress(wallet, inaddr, opts) {

@@ -98,6 +98,10 @@ class ChainProxy {
     return this.get(txp.chain).getBitcoreTx(txp, { signed: opts.signed });
   }
 
+  isPrePublishRawBound(txp: TxProposal<any>) {
+    return this.get(txp.chain).isPrePublishRawBound(txp);
+  }
+
   convertFeePerKb(chain, p, feePerKb) {
     return this.get(chain).convertFeePerKb(p, feePerKb);
   }

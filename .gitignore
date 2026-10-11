@@ -22,3 +22,4 @@ Session.vim
 ts_build
 bitcore-lib.js
 bitcore-test.local.config.json
+.worktrees

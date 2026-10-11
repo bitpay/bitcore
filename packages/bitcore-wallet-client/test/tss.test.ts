@@ -565,6 +565,75 @@ describe('TSS', function() {
         ]);
       });
     });
+
+    describe('Out of partyId order', function() {
+      let tss0: TssKeyGen;
+      let tss1: TssKeyGen;
+      let tss2: TssKeyGen;
+
+      afterEach(function() {
+        tss0?.unsubscribe();
+        tss1?.unsubscribe();
+        tss2?.unsubscribe();
+      });
+
+      it(happyPath('should generate the key when parties join out of partyId order'), async function() {
+        const party0Key = new Key({ seedType: 'new' });
+        const party1Key = new Key({ seedType: 'new' });
+        const party2Key = new Key({ seedType: 'new' });
+        tss0 = new TssKeyGen({
+          chain,
+          network,
+          baseUrl: '/bws/api',
+          request: request(app),
+          key: party0Key
+        });
+        tss1 = new TssKeyGen({
+          chain,
+          network,
+          baseUrl: '/bws/api',
+          request: request(app),
+          key: party1Key
+        });
+        tss2 = new TssKeyGen({
+          chain,
+          network,
+          baseUrl: '/bws/api',
+          request: request(app),
+          key: party2Key
+        });
+        await tss0.newKey({ m, n });
+        const code1 = tss0.createJoinCode({
+          partyId: 1,
+          partyPubKey: party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
+        });
+        const code2 = tss0.createJoinCode({
+          partyId: 2,
+          partyPubKey: party2Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
+        });
+
+        await tss2.joinKey({ code: code2 });
+        await tss1.joinKey({ code: code1 });
+        let session = await storage.fetchTssKeyGenSession({ id: tss0.id });
+        session.rounds[0].map(message => message.fromPartyId).should.deep.equal([0, 2, 1]);
+
+        const complete0 = new Promise(r => tss0.once('complete', r));
+        const complete1 = new Promise(r => tss1.once('complete', r));
+        const complete2 = new Promise(r => tss2.once('complete', r));
+        tss0.on('error', (e) => { should.not.exist(e?.message ?? e); });
+        tss1.on('error', (e) => { should.not.exist(e?.message ?? e); });
+        tss2.on('error', (e) => { should.not.exist(e?.message ?? e); });
+        tss0.subscribe({ timeout: 10 });
+        tss1.subscribe({ timeout: 10 });
+        tss2.subscribe({ timeout: 10 });
+        await Promise.all([complete0, complete1, complete2]);
+
+        session = await storage.fetchTssKeyGenSession({ id: tss0.id });
+        tss0.getTssKey().keychain.commonKeyChain.should.equal(session.sharedPublicKey);
+        tss1.getTssKey().keychain.commonKeyChain.should.equal(session.sharedPublicKey);
+        tss2.getTssKey().keychain.commonKeyChain.should.equal(session.sharedPublicKey);
+      });
+    });
   });
 
 

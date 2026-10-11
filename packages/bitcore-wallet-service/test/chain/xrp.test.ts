@@ -4,12 +4,43 @@ import * as chai from 'chai';
 import 'chai/register-should';
 import { ChainService } from '../../src/lib/chain';
 import { ITxProposal, TxProposal } from '../../src/lib/model/txproposal';
+import { Defaults } from '../../src/lib/common/defaults';
 
 const should = chai.should();
 
 const xpub = 'tpubDD7tYYerLNNm65Ez7pRjxQ2NpRHDoyRWoLWudnQ8agXjr7qs9BsPsRXk8Z6spPPJodnaY158YqeCKT5oXuZvbuNLfm1R4kXGJ2vPd9pUxDT';
 
 describe('Chain XRP', function() { 
+  describe('#getWalletBalance', function() {
+    it('should expose the reserve separately from pending amounts and fees', function(done) {
+      const server = {
+        walletId: '1',
+        _getBlockchainExplorer: () => ({
+          getBalance: (_wallet, cb) => cb(null, { balance: 2000000, confirmed: 2000000 }),
+          getReserve: cb => cb(null, 1000000)
+        }),
+        getPendingTxs: (_opts, cb) => cb(null, [{ amount: '3000000', fee: '12' }]),
+        storage: { fetchAddresses: (_walletId, cb) => cb(null, []) }
+      };
+      const wallet = { chain: 'xrp', network: 'livenet' };
+
+      ChainService.get('xrp').getWalletBalance(server as any, wallet as any, {}, (err, balance) => {
+        should.not.exist(err);
+        balance.should.deep.equal({
+          totalAmount: 2000000,
+          totalConfirmedAmount: 2000000,
+          lockedAmount: 4000012,
+          lockedConfirmedAmount: 4000012,
+          reserve: 1000000,
+          availableAmount: -2000012,
+          availableConfirmedAmount: -2000012,
+          byAddress: []
+        });
+        done();
+      });
+    });
+  });
+
   describe('#getWalletSendMaxInfo', function() {
     it('should resolve fee level before calculating sendMax amount', function(done) {
       const server = {
@@ -26,6 +57,26 @@ describe('Chain XRP', function() {
         info.amount.should.equal(999988);
         info.fee.should.equal(12);
         info.feePerKb.should.equal(12);
+        done();
+      });
+    });
+  });
+
+  describe('#selectTxInputs', function() {
+    const balanceOf = amount => ({
+      getBalance: (_opts, cb) => cb(null, { totalAmount: amount, availableAmount: amount })
+    });
+    const txpOf = amounts => TxProposal.fromObj({
+      ...aTXP(),
+      outputs: amounts.map(amount => ({ ...aTXP().outputs[0], amount }))
+    } as any);
+
+    it('should reject a total that a number rounds down to the balance', function(done) {
+      const balance = 9007199254740992 + Defaults.MIN_XRP_BALANCE;
+
+      ChainService.get('xrp').selectTxInputs(balanceOf(balance) as any, txpOf(['9007199254740992', '1']), {} as any, {}, err => {
+        should.exist(err);
+        err.code.should.equal('INSUFFICIENT_FUNDS');
         done();
       });
     });

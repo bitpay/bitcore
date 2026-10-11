@@ -83,6 +83,10 @@ export const errorSpec: IErrorSpec[] = [
     message: 'Your linked POLYGON wallet does not have enough MATIC for fee.'
   },
   {
+    name: 'INSUFFICIENT_SOL_FEE',
+    message: 'Your linked SOL wallet does not have enough SOL for fee.'
+  },
+  {
     name: 'LOCKED_FUNDS',
     message: 'Locked funds.'
   },
@@ -95,6 +99,11 @@ export const errorSpec: IErrorSpec[] = [
     name: 'LOCKED_MATIC_FEE',
     message:
       'Your POLYGON linked wallet funds are locked by pending spend proposals.'
+  },
+  {
+    name: 'LOCKED_SOL_FEE',
+    message:
+      'Your SOL linked wallet funds are locked by pending spend proposals.'
   },
   {
     name: 'DUST_AMOUNT',

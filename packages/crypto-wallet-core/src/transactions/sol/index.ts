@@ -180,6 +180,20 @@ export class SOLTxProvider {
     return SolKit.decompileTransactionMessage(compiledTransactionMessage);
   }
 
+  /**
+   * Reads the fields BWS may mutate between proposal creation and publish out of a raw tx, to bind
+   * txp.prePublishRaw to the proposal. For Solana that is the recent blockhash (refreshOnPublish), which is
+   * the compiled message's `lifetimeToken`. We decode only the compiled message (never decompile) so this
+   * stays safe for txs using Address Lookup Tables -- decompilation would need the on-chain table accounts,
+   * which a client-side lib cannot fetch. lastValidBlockHeight is not on the wire and does not affect
+   * serialization, so it is intentionally not recovered.
+   */
+  getMutableFields(rawTx: string): { blockHash?: string } {
+    const decoded: any = this.decodeRawTransaction({ rawTx, decodeTransactionMessage: false });
+    const compiled: any = SolKit.getCompiledTransactionMessageDecoder().decode(decoded.messageBytes);
+    return { blockHash: compiled?.lifetimeToken };
+  }
+
   async sign(params: { tx: string; key: Key }): Promise<string> {
     const { tx, key } = params;
     const decodedTx = this.decodeRawTransaction({ rawTx: tx, decodeTransactionMessage: false });

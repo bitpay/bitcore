@@ -287,6 +287,10 @@ export class EthChain implements IChain {
     });
   }
 
+  isPrePublishRawBound(txp: TxProposal) {
+    return Common.Utils.isPrePublishRawBound(this, txp);
+  }
+
   getBitcoreTx(txp: TxProposal, opts = { signed: true }) {
     const {
       data,
@@ -464,7 +468,7 @@ export class EthChain implements IChain {
         const txpTotalAmount =
           (opts.multisigContractAddress || opts.tokenAddress) && txp.payProUrl
             ? getInvoiceValue(txp)
-            : txp.getTotalAmount();
+            : txp.getTotalAmountBigInt();
 
         if (totalAmount < txpTotalAmount) {
           return cb(Errors.INSUFFICIENT_FUNDS);

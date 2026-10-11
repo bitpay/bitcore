@@ -3032,8 +3032,8 @@ export class WalletService implements IWalletService {
                     spenderAddress: txp.multiSendContractAddress
                   }, (err, allowance) => {
                     if (err) { return next(err); }
-                    if (BigInt(allowance) < BigInt(txp.getTotalAmount())) {
-                      return next(new Error(`Insufficient token allowance. Allowed: ${BigInt(allowance)}, Want: ${BigInt(txp.getTotalAmount())}`));
+                    if (BigInt(allowance) < txp.getTotalAmountBigInt()) {
+                      return next(new Error(`Insufficient token allowance. Allowed: ${BigInt(allowance)}, Want: ${txp.getTotalAmountBigInt()}`));
                     }
                     return next();
                   });
@@ -3120,8 +3120,12 @@ export class WalletService implements IWalletService {
 
           let signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
           if (!signingKey) {
-            // If the txp has been published previously, we will verify the signature against the previously published raw tx
-            if (txp.hasMutableTxData() && txp.prePublishRaw) {
+            // The signature didn't match the current (refreshed) raw tx. Fall back to the previously-published
+            // raw tx -- but only if it is bound to THIS proposal (differs from the current tx solely in the
+            // field BWS mutates at publish: blockhash/nonce). Without that check a tampered stored proposal
+            // could reuse an old, still-valid proposalSignature over prePublishRaw. Mirrors the client
+            // Verifier.checkPrePublishRaw guard.
+            if (txp.hasMutableTxData() && txp.prePublishRaw && ChainService.isPrePublishRawBound(txp)) {
               raw = txp.prePublishRaw;
               signingKey = this._getSigningKey(raw, opts.proposalSignature, copayer.requestPubKeys);
             }

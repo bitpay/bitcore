@@ -6271,6 +6271,23 @@ describe('client API', function() {
           }
         });
       }
+
+      it('should default missing derivation settings to BIP45 and non-compliant', () => {
+        const master = new Bitcore.HDPrivateKey({
+          network: 'livenet', depth: 0, parentFingerPrint: 0, childIndex: 0,
+          chainCode: Buffer.alloc(32, 7),
+          privateKey: Buffer.concat([Buffer.alloc(31), Buffer.from([1])])
+        });
+        const xPubKey = master.deriveNonCompliantChild("m/45'").hdPublicKey.toString();
+        const { key, credentials } = Client.upgradeCredentialsV1({
+          network: 'livenet', xPrivKey: master.toString(), xPubKey, m: 1, n: 1
+        });
+
+        credentials.rootPath.should.equal("m/45'");
+        key.BIP45.should.equal(true);
+        key.compliantDerivation.should.equal(false);
+        (key.derive(null, credentials.rootPath).hdPublicKey.toString() === xPubKey).should.equal(true);
+      });
     });
 
     describe('#upgradeMultipleCredentialsV1', () => {

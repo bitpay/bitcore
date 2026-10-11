@@ -2,12 +2,12 @@
 
 var _ = require('lodash');
 var BN = require('../crypto/bn');
-var BufferUtil = require('../util/buffer');
+var Hash = require('../crypto/hash');
 var BufferReader = require('../encoding/bufferreader');
 var BufferWriter = require('../encoding/bufferwriter');
-var Hash = require('../crypto/hash');
+var BufferUtil = require('../util/buffer');
+// eslint-disable-next-line import/order
 var $ = require('../util/preconditions');
-var Script = require('../script');
 
 var GENESIS_BITS = 0x1e0ffff0; // Regtest: 0x207fffff
 
@@ -23,7 +23,7 @@ var BlockHeader = function BlockHeader(arg) {
   if (!(this instanceof BlockHeader)) {
     return new BlockHeader(arg);
   }
-  var info = BlockHeader._from(arg);
+  const info = BlockHeader._from(arg);
   this.version = info.version;
   this.prevHash = info.prevHash;
   this.merkleRoot = info.merkleRoot;
@@ -50,7 +50,7 @@ var BlockHeader = function BlockHeader(arg) {
  * @private
  */
 BlockHeader._from = function _from(arg) {
-  var info = {};
+  let info = {};
   if (BufferUtil.isBuffer(arg)) {
     info = BlockHeader._fromBufferReader(BufferReader(arg));
   } else if (_.isObject(arg)) {
@@ -68,15 +68,15 @@ BlockHeader._from = function _from(arg) {
  */
 BlockHeader._fromObject = function _fromObject(data) {
   $.checkArgument(data, 'data is required');
-  var prevHash = data.prevHash;
-  var merkleRoot = data.merkleRoot;
+  let prevHash = data.prevHash;
+  let merkleRoot = data.merkleRoot;
   if (_.isString(data.prevHash)) {
     prevHash = BufferUtil.reverse(Buffer.from(data.prevHash, 'hex'));
   }
   if (_.isString(data.merkleRoot)) {
     merkleRoot = BufferUtil.reverse(Buffer.from(data.merkleRoot, 'hex'));
   }
-  var info = {
+  const info = {
     hash: data.hash,
     version: data.version,
     prevHash: prevHash,
@@ -95,7 +95,7 @@ BlockHeader._fromObject = function _fromObject(data) {
  * @returns {BlockHeader} - An instance of block header
  */
 BlockHeader.fromObject = function fromObject(obj) {
-  var info = BlockHeader._fromObject(obj);
+  const info = BlockHeader._fromObject(obj);
   return new BlockHeader(info);
 };
 
@@ -107,9 +107,9 @@ BlockHeader.fromRawBlock = function fromRawBlock(data) {
   if (!BufferUtil.isBuffer(data)) {
     data = Buffer.from(data, 'binary');
   }
-  var br = BufferReader(data);
+  const br = BufferReader(data);
   br.pos = BlockHeader.Constants.START_OF_HEADER;
-  var info = BlockHeader._fromBufferReader(br);
+  const info = BlockHeader._fromBufferReader(br);
   return new BlockHeader(info);
 };
 
@@ -118,7 +118,7 @@ BlockHeader.fromRawBlock = function fromRawBlock(data) {
  * @returns {BlockHeader} - An instance of block header
  */
 BlockHeader.fromBuffer = function fromBuffer(buf) {
-  var info = BlockHeader._fromBufferReader(BufferReader(buf));
+  const info = BlockHeader._fromBufferReader(BufferReader(buf));
   return new BlockHeader(info);
 };
 
@@ -127,7 +127,7 @@ BlockHeader.fromBuffer = function fromBuffer(buf) {
  * @returns {BlockHeader} - An instance of block header
  */
 BlockHeader.fromString = function fromString(str) {
-  var buf = Buffer.from(str, 'hex');
+  const buf = Buffer.from(str, 'hex');
   return BlockHeader.fromBuffer(buf);
 };
 
@@ -137,7 +137,7 @@ BlockHeader.fromString = function fromString(str) {
  * @private
  */
 BlockHeader._fromBufferReader = function _fromBufferReader(br) {
-  var info = {};
+  const info = {};
   info.version = br.readInt32LE();
   info.prevHash = br.read(32);
   info.merkleRoot = br.read(32);
@@ -153,7 +153,7 @@ BlockHeader._fromBufferReader = function _fromBufferReader(br) {
  * @returns {BlockHeader} - An instance of block header
  */
 BlockHeader.fromBufferReader = function fromBufferReader(br) {
-  var info = BlockHeader._fromBufferReader(br);
+  const info = BlockHeader._fromBufferReader(br);
   return new BlockHeader(info);
 };
 
@@ -217,8 +217,8 @@ BlockHeader.prototype.toBufferWriter = function toBufferWriter(bw, includeAuxPow
 BlockHeader.prototype.getTargetDifficulty = function getTargetDifficulty(bits) {
   bits = bits || this.bits;
 
-  var target = new BN(bits & 0xffffff);
-  var mov = 8 * ((bits >>> 24) - 3);
+  let target = new BN(bits & 0xffffff);
+  let mov = 8 * ((bits >>> 24) - 3);
   while (mov-- > 0) {
     target = target.mul(new BN(2));
   }
@@ -255,7 +255,7 @@ BlockHeader.prototype.getDifficulty = function getDifficulty() {
  * @returns {Buffer} - The little endian hash buffer of the header
  */
 BlockHeader.prototype._getHash = function hash() {
-  var buf = this.toBuffer(false);
+  const buf = this.toBuffer(false);
   return Hash.sha256sha256(buf);
 };
 
@@ -280,7 +280,7 @@ Object.defineProperty(BlockHeader.prototype, 'hash', idProperty);
  * @returns {Boolean} - If timestamp is not too far in the future
  */
 BlockHeader.prototype.validTimestamp = function validTimestamp() {
-  var currentTime = Math.round(new Date().getTime() / 1000);
+  const currentTime = Math.round(new Date().getTime() / 1000);
   if (this.time > currentTime + BlockHeader.Constants.MAX_TIME_OFFSET) {
     return false;
   }
@@ -291,15 +291,15 @@ BlockHeader.prototype.validTimestamp = function validTimestamp() {
  * @returns {Boolean} - If the proof-of-work hash satisfies the target difficulty
  */
 BlockHeader.prototype.validProofOfWork = function validProofOfWork() {
-  // For Litecoin, we use the scrypt hash to calculate proof of work
+  // For Dogecoin, we use the scrypt hash to calculate proof of work
   let hashBuf;
   if (this.isAuxPow()) {
     hashBuf = this.auxpow.parentBlock.toBuffer();
   } else {
-    hashBuf = this.toBuffer()
+    hashBuf = this.toBuffer();
   }
-  var pow = new BN(Hash.scrypt(hashBuf));
-  var target = this.getTargetDifficulty();
+  const pow = new BN(Hash.scrypt(hashBuf));
+  const target = this.getTargetDifficulty();
 
   if (pow.cmp(target) > 0) {
     return false;
@@ -322,7 +322,7 @@ BlockHeader.prototype.isAuxPow = function() {
   // Reference for AuxPoW bit:
   // https://github.com/dogecoin/dogecoin/blob/0b46a40ed125d7bf4b5a485b91350bc8bdc48fc8/src/primitives/pureheader.h#L131
   return Boolean(this.version & (1 << 8));
-}
+};
 
 Object.defineProperty(BlockHeader.prototype, 'auxpow', {
   configurable: false,
@@ -336,7 +336,7 @@ Object.defineProperty(BlockHeader.prototype, 'auxpow', {
     }
     return null;
   }
-})
+});
 
 
 BlockHeader.Constants = {

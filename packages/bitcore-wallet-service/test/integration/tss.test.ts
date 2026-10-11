@@ -379,6 +379,73 @@ describe('TSS', function() {
     });
   });
 
+  describe('GET /v1/tss/keygen/:id/:round', function() {
+    const roundUrl = '/v1/tss/keygen/test/0?maxWaitTime=0';
+    const parties = [vector.party0, vector.party1, vector.party2];
+    const round0Messages = [vector.keygen.messages.round0.party0, vector.keygen.messages.round0.party1, vector.keygen.messages.round0.party2];
+
+    const joinRound0 = async (partyId: number) => {
+      const publicKey = parties[partyId].authKey.publicKey.toString();
+      const message = { ...round0Messages[partyId], partyId, round: 0, publicKey };
+      await app.post(`${urlPrefix}/v1/tss/keygen/test`)
+        .set('x-identity', publicKey)
+        .send({ message, n: 3, version: 1.1 })
+        .expect(200);
+    };
+
+    const getRound0 = (partyId: number) => {
+      const { authKey } = parties[partyId];
+      const hash = Utils.hashMessage(`get|${roundUrl}|{}`, false);
+      const xSignature = BitcoreLib.crypto.ECDSA.sign(hash, authKey, { endian: 'little' }).toString();
+      return app.get(urlPrefix + roundUrl)
+        .set('x-identity', authKey.publicKey.toString())
+        .set('x-signature', xSignature);
+    };
+
+    beforeEach(async function() {
+      const storage = helpers.getStorage();
+      await storage.db.collection(BWS.Storage.collections.TSS_KEYGEN).deleteMany({});
+    });
+
+    it('should authenticate every party when round 0 messages arrive in partyId order', async function() {
+      await joinRound0(0);
+      await joinRound0(1);
+      await joinRound0(2);
+
+      for (const partyId of [0, 1, 2]) {
+        const res = await getRound0(partyId);
+        res.status.should.equal(200);
+        JSON.parse(res.text).messages.length.should.equal(2);
+      }
+    });
+
+    it('should authenticate every party when round 0 messages arrive out of partyId order', async function() {
+      await joinRound0(0);
+      await joinRound0(2);
+      await joinRound0(1);
+
+      for (const partyId of [0, 1, 2]) {
+        const res = await getRound0(partyId);
+        res.status.should.equal(200);
+        JSON.parse(res.text).messages.length.should.equal(2);
+      }
+    });
+
+    it('should reject another party identity when round 0 messages arrive out of partyId order', async function() {
+      await joinRound0(0);
+      await joinRound0(2);
+      await joinRound0(1);
+
+      for (const [partyId, otherPartyId] of [[1, 2], [2, 1]]) {
+        const res = await getRound0(partyId)
+          .set('x-identity', parties[otherPartyId].authKey.publicKey.toString());
+        res.status.should.equal(401);
+        res.body.code.should.equal('NOT_AUTHORIZED');
+        res.body.message.should.equal('Invalid signature');
+      }
+    });
+  });
+
   describe('POST /v1/tss/sign/:id', function() {
     const url = id => `${urlPrefix}/v1/tss/sign/${id}`;
     const signRequest = body => {
