@@ -4,7 +4,9 @@ import { BaseModule } from 'src/types/base.js';
 import { UtxoChainType } from 'src/types/chains.js';
 import { EveryUtxoType, TransactionType } from '../../types/txTypes.js';
 import Util from '../../util.js';
+import type { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import type BTC from '@ledgerhq/hw-app-btc';
+import type { AddressFormat } from '@ledgerhq/hw-app-btc/getWalletPublicKey';
 import type * as HwTransport from '@ledgerhq/hw-transport';
 // @eslint disable import/newline-after-import
 const require = createRequire(import.meta.url);
@@ -18,7 +20,8 @@ export default class BitcoinLegacyModule implements BaseModule {
   btc: BTC.default;
   chain: UtxoChainType = 'BTC';
   derivationPath = "84'/0'/0'";
-  lib;
+  addressFormat: AddressFormat = 'bech32';
+  lib: BitcoreLib;
   
   constructor(transport: HwTransport.default) {
     this.lib = Util.libs[this.chain];
@@ -81,14 +84,14 @@ export default class BitcoinLegacyModule implements BaseModule {
     const result = await this.btc.signPsbtBuffer(psbt.toBuffer(), {
       finalizePsbt: true,
       accountPath: this.derivationPath,
-      addressFormat: 'bech32',
+      addressFormat: this.addressFormat,
       knownAddressDerivations: map,
     });
     return result.tx;
   }
 
   async getAddress() {
-    const result = await this.btc.getWalletPublicKey(this.derivationPath + '/0/0', { format: 'bech32' });
+    const result = await this.btc.getWalletPublicKey(this.derivationPath + '/0/0', { format: this.addressFormat });
     return result.bitcoinAddress;
   }
 }

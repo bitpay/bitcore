@@ -8,7 +8,7 @@ import {
   // BitcoinCashModule,
   BitcoinLegacyModule,
   // BitcoinModule,
-  // DogeModule,
+  DogeModule,
   // EthereumModule,
   // LitecoinModule,
   // SolanaModule
@@ -52,6 +52,8 @@ export default class Ledger implements Base {
   async connect() {
     const transport = await TransportNodeSpeculos.open({ apduPort: 40000 });
     this.modules.BTC_LEGACY = new BitcoinLegacyModule(transport);
+    const _transport = await TransportNodeSpeculos.open({ apduPort: 40004 });
+    this.modules.DOGE = new DogeModule(_transport);
     // return new Promise(async resolve => {
     //   console.log('Discovering Ledger device...');
     //   if (this.discoverySubscription) {

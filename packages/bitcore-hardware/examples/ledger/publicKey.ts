@@ -12,6 +12,6 @@ const ledger = new Ledger({ transport: 'speculos' });
 await ledger.connect();
 
 console.log('Awaiting approval from your ledger...');
-console.log(await ledger.getPublicKey({ chain: 'BTC_LEGACY' }));
+console.log(await ledger.getPublicKey({ chain }));
 await ledger.disconnect();
 process.exit(0);

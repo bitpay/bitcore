@@ -6,9 +6,9 @@ import Utils from '../../src/util.js';
 const args = process.argv.slice(2);
 const chain = args[0]?.toUpperCase() || 'BTC';
 
-// if (!Ledger.isValidChain(chain)) {
-//   throw new Error(`Invalid chain: ${chain}`);
-// }
+if (!Ledger.isValidChain(chain)) {
+  throw new Error(`Invalid chain: ${chain}`);
+}
 
 const ledger = new Ledger();
 await ledger.connect();
