@@ -1,8 +1,11 @@
 'use strict';
 
 import * as chai from 'chai';
+import sinon from 'sinon';
 import { ChainService } from '../../src/lib/chain';
 import { Defaults } from '../../src/lib/common/defaults';
+import { ClientError } from '../../src/lib/errors/clienterror';
+import { TxProposal } from '../../src/lib/model/txproposal';
 
 const should = chai.should();
 
@@ -44,5 +47,183 @@ describe('Chain SOL', function() {
         });
       });
     }
+  });
+
+  describe('#getFee', function() {
+    const sol = ChainService.get('sol');
+    const getFee = async opts => (await sol.getFee(null, null, opts)).fee;
+    const outputs = n => Array.from({ length: n }, () => ({ toAddress: 'addr', amount: 1 }));
+
+    it('should be the signature fee when no priority fee is set', async function() {
+      (await getFee({ outputs: outputs(1) })).should.equal(5000);
+      (await getFee({ outputs: outputs(1), numSignatures: 2 })).should.equal(10000);
+      (await getFee({ outputs: outputs(1), computeUnits: 300000 })).should.equal(5000);
+    });
+
+    it('should add the priority fee for the given compute unit limit', async function() {
+      // 50,000 micro-lamports/CU * 300,000 CU = 15,000 lamports
+      (await getFee({ outputs: outputs(1), priorityFee: 50000, computeUnits: 300000 })).should.equal(5000 + 15000);
+    });
+
+    it('should round the priority fee up to a whole lamport', async function() {
+      // 1,001 micro-lamports/CU * 1,000 CU = 1,001,000 micro-lamports = 1.001 lamports
+      (await getFee({ outputs: outputs(1), priorityFee: 1001, computeUnits: 1000 })).should.equal(5000 + 2);
+    });
+
+    it('should raise the priority fee to the minimum CWC applies', async function() {
+      // 1 micro-lamport/CU is raised to 1,000; 1,000 * 200,000 CU = 200 lamports
+      (await getFee({ outputs: outputs(1), priorityFee: 1, computeUnits: 200000 })).should.equal(5000 + 200);
+    });
+
+    it('should use the default compute unit limit per instruction without computeUnits', async function() {
+      // 200,000 CU per transfer instruction
+      (await getFee({ outputs: outputs(1), priorityFee: 10000 })).should.equal(5000 + 2000);
+      (await getFee({ outputs: outputs(3), priorityFee: 10000 })).should.equal(5000 + 6000);
+      // the memo is one more instruction
+      (await getFee({ outputs: outputs(1), memo: 'refund', priorityFee: 10000 })).should.equal(5000 + 4000);
+    });
+
+    it('should cap the default compute unit limit at the per-transaction maximum', async function() {
+      // 12 transfers would be 2.4M CU, capped at 1.4M
+      (await getFee({ outputs: outputs(12), priorityFee: 10000 })).should.equal(5000 + 14000);
+    });
+  });
+
+  describe('#selectTxInputs', function() {
+    const sol = ChainService.get('sol');
+    const wallet = { chain: 'sol', network: 'livenet' };
+    const fee = 5000;
+    let checkTxCalled;
+
+    beforeEach(function() {
+      checkTxCalled = false;
+      sinon.stub(sol, 'checkTx').callsFake(() => {
+        checkTxCalled = true;
+        return null;
+      });
+    });
+
+    afterEach(function() {
+      sinon.restore();
+    });
+
+    it('should reject a total that a number rounds down to the balance', function(done) {
+      const balance = 9007199254740992 + Defaults.MIN_SOL_BALANCE;
+      const server = {
+        getBalance: (_opts, cb) => cb(null, { totalAmount: balance, availableAmount: balance })
+      };
+      const txp = TxProposal.fromObj({
+        version: 3,
+        id: '75c34f49-1ed6-255f-e9fd-0c71ae75ed1e',
+        walletId: '1',
+        creatorId: '1',
+        coin: 'sol',
+        chain: 'sol',
+        network: 'livenet',
+        from: '8WyoNvKsmfdG6zrbzNBVN8DETyLra3ond61saU9C52YR',
+        fee: 5000,
+        status: 'pending',
+        actions: [],
+        outputs: [
+          { toAddress: 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY', amount: '9007199254740992' },
+          { toAddress: 'F7FknkRckx4yvA3Gexnx1H3nwPxndMxVt58BwAzEQhcY', amount: '1' }
+        ]
+      } as any);
+
+      ChainService.get('sol').selectTxInputs(server as any, txp, {} as any, {}, err => {
+        should.exist(err);
+        err.code.should.equal('INSUFFICIENT_FUNDS');
+        done();
+      });
+    });
+
+    // Token balance is returned when tokenAddress is passed, native SOL balance otherwise
+    const makeServer = ({ native, token }: { native: any; token?: any }) => ({
+      getBalance: (opts, cb) => cb(null, opts.tokenAddress ? token : native)
+    });
+    const balance = (total, available) => ({ totalAmount: total, availableAmount: available });
+    const makeTxp = amount => ({ fee, getTotalAmount: () => amount, getTotalAmountBigInt: () => BigInt(amount) });
+
+    describe('SPL token', function() {
+      const opts = { tokenAddress: 'mint' };
+
+      it('should fail with INSUFFICIENT_SOL_FEE if the wallet has no SOL for the fee', function(done) {
+        const server = makeServer({ token: balance(1e6, 1e6), native: balance(0, 0) });
+        sol.selectTxInputs(server as any, makeTxp(5e5) as any, wallet as any, opts, err => {
+          should.exist(err);
+          err.should.be.instanceof(ClientError);
+          err.code.should.equal('INSUFFICIENT_SOL_FEE');
+          err.message.should.equal('Your linked SOL wallet does not have enough SOL for fee. RequiredFee: 5000');
+          err.messageData.should.deep.equal({ requiredFee: fee });
+          checkTxCalled.should.equal(false);
+          done();
+        });
+      });
+
+      it('should fail with LOCKED_SOL_FEE if the SOL for the fee is locked', function(done) {
+        const server = makeServer({ token: balance(1e6, 1e6), native: balance(1e7, 1000) });
+        sol.selectTxInputs(server as any, makeTxp(5e5) as any, wallet as any, opts, err => {
+          should.exist(err);
+          err.should.be.instanceof(ClientError);
+          err.code.should.equal('LOCKED_SOL_FEE');
+          err.messageData.should.deep.equal({ requiredFee: fee });
+          checkTxCalled.should.equal(false);
+          done();
+        });
+      });
+
+      it('should still fail with INSUFFICIENT_FUNDS when the token balance is short', function(done) {
+        const server = makeServer({ token: balance(1e5, 1e5), native: balance(1e9, 1e9) });
+        sol.selectTxInputs(server as any, makeTxp(5e5) as any, wallet as any, opts, err => {
+          should.exist(err);
+          err.code.should.equal('INSUFFICIENT_FUNDS');
+          done();
+        });
+      });
+
+      it('should pass when both the token and the SOL fee are covered', function(done) {
+        const server = makeServer({ token: balance(1e6, 1e6), native: balance(1e9, 1e9) });
+        sol.selectTxInputs(server as any, makeTxp(5e5) as any, wallet as any, opts, err => {
+          should.not.exist(err);
+          checkTxCalled.should.equal(true);
+          done();
+        });
+      });
+    });
+
+    describe('native SOL', function() {
+      it('should fail with INSUFFICIENT_FUNDS_FOR_FEE if the amount fits but the fee does not', function(done) {
+        const amount = 1e9;
+        const server = makeServer({ native: balance(amount + Defaults.MIN_SOL_BALANCE, amount) });
+        sol.selectTxInputs(server as any, makeTxp(amount) as any, wallet as any, {}, err => {
+          should.exist(err);
+          err.should.be.instanceof(ClientError);
+          err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
+          err.message.should.equal('Insufficient funds for fee. RequiredFee: 5000');
+          err.messageData.should.deep.equal({ requiredFee: fee });
+          checkTxCalled.should.equal(false);
+          done();
+        });
+      });
+
+      it('should still fail with INSUFFICIENT_FUNDS when the amount does not fit', function(done) {
+        const server = makeServer({ native: balance(1e9, 1e9) });
+        sol.selectTxInputs(server as any, makeTxp(2e9) as any, wallet as any, {}, err => {
+          should.exist(err);
+          err.code.should.equal('INSUFFICIENT_FUNDS');
+          done();
+        });
+      });
+
+      it('should pass when the amount and fee are covered', function(done) {
+        const amount = 1e9;
+        const server = makeServer({ native: balance(2e9, amount + fee) });
+        sol.selectTxInputs(server as any, makeTxp(amount) as any, wallet as any, {}, err => {
+          should.not.exist(err);
+          checkTxCalled.should.equal(true);
+          done();
+        });
+      });
+    });
   });
 });

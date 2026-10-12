@@ -2,9 +2,6 @@
 /* jshint unused: false */
 
 const should = require('chai').should();
-const expect = require('chai').expect;
-const _ = require('lodash');
-
 const bitcore = require('../../..');
 
 const Transaction = bitcore.Transaction;
@@ -30,6 +27,34 @@ describe('MultiSigInput', function() {
     script: new Script('5221025c95ec627038e85b5688a9b3d84d28c5ebe66e8c8d697d498e20fe96e3b1ab1d2102cdddfc974d41a62f1f80081deee70592feb7d6e6cf6739d6592edbe7946720e72103c95924e02c240b5545089c69c6432447412b58be43fd671918bd184a5009834353ae'),
     satoshis: 1000000
   };
+  it('sorts objects, hex strings, buffers, and mixed keys without mutating caller arrays', function() {
+    const expected = [public2, public3, public1].map(key => key.toString());
+    const representations = [
+      [public1, public2, public3],
+      expected,
+      [public1, public2, public3].map(key => key.toBuffer()),
+      [public1.toString(), public2, public3.toBuffer()]
+    ];
+    const permutations = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
+    for (const keys of representations) {
+      for (const permutation of permutations) {
+        const pubkeys = permutation.map(index => keys[index]);
+        const original = [...pubkeys];
+        const input = new MultiSigInput({ output, script: Script.empty() }, pubkeys, 2);
+        input.publicKeys.map(key => key.toString('hex')).should.deep.equal(expected);
+        pubkeys.should.deep.equal(original);
+      }
+    }
+  });
+  it('orders Buffer keys by their bytes rather than decoded text', function() {
+    const first = Buffer.from('02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5', 'hex');
+    const second = Buffer.from('02d7924d4f7d43ea965a465ae3095ff41131e5946f3c85f79e44adbcf8e27e080e', 'hex');
+    const pubkeys = [first, second];
+    const outputData = { script: Script.buildMultisigOut(pubkeys, 2), satoshis: 1000000 };
+    const input = new MultiSigInput({ output: outputData, script: Script.empty() }, pubkeys, 2);
+    input.publicKeys.should.deep.equal([first, second]);
+    pubkeys.should.deep.equal([first, second]);
+  });
   it('can count missing signatures', function() {
     const transaction = new Transaction()
       .from(output, [public1, public2, public3], 2)
@@ -72,18 +97,21 @@ describe('MultiSigInput', function() {
       .to(address, 1000000);
     const input = transaction.inputs[0];
 
-    _.every(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
-      const serialized = publicKeyMissing.toString();
-      return serialized === public1.toString() ||
-              serialized === public2.toString() ||
-              serialized === public3.toString();
-    }).should.equal(true);
+    const missingPublicKeys = input.publicKeysWithoutSignature().map(publicKey => publicKey.toString());
+    missingPublicKeys.should.have.members([
+      public1.toString(),
+      public2.toString(),
+      public3.toString()
+    ]);
+    missingPublicKeys.should.have.length(3);
+
     transaction.sign(privateKey1);
-    _.every(input.publicKeysWithoutSignature(), function(publicKeyMissing) {
-      const serialized = publicKeyMissing.toString();
-      return serialized === public2.toString() ||
-              serialized === public3.toString();
-    }).should.equal(true);
+    const missingAfterSign = input.publicKeysWithoutSignature().map(publicKey => publicKey.toString());
+    missingAfterSign.should.have.members([
+      public2.toString(),
+      public3.toString()
+    ]);
+    missingAfterSign.should.have.length(2);
   });
   it('can clear all signatures', function() {
     const transaction = new Transaction()

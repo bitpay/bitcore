@@ -34,6 +34,9 @@ interface Errors<T> {
   // Optimisim Errors
   INSUFFICIENT_OP_FEE: T;
   LOCKED_OP_FEE: T;
+  // Solana Errors
+  INSUFFICIENT_SOL_FEE: T;
+  LOCKED_SOL_FEE: T;
   HISTORY_LIMIT_EXCEEDED: T;
   MAIN_ADDRESS_GAP_REACHED: T;
   MULTI_TX_UNSUPPORTED: T;
@@ -105,6 +108,8 @@ const errors: Errors<string> = {
   LOCKED_BASE_FEE: 'Your linked BASE wallet does not have enough ETH for fee',
   INSUFFICIENT_OP_FEE: 'Your linked OP wallet does not have enough ETH for fee',
   LOCKED_OP_FEE: 'Your linked OP wallet does not have enough ETH for fee',
+  INSUFFICIENT_SOL_FEE: 'Your linked SOL wallet does not have enough SOL for fee',
+  LOCKED_SOL_FEE: 'Your linked SOL wallet does not have enough SOL for fee',
   INVALID_ADDRESS: 'Invalid address',
   INVALID_CHANGE_ADDRESS: 'Invalid change address',
   KEY_IN_COPAYER: 'Key already registered',
