@@ -184,6 +184,70 @@ export class TssKey extends Key implements ITssKey {
   }
 };
 
+/**
+ * Normalize a public key (hex string in any valid encoding, or a PublicKey) to compressed lowercase hex.
+ * Throws `Invalid <name>` if the value is not a valid secp256k1 public key.
+ */
+function normalizePubKey(pubKey: string | BitcoreLib.PublicKey, name = 'public key'): string {
+  try {
+    const pk = pubKey instanceof BitcoreLib.PublicKey ? pubKey : new BitcoreLib.PublicKey(pubKey);
+    return BitcoreLib.PublicKey.fromPoint(pk.point, true).toString();
+  } catch {
+    throw new Error('Invalid ' + name);
+  }
+}
+
+/**
+ * Read the sender public key from the header of an ECIES payload that was not created with `noKey`.
+ * This mirrors the header parsing in ECIES.decrypt and must only be used after a successful decrypt.
+ */
+function readEciesSenderPubKey(payload: Buffer): string {
+  const len = payload[0] === 4 ? 65 : (payload[0] === 2 || payload[0] === 3) ? 33 : 0;
+  if (!len) {
+    throw new Error('Invalid join code: unrecognized key header');
+  }
+  return normalizePubKey(BitcoreLib.PublicKey.fromDER(payload.subarray(0, len)));
+}
+
+const VALID_NETWORKS = ['livenet', 'testnet', 'regtest'];
+
+/**
+ * Check the ceremony fields of a decrypted join code. A correctly encrypted code is not necessarily a well-formed one,
+ * and its fields become ceremony state and (via the creator key) trusted delivery state.
+ * Fields may be undefined if the code had too few of them.
+ */
+function assertValidJoinCode(fields: Partial<Omit<ParsedJoinCode, 'extra' | 'creatorPubKey'>>): void {
+  const { id, partyId, chain, network, m, n } = fields;
+  const fail = (reason: string): never => { throw new Error('Invalid join code: ' + reason); };
+  const toInt = (name: string, value?: string) => {
+    const int = /^\d+$/.test(value ?? '') ? Number(value) : NaN;
+    return Number.isSafeInteger(int) ? int : fail(`${name} must be a non-negative integer`);
+  };
+
+  if (!id) fail('missing session id');
+  if (!chain) fail('missing chain');
+  if (!VALID_NETWORKS.includes(network as string)) fail('unknown network');
+  const mInt = toInt('m', m);
+  const nInt = toInt('n', n);
+  const partyInt = toInt('partyId', partyId);
+  if (mInt < 1 || mInt > nInt) fail('m must be between 1 and n');
+  if (partyInt < 1 || partyInt >= nInt) fail('partyId must be between 1 and n - 1');
+}
+
+/** Join code contents as decrypted; numeric fields are unparsed */
+interface ParsedJoinCode {
+  id: string;
+  partyId: string;
+  chain: string;
+  network: string;
+  m: string;
+  n: string;
+  /** Anything after the ceremony fields (the optional invitation `extra`, used as the server password fallback) */
+  extra: string;
+  /** Normalized creator public key the code was issued by */
+  creatorPubKey: string;
+}
+
 export class TssKeyGen extends EventEmitter {
   #request: Request;
   #key: Key;
@@ -194,6 +258,8 @@ export class TssKeyGen extends EventEmitter {
   #requestPrivateKey: BitcoreLib.PrivateKey;
   #subscriptionId: ReturnType<typeof setInterval>;
   #subscriptionRunning: boolean;
+  #recipientKeys: Map<number, string> = new Map();
+  #creatorPubKey: string;
   id: string;
   chain: string;
   network: 'livenet' | 'testnet' | 'regtest';
@@ -326,14 +392,19 @@ export class TssKeyGen extends EventEmitter {
     };
   }): string {
     const { partyId, partyPubKey, opts } = params;
+    $.checkArgument(Number.isInteger(partyId) && partyId > 0 && partyId < this.n, 'partyId must be an integer between 1 and n - 1');
+    const normalizedPubKey = normalizePubKey(partyPubKey, 'partyPubKey');
     const extra = params.extra || '';
     const data = [this.id, partyId, this.chain, this.network, this.m, this.n, extra].join(':');
     const code = ECIES.encrypt({
       message: data,
-      publicKey: partyPubKey,
+      publicKey: normalizedPubKey,
       privateKey: this.#requestPrivateKey,
       opts
     });
+    // Only retain the assignment once the invitation was successfully produced.
+    // Reissuing for the same party replaces its key (e.g. the creator corrected a mistyped key before delivery).
+    this.#recipientKeys.set(partyId, normalizedPubKey);
     return code.toString(opts?.encoding || 'hex');
   }
 
@@ -344,16 +415,18 @@ export class TssKeyGen extends EventEmitter {
        * Encoding for the join code (default: 'hex')
        */
       encoding?: BufferEncoding;
+      /**
+       * The join code was created with the `noKey` option. Requires `creatorPubKey`.
+       */
+      noKey?: boolean;
     };
+    /**
+     * The session creator's public key (the creator's `getAuthPublicKey()`), obtained from a trusted exchange.
+     * Required if the join code was created with `noKey`; otherwise, if given, the join code must have been issued by this key.
+     */
+    creatorPubKey?: string;
   }) {
-    let { code } = params;
-    const { opts } = params;
-    $.checkArgument(code, 'Missing required param: code');
-    $.checkArgument(typeof code === 'string' || Buffer.isBuffer(code), '`code` must be a string or buffer');
-    code = Buffer.isBuffer(code) ? code : Buffer.from(code, opts?.encoding || 'hex');
-    const authKey = this.#credentials.requestPrivKey;
-    const decryptedCode = ECIES.decrypt({ payload: code, privateKey: authKey }).toString();
-    const [id, partyId, chain, network, m, n] = decryptedCode.split(':');
+    const { id, partyId, chain, network, m, n } = this.#readJoinCode(params);
     return {
       id,
       partyId: parseInt(partyId),
@@ -380,23 +453,25 @@ export class TssKeyGen extends EventEmitter {
        * Encoding for the join code (default: 'hex')
        */
       encoding?: BufferEncoding;
+      /**
+       * The join code was created with the `noKey` option. Requires `creatorPubKey`.
+       */
+      noKey?: boolean;
     };
     /**
      * Server password to join the TSS key. This was set by the initiator and should be told to you by them.
      */
     password?: string;
+    /**
+     * The session creator's public key (the creator's `getAuthPublicKey()`), obtained from a trusted exchange.
+     * Required if the join code was created with `noKey`; otherwise, if given, the join code must have been issued by this key.
+     * The creator key from the join code becomes the trusted key for later delivery verification.
+     */
+    creatorPubKey?: string;
   }): Promise<TssKeyGen> {
-    let { code, password } = params;
-    const { opts } = params;
-    $.checkArgument(code, 'Missing required param: code');
-    $.checkArgument(typeof code === 'string' || Buffer.isBuffer(code), '`code` must be a string or buffer');
-
-    code = Buffer.isBuffer(code) ? code : Buffer.from(code, opts?.encoding || 'hex');
-
+    let { password } = params;
+    const { id, partyId, chain, network, m, n, extra, creatorPubKey } = this.#readJoinCode(params);
     const authKey = this.#credentials.requestPrivKey;
-    const decryptedCode = ECIES.decrypt({ payload: code, privateKey: authKey }).toString();
-    const [id, partyId, chain, network, m, n, ...more] = decryptedCode.split(':');
-    const extra = more.join(':');
 
     const keygen = new ECDSA.KeyGen({
       m,
@@ -409,15 +484,107 @@ export class TssKeyGen extends EventEmitter {
     this.#keygen = keygen;
     this.id = id;
     this.chain = chain;
-    this.network = network;
+    this.network = network as TssKeyGen['network'];
     this.m = parseInt(m);
     this.n = parseInt(n);
     this.partyId = parseInt(partyId);
+    this.#creatorPubKey = creatorPubKey;
+    this.#recipientKeys.clear();
 
     const msg = await keygen.initJoin();
     password = password || extra;
     await this.#request.post('/v1/tss/keygen/' + this.id, { message: msg, password, version: TSS_KEYGEN_VERSION });
     return this;
+  }
+
+  /**
+   * Decrypt a join code and identify the creator key it was issued by.
+   * Does not retain anything; callers decide whether the result becomes trusted state.
+   */
+  #readJoinCode(params: {
+    code: string | Buffer;
+    opts?: { encoding?: BufferEncoding; noKey?: boolean };
+    creatorPubKey?: string;
+  }): ParsedJoinCode {
+    let { code } = params;
+    const { opts, creatorPubKey } = params;
+    $.checkArgument(code, 'Missing required param: code');
+    $.checkArgument(typeof code === 'string' || Buffer.isBuffer(code), '`code` must be a string or buffer');
+    code = Buffer.isBuffer(code) ? code : Buffer.from(code, opts?.encoding || 'hex');
+
+    const expectedCreatorKey = creatorPubKey == null ? undefined : normalizePubKey(creatorPubKey, 'creatorPubKey');
+
+    const authKey = this.#credentials.requestPrivKey;
+    let senderKey: string;
+    let decrypted: Buffer;
+    if (opts?.noKey) {
+      // A noKey code carries no sender key, so the caller must supply the creator's key from a trusted exchange.
+      if (!expectedCreatorKey) {
+        throw new Error('creatorPubKey is required for a join code created with noKey');
+      }
+      senderKey = expectedCreatorKey;
+      decrypted = ECIES.decrypt({ payload: code, privateKey: authKey, publicKey: senderKey });
+    } else {
+      senderKey = readEciesSenderPubKey(code);
+      decrypted = ECIES.decrypt({ payload: code, privateKey: authKey });
+    }
+
+    try {
+      if (expectedCreatorKey && senderKey !== expectedCreatorKey) {
+        throw new Error('Join code was not issued by the expected creator key');
+      }
+
+      // Parsing needs strings, which cannot be wiped. The decrypted buffer is zeroed below.
+      const [id, partyId, chain, network, m, n, ...more] = decrypted.toString().split(':');
+      assertValidJoinCode({ id, partyId, chain, network, m, n });
+      return { id, partyId, chain, network, m, n, extra: more.join(':'), creatorPubKey: senderKey };
+    } finally {
+      decrypted.fill(0);
+    }
+  }
+
+  /**
+   * Check the locally retained delivery keys against the session's party/request-key mapping from BWS.
+   * The retained keys are the source of trust: BWS data is only compared against them, never adopted.
+   * Throws if a retained key is missing or the session disagrees with it.
+   * @param sessionKeys The request public key each party enrolled in the session with, indexed by partyId
+   *   (the `publicKey` of each party's round-0 message at BWS)
+   */
+  verifyDeliveryBindings(sessionKeys: Array<string>): void {
+    $.checkArgument(Array.isArray(sessionKeys), 'sessionKeys must be an array');
+    const sessionKey = (partyId: number) => {
+      const key = sessionKeys[partyId];
+      if (!key) {
+        throw new Error(`Session has no public key for party ${partyId}`);
+      }
+      try {
+        return normalizePubKey(key);
+      } catch {
+        throw new Error(`Session has an invalid public key for party ${partyId}`);
+      }
+    };
+    const expectKey = (partyId: number, trusted: string) => {
+      if (sessionKey(partyId) !== trusted) {
+        throw new Error(`Session public key for party ${partyId} does not match the trusted key`);
+      }
+    };
+
+    if (this.partyId === 0) {
+      for (let partyId = 1; partyId < this.n; partyId++) {
+        const trusted = this.#recipientKeys.get(partyId);
+        if (!trusted) {
+          throw new Error(`Missing trusted public key for party ${partyId}. Create a join code for this party first.`);
+        }
+        expectKey(partyId, trusted);
+      }
+    } else {
+      if (!this.#creatorPubKey) {
+        throw new Error('Missing trusted creator public key. Join using the creator\'s join code.');
+      }
+      expectKey(0, this.#creatorPubKey);
+    }
+    // Every party must be registered under its own request key
+    expectKey(this.partyId, normalizePubKey(this.#credentials.requestPubKey));
   }
 
   /**

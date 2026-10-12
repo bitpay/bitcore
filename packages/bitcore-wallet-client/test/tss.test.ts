@@ -1406,4 +1406,227 @@ describe('TSS', function() {
       });
     });
   });
+  describe('Invitation delivery trust', function() {
+    const mk = (key) => new TssKeyGen({ chain, network, baseUrl: '/bws/api', request: request(app), key });
+    const pubKeyOf = (key) => key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey;
+    const compressed = (hex: string) => BitcoreLib.PublicKey.fromPoint(new BitcoreLib.PublicKey(hex).point, true).toString();
+    const uncompressed = (hex: string) => BitcoreLib.PublicKey.fromPoint(new BitcoreLib.PublicKey(hex).point, false).toString();
+    // The request public key each party enrolled with at BWS, indexed by partyId
+    const sessionKeysOf = async (id: string) => {
+      const session = await storage.fetchTssKeyGenSession({ id });
+      const keys = [];
+      for (const r of session.rounds[0]) {
+        keys[r.fromPartyId] = r.messages.publicKey;
+      }
+      return keys;
+    };
+    let creator: TssKeyGen;
+    let invitee: TssKeyGen;
+    let creatorKey;
+    let inviteeKey;
+    let otherKey;
+
+    beforeEach(async function() {
+      creatorKey = new Key({ seedType: 'new' });
+      inviteeKey = new Key({ seedType: 'new' });
+      otherKey = new Key({ seedType: 'new' });
+      creator = mk(creatorKey);
+      invitee = mk(inviteeKey);
+      await creator.newKey({ m: 2, n: 2 });
+    });
+
+    afterEach(function() {
+      creator?.unsubscribe();
+      invitee?.unsubscribe();
+    });
+
+    describe('creator', function() {
+      it(happyPath('should retain the party/key assignment from the join code'), async function() {
+        const code = creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
+        await invitee.joinKey({ code });
+        creator.verifyDeliveryBindings(await sessionKeysOf(creator.id));
+      });
+
+      it('should normalize equivalent public key encodings consistently', function() {
+        const pub = pubKeyOf(inviteeKey);
+        const encodings = (hex: string) => [compressed(hex), uncompressed(hex), hex.toUpperCase()];
+        for (const retained of encodings(pub)) {
+          creator.createJoinCode({ partyId: 1, partyPubKey: retained });
+          for (const creatorEnc of encodings(pubKeyOf(creatorKey))) {
+            for (const sessionEnc of encodings(pub)) {
+              creator.verifyDeliveryBindings([creatorEnc, sessionEnc]);
+            }
+          }
+        }
+      });
+
+      it('should not retain trust for invalid keys or party IDs', function() {
+        should.throw(() => creator.createJoinCode({ partyId: 1, partyPubKey: 'zz' }), /Invalid partyPubKey/);
+        should.throw(() => creator.createJoinCode({ partyId: 1, partyPubKey: '02' + '00'.repeat(32) }), /Invalid partyPubKey/);
+        should.throw(() => creator.createJoinCode({ partyId: 0, partyPubKey: pubKeyOf(inviteeKey) }), /partyId/);
+        should.throw(() => creator.createJoinCode({ partyId: 2, partyPubKey: pubKeyOf(inviteeKey) }), /partyId/);
+        should.throw(() => creator.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(inviteeKey)]), /Missing trusted public key for party 1/);
+      });
+
+      it('should report missing bindings', function() {
+        should.throw(() => creator.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(inviteeKey)]), /Missing trusted public key for party 1/);
+      });
+
+      it('should detect a session key that disagrees with the retained key and not adopt it', async function() {
+        creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
+        should.throw(() => creator.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(otherKey)]), /party 1 does not match/);
+        should.throw(() => creator.verifyDeliveryBindings([pubKeyOf(creatorKey)]), /no public key for party 1/);
+        should.throw(() => creator.verifyDeliveryBindings([pubKeyOf(otherKey), pubKeyOf(inviteeKey)]), /party 0 does not match/);
+        // The retained key is unchanged by the failed checks
+        creator.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(inviteeKey)]);
+      });
+
+      it('should replace the key when a join code is reissued for the same party', function() {
+        creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(otherKey) });
+        creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
+        creator.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(inviteeKey)]);
+      });
+    });
+
+    describe('invitee', function() {
+      it(happyPath('should retain the creator key and ceremony context from a normal join code'), async function() {
+        const code = creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
+        await invitee.joinKey({ code });
+        invitee.id.should.equal(creator.id);
+        invitee.partyId.should.equal(1);
+        invitee.m.should.equal(2);
+        invitee.n.should.equal(2);
+        invitee.verifyDeliveryBindings(await sessionKeysOf(creator.id));
+        should.throw(() => invitee.verifyDeliveryBindings([pubKeyOf(otherKey), pubKeyOf(inviteeKey)]), /party 0 does not match/);
+        should.throw(() => invitee.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(otherKey)]), /party 1 does not match/);
+      });
+
+      it('should report a missing creator key before joining', function() {
+        should.throw(() => invitee.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(inviteeKey)]), /Missing trusted creator public key/);
+      });
+
+      it('should not retain trust from an invalid join code', async function() {
+        const code = creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(otherKey) });
+        try {
+          await invitee.joinKey({ code });
+          throw new Error('Should have failed');
+        } catch (err) {
+          err.message.should.equal('Invalid checksum');
+        }
+        should.throw(() => invitee.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(inviteeKey)]), /Missing trusted creator public key/);
+      });
+
+      it(happyPath('should accept a normal join code when the expected creator key matches'), async function() {
+        const code = creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
+        await invitee.joinKey({ code, creatorPubKey: uncompressed(creator.getAuthPublicKey()) });
+        invitee.verifyDeliveryBindings(await sessionKeysOf(creator.id));
+      });
+
+      it('should reject a normal join code issued by a different creator key than expected', async function() {
+        const code = creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
+        try {
+          await invitee.joinKey({ code, creatorPubKey: pubKeyOf(otherKey) });
+          throw new Error('Should have failed');
+        } catch (err) {
+          err.message.should.equal('Join code was not issued by the expected creator key');
+        }
+        should.throw(() => invitee.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(inviteeKey)]), /Missing trusted creator public key/);
+      });
+
+      describe('malformed invitation contents', function() {
+        // Hand-build a correctly encrypted invitation from the real creator key with arbitrary plaintext
+        const buildCode = (fields: Array<string | number>) => {
+          const creatorPrivKey = creatorKey.createCredentials(null, { chain, network, n: 1, account: 0 }).requestPrivKey;
+          return ECIES.encrypt({
+            message: fields.join(':'),
+            publicKey: pubKeyOf(inviteeKey),
+            privateKey: creatorPrivKey
+          }).toString('hex');
+        };
+        const wellFormed = () => [creator.id, 1, 'eth', 'livenet', 2, 2, ''];
+
+        it('should accept a well-formed hand-built invitation', async function() {
+          const code = buildCode(wellFormed());
+          invitee.checkJoinCode({ code }).should.deep.equal({ id: creator.id, partyId: 1, chain: 'eth', network: 'livenet', m: 2, n: 2 });
+          await invitee.joinKey({ code });
+          invitee.verifyDeliveryBindings(await sessionKeysOf(creator.id));
+        });
+
+        const cases: Array<[string, (f: Array<string | number>) => Array<string | number>]> = [
+          ['an empty session id', f => { f[0] = ''; return f; }],
+          ['an empty chain', f => { f[2] = ''; return f; }],
+          ['an unknown network', f => { f[3] = 'mainnet'; return f; }],
+          ['an empty network', f => { f[3] = ''; return f; }],
+          ['a fractional partyId', f => { f[1] = '1.5'; return f; }],
+          ['a fractional m', f => { f[4] = '1.5'; return f; }],
+          ['a fractional n', f => { f[5] = '2.5'; return f; }],
+          ['a non-numeric m', f => { f[4] = 'two'; return f; }],
+          ['a negative partyId', f => { f[1] = '-1'; return f; }],
+          ['the creator partyId (0)', f => { f[1] = 0; return f; }],
+          ['a partyId outside the ceremony (>= n)', f => { f[1] = 2; return f; }],
+          ['m of zero', f => { f[4] = 0; return f; }],
+          ['m greater than n', f => { f[4] = 3; return f; }],
+          ['missing ceremony fields', f => f.slice(0, 4)]
+        ];
+
+        for (const [name, mutate] of cases) {
+          it(`should reject an invitation with ${name} without establishing trust`, async function() {
+            const code = buildCode(mutate(wellFormed()));
+            should.throw(() => invitee.checkJoinCode({ code }), /Invalid join code/);
+            try {
+              await invitee.joinKey({ code });
+              throw new Error('Should have failed');
+            } catch (err) {
+              err.message.should.include('Invalid join code');
+            }
+            // No ceremony state, trust, or session enrollment results from the rejected invitation
+            should.not.exist(invitee.id);
+            should.not.exist(invitee.partyId);
+            should.throw(() => invitee.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(inviteeKey)]), /Missing trusted creator public key/);
+            const session = await storage.fetchTssKeyGenSession({ id: creator.id });
+            should.not.exist(session.participants[1]);
+          });
+        }
+      });
+
+      describe('noKey join code', function() {
+        let code: string;
+        beforeEach(function() {
+          code = creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey), opts: { noKey: true } });
+        });
+
+        it(happyPath('should work with the expected creator key and retain it'), async function() {
+          invitee.checkJoinCode({ code, opts: { noKey: true }, creatorPubKey: creator.getAuthPublicKey() }).id.should.equal(creator.id);
+          await invitee.joinKey({ code, opts: { noKey: true }, creatorPubKey: creator.getAuthPublicKey() });
+          invitee.id.should.equal(creator.id);
+          invitee.verifyDeliveryBindings(await sessionKeysOf(creator.id));
+        });
+
+        it('should fail explicitly without the creator key', async function() {
+          should.throw(() => invitee.checkJoinCode({ code, opts: { noKey: true } }), /creatorPubKey is required/);
+          try {
+            await invitee.joinKey({ code, opts: { noKey: true } });
+            throw new Error('Should have failed');
+          } catch (err) {
+            err.message.should.include('creatorPubKey is required');
+          }
+          should.throw(() => invitee.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(inviteeKey)]), /Missing trusted creator public key/);
+        });
+
+        it('should fail with the wrong creator key', async function() {
+          try {
+            await invitee.joinKey({ code, opts: { noKey: true }, creatorPubKey: pubKeyOf(otherKey) });
+            throw new Error('Should have failed');
+          } catch (err) {
+            err.message.should.equal('Invalid checksum');
+          }
+          should.throw(() => invitee.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(inviteeKey)]), /Missing trusted creator public key/);
+        });
+
+        it('should reject an invalid creator key', function() {
+          should.throw(() => invitee.checkJoinCode({ code, opts: { noKey: true }, creatorPubKey: 'nope' }), /Invalid creatorPubKey/);
+        });
+      });
+    });
+  });
 });
