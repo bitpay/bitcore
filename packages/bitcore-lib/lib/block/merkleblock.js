@@ -1,13 +1,11 @@
 'use strict';
 
-const _ = require('lodash');
 const Hash = require('../crypto/hash');
 const BufferReader = require('../encoding/bufferreader');
 const BufferWriter = require('../encoding/bufferwriter');
 const errors = require('../errors');
 const Transaction = require('../transaction');
 const BufferUtil = require('../util/buffer');
-const JSUtil = require('../util/js');
 const $ = require('../util/preconditions');
 const BlockHeader = require('./blockheader');
 
@@ -29,7 +27,7 @@ function MerkleBlock(arg) {
   let info = {};
   if (BufferUtil.isBuffer(arg)) {
     info = MerkleBlock._fromBufferReader(BufferReader(arg));
-  } else if (_.isObject(arg)) {
+  } else if (typeof arg === 'object' && arg !== null) {
     let header;
     if (arg.header instanceof BlockHeader) {
       header = arg.header;
@@ -61,7 +59,7 @@ function MerkleBlock(arg) {
   } else {
     throw new TypeError('Unrecognized argument for MerkleBlock');
   }
-  _.extend(this, info);
+  Object.assign(this, info);
   this._flagBitsUsed = 0;
   this._hashesUsed = 0;
 
@@ -129,8 +127,8 @@ MerkleBlock.prototype.toObject = MerkleBlock.prototype.toJSON = function toObjec
  * @returns {Boolean} - True/False whether this MerkleBlock is Valid
  */
 MerkleBlock.prototype.validMerkleTree = function validMerkleTree() {
-  $.checkState(_.isArray(this.flags), 'MerkleBlock flags is not an array');
-  $.checkState(_.isArray(this.hashes), 'MerkleBlock hashes is not an array');
+  $.checkState(Array.isArray(this.flags), 'MerkleBlock flags is not an array');
+  $.checkState(Array.isArray(this.hashes), 'MerkleBlock hashes is not an array');
 
   // Can't have more hashes than numTransactions
   if (this.hashes.length > this.numTransactions) {
@@ -156,8 +154,8 @@ MerkleBlock.prototype.validMerkleTree = function validMerkleTree() {
  * @returns {Array} - txs hash that match the filter
  */
 MerkleBlock.prototype.filterdTxsHash = function filterdTxsHash() {
-  $.checkState(_.isArray(this.flags), 'MerkleBlock flags is not an array');
-  $.checkState(_.isArray(this.hashes), 'MerkleBlock hashes is not an array');
+  $.checkState(Array.isArray(this.flags), 'MerkleBlock flags is not an array');
+  $.checkState(Array.isArray(this.hashes), 'MerkleBlock hashes is not an array');
 
   // Can't have more hashes than numTransactions
   if (this.hashes.length > this.numTransactions) {
@@ -210,6 +208,7 @@ MerkleBlock.prototype._traverseMerkleTree = function traverseMerkleTree(depth, p
   if (opts.flagBitsUsed > this.flags.length * 8) {
     return null;
   }
+  // eslint-disable-next-line no-bitwise
   const isParentOfMatch = (this.flags[opts.flagBitsUsed >> 3] >>> (opts.flagBitsUsed++ & 7)) & 1;
   if (depth === 0 || !isParentOfMatch) {
     if (opts.hashesUsed >= this.hashes.length) {
@@ -241,6 +240,7 @@ MerkleBlock.prototype._traverseMerkleTree = function traverseMerkleTree(depth, p
  * @private
  */
 MerkleBlock.prototype._calcTreeWidth = function calcTreeWidth(height) {
+  // eslint-disable-next-line no-bitwise
   return (this.numTransactions + (1 << height) - 1) >> height;
 };
 
@@ -263,7 +263,7 @@ MerkleBlock.prototype._calcTreeHeight = function calcTreeHeight() {
  * @private
  */
 MerkleBlock.prototype.hasTransaction = function hasTransaction(tx) {
-  $.checkArgument(!_.isUndefined(tx), 'tx cannot be undefined');
+  $.checkArgument(tx != null, 'tx cannot be undefined');
   $.checkArgument(tx instanceof Transaction || typeof tx === 'string',
     'Invalid tx given, tx must be a "string" or "Transaction"');
 
