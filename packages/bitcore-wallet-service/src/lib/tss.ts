@@ -155,6 +155,53 @@ class TssKeyGenClass {
     return session;
   }
 
+  async registerParty(params: {
+    /** Session ID */
+    id: string;
+    /** Copayer ID of the requesting party */
+    copayerId: string;
+    /* Copayer data to register */
+    data: {
+      /** Party ID */
+      partyId: string | number;
+      /** Public key/Copayer ID of the party */
+      partyPubKey: string;
+    };
+  }) {
+    const { id, copayerId, data } = params;
+
+    const session = await this.getSessionForCopayer({ id, copayerId });
+    const reqPartyId = session.participants.indexOf(copayerId);
+    if (reqPartyId !== 0) {
+      throw Errors.TSS_NON_PARTICIPANT.withMessage('Only the first participant can register a party');
+    }
+
+    const partyId = parseInt(data.partyId as string);
+    const pubKey = data.partyPubKey?.trim();
+
+    if (!(partyId > 0) || !pubKey || pubKey === copayerId || partyId >= session.n) {
+      throw Errors.TSS_INVALID_PARTY_DATA.withMessage(`Invalid data for party ${partyId} registration`);
+    }
+
+    if (session.authPublicKeys.includes(pubKey)) {
+      if (session.authPublicKeys.indexOf(pubKey) === partyId) {
+        // Already registered at partyId -> return idempotently
+        return;
+      } else {
+        // Trying to re-register a party that is already registered under a different party ID
+        throw Errors.TSS_PARTY_ALREADY_REGISTERED;
+      }
+    }
+    
+    // Has party already submitted initial rounds message? (case when this is a re-register)
+    if (session.rounds?.[0]?.some(round => round.fromPartyId === partyId)) {
+      throw Errors.TSS_ROUNDS_ALREADY_STARTED.withMessage(`Party ${partyId} has already submitted an initial message. Cannot register a new party ${partyId}`);
+    }
+
+    const storage = WalletService.getStorage();
+    await storage.storeTssKeyGenAuthPublicKey({ id, partyId, authPublicKey: pubKey, __v: session.__v });
+  }
+
   /**
    * Get messages for a given party in a TSS keygen session.
    * Only returns messages if all other parties have sent their messages for the round.
@@ -279,10 +326,13 @@ class TssKeyGenClass {
 
 
       if (!session.participants[message.partyId]) {
+        if (session.participants.includes(copayerId)) {
+          throw Errors.TSS_PARTY_ALREADY_REGISTERED;
+        }
         if (!this._checkPassword({ session, password })) {
           throw Errors.TSS_INVALID_PASSWORD;
         }
-        await storage.storeTssKeyGenParticipant({ id, partyId: message.partyId, copayerId });
+        await storage.storeTssKeyGenParticipant({ id, partyId: message.partyId, copayerId, __v: session.__v });
       }
 
       let result = false;

@@ -106,13 +106,12 @@ export async function createThresholdSigWallet(
             Utils.copyToClipboard(joinCode);
           } catch (error) {
             prompt.log.error(`Error copying to clipboard: ${error instanceof Error ? error.message : String(error)}`);
-            joinCodeAction = null; // Reset to re-prompt the user
           }
           break;
         case 'continue':
           break;
       }
-    } while (joinCodeAction !== 'continue');
+    } while (joinCodeAction === 'copy');
   }
 
   const spinner = prompt.spinner({ indicator: 'timer', onCancel: () => { tss.unsubscribe(); } });
