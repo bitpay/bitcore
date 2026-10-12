@@ -118,13 +118,14 @@ export function authTssSignRequest(): express.RequestHandler {
       
       const { id } = req.params as { [key: string]: string };
       const body = req.body as { message: ITssSigMessageObject | undefined };
+      const verifyMsg = req.method !== 'GET'; // getters methods don't have a body.message to verify message has correct info
 
       const copayer = await storage.fetchCopayerLookup(copayerId);
       if (!copayer) {
         throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found');
       }
       const pubKey = copayer.requestPubKeys[0].key;
-      if (body?.message && pubKey !== body?.message?.publicKey) {
+      if (verifyMsg && pubKey !== body?.message?.publicKey) {
         throw Errors.NOT_AUTHORIZED.withMessage('Invalid public key');
       }
 
@@ -135,7 +136,7 @@ export function authTssSignRequest(): express.RequestHandler {
         if (!party) {
           throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found in session');
         }
-        if (body?.message && party.partyId !== body?.message?.partyId) {
+        if (verifyMsg && party.partyId !== body?.message?.partyId) {
           throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found in session');
         }
         if (session.isExpired()) {
