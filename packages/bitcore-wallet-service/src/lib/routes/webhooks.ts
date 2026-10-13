@@ -149,20 +149,6 @@ export function registerWebhookRoutes(router: express.Router, context: RouteCont
   });
 
   /**
-   * POST /v1/service/ramp/offramp-webhook
-   * Ramp sell (offramp) event. Configured via offrampWebhookV3Url in the Ramp widget.
-   */
-  router.post('/v1/service/ramp/offramp-webhook', (req, res) => {
-    const server = getServer(req, res);
-    if (!server) return;
-    return handleWebhook(
-      req, res, 'ramp',
-      () => server.externalServices.ramp.rampHandleWebhook(req),
-      event => server.storage.storeOnrampWebhookEvent({ event })
-    ).catch(err => logger.error('[webhook:ramp] Unhandled error: %o', err));
-  });
-
-  /**
    * POST /v1/service/transak/webhook
    * Transak order event. Payload data field is a HS256 JWT signed with the
    * Partner Access Token (rotates, cached per env in TransakService).

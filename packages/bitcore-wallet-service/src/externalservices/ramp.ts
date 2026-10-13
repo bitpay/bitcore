@@ -183,7 +183,8 @@ export class RampService {
     if (req.body.userId && webhookCallbackBaseUrl) {
       const userIdParam = 'userId=' + encodeURIComponent(req.body.userId);
       const webhookStatusUrl = `${webhookCallbackBaseUrl}/v1/service/ramp/webhook?${userIdParam}`;
-      // TODO: We don't currently use the offrampWebhookV3Url, but we may want to in the future. If so, uncomment the lines below.
+      // TODO: Sell webhooks are disabled for now. To enable them, register POST /v1/service/ramp/offramp-webhook
+      // in routes/webhooks.ts (same handler as /v1/service/ramp/webhook) and uncomment the lines below.
       // const offrampWebhookV3Url = `${webhookCallbackBaseUrl}/v1/service/ramp/offramp-webhook?${userIdParam}`;
       qs.push('webhookStatusUrl=' + encodeURIComponent(webhookStatusUrl));
       // qs.push('offrampWebhookV3Url=' + encodeURIComponent(offrampWebhookV3Url));
