@@ -4,9 +4,7 @@ import * as chai from 'chai';
 import * as crypto from 'crypto';
 import * as sinon from 'sinon';
 import 'chai/register-should';
-import * as crypto from 'crypto';
 import util from 'util';
-import { TransakService } from '../../../src/externalservices/transak';
 import { WalletService } from '../../../src/lib/server';
 import { TransakService } from '../../../src/externalservices/transak';
 import * as TestData from '../../testdata';
@@ -1072,7 +1070,7 @@ describe('Transak integration', () => {
 
     it('should share the cached access token across TransakService instances', async () => {
       await server.externalServices.transak.transakHandleWebhook(req);
-      const otherInstance = new TransakService();
+      const otherInstance = new TransakService(server.storage, server.lock);
       let callCount = 0;
       otherInstance.request = {
         post: () => {
