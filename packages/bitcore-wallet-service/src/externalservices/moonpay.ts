@@ -584,41 +584,40 @@ export class MoonpayService {
       { key: config.moonpay.production?.webhookSecretKey, isEmbedded: false },
       { key: config.moonpay.production?.webhookSecretKeyEmbedded, isEmbedded: true }
     ].filter(k => !!k.key);
+    if (!secretKeys.length) {
+      throw new Error('MoonPay webhook secret not configured');
+    }
 
-    let isEmbedded: boolean | undefined;
-    if (secretKeys.length) {
-      const signatureHeader = req.headers['moonpay-signature-v2'] as string;
-      if (!signatureHeader) {
-        throw new Error('MoonPay webhook missing Moonpay-Signature-V2 header');
+    const signatureHeader = req.headers['moonpay-signature-v2'] as string;
+    if (!signatureHeader) {
+      throw new Error('MoonPay webhook missing Moonpay-Signature-V2 header');
+    }
+    let isEmbedded: boolean;
+    try {
+      // Parse: t=timestamp,s=signature
+      const parts: Record<string, string> = {};
+      for (const part of signatureHeader.split(',')) {
+        const [k, v] = part.split('=');
+        if (k && v !== undefined) parts[k] = v;
       }
-      try {
-        // Parse: t=timestamp,s=signature
-        const parts: Record<string, string> = {};
-        for (const part of signatureHeader.split(',')) {
-          const [k, v] = part.split('=');
-          if (k && v !== undefined) parts[k] = v;
-        }
-        if (!parts.t || !parts.s) throw new Error('Invalid Moonpay-Signature-V2 header');
+      if (!parts.t || !parts.s) throw new Error('Invalid Moonpay-Signature-V2 header');
 
-        // signed_payload = timestamp + '.' + rawBody
-        const rawBody: string = (req as any).rawBody ?? JSON.stringify(req.body);
-        const signedPayload = `${parts.t}.${rawBody}`;
-        const given = Buffer.from(parts.s, 'hex');
-        const matched = secretKeys.find(({ key }) => {
-          const expected = crypto.createHmac('sha256', key).update(signedPayload).digest();
-          return expected.length === given.length && crypto.timingSafeEqual(expected, given);
-        });
-        if (!matched) {
-          throw new Error('MoonPay webhook signature mismatch');
-        }
-        isEmbedded = matched.isEmbedded;
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err);
-        logger.warn('MoonPay webhook signature error: %s', errMsg);
-        throw new Error('MoonPay webhook signature verification failed');
+      // signed_payload = timestamp + '.' + rawBody
+      const rawBody: string = (req as any).rawBody ?? JSON.stringify(req.body);
+      const signedPayload = `${parts.t}.${rawBody}`;
+      const given = Buffer.from(parts.s, 'hex');
+      const matched = secretKeys.find(({ key }) => {
+        const expected = crypto.createHmac('sha256', key).update(signedPayload).digest();
+        return expected.length === given.length && crypto.timingSafeEqual(expected, given);
+      });
+      if (!matched) {
+        throw new Error('MoonPay webhook signature mismatch');
       }
-    } else {
-      logger.warn('MoonPay webhook: no webhookSecretKey configured, skipping signature verification');
+      isEmbedded = matched.isEmbedded;
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err);
+      logger.warn('MoonPay webhook signature error: %s', errMsg);
+      throw new Error('MoonPay webhook signature verification failed');
     }
 
     const body = req.body || {};

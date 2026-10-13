@@ -280,9 +280,10 @@ export class BanxaService {
    * Signature is computed over: POST\n{WEBHOOK_PATH}\n{NONCE}\n{RAW_BODY}
    * https://docs.banxa.com/products/hosted-checkout/docs/transaction-lifecycle/webhooks
    *
-   * WEBHOOK_PATH must be the full URI path of this endpoint as registered in the
-   * Banxa dashboard (including any proxy prefix, e.g. /bws/api/v1/service/banxa/webhook).
-   * Configure it per env in config.banxa[env].webhookPath.
+   * WEBHOOK_PATH is the full URI path Banxa called, which defaults to the path
+   * this request was received on (base path included, e.g.
+   * /bws/api/v1/service/banxa/webhook). If a proxy rewrites the path, set
+   * config.banxa[env].webhookPath to the path registered in the Banxa dashboard.
    *
    * The environment is determined by which configured key verifies the signature
    * (separate URLs/keys per env in the dashboard), not by the request.
@@ -290,41 +291,41 @@ export class BanxaService {
   banxaHandleWebhook(req): { event: OnrampWebhookEvent } {
     if (!config.banxa) throw new Error('Banxa missing credentials');
 
+    const requestPath = `${req.baseUrl || ''}${req.path || ''}`;
     const secretKeys: { key: string; env: string; webhookPath: string }[] = [
-      { key: (config.banxa.production as any)?.webhookSecretKey || config.banxa.production?.secretKey, env: 'production', webhookPath: (config.banxa.production as any)?.webhookPath || '/v1/service/banxa/webhook' },
-      { key: (config.banxa.sandbox as any)?.webhookSecretKey || config.banxa.sandbox?.secretKey, env: 'sandbox', webhookPath: (config.banxa.sandbox as any)?.webhookPath || '/v1/service/banxa/webhook' }
+      { key: (config.banxa.production as any)?.webhookSecretKey || config.banxa.production?.secretKey, env: 'production', webhookPath: (config.banxa.production as any)?.webhookPath || requestPath },
+      { key: (config.banxa.sandbox as any)?.webhookSecretKey || config.banxa.sandbox?.secretKey, env: 'sandbox', webhookPath: (config.banxa.sandbox as any)?.webhookPath || requestPath }
     ].filter(k => !!k.key);
+    if (!secretKeys.length) {
+      throw new Error('Banxa webhook secret not configured');
+    }
 
-    let env = 'production';
-    if (secretKeys.length) {
-      const authHeader = req.headers['authorization'] as string;
-      if (!authHeader) {
-        throw new Error('Banxa webhook missing Authorization header');
+    const authHeader = req.headers['authorization'] as string;
+    if (!authHeader) {
+      throw new Error('Banxa webhook missing Authorization header');
+    }
+    let env: string;
+    try {
+      // Strip 'Bearer ' prefix
+      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+      const parts = token.split(':');
+      if (parts.length !== 3) throw new Error('Invalid Banxa Authorization header format');
+      const [, receivedSig, nonce] = parts;
+      const rawBody: string = (req as any).rawBody ?? JSON.stringify(req.body);
+      const given = Buffer.from(receivedSig, 'hex');
+      const matched = secretKeys.find(({ key, webhookPath }) => {
+        const signingString = `POST\n${webhookPath}\n${nonce}\n${rawBody}`;
+        const expected = crypto.createHmac('sha256', key).update(signingString).digest();
+        return expected.length === given.length && crypto.timingSafeEqual(expected, given);
+      });
+      if (!matched) {
+        throw new Error('Banxa webhook signature mismatch');
       }
-      try {
-        // Strip 'Bearer ' prefix
-        const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
-        const parts = token.split(':');
-        if (parts.length !== 3) throw new Error('Invalid Banxa Authorization header format');
-        const [, receivedSig, nonce] = parts;
-        const rawBody: string = (req as any).rawBody ?? JSON.stringify(req.body);
-        const given = Buffer.from(receivedSig, 'hex');
-        const matched = secretKeys.find(({ key, webhookPath }) => {
-          const signingString = `POST\n${webhookPath}\n${nonce}\n${rawBody}`;
-          const expected = crypto.createHmac('sha256', key).update(signingString).digest();
-          return expected.length === given.length && crypto.timingSafeEqual(expected, given);
-        });
-        if (!matched) {
-          throw new Error('Banxa webhook signature mismatch');
-        }
-        env = matched.env;
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err);
-        logger.warn('Banxa webhook signature error: %s', errMsg);
-        throw new Error('Banxa webhook signature verification failed');
-      }
-    } else {
-      logger.warn('Banxa webhook: no secretKey configured, skipping signature verification');
+      env = matched.env;
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err);
+      logger.warn('Banxa webhook signature error: %s', errMsg);
+      throw new Error('Banxa webhook signature verification failed');
     }
 
     const body = req.body || {};

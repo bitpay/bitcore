@@ -312,11 +312,14 @@ export class RampService {
     const publicKeys: { key: string; env: string }[] = [
       { key: (config.ramp.production as any)?.webhookSigningKey, env: 'production' },
       { key: (config.ramp.sandbox as any)?.webhookSigningKey, env: 'sandbox' }
-    ];
+    ].filter(k => !!k.key);
+    if (!publicKeys.length) {
+      throw new Error('Ramp webhook signing key not configured');
+    }
 
     const body = req.body || {};
 
-    let env = 'production';
+    let env: string;
     const sigHeader = req.headers['x-body-signature'] as string;
     if (!sigHeader) {
       throw new Error('Ramp webhook missing X-Body-Signature header');

@@ -280,39 +280,41 @@ export class SimplexService {
       { key: config.simplex.production?.publicKeyWebhook, env: 'production' },
       { key: config.simplex.sandbox?.publicKeyWebhook, env: 'sandbox' }
     ].filter(k => !!k.key);
+    if (!publicKeys.length) {
+      throw new Error('Simplex webhook public key not configured');
+    }
 
-    let env = 'production';
-    if (publicKeys.length) {
-      const signature = req.headers['x-signature-sha256'] as string;
-      if (!signature) {
-        throw new Error('Simplex webhook missing X-Signature-SHA256 header');
+    const signature = req.headers['x-signature-sha256'] as string;
+    if (!signature) {
+      throw new Error('Simplex webhook missing X-Signature-SHA256 header');
+    }
+    let env: string;
+    try {
+      // Verify RS256 JWT: split into header.payload.signature parts
+      const parts = signature.split('.');
+      if (parts.length !== 3) throw new Error('Invalid JWT format');
+      const signingInput = `${parts[0]}.${parts[1]}`;
+      const sig = Buffer.from(parts[2], 'base64url');
+      const matched = publicKeys.find(({ key }) => {
+        const verifier = crypto.createVerify('RSA-SHA256');
+        verifier.update(signingInput);
+        return verifier.verify(key, sig);
+      });
+      if (!matched) {
+        throw new Error('Simplex webhook signature mismatch');
       }
-      try {
-        // Verify RS256 JWT: split into header.payload.signature parts
-        const parts = signature.split('.');
-        if (parts.length !== 3) throw new Error('Invalid JWT format');
-        const signingInput = `${parts[0]}.${parts[1]}`;
-        const sig = Buffer.from(parts[2], 'base64url');
-        const matched = publicKeys.find(({ key }) => {
-          const verifier = crypto.createVerify('RSA-SHA256');
-          verifier.update(signingInput);
-          return verifier.verify(key, sig);
-        });
-        if (!matched) {
-          throw new Error('Simplex webhook signature mismatch');
-        }
-        const jwtPayload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
-        if (jwtPayload?.exp != null && jwtPayload.exp * 1000 < Date.now()) {
-          throw new Error('Simplex webhook JWT expired');
-        }
-        env = matched.env;
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err);
-        logger.warn('Simplex webhook signature error: %s', errMsg);
-        throw new Error('Simplex webhook signature verification failed');
+      const jwtPayload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+      if (!Number.isFinite(jwtPayload?.exp)) {
+        throw new Error('Simplex webhook JWT missing exp');
       }
-    } else {
-      logger.warn('Simplex webhook: no publicKeyWebhook configured, skipping signature verification');
+      if (jwtPayload.exp * 1000 < Date.now()) {
+        throw new Error('Simplex webhook JWT expired');
+      }
+      env = matched.env;
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err);
+      logger.warn('Simplex webhook signature error: %s', errMsg);
+      throw new Error('Simplex webhook signature verification failed');
     }
 
     const body = req.body || {};

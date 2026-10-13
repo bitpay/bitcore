@@ -254,28 +254,30 @@ export class SardineService {
       { key: (config.sardine.production as any)?.webhookSecret, env: 'production' },
       { key: (config.sardine.sandbox as any)?.webhookSecret, env: 'sandbox' }
     ].filter(k => !!k.key);
+    if (!webhookSecrets.length) {
+      throw new Error('Sardine webhook secret not configured');
+    }
 
-    let env = 'production';
     const sigHeader = req.headers['x-sardine-signature'] as string | undefined;
-    if (sigHeader && webhookSecrets.length) {
-      try {
-        const rawBody: string = (req as any).rawBody ?? JSON.stringify(req.body);
-        const given = Buffer.from(sigHeader, 'hex');
-        const matched = webhookSecrets.find(({ key }) => {
-          const expected = crypto.createHmac('sha256', key).update(rawBody).digest();
-          return expected.length === given.length && crypto.timingSafeEqual(expected, given);
-        });
-        if (!matched) {
-          throw new Error('Sardine webhook signature mismatch');
-        }
-        env = matched.env;
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err);
-        logger.warn('Sardine webhook signature error: %s', errMsg);
-        throw new Error('Sardine webhook signature verification failed');
+    if (!sigHeader) {
+      throw new Error('Sardine webhook missing X-Sardine-Signature header');
+    }
+    let env: string;
+    try {
+      const rawBody: string = (req as any).rawBody ?? JSON.stringify(req.body);
+      const given = Buffer.from(sigHeader, 'hex');
+      const matched = webhookSecrets.find(({ key }) => {
+        const expected = crypto.createHmac('sha256', key).update(rawBody).digest();
+        return expected.length === given.length && crypto.timingSafeEqual(expected, given);
+      });
+      if (!matched) {
+        throw new Error('Sardine webhook signature mismatch');
       }
-    } else {
-      logger.warn('Sardine webhook: signature not verified (header present: %s, secret configured: %s)', !!sigHeader, !!webhookSecrets.length);
+      env = matched.env;
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err);
+      logger.warn('Sardine webhook signature error: %s', errMsg);
+      throw new Error('Sardine webhook signature verification failed');
     }
 
     const body = req.body || {};

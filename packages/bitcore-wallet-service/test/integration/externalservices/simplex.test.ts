@@ -18,7 +18,7 @@ const { privateKey: simplexPrivateKey, publicKey: simplexPublicKey } = crypto.ge
   privateKeyEncoding: { type: 'pkcs8', format: 'pem' }
 });
 
-function buildSimplexJwt(privateKey: string, exp: number): string {
+function buildSimplexJwt(privateKey: string, exp?: number): string {
   const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
   const payload = Buffer.from(JSON.stringify({ exp })).toString('base64url');
   const signingInput = `${header}.${payload}`;
@@ -590,10 +590,26 @@ describe('Simplex integration', () => {
       }
     });
 
-    it('should skip verification and still parse if no publicKeyWebhook is configured', () => {
+    it('should throw if the JWT has no exp', () => {
+      req.headers['x-signature-sha256'] = buildSimplexJwt(simplexPrivateKey);
+      try {
+        server.externalServices.simplex.simplexHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Simplex webhook signature verification failed');
+      }
+    });
+
+    it('should throw if no publicKeyWebhook is configured', () => {
       delete config.simplex.production.publicKeyWebhook;
-      const { event } = server.externalServices.simplex.simplexHandleWebhook(req);
-      event.externalId.should.equal('payment1');
+      delete config.simplex.sandbox?.publicKeyWebhook;
+      req.headers['x-signature-sha256'] = buildSimplexJwt(simplexPrivateKey, Math.floor(Date.now() / 1000) + 300);
+      try {
+        server.externalServices.simplex.simplexHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Simplex webhook public key not configured');
+      }
     });
 
     it('should return error if simplex is commented in config', () => {

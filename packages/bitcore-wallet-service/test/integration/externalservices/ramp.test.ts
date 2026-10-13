@@ -724,6 +724,27 @@ describe('Ramp integration', () => {
       }
     });
 
+    it('should verify with the sandbox key when only the sandbox key is configured', () => {
+      delete config.ramp.production.webhookSigningKey;
+      const body = { type: 'RELEASED', purchase: { id: 'purchase1', status: 'RELEASED', updatedAt: '2024-01-01T00:05:00.000Z' } };
+      req = { headers: { 'x-body-signature': signRampBody(body, rampWebhookPrivateKey) }, query: {}, body };
+      const { event } = server.externalServices.ramp.rampHandleWebhook(req);
+      event.env.should.equal('sandbox');
+    });
+
+    it('should throw if no webhookSigningKey is configured', () => {
+      delete config.ramp.production.webhookSigningKey;
+      delete config.ramp.sandbox.webhookSigningKey;
+      const body = { type: 'RELEASED', purchase: { id: 'purchase1' } };
+      req = { headers: { 'x-body-signature': signRampBody(body, rampWebhookPrivateKey) }, query: {}, body };
+      try {
+        server.externalServices.ramp.rampHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Ramp webhook signing key not configured');
+      }
+    });
+
     it('should return error if ramp is commented in config', () => {
       config.ramp = undefined;
       req = { headers: {}, query: {}, body: {} };

@@ -374,10 +374,10 @@ describe('Banxa integration', () => {
 
   describe('#banxaHandleWebhook', () => {
     let body;
-    const webhookPath = '/v1/service/banxa/webhook';
+    const webhookPath = '/bws/api/v1/service/banxa/webhook';
 
-    function banxaAuthHeader(secret, apiKey, nonce, rawBody) {
-      const signingString = `POST\n${webhookPath}\n${nonce}\n${rawBody}`;
+    function banxaAuthHeader(secret, apiKey, nonce, rawBody, signedPath = webhookPath) {
+      const signingString = `POST\n${signedPath}\n${nonce}\n${rawBody}`;
       const sig = crypto.createHmac('sha256', secret).update(signingString).digest('hex');
       return `Bearer ${apiKey}:${sig}:${nonce}`;
     }
@@ -396,7 +396,7 @@ describe('Banxa integration', () => {
         payment_method: 'card',
         metadata: 'user1'
       };
-      req = { headers: {}, body };
+      req = { headers: {}, body, baseUrl: '/bws/api', path: '/v1/service/banxa/webhook' };
     });
 
     it('should verify and parse a valid webhook payload', () => {
@@ -462,11 +462,25 @@ describe('Banxa integration', () => {
       }
     });
 
-    it('should skip verification and still parse if no secretKey is configured', () => {
+    it('should sign against the configured webhookPath when a proxy rewrites the path', () => {
+      config.banxa.production.webhookPath = '/public/banxa/webhook';
+      const nonce = Date.now().toString();
+      req.headers['authorization'] = banxaAuthHeader('secretKey2', 'apiKey2', nonce, JSON.stringify(body), '/public/banxa/webhook');
+      const { event } = server.externalServices.banxa.banxaHandleWebhook(req);
+      event.env.should.equal('production');
+    });
+
+    it('should throw if no secretKey is configured', () => {
       config.banxa.production.secretKey = undefined;
       config.banxa.sandbox.secretKey = undefined;
-      const { event } = server.externalServices.banxa.banxaHandleWebhook(req);
-      event.externalId.should.equal('order1');
+      const nonce = Date.now().toString();
+      req.headers['authorization'] = banxaAuthHeader('secretKey2', 'apiKey2', nonce, JSON.stringify(body));
+      try {
+        server.externalServices.banxa.banxaHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Banxa webhook secret not configured');
+      }
     });
 
     it('should return error if banxa is commented in config', () => {

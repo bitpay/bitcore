@@ -389,7 +389,6 @@ describe('Sardine integration', () => {
     });
 
     it('should parse a flat (non-nested) payload when there is no order wrapper', () => {
-      delete config.sardine.production.webhookSecret;
       req.body = {
         id: 'order2',
         status: 'complete',
@@ -399,6 +398,7 @@ describe('Sardine integration', () => {
         cryptoCurrency: 'ETH',
         externalUserId: 'user2'
       };
+      req.headers['x-sardine-signature'] = crypto.createHmac('sha256', webhookSecret).update(JSON.stringify(req.body)).digest('hex');
       const { event } = server.externalServices.sardine.sardineHandleWebhook(req);
       event.externalId.should.equal('order2');
       event.fiatCurrency.should.equal('EUR');
@@ -418,16 +418,24 @@ describe('Sardine integration', () => {
       }
     });
 
-    it('should not throw and skip verification if the signature header is missing, even with a secret configured', () => {
-      const { event } = server.externalServices.sardine.sardineHandleWebhook(req);
-      event.externalId.should.equal('order1');
+    it('should throw if the signature header is missing', () => {
+      try {
+        server.externalServices.sardine.sardineHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Sardine webhook missing X-Sardine-Signature header');
+      }
     });
 
-    it('should not throw and skip verification if no webhookSecret is configured', () => {
+    it('should throw if no webhookSecret is configured', () => {
       delete config.sardine.production.webhookSecret;
       req.headers['x-sardine-signature'] = 'some-signature';
-      const { event } = server.externalServices.sardine.sardineHandleWebhook(req);
-      event.externalId.should.equal('order1');
+      try {
+        server.externalServices.sardine.sardineHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Sardine webhook secret not configured');
+      }
     });
 
     it('should return error if sardine is commented in config', () => {
