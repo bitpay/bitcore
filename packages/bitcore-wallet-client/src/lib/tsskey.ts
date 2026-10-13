@@ -6,6 +6,7 @@ import { Constants, Encryption } from './common';
 import { Credentials } from './credentials';
 import { ExportedKey, Key, KeyAlgorithm, PasswordMaybe } from './key';
 import { Request, RequestResponse } from './request';
+import { normalizePubKey } from './tssdelivery';
 
 const $ = BitcoreLib.util.preconditions;
 
@@ -183,19 +184,6 @@ export class TssKey extends Key implements ITssKey {
     }
   }
 };
-
-/**
- * Normalize a public key (hex string in any valid encoding, or a PublicKey) to compressed lowercase hex.
- * Throws `Invalid <name>` if the value is not a valid secp256k1 public key.
- */
-function normalizePubKey(pubKey: string | BitcoreLib.PublicKey, name = 'public key'): string {
-  try {
-    const pk = pubKey instanceof BitcoreLib.PublicKey ? pubKey : new BitcoreLib.PublicKey(pubKey);
-    return BitcoreLib.PublicKey.fromPoint(pk.point, true).toString();
-  } catch {
-    throw new Error('Invalid ' + name);
-  }
-}
 
 /**
  * Read the sender public key from the header of an ECIES payload that was not created with `noKey`.
