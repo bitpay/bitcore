@@ -292,6 +292,30 @@ interface DeliveryBindings {
 }
 
 /**
+ * Check retained bindings for well-formed keys that belong to the party's role: a creator retains a key for each
+ * recipient (party IDs 1 to n - 1), and a recipient retains only the creator's key.
+ * @returns What is wrong, if anything
+ */
+function bindingsViolation(partyId: number, n: number, bindings: DeliveryBindings): string | undefined {
+  const isNormalizedKey = (key: unknown) => {
+    try {
+      return typeof key === 'string' && key === normalizePubKey(key);
+    } catch {
+      return false;
+    }
+  };
+  if (partyId === 0) {
+    if (bindings.creatorPubKey != null) return 'the creator should not have a creator key';
+    for (const [recipient, key] of bindings.recipientKeys) {
+      if (recipient < 1 || recipient >= n || !isNormalizedKey(key)) return 'malformed delivery keys';
+    }
+  } else {
+    if (bindings.recipientKeys.size) return 'a recipient has no recipient keys';
+    if (bindings.creatorPubKey != null && !isNormalizedKey(bindings.creatorPubKey)) return 'malformed delivery keys';
+  }
+}
+
+/**
  * Read `n`, `m` and `partyId` from the DKG's own export (`round:n:m:partyId:...`), which is encrypted to the request key.
  * Only the leading fields are parsed so the rest of the plaintext (which includes the seed) never becomes a string.
  */
@@ -705,21 +729,49 @@ export class TssKeyGen extends EventEmitter {
     trusted?: RestoreTrustedInputs;
   }): Promise<TssKeyGen> {
     const { session, trusted } = params;
-    const isWrapped = session.startsWith(SESSION_WRAPPER_PREFIX);
-    let legacySession = session;
-    const retained: DeliveryBindings = { recipientKeys: new Map() };
-
     // Everything is validated before any state is replaced, so a failed restore changes nothing.
+    const { restored, keygenSession, retained } = this.#readSession(session);
+    const bindings = this.#applyTrustedInputs(trusted, restored, retained);
+
+    const keygen = await ECDSA.KeyGen.restore({ session: keygenSession, authKey: this.#credentials.requestPrivKey });
+    this.id = restored.id;
+    this.m = restored.m;
+    this.n = restored.n;
+    this.partyId = restored.partyId;
+    this.#keygen = keygen;
+    this.#creatorPubKey = bindings.creatorPubKey;
+    this.#recipientKeys = bindings.recipientKeys;
+    return this;
+  }
+
+  /**
+   * Parse either session format. Does not retain anything.
+   * `retained` is what the session string itself vouches for: the keys from a wrapper, and always nothing for a legacy export.
+   */
+  #readSession(session: string): {
+    restored: { id: string; partyId: number; m: number; n: number };
+    keygenSession: string;
+    retained: DeliveryBindings;
+  } {
+    const isWrapped = session.startsWith(SESSION_WRAPPER_PREFIX);
+    const retained: DeliveryBindings = { recipientKeys: new Map() };
+    // legacy, reassigned if isWrapped
+    let unwrappedSession = session;
+
     if (isWrapped) {
       const wrapper = this.#readSessionWrapper(session.slice(SESSION_WRAPPER_PREFIX.length));
-      legacySession = wrapper.session;
+      unwrappedSession = wrapper.session;
       retained.creatorPubKey = wrapper.creatorPubKey;
       for (const { partyId, pubKey } of wrapper.recipientKeys) {
         retained.recipientKeys.set(partyId, pubKey);
       }
+      const violation = bindingsViolation(wrapper.partyId, wrapper.n, retained);
+      if (violation) {
+        throw new Error('Invalid session: ' + violation);
+      }
     }
 
-    const parts = legacySession.split(':');
+    const parts = unwrappedSession.split(':');
     const id = parts.slice(0, -4).join(':'); // id may contain colons, so we join all parts except the last 4
     const [partyId, m, n, keygenSession] = parts.slice(-4);
     const restored = { id, partyId: parseInt(partyId), m: parseInt(m), n: parseInt(n) };
@@ -736,18 +788,7 @@ export class TssKeyGen extends EventEmitter {
         throw new Error('Session ceremony parameters do not match its DKG state');
       }
     }
-
-    const bindings = this.#applyTrustedInputs(trusted, restored, retained);
-
-    const keygen = await ECDSA.KeyGen.restore({ session: keygenSession, authKey: this.#credentials.requestPrivKey });
-    this.id = restored.id;
-    this.m = restored.m;
-    this.n = restored.n;
-    this.partyId = restored.partyId;
-    this.#keygen = keygen;
-    this.#creatorPubKey = bindings.creatorPubKey;
-    this.#recipientKeys = bindings.recipientKeys;
-    return this;
+    return { restored, keygenSession, retained };
   }
 
   /**
@@ -787,27 +828,13 @@ export class TssKeyGen extends EventEmitter {
       fail('ceremony parameters do not match the wrapped session');
     }
 
-    // Retained keys must be well-formed and belong to this party's role
-    const isNormalizedKey = (key: unknown) => {
-      try {
-        return typeof key === 'string' && key === normalizePubKey(key);
-      } catch {
-        return false;
+    // Entry shape only. Whether the keys are valid and fit the role is checked by bindingsViolation().
+    const seen = new Set<number>();
+    for (const entry of wrapper.recipientKeys) {
+      if (!entry || typeof entry !== 'object' || !isInt(entry.partyId) || seen.has(entry.partyId)) {
+        fail('malformed delivery keys');
       }
-    };
-    if (wrapper.partyId === 0) {
-      if (wrapper.creatorPubKey != null) fail('the creator has no creator key');
-      const seen = new Set<number>();
-      for (const { partyId: recipient, pubKey } of wrapper.recipientKeys) {
-        // partyId is in [1, n-1], is not duplicated, and is normalized
-        if (!isInt(recipient) || recipient < 1 || recipient >= wrapper.n || seen.has(recipient) || !isNormalizedKey(pubKey)) {
-          fail('malformed delivery keys');
-        }
-        seen.add(recipient);
-      }
-    } else {
-      if (wrapper.recipientKeys.length) fail('a recipient has no recipient keys');
-      if (wrapper.creatorPubKey != null && !isNormalizedKey(wrapper.creatorPubKey)) fail('malformed delivery keys');
+      seen.add(entry.partyId);
     }
     return wrapper;
   }
@@ -826,6 +853,9 @@ export class TssKeyGen extends EventEmitter {
     if (!trusted) return bindings;
     const { recipientKeys: suppliedRecipients, joinCode } = trusted;
 
+    /**
+     * NAND(suppliedRecipients, joinCode)
+     */
     if (suppliedRecipients) {
       $.checkArgument(restored.partyId === 0, 'Recipient keys can only be supplied when restoring the creator\'s session');
       $.checkArgument(Array.isArray(suppliedRecipients), 'recipientKeys must be an array');
