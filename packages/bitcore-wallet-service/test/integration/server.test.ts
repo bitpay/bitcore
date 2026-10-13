@@ -1844,6 +1844,20 @@ describe('Wallet service', function() {
         err.code.should.equal('TSS_NON_PARTICIPANT');
       });
 
+      it('should let a keygen participant join a non-EVM TSS wallet', async function() {
+        const server = new WalletService();
+        const walletId = await createTssWallet(server, { coin: 'btc', chain: 'btc' });
+        await server.storage.db.collection('tss_keygen').updateOne(
+          { id: 'tss-evm-chains-test-session' },
+          { $push: { participants: Model.Copayer.xPubToCopayerId('btc', xPubKey) } }
+        );
+
+        const { err, result } = await joinTssWallet(server, walletId, { coin: 'btc', chain: 'btc' });
+
+        should.not.exist(err);
+        result.copayerId.should.equal(Model.Copayer.xPubToCopayerId('btc', xPubKey));
+      });
+
       it('should keep a copayer that joins while the wallet registers with the explorer', async function() {
         const server = new WalletService();
         const walletId = await createTssWallet(server, { coin: 'eth', chain: 'eth' });
