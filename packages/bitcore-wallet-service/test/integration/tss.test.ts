@@ -869,7 +869,7 @@ describe('TSS', function() {
       });
 
       it('should reject chain secrets that are not keyed by EVM chain with a non-empty secret', async function() {
-        for (const secrets of [{ btc: 'btc-secret' }, { arb: '' }, { arb: 1 }, 1]) {
+        for (const secrets of [{ btc: 'btc-secret' }, { arb: '' }, { arb: 1 }, 1, []]) {
           const res = await post(path, { secret: 'eth-secret', secrets }, partyAuth(0));
           expectError(res, 400, 'TSS_GENERIC_ERROR', 'Invalid BWS join secrets provided');
         }

@@ -659,6 +659,14 @@ export class TssKeyGen extends EventEmitter {
     chains?: Array<{ chain: string; coin: string }>;
   }) {
     const { walletName, copayerName, opts = {}, chains = [] } = params;
+    const chainNames = chains.map(({ chain }) => chain);
+    $.checkArgument(
+      chains.length === 0 ||
+      (Constants.EVM_CHAINS.includes(this.chain) &&
+        chainNames.every(chain => Constants.EVM_CHAINS.includes(chain) && chain !== this.chain) &&
+        new Set(chainNames).size === chainNames.length),
+      'Additional chains must be unique EVM chains different from the primary chain'
+    );
     const key = this.getTssKey();
     if (!key) {
       throw new Error('TSS Key generation is not complete. This should be called after the `complete` event is emitted.');
