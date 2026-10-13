@@ -2024,8 +2024,6 @@ export class Storage {
       ...(event.isEmbedded !== undefined && { isEmbedded: event.isEmbedded })
     };
 
-    console.log(`Storing onramp webhook event ${eventName} for partner ${event.partner} with id ${id} storedEvent:`, JSON.stringify(storedEvent));
-
     try {
       await this.db.collection(collections.ONRAMP_WEBHOOK_EVENTS).insertOne(storedEvent);
       let isStale = false;
