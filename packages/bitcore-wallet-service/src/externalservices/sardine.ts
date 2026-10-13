@@ -289,7 +289,7 @@ export class SardineService {
       partner: 'sardine',
       externalId: order.id || order.orderId,
       status: order.status || body.eventType || '',
-      eventName: body.eventType,
+      eventName: body.eventType || order.status,
       createdAt: order.createdAt,
       fiatAmount: order.total != null ? Number(order.total) : undefined,
       fiatCurrency: order.fiatCurrency,

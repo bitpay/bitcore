@@ -401,6 +401,7 @@ describe('Sardine integration', () => {
       req.headers['x-sardine-signature'] = crypto.createHmac('sha256', webhookSecret).update(JSON.stringify(req.body)).digest('hex');
       const { event } = server.externalServices.sardine.sardineHandleWebhook(req);
       event.externalId.should.equal('order2');
+      event.eventName.should.equal('complete');
       event.fiatCurrency.should.equal('EUR');
       event.cryptoCurrency.should.equal('ETH');
       event.userId.should.equal('user2');
