@@ -194,11 +194,15 @@ module.exports = {
   //     api: 'https://bitpay.banxa-sandbox.com/api',
   //     apiKey: 'banxa_sandbox_api_key_here',
   //     secretKey: 'banxa_sandbox_secret_key_here',
+  //     webhookSecretKey: 'banxa_sandbox_webhook_secret_key_here',
+  //     webhookPath: '/bws/api/v1/service/banxa/webhook',
   //   },
   //   production: {
   //     api: 'https://bitpay.banxa-sandbox.com/api',
   //     apiKey: 'banxa_production_api_key_here',
   //     secretKey: 'banxa_production_secret_key_here',
+  //     webhookSecretKey: 'banxa_production_webhook_secret_key_here',
+  //     webhookPath: '/bws/api/v1/service/banxa/webhook',
   //   },
   //   sandboxWeb: {
   //     api: 'https://bitpay.banxa-sandbox.com/api',

@@ -1016,6 +1016,10 @@ describe('Moonpay integration', () => {
       return `t=${ts},s=${sig}`;
     }
 
+    function signRequest() {
+      req.headers['moonpay-signature-v2'] = moonpaySignatureHeader(webhookSecret, Date.now(), JSON.stringify(req.body));
+    }
+
     beforeEach(() => {
       config.moonpay.production.webhookSecretKey = webhookSecret;
       body = {
@@ -1089,15 +1093,21 @@ describe('Moonpay integration', () => {
       }
     });
 
-    it('should skip verification and still parse if no webhookSecretKey is configured', () => {
+    it('should throw if no webhookSecretKey is configured', () => {
       delete config.moonpay.production.webhookSecretKey;
-      const { event } = server.externalServices.moonpay.moonpayHandleWebhook(req);
-      event.externalId.should.equal('tx1');
+      delete config.moonpay.production.webhookSecretKeyEmbedded;
+      signRequest();
+      try {
+        server.externalServices.moonpay.moonpayHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('MoonPay webhook secret not configured');
+      }
     });
 
     it('should throw if event type is missing', () => {
-      delete config.moonpay.production.webhookSecretKey;
       delete req.body.type;
+      signRequest();
       try {
         server.externalServices.moonpay.moonpayHandleWebhook(req);
         should.fail('should have thrown');
@@ -1107,8 +1117,8 @@ describe('Moonpay integration', () => {
     });
 
     it('should throw if transaction id is missing', () => {
-      delete config.moonpay.production.webhookSecretKey;
       delete req.body.data.id;
+      signRequest();
       try {
         server.externalServices.moonpay.moonpayHandleWebhook(req);
         should.fail('should have thrown');
@@ -1118,8 +1128,8 @@ describe('Moonpay integration', () => {
     });
 
     it('should throw if updatedAt is missing or invalid', () => {
-      delete config.moonpay.production.webhookSecretKey;
       req.body.data.updatedAt = 'not-a-date';
+      signRequest();
       try {
         server.externalServices.moonpay.moonpayHandleWebhook(req);
         should.fail('should have thrown');
