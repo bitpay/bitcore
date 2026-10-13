@@ -776,17 +776,15 @@ export class TssKeyGen extends EventEmitter {
     const [partyId, m, n, keygenSession] = parts.slice(-4);
     const restored = { id, partyId: parseInt(partyId), m: parseInt(m), n: parseInt(n) };
 
-    if (isWrapped) {
-      // The wrapper's own fields were checked against each other; check them against the DKG state too.
-      let dkg: ReturnType<typeof readKeygenSessionParams>;
-      try {
-        dkg = readKeygenSessionParams(keygenSession, this.#requestPrivateKey);
-      } catch {
-        throw new Error('Session could not be decrypted or verified');
-      }
-      if (dkg.n !== restored.n || dkg.m !== restored.m || dkg.partyId !== restored.partyId) {
-        throw new Error('Session ceremony parameters do not match its DKG state');
-      }
+    // Check both formats against the authenticated DKG state; legacy outer parameters are plaintext.
+    let dkg: ReturnType<typeof readKeygenSessionParams>;
+    try {
+      dkg = readKeygenSessionParams(keygenSession, this.#requestPrivateKey);
+    } catch {
+      throw new Error('Session could not be decrypted or verified');
+    }
+    if (dkg.n !== restored.n || dkg.m !== restored.m || dkg.partyId !== restored.partyId) {
+      throw new Error('Session ceremony parameters do not match its DKG state');
     }
     return { restored, keygenSession, retained };
   }

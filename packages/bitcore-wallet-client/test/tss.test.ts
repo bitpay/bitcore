@@ -16,7 +16,7 @@ import path from 'path';
 import { ECIES, utils as TssUtils } from '@bitpay-labs/bitcore-tss';
 import { Request } from '../src/lib/request';
 import { BitcoreLib, Deriver } from '@bitpay-labs/crypto-wallet-core';
-import { TssKeyGen, TssKey } from '../src/lib/tsskey';
+import { TssKeyGen, TssKey, type RestoreTrustedInputs } from '../src/lib/tsskey';
 import { TssSign } from '../src/lib/tsssign';
 import log from '../src/lib/log';
 import Client, { type Credentials } from '../src';
@@ -1935,6 +1935,39 @@ describe('TSS', function() {
     });
 
     describe('legacy export', function() {
+      for (const { field, offset, value } of [
+        { field: 'm', offset: 3, value: 1 },
+        { field: 'n', offset: 2, value: 4 },
+        { field: 'partyId', offset: 4, value: undefined }
+      ]) {
+        it(`should reject legacy ${field} that disagrees with the DKG state before replacing state`, async function() {
+          const parties: Array<{ instance: TssKeyGen; key: InstanceType<typeof Key>; trusted: RestoreTrustedInputs }> = [
+            {
+              instance: creator,
+              key: creatorKey,
+              trusted: { recipientKeys: [{ partyId: 1, partyPubKey: pubKeyOf(keyA) }, { partyId: 2, partyPubKey: pubKeyOf(keyB) }] }
+            },
+            { instance: inviteeA, key: keyA, trusted: { joinCode: { code: codeA } } }
+          ];
+          for (const { instance, key, trusted } of parties) {
+            const original = { id: instance.id, partyId: instance.partyId, m: instance.m, n: instance.n };
+            const parts = unwrap(instance.exportSession(), key).split(':');
+            parts[parts.length - offset] = String(value ?? original.partyId + 1);
+            for (const inputs of [undefined, trusted]) {
+              await assert.rejects(
+                instance.restoreSession({ session: parts.join(':'), trusted: inputs }),
+                { message: 'Session ceremony parameters do not match its DKG state' }
+              );
+              assert.deepStrictEqual(
+                { id: instance.id, partyId: instance.partyId, m: instance.m, n: instance.n },
+                original
+              );
+              instance.verifyDeliveryBindings(sessionKeys);
+            }
+          }
+        });
+      }
+
       it('should restore but report missing trust for the creator', async function() {
         const legacy = unwrap(creator.exportSession(), creatorKey);
         legacy.startsWith(WRAPPER_PREFIX).should.equal(false);
