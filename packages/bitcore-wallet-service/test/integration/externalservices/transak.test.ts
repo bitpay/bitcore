@@ -4,6 +4,7 @@ import * as chai from 'chai';
 import 'chai/register-should';
 import * as crypto from 'crypto';
 import util from 'util';
+import { TransakService } from '../../../src/externalservices/transak';
 import { WalletService } from '../../../src/lib/server';
 import * as TestData from '../../testdata';
 import helpers from '../helpers';
@@ -514,6 +515,8 @@ describe('Transak integration', () => {
     }
 
     beforeEach(() => {
+      TransakService['webhookAccessTokens'] = {};
+      TransakService['webhookAccessTokenRefreshes'] = {};
       server.externalServices.transak.request = fakeRefreshTokenRequest(accessTokenSecret);
       const webhookData = {
         id: 'order1',
@@ -565,6 +568,41 @@ describe('Transak integration', () => {
       callCount.should.equal(firstCallCount);
     });
 
+    it('should share the cached access token across TransakService instances', async () => {
+      await server.externalServices.transak.transakHandleWebhook(req);
+      const otherInstance = new TransakService();
+      let callCount = 0;
+      otherInstance.request = {
+        post: () => {
+          callCount++;
+        },
+      };
+      const { event } = await otherInstance.transakHandleWebhook(req);
+      event.externalId.should.equal('order1');
+      callCount.should.equal(0);
+    });
+
+    it('should share a single in-flight refresh between concurrent webhooks', async () => {
+      let callCount = 0;
+      const pending: Array<() => void> = [];
+      server.externalServices.transak.request = {
+        post: (_url, opts, cb) => {
+          callCount++;
+          should.exist(opts.timeout);
+          pending.push(() => cb(null, { body: { data: { accessToken: accessTokenSecret, expiresAt: Math.floor(Date.now() / 1000) + 7 * 24 * 3600 } } }));
+        },
+      };
+      const first = server.externalServices.transak.transakHandleWebhook(req);
+      const second = server.externalServices.transak.transakHandleWebhook(req);
+      const callsBeforeResolving = callCount;
+      for (const resolve of pending) {
+        resolve();
+      }
+      await Promise.all([first, second]);
+      callsBeforeResolving.should.equal(2); // one per env, not one per webhook
+      callCount.should.equal(2);
+    });
+
     it('should throw if the JWT signature does not match', async () => {
       req.body = { data: buildTransakJwt({ webhookData: { id: 'order1' }, eventID: 'ORDER_COMPLETED' }, 'wrongSecret') };
       try {
@@ -585,13 +623,31 @@ describe('Transak integration', () => {
       }
     });
 
-    it('should skip verification and still parse if refresh-token fails for both envs', async () => {
+    it('should throw a retryable error if refresh-token fails for both envs', async () => {
       server.externalServices.transak.request = {
         post: (_url, _opts, cb) => cb(new Error('network error'), null),
       };
-      const { event } = await server.externalServices.transak.transakHandleWebhook(req);
-      should.exist(event);
-      event.externalId.should.equal('order1');
+      try {
+        await server.externalServices.transak.transakHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Transak webhook access token unavailable');
+        err.retryable.should.equal(true);
+      }
+    });
+
+    it('should throw a retryable error if the token of the signing env could not be fetched', async () => {
+      server.externalServices.transak.request = {
+        post: (url, _opts, cb) => url.startsWith(config.transak.production.api)
+          ? cb(new Error('network error'), null)
+          : cb(null, { body: { data: { accessToken: 'sandboxAccessToken', expiresAt: Math.floor(Date.now() / 1000) + 7 * 24 * 3600 } } }),
+      };
+      try {
+        await server.externalServices.transak.transakHandleWebhook(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.retryable.should.equal(true);
+      }
     });
 
     it('should return error if transak is commented in config', async () => {

@@ -13,6 +13,9 @@ interface CachedAccessToken {
 }
 
 const ACCESS_TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000;
+const ACCESS_TOKEN_REQUEST_TIMEOUT_MS = 3000;
+
+type WebhookEnv = 'sandbox' | 'production';
 
 export class TransakService {
   request: any = request;
@@ -22,7 +25,11 @@ export class TransakService {
   // webhook `data` JWT must be verified with the Partner Access Token
   // (returned by POST /partners/api/v2/refresh-token), not a static secret.
   // Tokens are valid ~7 days.
-  private webhookAccessTokenCache: Partial<Record<'sandbox' | 'production', CachedAccessToken>> = {};
+  // Static because getServer() builds a new TransakService per request, so an
+  // instance-level cache would never be reused.
+  private static webhookAccessTokens: Partial<Record<WebhookEnv, CachedAccessToken>> = {};
+  // In-flight refreshes, so concurrent webhooks share a single refresh-token call.
+  private static webhookAccessTokenRefreshes: Partial<Record<WebhookEnv, Promise<CachedAccessToken>>> = {};
 
   private transakGetKeys(req, cleanBody: boolean = true) {
     if (!config.transak) throw new Error('Transak missing credentials');
@@ -93,7 +100,8 @@ export class TransakService {
         {
           headers,
           body,
-          json: true
+          json: true,
+          timeout: ACCESS_TOKEN_REQUEST_TIMEOUT_MS
         },
         (err, data) => {
           if (err) {
@@ -116,14 +124,17 @@ export class TransakService {
 
   // Returns a cached, still-valid Partner Access Token for the given env,
   // refreshing it first if missing/expired.
-  private async transakGetWebhookAccessToken(env: 'sandbox' | 'production'): Promise<string | undefined> {
-    const cached = this.webhookAccessTokenCache[env];
+  private async transakGetWebhookAccessToken(env: WebhookEnv): Promise<string | undefined> {
+    const cached = TransakService.webhookAccessTokens[env];
     if (cached && cached.expiresAt - ACCESS_TOKEN_REFRESH_MARGIN_MS > Date.now()) {
       return cached.token;
     }
+    TransakService.webhookAccessTokenRefreshes[env] ??= this.transakFetchAccessTokenForEnv(env).finally(() => {
+      delete TransakService.webhookAccessTokenRefreshes[env];
+    });
     try {
-      const fresh = await this.transakFetchAccessTokenForEnv(env);
-      this.webhookAccessTokenCache[env] = fresh;
+      const fresh = await TransakService.webhookAccessTokenRefreshes[env];
+      TransakService.webhookAccessTokens[env] = fresh;
       return fresh.token;
     } catch (err) {
       logger.warn('Transak webhook: failed to refresh access token for env=%s: %o', env, err);
@@ -432,34 +443,31 @@ export class TransakService {
       throw new Error('Invalid JWT format');
     }
 
-    const envsToTry: ('production' | 'sandbox')[] = ['production', 'sandbox'].filter(e => !!config.transak[e]) as any;
+    const envsToTry: WebhookEnv[] = (['production', 'sandbox'] as WebhookEnv[]).filter(e => !!config.transak[e]);
     const fetchedTokens = await Promise.all(envsToTry.map(e => this.transakGetWebhookAccessToken(e)));
     const verificationKeys: { key: string; env: string }[] = envsToTry
       .map((e, i) => ({ key: fetchedTokens[i], env: e }))
-      .filter(k => !!k.key) as { key: string; env: string }[];
+      .filter(k => !!k.key);
 
-    let env = 'production';
-    if (verificationKeys.length) {
-      try {
-        // Verify HS256 JWT manually using Node crypto (no external library needed)
-        const signingInput = `${parts[0]}.${parts[1]}`;
-        const given = Buffer.from(parts[2], 'base64url');
-        const matched = verificationKeys.find(({ key }) => {
-          const expected = crypto.createHmac('sha256', key).update(signingInput).digest();
-          return expected.length === given.length && crypto.timingSafeEqual(expected, given);
-        });
-        if (!matched) {
-          throw new Error('Transak webhook JWT signature mismatch');
-        }
-        env = matched.env;
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : typeof err === 'string' ? err : JSON.stringify(err);
-        logger.warn('Transak webhook JWT error: %s', errMsg);
-        throw new Error('Transak webhook signature verification failed');
+    // Verify HS256 JWT manually using Node crypto (no external library needed)
+    const signingInput = `${parts[0]}.${parts[1]}`;
+    const given = Buffer.from(parts[2], 'base64url');
+    const matched = verificationKeys.find(({ key }) => {
+      const expected = crypto.createHmac('sha256', key).update(signingInput).digest();
+      return expected.length === given.length && crypto.timingSafeEqual(expected, given);
+    });
+    if (!matched) {
+      if (verificationKeys.length < envsToTry.length) {
+        // The delivery may be signed with a token we could not fetch: let
+        // Transak retry it instead of rejecting it for good.
+        const err: any = new Error('Transak webhook access token unavailable');
+        err.retryable = true;
+        throw err;
       }
-    } else {
-      logger.warn('Transak webhook: no access token available for any env, skipping signature verification');
+      logger.warn('Transak webhook JWT error: signature mismatch');
+      throw new Error('Transak webhook signature verification failed');
     }
+    const env = matched.env;
 
     let webhookData: any = {};
     let eventID: string | undefined;
