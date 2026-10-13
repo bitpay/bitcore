@@ -12,7 +12,7 @@ import request from 'supertest';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { ECIES } from '@bitpay-labs/bitcore-tss';
+import { ECIES, utils as TssUtils } from '@bitpay-labs/bitcore-tss';
 import { Request } from '../src/lib/request';
 import { BitcoreLib, Deriver } from '@bitpay-labs/crypto-wallet-core';
 import { TssKeyGen, TssKey } from '../src/lib/tsskey';
@@ -1626,6 +1626,374 @@ describe('TSS', function() {
         it('should reject an invalid creator key', function() {
           should.throw(() => invitee.checkJoinCode({ code, opts: { noKey: true }, creatorPubKey: 'nope' }), /Invalid creatorPubKey/);
         });
+      });
+    });
+  });
+
+  describe('Session restore delivery trust', function() {
+    const WRAPPER_PREFIX = 'tsskeygen.1.';
+    const mk = (key, opts: { chain?: string } = {}) => new TssKeyGen({ chain: opts.chain || chain, network, baseUrl: '/bws/api', request: request(app), key });
+    const credsOf = (key) => key.createCredentials(null, { network, n: 1, account: 0 });
+    const pubKeyOf = (key) => credsOf(key).requestPubKey;
+    const sessionKeysOf = async (id: string) => {
+      const session = await storage.fetchTssKeyGenSession({ id });
+      const keys = [];
+      for (const r of session.rounds[0]) {
+        keys[r.fromPartyId] = r.messages.publicKey;
+      }
+      return keys;
+    };
+    // Decrypt a wrapped export with the party's request key, change it, and encrypt it back (as the party itself would)
+    const rewrap = (exported: string, key, mutate: (wrapper: any) => void) => {
+      const priv = new BitcoreLib.PrivateKey(credsOf(key).requestPrivKey);
+      const wrapper = JSON.parse(TssUtils.decrypt(Buffer.from(exported.slice(WRAPPER_PREFIX.length), 'base64'), priv.publicKey, priv).toString());
+      mutate(wrapper);
+      return WRAPPER_PREFIX + TssUtils.encrypt(Buffer.from(JSON.stringify(wrapper)), priv.publicKey, priv).toString('base64');
+    };
+    const unwrap = (exported: string, key): string => {
+      let legacy: string;
+      rewrap(exported, key, (w) => { legacy = w.session; });
+      return legacy;
+    };
+
+    let creator: TssKeyGen;
+    let inviteeA: TssKeyGen;
+    let inviteeB: TssKeyGen;
+    let creatorKey;
+    let keyA;
+    let keyB;
+    let otherKey;
+    let codeA: string;
+    let codeB: string;
+    let sessionKeys: string[];
+
+    beforeEach(async function() {
+      creatorKey = new Key({ seedType: 'new' });
+      keyA = new Key({ seedType: 'new' });
+      keyB = new Key({ seedType: 'new' });
+      otherKey = new Key({ seedType: 'new' });
+      creator = mk(creatorKey);
+      inviteeA = mk(keyA);
+      inviteeB = mk(keyB);
+      await creator.newKey({ m: 2, n: 3 });
+      codeA = creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keyA) });
+      codeB = creator.createJoinCode({ partyId: 2, partyPubKey: pubKeyOf(keyB) });
+      await inviteeA.joinKey({ code: codeA });
+      await inviteeB.joinKey({ code: codeB });
+      sessionKeys = await sessionKeysOf(creator.id);
+    });
+
+    afterEach(function() {
+      creator?.unsubscribe();
+      inviteeA?.unsubscribe();
+      inviteeB?.unsubscribe();
+    });
+
+    describe('round trip', function() {
+      it(happyPath('should retain the creator\'s context and recipient keys'), async function() {
+        const exported = creator.exportSession();
+        exported.startsWith(WRAPPER_PREFIX).should.equal(true);
+        const restored = await mk(creatorKey).restoreSession({ session: exported });
+        restored.id.should.equal(creator.id);
+        restored.partyId.should.equal(0);
+        restored.m.should.equal(2);
+        restored.n.should.equal(3);
+        restored.verifyDeliveryBindings(sessionKeys);
+        // Still agrees with the session only for the original keys
+        should.throw(() => restored.verifyDeliveryBindings([sessionKeys[0], sessionKeys[1], pubKeyOf(otherKey)]), /party 2 does not match/);
+      });
+
+      it(happyPath('should retain the recipient\'s context and creator key'), async function() {
+        const restored = await mk(keyA).restoreSession({ session: inviteeA.exportSession() });
+        restored.id.should.equal(creator.id);
+        restored.partyId.should.equal(1);
+        restored.m.should.equal(2);
+        restored.n.should.equal(3);
+        restored.verifyDeliveryBindings(sessionKeys);
+        should.throw(() => restored.verifyDeliveryBindings([pubKeyOf(otherKey), sessionKeys[1], sessionKeys[2]]), /party 0 does not match/);
+      });
+
+      it('should keep restoring consistently when the restored instance is exported again', async function() {
+        const once = await mk(creatorKey).restoreSession({ session: creator.exportSession() });
+        const twice = await mk(creatorKey).restoreSession({ session: once.exportSession() });
+        twice.verifyDeliveryBindings(sessionKeys);
+      });
+
+      it('should restore a noKey invitation\'s creator key', async function() {
+        const soloCreator = mk(otherKey);
+        await soloCreator.newKey({ m: 2, n: 2 });
+        const invitee = mk(keyA);
+        const code = soloCreator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keyA), opts: { noKey: true } });
+        await invitee.joinKey({ code, opts: { noKey: true }, creatorPubKey: soloCreator.getAuthPublicKey() });
+        const restored = await mk(keyA).restoreSession({ session: invitee.exportSession() });
+        restored.verifyDeliveryBindings(await sessionKeysOf(soloCreator.id));
+        soloCreator.unsubscribe();
+      });
+
+      it('should not expose the retained keys outside the ciphertext', function() {
+        const exported = creator.exportSession();
+        const raw = Buffer.from(exported.slice(WRAPPER_PREFIX.length), 'base64').toString('latin1');
+        for (const text of [exported, raw]) {
+          text.should.not.include(pubKeyOf(keyA));
+          text.should.not.include(creator.id);
+          text.should.not.include('recipientKeys');
+        }
+      });
+    });
+
+    describe('round rollback', function() {
+      it(happyPath('should preserve the bindings and still allow DKG to proceed'), async function() {
+        const restoreSpy = sandbox.spy(creator, 'restoreSession');
+        const postStub = sandbox.stub(Request.prototype, 'post').throws(new Error('restore me'));
+        const rolledBack = new Promise<void>(r => creator.on('error', (e) => {
+          if (e.message !== 'restore me') { throw e; }
+          postStub.restore();
+          r();
+        }));
+        creator.subscribe({ timeout: 10, iterHandler: () => creator.unsubscribe() });
+        await rolledBack;
+        restoreSpy.callCount.should.equal(1);
+        creator.verifyDeliveryBindings(sessionKeys);
+
+        const submitted = new Promise(r => creator.once('roundsubmitted', r));
+        creator.on('error', (e) => { should.not.exist(e?.message ?? e); });
+        creator.subscribe({ timeout: 10, iterHandler: () => creator.unsubscribe() });
+        (await submitted).should.equal(1);
+        creator.verifyDeliveryBindings(sessionKeys);
+      });
+    });
+
+    describe('invalid restore', function() {
+      it('should fail with the wrong request key', async function() {
+        const exported = creator.exportSession();
+        for (const key of [otherKey, keyA]) {
+          try {
+            await mk(key).restoreSession({ session: exported });
+            throw new Error('Should have failed');
+          } catch (err) {
+            err.message.should.equal('Session could not be decrypted or verified');
+          }
+        }
+      });
+
+      it('should fail if the wrapper was altered', async function() {
+        const exported = creator.exportSession();
+        const body = exported.slice(WRAPPER_PREFIX.length);
+        const i = Math.floor(body.length / 2);
+        const altered = WRAPPER_PREFIX + body.slice(0, i) + (body[i] === 'A' ? 'B' : 'A') + body.slice(i + 1);
+        try {
+          await mk(creatorKey).restoreSession({ session: altered });
+          throw new Error('Should have failed');
+        } catch (err) {
+          err.message.should.equal('Session could not be decrypted or verified');
+        }
+      });
+
+      it('should fail if the wrapper was truncated', async function() {
+        const exported = creator.exportSession();
+        try {
+          await mk(creatorKey).restoreSession({ session: exported.slice(0, exported.length - 40) });
+          throw new Error('Should have failed');
+        } catch (err) {
+          err.message.should.equal('Session could not be decrypted or verified');
+        }
+      });
+
+      describe('mismatched parameters', function() {
+        const fails = async (key, exported: string, message: RegExp, opts: { chain?: string } = {}) => {
+          try {
+            await mk(key, opts).restoreSession({ session: exported });
+            throw new Error('Should have failed');
+          } catch (err) {
+            err.message.should.match(message);
+          }
+        };
+
+        it('should fail if the wrapper fields disagree with the wrapped session', async function() {
+          const exported = creator.exportSession();
+          await fails(creatorKey, rewrap(exported, creatorKey, w => { w.m = 3; }), /do not match the wrapped session/);
+          await fails(creatorKey, rewrap(exported, creatorKey, w => { w.id = 'other'; }), /do not match the wrapped session/);
+          await fails(creatorKey, rewrap(exported, creatorKey, w => { w.partyId = 1; }), /do not match the wrapped session/);
+        });
+
+        it('should fail if the wrapped session disagrees with its DKG state', async function() {
+          const exported = creator.exportSession();
+          // m is consistent between the wrapper and the wrapped session, but the DKG state was created for m = 2
+          await fails(creatorKey, rewrap(exported, creatorKey, w => {
+            const parts = w.session.split(':');
+            parts[parts.length - 3] = '3';
+            w.session = parts.join(':');
+            w.m = 3;
+          }), /do not match its DKG state/);
+        });
+
+        it('should fail for a different request identity, chain or network', async function() {
+          const exported = creator.exportSession();
+          await fails(creatorKey, rewrap(exported, creatorKey, w => { w.requestPubKey = pubKeyOf(otherKey); }), /different request key/);
+          await fails(creatorKey, rewrap(exported, creatorKey, w => { w.chain = 'btc'; }), /chain or network does not match/);
+          await fails(creatorKey, rewrap(exported, creatorKey, w => { w.network = 'testnet'; }), /chain or network does not match/);
+        });
+
+        it('should fail for an unsupported version or malformed contents', async function() {
+          const exported = creator.exportSession();
+          await fails(creatorKey, rewrap(exported, creatorKey, w => { w.version = 2; }), /unsupported version/);
+          await fails(creatorKey, rewrap(exported, creatorKey, w => { w.m = '2'; }), /malformed ceremony parameters/);
+          await fails(creatorKey, rewrap(exported, creatorKey, w => { w.recipientKeys = 'x'; }), /malformed delivery keys/);
+        });
+
+        it('should fail for delivery keys that are malformed or do not belong to the role', async function() {
+          const creatorExport = creator.exportSession();
+          await fails(creatorKey, rewrap(creatorExport, creatorKey, w => { w.recipientKeys[0].pubKey = 'zz'; }), /malformed delivery keys/);
+          await fails(creatorKey, rewrap(creatorExport, creatorKey, w => { w.recipientKeys[0].partyId = 0; }), /malformed delivery keys/);
+          await fails(creatorKey, rewrap(creatorExport, creatorKey, w => { w.recipientKeys[1].partyId = 1; }), /malformed delivery keys/);
+          await fails(creatorKey, rewrap(creatorExport, creatorKey, w => { w.creatorPubKey = pubKeyOf(otherKey); }), /the creator has no creator key/);
+          const inviteeExport = inviteeA.exportSession();
+          await fails(keyA, rewrap(inviteeExport, keyA, w => { w.creatorPubKey = 'zz'; }), /malformed delivery keys/);
+          await fails(keyA, rewrap(inviteeExport, keyA, w => { w.recipientKeys = [{ partyId: 2, pubKey: pubKeyOf(keyB) }]; }), /a recipient has no recipient keys/);
+        });
+
+        it('should leave the instance unchanged when a restore fails', async function() {
+          try {
+            await creator.restoreSession({ session: rewrap(creator.exportSession(), creatorKey, w => { w.m = 3; }) });
+            throw new Error('Should have failed');
+          } catch (err) {
+            err.message.should.match(/do not match the wrapped session/);
+          }
+          creator.m.should.equal(2);
+          creator.verifyDeliveryBindings(sessionKeys);
+        });
+      });
+    });
+
+    describe('legacy export', function() {
+      it('should restore but report missing trust for the creator', async function() {
+        const legacy = unwrap(creator.exportSession(), creatorKey);
+        legacy.startsWith(WRAPPER_PREFIX).should.equal(false);
+        const restored = await mk(creatorKey).restoreSession({ session: legacy });
+        restored.id.should.equal(creator.id);
+        restored.n.should.equal(3);
+        should.throw(() => restored.verifyDeliveryBindings(sessionKeys), /Missing trusted public key for party 1/);
+      });
+
+      it('should restore but report missing trust for the recipient', async function() {
+        const restored = await mk(keyA).restoreSession({ session: unwrap(inviteeA.exportSession(), keyA) });
+        should.throw(() => restored.verifyDeliveryBindings(sessionKeys), /Missing trusted creator public key/);
+      });
+
+      it('should drop bindings previously retained by the restored instance', async function() {
+        creator.verifyDeliveryBindings(sessionKeys);
+        await creator.restoreSession({ session: unwrap(creator.exportSession(), creatorKey) });
+        should.throw(() => creator.verifyDeliveryBindings(sessionKeys), /Missing trusted public key for party 1/);
+      });
+
+      it(happyPath('should work for the creator once the original recipient keys are supplied'), async function() {
+        const legacy = unwrap(creator.exportSession(), creatorKey);
+        const restored = await mk(creatorKey).restoreSession({
+          session: legacy,
+          trusted: { recipientKeys: [{ partyId: 1, partyPubKey: pubKeyOf(keyA) }, { partyId: 2, partyPubKey: pubKeyOf(keyB) }] }
+        });
+        restored.verifyDeliveryBindings(sessionKeys);
+        // and the restored session is exportable with its bindings
+        const again = await mk(creatorKey).restoreSession({ session: restored.exportSession() });
+        again.verifyDeliveryBindings(sessionKeys);
+      });
+
+      it('should still report missing trust if only some recipient keys are supplied', async function() {
+        const restored = await mk(creatorKey).restoreSession({
+          session: unwrap(creator.exportSession(), creatorKey),
+          trusted: { recipientKeys: [{ partyId: 1, partyPubKey: pubKeyOf(keyA) }] }
+        });
+        should.throw(() => restored.verifyDeliveryBindings(sessionKeys), /Missing trusted public key for party 2/);
+      });
+
+      it('should not trust supplied recipient keys the session disagrees with', async function() {
+        const restored = await mk(creatorKey).restoreSession({
+          session: unwrap(creator.exportSession(), creatorKey),
+          trusted: { recipientKeys: [{ partyId: 1, partyPubKey: pubKeyOf(otherKey) }, { partyId: 2, partyPubKey: pubKeyOf(keyB) }] }
+        });
+        should.throw(() => restored.verifyDeliveryBindings(sessionKeys), /party 1 does not match/);
+      });
+
+      it(happyPath('should work for the recipient once the original join code is supplied'), async function() {
+        const restored = await mk(keyA).restoreSession({
+          session: unwrap(inviteeA.exportSession(), keyA),
+          trusted: { joinCode: { code: codeA } }
+        });
+        restored.verifyDeliveryBindings(sessionKeys);
+      });
+
+      it('should work for the recipient with a noKey join code and the expected creator key', async function() {
+        const code = creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keyA), opts: { noKey: true } });
+        const restored = await mk(keyA).restoreSession({
+          session: unwrap(inviteeA.exportSession(), keyA),
+          trusted: { joinCode: { code, opts: { noKey: true }, creatorPubKey: creator.getAuthPublicKey() } }
+        });
+        restored.verifyDeliveryBindings(sessionKeys);
+        await mk(keyA).restoreSession({
+          session: unwrap(inviteeA.exportSession(), keyA),
+          trusted: { joinCode: { code, opts: { noKey: true } } }
+        }).then(() => { throw new Error('Should have failed'); }, err => err.message.should.include('creatorPubKey is required'));
+      });
+
+      it('should reject a join code for another party, or a different session', async function() {
+        const otherCreator = mk(otherKey);
+        await otherCreator.newKey({ m: 2, n: 3 });
+        const foreign = otherCreator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keyA) });
+        const legacy = unwrap(inviteeA.exportSession(), keyA);
+        for (const code of [codeB, foreign]) {
+          try {
+            await mk(keyA).restoreSession({ session: legacy, trusted: { joinCode: { code } } });
+            throw new Error('Should have failed');
+          } catch (err) {
+            err.message.should.match(/Invalid checksum|does not match the session being restored/);
+          }
+        }
+        otherCreator.unsubscribe();
+      });
+
+      it('should reject recipient keys together with a join code', async function() {
+        const trusted = { recipientKeys: [{ partyId: 1, partyPubKey: pubKeyOf(keyA) }], joinCode: { code: codeA } };
+        for (const [key, exported] of [[creatorKey, creator.exportSession()], [keyA, inviteeA.exportSession()]]) {
+          await mk(key).restoreSession({ session: exported, trusted: trusted as any })
+            .then(() => { throw new Error('Should have failed'); }, err => err.message.should.match(/can only be supplied when restoring (the creator|a recipient)'s session/));
+        }
+      });
+
+      it('should reject trusted inputs for the wrong role', async function() {
+        const creatorLegacy = unwrap(creator.exportSession(), creatorKey);
+        const inviteeLegacy = unwrap(inviteeA.exportSession(), keyA);
+        await mk(creatorKey).restoreSession({ session: creatorLegacy, trusted: { joinCode: { code: codeA } } })
+          .then(() => { throw new Error('Should have failed'); }, err => err.message.should.include('recipient\'s session'));
+        await mk(keyA).restoreSession({ session: inviteeLegacy, trusted: { recipientKeys: [{ partyId: 1, partyPubKey: pubKeyOf(keyA) }] } })
+          .then(() => { throw new Error('Should have failed'); }, err => err.message.should.include('creator\'s session'));
+      });
+    });
+
+    describe('trusted inputs with a retained export', function() {
+      it('should accept inputs that agree with the retained keys', async function() {
+        const restored = await mk(creatorKey).restoreSession({
+          session: creator.exportSession(),
+          trusted: { recipientKeys: [{ partyId: 1, partyPubKey: pubKeyOf(keyA) }] }
+        });
+        restored.verifyDeliveryBindings(sessionKeys);
+        const restoredA = await mk(keyA).restoreSession({ session: inviteeA.exportSession(), trusted: { joinCode: { code: codeA } } });
+        restoredA.verifyDeliveryBindings(sessionKeys);
+      });
+
+      it('should reject inputs that contradict the retained keys instead of replacing them', async function() {
+        await mk(creatorKey).restoreSession({
+          session: creator.exportSession(),
+          trusted: { recipientKeys: [{ partyId: 1, partyPubKey: pubKeyOf(otherKey) }] }
+        }).then(() => { throw new Error('Should have failed'); }, err => err.message.should.match(/party 1 does not match the retained key/));
+
+        // A code from a different creator key for this same session
+        const impostor = mk(otherKey);
+        impostor['id'] = creator.id;
+        impostor['n'] = 3;
+        impostor['m'] = 2;
+        const forged = impostor.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keyA) });
+        await mk(keyA).restoreSession({ session: inviteeA.exportSession(), trusted: { joinCode: { code: forged } } })
+          .then(() => { throw new Error('Should have failed'); }, err => err.message.should.include('creator key does not match the retained key'));
       });
     });
   });

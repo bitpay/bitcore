@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { ECDSA, ECIES } from '@bitpay-labs/bitcore-tss';
+import { ECDSA, ECIES, utils as TssUtils } from '@bitpay-labs/bitcore-tss';
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { API as Client, CreateWalletOpts } from './api';
 import { Constants, Encryption } from './common';
@@ -234,6 +234,82 @@ interface ParsedJoinCode {
   extra: string;
   /** Normalized creator public key the code was issued by */
   creatorPubKey: string;
+}
+
+/** Marks an exported session as the wrapper format. A legacy export starts with the session ID, which is never this. */
+const SESSION_WRAPPER_PREFIX = 'tsskeygen.1.';
+const SESSION_WRAPPER_VERSION = 1;
+
+/**
+ * What an exported session holds beyond the DKG state: the ceremony it belongs to and the trusted keys
+ * the delivery of the wallet secret is encrypted to / verified against.
+ * It is encrypted to the exporting party's own request key, which also authenticates it.
+ */
+interface SessionWrapper {
+  version: number;
+  id: string;
+  partyId: number;
+  chain: string;
+  network: string;
+  m: number;
+  n: number;
+  /** The exporting party's request public key */
+  requestPubKey: string;
+  /** The legacy export: `id:partyId:m:n:<DKG export>` */
+  session: string;
+  /** Recipient only: the creator's key from the trusted invitation */
+  creatorPubKey?: string;
+  /** Creator only: each recipient's key from the trusted invitation exchange */
+  recipientKeys: Array<{ partyId: number; pubKey: string }>;
+}
+
+/**
+ * Trusted inputs for restoring a session that has no retained delivery bindings (a legacy export),
+ * or to confirm them for one that has. They must come from the original invitation exchange, never from BWS.
+ */
+export type RestoreTrustedInputs =
+  | {
+    /** Creator only: the public key each recipient gave the creator (as passed to `createJoinCode`) */
+    recipientKeys: Array<{ partyId: number; partyPubKey: string }>;
+    joinCode?: never;
+  }
+  | {
+    /** Recipient only: the join code originally received, with the same options `joinKey` takes */
+    joinCode: {
+      code: string | Buffer;
+      opts?: { encoding?: BufferEncoding; noKey?: boolean };
+      creatorPubKey?: string;
+    };
+    recipientKeys?: never;
+  };
+
+/** The trusted keys delivery is encrypted to / verified against */
+interface DeliveryBindings {
+  /** Recipient only */
+  creatorPubKey?: string;
+  /** Creator only: partyId -> request public key */
+  recipientKeys: Map<number, string>;
+}
+
+/**
+ * Read `n`, `m` and `partyId` from the DKG's own export (`round:n:m:partyId:...`), which is encrypted to the request key.
+ * Only the leading fields are parsed so the rest of the plaintext (which includes the seed) never becomes a string.
+ */
+function readKeygenSessionParams(keygenSession: string, requestPrivKey: BitcoreLib.PrivateKey) {
+  const plaintext = TssUtils.decrypt(Buffer.from(keygenSession, 'base64'), requestPrivKey.publicKey, requestPrivKey);
+  try {
+    let end = -1;
+    for (let i = 0; i < 4; i++) {
+      end = plaintext.indexOf(':', end + 1);
+      if (end < 0) {
+        throw new Error('Invalid session');
+      }
+    }
+    const [, n, m, partyId] = plaintext.subarray(0, end).toString().split(':').map(Number);
+    return { n, m, partyId };
+  } finally {
+    plaintext.fill(0);
+  }
 }
 
 export class TssKeyGen extends EventEmitter {
@@ -576,18 +652,45 @@ export class TssKeyGen extends EventEmitter {
   }
 
   /**
-   * Export the session for storage
+   * Export the session for storage.
+   * Besides the DKG state, the export carries the delivery keys retained from the invitation exchange,
+   * so a restored session can still deliver/verify the wallet secret. It is encrypted to this party's request key.
    * @returns {string} Session string
    */
   exportSession(): string {
     if (this.#keygen.isKeyChainReady()) {
       throw new Error('Cannot export a completed session. Run getKeyChain() instead.');
     }
-    return [this.id, this.partyId, this.m, this.n, this.#keygen.export()].join(':');
+    const wrapper: SessionWrapper = {
+      version: SESSION_WRAPPER_VERSION,
+      id: this.id,
+      partyId: this.partyId,
+      chain: this.chain,
+      network: this.network,
+      m: this.m,
+      n: this.n,
+      requestPubKey: normalizePubKey(this.#credentials.requestPubKey),
+      session: [this.id, this.partyId, this.m, this.n, this.#keygen.export()].join(':'),
+      recipientKeys: [...this.#recipientKeys].map(([partyId, pubKey]) => ({ partyId, pubKey }))
+    };
+    if (this.#creatorPubKey) {
+      wrapper.creatorPubKey = this.#creatorPubKey;
+    }
+    const plaintext = Buffer.from(JSON.stringify(wrapper));
+    try {
+      const encrypted = TssUtils.encrypt(plaintext, this.#requestPrivateKey.publicKey, this.#requestPrivateKey);
+      return SESSION_WRAPPER_PREFIX + encrypted.toString('base64');
+    } finally {
+      plaintext.fill(0);
+    }
   }
 
   /**
    * Restore a session from a previously exported session
+   *
+   * A session exported before delivery keys were retained (a legacy export) carries none.
+   * Supply them from the original invitation exchange with `trusted`; otherwise delivery reports missing trust.
+   * They are never reconstructed from BWS.
    * @returns {Promise<TssKeyGen>} Restored TSS instance
    */
   async restoreSession(params: {
@@ -595,18 +698,162 @@ export class TssKeyGen extends EventEmitter {
      * Session string to restore
      */
     session: string;
+    /**
+     * Original trusted invitation inputs. Required to establish delivery trust for a legacy export.
+     * For an export that retained its keys, they must agree with what was retained.
+     */
+    trusted?: RestoreTrustedInputs;
   }): Promise<TssKeyGen> {
-    const { session } = params;
-    const parts = session.split(':');
+    const { session, trusted } = params;
+    const isWrapped = session.startsWith(SESSION_WRAPPER_PREFIX);
+    let legacySession = session;
+    const retained: DeliveryBindings = { recipientKeys: new Map() };
+
+    // Everything is validated before any state is replaced, so a failed restore changes nothing.
+    if (isWrapped) {
+      const wrapper = this.#readSessionWrapper(session.slice(SESSION_WRAPPER_PREFIX.length));
+      legacySession = wrapper.session;
+      retained.creatorPubKey = wrapper.creatorPubKey;
+      for (const { partyId, pubKey } of wrapper.recipientKeys) {
+        retained.recipientKeys.set(partyId, pubKey);
+      }
+    }
+
+    const parts = legacySession.split(':');
     const id = parts.slice(0, -4).join(':'); // id may contain colons, so we join all parts except the last 4
     const [partyId, m, n, keygenSession] = parts.slice(-4);
-    this.id = id;
-    this.m = parseInt(m);
-    this.n = parseInt(n);
-    this.partyId = parseInt(partyId);
+    const restored = { id, partyId: parseInt(partyId), m: parseInt(m), n: parseInt(n) };
+
+    if (isWrapped) {
+      // The wrapper's own fields were checked against each other; check them against the DKG state too.
+      let dkg: ReturnType<typeof readKeygenSessionParams>;
+      try {
+        dkg = readKeygenSessionParams(keygenSession, this.#requestPrivateKey);
+      } catch {
+        throw new Error('Session could not be decrypted or verified');
+      }
+      if (dkg.n !== restored.n || dkg.m !== restored.m || dkg.partyId !== restored.partyId) {
+        throw new Error('Session ceremony parameters do not match its DKG state');
+      }
+    }
+
+    const bindings = this.#applyTrustedInputs(trusted, restored, retained);
+
     const keygen = await ECDSA.KeyGen.restore({ session: keygenSession, authKey: this.#credentials.requestPrivKey });
+    this.id = restored.id;
+    this.m = restored.m;
+    this.n = restored.n;
+    this.partyId = restored.partyId;
     this.#keygen = keygen;
+    this.#creatorPubKey = bindings.creatorPubKey;
+    this.#recipientKeys = bindings.recipientKeys;
     return this;
+  }
+
+  /**
+   * Decrypt and validate a session wrapper against this instance's request identity and chain/network.
+   * Does not retain anything.
+   */
+  #readSessionWrapper(encoded: string): SessionWrapper {
+    let wrapper: SessionWrapper;
+    try {
+      const plaintext = TssUtils.decrypt(Buffer.from(encoded, 'base64'), this.#requestPrivateKey.publicKey, this.#requestPrivateKey);
+      try {
+        wrapper = JSON.parse(plaintext.toString());
+      } finally {
+        plaintext.fill(0);
+      }
+    } catch {
+      throw new Error('Session could not be decrypted or verified');
+    }
+
+    const fail = (reason: string): never => { throw new Error('Invalid session: ' + reason); };
+    const isInt = (v: unknown): v is number => Number.isSafeInteger(v);
+    if (!wrapper || typeof wrapper !== 'object') fail('malformed');
+    if (wrapper.version !== SESSION_WRAPPER_VERSION) fail('unsupported version');
+    if (typeof wrapper.id !== 'string' || !wrapper.id) fail('missing session id');
+    if (!isInt(wrapper.m) || !isInt(wrapper.n) || !isInt(wrapper.partyId)) fail('malformed ceremony parameters');
+    if (wrapper.m < 1 || wrapper.m > wrapper.n || wrapper.partyId < 0 || wrapper.partyId >= wrapper.n) fail('ceremony parameters out of range');
+    if (typeof wrapper.session !== 'string') fail('missing DKG state');
+    if (wrapper.requestPubKey !== normalizePubKey(this.#credentials.requestPubKey)) fail('exported by a different request key');
+    if (wrapper.chain !== this.chain || wrapper.network !== this.network) fail('chain or network does not match');
+    if (!Array.isArray(wrapper.recipientKeys)) fail('malformed delivery keys');
+
+    // The wrapper's own fields must describe the DKG export it wraps
+    const parts = wrapper.session.split(':');
+    const sessionId = parts.slice(0, -4).join(':');
+    const [partyId, m, n] = parts.slice(-4).map(Number);
+    if (sessionId !== wrapper.id || partyId !== wrapper.partyId || m !== wrapper.m || n !== wrapper.n) {
+      fail('ceremony parameters do not match the wrapped session');
+    }
+
+    // Retained keys must be well-formed and belong to this party's role
+    const isNormalizedKey = (key: unknown) => {
+      try {
+        return typeof key === 'string' && key === normalizePubKey(key);
+      } catch {
+        return false;
+      }
+    };
+    if (wrapper.partyId === 0) {
+      if (wrapper.creatorPubKey != null) fail('the creator has no creator key');
+      const seen = new Set<number>();
+      for (const { partyId: recipient, pubKey } of wrapper.recipientKeys) {
+        // partyId is in [1, n-1], is not duplicated, and is normalized
+        if (!isInt(recipient) || recipient < 1 || recipient >= wrapper.n || seen.has(recipient) || !isNormalizedKey(pubKey)) {
+          fail('malformed delivery keys');
+        }
+        seen.add(recipient);
+      }
+    } else {
+      if (wrapper.recipientKeys.length) fail('a recipient has no recipient keys');
+      if (wrapper.creatorPubKey != null && !isNormalizedKey(wrapper.creatorPubKey)) fail('malformed delivery keys');
+    }
+    return wrapper;
+  }
+
+  /**
+   * Merge caller-supplied trusted inputs into the retained bindings.
+   * Inputs that contradict a retained binding are rejected rather than replacing it.
+   * @returns The bindings to keep
+   */
+  #applyTrustedInputs(
+    trusted: RestoreTrustedInputs | undefined,
+    restored: { id: string; partyId: number; m: number; n: number },
+    retained: DeliveryBindings
+  ): DeliveryBindings {
+    const bindings: DeliveryBindings = { creatorPubKey: retained.creatorPubKey, recipientKeys: new Map(retained.recipientKeys) };
+    if (!trusted) return bindings;
+    const { recipientKeys: suppliedRecipients, joinCode } = trusted;
+
+    if (suppliedRecipients) {
+      $.checkArgument(restored.partyId === 0, 'Recipient keys can only be supplied when restoring the creator\'s session');
+      $.checkArgument(Array.isArray(suppliedRecipients), 'recipientKeys must be an array');
+      for (const { partyId, partyPubKey } of suppliedRecipients) {
+        $.checkArgument(Number.isInteger(partyId) && partyId > 0 && partyId < restored.n, 'partyId must be an integer between 1 and n - 1');
+        const key = normalizePubKey(partyPubKey, 'partyPubKey');
+        const existing = bindings.recipientKeys.get(partyId);
+        if (existing && existing !== key) {
+          throw new Error(`Supplied public key for party ${partyId} does not match the retained key`);
+        }
+        bindings.recipientKeys.set(partyId, key);
+      }
+    }
+
+    if (joinCode) {
+      $.checkArgument(restored.partyId > 0, 'A join code can only be supplied when restoring a recipient\'s session');
+      const code = this.#readJoinCode(joinCode);
+      if (code.id !== restored.id || parseInt(code.partyId) !== restored.partyId ||
+        parseInt(code.m) !== restored.m || parseInt(code.n) !== restored.n ||
+        code.chain.toLowerCase() !== this.chain || code.network !== this.network) {
+        throw new Error('Join code does not match the session being restored');
+      }
+      if (bindings.creatorPubKey && bindings.creatorPubKey !== code.creatorPubKey) {
+        throw new Error('Join code creator key does not match the retained key');
+      }
+      bindings.creatorPubKey = code.creatorPubKey;
+    }
+    return bindings;
   }
 
   /**
