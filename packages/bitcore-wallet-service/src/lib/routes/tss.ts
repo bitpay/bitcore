@@ -36,6 +36,31 @@ export class TssRouter {
       }
     });
 
+    // Must be registered before the generic `/:round` route or it would be treated as a round number.
+    // The caller's identity comes only from the authenticated request - nothing in the query or body selects a recipient.
+    router.get('/v1/tss/keygen/:id/join-delivery', authTssRequest(), async function(req, res) {
+      try {
+        const id = req.params.id;
+        const copayerId = req.headers['x-identity'];
+        const delivery = await TssKeyGen.getJoinDelivery({ id, copayerId });
+        return res.json(delivery);
+      } catch (err) {
+        return returnError(err ?? 'unknown', res, req);
+      }
+    });
+
+    router.post('/v1/tss/keygen/:id/join-delivery', authTssRequest(), async function(req, res) {
+      try {
+        const id = req.params.id;
+        const { version, records } = req.body;
+        const copayerId = req.headers['x-identity'];
+        await TssKeyGen.storeJoinDelivery({ id, version, records, copayerId });
+        return res.send();
+      } catch (err) {
+        return returnError(err ?? 'unknown', res, req);
+      }
+    });
+
     router.get('/v1/tss/keygen/:id/:round', authTssRequest(), async function(req, res) {
       let interval: NodeJS.Timeout;
       try {
