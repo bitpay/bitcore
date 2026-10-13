@@ -8390,6 +8390,66 @@ describe('Wallet service', function() {
       txp.nonce.should.equal('5');
     });
 
+    describe('republishing a txp with mutable tx data', function() {
+      let txp, publishOpts;
+
+      beforeEach(async function() {
+        txp = await util.promisify(server.createTx).call(server, {
+          outputs: [{ toAddress: ETH_ADDR, amount: 8000 }],
+          feePerKb: 123e2,
+          from: fromAddr,
+          deferNonce: true
+        });
+        publishOpts = helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0);
+        await util.promisify(server.publishTx).call(server, publishOpts);
+      });
+
+      const setStatus = async status => {
+        const stored = await util.promisify(server.storage.fetchTx).call(server.storage, wallet.id, txp.id);
+        stored.status = status;
+        await util.promisify(server.storage.storeTx).call(server.storage, wallet.id, stored);
+      };
+
+      const republishError = async () => {
+        try {
+          await util.promisify(server.publishTx).call(server, publishOpts);
+        } catch (err) {
+          return err;
+        }
+      };
+
+      it('should republish a pending txp', async function() {
+        should.not.exist(await republishError());
+        const stored = await util.promisify(server.storage.fetchTx).call(server.storage, wallet.id, txp.id);
+        stored.status.should.equal('pending');
+      });
+
+      it('should not republish a broadcasted txp back to pending', async function() {
+        await setStatus('broadcasted');
+        const err = await republishError();
+        should.exist(err);
+        err.code.should.equal('TX_ALREADY_BROADCASTED');
+        const stored = await util.promisify(server.storage.fetchTx).call(server.storage, wallet.id, txp.id);
+        stored.status.should.equal('broadcasted');
+      });
+
+      it('should not republish an accepted txp back to pending', async function() {
+        await setStatus('accepted');
+        const err = await republishError();
+        should.exist(err);
+        err.code.should.equal('TX_NOT_PENDING');
+        const stored = await util.promisify(server.storage.fetchTx).call(server.storage, wallet.id, txp.id);
+        stored.status.should.equal('accepted');
+      });
+
+      it('should not republish a rejected txp back to pending', async function() {
+        await setStatus('rejected');
+        const err = await republishError();
+        should.exist(err);
+        err.code.should.equal('TX_NOT_PENDING');
+      });
+    });
+
     it('should publish a deferred-nonce txp and save prePublishRaw', async function() {
       const txOpts = {
         outputs: [{ toAddress: ETH_ADDR, amount: 8000 }],
