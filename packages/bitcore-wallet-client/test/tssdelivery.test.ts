@@ -42,8 +42,12 @@ describe('TSS join delivery', function() {
   const encryptParams = { context, secret, creatorPrivKey: creatorPriv };
   const decryptParams = { recipientPrivKey: recipientPriv, creatorPubKey: creatorPub, expected: context };
 
-  /** A delivery signed and encrypted as a creator would, from a correct payload with `overrides` applied. For exercising the recipient's checks. */
-  const craft = (overrides: Record<string, any>, privKey = creatorPriv) => {
+  /**
+   * A delivery whose payload is a correct one with `payloadOverrides` applied, for exercising the recipient's checks.
+   * Built with the original `encryptAndDetachSignData` helper rather than `encryptJoinDelivery`, so it can carry payloads that
+   * `encryptJoinDelivery` refuses to produce. Signed by `signerPrivKey` (the creator unless given).
+   */
+  const deliveryWithPayload = (payloadOverrides: Record<string, any>, signerPrivKey = creatorPriv) => {
     const payload = {
       purpose: JOIN_DELIVERY_PURPOSE,
       version: JOIN_DELIVERY_VERSION,
@@ -57,9 +61,9 @@ describe('TSS join delivery', function() {
       n: context.n,
       commonKeyChain: context.commonKeyChain,
       secret,
-      ...overrides
+      ...payloadOverrides
     };
-    return TssUtils.encryptAndDetachSignData(Buffer.from(JSON.stringify(payload)), recipientPriv.publicKey, privKey);
+    return TssUtils.encryptAndDetachSignData(Buffer.from(JSON.stringify(payload)), recipientPriv.publicKey, signerPrivKey);
   };
 
   describe('round trip', function() {
@@ -126,7 +130,7 @@ describe('TSS join delivery', function() {
     it('should reject a delivery signed by someone other than the creator', function() {
       // Encrypted with the creator's key (so it decrypts), but signed with another key
       const delivery = encryptJoinDelivery(encryptParams);
-      const forged = { ...delivery, signature: craft({}, otherPriv).signature };
+      const forged = { ...delivery, signature: deliveryWithPayload({}, otherPriv).signature };
       should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: forged }), /could not be decrypted or verified/);
     });
 
@@ -142,7 +146,7 @@ describe('TSS join delivery', function() {
       const delivery = encryptJoinDelivery(encryptParams);
       const sameContentDelivery = encryptJoinDelivery(encryptParams);
       // A signature over a different message is not valid for this one
-      const otherMessageSignature = craft({ sessionId: 'another' }).signature;
+      const otherMessageSignature = deliveryWithPayload({ sessionId: 'another' }).signature;
       const wrongSignature = { ...delivery, signature: otherMessageSignature };
       const notASignature = { ...delivery, signature: 'not a signature' };
       should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: wrongSignature }), /could not be decrypted or verified/);
@@ -173,7 +177,7 @@ describe('TSS join delivery', function() {
     });
 
     it('should accept records produced by the helpers', function() {
-      decryptJoinDelivery({ ...decryptParams, delivery: craft({}) }).should.equal(secret);
+      decryptJoinDelivery({ ...decryptParams, delivery: deliveryWithPayload({}) }).should.equal(secret);
     });
   });
 
@@ -209,15 +213,15 @@ describe('TSS join delivery', function() {
       const validDelivery = encryptJoinDelivery(encryptParams);
       const rejectedDeliveries = [
         // Signature does not verify
-        { ...validDelivery, signature: craft({ sessionId: 'another' }).signature },
+        { ...validDelivery, signature: deliveryWithPayload({ sessionId: 'another' }).signature },
         { ...validDelivery, signature: 'not a signature' },
         // Not JSON
         TssUtils.encryptAndDetachSignData(Buffer.from('not json'), recipientPriv.publicKey, creatorPriv),
         // Wrong context, purpose, version and secret
-        craft({ sessionId: 'another' }),
-        craft({ purpose: 'other' }),
-        craft({ version: 2 }),
-        craft({ secret: 'garbage' })
+        deliveryWithPayload({ sessionId: 'another' }),
+        deliveryWithPayload({ purpose: 'other' }),
+        deliveryWithPayload({ version: 2 }),
+        deliveryWithPayload({ secret: 'garbage' })
       ];
       for (const delivery of rejectedDeliveries) {
         should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery }));
@@ -233,14 +237,14 @@ describe('TSS join delivery', function() {
 
   describe('authenticated context', function() {
     it('should accept a payload that matches the expected context', function() {
-      decryptJoinDelivery({ ...decryptParams, delivery: craft({}) }).should.equal(secret);
+      decryptJoinDelivery({ ...decryptParams, delivery: deliveryWithPayload({}) }).should.equal(secret);
     });
 
     it('should reject the wrong purpose or version', function() {
-      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: craft({ purpose: 'something-else' }) }), /wrong purpose/);
-      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: craft({ purpose: undefined }) }), /wrong purpose/);
-      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: craft({ version: 2 }) }), /Unsupported join delivery version/);
-      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: craft({ version: '1' }) }), /Unsupported join delivery version/);
+      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: deliveryWithPayload({ purpose: 'something-else' }) }), /wrong purpose/);
+      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: deliveryWithPayload({ purpose: undefined }) }), /wrong purpose/);
+      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: deliveryWithPayload({ version: 2 }) }), /Unsupported join delivery version/);
+      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: deliveryWithPayload({ version: '1' }) }), /Unsupported join delivery version/);
     });
 
     it('should reject a delivery for another session, recipient or ceremony', function() {
@@ -256,13 +260,13 @@ describe('TSS join delivery', function() {
         ['commonKeyChain', 'another-common-key-chain']
       ];
       for (const [field, value] of cases) {
-        should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: craft({ [field]: value }) }), new RegExp(`${field} does not match`));
+        should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: deliveryWithPayload({ [field]: value }) }), new RegExp(`${field} does not match`));
       }
     });
 
     it('should reject a payload with a missing context field', function() {
       for (const field of ['sessionId', 'partyId', 'requestPubKey', 'chain', 'coin', 'network', 'm', 'n', 'commonKeyChain']) {
-        should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: craft({ [field]: undefined }) }), new RegExp(`${field} does not match`));
+        should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: deliveryWithPayload({ [field]: undefined }) }), new RegExp(`${field} does not match`));
       }
     });
 
@@ -302,7 +306,7 @@ describe('TSS join delivery', function() {
 
     for (const [name, badSecret] of bad) {
       it(`should reject ${name}`, function() {
-        should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: craft({ secret: badSecret }) }), /Invalid join secret/);
+        should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: deliveryWithPayload({ secret: badSecret }) }), /Invalid join secret/);
         // and refuse to produce one
         should.throw(() => encryptJoinDelivery({ ...encryptParams, secret: badSecret }), /Invalid join secret/);
       });
@@ -313,35 +317,35 @@ describe('TSS join delivery', function() {
         const shortSecret = API._buildSecret(shortId, API.parseSecret(secret).walletPrivKey, 'eth', 'livenet');
         // The ordinary parser and builder round trip it, which is why the format must be checked explicitly
         API.parseSecret(shortSecret).walletId.should.not.equal(walletId);
-        should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: craft({ secret: shortSecret }) }), /Invalid join secret/);
+        should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: deliveryWithPayload({ secret: shortSecret }) }), /Invalid join secret/);
         should.throw(() => encryptJoinDelivery({ ...encryptParams, secret: shortSecret }), /Invalid join secret/);
       }
     });
 
     it('should reject trailing data, which would otherwise change the coin', function() {
-      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: craft({ secret: secret + 'x' }) }), /secret coin does not match/);
+      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: deliveryWithPayload({ secret: secret + 'x' }) }), /secret coin does not match/);
       should.throw(() => encryptJoinDelivery({ ...encryptParams, secret: secret + 'x' }), /secret coin does not match/);
     });
 
     it('should reject a non-string secret', function() {
       for (const value of [undefined, null, 1, {}, ['x']]) {
-        should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: craft({ secret: value }) }), /Invalid join secret/);
+        should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: deliveryWithPayload({ secret: value }) }), /Invalid join secret/);
       }
     });
 
     it('should reject a secret whose coin or network disagrees with the ceremony', function() {
       const btcSecret = API._buildSecret(walletId, new BitcoreLib.PrivateKey(), 'btc', 'livenet');
       const testnetSecret = API._buildSecret(walletId, new BitcoreLib.PrivateKey(), 'eth', 'testnet');
-      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: craft({ secret: btcSecret }) }), /secret coin does not match/);
-      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: craft({ secret: testnetSecret }) }), /secret network does not match/);
+      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: deliveryWithPayload({ secret: btcSecret }) }), /secret coin does not match/);
+      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: deliveryWithPayload({ secret: testnetSecret }) }), /secret network does not match/);
       should.throw(() => encryptJoinDelivery({ ...encryptParams, secret: btcSecret }), /secret coin does not match/);
       should.throw(() => encryptJoinDelivery({ ...encryptParams, secret: testnetSecret }), /secret network does not match/);
     });
 
     it('should not include the secret in any failure message', function() {
       const attempts = [
-        () => decryptJoinDelivery({ ...decryptParams, delivery: craft({ secret: secret + 'x' }) }),
-        () => decryptJoinDelivery({ ...decryptParams, delivery: craft({ sessionId: 'another' }) }),
+        () => decryptJoinDelivery({ ...decryptParams, delivery: deliveryWithPayload({ secret: secret + 'x' }) }),
+        () => decryptJoinDelivery({ ...decryptParams, delivery: deliveryWithPayload({ sessionId: 'another' }) }),
         () => decryptJoinDelivery({ ...decryptParams, delivery: encryptJoinDelivery(encryptParams), recipientPrivKey: otherPriv }),
         () => encryptJoinDelivery({ ...encryptParams, secret: secret + 'x' })
       ];
