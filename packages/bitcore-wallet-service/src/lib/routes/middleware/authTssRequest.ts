@@ -52,7 +52,7 @@ export function authTssKeyGenRequest(): express.RequestHandler {
         }
       }
       const isRound0Msg = body?.message?.round === 0;
-      const awaitingJoiners = session.participants.some(p => !p);
+      const awaitingJoiners = session.participants.some(p => !p); // session.participants is initiated with n slots (initally null) that get populated as participants join
       const participantIdx = session.participants.indexOf(copayerId); // equals -1 if the copayer has not joined yet
       if (participantIdx === -1 && session.schemeVersion >= 1.2) {
         // Check session.authPublicKeys to ensure initiator registered this participant
@@ -71,14 +71,20 @@ export function authTssKeyGenRequest(): express.RequestHandler {
       const partyId = participantIdx > -1
         ? participantIdx
         : (awaitingJoiners && isRound0Msg)
-          ? body?.message?.partyId
+          ? body?.message?.partyId // if participant has not joined session yet, use the partyId from the initial round message (verified below)
           : -1;
       
       let pubKey: string = null;
       if (session?.schemeVersion <= 1.1) {
-        // session.authPublicKeys was not added until 1.2
+        // session.authPublicKeys was not added until 1.2, so fetch public key from the first round messages instead (old way)
         pubKey = partyId > -1 ? session.rounds[0].find(r => r.fromPartyId === partyId)?.messages.publicKey : null;
+        if (!pubKey && participantIdx === -1 && partyId > -1) {
+          // Joining party hasn't submitted its round 0 message yet and legacy sessions have no registration,
+          //  so use the joining message's public key (verifyTssMessage verifies the message's payload against it)
+          pubKey = body?.message?.publicKey;
+        }
       } else {
+        // authPublicKeys is set by the session leader, so this will verify that the leader and the calling participant here are on the same page
         pubKey = partyId > -1 ? session?.authPublicKeys[partyId] : null;
       }
 
@@ -118,7 +124,9 @@ export function authTssSignRequest(): express.RequestHandler {
       
       const { id } = req.params as { [key: string]: string };
       const body = req.body as { message: ITssSigMessageObject | undefined };
-      const verifyMsg = req.method !== 'GET'; // getters methods don't have a body.message to verify message has correct info
+      // Only some requests carry a body.message (e.g. POST /store only sends the final signature).
+      //  Omitting it is safe since routes that don't receive a message don't consume one.
+      const verifyMsg = !!body?.message;
 
       const copayer = await storage.fetchCopayerLookup(copayerId);
       if (!copayer) {
