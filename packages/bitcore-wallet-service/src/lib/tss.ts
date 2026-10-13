@@ -501,6 +501,7 @@ class TssKeyGenClass {
     }
     if (secrets != null && (
       typeof secrets !== 'object' ||
+      Array.isArray(secrets) ||
       Object.entries(secrets).some(([chain, s]) => !Utils.checkValueInCollection(chain, Constants.EVM_CHAINS) || !s || typeof s !== 'string')
     )) {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid BWS join secrets provided');

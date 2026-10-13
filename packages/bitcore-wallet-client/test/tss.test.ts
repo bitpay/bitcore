@@ -703,6 +703,23 @@ describe('TSS', function() {
           wallet.copayers.length.should.equal(n);
         }
       });
+
+      it('should reject additional chains that are not unique EVM chains different from the primary chain', async function() {
+        for (const { primaryChain, chains } of [
+          { primaryChain: 'eth', chains: [{ chain: 'eth', coin: 'eth' }] },
+          { primaryChain: 'eth', chains: [{ chain: 'arb', coin: 'eth' }, { chain: 'arb', coin: 'eth' }] },
+          { primaryChain: 'eth', chains: [{ chain: 'btc', coin: 'btc' }] },
+          { primaryChain: 'btc', chains: [{ chain: 'arb', coin: 'eth' }] }
+        ]) {
+          const tss = new TssKeyGen({ chain: primaryChain, network, baseUrl, key: new Key({ seedType: 'new' }) });
+          try {
+            await tss.createWallet({ walletName: 'evm account', copayerName: 'party0', chains });
+            throw new Error('Should have thrown');
+          } catch (err) {
+            err.message.should.include('Additional chains must be unique EVM chains different from the primary chain');
+          }
+        }
+      });
     });
   });
 

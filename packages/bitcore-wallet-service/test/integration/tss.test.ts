@@ -509,7 +509,7 @@ describe('TSS', function() {
     });
 
     it('should reject chain secrets that are not keyed by EVM chain with a non-empty secret', async function() {
-      for (const secrets of [{ btc: 'btc-secret' }, { arb: '' }, { arb: 1 }, 1]) {
+      for (const secrets of [{ btc: 'btc-secret' }, { arb: '' }, { arb: 1 }, 1, []]) {
         const res = await postSecret(0, { secret: 'eth-secret', secrets });
         res.status.should.equal(400);
         res.body.code.should.equal('TSS_GENERIC_ERROR');
