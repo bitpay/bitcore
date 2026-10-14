@@ -389,4 +389,18 @@ describe('Utils', () => {
       valid.should.be.equal(false);
     });
   });
+
+  describe('#isValidNetwork', () => {
+    it('should accept each network', () => {
+      for (const network of ['livenet', 'testnet', 'regtest']) {
+        Utils.isValidNetwork(network).should.equal(true);
+      }
+    });
+
+    it('should reject anything else', () => {
+      for (const network of ['mainnet', 'Livenet', 'sepolia', '', undefined, null, 1, {}, ['livenet']]) {
+        Utils.isValidNetwork(network).should.equal(false);
+      }
+    });
+  });
 });

@@ -10,7 +10,7 @@ import {
 } from '@bitpay-labs/crypto-wallet-core';
 import Stringify from 'json-stable-stringify';
 import { singleton } from 'preconditions';
-import { Constants } from './constants';
+import { Constants, type Network } from './constants';
 import { Defaults } from './defaults';
 import { Encryption } from './encryption';
 
@@ -606,5 +606,10 @@ export class Utils {
 
   static isSingleAddressChain(chain: string): boolean {
     return !Utils.isUtxoChain(chain);
+  }
+
+  /** Whether the value is one of `Constants.NETWORKS`. Case-sensitive, like the networks themselves. */
+  static isValidNetwork(network: unknown): network is Network {
+    return typeof network === 'string' && (Constants.NETWORKS as readonly string[]).includes(network);
   }
 }

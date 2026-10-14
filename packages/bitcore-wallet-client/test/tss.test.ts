@@ -14,9 +14,12 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { ECIES, utils as TssUtils } from '@bitpay-labs/bitcore-tss';
+import { Credentials as RealCredentials } from '../src/lib/credentials';
 import { Request } from '../src/lib/request';
 import { BitcoreLib, Deriver } from '@bitpay-labs/crypto-wallet-core';
 import { TssKeyGen, TssKey, type RestoreTrustedInputs } from '../src/lib/tsskey';
+import { decryptJoinDelivery } from '../src/lib/tssdelivery';
+import { Errors } from '../src/lib/errors';
 import { TssSign } from '../src/lib/tsssign';
 import log from '../src/lib/log';
 import Client, { type Credentials } from '../src';
@@ -2108,6 +2111,471 @@ describe('TSS', function() {
           mk(keyA).restoreSession({ session: inviteeA.exportSession(), trusted: { joinCode: { code: forged } } }),
           { message: /creator key does not match the retained key/ }
         );
+      });
+    });
+  });
+
+  describe('Creator wallet enrollment and delivery publication', function() {
+    // Each test runs a real DKG with 10 ms polling, which is slow when the machine is busy
+    this.timeout(30000);
+
+    const mk = (key) => new TssKeyGen({ chain, network, baseUrl: '/bws/api', request: request(app), key });
+    const credsOf = (key) => key.createCredentials(null, { network, n: 1, account: 0 });
+    const pubKeyOf = (key) => credsOf(key).requestPubKey;
+    /** Whether a request is the creator's own, as opposed to another party's in the same test */
+    const isCreatorRequest = (r: Request) => (r.credentials as any)?.requestPubKey === pubKeyOf(keys[0]);
+    const nextEvent = (emitter: TssKeyGen, event: string) => new Promise<any>(r => emitter.once(event, r));
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+    let keys;
+    let tss: TssKeyGen[];
+    let urls: Array<{ method: string; url: string; body?: any }>;
+
+    /** Join every party to one session, then run the DKG to completion. Only the creator's subscription (if any) goes on to the wallet. */
+    const runCeremony = async (parties: number, creatorSubscribe?: { walletName: string; copayerName: string }) => {
+      keys = Array.from({ length: parties }, () => new Key({ seedType: 'new' }));
+      tss = keys.map(mk);
+      await tss[0].newKey({ m: 2, n: parties });
+      for (let partyId = 1; partyId < parties; partyId++) {
+        await tss[partyId].joinKey({ code: tss[0].createJoinCode({ partyId, partyPubKey: pubKeyOf(keys[partyId]) }) });
+      }
+      const done = tss.map((t, i) => nextEvent(t, i === 0 && creatorSubscribe ? 'wallet' : 'complete'));
+      for (const [i, t] of tss.entries()) {
+        t.on('error', () => {});
+        t.subscribe({ timeout: 10, ...(i === 0 ? creatorSubscribe : {}) });
+      }
+      await Promise.all(done);
+    };
+
+    /** Decrypt the delivery BWS holds for a recipient, as the recipient would */
+    const decryptFor = async (partyId: number) => {
+      const session = await storage.fetchTssKeyGenSession({ id: tss[0].id });
+      const record = session.bwsJoinDelivery.records.find(r => r.partyId === partyId);
+      return decryptJoinDelivery({
+        delivery: record,
+        recipientPrivKey: credsOf(keys[partyId]).requestPrivKey,
+        creatorPubKey: tss[0].getAuthPublicKey(),
+        expected: {
+          sessionId: tss[0].id,
+          partyId,
+          requestPubKey: pubKeyOf(keys[partyId]),
+          chain,
+          network,
+          m: 2,
+          n: tss.length,
+          commonKeyChain: tss[partyId].getTssKey().keychain.commonKeyChain
+        }
+      });
+    };
+
+    beforeEach(function() {
+      urls = [];
+      // Record every request a TSS instance makes. The real request still goes through unless a test replaces it.
+      const origGet = Request.prototype.get;
+      const origPost = Request.prototype.post;
+      sandbox.stub(Request.prototype, 'get').callsFake(function(this: Request, url: string, ...rest) {
+        urls.push({ method: 'get', url });
+        return origGet.call(this, url, ...rest);
+      });
+      sandbox.stub(Request.prototype, 'post').callsFake(function(this: Request, url: string, body?: any, ...rest) {
+        urls.push({ method: 'post', url, body });
+        return origPost.call(this, url, body, ...rest);
+      });
+    });
+
+    afterEach(function() {
+      for (const t of tss || []) {
+        t.unsubscribe();
+      }
+      tss = [];
+    });
+
+    const deliveryPosts = () => urls.filter(u => u.method === 'post' && u.url.endsWith('/join-delivery'));
+    const createCalls = () => (Client.prototype.createWallet as sinon.SinonSpy);
+
+    for (const parties of [2, 3]) {
+      describe(`${parties === 2 ? '2-of-2' : '2-of-3'} ceremony`, function() {
+        it(happyPath('should create one wallet and publish an encrypted record to each recipient'), async function() {
+          sandbox.spy(Client.prototype, 'createWallet');
+          const storeSecret = sandbox.spy(BwsTssKeyGen, 'storeBwsJoinSecret');
+          await runCeremony(parties, { walletName: 'wallet', copayerName: 'creator' });
+
+          createCalls().callCount.should.equal(1);
+          const { secret } = await createCalls().returnValues[0];
+          const walletPrivKey = Client.parseSecret(secret).walletPrivKey.toWIF();
+
+          // Each recipient recovers the original secret, and only with its own key
+          for (let partyId = 1; partyId < parties; partyId++) {
+            (await decryptFor(partyId)).should.equal(secret);
+          }
+          const session = await storage.fetchTssKeyGenSession({ id: tss[0].id });
+          session.bwsJoinDelivery.records.map(r => r.partyId).should.deep.equal(Array.from({ length: parties - 1 }, (_, i) => i + 1));
+
+          // Neither what the creator sent nor what BWS stored holds the secret or the wallet key
+          deliveryPosts().length.should.equal(1);
+          const sent = JSON.stringify(deliveryPosts()[0].body);
+          const stored = JSON.stringify(session);
+          for (const text of [secret, walletPrivKey]) {
+            sent.should.not.include(text);
+            stored.should.not.include(text);
+          }
+          // The plaintext path is never used
+          urls.filter(u => u.url.includes('/secret')).should.deep.equal([]);
+          storeSecret.called.should.equal(false);
+          should.not.exist(session.bwsJoinSecret);
+        });
+      });
+    }
+
+    it('should check the retained keys, then create the wallet, then publish', async function() {
+      sandbox.spy(Client.prototype, 'createWallet');
+      await runCeremony(2, { walletName: 'wallet', copayerName: 'creator' });
+      const order = urls.filter(u => u.url.endsWith('/0') || u.url.includes('/0?') || u.url.endsWith('/join-delivery')).map(u => u.method + ' ' + (u.url.includes('join-delivery') ? 'delivery' : 'round0'));
+      // round 0 is read by the creator's own check as well as the DKG; the delivery comes last
+      order[order.length - 1].should.equal('post delivery');
+      order.slice(0, -1).includes('get round0').should.equal(true);
+    });
+
+    it('should publish ciphertext that BWS cannot open and that is not reusable by another recipient', async function() {
+      await runCeremony(3, { walletName: 'wallet', copayerName: 'creator' });
+      const session = await storage.fetchTssKeyGenSession({ id: tss[0].id });
+      const [rec1, rec2] = session.bwsJoinDelivery.records;
+      rec1.encryptedMessage.should.not.equal(rec2.encryptedMessage);
+      // Party 2's key cannot open party 1's record
+      should.throw(() => decryptJoinDelivery({
+        delivery: rec1,
+        recipientPrivKey: credsOf(keys[2]).requestPrivKey,
+        creatorPubKey: tss[0].getAuthPublicKey(),
+        expected: {
+          sessionId: tss[0].id, partyId: 1, requestPubKey: pubKeyOf(keys[1]), chain, network, m: 2, n: 3,
+          commonKeyChain: tss[1].getTssKey().keychain.commonKeyChain
+        }
+      }), /could not be decrypted or verified/);
+    });
+
+    describe('delivery retries', function() {
+      it('should republish the same wallet\'s secret after a lost publication response, without creating another wallet', async function() {
+        sandbox.spy(Client.prototype, 'createWallet');
+        await runCeremony(2);
+
+        // The first publication reaches BWS, but the creator never sees the response
+        let lost = false;
+        const post = Request.prototype.post as sinon.SinonStub;
+        const real = post.wrappedMethod ?? post;
+        post.callsFake(async function(this: Request, url: string, body?: any, ...rest) {
+          urls.push({ method: 'post', url, body });
+          const res = await real.call(this, url, body, ...rest);
+          if (url.endsWith('/join-delivery') && !lost) {
+            lost = true;
+            throw new Errors.CONNECTION_ERROR();
+          }
+          return res;
+        });
+
+        await assert.rejects(tss[0].createWallet({ walletName: 'wallet', copayerName: 'creator' }), { name: 'bwc.ErrorCONNECTION_ERROR' });
+        const wallet = await tss[0].createWallet({ walletName: 'wallet', copayerName: 'creator' });
+
+        createCalls().callCount.should.equal(1);
+        const { wallet: created, secret } = await createCalls().returnValues[0];
+        wallet.id.should.equal(created.id);
+        deliveryPosts().length.should.equal(2);
+        // Fresh randomness each time, same secret
+        deliveryPosts()[0].body.records[0].encryptedMessage.should.not.equal(deliveryPosts()[1].body.records[0].encryptedMessage);
+        (await decryptFor(1)).should.equal(secret);
+      });
+
+      it('should retry through the subscription without restarting creation', async function() {
+        sandbox.spy(Client.prototype, 'createWallet');
+        const post = Request.prototype.post as sinon.SinonStub;
+        const realPost = post.wrappedMethod ?? post;
+        let failures = 0;
+        post.callsFake(async function(this: Request, url: string, body?: any, ...rest) {
+          urls.push({ method: 'post', url, body });
+          if (url.endsWith('/join-delivery') && failures < 2) {
+            failures++;
+            throw new Errors.CONNECTION_ERROR();
+          }
+          return realPost.call(this, url, body, ...rest);
+        });
+
+        keys = [new Key({ seedType: 'new' }), new Key({ seedType: 'new' })];
+        tss = keys.map(mk);
+        await tss[0].newKey({ m: 2, n: 2 });
+        await tss[1].joinKey({ code: tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keys[1]) }) });
+        const errors = [];
+        tss[0].on('error', e => errors.push(e));
+        tss[1].on('error', () => {});
+        let stored = 0;
+        tss[0].on('tsskeystored', () => stored++);
+        const done = Promise.all([nextEvent(tss[0], 'wallet'), nextEvent(tss[1], 'complete')]);
+        tss[0].subscribe({ timeout: 10, walletName: 'wallet', copayerName: 'creator' });
+        tss[1].subscribe({ timeout: 10 });
+        await done;
+
+        // The wallet phase ran for three ticks. The key is stored at most once (not at all if the other party stored it first)
+        stored.should.be.at.most(1);
+        errors.length.should.equal(2);
+        errors.every(e => e instanceof Errors.CONNECTION_ERROR).should.equal(true);
+        createCalls().callCount.should.equal(1);
+        deliveryPosts().length.should.equal(3);
+        const { secret } = await createCalls().returnValues[0];
+        (await decryptFor(1)).should.equal(secret);
+      });
+
+      it('should not publish to a recipient key replaced after the first attempt', async function() {
+        sandbox.spy(Client.prototype, 'createWallet');
+        await runCeremony(2);
+        const post = Request.prototype.post as sinon.SinonStub;
+        const realPost = post.wrappedMethod ?? post;
+        let failed = false;
+        post.callsFake(async function(this: Request, url: string, body?: any, ...rest) {
+          urls.push({ method: 'post', url, body });
+          if (url.endsWith('/join-delivery') && !failed) {
+            failed = true;
+            throw new Errors.CONNECTION_ERROR();
+          }
+          return realPost.call(this, url, body, ...rest);
+        });
+
+        await assert.rejects(tss[0].createWallet({ walletName: 'wallet', copayerName: 'creator' }), { name: 'bwc.ErrorCONNECTION_ERROR' });
+        // Between attempts the retained key for party 1 is replaced with an identity that never enrolled
+        const impostor = new Key({ seedType: 'new' });
+        tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(impostor) });
+
+        await assert.rejects(tss[0].createWallet({ walletName: 'wallet', copayerName: 'creator' }), { message: /party 1 does not match the trusted key/ });
+        deliveryPosts().length.should.equal(1);
+        createCalls().callCount.should.equal(1);
+        // The first attempt never reached BWS and the second was refused before encrypting, so nothing is addressed to the impostor
+        const session = await storage.fetchTssKeyGenSession({ id: tss[0].id });
+        should.not.exist(session.bwsJoinDelivery);
+      });
+
+      it('should retry delivery after the DKG without polling rounds', async function() {
+        sandbox.spy(Client.prototype, 'createWallet');
+        const get = Request.prototype.get as sinon.SinonStub;
+        const realGet = get.wrappedMethod ?? get;
+        const roundGets = [];
+        get.callsFake(async function(this: Request, url: string, ...rest) {
+          urls.push({ method: 'get', url });
+          if (isCreatorRequest(this) && tss[0].getTssKey() && /\/v1\/tss\/keygen\/[^/]+\/\d+$/.test(url) && !url.endsWith('/0')) {
+            roundGets.push(url);
+            throw new Errors.NOT_AUTHORIZED();
+          }
+          return realGet.call(this, url, ...rest);
+        });
+        const post = Request.prototype.post as sinon.SinonStub;
+        const realPost = post.wrappedMethod ?? post;
+        let failures = 0;
+        post.callsFake(async function(this: Request, url: string, body?: any, ...rest) {
+          urls.push({ method: 'post', url, body });
+          if (url.endsWith('/join-delivery') && failures < 2) {
+            failures++;
+            throw new Errors.CONNECTION_ERROR();
+          }
+          return realPost.call(this, url, body, ...rest);
+        });
+
+        keys = [new Key({ seedType: 'new' }), new Key({ seedType: 'new' })];
+        tss = keys.map(mk);
+        await tss[0].newKey({ m: 2, n: 2 });
+        await tss[1].joinKey({ code: tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keys[1]) }) });
+        const errors = [];
+        tss[0].on('error', e => errors.push(e));
+        tss[1].on('error', () => {});
+        const done = Promise.all([nextEvent(tss[0], 'wallet'), nextEvent(tss[1], 'complete')]);
+        tss[0].subscribe({ timeout: 10, walletName: 'wallet', copayerName: 'creator' });
+        tss[1].subscribe({ timeout: 10 });
+        await done;
+
+        // Rounds are polled only until the DKG completes...
+        errors.filter(e => e instanceof Errors.NOT_AUTHORIZED).length.should.equal(0);
+        roundGets.length.should.equal(0);
+        // ...and the retries that follow do not poll again
+        errors.length.should.equal(2);
+        createCalls().callCount.should.equal(1);
+        deliveryPosts().length.should.equal(3);
+      });
+
+      for (const [name, makeError] of [
+        ['rejected', () => new Errors.NOT_AUTHORIZED()],
+        ['expired', () => new Errors.TSS_SESSION_EXPIRED()]
+      ] as const) {
+        it(`should stop on a ${name} session once the DKG is complete`, async function() {
+          sandbox.spy(Client.prototype, 'createWallet');
+          await runCeremony(2);
+          const get = Request.prototype.get as sinon.SinonStub;
+          const realGet = get.wrappedMethod ?? get;
+          get.callsFake(async function(this: Request, url: string, ...rest) {
+            urls.push({ method: 'get', url });
+            if (/\/v1\/tss\/keygen\/[^/]+\/\d+$/.test(url)) throw makeError();
+            return realGet.call(this, url, ...rest);
+          });
+          const errors = [];
+          tss[0].on('error', e => errors.push(e));
+          const unsubscribed = nextEvent(tss[0], 'unsubscribe');
+          tss[0].subscribe({ timeout: 10, walletName: 'wallet', copayerName: 'creator' });
+          await unsubscribed;
+          await sleep(100);
+
+          errors.length.should.equal(1);
+          createCalls().called.should.equal(false);
+        });
+      }
+    });
+
+    describe('stopping', function() {
+      /** Wait out several poll intervals, so a subscription that did not stop would run again */
+      const settle = () => sleep(100);
+
+      it('should stop on conflicting trusted keys before creating a wallet', async function() {
+        sandbox.spy(Client.prototype, 'createWallet');
+        await runCeremony(2);
+        const errors = [];
+        tss[0].on('error', e => errors.push(e));
+        // The creator's retained key for party 1 no longer matches the key it enrolled with
+        tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(new Key({ seedType: 'new' })) });
+
+        await assert.rejects(tss[0].createWallet({ walletName: 'wallet', copayerName: 'creator' }), { message: /party 1 does not match the trusted key/ });
+        createCalls().called.should.equal(false);
+        deliveryPosts().length.should.equal(0);
+        const session = await storage.fetchTssKeyGenSession({ id: tss[0].id });
+        should.not.exist(session.bwsJoinDelivery);
+      });
+
+      it('should stop the subscription on missing trust and surface the error', async function() {
+        sandbox.spy(Client.prototype, 'createWallet');
+        keys = [new Key({ seedType: 'new' }), new Key({ seedType: 'new' })];
+        tss = keys.map(mk);
+        await tss[0].newKey({ m: 2, n: 2 });
+        await tss[1].joinKey({ code: tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keys[1]) }) });
+        // A legacy export carries no keys, so the restored creator has nothing to deliver to
+        const exported = tss[0].exportSession();
+        const legacy = (() => {
+          const priv = new BitcoreLib.PrivateKey(credsOf(keys[0]).requestPrivKey);
+          const wrapper = JSON.parse(TssUtils.decrypt(Buffer.from(exported.slice('tsskeygen.1.'.length), 'base64'), priv.publicKey, priv).toString());
+          return wrapper.session as string;
+        })();
+        tss[0] = await mk(keys[0]).restoreSession({ session: legacy });
+
+        const errors = [];
+        tss[0].on('error', e => errors.push(e));
+        tss[1].on('error', () => {});
+        const unsubscribed = nextEvent(tss[0], 'unsubscribe');
+        tss[0].subscribe({ timeout: 10, walletName: 'wallet', copayerName: 'creator' });
+        tss[1].subscribe({ timeout: 10 });
+        await unsubscribed;
+        await settle();
+
+        errors.length.should.equal(1);
+        errors[0].message.should.match(/Missing trusted public key for party 1/);
+        createCalls().called.should.equal(false);
+        deliveryPosts().length.should.equal(0);
+      });
+
+      it('should not restart an ambiguous wallet creation failure', async function() {
+        sandbox.stub(Client.prototype, 'createWallet').rejects(new Errors.CONNECTION_ERROR());
+        keys = [new Key({ seedType: 'new' }), new Key({ seedType: 'new' })];
+        tss = keys.map(mk);
+        await tss[0].newKey({ m: 2, n: 2 });
+        await tss[1].joinKey({ code: tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keys[1]) }) });
+        const errors = [];
+        tss[0].on('error', e => errors.push(e));
+        tss[1].on('error', () => {});
+        const unsubscribed = nextEvent(tss[0], 'unsubscribe');
+        tss[0].subscribe({ timeout: 10, walletName: 'wallet', copayerName: 'creator' });
+        tss[1].subscribe({ timeout: 10 });
+        await unsubscribed;
+        await settle();
+
+        errors.length.should.equal(1);
+        errors[0].should.be.instanceOf(Errors.CONNECTION_ERROR);
+        createCalls().callCount.should.equal(1);
+        deliveryPosts().length.should.equal(0);
+      });
+
+      for (const [name, arrange, message] of [
+        ['returns nothing', () => { sandbox.stub(Client.prototype, 'createWallet').resolves(undefined); }, /returned no wallet/],
+        ['returns no wallet', () => { sandbox.stub(Client.prototype, 'createWallet').resolves({ secret: 'x' } as any); }, /returned no wallet/],
+        ['succeeds but its result cannot be recorded', () => {
+          sandbox.spy(Client.prototype, 'createWallet');
+          // The first call is the client's own, during creation. The second records the result for this instance.
+          const addWalletInfo = RealCredentials.prototype.addWalletInfo;
+          let calls = 0;
+          sandbox.stub(RealCredentials.prototype, 'addWalletInfo').callsFake(function(this: any, ...args: any[]) {
+            if (++calls === 2) throw new Error('wallet info rejected');
+            return addWalletInfo.apply(this, args);
+          });
+        }, /wallet info rejected/]
+      ] as const) {
+        it(`should not create another wallet when creation ${name}`, async function() {
+          arrange();
+          keys = [new Key({ seedType: 'new' }), new Key({ seedType: 'new' })];
+          tss = keys.map(mk);
+          await tss[0].newKey({ m: 2, n: 2 });
+          await tss[1].joinKey({ code: tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keys[1]) }) });
+          const errors = [];
+          tss[0].on('error', e => errors.push(e));
+          tss[1].on('error', () => {});
+          const unsubscribed = nextEvent(tss[0], 'unsubscribe');
+          tss[0].subscribe({ timeout: 10, walletName: 'wallet', copayerName: 'creator' });
+          tss[1].subscribe({ timeout: 10 });
+          await unsubscribed;
+          await settle();
+
+          errors.length.should.equal(1);
+          errors[0].message.should.match(message);
+          createCalls().callCount.should.equal(1);
+          deliveryPosts().length.should.equal(0);
+        });
+      }
+
+      it('should stop on a delivery rejection without falling back to the plaintext path', async function() {
+        sandbox.spy(Client.prototype, 'createWallet');
+        const storeSecret = sandbox.spy(BwsTssKeyGen, 'storeBwsJoinSecret');
+        const post = Request.prototype.post as sinon.SinonStub;
+        const realPost = post.wrappedMethod ?? post;
+        // A server without the delivery endpoint
+        post.callsFake(async function(this: Request, url: string, body?: any, ...rest) {
+          urls.push({ method: 'post', url, body });
+          if (url.endsWith('/join-delivery')) throw new Errors.NOT_FOUND();
+          return realPost.call(this, url, body, ...rest);
+        });
+        keys = [new Key({ seedType: 'new' }), new Key({ seedType: 'new' })];
+        tss = keys.map(mk);
+        await tss[0].newKey({ m: 2, n: 2 });
+        await tss[1].joinKey({ code: tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keys[1]) }) });
+        const errors = [];
+        tss[0].on('error', e => errors.push(e));
+        tss[1].on('error', () => {});
+        const unsubscribed = nextEvent(tss[0], 'unsubscribe');
+        tss[0].subscribe({ timeout: 10, walletName: 'wallet', copayerName: 'creator' });
+        tss[1].subscribe({ timeout: 10 });
+        await unsubscribed;
+        await settle();
+
+        errors.length.should.equal(1);
+        errors[0].should.be.instanceOf(Errors.NOT_FOUND);
+        createCalls().callCount.should.equal(1);
+        deliveryPosts().length.should.equal(1);
+        urls.filter(u => u.url.includes('/secret')).should.deep.equal([]);
+        storeSecret.called.should.equal(false);
+      });
+
+      it('should only let the session creator create the wallet', async function() {
+        sandbox.spy(Client.prototype, 'createWallet');
+        await runCeremony(2);
+        await assert.rejects(tss[1].createWallet({ walletName: 'wallet', copayerName: 'party1' }), { message: /Only the session creator/ });
+        createCalls().called.should.equal(false);
+      });
+
+      it('should not accept a wallet secret that disagrees with the ceremony', async function() {
+        const stub = sandbox.stub(Client.prototype, 'createWallet').callsFake(async function(this: any) {
+          return { wallet: { id: 'x', addressType: 'P2PKH' }, secret: Client._buildSecret('2b8d1f0e-6c3a-4d9b-8a7e-5f4c3b2a1d0e', new BitcoreLib.PrivateKey(), 'btc', network) };
+        });
+        await runCeremony(2);
+        await assert.rejects(tss[0].createWallet({ walletName: 'wallet', copayerName: 'creator' }), { message: /secret coin does not match/ });
+        deliveryPosts().length.should.equal(0);
+        stub.callCount.should.equal(1);
       });
     });
   });
