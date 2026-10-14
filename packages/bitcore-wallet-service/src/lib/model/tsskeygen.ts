@@ -90,7 +90,8 @@ export interface ITssKeyGenModel {
    */
   timeLimit?: number;
   /**
-   * The BWC-generated secret for joining a BWS wallet
+   * @deprecated Legacy plaintext join secret. No code writes or serves it any more; the field is only
+   * still declared so that existing documents keep loading until it is purged from storage.
    */
   bwsJoinSecret?: string;
   /**

@@ -617,6 +617,40 @@ describe('TSS', function() {
     });
   });
 
+  describe('GET /v1/tss/keygen/:id/:round validation', function() {
+    const parties = [vector.party0, vector.party1];
+    const pubKey = (partyId: number) => parties[partyId].authKey.publicKey.toString();
+
+    const get = (url: string, partyId: number) => {
+      const hash = Utils.hashMessage(`get|${url}|{}`, false);
+      const xSignature = BitcoreLib.crypto.ECDSA.sign(hash, parties[partyId].authKey, { endian: 'little' }).toString();
+      return app.get(urlPrefix + url).set('x-identity', pubKey(partyId)).set('x-signature', xSignature);
+    };
+
+    beforeEach(async function() {
+      const storage = helpers.getStorage();
+      await storage.db.collection(BWS.Storage.collections.TSS_KEYGEN).deleteMany({});
+      const keyGen = TssKeyGenModel.create({
+        id: 'test',
+        message: { partyId: 0, publicKey: pubKey(0) } as any,
+        n: 2,
+        copayerId: pubKey(0),
+        version: 1.1
+      });
+      keyGen.participants[1] = pubKey(1);
+      keyGen.rounds[0].push({ fromPartyId: 1, messages: { partyId: 1, publicKey: pubKey(1) } as any });
+      await storage.storeTssKeyGenSession({ doc: keyGen });
+    });
+
+    it('should reject a non-numeric round instead of answering with an empty round', async function() {
+      for (const round of ['secret', '1abc', '-1', '1.5']) {
+        const res = await get(`/v1/tss/keygen/test/${round}?maxWaitTime=0`, 1);
+        res.status.should.equal(400);
+        res.body.code.should.equal('TSS_GENERIC_ERROR');
+      }
+    });
+  });
+
   describe('POST /v1/tss/sign/:id', function() {
     const url = id => `${urlPrefix}/v1/tss/sign/${id}`;
     const signRequest = body => {

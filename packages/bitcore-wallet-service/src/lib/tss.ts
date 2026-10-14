@@ -482,40 +482,6 @@ class TssKeyGenClass {
     // }
   }
 
-  /** Store the BWS join secret for the TSS keygen session */
-  async storeBwsJoinSecret(params: {
-    /** Session ID */
-    id: string;
-    /** BWS join secret */
-    secret: string;
-    /** Copayer ID of the submitting party (must be the session creator) */
-    copayerId: string;
-  }) {
-    const { id, secret, copayerId } = params;
-    if (!secret) {
-      throw Errors.TSS_GENERIC_ERROR.withMessage('No BWS join secret provided');
-    }
-    if (typeof secret !== 'string') {
-      throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid BWS join secret provided');
-    }
-    const storage = WalletService.getStorage();
-    const session = await storage.fetchTssKeyGenSession({ id });
-
-    if (!session) {
-      throw Errors.TSS_SESSION_NOT_FOUND;
-    }
-
-    if (session.participants.indexOf(copayerId) !== 0) {
-      throw Errors.TSS_GENERIC_ERROR.withMessage('Only the session creator can store the BWS join secret');
-    }
-
-    const result = await storage.storeTssKeyBwsJoinSecret({ id, secret });
-    if (!result.result.ok) {
-      logger.error('Failed to store TSS key generation BWS join secret %o %o', id, result);
-      throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS key generation BWS join secret');
-    }
-  }
-
   /**
    * Store the encrypted join delivery for the TSS keygen session. Only the session creator may publish.
    * Replaces any previous set. BWS checks format and routing only; it cannot read the ciphertext.
@@ -610,28 +576,6 @@ class TssKeyGenClass {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Stored join delivery is missing this participant');
     }
     return { version: delivery.version, encryptedMessage: record.encryptedMessage, signature: record.signature };
-  }
-
-  /** Get the BWS join secret for the TSS keygen session */
-  async getBwsJoinSecret(params: {
-    /** Session ID */
-    id: string;
-    /** Copayer ID of the requesting party */
-    copayerId: string;
-  }): Promise<string> {
-    const { id, copayerId } = params;
-    const storage = WalletService.getStorage();
-    const session = await storage.fetchTssKeyGenSession({ id });
-    if (!session) {
-      throw Errors.TSS_SESSION_NOT_FOUND;
-    }
-    if (session.participants.indexOf(copayerId) === -1) {
-      throw Errors.TSS_NON_PARTICIPANT;
-    }
-    if (!session.bwsJoinSecret) {
-      throw Errors.TSS_BWS_JOIN_SECRET_NOT_FOUND;
-    }
-    return session.bwsJoinSecret;
   }
 };
 

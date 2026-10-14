@@ -2197,7 +2197,6 @@ describe('TSS', function() {
       describe(`${parties === 2 ? '2-of-2' : '2-of-3'} ceremony`, function() {
         it(happyPath('should create one wallet and publish an encrypted record to each recipient'), async function() {
           sandbox.spy(Client.prototype, 'createWallet');
-          const storeSecret = sandbox.spy(BwsTssKeyGen, 'storeBwsJoinSecret');
           await runCeremony(parties, { walletName: 'wallet', copayerName: 'creator' });
 
           createCalls().callCount.should.equal(1);
@@ -2221,7 +2220,6 @@ describe('TSS', function() {
           }
           // The plaintext path is never used
           urls.filter(u => u.url.includes('/secret')).should.deep.equal([]);
-          storeSecret.called.should.equal(false);
           should.not.exist(session.bwsJoinSecret);
         });
       });
@@ -2531,7 +2529,6 @@ describe('TSS', function() {
 
       it('should stop on a delivery rejection without falling back to the plaintext path', async function() {
         sandbox.spy(Client.prototype, 'createWallet');
-        const storeSecret = sandbox.spy(BwsTssKeyGen, 'storeBwsJoinSecret');
         const post = Request.prototype.post as sinon.SinonStub;
         const realPost = post.wrappedMethod ?? post;
         // A server without the delivery endpoint
@@ -2558,7 +2555,6 @@ describe('TSS', function() {
         createCalls().callCount.should.equal(1);
         deliveryPosts().length.should.equal(1);
         urls.filter(u => u.url.includes('/secret')).should.deep.equal([]);
-        storeSecret.called.should.equal(false);
       });
 
       it('should only let the session creator create the wallet', async function() {
@@ -2661,8 +2657,6 @@ describe('TSS', function() {
 
     for (const parties of [2, 3]) {
       it(happyPath(`should join every recipient to the creator's wallet in a ${parties === 2 ? '2-of-2' : '2-of-3'} ceremony`), async function() {
-        const storeSecret = sandbox.spy(BwsTssKeyGen, 'storeBwsJoinSecret');
-        const readSecret = sandbox.spy(BwsTssKeyGen, 'getBwsJoinSecret');
         await setup(parties);
         const wallets = tss.map(t => nextEvent(t, 'wallet'));
         subscribe();
@@ -2684,8 +2678,6 @@ describe('TSS', function() {
 
         // Only the encrypted route was used
         urls.filter(u => u.url.includes('/secret')).should.deep.equal([]);
-        storeSecret.called.should.equal(false);
-        readSecret.called.should.equal(false);
         // Each recipient asked for its own delivery, and nobody was told anything else
         urls.filter(u => isDeliveryGet(u.url)).length.should.be.at.least(parties - 1);
       });
