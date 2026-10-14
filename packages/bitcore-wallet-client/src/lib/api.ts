@@ -8,7 +8,7 @@ import Bip38 from 'bip38';
 import { singleton } from 'preconditions';
 import * as Uuid from 'uuid';
 import { BulkClient } from './bulkclient';
-import { Constants, Encryption, Utils } from './common';
+import { Constants, Encryption, type Network, Utils } from './common';
 import { Credentials } from './credentials';
 import { Errors } from './errors';
 import { Key, PasswordMaybe } from './key';
@@ -4150,8 +4150,6 @@ export class API extends EventEmitter {
     return this.request.post('/v1/moralis/getMultipleSolTokenPrices', data);
   }
 };
-
-export type Network = 'livenet' | 'testnet' | 'regtest';
 
 export interface CreateWalletOpts {
   /**
