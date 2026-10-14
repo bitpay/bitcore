@@ -18,7 +18,7 @@ import { Credentials as RealCredentials } from '../src/lib/credentials';
 import { Request } from '../src/lib/request';
 import { BitcoreLib, Deriver } from '@bitpay-labs/crypto-wallet-core';
 import { TssKeyGen, TssKey, type RestoreTrustedInputs } from '../src/lib/tsskey';
-import { decryptJoinDelivery } from '../src/lib/tssdelivery';
+import { decryptJoinDelivery, encryptJoinDelivery } from '../src/lib/tssdelivery';
 import { Errors } from '../src/lib/errors';
 import { TssSign } from '../src/lib/tsssign';
 import log from '../src/lib/log';
@@ -2577,6 +2577,355 @@ describe('TSS', function() {
         deliveryPosts().length.should.equal(0);
         stub.callCount.should.equal(1);
       });
+    });
+  });
+
+  describe('Recipient delivery polling and enrollment', function() {
+    this.timeout(30000);
+
+    const mk = (key) => new TssKeyGen({ chain, network, baseUrl: '/bws/api', request: request(app), key });
+    const credsOf = (key) => key.createCredentials(null, { network, n: 1, account: 0 });
+    const pubKeyOf = (key) => credsOf(key).requestPubKey;
+    const nextEvent = (emitter: TssKeyGen, event: string) => new Promise<any>(r => emitter.once(event, r));
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+    const isDeliveryGet = (url: string) => url.endsWith('/join-delivery');
+
+    let keys;
+    let tss: TssKeyGen[];
+    let urls: Array<{ method: string; url: string; body?: any }>;
+    let errors: Array<Array<any>>;
+
+    const createCalls = () => (Client.prototype.createWallet as sinon.SinonSpy);
+    const joinCalls = () => (Client.prototype.joinWallet as sinon.SinonSpy);
+
+    /** Create the session and enroll every party's DKG, without starting any subscription */
+    const setup = async (parties: number) => {
+      keys = Array.from({ length: parties }, () => new Key({ seedType: 'new' }));
+      tss = keys.map(mk);
+      errors = tss.map(() => []);
+      await tss[0].newKey({ m: 2, n: parties });
+      for (let partyId = 1; partyId < parties; partyId++) {
+        await tss[partyId].joinKey({ code: tss[0].createJoinCode({ partyId, partyPubKey: pubKeyOf(keys[partyId]) }) });
+      }
+      for (const [i, t] of tss.entries()) {
+        t.on('error', e => errors[i].push(e));
+      }
+    };
+
+    /** Start the subscriptions that create (party 0) or join (everyone else) the wallet */
+    const subscribe = (opts: { creator?: boolean; recipients?: Array<number> } = {}) => {
+      const { creator = true, recipients = tss.map((_, i) => i).slice(1) } = opts;
+      if (creator) {
+        tss[0].subscribe({ timeout: 10, walletName: 'wallet', copayerName: 'creator' });
+      }
+      for (const partyId of recipients) {
+        tss[partyId].subscribe({ timeout: 10, copayerName: 'party' + partyId });
+      }
+    };
+
+    /** The delivery BWS served to a recipient, replaced for that recipient's delivery GETs only */
+    const serveDelivery = (replace: (served: any, partyId: number) => any) => {
+      const get = Request.prototype.get as sinon.SinonStub;
+      const realGet = get.wrappedMethod ?? get;
+      get.callsFake(async function(this: Request, url: string, ...rest) {
+        urls.push({ method: 'get', url });
+        const res = await realGet.call(this, url, ...rest);
+        if (!isDeliveryGet(url)) return res;
+        const partyId = keys.findIndex(k => pubKeyOf(k) === (this.credentials as any)?.requestPubKey);
+        return { ...res, body: replace(res.body, partyId) };
+      });
+    };
+
+    beforeEach(function() {
+      urls = [];
+      const origGet = Request.prototype.get;
+      const origPost = Request.prototype.post;
+      sandbox.stub(Request.prototype, 'get').callsFake(function(this: Request, url: string, ...rest) {
+        urls.push({ method: 'get', url });
+        return origGet.call(this, url, ...rest);
+      });
+      sandbox.stub(Request.prototype, 'post').callsFake(function(this: Request, url: string, body?: any, ...rest) {
+        urls.push({ method: 'post', url, body });
+        return origPost.call(this, url, body, ...rest);
+      });
+      sandbox.spy(Client.prototype, 'createWallet');
+      sandbox.spy(Client.prototype, 'joinWallet');
+    });
+
+    afterEach(function() {
+      for (const t of tss || []) {
+        t.unsubscribe();
+      }
+      tss = [];
+    });
+
+    for (const parties of [2, 3]) {
+      it(happyPath(`should join every recipient to the creator's wallet in a ${parties === 2 ? '2-of-2' : '2-of-3'} ceremony`), async function() {
+        const storeSecret = sandbox.spy(BwsTssKeyGen, 'storeBwsJoinSecret');
+        const readSecret = sandbox.spy(BwsTssKeyGen, 'getBwsJoinSecret');
+        await setup(parties);
+        const wallets = tss.map(t => nextEvent(t, 'wallet'));
+        subscribe();
+        const joined = await Promise.all(wallets);
+
+        // One wallet, with everyone in it, joined with the secret the creator created
+        createCalls().callCount.should.equal(1);
+        const { wallet, secret } = await createCalls().returnValues[0];
+        joined.every(w => w.id === wallet.id).should.equal(true);
+        joinCalls().callCount.should.equal(parties - 1);
+        joinCalls().args.every(args => args[0] === secret).should.equal(true);
+        const stored = await new Promise<any>((resolve, reject) => {
+          storage.fetchWallet(wallet.id, (err, w) => err ? reject(err) : resolve(w));
+        });
+        stored.copayers.length.should.equal(parties);
+        for (const partyErrors of errors) {
+          partyErrors.should.deep.equal([]);
+        }
+
+        // Only the encrypted route was used
+        urls.filter(u => u.url.includes('/secret')).should.deep.equal([]);
+        storeSecret.called.should.equal(false);
+        readSecret.called.should.equal(false);
+        // Each recipient asked for its own delivery, and nobody was told anything else
+        urls.filter(u => isDeliveryGet(u.url)).length.should.be.at.least(parties - 1);
+      });
+    }
+
+    it('should keep polling while the delivery is pending, then join, without processing rounds again', async function() {
+      const exportSession = sandbox.spy(TssKeyGen.prototype, 'exportSession');
+      const recipientExports = () => exportSession.thisValues.filter(t => t === tss[1]).length;
+      await setup(2);
+      const keyReady = nextEvent(tss[1], 'tsskey');
+      subscribe({ creator: false });
+      // The creator finishes the DKG but does not create the wallet yet
+      tss[0].subscribe({ timeout: 10 });
+      await keyReady;
+      const exportsAtCompletion = recipientExports();
+
+      await sleep(300);
+      const polls = urls.filter(u => isDeliveryGet(u.url)).length;
+      polls.should.be.above(2);
+      joinCalls().called.should.equal(false);
+      // Pending is not an error, and polling after the DKG neither exports a session nor asks for rounds
+      errors[1].should.deep.equal([]);
+      recipientExports().should.equal(exportsAtCompletion);
+
+      const wallet = nextEvent(tss[1], 'wallet');
+      await tss[0].createWallet({ walletName: 'wallet', copayerName: 'creator' });
+      const { secret } = await createCalls().returnValues[0];
+      (await wallet).should.have.property('id');
+      joinCalls().callCount.should.equal(1);
+      joinCalls().args[0][0].should.equal(secret);
+    });
+
+    describe('recoverable failures', function() {
+      it('should poll again after a transient failure of the delivery GET', async function() {
+        await setup(2);
+        const get = Request.prototype.get as sinon.SinonStub;
+        const realGet = get.wrappedMethod ?? get;
+        let failures = 0;
+        get.callsFake(async function(this: Request, url: string, ...rest) {
+          urls.push({ method: 'get', url });
+          if (isDeliveryGet(url) && failures < 2) {
+            failures++;
+            throw new Errors.CONNECTION_ERROR();
+          }
+          return realGet.call(this, url, ...rest);
+        });
+        const wallets = tss.map(t => nextEvent(t, 'wallet'));
+        subscribe();
+        await Promise.all(wallets);
+
+        failures.should.equal(2);
+        errors[1].length.should.equal(2);
+        errors[1].every(e => e instanceof Errors.CONNECTION_ERROR).should.equal(true);
+        createCalls().callCount.should.equal(1);
+        joinCalls().callCount.should.equal(1);
+      });
+    });
+
+    describe('stopping', function() {
+      /** Subscribe the recipient alone and wait for it to stop. The creator is only running if a test started it. */
+      const expectStop = async () => {
+        const unsubscribed = nextEvent(tss[1], 'unsubscribe');
+        subscribe({ creator: false, recipients: [1] });
+        await unsubscribed;
+        // Several more intervals, so a subscription that did not stop would try again
+        await sleep(100);
+      };
+
+      const stopsWith = (name: string, arrange: () => void | Promise<void>, message: RegExp) => {
+        it(`should stop before joining when ${name}`, async function() {
+          await setup(2);
+          await arrange();
+          await expectStop();
+
+          errors[1].length.should.equal(1);
+          errors[1][0].message.should.match(message);
+          joinCalls().called.should.equal(false);
+          urls.filter(u => u.url.includes('/secret')).should.deep.equal([]);
+          // Rejecting a delivery is not a reason to start another enrollment
+          createCalls().callCount.should.equal(1);
+        });
+      };
+
+      /** A delivery for the recipient, as the creator would make it, except for what the test overrides */
+      const deliveryFor = async (opts: { context?: object; signer?: any } = {}) => {
+        const { secret } = await createCalls().returnValues[0];
+        return encryptJoinDelivery({
+          context: {
+            sessionId: tss[0].id, partyId: 1, requestPubKey: pubKeyOf(keys[1]), chain, network, m: 2, n: 2,
+            commonKeyChain: tss[1].getTssKey().keychain.commonKeyChain,
+            ...opts.context
+          },
+          secret,
+          creatorPrivKey: credsOf(opts.signer || keys[0]).requestPrivKey
+        });
+      };
+
+      /** Run the creator all the way, so the recipient has a real delivery to be given. The recipient only completes the DKG. */
+      const published = async () => {
+        const creatorDone = nextEvent(tss[0], 'wallet');
+        const recipientDone = nextEvent(tss[1], 'complete');
+        tss[0].subscribe({ timeout: 10, walletName: 'wallet', copayerName: 'creator' });
+        tss[1].subscribe({ timeout: 10 });
+        await Promise.all([creatorDone, recipientDone]);
+        // Completing removed the listeners
+        tss[1].on('error', e => errors[1].push(e));
+      };
+
+      stopsWith('the signature has been tampered with', async () => {
+        await published();
+        const flip = (hex: string) => hex.slice(0, -1) + (hex.endsWith('0') ? '1' : '0');
+        serveDelivery(served => ({ ...served, signature: flip(served.signature) }));
+      }, /could not be decrypted or verified/);
+
+      stopsWith('the ciphertext has been tampered with', async () => {
+        await published();
+        serveDelivery(served => {
+          const bytes = Buffer.from(served.encryptedMessage, 'base64');
+          // eslint-disable-next-line no-bitwise
+          bytes[bytes.length - 1] ^= 1;
+          return { ...served, encryptedMessage: bytes.toString('base64') };
+        });
+      }, /could not be decrypted or verified/);
+
+      stopsWith('the delivery is encrypted to someone else', async () => {
+        // Correctly signed by the creator, but for a key that is not this recipient's
+        await published();
+        const forOther = await deliveryFor({ context: { requestPubKey: pubKeyOf(new Key({ seedType: 'new' })) } });
+        serveDelivery(() => ({ version: 1, ...forOther }));
+      }, /could not be decrypted or verified/);
+
+      stopsWith('the delivery is for another ceremony', async () => {
+        await published();
+        const wrong = await deliveryFor({ context: { commonKeyChain: 'a-different-common-key-chain' } });
+        serveDelivery(() => ({ version: 1, ...wrong }));
+      }, /commonKeyChain does not match/);
+
+      stopsWith('the delivery is for another session', async () => {
+        await published();
+        const wrong = await deliveryFor({ context: { sessionId: 'another-session' } });
+        serveDelivery(() => ({ version: 1, ...wrong }));
+      }, /sessionId does not match/);
+
+      stopsWith('the creator\'s key is not the one the recipient trusts', async () => {
+        await published();
+        // BWS can only substitute what it serves. A delivery from some other key does not verify against the trusted one.
+        const forged = await deliveryFor({ signer: new Key({ seedType: 'new' }) });
+        serveDelivery(() => ({ version: 1, ...forged }));
+      }, /could not be decrypted or verified/);
+
+      stopsWith('the delivery format is not supported', async () => {
+        await published();
+        serveDelivery(served => ({ ...served, version: 2 }));
+      }, /Unsupported join delivery version/);
+
+      stopsWith('the server does not have the delivery route', async () => {
+        await published();
+        const get = Request.prototype.get as sinon.SinonStub;
+        const realGet = get.wrappedMethod ?? get;
+        get.callsFake(async function(this: Request, url: string, ...rest) {
+          urls.push({ method: 'get', url });
+          if (isDeliveryGet(url)) throw new Errors.NOT_FOUND();
+          return realGet.call(this, url, ...rest);
+        });
+      }, /not found/i);
+
+      it('should stop before asking for a delivery when the creator\'s key is not trusted', async function() {
+        await setup(2);
+        // A legacy export carries no keys, and the recipient has nothing but BWS to trust
+        const priv = new BitcoreLib.PrivateKey(credsOf(keys[1]).requestPrivKey);
+        const exported = tss[1].exportSession().slice('tsskeygen.1.'.length);
+        const wrapper = JSON.parse(TssUtils.decrypt(Buffer.from(exported, 'base64'), priv.publicKey, priv).toString());
+        tss[1] = await mk(keys[1]).restoreSession({ session: wrapper.session });
+        tss[1].on('error', e => errors[1].push(e));
+        // The creator takes part in the DKG, but does not create the wallet
+        tss[0].subscribe({ timeout: 10 });
+        await expectStop();
+
+        errors[1].length.should.equal(1);
+        errors[1][0].message.should.match(/Missing trusted creator public key/);
+        urls.filter(u => isDeliveryGet(u.url)).should.deep.equal([]);
+        joinCalls().called.should.equal(false);
+      });
+
+      for (const [name, makeError] of [
+        ['rejected', () => new Errors.NOT_AUTHORIZED()],
+        ['expired', () => new Errors.TSS_SESSION_EXPIRED()]
+      ] as const) {
+        it(`should stop on ${name === 'expired' ? 'an' : 'a'} ${name} session once the DKG is complete`, async function() {
+          await setup(2);
+          const keyReady = nextEvent(tss[1], 'tsskey');
+          tss[0].subscribe({ timeout: 10 });
+          tss[1].subscribe({ timeout: 10, copayerName: 'party1' });
+          await keyReady;
+          const get = Request.prototype.get as sinon.SinonStub;
+          const realGet = get.wrappedMethod ?? get;
+          get.callsFake(async function(this: Request, url: string, ...rest) {
+            urls.push({ method: 'get', url });
+            if (isDeliveryGet(url)) throw makeError();
+            return realGet.call(this, url, ...rest);
+          });
+          await nextEvent(tss[1], 'unsubscribe');
+          await sleep(100);
+
+          errors[1].length.should.equal(1);
+          joinCalls().called.should.equal(false);
+          createCalls().called.should.equal(false);
+        });
+      }
+
+      it('should not retry an ambiguous join failure as another enrollment', async function() {
+        await setup(2);
+        (Client.prototype.joinWallet as sinon.SinonSpy).restore();
+        sandbox.stub(Client.prototype, 'joinWallet').rejects(new Errors.CONNECTION_ERROR());
+        const unsubscribed = nextEvent(tss[1], 'unsubscribe');
+        subscribe();
+        await unsubscribed;
+        await sleep(100);
+
+        errors[1].length.should.equal(1);
+        errors[1][0].should.be.instanceOf(Errors.CONNECTION_ERROR);
+        joinCalls().callCount.should.equal(1);
+        createCalls().callCount.should.equal(1);
+      });
+    });
+
+    it('should not put the decrypted secret in an error or an event', async function() {
+      await setup(2);
+      const events: Array<any> = [];
+      for (const event of ['roundready', 'roundprocessed', 'roundsubmitted', 'tsskeystored', 'wallet', 'complete', 'error']) {
+        tss[1].on(event, (...args) => events.push(args));
+      }
+      const wallet = nextEvent(tss[1], 'wallet');
+      subscribe();
+      await wallet;
+      const { secret } = await createCalls().returnValues[0];
+      const { walletPrivKey } = Client.parseSecret(secret);
+      for (const text of [secret, walletPrivKey.toWIF()]) {
+        JSON.stringify(events).should.not.include(text);
+      }
     });
   });
 });

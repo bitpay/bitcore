@@ -7,7 +7,7 @@ import { Credentials } from './credentials';
 import { Errors } from './errors';
 import { ExportedKey, Key, KeyAlgorithm, PasswordMaybe } from './key';
 import { Request, RequestResponse, isTransientRequestError } from './request';
-import { JOIN_DELIVERY_VERSION, encryptJoinDelivery, normalizePubKey } from './tssdelivery';
+import { JOIN_DELIVERY_VERSION, decryptJoinDelivery, encryptJoinDelivery, normalizePubKey } from './tssdelivery';
 
 const $ = BitcoreLib.util.preconditions;
 
@@ -904,8 +904,9 @@ export class TssKeyGen extends EventEmitter {
    * - `wallet` => any: The wallet has been created. Emits the wallet object.
    * - `complete` => void: The key generation process (+ wallet creation, if applicable) is complete. This is the final event emitted along the happy path.
    * - `error` => Error: An error occurred during the process. Emits the error. Note that this will not stop the subscription,
-   *   unless the party 0 wallet creation or delivery of the wallet secret cannot be retried (e.g. missing/conflicting trusted keys,
-   *   or an ambiguous wallet creation failure). The subscription then stops, emitting `unsubscribe` after the error.
+   *   unless the wallet phase cannot be retried: creating the wallet or delivering its secret (party 0), or receiving it and
+   *   joining (other parties). E.g. missing/conflicting trusted keys, a delivery that fails decryption or verification,
+   *   or an ambiguous wallet creation/join failure. The subscription then stops, emitting `unsubscribe` after the error.
    * @returns {NodeJS.Timeout} Subscription ID
    */
   subscribe(params: {
@@ -973,7 +974,8 @@ export class TssKeyGen extends EventEmitter {
           keyStored ||= !!body.publicKey;
         }
 
-        const hasEveryoneSubmitted = body.messages?.length === this.n - 1; // subtract yourself
+        // Once complete there is no round left to process, whatever the poll returned
+        const hasEveryoneSubmitted = !this.#keygen.isKeyChainReady() && body.messages?.length === this.n - 1; // subtract yourself
         if (hasEveryoneSubmitted) {
           this.emit('roundready', thisRound);
           // Snapshot the session in case there's an API failure
@@ -1029,10 +1031,10 @@ export class TssKeyGen extends EventEmitter {
               try {
                 wallet = await this.joinWallet({ copayerName });
               } catch (err) {
-                if (!err.message.includes('TSS_BWS_JOIN_SECRET_NOT_FOUND')) {
+                if (!(err instanceof Errors.TSS_JOIN_DELIVERY_PENDING)) {
                   throw err;
                 }
-                // Ignore 'No secret found...' since it means the session initiator has not finished created the wallet yet
+                // Ignore a pending delivery since it means the session initiator has not finished creating the wallet yet
               }
             }
           
@@ -1252,6 +1254,13 @@ export class TssKeyGen extends EventEmitter {
     }
   }
 
+  /**
+   * Join the wallet the session creator created, using the join secret the creator delivered (encrypted) through BWS.
+   * The secret is decrypted and checked here against the invitation and the local DKG result before anything is joined.
+   *
+   * Throws `TSS_JOIN_DELIVERY_PENDING` if the creator has not published it yet; calling this again later is safe.
+   * Joining itself is not repeated by the subscription: a failure of the join request does not say whether it was applied.
+   */
   async joinWallet(params: {
     copayerName: string;
     opts?: {
@@ -1264,29 +1273,79 @@ export class TssKeyGen extends EventEmitter {
     if (!key) {
       throw new Error('TSS Key generation is not complete. This should be called after the `complete` event is emitted.');
     }
+    $.checkState(this.partyId > 0, 'The session creator creates the wallet, it does not join it');
     this.#credentials.clientDerivedPublicKey = key.getXPubKey(this.network);
 
-    const { body: { secret } } = await this.#request.get(`/v1/tss/keygen/${this.id}/secret`);
+    const secret = await this.#getJoinSecret(key.keychain.commonKeyChain);
 
-    const client = new Client({ baseUrl: this.#request.baseUrl });
-    client.fromObj(this.#credentials.toObj());
+    try {
+      // Same transport as this instance's own requests (the default one, unless a test supplied another)
+      const client = new Client({ baseUrl: this.#request.baseUrl, request: this.#request.r });
+      client.fromObj(this.#credentials.toObj());
 
-    const wallet = await client.joinWallet(
-      secret,
-      copayerName,
-      Object.assign({}, opts, {
-        chain: this.chain
-      })
-    );
+      const wallet = await client.joinWallet(
+        secret,
+        copayerName,
+        Object.assign({}, opts, {
+          chain: this.chain
+        })
+      );
 
-    const credObj = client.toObj();
-    this.#credentials.addWalletInfo(credObj.walletId, credObj.walletName, 1, 1, copayerName, {
-      useNativeSegwit: ['P2WPKH', 'P2WSH', 'P2TR'].includes(wallet.addressType),
-      segwitVersion: wallet.addressType === 'P2TR' ? 1 : 0,
-      tssKeyId: this.id,
-    });
-    
-    return wallet;
+      const credObj = client.toObj();
+      this.#credentials.addWalletInfo(credObj.walletId, credObj.walletName, 1, 1, copayerName, {
+        useNativeSegwit: ['P2WPKH', 'P2WSH', 'P2TR'].includes(wallet.addressType),
+        segwitVersion: wallet.addressType === 'P2TR' ? 1 : 0,
+        tssKeyId: this.id,
+      });
+
+      return wallet;
+    } catch (err) {
+      // The join may or may not have been applied at BWS, so it must not be repeated as another attempt
+      throw this.#stopOn(err);
+    }
+  }
+
+  /**
+   * Fetch this party's delivery from BWS, then decrypt it and check it against what is known locally.
+   * The creator's key is the one retained from the trusted invitation; nothing BWS returns can replace it.
+   * A pending delivery and a transient transport failure are left as they are, since asking again can succeed.
+   * Everything else would only repeat itself, so it stops the subscription. There is no fallback to plaintext delivery.
+   */
+  async #getJoinSecret(commonKeyChain: string): Promise<string> {
+    const creatorPubKey = this.#creatorPubKey;
+    if (!creatorPubKey) {
+      throw this.#stopOn(new Error('Missing trusted creator public key. Join with the join code (or restore the session with it) to verify the delivery.'));
+    }
+
+    let delivery: RequestResponse['body'];
+    try {
+      ({ body: delivery } = await this.#request.get(`/v1/tss/keygen/${this.id}/join-delivery`) as RequestResponse);
+    } catch (err) {
+      throw (err instanceof Errors.TSS_JOIN_DELIVERY_PENDING || isTransientRequestError(err)) ? err : this.#stopOn(err);
+    }
+
+    try {
+      if (delivery?.version !== JOIN_DELIVERY_VERSION) {
+        throw new Error('Unsupported join delivery version');
+      }
+      return decryptJoinDelivery({
+        delivery,
+        recipientPrivKey: this.#requestPrivateKey,
+        creatorPubKey,
+        expected: {
+          sessionId: this.id,
+          partyId: this.partyId,
+          requestPubKey: this.#credentials.requestPubKey,
+          chain: this.chain,
+          network: this.network,
+          m: this.m,
+          n: this.n,
+          commonKeyChain
+        }
+      });
+    } catch (err) {
+      throw this.#stopOn(err);
+    }
   }
 
   /**
