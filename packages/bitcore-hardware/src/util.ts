@@ -1,12 +1,15 @@
 import { BitcoreLib, BitcoreLibCash, BitcoreLibDoge, BitcoreLibLtc } from '@bitpay-labs/crypto-wallet-core';
 import CWC from '@bitpay-labs/crypto-wallet-core';
+import {
+  Observable,
+  lastValueFrom
+} from 'rxjs';
 import { EveryUtxoType, TransactionType } from 'src/types/txTypes.js';
 import { UtxoChainType } from './types/chains.js';
 
 class UtilClass {
   libs: Record<UtxoChainType, BitcoreLib> = {
     BTC: BitcoreLib,
-    BTC_LEGACY: BitcoreLib,
     BCH: BitcoreLibCash,
     DOGE: BitcoreLibDoge,
     LTC: BitcoreLibLtc
@@ -31,6 +34,22 @@ class UtilClass {
       bitcoreTx.associateInputs(applicableUtxos.map(utxo => new lib.Transaction.UnspentOutput(utxo)));
     }
     return bitcoreTx;
+  }
+
+  /**
+   * Get the data of an observable or throw error
+   * @param observable The observable to get the data from
+   * @returns Promise containing the data
+   * @throws Error if the result status is 'error'
+   */
+  async getObservableDataOrError(observable: Observable<any>): Promise<any> {
+    const result = await lastValueFrom(observable);
+    if (result.status === 'error') {
+      const e = result.error;
+      const code = e?.errorCode ?? e?._tag;
+      throw new Error(`Fetching xpub failed: ${e?.message ?? 'unknown error'}${code ? ` (${code})` : ''}`, { cause: e });
+    }
+    return result;
   }
 }
 

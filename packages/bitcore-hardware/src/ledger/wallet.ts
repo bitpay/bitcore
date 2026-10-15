@@ -6,18 +6,16 @@ import { EveryUtxoType, TransactionType } from '../types/txTypes.js';
 import { DMKConfig, getDmk } from './dmk.js';
 import {
   BitcoinCashModule,
-  BitcoinLegacyModule,
-  // BitcoinModule,
+  BitcoinModule,
   DogeModule,
-  // EthereumModule,
+  EthereumModule,
   LitecoinModule,
-  // SolanaModule
+  SolanaModule
 } from './modules/index.js';
 import type * as DMK from '@ledgerhq/device-management-kit';
-// import type * as SignerKitBtc from '@ledgerhq/device-signer-kit-bitcoin';
-// import type * as SignerKitEth from '@ledgerhq/device-signer-kit-ethereum';
-// import type * as SignerKitSolana from '@ledgerhq/device-signer-kit-solana';
-// import type * as HwTransport from '@ledgerhq/hw-transport';
+import type * as SignerKitBtc from '@ledgerhq/device-signer-kit-bitcoin';
+import type * as SignerKitEth from '@ledgerhq/device-signer-kit-ethereum';
+import type * as SignerKitSolana from '@ledgerhq/device-signer-kit-solana';
 import type * as HwTransportNodeSpeculos from '@ledgerhq/hw-transport-node-speculos';
 // @eslint disable import/newline-after-import
 const require = createRequire(import.meta.url);
@@ -26,17 +24,16 @@ const {
   GetOsVersionCommand,
   isSuccessCommandResult
 }: typeof DMK = require('@ledgerhq/device-management-kit');
-// const {
-//   SignerBtcBuilder
-// }: typeof SignerKitBtc = require('@ledgerhq/device-signer-kit-bitcoin');
-// const {
-//   SignerEthBuilder
-// }: typeof SignerKitEth = require('@ledgerhq/device-signer-kit-ethereum');
-// const {
-//   SignerSolanaBuilder
-// }: typeof SignerKitSolana = require('@ledgerhq/device-signer-kit-solana');
+const {
+  SignerBtcBuilder
+}: typeof SignerKitBtc = require('@ledgerhq/device-signer-kit-bitcoin');
+const {
+  SignerEthBuilder
+}: typeof SignerKitEth = require('@ledgerhq/device-signer-kit-ethereum');
+const {
+  SignerSolanaBuilder
+}: typeof SignerKitSolana = require('@ledgerhq/device-signer-kit-solana');
 const TransportNodeSpeculos: typeof HwTransportNodeSpeculos.default.default = require('@ledgerhq/hw-transport-node-speculos').default;
-// const TransportNodeHid: typeof HwTransport.default.default = require('@ledgerhq/hw-transport-node-hid').default;
 
 export default class Ledger implements Base {
   device: DMK.ConnectedDevice | null = null;
@@ -50,52 +47,49 @@ export default class Ledger implements Base {
   }
 
   async connect() {
-    this.modules.BTC_LEGACY = new BitcoinLegacyModule(await TransportNodeSpeculos.open({ apduPort: 40000 }));
     this.modules.BCH = new BitcoinCashModule(await TransportNodeSpeculos.open({ apduPort: 40003 }));
     this.modules.DOGE = new DogeModule(await TransportNodeSpeculos.open({ apduPort: 40004 }));
     this.modules.LTC = new LitecoinModule(await TransportNodeSpeculos.open({ apduPort: 40005 }));
-    // return new Promise(async resolve => {
-    //   console.log('Discovering Ledger device...');
-    //   if (this.discoverySubscription) {
-    //     this.discoverySubscription.unsubscribe();
-    //   }
+    return new Promise(async resolve => {
+      console.log('Discovering Ledger device...');
+      if (this.discoverySubscription) {
+        this.discoverySubscription.unsubscribe();
+      }
 
-    //   this.discoverySubscription = this.dmk.startDiscovering({}).subscribe({
-    //     next: async (device) => {
-    //       console.log(`Found ${device.id}, model: ${device.deviceModel.model}`);
-    //       try {
-    //         this.sessionId = await this.dmk.connect({ device });
-    //         this.discoverySubscription?.unsubscribe();
+      this.discoverySubscription = this.dmk.startDiscovering({}).subscribe({
+        next: async (device) => {
+          console.log(`Found ${device.id}, model: ${device.deviceModel.model}`);
+          try {
+            this.sessionId = await this.dmk.connect({ device });
+            this.discoverySubscription?.unsubscribe();
 
-    //         this.device = this.dmk.getConnectedDevice({
-    //           sessionId: this.sessionId
-    //         });
+            this.device = this.dmk.getConnectedDevice({
+              sessionId: this.sessionId
+            });
 
-    //         const signerBtc = new SignerBtcBuilder({ dmk: this.dmk, sessionId: this.sessionId }).build();
-    //         const signerEth = new SignerEthBuilder({ dmk: this.dmk, sessionId: this.sessionId }).build();
-    //         const signerSol = new SignerSolanaBuilder({
-    //           dmk: this.dmk,
-    //           sessionId: this.sessionId,
-    //           solanaRPCURL: 'https://api.mainnet-beta.solana.com/',
-    //         }).build();
-    //         this.modules.BTC = new BitcoinModule(signerBtc);
-    //         this.modules.BCH = new BitcoinCashModule(signerBtc);
-    //         this.modules.LTC = new LitecoinModule(signerBtc);
-    //         this.modules.ETH = new EthereumModule(signerEth);
-    //         this.modules.SOL = new SolanaModule(signerSol);
+            const signerBtc = new SignerBtcBuilder({ dmk: this.dmk, sessionId: this.sessionId }).build();
+            const signerEth = new SignerEthBuilder({ dmk: this.dmk, sessionId: this.sessionId }).build();
+            const signerSol = new SignerSolanaBuilder({
+              dmk: this.dmk,
+              sessionId: this.sessionId,
+              solanaRPCURL: 'https://api.mainnet-beta.solana.com/',
+            }).build();
+            this.modules.BTC = new BitcoinModule(signerBtc);
+            this.modules.ETH = new EthereumModule(signerEth);
+            this.modules.SOL = new SolanaModule(signerSol);
             
-    //         resolve(0);
-    //       } catch (error) {
-    //         console.error(error);
-    //         resolve(1);
-    //       }
-    //     },
-    //     error: (error) => {
-    //       console.error(error);
-    //       resolve(1);
-    //     }
-    //   });
-    // });
+            resolve(0);
+          } catch (error) {
+            console.error(error);
+            resolve(1);
+          }
+        },
+        error: (error) => {
+          console.error(error);
+          resolve(1);
+        }
+      });
+    });
   }
 
   async disconnect() {
@@ -128,14 +122,26 @@ export default class Ledger implements Base {
   }
 
   async sign(params: {
-    chain: UtxoChainType;
+    chain: 'BTC';
     tx: string;
     utxos: EveryUtxoType[];
   })
   async sign(params: {
-    chain: UtxoChainType;
+    chain: 'BTC';
     tx: object;
     utxos?: EveryUtxoType[];
+  })
+  async sign(params: {
+    chain: Exclude<UtxoChainType, 'BTC'>;
+    tx: string;
+    utxos: EveryUtxoType[];
+    prevTxs?: string[];
+  })
+  async sign(params: {
+    chain: Exclude<UtxoChainType, 'BTC'>;
+    tx: object;
+    utxos?: EveryUtxoType[];
+    prevTxs?: string[];
   })
   async sign(params: {
     chain: 'ETH' | 'SOL';
@@ -145,11 +151,13 @@ export default class Ledger implements Base {
     chain: string;
     tx: TransactionType;
     utxos?: EveryUtxoType[];
+    prevTxs?: string[];
   }) {
-    const { chain, tx, utxos } = params;
+    const { chain, tx, utxos, prevTxs } = params;
     return this.modules[chain].sign({
       tx,
-      utxos
+      utxos,
+      prevTxs
     });
   }
   

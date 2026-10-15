@@ -2,8 +2,7 @@ import { createRequire } from 'module';
 import CWC from '@bitpay-labs/crypto-wallet-core';
 import { Psbt } from 'bitcoinjs-lib';
 import {
-  Observable,
-  lastValueFrom
+  Observable
 } from 'rxjs';
 import { BaseModule } from 'src/types/base.js';
 import { UtxoChainType } from 'src/types/chains.js';
@@ -58,26 +57,25 @@ export default class BitcoinModule implements BaseModule {
       new DefaultWallet(this.derivationPath, DefaultDescriptorTemplate.NATIVE_SEGWIT),
       psbt
     ).observable;
-
-    const result = await lastValueFrom(ob);
-    return result.output.slice(2);
+    const result = await Util.getObservableDataOrError(ob);
+    return result.output.slice(2); // remove 0x prefix
   }
   
   async getAddress() {
     const ob: Observable<any> = this.signer.getWalletAddress({ derivationPath: this.derivationPath, template: DefaultDescriptorTemplate.NATIVE_SEGWIT }, 0).observable;
-    const result = await lastValueFrom(ob);
+    const result = await Util.getObservableDataOrError(ob);
     return result.output.address;
   }
 
   async getPublicKey() {
     const ob: Observable<any> = this.signer.getExtendedPublicKey(this.derivationPath).observable;
-    const result = await lastValueFrom(ob);
+    const result = await Util.getObservableDataOrError(ob);
     return BitcoreLib.HDPublicKey(result.output.extendedPublicKey).derive('m/0/0').publicKey.toString();
   }
 
   async getMasterKeyFingerprint(): Promise<Uint8Array> {
     const ob: Observable<any> = this.signer.getMasterFingerprint().observable;
-    const result = await lastValueFrom(ob);
+    const result = await Util.getObservableDataOrError(ob);
     return result.output.masterFingerprint;
   }
 }

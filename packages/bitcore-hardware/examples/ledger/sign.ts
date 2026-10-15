@@ -10,7 +10,7 @@ if (!Ledger.isValidChain(chain)) {
   throw new Error(`Invalid chain: ${chain}`);
 }
 
-const ledger = new Ledger();
+const ledger = new Ledger({ transport: 'speculos' });
 await ledger.connect();
 
 console.log('Awaiting approval from your ledger...');
@@ -51,14 +51,135 @@ switch (chain) {
     console.log(signedTransaction);
     break;
   }
-  case 'LTC':
-  case 'DOGE':
+  // BCH, DOGE, and LTC all need the previous transactions of all the inputs in order to sign
+  case 'LTC': {
+    const lib = Utils.libs[chain];
+    const ledgerAddress = await ledger.getAddress({ chain });
+    const receivingAddress = new lib.PrivateKey().toAddress().toString();
+    
+    const fundingTx = new lib.Transaction(
+      '0200000001' +
+      '1111111111111111111111111111111111111111111111111111111111111111' + // fake prevout hash
+      '00000000' + // prevout index
+      '00' +       // empty scriptSig
+      'ffffffff' + // sequence
+      '01' +
+      'a086010000000000' + // 100000 litoshis
+      '1976a914b1d140085b7ea3f5ebc46d49dabed8cb78e7c42488ac' +
+      '00000000'  // locktime
+    );
+
+    const fee = 1000;
+    const value = 100_000;
+    
+    const utxos = [
+      {
+        chain: 'LTC',
+        network: 'mainnet',
+        coinbase: false,
+        mintIndex: 0,
+        spentTxid: '',
+        mintTxid: fundingTx.id,
+        mintHeight: -1,
+        spentHeight: -2,
+        address: ledgerAddress,
+        script: lib.Script.fromAddress(ledgerAddress).toString(),
+        value: value,
+        confirmations: -1
+      }
+    ];
+
+    const tx: string = CWC.Transactions.create({
+      chain: 'LTC',
+      recipients: [{ address: receivingAddress, amount: value - fee }],
+      utxos,
+      fee
+    });
+
+    const signedTransaction = await ledger.sign({
+      chain: 'LTC',
+      tx,
+      utxos,
+      prevTxs: [fundingTx.toString()]
+    });
+
+    console.log(signedTransaction);
+    break;
+  }
+  case 'DOGE': {
+    const lib = Utils.libs[chain];
+    const ledgerAddress = await ledger.getAddress({ chain });
+    const receivingAddress = new lib.PrivateKey().toAddress().toString();
+
+    const fundingTx = new lib.Transaction(
+      '0200000001' +
+      '1111111111111111111111111111111111111111111111111111111111111111' + // fake prevout hash
+      '00000000' + // prevout index
+      '00' +       // empty scriptSig
+      'ffffffff' + // sequence
+      '01' +
+      '00e1f50500000000' + // 100000000 koinus (1 DOGE)
+      '1976a9147a9b588e995d3134c13672b6ad09a74b2aa7e94988ac' +
+      '00000000'  // locktime
+    );
+
+    const value = 100000000;
+    const fee = 1000000;
+
+    const utxos = [
+      {
+        chain: 'DOGE',
+        network: 'mainnet',
+        coinbase: false,
+        mintIndex: 0,
+        spentTxid: '',
+        mintTxid: fundingTx.id,
+        mintHeight: -1,
+        spentHeight: -2,
+        address: ledgerAddress,
+        script: lib.Script.fromAddress(ledgerAddress).toString(),
+        value: value,
+        confirmations: -1
+      }
+    ];
+
+    const tx: string = CWC.Transactions.create({
+      chain: 'DOGE',
+      recipients: [{ address: receivingAddress, amount: value - fee }],
+      utxos,
+      fee
+    });
+
+    const signedTransaction = await ledger.sign({
+      chain: 'DOGE',
+      tx,
+      utxos,
+      prevTxs: [fundingTx.toString()]
+    });
+
+    console.log(signedTransaction);
+    break;
+  }
   case 'BCH': {
     const lib = Utils.libs[chain];
-    const privateKey = new lib.PrivateKey();
-    const publicKey = privateKey.toPublicKey();
-    const address = publicKey.toAddress();
-    
+    const ledgerAddress = await ledger.getAddress({ chain });
+    const receivingAddress = new lib.PrivateKey().toAddress().toString();
+      
+    const fundingTx = new lib.Transaction(
+      '0200000001' +
+      '1111111111111111111111111111111111111111111111111111111111111111' + // fake prevout hash
+      '00000000' + // prevout index
+      '00' +       // empty scriptSig
+      'ffffffff' + // sequence
+      '01' +
+      'a086010000000000' + // 100000 sats
+      '1976a91447b2653a6a64fadd4118cab92e1c226b96c4158188ac' +
+      '00000000'  // locktime
+    );
+
+
+    const fee = 362;
+    const value = 100_000;
     const utxos = [
       {
         chain: 'BCH',
@@ -66,68 +187,39 @@ switch (chain) {
         coinbase: false,
         mintIndex: 0,
         spentTxid: '',
-        mintTxid: '78519a191327dfdc0c2ea64a04d09d87c3909ce8365d0e0c0dbd0bc80d0405b4',
-        mintHeight: 957071,
+        mintTxid: fundingTx.id,
+        mintHeight: -1,
         spentHeight: -2,
-        address: address.toString(),
-        script: '001491f570a0236f1b6b40f52514c6e6623eacd56a0b',
-        value: 1562,
+        address: ledgerAddress,
+        script: lib.Script.fromAddress(ledgerAddress).toString(),
+        value: value,
         confirmations: -1
       }
     ];
-    
+
     const tx: string = CWC.Transactions.create({
-      chain,
-      recipients: [{ address: new lib.PrivateKey().toAddress().toString(), amount: 1200 }],
+      chain: 'BCH',
+      recipients: [{ address: receivingAddress, amount: value - fee }],
       utxos,
-      fee: 362
+      fee
     });
-    
+
     const signedTransaction = await ledger.sign({
-      chain,
+      chain: 'BCH',
       tx,
-      utxos
+      utxos,
+      prevTxs: [fundingTx.toString()]
     });
-    
+
     console.log(signedTransaction);
     break;
   }
-  case 'BTC_LEGACY': {
-    const utxos = [
-      {
-        chain: 'BTC',
-        network: 'mainnet',
-        coinbase: false,
-        mintIndex: 0,
-        spentTxid: '10952a135e03db06c4bca131235862283a5333e9b2a06b907dddb3a79fe07417',
-        mintTxid: 'df82b6ad7452a1df887765a60bb50954495ea65b16505a4d02ff11fa048df00c',
-        mintHeight: 878245,
-        spentHeight: 878646,
-        address: 'bc1qqtl9jlrwcr3fsfcjj2du7pu6fcgaxl5dsw2vyg',
-        script: '001402fe597c6ec0e2982712929bcf079a4e11d37e8d',
-        value: 1023,
-        confirmations: -1,
-        sequenceNumber: 0
-      }
-    ];
-    const tx: string = CWC.Transactions.create({
-      chain: 'BTC',
-      recipients: [{ address: 'bc1qj86hpgprdudkks84y52vdenz86kd26stkssrcq', amount: 800 }],
-      utxos
-    });
-    
-    const signedTransaction = await ledger.sign({
-      chain: 'BTC_LEGACY',
-      tx,
-      utxos
-    });
-    
-    console.log(signedTransaction);
-    break;
-  };
   default:
   case 'BTC': {
-    // utxos from https://api.bitcore.io/api/BTC/mainnet/address/bc1qj86hpgprdudkks84y52vdenz86kd26stkssrcq/coins
+    const lib = Utils.libs[chain];
+    const ledgerAddress = await ledger.getAddress({ chain });
+    const receivingAddress = new lib.PrivateKey().toAddress().toString();
+
     const utxos = [
       {
         chain: 'BTC',
@@ -138,8 +230,8 @@ switch (chain) {
         mintTxid: '78519a191327dfdc0c2ea64a04d09d87c3909ce8365d0e0c0dbd0bc80d0405b4',
         mintHeight: 957071,
         spentHeight: -2,
-        address: 'bc1qj86hpgprdudkks84y52vdenz86kd26stkssrcq',
-        script: '001491f570a0236f1b6b40f52514c6e6623eacd56a0b',
+        address: ledgerAddress,
+        script: lib.Script.fromAddress(ledgerAddress).toString(),
         value: 1562,
         confirmations: -1
       }
@@ -147,7 +239,7 @@ switch (chain) {
     
     const tx: string = CWC.Transactions.create({
       chain: 'BTC',
-      recipients: [{ address: 'bc1qm5anagcsad5kx2kuq3lv0j5zaxkxr7teuk9wfa', amount: 1200 }],
+      recipients: [{ address: receivingAddress, amount: 1200 }],
       utxos
     });
     
@@ -158,13 +250,6 @@ switch (chain) {
     });
     
     console.log(signedTransaction);
-    /* 
-    Broadcasted using bitcore-node
-    $ curl --header "Content-Type: application/json" --request POST -d '{"rawTx": "02000000000101b405040dc80bbd0d0c0e5d36e89c90c3879dd0044aa62e0cdcdf2713199a51780000000000ffffffff01b004000000000000160014dd3b3ea310eb69632adc047ec7ca82e9ac61f9790247304402205e0bc606e3e76e8c623b4de8fd1c1ac098aaf32b161310f7dbaa14d8d29dcd2602203fd47d3d1fb0b223b203a5d01fd28804296666d1a15d1040d4140ba4bfee6125012103a7c7057355969fb52b23744aae7275f10440620654a912a78684a8a697d92e2b00000000"}' https://api.bitcore.io/api/BTC/mainnet/tx/send
-    {"txid":"3049a6c75390696260366672693ebccf1a5a9892e3aa728b1f51c59e8f137a26"}
-    
-    View on Insight: https://bitpay.com/insight/BTC/mainnet/tx/3049a6c75390696260366672693ebccf1a5a9892e3aa728b1f51c59e8f137a26
-    */
     break;
   }
 }
