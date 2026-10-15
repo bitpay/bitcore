@@ -516,6 +516,7 @@ class TssKeyGenClass {
       throw invalid('expected one record for each participant other than the creator');
     }
     const seen = new Set<number>();
+    // Validate each record and return only partyId, encryptedMessage, and signature
     const clean = records.map(record => {
       const { partyId, encryptedMessage, signature } = record ?? {} as typeof record;
       // participants is sized n up front - last check ensures a valid partipant at index partyId
@@ -531,7 +532,7 @@ class TssKeyGenClass {
           throw invalid('malformed record');
         }
       }
-      return { partyId, encryptedMessage, signature }; // drops any extra fields
+      return { partyId, encryptedMessage, signature };
     }).sort((a, b) => a.partyId - b.partyId);
 
     const result = await storage.storeTssKeyJoinDelivery({

@@ -38,7 +38,6 @@ export class TssRouter {
     });
 
     // Must be registered before the generic `/:round` route or it would be treated as a round number.
-    // The caller's identity comes only from the authenticated request - nothing in the query or body selects a recipient.
     router.get('/v1/tss/keygen/:id/join-delivery', authTssRequest(), async function(req, res) {
       try {
         const id = req.params.id;

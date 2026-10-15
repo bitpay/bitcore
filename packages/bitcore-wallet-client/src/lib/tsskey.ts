@@ -221,8 +221,8 @@ function assertValidJoinCode(fields: Partial<Omit<ParsedJoinCode, 'extra' | 'cre
   const mInt = toInt('m', m);
   const nInt = toInt('n', n);
   const partyInt = toInt('partyId', partyId);
-  if (mInt < 1 || mInt > nInt) fail('m must be between 1 and n');
-  if (partyInt < 1 || partyInt >= nInt) fail('partyId must be between 1 and n - 1');
+  if (mInt < 1 || mInt > nInt) fail('m must be in [1. n]');
+  if (partyInt < 1 || partyInt >= nInt) fail('partyId must be in [1, n)');
 }
 
 /** Join code contents as decrypted; numeric fields are unparsed */
@@ -310,6 +310,7 @@ function bindingsViolation(partyId: number, n: number, bindings: DeliveryBinding
     }
   } else {
     if (bindings.recipientKeys.size) return 'a recipient has no recipient keys';
+    // If the key is present, it must be normalized
     if (bindings.creatorPubKey != null && !isNormalizedKey(bindings.creatorPubKey)) return 'malformed delivery keys';
   }
 }
@@ -322,12 +323,14 @@ function readKeygenSessionParams(keygenSession: string, requestPrivKey: BitcoreL
   const plaintext = TssUtils.decrypt(Buffer.from(keygenSession, 'base64'), requestPrivKey.publicKey, requestPrivKey);
   try {
     let end = -1;
+    // advance end to the correct position: the fourth ':'
     for (let i = 0; i < 4; i++) {
       end = plaintext.indexOf(':', end + 1);
       if (end < 0) {
         throw new Error('Invalid session');
       }
     }
+    // end is advanced to the correct position so subarray().toString() doesn't create an immutable string containing the seed
     const [, n, m, partyId] = plaintext.subarray(0, end).toString().split(':').map(Number);
     return { n, m, partyId };
   } finally {
@@ -347,13 +350,8 @@ export class TssKeyGen extends EventEmitter {
   #subscriptionRunning: boolean;
   #recipientKeys: Map<number, string> = new Map();
   #creatorPubKey: string;
-  /**
-   * The wallet the creator created, and the ordinary join secret that goes with it. Kept in memory so that a
-   * delivery retry publishes the same secret instead of creating another wallet.
-   */
   #createdWallet?: { wallet: any; secret: string };
-  /** Errors the subscription must not retry past (see `subscribe`). Weakly held, so recording an error does not keep it alive. */
-  #stopErrors = new WeakSet<object>();
+  #stopErrors = new WeakSet<object>(); // Errors the subscription must not retry past (see `subscribe`). Weakly held, so recording an error does not keep it alive
   id: string;
   chain: string;
   network: Network;
