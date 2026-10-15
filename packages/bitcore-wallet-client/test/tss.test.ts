@@ -2248,7 +2248,7 @@ describe('TSS', function() {
           sessionId: tss[0].id, partyId: 1, requestPubKey: pubKeyOf(keys[1]), chain, network, m: 2, n: 3,
           commonKeyChain: tss[1].getTssKey().keychain.commonKeyChain
         }
-      }), /could not be decrypted or verified/);
+      }), /could not be decrypted$/);
     });
 
     describe('delivery retries', function() {
@@ -2790,7 +2790,7 @@ describe('TSS', function() {
         await published();
         const flip = (hex: string) => hex.slice(0, -1) + (hex.endsWith('0') ? '1' : '0');
         serveDelivery(served => ({ ...served, signature: flip(served.signature) }));
-      }, /could not be decrypted or verified/);
+      }, /signature verification failed$/);
 
       stopsWith('the ciphertext has been tampered with', async () => {
         await published();
@@ -2800,14 +2800,14 @@ describe('TSS', function() {
           bytes[bytes.length - 1] ^= 1;
           return { ...served, encryptedMessage: bytes.toString('base64') };
         });
-      }, /could not be decrypted or verified/);
+      }, /could not be decrypted$/);
 
       stopsWith('the delivery is encrypted to someone else', async () => {
         // Correctly signed by the creator, but for a key that is not this recipient's
         await published();
         const forOther = await deliveryFor({ context: { requestPubKey: pubKeyOf(new Key({ seedType: 'new' })) } });
         serveDelivery(() => ({ version: 1, ...forOther }));
-      }, /could not be decrypted or verified/);
+      }, /could not be decrypted$/);
 
       stopsWith('the delivery is for another ceremony', async () => {
         await published();
@@ -2826,7 +2826,7 @@ describe('TSS', function() {
         // BWS can only substitute what it serves. A delivery from some other key does not verify against the trusted one.
         const forged = await deliveryFor({ signer: new Key({ seedType: 'new' }) });
         serveDelivery(() => ({ version: 1, ...forged }));
-      }, /could not be decrypted or verified/);
+      }, /could not be decrypted$/);
 
       stopsWith('the delivery format is not supported', async () => {
         await published();

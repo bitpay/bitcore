@@ -1,6 +1,7 @@
 'use strict';
 
 import * as chai from 'chai';
+import assert from 'assert';
 import sinon from 'sinon';
 import { utils as TssUtils } from '@bitpay-labs/bitcore-tss';
 import { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
@@ -114,24 +115,24 @@ describe('TSS join delivery', function() {
   describe('keys and tampering', function() {
     it('should reject the wrong recipient key', function() {
       const delivery = encryptJoinDelivery(encryptParams);
-      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery, recipientPrivKey: otherPriv }), /could not be decrypted or verified/);
+      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery, recipientPrivKey: otherPriv }), /could not be decrypted$/);
     });
 
     it('should reject the wrong creator key', function() {
       const delivery = encryptJoinDelivery(encryptParams);
-      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery, creatorPubKey: otherPriv.publicKey.toString() }), /could not be decrypted or verified/);
+      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery, creatorPubKey: otherPriv.publicKey.toString() }), /could not be decrypted$/);
     });
 
     it('should reject a delivery encrypted by someone other than the creator', function() {
       const delivery = encryptJoinDelivery({ ...encryptParams, creatorPrivKey: otherPriv });
-      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery }), /could not be decrypted or verified/);
+      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery }), /could not be decrypted$/);
     });
 
     it('should reject a delivery signed by someone other than the creator', function() {
       // Encrypted with the creator's key (so it decrypts), but signed with another key
       const delivery = encryptJoinDelivery(encryptParams);
       const forged = { ...delivery, signature: deliveryWithPayload({}, otherPriv).signature };
-      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: forged }), /could not be decrypted or verified/);
+      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: forged }), /signature verification failed$/);
     });
 
     it('should reject tampered ciphertext', function() {
@@ -139,7 +140,7 @@ describe('TSS join delivery', function() {
       const bytes = Buffer.from(delivery.encryptedMessage, 'base64');
       bytes[20] = (bytes[20] + 1) % 256;
       const tampered = { ...delivery, encryptedMessage: bytes.toString('base64') };
-      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: tampered }), /could not be decrypted or verified/);
+      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: tampered }), /could not be decrypted$/);
     });
 
     it('should reject a tampered or substituted signature', function() {
@@ -149,8 +150,8 @@ describe('TSS join delivery', function() {
       const otherMessageSignature = deliveryWithPayload({ sessionId: 'another' }).signature;
       const wrongSignature = { ...delivery, signature: otherMessageSignature };
       const notASignature = { ...delivery, signature: 'not a signature' };
-      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: wrongSignature }), /could not be decrypted or verified/);
-      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: notASignature }), /could not be decrypted or verified/);
+      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: wrongSignature }), /signature verification failed$/);
+      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: notASignature }), /Invalid join delivery signature$/);
       // A signature over the same plaintext still verifies, since the signature covers the plaintext only
       const swapped = { ...delivery, signature: sameContentDelivery.signature };
       decryptJoinDelivery({ ...decryptParams, delivery: swapped }).should.equal(secret);
@@ -160,13 +161,56 @@ describe('TSS join delivery', function() {
       for (const bad of [null, undefined, {}, { encryptedMessage: 'abc' }, { signature: 'abc' }, { encryptedMessage: 1, signature: 2 }, 'string']) {
         should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: bad as any }), /Invalid join delivery$/);
       }
-      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: { encryptedMessage: '', signature: '' } }), /could not be decrypted or verified/);
+      should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery: { encryptedMessage: '', signature: '' } }), /could not be decrypted$/);
     });
 
     it('should require a valid creator key', function() {
       const delivery = encryptJoinDelivery(encryptParams);
       should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery, creatorPubKey: 'zz' }), /Invalid creatorPubKey/);
       should.throw(() => decryptJoinDelivery({ ...decryptParams, delivery, creatorPubKey: undefined }), /Invalid creatorPubKey/);
+    });
+  });
+
+  describe('decryption error handling', function() {
+    afterEach(function() {
+      sandbox.restore();
+    });
+
+    for (const malformed of [false, true]) {
+      it(`should reject a ${malformed ? 'malformed' : 'mismatched'} signature before parsing the plaintext`, function() {
+        const delivery = TssUtils.encryptAndDetachSignData(Buffer.from('not json'), recipientPriv.publicKey, creatorPriv);
+        delivery.signature = malformed ? 'not a signature' : deliveryWithPayload({}).signature;
+        const parseSpy = sandbox.spy(JSON, 'parse');
+
+        assert.throws(() => decryptJoinDelivery({ ...decryptParams, delivery }));
+        parseSpy.called.should.equal(false);
+      });
+    }
+
+    it('should sanitize malformed JSON errors and zero the decrypted plaintext', function() {
+      const malformedJson = JSON.stringify({ secret }) + ' trailing data';
+      const delivery = TssUtils.encryptAndDetachSignData(Buffer.from(malformedJson), recipientPriv.publicKey, creatorPriv);
+      const decryptSpy = sandbox.spy(TssUtils, 'decrypt');
+
+      assert.throws(() => decryptJoinDelivery({ ...decryptParams, delivery }), (err: Error) => {
+        err.message.should.equal('Invalid join delivery contents');
+        should.not.exist(err['cause']);
+        String(err.stack).should.not.include(secret);
+        return true;
+      });
+      decryptSpy.firstCall.returnValue.every(b => b === 0).should.equal(true);
+    });
+
+    it('should preserve unexpected verification errors and zero the decrypted plaintext', function() {
+      const delivery = encryptJoinDelivery(encryptParams);
+      const failure = new Error('Unexpected verifier failure');
+      sandbox.stub(BitcoreLib.crypto.ECDSA, 'verify').throws(failure);
+      const decryptSpy = sandbox.spy(TssUtils, 'decrypt');
+      const parseSpy = sandbox.spy(JSON, 'parse');
+
+      assert.throws(() => decryptJoinDelivery({ ...decryptParams, delivery }), err => err === failure);
+      parseSpy.called.should.equal(false);
+      decryptSpy.firstCall.returnValue.every(b => b === 0).should.equal(true);
     });
   });
 

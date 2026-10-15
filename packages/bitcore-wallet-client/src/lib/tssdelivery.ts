@@ -89,9 +89,6 @@ function toPayload(context: JoinDeliveryContext, secret: string): JoinDeliveryPa
   };
 }
 
-/** A wallet ID is 128 bits. The secret parser also accepts shorter IDs, which it returns padded with dashes (e.g. `12345678----`) */
-const WALLET_ID_FORMAT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-
 /**
  * The secret parser is lenient (it defaults an unknown network to livenet and a missing coin to btc,
  * and accepts a short wallet ID), so require the secret to be exactly what the ordinary builder would produce
@@ -105,11 +102,17 @@ function assertValidSecret(secret: unknown, coin: string, network: string): void
   let parsed: ReturnType<typeof API.parseSecret>;
   try {
     parsed = API.parseSecret(secret);
-    if (!WALLET_ID_FORMAT.test(parsed.walletId) ||
-      API._buildSecret(parsed.walletId, parsed.walletPrivKey, parsed.coin, parsed.network) !== secret) {
-      throw new Error();
-    }
   } catch {
+    throw new Error('Invalid join secret');
+  }
+
+  /**
+   * Require a full wallet ID: 32 lowercase hex digits in UUID layout.
+   * parseSecret also accepts shorter IDs and inserts separators for missing groups (e.g. `12345678----`).
+   */
+  const WALLET_ID_FORMAT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+  if (!WALLET_ID_FORMAT.test(parsed.walletId) ||
+    API._buildSecret(parsed.walletId, parsed.walletPrivKey, parsed.coin, parsed.network) !== secret) {
     throw new Error('Invalid join secret');
   }
   if (parsed.coin !== coin) {
@@ -125,23 +128,23 @@ function assertValidSecret(secret: unknown, coin: string, network: string): void
  * without the helper's base64 copy of the plaintext. The digest is derived from the secret, so it is wiped too.
  */
 function signPlaintext(plaintext: Buffer, privKey: BitcoreLib.PrivateKey | string): string {
+  // zeroing digest not required - the digested plaintext includes a randomly-generated string
   const digest = Hash.sha256sha256(plaintext);
-  try {
-    const key = privKey instanceof BitcoreLib.PrivateKey ? privKey : new BitcoreLib.PrivateKey(privKey);
-    return ECDSA.sign(digest, key).toString();
-  } finally {
-    digest.fill(0);
-  }
+  const key = privKey instanceof BitcoreLib.PrivateKey ? privKey : new BitcoreLib.PrivateKey(privKey);
+  return ECDSA.sign(digest, key).toString();
 }
 
 /** Counterpart of `signPlaintext`; compatible with `TssUtils.verifySignedData` */
 function verifyPlaintext(plaintext: Buffer, signature: string, pubKey: string): boolean {
+  // zeroing digest not required - the digested plaintext includes a randomly-generated string
   const digest = Hash.sha256sha256(plaintext);
+  let parsedSignature: ReturnType<typeof Signature.fromString>;
   try {
-    return ECDSA.verify(digest, Signature.fromString(signature), new BitcoreLib.PublicKey(pubKey));
-  } finally {
-    digest.fill(0);
+    parsedSignature = Signature.fromString(signature);
+  } catch {
+    throw new Error('Invalid join delivery signature');
   }
+  return ECDSA.verify(digest, parsedSignature, new BitcoreLib.PublicKey(pubKey));
 }
 
 /**
@@ -197,16 +200,17 @@ export function decryptJoinDelivery(params: {
     throw new Error('Invalid join delivery');
   }
 
-  let payload: JoinDeliveryPayload;
   let plaintext: Buffer;
   try {
-    try {
-      plaintext = TssUtils.decrypt(Buffer.from(delivery.encryptedMessage, 'base64'), trustedCreatorKey, recipientPrivKey);
-      if (!verifyPlaintext(plaintext, delivery.signature, trustedCreatorKey)) {
-        throw new Error();
-      }
-    } catch {
-      throw new Error('Join delivery could not be decrypted or verified');
+    plaintext = TssUtils.decrypt(Buffer.from(delivery.encryptedMessage, 'base64'), trustedCreatorKey, recipientPrivKey);
+  } catch {
+    throw new Error('Join delivery could not be decrypted');
+  }
+
+  let payload: JoinDeliveryPayload;
+  try {
+    if (!verifyPlaintext(plaintext, delivery.signature, trustedCreatorKey)) {
+      throw new Error('Join delivery signature verification failed');
     }
 
     try {
@@ -215,7 +219,7 @@ export function decryptJoinDelivery(params: {
       throw new Error('Invalid join delivery contents');
     }
   } finally {
-    plaintext?.fill(0);
+    plaintext.fill(0);
   }
   if (!payload || typeof payload !== 'object') {
     throw new Error('Invalid join delivery contents');
