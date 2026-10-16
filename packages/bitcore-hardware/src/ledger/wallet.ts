@@ -255,13 +255,13 @@ export default class Ledger implements Base {
     chain: Exclude<UtxoChainType, 'BTC'>;
     tx: string;
     utxos: EveryUtxoType[];
-    prevTxs?: string[];
+    prevTxs: string[];
   })
   async sign(params: {
     chain: Exclude<UtxoChainType, 'BTC'>;
     tx: object;
     utxos?: EveryUtxoType[];
-    prevTxs?: string[];
+    prevTxs: string[];
   })
   async sign(params: {
     chain: 'ETH' | 'SOL';
