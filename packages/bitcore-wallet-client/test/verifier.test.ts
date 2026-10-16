@@ -41,6 +41,27 @@ describe('Verifier', function() {
       );
     };
 
+    it('should verify explicitly requested EVM gas fees and transaction type', function() {
+      for (const field of ['gasPrice', 'maxGasFee', 'priorityGasFee']) {
+        checkProposalCreation({ [field]: 2000000000 }, { [field]: '2000000000' }).should.be.true;
+        checkProposalCreation({ [field]: 2000000000 }, { [field]: 3000000000 }).should.be.false;
+        checkProposalCreation({ [field]: 2000000000 }, {}).should.be.false;
+      }
+      checkProposalCreation({ txType: 2 }, { txType: '2' }).should.be.true;
+      checkProposalCreation({ txType: 2 }, { txType: 0 }).should.be.false;
+      checkProposalCreation({ txType: 2 }, {}).should.be.false;
+      checkProposalCreation({ gasPrice: 2000000000 }, { gasPrice: 2000000000, txType: 2 }).should.be.false;
+      checkProposalCreation({ gasPrice: 2000000000 }, { gasPrice: 2000000000, maxGasFee: 3000000000 }).should.be.false;
+      checkProposalCreation({}, { txType: 2, maxGasFee: 3000000000, priorityGasFee: 1000000000 }).should.be.true;
+    });
+
+    it('should accept matching XRP transaction types and reject changed or missing types', function() {
+      const args = { coin: 'xrp', chain: 'xrp', txType: 'Payment' };
+      checkProposalCreation(args, args).should.be.true;
+      checkProposalCreation(args, { ...args, txType: 'TrustSet' }).should.be.false;
+      checkProposalCreation(args, { ...args, txType: undefined }).should.be.false;
+    });
+
     it('should accept a matching fixed fee and reordered explicit inputs', function() {
       checkProposalCreation(
         { fee: 1000n, inputs },

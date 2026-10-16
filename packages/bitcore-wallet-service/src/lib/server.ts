@@ -1957,6 +1957,7 @@ export class WalletService implements IWalletService {
             }
             utxo.path = addressToPath[utxo.address].path;
             utxo.publicKeys = addressToPath[utxo.address].publicKeys;
+            utxo.isChange = addressToPath[utxo.address].isChange;
           }
           return next();
         }
@@ -2410,6 +2411,37 @@ export class WalletService implements IWalletService {
   }
 
   _validateAndSanitizeTxOpts(wallet, opts, cb) {
+    const gasFeeFields = ['gasPrice', 'maxGasFee', 'priorityGasFee'];
+    const hasGasFeeOverride = gasFeeFields.some(key => opts[key] != null);
+    if (hasGasFeeOverride) {
+      if (!Constants.EVM_CHAINS[wallet.chain.toUpperCase()]) {
+        return cb(new ClientError('Gas fee overrides are only supported for EVM chains'));
+      }
+      for (const key of gasFeeFields) {
+        if (opts[key] != null && (!Number.isSafeInteger(opts[key]) || opts[key] <= 0)) {
+          return cb(new ClientError(`${key} must be a positive safe integer in wei`));
+        }
+      }
+      if (opts.gasPrice != null && Number(opts.txType || 0) !== 0) {
+        return cb(new ClientError('gasPrice requires a type 0 transaction'));
+      }
+      if ((opts.maxGasFee != null || opts.priorityGasFee != null) && Number(opts.txType) !== 2) {
+        return cb(new ClientError('maxGasFee and priorityGasFee require a type 2 transaction'));
+      }
+      if ((opts.maxGasFee != null) !== (opts.priorityGasFee != null)) {
+        return cb(new ClientError('maxGasFee and priorityGasFee must be supplied together'));
+      }
+      if (opts.priorityGasFee > opts.maxGasFee) {
+        return cb(new ClientError('priorityGasFee must not exceed maxGasFee'));
+      }
+      if (opts.feePerKb != null || opts.fee != null) {
+        return cb(new ClientError('Gas fee overrides cannot be combined with feePerKb or fee'));
+      }
+      // sendMax calculates its amount before getFee, using a separate fee estimate.
+      if (opts.sendMax) {
+        return cb(new ClientError('Gas fee overrides are not supported with sendMax'));
+      }
+    }
     async.series(
       [
         next => {
@@ -2417,7 +2449,7 @@ export class WalletService implements IWalletService {
             boolToNum(!!opts.feeLevel) + boolToNum(Utils.isNumber(opts.feePerKb)) + boolToNum(Utils.isNumber(opts.fee));
           if (feeArgs > 1) return next(new ClientError('Only one of feeLevel/feePerKb/fee can be specified'));
 
-          if (feeArgs == 0) {
+          if (feeArgs == 0 && !hasGasFeeOverride) {
             opts.feeLevel = 'normal';
           }
 
@@ -2427,6 +2459,11 @@ export class WalletService implements IWalletService {
               return next(
                 new ClientError('Invalid fee level. Valid values are ' + feeLevels.map(lvl => lvl.name).join(', '))
               );
+          }
+
+          // An explicit gas fee determines the price, not the named fee level.
+          if (hasGasFeeOverride) {
+            delete opts.feeLevel;
           }
 
           const error = ChainService.checkUtxos(wallet.chain, opts);
@@ -2790,6 +2827,9 @@ export class WalletService implements IWalletService {
    * @param {Boolean} opts.enableRBF - Optional. enable BTC Replace By Fee
    * @param {Boolean} opts.replaceTxByFee - Optional. Ignore locked utxos check ( used for replacing a transaction designated as RBF)
    * @param {number} opts.txType - Optional. Type of EVM transaction
+   * @param {number} opts.gasPrice - Optional. Type 0 gas price in wei. Overrides feeLevel; incompatible with fee/feePerKb/sendMax.
+   * @param {number} opts.maxGasFee - Optional. Type 2 maximum fee per gas in wei; requires priorityGasFee.
+   * @param {number} opts.priorityGasFee - Optional. Positive type 2 priority fee per gas in wei; requires maxGasFee and must not exceed it. Gas fee overrides cannot be used with fee/feePerKb/sendMax.
    * @param {number} opts.gasLimitBuffer - Optional. Percentage of buffer to add to the gasLimit
    * @param {number} opts.priorityFeePercentile - Optional. Percentile of targeted priority fee rate
    * @param {Boolean} opts.multiTx - Optional. Proposal will create multiple transactions

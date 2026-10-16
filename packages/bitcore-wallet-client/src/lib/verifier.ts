@@ -219,6 +219,15 @@ export class Verifier {
       return false;
     if (args.fee != null && !this.atomicValuesEqual(args.fee, txp.fee))
       return false;
+    for (const field of ['gasPrice', 'maxGasFee', 'priorityGasFee']) {
+      if (args[field] != null && !this.atomicValuesEqual(args[field], txp[field]))
+        return false;
+    }
+    // XRP uses named transaction types; EVM uses numeric types.
+    if (args.txType != null && args.txType !== txp.txType && !this.atomicValuesEqual(args.txType, txp.txType))
+      return false;
+    if (args.gasPrice != null && (Number(txp.txType ?? 0) !== 0 || txp.maxGasFee != null))
+      return false;
     if (args.inputs != null && !this.explicitInputsEqual(args.inputs, txp.inputs))
       return false;
     if (!this.optionalAtomicValuesEqual(args.destinationTag, txp.destinationTag))
