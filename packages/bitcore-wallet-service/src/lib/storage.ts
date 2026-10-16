@@ -776,6 +776,26 @@ export class Storage {
     );
   }
 
+  storeTssWalletRegistration(wallet, cb) {
+    this.db.collection(collections.WALLETS).updateOne(
+      {
+        id: wallet.id
+      },
+      {
+        $set: {
+          beRegistered: wallet.beRegistered,
+          beAuthPrivateKey2: wallet.beAuthPrivateKey2,
+          beAuthPublicKey2: wallet.beAuthPublicKey2
+        }
+      },
+      {
+        w: 1,
+        upsert: false
+      },
+      cb
+    );
+  }
+
   deregisterWallet(walletId, cb) {
     this.db.collection(collections.WALLETS).updateOne(
       {
@@ -1864,13 +1884,14 @@ export class Storage {
     );
   }
 
-  async storeTssKeyBwsJoinSecret({ id, secret }: { id: string; secret: string }) {
+  async storeTssKeyBwsJoinSecret({ id, secret, secrets }: { id: string; secret: string; secrets?: { [chain: string]: string } }) {
     return this.db.collection(collections.TSS_KEYGEN).updateOne({
       id
     },
     {
       $set: {
-        bwsJoinSecret: secret
+        bwsJoinSecret: secret,
+        bwsJoinSecrets: secrets
       }
     },
     { upsert: false });

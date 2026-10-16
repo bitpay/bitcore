@@ -79,6 +79,7 @@ export interface ITssKeyGenModel {
    * The BWC-generated secret for joining a BWS wallet
    */
   bwsJoinSecret?: string;
+  bwsJoinSecrets?: { [chain: string]: string };
   /**
    * The mongo doc version
    */
@@ -100,6 +101,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
   createdOn: number;
   timeLimit?: number;
   bwsJoinSecret?: string;
+  bwsJoinSecrets?: { [chain: string]: string };
   __v: number;
 
 
@@ -161,6 +163,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
     x.createdOn = obj.createdOn;
     x.timeLimit = obj.timeLimit;
     x.bwsJoinSecret = obj.bwsJoinSecret;
+    x.bwsJoinSecrets = obj.bwsJoinSecrets;
     x.__v = obj.__v;
     return x;
   }
