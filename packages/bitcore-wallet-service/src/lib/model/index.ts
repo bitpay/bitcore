@@ -1,5 +1,11 @@
 export { Address } from './address';
 export { Copayer } from './copayer';
+export {
+  IOnrampWebhookEvent,
+  IStoredOnrampWebhookEvent,
+  IStoreOnrampWebhookEventResult,
+  OnrampWebhookEvent
+} from './onrampWebhookEvent';
 export { Advertisement } from './advertisement';
 export { Email } from './email';
 export { INotification, Notification } from './notification';

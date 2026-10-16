@@ -44,11 +44,18 @@ export function setupAppMiddleware(app: express.Express, opts) {
   const POST_LIMIT = 1024 * 100;
   const POST_LIMIT_LARGE = 2 * 1024 * 1024;
 
+  // Capture raw body for webhook routes (needed for HMAC signature verification)
+  const captureRawBody = (req: any, _res: any, buf: Buffer) => {
+    if (req.path?.includes('/webhook')) {
+      req.rawBody = buf.toString('utf8');
+    }
+  };
+
   app.use((req, res, next) => {
     if (req.path.includes('/txproposals') || req.path.includes('/tss/')) {
-      return express.json({ limit: POST_LIMIT_LARGE })(req, res, next);
+      return express.json({ limit: POST_LIMIT_LARGE, verify: captureRawBody })(req, res, next);
     } else {
-      return express.json({ limit: POST_LIMIT })(req, res, next);
+      return express.json({ limit: POST_LIMIT, verify: captureRawBody })(req, res, next);
     }
   });
 
