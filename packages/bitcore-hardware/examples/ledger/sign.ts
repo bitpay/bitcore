@@ -56,7 +56,9 @@ switch (chain) {
     const lib = Utils.libs[chain];
     const ledgerAddress = await ledger.getAddress({ chain });
     const receivingAddress = new lib.PrivateKey().toAddress().toString();
-    
+
+    const fee = 1000;
+    const satoshis = 100_000;
     const fundingTx = new lib.Transaction()
       .addInput(
         new lib.Transaction.Input({
@@ -65,20 +67,17 @@ switch (chain) {
           prevTxId: '1111111111111111111111111111111111111111111111111111111111111111',
           output: new lib.Transaction.Output({
             script: '',
-            satoshis: 100_000
+            satoshis
           })
         })
       )
       .addOutput(
         new lib.Transaction.Output({
-          satoshis: 100_000,
+          satoshis,
           script: new lib.Script.buildPublicKeyHashOut(ledgerAddress)
         })
       );
 
-    const fee = 1000;
-    const value = 100_000;
-    
     const utxos = [
       {
         chain: 'LTC',
@@ -91,14 +90,14 @@ switch (chain) {
         spentHeight: -2,
         address: ledgerAddress,
         script: lib.Script.fromAddress(ledgerAddress).toString(),
-        value: value,
+        value: satoshis,
         confirmations: -1
       }
     ];
 
     const tx: string = CWC.Transactions.create({
       chain: 'LTC',
-      recipients: [{ address: receivingAddress, amount: value - fee }],
+      recipients: [{ address: receivingAddress, amount: satoshis - fee }],
       utxos,
       fee
     });
@@ -118,6 +117,8 @@ switch (chain) {
     const ledgerAddress = await ledger.getAddress({ chain });
     const receivingAddress = new lib.PrivateKey().toAddress().toString();
 
+    const fee = 1_000_000;
+    const satoshis = 100_000_000;
     const fundingTx = new lib.Transaction()
       .addInput(
         new lib.Transaction.Input({
@@ -126,19 +127,16 @@ switch (chain) {
           prevTxId: '1111111111111111111111111111111111111111111111111111111111111111',
           output: new lib.Transaction.Output({
             script: '',
-            satoshis: 100_000_000
+            satoshis
           })
         })
       )
       .addOutput(
         new lib.Transaction.Output({
-          satoshis: 100_000_000,
+          satoshis,
           script: new lib.Script.buildPublicKeyHashOut(ledgerAddress)
         })
       );
-
-    const value = 100000000;
-    const fee = 1000000;
 
     const utxos = [
       {
@@ -152,14 +150,14 @@ switch (chain) {
         spentHeight: -2,
         address: ledgerAddress,
         script: lib.Script.fromAddress(ledgerAddress).toString(),
-        value: value,
+        value: satoshis,
         confirmations: -1
       }
     ];
 
     const tx: string = CWC.Transactions.create({
       chain: 'DOGE',
-      recipients: [{ address: receivingAddress, amount: value - fee }],
+      recipients: [{ address: receivingAddress, amount: satoshis - fee }],
       utxos,
       fee
     });
@@ -179,6 +177,8 @@ switch (chain) {
     const ledgerAddress = await ledger.getAddress({ chain });
     const receivingAddress = new lib.PrivateKey().toAddress().toString();
       
+    const fee = 362;
+    const satoshis = 100_000;
     const fundingTx = new lib.Transaction()
       .addInput(
         new lib.Transaction.Input({
@@ -187,20 +187,18 @@ switch (chain) {
           prevTxId: '1111111111111111111111111111111111111111111111111111111111111111',
           output: new lib.Transaction.Output({
             script: '',
-            satoshis: 100_000
+            satoshis
           })
         })
       )
       .addOutput(
         new lib.Transaction.Output({
-          satoshis: 100_000,
+          satoshis,
           script: new lib.Script.buildPublicKeyHashOut(ledgerAddress)
         })
       );
 
 
-    const fee = 362;
-    const value = 100_000;
     const utxos = [
       {
         chain: 'BCH',
@@ -213,14 +211,14 @@ switch (chain) {
         spentHeight: -2,
         address: ledgerAddress,
         script: lib.Script.fromAddress(ledgerAddress).toString(),
-        value: value,
+        value: satoshis,
         confirmations: -1
       }
     ];
 
     const tx: string = CWC.Transactions.create({
       chain: 'BCH',
-      recipients: [{ address: receivingAddress, amount: value - fee }],
+      recipients: [{ address: receivingAddress, amount: satoshis - fee }],
       utxos,
       fee
     });

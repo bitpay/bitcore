@@ -11,7 +11,7 @@ const { deviceControllerClientFactory } = require('@ledgerhq/speculos-device-con
 const { SolKit } = CWC;
 
 describe('Ledger Solana', function () {
-  const ledger = new Ledger({ transport: 'speculos', apiPort: 5002 });
+  const ledger = new Ledger({ transport: 'speculos' });
   const deviceClient = deviceControllerClientFactory('http://localhost:5002');
   const deviceButtons = deviceClient.buttonFactory();
 
