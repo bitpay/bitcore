@@ -8,7 +8,6 @@ import Mnemonic from '@bitpay-labs/bitcore-mnemonic';
 import { Errors as BWCErrors, Status } from '@bitpay-labs/bitcore-wallet-client';
 import * as prompt from '@clack/prompts';
 import { program } from 'commander';
-import { CommonArgs, ICliOptions } from '../types/cli';
 import { getCommands } from './cli-commands';
 import * as commands from './commands';
 import { bitcoreLogo } from './constants';
@@ -16,6 +15,7 @@ import * as Errors from './errors';
 import { getAction } from './prompts';
 import { Utils } from './utils';
 import { Wallet } from './wallet';
+import type { CommonArgs, ICliListOptions, ICliWalletOptions } from '../types/cli';
 
 const { version } = JSON.parse(fs.readFileSync(path.join(__dirname, '../../package.json')).toString());
 
@@ -23,25 +23,55 @@ program
   .addHelpText('beforeAll', bitcoreLogo)
   .usage('<walletName>|list [options]')
   .description('A command line tool for Bitcore wallets')
-  .argument('<walletName>', 'Name of the wallet you want to create, join, or interact with. Use "list" to see all wallets in the specified directory.')
   .optionsGroup('Global Options')
+  .version(version, '--version', 'Output the version number of this tool')
   .option('-d, --dir <directory>', 'Directory to look for the wallet', process.env['BITCORE_CLI_DIR'] || path.join(os.homedir(), '.wallets'))
+  .option('-h, --help', 'Display help message. Use with --command to get help for a specific command');
+
+program
+  .command('list', 'List all available wallets')
+  .optionsGroup('List Options')
+  .option('--chain <chain>', 'Filter the list by chain')
+  .option('--network <network>', 'Filter the list by network')
+  .option('--type <type>', 'Filter the list by wallet type (e.g.: "tss", "multisig", "singlesig", "encrypted")');
+
+program
+  .command('wallet <walletName>', 'Name of the wallet you want to create, join, or interact with.', { isDefault: true })
+  .optionsGroup('Wallet Options')
   .option('-H, --host <host>', 'Bitcore Wallet Service base URL', process.env['BITCORE_CLI_HOST'] || 'https://bws.bitpay.com')
   .option('-c, --command <command>', 'Run a specific command without entering the interactive CLI. Use "help" to see available commands', (value) => value.toLowerCase())
   .option('--no-status', 'Do not display the wallet status on startup. Defaults to true when running with --command')
   .option('-s, --pageSize <number>', 'Number of items per page of a list output', (value) => parseInt(value, 10), 10)
   .option('-v, --verbose', 'Show more data and logs')
   .option('--register', 'Register the wallet with the Bitcore Wallet Service if it does not exist')
-  .option('--walletId <walletId>', 'Support Staff Only: Wallet ID to provide support for')
-  .option('-h, --help', 'Display help message. Use with --command to get help for a specific command')
-  .version(version, '--version', 'Output the version number of this tool');
+  .option('--walletId <walletId>', 'Support Staff Only: Wallet ID to provide support for');
 
 
-const opts = program.opts() as ICliOptions;
+const opts = program.opts() as ICliWalletOptions;
 const walletName = program.parseOptions(process.argv).operands.slice(2)[0];
 
 if (opts.help && !opts.command) {
   program.help();
+}
+
+if (walletName === 'list') {
+  const _opts = opts as ICliListOptions;
+  for (const file of fs.readdirSync(_opts.dir)) {
+    if (file.endsWith('.json')) {
+      const walletData = JSON.parse(fs.readFileSync(path.join(_opts.dir, file), 'utf8'));
+      let type;
+      if (!walletData.credentials) type = 'encrypted';
+      else if (walletData.key?.metadata?.n > 1) type = 'tss';
+      else if (walletData.credentials?.n > 1) type = 'multisig';
+      else type = 'singlesig';
+      const isReadOnly = walletData.credentials && !walletData.key;
+      if (_opts.chain && walletData.credentials?.chain !== _opts.chain) continue;
+      if (_opts.network && walletData.credentials?.network !== _opts.network) continue;
+      if (_opts.type && _opts.type !== type) continue;
+      console.log(`  ${Utils.boldText(file.replace('.json', ''))}  ${walletData.cipher ? '{Encrypted}' : `[${Utils.colorizeChain(walletData.credentials.chain)}:${walletData.credentials.network}]${!['encrypted', 'singlesig'].includes(type) ? `.${Utils.boldText(type)}` : ''}${isReadOnly ? '*' : ''}`}`);
+    }
+  }
+  process.exit(0);
 }
 
 if (!walletName && !opts.command) {
