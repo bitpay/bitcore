@@ -40,17 +40,16 @@ describe('Ledger Ethereum', function () {
       data: '0x'
     });
     
-    const signedTransactionHex = await ledger.sign({
+    const signPromise = ledger.sign({
       chain: 'ETH',
       tx
-    }).then(new Promise(resolve => setTimeout(resolve, 1500))
-      .then(async () => {
-        for (let i = 0; i < 5; i++) {
-          await deviceButtons.right();
-        }
-        await deviceButtons.both();
-      })
-    );
+    });
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    for (let i = 0; i < 5; i++) {
+      await deviceButtons.right();
+    }
+    await deviceButtons.both();
+    const signedTransactionHex = await signPromise;
 
     const signedTransaction = ethers.Transaction.from(signedTransactionHex);
     expect(signedTransaction.to).to.equal('0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A');

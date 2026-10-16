@@ -245,34 +245,34 @@ export default class Ledger implements Base {
     chain: 'BTC';
     tx: string;
     utxos: EveryUtxoType[];
-  })
+  }): Promise<string>
   async sign(params: {
     chain: 'BTC';
     tx: object;
     utxos?: EveryUtxoType[];
-  })
+  }): Promise<string>
   async sign(params: {
     chain: Exclude<UtxoChainType, 'BTC'>;
     tx: string;
     utxos: EveryUtxoType[];
     prevTxs: string[];
-  })
+  }): Promise<string>
   async sign(params: {
     chain: Exclude<UtxoChainType, 'BTC'>;
     tx: object;
     utxos?: EveryUtxoType[];
     prevTxs: string[];
-  })
+  }): Promise<string>
   async sign(params: {
     chain: 'ETH' | 'SOL';
     tx: string;
-  })
+  }): Promise<string>
   async sign(params: {
     chain: string;
     tx: TransactionType;
     utxos?: EveryUtxoType[];
     prevTxs?: string[];
-  }) {
+  }): Promise<string> {
     const { chain, tx, utxos, prevTxs } = params;
     return this.modules[chain].sign({
       tx,
@@ -281,11 +281,11 @@ export default class Ledger implements Base {
     });
   }
   
-  async getAddress(params: { chain: string }) {
+  async getAddress(params: { chain: string }): Promise<string> {
     return this.modules[params.chain].getAddress();
   }
 
-  async getPublicKey(params: { chain: string }) {
+  async getPublicKey(params: { chain: string }): Promise<string> {
     return this.modules[params.chain].getPublicKey();
   }
 

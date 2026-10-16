@@ -54,22 +54,21 @@ describe('Ledger Bitcoin', function () {
       utxos
     });
     
-    const signedTransactionHex = await ledger.sign({
+    const signPromise = ledger.sign({
       chain: 'BTC',
       tx,
       utxos
-    }).then(new Promise(resolve => setTimeout(resolve, 1500))
-      .then(async () => {
-        for (let i = 0; i < 2; i++) {
-          await deviceButtons.right();
-        }
-        await deviceButtons.both();
-        for (let i = 0; i < 4; i++) {
-          await deviceButtons.right();
-        }
-        await deviceButtons.both();
-      })
-    );
+    });
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    for (let i = 0; i < 2; i++) {
+      await deviceButtons.right();
+    }
+    await deviceButtons.both();
+    for (let i = 0; i < 4; i++) {
+      await deviceButtons.right();
+    }
+    await deviceButtons.both();
+    const signedTransactionHex = await signPromise;
 
     const signedTransaction = new BitcoreLib.Transaction(signedTransactionHex);
     expect(signedTransaction.inputs[0].prevTxId.toString('hex')).to.equal('78519a191327dfdc0c2ea64a04d09d87c3909ce8365d0e0c0dbd0bc80d0405b4');

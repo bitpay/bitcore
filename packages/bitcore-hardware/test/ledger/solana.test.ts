@@ -43,17 +43,16 @@ describe('Ledger Solana', function () {
       category: 'transfer'
     });
     
-    const signedTransactionBase64 = await ledger.sign({
+    const signPromise = ledger.sign({
       chain: 'SOL',
       tx
-    }).then(new Promise(resolve => setTimeout(resolve, 1500))
-      .then(async () => {
-        for (let i = 0; i < 3; i++) {
-          await deviceButtons.right();
-        }
-        await deviceButtons.both();
-      })
-    );
+    });
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    for (let i = 0; i < 3; i++) {
+      await deviceButtons.right();
+    }
+    await deviceButtons.both();
+    const signedTransactionBase64 = await signPromise;
 
     const wireTransactionBytes = SolKit.getBase64Encoder().encode(signedTransactionBase64);
     const transaction = SolKit.getTransactionDecoder().decode(wireTransactionBytes);

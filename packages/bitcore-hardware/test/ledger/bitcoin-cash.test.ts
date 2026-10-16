@@ -81,23 +81,22 @@ describe('Ledger Bitcoin Cash', function () {
       fee
     });
 
-    const signedTransactionHex = await ledger.sign({
+    const signPromise = ledger.sign({
       chain: 'BCH',
       tx,
       utxos,
       prevTxs: [fundingTx.toString()]
-    }).then(new Promise(resolve => setTimeout(resolve, 1500))
-      .then(async () => {
-        for (let i = 0; i < 3; i++) {
-          await deviceButtons.right();
-        }
-        await deviceButtons.both();
-        for (let i = 0; i < 2; i++) {
-          await deviceButtons.right();
-        }
-        await deviceButtons.both();
-      })
-    );
+    });
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    for (let i = 0; i < 3; i++) {
+      await deviceButtons.right();
+    }
+    await deviceButtons.both();
+    for (let i = 0; i < 2; i++) {
+      await deviceButtons.right();
+    }
+    await deviceButtons.both();
+    const signedTransactionHex = await signPromise;
 
     const signedTransaction = new BitcoreLibCash.Transaction(signedTransactionHex);
     expect(signedTransaction.inputs[0].prevTxId.toString('hex')).to.equal('6e4f2edc3bdcccca1846bb4cdd9436f7f760bac7dcefb70ae7c3bcc11a0e7ec2');

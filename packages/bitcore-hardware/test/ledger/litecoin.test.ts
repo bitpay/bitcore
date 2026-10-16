@@ -81,23 +81,22 @@ describe('Ledger Litecoin', function () {
       fee
     });
 
-    const signedTransactionHex = await ledger.sign({
+    const signPromise = ledger.sign({
       chain: 'LTC',
       tx,
       utxos,
       prevTxs: [fundingTx.toString()]
-    }).then(new Promise(resolve => setTimeout(resolve, 1500))
-      .then(async () => {
-        for (let i = 0; i < 3; i++) {
-          await deviceButtons.right();
-        }
-        await deviceButtons.both();
-        for (let i = 0; i < 2; i++) {
-          await deviceButtons.right();
-        }
-        await deviceButtons.both();
-      })
-    );
+    });
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    for (let i = 0; i < 3; i++) {
+      await deviceButtons.right();
+    }
+    await deviceButtons.both();
+    for (let i = 0; i < 2; i++) {
+      await deviceButtons.right();
+    }
+    await deviceButtons.both();
+    const signedTransactionHex = await signPromise;
 
     const signedTransaction = new BitcoreLibLtc.Transaction(signedTransactionHex);
     expect(signedTransaction.inputs[0].prevTxId.toString('hex')).to.equal('481f2ddb2de5fb0f7871c34ace822e78a5282cfdbec0b23b9a4b72991a897038');

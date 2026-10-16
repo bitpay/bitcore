@@ -81,23 +81,22 @@ describe('Ledger Dogecoin', function () {
       fee
     });
 
-    const signedTransactionHex = await ledger.sign({
+    const signPromise = ledger.sign({
       chain: 'DOGE',
       tx,
       utxos,
       prevTxs: [fundingTx.toString()]
-    }).then(new Promise(resolve => setTimeout(resolve, 1500))
-      .then(async () => {
-        for (let i = 0; i < 3; i++) {
-          await deviceButtons.right();
-        }
-        await deviceButtons.both();
-        for (let i = 0; i < 2; i++) {
-          await deviceButtons.right();
-        }
-        await deviceButtons.both();
-      })
-    );
+    });
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    for (let i = 0; i < 3; i++) {
+      await deviceButtons.right();
+    }
+    await deviceButtons.both();
+    for (let i = 0; i < 2; i++) {
+      await deviceButtons.right();
+    }
+    await deviceButtons.both();
+    const signedTransactionHex = await signPromise;
 
     const signedTransaction = new BitcoreLibDoge.Transaction(signedTransactionHex);
     expect(signedTransaction.inputs[0].prevTxId.toString('hex')).to.equal('f6621a398c9db70a1a2120507108770ef3a9782c281b93a1c4161cbfdb2db116');
