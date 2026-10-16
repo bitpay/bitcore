@@ -37,9 +37,8 @@ export default class BitcoinCashModule implements BaseModule {
   }
 
   async getPublicKey() {
-    const result = await this.btc.getWalletPublicKey(this.derivationPath + '/0/0');
-    const { PublicKey } = this.lib;
-    return PublicKey.fromPoint(new PublicKey(result.publicKey).point, true).toString();
+    const { publicKey } = await this.btc.getWalletPublicKey(this.derivationPath + '/0/0');
+    return this.lib.PublicKey.fromPoint(new this.lib.PublicKey(publicKey).point, true).toString();
   }
 
   /**
@@ -101,7 +100,7 @@ export default class BitcoinCashModule implements BaseModule {
   }
 
   async getAddress() {
-    const result = await this.btc.getWalletPublicKey(this.derivationPath + '/0/0', { format: this.addressFormat });
-    return this.chain === 'BCH' ? 'bitcoincash:' + result.bitcoinAddress : result.bitcoinAddress;
+    const { bitcoinAddress } = await this.btc.getWalletPublicKey(this.derivationPath + '/0/0', { format: this.addressFormat });
+    return this.chain === 'BCH' ? 'bitcoincash:' + bitcoinAddress : bitcoinAddress;
   }
 }

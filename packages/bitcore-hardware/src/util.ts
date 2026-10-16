@@ -42,14 +42,14 @@ class UtilClass {
    * @returns Promise containing the data
    * @throws Error if the result status is 'error'
    */
-  async getObservableDataOrError(observable: Observable<any>): Promise<any> {
+  async getObservableOutputOrError(observable: Observable<any>): Promise<any> {
     const result = await lastValueFrom(observable);
     if (result.status === 'error') {
       const e = result.error;
       const code = e?.errorCode ?? e?._tag;
       throw new Error(`Fetching xpub failed: ${e?.message ?? 'unknown error'}${code ? ` (${code})` : ''}`, { cause: e });
     }
-    return result;
+    return result.output;
   }
 }
 

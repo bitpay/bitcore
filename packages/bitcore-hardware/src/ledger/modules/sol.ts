@@ -1,9 +1,7 @@
 import { SolKit } from '@bitpay-labs/crypto-wallet-core';
-import {
-  Observable,
-  lastValueFrom
-} from 'rxjs';
+import { Observable } from 'rxjs';
 import { BaseModule } from 'src/types/base.js';
+import Util from '../../util.js';
 import type * as SignerKitSolana from '@ledgerhq/device-signer-kit-solana';
 
 
@@ -24,8 +22,7 @@ export default class SolanaModule implements BaseModule {
       Uint8Array.from(transaction.messageBytes)
     ).observable;
 
-    const result = await lastValueFrom(ob);
-    const signature = result.output;
+    const signature = await Util.getObservableOutputOrError(ob);
 
     return SolKit.getBase64EncodedWireTransaction({
       ...transaction,
@@ -38,8 +35,8 @@ export default class SolanaModule implements BaseModule {
   
   async getAddress() {
     const ob: Observable<any> = this.signer.getAddress(this.derivationPath).observable;
-    const result = await lastValueFrom(ob);
-    return result.output;
+    const address = await Util.getObservableOutputOrError(ob);
+    return address;
   }
 
   async getPublicKey() {

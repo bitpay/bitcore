@@ -1,9 +1,7 @@
 import CWC, { ethers } from '@bitpay-labs/crypto-wallet-core';
-import {
-  Observable,
-  lastValueFrom
-} from 'rxjs';
+import { Observable } from 'rxjs';
 import { BaseModule } from 'src/types/base.js';
+import Util from '../../util.js';
 import type * as SignerKitEth from '@ledgerhq/device-signer-kit-ethereum';
 
 export default class EthereumModule implements BaseModule {
@@ -22,8 +20,7 @@ export default class EthereumModule implements BaseModule {
       bytes
     ).observable;
 
-    const result = await lastValueFrom(ob);
-    const signature = result.output;
+    const signature = await Util.getObservableOutputOrError(ob);
     const signedTx = CWC.Transactions.applySignature({
       chain: 'ETH',
       tx,
@@ -34,13 +31,13 @@ export default class EthereumModule implements BaseModule {
 
   async getAddress() {
     const ob: Observable<any> = this.signer.getAddress(this.derivationPath).observable;
-    const result = await lastValueFrom(ob);
-    return result.output.address;
+    const { address } = await Util.getObservableOutputOrError(ob);
+    return address;
   }
 
   async getPublicKey() {
     const ob: Observable<any> = this.signer.getAddress(this.derivationPath).observable;
-    const result = await lastValueFrom(ob);
-    return result.output.publicKey;
+    const { publicKey } = await Util.getObservableOutputOrError(ob);
+    return publicKey;
   }
 }
