@@ -10,9 +10,9 @@
 /* jshint maxstatements: 100 */
 /* jshint unused: false */
 
-const _ = require('lodash');
-const should = require('chai').should();
-const expect = require('chai').expect;
+const chai = require('chai');
+chai.should();
+const expect = chai.expect;
 const sinon = require('sinon');
 const bitcore = require('..');
 
@@ -22,9 +22,8 @@ const HDPublicKey = bitcore.HDPublicKey;
 
 describe('HDKeys building with static methods', function() {
   const classes = [HDPublicKey, HDPrivateKey];
-  let clazz, index;
 
-  _.each(classes, function(clazz) {
+  for (const clazz of classes) {
     const expectStaticMethodFail = function(staticMethod, argument, message) {
       expect(clazz[staticMethod].bind(null, argument)).to.throw(message);
     };
@@ -50,7 +49,7 @@ describe('HDKeys building with static methods', function() {
       expectStaticMethodFail(method, null, errorMessage);
       expectStaticMethodFail(method, '', errorMessage);
     });
-  });
+  }
 });
 
 describe('BIP32 compliance', function() {
