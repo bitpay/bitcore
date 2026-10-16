@@ -23,6 +23,7 @@ import { CoinGeckoService } from '../externalservices/coingecko';
 import { MoonpayService } from '../externalservices/moonpay';
 import { OneInchService } from '../externalservices/oneInch';
 import { RampService } from '../externalservices/ramp';
+import { RangoService } from '../externalservices/rango';
 import { SardineService } from '../externalservices/sardine';
 import { SimplexService } from '../externalservices/simplex';
 import { ThorswapService } from '../externalservices/thorswap';
@@ -156,6 +157,7 @@ export class WalletService implements IWalletService {
     moonpay: MoonpayService;
     oneInch: OneInchService;
     ramp: RampService;
+    rango: RangoService;
     sardine: SardineService;
     simplex: SimplexService;
     thorswap: ThorswapService;
@@ -186,6 +188,7 @@ export class WalletService implements IWalletService {
       moonpay: new MoonpayService(),
       oneInch: new OneInchService(this.storage),
       ramp: new RampService(),
+      rango: new RangoService(),
       sardine: new SardineService(),
       simplex: new SimplexService(),
       thorswap: new ThorswapService(),

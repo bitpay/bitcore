@@ -252,6 +252,14 @@ const Config = (): any => {
           disabled: false,
           removed: false
         },
+        rango: {
+          disabled: true,
+          removed: false,
+          // config: {
+          //   referrerAddress: 'evm_address_to_receive_fees_here',
+          //   referrerFee: 'percent_as_string_here' // '0.1' == 0.1%, max 3
+          // }
+        },
         thorswap: {
           disabled: false,
           removed: false,
@@ -399,6 +407,20 @@ const Config = (): any => {
     //     appSellRefId: 'simplex_web_sell_ref_id_here',
     //     publicKey: 'simplex_web_public_key_here',
     //   }
+    // },
+    // rango: {
+    //   sandbox: {
+    //     api: 'https://api.rango.exchange',
+    //     apiKey: 'rango_sandbox_api_key_here',
+    //     referrerAddress: 'rango_sandbox_referrer_address_here',
+    //     referrerFee: 'rango_sandbox_referrer_fee_here'
+    //   },
+    //   production: {
+    //     api: 'https://api.rango.exchange',
+    //     apiKey: 'rango_production_api_key_here',
+    //     referrerAddress: 'rango_production_referrer_address_here',
+    //     referrerFee: 'rango_production_referrer_fee_here'
+    //   },
     // },
     // thorswap: {
     //   sandbox: {
