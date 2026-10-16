@@ -1,9 +1,8 @@
 import 'source-map-support/register.js';
-import Burner from '../../src/burner.js';
+import { HwProxy } from '../../src/index.js';
 
-const burner = new Burner();
-burner.connect();
+await HwProxy.connect();
 
 console.log('Tap an NFC reader with a burner wallet...');
-console.log(await burner.getPublicKey({ index: 9 }));
+console.log(await HwProxy.getPublicKey({ wallet: 'burner', transport: 'nfc' }));
 process.exit(0);

@@ -1,17 +1,16 @@
 import 'source-map-support/register.js';
 import CWC from '@bitpay-labs/crypto-wallet-core';
-import Burner from '../../src/burner.js';
+import { HwProxy } from '../../src/index.js';
 
 
 const args = process.argv.slice(2);
 const chain = args[0]?.toUpperCase() || 'BTC';
 
-if (!Burner.isValidChain(chain)) {
+if (!HwProxy.isValidChain('burner', chain)) {
   throw new Error(`Invalid chain: ${chain}`);
 }
 
-const burner = new Burner();
-burner.connect();
+await HwProxy.connect();
 
 console.log('Tap an NFC reader with a burner wallet...');
 switch (chain) {
@@ -26,11 +25,12 @@ switch (chain) {
       data: '0x'
     });
     
-    const signedTransaction = await burner.sign({
+    const signedTransaction = await HwProxy.sign({
+      wallet: 'burner',
+      transport: 'nfc',
       chain: 'ETH',
       tx,
-      password: '123456',
-      index: 9
+      password: '123456'
     });
     console.log(signedTransaction);
     /*
@@ -73,11 +73,12 @@ switch (chain) {
       utxos
     });
     
-    const signedTransaction: any = await burner.sign({
+    const signedTransaction: any = await HwProxy.sign({
+      wallet: 'burner',
+      transport: 'nfc',
       chain: 'BTC',
       tx,
       utxos,
-      index: 9,
       password: '123456'
     });
     console.log(signedTransaction);

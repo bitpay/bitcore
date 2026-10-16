@@ -64,7 +64,7 @@ interface DmkConnection {
 
 interface Config {
   connections: Connection[];
-  transport: 'node' | 'speculos';
+  transport: 'hid' | 'speculos';
 }
 
 const MODULE_CLASSES = {
@@ -89,7 +89,7 @@ const DEFAULT_CONFIG: Config = {
       port: 5000
     }
   ],
-  transport: 'node'
+  transport: 'hid'
 };
 
 const SPECULOS_CONFIG: Config = {

@@ -4,10 +4,11 @@
 ## Usage
 Get a bitcoin address with a ledger wallet
 ```JavaScript
-const ledger = new Ledger();
-await ledger.connect();
+import { HwProxy } from '@bitpay-labs/bitcore-hardware';
 
-const ledgerAddress = await ledger.getAddress({ chain: 'BTC' });
+await HwProxy.connect();
+
+const ledgerAddress = await HwProxy.getAddress({ wallet: 'ledger', transport: 'speculos', chain: 'BTC' });
 console.log(ledgerAddress);
 // bc1qj86hpgprdudkks84y52vdenz86kd26stkssrcq
 ```
@@ -37,7 +38,9 @@ const tx: string = CWC.Transactions.create({
   utxos
 });
 
-const signedTransaction = await ledger.sign({
+const signedTransaction = await HwProxy.sign({
+  wallet: 'ledger',
+  transport: 'speculos',
   chain: 'BTC',
   tx,
   utxos
@@ -54,10 +57,9 @@ View on Insight: https://bitpay.com/insight/BTC/mainnet/tx/3049a6c75390696260366
 ```
 Get an address with a burner wallet:
 ```JavaScript
-const burner = new Burner();
-burner.connect();
+await HwProxy.connect();
 
-const burnerAddress = await burner.getAddress({ chain: 'BTC', index: 9 });
+const burnerAddress = await HwProxy.getAddress({ wallet: 'burner', transport: 'nfc', chain: 'BTC' });
 console.log(burnerAddress);
 // bc1q2mz4276pxzt2488xtmml9esn8hmnhj5t3rd8gk
 ```
@@ -87,11 +89,12 @@ const tx: string = CWC.Transactions.create({
   utxos
 });
 
-const signedTransaction: any = await burner.sign({
+const signedTransaction: any = await HwProxy.sign({
+  wallet: 'burner',
+  transport: 'nfc',
   chain: 'BTC',
   tx,
   utxos,
-  index: 9,
   password: '123456'
 });
 console.log(signedTransaction);

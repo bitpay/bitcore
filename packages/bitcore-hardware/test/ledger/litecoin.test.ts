@@ -2,7 +2,7 @@ import 'source-map-support/register.js';
 import { createRequire } from 'module';
 import { expect } from 'chai';
 import { describe } from 'mocha';
-import Ledger from '../../src/ledger/wallet.js';
+import { HwProxy } from '../../src/index.js';
 import CWC from '@bitpay-labs/crypto-wallet-core';
 
 const require = createRequire(import.meta.url);
@@ -13,20 +13,27 @@ const { BitcoreLibLtc } = CWC;
 describe('Ledger Litecoin', function () {
   const deviceClient = deviceControllerClientFactory('http://localhost:5005');
   const deviceButtons = deviceClient.buttonFactory();
-  const ledger = new Ledger({ transport: 'speculos' });
   
   before(async () => {
-    await ledger.connect();
+    await HwProxy.connect();
   });
   
   after(async () => {
-    await ledger.disconnect();
+    await HwProxy.disconnect();
   });
 
 
   it('should get matching address and publickey', async () => {
-    const publicKey = await ledger.getPublicKey({ chain: 'LTC' });
-    const address = await ledger.getAddress({ chain: 'LTC' });
+    const publicKey = await HwProxy.getPublicKey({
+      wallet: 'ledger',
+      transport: 'speculos',
+      chain: 'LTC'
+    });
+    const address = await HwProxy.getAddress({
+      wallet: 'ledger',
+      transport: 'speculos',
+      chain: 'LTC'
+    });
 
     expect(publicKey, 'public key hex').to.match(/^0[23][0-9a-f]{64}$/i); // compressed secp256k1
     expect(address, 'address').to.be.a('string');
@@ -43,7 +50,11 @@ describe('Ledger Litecoin', function () {
   });
 
   it('should sign a transaction', async () => {
-    const ledgerAddress = await ledger.getAddress({ chain: 'LTC' });
+    const ledgerAddress = await HwProxy.getAddress({
+      wallet: 'ledger',
+      transport: 'speculos',
+      chain: 'LTC'
+    });
     const receivingAddress = new BitcoreLibLtc.PrivateKey().toAddress().toString();
       
     const fee = 362;
@@ -92,7 +103,9 @@ describe('Ledger Litecoin', function () {
       fee
     });
 
-    const signPromise = ledger.sign({
+    const signPromise = HwProxy.sign({
+      wallet: 'ledger',
+      transport: 'speculos',
       chain: 'LTC',
       tx,
       utxos,

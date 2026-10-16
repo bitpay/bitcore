@@ -2,8 +2,8 @@ import 'source-map-support/register.js';
 import { createRequire } from 'module';
 import { expect } from 'chai';
 import { describe } from 'mocha';
-import Ledger from '../../src/ledger/wallet.js';
 import CWC from '@bitpay-labs/crypto-wallet-core';
+import { HwProxy } from '../../src/index.js';
 
 const require = createRequire(import.meta.url);
 const { deviceControllerClientFactory } = require('@ledgerhq/speculos-device-controller');
@@ -13,19 +13,26 @@ const { BitcoreLib } = CWC;
 describe('Ledger Bitcoin', function () {
   const deviceClient = deviceControllerClientFactory('http://localhost:5000');
   const deviceButtons = deviceClient.buttonFactory();
-  const ledger = new Ledger({ transport: 'speculos' });
 
   before(async () => {
-    await ledger.connect();
+    await HwProxy.connect();
   });
 
   after(async () => {
-    await ledger.disconnect();
+    await HwProxy.disconnect();
   });
 
   it('should get matching address and publickey', async () => {
-    const publicKey = await ledger.getPublicKey({ chain: 'BTC' });
-    const address = await ledger.getAddress({ chain: 'BTC' });
+    const publicKey = await HwProxy.getPublicKey({
+      wallet: 'ledger',
+      transport: 'speculos',
+      chain: 'BTC'
+    });
+    const address = await HwProxy.getAddress({
+      wallet: 'ledger',
+      transport: 'speculos',
+      chain: 'BTC'
+    });
 
     expect(publicKey, 'public key hex').to.match(/^0[23][0-9a-f]{64}$/i); // compressed secp256k1
     expect(address, 'address').to.be.a('string');
@@ -44,7 +51,11 @@ describe('Ledger Bitcoin', function () {
   it('should sign a transaction', async () => {
     const satoshis = 100_000;
     const fee = 1000;
-    const address = await ledger.getAddress({ chain: 'BTC' });
+    const address = await HwProxy.getAddress({
+      wallet: 'ledger',
+      transport: 'speculos',
+      chain: 'BTC'
+    });
     const utxos = [
       {
         chain: 'BTC',
@@ -68,12 +79,14 @@ describe('Ledger Bitcoin', function () {
       utxos
     });
     
-    const signPromise = ledger.sign({
+    const signPromise = HwProxy.sign({
+      wallet: 'ledger',
+      transport: 'speculos',
       chain: 'BTC',
       tx,
       utxos
     });
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 3000));
     for (let i = 0; i < 2; i++) {
       await deviceButtons.right();
     }

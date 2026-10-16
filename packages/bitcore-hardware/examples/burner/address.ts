@@ -1,16 +1,15 @@
 import 'source-map-support/register.js';
-import Burner from '../../src/burner.js';
+import { HwProxy } from '../../src/index.js';
 
 const args = process.argv.slice(2);
 const chain = args[0]?.toUpperCase() || 'BTC';
 
-if (!Burner.isValidChain(chain)) {
+if (!HwProxy.isValidChain('burner', chain)) {
   throw new Error(`Invalid chain: ${chain}`);
 }
 
-const burner = new Burner();
-burner.connect();
+await HwProxy.connect();
 
 console.log('Tap an NFC reader with a burner wallet...');
-console.log(await burner.getAddress({ chain, index: 9 }));
+console.log(await HwProxy.getAddress({ wallet: 'burner', transport: 'nfc', chain }));
 process.exit(0);

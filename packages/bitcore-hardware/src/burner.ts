@@ -18,7 +18,8 @@ export default class Burner implements Base {
   commandQueue = new Map<string, Record<string, any>>();
   // responses to all the commands from commandQueue
   responses = new Map<string, Record<string, any>>();
-  private queueCapacity = 100;
+  private QUEUE_CAPACITY = 100;
+  private SLOT = 9;
 
   /**
    * Queues a command to be sent off to the wallet when it is scanned with an NFC reader.
@@ -45,10 +46,10 @@ export default class Burner implements Base {
   async sendManyCommands(commands: CommandType[]): Promise<Record<string, any>[]> {
     const ids: string[] = [];
     for (const command of commands) {
-      if (this.commandQueue.size >= this.queueCapacity) {
+      if (this.commandQueue.size >= this.QUEUE_CAPACITY) {
         throw new Error('queue filled');
       }
-      for (let i = 0; i < this.queueCapacity; i++) {
+      for (let i = 0; i < this.QUEUE_CAPACITY; i++) {
         const id = command.name + '' + i;
         if (!this.commandQueue.has(id)) {
           this.commandQueue.set(id, command);
@@ -74,7 +75,7 @@ export default class Burner implements Base {
   /**
    * Sends all commands to the wallet and recieves all responses
    */
-  connect() {
+  async connect() {
     this.nfc = this.nfc ?? new NFC();
 
     this.nfc.on('reader', (reader) => {
@@ -100,31 +101,29 @@ export default class Burner implements Base {
     });
   }
 
+  async disconnect() { };
+
   async sign(params: {
     chain: 'ETH';
     tx: string;
-    index: number;
     password: string;
   })
   async sign(params: {
     chain: 'BTC';
     tx: string;
     utxos: EveryUtxoType[];
-    index: number;
     password: string;
   })
   async sign(params: {
     chain: 'BTC';
     tx: object;
     utxos?: EveryUtxoType[];
-    index: number;
     password: string;
   })
   async sign(params: {
     chain: 'BTC' | 'ETH';
     tx: TransactionType;
     utxos?: EveryUtxoType[];
-    index: number;
     password: string;
   }) {
     switch (params.chain) {
@@ -139,10 +138,9 @@ export default class Burner implements Base {
   async signBtc(params: {
     tx: TransactionType;
     utxos?: EveryUtxoType[];
-    index: number;
     password: string;
   }) {
-    const { tx, utxos, index, password } = params;
+    const { tx, utxos, password } = params;
     const bitcoreTx = Util.buildTransaction(tx, utxos);
 
     const commands: CommandType[] = [];
@@ -152,7 +150,7 @@ export default class Burner implements Base {
         name: 'sign',
         digest: sighash,
         password,
-        keyNo: index
+        keyNo: this.SLOT
       });
     };
     const responses = await this.sendManyCommands(commands);
@@ -174,8 +172,8 @@ export default class Burner implements Base {
     return bitcoreTx.serialize();
   }
 
-  async signEth(params: { tx: string; index: number; password: string }) {
-    const { tx, index, password } = params;
+  async signEth(params: { tx: string; password: string }) {
+    const { tx, password } = params;
     
     const sighash = CWC.Transactions.getSighash({
       chain: 'ETH',
@@ -186,7 +184,7 @@ export default class Burner implements Base {
       name: 'sign',
       digest: sighash,
       password,
-      keyNo: index
+      keyNo: this.SLOT
     });
     const signature = response.signature.ether;
     
@@ -204,40 +202,35 @@ export default class Burner implements Base {
    * @param req
    * @returns
    */
-  async getData(req: Array<{ type: DataType; index: number }>) {
+  async getData(req: Array<{ type: DataType }>) {
     return this.sendCommand({
       name: 'get_data_struct_v2',
-      spec: req
+      spec: req.map(({ type }) => ({ type, index: this.SLOT }))
     });
   }
 
-  async getPublicKey(params: { index: number }) {
-    const { index } = params;
-
+  async getPublicKey() {
     return (await this.getData(
-      [{ type: 'publicKey', index }]
-    ) as any).publicKey[index].value;
+      [{ type: 'publicKey' }]
+    ) as any).publicKey[this.SLOT].value;
   }
 
   async getAddress(params: {
     chain: 'BTC' | 'ETH';
-    index: number;
   }) {
     switch (params.chain) {
       case 'ETH':
-        return this.getAddressEth(params);
+        return this.getAddressEth();
       case 'BTC':
       default:
-        return this.getAddressBtc(params);
+        return this.getAddressBtc();
     }
   }
 
-  async getAddressBtc(params: { index: number }) {
-    const { index } = params;
-
-    const data: any = await this.getData([{ type: 'compressedPublicKey', index }]);
+  async getAddressBtc() {
+    const data: any = await this.getData([{ type: 'compressedPublicKey' }]);
     try {
-      const pubKey = PublicKey.fromString(data.compressedPublicKey[index].value);
+      const pubKey = PublicKey.fromString(data.compressedPublicKey[this.SLOT].value);
       const address = Address.fromPublicKey(pubKey, 'livenet', 'witnesspubkeyhash');
       return address.toString();
     } catch (error) {
@@ -246,13 +239,11 @@ export default class Burner implements Base {
     }
   }
 
-  async getAddressEth(params: { index: number }) {
-    const { index } = params;
-
-    const data: any = await this.getData([{ type: 'publicKey', index }]);
+  async getAddressEth() {
+    const data: any = await this.getData([{ type: 'publicKey' }]);
 
     try {
-      const address = CWC.ethers.computeAddress('0x' + data.publicKey[index].value);
+      const address = CWC.ethers.computeAddress('0x' + data.publicKey[this.SLOT].value);
       return address.toString();
     } catch (error) {
       console.error(error);

@@ -2,7 +2,7 @@ import 'source-map-support/register.js';
 import { createRequire } from 'module';
 import { expect } from 'chai';
 import { describe } from 'mocha';
-import Ledger from '../../src/ledger/wallet.js';
+import { HwProxy } from '../../src/index.js';
 import CWC from '@bitpay-labs/crypto-wallet-core';
 
 const require = createRequire(import.meta.url);
@@ -11,21 +11,28 @@ const { deviceControllerClientFactory } = require('@ledgerhq/speculos-device-con
 const { SolKit } = CWC;
 
 describe('Ledger Solana', function () {
-  const ledger = new Ledger({ transport: 'speculos' });
   const deviceClient = deviceControllerClientFactory('http://localhost:5002');
   const deviceButtons = deviceClient.buttonFactory();
 
   before(async () => {
-    await ledger.connect();
+    await HwProxy.connect();
   });
 
   after(async () => {
-    await ledger.disconnect();
+    await HwProxy.disconnect();
   });
 
   it('should get address/publickey', async () => {
-    const publicKey = await ledger.getPublicKey({ chain: 'SOL' });
-    const address = await ledger.getAddress({ chain: 'SOL' });
+    const publicKey = await HwProxy.getPublicKey({
+      wallet: 'ledger',
+      transport: 'speculos',
+      chain: 'SOL'
+    });
+    const address = await HwProxy.getAddress({
+      wallet: 'ledger',
+      transport: 'speculos',
+      chain: 'SOL'
+    });
 
     expect(publicKey).to.equal(address);
     expect(address, 'address').to.match(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/); // base58
@@ -34,7 +41,11 @@ describe('Ledger Solana', function () {
   });
 
   it('should sign a transaction', async () => {
-    const address = await ledger.getAddress({ chain: 'SOL' });
+    const address = await HwProxy.getAddress({
+      wallet: 'ledger',
+      transport: 'speculos',
+      chain: 'SOL'
+    });
     const tx = CWC.Transactions.create({
       network: 'livenet',
       chain: 'SOL',
@@ -45,7 +56,9 @@ describe('Ledger Solana', function () {
       category: 'transfer'
     });
     
-    const signPromise = ledger.sign({
+    const signPromise = HwProxy.sign({
+      wallet: 'ledger',
+      transport: 'speculos',
       chain: 'SOL',
       tx
     });

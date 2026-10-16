@@ -1,28 +1,32 @@
 import { expect } from 'chai';
 import { describe } from 'mocha';
 import CWC, { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
-import Burner from '../../src/burner.js';
+import { HwProxy } from '../../src/index.js';
 
 const { PrivateKey, crypto, Transaction, Script } = BitcoreLib;
 
 describe('Burner Signing', function () {
-  const burner = new Burner();
   const privateKey = new PrivateKey();
   const publicKey = privateKey.toPublicKey();
   const address = publicKey.toAddress();
 
-  before(function () {
+  before(async function () {
     this.timeout(5_000);
+    await HwProxy.connect();
+  });
+
+  after(async function () {
+    await HwProxy.disconnect();
   });
 
   beforeEach(function () {
-    burner.responses.clear();
-    burner.commandQueue.clear();
+    HwProxy.get('burner', 'nfc').responses.clear();
+    HwProxy.get('burner', 'nfc').commandQueue.clear();
   });
 
   afterEach(function () {
-    expect(burner.responses.size).to.equal(0, 'response queue not cleaning properly');
-    expect(burner.commandQueue.size).to.equal(0, 'command queue not cleaning properly');
+    expect(HwProxy.get('burner', 'nfc').responses.size).to.equal(0, 'response queue not cleaning properly');
+    expect(HwProxy.get('burner', 'nfc').commandQueue.size).to.equal(0, 'command queue not cleaning properly');
   });
 
   it('should sign a BTC transaction', async function () {
@@ -40,12 +44,13 @@ describe('Burner Signing', function () {
       utxos
     });
 
-    const signRequest: Promise<string> = burner.sign({
+    const signRequest: Promise<string> = HwProxy.sign({
+      wallet: 'burner',
+      transport: 'nfc',
       chain: 'BTC',
       tx,
       utxos,
-      password: 'password not relevant to test',
-      index: 0
+      password: 'password not relevant to test'
     });
 
     const hash = CWC.Transactions.getSighash({
@@ -58,11 +63,11 @@ describe('Burner Signing', function () {
     const signature = crypto.ECDSA.sign(Buffer.from(hash, 'hex'), privateKey);
 
     const id = 'sign0';
-    burner.responses.set(
+    HwProxy.get('burner', 'nfc').responses.set(
       id,
       {
-        input: (burner.commandQueue.get(id) as any).keyNo,
-        digest: (burner.commandQueue.get(id) as any).digest,
+        input: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).keyNo,
+        digest: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).digest,
         signature: {
           raw: {},
           der: signature.toString(),
@@ -90,11 +95,12 @@ describe('Burner Signing', function () {
       data: '0xb6b4af05000000000000000000000000000000000000000000000000000dd764300b800000000000000000000000000000000000000000000000000000000004a817c8000000000000000000000000000000000000000000000000000000016ada606a26050bb49a5a8228599e0dd48c1368abd36f4f14d2b74a015b2d168dbcab0773ce399393220df874bb22ca961f351e038acd2ba5cc8c764385c9f23707622cc435000000000000000000000000000000000000000000000000000000000000001c7e247d684a635813267b10a63f7f3ba88b28ca2790c909110b28236cf1b9bba03451e83d5834189f28d4c77802fc76b7c760a42bc8bebf8dd15e6ead146805630000000000000000000000000000000000000000000000000000000000000000'
     });
     
-    const signRequest = burner.sign({
+    const signRequest = HwProxy.sign({
+      wallet: 'burner',
+      transport: 'nfc',
       chain: 'ETH',
       tx,
-      password: 'password not relevant to test',
-      index: 0
+      password: 'password not relevant to test'
     });
 
     const signature = CWC.Transactions.getSignature({
@@ -104,11 +110,11 @@ describe('Burner Signing', function () {
     });
 
     const id = 'sign0';
-    burner.responses.set(
+    HwProxy.get('burner', 'nfc').responses.set(
       id,
       {
-        input: (burner.commandQueue.get(id) as any).keyNo,
-        digest: (burner.commandQueue.get(id) as any).digest,
+        input: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).keyNo,
+        digest: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).digest,
         signature: {
           raw: {},
           ether: signature,
@@ -149,20 +155,21 @@ describe('Burner Signing', function () {
     
     const signature = crypto.ECDSA.sign(Buffer.from(hash, 'hex'), privateKey);
 
-    const signRequest: Promise<string> = burner.sign({
+    const signRequest: Promise<string> = HwProxy.sign({
+      wallet: 'burner',
+      transport: 'nfc',
       chain: 'BTC',
       tx,
       utxos,
-      password: 'password not relevant to test',
-      index: 0
+      password: 'password not relevant to test'
     });
 
     const id = 'sign0';
-    burner.responses.set(
+    HwProxy.get('burner', 'nfc').responses.set(
       id,
       {
-        input: (burner.commandQueue.get(id) as any).keyNo,
-        digest: (burner.commandQueue.get(id) as any).digest,
+        input: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).keyNo,
+        digest: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).digest,
         signature: {
           raw: {},
           der: signature.toString(),
@@ -194,11 +201,12 @@ describe('Burner Signing', function () {
       .from(utxos)
       .to('1Gokm82v6DmtwKEB8AiVhm82hyFSsEvBDK', 1000);
 
-    const signRequest: Promise<string> = burner.sign({
+    const signRequest: Promise<string> = HwProxy.sign({
+      wallet: 'burner',
+      transport: 'nfc',
       chain: 'BTC',
       tx,
-      password: 'password not relevant to test',
-      index: 0
+      password: 'password not relevant to test'
     });
 
     const hash = CWC.Transactions.getSighash({
@@ -211,11 +219,11 @@ describe('Burner Signing', function () {
     const signature = crypto.ECDSA.sign(Buffer.from(hash, 'hex'), privateKey);
     
     const id = 'sign0';
-    burner.responses.set(
+    HwProxy.get('burner', 'nfc').responses.set(
       id,
       {
-        input: (burner.commandQueue.get(id) as any).keyNo,
-        digest: (burner.commandQueue.get(id) as any).digest,
+        input: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).keyNo,
+        digest: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).digest,
         signature: {
           raw: {},
           der: signature.toString(),
@@ -271,12 +279,13 @@ describe('Burner Signing', function () {
       utxos
     });
 
-    const signRequest: Promise<string> = burner.sign({
+    const signRequest: Promise<string> = HwProxy.sign({
+      wallet: 'burner',
+      transport: 'nfc',
       chain: 'BTC',
       tx,
       utxos,
-      password: 'password not relevant to test',
-      index: 0
+      password: 'password not relevant to test'
     });
 
     for (let i = 0; i < utxos.length; i++) {
@@ -289,11 +298,11 @@ describe('Burner Signing', function () {
       const signature = crypto.ECDSA.sign(Buffer.from(hash, 'hex'), privateKey);
 
       const id = 'sign' + i;
-      burner.responses.set(
+      HwProxy.get('burner', 'nfc').responses.set(
         id,
         {
-          input: (burner.commandQueue.get(id) as any).keyNo,
-          digest: (burner.commandQueue.get(id) as any).digest,
+          input: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).keyNo,
+          digest: (HwProxy.get('burner', 'nfc').commandQueue.get(id) as any).digest,
           signature: {
             raw: {},
             der: signature.toString(),

@@ -1,22 +1,21 @@
 import 'source-map-support/register.js';
 import CWC from '@bitpay-labs/crypto-wallet-core';
-import Ledger from '../../src/ledger/wallet.js';
+import { HwProxy } from '../../src/index.js';
 import Utils from '../../src/util.js';
 
 const args = process.argv.slice(2);
 const chain = args[0]?.toUpperCase() || 'BTC';
 
-if (!Ledger.isValidChain(chain)) {
+if (!HwProxy.isValidChain('ledger', chain)) {
   throw new Error(`Invalid chain: ${chain}`);
 }
 
-const ledger = new Ledger({ transport: 'speculos' });
-await ledger.connect();
+await HwProxy.connect();
 
 console.log('Awaiting approval from your ledger...');
 switch (chain) {
   case 'SOL': {
-    const address = await ledger.getAddress({ chain: 'SOL' });
+    const address = await HwProxy.getAddress({ wallet: 'ledger', transport: 'speculos', chain: 'SOL' });
     
     const tx = CWC.Transactions.create({
       network: 'livenet',
@@ -28,7 +27,9 @@ switch (chain) {
       category: 'transfer'
     });
     
-    const signedTransaction = await ledger.sign({
+    const signedTransaction = await HwProxy.sign({
+      wallet: 'ledger',
+      transport: 'speculos',
       chain: 'SOL',
       tx
     });
@@ -44,7 +45,9 @@ switch (chain) {
       data: '0x'
     });
     
-    const signedTransaction = await ledger.sign({
+    const signedTransaction = await HwProxy.sign({
+      wallet: 'ledger',
+      transport: 'speculos',
       chain: 'ETH',
       tx
     });
@@ -54,7 +57,7 @@ switch (chain) {
   // BCH, DOGE, and LTC all need the previous transactions of all the inputs in order to sign
   case 'LTC': {
     const lib = Utils.libs[chain];
-    const ledgerAddress = await ledger.getAddress({ chain });
+    const ledgerAddress = await HwProxy.getAddress({ wallet: 'ledger', transport: 'speculos', chain });
     const receivingAddress = new lib.PrivateKey().toAddress().toString();
 
     const fee = 1000;
@@ -102,7 +105,9 @@ switch (chain) {
       fee
     });
 
-    const signedTransaction = await ledger.sign({
+    const signedTransaction = await HwProxy.sign({
+      wallet: 'ledger',
+      transport: 'speculos',
       chain: 'LTC',
       tx,
       utxos,
@@ -114,7 +119,7 @@ switch (chain) {
   }
   case 'DOGE': {
     const lib = Utils.libs[chain];
-    const ledgerAddress = await ledger.getAddress({ chain });
+    const ledgerAddress = await HwProxy.getAddress({ wallet: 'ledger', transport: 'speculos', chain });
     const receivingAddress = new lib.PrivateKey().toAddress().toString();
 
     const fee = 1_000_000;
@@ -162,7 +167,9 @@ switch (chain) {
       fee
     });
 
-    const signedTransaction = await ledger.sign({
+    const signedTransaction = await HwProxy.sign({
+      wallet: 'ledger',
+      transport: 'speculos',
       chain: 'DOGE',
       tx,
       utxos,
@@ -174,7 +181,7 @@ switch (chain) {
   }
   case 'BCH': {
     const lib = Utils.libs[chain];
-    const ledgerAddress = await ledger.getAddress({ chain });
+    const ledgerAddress = await HwProxy.getAddress({ wallet: 'ledger', transport: 'speculos', chain });
     const receivingAddress = new lib.PrivateKey().toAddress().toString();
       
     const fee = 362;
@@ -223,7 +230,9 @@ switch (chain) {
       fee
     });
 
-    const signedTransaction = await ledger.sign({
+    const signedTransaction = await HwProxy.sign({
+      wallet: 'ledger',
+      transport: 'speculos',
       chain: 'BCH',
       tx,
       utxos,
@@ -236,7 +245,7 @@ switch (chain) {
   default:
   case 'BTC': {
     const lib = Utils.libs[chain];
-    const ledgerAddress = await ledger.getAddress({ chain });
+    const ledgerAddress = await HwProxy.getAddress({ wallet: 'ledger', transport: 'speculos', chain });
     const receivingAddress = new lib.PrivateKey().toAddress().toString();
 
     const utxos = [
@@ -262,7 +271,9 @@ switch (chain) {
       utxos
     });
     
-    const signedTransaction = await ledger.sign({
+    const signedTransaction = await HwProxy.sign({
+      wallet: 'ledger',
+      transport: 'speculos',
       chain: 'BTC',
       tx,
       utxos
@@ -273,5 +284,5 @@ switch (chain) {
   }
 }
 
-await ledger.disconnect();
+await HwProxy.disconnect();
 process.exit(0);

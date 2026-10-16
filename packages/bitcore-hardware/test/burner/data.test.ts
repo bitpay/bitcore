@@ -2,34 +2,42 @@ import { expect } from 'chai';
 import { describe } from 'mocha';
 import CWC, { BitcoreLib, ethers } from '@bitpay-labs/crypto-wallet-core';
 import Burner from '../../src/burner.js';
+import { HwProxy } from '../../src/index.js';
 
 const { PrivateKey, Address } = BitcoreLib;
 
 describe('Burner Data', function () {
-  const burner = new Burner();
   const privateKey = new PrivateKey();
   const publicKey = privateKey.toPublicKey();
   const address = Address.fromPublicKey(publicKey, 'livenet', 'witnesspubkeyhash');
   const etherAddress = ethers.computeAddress('0x' + publicKey.toString());
 
-  before(function () {
+  before(async function () {
     this.timeout(5_000);
+    await HwProxy.connect();
+  });
+
+  after(async function () {
+    await HwProxy.disconnect();
   });
 
   beforeEach(function () {
-    burner.responses.clear();
-    burner.commandQueue.clear();
+    HwProxy.get('burner').responses.clear();
+    HwProxy.get('burner').commandQueue.clear();
   });
 
   afterEach(function () {
-    expect(burner.responses.size).to.equal(0, 'response queue not cleaning properly');
-    expect(burner.commandQueue.size).to.equal(0, 'command queue not cleaning properly');
+    expect(HwProxy.get('burner').responses.size).to.equal(0, 'response queue not cleaning properly');
+    expect(HwProxy.get('burner').commandQueue.size).to.equal(0, 'command queue not cleaning properly');
   });
 
   it('should get public key', async function () {
-    const publicKeyRequest: Promise<string> = burner.getPublicKey({ index: 9 });
+    const publicKeyRequest: Promise<string> = HwProxy.getPublicKey({
+      wallet: 'burner',
+      transport: 'nfc'
+    });
 
-    burner.responses.set(
+    HwProxy.get('burner').responses.set(
       'get_data_struct_v20',
       {
         publicKey: {
@@ -45,8 +53,12 @@ describe('Burner Data', function () {
   });
 
   it('should get bitcoin address', async function () {
-    const addressRequest: Promise<string> = burner.getAddress({ chain: 'BTC', index: 9 });
-    burner.responses.set(
+    const addressRequest: Promise<string> = HwProxy.getAddress({
+      wallet: 'burner',
+      transport: 'nfc',
+      chain: 'BTC'
+    });
+    HwProxy.get('burner').responses.set(
       'get_data_struct_v20',
       {
         compressedPublicKey: {
@@ -61,8 +73,12 @@ describe('Burner Data', function () {
   });
 
   it('should get return undefined for invalid bitcoin address', async function () {
-    const addressRequest: Promise<string> = burner.getAddress({ chain: 'BTC', index: 9 });
-    burner.responses.set(
+    const addressRequest: Promise<string> = HwProxy.getAddress({
+      wallet: 'burner',
+      transport: 'nfc',
+      chain: 'BTC'
+    });
+    HwProxy.get('burner').responses.set(
       'get_data_struct_v20',
       {
         compressedPublicKey: {
@@ -77,8 +93,12 @@ describe('Burner Data', function () {
   });
   
   it('should get ethereum address', async function () {
-    const addressRequest: Promise<string> = burner.getAddress({ chain: 'ETH', index: 9 });
-    burner.responses.set(
+    const addressRequest: Promise<string> = HwProxy.getAddress({
+      wallet: 'burner',
+      transport: 'nfc',
+      chain: 'ETH'
+    });
+    HwProxy.get('burner').responses.set(
       'get_data_struct_v20',
       {
         publicKey: {
@@ -93,8 +113,12 @@ describe('Burner Data', function () {
   });
 
   it('should get return undefined for invalid ethereum address', async function () {
-    const addressRequest: Promise<string> = burner.getAddress({ chain: 'ETH', index: 9 });
-    burner.responses.set(
+    const addressRequest: Promise<string> = HwProxy.getAddress({
+      wallet: 'burner',
+      transport: 'nfc',
+      chain: 'ETH'
+    });
+    HwProxy.get('burner').responses.set(
       'get_data_struct_v20',
       {
         publicKey: {
@@ -117,7 +141,7 @@ describe('Burner Data', function () {
   
   it('should throw error when filling queue', async function () {
     for (let i = 0; i < 100; i++) {
-      burner.commandQueue.set(
+      HwProxy.get('burner').commandQueue.set(
         'get_data_struct_v2' + i,
         {
           name: 'get_data_struct_v2',
@@ -127,11 +151,11 @@ describe('Burner Data', function () {
     }
     let error = false;
     try {
-      await burner.getPublicKey({ index: 9 });
+      await HwProxy.getPublicKey({ wallet: 'burner', transport: 'nfc' });
     } catch (e) {
       error = true;
     }
     expect(error, 'did not throw error when filling queue').to.be.true;
-    burner.commandQueue.clear();
+    HwProxy.get('burner').commandQueue.clear();
   });
 });

@@ -1,17 +1,16 @@
 import 'source-map-support/register.js';
-import Ledger from '../../src/ledger/wallet.js';
+import { HwProxy } from '../../src/index.js';
 
 const args = process.argv.slice(2);
 const chain = args[0]?.toUpperCase() || 'BTC';
 
-if (!Ledger.isValidChain(chain)) {
+if (!HwProxy.isValidChain('ledger', chain)) {
   throw new Error(`Invalid chain: ${chain}`);
 }
 
-const ledger = new Ledger({ transport: 'speculos' });
-await ledger.connect();
+await HwProxy.connect();
 
 console.log('Awaiting approval from your ledger...');
-console.log(await ledger.getPublicKey({ chain }));
-await ledger.disconnect();
+console.log(await HwProxy.getPublicKey({ wallet: 'ledger', transport: 'speculos', chain }));
+await HwProxy.disconnect();
 process.exit(0);
