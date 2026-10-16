@@ -149,7 +149,10 @@ export class RangoService {
     const qs = this.rangoQs({
       apiKey: keys.API_KEY,
       blockchains: RANGO_ALLOWED_BLOCKCHAINS.join(','),
-      excludeNonPopulars: req.body?.excludeNonPopulars === false ? 'false' : 'true'
+      // Pinned, not client-controlled. With the chain filter but
+      // excludeNonPopulars=false Rango still returns ~32,800 tokens / 12.9 MB,
+      // which an unauthenticated caller could pull repeatedly on our API key.
+      excludeNonPopulars: 'true'
     });
 
     return this.rangoGet(keys.API + `/basic/meta?${qs}`);
