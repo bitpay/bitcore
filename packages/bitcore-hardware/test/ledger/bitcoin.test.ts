@@ -23,14 +23,28 @@ describe('Ledger Bitcoin', function () {
     await ledger.disconnect();
   });
 
-  it('should get address and publickey', async () => {
+  it('should get matching address and publickey', async () => {
     const publicKey = await ledger.getPublicKey({ chain: 'BTC' });
     const address = await ledger.getAddress({ chain: 'BTC' });
 
-    expect(BitcoreLib.Address.fromPublicKey(new BitcoreLib.PublicKey(publicKey), 'livenet', 'witnesspubkeyhash').toString()).to.equal(address);
+    expect(publicKey, 'public key hex').to.match(/^0[23][0-9a-f]{64}$/i); // compressed secp256k1
+    expect(address, 'address').to.be.a('string');
+
+    const expected = BitcoreLib.Address.fromPublicKey(
+      new BitcoreLib.PublicKey(publicKey),
+      'livenet',
+      'witnesspubkeyhash'
+    ).toString();
+
+    expect(address).to.equal(expected);
+    expect(address).to.match(/^bc1q[02-9ac-hj-np-z]{38}$/); // bech32 P2WPKH format
+    expect(BitcoreLib.Address.isValid(address, 'livenet')).to.be.true;
   });
 
   it('should sign a transaction', async () => {
+    const satoshis = 100_000;
+    const fee = 1000;
+    const address = await ledger.getAddress({ chain: 'BTC' });
     const utxos = [
       {
         chain: 'BTC',
@@ -41,16 +55,16 @@ describe('Ledger Bitcoin', function () {
         mintTxid: '78519a191327dfdc0c2ea64a04d09d87c3909ce8365d0e0c0dbd0bc80d0405b4',
         mintHeight: 957071,
         spentHeight: -2,
-        address: await ledger.getAddress({ chain: 'BTC' }),
-        script: BitcoreLib.Script.buildWitnessV0Out(new BitcoreLib.Address('bc1qqtl9jlrwcr3fsfcjj2du7pu6fcgaxl5dsw2vyg')).toString(),
-        value: 1562,
+        address,
+        script: BitcoreLib.Script.buildWitnessV0Out(address).toString(),
+        value: satoshis,
         confirmations: -1
       }
     ];
     
     const tx: string = CWC.Transactions.create({
       chain: 'BTC',
-      recipients: [{ address: 'bc1qm5anagcsad5kx2kuq3lv0j5zaxkxr7teuk9wfa', amount: 1200 }],
+      recipients: [{ address: 'bc1qm5anagcsad5kx2kuq3lv0j5zaxkxr7teuk9wfa', amount: satoshis - fee }],
       utxos
     });
     
@@ -72,7 +86,7 @@ describe('Ledger Bitcoin', function () {
 
     const signedTransaction = new BitcoreLib.Transaction(signedTransactionHex);
     expect(signedTransaction.inputs[0].prevTxId.toString('hex')).to.equal('78519a191327dfdc0c2ea64a04d09d87c3909ce8365d0e0c0dbd0bc80d0405b4');
-    expect(signedTransaction.outputs[0].satoshis).to.equal(1200);
+    expect(signedTransaction.outputs[0].satoshis).to.equal(satoshis - fee);
     expect(signedTransaction.verify()).to.be.true;
   });
 });

@@ -24,11 +24,21 @@ describe('Ledger Bitcoin Cash', function () {
   });
 
 
-  it('should get address and publickey', async () => {
+  it('should get matching address and publickey', async () => {
     const publicKey = await ledger.getPublicKey({ chain: 'BCH' });
     const address = await ledger.getAddress({ chain: 'BCH' });
 
-    expect(BitcoreLibCash.Address.fromPublicKey(new BitcoreLibCash.PublicKey(publicKey), 'livenet', 'pubkeyhash').toString()).to.equal(address);
+    expect(publicKey, 'public key hex').to.match(/^0[23][0-9a-f]{64}$/i); // compressed secp256k1
+    expect(address, 'address').to.be.a('string');
+
+    const expected = BitcoreLibCash.Address.fromPublicKey(
+      new BitcoreLibCash.PublicKey(publicKey),
+      'livenet'
+    ).toCashAddress();
+
+    expect(address).to.equal(expected);
+    expect(address).to.match(/^bitcoincash:q[a-z0-9]{41}$/); // CashAddr P2PKH format
+    expect(BitcoreLibCash.Address.isValid(address, 'livenet')).to.be.true;
   });
 
   it('should sign a transaction', async () => {

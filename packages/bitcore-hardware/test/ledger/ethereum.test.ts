@@ -26,15 +26,20 @@ describe('Ledger Ethereum', function () {
   it('should get address and publickey', async () => {
     const publicKey = await ledger.getPublicKey({ chain: 'ETH' });
     const address = await ledger.getAddress({ chain: 'ETH' });
-  
+
+    expect(publicKey, 'public key hex').to.match(/^04[0-9a-f]{128}$/i); // uncompressed secp256k1 (65 bytes)
+    expect(address, 'address').to.match(/^0x[0-9a-fA-F]{40}$/);
+    expect(ethers.getAddress(address), 'EIP-55 checksum').to.equal(address);
+
     expect(ethers.computeAddress('0x' + publicKey)).to.equal(address);
     expect(ethers.isAddress(address)).to.be.true;
   });
 
   it('should sign a transaction', async () => {
+    const amount = 3896000000000000;
     const tx = CWC.Transactions.create({
       chain: 'ETH',
-      recipients: [{ address: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A', amount: 3896000000000000 }],
+      recipients: [{ address: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A', amount }],
       nonce: 0,
       gasPrice: 21000,
       data: '0x'
@@ -57,7 +62,7 @@ describe('Ledger Ethereum', function () {
     expect(signedTransaction.nonce).to.equal(0);
     expect(signedTransaction.gasLimit).to.equal(0n);
     expect(signedTransaction.gasPrice).to.equal(21000n);
-    expect(signedTransaction.value).to.equal(3896000000000000n);
+    expect(signedTransaction.value).to.equal(BigInt(amount));
     expect(signedTransaction.chainId).to.equal(1n);
 
     const address = signedTransaction.from;

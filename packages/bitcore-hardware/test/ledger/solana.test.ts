@@ -23,11 +23,13 @@ describe('Ledger Solana', function () {
     await ledger.disconnect();
   });
 
-  it('should get address and publickey', async () => {
+  it('should get address/publickey', async () => {
     const publicKey = await ledger.getPublicKey({ chain: 'SOL' });
     const address = await ledger.getAddress({ chain: 'SOL' });
 
     expect(publicKey).to.equal(address);
+    expect(address, 'address').to.match(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/); // base58
+    expect(SolKit.getBase58Encoder().encode(address).byteLength, 'decoded key length').to.equal(32); // ed25519 public key
     expect(SolKit.isAddress(address)).to.be.true;
   });
 

@@ -24,11 +24,22 @@ describe('Ledger Dogecoin', function () {
   });
 
 
-  it('should get address and publickey', async () => {
+  it('should get matching address and publickey', async () => {
     const publicKey = await ledger.getPublicKey({ chain: 'DOGE' });
     const address = await ledger.getAddress({ chain: 'DOGE' });
 
-    expect(BitcoreLibDoge.Address.fromPublicKey(new BitcoreLibDoge.PublicKey(publicKey), 'livenet', 'pubkeyhash').toString()).to.equal(address);
+    expect(publicKey, 'public key hex').to.match(/^0[23][0-9a-f]{64}$/i); // compressed secp256k1
+    expect(address, 'address').to.be.a('string');
+
+    const expected = BitcoreLibDoge.Address.fromPublicKey(
+      new BitcoreLibDoge.PublicKey(publicKey),
+      'livenet',
+      'pubkeyhash'
+    ).toString();
+
+    expect(address).to.equal(expected);
+    expect(address).to.match(/^D[1-9A-HJ-NP-Za-km-z]{33}$/); // base58check P2PKH format
+    expect(BitcoreLibDoge.Address.isValid(address, 'livenet')).to.be.true;
   });
 
   it('should sign a transaction', async () => {
