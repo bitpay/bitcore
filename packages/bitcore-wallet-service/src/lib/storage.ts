@@ -288,27 +288,19 @@ export class Storage {
     );
   }
 
-  fetchCopayerLookup(copayerId: string, cb: (err?: any, copayer?: Copayer) => void) {
-    this.db.collection(collections.COPAYERS_LOOKUP).findOne(
-      {
-        copayerId
-      },
-      (err, result) => {
-        if (err) return cb(err);
-        if (!result) return cb();
-
-        if (!result.requestPubKeys) {
-          result.requestPubKeys = [
-            {
-              key: result.requestPubKey,
-              signature: result.signature
-            }
-          ];
+  async fetchCopayerLookup(copayerId: string): Promise<Copayer | undefined> {
+    const result = await this.db.collection(collections.COPAYERS_LOOKUP).findOne({ copayerId });
+    if (!result) return;
+    if (!result.requestPubKeys) {
+      result.requestPubKeys = [
+        {
+          key: result.requestPubKey,
+          signature: result.signature
         }
+      ];
+    }
 
-        return cb(null, Copayer.fromObj(result));
-      }
-    );
+    return Copayer.fromObj(result);
   }
 
   // TODO: should be done client-side
@@ -1806,16 +1798,42 @@ export class Storage {
     return this.db.collection(collections.TSS_KEYGEN).insertOne(doc);
   }
 
-  async storeTssKeyGenParticipant({ id, partyId, copayerId }: { id: string; partyId: number; copayerId: string }) {
-    return this.db.collection(collections.TSS_KEYGEN).updateOne(
-      { id },
+  async storeTssKeyGenAuthPublicKey({ id, partyId, authPublicKey, __v }: { id: string; partyId: number; authPublicKey: string; __v: number }) {
+    const result = await this.db.collection(collections.TSS_KEYGEN).updateOne(
+      { id, __v },
       {
         $set: {
-          [`participants.${partyId}`]: copayerId
+          [`authPublicKeys.${partyId}`]: authPublicKey
+        },
+        $inc: {
+          __v: 1
         }
       },
       { upsert: false }
     );
+    if (!result.matchedCount) {
+      throw new Error('MONGO_DOC_OUTDATED: No document found for version ' + __v);
+    }
+    return result;
+  }
+
+  async storeTssKeyGenParticipant({ id, partyId, copayerId, __v }: { id: string; partyId: number; copayerId: string; __v: number }) {
+    const result = await this.db.collection(collections.TSS_KEYGEN).updateOne(
+      { id, __v },
+      {
+        $set: {
+          [`participants.${partyId}`]: copayerId
+        },
+        $inc: {
+          __v: 1
+        }
+      },
+      { upsert: false }
+    );
+    if (!result.matchedCount) {
+      throw new Error('MONGO_DOC_OUTDATED: No document found for version ' + __v);
+    }
+    return result;
   }
 
   async storeTssKeyGenMessage({ id, message, __v }: { id: string; message: ITssKeyMessageObject; __v: number }) {

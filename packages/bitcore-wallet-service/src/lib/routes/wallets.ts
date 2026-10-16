@@ -230,13 +230,13 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
 
       const storage = WalletService.getStorage();
       const existing = await Promise.all<{ copayerId: string; verified: boolean }>(copayers.map(c => new Promise((resolve) => {
-        storage.fetchCopayerLookup(c.copayerId, (err, copayer) => {
-          if (err || !copayer) {
-            return resolve({ copayerId: c.copayerId, verified: false });
+        storage.fetchCopayerLookup(c.copayerId).then(copayer => {
+          if (!copayer) {
+            throw new Error('Catch me & resolve with verified: false');
           }
           const verified = copayer.requestPubKeys.some(pubkey => Utils.verifyMessage(c.copayerId, c.signature, pubkey.key));
           return resolve({ copayerId: c.copayerId, verified });
-        });
+        }).catch(() => resolve({ copayerId: c.copayerId, verified: false }));
       })));
       return res.json(existing.filter(e => e.verified).map(e => e.copayerId));
     } catch (err) {

@@ -44,10 +44,14 @@ export interface ITssKeyGenModel {
    */
   n: number;
   /**
-   * The list of public keys of the participants in the TSS key generation process.
-   * The pub keys are in partyId order.
+   * The list of copayer IDs of the participants in the TSS key generation process.
+   * They are in partyId order.
    */
   participants: Array<string>;
+  /**
+   * The list of authentication public keys corresponding to the participants in the TSS key generation process.
+   */
+  authPublicKeys: Array<string>;
   /**
    * An array of the rounds in round order. Each round is an array of messages
    */
@@ -89,6 +93,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
   id: string;
   n: number;
   participants: Array<string>;
+  authPublicKeys: Array<string>;
   rounds: Array<Array<{
     fromPartyId: number;
     messages: ITssKeyMessageObject;
@@ -136,6 +141,8 @@ export class TssKeyGenModel implements ITssKeyGenModel {
     x.n = n;
     x.participants = new Array(n);
     x.participants[partyId] = copayerId;
+    x.authPublicKeys = new Array(n);
+    x.authPublicKeys[partyId] = message.publicKey;
     x.rounds = [[{
       fromPartyId: partyId,
       messages: message
@@ -154,6 +161,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
     x.schemeVersion = obj.schemeVersion;
     x.n = obj.n;
     x.participants = obj.participants;
+    x.authPublicKeys = obj.authPublicKeys;
     x.rounds = obj.rounds;
     x.sharedPublicKey = obj.sharedPublicKey;
     x.joinPassword = obj.joinPassword;
