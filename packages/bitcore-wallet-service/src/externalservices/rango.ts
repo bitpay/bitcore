@@ -12,8 +12,70 @@ import { checkRequired } from '../lib/server';
  *
  * Docs: https://docs.rango.exchange/api-integration/basic-api-single-step
  */
+/**
+ * Chains BitPay custodies. The metadata route is public, so the chain filter
+ * is pinned here rather than taken from the request — an unfiltered
+ * /basic/meta is ~13 MB, which an unauthenticated caller could otherwise make
+ * BWS fetch and re-serve on our API key.
+ */
+const RANGO_ALLOWED_BLOCKCHAINS = [
+  'BTC',
+  'BCH',
+  'DOGE',
+  'LTC',
+  'ETH',
+  'POLYGON',
+  'ARBITRUM',
+  'BASE',
+  'OPTIMISM',
+  'SOLANA'
+];
+
+/** Rango caps the referrer fee at 3%. */
+const RANGO_MAX_REFERRER_FEE = 3;
+
 export class RangoService {
   request: any = request;
+
+  /**
+   * Builds a query string with every value percent-encoded.
+   *
+   * Asset identifiers are user-influenced and routinely contain characters
+   * that change a URL's meaning: '.' and '--' always, and symbols such as
+   * 'USD₮0' are already listed on chains we support. Raw concatenation lets a
+   * '#' truncate the query (dropping apiKey) or an '&' inject parameters.
+   */
+  private rangoQs(params: Record<string, string | number | undefined>): string {
+    return Object.entries(params)
+      .filter(([, v]) => v !== undefined && v !== null && v !== '')
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+      .join('&');
+  }
+
+  /**
+   * Referrer fee and address are read from server config only. They are never
+   * taken from the request: a client could otherwise redirect BitPay's
+   * affiliate revenue to its own address, or zero the fee.
+   *
+   * Both are applied together or not at all — Rango's quote endpoint needs the
+   * fee to price the route and the swap endpoint needs both, so setting one
+   * without the other makes the quoted output differ from what the user gets.
+   */
+  private rangoReferrer(keys: {
+    REFERRER_ADDRESS: string;
+    REFERRER_FEE: string;
+  }): { referrerFee?: string; referrerAddress?: string } {
+    const fee = Number(keys.REFERRER_FEE);
+    if (!keys.REFERRER_ADDRESS || !keys.REFERRER_FEE || !Number.isFinite(fee)) {
+      return {};
+    }
+    if (fee <= 0 || fee > RANGO_MAX_REFERRER_FEE) {
+      throw new Error(
+        `Rango referrerFee must be between 0 and ${RANGO_MAX_REFERRER_FEE}, got ${keys.REFERRER_FEE}`
+      );
+    }
+    return { referrerFee: keys.REFERRER_FEE, referrerAddress: keys.REFERRER_ADDRESS };
+  }
 
   private rangoGetKeys(req) {
     if (!config.rango) throw new Error('Rango missing credentials');
@@ -21,6 +83,10 @@ export class RangoService {
     const env: 'sandbox' | 'production' = req.body.env === 'production' ? 'production' : 'sandbox';
 
     delete req.body.env;
+
+    if (!config.rango[env]) {
+      throw new ClientError(`Rango is not configured for the ${env} environment`);
+    }
 
     const keys: {
       API: string;
@@ -71,27 +137,22 @@ export class RangoService {
    */
   rangoGetSupportedChains(req): Promise<any> {
     const keys = this.rangoGetKeys(req);
-    const qs: string[] = [];
-    qs.push('apiKey=' + keys.API_KEY);
-
-    const URL: string = keys.API + `/basic/meta/blockchains?${qs.join('&')}`;
-    return this.rangoGet(URL);
+    const qs = this.rangoQs({ apiKey: keys.API_KEY });
+    return this.rangoGet(keys.API + `/basic/meta/blockchains?${qs}`);
   }
 
   rangoGetCryptoCurrencies(req): Promise<any> {
     const keys = this.rangoGetKeys(req);
-    const qs: string[] = [];
-    qs.push('apiKey=' + keys.API_KEY);
 
-    if (req.body.blockchains) qs.push('blockchains=' + req.body.blockchains);
-    if (req.body.blockchainsExclude) qs.push('blockchainsExclude=' + req.body.blockchainsExclude);
-    if (req.body.swappers) qs.push('swappers=' + req.body.swappers);
-    if (req.body.swappersExclude) qs.push('swappersExclude=' + req.body.swappersExclude);
-    if (req.body.transactionTypes) qs.push('transactionTypes=' + req.body.transactionTypes);
-    if (req.body.excludeNonPopulars) qs.push('excludeNonPopulars=' + req.body.excludeNonPopulars);
+    // Blockchains are NOT taken from the request. This route is public and an
+    // unfiltered response is multi-megabyte.
+    const qs = this.rangoQs({
+      apiKey: keys.API_KEY,
+      blockchains: RANGO_ALLOWED_BLOCKCHAINS.join(','),
+      excludeNonPopulars: req.body?.excludeNonPopulars === false ? 'false' : 'true'
+    });
 
-    const URL: string = keys.API + `/basic/meta?${qs.join('&')}`;
-    return this.rangoGet(URL);
+    return this.rangoGet(keys.API + `/basic/meta?${qs}`);
   }
 
   /**
@@ -105,25 +166,25 @@ export class RangoService {
       return Promise.reject(new ClientError("Rango's request missing arguments"));
     }
 
-    const qs: string[] = [];
-    qs.push('apiKey=' + keys.API_KEY);
-    qs.push('from=' + req.body.from);
-    qs.push('to=' + req.body.to);
-    qs.push('amount=' + req.body.amount);
-    qs.push('slippage=' + (req.body.slippage ?? 1.5));
+    let referrer;
+    try {
+      referrer = this.rangoReferrer(keys);
+    } catch (err) {
+      return Promise.reject(new ClientError(err.message));
+    }
 
-    // The referrer fee must match between quote and swap or the quoted output
-    // will not match what the user receives.
-    const referrerFee = req.body.referrerFee ?? keys.REFERRER_FEE;
-    if (referrerFee) qs.push('referrerFee=' + referrerFee);
+    const qs = this.rangoQs({
+      apiKey: keys.API_KEY,
+      from: req.body.from,
+      to: req.body.to,
+      amount: req.body.amount,
+      slippage: req.body.slippage ?? 1.5,
+      // Must match the swap call exactly or the quoted output is not what the
+      // user receives.
+      referrerFee: referrer.referrerFee
+    });
 
-    if (req.body.fromAddress) qs.push('fromAddress=' + req.body.fromAddress);
-    if (req.body.toAddress) qs.push('toAddress=' + req.body.toAddress);
-    if (req.body.swappers) qs.push('swappers=' + req.body.swappers);
-    if (req.body.swappersExclude) qs.push('swappersExclude=' + req.body.swappersExclude);
-
-    const URL: string = keys.API + `/basic/quote?${qs.join('&')}`;
-    return this.rangoGet(URL);
+    return this.rangoGet(keys.API + `/basic/quote?${qs}`);
   }
 
   /**
@@ -138,31 +199,27 @@ export class RangoService {
       return Promise.reject(new ClientError("Rango's request missing arguments"));
     }
 
-    const qs: string[] = [];
-    qs.push('apiKey=' + keys.API_KEY);
-    qs.push('from=' + req.body.from);
-    qs.push('to=' + req.body.to);
-    qs.push('amount=' + req.body.amount);
-    qs.push('slippage=' + (req.body.slippage ?? 1.5));
-    qs.push('fromAddress=' + req.body.fromAddress);
-    qs.push('toAddress=' + req.body.toAddress);
-
-    // referrerAddress is where BitPay's cut lands. Rango supports EVM,
-    // Starknet and Osmosis addresses for this; Solana fee collection is not
-    // generally available, so routes originating on Solana may collect nothing.
-    const referrerFee = req.body.referrerFee ?? keys.REFERRER_FEE;
-    const referrerAddress = req.body.referrerAddress ?? keys.REFERRER_ADDRESS;
-    if (referrerFee && referrerAddress) {
-      qs.push('referrerFee=' + referrerFee);
-      qs.push('referrerAddress=' + referrerAddress);
+    let referrer;
+    try {
+      referrer = this.rangoReferrer(keys);
+    } catch (err) {
+      return Promise.reject(new ClientError(err.message));
     }
 
-    if (req.body.disableEstimate) qs.push('disableEstimate=' + req.body.disableEstimate);
-    if (req.body.swappers) qs.push('swappers=' + req.body.swappers);
-    if (req.body.swappersExclude) qs.push('swappersExclude=' + req.body.swappersExclude);
+    const qs = this.rangoQs({
+      apiKey: keys.API_KEY,
+      from: req.body.from,
+      to: req.body.to,
+      amount: req.body.amount,
+      slippage: req.body.slippage ?? 1.5,
+      fromAddress: req.body.fromAddress,
+      toAddress: req.body.toAddress,
+      referrerFee: referrer.referrerFee,
+      referrerAddress: referrer.referrerAddress,
+      disableEstimate: req.body.disableEstimate
+    });
 
-    const URL: string = keys.API + `/basic/swap?${qs.join('&')}`;
-    return this.rangoGet(URL);
+    return this.rangoGet(keys.API + `/basic/swap?${qs}`);
   }
 
   /**
@@ -176,13 +233,13 @@ export class RangoService {
       return Promise.reject(new ClientError("Rango's request missing arguments"));
     }
 
-    const qs: string[] = [];
-    qs.push('apiKey=' + keys.API_KEY);
-    qs.push('requestId=' + req.body.requestId);
-    qs.push('txId=' + req.body.txId);
+    const qs = this.rangoQs({
+      apiKey: keys.API_KEY,
+      requestId: req.body.requestId,
+      txId: req.body.txId
+    });
 
-    const URL: string = keys.API + `/basic/status?${qs.join('&')}`;
-    return this.rangoGet(URL);
+    return this.rangoGet(keys.API + `/basic/status?${qs}`);
   }
 
   /**
@@ -197,13 +254,13 @@ export class RangoService {
       return Promise.reject(new ClientError("Rango's request missing arguments"));
     }
 
-    const qs: string[] = [];
-    qs.push('apiKey=' + keys.API_KEY);
-    qs.push('requestId=' + req.body.requestId);
-    qs.push('txId=' + req.body.txId);
+    const qs = this.rangoQs({
+      apiKey: keys.API_KEY,
+      requestId: req.body.requestId,
+      txId: req.body.txId
+    });
 
-    const URL: string = keys.API + `/basic/is-approved?${qs.join('&')}`;
-    return this.rangoGet(URL);
+    return this.rangoGet(keys.API + `/basic/is-approved?${qs}`);
   }
 
   /**
@@ -223,7 +280,7 @@ export class RangoService {
         'Content-Type': 'application/json'
       };
 
-      const URL: string = keys.API + `/basic/report-tx?apiKey=${keys.API_KEY}`;
+      const URL: string = keys.API + `/basic/report-tx?${this.rangoQs({ apiKey: keys.API_KEY })}`;
 
       this.request.post(
         URL,
