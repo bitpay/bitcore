@@ -163,3 +163,145 @@ describe('TSS session subscriptions', function() {
   });
 
 });
+describe('TSS join delivery', function() {
+  const sandbox = sinon.createSandbox();
+  let TssKeyGen: typeof import('../src/lib/tss').TssKeyGen;
+  let storage: Storage;
+  let session: TssKeyGenModel;
+  let storeDelivery: sinon.SinonStub;
+  let fetchSession: sinon.SinonStub;
+
+  const rec = (partyId: number, tag = '') => ({ partyId, encryptedMessage: 'ct' + partyId + tag, signature: 'sig' + partyId + tag });
+  const publish = (records: any, extra: object = {}) =>
+    TssKeyGen.storeJoinDelivery({ id: 'session', version: 1, records, copayerId: 'alice', ...extra });
+  const rejection = (p: Promise<any>) => p.then(() => undefined, err => err);
+
+  before(async function() {
+    ({ TssKeyGen } = await import('../src/lib/tss'));
+  });
+
+  beforeEach(function() {
+    storage = new Storage();
+    sandbox.stub(WalletService, 'getStorage').returns(storage);
+    session = Object.assign(new TssKeyGenModel(), {
+      id: 'session', n: 3, participants: ['alice', 'bob', 'carol'], rounds: [[]]
+    });
+    fetchSession = sandbox.stub(storage, 'fetchTssKeyGenSession').callsFake(async () => session);
+    storeDelivery = sandbox.stub(storage, 'storeTssKeyJoinDelivery').callsFake(async ({ delivery }) => {
+      session.bwsJoinDelivery = delivery;
+      return { result: { ok: 1 }, matchedCount: 1 } as any;
+    });
+  });
+
+  afterEach(function() {
+    sandbox.restore();
+  });
+
+  it('stores one complete set covering exactly the noncreator participants', async function() {
+    await publish([rec(2), { ...rec(1), extra: 'dropped' }]);
+    expect(storeDelivery.calledOnce).to.equal(true);
+    expect(session.bwsJoinDelivery).to.deep.equal({ version: 1, records: [rec(1), rec(2)] });
+  });
+
+  it('rejects bad sets without changing stored delivery', async function() {
+    await publish([rec(1), rec(2)]);
+    const stored = JSON.stringify(session.bwsJoinDelivery);
+    storeDelivery.resetHistory();
+    const big = 'x'.repeat(16 * 1024 + 1);
+    const bad: Array<{ name: string; records: any; extra?: object; message: string }> = [
+      { name: 'missing recipient', records: [rec(1)], message: 'expected one record' },
+      { name: 'too many records', records: [rec(1), rec(2), rec(3)], message: 'expected one record' },
+      { name: 'duplicate recipient', records: [rec(1), rec(1)], message: 'duplicate recipient' },
+      { name: 'creator-addressed', records: [rec(0), rec(1)], message: 'unknown recipient' },
+      { name: 'unknown recipient', records: [rec(1), rec(3)], message: 'unknown recipient' },
+      { name: 'non-integer party', records: [rec(1), { ...rec(2), partyId: '2' }], message: 'unknown recipient' },
+      { name: 'empty ciphertext', records: [rec(1), { ...rec(2), encryptedMessage: '' }], message: 'malformed record' },
+      { name: 'non-string signature', records: [rec(1), { ...rec(2), signature: {} }], message: 'malformed record' },
+      { name: 'oversized ciphertext', records: [rec(1), { ...rec(2), encryptedMessage: big }], message: 'malformed record' },
+      { name: 'non-array', records: 'nope', message: 'expected one record' },
+      { name: 'null record', records: [rec(1), null], message: 'unknown recipient' },
+      { name: 'unsupported version', records: [rec(1), rec(2)], extra: { version: 2 }, message: 'unsupported version' },
+    ];
+    for (const { name, records, extra, message } of bad) {
+      const err = await rejection(publish(records, extra));
+      expect(err, name).to.have.property('message').that.includes('Invalid join delivery: ' + message);
+    }
+    expect(storeDelivery.called).to.equal(false);
+    expect(JSON.stringify(session.bwsJoinDelivery)).to.equal(stored);
+  });
+
+  it('rejects a recipient that has not enrolled in the session roster', async function() {
+    session.participants = ['alice', 'bob', null];
+    expect(await rejection(publish([rec(1), rec(2)]))).to.have.property('message', 'Invalid join delivery: unknown recipient');
+    expect(storeDelivery.called).to.equal(false);
+    expect(session.bwsJoinDelivery).to.equal(undefined);
+  });
+
+  it('rejects publication by a noncreator', async function() {
+    expect(await rejection(publish([rec(1), rec(2)], { copayerId: 'bob' })))
+      .to.have.property('message', 'Only the session creator can store the join delivery');
+    expect(storeDelivery.called).to.equal(false);
+  });
+
+  it('rejects a missing session', async function() {
+    const { Errors } = await import('../src/lib/errors/errordefinitions');
+    fetchSession.resolves(null);
+    expect(await rejection(publish([rec(1), rec(2)]))).to.equal(Errors.TSS_SESSION_NOT_FOUND);
+    expect(storeDelivery.called).to.equal(false);
+  });
+
+  it('fails if storage matched no session', async function() {
+    storeDelivery.resolves({ result: { ok: 1 }, matchedCount: 0 });
+    expect(await rejection(publish([rec(1), rec(2)])))
+      .to.have.property('message', 'Failed to store TSS key generation join delivery');
+  });
+
+  it('returns only the calling party record and does not consume the delivery', async function() {
+    await publish([rec(1), rec(2)]);
+    const before = JSON.stringify(session);
+    for (let i = 0; i < 2; i++) {
+      expect(await TssKeyGen.getJoinDelivery({ id: 'session', copayerId: 'bob' }))
+        .to.deep.equal({ version: 1, encryptedMessage: 'ct1', signature: 'sig1' });
+    }
+    expect(await TssKeyGen.getJoinDelivery({ id: 'session', copayerId: 'carol' }))
+      .to.deep.equal({ version: 1, encryptedMessage: 'ct2', signature: 'sig2' });
+    expect(JSON.stringify(session)).to.equal(before);
+  });
+
+  it('reports pending before publication, distinguishable from other errors', async function() {
+    const { Errors } = await import('../src/lib/errors/errordefinitions');
+    expect(await rejection(TssKeyGen.getJoinDelivery({ id: 'session', copayerId: 'bob' })))
+      .to.equal(Errors.TSS_JOIN_DELIVERY_PENDING);
+  });
+
+  it('gives outsiders and the creator no delivery', async function() {
+    const { Errors } = await import('../src/lib/errors/errordefinitions');
+    await publish([rec(1), rec(2)]);
+    expect(await rejection(TssKeyGen.getJoinDelivery({ id: 'session', copayerId: 'mallory' })))
+      .to.equal(Errors.TSS_NON_PARTICIPANT);
+    expect(await rejection(TssKeyGen.getJoinDelivery({ id: 'session', copayerId: 'alice' })))
+      .to.have.property('message', 'The session creator has no join delivery');
+  });
+
+  it('lets a complete replacement set overwrite the previous one', async function() {
+    await publish([rec(1), rec(2)]);
+    await publish([rec(1, 'b'), rec(2, 'b')]);
+    expect(await TssKeyGen.getJoinDelivery({ id: 'session', copayerId: 'bob' }))
+      .to.deep.equal({ version: 1, encryptedMessage: 'ct1b', signature: 'sig1b' });
+  });
+
+  it('issues one non-upserting $set, and the model round trips the delivery', async function() {
+    const updateOne = sinon.stub().resolves({ result: { ok: 1 }, matchedCount: 1 });
+    const real = new Storage();
+    (real as any).db = { collection: () => ({ updateOne }) };
+    const delivery = { version: 1, records: [rec(1), rec(2)] };
+    await real.storeTssKeyJoinDelivery({ id: 'session', delivery });
+    expect(updateOne.calledOnceWithExactly({ id: 'session' }, { $set: { bwsJoinDelivery: delivery } }, { upsert: false })).to.equal(true);
+
+    const doc = TssKeyGenModel.fromObj({ ...session, bwsJoinDelivery: delivery, __v: 0 } as any);
+    expect(doc.bwsJoinDelivery).to.deep.equal(delivery);
+    expect(doc.participants).to.deep.equal(session.participants);
+    expect(doc.n).to.equal(3);
+  });
+
+});

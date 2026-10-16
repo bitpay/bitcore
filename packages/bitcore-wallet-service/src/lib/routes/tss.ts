@@ -1,5 +1,6 @@
 import express from 'express';
 import * as Types from '../../types/expressapp';
+import { Errors } from '../errors/errordefinitions';
 import { TssKeyGen, TssSign } from '../tss';
 import { authRequest } from './middleware/authRequest';
 import { authTssRequest } from './middleware/authTssRequest';
@@ -36,6 +37,30 @@ export class TssRouter {
       }
     });
 
+    // Must be registered before the generic `/:round` route or it would be treated as a round number.
+    router.get('/v1/tss/keygen/:id/join-delivery', authTssRequest(), async function(req, res) {
+      try {
+        const id = req.params.id;
+        const copayerId = req.headers['x-identity'];
+        const delivery = await TssKeyGen.getJoinDelivery({ id, copayerId });
+        return res.json(delivery);
+      } catch (err) {
+        return returnError(err ?? 'unknown', res, req);
+      }
+    });
+
+    router.post('/v1/tss/keygen/:id/join-delivery', authTssRequest(), async function(req, res) {
+      try {
+        const id = req.params.id;
+        const { version, records } = req.body;
+        const copayerId = req.headers['x-identity'];
+        await TssKeyGen.storeJoinDelivery({ id, version, records, copayerId });
+        return res.send();
+      } catch (err) {
+        return returnError(err ?? 'unknown', res, req);
+      }
+    });
+
     router.get('/v1/tss/keygen/:id/:round', authTssRequest(), async function(req, res) {
       let interval: NodeJS.Timeout;
       try {
@@ -45,9 +70,9 @@ export class TssRouter {
         const { id, round } = req.params as { [key: string]: string };
         const { maxWaitTime } = req.query as { [key: string]: string };
         const copayerId = req.headers['x-identity'];
-        if (round === 'secret') {
-          const secret = await TssKeyGen.getBwsJoinSecret({ id, copayerId });
-          return res.json({ secret });
+        // Rounds are numeric. Anything else (including the retired `secret` pseudo-round) is rejected rather than answered with an empty round.
+        if (!/^\d+$/.test(round)) {
+          throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid round');
         }
 
         // Validate access and fetch session before committing to a streaming response, so that errors like
@@ -82,29 +107,6 @@ export class TssRouter {
 
         await TssKeyGen.storeKey({ id, message, copayerId });
         return res.send();
-      } catch (err) {
-        return returnError(err ?? 'unknown', res, req);
-      }
-    });
-
-    router.post('/v1/tss/keygen/:id/secret', authTssRequest(), async function(req, res) {
-      try {
-        const id = req.params.id;
-        const { secret } = req.body;
-        const copayerId = req.headers['x-identity'];
-        await TssKeyGen.storeBwsJoinSecret({ id, secret, copayerId });
-        return res.send();
-      } catch (err) {
-        return returnError(err ?? 'unknown', res, req);
-      }
-    });
-
-    router.get('/v1/tss/keygen/:id/secret', authTssRequest(), async function(req, res) {
-      try {
-        const id = req.params.id;
-        const copayerId = req.headers['x-identity'];
-        const secret = await TssKeyGen.getBwsJoinSecret({ id, copayerId });
-        return res.json({ secret });
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);
       }

@@ -21,6 +21,23 @@ export interface RequestResponse<ResponseBody = any, ResponseHeader = any> {
   header: ResponseHeader;
 };
 
+/**
+ * Whether a request failure says nothing about the request itself (the connection, a gateway or a server fault; see the
+ * status mapping in `doRequest`), so sending the same request again can succeed.
+ * Only for requests that are safe to repeat: a 500 or a lost response does not say whether the server acted on the request.
+ */
+export function isTransientRequestError(err: unknown): boolean {
+  return [
+    Errors.CONNECTION_ERROR,
+    Errors.ECONNRESET_ERROR,
+    Errors.MAINTENANCE_ERROR,
+    Errors.BAD_GATEWAY_ERROR,
+    Errors.GATEWAY_TIMEOUT_ERROR,
+    Errors.TOO_MANY_REQUESTS_ERROR,
+    Errors.INTERNAL_SERVER_ERROR
+  ].some(ErrorClass => err instanceof ErrorClass);
+}
+
 export class Request<CredT = Credentials> {
   baseUrl: string;
   session: any;

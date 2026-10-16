@@ -94,6 +94,7 @@ export async function joinThresholdSigWallet(
   await new Promise<void>((resolve, _reject) => {
     let rejected = false;
     const reject = (err) => { if (!rejected) { rejected = true; _reject(err); } };
+    let lastError: unknown;
 
     process.on('SIGINT', () => {
       tss.unsubscribe();
@@ -108,7 +109,14 @@ export async function joinThresholdSigWallet(
         spinner.cancel(e.message);
         return reject(new ProcessCancelled());
       }
+      lastError = e;
       prompt.log.error('Unexpected error during TSS wallet creation: ' + (e.stack || e));
+    });
+    // Only emitted with listeners intact when the subscription stopped on an error it cannot retry
+    // (e.g. the wallet secret failed verification). Nothing else will resolve this promise.
+    tss.on('unsubscribe', () => {
+      spinner.cancel('Could not join the wallet');
+      reject(lastError ?? new UserCancelled());
     });
     tss.on('complete', async () => {
       try {

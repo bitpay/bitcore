@@ -28,6 +28,20 @@ export interface ITssKeyMessageObject {
   round: number;
 };
 
+/** One recipient's encrypted join secret. Both strings are opaque to BWS. */
+export interface ITssJoinDeliveryRecord {
+  /** Recipient party ID, 1 to n-1. The creator is always party 0 and gets no record. */
+  partyId: number;
+  encryptedMessage: string;
+  signature: string;
+}
+
+export interface ITssJoinDelivery {
+  /** Delivery envelope format */
+  version: number;
+  records: Array<ITssJoinDeliveryRecord>;
+}
+
 export interface ITssKeyGenModel {
   /**
    * The ID of the TSS key generation session.
@@ -76,9 +90,15 @@ export interface ITssKeyGenModel {
    */
   timeLimit?: number;
   /**
-   * The BWC-generated secret for joining a BWS wallet
+   * @deprecated Legacy plaintext join secret. No code writes or serves it any more; the field is only
+   * still declared so that existing documents keep loading until it is purged from storage.
    */
   bwsJoinSecret?: string;
+  /**
+   * Join secret delivery encrypted by the session creator to each other participant.
+   * BWS routes these records but cannot decrypt them.
+   */
+  bwsJoinDelivery?: ITssJoinDelivery;
   /**
    * The mongo doc version
    */
@@ -100,6 +120,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
   createdOn: number;
   timeLimit?: number;
   bwsJoinSecret?: string;
+  bwsJoinDelivery?: ITssJoinDelivery;
   __v: number;
 
 
@@ -161,6 +182,7 @@ export class TssKeyGenModel implements ITssKeyGenModel {
     x.createdOn = obj.createdOn;
     x.timeLimit = obj.timeLimit;
     x.bwsJoinSecret = obj.bwsJoinSecret;
+    x.bwsJoinDelivery = obj.bwsJoinDelivery;
     x.__v = obj.__v;
     return x;
   }

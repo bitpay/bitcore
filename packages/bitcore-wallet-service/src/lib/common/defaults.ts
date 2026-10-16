@@ -450,5 +450,7 @@ export const Defaults = {
   TSS_SIGGEN_SCHEME_VERSION: 1.1,
 
   TSS_KEYGEN_TIME_LIMIT: 20, // minutes
+  TSS_JOIN_DELIVERY_VERSION: 1,
+  TSS_JOIN_DELIVERY_MAX_FIELD_LENGTH: 16 * 1024, // per ciphertext/signature string; the 100KB request limit still applies overall
   TSS_SIGGEN_TIME_LIMIT: 60 * 24, // minutes - 1 day (TODO tighten this up after testing)
 } as const;

@@ -446,6 +446,211 @@ describe('TSS', function() {
     });
   });
 
+  describe('/v1/tss/keygen/:id/join-delivery', function() {
+    const parties = [vector.party0, vector.party1, vector.party2];
+    const pubKey = (partyId: number) => parties[partyId].authKey.publicKey.toString();
+    const path = '/v1/tss/keygen/test/join-delivery';
+    const rec = (partyId: number, tag = '') => ({ partyId, encryptedMessage: 'ct' + partyId + tag, signature: 'sig' + partyId + tag });
+    const fullSet = (tag = '') => ({ version: 1, records: [rec(1, tag), rec(2, tag)] });
+
+    const sign = (method: string, url: string, body: object, partyId: number) => {
+      const hash = Utils.hashMessage(`${method}|${url}|${JSON.stringify(body)}`, false);
+      return BitcoreLib.crypto.ECDSA.sign(hash, parties[partyId].authKey, { endian: 'little' }).toString();
+    };
+    const get = (partyId: number, query = '') => {
+      const url = path + query;
+      return app.get(urlPrefix + url)
+        .set('x-identity', pubKey(partyId))
+        .set('x-signature', sign('get', url, {}, partyId));
+    };
+    const post = (partyId: number, body: object) => app.post(urlPrefix + path)
+      .set('x-identity', pubKey(partyId))
+      .set('x-signature', sign('post', path, body, partyId))
+      .send(body);
+    const storedDelivery = async () => {
+      const storage = helpers.getStorage();
+      const doc = await storage.db.collection(BWS.Storage.collections.TSS_KEYGEN).findOne({ id: 'test' });
+      return doc.bwsJoinDelivery;
+    };
+
+    beforeEach(async function() {
+      const storage = helpers.getStorage();
+      await storage.db.collection(BWS.Storage.collections.TSS_KEYGEN).deleteMany({});
+      const keyGen = TssKeyGenModel.create({
+        id: 'test',
+        message: { partyId: 0, publicKey: pubKey(0) } as any,
+        n: 3,
+        copayerId: pubKey(0),
+        version: 1.1
+      });
+      for (const partyId of [1, 2]) {
+        keyGen.participants[partyId] = pubKey(partyId);
+        keyGen.rounds[0].push({ fromPartyId: partyId, messages: { partyId, publicKey: pubKey(partyId) } as any });
+      }
+      await storage.storeTssKeyGenSession({ doc: keyGen });
+    });
+
+    it('should reach the handlers rather than the generic /:round route', async function() {
+      const pending = await get(1);
+      pending.status.should.equal(400);
+      pending.body.code.should.equal('TSS_JOIN_DELIVERY_PENDING');
+
+      const res = await post(0, fullSet());
+      res.status.should.equal(200);
+      const delivered = await get(1);
+      delivered.status.should.equal(200);
+      delivered.body.should.deep.equal({ version: 1, encryptedMessage: 'ct1', signature: 'sig1' });
+    });
+
+    it('should let the creator publish and each recipient read only its own record, repeatedly', async function() {
+      (await post(0, fullSet())).status.should.equal(200);
+
+      for (let i = 0; i < 2; i++) {
+        for (const partyId of [1, 2]) {
+          const res = await get(partyId);
+          res.status.should.equal(200);
+          res.body.should.deep.equal({ version: 1, encryptedMessage: 'ct' + partyId, signature: 'sig' + partyId });
+        }
+      }
+      (await storedDelivery()).should.deep.equal(fullSet());
+    });
+
+    it('should let the creator overwrite a published set', async function() {
+      (await post(0, fullSet())).status.should.equal(200);
+      (await post(0, fullSet('b'))).status.should.equal(200);
+
+      const res = await get(2);
+      res.body.should.deep.equal({ version: 1, encryptedMessage: 'ct2b', signature: 'sig2b' });
+    });
+
+    it('should not let a supplied recipient selector expand access', async function() {
+      (await post(0, fullSet())).status.should.equal(200);
+
+      for (const query of ['?partyId=2', '?recipient=2&copayerId=' + pubKey(2), '?round=2']) {
+        const res = await get(1, query);
+        res.status.should.equal(200);
+        res.body.should.deep.equal({ version: 1, encryptedMessage: 'ct1', signature: 'sig1' });
+      }
+    });
+
+    it('should reject POST from a participant other than the creator', async function() {
+      const res = await post(1, fullSet());
+      res.status.should.equal(400);
+      res.body.code.should.equal('TSS_GENERIC_ERROR');
+      should.not.exist(await storedDelivery());
+    });
+
+    it('should give the creator no delivery to read', async function() {
+      (await post(0, fullSet())).status.should.equal(200);
+      const res = await get(0);
+      res.status.should.equal(400);
+      res.body.code.should.equal('TSS_GENERIC_ERROR');
+    });
+
+    it('should reject malformed sets without changing the stored delivery', async function() {
+      (await post(0, fullSet())).status.should.equal(200);
+
+      const bad = [
+        { version: 2, records: fullSet().records },
+        { version: 1, records: [rec(1)] },
+        { version: 1, records: [rec(1), rec(1)] },
+        { version: 1, records: [rec(0), rec(1)] },
+        { version: 1, records: [rec(1), rec(3)] },
+        { version: 1, records: [rec(1), { partyId: 2, encryptedMessage: 'ct' }] },
+        { version: 1 }
+      ];
+      for (const body of bad) {
+        const res = await post(0, body);
+        res.status.should.equal(400);
+        res.body.code.should.equal('TSS_GENERIC_ERROR');
+      }
+      (await storedDelivery()).should.deep.equal(fullSet());
+    });
+
+    it('should reject outsiders, missing signatures and invalid signatures', async function() {
+      const outsider = new BitcoreLib.PrivateKey();
+      const body = fullSet();
+      const outsiderHash = Utils.hashMessage(`post|${path}|${JSON.stringify(body)}`, false);
+      const outsiderSig = BitcoreLib.crypto.ECDSA.sign(outsiderHash, outsider, { endian: 'little' }).toString();
+      const outsiderPost = await app.post(urlPrefix + path)
+        .set('x-identity', outsider.publicKey.toString())
+        .set('x-signature', outsiderSig)
+        .send(body);
+      outsiderPost.status.should.equal(401);
+      outsiderPost.body.code.should.equal('NOT_AUTHORIZED');
+
+      const outsiderGet = await app.get(urlPrefix + path)
+        .set('x-identity', outsider.publicKey.toString())
+        .set('x-signature', sign('get', path, {}, 1));
+      outsiderGet.status.should.equal(401);
+
+      const unsigned = await app.post(urlPrefix + path).set('x-identity', pubKey(0)).send(body);
+      unsigned.status.should.equal(401);
+      const noIdentity = await app.get(urlPrefix + path);
+      noIdentity.status.should.equal(401);
+
+      // a signature from another participant, and a signature over a different body
+      const wrongKey = await post(0, body).set('x-signature', sign('post', path, body, 1));
+      wrongKey.status.should.equal(401);
+      wrongKey.body.message.should.equal('Invalid signature');
+      const wrongBody = await post(0, body).set('x-signature', sign('post', path, fullSet('x'), 0));
+      wrongBody.status.should.equal(401);
+      const impersonate = await get(1).set('x-identity', pubKey(2));
+      impersonate.status.should.equal(401);
+
+      should.not.exist(await storedDelivery());
+    });
+
+    it('should reject POST and GET once the session has expired', async function() {
+      (await post(0, fullSet())).status.should.equal(200);
+
+      const later = Date.now() + 2 * 60 * 60 * 1000;
+      sandbox.stub(Date, 'now').returns(later);
+
+      const posted = await post(0, fullSet('b'));
+      posted.status.should.equal(400);
+      posted.body.code.should.equal('TSS_SESSION_EXPIRED');
+      const fetched = await get(1);
+      fetched.status.should.equal(400);
+      fetched.body.code.should.equal('TSS_SESSION_EXPIRED');
+      (await storedDelivery()).should.deep.equal(fullSet());
+    });
+  });
+
+  describe('GET /v1/tss/keygen/:id/:round validation', function() {
+    const parties = [vector.party0, vector.party1];
+    const pubKey = (partyId: number) => parties[partyId].authKey.publicKey.toString();
+
+    const get = (url: string, partyId: number) => {
+      const hash = Utils.hashMessage(`get|${url}|{}`, false);
+      const xSignature = BitcoreLib.crypto.ECDSA.sign(hash, parties[partyId].authKey, { endian: 'little' }).toString();
+      return app.get(urlPrefix + url).set('x-identity', pubKey(partyId)).set('x-signature', xSignature);
+    };
+
+    beforeEach(async function() {
+      const storage = helpers.getStorage();
+      await storage.db.collection(BWS.Storage.collections.TSS_KEYGEN).deleteMany({});
+      const keyGen = TssKeyGenModel.create({
+        id: 'test',
+        message: { partyId: 0, publicKey: pubKey(0) } as any,
+        n: 2,
+        copayerId: pubKey(0),
+        version: 1.1
+      });
+      keyGen.participants[1] = pubKey(1);
+      keyGen.rounds[0].push({ fromPartyId: 1, messages: { partyId: 1, publicKey: pubKey(1) } as any });
+      await storage.storeTssKeyGenSession({ doc: keyGen });
+    });
+
+    it('should reject a non-numeric round instead of answering with an empty round', async function() {
+      for (const round of ['secret', '1abc', '-1', '1.5']) {
+        const res = await get(`/v1/tss/keygen/test/${round}?maxWaitTime=0`, 1);
+        res.status.should.equal(400);
+        res.body.code.should.equal('TSS_GENERIC_ERROR');
+      }
+    });
+  });
+
   describe('POST /v1/tss/sign/:id', function() {
     const url = id => `${urlPrefix}/v1/tss/sign/${id}`;
     const signRequest = body => {
