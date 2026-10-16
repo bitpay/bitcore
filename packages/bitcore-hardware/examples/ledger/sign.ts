@@ -57,17 +57,24 @@ switch (chain) {
     const ledgerAddress = await ledger.getAddress({ chain });
     const receivingAddress = new lib.PrivateKey().toAddress().toString();
     
-    const fundingTx = new lib.Transaction(
-      '0200000001' +
-      '1111111111111111111111111111111111111111111111111111111111111111' + // fake prevout hash
-      '00000000' + // prevout index
-      '00' +       // empty scriptSig
-      'ffffffff' + // sequence
-      '01' +
-      'a086010000000000' + // 100000 litoshis
-      '1976a914b1d140085b7ea3f5ebc46d49dabed8cb78e7c42488ac' +
-      '00000000'  // locktime
-    );
+    const fundingTx = new lib.Transaction()
+      .addInput(
+        new lib.Transaction.Input({
+          outputIndex: 0,
+          script: '',
+          prevTxId: '1111111111111111111111111111111111111111111111111111111111111111',
+          output: new lib.Transaction.Output({
+            script: '',
+            satoshis: 100_000
+          })
+        })
+      )
+      .addOutput(
+        new lib.Transaction.Output({
+          satoshis: 100_000,
+          script: new lib.Script.buildPublicKeyHashOut(ledgerAddress)
+        })
+      );
 
     const fee = 1000;
     const value = 100_000;
@@ -111,17 +118,24 @@ switch (chain) {
     const ledgerAddress = await ledger.getAddress({ chain });
     const receivingAddress = new lib.PrivateKey().toAddress().toString();
 
-    const fundingTx = new lib.Transaction(
-      '0200000001' +
-      '1111111111111111111111111111111111111111111111111111111111111111' + // fake prevout hash
-      '00000000' + // prevout index
-      '00' +       // empty scriptSig
-      'ffffffff' + // sequence
-      '01' +
-      '00e1f50500000000' + // 100000000 koinus (1 DOGE)
-      '1976a9147a9b588e995d3134c13672b6ad09a74b2aa7e94988ac' +
-      '00000000'  // locktime
-    );
+    const fundingTx = new lib.Transaction()
+      .addInput(
+        new lib.Transaction.Input({
+          outputIndex: 0,
+          script: '',
+          prevTxId: '1111111111111111111111111111111111111111111111111111111111111111',
+          output: new lib.Transaction.Output({
+            script: '',
+            satoshis: 100_000_000
+          })
+        })
+      )
+      .addOutput(
+        new lib.Transaction.Output({
+          satoshis: 100_000_000,
+          script: new lib.Script.buildPublicKeyHashOut(ledgerAddress)
+        })
+      );
 
     const value = 100000000;
     const fee = 1000000;
@@ -165,17 +179,24 @@ switch (chain) {
     const ledgerAddress = await ledger.getAddress({ chain });
     const receivingAddress = new lib.PrivateKey().toAddress().toString();
       
-    const fundingTx = new lib.Transaction(
-      '0200000001' +
-      '1111111111111111111111111111111111111111111111111111111111111111' + // fake prevout hash
-      '00000000' + // prevout index
-      '00' +       // empty scriptSig
-      'ffffffff' + // sequence
-      '01' +
-      'a086010000000000' + // 100000 sats
-      '1976a91447b2653a6a64fadd4118cab92e1c226b96c4158188ac' +
-      '00000000'  // locktime
-    );
+    const fundingTx = new lib.Transaction()
+      .addInput(
+        new lib.Transaction.Input({
+          outputIndex: 0,
+          script: '',
+          prevTxId: '1111111111111111111111111111111111111111111111111111111111111111',
+          output: new lib.Transaction.Output({
+            script: '',
+            satoshis: 100_000
+          })
+        })
+      )
+      .addOutput(
+        new lib.Transaction.Output({
+          satoshis: 100_000,
+          script: new lib.Script.buildPublicKeyHashOut(ledgerAddress)
+        })
+      );
 
 
     const fee = 362;

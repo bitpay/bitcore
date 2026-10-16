@@ -108,23 +108,6 @@ describe('Burner Data', function () {
     expect(fetchedAddress).to.be.undefined;
   });
 
-  it('should get firmware version', async function () {
-    const versionRequest: Promise<string> = burner.getVersion();
-    const expectedVersion = '30312e43382e3030303034332e3930333943363334';
-    burner.responses.set(
-      'get_data_struct_v20',
-      {
-        firmwareVersion: {
-          1: {
-            value: expectedVersion
-          }
-        }
-      }
-    );
-    const version = await versionRequest;
-    expect(version).to.equal(expectedVersion);
-  });
-
   it('should validate chain names', async function () {
     expect(Burner.isValidChain('BTC')).to.be.true;
     expect(Burner.isValidChain('ETH')).to.be.true;

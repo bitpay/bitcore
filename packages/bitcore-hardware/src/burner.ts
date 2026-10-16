@@ -260,12 +260,6 @@ export default class Burner implements Base {
     }
   }
 
-  async getVersion(params?: { index: number }) {
-    const { index } = params || { index: 1 };
-    const data: any = await this.getData([{ type: 'firmwareVersion', index }]);
-    return data.firmwareVersion[index].value;
-  }
-
   static isValidChain(value: string): value is 'BTC' | 'ETH' {
     return ['BTC', 'ETH'].includes(value);
   }

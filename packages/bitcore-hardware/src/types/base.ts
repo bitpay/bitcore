@@ -8,5 +8,4 @@ export interface Base {
   sign(params: any): Promise<string>;
   getPublicKey(params: any): Promise<string>;
   getAddress(params: any): Promise<string>;
-  getVersion(params: any): Promise<any>;
 };
