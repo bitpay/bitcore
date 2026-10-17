@@ -146,20 +146,17 @@ export class ListTransactionsStream extends Transform {
     }
   }
 
-  /** txids in which one of this wallet's coins was spent */
+  /**
+   * txids in which one of this wallet's coins was spent. distinct dedupes on the server, so a tx that spends
+   * many wallet coins (a consolidation) comes back once rather than once per input.
+   */
   private async findSendingTxids(txids: string[]): Promise<Set<string>> {
-    const spent = await CoinStorage.collection
-      .find(
-        {
-          wallets: this.wallet._id,
-          'wallets.0': { $exists: true },
-          spentTxid: { $in: txids }
-        },
-        { batchSize: cursorBatchSize }
-      )
-      .project({ _id: 0, spentTxid: 1 })
-      .toArray();
-    return new Set(spent.map(coin => coin.spentTxid));
+    const spentTxids: string[] = await CoinStorage.collection.distinct('spentTxid', {
+      wallets: this.wallet._id,
+      'wallets.0': { $exists: true },
+      spentTxid: { $in: txids }
+    });
+    return new Set(spentTxids);
   }
 
   /** every output of a sending tx, scoped to its chain/network (txids can repeat across forks) */

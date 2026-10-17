@@ -34,12 +34,14 @@ describe('Bitcoin wallet transaction history', function() {
   const walletEdge = newWallet();
   const walletPayout = newWallet();
   const walletMany = newWallet();
+  const walletConsolidate = newWallet();
 
   const A1 = 'bcrt1qwalletaaddress1';
   const A2 = 'bcrt1qwalletaaddress2';
   const B1 = 'bcrt1qwalletbaddress1';
   const E1 = 'bcrt1qwalletedgeaddress';
   const P1 = 'bcrt1qwalletpayoutaddress';
+  const C1 = 'bcrt1qwalletconsolidateaddress';
   const X = 'bcrt1qexternaladdress';
   const payee = (i: number) => `bcrt1qpayee${i}`;
 
@@ -114,7 +116,13 @@ describe('Bitcoin wallet transaction history', function() {
     wallets: [walletMany._id]
   }));
 
-  const allTxs = [...allA, TT3, TT4, ER, ES, ...allPayout, ...manyTxs];
+  // walletConsolidate: a tx spending many wallet coins into one wallet output, then a receive
+  const INPUTS = 20;
+  const CT: TxFixture = { txid: txid(0x400), blockHeight: 600, blockTimeNormalized: at(600), fee: 2000, size: 3000, wallets: [walletConsolidate._id] };
+  const CR: TxFixture = { txid: txid(0x401), blockHeight: 601, blockTimeNormalized: at(601), fee: 100, size: 200, wallets: [walletConsolidate._id] };
+  const allConsolidate = [CT, CR];
+
+  const allTxs = [...allA, TT3, TT4, ER, ES, ...allPayout, ...manyTxs, ...allConsolidate];
 
   const coins: CoinFixture[] = [
     // external input to T2; not owned by any wallet, so T2 is a receive for walletA
@@ -171,6 +179,14 @@ describe('Bitcoin wallet transaction history', function() {
         ...(payouts[p + 1] ? { spentTxid: payouts[p + 1].txid, spentHeight: payouts[p + 1].blockHeight } : {})
       }
     ]),
+    // CT: spends INPUTS wallet coins (minted outside the wallet's history) into one wallet output
+    ...Array.from({ length: INPUTS }, (_, i) => ({
+      mintTxid: txid(0x4000 + i), mintIndex: 0, mintHeight: 550, address: C1, value: 1000, wallets: [walletConsolidate._id], spentTxid: CT.txid, spentHeight: 600
+    })),
+    { mintTxid: CT.txid, mintIndex: 0, mintHeight: 600, address: C1, value: INPUTS * 1000 - 2000, wallets: [walletConsolidate._id] },
+    // CR: external -> C1
+    { mintTxid: CR.txid, mintIndex: 0, mintHeight: 601, address: C1, value: 7000, wallets: [walletConsolidate._id] },
+    { mintTxid: CR.txid, mintIndex: 1, mintHeight: 601, address: X, value: 500, wallets: [] },
     // walletMany receives
     ...manyTxs.map(tx => ({ mintTxid: tx.txid, mintIndex: 0, mintHeight: tx.blockHeight, address: 'bcrt1qmanyreceives', value: 1000, wallets: [walletMany._id] }))
   ];
@@ -229,6 +245,11 @@ describe('Bitcoin wallet transaction history', function() {
         ]
       ])
     )
+  });
+
+  const expectedConsolidate = () => ({
+    [CT.txid]: [outputRow(CT, 'move', 0, C1, -(INPUTS * 1000 - 2000)), feeRow(CT)],
+    [CR.txid]: [outputRow(CR, 'receive', 0, C1, 7000)]
   });
 
   // resolve the BTC provider via regtest (the only BTC network configured in tests) so queryNetwork can differ
@@ -295,8 +316,9 @@ describe('Bitcoin wallet transaction history', function() {
   const isPerTxOutputLookup = (q: any) => typeof q.mintTxid === 'string';
 
   /**
-   * Pins one CoinStorage Collection (the getter returns a new one per access) and records every find:
-   * its query and how many docs it returned. `fail(predicate, err)` makes matching finds reject.
+   * Pins one CoinStorage Collection (the getter returns a new one per access) and records every find and
+   * distinct: its query and how many docs or values it returned. `fail(predicate, err)` makes matching queries
+   * reject.
    * Fakes are cleaned up by sandbox.restore() in afterEach.
    */
   function recordCoinQueries() {
@@ -321,6 +343,18 @@ describe('Bitcoin wallet transaction history', function() {
         return docs;
       };
       return cursor;
+    });
+    const realDistinct = collection.distinct.bind(collection);
+    sandbox.stub(collection, 'distinct').callsFake(async (key, query, ...rest) => {
+      const call: { query: any; returned?: number } = { query };
+      calls.push(call);
+      const failure = failures.find(f => f.matches(query));
+      if (failure) {
+        throw failure.err;
+      }
+      const values = await realDistinct(key, query, ...rest);
+      call.returned = values.length;
+      return values;
     });
     const countDocuments = sandbox.spy(collection, 'countDocuments');
     return {
@@ -420,6 +454,11 @@ describe('Bitcoin wallet transaction history', function() {
     expectRows(rows, expectedPayout(), allPayout);
   });
 
+  it('emits one row per output (not per input) for a tx spending many wallet coins', async () => {
+    const rows = await streamRows(walletConsolidate, {});
+    expectRows(rows, expectedConsolidate(), allConsolidate);
+  });
+
   it('filters by startBlock and excludes mempool and conflicting txs', async () => {
     const rows = await streamRows(walletA, { startBlock: '102' });
     expectRows(rows, expectedA(), [T3, T4, T5, T6]);
@@ -483,6 +522,7 @@ describe('Bitcoin wallet transaction history', function() {
           expectRows(await streamRows(walletB, {}, network, provider), expectedB(), [T5, T6]);
           expectRows(await streamRows(walletEdge, {}, network, provider), expectedEdge(), [ER, ES]);
           expectRows(await streamRows(walletPayout, {}, network, provider), expectedPayout(), allPayout);
+          expectRows(await streamRows(walletConsolidate, {}, network, provider), expectedConsolidate(), allConsolidate);
         });
       }
     }
@@ -528,6 +568,15 @@ describe('Bitcoin wallet transaction history', function() {
       expect(recorder.calls).to.have.length(6);
       expect(recorder.calls.filter(c => isSendingLookup(c.query)).map(c => c.query.spentTxid.$in.length)).to.deep.equal([100, 100, 50]);
       expect(recorder.countDocuments.callCount).to.equal(0);
+    });
+
+    it('returns each sending txid once, however many wallet coins the tx spends', async () => {
+      const recorder = recordCoinQueries();
+      await streamRows(walletConsolidate, {});
+      const sendingLookups = recorder.calls.filter(c => isSendingLookup(c.query));
+      expect(sendingLookups).to.have.length(1);
+      // CT spends INPUTS wallet coins; the lookup must not return one result per input
+      expect(sendingLookups[0].returned).to.equal(1);
     });
 
     it('falls back to per-tx output lookups when a batch lookup exceeds maxBatchOutputs', async () => {
