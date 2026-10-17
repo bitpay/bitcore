@@ -1,8 +1,12 @@
 import { expect } from 'chai';
 import { ObjectID } from 'mongodb';
+import sinon from 'sinon';
+import { Writable } from 'stream';
 import { CoinStorage } from '../../../src/models/coin';
 import { TransactionStorage } from '../../../src/models/transaction';
 import { ChainStateProvider } from '../../../src/providers/chain-state';
+import { InternalStateProvider } from '../../../src/providers/chain-state/internal/internal';
+import { ListTransactionsStream, ListTransactionsStreamOptions } from '../../../src/providers/chain-state/internal/transforms';
 import { resetDatabase } from '../../helpers';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
@@ -12,13 +16,14 @@ import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
  *
  * The row tests compare rows per tx: tx order must match exactly, non-fee rows are compared sorted by
  * outputIndex, and the fee row (when present) must be the tx's last row. Output order within a tx is
- * not asserted, since the query does not define it.
+ * asserted separately in the batching tests.
  */
 describe('Bitcoin wallet transaction history', function() {
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const suite = this;
   this.timeout(30000);
 
+  const sandbox = sinon.createSandbox();
   const chain = 'BTC';
   const network = 'regtest';
   const newWallet = (walletNetwork = network) => ({ _id: new ObjectID(), chain, network: walletNetwork }) as any;
@@ -228,6 +233,16 @@ describe('Bitcoin wallet transaction history', function() {
 
   // resolve the BTC provider via regtest (the only BTC network configured in tests) so queryNetwork can differ
   const defaultProvider = () => ChainStateProvider.get({ chain, network });
+  const providerWith = (options: ListTransactionsStreamOptions) =>
+    new InternalStateProvider(
+      chain,
+      class extends ListTransactionsStream {
+        constructor(wallet) {
+          super(wallet, options);
+        }
+      }
+    );
+
   const parseRows = (chunks: any[]): Row[] =>
     chunks
       .join('')
@@ -274,6 +289,56 @@ describe('Bitcoin wallet transaction history', function() {
     }
   }
 
+  // classify coin queries by shape
+  const isSendingLookup = (q: any) => !!q.spentTxid?.$in;
+  const isBatchOutputLookup = (q: any) => !!q.mintTxid?.$in;
+  const isPerTxOutputLookup = (q: any) => typeof q.mintTxid === 'string';
+
+  /**
+   * Pins one CoinStorage Collection (the getter returns a new one per access) and records every find:
+   * its query and how many docs it returned. `fail(predicate, err)` makes matching finds reject.
+   * Fakes are cleaned up by sandbox.restore() in afterEach.
+   */
+  function recordCoinQueries() {
+    const collection = CoinStorage.collection;
+    sandbox.stub(CoinStorage, 'collection').get(() => collection);
+    const realFind = collection.find.bind(collection);
+    const calls: { query: any; returned?: number }[] = [];
+    const failures: { matches: (q: any) => boolean; err: Error }[] = [];
+    sandbox.stub(collection, 'find').callsFake((query, options) => {
+      const call: { query: any; returned?: number } = { query };
+      calls.push(call);
+      const failure = failures.find(f => f.matches(query));
+      if (failure) {
+        const failing: any = { project: () => failing, limit: () => failing, toArray: () => Promise.reject(failure.err) };
+        return failing;
+      }
+      const cursor = realFind(query, options);
+      const toArray = cursor.toArray.bind(cursor);
+      cursor.toArray = async () => {
+        const docs = await toArray();
+        call.returned = docs.length;
+        return docs;
+      };
+      return cursor;
+    });
+    const countDocuments = sandbox.spy(collection, 'countDocuments');
+    return {
+      calls,
+      countDocuments,
+      fail(matches: (q: any) => boolean, err: Error) {
+        failures.push({ matches, err });
+      }
+    };
+  }
+
+  async function streamError(wallet: any, provider: any) {
+    return streamRows(wallet, {}, wallet.network, provider).then(
+      () => null,
+      e => e
+    );
+  }
+
   before(async () => {
     await intBeforeHelper();
     await resetDatabase();
@@ -311,6 +376,8 @@ describe('Bitcoin wallet transaction history', function() {
       })) as any
     );
   });
+
+  afterEach(() => sandbox.restore());
 
   after(async () => {
     await resetDatabase();
@@ -404,5 +471,165 @@ describe('Bitcoin wallet transaction history', function() {
 
   it('returns nothing for a wallet with no txs', async () => {
     expect(await streamRows(newWallet(), {})).to.deep.equal([]);
+  });
+
+  describe('batching', function() {
+    for (const batchSize of [1, 2, 3, 9, 1000]) {
+      for (const maxBatchOutputs of [ListTransactionsStream.DEFAULT_MAX_BATCH_OUTPUTS, 1]) {
+        it(`produces the same rows with batchSize ${batchSize} and maxBatchOutputs ${maxBatchOutputs}`, async () => {
+          const provider = providerWith({ batchSize, maxBatchOutputs });
+          expectRows(await streamRows(walletA, {}, network, provider), expectedA(), allA);
+          expectRows(await streamRows(walletA, { startBlock: '102', includeMempool: 'true' }, network, provider), expectedA(), [T3, T4, T5, T6, T7, T8]);
+          expectRows(await streamRows(walletB, {}, network, provider), expectedB(), [T5, T6]);
+          expectRows(await streamRows(walletEdge, {}, network, provider), expectedEdge(), [ER, ES]);
+          expectRows(await streamRows(walletPayout, {}, network, provider), expectedPayout(), allPayout);
+        });
+      }
+    }
+
+    it('emits each tx\'s output rows in mintIndex order, then the fee row', async () => {
+      for (const provider of [defaultProvider(), providerWith({ maxBatchOutputs: 1 })]) {
+        const edge = await streamRows(walletEdge, {}, network, provider);
+        // ER's wallet outputs were inserted as 2, 0, 1
+        expect(edge.filter(r => r.txid === ER.txid).map(r => r.outputIndex)).to.deep.equal([0, 1, 2]);
+        const payout = await streamRows(walletPayout, {}, network, provider);
+        expect(payout.filter(r => r.txid === payouts[0].txid).map(r => r.outputIndex)).to.deep.equal([0, 1, 2, 3, 4, 5, undefined]);
+      }
+    });
+
+    it('runs three coin queries for each batch that has both sends and receives', async () => {
+      const recorder = recordCoinQueries();
+      // batches: [T1 T2 T3] [T4 T5 T6] [T9 T7 T8]
+      await streamRows(walletA, {}, network, providerWith({ batchSize: 3 }));
+      expect(recorder.calls.map(c => isSendingLookup(c.query) ? 'sending' : isBatchOutputLookup(c.query) ? 'outputs' : 'other')).to.deep.equal([
+        'sending', 'outputs', 'outputs',
+        'sending', 'outputs', 'outputs',
+        'sending', 'outputs', 'outputs'
+      ]);
+      expect(recorder.countDocuments.callCount).to.equal(0);
+    });
+
+    it('runs two coin queries for a batch of only sends', async () => {
+      const recorder = recordCoinQueries();
+      // T4 and T5 are both sends
+      await streamRows(walletA, { startBlock: '103', endBlock: '104' }, network, providerWith({ batchSize: 10 }));
+      expect(recorder.calls).to.have.length(2);
+      expect(isSendingLookup(recorder.calls[0].query)).to.equal(true);
+      expect(isBatchOutputLookup(recorder.calls[1].query)).to.equal(true);
+    });
+
+    it('resolves 100 txs per batch by default, so query counts stay fixed as txs grow', async () => {
+      const recorder = recordCoinQueries();
+      const rows = await streamRows(walletMany, {});
+      expect(rows).to.have.length(MANY);
+      expect(rows.every(r => r.category === 'receive')).to.equal(true);
+      expect(rows.map(r => r.txid)).to.deep.equal(manyTxs.map(t => t.txid));
+      // 250 receive-only txs -> 3 batches (100, 100, 50) x (sending check + wallet outputs)
+      expect(recorder.calls).to.have.length(6);
+      expect(recorder.calls.filter(c => isSendingLookup(c.query)).map(c => c.query.spentTxid.$in.length)).to.deep.equal([100, 100, 50]);
+      expect(recorder.countDocuments.callCount).to.equal(0);
+    });
+
+    it('falls back to per-tx output lookups when a batch lookup exceeds maxBatchOutputs', async () => {
+      const recorder = recordCoinQueries();
+      // the 3 payouts have 18 outputs in total (over the cap); the funding receive has 1 wallet output (under it)
+      const rows = await streamRows(walletPayout, {}, network, providerWith({ maxBatchOutputs: 10 }));
+      expectRows(rows, expectedPayout(), allPayout);
+      const perTx = recorder.calls.filter(c => isPerTxOutputLookup(c.query));
+      expect(perTx.map(c => c.query.mintTxid)).to.deep.equal(payouts.map(t => t.txid));
+      expect(recorder.calls).to.have.length(1 + 2 + payouts.length);
+    });
+
+    it('never loads more than maxBatchOutputs + 1 outputs in one batch lookup', async () => {
+      const recorder = recordCoinQueries();
+      await streamRows(walletPayout, {}, network, providerWith({ maxBatchOutputs: 10 }));
+      const batchLookups = recorder.calls.filter(c => isBatchOutputLookup(c.query));
+      expect(batchLookups).to.have.length(2);
+      expect(Math.max(...batchLookups.map(c => c.returned!))).to.be.at.most(11);
+    });
+
+    it('fails the stream when a coin query fails in a full batch', async () => {
+      const recorder = recordCoinQueries();
+      const boom = new Error('coin query failed');
+      // batchSize 3 -> T4 is in the second full batch
+      recorder.fail(q => isSendingLookup(q) && q.spentTxid.$in.includes(T4.txid), boom);
+      expect(await streamError(walletA, providerWith({ batchSize: 3 }))).to.equal(boom);
+    });
+
+    it('fails the stream when a coin query fails in the final partial batch', async () => {
+      const recorder = recordCoinQueries();
+      const boom = new Error('coin query failed in flush');
+      // batchSize 2 over 9 txs -> T8 is alone in the final batch, resolved by _flush
+      recorder.fail(q => isSendingLookup(q) && q.spentTxid.$in.includes(T8.txid), boom);
+      expect(await streamError(walletA, providerWith({ batchSize: 2 }))).to.equal(boom);
+    });
+
+    it('fails the stream when a per-tx fallback lookup fails', async () => {
+      const recorder = recordCoinQueries();
+      const boom = new Error('per-tx lookup failed');
+      recorder.fail(q => isPerTxOutputLookup(q) && q.mintTxid === payouts[1].txid, boom);
+      expect(await streamError(walletPayout, providerWith({ maxBatchOutputs: 1 }))).to.equal(boom);
+    });
+
+    it('delivers every row to a slow consumer', async () => {
+      const expected = await streamRows(walletMany, {});
+      const stream = await openStream(walletMany, {}, network, providerWith({ batchSize: 7 }));
+      const chunks: any[] = [];
+      await new Promise<void>((resolve, reject) => {
+        const slow = new Writable({
+          objectMode: true,
+          highWaterMark: 1,
+          write(chunk, _, cb) {
+            chunks.push(chunk);
+            setImmediate(cb);
+          }
+        });
+        slow.on('finish', resolve);
+        slow.on('error', reject);
+        stream.on('error', reject);
+        stream.pipe(slow);
+      });
+      expect(parseRows(chunks)).to.deep.equal(expected);
+    });
+
+    it('waits for the consumer between txs instead of buffering a whole batch of rows', async () => {
+      const stream = await openStream(walletMany, {});
+      let maxBuffered = 0;
+      await new Promise<void>((resolve, reject) => {
+        const slow = new Writable({
+          objectMode: true,
+          highWaterMark: 1,
+          write(_chunk, _, cb) {
+            maxBuffered = Math.max(maxBuffered, stream.readableLength);
+            setImmediate(cb);
+          }
+        });
+        slow.on('finish', resolve);
+        slow.on('error', reject);
+        stream.on('error', reject);
+        stream.pipe(slow);
+      });
+      // each walletMany tx emits one row, so at most one tx's rows go past the high-water mark
+      expect(maxBuffered).to.be.at.most(stream.readableHighWaterMark + 1);
+    });
+
+    it('stops cleanly when the consumer goes away while a batch is waiting', async () => {
+      const stream = await openStream(walletMany, {});
+      // nobody reads, so the first batch fills the buffer and waits for the consumer
+      for (let i = 0; i < 200 && stream.readableLength < stream.readableHighWaterMark; i++) {
+        await new Promise(resolve => setTimeout(resolve, 5));
+      }
+      expect(stream.readableLength).to.be.at.least(stream.readableHighWaterMark);
+      const errors: Error[] = [];
+      stream.on('error', err => errors.push(err));
+      const closed = new Promise(resolve => stream.once('close', resolve));
+      stream.destroy();
+      await closed;
+      // give the waiting batch a chance to resume and finish
+      await new Promise(resolve => setTimeout(resolve, 50));
+      expect(errors).to.deep.equal([]);
+      // otherwise the batch would stay suspended forever, holding its rows and coins
+      expect((stream as any).waitingBatch, 'no batch left waiting').to.equal(undefined);
+    });
   });
 });

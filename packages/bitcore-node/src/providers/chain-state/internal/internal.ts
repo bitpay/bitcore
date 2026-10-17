@@ -51,7 +51,7 @@ export class InternalStateProvider implements IChainStateService {
   chain: string;
   blockAtTimeCache: { [key: string]: LRUCache<string, IBlock> };
 
-  constructor(chain: string, private WalletStreamTransform = ListTransactionsStream) {
+  constructor(chain: string, private WalletStreamTransform: new (wallet: IWallet) => Transform = ListTransactionsStream) {
     this.chain = chain;
     this.chain = this.chain.toUpperCase();
     this.blockAtTimeCache = {};
