@@ -18,6 +18,16 @@ import { checkRequired } from '../lib/server';
  * /basic/meta is ~13 MB, which an unauthenticated caller could otherwise make
  * BWS fetch and re-serve on our API key.
  */
+/**
+ * Environment the two unauthenticated metadata routes always use, whatever
+ * the caller asks for. Metadata is identical between environments, so there
+ * is nothing to gain by letting an anonymous request pick production.
+ */
+const RANGO_PUBLIC_ENV: 'sandbox' | 'production' = 'sandbox';
+
+/** Upstream request timeout. Rango's meta payload is large, so this is generous. */
+const RANGO_REQUEST_TIMEOUT_MS = 30000;
+
 const RANGO_ALLOWED_BLOCKCHAINS = [
   'BTC',
   'BCH',
@@ -77,10 +87,17 @@ export class RangoService {
     return { referrerFee: keys.REFERRER_FEE, referrerAddress: keys.REFERRER_ADDRESS };
   }
 
-  private rangoGetKeys(req) {
+  /**
+   * @param opts.forcedEnv pins the environment regardless of what the caller
+   *   asked for. Used by the two unauthenticated metadata routes: without it
+   *   anonymous callers can select `production` and burn the quota on the
+   *   production key, which is the one credential we cannot cheaply rotate.
+   */
+  private rangoGetKeys(req, opts?: { forcedEnv?: 'sandbox' | 'production' }) {
     if (!config.rango) throw new Error('Rango missing credentials');
 
-    const env: 'sandbox' | 'production' = req.body.env === 'production' ? 'production' : 'sandbox';
+    const env: 'sandbox' | 'production' =
+      opts?.forcedEnv ?? (req.body.env === 'production' ? 'production' : 'sandbox');
 
     delete req.body.env;
 
@@ -118,7 +135,12 @@ export class RangoService {
         URL,
         {
           headers,
-          json: true
+          json: true,
+          // Without this a Rango endpoint that accepts the connection but
+          // never answers holds the socket open indefinitely. The app's own
+          // pollers check their deadline only between requests, so one hung
+          // call strands the swap and the sockets accumulate here.
+          timeout: RANGO_REQUEST_TIMEOUT_MS
         },
         (err, data) => {
           if (err) {
@@ -136,13 +158,15 @@ export class RangoService {
    * response, which matters because the full meta payload is multi-megabyte.
    */
   rangoGetSupportedChains(req): Promise<any> {
-    const keys = this.rangoGetKeys(req);
+    // Public route: environment is pinned, not caller-selected.
+    const keys = this.rangoGetKeys(req, { forcedEnv: RANGO_PUBLIC_ENV });
     const qs = this.rangoQs({ apiKey: keys.API_KEY });
     return this.rangoGet(keys.API + `/basic/meta/blockchains?${qs}`);
   }
 
   rangoGetCryptoCurrencies(req): Promise<any> {
-    const keys = this.rangoGetKeys(req);
+    // Public route: environment is pinned, not caller-selected.
+    const keys = this.rangoGetKeys(req, { forcedEnv: RANGO_PUBLIC_ENV });
 
     // Blockchains are NOT taken from the request. This route is public and an
     // unfiltered response is multi-megabyte.

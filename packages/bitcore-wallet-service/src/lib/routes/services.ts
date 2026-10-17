@@ -339,13 +339,19 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
     });
   });
 
+  // Both metadata routes are unauthenticated and answer with a response that
+  // barely changes between calls, so they are cached rather than spending a
+  // Rango request per client. Without this an anonymous caller can pull them
+  // in a loop and consume our API quota.
   router.post('/v1/service/rango/supportedChains', (req, res) => {
+    setPublicCache(res, 10 * ONE_MINUTE);
     respondWithPublicServer(req, res, context, server => {
       return server.externalServices.rango.rangoGetSupportedChains(req);
     });
   });
 
   router.post('/v1/service/rango/cryptoCurrencies', (req, res) => {
+    setPublicCache(res, 10 * ONE_MINUTE);
     respondWithPublicServer(req, res, context, server => {
       return server.externalServices.rango.rangoGetCryptoCurrencies(req);
     });

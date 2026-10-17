@@ -86,16 +86,31 @@ describe('Rango integration', () => {
       req = { headers: {}, body: { env: 'sandbox' } };
     });
 
+    /**
+     * Environment selection is tested through an authenticated route. The two
+     * public metadata routes deliberately ignore `env` - see the
+     * 'public metadata routes' block below.
+     */
+    const authedReq = (env: string) => ({
+      headers: {},
+      body: {
+        env,
+        from: 'BTC.BTC',
+        to: 'ETH.ETH',
+        amount: '100000'
+      }
+    });
+
     it('should use the key for the requested environment', async () => {
-      await server.externalServices.rango.rangoGetSupportedChains(req);
+      await server.externalServices.rango.rangoGetSwapQuote(authedReq('sandbox'));
       queryOf(requested[0]).apiKey.should.equal('rangoApiKey1');
       requested[0].should.contain('rango-sandbox.example');
     });
 
     it('should use production credentials when asked', async () => {
-      req.body.env = 'production';
-      await server.externalServices.rango.rangoGetSupportedChains(req);
+      await server.externalServices.rango.rangoGetSwapQuote(authedReq('production'));
       queryOf(requested[0]).apiKey.should.equal('rangoApiKey2');
+      requested[0].should.contain('rango-production.example');
     });
 
     it('should never return the api key to the caller', async () => {
@@ -151,6 +166,47 @@ describe('Rango integration', () => {
       req.body.swappers = 'SomeSwapper';
       await server.externalServices.rango.rangoGetCryptoCurrencies(req);
       should.not.exist(queryOf(requested[0]).swappers);
+    });
+  });
+
+  describe('public metadata routes', () => {
+    beforeEach(() => {
+      req = { headers: {}, body: {} };
+    });
+
+    it('should ignore a client asking for the production environment', async () => {
+      // Unauthenticated callers must not be able to spend the production
+      // key's quota - it is the one credential we cannot cheaply rotate.
+      req.body.env = 'production';
+      await server.externalServices.rango.rangoGetCryptoCurrencies(req);
+      queryOf(requested[0]).apiKey.should.equal('rangoApiKey1');
+      requested[0].should.contain('rango-sandbox.example');
+    });
+
+    it('should pin the environment on the chains route too', async () => {
+      req.body.env = 'production';
+      await server.externalServices.rango.rangoGetSupportedChains(req);
+      queryOf(requested[0]).apiKey.should.equal('rangoApiKey1');
+    });
+  });
+
+  describe('upstream timeout', () => {
+    it('should bound every outbound request', async () => {
+      // A Rango endpoint that accepts the connection but never answers would
+      // otherwise hold the socket open indefinitely, and the app's pollers
+      // only check their deadline between requests.
+      let opts;
+      server.externalServices.rango.request = {
+        get: (_url, _opts, _cb) => {
+          opts = _opts;
+          return _cb(null, { body: { resultType: 'OK' } });
+        }
+      };
+      req = { headers: {}, body: { env: 'sandbox' } };
+
+      await server.externalServices.rango.rangoGetSupportedChains(req);
+      should.exist(opts.timeout);
+      opts.timeout.should.be.above(0);
     });
   });
 
