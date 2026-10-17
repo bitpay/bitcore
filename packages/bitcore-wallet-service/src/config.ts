@@ -409,8 +409,11 @@ const Config = (): any => {
     //   }
     // },
     // rango: {
+    //   // The test key documented at
+    //   // docs.rango.exchange/api-integration/api-key-and-rate-limits is paired
+    //   // with the public endpoint; a private key uses api.rango.exchange.
     //   sandbox: {
-    //     api: 'https://api.rango.exchange',
+    //     api: 'https://public-api.rango.exchange',
     //     apiKey: 'rango_sandbox_api_key_here',
     //     referrerAddress: 'rango_sandbox_referrer_address_here',
     //     referrerFee: 'rango_sandbox_referrer_fee_here'
