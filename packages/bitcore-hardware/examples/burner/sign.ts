@@ -12,7 +12,7 @@ if (!HwProxy.isValidChain('burner', chain)) {
 
 await HwProxy.connect();
 
-console.log('Tap an NFC reader with a burner wallet...');
+console.log('Tap an NFC reader with a burner device...');
 switch (chain) {
   case 'ETH': {
     const tx: string = CWC.Transactions.create({
@@ -26,8 +26,8 @@ switch (chain) {
     });
     
     const signedTransaction = await HwProxy.sign({
-      wallet: 'burner',
-      transport: 'nfc',
+      vendor: 'burner',
+      connection: 'nfc',
       chain: 'ETH',
       tx,
       password: '123456'
@@ -74,8 +74,8 @@ switch (chain) {
     });
     
     const signedTransaction: any = await HwProxy.sign({
-      wallet: 'burner',
-      transport: 'nfc',
+      vendor: 'burner',
+      connection: 'nfc',
       chain: 'BTC',
       tx,
       utxos,

@@ -11,6 +11,6 @@ if (!HwProxy.isValidChain('ledger', chain)) {
 await HwProxy.connect();
 
 console.log('Awaiting approval from your ledger...');
-console.log(await HwProxy.getPublicKey({ wallet: 'ledger', transport: 'speculos', chain }));
+console.log(await HwProxy.getPublicKey({ vendor: 'ledger', connection: 'speculos', chain }));
 await HwProxy.disconnect();
 process.exit(0);

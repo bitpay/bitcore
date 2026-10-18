@@ -25,13 +25,13 @@ describe('Ledger Litecoin', function () {
 
   it('should get matching address and publickey', async () => {
     const publicKey = await HwProxy.getPublicKey({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'LTC'
     });
     const address = await HwProxy.getAddress({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'LTC'
     });
 
@@ -51,8 +51,8 @@ describe('Ledger Litecoin', function () {
 
   it('should sign a transaction', async () => {
     const ledgerAddress = await HwProxy.getAddress({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'LTC'
     });
     const receivingAddress = new BitcoreLibLtc.PrivateKey().toAddress().toString();
@@ -104,8 +104,8 @@ describe('Ledger Litecoin', function () {
     });
 
     const signPromise = HwProxy.sign({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'LTC',
       tx,
       utxos,

@@ -24,13 +24,13 @@ describe('Ledger Solana', function () {
 
   it('should get address/publickey', async () => {
     const publicKey = await HwProxy.getPublicKey({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'SOL'
     });
     const address = await HwProxy.getAddress({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'SOL'
     });
 
@@ -42,8 +42,8 @@ describe('Ledger Solana', function () {
 
   it('should sign a transaction', async () => {
     const address = await HwProxy.getAddress({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'SOL'
     });
     const tx = CWC.Transactions.create({
@@ -57,8 +57,8 @@ describe('Ledger Solana', function () {
     });
     
     const signPromise = HwProxy.sign({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'SOL',
       tx
     });

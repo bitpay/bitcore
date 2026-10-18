@@ -47,7 +47,7 @@ class UtilClass {
     if (result.status === 'error') {
       const e = result.error;
       const code = e?.errorCode ?? e?._tag;
-      throw new Error(`Fetching xpub failed: ${e?.message ?? 'unknown error'}${code ? ` (${code})` : ''}`, { cause: e });
+      throw new Error(`${e?.message ?? 'unknown error'}${code ? ` (${code})` : ''}`, { cause: e });
     }
     return result.output;
   }

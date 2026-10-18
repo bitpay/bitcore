@@ -24,13 +24,13 @@ describe('Ledger Ethereum', function () {
 
   it('should get address and publickey', async () => {
     const publicKey = await HwProxy.getPublicKey({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'ETH'
     });
     const address = await HwProxy.getAddress({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'ETH'
     });
 
@@ -53,8 +53,8 @@ describe('Ledger Ethereum', function () {
     });
     
     const signPromise = HwProxy.sign({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'ETH',
       tx
     });
@@ -76,8 +76,8 @@ describe('Ledger Ethereum', function () {
 
     const address = signedTransaction.from;
     const expectedAddress = await HwProxy.getAddress({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'ETH'
     });
 

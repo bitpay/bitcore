@@ -36,8 +36,8 @@ describe('HwProxy', function () {
       for (const chain of ['BTC', 'BCH', 'DOGE', 'not a chain', 'LTC', 'ETH', 'SOL']) {
         if (HwProxy.isValidChain('ledger', chain)) {
           const address = await HwProxy.getAddress({
-            wallet: 'ledger',
-            transport: 'speculos',
+            vendor: 'ledger',
+            connection: 'speculos',
             chain
           });
           addresses.push(address);
@@ -47,8 +47,8 @@ describe('HwProxy', function () {
           const privateKey = new CWC.BitcoreLib.PrivateKey();
           const publicKey = privateKey.toPublicKey();
           const addressRequest: Promise<string> = HwProxy.getAddress({
-            wallet: 'burner',
-            transport: 'nfc',
+            vendor: 'burner',
+            connection: 'nfc',
             chain
           });
           if (chain === 'BTC') {

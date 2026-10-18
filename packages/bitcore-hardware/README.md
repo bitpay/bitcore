@@ -2,17 +2,17 @@
 **A coin-agnostic hardware wallet library for getting data and signing transactions with ledger and burner.**
 
 ## Usage
-Get a bitcoin address with a ledger wallet
+Get a bitcoin address with a ledger device
 ```JavaScript
 import { HwProxy } from '@bitpay-labs/bitcore-hardware';
 
 await HwProxy.connect();
 
-const ledgerAddress = await HwProxy.getAddress({ wallet: 'ledger', transport: 'speculos', chain: 'BTC' });
+const ledgerAddress = await HwProxy.getAddress({ vendor: 'ledger', connection: 'speculos', chain: 'BTC' });
 console.log(ledgerAddress);
 // bc1qj86hpgprdudkks84y52vdenz86kd26stkssrcq
 ```
-Sign a bitcoin transaction with a ledger wallet
+Sign a bitcoin transaction with a ledger device
 ```JavaScript
 // utxos from https://api.bitcore.io/api/BTC/mainnet/address/bc1qj86hpgprdudkks84y52vdenz86kd26stkssrcq/coins
 const utxos = [
@@ -39,8 +39,8 @@ const tx: string = CWC.Transactions.create({
 });
 
 const signedTransaction = await HwProxy.sign({
-  wallet: 'ledger',
-  transport: 'speculos',
+  vendor: 'ledger',
+  connection: 'speculos',
   chain: 'BTC',
   tx,
   utxos
@@ -55,15 +55,15 @@ $ curl --header "Content-Type: application/json" --request POST -d '{"rawTx": "0
 View on Insight: https://bitpay.com/insight/BTC/mainnet/tx/3049a6c75390696260366672693ebccf1a5a9892e3aa728b1f51c59e8f137a26
 */
 ```
-Get an address with a burner wallet:
+Get an address with a burner device:
 ```JavaScript
 await HwProxy.connect();
 
-const burnerAddress = await HwProxy.getAddress({ wallet: 'burner', transport: 'nfc', chain: 'BTC' });
+const burnerAddress = await HwProxy.getAddress({ vendor: 'burner', connection: 'nfc', chain: 'BTC' });
 console.log(burnerAddress);
 // bc1q2mz4276pxzt2488xtmml9esn8hmnhj5t3rd8gk
 ```
-Sign a transaction with a burner wallet:
+Sign a transaction with a burner device:
 ```JavaScript
 // utxo from https://api.bitcore.io/api/BTC/mainnet/address/bc1q2mz4276pxzt2488xtmml9esn8hmnhj5t3rd8gk/coins
 const utxos = [
@@ -90,8 +90,8 @@ const tx: string = CWC.Transactions.create({
 });
 
 const signedTransaction: any = await HwProxy.sign({
-  wallet: 'burner',
-  transport: 'nfc',
+  vendor: 'burner',
+  connection: 'nfc',
   chain: 'BTC',
   tx,
   utxos,

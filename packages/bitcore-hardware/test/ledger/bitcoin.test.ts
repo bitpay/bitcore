@@ -24,13 +24,13 @@ describe('Ledger Bitcoin', function () {
 
   it('should get matching address and publickey', async () => {
     const publicKey = await HwProxy.getPublicKey({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'BTC'
     });
     const address = await HwProxy.getAddress({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'BTC'
     });
 
@@ -52,8 +52,8 @@ describe('Ledger Bitcoin', function () {
     const satoshis = 100_000;
     const fee = 1000;
     const address = await HwProxy.getAddress({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'BTC'
     });
     const utxos = [
@@ -80,8 +80,8 @@ describe('Ledger Bitcoin', function () {
     });
     
     const signPromise = HwProxy.sign({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'BTC',
       tx,
       utxos

@@ -14,7 +14,7 @@ const { Address, PublicKey, crypto } = BitcoreLib;
  */
 export default class Burner implements Base {
   nfc?: NFC;
-  // list of commands waiting to be sent to the wallet
+  // list of commands waiting to be sent to the device
   commandQueue = new Map<string, Record<string, any>>();
   // responses to all the commands from commandQueue
   responses = new Map<string, Record<string, any>>();
@@ -22,26 +22,26 @@ export default class Burner implements Base {
   private SLOT = 9;
 
   /**
-   * Queues a command to be sent off to the wallet when it is scanned with an NFC reader.
+   * Queues a command to be sent off to the device when it is scanned with an NFC reader.
    * 
    * Logic for getting the response is not in this function, but in connect.
    * This function simply waits for the card listener to add the responses.
    * 
    * @param command command to queue
-   * @returns response from the wallet
+   * @returns response from the device
    */
   async sendCommand(command: CommandType): Promise<Record<string, any>> {
     return this.sendManyCommands([command]).then(responses => responses[0]);
   }
 
   /**
-   * Queues commands to be sent off to the wallet when it is scanned with an NFC reader.
+   * Queues commands to be sent off to the device when it is scanned with an NFC reader.
    * 
    * Logic for getting the response is not in this function, but in connect.
    * This function simply waits for the card listener to add the responses.
    * 
    * @param command commands to queue
-   * @returns responses from the wallet
+   * @returns responses from the device
    */
   async sendManyCommands(commands: CommandType[]): Promise<Record<string, any>[]> {
     const ids: string[] = [];
@@ -73,7 +73,7 @@ export default class Burner implements Base {
   }
 
   /**
-   * Sends all commands to the wallet and recieves all responses
+   * Sends all commands to the device and recieves all responses
    */
   async connect() {
     this.nfc = this.nfc ?? new NFC();

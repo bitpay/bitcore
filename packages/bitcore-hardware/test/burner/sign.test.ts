@@ -45,8 +45,8 @@ describe('Burner Signing', function () {
     });
 
     const signRequest: Promise<string> = HwProxy.sign({
-      wallet: 'burner',
-      transport: 'nfc',
+      vendor: 'burner',
+      connection: 'nfc',
       chain: 'BTC',
       tx,
       utxos,
@@ -96,8 +96,8 @@ describe('Burner Signing', function () {
     });
     
     const signRequest = HwProxy.sign({
-      wallet: 'burner',
-      transport: 'nfc',
+      vendor: 'burner',
+      connection: 'nfc',
       chain: 'ETH',
       tx,
       password: 'password not relevant to test'
@@ -156,8 +156,8 @@ describe('Burner Signing', function () {
     const signature = crypto.ECDSA.sign(Buffer.from(hash, 'hex'), privateKey);
 
     const signRequest: Promise<string> = HwProxy.sign({
-      wallet: 'burner',
-      transport: 'nfc',
+      vendor: 'burner',
+      connection: 'nfc',
       chain: 'BTC',
       tx,
       utxos,
@@ -202,8 +202,8 @@ describe('Burner Signing', function () {
       .to('1Gokm82v6DmtwKEB8AiVhm82hyFSsEvBDK', 1000);
 
     const signRequest: Promise<string> = HwProxy.sign({
-      wallet: 'burner',
-      transport: 'nfc',
+      vendor: 'burner',
+      connection: 'nfc',
       chain: 'BTC',
       tx,
       password: 'password not relevant to test'
@@ -280,8 +280,8 @@ describe('Burner Signing', function () {
     });
 
     const signRequest: Promise<string> = HwProxy.sign({
-      wallet: 'burner',
-      transport: 'nfc',
+      vendor: 'burner',
+      connection: 'nfc',
       chain: 'BTC',
       tx,
       utxos,

@@ -25,13 +25,13 @@ describe('Ledger Dogecoin', function () {
 
   it('should get matching address and publickey', async () => {
     const publicKey = await HwProxy.getPublicKey({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'DOGE'
     });
     const address = await HwProxy.getAddress({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'DOGE'
     });
 
@@ -51,8 +51,8 @@ describe('Ledger Dogecoin', function () {
 
   it('should sign a transaction', async () => {
     const ledgerAddress = await HwProxy.getAddress({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'DOGE'
     });
     const receivingAddress = new BitcoreLibDoge.PrivateKey().toAddress().toString();
@@ -104,8 +104,8 @@ describe('Ledger Dogecoin', function () {
     });
 
     const signPromise = HwProxy.sign({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'DOGE',
       tx,
       utxos,

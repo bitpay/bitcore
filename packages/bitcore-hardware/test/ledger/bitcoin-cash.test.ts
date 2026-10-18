@@ -25,13 +25,13 @@ describe('Ledger Bitcoin Cash', function () {
 
   it('should get matching address and publickey', async () => {
     const publicKey = await HwProxy.getPublicKey({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'BCH'
     });
     const address = await HwProxy.getAddress({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'BCH'
     });
 
@@ -50,8 +50,8 @@ describe('Ledger Bitcoin Cash', function () {
 
   it('should sign a transaction', async () => {
     const ledgerAddress = await HwProxy.getAddress({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'BCH'
     });
     const receivingAddress = new BitcoreLibCash.PrivateKey().toAddress().toString();
@@ -103,8 +103,8 @@ describe('Ledger Bitcoin Cash', function () {
     });
 
     const signPromise = HwProxy.sign({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection: 'speculos',
       chain: 'BCH',
       tx,
       utxos,

@@ -10,6 +10,6 @@ if (!HwProxy.isValidChain('burner', chain)) {
 
 await HwProxy.connect();
 
-console.log('Tap an NFC reader with a burner wallet...');
-console.log(await HwProxy.getAddress({ wallet: 'burner', transport: 'nfc', chain }));
+console.log('Tap an NFC reader with a burner device...');
+console.log(await HwProxy.getAddress({ vendor: 'burner', connection: 'nfc', chain }));
 process.exit(0);

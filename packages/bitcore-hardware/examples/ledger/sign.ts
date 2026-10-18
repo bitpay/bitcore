@@ -5,6 +5,7 @@ import Utils from '../../src/util.js';
 
 const args = process.argv.slice(2);
 const chain = args[0]?.toUpperCase() || 'BTC';
+const connection: 'hid' | 'speculos' = args[1]?.toLowerCase() === 'hid' ? 'hid' : 'speculos';
 
 if (!HwProxy.isValidChain('ledger', chain)) {
   throw new Error(`Invalid chain: ${chain}`);
@@ -15,7 +16,7 @@ await HwProxy.connect();
 console.log('Awaiting approval from your ledger...');
 switch (chain) {
   case 'SOL': {
-    const address = await HwProxy.getAddress({ wallet: 'ledger', transport: 'speculos', chain: 'SOL' });
+    const address = await HwProxy.getAddress({ vendor: 'ledger', connection, chain: 'SOL' });
     
     const tx = CWC.Transactions.create({
       network: 'livenet',
@@ -28,8 +29,8 @@ switch (chain) {
     });
     
     const signedTransaction = await HwProxy.sign({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection,
       chain: 'SOL',
       tx
     });
@@ -46,8 +47,8 @@ switch (chain) {
     });
     
     const signedTransaction = await HwProxy.sign({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection,
       chain: 'ETH',
       tx
     });
@@ -57,7 +58,7 @@ switch (chain) {
   // BCH, DOGE, and LTC all need the previous transactions of all the inputs in order to sign
   case 'LTC': {
     const lib = Utils.libs[chain];
-    const ledgerAddress = await HwProxy.getAddress({ wallet: 'ledger', transport: 'speculos', chain });
+    const ledgerAddress = await HwProxy.getAddress({ vendor: 'ledger', connection, chain });
     const receivingAddress = new lib.PrivateKey().toAddress().toString();
 
     const fee = 1000;
@@ -106,8 +107,8 @@ switch (chain) {
     });
 
     const signedTransaction = await HwProxy.sign({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection,
       chain: 'LTC',
       tx,
       utxos,
@@ -119,7 +120,7 @@ switch (chain) {
   }
   case 'DOGE': {
     const lib = Utils.libs[chain];
-    const ledgerAddress = await HwProxy.getAddress({ wallet: 'ledger', transport: 'speculos', chain });
+    const ledgerAddress = await HwProxy.getAddress({ vendor: 'ledger', connection, chain });
     const receivingAddress = new lib.PrivateKey().toAddress().toString();
 
     const fee = 1_000_000;
@@ -168,8 +169,8 @@ switch (chain) {
     });
 
     const signedTransaction = await HwProxy.sign({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection,
       chain: 'DOGE',
       tx,
       utxos,
@@ -181,7 +182,7 @@ switch (chain) {
   }
   case 'BCH': {
     const lib = Utils.libs[chain];
-    const ledgerAddress = await HwProxy.getAddress({ wallet: 'ledger', transport: 'speculos', chain });
+    const ledgerAddress = await HwProxy.getAddress({ vendor: 'ledger', connection, chain });
     const receivingAddress = new lib.PrivateKey().toAddress().toString();
       
     const fee = 362;
@@ -231,8 +232,8 @@ switch (chain) {
     });
 
     const signedTransaction = await HwProxy.sign({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection,
       chain: 'BCH',
       tx,
       utxos,
@@ -245,7 +246,7 @@ switch (chain) {
   default:
   case 'BTC': {
     const lib = Utils.libs[chain];
-    const ledgerAddress = await HwProxy.getAddress({ wallet: 'ledger', transport: 'speculos', chain });
+    const ledgerAddress = await HwProxy.getAddress({ vendor: 'ledger', connection, chain });
     const receivingAddress = new lib.PrivateKey().toAddress().toString();
 
     const utxos = [
@@ -272,8 +273,8 @@ switch (chain) {
     });
     
     const signedTransaction = await HwProxy.sign({
-      wallet: 'ledger',
-      transport: 'speculos',
+      vendor: 'ledger',
+      connection,
       chain: 'BTC',
       tx,
       utxos

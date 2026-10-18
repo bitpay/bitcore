@@ -44,30 +44,31 @@ const { speculosTransportFactory } = require('@ledgerhq/device-transport-kit-spe
 const TransportNodeHid: typeof HwTransportNode.default.default = require('@ledgerhq/hw-transport-node-hid').default;
 const TransportNodeSpeculos: typeof HwTransportNodeSpeculos.default.default = require('@ledgerhq/hw-transport-node-speculos').default;
 
-interface Connection {
-  port: number;
-  chains: ChainType[];
-}
-
-interface TransportConnection {
+// One hardware wallet is both a transport device and a dmk device
+interface TransportDevice {
   port: number;
   chains: TransportChainType[];
 }
 
-interface DmkConnection {
+interface DmkDevice {
   dmk: DMK.DeviceManagementKit;
-  device: DMK.ConnectedDevice | null;
+  connectedDevice: DMK.ConnectedDevice | null;
   chains: DmkChainType[];
   discoverySubscription: Subscription | null;
   sessionId: DMK.DeviceSessionId | null;
 }
 
-interface Config {
-  connections: Connection[];
-  transport: 'hid' | 'speculos';
+interface DeviceConfig {
+  port: number;
+  chains: ChainType[];
 }
 
-const MODULE_CLASSES = {
+interface Config {
+  devices: DeviceConfig[];
+  connection: 'hid' | 'speculos';
+}
+
+const MODULE_CLASSES: Record<string, any> = {
   BTC: BitcoinModule,
   ETH: EthereumModule,
   SOL: SolanaModule,
@@ -76,24 +77,24 @@ const MODULE_CLASSES = {
   LTC: LitecoinModule
 };
 
-const SIGNER_CLASSES = {
+const SIGNER_CLASSES: Record<string, any> = {
   BTC: SignerBtcBuilder,
   ETH: SignerEthBuilder,
-  SOl: SignerSolanaBuilder
+  SOL: SignerSolanaBuilder
 };
 
 const DEFAULT_CONFIG: Config = {
-  connections: [
+  devices: [
     {
       chains: CHAINS as ChainType[],
       port: 5000
     }
   ],
-  transport: 'hid'
+  connection: 'hid'
 };
 
 const SPECULOS_CONFIG: Config = {
-  connections: [
+  devices: [
     {
       chains: ['BTC'],
       port: 5000
@@ -119,26 +120,26 @@ const SPECULOS_CONFIG: Config = {
       port: 40005
     }
   ],
-  transport: 'speculos'
+  connection: 'speculos'
 };
 
 export default class Ledger implements Base {
   speculos: boolean;
-  dmkConnections: DmkConnection[] = [];
-  transportConnections: TransportConnection[] = [];
+  dmkDevices: DmkDevice[] = [];
+  transportDevices: TransportDevice[] = [];
 
   modules = {} as Record<ChainType, BaseModule>;
 
   constructor(config?: Partial<Config>) {
-    this.speculos = config?.transport === 'speculos';
+    this.speculos = config?.connection === 'speculos';
     if (config == undefined) {
       config = this.speculos ? SPECULOS_CONFIG : DEFAULT_CONFIG;        
-    } else if (config.connections == undefined) {
-      config.connections = this.speculos ? SPECULOS_CONFIG.connections : DEFAULT_CONFIG.connections;
+    } else if (config.devices == undefined) {
+      config.devices = this.speculos ? SPECULOS_CONFIG.devices : DEFAULT_CONFIG.devices;
     }
-    // Handle dmk and transport connections
-    for (const connection of config?.connections || []) {
-      const { chains, port } = connection;
+    // Handle dmk and transport devices
+    for (const deviceConfig of config?.devices || []) {
+      const { chains, port } = deviceConfig;
       if (chains.every(Ledger.isDmkChain)) {
         let dmkBuilder = new DeviceManagementKitBuilder();
         if (this.speculos) {
@@ -147,27 +148,27 @@ export default class Ledger implements Base {
           dmkBuilder = dmkBuilder.addTransport(nodeHidTransportFactory);          
         }
         
-        this.dmkConnections.push({
+        this.dmkDevices.push({
           dmk: dmkBuilder.build(),
-          device: null,
+          connectedDevice: null,
           chains,
           discoverySubscription: null,
           sessionId: null
         });
       } else if (chains.every(Ledger.isTransportChain)) {        
-        this.transportConnections.push({
+        this.transportDevices.push({
           port,
           chains
         });
       } else {
-        throw new Error('BCH, DOGE, and LTC connections cannot share a port with BTC, ETH, or SOL');
+        throw new Error('BCH, DOGE, and LTC cannot share a port with BTC, ETH, or SOL');
       }
     }
   }
 
   async connect() {
-    for (const connection of this.transportConnections) {
-      const { port, chains } = connection;
+    for (const transportDevice of this.transportDevices) {
+      const { port, chains } = transportDevice;
       let transport;
       if (this.speculos) {
         transport = await TransportNodeSpeculos.open({ apduPort: port });
@@ -180,29 +181,29 @@ export default class Ledger implements Base {
     }
 
     const promises: Promise<any>[] = [];
-    for (const connection of this.dmkConnections) {
+    for (const dmkDevice of this.dmkDevices) {
       const promise = new Promise(async resolve => {
-        if (connection.discoverySubscription) {
-          connection.discoverySubscription.unsubscribe();
+        if (dmkDevice.discoverySubscription) {
+          dmkDevice.discoverySubscription.unsubscribe();
         }
-        connection.discoverySubscription = connection.dmk.startDiscovering({}).subscribe({
+        dmkDevice.discoverySubscription = dmkDevice.dmk.startDiscovering({}).subscribe({
           next: async (device) => {
             try {
-              connection.sessionId = await connection.dmk.connect({ device });
-              connection.device = connection.dmk.getConnectedDevice({
-                sessionId: connection.sessionId
+              dmkDevice.sessionId = await dmkDevice.dmk.connect({ device });
+              dmkDevice.connectedDevice = dmkDevice.dmk.getConnectedDevice({
+                sessionId: dmkDevice.sessionId
               });
 
-              for (const chain of connection.chains) {
+              for (const chain of dmkDevice.chains) {
                 let signer;
                 if (chain === 'SOL') {
                   signer = new SignerSolanaBuilder({
-                    dmk: connection.dmk,
-                    sessionId: connection.sessionId,
+                    dmk: dmkDevice.dmk,
+                    sessionId: dmkDevice.sessionId,
                     solanaRPCURL: 'https://api.mainnet-beta.solana.com/',
                   }).build();
                 } else {
-                  signer = new SIGNER_CLASSES[chain]({ dmk: connection.dmk, sessionId: connection.sessionId }).build();
+                  signer = new SIGNER_CLASSES[chain]({ dmk: dmkDevice.dmk, sessionId: dmkDevice.sessionId }).build();
                 }
                 this.modules[chain] = new MODULE_CLASSES[chain](signer);
               }
@@ -225,14 +226,14 @@ export default class Ledger implements Base {
   }
 
   async disconnect() {
-    for (const connection of this.dmkConnections) {
-      if (connection.discoverySubscription) {
-        connection.discoverySubscription.unsubscribe();
+    for (const dmkDevice of this.dmkDevices) {
+      if (dmkDevice.discoverySubscription) {
+        dmkDevice.discoverySubscription.unsubscribe();
 
-        if (connection.sessionId) {
+        if (dmkDevice.sessionId) {
           try {
-            await connection.dmk.disconnect({ sessionId: connection.sessionId });
-            connection.sessionId = null;
+            await dmkDevice.dmk.disconnect({ sessionId: dmkDevice.sessionId });
+            dmkDevice.sessionId = null;
           } catch (error) {
             console.error(error);
           }

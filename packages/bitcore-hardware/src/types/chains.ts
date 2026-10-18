@@ -4,6 +4,7 @@ export type SolChainType = 'SOL';
 export type ChainType = UtxoChainType | EvmChainType | SolChainType;
 export type TransportChainType = 'BCH' | 'DOGE' | 'LTC';
 export type DmkChainType = 'BTC' | 'ETH' | 'SOL';
+export type BurnerChainType = 'BTC' | 'ETH';
 
 export const UTXO_CHAINS = ['BTC', 'BCH', 'DOGE', 'LTC'];
 export const EVM_CHAINS = ['ETH'];
