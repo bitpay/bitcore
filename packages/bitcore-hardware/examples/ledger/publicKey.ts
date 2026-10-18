@@ -3,6 +3,7 @@ import { HwProxy } from '../../src/index.js';
 
 const args = process.argv.slice(2);
 const chain = args[0]?.toUpperCase() || 'BTC';
+const connection: 'hid' | 'speculos' = args[1]?.toLowerCase() === 'hid' ? 'hid' : 'speculos';
 
 if (!HwProxy.isValidChain('ledger', chain)) {
   throw new Error(`Invalid chain: ${chain}`);
@@ -10,7 +11,7 @@ if (!HwProxy.isValidChain('ledger', chain)) {
 
 await HwProxy.connect();
 
-console.log('Awaiting approval from your ledger...');
-console.log(await HwProxy.getPublicKey({ vendor: 'ledger', connection: 'speculos', chain }));
+console.log('Waiting for response...');
+console.log(await HwProxy.getPublicKey({ vendor: 'ledger', connection, chain }));
 await HwProxy.disconnect();
 process.exit(0);

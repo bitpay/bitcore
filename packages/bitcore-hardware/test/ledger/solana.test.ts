@@ -11,7 +11,7 @@ const { deviceControllerClientFactory } = require('@ledgerhq/speculos-device-con
 const { SolKit } = CWC;
 
 describe('Ledger Solana', function () {
-  const deviceClient = deviceControllerClientFactory('http://localhost:5002');
+  const deviceClient = deviceControllerClientFactory('http://localhost:5003');
   const deviceButtons = deviceClient.buttonFactory();
 
   before(async () => {

@@ -11,7 +11,7 @@ const { deviceControllerClientFactory } = require('@ledgerhq/speculos-device-con
 const { ethers } = CWC;
 
 describe('Ledger Ethereum', function () {
-  const deviceClient = deviceControllerClientFactory('http://localhost:5001');
+  const deviceClient = deviceControllerClientFactory('http://localhost:5002');
   const deviceButtons = deviceClient.buttonFactory();
 
   before(async () => {

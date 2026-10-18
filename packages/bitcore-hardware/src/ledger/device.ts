@@ -62,8 +62,12 @@ const SIGNER_CLASSES: Record<string, any> = {
 const DEFAULT_CONFIG: Config = {
   devices: [
     {
-      chains: CHAINS as ChainType[],
+      chains: DMK_CHAINS as DmkChainType[],
       port: 5000
+    },
+    {
+      chains: TRANSPORT_CHAINS as TransportChainType[],
+      port: 40000
     }
   ],
   connection: 'hid'
@@ -73,27 +77,27 @@ const SPECULOS_CONFIG: Config = {
   devices: [
     {
       chains: ['BTC'],
-      port: 5000
-    },
-    {
-      chains: ['ETH'],
       port: 5001
     },
     {
-      chains: ['SOL'],
+      chains: ['ETH'],
       port: 5002
     },
     {
-      chains: ['BCH'],
-      port: 40003
+      chains: ['SOL'],
+      port: 5003
     },
     {
-      chains: ['DOGE'],
+      chains: ['BCH'],
       port: 40004
     },
     {
-      chains: ['LTC'],
+      chains: ['DOGE'],
       port: 40005
+    },
+    {
+      chains: ['LTC'],
+      port: 40006
     }
   ],
   connection: 'speculos'
@@ -110,6 +114,7 @@ export default class Ledger implements Base {
   modules = {} as Record<ChainType, BaseModule>;
 
   constructor(config?: Partial<Config>) {
+    // choose config
     this.speculos = config?.connection === 'speculos';
     if (config == undefined) {
       config = this.speculos ? SPECULOS_CONFIG : DEFAULT_CONFIG;        
@@ -140,7 +145,7 @@ export default class Ledger implements Base {
           chains
         });
       } else {
-        throw new Error('BCH, DOGE, and LTC cannot share a port with BTC, ETH, or SOL');
+        throw new Error(`BCH, DOGE, and LTC cannot share a port with BTC, ETH, or SOL\nInvalid chain combination ${chains}`);
       }
     }
   }

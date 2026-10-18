@@ -11,7 +11,7 @@ const { deviceControllerClientFactory } = require('@ledgerhq/speculos-device-con
 const { BitcoreLibLtc } = CWC;
 
 describe('Ledger Litecoin', function () {
-  const deviceClient = deviceControllerClientFactory('http://localhost:5005');
+  const deviceClient = deviceControllerClientFactory('http://localhost:5006');
   const deviceButtons = deviceClient.buttonFactory();
   
   before(async () => {
