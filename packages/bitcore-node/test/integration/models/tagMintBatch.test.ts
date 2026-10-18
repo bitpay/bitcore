@@ -220,6 +220,73 @@ describe('TransactionModel.tagMintBatch', function() {
       return calls;
     }
 
+    it('orders a tx\'s wallets by output, and finds several wallets for an address, when its addresses span lookups', async () => {
+      const P = address('later-chunk');
+      const Q = address('first-chunk');
+      await addWalletAddress(W1, P);
+      await addWalletAddress(W3, P);
+      await addWalletAddress(W2, Q);
+      // Q is in the first 1000 distinct addresses, P in the second lookup; the second tx pays P first, then Q
+      const first = makeTx([Q, ...Array.from({ length: 999 }, (_, i) => other(i)), P]);
+      const second = makeTx([P, Q]);
+      const [ops] = await mintOps([first, second]);
+      expect(hex(ops[1000].updateOne.update.$set.wallets)!.sort()).to.deep.equal(hex([W1, W3]));
+      const pWallets = hex(ops[1000].updateOne.update.$set.wallets);
+      expect(hex(second.wallets)).to.deep.equal([...pWallets!, W2.toHexString()]);
+      expect(hex(first.wallets)).to.deep.equal([W2.toHexString(), ...pWallets!]);
+    });
+
+    it('tags an output with each of its wallets once, even when its address is looked up in two chunks', async () => {
+      await addWalletAddress(W1, A1);
+      // A1, then 1000 other addresses, then A1 again: more than one 1000-address lookup
+      const tx = makeTx([A1, ...Array.from({ length: 1000 }, (_, i) => other(i)), A1]);
+      const [ops] = await mintOps([tx]);
+      taggedUpdate(ops[0], [W1]);
+      taggedUpdate(ops[1001], [W1]);
+      expect(hex(tx.wallets)).to.deep.equal(hex([W1, W1]));
+    });
+
+    it('tags each 50k-output mint batch\'s txs from that batch alone', async () => {
+      await addWalletAddress(W1, A1);
+      await addWalletAddress(W2, B1);
+      // 11 txs x 10k outputs: batches of txs 0-4 and 5-9 (50k outputs each), then tx 10; A1 is paid in the
+      // first batch, B1 in the second, nothing in the third
+      const payTo = (t: number) => (t === 0 ? A1 : t === 5 ? B1 : other(t * 10000));
+      const txs = Array.from({ length: 11 }, (_, t) => makeTx([payTo(t), ...Array.from({ length: 9999 }, (_, i) => other(t * 10000 + 1 + i))]));
+      const batches = await mintOps(txs);
+      expect(batches.map(batch => batch.length)).to.deep.equal([50000, 50000, 10000]);
+      expect(txs.map(tx => hex(tx.wallets))).to.deep.equal([
+        hex([W1]), [], [], [], [],
+        hex([W2]), [], [], [], [],
+        // the last batch matched nothing, so its tx is left untagged
+        undefined
+      ]);
+
+      // again with the last batch matching too: it must not retag the earlier batches' txs
+      await addWalletAddress(W3, other(100000));
+      for (const tx of txs) {
+        delete (tx as any).wallets;
+      }
+      await mintOps(txs);
+      expect(txs.map(tx => hex(tx.wallets))).to.deep.equal([
+        hex([W1]), [], [], [], [],
+        hex([W2]), [], [], [], [],
+        hex([W3])
+      ]);
+    });
+
+    it('looks up wallet addresses in one index-only query per 1000 distinct addresses', async () => {
+      await addWalletAddress(W1, other(5));
+      const calls = recordWalletAddressFinds(Array.from({ length: 2000 }, (_, i) => other(i)));
+      // 2500 outputs over 2000 distinct addresses
+      await mintOps([makeTx([...Array.from({ length: 2000 }, (_, i) => other(i)), ...Array.from({ length: 500 }, (_, i) => other(i))])]);
+      expect(calls.map(c => c.addresses)).to.deep.equal([1000, 1000]);
+      expect(calls.map(c => c.projection)).to.deep.equal([
+        { _id: 0, wallet: 1, address: 1 },
+        { _id: 0, wallet: 1, address: 1 }
+      ]);
+    });
+
     it('runs no wallet address query when tagging is off', async () => {
       allowCreationBeforeCompleteSync(false);
       const calls = recordWalletAddressFinds([A1]);
