@@ -88,6 +88,10 @@ describe('EVM balance at a time', function() {
     throw new Error('expected an error');
   }
 
+  function cacheWrites() {
+    return (CacheStorage.setGlobal as sinon.SinonSpy).getCalls().filter(call => cacheKeys.includes(call.args[0]));
+  }
+
   function latestRpcCalls() {
     return rpcCalls.filter(call => call.block === 'latest');
   }
@@ -130,6 +134,7 @@ describe('EVM balance at a time', function() {
       const blockHeight = blockHeights[params.time as string];
       return blockHeight === undefined ? null : ({ height: blockHeight } as any);
     });
+    sandbox.spy(CacheStorage, 'setGlobal');
   });
 
   afterEach(async () => {
@@ -261,6 +266,52 @@ describe('EVM balance at a time', function() {
       expect(error.message).to.equal(`Balance not found at ${timeWithoutBlock}`);
       expect(rpcCalls).to.deep.equal([]);
     });
+
+    it('returns the balance at the time even while the latest balance is cached', async () => {
+      const address = newAddress();
+      await getBalance(address, {});
+      await getBalance(address, { tokenAddress });
+      expect(await getBalance(address, { time })).to.deep.equal({ confirmed: 700, unconfirmed: 0, balance: 700 });
+      expect(await getBalance(address, { time, tokenAddress })).to.deep.equal(
+        { confirmed: 30, unconfirmed: 0, balance: 30 }
+      );
+    });
+
+    it('does not write the cache for a balance at a time', async () => {
+      const address = newAddress();
+      await getBalance(address, { time });
+      await getBalance(address, { time, tokenAddress });
+      expect(cacheWrites()).to.deep.equal([]);
+      expect(await CacheStorage.collection.findOne({ key: latestKey(address) })).to.equal(null);
+      expect(await CacheStorage.collection.findOne({ key: latestKey(address, tokenAddress) })).to.equal(null);
+    });
+
+    it('keeps the cached latest balance when a balance at a time finishes after it', async () => {
+      const address = newAddress();
+      let historicalStarted: () => void = () => {};
+      const started = new Promise<void>(resolve => {
+        historicalStarted = resolve;
+      });
+      let releaseHistorical: () => void = () => {};
+      const held = new Promise<void>(resolve => {
+        releaseHistorical = resolve;
+      });
+      rpcGate = async block => {
+        if (block !== 'latest') {
+          historicalStarted();
+          await held;
+        }
+      };
+      // both requests miss the cache; the latest one is cached first, then the one at a time finishes
+      const historical = getBalance(address, { time });
+      await Promise.race([started, historical]);
+      await getBalance(address, {});
+      releaseHistorical();
+      await historical;
+
+      expect(await getBalance(address, {})).to.deep.equal({ confirmed: 1000, unconfirmed: 0, balance: 1000 });
+      expect(latestRpcCalls().length).to.equal(1);
+    });
   });
 
   describe('getWalletBalanceAtTime', () => {
@@ -367,5 +418,26 @@ describe('EVM balance at a time', function() {
       const error = await errorFrom(getWalletBalance({}, {}));
       expect(error.message).to.equal('Wallet balance can only be retrieved for wallets with the _id property');
     });
+
+    it('sums the balances at the time even while the latest balances are cached', async () => {
+      const { wallet, addresses } = await newWallet(3);
+      for (const address of addresses) {
+        await getBalance(address, {});
+      }
+      expect(await getWalletBalance(wallet, {})).to.deep.equal({ confirmed: 2100, unconfirmed: 0, balance: 2100 });
+      expect(cacheWrites().length).to.equal(3);
+      for (const address of addresses) {
+        const cached = await CacheStorage.collection.findOne({ key: latestKey(address) });
+        expect(cached!.value.balance).to.equal('0x3e8');
+      }
+    });
+
+    for (const [label, walletTime] of [['', time], [' at the genesis block', genesisTime]]) {
+      it(`looks up the block once for every address in the wallet${label}`, async () => {
+        const { wallet } = await newWallet(3);
+        await getWalletBalance(wallet, {}, walletTime);
+        expect(blockLookups).to.deep.equal([walletTime]);
+      });
+    }
   });
 });

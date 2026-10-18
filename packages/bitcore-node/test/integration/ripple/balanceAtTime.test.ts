@@ -81,6 +81,10 @@ describe('XRP balance at a time', function() {
     throw new Error('expected an error');
   }
 
+  function cacheWrites() {
+    return (CacheStorage.setGlobal as sinon.SinonSpy).getCalls().filter(call => cacheKeys.includes(call.args[0]));
+  }
+
   function drops(confirmed: number) {
     return { confirmed, unconfirmed: 0, balance: confirmed };
   }
@@ -104,6 +108,7 @@ describe('XRP balance at a time', function() {
       const index = ledgerIndexes[params.time as string];
       return index === undefined ? null : ({ height: index } as any);
     });
+    sandbox.spy(CacheStorage, 'setGlobal');
   });
 
   afterEach(async () => {
@@ -192,6 +197,46 @@ describe('XRP balance at a time', function() {
       expect(error.message).to.equal(`Balance not found at ${timeWithoutLedger}`);
       expect(clientCalls).to.deep.equal([]);
     });
+
+    it('returns the balance at the time even while the latest balance is cached', async () => {
+      const address = newAddress();
+      await getBalance(address, {});
+      expect(await getBalance(address, { time })).to.deep.equal(drops(7250000));
+    });
+
+    it('does not write the cache for a balance at a time', async () => {
+      const address = newAddress();
+      await getBalance(address, { time });
+      expect(cacheWrites()).to.deep.equal([]);
+      expect(await CacheStorage.collection.findOne({ key: latestKey(address) })).to.equal(null);
+    });
+
+    it('keeps the cached latest balance when a balance at a time finishes after it', async () => {
+      const address = newAddress();
+      let historicalStarted: () => void = () => {};
+      const started = new Promise<void>(resolve => {
+        historicalStarted = resolve;
+      });
+      let releaseHistorical: () => void = () => {};
+      const held = new Promise<void>(resolve => {
+        releaseHistorical = resolve;
+      });
+      clientGate = async index => {
+        if (index !== undefined) {
+          historicalStarted();
+          await held;
+        }
+      };
+      // both requests miss the cache; the latest one is cached first, then the one at a time finishes
+      const historical = getBalance(address, { time });
+      await Promise.race([started, historical]);
+      await getBalance(address, {});
+      releaseHistorical();
+      await historical;
+
+      expect(await getBalance(address, {})).to.deep.equal(drops(12500000));
+      expect(clientCalls.filter(call => call.ledgerIndex === undefined).length).to.equal(1);
+    });
   });
 
   describe('getWalletBalanceAtTime', () => {
@@ -226,5 +271,26 @@ describe('XRP balance at a time', function() {
       expect(error.message).to.equal(`Balance not found at ${timeWithoutLedger}`);
       expect(clientCalls).to.deep.equal([]);
     });
+
+    it('sums the balances at the time even while the latest balances are cached', async () => {
+      const { wallet, addresses } = await newWallet(3);
+      for (const address of addresses) {
+        await getBalance(address, {});
+      }
+      expect(await getWalletBalance(wallet)).to.deep.equal(drops(21750000));
+      expect(cacheWrites().length).to.equal(3);
+      for (const address of addresses) {
+        const cached = await CacheStorage.collection.findOne({ key: latestKey(address) });
+        expect(cached!.value).to.deep.equal(drops(12500000));
+      }
+    });
+
+    for (const [label, walletTime] of [['', time], [' at the genesis ledger', genesisTime]]) {
+      it(`looks up the ledger once for every address in the wallet${label}`, async () => {
+        const { wallet } = await newWallet(3);
+        await getWalletBalance(wallet, walletTime);
+        expect(ledgerLookups).to.deep.equal([walletTime]);
+      });
+    }
   });
 });
