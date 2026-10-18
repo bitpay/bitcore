@@ -404,8 +404,8 @@ describe('TransactionModel.pruneMempool', function() {
 
   describe('through batchImport', () => {
     const privateKey = new BitcoreLib.PrivateKey('L1uyy5qTuGrVXrmrsvHWHgVzW9kKdrp27wBC7Vs6nZDTF2BRUVwy');
-    const address = privateKey.toAddress().toString();
-    const script = BitcoreLib.Script.buildPublicKeyHashOut(privateKey.toAddress()).toHex();
+    const address = privateKey.toPublicKey().toAddress().toString();
+    const script = BitcoreLib.Script.buildPublicKeyHashOut(privateKey.toPublicKey().toAddress()).toHex();
     const utxo = (tx: BitcoinTransaction, outputIndex: number) => ({
       txId: tx.hash,
       outputIndex,
