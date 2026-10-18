@@ -42,6 +42,8 @@ describe('TransactionModel.tagMintBatch', function() {
   const B1 = address('b1');
   const X = address('external');
   const other = (i: number) => address(`other-${i}`);
+  /** the P2PKH output script for an address */
+  const p2pkh = (to: string) => BitcoreLib.Script.buildPublicKeyHashOut(new BitcoreLib.Address(to));
 
   let txCount = 0;
   /** marks an OP_RETURN output in makeTx */
@@ -53,11 +55,11 @@ describe('TransactionModel.tagMintBatch', function() {
     tx.from({
       txId: crypto.createHash('sha256').update(`input-${txCount++}`).digest('hex'),
       outputIndex: 0,
-      script: BitcoreLib.Script.buildPublicKeyHashOut(X).toHex(),
+      script: p2pkh(X).toHex(),
       satoshis: 1e15
     });
     for (const to of outputs) {
-      const script = to === OP_RETURN ? BitcoreLib.Script.buildDataOut('data') : BitcoreLib.Script.buildPublicKeyHashOut(to);
+      const script = to === OP_RETURN ? BitcoreLib.Script.buildDataOut('data', 'utf8') : p2pkh(to);
       tx.addOutput(new BitcoreLib.Transaction.Output({ script, satoshis: to === OP_RETURN ? 0 : 1000 }));
     }
     return tx as unknown as TaggedBitcoinTx;
@@ -364,7 +366,7 @@ describe('TransactionModel.tagMintBatch', function() {
       const funding = makeTx([A1, X]);
       await TransactionStorage.batchImport({ txs: [funding] as any, height: 1, chain, network, initialSyncComplete: true });
       const spend = new BitcoreLib.Transaction()
-        .from({ txId: funding.hash, outputIndex: 0, script: BitcoreLib.Script.buildPublicKeyHashOut(A1).toHex(), satoshis: 1000 })
+        .from({ txId: funding.hash, outputIndex: 0, script: p2pkh(A1).toHex(), satoshis: 1000 })
         .to(B1, 900) as unknown as BitcoinTransaction;
       await TransactionStorage.batchImport({ txs: [spend], height: 2, chain, network, initialSyncComplete: true });
 
