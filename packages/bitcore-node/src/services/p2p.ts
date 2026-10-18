@@ -66,7 +66,6 @@ export class P2pManager {
 
 export class BaseP2PWorker<T extends IBlock = IBlock> {
   protected lastHeartBeat = '';
-  protected queuedRegistrations = new Array<NodeJS.Timeout>();
   protected stopping = false;
   protected chain = '';
   protected network = '';
@@ -99,6 +98,8 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
   }
 
   async refreshSyncingNode() {
+    // the other node's heartbeat this worker is waiting on, and when to take over if it is not renewed
+    let takeover: { heartBeat: string; at: number } | undefined;
     while (!this.stopping) {
       const wasSyncingNode = this.getIsSyncingNode();
       this.lastHeartBeat = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
@@ -112,28 +113,26 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
         this.sync();
       }
       if (!this.lastHeartBeat || this.getIsSyncingNode()) {
-        this.registerSyncingNode({ primary: true });
+        await this.registerSyncingNode();
       } else {
         logger.info('Another node is the primary syncing node');
-        this.registerSyncingNode({ primary: false });
+        if (takeover?.heartBeat !== this.lastHeartBeat) {
+          takeover = { heartBeat: this.lastHeartBeat, at: Date.now() + 5 * 60 * 1000 };
+        }
+        if (Date.now() >= takeover.at) {
+          await this.registerSyncingNode();
+        }
       }
       await wait(500);
     }
   }
 
-  async registerSyncingNode({ primary }) {
-    const lastHeartBeat = this.lastHeartBeat;
-    const queuedRegistration = setTimeout(
-      () => {
-        StateStorage.selfNominateSyncingNode({
-          chain: this.chain,
-          network: this.network,
-          lastHeartBeat
-        }).catch(err => logger.error('Error in selfNominateSyncingNode:', err));
-      },
-      primary ? 0 : 5 * 60 * 1000
-    );
-    this.queuedRegistrations.push(queuedRegistration);
+  async registerSyncingNode() {
+    await StateStorage.selfNominateSyncingNode({
+      chain: this.chain,
+      network: this.network,
+      lastHeartBeat: this.lastHeartBeat
+    }).catch(err => logger.error('Error in selfNominateSyncingNode:', err));
   }
 
   async unregisterSyncingNode() {

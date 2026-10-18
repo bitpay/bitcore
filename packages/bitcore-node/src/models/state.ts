@@ -34,18 +34,24 @@ export class StateModel extends BaseModel<IState> {
     );
   }
 
+  async findSingletonState() {
+    // read from the primary: a stale heartbeat would make renewals fail
+    const state = await this.collection.findOne({}, { readPreference: 'primary' });
+    return state || (await this.getSingletonState()).value!;
+  }
+
   async getSyncingNode(params: { chain: string; network: string }): Promise<string> {
     const { chain, network } = params;
-    const state = await this.getSingletonState();
-    return state.value![`syncingNode:${chain}:${network}`];
+    const state = await this.findSingletonState();
+    return state[`syncingNode:${chain}:${network}`];
   }
 
   async selfNominateSyncingNode(params: { chain: string; network: string; lastHeartBeat: any }) {
     const { chain, network, lastHeartBeat } = params;
-    const singleState = await this.getSingletonState();
+    const singleState = await this.findSingletonState();
     return this.collection.findOneAndUpdate(
       {
-        _id: singleState.value!._id,
+        _id: singleState._id,
         $or: [
           { [`syncingNode:${chain}:${network}`]: { $exists: false } },
           { [`syncingNode:${chain}:${network}`]: lastHeartBeat }
@@ -57,9 +63,9 @@ export class StateModel extends BaseModel<IState> {
 
   async selfResignSyncingNode(params: { chain: string; network: string; lastHeartBeat: any }) {
     const { chain, network, lastHeartBeat } = params;
-    const singleState = await this.getSingletonState();
+    const singleState = await this.findSingletonState();
     return this.collection.findOneAndUpdate(
-      { _id: singleState.value!._id, [`syncingNode:${chain}:${network}`]: lastHeartBeat },
+      { _id: singleState._id, [`syncingNode:${chain}:${network}`]: lastHeartBeat },
       { $unset: { [`syncingNode:${chain}:${network}`]: true } }
     );
   }

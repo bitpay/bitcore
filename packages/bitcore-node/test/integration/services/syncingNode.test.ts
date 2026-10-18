@@ -4,7 +4,9 @@ import { Collection } from 'mongodb';
 import * as os from 'os';
 import * as sinon from 'sinon';
 import { BitcoinP2PWorker } from '../../../src/modules/bitcoin/p2p';
+import { MoralisP2PWorker } from '../../../src/modules/moralis/p2p/p2p';
 import { StateStorage } from '../../../src/models/state';
+import { BaseEVMStateProvider } from '../../../src/providers/chain-state/evm/api/csp';
 import { Libs } from '../../../src/providers/libs';
 import { BaseP2PWorker } from '../../../src/services/p2p';
 import { Storage } from '../../../src/services/storage';
@@ -18,6 +20,10 @@ const PASS = 500;
 const FIVE_MINUTES = 5 * 60 * 1000;
 const otherNode = (time: number) => `otherhost:4242:${time}`;
 const thisNode = (time: number) => `${os.hostname()}:${process.pid}:${time}`;
+const WRITES = [
+  'findOneAndUpdate', 'findOneAndReplace', 'updateOne', 'updateMany',
+  'replaceOne', 'insertOne', 'insertMany', 'bulkWrite'
+];
 const READS = ['findOneAndUpdate', 'findOne', 'find'];
 
 class TestWorker extends BaseP2PWorker<any> {
@@ -130,7 +136,7 @@ describe('Syncing node heartbeat', function() {
     direct = Storage.db!.collection('heartbeatTestState');
     await direct.deleteMany({});
     collection = Storage.db!.collection('heartbeatTestState');
-    for (const method of READS) {
+    for (const method of new Set([...WRITES, ...READS])) {
       sandbox.spy(collection, method as any);
     }
     sandbox.stub(StateStorage, 'collection').get(() => collection);
@@ -185,6 +191,10 @@ describe('Syncing node heartbeat', function() {
 
   function calls(methods: string[]) {
     return methods.reduce((sum, method) => sum + (collection[method] as sinon.SinonSpy).callCount, 0);
+  }
+
+  function pendingLoopTimers() {
+    return Object.keys((clock as any).timers || {}).length;
   }
 
   describe('StateModel', () => {
@@ -482,7 +492,14 @@ describe('Syncing node heartbeat', function() {
       return bitcoin;
     }
 
-    const workers = [['bitcoin', bitcoinWorker]] as const;
+    function moralisWorker() {
+      sandbox.stub(BaseEVMStateProvider, 'initializeRpcs');
+      const moralis = new MoralisP2PWorker({ chain, network, chainConfig: {} });
+      sandbox.stub(moralis, 'sync').resolves();
+      return moralis;
+    }
+
+    const workers = [['bitcoin', bitcoinWorker], ['moralis', moralisWorker], ['base', () => new TestWorker()]] as const;
     for (const [name, make] of workers) {
       it(`a stopped ${name} worker never takes over`, async () => {
         await setHeartBeat(otherNode(start - 60000));
@@ -494,5 +511,41 @@ describe('Syncing node heartbeat', function() {
         expect(await heartBeat()).to.equal(otherNode(start - 60000));
       });
     }
+  });
+
+  describe('cost per pass', () => {
+    it('leaves no timers pending while another node holds the heartbeat', async () => {
+      await setHeartBeat(otherNode(start));
+      await drive().start();
+      let most = 0;
+      while (Date.now() < start + 2 * FIVE_MINUTES) {
+        await driver.pass();
+        await setHeartBeat(otherNode(Date.now()));
+        most = Math.max(most, pendingLoopTimers());
+      }
+      expect(most).to.equal(0);
+    });
+
+    it('does not write the state document while another node holds the heartbeat', async () => {
+      await setHeartBeat(otherNode(start));
+      await drive().start();
+      const writesBefore = calls(WRITES);
+      while (Date.now() < start + 2 * FIVE_MINUTES) {
+        await driver.pass();
+        await setHeartBeat(otherNode(Date.now()));
+      }
+      expect(calls(WRITES) - writesBefore).to.equal(0);
+    });
+
+    // a renewal is a single compare-and-set
+    it('writes the state document once per pass as the syncing node', async () => {
+      await drive().start();
+      await driver.pass();
+      const writesBefore = calls(WRITES);
+      for (let i = 0; i < 100; i++) {
+        await driver.pass();
+      }
+      expect(calls(WRITES) - writesBefore).to.equal(100);
+    });
   });
 });
