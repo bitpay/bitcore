@@ -1,16 +1,16 @@
 import { execHaloCmdPCSC } from '@arx-research/libhalo/api/desktop';
 import CWC, { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { NFC } from 'nfc-pcsc';
-import { Base } from 'src/types/base.js';
-import { CommandNameType, DataType } from './types/burnerTypes.js';
-import { EveryUtxoType, TransactionType } from './types/txTypes.js';
-import Util from './util.js';
+import { Base } from '../types/base.js';
+import { BurnerChainType } from '../types/chains.js';
+import { EveryUtxoType, TransactionType } from '../types/tx.js';
+import Util from '../util.js';
+import { CommandNameType, DataType } from './types.js';
 
 const { Address, PublicKey, crypto } = BitcoreLib;
 
 /**
- * Connect listens on the NFC reader for a card.
- * Methods queue a command to run when the card is scanned.
+ * Fetch address, public key and sign transactions using the burner card.
  */
 export default class Burner implements Base {
   nfc?: NFC;
@@ -121,7 +121,7 @@ export default class Burner implements Base {
     password: string;
   })
   async sign(params: {
-    chain: 'BTC' | 'ETH';
+    chain: BurnerChainType;
     tx: TransactionType;
     utxos?: EveryUtxoType[];
     password: string;
@@ -216,7 +216,7 @@ export default class Burner implements Base {
   }
 
   async getAddress(params: {
-    chain: 'BTC' | 'ETH';
+    chain: BurnerChainType;
   }) {
     switch (params.chain) {
       case 'ETH':
@@ -251,7 +251,7 @@ export default class Burner implements Base {
     }
   }
 
-  static isValidChain(value: string): value is 'BTC' | 'ETH' {
+  static isValidChain(value: string): value is BurnerChainType {
     return ['BTC', 'ETH'].includes(value);
   }
 }

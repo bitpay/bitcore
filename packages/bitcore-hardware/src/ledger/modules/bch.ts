@@ -1,7 +1,7 @@
 import { createRequire } from 'module';
 import { BaseModule } from 'src/types/base.js';
 import { UtxoChainType } from 'src/types/chains.js';
-import { EveryUtxoType, TransactionType } from '../../types/txTypes.js';
+import { EveryUtxoType, TransactionType } from '../../types/tx.js';
 import Util from '../../util.js';
 import type { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import type BTC from '@ledgerhq/hw-app-btc';

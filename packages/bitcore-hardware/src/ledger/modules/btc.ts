@@ -4,7 +4,7 @@ import { Psbt } from 'bitcoinjs-lib';
 import { Observable } from 'rxjs';
 import { BaseModule } from 'src/types/base.js';
 import { UtxoChainType } from 'src/types/chains.js';
-import { EveryUtxoType, TransactionType } from 'src/types/txTypes.js';
+import { EveryUtxoType, TransactionType } from 'src/types/tx.js';
 import Util from '../../util.js';
 import type * as SignerKitBtc from '@ledgerhq/device-signer-kit-bitcoin';
 // @eslint disable import/newline-after-import

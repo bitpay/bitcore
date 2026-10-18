@@ -1,6 +1,5 @@
 import { createRequire } from 'module';
 import { nodeHidTransportFactory } from '@ledgerhq/device-transport-kit-node-hid';
-import { Subscription } from 'rxjs';
 import { Base, BaseModule } from '../types/base.js';
 import {
   CHAINS,
@@ -11,7 +10,7 @@ import {
   TransportChainType,
   UtxoChainType
 } from '../types/chains.js';
-import { EveryUtxoType, TransactionType } from '../types/txTypes.js';
+import { EveryUtxoType, TransactionType } from '../types/tx.js';
 import {
   BitcoinCashModule,
   BitcoinModule,
@@ -20,6 +19,7 @@ import {
   LitecoinModule,
   SolanaModule
 } from './modules/index.js';
+import { Config, DmkDevice, TransportDevice } from './types.js';
 import type * as DMK from '@ledgerhq/device-management-kit';
 import type * as SignerKitBtc from '@ledgerhq/device-signer-kit-bitcoin';
 import type * as SignerKitEth from '@ledgerhq/device-signer-kit-ethereum';
@@ -43,30 +43,6 @@ const {
 const { speculosTransportFactory } = require('@ledgerhq/device-transport-kit-speculos');
 const TransportNodeHid: typeof HwTransportNode.default.default = require('@ledgerhq/hw-transport-node-hid').default;
 const TransportNodeSpeculos: typeof HwTransportNodeSpeculos.default.default = require('@ledgerhq/hw-transport-node-speculos').default;
-
-// One hardware wallet is both a transport device and a dmk device
-interface TransportDevice {
-  port: number;
-  chains: TransportChainType[];
-}
-
-interface DmkDevice {
-  dmk: DMK.DeviceManagementKit;
-  connectedDevice: DMK.ConnectedDevice | null;
-  chains: DmkChainType[];
-  discoverySubscription: Subscription | null;
-  sessionId: DMK.DeviceSessionId | null;
-}
-
-interface DeviceConfig {
-  port: number;
-  chains: ChainType[];
-}
-
-interface Config {
-  devices: DeviceConfig[];
-  connection: 'hid' | 'speculos';
-}
 
 const MODULE_CLASSES: Record<string, any> = {
   BTC: BitcoinModule,
@@ -123,6 +99,9 @@ const SPECULOS_CONFIG: Config = {
   connection: 'speculos'
 };
 
+/**
+ * Fetch address, public key and sign transactions using ledger devices.
+ */
 export default class Ledger implements Base {
   speculos: boolean;
   dmkDevices: DmkDevice[] = [];

@@ -4,7 +4,7 @@ import {
   Observable,
   lastValueFrom
 } from 'rxjs';
-import { EveryUtxoType, TransactionType } from 'src/types/txTypes.js';
+import { EveryUtxoType, TransactionType } from 'src/types/tx.js';
 import { UtxoChainType } from './types/chains.js';
 
 class UtilClass {

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { describe } from 'mocha';
 import CWC, { BitcoreLib, ethers } from '@bitpay-labs/crypto-wallet-core';
-import Burner from '../../src/burner.js';
+import Burner from '../../src/burner/device.js';
 import { HwProxy } from '../../src/index.js';
 
 const { PrivateKey, Address } = BitcoreLib;
