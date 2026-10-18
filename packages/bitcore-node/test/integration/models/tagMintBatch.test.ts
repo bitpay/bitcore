@@ -160,6 +160,21 @@ describe('TransactionModel.tagMintBatch', function() {
       expect(unrelated.wallets).to.deep.equal([]);
     });
 
+    it('tags an address that belongs to more wallets than a function call can take as arguments', async () => {
+      // spreading this many ids into push() throws RangeError (V8 caps argument counts around 120k)
+      const WALLET_COUNT = 130000;
+      const wallets = Array.from({ length: WALLET_COUNT }, (_, i) => new ObjectID((0x64e000000000000000000000n + BigInt(i)).toString(16).padStart(24, '0')));
+      for (let i = 0; i < WALLET_COUNT; i += 10000) {
+        await WalletAddressStorage.collection.insertMany(
+          wallets.slice(i, i + 10000).map(wallet => ({ chain, network, wallet, address: A1, processed: true })) as any
+        );
+      }
+      const tx = makeTx([A1, X]);
+      const [ops] = await mintOps([tx]);
+      expect(ops[0].updateOne.update.$set.wallets).to.have.length(WALLET_COUNT);
+      expect(tx.wallets).to.have.length(WALLET_COUNT);
+    });
+
     it('tags an address that belongs to several wallets with all of them', async () => {
       await addWalletAddress(W1, A1);
       await addWalletAddress(W3, A1);

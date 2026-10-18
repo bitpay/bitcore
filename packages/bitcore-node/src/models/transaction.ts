@@ -447,7 +447,10 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
         }
       }
       const txWallets = walletsByTxid.get(mintOp.updateOne.filter.mintTxid) || [];
-      txWallets.push(...wallets);
+      // not push(...wallets): an address can belong to more wallets than a call can take as arguments
+      for (const wallet of wallets) {
+        txWallets.push(wallet);
+      }
       walletsByTxid.set(mintOp.updateOne.filter.mintTxid, txWallets);
     }
     for (const tx of params.txs as Array<TaggedBitcoinTx>) {
