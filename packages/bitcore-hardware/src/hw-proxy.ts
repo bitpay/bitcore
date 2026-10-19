@@ -1,5 +1,5 @@
-import Burner from './burner/device.js';
-import Ledger from './ledger/device.js';
+import Burner from './burner/adapter.js';
+import Ledger from './ledger/adapter.js';
 import { Base } from './types/base.js';
 import { BurnerChainType, ChainType } from './types/chains.js';
 import { EveryUtxoType, TransactionType } from './types/tx.js';
