@@ -723,6 +723,35 @@ describe('Moonpay integration', () => {
       await server.externalServices.moonpay.moonpayRevokeActiveSession(req);
     });
 
+    it('should return the response body if there is one', async () => {
+      const data = await server.externalServices.moonpay.moonpayRevokeActiveSession(req);
+      data.should.equal('data');
+    });
+
+    it('should return success true without leaking the response if there is no body', async () => {
+      const fakeRequest2 = {
+        delete: (_url, opts, _cb) => {
+          return _cb(null, { statusCode: 204, body: undefined, headers: {}, request: { headers: opts.headers } });
+        },
+      };
+
+      server.externalServices.moonpay.request = fakeRequest2;
+      const data = await server.externalServices.moonpay.moonpayRevokeActiveSession(req);
+      data.should.deep.equal({ success: true });
+    });
+
+    it('should return success false if there is no body and status is not 2xx', async () => {
+      const fakeRequest2 = {
+        delete: (_url, opts, _cb) => {
+          return _cb(null, { statusCode: 404, body: '', headers: {}, request: { headers: opts.headers } });
+        },
+      };
+
+      server.externalServices.moonpay.request = fakeRequest2;
+      const data = await server.externalServices.moonpay.moonpayRevokeActiveSession(req);
+      data.should.deep.equal({ success: false });
+    });
+
     it('should return error if delete returns error', async () => {
       const fakeRequest2 = {
         delete: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
