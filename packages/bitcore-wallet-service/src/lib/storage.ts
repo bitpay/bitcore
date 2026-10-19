@@ -312,8 +312,9 @@ export class Storage {
   }
 
   // TODO: should be done client-side
-  _completeTxData(walletId: string, txs: TxProposal | TxProposal[], cb: (err?: any, txs?: TxProposal | TxProposal[]) => void) {
-    this.fetchWallet(walletId, (err, wallet) => {
+  // Callers that already have the wallet pass it, to save reading it again
+  _completeTxData(walletId: string, txs: TxProposal | TxProposal[], cb: (err?: any, txs?: TxProposal | TxProposal[]) => void, wallet?: Wallet) {
+    const complete = (err, wallet: Wallet) => {
       if (err) return cb(err);
       for (const tx of [].concat(txs) as TxProposal[]) {
         tx.derivationStrategy = wallet.derivationStrategy || 'BIP45';
@@ -326,11 +327,13 @@ export class Storage {
           tx.raw = tx.getRawTx();
       }
       return cb(null, txs);
-    });
+    };
+    if (wallet) return complete(null, wallet);
+    this.fetchWallet(walletId, complete);
   }
 
   // TODO: remove walletId from signature
-  fetchTx(walletId: string, txProposalId: string, cb: (err?: any, tx?: TxProposal) => void) {
+  fetchTx(walletId: string, txProposalId: string, cb: (err?: any, tx?: TxProposal) => void, wallet?: Wallet) {
     if (!this.db) return cb();
 
     this.db.collection(collections.TXS).findOne(
@@ -341,7 +344,7 @@ export class Storage {
       (err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        return this._completeTxData(walletId, TxProposal.fromObj(result), cb);
+        return this._completeTxData(walletId, TxProposal.fromObj(result), cb, wallet);
       }
     );
   }
@@ -364,7 +367,7 @@ export class Storage {
 
   // Wallet-scoped counterpart to fetchTxByHash, used by the authenticated
   // by-hash API read.
-  fetchTxByHashForWallet(walletId: string, hash, cb: (err?: any, tx?: TxProposal) => void) {
+  fetchTxByHashForWallet(walletId: string, hash, cb: (err?: any, tx?: TxProposal) => void, wallet?: Wallet) {
     if (!this.db) return cb();
 
     this.db.collection(collections.TXS).findOne(
@@ -376,7 +379,7 @@ export class Storage {
         if (err) return cb(err);
         if (!result) return cb();
 
-        return this._completeTxData(walletId, TxProposal.fromObj(result), cb);
+        return this._completeTxData(walletId, TxProposal.fromObj(result), cb, wallet);
       }
     );
   }
@@ -452,7 +455,7 @@ export class Storage {
     });
   }
 
-  fetchPendingTxs(walletId, cb) {
+  fetchPendingTxs(walletId, cb, wallet?: Wallet) {
     this.db
       .collection(collections.TXS)
       .find({
@@ -468,7 +471,7 @@ export class Storage {
         const txs = _.map(result, tx => {
           return TxProposal.fromObj(tx);
         });
-        return this._completeTxData(walletId, txs, cb);
+        return this._completeTxData(walletId, txs, cb, wallet);
       });
   }
 
@@ -480,7 +483,7 @@ export class Storage {
    * @param opts.maxTs
    * @param opts.limit
    */
-  fetchTxs(walletId, opts, cb) {
+  fetchTxs(walletId, opts, cb, wallet?: Wallet) {
     opts = opts || {};
 
     const tsFilter: { $gte?: number; $lte?: number } = {};
@@ -507,7 +510,7 @@ export class Storage {
         const txs = _.map(result, tx => {
           return TxProposal.fromObj(tx);
         });
-        return this._completeTxData(walletId, txs, cb);
+        return this._completeTxData(walletId, txs, cb, wallet);
       });
   }
 
@@ -519,7 +522,7 @@ export class Storage {
    * @param opts.maxTs
    * @param opts.limit
    */
-  fetchBroadcastedTxs(walletId, opts, cb) {
+  fetchBroadcastedTxs(walletId, opts, cb, wallet?: Wallet) {
     opts = opts || {};
 
     const tsFilter: { $gte?: number; $lte?: number } = {};
@@ -551,7 +554,7 @@ export class Storage {
         const txs = _.map(result, tx => {
           return TxProposal.fromObj(tx);
         });
-        return this._completeTxData(walletId, txs, cb);
+        return this._completeTxData(walletId, txs, cb, wallet);
       });
   }
 
@@ -1308,7 +1311,7 @@ export class Storage {
       });
   }
 
-  fetchTxNote(walletId, txid, cb: (err?: any, note?: TxNote) => void) {
+  fetchTxNote(walletId, txid, cb: (err?: any, note?: TxNote) => void, wallet?: Wallet) {
     this.db.collection(collections.TX_NOTES).findOne(
       {
         walletId,
@@ -1317,20 +1320,23 @@ export class Storage {
       (err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        return this._completeTxNotesData(walletId, TxNote.fromObj(result), cb);
+        return this._completeTxNotesData(walletId, TxNote.fromObj(result), cb, wallet);
       }
     );
   }
 
   // TODO: should be done client-side
-  _completeTxNotesData(walletId, notes: TxNote | TxNote[], cb: (err?: any, notes?: TxNote | TxNote[]) => void) {
-    this.fetchWallet(walletId, (err, wallet) => {
+  // Callers that already have the wallet pass it, to save reading it again
+  _completeTxNotesData(walletId, notes: TxNote | TxNote[], cb: (err?: any, notes?: TxNote | TxNote[]) => void, wallet?: Wallet) {
+    const complete = (err, wallet: Wallet) => {
       if (err) return cb(err);
       for (const note of [].concat(notes) as TxNote[]) {
         note.editedByName = wallet.getCopayer(note.editedBy).name;
       }
       return cb(null, notes);
-    });
+    };
+    if (wallet) return complete(null, wallet);
+    this.fetchWallet(walletId, complete);
   }
 
   /**
@@ -1339,7 +1345,7 @@ export class Storage {
    * @param walletId
    * @param opts.minTs
    */
-  fetchTxNotes(walletId, opts, cb) {
+  fetchTxNotes(walletId, opts, cb, wallet?: Wallet) {
     const filter: { walletId: string; editedOn?: { $gte: number } } = {
       walletId
     };
@@ -1357,7 +1363,7 @@ export class Storage {
             return TxNote.fromObj(note);
           })
         );
-        return this._completeTxNotesData(walletId, notes, cb);
+        return this._completeTxNotesData(walletId, notes, cb, wallet);
       });
   }
 
