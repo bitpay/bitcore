@@ -560,7 +560,8 @@ export class MoonpayService {
           if (err) {
             return reject(err.body ? err.body : err);
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            return resolve(data.body ? data.body : { success });
           }
         }
       );
