@@ -1546,9 +1546,10 @@ export class WalletService implements IWalletService {
   _canCreateAddress(ignoreMaxGap, cb) {
     if (ignoreMaxGap) return cb(null, true);
 
-    this.storage.fetchAddresses(this.walletId, (err, addresses: IAddress[]) => {
+    const newest = { noChange: true, reverse: true, limit: Defaults.MAX_MAIN_ADDRESS_GAP };
+    this.storage.fetchAddressesPage(this.walletId, newest, (err, addresses: IAddress[]) => {
       if (err) return cb(err);
-      const latestAddresses = addresses.filter(x => !x.isChange).slice(-Defaults.MAX_MAIN_ADDRESS_GAP) as IAddress[];
+      const latestAddresses = addresses.reverse();
       if (
         latestAddresses.length < Defaults.MAX_MAIN_ADDRESS_GAP ||
         latestAddresses.some(a => a.hasActivity)
@@ -1649,7 +1650,7 @@ export class WalletService implements IWalletService {
     };
 
     const getFirstAddress = (wallet, cb) => {
-      this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+      this.storage.fetchAddressesPage(this.walletId, { limit: 1 }, (err, addresses) => {
         if (err) return cb(err);
         if (addresses?.length) {
           const x = addresses[0];
@@ -1702,17 +1703,9 @@ export class WalletService implements IWalletService {
 
   getAddresses(opts: GetAddressesOpts, cb) {
     opts = opts || {};
-    this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+    const { noChange, addresses: only, reverse, skip, limit } = opts;
+    this.storage.fetchAddressesPage(this.walletId, { noChange, addresses: only, reverse, skip, limit }, (err, addresses) => {
       if (err) return cb(err);
-      if (opts.noChange) {
-        addresses = addresses.filter(a => !a.isChange);
-      }
-      if (opts.addresses) {
-        addresses = addresses.filter(a => opts.addresses.includes(a.address));
-      }
-      if (opts.reverse) addresses.reverse();
-      if (opts.skip > 0) addresses = addresses.slice(opts.skip);
-      if (opts.limit > 0) addresses = addresses.slice(0, opts.limit);
 
       this.getWallet({}, (err, wallet) => {
         if (err) return cb(err);
