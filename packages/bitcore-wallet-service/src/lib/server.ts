@@ -3100,6 +3100,9 @@ export class WalletService implements IWalletService {
           if (err) return cb(err);
           if (!txp) return cb(Errors.TX_NOT_FOUND);
           if (!txp.isTemporary() && !txp.hasMutableTxData()) return cb(null, txp);
+          // Broadcasted proposals should not be published again. Only temporary or pending proposals can be published.
+          if (txp.isBroadcasted()) return cb(Errors.TX_ALREADY_BROADCASTED);
+          if (!txp.isTemporary() && txp.status !== 'pending') return cb(Errors.TX_NOT_PENDING);
 
           const copayer = wallet.getCopayer(this.copayerId);
 
