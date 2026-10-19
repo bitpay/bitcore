@@ -260,6 +260,165 @@ describe('EVM fee estimates', function() {
         expect(await rpc.estimateGasPrice()).to.equal(gwei(1));
         expect([keys(rpc.blockMaxPriorityFeeCache), keys(rpc.blockGasPriceCache)]).to.deep.equal(before);
       });
+
+      it('reads only the blocks it has not read yet', async () => {
+        await rpc.estimateMaxPriorityFee({ percentile: 15 });
+        node.addBlocks(market(3));
+        node.resetCalls();
+        const estimate = await rpc.estimateMaxPriorityFee({ percentile: 15 });
+        expect(node.calls.filter((call) => call.method === 'eth_getBlockByNumber').map((call) => call.params))
+          .to.have.deep.members([['0xf', true], ['0xe', true], ['0xd', true]]);
+        connect(chain);
+        expect(estimate).to.equal(await rpc.estimateMaxPriorityFee({ percentile: 15 }));
+      });
+
+      it('shares the blocks it read between the priority fee and the gas price', async () => {
+        await rpc.estimateMaxPriorityFee({ percentile: 15 });
+        await rpc.estimateGasPrice();
+        expect(node.count('eth_getBlockByNumber')).to.equal(10);
+      });
+
+      it('keeps the blocks and the block fees of the last 10 blocks', async () => {
+        for (let i = 0; i < 3; i++) {
+          await rpc.estimateMaxPriorityFee({ percentile: 15 });
+          await rpc.estimateGasPrice();
+          node.addBlocks(market(4));
+        }
+        const estimates = [await rpc.estimateMaxPriorityFee({ percentile: 15 }), await rpc.estimateGasPrice()];
+        const window = [...Array(10).keys()].map((i) => BigInt(15 + i));
+        const keys = (cache) => [...cache.keys()].sort((a, b) => (a < b ? -1 : 1));
+        expect(keys(rpc.blockCache)).to.deep.equal(window);
+        expect(keys(rpc.blockMaxPriorityFeeCache)).to.deep.equal(window);
+        expect(keys(rpc.blockGasPriceCache)).to.deep.equal(window);
+        connect(chain);
+        expect(estimates).to.deep.equal([await rpc.estimateMaxPriorityFee({ percentile: 15 }), await rpc.estimateGasPrice()]);
+      });
+
+      it('drops the cached blocks and block fees the tip has moved past', async () => {
+        await rpc.estimateMaxPriorityFee({ percentile: 15 });
+        await rpc.estimateGasPrice();
+        node.addBlocks(market(15));
+        await rpc.estimateMaxPriorityFee({ percentile: 15 });
+        await rpc.estimateGasPrice();
+        const window = [...Array(10).keys()].map((i) => BigInt(18 + i));
+        const keys = (cache) => [...cache.keys()].sort((a, b) => (a < b ? -1 : 1));
+        expect(keys(rpc.blockCache)).to.deep.equal(window);
+        expect(keys(rpc.blockMaxPriorityFeeCache)).to.deep.equal(window);
+        expect(keys(rpc.blockGasPriceCache)).to.deep.equal(window);
+      });
+    });
+  }
+
+  for (const chain of ['MATIC', 'OP', 'ARB', 'BASE', 'ARC']) {
+    describe(`${chain} reads eth_feeHistory`, function() {
+      beforeEach(() => {
+        node.setChain(market(12), { gasPrice: gwei(1) });
+        connect(chain);
+      });
+
+      it('estimates the priority fee from one eth_feeHistory request', async () => {
+        await rpc.estimateMaxPriorityFee({ percentile: 15 });
+        expect(node.calls).to.deep.equal([{ method: 'eth_feeHistory', params: ['0xa', 'latest', [85]] }]);
+      });
+
+      it('estimates the gas price from eth_gasPrice and one eth_feeHistory request', async () => {
+        await rpc.estimateGasPrice();
+        expect(node.calls).to.have.deep.members([
+          { method: 'eth_gasPrice', params: [] },
+          { method: 'eth_feeHistory', params: ['0xa', 'latest', [75]] }
+        ]);
+      });
+
+      it('estimates the max fee from the latest block header and one eth_feeHistory request', async () => {
+        await rpc.estimateMaxFee({ percentile: 15 });
+        expect(node.calls).to.have.deep.members([
+          { method: 'eth_getBlockByNumber', params: ['latest', false] },
+          { method: 'eth_feeHistory', params: ['0xa', 'latest', [85]] }
+        ]);
+      });
+
+      it('requests eth_feeHistory only for a percentile from 0 to 100', async () => {
+        for (const percentile of [0, 100, 150, -5, NaN, 'fast']) {
+          await rpc.estimateMaxPriorityFee({ percentile });
+        }
+        expect(node.calls.filter((call) => call.method === 'eth_feeHistory').map((call) => call.params))
+          .to.deep.equal([['0xa', 'latest', [100]], ['0xa', 'latest', [0]]]);
+        expect(failures).to.deep.equal([]);
+      });
+
+      it('sends one eth_feeHistory request for each estimate when they run at once', async () => {
+        await Promise.all([rpc.estimateMaxPriorityFee({ percentile: 15 }), rpc.estimateGasPrice()]);
+        expect(node.count('eth_feeHistory')).to.equal(2);
+        expect(node.count('eth_getBlockByNumber')).to.equal(0);
+      });
+
+      it('uses the blocks eth_feeHistory returns when it returns fewer than 10', async () => {
+        node.limitFeeHistory(3);
+        // k = 12, 11, 10: the newest 1 averages 12, all 3 average 11
+        expect(await rpc.estimateMaxPriorityFee({ percentile: 15 })).to.equal(gwei((12 + 1) * 9));
+        expect(failures).to.deep.equal([]);
+      });
+
+      for (const [problem, change] of [
+        ['no rewards', ({ reward, ...history }) => history],
+        ['a block without a reward', (history) => ({ ...history, reward: history.reward.map(() => []) })],
+        ['no gas used ratios', ({ gasUsedRatio, ...history }) => history]
+      ]) {
+        it(`reads the blocks, and emits a failure, when eth_feeHistory returns ${problem}`, async () => {
+          node.changeFeeHistory(change);
+          expect(await rpc.estimateMaxPriorityFee({ percentile: 15 })).to.equal(gwei(112.5));
+          expect(node.count('eth_getBlockByNumber')).to.equal(10);
+          expect(failures).to.have.lengthOf(1);
+        });
+      }
+
+      it('reads the blocks for the max fee when eth_feeHistory fails', async () => {
+        node.fail('eth_feeHistory');
+        expect(await rpc.estimateMaxFee({ percentile: 15 })).to.equal(gwei(20 + 112.5));
+        expect(failures).to.have.lengthOf(1);
+      });
+
+      it('reads the blocks, and emits the failure, when eth_feeHistory fails', async () => {
+        node.fail('eth_feeHistory', 'the method eth_feeHistory does not exist');
+        expect(await rpc.estimateMaxPriorityFee({ percentile: 15 })).to.equal(gwei(112.5));
+        expect(await rpc.estimateGasPrice()).to.equal(gwei(110));
+        expect(node.count('eth_getBlockByNumber')).to.equal(10);
+        expect(failures.map((err) => err.message)).to.have.lengthOf(2)
+          .and.satisfy((messages) => messages.every((message) => message.includes('eth_feeHistory does not exist')));
+      });
+    });
+
+    describe(`${chain} eth_feeHistory estimates`, function() {
+      beforeEach(() => {
+        node.setChain([]);
+        connect(chain);
+      });
+
+      it('uses the tip a transaction pays, not a higher one it declares', async () => {
+        // declared tips of 20 to 200 gwei, but a max fee of 60 gwei over a 10 gwei base fee pays at most 50
+        node.setChain(oneBlock(tips(20, { maxFee: gwei(60) })));
+        expect(await rpc.estimateMaxPriorityFee({ percentile: 15 })).to.equal(gwei(50));
+      });
+
+      it('weighs transactions by the gas they use', async () => {
+        // tips of 10 to 100 gwei; the 100 gwei transaction uses most of the block's gas
+        const txs = tips(10);
+        txs[9].gas = 420000n;
+        node.setChain(oneBlock(txs), { gasPrice: gwei(1) });
+        expect(await rpc.estimateMaxPriorityFee({ percentile: 15 })).to.equal(gwei(100));
+        expect(await rpc.estimateGasPrice()).to.equal(gwei(110));
+      });
+
+      it('counts legacy transactions', async () => {
+        node.setChain(oneBlock(tips(20, { legacy: true })), { gasPrice: gwei(1) });
+        expect(await rpc.estimateMaxPriorityFee({ percentile: 15 })).to.equal(gwei(180));
+        expect(await rpc.estimateGasPrice()).to.equal(gwei(10 + 160));
+      });
+
+      it('counts type 2 transactions that tip nothing', async () => {
+        node.setChain(oneBlock([...Array(8).fill({ tip: 0n }), { tip: gwei(100) }, { tip: gwei(200) }]));
+        expect(await rpc.estimateMaxPriorityFee({ percentile: 15 })).to.equal(gwei(100));
+      });
     });
   }
 });
