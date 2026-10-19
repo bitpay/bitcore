@@ -1,6 +1,6 @@
 {
   "name": "@bitpay-labs/bitcore-tss",
-  "version": "11.10.13",
+  "version": "11.10.14",
   "description": "Bitcore Library for Threshold Signature Schemes",
   "main": "index.js",
   "type": "commonjs",
@@ -33,10 +33,10 @@
   },
   "dependencies": {
     "@bitgo/sdk-lib-mpc": "^10.15.0",
-    "@bitpay-labs/bitcore-lib": "^11.10.13"
+    "@bitpay-labs/bitcore-lib": "^11.10.14"
   },
   "devDependencies": {
-    "@bitpay-labs/crypto-wallet-core": "^11.10.13",
+    "@bitpay-labs/crypto-wallet-core": "^11.10.14",
     "@wdio/browser-runner": "^9.12.0",
     "@wdio/cli": "^9.12.0",
     "@wdio/firefox-profile-service": "^9.10.1",
