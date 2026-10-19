@@ -675,6 +675,21 @@ describe('SOL Tests', () => {
         expect(refetchedAsJsonParsed(calls)).to.be.true;
       });
 
+      for (const list of ['writable', 'readonly']) {
+        it(`matches the validator for a lookup-table tx whose loadedAddresses has a ${list} account missing`, async () => {
+          const respond = async ({ method, args, send }) => {
+            const response = await send();
+            if (method === 'getTransaction' && args[1]?.encoding === 'base64') {
+              const { loadedAddresses } = response.meta;
+              return { ...response, meta: { ...response.meta, loadedAddresses: { ...loadedAddresses, [list]: loadedAddresses[list].slice(1) } } };
+            }
+            return response;
+          };
+          const { calls } = await expectMatchesValidator(txids.twoLookupTables, respond);
+          expect(refetchedAsJsonParsed(calls)).to.be.true;
+        });
+      }
+
       it('returns the validator\'s status for a tx that was just sent', async () => {
         const txid = await sendTransaction(solRpc, senderKeypair, receiverKeypair, 1000, 0);
         const { value: [statusBefore] } = await solRpc.rpc.getSignatureStatuses([txid]).send();
@@ -825,6 +840,70 @@ describe('SOL Tests', () => {
             const unknownTxid = LibSolKit.getBase58Decoder().decode(new Uint8Array(64).fill(7));
             expect(await solRpc.getConfirmations({ txid: unknownTxid })).to.be.null;
           });
+        });
+      });
+
+      describe('RPC requests', () => {
+        const record = async (fn, respond) => {
+          const recorder = recordRpcCalls(solRpc, { respond });
+          try {
+            await fn();
+          } finally {
+            recorder.restore();
+          }
+          return recorder;
+        };
+        // Whether each status lookup also searched the ledger, not only the recent status cache
+        const historySearches = recorder => recorder.calls
+          .filter(({ method }) => method === 'getSignatureStatuses')
+          .map(({ args }) => args[1]?.searchTransactionHistory === true);
+        // Answers lookups of the recent status cache alone as if the tx had aged out of it
+        const agedOut = ({ method, args, send }) => method === 'getSignatureStatuses' && !args[1]?.searchTransactionHistory
+          ? { context: { slot: 0n }, value: [null] }
+          : send();
+
+        for (const kind of ['legacy', 'versioned', 'oneLookupTable', 'twoLookupTables']) {
+          it(`fetches a finalized ${kind} tx, its status and the tip once each`, async () => {
+            const recorder = await record(() => solRpc.getTransaction({ txid: txids[kind] }));
+            expect(recorder.methods()).to.deep.equal(['getTransaction', 'getSignatureStatuses', 'getSlot']);
+            expect(recorder.calls[0].args[1].encoding).to.equal('base64');
+            expect(historySearches(recorder)).to.deep.equal([true]);
+          });
+        }
+
+        it('fetches a tx that is no longer in the recent status cache, its status and the tip once each', async () => {
+          const recorder = await record(() => solRpc.getTransaction({ txid: txids.versioned }), agedOut);
+          expect(recorder.methods()).to.deep.equal(['getTransaction', 'getSignatureStatuses', 'getSlot']);
+        });
+
+        it('does not fetch the tip when the status has a confirmation count', async () => {
+          const { value: [status] } = await solRpc.rpc.getSignatureStatuses([txids.legacy], { searchTransactionHistory: true }).send();
+          const respond = ({ method, send }) => method === 'getSignatureStatuses'
+            ? { context: { slot: 0n }, value: [{ ...status, confirmations: 5n, confirmationStatus: 'confirmed' }] }
+            : send();
+          const recorder = await record(() => solRpc.getTransaction({ txid: txids.legacy }), respond);
+          expect(recorder.methods()).to.deep.equal(['getTransaction', 'getSignatureStatuses']);
+        });
+
+        it('does not fetch the tx again when its status has no slot', async () => {
+          const { value: [status] } = await solRpc.rpc.getSignatureStatuses([txids.legacy], { searchTransactionHistory: true }).send();
+          const respond = ({ method, send }) => method === 'getSignatureStatuses'
+            ? { context: { slot: 0n }, value: [{ ...status, confirmations: null, slot: undefined }] }
+            : send();
+          const recorder = await record(() => solRpc.getTransaction({ txid: txids.legacy }), respond);
+          expect(recorder.methods()).to.deep.equal(['getTransaction', 'getSignatureStatuses', 'getSlot']);
+        });
+
+        it('looks up the status once when decoding a tx that was never sent', async () => {
+          const rawTx = await createRawTransaction(solRpc.rpc, senderKeypair, receiverKeypair, 1000);
+          const recorder = await record(() => solRpc.decodeRawTransaction({ rawTx }));
+          expect(recorder.methods()).to.deep.equal(['getSignatureStatuses']);
+          expect(historySearches(recorder)).to.deep.equal([true]);
+        });
+
+        it('getConfirmations looks up the status and the tip once each for a tx that is no longer in the recent status cache', async () => {
+          const recorder = await record(() => solRpc.getConfirmations({ txid: txids.versioned }), agedOut);
+          expect(recorder.methods()).to.deep.equal(['getSignatureStatuses', 'getSlot']);
         });
       });
     });
