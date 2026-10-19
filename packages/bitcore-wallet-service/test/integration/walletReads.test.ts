@@ -51,6 +51,12 @@ describe('Wallet reads', function() {
     signatures: helpers.clientSign(txp, TestData.copayers[copayer].xPrivKey_44H_0H_0H)
   });
 
+  // Returns a function that counts the wallet's reads since this was called
+  const countWalletReads = (walletId: string) => {
+    const fetchWallet = sinon.spy(storage, 'fetchWallet');
+    return () => fetchWallet.getCalls().filter(c => c.args[0] === walletId).length;
+  };
+
   describe('getStatus', function() {
     it('returns the stored wallet without the extended fields', async function() {
       const { server, wallet } = await helpers.createAndJoinWallet(1, 2);
@@ -195,6 +201,49 @@ describe('Wallet reads', function() {
       (await storedWallet(server.walletId)).nativeCashAddr.should.equal(true);
     });
 
+    describe('wallet reads', function() {
+      it('reads the wallet once for a UTXO wallet with pending and broadcast txps', async function() {
+        const { server, wallet } = await helpers.createAndJoinWallet(1, 1);
+        await helpers.stubUtxos(server, wallet, [1, 1, 1]);
+        const broadcast = await sign(server, await createTx(server, 0.5e8));
+        helpers.stubBroadcast(broadcast.txid);
+        await call(server, 'broadcastTx', { txProposalId: broadcast.id });
+        await createTx(server, 0.5e8);
+        await sign(server, await createTx(server, 0.5e8)); // accepted, not yet broadcast
+
+        const reads = countWalletReads(wallet.id);
+        await call(server, 'getStatus');
+        reads().should.equal(1);
+      });
+
+      it('reads the wallet once for an account-based wallet', async function() {
+        const { server, wallet } = await helpers.createAndJoinWallet(1, 1, { coin: 'eth' });
+        await call(server, 'createAddress');
+        await helpers.stubUtxos(server, wallet, [1]);
+
+        const reads = countWalletReads(wallet.id);
+        await call(server, 'getStatus');
+        reads().should.equal(1);
+      });
+
+      it('reads the wallet once when the status registers the wallet', async function() {
+        const { server, wallet } = await helpers.createAndJoinWallet(1, 2);
+        (await storedWallet(wallet.id)).beRegistered.should.equal(false);
+
+        const reads = countWalletReads(wallet.id);
+        await call(server, 'getStatus');
+        reads().should.equal(1);
+        blockchainExplorer.register.calledOnce.should.equal(true);
+      });
+
+      it('migrates an old BCH wallet once', async function() {
+        const { server } = await helpers.createAndJoinWallet(1, 1, { coin: 'bch', earlyRet: true, nativeCashAddr: false });
+        const migrate = sinon.spy(storage, 'migrateToCashAddr');
+        await call(server, 'getStatus');
+        migrate.callCount.should.equal(1);
+      });
+    });
+
     describe('errors', function() {
       it('fails with UPGRADE_NEEDED for a SOL wallet and an old client', async function() {
         const { server } = await helpers.createAndJoinWallet(1, 1, { coin: 'sol' });
@@ -315,6 +364,29 @@ describe('Wallet reads', function() {
       tx.note.editedByName.should.equal('copayer 2');
     });
 
+    it('getTx reads the wallet once', async function() {
+      const reads = countWalletReads(server.walletId);
+      await call(server, 'getTx', { txProposalId: txp.id });
+      reads().should.equal(1);
+    });
+
+    it('getTxByHash reads the wallet once', async function() {
+      const reads = countWalletReads(server.walletId);
+      await call(server, 'getTxByHash', { txid: txp.txid });
+      reads().should.equal(1);
+    });
+
+    it('getTxHistory reads the wallet once', async function() {
+      helpers.stubHistory(0, 1000, [{
+        txid: txp.txid, category: 'send', satoshis: 0.5e8, fee: 1000, height: 900, address: TO_ADDRESS,
+        outputs: [{ address: TO_ADDRESS, amount: 0.5e8 }], blockTime: new Date().toISOString()
+      }]);
+      const reads = countWalletReads(server.walletId);
+      const history = await call(server, 'getTxHistory');
+      should.exist(history[0].proposalId);
+      reads().should.equal(1);
+    });
+
     it('getTx and getTxByHash fail with TX_NOT_FOUND for an unknown tx', async function() {
       for (const [method, opts] of [['getTx', { txProposalId: 'unknown' }], ['getTxByHash', { txid: 'unknown' }]] as Array<[string, object]>) {
         const err: any = await call(server, method, opts).catch(e => e);
@@ -372,6 +444,34 @@ describe('Wallet reads', function() {
 
       result.id.should.equal(txp.id);
       fetchTxNote.called.should.equal(false);
+    });
+
+    it('each storage fetch completes from the wallet it is given, without reading it', async function() {
+      // A copy of the wallet with renamed copayers shows which wallet the names came from
+      const given = await util.promisify(storage.fetchWallet).call(storage, server.walletId);
+      for (const copayer of given.copayers) copayer.name = 'given ' + copayer.name;
+      const fetchWallet = sinon.spy(storage, 'fetchWallet');
+      const walletId = server.walletId;
+      const pending = await createTx(server, 0.1e8);
+      fetchWallet.resetHistory();
+
+      const fetches: Array<[string, (cb) => void, (result) => string[]]> = [
+        ['fetchTx', cb => storage.fetchTx(walletId, txp.id, cb, given), tx => [tx.creatorName]],
+        ['fetchTxByHashForWallet', cb => storage.fetchTxByHashForWallet(walletId, txp.txid, cb, given), tx => [tx.creatorName]],
+        ['fetchPendingTxs', cb => storage.fetchPendingTxs(walletId, cb, given), txs => txs.map(t => t.creatorName)],
+        ['fetchTxs', cb => storage.fetchTxs(walletId, {}, cb, given), txs => txs.map(t => t.creatorName)],
+        ['fetchBroadcastedTxs', cb => storage.fetchBroadcastedTxs(walletId, {}, cb, given), txs => txs.map(t => t.creatorName)],
+        ['fetchTxNote', cb => storage.fetchTxNote(walletId, txp.txid, cb, given), note => [note.editedByName]],
+        ['fetchTxNotes', cb => storage.fetchTxNotes(walletId, {}, cb, given), notes => notes.map(n => n.editedByName)]
+      ];
+      for (const [name, fetch, names] of fetches) {
+        const result = await util.promisify(fetch)();
+        const got = names(result);
+        got.length.should.be.above(0, name);
+        got.every(n => n.startsWith('given ')).should.equal(true, name);
+      }
+      fetchWallet.callCount.should.equal(0);
+      should.exist(pending);
     });
 
     it('a storage error reading the wallet fails each completion', async function() {
