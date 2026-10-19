@@ -336,6 +336,11 @@ class TssKeyGenClass {
         if (!this._checkPassword({ session, password })) {
           throw Errors.TSS_INVALID_PASSWORD;
         }
+        // Sanity check for the public key of the participant in the session
+        // session.authPublicKeys was not added until version 1.2
+        if (session.schemeVersion >= 1.2 && session.authPublicKeys[message.partyId] !== message.publicKey) {
+          throw Errors.NOT_AUTHORIZED;
+        }
         try {
           await storage.storeTssKeyGenParticipant({ id, partyId: message.partyId, copayerId, __v: session.__v });
         } catch (e) {
