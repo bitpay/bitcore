@@ -9,10 +9,12 @@ import * as SolComputeBudget from '@solana-program/compute-budget';
 import * as SolLookUpTable from '@solana-program/address-lookup-table';
 import * as SolToken from '@solana-program/token';
 import { pipe } from '@solana/functional';
+import { SolKit as LibSolKit } from '@bitpay-labs/crypto-wallet-core';
 import { SolRpc } from '../lib/sol/SolRpc.js';
 import { SOL_ERROR_MESSAGES } from '../lib/sol/error_messages.js';
 import { parseInstructions, instructionKeys } from '../lib/sol/transaction-parser.js';
 import { assertAccountInfoShape, recordGetAccountInfoCalls, SYSTEM_PROGRAM_ADDRESS, TOKEN_2022_PROGRAM_ADDRESS } from './getAccountInfo.helper.js';
+import { recordRpcCalls } from './solRpcCalls.helper.js';
 
 const require = createRequire(import.meta.url);
 const privateKey1 = require('../blockchain/solana/test/keypair/id.json');
@@ -542,6 +544,287 @@ describe('SOL Tests', () => {
           
           const receiverDifference = Number(receiverPostBalance - receiverPreBalance);
           expect(receiverDifference).to.equal(amountInLamports);
+        });
+      });
+    });
+
+    describe('getTransaction compared with the validator', function() {
+      // The fields of meta that are the same in every encoding. innerInstructions is parsed only in the jsonParsed
+      // encoding, so it isn't compared: getTransaction returns the base64 meta, but used to return the jsonParsed one
+      // for lookup-table txs.
+      const META_FIELDS = ['fee', 'err', 'preBalances', 'postBalances', 'preTokenBalances', 'postTokenBalances', 'logMessages', 'computeUnitsConsumed'];
+      const txids = {};
+      const loadedAccounts = {};
+
+      before(async function() {
+        // Two lookup tables, each holding a writable and a readonly account, so a tx can load both kinds from both tables
+        const tables = await Promise.all([senderKeypair, thirdKeypair].map(async authority => {
+          const [writable, readonly] = await Promise.all([SolKit.generateKeyPairSigner(), SolKit.generateKeyPairSigner()]);
+          const addresses = [writable.address, readonly.address];
+          const lookupTableAddress = await createLookupTable({ solRpc, fromKeypair: authority, addresses });
+          return { lookupTableAddress, writable: writable.address, readonly: readonly.address };
+        }));
+        loadedAccounts.writable = tables.map(({ writable }) => writable);
+        loadedAccounts.readonly = tables.map(({ readonly }) => readonly);
+
+        txids.legacy = await sendTransaction(solRpc, senderKeypair, receiverKeypair, 1000, 'legacy');
+        txids.versioned = await sendTransaction(solRpc, senderKeypair, receiverKeypair, 1000, 0);
+        txids.oneLookupTable = await sendTransactionLoadingFromLookupTables({ solRpc, fromKeypair: senderKeypair, tables: tables.slice(0, 1), amountInLamports: 1e6 });
+        txids.twoLookupTables = await sendTransactionLoadingFromLookupTables({ solRpc, fromKeypair: senderKeypair, tables, amountInLamports: 1e6 });
+        await Promise.all(Object.values(txids).map(txid => waitForFinalized(solRpc, txid)));
+      });
+
+      // What the validator returns for a tx when asked directly, decoded with the same kit the library uses
+      const fetchFromValidator = async txid => {
+        const signature = LibSolKit.signature(txid);
+        const [jsonParsed, base64, { value: [status] }] = await Promise.all([
+          solRpc.rpc.getTransaction(signature, { ...solRpc._versionedConfig, encoding: 'jsonParsed' }).send(),
+          solRpc.rpc.getTransaction(signature, { ...solRpc._versionedConfig, encoding: 'base64' }).send(),
+          solRpc.rpc.getSignatureStatuses([signature], { searchTransactionHistory: true }).send()
+        ]);
+        const decoded = LibSolKit.getTransactionDecoder().decode(LibSolKit.getBase64Encoder().encode(base64.transaction[0]));
+        const compiled = LibSolKit.getCompiledTransactionMessageDecoder().decode(decoded.messageBytes);
+        const decompiled = await LibSolKit.decompileTransactionMessageFetchingLookupTables(compiled, solRpc.rpc);
+        return { jsonParsed, base64, status, compiled, decompiled };
+      };
+
+      // Calls getTransaction and returns the confirmed slots seen just before and just after it
+      const getTransactionTimed = async (txid, respond) => {
+        const slotBefore = await solRpc.rpc.getSlot({ commitment: 'confirmed' }).send();
+        const recorder = recordRpcCalls(solRpc, { respond });
+        let tx;
+        try {
+          tx = await solRpc.getTransaction({ txid });
+        } finally {
+          recorder.restore();
+        }
+        const slotAfter = await solRpc.rpc.getSlot({ commitment: 'confirmed' }).send();
+        return { tx, slotBefore, slotAfter, calls: recorder.calls };
+      };
+
+      // A finalized tx: every field getTransaction returns, checked against the validator
+      const expectMatchesValidator = async (txid, respond) => {
+        const { tx, slotBefore, slotAfter, calls } = await getTransactionTimed(txid, respond);
+        const { jsonParsed, status, compiled, decompiled } = await fetchFromValidator(txid);
+        assertValidTransaction(tx, true);
+
+        expect(tx.txid).to.equal(txid);
+        expect(tx.slot).to.equal(Number(jsonParsed.slot));
+        expect(tx.blockTime).to.equal(Number(jsonParsed.blockTime));
+        expect(tx.version).to.equal(compiled.version);
+        expect(tx.feePayerAddress).to.equal(decompiled.feePayer.address);
+        expect(tx.lifetimeConstraint).to.deep.equal({
+          blockhash: decompiled.lifetimeConstraint.blockhash,
+          lastValidBlockHeight: decompiled.lifetimeConstraint.lastValidBlockHeight
+        });
+        expect(tx.instructions).to.deep.equal(parseInstructions(decompiled.instructions));
+        expect(tx.accountKeys).to.deep.equal(jsonParsed.transaction.message.accountKeys.map(({ pubkey }) => pubkey));
+        for (const field of META_FIELDS) {
+          expect(tx.meta[field], `meta.${field}`).to.deep.equal(jsonParsed.meta[field]);
+        }
+        expect(tx).not.to.have.property('lookupTablesUsed');
+
+        expect(status.confirmationStatus).to.equal('finalized');
+        expect(tx.status).to.equal('finalized');
+        // A finalized status has no confirmation count, so confirmations is the confirmed tip minus the tx's slot
+        expect(tx.confirmations).to.be.within(Number(slotBefore - jsonParsed.slot), Number(slotAfter - jsonParsed.slot));
+        return { tx, calls };
+      };
+      // Whether getTransaction fetched the tx again as jsonParsed, which it does for a lookup-table tx when it can't use loadedAddresses
+      const refetchedAsJsonParsed = calls => calls.some(({ method, args }) => method === 'getTransaction' && args[1]?.encoding === 'jsonParsed');
+      const transfer = (destination, amount) => ({ amount, currency: 'SOL', destination, source: senderKeypair.address });
+
+      it('matches the validator for a finalized legacy tx', async () => {
+        const { tx } = await expectMatchesValidator(txids.legacy);
+        expect(tx.instructions[instructionKeys.TRANSFER_SOL]).to.deep.equal([transfer(receiverKeypair.address, 1000)]);
+      });
+
+      it('matches the validator for a finalized v0 tx', async () => {
+        const { tx } = await expectMatchesValidator(txids.versioned);
+        expect(tx.instructions[instructionKeys.TRANSFER_SOL]).to.deep.equal([transfer(receiverKeypair.address, 1000)]);
+      });
+
+      it('matches the validator for a v0 tx that loads accounts from a lookup table', async () => {
+        const { base64 } = await fetchFromValidator(txids.oneLookupTable);
+        expect(base64.meta.loadedAddresses).to.deep.equal({ writable: loadedAccounts.writable.slice(0, 1), readonly: loadedAccounts.readonly.slice(0, 1) });
+        const { tx } = await expectMatchesValidator(txids.oneLookupTable);
+        expect(tx.instructions[instructionKeys.TRANSFER_SOL]).to.deep.equal([transfer(loadedAccounts.writable[0], 1e6)]);
+      });
+
+      it('matches the validator for a v0 tx that loads writable and readonly accounts from two lookup tables', async () => {
+        const { base64 } = await fetchFromValidator(txids.twoLookupTables);
+        expect(base64.meta.loadedAddresses.writable).to.have.members(loadedAccounts.writable);
+        expect(base64.meta.loadedAddresses.readonly).to.have.members(loadedAccounts.readonly);
+        const { tx } = await expectMatchesValidator(txids.twoLookupTables);
+        expect(tx.instructions[instructionKeys.TRANSFER_SOL]).to.deep.equal(loadedAccounts.writable.map(writable => transfer(writable, 1e6)));
+        // The loaded accounts follow the static ones: every writable account, then every readonly one
+        const { staticAccounts } = (await fetchFromValidator(txids.twoLookupTables)).compiled;
+        expect(tx.accountKeys).to.deep.equal([...staticAccounts, ...base64.meta.loadedAddresses.writable, ...base64.meta.loadedAddresses.readonly]);
+      });
+
+      it('matches the validator for a lookup-table tx whose response has no loadedAddresses', async () => {
+        const respond = async ({ method, args, send }) => {
+          const response = await send();
+          if (method === 'getTransaction' && args[1]?.encoding === 'base64') {
+            const { loadedAddresses, ...meta } = response.meta;
+            return { ...response, meta };
+          }
+          return response;
+        };
+        const { calls } = await expectMatchesValidator(txids.twoLookupTables, respond);
+        expect(refetchedAsJsonParsed(calls)).to.be.true;
+      });
+
+      it('returns the validator\'s status for a tx that was just sent', async () => {
+        const txid = await sendTransaction(solRpc, senderKeypair, receiverKeypair, 1000, 0);
+        const { value: [statusBefore] } = await solRpc.rpc.getSignatureStatuses([txid]).send();
+        const tx = await solRpc.getTransaction({ txid });
+        const { value: [statusAfter] } = await solRpc.rpc.getSignatureStatuses([txid]).send();
+        const processedTip = await solRpc.rpc.getSlot({ commitment: 'processed' }).send();
+        expect(tx.status).to.be.oneOf([statusBefore.confirmationStatus, statusAfter.confirmationStatus]);
+        expect(tx.confirmations).to.be.a('number').within(0, Number(processedTip - BigInt(tx.slot)));
+      });
+
+      it('returns null for a txid that is not base58', async () => {
+        expect(await solRpc.getTransaction({ txid: 'not-a-txid!' })).to.be.null;
+      });
+
+      it('returns null for a txid the validator does not know', async () => {
+        const unknownTxid = LibSolKit.getBase58Decoder().decode(new Uint8Array(64).fill(7));
+        expect(await solRpc.getTransaction({ txid: unknownTxid })).to.be.null;
+      });
+
+      it('returns a null status and confirmations when decoding a tx that was never sent', async () => {
+        const rawTx = await createRawTransaction(solRpc.rpc, senderKeypair, receiverKeypair, 1000);
+        const decoded = await solRpc.decodeRawTransaction({ rawTx });
+        expect(decoded.status).to.be.null;
+        expect(decoded.confirmations).to.be.null;
+      });
+
+      describe('status and confirmations from the status response', () => {
+        // Statuses the validator only gives under conditions a test can't set up quickly (a count of 5, a tx
+        // that has aged out of the recent status cache, a failed lookup) are answered by the recorder instead
+        let finalizedStatus;
+        before(async () => {
+          ({ value: [finalizedStatus] } = await solRpc.rpc.getSignatureStatuses([txids.legacy], { searchTransactionHistory: true }).send());
+          expect(finalizedStatus.confirmations).to.be.null;
+        });
+        const statusWith = fields => ({ ...finalizedStatus, ...fields });
+
+        // Answers status lookups with `status` (and `recentStatus` when the recent cache alone is searched) and
+        // tip lookups with `tip`; everything else goes to the validator
+        const answer = ({ status, recentStatus = status, tip, statusError, slotError }) => ({ method, args, send }) => {
+          if (method === 'getSignatureStatuses') {
+            expect(args[0]).to.deep.equal([txids.legacy]);
+            if (statusError) throw statusError;
+            return { context: { slot: tip }, value: [args[1]?.searchTransactionHistory ? status : recentStatus] };
+          }
+          if (method === 'getSlot') {
+            if (slotError) throw slotError;
+            return tip;
+          }
+          return send();
+        };
+        const withAnswers = async (options, fn) => {
+          const recorder = recordRpcCalls(solRpc, { respond: answer(options) });
+          try {
+            return await fn();
+          } finally {
+            recorder.restore();
+          }
+        };
+        const getTransactionWith = options => withAnswers(options, () => solRpc.getTransaction({ txid: txids.legacy }));
+        const getConfirmationsWith = (options, txid = txids.legacy) => withAnswers(options, () => solRpc.getConfirmations({ txid }));
+
+        it('uses the status\'s confirmation count when it has one', async () => {
+          const tx = await getTransactionWith({ status: statusWith({ confirmations: 5n, confirmationStatus: 'confirmed' }), tip: finalizedStatus.slot + 50n });
+          expect(tx.status).to.equal('confirmed');
+          expect(tx.confirmations).to.equal(5);
+        });
+
+        it('counts confirmations from the tip when the status has no count', async () => {
+          const tx = await getTransactionWith({ status: statusWith({ confirmations: null }), tip: finalizedStatus.slot + 40n });
+          expect(tx.status).to.equal('finalized');
+          expect(tx.confirmations).to.equal(40);
+        });
+
+        it('counts confirmations from the status\'s slot', async () => {
+          // A status slot that differs from the tx's own slot shows which one is used
+          const tx = await getTransactionWith({ status: statusWith({ confirmations: null, slot: finalizedStatus.slot + 2n }), tip: finalizedStatus.slot + 40n });
+          expect(tx.confirmations).to.equal(38);
+        });
+
+        it('counts confirmations from the tip when the status count is 0', async () => {
+          const tx = await getTransactionWith({ status: statusWith({ confirmations: 0n, confirmationStatus: 'processed' }), tip: finalizedStatus.slot + 3n });
+          expect(tx.status).to.equal('processed');
+          expect(tx.confirmations).to.equal(3);
+        });
+
+        it('counts confirmations from the tx\'s slot when the status has no slot', async () => {
+          const tx = await getTransactionWith({ status: statusWith({ confirmations: null, slot: undefined }), tip: finalizedStatus.slot + 7n });
+          expect(tx.status).to.equal('finalized');
+          expect(tx.confirmations).to.equal(7);
+        });
+
+        it('counts confirmations from the confirmed tip', async () => {
+          const recorder = recordRpcCalls(solRpc, { respond: answer({ status: statusWith({ confirmations: null }), tip: finalizedStatus.slot + 40n }) });
+          try {
+            await solRpc.getTransaction({ txid: txids.legacy });
+            await solRpc.getConfirmations({ txid: txids.legacy });
+          } finally {
+            recorder.restore();
+          }
+          const tipLookups = recorder.calls.filter(({ method }) => method === 'getSlot');
+          expect(tipLookups).to.have.length.greaterThan(0);
+          expect(tipLookups.map(({ args }) => args[0]?.commitment)).to.deep.equal(tipLookups.map(() => 'confirmed'));
+        });
+
+        it('finds a tx that is no longer in the recent status cache', async () => {
+          const tx = await getTransactionWith({ status: statusWith({ confirmations: null }), recentStatus: null, tip: finalizedStatus.slot + 500n });
+          expect(tx.status).to.equal('finalized');
+          expect(tx.confirmations).to.equal(500);
+        });
+
+        it('returns a null status and confirmations when no status is found', async () => {
+          const tx = await getTransactionWith({ status: null, tip: finalizedStatus.slot + 1n });
+          expect(tx.status).to.be.null;
+          expect(tx.confirmations).to.be.null;
+          expect(tx.txid).to.equal(txids.legacy);
+        });
+
+        it('returns a null status and confirmations when the status lookup fails', async () => {
+          const tx = await getTransactionWith({ statusError: new Error('status lookup failed') });
+          expect(tx.status).to.be.null;
+          expect(tx.confirmations).to.be.null;
+        });
+
+        it('returns a null status and confirmations when the tip lookup fails', async () => {
+          const tx = await getTransactionWith({ status: statusWith({ confirmations: null }), slotError: new Error('tip lookup failed') });
+          expect(tx.status).to.be.null;
+          expect(tx.confirmations).to.be.null;
+        });
+
+        describe('getConfirmations', () => {
+          it('uses the status\'s confirmation count when it has one', async () => {
+            expect(await getConfirmationsWith({ status: statusWith({ confirmations: 5n }), tip: finalizedStatus.slot + 50n })).to.equal(5);
+          });
+
+          it('counts confirmations from the tip when the status has no count', async () => {
+            expect(await getConfirmationsWith({ status: statusWith({ confirmations: null }), tip: finalizedStatus.slot + 40n })).to.equal(40);
+          });
+
+          it('finds a tx that is no longer in the recent status cache', async () => {
+            expect(await getConfirmationsWith({ status: statusWith({ confirmations: null }), recentStatus: null, tip: finalizedStatus.slot + 500n })).to.equal(500);
+          });
+
+          it('counts confirmations from the tx\'s slot when no status is found', async () => {
+            expect(await getConfirmationsWith({ status: null, tip: finalizedStatus.slot + 9n })).to.equal(9);
+          });
+
+          it('returns null for a txid the validator does not know', async () => {
+            const unknownTxid = LibSolKit.getBase58Decoder().decode(new Uint8Array(64).fill(7));
+            expect(await solRpc.getConfirmations({ txid: unknownTxid })).to.be.null;
+          });
         });
       });
     });
@@ -1967,9 +2250,10 @@ async function sendNoisyTransactionUsingMultipleLookupTables({ solRpc, fromKeypa
  * @param {Object} params
  * @param {SolRpc} params.solRpc
  * @param {SolKit.KeyPairSigner<string>} params.fromKeypair
- * @param {SolKit.KeyPairSigner<string>} params.toKeypair
+ * @param {SolKit.KeyPairSigner<string>} [params.toKeypair] - its address is the table's only entry, unless `addresses` is given
+ * @param {string[]} [params.addresses] - the table's entries
  */
-async function createLookupTable({ solRpc, fromKeypair, toKeypair }) {
+async function createLookupTable({ solRpc, fromKeypair, toKeypair, addresses = [toKeypair.address] }) {
   try {
     const sendAndConfirmTransaction = SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions });
     const { value: recentBlockhash } = await solRpc.rpc.getLatestBlockhash({ commitment: 'confirmed' }).send();
@@ -2002,9 +2286,7 @@ async function createLookupTable({ solRpc, fromKeypair, toKeypair }) {
       address: lookupTableAddress,
       payer: fromKeypair.address,
       authority: fromKeypair.address,
-      addresses: [
-        toKeypair.address
-      ]
+      addresses
     });
 
     const { value: recenterBlockhash } = await solRpc.rpc.getLatestBlockhash({ commitment: 'confirmed' }).send();
@@ -2024,4 +2306,56 @@ async function createLookupTable({ solRpc, fromKeypair, toKeypair }) {
     console.error('err', err);
     throw err;
   }
+}
+
+/**
+ * Sends a v0 tx that transfers to each table's writable address, with each table's readonly address added to the
+ * transfer as an extra readonly account, so the validator loads writable and readonly accounts from every table.
+ * @param {Object} params
+ * @param {SolRpc} params.solRpc
+ * @param {SolKit.KeyPairSigner<string>} params.fromKeypair
+ * @param {Array<{ lookupTableAddress: string, writable: string, readonly: string }>} params.tables
+ * @param {number} params.amountInLamports - enough to fund a new account
+ */
+async function sendTransactionLoadingFromLookupTables({ solRpc, fromKeypair, tables, amountInLamports }) {
+  const lookupTableAccounts = await SolKit.fetchJsonParsedAccounts(solRpc.rpc, tables.map(({ lookupTableAddress }) => lookupTableAddress));
+  for (const lookupTableAccount of lookupTableAccounts) {
+    SolKit.assertAccountDecoded(lookupTableAccount);
+    SolKit.assertAccountExists(lookupTableAccount);
+  }
+
+  const instructions = tables.map(({ writable, readonly }) => {
+    const transfer = SolSystem.getTransferSolInstruction({ amount: amountInLamports, destination: writable, source: fromKeypair });
+    return { ...transfer, accounts: [...transfer.accounts, { address: readonly, role: SolKit.AccountRole.READONLY }] };
+  });
+  const { value: recentBlockhash } = await solRpc.rpc.getLatestBlockhash().send();
+  const transactionMessage = pipe(
+    SolKit.createTransactionMessage({ version: 0 }),
+    (tx) => SolKit.setTransactionMessageFeePayerSigner(fromKeypair, tx),
+    (tx) => SolKit.setTransactionMessageLifetimeUsingBlockhash(recentBlockhash, tx),
+    (tx) => SolKit.appendTransactionMessageInstructions(instructions, tx)
+  );
+  const transactionMessageWithLookupTables = SolKit.compressTransactionMessageUsingAddressLookupTables(
+    transactionMessage,
+    Object.fromEntries(lookupTableAccounts.map(({ address, data }) => [address, data.addresses]))
+  );
+
+  const signedTransactionMessage = await SolKit.signTransactionMessageWithSigners(transactionMessageWithLookupTables);
+  await SolKit.sendAndConfirmTransactionFactory({ rpc: solRpc.rpc, rpcSubscriptions: solRpc.rpcSubscriptions })(signedTransactionMessage, { commitment: 'confirmed' });
+  return SolKit.getSignatureFromTransaction(signedTransactionMessage);
+}
+
+/**
+ * @param {SolRpc} solRpc
+ * @param {string} txid
+ */
+async function waitForFinalized(solRpc, txid) {
+  for (let i = 0; i < 240; i++) {
+    const { value: [status] } = await solRpc.rpc.getSignatureStatuses([txid]).send();
+    if (status?.confirmationStatus === 'finalized') {
+      return;
+    }
+    await new Promise(resolve => setTimeout(resolve, 250));
+  }
+  throw new Error(`${txid} was not finalized`);
 }
