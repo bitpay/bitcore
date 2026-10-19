@@ -176,6 +176,10 @@ class TssKeyGenClass {
       throw Errors.TSS_NON_PARTICIPANT.withMessage('Only the first participant can register a party');
     }
 
+    if (data.partyId == null || isNaN(data.partyId as number)) {
+      throw Errors.TSS_INVALID_PARTY_DATA.withMessage(`Invalid partyId: ${data.partyId}`);
+    }
+
     const partyId = parseInt(data.partyId as string);
     const pubKey = data.partyPubKey?.trim();
 
@@ -332,7 +336,16 @@ class TssKeyGenClass {
         if (!this._checkPassword({ session, password })) {
           throw Errors.TSS_INVALID_PASSWORD;
         }
-        await storage.storeTssKeyGenParticipant({ id, partyId: message.partyId, copayerId, __v: session.__v });
+        try {
+          await storage.storeTssKeyGenParticipant({ id, partyId: message.partyId, copayerId, __v: session.__v });
+        } catch (e) {
+          if (e?.message?.startsWith('MONGO_DOC_OUTDATED')) {
+            return this.processMessage(params);
+          }
+          throw e;
+        }
+      } else if (session.participants[message.partyId] !== copayerId) {
+        throw Errors.TSS_NON_PARTICIPANT.withMessage('Incorrect copayerId for this partyId');
       }
 
       let result = false;

@@ -45,6 +45,8 @@ export function authTssKeyGenRequest(): express.RequestHandler {
       if (!session) {
         // This is a brand new session. Caller should be party 0 with the initial round message.
         if (body?.message?.round === 0 && body?.message?.partyId === 0) {
+          const pubKey = body?.message?.publicKey;
+          verifyMessage(req, signature, pubKey); // Self verification, but at least ensures that the caller owns the message's private key
           return next();
         } else {
           // Session should have been initialized by the client already in BWC > TssKeyGen.newKey()

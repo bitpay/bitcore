@@ -402,6 +402,18 @@ describe('TSS', function() {
           expectError(res, 401, 'NOT_AUTHORIZED', 'Session not found');
         });
 
+        it('should error if the request is not signed by the message\'s publicKey', async function() {
+          const res = await post(path, { message: round0Message(0), n: vector.n, version: 1.2 }, { copayerId: copayerIds[0], privKey: randomKey() });
+          expectError(res, 401, 'NOT_AUTHORIZED', 'Invalid signature');
+        });
+
+        it('should error if the message has no publicKey', async function() {
+          const message = round0Message(0);
+          delete message.publicKey;
+          const res = await post(path, { message, n: vector.n, version: 1.2 }, partyAuth(0));
+          expectError(res, 401, 'NOT_AUTHORIZED');
+        });
+
         it('should error if party 0 tries to start the session with a non-round 0 message', async function() {
           const res = await post(path, { message: round1Message(0), n: vector.n, version: 1.2 }, partyAuth(0));
           expectError(res, 401, 'NOT_AUTHORIZED', 'Session not found');
@@ -424,7 +436,11 @@ describe('TSS', function() {
           res.status.should.equal(200);
         });
 
+        // For an existing session, request auth uses the session's authPublicKeys rather than
+        //  message.publicKey, so these reach verifyTssMessage instead of failing auth first.
+
         it('should error if no publicKey', async function() {
+          await createKeyGenSession();
           const message = round0Message(0);
           delete message.publicKey;
           const res = await post(path, { message }, partyAuth(0));
@@ -432,12 +448,14 @@ describe('TSS', function() {
         });
 
         it('should error if publicKey is bogus', async function() {
+          await createKeyGenSession();
           const message = { ...round0Message(0), publicKey: 'invalid' };
           const res = await post(path, { message }, partyAuth(0));
           expectError(res, 400, 'TSS_INVALID_MESSAGE');
         });
 
         it('should error if publicKey cannot verify broadcast message signature', async function() {
+          await createKeyGenSession();
           const message = { ...round0Message(0), publicKey: randomKey().publicKey.toString() };
           const res = await post(path, { message }, partyAuth(0));
           expectError(res, 400, 'TSS_INVALID_MESSAGE_SIG');
@@ -553,6 +571,57 @@ describe('TSS', function() {
         });
       });
 
+      describe('concurrent joins', function() {
+        /**
+         * Make the first storeTssKeyGenParticipant call lose a race: before it writes,
+         * another copayer is written into `concurrentPartyId`, so the original call's __v is stale.
+         */
+        const stubJoinRaceCondition = (concurrentPartyId: number, concurrentCopayerId: string) => {
+          const stub = sandbox.stub(BWS.Storage.prototype, 'storeTssKeyGenParticipant');
+          stub.callThrough();
+          stub.onFirstCall().callsFake(async function(params) {
+            const current = await this.fetchTssKeyGenSession({ id: params.id });
+            await stub.wrappedMethod.call(this, { id: params.id, partyId: concurrentPartyId, copayerId: concurrentCopayerId, __v: current.__v });
+            return stub.wrappedMethod.call(this, params);
+          });
+          return stub;
+        };
+
+        it('should retry and join if another party joined concurrently', async function() {
+          await createKeyGenSession({ registered: [1, 2] });
+          const stub = stubJoinRaceCondition(2, copayerIds[2]);
+
+          const res = await post(path, { message: round0Message(1), version: 1.2 }, partyAuth(1));
+          res.status.should.equal(200);
+          stub.callCount.should.equal(2);
+
+          const session = await storage.fetchTssKeyGenSession({ id: SESSION_ID });
+          session.participants.should.deep.equal(copayerIds);
+          session.rounds[0].map(r => r.fromPartyId).should.deep.equal([0, 1]);
+        });
+
+        it('should not join if another copayer took the same partyId concurrently', async function() {
+          await createKeyGenSession({ version: 1.1 });
+          stubJoinRaceCondition(1, copayerIds[2]);
+
+          const res = await post(path, { message: round0Message(1), version: 1.1 }, partyAuth(1));
+          res.status.should.not.equal(200);
+
+          const session = await storage.fetchTssKeyGenSession({ id: SESSION_ID });
+          session.participants[1].should.equal(copayerIds[2]);
+          session.rounds[0].map(r => r.fromPartyId).should.deep.equal([0]);
+        });
+
+        it('should not retry on other storage errors', async function() {
+          await createKeyGenSession({ registered: [1] });
+          const stub = sandbox.stub(BWS.Storage.prototype, 'storeTssKeyGenParticipant').rejects(new Error('boom'));
+
+          const res = await post(path, { message: round0Message(1), version: 1.2 }, partyAuth(1));
+          res.status.should.equal(500);
+          stub.callCount.should.equal(1);
+        });
+      });
+
       describe('existing participants', function() {
         it('should error if the request signature is invalid', async function() {
           await createKeyGenSession({ joined: [1, 2] });
@@ -622,6 +691,31 @@ describe('TSS', function() {
           await createKeyGenSession();
           const res = await register(partyId, getPubKey());
           expectError(res, 400, 'TSS_INVALID_PARTY_DATA');
+        });
+      }
+
+      it('should accept a numeric string partyId', async function() {
+        await createKeyGenSession();
+
+        const res = await register('1', authPubKey(1));
+        res.status.should.equal(200);
+
+        const session = await storage.fetchTssKeyGenSession({ id: SESSION_ID });
+        session.authPublicKeys[1].should.equal(authPubKey(1));
+      });
+
+      for (const [description, partyId, expected] of [
+        ['partyId is missing', undefined, 'undefined'],
+        ['partyId is null', null, 'null'],
+        ['partyId has a numeric prefix', '1abc', '1abc'],
+      ] as Array<[string, any, string]>) {
+        it(`should error with an invalid partyId message if ${description}`, async function() {
+          await createKeyGenSession();
+          const res = await register(partyId, authPubKey(1));
+          expectError(res, 400, 'TSS_INVALID_PARTY_DATA', `Invalid partyId: ${expected}`);
+
+          const session = await storage.fetchTssKeyGenSession({ id: SESSION_ID });
+          session.authPublicKeys.should.deep.equal([authPubKey(0), null, null]);
         });
       }
 

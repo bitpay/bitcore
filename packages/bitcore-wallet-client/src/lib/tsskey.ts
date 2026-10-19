@@ -296,7 +296,7 @@ export class TssKeyGen extends EventEmitter {
    *  intercept or brute force the session ID and submit an initial message to join the session
    *  uninvited. To prevent this (unlikely) possibility, set a password in the newKey() method
    *  and share it with the other parties.
-   * @returns {string} Encrypted join code
+   * @returns {Promise<string>} Encrypted join code
    */
   async createJoinCode(params: {
     /**
