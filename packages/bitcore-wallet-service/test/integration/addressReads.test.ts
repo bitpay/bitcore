@@ -6,6 +6,7 @@ import util from 'util';
 import sinon from 'sinon';
 import { BCHAddressTranslator } from '../../src/lib/bchaddresstranslator';
 import { Common } from '../../src/lib/common';
+import { Address } from '../../src/lib/model';
 import { WalletService } from '../../src/lib/server';
 import { Storage } from '../../src/lib/storage';
 import * as TestData from '../testdata';
@@ -294,6 +295,120 @@ describe('Address reads', function() {
       failAddressQueries();
       const err: any = await call(server, 'createAddress').catch(e => e);
       err.message.should.equal('addresses read failed');
+    });
+  });
+
+  describe('reads only the addresses it needs', function() {
+    // 30 receive and 10 change addresses, each created in its own second
+    const largeWallet = async () => {
+      const { server, wallet } = await helpers.createAndJoinWallet(1, 1);
+      await helpers.createAddresses(server, wallet, 30, 10);
+      const docs = await addresses().find({ walletId: wallet.id }).toArray();
+      for (const [i, doc] of docs.entries()) {
+        await addresses().updateOne({ _id: doc._id }, { $set: { createdOn: 1000 + i } });
+      }
+      return { server, wallet };
+    };
+    const countBuilt = () => sinon.spy(Address, 'fromObj');
+    // Wraps the addresses collection: counts the documents its queries return, and fails the queries after the first
+    // `passing` finds when that is given. The cursors are the real ones, so the query shape doesn't matter.
+    const wrapAddressQueries = ({ passing = Infinity } = {}) => {
+      const realCollection = storage.db.collection.bind(storage.db);
+      const counts = { finds: 0, docs: 0, findOnes: 0 };
+      sinon.stub(storage.db, 'collection').callsFake(name => {
+        const collection = realCollection(name);
+        if (name !== Storage.collections.ADDRESSES) return collection;
+        return Object.assign(Object.create(collection), {
+          find: (...args) => {
+            const cursor = collection.find(...args);
+            const fail = ++counts.finds > passing;
+            const toArray = cursor.toArray.bind(cursor);
+            cursor.toArray = cb => fail ? cb(new Error('addresses read failed')) : toArray((err, docs) => {
+              counts.docs += docs?.length || 0;
+              cb(err, docs);
+            });
+            return cursor;
+          },
+          findOne: (...args) => {
+            counts.findOnes++;
+            return collection.findOne(...args);
+          }
+        });
+      });
+      return counts;
+    };
+
+    it('getAddresses with a limit builds only that many addresses', async function() {
+      const { server } = await largeWallet();
+      const built = countBuilt();
+      const read = wrapAddressQueries();
+      (await call(server, 'getAddresses', { limit: 1 })).length.should.equal(1);
+      built.callCount.should.equal(1);
+      read.docs.should.equal(2); // the page and one more, to see that the next address has a different createdOn
+      read.findOnes.should.equal(1);
+    });
+
+    it('getAddresses with skip and a limit builds only the addresses up to the end of the page', async function() {
+      const { server } = await largeWallet();
+      const built = countBuilt();
+      const read = wrapAddressQueries();
+      (await call(server, 'getAddresses', { noChange: true, reverse: true, skip: 2, limit: 3 })).length.should.equal(3);
+      built.callCount.should.equal(5);
+      read.docs.should.equal(6);
+    });
+
+    it('getAddresses also builds the addresses that share the page\'s last createdOn', async function() {
+      const { server, wallet } = await largeWallet();
+      const first = await addresses().find({ walletId: wallet.id }).sort({ createdOn: 1 }).limit(4).toArray();
+      await addresses().updateMany({ _id: { $in: first.slice(1).map(d => d._id) } }, { $set: { createdOn: first[1].createdOn } });
+      const built = countBuilt();
+      const read = wrapAddressQueries();
+      (await call(server, 'getAddresses', { limit: 2 })).length.should.equal(2);
+      built.callCount.should.equal(4);
+      read.docs.should.equal(6); // the page and one more, then the three sharing the last createdOn
+    });
+
+    it('getAddresses passes on a storage error reading the page', async function() {
+      const { server } = await largeWallet();
+      wrapAddressQueries({ passing: 0 });
+      const err: any = await call(server, 'getAddresses', { limit: 2 }).catch(e => e);
+      err.message.should.equal('addresses read failed');
+    });
+
+    it('getAddresses passes on a storage error reading the addresses that share the last createdOn', async function() {
+      const { server, wallet } = await largeWallet();
+      await addresses().updateMany({ walletId: wallet.id }, { $set: { createdOn: 1000 } });
+      wrapAddressQueries({ passing: 1 });
+      const err: any = await call(server, 'getAddresses', { limit: 2 }).catch(e => e);
+      err.message.should.equal('addresses read failed');
+    });
+
+    it('the single-address paths build only the first address', async function() {
+      for (const [coin, singleAddress] of [['eth', false], ['xrp', false], ['btc', true]] as Array<[string, boolean]>) {
+        const { server, wallet } = await helpers.createAndJoinWallet(1, 1, { coin, singleAddress, offset: coin === 'xrp' ? 1 : coin === 'btc' ? 2 : 0 });
+        await helpers.createAddresses(server, wallet, 10, 0);
+        const docs = await addresses().find({ walletId: wallet.id }).toArray();
+        for (const [i, doc] of docs.entries()) {
+          await addresses().updateOne({ _id: doc._id }, { $set: { createdOn: 1000 + i } });
+        }
+        await helpers.stubUtxos(server, wallet, [1]);
+        const built = countBuilt();
+        await call(server, coin === 'btc' ? 'createAddress' : 'getBalance');
+        built.callCount.should.equal(1, coin);
+        built.restore();
+      }
+    });
+
+    it('createAddress builds only the addresses in the gap window', async function() {
+      const { server } = await largeWallet();
+      sinon.stub(Defaults, 'MAX_MAIN_ADDRESS_GAP').value(3);
+      helpers.stubAddressActivity([]);
+      const built = countBuilt();
+      const read = wrapAddressQueries();
+      const err: any = await call(server, 'createAddress').catch(e => e);
+      err.code.should.equal('MAIN_ADDRESS_GAP_REACHED');
+      built.callCount.should.equal(3);
+      read.docs.should.equal(4);
     });
   });
 
