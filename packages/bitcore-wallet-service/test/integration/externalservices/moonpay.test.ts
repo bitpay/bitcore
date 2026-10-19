@@ -573,6 +573,35 @@ describe('Moonpay integration', () => {
       should.exist(data);
     });
 
+    it('should return the response body if there is one', async () => {
+      const data = await server.externalServices.moonpay.moonpayCancelSellTransaction(req);
+      data.should.equal('data');
+    });
+
+    it('should return success true without leaking the response if there is no body', async () => {
+      const fakeRequest2 = {
+        delete: (_url, opts, _cb) => {
+          return _cb(null, { statusCode: 204, body: undefined, headers: {}, request: { headers: opts.headers } });
+        },
+      };
+
+      server.externalServices.moonpay.request = fakeRequest2;
+      const data = await server.externalServices.moonpay.moonpayCancelSellTransaction(req);
+      data.should.deep.equal({ success: true });
+    });
+
+    it('should return success false if there is no body and status is not 2xx', async () => {
+      const fakeRequest2 = {
+        delete: (_url, opts, _cb) => {
+          return _cb(null, { statusCode: 404, body: '', headers: {}, request: { headers: opts.headers } });
+        },
+      };
+
+      server.externalServices.moonpay.request = fakeRequest2;
+      const data = await server.externalServices.moonpay.moonpayCancelSellTransaction(req);
+      data.should.deep.equal({ success: false });
+    });
+
     it('should return error if delete returns error', async () => {
       const fakeRequest2 = {
         delete: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
@@ -639,6 +668,27 @@ describe('Moonpay integration', () => {
       req.body.phoneNumber = '+14155551234';
       const data = await server.externalServices.moonpay.moonpayCreateSession(req);
       should.exist(data);
+    });
+
+    it('should return the response body if there is one', async () => {
+      const data = await server.externalServices.moonpay.moonpayCreateSession(req);
+      data.should.equal('data');
+    });
+
+    it('should throw without leaking the response if there is no session body', async () => {
+      const fakeRequest2 = {
+        post: (_url, opts, _cb) => {
+          return _cb(null, { statusCode: 200, body: undefined, headers: {}, request: { headers: opts.headers } });
+        },
+      };
+
+      server.externalServices.moonpay.request = fakeRequest2;
+      try {
+        await server.externalServices.moonpay.moonpayCreateSession(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Moonpay did not return a session');
+      }
     });
 
     it('should return error if post returns error', async () => {
