@@ -1,6 +1,6 @@
 {
   "name": "@bitpay-labs/crypto-rpc",
-  "version": "11.10.12",
+  "version": "11.10.14",
   "description": "A Normalized RPC Interface for Cryptocurrencies",
   "main": "index.js",
   "type": "module",
@@ -16,7 +16,7 @@
     "docker:test:build": "docker compose build",
     "docker:test:down": "docker compose down",
     "hardhat:compile": "cd blockchain/EVM/ && npx hardhat compile",
-    "hardhat:deploy": "cd blockchain/EVM/ && export HARDHAT_IGNITION_CONFIRM_DEPLOYMENT=false && export HARDHAT_IGNITION_CONFIRM_RESET=false && npx hardhat --network geth ignition deploy ./ignition/modules/all.js --reset",
+    "hardhat:deploy": "cd blockchain/EVM/ && npx hardhat --network geth run ./scripts/waitForTxIndex.js && export HARDHAT_IGNITION_CONFIRM_DEPLOYMENT=false && export HARDHAT_IGNITION_CONFIRM_RESET=false && npx hardhat --network geth ignition deploy ./ignition/modules/all.js --reset",
     "hardhat:clean": "rm -rf blockchain/EVM/artifacts blockchain/EVM/cache",
     "hardhat:test": "npm run hardhat:clean && cd blockchain/EVM/ && npx hardhat test",
     "lint": "eslint .",
@@ -26,7 +26,7 @@
   "author": "Micah Riggan",
   "license": "MIT",
   "dependencies": {
-    "@bitpay-labs/crypto-wallet-core": "^11.10.12",
+    "@bitpay-labs/crypto-wallet-core": "^11.10.14",
     "@solana-program/address-lookup-table": "0.7.0",
     "bitcoind-rpc": "0.9.1",
     "commander": "2.8.1",
