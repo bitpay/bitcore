@@ -26,7 +26,6 @@ describe('Rango route registration', () => {
   ];
 
   let routes: { [path: string]: Function };
-  let cached: { [path: string]: number };
   let reachedVia: string;
 
   const stubServer = {
@@ -44,7 +43,6 @@ describe('Rango route registration', () => {
 
   beforeEach(() => {
     routes = {};
-    cached = {};
 
     const router: any = {
       post: (path, handler) => { routes[path] = handler; },
@@ -59,10 +57,6 @@ describe('Rango route registration', () => {
       setPublicCache: (res, seconds) => { res.__cacheSeconds = seconds; },
       returnError: err => { throw err; }
     };
-
-    // setPublicCache is called with the response object, so record against the
-    // path by wrapping the handler lookup instead.
-    context.setPublicCache = (res, seconds) => { res.__cacheSeconds = seconds; cached[reachedVia ?? 'pending'] = seconds; };
 
     registerServiceRoutes(router, context);
   });

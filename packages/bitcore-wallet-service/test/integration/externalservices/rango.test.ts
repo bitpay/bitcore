@@ -7,6 +7,7 @@ import { WalletService } from '../../../src/lib/server';
 import * as TestData from '../../testdata';
 import helpers from '../helpers';
 import config from '../../../src/config';
+import { resetRangoMetaCache } from '../../../src/externalservices/rango';
 
 const should = chai.should();
 
@@ -48,6 +49,10 @@ describe('Rango integration', () => {
         referrerFee: '0.2'
       }
     };
+
+    // The metadata cache lives at module scope, so without this a fetch from
+    // one test satisfies the next and `requested` comes back empty.
+    resetRangoMetaCache();
 
     requested = [];
     fakeRequest = {
@@ -134,7 +139,7 @@ describe('Rango integration', () => {
         await server.externalServices.rango.rangoGetSupportedChains(req);
         should.fail('should have thrown');
       } catch (err) {
-        // A ClientError rather than a TypeError reading .api of undefined.
+        // A named error rather than a TypeError reading .api of undefined.
         err.message.should.contain('not configured for the sandbox');
       }
     });
@@ -384,6 +389,134 @@ describe('Rango integration', () => {
       const data = await server.externalServices.rango.rangoGetSupportedChains(req);
       data.resultType.should.equal('NO_ROUTE');
       data.error.should.equal('No route available');
+    });
+  });
+
+  /**
+   * The two public routes are the ones an anonymous caller can reach, and
+   * `setPublicCache` only sets a response header — on a POST route nothing
+   * downstream stores it. This server-side cache is what actually stops a
+   * caller spending one Rango request per call on our API key.
+   */
+  describe('public metadata caching', () => {
+    beforeEach(() => {
+      req = { headers: {}, body: { env: 'sandbox' } };
+    });
+
+    it('should not call Rango again within the cache window', async () => {
+      await server.externalServices.rango.rangoGetCryptoCurrencies(req);
+      await server.externalServices.rango.rangoGetCryptoCurrencies(req);
+      await server.externalServices.rango.rangoGetCryptoCurrencies(req);
+
+      requested.length.should.equal(1);
+    });
+
+    it('should serve the cached body, not an empty response', async () => {
+      const first = await server.externalServices.rango.rangoGetCryptoCurrencies(req);
+      const second = await server.externalServices.rango.rangoGetCryptoCurrencies(req);
+
+      second.should.deep.equal(first);
+    });
+
+    it('should share one upstream request between concurrent callers', async () => {
+      await Promise.all([
+        server.externalServices.rango.rangoGetCryptoCurrencies(req),
+        server.externalServices.rango.rangoGetCryptoCurrencies(req),
+        server.externalServices.rango.rangoGetCryptoCurrencies(req)
+      ]);
+
+      requested.length.should.equal(1);
+    });
+
+    it('should keep the two metadata routes in separate cache slots', async () => {
+      await server.externalServices.rango.rangoGetCryptoCurrencies(req);
+      await server.externalServices.rango.rangoGetSupportedChains(req);
+
+      requested.length.should.equal(2);
+      requested[0].should.contain('/basic/meta?');
+      requested[1].should.contain('/basic/meta/blockchains?');
+    });
+
+    it('should not cache a failed fetch', async () => {
+      let calls = 0;
+      server.externalServices.rango.request = {
+        get: (_url, _opts, _cb) => {
+          calls++;
+          return calls === 1 ? _cb(new Error('upstream down')) : _cb(null, { body: { ok: true } });
+        }
+      };
+
+      try {
+        await server.externalServices.rango.rangoGetCryptoCurrencies(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('upstream down');
+      }
+
+      // A transient failure must not be served for the rest of the window.
+      const data = await server.externalServices.rango.rangoGetCryptoCurrencies(req);
+      data.ok.should.equal(true);
+      calls.should.equal(2);
+    });
+  });
+
+  describe('request timeouts', () => {
+    /**
+     * A Rango endpoint that accepts the connection but never answers holds the
+     * socket open until something closes it. Every outbound call must carry a
+     * deadline — report-tx is a POST and does not go through rangoGet, so it
+     * is the one that can quietly lose its timeout.
+     */
+    it('should set a timeout on metadata requests', async () => {
+      let opts;
+      server.externalServices.rango.request = {
+        get: (_url, _opts, _cb) => { opts = _opts; return _cb(null, { body: {} }); }
+      };
+
+      await server.externalServices.rango.rangoGetSupportedChains({ headers: {}, body: {} });
+      opts.timeout.should.be.above(0);
+    });
+
+    it('should set a timeout on reportFailure', async () => {
+      let opts;
+      server.externalServices.rango.request = {
+        post: (_url, _opts, _cb) => { opts = _opts; return _cb(null, { body: {} }); }
+      };
+
+      await server.externalServices.rango.rangoReportFailure({
+        headers: {},
+        body: { env: 'sandbox', requestId: 'req-1', eventType: 'SEND_TX_FAILED' }
+      });
+      opts.timeout.should.be.above(0);
+    });
+  });
+
+  describe('slippage', () => {
+    const quoteReq = (slippage?) => ({
+      headers: {},
+      body: { env: 'sandbox', from: 'BTC.BTC', to: 'ETH.ETH', amount: '100000', slippage }
+    });
+
+    it('should default slippage when the client sends none', async () => {
+      await server.externalServices.rango.rangoGetSwapQuote(quoteReq());
+      queryOf(requested[0]).slippage.should.equal('1.5');
+    });
+
+    it('should forward a slippage inside the accepted range', async () => {
+      await server.externalServices.rango.rangoGetSwapQuote(quoteReq(3));
+      queryOf(requested[0]).slippage.should.equal('3');
+    });
+
+    it('should reject an out-of-range slippage rather than forwarding it', async () => {
+      for (const bad of [0, -1, 500, 'abc']) {
+        try {
+          await server.externalServices.rango.rangoGetSwapQuote(quoteReq(bad));
+          should.fail(`should have thrown for ${bad}`);
+        } catch (err) {
+          err.message.should.contain('slippage must be between');
+        }
+      }
+      requested.length.should.equal(0);
     });
   });
 });

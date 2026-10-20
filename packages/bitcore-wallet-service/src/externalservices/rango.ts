@@ -13,12 +13,6 @@ import { checkRequired } from '../lib/server';
  * Docs: https://docs.rango.exchange/api-integration/basic-api-single-step
  */
 /**
- * Chains BitPay custodies. The metadata route is public, so the chain filter
- * is pinned here rather than taken from the request — an unfiltered
- * /basic/meta is ~13 MB, which an unauthenticated caller could otherwise make
- * BWS fetch and re-serve on our API key.
- */
-/**
  * Environment the two unauthenticated metadata routes always use, whatever
  * the caller asks for. Metadata is identical between environments, so there
  * is nothing to gain by letting an anonymous request pick production.
@@ -28,6 +22,54 @@ const RANGO_PUBLIC_ENV: 'sandbox' | 'production' = 'sandbox';
 /** Upstream request timeout. Rango's meta payload is large, so this is generous. */
 const RANGO_REQUEST_TIMEOUT_MS = 30000;
 
+/**
+ * How long a metadata response is reused before it is fetched again.
+ *
+ * This cache is what actually bounds the two public routes. `setPublicCache`
+ * only sets a Cache-Control header, and both routes are POST, so no browser or
+ * shared cache stores the response — without this every anonymous call spends
+ * a Rango request on our API key.
+ */
+const RANGO_META_CACHE_TTL_MS = 10 * 60 * 1000;
+
+/**
+ * Module scope, deliberately: `WalletService.getInstance()` builds a new
+ * RangoService per request, so an instance field would never be read twice.
+ */
+const rangoMetaCache = new Map<string, { at: number; value: Promise<any> }>();
+
+/** Drops every cached metadata response. Exists for tests. */
+export function resetRangoMetaCache(): void {
+  rangoMetaCache.clear();
+}
+
+/**
+ * Caches the in-flight promise rather than the settled value, so a burst of
+ * concurrent callers shares one upstream request instead of starting one each.
+ * A rejected fetch is evicted so a transient Rango failure is not served for
+ * the rest of the TTL.
+ */
+function rangoCachedGet(key: string, fetch: () => Promise<any>): Promise<any> {
+  const hit = rangoMetaCache.get(key);
+  if (hit && Date.now() - hit.at < RANGO_META_CACHE_TTL_MS) {
+    return hit.value;
+  }
+
+  const value = fetch().catch(err => {
+    rangoMetaCache.delete(key);
+    throw err;
+  });
+
+  rangoMetaCache.set(key, { at: Date.now(), value });
+  return value;
+}
+
+/**
+ * Chains BitPay custodies. The metadata route is public, so the chain filter
+ * is pinned here rather than taken from the request — an unfiltered
+ * /basic/meta is ~13 MB, which an unauthenticated caller could otherwise make
+ * BWS fetch and re-serve on our API key.
+ */
 const RANGO_ALLOWED_BLOCKCHAINS = [
   'BTC',
   'BCH',
@@ -43,6 +85,14 @@ const RANGO_ALLOWED_BLOCKCHAINS = [
 
 /** Rango caps the referrer fee at 3%. */
 const RANGO_MAX_REFERRER_FEE = 3;
+
+/**
+ * Slippage is a percent the client chooses. The app sends either Rango's own
+ * quoted slippage or 1.5, so anything outside this range is a client bug —
+ * and an unbounded value silently buys a route the user did not intend.
+ */
+const RANGO_DEFAULT_SLIPPAGE = 1.5;
+const RANGO_MAX_SLIPPAGE = 50;
 
 export class RangoService {
   request: any = request;
@@ -79,12 +129,33 @@ export class RangoService {
     if (!keys.REFERRER_ADDRESS || !keys.REFERRER_FEE || !Number.isFinite(fee)) {
       return {};
     }
+    // A plain Error, not a ClientError: a misconfigured fee is our fault, and
+    // ClientError answers 400, which blames the caller and pages nobody. The
+    // configured value is left out of the message — it does not cross the
+    // boundary.
     if (fee <= 0 || fee > RANGO_MAX_REFERRER_FEE) {
       throw new Error(
-        `Rango referrerFee must be between 0 and ${RANGO_MAX_REFERRER_FEE}, got ${keys.REFERRER_FEE}`
+        `Rango referrerFee must be between 0 and ${RANGO_MAX_REFERRER_FEE}`
       );
     }
     return { referrerFee: keys.REFERRER_FEE, referrerAddress: keys.REFERRER_ADDRESS };
+  }
+
+  /**
+   * Bounds the client-supplied slippage. Absent means "use the default"; a
+   * value outside the accepted range is rejected rather than forwarded.
+   */
+  private rangoSlippage(value: unknown): number {
+    if (value === undefined || value === null || value === '') {
+      return RANGO_DEFAULT_SLIPPAGE;
+    }
+    const slippage = Number(value);
+    if (!Number.isFinite(slippage) || slippage <= 0 || slippage > RANGO_MAX_SLIPPAGE) {
+      throw new ClientError(
+        `Rango slippage must be between 0 and ${RANGO_MAX_SLIPPAGE}`
+      );
+    }
+    return slippage;
   }
 
   /**
@@ -101,8 +172,9 @@ export class RangoService {
 
     delete req.body.env;
 
+    // Also a server fault, not a client one.
     if (!config.rango[env]) {
-      throw new ClientError(`Rango is not configured for the ${env} environment`);
+      throw new Error(`Rango is not configured for the ${env} environment`);
     }
 
     const keys: {
@@ -161,7 +233,11 @@ export class RangoService {
     // Public route: environment is pinned, not caller-selected.
     const keys = this.rangoGetKeys(req, { forcedEnv: RANGO_PUBLIC_ENV });
     const qs = this.rangoQs({ apiKey: keys.API_KEY });
-    return this.rangoGet(keys.API + `/basic/meta/blockchains?${qs}`);
+    // Keyed on the route and environment, never on the URL — that carries the
+    // API key.
+    return rangoCachedGet(`${RANGO_PUBLIC_ENV}:blockchains`, () =>
+      this.rangoGet(keys.API + `/basic/meta/blockchains?${qs}`)
+    );
   }
 
   rangoGetCryptoCurrencies(req): Promise<any> {
@@ -179,7 +255,9 @@ export class RangoService {
       excludeNonPopulars: 'true'
     });
 
-    return this.rangoGet(keys.API + `/basic/meta?${qs}`);
+    return rangoCachedGet(`${RANGO_PUBLIC_ENV}:meta`, () =>
+      this.rangoGet(keys.API + `/basic/meta?${qs}`)
+    );
   }
 
   /**
@@ -193,19 +271,14 @@ export class RangoService {
       return Promise.reject(new ClientError("Rango's request missing arguments"));
     }
 
-    let referrer;
-    try {
-      referrer = this.rangoReferrer(keys);
-    } catch (err) {
-      return Promise.reject(new ClientError(err.message));
-    }
+    const referrer = this.rangoReferrer(keys);
 
     const qs = this.rangoQs({
       apiKey: keys.API_KEY,
       from: req.body.from,
       to: req.body.to,
       amount: req.body.amount,
-      slippage: req.body.slippage ?? 1.5,
+      slippage: this.rangoSlippage(req.body.slippage),
       // Must match the swap call exactly or the quoted output is not what the
       // user receives.
       referrerFee: referrer.referrerFee
@@ -226,19 +299,14 @@ export class RangoService {
       return Promise.reject(new ClientError("Rango's request missing arguments"));
     }
 
-    let referrer;
-    try {
-      referrer = this.rangoReferrer(keys);
-    } catch (err) {
-      return Promise.reject(new ClientError(err.message));
-    }
+    const referrer = this.rangoReferrer(keys);
 
     const qs = this.rangoQs({
       apiKey: keys.API_KEY,
       from: req.body.from,
       to: req.body.to,
       amount: req.body.amount,
-      slippage: req.body.slippage ?? 1.5,
+      slippage: this.rangoSlippage(req.body.slippage),
       fromAddress: req.body.fromAddress,
       toAddress: req.body.toAddress,
       referrerFee: referrer.referrerFee,
@@ -314,7 +382,11 @@ export class RangoService {
         {
           headers,
           body: req.body,
-          json: true
+          json: true,
+          // Same reason as rangoGet: without this a Rango endpoint that
+          // accepts the connection but never answers holds the socket open
+          // indefinitely, and they accumulate during an upstream incident.
+          timeout: RANGO_REQUEST_TIMEOUT_MS
         },
         (err, data) => {
           if (err) {
