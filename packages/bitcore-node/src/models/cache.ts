@@ -123,7 +123,8 @@ export class CacheModel extends BaseModel<ICache<any>> {
           const timedOut = new Promise<never>((_, reject) => {
             timer = setTimeout(() => reject(new Error(`Refreshing ${key} timed out`)), cacheTime);
           });
-          const value = await Promise.race([refresh(), timedOut]);
+          // refresh after this promise is in refreshing, so a refresh that throws at once is still cleaned up
+          const value = await Promise.race([Promise.resolve().then(refresh), timedOut]);
           await this.setGlobal(key, value, cacheTime, started);
           return value;
         } finally {
