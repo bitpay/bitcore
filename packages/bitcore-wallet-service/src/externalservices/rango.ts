@@ -23,52 +23,14 @@ const RANGO_PUBLIC_ENV: 'sandbox' | 'production' = 'sandbox';
 const RANGO_REQUEST_TIMEOUT_MS = 30000;
 
 /**
- * How long a metadata response is reused before it is fetched again.
- *
- * This cache is what actually bounds the two public routes. `setPublicCache`
- * only sets a Cache-Control header, and both routes are POST, so no browser or
- * shared cache stores the response — without this every anonymous call spends
- * a Rango request on our API key.
- */
-const RANGO_META_CACHE_TTL_MS = 10 * 60 * 1000;
-
-/**
- * Module scope, deliberately: `WalletService.getInstance()` builds a new
- * RangoService per request, so an instance field would never be read twice.
- */
-const rangoMetaCache = new Map<string, { at: number; value: Promise<any> }>();
-
-/** Drops every cached metadata response. Exists for tests. */
-export function resetRangoMetaCache(): void {
-  rangoMetaCache.clear();
-}
-
-/**
- * Caches the in-flight promise rather than the settled value, so a burst of
- * concurrent callers shares one upstream request instead of starting one each.
- * A rejected fetch is evicted so a transient Rango failure is not served for
- * the rest of the TTL.
- */
-function rangoCachedGet(key: string, fetch: () => Promise<any>): Promise<any> {
-  const hit = rangoMetaCache.get(key);
-  if (hit && Date.now() - hit.at < RANGO_META_CACHE_TTL_MS) {
-    return hit.value;
-  }
-
-  const value = fetch().catch(err => {
-    rangoMetaCache.delete(key);
-    throw err;
-  });
-
-  rangoMetaCache.set(key, { at: Date.now(), value });
-  return value;
-}
-
-/**
  * Chains BitPay custodies. The metadata route is public, so the chain filter
  * is pinned here rather than taken from the request — an unfiltered
  * /basic/meta is ~13 MB, which an unauthenticated caller could otherwise make
- * BWS fetch and re-serve on our API key.
+ * BWS fetch and re-serve on our API key. With the filter and
+ * excludeNonPopulars the response is bounded, which is what makes the route
+ * safe to leave public; the sibling providers' public metadata routes
+ * (changelly, thorswap, moonpay, simplex, transak...) are uncached the same
+ * way.
  */
 const RANGO_ALLOWED_BLOCKCHAINS = [
   'BTC',
@@ -233,11 +195,7 @@ export class RangoService {
     // Public route: environment is pinned, not caller-selected.
     const keys = this.rangoGetKeys(req, { forcedEnv: RANGO_PUBLIC_ENV });
     const qs = this.rangoQs({ apiKey: keys.API_KEY });
-    // Keyed on the route and environment, never on the URL — that carries the
-    // API key.
-    return rangoCachedGet(`${RANGO_PUBLIC_ENV}:blockchains`, () =>
-      this.rangoGet(keys.API + `/basic/meta/blockchains?${qs}`)
-    );
+    return this.rangoGet(keys.API + `/basic/meta/blockchains?${qs}`);
   }
 
   rangoGetCryptoCurrencies(req): Promise<any> {
@@ -255,9 +213,7 @@ export class RangoService {
       excludeNonPopulars: 'true'
     });
 
-    return rangoCachedGet(`${RANGO_PUBLIC_ENV}:meta`, () =>
-      this.rangoGet(keys.API + `/basic/meta?${qs}`)
-    );
+    return this.rangoGet(keys.API + `/basic/meta?${qs}`);
   }
 
   /**

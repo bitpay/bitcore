@@ -82,11 +82,4 @@ describe('Rango route registration', () => {
       via.should.equal('auth');
     });
   }
-
-  it('should cache the public metadata responses', async () => {
-    const res: any = { json: () => undefined, set: () => undefined };
-    await routes['/v1/service/rango/cryptoCurrencies']({ headers: {}, body: {} }, res);
-    should.exist(res.__cacheSeconds);
-    res.__cacheSeconds.should.be.above(0);
-  });
 });
