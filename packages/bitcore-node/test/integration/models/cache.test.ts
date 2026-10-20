@@ -198,6 +198,28 @@ describe('Cache Model', function() {
       expect(calls).to.eq(2);
     });
 
+    it('recovers from a first computation that throws before returning a promise', async () => {
+      const throwing = (): Promise<any> => {
+        throw new Error('thrown at once');
+      };
+      const err = await CacheStorage.getGlobalAndRefresh(key, throwing, CacheStorage.Times.Minute).catch(e => e);
+      expect(err).to.have.property('message', 'thrown at once');
+      expect(await CacheStorage.getGlobalAndRefresh(key, async () => value, CacheStorage.Times.Minute)).to.deep.eq(value);
+    });
+
+    it('recovers from a refresh that throws before returning a promise', async () => {
+      await CacheStorage.setGlobal(key, value, CacheStorage.Times.Minute);
+      await age(61 * 1000);
+      const throwing = (): Promise<any> => {
+        throw new Error('thrown at once');
+      };
+      expect(await CacheStorage.getGlobalAndRefresh(key, throwing, CacheStorage.Times.Minute)).to.deep.eq(value);
+      await waitFor(() => warn.callCount === 1);
+      expect(warn.firstCall.args[2]).to.have.property('message', 'thrown at once');
+      expect(await CacheStorage.getGlobalAndRefresh(key, async () => fresh, CacheStorage.Times.Minute)).to.deep.eq(value);
+      await waitFor(async () => (await storedValue())?.hello === 'again');
+    });
+
     it('gives up on a refresh that takes longer than maxAge, so the next call can refresh', async () => {
       const maxAge = 300;
       await CacheStorage.setGlobal(key, value, maxAge);
