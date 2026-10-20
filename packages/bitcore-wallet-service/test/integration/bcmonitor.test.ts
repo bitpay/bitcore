@@ -5,6 +5,7 @@ import sinon from 'sinon';
 import util from 'util';
 import * as CWC from '@bitpay-labs/crypto-wallet-core';
 import { BlockchainMonitor } from '../../src/lib/blockchainmonitor';
+import { ChainService } from '../../src/lib/chain';
 import { Constants } from '../../src/lib/common/constants';
 import helpers from './helpers';
 
@@ -187,6 +188,31 @@ describe('Blockchain monitor', function() {
           });
         }, 100);
       });
+    });
+  });
+
+  describe('EVM tx events, as bitcore-node emits them', function() {
+    const sender = '0xC877cBCF020A8AA259A1Efab1559B2A3A7259086';
+    // passes a tx event through the chain's onTx to the monitor, as the v8 explorer's wallets socket does
+    const receive = tx => bcmonitor._handleIncomingPayments('eth', 'livenet', ChainService.onTx('eth', tx));
+    const incomingNotifications = async s => {
+      const notifications = await util.promisify(s.getNotifications).call(s, {});
+      return notifications.filter(n => n.type === 'NewIncomingTx');
+    };
+    const ethAddress = async () => {
+      const { server: s } = await helpers.createAndJoinWallet(1, 1, { coin: 'eth' });
+      const address = await util.promisify(s.createAddress).call(s, {});
+      return { s, address: address.address };
+    };
+
+    it('notifies the recipient of a native transfer', async function() {
+      const { s, address } = await ethAddress();
+      receive({ chain: 'ETH', network: 'mainnet', txid: '0x01', to: address, from: sender, value: 5000, effects: [] });
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const notifications = await incomingNotifications(s);
+      notifications.length.should.equal(1);
+      notifications[0].data.should.include({ txid: '0x01', address, amount: 5000 });
+      should.not.exist(notifications[0].data.tokenAddress);
     });
   });
 
