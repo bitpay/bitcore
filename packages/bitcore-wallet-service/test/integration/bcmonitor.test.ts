@@ -192,6 +192,7 @@ describe('Blockchain monitor', function() {
   });
 
   describe('EVM tx events, as bitcore-node emits them', function() {
+    const token = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
     const sender = '0xC877cBCF020A8AA259A1Efab1559B2A3A7259086';
     // passes a tx event through the chain's onTx to the monitor, as the v8 explorer's wallets socket does
     const receive = tx => bcmonitor._handleIncomingPayments('eth', 'livenet', ChainService.onTx('eth', tx));
@@ -213,6 +214,23 @@ describe('Blockchain monitor', function() {
       notifications.length.should.equal(1);
       notifications[0].data.should.include({ txid: '0x01', address, amount: 5000 });
       should.not.exist(notifications[0].data.tokenAddress);
+    });
+
+    it('notifies the recipient of an ERC20 transfer, with the token', async function() {
+      const { s, address } = await ethAddress();
+      receive({
+        chain: 'ETH',
+        network: 'mainnet',
+        txid: '0x02',
+        to: token,
+        from: sender,
+        value: 0,
+        effects: [{ type: 'ERC20:transfer', to: address, from: sender, amount: '1000000', contractAddress: token, callStack: '' }]
+      });
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const notifications = await incomingNotifications(s);
+      notifications.length.should.equal(1);
+      notifications[0].data.should.include({ txid: '0x02', address, amount: '1000000', tokenAddress: token });
     });
   });
 

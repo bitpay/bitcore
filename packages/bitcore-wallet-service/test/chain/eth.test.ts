@@ -73,6 +73,20 @@ describe('Chain ETH', function() {
         address: recipient, amount: 5000, tokenAddress: undefined, multisigContractAddress: undefined
       });
     });
+
+    it('notifies the token recipient, amount and token of an ERC20 transfer', function() {
+      ChainService.onTx('eth', tx({ effects: [erc20] })).should.deep.equal({
+        txid: '0x01',
+        out: { address: recipient, amount: '1000000', tokenAddress: token, multisigContractAddress: undefined }
+      });
+      ChainService.onTx('matic', tx({ chain: 'MATIC', effects: [erc20] })).out.tokenAddress.should.equal(token);
+    });
+
+    it('prefers an ERC20 transfer to an internal value transfer', function() {
+      ChainService.onTx('eth', tx({ effects: [internal, erc20] })).out.should.deep.equal({
+        address: recipient, amount: '1000000', tokenAddress: token, multisigContractAddress: undefined
+      });
+    });
   });
 
   describe('#selectTxInputs', function() {
