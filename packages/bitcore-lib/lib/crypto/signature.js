@@ -73,13 +73,22 @@ Signature.fromDER = Signature.fromBuffer = function(buf, strict) {
 
   // Schnorr Signatures use 65 byte for in tx r [len] 32 , s [len] 32, nhashtype
   // NOTE: this check is not very reliable. You should use .fromSchnorr directly if you know it's a schnorr sig.
-  if ((buf.length === 64 || buf.length === 65) && buf[0] != 0x30) {
+  // 64 byte DER (ecdsa) signatures are not allowed, so a 64 byte buffer is always schnorr. Don't rely on the
+  // first byte here: it's the first byte of r, which is 0x30 for ~1/256 schnorr sigs.
+  if (buf.length === 64 || (buf.length === 65 && buf[0] != 0x30)) {
     return Signature.fromSchnorr(buf);
   }
-  
-  $.checkArgument(!(buf.length === 64 && buf[0] === 0x30), new Error('64 DER (ecdsa) signatures not allowed'));
-  
-  const obj = Signature.parseDER(buf, strict);
+
+  let obj;
+  try {
+    obj = Signature.parseDER(buf, strict);
+  } catch (e) {
+    // A 65 byte schnorr sig (with nhashtype) whose r starts with 0x30
+    if (buf.length === 65) {
+      return Signature.fromSchnorr(buf);
+    }
+    throw e;
+  }
 
   sig.r = obj.r;
   sig.s = obj.s;

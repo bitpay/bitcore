@@ -92,6 +92,35 @@ describe('Signature', function() {
       }).toString('hex').should.equal('729e85cc46ffab881065ec07694220e71d4df9b2b8c8fd12c3122cf3a5efbcf2');
     });
 
+    describe('schnorr', function() {
+      // r starts with 0x30, which looks like a DER header
+      const r = '30' + '11'.repeat(31);
+      const s = '22'.repeat(32);
+
+      it('should parse a 64 byte schnorr signature whose r starts with 0x30', function() {
+        const buf = Buffer.from(r + s, 'hex');
+        const sig = Signature.fromDER(buf);
+        sig.isSchnorr.should.equal(true);
+        sig.nhashtype.should.equal(Signature.SIGHASH_DEFAULT);
+        sig.toDER().toString('hex').should.equal(r + s);
+      });
+
+      it('should parse a 65 byte schnorr signature whose r starts with 0x30', function() {
+        const buf = Buffer.from(r + s + '01', 'hex');
+        const sig = Signature.fromDER(buf);
+        sig.isSchnorr.should.equal(true);
+        sig.nhashtype.should.equal(Signature.SIGHASH_ALL);
+        sig.toDER().toString('hex').should.equal(r + s + '01');
+      });
+
+      it('should parse a 64 byte schnorr signature', function() {
+        const buf = Buffer.from('ab' + '11'.repeat(31) + s, 'hex');
+        const sig = Signature.fromDER(buf);
+        sig.isSchnorr.should.equal(true);
+        sig.toDER().equals(buf).should.equal(true);
+      });
+    });
+
   });
 
   describe('#fromString', function() {
