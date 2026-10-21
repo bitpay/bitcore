@@ -1,6 +1,7 @@
 'use strict';
 
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import crypto from 'crypto';
 import 'chai/register-should';
 import util from 'util';
@@ -8,6 +9,7 @@ import { WalletService } from '../../../src/lib/server';
 import * as TestData from '../../testdata';
 import helpers from '../helpers';
 import config from '../../../src/config';
+import logger from '../../../src/lib/logger';
 
 const should = chai.should();
 const { privateKey: privDer } = crypto.generateKeyPairSync('ed25519', {
@@ -22,10 +24,12 @@ const { privateKey: privDer } = crypto.generateKeyPairSync('ed25519', {
 });
 
 describe('Ramp integration', () => {
+  const sandbox = sinon.createSandbox();
   let server;
   let wallet;
   let fakeRequest;
   let req;
+  let loggerError: sinon.SinonStub;
 
   before(async () => {
     await helpers.before();
@@ -77,6 +81,12 @@ describe('Ramp integration', () => {
       clientVersion: 'bwc-2.0.0',
       walletId: '123',
     }));
+    sandbox.stub(logger, 'warn');
+    loggerError = sandbox.stub(logger, 'error');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
   });
 
   after(async () => {
@@ -118,7 +128,23 @@ describe('Ramp integration', () => {
         await server.externalServices.ramp.rampGetQuote(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Ramp request failed with error (');
+        err.message.should.equal('Failed to get Ramp quote');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        post: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.ramp.request = fakeRequest2;
+      try {
+        await server.externalServices.ramp.rampGetQuote(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Ramp did not return quote data');
       }
     });
 
@@ -178,7 +204,23 @@ describe('Ramp integration', () => {
         await server.externalServices.ramp.rampGetSellQuote(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Ramp request failed with error (');
+        err.message.should.equal('Failed to get Ramp sell quote');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        post: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.ramp.request = fakeRequest2;
+      try {
+        await server.externalServices.ramp.rampGetSellQuote(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Ramp did not return sell quote data');
       }
     });
 
@@ -541,7 +583,23 @@ describe('Ramp integration', () => {
         await server.externalServices.ramp.rampGetAssets(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Ramp request failed with error (');
+        err.message.should.equal('Failed to get Ramp assets');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.ramp.request = fakeRequest2;
+      try {
+        await server.externalServices.ramp.rampGetAssets(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Ramp did not return assets data');
       }
     });
 
@@ -584,7 +642,23 @@ describe('Ramp integration', () => {
         await server.externalServices.ramp.rampGetSellTransactionDetails(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Ramp request failed with error (');
+        err.message.should.equal('Failed to get Ramp sell transaction details');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.ramp.request = fakeRequest2;
+      try {
+        await server.externalServices.ramp.rampGetSellTransactionDetails(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Ramp did not return sell transaction details');
       }
     });
 

@@ -27,7 +27,6 @@ import { SardineService } from '../externalservices/sardine';
 import { SimplexService } from '../externalservices/simplex';
 import { ThorswapService } from '../externalservices/thorswap';
 import { TransakService } from '../externalservices/transak';
-import { WyreService } from '../externalservices/wyre';
 import { serverMessages } from '../serverMessages';
 import { BCHAddressTranslator } from './bchaddresstranslator';
 import { BlockChainExplorer } from './blockchainexplorer';
@@ -160,7 +159,6 @@ export class WalletService implements IWalletService {
     simplex: SimplexService;
     thorswap: ThorswapService;
     transak: TransakService;
-    wyre: WyreService;
     coinGecko: CoinGeckoService;
   };
 
@@ -190,7 +188,6 @@ export class WalletService implements IWalletService {
       simplex: new SimplexService(),
       thorswap: new ThorswapService(),
       transak: new TransakService(),
-      wyre: new WyreService(),
       coinGecko: new CoinGeckoService(this.storage),
     };
   }
