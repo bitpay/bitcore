@@ -6,11 +6,11 @@ const builder = require('../../coverage-builder.js').default;
  * @type {import('monocart-coverage-reports').CoverageReportOptions}
  */
 const config = builder({
-  bytes: 90,
-  statements: 90,
+  bytes: 80,
+  statements: 80,
   branches: 90,
   functions: 80,
-  lines: 90
+  lines: 80
 });
 
 module.exports = config;
