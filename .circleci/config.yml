@@ -53,8 +53,8 @@ commands:
       - run:
           name: Use Node 22
           command: |
-            nvm install 22.13.1
-            nvm alias default 22.13.1
+            nvm install 22.23.4
+            nvm alias default 22.23.4
             nvm use default
   restore_dependency_cache:
     steps:
