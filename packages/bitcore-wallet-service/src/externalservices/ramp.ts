@@ -283,6 +283,7 @@ export class RampService {
       qs.push('secret=' + req.body.saleViewToken);
 
       const URL = API + `/host-api/v3/offramp/sale/${req.body.id}?${qs.join('&')}`;
+      const safeURL = URL.replace('secret=' + req.body.saleViewToken, 'secret=***');
 
       this.request.get(
         URL,
@@ -292,12 +293,12 @@ export class RampService {
         },
         (err, data) => {
           if (err) {
-            logger.error(`Ramp request failed with error (${URL}): ${err.stack || err}`);
+            logger.error(`Ramp request failed with error (${safeURL}): ${err.stack || err}`);
             return reject(new ClientError('Failed to get Ramp sell transaction details'));
           } else {
             const success = data.statusCode >= 200 && data.statusCode < 300;
             if (!success) {
-              logger.warn(`Ramp request failed with status code ${data.statusCode}: ${URL}`);
+              logger.warn(`Ramp request failed with status code ${data.statusCode}: ${safeURL}`);
             }
             if (!data.body) {
               return reject(new ClientError('Ramp did not return sell transaction details'));
