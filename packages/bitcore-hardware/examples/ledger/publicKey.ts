@@ -3,7 +3,7 @@ import { HwProxy } from '../../src/index.js';
 
 const args = process.argv.slice(2);
 const chain = args[0]?.toUpperCase() || 'BTC';
-const connection: 'hid' | 'speculos' = args[1]?.toLowerCase() === 'hid' ? 'hid' : 'speculos';
+const connection: 'usb' | 'speculos' = args[1]?.toLowerCase() === 'usb' ? 'usb' : 'speculos';
 
 if (!HwProxy.isValidChain('ledger', chain)) {
   throw new Error(`Invalid chain: ${chain}`);

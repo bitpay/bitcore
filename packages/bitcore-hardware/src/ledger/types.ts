@@ -47,7 +47,7 @@ export interface DeviceConfig {
 
 export interface Config {
   devices: DeviceConfig[];
-  connection: 'hid' | 'speculos';
+  connection: 'usb' | 'speculos';
 }
 
 export const MODULE_CLASSES: Record<string, any> = {
@@ -76,7 +76,7 @@ export const DEFAULT_CONFIG: Config = {
       port: 40000
     }
   ],
-  connection: 'hid'
+  connection: 'usb'
 };
 
 export const SPECULOS_CONFIG: Config = {

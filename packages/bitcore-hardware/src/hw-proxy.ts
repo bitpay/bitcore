@@ -6,7 +6,7 @@ import { TransactionType } from './types/tx.js';
 import type { EveryUtxoType } from '@bitpay-labs/crypto-wallet-core/ts_build/src/transactions/btc/index.js';
 
 export type Vendor = 'ledger' | 'burner';
-export type Connection = 'hid' | 'speculos' | 'nfc';
+export type Connection = 'usb' | 'speculos' | 'nfc';
 
 export class HardwareProxy implements Hardware {
   devices: Record<Vendor, Record<string, Hardware>> | undefined;
@@ -23,7 +23,7 @@ export class HardwareProxy implements Hardware {
     this.devices = {
       ledger: {
         speculos: new Ledger({ connection: 'speculos' }),
-        // hid: new Ledger({ connection: 'hid' }), // currently busted...
+        // usb: new Ledger({ connection: 'usb' }), // currently busted...
       },
       burner: {
         nfc: new Burner(),
@@ -73,10 +73,10 @@ export class HardwareProxy implements Hardware {
    * ```
    *
    * @param vendor ledger or burner
-   * @param connection the connection type: hid, speculos, or nfc
+   * @param connection the connection type: usb, speculos, or nfc
    * @returns the adapter instance
    */
-  get(vendor: 'ledger', connection: 'hid' | 'speculos'): Ledger
+  get(vendor: 'ledger', connection: 'usb' | 'speculos'): Ledger
   get(vendor: 'burner', connection?: 'nfc'): Burner
   get(vendor: Vendor, connection?: Connection): Hardware
   get(vendor: Vendor, connection?: Connection): Hardware {
@@ -85,6 +85,9 @@ export class HardwareProxy implements Hardware {
     }
     if (vendor === 'burner') {
       connection = 'nfc';
+    }
+    if (connection === undefined) {
+      throw new Error(`Connection needs to be specified for ${vendor}`);
     }
     return this.devices[vendor][connection];
   }
@@ -113,21 +116,21 @@ export class HardwareProxy implements Hardware {
    */
   async sign(params: {
     vendor: 'ledger';
-    connection: 'hid' | 'speculos';
+    connection: 'usb' | 'speculos';
     chain: 'BTC';
     tx: string;
     utxos: EveryUtxoType[];
   }): Promise<string>
   async sign(params: {
     vendor: 'ledger';
-    connection: 'hid' | 'speculos';
+    connection: 'usb' | 'speculos';
     chain: 'BTC';
     tx: object;
     utxos?: EveryUtxoType[];
   }): Promise<string>
   async sign(params: {
     vendor: 'ledger';
-    connection: 'hid' | 'speculos';
+    connection: 'usb' | 'speculos';
     chain: 'BCH' | 'DOGE' | 'LTC';
     tx: string;
     utxos: EveryUtxoType[];
@@ -135,7 +138,7 @@ export class HardwareProxy implements Hardware {
   }): Promise<string>
   async sign(params: {
     vendor: 'ledger';
-    connection: 'hid' | 'speculos';
+    connection: 'usb' | 'speculos';
     chain: 'BCH' | 'DOGE' | 'LTC';
     tx: object;
     utxos?: EveryUtxoType[];
@@ -143,7 +146,7 @@ export class HardwareProxy implements Hardware {
   }): Promise<string>
   async sign(params: {
     vendor: 'ledger';
-    connection: 'hid' | 'speculos';
+    connection: 'usb' | 'speculos';
     chain: 'ETH' | 'SOL';
     tx: string;
   }): Promise<string>
@@ -195,13 +198,13 @@ export class HardwareProxy implements Hardware {
    * ```
    *
    * @param params.vendor ledger or burner
-   * @param params.connection type of connection hid, speculos, or nfc
+   * @param params.connection type of connection usb, speculos, or nfc
    * @param params.chain BTC, BCH, ETH, etc.
    * @returns address as a string
    */
   async getAddress(params: {
     vendor: 'ledger';
-    connection: 'hid' | 'speculos';
+    connection: 'usb' | 'speculos';
     chain: ChainType;
   }): Promise<string>
   async getAddress(params: {
@@ -236,7 +239,7 @@ export class HardwareProxy implements Hardware {
    */
   async getPublicKey(params: {
     vendor: 'ledger';
-    connection: 'hid' | 'speculos';
+    connection: 'usb' | 'speculos';
     chain: ChainType;
   }): Promise<string>
   async getPublicKey(params: {

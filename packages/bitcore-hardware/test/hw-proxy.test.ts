@@ -80,4 +80,8 @@ describe('HwProxy', function () {
       await HwProxy.disconnect();
     });
   });
+  it('should throw for .get if no connection is provided for ledger', async () => {
+    await HwProxy.connect();
+    expect(() => HwProxy.get('ledger')).to.throw('Connection needs to be specified for ledger');
+  });
 });

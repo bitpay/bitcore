@@ -4,6 +4,6 @@ Bitcore hardware supports ledger and burner devices. The burner card and the led
 For HwProxy, these devices are specified by vendor and connection type.
 | Device | Vendor | Connection Type |
 |---|---|---|
-| Ledger Nano S | ledger | hid |
+| Ledger Nano S | ledger | usb |
 | Speculos Emulator | ledger | speculos |
 | Burner Card | burner | nfc |
