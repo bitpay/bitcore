@@ -20,6 +20,8 @@ export class HardwareProxy implements Hardware {
    * ```
    */
   async connect() {
+    // Release any existing sessions so they don't keep talking to the devices
+    await this.disconnect();
     this.devices = {
       ledger: {
         speculos: new Ledger({ connection: 'speculos' }),
