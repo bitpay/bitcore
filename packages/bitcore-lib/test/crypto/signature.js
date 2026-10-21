@@ -175,6 +175,21 @@ describe('Signature', function() {
       sig.toTxFormat().toString('hex').should.equal(hex);
     });
 
+    it('should parse a 64 byte DER signature as ecdsa, not schnorr', function() {
+      // 29 byte r and s => 2 + (2 + 29) * 2 = 64 byte DER, plus 1 byte nhashtype
+      const r = '11'.repeat(29);
+      const s = '22'.repeat(29);
+      const hex = '303e021d' + r + '021d' + s + '01';
+      const buf = Buffer.from(hex, 'hex');
+      Signature.isTxDER(buf).should.equal(true);
+      const sig = Signature.fromTxFormat(buf);
+      should.not.exist(sig.isSchnorr);
+      sig.r.toString('hex').should.equal(r);
+      sig.s.toString('hex').should.equal(s);
+      sig.nhashtype.should.equal(Signature.SIGHASH_ALL);
+      sig.toTxFormat().toString('hex').should.equal(hex);
+    });
+
   });
 
   describe('#parseDER', function() {
