@@ -57,14 +57,10 @@ async function withSignature(storage: Storage, opts): Promise<Copayer> {
     return;
   }
 
-  const copayer = await new Promise<Copayer>((resolve, reject) => {
-    storage.fetchCopayerLookup(opts.copayerId).then(copayer => {
-      if (!copayer) {
-        return reject(Errors.NOT_AUTHORIZED.withMessage('Copayer not found'));
-      }
-      return resolve(copayer);
-    }).catch(err => reject(err));
-  });
+  const copayer = await storage.fetchCopayerLookup(opts.copayerId);
+  if (!copayer) {
+    throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found');
+  }
 
   const isValid = !!copayer.requestPubKeys.find(pubKey => Utils.verifyMessage(opts.message, opts.signature, pubKey.key));
   if (!isValid) {

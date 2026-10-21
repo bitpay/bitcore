@@ -1812,6 +1812,9 @@ export class Storage {
       { upsert: false }
     );
     if (!result.matchedCount) {
+      if ((await this.db.collection(collections.TSS_KEYGEN).countDocuments({ id })) === 0) {
+        throw new Error('MONGO_DOC_NOT_FOUND: No document found for id ' + id);
+      }
       throw new Error('MONGO_DOC_OUTDATED: No document found for version ' + __v);
     }
     return result;
@@ -1831,6 +1834,9 @@ export class Storage {
       { upsert: false }
     );
     if (!result.matchedCount) {
+      if ((await this.db.collection(collections.TSS_KEYGEN).countDocuments({ id })) === 0) {
+        throw new Error('MONGO_DOC_NOT_FOUND: No document found for id ' + id);
+      }
       throw new Error('MONGO_DOC_OUTDATED: No document found for version ' + __v);
     }
     return result;
@@ -1853,6 +1859,9 @@ export class Storage {
       { upsert: false }
     );
     if (!result.matchedCount) {
+      if ((await this.db.collection(collections.TSS_KEYGEN).countDocuments({ id })) === 0) {
+        throw new Error('MONGO_DOC_NOT_FOUND: No document found for id ' + id);
+      }
       throw new Error('MONGO_DOC_OUTDATED: No document found for version ' + __v);
     }
     return result;
@@ -1920,6 +1929,9 @@ export class Storage {
       { upsert: false }
     );
     if (!result.matchedCount) {
+      if ((await this.db.collection(collections.TSS_SIGN).countDocuments({ id })) === 0) {
+        throw new Error('MONGO_DOC_NOT_FOUND: No document found for id ' + id);
+      }
       throw new Error('MONGO_DOC_OUTDATED: No document found for version ' + __v);
     }
     return result;
@@ -1942,6 +1954,9 @@ export class Storage {
       { upsert: false }
     );
     if (!result.matchedCount) {
+      if ((await this.db.collection(collections.TSS_SIGN).countDocuments({ id })) === 0) {
+        throw new Error('MONGO_DOC_NOT_FOUND: No document found for id ' + id);
+      }
       throw new Error('MONGO_DOC_OUTDATED: No document found for version ' + __v);
     }
     return result;

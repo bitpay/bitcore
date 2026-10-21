@@ -140,11 +140,11 @@ export class TssKeyGenModel implements ITssKeyGenModel {
     x.schemeVersion = version || Defaults.TSS_KEYGEN_SCHEME_VERSION;
     x.n = n;
     x.participants = new Array(n);
-    x.participants[partyId] = copayerId;
+    x.participants[0] = copayerId; // caller's partyId is 0 (enforced above)
     x.authPublicKeys = new Array(n);
-    x.authPublicKeys[partyId] = message.publicKey;
+    x.authPublicKeys[0] = message.publicKey; // caller's partyId is 0 (enforced above)
     x.rounds = [[{
-      fromPartyId: partyId,
+      fromPartyId: 0, // caller's partyId is 0 (enforced above)
       messages: message
     }]];
     x.joinPassword = passwordHash;

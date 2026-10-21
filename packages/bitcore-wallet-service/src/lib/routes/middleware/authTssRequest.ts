@@ -53,6 +53,11 @@ export function authTssKeyGenRequest(): express.RequestHandler {
           throw Errors.NOT_AUTHORIZED.withMessage('Session not found');
         }
       }
+
+      if (session.isExpired()) {
+        throw Errors.TSS_SESSION_EXPIRED;
+      }
+
       const isRound0Msg = body?.message?.round === 0;
       const awaitingJoiners = session.participants.some(p => !p); // session.participants is initiated with n slots (initally null) that get populated as participants join
       const participantIdx = session.participants.indexOf(copayerId); // equals -1 if the copayer has not joined yet
@@ -76,25 +81,26 @@ export function authTssKeyGenRequest(): express.RequestHandler {
           ? body?.message?.partyId // if participant has not joined session yet, use the partyId from the initial round message (verified below)
           : -1;
       
+      if (partyId < 0 || partyId >= session.n || !Number.isInteger(partyId)) {
+        throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found in session');
+      }
+
       let pubKey: string = null;
       if (session?.schemeVersion <= 1.1) {
         // session.authPublicKeys was not added until 1.2, so fetch public key from the first round messages instead (old way)
-        pubKey = partyId > -1 ? session.rounds[0].find(r => r.fromPartyId === partyId)?.messages.publicKey : null;
-        if (!pubKey && participantIdx === -1 && partyId > -1) {
+        pubKey = session.rounds[0].find(r => r.fromPartyId === partyId)?.messages.publicKey;
+        if (!pubKey && participantIdx === -1) {
           // Joining party hasn't submitted its round 0 message yet and legacy sessions have no registration,
           //  so use the joining message's public key (verifyTssMessage verifies the message's payload against it)
           pubKey = body?.message?.publicKey;
         }
       } else {
         // authPublicKeys is set by the session leader, so this will verify that the leader and the calling participant here are on the same page
-        pubKey = partyId > -1 ? session?.authPublicKeys[partyId] : null;
+        pubKey = session?.authPublicKeys[partyId];
       }
 
       if (!pubKey) {
         throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found in session');
-      }
-      if (session.isExpired()) {
-        throw Errors.TSS_SESSION_EXPIRED;
       }
 
       verifyMessage(req, signature, pubKey);
@@ -142,15 +148,15 @@ export function authTssSignRequest(): express.RequestHandler {
       const session: TssSigGenModel = await storage.fetchTssSigSession({ id });
       // If !session, it needs to be initiated
       if (session) {
-        const party = session?.participants.find(p => p.copayerId === copayerId);
+        if (session.isExpired()) {
+          throw Errors.TSS_SESSION_EXPIRED;
+        }
+        const party = session.participants.find(p => p.copayerId === copayerId);
         if (!party) {
           throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found in session');
         }
         if (verifyMsg && party.partyId !== body?.message?.partyId) {
           throw Errors.NOT_AUTHORIZED.withMessage('Copayer not found in session');
-        }
-        if (session.isExpired()) {
-          throw Errors.TSS_SESSION_EXPIRED;
         }
 
         req.session = session;

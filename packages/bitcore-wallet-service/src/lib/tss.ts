@@ -346,6 +346,8 @@ class TssKeyGenClass {
         } catch (e) {
           if (e?.message?.startsWith('MONGO_DOC_OUTDATED')) {
             return this.processMessage(params);
+          } else if (e?.message?.startsWith('MONGO_DOC_NOT_FOUND')) {
+            throw Errors.TSS_SESSION_NOT_FOUND;
           }
           throw e;
         }
@@ -495,6 +497,8 @@ class TssKeyGenClass {
     } catch (e) {
       if (e?.message?.startsWith('MONGO_DOC_OUTDATED')) {
         return false;
+      } else if (e?.message?.startsWith('MONGO_DOC_NOT_FOUND')) {
+        throw Errors.TSS_SESSION_NOT_FOUND;
       }
       throw e;
     }
@@ -762,6 +766,8 @@ class TssSignClass {
         } catch (e) {
           if (e?.message?.startsWith('MONGO_DOC_OUTDATED')) {
             return this.processMessage(params);
+          } else if (e?.message?.startsWith('MONGO_DOC_NOT_FOUND')) {
+            throw Errors.TSS_SESSION_NOT_FOUND;
           }
           throw e;
         }
@@ -882,6 +888,8 @@ class TssSignClass {
     } catch (e) {
       if (e?.message?.startsWith('MONGO_DOC_OUTDATED')) {
         return false;
+      } else if (e?.message?.startsWith('MONGO_DOC_NOT_FOUND')) {
+        throw Errors.TSS_SESSION_NOT_FOUND;
       }
       throw e;
     }
