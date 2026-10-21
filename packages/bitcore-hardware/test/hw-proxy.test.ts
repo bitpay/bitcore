@@ -48,7 +48,6 @@ describe('HwProxy', function () {
           const publicKey = privateKey.toPublicKey();
           const addressRequest: Promise<string> = HwProxy.getAddress({
             vendor: 'burner',
-            connection: 'nfc',
             chain
           });
           if (chain === 'BTC') {

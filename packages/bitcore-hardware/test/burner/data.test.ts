@@ -34,7 +34,6 @@ describe('Burner Data', function () {
   it('should get public key', async function () {
     const publicKeyRequest: Promise<string> = HwProxy.getPublicKey({
       vendor: 'burner',
-      connection: 'nfc'
     });
 
     HwProxy.get('burner').responses.set(
@@ -55,7 +54,6 @@ describe('Burner Data', function () {
   it('should get bitcoin address', async function () {
     const addressRequest: Promise<string> = HwProxy.getAddress({
       vendor: 'burner',
-      connection: 'nfc',
       chain: 'BTC'
     });
     HwProxy.get('burner').responses.set(
@@ -75,7 +73,6 @@ describe('Burner Data', function () {
   it('should get return undefined for invalid bitcoin address', async function () {
     const addressRequest: Promise<string> = HwProxy.getAddress({
       vendor: 'burner',
-      connection: 'nfc',
       chain: 'BTC'
     });
     HwProxy.get('burner').responses.set(
@@ -95,7 +92,6 @@ describe('Burner Data', function () {
   it('should get ethereum address', async function () {
     const addressRequest: Promise<string> = HwProxy.getAddress({
       vendor: 'burner',
-      connection: 'nfc',
       chain: 'ETH'
     });
     HwProxy.get('burner').responses.set(
@@ -115,7 +111,6 @@ describe('Burner Data', function () {
   it('should get return undefined for invalid ethereum address', async function () {
     const addressRequest: Promise<string> = HwProxy.getAddress({
       vendor: 'burner',
-      connection: 'nfc',
       chain: 'ETH'
     });
     HwProxy.get('burner').responses.set(
@@ -151,7 +146,7 @@ describe('Burner Data', function () {
     }
     let error = false;
     try {
-      await HwProxy.getPublicKey({ vendor: 'burner', connection: 'nfc' });
+      await HwProxy.getPublicKey({ vendor: 'burner' });
     } catch (e) {
       error = true;
     }

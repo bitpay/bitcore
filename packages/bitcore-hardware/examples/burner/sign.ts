@@ -27,7 +27,6 @@ switch (chain) {
     
     const signedTransaction = await HwProxy.sign({
       vendor: 'burner',
-      connection: 'nfc',
       chain: 'ETH',
       tx,
       password: '123456'
@@ -75,7 +74,6 @@ switch (chain) {
     
     const signedTransaction: any = await HwProxy.sign({
       vendor: 'burner',
-      connection: 'nfc',
       chain: 'BTC',
       tx,
       utxos,

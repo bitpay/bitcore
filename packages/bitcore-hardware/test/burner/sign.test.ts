@@ -46,7 +46,6 @@ describe('Burner Signing', function () {
 
     const signRequest: Promise<string> = HwProxy.sign({
       vendor: 'burner',
-      connection: 'nfc',
       chain: 'BTC',
       tx,
       utxos,
@@ -97,7 +96,6 @@ describe('Burner Signing', function () {
     
     const signRequest = HwProxy.sign({
       vendor: 'burner',
-      connection: 'nfc',
       chain: 'ETH',
       tx,
       password: 'password not relevant to test'
@@ -157,7 +155,6 @@ describe('Burner Signing', function () {
 
     const signRequest: Promise<string> = HwProxy.sign({
       vendor: 'burner',
-      connection: 'nfc',
       chain: 'BTC',
       tx,
       utxos,
@@ -203,7 +200,6 @@ describe('Burner Signing', function () {
 
     const signRequest: Promise<string> = HwProxy.sign({
       vendor: 'burner',
-      connection: 'nfc',
       chain: 'BTC',
       tx,
       password: 'password not relevant to test'
@@ -281,7 +277,6 @@ describe('Burner Signing', function () {
 
     const signRequest: Promise<string> = HwProxy.sign({
       vendor: 'burner',
-      connection: 'nfc',
       chain: 'BTC',
       tx,
       utxos,

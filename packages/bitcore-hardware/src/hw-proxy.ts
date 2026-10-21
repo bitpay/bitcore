@@ -64,7 +64,7 @@ export class HardwareProxy implements Hardware {
   };
 
   /**
-   * Get the device object instance.
+   * Get the adapter object instance.
    * Allows access to public variables and some methods.
    *
    * ```JavaScript
@@ -73,8 +73,8 @@ export class HardwareProxy implements Hardware {
    * ```
    *
    * @param vendor ledger or burner
-   * @param connection the connection type, defaults to nfc
-   * @returns the device instance
+   * @param connection the connection type: hid, speculos, or nfc
+   * @returns the adapter instance
    */
   get(vendor: 'ledger', connection: 'hid' | 'speculos'): Ledger
   get(vendor: 'burner', connection?: 'nfc'): Burner
@@ -83,81 +83,12 @@ export class HardwareProxy implements Hardware {
     if (!this.devices) {
       throw new Error('Please connect the Hardware Proxy');
     }
-    if (connection == undefined) {
+    if (vendor === 'burner') {
       connection = 'nfc';
     }
     return this.devices[vendor][connection];
   }
-
-  /**
-   * Get the address of a hardware vendor on a chain
-   *
-   * ```JavaScript
-   * const address = await HwProxy.getAddress({
-   *  vendor: 'ledger',
-   *  connection: 'speculos',
-   *  chain: 'BTC'
-   * });
-   * ```
-   *
-   * @param params.vendor ledger or burner
-   * @param params.connection type of connection hid, speculos, or nfc
-   * @param params.chain BTC, BCH, ETH, etc.
-   * @returns address as a string
-   */
-  async getAddress(params: {
-    vendor: 'ledger';
-    connection: 'hid' | 'speculos';
-    chain: ChainType;
-  }): Promise<string>
-  async getAddress(params: {
-    vendor: 'burner';
-    connection: 'nfc';
-    chain: BurnerChainType;
-  }): Promise<string>
-  async getAddress(params: {
-    vendor: Vendor;
-    connection: Connection;
-    chain: ChainType;
-  }): Promise<string> {
-    const { vendor, connection } = params;
-    return this.get(vendor, connection).getAddress(params);
-  }
-
-  /**
-   * Get the public key of a hardware device
-   *
-   * ```JavaScript
-   * const publicKey = await HwProxy.getPublicKey({
-   *  vendor: 'ledger',
-   *  connection: 'speculos',
-   *  chain: 'BTC'
-   * });
-   * ```
-   *
-   * @param params.vendor ledger or burner
-   * @param params.connection the connection type
-   * @param params.chain BTC, ETH, SOL, etc.
-   * @returns public key as a string
-   */
-  async getPublicKey(params: {
-    vendor: 'ledger';
-    connection: 'hid' | 'speculos';
-    chain: ChainType;
-  }): Promise<string>
-  async getPublicKey(params: {
-    vendor: 'burner';
-    connection: 'nfc';
-  }): Promise<string>
-  async getPublicKey(params: {
-    vendor: Vendor;
-    connection: Connection;
-    chain?: ChainType;
-  }): Promise<string> {
-    const { vendor, connection } = params;
-    return this.get(vendor, connection).getPublicKey(params);
-  }
-
+  
   /**
    * Sign a transaction with a hardware device
    *
@@ -218,7 +149,7 @@ export class HardwareProxy implements Hardware {
   }): Promise<string>
   async sign(params: {
     vendor: 'burner';
-    connection: 'nfc';
+    connection?: 'nfc';
     chain: 'BTC';
     tx: string;
     utxos: EveryUtxoType[];
@@ -226,7 +157,7 @@ export class HardwareProxy implements Hardware {
   }): Promise<string>
   async sign(params: {
     vendor: 'burner';
-    connection: 'nfc';
+    connection?: 'nfc';
     chain: 'BTC';
     tx: object;
     utxos?: EveryUtxoType[];
@@ -234,14 +165,14 @@ export class HardwareProxy implements Hardware {
   }): Promise<string>
   async sign(params: {
     vendor: 'burner';
-    connection: 'nfc';
+    connection?: 'nfc';
     chain: 'ETH';
     tx: string;
     password: string;
   }): Promise<string>
   async sign(params: {
     vendor: Vendor;
-    connection: Connection;
+    connection?: Connection;
     chain: ChainType;
     tx: TransactionType;
     utxos?: EveryUtxoType[];
@@ -250,6 +181,75 @@ export class HardwareProxy implements Hardware {
   }): Promise<string> {
     const { vendor, connection } = params;
     return this.get(vendor, connection).sign(params);
+  }
+
+  /**
+   * Get the address of a hardware wallet
+   *
+   * ```JavaScript
+   * const address = await HwProxy.getAddress({
+   *  vendor: 'ledger',
+   *  connection: 'speculos',
+   *  chain: 'BTC'
+   * });
+   * ```
+   *
+   * @param params.vendor ledger or burner
+   * @param params.connection type of connection hid, speculos, or nfc
+   * @param params.chain BTC, BCH, ETH, etc.
+   * @returns address as a string
+   */
+  async getAddress(params: {
+    vendor: 'ledger';
+    connection: 'hid' | 'speculos';
+    chain: ChainType;
+  }): Promise<string>
+  async getAddress(params: {
+    vendor: 'burner';
+    connection?: 'nfc';
+    chain: BurnerChainType;
+  }): Promise<string>
+  async getAddress(params: {
+    vendor: Vendor;
+    connection?: Connection;
+    chain: ChainType;
+  }): Promise<string> {
+    const { vendor, connection } = params;
+    return this.get(vendor, connection).getAddress(params);
+  }
+
+  /**
+   * Get the public key of a hardware device
+   *
+   * ```JavaScript
+   * const publicKey = await HwProxy.getPublicKey({
+   *  vendor: 'ledger',
+   *  connection: 'speculos',
+   *  chain: 'BTC'
+   * });
+   * ```
+   *
+   * @param params.vendor ledger or burner
+   * @param params.connection the connection type
+   * @param params.chain BTC, ETH, SOL, etc.
+   * @returns public key as a string
+   */
+  async getPublicKey(params: {
+    vendor: 'ledger';
+    connection: 'hid' | 'speculos';
+    chain: ChainType;
+  }): Promise<string>
+  async getPublicKey(params: {
+    vendor: 'burner';
+    connection?: 'nfc';
+  }): Promise<string>
+  async getPublicKey(params: {
+    vendor: Vendor;
+    connection?: Connection;
+    chain?: ChainType;
+  }): Promise<string> {
+    const { vendor, connection } = params;
+    return this.get(vendor, connection).getPublicKey(params);
   }
 
   /**
