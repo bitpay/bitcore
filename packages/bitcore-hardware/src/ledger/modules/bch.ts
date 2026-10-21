@@ -1,9 +1,10 @@
 import { createRequire } from 'module';
-import { BaseModule } from 'src/types/base.js';
 import { UtxoChainType } from 'src/types/chains.js';
-import { EveryUtxoType, TransactionType } from '../../types/tx.js';
+import { Module } from 'src/types/modules.js';
+import { TransactionType } from '../../types/tx.js';
 import Util from '../../util.js';
 import type { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
+import type { EveryUtxoType } from '@bitpay-labs/crypto-wallet-core/ts_build/src/transactions/btc/index.js';
 import type BTC from '@ledgerhq/hw-app-btc';
 import type { AddressFormat } from '@ledgerhq/hw-app-btc/getWalletPublicKey';
 import type * as HwTransport from '@ledgerhq/hw-transport';
@@ -15,7 +16,7 @@ const Btc: typeof BTC.default = require('@ledgerhq/hw-app-btc').default;
  * The DMK does not support non bitcoin utxo chains until 2027.
  * For now, non bitcoin utxo chains will extend this implentation instead.
  */
-export default class BitcoinCashModule implements BaseModule {
+export default class BitcoinCashModule implements Module {
   btc: BTC.default;
   chain: UtxoChainType;
   derivationPath = "44'/145'/0'";
@@ -34,11 +35,6 @@ export default class BitcoinCashModule implements BaseModule {
     const currency = TICKER_TO_NAMES.get(this.chain) || 'bitcoin';
     this.btc = new Btc({ transport, currency });
     this.addressFormat = this.chain === 'BCH' ? 'cashaddr' : 'legacy';
-  }
-
-  async getPublicKey() {
-    const { publicKey } = await this.btc.getWalletPublicKey(this.derivationPath + '/0/0');
-    return this.lib.PublicKey.fromPoint(new this.lib.PublicKey(publicKey).point, true).toString();
   }
 
   /**
@@ -102,5 +98,10 @@ export default class BitcoinCashModule implements BaseModule {
   async getAddress() {
     const { bitcoinAddress } = await this.btc.getWalletPublicKey(this.derivationPath + '/0/0', { format: this.addressFormat });
     return this.chain === 'BCH' ? 'bitcoincash:' + bitcoinAddress : bitcoinAddress;
+  }
+  
+  async getPublicKey() {
+    const { publicKey } = await this.btc.getWalletPublicKey(this.derivationPath + '/0/0');
+    return this.lib.PublicKey.fromPoint(new this.lib.PublicKey(publicKey).point, true).toString();
   }
 }

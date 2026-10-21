@@ -4,8 +4,9 @@ import {
   Observable,
   lastValueFrom
 } from 'rxjs';
-import { EveryUtxoType, TransactionType } from 'src/types/tx.js';
+import { TransactionType } from 'src/types/tx.js';
 import { UtxoChainType } from './types/chains.js';
+import type { EveryUtxoType } from '@bitpay-labs/crypto-wallet-core/ts_build/src/transactions/btc/index.js';
 
 class UtilClass {
   libs: Record<UtxoChainType, BitcoreLib> = {

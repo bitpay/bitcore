@@ -1,11 +1,11 @@
 import { SolKit } from '@bitpay-labs/crypto-wallet-core';
 import { Observable } from 'rxjs';
-import { BaseModule } from 'src/types/base.js';
+import { Module } from 'src/types/modules.js';
 import Util from '../../util.js';
 import type * as SignerKitSolana from '@ledgerhq/device-signer-kit-solana';
 
 
-export default class SolanaModule implements BaseModule {
+export default class SolanaModule implements Module {
   signer: SignerKitSolana.SignerSolana;
   derivationPath = "44'/501'/0'";
   constructor(signer: SignerKitSolana.SignerSolana) {

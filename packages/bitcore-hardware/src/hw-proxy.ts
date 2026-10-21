@@ -1,14 +1,15 @@
 import Burner from './burner/adapter.js';
 import Ledger from './ledger/adapter.js';
-import { Base } from './types/base.js';
 import { BurnerChainType, ChainType } from './types/chains.js';
-import { EveryUtxoType, TransactionType } from './types/tx.js';
+import { Hardware } from './types/modules.js';
+import { TransactionType } from './types/tx.js';
+import type { EveryUtxoType } from '@bitpay-labs/crypto-wallet-core/ts_build/src/transactions/btc/index.js';
 
 export type Vendor = 'ledger' | 'burner';
 export type Connection = 'hid' | 'speculos' | 'nfc';
 
-export class HardwareProxy implements Base {
-  devices: Record<Vendor, Record<string, Base>> | undefined;
+export class HardwareProxy implements Hardware {
+  devices: Record<Vendor, Record<string, Hardware>> | undefined;
 
   /**
    * Create and connect to every device.
@@ -49,7 +50,7 @@ export class HardwareProxy implements Base {
    * @param params passed to each device's method
    * @returns the result from each device
    */
-  private async runParallel(method: keyof Base, params?: any) {
+  private async runParallel(method: keyof Hardware, params?: any) {
     if (this.devices == undefined) {
       return;
     }
@@ -77,8 +78,8 @@ export class HardwareProxy implements Base {
    */
   get(vendor: 'ledger', connection: 'hid' | 'speculos'): Ledger
   get(vendor: 'burner', connection?: 'nfc'): Burner
-  get(vendor: Vendor, connection?: Connection): Base
-  get(vendor: Vendor, connection?: Connection): Base {
+  get(vendor: Vendor, connection?: Connection): Hardware
+  get(vendor: Vendor, connection?: Connection): Hardware {
     if (!this.devices) {
       throw new Error('Please connect the Hardware Proxy');
     }

@@ -1,6 +1,5 @@
 import { createRequire } from 'module';
 import { nodeHidTransportFactory } from '@ledgerhq/device-transport-kit-node-hid';
-import { Base, BaseModule } from '../types/base.js';
 import {
   CHAINS,
   ChainType,
@@ -10,19 +9,11 @@ import {
   TransportChainType,
   UtxoChainType
 } from '../types/chains.js';
-import { EveryUtxoType, TransactionType } from '../types/tx.js';
-import {
-  BitcoinCashModule,
-  BitcoinModule,
-  DogeModule,
-  EthereumModule,
-  LitecoinModule,
-  SolanaModule
-} from './modules/index.js';
-import { Config, DmkDevice, TransportDevice } from './types.js';
+import { Hardware, Module } from '../types/modules.js';
+import { TransactionType } from '../types/tx.js';
+import { Config, DEFAULT_CONFIG, DmkDevice, MODULE_CLASSES, SIGNER_CLASSES, SPECULOS_CONFIG, TransportDevice } from './types.js';
+import type { EveryUtxoType } from '@bitpay-labs/crypto-wallet-core/ts_build/src/transactions/btc/index.js';
 import type * as DMK from '@ledgerhq/device-management-kit';
-import type * as SignerKitBtc from '@ledgerhq/device-signer-kit-bitcoin';
-import type * as SignerKitEth from '@ledgerhq/device-signer-kit-ethereum';
 import type * as SignerKitSolana from '@ledgerhq/device-signer-kit-solana';
 import type * as HwTransportNode from '@ledgerhq/hw-transport-node-hid';
 import type * as HwTransportNodeSpeculos from '@ledgerhq/hw-transport-node-speculos';
@@ -32,86 +23,21 @@ const {
   DeviceManagementKitBuilder
 }: typeof DMK = require('@ledgerhq/device-management-kit');
 const {
-  SignerBtcBuilder
-}: typeof SignerKitBtc = require('@ledgerhq/device-signer-kit-bitcoin');
-const {
-  SignerEthBuilder
-}: typeof SignerKitEth = require('@ledgerhq/device-signer-kit-ethereum');
-const {
   SignerSolanaBuilder
 }: typeof SignerKitSolana = require('@ledgerhq/device-signer-kit-solana');
 const { speculosTransportFactory } = require('@ledgerhq/device-transport-kit-speculos');
 const TransportNodeHid: typeof HwTransportNode.default.default = require('@ledgerhq/hw-transport-node-hid').default;
 const TransportNodeSpeculos: typeof HwTransportNodeSpeculos.default.default = require('@ledgerhq/hw-transport-node-speculos').default;
 
-const MODULE_CLASSES: Record<string, any> = {
-  BTC: BitcoinModule,
-  ETH: EthereumModule,
-  SOL: SolanaModule,
-  BCH: BitcoinCashModule,
-  DOGE: DogeModule,
-  LTC: LitecoinModule
-};
-
-const SIGNER_CLASSES: Record<string, any> = {
-  BTC: SignerBtcBuilder,
-  ETH: SignerEthBuilder,
-  SOL: SignerSolanaBuilder
-};
-
-const DEFAULT_CONFIG: Config = {
-  devices: [
-    {
-      chains: DMK_CHAINS as DmkChainType[],
-      port: 5000
-    },
-    {
-      chains: TRANSPORT_CHAINS as TransportChainType[],
-      port: 40000
-    }
-  ],
-  connection: 'hid'
-};
-
-const SPECULOS_CONFIG: Config = {
-  devices: [
-    {
-      chains: ['BTC'],
-      port: 5001
-    },
-    {
-      chains: ['ETH'],
-      port: 5002
-    },
-    {
-      chains: ['SOL'],
-      port: 5003
-    },
-    {
-      chains: ['BCH'],
-      port: 40004
-    },
-    {
-      chains: ['DOGE'],
-      port: 40005
-    },
-    {
-      chains: ['LTC'],
-      port: 40006
-    }
-  ],
-  connection: 'speculos'
-};
-
 /**
  * Fetch address, public key and sign transactions using ledger devices.
  */
-export default class Ledger implements Base {
+export default class Ledger implements Hardware {
   speculos: boolean;
   dmkDevices: DmkDevice[] = [];
   transportDevices: TransportDevice[] = [];
 
-  modules = {} as Record<ChainType, BaseModule>;
+  modules = {} as Record<ChainType, Module>;
 
   constructor(config?: Partial<Config>) {
     // choose config

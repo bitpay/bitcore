@@ -1,18 +1,19 @@
 import { execHaloCmdPCSC } from '@arx-research/libhalo/api/desktop';
 import CWC, { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
 import { NFC } from 'nfc-pcsc';
-import { Base } from '../types/base.js';
 import { BurnerChainType } from '../types/chains.js';
-import { EveryUtxoType, TransactionType } from '../types/tx.js';
+import { Hardware } from '../types/modules.js';
+import { TransactionType } from '../types/tx.js';
 import Util from '../util.js';
 import { CommandNameType, DataType } from './types.js';
+import type { EveryUtxoType } from '@bitpay-labs/crypto-wallet-core/ts_build/src/transactions/btc/index.js';
 
 const { Address, PublicKey, crypto } = BitcoreLib;
 
 /**
  * Fetch address, public key and sign transactions using the burner card.
  */
-export default class Burner implements Base {
+export default class Burner implements Hardware {
   nfc?: NFC;
   // list of commands waiting to be sent to the device
   commandQueue = new Map<string, Record<string, any>>();
@@ -20,57 +21,6 @@ export default class Burner implements Base {
   responses = new Map<string, Record<string, any>>();
   private QUEUE_CAPACITY = 100;
   private SLOT = 9;
-
-  /**
-   * Queues a command to be sent off to the device when it is scanned with an NFC reader.
-   * 
-   * Logic for getting the response is not in this function, but in connect.
-   * This function simply waits for the card listener to add the responses.
-   * 
-   * @param command command to queue
-   * @returns response from the device
-   */
-  async sendCommand(command: CommandType): Promise<Record<string, any>> {
-    return this.sendManyCommands([command]).then(responses => responses[0]);
-  }
-
-  /**
-   * Queues commands to be sent off to the device when it is scanned with an NFC reader.
-   * 
-   * Logic for getting the response is not in this function, but in connect.
-   * This function simply waits for the card listener to add the responses.
-   * 
-   * @param command commands to queue
-   * @returns responses from the device
-   */
-  async sendManyCommands(commands: CommandType[]): Promise<Record<string, any>[]> {
-    const ids: string[] = [];
-    for (const command of commands) {
-      if (this.commandQueue.size >= this.QUEUE_CAPACITY) {
-        throw new Error('queue filled');
-      }
-      for (let i = 0; i < this.QUEUE_CAPACITY; i++) {
-        const id = command.name + '' + i;
-        if (!this.commandQueue.has(id)) {
-          this.commandQueue.set(id, command);
-          ids.push(id);
-          break;
-        }
-      }
-    }
-    return new Promise(async resolve1 => {
-      const _responses: Record<string, object>[] = [];
-      for (const id of ids) {
-        while (this.responses.get(id) == undefined) {
-          await new Promise(async resolve2 => setTimeout(resolve2, 10));
-        }
-        _responses.push(this.responses.get(id) ?? { error: 'no command' });
-        this.responses.delete(id);
-        this.commandQueue.delete(id);
-      }
-      resolve1(_responses);
-    });
-  }
 
   /**
    * Sends all commands to the device and recieves all responses
@@ -197,18 +147,6 @@ export default class Burner implements Base {
     return signedTx;
   }
 
-  /**
-   *
-   * @param req
-   * @returns
-   */
-  async getData(req: Array<{ type: DataType }>) {
-    return this.sendCommand({
-      name: 'get_data_struct_v2',
-      spec: req.map(({ type }) => ({ type, index: this.SLOT }))
-    });
-  }
-
   async getPublicKey() {
     return (await this.getData(
       [{ type: 'publicKey' }]
@@ -249,6 +187,69 @@ export default class Burner implements Base {
       console.error(error);
       return undefined;
     }
+  }
+
+  /**
+   *
+   * @param req
+   * @returns
+   */
+  async getData(req: Array<{ type: DataType }>) {
+    return this.sendCommand({
+      name: 'get_data_struct_v2',
+      spec: req.map(({ type }) => ({ type, index: this.SLOT }))
+    });
+  }
+
+  /**
+   * Queues a command to be sent off to the device when it is scanned with an NFC reader.
+   * 
+   * Logic for getting the response is not in this function, but in connect.
+   * This function simply waits for the card listener to add the responses.
+   * 
+   * @param command command to queue
+   * @returns response from the device
+   */
+  async sendCommand(command: CommandType): Promise<Record<string, any>> {
+    return this.sendManyCommands([command]).then(responses => responses[0]);
+  }
+
+  /**
+   * Queues commands to be sent off to the device when it is scanned with an NFC reader.
+   * 
+   * Logic for getting the response is not in this function, but in connect.
+   * This function simply waits for the card listener to add the responses.
+   * 
+   * @param command commands to queue
+   * @returns responses from the device
+   */
+  async sendManyCommands(commands: CommandType[]): Promise<Record<string, any>[]> {
+    const ids: string[] = [];
+    for (const command of commands) {
+      if (this.commandQueue.size >= this.QUEUE_CAPACITY) {
+        throw new Error('queue filled');
+      }
+      for (let i = 0; i < this.QUEUE_CAPACITY; i++) {
+        const id = command.name + '' + i;
+        if (!this.commandQueue.has(id)) {
+          this.commandQueue.set(id, command);
+          ids.push(id);
+          break;
+        }
+      }
+    }
+    return new Promise(async resolve1 => {
+      const _responses: Record<string, object>[] = [];
+      for (const id of ids) {
+        while (this.responses.get(id) == undefined) {
+          await new Promise(async resolve2 => setTimeout(resolve2, 10));
+        }
+        _responses.push(this.responses.get(id) ?? { error: 'no command' });
+        this.responses.delete(id);
+        this.commandQueue.delete(id);
+      }
+      resolve1(_responses);
+    });
   }
 
   static isValidChain(value: string): value is BurnerChainType {
