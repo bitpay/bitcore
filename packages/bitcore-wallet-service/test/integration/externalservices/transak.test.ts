@@ -491,4 +491,345 @@ describe('Transak integration', () => {
       }
     });
   });
+
+  describe('Headless', () => {
+    let captured;
+
+    beforeEach(() => {
+      captured = undefined;
+      server.externalServices.transak.request = {
+        get: (url, opts, cb) => {
+          captured = { url, opts };
+          return cb(null, { body: 'data' });
+        },
+        post: (url, opts, cb) => {
+          captured = { url, opts };
+          return cb(null, { body: 'data' });
+        },
+      };
+    });
+
+    describe('#transakHeadlessSendOtp', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            email: 'user@example.com',
+          }
+        };
+      });
+
+      it('should post the email to the Whitelabel auth API', async () => {
+        const data = await server.externalServices.transak.transakHeadlessSendOtp(req);
+        data.should.equal('data');
+        captured.url.should.equal('widgetApi1/api/v2/auth/login');
+        captured.opts.body.should.deep.equal({ apiKey: 'apiKey1', email: 'user@example.com' });
+        captured.opts.headers['x-api-key'].should.equal('apiKey1');
+        should.not.exist(captured.opts.headers.authorization);
+      });
+
+      it('should use production keys', async () => {
+        req.body.env = 'production';
+        await server.externalServices.transak.transakHeadlessSendOtp(req);
+        captured.url.should.equal('widgetApi2/api/v2/auth/login');
+        captured.opts.body.apiKey.should.equal('apiKey2');
+      });
+
+      it('should return error if there is some missing arguments', async () => {
+        delete req.body.email;
+        try {
+          await server.externalServices.transak.transakHeadlessSendOtp(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+
+      it('should return error if post returns error', async () => {
+        server.externalServices.transak.request = {
+          post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
+        };
+        try {
+          await server.externalServices.transak.transakHeadlessSendOtp(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Error');
+        }
+      });
+
+      it('should return error if transak is commented in config', async () => {
+        config.transak = undefined;
+        try {
+          await server.externalServices.transak.transakHeadlessSendOtp(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak missing credentials');
+        }
+      });
+    });
+
+    describe('#transakHeadlessVerifyOtp', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            email: 'user@example.com',
+            otp: '123456',
+            stateToken: 'stateToken1',
+          }
+        };
+      });
+
+      it('should post the code with the state token', async () => {
+        await server.externalServices.transak.transakHeadlessVerifyOtp(req);
+        captured.url.should.equal('widgetApi1/api/v2/auth/verify');
+        captured.opts.body.should.deep.equal({
+          apiKey: 'apiKey1',
+          email: 'user@example.com',
+          otp: '123456',
+          stateToken: 'stateToken1',
+        });
+      });
+
+      it('should return error if there is some missing arguments', async () => {
+        delete req.body.stateToken;
+        try {
+          await server.externalServices.transak.transakHeadlessVerifyOtp(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
+    describe('#transakHeadlessGetQuote', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            fiatCurrency: 'EUR',
+            cryptoCurrency: 'ETH',
+            network: 'ethereum',
+            paymentMethod: 'credit_debit_card',
+            fiatAmount: 100,
+            partnerOrderId: 'partnerOrderId1',
+          }
+        };
+      });
+
+      it('should request a Whitelabel quote', async () => {
+        await server.externalServices.transak.transakHeadlessGetQuote(req);
+        const url = new URL(captured.url, 'https://example.com');
+        url.pathname.should.equal('/widgetApi1/api/v2/lookup/quotes');
+        url.searchParams.get('apiKey').should.equal('apiKey1');
+        url.searchParams.get('isBuyOrSell').should.equal('BUY');
+        url.searchParams.get('fiatAmount').should.equal('100');
+        url.searchParams.get('partnerOrderId').should.equal('partnerOrderId1');
+        url.searchParams.has('partnerCustomerId').should.equal(false);
+        should.not.exist(captured.opts.body);
+      });
+
+      it('should return error if there is some missing arguments', async () => {
+        delete req.body.fiatAmount;
+        try {
+          await server.externalServices.transak.transakHeadlessGetQuote(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
+    describe('#transakHeadlessGetKycRequirement', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            quoteId: 'quoteId1',
+          }
+        };
+      });
+
+      it('should forward the user access token', async () => {
+        await server.externalServices.transak.transakHeadlessGetKycRequirement(req);
+        const url = new URL(captured.url, 'https://example.com');
+        url.pathname.should.equal('/widgetApi1/api/v2/kyc/requirement');
+        url.searchParams.get('metadata[quoteId]').should.equal('quoteId1');
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+      });
+
+      it('should return error if the user access token is missing', async () => {
+        delete req.body.userAccessToken;
+        try {
+          await server.externalServices.transak.transakHeadlessGetKycRequirement(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
+    describe('#transakHeadlessGetSavedCards', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+          }
+        };
+      });
+
+      it('should request the saved cards', async () => {
+        await server.externalServices.transak.transakHeadlessGetSavedCards(req);
+        captured.url.should.equal('widgetApi1/api/v2/payment-instrument/status?paymentInstrumentId=credit_debit_card');
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+      });
+
+      it('should return error if the user access token is missing', async () => {
+        delete req.body.userAccessToken;
+        try {
+          await server.externalServices.transak.transakHeadlessGetSavedCards(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
+    describe('#transakHeadlessCreateCardSession', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            quoteId: 'quoteId1',
+            walletAddress: 'walletAddress1',
+            successUrl: 'https://example.com/success',
+            failureUrl: 'https://example.com/failure',
+            config: { colorMode: 'DARK' },
+            unexpected: 'value',
+          }
+        };
+      });
+
+      it('should only send the documented fields', async () => {
+        await server.externalServices.transak.transakHeadlessCreateCardSession(req);
+        captured.url.should.equal('widgetApi1/api/v2/transaction-session');
+        captured.opts.body.should.deep.equal({
+          quoteId: 'quoteId1',
+          walletAddress: 'walletAddress1',
+          successUrl: 'https://example.com/success',
+          failureUrl: 'https://example.com/failure',
+          config: { colorMode: 'DARK' },
+        });
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+      });
+
+      it('should return error if there is some missing arguments', async () => {
+        delete req.body.failureUrl;
+        try {
+          await server.externalServices.transak.transakHeadlessCreateCardSession(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
+    describe('#transakHeadlessCreateOrder', () => {
+      it('should place a new card order with the requestId only', async () => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            requestId: 'requestId1',
+            quoteId: 'quoteId1',
+          }
+        };
+        await server.externalServices.transak.transakHeadlessCreateOrder(req);
+        captured.url.should.equal('widgetApi1/api/v2/orders');
+        captured.opts.body.should.deep.equal({ requestId: 'requestId1' });
+      });
+
+      it('should place a saved card order', async () => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            quoteId: 'quoteId1',
+            walletAddress: 'walletAddress1',
+            paymentIdentifierId: 'card1',
+            successUrl: 'https://example.com/success',
+            failureUrl: 'https://example.com/failure',
+          }
+        };
+        await server.externalServices.transak.transakHeadlessCreateOrder(req);
+        captured.opts.body.should.deep.equal({
+          quoteId: 'quoteId1',
+          walletAddress: 'walletAddress1',
+          paymentInstrumentId: 'credit_debit_card',
+          paymentIdentifierId: 'card1',
+          additionalData: {
+            successUrl: 'https://example.com/success',
+            failureUrl: 'https://example.com/failure',
+          },
+        });
+      });
+
+      it('should return error if neither a requestId nor a saved card is sent', async () => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            quoteId: 'quoteId1',
+          }
+        };
+        try {
+          await server.externalServices.transak.transakHeadlessCreateOrder(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+
+    describe('#transakHeadlessGetOrderDetails', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            userAccessToken: 'userAccessToken1',
+            orderId: 'order/1',
+          }
+        };
+      });
+
+      it('should request the order with the id encoded', async () => {
+        await server.externalServices.transak.transakHeadlessGetOrderDetails(req);
+        captured.url.should.equal('widgetApi1/api/v2/orders/order%2F1');
+        captured.opts.headers.authorization.should.equal('userAccessToken1');
+      });
+
+      it('should return error if there is some missing arguments', async () => {
+        delete req.body.orderId;
+        try {
+          await server.externalServices.transak.transakHeadlessGetOrderDetails(req);
+          should.fail('should have thrown');
+        } catch (err) {
+          err.message.should.equal('Transak\'s request missing arguments');
+        }
+      });
+    });
+  });
 });
