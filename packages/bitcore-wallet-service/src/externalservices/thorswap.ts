@@ -1,6 +1,7 @@
 import * as request from 'request';
 import config from '../config';
 import { ClientError } from '../lib/errors/clienterror';
+import logger from '../lib/logger';
 import { checkRequired } from '../lib/server';
 
 export class ThorswapService {
@@ -47,7 +48,7 @@ export class ThorswapService {
         'x-api-key': API_KEY
       };
 
-      const uriPath: string = req?.body?.includeDetails ? '/tokenlist/utils/chains/details' : '/tokenlist/utils/chains';
+      const uriPath: string = '/tokenlist/utils/chains' + (req?.body?.includeDetails ? '/details' : '');
       const URL: string = API + uriPath;
 
       this.request.get(
@@ -58,9 +59,17 @@ export class ThorswapService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Thorswap request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Thorswap supported chains'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Thorswap request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Thorswap did not return supported chains'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -84,7 +93,7 @@ export class ThorswapService {
       const qs: string[] = [];
       qs.push('categories=' + (req?.body?.categories ?? 'all'));
 
-      const uriPath: string = req?.body?.includeDetails ? '/tokenlist/utils/currencies/details' : '/tokenlist/utils/currencies';
+      const uriPath: string = '/tokenlist/utils/currencies' + (req?.body?.includeDetails ? '/details' : '');
       const URL: string = API + `${uriPath}?${qs.join('&')}`;
 
       this.request.get(
@@ -95,9 +104,17 @@ export class ThorswapService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Thorswap request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Thorswap supported currencies'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Thorswap request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Thorswap did not return supported currencies'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -147,9 +164,17 @@ export class ThorswapService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Thorswap request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Thorswap swap quote'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Thorswap request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Thorswap did not return a swap quote'));
+            }
+            return resolve(data.body);
           }
         }
       );
@@ -174,8 +199,10 @@ export class ThorswapService {
         return reject(new ClientError("Thorswap's request missing arguments"));
       }
 
+      const URL = API + '/tracker/v2/txn';
+
       this.request.post(
-        API + '/tracker/v2/txn',
+        URL,
         // API + '/apiusage/v2/txn',
         // 'https://api.swapkit.dev/track',
         // /apiusage/v2/txn
@@ -186,9 +213,17 @@ export class ThorswapService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : err);
+            logger.error(`Thorswap request failed with error (${URL}): ${err.stack || err}`);
+            return reject(new ClientError('Failed to get Thorswap swap transaction'));
           } else {
-            return resolve(data.body ? data.body : data);
+            const success = data.statusCode >= 200 && data.statusCode < 300;
+            if (!success) {
+              logger.warn(`Thorswap request failed with status code ${data.statusCode}: ${URL}`);
+            }
+            if (!data.body) {
+              return reject(new ClientError('Thorswap did not return a swap transaction'));
+            }
+            return resolve(data.body);
           }
         }
       );

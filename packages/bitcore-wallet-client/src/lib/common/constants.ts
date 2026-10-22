@@ -70,7 +70,7 @@ export const Constants = {
     op: 'op',
   },
 
-  TSS_KEYGEN_VERSION: 1.1,
+  TSS_KEYGEN_VERSION: 1.2,
   TSS_SIGN_VERSION: 1.1
 };
 

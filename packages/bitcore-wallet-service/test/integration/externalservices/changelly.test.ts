@@ -1,6 +1,7 @@
 'use strict';
 
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import 'chai/register-should';
 import crypto from 'crypto';
 import util from 'util';
@@ -8,6 +9,7 @@ import { WalletService } from '../../../src/lib/server';
 import * as TestData from '../../testdata';
 import helpers from '../helpers';
 import config from '../../../src/config';
+import logger from '../../../src/lib/logger';
 
 const should = chai.should();
 
@@ -24,10 +26,12 @@ const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
 });
 
 describe('Changelly integration', () => {
+  const sandbox = sinon.createSandbox();
   let server;
   let wallet;
   let fakeRequest;
   let req;
+  let loggerError: sinon.SinonStub;
 
   before(async () => {
     await helpers.before();
@@ -65,6 +69,12 @@ describe('Changelly integration', () => {
       clientVersion: 'bwc-2.0.0',
       walletId: '123',
     }));
+    sandbox.stub(logger, 'warn');
+    loggerError = sandbox.stub(logger, 'error');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
   });
 
   after(async () => {
@@ -140,7 +150,24 @@ describe('Changelly integration', () => {
         await server.externalServices.changelly.changellyGetCurrencies(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Changelly request failed with error (');
+        err.message.should.equal('Failed to fetch Changelly currencies');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      req.body.id = 'test';
+      const fakeRequest2 = {
+        post: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.changelly.request = fakeRequest2;
+      try {
+        await server.externalServices.changelly.changellyGetCurrencies(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Changelly did not return currencies');
       }
     });
 
@@ -212,7 +239,24 @@ describe('Changelly integration', () => {
         await server.externalServices.changelly.changellyGetPairsParams(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Changelly request failed with error (');
+        err.message.should.equal('Failed to fetch Changelly pairs params');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      req.body.coinFrom = 'btc';
+      const fakeRequest2 = {
+        post: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.changelly.request = fakeRequest2;
+      try {
+        await server.externalServices.changelly.changellyGetPairsParams(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Changelly did not return pairs params');
       }
     });
 
@@ -284,7 +328,24 @@ describe('Changelly integration', () => {
         await server.externalServices.changelly.changellyGetFixRateForAmount(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Changelly request failed with error (');
+        err.message.should.equal('Failed to fetch Changelly fix rate for amount');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      req.body.coinFrom = 'btc';
+      const fakeRequest2 = {
+        post: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.changelly.request = fakeRequest2;
+      try {
+        await server.externalServices.changelly.changellyGetFixRateForAmount(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Changelly did not return fix rate for amount');
       }
     });
 
@@ -355,7 +416,24 @@ describe('Changelly integration', () => {
         await server.externalServices.changelly.changellyCreateFixTransaction(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Changelly request failed with error (');
+        err.message.should.equal('Failed to create Changelly fix transaction');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      req.body.coinFrom = 'btc';
+      const fakeRequest2 = {
+        post: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.changelly.request = fakeRequest2;
+      try {
+        await server.externalServices.changelly.changellyCreateFixTransaction(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Changelly did not return fix transaction');
       }
     });
 
@@ -421,7 +499,24 @@ describe('Changelly integration', () => {
         await server.externalServices.changelly.changellyGetTransactions(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Changelly request failed with error (');
+        err.message.should.equal('Failed to get Changelly transactions');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async() => {
+      req.body.exchangeTxId = 'exchangeTxId';
+      const fakeRequest2 = {
+        post: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+      server.externalServices.changelly.request = fakeRequest2;
+
+      try {
+        await server.externalServices.changelly.changellyGetTransactions(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Changelly did not return transactions');
       }
     });
 
@@ -487,7 +582,24 @@ describe('Changelly integration', () => {
         await server.externalServices.changelly.changellyGetStatus(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Changelly request failed with error (');
+        err.message.should.equal('Failed to get Changelly status');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      req.body.exchangeTxId = 'exchangeTxId';
+      const fakeRequest2 = {
+        post: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.changelly.request = fakeRequest2;
+      try {
+        await server.externalServices.changelly.changellyGetStatus(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Changelly did not return status');
       }
     });
 

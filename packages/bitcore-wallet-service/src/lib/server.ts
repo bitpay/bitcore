@@ -27,7 +27,6 @@ import { SardineService } from '../externalservices/sardine';
 import { SimplexService } from '../externalservices/simplex';
 import { ThorswapService } from '../externalservices/thorswap';
 import { TransakService } from '../externalservices/transak';
-import { WyreService } from '../externalservices/wyre';
 import { serverMessages } from '../serverMessages';
 import { BCHAddressTranslator } from './bchaddresstranslator';
 import { BlockChainExplorer } from './blockchainexplorer';
@@ -160,7 +159,6 @@ export class WalletService implements IWalletService {
     simplex: SimplexService;
     thorswap: ThorswapService;
     transak: TransakService;
-    wyre: WyreService;
     coinGecko: CoinGeckoService;
   };
 
@@ -190,7 +188,6 @@ export class WalletService implements IWalletService {
       simplex: new SimplexService(),
       thorswap: new ThorswapService(),
       transak: new TransakService(),
-      wyre: new WyreService(),
       coinGecko: new CoinGeckoService(this.storage),
     };
   }
@@ -394,10 +391,7 @@ export class WalletService implements IWalletService {
         return cb(ex);
       }
 
-      server.storage.fetchCopayerLookup(opts.copayerId, (err, copayer) => {
-        if (err) {
-          return cb(err);
-        }
+      server.storage.fetchCopayerLookup(opts.copayerId).then(copayer => {
         if (!copayer) {
           return cb(Errors.NOT_AUTHORIZED.withMessage('Copayer not found'));
         }
@@ -420,7 +414,7 @@ export class WalletService implements IWalletService {
 
         server.copayerId = opts.copayerId;
         return cb(null, server);
-      });
+      }).catch(err => cb(err));
     };
 
     const withSession = cb => {
@@ -428,7 +422,7 @@ export class WalletService implements IWalletService {
         return;
       }
 
-      let server;
+      let server: WalletService;
       try {
         server = WalletService.getInstance(opts);
       } catch (ex) {
@@ -445,10 +439,7 @@ export class WalletService implements IWalletService {
           return cb(Errors.NOT_AUTHORIZED.withMessage('Session expired'));
         }
 
-        server.storage.fetchCopayerLookup(opts.copayerId, (err, copayer) => {
-          if (err) {
-            return cb(err);
-          }
+        server.storage.fetchCopayerLookup(opts.copayerId).then(copayer => {
           if (!copayer) {
             return cb(Errors.NOT_AUTHORIZED.withMessage('Copayer not found'));
           }
@@ -456,7 +447,7 @@ export class WalletService implements IWalletService {
           server.copayerId = opts.copayerId;
           server.walletId = copayer.walletId;
           return cb(null, server);
-        });
+        }).catch(err => cb(err));
       });
     };
 
@@ -1060,8 +1051,7 @@ export class WalletService implements IWalletService {
       derivationStrategy: wallet.derivationStrategy
     });
 
-    this.storage.fetchCopayerLookup(copayer.id, (err, res) => {
-      if (err) return cb(err);
+    this.storage.fetchCopayerLookup(copayer.id).then(res => {
       if (res) return cb(Errors.COPAYER_REGISTERED);
 
       if (opts.dryRun)
@@ -1113,7 +1103,7 @@ export class WalletService implements IWalletService {
           }
         );
       });
-    });
+    }).catch(err => cb(err));
   }
 
   _addKeyToCopayer(wallet: Wallet, copayer: Copayer, opts, cb) {
@@ -1143,8 +1133,7 @@ export class WalletService implements IWalletService {
   addAccess(opts, cb) {
     if (!checkRequired(opts, ['copayerId', 'requestPubKey', 'signature'], cb)) return;
 
-    this.storage.fetchCopayerLookup(opts.copayerId, (err, copayer) => {
-      if (err) return cb(err);
+    this.storage.fetchCopayerLookup(opts.copayerId).then(copayer => {
       if (!copayer) return cb(Errors.NOT_AUTHORIZED);
       this.storage.fetchWallet(copayer.walletId, (err, wallet) => {
         if (err) return cb(err);
@@ -1164,7 +1153,7 @@ export class WalletService implements IWalletService {
 
         this._addKeyToCopayer(wallet, copayer, opts, cb);
       });
-    });
+    }).catch(err => cb(err));
   }
 
   _setClientVersion(version) {

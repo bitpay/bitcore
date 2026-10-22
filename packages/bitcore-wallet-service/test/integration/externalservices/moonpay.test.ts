@@ -1,20 +1,24 @@
 'use strict';
 
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import 'chai/register-should';
 import util from 'util';
 import { WalletService } from '../../../src/lib/server';
 import * as TestData from '../../testdata';
 import helpers from '../helpers';
 import config from '../../../src/config';
+import logger from '../../../src/lib/logger';
 
 const should = chai.should();
 
 describe('Moonpay integration', () => {
+  const sandbox = sinon.createSandbox();
   let server;
   let wallet;
   let fakeRequest;
   let req;
+  let loggerError: sinon.SinonStub;
 
   before(async () => {
     await helpers.before();
@@ -71,10 +75,73 @@ describe('Moonpay integration', () => {
       clientVersion: 'bwc-2.0.0',
       walletId: '123',
     }));
+    sandbox.stub(logger, 'warn');
+    loggerError = sandbox.stub(logger, 'error');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
   });
 
   after(async () => {
     await helpers.after();
+  });
+
+  describe('#moonpayGetCurrencies', () => {
+    beforeEach(() => {
+      req = {
+        headers: {},
+        body: {
+          env: 'sandbox'
+        }
+      };
+      server.externalServices.moonpay.request = fakeRequest;
+    });
+
+    it('should work properly if req is OK', async () => {
+      const data = await server.externalServices.moonpay.moonpayGetCurrencies(req);
+      should.exist(data);
+    });
+
+    it('should return error if get returns error', async () => {
+      const fakeRequest2 = {
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error'), null); },
+      };
+
+      server.externalServices.moonpay.request = fakeRequest2;
+      try {
+        await server.externalServices.moonpay.moonpayGetCurrencies(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Moonpay request failed with error (');
+        err.message.should.equal('Failed to get Moonpay currencies');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.moonpay.request = fakeRequest2;
+      try {
+        await server.externalServices.moonpay.moonpayGetCurrencies(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Moonpay did not return currencies');
+      }
+    });
+
+    it('should return error if moonpay is commented in config', async () => {
+      config.moonpay = undefined;
+      try {
+        await server.externalServices.moonpay.moonpayGetCurrencies(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Moonpay missing credentials');
+      }
+    });
   });
 
   describe('#moonpayGetQuote', () => {
@@ -113,7 +180,23 @@ describe('Moonpay integration', () => {
         await server.externalServices.moonpay.moonpayGetQuote(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Moonpay request failed with error (');
+        err.message.should.equal('Failed to get Moonpay buy quote');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.moonpay.request = fakeRequest2;
+      try {
+        await server.externalServices.moonpay.moonpayGetQuote(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Moonpay did not return buy quote');
       }
     });
 
@@ -173,7 +256,23 @@ describe('Moonpay integration', () => {
         await server.externalServices.moonpay.moonpayGetSellQuote(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Moonpay request failed with error (');
+        err.message.should.equal('Failed to get Moonpay sell quote');
+      };
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.moonpay.request = fakeRequest2;
+      try {
+        await server.externalServices.moonpay.moonpayGetSellQuote(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Moonpay did not return sell quote');
       };
     });
 
@@ -232,7 +331,23 @@ describe('Moonpay integration', () => {
         await server.externalServices.moonpay.moonpayGetCurrencyLimits(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Moonpay request failed with error (');
+        err.message.should.equal('Failed to get Moonpay currency limits');
+      };
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.moonpay.request = fakeRequest2;
+      try {
+        await server.externalServices.moonpay.moonpayGetCurrencyLimits(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Moonpay did not return currency limits');
       };
     });
 
@@ -422,7 +537,23 @@ describe('Moonpay integration', () => {
         await server.externalServices.moonpay.moonpayGetTransactionDetails(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Moonpay request failed with error (');
+        err.message.should.equal('Failed to get Moonpay transaction details');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.moonpay.request = fakeRequest2;
+      try {
+        await server.externalServices.moonpay.moonpayGetTransactionDetails(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Moonpay did not return transaction details');
       }
     });
 
@@ -482,7 +613,23 @@ describe('Moonpay integration', () => {
         await server.externalServices.moonpay.moonpayGetSellTransactionDetails(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Moonpay request failed with error (');
+        err.message.should.equal('Failed to get Moonpay sell transaction details');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.moonpay.request = fakeRequest2;
+      try {
+        await server.externalServices.moonpay.moonpayGetSellTransactionDetails(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Moonpay did not return sell transaction details');
       }
     });
 
@@ -534,7 +681,23 @@ describe('Moonpay integration', () => {
         await server.externalServices.moonpay.moonpayGetAccountDetails(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Moonpay request failed with error (');
+        err.message.should.equal('Failed to get Moonpay account details');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.moonpay.request = fakeRequest2;
+      try {
+        await server.externalServices.moonpay.moonpayGetAccountDetails(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Moonpay did not return account details');
       }
     });
 
@@ -612,7 +775,9 @@ describe('Moonpay integration', () => {
         await server.externalServices.moonpay.moonpayCancelSellTransaction(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Moonpay request failed with error (');
+        err.message.should.equal('Failed to cancel Moonpay sell transaction');
       }
     });
 
@@ -701,7 +866,9 @@ describe('Moonpay integration', () => {
         await server.externalServices.moonpay.moonpayCreateSession(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Moonpay request failed with error (');
+        err.message.should.equal('Failed to create Moonpay session');
       }
     });
 
@@ -812,7 +979,9 @@ describe('Moonpay integration', () => {
         await server.externalServices.moonpay.moonpayRevokeActiveSession(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Moonpay request failed with error (');
+        err.message.should.equal('Failed to revoke Moonpay session');
       }
     });
 

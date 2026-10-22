@@ -52,10 +52,9 @@ export async function joinThresholdSigWallet(
         Utils.copyToClipboard(authPubKey);
       } catch (error) {
         prompt.log.error(`Error copying to clipboard: ${error instanceof Error ? error.message : String(error)}`);
-        pubKeyAction = null; // Reset to re-prompt the user
       }
     }
-  } while (pubKeyAction !== 'done');
+  } while (pubKeyAction === 'copy');
 
   const joinCode = await prompt.text({
     message: 'Enter the join code from the session leader:',
@@ -89,7 +88,7 @@ export async function joinThresholdSigWallet(
   await tss.joinKey({ code: joinCode });
 
   const spinner = prompt.spinner({ indicator: 'timer' });
-  spinner.start('Waiting for all parties to join...');
+  spinner.start('Waiting for your fearless leader to register your participation...');
 
   await new Promise<void>((resolve, _reject) => {
     let rejected = false;
@@ -133,10 +132,6 @@ export async function joinThresholdSigWallet(
 
         verbose && prompt.log.step(`Wallet file saved to: ${Utils.colorText(wallet.filename, 'blue')}`);
 
-        // const pubKey = CWC.BitcoreLib.HDPublicKey(key.getXPubKey()).publicKey;
-        // const address = CWC.Deriver.getAddress(chain, network, pubKey);
-        // console.log('Address:', address);
-
         resolve();
       } catch (err) {
         reject(err);
@@ -155,7 +150,8 @@ export async function joinThresholdSigWallet(
   }
 
   return {
-    // TSS wallets cannot be restored from a mnemonic alone, so we return null here. All the wallet recovery information is in the keyshare backup file.
+    // TSS wallets cannot be restored from a mnemonic alone, so we return null here.
+    // All the wallet recovery information is in the keyshare backup file.
     mnemonic: null
   };
 }

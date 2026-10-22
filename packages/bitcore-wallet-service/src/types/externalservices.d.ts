@@ -20,7 +20,6 @@ export interface BuyCryptoConfig {
   sardine?: ExchangeConfig;
   simplex?: ExchangeConfig;
   transak?: ExchangeConfig;
-  wyre?: ExchangeConfig;
 }
 
 export interface SellCryptoConfig {

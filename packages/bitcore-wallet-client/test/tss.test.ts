@@ -139,8 +139,8 @@ describe('TSS', function() {
       tss0.partyId.should.equal(0);
     });
 
-    it(happyPath('should create a join code'), function() {
-      const code1 = tss0.createJoinCode({
+    it(happyPath('should create a join code'), async function() {
+      const code1 = await tss0.createJoinCode({
         partyId: 1,
         partyPubKey: party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
       });
@@ -149,7 +149,7 @@ describe('TSS', function() {
       BitcoreLib.util.js.isHexaString(code1).should.equal(true);
       joinCode1 = code1;
 
-      const code2 = tss0.createJoinCode({
+      const code2 = await tss0.createJoinCode({
         partyId: 2,
         partyPubKey: party2Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
       });
@@ -159,8 +159,8 @@ describe('TSS', function() {
       joinCode2 = code2;
     });
 
-    it('should not produce a deterministic join code', function() {
-      const code = tss0.createJoinCode({
+    it('should not produce a deterministic join code', async function() {
+      const code = await tss0.createJoinCode({
         partyId: 1,
         partyPubKey: party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
       });
@@ -170,8 +170,8 @@ describe('TSS', function() {
       code.should.not.equal(joinCode1);
     });
 
-    it('should encode the join code per the encoding option', function() {
-      const code = tss0.createJoinCode({
+    it('should encode the join code per the encoding option', async function() {
+      const code = await tss0.createJoinCode({
         partyId: 1,
         partyPubKey: party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey,
         opts: { encoding: 'base64' }
@@ -183,6 +183,21 @@ describe('TSS', function() {
     });
 
     it('should not allow other party to use join code', async function() {
+      try {
+        const tss = new TssKeyGen({
+          chain,
+          network,
+          baseUrl: '/bws/api',
+          request: request(app),
+          key: party0Key
+        });
+        // party0 should not be able to use party1's join code
+        const result = await tss.joinKey({ code: joinCode1 });
+        throw new Error('Should not have been able to join');
+      } catch (err) {
+        err.message.should.equal('Invalid checksum');
+      }
+
       try {
         const tss = new TssKeyGen({
           chain,
@@ -496,7 +511,7 @@ describe('TSS', function() {
 
       it(happyPath('should join key with a password'), async function() {
         const { tss0, tss1, tss2, ...keys } = await setupSession(password);
-        const code1 = tss0.createJoinCode({
+        const code1 = await tss0.createJoinCode({
           partyId: 1,
           partyPubKey: keys.party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
         });
@@ -512,7 +527,7 @@ describe('TSS', function() {
 
       it(happyPath('should join key with a password embedded in the join code'), async function() {
         const { tss0, tss1, tss2, ...keys } = await setupSession(password);
-        const code1 = tss0.createJoinCode({
+        const code1 = await tss0.createJoinCode({
           partyId: 1,
           partyPubKey: keys.party1Key.createCredentials(null, { chain, network, n: 1, account: 0 }).requestPubKey,
           extra: password
@@ -529,7 +544,7 @@ describe('TSS', function() {
 
       it('should NOT join key with a WRONG password', async function() {
         const { tss0, tss1, tss2, ...keys } = await setupSession(password);
-        const code1 = tss0.createJoinCode({
+        const code1 = await tss0.createJoinCode({
           partyId: 1,
           partyPubKey: keys.party1Key.createCredentials(null, { chain, network, n: 1, account: 0 }).requestPubKey
         });
@@ -550,7 +565,7 @@ describe('TSS', function() {
 
       it('should NOT join key with a MISSING password', async function() {
         const { tss0, tss1, tss2, ...keys } = await setupSession(password);
-        const code1 = tss0.createJoinCode({
+        const code1 = await tss0.createJoinCode({
           partyId: 1,
           partyPubKey: keys.party1Key.createCredentials(null, { chain, network, n: 1, account: 0 }).requestPubKey
         });
@@ -607,11 +622,11 @@ describe('TSS', function() {
           key: party2Key
         });
         await tss0.newKey({ m, n });
-        const code1 = tss0.createJoinCode({
+        const code1 = await tss0.createJoinCode({
           partyId: 1,
           partyPubKey: party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
         });
-        const code2 = tss0.createJoinCode({
+        const code2 = await tss0.createJoinCode({
           partyId: 2,
           partyPubKey: party2Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
         });
@@ -685,19 +700,19 @@ describe('TSS', function() {
         }
       });
       const client = helpers.newClient(app);
-      for (const tssKey of [party0TssKey, party1TssKey, party2TssKey]) {
-        await helpers.createAndJoinWallet(
-          [client, client, client],
-          [tssKey],
-          1,
-          1,
-          {
-            key: tssKey,
-            coin: chain.toLowerCase(),
-            tssKeyId: tssKey.metadata.id
-          }
-        );
-      }
+      // for (const tssKey of [party0TssKey, party1TssKey, party2TssKey]) {
+      await helpers.createAndJoinWallet(
+        [client, client, client],
+        [party0TssKey, party1TssKey, party2TssKey],
+        m,
+        n,
+        {
+          key: party0TssKey,
+          coin: chain.toLowerCase(),
+          tssKeyId: party0TssKey.metadata.id
+        }
+      );
+      // }
     });
 
     it(happyPath('should start a new signing session'), async function() {
@@ -1149,7 +1164,7 @@ describe('TSS', function() {
         const tss0 = new TssKeyGen({ chain, network, baseUrl: '/bws/api', request: request(app), key: party0Key });
         await tss0.newKey({ m, n }); // real version, creates session with schemeVersion 1.1
 
-        const joinCode = tss0.createJoinCode({
+        const joinCode = await tss0.createJoinCode({
           partyId: 1,
           partyPubKey: party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
         });

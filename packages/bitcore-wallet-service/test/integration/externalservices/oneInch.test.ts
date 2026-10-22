@@ -1,21 +1,25 @@
 'use strict';
 
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import 'chai/register-should';
 import util from 'util';
 import { WalletService } from '../../../src/lib/server';
 import * as TestData from '../../testdata';
 import helpers from '../helpers';
 import config from '../../../src/config';
+import logger from '../../../src/lib/logger';
 
 const should = chai.should();
 
 describe('OneInch integration', function() {
   this.timeout(5000);
+  const sandbox = sinon.createSandbox();
   let server;
   let wallet;
   let fakeRequest;
   let req;
+  let loggerError: sinon.SinonStub;
   
   before(async () => {
     await helpers.before();
@@ -47,6 +51,12 @@ describe('OneInch integration', function() {
       clientVersion: 'bwc-2.0.0',
       walletId: '123',
     }));
+    sandbox.stub(logger, 'warn');
+    loggerError = sandbox.stub(logger, 'error');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
   });
 
   after(async () => {
@@ -119,7 +129,24 @@ describe('OneInch integration', function() {
         await server.externalServices.oneInch.oneInchGetSwap(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('1Inch request failed with error (');
+        err.message.should.equal('Failed to get 1Inch swap data');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        post: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); }
+      };
+
+      server.externalServices.oneInch.request = fakeRequest2;
+      try {
+        await server.externalServices.oneInch.oneInchGetSwap(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('1Inch did not return swap data');
       }
     });
 

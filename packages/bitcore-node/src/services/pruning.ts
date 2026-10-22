@@ -342,7 +342,7 @@ export class PruningService {
       ),
       this.coinModel.collection.updateMany(
         { chain, network, spentTxid: { $in: txids }, spentHeight: SpentHeightIndicators.pending },
-        { $set: { spentTxid: null, spentHeight: SpentHeightIndicators.unspent } }
+        { $set: { spentTxid: null as any, spentHeight: SpentHeightIndicators.unspent } }
       )
     ]);
   }

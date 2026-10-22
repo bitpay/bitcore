@@ -459,18 +459,6 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
     });
   });
 
-  router.post('/v1/service/wyre/walletOrderQuotation', (req, res) => {
-    respondWithAuthServer(req, res, context, server => {
-      return server.externalServices.wyre.wyreWalletOrderQuotation(req);
-    });
-  });
-
-  router.post('/v1/service/wyre/walletOrderReservation', (req, res) => {
-    respondWithAuthServer(req, res, context, server => {
-      return server.externalServices.wyre.wyreWalletOrderReservation(req);
-    });
-  });
-
   router.post('/v1/service/changelly/getCurrencies', (req, res) => {
     respondWithPublicServer(req, res, context, server => {
       return server.externalServices.changelly.changellyGetCurrencies(req);

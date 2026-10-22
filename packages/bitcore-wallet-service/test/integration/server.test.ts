@@ -7712,43 +7712,31 @@ describe('Wallet service', function() {
       },
     ];
 
-    function checkTx(txOpts, x, cb) {
-      function sign(copayerM, tx, cb) {
-        helpers.getAuthServer(wallet.copayers[copayerM].id).then(function(server) {
-          const signatures = helpers.clientSign(tx, TestData.copayers[copayerM].xPrivKey_44H_0H_0H);
-          server.signTx({
-            txProposalId: tx.id,
-            signatures: signatures,
-          }, function(err, txp) {
-            should.not.exist(err, err);
-
-            if (++copayerM == x.m) {
-              return cb(txp);
-            } else {
-              return sign(copayerM, tx, cb);
-            }
-          });
+    async function checkTx(txOpts, x): Promise<number> {
+      const tx = await helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0);
+      let txp;
+      for (let copayerM = 0; copayerM < x.m; copayerM++) {
+        const authServer = await helpers.getAuthServer(wallet.copayers[copayerM].id);
+        const signatures = helpers.clientSign(tx, TestData.copayers[copayerM].xPrivKey_44H_0H_0H);
+        txp = await util.promisify(authServer.signTx).call(authServer, {
+          txProposalId: tx.id,
+          signatures: signatures,
         });
       }
+      should.exist(txp.raw);
+      txp.status.should.equal('accepted');
+      const t = ChainService.getBitcoreTx(txp);
 
-      helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0).then(function(tx) {
-        sign(0, tx, (txp) => {
-          should.exist(txp.raw);
-          txp.status.should.equal('accepted');
-          const t = ChainService.getBitcoreTx(txp);
+      // Check size and fee rate
+      (txp.raw.length / 2).should.equal(t.size);
+      const feeRate = t.getFee() / (x.fromSegwit ? t.vsize : t.size) * 1000;
+      console.log(`Wire Size: ${t.size} vSize: ${t.vsize} (Segwit: ${x.fromSegwit}, SegwitVersion: ${x.segwitVersion || 0})  Fee:${t.getFee()} ActualRate:${Math.round(feeRate)} RequiredRate:${x.requiredFeeRate}`);
 
-          // Check size and fee rate
-          (txp.raw.length / 2).should.equal(t.size);
-          const feeRate = t.getFee() / (x.fromSegwit ? t.vsize : t.size) * 1000;
-          console.log(`Wire Size: ${t.size} vSize: ${t.vsize} (Segwit: ${x.fromSegwit}, SegwitVersion: ${x.segwitVersion || 0})  Fee:${t.getFee()} ActualRate:${Math.round(feeRate)} RequiredRate:${x.requiredFeeRate}`);
-
-          // size should be above (or equal) the required FeeRate
-          feeRate.should.not.be.below(x.requiredFeeRate);
-          feeRate.should.be.below(x.requiredFeeRate * 1.5); // no more that 50% extra
-          return cb(feeRate);
-        });
-      });
-    };
+      // size should be above (or equal) the required FeeRate
+      feeRate.should.not.be.below(x.requiredFeeRate);
+      feeRate.should.be.below(x.requiredFeeRate * 1.5); // no more that 50% extra
+      return feeRate;
+    }
 
     for (let i = 0; i < cases.length; i++) {
       const x = cases[i];
@@ -7780,7 +7768,7 @@ describe('Wallet service', function() {
           Object.assign(txOpts, { feePerKb: x.requiredFeeRate });
         }
 
-        const fee1 = await new Promise<number>(r => checkTx(txOpts, x, r));
+        const fee1 = await checkTx(txOpts, x);
         should.exist(fee1);
 
         // CASE 8
@@ -7791,7 +7779,7 @@ describe('Wallet service', function() {
           ({ server, wallet } = await helpers.createAndJoinWallet(x.m, x.n, { useNativeSegwit: x.fromSegwit }));
           await helpers.stubUtxos(server, wallet, x.utxos);
           txOpts.payProUrl = null;
-          const fee2 = await new Promise<number>(r => checkTx(txOpts, x, r));
+          const fee2 = await checkTx(txOpts, x);
           console.log(`## Fee PayPro: ${fee1} vs ${fee2}`);
           fee1.should.be.above(fee2);
         }
@@ -7880,49 +7868,37 @@ describe('Wallet service', function() {
       },
     ];
 
-    function checkTx(txOpts, x, cb) {
-      function sign(copayerM, tx, cb) {
-        helpers.getAuthServer(wallet.copayers[copayerM].id).then(function(server) {
-          const signatures = helpers.clientSign(tx, TestData.copayers[copayerM].xPrivKey_44H_0H_0H);
-          server.signTx({
-            txProposalId: tx.id,
-            signatures: signatures,
-          }, function(err, txp) {
-            should.not.exist(err, err);
-
-            if (++copayerM == x.m) {
-              return cb(txp);
-            } else {
-              return sign(copayerM, tx, cb);
-            }
-          });
+    async function checkTx(txOpts, x): Promise<number> {
+      const tx = await helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0);
+      let txp;
+      for (let copayerM = 0; copayerM < x.m; copayerM++) {
+        const authServer = await helpers.getAuthServer(wallet.copayers[copayerM].id);
+        const signatures = helpers.clientSign(tx, TestData.copayers[copayerM].xPrivKey_44H_0H_0H);
+        txp = await util.promisify(authServer.signTx).call(authServer, {
+          txProposalId: tx.id,
+          signatures: signatures,
         });
       }
+      should.exist(txp.raw);
+      txp.status.should.equal('accepted');
 
-      helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0).then(function(tx) {
-        sign(0, tx, (txp) => {
-          should.exist(txp.raw);
-          txp.status.should.equal('accepted');
+      const t = ChainService.getBitcoreTx(txp);
+      const vSize = x.vSize || t._estimateSize(); // use given vSize if available
+      // Check size and fee rate
+      const actualSize = txp.raw.length / 2;
+      const actualFeeRate = t.getFee() / (x.fromSegwit ? vSize : actualSize) * 1000;
+      console.log(`Wire Size:${actualSize} vSize: ${vSize} (Segwit: ${x.fromSegwit})  Fee: ${t.getFee()} ActualRate:${Math.round(actualFeeRate)} RequiredRate:${x.requiredFeeRate}`);
 
-          const t = ChainService.getBitcoreTx(txp);
-          const vSize = x.vSize || t._estimateSize(); // use given vSize if available
-          // Check size and fee rate
-          const actualSize = txp.raw.length / 2;
-          const actualFeeRate = t.getFee() / (x.fromSegwit ? vSize : actualSize) * 1000;
-          console.log(`Wire Size:${actualSize} vSize: ${vSize} (Segwit: ${x.fromSegwit})  Fee: ${t.getFee()} ActualRate:${Math.round(actualFeeRate)} RequiredRate:${x.requiredFeeRate}`);
+      // Fee should be more than min relay fee
+      t.getFee().should.be.gte(CWC.BitcoreLibDoge.Transaction.DUST_AMOUNT);
 
-          // Fee should be more than min relay fee
-          t.getFee().should.be.gte(CWC.BitcoreLibDoge.Transaction.DUST_AMOUNT);
-
-          if (t.getFee() > CWC.BitcoreLibDoge.Transaction.DUST_AMOUNT) {
-            // size should be above (or equal) the required FeeRate
-            actualFeeRate.should.not.be.below(x.requiredFeeRate);
-            actualFeeRate.should.be.below(x.requiredFeeRate * 1.5); // no more that 50% extra
-          }
-          return cb(actualFeeRate);
-        });
-      });
-    };
+      if (t.getFee() > CWC.BitcoreLibDoge.Transaction.DUST_AMOUNT) {
+        // size should be above (or equal) the required FeeRate
+        actualFeeRate.should.not.be.below(x.requiredFeeRate);
+        actualFeeRate.should.be.below(x.requiredFeeRate * 1.5); // no more that 50% extra
+      }
+      return actualFeeRate;
+    }
 
     for (let i = 0; i < cases.length; i++) {
       const x = cases[i];
@@ -7954,7 +7930,7 @@ describe('Wallet service', function() {
           Object.assign(txOpts, { feePerKb: x.requiredFeeRate });
         }
 
-        const fee1 = await new Promise<number>(r => checkTx(txOpts, x, r));
+        const fee1 = await checkTx(txOpts, x);
         should.exist(fee1);
 
         // CASE 8
@@ -7965,7 +7941,7 @@ describe('Wallet service', function() {
           ({ server, wallet } = await helpers.createAndJoinWallet(x.m, x.n, { useNativeSegwit: x.fromSegwit }));
           await helpers.stubUtxos(server, wallet, x.utxos);
           txOpts.payProUrl = null;
-          const fee2 = await new Promise<number>(r => checkTx(txOpts, x, r));
+          const fee2 = await checkTx(txOpts, x);
           console.log(`## Fee PayPro: ${fee1} vs ${fee2}`);
           fee1.should.be.above(fee2);
         }
@@ -11637,10 +11613,6 @@ describe('Wallet service', function() {
             simplex: {
               disabled: false,
               removed: false
-            },
-            wyre: {
-              disabled: false,
-              removed: false
             }
           },
           sellCrypto: {
@@ -11728,10 +11700,6 @@ describe('Wallet service', function() {
               removed: false
             },
             transak: {
-              disabled: false,
-              removed: false
-            },
-            wyre: {
               disabled: false,
               removed: false
             }

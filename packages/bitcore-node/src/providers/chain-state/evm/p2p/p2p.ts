@@ -265,8 +265,7 @@ export class EVMP2pWorker extends BaseP2PWorker<IEVMBlock> {
     const { parentChain, forkHeight = 0 } = chainConfig;
     this.syncing = true;
     const state = await StateStorage.collection.findOne({});
-    this.initialSyncComplete =
-      state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
+    this.initialSyncComplete = !!state?.initialSyncComplete?.includes(`${chain}:${network}`);
     let tip = await ChainStateProvider.getLocalTip({ chain, network });
     if (parentChain && (!tip || tip.height < forkHeight)) {
       let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
