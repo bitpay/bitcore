@@ -19,6 +19,7 @@ import { registerTransactionRoutes } from './routes/transactions';
 import { TssRouter } from './routes/tss';
 import { registerWalletDataRoutes } from './routes/walletdata';
 import { registerWalletRoutes } from './routes/wallets';
+import { registerWebhookRoutes } from './routes/webhooks';
 import { WalletService } from './server';
 
 export class ExpressApp {
@@ -127,6 +128,11 @@ export class ExpressApp {
     registerMoralisRoutes(router, {
       getServer,
       getServerWithAuth,
+      returnError
+    });
+
+    registerWebhookRoutes(router, {
+      getServer,
       returnError
     });
 
