@@ -229,15 +229,14 @@ export function registerWalletRoutes(router: express.Router, context: RouteConte
       }
 
       const storage = WalletService.getStorage();
-      const existing = await Promise.all<{ copayerId: string; verified: boolean }>(copayers.map(c => new Promise((resolve) => {
-        storage.fetchCopayerLookup(c.copayerId, (err, copayer) => {
-          if (err || !copayer) {
-            return resolve({ copayerId: c.copayerId, verified: false });
-          }
-          const verified = copayer.requestPubKeys.some(pubkey => Utils.verifyMessage(c.copayerId, c.signature, pubkey.key));
-          return resolve({ copayerId: c.copayerId, verified });
-        });
-      })));
+      const existing = await Promise.all<{ copayerId: string; verified: boolean }>(copayers.map(async c => {
+        const copayer = await storage.fetchCopayerLookup(c.copayerId).catch(() => null);
+        if (!copayer) {
+          return { copayerId: c.copayerId, verified: false };
+        }
+        const verified = copayer.requestPubKeys.some(pubkey => Utils.verifyMessage(c.copayerId, c.signature, pubkey.key));
+        return { copayerId: c.copayerId, verified };
+      }));
       return res.json(existing.filter(e => e.verified).map(e => e.copayerId));
     } catch (err) {
       return returnError(err, res, req);

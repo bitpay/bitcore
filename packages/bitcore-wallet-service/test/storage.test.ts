@@ -12,7 +12,8 @@ import helpers from './integration/helpers';
 const should = chai.should();
 
 describe('Storage', function() {
-  let client, storage;
+  let client: mongodb.MongoClient;
+  let storage: Storage;
   before(function(done) {
     mongodb.MongoClient.connect(config.mongoDb.uri, { useUnifiedTopology: true }, function(err, inclient) {
       if (err) throw err;
@@ -99,22 +100,20 @@ describe('Storage', function() {
       should.exist(wallet);
       storage.storeWalletAndUpdateCopayersLookup(wallet, function(err) {
         should.not.exist(err);
-        storage.fetchCopayerLookup(wallet.copayers[1].id, function(err, lookup) {
-          should.not.exist(err);
+        storage.fetchCopayerLookup(wallet.copayers[1].id).then(lookup => {
           should.exist(lookup);
           lookup.walletId.should.equal('123');
           lookup.requestPubKeys[0].key.should.equal('requestPubKey 1');
           lookup.requestPubKeys[0].signature.should.equal('xxx');
           done();
-        });
+        }).catch(err => done(err));
       });
     });
     it('should not return error if copayer not found', function(done) {
-      storage.fetchCopayerLookup('2', function(err, lookup) {
-        should.not.exist(err);
+      storage.fetchCopayerLookup('2').then(lookup => {
         should.not.exist(lookup);
         done();
-      });
+      }).catch(err => done(err));
     });
   });
 

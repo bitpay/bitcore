@@ -296,9 +296,9 @@ export class TssKeyGen extends EventEmitter {
    *  intercept or brute force the session ID and submit an initial message to join the session
    *  uninvited. To prevent this (unlikely) possibility, set a password in the newKey() method
    *  and share it with the other parties.
-   * @returns {string} Encrypted join code
+   * @returns {Promise<string>} Encrypted join code
    */
-  createJoinCode(params: {
+  async createJoinCode(params: {
     /**
      * Party ID to create the join code for
      */
@@ -324,9 +324,10 @@ export class TssKeyGen extends EventEmitter {
        */
       noKey?: boolean;
     };
-  }): string {
+  }): Promise<string> {
     const { partyId, partyPubKey, opts } = params;
     const extra = params.extra || '';
+    await this.#request.post('/v1/tss/keygen/' + this.id + '/register', { partyId, partyPubKey });
     const data = [this.id, partyId, this.chain, this.network, this.m, this.n, extra].join(':');
     const code = ECIES.encrypt({
       message: data,
