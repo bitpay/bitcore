@@ -459,6 +459,54 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
     });
   });
 
+  router.post('/v1/service/transak/headless/sendOtp', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessSendOtp(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/verifyOtp', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessVerifyOtp(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/quote', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessGetQuote(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/kycRequirement', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessGetKycRequirement(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/savedCards', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessGetSavedCards(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/cardSession', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessCreateCardSession(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/order', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessCreateOrder(req);
+    });
+  });
+
+  router.post('/v1/service/transak/headless/orderDetails', cors(transakCorsOptions), (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.transak.transakHeadlessGetOrderDetails(req);
+    });
+  });
+
   router.post('/v1/service/wyre/walletOrderQuotation', (req, res) => {
     respondWithAuthServer(req, res, context, server => {
       return server.externalServices.wyre.wyreWalletOrderQuotation(req);
