@@ -61,7 +61,11 @@ commands:
     steps:
       - run:
           name: Install PC/SC Lite
-          command: sudo apt-get update && sudo apt-get install -y libpcsclite-dev
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y libpcsclite-dev pcscd
+            sudo systemctl enable --now pcscd.socket
+            test -S /run/pcscd/pcscd.comm && echo "pcscd socket ready"
   restore_dependency_cache:
     steps:
       - create_concatenated_package_lock:
