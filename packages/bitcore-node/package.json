@@ -70,7 +70,7 @@
     "@types/request": "2.47.0",
     "@types/sinon": "4.3.3",
     "@types/through2": "2.0.33",
-    "axios": "0.21.1",
+    "axios": "0.34.0",
     "chai": "^5.2.0",
     "sinon": "4.4.8",
     "socket.io-client": "4.8.1",
