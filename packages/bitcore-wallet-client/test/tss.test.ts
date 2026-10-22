@@ -1009,7 +1009,160 @@ describe('TSS', function() {
         err.message.should.include('TSS_ROUND_ALREADY_DONE');
       }
     });
-  
+
+  });
+
+  describe('Single Signer', function() {
+    let party0TssKey: TssKey;
+    let party1TssKey: TssKey;
+    let party0Creds: Credentials;
+    let party1Creds: Credentials;
+    const messageHash = BitcoreLib.crypto.Hash.sha256(Buffer.from('single signer'));
+    const derivationPath = 'm/0/0';
+
+    before(async function() {
+      const party0Key = new Key({ seedType: 'new' });
+      const party1Key = new Key({ seedType: 'new' });
+      const tss0 = new TssKeyGen({ chain, network, baseUrl: '/bws/api', request: request(app), key: party0Key });
+      const tss1 = new TssKeyGen({ chain, network, baseUrl: '/bws/api', request: request(app), key: party1Key });
+      await tss0.newKey({ m: 1, n: 2 });
+      const code1 = await tss0.createJoinCode({
+        partyId: 1,
+        partyPubKey: party1Key.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
+      });
+      await tss1.joinKey({ code: code1 });
+      const complete0 = new Promise(r => tss0.once('complete', r));
+      const complete1 = new Promise(r => tss1.once('complete', r));
+      tss0.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      tss1.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      tss0.subscribe({ timeout: 10 });
+      tss1.subscribe({ timeout: 10 });
+      await Promise.all([complete0, complete1]);
+
+      party0TssKey = tss0.getTssKey();
+      party1TssKey = tss1.getTssKey();
+      party0Creds = party0TssKey.createCredentials(null, { chain, network, account: 0 });
+      party1Creds = party1TssKey.createCredentials(null, { chain, network, account: 0 });
+      const client = helpers.newClient(app);
+      for (const tssKey of [party0TssKey, party1TssKey]) {
+        await helpers.createAndJoinWallet(
+          [client, client, client],
+          [tssKey],
+          1,
+          1,
+          { key: tssKey, coin: chain.toLowerCase(), network, tssKeyId: tssKey.metadata.id }
+        );
+      }
+    });
+
+    for (const partyId of [0, 1]) {
+      it(happyPath(`should sign alone as party ${partyId}`), async function() {
+        const tssKey = [party0TssKey, party1TssKey][partyId];
+        const credentials = [party0Creds, party1Creds][partyId];
+        const getSpy = sandbox.spy(Request.prototype, 'get');
+        const postSpy = sandbox.spy(Request.prototype, 'post');
+        const sig = new TssSign({ baseUrl: '/bws/api', request: request(app), credentials, tssKey });
+        await sig.start({ id: `single-signer-party${partyId}`, messageHash, derivationPath });
+        const complete = new Promise(r => sig.once('complete', r));
+        sig.on('error', (e) => { should.not.exist(e?.message ?? e); });
+        sig.subscribe({ timeout: 10 });
+        await complete;
+
+        getSpy.callCount.should.equal(0);
+        postSpy.args.map(o => o[0]).should.deep.equal([`/v1/tss/sign/${sig.id}`, `/v1/tss/sign/${sig.id}/store`]);
+        const session = await storage.fetchTssSigSession({ id: sig.id });
+        session.rounds.length.should.equal(1);
+        session.signature.should.deep.equal(sig.getSignature());
+        const pubKey = BitcoreLib.HDPublicKey(tssKey.getXPubKey()).deriveChild(derivationPath).publicKey.toString('hex');
+        sig.getSignature().pubKey.should.equal(pubKey);
+      });
+    }
+
+    it('should get the signature from round 0 after restarting a finished session', async function() {
+      const sig = new TssSign({ baseUrl: '/bws/api', request: request(app), credentials: party0Creds, tssKey: party0TssKey });
+      await sig.start({ id: 'single-signer-recovery', messageHash, derivationPath });
+      should.not.exist(await sig.getSignatureFromServer());
+      const complete = new Promise(r => sig.once('complete', r));
+      sig.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      sig.subscribe({ timeout: 10 });
+      await complete;
+
+      const restarted = new TssSign({ baseUrl: '/bws/api', request: request(app), credentials: party0Creds, tssKey: party0TssKey });
+      try {
+        await restarted.start({ id: 'single-signer-recovery', messageHash, derivationPath });
+        throw new Error('Should have thrown');
+      } catch (err) {
+        err.message.should.include('TSS_ROUND_ALREADY_DONE');
+      }
+      const signature = await restarted.getSignatureFromServer();
+      signature.should.deep.equal(sig.getSignature());
+    });
+
+    it('should finish a restored session and reproduce the stored signature', async function() {
+      const sig = new TssSign({ baseUrl: '/bws/api', request: request(app), credentials: party1Creds, tssKey: party1TssKey });
+      await sig.start({ id: 'single-signer-restore', messageHash, derivationPath });
+      const startExport = sig.exportSession();
+      let roundExport: string;
+      sig.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      await new Promise<void>(r => {
+        sig.once('roundprocessed', () => { roundExport = sig.exportSession(); });
+        sig.subscribe({ timeout: 10, iterHandler: () => { sig.unsubscribe(); r(); } });
+      });
+      let session = await storage.fetchTssSigSession({ id: sig.id });
+      session.rounds.length.should.equal(1);
+
+      const restored = await new TssSign({
+        baseUrl: '/bws/api',
+        request: request(app),
+        credentials: party1Creds,
+        tssKey: party1TssKey,
+      }).restoreSession({ session: roundExport });
+      const restoredComplete = new Promise(r => restored.once('complete', r));
+      restored.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      restored.subscribe({ timeout: 10 });
+      await restoredComplete;
+      session = await storage.fetchTssSigSession({ id: sig.id });
+      session.signature.should.deep.equal(restored.getSignature());
+
+      const late = await new TssSign({
+        baseUrl: '/bws/api',
+        request: request(app),
+        credentials: party1Creds,
+        tssKey: party1TssKey,
+      }).restoreSession({ session: startExport });
+      const lateComplete = new Promise(r => late.once('complete', r));
+      late.on('error', (e) => { should.not.exist(e?.message ?? e); });
+      late.subscribe({ timeout: 10 });
+      await lateComplete;
+      late.getSignature().should.deep.equal(session.signature);
+    });
+
+    it('should retry storing the signature when the store response is lost', async function() {
+      const origPost = Request.prototype.post;
+      let responseLost = false;
+      const postStub = sandbox.stub(Request.prototype, 'post').callsFake(async function(url, body) {
+        const response = await origPost.call(this, url, body);
+        if (url.endsWith('/store') && !responseLost) {
+          responseLost = true;
+          throw new Error('lost store response');
+        }
+        return response;
+      });
+      const sig = new TssSign({ baseUrl: '/bws/api', request: request(app), credentials: party0Creds, tssKey: party0TssKey });
+      await sig.start({ id: 'single-signer-store-retry', messageHash, derivationPath });
+      const error = new Promise<Error>(r => sig.once('error', r));
+      const complete = new Promise(r => sig.once('complete', r));
+      sig.subscribe({ timeout: 10 });
+      const e = await error;
+      e.message.should.equal('lost store response');
+      await complete;
+
+      const storeCalls = postStub.args.filter(o => o[0].endsWith('/store'));
+      storeCalls.length.should.equal(2);
+      storeCalls[1][1].should.deep.equal(storeCalls[0][1]);
+      const session = await storage.fetchTssSigSession({ id: sig.id });
+      session.signature.should.deep.equal(sig.getSignature());
+    });
   });
 
   describe('TssKey', function() {
