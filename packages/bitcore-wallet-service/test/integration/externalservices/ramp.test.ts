@@ -9,6 +9,7 @@ import { WalletService } from '../../../src/lib/server';
 import * as TestData from '../../testdata';
 import helpers from '../helpers';
 import config from '../../../src/config';
+import { ClientError } from '../../../src/lib/errors/clienterror';
 import logger from '../../../src/lib/logger';
 
 const should = chai.should();
@@ -30,6 +31,7 @@ describe('Ramp integration', () => {
   let fakeRequest;
   let req;
   let loggerError: sinon.SinonStub;
+  let loggerWarn: sinon.SinonStub;
 
   before(async () => {
     await helpers.before();
@@ -81,7 +83,7 @@ describe('Ramp integration', () => {
       clientVersion: 'bwc-2.0.0',
       walletId: '123',
     }));
-    sandbox.stub(logger, 'warn');
+    loggerWarn = sandbox.stub(logger, 'warn');
     loggerError = sandbox.stub(logger, 'error');
   });
 
@@ -659,6 +661,52 @@ describe('Ramp integration', () => {
         should.fail('should have thrown');
       } catch (err) {
         err.message.should.equal('Ramp did not return sell transaction details');
+      }
+    });
+
+    it('should log the redacted URL and not leak the saleViewToken if get returns error', async () => {
+      let requestedUrl;
+      const fakeRequest2 = {
+        get: (url, _opts, cb) => { requestedUrl = url; return cb(new Error('Error'), null); },
+      };
+
+      server.externalServices.ramp.request = fakeRequest2;
+      try {
+        await server.externalServices.ramp.rampGetSellTransactionDetails(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        // the real request must still carry the token
+        requestedUrl.should.equal('api2/host-api/v3/offramp/sale/id1?secret=saleViewToken1');
+
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('(api2/host-api/v3/offramp/sale/id1?secret=***)');
+        loggerError.args[0][0].should.not.contain('saleViewToken1');
+
+        err.should.be.instanceOf(ClientError);
+        err.message.should.equal('Failed to get Ramp sell transaction details');
+        JSON.stringify(err).should.not.contain('saleViewToken1');
+        err.toString().should.not.contain('saleViewToken1');
+      }
+    });
+
+    it('should log the redacted URL and not leak the saleViewToken on non-2xx status', async () => {
+      const fakeRequest2 = {
+        get: (_url, _opts, cb) => { return cb(null, { statusCode: 401, body: undefined }); },
+      };
+
+      server.externalServices.ramp.request = fakeRequest2;
+      try {
+        await server.externalServices.ramp.rampGetSellTransactionDetails(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        loggerWarn.callCount.should.equal(1);
+        loggerWarn.args[0][0].should.equal('Ramp request failed with status code 401: api2/host-api/v3/offramp/sale/id1?secret=***');
+        loggerWarn.args[0][0].should.not.contain('saleViewToken1');
+
+        err.should.be.instanceOf(ClientError);
+        err.message.should.equal('Ramp did not return sell transaction details');
+        JSON.stringify(err).should.not.contain('saleViewToken1');
+        err.toString().should.not.contain('saleViewToken1');
       }
     });
 
