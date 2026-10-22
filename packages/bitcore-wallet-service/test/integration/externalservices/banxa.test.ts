@@ -1,20 +1,24 @@
 'use strict';
 
 import * as chai from 'chai';
+import * as sinon from 'sinon';
 import 'chai/register-should';
 import util from 'util';
 import { WalletService } from '../../../src/lib/server';
 import * as TestData from '../../testdata';
 import helpers from '../helpers';
 import config from '../../../src/config';
+import logger from '../../../src/lib/logger';
 
 const should = chai.should();
 
 describe('Banxa integration', () => {
+  const sandbox = sinon.createSandbox();
   let server;
   let wallet;
   let fakeRequest;
   let req;
+  let loggerError: sinon.SinonStub;
 
   before(async function() {
     await helpers.before();
@@ -63,6 +67,12 @@ describe('Banxa integration', () => {
       walletId: '123',
     });
     server = s;
+    sandbox.stub(logger, 'warn');
+    loggerError = sandbox.stub(logger, 'error');
+  });
+
+  afterEach(() => {
+    sandbox.restore();
   });
 
   after(async function() {
@@ -101,7 +111,23 @@ describe('Banxa integration', () => {
         await server.externalServices.banxa.banxaGetPaymentMethods(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Banxa request failed with error (');
+        err.message.should.equal('Failed to fetch Banxa payment methods');
+      }
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.banxa.request = fakeRequest2;
+      try {
+        await server.externalServices.banxa.banxaGetPaymentMethods(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Banxa did not return payment methods');
       }
     });
 
@@ -155,7 +181,23 @@ describe('Banxa integration', () => {
         await server.externalServices.banxa.banxaGetCoins(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Banxa request failed with error (');
+        err.message.should.equal('Failed to fetch Banxa coins');
+      };
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.banxa.request = fakeRequest2;
+      try {
+        await server.externalServices.banxa.banxaGetCoins(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Banxa did not return coins');
       };
     });
 
@@ -224,7 +266,23 @@ describe('Banxa integration', () => {
         await server.externalServices.banxa.banxaGetQuote(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Banxa request failed with error (');
+        err.message.should.equal('Failed to fetch Banxa quote');
+      };
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.banxa.request = fakeRequest2;
+      try {
+        await server.externalServices.banxa.banxaGetQuote(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Banxa did not return quote');
       };
     });
 
@@ -287,7 +345,23 @@ describe('Banxa integration', () => {
         await server.externalServices.banxa.banxaCreateOrder(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Banxa request failed with error (');
+        err.message.should.equal('Failed to create Banxa order');
+      };
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        post: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.banxa.request = fakeRequest2;
+      try {
+        await server.externalServices.banxa.banxaCreateOrder(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Banxa did not return order');
       };
     });
 
@@ -345,7 +419,23 @@ describe('Banxa integration', () => {
         await server.externalServices.banxa.banxaGetOrder(req);
         should.fail('should have thrown');
       } catch (err) {
-        err.message.should.equal('Error');
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('Banxa request failed with error (');
+        err.message.should.equal('Failed to get Banxa order');
+      };
+    });
+
+    it('should return error and not leak the response if body is empty', async () => {
+      const fakeRequest2 = {
+        get: (_url, opts, cb) => { return cb(null, { statusCode: 200, body: undefined, request: { headers: opts.headers } }); },
+      };
+
+      server.externalServices.banxa.request = fakeRequest2;
+      try {
+        await server.externalServices.banxa.banxaGetOrder(req);
+        should.fail('should have thrown');
+      } catch (err) {
+        err.message.should.equal('Banxa did not return order');
       };
     });
 

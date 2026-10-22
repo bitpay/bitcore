@@ -253,7 +253,7 @@ class Helpers {
     if ([true, false].includes(opts.supportBIP44AndP2PKH))
       walletOpts.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
 
-    const walletId = await util.promisify(server.createWallet).call(server, walletOpts);
+    const walletId = await new Promise((resolve, reject) => server.createWallet(walletOpts, (err, walletId) => err ? reject(err) : resolve(walletId)));
 
     for (let i = 0; i < n; i++) {
       const copayerData = TestData.copayers[i + offset];

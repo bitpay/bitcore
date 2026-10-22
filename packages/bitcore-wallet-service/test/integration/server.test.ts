@@ -11637,10 +11637,6 @@ describe('Wallet service', function() {
             simplex: {
               disabled: false,
               removed: false
-            },
-            wyre: {
-              disabled: false,
-              removed: false
             }
           },
           sellCrypto: {
@@ -11728,10 +11724,6 @@ describe('Wallet service', function() {
               removed: false
             },
             transak: {
-              disabled: false,
-              removed: false
-            },
-            wyre: {
               disabled: false,
               removed: false
             }

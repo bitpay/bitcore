@@ -4082,14 +4082,6 @@ export class API extends EventEmitter {
     return this.request.post('/v1/service/transak/orderDetails', data);
   }
 
-  async wyreWalletOrderQuotation(data) {
-    return this.request.post('/v1/service/wyre/walletOrderQuotation', data);
-  }
-
-  async wyreWalletOrderReservation(data) {
-    return this.request.post('/v1/service/wyre/walletOrderReservation', data);
-  }
-
   async changellyGetPairsParams(data) {
     return this.request.post('/v1/service/changelly/getPairsParams', data);
   }

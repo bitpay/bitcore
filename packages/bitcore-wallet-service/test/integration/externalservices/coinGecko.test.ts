@@ -139,6 +139,7 @@ describe('CoinGecko integration', function() {
   let server;
   let wallet;
   let fakeRequest;
+  let loggerError: sinon.SinonStub;
 
   const cg = () => server.externalServices.coinGecko;
   const getMarketStats = (query: any, code = 'USD') => cg().coinGeckoGetMarketStats({ params: { code }, query });
@@ -188,6 +189,7 @@ describe('CoinGecko integration', function() {
       clientVersion: 'bwc-2.0.0',
       walletId: '123'
     });
+    loggerError = sandbox.stub(logger, 'error');
   });
 
   after(async () => {
@@ -486,6 +488,8 @@ describe('CoinGecko integration', function() {
         await getMarketStats({ coin: 'USDC.e', chain: 'arb', tokenAddress });
         should.fail('should have thrown');
       } catch (err) {
+        loggerError.callCount.should.equal(1);
+        loggerError.args[0][0].should.contain('CoinGecko request failed');
         err.message.should.equal('Unsupported tokenAddress');
       }
     });
