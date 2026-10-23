@@ -843,67 +843,42 @@ describe('TSS', function() {
   });
 
   describe('/v1/tss/keygen/:id/join-delivery', function() {
-    const parties = [vector.party0, vector.party1, vector.party2];
-    const pubKey = (partyId: number) => parties[partyId].authKey.publicKey.toString();
-    const path = '/v1/tss/keygen/test/join-delivery';
+    const path = `/v1/tss/keygen/${SESSION_ID}/join-delivery`;
     const rec = (partyId: number, tag = '') => ({ partyId, encryptedMessage: 'ct' + partyId + tag, signature: 'sig' + partyId + tag });
     const fullSet = (tag = '') => ({ version: 1, records: [rec(1, tag), rec(2, tag)] });
 
-    const sign = (method: string, url: string, body: object, partyId: number) => {
-      const hash = Utils.hashMessage(`${method}|${url}|${JSON.stringify(body)}`, false);
-      return BitcoreLib.crypto.ECDSA.sign(hash, parties[partyId].authKey, { endian: 'little' }).toString();
-    };
-    const get = (partyId: number, query = '') => {
-      const url = path + query;
-      return app.get(urlPrefix + url)
-        .set('x-identity', pubKey(partyId))
-        .set('x-signature', sign('get', url, {}, partyId));
-    };
-    const post = (partyId: number, body: object) => app.post(urlPrefix + path)
-      .set('x-identity', pubKey(partyId))
-      .set('x-signature', sign('post', path, body, partyId))
-      .send(body);
+    // The query string is part of the signed URL
+    const getDelivery = (partyId: number, query = '') => get(path + query, partyAuth(partyId));
+    const postDelivery = (partyId: number, body: object) => post(path, body, partyAuth(partyId));
+    const clearSessions = () => storage.db.collection(BWS.Storage.collections.TSS_KEYGEN).deleteMany({});
     const storedDelivery = async () => {
-      const storage = helpers.getStorage();
-      const doc = await storage.db.collection(BWS.Storage.collections.TSS_KEYGEN).findOne({ id: 'test' });
+      const doc = await storage.db.collection(BWS.Storage.collections.TSS_KEYGEN).findOne({ id: SESSION_ID });
       return doc.bwsJoinDelivery;
     };
 
     beforeEach(async function() {
-      const storage = helpers.getStorage();
-      await storage.db.collection(BWS.Storage.collections.TSS_KEYGEN).deleteMany({});
-      const keyGen = TssKeyGenModel.create({
-        id: 'test',
-        message: { partyId: 0, publicKey: pubKey(0) } as any,
-        n: 3,
-        copayerId: pubKey(0),
-        version: 1.1
-      });
-      for (const partyId of [1, 2]) {
-        keyGen.participants[partyId] = pubKey(partyId);
-        keyGen.rounds[0].push({ fromPartyId: partyId, messages: { partyId, publicKey: pubKey(partyId) } as any });
-      }
-      await storage.storeTssKeyGenSession({ doc: keyGen });
+      await clearSessions();
+      await createKeyGenSession({ joined: [1, 2] });
     });
 
     it('should reach the handlers rather than the generic /:round route', async function() {
-      const pending = await get(1);
+      const pending = await getDelivery(1);
       pending.status.should.equal(400);
       pending.body.code.should.equal('TSS_JOIN_DELIVERY_PENDING');
 
-      const res = await post(0, fullSet());
+      const res = await postDelivery(0, fullSet());
       res.status.should.equal(200);
-      const delivered = await get(1);
+      const delivered = await getDelivery(1);
       delivered.status.should.equal(200);
       delivered.body.should.deep.equal({ version: 1, encryptedMessage: 'ct1', signature: 'sig1' });
     });
 
     it('should let the creator publish and each recipient read only its own record, repeatedly', async function() {
-      (await post(0, fullSet())).status.should.equal(200);
+      (await postDelivery(0, fullSet())).status.should.equal(200);
 
       for (let i = 0; i < 2; i++) {
         for (const partyId of [1, 2]) {
-          const res = await get(partyId);
+          const res = await getDelivery(partyId);
           res.status.should.equal(200);
           res.body.should.deep.equal({ version: 1, encryptedMessage: 'ct' + partyId, signature: 'sig' + partyId });
         }
@@ -912,39 +887,39 @@ describe('TSS', function() {
     });
 
     it('should let the creator overwrite a published set', async function() {
-      (await post(0, fullSet())).status.should.equal(200);
-      (await post(0, fullSet('b'))).status.should.equal(200);
+      (await postDelivery(0, fullSet())).status.should.equal(200);
+      (await postDelivery(0, fullSet('b'))).status.should.equal(200);
 
-      const res = await get(2);
+      const res = await getDelivery(2);
       res.body.should.deep.equal({ version: 1, encryptedMessage: 'ct2b', signature: 'sig2b' });
     });
 
     it('should not let a supplied recipient selector expand access', async function() {
-      (await post(0, fullSet())).status.should.equal(200);
+      (await postDelivery(0, fullSet())).status.should.equal(200);
 
-      for (const query of ['?partyId=2', '?recipient=2&copayerId=' + pubKey(2), '?round=2']) {
-        const res = await get(1, query);
+      for (const query of ['?partyId=2', '?recipient=2&copayerId=' + copayerIds[2], '?round=2']) {
+        const res = await getDelivery(1, query);
         res.status.should.equal(200);
         res.body.should.deep.equal({ version: 1, encryptedMessage: 'ct1', signature: 'sig1' });
       }
     });
 
     it('should reject POST from a participant other than the creator', async function() {
-      const res = await post(1, fullSet());
+      const res = await postDelivery(1, fullSet());
       res.status.should.equal(400);
       res.body.code.should.equal('TSS_GENERIC_ERROR');
       should.not.exist(await storedDelivery());
     });
 
     it('should give the creator no delivery to read', async function() {
-      (await post(0, fullSet())).status.should.equal(200);
-      const res = await get(0);
+      (await postDelivery(0, fullSet())).status.should.equal(200);
+      const res = await getDelivery(0);
       res.status.should.equal(400);
       res.body.code.should.equal('TSS_GENERIC_ERROR');
     });
 
     it('should reject malformed sets without changing the stored delivery', async function() {
-      (await post(0, fullSet())).status.should.equal(200);
+      (await postDelivery(0, fullSet())).status.should.equal(200);
 
       const bad = [
         { version: 2, records: fullSet().records },
@@ -956,7 +931,7 @@ describe('TSS', function() {
         { version: 1 }
       ];
       for (const body of bad) {
-        const res = await post(0, body);
+        const res = await postDelivery(0, body);
         res.status.should.equal(400);
         res.body.code.should.equal('TSS_GENERIC_ERROR');
       }
@@ -964,52 +939,58 @@ describe('TSS', function() {
     });
 
     it('should reject outsiders, missing signatures and invalid signatures', async function() {
-      const outsider = new BitcoreLib.PrivateKey();
       const body = fullSet();
-      const outsiderHash = Utils.hashMessage(`post|${path}|${JSON.stringify(body)}`, false);
-      const outsiderSig = BitcoreLib.crypto.ECDSA.sign(outsiderHash, outsider, { endian: 'little' }).toString();
-      const outsiderPost = await app.post(urlPrefix + path)
-        .set('x-identity', outsider.publicKey.toString())
-        .set('x-signature', outsiderSig)
-        .send(body);
+      const outsider = { copayerId: 'notInSession', privKey: randomKey() };
+      const outsiderPost = await post(path, body, outsider);
       outsiderPost.status.should.equal(401);
       outsiderPost.body.code.should.equal('NOT_AUTHORIZED');
 
-      const outsiderGet = await app.get(urlPrefix + path)
-        .set('x-identity', outsider.publicKey.toString())
-        .set('x-signature', sign('get', path, {}, 1));
+      const outsiderGet = await get(path, { copayerId: outsider.copayerId, privKey: parties[1].authKey });
       outsiderGet.status.should.equal(401);
 
-      const unsigned = await app.post(urlPrefix + path).set('x-identity', pubKey(0)).send(body);
+      const unsigned = await app.post(urlPrefix + path).set('x-identity', copayerIds[0]).send(body);
       unsigned.status.should.equal(401);
       const noIdentity = await app.get(urlPrefix + path);
       noIdentity.status.should.equal(401);
 
       // a signature from another participant, and a signature over a different body
-      const wrongKey = await post(0, body).set('x-signature', sign('post', path, body, 1));
+      const wrongKey = await postDelivery(0, body).set('x-signature', signRequest('post', path, body, parties[1].authKey));
       wrongKey.status.should.equal(401);
       wrongKey.body.message.should.equal('Invalid signature');
-      const wrongBody = await post(0, body).set('x-signature', sign('post', path, fullSet('x'), 0));
+      const wrongBody = await postDelivery(0, body).set('x-signature', signRequest('post', path, fullSet('x'), parties[0].authKey));
       wrongBody.status.should.equal(401);
-      const impersonate = await get(1).set('x-identity', pubKey(2));
+      const impersonate = await getDelivery(1).set('x-identity', copayerIds[2]);
       impersonate.status.should.equal(401);
+      impersonate.body.message.should.equal('Invalid signature');
 
       should.not.exist(await storedDelivery());
     });
 
     it('should reject POST and GET once the session has expired', async function() {
-      (await post(0, fullSet())).status.should.equal(200);
+      (await postDelivery(0, fullSet())).status.should.equal(200);
 
       const later = Date.now() + 2 * 60 * 60 * 1000;
       sandbox.stub(Date, 'now').returns(later);
 
-      const posted = await post(0, fullSet('b'));
+      const posted = await postDelivery(0, fullSet('b'));
       posted.status.should.equal(400);
       posted.body.code.should.equal('TSS_SESSION_EXPIRED');
-      const fetched = await get(1);
+      const fetched = await getDelivery(1);
       fetched.status.should.equal(400);
       fetched.body.code.should.equal('TSS_SESSION_EXPIRED');
       (await storedDelivery()).should.deep.equal(fullSet());
+    });
+
+    describe('legacy (v1.1) session', function() {
+      it('should let the creator publish and a recipient read its own record', async function() {
+        await clearSessions();
+        await createKeyGenSession({ version: 1.1, joined: [1, 2] });
+
+        (await postDelivery(0, fullSet())).status.should.equal(200);
+        const res = await getDelivery(1);
+        res.status.should.equal(200);
+        res.body.should.deep.equal({ version: 1, encryptedMessage: 'ct1', signature: 'sig1' });
+      });
     });
   });
 
