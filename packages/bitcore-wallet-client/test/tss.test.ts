@@ -1461,16 +1461,16 @@ describe('TSS', function() {
 
     describe('creator', function() {
       it(happyPath('should retain the party/key assignment from the join code'), async function() {
-        const code = creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
+        const code = await creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
         await invitee.joinKey({ code });
         creator.verifyDeliveryBindings(await sessionKeysOf(creator.id));
       });
 
-      it('should normalize equivalent public key encodings consistently', function() {
+      it('should normalize equivalent public key encodings consistently', async function() {
         const pub = pubKeyOf(inviteeKey);
         const encodings = (hex: string) => [compressed(hex), uncompressed(hex), hex.toUpperCase()];
         for (const retained of encodings(pub)) {
-          creator.createJoinCode({ partyId: 1, partyPubKey: retained });
+          await creator.createJoinCode({ partyId: 1, partyPubKey: retained });
           for (const creatorEnc of encodings(pubKeyOf(creatorKey))) {
             for (const sessionEnc of encodings(pub)) {
               creator.verifyDeliveryBindings([creatorEnc, sessionEnc]);
@@ -1479,11 +1479,11 @@ describe('TSS', function() {
         }
       });
 
-      it('should not retain trust for invalid keys or party IDs', function() {
-        should.throw(() => creator.createJoinCode({ partyId: 1, partyPubKey: 'zz' }), /Invalid partyPubKey/);
-        should.throw(() => creator.createJoinCode({ partyId: 1, partyPubKey: '02' + '00'.repeat(32) }), /Invalid partyPubKey/);
-        should.throw(() => creator.createJoinCode({ partyId: 0, partyPubKey: pubKeyOf(inviteeKey) }), /partyId/);
-        should.throw(() => creator.createJoinCode({ partyId: 2, partyPubKey: pubKeyOf(inviteeKey) }), /partyId/);
+      it('should not retain trust for invalid keys or party IDs', async function() {
+        await assert.rejects(creator.createJoinCode({ partyId: 1, partyPubKey: 'zz' }), /Invalid partyPubKey/);
+        await assert.rejects(creator.createJoinCode({ partyId: 1, partyPubKey: '02' + '00'.repeat(32) }), /Invalid partyPubKey/);
+        await assert.rejects(creator.createJoinCode({ partyId: 0, partyPubKey: pubKeyOf(inviteeKey) }), /partyId/);
+        await assert.rejects(creator.createJoinCode({ partyId: 2, partyPubKey: pubKeyOf(inviteeKey) }), /partyId/);
         should.throw(() => creator.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(inviteeKey)]), /Missing trusted public key for party 1/);
       });
 
@@ -1492,7 +1492,7 @@ describe('TSS', function() {
       });
 
       it('should detect a session key that disagrees with the retained key and not adopt it', async function() {
-        creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
+        await creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
         should.throw(() => creator.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(otherKey)]), /party 1 does not match/);
         should.throw(() => creator.verifyDeliveryBindings([pubKeyOf(creatorKey)]), /no public key for party 1/);
         should.throw(() => creator.verifyDeliveryBindings([pubKeyOf(otherKey), pubKeyOf(inviteeKey)]), /party 0 does not match/);
@@ -1500,16 +1500,16 @@ describe('TSS', function() {
         creator.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(inviteeKey)]);
       });
 
-      it('should replace the key when a join code is reissued for the same party', function() {
-        creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(otherKey) });
-        creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
+      it('should replace the key when a join code is reissued for the same party', async function() {
+        await creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(otherKey) });
+        await creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
         creator.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(inviteeKey)]);
       });
     });
 
     describe('invitee', function() {
       it(happyPath('should retain the creator key and ceremony context from a normal join code'), async function() {
-        const code = creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
+        const code = await creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
         await invitee.joinKey({ code });
         invitee.id.should.equal(creator.id);
         invitee.partyId.should.equal(1);
@@ -1525,7 +1525,7 @@ describe('TSS', function() {
       });
 
       it('should not retain trust from an invalid join code', async function() {
-        const code = creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(otherKey) });
+        const code = await creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(otherKey) });
         try {
           await invitee.joinKey({ code });
           throw new Error('Should have failed');
@@ -1536,13 +1536,13 @@ describe('TSS', function() {
       });
 
       it(happyPath('should accept a normal join code when the expected creator key matches'), async function() {
-        const code = creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
+        const code = await creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
         await invitee.joinKey({ code, creatorPubKey: uncompressed(creator.getAuthPublicKey()) });
         invitee.verifyDeliveryBindings(await sessionKeysOf(creator.id));
       });
 
       it('should reject a normal join code issued by a different creator key than expected', async function() {
-        const code = creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
+        const code = await creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
         try {
           await invitee.joinKey({ code, creatorPubKey: pubKeyOf(otherKey) });
           throw new Error('Should have failed');
@@ -1565,6 +1565,9 @@ describe('TSS', function() {
         const wellFormed = () => [creator.id, 1, 'eth', 'livenet', 2, 2, ''];
 
         it('should accept a well-formed hand-built invitation', async function() {
+          // The creator registers the recipient's key when issuing an invitation, so the hand-built one is only
+          // acceptable for a recipient that was legitimately registered first.
+          await creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
           const code = buildCode(wellFormed());
           invitee.checkJoinCode({ code }).should.deep.equal({ id: creator.id, partyId: 1, chain: 'eth', network: 'livenet', m: 2, n: 2 });
           await invitee.joinKey({ code });
@@ -1610,8 +1613,8 @@ describe('TSS', function() {
 
       describe('noKey join code', function() {
         let code: string;
-        beforeEach(function() {
-          code = creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey), opts: { noKey: true } });
+        beforeEach(async function() {
+          code = await creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey), opts: { noKey: true } });
         });
 
         it(happyPath('should work with the expected creator key and retain it'), async function() {
@@ -1695,8 +1698,8 @@ describe('TSS', function() {
       inviteeA = mk(keyA);
       inviteeB = mk(keyB);
       await creator.newKey({ m: 2, n: 3 });
-      codeA = creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keyA) });
-      codeB = creator.createJoinCode({ partyId: 2, partyPubKey: pubKeyOf(keyB) });
+      codeA = await creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keyA) });
+      codeB = await creator.createJoinCode({ partyId: 2, partyPubKey: pubKeyOf(keyB) });
       await inviteeA.joinKey({ code: codeA });
       await inviteeB.joinKey({ code: codeB });
       sessionKeys = await sessionKeysOf(creator.id);
@@ -1742,7 +1745,7 @@ describe('TSS', function() {
         const soloCreator = mk(otherKey);
         await soloCreator.newKey({ m: 2, n: 2 });
         const invitee = mk(keyA);
-        const code = soloCreator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keyA), opts: { noKey: true } });
+        const code = await soloCreator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keyA), opts: { noKey: true } });
         await invitee.joinKey({ code, opts: { noKey: true }, creatorPubKey: soloCreator.getAuthPublicKey() });
         const restored = await mk(keyA).restoreSession({ session: invitee.exportSession() });
         restored.verifyDeliveryBindings(await sessionKeysOf(soloCreator.id));
@@ -2043,7 +2046,7 @@ describe('TSS', function() {
       });
 
       it('should work for the recipient with a noKey join code and the expected creator key', async function() {
-        const code = creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keyA), opts: { noKey: true } });
+        const code = await creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keyA), opts: { noKey: true } });
         const restored = await mk(keyA).restoreSession({
           session: unwrap(inviteeA.exportSession(), keyA),
           trusted: { joinCode: { code, opts: { noKey: true }, creatorPubKey: creator.getAuthPublicKey() } }
@@ -2061,7 +2064,7 @@ describe('TSS', function() {
       it('should reject a join code for another party, or a different session', async function() {
         const otherCreator = mk(otherKey);
         await otherCreator.newKey({ m: 2, n: 3 });
-        const foreign = otherCreator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keyA) });
+        const foreign = await otherCreator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keyA) });
         const legacy = unwrap(inviteeA.exportSession(), keyA);
         for (const code of [codeB, foreign]) {
           await assert.rejects(
@@ -2116,12 +2119,13 @@ describe('TSS', function() {
           { message: /party 1 does not match the retained key/ }
         );
 
-        // A code from a different creator key for this same session
-        const impostor = mk(otherKey);
-        impostor['id'] = creator.id;
-        impostor['n'] = 3;
-        impostor['m'] = 2;
-        const forged = impostor.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keyA) });
+        // A code from a different creator key for this same session. The impostor can't register with BWS,
+        // so build the invitation directly, encoded the way createJoinCode() does.
+        const forged = ECIES.encrypt({
+          message: [creator.id, 1, chain, network, 2, 3, ''].join(':'),
+          publicKey: pubKeyOf(keyA),
+          privateKey: otherKey.createCredentials(null, { chain, network, n: 1, account: 0 }).requestPrivKey
+        }).toString('hex');
         await assert.rejects(
           mk(keyA).restoreSession({ session: inviteeA.exportSession(), trusted: { joinCode: { code: forged } } }),
           { message: /creator key does not match the retained key/ }
@@ -2152,7 +2156,8 @@ describe('TSS', function() {
       tss = keys.map(mk);
       await tss[0].newKey({ m: 2, n: parties });
       for (let partyId = 1; partyId < parties; partyId++) {
-        await tss[partyId].joinKey({ code: tss[0].createJoinCode({ partyId, partyPubKey: pubKeyOf(keys[partyId]) }) });
+        const code = await tss[0].createJoinCode({ partyId, partyPubKey: pubKeyOf(keys[partyId]) });
+        await tss[partyId].joinKey({ code });
       }
       const done = tss.map((t, i) => nextEvent(t, i === 0 && creatorSubscribe ? 'wallet' : 'complete'));
       for (const [i, t] of tss.entries()) {
@@ -2314,7 +2319,8 @@ describe('TSS', function() {
         keys = [new Key({ seedType: 'new' }), new Key({ seedType: 'new' })];
         tss = keys.map(mk);
         await tss[0].newKey({ m: 2, n: 2 });
-        await tss[1].joinKey({ code: tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keys[1]) }) });
+        const code = await tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keys[1]) });
+        await tss[1].joinKey({ code });
         const errors = [];
         tss[0].on('error', e => errors.push(e));
         tss[1].on('error', () => {});
@@ -2353,7 +2359,7 @@ describe('TSS', function() {
         await assert.rejects(tss[0].createWallet({ walletName: 'wallet', copayerName: 'creator' }), { name: 'bwc.ErrorCONNECTION_ERROR' });
         // Between attempts the retained key for party 1 is replaced with an identity that never enrolled
         const impostor = new Key({ seedType: 'new' });
-        tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(impostor) });
+        await tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(impostor) });
 
         await assert.rejects(tss[0].createWallet({ walletName: 'wallet', copayerName: 'creator' }), { message: /party 1 does not match the trusted key/ });
         deliveryPosts().length.should.equal(1);
@@ -2391,7 +2397,8 @@ describe('TSS', function() {
         keys = [new Key({ seedType: 'new' }), new Key({ seedType: 'new' })];
         tss = keys.map(mk);
         await tss[0].newKey({ m: 2, n: 2 });
-        await tss[1].joinKey({ code: tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keys[1]) }) });
+        const code = await tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keys[1]) });
+        await tss[1].joinKey({ code });
         const errors = [];
         tss[0].on('error', e => errors.push(e));
         tss[1].on('error', () => {});
@@ -2446,7 +2453,7 @@ describe('TSS', function() {
         const errors = [];
         tss[0].on('error', e => errors.push(e));
         // The creator's retained key for party 1 no longer matches the key it enrolled with
-        tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(new Key({ seedType: 'new' })) });
+        await tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(new Key({ seedType: 'new' })) });
 
         await assert.rejects(tss[0].createWallet({ walletName: 'wallet', copayerName: 'creator' }), { message: /party 1 does not match the trusted key/ });
         createCalls().called.should.equal(false);
@@ -2460,7 +2467,8 @@ describe('TSS', function() {
         keys = [new Key({ seedType: 'new' }), new Key({ seedType: 'new' })];
         tss = keys.map(mk);
         await tss[0].newKey({ m: 2, n: 2 });
-        await tss[1].joinKey({ code: tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keys[1]) }) });
+        const code = await tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keys[1]) });
+        await tss[1].joinKey({ code });
         // A legacy export carries no keys, so the restored creator has nothing to deliver to
         const exported = tss[0].exportSession();
         const legacy = (() => {
@@ -2490,7 +2498,8 @@ describe('TSS', function() {
         keys = [new Key({ seedType: 'new' }), new Key({ seedType: 'new' })];
         tss = keys.map(mk);
         await tss[0].newKey({ m: 2, n: 2 });
-        await tss[1].joinKey({ code: tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keys[1]) }) });
+        const code = await tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keys[1]) });
+        await tss[1].joinKey({ code });
         const errors = [];
         tss[0].on('error', e => errors.push(e));
         tss[1].on('error', () => {});
@@ -2525,7 +2534,8 @@ describe('TSS', function() {
           keys = [new Key({ seedType: 'new' }), new Key({ seedType: 'new' })];
           tss = keys.map(mk);
           await tss[0].newKey({ m: 2, n: 2 });
-          await tss[1].joinKey({ code: tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keys[1]) }) });
+          const code = await tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keys[1]) });
+          await tss[1].joinKey({ code });
           const errors = [];
           tss[0].on('error', e => errors.push(e));
           tss[1].on('error', () => {});
@@ -2555,7 +2565,8 @@ describe('TSS', function() {
         keys = [new Key({ seedType: 'new' }), new Key({ seedType: 'new' })];
         tss = keys.map(mk);
         await tss[0].newKey({ m: 2, n: 2 });
-        await tss[1].joinKey({ code: tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keys[1]) }) });
+        const code = await tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(keys[1]) });
+        await tss[1].joinKey({ code });
         const errors = [];
         tss[0].on('error', e => errors.push(e));
         tss[1].on('error', () => {});
@@ -2616,7 +2627,8 @@ describe('TSS', function() {
       errors = tss.map(() => []);
       await tss[0].newKey({ m: 2, n: parties });
       for (let partyId = 1; partyId < parties; partyId++) {
-        await tss[partyId].joinKey({ code: tss[0].createJoinCode({ partyId, partyPubKey: pubKeyOf(keys[partyId]) }) });
+        const code = await tss[0].createJoinCode({ partyId, partyPubKey: pubKeyOf(keys[partyId]) });
+        await tss[partyId].joinKey({ code });
       }
       for (const [i, t] of tss.entries()) {
         t.on('error', e => errors[i].push(e));

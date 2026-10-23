@@ -8,6 +8,7 @@
  * BWS's integration tests; this file is about the combined flow and what ends up persisted.
  */
 
+import assert from 'assert';
 import * as chai from 'chai';
 import sinon from 'sinon';
 import request from 'supertest';
@@ -169,7 +170,7 @@ describe('TSS join delivery, end to end', function() {
       await tss[0].newKey({ m: 2, n, password });
       const invitationOpts = noKey ? { noKey: true } : undefined;
       for (const partyId of joinOrder) {
-        const code = tss[0].createJoinCode({ partyId, partyPubKey: pubKeyOf(keys[partyId]), extra: password, opts: invitationOpts });
+        const code = await tss[0].createJoinCode({ partyId, partyPubKey: pubKeyOf(keys[partyId]), extra: password, opts: invitationOpts });
         await tss[partyId].joinKey({
           code,
           opts: invitationOpts,
@@ -644,12 +645,9 @@ describe('TSS join delivery, end to end', function() {
       const creator = mk(key0);
       await creator.newKey({ m: 2, n: 2, password: 'right' });
       // No password in the invitation, so the recipient must supply one
-      const code = creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(key1) });
+      const code = await creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(key1) });
       for (const password of [undefined, 'wrong']) {
-        await mk(key1).joinKey({ code, password }).then(
-          () => { throw new Error('expected the join to be rejected'); },
-          err => { err.message.should.not.equal('expected the join to be rejected'); }
-        );
+        await assert.rejects(mk(key1).joinKey({ code, password }), { message: /^TSS_INVALID_PASSWORD:/ });
       }
       const session = await findOne('tss_keygen', { id: creator.id });
       session.participants.filter(Boolean).length.should.equal(1);
@@ -673,14 +671,15 @@ describe('TSS join delivery, end to end', function() {
       const creator = mk(key0);
       await creator.newKey({ m: 2, n: 2 });
       const opts = { noKey: true };
-      const code = creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(key1), opts });
+      const code = await creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(key1), opts });
       const otherKey = mk(new Key({ seedType: 'new' })).getAuthPublicKey();
 
-      for (const creatorPubKey of [undefined, otherKey]) {
-        await mk(key1).joinKey({ code, opts, creatorPubKey }).then(
-          () => { throw new Error('expected the join to be rejected'); },
-          err => { err.message.should.not.equal('expected the join to be rejected'); }
-        );
+      const expected: Array<[string | undefined, RegExp]> = [
+        [undefined, /creatorPubKey is required/],
+        [otherKey, /Invalid checksum/]
+      ];
+      for (const [creatorPubKey, message] of expected) {
+        await assert.rejects(mk(key1).joinKey({ code, opts, creatorPubKey }), { message });
       }
       // Nothing was enrolled
       const session = await findOne('tss_keygen', { id: creator.id });
