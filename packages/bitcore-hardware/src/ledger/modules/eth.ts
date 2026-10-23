@@ -1,7 +1,7 @@
 import CWC, { ethers } from '@bitpay-labs/crypto-wallet-core';
 import { Observable } from 'rxjs';
-import { Module } from 'src/types/modules.js';
 import Util from '../../util.js';
+import type { Module } from '../../types/modules.js';
 import type * as SignerKitEth from '@ledgerhq/device-signer-kit-ethereum';
 
 export default class EthereumModule implements Module {

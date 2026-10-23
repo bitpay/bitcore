@@ -2,10 +2,10 @@ import { createRequire } from 'module';
 import CWC from '@bitpay-labs/crypto-wallet-core';
 import { Psbt } from 'bitcoinjs-lib';
 import { Observable } from 'rxjs';
-import { UtxoChainType } from 'src/types/chains.js';
-import { Module } from 'src/types/modules.js';
-import { TransactionType } from 'src/types/tx.js';
 import Util from '../../util.js';
+import type { UtxoChainType } from '../../types/chains.js';
+import type { Module } from '../../types/modules.js';
+import type { TransactionType } from '../../types/tx.js';
 import type { EveryUtxoType } from '@bitpay-labs/crypto-wallet-core/ts_build/src/transactions/btc/index.js';
 import type * as SignerKitBtc from '@ledgerhq/device-signer-kit-bitcoin';
 // @eslint disable import/newline-after-import
@@ -20,7 +20,6 @@ const { BitcoreLib } = CWC;
 export default class BitcoinModule implements Module {
   signer: SignerKitBtc.SignerBtc;
   derivationPath = "84'/0'/0'";
-  // BitcoinModule is extended by other utxo chains
   chain: UtxoChainType = 'BTC';
   
   constructor(signer: SignerKitBtc.SignerBtc) {

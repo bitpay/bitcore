@@ -80,8 +80,9 @@ export default class Burner implements Hardware {
       case 'ETH':
         return this.signEth(params);
       case 'BTC':
-      default:
         return this.signBtc(params);
+      default:
+        throw new Error(`Invalid chain ${params.chain}. Should be BTC or ETH.`);
     }
   }
   

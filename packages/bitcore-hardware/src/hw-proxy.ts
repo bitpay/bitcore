@@ -12,7 +12,7 @@ export class HardwareProxy implements Hardware {
   devices: Record<Vendor, Record<string, Hardware>> = {
     ledger: {},
     burner: {}
-  };;
+  };
   private vendorClasses: Record<Vendor, new (config?: any) => Hardware> = {
     ledger: Ledger,
     burner: Burner
