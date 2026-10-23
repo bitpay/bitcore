@@ -24,6 +24,8 @@ function shouldFire(obj: { wallets?: Array<ObjectID> }) {
   return !onlyWalletEvents || (onlyWalletEvents && obj.wallets && obj.wallets.length > 0);
 }
 const MAX_BATCH_SIZE = 50000;
+// mintTxids per pruneMempool coin query
+const PRUNE_MEMPOOL_QUERY_SIZE = 1000;
 
 export type IBtcTransaction = ITransaction & {
   coinbase: boolean;
@@ -635,38 +637,43 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
       return;
     }
 
-    const seenMinedTxids = new Set();
-    for (const spentOp of spendOps) {
-      const minedTxid = spentOp.updateOne.update.$set.spentTxid;
-      if (seenMinedTxids.has(minedTxid)) {
-        continue;
+    // pending spends of the outpoints this batch spends, by outpoint
+    const pendingSpends = new Map<string, string>();
+    const mintTxids = Array.from(new Set(spendOps.map(spendOp => spendOp.updateOne.filter.mintTxid)));
+    for (let i = 0; i < mintTxids.length; i += PRUNE_MEMPOOL_QUERY_SIZE) {
+      const coins = await CoinStorage.collection
+        .find(
+          {
+            chain,
+            network,
+            spentHeight: SpentHeightIndicators.pending,
+            mintTxid: { $in: mintTxids.slice(i, i + PRUNE_MEMPOOL_QUERY_SIZE) }
+          },
+          { batchSize: 10000 }
+        )
+        // without the hint, Mongo 3.6 can plan this $in as a scan of every coin on the chain
+        .hint({ mintTxid: 1, mintIndex: 1 })
+        .project({ _id: 0, mintTxid: 1, mintIndex: 1, spentTxid: 1 })
+        .toArray();
+      for (const coin of coins) {
+        pendingSpends.set(`${coin.mintTxid}:${coin.mintIndex}`, coin.spentTxid);
       }
-
-      const conflictingInputsQuery = {
-        chain,
-        network,
-        spentHeight: SpentHeightIndicators.pending,
-        mintTxid: spentOp.updateOne.filter.mintTxid,
-        mintIndex: spentOp.updateOne.filter.mintIndex,
-        spentTxid: { $ne: minedTxid }
-      };
-
-      const conflictingInputsStream = CoinStorage.collection.find(conflictingInputsQuery);
-      const seenInvalidTxids = new Set();
-      let input: ICoin | null;
-
-      while ((input = await conflictingInputsStream.next())) {
-        if (seenInvalidTxids.has(input.spentTxid)) {
-          continue;
-        }
-        await this._invalidateTx({ chain, network, invalidTxid: input.spentTxid, replacedByTxid: minedTxid, simple: true });
-        seenInvalidTxids.add(input.spentTxid);
-      }
-
-      seenMinedTxids.add(minedTxid);
     }
 
-    return;
+    // a pending coin spent by a different tx than the one now spending it means that tx conflicts;
+    // invalidate each conflicting tx once, as replaced by the first tx in the batch it conflicts with
+    const replacedBy = new Map<string, string>();
+    for (const spendOp of spendOps) {
+      const { mintTxid, mintIndex } = spendOp.updateOne.filter;
+      const spender = spendOp.updateOne.update.$set.spentTxid;
+      const pendingSpender = pendingSpends.get(`${mintTxid}:${mintIndex}`);
+      if (pendingSpender !== undefined && pendingSpender !== spender && !replacedBy.has(pendingSpender)) {
+        replacedBy.set(pendingSpender, spender);
+      }
+    }
+    for (const [invalidTxid, replacedByTxid] of replacedBy) {
+      await this._invalidateTx({ chain, network, invalidTxid, replacedByTxid, simple: true });
+    }
   }
 
   async _invalidateTx(params: {
