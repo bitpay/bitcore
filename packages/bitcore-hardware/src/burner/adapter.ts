@@ -1,0 +1,264 @@
+import { execHaloCmdPCSC } from '@arx-research/libhalo/api/desktop';
+import CWC, { BitcoreLib } from '@bitpay-labs/crypto-wallet-core';
+import { NFC } from 'nfc-pcsc';
+import { BurnerChainType } from '../types/chains.js';
+import { Hardware } from '../types/modules.js';
+import { TransactionType } from '../types/tx.js';
+import Util from '../util.js';
+import { CommandNameType, DataType } from './types.js';
+import type { EveryUtxoType } from '@bitpay-labs/crypto-wallet-core/ts_build/src/transactions/btc/index.js';
+
+const { Address, PublicKey, crypto } = BitcoreLib;
+
+/**
+ * Fetch address, public key and sign transactions using the burner card.
+ */
+export default class Burner implements Hardware {
+  nfc?: NFC;
+  // list of commands waiting to be sent to the device
+  commandQueue = new Map<string, Record<string, any>>();
+  // responses to all the commands from commandQueue
+  responses = new Map<string, Record<string, any>>();
+  private QUEUE_CAPACITY = 100;
+  private SLOT = 9;
+
+  /**
+   * Sends all commands to the device and recieves all responses
+   */
+  async connect() {
+    this.nfc = this.nfc ?? new NFC();
+
+    this.nfc.on('reader', (reader) => {
+      reader.autoProcessing = false;
+
+      reader.on('card', async () => {
+        try {
+          for (const id of this.commandQueue.keys()) {
+            this.responses.set(id, await execHaloCmdPCSC(this.commandQueue.get(id), reader));
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      });
+
+      reader.on('error', (err) => {
+        console.log(`${reader.reader.name} an error occurred`, err);
+      });
+    });
+
+    this.nfc.on('error', (err) => {
+      console.log('An error occurred', err);
+    });
+  }
+
+  async disconnect() { };
+
+  async sign(params: {
+    chain: 'ETH';
+    tx: string;
+    password: string;
+  })
+  async sign(params: {
+    chain: 'BTC';
+    tx: string;
+    utxos: EveryUtxoType[];
+    password: string;
+  })
+  async sign(params: {
+    chain: 'BTC';
+    tx: object;
+    utxos?: EveryUtxoType[];
+    password: string;
+  })
+  async sign(params: {
+    chain: BurnerChainType;
+    tx: TransactionType;
+    utxos?: EveryUtxoType[];
+    password: string;
+  }) {
+    switch (params.chain) {
+      case 'ETH':
+        return this.signEth(params);
+      case 'BTC':
+      default:
+        return this.signBtc(params);
+    }
+  }
+  
+  async signBtc(params: {
+    tx: TransactionType;
+    utxos?: EveryUtxoType[];
+    password: string;
+  }) {
+    const { tx, utxos, password } = params;
+    const bitcoreTx = Util.buildTransaction(tx, utxos);
+
+    const commands: CommandType[] = [];
+    for (let i = 0; i < bitcoreTx.inputs.length; i++) {
+      const sighash = CWC.Transactions.getSighash({ chain: 'BTC', tx: bitcoreTx, index: i });
+      commands.push({
+        name: 'sign',
+        digest: sighash,
+        password,
+        keyNo: this.SLOT
+      });
+    };
+    const responses = await this.sendManyCommands(commands);
+    
+    for (let i = 0; i < bitcoreTx.inputs.length; i++) {
+      const response = responses[i];
+      const publicKey = new PublicKey(response.publicKey);
+      const signature = crypto.Signature.fromString(response.signature.der);
+      signature.pubKey = BitcoreLib.crypto.Point.pointToCompressed(publicKey.point).toString('hex');
+  
+      CWC.Transactions.applySignature({
+        chain: 'BTC',
+        tx: bitcoreTx,
+        signature,
+        index: i
+      });
+    }
+
+    return bitcoreTx.serialize();
+  }
+
+  async signEth(params: { tx: string; password: string }) {
+    const { tx, password } = params;
+    
+    const sighash = CWC.Transactions.getSighash({
+      chain: 'ETH',
+      tx
+    });
+    
+    const response = await this.sendCommand({
+      name: 'sign',
+      digest: sighash,
+      password,
+      keyNo: this.SLOT
+    });
+    const signature = response.signature.ether;
+    
+    const signedTx = CWC.Transactions.applySignature({
+      chain: 'ETH',
+      tx,
+      signature
+    });
+
+    return signedTx;
+  }
+
+  async getPublicKey() {
+    return (await this.getData(
+      [{ type: 'publicKey' }]
+    ) as any).publicKey[this.SLOT].value;
+  }
+
+  async getAddress(params: {
+    chain: BurnerChainType;
+  }) {
+    switch (params.chain) {
+      case 'ETH':
+        return this.getAddressEth();
+      case 'BTC':
+      default:
+        return this.getAddressBtc();
+    }
+  }
+
+  async getAddressBtc() {
+    const data: any = await this.getData([{ type: 'compressedPublicKey' }]);
+    try {
+      const pubKey = PublicKey.fromString(data.compressedPublicKey[this.SLOT].value);
+      const address = Address.fromPublicKey(pubKey, 'livenet', 'witnesspubkeyhash');
+      return address.toString();
+    } catch (error) {
+      console.error(error);
+      return undefined;
+    }
+  }
+
+  async getAddressEth() {
+    const data: any = await this.getData([{ type: 'publicKey' }]);
+
+    try {
+      const address = CWC.ethers.computeAddress('0x' + data.publicKey[this.SLOT].value);
+      return address.toString();
+    } catch (error) {
+      console.error(error);
+      return undefined;
+    }
+  }
+
+  /**
+   *
+   * @param req
+   * @returns
+   */
+  async getData(req: Array<{ type: DataType }>) {
+    return this.sendCommand({
+      name: 'get_data_struct_v2',
+      spec: req.map(({ type }) => ({ type, index: this.SLOT }))
+    });
+  }
+
+  /**
+   * Queues a command to be sent off to the device when it is scanned with an NFC reader.
+   * 
+   * Logic for getting the response is not in this function, but in connect.
+   * This function simply waits for the card listener to add the responses.
+   * 
+   * @param command command to queue
+   * @returns response from the device
+   */
+  async sendCommand(command: CommandType): Promise<Record<string, any>> {
+    return this.sendManyCommands([command]).then(responses => responses[0]);
+  }
+
+  /**
+   * Queues commands to be sent off to the device when it is scanned with an NFC reader.
+   * 
+   * Logic for getting the response is not in this function, but in connect.
+   * This function simply waits for the card listener to add the responses.
+   * 
+   * @param command commands to queue
+   * @returns responses from the device
+   */
+  async sendManyCommands(commands: CommandType[]): Promise<Record<string, any>[]> {
+    const ids: string[] = [];
+    for (const command of commands) {
+      if (this.commandQueue.size >= this.QUEUE_CAPACITY) {
+        throw new Error('queue filled');
+      }
+      for (let i = 0; i < this.QUEUE_CAPACITY; i++) {
+        const id = command.name + '' + i;
+        if (!this.commandQueue.has(id)) {
+          this.commandQueue.set(id, command);
+          ids.push(id);
+          break;
+        }
+      }
+    }
+    return new Promise(async resolve1 => {
+      const _responses: Record<string, object>[] = [];
+      for (const id of ids) {
+        while (this.responses.get(id) == undefined) {
+          await new Promise(async resolve2 => setTimeout(resolve2, 10));
+        }
+        _responses.push(this.responses.get(id) ?? { error: 'no command' });
+        this.responses.delete(id);
+        this.commandQueue.delete(id);
+      }
+      resolve1(_responses);
+    });
+  }
+
+  static isValidChain(value: string): value is BurnerChainType {
+    return ['BTC', 'ETH'].includes(value);
+  }
+}
+
+type CommandType = Record<string, any> & {
+  name: CommandNameType;
+  password?: string;
+  keyNo?: number;
+};
