@@ -4,6 +4,9 @@ import { Web3, ethers } from '@bitpay-labs/crypto-wallet-core';
 import { CryptoRpc } from '../index.js';
 import { chainConfig } from '../lib/eth/chains.js';
 
+// chains whose fee estimates come from eth_feeHistory
+const FEE_HISTORY_CHAINS = ['MATIC', 'OP', 'ARB', 'BASE'];
+
 const configs = [
   {
     chain: 'ETH',
@@ -197,11 +200,51 @@ describe('EVM', function() {
         expect(evmRPC.web3.eth.getBlock.callCount).to.equal(1);
       });
 
-      it('should use fee minimums when estimating priority fee for type 2 txs', async () => {
-        const maxFee = await evmRPC.estimateMaxPriorityFee({ percentile: 25 });
-        const minimumFee = chainConfig[config.chain] ? chainConfig[config.chain].priorityFee : 2.5;
-        expect(maxFee).to.equal(BigInt(minimumFee * 1e9));
-      });
+      if (FEE_HISTORY_CHAINS.includes(config.chain)) {
+        it('should read the tip a transaction paid from eth_feeHistory', async () => {
+          const signer = new ethers.Wallet(config.currencyConfig.privateKey);
+          const signedTx = await signer.signTransaction({
+            type: 2,
+            chainId: 1337,
+            nonce: await rpcs.getTransactionCount({ currency, address: config.account }),
+            gasLimit: 25000,
+            maxFeePerGas: 200e9,
+            maxPriorityFeePerGas: 50e9,
+            to: config.currencyConfig.sendTo,
+            value: 123
+          });
+          const txid = await rpcs.sendRawTransaction({ currency, rawTx: signedTx });
+          let receipt;
+          for (let i = 0; i < 50 && !receipt; i++) {
+            receipt = await evmRPC.web3.eth.getTransactionReceipt(txid).catch(() => null);
+            await new Promise((resolve) => setTimeout(resolve, 200));
+          }
+          expect(receipt).to.exist;
+          // the highest tip of each of the last 10 blocks
+          const tips = await evmRPC._getFeeHistoryFees({ percentile: 0, getFee: ({ reward }) => reward });
+          expect(tips).to.deep.include(BigInt(50e9));
+        });
+
+        it('should estimate the priority fee and gas price from eth_feeHistory', async () => {
+          sinon.spy(evmRPC.web3.eth, 'getFeeHistory');
+          sinon.spy(evmRPC.web3.eth, 'getBlock');
+          const priorityFee = await evmRPC.estimateMaxPriorityFee({ percentile: 25 });
+          const gasPrice = await evmRPC.estimateGasPrice();
+          const minimumFee = chainConfig[config.chain] ? chainConfig[config.chain].priorityFee : 2.5;
+          expect(typeof priorityFee).to.equal('bigint');
+          expect(priorityFee >= BigInt(minimumFee * 1e9)).to.be.true;
+          expect(typeof gasPrice).to.equal('bigint');
+          expect(gasPrice >= BigInt(await evmRPC.web3.eth.getGasPrice())).to.be.true;
+          expect(evmRPC.web3.eth.getFeeHistory.callCount).to.equal(2);
+          expect(evmRPC.web3.eth.getBlock.callCount).to.equal(0);
+        });
+      } else {
+        it('should use fee minimums when estimating priority fee for type 2 txs', async () => {
+          const maxFee = await evmRPC.estimateMaxPriorityFee({ percentile: 25 });
+          const minimumFee = chainConfig[config.chain] ? chainConfig[config.chain].priorityFee : 2.5;
+          expect(maxFee).to.equal(BigInt(minimumFee * 1e9));
+        });
+      }
     
       it('should estimate gas price', async () => {
         const gasPrice = await evmRPC.estimateGasPrice();
