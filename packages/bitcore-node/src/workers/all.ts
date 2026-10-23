@@ -6,6 +6,7 @@ import { Api } from '../services/api';
 import { Event } from '../services/event';
 import { P2P } from '../services/p2p';
 import { Storage } from '../services/storage';
+import { WalletStats } from '../services/walletStats';
 import { Worker } from '../services/worker';
 import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
@@ -24,6 +25,7 @@ export const FullClusteredWorker = async () => {
   services.push(Storage, Event);
   if (cluster.isPrimary) {
     services.push(P2P);
+    services.push(WalletStats); // self-gates via isDisabled; defaults disabled
     if (args.DEBUG) {
       services.push(Api);
     } else {

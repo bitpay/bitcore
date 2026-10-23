@@ -5,6 +5,7 @@ import { Config } from '../services/config';
 import * as apiRoutes from './api';
 import { CacheMiddleware, CacheTimes, LogMiddleware, RateLimiter } from './middleware';
 import { statusRoute } from './status';
+import { walletStatsRoute } from './walletStats';
 import { Web3Proxy } from './web3';
 import type { Request, Response } from 'express';
 
@@ -48,6 +49,7 @@ app.use(LogMiddleware());
 app.use(CacheMiddleware(CacheTimes.Second, CacheTimes.Second));
 app.use(RateLimiter('GLOBAL', 10, 200, 4000));
 app.use('/api' + statusRoute.path, statusRoute.router);
+app.use('/api' + walletStatsRoute.path, walletStatsRoute.router);
 // Change aliased chain and network params
 app.param(['chain', 'network'], (req: Request, _: Response, next: any) => {
   const { chain: beforeChain, network: beforeNetwork } = req.params;
