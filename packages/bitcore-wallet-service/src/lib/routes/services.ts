@@ -339,6 +339,53 @@ export function registerServiceRoutes(router: express.Router, context: RouteCont
     });
   });
 
+  // Public, matching the metadata routes of every other swap and ramp
+  // provider here. No setPublicCache: these are POST, so nothing downstream
+  // stores the response, and the header would only imply a protection that
+  // isn't there. What bounds them is the pinned environment and the pinned
+  // chain filter in RangoService.
+  router.post('/v1/service/rango/supportedChains', (req, res) => {
+    respondWithPublicServer(req, res, context, server => {
+      return server.externalServices.rango.rangoGetSupportedChains(req);
+    });
+  });
+
+  router.post('/v1/service/rango/cryptoCurrencies', (req, res) => {
+    respondWithPublicServer(req, res, context, server => {
+      return server.externalServices.rango.rangoGetCryptoCurrencies(req);
+    });
+  });
+
+  router.post('/v1/service/rango/getSwapQuote', (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.rango.rangoGetSwapQuote(req);
+    });
+  });
+
+  router.post('/v1/service/rango/createSwapTx', (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.rango.rangoCreateSwapTx(req);
+    });
+  });
+
+  router.post('/v1/service/rango/getStatus', (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.rango.rangoGetStatus(req);
+    });
+  });
+
+  router.post('/v1/service/rango/isApproved', (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.rango.rangoIsApproved(req);
+    });
+  });
+
+  router.post('/v1/service/rango/reportFailure', (req, res) => {
+    respondWithAuthServer(req, res, context, server => {
+      return server.externalServices.rango.rangoReportFailure(req);
+    });
+  });
+
   router.post('/v1/service/sardine/quote', (req, res) => {
     respondWithAuthServer(req, res, context, server => {
       return server.externalServices.sardine.sardineGetQuote(req);
