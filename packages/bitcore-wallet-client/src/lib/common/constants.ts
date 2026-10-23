@@ -47,6 +47,8 @@ export const Constants = {
     'usdt'
   ],
 
+  NETWORKS: ['livenet', 'testnet', 'regtest'] as const,
+
   CHAINS: CWC.Constants.CHAINS,
   UTXO_CHAINS: CWC.Constants.UTXO_CHAINS,
   EVM_CHAINS: CWC.Constants.EVM_CHAINS,
@@ -71,3 +73,6 @@ export const Constants = {
   TSS_KEYGEN_VERSION: 1.2,
   TSS_SIGN_VERSION: 1.1
 };
+
+/** 'livenet' | 'testnet' | 'regtest' */
+export type Network = typeof Constants.NETWORKS[number];

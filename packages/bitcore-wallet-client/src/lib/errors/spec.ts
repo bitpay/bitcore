@@ -225,5 +225,9 @@ export const errorSpec: IErrorSpec[] = [
   {
     name: 'TSS_SESSION_EXPIRED',
     message: 'TSS session expired.'
+  },
+  {
+    name: 'TSS_JOIN_DELIVERY_PENDING',
+    message: 'TSS join delivery has not been published yet.'
   }
 ];

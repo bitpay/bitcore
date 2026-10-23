@@ -20,7 +20,7 @@ import {
 } from './model';
 import { TssKeyGenModel } from './model/tsskeygen';
 import { TssSigGenModel } from './model/tsssign';
-import type { ITssKeyMessageObject } from './model/tsskeygen';
+import type { ITssJoinDelivery, ITssKeyMessageObject } from './model/tsskeygen';
 import type { ITssSigMessageObject } from './model/tsssign';
 import type { Db } from 'mongodb';
 
@@ -1891,16 +1891,13 @@ export class Storage {
     );
   }
 
-  async storeTssKeyBwsJoinSecret({ id, secret }: { id: string; secret: string }) {
-    return this.db.collection(collections.TSS_KEYGEN).updateOne({
-      id
-    },
-    {
-      $set: {
-        bwsJoinSecret: secret
-      }
-    },
-    { upsert: false });
+  /** Replace the whole join delivery set of an existing session in one update. Never creates a session. */
+  async storeTssKeyJoinDelivery({ id, delivery }: { id: string; delivery: ITssJoinDelivery }) {
+    return this.db.collection(collections.TSS_KEYGEN).updateOne(
+      { id },
+      { $set: { bwsJoinDelivery: delivery } },
+      { upsert: false }
+    );
   }
 
   async fetchTssSigSession({ id }: { id: string }) {

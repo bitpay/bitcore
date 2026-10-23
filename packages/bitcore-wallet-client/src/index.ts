@@ -10,7 +10,8 @@ import { API } from './lib/api';
 export default API;
 
 export { API } from './lib/api';
-export type { Network, CreateWalletOpts, Status, Txp } from './lib/api';
+export type { CreateWalletOpts, Status, Txp } from './lib/api';
+export type { Network } from './lib/common';
 export { Credentials } from './lib/credentials';
 export { PayProV2 } from './lib/payproV2';
 export { PayPro } from './lib/paypro';
