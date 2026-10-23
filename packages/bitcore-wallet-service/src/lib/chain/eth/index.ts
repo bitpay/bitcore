@@ -23,6 +23,9 @@ function requireUncached(module) {
   return require(module);
 }
 
+// the effect type bitcore-node gives ERC20 transfers in tx events
+const ERC20_TRANSFER_EFFECT = 'ERC20:transfer';
+
 const Erc20Decoder = requireUncached('abi-decoder');
 Erc20Decoder.addABI(ERC20Abi);
 
@@ -613,7 +616,7 @@ export class EthChain implements IChain {
     if (tx.effects && tx.effects.length) {
       const multisigConfirm = tx.effects.findIndex(e => e.type === 'MULTISIG:confirmTransaction');
       const multisigSubmit = tx.effects.findIndex(e => e.type === 'MULTISIG:submitTransaction');
-      const erc20Transfer = tx.effects.findIndex(e => e.type === 'ERC20:transer');
+      const erc20Transfer = tx.effects.findIndex(e => e.type === ERC20_TRANSFER_EFFECT);
       const internalTransfer = tx.effects.findIndex(e => !e.type && !e.contractAddress);
 
       const exists = [multisigConfirm, multisigSubmit, erc20Transfer, internalTransfer].filter(i => i > -1);
@@ -625,7 +628,7 @@ export class EthChain implements IChain {
           multisigContractAddress = best.contractAddress;
           address = best.to;
           amount = best.amount;
-        } else if (best.type == 'ERC20:transfer') {
+        } else if (best.type == ERC20_TRANSFER_EFFECT) {
           tokenAddress = best.contractAddress;
           address = best.to;
           amount = best.amount;
