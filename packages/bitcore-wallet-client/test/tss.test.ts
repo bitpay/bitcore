@@ -1466,16 +1466,56 @@ describe('TSS', function() {
         creator.verifyDeliveryBindings(await sessionKeysOf(creator.id));
       });
 
-      it('should normalize equivalent public key encodings consistently', async function() {
-        const pub = pubKeyOf(inviteeKey);
-        const encodings = (hex: string) => [compressed(hex), uncompressed(hex), hex.toUpperCase()];
-        for (const retained of encodings(pub)) {
-          await creator.createJoinCode({ partyId: 1, partyPubKey: retained });
-          for (const creatorEnc of encodings(pubKeyOf(creatorKey))) {
-            for (const sessionEnc of encodings(pub)) {
-              creator.verifyDeliveryBindings([creatorEnc, sessionEnc]);
+      describe('equivalent public key encodings', function() {
+        this.timeout(30000);
+
+        const encodings: Record<string, (hex: string) => string> = {
+          compressed,
+          uppercase: hex => hex.toUpperCase(),
+          uncompressed
+        };
+
+        for (const [name, encode] of Object.entries(encodings)) {
+          it(`should register, retain, and deliver to a recipient given as ${name}`, async function() {
+            // Fresh keys: the session ID is deterministic, so reusing the beforeEach pair would collide
+            const keyA = new Key({ seedType: 'new' });
+            const keyB = new Key({ seedType: 'new' });
+            const tssA = mk(keyA);
+            const tssB = mk(keyB);
+            try {
+              await tssA.newKey({ m: 2, n: 2 });
+              const pub = pubKeyOf(keyB);
+              const code = await tssA.createJoinCode({ partyId: 1, partyPubKey: encode(pub) });
+
+              // BWS holds the canonical key rather than the caller's spelling
+              const session = await storage.fetchTssKeyGenSession({ id: tssA.id });
+              session.authPublicKeys[1].should.equal(compressed(pub));
+
+              await tssB.joinKey({ code });
+              tssB.partyId.should.equal(1);
+              // The local trust matches the registered key, whichever encoding was supplied
+              tssA.verifyDeliveryBindings(await sessionKeysOf(tssA.id));
+
+              // The intended participant joins, and the encrypted delivery reaches it
+              const errors = [];
+              tssA.on('error', e => errors.push(e));
+              tssB.on('error', e => errors.push(e));
+              const creatorWallet = new Promise<any>(r => tssA.once('wallet', r));
+              const recipientWallet = new Promise<any>(r => tssB.once('wallet', r));
+              tssA.subscribe({ timeout: 10, walletName: 'wallet', copayerName: 'creator' });
+              tssB.subscribe({ timeout: 10, copayerName: 'recipient' });
+              const [created, joined] = await Promise.all([creatorWallet, recipientWallet]);
+              joined.id.should.equal(created.id);
+              errors.should.deep.equal([]);
+              const stored = await new Promise<any>((resolve, reject) => {
+                storage.fetchWallet(created.id, (err, w) => err ? reject(err) : resolve(w));
+              });
+              stored.copayers.length.should.equal(2);
+            } finally {
+              tssA.unsubscribe();
+              tssB.unsubscribe();
             }
-          }
+          });
         }
       });
 
@@ -1485,6 +1525,20 @@ describe('TSS', function() {
         await assert.rejects(creator.createJoinCode({ partyId: 0, partyPubKey: pubKeyOf(inviteeKey) }), /partyId/);
         await assert.rejects(creator.createJoinCode({ partyId: 2, partyPubKey: pubKeyOf(inviteeKey) }), /partyId/);
         should.throw(() => creator.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(inviteeKey)]), /Missing trusted public key for party 1/);
+      });
+
+      it('should not retain trust when registration is rejected for a first invitation', async function() {
+        const realPost = Request.prototype.post;
+        sandbox.stub(Request.prototype, 'post').callsFake(function(this: Request, url: string, ...rest: any[]) {
+          if (url.endsWith('/register')) {
+            return Promise.reject(new Error('registration unavailable'));
+          }
+          return (realPost as any).call(this, url, ...rest);
+        });
+        await assert.rejects(creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) }), /registration unavailable/);
+        should.throw(() => creator.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(inviteeKey)]), /Missing trusted public key for party 1/);
+        const session = await storage.fetchTssKeyGenSession({ id: creator.id });
+        should.not.exist(session.authPublicKeys[1]);
       });
 
       it('should report missing bindings', function() {
@@ -1501,9 +1555,17 @@ describe('TSS', function() {
       });
 
       it('should replace the key when a join code is reissued for the same party', async function() {
+        // Before the recipient has enrolled, the creator can still correct a mistyped key
         await creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(otherKey) });
-        await creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
-        creator.verifyDeliveryBindings([pubKeyOf(creatorKey), pubKeyOf(inviteeKey)]);
+        const code = await creator.createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(inviteeKey) });
+        await invitee.joinKey({ code });
+
+        const keys = await sessionKeysOf(creator.id);
+        keys[1].should.equal(compressed(pubKeyOf(inviteeKey)));
+        keys[1].should.not.equal(compressed(pubKeyOf(otherKey)));
+        const session = await storage.fetchTssKeyGenSession({ id: creator.id });
+        session.authPublicKeys.should.not.include(compressed(pubKeyOf(otherKey)));
+        creator.verifyDeliveryBindings(keys);
       });
     });
 
@@ -2341,7 +2403,7 @@ describe('TSS', function() {
         (await decryptFor(1)).should.equal(secret);
       });
 
-      it('should not publish to a recipient key replaced after the first attempt', async function() {
+      it('should preserve the enrolled recipient after a rejected replacement and retry delivery', async function() {
         sandbox.spy(Client.prototype, 'createWallet');
         await runCeremony(2);
         const post = Request.prototype.post as sinon.SinonStub;
@@ -2357,16 +2419,23 @@ describe('TSS', function() {
         });
 
         await assert.rejects(tss[0].createWallet({ walletName: 'wallet', copayerName: 'creator' }), { name: 'bwc.ErrorCONNECTION_ERROR' });
-        // Between attempts the retained key for party 1 is replaced with an identity that never enrolled
+        // Once party 1 has enrolled, BWS refuses to register another key for it
         const impostor = new Key({ seedType: 'new' });
-        await tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(impostor) });
-
-        await assert.rejects(tss[0].createWallet({ walletName: 'wallet', copayerName: 'creator' }), { message: /party 1 does not match the trusted key/ });
-        deliveryPosts().length.should.equal(1);
-        createCalls().callCount.should.equal(1);
-        // The first attempt never reached BWS and the second was refused before encrypting, so nothing is addressed to the impostor
+        await assert.rejects(
+          tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(impostor) }),
+          { message: /^TSS_ROUNDS_ALREADY_STARTED:/ }
+        );
+        // The server key and the creator's retained key still agree on the original recipient
         const session = await storage.fetchTssKeyGenSession({ id: tss[0].id });
-        should.not.exist(session.bwsJoinDelivery);
+        session.authPublicKeys[1].should.equal(pubKeyOf(keys[1]));
+        tss[0].verifyDeliveryBindings([pubKeyOf(keys[0]), session.authPublicKeys[1]]);
+
+        const wallet = await tss[0].createWallet({ walletName: 'wallet', copayerName: 'creator' });
+        createCalls().callCount.should.equal(1);
+        const { wallet: created, secret } = await createCalls().returnValues[0];
+        wallet.id.should.equal(created.id);
+        deliveryPosts().length.should.equal(2);
+        (await decryptFor(1)).should.equal(secret);
       });
 
       it('should retry delivery after the DKG without polling rounds', async function() {
@@ -2452,8 +2521,22 @@ describe('TSS', function() {
         await runCeremony(2);
         const errors = [];
         tss[0].on('error', e => errors.push(e));
-        // The creator's retained key for party 1 no longer matches the key it enrolled with
-        await tss[0].createJoinCode({ partyId: 1, partyPubKey: pubKeyOf(new Key({ seedType: 'new' })) });
+        // A dishonest BWS reports a different request key for party 1 than the one the creator invited
+        const get = Request.prototype.get as sinon.SinonStub;
+        const realGet = get.wrappedMethod ?? get;
+        get.callsFake(async function(this: Request, url: string, ...rest) {
+          urls.push({ method: 'get', url });
+          const res = await realGet.call(this, url, ...rest);
+          if (!isCreatorRequest(this) || !/\/v1\/tss\/keygen\/[^/?]+\/0(\?|$)/.test(url)) return res;
+          const forged = pubKeyOf(new Key({ seedType: 'new' }));
+          return {
+            ...res,
+            body: {
+              ...res.body,
+              messages: res.body.messages.map(msg => msg.partyId === 1 ? { ...msg, publicKey: forged } : msg)
+            }
+          };
+        });
 
         await assert.rejects(tss[0].createWallet({ walletName: 'wallet', copayerName: 'creator' }), { message: /party 1 does not match the trusted key/ });
         createCalls().called.should.equal(false);

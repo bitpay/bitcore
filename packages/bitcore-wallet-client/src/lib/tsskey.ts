@@ -488,7 +488,7 @@ export class TssKeyGen extends EventEmitter {
     $.checkArgument(Number.isInteger(partyId) && partyId > 0 && partyId < this.n, 'partyId must be an integer between 1 and n - 1');
     const normalizedPubKey = normalizePubKey(partyPubKey, 'partyPubKey');
     const extra = params.extra || '';
-    await this.#request.post('/v1/tss/keygen/' + this.id + '/register', { partyId, partyPubKey });
+    await this.#request.post('/v1/tss/keygen/' + this.id + '/register', { partyId, partyPubKey: normalizedPubKey });
     const data = [this.id, partyId, this.chain, this.network, this.m, this.n, extra].join(':');
     const code = ECIES.encrypt({
       message: data,
