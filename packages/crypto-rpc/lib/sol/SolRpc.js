@@ -3,6 +3,7 @@ import { SolKit, SolanaProgram } from '@bitpay-labs/crypto-wallet-core';
 import { pipe } from '@solana/functional';
 import bs58 from 'bs58';
 import { SOL_ERROR_MESSAGES } from './error_messages.js';
+import { addressesByLookupTableAddress } from './lookup-tables.js';
 import { parseInstructions } from './transaction-parser.js';
 
 const {
@@ -10,6 +11,9 @@ const {
   System: SolSystem,
   Token: SolToken
 } = SolanaProgram;
+
+const transactionDecoder = SolKit.getTransactionDecoder();
+const compiledTransactionMessageDecoder = SolKit.getCompiledTransactionMessageDecoder();
 
 export class SolRpc {
   /**
@@ -470,13 +474,16 @@ export class SolRpc {
     const serializedTransaction = transaction[0];
     const base64Encoder = SolKit.getBase64Encoder();
     const transactionBytes = base64Encoder.encode(serializedTransaction);
-    const decodeRawTransactionParams = { rawTx: transactionBytes };
 
-    const { lookupTablesUsed, ...parsedTransaction } = await this.decodeRawTransaction(decodeRawTransactionParams);
+    // The response has the tx's slot and the accounts it loaded from lookup tables, so decoding doesn't fetch them again
+    const {
+      decoded: { lookupTablesUsed, ...parsedTransaction },
+      accountsLoaded
+    } = await this.#decodeTransaction({ rawTx: transactionBytes, slot, loadedAddresses: meta?.loadedAddresses });
     parsedTransaction.blockTime = Number(blockTime);
     parsedTransaction.slot = Number(slot);
 
-    if (lookupTablesUsed) {
+    if (lookupTablesUsed && !accountsLoaded) {
       const parsedTx = await this.rpc.getTransaction(SolKit.signature(txid), { ...this._versionedConfig, encoding: 'jsonParsed' }).send();
 
       return {
@@ -598,20 +605,37 @@ export class SolRpc {
    * // NOTE! decodeRawTransaction does not include transaction meta - it is available in getTransaction though, which wraps this method
    */
   async decodeRawTransaction({ rawTx }) {
+    const { decoded } = await this.#decodeTransaction({ rawTx });
+    return decoded;
+  }
+
+  /**
+   * @param {Object} params
+   * @param {Uint8Array|string} params.rawTx
+   * @param {bigint} [params.slot] - The tx's slot, if known
+   * @param {{ writable: string[], readonly: string[] }} [params.loadedAddresses] - The accounts the tx loaded from lookup tables, from its meta
+   * @returns {Promise<{ decoded: Object, accountsLoaded: boolean }>} accountsLoaded is true when the lookup-table accounts came from loadedAddresses
+   */
+  async #decodeTransaction({ rawTx, slot, loadedAddresses }) {
     if (typeof rawTx === 'string') {
       rawTx = Buffer.from(rawTx, 'base64');
     }
 
-    const transactionDecoder = SolKit.getTransactionDecoder();
     const decodedTransaction = transactionDecoder.decode(rawTx);
-
-    const compiledTransactionMessageDecoder = SolKit.getCompiledTransactionMessageDecoder();
     const compiledTransactionMessage = compiledTransactionMessageDecoder.decode(decodedTransaction.messageBytes);
     const decompileTransactionMessageConfig = {};
 
     let decompiledTransactionMessage;
+    let accountKeys = compiledTransactionMessage.staticAccounts;
     const lookupTablesUsed = 'addressTableLookups' in compiledTransactionMessage && compiledTransactionMessage.addressTableLookups !== undefined;
-    if (lookupTablesUsed) {
+    const loadedTables = lookupTablesUsed && loadedAddresses
+      ? addressesByLookupTableAddress(compiledTransactionMessage.addressTableLookups, loadedAddresses)
+      : null;
+    if (loadedTables) {
+      decompileTransactionMessageConfig.addressesByLookupTableAddress = loadedTables;
+      decompiledTransactionMessage = SolKit.decompileTransactionMessage(compiledTransactionMessage, decompileTransactionMessageConfig);
+      accountKeys = [...accountKeys, ...loadedAddresses.writable, ...loadedAddresses.readonly];
+    } else if (lookupTablesUsed) {
       try {
         decompiledTransactionMessage = await SolKit.decompileTransactionMessageFetchingLookupTables(compiledTransactionMessage, this.rpc);
       } catch (err) {
@@ -642,7 +666,7 @@ export class SolRpc {
 
     let status, confirmations;
     try {
-      const { status: retrievedStatus, confirmations: retrievedConfirmations } = await this.#getStatusAndConfirmations({ txid });
+      const { status: retrievedStatus, confirmations: retrievedConfirmations } = await this.#getStatusAndConfirmations({ txid, slot });
       status = retrievedStatus;
       confirmations = retrievedConfirmations;
     } catch {
@@ -663,7 +687,10 @@ export class SolRpc {
       output.lifetimeConstraint = { ...lifetimeConstraint };
     }
 
-    return { ...output, accountKeys: compiledTransactionMessage.staticAccounts, lookupTablesUsed };
+    return {
+      decoded: { ...output, accountKeys, lookupTablesUsed },
+      accountsLoaded: !!loadedTables
+    };
   }
 
   /**
@@ -747,16 +774,17 @@ export class SolRpc {
    * 
    * @param {Object} params - The parameters for the function.
    * @param {string} params.txid - The transaction ID to get confirmations for.
+   * @param {bigint} [params.slot] - The tx's slot, if known; used when the status has none
    */
-  async #getStatusAndConfirmations({ txid }) {
+  async #getStatusAndConfirmations({ txid, slot }) {
     if (!this.isBase58(txid)) {
       throw new Error('Invalid txid');
     }
 
-    const status = await this.#getSignatureStatusWithRetry({ txid });
+    const status = await this.#getSignatureStatus({ txid });
     let confirmations = Number(status.confirmations);
     if (!confirmations) {
-      confirmations = await this.getConfirmations({ txid }) || 0;
+      confirmations = await this.#getConfirmationsFromTip({ txid, slot: status.slot ?? slot }) || 0;
     }
 
     return {
@@ -777,14 +805,24 @@ export class SolRpc {
       throw new Error('Invalid txid');
     }
 
-    const status = await this.#getSignatureStatusWithRetry({ txid });
+    const status = await this.#getSignatureStatus({ txid });
     if (status?.confirmations) {
       return Number(status.confirmations);
     }
+    return this.#getConfirmationsFromTip({ txid, slot: status?.slot });
+  }
 
+  /**
+   * Counts confirmations as the confirmed tip minus the tx's slot, fetching the tx when its slot isn't known.
+   * @param {Object} params
+   * @param {string} params.txid
+   * @param {bigint} [params.slot]
+   * @returns {Promise<number|null>} null if the tx isn't found
+   */
+  async #getConfirmationsFromTip({ txid, slot }) {
     const latestSlot = await this.rpc.getSlot({ commitment: 'confirmed' }).send();
-    if (status?.slot) {
-      return Number(latestSlot - status.slot);
+    if (slot) {
+      return Number(latestSlot - slot);
     }
 
     const tx = await this.rpc.getTransaction(SolKit.signature(txid), this._versionedConfig).send();
@@ -903,25 +941,17 @@ export class SolRpc {
   }
 
   /**
-   * 
+   * The validator checks its recent status cache first and searches the ledger only for a tx that isn't there.
    * @param {string} args.txid 
-   * @returns 
+   * @returns {Promise<Object|null>} null if the tx isn't found
    */
-  async #getSignatureStatusWithRetry({ txid }) {
+  async #getSignatureStatus({ txid }) {
     if (!this.isBase58(txid)) {
       throw new Error('Invalid txid');
     }
 
-    const { value } = await this.rpc.getSignatureStatuses([SolKit.signature(txid)]).send();
-    let statuses = value;
-    if (value.length === 0 || !value[0]) {
-      const { value } = await this.rpc.getSignatureStatuses([SolKit.signature(txid)], { searchTransactionHistory: true }).send();
-      if (value.length === 0 || !value[0]) {
-        return null;
-      }
-      statuses = value;
-    }
-    return statuses[0];
+    const { value } = await this.rpc.getSignatureStatuses([SolKit.signature(txid)], { searchTransactionHistory: true }).send();
+    return value[0] || null;
   }
 
   /**
