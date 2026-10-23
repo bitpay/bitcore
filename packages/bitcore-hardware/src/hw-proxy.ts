@@ -9,7 +9,14 @@ export type Vendor = 'ledger' | 'burner';
 export type Connection = 'usb' | 'speculos' | 'nfc';
 
 export class HardwareProxy implements Hardware {
-  devices: Record<Vendor, Record<string, Hardware>> | undefined;
+  devices: Record<Vendor, Record<string, Hardware>> = {
+    ledger: {},
+    burner: {}
+  };;
+  private vendorClasses: Record<Vendor, new (config?: any) => Hardware> = {
+    ledger: Ledger,
+    burner: Burner
+  };
 
   /**
    * Create and connect to every device.
@@ -22,16 +29,21 @@ export class HardwareProxy implements Hardware {
   async connect() {
     // Release any existing sessions so they don't keep talking to the devices
     await this.disconnect();
-    this.devices = {
-      ledger: {
-        speculos: new Ledger({ connection: 'speculos' }),
-        // usb: new Ledger({ connection: 'usb' }), // currently busted...
-      },
-      burner: {
-        nfc: new Burner(),
+    await this.tryCreateAndConnect('ledger', 'speculos');
+    await this.tryCreateAndConnect('ledger', 'usb');
+    await this.tryCreateAndConnect('burner', 'nfc');
+  }
+
+  async tryCreateAndConnect(vendor: Vendor, connection: Connection) {
+    try {
+      this.devices[vendor][connection] = new this.vendorClasses[vendor]({ connection });
+      await this.devices[vendor][connection].connect();
+    } catch {
+      if (this.devices[vendor][connection]) {
+        await this.devices[vendor][connection].disconnect();
+        delete this.devices[vendor][connection];
       }
-    };
-    return this.runParallel('connect');
+    }
   }
 
   /**
@@ -42,7 +54,11 @@ export class HardwareProxy implements Hardware {
    * ```
    */
   async disconnect() {
-    return this.runParallel('disconnect');
+    await this.runParallel('disconnect');
+    this.devices = {
+      ledger: {},
+      burner: {}
+    };
   }
 
   /**
