@@ -1,4 +1,5 @@
-import { Transactions, Utils, Validation, Web3 } from '@bitpay-labs/crypto-wallet-core';
+import util from 'util';
+import { Constants as CWCConstants, Transactions, Utils, Validation, Web3 } from '@bitpay-labs/crypto-wallet-core';
 import _ from 'lodash';
 import { IWallet } from 'src/lib/model';
 import { IAddress } from 'src/lib/model/address';
@@ -170,121 +171,134 @@ export class EthChain implements IChain {
 
   checkScriptOutput(_output) { }
 
-  getFee(server, wallet, opts) {
-    return new Promise(resolve => {
-      server._getFeePerKb(wallet, opts, async (err, inFeePerKb) => {
-        let feePerKb = inFeePerKb;
-        let gasPrice = inFeePerKb;
-        let maxGasFee;
-        let priorityGasFee;
-        const { from, txType, priorityFeePercentile, gasLimitBuffer } = opts;
-        const { coin, network, chain } = wallet;
-        let inGasLimit = 0; // Per recepient gas limit
-        let gasLimit = 0; // Gas limit for all recepients. used for contract interactions that rollup recepients
-        let fee = 0;
-        const defaultGasLimit = this.getDefaultGasLimit(opts);
-        const outputAddresses = []; // Parameter for MuliSend contract
-        const outputAmounts: bigint[] = []; // Parameter for MuliSend contract
-        let totalValue = 0n; // Parameter for MuliSend contract
-        logger.info(`getFee for address ${from} on network ${network} and chain ${chain}`);
-        logger.info('getFee.opts: %o', { from, txType, priorityFeePercentile, gasLimitBuffer });
-        logger.info(`[${from}] Add gas limit buffer?: ${!!gasLimitBuffer}`);
-        for (const output of opts.outputs) {
-          // Multisend txs build contract fn parameters (addresses, amounts) and bypass output level gas estimations
-          if (opts.multiSendContractAddress) {
-            outputAddresses.push(output.toAddress);
-            outputAmounts.push(BigInt(output.amount));
-            if (!opts.tokenAddress) {
-              totalValue += BigInt(output.amount);
-            }
-            // Used as a fallback value if estimateGas fails for multisend
-            inGasLimit += output.gasLimit ? output.gasLimit : defaultGasLimit;
-            continue;
-          }
-          // Estimate a standard transfer
-          if (!output.gasLimit) {
-            try {
-              const to = opts.payProUrl
-                ? output.toAddress
-                : opts.tokenAddress
-                  ? opts.tokenAddress
-                  : opts.multisigContractAddress
-                    ? opts.multisigContractAddress
-                    : output.toAddress;
-              const value = opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount;
-              // output.gasLimit used as the gasLimit in getBitcoreTx for non multisend transactions
-              const gasLimitEstimate = await server.estimateGas({
-                coin,
-                chain: this.chain,
-                network,
-                from,
-                to,
-                value,
-                data: output.data,
-                gasPrice
-              });
-              output.gasLimit = gasLimitEstimate || defaultGasLimit;
-            } catch {
-              output.gasLimit = defaultGasLimit;
-            }
-          }
-          inGasLimit += output.gasLimit;
-          logger.info(`[${from}][${output?.toAddress || opts?.tokenAddress}] Output level gas limit: ${output.gasLimit}`);
-          // Add gas Limit buffer to output level gasLimit
-          if (gasLimitBuffer) {
-            const gasBuffer = Math.ceil(output.gasLimit * (gasLimitBuffer / 100));
-            output.gasLimit += gasBuffer;
-            inGasLimit += gasBuffer;
-            logger.info(`[${from}][${output?.toAddress || opts?.tokenAddress}] Output gas limit with buffer: ${output.gasLimit}`);
-          }
-          if (_.isNumber(opts.fee)) {
-            // This is used for sendmax
-            gasPrice = feePerKb = Number((opts.fee / (inGasLimit || defaultGasLimit)).toFixed());
-          }
-          fee += feePerKb * output.gasLimit;
+  async getFee(server, wallet, opts) {
+    const hasType2FeeOverride = opts.maxGasFee != null || opts.priorityGasFee != null;
+    let { maxGasFee, priorityGasFee } = opts;
+    if (hasType2FeeOverride) {
+      const chain = wallet.chain || wallet.coin;
+      // Keep overrides consistent with CWC's chain-specific minimum priority fee.
+      const minimum = CWCConstants.FEE_MINIMUMS[chain.toUpperCase()]?.priority ?? 0;
+      if (priorityGasFee < minimum) {
+        throw new ClientError(`priorityGasFee must be at least ${minimum} wei for ${chain}`);
+      }
+    }
+    // Use the explicit rate for both construction and the fee reserved from the wallet balance.
+    const feeOpts = opts.gasPrice != null || hasType2FeeOverride
+      ? { ...opts, feePerKb: opts.gasPrice ?? maxGasFee }
+      : opts;
+    // Fixed fees are converted to a gas price below, once the gas limits are known.
+    const fixedFee = Common.Utils.isNumber(opts.fee) ? Number(opts.fee) : undefined;
+    const inFeePerKb = fixedFee != null
+      ? undefined
+      : await util.promisify(server._getFeePerKb).call(server, wallet, feeOpts);
+    let feePerKb = inFeePerKb;
+    let gasPrice = inFeePerKb;
+    const { from, txType, priorityFeePercentile, gasLimitBuffer } = opts;
+    const { coin, network, chain } = wallet;
+    let inGasLimit = 0; // Per recepient gas limit
+    let gasLimit = 0; // Gas limit for all recepients. used for contract interactions that rollup recepients
+    let fee = 0;
+    const defaultGasLimit = this.getDefaultGasLimit(opts);
+    const outputAddresses = []; // Parameter for MuliSend contract
+    const outputAmounts: bigint[] = []; // Parameter for MuliSend contract
+    let totalValue = 0n; // Parameter for MuliSend contract
+    logger.info(`getFee for address ${from} on network ${network} and chain ${chain}`);
+    logger.info('getFee.opts: %o', { from, txType, priorityFeePercentile, gasLimitBuffer });
+    logger.info(`[${from}] Add gas limit buffer?: ${!!gasLimitBuffer}`);
+    for (const output of opts.outputs) {
+      // Multisend txs build contract fn parameters (addresses, amounts) and bypass output level gas estimations
+      if (opts.multiSendContractAddress) {
+        outputAddresses.push(output.toAddress);
+        outputAmounts.push(BigInt(output.amount));
+        if (!opts.tokenAddress) {
+          totalValue += BigInt(output.amount);
         }
-        // gasLimit == sum of internal gasLimits (for non Multisend)
-        gasLimit = inGasLimit;
-        logger.info(`[${from}] Current top level gas limit: ${gasLimit}`);
-        if (opts.multiSendContractAddress) {
-          // Calculate gas limit for top level of txp based on multisend tx
-          let _gasLimit;
-          try {
-            const data = this.encodeContractParameters(
-              Constants.BITPAY_CONTRACTS.MULTISEND,
-              { addresses: outputAddresses, amounts: outputAmounts },
-              opts
-            );
+        // Used as a fallback value if estimateGas fails for multisend
+        inGasLimit += output.gasLimit ? output.gasLimit : defaultGasLimit;
+        continue;
+      }
+      // Estimate a standard transfer
+      if (!output.gasLimit) {
+        try {
+          const to = opts.payProUrl
+            ? output.toAddress
+            : opts.tokenAddress
+              ? opts.tokenAddress
+              : opts.multisigContractAddress
+                ? opts.multisigContractAddress
+                : output.toAddress;
+          const value = opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount;
+          // output.gasLimit used as the gasLimit in getBitcoreTx for non multisend transactions
+          const gasLimitEstimate = await server.estimateGas({
+            coin,
+            chain: this.chain,
+            network,
+            from,
+            to,
+            value,
+            data: output.data,
+            gasPrice
+          });
+          output.gasLimit = gasLimitEstimate || defaultGasLimit;
+        } catch {
+          output.gasLimit = defaultGasLimit;
+        }
+      }
+      inGasLimit += output.gasLimit;
+      logger.info(`[${from}][${output?.toAddress || opts?.tokenAddress}] Output level gas limit: ${output.gasLimit}`);
+      // Add gas Limit buffer to output level gasLimit
+      if (gasLimitBuffer) {
+        const gasBuffer = Math.ceil(output.gasLimit * (gasLimitBuffer / 100));
+        output.gasLimit += gasBuffer;
+        inGasLimit += gasBuffer;
+        logger.info(`[${from}][${output?.toAddress || opts?.tokenAddress}] Output gas limit with buffer: ${output.gasLimit}`);
+      }
+      if (fixedFee != null) {
+        // This is used for sendmax
+        gasPrice = feePerKb = Number((fixedFee / (inGasLimit || defaultGasLimit)).toFixed());
+      }
+      fee += feePerKb * output.gasLimit;
+    }
+    // gasLimit == sum of internal gasLimits (for non Multisend)
+    gasLimit = inGasLimit;
+    logger.info(`[${from}] Current top level gas limit: ${gasLimit}`);
+    if (opts.multiSendContractAddress) {
+      // Calculate gas limit for top level of txp based on multisend tx
+      let _gasLimit;
+      try {
+        const data = this.encodeContractParameters(
+          Constants.BITPAY_CONTRACTS.MULTISEND,
+          { addresses: outputAddresses, amounts: outputAmounts },
+          opts
+        );
 
-            _gasLimit = await server.estimateGas({
-              coin,
-              chain: this.chain,
-              network,
-              from,
-              to: opts.multiSendContractAddress,
-              value: totalValue.toString(),
-              data,
-              gasPrice
-            });
-            logger.info(`[${from}] Estimated multisend gas limit: ${_gasLimit}`);
-          } catch (error) {
-            logger.error('Error estimating gas for MultiSend contract: %o', error);
-          }
-          // Add gas limit buffer to top level gas limit
-          const buffer = gasLimitBuffer ? gasLimitBuffer / 100 : Defaults.MS_GAS_LIMIT_BUFFER_PERCENT;
-          // If gas estimation fails, fallback to sum of internal gasLimits
-          gasLimit = _gasLimit || gasLimit;
-          gasLimit += Math.ceil(gasLimit * buffer); // add gas limit buffer 
-          fee += feePerKb * gasLimit;
-          logger.info(`[${from}] Top level gas limit with buffer: ${gasLimit}`);
-        }
-        if (Number(txType) === 2) {
-          maxGasFee = await server.estimateFee({ network, chain: wallet.chain || coin, txType: 2 });
-          priorityGasFee = await server.estimatePriorityFee({ network, chain: wallet.chain || coin, percentile: priorityFeePercentile || 15 });
-        }
-        return resolve({ feePerKb, gasPrice, gasLimit, maxGasFee, priorityGasFee, fee });
-      });
-    });
+        _gasLimit = await server.estimateGas({
+          coin,
+          chain: this.chain,
+          network,
+          from,
+          to: opts.multiSendContractAddress,
+          value: totalValue.toString(),
+          data,
+          gasPrice
+        });
+        logger.info(`[${from}] Estimated multisend gas limit: ${_gasLimit}`);
+      } catch (error) {
+        logger.error('Error estimating gas for MultiSend contract: %o', error);
+      }
+      // Add gas limit buffer to top level gas limit
+      const buffer = gasLimitBuffer ? gasLimitBuffer / 100 : Defaults.MS_GAS_LIMIT_BUFFER_PERCENT;
+      // If gas estimation fails, fallback to sum of internal gasLimits
+      gasLimit = _gasLimit || gasLimit;
+      gasLimit += Math.ceil(gasLimit * buffer); // add gas limit buffer
+      fee += feePerKb * gasLimit;
+      logger.info(`[${from}] Top level gas limit with buffer: ${gasLimit}`);
+    }
+    if (Number(txType) === 2 && !hasType2FeeOverride) {
+      maxGasFee = await server.estimateFee({ network, chain: wallet.chain || coin, txType: 2 });
+      priorityGasFee = await server.estimatePriorityFee({ network, chain: wallet.chain || coin, percentile: priorityFeePercentile || 15 });
+    }
+    return { feePerKb, gasPrice, gasLimit, maxGasFee, priorityGasFee, fee };
   }
 
   isPrePublishRawBound(txp: TxProposal) {
