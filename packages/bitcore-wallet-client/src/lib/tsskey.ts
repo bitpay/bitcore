@@ -333,11 +333,17 @@ function readKeygenSessionParams(keygenSession: string, requestPrivKey: BitcoreL
   }
 }
 
+/**
+ * One local participant in one TSS key-generation ceremony. Use a separate instance for each participant and ceremony.
+ * Call either newKey() (creator) or joinKey() (recipient) once. After initialization starts, even a failed start requires
+ * a fresh instance: BWS may already have accepted it. Session restoration remains available for recovery and rollback.
+ */
 export class TssKeyGen extends EventEmitter {
   #request: Request;
   #key: Key;
   #xPrivKey: string;
   #keygen: ECDSA.KeyGen;
+  #initializationState: 'unused' | 'initializing' | 'in-use' = 'unused';
   #seed: string;
   #credentials: Credentials;
   #requestPrivateKey: BitcoreLib.PrivateKey;
@@ -397,6 +403,7 @@ export class TssKeyGen extends EventEmitter {
 
   /**
    * Initiate a new Threshold Signature Scheme key generation session
+   * Only valid on an unused instance; cannot be combined with joinKey() on the same instance.
    * @returns {Promise<TssKeyGen>}
    */
   async newKey(params: {
@@ -414,6 +421,7 @@ export class TssKeyGen extends EventEmitter {
      */
     password?: string;
   }): Promise<TssKeyGen> {
+    this.#assertUnused();
     const { m, n, password } = params;
     const keygen = new ECDSA.KeyGen({
       n,
@@ -422,16 +430,25 @@ export class TssKeyGen extends EventEmitter {
       seed: this.#seed,
       authKey: this.#credentials.requestPrivKey
     });
+    this.#initializationState = 'initializing';
     this.id = BitcoreLib.crypto.Hash.sha256sha256(this.#seed).toString('hex');
     this.m = parseInt(m as string);
     this.n = parseInt(n as string);
     this.partyId = 0;
     this.#createdWallet = undefined;
 
-    const msg = await keygen.initJoin();
-    await this.#request.post('/v1/tss/keygen/' + this.id, { message: msg, n, password, version: TSS_KEYGEN_VERSION });
-    this.#keygen = keygen;
-    return this;
+    try {
+      const msg = await keygen.initJoin();
+      await this.#request.post('/v1/tss/keygen/' + this.id, { message: msg, n, password, version: TSS_KEYGEN_VERSION });
+      this.#keygen = keygen;
+      return this;
+    } finally {
+      this.#initializationState = 'in-use';
+    }
+  }
+
+  #assertUnused(): void {
+    $.checkState(this.#initializationState === 'unused', 'TssKeyGen initialization already started. Use a new instance for each participant and ceremony.');
   }
 
   /**
@@ -558,6 +575,7 @@ export class TssKeyGen extends EventEmitter {
      */
     creatorPubKey?: string;
   }): Promise<TssKeyGen> {
+    this.#assertUnused();
     let { password } = params;
     const { id, partyId, chain, network, m, n, extra, creatorPubKey } = this.#readJoinCode(params);
     const authKey = this.#credentials.requestPrivKey;
@@ -570,6 +588,7 @@ export class TssKeyGen extends EventEmitter {
       authKey
     });
 
+    this.#initializationState = 'initializing';
     this.#keygen = keygen;
     this.id = id;
     this.chain = chain;
@@ -581,10 +600,14 @@ export class TssKeyGen extends EventEmitter {
     this.#recipientKeys.clear();
     this.#createdWallet = undefined;
 
-    const msg = await keygen.initJoin();
-    password = password || extra;
-    await this.#request.post('/v1/tss/keygen/' + this.id, { message: msg, password, version: TSS_KEYGEN_VERSION });
-    return this;
+    try {
+      const msg = await keygen.initJoin();
+      password = password || extra;
+      await this.#request.post('/v1/tss/keygen/' + this.id, { message: msg, password, version: TSS_KEYGEN_VERSION });
+      return this;
+    } finally {
+      this.#initializationState = 'in-use';
+    }
   }
 
   /**
@@ -730,20 +753,29 @@ export class TssKeyGen extends EventEmitter {
      */
     trusted?: RestoreTrustedInputs;
   }): Promise<TssKeyGen> {
+    $.checkState(this.#initializationState !== 'initializing', 'TssKeyGen initialization is in progress. Wait for it to finish before restoring a session.');
     const { session, trusted } = params;
     // Everything is validated before any state is replaced, so a failed restore changes nothing.
     const { restored, keygenSession, retained } = this.#readSession(session);
     const bindings = this.#applyTrustedInputs(trusted, restored, retained);
 
-    const keygen = await ECDSA.KeyGen.restore({ session: keygenSession, authKey: this.#credentials.requestPrivKey });
-    this.id = restored.id;
-    this.m = restored.m;
-    this.n = restored.n;
-    this.partyId = restored.partyId;
-    this.#keygen = keygen;
-    this.#creatorPubKey = bindings.creatorPubKey;
-    this.#recipientKeys = bindings.recipientKeys;
-    this.#createdWallet = undefined;
+    const previousState = this.#initializationState;
+    this.#initializationState = 'initializing';
+    try {
+      const keygen = await ECDSA.KeyGen.restore({ session: keygenSession, authKey: this.#credentials.requestPrivKey });
+      this.id = restored.id;
+      this.m = restored.m;
+      this.n = restored.n;
+      this.partyId = restored.partyId;
+      this.#keygen = keygen;
+      this.#creatorPubKey = bindings.creatorPubKey;
+      this.#recipientKeys = bindings.recipientKeys;
+      this.#createdWallet = undefined;
+    } catch (err) {
+      this.#initializationState = previousState;
+      throw err;
+    }
+    this.#initializationState = 'in-use';
     return this;
   }
 
