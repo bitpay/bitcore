@@ -606,30 +606,30 @@ export class TssKeyGen extends EventEmitter {
 
     const authKey = this.#credentials.requestPrivKey;
     let senderKey: string;
-    let decrypted: Buffer;
-    if (opts?.noKey) {
-      // A noKey code carries no sender key, so the caller must supply the creator's key from a trusted exchange.
-      if (!expectedCreatorKey) {
-        throw new Error('creatorPubKey is required for a join code created with noKey');
-      }
-      senderKey = expectedCreatorKey;
-      decrypted = ECIES.decrypt({ payload: code, privateKey: authKey, publicKey: senderKey });
-    } else {
-      senderKey = normalizePubKey(ECIES.readSenderPublicKey(code));
-      decrypted = ECIES.decrypt({ payload: code, privateKey: authKey });
-    }
-
+    let decrypted: Buffer | undefined;
     try {
+      if (opts?.noKey) {
+      // A noKey code carries no sender key, so the caller must supply the creator's key from a trusted exchange.
+        if (!expectedCreatorKey) {
+          throw new Error('creatorPubKey is required for a join code created with noKey');
+        }
+        senderKey = expectedCreatorKey;
+        decrypted = ECIES.decrypt({ payload: code, privateKey: authKey, publicKey: senderKey });
+      } else {
+        senderKey = normalizePubKey(ECIES.readSenderPublicKey(code));
+        decrypted = ECIES.decrypt({ payload: code, privateKey: authKey });
+      }
+
       if (expectedCreatorKey && senderKey !== expectedCreatorKey) {
         throw new Error('Join code was not issued by the expected creator key');
       }
 
       // Parsing needs strings, which cannot be wiped. The decrypted buffer is zeroed below.
-      const [id, partyId, chain, network, m, n, ...more] = decrypted.toString().split(':');
+      const [id, partyId, chain, network, m, n, ...more] = (decrypted as Buffer).toString().split(':');
       assertValidJoinCode({ id, partyId, chain, network, m, n });
       return { id, partyId, chain, network, m, n, extra: more.join(':'), creatorPubKey: senderKey };
     } finally {
-      decrypted.fill(0);
+      decrypted?.fill(0);
     }
   }
 
