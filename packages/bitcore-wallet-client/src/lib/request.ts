@@ -21,6 +21,14 @@ export interface RequestResponse<ResponseBody = any, ResponseHeader = any> {
   header: ResponseHeader;
 };
 
+// Keep transport details separate from the errors callers already receive.
+const requestErrorStatuses = new WeakMap<object, number>();
+
+/** HTTP status of a failed request, without changing its error's class or properties. */
+export function getRequestErrorStatus(err: unknown): number | undefined {
+  return err && typeof err === 'object' ? requestErrorStatuses.get(err) : undefined;
+}
+
 /**
  * Whether a request failure says nothing about the request itself (the connection, a gateway or a server fault; see the
  * status mapping in `doRequest`), so sending the same request again can succeed.
@@ -152,6 +160,7 @@ export class Request<CredT = Credentials> {
 
     r.timeout(this.timeout);
 
+    let responseStatus: number | undefined;
     try {
       const retval = await new Promise<RequestResponse<ResBodyT>>((resolve, reject) => {
         r.end((err, res) => {
@@ -159,6 +168,7 @@ export class Request<CredT = Credentials> {
             return reject(new Errors.CONNECTION_ERROR());
           }
 
+          responseStatus = res.status;
           if (res.body)
             log.debug(util.inspect(res.body, { depth: 10 }));
 
@@ -197,6 +207,9 @@ export class Request<CredT = Credentials> {
       if (cb) cb(null, retval.body, retval.header);
       return retval;
     } catch (err) {
+      if (responseStatus !== undefined && err && typeof err === 'object') {
+        requestErrorStatuses.set(err, responseStatus);
+      }
       if (cb) { cb(err); return {} as RequestResponse; }
       throw err;
     }

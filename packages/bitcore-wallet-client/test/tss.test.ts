@@ -15,7 +15,7 @@ import fs from 'fs';
 import path from 'path';
 import { ECIES, utils as TssUtils } from '@bitpay-labs/bitcore-tss';
 import { Credentials as RealCredentials } from '../src/lib/credentials';
-import { Request } from '../src/lib/request';
+import { Request, getRequestErrorStatus } from '../src/lib/request';
 import { BitcoreLib, Deriver } from '@bitpay-labs/crypto-wallet-core';
 import { TssKeyGen, TssKey, type RestoreTrustedInputs } from '../src/lib/tsskey';
 import { decryptJoinDelivery, encryptJoinDelivery } from '../src/lib/tssdelivery';
@@ -2334,6 +2334,46 @@ describe('TSS', function() {
     });
 
     describe('delivery retries', function() {
+      for (const afterWrite of [false, true]) {
+        it(`should retry publication after a BWS HTTP 500 ${afterWrite ? 'after' : 'before'} storing delivery`, async function() {
+          sandbox.spy(Client.prototype, 'createWallet');
+          sandbox.spy(Client.prototype, 'joinWallet');
+          await runCeremony(2);
+
+          const store = storage.storeTssKeyJoinDelivery.bind(storage);
+          let failed = false;
+          sandbox.stub(storage, 'storeTssKeyJoinDelivery').callsFake(async function(params) {
+            if (!failed) {
+              failed = true;
+              if (afterWrite) await store(params);
+              throw new Error('MongoNetworkError: temporary database connection loss');
+            }
+            return store(params);
+          });
+
+          const errors = [];
+          tss[0].on('error', e => errors.push(e));
+          tss[1].on('error', () => {});
+          const wallets = Promise.all(tss.map(t => nextEvent(t, 'wallet')));
+          const stopped = new Promise<never>((_, reject) => {
+            tss[0].once('unsubscribe', () => reject(new Error('Creator stopped before retrying publication')));
+            tss[1].once('unsubscribe', () => reject(new Error('Recipient stopped before joining')));
+          });
+          tss[0].subscribe({ timeout: 10, walletName: 'wallet', copayerName: 'creator' });
+          tss[1].subscribe({ timeout: 10, copayerName: 'recipient' });
+          const [created, joined] = await Promise.race([wallets, stopped]);
+
+          failed.should.equal(true);
+          errors.filter(e => getRequestErrorStatus(e) === 500).length.should.equal(1);
+          createCalls().callCount.should.equal(1);
+          (Client.prototype.joinWallet as sinon.SinonSpy).callCount.should.equal(1);
+          deliveryPosts().length.should.equal(2);
+          joined.id.should.equal(created.id);
+          const { secret } = await createCalls().returnValues[0];
+          (await decryptFor(1)).should.equal(secret);
+        });
+      }
+
       it('should republish the same wallet\'s secret after a lost publication response, without creating another wallet', async function() {
         sandbox.spy(Client.prototype, 'createWallet');
         await runCeremony(2);
@@ -2821,6 +2861,31 @@ describe('TSS', function() {
     });
 
     describe('recoverable failures', function() {
+      it('should retry the delivery GET after a BWS HTTP 500 and join the existing wallet', async function() {
+        await setup(2);
+        const getDelivery = BwsTssKeyGen.getJoinDelivery.bind(BwsTssKeyGen);
+        let failed = false;
+        sandbox.stub(BwsTssKeyGen, 'getJoinDelivery').callsFake(async function(params) {
+          if (!failed) {
+            failed = true;
+            throw new Error('MongoNetworkError: temporary database connection loss');
+          }
+          return getDelivery(params);
+        });
+        const wallets = Promise.all(tss.map(t => nextEvent(t, 'wallet')));
+        const stopped = new Promise<never>((_, reject) => {
+          tss[1].once('unsubscribe', () => reject(new Error('Recipient stopped before retrying delivery')));
+        });
+        subscribe();
+        const [created, joined] = await Promise.race([wallets, stopped]);
+
+        failed.should.equal(true);
+        errors[1].filter(e => getRequestErrorStatus(e) === 500).length.should.equal(1);
+        createCalls().callCount.should.equal(1);
+        joinCalls().callCount.should.equal(1);
+        joined.id.should.equal(created.id);
+      });
+
       it('should poll again after a transient failure of the delivery GET', async function() {
         await setup(2);
         const get = Request.prototype.get as sinon.SinonStub;

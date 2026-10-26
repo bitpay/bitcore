@@ -6,7 +6,7 @@ import { Constants, Encryption, type Network, Utils } from './common';
 import { Credentials } from './credentials';
 import { Errors } from './errors';
 import { ExportedKey, Key, KeyAlgorithm, PasswordMaybe } from './key';
-import { Request, RequestResponse, isTransientRequestError } from './request';
+import { Request, RequestResponse, getRequestErrorStatus, isTransientRequestError } from './request';
 import { JOIN_DELIVERY_VERSION, decryptJoinDelivery, encryptJoinDelivery, normalizePubKey } from './tssdelivery';
 
 const $ = BitcoreLib.util.preconditions;
@@ -16,6 +16,13 @@ const { TSS_KEYGEN_VERSION } = Constants;
 /** Marks an exported session as the wrapper format. A legacy export starts with the session ID, which is never this. */
 const SESSION_WRAPPER_PREFIX = 'tsskeygen.1.';
 const SESSION_WRAPPER_VERSION = 1;
+
+/** Only used for delivery publication and reads that are safe to repeat after a server failure. */
+function isRetryableDeliveryRequestError(err: unknown): boolean {
+  // isTransientError handles all specific rejections from Request.doRequest
+  // 500 errors from BWS with bodies are storable/retrievable and considered retryable
+  return getRequestErrorStatus(err) === 500 || isTransientRequestError(err);
+}
 
 export interface ITssKeyGenConstructorParams {
   /**
@@ -1137,7 +1144,7 @@ export class TssKeyGen extends EventEmitter {
     try {
       recipientKeys = await this.#checkSessionKeys();
     } catch (err) {
-      throw isTransientRequestError(err) ? err : this.#stopOn(err);
+      throw isRetryableDeliveryRequestError(err) ? err : this.#stopOn(err);
     }
 
     if (!this.#createdWallet) {
@@ -1249,7 +1256,7 @@ export class TssKeyGen extends EventEmitter {
     try {
       await this.#request.post(`/v1/tss/keygen/${this.id}/join-delivery`, { version: JOIN_DELIVERY_VERSION, records });
     } catch (err) {
-      throw isTransientRequestError(err) ? err : this.#stopOn(err);
+      throw isRetryableDeliveryRequestError(err) ? err : this.#stopOn(err);
     }
   }
 
@@ -1320,7 +1327,7 @@ export class TssKeyGen extends EventEmitter {
     try {
       ({ body: delivery } = await this.#request.get(`/v1/tss/keygen/${this.id}/join-delivery`) as RequestResponse);
     } catch (err) {
-      throw (err instanceof Errors.TSS_JOIN_DELIVERY_PENDING || isTransientRequestError(err)) ? err : this.#stopOn(err);
+      throw (err instanceof Errors.TSS_JOIN_DELIVERY_PENDING || isRetryableDeliveryRequestError(err)) ? err : this.#stopOn(err);
     }
 
     try {
