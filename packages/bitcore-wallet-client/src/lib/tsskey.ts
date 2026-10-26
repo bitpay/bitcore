@@ -201,6 +201,8 @@ export class TssKey extends Key implements ITssKey {
  * Parse and validate the ceremony fields of a decrypted join code. A correctly encrypted code is not necessarily a well-formed one,
  * and its fields become ceremony state and (via the creator key) trusted delivery state.
  * Fields may be undefined if the code had too few of them.
+ * 
+ * number fields m, n, and partyId are confirmed ints and pairwise-consistent
  */
 function parseJoinCodeFields(fields: RawJoinCodeFields): JoinCodeFields {
   const { id, partyId, chain, network, m, n } = fields;
@@ -221,7 +223,10 @@ function parseJoinCodeFields(fields: RawJoinCodeFields): JoinCodeFields {
   return { id, partyId: partyInt, chain, network, m: mInt, n: nInt };
 }
 
-/** Validated join code contents, with numeric fields parsed as safe integers. */
+/** 
+ * Validated join code contents, with numeric fields parsed as safe integers.
+ * When used, m, n, and partyId should be confirmed integers - see parseJoinCodeFields return
+ */
 interface ParsedJoinCode {
   id: string;
   partyId: number;
@@ -654,6 +659,7 @@ export class TssKeyGen extends EventEmitter {
 
       // Parsing needs strings, which cannot be wiped. The decrypted buffer is zeroed below.
       const [id, partyId, chain, network, m, n, ...more] = (decrypted as Buffer).toString().split(':');
+      // parseJoinCodeFields ensures partyId, mn, and n are ints
       const fields = parseJoinCodeFields({ id, partyId, chain, network, m, n });
       return { ...fields, extra: more.join(':'), creatorPubKey: senderKey };
     } finally {
