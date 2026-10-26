@@ -1,8 +1,9 @@
 import { Utils as CWCUtils, xrpl } from '@bitpay-labs/crypto-wallet-core';
 import * as prompt from '@clack/prompts';
+import { Command } from 'commander';
 import { promptXrpFlag } from '../prompts';
 import { Utils } from '../utils';
-import { type ITransactionArgs, createTransaction, command as txCommand } from './transaction';
+import { type ITransactionArgs, createTransaction, command as transactionCommand } from './transaction';
 import type { CommonArgs } from '../../types/cli';
 
 function flagsDisplay() {
@@ -10,44 +11,45 @@ function flagsDisplay() {
   return 'Possible flags are: ' + flags.join(', ');
 }
 
-export function command(args: CommonArgs<ITransactionArgs>) {
-  const { program } = args;
-  program
+export function command() {
+  const txCommand = transactionCommand();
+  const flagsCommand = new Command('flags')
     .description('View and manage XRP wallet flags')
-    .usage('<walletName> --command flags [options]')
     .optionsGroup('Flags Options')
     .option('--flags <flags>', 'Comma-delimited list of account transaction flag(s) to set. If provided, see Transaction Options below for additional options to provide for the setting transaction. ' + flagsDisplay());
 
-  const opts = txCommand({
-    ...args,
-    opts: {
-      ...args.opts,
-      extensionOpts: {
-        excludedOptions: new Set(['--to', '--amount']),
-        parse: (opts) => {
-          if (opts.flags) {
-            const flags = opts.flags.split(',').map(f => CWCUtils.normalizeXrpFlag(f.trim()));
-            if (flags.some(f => !f)) {
-              throw new Error('Invalid flag(s) specified. ' + flagsDisplay());
-            }
-            opts.flags = flags.join(',');
-          }
-        }
-      }      
+  flagsCommand.optionsGroup('Transaction Options');
+  for (const txOpt of txCommand.options) {
+    if (!(
+      txOpt.flags.startsWith('--to ') ||
+      txOpt.flags.startsWith('--amount ') ||
+      txOpt.flags.startsWith('--nonce ') ||
+      txOpt.flags.startsWith('--tokenAddress ') ||
+      txOpt.flags.startsWith('--token ')
+    )) {
+      flagsCommand.option(txOpt.flags, txOpt.description, txOpt.parseArg || txOpt.defaultValue);
+    }
+  }
+
+  flagsCommand['_lifeCycleHooks'] = txCommand['_lifeCycleHooks'];
+  flagsCommand.hook('preAction', (thisCommand) => {
+    const opts = thisCommand.opts();
+    if (opts.flags) {
+      const flags = opts.flags.split(',').map(f => CWCUtils.normalizeXrpFlag(f.trim()));
+      if (flags.some(f => !f)) {
+        throw new Error('Invalid flag(s) specified. ' + flagsDisplay());
+      }
+      opts.flags = flags.join(',');
     }
   });
-
-  return opts;
+  return flagsCommand;
 }
 
 export async function getOrSetFlags(args: CommonArgs<ITransactionArgs>) {
   const { wallet, opts } = args;
-  if (opts.command) {
-    Object.assign(opts, command(args));
-  }
   
   if (!wallet.isXrp()) {
-    // This code should only be reachable if using --command, so we should die.
+    // This code should only be reachable if using [command], so we should die.
     Utils.die('Flags management is only available for XRP wallets');
   }
 

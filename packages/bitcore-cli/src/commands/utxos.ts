@@ -1,29 +1,20 @@
 import fs from 'fs';
 import os from 'os';
 import * as prompt from '@clack/prompts';
+import { Command } from 'commander';
 import { getFileName } from '../prompts';
 import { Utils } from '../utils';
 import type { CommonArgs } from '../../types/cli';
 
-export function command(args: CommonArgs) {
-  const { wallet, program } = args;
-  program
+export function command() {
+  return new Command('utxos')
     .description('List unspent transaction outputs (UTXOs) for a wallet')
-    .usage('<walletName> --command utxos [options]')
     .optionsGroup('UTXOs Options')
     .option('--expand', 'Display in expanded format')
     .option('--sortBy <field>', 'Sort by "amount" or "time"', 'time')
     .option('--sortDir <direction>', 'Sort direction "asc" or "desc"', 'asc')
     .option('--raw', 'Print raw UTXO objects instead of formatted output')
-    .option('--export [filename]', `Export UTXOs to a file (default: ~/${wallet.name}_utxos_<timestamp>.json)`)
-    .parse(process.argv);
-
-  const opts = program.opts();
-  if (opts.help) {
-    program.help();
-  }
-
-  return opts;
+    .option('--export [filename]', 'Export UTXOs to a file (default: ~/$<walletName>_utxos_<timestamp>.json)');
 }
 
 export async function getUtxos(
@@ -36,9 +27,6 @@ export async function getUtxos(
   }>
 ) {
   const { wallet, opts } = args;
-  if (opts.command) {
-    Object.assign(opts, command(args));
-  }
   const utxos = await wallet.client.getUtxos({});
 
   if (utxos.length === 0) {

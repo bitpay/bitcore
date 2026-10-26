@@ -1,31 +1,22 @@
 import fs from 'fs';
 import os from 'os';
 import * as prompt from '@clack/prompts';
+import { Command } from 'commander';
 import { getFileName } from '../prompts';
 import { Utils } from '../utils';
 import type { CommonArgs } from '../../types/cli';
 import type { ITokenObj } from '../../types/wallet';
 
-export function command(args: CommonArgs) {
-  const { wallet, program } = args;
-  program
+export function command() {
+  return new Command('history')
     .description('Get transaction history for a wallet')
-    .usage('<walletName> --command history [options]')
     .optionsGroup('Transaction History Options')
     .option('--page <page>', 'Page number to display', '1')
     .option('--token <token>', 'Token to get the balance for (e.g. USDC)')
     .option('--tokenAddress <address>', 'Token contract address to get the balance for')
     .option('--expand', 'Display in expanded format')
     .option('--raw', 'Print raw transaction objects instead of formatted output')
-    .option('--export [filename]', `Export the transaction history to a file (default: ~/${wallet.name}_txhistory_<date>_<page>.json)`)
-    .parse(process.argv);
-
-  const opts = program.opts();
-  if (opts.help) {
-    program.help();
-  }
-  
-  return opts;
+    .option('--export [filename]', 'Export the transaction history to a file (default: ~/<walletName>_txhistory_<date>_<page>.json)');
 }
 
 export async function getTxHistory(
@@ -37,10 +28,6 @@ export async function getTxHistory(
     export?: string | boolean;
   }>) {
   const { wallet, opts } = args;
-
-  if (opts.command) {
-    Object.assign(opts, command(args));
-  }
   
 
   let tokenObj: ITokenObj;

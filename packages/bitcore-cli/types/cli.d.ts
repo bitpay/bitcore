@@ -1,5 +1,4 @@
 import { type Status } from '@bitpay-labs/bitcore-wallet-client';
-import { program } from 'commander';
 import type { IWallet } from './wallet';
 
 export interface ICliGlobalOptions {
@@ -27,11 +26,8 @@ export interface ICliWalletOptions extends ICliGlobalOptions {
   tokenAddress?: string;
 }
 
-export type Program = typeof program;
-
 export interface CommonArgs<MoreOpts = object> {
   wallet: IWallet;
-  program?: Program;
   opts?: ICliWalletOptions & MoreOpts;
   status?: Status;
 }

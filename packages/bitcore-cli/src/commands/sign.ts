@@ -1,41 +1,26 @@
 import os from 'os';
 import { type Types as CWCTypes, Deriver, Validation } from '@bitpay-labs/crypto-wallet-core';
 import prompt from '@clack/prompts';
+import { Command } from 'commander';
 import { type CommonArgs } from '../../types/cli';
 import { UserCancelled } from '../errors';
 import { Utils } from '../utils';
 
 type ISignedMessage = CWCTypes.Message.ISignedMessage<string>;
 
-export function command(args: CommonArgs) {
-  const { program } = args;
-  program
+export function command() {
+
+  return new Command('sign')
     .description('Sign an arbitrary message with a wallet address')
-    .usage('<walletName> --command sign [options]')
     .optionsGroup('Sign Options')
     .option('--message <message>', 'Message to sign')
     .option('--address <address>', 'Address to use for signing. Mutually exclusive with --path')
-    .option('--path <path>', 'Derivation path to use for signing. Mutually exclusive with --address')
-    .parse(process.argv);
-
-  const opts = program.opts();
-  if (opts.help) {
-    program.help();
-  }
-  
-  if (opts.path && opts.address) {
-    throw new Error('Cannot use both --path and --address options. Use one of them to specify the signing address.');
-  }
-  
-  return opts;
+    .option('--path <path>', 'Derivation path to use for signing. Mutually exclusive with --address');
 }
 
 
 export async function signMessage(args: CommonArgs<{ message?: string; path?: string; address?: string }>) {
   const { wallet, opts } = args;
-  if (opts.command) {
-    Object.assign(opts, command(args));
-  }
 
   if (wallet.isReadOnly()) {
     throw new Error('Read-only wallets cannot sign messages');

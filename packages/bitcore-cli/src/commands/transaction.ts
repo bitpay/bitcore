@@ -2,11 +2,11 @@ import os from 'os';
 import { Utils as BWCUtils, type Txp } from '@bitpay-labs/bitcore-wallet-client'; 
 import { Validation } from '@bitpay-labs/crypto-wallet-core';
 import * as prompt from '@clack/prompts';
+import { Command } from 'commander';
 import { UserCancelled } from '../errors';
 import { Utils } from '../utils';
 import type { CommonArgs } from '../../types/cli';
 import type { ITokenObj } from '../../types/wallet';
-import type { OptionValues } from 'commander';
 
 export interface ITransactionArgs {
   to?: string;
@@ -24,76 +24,50 @@ export interface ITransactionArgs {
   destinationTag?: string;
 };
 
-
-export function command(args: CommonArgs<ITransactionArgs & { extensionOpts?: { excludedOptions?: Set<string>; parse: (opts: OptionValues) => void } }>) {
-  const { program, opts: { extensionOpts } = {} } = args;
-  const isExtension = !!extensionOpts;
-
-  if (program.processedArgs.length > 0) {
-    return args.opts; // program.parse already called
-  }
-
-  if (!isExtension) {
-    program
-      .description('Create and send a transaction')
-      .usage('<walletName> --command transaction [options]');
-  }
-  program
-    .optionsGroup('Transaction Options');
-  const options = [
-    { option: '--to <address>', help: 'Recipient address' },
-    { option: '--amount <amount>', help: 'Amount to send (in BTC/ETH/etc). Use "max" to send all available balance' },
-    { option: '--feeLevel <level>', help: 'Fee level to use (e.g. low, normal, high). The levels are computed using fees from recent blocks', default: 'normal' },
-    { option: '--feeRate <rate>', help: 'Custom fee rate in sats/b, gwei, drops, etc.' },
-    { option: '--fee <fee>', help: 'Exact fee to use in base units (sats, wei, drops, etc.)' },
-    { option: '--nonce <nonce>', help: 'Nonce for the transaction (optional, for chains that require it)' },
-    { option: '--token <token>', help: 'Token to send (e.g. USDC). This is a convenient way to specify the token without needing the contract address, but only works for well-known, common tokens. Use --tokenAddress for more obscure tokens.' },
-    { option: '--tokenAddress <address>', help: 'Token contract address to send (takes precedence over --token)' },
-    { option: '--note <note>', help: 'Note for the transaction' },
-    { option: '--tag <tag>', help: '(XRP only) Destination tag for the transaction' },
-    { option: '--dry-run', help: 'Only create the transaction proposal without broadcasting' },
-  ];
-
-  for (const { option, help, default: defaultValue } of options) {
-    if (extensionOpts?.excludedOptions?.has(option.split(' ')[0])) {
-      continue; // skip it
-    }
-    program.option(option, help, defaultValue);
-  }
-
-  program.parse(process.argv);
-  
-  const opts = program.opts();
-  if (opts.help) {
-    program.help();
-  }
-
-  if (!isExtension) {
-    // Don't require `--to` and `--amount` if this command is being called from an extension
-    // since the extension may provide the address and amount in a different way (e.g. flags management extension)  
-    if (!opts.to) {
-      throw new Error('Recipient address (--to) is required');
-    }
-    if (!parseFloat(opts.amount) && opts.amount !== 'max') {
+export function command() {
+  return new Command('transaction')
+    .description('Create and send a transaction')
+    .optionsGroup('Transaction Options')
+    .requiredOption('--to <address>', 'Recipient address')
+    .requiredOption('--amount <amount>', 'Amount to send (in BTC/ETH/etc). Use "max" to send all available balance', (amount) => {
+      if (amount === 'max' || Number(amount) > 0) {
+        return amount;
+      }
       throw new Error('Missing or invalid amount (--amount) specified');
-    }
-  }
-  if (opts.fee && !parseFloat(opts.fee)) {
-    throw new Error('Invalid fee specified.');
-  }
-  if (opts.feeRate && !parseFloat(opts.feeRate)) {
-    throw new Error('Invalid fee rate specified.');
-  }
-  if (opts.tag) {
-    if (isNaN(parseInt(opts.tag)) || parseInt(opts.tag) < 0) {
-      throw new Error('Invalid destination tag specified. It should be a non-negative integer.');
-    }
-    opts.destinationTag = opts.tag;
-  }
-
-  extensionOpts?.parse?.(opts);
-
-  return opts;
+    })
+    .option('--feeLevel <level>', 'Fee level to use (e.g. low, normal, high). The levels are computed using fees from recent blocks', 'normal')
+    .option('--feeRate <rate>', 'Custom fee rate in sats/b, gwei, drops, etc.', (rate) => {
+      const parsed = Number(rate);
+      if (isNaN(parsed) || parsed < 0) {
+        throw new Error('Invalid fee rate specified.');
+      }
+      return parsed;
+    })
+    .option('--fee <fee>', 'Exact fee to use in base units (sats, wei, drops, etc.)', (fee) => {
+      const parsed = Number(fee);
+      if (isNaN(parsed) || parsed < 0) {
+        throw new Error('Invalid fee specified.');
+      }
+      return parsed;
+    })
+    .option('--nonce <nonce>', 'Nonce for the transaction (optional, for chains that require it)', parseInt)
+    .option('--token <token>', 'Token to send (e.g. USDC). This is a convenient way to specify the token without needing the contract address, but only works for well-known, common tokens. Use --tokenAddress for more obscure tokens.')
+    .option('--tokenAddress <address>', 'Token contract address to send (takes precedence over --token)')
+    .option('--note <note>', 'Note for the transaction')
+    .option('--tag <tag>', '(XRP only) Destination tag for the transaction', (tag) => {
+      const parsed = Number(tag);
+      if (isNaN(parsed) || parsed < 0) {
+        throw new Error('Invalid destination tag specified. It should be a non-negative integer.');
+      }
+      return parsed;
+    })
+    .option('--dry-run', 'Only create the transaction proposal without broadcasting')
+    .hook('preAction', (thisCommand) => {
+      const opts = thisCommand.opts();
+      if (opts.tag) {
+        opts.destinationTag = opts.tag;
+      }
+    });
 }
 
 export async function createTransaction(
@@ -102,10 +76,6 @@ export async function createTransaction(
   const { wallet, opts } = args;
   let { status } = args;
   const { chain, network } = wallet.client.credentials;
-
-  if (opts.command) {
-    Object.assign(opts, command(args));
-  }
 
   if (wallet.isReadOnly()) {
     throw new Error('Read-only wallets cannot create transactions');
@@ -140,8 +110,7 @@ export async function createTransaction(
   }
 
 
-  // Don't do opts.command tertiary check in case opts.to is passed in from an extension (e.g. flags management)
-  const to = opts.to || await prompt.text({
+  const to = opts.command ? opts.to : await prompt.text({
     message: 'Enter the recipient\'s address:',
     validate: (value) => {
       if (!Validation.validateAddress(chain, network, value)) {
@@ -177,8 +146,7 @@ export async function createTransaction(
     }
   }
 
-  // Don't do opts.command tertiary check in case opts.to is passed in from an extension (e.g. flags management)
-  const amount = opts.amount || await prompt.text({
+  const amount = opts.command ? opts.amount : await prompt.text({
     message: 'Enter the amount to send:',
     placeholder: 'Type `help` for help and to see your balance',
     validate: (value) => {
@@ -313,7 +281,7 @@ export async function createTransaction(
     return;
   }
   
-  // Always prompt for confirmation, even if --command is used.
+  // Always prompt for confirmation, even if run by the `transaction` command.
   const confirmed = await prompt.confirm({
     message: 'Send this transaction?' + (wallet.isTss() ? ` (This wallet requires ${wallet.getMinSigners() - 1} other participant(s) be ready to sign)` : ''),
     initialValue: true,
@@ -325,7 +293,16 @@ export async function createTransaction(
 
   txp = await wallet.client.createTxProposal(txpParams);
   txp = await wallet.client.publishTxProposal({ txp });
-  txp = await wallet.signAndBroadcastTxp({ txp });
+  try {
+    txp = await wallet.signAndBroadcastTxp({ txp });
+  } catch (err) {
+    if (err instanceof UserCancelled) {
+      await wallet.client.removeTxProposal(txp);
+      prompt.log.warn('Transaction cancelled by user.');
+      return;
+    }
+    throw err;
+  }
 
   if (txp.status === 'broadcasted') {
     prompt.log.success(`Txid: ${Utils.colorText(txp.txid, 'green')}`);

@@ -2,32 +2,22 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import * as prompt from '@clack/prompts';
+import { Command } from 'commander';
 import { UserCancelled } from '../errors';
 import { getPassword } from '../prompts';
 import type { CommonArgs } from '../../types/cli';
 
-export function command(args: CommonArgs) {
-  const { wallet, program } = args;
-  program
+export function command() {
+  return new Command('export')
     .description('Export wallet to a file')
-    .usage('<walletName> --command export [options]')
     .optionsGroup('Export Options')
-    .option('--filename <filename>', 'Filename to export to', `~/${wallet.name}-export.json`)
-    .option('--readonly', 'Export as read-only (cannot send funds)')
-    .parse(process.argv);
-  
-  const opts = program.opts();
-  if (opts.help) {
-    program.help();
-  }
-  return opts;
+    .option('--filename <filename>', 'Filename to export to')
+    .option('--readonly', 'Export as read-only (cannot send funds)');
 }
 
 export async function exportWallet(args: CommonArgs<{ filename?: string; readonly?: boolean }>) {
   const { wallet, opts } = args;
-  if (opts.command) {
-    Object.assign(opts, command(args));
-  }
+
   const replaceTilde = str => str.startsWith('~') ? str.replace('~', os.homedir()) : str;
 
   const readOnly = opts.readonly ?? (wallet.isReadOnly() || await prompt.confirm({
