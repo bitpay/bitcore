@@ -198,18 +198,6 @@ export class TssKey extends Key implements ITssKey {
 };
 
 /**
- * Read the sender public key from the header of an ECIES payload that was not created with `noKey`.
- * This mirrors the header parsing in ECIES.decrypt and must only be used after a successful decrypt.
- */
-function readEciesSenderPubKey(payload: Buffer): string {
-  const len = payload[0] === 4 ? 65 : (payload[0] === 2 || payload[0] === 3) ? 33 : 0;
-  if (!len) {
-    throw new Error('Invalid join code: unrecognized key header');
-  }
-  return normalizePubKey(BitcoreLib.PublicKey.fromDER(payload.subarray(0, len)));
-}
-
-/**
  * Check the ceremony fields of a decrypted join code. A correctly encrypted code is not necessarily a well-formed one,
  * and its fields become ceremony state and (via the creator key) trusted delivery state.
  * Fields may be undefined if the code had too few of them.
@@ -627,7 +615,7 @@ export class TssKeyGen extends EventEmitter {
       senderKey = expectedCreatorKey;
       decrypted = ECIES.decrypt({ payload: code, privateKey: authKey, publicKey: senderKey });
     } else {
-      senderKey = readEciesSenderPubKey(code);
+      senderKey = normalizePubKey(ECIES.readSenderPublicKey(code));
       decrypted = ECIES.decrypt({ payload: code, privateKey: authKey });
     }
 

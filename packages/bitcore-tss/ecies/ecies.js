@@ -92,7 +92,7 @@ function encrypt({ message, publicKey, privateKey, ivbuf, opts = {} }) {
  * @param {object} params
  * @param {Buffer} params.payload Encrypted payload buffer.
  * @param {PrivateKey} params.privateKey Your private key is used to decrypt the payload.
- * @param {PublicKey} params.publicKey Sender's public key is used to verify the payload.
+ * @param {PublicKey} [params.publicKey] Sender's public key is used to verify the payload.
  *                              *Only* include this if the encrypter specified the `noKey` option, otherwise the public key is included in the payload.
  * @returns {Buffer} Decrypted message buffer.
  */
@@ -110,20 +110,8 @@ function decrypt({ payload, privateKey, publicKey }) {
 
   let offset = 0;
   if (!publicKey) {
-    let pub;
-    switch (payload[0]) {
-      case 4:
-        pub = payload.subarray(0, 65);
-        break;
-      case 3:
-      case 2:
-        pub = payload.subarray(0, 33);
-        break;
-      default:
-        throw new Error('Invalid type: ' + payload[0]);
-    }
-    publicKey = PublicKey.fromDER(pub);
-    offset += pub.length;
+    publicKey = readSenderPublicKey(payload);
+    offset = publicKey.toBuffer().length;
   }
 
   const tagLength = 32;
@@ -143,6 +131,33 @@ function decrypt({ payload, privateKey, publicKey }) {
   return message;
 };
 
+/**
+ * Read the sender public key embedded in an ECIES payload header.
+ * Only use for payloads created without `noKey`; that format cannot be detected reliably from the bytes alone.
+ * This parses the key without authenticating the payload. Trust it only after successful decryption
+ * and any required comparison with an expected sender key.
+ * @param {Buffer} payload Encrypted payload buffer with an embedded sender public key.
+ * @returns {PublicKey} Sender public key, preserving the header's compressed or uncompressed encoding.
+ */
+function readSenderPublicKey(payload) {
+  $.checkArgument(Buffer.isBuffer(payload), 'payload must be a Buffer');
+  let length;
+  switch (payload[0]) {
+    case 4:
+      length = 65;
+      break;
+    case 3:
+    case 2:
+      length = 33;
+      break;
+    default:
+      throw new Error('Invalid type: ' + payload[0]);
+  }
+  $.checkArgument(payload.length >= length, 'Truncated public key header');
+  return PublicKey.fromDER(payload.subarray(0, length));
+};
+
 module.exports.KDF = KDF;
 module.exports.encrypt = encrypt;
 module.exports.decrypt = decrypt;
+module.exports.readSenderPublicKey = readSenderPublicKey;

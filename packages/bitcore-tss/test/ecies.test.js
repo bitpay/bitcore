@@ -76,6 +76,39 @@ describe('ECIES', function() {
     });
   });
 
+  describe('readSenderPublicKey', function() {
+    for (const prefix of [2, 3, 4]) {
+      it(`reads a public key with prefix ${prefix} and preserves its encoding`, function() {
+        const point = prefix === 2 ? aliceKey.publicKey.point.neg() : aliceKey.publicKey.point;
+        const senderPubKey = bitcore.PublicKey.fromPoint(point, prefix !== 4);
+        const header = senderPubKey.toBuffer();
+        assert.strictEqual(header[0], prefix);
+        const payload = Buffer.concat([header, encNoKeyBuf]);
+
+        const parsed = ECIES.readSenderPublicKey(payload);
+
+        assert(parsed instanceof bitcore.PublicKey);
+        assert.deepStrictEqual(parsed.toBuffer(), header);
+      });
+    }
+
+    it('rejects non-buffer input', function() {
+      assert.throws(() => ECIES.readSenderPublicKey(encrypted), /payload must be a Buffer/);
+    });
+
+    it('rejects empty, unrecognized, truncated, or invalid key headers', function() {
+      for (const payload of [
+        Buffer.alloc(0),
+        Buffer.from([1]),
+        encBuf.subarray(0, 32),
+        Buffer.concat([Buffer.from([4]), Buffer.alloc(63)]),
+        Buffer.concat([Buffer.from([4]), Buffer.alloc(64)])
+      ]) {
+        assert.throws(() => ECIES.readSenderPublicKey(payload));
+      }
+    });
+  });
+
   it('correctly encrypts a message', function() {
     const ciphertext = alice.encrypt(message, { deterministicIv: true });
     assert.strictEqual(Buffer.isBuffer(ciphertext), true);
