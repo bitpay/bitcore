@@ -15,7 +15,13 @@ export function command() {
     .optionsGroup('Sign Options')
     .option('--message <message>', 'Message to sign')
     .option('--address <address>', 'Address to use for signing. Mutually exclusive with --path')
-    .option('--path <path>', 'Derivation path to use for signing. Mutually exclusive with --address');
+    .option('--path <path>', 'Derivation path to use for signing. Mutually exclusive with --address')
+    .hook('preAction', (thisCommand) => {
+      const opts = thisCommand.opts();
+      if (opts.address && opts.path) {
+        throw new Error('Cannot use both --path and --address options. Use one of them to specify the signing address.');
+      }
+    });
 }
 
 

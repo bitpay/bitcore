@@ -313,7 +313,7 @@ if (require.main === module) {
                 await commands.addresses.getAddresses(cmdParams);
                 break;
               case 'utxos':
-                await commands.utxos.getUtxos(cmdParams);
+                ({ action } = await commands.utxos.getUtxos(cmdParams));
                 break;
               case 'preferences':
                 await commands.preferences.getPreferences(cmdParams);

@@ -56,7 +56,7 @@ export function command() {
     .option('--note <note>', 'Note for the transaction')
     .option('--tag <tag>', '(XRP only) Destination tag for the transaction', (tag) => {
       const parsed = Number(tag);
-      if (isNaN(parsed) || parsed < 0) {
+      if (!Number.isInteger(parsed) || parsed < 0) {
         throw new Error('Invalid destination tag specified. It should be a non-negative integer.');
       }
       return parsed;

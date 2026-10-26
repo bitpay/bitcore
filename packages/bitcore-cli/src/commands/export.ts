@@ -11,16 +11,23 @@ export function command() {
   return new Command('export')
     .description('Export wallet to a file')
     .optionsGroup('Export Options')
-    .option('--filename <filename>', 'Filename to export to')
-    .option('--readonly', 'Export as read-only (cannot send funds)');
+    .option('--filename <filename>', 'Filename to export to (default: ~/<walletName>-export.json)')
+    .option('--readonly', 'Export as read-only (cannot send funds)', false)
+    .option('--overwrite', 'Overwrite existing file if it exists', false)
+    .hook('preAction', (thisCommand) => {
+      const opts = thisCommand.opts();
+      if (!opts.filename) {
+        opts.filename = `~/${thisCommand.parent.name()}-export.json`;
+      }
+    });
 }
 
-export async function exportWallet(args: CommonArgs<{ filename?: string; readonly?: boolean }>) {
+export async function exportWallet(args: CommonArgs<{ filename?: string; readonly?: boolean; overwrite?: boolean }>) {
   const { wallet, opts } = args;
 
   const replaceTilde = str => str.startsWith('~') ? str.replace('~', os.homedir()) : str;
 
-  const readOnly = opts.readonly ?? (wallet.isReadOnly() || await prompt.confirm({
+  const readOnly = wallet.isReadOnly() || (opts.command ? !!opts.readonly : await prompt.confirm({
     message: 'Export as read-only (cannot send funds)?',
     initialValue: false
   }));
@@ -28,7 +35,7 @@ export async function exportWallet(args: CommonArgs<{ filename?: string; readonl
     throw new UserCancelled();
   }
 
-  const filename = opts.filename || await prompt.text({
+  const filename = opts.command ? replaceTilde(opts.filename) : await prompt.text({
     message: 'Enter filename to export to:',
     initialValue: `~/${wallet.name}${readOnly ? '-nokey' : ''}-export.json`,
     validate: (value) => {
@@ -54,6 +61,19 @@ export async function exportWallet(args: CommonArgs<{ filename?: string; readonl
   });
   if (prompt.isCancel(filename)) {
     throw new UserCancelled();
+  }
+
+  if (fs.existsSync(filename) && !opts.overwrite) {
+    if (opts.command) {
+      throw new Error(`File already exists: ${filename}`);
+    }
+    const overwrite = await prompt.confirm({
+      message: `File already exists: ${filename}. Overwrite?`,
+      initialValue: false
+    });
+    if (prompt.isCancel(overwrite) || !overwrite) {
+      throw new UserCancelled();
+    }
   }
 
   const exportPassword = await getPassword('File encryption password:', { hidden: false, minLength: 6, confirm: true });
