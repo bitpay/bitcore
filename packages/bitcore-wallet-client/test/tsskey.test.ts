@@ -143,7 +143,7 @@ describe('TSS keygen instance lifecycle', function() {
       }
       const before = state();
       const snapshot = tss.exportSession();
-      await tss.restoreSession({ session: snapshot });
+      await tss.restoreSession({ session: snapshot, trusted: role === 'recipient' ? { joinCode: { code: joinCode() } } : undefined });
       await tss.restoreSession({ session: snapshot });
       assert.deepStrictEqual(state(), before);
       assert.strictEqual(tss.getTssKey(), null);
@@ -160,6 +160,81 @@ describe('TSS keygen instance lifecycle', function() {
     await assert.rejects(tss.restoreSession({ session: session() }), /restore failed/);
     assert.strictEqual(await start('creator'), tss);
   });
+});
+
+describe('TSS join code parsing', function() {
+  const sandbox = sinon.createSandbox();
+  let tss: TssKeyGen;
+  let creatorPrivKey: BitcoreLib.PrivateKey;
+  const fields = { id: 'session-id', partyId: '014', chain: 'eth', network: 'livenet', m: '010', n: '015' };
+  const buildCode = (overrides: Partial<typeof fields> = {}) => {
+    const { id, partyId, chain, network, m, n } = { ...fields, ...overrides };
+    return ECIES.encrypt({
+      message: [id, partyId, chain, network, m, n, 'session-password:with:colons'].join(':'),
+      publicKey: tss.getAuthPublicKey(),
+      privateKey: creatorPrivKey
+    }).toString('hex');
+  };
+
+  beforeEach(function() {
+    tss = new TssKeyGen({ chain: 'eth', network: 'livenet', baseUrl: '/bws/api', key: new Key({ seedType: 'new' }) });
+    creatorPrivKey = new BitcoreLib.PrivateKey();
+  });
+
+  afterEach(function() {
+    sandbox.restore();
+  });
+
+  for (const network of ['livenet', 'testnet', 'regtest']) {
+    it(`should return numeric ceremony parameters and accept ${network}`, async function() {
+      const code = buildCode({ network });
+      assert.deepStrictEqual(tss.checkJoinCode({ code }), { id: fields.id, partyId: 14, chain: 'eth', network, m: 10, n: 15 });
+      sandbox.stub(ECDSA.KeyGen.prototype, 'initJoin').resolves({ round: 0 });
+      const post = sandbox.stub(Request.prototype, 'post').resolves({ body: {} });
+
+      await tss.joinKey({ code });
+
+      assert.strictEqual(tss.partyId, 14);
+      assert.strictEqual(tss.m, 10);
+      assert.strictEqual(tss.n, 15);
+      assert.strictEqual(tss.network, network);
+      assert.strictEqual(post.firstCall.args[1].password, 'session-password:with:colons');
+    });
+  }
+
+  it('should preserve safe integers at the upper boundary', function() {
+    const max = Number.MAX_SAFE_INTEGER;
+    const code = buildCode({ m: String(max), n: String(max), partyId: String(max - 1) });
+    const parsed = tss.checkJoinCode({ code });
+    assert.strictEqual(parsed.m, max);
+    assert.strictEqual(parsed.n, max);
+    assert.strictEqual(parsed.partyId, max - 1);
+  });
+
+  const invalid: Array<[string, Partial<typeof fields>]> = [
+    ['an invalid network', { network: 'mainnet' }],
+    ['a fractional threshold', { m: '1.5' }],
+    ['a numeric prefix with trailing text', { n: '15parties' }],
+    ['a negative party ID', { partyId: '-1' }],
+    ['a zero threshold', { m: '0' }],
+    ['a threshold greater than the party count', { m: '16' }],
+    ['a party ID equal to the party count', { partyId: '15' }],
+    ...(['m', 'n', 'partyId'] as const).map(field => [
+      `an unsafe ${field}`, { [field]: String(Number.MAX_SAFE_INTEGER + 1) }
+    ] as [string, Partial<typeof fields>])
+  ];
+  for (const [name, overrides] of invalid) {
+    it(`should reject ${name} before initializing or enrolling`, async function() {
+      const init = sandbox.spy(ECDSA.KeyGen.prototype, 'initJoin');
+      const post = sandbox.stub(Request.prototype, 'post').resolves({ body: {} });
+      const code = buildCode(overrides);
+      assert.throws(() => tss.checkJoinCode({ code }), /Invalid join code/);
+      await assert.rejects(tss.joinKey({ code }), /Invalid join code/);
+      assert.strictEqual(init.callCount, 0);
+      assert.strictEqual(post.callCount, 0);
+      assert.strictEqual(tss.id, undefined);
+    });
+  }
 });
 
 describe('TSS keygen session parameters', function() {

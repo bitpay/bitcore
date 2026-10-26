@@ -198,11 +198,11 @@ export class TssKey extends Key implements ITssKey {
 };
 
 /**
- * Check the ceremony fields of a decrypted join code. A correctly encrypted code is not necessarily a well-formed one,
+ * Parse and validate the ceremony fields of a decrypted join code. A correctly encrypted code is not necessarily a well-formed one,
  * and its fields become ceremony state and (via the creator key) trusted delivery state.
  * Fields may be undefined if the code had too few of them.
  */
-function assertValidJoinCode(fields: Partial<Omit<ParsedJoinCode, 'extra' | 'creatorPubKey'>>): void {
+function parseJoinCodeFields(fields: RawJoinCodeFields): JoinCodeFields {
   const { id, partyId, chain, network, m, n } = fields;
   const fail = (reason: string): never => { throw new Error('Invalid join code: ' + reason); };
   const toInt = (name: string, value?: string) => {
@@ -210,29 +210,34 @@ function assertValidJoinCode(fields: Partial<Omit<ParsedJoinCode, 'extra' | 'cre
     return Number.isSafeInteger(int) ? int : fail(`${name} must be a non-negative integer`);
   };
 
-  if (!id) fail('missing session id');
-  if (!chain) fail('missing chain');
-  if (!Utils.isValidNetwork(network)) fail('unknown network');
+  if (!id) return fail('missing session id');
+  if (!chain) return fail('missing chain');
+  if (!Utils.isValidNetwork(network)) return fail('unknown network');
   const mInt = toInt('m', m);
   const nInt = toInt('n', n);
   const partyInt = toInt('partyId', partyId);
   if (mInt < 1 || mInt > nInt) fail('m must be in [1. n]');
   if (partyInt < 1 || partyInt >= nInt) fail('partyId must be in [1, n)');
+  return { id, partyId: partyInt, chain, network, m: mInt, n: nInt };
 }
 
-/** Join code contents as decrypted; numeric fields are unparsed */
+/** Validated join code contents, with numeric fields parsed as safe integers. */
 interface ParsedJoinCode {
   id: string;
-  partyId: string;
+  partyId: number;
   chain: string;
-  network: string;
-  m: string;
-  n: string;
+  network: Network;
+  m: number;
+  n: number;
   /** Anything after the ceremony fields (the optional invitation `extra`, used as the server password fallback) */
   extra: string;
   /** Normalized creator public key the code was issued by */
   creatorPubKey: string;
 }
+
+type JoinCodeFields = Omit<ParsedJoinCode, 'extra' | 'creatorPubKey'>;
+/** Fields from splitting the plaintext; truncated invitations may omit fields. */
+type RawJoinCodeFields = Partial<Record<keyof JoinCodeFields, string>>;
 
 /**
  * What an exported session holds beyond the DKG state: the ceremony it belongs to and the trusted keys
@@ -535,11 +540,11 @@ export class TssKeyGen extends EventEmitter {
     const { id, partyId, chain, network, m, n } = this.#readJoinCode(params);
     return {
       id,
-      partyId: parseInt(partyId),
+      partyId,
       chain,
       network,
-      m: parseInt(m),
-      n: parseInt(n),
+      m,
+      n,
     };
   }
 
@@ -592,10 +597,10 @@ export class TssKeyGen extends EventEmitter {
     this.#keygen = keygen;
     this.id = id;
     this.chain = chain;
-    this.network = network as Network;
-    this.m = parseInt(m);
-    this.n = parseInt(n);
-    this.partyId = parseInt(partyId);
+    this.network = network;
+    this.m = m;
+    this.n = n;
+    this.partyId = partyId;
     this.#creatorPubKey = creatorPubKey;
     this.#recipientKeys.clear();
     this.#createdWallet = undefined;
@@ -649,8 +654,8 @@ export class TssKeyGen extends EventEmitter {
 
       // Parsing needs strings, which cannot be wiped. The decrypted buffer is zeroed below.
       const [id, partyId, chain, network, m, n, ...more] = (decrypted as Buffer).toString().split(':');
-      assertValidJoinCode({ id, partyId, chain, network, m, n });
-      return { id, partyId, chain, network, m, n, extra: more.join(':'), creatorPubKey: senderKey };
+      const fields = parseJoinCodeFields({ id, partyId, chain, network, m, n });
+      return { ...fields, extra: more.join(':'), creatorPubKey: senderKey };
     } finally {
       decrypted?.fill(0);
     }
@@ -906,8 +911,8 @@ export class TssKeyGen extends EventEmitter {
     if (joinCode) {
       $.checkArgument(restored.partyId > 0, 'A join code can only be supplied when restoring a recipient\'s session');
       const code = this.#readJoinCode(joinCode);
-      if (code.id !== restored.id || parseInt(code.partyId) !== restored.partyId ||
-        parseInt(code.m) !== restored.m || parseInt(code.n) !== restored.n ||
+      if (code.id !== restored.id || code.partyId !== restored.partyId ||
+        code.m !== restored.m || code.n !== restored.n ||
         code.chain.toLowerCase() !== this.chain || code.network !== this.network) {
         throw new Error('Join code does not match the session being restored');
       }
