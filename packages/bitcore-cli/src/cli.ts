@@ -48,7 +48,7 @@ program
         if (_opts.chain && walletData.credentials?.chain !== _opts.chain) continue;
         if (_opts.network && walletData.credentials?.network !== _opts.network) continue;
         if (_opts.type && _opts.type !== type) continue;
-        console.log(`  ${Utils.boldText(file.replace('.json', ''))}  ${walletData.cipher ? '{Encrypted}' : `[${Utils.colorizeChain(walletData.credentials.chain)}:${walletData.credentials.network}]${!['encrypted', 'singlesig'].includes(type) ? `.${Utils.boldText(type)}` : ''}${isReadOnly ? '*' : ''}`}`);
+        console.log(`  ${Utils.boldText(file.replace('.json', ''))}  ${walletData.ct ? '{Encrypted}' : `[${Utils.colorizeChain(walletData.credentials.chain)}:${walletData.credentials.network}]${!['encrypted', 'singlesig'].includes(type) ? `.${Utils.boldText(type)}` : ''}${isReadOnly ? '*' : ''}`}`);
       }
     }
     process.exit(0);
