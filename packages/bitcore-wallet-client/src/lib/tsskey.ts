@@ -897,9 +897,9 @@ export class TssKeyGen extends EventEmitter {
     if (!trusted) return bindings;
     const { recipientKeys: suppliedRecipients, joinCode } = trusted;
 
-    /**
-     * NAND(suppliedRecipients, joinCode)
-     */
+    // Restore or confirm role-specific trust:
+    // creators supply recipient keys; recipients supply their original join code.
+    // Neither is needed when the exported session already retains those bindings.
     if (suppliedRecipients) {
       $.checkArgument(restored.partyId === 0, 'Recipient keys can only be supplied when restoring the creator\'s session');
       $.checkArgument(Array.isArray(suppliedRecipients), 'recipientKeys must be an array');

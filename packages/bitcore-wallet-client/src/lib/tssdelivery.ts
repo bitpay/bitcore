@@ -64,89 +64,6 @@ interface JoinDeliveryPayload {
   secret: string;
 }
 
-function toPayload(context: JoinDeliveryContext, secret: string): JoinDeliveryPayload {
-  const { sessionId, partyId, requestPubKey, chain, network, m, n, commonKeyChain } = context;
-  $.checkArgument(sessionId && typeof sessionId === 'string', 'Missing sessionId');
-  $.checkArgument(Number.isInteger(partyId) && partyId > 0, 'partyId must be a positive integer');
-  $.checkArgument(chain && typeof chain === 'string', 'Missing chain');
-  $.checkArgument(network && typeof network === 'string', 'Missing network');
-  $.checkArgument(Number.isInteger(m) && Number.isInteger(n) && m >= 1 && m <= n, 'm and n must be integers with 1 <= m <= n');
-  $.checkArgument(partyId < n, 'partyId must be less than n');
-  $.checkArgument(commonKeyChain && typeof commonKeyChain === 'string', 'Missing commonKeyChain');
-  return {
-    purpose: JOIN_DELIVERY_PURPOSE,
-    version: JOIN_DELIVERY_VERSION,
-    sessionId,
-    partyId,
-    requestPubKey: normalizePubKey(requestPubKey, 'requestPubKey'),
-    chain: chain.toLowerCase(),
-    coin: (context.coin || chain).toLowerCase(),
-    network,
-    m,
-    n,
-    commonKeyChain,
-    secret
-  };
-}
-
-/**
- * The secret parser is lenient (it defaults an unknown network to livenet and a missing coin to btc,
- * and accepts a short wallet ID), so require the secret to be exactly what the ordinary builder would produce
- * for what it parses to, and to hold a full wallet ID.
- * Throws without including the secret.
- */
-function assertValidSecret(secret: unknown, coin: string, network: string): void {
-  if (typeof secret !== 'string' || !secret) {
-    throw new Error('Invalid join secret');
-  }
-  let parsed: ReturnType<typeof API.parseSecret>;
-  try {
-    parsed = API.parseSecret(secret);
-  } catch {
-    throw new Error('Invalid join secret');
-  }
-
-  /**
-   * Require a full wallet ID: 32 lowercase hex digits in UUID layout.
-   * parseSecret also accepts shorter IDs and inserts separators for missing groups (e.g. `12345678----`).
-   */
-  const WALLET_ID_FORMAT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-  if (!WALLET_ID_FORMAT.test(parsed.walletId) ||
-    API._buildSecret(parsed.walletId, parsed.walletPrivKey, parsed.coin, parsed.network) !== secret) {
-    throw new Error('Invalid join secret');
-  }
-  if (parsed.coin !== coin) {
-    throw new Error('Join secret coin does not match the ceremony');
-  }
-  if (parsed.network !== network) {
-    throw new Error('Join secret network does not match the ceremony');
-  }
-}
-
-/**
- * Sign the plaintext the same way `TssUtils.detachSignData` does (double SHA-256, DER signature as a string),
- * without the helper's base64 copy of the plaintext. The digest is derived from the secret, so it is wiped too.
- */
-function signPlaintext(plaintext: Buffer, privKey: BitcoreLib.PrivateKey | string): string {
-  // zeroing digest not required - the digested plaintext includes a randomly-generated string
-  const digest = Hash.sha256sha256(plaintext);
-  const key = privKey instanceof BitcoreLib.PrivateKey ? privKey : new BitcoreLib.PrivateKey(privKey);
-  return ECDSA.sign(digest, key).toString();
-}
-
-/** Counterpart of `signPlaintext`; compatible with `TssUtils.verifySignedData` */
-function verifyPlaintext(plaintext: Buffer, signature: string, pubKey: string): boolean {
-  // zeroing digest not required - the digested plaintext includes a randomly-generated string
-  const digest = Hash.sha256sha256(plaintext);
-  let parsedSignature: ReturnType<typeof Signature.fromString>;
-  try {
-    parsedSignature = Signature.fromString(signature);
-  } catch {
-    throw new Error('Invalid join delivery signature');
-  }
-  return ECDSA.verify(digest, parsedSignature, new BitcoreLib.PublicKey(pubKey));
-}
-
 /**
  * Encrypt the ordinary join secret for one recipient, and sign it so the recipient can authenticate the creator.
  * Each call uses a fresh random IV, so repeated calls for the same payload produce different ciphertext.
@@ -240,4 +157,90 @@ export function decryptJoinDelivery(params: {
   }
   assertValidSecret(payload.secret, want.coin, want.network);
   return payload.secret;
+}
+
+/**
+ * HELPERS
+ */
+/**
+ * The secret parser is lenient (it defaults an unknown network to livenet and a missing coin to btc,
+ * and accepts a short wallet ID), so require the secret to be exactly what the ordinary builder would produce
+ * for what it parses to, and to hold a full wallet ID.
+ * Throws without including the secret.
+ */
+function assertValidSecret(secret: unknown, coin: string, network: string): void {
+  if (typeof secret !== 'string' || !secret) {
+    throw new Error('Invalid join secret');
+  }
+  let parsed: ReturnType<typeof API.parseSecret>;
+  try {
+    parsed = API.parseSecret(secret);
+  } catch {
+    throw new Error('Invalid join secret');
+  }
+
+  /**
+   * Require a full wallet ID: 32 lowercase hex digits in UUID layout.
+   * parseSecret also accepts shorter IDs and inserts separators for missing groups (e.g. `12345678----`).
+   */
+  const WALLET_ID_FORMAT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+  if (!WALLET_ID_FORMAT.test(parsed.walletId) ||
+    API._buildSecret(parsed.walletId, parsed.walletPrivKey, parsed.coin, parsed.network) !== secret) {
+    throw new Error('Invalid join secret');
+  }
+  if (parsed.coin !== coin) {
+    throw new Error('Join secret coin does not match the ceremony');
+  }
+  if (parsed.network !== network) {
+    throw new Error('Join secret network does not match the ceremony');
+  }
+}
+
+function toPayload(context: JoinDeliveryContext, secret: string): JoinDeliveryPayload {
+  const { sessionId, partyId, requestPubKey, chain, network, m, n, commonKeyChain } = context;
+  $.checkArgument(sessionId && typeof sessionId === 'string', 'Missing sessionId');
+  $.checkArgument(Number.isInteger(partyId) && partyId > 0, 'partyId must be a positive integer');
+  $.checkArgument(chain && typeof chain === 'string', 'Missing chain');
+  $.checkArgument(network && typeof network === 'string', 'Missing network');
+  $.checkArgument(Number.isInteger(m) && Number.isInteger(n) && m >= 1 && m <= n, 'm and n must be integers with 1 <= m <= n');
+  $.checkArgument(partyId < n, 'partyId must be less than n');
+  $.checkArgument(commonKeyChain && typeof commonKeyChain === 'string', 'Missing commonKeyChain');
+  return {
+    purpose: JOIN_DELIVERY_PURPOSE,
+    version: JOIN_DELIVERY_VERSION,
+    sessionId,
+    partyId,
+    requestPubKey: normalizePubKey(requestPubKey, 'requestPubKey'),
+    chain: chain.toLowerCase(),
+    coin: (context.coin || chain).toLowerCase(),
+    network,
+    m,
+    n,
+    commonKeyChain,
+    secret
+  };
+}
+
+/**
+ * Sign the plaintext the same way `TssUtils.detachSignData` does (double SHA-256, DER signature as a string),
+ * without the helper's base64 copy of the plaintext. The digest is derived from the secret, so it is wiped too.
+ */
+function signPlaintext(plaintext: Buffer, privKey: BitcoreLib.PrivateKey | string): string {
+  // zeroing digest not required - the digested plaintext includes a randomly-generated string
+  const digest = Hash.sha256sha256(plaintext);
+  const key = privKey instanceof BitcoreLib.PrivateKey ? privKey : new BitcoreLib.PrivateKey(privKey);
+  return ECDSA.sign(digest, key).toString();
+}
+
+/** Counterpart of `signPlaintext`; compatible with `TssUtils.verifySignedData` */
+function verifyPlaintext(plaintext: Buffer, signature: string, pubKey: string): boolean {
+  // zeroing digest not required - the digested plaintext includes a randomly-generated string
+  const digest = Hash.sha256sha256(plaintext);
+  let parsedSignature: ReturnType<typeof Signature.fromString>;
+  try {
+    parsedSignature = Signature.fromString(signature);
+  } catch {
+    throw new Error('Invalid join delivery signature');
+  }
+  return ECDSA.verify(digest, parsedSignature, new BitcoreLib.PublicKey(pubKey));
 }
