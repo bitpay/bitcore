@@ -19,7 +19,7 @@ export function command() {
     .option('--sortBy <field>', 'Sort by "amount" or "time"', 'time')
     .option('--sortDir <direction>', 'Sort direction "asc" or "desc"', 'asc')
     .option('--raw', 'Print raw UTXO objects instead of formatted output')
-    .option('--export [filename]', 'Export UTXOs to a file (default: ~/$<walletName>_utxos_<timestamp>.json)')
+    .option('--export [filename]', 'Export UTXOs to a file (default: ~/<walletName>_utxos_<timestamp>.json)')
     .option('--overwrite', 'Overwrite the export file if it already exists', false)
     .hook('preAction', (thisCommand) => {
       const opts = thisCommand.opts();

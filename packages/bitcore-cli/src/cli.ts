@@ -103,6 +103,11 @@ for (const subcommand of walletProgram.commands) {
  * Commander only dispatches subcommands from the leading operands, and an unknown option at one level
  * stops it from recognizing subcommands. Hoist `list` / `<walletName> [command]` to the front so options
  * can go anywhere, and name the wallet command after the wallet so Commander dispatches to it.
+ *
+ * Option values stay with their option, read the same way Commander reads them: a required value (`<value>`)
+ * is always the next arg, and an optional one (`[value]`) is the next arg unless that is another option.
+ * So an optional-value option given before the operands takes the next word as its value
+ * (`--export out.json myWallet utxos`). To omit its value, put it after the operands (`myWallet utxos --export`).
  */
 function normalizeArgv(argv: string[]) {
   const allOptions = [program, ...program.commands, ...walletProgram.commands].flatMap(c => c.options);
@@ -113,7 +118,9 @@ function normalizeArgv(argv: string[]) {
     const arg = args[i];
     if (arg.startsWith('-')) {
       rest.push(arg);
-      if (allOptions.find(o => o.short === arg || o.long === arg)?.required && i + 1 < args.length) {
+      const option = allOptions.find(o => o.short === arg || o.long === arg);
+      const next = args[i + 1];
+      if (next !== undefined && (option?.required || (option?.optional && !next.startsWith('-')))) {
         rest.push(args[++i]); // option value
       }
     } else if (words.length < (words[1] === 'help' ? 3 : 2)) { // `<walletName> help [command]`
