@@ -236,7 +236,7 @@ export async function createTransaction(
     message: note,
     feeLevel: feeLevel === 'custom' || opts.fee != null ? undefined : feeLevel,
     feePerKb: feeLevel === 'custom' && opts.fee == null ? BigInt(Math.ceil(Number(customFeeRate))) : undefined,
-    fee: opts.fee ? BigInt(Math.ceil(parseFloat(opts.fee))) : undefined,
+    fee: opts.fee != null ? BigInt(Math.ceil(parseFloat(opts.fee))) : undefined,
     sendMax,
     tokenAddress: tokenObj?.contractAddress,
     flags: opts.flags,
