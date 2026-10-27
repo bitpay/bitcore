@@ -6224,9 +6224,10 @@ describe('Wallet service', function() {
 
       for (const [txType, sendMax] of [[0, false], [2, false], [2, true]] as const) {
         it(`should publish, sign and submit a type ${txType} native USDC ${sendMax ? 'send-max ' : ''}proposal`, async () => {
-          sinon.stub(server, 'estimateFee').resolves(30000000000);
+          const maxGasFee = sendMax ? 31000000000 : 30000000000;
+          sinon.stub(server, 'estimateFee').resolves(maxGasFee).onFirstCall().resolves(30000000000);
           sinon.stub(server, 'estimatePriorityFee').resolves(0);
-          const fee = (txType === 2 ? 30000000000 : 25000000000) * 21000;
+          const fee = (txType === 2 ? maxGasFee : 25000000000) * 21000;
           const amount = sendMax ? 2e18 - fee : 1e18;
           const txp = await util.promisify(server.createTx).call(server, makeOpts({ txType, sendMax,
             outputs: [{ toAddress: destination, amount: sendMax ? null : amount, gasLimit: 21000 }] }));
@@ -6250,17 +6251,19 @@ describe('Wallet service', function() {
       }
 
       it('should reserve wallet-owned USDC contract debits and release them when removed', async () => {
-        for (const [method, args, debit] of [
+        for (const [method, args, debit, legacyData] of [
           ['transfer', [destination, 1000000n], 1e18],
           ['transferFrom', [from, destination, 1000000n], 1e18],
           ['transferFrom', [destination, from, 1000000n], 0],
-          ['approve', [destination, 1000000n], 0]
-        ] as Array<[string, any[], number]>) {
+          ['approve', [destination, 1000000n], 0],
+          ['approve', [destination, 1000000n], 1e18, usdc.encodeFunctionData('transfer', [destination, 1000000n])]
+        ] as Array<[string, any[], number, string?]>) {
           const data = usdc.encodeFunctionData(method, args);
-          const txp = await util.promisify(server.createTx).call(server, contractOpts(data));
+          const txp = await util.promisify(server.createTx).call(server, { ...contractOpts(data), data: legacyData });
           txp.amount.should.equal(0);
           txp.outputs[0].amount.should.equal(0);
           txp.outputs[0].data.should.equal(data);
+          CWC.ethers.Transaction.from(txp.getRawTx()[0]).data.should.equal(legacyData || data);
           await util.promisify(server.publishTx).call(server, helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0));
           const balance = await util.promisify(server.getBalance).call(server, {});
           balance.lockedAmount.should.equal(debit + txp.fee);

@@ -33,6 +33,8 @@ import type { IIndexedAPIAdapter } from '../../../providers/chain-state/external
 import type { IBlock } from '../../../types/Block';
 import type { IMultiProviderConfig } from '../../../types/Config';
 
+class ArcReceiptError extends Error {}
+
 interface ProviderWithHealth {
   adapter: IIndexedAPIAdapter;
   health: ProviderHealth;
@@ -253,7 +255,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
                 tx.effects = getArcUsdcEffects(receipt.logs, tx.effects);
                 done(null, tx);
               } catch (err) {
-                done(err instanceof Error ? err : new Error(String(err)));
+                done(new ArcReceiptError(err instanceof Error ? err.message : String(err), { cause: err }));
               }
             }
           }));
@@ -263,6 +265,10 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
         // Preflight: wait for first data item or error before committing to this provider
         const preflight = await this._preflightStream(txStream, PREFLIGHT_TIMEOUT_MS);
         if (!preflight.success) {
+          if (preflight.error instanceof ArcReceiptError) {
+            txStream.destroy();
+            throw preflight.error;
+          }
           provider.health.recordFailure(preflight.error || new Error('preflight failed'));
           logger.warn(`MultiProvider: ${provider.adapter.name} preflight failed for ${address}: ${preflight.error?.message}`);
           txStream.destroy();
@@ -299,6 +305,7 @@ export class MultiProviderEVMStateProvider extends BaseEVMStateProvider {
         txStream.pipe(wrapper);
         return wrapper;
       } catch (error) {
+        if (error instanceof ArcReceiptError) throw error;
         if (error instanceof AdapterError && (error as AdapterError).code === AdapterErrorCode.INVALID_REQUEST) throw error; // 400 — no failover
         provider.health.recordFailure(error as Error);
         logger.warn(`MultiProvider: ${provider.adapter.name} stream failed for ${address}: ${(error as Error).message}`);

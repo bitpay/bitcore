@@ -9,7 +9,6 @@ import { MultiProviderEVMStateProvider } from '../../../../src/modules/multiProv
 import { MoralisStateProvider } from '../../../../src/modules/moralis/api/csp';
 import { CacheStorage } from '../../../../src/models/cache';
 import { BaseEVMStateProvider } from '../../../../src/providers/chain-state/evm/api/csp';
-import { AllProvidersUnavailableError } from '../../../../src/providers/chain-state/external/adapters/errors';
 import { EVMBlockStorage } from '../../../../src/providers/chain-state/evm/models/block';
 import { streamJsonArray } from '../../../../src/routes/apiUtils';
 import { Config } from '../../../../src/services/config';
@@ -547,7 +546,7 @@ describe('MultiProviderEVMStateProvider: address transaction streaming', functio
   });
 
   it('closes Arc sources when receipt processing fails before or after preflight', async function() {
-    for (const validFirstReceipt of [false, true]) {
+    for (const [validFirstReceipt, rpcFailure] of [[false, false], [true, false], [false, true], [true, true]]) {
       const provider = new MultiProviderEVMStateProvider('ARC');
       const upstream = new ReadableWithEventPipe({ objectMode: true, read() {} });
       upstream.push({ txid: 'first', value: '0' });
@@ -556,7 +555,9 @@ describe('MultiProviderEVMStateProvider: address transaction streaming', functio
       const health = { isAvailable: () => true, recordSuccess: sinon.stub(), recordFailure: sinon.stub() };
       (provider as any).providersByNetwork = new Map([['mainnet', [{ adapter, health, priority: 1 }]]]);
       (provider as any).getChainId = async () => 5042n;
-      const getReceipt = sinon.stub(provider, 'getReceipt').resolves({} as any);
+      const getReceipt = sinon.stub(provider, 'getReceipt');
+      if (rpcFailure) getReceipt.rejects(new Error('Arc receipt RPC unavailable'));
+      else getReceipt.resolves({} as any);
       if (validFirstReceipt) getReceipt.onFirstCall().resolves({ logs: [] } as any);
       let failure: unknown;
       try {
@@ -568,8 +569,8 @@ describe('MultiProviderEVMStateProvider: address transaction streaming', functio
         getReceipt.restore();
       }
       expect(failure).to.be.instanceOf(Error);
-      if (validFirstReceipt) expect((failure as Error).message).to.include('Missing Arc receipt logs');
-      else expect(failure).to.be.instanceOf(AllProvidersUnavailableError);
+      expect((failure as Error).message).to.include(rpcFailure ? 'Arc receipt RPC unavailable' : 'Missing Arc receipt logs');
+      expect(health.recordFailure.called).to.equal(false);
       expect(upstream.destroyed).to.equal(true);
     }
   });

@@ -1,5 +1,7 @@
+import util from 'util';
 import { Constants, ethers } from '@bitpay-labs/crypto-wallet-core';
 import { ClientError } from '../../errors/clienterror';
+import { Errors } from '../../errors/errordefinitions';
 import { EthChain } from '../eth';
 import { ERC20Abi } from '../eth/abi-erc20';
 import type { TxProposal } from '../../model/txproposal';
@@ -20,9 +22,9 @@ export class ArcChain extends EthChain {
     if (txp.tokenAddress || txp.multisigContractAddress || txp.multiSendContractAddress) return 0n;
 
     try {
-      return (txp.outputs || []).reduce((total, output) => {
+      return (txp.outputs || []).reduce((total, output, index) => {
         if (output.toAddress?.toLowerCase() !== Constants.ARC.USDC_CONTRACT_ADDRESS) return total;
-        const data = output.data || txp.data;
+        const data = index === 0 && txp.data ? txp.data : output.data;
         if (!data || data === '0x') return total;
         const call = usdcInterface.parseTransaction({ data });
         let amount = 0n;
@@ -75,7 +77,13 @@ export class ArcChain extends EthChain {
       throw new ClientError('Arc gas price must be at least 20 gwei');
     }
     // Reserve the fee actually encoded in the transaction, including type-2 caps.
-    return { ...fees, fee: gasPrice * fees.gasLimit };
+    const fee = gasPrice * fees.gasLimit;
+    if (opts.sendMax && Number(opts.txType) === 2) {
+      const balance = await util.promisify(server.getBalance).call(server, {});
+      if (balance.availableAmount <= fee) throw Errors.INSUFFICIENT_FUNDS_FOR_FEE;
+      opts.outputs[0].amount = balance.availableAmount - fee;
+    }
+    return { ...fees, fee };
   }
 
   checkDust(output, opts) {
