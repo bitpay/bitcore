@@ -3,7 +3,7 @@
 import chai from 'chai';
 import 'chai/register-should';
 import sinon from 'sinon';
-import { BitcoreLib, ethers, SolKit, xrpl } from '@bitpay-labs/crypto-wallet-core';
+import { BitcoreLib, Constants, ethers, SolKit, xrpl } from '@bitpay-labs/crypto-wallet-core';
 import { Utils } from '../src/lib/common';
 import { PayProV2 } from '../src/lib/payproV2';
 import { Verifier } from '../src/lib/verifier';
@@ -1534,8 +1534,13 @@ describe('Verifier', function() {
     it('rejects EVM networks without a configured numeric chain ID', function() {
       const txp = txpFor('arc', evmAddress);
       const paypro = { chain: 'arc', network: 'livenet', instructions: [{ to: evmAddress, value: 10000 }] };
-      Verifier.checkPaypro(txp, paypro).should.equal(false);
-      Verifier.checkPaypro({ ...txp, network: 'testnet' }, { ...paypro, network: 'testnet' }).should.equal(true);
+      const chainId = sinon.stub(Constants.EVM_CHAIN_NETWORK_TO_CHAIN_ID, 'ARC_mainnet').value('unsupported');
+      try {
+        Verifier.checkPaypro(txp, paypro).should.equal(false);
+        Verifier.checkPaypro({ ...txp, network: 'testnet' }, { ...paypro, network: 'testnet' }).should.equal(true);
+      } finally {
+        chainId.restore();
+      }
     });
 
     it('does not mutate proposal calldata or signed invoice fields', function() {

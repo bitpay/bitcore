@@ -71,6 +71,7 @@ const Bitcore_ = {
   arb: Bitcore,
   base: Bitcore,
   op: Bitcore,
+  arc: Bitcore,
   xrp: Bitcore,
   doge: BitcoreDoge,
   ltc: BitcoreLtc,
@@ -1310,6 +1311,7 @@ export class WalletService implements IWalletService {
    * @param {string} opts.opTokenAddresses - Linked token addresses
    * @param {string} opts.baseTokenAddresses - Linked token addresses
    * @param {string} opts.arbTokenAddresses - Linked token addresses
+   * @param {string[]} opts.arcTokenAddresses - Linked Arc ERC20 token addresses
    * @param {string} opts.solTokenAddresses - Linked token addresses
    * @param {string} opts.multisigMaticInfo - Linked multisig eth wallet info
    *
@@ -1382,6 +1384,14 @@ export class WalletService implements IWalletService {
         name: 'arbTokenAddresses',
         isValid(value) {
           return Array.isArray(value) && value.every(x => Validation.validateAddress('arb', 'mainnet', x));
+        }
+      },
+      {
+        name: 'arcTokenAddresses',
+        isValid(value) {
+          return Array.isArray(value) && value.every(address =>
+            Validation.validateAddress('arc', 'mainnet', address) &&
+            address.toLowerCase() !== Constants.ARC.USDC_CONTRACT_ADDRESS);
         }
       },
       {
@@ -1483,6 +1493,13 @@ export class WalletService implements IWalletService {
             oldPref = oldPref || {} as Preferences;
             oldPref.arbTokenAddresses = oldPref.arbTokenAddresses || [];
             preferences.arbTokenAddresses = _.uniq(oldPref.arbTokenAddresses.concat(opts.arbTokenAddresses));
+          }
+
+          if (opts.arcTokenAddresses) {
+            oldPref = oldPref || {} as Preferences;
+            oldPref.arcTokenAddresses = oldPref.arcTokenAddresses || [];
+            preferences.arcTokenAddresses = _.uniq(oldPref.arcTokenAddresses.concat(opts.arcTokenAddresses)
+              .map(address => address.toLowerCase()));
           }
 
           if (opts.solTokenAddresses) {
@@ -2448,7 +2465,8 @@ export class WalletService implements IWalletService {
               feePerKb: opts.feePerKb,
               excludeUnconfirmedUtxos: !!opts.excludeUnconfirmedUtxos,
               returnInputs: true,
-              numSignatures: opts.numSignatures
+              numSignatures: opts.numSignatures,
+              txType: opts.txType
             },
             (err, info) => {
               if (err) return next(err);

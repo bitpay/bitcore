@@ -10,6 +10,7 @@ export const Constants = {
     ARB: 'arb',
     BASE: 'base',
     OP: 'op',
+    ARC: 'arc',
     XRP: 'xrp',
     DOGE: 'doge',
     LTC: 'ltc',
@@ -38,7 +39,8 @@ export const Constants = {
     EUROC: 'euroc',
     USDT: 'usdt',
     WETH: 'weth',
-    SOL: 'sol'
+    SOL: 'sol',
+    ARC: 'arc'
   },
 
   BITPAY_SUPPORTED_ETH_ERC20: {
@@ -60,6 +62,7 @@ export const Constants = {
 
   BITPAY_USD_STABLECOINS: {
     // used for rates
+    ARC: 'arc',
     USDC: 'usdc',
     PYUSD: 'pyusd',
     USDP: 'usdp',
@@ -88,6 +91,7 @@ export const Constants = {
     ARB: 'arb',
     BASE: 'base',
     OP: 'op',
+    ARC: 'arc',
   },
 
   EVM_CHAINS_WITH_ETH_GAS: {
@@ -112,6 +116,7 @@ export const Constants = {
     arb: ['livenet', 'sepolia', 'holesky', 'regtest'],
     base: ['livenet', 'sepolia', 'holesky', 'regtest'],
     op: ['livenet', 'sepolia', 'holesky', 'regtest'],
+    arc: ['livenet', 'testnet'],
     sol: ['livenet', 'testnet', 'devnet', 'regtest']
   } as { [chain: string]: Array<string> },
 
@@ -155,6 +160,9 @@ export const Constants = {
     op: {
       mainnet: 'livenet',
       testnet: 'sepolia'
+    },
+    arc: {
+      mainnet: 'livenet'
     },
     sol: {
       mainnet: 'livenet',
@@ -200,6 +208,8 @@ export const Constants = {
   ARB_TOKEN_OPTS: CWC.Constants.ARB_TOKEN_OPTS,
   OP_TOKEN_OPTS: CWC.Constants.OP_TOKEN_OPTS,
   BASE_TOKEN_OPTS: CWC.Constants.BASE_TOKEN_OPTS,
+  ARC_TOKEN_OPTS: CWC.Constants.ARC_TOKEN_OPTS,
+  ARC: CWC.Constants.ARC,
   SOL_TOKEN_OPTS: CWC.Constants.SOL_TOKEN_OPTS,
 
   BITPAY_CONTRACTS: {
@@ -219,6 +229,7 @@ export const Constants = {
     bch: { testnet: 300, livenet: 0 },
     eth: { testnet: 300, livenet: 0 },
     matic: { testnet: 300, livenet: 12 }, // MATIC set to 12 because blocks normally occur every 1-2 seconds
+    arc: { testnet: 0, livenet: 0 },
     xrp: { testnet: 300, livenet: 0 },
     doge: { testnet: 300, livenet: 0 },
     ltc: { testnet: 300, livenet: 0 }

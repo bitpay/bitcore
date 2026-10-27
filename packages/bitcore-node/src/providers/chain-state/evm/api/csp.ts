@@ -28,6 +28,7 @@ import { EVMBlockStorage } from '../models/block';
 import { EVMTransactionStorage } from '../models/transaction';
 import { EVMTransactionJSON, IEVMBlock, IEVMTransaction, IEVMTransactionInProcess } from '../types';
 import { AaveAccountData, AaveReserveData, AaveReserveTokensAddresses, AaveV2AccountData, AaveV3AccountData, AaveVersion, getAavePoolAddress } from './aave';
+import { getArcUsdcEffects } from './arc';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateEffectsForAddressTransform } from './populateEffectsTransform';
@@ -448,13 +449,23 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
   }
 
   async populateReceipt(tx: MongoBound<IEVMTransaction>) {
-    if (!tx.receipt) {
+    const isArc = this.chain === 'ARC';
+    if (!tx.receipt || (isArc && !Array.isArray(tx.receipt.logs))) {
       const receipt = await this.getReceipt(tx.network, tx.txid);
       if (receipt) {
         const fee = Number(BigInt(receipt.gasUsed) * BigInt(tx.gasPrice));
         await EVMTransactionStorage.collection.updateOne({ _id: tx._id }, { $set: { receipt: receipt as any, fee } });
         tx.receipt = receipt as any;
         tx.fee = fee;
+      }
+    }
+    // Normalize Arc's native USDC events before discarding the large receipt logs.
+    if (isArc) {
+      const logs = tx.receipt?.logs;
+      if (Array.isArray(logs)) {
+        tx.effects = getArcUsdcEffects(logs, tx.effects);
+      } else if ((tx.blockHeight ?? -1) >= 0) {
+        throw new Error(`Missing Arc receipt logs for ${tx.txid}`);
       }
     }
     // logs can be very large and are not currently needed for any use case in this codebase.
@@ -699,7 +710,8 @@ export class BaseEVMStateProvider extends InternalStateProvider implements IChai
     const { stream: builtStream, dispose } = await this._buildWalletTransactionsStream(params, streamParams);
     transactionStream = builtStream;
 
-    if (!args.tokenAddress && wallet._id) {
+    // Arc's receipt events are aggregated below instead of expanding native traces.
+    if (!args.tokenAddress && wallet._id && this.chain !== 'ARC') {
       const internalTxTransform = new InternalTxRelatedFilterTransform(web3, wallet._id);
       transactionStream = transactionStream.eventPipe(internalTxTransform);
     }

@@ -931,6 +931,19 @@ describe('Fiat rate service', function() {
         });
       });
     });
+    it('should fetch and store USD-pegged rates for native USDC on Arc', async function() {
+      await util.promisify(service.storage.storeFiatRate).call(service.storage, 'btc', btcRates);
+      request.get.yields(null, null, btcRates.map(({ code, value }) => ({ code, rate: value })));
+
+      await util.promisify(service._fetch).call(service);
+
+      const storedRate = await util.promisify(service.getRate).call(service, { coin: 'arc', code: 'USD' });
+      storedRate.rate.should.equal(1);
+      const rates = await util.promisify(service.getRatesByCoin).call(service, { coin: 'arc' });
+      rates.find(rate => rate.code === 'USD').rate.should.equal(1);
+      rates.find(rate => rate.code === 'EUR').rate.should.equal(0.87);
+      request.get.calledWith(sinon.match({ url: sinon.match(/\/rates\/ARC\?/) })).should.equal(false);
+    });
     it('should get rate for specific ts', function(done) {
       const clock = sinon.useFakeTimers({ toFake: ['Date'] });
       clock.tick(20);

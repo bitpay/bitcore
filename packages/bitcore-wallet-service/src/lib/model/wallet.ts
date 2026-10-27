@@ -24,6 +24,7 @@ const Bitcore = {
   arb: BitcoreLib,
   base: BitcoreLib,
   op: BitcoreLib,
+  arc: BitcoreLib,
   xrp: BitcoreLib,
   doge: BitcoreLibDoge,
   ltc: BitcoreLibLtc,

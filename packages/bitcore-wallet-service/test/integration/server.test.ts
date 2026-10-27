@@ -20,6 +20,7 @@ import * as TestData from '../testdata';
 import helpers from './helpers';
 import { ClientError } from '../../src/lib/errors/clienterror';
 import { ExpressApp } from '../../src/lib/expressapp';
+import { ERC20Abi } from '../../src/lib/chain/eth/abi-erc20';
 
 const should = chai.should();
 config.moralis = config.moralis ?? {
@@ -2696,6 +2697,29 @@ describe('Wallet service', function() {
       ({ server, wallet } = await helpers.createAndJoinWallet(1, 1, { coin: 'eth' }));
     });
 
+    it('should save and merge Arc token preferences without linking native USDC', async function() {
+      ({ server } = await helpers.createAndJoinWallet(1, 1, { coin: 'arc', network: 'livenet' }));
+      await util.promisify(server.savePreferences).call(server, { arcTokenAddresses: [TOKENS[0]], language: 'es' });
+      await util.promisify(server.savePreferences).call(server, {
+        arcTokenAddresses: [TOKENS[1], CWC.ethers.getAddress(TOKENS[0])],
+      });
+      let preferences = await util.promisify(server.getPreferences).call(server, {});
+      preferences.arcTokenAddresses.should.deep.equal(TOKENS);
+      preferences.language.should.equal('es');
+
+      try {
+        await util.promisify(server.savePreferences).call(server, {
+          arcTokenAddresses: [TOKENS[0], CWC.Constants.ARC.USDC_CONTRACT_ADDRESS], language: 'en',
+        });
+        should.fail('Expected native USDC token preference rejection');
+      } catch (err) {
+        err.message.toString().should.contain('arcTokenAddresses');
+      }
+      preferences = await util.promisify(server.getPreferences).call(server, {});
+      preferences.arcTokenAddresses.should.deep.equal(TOKENS);
+      preferences.language.should.equal('es');
+    });
+
     it('should save & retrieve preferences', function(done) {
       server.savePreferences({
         email: 'dummy@dummy.com',
@@ -2895,7 +2919,8 @@ describe('Wallet service', function() {
           unit: 'xxxxx',
         },
         expected: 'unit'
-      },];
+      }, ...['not-an-array', ['invalid']]
+        .map(arcTokenAddresses => ({ preferences: { arcTokenAddresses }, expected: 'arcTokenAddresses' }))];
 
       for (const item of invalid) {
         try {
@@ -6175,6 +6200,110 @@ describe('Wallet service', function() {
       });
     });
   });
+
+  for (const [network, chainId] of [['livenet', 5042n], ['testnet', 5042002n]] as const) {
+    describe(`#createTX ARC ${network}`, () => {
+      let server: WalletService;
+      let from: string;
+      const destination = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+      const usdc = new CWC.ethers.Interface(ERC20Abi);
+      const contractOpts = (data: string) => makeOpts({
+        outputs: [{ toAddress: CWC.Constants.ARC.USDC_CONTRACT_ADDRESS, amount: 0, gasLimit: 100000, data }]
+      });
+      const makeOpts = (overrides = {}) => ({
+        outputs: [{ toAddress: destination, amount: 1e18, gasLimit: 21000 }],
+        nonce: 0, feeLevel: 'normal', ...overrides
+      });
+
+      beforeEach(async () => {
+        ({ server } = await helpers.createAndJoinWallet(1, 1, { coin: 'arc', network }));
+        from = (await util.promisify(server.createAddress).call(server, {})).address;
+        blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, { balance: 2e18, confirmed: 2e18, unconfirmed: 0 });
+        helpers.stubFeeLevels({ 1: 25000000000, 2: 25000000000, 3: 25000000000, 4: 25000000000 }, true, 'arc');
+      });
+
+      for (const [txType, sendMax] of [[0, false], [2, false], [2, true]] as const) {
+        it(`should publish, sign and submit a type ${txType} native USDC ${sendMax ? 'send-max ' : ''}proposal`, async () => {
+          sinon.stub(server, 'estimateFee').resolves(30000000000);
+          sinon.stub(server, 'estimatePriorityFee').resolves(0);
+          const fee = (txType === 2 ? 30000000000 : 25000000000) * 21000;
+          const amount = sendMax ? 2e18 - fee : 1e18;
+          const txp = await util.promisify(server.createTx).call(server, makeOpts({ txType, sendMax,
+            outputs: [{ toAddress: destination, amount: sendMax ? null : amount, gasLimit: 21000 }] }));
+          txp.fee.should.equal(fee);
+          txp.amount.should.equal(amount);
+          await util.promisify(server.publishTx).call(server, helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0));
+          await util.promisify(server.signTx).call(server, { txProposalId: txp.id, signatures: helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H) });
+          const accepted = await util.promisify(server.getTx).call(server, { txProposalId: txp.id });
+          accepted.status.should.equal('accepted');
+          const [raw] = accepted.getRawTx();
+          const signed = CWC.ethers.Transaction.from(raw);
+          signed.chainId.should.equal(chainId);
+          signed.value.should.equal(BigInt(amount));
+          BigInt(txp.fee).should.equal((signed.maxFeePerGas ?? signed.gasPrice) * signed.gasLimit);
+          signed.isSigned().should.equal(true);
+          helpers.stubBroadcast(accepted.txid);
+          await util.promisify(server.broadcastTx).call(server, { txProposalId: txp.id });
+          blockchainExplorer.broadcast.firstCall.args[0].should.deep.equal([raw]);
+          (await util.promisify(server.getTx).call(server, { txProposalId: txp.id })).status.should.equal('broadcasted');
+        });
+      }
+
+      it('should reserve wallet-owned USDC contract debits and release them when removed', async () => {
+        for (const [method, args, debit] of [
+          ['transfer', [destination, 1000000n], 1e18],
+          ['transferFrom', [from, destination, 1000000n], 1e18],
+          ['transferFrom', [destination, from, 1000000n], 0],
+          ['approve', [destination, 1000000n], 0]
+        ] as Array<[string, any[], number]>) {
+          const data = usdc.encodeFunctionData(method, args);
+          const txp = await util.promisify(server.createTx).call(server, contractOpts(data));
+          txp.amount.should.equal(0);
+          txp.outputs[0].amount.should.equal(0);
+          txp.outputs[0].data.should.equal(data);
+          await util.promisify(server.publishTx).call(server, helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0));
+          const balance = await util.promisify(server.getBalance).call(server, {});
+          balance.lockedAmount.should.equal(debit + txp.fee);
+          balance.availableAmount.should.equal(2e18 - debit - txp.fee);
+          if (debit) {
+            try {
+              await util.promisify(server.createTx).call(server, makeOpts({ nonce: 1,
+                outputs: [{ toAddress: destination, amount: 1.5e18, gasLimit: 21000 }] }));
+              should.fail('Expected pending USDC funds to be unavailable');
+            } catch (err) {
+              err.code.should.equal('LOCKED_FUNDS');
+            }
+          }
+          await util.promisify(server.removePendingTx).call(server, { txProposalId: txp.id });
+          (await util.promisify(server.getBalance).call(server, {})).lockedAmount.should.equal(0);
+        }
+      });
+
+      it('should reject underpriced proposals, duplicate USDC token views and zero-address transfers', async () => {
+        try {
+          await util.promisify(server.getBalance).call(server, { tokenAddress: CWC.Constants.ARC.USDC_CONTRACT_ADDRESS });
+          throw new Error('Expected duplicate token balance rejection');
+        } catch (err) {
+          err.message.should.contain('omit tokenAddress');
+        }
+        for (const [opts, message] of [
+          [makeOpts({ feeLevel: undefined, feePerKb: 10000000000 }), 'at least 20 gwei'],
+          [makeOpts({ tokenAddress: CWC.Constants.ARC.USDC_CONTRACT_ADDRESS }), 'omit tokenAddress'],
+          [contractOpts(usdc.encodeFunctionData('transfer', [destination, 3000000n])), 'Insufficient funds'],
+          [contractOpts(usdc.encodeFunctionData('transfer', [destination, 2000000n])), 'Insufficient funds for fee'],
+          [contractOpts(usdc.getFunction('transfer').selector), 'Invalid Arc USDC contract call data'],
+          [makeOpts({ outputs: [{ toAddress: '0x0000000000000000000000000000000000000000', amount: 1e18 }] }), 'zero address']
+        ] as Array<[any, string]>) {
+          try {
+            await util.promisify(server.createTx).call(server, opts);
+            throw new Error('Expected proposal rejection');
+          } catch (err) {
+            err.message.should.contain(message);
+          }
+        }
+      });
+    });
+  }
 
   describe('#createTX ETH Only tests', () => {
     let server: WalletService;

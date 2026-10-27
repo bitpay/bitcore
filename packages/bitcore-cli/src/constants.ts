@@ -107,6 +107,10 @@ const PUBLIC_API = {
   base: {
     mainnet: 'https:/base-rpc.publicnode.com',
     testnet: 'https://base-sepolia-rpc.publicnode.com',
+  },
+  arc: {
+    mainnet: 'https://arc-rpc.publicnode.com',
+    testnet: 'https://arc-testnet-rpc.publicnode.com',
   }
 } as const;
 

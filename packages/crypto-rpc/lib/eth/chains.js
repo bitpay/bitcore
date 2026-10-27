@@ -13,5 +13,8 @@ export const chainConfig = {
   },
   BASE: {
     priorityFee: 1
+  },
+  ARC: {
+    priorityFee: 1
   }
 };

@@ -3,14 +3,17 @@ import { EventEmitter } from 'events';
 import * as sinon from 'sinon';
 import { Readable } from 'stream';
 import { CryptoRpc } from '@bitpay-labs/crypto-rpc';
+import { Web3 } from '@bitpay-labs/crypto-wallet-core';
 import { EthDater } from '../../../../src/utils/ethDater';
 import { MultiProviderEVMStateProvider } from '../../../../src/modules/multiProvider/api/csp';
 import { MoralisStateProvider } from '../../../../src/modules/moralis/api/csp';
 import { CacheStorage } from '../../../../src/models/cache';
 import { BaseEVMStateProvider } from '../../../../src/providers/chain-state/evm/api/csp';
+import { AllProvidersUnavailableError } from '../../../../src/providers/chain-state/external/adapters/errors';
 import { EVMBlockStorage } from '../../../../src/providers/chain-state/evm/models/block';
 import { streamJsonArray } from '../../../../src/routes/apiUtils';
 import { Config } from '../../../../src/services/config';
+import { ReadableWithEventPipe } from '../../../../src/utils/streamWithEventPipe';
 
 
 describe('BASE Chain State Provider', function() {
@@ -492,12 +495,83 @@ describe('MultiProviderEVMStateProvider: address transaction streaming', functio
   let cfgStub: sinon.SinonStub;
 
   before(function() {
-    cfgStub = sinon.stub(Config, 'get').returns({ chains: { ETH: {} } } as any);
-    (BaseEVMStateProvider as any).rpcInitialized = { ETH: true };
+    cfgStub = sinon.stub(Config, 'get').returns({ chains: { ETH: {}, ARC: {} } } as any);
+    (BaseEVMStateProvider as any).rpcInitialized = { ETH: true, ARC: true };
   });
 
   after(function() {
     cfgStub.restore();
+  });
+
+  it('enriches native Arc address history from receipts without changing token queries or transaction values', async function() {
+    const provider = new MultiProviderEVMStateProvider('ARC');
+    const from = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    const to = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+    const usdc = '0x3600000000000000000000000000000000000000';
+    const tx = { txid: 'arc-transfer', value: '0', effects: [], fee: 0 };
+    const makeStream = () => new ReadableWithEventPipe({ objectMode: true, read() {
+      this.push({ ...tx });
+      this.push(null);
+    } });
+    const adapter = { name: 'fake', streamAddressTransactions: sinon.stub().callsFake(makeStream),
+      streamERC20Transfers: sinon.stub().callsFake(makeStream) };
+    const health = { isAvailable: () => true, recordSuccess: sinon.stub(), recordFailure: sinon.stub() };
+    (provider as any).providersByNetwork = new Map([['mainnet', [{ adapter, health, priority: 1 }]]]);
+    (provider as any).getChainId = async () => 5042n;
+    const abi = new Web3().eth.abi;
+    const log = (address: string, amount: string) => ({ address, logIndex: 0,
+      data: abi.encodeParameter('uint256', amount), topics: [abi.encodeEventSignature('Transfer(address,address,uint256)'),
+        abi.encodeParameter('address', from), abi.encodeParameter('address', to)] });
+    const getReceipt = sinon.stub(provider, 'getReceipt').resolves({ logs: [
+      log('0xfffffffffffffffffffffffffffffffffffffffe', '1000000000000000000'), log(usdc, '1000000')
+    ] } as any);
+    try {
+      for (const args of [{}, { tokenAddress: usdc }]) {
+        const stream = await provider.streamAddressTransactions({ chain: 'ARC', network: 'mainnet', address: to, args } as any);
+        const rows: any[] = [];
+        for await (const row of stream) rows.push(row);
+        expect(rows).to.have.length(1);
+        expect(rows[0].value).to.equal('0');
+        expect(rows[0].fee).to.equal(0);
+        if ('tokenAddress' in args) {
+          expect(rows[0].effects).to.deep.equal([]);
+        } else {
+          expect(rows[0].effects).to.deep.equal([{ from: Web3.utils.toChecksumAddress(from),
+            to: Web3.utils.toChecksumAddress(to), amount: '1000000000000000000', callStack: '0' }]);
+        }
+      }
+      expect(getReceipt.calledOnceWithExactly('mainnet', tx.txid)).to.equal(true);
+    } finally {
+      getReceipt.restore();
+    }
+  });
+
+  it('closes Arc sources when receipt processing fails before or after preflight', async function() {
+    for (const validFirstReceipt of [false, true]) {
+      const provider = new MultiProviderEVMStateProvider('ARC');
+      const upstream = new ReadableWithEventPipe({ objectMode: true, read() {} });
+      upstream.push({ txid: 'first', value: '0' });
+      upstream.push({ txid: 'second', value: '0' });
+      const adapter = { name: 'fake', streamAddressTransactions: sinon.stub().returns(upstream) };
+      const health = { isAvailable: () => true, recordSuccess: sinon.stub(), recordFailure: sinon.stub() };
+      (provider as any).providersByNetwork = new Map([['mainnet', [{ adapter, health, priority: 1 }]]]);
+      (provider as any).getChainId = async () => 5042n;
+      const getReceipt = sinon.stub(provider, 'getReceipt').resolves({} as any);
+      if (validFirstReceipt) getReceipt.onFirstCall().resolves({ logs: [] } as any);
+      let failure: unknown;
+      try {
+        const stream = await provider.streamAddressTransactions({ chain: 'ARC', network: 'mainnet', address: 'address', args: {} } as any);
+        for await (const _row of stream) { /* Consume until the receipt error. */ }
+      } catch (err) {
+        failure = err;
+      } finally {
+        getReceipt.restore();
+      }
+      expect(failure).to.be.instanceOf(Error);
+      if (validFirstReceipt) expect((failure as Error).message).to.include('Missing Arc receipt logs');
+      else expect(failure).to.be.instanceOf(AllProvidersUnavailableError);
+      expect(upstream.destroyed).to.equal(true);
+    }
   });
 
   it('destroys the returned stream when the adapter errors after preflight', async function() {

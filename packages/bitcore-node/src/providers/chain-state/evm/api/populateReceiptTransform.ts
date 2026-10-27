@@ -11,7 +11,9 @@ export class PopulateReceiptTransform extends TransformWithEventPipe {
   async _transform(tx: MongoBound<IEVMTransaction>, _, done) {
     try {
       tx = await this.evm.populateReceipt(tx);
-    } catch {/* ignore error */}
+    } catch (err) {
+      if (this.evm.chain === 'ARC' && (tx.blockHeight ?? -1) >= 0) return done(err);
+    }
     this.push(tx);
     return done();
   }
