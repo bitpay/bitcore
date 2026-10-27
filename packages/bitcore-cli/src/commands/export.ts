@@ -1,10 +1,10 @@
 import fs from 'fs';
-import os from 'os';
 import path from 'path';
 import * as prompt from '@clack/prompts';
 import { Command } from 'commander';
 import { UserCancelled } from '../errors';
 import { getPassword } from '../prompts';
+import { Utils } from '../utils';
 import type { CommonArgs } from '../../types/cli';
 
 export function command() {
@@ -25,8 +25,6 @@ export function command() {
 export async function exportWallet(args: CommonArgs<{ filename?: string; readonly?: boolean; overwrite?: boolean }>) {
   const { wallet, opts } = args;
 
-  const replaceTilde = str => str.startsWith('~') ? str.replace('~', os.homedir()) : str;
-
   // Callers like createThresholdSig pass `readonly` explicitly to skip the prompt
   const readOnly = wallet.isReadOnly() || (opts.readonly ?? (opts.command ? false : await prompt.confirm({
     message: 'Export as read-only (cannot send funds)?',
@@ -36,13 +34,13 @@ export async function exportWallet(args: CommonArgs<{ filename?: string; readonl
     throw new UserCancelled();
   }
 
-  const filename = opts.command ? replaceTilde(opts.filename) : await prompt.text({
+  const filename = opts.command ? opts.filename : await prompt.text({
     message: 'Enter filename to export to:',
     initialValue: `~/${wallet.name}${readOnly ? '-nokey' : ''}-export.json`,
     validate: (value) => {
       value = value.trim();
       if (!value) return 'Filename is required';
-      value = replaceTilde(value);
+      value = Utils.replaceTilde(value);
 
       try {
         let _path = '';
@@ -64,7 +62,9 @@ export async function exportWallet(args: CommonArgs<{ filename?: string; readonl
     throw new UserCancelled();
   }
 
-  if (fs.existsSync(filename) && !opts.overwrite) {
+  const fullFilename = Utils.replaceTilde(filename);
+
+  if (fs.existsSync(fullFilename) && !opts.overwrite) {
     if (opts.command) {
       throw new Error(`File already exists: ${filename}`);
     }
@@ -80,7 +80,7 @@ export async function exportWallet(args: CommonArgs<{ filename?: string; readonl
   const exportPassword = await getPassword('File encryption password:', { hidden: false, minLength: 6, confirm: true });
 
   await wallet.export({
-    filename: replaceTilde(filename),
+    filename: fullFilename,
     exportPassword,
     readOnly
   });
