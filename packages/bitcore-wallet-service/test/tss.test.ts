@@ -427,6 +427,34 @@ describe('KeyGen admission', function() {
       await expectRefused(submit(p2p(1, 1, 'other-key'), 'bob'));
     });
 
+    it('should reject an enrolled sender with no round 0 message to bind its key to', async function() {
+      const session = makeSession();
+      session.participants[1] = 'bob';
+      session.authPublicKeys[1] = 'key1';
+      fetchSession.resolves(session);
+      await expectRefused(submit(broadcast(1)));
+    });
+
+    it('should reject an enrolled v1.2 sender whose round 0 key is not the registered key', async function() {
+      const session = makeSession({ version: 1.2, joined: [1, 2] });
+      session.authPublicKeys[1] = 'registered-elsewhere';
+      fetchSession.resolves(session);
+      await expectRefused(submit(p2p(1), 'bob', { version: 1.2 }));
+    });
+
+    it('should reject an enrolled sender whose round 0 key is ambiguous', async function() {
+      const session = makeSession({ joined: [1, 2] });
+      session.rounds[0].push({ fromPartyId: 1, messages: broadcast(1, 0, 'key1') });
+      fetchSession.resolves(session);
+      await expectRefused(submit(p2p(1)));
+    });
+
+    it('should accept an enrolled sender carrying its enrolled key', async function() {
+      fetchSession.resolves(makeSession({ joined: [1, 2] }));
+      await submit(p2p(1));
+      expect(brokerSend.calledOnce).to.equal(true);
+    });
+
     it('should reject a v1.2 joiner whose key is not the registered key for the slot', async function() {
       fetchSession.resolves(makeSession({ version: 1.2, registered: [1] }));
       await expectRefused(submit(broadcast(1, 0, 'other-key'), 'bob', { version: 1.2 }));
@@ -687,5 +715,43 @@ describe('KeyGen admission request shape validators', function() {
         invalidReg(body);
       });
     }
+  });
+});
+
+describe('KeyGen admission enrolled key lookup', function() {
+  const entry = (fromPartyId: number, publicKey: any) => ({ fromPartyId, messages: { publicKey } as any });
+  const session = (version: number, round0: any[], authPublicKeys: any[] = []) =>
+    Object.assign(new TssKeyGenModel(), { schemeVersion: version, rounds: [round0], authPublicKeys });
+
+  it('should return the one round 0 key for a legacy party', function() {
+    expect(session(1.1, [entry(0, 'k0'), entry(1, 'k1')]).getEnrolledKey(1)).to.equal('k1');
+  });
+
+  it('should look the key up by fromPartyId, not by position', function() {
+    expect(session(1.1, [entry(2, 'k2'), entry(0, 'k0'), entry(1, 'k1')]).getEnrolledKey(1)).to.equal('k1');
+  });
+
+  it('should return undefined when the party has no round 0 message', function() {
+    expect(session(1.1, [entry(0, 'k0')]).getEnrolledKey(1)).to.equal(undefined);
+  });
+
+  it('should return undefined when the mapping is ambiguous', function() {
+    expect(session(1.1, [entry(0, 'k0'), entry(1, 'k1'), entry(1, 'k1')]).getEnrolledKey(1)).to.equal(undefined);
+  });
+
+  it('should return undefined when the key is missing or not a string', function() {
+    for (const publicKey of [undefined, null, '', 5, {}]) {
+      expect(session(1.1, [entry(1, publicKey)]).getEnrolledKey(1)).to.equal(undefined);
+    }
+  });
+
+  it('should require a v1.2 round 0 key to be the registered key', function() {
+    expect(session(1.2, [entry(1, 'k1')], [null, 'k1']).getEnrolledKey(1)).to.equal('k1');
+    expect(session(1.2, [entry(1, 'k1')], [null, 'other']).getEnrolledKey(1)).to.equal(undefined);
+    expect(session(1.2, [entry(1, 'k1')], []).getEnrolledKey(1)).to.equal(undefined);
+  });
+
+  it('should not require a registry for legacy sessions', function() {
+    expect(session(1.1, [entry(1, 'k1')], undefined).getEnrolledKey(1)).to.equal('k1');
   });
 });

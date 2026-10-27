@@ -351,6 +351,13 @@ class TssKeyGenClass {
         if (!this._checkPassword({ session, password })) {
           throw Errors.TSS_INVALID_PASSWORD;
         }
+        // Admission only happens with the party's round 0 message, and a slot that is still vacant can't have one already
+        if (message.round !== 0) {
+          throw Errors.TSS_ROUND_TOO_EARLY;
+        }
+        if (session.rounds[0]?.some(r => r.fromPartyId === message.partyId)) {
+          throw Errors.TSS_ROUND_MESSAGE_EXISTS;
+        }
         // Sanity check for the public key of the participant in the session
         // session.authPublicKeys was not added until version 1.2
         if (session.schemeVersion >= 1.2 && session.authPublicKeys[message.partyId] !== message.publicKey) {
@@ -368,6 +375,9 @@ class TssKeyGenClass {
         }
       } else if (session.participants[message.partyId] !== copayerId) {
         throw Errors.TSS_NON_PARTICIPANT.withMessage('Incorrect copayerId for this partyId');
+      } else if (message.publicKey !== session.getEnrolledKey(message.partyId)) {
+        // Every message from an enrolled party must carry the key it enrolled with (and, from v1.2, was registered with)
+        throw Errors.NOT_AUTHORIZED.withMessage('Public key does not match the one established for this party');
       }
 
       let result = false;

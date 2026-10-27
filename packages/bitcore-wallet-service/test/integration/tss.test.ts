@@ -441,24 +441,28 @@ describe('TSS', function() {
         // For an existing session, request auth uses the session's authPublicKeys rather than
         //  message.publicKey, so these reach verifyTssMessage instead of failing auth first.
 
+        // The wrapper key must be the one the party enrolled with, so a missing or different key is refused
+        //  by authentication before the payload is verified.
+
         it('should error if no publicKey', async function() {
           await createKeyGenSession();
           const message = round0Message(0);
           delete message.publicKey;
           const res = await post(path, { message }, partyAuth(0));
-          expectError(res, 400, 'TSS_PUBKEY_MISSING');
+          expectError(res, 401, 'NOT_AUTHORIZED');
         });
 
         it('should error if publicKey is bogus', async function() {
           await createKeyGenSession();
           const message = { ...round0Message(0), publicKey: 'invalid' };
           const res = await post(path, { message }, partyAuth(0));
-          expectError(res, 400, 'TSS_INVALID_MESSAGE');
+          expectError(res, 401, 'NOT_AUTHORIZED');
         });
 
         it('should error if publicKey cannot verify broadcast message signature', async function() {
           await createKeyGenSession();
-          const message = { ...round0Message(0), publicKey: randomKey().publicKey.toString() };
+          const message = round0Message(0);
+          message.broadcastMessages[0].payload.signature = round0Message(1).broadcastMessages[0].payload.signature;
           const res = await post(path, { message }, partyAuth(0));
           expectError(res, 400, 'TSS_INVALID_MESSAGE_SIG');
         });
@@ -1296,7 +1300,7 @@ describe('TSS', function() {
           await createKeyGenSession({ version, registered: version >= 1.2 ? [1, 2] : [], joined: [1] });
           await setPassword('pw');
           const body = { message: round0Claim(1, 2), password: 'pw', version };
-          await expectRejected(() => post(path, body, partyAuth(1)));
+          await expectRejected(() => post(path, body, partyAuth(1)), { status: 401, code: 'NOT_AUTHORIZED' });
         });
       }
 
@@ -1422,6 +1426,56 @@ describe('TSS', function() {
         await createKeyGenSession({ joined: [1, 2] });
         const res = await get(`${path}/0?maxWaitTime=0`, forged(1));
         expectError(res, 401, 'NOT_AUTHORIZED');
+      });
+    });
+
+    describe('key binding', function() {
+      const message1 = () => round1Message(1);
+
+      it('should reject a new session whose proposed key is malformed', async function() {
+        const body = { message: { ...round0Message(0), publicKey: 'not-a-key' }, n: vector.n, version: 1.2 };
+        const res = await post(path, body, partyAuth(0));
+        expectError(res, 401, 'NOT_AUTHORIZED');
+        (await rawDoc() === null).should.equal(true);
+      });
+
+      it('should reject a legacy joiner whose proposed key is malformed', async function() {
+        await createKeyGenSession({ version: 1.1 });
+        const body = { message: { ...round0Message(1), publicKey: 'not-a-key' }, version: 1.1 };
+        await expectRejected(() => post(path, body, partyAuth(1)), { status: 401, code: 'NOT_AUTHORIZED' });
+      });
+
+      it('should reject a v1.2 joiner that signs with its registered key but submits another registered key', async function() {
+        await createKeyGenSession({ registered: [1, 2] });
+        const body = { message: round0Claim(2, 1), version: 1.2 };
+        await expectRejected(() => post(path, body, partyAuth(1)), { status: 401, code: 'NOT_AUTHORIZED' });
+      });
+
+      it('should reject an enrolled sender speaking for another slot even with consistent nested senders', async function() {
+        await createKeyGenSession({ joined: [1, 2] });
+        const message = { ...round1Message(1), partyId: 2 };
+        message.p2pMessages = [0, 1].map(to => ({ ...message.p2pMessages[0], from: 2, to }));
+        await expectRejected(() => post(path, { message, version: 1.2 }, partyAuth(1)), { status: 401, code: 'NOT_AUTHORIZED' });
+      });
+
+      it('should reject every request from a legacy party whose round 0 key is ambiguous', async function() {
+        await createKeyGenSession({ version: 1.1, joined: [1, 2] });
+        await col().updateOne({ id: SESSION_ID }, { $push: { 'rounds.0': { fromPartyId: 1, messages: round0Message(2) } } });
+        await expectRejected(() => post(path, { message: message1(), version: 1.1 }, partyAuth(1)), { status: 401, code: 'NOT_AUTHORIZED' });
+        await expectRejected(() => get(`${path}/0?maxWaitTime=0`, partyAuth(1)), { status: 401, code: 'NOT_AUTHORIZED' });
+      });
+
+      it('should reject a v1.2 message when the round 0 key disagrees with the registered key', async function() {
+        await createKeyGenSession({ joined: [1, 2] });
+        await col().updateOne({ id: SESSION_ID }, { $set: { 'rounds.0.1.messages.publicKey': authPubKey(2) } });
+        await expectRejected(() => post(path, { message: message1(), version: 1.2 }, partyAuth(1)), { status: 401, code: 'NOT_AUTHORIZED' });
+      });
+
+      it('should keep authenticating a v1.2 party on non-message routes when its round 0 key disagrees', async function() {
+        await createKeyGenSession({ joined: [1, 2] });
+        await col().updateOne({ id: SESSION_ID }, { $set: { 'rounds.0.1.messages.publicKey': authPubKey(2) } });
+        const res = await get(`${path}/0?maxWaitTime=0`, partyAuth(1));
+        res.status.should.equal(200);
       });
     });
 

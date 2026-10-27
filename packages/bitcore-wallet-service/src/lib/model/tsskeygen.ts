@@ -212,6 +212,22 @@ export class TssKeyGenModel implements ITssKeyGenModel {
     return x;
   }
 
+  /**
+   * The public key a party enrolled with: the key of its single round zero message. From v1.2 on it must also be
+   * the key the creator registered for the slot. Undefined when the mapping is missing, ambiguous or inconsistent.
+   */
+  getEnrolledKey(partyId: number): string | undefined {
+    const keys = (this.rounds?.[0] ?? []).filter(r => r.fromPartyId === partyId).map(r => r.messages?.publicKey);
+    const key = keys[0];
+    if (keys.length !== 1 || typeof key !== 'string' || !key) {
+      return undefined;
+    }
+    if (this.schemeVersion >= 1.2 && this.authPublicKeys?.[partyId] !== key) {
+      return undefined;
+    }
+    return key;
+  }
+
   getCurrentRound(): number {
     const mostRecentRound = this.rounds.length - 1;
     if (this.rounds[mostRecentRound].length === this.n) {
