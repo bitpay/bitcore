@@ -27,10 +27,11 @@ export async function exportWallet(args: CommonArgs<{ filename?: string; readonl
 
   const replaceTilde = str => str.startsWith('~') ? str.replace('~', os.homedir()) : str;
 
-  const readOnly = wallet.isReadOnly() || (opts.command ? !!opts.readonly : await prompt.confirm({
+  // Callers like createThresholdSig pass `readonly` explicitly to skip the prompt
+  const readOnly = wallet.isReadOnly() || (opts.readonly ?? (opts.command ? false : await prompt.confirm({
     message: 'Export as read-only (cannot send funds)?',
     initialValue: false
-  }));
+  })));
   if (prompt.isCancel(readOnly)) {
     throw new UserCancelled();
   }

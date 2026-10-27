@@ -12,7 +12,7 @@ export function command() {
     .optionsGroup('UTXOs Options')
     .option('--page <number>', 'Specify the page number', (value) => {
       const pg = Number(value);
-      if (Number.isInteger(pg) || pg < 0) throw new Error('Page must be a positive integer');
+      if (!Number.isInteger(pg) || pg < 1) throw new Error('Page must be a positive integer');
       return pg;
     }, 1)
     .option('--expand', 'Display in expanded format')
@@ -23,7 +23,7 @@ export function command() {
     .option('--overwrite', 'Overwrite the export file if it already exists', false)
     .hook('preAction', (thisCommand) => {
       const opts = thisCommand.opts();
-      if (!opts.export) {
+      if (opts.export === true) { // --export given without a filename
         opts.export = `~/${thisCommand.parent?.name()}_utxos_${new Date().toISOString()}.json`;
       }
     });
@@ -46,7 +46,7 @@ export async function getUtxos(
 
   if (allUtxos.length === 0) {
     prompt.log.info('No UTXOs found for this wallet.');
-    return;
+    return {};
   }
 
   enum ACTIONS {
@@ -63,8 +63,11 @@ export async function getUtxos(
   let sort = opts.sortBy || 'time'; // default sort by time
   let sortDir = opts.sortDir === 'desc' ? -1 : 1; // 1 for ascending, -1 for descending
   const totalPages = Math.ceil(allUtxos.length / pageSize);
+  let initialAction = opts.export ? ACTIONS.EXPORT : undefined;
 
   await Utils.paginate(async (page, action) => {
+    action ??= initialAction;
+    initialAction = undefined;
     if (action === ACTIONS.FORMAT) {
       compact = !compact; // toggle compact view
       printRaw = false; // reset printRaw when toggling format
@@ -102,6 +105,7 @@ export async function getUtxos(
           message: 'Enter output file name:',
           defaultValue
         });
+      let doWrite = true;
       if (fs.existsSync(filename) && !opts.overwrite) {
         if (opts.command) {
           throw new Error(`File already exists: ${filename}. Use --overwrite to overwrite.`);
@@ -110,12 +114,12 @@ export async function getUtxos(
           message: `File already exists: ${filename}. Overwrite?`,
           initialValue: false
         });
-        if (prompt.isCancel(overwritePrompt) || !overwritePrompt) {
-          return;
-        }
+        doWrite = !prompt.isCancel(overwritePrompt) && overwritePrompt;
       }
-      await fs.promises.writeFile(filename, JSON.stringify(allUtxos));
-      prompt.log.info(`UTXOs exported to: ${filename}`);
+      if (doWrite) {
+        await fs.promises.writeFile(filename, JSON.stringify(allUtxos));
+        prompt.log.info(`UTXOs exported to: ${filename}`);
+      }
     } else if (printRaw) {
       prompt.log.info(`Raw UTXOs:${os.EOL}` + JSON.stringify(utxos, null, 2));
     } else {
