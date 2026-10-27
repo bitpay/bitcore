@@ -3,9 +3,11 @@
 import * as chai from 'chai';
 import 'chai/register-should';
 import mongodb from 'mongodb';
+import sinon from 'sinon';
 import util from 'util';
 import { Storage } from '../src/lib/storage';
 import * as Model from '../src/lib/model';
+import { TssKeyGenModel } from '../src/lib/model/tsskeygen';
 import config from './test-config';
 import helpers from './integration/helpers';
 
@@ -517,4 +519,72 @@ describe('Storage', function() {
 
 
   });
+
+  describe('KeyGen admission', function() {
+    const id = 'keygen-session';
+    const message = (overrides: object = {}) => ({
+      round: 0, partyId: 1, publicKey: 'key1', broadcastMessages: [], p2pMessages: [], ...overrides
+    });
+    let updateOne: sinon.SinonSpy;
+
+    const storeSession = async () => {
+      const doc = TssKeyGenModel.create({ id, message: message({ partyId: 0, publicKey: 'key0' }) as any, n: 3, copayerId: 'alice', version: 1.2 });
+      await storage.storeTssKeyGenSession({ doc });
+    };
+    const rawSession = () => storage.db.collection(Storage.collections.TSS_KEYGEN).findOne({ id });
+    const bytes = (doc: object): Buffer => new (require('bson'))().serialize(doc);
+
+    beforeEach(async function() {
+      await storeSession();
+      updateOne = sinon.spy(Object.getPrototypeOf(storage.db.collection(Storage.collections.TSS_KEYGEN)), 'updateOne');
+    });
+
+    afterEach(function() {
+      updateOne.restore();
+    });
+
+    const rejectsWithoutUpdate = async (write: () => Promise<any>) => {
+      const before = await rawSession();
+      let error: any;
+      try {
+        await write();
+      } catch (e) {
+        error = e;
+      }
+      should.exist(error, 'expected the write to be rejected');
+      updateOne.callCount.should.equal(0, 'the write reached MongoDB');
+      bytes(await rawSession()).equals(bytes(before)).should.equal(true, 'stored session changed');
+    };
+
+    for (const round of ['00', '01', -1, 1.5, NaN, 2 ** 53, null, undefined]) {
+      it(`should not write a message for round ${String(round)}`, async function() {
+        await rejectsWithoutUpdate(() => storage.storeTssKeyGenMessage({ id, message: message({ round }) as any, __v: 0 }));
+      });
+    }
+
+    for (const partyId of ['01', -1, 1.5, NaN, 2 ** 53, null, undefined]) {
+      it(`should not write an auth key for party ${String(partyId)}`, async function() {
+        await rejectsWithoutUpdate(() => storage.storeTssKeyGenAuthPublicKey({ id, partyId: partyId as any, authPublicKey: 'key1', __v: 0 }));
+      });
+    }
+
+    for (const partyId of ['00', '01', -1, 1.5, NaN, 2 ** 53]) {
+      it(`should not write a participant for party ${String(partyId)}`, async function() {
+        await rejectsWithoutUpdate(() => storage.storeTssKeyGenParticipant({ id, partyId: partyId as any, copayerId: 'bob', __v: 0 }));
+      });
+    }
+
+    it('should change nothing when the version is stale', async function() {
+      const before = await rawSession();
+      const err = await storage.storeTssKeyGenMessage({ id, message: message() as any, __v: 7 }).then(() => undefined, e => e);
+      err.message.should.match(/^MONGO_DOC_OUTDATED/);
+      bytes(await rawSession()).equals(bytes(before)).should.equal(true, 'stored session changed');
+    });
+
+    it('should increment the version once per message write', async function() {
+      await storage.storeTssKeyGenMessage({ id, message: message() as any, __v: 0 });
+      (await rawSession()).__v.should.equal(1);
+    });
+  });
+
 });

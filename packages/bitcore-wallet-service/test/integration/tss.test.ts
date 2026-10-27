@@ -8,6 +8,7 @@ import helpers from './helpers';
 import { TssKeyGen } from '../../src/lib/tss';
 import { TssSigGenModel } from '../../src/lib/model/tsssign';
 import { TssKeyGenModel } from '../../src/lib/model/tsskeygen';
+import { WalletService } from '../../src/lib/server';
 import { Common } from '../../src/lib/common/index';
 
 const { Utils } = Common;
@@ -573,28 +574,37 @@ describe('TSS', function() {
       });
 
       describe('concurrent joins', function() {
+        const isSessionWrite = (collection: any, filter: any) =>
+          collection.collectionName === BWS.Storage.collections.TSS_KEYGEN && filter?.id === SESSION_ID;
+
         /**
-         * Make the first storeTssKeyGenParticipant call lose a race: before it writes,
-         * another copayer is written into `concurrentPartyId`, so the original call's __v is stale.
+         * Make the first write to the session lose a race: before it runs, another copayer is written into
+         * `concurrentPartyId`, so the original write's __v is stale. Independent of which storage method issues the write.
          */
         const stubJoinRaceCondition = (concurrentPartyId: number, concurrentCopayerId: string) => {
-          const stub = sandbox.stub(BWS.Storage.prototype, 'storeTssKeyGenParticipant');
-          stub.callThrough();
-          stub.onFirstCall().callsFake(async function(params) {
-            const current = await this.fetchTssKeyGenSession({ id: params.id });
-            await stub.wrappedMethod.call(this, { id: params.id, partyId: concurrentPartyId, copayerId: concurrentCopayerId, __v: current.__v });
-            return stub.wrappedMethod.call(this, params);
+          const stub = sandbox.stub(Object.getPrototypeOf(storage.db.collection(BWS.Storage.collections.TSS_KEYGEN)), 'updateOne');
+          const original = stub.wrappedMethod;
+          let sessionWrites = 0;
+          stub.callsFake(async function(this: any, filter: any, update: any, ...rest: any[]) {
+            if (isSessionWrite(this, filter) && ++sessionWrites === 1) {
+              const current = await this.findOne({ id: SESSION_ID });
+              await original.call(this, { id: SESSION_ID, __v: current.__v }, {
+                $set: { [`participants.${concurrentPartyId}`]: concurrentCopayerId },
+                $inc: { __v: 1 }
+              });
+            }
+            return original.call(this, filter, update, ...rest);
           });
-          return stub;
+          return { writes: () => sessionWrites };
         };
 
         it('should retry and join if another party joined concurrently', async function() {
           await createKeyGenSession({ registered: [1, 2] });
-          const stub = stubJoinRaceCondition(2, copayerIds[2]);
+          const race = stubJoinRaceCondition(2, copayerIds[2]);
 
           const res = await post(path, { message: round0Message(1), version: 1.2 }, partyAuth(1));
           res.status.should.equal(200);
-          stub.callCount.should.equal(2);
+          race.writes().should.be.at.least(2); // the conflicted write, then the successful retry
 
           const session = await storage.fetchTssKeyGenSession({ id: SESSION_ID });
           session.participants.should.deep.equal(copayerIds);
@@ -615,11 +625,20 @@ describe('TSS', function() {
 
         it('should not retry on other storage errors', async function() {
           await createKeyGenSession({ registered: [1] });
-          const stub = sandbox.stub(BWS.Storage.prototype, 'storeTssKeyGenParticipant').rejects(new Error('boom'));
+          const stub = sandbox.stub(Object.getPrototypeOf(storage.db.collection(BWS.Storage.collections.TSS_KEYGEN)), 'updateOne');
+          const original = stub.wrappedMethod;
+          let sessionWrites = 0;
+          stub.callsFake(function(this: any, filter: any, ...rest: any[]) {
+            if (isSessionWrite(this, filter)) {
+              sessionWrites++;
+              return Promise.reject(new Error('boom'));
+            }
+            return original.call(this, filter, ...rest);
+          });
 
           const res = await post(path, { message: round0Message(1), version: 1.2 }, partyAuth(1));
           res.status.should.equal(500);
-          stub.callCount.should.equal(1);
+          sessionWrites.should.equal(1);
         });
       });
 
@@ -1024,6 +1043,524 @@ describe('TSS', function() {
         const res = await get(`/v1/tss/keygen/test/${round}?maxWaitTime=0`, 1);
         res.status.should.equal(400);
         res.body.code.should.equal('TSS_GENERIC_ERROR');
+      }
+    });
+  });
+
+  describe('KeyGen admission', function() {
+    const path = `/v1/tss/keygen/${SESSION_ID}`;
+    const registerPath = `${path}/register`;
+    const col = () => storage.db.collection(BWS.Storage.collections.TSS_KEYGEN);
+    const rawDoc = () => col().findOne({ id: SESSION_ID });
+    const bsonBytes = (doc: object): Buffer => new (require('bson'))().serialize(doc);
+    const round2Messages = [vector.keygen.messages.round2.party0, vector.keygen.messages.round2.party1, vector.keygen.messages.round2.party2];
+    const round3Messages = [vector.keygen.messages.round3.party0, vector.keygen.messages.round3.party1, vector.keygen.messages.round3.party2];
+    const hashJoinPassword = (password: string) => BitcoreLib.crypto.Hash.sha256(Buffer.from(SESSION_ID + password)).toString('hex');
+    let brokerSend: sinon.SinonSpy;
+
+    /** Bounded wait so a request the server never answers fails an assertion instead of hanging the suite */
+    const settled = (request: PromiseLike<any>, ms = 1500): Promise<any> => {
+      let timer: NodeJS.Timeout;
+      const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`no response within ${ms}ms`)), ms);
+      });
+      return Promise.race([Promise.resolve(request), timeout]).finally(() => clearTimeout(timer));
+    };
+
+    /** Send a request that must be refused, then require the stored document and the broker to be untouched */
+    const expectRejected = async (send: () => PromiseLike<any>, expected: { status?: number; code?: string } = {}) => {
+      const before = await rawDoc();
+      const res = await settled(send());
+      const after = await rawDoc();
+      bsonBytes(after).equals(bsonBytes(before)).should.equal(true, 'stored session changed');
+      brokerSend.callCount.should.equal(0, 'a notification was published');
+      if (expected.code) {
+        expectError(res, expected.status ?? 400, expected.code);
+      } else {
+        res.status.should.be.within(400, 499, `expected a 4xx response, got ${res.status}`);
+      }
+    };
+
+    /** Mark the session with a join password, leaving __v alone */
+    const setPassword = (password: string) =>
+      col().updateOne({ id: SESSION_ID }, { $set: { joinPassword: hashJoinPassword(password) } });
+
+    /** Complete rounds 0 through `upTo - 1` for every party so that round `upTo` is the open round */
+    const completeRoundsBefore = async (upTo: number) => {
+      const all = [round0Messages, round1Messages, round2Messages, round3Messages];
+      const $set = {};
+      for (let round = 1; round < upTo; round++) {
+        $set[`rounds.${round}`] = [0, 1, 2].map(partyId => ({ fromPartyId: partyId, messages: keyGenMessage(all[round], partyId) }));
+      }
+      await col().updateOne({ id: SESSION_ID }, { $set });
+    };
+
+    /** A round 0 message from `copayer`'s own key, claiming `partyId` with consistent nested senders */
+    const round0Claim = (copayer: number, partyId: number) => {
+      const message = round0Message(copayer);
+      message.partyId = partyId;
+      message.broadcastMessages.forEach(m => { m.from = partyId; });
+      return message;
+    };
+
+    /** Re-sign a broadcast message with another key so that its payload verifies against that key */
+    const resignBroadcast = (message: any, key: BitcoreLib.PrivateKey) => {
+      for (const m of message.broadcastMessages) {
+        const hash = BitcoreLib.crypto.Hash.sha256sha256(Buffer.from(m.payload.message, 'base64'));
+        m.payload.signature = BitcoreLib.crypto.ECDSA.sign(hash, key).toString();
+      }
+      message.publicKey = key.publicKey.toString();
+      return message;
+    };
+
+    /**
+     * Hold the first `count` writes to the session document at a barrier until all of them have arrived
+     * (so every holder has read the same version), then let them through one at a time.
+     * `first` picks which held write goes first; by default it is arrival order.
+     */
+    const gateWrites = (count: number, first?: (update: any) => boolean) => {
+      const proto = Object.getPrototypeOf(col());
+      const stub = sandbox.stub(proto, 'updateOne');
+      const original = stub.wrappedMethod;
+      const held: Array<{ update: any; run: () => Promise<void> }> = [];
+      let gated = 0;
+      let timer: NodeJS.Timeout;
+      const release = async () => {
+        clearTimeout(timer);
+        const order = first ? [...held].sort((a, b) => Number(first(b.update)) - Number(first(a.update))) : held;
+        for (const h of order) {
+          await h.run();
+        }
+      };
+      stub.callsFake(function(this: any, filter: any, update: any, ...rest: any[]) {
+        if (this.collectionName !== BWS.Storage.collections.TSS_KEYGEN || filter?.id !== SESSION_ID || gated >= count) {
+          return original.call(this, filter, update, ...rest);
+        }
+        gated++;
+        return new Promise((resolve, reject) => {
+          held.push({ update, run: () => original.call(this, filter, update, ...rest).then(resolve, reject) });
+          if (held.length === 1) {
+            timer = setTimeout(release, 1500);
+          }
+          if (held.length === count) {
+            release();
+          }
+        });
+      });
+      return { arrivals: () => held.length };
+    };
+
+    /** Fail every write that appends a message, as a database outage between two separate writes would */
+    const failMessageWrites = () => {
+      const stub = sandbox.stub(Object.getPrototypeOf(col()), 'updateOne');
+      const original = stub.wrappedMethod;
+      stub.callsFake(function(this: any, filter: any, update: any, ...rest: any[]) {
+        if (this.collectionName === BWS.Storage.collections.TSS_KEYGEN && update?.$push) {
+          return Promise.reject(new Error('injected failure'));
+        }
+        return original.call(this, filter, update, ...rest);
+      });
+    };
+
+    const round0KeyFor = (doc: any, partyId: number) =>
+      doc.rounds[0].filter(r => r.fromPartyId === partyId).map(r => r.messages.publicKey);
+
+    beforeEach(async function() {
+      await col().deleteMany({});
+      brokerSend = sandbox.spy(WalletService.getMessageBroker(), 'send');
+    });
+
+    describe('malformed outer partyId', function() {
+      const senders: Array<[string, () => Promise<{ message: () => any; auth: Auth; version: number }>]> = [
+        ['an enrolled sender (v1.2)', async () => {
+          await createKeyGenSession({ joined: [1, 2] });
+          return { message: () => round1Message(1), auth: partyAuth(1), version: 1.2 };
+        }],
+        ['an enrolled sender (legacy)', async () => {
+          await createKeyGenSession({ version: 1.1, joined: [1, 2] });
+          return { message: () => round1Message(1), auth: partyAuth(1), version: 1.1 };
+        }],
+        ['a registered joiner (v1.2)', async () => {
+          await createKeyGenSession({ registered: [1] });
+          return { message: () => round0Message(1), auth: partyAuth(1), version: 1.2 };
+        }],
+        ['a legacy joiner', async () => {
+          await createKeyGenSession({ version: 1.1 });
+          return { message: () => round0Message(1), auth: partyAuth(1), version: 1.1 };
+        }],
+      ];
+      const malformed: Array<[string, any]> = [
+        ['"00"', '00'],
+        ['"1"', '1'],
+        ['null', null],
+        ['omitted', undefined],
+        ['-1', -1],
+        ['an unsafe integer', 2 ** 53],
+      ];
+      const outOfRange: Array<[string, number]> = [['n', vector.n], ['n + 1', vector.n + 1]];
+
+      for (const [senderName, setup] of senders) {
+        describe(`from ${senderName}`, function() {
+          for (const [valueName, value] of malformed) {
+            it(`should reject partyId ${valueName} as an invalid message`, async function() {
+              const { message, auth, version } = await setup();
+              const body = { message: { ...message(), partyId: value }, version };
+              await expectRejected(() => post(path, body, auth), { status: 400, code: 'TSS_INVALID_MESSAGE' });
+            });
+          }
+
+          for (const [valueName, value] of outOfRange) {
+            it(`should reject partyId ${valueName}`, async function() {
+              const { message, auth, version } = await setup();
+              const body = { message: { ...message(), partyId: value }, version };
+              await expectRejected(() => post(path, body, auth));
+            });
+          }
+        });
+      }
+
+      for (const [name, version, registered] of [['legacy', 1.1, []], ['v1.2 with a registered key', 1.2, [2]]] as Array<[string, number, number[]]>) {
+        it(`should reject the "00" slot alias from an outsider in a ${name} session and keep the creator enrolled and readable`, async function() {
+          await createKeyGenSession({ version, registered, joined: [1] });
+          const body = { message: { ...round0Message(2), partyId: '00' }, version };
+          await expectRejected(() => post(path, body, partyAuth(2)), { status: 401, code: 'NOT_AUTHORIZED' });
+
+          const session = await storage.fetchTssKeyGenSession({ id: SESSION_ID });
+          session.participants[0].should.equal(copayerIds[0]);
+          const res = await get(`${path}/0?maxWaitTime=0`, partyAuth(0));
+          res.status.should.equal(200);
+        });
+      }
+    });
+
+    describe('malformed round', function() {
+      for (const [name, value] of [['omitted', undefined], ['the string "0"', '0'], ['4', 4], ['5', 5], ['-1', -1]] as Array<[string, any]>) {
+        it(`should reject round ${name} from an enrolled sender`, async function() {
+          await createKeyGenSession({ joined: [1, 2] });
+          const body = { message: { ...round1Message(1), round: value }, version: 1.2 };
+          await expectRejected(() => post(path, body, partyAuth(1)), { status: 400, code: 'TSS_INVALID_MESSAGE' });
+        });
+      }
+
+      it('should reject the string round "0" from a legacy joiner', async function() {
+        await createKeyGenSession({ version: 1.1 });
+        const body = { message: { ...round0Message(1), round: '0' }, version: 1.1 };
+        await expectRejected(() => post(path, body, partyAuth(1)), { status: 400, code: 'TSS_INVALID_MESSAGE' });
+      });
+    });
+
+    describe('nested sender metadata', function() {
+      const mutations: Array<[string, (message: any) => void]> = [
+        ['a p2p message from another party', m => { m.p2pMessages[0].from = 0; }],
+        ['a later p2p message from another party', m => { m.p2pMessages[1].from = 2; }],
+        ['a p2p message addressed to its sender', m => { m.p2pMessages[0].to = 1; }],
+        ['a p2p recipient equal to n', m => { m.p2pMessages[0].to = vector.n; }],
+        ['a fractional p2p recipient', m => { m.p2pMessages[0].to = 0.5; }],
+      ];
+      for (const [name, mutate] of mutations) {
+        it(`should reject ${name}`, async function() {
+          await createKeyGenSession({ joined: [1, 2] });
+          const message = round1Message(1);
+          mutate(message);
+          await expectRejected(() => post(path, { message, version: 1.2 }, partyAuth(1)), { status: 400, code: 'TSS_INVALID_MESSAGE' });
+        });
+      }
+
+      it('should reject a broadcast whose nested sender differs from the outer partyId', async function() {
+        await createKeyGenSession({ joined: [1, 2] });
+        await completeRoundsBefore(3);
+        const message = keyGenMessage(round3Messages, 2);
+        message.broadcastMessages[0].from = 1;
+        await expectRejected(() => post(path, { message, version: 1.2 }, partyAuth(2)), { status: 400, code: 'TSS_INVALID_MESSAGE' });
+      });
+    });
+
+    describe('ownership and key binding', function() {
+      it('should reject a non-party claiming an occupied legacy slot with the correct password', async function() {
+        await createKeyGenSession({ version: 1.1, joined: [1] });
+        await setPassword('pw');
+        const body = { message: round0Claim(2, 1), password: 'pw', version: 1.1 };
+        await expectRejected(() => post(path, body, partyAuth(2)));
+      });
+
+      it('should reject a non-party claiming an occupied v1.2 slot with the correct password', async function() {
+        await createKeyGenSession({ joined: [1] });
+        await setPassword('pw');
+        const body = { message: round0Claim(2, 1), password: 'pw', version: 1.2 };
+        await expectRejected(() => post(path, body, partyAuth(2)));
+      });
+
+      for (const [name, version] of [['legacy', 1.1], ['v1.2', 1.2]] as Array<[string, number]>) {
+        it(`should reject an enrolled copayer claiming a second ${name} slot`, async function() {
+          await createKeyGenSession({ version, registered: version >= 1.2 ? [1, 2] : [], joined: [1] });
+          await setPassword('pw');
+          const body = { message: round0Claim(1, 2), password: 'pw', version };
+          await expectRejected(() => post(path, body, partyAuth(1)));
+        });
+      }
+
+      it('should reject a vacant legacy slot whose round 0 message already exists', async function() {
+        await createKeyGenSession({ version: 1.1, joined: [1] });
+        await col().updateOne({ id: SESSION_ID }, { $set: { 'participants.1': null } });
+        await expectRejected(() => post(path, { message: round0Message(1), version: 1.1 }, partyAuth(1)));
+      });
+
+      it('should reject a vacant v1.2 slot whose round 0 message already exists', async function() {
+        await createKeyGenSession({ joined: [1] });
+        await col().updateOne({ id: SESSION_ID }, { $set: { 'participants.1': null } });
+        await expectRejected(() => post(path, { message: round0Message(1), version: 1.2 }, partyAuth(1)));
+      });
+
+      it('should reject a later-round message for a vacant slot', async function() {
+        await createKeyGenSession({ version: 1.1 });
+        await expectRejected(() => post(path, { message: round1Message(1), version: 1.1 }, partyAuth(1)));
+      });
+
+      it('should reject an enrolled legacy sender that changes its wrapper key on a p2p-only message', async function() {
+        await createKeyGenSession({ version: 1.1, joined: [1, 2] });
+        const message = { ...round1Message(1), publicKey: randomKey().publicKey.toString() };
+        await expectRejected(() => post(path, { message, version: 1.1 }, partyAuth(1)));
+      });
+
+      it('should reject an enrolled v1.2 sender that changes its wrapper key on a p2p-only message', async function() {
+        await createKeyGenSession({ joined: [1, 2] });
+        const message = { ...round1Message(1), publicKey: randomKey().publicKey.toString() };
+        await expectRejected(() => post(path, { message, version: 1.2 }, partyAuth(1)));
+      });
+
+      for (const [name, version] of [['legacy', 1.1], ['v1.2', 1.2]] as Array<[string, number]>) {
+        it(`should reject an enrolled ${name} sender whose broadcast is signed by a different wrapper key`, async function() {
+          await createKeyGenSession({ version, joined: [1, 2] });
+          await completeRoundsBefore(3);
+          const message = resignBroadcast(keyGenMessage(round3Messages, 2), randomKey());
+          await expectRejected(() => post(path, { message, version }, partyAuth(2)));
+        });
+      }
+
+      it('should reject an unregistered v1.2 key with the correct password and a valid self-signature', async function() {
+        await createKeyGenSession({ registered: [1] });
+        await setPassword('pw');
+        const body = { message: round0Claim(2, 2), password: 'pw', version: 1.2 };
+        await expectRejected(() => post(path, body, partyAuth(2)));
+      });
+
+      it('should reject a v1.2 key registered for another slot with the correct password and a valid self-signature', async function() {
+        await createKeyGenSession({ registered: [1, 2] });
+        await setPassword('pw');
+        const body = { message: round0Claim(2, 1), password: 'pw', version: 1.2 };
+        await expectRejected(() => post(path, body, partyAuth(2)));
+      });
+
+      describe('request authentication', function() {
+        const postRaw = (body: object, headers: { identity?: string; signature?: string }) => {
+          const req = app.post(urlPrefix + path).send(body);
+          if (headers.identity) req.set('x-identity', headers.identity);
+          if (headers.signature) req.set('x-signature', headers.signature);
+          return req;
+        };
+        const body = () => ({ message: round1Message(1), version: 1.2 });
+
+        beforeEach(async function() {
+          await createKeyGenSession({ joined: [1, 2] });
+        });
+
+        it('should reject a forged signature', async function() {
+          await expectRejected(() => post(path, body(), { copayerId: copayerIds[1], privKey: randomKey() }), { status: 401, code: 'NOT_AUTHORIZED' });
+        });
+
+        it('should reject a missing signature', async function() {
+          await expectRejected(() => postRaw(body(), { identity: copayerIds[1] }), { status: 401, code: 'NOT_AUTHORIZED' });
+        });
+
+        it('should reject a missing identity', async function() {
+          const signature = signRequest('post', path, body(), parties[1].authKey);
+          await expectRejected(() => postRaw(body(), { signature }), { status: 401, code: 'NOT_AUTHORIZED' });
+        });
+
+        it('should reject a signature over a different body', async function() {
+          const signature = signRequest('post', path, { ...body(), version: 1.1 }, parties[1].authKey);
+          await expectRejected(() => postRaw(body(), { identity: copayerIds[1], signature }), { status: 401, code: 'NOT_AUTHORIZED' });
+        });
+
+        it('should reject a forged signature on the session-starting request', async function() {
+          await col().deleteMany({});
+          const res = await post(path, { message: round0Message(0), n: vector.n, version: 1.2 }, { copayerId: copayerIds[0], privKey: randomKey() });
+          expectError(res, 401, 'NOT_AUTHORIZED');
+          (await rawDoc() === null).should.equal(true);
+        });
+      });
+    });
+
+    describe('join password', function() {
+      it('should reject a missing password for a vacant slot', async function() {
+        await createKeyGenSession({ version: 1.1 });
+        await setPassword('pw');
+        await expectRejected(() => post(path, { message: round0Message(1), version: 1.1 }, partyAuth(1)), { status: 400, code: 'TSS_INVALID_PASSWORD' });
+      });
+
+      it('should reject a wrong password for a vacant slot', async function() {
+        await createKeyGenSession({ registered: [1] });
+        await setPassword('pw');
+        await expectRejected(() => post(path, { message: round0Message(1), password: 'nope', version: 1.2 }, partyAuth(1)), { status: 400, code: 'TSS_INVALID_PASSWORD' });
+      });
+
+      it('should admit the correct password', async function() {
+        await createKeyGenSession({ registered: [1] });
+        await setPassword('pw');
+        const res = await post(path, { message: round0Message(1), password: 'pw', version: 1.2 }, partyAuth(1));
+        res.status.should.equal(200);
+        (await storage.fetchTssKeyGenSession({ id: SESSION_ID })).participants[1].should.equal(copayerIds[1]);
+      });
+
+      it('should admit a passwordless registered v1.2 joiner', async function() {
+        await createKeyGenSession({ registered: [1] });
+        (await post(path, { message: round0Message(1), version: 1.2 }, partyAuth(1))).status.should.equal(200);
+      });
+    });
+
+    describe('valid submissions', function() {
+      it('should accept a valid p2p-only message from an enrolled sender', async function() {
+        await createKeyGenSession({ joined: [1, 2] });
+        const res = await post(path, { message: round1Message(1), version: 1.2 }, partyAuth(1));
+        res.status.should.equal(200);
+        const session = await storage.fetchTssKeyGenSession({ id: SESSION_ID });
+        session.rounds[1].map(r => r.fromPartyId).should.deep.equal([1]);
+      });
+
+      it('should accept every round from 0 to 3', async function() {
+        await createKeyGenSession({ joined: [1, 2] });
+        for (const round of [1, 2, 3]) {
+          const messages = [round1Messages, round2Messages, round3Messages][round - 1];
+          for (const partyId of [0, 1, 2]) {
+            const res = await post(path, { message: keyGenMessage(messages, partyId), version: 1.2 }, partyAuth(partyId));
+            res.status.should.equal(200, `round ${round} party ${partyId}`);
+          }
+        }
+      });
+    });
+
+    describe('atomic admission', function() {
+      for (const [name, version] of [['legacy', 1.1], ['v1.2', 1.2]] as Array<[string, number]>) {
+        it(`should leave a ${name} participant and first message absent when persistence fails`, async function() {
+          await createKeyGenSession({ version, registered: version >= 1.2 ? [1] : [] });
+          failMessageWrites();
+          const before = await rawDoc();
+
+          const res = await settled(post(path, { message: round0Message(1), version }, partyAuth(1)));
+          res.status.should.not.equal(200);
+
+          const after = await rawDoc();
+          bsonBytes(after).equals(bsonBytes(before)).should.equal(true, 'stored session changed');
+          brokerSend.callCount.should.equal(0);
+        });
+      }
+    });
+
+    describe('concurrency', function() {
+      const joinSlot1As = (copayer: number, version = 1.1) =>
+        settled(post(path, { message: round0Claim(copayer, 1), version }, partyAuth(copayer)));
+
+      it('should let exactly one of two legacy joiners take a vacant slot', async function() {
+        await createKeyGenSession({ version: 1.1 });
+        const gate = gateWrites(2);
+
+        const results = await Promise.all([joinSlot1As(1), joinSlot1As(2)]);
+        gate.arrivals().should.equal(2, 'both requests must reach their first write');
+
+        const winners = [1, 2].filter((_, i) => results[i].status === 200);
+        winners.should.have.length(1);
+        results[winners[0] === 1 ? 1 : 0].status.should.be.within(400, 499);
+
+        const doc = await rawDoc();
+        doc.participants[1].should.equal(copayerIds[winners[0]]);
+        round0KeyFor(doc, 1).should.deep.equal([authPubKey(winners[0])]);
+      });
+
+      it('should commit one first message when one registered v1.2 identity is admitted twice at once', async function() {
+        await createKeyGenSession({ registered: [1] });
+        const gate = gateWrites(2);
+
+        const results = await Promise.all([joinSlot1As(1, 1.2), joinSlot1As(1, 1.2)]);
+        gate.arrivals().should.equal(2, 'both requests must reach their first write');
+
+        results.filter(r => r.status === 200).should.have.length(1);
+        results.find(r => r.status !== 200).status.should.be.within(400, 499);
+        const doc = await rawDoc();
+        doc.participants[1].should.equal(copayerIds[1]);
+        round0KeyFor(doc, 1).should.deep.equal([authPubKey(1)]);
+      });
+
+      it('should let two registered v1.2 slots join concurrently', async function() {
+        await createKeyGenSession({ registered: [1, 2] });
+        const gate = gateWrites(2);
+
+        const results = await Promise.all([1, 2].map(partyId =>
+          settled(post(path, { message: round0Message(partyId), version: 1.2 }, partyAuth(partyId)))));
+        gate.arrivals().should.equal(2, 'both requests must reach their first write');
+
+        results.map(r => r.status).should.deep.equal([200, 200]);
+        const doc = await rawDoc();
+        doc.participants.should.deep.equal(copayerIds);
+        for (const partyId of [1, 2]) {
+          round0KeyFor(doc, partyId).should.deep.equal([authPubKey(partyId)]);
+        }
+      });
+
+      describe('creator key replacement during admission', function() {
+        const replacementKey = () => authPubKey(2);
+        const isRegistration = (update: any) => Object.keys(update?.$set || {}).some(k => k.startsWith('authPublicKeys.'));
+
+        const race = async (firstWrite: 'registration' | 'admission') => {
+          await createKeyGenSession({ registered: [1] });
+          const gate = gateWrites(2, update => isRegistration(update) === (firstWrite === 'registration'));
+          const [registration, admission] = await Promise.all([
+            settled(post(registerPath, { partyId: 1, partyPubKey: replacementKey() }, partyAuth(0))),
+            settled(post(path, { message: round0Message(1), version: 1.2 }, partyAuth(1)))
+          ]);
+          gate.arrivals().should.equal(2, 'both requests must reach their first write');
+          return { registration, admission, doc: await rawDoc() };
+        };
+
+        it('should reject the stale key after retry when the registration commits first', async function() {
+          const { registration, admission, doc } = await race('registration');
+          registration.status.should.equal(200);
+          admission.status.should.be.within(400, 499);
+          doc.authPublicKeys[1].should.equal(replacementKey());
+          (doc.participants[1] === null).should.equal(true);
+          round0KeyFor(doc, 1).should.deep.equal([]);
+        });
+
+        it('should reject the replacement with a deliberate error when the admission commits first', async function() {
+          const { registration, admission, doc } = await race('admission');
+          admission.status.should.equal(200);
+          registration.status.should.be.within(400, 499);
+          doc.authPublicKeys[1].should.equal(authPubKey(1));
+          doc.participants[1].should.equal(copayerIds[1]);
+          round0KeyFor(doc, 1).should.deep.equal([authPubKey(1)]);
+        });
+      });
+    });
+
+    describe('POST /v1/tss/keygen/:id/register identifiers', function() {
+      const register = (partyId: any, partyPubKey = authPubKey(1)) => post(registerPath, { partyId, partyPubKey }, partyAuth(0));
+      const values: Array<[string, any]> = [
+        ['fractional 1.9', 1.9],
+        ['fractional 1.5', 1.5],
+        ['a fractional string', '1.5'],
+        ['a numeric string', '1'],
+        ['a numeric string with leading zeros', '01'],
+        ['null', null],
+        ['omitted', undefined],
+        ['negative', -1],
+        ['zero', 0],
+        ['n', vector.n],
+        ['an unsafe integer', 2 ** 53],
+      ];
+      for (const [name, value] of values) {
+        it(`should reject ${name} without registering any slot`, async function() {
+          await createKeyGenSession();
+          await expectRejected(() => register(value), { status: 400, code: 'TSS_INVALID_PARTY_DATA' });
+        });
       }
     });
   });
