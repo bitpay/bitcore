@@ -64,7 +64,7 @@ export function command() {
     .option('--dry-run', 'Only create the transaction proposal without broadcasting')
     .hook('preAction', (thisCommand) => {
       const opts = thisCommand.opts();
-      if (opts.tag) {
+      if (opts.tag != null) {
         opts.destinationTag = opts.tag;
       }
     });
@@ -131,8 +131,8 @@ export async function createTransaction(
         if (!value) {
           return; // valid value, optional
         }
-        const val = parseInt(value);
-        if (isNaN(val) || val < 0 || !(/^\d+$/.test(value))) {
+        const val = Number(value);
+        if (!Number.isInteger(val) || val < 0) {
           return 'Please enter a valid destination tag';
         }
         return; // valid value
@@ -141,7 +141,7 @@ export async function createTransaction(
     if (prompt.isCancel(tag)) {
       throw new UserCancelled();
     }
-    if (tag) {
+    if (tag != null) {
       opts.destinationTag = tag;
     }
   }
@@ -254,7 +254,7 @@ export async function createTransaction(
 
   const lines = [];
   lines.push(`To: ${to}`);
-  if (opts.destinationTag) { // Display txp.destinationTag below in case user entered but there's a discrepancy
+  if (opts.destinationTag != null) { // Display txp.destinationTag below in case user entered but there's a discrepancy
     lines.push(`DestTag: ${txp.destinationTag}`);
   }
   lines.push(`Amount: ${Utils.renderAmount(currency, txp.amount, tokenObj)}`);
