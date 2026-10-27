@@ -71,7 +71,7 @@ export class ArcChain extends EthChain {
     if (this.isUsdcTokenView(opts)) {
       throw new ClientError('USDC is the native Arc asset; omit tokenAddress');
     }
-    const fees = await super.getFee(server, wallet, opts) as { gasPrice: number; maxGasFee?: number; gasLimit: number };
+    const fees = await super.getFee(server, wallet, opts);
     const gasPrice = Number(Number(opts.txType) === 2 ? fees.maxGasFee : fees.gasPrice);
     if (!Number.isFinite(gasPrice) || gasPrice < Constants.ARC.MIN_GAS_PRICE) {
       throw new ClientError('Arc gas price must be at least 20 gwei');
