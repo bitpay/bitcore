@@ -4,13 +4,15 @@ import { Constants } from './common/constants';
 import { Defaults } from './common/defaults';
 import { Errors } from './errors/errordefinitions';
 import logger from './logger';
-import { TssKeyGenModel } from './model/tsskeygen';
+import { TssKeyGenModel, isCanonicalIndex, isWellFormedPubKey } from './model/tsskeygen';
 import { TssSigGenModel } from './model/tsssign';
 import { WalletService, checkRequired } from './server';
 import { Storage } from './storage';
 import type { INotification } from './model/notification';
 import type { ITssKeyMessageObject } from './model/tsskeygen';
 import type { ITssSigMessageObject } from './model/tsssign';
+
+const MAX_ARRAY_LENGTH = 2 ** 32 - 1;
 
 type SessionHandler = (message: INotification) => Promise<void>;
 
@@ -164,7 +166,7 @@ class TssKeyGenClass {
     /* Copayer data to register */
     data: {
       /** Party ID */
-      partyId: string | number;
+      partyId: number;
       /** Public key/Copayer ID of the party */
       partyPubKey: string;
     };
@@ -177,14 +179,14 @@ class TssKeyGenClass {
       throw Errors.TSS_NON_PARTICIPANT.withMessage('Only the first participant can register a party');
     }
 
-    if (data.partyId == null || isNaN(data.partyId as number)) {
-      throw Errors.TSS_INVALID_PARTY_DATA.withMessage(`Invalid partyId: ${data.partyId}`);
+    const partyId = data?.partyId;
+    if (!isCanonicalIndex(partyId)) {
+      throw Errors.TSS_INVALID_PARTY_DATA.withMessage(`Invalid partyId: ${String(partyId).slice(0, 32)}`);
     }
 
-    const partyId = parseInt(data.partyId as string);
-    const pubKey = data.partyPubKey?.trim();
+    const pubKey = typeof data.partyPubKey === 'string' ? data.partyPubKey.trim() : undefined;
 
-    if (!(partyId > 0) || !pubKey || pubKey === copayerId || partyId >= session.n) {
+    if (!(partyId > 0) || !pubKey || pubKey === copayerId || partyId >= session.n || !isWellFormedPubKey(pubKey)) {
       throw Errors.TSS_INVALID_PARTY_DATA.withMessage(`Invalid data for party ${partyId} registration`);
     }
 
@@ -313,6 +315,10 @@ class TssKeyGenClass {
       throw Errors.UPGRADE_NEEDED.withMessage('TSS version too new: ' + version);
     }
 
+    if (!isCanonicalIndex(message?.partyId) || !isCanonicalIndex(message?.round)) {
+      throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid partyId or round provided');
+    }
+
     const storage = WalletService.getStorage();
     let session = await storage.fetchTssKeyGenSession({ id });
 
@@ -323,6 +329,14 @@ class TssKeyGenClass {
 
       if (!this._isValidBroadcastMessage({ message }) && !this._isValidP2pMessage({ message })) {
         throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid message provided');
+      }
+
+      if (message.partyId >= session.n) {
+        throw Errors.TSS_INVALID_MESSAGE.withMessage('partyId is out of range for this session');
+      }
+      const p2pMessages = Array.isArray(message.p2pMessages) ? message.p2pMessages : [];
+      if (p2pMessages.some(m => !isCanonicalIndex(m?.to) || m.to >= session.n)) {
+        throw Errors.TSS_INVALID_MESSAGE.withMessage('p2p recipient is out of range for this session');
       }
 
       if (session.schemeVersion != version) {
@@ -432,7 +446,8 @@ class TssKeyGenClass {
   }) {
     const { id, message, password, storage, copayerId, version, timeLimit } = params;
     const n = parseInt(params.n as string);
-    if (!n || n < 1) {
+    // `new Array(n)` below needs a valid array length
+    if (!Number.isSafeInteger(n) || n < 1 || n > MAX_ARRAY_LENGTH) {
       throw Errors.TSS_GENERIC_ERROR.withMessage('Invalid n provided: ' + n);
     }
 

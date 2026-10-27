@@ -523,6 +523,7 @@ describe('TSS', function() {
         it('should error if the party joins at a partyId other than the one it was registered at', async function() {
           await createKeyGenSession({ registered: [1] });
           const message = { ...round0Message(1), partyId: 2 };
+          for (const m of message.broadcastMessages) m.from = 2;
           const res = await post(path, { message, version: 1.2 }, partyAuth(1));
           expectError(res, 401, 'NOT_AUTHORIZED', 'Copayer not found in session');
         });
@@ -714,14 +715,14 @@ describe('TSS', function() {
         });
       }
 
-      it('should accept a numeric string partyId', async function() {
+      it('should not coerce a numeric string partyId', async function() {
         await createKeyGenSession();
 
         const res = await register('1', authPubKey(1));
-        res.status.should.equal(200);
+        expectError(res, 400, 'TSS_INVALID_PARTY_DATA');
 
         const session = await storage.fetchTssKeyGenSession({ id: SESSION_ID });
-        session.authPublicKeys[1].should.equal(authPubKey(1));
+        session.authPublicKeys.should.deep.equal([authPubKey(0), null, null]);
       });
 
       for (const [description, partyId, expected] of [
@@ -1099,7 +1100,7 @@ describe('TSS', function() {
     const round0Claim = (copayer: number, partyId: number) => {
       const message = round0Message(copayer);
       message.partyId = partyId;
-      message.broadcastMessages.forEach(m => { m.from = partyId; });
+      for (const m of message.broadcastMessages) m.from = partyId;
       return message;
     };
 
@@ -1220,10 +1221,10 @@ describe('TSS', function() {
       }
 
       for (const [name, version, registered] of [['legacy', 1.1, []], ['v1.2 with a registered key', 1.2, [2]]] as Array<[string, number, number[]]>) {
-        it(`should reject the "00" slot alias from an outsider in a ${name} session and keep the creator enrolled and readable`, async function() {
+        it(`should reject the "00" slot alias from an outsider in a ${name} session before authentication and keep the creator enrolled and readable`, async function() {
           await createKeyGenSession({ version, registered, joined: [1] });
           const body = { message: { ...round0Message(2), partyId: '00' }, version };
-          await expectRejected(() => post(path, body, partyAuth(2)), { status: 401, code: 'NOT_AUTHORIZED' });
+          await expectRejected(() => post(path, body, partyAuth(2)), { status: 400, code: 'TSS_INVALID_MESSAGE' });
 
           const session = await storage.fetchTssKeyGenSession({ id: SESSION_ID });
           session.participants[0].should.equal(copayerIds[0]);
@@ -1388,6 +1389,39 @@ describe('TSS', function() {
           expectError(res, 401, 'NOT_AUTHORIZED');
           (await rawDoc() === null).should.equal(true);
         });
+      });
+    });
+
+    describe('shape validation order', function() {
+      const forged = (partyId: number) => ({ copayerId: copayerIds[partyId], privKey: randomKey() });
+
+      it('should reject a malformed message before authentication and the service', async function() {
+        await createKeyGenSession({ joined: [1, 2] });
+        const processMessage = sandbox.spy(TssKeyGen, 'processMessage');
+        // A forged signature would answer 401 if authentication ran first
+        const body = { message: { ...round1Message(1), partyId: '1' }, version: 1.2 };
+        await expectRejected(() => post(path, body, forged(1)), { status: 400, code: 'TSS_INVALID_MESSAGE' });
+        processMessage.called.should.equal(false);
+      });
+
+      it('should reject a malformed message that starts a new session before authentication', async function() {
+        const body = { message: { ...round0Message(0), partyId: '0' }, n: vector.n, version: 1.2 };
+        const res = await post(path, body, forged(0));
+        expectError(res, 400, 'TSS_INVALID_MESSAGE');
+        (await rawDoc() === null).should.equal(true);
+      });
+
+      it('should reject a malformed registration before authentication and the service', async function() {
+        await createKeyGenSession();
+        const registerParty = sandbox.spy(TssKeyGen, 'registerParty');
+        await expectRejected(() => post(registerPath, { partyId: 1.9, partyPubKey: authPubKey(1) }, forged(0)), { status: 400, code: 'TSS_INVALID_PARTY_DATA' });
+        registerParty.called.should.equal(false);
+      });
+
+      it('should leave non-message routes on their authentication contract', async function() {
+        await createKeyGenSession({ joined: [1, 2] });
+        const res = await get(`${path}/0?maxWaitTime=0`, forged(1));
+        expectError(res, 401, 'NOT_AUTHORIZED');
       });
     });
 

@@ -18,13 +18,20 @@ import {
   TxProposal,
   Wallet
 } from './model';
-import { TssKeyGenModel } from './model/tsskeygen';
+import { TssKeyGenModel, isCanonicalIndex } from './model/tsskeygen';
 import { TssSigGenModel } from './model/tsssign';
 import type { ITssJoinDelivery, ITssKeyMessageObject } from './model/tsskeygen';
 import type { ITssSigMessageObject } from './model/tsssign';
 import type { Db } from 'mongodb';
 
 const $ = preconditions.singleton();
+
+/** Caller-derived identifiers become MongoDB path segments, so refuse anything Mongo could alias or reject (e.g. "00", 1.5, NaN). */
+function assertCanonicalIndex(value: unknown, name: string): asserts value is number {
+  if (!isCanonicalIndex(value)) {
+    throw new Error(`Invalid ${name} for a TSS keygen write: ${String(value).slice(0, 32)}`);
+  }
+}
 
 const collections = {
   // Duplciated in helpers.. TODO
@@ -1799,6 +1806,7 @@ export class Storage {
   }
 
   async storeTssKeyGenAuthPublicKey({ id, partyId, authPublicKey, __v }: { id: string; partyId: number; authPublicKey: string; __v: number }) {
+    assertCanonicalIndex(partyId, 'partyId');
     const result = await this.db.collection(collections.TSS_KEYGEN).updateOne(
       { id, __v },
       {
@@ -1821,6 +1829,7 @@ export class Storage {
   }
 
   async storeTssKeyGenParticipant({ id, partyId, copayerId, __v }: { id: string; partyId: number; copayerId: string; __v: number }) {
+    assertCanonicalIndex(partyId, 'partyId');
     const result = await this.db.collection(collections.TSS_KEYGEN).updateOne(
       { id, __v },
       {
@@ -1843,6 +1852,8 @@ export class Storage {
   }
 
   async storeTssKeyGenMessage({ id, message, __v }: { id: string; message: ITssKeyMessageObject; __v: number }) {
+    assertCanonicalIndex(message?.round, 'round');
+    assertCanonicalIndex(message?.partyId, 'partyId');
     const result = await this.db.collection(collections.TSS_KEYGEN).updateOne(
       { id, __v },
       {
