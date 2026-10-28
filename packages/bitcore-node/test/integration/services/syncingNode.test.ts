@@ -73,8 +73,16 @@ class LoopDriver {
   // runs the loop until it parks between passes, or ends
   private async run(release: () => void) {
     const parked = new Promise<void>(resolve => (this.parked = resolve));
+    let guard;
+    const stuck = new Promise((_, reject) => {
+      guard = setTimeout(() => reject(new Error('the pass did not finish')), 5000);
+    });
     release();
-    await Promise.race([parked, this.loop!.catch(() => {})]);
+    try {
+      await Promise.race([parked, this.loop!.catch(() => {}), stuck]);
+    } finally {
+      clearTimeout(guard);
+    }
     // registrations queued during the pass with no delay
     this.clock.tick(0);
     await this.settle();
@@ -413,6 +421,81 @@ describe('Syncing node heartbeat', function() {
       expect(testWorker.isSyncingNode).to.equal(true);
       expect(testWorker.syncs).to.equal(2);
       expect(error).to.equal(undefined);
+    });
+
+    it('stops syncing five minutes after a renewal stalls', async () => {
+      const testWorker = new TestWorker();
+      await drive(testWorker).start();
+      await driver.pass();
+      const lastRenewal = Date.now();
+      let unstall;
+      const stalled = new Promise(resolve => (unstall = resolve));
+      nominations.restore();
+      const stub = sandbox.stub(StateStorage, 'selfNominateSyncingNode').returns(stalled);
+      // settle() would wait on the stalled renewal
+      driver.nominations = sandbox.spy();
+      try {
+        await driver.passUntil(lastRenewal + FIVE_MINUTES - PASS);
+        expect(testWorker.isSyncingNode).to.equal(true);
+        await driver.pass();
+        expect(testWorker.isSyncingNode).to.equal(false);
+        // one renewal at a time
+        expect(stub.callCount).to.equal(1);
+      } finally {
+        unstall();
+      }
+    });
+
+    it('does not take over when it stops during the heartbeat read', async () => {
+      await setHeartBeat(otherNode(start - 60000));
+      await drive().start();
+      await driver.passUntil(start + FIVE_MINUTES - PASS);
+      const read = StateStorage.getSyncingNode.bind(StateStorage);
+      let reads = 0;
+      sandbox.stub(StateStorage, 'getSyncingNode').callsFake(async params => {
+        const value = await read(params);
+        if (!reads++) {
+          await worker.stop();
+        }
+        return value;
+      });
+      await driver.pass();
+      expect(await heartBeat()).to.equal(otherNode(start - 60000));
+    });
+
+    it('resigns after a renewal that is in flight when it stops', async () => {
+      await drive().start();
+      await driver.pass();
+      expect(worker.isSyncingNode).to.equal(true);
+      const nominate = StateStorage.selfNominateSyncingNode.bind(StateStorage);
+      const resign = StateStorage.selfResignSyncingNode.bind(StateStorage);
+      let unstall;
+      const stalled = new Promise(resolve => (unstall = resolve));
+      let resigned;
+      const resignation = new Promise(resolve => (resigned = resolve));
+      nominations.restore();
+      const stub = sandbox.stub(StateStorage, 'selfNominateSyncingNode').callsFake(async params => {
+        await stalled;
+        return nominate(params);
+      });
+      sandbox.stub(StateStorage, 'selfResignSyncingNode').callsFake(async params => {
+        const result = await resign(params);
+        resigned();
+        return result;
+      });
+      driver.nominations = sandbox.spy();
+      const passing = driver.pass().catch(() => {});
+      while (!stub.called) {
+        await new Promise(resolve => setImmediate(resolve));
+      }
+      const stopped = loopContext.run(driver, () => worker.stop());
+      // the renewal lands after the resignation, or while stop() waits on it
+      await Promise.race([resignation, new Promise(resolve => setTimeout(resolve, 200))]);
+      unstall();
+      await stopped;
+      await Promise.all(stub.returnValues);
+      await passing;
+      expect(await heartBeat()).to.equal(undefined);
     });
 
     it('stops looping once the worker is stopping', async () => {
