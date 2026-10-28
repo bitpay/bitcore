@@ -1594,6 +1594,18 @@ describe('TSS', function() {
         }
       });
 
+      it('should let two registrations for different slots both commit', async function() {
+        await createKeyGenSession();
+        const gate = gateWrites(2);
+
+        const results = await Promise.all([1, 2].map(partyId =>
+          settled(post(registerPath, { partyId, partyPubKey: authPubKey(partyId) }, partyAuth(0)))));
+        gate.arrivals().should.equal(2, 'both requests must reach their first write');
+
+        results.map(r => r.status).should.deep.equal([200, 200]);
+        (await rawDoc()).authPublicKeys.should.deep.equal([authPubKey(0), authPubKey(1), authPubKey(2)]);
+      });
+
       describe('creator key replacement during admission', function() {
         const replacementKey = () => authPubKey(2);
         const isRegistration = (update: any) => Object.keys(update?.$set || {}).some(k => k.startsWith('authPublicKeys.'));

@@ -1828,52 +1828,52 @@ export class Storage {
     return result;
   }
 
-  async storeTssKeyGenParticipant({ id, partyId, copayerId, __v }: { id: string; partyId: number; copayerId: string; __v: number }) {
-    assertCanonicalIndex(partyId, 'partyId');
-    const result = await this.db.collection(collections.TSS_KEYGEN).updateOne(
-      { id, __v },
-      {
-        $set: {
-          [`participants.${partyId}`]: copayerId
-        },
-        $inc: {
-          __v: 1
-        }
-      },
-      { upsert: false }
-    );
-    if (!result.matchedCount) {
-      if ((await this.db.collection(collections.TSS_KEYGEN).countDocuments({ id })) === 0) {
-        throw new Error('MONGO_DOC_NOT_FOUND: No document found for id ' + id);
-      }
-      throw new Error('MONGO_DOC_OUTDATED: No document found for version ' + __v);
-    }
-    return result;
-  }
-
-  async storeTssKeyGenMessage({ id, message, __v }: { id: string; message: ITssKeyMessageObject; __v: number }) {
+  /**
+   * Append a message to its round and, for an admission, enroll the sender into its slot in the same update.
+   * The write only matches if the session is still at the observed version and the slot is still in the state the
+   * caller checked: vacant (and the copayer in no slot) for an admission, owned by the copayer otherwise.
+   * Throws MONGO_DOC_OUTDATED when nothing matched, in which case nothing was written.
+   */
+  async storeTssKeyGenMessage({ id, message, __v, copayerId, isAdmission, registeredKey }: {
+    id: string;
+    message: ITssKeyMessageObject;
+    __v: number;
+    copayerId: string;
+    isAdmission: boolean;
+    /** The key the creator registered for the slot (v1.2+) */
+    registeredKey?: string;
+  }) {
     assertCanonicalIndex(message?.round, 'round');
     assertCanonicalIndex(message?.partyId, 'partyId');
-    const result = await this.db.collection(collections.TSS_KEYGEN).updateOne(
-      { id, __v },
-      {
-        $push: {
-          [`rounds.${message.round}`]: {
-            fromPartyId: message.partyId,
-            messages: message
-          }
-        },
-        $inc: {
-          __v: 1
+    const { round, partyId } = message;
+    const filter: Record<string, unknown> = { id, __v };
+    const update: Record<string, Record<string, unknown>> = {
+      $push: {
+        [`rounds.${round}`]: {
+          fromPartyId: partyId,
+          messages: message
         }
       },
-      { upsert: false }
-    );
+      $inc: {
+        __v: 1
+      }
+    };
+    if (isAdmission) {
+      filter[`participants.${partyId}`] = null;
+      filter.participants = { $ne: copayerId };
+      update.$set = { [`participants.${partyId}`]: copayerId };
+    } else {
+      filter[`participants.${partyId}`] = copayerId;
+    }
+    if (registeredKey !== undefined) {
+      filter[`authPublicKeys.${partyId}`] = registeredKey;
+    }
+    const result = await this.db.collection(collections.TSS_KEYGEN).updateOne(filter, update, { upsert: false });
     if (!result.matchedCount) {
       if ((await this.db.collection(collections.TSS_KEYGEN).countDocuments({ id })) === 0) {
         throw new Error('MONGO_DOC_NOT_FOUND: No document found for id ' + id);
       }
-      throw new Error('MONGO_DOC_OUTDATED: No document found for version ' + __v);
+      throw new Error('MONGO_DOC_OUTDATED: No document found for version ' + __v + ' and the expected slot state');
     }
     return result;
   }

@@ -315,6 +315,7 @@ describe('KeyGen admission', function() {
   let storage: Storage;
   let updateOne: sinon.SinonStub;
   let insertOne: sinon.SinonStub;
+  let countDocuments: sinon.SinonStub;
   let brokerSend: sinon.SinonStub;
   let fetchSession: sinon.SinonStub;
 
@@ -372,7 +373,8 @@ describe('KeyGen admission', function() {
     storage = new Storage();
     updateOne = sandbox.stub().resolves({ result: { ok: 1 }, matchedCount: 1 });
     insertOne = sandbox.stub().resolves({ result: { ok: 1 } });
-    (storage as any).db = { collection: () => ({ updateOne, insertOne, countDocuments: sandbox.stub().resolves(1) }) };
+    countDocuments = sandbox.stub().resolves(1);
+    (storage as any).db = { collection: () => ({ updateOne, insertOne, countDocuments }) };
     brokerSend = sandbox.stub();
     sandbox.stub(WalletService, 'getStorage').returns(storage);
     sandbox.stub(WalletService, 'getMessageBroker').returns({ send: brokerSend } as any);
@@ -476,14 +478,15 @@ describe('KeyGen admission', function() {
     });
 
     it('should not leave a participant enrolled when the message cannot be stored', async function() {
+      const committed: any[] = [];
       updateOne.callsFake(async (_filter, update) => {
         if (update.$push) throw new Error('injected failure');
+        committed.push(update);
         return { result: { ok: 1 }, matchedCount: 1 };
       });
       const err = await rejection(submit(broadcast(1)));
       expect(err?.message).to.equal('injected failure');
-      const enrolled = updateOne.getCalls().filter(c => Object.keys(c.args[1].$set || {}).some(k => k.startsWith('participants.')));
-      expect(enrolled, 'a participant write succeeded without its message').to.have.length(0);
+      expect(committed, 'a write succeeded without the message').to.have.length(0);
       expect(brokerSend.called).to.equal(false);
     });
   });
@@ -521,6 +524,50 @@ describe('KeyGen admission', function() {
     });
   });
 
+  describe('party registration conflicts', function() {
+    const register = (partyId: any = 1, partyPubKey = new BitcoreLib.PrivateKey().publicKey.toString()) =>
+      TssKeyGen.registerParty({ id: 'session', copayerId: 'alice', data: { partyId, partyPubKey } });
+    const statesInOrder = (...states: any[]) => {
+      fetchSession.callsFake(async () => states.length > 1 ? states.shift() : states[0]);
+    };
+    const conflictOnce = () => updateOne.onFirstCall().resolves({ result: { ok: 1 }, matchedCount: 0 });
+
+    it('should register with one write', async function() {
+      fetchSession.resolves(makeSession({ version: 1.2 }));
+      await register();
+      expect(updateOne.callCount).to.equal(1);
+    });
+
+    it('should revalidate after a conflict and refuse a slot that was admitted meanwhile', async function() {
+      conflictOnce();
+      statesInOrder(makeSession({ version: 1.2 }), makeSession({ version: 1.2, joined: [1] }));
+      const err = await rejection(register());
+      expect(err?.code).to.equal('TSS_ROUNDS_ALREADY_STARTED');
+      expect(updateOne.callCount).to.equal(1);
+    });
+
+    it('should retry after a conflict that left the slot open', async function() {
+      conflictOnce();
+      statesInOrder(makeSession({ version: 1.2 }), makeSession({ version: 1.2, registered: [2] }));
+      await register();
+      expect(updateOne.callCount).to.equal(2);
+    });
+
+    it('should report a session deleted meanwhile as not found', async function() {
+      conflictOnce();
+      countDocuments.resolves(0);
+      const err = await rejection(register());
+      expect(err?.code).to.equal('TSS_SESSION_NOT_FOUND');
+    });
+
+    it('should stop retrying a write that can never match', async function() {
+      fetchSession.resolves(makeSession({ version: 1.2 }));
+      updateOne.resolves({ result: { ok: 1 }, matchedCount: 0 });
+      const err = await rejection(register());
+      expect(err?.code).to.equal('TSS_GENERIC_ERROR');
+    });
+  });
+
   describe('retries after a version conflict', function() {
     const conflictOnce = () => updateOne.onFirstCall().resolves({ result: { ok: 1 }, matchedCount: 0 });
     const statesInOrder = (...states: any[]) => {
@@ -553,6 +600,62 @@ describe('KeyGen admission', function() {
       expect(err).to.not.equal(undefined);
       expect(updateOne.callCount).to.equal(1);
       expect(brokerSend.called).to.equal(false);
+    });
+
+    it('should rerun the ownership check after a conflict', async function() {
+      conflictOnce();
+      const taken = makeSession({ joined: [1, 2] });
+      taken.participants[1] = 'carol';
+      statesInOrder(makeSession({ joined: [1, 2] }), taken);
+      const err = await rejection(submit(p2p(1)));
+      expect(err?.code).to.equal('TSS_NON_PARTICIPANT');
+      expect(updateOne.callCount).to.equal(1);
+      expect(brokerSend.called).to.equal(false);
+    });
+
+    it('should rerun the duplicate check after a conflict', async function() {
+      conflictOnce();
+      const later = makeSession({ joined: [1, 2] });
+      later.rounds[1] = [{ fromPartyId: 1, messages: p2p(1) }];
+      statesInOrder(makeSession({ joined: [1, 2] }), later);
+      const err = await rejection(submit(p2p(1)));
+      expect(err?.code).to.equal('TSS_ROUND_MESSAGE_EXISTS');
+      expect(updateOne.callCount).to.equal(1);
+    });
+
+    it('should report a session deleted meanwhile as not found', async function() {
+      conflictOnce();
+      countDocuments.resolves(0);
+      const err = await rejection(submit(broadcast(1)));
+      expect(err?.code).to.equal('TSS_SESSION_NOT_FOUND');
+      expect(brokerSend.called).to.equal(false);
+    });
+
+    it('should stop retrying a write that can never match', async function() {
+      updateOne.resolves({ result: { ok: 1 }, matchedCount: 0 });
+      const err = await rejection(submit(broadcast(1)));
+      expect(err?.code).to.equal('TSS_GENERIC_ERROR');
+      expect(updateOne.callCount).to.be.within(2, 100);
+      expect(brokerSend.called).to.equal(false);
+    });
+
+    it('should require the admission predicates on the one write', async function() {
+      fetchSession.resolves(makeSession({ version: 1.2, registered: [1] }));
+      await submit(broadcast(1), 'bob', { version: 1.2 });
+      const [filter, update] = updateOne.firstCall.args;
+      expect(filter).to.deep.include({ id: 'session', __v: 0, 'participants.1': null, 'authPublicKeys.1': 'key1' });
+      expect(filter.participants).to.deep.equal({ $ne: 'bob' });
+      expect(update.$set).to.deep.equal({ 'participants.1': 'bob' });
+      expect(update.$inc).to.deep.equal({ __v: 1 });
+    });
+
+    it('should require slot ownership, and no roster change, on a write from an enrolled sender', async function() {
+      fetchSession.resolves(makeSession({ joined: [1, 2] }));
+      await submit(p2p(1));
+      const [filter, update] = updateOne.firstCall.args;
+      expect(filter).to.deep.include({ id: 'session', __v: 0, 'participants.1': 'bob' });
+      expect(filter).to.not.have.property('participants');
+      expect(update).to.not.have.property('$set');
     });
 
     it('should reject when the session expired meanwhile', async function() {

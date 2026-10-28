@@ -13,6 +13,8 @@ import type { ITssKeyMessageObject } from './model/tsskeygen';
 import type { ITssSigMessageObject } from './model/tsssign';
 
 const MAX_ARRAY_LENGTH = 2 ** 32 - 1;
+/** Bound on conflict retries for one keygen message, so a state the write's conditions can never match fails instead of looping */
+const MAX_WRITE_ATTEMPTS = 25;
 
 type SessionHandler = (message: INotification) => Promise<void>;
 
@@ -173,40 +175,53 @@ class TssKeyGenClass {
   }) {
     const { id, copayerId, data } = params;
 
-    const session = await this.getSessionForCopayer({ id, copayerId });
-    const reqPartyId = session.participants.indexOf(copayerId);
-    if (reqPartyId !== 0) {
-      throw Errors.TSS_NON_PARTICIPANT.withMessage('Only the first participant can register a party');
-    }
+    // A registration that loses a version check commits nothing, so each attempt revalidates against fresh state
+    for (let attempt = 0; attempt < MAX_WRITE_ATTEMPTS; attempt++) {
+      const session = await this.getSessionForCopayer({ id, copayerId });
+      const reqPartyId = session.participants.indexOf(copayerId);
+      if (reqPartyId !== 0) {
+        throw Errors.TSS_NON_PARTICIPANT.withMessage('Only the first participant can register a party');
+      }
 
-    const partyId = data?.partyId;
-    if (!isCanonicalIndex(partyId)) {
-      throw Errors.TSS_INVALID_PARTY_DATA.withMessage(`Invalid partyId: ${String(partyId).slice(0, 32)}`);
-    }
+      const partyId = data?.partyId;
+      if (!isCanonicalIndex(partyId)) {
+        throw Errors.TSS_INVALID_PARTY_DATA.withMessage(`Invalid partyId: ${String(partyId).slice(0, 32)}`);
+      }
 
-    const pubKey = typeof data.partyPubKey === 'string' ? data.partyPubKey.trim() : undefined;
+      const pubKey = typeof data.partyPubKey === 'string' ? data.partyPubKey.trim() : undefined;
 
-    if (!(partyId > 0) || !pubKey || pubKey === copayerId || partyId >= session.n || !isWellFormedPubKey(pubKey)) {
-      throw Errors.TSS_INVALID_PARTY_DATA.withMessage(`Invalid data for party ${partyId} registration`);
-    }
+      if (!(partyId > 0) || !pubKey || pubKey === copayerId || partyId >= session.n || !isWellFormedPubKey(pubKey)) {
+        throw Errors.TSS_INVALID_PARTY_DATA.withMessage(`Invalid data for party ${partyId} registration`);
+      }
 
-    if (session.authPublicKeys.includes(pubKey)) {
-      if (session.authPublicKeys.indexOf(pubKey) === partyId) {
-        // Already registered at partyId -> return idempotently
+      if (session.authPublicKeys.includes(pubKey)) {
+        if (session.authPublicKeys.indexOf(pubKey) === partyId) {
+          // Already registered at partyId -> return idempotently
+          return;
+        } else {
+          // Trying to re-register a party that is already registered under a different party ID
+          throw Errors.TSS_PARTY_ALREADY_REGISTERED;
+        }
+      }
+    
+      // Has party already submitted initial rounds message? (case when this is a re-register)
+      if (session.participants[partyId] || session.rounds?.[0]?.some(round => round.fromPartyId === partyId)) {
+        throw Errors.TSS_ROUNDS_ALREADY_STARTED.withMessage(`Party ${partyId} has already submitted an initial message. Cannot register a new party ${partyId}`);
+      }
+
+      try {
+        await WalletService.getStorage().storeTssKeyGenAuthPublicKey({ id, partyId, authPublicKey: pubKey, __v: session.__v });
         return;
-      } else {
-        // Trying to re-register a party that is already registered under a different party ID
-        throw Errors.TSS_PARTY_ALREADY_REGISTERED;
+      } catch (e) {
+        if (e?.message?.startsWith('MONGO_DOC_OUTDATED')) {
+          continue; // lost a race: nothing was written, so start over from the committed state
+        } else if (e?.message?.startsWith('MONGO_DOC_NOT_FOUND')) {
+          throw Errors.TSS_SESSION_NOT_FOUND;
+        }
+        throw e;
       }
     }
-    
-    // Has party already submitted initial rounds message? (case when this is a re-register)
-    if (session.rounds?.[0]?.some(round => round.fromPartyId === partyId)) {
-      throw Errors.TSS_ROUNDS_ALREADY_STARTED.withMessage(`Party ${partyId} has already submitted an initial message. Cannot register a new party ${partyId}`);
-    }
-
-    const storage = WalletService.getStorage();
-    await storage.storeTssKeyGenAuthPublicKey({ id, partyId, authPublicKey: pubKey, __v: session.__v });
+    throw Errors.TSS_GENERIC_ERROR.withMessage('Too many concurrent updates to the TSS key generation session');
   }
 
   /**
@@ -320,9 +335,21 @@ class TssKeyGenClass {
     }
 
     const storage = WalletService.getStorage();
-    let session = await storage.fetchTssKeyGenSession({ id });
 
-    if (session) {
+    // A write that loses a race commits nothing, so each attempt starts from a fresh session and reruns every acceptance check
+    for (let attempt = 0; attempt < MAX_WRITE_ATTEMPTS; attempt++) {
+      const session = await storage.fetchTssKeyGenSession({ id });
+
+      if (!session) {
+        if (attempt === 0 && message.round === 0 && message.partyId === 0) {
+          if (!this._isValidBroadcastMessage({ message })) {
+            throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid broadcast message provided');
+          }
+          return await this._initSession({ id, message, n, password, storage, copayerId, version, timeLimit });
+        }
+        throw Errors.TSS_SESSION_NOT_FOUND;
+      }
+
       if (session.isExpired()) {
         throw Errors.TSS_SESSION_EXPIRED;
       }
@@ -343,7 +370,6 @@ class TssKeyGenClass {
         throw Errors.TSS_MISMATCH_VERSION.withMessage(`TSS version (${version}) does not match session version (${session.schemeVersion})`);
       }
 
-
       if (!session.participants[message.partyId]) {
         if (session.participants.includes(copayerId)) {
           throw Errors.TSS_PARTY_ALREADY_REGISTERED;
@@ -363,16 +389,6 @@ class TssKeyGenClass {
         if (session.schemeVersion >= 1.2 && session.authPublicKeys[message.partyId] !== message.publicKey) {
           throw Errors.NOT_AUTHORIZED;
         }
-        try {
-          await storage.storeTssKeyGenParticipant({ id, partyId: message.partyId, copayerId, __v: session.__v });
-        } catch (e) {
-          if (e?.message?.startsWith('MONGO_DOC_OUTDATED')) {
-            return this.processMessage(params);
-          } else if (e?.message?.startsWith('MONGO_DOC_NOT_FOUND')) {
-            throw Errors.TSS_SESSION_NOT_FOUND;
-          }
-          throw e;
-        }
       } else if (session.participants[message.partyId] !== copayerId) {
         throw Errors.TSS_NON_PARTICIPANT.withMessage('Incorrect copayerId for this partyId');
       } else if (message.publicKey !== session.getEnrolledKey(message.partyId)) {
@@ -380,21 +396,11 @@ class TssKeyGenClass {
         throw Errors.NOT_AUTHORIZED.withMessage('Public key does not match the one established for this party');
       }
 
-      let result = false;
-      while (!result) {
-        result = await this._pushMessage({ session, message, storage });
-        if (!result) {
-          session = await storage.fetchTssKeyGenSession({ id });
-        }
+      if (await this._pushMessage({ session, message, storage, copayerId })) {
+        return;
       }
-    } else if (message.round === 0 && message.partyId === 0) {
-      if (!this._isValidBroadcastMessage({ message })) {
-        throw Errors.TSS_INVALID_MESSAGE.withMessage('Invalid broadcast message provided');
-      }
-      await this._initSession({ id, message, n, password, storage, copayerId, version, timeLimit });
-    } else {
-      throw Errors.TSS_SESSION_NOT_FOUND;
     }
+    throw Errors.TSS_GENERIC_ERROR.withMessage('Too many concurrent updates to the TSS key generation session');
   }
 
   /**
@@ -483,8 +489,9 @@ class TssKeyGenClass {
   }
 
   /**
-   * Push a TSS keygen message to the session.
-   * This will fail if the round is already complete or if the message is from a party that has already sent a message for the round.
+   * Push a TSS keygen message to the session, together with the sender's enrollment when it is an admission.
+   * This will fail if the round is already complete or the party has already sent a message for the round.
+   * @returns false if the write lost a race and nothing was committed, so the caller must start over from fresh state
    */
   private async _pushMessage(params: {
     /** TSS keygen session fetched from BWS storage */
@@ -493,8 +500,10 @@ class TssKeyGenClass {
     message: ITssKeyMessageObject;
     /** BWS storage instance */
     storage: Storage;
-  }) {
-    const { session, message, storage } = params;
+    /** Copayer ID of the submitting party */
+    copayerId: string;
+  }): Promise<boolean> {
+    const { session, message, storage, copayerId } = params;
     const { id } = session;
     const { round } = message;
 
@@ -509,11 +518,20 @@ class TssKeyGenClass {
     if (existing) {
       throw Errors.TSS_ROUND_MESSAGE_EXISTS;
     }
-    
+
+    const isAdmission = !session.participants[message.partyId];
     const messageBroker = WalletService.getMessageBroker();
 
     try {
-      const result = await storage.storeTssKeyGenMessage({ id, message, __v: session.__v });
+      const result = await storage.storeTssKeyGenMessage({
+        id,
+        message,
+        __v: session.__v,
+        copayerId,
+        isAdmission,
+        // From v1.2 the slot's registered key is part of the write's match conditions
+        registeredKey: session.schemeVersion >= 1.2 ? message.publicKey : undefined
+      });
       if (!result.result.ok) {
         logger.error('Failed to store TSS key generation message %o %o %o', id, result, message);
         throw Errors.TSS_GENERIC_ERROR.withMessage('Failed to store TSS key generation message');
