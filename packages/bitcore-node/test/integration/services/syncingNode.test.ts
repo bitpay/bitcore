@@ -8,6 +8,7 @@ import { BitcoinP2PWorker } from '../../../src/modules/bitcoin/p2p';
 import { MoralisP2PWorker } from '../../../src/modules/moralis/p2p/p2p';
 import { EventStorage } from '../../../src/models/events';
 import { EVMBlockStorage } from '../../../src/providers/chain-state/evm/models/block';
+import { EVMTransactionStorage } from '../../../src/providers/chain-state/evm/models/transaction';
 import { StateStorage } from '../../../src/models/state';
 import { TransactionStorage } from '../../../src/models/transaction';
 import { WebhookStorage } from '../../../src/models/webhook';
@@ -939,6 +940,46 @@ describe('Syncing node heartbeat', function() {
       await flush();
       expect(signal.callCount).to.equal(1);
       expect(verified.callCount).to.equal(1);
+    });
+  });
+
+  describe('moralis writes', () => {
+    it('syncs blocks and their transactions up to the tip', async () => {
+      const moralis = moralisWorker({ syncs: true });
+      sandbox.stub(moralis, 'getWeb3').resolves({
+        eth: {
+          getBlockNumber: async () => 1,
+          getBlock: async (height: number) => (height <= 1 ? { number: height, transactions: [{}] } : null)
+        }
+      } as any);
+      sandbox.stub(moralis as any, 'syncAddressActivity').resolves();
+      sandbox.stub(moralis as any, 'subscribeToAddressActivity').resolves(true);
+      sandbox.stub(EVMBlockStorage, 'convertRawBlock').returns({} as any);
+      sandbox.stub(EVMTransactionStorage, 'convertRawTx').returns({} as any);
+      const signalBlock = sandbox.stub(EventStorage, 'signalBlock').resolves();
+      const signalTx = sandbox.stub(EventStorage, 'signalTx').resolves();
+      const verified = sandbox.stub(StateStorage, 'setVerifiedBlockHeight').resolves();
+      await drive(moralis).start();
+      await driver.pass();
+      await until(() => verified.callCount >= 2);
+      await flush();
+      expect(signalBlock.callCount).to.equal(2);
+      expect(signalTx.callCount).to.equal(2);
+      expect(verified.getCalls().map(call => call.args[0].height)).to.deep.equal([0, 1]);
+    });
+
+    it('leaves a webhook unprocessed when none of its events are signaled', async () => {
+      const moralis = moralisWorker();
+      const tail = new EventEmitter() as any;
+      sandbox.stub(WebhookStorage, 'getTail').returns(tail);
+      sandbox.stub((moralis as any).csp, 'webhookToCoinEvents').returns([{}]);
+      const signal = sandbox.stub(EventStorage, 'signalAddressCoin').rejects(new Error('signal failed'));
+      const setProcessed = sandbox.stub(WebhookStorage, 'setProcessed').resolves();
+      (moralis as any).syncAddressActivity();
+      tail.emit('data', { source: 'moralis' });
+      await until(() => signal.called);
+      await flush();
+      expect(setProcessed.called).to.equal(false);
     });
   });
 
