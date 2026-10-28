@@ -1891,13 +1891,13 @@ export class Storage {
     );
   }
 
-  async storeTssKeyBwsJoinSecret({ id, secret }: { id: string; secret: string }) {
+  async storeTssKeyBwsJoinSecret({ id, delivery }: { id: string; delivery: TssKeyGenModel['bwsJoinDelivery'] }) {
     return this.db.collection(collections.TSS_KEYGEN).updateOne({
       id
     },
     {
       $set: {
-        bwsJoinSecret: secret
+        bwsJoinDelivery: delivery
       }
     },
     { upsert: false });
