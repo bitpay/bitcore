@@ -66,6 +66,7 @@ export class P2pManager {
 
 export class BaseP2PWorker<T extends IBlock = IBlock> {
   protected lastHeartBeat = '';
+  protected renewal?: Promise<void>;
   protected stopping = false;
   protected chain = '';
   protected network = '';
@@ -103,6 +104,9 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
     while (!this.stopping) {
       const wasSyncingNode = this.getIsSyncingNode();
       this.lastHeartBeat = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
+      if (this.stopping) {
+        break;
+      }
       const nowSyncingNode = this.getIsSyncingNode();
       this.isSyncingNode = nowSyncingNode;
       if (wasSyncingNode && !nowSyncingNode) {
@@ -113,30 +117,39 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
         this.sync();
       }
       if (!this.lastHeartBeat || this.getIsSyncingNode()) {
-        await this.registerSyncingNode();
+        this.registerSyncingNode();
       } else {
         logger.info('Another node is the primary syncing node');
         if (takeover?.heartBeat !== this.lastHeartBeat) {
           takeover = { heartBeat: this.lastHeartBeat, at: Date.now() + 5 * 60 * 1000 };
         }
         if (Date.now() >= takeover.at) {
-          await this.registerSyncingNode();
+          this.registerSyncingNode();
         }
       }
       await wait(500);
     }
   }
 
-  async registerSyncingNode() {
-    await StateStorage.selfNominateSyncingNode({
-      chain: this.chain,
-      network: this.network,
-      lastHeartBeat: this.lastHeartBeat
-    }).catch(err => logger.error('Error in selfNominateSyncingNode:', err));
+  // one nomination at a time, not awaited: the loop keeps reading, so a stalled renewal still lets the heartbeat expire
+  registerSyncingNode() {
+    if (!this.renewal) {
+      this.renewal = StateStorage.selfNominateSyncingNode({
+        chain: this.chain,
+        network: this.network,
+        lastHeartBeat: this.lastHeartBeat
+      })
+        .catch(err => logger.error('Error in selfNominateSyncingNode:', err))
+        .then(() => {
+          this.renewal = undefined;
+        });
+    }
   }
 
   async unregisterSyncingNode() {
     await wait(1000);
+    // a nomination that lands after resigning would claim the heartbeat again
+    await this.renewal;
     try {
       this.lastHeartBeat = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
       if (this.getIsSyncingNode()) {
