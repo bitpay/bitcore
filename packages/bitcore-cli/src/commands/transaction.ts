@@ -50,16 +50,16 @@ export function command() {
       }
       return parsed;
     })
-    .option('--nonce <nonce>', 'Nonce for the transaction (optional, for chains that require it)', parseInt)
+    .option('--nonce <nonce>', 'Nonce for the transaction (optional)', parseInt)
     .option('--token <token>', 'Token to send (e.g. USDC). This is a convenient way to specify the token without needing the contract address, but only works for well-known, common tokens. Use --tokenAddress for more obscure tokens.')
     .option('--tokenAddress <address>', 'Token contract address to send (takes precedence over --token)')
     .option('--note <note>', 'Note for the transaction')
-    .option('--tag <tag>', '(XRP only) Destination tag for the transaction', (tag) => {
+    .option('--tag <tag>', '(XRP only) Destination tag for the transaction', (tag: string) => {
       const parsed = Number(tag);
       if (!Number.isInteger(parsed) || parsed < 0) {
         throw new Error('Invalid destination tag specified. It should be a non-negative integer.');
       }
-      return parsed;
+      return tag; // keep it a string
     })
     .option('--dry-run', 'Only create the transaction proposal without broadcasting')
     .hook('preAction', (thisCommand) => {
@@ -110,7 +110,8 @@ export async function createTransaction(
   }
 
 
-  const to = opts.command ? opts.to : await prompt.text({
+  // Don't do opts.command tertiary check in case opts.to is passed in from another interactive command (e.g. flags management)
+  const to = opts.to || await prompt.text({
     message: 'Enter the recipient\'s address:',
     validate: (value) => {
       if (!Validation.validateAddress(chain, network, value)) {
@@ -141,12 +142,13 @@ export async function createTransaction(
     if (prompt.isCancel(tag)) {
       throw new UserCancelled();
     }
-    if (tag != null) {
+    if (tag) {
       opts.destinationTag = tag;
     }
   }
 
-  const amount = opts.command ? opts.amount : await prompt.text({
+  // Don't do opts.command tertiary check in case opts.amount is passed in from another interactive command (e.g. flags management)
+  const amount = opts.amount ?? await prompt.text({
     message: 'Enter the amount to send:',
     placeholder: 'Type `help` for help and to see your balance',
     validate: (value) => {
@@ -254,7 +256,7 @@ export async function createTransaction(
 
   const lines = [];
   lines.push(`To: ${to}`);
-  if (opts.destinationTag != null) { // Display txp.destinationTag below in case user entered but there's a discrepancy
+  if (opts.destinationTag) { // Display txp.destinationTag below in case user entered but there's a discrepancy
     lines.push(`DestTag: ${txp.destinationTag}`);
   }
   lines.push(`Amount: ${Utils.renderAmount(currency, txp.amount, tokenObj)}`);

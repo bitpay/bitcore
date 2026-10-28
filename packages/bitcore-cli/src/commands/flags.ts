@@ -18,11 +18,14 @@ export function command() {
     .optionsGroup('Flags Options')
     .option('--flags <flags>', 'Comma-delimited list of account transaction flag(s) to set. If provided, see Transaction Options below for additional options to provide for the setting transaction. ' + flagsDisplay());
 
+  // Inherit the options for transaction creation, omitting those not relevant to XRP flag setting
   flagsCommand.optionsGroup('Transaction Options');
   for (const txOpt of txCommand.options) {
     if (!(
+      // Automatically set for XRP flag setting tx
       txOpt.flags.startsWith('--to ') ||
       txOpt.flags.startsWith('--amount ') ||
+      // Not relevant to XRP flag setting tx
       txOpt.flags.startsWith('--nonce ') ||
       txOpt.flags.startsWith('--tokenAddress ') ||
       txOpt.flags.startsWith('--token ')
@@ -31,6 +34,7 @@ export function command() {
     }
   }
 
+  // Maintain the preAction hook(s) from the transaction command
   flagsCommand['_lifeCycleHooks'] = txCommand['_lifeCycleHooks'];
   flagsCommand.hook('preAction', (thisCommand) => {
     const opts = thisCommand.opts();
@@ -68,6 +72,7 @@ export async function getOrSetFlags(args: CommonArgs<ITransactionArgs>) {
     opts.to = (await wallet.client.getMainAddresses())[0].address;
     opts.amount = '0';
     opts.txType = 'AccountSet';
+    prompt.log.info('Creating XRP AccountSet transaction to update flags...');
     await createTransaction(args);
   }
 
