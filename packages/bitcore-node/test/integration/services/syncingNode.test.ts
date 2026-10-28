@@ -27,8 +27,7 @@ const FIVE_MINUTES = 5 * 60 * 1000;
 const LEASE = 4 * 60 * 1000;
 const STOP_WAIT = 15000;
 const otherNode = (time: number) => `otherhost:4242:${time}`;
-const processId = () => (StateStorage as any).processId;
-const thisNode = (time: number) => [os.hostname(), process.pid, time, processId()].filter(part => part !== undefined).join(':');
+const thisNode = (time: number) => `${os.hostname()}:${process.pid}:${time}:${StateStorage.processId}`;
 const WRITES = [
   'findOneAndUpdate', 'findOneAndReplace', 'updateOne', 'updateMany',
   'replaceOne', 'insertOne', 'insertMany', 'bulkWrite'

@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import os from 'os';
 import { ObjectID } from 'mongodb';
 import { StorageService } from '../services/storage';
@@ -23,6 +24,8 @@ export class StateModel extends BaseModel<IState> {
     super('state', storage);
   }
   allowedPaging = [];
+  // tells this process's heartbeats apart from those of another process with the same hostname and pid
+  readonly processId = randomBytes(6).toString('hex');
 
   onConnect() {}
 
@@ -52,7 +55,7 @@ export class StateModel extends BaseModel<IState> {
     return this.collection.findOneAndUpdate(
       // renew only the heartbeat this node read, and claim one only when there is none
       { _id: singleState._id, [`syncingNode:${chain}:${network}`]: lastHeartBeat || { $exists: false } },
-      { $set: { [`syncingNode:${chain}:${network}`]: `${os.hostname}:${process.pid}:${Date.now()}` } }
+      { $set: { [`syncingNode:${chain}:${network}`]: `${os.hostname()}:${process.pid}:${Date.now()}:${this.processId}` } }
     );
   }
 

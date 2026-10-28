@@ -1,4 +1,3 @@
-import * as os from 'os';
 import logger from '../logger';
 import { BaseBlock } from '../models/baseBlock';
 import { StateStorage } from '../models/state';
@@ -11,7 +10,8 @@ import { Config, ConfigService } from './config';
 // its last confirmed renewal, which leaves it time to shut down (forced after 30 seconds) before anyone takes over.
 const TAKEOVER_MS = 5 * 60 * 1000;
 const LEASE_MS = 4 * 60 * 1000;
-const RENEWAL_WAIT_MS = 5000;
+// how long stop() waits for the worker's writes to finish before it gives up resigning
+const STOP_WAIT_MS = 15000;
 
 // resolves to fallback if promise has not settled within ms
 async function within<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
@@ -46,9 +46,8 @@ export class P2pManager {
 
   async stop() {
     logger.info('Stopping P2P Manager');
-    for (const worker of this.workers) {
-      await worker.stop();
-    }
+    // in parallel, so a worker that is slow to stop doesn't hold up the others resigning
+    await Promise.all(this.workers.map(worker => worker.stop()));
     this.workers = [];
   }
 
@@ -84,6 +83,7 @@ export class P2pManager {
 export class BaseP2PWorker<T extends IBlock = IBlock> {
   protected lastHeartBeat = '';
   protected renewal?: Promise<void>;
+  protected writes = new Set<Promise<unknown>>();
   protected stopping = false;
   protected chain = '';
   protected network = '';
@@ -98,11 +98,10 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
     if (!this.lastHeartBeat) {
       return false;
     }
-    const [hostname, pid, timestamp] = this.lastHeartBeat.split(':');
-    const hostNameMatches = hostname === os.hostname();
-    const pidMatches = pid === process.pid.toString();
+    const [, , timestamp, processId] = this.lastHeartBeat.split(':');
+    const processMatches = processId === StateStorage.processId;
     const timestampIsFresh = Date.now() - parseInt(timestamp) < LEASE_MS;
-    const amSyncingNode = hostNameMatches && pidMatches && timestampIsFresh;
+    const amSyncingNode = processMatches && timestampIsFresh;
     return amSyncingNode;
   }
 
@@ -148,16 +147,20 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
     }
   }
 
-  // the syncing node's lease ends on time even if the read stalls: a lost lease reads as no heartbeat
+  // A read that fails or doesn't come back before the syncing node's lease ends keeps the last heartbeat read, which
+  // the lease has then outlived.
   async readHeartBeat(wasSyncingNode: boolean): Promise<string> {
+    const lastHeartBeat = this.lastHeartBeat;
+    const read = () =>
+      StateStorage.getSyncingNode({ chain: this.chain, network: this.network }).catch(err => {
+        logger.error('Error reading the syncing node heartbeat: %o', err);
+        return lastHeartBeat;
+      });
     if (!wasSyncingNode) {
-      return StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
+      return read();
     }
-    const leaseLeft = parseInt(this.lastHeartBeat.split(':')[2]) + LEASE_MS - Date.now();
-    if (leaseLeft <= 0) {
-      return '';
-    }
-    return within(StateStorage.getSyncingNode({ chain: this.chain, network: this.network }), leaseLeft, '');
+    const leaseLeft = parseInt(lastHeartBeat.split(':')[2]) + LEASE_MS - Date.now();
+    return leaseLeft > 0 ? within(read(), leaseLeft, lastHeartBeat) : lastHeartBeat;
   }
 
   // one nomination at a time, not awaited: the loop keeps reading, so a stalled renewal still lets the heartbeat expire
@@ -175,11 +178,29 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
     }
   }
 
+  // Runs a sync write unless the worker is stopping. A standby claims a resigned heartbeat on its next pass, so
+  // unregisterSyncingNode resigns only once these finish.
+  protected async write<R>(fn: () => Promise<R>): Promise<R | undefined> {
+    if (this.stopping) {
+      return undefined;
+    }
+    const writing = fn();
+    this.writes.add(writing);
+    try {
+      return await writing;
+    } finally {
+      this.writes.delete(writing);
+    }
+  }
+
   async unregisterSyncingNode() {
     await wait(1000);
-    // a renewal that lands between reading and resigning would leave a heartbeat nobody renews; don't let it hold up stop()
-    if (this.renewal) {
-      await within(this.renewal, RENEWAL_WAIT_MS, undefined);
+    // A renewal landing between reading and resigning would also leave a heartbeat nobody renews. If the writes don't
+    // finish in time, leave the heartbeat to expire rather than hold up stop().
+    const settled = Promise.allSettled([this.renewal, ...this.writes]).then(() => true);
+    if (!(await within(settled, STOP_WAIT_MS, false))) {
+      logger.warn(`Leaving the ${this.chain} ${this.network} syncing node heartbeat to expire: writes still in flight`);
+      return;
     }
     try {
       this.lastHeartBeat = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
