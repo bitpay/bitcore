@@ -833,6 +833,48 @@ describe('Syncing node heartbeat', function() {
       expect(await heartBeat()).to.equal(thisNode(start + PASS));
     });
 
+    it('does not start a write once its lease has run out, before the loop notices', async () => {
+      const testWorker = new TestWorker();
+      await becomeSyncingNode(testWorker);
+      // the lease the last pass confirmed was claimed at start
+      clock.tick(start + LEASE - 1 - Date.now());
+      const write = sandbox.stub().resolves();
+      await (testWorker as any).write(write);
+      expect(write.callCount).to.equal(1);
+      clock.tick(1);
+      await (testWorker as any).write(write);
+      expect(write.callCount).to.equal(1);
+      expect(testWorker.isSyncingNode).to.equal(true);
+    });
+
+    it('a worker that never held the lease writes', async () => {
+      const write = sandbox.stub().resolves();
+      await (new TestWorker() as any).write(write);
+      expect(write.callCount).to.equal(1);
+    });
+
+    it('a failed write fails for its caller and does not hold up resigning', async () => {
+      const testWorker = new TestWorker();
+      await becomeSyncingNode(testWorker);
+      let fail;
+      const failed = (testWorker as any).write(() => new Promise((_, reject) => (fail = reject)));
+      let error;
+      failed.catch(e => (error = e));
+      const stopping = stop();
+      await until(() => pendingLoopTimers() > 0);
+      fail(new Error('write failed'));
+      await stopping;
+      expect(error).to.be.an('error').with.property('message', 'write failed');
+      expect(await heartBeat()).to.equal(undefined);
+    });
+
+    it('forgets writes once they finish or fail', async () => {
+      const testWorker = new TestWorker();
+      await (testWorker as any).write(() => Promise.resolve());
+      await (testWorker as any).write(() => Promise.reject(new Error('write failed'))).catch(() => {});
+      expect((testWorker as any).writes.size).to.equal(0);
+    });
+
     it('does not start a write once stopping', async () => {
       const testWorker = new TestWorker();
       await becomeSyncingNode(testWorker);
@@ -967,6 +1009,20 @@ describe('Syncing node heartbeat', function() {
       expect(verified.getCalls().map(call => call.args[0].height)).to.deep.equal([0, 1]);
     });
 
+    it('marks a webhook processed once its events are signaled', async () => {
+      const moralis = moralisWorker();
+      const tail = new EventEmitter() as any;
+      sandbox.stub(WebhookStorage, 'getTail').returns(tail);
+      sandbox.stub((moralis as any).csp, 'webhookToCoinEvents').returns([{}, {}]);
+      sandbox.stub(EventStorage, 'signalAddressCoin').onFirstCall().rejects(new Error('signal failed')).resolves();
+      const setProcessed = sandbox.stub(WebhookStorage, 'setProcessed').resolves();
+      (moralis as any).syncAddressActivity();
+      const webhook = { source: 'moralis' };
+      tail.emit('data', webhook);
+      await until(() => setProcessed.called);
+      expect(setProcessed.firstCall.args[0]).to.deep.equal({ webhook });
+    });
+
     it('leaves a webhook unprocessed when none of its events are signaled', async () => {
       const moralis = moralisWorker();
       const tail = new EventEmitter() as any;
@@ -983,6 +1039,15 @@ describe('Syncing node heartbeat', function() {
   });
 
   describe('P2pManager', () => {
+    it('stops every worker even if one fails to stop', async () => {
+      const manager = new P2pManager();
+      const second = sandbox.stub().resolves();
+      manager.workers = [{ stop: sandbox.stub().rejects(new Error('stop failed')) }, { stop: second }] as any;
+      await manager.stop();
+      expect(second.called).to.equal(true);
+      expect(manager.workers).to.deep.equal([]);
+    });
+
     it('stops its workers in parallel', async () => {
       const manager = new P2pManager();
       const stopped: string[] = [];

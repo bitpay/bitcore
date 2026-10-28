@@ -87,9 +87,9 @@ describe('BitcoinP2PWorker', function() {
         (worker as any).stopping = true;
       });
       setupSyncStubs();
-      sandbox.stub(worker as any, 'getHeadersForSync')
-        .onFirstCall().resolves(headers)
-        .resolves([]);
+      const getHeaders = sandbox.stub(worker as any, 'getHeadersForSync').resolves([]);
+      getHeaders.onFirstCall().resolves(headers);
+      getHeaders.onSecondCall().resolves(headers);
 
       const done = sandbox.spy();
       (worker as any).events.on('SYNCDONE', done);
@@ -97,6 +97,8 @@ describe('BitcoinP2PWorker', function() {
       expect(await worker.sync()).to.equal(false);
 
       expect(processed).to.deep.equal(['block_0']);
+      // no more batches after the one that was stopping
+      expect(getHeaders.callCount).to.equal(2);
       // a stopped sync is not a completed one
       expect((StateStorage.collection as any).findOneAndUpdate.called).to.equal(false);
       expect(done.called).to.equal(false);
@@ -263,6 +265,25 @@ describe('BitcoinP2PWorker', function() {
   });
 
   describe('sync() dual-mode behavior', function() {
+    it('does not start the multi-thread sync once the worker is stopping', async function() {
+      const worker = createWorker({ threads: 4 });
+      const mtSyncStub = sandbox.stub((worker as any).multiThreadSync, 'sync').resolves(true);
+      sandbox.stub(StateStorage, 'collection').value({
+        findOne: sandbox.stub().resolves({ initialSyncComplete: [] }),
+        findOneAndUpdate: sandbox.stub().resolves()
+      });
+      // stop() lands while sync() looks up the tip
+      sandbox.stub(ChainStateProvider, 'getLocalTip').callsFake(async () => {
+        (worker as any).stopping = true;
+        return { height: 100 } as any;
+      });
+      sandbox.stub(worker as any, 'getHeadersForSync').resolves([]);
+
+      expect(await worker.sync()).to.equal(false);
+      expect(mtSyncStub.called).to.equal(false);
+      expect((worker as any).isSyncing).to.equal(false);
+    });
+
     it('should delegate to multiThreadSync when initial sync not complete and threads > 0', async function() {
       const worker = createWorker({ threads: 4 });
       const mtSyncStub = sandbox.stub((worker as any).multiThreadSync, 'sync').resolves(true);
