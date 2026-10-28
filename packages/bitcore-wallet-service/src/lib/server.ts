@@ -873,26 +873,29 @@ export class WalletService implements IWalletService {
       pendingTxps?: ITxProposal[];
       preferences?: boolean;
     } = {};
-    async.parallel(
-      [
-        next => {
-          this.getWallet({}, (err, wallet: Partial<Wallet>) => {
-            if (err) return next(err);
-            if (this._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet)) {
-              return next(Errors.UPGRADE_NEEDED);
-            }
+    this.getWallet({}, (err, fetchedWallet: Wallet) => {
+      if (err) return cb(err);
 
+      // Read the wallet once, and give each step its own copy, the same as reading it again: the steps change their
+      // wallet in place (this one strips copayer data, the balance code sets tokenAddress on it), and the balance step
+      // can store its copy whole.
+      const copyOfWallet = () => Wallet.fromObj(fetchedWallet.toObject());
+      const omit = (obj, keys: string[]): any => Object.fromEntries(Object.entries(obj).filter(([key]) => !keys.includes(key)));
+      async.parallel(
+        [
+          next => {
+            let wallet: Partial<Wallet> = copyOfWallet();
             const walletExtendedKeys = ['publicKeyRing', 'pubKey', 'addressManager'];
             const copayerExtendedKeys = ['xPubKey', 'requestPubKey', 'signature', 'addressManager', 'customData'];
 
             wallet.copayers = (wallet.copayers || []).map(copayer => {
               if (copayer.id == this.copayerId) return copayer;
-              return _.omit(copayer, 'customData');
+              return omit(copayer, ['customData']);
             });
             if (!opts.includeExtendedInfo) {
-              wallet = _.omit(wallet, walletExtendedKeys);
+              wallet = omit(wallet, walletExtendedKeys);
               wallet.copayers = (wallet.copayers || []).map(copayer => {
-                return _.omit(copayer, copayerExtendedKeys);
+                return omit(copayer, copayerExtendedKeys);
               }) as Copayer[];
             }
             status.wallet = wallet;
@@ -903,46 +906,45 @@ export class WalletService implements IWalletService {
               status.serverMessage = deprecatedServerMessage(wallet, this.appName, this.appVersion);
             }
             next();
-          });
-        },
-        next => {
-          opts.wallet = status.wallet;
-          this.getBalance(opts, (err, balance) => {
-            // ignore WALLET_NEED_SCAN err is includeExtendedInfo is given
-            // (to allow `importWallet` to import a wallet, while scan has
-            // failed)
-            if (opts.includeExtendedInfo) {
-              if (err && err.code != 'WALLET_NEED_SCAN') {
+          },
+          next => {
+            this.getBalance({ ...opts, wallet: copyOfWallet() }, (err, balance) => {
+              // ignore WALLET_NEED_SCAN err is includeExtendedInfo is given
+              // (to allow `importWallet` to import a wallet, while scan has
+              // failed)
+              if (opts.includeExtendedInfo) {
+                if (err && err.code != 'WALLET_NEED_SCAN') {
+                  return next(err);
+                }
+              } else if (err) {
                 return next(err);
               }
-            } else if (err) {
-              return next(err);
-            }
 
-            status.balance = balance;
-            next();
-          });
-        },
-        next => {
-          this.getPendingTxs(opts, (err, pendingTxps) => {
-            if (err) return next(err);
-            status.pendingTxps = pendingTxps;
-            next();
-          });
-        },
-        next => {
-          this.getPreferences({}, (err, preferences) => {
-            if (err) return next(err);
-            status.preferences = preferences;
-            next();
-          });
+              status.balance = balance;
+              next();
+            });
+          },
+          next => {
+            this.getPendingTxs({ ...opts, wallet: copyOfWallet() }, (err, pendingTxps) => {
+              if (err) return next(err);
+              status.pendingTxps = pendingTxps;
+              next();
+            });
+          },
+          next => {
+            this.getPreferences({}, (err, preferences) => {
+              if (err) return next(err);
+              status.preferences = preferences;
+              next();
+            });
+          }
+        ],
+        err => {
+          if (err) return cb(err);
+          return cb(null, status);
         }
-      ],
-      err => {
-        if (err) return cb(err);
-        return cb(null, status);
-      }
-    );
+      );
+    });
   }
 
   /**
@@ -1535,9 +1537,10 @@ export class WalletService implements IWalletService {
   _canCreateAddress(ignoreMaxGap, cb) {
     if (ignoreMaxGap) return cb(null, true);
 
-    this.storage.fetchAddresses(this.walletId, (err, addresses: IAddress[]) => {
+    const newest = { noChange: true, reverse: true, limit: Defaults.MAX_MAIN_ADDRESS_GAP };
+    this.storage.fetchAddressesPage(this.walletId, newest, (err, addresses: IAddress[]) => {
       if (err) return cb(err);
-      const latestAddresses = addresses.filter(x => !x.isChange).slice(-Defaults.MAX_MAIN_ADDRESS_GAP) as IAddress[];
+      const latestAddresses = addresses.reverse();
       if (
         latestAddresses.length < Defaults.MAX_MAIN_ADDRESS_GAP ||
         latestAddresses.some(a => a.hasActivity)
@@ -1638,7 +1641,7 @@ export class WalletService implements IWalletService {
     };
 
     const getFirstAddress = (wallet, cb) => {
-      this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+      this.storage.fetchAddressesPage(this.walletId, { limit: 1 }, (err, addresses) => {
         if (err) return cb(err);
         if (addresses?.length) {
           const x = addresses[0];
@@ -1691,17 +1694,9 @@ export class WalletService implements IWalletService {
 
   getAddresses(opts: GetAddressesOpts, cb) {
     opts = opts || {};
-    this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+    const { noChange, addresses: only, reverse, skip, limit } = opts;
+    this.storage.fetchAddressesPage(this.walletId, { noChange, addresses: only, reverse, skip, limit }, (err, addresses) => {
       if (err) return cb(err);
-      if (opts.noChange) {
-        addresses = addresses.filter(a => !a.isChange);
-      }
-      if (opts.addresses) {
-        addresses = addresses.filter(a => opts.addresses.includes(a.address));
-      }
-      if (opts.reverse) addresses.reverse();
-      if (opts.skip > 0) addresses = addresses.slice(opts.skip);
-      if (opts.limit > 0) addresses = addresses.slice(0, opts.limit);
 
       this.getWallet({}, (err, wallet) => {
         if (err) return cb(err);
@@ -1783,7 +1778,7 @@ export class WalletService implements IWalletService {
     async.series(
       [
         next => {
-          this.getWallet({}, (err, w) => {
+          const useWallet = (err, w) => {
             if (err) return next(err);
 
             wallet = w;
@@ -1793,7 +1788,10 @@ export class WalletService implements IWalletService {
             bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
             if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
             return next();
-          });
+          };
+          // the balance code passes the wallet it already has
+          if (opts.wallet) return useWallet(null, opts.wallet);
+          this.getWallet({}, useWallet);
         },
         next => {
           if (Array.isArray(opts.addresses)) {
@@ -1889,7 +1887,7 @@ export class WalletService implements IWalletService {
         next => {
           utxoIndex = _.keyBy(allUtxos, utxoKey);
 
-          this.getPendingTxs({ numberFormat: opts.numberFormat }, (err, txps) => {
+          this.getPendingTxs({ numberFormat: opts.numberFormat, wallet }, (err, txps) => {
             if (err) return next(err);
 
             const lockedInputs = txps.flatMap(t => t.inputs).map(utxoKey);
@@ -1933,7 +1931,8 @@ export class WalletService implements IWalletService {
               });
               logger.debug(`Got ${allUtxos.length} usable UTXOs`);
               return next();
-            }
+            },
+            wallet
           );
         },
         next => {
@@ -1946,6 +1945,7 @@ export class WalletService implements IWalletService {
             }
             utxo.path = addressToPath[utxo.address].path;
             utxo.publicKeys = addressToPath[utxo.address].publicKeys;
+            utxo.isChange = addressToPath[utxo.address].isChange;
           }
           return next();
         }
@@ -2399,6 +2399,37 @@ export class WalletService implements IWalletService {
   }
 
   _validateAndSanitizeTxOpts(wallet, opts, cb) {
+    const gasFeeFields = ['gasPrice', 'maxGasFee', 'priorityGasFee'];
+    const hasGasFeeOverride = gasFeeFields.some(key => opts[key] != null);
+    if (hasGasFeeOverride) {
+      if (!Constants.EVM_CHAINS[wallet.chain.toUpperCase()]) {
+        return cb(new ClientError('Gas fee overrides are only supported for EVM chains'));
+      }
+      for (const key of gasFeeFields) {
+        if (opts[key] != null && (!Number.isSafeInteger(opts[key]) || opts[key] <= 0)) {
+          return cb(new ClientError(`${key} must be a positive safe integer in wei`));
+        }
+      }
+      if (opts.gasPrice != null && Number(opts.txType || 0) !== 0) {
+        return cb(new ClientError('gasPrice requires a type 0 transaction'));
+      }
+      if ((opts.maxGasFee != null || opts.priorityGasFee != null) && Number(opts.txType) !== 2) {
+        return cb(new ClientError('maxGasFee and priorityGasFee require a type 2 transaction'));
+      }
+      if ((opts.maxGasFee != null) !== (opts.priorityGasFee != null)) {
+        return cb(new ClientError('maxGasFee and priorityGasFee must be supplied together'));
+      }
+      if (opts.priorityGasFee > opts.maxGasFee) {
+        return cb(new ClientError('priorityGasFee must not exceed maxGasFee'));
+      }
+      if (opts.feePerKb != null || opts.fee != null) {
+        return cb(new ClientError('Gas fee overrides cannot be combined with feePerKb or fee'));
+      }
+      // sendMax calculates its amount before getFee, using a separate fee estimate.
+      if (opts.sendMax) {
+        return cb(new ClientError('Gas fee overrides are not supported with sendMax'));
+      }
+    }
     async.series(
       [
         next => {
@@ -2406,7 +2437,7 @@ export class WalletService implements IWalletService {
             boolToNum(!!opts.feeLevel) + boolToNum(Utils.isNumber(opts.feePerKb)) + boolToNum(Utils.isNumber(opts.fee));
           if (feeArgs > 1) return next(new ClientError('Only one of feeLevel/feePerKb/fee can be specified'));
 
-          if (feeArgs == 0) {
+          if (feeArgs == 0 && !hasGasFeeOverride) {
             opts.feeLevel = 'normal';
           }
 
@@ -2416,6 +2447,11 @@ export class WalletService implements IWalletService {
               return next(
                 new ClientError('Invalid fee level. Valid values are ' + feeLevels.map(lvl => lvl.name).join(', '))
               );
+          }
+
+          // An explicit gas fee determines the price, not the named fee level.
+          if (hasGasFeeOverride) {
+            delete opts.feeLevel;
           }
 
           const error = ChainService.checkUtxos(wallet.chain, opts);
@@ -2779,6 +2815,9 @@ export class WalletService implements IWalletService {
    * @param {Boolean} opts.enableRBF - Optional. enable BTC Replace By Fee
    * @param {Boolean} opts.replaceTxByFee - Optional. Ignore locked utxos check ( used for replacing a transaction designated as RBF)
    * @param {number} opts.txType - Optional. Type of EVM transaction
+   * @param {number} opts.gasPrice - Optional. Type 0 gas price in wei. Overrides feeLevel; incompatible with fee/feePerKb/sendMax.
+   * @param {number} opts.maxGasFee - Optional. Type 2 maximum fee per gas in wei; requires priorityGasFee.
+   * @param {number} opts.priorityGasFee - Optional. Positive type 2 priority fee per gas in wei; requires maxGasFee and must not exceed it. Gas fee overrides cannot be used with fee/feePerKb/sendMax.
    * @param {number} opts.gasLimitBuffer - Optional. Percentage of buffer to add to the gasLimit
    * @param {number} opts.priorityFeePercentile - Optional. Percentile of targeted priority fee rate
    * @param {Boolean} opts.multiTx - Optional. Proposal will create multiple transactions
@@ -3169,19 +3208,23 @@ export class WalletService implements IWalletService {
    * @returns {Object} txProposal
    */
   getTx(opts, cb: (err: any, txp?: TxProposal) => void) {
-    this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
+    // the tx and its note are both completed from the wallet, so read it once
+    this.storage.fetchWallet(this.walletId, (err, wallet) => {
       if (err) return cb(err);
-      if (!txp) return cb(Errors.TX_NOT_FOUND);
+      this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
+        if (err) return cb(err);
+        if (!txp) return cb(Errors.TX_NOT_FOUND);
 
-      if (!txp.txid) return cb(null, txp);
+        if (!txp.txid) return cb(null, txp);
 
-      this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
-        if (err) {
-          this.logw(`Error fetching tx note for ${txp.txid}:`, err);
-        }
-        txp.note = note;
-        return cb(null, txp);
-      });
+        this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
+          if (err) {
+            this.logw(`Error fetching tx note for ${txp.txid}:`, err);
+          }
+          txp.note = note;
+          return cb(null, txp);
+        }, wallet);
+      }, wallet);
     });
   }
 
@@ -3199,19 +3242,22 @@ export class WalletService implements IWalletService {
     // foreign wallet's proposal data to any authenticated copayer. The
     // internal global consumers (BlockchainMonitor, getWalletFromIdentifier)
     // are unaffected; they keep calling storage.fetchTxByHash directly.
-    this.storage.fetchTxByHashForWallet(this.walletId, opts.txid, (err, txp) => {
+    this.storage.fetchWallet(this.walletId, (err, wallet) => {
       if (err) return cb(err);
-      if (!txp) return cb(Errors.TX_NOT_FOUND);
+      this.storage.fetchTxByHashForWallet(this.walletId, opts.txid, (err, txp) => {
+        if (err) return cb(err);
+        if (!txp) return cb(Errors.TX_NOT_FOUND);
 
-      if (!txp.txid) return cb(null, txp);
+        if (!txp.txid) return cb(null, txp);
 
-      this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
-        if (err) {
-          this.logw(`Error fetching tx note for ${txp.txid}:`, err);
-        }
-        txp.note = note;
-        return cb(null, txp);
-      });
+        this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
+          if (err) {
+            this.logw(`Error fetching tx note for ${txp.txid}:`, err);
+          }
+          txp.note = note;
+          return cb(null, txp);
+        }, wallet);
+      }, wallet);
     });
   }
 
@@ -3841,7 +3887,7 @@ export class WalletService implements IWalletService {
             return cb(err, txps);
           }
         );
-      });
+      }, opts.wallet);
     }
   }
 
@@ -4867,7 +4913,8 @@ export class WalletService implements IWalletService {
                       minTs,
                       maxTs
                     },
-                    done
+                    done,
+                    wallet
                   );
                 },
                 done => {
@@ -4876,7 +4923,8 @@ export class WalletService implements IWalletService {
                     {
                       minTs
                     },
-                    done
+                    done,
+                    wallet
                   );
                 }
               ],

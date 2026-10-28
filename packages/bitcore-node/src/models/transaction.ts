@@ -24,6 +24,8 @@ function shouldFire(obj: { wallets?: Array<ObjectID> }) {
   return !onlyWalletEvents || (onlyWalletEvents && obj.wallets && obj.wallets.length > 0);
 }
 const MAX_BATCH_SIZE = 50000;
+// mintTxids per pruneMempool coin query
+const PRUNE_MEMPOOL_QUERY_SIZE = 1000;
 
 export type IBtcTransaction = ITransaction & {
   coinbase: boolean;
@@ -406,51 +408,55 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
   }) {
     const { chain, network, initialSyncComplete, mintBatch } = params;
     const walletConfig = Config.for('api').wallets;
-    if (initialSyncComplete || (walletConfig && walletConfig.allowCreationBeforeCompleteSync)) {
-      const addressBatch = new Set<string>();
-      let wallets: IWalletAddress[] = [];
+    if (!initialSyncComplete && !(walletConfig && walletConfig.allowCreationBeforeCompleteSync)) {
+      return;
+    }
 
-      const findWalletsForAddresses = async (addresses: Array<string>) => {
-        const partialWallets = await WalletAddressStorage.collection
-          .find({ address: { $in: addresses }, chain, network }, { batchSize: 100 })
-          .project({ wallet: 1, address: 1 })
-          .toArray();
-        return partialWallets;
-      };
+    // wallets by address: one index-only query per 1000 distinct output addresses
+    const addressChunkSize = 1000;
+    const addresses = Array.from(new Set(mintBatch.map(mintOp => mintOp.updateOne.update.$set.address)));
+    const chunks = new Array<string[]>();
+    for (let i = 0; i < addresses.length; i += addressChunkSize) {
+      chunks.push(addresses.slice(i, i + addressChunkSize));
+    }
+    const results: IWalletAddress[][] = await Promise.all(
+      chunks.map(chunk =>
+        WalletAddressStorage.collection
+          .find({ address: { $in: chunk }, chain, network }, { batchSize: 10000 })
+          .project({ _id: 0, wallet: 1, address: 1 })
+          .toArray()
+      )
+    );
+    const walletsByAddress = new Map<string, ObjectID[]>();
+    for (const { address, wallet } of results.flat()) {
+      const wallets = walletsByAddress.get(address) || [];
+      wallets.push(wallet);
+      walletsByAddress.set(address, wallets);
+    }
+    if (!walletsByAddress.size) {
+      return;
+    }
 
-      for (const mintOp of mintBatch) {
-        addressBatch.add(mintOp.updateOne.update.$set.address);
-        if (addressBatch.size >= 1000) {
-          const batchWallets = await findWalletsForAddresses(Array.from(addressBatch));
-          wallets = wallets.concat(batchWallets);
-          addressBatch.clear();
+    // every op in the batch is tagged, even with no wallets; each tx gets its outputs' wallets in output order
+    const walletsByTxid = new Map<string, ObjectID[]>();
+    for (const mintOp of mintBatch) {
+      const wallets = [...(walletsByAddress.get(mintOp.updateOne.update.$set.address) || [])];
+      mintOp.updateOne.update.$set.wallets = wallets;
+      if (mintOp.updateOne.update.$setOnInsert) {
+        delete mintOp.updateOne.update.$setOnInsert.wallets;
+        if (!Object.keys(mintOp.updateOne.update.$setOnInsert).length) {
+          delete mintOp.updateOne.update.$setOnInsert;
         }
       }
-      const remainingBatch = await findWalletsForAddresses(Array.from(addressBatch));
-      wallets = wallets.concat(remainingBatch);
-
-      if (wallets.length) {
-        for (const mintOp of mintBatch) {
-          const transformedWallets = wallets
-            .filter(wallet => wallet.address === mintOp.updateOne.update.$set.address)
-            .map(wallet => wallet.wallet);
-          mintOp.updateOne.update.$set.wallets = transformedWallets;
-          if (mintOp.updateOne.update.$setOnInsert) {
-            delete mintOp.updateOne.update.$setOnInsert.wallets;
-            if (!Object.keys(mintOp.updateOne.update.$setOnInsert).length) {
-              delete mintOp.updateOne.update.$setOnInsert;
-            }
-          }
-        }
-
-        for (const tx of params.txs as Array<TaggedBitcoinTx>) {
-          const coinsForTx = mintBatch.filter(mint => mint.updateOne.filter.mintTxid === tx._hash!);
-          tx.wallets = coinsForTx.reduce((wallets, c) => {
-            wallets = wallets.concat(c.updateOne.update.$set.wallets!);
-            return wallets;
-          }, new Array<ObjectID>());
-        }
+      const txWallets = walletsByTxid.get(mintOp.updateOne.filter.mintTxid) || [];
+      // not push(...wallets): an address can belong to more wallets than a call can take as arguments
+      for (const wallet of wallets) {
+        txWallets.push(wallet);
       }
+      walletsByTxid.set(mintOp.updateOne.filter.mintTxid, txWallets);
+    }
+    for (const tx of params.txs as Array<TaggedBitcoinTx>) {
+      tx.wallets = walletsByTxid.get(tx._hash!) || [];
     }
   }
 
@@ -481,8 +487,11 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
       }
     }
     let mintBatch = new Array<MintOp>();
+    // a tx's outputs always land in one mint batch; tag each batch's txs from that batch alone
+    let batchTxs = new Array<BitcoinTransaction>();
     for (const tx of params.txs) {
       tx._hash = tx.hash;
+      batchTxs.push(tx);
       const isCoinbase = tx.isCoinbase();
       for (const [index, output] of tx.outputs.entries()) {
         if (
@@ -532,13 +541,14 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
         });
       }
       if (mintBatch.length >= MAX_BATCH_SIZE) {
-        await this.tagMintBatch({ ...params, mintBatch });
+        await this.tagMintBatch({ ...params, mintBatch, txs: batchTxs });
         params.mintStream.push(mintBatch);
         mintBatch = new Array<MintOp>();
+        batchTxs = new Array<BitcoinTransaction>();
       }
     }
     if (mintBatch.length) {
-      await this.tagMintBatch({ ...params, mintBatch });
+      await this.tagMintBatch({ ...params, mintBatch, txs: batchTxs });
       params.mintStream.push(mintBatch);
     }
     params.mintStream.push(null);
@@ -635,38 +645,43 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
       return;
     }
 
-    const seenMinedTxids = new Set();
-    for (const spentOp of spendOps) {
-      const minedTxid = spentOp.updateOne.update.$set.spentTxid;
-      if (seenMinedTxids.has(minedTxid)) {
-        continue;
+    // pending spends of the outpoints this batch spends, by outpoint
+    const pendingSpends = new Map<string, string>();
+    const mintTxids = Array.from(new Set(spendOps.map(spendOp => spendOp.updateOne.filter.mintTxid)));
+    for (let i = 0; i < mintTxids.length; i += PRUNE_MEMPOOL_QUERY_SIZE) {
+      const coins = await CoinStorage.collection
+        .find(
+          {
+            chain,
+            network,
+            spentHeight: SpentHeightIndicators.pending,
+            mintTxid: { $in: mintTxids.slice(i, i + PRUNE_MEMPOOL_QUERY_SIZE) }
+          },
+          { batchSize: 10000 }
+        )
+        // without the hint, Mongo 3.6 can plan this $in as a scan of every coin on the chain
+        .hint({ mintTxid: 1, mintIndex: 1 })
+        .project({ _id: 0, mintTxid: 1, mintIndex: 1, spentTxid: 1 })
+        .toArray();
+      for (const coin of coins) {
+        pendingSpends.set(`${coin.mintTxid}:${coin.mintIndex}`, coin.spentTxid);
       }
-
-      const conflictingInputsQuery = {
-        chain,
-        network,
-        spentHeight: SpentHeightIndicators.pending,
-        mintTxid: spentOp.updateOne.filter.mintTxid,
-        mintIndex: spentOp.updateOne.filter.mintIndex,
-        spentTxid: { $ne: minedTxid }
-      };
-
-      const conflictingInputsStream = CoinStorage.collection.find(conflictingInputsQuery);
-      const seenInvalidTxids = new Set();
-      let input: ICoin | null;
-
-      while ((input = await conflictingInputsStream.next())) {
-        if (seenInvalidTxids.has(input.spentTxid)) {
-          continue;
-        }
-        await this._invalidateTx({ chain, network, invalidTxid: input.spentTxid, replacedByTxid: minedTxid, simple: true });
-        seenInvalidTxids.add(input.spentTxid);
-      }
-
-      seenMinedTxids.add(minedTxid);
     }
 
-    return;
+    // a pending coin spent by a different tx than the one now spending it means that tx conflicts;
+    // invalidate each conflicting tx once, as replaced by the first tx in the batch it conflicts with
+    const replacedBy = new Map<string, string>();
+    for (const spendOp of spendOps) {
+      const { mintTxid, mintIndex } = spendOp.updateOne.filter;
+      const spender = spendOp.updateOne.update.$set.spentTxid;
+      const pendingSpender = pendingSpends.get(`${mintTxid}:${mintIndex}`);
+      if (pendingSpender !== undefined && pendingSpender !== spender && !replacedBy.has(pendingSpender)) {
+        replacedBy.set(pendingSpender, spender);
+      }
+    }
+    for (const [invalidTxid, replacedByTxid] of replacedBy) {
+      await this._invalidateTx({ chain, network, invalidTxid, replacedByTxid, simple: true });
+    }
   }
 
   async _invalidateTx(params: {
