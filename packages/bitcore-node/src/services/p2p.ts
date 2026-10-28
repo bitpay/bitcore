@@ -7,6 +7,23 @@ import { Class } from '../types/Class';
 import { wait } from '../utils';
 import { Config, ConfigService } from './config';
 
+// A standby takes over a heartbeat that has not changed for TAKEOVER_MS. The syncing node gives it up LEASE_MS after
+// its last confirmed renewal, which leaves it time to shut down (forced after 30 seconds) before anyone takes over.
+const TAKEOVER_MS = 5 * 60 * 1000;
+const LEASE_MS = 4 * 60 * 1000;
+const RENEWAL_WAIT_MS = 5000;
+
+// resolves to fallback if promise has not settled within ms
+async function within<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  let timer;
+  const timeout = new Promise<T>(resolve => (timer = setTimeout(() => resolve(fallback), ms)));
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export class P2pManager {
   workerClasses: { [chain: string]: Class<BaseP2PWorker> } = {};
 
@@ -84,7 +101,7 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
     const [hostname, pid, timestamp] = this.lastHeartBeat.split(':');
     const hostNameMatches = hostname === os.hostname();
     const pidMatches = pid === process.pid.toString();
-    const timestampIsFresh = Date.now() - parseInt(timestamp) < 5 * 60 * 1000;
+    const timestampIsFresh = Date.now() - parseInt(timestamp) < LEASE_MS;
     const amSyncingNode = hostNameMatches && pidMatches && timestampIsFresh;
     return amSyncingNode;
   }
@@ -102,8 +119,8 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
     // the other node's heartbeat this worker is waiting on, and when to take over if it is not renewed
     let takeover: { heartBeat: string; at: number } | undefined;
     while (!this.stopping) {
-      const wasSyncingNode = this.getIsSyncingNode();
-      this.lastHeartBeat = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
+      const wasSyncingNode = this.isSyncingNode;
+      this.lastHeartBeat = await this.readHeartBeat(wasSyncingNode);
       if (this.stopping) {
         break;
       }
@@ -121,7 +138,7 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
       } else {
         logger.info('Another node is the primary syncing node');
         if (takeover?.heartBeat !== this.lastHeartBeat) {
-          takeover = { heartBeat: this.lastHeartBeat, at: Date.now() + 5 * 60 * 1000 };
+          takeover = { heartBeat: this.lastHeartBeat, at: Date.now() + TAKEOVER_MS };
         }
         if (Date.now() >= takeover.at) {
           this.registerSyncingNode();
@@ -129,6 +146,18 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
       }
       await wait(500);
     }
+  }
+
+  // the syncing node's lease ends on time even if the read stalls: a lost lease reads as no heartbeat
+  async readHeartBeat(wasSyncingNode: boolean): Promise<string> {
+    if (!wasSyncingNode) {
+      return StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
+    }
+    const leaseLeft = parseInt(this.lastHeartBeat.split(':')[2]) + LEASE_MS - Date.now();
+    if (leaseLeft <= 0) {
+      return '';
+    }
+    return within(StateStorage.getSyncingNode({ chain: this.chain, network: this.network }), leaseLeft, '');
   }
 
   // one nomination at a time, not awaited: the loop keeps reading, so a stalled renewal still lets the heartbeat expire
@@ -148,8 +177,10 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
 
   async unregisterSyncingNode() {
     await wait(1000);
-    // a nomination that lands after resigning would claim the heartbeat again
-    await this.renewal;
+    // a renewal that lands between reading and resigning would leave a heartbeat nobody renews; don't let it hold up stop()
+    if (this.renewal) {
+      await within(this.renewal, RENEWAL_WAIT_MS, undefined);
+    }
     try {
       this.lastHeartBeat = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
       if (this.getIsSyncingNode()) {

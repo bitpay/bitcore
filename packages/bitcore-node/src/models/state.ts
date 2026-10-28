@@ -50,13 +50,8 @@ export class StateModel extends BaseModel<IState> {
     const { chain, network, lastHeartBeat } = params;
     const singleState = await this.findSingletonState();
     return this.collection.findOneAndUpdate(
-      {
-        _id: singleState._id,
-        $or: [
-          { [`syncingNode:${chain}:${network}`]: { $exists: false } },
-          { [`syncingNode:${chain}:${network}`]: lastHeartBeat }
-        ]
-      },
+      // renew only the heartbeat this node read, and claim one only when there is none
+      { _id: singleState._id, [`syncingNode:${chain}:${network}`]: lastHeartBeat || { $exists: false } },
       { $set: { [`syncingNode:${chain}:${network}`]: `${os.hostname}:${process.pid}:${Date.now()}` } }
     );
   }
