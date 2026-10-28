@@ -41,7 +41,8 @@ export class BtcChain implements IChain {
     server.getUtxosForCurrentWallet(
       {
         coin: opts.coin,
-        addresses: opts.addresses
+        addresses: opts.addresses,
+        wallet
       },
       (err, utxos) => {
         if (err) return cb(err);

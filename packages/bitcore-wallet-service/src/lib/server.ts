@@ -873,26 +873,29 @@ export class WalletService implements IWalletService {
       pendingTxps?: ITxProposal[];
       preferences?: boolean;
     } = {};
-    async.parallel(
-      [
-        next => {
-          this.getWallet({}, (err, wallet: Partial<Wallet>) => {
-            if (err) return next(err);
-            if (this._upgradeNeeded(UPGRADES.SOL_bwc_$lt_10_10_12, wallet)) {
-              return next(Errors.UPGRADE_NEEDED);
-            }
+    this.getWallet({}, (err, fetchedWallet: Wallet) => {
+      if (err) return cb(err);
 
+      // Read the wallet once, and give each step its own copy, the same as reading it again: the steps change their
+      // wallet in place (this one strips copayer data, the balance code sets tokenAddress on it), and the balance step
+      // can store its copy whole.
+      const copyOfWallet = () => Wallet.fromObj(fetchedWallet.toObject());
+      const omit = (obj, keys: string[]): any => Object.fromEntries(Object.entries(obj).filter(([key]) => !keys.includes(key)));
+      async.parallel(
+        [
+          next => {
+            let wallet: Partial<Wallet> = copyOfWallet();
             const walletExtendedKeys = ['publicKeyRing', 'pubKey', 'addressManager'];
             const copayerExtendedKeys = ['xPubKey', 'requestPubKey', 'signature', 'addressManager', 'customData'];
 
             wallet.copayers = (wallet.copayers || []).map(copayer => {
               if (copayer.id == this.copayerId) return copayer;
-              return _.omit(copayer, 'customData');
+              return omit(copayer, ['customData']);
             });
             if (!opts.includeExtendedInfo) {
-              wallet = _.omit(wallet, walletExtendedKeys);
+              wallet = omit(wallet, walletExtendedKeys);
               wallet.copayers = (wallet.copayers || []).map(copayer => {
-                return _.omit(copayer, copayerExtendedKeys);
+                return omit(copayer, copayerExtendedKeys);
               }) as Copayer[];
             }
             status.wallet = wallet;
@@ -903,46 +906,45 @@ export class WalletService implements IWalletService {
               status.serverMessage = deprecatedServerMessage(wallet, this.appName, this.appVersion);
             }
             next();
-          });
-        },
-        next => {
-          opts.wallet = status.wallet;
-          this.getBalance(opts, (err, balance) => {
-            // ignore WALLET_NEED_SCAN err is includeExtendedInfo is given
-            // (to allow `importWallet` to import a wallet, while scan has
-            // failed)
-            if (opts.includeExtendedInfo) {
-              if (err && err.code != 'WALLET_NEED_SCAN') {
+          },
+          next => {
+            this.getBalance({ ...opts, wallet: copyOfWallet() }, (err, balance) => {
+              // ignore WALLET_NEED_SCAN err is includeExtendedInfo is given
+              // (to allow `importWallet` to import a wallet, while scan has
+              // failed)
+              if (opts.includeExtendedInfo) {
+                if (err && err.code != 'WALLET_NEED_SCAN') {
+                  return next(err);
+                }
+              } else if (err) {
                 return next(err);
               }
-            } else if (err) {
-              return next(err);
-            }
 
-            status.balance = balance;
-            next();
-          });
-        },
-        next => {
-          this.getPendingTxs(opts, (err, pendingTxps) => {
-            if (err) return next(err);
-            status.pendingTxps = pendingTxps;
-            next();
-          });
-        },
-        next => {
-          this.getPreferences({}, (err, preferences) => {
-            if (err) return next(err);
-            status.preferences = preferences;
-            next();
-          });
+              status.balance = balance;
+              next();
+            });
+          },
+          next => {
+            this.getPendingTxs({ ...opts, wallet: copyOfWallet() }, (err, pendingTxps) => {
+              if (err) return next(err);
+              status.pendingTxps = pendingTxps;
+              next();
+            });
+          },
+          next => {
+            this.getPreferences({}, (err, preferences) => {
+              if (err) return next(err);
+              status.preferences = preferences;
+              next();
+            });
+          }
+        ],
+        err => {
+          if (err) return cb(err);
+          return cb(null, status);
         }
-      ],
-      err => {
-        if (err) return cb(err);
-        return cb(null, status);
-      }
-    );
+      );
+    });
   }
 
   /**
@@ -1783,7 +1785,7 @@ export class WalletService implements IWalletService {
     async.series(
       [
         next => {
-          this.getWallet({}, (err, w) => {
+          const useWallet = (err, w) => {
             if (err) return next(err);
 
             wallet = w;
@@ -1793,7 +1795,10 @@ export class WalletService implements IWalletService {
             bc = this._getBlockchainExplorer(wallet.chain, wallet.network);
             if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
             return next();
-          });
+          };
+          // the balance code passes the wallet it already has
+          if (opts.wallet) return useWallet(null, opts.wallet);
+          this.getWallet({}, useWallet);
         },
         next => {
           if (Array.isArray(opts.addresses)) {
@@ -1889,7 +1894,7 @@ export class WalletService implements IWalletService {
         next => {
           utxoIndex = _.keyBy(allUtxos, utxoKey);
 
-          this.getPendingTxs({ numberFormat: opts.numberFormat }, (err, txps) => {
+          this.getPendingTxs({ numberFormat: opts.numberFormat, wallet }, (err, txps) => {
             if (err) return next(err);
 
             const lockedInputs = txps.flatMap(t => t.inputs).map(utxoKey);
@@ -1933,7 +1938,8 @@ export class WalletService implements IWalletService {
               });
               logger.debug(`Got ${allUtxos.length} usable UTXOs`);
               return next();
-            }
+            },
+            wallet
           );
         },
         next => {
@@ -3209,19 +3215,23 @@ export class WalletService implements IWalletService {
    * @returns {Object} txProposal
    */
   getTx(opts, cb: (err: any, txp?: TxProposal) => void) {
-    this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
+    // the tx and its note are both completed from the wallet, so read it once
+    this.storage.fetchWallet(this.walletId, (err, wallet) => {
       if (err) return cb(err);
-      if (!txp) return cb(Errors.TX_NOT_FOUND);
+      this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
+        if (err) return cb(err);
+        if (!txp) return cb(Errors.TX_NOT_FOUND);
 
-      if (!txp.txid) return cb(null, txp);
+        if (!txp.txid) return cb(null, txp);
 
-      this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
-        if (err) {
-          this.logw(`Error fetching tx note for ${txp.txid}:`, err);
-        }
-        txp.note = note;
-        return cb(null, txp);
-      });
+        this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
+          if (err) {
+            this.logw(`Error fetching tx note for ${txp.txid}:`, err);
+          }
+          txp.note = note;
+          return cb(null, txp);
+        }, wallet);
+      }, wallet);
     });
   }
 
@@ -3239,19 +3249,22 @@ export class WalletService implements IWalletService {
     // foreign wallet's proposal data to any authenticated copayer. The
     // internal global consumers (BlockchainMonitor, getWalletFromIdentifier)
     // are unaffected; they keep calling storage.fetchTxByHash directly.
-    this.storage.fetchTxByHashForWallet(this.walletId, opts.txid, (err, txp) => {
+    this.storage.fetchWallet(this.walletId, (err, wallet) => {
       if (err) return cb(err);
-      if (!txp) return cb(Errors.TX_NOT_FOUND);
+      this.storage.fetchTxByHashForWallet(this.walletId, opts.txid, (err, txp) => {
+        if (err) return cb(err);
+        if (!txp) return cb(Errors.TX_NOT_FOUND);
 
-      if (!txp.txid) return cb(null, txp);
+        if (!txp.txid) return cb(null, txp);
 
-      this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
-        if (err) {
-          this.logw(`Error fetching tx note for ${txp.txid}:`, err);
-        }
-        txp.note = note;
-        return cb(null, txp);
-      });
+        this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
+          if (err) {
+            this.logw(`Error fetching tx note for ${txp.txid}:`, err);
+          }
+          txp.note = note;
+          return cb(null, txp);
+        }, wallet);
+      }, wallet);
     });
   }
 
@@ -3881,7 +3894,7 @@ export class WalletService implements IWalletService {
             return cb(err, txps);
           }
         );
-      });
+      }, opts.wallet);
     }
   }
 
@@ -4907,7 +4920,8 @@ export class WalletService implements IWalletService {
                       minTs,
                       maxTs
                     },
-                    done
+                    done,
+                    wallet
                   );
                 },
                 done => {
@@ -4916,7 +4930,8 @@ export class WalletService implements IWalletService {
                     {
                       minTs
                     },
-                    done
+                    done,
+                    wallet
                   );
                 }
               ],
