@@ -356,8 +356,11 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
         }
       }
 
-      logger.info(`${timestamp()} | Starting multi-thread sync | Chain: ${chain} | Network: ${network}`);
       this.isSyncing = false;
+      if (this.stopping) {
+        return false;
+      }
+      logger.info(`${timestamp()} | Starting multi-thread sync | Chain: ${chain} | Network: ${network}`);
       return this.multiThreadSync.sync();
     }
 

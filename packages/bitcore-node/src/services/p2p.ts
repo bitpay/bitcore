@@ -46,8 +46,8 @@ export class P2pManager {
 
   async stop() {
     logger.info('Stopping P2P Manager');
-    // in parallel, so a worker that is slow to stop doesn't hold up the others resigning
-    await Promise.all(this.workers.map(worker => worker.stop()));
+    // in parallel, so a worker that is slow or fails to stop doesn't hold up the others resigning
+    await Promise.allSettled(this.workers.map(worker => worker.stop()));
     this.workers = [];
   }
 
@@ -83,6 +83,8 @@ export class P2pManager {
 export class BaseP2PWorker<T extends IBlock = IBlock> {
   protected lastHeartBeat = '';
   protected renewal?: Promise<void>;
+  // when the lease this worker last confirmed as the syncing node runs out
+  protected leaseEnds?: number;
   protected writes = new Set<Promise<unknown>>();
   protected stopping = false;
   protected chain = '';
@@ -125,6 +127,9 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
       }
       const nowSyncingNode = this.getIsSyncingNode();
       this.isSyncingNode = nowSyncingNode;
+      if (nowSyncingNode) {
+        this.leaseEnds = parseInt(this.lastHeartBeat.split(':')[2]) + LEASE_MS;
+      }
       if (wasSyncingNode && !nowSyncingNode) {
         throw new Error('Syncing Node Renewal Failure');
       }
@@ -159,7 +164,7 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
     if (!wasSyncingNode) {
       return read();
     }
-    const leaseLeft = parseInt(lastHeartBeat.split(':')[2]) + LEASE_MS - Date.now();
+    const leaseLeft = this.leaseEnds! - Date.now();
     return leaseLeft > 0 ? within(read(), leaseLeft, lastHeartBeat) : lastHeartBeat;
   }
 
@@ -178,10 +183,11 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
     }
   }
 
-  // Runs a sync write unless the worker is stopping. A standby claims a resigned heartbeat on its next pass, so
-  // unregisterSyncingNode resigns only once these finish.
+  // Runs a sync write unless the worker is stopping or the lease it held has run out, which it checks itself rather than
+  // wait for the loop to notice. A standby claims a resigned heartbeat on its next pass, so unregisterSyncingNode
+  // resigns only once these finish.
   protected async write<R>(fn: () => Promise<R>): Promise<R | undefined> {
-    if (this.stopping) {
+    if (this.stopping || Date.now() >= (this.leaseEnds ?? Infinity)) {
       return undefined;
     }
     const writing = fn();
