@@ -1,14 +1,19 @@
 import { AsyncLocalStorage } from 'async_hooks';
 import { expect } from 'chai';
+import { EventEmitter } from 'events';
 import { Collection } from 'mongodb';
 import * as os from 'os';
 import * as sinon from 'sinon';
 import { BitcoinP2PWorker } from '../../../src/modules/bitcoin/p2p';
 import { MoralisP2PWorker } from '../../../src/modules/moralis/p2p/p2p';
+import { EventStorage } from '../../../src/models/events';
+import { EVMBlockStorage } from '../../../src/providers/chain-state/evm/models/block';
 import { StateStorage } from '../../../src/models/state';
+import { TransactionStorage } from '../../../src/models/transaction';
+import { WebhookStorage } from '../../../src/models/webhook';
 import { BaseEVMStateProvider } from '../../../src/providers/chain-state/evm/api/csp';
 import { Libs } from '../../../src/providers/libs';
-import { BaseP2PWorker } from '../../../src/services/p2p';
+import { BaseP2PWorker, P2pManager } from '../../../src/services/p2p';
 import { Storage } from '../../../src/services/storage';
 import * as utils from '../../../src/utils';
 import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
@@ -19,9 +24,10 @@ const key = `syncingNode:${chain}:${network}`;
 const PASS = 500;
 const FIVE_MINUTES = 5 * 60 * 1000;
 const LEASE = 4 * 60 * 1000;
-const RENEWAL_WAIT = 5000;
+const STOP_WAIT = 15000;
 const otherNode = (time: number) => `otherhost:4242:${time}`;
-const thisNode = (time: number) => `${os.hostname()}:${process.pid}:${time}`;
+const processId = () => (StateStorage as any).processId;
+const thisNode = (time: number) => [os.hostname(), process.pid, time, processId()].filter(part => part !== undefined).join(':');
 const WRITES = [
   'findOneAndUpdate', 'findOneAndReplace', 'updateOne', 'updateMany',
   'replaceOne', 'insertOne', 'insertMany', 'bulkWrite'
@@ -203,6 +209,31 @@ describe('Syncing node heartbeat', function() {
     return methods.reduce((sum, method) => sum + (collection[method] as sinon.SinonSpy).callCount, 0);
   }
 
+  function bitcoinWorker() {
+    const mockPool = function() {};
+    (mockPool as any).prototype = { on: sandbox.stub(), connect: sandbox.stub(), once: sandbox.stub() };
+    const mockMessages = function() {};
+    (mockMessages as any).prototype = {};
+    sandbox.stub(Libs, 'get').returns({
+      lib: { Networks: { get: sandbox.stub().returns('regtest') } },
+      p2p: { Messages: mockMessages, Pool: mockPool, Inventory: { TYPE: { BLOCK: 1, TX: 2 } } }
+    } as any);
+    const bitcoin = new BitcoinP2PWorker({ chain, network, chainConfig: { trustedPeers: [], rpc: {} } });
+    sandbox.stub(bitcoin, 'disconnect').resolves();
+    sandbox.stub(bitcoin, 'sync').resolves(true);
+    sandbox.stub((bitcoin as any).multiThreadSync, 'stop');
+    return bitcoin;
+  }
+
+  function moralisWorker({ syncs = false } = {}) {
+    sandbox.stub(BaseEVMStateProvider, 'initializeRpcs');
+    const moralis = new MoralisP2PWorker({ chain, network, chainConfig: { syncIntervalSecs: 0.001 } });
+    if (!syncs) {
+      sandbox.stub(moralis, 'sync').resolves();
+    }
+    return moralis;
+  }
+
   // stops the worker while its next heartbeat read is pending
   function stopDuringNextRead() {
     const read = StateStorage.getSyncingNode.bind(StateStorage);
@@ -270,6 +301,13 @@ describe('Syncing node heartbeat', function() {
       await direct.updateOne({}, { $unset: { [key]: true } });
       await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: thisNode(start - 1000) });
       expect(await heartBeat()).to.equal(undefined);
+    });
+
+    it('selfNominateSyncingNode tells this process apart from another with the same hostname and pid', async () => {
+      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: undefined });
+      const [hostname, pid, time, id] = (await heartBeat()).split(':');
+      expect([hostname, pid, time]).to.deep.equal([os.hostname(), `${process.pid}`, `${start}`]);
+      expect(id).to.match(/^[0-9a-f]{12}$/);
     });
 
     it('selfNominateSyncingNode claims a missing heartbeat when the previous one is empty', async () => {
@@ -589,17 +627,13 @@ describe('Syncing node heartbeat', function() {
       }
     });
 
-    it('resigns after waiting five seconds on a renewal that has not settled, which cannot claim the heartbeat back', async () => {
+    it('leaves its heartbeat to expire when a renewal has not settled fifteen seconds after stopping', async () => {
       await drive().start();
       await driver.pass();
-      const nominate = StateStorage.selfNominateSyncingNode.bind(StateStorage);
       let unstall;
       const stalled = new Promise(resolve => (unstall = resolve));
       nominations.restore();
-      const stub = sandbox.stub(StateStorage, 'selfNominateSyncingNode').callsFake(async params => {
-        await stalled;
-        return nominate(params);
-      });
+      const stub = sandbox.stub(StateStorage, 'selfNominateSyncingNode').returns(stalled);
       driver.nominations = sandbox.spy();
       try {
         await driver.pass();
@@ -607,18 +641,85 @@ describe('Syncing node heartbeat', function() {
         let stopped = false;
         const stopping = loopContext.run(driver, () => worker.stop()).then(() => (stopped = true));
         await until(() => pendingLoopTimers() > 0);
-        clock.tick(RENEWAL_WAIT - 1);
+        clock.tick(STOP_WAIT - 1);
         await flush();
         expect(stopped).to.equal(false);
         clock.tick(1);
         await stopping;
-        expect(await heartBeat()).to.equal(undefined);
-        unstall();
-        await Promise.all(stub.returnValues);
-        expect(await heartBeat()).to.equal(undefined);
+        expect(await heartBeat()).to.equal(thisNode(start + PASS));
       } finally {
         unstall();
       }
+    });
+
+    it('does not take a heartbeat with its hostname and pid from another process as its own', async () => {
+      const testWorker = new TestWorker();
+      const twin = `${os.hostname()}:${process.pid}:${start}:000000000000`;
+      await setHeartBeat(twin);
+      await drive(testWorker).start();
+      await driver.passUntil(start + 60000);
+      expect(testWorker.isSyncingNode).to.equal(false);
+      expect(testWorker.syncs).to.equal(0);
+      expect(await heartBeat()).to.equal(twin);
+    });
+
+    it('keeps its lease through a failed heartbeat read', async () => {
+      const testWorker = new TestWorker();
+      let error;
+      await drive(testWorker).start();
+      driver.loop!.catch(e => (error = e));
+      await driver.pass();
+      const reads = sandbox.stub(StateStorage, 'getSyncingNode').callThrough();
+      reads.onFirstCall().rejects(new Error('read failed'));
+      await driver.pass();
+      expect(error).to.equal(undefined);
+      expect(testWorker.isSyncingNode).to.equal(true);
+      expect(pendingLoopTimers()).to.equal(0);
+      await driver.pass();
+      expect(await heartBeat()).to.equal(thisNode(Date.now()));
+      expect(testWorker.syncs).to.equal(1);
+    });
+
+    it('gives up as the syncing node when its heartbeat reads keep failing for four minutes', async () => {
+      const testWorker = new TestWorker();
+      let error;
+      await drive(testWorker).start();
+      driver.loop!.catch(e => (error = e));
+      await driver.pass();
+      const lastRenewal = start;
+      sandbox.stub(StateStorage, 'getSyncingNode').rejects(new Error('read failed'));
+      await driver.passUntil(lastRenewal + LEASE - PASS);
+      expect(testWorker.isSyncingNode).to.equal(true);
+      await driver.pass();
+      expect(testWorker.isSyncingNode).to.equal(false);
+      expect(error).to.be.an('error').with.property('message', 'Syncing Node Renewal Failure');
+    });
+
+    it('keeps waiting to take over through a failed heartbeat read', async () => {
+      const testWorker = new TestWorker();
+      let error;
+      await setHeartBeat(otherNode(start - 60000));
+      await drive(testWorker).start();
+      driver.loop!.catch(e => (error = e));
+      const reads = sandbox.stub(StateStorage, 'getSyncingNode').callThrough();
+      reads.onSecondCall().rejects(new Error('read failed'));
+      await driver.passUntil(start + FIVE_MINUTES);
+      expect(error).to.equal(undefined);
+      expect(await heartBeat()).to.equal(thisNode(start + FIVE_MINUTES));
+    });
+
+    it('gives up as the syncing node when the loop resumes after a pause longer than its lease', async () => {
+      const testWorker = new TestWorker();
+      let error;
+      await drive(testWorker).start();
+      driver.loop!.catch(e => (error = e));
+      await driver.pass();
+      clock.tick(LEASE + 3000);
+      // even though the heartbeat it would read is its own and fresh
+      await setHeartBeat(thisNode(Date.now()));
+      await driver.pass();
+      expect(testWorker.isSyncingNode).to.equal(false);
+      expect(error).to.be.an('error').with.property('message', 'Syncing Node Renewal Failure');
     });
 
     it('stops looping once the worker is stopping', async () => {
@@ -682,30 +783,180 @@ describe('Syncing node heartbeat', function() {
     });
   });
 
-  describe('workers that stop while another node holds a stale heartbeat', () => {
-    function bitcoinWorker() {
-      const mockPool = function() {};
-      (mockPool as any).prototype = { on: sandbox.stub(), connect: sandbox.stub(), once: sandbox.stub() };
-      const mockMessages = function() {};
-      (mockMessages as any).prototype = {};
-      sandbox.stub(Libs, 'get').returns({
-        lib: { Networks: { get: sandbox.stub().returns('regtest') } },
-        p2p: { Messages: mockMessages, Pool: mockPool, Inventory: { TYPE: { BLOCK: 1, TX: 2 } } }
+  describe('writes on stop', () => {
+    // starts a write that finishes when the returned function is called
+    function stalledWrite(write: (fn: () => Promise<any>) => Promise<any>) {
+      let finish;
+      const finished = new Promise(resolve => (finish = resolve));
+      const writing = write(() => finished);
+      return () => {
+        finish();
+        return writing;
+      };
+    }
+
+    async function becomeSyncingNode(w: BaseP2PWorker<any>) {
+      await drive(w).start();
+      await driver.pass();
+      expect(w.isSyncingNode).to.equal(true);
+    }
+
+    function stop() {
+      return loopContext.run(driver, () => worker.stop());
+    }
+
+    it('resigns only once the writes in flight finish', async () => {
+      await becomeSyncingNode(new TestWorker());
+      const finish = stalledWrite(fn => (worker as any).write(fn));
+      const stopping = stop();
+      await until(() => pendingLoopTimers() > 0);
+      await flush();
+      expect(await heartBeat()).to.equal(thisNode(start + PASS));
+      await finish();
+      await stopping;
+      expect(await heartBeat()).to.equal(undefined);
+    });
+
+    it('leaves its heartbeat to expire when writes have not finished fifteen seconds after stopping', async () => {
+      await becomeSyncingNode(new TestWorker());
+      const finish = stalledWrite(fn => (worker as any).write(fn));
+      let stopped = false;
+      const stopping = stop().then(() => (stopped = true));
+      await until(() => pendingLoopTimers() > 0);
+      clock.tick(STOP_WAIT - 1);
+      await flush();
+      expect(stopped).to.equal(false);
+      clock.tick(1);
+      await stopping;
+      expect(await heartBeat()).to.equal(thisNode(start + PASS));
+      await finish();
+      expect(await heartBeat()).to.equal(thisNode(start + PASS));
+    });
+
+    it('does not start a write once stopping', async () => {
+      const testWorker = new TestWorker();
+      await becomeSyncingNode(testWorker);
+      await stop();
+      const write = sandbox.stub().resolves();
+      await (testWorker as any).write(write);
+      expect(write.called).to.equal(false);
+    });
+
+    it('a bitcoin worker resigns only once the block it is processing is written', async () => {
+      const bitcoin = bitcoinWorker();
+      await becomeSyncingNode(bitcoin);
+      const addBlock = sandbox.stub((bitcoin as any).blockModel, 'addBlock');
+      const finish = stalledWrite(fn => {
+        addBlock.callsFake(fn);
+        return bitcoin.processBlock({} as any);
+      });
+      const stopping = stop();
+      await until(() => pendingLoopTimers() > 0);
+      await flush();
+      expect(await heartBeat()).to.equal(thisNode(start + PASS));
+      await finish();
+      await stopping;
+      expect(await heartBeat()).to.equal(undefined);
+    });
+
+    it('a stopping bitcoin worker writes no more blocks or transactions', async () => {
+      const bitcoin = bitcoinWorker();
+      await becomeSyncingNode(bitcoin);
+      const addBlock = sandbox.stub((bitcoin as any).blockModel, 'addBlock').resolves();
+      const batchImport = sandbox.stub(TransactionStorage, 'batchImport').resolves();
+      await stop();
+      await bitcoin.processBlock({} as any);
+      await bitcoin.processTransaction({} as any);
+      expect(addBlock.called).to.equal(false);
+      expect(batchImport.called).to.equal(false);
+    });
+
+    function webhookTail(moralis: MoralisP2PWorker) {
+      const tail = new EventEmitter() as any;
+      tail.close = async () => {};
+      sandbox.stub(WebhookStorage, 'getTail').returns(tail);
+      sandbox.stub((moralis as any).csp, 'webhookToCoinEvents').returns([{}]);
+      sandbox.stub(WebhookStorage, 'setProcessed').resolves();
+      (moralis as any).syncAddressActivity();
+      return tail;
+    }
+
+    it('a moralis worker resigns only once the webhook it is processing is written', async () => {
+      const moralis = moralisWorker();
+      await becomeSyncingNode(moralis);
+      const tail = webhookTail(moralis);
+      const signal = sandbox.stub(EventStorage, 'signalAddressCoin');
+      const finish = stalledWrite(fn => {
+        signal.callsFake(fn);
+        tail.emit('data', { source: 'moralis' });
+        return until(() => signal.called);
+      });
+      const stopping = stop();
+      await until(() => pendingLoopTimers() > 0);
+      await flush();
+      expect(await heartBeat()).to.equal(thisNode(start + PASS));
+      await finish();
+      await stopping;
+      expect(await heartBeat()).to.equal(undefined);
+    });
+
+    it('a stopping moralis worker processes no more webhooks', async () => {
+      const moralis = moralisWorker();
+      await becomeSyncingNode(moralis);
+      const tail = webhookTail(moralis);
+      const signal = sandbox.stub(EventStorage, 'signalAddressCoin').resolves();
+      await stop();
+      tail.emit('data', { source: 'moralis' });
+      await flush();
+      expect(signal.called).to.equal(false);
+    });
+
+    it('a moralis worker resigns only once the block it is processing is written, and writes no more', async () => {
+      const moralis = moralisWorker({ syncs: true });
+      sandbox.stub(moralis, 'getWeb3').resolves({
+        eth: {
+          getBlockNumber: async () => 2,
+          getBlock: async (height: number) => (height <= 2 ? { number: height, transactions: [] } : null)
+        }
       } as any);
-      const bitcoin = new BitcoinP2PWorker({ chain, network, chainConfig: { trustedPeers: [], rpc: {} } });
-      sandbox.stub(bitcoin, 'disconnect').resolves();
-      sandbox.stub(bitcoin, 'sync').resolves(true);
-      sandbox.stub((bitcoin as any).multiThreadSync, 'stop');
-      return bitcoin;
-    }
+      sandbox.stub(moralis as any, 'syncAddressActivity').resolves();
+      sandbox.stub(moralis as any, 'subscribeToAddressActivity').resolves(true);
+      sandbox.stub(EVMBlockStorage, 'convertRawBlock').returns({} as any);
+      const verified = sandbox.stub(StateStorage, 'setVerifiedBlockHeight').resolves();
+      const signal = sandbox.stub(EventStorage, 'signalBlock');
+      let finish;
+      signal.onFirstCall().returns(new Promise(resolve => (finish = resolve)));
+      signal.resolves();
+      await becomeSyncingNode(moralis);
+      await until(() => signal.called);
+      const stopping = stop();
+      await until(() => pendingLoopTimers() > 0);
+      await flush();
+      expect(await heartBeat()).to.equal(thisNode(start + PASS));
+      finish();
+      await stopping;
+      expect(await heartBeat()).to.equal(undefined);
+      await flush();
+      expect(signal.callCount).to.equal(1);
+      expect(verified.callCount).to.equal(1);
+    });
+  });
 
-    function moralisWorker() {
-      sandbox.stub(BaseEVMStateProvider, 'initializeRpcs');
-      const moralis = new MoralisP2PWorker({ chain, network, chainConfig: {} });
-      sandbox.stub(moralis, 'sync').resolves();
-      return moralis;
-    }
+  describe('P2pManager', () => {
+    it('stops its workers in parallel', async () => {
+      const manager = new P2pManager();
+      const stopped: string[] = [];
+      manager.workers = [
+        { stop: () => new Promise(() => {}) },
+        { stop: async () => stopped.push('second') }
+      ] as any;
+      manager.stop();
+      await flush();
+      expect(stopped).to.deep.equal(['second']);
+    });
+  });
 
+  describe('workers that stop while another node holds a stale heartbeat', () => {
     const workers = [['bitcoin', bitcoinWorker], ['moralis', moralisWorker], ['base', () => new TestWorker()]] as const;
     for (const [name, make] of workers) {
       it(`a stopped ${name} worker never takes over`, async () => {

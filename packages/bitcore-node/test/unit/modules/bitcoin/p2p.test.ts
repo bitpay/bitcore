@@ -77,6 +77,42 @@ describe('BitcoinP2PWorker', function() {
   });
 
   describe('sync() with prefetching (single-thread mode)', function() {
+    it('stops processing headers once the worker is stopping', async function() {
+      const worker = createWorker({ prefetchSize: 0, threads: 0 });
+      const headers = Array.from({ length: 5 }, (_, i) => ({ hash: `block_${i}` }));
+      sandbox.stub(worker as any, 'getBlock').callsFake(async (hash: string) => ({ hash }));
+      const processed: string[] = [];
+      sandbox.stub(worker as any, 'processBlock').callsFake(async (block: any) => {
+        processed.push(block.hash);
+        (worker as any).stopping = true;
+      });
+      setupSyncStubs();
+      sandbox.stub(worker as any, 'getHeadersForSync')
+        .onFirstCall().resolves(headers)
+        .resolves([]);
+
+      const done = sandbox.spy();
+      (worker as any).events.on('SYNCDONE', done);
+
+      expect(await worker.sync()).to.equal(false);
+
+      expect(processed).to.deep.equal(['block_0']);
+      // a stopped sync is not a completed one
+      expect((StateStorage.collection as any).findOneAndUpdate.called).to.equal(false);
+      expect(done.called).to.equal(false);
+      expect((worker as any).isSyncing).to.equal(false);
+    });
+
+    it('does not start once the worker is stopping', async function() {
+      const worker = createWorker({ prefetchSize: 0, threads: 0 });
+      setupSyncStubs();
+      const getHeaders = sandbox.stub(worker as any, 'getHeadersForSync').resolves([]);
+      (worker as any).stopping = true;
+
+      expect(await worker.sync()).to.equal(false);
+      expect(getHeaders.called).to.equal(false);
+    });
+
     it('should prefetch blocks in parallel during sync', async function() {
       const worker = createWorker({ prefetchSize: 3, threads: 0 });
 
