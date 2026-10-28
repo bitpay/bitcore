@@ -681,6 +681,70 @@ export class Storage {
       });
   }
 
+  /**
+   * A page of the wallet's addresses, in fetchAddresses order (createdOn, then path), reading only the addresses the
+   * page needs. noChange and addresses filter the list, then reverse, skip and limit apply in that order.
+   *
+   * @param walletId
+   * @param opts.noChange - leave out change addresses
+   * @param opts.addresses - only these addresses
+   * @param opts.reverse - newest first
+   * @param opts.skip
+   * @param opts.limit
+   */
+  fetchAddressesPage(
+    walletId: string,
+    opts: { noChange?: boolean; addresses?: string[]; reverse?: boolean; skip?: number; limit?: number },
+    cb: (err?: any, addresses?: Address[]) => void
+  ) {
+    const query: { walletId: string; isChange?: { $in: Array<false | null> }; address?: { $in: string[] } } = { walletId };
+    // false, null or missing, the same addresses as !isChange
+    if (opts.noChange) query.isChange = { $in: [false, null] };
+    if (opts.addresses) query.address = { $in: opts.addresses };
+    // skip and limit apply only when positive, and as whole numbers, as slice does
+    const skip = opts.skip > 0 ? Math.floor(opts.skip) : 0;
+    const limit = opts.limit > 0 ? Math.floor(opts.limit) : null;
+    const collection = this.db.collection(collections.ADDRESSES);
+
+    const page = docs => {
+      let addresses = Utils.sortAsc(docs.map(Address.fromObj), 'createdOn', 'path');
+      if (opts.reverse) addresses.reverse();
+      if (skip) addresses = addresses.slice(skip);
+      if (limit !== null) addresses = addresses.slice(0, limit);
+      return addresses;
+    };
+    const readAll = () => collection.find(query).sort({ createdOn: 1 }).toArray((err, docs) => {
+      if (err) return cb(err);
+      return cb(null, page(docs));
+    });
+
+    // filtering by address, or reading without a limit or with one too large for a query limit, reads every matching
+    // address
+    if (opts.addresses || !(limit > 0) || !Number.isSafeInteger(skip + limit + 1)) return readAll();
+
+    // fetchAddresses sorts an address with a missing createdOn last and one with a null createdOn first, but Mongo sorts
+    // both first, so a wallet that has either is read whole
+    collection.findOne({ walletId, createdOn: null }, { projection: { _id: 1 } }, (err, unordered) => {
+      if (err) return cb(err);
+      if (unordered) return readAll();
+
+      // The page is within the first skip + limit addresses by createdOn plus any others sharing the last one's
+      // createdOn, whatever order addresses created in the same second are in. One more address shows whether there are any.
+      const count = skip + limit;
+      collection.find(query).sort({ createdOn: opts.reverse ? -1 : 1 }).limit(count + 1).toArray((err, docs) => {
+        if (err) return cb(err);
+        if (docs.length <= count || docs[count].createdOn !== docs[count - 1].createdOn) {
+          return cb(null, page(docs.slice(0, count)));
+        }
+        collection.find({ ...query, createdOn: docs[count - 1].createdOn }).toArray((err, ties) => {
+          if (err) return cb(err);
+          const read = new Set(docs.slice(0, count).map(doc => String(doc._id)));
+          return cb(null, page([...docs.slice(0, count), ...ties.filter(doc => !read.has(String(doc._id)))]));
+        });
+      });
+    });
+  }
+
   migrateToCashAddr(walletId, cb) {
     const cursor = this.db.collection(collections.ADDRESSES).find({
       walletId
