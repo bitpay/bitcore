@@ -13,7 +13,7 @@
     "wallet"
   ],
   "engines": {
-    "node": "^22"
+    "node": ">=22"
   },
   "repository": {
     "type": "git",
