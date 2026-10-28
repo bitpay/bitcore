@@ -112,18 +112,6 @@ export class TssRouter {
       }
     });
 
-    router.get('/v1/tss/keygen/:id/secret', authTssKeyGenRequest(), async function(req, res) {
-      try {
-        const id = req.params.id;
-        const copayerId = req.headers['x-identity'];
-        const delivery = await TssKeyGen.getBwsJoinSecret({ id, copayerId });
-        return res.json(delivery);
-      } catch (err) {
-        return returnError(err ?? 'unknown', res, req);
-      }
-    });
-
-
     /** Signature Methods */
 
     router.post('/v1/tss/sign/:id', authRequest(), verifyTssMessage, async function(req, res) {
