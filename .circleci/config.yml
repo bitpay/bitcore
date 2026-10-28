@@ -51,10 +51,10 @@ commands:
     description: Force usage of correct node version on the executor machine
     steps:
       - run:
-          name: Use Node 22
+          name: Use Node 24
           command: |
-            nvm install 22.23.4
-            nvm alias default 22.23.4
+            nvm install 24.22.1
+            nvm alias default 24.22.1
             nvm use default
   restore_dependency_cache:
     steps:
