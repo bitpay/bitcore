@@ -743,7 +743,7 @@ export class TssKeyGen extends EventEmitter {
       }));
       return { partyId, ...TssUtils.encryptAndDetachSignData(payload, recipientKey, this.#requestPrivateKey) };
     });
-    await this.#request.post(`/v1/tss/keygen/${this.id}/secret`, { version: 1, records });
+    await this.#request.post(`/v1/tss/keygen/${this.id}/secret`, { records });
     const credObj = client.toObj();
     this.#credentials.addWalletInfo(credObj.walletId, walletName, 1, 1, copayerName, {
       useNativeSegwit: ['P2WPKH', 'P2WSH', 'P2TR'].includes(wallet.addressType),
@@ -796,8 +796,8 @@ export class TssKeyGen extends EventEmitter {
    * Decrypt and verify the creator's delivery against the invitation key and this session, then return the join secret.
    * Error messages never include the decrypted contents.
    */
-  #openJoinDelivery(delivery: { version?: number; encryptedMessage?: string; signature?: string }, commonKeyChain: string): string {
-    if (delivery?.version !== 1 || typeof delivery.encryptedMessage !== 'string' || typeof delivery.signature !== 'string') {
+  #openJoinDelivery(delivery: { encryptedMessage?: string; signature?: string }, commonKeyChain: string): string {
+    if (typeof delivery?.encryptedMessage !== 'string' || typeof delivery.signature !== 'string') {
       throw new Error('Unsupported wallet join delivery');
     }
     let message;

@@ -20,7 +20,7 @@ import {
 } from './model';
 import { TssKeyGenModel } from './model/tsskeygen';
 import { TssSigGenModel } from './model/tsssign';
-import type { ITssKeyMessageObject } from './model/tsskeygen';
+import type { ITssJoinSecretRecord, ITssKeyMessageObject } from './model/tsskeygen';
 import type { ITssSigMessageObject } from './model/tsssign';
 import type { Db } from 'mongodb';
 
@@ -1891,14 +1891,16 @@ export class Storage {
     );
   }
 
-  async storeTssKeyBwsJoinSecret({ id, delivery }: { id: string; delivery: TssKeyGenModel['bwsJoinDelivery'] }) {
+  async storeTssKeyBwsJoinSecret({ id, records, secret }: {
+    id: string;
+    records?: ITssJoinSecretRecord[];
+    secret?: string;
+  }) {
     return this.db.collection(collections.TSS_KEYGEN).updateOne({
       id
     },
     {
-      $set: {
-        bwsJoinDelivery: delivery
-      }
+      $set: records ? { bwsJoinSecrets: records } : { bwsJoinSecret: secret }
     },
     { upsert: false });
   }

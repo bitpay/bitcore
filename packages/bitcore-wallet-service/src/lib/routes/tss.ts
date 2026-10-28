@@ -103,9 +103,9 @@ export class TssRouter {
     router.post('/v1/tss/keygen/:id/secret', authTssKeyGenRequest(), async function(req, res) {
       try {
         const id = req.params.id;
-        const delivery = req.body;
+        const { records, secret } = req.body;
         const copayerId = req.headers['x-identity'];
-        await TssKeyGen.storeBwsJoinSecret({ id, delivery, copayerId });
+        await TssKeyGen.storeBwsJoinSecret({ id, records, secret, copayerId });
         return res.send();
       } catch (err) {
         return returnError(err ?? 'unknown', res, req);

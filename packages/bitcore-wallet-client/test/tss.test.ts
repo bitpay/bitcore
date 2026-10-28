@@ -703,13 +703,13 @@ describe('TSS', function() {
       return tssKeyGens;
     }
 
-    async function storedDelivery(id: string) {
-      return (await storage.fetchTssKeyGenSession({ id })).bwsJoinDelivery;
+    async function storedRecords(id: string) {
+      return (await storage.fetchTssKeyGenSession({ id })).bwsJoinSecrets;
     }
 
     async function overwriteRecords(id: string, mutate: (records: any[]) => any[]) {
       const doc = await storage.db.collection('tss_keygen').findOne({ id });
-      await storage.db.collection('tss_keygen').updateOne({ id }, { $set: { 'bwsJoinDelivery.records': mutate(doc.bwsJoinDelivery.records) } });
+      await storage.db.collection('tss_keygen').updateOne({ id }, { $set: { bwsJoinSecrets: mutate(doc.bwsJoinSecrets) } });
     }
 
     function rawRequest(key: InstanceType<typeof Key>) {
@@ -729,7 +729,7 @@ describe('TSS', function() {
       const store = BwsTssKeyGen.storeBwsJoinSecret;
       let attempts = 0;
       sandbox.stub(BwsTssKeyGen, 'storeBwsJoinSecret').callsFake(async function(params) {
-        posted.push(params.delivery);
+        posted.push(params.records);
         await gate;
         await store.call(BwsTssKeyGen, params);
         if (attempts++ === 0) {
@@ -777,13 +777,13 @@ describe('TSS', function() {
       // The completed DKG is never re-exported or re-processed while waiting
       for (const e of errors) e.message.should.not.include('Cannot export a completed session');
 
-      const captured = JSON.stringify(posted) + JSON.stringify(await storedDelivery(tss0.id));
+      const captured = JSON.stringify(posted) + JSON.stringify(await storedRecords(tss0.id));
       captured.should.not.include(secret);
       captured.should.not.include(walletPrivKey.toString());
       captured.should.not.include(walletPrivKey.toWIF());
       const doc = await storage.db.collection('tss_keygen').findOne({ id: tss0.id });
       should.not.exist(doc.bwsJoinSecret);
-      (await storedDelivery(tss0.id)).records.map(r => r.partyId).should.deep.equal([1, 2]);
+      (await storedRecords(tss0.id)).map(r => r.partyId).should.deep.equal([1, 2]);
     });
 
     describe('ordinary wallet enrollment (not stubbed)', function() {
@@ -875,33 +875,32 @@ describe('TSS', function() {
       await rejects(get(keys[1]), /BWS join secret not found|TSS_BWS_JOIN_SECRET_NOT_FOUND/);
 
       // creator only
-      const body = { version: 1, records: [1, 2].map(partyId => ({ partyId, encryptedMessage: 'AAAA', signature: 'sig' })) };
+      const body = { records: [1, 2].map(partyId => ({ partyId, encryptedMessage: 'AAAA', signature: 'sig' })) };
       await rejects(rawRequest(keys[1]).post(`/v1/tss/keygen/${tss0.id}/secret`, body), /Only the session creator can store the BWS join secret/);
       await rejects(rawRequest(keys[0]).post(`/v1/tss/keygen/${tss0.id}/secret`, { secret: secret }), /Invalid BWS join delivery provided/); // legacy plaintext
-      should.not.exist(await storedDelivery(tss0.id));
+      should.not.exist(await storedRecords(tss0.id));
 
       // malformed sets
       const record = (partyId, extra = {}) => ({ partyId, encryptedMessage: 'AAAA', signature: 'sig', ...extra });
       const bad = [
-        { version: 2, records: body.records },
-        { version: 1, records: [record(1)] },
-        { version: 1, records: [record(1), record(1)] },
-        { version: 1, records: [record(0), record(1)] },
-        { version: 1, records: [record(1), record(3)] },
-        { version: 1, records: [record(1), record(2, { signature: 'x'.repeat(257) })] },
-        { version: 1, records: [record(1), record(2, { encryptedMessage: 'x'.repeat(16 * 1024 + 1) })] },
-        { version: 1, records: [record(1), record(2, { encryptedMessage: '' })] }
+        { records: [record(1)] },
+        { records: [record(1), record(1)] },
+        { records: [record(0), record(1)] },
+        { records: [record(1), record(3)] },
+        { records: [record(1), record(2, { signature: 'x'.repeat(257) })] },
+        { records: [record(1), record(2, { encryptedMessage: 'x'.repeat(16 * 1024 + 1) })] },
+        { records: [record(1), record(2, { encryptedMessage: '' })] }
       ];
       for (const b of bad) {
         await rejects(rawRequest(keys[0]).post(`/v1/tss/keygen/${tss0.id}/secret`, b), /Invalid BWS join delivery provided/);
       }
-      should.not.exist(await storedDelivery(tss0.id));
+      should.not.exist(await storedRecords(tss0.id));
 
       await rawRequest(keys[0]).post(`/v1/tss/keygen/${tss0.id}/secret`, { ...body, records: body.records.map(r => ({ ...r, encryptedMessage: 'ENC' + r.partyId })) });
       for (let i = 0; i < 2; i++) { // repeat GET works
         for (const p of [1, 2]) {
           const { body: res } = await get(keys[p]);
-          res.should.deep.equal({ version: 1, encryptedMessage: 'ENC' + p, signature: 'sig' });
+          res.should.deep.equal({ encryptedMessage: 'ENC' + p, signature: 'sig' });
         }
       }
       // nonparticipant
@@ -936,6 +935,11 @@ describe('TSS', function() {
         await tss1.joinWallet({ copayerName: 'c1' });
         await tss2.joinWallet({ copayerName: 'c2' });
         joinWalletStub.args.map(a => a[0]).should.deep.equal([secret, secret]);
+      });
+
+      it('should reject a plaintext response instead of falling back to legacy enrollment', async function() {
+        sandbox.stub(BwsTssKeyGen, 'getBwsJoinSecret').resolves({ secret });
+        await rejected(tss1, /Unsupported wallet join delivery/);
       });
 
       it(happyPath('should reuse the created wallet when publication is retried'), async function() {
@@ -1025,7 +1029,7 @@ describe('TSS', function() {
         Object.keys(decryptExport(keys[0], tss0.exportSession()).recipientKeys).should.deep.equal(['1', '2']);
       });
 
-      it('should restore a legacy export for DKG only, with no delivery trust', async function() {
+      it('should restore the legacy export format within the same protocol for DKG only, with no delivery trust', async function() {
         const [tss0, tss1, tss2] = tssKeyGens = keys.map(newTss);
         await invite(tss0, [tss1, tss2]);
         const legacy0 = decryptExport(keys[0], tss0.exportSession()).session;
@@ -1040,7 +1044,7 @@ describe('TSS', function() {
         createWalletStub.callCount.should.equal(0);
         await rejects(fresh1.joinWallet({ copayerName: 'c1' }), /Missing the trusted invitation key/);
         joinWalletStub.callCount.should.equal(0);
-        should.not.exist(await storedDelivery(tss0.id));
+        should.not.exist(await storedRecords(tss0.id));
       });
 
       it('should not replace bindings when the session export cannot be decrypted', async function() {
@@ -1539,7 +1543,7 @@ describe('TSS', function() {
     // Pass `undefined` to omit version entirely (simulates pre-v1.1 legacy clients).
     function stubPostVersion(version: number | undefined) {
       const origPost = Request.prototype.post;
-      sandbox.stub(Request.prototype, 'post').callsFake(function(url, body: any, cb) {
+      return sandbox.stub(Request.prototype, 'post').callsFake(function(url, body: any, cb) {
         if (version !== undefined) {
           return origPost.call(this, url, { ...body, version }, cb);
         } else {
@@ -1550,6 +1554,27 @@ describe('TSS', function() {
     }
 
     describe('Key Generation', function() {
+      for (const [creatorVersion, joinerVersion] of [[1.2, 1.3], [1.3, 1.2]]) {
+        it(`should reject scheme ${joinerVersion} joining scheme ${creatorVersion} before key generation`, async function() {
+          const creatorKey = new Key({ seedType: 'new' });
+          const joinerKey = new Key({ seedType: 'new' });
+          const tss0 = new TssKeyGen({ chain, network, baseUrl: '/bws/api', request: request(app), key: creatorKey });
+          const tss1 = new TssKeyGen({ chain, network, baseUrl: '/bws/api', request: request(app), key: joinerKey });
+          const creatorStub = stubPostVersion(creatorVersion);
+          await tss0.newKey({ m, n });
+          const code = await tss0.createJoinCode({
+            partyId: 1,
+            partyPubKey: joinerKey.createCredentials(null, { network, n: 1, account: 0 }).requestPubKey
+          });
+          creatorStub.restore();
+          stubPostVersion(joinerVersion);
+          const err = await tss1.joinKey({ code }).then(() => null, e => e);
+          should.exist(err);
+          err.message.should.include('TSS_MISMATCH_VERSION');
+          (await storage.fetchTssKeyGenSession({ id: tss0.id })).participants.filter(Boolean).should.have.length(1);
+        });
+      }
+
       it('should reject a too-old client version', async function() {
         stubPostVersion(0.9);
         const key = new Key({ seedType: 'new' });
@@ -1586,11 +1611,11 @@ describe('TSS', function() {
       });
 
       it('should reject a version mismatch when joining a session', async function() {
-        // Party 0 creates with current version (1.1); party 1 tries to join with old version (1.0)
+        // Party 0 creates with the current version; party 1 tries to join with an old version.
         const party0Key = new Key({ seedType: 'new' });
         const party1Key = new Key({ seedType: 'new' });
         const tss0 = new TssKeyGen({ chain, network, baseUrl: '/bws/api', request: request(app), key: party0Key });
-        await tss0.newKey({ m, n }); // real version, creates session with schemeVersion 1.1
+        await tss0.newKey({ m, n });
 
         const joinCode = await tss0.createJoinCode({
           partyId: 1,
