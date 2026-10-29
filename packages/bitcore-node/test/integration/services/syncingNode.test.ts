@@ -156,8 +156,7 @@ describe('Syncing node heartbeat', function() {
   // drivers of other workers in a test, stopped after it
   let others: LoopDriver[] = [];
   // a heartbeat written by the worker under test
-  const thisNode = (time: number) =>
-    `${os.hostname()}:${process.pid}:${time}:${(worker as any)?.instanceId ?? (StateStorage as any).processId}`;
+  const thisNode = (time: number) => `${os.hostname()}:${process.pid}:${time}:${(worker as any).instanceId}`;
   let start: number;
 
   before(intBeforeHelper);
@@ -182,9 +181,7 @@ describe('Syncing node heartbeat', function() {
     });
     start = Math.floor(Date.now() / 1000) * 1000;
     clock = sandbox.useFakeTimers({ now: start, toFake: ['Date', 'performance'] });
-    leaseLost = 'onLeaseLost' in BaseP2PWorker.prototype
-      ? sandbox.stub(BaseP2PWorker.prototype as any, 'onLeaseLost')
-      : sandbox.spy();
+    leaseLost = sandbox.stub(BaseP2PWorker.prototype as any, 'onLeaseLost');
     // only the loop's own timers run on the fake clock; the Mongo driver keeps real ones
     const loopTimers = new Set<any>();
     const realSetTimeout = global.setTimeout;
@@ -340,14 +337,14 @@ describe('Syncing node heartbeat', function() {
     });
 
     it('selfNominateSyncingNode claims a missing heartbeat and renews only the heartbeat it was given', async () => {
-      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: undefined, heartBeat: ownNode(start) } as any);
+      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: undefined, heartBeat: ownNode(start) });
       expect(await heartBeat()).to.equal(ownNode(start));
 
       clock.tick(1000);
-      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: otherNode(start), heartBeat: ownNode(start + 1000) } as any);
+      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: otherNode(start), heartBeat: ownNode(start + 1000) });
       expect(await heartBeat()).to.equal(ownNode(start));
 
-      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: ownNode(start), heartBeat: ownNode(start + 1000) } as any);
+      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: ownNode(start), heartBeat: ownNode(start + 1000) });
       expect(await heartBeat()).to.equal(ownNode(start + 1000));
       expect(await direct.countDocuments({})).to.equal(1);
     });
@@ -355,23 +352,23 @@ describe('Syncing node heartbeat', function() {
     it('selfNominateSyncingNode does not renew a heartbeat that has been removed', async () => {
       await setHeartBeat(ownNode(start - 1000));
       await direct.updateOne({}, { $unset: { [key]: true } });
-      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: ownNode(start - 1000), heartBeat: ownNode(start) } as any);
+      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: ownNode(start - 1000), heartBeat: ownNode(start) });
       expect(await heartBeat()).to.equal(undefined);
     });
 
     it('selfNominateSyncingNode writes the heartbeat it is given', async () => {
-      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: undefined, heartBeat: 'given:1:2:3' } as any);
+      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: undefined, heartBeat: 'given:1:2:3' });
       expect(await heartBeat()).to.equal('given:1:2:3');
     });
 
     it('selfNominateSyncingNode claims a missing heartbeat when the previous one is empty', async () => {
-      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: '', heartBeat: ownNode(start) } as any);
+      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: '', heartBeat: ownNode(start) });
       expect(await heartBeat()).to.equal(ownNode(start));
     });
 
     it('selfNominateSyncingNode without a previous heartbeat leaves another node\'s heartbeat', async () => {
       await setHeartBeat(otherNode(start));
-      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: undefined, heartBeat: ownNode(start) } as any);
+      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: undefined, heartBeat: ownNode(start) });
       expect(await heartBeat()).to.equal(otherNode(start));
     });
 
@@ -382,7 +379,7 @@ describe('Syncing node heartbeat', function() {
       };
       await direct.insertOne({ ...others });
       expect(await StateStorage.getSyncingNode({ chain, network })).to.equal(undefined);
-      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: undefined, heartBeat: ownNode(start) } as any);
+      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: undefined, heartBeat: ownNode(start) });
       expect(await heartBeat()).to.equal(ownNode(start));
       await StateStorage.selfResignSyncingNode({ chain, network, lastHeartBeat: ownNode(start) });
       const [state] = await direct.find({}).toArray();
@@ -404,7 +401,7 @@ describe('Syncing node heartbeat', function() {
       await setHeartBeat(otherNode(start));
       const { _id } = (await direct.findOne({}))!;
       const readsBefore = calls(['findOne']);
-      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: otherNode(start), stateId: _id, heartBeat: ownNode(start) } as any);
+      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: otherNode(start), stateId: _id, heartBeat: ownNode(start) });
       const nominated = await heartBeat();
       await StateStorage.selfResignSyncingNode({ chain, network, lastHeartBeat: ownNode(start), stateId: _id });
       expect(calls(['findOne']) - readsBefore).to.equal(0);
@@ -416,7 +413,7 @@ describe('Syncing node heartbeat', function() {
       await setHeartBeat(otherNode(start));
       const readsBefore = calls(['findOne']);
       const writesBefore = calls(WRITES);
-      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: otherNode(start), heartBeat: ownNode(start) } as any);
+      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: otherNode(start), heartBeat: ownNode(start) });
       await StateStorage.selfResignSyncingNode({ chain, network, lastHeartBeat: ownNode(start) });
       expect(calls(['findOne']) - readsBefore).to.equal(2);
       expect(calls(WRITES) - writesBefore).to.equal(2);
@@ -602,7 +599,8 @@ describe('Syncing node heartbeat', function() {
         // a renewal that lands too late to be read before the lease ends does not extend it
         unstall();
         await Promise.all(stub.returnValues);
-        expect(await heartBeat()).to.equal(thisNode(Date.now()));
+        // stamped when the renewal started
+        expect(await heartBeat()).to.equal(thisNode(lastRenewal + PASS));
         await driver.pass();
         expect(testWorker.isSyncingNode).to.equal(false);
         expectLeaseLost(error);

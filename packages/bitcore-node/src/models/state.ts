@@ -1,5 +1,3 @@
-import { randomBytes } from 'crypto';
-import os from 'os';
 import { ObjectID } from 'mongodb';
 import { StorageService } from '../services/storage';
 import { BaseModel } from './base';
@@ -24,8 +22,6 @@ export class StateModel extends BaseModel<IState> {
     super('state', storage);
   }
   allowedPaging = [];
-  // tells this process's heartbeats apart from those of another process with the same hostname and pid
-  readonly processId = randomBytes(6).toString('hex');
 
   onConnect() {}
 
@@ -54,13 +50,20 @@ export class StateModel extends BaseModel<IState> {
     return (await this.findSyncingNode(params)).heartBeat;
   }
 
-  async selfNominateSyncingNode(params: { chain: string; network: string; lastHeartBeat: any; stateId?: ObjectID }) {
-    const { chain, network, lastHeartBeat } = params;
+  // replaces lastHeartBeat with heartBeat, which the worker builds so that it can recognize it when it reads it back
+  async selfNominateSyncingNode(params: {
+    chain: string;
+    network: string;
+    lastHeartBeat: any;
+    heartBeat: string;
+    stateId?: ObjectID;
+  }) {
+    const { chain, network, lastHeartBeat, heartBeat } = params;
     const stateId = params.stateId || (await this.findSingletonState())._id;
     return this.collection.findOneAndUpdate(
       // renew only the heartbeat this node read, and claim one only when there is none
       { _id: stateId, [`syncingNode:${chain}:${network}`]: lastHeartBeat || { $exists: false } },
-      { $set: { [`syncingNode:${chain}:${network}`]: `${os.hostname()}:${process.pid}:${Date.now()}:${this.processId}` } }
+      { $set: { [`syncingNode:${chain}:${network}`]: heartBeat } }
     );
   }
 
