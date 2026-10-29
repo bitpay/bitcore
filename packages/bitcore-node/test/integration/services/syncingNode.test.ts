@@ -450,6 +450,8 @@ describe('Syncing node heartbeat', function() {
         await driver.pass();
         expect(await heartBeat()).to.equal(thisNode(Date.now()));
         expect(testWorker.isSyncingNode).to.equal(true);
+        // only the renewal not yet read back
+        expect((testWorker as any).written.size).to.equal(1);
       }
       expect(testWorker.syncs).to.equal(1);
     });
@@ -734,6 +736,7 @@ describe('Syncing node heartbeat', function() {
       try {
         await driver.pass();
         expect(stub.callCount).to.equal(1);
+        const resignReads = sandbox.spy(StateStorage, 'findSyncingNode');
         let stopped = false;
         const stopping = loopContext.run(driver, () => worker.stop()).then(() => (stopped = true));
         await until(() => pendingLoopTimers() > 0);
@@ -742,6 +745,8 @@ describe('Syncing node heartbeat', function() {
         expect(stopped).to.equal(false);
         clock.tick(1);
         await stopping;
+        // it gave up waiting for the renewal, without starting the resign
+        expect(resignReads.called).to.equal(false);
         expect(await heartBeat()).to.equal(thisNode(start + PASS));
       } finally {
         unstall();
@@ -965,6 +970,19 @@ describe('Syncing node heartbeat', function() {
   });
 
   describe('unregisterSyncingNode', () => {
+    it('resigns on stop while its renewals are failing', async () => {
+      await drive().start();
+      await driver.pass();
+      nominations.restore();
+      driver.nominations = sandbox.stub(StateStorage, 'selfNominateSyncingNode').rejects(new Error('renewal failed'));
+      await driver.pass();
+      expect(worker.isSyncingNode).to.equal(true);
+      // the heartbeat stored is the one read back, not a later renewal
+      expect(await heartBeat()).to.equal(thisNode(start + PASS));
+      await driver.stop();
+      expect(await heartBeat()).to.equal(undefined);
+    });
+
     it('resigns as the syncing node on stop', async () => {
       await drive().start();
       await driver.pass();
@@ -1033,9 +1051,12 @@ describe('Syncing node heartbeat', function() {
     it('resigns only once the writes in flight finish', async () => {
       await becomeSyncingNode(new TestWorker());
       const finish = stalledWrite(fn => (worker as any).write(fn));
+      const resignReads = sandbox.spy(StateStorage, 'findSyncingNode');
       const stopping = stop();
       await until(() => pendingLoopTimers() > 0);
       await flush();
+      // still draining: the resign hasn't started
+      expect(resignReads.called).to.equal(false);
       expect(await heartBeat()).to.equal(thisNode(start + PASS));
       await finish();
       await stopping;
@@ -1247,9 +1268,12 @@ describe('Syncing node heartbeat', function() {
         addBlock.callsFake(fn);
         return bitcoin.processBlock({} as any);
       });
+      const resignReads = sandbox.spy(StateStorage, 'findSyncingNode');
       const stopping = stop();
       await until(() => pendingLoopTimers() > 0);
       await flush();
+      // still draining: the resign hasn't started
+      expect(resignReads.called).to.equal(false);
       expect(await heartBeat()).to.equal(thisNode(start + PASS));
       await finish();
       await stopping;
@@ -1288,9 +1312,12 @@ describe('Syncing node heartbeat', function() {
         tail.emit('data', { source: 'moralis' });
         return until(() => signal.called);
       });
+      const resignReads = sandbox.spy(StateStorage, 'findSyncingNode');
       const stopping = stop();
       await until(() => pendingLoopTimers() > 0);
       await flush();
+      // still draining: the resign hasn't started
+      expect(resignReads.called).to.equal(false);
       expect(await heartBeat()).to.equal(thisNode(start + PASS));
       await finish();
       await stopping;
@@ -1326,9 +1353,12 @@ describe('Syncing node heartbeat', function() {
       signal.resolves();
       await becomeSyncingNode(moralis);
       await until(() => signal.called);
+      const resignReads = sandbox.spy(StateStorage, 'findSyncingNode');
       const stopping = stop();
       await until(() => pendingLoopTimers() > 0);
       await flush();
+      // still draining: the resign hasn't started
+      expect(resignReads.called).to.equal(false);
       expect(await heartBeat()).to.equal(thisNode(start + PASS));
       finish();
       await stopping;
