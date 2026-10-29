@@ -119,7 +119,7 @@ export class EthChain implements IChain {
         // TODO support big int
         const lockedSum = Number(amounts + fees) || 0;  // previously set to 0 if opts.multisigContractAddress
         const convertedBalance = this.convertBitcoreBalance(balance, lockedSum);
-        server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
+        server.storage.fetchAddressesPage(server.walletId, { limit: 1 }, (err, addresses: IAddress[]) => {
           if (err) return cb(err);
           if (addresses.length > 0) {
             const byAddress = [
