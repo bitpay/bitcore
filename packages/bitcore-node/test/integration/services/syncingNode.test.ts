@@ -228,6 +228,11 @@ describe('Syncing node heartbeat', function() {
     return state && state[key];
   }
 
+  // the heartbeat without the number of the attempt that wrote it
+  async function heartBeatStamp() {
+    return (await heartBeat()).split(':').slice(0, 4).join(':');
+  }
+
   function calls(methods: string[]) {
     return methods.reduce((sum, method) => sum + (collection[method] as sinon.SinonSpy).callCount, 0);
   }
@@ -434,7 +439,7 @@ describe('Syncing node heartbeat', function() {
     it('claims a missing heartbeat, then becomes the syncing node and syncs once', async () => {
       const testWorker = new TestWorker();
       await drive(testWorker).start();
-      expect(await heartBeat()).to.equal(thisNode(start));
+      expect(await heartBeatStamp()).to.equal(thisNode(start));
       expect(testWorker.isSyncingNode).to.equal(false);
       expect(testWorker.syncs).to.equal(0);
 
@@ -448,7 +453,7 @@ describe('Syncing node heartbeat', function() {
       await drive(testWorker).start();
       while (Date.now() < start + 2 * FIVE_MINUTES) {
         await driver.pass();
-        expect(await heartBeat()).to.equal(thisNode(Date.now()));
+        expect(await heartBeatStamp()).to.equal(thisNode(Date.now()));
         expect(testWorker.isSyncingNode).to.equal(true);
         // only the renewal not yet read back
         expect((testWorker as any).written.size).to.equal(1);
@@ -480,7 +485,7 @@ describe('Syncing node heartbeat', function() {
       expect(testWorker.isSyncingNode).to.equal(false);
 
       await driver.pass();
-      expect(await heartBeat()).to.equal(thisNode(start + FIVE_MINUTES));
+      expect(await heartBeatStamp()).to.equal(thisNode(start + FIVE_MINUTES));
       await driver.pass();
       expect(testWorker.isSyncingNode).to.equal(true);
       expect(testWorker.syncs).to.equal(1);
@@ -499,7 +504,7 @@ describe('Syncing node heartbeat', function() {
       await driver.passUntil(seenAt + FIVE_MINUTES - PASS);
       expect(await heartBeat()).to.equal(otherNode(renewedAt));
       await driver.pass();
-      expect(await heartBeat()).to.equal(thisNode(seenAt + FIVE_MINUTES));
+      expect(await heartBeatStamp()).to.equal(thisNode(seenAt + FIVE_MINUTES));
       await driver.pass();
       expect(testWorker.isSyncingNode).to.equal(true);
     });
@@ -541,7 +546,7 @@ describe('Syncing node heartbeat', function() {
       await driver.pass();
       expect(await heartBeat()).to.equal(otherNode(start - 60000));
       await driver.pass();
-      expect(await heartBeat()).to.equal(thisNode(start + FIVE_MINUTES + PASS));
+      expect(await heartBeatStamp()).to.equal(thisNode(start + FIVE_MINUTES + PASS));
       await driver.pass();
       expect(testWorker.isSyncingNode).to.equal(true);
     });
@@ -553,7 +558,7 @@ describe('Syncing node heartbeat', function() {
       await driver.passUntil(start + 60000);
       await direct.updateOne({}, { $unset: { [key]: true } });
       await driver.pass();
-      expect(await heartBeat()).to.equal(thisNode(Date.now()));
+      expect(await heartBeatStamp()).to.equal(thisNode(Date.now()));
       await driver.pass();
       expect(testWorker.isSyncingNode).to.equal(true);
       expect(testWorker.syncs).to.equal(1);
@@ -587,7 +592,7 @@ describe('Syncing node heartbeat', function() {
       await driver.pass();
       expect(testWorker.isSyncingNode).to.equal(false);
       expectLeaseLost(error);
-      expect(await heartBeat()).to.equal(thisNode(lastRenewal));
+      expect(await heartBeatStamp()).to.equal(thisNode(lastRenewal));
     });
 
     it('gives up as the syncing node four minutes after a renewal stalls', async () => {
@@ -614,7 +619,7 @@ describe('Syncing node heartbeat', function() {
         unstall();
         await Promise.all(stub.returnValues);
         // stamped when the renewal started
-        expect(await heartBeat()).to.equal(thisNode(lastRenewal + PASS));
+        expect(await heartBeatStamp()).to.equal(thisNode(lastRenewal + PASS));
         await driver.pass();
         expect(testWorker.isSyncingNode).to.equal(false);
         expectLeaseLost(error);
@@ -747,7 +752,7 @@ describe('Syncing node heartbeat', function() {
         await stopping;
         // it gave up waiting for the renewal, without starting the resign
         expect(resignReads.called).to.equal(false);
-        expect(await heartBeat()).to.equal(thisNode(start + PASS));
+        expect(await heartBeatStamp()).to.equal(thisNode(start + PASS));
       } finally {
         unstall();
       }
@@ -777,7 +782,7 @@ describe('Syncing node heartbeat', function() {
       expect(testWorker.isSyncingNode).to.equal(true);
       expect(pendingLoopTimers()).to.equal(0);
       await driver.pass();
-      expect(await heartBeat()).to.equal(thisNode(Date.now()));
+      expect(await heartBeatStamp()).to.equal(thisNode(Date.now()));
       expect(testWorker.syncs).to.equal(1);
     });
 
@@ -806,7 +811,7 @@ describe('Syncing node heartbeat', function() {
       reads.onSecondCall().rejects(new Error('read failed'));
       await driver.passUntil(start + FIVE_MINUTES);
       expect(error).to.equal(undefined);
-      expect(await heartBeat()).to.equal(thisNode(start + FIVE_MINUTES));
+      expect(await heartBeatStamp()).to.equal(thisNode(start + FIVE_MINUTES));
     });
 
     it('gives up as the syncing node when the loop resumes after a pause longer than its lease', async () => {
@@ -847,6 +852,12 @@ describe('Syncing node heartbeat', function() {
       await setHeartBeat(`thirdhost:100:${Date.now()}:bbbbbbbbbbbb`);
       await driver.pass();
       expect(standbyLogs()).to.equal(5);
+      // the same worker, another attempt
+      await setHeartBeat(`thirdhost:100:${Date.now()}:bbbbbbbbbbbb:7`);
+      await driver.pass();
+      await setHeartBeat(`thirdhost:100:${Date.now()}:bbbbbbbbbbbb:8`);
+      await driver.pass();
+      expect(standbyLogs()).to.equal(5);
     });
 
     it('holds the lease from when the renewal it reads back started, not when it landed', async () => {
@@ -875,7 +886,7 @@ describe('Syncing node heartbeat', function() {
       land();
       await Promise.all(stub.returnValues);
       await driver.pass();
-      expect(await heartBeat()).to.equal(thisNode(renewalStarted));
+      expect(await heartBeatStamp()).to.equal(thisNode(renewalStarted));
       driver.nominations = stub;
       await driver.passUntil(renewalStarted + LEASE - PASS);
       expect(testWorker.isSyncingNode).to.equal(true);
@@ -918,7 +929,7 @@ describe('Syncing node heartbeat', function() {
       }
       expect(await heartBeat()).to.equal(otherNode(start - 60000));
       await driver.pass();
-      expect(await heartBeat()).to.equal(thisNode(Date.now()));
+      expect(await heartBeatStamp()).to.equal(thisNode(Date.now()));
     });
 
     it('stops admitting writes as soon as another node replaces its heartbeat, while its lease would still run', async () => {
@@ -935,12 +946,16 @@ describe('Syncing node heartbeat', function() {
       expectLeaseLost(error);
     });
 
-    it('writes heartbeats that carry its hostname, pid, the time and its own id', async () => {
+    it('writes heartbeats that carry its hostname, pid, the time, its own id and the attempt', async () => {
       await drive().start();
-      const [hostname, pid, time, id] = (await heartBeat()).split(':');
-      expect([hostname, pid, time]).to.deep.equal([os.hostname(), `${process.pid}`, `${start}`]);
+      const [hostname, pid, time, id, attempt] = (await heartBeat()).split(':');
+      expect([hostname, pid, time, attempt]).to.deep.equal([os.hostname(), `${process.pid}`, `${start}`, '1']);
       expect(id).to.match(/^[0-9a-f]{12}$/);
       expect(id).to.not.equal((new TestWorker() as any).instanceId);
+      // the next renewal, with the wall clock showing the same time
+      clock.setSystemTime(start - PASS);
+      await driver.pass();
+      expect(await heartBeat()).to.equal(`${hostname}:${pid}:${start}:${id}:2`);
     });
 
     it('stops looping once the worker is stopping', async () => {
@@ -978,7 +993,7 @@ describe('Syncing node heartbeat', function() {
       await driver.pass();
       expect(worker.isSyncingNode).to.equal(true);
       // the heartbeat stored is the one read back, not a later renewal
-      expect(await heartBeat()).to.equal(thisNode(start + PASS));
+      expect(await heartBeatStamp()).to.equal(thisNode(start + PASS));
       await driver.stop();
       expect(await heartBeat()).to.equal(undefined);
     });
@@ -1057,7 +1072,7 @@ describe('Syncing node heartbeat', function() {
       await flush();
       // still draining: the resign hasn't started
       expect(resignReads.called).to.equal(false);
-      expect(await heartBeat()).to.equal(thisNode(start + PASS));
+      expect(await heartBeatStamp()).to.equal(thisNode(start + PASS));
       await finish();
       await stopping;
       expect(await heartBeat()).to.equal(undefined);
@@ -1075,10 +1090,10 @@ describe('Syncing node heartbeat', function() {
       expect(stopped).to.equal(false);
       clock.tick(1);
       await stopping;
-      expect(await heartBeat()).to.equal(thisNode(start + PASS));
+      expect(await heartBeatStamp()).to.equal(thisNode(start + PASS));
       expect(warn.getCalls().some(call => /writes still in flight/.test(call.args[0]))).to.equal(true);
       await finish();
-      expect(await heartBeat()).to.equal(thisNode(start + PASS));
+      expect(await heartBeatStamp()).to.equal(thisNode(start + PASS));
     });
 
     it('does not start a write once its lease has run out, before the loop notices', async () => {
@@ -1104,7 +1119,7 @@ describe('Syncing node heartbeat', function() {
 
     it('starts no writes after claiming the heartbeat until it reads the claim back', async () => {
       await drive().start();
-      expect(await heartBeat()).to.equal(thisNode(start));
+      expect(await heartBeatStamp()).to.equal(thisNode(start));
       expect(await admits(worker)).to.equal(false);
       await driver.pass();
       expect(await admits(worker)).to.equal(true);
@@ -1134,7 +1149,7 @@ describe('Syncing node heartbeat', function() {
         clock.tick(1);
         await until(() => stopped);
         await stopping;
-        expect(await heartBeat()).to.equal(thisNode(start + PASS));
+        expect(await heartBeatStamp()).to.equal(thisNode(start + PASS));
         expect(warn.getCalls().some(call => /resign/.test(call.args[0]))).to.equal(true);
       } finally {
         release();
@@ -1155,7 +1170,7 @@ describe('Syncing node heartbeat', function() {
         clock.tick(1);
         await until(() => stopped);
         await stopping;
-        expect(await heartBeat()).to.equal(thisNode(start + PASS));
+        expect(await heartBeatStamp()).to.equal(thisNode(start + PASS));
       } finally {
         release();
       }
@@ -1180,7 +1195,7 @@ describe('Syncing node heartbeat', function() {
         clock.tick(1);
         await until(() => stopped);
         await stopping;
-        expect(await heartBeat()).to.equal(thisNode(start + PASS));
+        expect(await heartBeatStamp()).to.equal(thisNode(start + PASS));
       } finally {
         await finish();
         release();
@@ -1199,7 +1214,7 @@ describe('Syncing node heartbeat', function() {
         await until(() => pendingLoopTimers() > 0);
         clock.tick(CLOSE_WAIT - 1);
         await flush();
-        expect(await heartBeat()).to.equal(thisNode(start + PASS));
+        expect(await heartBeatStamp()).to.equal(thisNode(start + PASS));
         clock.tick(1);
         await until(() => stopped);
         await stopping;
@@ -1274,7 +1289,7 @@ describe('Syncing node heartbeat', function() {
       await flush();
       // still draining: the resign hasn't started
       expect(resignReads.called).to.equal(false);
-      expect(await heartBeat()).to.equal(thisNode(start + PASS));
+      expect(await heartBeatStamp()).to.equal(thisNode(start + PASS));
       await finish();
       await stopping;
       expect(await heartBeat()).to.equal(undefined);
@@ -1318,7 +1333,7 @@ describe('Syncing node heartbeat', function() {
       await flush();
       // still draining: the resign hasn't started
       expect(resignReads.called).to.equal(false);
-      expect(await heartBeat()).to.equal(thisNode(start + PASS));
+      expect(await heartBeatStamp()).to.equal(thisNode(start + PASS));
       await finish();
       await stopping;
       expect(await heartBeat()).to.equal(undefined);
@@ -1359,7 +1374,7 @@ describe('Syncing node heartbeat', function() {
       await flush();
       // still draining: the resign hasn't started
       expect(resignReads.called).to.equal(false);
-      expect(await heartBeat()).to.equal(thisNode(start + PASS));
+      expect(await heartBeatStamp()).to.equal(thisNode(start + PASS));
       finish();
       await stopping;
       expect(await heartBeat()).to.equal(undefined);
@@ -1497,7 +1512,7 @@ describe('Syncing node heartbeat', function() {
       const nominate = StateStorage.selfNominateSyncingNode.bind(StateStorage);
       nominations.restore();
       const stub = sandbox.stub(StateStorage, 'selfNominateSyncingNode').callsFake(async (params: any) => {
-        if (params.heartBeat?.endsWith(`:${(a as any).instanceId}`)) {
+        if (params.heartBeat?.includes(`:${(a as any).instanceId}`)) {
           throw new Error('renewal failed');
         }
         return nominate(params);
@@ -1520,9 +1535,67 @@ describe('Syncing node heartbeat', function() {
       }
       expect(leaseLost.calledOn(a)).to.equal(true);
       expect(b.isSyncingNode).to.equal(true);
-      // at least the minute between the lease and the takeover
       // the minute between the lease, counted from when its last renewal read back started, and the takeover
       expect((bStarted - aStopped) * PASS).to.be.at.least(60000 + PASS);
+    });
+
+    it('a syncing node whose renewals fail gives up before a standby takes over, even when the wall clock repeats its last renewal', async () => {
+      const a = new TestWorker();
+      const b = new TestWorker();
+      await drive(a).start();
+      await driver.pass();
+      const lastRenewal = Number((await heartBeat()).split(':')[2]);
+      const other = driveOther(b);
+      await other.start();
+      const nominate = StateStorage.selfNominateSyncingNode.bind(StateStorage);
+      nominations.restore();
+      const stub = sandbox.stub(StateStorage, 'selfNominateSyncingNode').callsFake(async (params: any) => {
+        if (params.heartBeat?.includes(`:${(a as any).instanceId}`)) {
+          throw new Error('renewal failed');
+        }
+        return nominate(params);
+      });
+      driver.nominations = stub;
+      other.nominations = stub;
+      let aStopped;
+      let bStarted;
+      for (let i = 0; i < 2 * FIVE_MINUTES / PASS; i++) {
+        if (i === 3 * 60 * 1000 / PASS) {
+          // the renewal on this pass is stamped with the time of the one stored
+          clock.setSystemTime(lastRenewal - PASS);
+        }
+        await passAll(driver, other);
+        const aWrites = await admits(a);
+        const bWrites = await admits(b);
+        expect(aWrites && bWrites).to.equal(false);
+        if (!aWrites && aStopped === undefined) {
+          aStopped = i;
+        }
+        if (bWrites && bStarted === undefined) {
+          bStarted = i;
+        }
+      }
+      expect(leaseLost.calledOn(a)).to.equal(true);
+      expect(b.isSyncingNode).to.equal(true);
+      expect((bStarted - aStopped) * PASS).to.be.at.least(60000 + PASS);
+    });
+
+    it('a standby does not take over from a syncing node that keeps renewing while the wall clock stands still', async () => {
+      const a = new TestWorker();
+      const b = new TestWorker();
+      await drive(a).start();
+      await driver.pass();
+      const other = driveOther(b);
+      await other.start();
+      const frozen = Date.now();
+      for (let i = 0; i < 2 * FIVE_MINUTES / PASS; i++) {
+        clock.setSystemTime(frozen - PASS);
+        await passAll(driver, other);
+        expect(await admits(b)).to.equal(false);
+      }
+      expect(a.isSyncingNode).to.equal(true);
+      expect(await admits(a)).to.equal(true);
+      expect(leaseLost.called).to.equal(false);
     });
   });
 
