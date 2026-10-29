@@ -513,6 +513,17 @@ describe('Syncing node heartbeat', function() {
       expect(testWorker.syncs).to.equal(0);
     });
 
+    it('forgets the heartbeats it tried to write once they are older than a lease', async () => {
+      await setHeartBeat(otherNode(start - 60000));
+      await drive().start();
+      nominations.restore();
+      driver.nominations = sandbox.stub(StateStorage, 'selfNominateSyncingNode').rejects(new Error('takeover failed'));
+      await driver.passUntil(start + FIVE_MINUTES + 2 * LEASE);
+      // one per pass for at most a lease
+      expect((worker as any).written.size).to.be.at.most(LEASE / PASS + 1);
+      expect(driver.nominations.callCount).to.be.greaterThan(2 * LEASE / PASS);
+    });
+
     it('retries a takeover that fails on the next pass', async () => {
       const testWorker = new TestWorker();
       await setHeartBeat(otherNode(start - 60000));

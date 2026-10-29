@@ -97,7 +97,9 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
   // monotonic clock, and that last one, which its lease runs from. A renewal that misses can be followed by one that
   // lands, so the heartbeat read back isn't always the latest written.
   private written = new Map<string, number>();
-  private confirmed?: { heartBeat: string; startedAt: number };
+  private confirmed?: string;
+  // when the lease from the last heartbeat this worker read back runs out, on the monotonic clock
+  private leaseEnd = -Infinity;
   protected renewal?: Promise<void>;
   protected writes = new Set<Promise<unknown>>();
   // whether this worker runs the election, so that its writes need the lease
@@ -114,13 +116,8 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
   async stop(): Promise<any> {}
   async sync(): Promise<any> {}
 
-  // when the lease from the last heartbeat this worker read back runs out, on the monotonic clock
-  protected leaseEnds(): number {
-    return this.confirmed ? this.confirmed.startedAt + LEASE_MS : -Infinity;
-  }
-
   getIsSyncingNode(): boolean {
-    return !!this.lastHeartBeat && this.lastHeartBeat === this.confirmed?.heartBeat && performance.now() < this.leaseEnds();
+    return !!this.lastHeartBeat && this.lastHeartBeat === this.confirmed && performance.now() < this.leaseEnd;
   }
 
   // a read showing a heartbeat this worker wrote confirms it, and the lease now runs from when it was written
@@ -129,7 +126,8 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
     if (startedAt === undefined) {
       return;
     }
-    this.confirmed = { heartBeat, startedAt };
+    this.confirmed = heartBeat;
+    this.leaseEnd = startedAt + LEASE_MS;
     // an older heartbeat can't be read back once a newer one has
     for (const [written, writtenAt] of this.written) {
       if (writtenAt <= startedAt) {
@@ -216,7 +214,7 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
     if (!wasSyncingNode) {
       return read();
     }
-    const leaseLeft = this.leaseEnds() - performance.now();
+    const leaseLeft = this.leaseEnd - performance.now();
     return leaseLeft > 0 ? within(read(), leaseLeft, lastHeartBeat) : lastHeartBeat;
   }
 
@@ -250,7 +248,7 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
   // lease's time itself rather than wait for the loop to notice. A standby claims a resigned heartbeat on its next
   // pass, so unregisterSyncingNode resigns only once these finish.
   protected async write<R>(fn: () => Promise<R>): Promise<R | undefined> {
-    if (this.stopping || (this.electing && !(this.isSyncingNode && performance.now() < this.leaseEnds()))) {
+    if (this.stopping || (this.electing && !(this.isSyncingNode && performance.now() < this.leaseEnd))) {
       return undefined;
     }
     const writing = fn();
