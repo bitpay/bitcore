@@ -308,6 +308,17 @@ describe('Syncing node heartbeat', function() {
       expect(await heartBeat()).to.equal(undefined);
     });
 
+    it('selfNominateSyncingNode and selfResignSyncingNode without the id read the state document without writing it', async () => {
+      await setHeartBeat(otherNode(start));
+      const readsBefore = calls(['findOne']);
+      const writesBefore = calls(WRITES);
+      await StateStorage.selfNominateSyncingNode({ chain, network, lastHeartBeat: otherNode(start) });
+      await StateStorage.selfResignSyncingNode({ chain, network, lastHeartBeat: thisNode(start) });
+      expect(calls(['findOne']) - readsBefore).to.equal(2);
+      expect(calls(WRITES) - writesBefore).to.equal(2);
+      expect(await heartBeat()).to.equal(undefined);
+    });
+
     it('selfResignSyncingNode removes only the heartbeat it was given', async () => {
       await setHeartBeat(otherNode(start));
       await StateStorage.selfResignSyncingNode({ chain, network, lastHeartBeat: thisNode(start) });
@@ -561,6 +572,7 @@ describe('Syncing node heartbeat', function() {
         await Promise.all(stub.returnValues);
         await passing;
         expect(await heartBeat()).to.equal(undefined);
+        expect(pendingLoopTimers()).to.equal(0);
       } finally {
         unstall();
       }
@@ -606,6 +618,10 @@ describe('Syncing node heartbeat', function() {
       await driver.pass();
       await driver.pass();
       expect(standbyLogs()).to.equal(2);
+      // the same host, another process
+      await setHeartBeat(`thirdhost:100:${Date.now()}`);
+      await driver.pass();
+      expect(standbyLogs()).to.equal(3);
     });
 
     it('stops looping once the worker is stopping', async () => {
@@ -641,6 +657,15 @@ describe('Syncing node heartbeat', function() {
       expect(worker.isSyncingNode).to.equal(true);
       await driver.stop();
       expect(await heartBeat()).to.equal(undefined);
+    });
+
+    it('resigns on stop with one read of the state document', async () => {
+      await drive().start();
+      await driver.pass();
+      const readsBefore = calls(['findOne']);
+      await driver.stop();
+      expect(await heartBeat()).to.equal(undefined);
+      expect(calls(['findOne']) - readsBefore).to.equal(1);
     });
 
     it('leaves another node\'s heartbeat on stop', async () => {
