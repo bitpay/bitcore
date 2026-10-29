@@ -182,6 +182,7 @@ describe('Syncing node heartbeat', function() {
     start = Math.floor(Date.now() / 1000) * 1000;
     clock = sandbox.useFakeTimers({ now: start, toFake: ['Date', 'performance'] });
     leaseLost = sandbox.stub(BaseP2PWorker.prototype as any, 'onLeaseLost');
+    (BaseP2PWorker as any).leaseLossSignalled = false;
     // only the loop's own timers run on the fake clock; the Mongo driver keeps real ones
     const loopTimers = new Set<any>();
     const realSetTimeout = global.setTimeout;
@@ -835,6 +836,47 @@ describe('Syncing node heartbeat', function() {
       await setHeartBeat(`thirdhost:100:${Date.now()}`);
       await driver.pass();
       expect(standbyLogs()).to.equal(3);
+      // the same process, other workers
+      await setHeartBeat(`thirdhost:100:${Date.now()}:aaaaaaaaaaaa`);
+      await driver.pass();
+      await setHeartBeat(`thirdhost:100:${Date.now()}:bbbbbbbbbbbb`);
+      await driver.pass();
+      expect(standbyLogs()).to.equal(5);
+    });
+
+    it('holds the lease from when the renewal it reads back started, not when it landed', async () => {
+      const testWorker = new TestWorker();
+      let error;
+      await drive(testWorker).start();
+      driver.loop!.catch(e => (error = e));
+      await driver.pass();
+      const nominate = StateStorage.selfNominateSyncingNode.bind(StateStorage);
+      let land;
+      const landing = new Promise(resolve => (land = resolve));
+      let calls = 0;
+      nominations.restore();
+      const stub = sandbox.stub(StateStorage, 'selfNominateSyncingNode').callsFake(async params => {
+        if (calls++) {
+          throw new Error('renewal failed');
+        }
+        await landing;
+        return nominate(params);
+      });
+      driver.nominations = sandbox.spy();
+      // the renewal starts on the next pass and lands two minutes later
+      await driver.pass();
+      const renewalStarted = Date.now();
+      await driver.passUntil(renewalStarted + 2 * 60 * 1000);
+      land();
+      await Promise.all(stub.returnValues);
+      await driver.pass();
+      expect(await heartBeat()).to.equal(thisNode(renewalStarted));
+      driver.nominations = stub;
+      await driver.passUntil(renewalStarted + LEASE - PASS);
+      expect(testWorker.isSyncingNode).to.equal(true);
+      await driver.pass();
+      expect(testWorker.isSyncingNode).to.equal(false);
+      expectLeaseLost(error);
     });
 
     it('gives up four minutes of elapsed time after its last renewal even when the wall clock steps back', async () => {
@@ -948,13 +990,13 @@ describe('Syncing node heartbeat', function() {
       expect(await heartBeat()).to.equal(otherNode(start));
     });
 
-    it('does not resign a heartbeat older than its lease', async () => {
+    it('resigns its own heartbeat once its writes have finished, even past its lease', async () => {
       await drive().start();
       await driver.pass();
-      // past the lease, before a standby could take over
+      // past the lease, before a standby could take over: nothing of this worker's can still be writing
       clock.tick(LEASE + 30000);
       await driver.stop();
-      expect(await heartBeat()).to.equal(thisNode(start + PASS));
+      expect(await heartBeat()).to.equal(undefined);
     });
 
     it('swallows errors while resigning', async () => {
@@ -1003,6 +1045,7 @@ describe('Syncing node heartbeat', function() {
     it('leaves its heartbeat to expire when writes have not finished fifteen seconds after stopping', async () => {
       await becomeSyncingNode(new TestWorker());
       const finish = stalledWrite(fn => (worker as any).write(fn));
+      const warn = sandbox.spy(logger, 'warn');
       let stopped = false;
       const stopping = stop().then(() => (stopped = true));
       await until(() => pendingLoopTimers() > 0);
@@ -1012,6 +1055,7 @@ describe('Syncing node heartbeat', function() {
       clock.tick(1);
       await stopping;
       expect(await heartBeat()).to.equal(thisNode(start + PASS));
+      expect(warn.getCalls().some(call => /writes still in flight/.test(call.args[0]))).to.equal(true);
       await finish();
       expect(await heartBeat()).to.equal(thisNode(start + PASS));
     });
@@ -1045,9 +1089,11 @@ describe('Syncing node heartbeat', function() {
       expect(await admits(worker)).to.equal(true);
     });
 
-    it('asks the process to stop when its lease is lost', async () => {
+    it('asks the process to stop when its lease is lost, once however many workers lose theirs', async () => {
       leaseLost.restore?.();
       const kill = sandbox.stub(process, 'kill');
+      (new TestWorker() as any).onLeaseLost();
+      // a second SIGTERM would turn the graceful stop into an immediate exit
       (new TestWorker() as any).onLeaseLost();
       expect(kill.calledOnceWith(process.pid, 'SIGTERM')).to.equal(true);
     });
@@ -1130,13 +1176,30 @@ describe('Syncing node heartbeat', function() {
         let stopped = false;
         const stopping = stop().then(() => (stopped = true));
         await until(() => pendingLoopTimers() > 0);
-        clock.tick(CLOSE_WAIT);
+        clock.tick(CLOSE_WAIT - 1);
+        await flush();
+        expect(await heartBeat()).to.equal(thisNode(start + PASS));
+        clock.tick(1);
         await until(() => stopped);
         await stopping;
         expect(await heartBeat()).to.equal(undefined);
       } finally {
         release();
       }
+    });
+
+    it('a moralis worker whose webhook tail fails to close still resigns', async () => {
+      const moralis = moralisWorker();
+      await becomeSyncingNode(moralis);
+      let closes = 0;
+      (moralis as any).webhookTail = { close: () => (closes++ ? Promise.resolve() : Promise.reject(new Error('close failed'))) };
+      let stopped = false;
+      const stopping = stop()
+        .catch(() => {})
+        .then(() => (stopped = true));
+      await until(() => stopped);
+      await stopping;
+      expect(await heartBeat()).to.equal(undefined);
     });
 
     it('a worker outside the election writes', async () => {
@@ -1366,9 +1429,24 @@ describe('Syncing node heartbeat', function() {
     it('two workers starting together against an empty state elect one', async () => {
       const a = new TestWorker();
       const b = new TestWorker();
-      await drive(a).start();
+      // both read the empty state before either claim lands
+      const nominate = StateStorage.selfNominateSyncingNode.bind(StateStorage);
+      let claimed;
+      const bothClaiming = new Promise(resolve => (claimed = resolve));
+      let claims = 0;
+      nominations.restore();
+      const stub = sandbox.stub(StateStorage, 'selfNominateSyncingNode').callsFake(async (params: any) => {
+        if (++claims === 2) {
+          claimed();
+        }
+        await bothClaiming;
+        return nominate(params);
+      });
+      drive(a);
+      driver.nominations = stub;
       const other = driveOther(b);
-      await other.start();
+      await Promise.all([driver.start(), other.start()]);
+      expect(claims).to.equal(2);
       for (let i = 0; i < 2 * FIVE_MINUTES / PASS; i++) {
         await passAll(driver, other);
         expect(a.isSyncingNode && b.isSyncingNode).to.equal(false);
@@ -1413,7 +1491,8 @@ describe('Syncing node heartbeat', function() {
       expect(leaseLost.calledOn(a)).to.equal(true);
       expect(b.isSyncingNode).to.equal(true);
       // at least the minute between the lease and the takeover
-      expect((bStarted - aStopped) * PASS).to.be.at.least(60000);
+      // the minute between the lease, counted from when its last renewal read back started, and the takeover
+      expect((bStarted - aStopped) * PASS).to.be.at.least(60000 + PASS);
     });
   });
 

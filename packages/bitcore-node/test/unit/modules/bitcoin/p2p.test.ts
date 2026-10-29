@@ -105,6 +105,38 @@ describe('BitcoinP2PWorker', function() {
       expect((worker as any).isSyncing).to.equal(false);
     });
 
+    it('does not start without the lease when it runs the election', async function() {
+      const worker = createWorker({ prefetchSize: 0, threads: 0 });
+      setupSyncStubs();
+      const getHeaders = sandbox.stub(worker as any, 'getHeadersForSync').resolves([]);
+      (worker as any).electing = true;
+      (worker as any).isSyncingNode = false;
+
+      expect(await worker.sync()).to.equal(false);
+      expect(getHeaders.called).to.equal(false);
+    });
+
+    it('stops processing headers once its lease is lost', async function() {
+      const worker = createWorker({ prefetchSize: 0, threads: 0 });
+      const headers = Array.from({ length: 5 }, (_, i) => ({ hash: `block_${i}` }));
+      sandbox.stub(worker as any, 'getBlock').callsFake(async (hash: string) => ({ hash }));
+      const processed: string[] = [];
+      sandbox.stub(worker as any, 'processBlock').callsFake(async (block: any) => {
+        processed.push(block.hash);
+        (worker as any).isSyncingNode = false;
+      });
+      setupSyncStubs();
+      const getHeaders = sandbox.stub(worker as any, 'getHeadersForSync').resolves([]);
+      getHeaders.onFirstCall().resolves(headers);
+      getHeaders.onSecondCall().resolves(headers);
+      (worker as any).electing = true;
+      (worker as any).isSyncingNode = true;
+      (worker as any).leaseEnd = performance.now() + 60000;
+
+      expect(await worker.sync()).to.equal(false);
+      expect(processed).to.deep.equal(['block_0']);
+    });
+
     it('does not start once the worker is stopping', async function() {
       const worker = createWorker({ prefetchSize: 0, threads: 0 });
       setupSyncStubs();
